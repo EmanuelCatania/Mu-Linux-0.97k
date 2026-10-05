@@ -149,7 +149,7 @@
 //               DAT_07ea983e = 0
 //               SetErrorMessage(0x79)  — ShowErrorDialog(0x79)
 //               Después (si DAT_07e91388 >= 1) corta, si no: cae al 0x37
-//               NOTA: el bloque XOR de envío de acá (líneas 655-840) es el camino de
+//               NOTA: el bloque XOR de envío de este case es el camino de
 //               respuesta al NACK de re-login del server — misma clave de 32 bytes, mismo loop de reintento.
 //
 //   case 0x37:  FUN_004332e0(puVar8)
@@ -657,9 +657,6 @@ extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);
 extern "C" void __cdecl CreatePoint(float Position[3], int Value,
                                     float Color[3], float scale);
 
-// 2026-05-04: Hero equipment stash (definidos en Render_PlayerEquipment.cpp).
-// F3/03 los popula; HeroEquipWatchdog los re-aplica per-frame.
-
 // ============================================================================
 // Net_ProcessPacket @ 0x004389A0 — server→client opcode dispatcher
 // ============================================================================
@@ -672,17 +669,9 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 //       else if (Msg[0]==0xC3 o 0xC4) { /* desencripta in situ */ ... }
 //       dispatch on HeadCode...
 //   }
-//
-// Esta primera iteración implementa el scaffolding completo + los opcodes del
-// flujo de login (F1/00, F1/01, F4/02, F4/03, F4/05). Los handlers opcode
-// complejos (combate, movimiento, char list, etc.) son stubs que registran
-// llegada pero no avanzan estado — se añaden cuando el server los dispara.
-//
-// Paquetes cifrados (C3/C4) todavía no se desencriptan aquí: en el flujo
-// inicial ConnectServer → cliente solo envía/recibe C1/C2.
 // ============================================================================
 
-extern int __fastcall CWsctlc_GetReadMsg(int poolBase);   // GetReadMsg (stubs.cpp) — returns ptr as int
+extern int __fastcall CWsctlc_GetReadMsg(int poolBase);   // GetReadMsg (Scene/Scene_CharSelect_Nav.cpp) — returns ptr as int
 
 // Forward decls for inventory packet handlers (Item/Item_Inventory.cpp).
 extern "C" void __cdecl Recv_Inventory     (const BYTE* Msg);   // F3/10
@@ -692,7 +681,7 @@ extern "C" void HeroEquipWatchdog(int c);
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
 extern "C" void SetGuildNoticeText(const char* text);
 
-// 2026-05-08: inventory/warehouse pool symbols (defined in HUD_Pass3.cpp).
+// Inventory/warehouse pool symbols (defined in HUD_Pass3.cpp).
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetWarehouseItems[];
@@ -700,7 +689,7 @@ extern "C" BYTE OffsetMixItems[];
 extern "C" BYTE Inventory[];
 extern "C" BYTE ShopItems[];   // pool dedicado de la tienda (120 slots)
 extern "C" void DbgLogPublic(const char* msg);
-int __cdecl Entity_FindById(int entity_id);   // stubs.cpp
+int __cdecl Entity_FindById(int entity_id);   // Entity/Entity_Lookup.cpp
 extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base,
                                  unsigned int gridW);  // Item_ClickHandler.cpp
 extern "C" int  pPickedItem;
@@ -709,13 +698,15 @@ extern "C" BYTE byte_7E9136B;
 extern "C" int __cdecl ConvertItemType(BYTE* Item);
 extern "C" void ChaosBoxCloseAck(void);
 
-// ── ShopInsertItem (PORT FIEL de IDA sub_4CC0E0, 2026-07-25) ─────────────────
-// Inserta un item de tienda en el pool Inventory[32 + slot], llenando su
-// footprint Width×Height (de ItemAttribute[type]).  El item de tienda son 4
-// bytes: [typeLo][levelByte][durability][flags].  Key se setea solo en la celda
-// primaria (el render usa Key>0 como gate).  El ItemConvert completo (que llena
-// DamageMin/Defense/etc para el tooltip) se omite: el tooltip los recalcula
-// on-hover desde ItemAttribute[type].  Pool shop = Inventory[32..151] (grid 8×15).
+// ── ShopInsertItem (PORT FIEL de IDA sub_4CC0E0) ──────────────────────────────
+// Inserta un item de tienda en el pool de la tienda (ShopItems, 120 celdas de
+// 0x44 = grid 8×15), llenando su footprint Width×Height (de
+// ItemAttribute[type]).  El item de tienda son 4 bytes:
+// [typeLo][levelByte][durability][flags].  Key se setea solo en la celda
+// primaria (el render usa Key>0 como gate); ItemConvert completa los campos
+// derivados de cada celda.
+// DESVIACIÓN: en el binario el pool de tienda es el overlay
+// &Inventory[32].WalkSpeed; acá es un pool dedicado (ShopItems, HUD_Pass3.cpp).
 static void ShopInsertItem(int slot, const BYTE* Item)
 {
     int type = ConvertItemType((BYTE*)Item);
@@ -730,23 +721,21 @@ static void ShopInsertItem(int slot, const BYTE* Item)
         for (int c = 0; c < W; ++c) {
             int idx = slot + r * 8 + c;
             if (idx < 0 || idx >= 120) continue;    // bound del pool 8×15
-            // CRÍTICO: el pool de tienda es un overlay que arranca en
-            // &Inventory[idx].WalkSpeed (offset +24), NO en el base del ITEM.
-            // El render (sub_4E38B0, HUD_Pass3:382) recibe &Inventory[32].WalkSpeed
-            // y lee Type@+0, Level@+4, Durability@+26, Option1@+27, Key@+0x38
-            // relativo a ese puntero. sub_4CC0E0 escribe con el mismo convenio.
+            // El pool de tienda (ShopItems) usa el mismo convenio que el overlay del
+            // original (&Inventory[idx].WalkSpeed, offset +24): el render (sub_4E38B0)
+            // lee Type@+0, Level@+4, Durability@+26, Option1@+27, Key@+0x38 relativo a
+            // cada celda. sub_4CC0E0 escribe con el mismo convenio.
             BYTE* cell = ShopItems + idx * 0x44;
             *(short*)(cell + 0)    = (short)type;                  // Type
             *(int*)(cell + 4)      = (int)Item[1];                 // Level (raw byte)
             cell[26]               = Item[2];                      // Durability
             cell[27]               = Item[3];                      // Option1
             *(DWORD*)(cell + 0x38) = (r == 0 && c == 0) ? 1u : 0u; // Key (gate render)
-            // CRÍTICO (2026-07-27): x/y = posición-origen del item en el grid
-            // (slot%8, slot/8), escrito en TODAS las celdas del footprint (igual
-            // que sub_4CC0E0 ->x=a1%8 ->y=a1/8). El hover (Item_ClickHandler:634)
-            // normaliza celdas de footprint al origen vía `inv_base + 34*(8*y+x)`.
-            // Sin esto x/y=0 → TODA celda normaliza a slot 0 → el tooltip siempre
-            // mostraba el primer item sin importar cuál hovereabas.
+            // CRÍTICO: x/y = posición-origen del item en el grid (slot%8, slot/8),
+            // escrito en TODAS las celdas del footprint (igual que sub_4CC0E0 ->x=a1%8
+            // ->y=a1/8). El hover (Item_ClickHandler.cpp, FUN_004d23b0) normaliza celdas de
+            // footprint al origen vía `inv_base + 34*(grid_w*y+x)`; con x/y=0 toda celda
+            // normalizaría al slot 0 y el tooltip mostraría siempre el primer item.
             cell[62]               = (BYTE)(slot % 8);             // x
             cell[63]               = (BYTE)(slot / 8);             // y
             ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
@@ -804,15 +793,11 @@ static void ItemMove_RestoreSlot(BYTE* pool, int slot, const BYTE* item68)
     int slotMax = (pool == OffsetInventoryItems) ? 76 : (8 * ItemMove_GetGridH(pool));
     if (slotIndex >= 0 && slotIndex < slotMax) {
         int first = (pool == OffsetInventoryItems) ? 0 : 1;
-        // 2026-07-27 FIX "el item se transforma en otro al moverlo":
         // item68 es el ITEM struct de 68 bytes copiado del slot al hacer pickup,
-        // NO formato wire. InsertInventoryItem/InsertInventoryItem espera 4-5 bytes wire
-        // [typeLo][optByte][dur][hi][ext]; pasarle el struct crudo reinterpretaba
-        // Type-high/Level-int/etc como opciones → el item restaurado quedaba con
-        // type/opciones equivocadas. Se disparaba en CADA move denegado (server
-        // devuelve result=FF cuando el inventario está lleno / slot destino
-        // ocupado) → el item de origen se corrompía. Reconstruimos el wire desde
-        // los offsets conocidos de la struct (Type@0, Level@4, Durability@26,
+        // NO formato wire. InsertInventoryItem espera 4-5 bytes wire
+        // [typeLo][optByte][dur][hi][ext]: pasarle el struct crudo reinterpretaría
+        // Type-high/Level-int/etc como opciones. Se reconstruye el wire desde los
+        // offsets conocidos de la struct (Type@0, Level@4, Durability@26,
         // Unkown@60=byteHi, byColorState@61=ext).
         BYTE wire[6] = { 0, 0, 0, 0, 0, 0 };
         wire[0] = item68[0];    // Type low byte
@@ -1268,11 +1253,8 @@ static void Recv_NewCharacterInfo(const BYTE* Msg)
 // para traducirlo hay que buscar cada skill en la lista del personaje
 // (CharacterAttribute+87), que la puebla el F3/11.
 //
-// 2026-09-25: MuEmu manda el F3/30 ANTES del F3/11 (verificado en debug.log:
-// Option llega ~20 paquetes antes que SkillList), asi que al traducir la lista
-// todavia estaba vacia, ninguna skill matcheaba y el mapa quedaba entero en
-// 0xFF -- las teclas asignadas se perdian en cada login por mas veces que se
-// reasignaran.  Se guardan los 10 bytes y se aplica el mapeo dos veces: al
+// MuEmu manda el F3/30 ANTES del F3/11, asi que al recibirlo la lista puede
+// estar vacia.  Se guardan los 10 bytes y se aplica el mapeo dos veces: al
 // recibir el F3/30 (por si la lista ya estuviera, que es el orden que asume
 // IDA) y de nuevo al final del snapshot del F3/11.
 static void NetLog(const char* fmt, ...);   // definida mas abajo
@@ -1311,17 +1293,6 @@ static void ApplySkillKeyMap(void)
 //    p+32 PhysiDmgMin    p+36 PhysiDmgMax    p+40 MagicDmgMin   p+44 MagicDmgMax
 //    p+48 MagicDmgRate   p+52 AttackSuccessRate                 p+56 DamageMultiplier
 //    p+60 Defense        p+64 DefenseSuccessRate
-//
-// 2026-09-21 (issue #54, "defensa rate y dano se cruzan al subir de nivel"):
-// el port asumia que despues de MagicSpeed venian directo MagicDmgMin/Max y
-// leia AttackSuccessRate en p+40, Defense en p+48 y DefenseSuccessRate en p+52.
-// Faltaban los 4 campos del medio, asi que cargaba:
-//    tasa de ataque   <- MagicDmgMin        (en la captura: 3678)
-//    defensa          <- MagicDmgRate       (53)
-//    tasa de defensa  <- AttackSuccessRate  (42652)
-// Los tres numeros de la captura cuadran exactos.  Antes de subir de nivel se
-// veian bien porque venian del recalculo local (CalculateAll); el server manda
-// el E1 al subir, y ahi se pisaban.
 static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
 {
     BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
@@ -1354,9 +1325,9 @@ static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
     *(WORD*)(CA + 0x3A) = ClampToWord(ViewAttackSuccessRate);
     *(WORD*)(CA + 0x4E) = ClampToWord(ViewDefense);
     *(WORD*)(CA + 0x4C) = ClampToWord(ViewDefenseSuccess);
-    // 2026-09-24: los dos unicos campos que el DLL escribe y este port no
-    // (GCNewCharacterCalcRecv, Protocol.cpp:925).  El dano FISICO no viaja
-    // por aca -- el DLL tampoco lo escribe, lo sigue calculando el cliente.
+    // Los dos campos que el DLL escribe ademas (GCNewCharacterCalcRecv,
+    // Protocol.cpp).  El dano FISICO no viaja por aca -- el DLL tampoco lo
+    // escribe, lo sigue calculando el cliente.
     *(WORD*)(CA + 0x46) = ClampToWord(ViewMagicDamageMin);
     *(WORD*)(CA + 0x48) = ClampToWord(ViewMagicDamageMax);
 }
@@ -1495,19 +1466,15 @@ static void Recv_JoinServer(const BYTE* Msg)
 {
     if (Msg[4] == 1) {
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
-        // FIX 2026-07-24: HeroKey (HeroKey que usa ClearCharacters vía
-        // OpenWorld) NUNCA se seteaba → quedaba en 0.  Con eso, al entrar al
-        // mundo ClearCharacters(0) conservaba las entidades con Key==0 (incluida
-        // la del Hero stale del slot 0 que quedaba de antes del join) → fantasma
-        // renderizado + hover pegado.  Ahora lleva el HeroKey real.
+        // HeroKey (el que usa ClearCharacters vía OpenWorld) tiene que llevar el Key
+        // real: con 0, ClearCharacters(0) conservaría las entidades con Key==0
+        // (el Hero stale del slot 0) → fantasma renderizado + hover pegado.
         HeroKey   = g_HeroKey;
         CurrentProtocolState   = 2;
         DAT_083a7c14   = 2;          // login sub-state = CredentialInput
         PlayBuffer(27, 0, 0);
         NetLog("NET:    JoinServer OK: HeroKey=%d state→2/2", g_HeroKey);
-        // ── 2026-04-25: solo F1/05 HWID re-activado ────────────────────────
-        // Tras agregar el LoginKey chain XOR al F1/01 build, el server pasó
-        // de mudo a responder con code=05 (HardwareID rechazado / blacklist).
+        // ── F1/05 HWID (desviación MuEmu) ──────────────────────────────────────────
         // El server MuEmu requiere F1/05 SetHwid antes del F1/01 — sin él,
         // CheckHardwareID en Blacklist.cpp considera el HWID vacío como
         // blacklisted y devuelve code 05.
@@ -1553,20 +1520,15 @@ static void Recv_LoginResult(const BYTE* Msg)
     }
     DAT_05826cb0 = state;
     DAT_083a7c14 = 3;
-    // 2026-07-25 (#1): log del resultado de login crudo por intento, para
-    // diagnosticar el "primer enter = dato mal, segundo enter entra".  Si el
-    // primer intento trae un code de fallo (0x02 pass, 0x0C/0x0D, etc.) y el
-    // segundo (mismas credenciales) trae 0x01 OK, el problema es el PRIMER
-    // paquete (serial/encriptación) o un estado stale; si ambos códigos son
-    // iguales, es del server.  Msg[4]=code server, state=nuestro DAT_05826cb0.
+    // Log del resultado de login crudo por intento.  Msg[4]=code server,
+    // state=nuestro DAT_05826cb0.
     NetLog("NET:  → F1/01 LOGIN-RESULT code=0x%02X -> state=%u (t=%lu)",
            Msg[4], state, (unsigned long)GetTickCount());
 
-    // 2026-07-25 (#1): auto-reintento del PRIMER login fallido con code 0x02.
-    // El diagnóstico probó que el 1er F1/01 se rechaza (0x02 = pass incorrecta)
-    // con datos IDÉNTICOS (userLen/passLen/crc iguales) al 2do intento que SÍ
-    // entra (0x01) — quirk del primer paquete C3 contra el server MuEmu, no es
-    // la contraseña.  Reintentamos UNA sola vez simulando Enter (DAT_055ca038),
+    // DESVIACIÓN: auto-reintento del PRIMER login fallido con code 0x02.  Contra
+    // MuEmu el 1er F1/01 se rechaza (0x02 = pass incorrecta) con datos IDÉNTICOS al
+    // 2do intento que SÍ entra (0x01) — quirk del primer paquete C3, no es la
+    // contraseña.  Reintentamos UNA sola vez simulando Enter (DAT_055ca038),
     // que hace que Game_SceneUpdate re-envíe las MISMAS credenciales.  Si la
     // pass fuera realmente incorrecta, el 2do intento también da 0x02 y ahí sí
     // se muestra el error.  Sólo 0x02 — no reintentamos banned/already-online/
@@ -1790,17 +1752,11 @@ static void Recv_DeleteChar(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 {
-    // BUG-FIX 2026-04-28: el F3/03 que envía el server MuEmu (Protocol.cpp
-    // GDCharacterInfoSend → DataServer → DGCharacterInfoRecv → cliente) llega
-    // como packet plano C1 (no C3-encriptado vía SimpleModulus). Nuestro
-    // dispatcher en Net_ProcessPacket inicializa bEncrypted=false y nunca lo
-    // setea. Antes hacía early-return si !bEncrypted asumiendo que era el
-    // path "GameGuard re-auth"; pero en MuEmu el path bEncrypted=false ES el
-    // path real → skip → hero nunca se posiciona → pantalla negra.
-    //
-    // El IDA original 0.97K diferenciaba ambos paths para soportar
-    // re-handshakes de GameGuard. Nuestro server MuEmu no usa GG, así que
-    // ejecutamos siempre el world-load path.
+    // El F3/03 que envía el server MuEmu (Protocol.cpp GDCharacterInfoSend →
+    // DataServer → DGCharacterInfoRecv → cliente) llega con bEncrypted=false: el
+    // dispatcher nunca lo setea. El IDA original 0.97K diferenciaba ambos paths
+    // para soportar re-handshakes de GameGuard; nuestro server MuEmu no usa GG,
+    // así que ejecutamos siempre el world-load path (no hacer early-return).
     (void)bEncrypted;
 
     // Debe activarse antes de OpenWorld: ése es el tramo que permite que el
@@ -1871,25 +1827,21 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         *(WORD*)(CA + 46) = *(const WORD*)(RB + 46);     // available
         *(WORD*)(CA + 48) = *(const WORD*)(RB + 48);     // max
 
-        // 2026-07-27 FIX zen al login: PMSG_CHARACTER_INFO_SEND (F3/03) trae
-        // Money (DWORD) en offset 40 — la struct NO es pack(1): tras MaxBP
-        // (WORD@36) hay 2 bytes de padding porque Money (DWORD) se alinea a 4 →
-        // offset 40. Verificado por hex del paquete: RB[40..43]=D4 17 F1 1B =
-        // 0x1BF117D4 (leyendo en 38 daba 0x17D40000 = valor corrido). El zen se
-        // muestra desde CharacterMachine+1352 (= DAT_07cf1ffc+1352).
+        // PMSG_CHARACTER_INFO_SEND (F3/03) trae Money (DWORD) en offset 40 — la
+        // struct NO es pack(1): tras MaxBP (WORD@36) hay 2 bytes de padding porque
+        // Money (DWORD) se alinea a 4 → offset 40. El zen se muestra desde
+        // CharacterMachine+1352 (= DAT_07cf1ffc+1352).
         if (DAT_07cf1ffc != 0) {
             DWORD money = *(const DWORD*)(RB + 40);
             *(DWORD*)((BYTE*)(uintptr_t)DAT_07cf1ffc + 1352) = money;
             NetLog("NET:    F3/03 Money=%u -> CharacterMachine+1352", money);
         }
 
-        // 2026-07-27 FIX (alas/cuerpo rojos "PK"): PMSG_CHARACTER_INFO_SEND trae
-        // PKLevel (BYTE) justo después de Money → offset 44. El render aplica el
-        // tinte rojo (1.0,0.1,0.1) cuando entity+0x2EA >= 6
-        // (Entity_UpdateRender:333). Entity_Spawn inicializa ese campo en 3 para
-        // los mobs, pero el HÉROE no pasa por ese path → quedaba con basura
-        // (el diag mostró 2ea=255 → rojo permanente). Ahora guardamos el PKLevel
-        // real que manda el server.
+        // PMSG_CHARACTER_INFO_SEND trae PKLevel (BYTE) justo después de Money →
+        // offset 44. El render aplica el tinte rojo (1.0,0.1,0.1) cuando
+        // entity+0x2EA >= 6 (Entity_UpdateRender.cpp). Entity_Spawn inicializa ese
+        // campo en 3 para los mobs, pero el HÉROE no pasa por ese path, así que se
+        // guarda el PKLevel real que manda el server.
         if (DAT_07abf5d8) {
             BYTE pk = RB[44];
             if (pk > 6) pk = 0;                   // valor fuera de rango → normal
@@ -1916,28 +1868,18 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         NetLog("%s", hexBuf);
     }
 
-    // BUG-FIX 2026-04-28: leer class + body-part slots del char-select entity
-    // ANTES de OpenWorld (que llama ClearCharacters y borra los entities).
-    // Body parts (helm/armor/pant/glove/boot) son lo que efectivamente renderiza
-    // el cuerpo del hero — sin esto RenderCharacter entra pero no dibuja nada.
     // (3) World setup: mapa, terreno, tiles.
     World = world;
 
-    // 2026-05-07: WIPE entity pool de slots stale del CharSelect ANTES de
-    // OpenWorld + hero spawn. Sin esto, los slots de chars del CharSelect
-    // quedan activos con sus nombres en +0x1C1 y aparecen como "NPCs" cuando
-    // el hover detect los recoge.
+    // WIPE del entity pool de slots stale del CharSelect ANTES de OpenWorld +
+    // hero spawn: si no, los slots de chars del CharSelect quedan activos con sus
+    // nombres en +0x1C1 y aparecen como "NPCs" fantasma cuando el hover detect
+    // los recoge.
     //
-    // Wipea TODOS los slots — el nuevo hero se crea via CreateCharacterPointer
-    // a unas líneas más abajo (paso 4-5) en un slot random, sobrescribiendo
-    // sea cual sea. Los mobs/players del world via 0x12/0x13 viewport packets
-    // llegan DESPUÉS del OpenWorld y populan el pool limpio.
-    //
-    // Nota: el wipe es FULL (slot[0]=0 + 0x84=0 + 0x160=0 + 0x1C1=0). Si
-    // omitía slots por preservar el viejo hero, ese slot quedaba con nombre
-    // y kind viejos → seguía apareciendo como entidad fantasma in-world.
-    // User reportó "leo nombres del select character" + "entra con walking
-    // animation sin mobs" 2026-05-07.
+    // Wipea TODOS los slots (FULL: slot[0]=0 + 0x84=0 + 0x160=0 + 0x1C1=0) — el
+    // nuevo hero se crea via CreateCharacterPointer a unas líneas más abajo
+    // (paso 4-5) en un slot random. Los mobs/players del world via 0x12/0x13
+    // viewport packets llegan DESPUÉS del OpenWorld y populan el pool limpio.
     if (DAT_07abf5d0) {
         // Full memset del pool para garantizar todos los bytes limpios.
         // 400 slots × 0x394 = ~366 KB. CreateCharacterPointer + viewport spawn
@@ -1947,13 +1889,9 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         DAT_07abf5d8 = nullptr;
     }
 
-    // BUG-FIX 2026-04-29: OpenWorld bloquea ~2 segundos cargando
-    // BMDs. Durante ese tiempo el server manda ~3KB de packets post-JoinMapServer,
-    // pero como nuestro message pump está bloqueado no hacemos recv → server's
-    // IoSideBuffer overflows o WSASend falla con WSAENOBUFS → CloseClient.
-    // Pumpear la message queue ANTES de empezar el BMD load (drena lo que
-    // ya llegó), y al final del load (drena lo nuevo) ayuda a que el server
-    // no cierre por backpressure.
+    // OpenWorld bloquea ~2 segundos cargando BMDs. Los dos pumps de mensajes
+    // alrededor de la carga quedan desactivados (`false &&`): el drenaje del socket
+    // durante la carga lo hace AccessModel (ver `g_WorldLoading` abajo).
     {
         MSG msg;
         // Se mantiene estructuralmente sólo para diagnóstico. 00425840 no despacha
@@ -1964,15 +1902,11 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         }
     }
 
-    // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
-    // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-    // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
-    // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
-    // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
-    // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
-    // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
-    // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
-    // cargado -- los arreglara.
+    // OpenWorld tarda ~2 s cargando BMDs y, para que el server no cierre por
+    // backpressure, AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese
+    // pump entrega WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los
+    // handlers correrian RE-ENTRANTES en mitad de la carga (p.ej. un
+    // `0x13 ViewportMonster` creando monstruos cuyo modelo todavia no esta abierto).
     //
     // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
     // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
@@ -1997,10 +1931,10 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
-    // BUG-FIX 2026-04-28: CreateCharacterPointer setea cached_wp (+0x388/0x38c) pero NO
+    // CreateCharacterPointer setea cached_wp (+0x388/0x38c) pero NO
     // target_grid (+0x306/0x307). El per-frame walker Entity_AdvancePath en
-    // Player_InputTick lee target_grid → como inicialmente está en 0,0, el
-    // hero camina automáticamente a la esquina del mapa.
+    // Player_InputTick lee target_grid: con 0,0 el hero caminaría solo a la
+    // esquina del mapa.
     // Forzar target == position para que el walker quede idle hasta el primer click.
     heroPtr[0x306] = PosX;
     heroPtr[0x307] = PosY;
@@ -2008,9 +1942,8 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     heroPtr[0x354] = 0;             // path_current_wp = 0
     heroPtr[0x355] = 0;             // path_substep = 0
     heroPtr[0x356] = 0;             // path_wp_count = 0
-    // 2026-05-07: post-wipe init de anim_state — sin esto, el wipe deja 0x105=0
-    // y anim 0 puede no ser "idle" para algunos models. anim_state=1 es el
-    // idle1 standard.
+    // Init de anim_state post-wipe: el wipe deja 0x105=0 y anim 0 puede no ser
+    // "idle" para algunos models. anim_state=1 es el idle1 standard.
     heroPtr[0x105] = 1;             // anim_state = idle
     heroPtr[0x106] = 1;             // anim_state_prev
     *(float*)(heroPtr + 0x108) = 0.0f;  // anim_frame
@@ -2020,7 +1953,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     BYTE* charAttr = (BYTE*)CharacterAttribute;
     heroPtr[444] = charAttr[11];
 
-    // 2026-06-16: el ReceiveJoinMapServer de IDA NO espeja el cuerpo/equipo desde
+    // El ReceiveJoinMapServer de IDA NO espeja el cuerpo/equipo desde
     // las entidades del char-select. Asocia al Hero, copia clase/flags, y después reconstruye
     // desde CharacterMachine vía SetCharacterClass(). Acá dejamos sólo la
     // siembra de luz, porque CreateCharacterPointer deja Light en 0.
@@ -2072,34 +2005,16 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // guardado/restaurado del estado de conversion.
     DAT_07e11d6f = 0;            // LockInputStatus
 
-    // BUG-FIX 2026-04-29: enviar F3/12 CharacterMoveViewportEnable + 0E LiveClient
-    // inmediatamente. El server MuEmu (Protocol.cpp:1439 CGCharacterMoveViewportEnableRecv)
-    // pone RegenOk=2 al recibir esto. Sin un ACK del cliente post-JoinMapServer
-    // el server cree que el cliente está congelado y cierra el socket en
-    // ~50-100ms (visto en logs). El IDA original manda F3/12 al final de su
-    // ReceiveJoinMapServer; nuestro port no lo hacía.
-    // 2026-04-29: post-F3/03 sends removidos. El keepalive 1Hz en Game_MainLoop
-    // manda 0x0E. F3/12 fue la causa probable del kick previo (server-side
-    // procesa MainCheck antes de F3/12, y nuestro F3/12 desincronizaba algo).
-    //
-    // 2026-05-04: send INMEDIATO de keepalive 0x0E al recibir F3/03 — el
-    // server espera saber que el cliente sigue vivo apenas recibe el world
-    // entry. El keepalive 1Hz en Game_MainLoop puede tardar hasta 1s en
-    // arrancar (state==5 transición + frame interval), tiempo que el server
-    // a veces no perdona.
-    // 2026-05-05: el binario original 0.97k (FUN_00425840 Recv_JoinMapServer)
+    // Envíos post-F3/03: el binario original 0.97k (FUN_00425840 Recv_JoinMapServer)
     // en el path bEncrypted=TRUE (= C3 packet, como manda MuEmu) NO envía
     // NINGÚN packet post-F3/03. Solo procesa los datos del char y carga el
     // mundo. El send de F3/12 ViewportEnable solo ocurre en el path
-    // bEncrypted=FALSE (raro, no aplica con MuEmu C3).
+    // bEncrypted=FALSE (no aplica con MuEmu C3).
     //
-    // Sends previos (0x0E keepalive + F3/12 ViewportEnable) eran ADD-ON
-    // nuestros que NO existen en el original. El keepalive 1Hz en
-    // Game_MainLoop ya cubre el liveness check post-F3/03.
-    //
-    // RegenOk (=2 normalmente seteado por F3/12) — en MuEmu el server-tick
-    // lo procesa y eventualmente lo lleva a 0 (OBJECT_PLAYING) sin necesidad
-    // del F3/12 desde cliente.
+    // No agregar acá 0x0E keepalive ni F3/12: el keepalive 1Hz en Game_MainLoop
+    // ya cubre el liveness check post-F3/03, y en MuEmu el server-tick lleva
+    // RegenOk (=2 normalmente seteado por F3/12) a 0 (OBJECT_PLAYING) sin
+    // necesidad del F3/12 desde cliente.
 
     // (11) Stop dungeon BGM 110 si no estamos en mapa-evento (11..16).
     if (world < 11 || world > 16) {
@@ -2120,8 +2035,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 // `MaxRegenTime + 1000`; ahí `CObjectManager::Run` (ObjectManager.cpp:262-341)
 // restaura Life/Mana/BP, reubica al pj (`CharacterGetRespawnLocation`) y llama
 // `GCCharacterRegenSend`.  El cliente NO pide nada: sólo tiene que procesar
-// este paquete.  Como no teníamos el handler, el pj quedaba muerto para
-// siempre (issue #5).
+// este paquete.
 //
 // PMSG_CHARACTER_REGEN_SEND (Protocol.h:426, `setE` → frame C3), con el
 // padding de MSVC:
@@ -2238,15 +2152,11 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     }
 
     World = map;
-    // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
-    // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-    // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
-    // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
-    // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
-    // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
-    // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
-    // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
-    // cargado -- los arreglara.
+    // OpenWorld tarda ~2 s cargando BMDs y, para que el server no cierre por
+    // backpressure, AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese
+    // pump entrega WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los
+    // handlers correrian RE-ENTRANTES en mitad de la carga (p.ej. un
+    // `0x13 ViewportMonster` creando monstruos cuyo modelo todavia no esta abierto).
     //
     // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
     // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
@@ -2548,13 +2458,12 @@ static void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c14 = 0;                // sub-state reset (will be set to 0x14/0x15 by EnterWorldTick init)
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 50;               // CurrentProtocolState
-        // 2026-05-05: RESET scene-init guards. EnterWorldTick (state=4) and
+        // RESET de las guardas de init de escena. EnterWorldTick (state=4) y
         // CharSelectTick (state=5) tienen guardas de init (IDA: DAT_083a7c4b/4c) que
-        // sólo permite re-inicializar la escena la PRIMERA vez. Sin reset,
-        // post-JoinChar el substate DAT_083a7c14 quedaba en 0x1c (post-OK-
-        // click) heredado del primer login → la siguiente tick disparaba
-        // F3/03 select-char inmediato → server respondía con JoinMapServer
-        // → cliente "recargaba el mapa" en vez de mostrar char-select.
+        // sólo permiten re-inicializar la escena la PRIMERA vez. Sin reset, el
+        // substate DAT_083a7c14 heredado del primer login (0x1c, post-OK-click)
+        // dispararía un F3/03 select-char inmediato → el server respondería con
+        // JoinMapServer → el cliente recargaría el mapa en vez de mostrar char-select.
         CharSelectSceneInitialized = 0;
         DAT_083a7c4c = 0;                // CharSelect per-tick init
         DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
@@ -2571,18 +2480,14 @@ static void Recv_LogOut(const BYTE* Msg)
         NetLog("NET:    F3/00 char-list request (post-JoinChar)");
         Net_SendSmallPacket(pkt, 4);
 
-        // ── BUG-FIX 2026-08-17: faltaba la cola de ReceiveLogOut ──────────────
+        // ── Cola de ReceiveLogOut ──────────────────────────────────────────────────
         // IDA 0x4247D0 LABEL_117: DESPUÉS del send, la rama sub==1 hace
         // `CurrentProtocolState = 0` e `InitGame()`, igual que la rama sub==2.
-        // Sin el InitGame quedaba `World` (World) con el mapa anterior.
-        // Eso importa porque nuestro RequestTerrainHeight (Terrain_Utils.cpp:49)
-        // gatea con `World < 0` en vez del `SceneFlag != 5` del original — una
-        // desviación deliberada por el orden del JoinMapServer. Con World=7
-        // (Atlans) heredado y su heightmap todavía cargado, CreateCharacterPointer
-        // le daba a cada personaje del char-select la altura del terreno de
-        // Atlans en vez de 0 → aparecían flotando más arriba. `World = -1` de
-        // InitGame es justamente lo que hace que el guard relajado se comporte
-        // como el original acá.
+        // El `World = -1` de InitGame importa porque nuestro RequestTerrainHeight
+        // (Terrain_Utils.cpp) gatea con `World < 0` en vez del `SceneFlag != 5` del
+        // original — una desviación deliberada por el orden del JoinMapServer. Con el
+        // World anterior y su heightmap todavía cargado, CreateCharacterPointer le
+        // daría a cada personaje del char-select la altura del terreno de ese mapa.
         DAT_05826cb0 = 0;                // CurrentProtocolState
         InitGame();
         return;
@@ -2783,10 +2688,9 @@ static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
         UIChatLogWindow_AddText(nullptr, GlobalText[496], 2);
         SetErrorMessage(0);
     }
-    // AUDITORIA 2026-07-20: aca habia un `else if (state == 4)` con
-    // GlobalText[2108] — indice FUERA del Text.bmd del 0.97k (1000
-    // filas).  ReceiveTradeExit (IDA 0x4337F0) solo maneja los
-    // estados 0, 2 y 3; el 4 es un graft de version posterior.
+    // ReceiveTradeExit (IDA 0x4337F0) solo maneja los estados 0, 2 y 3.  Un
+    // `state == 4` con GlobalText[2108] seria de una version posterior (indice
+    // FUERA del Text.bmd del 0.97k, que tiene 1000 filas).
 
     DAT_07eaa11b = 0;
     DAT_05826d30 = 0;
@@ -2830,23 +2734,15 @@ void Net_ProcessPacket(void)
         BYTE hdr = Msg[0];
         bool bEncrypted = false;
 
-        // 2026-09-03 -- COPIA DEL PAQUETE ANTES DE PROCESARLO.
+        // COPIA DEL PAQUETE ANTES DE PROCESARLO.
         //
         // `CWsctlc_GetReadMsg` (GetReadMsg) devuelve un puntero DENTRO del buffer de
         // recepcion del socket, que es compartido.  Handlers que tardan --
         // sobre todo los de viewport, porque `CreateMonster` carga el BMD del
         // monstruo -- dejan que se bombee la cola de mensajes en el medio, entra
         // un `Net_Recv` y el buffer se sobreescribe MIENTRAS el handler todavia
-        // esta recorriendo sus entradas.
-        //
-        // Medido (sonda MONDBG, 2026-09-03): un `0x13 ViewportMonster count=22`
-        // parseo bien su entrada 0 (`id=89 type=253 pos=(207,75)`) y a partir de
-        // la 1 empezo a leer el payload de un `F3/E2` que habia llegado en el
-        // medio -- de ahi monstruos con ids de ~25700 en pos (0,2), (3,2), (7,2),
-        // entre ellos el "Giant" (type 7) inmatable en un mapa sin spawn.
-        //
-        // Los C3/C4 ya eran inmunes porque se desencriptan a `scratch`; los C1/C2
-        // se usaban directo.  Ahora todos se copian.
+        // esta recorriendo sus entradas.  Por eso todos los paquetes se copian (los
+        // C3/C4 ademas se desencriptan a `scratch`).
         BYTE __pktCopy[0x2100];
         {
             const int __wire = (hdr == 0xC1 || hdr == 0xC3)
@@ -2918,22 +2814,14 @@ void Net_ProcessPacket(void)
             // Corre el payload 1 byte para hacer lugar al byte plainLen
             BYTE plain[0x800];
             plain[0] = 0xC1;
-            // 2026-08-25 FIX (issue #13): `plain[1]` es UN byte, asi que para un paquete
-            // de mas de 255 el tamaño se trunca. Medido con el F3/10 del inventario:
-            // 306 bytes reales reportaban Size=49 (= 306 & 0xFF).
+            // `plain[1]` es UN byte, asi que para un paquete de mas de 255 el tamaño se
+            // trunca. Por eso el tamaño se lleva APARTE del buffer: `Size` es un int, se
+            // toma del valor real y NO se relee de `Msg[1]`. El byte de `plain[1]` queda
+            // truncado, pero no lo consume nadie.
             //
-            // No rompia el inventario porque ese parser itera por `count` y los DATOS
-            // del buffer si estan completos — solo el byte de tamaño se pierde. Pero
-            // cualquier handler que valide o recorra por `Size` cortaba mal.
-            //
-            // El arreglo es llevar el tamaño APARTE del buffer: `Size` es un int, se
-            // toma del valor real y NO se relee de `Msg[1]`. El byte de `plain[1]`
-            // queda truncado igual que antes, pero ya no lo consume nadie.
-            //
-            // Se descarto re-enmarcar como C2 (que es lo que haria el original para un
-            // paquete largo): eso correria +1 todos los offsets del cuerpo y obligaria
-            // a revisar cada handler que hoy asume el layout C1. Con el tamaño aparte
-            // el layout no cambia y el fix es cerrado.
+            // No se re-enmarca como C2 (que es lo que haria el original para un paquete
+            // largo): eso correria +1 todos los offsets del cuerpo de cada handler que
+            // hoy asume el layout C1.
             plain[1] = (BYTE)(bodyLen + 2);
             memcpy(plain + 2, scratch + 1, bodyLen);
             memcpy(Msg, plain, bodyLen + 2);
@@ -2941,8 +2829,7 @@ void Net_ProcessPacket(void)
             HeadCode = Msg[2];
             Size     = bodyLen + 2;   // real, no `Msg[1]` (que puede estar truncado)
             // El byte truncado se loguea al lado a proposito: cuando difiere de
-            // `Size`, esa linea es un paquete que ANTES se procesaba con el
-            // tamaño equivocado (ver el fix del issue #13).
+            // `Size`, el paquete supera los 255 bytes.
             if (Size > 0xFF) {
                 NetLog("NET: C3->C1 decoded encLen=%d -> Size=%d op=%02X  [byte truncado=%d — ANTES se usaba ESTE]",
                        encLen, Size, HeadCode, (int)Msg[1]);
@@ -3010,7 +2897,7 @@ void Net_ProcessPacket(void)
                         Recv_JoinMapServer(Msg, (int)bEncrypted);
                         break;
                     case 0x04:
-                        // Respawn tras la muerte (issue #5).  Ver Recv_Revival.
+                        // Respawn tras la muerte.  Ver Recv_Revival.
                         Recv_Revival(Msg, Size);
                         break;
                     case 0x05:
@@ -3019,14 +2906,11 @@ void Net_ProcessPacket(void)
                         break;
                     case 0x06: {
                         // ── F3/06 PMSG_LEVEL_UP_POINT_SEND ───────────────────
-                        // 2026-08-08 FIX ("al subir un punto los números se
-                        // vuelven locos"): el port leía un layout INVENTADO
-                        // (`WORD` en Msg+5 y Msg+7). El struct real del server
-                        // (Protocol.h:467, GAMESERVER_EXTRA=1 en stdafx.h:8) es,
-                        // con el padding de MSVC:
+                        // El struct real del server (Protocol.h:467, GAMESERVER_EXTRA=1 en
+                        // stdafx.h:8) es, con el padding de MSVC:
                         //    +0..3  PSBMSG_HEAD  (C1, size, F3, 06)
                         //    +4     BYTE result  (= 16 + type, 0 = rechazado)
-                        //    +5     padding                     ← el port leía acá
+                        //    +5     padding
                         //    +6     WORD MaxLifeAndMana
                         //    +8     WORD MaxBP
                         //    +10    padding (alineación a 4)
@@ -3293,7 +3177,7 @@ void Net_ProcessPacket(void)
                         break;
                     }
                     case 0x11: {
-                        // 2026-05-06: port FIEL desde server source
+                        // Port FIEL desde server source
                         // Mu-linux-97K/Source/MuServer/GameServer/SkillManager.cpp:2256
                         // GCSkillListSend. Wire format:
                         //   [C1][size][F3][11][count] [slot][skill][level]×count
@@ -3302,10 +3186,6 @@ void Net_ProcessPacket(void)
                         //   slot:  position in skill array (0..MAX_SKILL_LIST-1)
                         //   skill: skill ID
                         //   level: (m_level << 3) | (m_index & 7)  ← packed
-                        //
-                        // ANTES: el handler decía "HotbarUpdate" (mal-port) y
-                        // solo logueaba. User reportó "no veo skills en la UI"
-                        // — los skills nunca llegaban a CharacterAttribute.
                         //
                         // CharacterAttribute.Skill[] layout (per IDA):
                         //   CA[86] = count
@@ -3405,8 +3285,8 @@ void Net_ProcessPacket(void)
                         break;
                     }
                     case 0xE2: case 0xE5: {
-                        // F3/E3 (126B) quest, F3/E4 (854B) skills, F3/E5 (1111B) master tree.
-                        // Pendientes — dump-only por ahora (estructuras Protocol.h aún no porteadas).
+                        // F3/E2 (barras de vida) y F3/E5 (lista de /move): sólo se vuelcan al log.
+                        // Sus layouts están en Protocol/GameServerProtocol.h.
                         char b[400];
                         int p = wsprintfA(b, "NET:  → F3/%02X DUMP size=%d: ", sub, Size);
                         int dumpN = Size > 64 ? 64 : Size;
@@ -3424,10 +3304,6 @@ void Net_ProcessPacket(void)
                         //   +14     GameOption    (bit0=AutoAttack, bit2=WhisperSound)
                         //   +15/16/17  QKey/WKey/EKey  (item type = byte + 448)
                         //   +18     ChatWindow    (nibble alto*3 = líneas, bajo = transparencia)
-                        // Antes esto solo logueaba como "SkillList" y encima leía Msg+6
-                        // (el payload arranca en Msg+4) → el bloque de opciones NUNCA se
-                        // aplicaba: el chat window quedaba en el default hardcodeado del
-                        // ctor en vez del guardado por personaje.
                         const BYTE* p = Msg + ((hdr == 0xC1) ? 4 : 5);
                         NetLog("NET:  → F3/30 Option size=%d", Size);
                         if (Size < 19) { NetLog("NET:    F3/30 too short — skip"); break; }
@@ -3489,12 +3365,10 @@ void Net_ProcessPacket(void)
                     }
 
                     default: {
-                        // 2026-07-25 (#3): dump del payload de CUALQUIER F3 sub
-                        // desconocido, para tener la estructura cuando toque
-                        // portarlo.  F3/E6 (~326B, trae nombres tipo "Devil
-                        // Square") = lista de eventos/GameServer info; F3/E7+ etc.
-                        // El server MuEmu los manda en loop; hoy los ignoramos
-                        // (inofensivo), pero acá queda el hex para identificarlos.
+                        // Dump del payload de CUALQUIER F3 sub desconocido, para tener la
+                        // estructura cuando toque portarlo (p.ej. F3/E6 = horarios de eventos, ver
+                        // Protocol/GameServerProtocol.h).  El server MuEmu los manda en loop; hoy
+                        // se ignoran (inofensivo), pero acá queda el hex para identificarlos.
                         char b[420];
                         int p = wsprintfA(b, "NET:  → F3/%02X UNHANDLED-DUMP size=%d: ", sub, Size);
                         int dumpN = Size > 80 ? 80 : Size;
@@ -3542,29 +3416,21 @@ void Net_ProcessPacket(void)
             }
 
             // ── IN-GAME OPCODES ─────────────────────────────────────────────
-            // BUG-FIX 2026-04-28: el default case ignoraba TODOS los packets
-            // in-game. Sin estos handlers, server manda 0x10 (move-confirm),
-            // 0x11 (position-set), 0x14 (entity spawn) etc, cliente los descarta
-            // → hero estático, NPCs invisibles, movimiento roto.
 
             case 0x0E:  // LiveClient ACK (server confirma keepalive)
                 NetLog("NET:  → 0x0E LiveClient ACK");
                 break;
 
             // ── CHAT ─────────────────────────────────────────────────────────
-            // 2026-07-19: estos tres opcodes NO estaban en el dispatch → todo el
-            // chat entrante se descartaba en silencio. Layout autoritativo del
-            // server MuEmu (Protocol.h) + confirmado 1:1 con IDA ReceiveChat
-            // (0x427630), que lee name en +3 y el mensaje en +13.
+            // Layout autoritativo del server MuEmu (Protocol.h) + confirmado 1:1 con
+            // IDA ReceiveChat (0x427630), que lee name en +3 y el mensaje en +13.
             //   C1:00  PMSG_CHAT_SEND         name[10]@+3  message[60]@+13
             //   C1:01  PMSG_CHAT_TARGET_SEND  index[2]@+3  message[60]@+5
             //   C1:02  PMSG_CHAT_WHISPER_SEND name[10]@+3  message[60]@+13
-            // 2026-07-27 FIX (el guardia no responde): PMSG_CHAT_TARGET_SEND.
-            // El server manda el mensaje de un NPC "hablado" por acá
-            // (GCChatTargetSend — NpcTalk::NpcGuard lo usa para el guardia), pero
-            // NO había handler in-game → se descartaba en silencio y clickear al
-            // guardia sólo hacía el sonido de UI. Layout: index[2]@+3 (BE),
-            // message[60]@+5. Se muestra como burbuja de chat sobre la entidad.
+            // PMSG_CHAT_TARGET_SEND: el server manda por acá el mensaje de un NPC
+            // "hablado" (GCChatTargetSend — NpcTalk::NpcGuard lo usa para el guardia).
+            // Layout: index[2]@+3 (BE), message[60]@+5. Se muestra como burbuja de chat
+            // sobre la entidad.
             case 0x01: {
                 if (Size < 6) break;
                 int entIdx = Entity_FindById((Msg[3] << 8) | Msg[4]);
@@ -3587,11 +3453,9 @@ void Net_ProcessPacket(void)
             case 0x02: {
                 // Whisper — mismo layout que chat normal; canal 3 (whisper) en el log.
                 NetLog("NET:  → 0x02 ChatWhisper size=%d", Size);
-                // FIX 2026-07-19: mismo bug que el case 0x00 — el guard exigía el
-                // tamaño MÁXIMO (73) de una struct de longitud VARIABLE
-                // (`14 + strlen`). Por esto los `/post` dorados nunca aparecían:
-                // CommandManager::GCPostMessageGold los manda por este opcode y un
-                // post corto llega con Size ~30.
+                // PMSG_CHAT_WHISPER_SEND es de longitud VARIABLE (`14 + strlen`): no exigir
+                // el tamaño MÁXIMO (73) — los `/post` dorados de
+                // CommandManager::GCPostMessageGold llegan por este opcode con Size ~30.
                 // PORT FIEL de IDA `ReceiveWhisper` @ 0x4278F0 (identificada por
                 // disasm: la función sin nombre entre ReceiveChat y ReceiveNotice):
                 //     a0 ac 1d e1 07  mov al, byte_7E11DAC   ; m_bBlockWhisper
@@ -3601,10 +3465,8 @@ void Net_ProcessPacket(void)
                 //     6a 26 ...       PlayBuffer(0x26, 0, 0) ; sonido de whisper
                 //     6a 00 ...       UIChatLogWindow_AddText(name, msg, 0)
                 //
-                // FIX 2026-07-19: el canal era **3** (invención mía al agregar el
-                // handler, nunca validada). IDA usa **0** → negro sobre fondo
-                // celeste (0x9632C8FF), el look clásico de whisper. Por eso los
-                // `/post` dorados salían con estilo de chat normal.
+                // Canal **0** (como IDA) → negro sobre fondo celeste (0x9632C8FF), el look
+                // clásico de whisper.
                 if (Size >= 14 && DAT_07e11dac == 0) {   // m_bBlockWhisper (toggle F3)
                     char wname[11] = {0};
                     char wmsg[61]  = {0};
@@ -3649,16 +3511,13 @@ void Net_ProcessPacket(void)
             }
 
             case 0x54: {
-                // 2026-08-25 FIX (el NPC de crear guild no abria nada): el server
-                // manda `[C1][03][54]` (`GCGuildMasterQuestionSend`,
+                // El server manda `[C1][03][54]` (`GCGuildMasterQuestionSend`,
                 // Protocol.cpp:1795) al hablar con el Guild Master cumpliendo los
-                // requisitos, y aca se lo tragaba `Recv_InventoryClose`.
+                // requisitos.
                 //
                 // Si NO se cumplen, el server ni siquiera manda esto: contesta un
                 // chat o un notice (NpcTalk.cpp:197-220 — ya estas en un guild,
-                // nivel insuficiente, resets insuficientes). Por eso probandolo
-                // con un personaje que ya tenia guild no se abria nada, y eso es
-                // correcto.
+                // nivel insuficiente, resets insuficientes).
                 //
                 // Mismo criterio que el 0x55 de abajo: se distingue por tamaño.
                 if (Size == 3) {
@@ -3710,7 +3569,7 @@ void Net_ProcessPacket(void)
                 WORD entityId = ((Msg[3] & 0x7F) << 8) | Msg[4];
                 BYTE gx = Msg[5], gy = Msg[6];
                 NetLog("NET:  → 0x10 Move id=%d to (%d,%d)", entityId, gx, gy);
-                // BUG-FIX 2026-04-29: actualizar entidad sin importar si es hero u otra.
+                // Actualizar la entidad sin importar si es hero u otra.
                 BYTE* h = nullptr;
                 if (entityId == g_HeroKey && DAT_07abf5d8) {
                     h = (BYTE*)DAT_07abf5d8;
@@ -3765,17 +3624,10 @@ void Net_ProcessPacket(void)
             }
 
             case 0x03: {
-                // 2026-05-05 BUG-FIX CRÍTICO (causa raíz del FD_CLOSE post-F3/03):
-                // Server log muestra:
-                //   [HackPacketCheck][...][...] Packet encryption error
-                //   (Index: 3, Value: -1, Encrypt: [0][1])
-                //
-                // Server HackPacketCheck.txt: opcode 3 (MainCheck) Encrypt=1.
-                // Nuestro client mandaba el ACK como C1 plain con MuEmu byte-XOR
-                // → server veía encrypt=0 → mismatch [0][1] → CloseClient.
-                // Esto explica por qué SIEMPRE kick post-F3/03: el server manda
-                // 0x03 MainCheck challenge en el batch post-CharacterInfo, y
-                // nuestro ACK plain dispara hack-detection.
+                // HackPacketCheck.txt del server marca el opcode 3 (MainCheck) con
+                // Encrypt=1: el ACK tiene que salir C3.  Mandado como C1 plano (con el
+                // MuEmu byte-XOR) el server ve encrypt=0 → "Packet encryption error"
+                // (Index: 3, Value: -1, Encrypt: [0][1]) → CloseClient.
                 //
                 // Net_SendSmallPacket wrap correcto: chain-XOR + serial counter
                 // + SimpleModulus + envelope C3.
@@ -3828,11 +3680,8 @@ void Net_ProcessPacket(void)
             }
 
             case 0x12: {
-                // 2026-04-30 (v3): re-enabled with C1/C2 framing fix.
-                // Server-emu sends ViewportPlayer as C2 (multi-byte length),
-                    // pero nuestro handler anterior leía Msg[3] esperando enmarcado C1
-                    // — y ése es el byte de OPCODE para C2. Resultado: count=18 era
-                // actually 0x12 (the opcode itself!), causing bad-stride skip.
+                // El server-emu manda ViewportPlayer como C2 (largo de 2 bytes): ahí Msg[3]
+                // es el byte de OPCODE, no el count.
                 //
                 // Layout per framing:
                 //   C1: [C1][len][op=12][count][entries...]   data@Msg+3
@@ -3840,12 +3689,8 @@ void Net_ProcessPacket(void)
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 NetLog("NET:  → 0x12 ViewportPlayer count=%d size=%d hdr=%02X",
                        Msg[3 + hdrOff], Size, Msg[0]);
-                // 2026-08-25 FIX (reportado: "al entrar desde char-select, si hay
-                // NPCs en la zona no cargan; hay que salir y volver a entrar"):
-                // aca se DESCARTABA el viewport entero si el heroe todavia no
-                // estaba creado. Al entrar al mundo el server manda el viewport
-                // junto con el spawn del heroe, asi que ese `break` tiraba a
-                // todas las entidades de la zona y solo aparecian al reentrar.
+                // No descartar el viewport si el heroe todavia no esta creado: al entrar al
+                // mundo el server manda el viewport junto con el spawn del heroe.
                 //
                 // IDA `Combat_PacketDispatch` (0x429690) NO tiene ese guard:
                 // crea las entidades con `CreateCharacter` sin mirar al heroe.
@@ -3857,20 +3702,11 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 int count = Msg[3 + hdrOff];
-                // 2026-08-25 FIX (los monstruos no cargaban al entrar a un mapa poblado):
-                // el limite era `count > 30`, una invencion del port. Medido: el viewport
-                // inicial de Lost Tower llega con `count=41 size=497` y se descartaba
-                // ENTERO —"0x13 SKIP - count=41 out of range"—, asi que no se creaba
-                // ninguna de las 41 entidades. Se veian los "Miss" de sus ataques y los
-                // `0x18`/`0x10` de sus movimientos con "key not found", pero no habia nada
-                // dibujado; solo aparecian los pocos que llegaban despues en viewports
-                // chicos (count<=30).
-                //
                 // IDA (`ReceiveCreateMonsterViewport` 0x42A230, `Combat_PacketDispatch`
                 // 0x429690) NO tiene limite: itera `if (ReceiveBuffer[4]) do {...} while`
-                // por el count crudo, que es un BYTE. El tope real es 255 y la cota util
-                // es la validacion por `Size` que ya esta abajo — que recien ahora es
-                // confiable, con el fix del tamaño truncado de este mismo PR.
+                // por el count crudo, que es un BYTE (el viewport inicial de Lost Tower
+                // trae count=41). El tope real es 255 y la cota util es la validacion por
+                // `Size` que esta abajo.
                 if (count <= 0 || count > 255) {
                     NetLog("NET:    0x12 SKIP - count=%d out of range", count);
                     break;
@@ -3894,7 +3730,7 @@ void Net_ProcessPacket(void)
                 BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 for (int i = 0; i < count && (entryStart + i*entryStride + 30) <= Size; ++i) {
                     const BYTE* e = Msg + entryStart + i*entryStride;
-                    // 2026-05-05: layout decompilado del binario MuEmu
+                    // Layout decompilado del binario MuEmu
                     // server (CViewport::GCViewportPlayerSend, asm a1590).
                     // Stride 32 bytes:
                     //   e[0..1]=Key BE, e[2]=PosX, e[3]=PosY,
@@ -3902,8 +3738,6 @@ void Net_ProcessPacket(void)
                     //   e[e]=CtlCode, e[f]=padding,
                     //   e[10..11]=ViewSkillState (LE), e[12..1b]=Name(10B),
                     //   e[1c]=TargetX, e[1d]=TargetY, e[1e]=Path|Dir.
-                    // Antes leíamos name desde e[0x10] (off-by-2,
-                    // 2 bytes basura + 8 chars de nombre real).
                     WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];   // strip CREATE bit
                     BYTE x = e[2], y = e[3];
                     char name[11] = {0};
@@ -3916,12 +3750,10 @@ void Net_ProcessPacket(void)
                     // como eco al personaje local. El original mantiene al Hero como único objeto
                     // para HeroKey; pasarlo por CreateCharacter crea
                     // una segunda copia del jugador, renderizada por separado.
-                    // 2026-08-24 (issue #14): el filtro comparaba SOLO contra `g_HeroKey`,
-                    // un global del port que se fija una vez en el JoinServer. Si alguna vez
-                    // quedara desfasado del Key real de la entidad, la entrada del propio
-                    // heroe no entraria aca: `CreateCharacter` reusaria su slot por Key y lo
-                    // re-inicializaria SIN pasar por la restauracion de abajo (se perderia,
-                    // entre otras cosas, el byte de clase +0x1BC). Comparamos contra los dos.
+                    // Se compara contra `g_HeroKey` Y contra el Key real de la entidad del heroe:
+                    // si `g_HeroKey` quedara desfasado, `CreateCharacter` reusaria el slot del
+                    // heroe por Key y lo re-inicializaria SIN pasar por la restauracion de abajo
+                    // (se perderia, entre otras cosas, el byte de clase +0x1BC).
                     BYTE* heroEnt = (BYTE*)(uintptr_t)DAT_07abf5d8;
                     const WORD heroKeyReal = heroEnt ? *(WORD*)(heroEnt + 0x1DC) : g_HeroKey;
                     if (entityId == g_HeroKey || entityId == heroKeyReal) {
@@ -3932,7 +3764,7 @@ void Net_ProcessPacket(void)
                             hero[0x306] = tx;
                             hero[0x307] = ty;
 
-                            // 2026-08-22: vuelta de una transformacion (anillo).
+                            // Vuelta de una transformacion (anillo).
                             // El 0x45 (GCViewportSimpleChangeSend) convierte al
                             // heroe en monstruo llamando CreateMonster con SU
                             // key; al sacarse el anillo el server manda este 0x12
@@ -3982,27 +3814,11 @@ void Net_ProcessPacket(void)
                                (unsigned)entityId);
                         continue;
                     }
-                    // 2026-08-24 (issue #14, deuda): aca habia un scan de
-                    // slots propio, o sea una SEGUNDA implementacion de
-                    // CreateCharacter, y difería del original en dos puntos:
-                    //
-                    //  1. `if (slot == (BYTE*)DAT_07abf5d8) continue;` — excluia
-                    //     el slot del heroe TAMBIEN del match por Key. IDA
-                    //     (`Combat_PacketDispatch` L86) llama
-                    //     `CreateCharacter(key, 390, x, y, 0.0)` para TODAS las
-                    //     entradas, sin excluir a nadie: si llega el propio
-                    //     heroe se reusa SU slot. Con la exclusion, cualquier
-                    //     entrada que trajera su Key —y que el filtro de
-                    //     `g_HeroKey` de mas arriba no atrapara— caia al primer
-                    //     slot libre y clonaba al jugador.
-                    //  2. No llamaba `DeleteCloth` antes de reusar un slot
-                    //     inactivo, asi que la capa (cloth) de la entidad
-                    //     anterior quedaba colgada.
-                    //
-                    // `CreateCharacter` ya hace las dos cosas y es el port fiel
-                    // (Monster.cpp:526). Delegar en el elimina la divergencia:
-                    // una sola implementacion de "buscar slot por Key, si no
-                    // reusar uno inactivo".
+                    // Se delega en `CreateCharacter` (port fiel, Monster/Monster.cpp): busca el
+                    // slot por Key sin excluir a nadie —IDA `Combat_PacketDispatch` L86 llama
+                    // `CreateCharacter(key, 390, x, y, 0.0)` para TODAS las entradas— y si no
+                    // lo encuentra reusa uno inactivo llamando antes a `DeleteCloth`.  No
+                    // reimplementar ese scan acá.
                     //
                     // Su centinela de pool lleno (`base + 366400` = slot 400)
                     // cae dentro del buffer: WinMain aloca 0x764D4 = 529 slots
@@ -4146,17 +3962,12 @@ void Net_ProcessPacket(void)
             }
 
             case 0x13: {
-                // 2026-04-30 (v3): el mismo fix de C1/C2 que en 0x12.
+                // Mismo enmarcado C1/C2 que en 0x12.
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 NetLog("NET:  → 0x13 ViewportMonster count=%d size=%d hdr=%02X",
                        Msg[3 + hdrOff], Size, Msg[0]);
-                // 2026-08-25 FIX (mismo bug que el 0x12, reportado con los
-                // monstruos): se descartaba el viewport entero si el heroe aun
-                // no estaba creado. Al entrar al mapa el server manda el
-                // viewport junto con el spawn del heroe, asi que los monstruos
-                // de la zona no se creaban nunca — se veian los "Miss" de sus
-                // ataques pero no habia entidad que dibujar, y solo aparecian
-                // al salir y volver a entrar.
+                // No descartar el viewport si el heroe aun no esta creado (al entrar al mapa
+                // el server lo manda junto con el spawn del heroe).
                 //
                 // IDA `ReceiveCreateMonsterViewport` (0x42A230) no tiene ese
                 // guard, y este handler no usa `DAT_07abf5d8` en ningun lado de
@@ -4171,30 +3982,23 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 int entryStart = 4 + hdrOff;
-                // 2026-09-03 -- el stride es FIJO 12, no derivado del tamano.
+                // El stride es FIJO 12, no derivado del tamano.
                 // IDA `ReceiveCreateMonsterViewport` (0x0042A230): `Data2 =
                 // ReceiveBuffer + 7;` y al final del cuerpo del do-while
-                // `Data2 += 12;`.  El port lo calculaba como
-                // `(Size - entryStart) / count` con un fallback a 10, asi que
-                // cualquier desajuste de `Size` desalinea TODAS las entradas
-                // desde la segunda: el `type` sale de un byte que no es el suyo
-                // y se crean monstruos fantasma (de ahi el "Giant" en un mapa
-                // sin spawn, con un id que el server no conoce y por eso
-                // inmatable).  Ahora es literal.
+                // `Data2 += 12;`.  Derivarlo de `(Size - entryStart) / count` desalinea
+                // TODAS las entradas desde la segunda ante cualquier desajuste de `Size`
+                // (el `type` sale de un byte que no es el suyo → monstruos fantasma).
                 const int entryStride = 12;
                 BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 for (int i = 0; i < count && (entryStart + i*entryStride + 11) <= Size; ++i) {
                     const BYTE* e = Msg + entryStart + i*entryStride;
-                    // 2026-05-05: layout decompilado del binario MuEmu
+                    // Layout decompilado del binario MuEmu
                     // Linux server (CViewport::GCViewportMonsterSend, asm
                     // a17c0). Confirmado disasm:
                     //   e[0]=KeyH|CREATE, e[1]=KeyL, e[2]=Class,
                     //   e[3]=padding, e[4..5]=ViewSkillState (LE),
                     //   e[6]=PosX, e[7]=PosY, e[8]=TargetX, e[9]=TargetY,
                     //   e[10]=Path|Dir, e[11]=padding.
-                    // Antes leíamos x=e[5] y=e[6] (off-by-1) → monsters
-                    // spawneaban en pos=(0,N) con N=TargetX en lugar de
-                    // PosX/PosY reales.
                     WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];
                     BYTE type = e[2];
                     BYTE x = e[6], y = e[7];
@@ -4202,11 +4006,8 @@ void Net_ProcessPacket(void)
                     BYTE dirpk = e[10];
                     BYTE dir = (dirpk >> 4) & 0x0F;
                     const WORD viewSkillState = (WORD)(e[4] | (e[5] << 8));
-                    // 2026-05-04: usar CreateMonster en vez de
-                    // CreateCharacterPointer. El primero ADEMÁS
-                    // carga el BMD model via OpenMonsterModel/OpenNpc, que es
-                    // lo que faltaba — antes los slots se creaban "vacíos"
-                    // sin modelo → no rendían en pantalla.
+                    // CreateMonster (no CreateCharacterPointer): ADEMÁS carga el BMD model via
+                    // OpenMonsterModel/OpenNpc; sin modelo el slot no se dibuja.
                     extern char* __cdecl CreateMonster(unsigned int Type, int PosX,
                                                      int PosY, int Key, int);
                     float rot = ((float)dir - 1.0f) * 45.0f;
@@ -4217,12 +4018,10 @@ void Net_ProcessPacket(void)
                         // El facing va por separado — CreateMonster no lo setea.
                         *(float*)(slot + 0x24) = rot;
                         *(WORD*)(slot + 0x1dc) = entityId;
-                        // FIX 2026-07-25: NO sobrescribir +0x84 (kind).  CreateMonster
-                        // (CreateMonster) ya lo setea correcto por Type: 2=monster,
-                        // 4=NPC (type>200), 8=ground-item.  El override a 2 forzaba a
-                        // TODOS los NPCs (blacksmith, mage, etc) a kind=2 → Target_Render
-                        // los mostraba como banner de monstruo (RenderCenteredText arriba)
-                        // en vez del chat flotante de NPC (CreateChat).
+                        // NO sobrescribir +0x84 (kind).  CreateMonster ya lo setea correcto por
+                        // Type: 2=monster, 4=NPC (type>200), 8=ground-item.  Forzarlo a 2 haría
+                        // que Target_Render muestre a los NPCs con el banner de monstruo
+                        // (RenderCenteredText arriba) en vez del chat flotante de NPC (CreateChat).
                         slot[0x160] = 1;    // visible flag
                         slot[0xdc] = 1;     // is_rendered sub-flag
                         slot[0x305] = 0;
@@ -4232,14 +4031,14 @@ void Net_ProcessPacket(void)
                         *(int*)(slot + 0x388) = x;
                         *(int*)(slot + 0x38c) = y;
                         slot[0] = 1;
-                        // 2026-05-06: init +0x168 (screen distance) a 1.0f para
+                        // Init +0x168 (screen distance) a 1.0f para
                         // que mob sea targetable INMEDIATAMENTE (antes del primer
                         // frame de render). Sin esto, FUN_004afdc0 (hover detect)
                         // filtra mob por `_DAT_00552580 < ent[+0x168]` (= 0
                         // por default) → mob no es hovered hasta que sea
                         // rendered (1+ frame later).
                         *(float*)(slot + 0x168) = 1.0f;
-                        // 2026-05-05: init move speed (+0x2FA = +762 word).
+                        // Init move speed (+0x2FA = +762 word).
                         // CreateMonster solo setea esto para case 11. Resto de
                         // los tipos quedan en 0 → CharacterMoveSpeed retorna 0 →
                         // sin movimiento. O queda en basura → mobs acelerados.
@@ -4279,9 +4078,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x15: {
-                // 2026-05-06 BUG-FIX MAYÚSCULO: opcode 0x15 server→cliente NO es
-                // "ViewportDestroy" (eso era un mal-port de Ghidra). Es
-                // GCDamageSend → PMSG_DAMAGE_SEND per
+                // Opcode 0x15 server→cliente = GCDamageSend → PMSG_DAMAGE_SEND per
                 // Mu-linux-97K/Source/MuServer/GameServer/Protocol.cpp:1595-1626.
                 //
                 // Layout (basic, 7 bytes; con GAMESERVER_EXTRA es 15):
@@ -4297,14 +4094,7 @@ void Net_ProcessPacket(void)
                 //   - Disparar animación de muerte
                 //   - Mostrar "+EXP / -damage" en HUD (placeholder por ahora)
                 //
-                // ANTES: case 0x15 leía Msg[3] como `count` y trataba el packet
-                // como una lista de entity IDs a borrar. Esto significaba que
-                // el bit 7 (kill_flag) hacía `count = 128+` → OOB read sobre el
-                // packet, y los mobs muertos seguían targetables (user reportó
-                // "le pegue hasta animación de muerte pero podía seguir
-                // pegando", screenshot 2026-05-06).
-                // 2026-05-06: port FIEL desde IDA mu97k-src-IDA/raw/
-                // 0042ACC0_ReceiveAttackDamage.c. Parses damage + color flags,
+                // Port FIEL desde IDA ReceiveAttackDamage (0x0042ACC0). Parses damage + color flags,
                 // le baja HP al héroe si el objetivo es el héroe, y llama a CreatePoint
                 // (FUN_004792c0) para spawnear los números de daño flotantes en el espacio del mundo.
                 if (Size < 7) {
@@ -4324,16 +4114,12 @@ void Net_ProcessPacket(void)
                 // Damage: lower 12 bits across damage[0..1]; upper 4 bits of damage[0]
                 // are damage-type flags.
                 DWORD damage    = ((DWORD)(Msg[5] & 0x0F) << 8) | Msg[6];
-                // 2026-08-15 BUG-FIX (el daño se mostraba truncado: un crítico
-                // de 12392 salía como 104, y el daño normal saturaba en ~4000).
-                //
                 // El campo legacy `damage[2]` sólo lleva 12 BITS: el server hace
                 //     damage[0] = (SET_NUMBERHB(dmg) & 0x0F) | (type & 0xF0);
                 //     damage[1] =  SET_NUMBERLB(dmg);
                 // o sea el nibble ALTO de damage[0] es el tipo y sólo quedan 4
                 // bits para el byte alto del daño → máximo 0x0FFF = 4095, y por
-                // encima de eso se pierden los bits 12+. Comprobado con el caso
-                // real: 12392 = 0x3068 → HB=0x30, `& 0x0F` = 0, LB = 0x68 = 104.
+                // encima de eso se pierden los bits 12+.
                 //
                 // Con `GAMESERVER_EXTRA=1` (nuestro server: el paquete llega con
                 // size=16) el valor REAL viaja sin truncar en `ViewDamageHP`.
@@ -4385,10 +4171,6 @@ void Net_ProcessPacket(void)
                 // inyeccion NO hookea -- solo suprime el de 0x42B33D, el de la
                 // tirada 50/50 de mas abajo.  O sea aca el heroe SI se aturde, y
                 // por eso en el cliente de referencia el Lightning te frena.
-                //
-                // El port tenia la cobertura INVERTIDA: gateaba la unica llamada a
-                // SetPlayerShock con `!stunFlag`, o sea no hacia nada justo cuando
-                // el original aturde incondicionalmente.
                 if (stunFlag) {
                     extern void __cdecl SetPlayerShock(int c, int Hit);
                     SetPlayerShock((int)tgtSlot, (int)damage);
@@ -4447,7 +4229,7 @@ void Net_ProcessPacket(void)
                 *(WORD*)(tgtSlot + 760) = damage;
 
                 // ── Hit reaction (anim + grunt) — SetPlayerShock ─────────────
-                // 2026-05-08: imported from companion-DLL `IgnoreRandomStuck`
+                // Imported from companion-DLL `IgnoreRandomStuck`
                 // patch (Patchs.cpp). The original 0.97k client rolls a 50/50
                 // el chequeo aleatorio adentro de ReceiveAttackDamage y llama a
                 // SetPlayerShock incondicionalmente cuando la tirada pasa — eso
@@ -4520,8 +4302,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x18: {
-                // 2026-05-06: port FIEL desde IDA mu97k-src-IDA/raw/
-                // 0042B4F0_ReceiveAction.c. Server PMSG_ACTION_SEND format:
+                // Port FIEL desde IDA ReceiveAction (0x0042B4F0). Server PMSG_ACTION_SEND format:
                 //   struct {
                 //     PBMSG_HEAD header;  // [C1][size][0x18]
                 //     BYTE index[2];      // [3..4] entity index BIG-endian
@@ -4529,10 +4310,8 @@ void Net_ProcessPacket(void)
                 //     BYTE action;        // [6] action code (NOT raw anim_state)
                 //   };
                 //
-                // BUG-FIX MAYÚSCULO: el handler viejo leía `action = Msg[5]`
-                // (el dir byte) y lo escribía DIRECTAMENTE como anim_state. Eso
-                // causaba que el hero después de cada attack del server
-                // quedara con anims raros (porque dir=1..8 mapea a glyphs aleat).
+                // Ojo: el action es Msg[6], no el dir de Msg[5], y no se escribe crudo como
+                // anim_state.
                 //
                 // Action codes per IDA (con sufijo "(walk)" si bit 1 de c+444==2):
                 //   18  → emote 92 (sound 81)
@@ -4543,16 +4322,10 @@ void Net_ProcessPacket(void)
                 //   126..131 → special anims 123..127
                 //   else → SetAction(c, raw action)
                 if (Size < 7) break;
-                // 2026-05-07 BUG-FIX: IDA ReceiveAction:14 NO maskea bit 7 de
-                // Msg[3]. Es el byte alto del Key completo (16 bits). Antes
-                // hacíamos `& 0x7F` pensando que era kill_flag (eso es 0x15,
-                // NO 0x18). Resultado: cuando el server enviaba un 0x18 con
-                // bit 7 del high byte set en el key, fallaba el match con
-                // +0x1dc del slot real → caía a `slot=nullptr` y bail-out, OR
-                // matcheaba un slot equivocado (otro entity cuyo +0x1dc por
-                // casualidad coincidía con el key masked) → ANIMABA EL ENTITY
-                // EQUIVOCADO. User reportó: "el hero ataca solo cuando otro
-                // mob/player ataca cerca".
+                // IDA ReceiveAction:14 NO maskea el bit 7 de Msg[3]: es el byte alto del Key
+                // completo (16 bits).  El `& 0x7F` (kill_flag) es del 0x15, NO del 0x18:
+                // aplicarlo acá hace fallar el match con +0x1dc del slot real o anima una
+                // entidad equivocada.
                 WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
                 BYTE dirByte  = Msg[5];                  // [5] = dir (1..8)
                 BYTE action   = Msg[6];                  // [6] = action code
@@ -4693,9 +4466,8 @@ void Net_ProcessPacket(void)
             case 0x19: {
                 // PacketHandler_0x19 Skill — server tells client about skill effects.
                 // Format: [C1][size][0x19][skill_idx][src_id_hi][src_id_lo][tgt_id_hi][tgt_id_lo]
-                // 2026-05-07: delega en PacketHandler_0x19 de Skills.cpp, que tiene
+                // Delega en PacketHandler_0x19 (Combat/Skills.cpp), que tiene
                 // the full 30+ skill type dispatch (Poison/Ice/Lightning/Combo/etc.).
-                // El inline mínimo setea el lock de objetivo + el flag skill_active como respaldo.
                 if (Size < 8) break;
                 NetLog("NET:  → 0x19 Skill idx=%d size=%d", Msg[3], Size);
                 extern void PacketHandler_0x19(BYTE* pkt);
@@ -4707,14 +4479,14 @@ void Net_ProcessPacket(void)
                 // ReceiveCreateSummonViewport @ 0042A530.  MuEmu emits this
                 // como C2:1F, seguido de un contador y registros alineados de 22 bytes:
                 //   KeyH|CREATE, KeyL, Type, pad, ViewSkillState(WORD),
-                //   X, Y, TargetX, TargetY, Dir|PK, pad, OwnerName[10].
-                // El padding en los offsets 3 y 11 es parte del struct nativo del
-                // server; tratarlo como packed corre la posición en uno.
+                //   X, Y, TargetX, TargetY, Dir|PK, OwnerName[10], pad.
+                // Padding en los offsets 3 y 21; OwnerName arranca en +11.
+                // IDA 0x42A530 copia desde ReceiveBuffer+16 (la entrada arranca en +5).
                 const int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 const int countOff = 3 + hdrOff;
                 const int entryStart = 4 + hdrOff;
                 const int entryStride = 22;
-                // 2026-08-25: idem 0x12/0x13 — el `!DAT_07abf5d8` descartaba el
+                // Idem 0x12/0x13: no exigir el heroe (`DAT_07abf5d8`) para procesar el
                 // paquete al entrar al mapa. Este handler tampoco usa el heroe.
                 if (Size <= countOff || !DAT_07abf5d0) break;
 
@@ -4766,7 +4538,7 @@ void Net_ProcessPacket(void)
                     // el storage de GlobalText mientras se portea el subsistema de texto.
                     char oldName[101] = {};
                     strncpy(oldName, (char*)(summon + 449), sizeof(oldName) - 1);
-                    memcpy(summon + 449, e + 12, 10);
+                    memcpy(summon + 449, e + 11, 10);
                     summon[459] = 0;
                     strncat((char*)(summon + 449), "'s ", 100 - strlen((char*)(summon + 449)));
                     strncat((char*)(summon + 449), oldName, 100 - strlen((char*)(summon + 449)));
@@ -4775,7 +4547,7 @@ void Net_ProcessPacket(void)
 
                     if (create) AppearMonster((DWORD)(uintptr_t)summon);
                     NetLog("NET:    0x1F summon id=%d type=%d owner=%.10s pos=(%d,%d)",
-                           key, type, (const char*)(e + 12), x, y);
+                           key, type, (const char*)(e + 11), x, y);
                 }
                 break;
             }
@@ -4974,8 +4746,6 @@ void Net_ProcessPacket(void)
                 entity[748] = 0;
 
                 // Blood Castle: caer del puente al morir (IDA 0x42F030 L18-56).
-                // 2026-09-04: este bloque faltaba entero, junto con el
-                // clearMatchInfo() del heroe.
                 //   c+405 = m_bActionStart (lo consume MoveCharacter L572 y
                 //           RenderCharacter L361/L757)
                 //   c+192/196 Gravity/Velocity . c+200 spin . c+204/216 caida
@@ -5029,7 +4799,7 @@ void Net_ProcessPacket(void)
                 break;
 
             case 0x24: {
-                // 2026-05-09: Server response to PMSG_ITEM_MOVE_RECV (client
+                // Server response to PMSG_ITEM_MOVE_RECV (client
                 // manda 0x24 para pedir un movimiento; el server responde con el mismo
                 // opcode confirming or denying).
                 //
@@ -5066,17 +4836,11 @@ void Net_ProcessPacket(void)
                         // Server confirmed the move. Msg[4] = target slot,
                         // Msg[5..8] = ItemInfo (4 bytes, ItemByteConvert).
                         //
-                        // 2026-07-27 FIX "item se transforma en otro al moverlo":
-                        // el port anterior armaba el item mezclando 12 bytes del
-                        // ITEM struct agarrado (DAT_07e91350) con 4 bytes wire del
-                        // server. El ITEM struct NO está en formato wire — sus
-                        // bytes 4-11 (Durability/Option1/x/y/Key…) se
-                        // reinterpretaban como opciones/serial del item → el slot
-                        // quedaba con type/opciones equivocadas = "otro item".
-                        // Ahora construimos el item SOLO desde los 4 bytes wire
-                        // del server (autoritativo), igual que el snapshot F3/10
-                        // y el buy 0x32. InsertInventoryItem lee hasta Item[4];
-                        // dejamos ext=0.
+                        // El item se construye SOLO desde los 4 bytes wire del server
+                        // (autoritativo), igual que el snapshot F3/10 y el buy 0x32: el ITEM struct
+                        // agarrado (DAT_07e91350) NO está en formato wire y sus bytes 4-11
+                        // (Durability/Option1/x/y/Key…) se reinterpretarían como opciones/serial.
+                        // InsertInventoryItem lee hasta Item[4]; dejamos ext=0.
                         BYTE targetSlot = Msg[4];
                         BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
                         memcpy(itembytes, &Msg[5], 4);
@@ -5186,7 +4950,7 @@ void Net_ProcessPacket(void)
 
             case 0x30: {
                 // ── ReceiveTalk (IDA 0x4301B0, server→client) ────────────────
-                // 2026-07-25 (#2 shops): el server ordena abrir la ventana de un
+                // El server ordena abrir la ventana de un
                 // NPC al hablarle. Msg[3] = tipo:
                 //   2 = Warehouse (baúl)   3 = Chaos Machine (mezcla)
                 //   4/6 = Event window     5 = Server division
@@ -5199,9 +4963,8 @@ void Net_ProcessPacket(void)
                 InventoryOpened = 1;
                 switch (Msg[3]) {
                     case 2:  // Warehouse
-                        // (Se saco la exclusion mutua de paneles del 2026-07-27: no
-                        //  esta en IDA y el click al NPC ya exige ShopOpened == 0 y
-                        //  WarehouseOpened == 0.)
+                        // (Sin exclusion mutua de paneles: no esta en IDA y el click al NPC ya
+                        //  exige ShopOpened == 0 y WarehouseOpened == 0.)
                         WarehouseOpened = 1;
                         DAT_00559f5f = 0;     // byte_559F5F
                         DAT_07eaa14c = 0;     // dword_7EAA14C
@@ -5304,10 +5067,7 @@ void Net_ProcessPacket(void)
                 BYTE count = Msg[4];
                 int cursor = 5;
                 NetLog("NET:  -> 0x31 InventoryList sub=%d count=%d size=%d hdr=%02X", sub, count, Size, hdr);
-                // 2026-07-25 (#2 shops): dump crudo del 0x31 para capturar la
-                // estructura de la lista de items de TIENDA (viene C2, offsets
-                // distintos del layout C1 que asume este handler). Con esto
-                // porteamos la rama shop → pool Inventory[] con los offsets reales.
+                // Restos del dump crudo del 0x31: el loop de abajo quedó vacío y no hace nada.
                 {
                     // Dump en chunks de 32 bytes: NetLog trunca a 256 y devuelve
                     // -1 → salía vacío. DbgLogPublic no trunca.
@@ -5315,29 +5075,17 @@ void Net_ProcessPacket(void)
                     }
                 }
 
-                // 2026-07-25 (#2 shops) PIEZA C: rama SHOP con los offsets C2
-                // reales (IDA ReceiveTradeInventory 0x427560): type=Msg[4],
-                // count=Msg[5], records desde Msg[6] stride 5 = [slot(1)][info(4)].
-                // El handler viejo de abajo asume layout C1 (Msg[3]/Msg[4], stride
-                // 13) — correcto para warehouse C1 pero NO para el shop C2.
+                // Rama SHOP/BAÚL con los offsets C2 reales (IDA ReceiveTradeInventory
+                // 0x427560): type=Msg[4], count=Msg[5], records desde Msg[6] stride 5 =
+                // [slot(1)][info(4)].  El handler de abajo asume layout C1 (Msg[3]/Msg[4],
+                // stride 13).
                 {
                     BYTE listType  = Msg[4];
                     BYTE listCount = Msg[5];
-                    // 2026-07-27 FIX (tienda abre vacía a veces): el gate exigía
-                    // `ShopOpened` ya en 1, pero el 0x30 (que lo setea) y el 0x31
-                    // llegan casi juntos — si el 0x31 se procesaba antes de que
-                    // ShopOpened estuviera seteado, esta rama se saltaba y caía al
-                    // handler viejo (layout C1), que limpiaba el pool sin popular
-                    // → tienda vacía intermitente (confirmado por el diag SHOPREND:
-                    // ShopOpened=1 pos ok pero occ=0). El discriminante correcto es
-                    // el FORMATO: header C2 = shop list (stride 5), C1 = warehouse.
-                    // 2026-07-27 FIX (el baúl no carga items): el server manda la
-                    // lista del BAÚL con el MISMO opcode 0x31 y el MISMO type=0
-                    // que la tienda (Warehouse.cpp:276 vs Shop.cpp:251; sólo el
-                    // ChaosBox usa type=3). Son indistinguibles por formato, así
-                    // que el destino se decide por QUÉ VENTANA está abierta —
-                    // como hacía el original. El gate anterior (header C2) mandaba
-                    // la lista del baúl al pool de la tienda → baúl vacío.
+                    // El server manda la lista del BAÚL con el MISMO opcode 0x31, el MISMO type=0
+                    // y el mismo formato C2 que la tienda (Warehouse.cpp:276 vs Shop.cpp:251; sólo
+                    // el ChaosBox usa type=3). Son indistinguibles por formato, así que el destino
+                    // se decide por QUÉ VENTANA está abierta — como hacía el original.
                     // El 0x30 (que setea Warehouse/ShopOpened) siempre llega ANTES
                     // que el 0x31, así que el flag ya está puesto acá.
                     bool isWarehouseList = (Msg[0] == 0xC2) && (listType != 3) && WarehouseOpened;
@@ -5418,7 +5166,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x32: {
-                // 2026-07-27 FIX: este es el buy-response del shop
+                // Buy-response del shop
                 // (PMSG_ITEM_BUY_SEND, ItemManager.cpp CGItemBuyRecv):
                 //   [C1][08][32][result][i0][i1][i2][i3]  (Size=8)
                 //   result = slot ABSOLUTO del inventario (>=12 = grid
@@ -5426,10 +5174,8 @@ void Net_ProcessPacket(void)
                 //            o 0xFF si la compra falló (sin zen / sin espacio).
                 //   i0..i3 = 4-byte ItemInfo (ItemByteConvert): index, level/
                 //            opts, durability, hi/exc.
-                // El port anterior exigía Size>=16 y usaba el path de item-move
-                // (12 bytes) → NUNCA insertaba el item comprado (Size real = 8).
-                // Ahora reusa InsertInventoryItem, el mismo path fiel que el
-                // snapshot F3/10 (stride 5 = slot + 4 bytes) que sí funciona.
+                // Usa InsertInventoryItem, el mismo path fiel que el snapshot F3/10
+                // (stride 5 = slot + 4 bytes).
                 // IDA ProtocolCore L826: InsertInventoryItem(&Inv, 8, 8, byte[3],
                 // body+2, 0).
                 BYTE result = Msg[3];
@@ -5465,7 +5211,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x33: {
-                // 2026-05-08: slot de trade aceptado por el server. Limpia el
+                // Slot de trade aceptado por el server. Limpia el
                 // item flag (server confirmed the swap completed).
                 // Per IDA ProtocolCore L834-845.
                 NetLog("NET:  → 0x33 TradeAck sub=%d", Msg[3]);
@@ -5573,7 +5319,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x38: {
-                // 2026-05-08: UI_Main slot-clear notification. Per IDA L1126-1128.
+                // UI_Main slot-clear notification. Per IDA L1126-1128.
                 // Server tells client to clear inventory slot pkt[3].
                 NetLog("NET:  → 0x38 SlotClear slot=%d", Msg[3]);
                 // IDA 004389A0: C1:38 limpia `Inventory`, la grilla superior
@@ -5688,7 +5434,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x46: {
-                // 2026-05-07: Terrain tile update (Terrain_TileUpdate in Party.cpp).
+                // Terrain tile update (Terrain_TileUpdate en Party/Party.cpp).
                 // Sub-type at pkt[3]: 0x00 = rect update, 0x01 = single tile.
                 NetLog("NET:  → 0x46 TerrainTileUpdate size=%d", Size);
                 extern void Terrain_TileUpdate(BYTE* pkt);
@@ -5728,9 +5474,7 @@ void Net_ProcessPacket(void)
                 // [score] followed by count * { name[10], number, connected }.
                 // La rama 0x65 existente es de otro protocolo y
                 // no se puede usar acá porque los offsets de sus campos difieren.
-                // 2026-08-15 BUG-FIX (el panel abría con el nombre del guild pero
-                // la lista de miembros salía vacía): los offsets estaban corridos
-                // 5 bytes por el PADDING de la struct del server. MuEmu Guild.h:
+                // Ojo con el PADDING de la struct del server (MuEmu Guild.h):
                 //     struct PMSG_GUILD_LIST_SEND {
                 //         PWMSG_HEAD header;   // C2:52   +0..3
                 //         BYTE  result;        //         +4
@@ -5740,9 +5484,7 @@ void Net_ProcessPacket(void)
                 //         BYTE  score;         //         +12
                 //     };                       // sizeof = 16
                 // Los miembros (`PMSG_GUILD_LIST`, 12 bytes: name[10], number,
-                // connected) arrancan en +16, no en +11. Verificado contra el
-                // wire real: el nombre "mago" caía en Msg[16].
-                // Mismo patrón que el F3/06 de los stats (ver CLAUDE.md).
+                // connected) arrancan en +16, no en +11.
                 const int kHeaderSize = 16;
                 if (Size < kHeaderSize) break;
                 const BYTE count = Msg[5];
@@ -5756,10 +5498,9 @@ void Net_ProcessPacket(void)
                 g_nGuildMemberCount = memberCount;
                 GuildTotalScore = *(const int*)(Msg + 8);
                 if (GuildTotalScore < 0) GuildTotalScore = 0;
-                // 2026-08-15: alimentar el WIDGET de lista (dword_55C9FF4), que
-                // es de donde `RenderGuildList` saca las filas.  Antes sólo se
-                // llenaba `byte_7E919BC` (que el render usa nada más que para el
-                // nombre del guild en el título), así que el listado salía vacío.
+                // Se alimenta el WIDGET de lista (dword_55C9FF4), que es de donde
+                // `RenderGuildList` saca las filas (`byte_7E919BC` el render lo usa nada más
+                // que para el nombre del guild en el título).
                 // Fiel a IDA ReceiveGuildList @0x4348B0: vtable[10] para limpiar
                 // y vtable[28] por cada miembro, con el registro de 13 bytes
                 //   +0..9 name · +10 NUL · +11 connected · +12 party (o -1).
@@ -5926,12 +5667,10 @@ void Net_ProcessPacket(void)
             }
 
             // ── 0x8E-0x99 — EVENTOS, no guild ─────────────────────────────
-            // Hasta 2026-08-26 estos casos llamaban a handlers de guild
-            // (Guild_CreateOk, Guild_AddMemberResult, ...) que el port se
-            // invento. IDA y MuEmu coinciden en que son eventos: ver la tabla
+            // IDA y MuEmu coinciden en que son eventos: ver la tabla
             // completa en la cabecera de `src/Net/Net_Events.cpp`.
             // El guild de verdad esta en 0x50-0x56, mas arriba en este mismo
-            // switch, y no se toca.
+            // switch.
             case 0x8E: { // Devil Square admission levels (GameServer extension)
                 extern void Recv_DevilSquareRequiredLevels(BYTE* Msg, int Size);
                 Recv_DevilSquareRequiredLevels((BYTE*)Msg, Size);
@@ -6024,9 +5763,6 @@ void Net_ProcessPacket(void)
                 // El struct no lleva padding (state en +3 y el primer WORD en
                 // +4, que ya esta alineado), asi que coincide exacto con los
                 // indices de palabra del decompile.
-                //
-                // 2026-09-04: este case NO EXISTIA en el dispatcher, o sea el
-                // panel del evento nunca recibia datos.
                 if (Size < 13) { NetLog("NET:  -> 0x9B MatchState size=%d (corto)", Size); break; }
                 {
                     const BYTE state     = Msg[3];
@@ -6162,7 +5898,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x1A: {
-                // 2026-05-07: ReceiveMagicPosition @ 0x0042D780 (port FIEL).
+                // ReceiveMagicPosition @ 0x0042D780 (port FIEL).
                 // Server broadcasts a magic-area-attack:
                 //   Msg[3..4] = caster entity ID (BE)
                 //   Msg[5..6] = ID del skill mágico (BE) (se usa para el efecto visual)
@@ -6291,15 +6027,11 @@ void Net_ProcessPacket(void)
 
                     if (map != (BYTE)World) {
                         World = map;
-                        // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
-                        // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-                        // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
-                        // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
-                        // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
-                        // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
-                        // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
-                        // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
-                        // cargado -- los arreglara.
+                        // OpenWorld tarda ~2 s cargando BMDs y, para que el server no cierre por
+                        // backpressure, AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese
+                        // pump entrega WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los
+                        // handlers correrian RE-ENTRANTES en mitad de la carga (p.ej. un
+                        // `0x13 ViewportMonster` creando monstruos cuyo modelo todavia no esta abierto).
                         //
                         // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
                         // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
@@ -6322,15 +6054,10 @@ void Net_ProcessPacket(void)
                     }
 
                     // ── ACK de fin de carga: C1 04 F3 12 ──────────────────
-                    // 2026-08-15 BUG-FIX (el `/move` sólo funcionaba una vez y
-                    // el mapa nuevo quedaba sin NPCs ni mobs).
-                    //
                     // IDA `ReceiveTeleport` @0x428210, dentro del branch de gate
                     // y DESPUÉS de OpenWorld, arma y envía un paquete
                     // (`v118[2]=0xC1 v118[3]=1 v118[4]=0xF3` + chain-XOR) y
-                    // recién entonces setea `LoadingWorld = 30`. Nuestro port
-                    // hacía el ClearItems/ClearCharacters/OpenWorld pero nunca
-                    // enviaba el ACK.
+                    // recién entonces setea `LoadingWorld = 30`.
                     //
                     // Del lado del server (MuEmu) el ciclo es:
                     //   gObjMoveGate OK        → RegenOk = 1  (User.cpp:1964)
@@ -6409,7 +6136,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x23: {
-                // 2026-05-07: ReceiveDropItem @ 0x0042F690 (port FIEL).
+                // ReceiveDropItem @ 0x0042F690 (port FIEL).
                 // Server response after hero drops/moves an item.
                 //   Msg[3] == 0  → drop FAILED → reset inventory drag UI
                 //   Msg[3] != 0  → drop OK
@@ -6420,17 +6147,12 @@ void Net_ProcessPacket(void)
                 if (Size < 4) break;
                 BYTE result = Msg[3];
                 NetLog("NET:  → 0x23 DropItem result=%d slot=%d", result, Size >= 5 ? Msg[4] : -1);
-                // 2026-07-27 FIX: el item se sacó del slot de origen al hacer
-                // pickup (UI_Main limpia el footprint). Por eso:
-                //  - result==0 (drop rechazado por el server): hay que
-                //    RESTAURAR el item a su slot de origen o desaparece de la
-                //    vista (el server no lo removió). El port anterior sólo
-                //    limpiaba el cursor → item perdido visualmente.
-                //  - result!=0 (drop OK): el server removió el item; sólo hay
-                //    que soltar el cursor. El port anterior escribía a globales
-                //    equivocados (DAT_07ea9328 / CharacterMachine+552) con lógica
-                //    slot>=12 invertida → corrupción; el slot ya estaba vacío
-                //    desde el pickup así que esos writes eran innecesarios.
+                // El item se sacó del slot de origen al hacer pickup (UI_Main limpia el
+                // footprint). Por eso:
+                //  - result==0 (drop rechazado por el server): hay que RESTAURAR el item a
+                //    su slot de origen o desaparece de la vista (el server no lo removió).
+                //  - result!=0 (drop OK): el server removió el item; sólo hay que soltar el
+                //    cursor (el slot ya está vacío desde el pickup).
                 if (result == 0) {
                     ItemMove_RestoreSlot(OffsetInventoryItems, (int)DAT_07ea5b18,
                                          (BYTE*)DAT_07e91350);
@@ -6444,7 +6166,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x22: {
-                // 2026-05-07: ReceiveGetItem @ 0x0042F360 (port FIEL).
+                // ReceiveGetItem @ 0x0042F360 (port FIEL).
                 // Respuesta del server cuando el héroe levanta un item del piso vía el envío 0x22.
                 //   Msg[3] == 0xFF → pickup failed (no inventory space, etc.)
                 //   Msg[3] == 0xFE → levanta zen; el monto es el DWORD BE en Msg[4..7]
@@ -6474,13 +6196,9 @@ void Net_ProcessPacket(void)
                     // por eso el zen suena con pGetItem.wav (29).
                     Item = (const BYTE*)(uintptr_t)DAT_07cf1ffc;
                 } else {
-                    // 2026-07-27 FIX (item levantado no aparecía en inventario):
                     // PMSG_ITEM_GET_SEND es [C3][08][22][result][i0..i3] = Size 8
-                    // (ItemInfo son 4 bytes, MAX_ITEM_INFO). El gate `Size >= 16`
-                    // (formato de 12 bytes) NUNCA se cumplía → el item se
-                    // levantaba en el server pero jamás se insertaba en el grid.
-                    // Mismo bug que tenía el buy 0x32. InsertInventoryItem lee
-                    // hasta Item[4]; dejamos ext=0.
+                    // (ItemInfo son 4 bytes, MAX_ITEM_INFO): no exigir el formato de 12
+                    // bytes (`Size >= 16`). InsertInventoryItem lee hasta Item[4]; dejamos ext=0.
                     if (Size >= 8 && slot < 76) {
                         BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
                         memcpy(itembytes, (BYTE*)Msg + 4, 4);
@@ -6492,9 +6210,6 @@ void Net_ProcessPacket(void)
                 // Sonido de pickup — IDA L61-71, compartido por las dos ramas:
                 //   ConvertItemType(Item) in {461,462,464,399,470} → 49 (eGem.wav)
                 //   resto                                          → 29 (pGetItem.wav)
-                // 2026-08-21: la rama del zen tenía PlayBuffer(49) hardcodeado
-                // ("jewel pickup sound"), que es invención del port — al levantar
-                // zen sonaba la joya en vez del pickup normal.
                 if (slot != 0xFF && Item != nullptr) {
                     // ConvertItemType (0x0047B110): Item[0] + (Item[3] & 0x80) * 2
                     int type = (int)Item[0] + ((Item[3] & 0x80) ? 256 : 0);
@@ -6507,7 +6222,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x26: {
-                // 2026-05-07: ReceiveLife @ 0x00431780 (port FIEL).
+                // ReceiveLife @ 0x00431780 (port FIEL).
                 // Server pushes HP / MaxHP updates and item-durability decrements
                 // por este opcode. El sub-byte en Msg[3] elige:
                 //   0xFD     → EnableUse = 0 (item slot lock)
@@ -6543,7 +6258,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x27: {
-                // 2026-05-07: ReceiveMana @ 0x00431A90 (port FIEL).
+                // ReceiveMana @ 0x00431A90 (port FIEL).
                 // Server pushes Mana / BP / MaxMana / MaxBP updates.
                 //   0xFE → MaxMana(offset 34) + MaxBP(offset 38), cada uno WORD BE
                 //   0xFF → Mana(offset 30)    + BP(offset 36),    cada uno WORD BE
@@ -6575,7 +6290,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x28: {
-                // 2026-06-02: borrado de slot del lado del server. Lo usa mucho
+                // Borrado de slot del lado del server. Lo usa mucho
                 // stackable moves (source slot emptied after merge).
                 if (Size < 5) break;
                 BYTE slot = Msg[3];
@@ -6614,7 +6329,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x2A: {
-                // 2026-06-02: actualización de durabilidad/cantidad del lado del server. La usa
+                // Actualización de durabilidad/cantidad del lado del server. La usa
                 // stackable potions/jewels after partial merge.
                 if (Size < 6) break;
                 BYTE slot = Msg[3];
@@ -6646,7 +6361,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x2F: {
-                // 2026-05-07: ReceiveDurability @ 0x00431EA0 (port FIEL).
+                // ReceiveDurability @ 0x00431EA0 (port FIEL).
                 // Per-equipment-slot durability update.
                 //   Msg[3] = inventory slot index (0..11)
                 //   Msg[4] = new durability value
@@ -6851,15 +6566,13 @@ void Net_ProcessPacket(void)
                 // MsgNumber 0 = el destinatario del susurro no esta conectado
                 // (MuEmu: DGGlobalWhisperRecv -> GCServerMsgSend(index, 0)).
                 //     if (!ReceiveBuffer[3]) UIChatLogWindow_AddText(ChatWhisperID, GlobalText[482], 2);
-                // 2026-09-12: el opcode no tenia handler.
                 if (Size >= 4 && Msg[3] == 0)
                     UIChatLogWindow_AddText(ChatWhisperID, GlobalText[482], 2);
                 break;
             }
 
             case 0x0D: {
-                // 2026-05-06 BUG-FIX MAYÚSCULO (port FIEL desde IDA
-                // mu97k-src-IDA/raw/00427A00_ReceiveNotice.c):
+                // Port FIEL desde IDA ReceiveNotice (0x00427A00).
                 //
                 // PMSG_NOTICE_SEND server layout (server source
                 // Mu-linux-97K/Source/MuServer/GameServer/Notice.cpp):
@@ -6874,10 +6587,8 @@ void Net_ProcessPacket(void)
                 // type 2 → guild notice (sprintf "Guild: %s" + CreateNotice
                 //          gold). Deferred — guild stack no portado.
                 //
-                // ANTES: parser leía message desde Msg+7 (offset incorrecto, mal
-                // port basado en formato 5.2 con extra fields). Y ruteaba TODO
-                // a chat log → eventos aparecían en azul abajo-izquierda en vez
-                // de centrados en pantalla. User reportó este bug 2026-05-06.
+                // El mensaje arranca en Msg+4 (no en Msg+7, que es el formato 5.2 con
+                // campos extra).
                 if (Size < 5) {
                     NetLog("NET:  → 0x0D Notice size=%d (too small)", Size);
                     break;
@@ -6927,7 +6638,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x0F: {
-                // 2026-05-07: port FIEL desde IDA ProtocolCore:554
+                // Port FIEL desde IDA ProtocolCore:554
                 //   case 0xF:
                 //     Weather = ReceiveBuffer[3];
                 //     if (Weather >> 4) {
@@ -6955,28 +6666,24 @@ void Net_ProcessPacket(void)
 
             case 0x00: {
                 // PMSG_CHAT_SEND server→client — [C1][size][0x00][name 10B][msg 60B]
-                // 2026-07-19: delega al port FIEL `ReceiveChat` (IDA 0x427630).
-                // El handler anterior aproximaba mal: pasaba nullptr como nombre y
-                // pre-formateaba "name: msg" (IDA los pasa SEPARADOS — el renderLine
-                // del ChatListBox compone "name: text"), usaba canal 0 en vez de 3
-                // (color equivocado), y no hacía el dispatch de prefijos
-                // ('~'=party/4, '@'=guild/5, '#'=solo burbuja) ni la burbuja
-                // sobre el personaje (AssignChat).
+                // Delega al port FIEL `ReceiveChat` (IDA 0x427630): nombre y mensaje van
+                // SEPARADOS (el renderLine del ChatListBox compone "name: text"), canal 3,
+                // dispatch de prefijos ('~'=party/4, '@'=guild/5, '#'=solo burbuja) y
+                // burbuja sobre el personaje (AssignChat).
                 NetLog("NET:  → 0x00 Chat size=%d", Size);
-                // GUARDA 2026-07-19: el server manda `C1 04 00 xx` (4 bytes) como
-                // ping/handshake. ReceiveChat lee name@+3 y mensaje hasta +72, así que
+                // GUARDA: el server manda `C1 04 00 xx` (4 bytes) como
+                // ping/handshake. ReceiveChat lee name@+3 y el mensaje desde +13, así que
                 // con 4 bytes sobre-lee. El IDA solo ACKea esos en estado login
-                // (SceneFlag==2) y cae al parseo de chat en el resto → mismo
+                // (SceneFlag==2) y cae al parseo de chat en el resto → misma
                 // sobre-lectura. Procesamos como chat solo si el paquete tiene el
-                // tamaño de PMSG_CHAT_SEND (3 hdr + 10 name + 60 msg = 73).
+                // tamaño mínimo de PMSG_CHAT_SEND (ver abajo) o estamos en el login.
                 extern void __cdecl ReceiveChat(BYTE* ReceiveBuffer);
-                // FIX 2026-07-19: el guard era `Size >= 73` (tamaño MÁXIMO de la
-                // struct). PMSG_CHAT_SEND es de longitud VARIABLE — el server hace
+                // PMSG_CHAT_SEND es de longitud VARIABLE — el server hace
                 //   header.set(0x00, sizeof(pMsg) - (sizeof(pMsg.message) - (size+1)))
                 //   = 14 + strlen(mensaje)
-                // así que solo un mensaje de 59 chars llegaba a 73. Todo mensaje más
-                // corto se descartaba en silencio; en particular los `/post` azul (`~`)
-                // y verde (`@`) de CommandManager::GCPostMessageBlue/Green.
+                // así que no se puede exigir el tamaño MÁXIMO de la struct (73): se
+                // perderían los mensajes cortos y los `/post` azul (`~`) y verde (`@`) de
+                // CommandManager::GCPostMessageBlue/Green.
                 // Mínimo real = 3 (hdr) + 10 (name) + 1 (al menos un char) = 14.
                 // El server null-termina el mensaje, así que la lectura de 60 bytes
                 // que hace ReceiveChat (fiel a IDA) se corta sola en el NUL.
@@ -6998,7 +6705,7 @@ void Net_ProcessPacket(void)
                 int count = Msg[3 + hdrOff];
                 NetLog("NET:  → 0x20 ViewportItem count=%d size=%d", count, Size);
                 int cursor = 4 + hdrOff;
-                // 2026-07-27: escribir sobre el ITEM-BASE (DAT_07e127f8), no
+                // Escribir sobre el ITEM-BASE (DAT_07e127f8), no
                 // sobre DAT_07e12840 (= item-base+72). Los offsets de abajo son
                 // ip-relativos de CreateItem (ip+4 type, ip+72 active, ip+88 pos);
                 // con la base correcta el active queda en ip+72 = DAT_07e12840+0,
@@ -7006,11 +6713,10 @@ void Net_ProcessPacket(void)
                 BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
                 extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
                 extern void __cdecl ItemAngle(int);   // ItemAngle
-                // 2026-07-27: este server (MuEmu) manda PMSG_VIEWPORT_ITEM =
+                // Este server (MuEmu) manda PMSG_VIEWPORT_ITEM =
                 // index[2]+x+y+ItemInfo[MAX_ITEM_INFO+1] = 2+1+1+5 = 9 bytes por
-                // item SIEMPRE (Viewport.h). El port usaba stride 8 (0.97k) salvo
-                // type 463 → desalineaba todos los items después del 1ro. Bound y
-                // stride ahora son 9.
+                // item SIEMPRE (Viewport.h), no el stride 8 del 0.97k. Bound y
+                // stride son 9.
                 for (int i = 0; i < count && cursor + 9 <= Size; ++i) {
                     const BYTE* e = Msg + cursor;
                     WORD raw = (e[0] << 8) | e[1];
@@ -7098,8 +6804,6 @@ void Net_ProcessPacket(void)
 
                     // BoundingBox del objeto (IDA CreateItem L129-134):
                     // min = (-30,-30,-30), max = (30,30,30).
-                    // 2026-08-21: el port tenía -12.5 / 25.0 (mal decodificados
-                    // desde los literales -1041235968 / 1106247680).
                     *(int*)(ip + 352) = (int)0xC1F00000;  // -30.0f
                     *(int*)(ip + 356) = (int)0xC1F00000;
                     *(int*)(ip + 360) = (int)0xC1F00000;
@@ -7152,7 +6856,7 @@ void Net_ProcessPacket(void)
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 int count = Msg[3 + hdrOff];
                 NetLog("NET:  → 0x21 ViewportItemDestroy count=%d", count);
-                // 2026-05-05: limpiar slots en DAT_07e12840 pool. Per-entry
+                // Limpiar slots en DAT_07e12840 pool. Per-entry
                 // 2 bytes (key WORD, big-endian).
                 int entryStart = 4 + hdrOff;
                 BYTE* itemPool = (BYTE*)&DAT_07e12840;
@@ -7168,11 +6872,8 @@ void Net_ProcessPacket(void)
 
 
             // ── 0xA0..0xA3 — sistema de quests ──────────────────────────────
-            // 2026-08-21: los cuatro opcodes no estaban en el dispatcher (sólo
-            // el comentario del mapa de opcodes al principio del archivo), asi
-            // que el estado de quest nunca llegaba aunque los cuerpos ya
-            // estuvieran portados.  ProtocolCore (0x4389A0 L1376-1387) los
-            // manda a ReceiveQuestHistory / State / Result / Prize.
+            // ProtocolCore (0x4389A0 L1376-1387) los manda a ReceiveQuestHistory /
+            // State / Result / Prize.
             case 0xA0: {   // ReceiveQuestHistory @ 0x00437450
                 if (Size < 4 || g_csQuest == 0) break;
                 NetLog("NET:  → 0xA0 QuestHistory num=%d", Msg[3]);
@@ -7307,7 +7008,7 @@ void Net_ProcessPacket(void)
             }
 
             // ── Character config opcodes (DLL Protocol.cpp:308-327) ─────────
-            // 2026-05-04: las structs PMSG_CHARACTER_*_RECV usan PBMSG_HEAD (3 bytes)
+            // Las structs PMSG_CHARACTER_*_RECV usan PBMSG_HEAD (3 bytes)
             // + member alineado al tipo. WORD se alinea a 2 → +1 PAD entre header
             // y data. DWORD se alinea a 4 → +1 PAD igual. Por eso los offsets son
             // 4 para WORD/DWORD (no 3) y la size on-wire es 6/4/8 (no 5/4/7).

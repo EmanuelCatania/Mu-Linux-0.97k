@@ -94,10 +94,7 @@
 
 
 // =============================================================================
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 648-789 (142 lines)
-// =============================================================================
 // IDA: FUN_0046be40 @ 0x0046BE40 — Particle_RenderAll
-// 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/0046BE40_Particle_Render.c.
 // Itera el effect pool DAT_07b11670 (200 slots × 0x1BC bytes). Para cada slot
 // activo y visible, despacha por type code (1191/1200/1264/1265) llamando a
 // RenderTerrainAlphaBitmap con escala/color/rotación per-tipo:

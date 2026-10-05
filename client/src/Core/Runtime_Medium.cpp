@@ -1,7 +1,5 @@
 // Runtime_Medium.cpp
 //
-// Extracted from stubs_bulk_med.cpp (B3: stubs.cpp lines 14828-15881).
-//
 // BATCH 2-4: Functions 56-200+ bytes, sorted by size.
 //   BATCH 2 — generic 56-200 byte functions
 //   BATCH 3 — Game functions + BST/STL + Codec
@@ -59,8 +57,6 @@ void __cdecl RenderInformation(void) {
 }
 
 // GetMapName @ 0x004EF120 (64 bytes) -- nombre del mapa desde GlobalText.
-// (Antes era una tabla de nombres en ingles inventada: el original devolvia
-//  punteros a GlobalText y el port lo habia leido como direcciones fijas.)
 char *__cdecl GetMapName(int iMap) {
     if (iMap >= 11 && iMap <= 16) return GlobalText[56];   // Blood Castle
     if (iMap == 10)               return GlobalText[55];   // Icarus
@@ -88,20 +84,13 @@ int __cdecl LevelConvert(BYTE Level) {
 
 
 
-// OpenMacro @ 0x0050F750 (72 bytes) -- carga Data\Macro.txt
-//
-// BUG-FIX 2026-04-28: usaba direccion absoluta 0x07e0ffc8 con bound
-// 0x07e109c8.  Ahora indexa el array MacroText[10][0x100].
-//
-// 2026-09-24: el modo era "rb"; IDA abre con "rt" (aRt).
+// OpenMacro @ 0x0050F750 (72 bytes) -- carga Data\Macro.txt en MacroText[10][0x100].
+// Abre con "rt", como IDA (aRt).
 //
 // DESVIACION DOCUMENTADA (tomada del DLL, CPatchs::MyOpenMacro): el original
-// lee con `fscanf(fp, "%s", slot)`, que **corta en el primer espacio**, asi que
-// una macro con mas de una palabra se pierde al reiniciar el cliente aunque
-// SaveMacro la haya escrito entera.  El DLL de inyeccion reemplaza esta misma
-// funcion por una con `fgets` + recorte del salto de linea; se porta esa
-// version, que es la unica que hace util al sistema de macros.  Tambien limpia
-// el array antes de leer, como el DLL.
+// lee con `fscanf(fp, "%s", slot)`, que corta en el primer espacio; se usa
+// `fgets` + recorte del salto de linea y se limpia el array antes de leer,
+// como el DLL.
 void __cdecl OpenMacro(char *FileName) {
     FILE *fp = fopen(FileName, "rt");
     if (!fp) return;
@@ -391,7 +380,7 @@ void __cdecl FUN_00451ea0(int param_1, void *param_2, int param_3) {
 }
 
 // RenderTerrainAlphaBitmaps @ 0x00479540 (120 bytes) — render terrain alpha bitmaps
-// RenderTerrainAlphaBitmaps (IDA-activated, was Ghidra stub)
+// RenderTerrainAlphaBitmaps (IDA-activated)
 void RenderTerrainAlphaBitmaps()
 {
   float *v0; // esi
@@ -447,13 +436,10 @@ void __cdecl MoveCharacterCamera(float *Origin, float *Position, float *Angle) {
 }
 
 // OpenSMDFile @ 0x0040B200 (106 bytes) — open and parse SMD model file
-// CRITICAL 2026-05-03: ParseNodes/ParseSkeleton/ParseTriangles are EMPTY STUBS
-// (lines 19407, 19417, 19432). If we open SMDFile here and call them, the file
-// content is never consumed; fclose() leaves the global SMDFile pointing to a
-// freed FILE* — any later reader (GetToken from Monster_Data, etc.) crashes
-// dereferencing it. Until the SMD parsers are actually implemented, do not
-// touch the SMDFile global. Return false so the SMD chain stays a no-op
-// (matches the original behaviour: 0.97k ships only .bmd, no .smd files).
+// ParseNodes/ParseSkeleton/ParseTriangles son stubs vacios: si se abriera
+// SMDFile aca, el fclose lo dejaria apuntando a un FILE* liberado y el
+// siguiente GetToken (Monster_Data, etc.) reventaria.  No tocar SMDFile hasta
+// que existan los parsers.  Devuelve false (el 0.97k sólo trae .bmd).
 bool __cdecl OpenSMDFile(char *FileName, int /*Type*/, bool /*Flip*/) {
     if (FileName == NULL) return false;
     FILE* probe = fopen(FileName, "r");
@@ -506,7 +492,7 @@ void __cdecl FUN_00411420_impl(int *param_1) {
 
 
 // BSTIterator_PostIncrement @ 0x004117C0 (95 bytes) — BST iterator: post-increment (return old, advance)
-// BSTIterator_PostIncrement (IDA-activated, was Ghidra stub)
+// BSTIterator_PostIncrement (IDA-activated)
 DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 {
   int v3; // edi
@@ -640,7 +626,7 @@ void __fastcall FUN_00410d90_impl(int param_1) {
 }
 
 // Pool_AllocNextSlot @ 0x00410270 (88 bytes) — allocate next free slot in pool
-// Pool_AllocNextSlot (IDA-activated, was Ghidra stub)
+// Pool_AllocNextSlot (IDA-activated)
 int __cdecl Pool_AllocNextSlot(DWORD *_this)
 {
   int v1; // edx
@@ -679,23 +665,16 @@ LABEL_6:
 // Counts items in inventory matching nType (param_1), optional level filter (param_3).
 // Returns shortage = nCount - found (0 means at least nCount items present).
 // Inventory grid: 8 rows × 8 cols at DAT_07EA9328..DAT_07EA9504 (stride 0x44 per cell row,
-// 0x11 ints = 68 bytes per outer step). Iterates 7 outer × 8 inner = 56 cells.
-//
-// BUG-FIX 2026-05-03: original port used `if (piVar4 < 0x7ea9328)` — a hardcoded
-// absolute bound from the source binary. In our build &DAT_07ea9504 lives at
-// a different address (linker-placed) so the comparison was meaningless: it
-// either triggered immediately (early-exit returns wrong shortage) or never
-// (infinite loop / heap walk crash). Replaced with explicit iteration count.
+// 0x11 ints = 68 bytes per outer step). Iterates 8 outer × 8 inner = 64 cells.
+// Se itera por cantidad y no contra el bound de IDA (0x7ea9328) porque en este
+// build &DAT_07ea9504 no está en la VA original.
 int __cdecl CSQuest_FindQuestItemsInInven(int param_1, int param_2, uint param_3)
 {
     int iVar3 = 0;
     int *piVar4 = &DAT_07ea9504;
-    // 2026-08-22: eran 7 columnas y son 8.  El bound de IDA es
-    // `while (v5 >= &unk_7EA9328)` arrancando en &unk_7EA9504 con paso de -17
-    // ints (-68 bytes): (0x7EA9504 - 0x7EA9328) / 68 + 1 = 8.  Con 7 se salteaba
-    // una columna entera del inventario, asi que un item de quest que estuviera
-    // ahi contaba como faltante: la lista salia en rojo y el boton en gris
-    // aunque el personaje lo tuviera.
+    // El bound de IDA es `while (v5 >= &unk_7EA9328)` arrancando en
+    // &unk_7EA9504 con paso de -17 ints (-68 bytes):
+    // (0x7EA9504 - 0x7EA9328) / 68 + 1 = 8 columnas.
     for (int outer = 0; outer < 8; ++outer) {
         int *piVar1 = piVar4;
         for (int iVar2 = 7; iVar2 >= 0; --iVar2) {
@@ -741,15 +720,10 @@ static char *__cdecl FUN_00543ac0_impl(BYTE *name) {
     return getenv((const char*)name);
 }
 
-// Forward decl for FUN_0052f4d0
-
-// Forward decl
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH 9
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// === FUN_0052f4d0 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
 // ── FUN_0052f4d0 (IDA-activated, absent in Ghidra) ──
 int __cdecl FUN_0052f4d0(int a1, int a2, int a3, int a4)
 {

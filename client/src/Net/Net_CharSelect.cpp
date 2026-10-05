@@ -1,5 +1,5 @@
 // Net_CharSelect.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
+// CharSelect_SendSelectPacket.
 
 #include "stdafx.h"
 #include "globals.h"

@@ -434,7 +434,7 @@
 //   Particle_Spawn      @ 0x00460dc0
 //   AntiCheat_Validate  @ 0x004977f0
 //   Inventory_Reset     @ 0x004cd3b0
-//   CharData_RecalcStats @ 0x0047e3c0  (ver UI.cpp)
+//   CharData_RecalcStats @ 0x0047e3c0
 
 #include "stdafx.h"
 #include "Item/Item_Equip.h"
@@ -463,12 +463,6 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len);
 // Defined in src/Render/HUD_Pass3.cpp.
 extern "C" BYTE OffsetInventoryItems[];
 
-// =============================================================================
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 6475-7690 (1216 lines)
-// Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
-// Combat_UseElfSkill (UseSkillElf stub), Action (Action big switch),
-// TERRAIN_INDEX (Terrain_GetAttrDirect)
-// =============================================================================
 // IDA: SendMove @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
 // Codifica con XOR usando la clave hardcodeada de 32 bytes. Saltea si la entidad tiene el bit 0x20 en +0x78.
@@ -576,33 +570,26 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 
     // IDA sigue aunque no haya camino (activa la ruta y cierra ventanas), pero
     // ahi solo se llama tras un PathFinding exitoso. Se conserva como resguardo:
-    // un llamado sin camino reactivaba la ruta vieja y el heroe atravesaba
-    // paredes (2026-09-17).
+    // un llamado sin camino reactivaria la ruta vieja.
     if (wpCount == 0)
         return;
     {
     if (wpCount > 0xe)
         wpCount = 0xe;
 
-    // 2026-05-05 BUG-FIX: el packet de move tenía la nibble inversa y length
-    // fijo. Per IDA decompile Combat_SendMovePathPacket + server CGMoveRecv:
+    // Per IDA decompile Combat_SendMovePathPacket + server CGMoveRecv:
     //   path[0] = (dir0 << 4) | (wpCount - 1)
     //   path[1..] cada byte packs 2 dirs: high=dir[2k+1], low=dir[2k+2]
     //   total length = 5 + ((wpCount >> 1) + 1) bytes
-    // Antes mandábamos: path[0] = (wpCount << 4) | dir0  — server leía Dir=wpCount
-    // y PathCount=dir0 — no path procesado — server ignoraba y char snapeaba.
     unsigned char pkt[16];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0xC1;
     // length set abajo
     pkt[2] = 0x10;        // PROTOCOL_CODE1 (move opcode)
-    // 2026-05-05 BUG-FIX: IDA decompile Combat_SendMovePathPacket muestra que pkt[3]/pkt[4]
-    // son `entity[+0x357]` y `entity[+0x366]` = path_wp_x[0]/path_wp_y[0]
+    // pkt[3]/pkt[4] son `entity[+0x357]` y `entity[+0x366]` = path_wp_x[0]/path_wp_y[0]
     // (= START de la path = current grid pos), NO entity[+0x306]/[+0x307]
     // (= target del último move server-confirmed). Server lee pkt[3]/[4] como
-    // PathX[0] y walks PathX[1..PathCount-1] aplicando los dirs. Si pkt[3]/[4]
-    // era el target, server simulaba walk DESDE target — char acababa en
-    // posición incorrecta — server snap-back con GCTeleportSend.
+    // PathX[0] y camina PathX[1..PathCount-1] aplicando los dirs.
     pkt[3] = *(unsigned char*)(param_1 + 0x357); // path_wp_x[0] = start grid X
     pkt[4] = *(unsigned char*)(param_1 + 0x366); // path_wp_y[0] = start grid Y
 
@@ -620,10 +607,8 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
         BYTE ny = *(unsigned char*)(param_1 + 0x366 + i);
         int dx = (int)nx - (int)px;
         int dy = (int)ny - (int)py;
-        // 2026-05-05 BUG-FIX: dir encoding debe matchear server's RoadPathTable
+        // El dir encoding tiene que matchear el RoadPathTable del server
         // (Util.cpp:19): { (-1,-1), (0,-1), (1,-1), (1,0), (1,1), (0,1), (-1,1), (-1,0) }.
-        // Antes el mapping estaba rotado +1 — server walk a dirección equivocada
-        // — tiles bloqueadas — server respondía con 0x11 snap-back.
         BYTE dir = 0;
         if      (dx < 0 && dy < 0)  dir = 0;  // NW
         else if (dx == 0 && dy < 0) dir = 1;  // N
@@ -655,20 +640,13 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     unsigned int payloadLen = 5 + ((wpCount >> 1) + 1);
     pkt[1] = (BYTE)payloadLen;
 
-    // BUG-FIX 2026-07-19 (DESCONEXIÓN AL MOVERSE): esto usaba
-    // `Net_SendSmallPacket`, que es el path **C3** (Game_SceneUpdate.cpp:206):
-    //   pkt[1] = serial++;            ← PISA el byte de TAMAÑO del C1
-    //   buf[0] = 0xC3; ... encrypt;   ← re-enmarca como C3 cifrado
-    // El paquete de movimiento es un **C1 plano** (`C1 len 10 X Y path…`), así
-    // que salía con el tamaño destruido y envuelto como C3. El server lo
-    // descifraba como C3, obtenía basura y cerraba la conexión (FD_CLOSE ~50ms
-    // después de cada envío de movimiento). Además Net_SendSmallPacket aplica
-    // su propio chain-XOR, con lo que se duplicaba el que hacíamos acá.
+    // El paquete de movimiento es un **C1 plano** (`C1 len 10 X Y path…`): NO usar
+    // `Net_SendSmallPacket`, que es el path C3 (pisa pkt[1] con el serial y lo
+    // re-enmarca cifrado) y además aplica su propio chain-XOR.
     //
     // Path correcto para C1 (igual que Pkt_Send en Game_EnterWorldTick):
     // chain-XOR y `send()` directo — el hook de send() aplica el MuEmu byte-XOR
-    // automáticamente a los C1 planos (líneas "AUTO-ENCRYPT C1" del log, que
-    // brillaban por su ausencia en los envíos de movimiento).
+    // automáticamente a los C1 planos.
     static const BYTE s_MoveKey[32] = {
         0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
         0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
@@ -692,7 +670,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// IDA: Attack @ 0x0049CBF0 — Attack(c)  [PORTED 2026-05-05]
+// IDA: Attack @ 0x0049CBF0 — Attack(c)
 //
 // Tamaño binario: 62649 bytes (la función más grande del cliente).
 // Decompile IDA: 10112 líneas con cientos de stack vars de obfuscation.
@@ -745,7 +723,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 //   0x19 — skill broadcast (otra entidad usó skill ID X sobre target Y)
 //   0x1A — entity attack target (anim 0x5A play)
 //
-// FORMA REAL DEL CFG EN IDA (verificada 2026-09-01 contra el decompile y el
+// FORMA REAL DEL CFG EN IDA (verificada contra el decompile y el
 // disassembly; nuestro port es una reconstruccion POR ID DE SKILL, no una copia
 // estructural, y conviene tenerlo presente antes de tocar nada):
 //
@@ -797,15 +775,12 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 // HeroKey se lee del campo +0x1DC de la entidad del héroe (= g_HeroKey que asigna
 // Net_Process at JoinServer ACK; see Net_Process.cpp:1294).
 
-// 2026-09-01: aca vivian dos statics locales (`g_dwLatestMagicTick_Attack` y
-// `g_dwLatestTeleportRequest_Attack`) que reemplazaban a los globals del binario
-// porque se creia que sus direcciones aliaseaban timers de UI/NPC.  Es falso:
+// Cooldowns de magia/teleport: se usan los globals del binario, compartidos
+// con el resto del cliente:
 //   g_dwLatestMagicTick (ya usado por UseSkillWarrior/Wizard)
 //   dword_7E11DC8 / DC4  = DAT_07e11dc8 / DAT_07e11dc4 — los escribe
 //                          ReceiveTeleport (0x428210, xref 0x428EBF) y los leen
 //                          Attack (0x4AB5E7) y CheckGate (0x4AC6DE).
-// Con los statics el cooldown de teleport de Attack no compartia estado con el
-// que arma el servidor, asi que los dos gates corrian por separado.
 
 // 0049CCAA..0049CCF1.  The original keeps these independently of the UI
 // timers: they measure how long the right button has remained down.  Keeping
@@ -919,8 +894,8 @@ static void Attack_SendSkill19_97k(int iType, WORD key)
 
 // Byte `dis` del C3:1E (cases 55 y 56, y Triple Shot).
 //
-// 2026-09-02: verificado a nivel de INSTRUCCION y unificado con el sitio
-// gemelo de UseSkillWarrior.  El binario calcula los DOS nibbles a partir del
+// Verificado a nivel de INSTRUCCION, igual que el sitio gemelo de
+// UseSkillWarrior.  El binario calcula los DOS nibbles a partir del
 // MISMO delta X, con +8 arriba y -8 abajo.  No es un artefacto de Hex-Rays:
 // en 0x00486070 (UseSkillWarrior) la secuencia es literalmente
 //     8A 44 24 7C   mov al, [esp+7Ch]      ; TargetX
@@ -1349,13 +1324,11 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             *(float*)(entity + 16), *(float*)(entity + 20),
             *(float*)(entity + 788), *(float*)(entity + 792));
         // IDA L9303: Teleport || dword_7E11DC4 || GetTickCount() - dword_7E11DC8 < 3000.
-        // Los tres globals existen en nuestro arbol y ya los escribe el handler
-        // 0x1C de Net_Process (ReceiveTeleport), asi que el cooldown queda
-        // compartido igual que en el binario.
-        // `Teleport` de IDA es 0x05826D14 (Teleport), el mismo flag que
-        // limpian ReceiveTeleport, el 0x19/0x0F, ReceiveRevival y CheckGate.
-        // El port usaba DAT_05826d04, otro global (lo usan ReceiveLogOut y
-        // UI_InGameMenu): el flag del skill nunca se limpiaba donde debia.
+        // Los tres globals los escribe el handler 0x1C de Net_Process
+        // (ReceiveTeleport), asi que el cooldown queda compartido igual que en el
+        // binario. `Teleport` de IDA es 0x05826D14 (Teleport), el mismo flag que
+        // limpian ReceiveTeleport, el 0x19/0x0F, ReceiveRevival y CheckGate (no
+        // DAT_05826d04, que es otro global).
         if (Teleport || DAT_07e11dc4 || (GetTickCount() - DAT_07e11dc8) < 3000)
             return;
         Teleport = 1;                                     // IDA L9307: Teleport = 1
@@ -1541,10 +1514,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     //      if (c[765] || c[846] && (World < 11 || World > 16)) return;
     // +765 (0x2FD) = dead_flag real (lo setea ReceiveDie).
     // +846 (0x34E) = **SafeZone**, NO "mount-only": vale
-    //      TerrainWall[Terrain_Load(x,y)] & 1.  La etiqueta vieja venia de la
-    //      tabla de offsets de CLAUDE.md, que estaba mal (ver la entrada
-    //      "+0x34E es SafeZone, no dead_flag", 2026-08-10).  La logica ya era
-    //      correcta; solo el comentario mentia.
+    //      TerrainWall[Terrain_Load(x,y)] & 1.
     // O sea: muerto, o parado en zona segura fuera de los mapas 11..16.
     if (entity[765] != 0) return;
     if (entity[846] != 0) {
@@ -1569,15 +1539,11 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
 
     // 7) 0049CBF0 escribe Attacking desde el estado de movimiento de la entidad. Ése es
     // el estado que consume el gate de auto-ataque de la invocación siguiente, arriba.
-    // 2026-09-01 FIX — global partido en dos.  Esto escribia `DAT_07e11984`,
-    // que en globals.h es el *debounce de la flecha arriba del chat* (lo escribe
-    // Chat_InputTick con 0/1).  El `Attacking` de IDA vive en **0x00559C58**:
-    // verificado con ida_xrefs_to — lo escriben InitGame L38 (=-1),
+    // El `Attacking` de IDA vive en **0x00559C58** (no en DAT_07e11984, que es el
+    // debounce de la flecha arriba del chat): lo escriben InitGame L38 (=-1),
     // Player_InputTick L942 (=1) y este Attack (=2/-1), y lo leen el gate de
     // auto-ataque de arriba y Player_InputTick L599.  En nuestro arbol esa
     // direccion es `Attacking`, que Mouse_Hover ya usa con esa semantica.
-    // Con el global equivocado el gate `Attacking == 2` no se cumplia nunca y
-    // la continuacion de auto-ataque quedaba muerta.
     if (DAT_07e11e18 != 0 && (int)World != 6) {  // IDA: m_bAutoAttack, World
         const BYTE movementState = entity[444] & 7;       // IDA: v16 = c[444] & 7 (clase)
         if ((movementState != 2 || iType == 24 || iType == 25 || iType == 52)
@@ -1589,11 +1555,9 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     }
 
     // 8) MouseOnWindow (IDA Attack L1330) — si el cursor esta sobre una ventana
-    // de UI, no se ataca.  2026-08-15: estaba diferido ("no trackeamos ese
-    // global"), pero SI existe: `g_MouseOnWindow`, que puebla
-    // `MouseOnWindow_Update` en Player_InputTick.cpp (y al que el widget de chat
-    // le pasa su latch `g_ChatLB_MouseOnWindow`).  Sin este gate, click derecho
-    // sobre el inventario / chat / paneles disparaba el skill igual.
+    // de UI, no se ataca. `g_MouseOnWindow` lo puebla `MouseOnWindow_Update` en
+    // Player_InputTick.cpp (y el widget de chat le pasa su latch
+    // `g_ChatLB_MouseOnWindow`).
     if (g_MouseOnWindow) return;             // IDA L1330: MouseOnWindow (0x07D78094)
 
     // 8b) Gate por estado de animacion (IDA Attack L1335-1345).  `c+261` es el
@@ -1849,11 +1813,11 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 //    y manda via send() con WSAEWOULDBLOCK queue. En nuestro port usamos el
 //    helper Net_SendSmallPacket() que hace exactamente lo mismo + serial stomp.
 //
-// Notas para la implementación (status 2026-05-05):
-//  - Caso 2 (attack): IMPLEMENTADO — calcula distancia al target, llama
+// Notas para la implementación:
+//  - Caso 2 (attack): calcula distancia al target, llama
 //    SetPlayerAttack(c) para la animación local, y manda packet 0x15 con el
 //    target ID (entity index). Si fuera de rango, intenta pathfind.
-//  - Caso 4 (skill): IMPLEMENTADO parcialmente — dispatch sobre skill type
+//  - Caso 4 (skill): implementado parcialmente — dispatch sobre skill type
 //    desde DAT_07d78098 / DAT_07d7809c, llama UseSkillWarrior / UseSkillElf
 //    para los casos confirmados (47=warrior melee skill, 19-23/26-28/43/49/56=
 //    elf magic). Pathfind si fuera de rango.
@@ -1930,10 +1894,9 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         *(float*)(character + 788), *(float*)(character + 792));
 
     const WORD targetKey = *(WORD*)(target + 476);
-    // 2026-09-02: aca habia un `if (targetKey == 0xFFFF) return;` inventado.
-    // UseSkillElf (0x0048A180) no lo tiene: manda el paquete con la key tal cual
-    // la lee y despues SIEMPRE anima (SetPlayerMagic o SetPlayerAttack).  Con el
-    // guard, un slot en estado raro se comia el skill Y la animacion.
+    // UseSkillElf (0x0048A180) no filtra `targetKey == 0xFFFF`: manda el paquete
+    // con la key tal cual la lee y despues SIEMPRE anima (SetPlayerMagic o
+    // SetPlayerAttack).
     const DWORD now = GetTickCount();
 
     if (skillId >= 26 && skillId <= 28) {
@@ -1972,25 +1935,21 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
 // functions.h con los mismos prototipos; los re-declaramos localmente para evitar
 // implicit-decl warnings if a particular helper hasn't been wired up yet.
 //
-// IDA: FUN_004889D0 is ported as Combat_UseWizardSkill in
-// stubs_game.cpp y es el emisor de skill directo que usa Action en el case 4.
+// IDA: FUN_004889D0 is ported as Combat_UseWizardSkill (Skills_WizardElf.cpp)
+// y es el emisor de skill directo que usa Action en el case 4.
 
 // Aliases to match IDA companion variable names
 //   CharactersClient = g_EntityBase (= DAT_07abf5d0, stride 0x394 / 916)
 //   Hero             = DAT_07abf5d8 (local player entity ptr)
 #ifndef ACTION_CHARS_CLIENT
-// 2026-05-06 BUG-FIX MAYÚSCULO: usar DAT_07abf5d0 directamente, NO el alias
-// `g_EntityBase` que está declarado nullptr en stubs.cpp:73 y nunca se
-// asigna. ACTION_CHARS_CLIENT + 916*targetIdx + 16 = NULL+0x738 = AV
-// (user reportó crash apenas entrar al mundo addr=0x55D1D6 param1=0x738
-// 2026-05-06).
+// Usar DAT_07abf5d0 directamente, NO el alias `g_EntityBase`, que nunca se
+// asigna (queda en nullptr).
 #define ACTION_CHARS_CLIENT  ((char*)(uintptr_t)DAT_07abf5d0)
 #define ACTION_HERO          ((char*)DAT_07abf5d8)
 #endif
 
 // Como en IDA (0x0048D640), Action solo LEE la cola c+749; la reescribe
-// Player_InputTick en cada click.  (2026-09-18: se sacaron los cinco clears y
-// el tick secundario que los obligaba.)
+// Player_InputTick en cada click.
 // IDA: Action (0x0048D640)
 void __cdecl Action(DWORD c, DWORD o)
 {
@@ -2102,8 +2061,7 @@ void __cdecl Action(DWORD c, DWORD o)
 
         // IDA LABEL_297 (L952-1189): PMSG_NPC_TALK_RECV
         // (GameServer/NpcTalk.h:10) = [C1][05][30][index[2] big-endian].
-        // 2026-09-02: se removio un `if (npcKey != 0xFFFF)` inventado -- el
-        // binario manda la key tal cual la lee.
+        // El binario manda la key tal cual la lee (sin filtrar 0xFFFF).
         const unsigned short npcKey = *(unsigned short*)(npcEnt + 0x1DC);
         BYTE pkt[5] = { 0xC1, 0x05, 0x30,
                         (BYTE)((npcKey >> 8) & 0xFF), (BYTE)(npcKey & 0xFF) };
@@ -2134,11 +2092,9 @@ void __cdecl Action(DWORD c, DWORD o)
         // IDA Action 0x0048D640 L1194-1212 — alcance segun el arma equipada.
         //   v11 = *(__int16 *)(CharacterMachine + 536);   // wear slot 0 (mano izq)
         //   v12 = *(__int16 *)(CharacterMachine + 604);   // wear slot 1 (mano der)
-        // OJO: el original lee el global CharacterMachine, NO `c`.  El port leia
-        // `c + 536` / `c + 604`, que en la entidad (stride 916) son campos sin
-        // relacion, asi que Range nunca salia del default 1.8 y el arco pegaba
-        // solo cuerpo a cuerpo.  Los ids son TIPOS de item (sin el +400 del
-        // modelo): 136-142 arcos, 128-134 ballestas, 145 el par arco/ballesta.
+        // OJO: el original lee el global CharacterMachine, NO `c` (en la entidad,
+        // stride 916, esos offsets son otros campos).  Los ids son TIPOS de item (sin
+        // el +400 del modelo): 136-142 arcos, 128-134 ballestas, 145 el par arco/ballesta.
         const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
         const int leftHandType  = CM ? *(const short*)(CM + 536) : -1;   // IDA: v11
         const int rightHandType = CM ? *(const short*)(CM + 604) : -1;   // IDA: v12
@@ -2302,7 +2258,7 @@ void __cdecl Action(DWORD c, DWORD o)
     // (Lorencia case 0/133, Devias case 2/22/55, etc).
     // ──────────────────────────────────────────────────────────────────────────
     case 3: {
-        // 2026-05-08: port FIEL completo de IDA Action.c L1417-2243.
+        // Port FIEL de IDA Action.c L1417-2243.
         //
         // 1) Gate de distancia: toma el eje mayor de abs(heroGrid - target). Si
         //    es > 1 tile, el héroe todavía no llegó — retorna y espera.
@@ -2327,14 +2283,10 @@ void __cdecl Action(DWORD c, DWORD o)
         // ── 1. Distance gate ──────────────────────────────────────────────────────────────────────────
         int heroGX = *(int*)(c + 904);
         int heroGY = *(int*)(c + 908);
-        // 2026-09-04 FIX: el comentario anterior decia "en nuestro build TargetX/Y
-        // no son globals" y leia `o + 0x306/0x307`.  Es FALSO: TargetX/TargetY son
-        // 0x07E016C0 / 0x07E016C4 (= TargetX/c4), los mismos que escriben
-        // `CheckTarget` y el bloque de SelectedOperate de Player_InputTick.
-        // El +0x306/0x307 lo setea SOLO el click al suelo, asi que para una accion
-        // sobre mobiliario tenia valores viejos y el gate cortaba con `return`:
-        // el cursor cambiaba, el paquete de movimiento salia, pero la accion
-        // (sentarse / apoyarse / flotar) no se ejecutaba nunca.
+        // TargetX/TargetY son los globals 0x07E016C0 / 0x07E016C4 (= TargetX/c4), los
+        // mismos que escriben `CheckTarget` y el bloque de SelectedOperate de
+        // Player_InputTick; no usar `o + 0x306/0x307`, que lo setea SOLO el click al
+        // suelo.
         //
         // IDA elige el eje de MAYOR delta y gatea sobre ese:
         //   if ( abs(heroX - TargetX) <= abs(heroY - TargetY) ) { v = heroY; t = TargetY; }
@@ -2377,16 +2329,14 @@ void __cdecl Action(DWORD c, DWORD o)
             }
             break;
         case 3:  // Noria
-            // AMBIGUEDAD RESUELTA (2026-09-04).  El decompile cierra el bloque
-            // de mundos con
+            // El decompile cierra el bloque de mundos con
             //     if (World != 3) { if (World == 7) {...}
             //                       if (World != 8 || tile != 78) { LABEL_367: ... } }
             //     if (tile == 8)  goto LABEL_392;   // v307
             //     if (tile != 38) goto LABEL_367;
             //     <SetAction 137/138 + accion 110>
-            // o sea la cola compartida se alcanza con World == 3.  El port
-            // anterior la habia colgado de World 8 llamandola "entrada a la
-            // cueva de Lost Tower"; no lo es.  El source de MU 5.2 lo confirma
+            // o sea la cola compartida se alcanza con World == 3 (no es la "entrada a la
+            // cueva de Lost Tower" de World 8).  El source de MU 5.2 lo confirma
             // termino por termino (ZzzInterface.cpp, MOVEMENT_OPERATE):
             //     WD_3NORIA:  case 8: Sit;  case 38: Healing + facing
             // y el "Healing" del 0.97k es la pose de flotar sobre los orbes de
@@ -2559,11 +2509,9 @@ void __cdecl Action(DWORD c, DWORD o)
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
                     Combat_UseElfSkill((int)c, (int)o);  // UseSkillElf (AOE)
                 }
-                // 2026-09-02: aca habia un `else if (Path_FindRoute(...))` que
-                // hacia caminar al heroe cuando CheckWall fallaba.  IDA
-                // (LABEL_184) no hace nada en ese caso: si la linea de vista
+                // IDA (LABEL_184) no hace nada si CheckWall falla: si la linea de vista
                 // esta cortada, el skill simplemente no sale y la accion queda
-                // encolada hasta el proximo click.
+                // encolada hasta el proximo click (no caminar hacia el blanco).
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
                                  (unsigned char*)(c + 852), (float)skillRange)) {
@@ -2578,11 +2526,9 @@ void __cdecl Action(DWORD c, DWORD o)
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
                     Combat_UseElfSkill((int)c, (int)o);
                 }
-                // 2026-09-02: aca habia un `else if (Path_FindRoute(...))` que
-                // hacia caminar al heroe cuando CheckWall fallaba.  IDA
-                // (LABEL_184) no hace nada en ese caso: si la linea de vista
+                // IDA (LABEL_184) no hace nada si CheckWall falla: si la linea de vista
                 // esta cortada, el skill simplemente no sale y la accion queda
-                // encolada hasta el proximo click.
+                // encolada hasta el proximo click (no caminar hacia el blanco).
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
                                  (unsigned char*)(c + 852), (float)skillRange)) {

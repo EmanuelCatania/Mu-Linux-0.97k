@@ -1,16 +1,3 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
-
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -60,14 +47,13 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 //   - Compute slot offset: (Index * sizeof(ITEM_RAW)) within the inventory
 //     buffer. ITEM_RAW stride is 0x44 (= 68 bytes) per the binary format that
 //     server emits in opcode 0x22 / 0x32 / 0xF3-14.
-//   - Copy 12 bytes of raw item data into the slot (matches what
-//     Net_Process.cpp:2807-2814 already does for case 0x22).
+//   - Copy 12 bytes of raw item data into the slot (lo mismo que hace
+//     Net_Process.cpp para el case 0x22).
 //   - If `First==false`, bump CharacterMachine hash-table ref count (anti-
 //     tamper, no-op per project policy).
 //
-// 2026-05-08: ported as the canonical entry point. Net_Process inline copies
-// keep working unchanged, but anything that needs the IDA name (and the
-// signature taking grid-W/H plus First flag) can now use this.
+// Las copias inline de Net_Process siguen igual; esta es la entrada con el
+// nombre y la firma de IDA (grid W/H + flag First).
 extern "C" int __cdecl ConvertItemType(BYTE* Item);  // declared above
 extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
                                       int slotIdx, int type, int level,
@@ -82,17 +68,8 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     auto clear_slot = [&](int slotIndex) {
         if (slotIndex < 0) return;
         if (isMainInventory && slotIndex < 12) {
-            // 2026-08-22 FIX (items que desaparecian al equipar/desequipar):
-            // esto hacia `Inv + slotIndex * 0x44`, que es la CELDA `slotIndex`
-            // del grid 8x8 — no el wear slot.  Al equipar los pants (slot 4) se
-            // borraba la pocion de la celda 4, o sea la primera fila del
-            // inventario; el server nunca se enteraba, de ahi que el item
-            // "volviera" al reentrar (llega el F3/10) y que rechazara cualquier
-            // drop en esa celda.
-            //
-            // Los 12 wear slots NO tienen espejo en `OffsetInventoryItems`:
-            // viven en `CharacterMachine + 536 + 68*slot`.  Es la sexta copia de
-            // este mismo error (ver CLAUDE.md, 2026-08-08 g-bis).
+            // Los 12 wear slots NO tienen espejo en `OffsetInventoryItems` (ese pool es el
+            // grid 8x8): viven en `CharacterMachine + 536 + 68*slot`.
             static const int kEquipOffsets[12] = {
                 536, 604, 672, 740, 808, 876, 944, 1012, 1080, 1148, 1216, 1284
             };
@@ -178,8 +155,6 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     //
     // Without slot+56 set, sub_4E38B0 line 60 `*(int*)(slot+0x38) > 0` fails →
     // the item is silently skipped from the render walk → invisible in grid.
-    // 2026-05-08: this was the bug that caused inventory items received via
-    // packets 0x32/0x39/F3-14 to populate the data array but not appear.
     BYTE durability = Item[2];                    // raw durability byte
     if (durability == 0) durability = 1;          // ensure render gate
     *(int*)(slot + 56) = (int)durability;

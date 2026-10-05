@@ -1,7 +1,7 @@
 // Render_SpriteHelpers.cpp
 //
-// Extracted from stubs_game.cpp.  Owns the additive blend setup and sprite/
-// digit-atlas draw helpers.  Function comments retain IDA provenance.
+// Blend aditivo y helpers de dibujo de sprites/atlas de dígitos. Los
+// comentarios de cada función conservan la procedencia IDA.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -9,12 +9,9 @@
 // EnableAlphaBlend2 @ 0x00511810 (~28 lines) — OpenGL additive blending
 void __stdcall GL_SetBlendInvSrcColor(void) {
     // 0x00511810 — OpenGL additive blending (ONE_MINUS_DST_COLOR, ONE)
-    // 2026-04-30 BUG-FIX: previously cached state in DAT_07eaa160/164/168
-    // — those addresses are CheckInventory + adjacent ITEM ptrs, NOT GL
-    // state.  IDA shows the real cache is at DAT_083a412c (AlphaBlendType),
-    // DAT_083a411d (AlphaTestEnable), DAT_083a4125 (TextureEnable).
-    // Writing 2/3/5 to CheckInventory was crashing Scene_MapTick when it
-    // dereferenced CheckInventory as ITEM*.
+    // Cache de estado real (IDA): DAT_083a412c (AlphaBlendType), DAT_083a411d
+    // (AlphaTestEnable), DAT_083a4125 (TextureEnable). Ojo: DAT_07eaa160/164/168
+    // son CheckInventory + punteros ITEM vecinos, NO estado GL.
     if (DAT_083a412c != 5) {           // AlphaBlendType
         DAT_083a412c = 5;
         glEnable(0x0BE2);              // GL_BLEND
@@ -99,6 +96,3 @@ void __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float H
 }
 
 // RenderNumber2D vive en Render/HUD_Pass2.cpp.
-//
-// 2026-09-26: aca habia una copia bajo el nombre RenderNumber2D.  Las dos
-// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.

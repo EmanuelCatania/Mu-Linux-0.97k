@@ -1,5 +1,4 @@
 // UI_LegacyWidgetSystem.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos ------------------
+// Cloth_Integrate esta en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -149,18 +148,9 @@ void* __fastcall Widget_CtorBase(void *param_1)
 
     ((int *)param_1)[0x12] = 0;       // count at +0x48 = 0
 
-    // 2026-08-11 — vtable. IDA hace `*(_DWORD *)this = &off_552520;` y varias
-    // rutinas la usan por indirección; con el campo sin inicializar se ejecuta
-    // basura (crash 0xC0000005 param0=8 al entrar al mundo, desde
-    // `DeleteCloth`/DeleteCloth que llama vtable[0](3)).
-    //
-    // Leída del binario original (`Cliente armado/main.exe`, MD5 eb95ac…):
-    //     off_552520 = { 0x0045AAA0, 0x00408780, 0x004089B0, 0x00408FF0 }
-    // De esas cuatro sólo `sub_408FF0` está portada (y es un stub vacío); las
-    // otras tres no existen en este build. Se instala una vtable bien formada
-    // con no-ops para que el objeto sea válido y las indirecciones no salten a
-    // basura. TODO: portar 0x0045AAA0 (dtor), 0x00408780, 0x004089B0 y el
-    // cuerpo real de 0x00408FF0 (render de la tela).
+    // vtable. IDA hace `*(_DWORD *)this = &off_552520;` y varias rutinas la usan
+    // por indirección (p.ej. DeleteCloth llama vtable[0](3)): sin inicializar se
+    // ejecuta basura.  El contenido está en g_ClothVTable, más arriba.
     *(const void **)param_1 = (const void *)g_ClothVTable;
 
     Widget_NodeInit((int)param_1);
@@ -187,16 +177,15 @@ void  __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3,
 
 // IDA: Widget_CheckState (0x00408900)
 // Widget_CheckState(widget, hash, flags)
-// __thiscall in original (this=widget via ECX). Calls Sound_UpdateChannel3D_Tick `flags` times,
-// returns 0 if any fails, 1 if all pass. Sound_UpdateChannel3D_Tick is a void stub → always return 1.
+// __thiscall in original (this=widget via ECX). Calls Sound_UpdateChannel3D_Tick
+// (sub_408940) `flags` times; returns 0 if any fails, 1 if all pass.
 // Port FIEL de IDA `sub_408900` (Hex-Rays perdió el `this`, que viaja en ECX):
 //     v2 = 0;
 //     if (a2 <= 0) return 1;
 //     while (sub_408940(a1)) { if (++v2 >= a2) return 1; }
 //     return 0;
 // `hash` son los BITS del dt (0x3ba3d70a = 0.005f) y `flags` el nº de
-// iteraciones. 2026-08-11: era un stub que devolvía 1 SIN ejecutar la
-// simulación, así que los nodos de la tela nunca se movían.
+// iteraciones.
 int __cdecl Sound_UpdateChannel3D_Tick(int *param_1, float dt);
 int __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags) {
     if (!widget || flags <= 0) return 1;
@@ -220,22 +209,18 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
     char *thiz = (char*)widget;
     *(float *)(thiz + 0x04) = entity;
     *(int   *)(thiz + 0x10) = tb;
-    // 2026-08-11 FIX: los tres campos de abajo estaban CORRIDOS un parámetro.
     // IDA `sub_408130` L78-89:
-    //     this[6] (+0x18) = a4        ← nuestro port ponía p3
-    //     this[7] (+0x1C) = a5        ← ponía p4
-    //     this[8] (+0x20) = a8        ← ponía p5
-    //     this[9] (+0x24) = a9        ← ok
-    // El de +0x20 es el ANCHO de la grilla: con p5 (0.0 en la llamada de la
-    // capa) todos los nodos quedaban en la misma columna.
+    //     this[6] (+0x18) = a4
+    //     this[7] (+0x1C) = a5
+    //     this[8] (+0x20) = a8   (ANCHO de la grilla)
+    //     this[9] (+0x24) = a9
     *(float *)(thiz + 0x18) = *(float*)&p4;   // a4
     *(float *)(thiz + 0x1c) = *(float*)&p5;   // a5
-    // 2026-08-11 FIX: IDA `sub_408130` L80-90 guarda
+    // IDA `sub_408130` L80-90 guarda
     //     this[10] (+0x28) = a6   ← 6º param
-    //     this[11] (+0x2c) = a7   ← 7º param  (nuestro port ponía p3, el 3º)
+    //     this[11] (+0x2c) = a7   ← 7º param
     //     this[12] (+0x30) = a7 * a6
-    // Con p3 en +0x2c la grilla quedaba de 19 filas sobre 10x10 → el render
-    // (sub_408FF0 / sub_4091D0, que leen +0x28 y +0x2c) se iba de rango.
+    // El render (sub_408FF0 / sub_4091D0) lee +0x28 y +0x2c.
     *(int   *)(thiz + 0x28) = p6;             // cols
     int node_count = p6 * p7;
     *(int   *)(thiz + 0x08) = p3;
@@ -329,17 +314,12 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
                 float out_col[4] = {0};
                 BMD_TransformPosition((void *)(DAT_05828d58 + *(short *)(entity_ptr + 2) * 0xbc),
                              local_3c, out_pos, out_col, '\x01');
-                // 2026-08-11 FIX: BMD__TransformPosition LEE del 3er arg (Pos)
-                // y ESCRIBE en el 4º (WorldPos). El port leía de vuelta
-                // `out_pos` — la ENTRADA sin transformar — y descartaba el
-                // resultado, así que la malla quedaba en espacio local en vez
-                // de en la posición del personaje.
+                // BMD__TransformPosition LEE del 3er arg (Pos) y ESCRIBE en el 4º
+                // (WorldPos): el resultado transformado es out_col, no `out_pos`.
                 nx = out_col[0]; ny = out_col[1]; nz = out_col[2];
             }
 
-            // IDA `v31 = v30 + i * v29` con v29 = this[10] = W (columnas).
-            // 2026-08-11: era `H * row + col`. Coincide sólo cuando W == H
-            // (la capa del MG es 10x10); los demás cloths quedaban barajados.
+            // IDA `v31 = v30 + i * v29` con v29 = this[10] = W (columnas), no H.
             int ni = W * row + col;
             SpringNode_SetPos((char*)nodes + ni * 0x3c, nx, ny, nz, 0);
         }
@@ -349,8 +329,6 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
     // IDA: `if ((this[5] & 0x300) != 256) { v58 = 4; v63 = 1; }`
     //   v58 -> springs VERTICALES (bit 4 = solver de rango, sub_407B90)
     //   v63 -> springs DIAGONALES (bit 1 = solver de igualdad, sub_407C60)
-    // 2026-08-11: las diagonales recibían `vert_flag` (4) en vez de v63 (1),
-    // o sea entraban al solver de rango y nunca al de igualdad.
     BYTE vert_flag = (((*(unsigned int *)(thiz + 0x14) & 0x300) != 0x100)) ? 4 : 0;
     BYTE diag_flag = (((*(unsigned int *)(thiz + 0x14) & 0x300) != 0x100)) ? 1 : 0;
     int sp = 0;

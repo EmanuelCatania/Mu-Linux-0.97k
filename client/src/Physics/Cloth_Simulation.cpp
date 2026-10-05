@@ -1,5 +1,4 @@
 // Cloth_Simulation.cpp
-// Extracted from stubs_misc_helpers.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -154,7 +153,7 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Sistema de tela (capa del MG) — SOLVER. Port 2026-08-11.
+// Sistema de tela (capa del MG) — SOLVER.
 //
 // Layout del widget (stride 0x54), índices en DWORDs como los usa IDA:
 //   [1]=+0x04 entity   [2]=+0x08 boneIdx   [5]=+0x14 flags
@@ -183,7 +182,7 @@ int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);// spring
 
 // Vec3_Length @ 0x004f9c40 — Vec3_Length: returns sqrt(dot(v,v)), does NOT modify v.
 // (Ghidra shows return as float10 left in x87 ST0; callers use the return value as distance.)
-// Vec3_Length (IDA-activated, was Ghidra stub)
+// Vec3_Length (IDA-activated)
 float __cdecl Vec3_Length(float *a1)
 {
   long double v1; // st7
@@ -215,10 +214,6 @@ void __fastcall VerletNode_AddAccel(void *a, float x, float y, float z) {
 // ClothNode_Integrate @ 0x00407AF0 — ClothNode_Integrate: paso de Euler semi-implícito.
 // Layout: +0x04 accel[3], +0x10 vel[3], +0x1C pos[3], +0x28 pinned(byte).
 // _DAT_00559070 = 400.0 (leído del binario). Port FIEL de IDA `sub_407AF0`.
-//
-// 2026-08-11: el port limpiaba la aceleración al final. Eso NO está en IDA —
-// la aceleración la reescribe entera `sub_4079E0` (gravedad + viento) al
-// principio de cada tick, así que el clear extra era inofensivo pero falso.
 void __fastcall ClothNode_Integrate(void *a, float v) {
     char *p = (char*)a;
     if (*(BYTE*)(p+0x28) & 1) return;  // nodo fijado — no se integra
@@ -350,7 +345,7 @@ void __cdecl Cloth_SpringEqual(int a1, int a3, float rest)
 }
 
 // VerletSystem_Flush @ 0x00407d10 — VerletSystem_Flush: apply accumulated position corrections, zero buffer
-// VerletSystem_Flush (IDA-activated, was Ghidra stub)
+// VerletSystem_Flush (IDA-activated)
 char __fastcall VerletSystem_Flush(int a1)
 {
   int v1; // eax
@@ -429,7 +424,7 @@ void __fastcall SpringNode_ZeroFields(int param_1) {
 }
 
 // SpringNode_Ctor @ 0x00407950 — SpringNode_Ctor: set vtable + zero fields.
-// SpringNode_Ctor (IDA-activated, was Ghidra stub)
+// SpringNode_Ctor (IDA-activated)
 void __fastcall SpringNode_Ctor(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
@@ -489,7 +484,7 @@ void* __fastcall VerletNode_CtorBase(void *param_1) {
 }
 
 // VerletNode_CtorExt @ 0x00407ED0 — VerletNode_CtorExt: zero fields + clear +0x20.
-// VerletNode_CtorExt (IDA-activated, was Ghidra stub)
+// VerletNode_CtorExt (IDA-activated)
 int __cdecl VerletNode_CtorExt(DWORD *_this)
 {
   int result; // eax
@@ -527,7 +522,7 @@ void __cdecl FUN_00408680(void *_this, char flags);
 void *g_ClothNodeVTable[1] = { (void *)FUN_00408680 };
 
 // ClothAnchor_Ctor @ 0x00407E50 — ClothAnchor_Ctor: full constructor (base + ext).
-// ClothAnchor_Ctor (IDA-activated, was Ghidra stub)
+// ClothAnchor_Ctor (IDA-activated)
 DWORD *__cdecl ClothAnchor_Ctor(DWORD *_this)
 {
   VerletNode_CtorBase(_this);
@@ -622,12 +617,9 @@ int __cdecl Cloth_CollideAnchors(DWORD *_this)
 // ClothAnchor_SetParams @ 0x00407EF0 — ClothAnchor_SetParams.
 // Fields: +4/+8/+0xc = posición LOCAL, +0x20 = radio, +0x10 = índice de HUESO.
 //
-// 2026-08-11: el último parámetro era `float`. En IDA (`sub_407EF0`) es
-// `this[4] = a6` — un DWORD entero, y `sub_408E30` lo usa como
-// `48 * v5[4]` para indexar la matriz de huesos. Con 17.0f guardado como
-// float, `v5[4]` valía 0x41880000 y el índice se iba a 52 GB del arranque
-// de la tabla. Los call sites de IDA lo confirman: los 5 primeros args son
-// bits de float y el 6º un entero chico (2, 10, 17, 18, 19).
+// Ojo: el último parámetro es un DWORD entero (IDA `sub_407EF0`: `this[4] = a6`),
+// no float: `sub_408E30` lo usa como `48 * v5[4]` para indexar la matriz de
+// huesos.  Los call sites de IDA pasan enteros chicos (2, 10, 17, 18, 19).
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx) {
     char *p = (char*)node;
     *(float *)(p + 0x04) = p1;

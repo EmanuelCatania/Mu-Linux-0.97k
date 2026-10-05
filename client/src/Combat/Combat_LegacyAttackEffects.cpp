@@ -1,16 +1,3 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
-
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -62,9 +49,8 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 //   0x4D 'M' Lightning   → CreateJoint(0x4E5, ...)×40
 //   (most others)        → CreateEffect(0xBF, pos) + PlayBuffer(0x2E)
 // Second section: target effects for skill category 0x11 (direct) and 0x03 (magic).
-// 2026-08-16: version PARCIAL (374 lineas). Desactivada a favor del port fiel
-// de IDA en stubs_IDA_ports.cpp (2043 lineas), que ahora se activa con
-// IDA_PORT_00445230 en globals.h.
+// Versión PARCIAL, desactivada: IDA_PORT_00445230 está definida en globals.h y
+// rige el port fiel de Combat_AttackEffect.cpp.
 #if !defined(IDA_PORT_00445230)
 void __cdecl AttackEffect(int entity)
 {
@@ -445,6 +431,6 @@ void __cdecl AttackEffect(int entity)
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2026-05-08: Companion-DLL Offsets.h cross-reference — port small functions
-// that were truly missing in our build. Sizes per IDA decompile.
+// Funciones chicas que faltaban, cruzadas con Offsets.h del DLL companion.
+// Tamaños según el decompile de IDA.
 // ─────────────────────────────────────────────────────────────────────────────

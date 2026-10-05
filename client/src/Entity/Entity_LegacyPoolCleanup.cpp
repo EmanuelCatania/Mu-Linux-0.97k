@@ -1,15 +1,4 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
+// Entity_LegacyPoolCleanup.cpp — DeleteCharacter y DeleteEffect.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -90,10 +79,8 @@ extern "C" void __cdecl DeleteCharacter(int Key)
 extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
 {
     DWORD* o = (DWORD*)((char*)&DAT_07b11670[0] + 4);
-    // 2026-09-04: el bound era 124 slots.  El pool de efectos tiene 200
-    // (IDA acota con `&unk_7B27154`: (0x07B27154 - 0x07B11674) / 0x1BC = 200) y
-    // ya se habia redimensionado en 2026-08-15; esta funcion quedo con el valor
-    // viejo, asi que los efectos de los slots 124..199 no se borraban nunca.
+    // El pool de efectos tiene 200 slots (IDA acota con `&unk_7B27154`:
+    // (0x07B27154 - 0x07B11674) / 0x1BC = 200): se recorre el array entero.
     DWORD* end = (DWORD*)((char*)&DAT_07b11670[0] + sizeof(DAT_07b11670) + 4);
     while (o < end) {
         if (*((BYTE*)o - 4) != 0 &&
@@ -106,5 +93,3 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
         o += 111;  // stride 0x1BC
     }
 }
-// 2026-09-25: aca habia un puente FUN_00460d20 sin callers que solo llamaba a
-// DeleteEffect (misma direccion, 0x00460D20).  Eliminado.

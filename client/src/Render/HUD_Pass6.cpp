@@ -1,4 +1,4 @@
-// HUD_Pass6.cpp — final pass: closes every remaining stub.
+// HUD_Pass6.cpp — última tanda de paneles del HUD.
 //
 // Each function in this file is a real port from IDA (1:1 structure) — the
 // anti-tamper hash-table dances around CharacterMachine / TradeOpened /
@@ -44,16 +44,12 @@ extern "C" void Net_SendNpcTalkClose(void);
 
 // Origen (esquina superior izquierda) de los paneles Character / Guild.
 //
-// 2026-08-08 FIX "el botón X no cierra guild/party/character (en el inventario
-// sí anda)": esto eran DOS `static int` de este .cpp, o sea una SEGUNDA copia
-// de globals que sí existen (CharacterInfoStartX/Y = DAT_07ea982c/30,
-// GuildListStartX/Y = DAT_07e91788/84). El render escribía las copias locales
-// y los hit-tests de cierre (SecondPassword_Screen1 / SecondPassword_Screen3 en Net/SecondPassword,
-// port de sub_4E4760 L617-629 y sub_4E5DE0 L336-357) leían los globals reales,
-// que quedaban en 0 → el rect de la X caía en (25..49, 395..419) de PANTALLA en
-// vez de (panelX+25, panelY+395), y encima SecondPassword_Screen3/Party_MemberClickHandler hacen
-// early-return cuando el origen es 0, así que el hit-test ni corría.
-// El inventario funcionaba porque InventoryStartX/Y sí es el global real.
+// Son los globals reales (CharacterInfoStartX/Y = DAT_07ea982c/30,
+// GuildListStartX/Y = DAT_07e91788/84), no copias locales: los hit-tests de
+// cierre (SecondPassword_Screen1 / SecondPassword_Screen3 en Net/SecondPassword,
+// port de sub_4E4760 L617-629 y sub_4E5DE0 L336-357) los leen, y
+// SecondPassword_Screen3/Party_MemberClickHandler hacen early-return cuando el
+// origen es 0.
 #define CharacterInfoStartX  (*(int*)&DAT_07ea982c)
 #define CharacterInfoStartY  (*(int*)&DAT_07ea9830)
 #define GuildListStartX      (*(int*)&DAT_07e91788)
@@ -243,20 +239,14 @@ extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
             float v8 = (float)((double)row + fPosY);
             for (int c = 0; c < iMaxWidth; ++c) {
                 float x = (float)((double)(20 * c) + fPosX);
-                // 2026-07-27 FIX "todos los slots se ven iguales": ITEM.Type es
-                // short (signed). Una celda vacía = -1 (0xFFFF). El check estaba
-                // como `== (WORD)-1`: (WORD)-1 = 0xFFFF = 65535, pero v7->Type
-                // (short -1) promociona a int como -1 → `-1 == 65535` SIEMPRE
-                // falso → toda celda vacía caía al else y dibujaba la textura 278
-                // (ocupada) → grid uniforme. IDA usa `v7->Type == -1`.
+                // ITEM.Type es short (signed): una celda vacía = -1 (0xFFFF). Comparar con
+                // `-1`, no con `(WORD)-1` (65535), que nunca coincide tras la promoción a int.
+                // IDA usa `v7->Type == -1`.
                 if (v7->Type == -1) {
-                    // 2026-09-09: aca habia un `glColor3f(1,1,1)` fijo.  IDA
-                    // (0x4E37B0) llama `InventoryColor(v7)` en las DOS ramas, y
-                    // esa es justamente la que muestra la SILUETA del item que
-                    // se esta arrastrando: el hit-test escribe ITEM.Color = 2
-                    // (no entra) / 3 (entra) / 4 (moneda) sobre las celdas
-                    // VACIAS bajo el cursor, y con el color fijo ese marcado no
-                    // se veia nunca.
+                    // IDA (0x4E37B0) llama `InventoryColor(v7)` en las DOS ramas, y esa es
+                    // justamente la que muestra la SILUETA del item que se esta arrastrando: el
+                    // hit-test escribe ITEM.Color = 2 (no entra) / 3 (entra) / 4 (moneda) sobre
+                    // las celdas VACIAS bajo el cursor.
                     InventoryColor(v7);
                     GL_DrawTexture(277, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
                 } else {
@@ -315,8 +305,8 @@ char __cdecl sub_4F5CE0_(void)
     return (char)ChaosMixOpened;
 }
 
-// Wire over the previous stub of FUN_004f5ce0 (declared in HUD_Pass1.cpp).
-// HUD_Pass1's stub took (int,int,int,int) — we redirect from there.
+// FUN_004f5ce0_realbody no tiene callers: el wrapper FUN_004f5ce0(int,int,int,int)
+// que se usa está en HUD_Pass1.cpp.
 extern "C" void FUN_004f5ce0_realbody(void) { sub_4F5CE0_(); }
 
 // =============================================================================
@@ -386,7 +376,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
     // sub_4E6550, en el tick; no aca en el render.
 
-    // ── In-world click handler hook (2026-05-08) ────────────────────────────
+    // ── In-world click handler hook ──────────────────────────────────────────
     // FUN_004d23b0 = grid hit-test + pickup + right-click use dispatcher.
     // Must run BEFORE RenderItemsBoxes so highlight bytes are set when the
     // item bitmaps are painted. Drop dispatcher (Inventory_DropDispatch) is invoked
@@ -537,12 +527,9 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     }
 
     // ── Full Party panel ───────────────────────────────────────────────────
-    // 2026-07-27 FIX (tienda vacía intermitente): estos scratch escribían en
-    // Inventory[32], que es EXACTAMENTE el primer slot del overlay del pool de
-    // la TIENDA (&Inventory[32].WalkSpeed). Cada frame con el panel de Party
-    // abierto pisaba el slot 0 → el render lo veía vacío (diag SHOPREND:
-    // slot0Type=-1 occ=0 sin ningún paquete de red en el medio). En el binario
-    // original ese scratch vive en otra dirección; acá le damos storage propio.
+    // Scratch con storage propio: en el binario vive en otra dirección, y acá
+    // Inventory[32] es el primer slot del pool de la TIENDA, así que no se puede
+    // usar como scratch.
     g_PartyPanelScratchX = a1;
     g_PartyPanelScratchY = a2;
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -569,20 +556,15 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             RenderText(a1 + 20, a2 + dy, GlobalText[191 + i], 0, 0, 0);
         }
     } else {
-        // 2026-08-25 FIX (el panel mostraba coords y HP en basura): la base
-        // estaba en `Party + 24`, o sea TODOS los campos corridos 24 bytes —
-        // se leia dentro del registro SIGUIENTE. IDA `RenderParty` (0x4EF160
-        // L435) usa `v4 = 36 * row + Party`, la base del registro:
+        // La base es la del registro: IDA `RenderParty` (0x4EF160 L435) usa
+        // `v4 = 36 * row + Party`:
         //     +0        name[10]
         //     +12       map      -> GlobalText[map + 30]
         //     +13, +14  X, Y
         //     +16, +20  CurLife, MaxLife (DWORD)
-        // El +24 SI es correcto para las barras del HUD de mas arriba (ahi el
-        // byte de paso de vida vive en +24, IDA L297 `v67 = &Party + 6`), pero
-        // no para este panel.
-        //
-        // Los offsets relativos ya estaban bien; lo unico que fallaba era la
-        // base — y el nombre lo compensaba a mano con `v4 - 24`.
+        // El +24 es correcto para las barras del HUD de mas arriba (ahi el byte de
+        // paso de vida vive en +24, IDA L297 `v67 = &Party + 6`), pero no para este
+        // panel.
         DWORD* slot = (DWORD*)Party;
         for (int row = 0; row < PartyNumber; ++row) {
             BYTE* v4 = (BYTE*)(slot + row * 9);
@@ -664,19 +646,17 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText((int)v59, (int)v63 - 13, GlobalText[221]);
-        // 2026-05-04: Party panel X close button click handler.  The original
-        // 0.97k routes this via a __thiscall hit-test (sub_402F40 pattern at
-        // MouseX in [475,499) × MouseY in [395,419) when MouseLButtonPush);
-        // we add the equivalent inline here so the X button actually closes
-        // the panel, mirroring the bottom-HUD Party toggle behaviour.
+        // Party panel X close button click handler.  The original 0.97k routes this
+        // via a __thiscall hit-test (sub_402F40 pattern at MouseX in [475,499) ×
+        // MouseY in [395,419) when MouseLButtonPush); we add the equivalent inline
+        // here so the X button actually closes the panel, mirroring the bottom-HUD
+        // Party toggle behaviour.
     }
 }
 
-// 2026-08-25: esto era un `static` propio del archivo, o sea una SEGUNDA copia
-// del flag. El global real es 0x7EAA144 (= DAT_07eaa144), que es el que lee el
-// hit-test de la creacion de guild en `SecondPassword_Screen1`: el handler del 0x55
-// seteaba esta copia y el hit-test leia la otra, que nunca pasaba de 0.
-// Ver [[global-partido-en-dos]].
+// Es el global real 0x7EAA144 (= DAT_07eaa144), no una copia del archivo: lo
+// setea el handler del 0x55 y lo lee el hit-test de la creacion de guild en
+// `SecondPassword_Screen1`.
 #define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
@@ -699,7 +679,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
         *(short*)((BYTE*)Hero + 474) = 999;
 }
 
-// 2026-08-25: el dialogo previo "¿crear guild?" — modo 0 del mismo panel.
+// El dialogo previo "¿crear guild?" — modo 0 del mismo panel.
 // El server lo abre con `[C1][03][54]` (`GCGuildMasterQuestionSend`,
 // Protocol.cpp:1795) cuando hablas con el NPC Guild Master Y cumplis los
 // requisitos; si ya estas en un guild o te falta nivel/resets manda un chat o
@@ -753,9 +733,7 @@ extern "C" {
     int  g_nGuildMemberCount = 0;
 }
 // `byte_7E919BC` NO es un buffer propio: es la tabla global `DAT_07e919bc`
-// (stride 80). Antes se definía acá un array separado de 1280 bytes, así que
-// Net_Process escribía en una memoria y el render leía otra — el panel de
-// guild mostraba "no tenés guild" aunque la lista hubiera llegado.
+// (stride 80), la misma que escribe Net_Process.
 #define byte_7E919BC  DAT_07e919bc
 
 extern void SetPlayerColor(BYTE PK);
@@ -767,8 +745,8 @@ extern void SetPlayerColor(BYTE PK);
 // Agility/Defense row + Vitality/HP row + Energy/Mana row + DK/MG skill
 // damage line (when applicable) + Charisma/Command (DK/MG) line.
 // Anti-tamper CharacterMachine hash-table refcount blocks (~60% of original
-// bytes) skipped per CLAUDE.md project policy — they no-op when the table
-// is empty (`dword_55C9BD4 == 0`) which is our default state.
+// bytes) skipped — they no-op when the table is empty
+// (`dword_55C9BD4 == 0`) which is our default state.
 // =============================================================================
 extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 {
@@ -812,9 +790,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
 
     // Zone label: "ServerName - Channel" via GlobalText[460]/[461].
-    // 2026-05-04: el sprintf usaba `"%s"` con GlobalText[460] como dato → si
-    // GlobalText[460] contenía un format spec como "%s - %d" lo copiaba
-    // literal al pszText y el HUD mostraba "%s - %d" en pantalla.
+    // GlobalText[460]/[461] es el FORMATO (contiene "%s - %d"), no un dato.
     // IDA `sub_4ECC60:280-287` hace:
     //   if (sub_406B10(ServerSelectHi, dword_56169C))
     //     sprintf(pszText, GlobalText[460], &ServerList[idx], channel);
@@ -861,7 +837,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     SelectObject(m_hFontDC, g_hFontBold);
 
     // ── Level (label) ───────────────────────────────────────────────────────
-    // 2026-05-04: GlobalText[200] format = "Nivel: %d / %d" (CharacterLevel /
+    // GlobalText[200] format = "Nivel: %d / %d" (CharacterLevel /
     // MaxCharacterLevel). El IDA Hex-Rays decompile perdió el 2º arg; el
     // companion source PrintPlayer.cpp:472 confirma 2 args.
     // g_MaxCharacterLevel se popula por opcode 0xDF (Net_Process); default 400.
@@ -914,9 +890,8 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 24, iPosY + 95, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
 
     // ── Stat-add [+] buttons (sprites 0x120 / 0x121) ────────────────────────
-    // 2026-08-08: la geometría venía de OpenMU (PrintPlayer.cpp) y NO coincidía
-    // con el hit-test real. Ahora sale de IDA sub_4E5DE0 L94-98, que es donde el
-    // binario testea estos botones:
+    // La geometría sale de IDA sub_4E5DE0 L94-98, que es donde el binario testea
+    // estos botones (no de OpenMU PrintPlayer.cpp):
     //     x ∈ [CharacterInfoStartX+125, +149)      (24 px)
     //     y ∈ [CharacterInfoStartY+115+60*row, +24)
     // Gate: LevelUpPoint = *(WORD*)(CharacterAttribute+0x54) != 0.
@@ -929,17 +904,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         float btnY = (float)(iPosY + 115 + 60 * row);
         bool hover = ((double)MouseX >= btnX && (double)MouseX < btnX + 24.0 &&
                       (double)MouseY >= btnY && (double)MouseY < btnY + 24.0);
-        // 2026-05-04: tap clicks (DOWN+UP within one frame) lose DAT_083a4124
-        // before this render runs — WM_LBUTTONUP clears it.  Use the latched
-        // click-event flag DAT_083a413c instead (set on UP, sticks until
-        // consumed). Hover-without-click still highlights via 4124 for held
-        // clicks.  Player_InputTick already gates on g_MouseOnWindow so it
-        // won't double-fire ground walk.
-        // 2026-08-08: SOLO render + highlight. El CLICK (y el envío del
-        // F3/06) lo maneja `SecondPassword_Screen3` (port de sub_4E5DE0 L85-244), que es
-        // donde el binario original tiene el hit-test de estos botones — mismo
-        // rect (+125..+149 × +115+60*row ..+24) y mismo gate (LevelUpPoint).
-        // Tener el send acá TAMBIÉN mandaba el paquete dos veces por click.
+        // Tap clicks (DOWN+UP within one frame) lose DAT_083a4124 before this render
+        // runs — WM_LBUTTONUP clears it.  Use the latched click-event flag
+        // DAT_083a413c instead (set on UP, sticks until consumed). Hover-without-click
+        // still highlights via 4124 for held clicks.
+        // SOLO render + highlight: el CLICK (y el envío del F3/06) lo maneja
+        // `SecondPassword_Screen3` (port de sub_4E5DE0 L85-244), que es donde el
+        // binario original tiene el hit-test de estos botones. Mandarlo también acá
+        // duplicaría el paquete.
         bool pressed = hover && (DAT_083a4124 != 0 || DAT_083a413c != 0);
         (void)statSlot;
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -1197,12 +1169,9 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     // o sea despacha el slot 4 de la vtable del widget de lista (el que dibuja
     // las filas de miembros).
     //
-    // 2026-08-15: el AV de EJECUCIÓN que había acá NO era "el objeto no está
-    // construido" — `WinMain.cpp:844` sí lo construye vía
-    // `ChatListBox_ConstructWhisper()`.  El problema era que ese constructor le
-    // instalaba la vtable del CHAT (`s_ChatLB_VTable`, off_5525CC) cuando el
-    // binario le pone off_5526EC, y 13 de los 30 slots DIFIEREN — entre ellos
-    // los cuatro que usa este dispatch (20/22/23/24).  Corregido en
+    // El objeto lo construye `WinMain.cpp` vía `ChatListBox_ConstructWhisper()`,
+    // con la vtable off_5526EC (no la del CHAT, off_5525CC: 13 de los 30 slots
+    // difieren, entre ellos los cuatro que usa este dispatch, 20/22/23/24). Ver
     // `UI/ChatListBox.cpp` (bloque "WIDGET DE LISTA DE GUILD").
     if (g_nGuildMemberCount > 0 && DAT_055c9ff4) {
         DWORD* obj = (DWORD*)(uintptr_t)DAT_055c9ff4;
@@ -1226,8 +1195,8 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
 // =============================================================================
 extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 {
-    // 2026-07-27 FIX: idem Party panel — Inventory[32] es el slot 0 del pool de
-    // la tienda; usar storage propio en vez de pisarlo.
+    // Storage propio, igual que el Party panel: Inventory[32] es el slot 0 del
+    // pool de la tienda.
     g_GuildCreatorScratchX = iPosX;
     g_GuildCreatorScratchY = iPosY;
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -1445,8 +1414,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
-    // El hit-test lo hace FUN_004ec330 (sub_4EC330).  Hasta 2026-09-12 no se
-    // dibujaba ninguno: el herrero no mostraba los de reparacion.
+    // El hit-test lo hace FUN_004ec330 (sub_4EC330).
     {
         const BYTE shopMode = ((BYTE*)&DAT_07eaa150)[2];     // BYTE2(dword_7EAA150)
         auto over = [](float bx, float by) {
@@ -1511,10 +1479,8 @@ extern "C" void __cdecl RenderShopInterface(void)
             RenderText((int)bx + 10, ty, Buffer, 0, 0, 0);
         }
     }
-    // 2026-09-12: aca el port dibujaba una X de cierre (bitmap 280) en
-    // (+25, +395).  RenderShopInterface (0x4F1F50) no la tiene: la tienda se
-    // cierra con la X del inventario (sub_4EC330, InventoryStartX + 25).  Esa
-    // X inventada tapaba la etiqueta de "reparar todo".
+    // RenderShopInterface (0x4F1F50) no tiene X de cierre propia: la tienda se
+    // cierra con la X del inventario (sub_4EC330, InventoryStartX + 25).
 }
 
 static int ChaosMixLegacyValue()
@@ -1641,12 +1607,10 @@ extern "C" void __cdecl RenderChaosMix(void)
 
 // RenderWarehouse — sub_4F3170 @ 0x004F3170 (2776 bytes).
 //
-// 2026-08-08: port completo. Antes era un esqueleto (interfaz + grid + un botón
-// suelto 280) al que le faltaba TODA la fila inferior: el zen guardado, el
-// impuesto de retiro y los 3 botones (guardar zen / sacar zen / candado).
-// El hit-test de esos botones ya estaba portado (SecondPassword_Screen9, mal llamado
-// "SecondPassword_Screen9" en Net/SecondPassword.cpp) pero no se veía nada,
-// así que había que adivinar dónde clickear.
+// Incluye la fila inferior: el zen guardado, el impuesto de retiro y los 3
+// botones (guardar zen / sacar zen / candado). El hit-test de esos botones es
+// SecondPassword_Screen9 (Net/SecondPassword.cpp, nombre heredado: es el de
+// sub_4EB5D0).
 //
 // Ruido anti-tamper (hash table sobre CharacterMachine alrededor de CADA lectura
 // de +0x54C/+0x548 y del Level) omitido per policy — el efecto neto es la
@@ -1783,20 +1747,14 @@ extern "C" void __cdecl RenderWarehouse(void)
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// The 0.97K event dialog is not an item grid.  It is a selector of four Devil
-// Square or six Blood Castle levels (IDA RenderEventWindow @ 0x004F3C50).
-// Keeping it as a generic InventoryInterface skeleton was why these NPCs looked
-// like a shop even when ReceiveTalk had correctly selected EventWindowOpened.
 // ── RenderEventWindow (0x004F3C50) ───────────────────────────────────────────
-// Selector de nivel del evento: 4 filas para Devil Square, 6 para Blood Castle.
+// Selector de nivel del evento: 4 filas para Devil Square, 6 para Blood Castle
+// (no es una grilla de items).
 //
-// 2026-09-07: el port anterior manejaba el CLICK y mandaba el paquete de entrada
-// desde aca (`SendEventEntry`).  En el binario esta funcion **solo dibuja**: el
-// click lo atiende `sub_4E6C40`, que es donde viven el chequeo de nivel, los dos
-// carteles de "nivel muy bajo/alto" y el envio.  Tener las dos cosas hacia que el
-// click se consumiera aca (`MouseLButtonPush = 0`) antes de llegar al handler
-// bueno, y que se enviara un paquete con el slot mal calculado (usaba +12 para
-// los dos eventos, cuando Devil Square usa +24).
+// En el binario esta funcion **solo dibuja**: el click lo atiende
+// `sub_4E6C40`, que es donde viven el chequeo de nivel, los dos carteles de
+// "nivel muy bajo/alto" y el envio (Devil Square usa +24 para el slot). No
+// consumir el click aca.
 //
 // Diferencia real entre los dos paneles, y por que Devil Square muestra las
 // cuatro filas habilitadas: **solo Blood Castle** grisa las filas fuera de rango
@@ -1903,18 +1861,12 @@ extern "C" void __cdecl RenderEventWindow(void)
             DAT_083a4124 != 0)
         {
             DAT_083a4124 = 0;
-            // 2026-09-20: aca se mandaba `Net_SendEventWindowClose()` = un
-            // [C1][03][97], copiado del boton de cerrar del Golden Archer.  Es
-            // invencion del port: la ventana de evento (Devil Square / Blood
-            // Castle) la abre un NPC via 0x30, `CloseInventoryRelatedWindows`
-            // (0x4CBA60) no manda NADA al cerrarla, y el unico paquete que el
-            // binario emite por esa ventana es el 0x31 de `SendMove`
-            // (0x491C40 L742: `buf[4] = 49` con EventWindowOpened).
-            //
-            // Ademas era peligroso contra MuEmu: su `case 0x97` es un paquete
-            // con sub-opcode (`lpMsg[3]`), asi que con un frame de 3 bytes leia
-            // un byte FUERA del paquete y, si caia en 0x02 o 0x03, despachaba
-            // un canje del Golden Archer con datos basura.
+            // Al cerrar NO se manda [C1][03][97]: la ventana de evento (Devil Square /
+            // Blood Castle) la abre un NPC via 0x30, `CloseInventoryRelatedWindows`
+            // (0x4CBA60) no manda NADA al cerrarla, y el unico paquete que el binario
+            // emite por esa ventana es el 0x31 de `SendMove` (0x491C40 L742: `buf[4] = 49`
+            // con EventWindowOpened).  Ademas MuEmu trata el 0x97 como paquete con
+            // sub-opcode (`lpMsg[3]`): con un frame de 3 bytes leeria fuera del paquete.
             Net_SendNpcTalkClose();
             InventoryOpened = 0;
             CloseInventoryRelatedWindows();

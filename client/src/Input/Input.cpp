@@ -262,14 +262,10 @@ int NumPad_HitTest(void);
 // IDA: PressKey (0x0047EC20)
 // Returns 1 on the first frame a key goes down (edge trigger), 0 otherwise.
 //
-// BUG-FIX CRÍTICO (ESC-flicker): la versión de Ghidra terminaba con
-//   `return uVar2 & 0xffffff00;`
-// donde `uVar2 = CONCAT22(extraout_var, SVar1)` — y `extraout_var` nunca se
-// inicializa (warning C4700). Cuando la tecla estaba UP, el valor devuelto
-// era basura de EAX (restos del `MOV AX, <GAK>`), a veces ≠0 → el llamador
-// lo interpretaba como "tecla recién presionada" y el menú ESC flipeaba
-// ~16 veces/seg sin tocar nada. IDA (`PressKey`) siempre devuelve 0 en
-// cualquier path que no sea el edge-trigger.
+// Ojo: el decompile de Ghidra terminaba con `return uVar2 & 0xffffff00;` sobre
+// un `extraout_var` sin inicializar (basura de EAX): con la tecla UP devolvia a
+// veces != 0 y el menu ESC parpadeaba.  IDA devuelve 0 en todo camino que no
+// sea el edge-trigger.
 // IDA: PressKey
 int __cdecl PressKey(int param_1)
 {
@@ -325,11 +321,8 @@ void __cdecl ClearInput(int param_1)
 // IDA: CheckFunctionButtons
 void Input_ProcessFunctionKeys(void)
 {
-  byte bVar1;
   char cVar2;
   SHORT SVar3;
-  uint uVar4;
-  byte *pbVar5;
   undefined4 uVar6;
   undefined4 uVar7;
 
@@ -400,30 +393,10 @@ LAB_004c06d6:
   }
   else {
     if (DAT_07eaa116 == '\0') {
-      HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       cVar2 = DAT_07eaa11b;
-      uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa11b);
-      if (uVar4 != 0xffffffff) {
-        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa11b);
-        bVar1 = pbVar5[1];
-        pbVar5[1] = bVar1 - 1;
-        if ((byte)(bVar1 - 1) == 0) {
-          Packet_EncryptByte(pbVar5,&DAT_07eaa11b);
-        }
-      }
       if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
          (DAT_07eaa11c == '\0')) {
-        HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa118);
         cVar2 = DAT_07eaa118;
-        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa118);
-        if (uVar4 != 0xffffffff) {
-          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa118);
-          bVar1 = pbVar5[1];
-          pbVar5[1] = bVar1 - 1;
-          if ((byte)(bVar1 - 1) == 0) {
-            Packet_EncryptByte(pbVar5,&DAT_07eaa118);
-          }
-        }
         if (cVar2 == '\0') goto LAB_004c06d6;
       }
     }

@@ -81,9 +81,9 @@ CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *par
   undefined4 *unaff_retaddr;
   float fVar27;
   short sVar28;
-  // 2026-08-10 FIX (mismo patrón que MoveJoint): estos "locales" sueltos son en
-  // realidad un bloque CONTIGUO del frame original (ebp-0x6C .. ebp), y el
-  // código depende de esa contigüidad — MSVC no la garantiza:
+  // Estos "locales" sueltos son en realidad un bloque CONTIGUO del frame
+  // original (ebp-0x6C .. ebp), y el código depende de esa contigüidad — MSVC
+  // no la garantiza (mismo patrón que MoveJoint):
   //   Vector_Rotate(&local_6c, local_3c + 3, &local_60)
   //     → entrada  = {local_6c, local_68, local_64}
   //     → salida   = {local_60, local_5c, local_58}
@@ -113,9 +113,9 @@ CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *par
 LAB_00460dd8:
   pfVar8 = (float *)0x0;
   pfVar17 = (float *)&DAT_07b11670[0];
-  // BUG-FIX 2026-05-03: was `if (0x7b2714f < (int)pfVar17)` — absolute source-
-  // binary address. Pool DAT_07b11670 is sized 200 × 0x1bc bytes; walk by
-  // explicit iteration count.
+  // El original corta con `if (0x7b2714f < (int)pfVar17)`, una dirección absoluta
+  // del binario. El pool DAT_07b11670 es de 200 × 0x1bc bytes: se recorre por
+  // cantidad de iteraciones.
   {
     bool found_slot = false;
     for (int i = 0; i < 200; ++i, pfVar17 = pfVar17 + 0x6f) {
@@ -274,7 +274,7 @@ LAB_00460dd8:
         if ((int)uVar10 < 0) {
           uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
         }
-        *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float (fix 2026-08-16)
+        *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
         uVar10 = _rand();
         uVar10 = uVar10 & 0x80000003;
         if ((int)uVar10 < 0) {
@@ -322,7 +322,7 @@ LAB_00460dd8:
         if ((int)uVar10 < 0) {
           uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
         }
-        *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float (fix 2026-08-16)
+        *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
         uVar10 = _rand();
         uVar10 = uVar10 & 0x80000003;
         if ((int)uVar10 < 0) {
@@ -412,9 +412,8 @@ LAB_004649e0:
       case 0x4f0:
       case 0x4f1:
         pfVar17[0x18] = 2.8026e-44;
-        // 2026-08-15: IDA `if (*((_DWORD *)i + 1) == 4)` — SubType es un
-        // DWORD. Leerlo como float y convertir (`(int)pfVar17[1]`) daba 0 para
-        // cualquier SubType chico, asi que la rama NUNCA se ejecutaba.
+        // IDA `if (*((_DWORD *)i + 1) == 4)` — SubType es un DWORD. Leerlo como float
+        // y convertir (`(int)pfVar17[1]`) daría 0 para cualquier SubType chico.
         if (*(int*)&pfVar17[1] != 4) {
           return (float*)(uintptr_t)*(int*)&pfVar17[1];
         }
@@ -449,7 +448,7 @@ LAB_004649e0:
         return pfVar12;
       case 0x4f7:
         iVar9 = _rand();
-        *(int*)&pfVar17[0x18] = (int)(iVar9 % 0xf + 0xf);   // lifetime: DWORD, no float (fix 2026-08-16)
+        *(int*)&pfVar17[0x18] = (int)(iVar9 % 0xf + 0xf);   // lifetime: DWORD, no float
         pfVar17[0x36] = -20.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
@@ -900,12 +899,10 @@ LAB_00463e3d:
     if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != pfVar3) {
       return (float*)(uintptr_t)*(int*)&pfVar17[0x3f];
     }
-    STRUCT_DECRYPT(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
     *(char *)(pfVar17 + 0x22) = cVar5;
     *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
-    STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
     sVar28 = *(short *)((int)pfVar17 + 0x86);
     bVar6 = *(byte *)(pfVar17 + 0x22);
     fVar27 = 300.0;
@@ -938,7 +935,7 @@ LAB_00463e3d:
     pfVar17[0x30] = 0.0;
     pfVar17[0x31] = -10.0;
     pfVar17[0x32] = 0.0;
-    // BUG-FIX 2026-04-28: pass explicit (xf, yf) — effect pos at pfVar17[4]/[5]
+    // Se pasa (xf, yf) explícito — effect pos en pfVar17[4]/[5]
     fVar24 = (float10)RequestTerrainHeight(pfVar17[4], pfVar17[5]);
     pfVar17[6] = (float)fVar24;
     break;
@@ -1048,7 +1045,7 @@ switchD_00461001_caseD_c7:
     if ((int)uVar10 < 0) {
       uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
     }
-    *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float (fix 2026-08-16)
+    *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
     uVar10 = _rand();
     uVar10 = uVar10 & 0x80000003;
     if ((int)uVar10 < 0) {
@@ -1087,7 +1084,7 @@ switchD_00461001_caseD_c7:
     if ((int)uVar10 < 0) {
       uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
     }
-    *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float (fix 2026-08-16)
+    *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float
     uVar10 = _rand();
     uVar10 = uVar10 & 0x80000007;
     if ((int)uVar10 < 0) {
@@ -1520,7 +1517,6 @@ LAB_004625aa:
     pfVar17[0x19] = 0.0;
     return pfVar8;
   }
-  STRUCT_DECRYPT(&MAIN_HASH_CLASS,DAT_07cf1ffc);
   pfVar12 = (float*)DAT_07cf1ffc;
   cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
   *(char *)(pfVar17 + 0x22) = cVar5;
@@ -3851,14 +3847,11 @@ switchD_00460f25_caseD_101:
   }
   goto LAB_00462f4a;
 switchD_00465549_caseD_4ba:
-  // 2026-09-03 (Aqua Beam desplazado): el vector de avance de la estela de los
-  // tipos 1210/1211/1212 sale de `VectorRotate(in1, in2, (float *)i + 48)` con
-  // IDA poniendo `in1 = (0, -50, 0)` (o `(0, -15, 0)` para el 1212).  El port
-  // escribia `local_6c = fVar27; local_64 = fVar27;` -- o sea X y Z tomaban un
-  // valor sobrante de otra rama de la funcion en vez de 0.  El campo +0xC0 es
-  // el paso que `RenderEffects` usa para los 30 sprites 1176 de la estela, asi
-  // que la estela avanzaba en una direccion arbitraria: el Aqua Beam nacia bien
-  // pero se dibujaba corrido.
+  // El vector de avance de la estela de los tipos 1210/1211/1212 sale de
+  // `VectorRotate(in1, in2, (float *)i + 48)` con IDA poniendo `in1 = (0, -50, 0)`
+  // (o `(0, -15, 0)` para el 1212): X y Z en 0, no un valor sobrante de otra rama.
+  // El campo +0xC0 es el paso que `RenderEffects` usa para los 30 sprites 1176
+  // de la estela.
   pfVar17[0x18] = 2.8026e-44;
   if (param_1 == 0x4ba) {
     pfVar17[0x3a] = 0.5;

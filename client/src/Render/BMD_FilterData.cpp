@@ -1,5 +1,5 @@
 // BMD_FilterData.cpp
-// Extracted from stubs_misc_helpers.cpp; IDA provenance comments retained.
+// Carga y guardado de los filtros de texto (filtro de chat y de nombres).
 
 #include "stdafx.h"
 #include "globals.h"

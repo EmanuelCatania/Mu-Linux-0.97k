@@ -319,6 +319,7 @@
     <ClCompile Include="src\Render\Camera_Unproject.cpp" />
     <ClCompile Include="src\Net\Net_CharSelect.cpp" />
     <ClCompile Include="src\Net\Net_PipeQuery.cpp" />
+    <ClCompile Include="src\Net\Protocol\Protocol_Check.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />
     <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />
     <ClCompile Include="src\Render\BMD_Load.cpp" />
@@ -416,6 +417,9 @@
   <ItemGroup>
     <ClInclude Include="src\Debug\MiniDump.h" />
     <ClInclude Include="src\resource.h" />
+    <ClInclude Include="src\Net\Protocol\ProtocolBase.h" />
+    <ClInclude Include="src\Net\Protocol\GameServerProtocol.h" />
+    <ClInclude Include="src\Net\Protocol\ConnectServerProtocol.h" />
     <ResourceCompile Include="src\resource.rc" />
   </ItemGroup>
 

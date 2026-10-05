@@ -219,9 +219,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     }
 
     // Class2 SMD (only in Korean locale)
-    // BUGFIX 2026-04-26: era `i+4 < 7` (=i<3, 2 iter); IDA 0x00506170 línea 57
-    // `while (v6 + 3 < 7)` = 3 iter (v6=1,2,3) — sin i=3 nunca se carga
-    // HelmClass23/ArmorClass23/etc → ME (cls=10) class-default invisible.
+    // IDA 0x00506170 L57: `while (v6 + 3 < 7)` = 3 iteraciones (v6=1,2,3).
     if (DAT_0055a7c4 == '\0') {
         for (int i = 1; i+3 < 7; i++) {
             OpenModels((int)(i + 0x393), "Data2\\Player\\Helm\\class2_",  i);
@@ -232,7 +230,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
         }
     }
 
-    // Class2 BMD (classes 1-3) — same off-by-one fix as SMD path
+    // Class2 BMD (classes 1-3) — 3 iteraciones, igual que el SMD
     for (int i = 1; i+3 < 7; i++) {
         AccessModel(i + 0x393, "Data\\Player\\", "HelmClass2",  i);
         AccessModel(i + 0x39a, "Data\\Player\\", "ArmorClass2", i);
@@ -296,12 +294,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     }
 
     // Final slot range (0x12-0x15 suffix) — includes helm only for first 3
-    // BUGFIX 2026-04-26: el guard era `i-0x11 < 4` (= i < 0x15), perdía la
-    // iteración i=0x15 → ArmorMale21/PantMale21/GloveMale21/BootMale21 (idx
-    // 0x2A4/0x2C4/0x2E4/0x304) NO se registraban → MG (class=3) con armor
-    // tier=20 (Equipment[2]&0xF=4 + bit40 → +16 = 20) renderizaba sólo la
-    // cabeza porque los cinco body slots apuntaban a model_idx vacío. IDA
-    // 0x00506170 línea 104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).
+    // IDA 0x00506170 L104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).
     for (int i = 0x12; i-0x12 < 4; i++) {
         if (i - 0x12 < 3)
             AccessModel(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
@@ -316,16 +309,12 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     // Shadow BMD
     AccessModel(0x187, "Data\\Player\\", "Shadow", 1);
 
-    // ── Player action PlaySpeed table (IDA OpenPlayers @ 0x00506170 lines 107-154) ──
-    // BMD::Open NO carga el campo action+4 (PlaySpeed) del archivo BMD. Quedan en 0
-    // (operator_new no inicializa). Sin esta tabla todas las acciones del player
-    // tienen speed=0 y CharacterAnimation no avanza ningún frame → personajes
-    // estáticos en login y char-select.
-    //
-    // `Models + 73368` = (BYTE*)DAT_05828d58 + 73320 + 48 = player_model[390].Actions
-    // (188*390=73320 base + 48 offset al campo Actions del struct BMD).
-    // Cada acción es 16 bytes; offset +4 dentro de la acción es PlaySpeed (float).
-    // (offset 20 = action[1].speed, 36 = action[2].speed, ...)
+    // Velocidades de animación del jugador: IDA OpenPlayers, 0x5073AB..0x507622.
+    // BMD::Open no inicializa PlaySpeed. Los bucles originales incrementan el
+    // offset ANTES de escribir (offset - 12), incluida la última entrada. Se usan
+    // índices de acción para respetar esos límites, sobre todo la pose de apoyo
+    // de la elfa (140).
+    // Modelo del jugador = Models + 188 * 390; Actions en +48, stride 16, speed en +4.
     {
         BYTE* playerModelBase = (BYTE*)(uintptr_t)DAT_05828d58;
         // Aux fields del struct player (no son acciones; offsets internos del modelo)
@@ -338,8 +327,8 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
             BYTE* A = (BYTE*)(uintptr_t)actions;
 
             // action[1..12].speed = 0.28f  (idle/stop / walk variants)
-            for (int v10 = 32; v10 <= 192; v10 += 16) {
-                *(DWORD*)(A + v10 - 12) = 0x3E8F5C29;  // 0.28f
+            for (int action = 1; action <= 12; ++action) {
+                *(DWORD*)(A + 16 * action + 4) = 0x3E8F5C29;  // 0.28f
             }
             // Spot speeds for stop/walk hands variants
             *(DWORD*)(A +  52) = 0x3E851EB8;  // 0.26f  action[3]
@@ -348,101 +337,24 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
             *(DWORD*)(A + 116) = 0x3E6147AE;  // 0.22f  action[7]
             *(DWORD*)(A + 132) = 0x3E6147AE;  // 0.22f  action[8]
 
-            // action[12..32].speed = 0.30f (run variants)
-            for (int i = 208; i <= 528; i += 16) {
-                *(DWORD*)(A + i - 12) = 0x3E99999A;   // 0.30f
+            // action[13..33].speed = 0.30f
+            for (int action = 13; action <= 33; ++action) {
+                *(DWORD*)(A + 16 * action + 4) = 0x3E99999A;
             }
+            *(DWORD*)(A + 340) = 0x3EB33333;  // 0.35f action[21]
+            *(DWORD*)(A + 468) = 0x3EB33333;  // 0.35f action[29]
 
-            // ── DESVIACION DELIBERADA: accion 33 (2026-09-28) ────────────
-            // El bucle de arriba es 1:1 con el binario (verificado en el
-            // codigo maquina de 0x5073E0: `mov eax,208 / add eax,16 /
-            // cmp eax,528 / mov [ecx+eax-0Ch],esi / jle`), y corta en la
-            // accion 32.  La 33 queda SIN PlaySpeed, y no la escribe nadie
-            // mas: de las cuatro funciones que tocan `Models + 73368`,
-            // SetAttackSpeed cubre 34..54/56..67/81..91, AttackStage solo la
-            // 61 y RenderCharacter unicamente lee.
-            //
-            // Las dos son el par de la montura, y salen del orden de
-            // OpenSMDAnimation en esta misma funcion:
-            //     11 uniconp_stop.smd          12 uniconp_stop_weapon.smd
-            //     32 uniconp_run.smd           33 uniconp_run_weapon.smd
-            //     34 attack_fist.smd  <- ancla: SetAttackSpeed escribe el
-            //                            offset 548 = 16*34 + 4
-            //
-            // O sea la 33 es "montado y caminando CON arma equipada".  Como
-            // BMD::Open no lee PlaySpeed del archivo (escribe action+8/+10/
-            // +12, nunca +4) y `operator_new` no limpia, en el original ese
-            // float queda en memoria sin inicializar: no es una decision del
-            // binario sino UB, y el resultado depende del allocator.  En
-            // release suele ser 0 (paginas frescas del OS) y en nuestro build
-            // Debug el relleno del CRT es 0xCDCDCDCD, que como float es
-            // negativo y CharacterAnimation lo clampea a 0.  Por los dos
-            // caminos el frame no avanza y el jinete queda congelado en el
-            // frame 0 mientras la montura si se anima.
-            //
-            // Medido con sonda (helper=818, arma en LH): `act=33 spd=0.0000
-            // f=0.000->0.000 nF=7` — la animacion existe y tiene 7 frames,
-            // asi que la intencion era incluirla; el bucle tendria que haber
-            // cortado en 544.  Le damos el mismo 0.30f que al resto del
-            // bloque de walk/run, y en particular que a su par la 32.
-            //
-            // Misma clase que el buffer de huesos sin inicializar de
-            // CreateCharacterPointer: reproducir la UB no es ser fiel.
-            //
-            // Sin tocar quedan las otras acciones que ningun writer cubre
-            // (0, 55 y 68..77): no hay sintoma reportado ni forma de saber
-            // que valor les corresponde.  Si aparece otra animacion congelada
-            // del jugador, empezar por ahi.
-            *(DWORD*)(A + 532)  = 0x3E99999A;  // 0.30f  accion 33 (16*33 + 4)
-
-            // ── Las acciones 76 y 77 se dejan A PROPOSITO sin PlaySpeed ──
-            // Son Pegasus_fly.smd y Pegasus_fly_weapon.smd, el Dinorant
-            // volando, que SetPlayerWalk (0x443930) elige con
-            // `if (World != 8 && World != 10) ... else 76 / 77` -- o sea solo
-            // en Tarkan e Icarus.
-            //
-            // Tentador arreglarlas igual que la 33, pero NO: la animacion en
-            // si esta mal. MU 5.2 tiene esa misma rama y las dos llamadas
-            // comentadas a mano (ZzzCharacter.cpp L546-552), con el gate
-            // identico (WD_8TARKAN || WD_10HEAVEN) y esta nota de Webzen:
-            //
-            //     // 애니메이션 튀는거때문에 아예 막아버림
-            //     //   ("por el salto de la animacion, la bloqueamos del todo")
-            //     // if(c->Weapon[0].Type==-1 && c->Weapon[1].Type==-1)
-            //     //     SetAction(&c->Object,PLAYER_FLY_RIDE);
-            //     // else
-            //     //     SetAction(&c->Object,PLAYER_FLY_RIDE_WEAPON);
-            //
-            // (5.2 llama al 819 "Pegasia", de ahi el nombre de los archivos.)
-            //
-            // Probado: con PlaySpeed 0.30f la animacion corre y se ve mal al
-            // moverse, justo el defecto que describe esa nota. Sin velocidad
-            // queda en el frame 0, que es lo que hace el binario original --
-            // ahi tampoco las escribe nadie, asi que el float queda en memoria
-            // sin inicializar y en release da 0.
-            //
-            // Diferencia con la 33, que si se arregla mas arriba: alla la
-            // animacion es buena y su par (la 32) si tiene velocidad, o sea
-            // era un off-by-one del bucle. Aca faltan LAS DOS, no hay par
-            // asimetrico, y hay evidencia de que la animacion es defectuosa.
-            //
-            // Si algun dia se quiere que se vea bien, la salida de 5.2 es no
-            // llamar SetAction en esa rama (el personaje conserva la pose de
-            // montado parado, que si se ve bien) -- pero eso es desviarse del
-            // 0.97k y va con el resto de las mejoras, al final.            *(DWORD*)(A + 340) = 0x3EB33333;  // 0.35f
-            *(DWORD*)(A + 468) = 0x3EB33333;  // 0.35f
-
-            // action[91..129].speed = 0.32f (skill/magic anims)
-            for (int j = 1472; j <= 2080; j += 16) {
-                *(DWORD*)(A + j - 12) = 0x3EA3D70A;   // 0.32f
+            // action[92..130].speed = 0.32f
+            for (int action = 92; action <= 130; ++action) {
+                *(DWORD*)(A + 16 * action + 4) = 0x3EA3D70A;
             }
-            // action[130..131].speed = 0.45f
-            for (int k = 2096; k <= 2112; k += 16) {
-                *(DWORD*)(A + k - 12) = 0x3EE66666;   // 0.45f
+            // action[131..132].speed = 0.45f
+            for (int action = 131; action <= 132; ++action) {
+                *(DWORD*)(A + 16 * action + 4) = 0x3EE66666;
             }
-            // action[132..139].speed = 0.40f (sit/die)
-            for (int m = 2128; m < 2256; m += 16) {
-                *(DWORD*)(A + m - 12) = 0x3ECCCCCD;   // 0.40f
+            // action[133..140].speed = 0.40f, incluidas las dos poses de apoyo.
+            for (int action = 133; action <= 140; ++action) {
+                *(DWORD*)(A + 16 * action + 4) = 0x3ECCCCCD;
             }
 
             // Per-action overrides
@@ -459,7 +371,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
             *(DWORD*)(A + 1300) = 0x3E75C28F;  // 0.24f  PLAYER_ATTACK_TWO_HAND_SWORD_TWO
             *(DWORD*)(A + 1076) = 0x3EE66666;  // 0.45f
 
-            // Loop flags (action+0 = loop). 1 = loop enabled.
+            // Flag de no-loop (action+0): 1 = se detiene en el último frame.
             *(BYTE*)(A + 2096) = 1;
             *(BYTE*)(A + 2112) = 1;
             *(BYTE*)(A + 2064) = 1;

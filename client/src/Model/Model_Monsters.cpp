@@ -32,9 +32,7 @@ void __cdecl Model_LoadPlayerEquipmentTextures(void)
     SetMaxTextures(0x136);
 
     // Class equipment texture binding (slots 0x390-0x3af range, class 1-4)
-    // BUGFIX 2026-04-26: era `i-0x396 < 4` (3 iter), IDA 0x00507610 línea 38
-    // `while (v0 - 919 < 4)` con v0=919 → 4 iter (919..922). Faltaba ArmorClass4
-    // (texturas idx 922/915/929/936/943 = MG class-default).
+    // IDA 0x00507610 L38: `while (v0 - 919 < 4)` con v0=919 → 4 iteraciones (919..922).
     for (int i = 0x397; i-0x397 < 4; i++) {
         OpenTexture(i - 7,  "Player\\", 0x2600, '\x01');
         OpenTexture(i,      "Player\\", 0x2600, '\x01');
@@ -44,9 +42,7 @@ void __cdecl Model_LoadPlayerEquipmentTextures(void)
     }
 
     // Male equipment texture binding (slots 0x270-0x30f range, tiers 1-10 × 5 types)
-    // BUGFIX 2026-04-26: era `i-0x28f < 0x11` (16 iter), IDA `v1-656 < 17`
-    // → 17 iter (656..672). Faltaba ArmorMale17 (idx 672) — usado por chars
-    // tier-17 con bits +16+1 en Equipment[2].
+    // IDA: `v1-656 < 17` → 17 iteraciones (656..672).
     for (int i = 0x290; i-0x290 < 0x11; i++) {
         OpenTexture(i - 0x20, "Player\\", 0x2600, '\x01');
         OpenTexture(i,        "Player\\", 0x2600, '\x01');
@@ -56,8 +52,7 @@ void __cdecl Model_LoadPlayerEquipmentTextures(void)
     }
 
     // Class2 equipment texture binding (slots 0x394-0x3b3, class2 tiers 1-3 × 5 types)
-    // BUGFIX 2026-04-26: era `i-0x396 < 7` (2 iter), IDA `v2-919 < 7` con v2=923
-    // → 3 iter (923..925). Faltaba ArmorClass23 = ME (cls=10) class-default.
+    // IDA: `v2-919 < 7` con v2=923 → 3 iteraciones (923..925).
     for (int i = 0x39b; i-0x39b < 3; i++) {
         OpenTexture(i - 7,  "Player\\", 0x2600, '\x01');
         OpenTexture(i,      "Player\\", 0x2600, '\x01');
@@ -67,10 +62,7 @@ void __cdecl Model_LoadPlayerEquipmentTextures(void)
     }
 
     // Elf equipment texture binding (slots 0x280-0x30f, tiers × 5)
-    // BUGFIX 2026-04-26: era `i-0x2a0 < 4` (3 iter), IDA `v3-673 < 4` con v3=673
-    // → 4 iter (673..676). Faltaba ArmorMale21 (idx 676) — el bug central que
-    // dejaba al MG completamente blanco aun con la geometría cargada por el
-    // fix paralelo en Model_Items.cpp.
+    // IDA: `v3-673 < 4` con v3=673 → 4 iteraciones (673..676).
     for (int i = 0x2a1; i-0x2a1 < 4; i++) {
         OpenTexture(i - 0x20, "Player\\", 0x2600, '\x01');
         OpenTexture(i,        "Player\\", 0x2600, '\x01');

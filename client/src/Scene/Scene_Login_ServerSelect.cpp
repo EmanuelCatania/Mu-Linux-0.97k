@@ -129,11 +129,11 @@ int Scene_Login_ServerSelect(void)
     char        cVar1;
     byte        bVar2;
     float       fVar3, fVar18, fVar20;
-    // fVar4: era "current Y of last drawn row" en Pass 3 (float-but-really-int).
-    // Pass 4 la lee para posicionar la columna de canales. Inicializar a 0xdd
+    // fVar4: "current Y of last drawn row" en Pass 3 (float-but-really-int).
+    // Pass 4 la lee para posicionar la columna de canales. Se inicializa a 0xdd
     // (221, el tope que asigna iStartY cuando hay poca lista) para que, si
-    // ServerSelectHi != -1, Pass 4 use un Y razonable. El bug-fix en Pass 3 usa
-    // iYNonPvp/iYPvp locales y sincroniza fVar4 al final.
+    // ServerSelectHi != -1, Pass 4 use un Y razonable. Pass 3 usa iYNonPvp/iYPvp
+    // locales y sincroniza fVar4 al final.
     float       fVar4 = 0.0f;
     int         iVar5, iVar8, iVar10;
     uint        uVar6;
@@ -143,9 +143,7 @@ int Scene_Login_ServerSelect(void)
     LPCSTR      lpString;
     bool        bVar15;
     undefined8  uVar16;
-    // BUG-FIX: era undefined4 (unsigned int). Al pasar a glColor3f(float,...)
-    // hacia conversion int→float: 0x3f800000 → 1065353216.0f (se clampaba a 1.0).
-    // Usar float directamente.
+    // float (en el decomp era undefined4): glColor3f recibe el valor, no el bit-pattern.
     float       uVar17;
     int         iStack00000004;
     float       fStack00000008, fStack0000000c, fStack00000014, fStack00000018;
@@ -181,9 +179,7 @@ int Scene_Login_ServerSelect(void)
     //   Multi PVP channel:     sprintf(buf, "%s-%d %s", name, chNum, status)
     //   status = GlobalText[560/561/562]   (FULL/NORMAL/LOW)
     //
-    // BUG-FIX vs Ghidra: las llamadas eran `crt_sprintf(buf, fmt)` sin args —
-    // sprintf leía basura del stack y rendería "?TOO?TOO". Ahora pasamos los
-    // args correctos. Hardcoded status strings (no tenemos GlobalText[] cargado).
+    // Desviación: status con strings fijos (acá no hay GlobalText[] cargado).
     {
         const char* STATUS_FULL   = "FULL";
         const char* STATUS_NORMAL = "NORMAL";
@@ -269,9 +265,8 @@ int Scene_Login_ServerSelect(void)
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // Compute base Y for non-PVP column
-    // BUG-FIX: Ghidra tipó los slots de Y como float, pero el asm original los
-    // manipulaba como int32 (bit-pattern 0xdd=221). (int)3.08286e-43f→0, rompiendo
-    // el cálculo. Reescrito con ints limpios: Y_top = min(0x1bc - 16*N, 0xdd).
+    // Los slots de Y son int32 (Ghidra los tipó float, pero el asm los usa como
+    // int, bit-pattern 0xdd=221): Y_top = min(0x1bc - 16*N, 0xdd).
     int iYNonPvp;   // current non-PVP row Y (bumped +16 per entry)
     int iYPvp;      // current PVP row Y
     {
@@ -283,9 +278,7 @@ int Scene_Login_ServerSelect(void)
         iYNonPvp = iStartY;
         iYPvp    = ((iVar10 - iVar8) + -1) * 0x10 + iStartY;
         // Bridge: Pass 4/5 leen fStack00000008 como "PVP base Y" y fVar4 como
-        // "non-PVP base Y" para posicionar la columna de canales.
-        // BUG-FIX: fVar4 se quedaba en 0, haciendo que el panel de canales
-        // non-PVP renderizara arriba de pantalla (Y negativo). IDA usa v10
+        // "non-PVP base Y" para posicionar la columna de canales. IDA usa v10
         // (non-PVP base Y) en `v21 = 16 * v23 - 10 * v20 + v10 + 8`.
         fStack00000008 = (float)iYPvp;
         fVar4          = (float)iStartY;   // non-PVP base Y, leído por Pass 4
@@ -367,10 +360,10 @@ LAB_0051f4b0:
             } while ((int)pcVar7 < (int)(uintptr_t)(DAT_083a45d8 + 0x3502));
             iVar5 = 0;
 LAB_0051f4d9:
-            // BUG-FIX: DAT_083a45ec es `*(DWORD*)(...)` lvalue → &DAT es DWORD*,
-            // así que (&DAT)[iVar8] avanza iVar8*4 bytes. Disasm @ 0x0051f44e/4db
+            // DAT_083a45ec es `*(DWORD*)(...)` lvalue → &DAT es DWORD*, así que
+            // (&DAT)[iVar8] avanzaría iVar8*4 bytes. Disasm @ 0x0051f44e/4db
             // muestra `MOV AL, byte ptr [ECX + 0x83a45ec]` con ECX=iVar8 (byte
-            // offset). Castear base a char* para byte arith.
+            // offset): se castea la base a char* para byte arith.
             uVar6  = (uint)*((unsigned char*)&DAT_083a45ec + iVar8);
             iVar10 = iVar5 * 0x10 + uVar6 * -10 + 8 + (int)fVar4;
         } else {
@@ -398,7 +391,7 @@ LAB_0051f428:
             } while ((int)pcVar7 < (int)(uintptr_t)(DAT_083a45d8 + 0x3502));
             iVar5 = 0;
 LAB_0051f44c:
-            uVar6  = (uint)*((unsigned char*)&DAT_083a45ec + iVar8);  // BUG-FIX (ver arriba)
+            uVar6  = (uint)*((unsigned char*)&DAT_083a45ec + iVar8);  // byte arith (ver arriba)
             iVar10 = iVar5 * 0x10 + uVar6 * -10 + 8 + (int)fStack00000008;
         }
 
@@ -418,9 +411,9 @@ LAB_0051f44c:
                     fVar3 = 0.8f;   // not selected → dim
 
                 // Color by load
-                // BUG-FIX: DAT_083a4606 es `*(WORD*)(...)` y DAT_083a4604 es
-                // `*(DWORD*)(...)` lvalues. Indexar `(&DAT)[idx]` o `&DAT+idx`
-                // multiplica el offset por 2/4. Disasm @ 0x0051f538/540:
+                // DAT_083a4606 es `*(WORD*)(...)` y DAT_083a4604 es `*(DWORD*)(...)`
+                // lvalues: indexar `(&DAT)[idx]` o `&DAT+idx` multiplicaría el offset por
+                // 2/4. Disasm @ 0x0051f538/540:
                 //   MOV AX,word ptr [ECX+EBP*1+0x83a4604]   ; channel_id
                 //   MOV CL,byte ptr [ECX+EBP*1+0x83a4606]   ; load byte
                 // ECX=server*0x21e, EBP=chan*0x1a (ambos byte offsets).
@@ -468,7 +461,7 @@ LAB_0051f44c:
                 }
 
                 // Load bar (only for non-full servers)
-                // BUG-FIX (idem): WORD lvalue → necesita byte arith (char* cast)
+                // WORD lvalue → byte arith (char* cast), igual que arriba.
                 if ((*((unsigned char*)&DAT_083a4606 + ServerSelectHi * 0x21e + (int)fVar4) & 0x80) != 0x80) {
                     uVar6 = *((unsigned char*)&DAT_083a4606 + ServerSelectHi * 0x21e + (int)fVar4) & 0x7f;
                     if (100 < uVar6) uVar6 = 100;
@@ -511,13 +504,13 @@ LAB_0051f44c:
                 iVar8 = ServerSelectHi * 0x21e;
                 iStack00000004 += 0x14;
                 fStack00000018 = (float)((int)fVar4 + 0x1a);
-            } while (iVar5 < (int)(uint)*((unsigned char*)&DAT_083a45ec + iVar8));  // BUG-FIX: byte arith
+            } while (iVar5 < (int)(uint)*((unsigned char*)&DAT_083a45ec + iVar8));  // byte arith
         }
 
         // ── PASS 5: selected server IP display ───────────────────────────────
         DAT_00559c78 = 0xffffffff;
         SetBackgroundTextColor = 0x80000000;
-        // BUG-FIX: literales 0x3fxxxxxx eran int → float value-cast. Usar literales float.
+        // Literales float (no bit-patterns 0x3fxxxxxx).
         glColor3f(1.0f, 0.2f, 0.1f);   // orange-red (IP text)
 
         fVar4   = (float)(int)puStack00000010;

@@ -1,9 +1,5 @@
 // Item_Inventory.cpp — port directo desde MU 0.52 (sub_404830 / sub_425850 / sub_428C30)
 //
-// 2026-04-30: la versión 0.97 tenía estos handlers como stubs vacíos / no-op,
-// por lo que el server enviaba el packet F3/10 (inventory-snapshot) y el cliente
-// lo descartaba — ningún item aparecía en el grid.
-//
 // El código de 0.52 está libre de anti-tamper / hash-table noise. Estructuras
 // y offsets son idénticos a 0.97 (ITEM stride 68 B, grid 8×8 = 64 slots).
 //
@@ -188,12 +184,6 @@ static inline int GetEquipSlotByteOffset(int slotIdx)
 
 static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, BYTE durability, BYTE byteHi, BYTE extByte)
 {
-    // BUG-FIX 2026-05-01: el código previo mezclaba DWORD indexing y byte
-    // offsets. Resultado: Type se escribía bien (al inicio), pero Durability
-    // (cm[off + 0xE] como DWORD index) caía en posición wrong dentro del
-    // siguiente slot. RenderBrokenItem leía durability=0 → "Light Saber (0/69)"
-    // siempre.
-    //
     // Cada slot es un struct ITEM (68 bytes) en CharacterMachine.
     // Layout real: CharacterMachine + 536 + 68*slot.
     // Los offsets de campo dentro de ITEM (en bytes desde slot start):
@@ -220,25 +210,15 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
 
     memset(slot, 0, sizeof(ITEM));
     *(short*)(slot + 0)  = (short)type;
-    // 2026-05-08: BUG-FIX +N glow on EQUIPMENT slots.
-    // Same fix as AddItemToGrid: store the RAW Option byte (level<<3 encoded)
-    // so the render-side shift `(Level >> 3) & 0xF` extracts the correct +N.
-    // Previously we stored decoded `level` (0-15) → render shifted again →
-    // +9 → +1, no glow. Equipment uses the same render path (sub_4E38B0 /
-    // Render_HotbarItems3D → RenderItem3D → RenderObjectScreen).
+    // Se guarda el byte de Option CRUDO (level<<3 codificado), como en
+    // AddItemToGrid: el render hace `(Level >> 3) & 0xF` para sacar el +N
+    // (sub_4E38B0 / Render_HotbarItems3D → RenderItem3D → RenderObjectScreen).
     *(int*)(slot + 4)    = (int)optByte;
     *(BYTE*)(slot + 26)  = durability;
-    // FIX 2026-07-21 — Option1 llevaba `optByte` (= Attribute1, el byte de
-    // nivel).  Los flags de EXCELLENT viven en Attribute2 (= byteHi = Item[3]):
+    // Option1 = Attribute2 (byteHi = Item[3]): ahí viven los flags de EXCELLENT.
     // ItemConvert (0x47B910) hace `iItemExcel = Attribute2 & 63`, y esa es la
     // MISMA mascara 0x3F que testean CalcMaxDurability (0x4C45C0) y
     // RenderItemInfo sobre ip->Option1.
-    // Sintomas: los anillos/pendants excellent mostraban durabilidad maxima 15
-    // puntos MENOS (no se aplicaba el bonus +15 de excellent) y les faltaba el
-    // prefijo "Excelente" en el nombre.
-    // Las opciones excellent SI se veian porque salen de Special[]/SpecialValue[],
-    // que ItemConvert llena aparte — y a esa funcion los argumentos le llegaban
-    // bien (ver la llamada ItemConvert(slot, optByte, byteHi) mas abajo).
     *(BYTE*)(slot + 27)  = byteHi;
     *(DWORD*)(slot + 56) = durability ? (DWORD)durability : 1u;
     *(BYTE*)(slot + 60)  = byteHi;
@@ -297,8 +277,7 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
             memset(slot, 0, sizeof(ITEM));
             slot->Type       = (short)type;
             slot->Level      = (int)optByte;
-            // BUG-FIX 2026-05-01: Durability era el byteOpt (level/option byte)
-            // → broken-item warning falso. Ahora usa el byte real del packet.
+            // Durability = el byte de durabilidad del packet (no el byte de opciones).
             slot->Durability = durability;
             slot->Option1    = byteHi;   // Attribute2 — ver nota en WriteEquipmentSlot
             slot->Unknown    = byteHi;
@@ -312,13 +291,10 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
             slot->Level      = (int)optByte;
             ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
 
-            // 2026-05-08: BUG-FIX item +N glow.
             // sub_4E38B0 pasa `*(int*)(slot+4)` (= slot->Level int) como param_6
             // a RenderItem3D → RenderObjectScreen, que extrae el level con
-            // `(param_6 >> 3) & 0xF`. Si Level está pre-decoded (0-15), el
-            // shift en RenderObjectScreen produce (9>>3)=1 → no glow.
-            // ItemData_FillStats(level) acaba de setear Level = decoded —
-            // override aquí con el byteOpt RAW para preservar el shift chain.
+            // `(param_6 >> 3) & 0xF`. ItemData_FillStats(level) acaba de setear Level
+            // decodificado (0-15): se pisa con el byteOpt CRUDO para preservar el shift.
         }
     }
 

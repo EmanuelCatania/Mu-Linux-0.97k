@@ -1,5 +1,4 @@
 // Quest_UIState.cpp
-// Extracted from stubs_misc_helpers.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -9,11 +8,7 @@
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // CSQuest::clearQuest @ 0x00401960 — cierra la ventana de quest.
-// 2026-08-21: acá había un "CharSelect_SendClickPacket" que SÓLO mandaba el
-// paquete.  Le faltaban las dos cosas que realmente cierran el panel, así que
-// el botón X (y cualquier otro camino de cierre) no hacía nada: el flag
-// +0x1C87F seguía en 1, GetScreenWidth seguía devolviendo 450 y el panel
-// quedaba dibujado para siempre.  IDA:
+// IDA:
 //     *(_BYTE *)(This + 116863) = 0;
 //     CloseInventoryRelatedWindows();
 //     send([C1][03][31]);

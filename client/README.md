@@ -61,18 +61,16 @@ el movimiento de NPCs y monstruos.
 
 El código portado está distribuido por dominio (`Render/`, `Terrain/`, `UI/`,
 `Item/`, `Entity/`, `Combat/`, `Net/`, `Scene/`, etc.); ya no existe un depósito
-general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 251
-archivos `.cpp` y 55 headers bajo `src/`.
+general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 249
+archivos `.cpp` y 58 headers bajo `src/`.
 
-`stubs_IDA_ports.cpp` es la excepción intencional: contiene 26.431 líneas de
-decompilados crudos de IDA, cada uno protegido por `IDA_PORT_*`. Se preserva
-como referencia canónica del decompile y como mecanismo de compatibilidad o
-activación selectiva mientras se valida un port. **No refactorizar, renombrar
-ni distribuir este archivo entre módulos.** Sus aliases o bridges ABI tampoco
-son deuda de nomenclatura: existen para que los puertos selectivos mantengan
-su contrato original.
+Los decompilados crudos de IDA que nunca se activaron (antes en
+`src/stubs_IDA_ports.cpp`) están archivados en `docs/codigo-muerto/`, fuera
+del build, como referencia del decompile. Los aliases o bridges ABI que
+quedan en `functions.h`/`globals.h` no son deuda de nomenclatura: mantienen el
+contrato original de los ports que los usan.
 
-Los `FUN_*` y `DAT_*` que todavía aparecen fuera de ese archivo no son, por sí
+Los `FUN_*` y `DAT_*` que todavía aparecen en el código no son, por sí
 solos, deuda de renombrado. Algunos describen infraestructura, CRT, GameGuard,
 layouts binarios, pools o compatibilidad; otros requieren investigación o un
 port futuro antes de poder recibir un nombre semántico seguro.
@@ -219,11 +217,7 @@ mu97k-src/
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
-    ├── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
-    │
-    └── stubs_IDA_ports.cpp
-                         decompilados crudos IDA detrás de IDA_PORT_*;
-                         infraestructura preservada, no refactorizar
+    └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
 ```
 
 Los módulos agrupan por responsabilidad. La dirección en el binario sigue
@@ -255,6 +249,17 @@ ahí mismo**, explicando qué hace el original y por qué nos apartamos.
 Lo único que se saltea deliberadamente es el ruido anti-tamper: las
 operaciones de hash-table intercaladas, los bloques inalcanzables y el
 scrambling XOR de la versión protegida. No son lógica de juego.
+
+### Comentarios en el código
+
+Los comentarios describen **el código actual**: la referencia a IDA
+(`// IDA: <nombre> (<dirección>)`), el layout de un struct o paquete, las
+desviaciones vigentes respecto del binario y las advertencias que evitan romper
+algo. La historia de cómo se llegó a un fix (fechas, sondas, intentos
+descartados, lo que hacía el port viejo) no va en el código: va en el mensaje
+del commit o en `docs/`. Los comentarios de desarrollo que ya estaban en el
+código se movieron a [`docs/historial-comentarios/`](docs/historial-comentarios/README.md);
+el texto completo original sigue en el tag `0.97.00`.
 
 ### Trampas conocidas
 
@@ -342,3 +347,78 @@ interno entre colaboradores.
 
 `lib/libjpeg/jpeg-6b` es del Independent JPEG Group, bajo su propia licencia
 permisiva (`lib/libjpeg/jpeg-6b/README`, sección "LEGAL ISSUES").
+
+---
+
+## Hoja de ruta
+
+El tag `0.97.00` cierra la etapa de reconstrucción fiel: el cliente se comporta como el
+binario original. A partir de ahí el trabajo sigue por fases, y cada fase cerrada es una
+versión.
+
+```mermaid
+flowchart TD
+    F0["0.97.00 · Reconstrucción fiel (base)"] --> F1
+    F1["0.97.10 · Fase 1: base de ingeniería<br/>CMake, CI, limpieza de código y comentarios, espejo de protocolo"] --> F2
+    F2["0.97.20 · Fase 2: integración nativa del Main.dll + modularización<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados a la lógica base"] --> F3
+    F3["0.97.30 · Fase 3: optimización del código heredado<br/>switches y defines de Webzen → tablas y enums"] --> F4
+    F4["0.97.40 · Fase 4: abstracción de plataforma + Linux"] --> F5
+    F5["0.97.50 · Fase 5: timing real<br/>simulación separada del render, fps altos sin acelerar el juego"] --> F6
+    F6["0.97.60 · Fase 6: renderer moderno (OpenGL 3.3) y x64"] --> F7
+    F7["0.97.70 · Fase 7: contenido compartido cliente + server"] --> F8
+    F8["0.97.80 · Fase 8: autoridad del server + seguridad"] --> F9
+    F9["0.97.90 · Fase 9+: launcher/updater, web, Android"]
+```
+
+Los números de cada fase son la versión prevista al cerrarla; el alcance de cada una
+puede ajustarse en el camino.
+
+### Versionado
+
+Las versiones son `0.97.FH`, siempre de dos dígitos: **F** es la fase y **H** el
+hotfix.
+
+| Tag | Qué es |
+|---|---|
+| `0.97.00` | base de la reconstrucción fiel |
+| `0.97.01`, `0.97.02`… | correcciones sobre la base |
+| `0.97.10` | cierre de la Fase 1 |
+| `0.97.11`, `0.97.12`… | correcciones sobre la Fase 1 |
+| `0.97.20` | cierre de la Fase 2, y así sucesivamente |
+
+El cliente y el [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usan la
+misma numeración: el mismo tag en los dos repos indica que funcionan juntos. Cada
+Season tendrá su propia línea (`0.99.FH`, …).
+
+### Ramas
+
+```mermaid
+gitGraph
+    commit id: "base" tag: "0.97.00"
+    branch fase/1
+    checkout fase/1
+    commit id: "PR tema A"
+    commit id: "PR tema B"
+    checkout main
+    branch hotfix
+    checkout hotfix
+    commit id: "fix"
+    checkout main
+    merge hotfix tag: "0.97.01"
+    checkout fase/1
+    merge main id: "trae el fix"
+    checkout main
+    merge fase/1 tag: "0.97.10"
+    branch fase/2
+    checkout fase/2
+    commit id: "PR tema C"
+```
+
+- `main` sólo recibe cierres de fase y correcciones; cada merge lleva su tag y su
+  Release.
+- Cada fase se trabaja en `fase/N`. Las ramas de tema (`fix/…`, `feat/…`, `chore/…`)
+  salen de `fase/N` y vuelven por PR.
+- Una corrección sobre una versión publicada sale del tag afectado, se mergea a `main`
+  con su nuevo tag y también a la fase en curso.
+- Los Releases publican sólo el código fuente: cada uno compila el cliente con los datos
+  de su server.

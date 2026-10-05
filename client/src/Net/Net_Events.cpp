@@ -2,33 +2,24 @@
 // Handlers de los opcodes 0x90-0x99 — eventos (Devil Square, Blood Castle,
 // Golden Archer / Event Chip) y migracion de server.
 //
-// Por que existe este archivo
-// ---------------------------
-// Hasta 2026-08-26 estos opcodes estaban despachados en Net_Process.cpp a
-// handlers de GUILD inventados por el port (Guild_CreateOk,
-// Guild_AddMemberResult, Guild_MemberList, ...). Los nombres que IDA le da a
-// las funciones del binario original desmienten esa etiqueta una por una:
+// Nombres que IDA le da a las funciones del binario original:
 //
-//   opcode | funcion real en el binario           | etiqueta que tenia el port
-//   -------|--------------------------------------|---------------------------
-//   0x90   | ReceiveMoveToDevilSquareResult 436820 | "Guild create result"
-//   0x91   | ReceiveEventZoneOpenTime       436CB0 | "Guild add member result"
-//   0x92   | StartMatchCountDown            47EC00 | (no tenia case)
-//   0x93   | ReceiveDevilSquareRank         436A80 | "Guild member list"
-//   0x94   | ReceiveEventChipInfomation     4372C0 | "Guild char-select result"
-//   0x95   | ReceiveEventChip               437380 | "Guild update pos"
-//   0x96   | ReceiveMutoNumber              4373A0 | "Guild set target pos"
-//   0x99   | ReceiveServerImmigration       4373D0 | "Guild join toggle"
+//   opcode | funcion real en el binario
+//   -------|--------------------------------------
+//   0x90   | ReceiveMoveToDevilSquareResult 436820
+//   0x91   | ReceiveEventZoneOpenTime       436CB0
+//   0x92   | StartMatchCountDown            47EC00
+//   0x93   | ReceiveDevilSquareRank         436A80
+//   0x94   | ReceiveEventChipInfomation     4372C0
+//   0x95   | ReceiveEventChip               437380
+//   0x96   | ReceiveMutoNumber              4373A0
+//   0x99   | ReceiveServerImmigration       4373D0
 //
 // Y MuEmu coincide con IDA en los ocho: manda 0x90 desde DevilSquare.cpp, 0x91
 // desde Protocol.cpp (PMSG_EVENT_REMAIN_TIME_SEND), 0x92/0x93 desde
-// DevilSquare.cpp y BloodCastle.cpp, y 0x94-0x97 desde GoldenArcher.cpp. El
-// guild real vive en 0x50-0x62 (Guild.cpp del server), que el cliente ya
-// atiende aparte y correctamente.
-//
-// O sea no habia que elegir entre fidelidad a IDA y fidelidad a MuEmu: las dos
-// fuentes dicen lo mismo y el port estaba mal. Los Guild_* de Party.cpp quedan
-// sin callers (ver la nota alli).
+// DevilSquare.cpp y BloodCastle.cpp, y 0x94-0x97 desde GoldenArcher.cpp. No
+// son opcodes de guild: el guild real vive en 0x50-0x62 (Guild.cpp del server),
+// que el cliente atiende aparte.
 //
 // Hasta que se abra algun evento del lado del server esto no cambia nada
 // visible, salvo el 0x91, que es la respuesta al click derecho sobre las

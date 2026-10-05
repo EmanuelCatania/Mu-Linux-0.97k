@@ -1,5 +1,4 @@
 // Runtime_Externs.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos -------------------
+// Cloth_Integrate vive en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -44,33 +43,15 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// IDA: STRUCT_DECRYPT (0x00423040)
-// STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl STRUCT_DECRYPT(void *ctx, void *chardata) {
-    // STUB: HashTable insert with obfuscation — cannot implement safely (unaff_retaddr)
-    (void)ctx; (void)chardata;
-}
-// IDA: FUN_00422DF0 (0x00422DF0)
-// STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl PACKET_DECRYPT(void *ctx, void *counter) {
-    // STUB: HashTable insert (ptr) with obfuscation — cannot implement safely
-    (void)ctx; (void)counter;
-}
 // ChatListBox_ScrollByN @ 0x0040E330 — NO es "Timer_Advance": es el ciclador del TAMAÑO
 // del historial del ChatListBox (tecla F4 y botón 2 del popup del chat).
 // Cicla this[35] (visible row count, +0x8C): 3 → 6 → 30 → 6 …, alternando
 // g_bUseChatListBox, y después re-scrollea.
 //
-// FIX 2026-07-20 — CRASH 0xC0000005 con param0=8 (violación de EJECUCIÓN):
-// las 4 ramas hacían `(**(void(__cdecl**)(int))(*(int*)param_1 + 0x30))(0)`.
-// `*param_1 + 0x30` es vtable+48 = entrada 12 (sub_40CC50 / scrollByN), que es
-// __thiscall.  Al invocarla como __cdecl con un solo argumento, el `this` no
-// viajaba en ECX: la callee tomaba como `this` la basura que hubiera quedado en
-// ECX, deferenciaba su "vtable" y saltaba a una dirección arbitraria.
-// El disasm (0x40E35D, 0x40E375, 0x40E39C, 0x40E3BE) muestra las 4 ramas como
-// `mov eax,[ecx] / push 0 / call [eax+30h]` con ECX intacto = __thiscall(this, 0).
-// Hex-Rays tipó UNA de las ramas como __stdcall sin this (perdió el tracking de
-// ECX al hoistear `v2 = *this`); las otras tres sí salen como __thiscall.
+// Las 4 ramas llaman a vtable+0x30 (entrada 12, sub_40CC50 / scrollByN) como
+// __thiscall(this, 0) (disasm 0x40E35D, 0x40E375, 0x40E39C, 0x40E3BE). Hex-Rays
+// tipa una de ellas como __stdcall sin this: NO invocarla como __cdecl, porque
+// el this no viaja en ECX y la llamada salta a una dirección arbitraria.
 static void ChatLB_ScrollBy0(int* self)
 {
     // vtable+48 = entrada 12 = scrollByN(this, n).  __fastcall en nuestro build.

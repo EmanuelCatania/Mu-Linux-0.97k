@@ -1,5 +1,4 @@
 // Scene_LegacyHelpers.cpp
-// Extracted from stubs_misc_helpers.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -70,14 +69,8 @@ void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
 // Releases DirectSound buffers for the given slot (all loaded channels),
 // resets slot count and 3D-anchor table.
 //
-// BUG-FIX 2026-04-28: el IDA original usaba `g_lpDSBuffer[0][v3]` con
-// v3 = 4*Buffer + channel — un acceso flatten que el compilador C++ trata
-// como "fila 0, índice fuera de rango". MSVC en Release lo computa offset-
-// based (funciona) pero con ITERACIONES ilimitadas (MaxBufferChannel sin
-// clamp) leía mucho más allá del array, devolviendo basura tipo 0xC2A00000
-// (-80.0f bit-pattern) → v4->Release() → AV.
-//
-// Cambios:
+// Desviaciones respecto de IDA (que indexa `g_lpDSBuffer[0][v3]` con
+// v3 = 4*Buffer + channel, sin clamp):
 //   1. Indexar con 2D plano: g_lpDSBuffer[Buffer][channel].
 //   2. Clamp MaxBufferChannel a [0, 4] — array tiene exactamente 4 canales.
 //   3. Bounds-check Buffer < 420.

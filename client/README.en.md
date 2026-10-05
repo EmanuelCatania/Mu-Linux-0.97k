@@ -60,18 +60,16 @@ is NPC and monster movement.
 
 The ported code is laid out by domain (`Render/`, `Terrain/`, `UI/`, `Item/`,
 `Entity/`, `Combat/`, `Net/`, `Scene/`, and so on); there is no longer a general
-`stubs_*.cpp` dumping ground waiting to be split up. The current tree holds 251
-`.cpp` files and 55 headers under `src/`.
+`stubs_*.cpp` dumping ground waiting to be split up. The current tree holds 249
+`.cpp` files and 58 headers under `src/`.
 
-`stubs_IDA_ports.cpp` is the intentional exception: it holds 26,431 lines of raw
-IDA decompiles, each one guarded by `IDA_PORT_*`. It is preserved as the
-canonical reference for the decompile and as a compatibility or
-selective-activation mechanism while a port is being validated. **Do not
-refactor, rename, or spread this file across modules.** Its aliases and ABI
-bridges are not naming debt either: they exist so that selective ports keep
-their original contract.
+The raw IDA decompiles that were never activated (formerly in
+`src/stubs_IDA_ports.cpp`) are archived in `docs/codigo-muerto/`, outside the
+build, as a reference for the decompile. The aliases and ABI bridges left in
+`functions.h`/`globals.h` are not naming debt: they keep the original contract
+of the ports that use them.
 
-The `FUN_*` and `DAT_*` names that still appear outside that file are not, on
+The `FUN_*` and `DAT_*` names that still appear in the code are not, on
 their own, renaming debt. Some describe infrastructure, the CRT, GameGuard,
 binary layouts, pools, or compatibility; others need research or a future port
 before they can safely be given a semantic name.
@@ -221,11 +219,7 @@ mu97k-src/
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
-    ├── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
-    │
-    └── stubs_IDA_ports.cpp
-                         raw IDA decompiles behind IDA_PORT_*;
-                         preserved infrastructure, do not refactor
+    └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
 ```
 
 Modules group by responsibility. The address in the binary is still an important
@@ -342,3 +336,78 @@ for internal use among collaborators.
 
 `lib/libjpeg/jpeg-6b` belongs to the Independent JPEG Group, under its own
 permissive license (`lib/libjpeg/jpeg-6b/README`, "LEGAL ISSUES" section).
+
+---
+
+## Roadmap
+
+The `0.97.00` tag closes the faithful-reconstruction stage: the client behaves like the
+original binary. From there the work continues in phases, and each closed phase is a
+version.
+
+```mermaid
+flowchart TD
+    F0["0.97.00 · Faithful reconstruction (base)"] --> F1
+    F1["0.97.10 · Phase 1: engineering base<br/>CMake, CI, code and comment cleanup, protocol mirror"] --> F2
+    F2["0.97.20 · Phase 2: native integration of Main.dll + modularization<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrated into the base logic"] --> F3
+    F3["0.97.30 · Phase 3: optimization of the legacy code<br/>Webzen switches and defines → tables and enums"] --> F4
+    F4["0.97.40 · Phase 4: platform abstraction + Linux"] --> F5
+    F5["0.97.50 · Phase 5: real timing<br/>simulation separated from rendering, high fps without speeding up the game"] --> F6
+    F6["0.97.60 · Phase 6: modern renderer (OpenGL 3.3) and x64"] --> F7
+    F7["0.97.70 · Phase 7: content shared between client + server"] --> F8
+    F8["0.97.80 · Phase 8: server authority + security"] --> F9
+    F9["0.97.90 · Phase 9+: launcher/updater, web, Android"]
+```
+
+Each phase's number is the version planned for when it closes; the scope of each one
+may be adjusted along the way.
+
+### Versioning
+
+Versions are `0.97.FH`, always two digits: **F** is the phase and **H** the
+hotfix.
+
+| Tag | What it is |
+|---|---|
+| `0.97.00` | base of the faithful reconstruction |
+| `0.97.01`, `0.97.02`… | fixes on top of the base |
+| `0.97.10` | close of Phase 1 |
+| `0.97.11`, `0.97.12`… | fixes on top of Phase 1 |
+| `0.97.20` | close of Phase 2, and so on |
+
+The client and the [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) use the
+same numbering: the same tag in both repos means they work together. Each
+Season will have its own line (`0.99.FH`, …).
+
+### Branches
+
+```mermaid
+gitGraph
+    commit id: "base" tag: "0.97.00"
+    branch fase/1
+    checkout fase/1
+    commit id: "PR topic A"
+    commit id: "PR topic B"
+    checkout main
+    branch hotfix
+    checkout hotfix
+    commit id: "fix"
+    checkout main
+    merge hotfix tag: "0.97.01"
+    checkout fase/1
+    merge main id: "brings in the fix"
+    checkout main
+    merge fase/1 tag: "0.97.10"
+    branch fase/2
+    checkout fase/2
+    commit id: "PR topic C"
+```
+
+- `main` only receives phase closes and fixes; each merge gets its tag and its
+  Release.
+- Each phase is worked on in `fase/N`. Topic branches (`fix/…`, `feat/…`, `chore/…`)
+  branch off `fase/N` and come back through a PR.
+- A fix to a published version branches off the affected tag, is merged into `main`
+  with its new tag, and also into the phase in progress.
+- Releases publish only the source code: each one builds the client with its own
+  server's data.

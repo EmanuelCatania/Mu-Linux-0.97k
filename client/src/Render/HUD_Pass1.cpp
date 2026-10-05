@@ -1,14 +1,10 @@
 // HUD_Pass1.cpp — primera tanda de funciones de render del HUD in-world, portadas 1:1
 // del mu.exe original (sub_4BCA20, sub_4BD090, sub_4BD2B0, sub_4BFDE0).
 //
-// Estas cuatro faltaban por completo en nuestro build o estaban stubeadas vacías
-// en src/Render/Render_Frame.cpp. Traerlas restaura:
+// Contenido:
 //   * RenderPartyHP        — las barritas de HP sobre los miembros del party en el mundo
-//   * RenderBooleans       — floating-numbers iterator (damage/heal popups)
-//                            Nota: la llamada a RenderBoolean por entrada (0x480E00,
-//                            ~3000 bytes) todavía NO está portada; el iterador
-//                            does its layout/de-overlap work but then falls
-//                            por un RenderBoolean stubeado por ahora.
+//   * RenderBooleans       — floating-numbers iterator (damage/heal popups); cada
+//                            entrada la dibuja RenderBoolean (0x480E00, HUD_Pass3.cpp).
 //   * RenderMainFrameWindow — el marco inferior del HUD (5 llamadas a RenderBitmap + el
 //                            anti-tamper CharacterMachine encrypt/decrypt
 //                            block).  Anti-tamper is preserved structurally
@@ -58,16 +54,11 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // ── Globals que el original referencia por nombre simbólico ─────────────────
 // Definimos #defines para que los nombres estilo IDA coincidan con el storage que
 // ya tenemos, y el código portado quede visualmente cerca del decompile.
-// 2026-08-22 FIX: estos cuatro apuntaban a 0x00561558..0x00561564 con el
-// comentario "already in our build (assumed)" — una suposición que nunca se
-// verificó y que estaba mal.  `ida_xrefs_to` da las direcciones reales, las
-// cuatro escritas por `gluPerspective2` (0x511220):
+// Direcciones reales según `ida_xrefs_to`, las cuatro escritas por
+// `gluPerspective2` (0x511220), que es lo que escribe nuestro GL_SetPerspective:
 //     ScreenCenterX 0x083A429C · ScreenCenterY 0x083A42A0
 //     PerspectiveX  0x083A42A4 · PerspectiveY  0x083A42A8
-// 0x00561558 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
-// Nadie usaba estos nombres todavía, así que el bug nunca se disparó — pero eran
-// cuatro trampas armadas para el próximo port que los usara, porque nuestro
-// `GL_SetPerspective` sí escribe en los DAT_083a42xx.
+// OJO: 0x00561558..0x00561564 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
 #define ScreenCenterX        ViewportCenterX
 #define ScreenCenterY        ViewportCenterY
 #define PerspectiveX         _DAT_083a42a4
@@ -234,7 +225,7 @@ void RenderPartyHP_(void)
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// Entrada pública — reemplaza al stub vacío que antes estaba en Render_Frame.cpp.
+// Entrada pública (la llama Render_Frame.cpp).
 void Render_HPBars(void) { RenderPartyHP_(); }
 
 
@@ -245,7 +236,7 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 //      compute label dimensions (sub_480C60).
 //   2. De-overlap pass: for every pair of active entries, shift one out of
 //      la otra si sus rectángulos de bbox se superponen.
-//   3. Pasada de render: llama a RenderBoolean por entrada (hoy stubeada).
+//   3. Pasada de render: llama a RenderBoolean por entrada (HUD_Pass3.cpp).
 //
 // El original usa el vecino de la lista enlazada de las entradas (`*v0` es el puntero al dueño,
 // non-zero means alive).  Our port preserves the exact pointer-arithmetic
@@ -354,45 +345,13 @@ void RenderMainFrameWindow_(void)
     // Bottom tile #1 (left half).
     GL_DrawTexture(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
 
-    // ── Anti-tamper #1: desencripta CharacterMachine en la primera referencia ──
-    // Port 1:1 del bloque de hash-table intercalado de IDA. El bucket se encuentra
-    // vía HashTable_GetIndex (IDA: FUN_004041e0); nuestra implementación en
-    // stubs.cpp:16227 devuelve -1 porque la tabla está vacía por defecto —
-    // lo que hace que todo este bloque degrade a "insertar una entrada nueva con
-    // ref-count=1 y saltear el desencriptado XOR". Cuando el motor pueble
-    // dword_55C9BC8 como corresponde, la estructura coincide byte a byte con IDA.
+    // ── Anti-tamper #1: andamiaje de la hash-table intercalado de IDA ──
+    // HashTable_GetIndex (IDA: FUN_004041e0, Core/System_Legacy.cpp) devuelve
+    // siempre -1 en este build: sólo corre la rama "no encontrado".
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
         UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
-        if (v6 != 0xFFFFFFFFu && DAT_055c9bd4) {
-            // Encontrado: toma el puntero al valor del array de valores
-            // (dword_55C9BCC[v6]) e incrementa su byte de ref-count [+1412].
-            BYTE* v7 = *(BYTE**)((BYTE*)DAT_055c9bcc + 4 * v6);
-            if (v7) {
-                BYTE v8 = (BYTE)(v7[1412] + 1);
-                v7[1412] = v8;
-                if (v8 < 2) {
-                    // Primera referencia de este frame — desencripta con XOR el buffer de
-                    // 0x584 bytes de CharacterMachine a una copia scratch y lo escribe
-                    // de vuelta. Idéntico al loop de IDA:
-                    //   for v10 = 1411 down to 0:
-                    //     if (v10 < 0x583) v9[v10] ^= v9[v10+1];
-                    //     v9[v10] = ((v9[v10] - 35) ^ key[v10 % 16]) - 71;
-                    BYTE* v9 = new BYTE[0x584];
-                    memcpy(v9, v7, 0x584);
-                    int v10 = 1411;
-                    int v11 = 1412;
-                    do {
-                        if ((unsigned)v10 < 0x583u)
-                            v9[v10] ^= v9[v10 + 1];
-                        v9[v10] = (BYTE)(((v9[v10] - 35) ^ PacketXorKey16[v10 & 0xF]) - 71);
-                        --v10; --v11;
-                    } while (v11);
-                    memcpy(v0, v9, 0x584);
-                    delete[] v9;
-                }
-            }
-        } else {
+        if (!(v6 != 0xFFFFFFFFu && DAT_055c9bd4)) {
             // No encontrado / tabla vacía — inserta una entrada nueva marcada con
             // ref-count = 1 (así el decremento siguiente dispara el encriptado XOR
             // round-trip elsewhere).
@@ -412,26 +371,6 @@ void RenderMainFrameWindow_(void)
                   *(int*)((BYTE*)CharacterAttribute + 16),
                   *(int*)((BYTE*)CharacterAttribute + 52));
         (void)Buffer;
-    }
-
-    // ── Anti-tamper #2: symmetric ref-count decrement ───────────────────────
-    // Vuelve a buscar el mismo buffer, decrementa [+1412] y, al llegar a cero, llama a
-    // Packet_EncryptBuffer para sacar la entrada (lo que en el original dispara la
-    // vuelta de re-encriptado XOR vía sub_404370). Cuando la tabla está vacía
-    // this no-ops, matching IDA's "table full" error-report fallback.
-    if (CharacterMachine) {
-        void* v0 = CharacterMachine;
-        UINT  v12 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
-        if (v12 != 0xFFFFFFFFu && DAT_055c9bd4) {
-            BYTE* v13 = *(BYTE**)((BYTE*)DAT_055c9bcc + 4 * v12);
-            if (v13) {
-                BYTE v14 = (BYTE)(v13[1412] - 1);
-                v13[1412] = v14;
-                if (!v14) {
-                    Packet_EncryptBuffer(v13, v0);
-                }
-            }
-        }
     }
 
     // Bottom tile #2 (mid) and #3 (right half).
@@ -466,11 +405,7 @@ void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
 //   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
 // =============================================================================
 // Item_FindQuickSlotByCategory, RenderItem3D y Camera_BuildMouseRay ya están declaradas en
-// functions.h (que entra vía stdafx.h). FUN_004f5ce0 / FUN_004f6420 están
-// declaradas pero sin implementar en nuestro build — acá dejamos stubs para que
-// enlacen los call sites del render de la barra. Son renderers de efectos de
-// skill / teleport; que no tengan cuerpo sólo significa que esos overlays no se dibujan, lo cual es
-// fine until they get their own port.
+// functions.h (que entra vía stdafx.h).
 extern "C" DWORD DAT_07e91388;
 extern "C" DWORD DAT_07eaa13c;
 

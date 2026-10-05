@@ -16,7 +16,7 @@
 // HashTable encode/decode operations on (param_1+0x388) and (param_1+0x38c)
 // — the two grid coordinate slots. The anti-tamper XOR-encodes those words,
 // then decodes them immediately to use in the terrain-attribute test below.
-// Per CLAUDE.md policy these are reference-count obfuscation, not game logic.
+// These are reference-count obfuscation, not game logic.
 // The effective result of those 480 lines is:
 //   param_1[0x388] = grid_x  (param_2 & 0xff)
 //   param_1[0x38c] = grid_y  ((param_2 >> 8) & 0xff)
@@ -285,13 +285,9 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     //   SHL ECX,0x4                                ; count*0x30
     //   PUSH ECX; CALL operator_new
     //
-    // BUG-FIX: el port usaba offset +0x1022 (de una mala interpretación del
-    // decompile Ghidra que mostraba "Models[0xee8ef].Data + 0x9e"), lo que leía
-    // 22 structs MODEL_t adelante y devolvía un short basura. Si ese short era
-    // menor que el bone count real → undersized buffer → overflow detectado por
-    // PageHeap en R_ConcatTransforms línea 7266 (crash al escribir el último bone).
-    // Correcto: offset +0x22 dentro del struct MODEL_t (mismo que usa
-    // BMD_Animation para su loop count).
+    // Ojo: el bone count es el short en +0x22 del MODEL_t (el mismo campo que usa
+    // BMD_Animation para su loop).  Leerlo de otro offset deja el buffer corto y
+    // el render escribe el ultimo hueso fuera de el.
     if (*(unsigned char **)(param_1 + 0x114) != NULL) {
         operator_delete(*(unsigned char **)(param_1 + 0x114));
         *(int *)(param_1 + 0x114) = 0;
@@ -301,22 +297,12 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
         short boneCount = *(short *)(DAT_05828d58 + etype * 0xbc + 0x22);
         if (boneCount < 0) boneCount = 0;   // defense: short garbage → signed neg
         void *boneBuf = operator_new((unsigned int)boneCount * 0x30);
-        // UB heredado del original: IDA 0045ADC0 L710 hace `operator_new` sin
-        // inicializar, y el buffer se LEE antes de escribirse. El tick del frame
-        // del spawn (MoveCharacterClient -> MoveCharacterVisual, 0x4520C0) entra
-        // al switch por ModelID y transforma huesos que Calc_RenderObject todavia
-        // no lleno: recien los llena el render, que corre despues.
-        //
-        // En el binario release eso devuelve paginas frescas del OS (ceros) y el
-        // artefacto no se ve. Con el CRT debug el relleno es 0xCDCDCDCD, o sea
-        // posiciones de ~-5.6e8: la cadena de 13 joints 1254 de Queen Rainer
-        // (ModelID 321) nace con esas coordenadas y dibuja los haces azules que
-        // cruzan la pantalla. Cuadra con el sintoma: al entrar por primera vez
-        // los mobs salen mal y al alejarse y volver (slot ya con huesos validos)
-        // se ven bien.
-        //
-        // Se inicializa a cero, que es lo que el original obtiene de hecho.
-        // Mismo criterio que el fix de los buffers POT de textura (7c1a39d).
+        // DESVIACION: IDA 0045ADC0 L710 hace `operator_new` sin inicializar y el buffer
+        // se LEE antes de escribirse (el tick del spawn, MoveCharacterVisual 0x4520C0,
+        // transforma huesos que Calc_RenderObject todavia no lleno).  En release eso son
+        // paginas frescas del OS (ceros); con el relleno 0xCD del CRT debug los joints
+        // nacen en ~-5.6e8 y dibujan haces que cruzan la pantalla.  Se inicializa a
+        // cero, que es lo que el original obtiene de hecho.
         if (boneBuf && boneCount > 0)
             memset(boneBuf, 0, (size_t)boneCount * 0x30);
         *(void **)(param_1 + 0x114) = boneBuf;

@@ -1,15 +1,4 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
+// Math_LegacyAngle.cpp — Math_GetAngleFromPoints.
 
 #include "stdafx.h"
 #include "globals.h"

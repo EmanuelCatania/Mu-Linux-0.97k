@@ -116,10 +116,6 @@
 // IDA: Entity_SpawnEffects (0x004FC070)
 // Spawna partículas/efectos visuales en la posición de los huesos de la entidad.
 // Switch principal: World × entity.type.
-//
-// 2026-05-03: AUTO-SKIP removed. The only absolute-bound loop was the case
-// 0x27 portal bone walker (`while (pfVar3 < 0x69716cd)`), already replaced
-// with explicit count of 4. Other paths use proper bounds or symbol math.
 float * __cdecl Entity_SpawnEffects(int param_1)
 {
     void     *pModel;
@@ -142,7 +138,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     // Weather_Update, MoveJoint y CreateJoint).
     float     __lt[3] = { 0.0f, 0.0f, 0.0f };
     float    &local_24 = __lt[0], &local_20 = __lt[1], &local_1c = __lt[2];
-    // BUG-FIX: many paths pass &local_18 as if it were a contiguous float[3]
+    // Many paths pass &local_18 as if it were a contiguous float[3]
     // to TransformPosition / CreateSprite / Particle_Spawn. Keep the original
     // names as aliases over a real 3-float buffer so world positions are stable.
     float     local_pos_buf[3];
@@ -162,11 +158,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         local_light_rgb[1] = fVar14 * 0.5f;
         local_light_rgb[2] = fVar14 * 0.2f;
         local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
-        // BUG-FIX 2026-07-12: translate=0 (fiel al IDA Entity_SpawnEffects). El
-        // barco tiene 2 antorchas (bones c1c/c4c). El translate=1 de la sesión
-        // previa se puso a ciegas (flares invisibles por bug texcoords) y sumaba
-        // la pos world de más → 1 flare desplazado al lado del barco. La bone
-        // matrix ya está en world-space, translate=0 da la pos correcta.
+        // translate=0 (fiel al IDA Entity_SpawnEffects): la bone matrix ya está en
+        // world-space. El barco tiene 2 antorchas (bones c1c/c4c).
         BMD_TransformPosition(pModel, (float *)&DAT_06970c1c, local_c, &local_18, '\0');
         CreateSprite(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
         BMD_TransformPosition(pModel, (float *)&DAT_06970c4c, local_c, &local_18, '\0');
@@ -313,11 +306,9 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             CreateSprite(0x4a7, &local_18, 1.0f,&local_24, param_1,  local_30, 0);
             CreateSprite(0x4a7, &local_18, 1.0f,&local_24, param_1, -local_30, 0);
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
-            // BUG-FIX 2026-05-03: bound `< 0x69716cd` was an absolute source-binary
-            // address (= &DAT_0697160c + 0xC1). DAT_0697160c is a macro into
-            // g_BoneScratch in our build; comparing pfVar3 to literal 0x69716cd
-            // is junk. The iteration count is 4 ("array de 4 huesos portal,
-            // stride 0x30" per the file header).
+            // El bound del original `< 0x69716cd` es una dirección absoluta del binario
+            // (= &DAT_0697160c + 0xC1); DAT_0697160c es un macro a g_BoneScratch en
+            // nuestro build, así que se itera por cantidad: 4 huesos de portal, stride 0x30.
             pfVar3 = (float *)&DAT_0697160c;
             for (int boneIdx = 0; boneIdx < 4; ++boneIdx, pfVar3 += 0xc) {
                 BMD_TransformPosition(pModel, pfVar3, local_c, &local_18, '\0');

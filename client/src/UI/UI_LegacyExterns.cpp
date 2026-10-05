@@ -1,5 +1,4 @@
 // UI_LegacyExterns.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos ------------------
+// Cloth_Integrate esta en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -129,12 +128,9 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
 
 static void FUN_004c9730_old(float a1, int a2, int a3)
 {
-    // 2026-05-05: SIMPLIFIED safe version. La versión completa hacía 10+
-    // sprintf_s con GlobalText[N] format strings. Si cualquier slot de
-    // GlobalText estaba sin cargar/corrupted (e.g. tenía "%s" donde el código
-    // pasa un int), sprintf interpretaba el int como char* → AV crash on
-    // hover. Esta versión solo muestra el nombre del skill (sin damage,
-    // mana, distance lines) hasta que GlobalText loader esté validado.
+    // Version simplificada y SIN USO (no tiene callers; la activa es
+    // RenderSkillTooltip, mas abajo): solo muestra el nombre de la skill y
+    // distancia/mana.
     //
     // Bounds check: a3 (slot index hovered) debe ser 0..63 para evitar OOB
     // read en CharacterAttribute[87 + a3].
@@ -349,10 +345,8 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     //   opcional "no puede usarla"          color 5 (blanco con franja)
     //   ultimo  = "\n"
     //
-    // 2026-08-18: antes esto pintaba su PROPIA caja (cuarta reimplementacion
-    // inventada del tooltip, con colores ARGB y textos en ingles hardcodeados).
-    // Ahora usa lpString_07e90798 + CharMenu_RenderTextList, que es lo que hace el binario
-    // — misma rutina que el tooltip de item y el menu de personaje.
+    // Usa lpString_07e90798 + CharMenu_RenderTextList, igual que el binario —
+    // misma rutina que el tooltip de item y el menu de personaje.
     auto  TextListN     = [](int i) -> char* { return lpString_07e90798 + i * 100; };
     auto  GlobalTextOr  = [](int idx, const char* fallback) -> const char* {
         if (idx >= 0 && idx < GLOBALTEXT_ROWS && GlobalText[idx][0])
@@ -445,21 +439,17 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 // Draws text via Font vtable dispatch (CUIRenderText_RenderText) if non-empty or maxw!=0.
 // Return type is void per functions.h declaration.
 //
-// 2026-05-04: BUG-FIX — el flag `param_5` (iSort) determinaba alineación:
+// `param_5` (iSort) determina la alineación:
 //   1 = left-align (default)
 //   2 = center within [x, x+maxw]
-// Antes era `(void)param_5` → todo render quedaba left-aligned. El menú C
-// (RenderText con centered=1 sobre maxw=70-150) renderizaba "mago", "[Soul
-// Master]", "Fuerza:1000" etc. pegados a la izquierda en lugar de centrados.
 // IDA original delega al `CUIRenderText::RenderText` que maneja iSort
 // internamente; lo replicamos inline acá.
 // IDA: FUN_0047F7A0
 void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6) {
     (void)param_6;
     if (param_3 == nullptr) return;
-    // 2026-05-08: bug-fix — múltiples crashes en ucrtbase.dll's strlen/lstrlenA
-    // venían de pasar punteros pequeños (< 0x100000) tipo 0x2A00 (= type*64
-    // con DAT_07d78068=0). Validar el puntero antes de cualquier strlen.
+    // Validar el puntero antes de cualquier strlen: llegan punteros chicos
+    // (< 0x100000, p.ej. 0x2A00 = type*64 con DAT_07d78068=0).
     // Range: heap user-space [0x100000..0x80000000). rdata strings in our
     // exe live in [0x004XXXXX..0x00500000) — also valid.
     {
@@ -475,22 +465,12 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     int x = param_1;
 
     // Aplicar centrado dentro del box [param_1, param_1+param_4].
-    // param_1 y param_4 están en unidades del ortho; el extent de GDI viene en
-    // píxeles de framebuffer.  Text_MeasureOrthoWidth hace la conversión (es el
-    // equivalente correcto del `sz.cx / g_fScreenRate_x` de IDA para nuestro
-    // pipeline).  Sin ella el texto quedaba descentrado hacia la izquierda.
-    // 2026-08-26 — MEZCLA DE ESPACIOS. `param_4` (iBoxWidth) llega en PIXELES:
-    // los callers lo calculan como `N * WindowWidth / 640`, que es lo que hace
-    // el original (p.ej. RenderCharacterInfoWindow 0x4ECC60 L279:
+    // `param_4` (iBoxWidth) llega en PIXELES: los callers lo calculan como
+    // `N * WindowWidth / 640`, igual que el original (p.ej.
+    // RenderCharacterInfoWindow 0x4ECC60 L279:
     // `RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * WindowWidth / 0x280, ...)`).
-    // Ese hardcode es correcto y se conserva.
-    //
-    // Pero `param_1` es LOGICO y `Text_MeasureOrthoWidth` devuelve LOGICO, asi
-    // que el centrado mezclaba las dos unidades. A 640x480 no se notaba porque
-    // `N * 640 / 640 == N` y la escala vale 1.0; a 1024 el ancho de caja salia
-    // 1.6x mas grande que la medida del texto y el centrado se corria a la
-    // derecha — el sintoma de "textos corridos respecto de sus labels" en el
-    // menu de personaje (C).
+    // `param_1` y `Text_MeasureOrthoWidth` son LOGICOS, asi que el box se pasa a
+    // logico antes de centrar:
     //
     //   param_4  -> pixel -> / g_fScreenRate_x -> logico
     //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
@@ -513,12 +493,10 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
 // Returns 1 if found, 0 otherwise.
 bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
     int iVar5 = (int)strlen(pat);
-    // BUG-FIX 2026-07-17: patrón vacío = no-match. El IDA devuelve 1 para patrón
-    // vacío, pero eso solo es "correcto" porque en el original los strings de filtro
-    // están cargados (no vacíos). Varios de esos globals llegan vacíos en runtime en
-    // nuestro build (ej. GlobalText[457/458] si el Text.bmd no tiene esas filas) →
-    // FindText(nombre,"")=1 rechazaba TODO nombre en el create-char. Un patrón vacío
-    // no debe matchear nada.
+    // DESVIACIÓN: patrón vacío = no-match.  IDA devuelve 1, pero en el original
+    // los strings de filtro nunca llegan vacíos; en nuestro build algunos sí
+    // (ej. GlobalText[457/458] si el Text.bmd no tiene esas filas) y
+    // FindText(nombre,"")=1 rechazaría todo nombre en el create-char.
     if (iVar5 < 1) return 0;
     int iVar6 = (int)strlen(param_1) - iVar5;
     if (param_3 != '\0') iVar6 = 0;
@@ -572,7 +550,7 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
 // fuente GDI y emite el texto con glCallLists. Suficiente para UI (login,
 // char-select, chat) — el look no matchea la fuente TGA original píxel a
 // píxel pero los textos aparecen en su posición con el color y layout
-// correctos, que era lo que faltaba.
+// correctos.
 //
 // Coordenadas: callers pasan Y con origen TOP-LEFT (convención game). La GL
 // ortho es `gluOrtho2D(0, vw, 0, vh)` Y-bottom (ver GL_Begin2D en
@@ -582,38 +560,15 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
 // Color: DAT_00559c78 es el COLORREF GDI (0x00BBGGRR). Se convierte a glColor.
 // El Alpha del byte alto (cuando está seteado, ej 0xffd2e6ff) se respeta.
 // ── Escala "píxeles de framebuffer" → "unidades del ortho 2D" ───────────────
-// 2026-07-20.  El punto que hacía fallar todos los recuadros de texto:
-//
 //   · La GEOMETRÍA 2D (RenderColor / RenderBitmap) se emite en unidades del
-//     ortho, que es `gluOrtho2D(0, DAT_0056156c, 0, DAT_00561570)`, y la GPU la
-//     estira hasta el viewport.  Un quad de ancho W se ve W * (viewport/ortho).
-//   · Los GLIFOS, en cambio, los pinta wglUseFontBitmaps + glBitmap, que hace
-//     un blit 1:1 EN PÍXELES DE FRAMEBUFFER desde el raster position.  NO se
-//     estiran.  Y `GetTextExtentPointA` mide en esos mismos píxeles.
-//
+//     ortho y la GPU la estira hasta el viewport.
+//   · Los GLIFOS los pinta wglUseFontBitmaps + glBitmap, un blit 1:1 EN
+//     PÍXELES DE FRAMEBUFFER desde el raster position, y `GetTextExtentPointA`
+//     mide en esos mismos píxeles.
 // O sea que el ancho del texto y el ancho de su fondo viven en unidades
-// distintas, y hay que dividir el extent por la relación viewport/ortho para
-// que el recuadro cubra exactamente las letras.
-//
-// Deliberadamente NO usamos `g_fScreenRate_x` (_DAT_055c9b70) ni
-// `Screen_ToGLX` para esto: son dos fuentes de escala que en nuestro build
-// están DESINCRONIZADAS.  `g_fScreenRate_x` sale de `g_ScreenW` (Config_Load),
-// mientras que el ortho y el viewport salen de `DAT_0056156c` — y son dos
-// variables separadas (globals.cpp:303 vs Config_Load.cpp:49), donde nada
-// copia una a la otra.  Preguntarle a OpenGL por su viewport es la única
-// fuente que no puede desincronizarse, y sigue siendo correcta si algún día
-// se unifican esos globals.
-// 2026-08-26: esto derivaba la escala del viewport de OpenGL
-// (`viewport / WindowWidth`) para esquivar a `g_fScreenRate_x`, que en ese
-// momento estaba desincronizado. Pero el viewport se setea con ESE MISMO global
-// (`GL_Begin2D`: `glViewport(0,0,vw,vh)` con `vw = WindowWidth`), asi que la
-// division daba 1.0 por construccion: no compensaba nada.
-//
-// Con las escalas globales ya correctas, la conversion pixel -> logico es
-// exactamente `g_fScreenRate_x/y`, que es lo que usa el binario en sus seis
-// sitios (`TextSize.cx / g_fScreenRate_x`). Se mantiene el nombre y la firma
-// para no tocar los cuatro consumidores; lo que cambia es de donde sale el
-// factor.
+// distintas: para que el recuadro cubra exactamente las letras el extent se
+// divide por esta escala, que es `g_fScreenRate_x/y` (lo mismo que usa el
+// binario en sus seis sitios: `TextSize.cx / g_fScreenRate_x`).
 static void Text_PixelToOrthoScale(float* outX, float* outY)
 {
     *outX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
@@ -621,18 +576,13 @@ static void Text_PixelToOrthoScale(float* outX, float* outY)
 }
 
 // Ancho del texto EN UNIDADES DEL ORTHO (que es donde vive todo el layout).
-// Es el equivalente correcto, para nuestro pipeline, del `sz.cx /
-// g_fScreenRate_x` que hace IDA en RenderText (0x47F650) y RenderTipText
-// (0x47F7F0).
-// Escala pixeles-de-framebuffer -> unidades del ortho en las que dibuja el
-// stack de texto (la misma que aplica CUIRenderText_RenderText a los glifos).
-//
-// OJO, NO es lo mismo que g_fScreenRate_x: ese es el factor del BINARIO, que
-// pasa a espacio-640 porque su CUIRenderText reescala internamente. En nuestro
-// pipeline el reescalado lo hace el ortho, asi que un ancho medido con
-// GetTextExtentPointA hay que dividirlo por ESTE factor para mezclarlo con el
-// layout. Usar los dos mezclados deja la caja y el texto a escalas distintas
-// (ver el fix del ancho del tooltip en CharMenu_Build.cpp).
+// Equivale al `sz.cx / g_fScreenRate_x` que hace IDA en RenderText (0x47F650)
+// y RenderTipText (0x47F7F0).
+// Text_GetOrthoScaleX: escala pixeles-de-framebuffer -> unidades del ortho en
+// las que dibuja el stack de texto (la misma que aplica
+// CUIRenderText_RenderText a los glifos).  Sale de Text_PixelToOrthoScale, o
+// sea g_fScreenRate_x.  Todo ancho medido con GetTextExtentPointA se divide
+// por este factor antes de mezclarlo con el layout (ver CharMenu_Build.cpp).
 extern "C" float Text_GetOrthoScaleX(void)
 {
     float sx, sy;
@@ -844,30 +794,18 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     HDC hFontDC = DAT_055c9fec;
     if (hFontDC == NULL) return;
 
-    // ── FUENTE ACTIVA (fix 2026-07-20) ──────────────────────────────────────
-    // Acá había `hFont = DAT_055ca00c` HARDCODEADO (la fuente regular), pero
-    // los callers seleccionan fuentes DISTINTAS en este mismo DC antes de
-    // llamarnos: g_hFontBold (chat, HUD_Pass2/3/4, sub_40CE20 vía
-    // CUIRenderText::SetFont) y g_hFontBig (HUD_Pass3:486, doble tamaño).
-    //
-    // Consecuencia doble:
-    //   1. Los glifos salían SIEMPRE en regular — bold y big nunca se veían.
-    //   2. El recuadro de fondo se medía con GetTextExtentPointA usando la
-    //      fuente que el caller seleccionó (bold/big = más ancha) mientras las
-    //      letras se dibujaban en regular (más angosta) → el fondo excedía al
-    //      texto.  Y cuando el caller sí había dejado la regular, calzaba.
-    //      De ahí el "a veces sobra, a veces no" que quedaba después de
-    //      arreglar la escala viewport/ortho.
-    //
-    // Ahora la fuente sale del DC (que es la que efectivamente usó el caller
-    // para medir), y cacheamos las display lists POR fuente.
+    // ── FUENTE ACTIVA ───────────────────────────────────────────────────────
+    // La fuente sale del DC: los callers seleccionan fuentes DISTINTAS en este
+    // mismo DC antes de llamarnos (g_hFontBold: chat, HUD_Pass2/3/4, sub_40CE20
+    // vía CUIRenderText::SetFont; g_hFontBig: HUD_Pass3, doble tamaño) y miden el
+    // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
+    // se cachean POR fuente.
     HFONT hFont = (HFONT)GetCurrentObject(hFontDC, OBJ_FONT);
     if (hFont == NULL) hFont = (HFONT)(uintptr_t)DAT_055ca00c;
     if (hFont == NULL) return;
 
-    // Cache de hasta 4 fuentes (regular / bold / big / repuesto).  Antes era
-    // una sola entrada, así que alternar fuentes entre llamadas habría
-    // reconstruido 256 display lists en CADA llamada.
+    // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
+    // reconstruir las 256 display lists al alternar fuentes entre llamadas.
     struct FontLists { HGLRC rc; HFONT font; GLuint base; int ascent; };
     static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
     static int       s_next = 0;
@@ -948,11 +886,6 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     //     }
     // Width/Height son el extent en píxeles; acá los pasamos a unidades del
     // ortho con la misma escala que ya usa el fondo.
-    //
-    // 2026-08-21: sin esto, al llegar al borde el quad de fondo se dibujaba
-    // (glVertex2f se clipea normal) pero los glifos no, porque glRasterPos
-    // fuera del viewport invalida la posición y glCallLists no emite nada →
-    // quedaba un recuadro negro vacío en el borde.
     extern DWORD DAT_0056156c;  // ancho del ortho 2D
     extern DWORD DAT_00561570;  // alto  del ortho 2D
     DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
@@ -962,8 +895,6 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         // GDI tambien es pixel, asi que el clamp es homogeneo y se compara
         // contra WindowWidth/Height directamente — igual que `sub_47F4C0` con
         // a7 = 0:  `else if (Width + x > WindowWidth) x = WindowWidth - Width;`
-        // Antes se dividia por Text_PixelToOrthoScale, que valia 1.0 por
-        // construccion; a 640x480 el resultado numerico no cambia.
         SIZE tot = {0, 0};
         GetTextExtentPointA(hFontDC, drawText, (int)strlen(drawText), &tot);
         float wOrtho = (float)tot.cx;
@@ -986,17 +917,14 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // byte 3).  Con marcadores presentes esto es solo el color del PRIMER tramo;
     // el resto sale de markers[].fg (ver el loop de abajo).
     //
-    // 2026-05-04: respetar el alpha que el CALLER setea via glColor4f(...,α)
-    // antes de RenderText. Antes pisábamos con `glColor4ub(R,G,B,A)` y se
-    // perdía el cross-fade del banner clase/zona (los dos textos siempre a
-    // α=1 → solapaban). Multiplicamos los alphas para que tanto el del
-    // texto-color (DAT_00559c78 byte 3) como el del caller respeten su
-    // contribución.
+    // Se respeta el alpha que el CALLER setea via glColor4f(...,α) antes de
+    // RenderText (lo usa p.ej. el cross-fade del banner clase/zona): se
+    // multiplican el alpha del texto-color (DAT_00559c78 byte 3) y el del caller.
     GLfloat curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     glGetFloatv(GL_CURRENT_COLOR, curColor);
     GLubyte callerA = (GLubyte)(curColor[3] * 255.0f + 0.5f);
 
-    // 2026-08-21: el color del caller (glColor3f) también MODULA el RGB, no
+    // El color del caller (glColor3f) también MODULA el RGB, no
     // sólo el alpha.  En el binario el subclass por defecto de CUIRenderText
     // (sub_410AF0, g_iRenderTextType != 1) hace TextOut a un DIB, copia los
     // píxeles a una textura pintándolos con m_dwTextColor / m_dwBackColor
@@ -1017,7 +945,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
 
     // ── FONDO + GLIFOS, POR TRAMOS DE COLOR ──────────────────────────────────
     // Sin marcadores hay un único tramo con (m_dwTextColor, m_dwBackColor), o
-    // sea exactamente el comportamiento previo.
+    // sea un solo color de texto y de fondo.
     //
     // El original (sub_4105F0) resuelve el color por COLUMNA de píxel: busca el
     // último marcador cuyo pixelX sea menor que la columna.  Como pixelX es el
@@ -1025,9 +953,9 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // partir por charIndex — que es lo natural para un renderer de glifos — da
     // el mismo resultado.
     //
-    // FONDO: 2026-07-19 — faltaba por completo.  En el original el subclass
+    // FONDO: en el original el subclass
     // pinta el fondo (m_dwBackColor / bg del marcador) en los píxeles NO-texto
-    // del tramo; por eso los mensajes del chat salían sin su recuadro.
+    // del tramo (p.ej. el recuadro de los mensajes del chat).
     // Formato 0xAABBGGRR igual que el color de texto.  Alpha 0 = sin fondo.
     {
         // Los offsets de tramo (`markers[].pixelStart`) y los extents salen de
@@ -1066,9 +994,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                 bG = (GLubyte)((float)bG * callerG + 0.5f);
                 bB = (GLubyte)((float)bB * callerB + 0.5f);
                 // glRasterPos deja el ORIGEN DEL GLIFO en la baseline, así que el
-                // texto ocupa [rasterY - descent, rasterY + ascent]. Antes usaba
-                // `rasterY-2 .. rasterY+cy-2`, que corría la caja hacia arriba y
-                // dejaba aire abajo. descent = cy - ascent.
+                // texto ocupa [rasterY - descent, rasterY + ascent]. descent = cy - ascent.
                 int descent = (int)bsz.cy - s_ascent;
                 if (descent < 0) descent = 0;
                 // bsz está en píxeles de framebuffer (así mide GDI y así

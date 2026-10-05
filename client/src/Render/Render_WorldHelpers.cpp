@@ -1,6 +1,6 @@
 // Render_WorldHelpers.cpp
 //
-// Formerly stubs_render_helpers.cpp.  This module owns the world-render
+// This module owns the world-render
 // helpers called from Render_Scene3D and adjacent render passes.
 //
 // IDA provenance is intentionally retained at every entry point as
@@ -36,10 +36,6 @@ extern void __cdecl operator_delete(void* ptr);
 #endif
 
 // ── In-game render helpers (declared in functions.h, called from Render_Scene3D) ──
-// 2026-04-28: minimal-impl stubs so we can wire them up in Render_Scene3D without
-// link errors. Each will be ported per-IDA when the corresponding pool/entity
-// system gets activated.
-//
 // RenderBoids @ 0x00500AA0 — RenderBoids
 // Port FIEL del IDA: itera DAT_0839BE18 pool stride 444B (40 entries).
 // Decoración de fauna/efectos del mapa: birds, fish, butterflies, magic gates.
@@ -60,19 +56,15 @@ extern void __cdecl operator_delete(void* ptr);
 
 void __cdecl RenderBoids(void)
 {
-    // 2026-09-03 -- BOIDS QUE NUNCA SE DIBUJABAN.
     // IDA RenderBoids (0x00500AA0) arranca con `v0 = (float *)dword_839BE18` y
     // recorre `v0 += 111` hasta `&unk_83A0378`, o sea 40 slots de 444 bytes
     // anclados en +0x168 del slot: `v0 - 90` floats = la base del slot,
     // `*((BYTE*)v0 - 360)` = el flag de activo y `*((WORD*)v0 - 179)` = el tipo.
-    // Ese 0x0839BE18 NO es un puntero suelto: es el campo +0x168 del slot 0 del
-    // mismo pool que ya vive en `g_WeatherSlotPool` (base 0x0839BCB0, y
-    // 0x839BE18 - 0x839BCB0 = 0x168).  El port lo habia dejado como un DWORD
-    // aparte inicializado en 0, asi que este `return` se tomaba SIEMPRE y las
-    // criaturas voladoras del mapa no se dibujaban nunca -- se nota sobre todo
-    // en Atlans e Icarus, que son los dos mundos donde `Weather_Update` las
-    // spawnea (tanto que el DLL de inyeccion NOPea esas dos ramas en 0x00501292
-    // con el comentario "Fix Atlans and Icarus Goldens Overflow").
+    // Ese 0x0839BE18 NO es un puntero suelto: es el campo +0x168 del slot 0 de
+    // `g_WeatherSlotPool` (base 0x0839BCB0; 0x839BE18 - 0x839BCB0 = 0x168).
+    // Atlans e Icarus son los dos mundos donde `Weather_Update` spawnea estas
+    // criaturas (el DLL de inyeccion NOPea esas dos ramas en 0x00501292 con el
+    // comentario "Fix Atlans and Icarus Goldens Overflow").
     if (!DAT_05828d58) return;
 
     // El bound de IDA es `< &unk_83A0378` = 40 slots; lo expresamos como un
@@ -116,13 +108,6 @@ void __cdecl RenderBoids(void)
                 //   RenderPartObjectBodyColor(Models + 188*type, o, type, *v0, 68, 1.0, -1);
                 //
                 // (56588 = 188 * 301, o sea el modelo del dragon.)
-                //
-                // El port llamaba en su lugar a PartObjectColor (0x503CF0),
-                // que es OTRA funcion, con otra firma y otra semantica -- el
-                // comentario decia "Hero body color".  Resultado: el pase 0x48
-                // nunca corria y el dragon dorado salia con el render normal,
-                // o sea rojo.  Reportado 2026-09-29: "no aparecen dorados ni
-                // con la textura correcta".
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
                     void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + 188 * 301);
                     void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + 188 * entType);
@@ -147,12 +132,8 @@ void __cdecl RenderBoids(void)
                 // IDA RenderBoids L61:
                 //   CreateSprite(1150, v0 - 86, 1.0, v14, (DWORD)(v0 - 90), 0.0, 0);
                 //
-                // El port llamaba a Particle_Spawn, que es OTRA funcion con
-                // otra firma, y para que los argumentos entraran metia un
-                // nullptr como Position pasando la posicion real en el slot
-                // del Angle.  Particle_Spawn hace `*param_2` sin guard, asi
-                // que esto crasheaba leyendo la direccion 0 apenas aparecia
-                // una entidad de tipo 175 (reporte: al entrar a Noria).
+                // Es CreateSprite, no Particle_Spawn (otra funcion con otra firma, que hace
+                // `*param_2` sin guard: con Position nullptr crashea).
                 if (entType == 175) {
                     float scale = (float)((rand() % 32 + 64) * 0.01);
                     float color[3] = { scale * 0.2f, scale * 0.4f, scale * 0.4f };
@@ -171,10 +152,8 @@ void __cdecl RenderBoids(void)
 
                     // IDA L80-95: TransformPosition(v4, flt_6970ACC, ...) y
                     // CreateSprite(1150, Position, 0.1, Light, owner, 0.0, 0).
-                    // Mismos dos errores que en el caso 175, mas un nullptr
-                    // como matriz de hueso: Vector_Transform la deferencia, o
-                    // sea era otro crash latente.  flt_6970ACC es nuestro
-                    // DAT_06970acc (g_BoneScratch + 0x30).
+                    // flt_6970ACC es nuestro DAT_06970acc (g_BoneScratch + 0x30).  No pasar
+                    // nullptr como matriz de hueso: Vector_Transform la deferencia.
                     // Left jet
                     BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetL, Position, 1);
                     CreateSprite(1150, Position, 0.1f, color,
@@ -233,9 +212,6 @@ void __cdecl RenderBoids(void)
 //   7. Projection a screen → save sx/sy en entity[+0xB8/+0xBA].
 // RandomTable (0x055C9E58) la siembra WinMain con `rand() % 360`; la usa el
 // montón de monedas del tipo 863 (Zen) para repartirlas en círculo.
-// 2026-08-21: acá había una tabla local inventada con valores 0..99, así que
-// `% 360` daba ángulos de sólo 0..99° → las monedas salían en una cuña en vez
-// de en círculo, y siempre en el mismo patrón.
 
 void __cdecl Entity_Render(void)
 {
@@ -280,8 +256,7 @@ void __cdecl Entity_Render(void)
                 float headA[3]      = { *(float*)(v0 - 221), *(float*)(v0 - 217), *(float*)(v0 - 213) };
                 // AnimationFrame / PriorFrame: IDA los toma en v0+3 y v0+7 —
                 // offsets de BYTE (disasm 0x5039E9/0x5039ED: `mov ecx,[esi+7]`,
-                // `mov edx,[esi+3]`).  2026-08-21: el port usaba v0+12 y v0+28,
-                // que es la misma confusión float*/BYTE* que el Alpha de arriba.
+                // `mov edx,[esi+3]`), no de float.
                 BMD_Animation(model, (int)&DAT_06970a9c,
                              *(float*)(v0 + 3), *(unsigned int*)(v0 + 7),
                              v0[1], (unsigned int*)angles_in, headA, 0, 0);
@@ -319,7 +294,6 @@ void __cdecl Entity_Render(void)
                         // Alpha: IDA `*(float *)(v0 + 99)` — offset de BYTE
                         // (disasm 0x503B4C: `mov eax, [esi+63h]`), o sea Items+432,
                         // el mismo campo que usa el draw principal (v1 + 360).
-                        // 2026-08-21: el port tenía v0 + 396 (Items+729).
                         RenderPartObject((int)v1, type, 0, Light, *(float*)(v0 + 99),
                                      *(DWORD*)(v0 - 325), *(v0 - 302),
                                      1, 1, 1, 0, 2);
@@ -341,11 +315,8 @@ void __cdecl Entity_Render(void)
                                                  * (double)_DAT_00552488 + v22);
                 }
 
-                // 2026-07-27 FIX (item del suelo renderizaba mal, "árbol"):
-                // el IDA (L161-163) pasa `*((short*)v1 + 1)` = v1+2 = el TYPE
-                // del entity (= model del item, ej 662) a RenderPartObject.
-                // El port usaba v1+4 (= el flag "1" que escribe CreateItem en
-                // ip+76) → renderizaba el modelo equivocado.
+                // IDA (L161-163) pasa `*((short*)v1 + 1)` = v1+2 = el TYPE del entity
+                // (= model del item, ej 662) a RenderPartObject.
                 RenderPartObject((int)v1, *(short*)(v1 + 2), 0, Light,
                              *(float*)(v1 + 360),
                              *(DWORD*)(v0 - 325), *(v0 - 302),
@@ -355,12 +326,10 @@ void __cdecl Entity_Render(void)
                 *(float*)(v1 + 16) = v20;
                 *(float*)(v1 + 20) = v21;
 
-                // 2026-07-27 FIX: proyectar la posición del item a pantalla y
-                // guardarla en v1+92/94 (= word idx 46/47, IDA Entity_Render
-                // L182-183). RenderItemName lee esa pos en o+0x5c/0x5e (= base+
-                // 164/166 = v1+92/94) para dibujar el nombre SOBRE el item. El
-                // port la zereaba en v1+184 (offset equivocado) → nombre en
-                // (0,0). Camera_ProjectWorldToScreen (World_ToScreen) sí está implementado.
+                // Proyectar la posición del item a pantalla y guardarla en v1+92/94
+                // (= word idx 46/47, IDA Entity_Render L182-183). RenderItemName lee esa pos
+                // en o+0x5c/0x5e (= base+164/166 = v1+92/94) para dibujar el nombre SOBRE el
+                // item.
                 {
                     float scr[3];
                     scr[0] = v20;                              // world X
@@ -402,10 +371,8 @@ void __cdecl ItemDrop_Render(void)
     int* poolBase = (int*)((char*)DAT_07b27150 + 0x9b8);
     const int kStride = 0x9d8 / 4;   // 630 ints = 2520 bytes
     // El binario itera de &unk_7B27B08 a &unk_7C5B4E8 con stride 0x9d8 = 500
-    // entradas; nuestro pool DAT_07b27150 está dimensionado a 200 slots, así que
-    // iteramos los que entran (antes eran 84 fijos → los trails de los slots
-    // 84..199 nunca se dibujaban).
-    const int kEntries = (int)(sizeof(DAT_07b27150) / 0x9d8);   // 200
+    // entradas; se itera sobre el tamaño real de DAT_07b27150.
+    const int kEntries = (int)(sizeof(DAT_07b27150) / 0x9d8);   // 500
     const char* poolEnd = (const char*)DAT_07b27150 + sizeof(DAT_07b27150);
 
     for (int eIdx = 0; eIdx < kEntries; ++eIdx) {
@@ -414,12 +381,6 @@ void __cdecl ItemDrop_Render(void)
         if (!*((BYTE*)v0 - 2488)) continue;
 
         int type = *(v0 - 621);    // type code at offset -621*4 = -2484
-        // Sonda temporal, estrictamente acotada: el artefacto de Icarus se
-        // manifiesta al activar aura; el log demostró que el candidato visible
-        // en esa zona es el joint de alas 1254/subtipo 14. Antes de
-        // tocar la inicializacion de esos slots, capturamos la geometria que
-        // el renderer recibe realmente, no la que un creador supone haber
-        // escrito.
         // Decide blend mode per type/subtype.
         bool useMinus = (type == 1253 || type == 1250);
         if (type == 1253) {
@@ -429,15 +390,10 @@ void __cdecl ItemDrop_Render(void)
         if (type == 1250) {
             if (*(v0 - 620) != 4) useMinus = false;
         }
-        // 2026-08-10 FIX (picos duros / líneas negras de los joints): el IDA
-        // llama `EnableAlphaBlend()` en la rama else, que es **0x00511710 =
-        // GL_SetBlendAdditive** (blend tipo 3). El port llamaba `GL_SetBlendSrcOver`
-        // (GL_SetBlendSrcOver, alpha normal SRC_ALPHA/ONE_MINUS_SRC_ALPHA +
-        // depth-mask ON). Con alpha normal los téxeles OSCUROS de la textura de
-        // glow se pintan negros y opacos en vez de no sumar nada → el rayo
-        // aparecía como una forma sólida de bordes duros (picos azules del MG)
-        // y como líneas negras (mago). `EnableAlphaBlendMinus()` = 0x00511790,
-        // que sí estaba bien.
+        // IDA: la rama else llama `EnableAlphaBlend()` = **0x00511710 =
+        // GL_SetBlendAdditive** (blend tipo 3), NO GL_SetBlendSrcOver: con alpha
+        // normal los téxeles OSCUROS de la textura de glow se pintan negros y opacos.
+        // `EnableAlphaBlendMinus()` = 0x00511790.
         if (useMinus) GL_SetBlendSrcAlpha(); else GL_SetBlendAdditive();
 
         // Textura y color por tipo (IDA L60-113).  Para el 266 los subtipos
@@ -472,13 +428,12 @@ void __cdecl ItemDrop_Render(void)
 
         int segMax  = *(v0 - 601);
         int* v6     = v0 - 599;   // segment data pointer
-        // 2026-08-08 GUARD (crash 0xC0000005 dentro del driver GL, llamado desde
-        // acá): segCount sale del slot del pool; si un slot queda con basura, el
-        // loop avanza v6 de a 12 ints sin techo y termina pasándole a
-        // glVertex3fv un puntero fuera de todo lo mapeado. El binario original
-        // tampoco acota, pero acá el pool se corrompe por otros bugs de port, así
-        // que clampeamos al espacio de datos del propio slot (cada entrada son
-        // 630 ints; desde v0-599 entran (630-599+31)/12 segmentos con margen).
+        // DESVIACION (guard): segCount sale del slot del pool; si un slot queda con
+        // basura, el loop avanzaría v6 de a 12 ints sin techo y le pasaría a
+        // glVertex3fv un puntero fuera de lo mapeado (crash dentro del driver GL). El
+        // binario no acota; acá se clampea al espacio de datos del propio slot (cada
+        // entrada son 630 ints; desde v0-599 entran (630-599+31)/12 segmentos con
+        // margen).
         {
             const char* slotEnd = (const char*)v0 + (kStride - 599) * 4;
             if (slotEnd > poolEnd) slotEnd = poolEnd;
@@ -591,7 +546,7 @@ void __cdecl ItemDrop_Render(void)
 }
 
 
-// 2026-05-07: NPC interaction packet helpers
+// NPC interaction packet helpers
 // =============================================
 // Wire formats per server source Mu-linux-97K/Source/MuServer/GameServer/
 // {NpcTalk.h, ItemManager.h, Warehouse.h}.
@@ -750,7 +705,6 @@ extern "C" void ChaosBoxCloseAck(void) {
 
 
 // RenderMonsterName @ 0x004CB6F0 — Target_Render (sub_4CB6F0)
-// 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/004CB6F0_sub_4CB6F0.c.
 // Renderiza el nombre del target hovered (NPC/mob/item) sobre la HUD 2D.
 //
 // IDA flow:
@@ -772,21 +726,16 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();  // DisableAlphaBlend
 
-    // 2026-05-07: solo activo in-world. CharSelect tiene su propio path con
+    // Solo activo in-world. CharSelect tiene su propio path con
     // entity pool poblado de chars; queremos que Target_Render solo procese
     // mob/NPC/player hovers en el mundo de juego.
     if (SceneFlag != 5) return;
 
-    // 2026-09-21: reordenada segun el flujo de IDA (sub_4CB6F0).  El port
-    // dibujaba PRIMERO todos los nombres de items y despues el del monstruo.
-    // RenderItemName deja el glColor del ultimo item (IDA tampoco lo
-    // restaura), y como el texto sale como m_dwTextColor x glColor, el nombre
-    // del monstruo heredaba el color de ese item.  Reporte del tester: "el
-    // nombre de los monsters cambia de color segun el ultimo item pickeado,
-    // solo con el Alt activado" -- con Alt se dibujan todos, de ahi el "solo".
-    //
-    // Flujo real: PASO 1 dibuja UNO solo, por prioridad, con el glColor todavia
-    // en blanco; PASO 2 (LABEL_39) recien ahi los items de Alt.
+    // Orden según el flujo de IDA (sub_4CB6F0): PASO 1 dibuja UNO solo, por
+    // prioridad, con el glColor todavía en blanco; PASO 2 (LABEL_39) recién ahí
+    // los items de Alt.  RenderItemName deja el glColor del último item (IDA
+    // tampoco lo restaura) y el texto sale como m_dwTextColor x glColor, así que
+    // dibujar antes los items teñiría el nombre del monstruo.
     extern void __cdecl RenderItemName(int, DWORD, int, int, bool);
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     const int hovered = (int)SelectedItem;
@@ -828,17 +777,14 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
             if (kind == 2) {
                 // Monstruo: el nombre va arriba del todo, centrado.
                 //
-                // 2026-09-21, fix del DLL: IDA pone el fondo en rojo oscuro
-                // (0xFF000064; el formato es ABGR) y el texto en celeste, y NO
-                // los restaura.  Como el bucle de Alt (LABEL_39) viene justo
-                // despues, en el original los nombres de items del suelo se
-                // ponen rojos mientras se apunta a un monstruo.  Antes no se
-                // veia porque el port dibujaba los items antes que el monstruo.
-                // El DLL lo tapa en su hook de esta rama (HealthBar.cpp,
-                // DrawPointingHealthBar en 0x004CB7AD): despues del nombre hace
-                // `SetBackgroundTextColor = Color4b(0,0,0,0)`.  Aca se restaura
-                // el valor ANTERIOR en vez de forzar 0, para que los items
-                // queden igual que cuando no se apunta a nada.
+                // Fix del DLL: IDA pone el fondo en rojo oscuro (0xFF000064; el formato es
+                // ABGR) y el texto en celeste, y NO los restaura, así que los nombres de
+                // items del bucle de Alt (LABEL_39, justo después) saldrían rojos mientras se
+                // apunta a un monstruo.  El DLL lo tapa en su hook de esta rama (HealthBar.cpp,
+                // DrawPointingHealthBar en 0x004CB7AD): después del nombre hace
+                // `SetBackgroundTextColor = Color4b(0,0,0,0)`.  Acá se restaura el valor
+                // ANTERIOR en vez de forzar 0, para que los items queden igual que cuando no
+                // se apunta a nada.
                 const DWORD savedBack = SetBackgroundTextColor;
                 const DWORD savedText = DAT_00559c78;
                 SetBackgroundTextColor = 0xFF000064;  // m_dwBackColor (rojo oscuro, ABGR)
@@ -846,8 +792,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
                 // IDA LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, con v13
                 // del MISMO arbol que GetScreenWidth (0x4CB520): 260 con
                 // inventario + panel lateral, 450 con cualquier panel, 640 sin
-                // ninguno.  (2026-08-22: aca habia un criterio inventado que
-                // leia CharacterAttribute + 0x14E como "inventario abierto".)
+                // ninguno.
                 RenderCenteredText(GetScreenWidth() / 2, 10, name);
                 SetBackgroundTextColor = savedBack;
                 DAT_00559c78 = savedText;
@@ -879,7 +824,6 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
 }
 
 // RenderFishs @ 0x00502200 — RenderFishs
-// 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/00502200_RenderFishs.c.
 // Renderiza peces decorativos (Lorencia ponds, Devias mountains, etc).
 // Pool: DAT_083a2e90 (10 entries × 0x1BC bytes = 4440 bytes total).
 // Cada slot:
@@ -1038,7 +982,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
 // IDA: RenderEffects
 void __cdecl EffectPool_RenderAll(void)
 {
-    // BUG-FIX 2026-05-01: HeadAngle (0x07B11698) está en offset +40 dentro del
+    // HeadAngle (0x07B11698) está en offset +40 dentro del
     // effect pool DAT_07b11670 (200 entries × 0x1bc bytes = 0x1bc stride = 444B).
     // En IDA: HeadAngle iter es float*, offsets negativos cubren la cabecera del
     // entry. v0 inicia en (float*)(pool + 40), recorre 200 entries de 111 floats.
@@ -1069,7 +1013,7 @@ void __cdecl EffectPool_RenderAll(void)
             continue;
         }
 
-        // ── 2026-08-15: CAUSA DE LOS "CUADROS BLANCOS" ───────────────────────
+        // ── Tipos 238/239/243/244: fuera del rango genérico ──────────────────
         // El binario NO manda todo el rango 190..268 a Entity_PrepareRender: su
         // switch (IDA L110-137) aparta cuatro tipos ANTES de caer al rango:
         //     case 238: case 243:  break;                  // no se dibujan
@@ -1177,9 +1121,9 @@ extern void SkillEffect_Render(void);
 // IDA: FUN_0046cb70
 void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
 
-// MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA, 2026-06-27)
+// MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
-//   CameraFOV = 35.0  (antes el port no lo seteaba → quedaba stale 45/55/10)
+//   CameraFOV = 35.0
 //   CameraViewFar = 2000 (o 3200 en topview)
 //   CameraDistance = 1000 + smoothing (CameraDistanceTarget)
 //   CameraPosition vía AngleMatrix(CameraAngle)+VectorIRotate del offset (0,-1000,0)
@@ -1233,19 +1177,16 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 
 
 // Resource_LoadOrFatal @ 0x00406F50 — Resource_LoadOrFatal(filename).
-// Original: calls Resource_Load (Resource_Load). On failure: shows "IError"
-// MessageBox + Window_FatalError to terminate.
+// Original: llama a Resource_Load; si falla muestra el MessageBox "IError" y
+// termina con Window_FatalError.
 //
-// PORT FIX (2026-04-25): the resource manager context (DAT_083bbb14) is never
-// initialized in our port — Resource_Load always returns 0, which would make
-// every caller fatal-error. The most visible offender is Game_SceneUpdate.cpp
-// case 0x14 (post-login Character list ready) which passes the username
-// "tester" as a filename → IError MessageBox blocks user from ever reaching
-// char-select, which is what the user reports happens "siempre".
-//
-// Neutralized: still calls Resource_Load (so any future side effects remain
-// once the manager is wired up) but suppresses the modal + fatal exit. Once
-// resource loading is fully ported this guard can be removed.
+// DESVIACION: el contexto del resource manager (DAT_083bbb14) no se
+// inicializa en el port, así que Resource_Load siempre devuelve 0 y todo
+// caller terminaría en error fatal (p.ej. el flujo post-login de la lista de
+// personajes, que pasa el nombre de usuario como filename).  Se sigue llamando
+// a Resource_Load (por si aparece algún efecto lateral cuando el manager esté
+// portado) pero se suprimen el modal y la salida fatal.  Cuando el resource
+// loading esté portado, este guard se puede quitar.
 void __cdecl Resource_LoadOrFatal(char* param_1) {
     (void)Resource_Load(param_1);
     // Suppressed:

@@ -1,5 +1,4 @@
 // Particle_Move.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -32,9 +31,8 @@
 // WorldTime = DAT_05826e08 (global animation tick).
 
 // Helper macros for particle field access
-// BUG-FIX 2026-04-27: era `&DAT_07abf5f0` cuando DAT era `char` solo. Ahora es
-// array `char[N]` y `&array` sería pointer-to-array (aritmética × sizeof[N]).
-// Usar `DAT_07abf5f0` directo decae a char* correcto.
+// DAT_07abf5f0 es un array `char[N]`: usarlo directo (decae a char*). Con
+// `&DAT_07abf5f0` sería pointer-to-array (aritmética × sizeof[N]).
 #define P_BASE      (DAT_07abf5f0)
 #define P_ACTIVE(o) (*(char*)(P_BASE + (o)))
 #define P_TYPE(o)   (*(int*)(P_BASE + (o) + 0x04))

@@ -33,9 +33,7 @@ extern "C" {
 // DAT_07d780a8 globals (matching the IDA original where InputText is at
 // 0x07db8710 and InputLength at 0x07d780a8). See globals.h.
 // MacroTime es 0x07E11D7C (IDA lo decrementa en Game_MainLoop y lo pone en
-// 100 al disparar una macro).  Hasta 2026-09-24 este archivo definia una
-// variable propia con ese nombre, asi que la barra "Macro Time" nunca se
-// dibujaba: el contador que se escribia no era el que se leia.
+// 100 al disparar una macro): tiene que ser el global, no una variable propia.
 #define MacroTime   DAT_07e11d7c
 
 #define InputText   DAT_07db8710                    // char[10][256]
@@ -45,51 +43,37 @@ extern "C" {
 extern "C" {
     // 0x07E11D8C / 0x07E11D90.  Los escribe StartMatchCountDown (0x47EC00),
     // que atiende el opcode 0x92; declarados en globals.h para que el handler
-    // los vea (antes eran estaticos de este .cpp y nadie los seteaba).
+    // los vea.
     int   m_iMatchCountDownType   = 0;
     DWORD m_dwMatchCountDownStart = 0;
     // m_iMatchTime vive en globals.cpp (0x00559CCC): lo escribe SetMatchInfo
-    // desde el handler 0x9B.  Tenerlo aca como local dejaba al renderer
-    // leyendo una copia que nadie escribia (2026-09-04).
-    // MixState vive en globals.h como alias de DAT_07eaa140 (0x07EAA140).
-    // Estaba partido en dos: los ESCRITORES (Item_ClickHandler al mandar el mix
-    // = 1, y el handler del 0x86 con 0 o 2) usan DAT_07eaa140, y los LECTORES
-    // -- la animacion de la caja de Chaos de abajo y el `++MixState` que la hace
-    // avanzar -- leian este `int` propio, que nadie escribia.  Efecto: la
-    // maquina de Chaos nunca mostraba su animacion al mezclar.
+    // desde el handler 0x9B.
+    // MixState vive en globals.h como alias de DAT_07eaa140 (0x07EAA140): lo
+    // escriben Item_ClickHandler al mandar el mix (= 1) y el handler del 0x86
+    // (0 o 2), y lo leen la animacion de la caja de Chaos de abajo y el
+    // `++MixState` que la hace avanzar.
     int   AlphaBlendType          = 0;
 
     // Input fields — IDA exposes 10 slots (chat + whisper-target + ...).
-    // BUG-FIX 2026-05-04: previously this declared a separate `InputText[2][256]`
-    // local storage and `int InputLength[2]`, which DESYNCED from WM_CHAR (which
-    // writes to DAT_07db8710 / DAT_07d780a8). Net effect: typing in chat
-    // appended to the global, but RenderInputText read this dead local → user
-    // saw no characters appearing. Now both use the same storage.
+    // InputText / InputLength son los globals DAT_07db8710 / DAT_07d780a8 que
+    // escribe WM_CHAR (ver los aliases de arriba), no storage local.
     BYTE  InputTextHide[10]       = {0};
     char  InputTextIME[10][256]   = {{0}};
-    // 2026-08-26 — mismo bug que el de arriba, que quedo a medias en 2026-05-04:
-    // `InputIndex` e `InputFrame` eran copias LOCALES de dos globals reales, asi
-    // que este archivo nunca veia lo que escribia el resto del cliente.
+    // `InputIndex` e `InputFrame` son los globals reales, no copias locales:
     //
     //   InputIndex = DAT_07e11d78 — indice del campo de input activo. Lo rota el
     //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % InputNumber`) y
-    //     lo lee `RenderInputText` (Chat.cpp) para saber en que campo va el
-    //     caret. Con la copia local clavada en 0, el `_` se dibujaba SIEMPRE en
-    //     el campo de chat aunque se estuviera escribiendo en el de whisper.
+    //     lo leen `RenderInputText` y Chat.cpp para saber en que campo va el
+    //     caret.
     //
     //   InputFrame = DAT_07e11d2c — contador del parpadeo del caret; Chat.cpp
-    //     usa el mismo `% 2` sobre el global. Con dos contadores separados los
-    //     dos caret parpadeaban desfasados.
+    //     usa el mismo `% 2` sobre el global.
     #define InputIndex   DAT_07e11d78
     #define InputFrame   DAT_07e11d2c
 
     // Guild mark colour palette (16 entries × DWORD ARGB).
-    // 2026-08-25: esto era una copia LOCAL del array. El global real es
-    // 0x7E11F34 (= DAT_07e11f34), que es el que lee `RenderGuildMark`
-    // (0x4F02F0, nuestro RenderGuildMark): `CreateGuildMark` llenaba esta
-    // copia y el render leia el global, que quedaba en ceros — y encima estaba
-    // declarado como UN DWORD, asi que indexarlo 0..15 desbordaba.
-    // Ver [[global-partido-en-dos]].
+    // Es el global real 0x7E11F34 (= DAT_07e11f34), el que lee `RenderGuildMark`
+    // (0x4F02F0) y llena `CreateGuildMark`.
     #define MarkColor DAT_07e11f34
 
     // Per-mark 8×8 nibble palette source (16 marks × 80 bytes — matches IDA
@@ -299,8 +283,6 @@ void Render_MapLoadText(void) { Render_MapLoadText_(); }
 // Render_QuickButtons — sub_4F5820.  HUD UI dispatcher.  Calls 9 sub-panels
 // in sequence (party / inventory / trade / shop / chaos-mix / warehouse /
 // event / golden-archer / server-division) plus a quest-state refresh.
-// All 9 are stubs at the moment — when they get ported individually their
-// visuals appear without touching this dispatcher.
 // =============================================================================
 extern "C" void __cdecl Render_QuickButtons_(void);
 void Render_QuickButtons_(void)
@@ -308,12 +290,8 @@ void Render_QuickButtons_(void)
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     m_dwTextColor = 0xFFFF8080u;
-    // 2026-08-08 FIX "el panel de Character (C) se ve negro si se abre despues
-    // del inventario": esto era `GetScreenWidth()`, que devuelve 260 cuando
-    // Inventory+Character estan abiertos a la vez -> el panel de Character se
-    // dibujaba ENCIMA del inventario (que tambien va a 260) y la franja 450..640
-    // quedaba sin pintar = rectangulo negro. En el binario los 3 paneles del
-    // lado derecho son CONSTANTES 0x1C2 (=450), no el ancho del viewport:
+    // Los 3 paneles del lado derecho van en x CONSTANTE 0x1C2 (=450), no en
+    // `GetScreenWidth()` (que devuelve 260 con Inventory+Character abiertos):
     //   sub_4F5820+0x39  push 0 / push 1C2h / call RenderGuildCreation
     //   sub_4F5820+0x253 push 0 / push 1C2h / call RenderGuildList
     //   sub_4F5820+0x379 push 0 / push 1C2h / call RenderCharacterInfoWindow
@@ -331,17 +309,10 @@ void Render_QuickButtons_(void)
         // de inicializar su scratch y por eso quedaban fuera del panel.
         g_GuildCreatorScratchX = panelStartX;
         g_GuildCreatorScratchY = 0;
-        // 2026-08-26 FIX "los botones OK/CANCEL salen abajo a la izquierda, fuera
-        // del panel": el origen era `DAT_07ea5b1c/20` (= Inventory[32].Level/Part),
-        // el scratch que el port ABANDONO el 2026-07-27 al mover el origen del
-        // creador a `g_GuildCreatorScratchX/Y` (Inventory[32] es el slot 0 del pool
-        // de la tienda y lo estaba pisando). Quedo en 0, asi que los botones se
-        // dibujaban en (0+20, 0+350) absoluto — abajo a la izquierda — mientras los
-        // El hit-test SecondPassword_Screen1 ya usaba el origen bueno: se dibujaban en un
-        // lado y se clickeaban en otro.
+        // El origen de los botones OK/CANCEL es `g_GuildCreatorScratchX/Y`, el mismo
+        // que usa el hit-test SecondPassword_Screen1 (no `DAT_07ea5b1c/20` =
+        // Inventory[32].Level/Part, que es el slot 0 del pool de la tienda).
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
-        // Es el tercer hermano del fix del 2026-08-08 b (GuildList y CharacterInfo
-        // ya habian pasado a sus globals reales; este quedo sin actualizar).
         float btnX = (float)g_GuildCreatorScratchX + _DAT_005524fc;
         float btnY = (float)g_GuildCreatorScratchY + _DAT_00552ca4;
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -350,17 +321,11 @@ void Render_QuickButtons_(void)
                    (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF2 : 0xF1;
         GL_DrawTexture(tex, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
 
-        // 2026-08-26 FIX (CANCEL sobresalia del panel): el segundo boton
-        // arranca en +100 desde el origen del panel, NO en +20+100.
+        // El segundo boton arranca en +100 desde el origen del panel, NO en +20+100.
         // IDA `sub_4E4760` L446-447 da los dos rects:
         //     boton 1 (crear):  [origin+20 , origin+90 )   ancho 70
         //     boton 2 (cancel): [origin+100, origin+170)   ancho 70
-        // El port partia del primero (+20) y le sumaba `_DAT_005524f0` (que
-        // ademas es TERRAIN_SCALE, no un offset de UI: valia 100 de casualidad),
-        // dejando el boton en +120..+190. Como el panel mide 190 de ancho, ese
-        // rect terminaba exactamente en el borde y se veia sobresalir; el
-        // desalineado contra el hit-test crecia con la resolucion.
-        // No es mezcla de espacios: los dos estaban en logico. Es el offset.
+        // (`_DAT_005524f0` es TERRAIN_SCALE, no un offset de UI.)
         btnX = (float)g_GuildCreatorScratchX + 100.0f;
         GL_DrawTexture(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
@@ -401,21 +366,15 @@ void Render_QuickButtons_(void)
         }
     }
 
-    // 2026-05-04: en el original (sub_4F5820) hay 3 `if` sites antes/alrededor
-    // de RenderParty que llaman a RenderCharacterInfoWindow/RenderGuildList/
-    // RenderGuildCreation cuando los flags correspondientes están seteados.
-    // Sin ellos, los menús C/G renderizan como rectángulo negro afuera del
-    // 3D viewport (que es 450 wide cuando esos flags están on).
-    // 2026-09-04: el ORDEN importa -- los tres paneles se dibujan en el mismo
-    // x=450 y el ultimo tapa a los anteriores.  IDA sub_4F5820:
+    // En el original (sub_4F5820) hay 3 `if` sites antes/alrededor de RenderParty
+    // que llaman a RenderCharacterInfoWindow/RenderGuildList/RenderGuildCreation
+    // cuando los flags correspondientes están seteados.
+    // El ORDEN importa -- los tres paneles se dibujan en el mismo x=450 y el
+    // ultimo tapa a los anteriores.  IDA sub_4F5820:
     //     if (GuildCreatorOpened) RenderGuildCreation(450, 0);
     //     else if (GuildOpened)   RenderGuildList(450, 0);
     //     RenderParty(450, 0);
     //     if (CharacterOpened)    RenderCharacterInfoWindow(450, 0);
-    // El port lo tenia al reves (personaje primero, guild despues), asi que con
-    // GuildOpened en 1 el panel de guild pintaba ENCIMA del de personaje y del
-    // de party: de ahi "los botones de party y character abren el panel de
-    // guild".
     if (HUD_IsGuildListRuntime())      RenderGuildList(panelStartX, 0);
 
     RenderParty(450, 0);
@@ -429,28 +388,22 @@ void Render_QuickButtons_(void)
     RenderEventWindow();
     RenderGoldenArcherWindow();
 
-    // 2026-08-21: faltaba el render del panel de quest.  IDA sub_4F5820 L38:
+    // Render del panel de quest.  IDA sub_4F5820 L38:
     // `sub_403F30((_BYTE *)g_csQuest);` entre RenderGoldenArcherWindow y
-    // RenderServerDivision.  Sin esto, con el flag del panel prendido
-    // GetScreenWidth angostaba el viewport a 450 y esa franja quedaba negra.
+    // RenderServerDivision.
     FUN_00403f30((void*)(uintptr_t)g_csQuest);
 
-    // ── In-world drop dispatcher (2026-05-08) ────────────────────────────────
-    // Mirrors what Net_PacketSession.cpp:284 does for state=4 char-select but
+    // ── In-world drop dispatcher ─────────────────────────────────────────────
+    // Mirrors what Net_PacketSession.cpp does for state=4 char-select but
     // for in-world. Gated internally on dword_7E91388 > 0 (= player carrying
     // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
     // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
     // packet via SendRequestEquipmentItem → Net_SendSmallPacket (C3).
-    // 2026-09-16: este llamado es un DUPLICADO del port — en IDA el dispatcher
-    // (sub_4DF410) solo lo llama UpdateWindowsMouse (0x4ECB00), que corta antes
-    // mientras el teclado del PIN esta abierto (SecondPassword_Handler devuelve
-    // 1 y el widget en foco no coincide).  Sin este gate el preview azul del
-    // drop seguia al mouse con el teclado abierto.  Se deja el llamado (quitarlo
-    // requiere probar el drop) pero con el mismo corte que el original.
-    // Condicion de corte de UpdateWindowsMouse: teclado del PIN activo, un
-    // cartel abierto (ErrorMessage) o un widget con foco.  El caso del cartel
-    // aparecia con el quick-move del click derecho: tras un PIN incorrecto el
-    // item queda en la mano con el cartel "Contrasena incorrecta" encima.
+    // DESVIACION: este llamado es un DUPLICADO del port — en IDA el dispatcher
+    // (sub_4DF410) solo lo llama UpdateWindowsMouse (0x4ECB00).  Se deja el
+    // llamado (quitarlo requiere probar el drop) pero con el mismo corte que el
+    // original: teclado del PIN activo, un cartel abierto (ErrorMessage) o un
+    // widget con foco.
     if (DAT_07eaa14c == 0 && DAT_083a7c24 == 0 &&
         DAT_055c9b7c == 0 && DAT_055c9b80 == 0)
         Inventory_DropDispatch(0, 0);
@@ -467,7 +420,7 @@ void Render_QuickButtons(void) { Render_QuickButtons_(); }
 // via RenderItem3D, or as a 2D quantity glyph (RenderNumber2D) for arrows.
 //
 // Special case for OffsetMixItems during MixState animation: spawns three
-// glow particles via sub_5126E0 (stubbed).
+// glow particles via sub_5126E0 (HUD_Pass6.cpp).
 //
 // Special case for the Inventory pool: cells with Color == 99 get a quest
 // icon overlay (bitmap 9) bobbing with WorldTime, plus GlobalText[370]
@@ -635,19 +588,9 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     GetTextExtentPointA(m_hFontDC, Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
 
-    // 2026-08-26: acá había un workaround. En 2026-07-19 se detectó que el
-    // caret quedaba corto (~80% del largo) y se lo compensó guardando el ancho
-    // SIN dividir, porque en ese momento `UI_DrawText` -> `CUIRenderText_RenderText`
-    // dibujaba en píxeles crudos: la mitad "lógico -> físico" del pipeline no
-    // existía, así que un offset en espacio-640 se dibujaba como si fuera píxel.
-    //
-    // Esa mitad ya está implementada (CUIRenderText_RenderText convierte con
-    // g_fScreenRate_x/y, igual que `sub_410AF0` en el binario), así que el
-    // workaround quedó obsoleto y ahora es él quien descoloca el caret: sumaba
-    // un ancho en PÍXELES a una `x` en LÓGICO.
-    //
     // IDA (RenderInputText 0x47F0B0) posiciona el caret con el TextSize ya
-    // dividido, o sea en espacio lógico, que es lo que se restaura acá.
+    // dividido, o sea en espacio lógico (UI_DrawText -> CUIRenderText_RenderText
+    // convierte lógico -> físico con g_fScreenRate_x/y, igual que `sub_410AF0`).
     //   ancho medido -> píxel -> / g_fScreenRate_x -> lógico -> + x (lógico)
     TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
     TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);

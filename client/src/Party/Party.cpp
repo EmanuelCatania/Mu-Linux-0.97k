@@ -276,21 +276,20 @@ void Party_Keepalive(void)
 
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
-// ║  CÓDIGO MUERTO — desde 2026-08-26 no tienen callers                      ║
+// ║  CÓDIGO MUERTO — no tienen callers                                       ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 //
 // Las siete funciones `Guild_*` que siguen hasta el final del archivo estaban
 // enganchadas a los opcodes 0x90-0x99. Ese rango NO es guild: IDA y MuEmu
 // coinciden en que son eventos (Devil Square, Blood Castle, Golden Archer).
 // La tabla opcode -> función real está en la cabecera de
-// `src/Net/Net_Events.cpp`, que es quien los atiende ahora.
+// `src/Net/Net_Events.cpp`, que es quien los atiende.
 //
-// El guild de verdad usa 0x50-0x56 y ya estaba bien atendido en Net_Process.cpp
-// (`ReceiveGuildResult`, `ReceiveGuildList`, `ReceiveCreateGuildResult`, ...);
-// esta tanda no lo tocó.
+// El guild de verdad usa 0x50-0x56 y lo atiende Net_Process.cpp
+// (`ReceiveGuildResult`, `ReceiveGuildList`, `ReceiveCreateGuildResult`, ...).
 //
-// No se borran todavía porque el cuerpo puede servir de referencia si alguna
-// vez se porta el protocolo de guild de otra versión. Ojo con reengancharlas:
+// Se conservan como referencia por si alguna vez se porta el protocolo de
+// guild de otra versión. Ojo con reengancharlas:
 // `Guild_CreateOk` ENVÍA un `[C1][03][31]`, así que colgada del opcode
 // equivocado no sólo muestra un cartel de más, también le manda basura al
 // server.

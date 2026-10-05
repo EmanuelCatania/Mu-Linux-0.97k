@@ -19,14 +19,10 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     float local_88 = 0.0f;       // max Y
 
     // Vec3_Transform output buffer.
-    // BUG-FIX 2026-06-29: antes eran 3 locals SEPARADAS (`float local_78,
-    // local_74, local_70;`).  VectorIRotate (Vector_InverseRotate) escribe un float[3]
-    // desde &local_78 asumiendo contigüidad (en el binario original están en
-    // ebp-0x78/-0x74/-0x70, contiguas).  MSVC no garantiza ese layout con vars
-    // sueltas → out[1]/out[2] caían en stack equivocado y wy/wz leían basura
-    // constante → TODOS los corners del frustum con el mismo Y (frustum colapsado
-    // a una línea → bound no contenía al héroe → terreno negro).  Mismo bug que
-    // CreateTerrainNormal.  Fix: array contiguo real.
+    // VectorIRotate (Vector_InverseRotate) escribe un float[3] contiguo (en el
+    // binario original: ebp-0x78/-0x74/-0x70). Tiene que ser un array real: con
+    // locals sueltas MSVC no garantiza el layout y el frustum colapsa. Mismo
+    // patrón que CreateTerrainNormal.
     float out3[3];
 
     // 5 frustum corners × 3 floats (contiguous, passed by pointer to Vector_InverseRotate)
@@ -153,13 +149,8 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     //     FaceNormalize(V[0], V[3], V[4], normal[2]);
     //     FaceNormalize(V[0], V[4], V[1], normal[3]);
     //     FaceNormalize(V[3], V[2], V[1], normal[4]);   <-- base, NO el ápice
-    //
-    // 2026-08-21: el quinto se armaba con (V[2], V[1], V[0]) y su D se
-    // referenciaba a V[2] en vez de V[1], así que el plano de corte quedaba
-    // pasando por la cámara en vez de por la base.  Efecto: todo lo que se
-    // alejaba un poco caía del lado de afuera y se marcaba como no visible —
-    // por eso desaparecían los nombres (y el modelo) de los items del suelo
-    // sin estar realmente lejos.  Afecta a TODO lo que pasa por sub_4F9590.
+    // El D del quinto plano se referencia a V[1]. Afecta a TODO lo que pasa por
+    // sub_4F9590.
     Triangle_ComputeNormal(c0, c1, c2, plane0);
     Triangle_ComputeNormal(c0, c2, c3, plane1);
     Triangle_ComputeNormal(c0, c3, c4, plane2);
@@ -215,12 +206,12 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 }
 
 // ── Compatibility helper; no standalone IDA function ─────────────────────────
-// DEAD CODE 2026-05-04: esta función NO se llama. Es una decompilación errónea
+// CÓDIGO MUERTO: esta función NO se llama. Es una decompilación errónea
 // que asume corners en DAT_07eab1bc..1e8 (que ya están en world coords post
 // Camera_SetupFrustum). La verdadera FUN_004F8EB0 (CreateFrustrum2D) vive en
-// stubs.cpp:9127 — usa 4 corners hardcoded escalados por GetScreenWidth(),
-// rotados Z=45°, trasladados por cam_pos. Mantenida por compatibilidad
-// histórica del header pero no debe llamarse.
+// src/Net/SecondPassword.cpp — usa 4 corners hardcoded escalados por
+// GetScreenWidth(), rotados Z=45°, trasladados por cam_pos. Se mantiene por la
+// declaración en Camera.h pero no debe llamarse.
 void __cdecl Camera_SetMatrix(float *cam_pos)
 {
     float angles[3] = { 0.0f, 0.0f, 45.0f };  // fixed roll=45°
@@ -246,14 +237,9 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
         corners_world[i][2] = out[2] + cam_pos[2];
     }
 
-    // BUG-FIX 2026-05-01: el código previo SOLO escribía corner[0]. Pero
     // TestFrustrum2D (Frustum_IsVisible) hace test point-in-quad usando los
-    // 4 vertices en FrustrumX[0..3] (X) y FrustrumY[0..3] (Y).
-    // Con 3/4 vertices en (0,0), el quad degenerado rechazaba TODOS los
-    // chunks → mapa renderizaba vacío de objetos pese a que se spawn 2142.
-    //
-    // Per ghidra_backup line 6127-6128: loop 4 iterations, j stride 4 bytes
-    // (= 1 float), escribiendo 4 vertices contiguos en cada array.
+    // 4 vertices en FrustrumX[0..3] (X) y FrustrumY[0..3] (Y): hay que escribir
+    // los 4 (loop de 4 iteraciones, stride 1 float, como el original).
     float* outX = (float*)&FrustrumX;
     float* outY = (float*)&FrustrumY;
     for (int i = 0; i < 4; i++) {
@@ -268,14 +254,11 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
 // param_1: xyz position (float[3])
 // param_2: radius (frustum half-width extension)
 // Returns a short: low byte 1 if inside all planes, high byte flags if outside.
-// Iterates 6 frustum planes stored at DAT_0838b7c8 (normal[3] stride=3) +
-// corresponding plane-distances at FrustrumFaceD.
-// 2026-05-03: AUTO-SKIP removed. The original Ghidra walked five plane normals
-// at &DAT_0838b7c8 (= plane[0].Y) bound by literal `< 0x838b804`. In our build
-// each plane component is a SEPARATE global (FrustrumFaceNormal..7fc, 15 floats) —
-// the linker may not place them contiguously, so the pointer walk would read
-// random memory between plane components. Camera_SetupFrustum (Camera.cpp:148)
-// writes all 5 planes; here we read them by name. Unrolled 5×.
+// Recorre los 5 planos del frustum (normales desde FrustrumFaceNormal /
+// DAT_0838b7c8.., distancias desde FrustrumFaceD). El original camina las
+// normales con un puntero acotado por el literal `< 0x838b804`; acá cada
+// componente es un global SEPARADO (el linker no garantiza contigüidad), así
+// que se leen por nombre, desenrollado 5×. Los escribe Camera_SetupFrustum.
 int __cdecl Frustum_TestSphere(float *param_1, float param_2)
 {
     float fVar1 = -param_2;
@@ -325,20 +308,6 @@ void __cdecl SetActionObject(int param_1,int param_2,int param_3,int param_4)
 // param_1: world xyz (float[3])
 // param_2: output screen X (int*)
 // param_3: output screen Y (int*)
-//
-// ── BUG-FIX 2026-04-26 ────────────────────────────────────────────────────────
-// El decompile original tenía:
-//   Vector_Transform(param_1, mat, local_c);
-//   lVar1 = __ftol();   *param_2 = ViewportCenterX - lVar1;
-//   lVar1 = __ftol();   *param_3 = lVar1 + ViewportCenterY;
-// Ghidra perdió la aritmética FPU entre la transformación y __ftol — el código
-// original calculaba perspective divide (x_view*scale/z_view) antes de truncar.
-// Como `__ftol` aquí está stubbed a `GetTickCount()` (stdafx.h), el resultado
-// era basura y rompía: name labels en char-select, hit-test del mouse, todo lo
-// que dependa de proyección mundo→pantalla.
-// Solución: usar gluProject con el GL state actual. Más robusto que recrear
-// la perspective math; respeta cualquier viewport/projection set por
-// GL_BeginViewport.
 void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_3)
 {
   // Port directo del IDA Projection (sub_5113F0). Usa la matriz de cámara
@@ -359,10 +328,6 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
   // Scale from real-window pixels to logical 640×480
   // IDA: `*sx = 640 * *sx / (int)WindowWidth;` — aritmetica CON SIGNO (el cast
   // a (int) del divisor esta justamente para eso).
-  // 2026-08-22: aca se casteaba sx/sy a unsigned. Con un item fuera de pantalla
-  // a la izquierda sx es negativo, y como unsigned pasaba a ~4.29e9: el
-  // resultado salia positivo grande y el nombre del item saltaba al borde
-  // DERECHO de la pantalla.
   int ww = (int)DAT_0056156c;
   int wh = (int)DAT_00561570;
   if (ww == 0) ww = 640;
@@ -397,14 +362,13 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   glPushMatrix();
   glLoadIdentity();
   GL_SetViewport(uVar1 / 0x280,uVar2 / 0x1e0,uVar3,uVar4);
-  // BUG-FIX: DAT_00561550 es DWORD (bit-pattern float). En original asm el FLD
-  // lee como float. En C++ `DAT_00561550 * float` hace int→float (convierte el
-  // bit-pattern 0x461c4000=10000.0f a 1.17e9), dando far plane astronómico.
-  // Reinterpretar con Ff() antes de multiplicar.
+  // DAT_00561550 es DWORD (bit-pattern float): reinterpretar con Ff() antes de
+  // multiplicar. `DAT_00561550 * float` haría int→float (0x461c4000=10000.0f
+  // pasaría a 1.17e9) y daría un far plane astronómico.
   //
-  // NOTA (2026-04-21): FOV y Near pasan crudos como `int` — GL_SetPerspective los
-  // recibe como `int fov, int near_clip` y hace `Ff()` internamente (ver
-  // stubs.cpp:2386-2388). Pasarles Ff() aquí causaría DOBLE reinterpretación:
+  // FOV y Near pasan crudos como `int` — GL_SetPerspective (GL_LegacyState.cpp)
+  // los recibe como `int fov, int near_clip` y hace `Ff()` internamente.
+  // Pasarles Ff() aquí causaría DOBLE reinterpretación:
   // 55.0f→int 55→Ff(55)=7.7e-44 → FOV≈0 → pantalla negra.
   // Solo el far necesita Ff() en el caller porque lo multiplicamos por _DAT_00552d34
   // (1.4f) ANTES de pasarlo — la multiplicación es en float-space aquí.
@@ -412,13 +376,10 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   glMatrixMode(0x1700);
   glPushMatrix();
   glLoadIdentity();
-  // BUG-FIX: 0x3f800000 es el bit pattern de 1.0f pero glRotatef espera GLfloat.
-  // La conversion int→float daba 1065353216.0f (inofensivo porque glRotatef
-  // normaliza el eje, pero ilegible). Usar 1.0f literal.
-  // BUG-FIX 2: los ángulos DAT_083a42b8/bc/c0 son DWORD (bit-pattern de float).
-  // En original asm FLD los lee como float. En C++, pasar DWORD→GLfloat hace
-  // int→float: con pitch=-40.0f (bitpattern 0xc2200000), el valor pasado era
-  // 3.26e9° (equivalente a ruido aleatorio tras glu). Reinterpretar con Ff().
+  // Los ángulos DAT_083a42b8/bc/c0 son DWORD (bit-pattern de float): en el asm
+  // original FLD los lee como float. Pasarlos directo a glRotatef haría int→float
+  // (pitch=-40.0f, 0xc2200000, saldría 3.26e9°): se reinterpretan con Ff(). El
+  // eje va como 1.0f literal, no como el bit pattern 0x3f800000.
   glRotatef(Ff(DAT_083a42bc), 0.0f, 1.0f, 0.0f);
   if (CameraTopViewEnabled == '\0') {
     glRotatef(Ff(DAT_083a42b8), 1.0f, 0.0f, 0.0f);
@@ -436,10 +397,9 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   DAT_083a411c = 1;
   DAT_083a42e8 = 1;
   glDepthFunc(0x203);
-  // BUG-FIX CRITICO: 0x3e800000 es bit pattern de 0.25f, glAlphaFunc espera
-  // GLclampf. Como int se convierte a 1048576000.0f → clamp a 1.0 → test
-  // "alpha > 1.0" siempre falla → TODO el UI con alpha-test activo era
-  // invisible (login screen quedaba sin server list, botones, texto).
+  // 0.25f literal: 0x3e800000 es el bit pattern de 0.25f y glAlphaFunc espera
+  // GLclampf. Como int se convertiría a 1048576000.0f → clamp a 1.0 → el test
+  // "alpha > 1.0" siempre falla y todo el UI con alpha-test queda invisible.
   glAlphaFunc(GL_GREATER, 0.25f);
   if (DAT_083a42ea != '\0') {
     glEnable(0xb60);

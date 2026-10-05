@@ -1,12 +1,8 @@
 // ghidra_compat.h
 //
 // Macros que el decompile de Ghidra / Hex-Rays da por existentes y que el port
-// necesita para compilar sus salidas tal cual.
-//
-// Antes cada archivo las redefinía por su cuenta con su propio `#ifndef`: había
-// 15 copias de `qmemcpy`, 14 de `delete__` y 11-12 de cada accesor de palabra,
-// repartidas en 17 archivos. Eso rompía el refactor B3: al mover una función a
-// otro módulo dejaba de ver las macros de su archivo de origen.
+// necesita para compilar sus salidas tal cual. Centralizadas acá para que una
+// función movida a otro módulo las siga viendo.
 //
 // Se incluye desde `stdafx.h`, así que está disponible en todo el proyecto.
 // Los `#ifndef` se conservan para no chocar con los `#define` locales que aún

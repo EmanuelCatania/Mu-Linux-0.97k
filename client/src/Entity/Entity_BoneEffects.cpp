@@ -1,17 +1,5 @@
-// Entity_BoneEffects.cpp
-//
-// Extracted from stubs_helpers.cpp; original IDA comments and DAT_* provenance retained.
-
-// stubs_helpers.cpp
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 12638-13754 (1117 lines).
-//
-// Originally tagged "New helpers needed by SecondPassword implementations" but
-// content is mixed: item/inventory helpers (GetItemCount/GetItemSlot/
-// CalcMaxDurability/ConvertItemType/ItemValue/ConvertGold), render helpers
-// (CreateOkMessageBox/BMD::Animation/RenderObjectScreen), math helpers
-// (VectorMA/VectorNormalize/RandomXY), effect helpers (SpawnEffectAtBone/
-// JointBetweenBones), Pipe helpers (Pipe_Send/Recv/SetTarget), CSQuest helpers.
+// Entity_BoneEffects.cpp — efectos atados a huesos (Entity_SpawnBoneEffect,
+// Entity_SpawnBoneRangeEffect).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -51,9 +39,7 @@ extern void __cdecl operator_delete(void* ptr);
 void* __cdecl Entity_SpawnBoneEffect(int entity, int effectType, float scale, int bone, float x, int flags, float yOff)
 {
     // offset vector at bone position + x/yOff
-    // BUG-FIX 2026-08-18 (A): el vector de offset se pasaba desde `&offset[3]`,
-    // o sea leia offset[3],[4],[5] - dos floats FUERA del array. IDA sub_456590
-    // arma v9[0]=a5, v9[1]=a6, v9[2]=a7 y pasa v9, el indice 0.
+    // IDA sub_456590 arma v9[0]=a5, v9[1]=a6, v9[2]=a7 y pasa v9 (desde el indice 0).
     float offset[3];
     offset[0] = x;
     offset[1] = (float)flags;   // param_6 (undefined4 packed as float here)
@@ -71,11 +57,8 @@ void* __cdecl Entity_SpawnBoneEffect(int entity, int effectType, float scale, in
     light[1] = light[0] * _DAT_00552534;
     light[2] = light[0] * _DAT_005528b4;
 
-    // BUG-FIX 2026-08-18 (B): el 3er argumento de CreateSprite es la ESCALA y se
-    // pasaba (float)effectType - o sea escala 1191 para el tipo 1191. IDA
-    // sub_456590: CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0).
-    // Con eso el quad media 152448 unidades y, pintado con Light=(v, v*0.6,
-    // v*0.4) = salmon, tapaba la pantalla entera en Atlans.
+    // IDA sub_456590: CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0) —
+    // el 3er argumento es la ESCALA, no el tipo.
     CreateSprite((unsigned short)effectType, outPos, scale, light, entity, 0.0f, 0);
     return (void *)entity;
 }

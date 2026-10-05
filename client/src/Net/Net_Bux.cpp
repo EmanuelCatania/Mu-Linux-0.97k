@@ -1,5 +1,5 @@
 // Net_Bux.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
+// BuxConvert y MapFileDecrypt (descifrado de archivos de datos del cliente).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -24,9 +24,8 @@ void __cdecl BuxConvert(int data, int size)
 //   wKey = cipher[i] + 0x3D    (note: cipher byte, not plain)
 // Initial wKey = 0x5E.
 //
-// BUG-FIX 2026-05-01: BuxConvert_1 (3-byte XOR) NO sirve para .map/.obj — esos
-// archivos usan un algorithm distinto (de ahí el prefix "Enc" mientras que .att
-// usa BuxConvert_1 simple).
+// BuxConvert_1 (3-byte XOR) NO sirve para .map/.obj: esos archivos usan este
+// algoritmo (de ahí el prefijo "Enc"); .att usa BuxConvert_1 simple.
 void MapFileDecrypt(BYTE* buf, int size)
 {
     static const BYTE MapFileKey[16] = {

@@ -29,7 +29,7 @@
 //
 // HashTable section (lines ~131-350 in original):
 //   Anti-tamper XOR encode/decode block operating on DAT_07cf1ffc (0x584-byte
-//   char-data buffer). Per CLAUDE.md policy, hash table operations are
+//   char-data buffer). Hash table operations are
 //   reference-count obfuscation — not game logic. Omitted from implementation.
 //
 // After hover detection: if hover target found and Attacking != -1,
@@ -48,10 +48,9 @@
 void Mouse_UpdateHoverTargets(void)
 {
     // ── 1. Cursor billboard render ────────────────────────────────────────────
-    // 2026-04-29 DISABLED: el cursor billboard 3D (sprite en el suelo del tile
-    // hovered) requiere DAT_07eab24c (BackTerrainHeight) que no se inicializa
-    // en nuestro port. Crash AV en Terrain_RenderQuad al acceder al buffer null.
-    // El cursor 2D (Cursor_Render) sigue funcionando normalmente.
+    // DESACTIVADO: el billboard 3D (sprite en el suelo del tile hovered) necesita
+    // DAT_07eab24c (BackTerrainHeight), que el port nunca asigna (queda en 0).
+    // El cursor 2D (Cursor_Render) no depende de esto.
     #if 0
     if (SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5)
     {
@@ -79,9 +78,7 @@ void Mouse_UpdateHoverTargets(void)
 
     // ── 2. Reset hover targets ────────────────────────────────────────────────
 
-    // 2026-05-06: añadido guard `c50 >= 0` para evitar OOB read cuando
-    // SelectedCharacter == -1 (initial state). Antes se leía entity[+0x2fd] con
-    // c50=-1 → puntero negativo → crash latente.
+    // `SelectedCharacter >= 0` evita leer entity[+0x2fd] con indice -1 (estado inicial).
     if (m_bAutoAttack == '\0' || World == 6) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
@@ -90,11 +87,6 @@ void Mouse_UpdateHoverTargets(void)
                *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * 0x394) == '\0' &&
                *(char *)(DAT_07abf5d0 + SelectedCharacter * 0x394 + 0x84) == '\x02') {
         // Current hover target is a valid alive monster.
-        // 2026-05-06: REMOVED reset on IsClickPushed/DAT_083a42c4. La lógica
-        // original IDA reseteaba aquí porque la detect que sigue inmediato
-        // re-poblaría. Pero en nuestro port el detect a veces falla (terrain
-        // filter, etc) → c50 quedaba -1 al click time → mob attack handler
-        // no disparaba. Mantener el target HASTA que detect lo reemplace.
         // Keep the original transient hover state.  Leaving this selected
         // after the cursor moves away turns later ground clicks into a basic
         // attack against the stale mob.
@@ -113,11 +105,9 @@ void Mouse_UpdateHoverTargets(void)
         // L326) lo vuelve a poblar con lo que haya bajo el cursor.  Por eso el
         // objetivo sigue al mouse en el original.
         //
-        // El port tenia SOLO los dos flags del boton DERECHO
-        // (DAT_083a42ac / MouseRButtonPush), asi que clickeando con el IZQUIERDO el
-        // target nunca se limpiaba: quedaba pegado el primer mob que hubiera
-        // pasado por debajo del cursor.  Direcciones confirmadas con
-        // ida_xrefs_to:  MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
+        // Hacen falta los botones IZQUIERDO y DERECHO: con solo el derecho, clickeando
+        // con el izquierdo el target queda pegado.  Direcciones (ida_xrefs_to):
+        //                MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
         //                MouseRButton = 0x083A42AC · MouseRButtonPush = 0x083A42D0
         //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
         if (Attacking == -1 ||
@@ -182,17 +172,9 @@ void Mouse_UpdateHoverTargets(void)
             // IDA sub_4B0310 L315-351 (Alt SIN apretar): cadena de descarte
             // estricta, personaje -> personaje -> NPC -> ITEM -> mobiliario.  El
             // item solo se elige si el cursor no esta sobre ningun personaje ni NPC.
-            //
-            // 2026-09-21: aca habia una inversion puesta el 2026-07-27 que miraba
-            // el item PRIMERO, porque "cualquier mob cercano en pantalla robaba el
-            // hover".  Esa causa desaparecio el 2026-09-16 (2f83d26): desde ahi
-            // Entity_SelectNearest usa el rayo contra la OBB, como IDA, y solo
-            // elige al que esta realmente bajo el cursor.  La inversion quedo
-            // compensando un problema que ya no existia, y su efecto era el
-            // reporte del tester: con un item debajo del monstruo el cursor
-            // quedaba en el de levantar en vez del de ataque (RenderCursor le da
-            // prioridad a SelectedItem).  Con Alt APRETADO los items si van
-            // primero -- esa rama de arriba es la de IDA y no se toca.
+            // No adelantar el item: con un item debajo del monstruo el cursor mostraria el
+            // de levantar en vez del de ataque (RenderCursor le da prioridad a
+            // SelectedItem).  Con Alt APRETADO los items si van primero (rama de arriba, de IDA).
             //
             // Orden de los dos tipos de personaje (IDA L117-118 y L318-322): por
             // defecto monstruos (0x22) y despues jugadores (1); con un buff de
@@ -239,7 +221,6 @@ done:
 
 }
 
-// ── Additional helpers extracted from stubs_mouse_hover.cpp ─────────────────
 // ── Mouse hover helpers ────────────────────────────────────────────────────────
 // RenderTerrainTile @ 0x004F8480 — Terrain_TilePick(x,y,row,col,unused,stride,flag)
 // Stores world coords + tile index, optionally renders a debug outline (GL_LINE_STRIP).
@@ -286,8 +267,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
         GL_SetAlphaTest('\0');
         glColor3f(0.0f, 0.0f, 0.0f);
         glBegin(3);
-        // BUG-FIX 2026-04-28: bound era 0x7feb288 (addr abs del binario original).
-        // Pool real es g_TilePickBuf[12] = 4 vec3 corners. Iterar 4.
+        // g_TilePickBuf[12] = 4 vec3 corners: iterar 4 (no el bound absoluto del binario).
         for (int i = 0; i < 4; ++i) {
             glVertex3fv(&g_TilePickBuf[i * 3]);
         }
@@ -325,9 +305,8 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
             GL_SetAlphaTest('\0');
             glBegin(6);
             glColor4f(1.0f, 0.0f, 0.0f, 0.3f);
-            // BUG-FIX 2026-05-03: was `while (puVar3 < 0x7feb288)` — absolute
-            // source-binary bound, junk in our build. g_TilePickBuf[12] holds
-            // exactly 4 vec3 corners (matching the lines 924 fix above).
+            // g_TilePickBuf[12] holds exactly 4 vec3 corners (no el bound absoluto
+            // 0x7feb288 del binario).
             for (int i = 0; i < 4; ++i) {
                 glVertex3fv(&g_TilePickBuf[i * 3]);
             }
@@ -381,10 +360,8 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         }
     }
 
-    // Pass 2: find nearest entity to MOUSE-RAY (perpendicular distance), not camera.
-    // Antes: usábamos distancia a cámara con Collision_SegmentToOBB stub → siempre return 1
-    // → ganaba el más cercano a cámara siempre, que es slot 1 (elfa) por geometría.
-    // Ahora: gana el char cuyo centro de masa está más cerca del ray del mouse.
+    // Pass 2: entre las entidades cuya OBB corta el rayo del mouse, gana la mas
+    // cercana a la camara (ver abajo).
     float best_perp = 1e12f;
     int   best_idx  = -1;
     int   ent_idx   = 0;
@@ -431,14 +408,6 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         // IDA sub_4AFDC0 L38-52: test del RAYO del mouse contra la OBB de la
         // entidad (o+0x130, 12 floats que llena Calc_RenderObject) con
         // sub_513260, y gana la MAS CERCANA A LA CAMARA.
-        //
-        // 2026-09-16: aca habia una reimplementacion en pantalla (gluProject de
-        // tres puntos a 10/40/70 de altura sobre los pies y un radio fijo de 32
-        // px).  Apuntando a la parte alta del cuerpo, o con el mob inclinado en
-        // su animacion, el cursor quedaba fuera de esos circulos y el click caia
-        // al suelo (SelectedCharacter = -1): los "clicks que no atacan".  El
-        // motivo por el que se habia reemplazado (Collision_SegmentToOBB era un stub que
-        // devolvia 1) ya no aplica: quedo portado el 2026-09-04.
         {
             float box[12];
             memcpy(box, (const void*)(ent + 0x130), sizeof(box));
@@ -454,9 +423,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             // Filtro de techos (IDA L~115-131): en Lorencia (World 0) una entidad
             // sobre un tile 4, y en Devias (World 2) sobre un tile 3, solo se
             // puede elegir si el heroe esta en ese mismo tipo de tile.
-            // `World` es el indice de mapa (el macro `World` que lo
-            // nombraba World mentia; la nota vieja que deshabilito este
-            // filtro partia de esa etiqueta).
+            // `World` es el indice de mapa.
             const int map = (int)World;
             if (map == 0 || map == 2) {
                 int tx = (int)*(float*)(ent + 0x10) / 100;
@@ -495,40 +462,20 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 }
 
 // ItemOnGround_HoverTest @ 0x004AFA40
-// 2026-09-04: el encabezado decia "NEUTRALIZADO (2026-04-26)", pero eso quedo
-// viejo -- la funcion se reimplemento el 2026-07-27 y anda (pickup confirmado en
-// runtime).  Se conserva la nota historica porque explica la DESVIACION que sigue
-// vigente:
-//
-//   El path fiel (sub_4AFA40) hace un test de rayo contra la OBB del item con
-//   `sub_513260`; aca se usa proximidad world-space -- se compara el tile del item
-//   con el tile del terreno bajo el mouse (el mismo picker del click-to-move,
-//   RenderTerrain -> DAT_080ab288/28c).
-//
-//   El motivo que se anotaba para no portarlo ("Collision_SegmentToOBB depende de macros
-//   Hex-Rays sin portar") YA NO APLICA: ese test quedo portado el 2026-09-04 al
-//   arreglar el pick de objetos interactuables.  Si algun dia el hover de items se
-//   comporta distinto al original, ese es el cambio a hacer -- pero hoy funciona y
-//   tocarlo es riesgo sin beneficio reportado.
+// DESVIACION: el path fiel (sub_4AFA40) hace un test de rayo contra la OBB del
+// item con `sub_513260` (Collision_SegmentToOBB, ya portado); aca se elige el
+// item cuya posicion de PANTALLA esta mas cerca del cursor (umbral ~24 px).  Si
+// el hover de items se comporta distinto al original, ese es el cambio a hacer.
 //
 // El pool DAT_07e12840 es 1000x0x204; layout por slot (base = pool + i*0x204):
 //   base+72   active flag
 //   base+424  visible flag (lo setea el render)
 //   base+16/20  world X/Y del item
+//   base+164/166  posicion de pantalla (short, la escribe el render)
 //   base+304/308/312  light color (0.2 normal, 1.5 al hover)
 // IDA: FUN_004afa40
 int __cdecl ItemOnGround_HoverTest(void)
 {
-    // 2026-07-27: hover de items en el suelo. El path FIEL (sub_4AFA40) usa un
-    // point-in-quad screen-space (Collision_SegmentToOBB, 12-arg) que depende de macros
-    // Hex-Rays sin portar. En su lugar usamos proximidad world-space: comparar
-    // el tile del item con el tile del terreno bajo el mouse (el mismo picker
-    // que usa el click-to-move, RenderTerrain → DAT_080ab288/28c).
-    // El pool DAT_07e12840 es 1000×0x204; layout por slot (base = pool+i*0x204):
-    //   base+72   active flag
-    //   base+424  visible flag (lo setea el render)
-    //   base+16/20  world X/Y del item
-    //   base+304/308/312  light color (0.2 normal, 1.5 al hover)
     BYTE* pool = (BYTE*)&DAT_07e12840[0];
 
     // Pass 1: atenuar todos los items activos + visibles.
@@ -579,10 +526,8 @@ int __cdecl ItemOnGround_HoverTest(void)
 // Pasada 2: el primero cuya OBB (objeto+0x130, la que deja Calc_RenderObject)
 //           corte el rayo del mouse se ilumina a 1.5 y se devuelve su indice.
 //
-// 2026-09-04: estaba NEUTRALIZADO (`return -1`) desde 2026-04-26 porque el port
-// original iteraba con el bound absoluto 0x83A2CD0 del binario fuente.  El array
-// ya esta bien dimensionado en globals.cpp (0x960 = 200 x 12), asi que se acota
-// con `sizeof`.  Mientras estuvo neutralizado NADA del mundo era interactuable.
+// El array esta dimensionado en globals.cpp (0x960 = 200 x 12) y se acota con
+// `sizeof`, no con el bound absoluto 0x83A2CD0 del binario.
 int __cdecl SpecialObject_HoverTest(void)
 {
     const int stride = 0xc;

@@ -103,9 +103,9 @@ void __cdecl AmbientParticles_Update(void)
     puVar9 = (unsigned int *)DAT_083a2f78;   // base of pool (now real array)
     iVar8  = World;
 
-    // BUG-FIX 2026-04-28: las dos comparaciones contra 0x83a34ac y 0x83a40cf
-    // eran direcciones absolutas del binario original. Ahora computamos
-    // bounds relativos al array real DAT_083a2f78 (10 × 0x1bc).
+    // Las comparaciones del original contra 0x83a34ac / 0x83a40cf son direcciones
+    // absolutas del binario; acá los bounds son relativos al array real
+    // DAT_083a2f78 (10 × 0x1bc).
     // - Active range (slots 0..2) = primeros 3 × 0x1bc = 0x534 bytes desde base
     // - Total range (slots 0..9) = 10 × 0x1bc = 0x1158 bytes desde base
     const uintptr_t arrBase   = (uintptr_t)DAT_083a2f78;
@@ -255,8 +255,8 @@ switchD_caseD_2:
         if (*(char *)(puVar9 + -0x3a) != '\0') {
             pfVar1    = (float *)(puVar9 + -0x36);
             short modelIdx = *(short *)((int)puVar9 + -0xe6);
-            // BUG-FIX 2026-04-28: el modelIdx puede venir garbage (ej. de un
-            // slot reciclado de char-select). Models[] válido en 0..~0x4A8.
+            // Guarda propia: el modelIdx puede venir basura (ej. de un slot reciclado de
+            // char-select). Models[] válido en 0..~0x4A8.
             if (modelIdx < 0 || modelIdx > 0x4A8) goto LAB_00502b38;
             this_model = (void *)(DAT_05828d58 + modelIdx * 0xbc);
 
@@ -300,7 +300,7 @@ switchD_caseD_2:
                 *(float*)&puVar9[-0x34] = local_10 + *(float*)&puVar9[-0x34]; // pos_z
 
                 if (bVar10) {
-                    // BUG-FIX 2026-04-28: pass explicit (xf, yf) — pos at pfVar1[0/1]
+                    // Se pasa (xf, yf) explícito — pos en pfVar1[0/1]
                     float __h = RequestTerrainHeight(*pfVar1, *(float*)(puVar9 - 0x35));
                     puVar9[-0x34] = *(unsigned int*)&__h;
                     fVar11 = (float10)__h;

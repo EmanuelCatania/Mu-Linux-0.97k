@@ -1,7 +1,6 @@
 // Camera_Movement.cpp
 //
-// Extracted from stubs_game.cpp.  Owns the intro/login camera walk animation.
-// The function comment retains its original IDA symbol/address.
+// Animación del recorrido de cámara de la intro/login.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -22,11 +21,10 @@ void __stdcall MoveCamera(void) {
     // SceneFlag = DAT_07e11980, CameraFOV = DAT_00561554
     // CameraAngle = float[3] at 0x083a42b8, CameraPosition = float[3] at 0x083a42d4
 
-    // BUG-FIX 2026-04-21: usar los arrays concretos en vez de `(float*)&DAT_*`
-    // los DAT_* son referencias (float&/DWORD&) y tomar `&` sobre una referencia
-    // no siempre da el address que uno espera con MSVC/extern. CurrentCameraAngle
-    // quedaba en (0,0,0) aunque el init block corriera → CameraPitch nunca llegaba
-    // a -80° → escena se veía sin pitch ("volteada").
+    // Usar los arrays concretos en vez de `(float*)&DAT_*`: los DAT_* son
+    // referencias (float&/DWORD&) y tomar `&` sobre una referencia no siempre da el
+    // address que uno espera con MSVC/extern (CurrentCameraAngle quedaba en
+    // (0,0,0) y la escena se veía sin pitch).
     float* CamWalk = CameraWalk_005615ec;        // concrete float[36]
     float* CurPos = CurrentCameraPosition;       // concrete float[3]
     float* CurAngle = CurrentCameraAngle;        // concrete float[3]
@@ -67,12 +65,9 @@ void __stdcall MoveCamera(void) {
         if (DAT_083a7af4 == 0) {
             DAT_083a7af4 = 1;
         } else if (SceneFlag == 2) {
-            // BUG-FIX: el decompile original usaba DAT_07e11980 (una variable
-            // que NO existe como xref en el binario; siempre 0). La instrucción
-            // real en PE @ 0x0051E5D5 es `CMP [0x005615c0], 2` → SceneFlag.
-            // Con la variable equivocada, la rama siempre caía al else y
-            // elegía wp5 (200,-800,300, roll=-10°) → la cámara saltaba de
-            // golpe a posición angulada tras ~128 frames (~3.2s).
+            // El decompile usaba DAT_07e11980 (una variable que NO existe como xref en el
+            // binario; siempre 0). La instrucción real en PE @ 0x0051E5D5 es
+            // `CMP [0x005615c0], 2` → SceneFlag.
             // SceneFlag==2 (login): random waypoint 1..4, random walk type 0..1
             unsigned int r = rand();
             unsigned int rMod = r & 0x80000003;

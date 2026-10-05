@@ -1,5 +1,4 @@
 // Render_LegacyTrails.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos -----------------
+// Cloth_Integrate vive en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -51,7 +50,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 void __cdecl Entity_TeleportAnim(float *pos, float a, float b, float c)
 {
     return;  // AUTO-SKIP: dead duplicate (kept for reference). Active impl is the
-             // 4-arg overload in stubs.cpp:3324 (Entity_TeleportAnim with float* dst_pos).
+             // 4-arg overload in Combat/Skills_WarriorLegacy.cpp (Entity_TeleportAnim with float* dst_pos).
     char *slot = &DAT_07c80110[0];
     while ((int)slot < 0x7c82cd0) {
         if (*slot == '\0') {
@@ -71,9 +70,8 @@ void __cdecl Entity_TeleportAnim(float *pos, float a, float b, float c)
 }
 
 // Particle_Update @ 0x0046C3E0 — Trail_RenderAll: render weapon/beam trails in pool.
-// Pool: g_RenderPool_07c608a8 (= shared joint/trail pool, 100 slots × 0x2f0).
-// 2026-05-03: AUTO-SKIP removed. Pool now properly sized; iteration count
-// is 100 (matching IDA bound `< 0x7c72e74` = base + 100*0x2f0).
+// Pool: g_RenderPool_07c608a8 (= shared joint/trail pool, 100 slots × 0x2f0);
+// iteration count is 100 (matching IDA bound `< 0x7c72e74` = base + 100*0x2f0).
 void __cdecl Particle_Update(void)
 {
     int *slot = (int *)&DAT_07c608b4;

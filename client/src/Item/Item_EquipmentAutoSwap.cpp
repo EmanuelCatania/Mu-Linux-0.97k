@@ -1,5 +1,4 @@
 // Item_EquipmentAutoSwap.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -52,11 +51,6 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     //   }
     //
     // `v18` es el test de ARCO y `v20` el de BALLESTA.  Segun sub_4824C0 L76-88
-    // y CreateArrow (0x474370 L67), el arco vive en CharacterMachine + 604 y la
-    // ballesta en + 536; la municion va al slot que queda libre.  El port leia
-    // el arco en +536 y la ballesta en +604, o sea al reves: con arco equipado
-    // ninguna rama daba, y al quedarse sin flechas (+536 == -1) caia en la rama
-    // de ballesta y pedia equipar en el slot 1 — el del propio arco.
     const short bowSlotType      = *(const short*)(characterMachine + 604);  // IDA: v18
     const short crossbowSlotType = *(const short*)(characterMachine + 536);  // IDA: v20 / *v25
 

@@ -1,5 +1,4 @@
 // GameGuard_Packet.cpp
-// Extracted from stubs_bulk_misc.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"

@@ -21,10 +21,10 @@ static bool HUD_IsGuildCreationRuntime(void);
 static bool HUD_IsGuildListRuntime(void);
 static bool HUD_IsCharacterInfoRuntime(void);
 
-// 2026-04-30: Bottom-bar HUD button hit-test.
-// Los rectángulos salen de HUD_Pass5.cpp:264-296 (las mismas coordenadas que ya
-// se usan para los tooltips de hover y el resaltado de "panel abierto"). Con un
-// LButton release (no drag), toggles the corresponding panel flag.
+// Bottom-bar HUD button hit-test.
+// Los rectángulos son los mismos que usan los tooltips de hover y el
+// resaltado de "panel abierto" en HUD_Pass5.cpp. Con un LButton release (no
+// drag), toggles the corresponding panel flag.
 //
 // Gated by:
 //   - sólo en estado in-game (SceneFlag == 5)
@@ -32,18 +32,14 @@ static bool HUD_IsCharacterInfoRuntime(void);
 //   - limpiar DAT_083a413c después de consumirlo, para que otra parte de la UI no lo maneje dos veces
 //
 // En el binario 0.97k original esto estaba inline dentro del ruido anti-tamper de
-// sub_004B82xx; acá lo reimplementamos limpio porque el camino click→toggle
-// es lo que realmente hace funcionar los botones del HUD.
-// 2026-05-04: MouseOnWindow (per IDA Player_InputTick:416,566 + sub_402F40:9):
-// flag que se setea en cada frame si el mouse está sobre algún panel de UI abierto. Se usa para gatear
-// el GroundClick / walker de movimiento, así clickear adentro de un panel no hace
-// que el jugador camine hacia esa posición de pantalla.
-// 2026-09-09: `MouseOnWindow` es UN SOLO global del binario, 0x07D78094 (=
-// DAT_07d78094).  Estaba partido en dos: el port fiel de `sub_4E6550`
-// (CheckInventory) escribia DAT_07d78094 con los seis rects de panel
-// -- inventario, tienda, baul, ChaosMix, trade y ventana de evento -- y el gate
-// de `Attack` (IDA L1330) leia este `g_MouseOnWindow`, una reimplementacion
-// propia que NO cubre ninguno de esos seis.  Ahora es un alias del global real.
+// sub_004B82xx; acá lo reimplementamos limpio.
+//
+// `MouseOnWindow` (IDA Player_InputTick:416,566 + sub_402F40:9) es un solo
+// global del binario, 0x07D78094 (= DAT_07d78094): se setea cada frame si el
+// mouse está sobre algún panel de UI abierto y gatea el GroundClick, para que
+// clickear adentro de un panel no haga caminar al jugador. Lo escribe
+// CheckInventory (sub_4E6550) con los seis rects de panel; g_MouseOnWindow es
+// un alias.
 #define g_MouseOnWindow DAT_07d78094
 
 // IDA `Attacking` — estado del auto-ataque: -1 = ninguno, 1 = ataque iniciado
@@ -57,12 +53,10 @@ static bool HUD_IsCharacterInfoRuntime(void);
 // declaraciones externas.
 #define g_Attacking Attacking
 
-// 2026-07-20: el ChatListBox publica su propio hit-test acá (definido en
-// src/UI/ChatListBox.cpp).  Su tick (slot 5 → slot 7) corre ANTES que esta
-// función dentro del mismo frame (Game_CharSelectTick líneas 217 y 298), así
-// que el latch está fresco.  Sin esto, clickear dentro del recuadro del chat
-// mandaba a caminar al personaje: el slot 7 escribía un `MouseOnWindow` local
-// de ChatListBox.cpp que no leía nadie.
+// El ChatListBox publica su propio hit-test acá (definido en
+// src/UI/ChatListBox.cpp). Su tick corre ANTES que esta función dentro del
+// mismo frame, así que el latch está fresco. Sin esto, clickear dentro del
+// recuadro del chat mandaría a caminar al personaje.
 extern "C" int g_ChatLB_MouseOnWindow;
 
 // Resetea y puebla MouseOnWindow al inicio del frame. La llama Player_InputTick.
@@ -109,8 +103,8 @@ static void MouseOnWindow_Update(void)
         if (mx >= btnX && mx < btnX + 70 && my >= btnY && my < btnY + 21) {
             g_MouseOnWindow = 1; return;
         }
-        // 2026-08-26: mismo fix que el render — IDA `sub_4E4760` L446 pone el
-        // segundo boton en [origin+100, origin+170), no en +20+100.
+        // IDA `sub_4E4760` L446 (igual que el render): el segundo botón va en
+        // [origin+100, origin+170).
         btnX = (int)((float)g_GuildCreatorScratchX + 100.0f);
         if (mx >= btnX && mx < btnX + 70 && my >= btnY && my < btnY + 21) {
             g_MouseOnWindow = 1; return;
@@ -133,16 +127,13 @@ static void MouseOnWindow_Update(void)
         }
     }
 
-    // 2026-05-05: Skill bar expanded list (cells at y=370..411 cuando
-    // DAT_07db870c=1, el user expandió el menú con click en el icono central).
-    // Sin este check, click en una skill cell del menú expandido cae en zona
-    // libre del world → Player_InputTick lo procesa como move click → hero
-    // camina al lugar del cell además de cambiar la skill.
+    // Skill bar expanded list (cells at y=370..411 cuando DAT_07db870c=1, el user
+    // expandió el menú con click en el icono central): un click en una cell no
+    // tiene que caer como move click.
     //
-    // 2026-05-05 (followup): Chat_InputTick (corre ANTES) resetea DAT_07db870c
-    // a 0 cuando user clickea una cell. Entonces cuando llegamos acá, el flag
-    // ya cambió. Usamos un latch del frame anterior para que el click "tail"
-    // siga viendo el menú como abierto.
+    // Chat_InputTick (corre ANTES) resetea DAT_07db870c a 0 cuando el user clickea
+    // una cell, así que acá se usa un latch del frame anterior para que el click
+    // "tail" siga viendo el menú como abierto.
     static char s_lastMenuOpen = 0;
     char menuOpen = (DAT_07db870c != '\0') ? (char)1 : (char)0;
     if ((menuOpen || s_lastMenuOpen) && my >= 370 && my < 412) {
@@ -186,9 +177,6 @@ static void MouseOnWindow_Update(void)
 //                       (CloseInventoryRelatedWindows ya manda el 0x31 de la
 //                       tienda, fix del DLL)
 // Devuelve false cuando la ventana del NPC no se pudo cerrar (la tecla apaga
-// entonces el panel que acababa de abrir).  2026-09-18: reemplaza a
-// HUD_CloseNpcWindowsIfAny / HUD_CloseInventoryFamilyFromUI, que mandaban 0x31
-// para todo e impedian abrir el panel.
 enum HudPanelTail { TAIL_GUILD, TAIL_PARTY, TAIL_CHARACTER, TAIL_INVENTORY_CLOSE };
 static bool HUD_PanelTail97k(HudPanelTail kind)
 {
@@ -223,19 +211,10 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
 // `Chat_InputTick` (0x4B14F0); aca corre desde Player_InputTick, que se ejecuta
 // antes de la logica de click al mundo.
 //
-// 2026-09-04 -- reescrito contra IDA.  La version anterior era una
-// reimplementacion ("clean reimplementation ... covers the same observable
-// behavior") con tres desviaciones:
-//   * el boton de inventario gateaba con `HUD_IsInventoryFamilyActive()`, que
-//     incluye CharacterOpened -> con el panel de personaje abierto, clickear
-//     inventario lo CERRABA en vez de abrirlo.  En el original los dos paneles
-//     conviven (por eso GetScreenWidth devuelve 260 justo para esa combinacion).
-//   * usaba `DAT_083a413c` (latch de click soltado) con deteccion de flanco
-//     propia; IDA usa `MouseLButtonPush` (DAT_083a4124) y lo CONSUME poniendolo
-//     en 0, que es lo que evita el auto-repeat.
-//   * le faltaban los sonidos 25/28 al cerrar, el `PartyOpened = 0` del boton de
-//     guild, el `GuildOpened = 0; PartyOpened = 0` al abrir inventario, y el
-//     gate de entrada que apaga toda la fila mientras hay un modal abierto.
+// Como en IDA: inventario y personaje conviven (por eso GetScreenWidth
+// devuelve 260 justo para esa combinacion); el click se toma de
+// `MouseLButtonPush` (DAT_083a4124) y se CONSUME poniendolo en 0, que es lo
+// que evita el auto-repeat; y toda la fila se apaga mientras hay un modal.
 //
 // Rects (IDA L1130, L1455, L1775, L2078):
 //   guild      (582..634, 459..477)
@@ -328,7 +307,7 @@ void HUD_BottomBarButtons_HitTest(void)
     }
 }
 
-// 2026-04-30: hotkeys de UI por frame para el HUD in-game (C/V/I).
+// Hotkeys de UI por frame para el HUD in-game (C/V/I).
 // En el binario 0.97k original, los botones de la barra inferior (y estos
 // atajos de teclado) invierten los flags de un byte DAT_07eaa11x que gatean cada
 // bloque de render del HUD. La rutina dedicada que hacía esto estaba enterrada en
@@ -337,11 +316,9 @@ void HUD_BottomBarButtons_HitTest(void)
 //
 // Se suprime mientras haya algún modo de entrada de texto activo (chat, IME, texto de login)
 // para que tipear letras en el chat no invierta paneles sin querer.
-// 2026-05-04: defensive guard — GuildInputEnable/d71 (ChatMode/IME) get corrupted
-// a 0xFF (-1 con signo) por ALGÚN código, poco después de abrir el inventario. El
-// writer is hard to find via grep (no literal -1 store).  As a defense, clamp
-// cualquier valor que no sea {0,1} a 0 al inicio de cada llamada a Player_InputTick Y logueamos
-// las primeras veces que vemos la corrupción, para poder encontrar la fuente.
+// Guard defensivo: GuildInputEnable/d71 (ChatMode/IME) aparecen corrompidos a
+// 0xFF poco después de abrir el inventario (escritor no encontrado); se clampea
+// a 0 cualquier valor fuera de {0,1} y se loguean las primeras ocurrencias.
 extern char g_PadBeforeChatMode[64];
 extern char g_PadAfterChatMode[64];
 static void ClampChatModeIME(const char* tag)
@@ -357,12 +334,9 @@ static void ClampChatModeIME(const char* tag)
         if (ime  > 1) DAT_07e11d71 = 0;
     }
 
-    // 2026-07-27: detector de la transición 0→1 de ChatMode. El clamp de arriba
-    // sólo atrapa valores >1, pero un `1` espurio es un valor VÁLIDO ("chat on")
-    // → abre la caja de chat/whisper con un carácter suelto (el bug del "whisper
-    // con la letra l" que aparece cada tanto, típicamente tras abrir tiendas).
-    // Logueamos el tag del punto del frame donde se encendió para ubicar al
-    // escritor real.
+    // Detector de la transición 0→1 de ChatMode: el clamp de arriba sólo atrapa
+    // valores >1, pero un `1` espurio abre la caja de chat/whisper con un carácter
+    // suelto. Se loguea el punto del frame donde se encendió para ubicar al escritor.
     {
         static BYTE s_prevChat = 0;
         BYTE now = (BYTE)GuildInputEnable;
@@ -442,24 +416,11 @@ static void HUD_HotkeyTick(void)
     //   || *(BYTE*)(g_csQuest + 116863) == 1
     //   || g_bServerDivisionEnable
     //
-    // 2026-08-21 se habia portado SOLO el termino de la ventana de quest
-    // ("sin el gate se podia abrir el inventario encima del panel de quest --
-    // los dos se dibujan en x=450").  El mismo razonamiento vale para el resto
-    // de la lista, que es la que ya usa el handler de la barra inferior.
-    //
-    // 2026-09-20: faltaba g_bEventChipDialogEnable (el Golden Archer), y eso
-    // causaba dos sintomas.  Con la ventana abierta, la V dibujaba el
-    // inventario ENCIMA del panel (los dos van a x=450); y al volver a
-    // apretarla, HUD_PanelTail97k -> CloseInventoryRelatedWindows (0x4CBA60
-    // L154) limpia g_bEventChipDialogEnable sin avisarle al server.  El server
-    // se queda con Interface.use != 0 y rechaza /move con el mensaje 65,
-    // "You cannot move right now" (Move.cpp L181-185) -- y no se recupera,
-    // porque el 0x31 que manda SendMove al caminar esta gateado por ese mismo
-    // flag que la V ya puso en cero.
-    //
-    // Con el gate puesto, la ventana solo se cierra por su X o caminando, que
-    // son los dos caminos que si mandan el 0x31 (igual que el DLL, que para
-    // eso hookea SendMove en 0x00492AD2).
+    // Con g_bEventChipDialogEnable (Golden Archer) abierto, la V dibujaría el
+    // inventario encima del panel (los dos van a x=450) y al cerrarlo
+    // CloseInventoryRelatedWindows limpiaría el flag sin avisarle al server, que
+    // después rechaza /move. Con el gate, esa ventana solo se cierra por su X o
+    // caminando, que son los caminos que mandan el 0x31.
     if (DAT_07eaa11b ||                      // TradeOpened
         DAT_07eaa124 ||                      // GuildCreatorOpened
         DAT_083a7c24 == 126 ||               // ErrorMessage: expulsar del guild
@@ -552,7 +513,7 @@ static void HUD_HotkeyTick(void)
 //  12. Atributo de terreno bajo el cursor → DAT_07e118e8
 //
 // Los bloques de ofuscación por HashTable repartidos por la función (~70 % del código) se omiten
-// per project policy (see CLAUDE.md §Anti-tamper).
+// (ver docs/analisis/hashtable-anti-tamper.md).
 //
 // Key globals:
 //   DAT_07abf5d8          — local player entity ptr
@@ -575,15 +536,9 @@ static void HUD_HotkeyTick(void)
 //   Facing:       [0xC1][0x07][0x0F] + encoded direction byte
 //   Walk/swim:    [0xC1][0x11] + grid_x,grid_y
 
-// Helper: manda el buffer por el socket, con fallback a la cola de WSAEWOULDBLOCK
-// BUG-FIX 2026-04-29: server log mostró `[SocketManager] Protocol header
-// error (Header: 41)` — 0x41 = lo que el server-side decrypt produce cuando
-// recibe nuestros bytes plain como si fueran cipher. Causa: este helper
-// NUNCA llamaba MuEmu::EncryptSend. Server con ENCRYPT_STATE=1 decripta todo
-// el stream → packets que mandamos plain salen como garbage → kick.
-// El primer F3/03 (CharSelect) funcionaba porque va por OTRO path con
-// EncryptSend (Game_CharSelectTick). Movimiento y swim packets desde aquí
-// rompían la sesión.
+// Helper: manda el buffer por el socket, con fallback a la cola de WSAEWOULDBLOCK.
+// Pasa por MuEmu::EncryptSend: con ENCRYPT_STATE=1 el server descifra todo el
+// stream, y un paquete plano llega como basura y lo desconecta.
 static void SendPacket(const char *buf, unsigned int len)
 {
     if (SocketClientSocket == 0xffffffff)
@@ -625,25 +580,16 @@ static void SendPacket(const char *buf, unsigned int len)
 // IDA: Player_InputTick
 void __cdecl Player_ProcessInput(void)
 {
-    // 2026-04-30: el procesamiento de hotkeys de UI va PRIMERO, para que los toggles funcionen incluso
-    // cuando los gates de abajo saldrían temprano (p.ej. durante un cooldown).
+    // El procesamiento de hotkeys de UI va PRIMERO, para que los toggles funcionen
+    // incluso cuando los gates de abajo saldrían temprano (p.ej. durante un cooldown).
     HUD_HotkeyTick();
-    // 2026-05-04: poblar el flag MouseOnWindow (per IDA) ANTES de la lógica de
-    // GroundClick, así clickear adentro de un panel no hace caminar al jugador.
+    // Poblar el flag MouseOnWindow (per IDA) ANTES de la lógica de GroundClick,
+    // así clickear adentro de un panel no hace caminar al jugador.
     MouseOnWindow_Update();
-    // 2026-05-20: in-game unificamos el latch viejo de hover con la captura de UI
-    // capture result. Inventory / character / chat render paths still poke
-    // DAT_07d78094 directo y lo puede dejar pegado, lo que bloquea el movimiento
-    // even when the mouse is no longer over a panel. For world input, only
-    // sólo debería importar la captura de UI del frame actual.
-    // 2026-09-09: aca habia `DAT_07d78094 = (g_MouseOnWindow != 0) ? 1 : 0;`,
-    // que in-game PISABA el flag que ya habia puesto CheckInventory por los
-    // paneles.  Sintoma: con la Chaos Machine abierta, mover items disparaba el
-    // camino de ataque -> sin mana -> busca pocion -> cartel GlobalText[474]
-    // ("Los items no pueden ser utilizados mientras usas el baul o durante
-    // trade").  Ahora los dos nombres son la misma memoria y no hay que copiar.
-    // 2026-09-04: los botones de la barra inferior se atienden desde
-    // `Chat_InputTick` (0x4B14F0), que es donde los tiene el binario.
+    // DAT_07d78094 y g_MouseOnWindow son la misma memoria (la escribe
+    // CheckInventory por los paneles): no copiar uno en el otro acá.
+    // Los botones de la barra inferior se atienden desde `Chat_InputTick`
+    // (0x4B14F0), que es donde los tiene el binario.
 
     // ── Guard: entity visibility / renderable flag ─────────────────────────────
     if (*(char*)((int)DAT_07abf5d8 + 0x2fd) != '\0')
@@ -681,10 +627,6 @@ void __cdecl Player_ProcessInput(void)
         // IDA Player_InputTick L344-349:
         //     v11 = dword_559CC4;
         //     v12 = &byte_7E113E4[256 * v11];
-        // 2026-08-21: el port indexaba con SelectedCharacter (SelectedCharacter, que
-        // llega hasta 399) sobre una tabla de 5 entradas → escribía 0x40 bytes
-        // hasta ~100 KB fuera del global cada vez que se hacía click derecho
-        // sobre un jugador con el chat abierto.
         int histSlot = (int)DAT_00559cc4;
         if (histSlot < 0 || histSlot > 4) histSlot = 0;
         memcpy((void*)(DAT_07e113e4 + histSlot * 0x100), nameSrc, 0x40);
@@ -702,19 +644,6 @@ void __cdecl Player_ProcessInput(void)
     //
     // Layout de la entidad, confirmado con la struct de MU 5.2 (`w_ObjectInfo.h`):
     //     +28 Angle[3]      +40 HeadAngle[3]      +52 HeadTargetAngle[3]
-    //
-    // La cadena ya estaba entera salvo el PRODUCTOR:
-    //   · `MoveCharacterVisual` (0x4520C0) interpola cada frame
-    //       HeadAngle[j] = TurnAngle2(HeadAngle[j], HeadTargetAngle[j],
-    //                                 FarAngle(HeadAngle[j], HeadTargetAngle[j]) * 0.2)
-    //   · `BMD_Animation` (0x440060) rota el hueso de la cabeza con
-    //     HeadAngle[0]/[1] (grados → radianes, * 0.017453294).
-    // Nadie escribía HeadTargetAngle del héroe, así que quedaba en 0 y el pj
-    // miraba siempre al frente de su cuerpo.
-    //
-    // El port anterior había degradado justo las dos líneas del cálculo:
-    // `GetScreenWidth()` — que es **GetScreenWidth**, no "frame time" — con el
-    // resultado descartado, y `CreateAngle(0,0,0,0)` (CreateAngle) con ceros.
     bool bHeadTrackActive = false;
     float fHalfScreenW = 320.0f;
     {
@@ -754,27 +683,18 @@ void __cdecl Player_ProcessInput(void)
     CheckGate();
 
     // ── WALKER (corre cada tick, INDEPENDIENTE de gates) ─────────────────────
-    // BUG-FIX 2026-05-01: el walker estaba adentro del gate `bec <= d28`,
-    // pero `bec` se setea a `wpCount*3+4` cada vez que Combat_SendMovePathPacket envía un
-    // packet de movimiento. Para wpCount=5 → bec=19 ticks (760 ms). Eso
-    // throttleaba el walker a 1.3 calls/sec — el hero "se movía por zonas".
-    //
-    // 2026-05-05: además debe ir ARRIBA del gate `DAT_07d78094` (que se setea
-    // cuando user hover sobre skill bar). Sin esto, hover sobre skill detenía
-    // el walker mid-path → hero parado en el lugar pero anim de walk seguía
-    // corriendo. El walker debe ejecutarse SIEMPRE; solo el envío de packets
-    // y el procesamiento de NEW clicks debe gated.
+    // Va fuera del gate de debounce `bec <= d28` (que se setea a `wpCount*3+4` en
+    // cada envío de camino) y ARRIBA del gate `DAT_07d78094` (hover sobre la skill
+    // bar): el walker se ejecuta SIEMPRE; solo el envío de packets y el
+    // procesamiento de clicks nuevos van gateados.
     {
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
         if (*(unsigned char*)(ent + 0x78) & 0x20) {
             SetPlayerStop((int)ent);
         } else {
-            // BUG-FIX 2026-05-03: el chequeo isIdle DEBE ir ANTES de SetPlayerWalk.
-            // Si está idle (sin path activo), NO queremos que SetPlayerWalk setee
-            // walk action (action 0x0d) cada frame. Antes el orden era:
-            //   SetPlayerWalk (set walk) → check isIdle → si idle: set 1 (idle)
-            // → action cambia walk↔idle cada frame → frame counter reset cada
-            // tick → render frozen en frame 0.
+            // El chequeo isIdle va ANTES de SetPlayerWalk: si está idle (sin path activo)
+            // no hay que setear la acción de caminar cada frame (resetearía el frame
+            // counter de la animación).
             // IDA gatea todo este walker con Hero+748. Los contadores de waypoint
             // son internos a MovePath y no hay que usarlos para enganchar la posición
             // de mundo mientras el runner de camino está inactivo.
@@ -787,32 +707,22 @@ void __cdecl Player_ProcessInput(void)
                 if ((char)moveOk == '\0') {
                     MoveCharacterPosition((int)ent);
                 } else {
-                    // BUG-FIX 2026-05-03: al llegar al destino, resetear
-                    // wp_count + cur_wp para que isIdle (línea 319) sea true
-                    // en el frame siguiente. Sin esto, isIdle queda en false
-                    // (wp_count != 0), el walker sigue corriendo cada frame
-                    // ejecutando SetPlayerWalk (sets walk action) → SetPlayerStop
-                    // (sets idle action) → frame counter reset cada tick →
-                    // player FROZEN en pose de walk frame 0.
+                    // Al llegar al destino se resetean wp_count + cur_wp para que isIdle sea true
+                    // en el frame siguiente.
                     *(unsigned char*)(ent + 0x354) = 0;   // cur_wp
                     *(unsigned char*)(ent + 0x355) = 0;   // substep
                     *(unsigned char*)(ent + 0x356) = 0;   // wp_count
-                    *(unsigned char*)(ent + 0x305) = 0;   // 2026-05-05: move_pending,
+                    *(unsigned char*)(ent + 0x305) = 0;   // move_pending:
                     // sin esto isIdle queda false → walker sigue ejecutando
                     // SetPlayerWalk cada frame → action=walk persistente.
                     *(unsigned char*)(ent + 0x2ec) = 0;
                     // IDA Player_InputTick L399: `*(_BYTE *)(v0 + 748) = 0;`
                     // Es la UNICA escritura a +748 que tiene esa funcion en el
-                    // binario y faltaba.  Sin ella el walker nunca se apaga: el
-                    // flag queda en 1 para siempre y el camino se regenera sin
-                    // pasar por idle (medido: 22 fines de camino contra 2
-                    // arranques).
+                    // binario: sin ella el walker nunca se apaga.
                     *(unsigned char*)(ent + 748) = 0;
                     SetPlayerStop((int)ent);
                     // IDA L401: `dword_7E11DBC = (__int64)*(float *)(v0 + 36);`
-                    // — es el FACING del héroe, no un timestamp. El port tenía
-                    // `DAT_05826e08` (WorldTime), que dejaba basura en el campo
-                    // que después lee la rotación por octante.
+                    // — es el FACING del héroe, no un timestamp.
                     DAT_07e11dbc = (int)*(float*)(ent + 36);
                     DAT_07e11db8 = 0;
                     // IDA L397-403: al terminar el camino, Action(c, c) con
@@ -864,8 +774,7 @@ void __cdecl Player_ProcessInput(void)
                             // hash-table (la key de 32 bytes v233..v256), así que
                             // queda sin enviar hasta confirmarlo por disassembly:
                             // sólo afecta a que OTROS jugadores vean la rotación,
-                            // y un paquete mal formado desconecta (ver la entrada
-                            // "Desconexiones: serial de packets" de CLAUDE.md).
+                            // y un paquete mal formado desconecta.
                         }
                     }
                 }
@@ -930,31 +839,25 @@ void __cdecl Player_ProcessInput(void)
     #endif // obsolete inline mini-attack disabled
 
     // ── Salida temprana si el movimiento está bloqueado o la UI activa (post-walker) ──
-    // 2026-05-05: el gate se movió a DESPUÉS del walker, así el walker siempre avanza
-    // incluso con DAT_07d78094 seteado (mouse sobre la barra de skills). Sin esto,
-    // hover over skill icon froze hero mid-walk with looping anim.
+    // El gate va DESPUÉS del walker, así el walker siempre avanza incluso con
+    // DAT_07d78094 seteado (mouse sobre la barra de skills).
     if (DAT_07e11d30 != 0 || g_MouseOnWindow != 0)
         goto end_tick;
 
     // ── Movement debounce gate (controla envío de packets/clicks, NO walker) ─
-    // 2026-05-03: relax el gate cuando el walker está idle (wp_count == 0).
-    // Antes el gate era estrictamente time-based (~1.2 sec entre clicks).
-    // Si user clickea rápidamente, los clicks se descartaban silenciosamente.
-    // Ahora: si idle, aceptar clicks de inmediato; si moviendo, mantener el
-    // gate original para no spamear el server con paths intermedios.
+    // Desviación: con el walker idle (wp_count == 0) los clicks se aceptan de
+    // inmediato; mientras se mueve se mantiene el gate por tiempo para no spamear
+    // el server con paths intermedios.
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
-    // [FIX #2 2026-06-30] DAT_07e11dc0 ("movement lock flag B") — per IDA solo lo
-    // escriben Attack (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío
-    // en nuestro build y el port de Chat_InputTick omitió ese write, así que NADA
-    // lo setea legítimamente → su valor fiel es 0. El runtime mostró -44 (corrupción
-    // de un buffer adyacente que toggle con el inventario: cerrado=-44 bloqueaba el
-    // gate de debounce). Forzamos 0 acá hasta portar Attack (que reimplementaría el
-    // lock real) y/o encontrar el corruptor. Sin esto, el héroe no caminaba con el
-    // inventario cerrado en Devias.
+    // DAT_07e11dc0 ("movement lock flag B"): según IDA solo lo escriben Attack
+    // (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío en nuestro build
+    // y el port de Chat_InputTick no tiene ese write, así que su valor fiel es 0;
+    // se fuerza acá porque se observó corrompido (-44) por un buffer adyacente.
+    // Revisar al portar Attack.
     DAT_07e11dc0 = 0;
     if ((DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0') {
 
-        // BUG-FIX 2026-04-30 (v2): un click = un GroundClick.
+        // Un click = un GroundClick.
         //
         // Race condition entre WM_LBUTTONUP y este tick (PIT corre a 25 Hz / 40 ms).
         // Tres casos a manejar:
@@ -968,28 +871,13 @@ void __cdecl Player_ProcessInput(void)
         // El ciclo se abre con cualquier flag activo y se cierra cuando todo
         // queda idle (sin click held, sin latch, sin pending).
         static bool s_clickCycleConsumed = false;
-        // 2026-05-05: trackea si el evento de click ABAJO pasó sobre una ventana.
-        // Si sí, todo el ciclo del click (ARRIBA/soltar) también tiene que tratarse
-        // como "click de panel" — aunque el usuario haya movido el mouse al mundo antes de soltar.
-        // Sin esto, un click en un ícono de skill seguido de una deriva del mouse al
-        // mundo antes de soltar disparaba un movimiento por el flanco de subida.
+        // Trackea si el evento de click ABAJO pasó sobre una ventana. Si sí, todo el
+        // ciclo del click (ARRIBA/soltar) también se trata como "click de panel",
+        // aunque el usuario haya movido el mouse al mundo antes de soltar.
         static bool s_clickStartedOnWindow = false;
 
-        // 2026-05-07 BUG-FIX: detectar entry a in-world (SceneFlag == 5)
-        // y CONSUMIR los click flags stale del CharSelect click "Enter".
-        // Sin esto, el latch DAT_083a413c=1 del click final en CharSelect
-        // queda set al primer frame in-world → bClickEdge fires sin click
-        // real → mob attack handler dispara → hero ataca al primer mob
-        // visible al spawn. User reportó "aparece el char atacando cuando
-        // entro al mundo sin haber clickeado nada" 2026-05-07.
-        //
-        // 2026-05-07 (followup): además wipear el entity pool DAT_07abf5d0
-        // (excepto hero slot) porque CharSelect dejaba los slots de los chars
-        // disponibles activos (slot[0]=1) con sus nombres en +0x1C1. Cuando
-        // entrábamos al mundo, hover detect en FUN_004afdc0 leía esos slots
-        // como entidades válidas y Target_Render mostraba sus nombres como
-        // si fueran NPCs/players del mundo. User reportó "leo los nombres de
-        // los personajes del select character" 2026-05-07.
+        // Al entrar al mundo (SceneFlag == 5) se consumen los click flags que quedaron
+        // del "Enter" de CharSelect (si no, el héroe atacaría al primer mob visible).
         {
             static int s_lastGameState = -1;
             int curState = (int)SceneFlag;
@@ -1013,10 +901,8 @@ void __cdecl Player_ProcessInput(void)
                     // maneja, no un "alive" flag (per IDA ReceiveAction:20
                     // setea a 0 durante acciones de entidades vivas).
                     //
-                    // 2026-05-07: también resetear anim_state a idle (1) y
-                    // path state. El hero entity hereda anim_state stale del
-                    // CharSelect (donde se anima el preview en walk/idle) y
-                    // sin reset queda walking-in-place al spawn del mundo.
+                    // También se resetean anim_state a idle (1) y el path state: el héroe hereda
+                    // el anim_state del preview de CharSelect.
                     if (DAT_07abf5d8) {
                         BYTE* hero = (BYTE*)DAT_07abf5d8;
                         hero[0x2ed] = 0;            // action queue
@@ -1028,18 +914,15 @@ void __cdecl Player_ProcessInput(void)
                         hero[0x356] = 0;            // path_wp_count
                         hero[0x305] = 0;            // move_pending
                     }
-                    // 2026-05-07: NO wipear el entity pool aquí — Player_InputTick
-                    // corre DESPUÉS que F3/03 JoinMapServer ya pobló el pool con
-                    // viewport spawns (0x12/0x13). Wipearlo aquí borraba los mobs
-                    // recién spawneados → user veía mundo vacío con hero walking
-                    // in place. El wipe se hace en Net_Process F3/03 handler
-                    // ANTES del OpenWorld load, donde es safe.
+                    // NO wipear el entity pool aquí: Player_InputTick corre DESPUÉS de que F3/03
+                    // JoinMapServer pobló el pool con los viewport spawns (0x12/0x13). El wipe se
+                    // hace en el handler F3/03 de Net_Process, ANTES de cargar OpenWorld.
                 }
                 s_lastGameState = curState;
             }
         }
 
-        // 2026-05-07 (FINAL): semántica per IDA Player_InputTick:
+        // Semántica per IDA Player_InputTick:
         //   DAT_083a4124 = MouseLButtonPush (DOWN pulse, ONE-SHOT)
         //                  Lo setea WndProc en WM_LBUTTONDOWN si DAT_083a42c4==0.
         //                  IDA consume: `if (Push) { Push=0; v32=1; }`.
@@ -1050,11 +933,6 @@ void __cdecl Player_ProcessInput(void)
         // dispara again hasta el next DOWN.
         // HELD es continuous — refleja el real-time mouse button state.
         // POP es UP-edge — set en UP no-drag, consumed por dialog buttons etc.
-        //
-        // BUG previo: nuestro IsClickPushed() retornaba DAT_083a4124==1 que
-        // permanecía true durante todo el hold. NO consumíamos en
-        // InputTick → cada frame veía push=true → cualquier reset de
-        // s_prevAnyClick disparaba edge espurio en hover.
         bool bMousePush    = (DAT_083a4124 == 1);   // DOWN pulse this tick
         bool bClickHeld    = (DAT_083a42c4 != 0);   // real-time held state
         bool bClickLatched = (DAT_083a413c == 1);   // UP no-drag latch
@@ -1072,17 +950,9 @@ void __cdecl Player_ProcessInput(void)
             s_clickStartedOnWindow = true;
         }
 
-        // 2026-05-06: detectar cambio de hover target durante click held.
-        // Si user click on mob A → mob A muere → user mueve mouse a mob B
-        // sin liberar click, debería ser un new intent (new attack on B).
-        // El cycle-consumed bloquea, así que reset cycle si target cambia.
-        //
-        // 2026-05-06 (followup): GATED POR bClickHeld. Sin esto, un
-        // bClickLatched colgado (DAT_083a413c=1) más cualquier cambio de
-        // hover (= mouse pasando sobre mob) reseteaba el cycle → bHoverActive
-        // se volvía true sin click real → attack disparaba al pasar el mouse
-        // sobre un mob. User reportó: "si le paso el mouse por encima ataca,
-        // no si le hago click" 2026-05-06.
+        // Si cambia el target de hover con el click mantenido (p.ej. muere el mob A y
+        // el mouse pasa a B), es un intent nuevo: se resetea el ciclo. Sólo con
+        // bClickHeld; un latch colgado más un cambio de hover atacaría al pasar el mouse.
         static int s_lastHoverMob = -1;
         int curHoverMob = (int)SelectedCharacter;
         if (curHoverMob != -1 && curHoverMob != s_lastHoverMob && bClickHeld) {
@@ -1091,10 +961,8 @@ void __cdecl Player_ProcessInput(void)
         }
         s_lastHoverMob = curHoverMob;
 
-        // 2026-05-06: detectar DOWN edge del click. Cada nuevo click DEBE
-        // disparar nuevo cycle (incluso si user click rapidamente sobre el
-        // mismo mob varias veces). Antes user tenía que mover mouse para que
-        // funcionara cada attack — muy molesto.
+        // Detectar el flanco DOWN del click: cada click nuevo dispara un ciclo nuevo,
+        // aunque sea sobre el mismo mob.
         static bool s_prevClickHeld = false;
         if (bClickHeld && !s_prevClickHeld) {
             // Rising edge: new click started
@@ -1102,11 +970,8 @@ void __cdecl Player_ProcessInput(void)
         }
         s_prevClickHeld = bClickHeld;
 
-        // 2026-05-07 FINAL (matching IDA semantics):
-        //   bClickEdge = bMousePush — el push pulse YA es one-shot per IDA.
-        //   Después del click handler, lo CONSUMIMOS (DAT_083a4124 = 0).
-        //   Próximos frames: push=0 hasta el next DOWN. NO se dispara en
-        //   hover, NO se dispara espurio.
+        // bClickEdge = bMousePush: el push pulse YA es one-shot (como en IDA). Después
+        // del click handler se CONSUME (DAT_083a4124 = 0).
         //
         // Push semantics:
         //   - DOWN: WndProc sets DAT_083a4124=1, DAT_083a42c4=1.
@@ -1117,19 +982,13 @@ void __cdecl Player_ProcessInput(void)
         //
         // El bClickLatched (POP/UP-edge) sigue funcionando como respaldo para
         // dialogs/menus que necesiten detectar UP. NO se usa aquí para
-        // attack-arm (eso causaba el hover-attack bug).
+        // attack-arm (dispararía ataques al pasar el mouse).
         bool bClickEdge = bMousePush;
-        // 2026-05-08 BUG-FIX MAYÚSCULO: solo consumir el push pulse si el
-        // click NO está sobre una UI window. Si el cursor está sobre el
-        // inventario / character panel / shop / etc., el click handler de
-        // ESA window (FUN_004d23b0 invocado más tarde en el render pipeline
-        // desde RenderInventoryWindow / RenderShopInterface / etc.) necesita
-        // ver `DAT_083a4124 == 1` para detectar y procesar el click. Si lo
-        // consumimos acá, el handler del UI ve 0 y el pickup/use jamás
-        // dispara — síntoma observado: hovers funcionan (la rama hover de
-        // FUN_004d23b0 no usa el flag), pero ningún click consigue mover ni
-        // consumir items. `g_MouseOnWindow` lo setea HUD_HitTest_AllWindows
-        // (líneas 65-90) basado en las flags de panel abierto + bounding box.
+        // Solo consumir el push pulse si el click NO está sobre una ventana de UI: el
+        // click handler de ESA ventana (FUN_004d23b0, llamado más tarde desde
+        // RenderInventoryWindow / RenderShopInterface / etc.) necesita ver
+        // `DAT_083a4124 == 1`. `g_MouseOnWindow` lo setea HUD_HitTest_AllWindows según
+        // las flags de panel abierto + bounding box.
         if (bMousePush && !g_MouseOnWindow) {
             DAT_083a4124 = 0;
         }
@@ -1140,10 +999,8 @@ void __cdecl Player_ProcessInput(void)
             DAT_083a413c = 0;
         }
 
-        // 2026-05-07: durante los primeros 10 frames in-world, force bClickEdge=false.
-        // Cubre el caso de WndProc dejando DAT_083a4124=1 colgado durante la
-        // transición CharSelect → World, o cualquier edge espurio causado por
-        // race condition en la inicialización del input system.
+        // Durante los primeros 10 frames in-world, bClickEdge=false: cubre un
+        // DAT_083a4124=1 colgado de la transición CharSelect → World.
         {
             static int s_inWorldFramesEdge = 0;
             if (SceneFlag == 5) s_inWorldFramesEdge++;
@@ -1153,60 +1010,37 @@ void __cdecl Player_ProcessInput(void)
             }
         }
 
-        // 2026-05-07 SAFETY (mejorada): clear ent[0x2ed] (action queue) cuando:
-        //   - NO hubo click edge este frame
-        //   - El user NO está sosteniendo el botón izquierdo (bClickHeld=false)
-        //   - Walker está idle (ent[0x356]==0) — sin path activo
-        //
-        // Match IDA Player_InputTick:599 que requires `m_bAutoAttack && Attacking==1
-        // && SelectedCharacter!=-1` AND v32 (current click) para continuar combat.
-        // Sin alguna de esas, bail (= no attack/action).
-        //
+        // IDA Player_InputTick:599 sólo sigue con el combate si `m_bAutoAttack &&
+        // Attacking==1 && SelectedCharacter!=-1` o hay click (v32); si no, sale.
         bool bHoverActive = false;
-        // 2026-09-29: sacado el `&& !s_clickCycleConsumed`.  IDA
-        // Player_InputTick L590-598 no tiene ningun concepto de "ciclo
+        // IDA Player_InputTick L590-598 no tiene ningun concepto de "ciclo
         // consumido":
         //     v32 = 0;
         //     if ( MouseLButtonPush ) { MouseLButtonPush = 0; v32 = 1; }
         //     if ( MouseLButton )     { v32 = 1; }      // MANTENIDO
         // o sea con el boton apretado el click se procesa en CADA apertura
         // del gate, y el throttle es el propio MouseUpdateTimeMax -- que ya
-        // gatea todo este bloque.  El guard era redundante con el gate y
-        // ademas rompia su auto-regulado: como `MouseUpdateTime = 0` vive en
-        // el camino de procesar el click, al bloquearse el contador no se
-        // reseteaba nunca.
-        //
-        // Medido con sonda, caminando con el boton mantenido: al agotarse el
-        // camino MouseUpdateTime valia 27/33/43 contra un MouseUpdateTimeMax
-        // de 19/22/25.  O sea el gate se abria a tiempo (3*wp+4 < 4*wp) pero
-        // el click no se procesaba, el camino no se encadenaba y se llegaba a
-        // SetPlayerStop -- un frame con la pose de parado cada ~1.08 s.
+        // gatea todo este bloque. No agregar `&& !s_clickCycleConsumed`: como
+        // `MouseUpdateTime = 0` vive en el camino de procesar el click, el contador
+        // no se resetearía nunca.
         if (bClickHeld || bClickLatched) {
             bHoverActive = true;
             s_clickCycleConsumed = true;
-            // 2026-05-04: NO consumir DAT_083a4124 cuando el mouse está sobre
+            // NO consumir DAT_083a4124 cuando el mouse está sobre
             // un panel — el render-phase de RenderCharacterInfoWindow / etc.
             // necesita ese flag para detectar clicks en sus botones (X close,
-            // [+] stat add, etc.).  Si lo consumimos acá, los handlers de
-            // panel ven `pressed=false` y nunca disparan.  Solo consumir
-            // cuando el click ES para el ground (mouse fuera de panels).
+            // [+] stat add, etc.).  Solo consumir cuando el click ES para el ground
+            // (mouse fuera de panels).
             if (!g_MouseOnWindow) {
                 DAT_083a4124 = '\0';
                 DAT_083a413c = '\0';   // consume ambos flags
             }
         }
-        // 2026-05-05: Si el mouse está sobre un panel (HUD bottom, skill
-        // expanded list, panels right-side), forzar bHoverActive=false para
-        // que los alt-targets (hover target, NPC click, tertiary) NO procesen
-        // el click como movement. Antes user click en skill icon → bHoverActive
-        // permanecía true → disparaba pathfind a stale hover target → hero
-        // caminaba al lugar de un NPC/monster cercano.
-        //
-        // 2026-05-05 (followup): TAMBIÉN consume DAT_083a42c4 y reset
-        // SelectedCharacter/4c/48 (hover targets) cuando hay click sobre window.
-        // Sin esto, un hover target stale (NPC bajo el cursor del frame
-        // anterior) hacía que líneas 757/801/831 dispararan pathfind aunque
-        // bHoverActive=false, aunque DAT_083a42c4 conserve el latch del click.
+        // Si el mouse está sobre un panel (HUD bottom, skill expanded list, panels
+        // right-side), bHoverActive=false para que los alt-targets (hover target, NPC
+        // click, tertiary) NO procesen el click como movement. También se consume
+        // DAT_083a42c4 y se resetean SelectedCharacter/4c/48 (hover targets), para que
+        // un hover target stale no dispare pathfind.
         if (g_MouseOnWindow || s_clickStartedOnWindow) {
             bHoverActive = false;
             // Consume los flags de click para que no se propaguen al tick
@@ -1217,10 +1051,8 @@ void __cdecl Player_ProcessInput(void)
             DAT_083a42c4 = 0;
         }
 
-        // 2026-05-05: si el user NO está clickeando activamente (no held, no
-        // latched), forzar DAT_083a42c4=0 también. Sin esto, un click anterior
-        // que no se consumió bien puede dejar este flag activo después de
-        // soltar el botón.
+        // Si el user NO está clickeando activamente (no held, no latched), forzar
+        // DAT_083a42c4=0 también, para que un click mal consumido no deje el flag activo.
         if (!bClickHeld && !bClickLatched) {
             DAT_083a42c4 = 0;
         }
@@ -1283,11 +1115,8 @@ void __cdecl Player_ProcessInput(void)
                 // a mano.  Con 76/77 se olvidaron, y son del mismo tipo:
                 // animaciones de desplazamiento, no de ataque.
                 //
-                // Medido con sonda volando en Icarus: con la accion 77 el
-                // click queda bloqueado (hover=16 pero reset=1), no se pide el
-                // camino siguiente, el actual se agota y SetPlayerStop pasa un
-                // frame por la pose de parado.  Ese frame es el salto que se
-                // ve, y el ciclo se repite cada ~1.08 s.  Es el mismo artefacto
+                // Con 76/77 bloqueadas el camino no se encadena y SetPlayerStop pasa un
+                // frame por la pose de parado cada ~1.08 s.  Es el mismo artefacto
                 // que Webzen describe en 5.2 ("애니메이션 튀는거", la animacion
                 // salta) y que alla resolvieron dejando de usar 76/77.
                 // Extender la excepcion es mas acotado: conserva la eleccion de
@@ -1323,15 +1152,10 @@ void __cdecl Player_ProcessInput(void)
         // Si la entidad está viva y CanAct y en movimiento de nado:
         if (*(char*)(ent + 0x34e) == '\0') {
             unsigned int canAct = CheckAttack();
-            // BUG-FIX 2026-04-28: CheckAttack retorna 0 cuando
-            // no hay entidad bajo el mouse (SelectedCharacter == -1). El gate
-            // original solo dejaba pasar entity-hover-clicks → ground-click
-            // (clic en el suelo sin hover de entidad) NUNCA disparaba el
-            // pathfind → hero no se movía nunca.
-            // El IDA original probablemente separaba ground-click fuera de
-            // este gate; aquí relajamos: si bHoverActive (click real), pasar
-            // aunque canAct=0. Los handlers internos siguen gateados por
-            // SelectedCharacter/4c/48/54 != -1, así que no disparan spurio.
+            // Desviación: CheckAttack retorna 0 cuando no hay entidad bajo el mouse
+            // (SelectedCharacter == -1); con bHoverActive (click real) se pasa igual, para
+            // que el click al suelo llegue al pathfind. Los handlers internos siguen
+            // gateados por SelectedCharacter/4c/48/54 != -1.
             if ((char)canAct != '\0' || bHoverActive) {
                 if (*(char*)(ent + 0x2ec) != '\0'
                     && *(char*)(ent + 0x2ed) == '\0'
@@ -1362,33 +1186,15 @@ void __cdecl Player_ProcessInput(void)
                 }
 
                 // ── Hover entity attack (SelectedCharacter valid) ─────────────────
-                // 2026-05-06 (final): GATEAR POR bClickEdge (rising edge del
-                // mouse press, capturado tanto desde bClickHeld como del
-                // latch DAT_083a413c). Match IDA Player_InputTick que usa
-                // `MouseLButton` raw — el ataque se arma SOLO en el frame
-                // exacto donde el botón pasa de released → pressed.
-                //
-                // Bug original: bHoverActive era TRUE mientras bClickLatched
-                // estuviera set (entre frames antes de consumirse), aunque
-                // el user NO estuviera apretando el mouse. Cualquier cambio
-                // de hover target durante esa ventana → attack disparaba al
-                // pasar el mouse sobre un mob. User reportó: "si le paso el
-                // mouse por encima ataca, no si le hago click".
-                //
-                // Con bClickEdge: dispara una sola vez por click. Sin posibili-
-                // dad de spuriarse por latches stale, hover changes, etc.
-                //
-                // Filtro adicional: mobs MUERTOS (entity[+0x34e]==1) no son
-                // targeteables.
-                // 2026-09-16: IDA 0x004ACEF0 L590-603 no exige el flanco:
+                // Filtro: mobs MUERTOS no son targeteables (ver abajo).
+                // IDA 0x004ACEF0 L590-603 no exige el flanco:
                 //   v32 = MouseLButtonPush || MouseLButton;
                 //   if ((!m_bAutoAttack || World == 6 || Attacking != 1 ||
                 //        SelectedCharacter == -1) && !v32) goto LABEL_390;
                 // O sea con el boton MANTENIDO se sigue atacando (el gate de
                 // animacion de mas arriba marca el ritmo), y con m_bAutoAttack
                 // el ataque continua al soltar mientras el objetivo siga
-                // vivo (sub_4B0310 lo mantiene fijo).  Antes solo pegaba en el
-                // frame del click.
+                // vivo (sub_4B0310 lo mantiene fijo).
                 const bool bAutoAttackGoOn = m_bAutoAttack != 0          // m_bAutoAttack
                                           && World != 6           // World
                                           && (int)Attacking == 1;     // Attacking
@@ -1404,16 +1210,9 @@ void __cdecl Player_ProcessInput(void)
                     }
                     BYTE* hoverEnt = (BYTE*)(uintptr_t)DAT_07abf5d0
                                    + (uintptr_t)SelectedCharacter * 0x394;
-                    // 2026-05-07: dead check usa SOLO 0x2FD per IDA ReceiveDie:18.
-                    // El check viejo `0x2EC == 0` era WRONG: 0x2EC es un "state"
-                    // flag que el server setea a 0 también en ReceiveAction y
-                    // otros casos NO-muerte (per IDA ReceiveAction:20). Usarlo
-                    // como "dead" filter rechazaba mobs vivos → click handler no
-                    // armaba attack. User reportó que el ataque "a veces" no
-                    // disparaba (cuando el mob estaba en mid-action).
-                    // 2026-08-10: sacado el `|| hoverEnt[0x34e] != 0`. +0x34E es
-                    // SafeZone, no dead: incluirlo volvía NO-targeteable a todo
-                    // NPC parado en zona segura (o sea todos los del pueblo).
+                    // Muerto = +0x2FD (IDA ReceiveDie:18). No usar +0x2EC (state flag que el
+                    // server también pone en 0 en ReceiveAction) ni +0x34E (es SafeZone: dejaría
+                    // sin targetear a todo NPC del pueblo).
                     if (hoverEnt[0x2FD] != 0) {
                         // Muerto — limpia el estado de hover para que el click siguiente no quede
                         // pegado al cadáver, y sale.
@@ -1430,12 +1229,7 @@ void __cdecl Player_ProcessInput(void)
                     DAT_00559ce8 = SelectedCharacter;
                     Attacking  = 1;
                     *(unsigned char*)(ent + 0x2ed) = 3;
-                    // 2026-05-07 BUG-FIX: dst grid coords son del MOB target,
-                    // NO `DAT_05826e08` (eso es g_AnimTick, tick counter).
-                    // El bug viejo asignaba el tick counter como grid coord,
-                    // entonces pathfind iba a un tile aleatorio basado en
-                    // frame number → user reportó que click far mob no movía
-                    // al hero pero hacía attack animation in place.
+                    // Destino = grid del MOB target (no DAT_05826e08, que es el tick counter).
                     TargetX = (DWORD)dstX;
                     TargetY = (DWORD)dstY;
 
@@ -1540,22 +1334,14 @@ void __cdecl Player_ProcessInput(void)
         }
 
         // ── Alt-target: NPC/item (SelectedNpc != -1) ────────────────────────
-        // 2026-09-04 (b): este bloque estaba DENTRO del guard
-        //     if (SelectedOperate == -1 || (montado && !SafeZone)) { ... }
-        // que envuelve las ramas de NPC / item / click al suelo.  O sea cuando SI
-        // habia objeto seleccionado, el guard saltaba todo el bloque -- incluido el
-        // propio manejo del operate.  Medido en debug.log: en el frame del click
-        // `MOVEHOVER ... c54=23` no lo seguia ni `PIT GroundClick!` ni la sonda.
         // En IDA los dos son `if` HERMANOS y el de SelectedOperate va primero:
         //     if ( SelectedOperate != -1 ) { ... }
         //     if ( SelectedNpc != -1 )     { ... }
         // Objeto interactuable bajo el cursor (sillas, bancos, barandas,
         // orbes de Noria).  IDA 0x4ACEF0 L1133-1195.
         //
-        // 2026-09-04 FIX: este bloque estaba como `else if (bClickEdge)`
-        // del `if (!shiftHeld)` de abajo, o sea SOLO corria con Shift
-        // apretado.  En IDA la cadena es secuencial y SelectedOperate se
-        // chequea ANTES del ramo de movimiento por terreno:
+        // En IDA la cadena es secuencial y SelectedOperate se chequea ANTES del ramo
+        // de movimiento por terreno (no sólo con Shift):
         //     if ( SelectedOperate != -1 ) { ... goto LABEL_340/LABEL_312; }
         //     ...
         //     if ( GetAsyncKeyState(16) >> 8 != 0x80 ) { RenderTerrain(1); ... }
@@ -1564,10 +1350,6 @@ void __cdecl Player_ProcessInput(void)
         // IDA L590-598: las ramas de mobiliario, NPC e item corren con
         //     v32 = MouseLButtonPush || MouseLButton
         // o sea con el boton MANTENIDO tambien, igual que el click al suelo.
-        // El port les exigia el flanco (bClickEdge): si el flanco se consumia
-        // en un tick bloqueado por la animacion o el debounce, el click caia
-        // al suelo con el item bajo el cursor y el heroe caminaba en vez de
-        // levantarlo.  2026-09-18.
         const bool bClickNow = bClickEdge || DAT_083a42c4 != 0;   // MouseLButton
         if (SelectedOperate != -1 && bClickNow) {
             // Gate de montura (IDA L1135): solo se opera si NO se va
@@ -1583,8 +1365,8 @@ void __cdecl Player_ProcessInput(void)
                                    ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
 
             if (mountOk && tgtEntityPtr != 0) {
-                // 2026-09-04 FIX: TargetX/TargetY salen de la POSICION
-                // DEL OBJETO, no del tile bajo el cursor.  IDA L1138:
+                // TargetX/TargetY salen de la POSICION DEL OBJETO, no del tile bajo el
+                // cursor.  IDA L1138:
                 //     TargetX = (__int64)(o->Position[0] * 0.01);
                 //     TargetY = (__int64)(o->Position[1] * 0.01);
                 TargetX = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
@@ -1623,10 +1405,8 @@ void __cdecl Player_ProcessInput(void)
                 && *(char*)(ent + 0x34e) == '\0'))
         {
             if (SelectedNpc != -1 && bClickNow) {
-                // 2026-05-06: bClickEdge en vez de bHoverActive — mismo fix
-                // que el attack handler arriba para evitar disparos por
-                // bClickLatched stale + cambio de hover.
-                // Click sobre un NPC: setea el objetivo de movimiento y pathfindea (gateado por un click real)
+                // Click sobre un NPC: setea el objetivo de movimiento y pathfindea (gateado por
+                // un click real, bClickEdge, no bHoverActive).
                 if (DAT_07eaa118 == '\0' && DAT_07eaa119 == '\0') {
                     *(unsigned char*)(ent + 0x2ed) = 2;
                     DAT_00559ce8 = SelectedNpc;
@@ -1639,7 +1419,7 @@ void __cdecl Player_ProcessInput(void)
                     int srcY = *(int*)(ent + 0x38c);
                     int dstX = *(int*)(tgtBase + 0x388);
                     int dstY = *(int*)(tgtBase + 0x38c);
-                    // 2026-05-07 BUG-FIX: dst grid coords del NPC, NO el animTick.
+                    // Destino = grid del NPC.
                     TargetX = (DWORD)dstX;
                     TargetY = (DWORD)dstY;
 
@@ -1658,23 +1438,17 @@ void __cdecl Player_ProcessInput(void)
 
             // ── Tertiary target (SelectedItem) ───────────────────────────────
             if (SelectedItem != -1 && bClickNow) {
-                // 2026-05-06: bClickEdge en vez de bHoverActive (mismo fix).
+                // bClickEdge, no bHoverActive (igual que el handler de ataque).
                 *(unsigned char*)(ent + 0x2ed) = 1;
                 ItemKey = (DWORD)SelectedItem;   // latch, IDA L1281
-                // 2026-07-27 BUG-FIX: SelectedItem es índice del pool de items
-                // del suelo (DAT_07e12840, stride 0x204), NO del pool de
-                // personajes (DAT_07abf5d0, stride 0x394). El port anterior leía
-                // el destino del pool equivocado → coords basura → el héroe
-                // caminaba a cualquier lado. El tile del item = worldXY/100
-                // (world = base+16/20).
+                // SelectedItem es índice del pool de items del suelo (DAT_07e12840, stride
+                // 0x204), NO del pool de personajes (DAT_07abf5d0, stride 0x394). El tile del
+                // item = worldXY/100.
                 int itemSlotIdx = (int)SelectedItem;
                 BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
                               + (uintptr_t)itemSlotIdx * 0x204;
-                // 2026-07-27 BUG-FIX: la posición world del item la escribe
-                // CreateItem en ip+88/92 (no ip+16). Leer ip+16 daba (0,0) → el
-                // héroe caminaba al origen del mundo (nada). El render lee la pos
-                // en v1+16 = ip+72+16 = ip+88; el item-base (itemEnt) = ip, así
-                // que la pos está en itemEnt+88/92.
+                // La posición world del item la escribe CreateItem en ip+88/92 (el render la
+                // lee en v1+16 = ip+72+16 = ip+88); itemEnt = ip.
                 int dstX = (int)(*(float*)(itemEnt + 88) / 100.0f);
                 int dstY = (int)(*(float*)(itemEnt + 92) / 100.0f);
                 TargetX = (DWORD)dstX;
@@ -1696,61 +1470,34 @@ void __cdecl Player_ProcessInput(void)
             }
 
             // ── Ground click: ray cast → terrain check → pathfind ────────────
-            // 2026-08-17 — REVERTIDO el gate one-shot de 2026-04-28.
-            //
-            // El gate era `if (!bHoverActive) goto end_tick_inc;`, y bHoverActive
-            // es one-shot (lo cierra el latch s_clickCycleConsumed en la línea
-            // ~1183). Eso convertía MANTENER el botón en un click único: el héroe
-            // daba un paso y se plantaba.
-            //
-            // El original NO hace eso. MoveHero @ 0x004ACEF0:
+            // Como el original, MANTENER el botón camina de forma continua.
+            // MoveHero @ 0x004ACEF0:
             //     bVar32 = MouseLButtonPush != false;
             //     if (bVar32) MouseLButtonPush = false;      // consume el flanco
             //     bVar31 = MouseLButton != false || bVar32;  // ESTADO SOSTENIDO || flanco
             //     if (MouseLButton == false && !bVar32) { ...sale sin mover... }
-            // bVar31 — lo que habilita el movimiento — es el estado en tiempo real
-            // del botón O el flanco de bajada. Mantener el botón camina de forma
-            // continua: es el comportamiento clásico del MU.
+            // La repetición la limita el debounce (DAT_00559bec <= DAT_07e11d28), igual
+            // que el original la limita con MouseUpdateTimeMax <= MouseUpdateTime.
             //
-            // El comentario del fix viejo decía "sin esto el hero seguía al mouse
-            // continuamente sin click": seguir al mouse mientras el botón está
-            // apretado ES lo correcto. El bug real era que DAT_083a42c4 quedaba
-            // pegado en 1 tras soltar (de ahí el "sin click"); hoy WndProc lo
-            // mantiene bien (WinMain.cpp:1182-1204), así que la causa ya no existe.
-            //
-            // La repetición la limita el debounce de la línea ~955
-            // (DAT_00559bec <= DAT_07e11d28), igual que el original la limita con
-            // MouseUpdateTimeMax <= MouseUpdateTime. Los gates de UI de abajo
-            // (g_MouseOnWindow, s_clickStartedOnWindow) siguen intactos.
-            //
-            // 2026-08-17 (b): leer DAT_083a42c4 EN VIVO, no la copia bClickHeld
-            // capturada en la línea ~1059. Las líneas ~1214-1216 limpian los flags
-            // de click cuando el cursor pasa a estar sobre una ventana, y con la
-            // copia vieja ese limpiado no tenía efecto hasta el frame siguiente:
-            // manteniendo el botón y arrastrando el cursor sobre la UI, el ground
-            // click seguía recalculando destino desde el píxel bajo el cursor y,
-            // como la cámara sigue al héroe, el destino huía con ella → caminata
-            // infinita. Con el estado en vivo el hold se corta en el acto, igual
-            // que el original, que lee MouseLButton directo y no una copia.
+            // Se lee DAT_083a42c4 EN VIVO, no la copia bClickHeld: más arriba se limpian
+            // los flags cuando el cursor pasa sobre una ventana, y con la copia el hold
+            // seguiría recalculando el destino un frame más (como la cámara sigue al
+            // héroe, el destino huiría con ella).
             if (DAT_083a42c4 == 0 && !bClickEdge) goto end_tick_inc;
-            // 2026-05-04: per IDA Player_InputTick:416,566 — block ground click
-            // cuando el mouse está sobre cualquier panel abierto (MouseOnWindow=1). Sin
-            // esto, clickear el botón [+] de stats o la X de cerrar del panel también
-            // hacía caminar al jugador hacia esa posición de pantalla.
+            // Per IDA Player_InputTick:416,566: bloquear el ground click cuando el mouse
+            // está sobre cualquier panel abierto (MouseOnWindow=1).
             if (g_MouseOnWindow) goto end_tick_inc;
             // IDA: el click al mundo NO cierra ventanas de NPC acá. Lo hace
             // SendMove (0x491C40) al mandar el movimiento: el personaje camina
             // y la ventana se cierra con su paquete (Combat.cpp,
             // SendMove_CloseWindows97k). MuEmu no rechaza el 0x10 con la
             // interfaz abierta (CGMoveRecv no la chequea).
-            // 2026-05-05: También bloquear si el click se inició sobre window
-            // (caso: user click skill cell, Chat_InputTick consume y resetea
-            // DAT_07db870c → siguiente frame g_MouseOnWindow=0 pero el click
-            // tail aún propagating como bHoverActive=true).
+            // También se bloquea si el click se inició sobre una ventana (p.ej. una
+            // skill cell que Chat_InputTick ya consumió).
             if (s_clickStartedOnWindow) goto end_tick_inc;
-            // 2026-05-05: hard gate — si la skill expanded list estuvo abierta
-            // este frame O el frame anterior, ningún ground click vale.
-            // Cubre el race entre Chat_InputTick reset y Player_InputTick check.
+            // Hard gate: si la skill expanded list estuvo abierta este frame O el
+            // anterior, ningún ground click vale (race entre el reset de Chat_InputTick
+            // y este chequeo).
             {
                 static char s_lastSkillMenu = 0;
                 char skillMenuNow = (DAT_07db870c != '\0') ? (char)1 : (char)0;
@@ -1769,9 +1516,8 @@ void __cdecl Player_ProcessInput(void)
                 SHORT shift = GetAsyncKeyState(0x10);
                 bool shiftHeld = ((char)((unsigned short)shift >> 8) == -0x80);
                 if (!shiftHeld) {
-                    // BUG-FIX 2026-04-29: reset closest-hit sentinel ANTES de
-                    // cada scan. Sin esto, CollisionDetectLineToFace rechaza todos los hits
-                    // si DAT_083a4120 (t_max) quedó stale de un frame previo.
+                    // Reset del closest-hit sentinel ANTES de cada scan: si DAT_083a4120 (t_max)
+                    // quedó de un frame previo, CollisionDetectLineToFace rechaza todos los hits.
                     extern void Map_InitRayCast(void);
                     Map_InitRayCast();
                     DAT_07eab1fc = 0;             // reset hit flag
@@ -1780,16 +1526,9 @@ void __cdecl Player_ProcessInput(void)
                     char cHit = (DAT_07eab1fc != 0) ? '\x01' : '\0';
 
                     if (cHit != '\0') {
-                        // BUG-FIX 2026-04-30: el "fix 2026-04-28" estaba MAL.
-                        // En realidad DAT_080ab288/28c YA viene en grid coords
-                        // (e.g. 218.0) — el picker (RenderTerrain) hace la
-                        // conversión interna con _DAT_005524f0.  Dividir otra
-                        // vez por 100 producía siempre gridX=2 gridY=0 (218/100
-                        // → 2 truncado) y bloqueaba el movimiento porque
-                        // pathfind iba siempre al mismo destino imposible.
-                        //
-                        // Evidencia del log: pickWX=218.0 (grid 218), no 21800.
-                        // Cast directo a int.
+                        // DAT_080ab288/28c ya viene en grid coords (e.g. 218.0): el picker
+                        // (RenderTerrain) hace la conversión interna con _DAT_005524f0. Cast directo a
+                        // int, sin dividir por 100.
                         float pickWX = *(float*)&DAT_080ab288;
                         float pickWY = *(float*)&DAT_080ab28c;
                         TargetX = (DWORD)(int)pickWX;
@@ -1868,21 +1607,13 @@ void __cdecl Player_ProcessInput(void)
             }
                 }
     }
-    // 2026-09-02 FIX (hay que clickear varias veces para caminar): aca habia
-    // un `else` que, cuando el gate de debounce bloqueaba, hacia
-    //     MouseLButtonPush = 0; MouseLButton = 0;
-    //
-    // IDA Player_InputTick (0x4ACEF0 L586-588) NO borra nada en ese camino:
+    // IDA Player_InputTick (0x4ACEF0 L586-588) NO borra los flags de click cuando
+    // el gate de debounce bloquea:
     //     if ( MouseUpdateTime < MouseUpdateTimeMax || byte_7E11DC0 )
     //         goto LABEL_390;            // == ++MouseUpdateTime; salir
     // Los dos flags solo se limpian en el anti-AFK de L607-611 (boton
     // sostenido 3600 s). O sea el click PENDIENTE sobrevive al bloqueo y lo
     // procesa el primer tick que pase el gate.
-    //
-    // Al borrarlos se perdia el click: con el boton sostenido, el primer tick
-    // bloqueado mataba MouseLButton y el caminar continuo se cortaba; con un
-    // click corto se perdia el pulso entero y habia que volver a clickear.
-    // Medido en debug.log: 161 WM_LBUTTONDOWN -> solo 57 GroundClick.
 
 end_tick_inc:
     DAT_07e11d28 = DAT_07e11d28 + 1;
@@ -1897,11 +1628,6 @@ end_tick:
     //          + (((__int64)*(float *)(Hero + 20) / 100) << 8);
     //     clamp [0, 0xFFFF]
     //     HeroTile = TerrainMappingLayer1[v227];
-    //
-    // 2026-08-16: el port tenía DOS errores acá y por eso `HeroTile` era basura:
-    //   1. Leía `DAT_05826e08` (**WorldTime**) en AMBOS ejes, no la posición del
-    //      héroe. El comentario lo admitía ("simplified").
-    //   2. Componía el índice invertido (`gy + gx*256` en vez de `gx + gy*256`).
     //
     // `HeroTile` es lo que gatea el **techo transparente**: `MoveObjects`
     // (0x4FDC00) pone AlphaTarget=0 en los objetos de techo cuando el héroe

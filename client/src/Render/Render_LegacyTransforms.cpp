@@ -1,5 +1,4 @@
 // Render_LegacyTransforms.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos -----------------
+// Cloth_Integrate vive en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -151,7 +150,7 @@ void __cdecl QuatSlerp(int ia, int ib, int ic, int id) {
 // Entity_InitRenderState @ 0x004FF580 — Entity_InitRenderState(entity)
 // Scans render-state pool at DAT_083a2370 (stride 0xc, 128 slots).
 // Finds first free slot (byte[0]==0), marks it active and stores entity ptr.
-// Entity_InitRenderState (IDA-activated, was Ghidra stub)
+// Entity_InitRenderState (IDA-activated)
 void *__cdecl Entity_InitRenderState(void *a1)
 {
   DWORD *result; // eax

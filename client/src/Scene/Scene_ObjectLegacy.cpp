@@ -1,5 +1,3 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -37,22 +35,12 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE 62
 #define ITEM_OPTION_ADD_DEFENSE_CODE 63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-#ifndef IDA_PORT_004FDC00   // desactivado: el port FULL vive en stubs_IDA_ports.cpp
+#ifndef IDA_PORT_004FDC00   // desactivado: el port FULL vive en Scene_ObjectUpdate.cpp
 // 0x004FDC00 — MoveObjects: tick per-frame de cada objeto visible del mundo.
 //
-// 2026-08-11 — UNIFICACIÓN. Existían DOS ports de esta función:
-//   · éste, mínimo, que sólo hacía Alpha + el banner MUGAME del login, y
-//   · `MoveObject_PerWorld` (stubs_game.cpp), con el toggle por HeroTile,
-//     PlayAnimation y el switch por World COMPLETO.
-// El que se llamaba desde el loop de MoveObjects era éste, así que el switch
-// por World nunca corría: **ningún objeto del mundo generaba sus efectos**.
-// Entre otras cosas, los tipos 130/131/132 de Lorencia (Light01/02/03) quedaban
-// visibles como cajas de 8 vértices con la textura dummy `ston03` (2x2 negra)
-// en vez de ocultarse (`HiddenMesh = -2`) y emitir el humo de las chimeneas y
-// de la forja del herrero. Mismo patrón que `OpenSMDFile` / `RenderText` /
-// `SetPlayerStop`: un símbolo con dos implementaciones donde gana la incompleta.
-//
-// Ahora hay una sola implementación, en el orden del binario:
+// Versión mínima DESACTIVADA (IDA_PORT_004FDC00 está definida en globals.h):
+// la copia viva es el port completo de FUN_004fdc00 en Scene_ObjectUpdate.cpp,
+// en el orden del binario:
 //   World 9 → World 0/2 toggles → Alpha → early-return → PlayAnimation →
 //   bloque de login (160/161/162) → switch por World.
 void __cdecl FUN_004fdc00(float pObj) {

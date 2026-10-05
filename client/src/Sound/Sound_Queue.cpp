@@ -1,39 +1,20 @@
 // Sound_Queue.cpp
 // Render_DrawSpritePool @ 0x00479730
 //
-// Sound_UpdateQueue — processes the pending sound-play queue each frame.
-//
-// The queue is a flat array starting at DAT_07c85894 with stride 0x6f (int-words),
-// so each entry is 0x1bc = 444 bytes. The array ends at 0x7CF1EF4.
-// Each entry layout (relative to piVar2, which points at field +4):
-//   piVar2[-1]  (byte)   — active flag (non-zero = pending)
-//   piVar2[0]   (int)    — sound type:
-//                            0 = GL_SetBlendAdditive (play once)
-//                            1 = GL_SetBlendSrcAlpha (play looped / 3D)
-//                            2 = GL_SetBlendSrcOver(1) (play with param)
-//   piVar2[...]          — remaining sound params (passed to Render_DrawSprite)
-//
-// After dispatching the play call, Render_DrawSprite is invoked on the entry
-// (likely to advance or clear the queue slot).
-//
-// Sub-functions:
-//   GL_SetBlendAdditive — Sound_Play (type 0: one-shot)
-//   GL_SetBlendSrcAlpha — Sound_PlayLoop (type 1: looped/3D)
-//   GL_SetBlendSrcOver — Sound_PlayParam (type 2: param variant)
-//   Render_DrawSprite — Sound_Queue_Advance / clear slot
+// Pese al nombre del archivo, acá no hay sonido: son RenderSprites
+// (Render_DrawSpritePool) y RenderSprite (Render_DrawSprite), que recorren y
+// dibujan el pool de sprites en DAT_07c85890 (1002 slots de 0x1bc bytes;
+// +0 flag activo, +4 modo de blend), más los timers de avisos y de chat.
 
 #include "stdafx.h"
 
-// Render_DrawSpritePool = RenderSprites (verificado vía Ghidra). Recorre el effect pool
+// Render_DrawSpritePool = RenderSprites. Recorre el effect pool
 // y por cada slot activo:
 //   - dispatch GL state según blend mode en +4 (GL_SetBlendAdditive/90/80)
 //   - llama Render_DrawSprite (RenderSprite) para dibujar el quad
 //   - clear active flag
-// Llamada desde Scene_CharSelect.cpp:325 (mal-comentada como "Portal_Render"),
-// Scene_Login.cpp:100. Es la función que dibuja TODOS los sprites/glows/sparkles
-// del pool (glow +9 set, wing FX, weapon FX, particles, etc.)
-// Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render — ahora itera
-// por índice acotado a 1002 slots.
+// Es la función que dibuja todos los sprites/glows/sparkles del pool (glow +9
+// set, wing FX, weapon FX, particles, etc.). Itera los 1002 slots por índice.
 // IDA: RenderSprites
 void __cdecl Render_DrawSpritePool(void)
 {
@@ -53,26 +34,25 @@ void __cdecl Render_DrawSpritePool(void)
 
 // Render_DrawSprite @ 0x00479670
 //
-// Sound_Queue_Advance — per-frame update for a sound queue slot.
+// RenderSprite: dibuja un slot del pool de sprites como billboard cuadrado vía
+// RenderSprite_0 (Sprite_DrawTexturedQuad).
 //
-// Fades the slot's volume field (+0x108) up or down based on the
-// direction flag at +0x160:
-//   0 — fade out: subtract _DAT_005524f4 per frame; clamp to 0.2 (0x3e4ccccd)
-//   1 — fade in:  add    _DAT_005524f4 per frame; clamp to 1.0 (0x3f800000)
+// Primero ajusta el factor +0x108 según el flag +0x160:
+//   0 — resta _DAT_005524f4 por frame; piso 0.2 (0x3e4ccccd)
+//   1 — suma  _DAT_005524f4 por frame; tope 1.0 (0x3f800000)
 //
-// After adjusting volume, calls RenderSprite_0 to submit the sound update:
-//   channel  = *(short*)(param_1 + 2)
-//   position = (float*)(param_1 + 0x10)
-//   volume   = slot_volume * channel_volume_R * channel_volume_G (from DAT_083a7cc0/DAT_083a7cc4)
-//   roll-off = *(float*)(param_1 + 0xe8)
-//   distance = *(float*)(param_1 + 0x24)
+// Argumentos de RenderSprite_0:
+//   textura  = *(short*)(param_1 + 2)
+//   posición = (float*)(param_1 + 0x10)
+//   ancho/alto = *(float*)(param_1 + 0xc) * factor * Bitmaps[tipo] (+0/+4)
+//   luz      = (float*)(param_1 + 0xe8)
+//   rotación = *(float*)(param_1 + 0x24)
 //
 // Globals:
-//   _DAT_005524f4  — fade step delta
-//   _DAT_005526e4  — minimum fade-out floor (0.2)
+//   _DAT_005524f4  — paso del fade
+//   _DAT_005526e4  — piso del fade (0.2)
 //   _DAT_0055256c  — float 1.0
-//   DAT_083a7cc0   — per-channel volume table (R component, stride 0x38)
-//   DAT_083a7cc4   — per-channel volume table (G component, stride 0x38)
+//   DAT_083a7cc0/cc4 — Bitmaps[tipo]: ancho/alto de la textura (stride 0x38)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -82,16 +62,6 @@ void __cdecl Render_DrawSprite(int param_1)
 {
   float fVar1;
   int iVar2;
-
-  // BUG-FIX 2026-04-27: esta función NO es Sound_Queue_Advance — es **RenderSprite**
-  // (verificado vía Ghidra, addr 0x00479670 → "RenderSprite"). El comentario y el
-  // archivo Sound_Queue.cpp tenían el nombre wrong. Saca cada slot del effect pool
-  // y lo dibuja como billboard cuadrado vía RenderSprite_0 (Sprite_DrawTexturedQuad).
-  // El return; previo bloqueaba TODO el render de sprites del juego (glow +9, wing
-  // FX, weapon sparkles, lightning, particles) — combinado con el AUTO-SKIP del
-  // pool en CreateSprite, NADA spawneaba ni se dibujaba.
-  // DAT_083a7cc0/cc4 = Bitmaps[type] tabla de texturas (stride 0x38), fields +0/+4
-  // = width/height usados para scale del quad.
 
   if (*(char *)(param_1 + 0x160) == '\0') {
     fVar1 = *(float *)(param_1 + 0x108) - _DAT_005524f4;
@@ -145,38 +115,31 @@ void Chat_TickMessageTimer(void)
   bVar1 = DAT_00559ce4 < 1;
   DAT_00559ce4 = DAT_00559ce4 + -1;
 
-  // Verificado runtime 2026-07-19: el tick dispara cada 150 frames y agrega la
-  // linea vacia que hace scrollear el historial superior-izquierdo.
+  // El tick dispara cada 150 frames y agrega la línea vacía que hace
+  // scrollear el historial superior izquierdo.
   if (bVar1) {
     DAT_00559ce4 = 0x96;
-    // Este es el ENVEJECEDOR del historial de chat, no un "mensaje periodico".
-    //
-    // IDA 0x480950 llama incondicionalmente con strText (0x07E11DD8) y
-    // byte_7E11DDC (0x07E11DDC), y a esos dos globals NO LOS ESCRIBE NADIE en
-    // todo el binario: tienen un unico xref cada uno, que es esta misma
-    // lectura.  O sea son cadenas VACIAS siempre, y ese es el punto.
-    //
-    // El primer branch de ChatLB_AddText (sub_40C940) es justamente
-    // `if (!*src && !*msg)`: recorre la lista y hace ++nodo[+0x114] en cada
-    // entrada.  El render de la linea (slot 23) lee ese contador y empuja la
-    // fila hacia arriba, dejando de dibujarla cuando pasa el tope de filas
-    // visibles.  O sea la caducidad del historial la produce esta llamada,
-    // cada 150 frames.  MoveNotices (0x47FCB0) es el mismo patron para los
-    // avisos: CreateNotice(byte_7E11DD0, 0) cada 300, con otro buffer que
-    // tampoco escribe nadie.
-    //
-    // 2026-07-27 esto se habia gateado con un chequeo de "texto imprimible"
-    // para tapar un mensaje fantasma con un caracter raro.  El sintoma era
-    // real pero la causa era otra: DAT_07e11dd8/ddc estaban declarados como un
-    // char suelto, y leerlos como cadena se iba a los globals vecinos.  Con el
-    // gate puesto, el caso normal (buffers vacios) no llama nunca y el
-    // historial deja de avanzar: solo se movia cuando llegaban mensajes
-    // nuevos.  Los buffers ya estan bien dimensionados en globals.cpp, asi que
-    // la llamada vuelve a ser incondicional como en IDA.
+      // Este es el ENVEJECEDOR del historial de chat, no un "mensaje periodico".
+      //
+      // IDA 0x480950 llama incondicionalmente con strText (0x07E11DD8) y
+      // byte_7E11DDC (0x07E11DDC), y a esos dos globals NO LOS ESCRIBE NADIE en
+      // todo el binario: tienen un unico xref cada uno, que es esta misma
+      // lectura.  O sea son cadenas VACIAS siempre, y ese es el punto.
+      //
+      // El primer branch de ChatLB_AddText (sub_40C940) es justamente
+      // `if (!*src && !*msg)`: recorre la lista y hace ++nodo[+0x114] en cada
+      // entrada.  El render de la linea (slot 23) lee ese contador y empuja la
+      // fila hacia arriba, dejando de dibujarla cuando pasa el tope de filas
+      // visibles.  O sea la caducidad del historial la produce esta llamada,
+      // cada 150 frames.  MoveNotices (0x47FCB0) es el mismo patron para los
+      // avisos: CreateNotice(byte_7E11DD0, 0) cada 300, con otro buffer que
+      // tampoco escribe nadie.
+      //
+      // No condicionar la llamada al contenido de los buffers: con buffers vacíos
+      // (el caso normal) el historial dejaría de avanzar.
     UIChatLogWindow_AddText(DAT_07e11ddc, DAT_07e11dd8, 0);
   }
   return;
 }
 
-
-// CreateBug — implemented in src/stubs.cpp (Sound_SpawnEmitter, cleaner version)
+

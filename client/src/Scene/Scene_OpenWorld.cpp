@@ -1,12 +1,11 @@
 // Scene_OpenWorld.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
 
 // IDA: OpenWorld (0x0050E5A0)
-// Per IDA decompile (raw/0050E5A0_OpenWorld.c, 1500 bytes).
+// Per IDA decompile (1500 bytes).
 // Loads all terrain and tile textures for the current world map.
 //
 // World name = "World<N>" where N = World+1 (capped at 12 for dungeons 11-16).
@@ -14,13 +13,8 @@
 // TerrainHeight.bmp, TerrainLight.jpg, then 14 tile JPGs (slots 0x23-0x30) +
 // 3 alpha-overlay TGAs (slots 0x32-0x34) + leaf01/02 + rain01/02 (always from
 // World1) + rain03 (always from World10).
-//
-// BUG-FIX 2026-04-27: fixed path strings to match IDA exactly:
-//   - "World_%d"           → "World%d"            (no underscore)
-//   - "Data/%s/Terrain/%d" → "Data/%s/Terrain%d"  (no extra slash)
-//   - "Data/%s/terrain/%d" → "Data/%s/terrain%d"  (no extra slash)
-//   - rain01/02 use "World1" hardcoded; rain03 uses "World10" hardcoded.
-//   - Pass FileName to OpenTerrainAttribute (was called with no args → no-op).
+// Paths como IDA: "World%d", "Data/%s/Terrain%d", "Data/%s/terrain%d"; rain01/02
+// usan "World1" y rain03 "World10" fijos.
 void __cdecl OpenWorld(void) {
     BYTE  uVar1;
     CHAR  world_name[32];
@@ -32,9 +26,8 @@ void __cdecl OpenWorld(void) {
     ClearItems();             // ClearItems
     ClearCharacters(HeroKey); // ClearCharacters(HeroKey)
 
-    // BUG-FIX 2026-04-28: limpiar TODOS los pools de char-select que
-    // sobreviven al world load. Sin esto los tick-functions iteran slots
-    // con punteros garbage → AV.
+    // Limpiar TODOS los pools de char-select que sobreviven al world load (si no,
+    // los tick-functions iteran slots con punteros basura).
     memset(DAT_07abf5f0, 0, sizeof(DAT_07abf5f0));   // particle pool (3000×0x70)
     memset(DAT_07c5ab3c, 0, sizeof(DAT_07c5ab3c));   // skill effect pool (200×0x70)
     memset(DAT_07b11670, 0, sizeof(DAT_07b11670));   // effect pool (124×0x1bc)
@@ -53,21 +46,16 @@ void __cdecl OpenWorld(void) {
 
     crt_sprintf(world_name, "World%d", iVar2);
 
-    // BUG-FIX 2026-05-01: los archivos reales en bin/Client/Data/World%d/
-    // son EncTerrain%d.{map,att,obj} (versiones encrypted). El loader de
-    // texturas tiene auto-fallback OZ*↔jpg/tga, pero los loaders de map/
-    // att/obj NO. Sin esto los modelos cargan (Object*.bmd OK) pero las
-    // INSTANCIAS (qué objeto va dónde) jamás se leen → mapa renderiza
-    // solo terreno + hero, sin casas/NPCs estáticos/props.
+    // Desviación: los archivos reales del cliente son EncTerrain%d.{map,att,obj}
+    // (versiones encriptadas), y los loaders de map/att/obj no tienen fallback de
+    // extensión como el de texturas.
     crt_sprintf(local_40, "Data/%s/EncTerrain%d.map", world_name, iVar2);
     OpenTerrainMapping(local_40);     // OpenTerrainMapping
 
-    // 2026-05-04: el archivo `EncTerrain%d.att` mide 131076 bytes (formato
-    // encriptado custom) pero `OpenTerrainAttribute` solo acepta 65539 bytes
-    // (formato vanilla 0.97k). Sin .att cargado → DAT_0838bc70 queda en 0
-    // → todas las tiles son walkable → atravesamos casas y NPCs.
-    // Intentamos el archivo unencrypted `Terrain%d.att` primero (mismo formato
-    // que IDA espera). Fallback a EncTerrain*.att si no existe.
+    // `EncTerrain%d.att` mide 131076 bytes (formato encriptado custom) y
+    // `OpenTerrainAttribute` solo acepta 65539 (formato vanilla 0.97k): se prueba
+    // primero el `Terrain%d.att` sin encriptar (el formato que espera IDA) y si no
+    // existe, EncTerrain*.att.
     crt_sprintf(local_40, "Data/%s/Terrain%d.att", world_name, iVar2);
     if (OpenTerrainAttribute(local_40) == 0) {
         crt_sprintf(local_40, "Data/%s/EncTerrain%d.att", world_name, iVar2);
@@ -80,10 +68,9 @@ void __cdecl OpenWorld(void) {
     uVar1 = DAT_0055a7c4;
     if (DAT_083a410c != '\0') DAT_0055a7c4 = 0;
 
-    // BUG-FIX 2026-05-01: archivos reales en filesystem son OZ* (encrypted),
-    // no .bmp/.jpg/.tga. La función OpenJPG no hace ext-swap automático
-    // a menos que DAT_0055a7c4 != 0 — y en in-game está en 0. Usamos extensiones
-    // reales directamente para que fopen abra el archivo correcto.
+    // Desviación: los archivos reales son OZ* (encriptados), no .bmp/.jpg/.tga, y
+    // OpenJPG sólo cambia la extensión si DAT_0055a7c4 != 0 (in-game vale 0): se
+    // usan las extensiones reales.
     crt_sprintf(local_40, "%s/TerrainHeight.OZB", world_name); CreateTerrain(local_40);
     crt_sprintf(local_40, "%s/TerrainLight.OZJ",  world_name); OpenTerrainLight(local_40);
 

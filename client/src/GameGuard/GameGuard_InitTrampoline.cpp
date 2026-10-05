@@ -1,5 +1,4 @@
 // GameGuard_InitTrampoline.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comment retained.
 
 #include "stdafx.h"
 #include "globals.h"

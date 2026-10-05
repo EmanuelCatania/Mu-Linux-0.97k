@@ -69,11 +69,9 @@ static void Chat_SendPacket(BYTE *pkt, int len, int hdr_skip = 0)
             int err = WSAGetLastError();
             if (err == WSAEWOULDBLOCK) {
                 if ((int)(SocketClientSendBufferLength + len) < 0x2001) {
-                    // BUG-FIX 2026-05-03: was `(BYTE*)0x055ca16c + 4` — literal
-                    // source-binary address (unmapped in our build → AV on first
-                    // WSAEWOULDBLOCK retry). The other 5 sites of this same
-                    // pattern (Game_*Tick, Party, Player_InputTick) all use the
-                    // SocketClientSendBuffer macro (= SocketClient + 0xC). Match them.
+                    // SocketClientSendBuffer (= SocketClient + 0xC), igual que los otros sitios
+                    // con este patrón (Game_*Tick, Party, Player_InputTick); la dirección literal
+                    // del binario (0x055ca16c) no existe en este build.
                     memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, len);
                     SocketClientSendBufferLength += len;
                 } else {
@@ -106,7 +104,7 @@ static void SendRaw3(BYTE b0, BYTE b1, BYTE b2)
         if (n == -1) {
             if (WSAGetLastError() == WSAEWOULDBLOCK) {
                 if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 3);  // BUG-FIX 2026-05-03: was literal 0x055ca16c
+                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 3);
                     SocketClientSendBufferLength += 3;
                 } else Net_Disconnect(((int)(uintptr_t)SocketClient));
             } else Net_Disconnect(((int)(uintptr_t)SocketClient));
@@ -257,9 +255,9 @@ static bool Chat_TrySendGuildRequest(const char* text)
     return Chat_TrySendTargetRequest(text, "/guild", 0x50, /*plainC1=*/true);
 }
 
-// 2026-05-04 — Public helper: send a chat line typed into InputText[0]
+// Public helper: send a chat line typed into InputText[0]
 // (DAT_07db8710 slot 0) by the WM_CHAR handler. Mirrors the inline
-// build/send logic at Chat_InputTick lines 580-614 (channel-0 path)
+// build/send logic of the IDA Chat_InputTick (channel-0 path)
 // without depending on the per-frame FUN_00494520 polling. Packet:
 //   [0xC1][len][..XOR-encoded text..]
 // `text` must be NUL-terminated, length capped at 0x3c chars (matching
@@ -341,13 +339,13 @@ extern "C" void Chat_SendChatLine(const char* text)
         memcpy(pkt + 3, whisperTarget, 10);   // name[10] = DESTINATARIO
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
         // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
-        // ("no esta conectado") como remitente.  2026-09-12.
+        // ("no esta conectado") como remitente.
         memcpy(ChatWhisperID, whisperTarget, 10);
         ChatWhisperID[10] = '\0';
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
-        // BUG-FIX 2026-07-19 (nuestros mensajes no llegaban): el campo name[10]
-        // quedaba en CEROS y el server los descartaba en silencio.
+        // name[10] = nombre del héroe: con el campo en CEROS el server descarta el
+        // mensaje en silencio.
         if (DAT_07abf5d8) {
             memcpy(pkt + 3, (const char*)DAT_07abf5d8 + 0x1C1, 10);
         }
@@ -358,10 +356,9 @@ extern "C" void Chat_SendChatLine(const char* text)
     // MuEmu_send_hook`) encripta el buffer en el lugar y pkt[2] deja de valer 0x02.
     const bool isWhisper = (pkt[2] == 0x02);
 
-    // BUG-FIX: era un XOR simple `pkt[i] ^= key[i]`. El server (XorData en
-    // PacketManager.cpp) reversa el CHAIN-XOR, así que el cliente debe usar
-    // `pkt[i] ^= pkt[i-1] ^ key[i]` — igual que el resto de los C1 (movimiento,
-    // enter-world, char-select). Con el XOR simple el texto llegaba ilegible.
+    // El server (XorData en PacketManager.cpp) reversa el CHAIN-XOR:
+    // `pkt[i] ^= pkt[i-1] ^ key[i]`, igual que el resto de los C1 (movimiento,
+    // enter-world, char-select). Con un XOR simple el texto llega ilegible.
     for (int xi = 3; xi < pktLen; ++xi)
         pkt[xi] ^= pkt[xi - 1] ^ s_xorKey[xi & 0x1f];
 
@@ -425,16 +422,10 @@ void __cdecl Chat_InputTick(void)
             // &DAT_07df948c y &DAT_07df9494 son int*, asi que la aritmetica se
             // hace casteando a char* antes de sumar el stride en bytes.
             //
-            // 2026-09-03 FIX: tres de los cuatro punteros usaban `slot * 0x46`
-            // sobre char*, o sea un paso de 0x46 BYTES.  El stride real de la
-            // tabla es **0x118** -- lo dice su propia declaracion
-            // (`char DAT_07df9380[0x77 * 0x118]`) y lo usan todos los accesos de
-            // Chat.cpp.  El 0x46 viene de los sitios donde el indice se aplica a
-            // un `int*` (`(&DAT_07df948c)[i * 0x46]`, y 0x46*4 == 0x118): al
-            // copiar el multiplicador a un contexto de bytes el paso quedaba 4x
-            // corto y el bucle releia las primeras ~20 filas en vez de recorrer
-            // las 78.  Misma familia que el bug del pool de clima, pero sin
-            // salirse del buffer: no corrompe, devuelve la fila equivocada.
+            // OJO: el stride de la tabla es **0x118** bytes (lo dice su declaracion,
+            // `char DAT_07df9380[0x77 * 0x118]`, y lo usan todos los accesos de Chat.cpp).
+            // El 0x46 de otros sitios es el indice sobre un `int*`
+            // (`(&DAT_07df948c)[i * 0x46]`, y 0x46*4 == 0x118): no vale en bytes.
             const char *tableName = DAT_07df9380 + slot * 0x118;
             const char *activePtr = (const char *)&DAT_07df938b + slot * 0x118;
             const char *typePtr   = (const char *)&DAT_07df948c + slot * 0x118;
@@ -541,9 +532,7 @@ void __cdecl Chat_InputTick(void)
     //   DAT_083a7c24 not 0x7e/0x98, GoldenArcherOpenType==0,
     //   *(DAT_00583d8c+0x1c87f)==0, ServerDivisionOpened==0
     {
-        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         char bVar4 = DAT_07eaa11b;
-        PACKET_ENCRYPT(&MAIN_HASH_CLASS, (char *)&DAT_07eaa11b);
 
         if ((bVar4 == 0) &&
             (DAT_07eaa124 == '\0') &&
@@ -558,16 +547,6 @@ void __cdecl Chat_InputTick(void)
             // IDA los tiene aca mismo: L1130 (guild, 582..634 x 459..477),
             // L1455 (party, 348..372 x 452..476), L1775 (personaje,
             // 379..403 x 452..476) y L2078 (inventario, 410..434 x 452..476).
-            //
-            // 2026-09-04 -- estaban portados como "class-tab buttons" con los
-            // rects correctos pero el cuerpo mal: los tres compartian el helper
-            // `ClassTab_HandleClick`, que hacia `GuildOpened = 1` y
-            // `g_nGuildMemberCount = -1` SIEMPRE (son del boton de guild, IDA
-            // L1196-1199) y mandaba paquetes inventados 0xF3..0xFB en vez de los
-            // reales (0x52 guild, 0x42 party, 0x82/0x87 para cerrar
-            // warehouse/chaos).  De ahi que party y personaje abrieran el panel
-            // de guild.  Ademas consumian el click (`MouseLButtonPush = 0`)
-            // antes de que llegara el hit-test bueno.
             //
             // El cuerpo fiel vive en `HUD_BottomBarButtons_HitTest`
             // (src/Game/Player_InputTick.cpp), que ya trae los cuatro botones
@@ -634,7 +613,6 @@ void __cdecl Chat_InputTick(void)
                                         int key = k % 10;          // 1..9, despues 0
                                         if (((unsigned short)GetAsyncKeyState(0x30 + key) >> 8) == 0)
                                             continue;
-                                        STRUCT_DECRYPT(&MAIN_HASH_CLASS, DAT_07cf1ffc);
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
                                             char *slot_ptr = (char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + j;
@@ -644,7 +622,6 @@ void __cdecl Chat_InputTick(void)
                                             }
                                         }
                                         *((char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + (int)uVar14) = (char)key;
-                                        STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (void *)DAT_07cf1ffc);
                                     }
                                 }
                                 break;
@@ -663,8 +640,6 @@ void __cdecl Chat_InputTick(void)
             //           if (GetAsyncKeyState(n + 48) >> 8) sub_4B0E80(n);
             //       if (GetAsyncKeyState(48) >> 8)         sub_4B0E80(0);
             //   }
-            // 2026-09-04 BUG-FIX: el gate miraba VK_NUMPAD0 (0x60) en vez de
-            // VK_MENU (18 = ALT), y las llamadas no pasaban el numero.
             if ((DAT_00559c84 == 0) && (DAT_07e11d71 == 0))
             {
                 if (((unsigned short)GetAsyncKeyState(VK_MENU) >> 8) != 0x80)
@@ -839,7 +814,7 @@ void __cdecl Chat_InputTick(void)
                                                 if (n == -1) {
                                                     if (WSAGetLastError() == WSAEWOULDBLOCK) {
                                                         if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
-                                                            memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);  // BUG-FIX 2026-05-03: was literal 0x055ca16c
+                                                            memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);
                                                             SocketClientSendBufferLength += pktLen;
                                                         } else Net_Disconnect(((int)(uintptr_t)SocketClient));
                                                     } else Net_Disconnect(((int)(uintptr_t)SocketClient));
@@ -878,16 +853,11 @@ void __cdecl Chat_InputTick(void)
     // (Las llamadas sub_43D8A0/sub_4041E0 intercaladas son ruido anti-tamper
     // de hash-table — omitidas per policy del proyecto.)
     //
-    // BUG QUE ARREGLA (2026-07-19): en teclado español/latino `@` es AltGr+Q, y
-    // `GetAsyncKeyState` ve la Q presionada → tipear `@` (o 'q'/'w'/'e', 'b',
-    // 'r') en el chat disparaba el quick-use del hotbar y mandaba un
-    // PMSG_ITEM_USE_RECV → el server cerraba la conexión.
-    //
-    // 1er intento porteó SOLO `g_ChatMode` y no alcanzó: al abrir el chat el
-    // que se pone en 1 es **`g_TextMode` (DAT_00559c84)** — es el `InputEnable`
-    // del log de WM_CHAR. Es también el flag que ya usaba `HUD_HotkeyTick`
-    // (Player_InputTick.cpp), por eso las teclas de inventario SÍ quedaban
-    // bloqueadas y estas no.
+    // En teclado español/latino `@` es AltGr+Q y `GetAsyncKeyState` ve la Q
+    // presionada: sin este gate, tipear en el chat dispara el quick-use del
+    // hotbar (PMSG_ITEM_USE_RECV) y el server corta la conexión.  El flag que se
+    // pone en 1 al abrir el chat es **`g_TextMode` (DAT_00559c84)**, el mismo que
+    // usa `HUD_HotkeyTick` (Player_InputTick.cpp).
     if (DAT_00559c84 != 0) return;   // g_TextMode  (input de texto activo)
     if (DAT_07e11d71 != 0) return;   // g_IME_Mode  (composición DBCS/coreano)
     if (DAT_07eaa11b != 0) return;   // TradeOpened
@@ -1017,16 +987,9 @@ void __cdecl Chat_InputTick(void)
         }
     }
 
-    // ── 12-15. C/V/I/G/P key handlers — REMOVED ────────────────────────────
-    // 2026-05-08 (b): These keys are already handled by Player_InputTick
-    // (`HUD_HotkeyTick` in src/Game/Player_InputTick.cpp:251-287) using the
-    // edge-triggered helper PressKey. Adding duplicate handlers here
-    // caused a DOUBLE-TOGGLE bug: pressing C played sound (Chat_InputTick set
-    // CharacterOpened=1, played sound) but Player_InputTick toggled it back
-    // to 0 in the same frame → net result = closed.
-    //
-    // Player_InputTick's pure-toggle handler is sufficient for visible-panel
-    // gameplay. The packet-send side effects (guild/party 0x52/0x42 list
-    // request, warehouse close 0x82) of the IDA Chat_InputTick path require
-    // server context which is not yet wired.
+    // ── 12-15. C/V/I/G/P: NO se manejan acá ─────────────────────────────────
+    // Los maneja `HUD_HotkeyTick` (src/Game/Player_InputTick.cpp) con el helper
+    // por flanco PressKey, incluidos los paquetes 0x52/0x42 de guild/party.
+    // No duplicarlos aquí: dos handlers en el mismo frame invierten el panel dos
+    // veces y queda cerrado.
 }

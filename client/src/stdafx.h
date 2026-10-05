@@ -16,10 +16,8 @@
 #include <gl/glu.h>
 
 // CRT debug heap — enable BEFORE stdlib.h to track all malloc/new sites
-// 2026-05-03: investigando crash heap corruption (addr 0x0054B54C, 0x005488CC).
 // _CRTDBG_MAP_ALLOC redirige new/malloc al debug heap con file/line tracking.
-// _CRTDBG_CHECK_ALWAYS_DF (set en WinMain) hace que CADA alloc valide TODO el
-// heap antes/después → captura la corrupción en cuanto pasa.
+// Los flags de validación (_CRTDBG_CHECK_EVERY_1024_DF) se setean en WinMain.
 #ifdef _DEBUG
   #define _CRTDBG_MAP_ALLOC
 #endif

@@ -1,17 +1,5 @@
 // BMD_LegacyDraw.cpp
-//
-// Extracted from stubs_helpers.cpp; original IDA comments and DAT_* provenance retained.
-
-// stubs_helpers.cpp
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 12638-13754 (1117 lines).
-//
-// Originally tagged "New helpers needed by SecondPassword implementations" but
-// content is mixed: item/inventory helpers (GetItemCount/GetItemSlot/
-// CalcMaxDurability/ConvertItemType/ItemValue/ConvertGold), render helpers
-// (CreateOkMessageBox/BMD::Animation/RenderObjectScreen), math helpers
-// (VectorMA/VectorNormalize/RandomXY), effect helpers (SpawnEffectAtBone/
-// JointBetweenBones), Pipe helpers (Pipe_Send/Recv/SetTarget), CSQuest helpers.
+// BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
 #include "globals.h"

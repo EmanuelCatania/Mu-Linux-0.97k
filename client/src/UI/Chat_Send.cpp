@@ -1,5 +1,4 @@
 // Chat_Send.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -31,14 +30,8 @@ void __cdecl SendChat(char* Text) {
     // Rate limit — `ChatTime` es el GLOBAL 0x05826D08 (= ChatTime), que
     // `Game_MainLoop` decrementa un tick por frame (IDA 0x5262D9-0x5262EA):
     //     if ( ChatTime > 0 ) --ChatTime;
-    //
-    // 2026-08-12 BUG-FIX: acá era un `static int s_ChatTime` local, y NADIE lo
-    // decrementaba. Después del primer mensaje quedaba clavado en 70, así que
-    // `if (> 50) return` bloqueaba **todo** el chat posterior de la sesión.
-    // Síntoma reportado: el primer `/move <mapa>` funcionaba y los siguientes
-    // no hacían nada — el jugador se quedaba en el destino del primero y
-    // parecía que el comando "recordaba" el mapa anterior.
-    // Lo usan además WndProc y Chat_InputTick, que ya leían el global real.
+    // Lo leen además WndProc y Chat_InputTick.  No usar un static local: nadie
+    // lo decrementaría y el chat quedaría bloqueado tras el primer mensaje.
     if ((int)ChatTime > 0x32) return;
 
     // Duplicate check: compare with last-sent text
@@ -86,9 +79,6 @@ void __cdecl SendChat(char* Text) {
             if (len1 > 0 && strncmp(Text, &DAT_07d3d284, len1) == 0) {
                 // `m_bBlockWhisper_1` es el GLOBAL 0x07E11DAC (= DAT_07e11dac),
                 // que ya leen Net_Process (F3 toggle) y Chat_InputTick.
-                // 2026-08-12 BUG-FIX: acá había DOS `static bool` distintos —
-                // uno para "on" y otro para "off" — así que el toggle no
-                // cambiaba nada y nadie podía leer el estado.
                 DAT_07e11dac = 1;
                 UIChatLogWindow_AddText((const char*)&lpDefault_00583d88, &DAT_07d3d608, 1);
                 return;

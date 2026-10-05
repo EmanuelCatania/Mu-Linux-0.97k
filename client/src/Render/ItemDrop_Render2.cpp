@@ -39,10 +39,7 @@
 
 void RenderParticles(void)
 {
-    // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render del particle
-    // pool DAT_07abf5f0 — particles spawneadas via CreateParticle (Particle_Spawn)
-    // (lightning ELS=10/11, waterfall +9 glow, fire/smoke, rain/snow) NUNCA se
-    // dibujaban. Ahora itera por índice acotado a 3000 slots.
+    // Itera el pool DAT_07abf5f0 por índice, acotado a 3000 slots.
     uint  *puVar8  = (uint*)((char*)DAT_07abf5f0 + 0x44);  // +0x44 from slot 0 base
     uint   local_2c = 0;             // entry index / loop counter
 
@@ -51,20 +48,14 @@ void RenderParticles(void)
         if ((char)puVar8[-0x11] == '\0') goto next_entry;
 
         {
-            // BUG-FIX 2026-04-28: bounds-check entity_type. La tabla en
-            // DAT_083a7cc0 tiene 0x600 entradas (stride 0x38). Tipos fuera
-            // de rango leen memoria inválida → AV. Causa: el pool se sembraba
-            // con tipos garbage (ej. bits de un float) cuando un particle se
-            // marcaba activo pero no se inicializaba bien.
+            // DESVIACION: bounds-check de entity_type. La tabla en DAT_083a7cc0 tiene
+            // 0x600 entradas (stride 0x38); un tipo fuera de rango leería memoria inválida.
             uint entityType = puVar8[-0x10];
             if (entityType >= 0x600) goto next_entry;
 
             int   iVar2  = (int)entityType * 0x38;
-            // BUG-FIX (sistema de partículas): el campo scale (slot+0x0c) es un FLOAT.
-            // IDA: Width = Bitmaps[type].Width * *((float*)v1 - 14). El port hacía
-            // `(float)puVar8[-0xe]` = conversión int→float de los BITS del float →
-            // p.ej. 0.5f (bits 0x3F000000 = 1056964608) se convertía en 1e9 → billboard
-            // gigante → whiteout. Reinterpretamos los bits como el binario original.
+            // El campo scale (slot+0x0c) es un FLOAT: reinterpretar los bits, no convertir
+            // int→float. IDA: Width = Bitmaps[type].Width * *((float*)v1 - 14).
             float fVar13 = *(float *)((char *)&DAT_083a7cc0 + iVar2) * *(float *)(puVar8 - 0xe);
             float fVar14 = *(float *)((char *)&DAT_083a7cc4 + iVar2) * *(float *)(puVar8 - 0xe);
 
@@ -72,21 +63,12 @@ void RenderParticles(void)
             if (((char *)&DAT_083a7cc8)[iVar2] == '\x03')
                 GL_SetBlendAdditive();          // EnableAlphaBlend
             else
-                // ── 2026-08-16: CAUSA DEL CUADRO BLANCO ───────────────────────
                 // IDA 00478C00 L66-72:
                 //     if (Bitmaps[v2].Components == 3) EnableAlphaBlend();
                 //     else                             EnableAlphaTest(0);
-                // `EnableAlphaTest` es **0x00511680**. El comentario anterior
-                // afirmaba que estaba "mapped at 00511590" y es FALSO: 0x511590
-                // es `DisableTexture(bool)`, que hace glDisable(GL_TEXTURE_2D).
-                // O sea TODA particula con Components != 3 apagaba el
-                // texturizado y su quad salia pintado con el color plano
-                // (blanco). Como las particulas se dibujan de a cientos
-                // (parts llego a 439 en el log) y el estado GL queda pegado,
-                // se veia una masa blanca de bordes escalonados que ademas
-                // contaminaba lo que se dibujara despues.
-                // Mismo error que ya estaba en SkillEffect_Render; es la 4ta
-                // vez que esta familia muerde (ver la tabla en CLAUDE.md).
+                // `EnableAlphaTest` es **0x00511680** (= GL_SetBlendSrcOver). No confundir con
+                // 0x511590 = `DisableTexture(bool)`, que hace glDisable(GL_TEXTURE_2D) y deja
+                // las partículas pintadas con el color plano (blanco).
                 GL_SetBlendSrcOver('\0');      // EnableAlphaTest(0)
 
             uint  uVar3  = puVar8[-0x10];  // entity_type (passed to RenderSprite_0)

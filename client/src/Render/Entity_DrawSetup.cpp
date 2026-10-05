@@ -19,20 +19,13 @@
 // param_7 — pass-through (unused in default path)
 // param_8 — draw flags (bit 0x400 forces anim_mode 0; bit 0x100 passed to subs)
 //
-// ── BUG-FIX (2026-04-20) ───────────────────────────────────────────────────────
-// La port anterior pasaba `(int)(uintptr_t)param_3` (puntero heap) como 2do
-// argumento `int flags` de BMD__RenderBody. Resultado en log:
-//   BMD_Draw flags=0xa0b5790 bodyLight=(0,0,0)
-// La función real de Ghidra NO llama BMD__RenderBody en el default path — sólo
-// BMD_SetupRenderByType. Además BMD_SetupRenderByType toma 5 args (this, entity, model_slot,
-// scale, flags), no 3. Esta re-port arregla ambos.
+// La rama default NO llama BMD__RenderBody: sólo BMD_SetupRenderByType, que
+// toma 5 args (this, entity, model_slot, scale, flags).
 //
-// ── Entity-type switches (Ghidra) ──────────────────────────────────────────────
-// Hay ~15 branches para tipos especiales (0x1f9, 0x33f, 0x3be, 0x341, 0x342,
-// 0x315, 0x316, 0x361-0x365, etc.). Para Player (0x186) y body-parts
-// (0x390-0x3ac) NINGUNA coincide → todos caen al default path implementado aquí.
-// Los branches especiales se dejan fuera; si aparecen sprites con tipo raro
-// (dragones, phoenixes, bosses específicos), habrá que portarlos.
+// ── Entity-type switches ───────────────────────────────────────────────────────
+// Los tipos especiales (505, 788-790, 831, 833, 834, 865-869, 958, ...) tienen
+// su rama propia. Player (0x186) y body-parts (0x390-0x3ac) no coinciden con
+// ninguna y caen al default path.
 //
 // Called from: Entity_DrawAt @ 0x00505A10
 
@@ -385,14 +378,12 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x50) = 1.0f;
     }
     else {
-        // ── BUG-FIX 2026-04-27: PORT del +N item-level glow logic IDA ───────
-        // (Antes solo copiaba light directo y hacía UN render — el +9/+11 glow
-        // visible del Mu Online viene de DOBLE render via RenderPartObjectBodyColor
-        // con flags 0x44 + 0x48). Ver RenderPartObjectEffect IDA lines 415-510.
+        // ── +N item-level glow (IDA RenderPartObjectEffect L415-510) ───────────
+        // El glow visible de +9/+11 viene de un DOBLE render vía
+        // RenderPartObjectBodyColor con flags 0x44 + 0x48.
         //
-        // ItemLevel se extrae de param_5 (flags con level en bits 3-6).
-        // BUG-FIX: línea 52 ya hizo `param_5 = ((int)param_5 >> 3) & 0xf;` así que
-        // param_5 ES el ItemLevel directamente. El shift adicional daba 0xb→1.
+        // ItemLevelFx ya es el ItemLevel: al principio se hizo
+        // `param_5 = ((int)param_5 >> 3) & 0xf;` — no volver a shiftear.
         uint ItemLevel = (uint)ItemLevelFx;
 
         bool didExtraRender = false;

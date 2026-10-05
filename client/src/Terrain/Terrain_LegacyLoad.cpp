@@ -1,5 +1,4 @@
 // Terrain_LegacyLoad.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,6 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -45,17 +41,14 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// Terrain / map loaders (called from OpenWorld / Map_LoadResources in stubs.cpp)
+// Terrain / map loaders (called from OpenWorld / Map_LoadResources)
 
 // OpenTerrainMapping @ 0x004F6F90 — Terrain_LoadMap(path)
 // Reads map file: skips 1 byte, copies 0x4000×4 bytes to TerrainMappingLayer1 (tile map),
 // next 0x4000×4 bytes to TerrainMappingLayer2 (alt-tile), then 0x10000 height bytes → TerrainMappingAlpha as float.
 //
-// BUG-FIX 2026-05-01: el archivo `EncTerrain%d.map` está ENCRIPTADO con el mismo
-// BuxConvert_1 (3-byte XOR rolling) que usa OpenTerrainAttribute (.att). Sin
-// descifrarlo, los bytes raw del file se interpretaban como tile-texture-IDs
-// y heights → suelo render como mosaico de UI textures con quads de altura
-// infinity (causa el triángulo cyan gigante). Aplicar BuxConvert_1 antes de parsear.
+// `EncTerrain%d.map` está encriptado con BuxConvert_1 (3-byte XOR rolling), igual
+// que el .att (OpenTerrainAttribute); se descifra antes de parsear.
 void __cdecl OpenTerrainMapping(const char *path) {
     Terrain_Clear(); // InitTerrainMappingLayer (IDA)
     FILE *f = crt_fopen(path, DAT_005580ac);
@@ -76,10 +69,10 @@ void __cdecl OpenTerrainMapping(const char *path) {
     // Format post-decrypt: byte 0 = magic, bytes 1+ = 3 layers of 0x10000 bytes.
     MapFileDecrypt((BYTE*)buf, (int)sz);
 
-    // BUG-FIX 2026-05-01 (v3): formato Enc tiene BYTE EXTRA de version flag.
-    // Verificación: archivo .map size = 0x30002 = 1(magic) + 1(version) + 3*0x10000(data).
-    // Verificación: archivo .obj size = 64324 = 1+1+2(count short)+30*2144 → count=0x0860.
-    // El parser 0.85 leía desde buf+1; en archivos Enc hay que leer desde buf+2.
+    // El formato Enc tiene un byte extra de version flag:
+    //   .map size = 0x30002 = 1(magic) + 1(version) + 3*0x10000(data)
+    //   .obj size = 64324 = 1+1+2(count short)+30*2144 → count=0x0860
+    // Por eso se lee desde buf+2 (el parser 0.85 leía desde buf+1).
     char *p = buf + 2;
     DWORD *dst = (DWORD*)TerrainMappingLayer1;
     for (int i = 0; i < 0x4000; i++) { *dst++ = *(DWORD*)p; p += 4; }
@@ -100,17 +93,12 @@ void __cdecl OpenTerrainMapping(const char *path) {
 // into the terrain wall array DAT_0838bc70 (256×256). First byte must be 0,
 // next short must be 0xFFFF (file marker). Per-world magic-byte check at
 // known offsets validates the right map. Any byte >= 0x80 triggers Error.
-//
-// BUG-FIX 2026-04-27: previously a no-op (signature was void, path
-// param lost). Now properly loads the .att file via the same FUN_0054xxxx
-// pipeline used by the other terrain loaders.
 unsigned char* TerrainWall = (unsigned char*)&DAT_0838bc70;
 int __cdecl OpenTerrainAttribute(const char *FileName) {
     FILE *fp = fopen(FileName, "rb");
     if (!fp) {
-        // 2026-05-04: silent fail — el caller (stubs.cpp:1922) prueba dos
-        // formatos (Terrain*.att y EncTerrain*.att). MessageBox bloqueante +
-        // WM_DESTROY harían imposible el fallback. Loggear y retornar.
+        // Falla en silencio: el caller prueba dos formatos (Terrain*.att y
+        // EncTerrain*.att) y un MessageBox bloqueante impediría el fallback.
         char dbg[260];
         wsprintfA(dbg, "OpenTerrainAttribute: file not found '%s'", FileName);
         DbgLogPublic(dbg);
@@ -153,9 +141,8 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
     }
 
     if (Error) {
-        // 2026-05-04: silent fail — la valid magic-byte check del IDA original
-        // mata el proceso si fallía. En nuestro build preferimos seguir con
-        // walkable=0 implícito (mejor que crash duro).
+        // Desviación: en IDA una validación fallida mata el proceso; acá se sigue
+        // con walkable=0 implícito.
         DbgLogPublic("OpenTerrainAttribute: validation Error (magic-byte mismatch or byte>=0x80)");
         fclose(fp);
         return 0;
@@ -167,21 +154,14 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
 // OpenObjectsEnc @ 0x004FFE70 — Terrain_LoadObjects(path)
 // Reads .obj file: 2-byte count, then count×0x1e entries → calls CreateObject for each.
 //
-// BUG-FIX 2026-05-01: el archivo `EncTerrain%d.obj` está ENCRIPTADO (mismo
-// BuxConvert_1 3-byte XOR rolling key que .att). Sin descifrar, count y posiciones
-// son basura → no se spawnean instancias de objetos del mundo (casas, NPCs
-// estáticos, props) → mapa renderiza solo terreno + hero.
+// `EncTerrain%d.obj` está encriptado con BuxConvert_1 (igual que el .att); se
+// descifra antes de parsear.
 void __cdecl OpenObjectsEnc(const char *path) {
     FILE *f = crt_fopen(path, DAT_005580ac);
     if (!f) {
-        // CRITICAL BUG-FIX 2026-05-08: previously wrote the error string into
-        // `(char*)&DAT_083a0218` — the bucket-grid cell[0] start in our build.
-        // IDA's original used a stack-local `char Text[256]` that Ghidra
-        // mis-decompiled as the global symbol. Writing "File not found: %s"
-        // there overwrote cell[0].head/tail with garbage like 0x656c6946
-        // ("File"), turning the bucket walker into a deref-into-unmapped
-        // memory fault on the next frame (the AV chain
-        // Object_MoveUpdate → MoveObjects → FUN_004fdc00 → Alpha).
+        // Text es un buffer local, como en IDA. Ghidra lo había decompilado como el
+        // global DAT_083a0218, que en nuestro build es la celda 0 de la grilla de
+        // buckets: escribir ahí rompe el recorrido de objetos.
         char Text[256];
         crt_sprintf(Text, "OpenObjectsEnc: file not found '%s'", path);
         DbgLogPublic(Text);
@@ -199,14 +179,9 @@ void __cdecl OpenObjectsEnc(const char *path) {
     MapFileDecrypt((BYTE*)buf, (int)sz);
 
     int count = (int)*(short*)(buf + 2);
-    // BUG-FIX 2026-08-17: el guard era `count > 0 && count < 5000`, un tope
-    // inventado por el port (IDA 0x4FFE70 sólo chequea `> 0`). Los conteos
-    // reales del 0.97k son Lorencia 2870, Dungeon 4488, Atlans 5205,
-    // LostTower 5380 y Noria 9399 — o sea el cap descartaba el archivo ENTERO
-    // en los tres últimos y esos mapas quedaban sin un solo objeto (paredes,
-    // puentes, props). Ahora el bound sale del tamaño real del buffer, que es
-    // lo único que hace falta para no leer fuera: el header son 4 bytes y cada
-    // entrada 30 (verificado: 4 + 30*count == filesize exacto en los 5 mapas).
+    // IDA 0x4FFE70 sólo chequea count > 0. El tope sale del tamaño del buffer
+    // (header de 4 bytes + 30 por entrada) para no leer fuera; no poner un máximo
+    // fijo: los conteos reales llegan a 9399 (Noria).
     int maxByBuf = ((int)sz - 4) / 30;
     if (count > maxByBuf) count = maxByBuf;
     if (count > 0) {
@@ -214,12 +189,8 @@ void __cdecl OpenObjectsEnc(const char *path) {
         for (int i = 0; i < count; i++, p += 0xf) {
             float pos[3]  = { *(float*)(p+1), *(float*)(p+3), *(float*)(p+5) };
             float tgt[3]  = { *(float*)(p+7), *(float*)(p+9), *(float*)(p+0xb) };
-            // BUG-FIX 2026-05-03: el 4° arg de CreateObject es `float param_4`
-            // (la SCALE del objeto en el .obj). Antes leíamos como `*(unsigned int*)`
-            // y la conversión implícita int→float convertía el bit pattern de 1.0f
-            // (= 0x3F800000 = 1065353216) en el float 1065353216.0f literal →
-            // scale gigante → vertices transformados fuera del frustum → invisible.
-            // El IDA original lee como `*(float*)` (bit-cast) preservando los bits.
+            // El 4° arg de CreateObject es la escala del objeto: se lee como `*(float*)`,
+            // igual que IDA, no como entero.
             CreateObject((int)*p, pos, tgt, *(float*)(p + 0xd));
         }
     }
@@ -229,11 +200,6 @@ void __cdecl OpenObjectsEnc(const char *path) {
 // OpenTerrainLight @ 0x004F7250 — Terrain_LoadLight(path)
 // Loads TerrainLight.jpg into DAT_07eeb238 (RGB float buffer, 256x256x3),
 // then processes via FUN_004f70b0 / FUN_004f71c0.
-//
-// BUG-FIX 2026-04-28: el decomp pasaba la dirección absoluta hardcodeada
-// 0x7eeb238 que en el binario original es DAT_07eeb238. En nuestro proceso
-// esa dirección no existe → AV al escribir. Ahora pasamos &DAT_07eeb238,
-// que es el array real.
 void __cdecl OpenTerrainLight(const char *path) {
     OpenJpegBuffer((char*)path, (int)(uintptr_t)DAT_07eeb238);
     CreateTerrainNormal(); // FUN_004f70b0 (IDA)
@@ -249,17 +215,9 @@ void __cdecl CreateTerrain(const char *path) {
 }
 
 // ClearItems @ 0x00502B80 — ClearItems / Map_InitEntities
-// Clears the "alive" flag (offset 0) for every slot in the GroundItem pool.
-// Pool is at DAT_07e12840, 1000 slots × 0x204 bytes.
-//
-// BUG-FIX 2026-04-28: el decomp Ghidra hardcodeaba la dirección absoluta
-// del binario original (0x07E12840 .. 0x07E907E0). En nuestro proceso esa
-// dirección no existe → AV. Indexamos el array real ahora que está en
-// globals.cpp con tamaño correcto.
-// 2026-08-21: limpiaba el offset 0 de cada slot.  IDA arranca en
-// `&Items[0][72]` — el flag activo vive en ip+72, que es el que leen
-// Net_Process (0x20), Entity_Render y MoveItems.  O sea ClearItems no borraba
-// nada y los items del mapa anterior seguían "vivos" al cambiar de zona.
+// Limpia el flag "vivo" de cada slot del pool de GroundItem (DAT_07e12840,
+// 1000 slots × 0x204 bytes). Como IDA, arranca en `&Items[0][72]`: el flag vive
+// en +72, que es el que leen Net_Process (0x20), Entity_Render y MoveItems.
 void __cdecl ClearItems(void) {
     for (int i = 0; i < 1000; ++i) {
         DAT_07e12840[i * 0x204 + 72] = 0;
@@ -399,8 +357,7 @@ void __cdecl OpenWorldModels(void) {
             AccessModel(i, "Data/Object8/", "Fish", i - 0xb4);
             OpenTexture(i, "Object8/", 0x2600, '\x01');
         }
-        // BUG-FIX 2026-08-17: faltaba entero el bloque de texturas de agua de
-        // Atlans (IDA L175-199). Carga wt00..wt31 en Bitmaps[65..96] y además
+        // Texturas de agua de Atlans (IDA L175-199). Carga wt00..wt31 en Bitmaps[65..96] y además
         // copia el nombre corto en Bitmaps[n].FileName (offset 0 del slot,
         // stride 0x38), que es de donde lo lee el render de tiles de agua.
         // El "if (v5 >= &Bitmaps[75])" del decompile es simplemente v4 >= 10:
@@ -451,15 +408,6 @@ void __cdecl OpenWorldModels(void) {
         //     for (m=0;m<2;m++) OpenTexture(m+260, "Monster\\", 9728, 1);
         //     AccessModelWithTextures(185, "Data\\Object12\\", "Shine", 1);
         //     OpenTexture(185, "Object12\\", 9728, 1);
-        //
-        // 2026-09-04 FIX, tres cosas:
-        //  a) el slot 184 pedia "Angel01.bmd", que no existe; es "Crow01.bmd".
-        //  b) los slots 262/263 (LA PUERTA del evento) pedian
-        //     "gate_entrance01/02.bmd", que tampoco existen: son "Gate01/02.bmd".
-        //     Con el BMD sin cargar el modelo queda con 0 mallas, y romper la
-        //     puerta terminaba trabajando sobre esa entrada vacia.
-        //  c) faltaban las cuatro OpenTexture de la puerta y los sarcofagos,
-        //     que salen de "Monster/" y no de "Object12/".
         AccessModel(0xb8, "Data/Object12/", "Crow", 1);
         OpenTexture(0xb8, "Object12/", 0x2600, '\x01');
         AccessModel(0x106, "Data/Object12/", "Gate", 1);
@@ -472,13 +420,9 @@ void __cdecl OpenWorldModels(void) {
             OpenTexture(m + 0x104, "Monster/", 0x2600, '\x01');
         AccessModel(0xb9, "Data/Object12/", "Shine", 1);
         OpenTexture(0xb9, "Object12/", 0x2600, '\x01');
-        // 2026-09-04 FIX: estas dos estaban en el PRIMER switch, que va dentro de
-        // `if (DAT_0055a7c4 == 0)` -- el gate de "primera carga de mundo".  Como
-        // cualquier mapa anterior ya deja ese flag en 1, en Blood Castle no corrian.
-        // IDA las tiene en ESTE switch, fuera del `if (!unk_55A7C4)` interno
-        // (0x50C4D0 L243-245), o sea se ejecutan en cada entrada al mapa.
-        // Sin el LoadWaveFile el `PlayBuffer(110, 0, 1)` del estado 0 del 0x9B no
-        // tenia nada que reproducir: por eso no sonaba la musica del evento.
+        // Van en este switch, fuera del `if (!unk_55A7C4)` interno, como en IDA
+        // (0x50C4D0 L243-245): se ejecutan en cada entrada al mapa. El LoadWaveFile hace
+        // falta para el `PlayBuffer(110, 0, 1)` del estado 0 del 0x9B (música del evento).
         OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, 1);
         LoadWaveFile(0x6e, "Data/Sound/iBloodCastle.wav", 1, 0);
         break;
@@ -606,12 +550,9 @@ void __cdecl OpenWorldModels(void) {
             OpenModel((int)0x98, "Data2/Object1/", "beer_02.smd");
             OpenModel((int)0x99, "Data2/Object1/", "beer_03.smd");
         }
-        // BUG-FIX 2026-05-04: agregar load explícito de BMDs Object1.
-        // El bloque SMD arriba está gated por `DAT_0055a7c4 == 0` que en nuestro
-        // build SIEMPRE es 1 (default = Data mode, no Data2/), así que las SMDs
-        // nunca se cargaban. Como la distribución solo trae BMDs con nombres
-        // PascalCase (House01.bmd, Tree01.bmd, Bridge01.bmd, etc.), aquí mapeamos
-        // explícitamente cada slot SMD a su BMD equivalente.
+        // IDA OpenWorldModels (0x50C4D0): la tabla de BMD de Object1 sigue al bloque
+        // opcional de SMD. Se conservan los IDs de modelo originales y todas sus
+        // entradas; los nombres SMD difieren (jar_01.smd es Well01.bmd, por ejemplo).
         struct LorenciaSlot { int slot; const char* bmd; };
         static const LorenciaSlot lorenciaSlots[] = {
             // Trees (slots 0x00..0x0c → Tree01..Tree13)
@@ -620,10 +561,10 @@ void __cdecl OpenWorldModels(void) {
             { 0x05, "Tree06" }, { 0x06, "Tree07" }, { 0x07, "Tree08" },
             { 0x08, "Tree09" }, { 0x09, "Tree10" }, { 0x0a, "Tree11" },
             { 0x0b, "Tree12" }, { 0x0c, "Tree13" },
-            // Grass (0x14..0x19 → Grass01..Grass06)
+            // IDA: ocho modelos de pasto, slots 20..27.
             { 0x14, "Grass01" }, { 0x15, "Grass02" }, { 0x16, "Grass03" },
             { 0x17, "Grass04" }, { 0x18, "Grass05" }, { 0x19, "Grass06" },
-            // Mushrooms not distributed as BMDs (only OZJ texture)
+            { 0x1a, "Grass07" }, { 0x1b, "Grass08" },
             // Stones — IDA 0x0050C4D0: object/model IDs 30..34 (0x1e..0x22).
             // The .obj record type is used directly as the Models[] index by
             // Draw_RenderObject (0x004FAE00); these are not file ordinals.
@@ -632,6 +573,7 @@ void __cdecl OpenWorldModels(void) {
             // Statues / Tomb
             { 0x28, "StoneStatue01" }, { 0x29, "StoneStatue02" },
             { 0x2a, "StoneStatue03" },
+            { 0x2b, "SteelStatue01" },
             { 0x2c, "Tomb01" }, { 0x2d, "Tomb02" }, { 0x2e, "Tomb03" },
             // Fire / Light
             { 0x32, "FireLight01" }, { 0x33, "FireLight02" },
@@ -664,9 +606,11 @@ void __cdecl OpenWorldModels(void) {
             // Carriage
             { 0x62, "Carriage01" }, { 0x63, "Carriage02" },
             { 0x64, "Carriage03" }, { 0x65, "Carriage04" },
-            // Straw / waterspout (Jar01..04 not distributed)
+            // Paja / caño de agua / pozos (IDs de modelo de IDA 106..109).
             { 0x66, "Straw01" }, { 0x67, "Straw02" },
             { 0x69, "Waterspout01" },
+            { 0x6a, "Well01" }, { 0x6b, "Well02" },
+            { 0x6c, "Well03" }, { 0x6d, "Well04" },
             // Hanging / stair
             { 0x6e, "Hanging01" }, { 0x6f, "Stair01" },
             // Houses (0x73..0x77 → House01..House05)
@@ -708,11 +652,6 @@ void __cdecl OpenWorldModels(void) {
         // Numero de carpeta de objetos.  IDA 0x50C4D0:
         //     v33 = World + 1;
         //     if ( World >= 11 && World <= 16 ) v33 = 12;
-        // 2026-09-04 FIX: faltaba el override.  Los seis niveles de Blood Castle
-        // (World 11..16) COMPARTEN Data/Object12; con `World + 1` los niveles 2 a 7
-        // buscaban Object13..Object17, que no existen -- de ahi que el mapa
-        // apareciera pelado, sin paredes ni props.  El nivel 1 (World 11 -> 12)
-        // acertaba de casualidad.
         int objFolder = World + 1;
         if (World >= 11 && World <= 16)
             objFolder = 12;
@@ -762,4 +701,4 @@ void __cdecl OpenWorldModels(void) {
         DAT_0055a7c4 = cVar2;
 }
 
-// Font helpers (called from OpenFont in stubs.cpp)
+// Font helpers (called from OpenFont)

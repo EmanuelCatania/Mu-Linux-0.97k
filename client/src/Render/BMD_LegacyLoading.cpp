@@ -1,15 +1,6 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
+// Carga de modelos y texturas: OpenModel / AccessModel / OpenTexture, la
+// cadena SMD (OpenSMDModel / OpenSMDAnimation) y el tokenizer de texto de los
+// data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -62,7 +53,7 @@ void __cdecl SetMaxTextures(int param_1) {
 //   4. Si v11==0: OpenSMDModel(Type, FileName, 1, unk_83A4100) +
 //      OpenSMDAnimation(Type, FileName, 0)
 //
-// NOTA 2026-05-01: los archivos Data2/Item/<class>/<file>.smd NO existen en el
+// NOTA: los archivos Data2/Item/<class>/<file>.smd NO existen en el
 // filesystem distribuido (solo Data/Item/<file>.bmd está). Las llamadas a
 // fopen dentro de OpenSMDModel/OpenSMDAnimation retornarán NULL → early return →
 // no-op silencioso. El path BMD (AccessModel) cubre la carga real de items.
@@ -82,11 +73,11 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     OpenSMDAnimation(Type, FileName, 0);
     DAT_083a4100 = 0;
 
-    // BUG-FIX 2026-05-04: el cliente 0.97k distribuido NO tiene Data2/Object*/
-    // (solo Data/Object*/ con archivos .bmd). Las SMDs no cargan → Lorencia
-    // queda sin casas/decoraciones porque su path de OpenWorldModels usa SMDs
-    // exclusivamente. Como fallback, si después del SMD load el slot sigue
-    // vacío (mesh count = 0), intentamos varias transformaciones del nombre
+    // DESVIACION: el cliente 0.97k distribuido NO tiene Data2/Object*/ (solo
+    // Data/Object*/ con archivos .bmd), así que las SMDs no cargan y Lorencia
+    // quedaría sin casas/decoraciones (su path de OpenWorldModels usa SMDs
+    // exclusivamente). Como fallback, si después del SMD load el slot sigue
+    // vacío (mesh count = 0), se prueban varias transformaciones del nombre
     // .smd → .bmd para encontrar el archivo real (case-insensitive en Win32).
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * Type);
     short meshCount = *(short*)(slot + 0x22);  // model[+0x22] = mesh count
@@ -219,16 +210,16 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
 // all available in stdafx-included <cctype>/<cstdio>/<cstdlib>.
 int __cdecl TextParser_GetToken(void)
 {
-    // 2026-08-22 FIX: escribia en ParserTokenString, que es el buffer del OTRO
-    // tokenizer (Parse_NextToken / OpenWorldModels).  TokenString es 0x07CF1EF0.
+    // Usa TextParserTokenString (TokenString = 0x07CF1EF0), NO ParserTokenString,
+    // que es el buffer del OTRO tokenizer (Parse_NextToken / OpenWorldModels).
     char* TokenStringBuf = (char*)&TextParserTokenString[0];
     int&   CurrentToken  = ParserCurrentToken;
     float& TokenNumber   = ParserTokenNumber;
 
-    // CRITICAL 2026-05-03: data parsers (Item_Data, Monster_Data, Skill_Data,
-    // Filter_Data, NPC_Data, Gate_Data) all open their file via DAT_07d7806c
-    // (= IDA's SMDFile_0). The other "SMDFile" symbol at DAT_0055c0a0 is a
-    // separate misnamed global from an early port pass — unused here.
+    // Los data parsers (Item_Data, Monster_Data, Skill_Data, Filter_Data,
+    // NPC_Data, Gate_Data) abren su archivo vía DAT_07d7806c (= SMDFile_0 de IDA).
+    // El otro símbolo "SMDFile" en DAT_0055c0a0 es un global distinto mal
+    // nombrado — no se usa acá.
     FILE* fp = DAT_07d7806c;
 
     char  TempString[100];
@@ -312,11 +303,6 @@ int __cdecl TextParser_GetToken(void)
     return result;
 }
 
-// Skill_HashTable_SerializeEntry @ 0x0047EA70 — Skill_HashTable_SerializeEntry: encode 0x28-byte
-// entry via rolling XOR/sub cipher and insert into hash table.
-void __cdecl Skill_HashTable_SerializeEntry(void *dst, void *src) { /* hash table serialize stub */ }
-// Skill_HashTable_FreeEntry @ 0x0047EAF0 — Skill_HashTable_FreeEntry: decode entry and remove.
-void __cdecl Skill_HashTable_FreeEntry(void *entry, void *key) { /* hash table free stub */ }
 // crt_fwrite @ 0x005430F0 — fwrite wrapper (with lock).
 uint __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp) {
     return (uint)fwrite(buf, size, count, (FILE *)fp);
@@ -329,10 +315,10 @@ uint __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp) {
 // "Data/Logo/01.bmd" en vez de "Logo01.bmd", los modelos de login/select nunca
 // cargaban y el fondo 3D del server select quedaba vacío.
 void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, int param_4) {
-    // BUG-FIX 2026-04-29: pump message queue cada N llamadas para evitar que
-    // OpenWorld (que llama esta func ~hundreds de veces) bloquee el message
-    // pump por 2+ segundos. El server MuEmu nos kickea por backpressure si
-    // no consumimos los packets que envía después del JoinMapServer.
+    // DESVIACION: se bombea la message queue cada N llamadas para que OpenWorld
+    // (que llama esta función cientos de veces) no bloquee el message pump por
+    // 2+ segundos: el server MuEmu kickea por backpressure si no se consumen los
+    // packets que envía después del JoinMapServer.
     {
         static int s_pumpCounter = 0;
         if ((s_pumpCounter++ & 0x07) == 0) {  // cada 8 BMDs
@@ -354,9 +340,9 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
     int numBonesInSlot = *(short*)(DAT_05828d58 + 0x22 + param_1 * 0xbc);
     if (DAT_0055a7c4 == '\0') {
         // HQ path original: si el SMD ya cargó bones, BMD__Save agrega la anim BMD.
-        // PORT FALLBACK: como nuestro SMD loader (OpenModel) es stub y nunca
-        // popula bones, caemos al loader completo BMD__Open para al menos traer
-        // la geometría BMD y ver algo del background 3D.
+        // DESVIACION: los .smd no existen en el cliente distribuido (ver OpenModel), así
+        // que si el slot no tiene bones se cae al loader completo BMD__Open para traer
+        // la geometría BMD.
         if (numBonesInSlot > 0)
             BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
         else
@@ -376,7 +362,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         *(float *)(slotBase + 0x50) = 1.0f;
     }
 }
-// Forward-declare FindTextureByName (real implementation at ~line 12786 below).
+// Forward-declare FindTextureByName (implementada en src/Core/Runtime_Medium.cpp).
 int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 
 // IDA: OpenTexture (0x00505C80)
@@ -402,15 +388,14 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 //   DAT_0055a7a4      = base path "Data2\"   (Data2/pak mode)
 //   DAT_0055a79c      = base path "Data\"    (Data mode)
 void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check) {
-    // ── BUG fix (crash 0xC0000005 @ 0x61746168 "ataH"): el Model slot ES la
-    //    estructura BMD completa (stride 0xBC), NO un puntero a datos. Los
-    //    primeros 32 bytes del slot son el Name (string), no un data ptr.
-    //    Los contadores y tablas están inline:
-    //       slot +0x24 short  numMeshes
-    //       slot +0x34 char*  texNameTable (char[n][0x20])
-    //       slot +0x38 short* indexTexture (short[n])
-    //    Verificado en Ghidra BMD__Open (BMD::Open): this[0x24]=numMeshes,
-    //    this[0x34]=texName[] y this[0x38]=indexTex[] se asignan directamente.
+    // El Model slot ES la estructura BMD completa (stride 0xBC), NO un puntero a
+    // datos. Los primeros 32 bytes del slot son el Name (string), no un data ptr.
+    // Los contadores y tablas están inline:
+    //    slot +0x24 short  numMeshes
+    //    slot +0x34 char*  texNameTable (char[n][0x20])
+    //    slot +0x38 short* indexTexture (short[n])
+    // Verificado en BMD__Open (BMD::Open): this[0x24]=numMeshes,
+    // this[0x34]=texName[] y this[0x38]=indexTex[] se asignan directamente.
     char* slot = (char*)(DAT_05828d58 + Model * 0xBC);
     short numMeshes = *(short*)(slot + 0x24);
     // DIAG-canary inconditional: confirmar que llegamos a la función para Ship/Logo
@@ -455,11 +440,10 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             for (int k = 0; k < nameLen; k++) { if (Name[k] == '.') { dotPos = k; break; } }
 
             // Build full path: SubFolder + Name  (into local_40)
-            // 2026-05-05: Si Name ya contiene un path (ej. "Data\Npc\foo.OZT"
-            // como guardan algunos BMDs de NPC), NO concatenar SubFolder —
-            // sino que sale "Data\Npc\Data\Npc\foo.OZT" → fopen FAIL.
-            // Detectamos path absoluto: arranca con "Data\" o "Data/" o
-            // contiene '\\' o '/' antes del primer '.'.
+            // Si Name ya contiene un path (ej. "Data\Npc\foo.OZT", como guardan algunos
+            // BMDs de NPC), NO concatenar SubFolder — saldría "Data\Npc\Data\Npc\foo.OZT"
+            // → fopen FAIL. Path absoluto = arranca con "Data\" o "Data/" o contiene
+            // '\\' o '/' antes del primer '.'.
             char local_40[128];
             size_t nlen = strnlen(Name, 32);
             bool nameHasPath = false;
@@ -535,8 +519,8 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     }
 }
 
-// Forward decls for the SMD parsing chain (stubs below — files no existen
-// en filesystem, retornan false; mantienen estructura del binario).
+// Forward decls de la cadena de parseo SMD (definidas más abajo; los archivos
+// no existen en el filesystem, retornan false; mantienen la estructura del binario).
 extern "C" bool __cdecl OpenSMDFile(const char* FileName, int Type, char Flip);
 extern "C" void __cdecl FixupSMD(void);
 extern "C" void __cdecl SMD2BMDModel(int ID, int Actions);

@@ -47,15 +47,11 @@
 // (_rand ya está definido como `_rand() rand()` en stdafx.h)
 
 
-// 2026-08-17 — FRENO DE RENDIMIENTO, no es parte del port.
-// ChkHeapPublic() llama _CrtCheckMemory(), que recorre TODO el heap de debug
-// validando los guard bytes de cada bloque asignado. Con los modelos, texturas
-// y el terreno cargados son decenas/centenas de miles de bloques, y abajo se
-// invocaba 16 VECES POR FRAME → el chequeo solo puede costar más que el frame
-// entero. El original no tiene nada equivalente: es instrumentación nuestra
-// para cazar corrupción de heap (ver ChkHeapPublic en WinMain.cpp).
-// Queda detrás de un switch, apagado por defecto. Poner en 1 para reactivarlo
-// cuando haya que volver a rastrear corrupción de heap.
+// Freno de rendimiento, no es parte del port: ChkHeapPublic() llama a
+// _CrtCheckMemory(), que recorre TODO el heap de debug, y abajo se invoca 16
+// veces por frame. Es instrumentación nuestra para rastrear corrupción de heap
+// (ver ChkHeapPublic en WinMain.cpp). Apagado por defecto; poner en 1 para
+// reactivarlo.
 #define ML_HEAP_CHECK 0
 #if ML_HEAP_CHECK
 #define CHK(tag) ChkHeapPublic(tag)
@@ -74,7 +70,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     CHK("ML/enter");
 
-    // 2026-05-05 diag: log entry rate-limited (per state)
+    // Diagnóstico: log de entrada, limitado por estado.
     {
         static int s_lastEnterState = -1;
         static DWORD s_lastEnterT = 0;
@@ -171,21 +167,9 @@ void __cdecl Game_MainLoop(HDC param_1)
             if (idx == 0xffffffff) {
                 void* node = AntiTamper_HashNode(); *((BYTE*)node + 4) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
-            } else {
-                BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
-                node[4]++;
-                if (node[4] < 2) Packet_DecryptDword(&DAT_083a7c00, node);
             }
         }
         DAT_083a7c00++;
-        {
-            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
-            if (idx != 0xffffffff) {
-                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_083a7c00);
-                node[4]--;
-                if (node[4] == 0) Packet_EncryptDword(node, &DAT_083a7c00);
-            }
-        }
 
         // Consume 40ms of budget, count frame
         DAT_005616b8  -= 0x28;
@@ -204,16 +188,9 @@ void __cdecl Game_MainLoop(HDC param_1)
         // IDA 0x525D40 L308:
         //   sprintf(GrabFileName, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
         //           st.wMonth, st.wDay, st.wHour, st.wMinute, GrabScreen);
+        // GrabScreen (DAT_083a42f0) lo incrementa SaveScreen modulo 10000.
         //
-        // El port tenia "Screen %02d %02d %02d %02d - %04d" con st.wYear. Dos
-        // bugs: (a) sin la extension .jpg, y el archivo lo escribe WriteJpeg
-        // (WriteJpeg, calidad 100), asi que quedaba un JPEG sin extension
-        // que el explorador no reconocia; (b) con el ANO en vez de GrabScreen
-        // el nombre solo cambiaba por minuto, asi que dos capturas en el mismo
-        // minuto se pisaban. GrabScreen (DAT_083a42f0) lo incrementa
-        // SaveScreen modulo 10000.
-        //
-        // DESVIACION DELIBERADA (pedido del usuario, 2026-09-20): el binario
+        // DESVIACION DELIBERADA (pedido del usuario): el binario
         // guarda en la RAIZ del cliente -- GrabFileName no lleva ruta.  Para
         // no ensuciarla, las capturas van a "Screenshots/".  La carpeta se
         // crea una sola vez por sesion y, si no se puede crear, se cae a la
@@ -290,9 +267,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/post_viewport");
     glClear(0x4100);  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
     // IDA Game_MainLoop (0x525D40): BeginOpengl(0,0,640,480); glClear; EndOpengl();
-    // BUG-FIX 2026-06-28: antes era GL_PopMatrixAll() (hack que popea 8×2=16 matrices)
-    // sobre un stack con sólo 2 pushes → GL_STACK_UNDERFLOW (0x504) cada frame.
-    // El balance correcto es EndOpengl (pop MODELVIEW + PROJECTION), igual a IDA.
+    // EndOpengl balancea el BeginOpengl (pop MODELVIEW + PROJECTION).
     GL_EndOpenGL();   // EndOpengl → pop MODELVIEW + PROJECTION (balancea el BeginOpengl)
     CHK("ML/post_PopMatrix");
 
@@ -369,14 +344,11 @@ void __cdecl Game_MainLoop(HDC param_1)
         DAT_005616b8 += elapsed;
     }
 
-    // ── CONNECTION CHECK ──────────────────────────────────────────────────────
-    // BUG-FIX 2026-04-28: este check leía *(int*)(SocketClient + 8) y comparaba
-    // con -1. En el original SocketClient era un Object* con un Type field en
-    // +8; en nuestro port SocketClient es un buffer estático sin esa estructura
-    // → el read devolvía garbage que a veces == -1 → disparaba 0x71 ConnLost
-    // 100ms después de JoinMapServer, anulando todos los menús.
-    // Real disconnect detection: WSA FD_CLOSE event en WinMain; ese path setea
-    // DAT_055ca018 que ya bloquea Game_MainLoop al inicio.
+    // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
+    // En el original SocketClient es un Object* con un Type en +8; en nuestro port
+    // es un buffer estático sin esa estructura, así que este chequeo leería basura.
+    // La desconexión se detecta por el FD_CLOSE en WinMain, que setea
+    // DAT_055ca018 y ya bloquea Game_MainLoop al inicio.
     #if 0
     if (DAT_083a7c48 != '\0' && SceneFlag == 5) {
         if (CWsctlc_GetSocket(((int)(uintptr_t)SocketClient)) == -1) {
@@ -391,19 +363,13 @@ void __cdecl Game_MainLoop(HDC param_1)
     #endif
 
     // ── LIVECLIENT KEEPALIVE (opcode 0x0E) ────────────────────────────────────
-    // BUG-FIX 2026-04-28: server MuEmu (Protocol.cpp:68 CGLiveClientRecv)
-    // espera C1/0E cada ~1-3 seg después de OBJECT_LOGGED. Sin este packet,
-    // el server timeout-ea y manda F1/02 sub=0 (Exit). Era la causa del
-    // "se cierra sin cartel" después de entrar al mundo.
+    // El server MuEmu (CGLiveClientRecv) espera C1/0E cada ~1-3 s después de
+    // OBJECT_LOGGED; si no llega, manda F1/02 sub=0 (Exit). Se envía también desde
+    // char-select y durante la carga del mapa, porque el server cierra el socket
+    // si el cliente queda en silencio en esa transición.
     //
     // Packet: [C1] [0x0B] [0x0E] [TickCount:DWORD] [PhysiSpeed:WORD] [MagicSpeed:WORD]
     // Total = 11 bytes.
-    // 2026-04-29: keepalive 0x0E re-habilitado. Con el send() hook en MuEmu.h/cpp
-    // toda send call ahora se auto-encripta si el primer byte es C1/C2/C3/C4 plain.
-    // 2026-05-04: gate cambiado de `state==5` a `state>=4 || sub==7`. El
-    // server cerraba el socket DURANTE la carga de mapa (state=5 sub=7 →
-    // sub=0 transición), 5+ s de silencio del cliente. Ahora keepalive
-    // empieza desde char-select (state=4) y sigue mientras carga el mapa.
     #if 1
     if (SocketClientSocket != 0xffffffff &&
         (SceneFlag == 4 || SceneFlag == 5 || World == 7)) {

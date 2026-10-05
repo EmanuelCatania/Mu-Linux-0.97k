@@ -56,16 +56,11 @@ int __cdecl Terrain_Water(void)
                     iVar2 = (uVar5 & 0xff) + (uVar7 & 0xff) * 0x100;
                     iVar3 = iVar2 * 0xc;  // byte offset (3 floats × 4 bytes)
                     uVar5++;
-                    // BUG-FIX: DAT_081cb608 está declarado DWORD, así que
-                    // `&DAT_081cb608 + iVar3` hace aritmética DWORD* (= +iVar3*4
-                    // = +iVar2*48 bytes). El stride real es 12 bytes (3 floats).
-                    // Disasm @ 0x004f9620-23 confirma byte-offset = iVar2*3*4=12.
-                    // Castear a char* para que la suma sea aritmética de bytes.
-                    // FIX 2026-06-27: el RHS era `DAT_0828b608[iVar2*3]` (float[] → VALOR
-                    // float); asignado a `*(unsigned int*)` hacía conversión float→int =
-                    // truncación → R quedaba 0 (luz 0.x<1.0). G/B usan el macro DWORD*
-                    // (bits). IDA hace PrimaryTerrainLight[i][0]=BackTerrainLight[i][0]
-                    // (copia float). Bit-cast del source para preservar el float, igual a G/B.
+                    // DAT_081cb608 está declarado DWORD: castear a char* para que la suma sea
+                    // aritmética de bytes (stride real 12 bytes = 3 floats; disasm @
+                    // 0x004f9620-23 confirma byte-offset = iVar2*3*4).
+                    // IDA copia el float (PrimaryTerrainLight[i][0]=BackTerrainLight[i][0]):
+                    // bit-cast del source para preservarlo, igual que G/B.
                     *(unsigned int *)((char*)&DAT_081cb608 + iVar3) = *(unsigned int*)&DAT_0828b608[iVar2 * 3];
                     *(unsigned int *)((char*)&DAT_081cb60c + iVar3) = (&DAT_0828b60c)[iVar2 * 3];
                     *(unsigned int *)((char*)&DAT_081cb610 + iVar3) = (&DAT_0828b610)[iVar2 * 3];
@@ -100,7 +95,7 @@ int __cdecl Terrain_Water(void)
             fVar12 = (float10)(int)FrustrumBoundMinX_1;
             if ((int)FrustrumBoundMinX_1 <= colMax2) {
                 iVar4 = (colMax2 - FrustrumBoundMinX_1) + 1;
-                // BUG-FIX: DAT_07eab200 es DWORD → &DAT_07eab200 + N*4 hace
+                // DAT_07eab200 es DWORD → &DAT_07eab200 + N*4 hace
                 // aritmética DWORD* (=+N*16 bytes). Disasm @ 0x004f96d1 muestra
                 // LEA EDX,[EAX*0x4 + 0x7eab200] = byte offset N*4. Castear a char*.
                 pfVar6 = (float *)((char*)&DAT_07eab200 + (iVar9 + FrustrumBoundMinX_1) * 4);

@@ -36,7 +36,7 @@
 #  include <crtdbg.h>
 #endif
 
-// 2026-05-04: helper de src/UI/Chat_InputTick.cpp — envía una línea de chat
+// Helper de src/UI/Chat_InputTick.cpp — envía una línea de chat
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
@@ -57,7 +57,7 @@ static int  OpenGL_Init(void);
 
 // Chat_TryAssignMacro -- "/1 texto" guarda una macro en la tecla 1.
 //
-// DESVIACION DOCUMENTADA (2026-09-24).  El 0.97k NO tiene esto: sus macros
+// DESVIACION DOCUMENTADA.  El 0.97k NO tiene esto: sus macros
 // salen unicamente de Data\\Macro.txt (OpenMacro 0x50F750) y no hay una sola
 // escritura al array fuera de ese loader -- verificado con los xrefs de
 // 0x07E0FFC8.  La asignacion por chat aparece recien en MU 5.2
@@ -123,10 +123,9 @@ static bool s_DisplayModeChanged = false;
 // excepciones: la llama OpenGL_Release en el cierre normal Y
 // DbgUnhandledException al crashear.
 //
-// Lo segundo NO es de adorno (reporte de 2026-09-27): en pantalla completa el
-// filtro termina el proceso con EXCEPTION_EXECUTE_HANDLER, asi que
-// OpenGL_Release no corre y al usuario le quedaba el escritorio clavado en la
-// resolucion del juego hasta reiniciar.
+// Lo segundo NO es de adorno: en pantalla completa el filtro termina el proceso
+// con EXCEPTION_EXECUTE_HANDLER, asi que OpenGL_Release no corre y sin esto el
+// escritorio queda clavado en la resolucion del juego.
 static void Display_RestoreIfChanged(void)
 {
     if (!s_DisplayModeChanged) return;
@@ -193,7 +192,7 @@ static void Display_ApplyFullscreen(void)
 //   window style: WS_POPUP (0x80000000)
 //   Dimensions: DAT_0056156c × DAT_00561570 (de ChangeDisplaySettings)
 //
-// 2026-09-27: se agrego el modo ventana (ver Config/Config.h).  Lo de
+// Modo ventana: ver Config/Config.h.  Lo de
 // arriba describe la rama `!g_WindowMode`, que es la del binario.
 // ─────────────────────────────────────────────────────────────────────────────
 static void Window_Create(HINSTANCE hInst)
@@ -202,10 +201,9 @@ static void Window_Create(HINSTANCE hInst)
     wc.style         = 0x2B;            // CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS
     wc.lpfnWndProc   = WndProc;
     wc.hInstance     = hInst;
-    // Icono grande (Alt+Tab, barra de tareas).  Antes era
-    // LoadIconA(NULL, "IDI_ICON1"): con hInstance NULL la API busca entre los
-    // iconos PREDEFINIDOS del sistema, que son ordinales, asi que un nombre
-    // propio nunca matchea y devolvia NULL.
+    // Icono grande (Alt+Tab, barra de tareas), desde los recursos del exe: con
+    // hInstance NULL, LoadIconA busca entre los iconos PREDEFINIDOS del sistema
+    // (ordinales) y un nombre propio nunca matchea.
     wc.hIcon         = LoadIconA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON));
     wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
@@ -550,12 +548,9 @@ extern "C" void DbgLogPublic(const char* msg);
 extern "C" void CsmWatchdog(const char *tag);
 static void DbgLog(const char* msg)
 {
-    // 2026-04-30: el guard IsDebuggerPresent fue removido porque la fuente
-    // original del crash en VS (MuEmu::DumpHex emitiendo bytes binarios) ya
-    // está silenciada bajo #ifdef MUEMU_TRACE.  Ahora podemos loggear bajo
-    // VS sin riesgo de AV en KernelBase, y los traces son visibles en
-    // debug.log.  El sanitizado a ASCII printable abajo sigue activo como
-    // segunda red de seguridad.
+    // Sin guard IsDebuggerPresent acá: el volcado binario de MuEmu::DumpHex (que
+    // hacía crashear VS) está bajo #ifdef MUEMU_TRACE. El sanitizado a ASCII
+    // printable de abajo queda como segunda red de seguridad.
     static __declspec(thread) bool s_inside = false;
     if (s_inside) return;
     s_inside = true;
@@ -567,10 +562,8 @@ static void DbgLog(const char* msg)
     const char* safeMsg = msg ? msg : "(null)";
     DWORD t = GetTickCount();
 
-    // 2026-04-29: sanitize msg para que solo tenga ASCII printable. VS debugger
-    // intercepta WriteFile en debug.log y crashea cuando el contenido tiene
-    // caracteres no-printables (probablemente del hex dump de DumpHex que pasa
-    // bytes binarios como string al format %s).
+    // Sanitiza msg a ASCII printable: el debugger de VS intercepta WriteFile en
+    // debug.log y crashea si el contenido tiene caracteres no printables.
     char sanitized[510];
     {
         int j = 0;
@@ -583,22 +576,17 @@ static void DbgLog(const char* msg)
 
     int n = wsprintfA(buf, "[%u] %s\r\n", t, sanitized);
     if (n > 0) {
-        // 2026-04-29: NO usar OutputDebugStringA — VS debugger lo intercepta
-        // y dispara una AV en KernelBase cuando el debug message contiene
-        // bytes que VS no puede mostrar (probablemente el hex dump de
-        // MuEmu::DumpHex que tiene caracteres binarios).
-        // Solo escribir a archivo, con kill-switch.
+        // Salida a debug.log, con kill-switch si no se puede abrir (bajo debugger se
+        // usa OutputDebugStringA, ver abajo).
         static HANDLE h = INVALID_HANDLE_VALUE;
         if (h == INVALID_HANDLE_VALUE) {
             h = CreateFileA("debug.log", GENERIC_WRITE, FILE_SHARE_READ,
                             NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
             if (h == INVALID_HANDLE_VALUE) { s_killed = 1; s_inside = false; return; }
         }
-        // 2026-05-01 (v2): VS debugger captura first-chance exceptions ANTES
-        // que el SEH del programa, aún con __try/__except. La única forma de
-        // evitar la pausa de VS es NO LLAMAR WriteFile cuando hay debugger.
-        // Bajo debugger: solo OutputDebugStringA → Output Window de VS.
-        // Sin debugger: WriteFile normal a debug.log.
+        // El debugger de VS captura las first-chance exceptions ANTES que el SEH del
+        // programa, aun con __try/__except: bajo debugger NO se llama WriteFile, solo
+        // OutputDebugStringA (Output Window de VS); sin debugger, WriteFile a debug.log.
         DWORD w = 0;
         if (IsDebuggerPresent()) {
             OutputDebugStringA(buf);
@@ -635,7 +623,7 @@ extern "C" void ChkHeapPublic(const char* tag)
 
 static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
 {
-    // 2026-04-29: anti-recursion guard. Si DbgLog crashea (e.g., WriteFile AV),
+    // Anti-recursion guard: Si DbgLog crashea (e.g., WriteFile AV),
     // el filter se reentra → recursion infinita → otra AV en KernelBase.
     static __declspec(thread) int s_handlerDepth = 0;
     if (s_handlerDepth > 0) return EXCEPTION_CONTINUE_SEARCH;
@@ -804,11 +792,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 {
     // CSQuest: en el binario el objeto lo construye `unknown_libname_1`
     // (0x401010), que esta en la tabla de inicializadores estaticos del CRT y
-    // corre ANTES de WinMain.  Aca nadie lo llamaba, asi que `g_csQuest` se
-    // quedaba en 0 y cualquier acceso al objeto escribia sobre la pagina cero
-    // (crash 0xC0000005 con param1 = 0x1C848, que es el offset de la lista de
-    // quests).  Los lectores viejos no reventaban porque estaban gateados con
-    // `g_csQuest != 0`; los handlers de quest nuevos si.
+    // corre ANTES de WinMain.  Aca hay que llamarlo explicitamente: sin esto
+    // `g_csQuest` queda en 0 y cualquier acceso al objeto escribe sobre la pagina
+    // cero.
     Quest_InitializeStaticState();
 
     // Todos los paths de datos del original son relativos (p.ej. Data\\Skill\\Fire01.bmd).
@@ -843,19 +829,18 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         int flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
         flag |= _CRTDBG_ALLOC_MEM_DF;          // debug heap con guard bytes
         flag |= _CRTDBG_CHECK_EVERY_1024_DF;   // validate every 1024 ops
-        // DELAY_FREE_MEM removed: el crash es en sbh_alloc_block (Small Block
-        // Heap, capa abajo del debug heap CRT) — _CrtCheckMemory no valida sbh.
-        // Mantenemos el debug heap básico para tener guard bytes en allocs
-        // grandes; UAF en sbh requiere otro approach (Application Verifier).
+        // Sin _CRTDBG_DELAY_FREE_MEM_DF: los crashes de heap vistos caen en
+        // sbh_alloc_block (Small Block Heap, por debajo del debug heap CRT) y
+        // _CrtCheckMemory no valida sbh. El debug heap básico da guard bytes en allocs
+        // grandes; un UAF en sbh necesita otra herramienta (Application Verifier).
         _CrtSetDbgFlag(flag);
 
         // Instala un hook de reportes del CRT para que los asserts de corrupción
         // de heap queden logueados en debug.log (visible sin debugger).
         _CrtSetReportHook(HeapAssertReportHook);
-        // 2026-04-29: NO prompt on assert/error. _vsnprintf_s falla con
-        // __invoke_invalid_parameter en CRT debug y popup aparece en cada call
-        // bad. Dejamos solo log en Output Window — el SilentInvalidParameterHandler
-        // se encarga de no recursar.
+        // Sin popup en assert/error: _vsnprintf_s dispara __invoke_invalid_parameter en
+        // el CRT debug en cada llamada mala. Sólo log en Output Window; el
+        // SilentInvalidParameterHandler se encarga de no recursar.
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
         _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_DEBUG);
         _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_DEBUG);
@@ -890,7 +875,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // 9: carga de claves CSimpleModulus — tiene que pasar ANTES de que se envíe
     // el primer paquete. Sin estas claves, el cuerpo de cada paquete C3/C4 va
     // encriptado con ceros, el server no lo puede desencriptar, y responde con
-    // FD_CLOSE (el síntoma del diálogo vacío que vuelve al login de la corrida del 2026-04-24).
+    // FD_CLOSE (síntoma: diálogo vacío y vuelta al login).
     extern BOOL __cdecl CSimpleModulus_LoadEncryptionKey(DWORD *self, const char *fn);
     extern BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn);
     BOOL okEnc = CSimpleModulus_LoadEncryptionKey(g_SimpleModulusCS, "Data\\Enc1.dat");
@@ -899,10 +884,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     if (!Config_Load()) { DbgLog("Config_Load FAILED"); return 0; }
 
     // 10b: localized string pool — Data/Local/Text.bmd → GlobalText[1000][300].
-    // El WinMain original llama OpenTextData() antes del chequeo de versión/integridad
-    // (ver el port de IDA en stubs.cpp:33019). Lo invocamos acá para que todo camino
-    // de UI que lea GlobalText[N] (mensajes de error, confirmaciones, cuentas regresivas...)
-    // datos reales en vez de vacíos.
+    // El WinMain original llama OpenTextData() antes del chequeo de versión/integridad.
+    // Lo invocamos acá para que todo camino de UI que lea GlobalText[N] (mensajes de
+    // error, confirmaciones, cuentas regresivas...) tenga datos reales en vez de vacíos.
     OpenTextData();
 
     // 11: modo de video — pone los valores por defecto si no está configurado
@@ -964,7 +948,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         else if (DAT_0056156c == 0x400) fontSize = 0x0e;   // 1024
         else if (DAT_0056156c >= 0x500) fontSize = 0x0f;   // 1280+
         FontHeight = fontSize;
-        // CHARSET — DESVIACIÓN DELIBERADA del binario (2026-07-20).
+        // CHARSET — DESVIACIÓN DELIBERADA del binario.
         // Acá había 129 = HANGEUL_CHARSET, que es lo que usa el cliente coreano
         // original porque su Text.bmd es coreano.  El nuestro es ESPAÑOL en
         // Windows-1252, y con HANGEUL_CHARSET la GDI trata los bytes 0x81..0xFE
@@ -1027,10 +1011,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // 20-21: CharacterAttribute = CharacterMachine; Hero = entity array slot 0
     DAT_07cf1ff4 = DAT_07cf1ffc;
-    // BUG-FIX 2026-05-01: tambien setear el global C++ `CharacterMachine`
-    // (declarado en globals.cpp:2543 como nullptr separado). HUD_Pass5
-    // (Render_HudPass_4BD650_) chequea `if (!CharacterMachine || !CharacterAttribute) return;`
-    // Si solo seteamos DAT_07cf1ffc, el HUD nunca rendea HP/MP/skills.
+    // También hay que setear el global C++ `CharacterMachine` (definido en
+    // globals.cpp, separado de DAT_07cf1ffc): HUD_Pass5 (Render_HudPass_4BD650_)
+    // chequea `if (!CharacterMachine || !CharacterAttribute) return;` y sin esto el
+    // HUD no dibuja HP/MP/skills.
     extern void* CharacterMachine;
     CharacterMachine = DAT_07cf1ffc;
     // CHARACTER_MACHINE_Init(DAT_07cf1ffc);   // HashTable_Init — TODO: implement
@@ -1038,37 +1022,34 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // Contexto del pathfinder (DAT_05826df4).
     //
-    // 2026-08-17: antes era `malloc(0x420)` + memset, que dejaba el vtable de la
-    // cola de prioridad (+0x414) en NULL — por eso PATH_FindPath (PATH::FindPath)
-    // no se podia usar. Ahora se construye igual que el binario
-    // (0x0043F280..0x0043F2C7: reserva de 0x424 bytes, vtable y campos en cero).
+    // Se construye igual que el binario (0x0043F280..0x0043F2C7: reserva de 0x424
+    // bytes, vtable de la cola de prioridad en +0x414 y campos en cero); con un
+    // malloc + memset el vtable queda en NULL y PATH_FindPath (PATH::FindPath) no
+    // se puede usar.
     //
-    // InitPath (0x0043F2D0) NO se llama aca: ya estaba portada en
-    // stubs_externs.cpp y la llama OpenFont (World_Init) desde Scene_Intro,
-    // igual que en el binario. Este ctor corre antes, que es el orden correcto.
+    // InitPath (0x0043F2D0, PathFinder_ResetContext en Path/Path_LegacyReset.cpp) NO
+    // se llama aca: la llama OpenFont (World_Init) desde Scene_Intro, igual que en
+    // el binario. Este ctor corre antes, que es el orden correcto.
     extern void __cdecl PathContext_Create(void);   // src/Game/PathFinder.cpp
     PathContext_Create();
 
     // 22: vtable object construction (font/UI system objects)
-    // 2026-04-29: antes se había identificado DAT_055c9ff0 como HGLRC y se
-    // inicializaba mal, como un buffer en cero; IDA muestra que es el objeto del
-    // motor del chat-listbox, que construye sub_40C7D0 (ctor) sobre
-    // operator_new(0x5C8). Sin el ctor la vtable queda nula y todos los
-    // sitios de dispatch (Render_GameFrame +0x10, UIChatLogWindow_AddText +0x70,
-    // CreateChat +0x70) crasheaban en silencio — por eso nunca aparecía el HUD
-    // in-world. ChatListBox_Construct portea sub_40C5D0+sub_40C7D0 1:1.
+    // DAT_055c9ff0 es el objeto del motor del chat-listbox (no un HGLRC): lo
+    // construye sub_40C7D0 (ctor) sobre operator_new(0x5C8). Sin el ctor la vtable
+    // queda nula y todos los sitios de dispatch (Render_GameFrame +0x10,
+    // UIChatLogWindow_AddText +0x70, CreateChat +0x70) crashean.
+    // ChatListBox_Construct portea sub_40C5D0+sub_40C7D0 1:1.
     DAT_055c9ff0 = (DWORD)ChatListBox_Construct();
-    // 2026-04-30: DAT_055c9ff4 es el segundo widget de chat (susurro / panel de
-    // notificaciones, esquina superior derecha). El WinMain de IDA llama
-    // operator_new(0xBC) + sub_40E990 (hermana de sub_40C7D0, con nodo de lista
-    // más chico, 0x18, y 24 filas visibles). Sin construirlo bien la vtable
-    // quedaba nula → el dispatch vtable[+0x14] desde SecondPassword_Screen1 crasheaba leyendo 0x14.
+    // DAT_055c9ff4 es el segundo widget de chat (susurro / panel de notificaciones,
+    // esquina superior derecha). El WinMain de IDA llama operator_new(0xBC) +
+    // sub_40E990 (hermana de sub_40C7D0, con nodo de lista más chico, 0x18, y 24
+    // filas visibles). Sin construirlo la vtable queda nula y el dispatch
+    // vtable[+0x14] desde SecondPassword_Screen1 crashea.
     DAT_055c9ff4 = (DWORD)ChatListBox_ConstructWhisper();
 
-    // 2026-04-30: los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0.
-    // Los scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/sub_482E40) toman el 0
-    // como un tipo de arma válido y matchean celdas vacías por error, lo que hace
-    // que RenderItem3D se invoque sobre basura → el bug de render del triángulo cyan.
+    // Los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0: los
+    // scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/
+    // sub_482E40) toman el 0 como un tipo de arma válido y matchean celdas vacías.
     HUD_InitInventoryPools();
     DAT_055c9ff8 = (DWORD)malloc(0xc);   memset((void*)DAT_055c9ff8, 0, 0xc);
 
@@ -1088,7 +1069,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // 4*(klass>>3)). En el original vive en GlobalText[20..] (cargado del .bmd de
     // texto); acá lo poblamos directo con los nombres para el create-panel
     // (RenderText 285,+200 lee `DAT_07d2b494 + class*300`) y para consistencia con
-    // el char-list. 2026-07-17.
+    // el char-list.
     {
         extern char DAT_07d2b494[9000];
         static const char* kCN[7] = {
@@ -1262,7 +1243,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (evt & 0x01) { // FD_READ
             CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
             CsmWatchdog("after-Recv");        // catches any future trample regression
-            // 2026-09-02: durante OpenWorld el pump de AccessModel reentra aca.
+            // Durante OpenWorld el pump de AccessModel reentra aca.
             // Se drena el socket (arriba) para que el server no cierre por
             // backpressure, pero NO se despachan los paquetes: quedan en la cola
             // y los procesa el frame siguiente, ya con los modelos cargados.
@@ -1438,12 +1419,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (wParam == 0xD) {         // Enter — signals login/submit + chat toggle
             DAT_055ca038 = 1;
 
-            // 2026-08-08 (baúl: guardar/sacar zen). Per IDA WndProc L2047-2051:
+            // Baúl: guardar/sacar zen. Per IDA WndProc L2047-2051:
             //   InputIndex = 0;
             //   if (GoldInputEnable) { InputGold = atoi(InputText[0]); ... }
-            // Sin esto InputGold quedaba siempre en 0 y el diálogo de zen del
-            // baúl no tenía forma de saber cuánto tecleó el jugador.
-            // GoldInputEnable = GoldInputEnable, InputGold = InputGold.
+            // Así el diálogo de zen del baúl sabe cuánto tecleó el jugador.
             if (GoldInputEnable) {
                 DAT_07e11d78 = 0;                     // InputIndex = 0
                 char* goldBuf = (char*)DAT_07db8710;  // InputText[0]
@@ -1457,7 +1436,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 break;
             }
 
-            // 2026-05-04: toggle del chat in-game (per IDA WndProc:2011-2046).
+            // Toggle del chat in-game (per IDA WndProc:2011-2046).
             //   - state=5 (in-world)
             //   - input vacío + InputEnable=0  → abre el chat (InputEnable=1)
             //   - input vacío + InputEnable=1  → cierra el chat (InputEnable=0)
@@ -1529,11 +1508,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // El gate de InputEnable cubre login + chat; GuildInputEnable y los
         // modales 126/152 comparten el buffer, pero preservan un foco distinto
         // y no deben abrir el chat.
-        // 2026-08-08: el diálogo de zen del baúl abre con InputEnable=0 +
-        // GoldInputEnable=1 (sub_4EB5D0), así que con el gate viejo (sólo
-        // InputEnable) NO se podía tipear nada. Per IDA WndProc L1953-1963 el
-        // gate es `InputEnable || GoldInputEnable || …` y con GoldInputEnable
-        // sólo se aceptan dígitos '0'..'9'.
+        // Per IDA WndProc L1953-1963 el gate es `InputEnable || GoldInputEnable || …`
+        // (el diálogo de zen del baúl abre con InputEnable=0 + GoldInputEnable=1,
+        // sub_4EB5D0) y con GoldInputEnable sólo se aceptan dígitos '0'..'9'.
         const bool guildDeleteCodeDialog =
             DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
         if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {

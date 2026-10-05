@@ -102,10 +102,9 @@ void Entity_RenderAll_3D(void)
         pcVar1 = (char *)(DAT_07abf5d0 + iVar3);
 
 
-        // BUG-FIX 2026-04-28: el IDA original tiene branches con conditions
-        // que en nuestro build nunca matchean (flag bit 2, visibility flag).
-        // Resultado: hero nunca renderiza. Detectamos hero ANTES que cualquier
-        // otra cosa y forzamos el render.
+        // DESVIACION: las branches del IDA original tienen condiciones que en nuestro
+        // build nunca matchean (flag bit 2, visibility flag), así que el héroe se
+        // detecta ANTES que cualquier otra cosa y se fuerza su render.
         if (pcVar1 == DAT_07abf5d8 && SceneFlag == 5 && *pcVar1 != '\0') {
             // Reset velocity / motion fields (per IDA original).
             pcVar1[0x130] = '\0'; pcVar1[0x131] = '\0';
@@ -118,12 +117,9 @@ void Entity_RenderAll_3D(void)
             pcVar1[0x13e] = -0x80; pcVar1[0x13f] = '?';
 
             pcVar1[0x160] = 1;   // force visible flag
-            // FIX 2026-07-24: el 3er param de RenderCharacter es
-            // el flag de HOVER/highlight (dibuja el borde de selección).  El IDA
-            // pasa `(slot == SelectedCharacter || SelectedNpc)`, y el Hero está
-            // EXCLUIDO de esos → el original lo dibuja con 0.  Este forced-render
-            // hardcodeaba 1 → el PJ tenía el borde de hover pegado siempre.
-            // Debe ser 0 (el Hero nunca es su propio target de hover).
+            // El 3er param de RenderCharacter es el flag de HOVER/highlight (dibuja el
+            // borde de selección). El IDA pasa `(slot == SelectedCharacter || SelectedNpc)`
+            // y el Hero está EXCLUIDO de esos: va 0.
             RenderCharacter((undefined4 *)pcVar1, (undefined4 *)pcVar1, (undefined4 *)0);
         } else if ((*pcVar1 != '\0') && (pcVar1[0x160] != '\0')) {
             DAT_07abf5d4 = DAT_07abf5d4 + 1;

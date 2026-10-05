@@ -55,18 +55,17 @@ static inline float int_as_float(int i) {
 
 
 // -----------------------------------------------------------------------------
-// 2026-09-03 - COLA GENERICA de MoveJoint (IDA 0x00470030 L1922-2217)
+// COLA GENERICA de MoveJoint (IDA 0x00470030 L1922-2217)
 //
 // En el binario, todo joint cuyo TIPO no matchea ningun bloque del dispatch cae
 // en esta cola.  Es la que CONSTRUYE la estela: recorre `segMax` pasos y en cada
 // uno mueve el joint con `MoveHumming` hacia su objetivo y empuja un segmento
 // con `sub_46FE90` -- o sea el rayo entero se dibuja en UN tick.
 //
-// El port no la tenia, y por eso faltaban tres cosas que parecian no
-// relacionadas: el rayo del Lightning (1254 sub 0), los rayos del Twister
-// (1253 sub 0, ocho joints) y los rayos de fondo de Icarus (1254 sub 6, que
-// ademas es el unico subtipo que el epilogo LABEL_487 excluye del tick de
-// segmentos justamente porque los construye aca).
+// La usan el rayo del Lightning (1254 sub 0), los rayos del Twister (1253 sub 0,
+// ocho joints) y los rayos de fondo de Icarus (1254 sub 6, que ademas es el
+// unico subtipo que el epilogo LABEL_487 excluye del tick de segmentos
+// justamente porque los construye aca).
 //
 // Offsets: +8 SubType - +12 Scale - +16 Position - +40 Angle - +52 Light
 //          +64 Owner - +68 TargetPosition - +84 segMax - +2488 lifetime
@@ -300,19 +299,15 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
     float   local_e4_f;   // maps to local_e4
     float   local_e0_f;   // maps to local_e0
     float   local_dc_f;   // maps to local_dc (delta X, used as float seed)
-    // 2026-08-10 FIX (haces oscuros): estos "locales" que produjo Ghidra son en
-    // realidad UN bloque contiguo del frame original (ebp-0xD8 .. ebp), y el
-    // código de abajo depende de esa contigüidad — MSVC no la garantiza:
+    // Estos "locales" que produjo Ghidra son en realidad UN bloque contiguo del
+    // frame original (ebp-0xD8 .. ebp), y el código de abajo depende de esa
+    // contigüidad — MSVC no la garantiza:
     //   L99  Vector_Rotate(&local_b4, local_30, local_d8 + 6)  → escribe el vec3
     //        de salida en local_d8[6],[7],[8]; L102 lee out[2] como `local_b8`,
-    //        o sea `local_d8[8] == local_b8` (¡y local_d8 estaba dimensionado a
-    //        8, así que era además una escritura fuera de rango en el stack!).
+    //        o sea `local_d8[8] == local_b8`.
     //   L138 Vector_Rotate(local_d8 + 6, local_a8 + 6, &local_b4) → L140/L141
     //        leen out[1] y out[2] como `local_b0` y `local_ac`, o sea
     //        `(&local_b4)[1] == local_b0` y `(&local_b4)[2] == local_ac`.
-    // Con locales sueltos, la entrada de Vector_Rotate traía basura en y/z y la
-    // salida se perdía → la Position del joint (+0x14/+0x18) quedaba con valores
-    // de ~1e9 y el render dibujaba quads que cruzaban toda la pantalla.
     // Mapeo por offset de frame: -0xD8=[0] … -0xB8=[8] … -0xA8=[12] …
     // -0x60=[30] … -0x30=[42], total 0xD8/4 = 54 floats.
     float   __frame[54] = {0};
@@ -357,8 +352,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
         //     Distance = MoveHumming(Position, Angle, TargetPosition, 0.f);
         //     ... if (Distance <= o->Velocity) { o->Live = false; ... }
         // IDA lo muestra como `sub_43E4A0(...); v295 = v4;` — `v4` es el retorno
-        // FPU que Hex-Rays no tipa. Antes se aproximaba con `local_e4_f`
-        // (distancia recalculada a mano); ahora se usa el valor real.
+        // FPU que Hex-Rays no tipa; se usa el valor de retorno de MoveHumming.
         const float dist_4e8 =
             MoveHumming(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
         float matrix_4e8[12];
@@ -648,14 +642,9 @@ LAB_0047036e:
         // se deshace en tiras sueltas al caminar.
         if ((iVar16 == 0) || (iVar16 == 4)) {
             // Subtract anchor from segment positions (un-translate)
-            // 2026-09-03 FIX (la banda de Icarus): el bucle cubria las filas
-            // 0..segCount-1, pero el renderer (0x00473710) dibuja segCount
-            // quads leyendo las filas segIdx y segIdx+1, o sea llega hasta la
-            // fila **segCount**; y `sub_46FE90` tambien escribe esa fila.  La
-            // fila de mas quedaba fuera del par restar/sumar y derivaba: la
-            // sonda JSPAN la cazo con un quad de 1572 unidades entre
-            // (1648,1571,299) y (1638,0,285) -- una raya cruzando el mapa.
-            // Ahora se cubren segCount+1 filas, acotado a segMax.
+            // Cubre segCount+1 filas, acotado a segMax: el renderer (0x00473710) dibuja
+            // segCount quads leyendo las filas segIdx y segIdx+1, o sea llega hasta la
+            // fila **segCount**, y `sub_46FE90` tambien escribe esa fila.
             int seg_rows = *(int *)(param_1 + 0x50) + 1;
             {
                 const int seg_max = *(int *)(param_1 + 0x54);
@@ -689,14 +678,9 @@ LAB_0047036e:
 
         if ((iVar16 == 0) || (iVar16 == 4)) {
             // Add anchor back to segment positions (re-translate)
-            // 2026-09-03 FIX (la banda de Icarus): el bucle cubria las filas
-            // 0..segCount-1, pero el renderer (0x00473710) dibuja segCount
-            // quads leyendo las filas segIdx y segIdx+1, o sea llega hasta la
-            // fila **segCount**; y `sub_46FE90` tambien escribe esa fila.  La
-            // fila de mas quedaba fuera del par restar/sumar y derivaba: la
-            // sonda JSPAN la cazo con un quad de 1572 unidades entre
-            // (1648,1571,299) y (1638,0,285) -- una raya cruzando el mapa.
-            // Ahora se cubren segCount+1 filas, acotado a segMax.
+            // Cubre segCount+1 filas, acotado a segMax: el renderer (0x00473710) dibuja
+            // segCount quads leyendo las filas segIdx y segIdx+1, o sea llega hasta la
+            // fila **segCount**, y `sub_46FE90` tambien escribe esa fila.
             int seg_rows = *(int *)(param_1 + 0x50) + 1;
             {
                 const int seg_max = *(int *)(param_1 + 0x54);
@@ -729,25 +713,19 @@ LAB_0047036e:
         if ((int)uVar7 < 0) {
             bVar21 = ((uVar7 - 1 | 0xfffffffe) == 0xffffffff);
         }
-        // 2026-08-24 FIX (Soul Barrier: el efecto se deformaba y cubria al pj en
-        // vez de orbitar): la semilla era `local_dc_f`, que es el DELTA X
-        // (Position.x - Target.x) — un valor geometrico. IDA (0x470030 L1035-1039)
-        // usa MoveSceneFrame, el contador de frames:
+        // Semilla = MoveSceneFrame, el contador de frames (no el delta X
+        // Position.x - Target.x, que realimentaria la orbita).  IDA (0x470030 L1035-1039):
         //     v49 = LODWORD(v297);                      // v297 = MoveSceneFrame
         //     if ( !(iIndex % 2) ) v49 = -LODWORD(v297);
         //     v52 = iIndex + v49 + 53730 * iIndex;
-        // Con el delta X la posicion del joint se calcula a partir de si misma:
-        // realimentacion -> la orbita se abre en cada frame hasta cubrir al pj.
-        // Hex-Rays reusa el slot `v297` varias veces en esta funcion y el port
-        // tomo el valor de otro tramo.
+        // Hex-Rays reusa el slot `v297` varias veces en esta funcion.
         //
         // `LODWORD` sobre un float toma sus BITS: MoveSceneFrame es un contador
         // entero (DAT_083a7c00, DWORD) que Hex-Rays tipeo float, asi que el valor
         // correcto es el entero directo — no `float_as_int` de un float negado,
         // que solo invierte el bit de signo y da otra cosa.
         //
-        // Ojo el sentido: IDA niega cuando el indice es PAR (`if (!(iIndex % 2))`),
-        // al reves de lo que hacia el port.
+        // Ojo el sentido: IDA niega cuando el indice es PAR (`if (!(iIndex % 2))`).
         const int frameSeed = (int)DAT_083a7c00;          // MoveSceneFrame
         const int dc_signed = bVar21 ? -frameSeed : frameSeed;
         iVar13 = dc_signed + (int)(param_2 * 0xd1e3);
@@ -912,17 +890,12 @@ LAB_0047036e:
         goto switchD_caseD_4ef;
     }
 
-    // 2026-09-02 (Lightning sin rayo): el tipo 1254 NO tiene bloque propio en
-    // IDA MoveJoint (0x00470030) -- su unica mencion en toda la funcion es la
-    // exclusion del epilogo (L2226).  El bloque que habia aca era invencion del
-    // port y hacia DOS cosas daninas:
-    //   1. Llamaba `sub_46FE90` una segunda vez por frame (el epilogo ya la
-    //      llama), o sea DOBLE scroll de la historia de segmentos: la estela
-    //      perdia la mitad de su largo y duplicaba la cabeza.
-    //   2. Aplicaba el fade `if (lifetime < 5) color *= 0.76923078`, que en
-    //      IDA pertenece al tipo **1176** (L785-791), no al 1254.
-    // Con lifetime 2 (CreateJoint case 1254 sub 0 -> LABEL_57), las dos cosas
-    // juntas dejaban el rayo del Lightning practicamente invisible.
+    // El tipo 1254 NO tiene bloque propio en IDA MoveJoint (0x00470030) -- su
+    // unica mencion en toda la funcion es la exclusion del epilogo (L2226) -- y
+    // cae en la cola generica.  No agregarle un segundo `sub_46FE90` (el epilogo
+    // ya lo llama: doble scroll de la estela) ni el fade
+    // `if (lifetime < 5) color *= 0.76923078`, que en IDA es del tipo **1176**
+    // (L785-791).
     if (iVar16 == 0x4e6) {
         MoveJoint_GenericTail(param_1);   // IDA: 1254 no tiene case -> cae en la cola generica
         goto switchD_caseD_4ef;
@@ -936,17 +909,13 @@ LAB_0047036e:
                 (float)(rand() % 100) + *(float *)(param_1 + 0x48) - 50.0f,
                 *(float *)(param_1 + 0x4c)
             };
-            // 2026-09-03 (haz que cruzaba Icarus): IDA (0x00470030 L1880-1886)
+            // IDA (0x00470030 L1880-1886):
             //     *v2 = *(float *)(o + 28);
             //     *(_DWORD *)(o + 20) = *(_DWORD *)(o + 32);
             //     *(_DWORD *)(o + 24) = *(_DWORD *)(o + 36);
             // Esos 28/32/36 son DECIMALES = 0x1C/0x20/0x24, donde `CreateJoint`
             // guarda el ORIGEN del rayo (LABEL_61: `*((float *)v11 + 7) = *v12`).
-            // El port los leyo como HEX y reseteaba desde 0x28/0x2c/0x30, que es
-            // el vector Angle (~0,0,0 para estos joints): el rayo renacia en la
-            // esquina del mapa en cada rebuild y la estela lo unia con el cielo
-            // -- el haz azul que cruzaba Icarus.  Medido con la sonda JBEAM:
-            // `type=1255 sub=9 P=(3167,928,58) v0=(1251,54,139)`.
+            // No confundir con 0x28/0x2c/0x30, que es el vector Angle.
             *pfVar15                   = *(float *)(param_1 + 0x1c);
             *(float *)(param_1 + 0x14) = *(float *)(param_1 + 0x20);
             *(float *)(param_1 + 0x18) = *(float *)(param_1 + 0x24);
@@ -1012,11 +981,8 @@ LAB_0047036e:
                     *(float *)(param_1 + 0x48) = target_4ea[1];
                     *(float *)(param_1 + 0x4c) = target_4ea[2];
                 }
-                // 2026-08-16: `Distance` es el RETORNO de MoveHumming, no la Z
-                // del target. Hex-Rays tipaba MoveHumming como void (retorno en
-                // st0) y este port comparaba `target[2]` = ownerZ + 120, que en
-                // cualquier mapa es >> 35 → las esferas de EXP nunca llegaban a
-                // absorberse y orbitaban al pj acumulandose. Confirmado contra el
+                // `Distance` es el RETORNO de MoveHumming, no la Z del target (Hex-Rays
+                // tipaba MoveHumming como void, retorno en st0).  Confirmado contra el
                 // source de MU 5.2 (ZzzEffectJoint.cpp:3368).
                 const float dist_4ea =
                     MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4ea,
@@ -1320,29 +1286,18 @@ switchD_caseD_4fd:
     // ── IDA LABEL_301 — movimiento compartido por los tipos 1249 (0x4E1) y
     // 1277 (0x4FD). Es un switch sobre el SubType (+0x08).
     //
-    // 2026-08-10 FIX (destello dorado errático del set +11): el port mandaba
-    // TODOS los subtipos a la órbita pseudo-aleatoria de más abajo, sembrada con
-    // el índice de slot — de ahí que el efecto saltara de un lado a otro en
-    // cualquier altura. El subtipo 0 (que es el halo del set +11, spawneado por
-    // `Entity_UpdateRender` sección 6) en el original es un **círculo que sube**:
+    // El subtipo 0 (el halo del set +11, spawneado por `Entity_UpdateRender`
+    // sección 6) es un **círculo que sube**:
     //     a = (lifetime + phase) * 0.1        (PKKey == -1)
     //     Position.x = cos(a) * 40 + TargetPos.x
     //     Position.y = TargetPos.y - sin(a) * 40
     //     Position.z += riseSpeed
     //
-    // 2026-09-26: TODOS los subtipos estan portados y verificados contra IDA.
-    //
-    // El comentario anterior decia que 4/6/7/8/9/11/12 quedaban sin portar porque
-    // su decompile "esta entrelazado con ruido de hash-table (LABEL_438/439)".
-    // Las dos cosas eran falsas: MoveJoint no tiene ruido anti-tamper (6 lineas
-    // de 2244, o sea 0%), y LABEL_438/439 no es anti-tamper sino la cola comun a
-    // la que saltan varios subtipos.  Lo que despista es que el switch de IDA
-    // (L1085) solo lleva los cases 0/2/3/10/14 y NO tiene default: el resto se
+    // TODOS los subtipos estan portados y verificados contra IDA.  El switch de
+    // IDA (L1085) solo lleva los cases 0/2/3/10/14 y NO tiene default: el resto se
     // resuelve con ifs encadenados desde L1162, asi que no aparecen como `case`.
-    //
-    // De los que el comentario daba por pendientes, 6/7/8/9/11/12 ya estaban
-    // portados (y verificados ahora termino a termino); el unico que faltaba de
-    // verdad era el 4.
+    // LABEL_438/439 no es anti-tamper sino la cola comun a la que saltan varios
+    // subtipos (MoveJoint no tiene ruido de hash-table).
     {
         const int  jsub  = *(int *)(param_1 + 8);
         float     *jposX = (float *)(param_1 + 0x10);   // Position.x  (IDA v2)
@@ -1407,10 +1362,9 @@ switchD_caseD_4fd:
             // 00470030 LABEL_301 subtipos 4, 6 y 12: los tres convergen en
             // LABEL_438/439 y solo cambian como calculan lateral/vertical.
             //
-            // 2026-09-26: el 4 faltaba.  En IDA llega aca por el `if (v168 != 4)`
-            // de L1162, que SALTEA todo el bloque de los demas subtipos, asi que
-            // cae junto al 12 en L1681 (`v16 = v168 == 12`).  Su rama es la del
-            // else de L1702.
+            // El 4 llega aca por el `if (v168 != 4)` de L1162, que SALTEA todo el bloque
+            // de los demas subtipos, asi que cae junto al 12 en L1681
+            // (`v16 = v168 == 12`).  Su rama es la del else de L1702.
             const int life = *(int *)(param_1 + 0x9b8);
             const float phase = *(float *)(param_1 + 0x9c4);
             float lateral;
@@ -1441,13 +1395,11 @@ switchD_caseD_4fd:
             *(float *)(param_1 + 0x18) = vertical + *(float *)(param_1 + 0x4c);
             goto switchD_caseD_4ef;
         }
-        // 2026-09-01 FIX — los subtipos 8 y 9 PISABAN `local_30`, que es el
-        // `in2` de IDA: la matriz que arma el prologo con
-        // `AngleMatrix((float *)(o + 40), in2)` (L319) y que el epilogo
-        // LABEL_487 (L2228) le pasa a `sub_46FE90` para construir las 4
-        // esquinas del segmento nuevo.  IDA usa una matriz APARTE (`v304`,
-        // declarada en L307) en estos dos cases; reusar `in2` dejaba el
-        // scroll de segmentos del epilogo con la matriz equivocada.
+        // Los subtipos 8 y 9 usan una matriz APARTE (`v304`, declarada en L307), no
+        // `local_30`, que es el `in2` de IDA: la matriz que arma el prologo con
+        // `AngleMatrix((float *)(o + 40), in2)` (L319) y que el epilogo LABEL_487
+        // (L2228) le pasa a `sub_46FE90` para construir las 4 esquinas del segmento
+        // nuevo.
         float jointMatrix_v304[12];               // IDA: v304[3][4]
         if (jsub == 8) {
             // 00470030 LABEL_301/case 8: rotate the fixed vertical offset
@@ -1479,13 +1431,12 @@ switchD_caseD_4fd:
             goto switchD_caseD_4ef;   // IDA: case 3 → LABEL_447 (sin movimiento)
         }
 
-        // 2026-09-04 -- PORTADO: subtipos 7 y 11 (IDA 0x00470030 L1302-1682).
+        // Subtipos 7 y 11 (IDA 0x00470030 L1302-1682).
         //
-        // Estos dos NO caen en la helice generica de mas abajo.  Rehice la traza
-        // de anidamiento de LABEL_301 contando llaves: `if (v168 != 7)` cierra en
-        // L1301 y la ejecucion sigue en L1302, dentro del bloque de
-        // `if (v168 != 12)`, que llega hasta L1683 y termina en `goto LABEL_447`.
-        // Solo los subtipos 4 y 12 alcanzan la helice.
+        // Estos dos NO caen en la helice generica de mas abajo: en LABEL_301
+        // `if (v168 != 7)` cierra en L1301 y la ejecucion sigue en L1302, dentro del
+        // bloque de `if (v168 != 12)`, que llega hasta L1683 y termina en
+        // `goto LABEL_447`.  Solo los subtipos 4 y 12 alcanzan la helice.
         //
         // Es un PROYECTIL que converge sobre el owner:
         //   - la posicion sale de una espiral alrededor de TargetPosition, con
@@ -1497,10 +1448,7 @@ switchD_caseD_4fd:
         //     unico visible del efecto.
         //
         // Es el disparo del ataque de Alquamos: AttackEffect case 0x45 crea ocho
-        // 1249/sub7 con el heroe como owner.  Nuestro port los mandaba a la
-        // helice, que ni converge ni emite sprites -- de ahi que primero se
-        // vieran lineas hacia cualquier lado y, una vez limpia la velocidad
-        // heredada del slot, no se viera nada.
+        // 1249/sub7 con el heroe como owner.
         if (jsub == 7 || jsub == 11) {
             const int iIndex = (int)param_2;                 // indice de slot
             const int msf    = (int)DAT_083a7c00;            // MoveSceneFrame
@@ -1563,8 +1511,7 @@ switchD_caseD_4fd:
             const int jowner = *(int *)(param_1 + 0x40);
             if (jowner) {
                 int v226 = 0;
-                // 2026-09-04 FIX (la flecha del arco colapsaba en un destello):
-                // el subtipo 11 NO converge hacia `owner + 16/20/24` sino hacia
+                // El subtipo 11 NO converge hacia `owner + 16/20/24` sino hacia
                 // `owner + 368/372/376`.  IDA lo escribe ofuscado --
                 // `LODWORD(v295) = 352 - o;` y luego
                 // `*(float *)(LODWORD(v295) + *(_DWORD *)(o + 64) + v228)` --
@@ -1573,10 +1520,8 @@ switchD_caseD_4fd:
                 // case 243 (`i+92..94`) 100 unidades por delante y la que usa su
                 // propio AddTerrainLight.
                 //
-                // Con `owner + 16` la cosa se realimenta: el joint con
-                // SkillIndex==1 escribe su posicion EN `owner + 16`, asi que
-                // convergia hacia si mismo y los cuatro joints se apelotonaban
-                // en el punto de salida -- el destello sin estela.
+                // Con `owner + 16` la cosa se realimenta: el joint con SkillIndex==1
+                // escribe su posicion EN `owner + 16`, asi que convergeria hacia si mismo.
                 const int srcBase = (jsub == 11) ? 352 : 0;
                 for (int v228 = 16; v228 < 28; v228 += 4) {
                     const int    k    = iIndex + v226 + 51230 * iIndex + msf / 10;
@@ -1618,16 +1563,11 @@ switchD_caseD_4fd:
         }
     }
 
-    // 2026-09-01 — PORTADA la cola real de LABEL_301 (IDA L1706-1724 ->
-    // LABEL_438 -> LABEL_439).  Aca habia una "orbita pseudo-aleatoria"
-    // INVENTADA (sembrada con el indice de slot y unos globals de ruido) que
-    // ademas llamaba `Joint_SegmentTick` de mas: el epilogo LABEL_487 ya lo llama,
-    // asi que se scrolleaba la historia de segmentos DOS veces por tick — el
-    // anillo avanzaba al doble y quedaban segmentos duplicados/entrelazados.
+    // Cola real de LABEL_301 (IDA L1706-1724 -> LABEL_438 -> LABEL_439) para los
+    // subtipos que no tienen bloque propio arriba (4/6/12 y 7/11 salen antes).
+    // No llamar `Joint_SegmentTick` aca: el epilogo LABEL_487 ya lo llama.
     //
-    // Lo que hace el binario para los subtipos que no matchean ningun case
-    // (4, 7, 11 y el resto) es la MISMA helice que 6 y 12, con otra formula de
-    // radio:
+    // Es la MISMA helice que 4, 6 y 12, con otra formula de radio:
     //     v237 = *(_DWORD *)(o + 2488);                       // life
     //     v238 = ((double)v237 + *(float *)(o + 2500)) * 0.1;  // angulo
     //     v240 = v237 + 40;  v296 = (v240 <= 10) ? 10 : v240;  // radio
@@ -1682,14 +1622,12 @@ switchD_caseD_4ef:
     }
 _skipLabel182:;
 
-    // 2026-09-04 -- ORDEN CORREGIDO.  En IDA el epilogo es
+    // Orden de IDA en el epilogo:
     //     LABEL_182 (re-ancla SubType 7)  ->  LABEL_487 (scroll de segmentos)
-    // y aca estaban al reves.  Con el orden invertido, el `goto _skipLabel182`
-    // que usa el bloque de los subtipos 7/11 -- que en IDA salta LABEL_182 pero
-    // SI pasa por LABEL_487 -- terminaba salteando tambien el scroll, asi que
-    // esos joints nunca acumulaban segmentos y su cinta no se dibujaba.  Es la
-    // estela de la flecha del arco (cuatro 1249/sub11 que crea CreateEffect
-    // case 243) y la cadena de Queen Rainer.
+    // El `goto _skipLabel182` que usa el bloque de los subtipos 7/11 salta
+    // LABEL_182 pero SI pasa por LABEL_487; si no, esos joints no acumulan
+    // segmentos (estela de la flecha del arco -- cuatro 1249/sub11 que crea
+    // CreateEffect case 243 -- y la cadena de Queen Rainer).
     iVar16 = *(int *)(param_1 + 4);
     if (((iVar16 != 0x4e6) || (*(int *)(param_1 + 8) != 6)) &&
         ((iVar16 != 0x4ee) &&

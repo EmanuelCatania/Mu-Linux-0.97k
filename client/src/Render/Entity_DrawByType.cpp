@@ -30,7 +30,7 @@
 //
 // ── Anti-tamper note ──────────────────────────────────────────────────────────
 // Type 0x14a contains an ~300-line HashTable encode/decode block operating on
-// DAT_083a7c00 (a local slot key). Per CLAUDE.md policy this is obfuscation,
+// DAT_083a7c00 (a local slot key). This is anti-tamper obfuscation,
 // not game logic. The post-hash render logic IS implemented.
 
 #include "stdafx.h"
@@ -56,8 +56,8 @@
 // Desviacion: el binario hace `operator_new(0x20)` en CADA frame y nunca libera
 // el objeto (el metodo [2] solo libera sus buffers), y llama a los metodos por
 // la vtable.  Aca el objeto vive en el stack y los metodos se llaman directo:
-// mismo resultado, sin la fuga.  2026-09-18: antes el port llamaba por una
-// vtable que nunca se instalaba (WidgetB_CtorFull la saltea) y sin `this`.
+// mismo resultado, sin la fuga (la vtable nunca se instala: WidgetB_CtorFull
+// la saltea).
 // ─────────────────────────────────────────────────────────────────────────────
 struct MoltSilhouette {
     void          *vtable;
@@ -175,7 +175,7 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
     if (World == 10 && *(short *)(param_1 + 2) == 0x12d) {
-        *(float *)((int)model + 0x48) = 0.02f;          // 0x3ca3d70a R (el port tenia 0.15)
+        *(float *)((int)model + 0x48) = 0.02f;          // 0x3ca3d70a R
         *(float *)((int)model + 0x4c) = 0.05f;          // 0x3d4ccccd G
         *(float *)((int)model + 0x50) = 0.15f;          // 0x3e19999a B
         goto LAB_render_dispatch;
@@ -213,7 +213,7 @@ LAB_render_dispatch:
     if (sType == 0x128) {
         // Double-pass: dim orange first, then normal
         *(float *)((int)model + 0x48) = 0.4f;    // 0x3ecccccd R
-        *(float *)((int)model + 0x4c) = 0.6f;    // 0x3f19999a G (el port tenia 0.575)
+        *(float *)((int)model + 0x4c) = 0.6f;    // 0x3f19999a G
         *(float *)((int)model + 0x50) = 1.0f;
         *(unsigned char *)((int)model + 0x88) = 0;
         BMD__RenderBody(model, 2,
@@ -356,7 +356,7 @@ LAB_substate4_done:
                 // PvP player: yellow-green
                 *(float *)((int)model + 0x4c) = 1.0f;
                 *(float *)((int)model + 0x48) = 0.3f;   // 0x3e99999a
-                *(float *)((int)model + 0x50) = 0.8f;   // 0x3f4ccccd (el port tenia 0.6)
+                *(float *)((int)model + 0x50) = 0.8f;   // 0x3f4ccccd
             } else {
                 // Party player: yellow
                 *(float *)((int)model + 0x4c) = 1.0f;
@@ -488,7 +488,7 @@ LAB_substate4_done:
         if (param_4 != '\0') {
             *(float *)((int)model + 0x48) = 0.1f;
             *(float *)((int)model + 0x4c) = 1.0f;
-            *(float *)((int)model + 0x50) = 0.8f;  // 0x3f4ccccd (el port tenia 0.6)
+            *(float *)((int)model + 0x50) = 0.8f;  // 0x3f4ccccd
         }
         goto LAB_standard_render;
     }
@@ -537,7 +537,7 @@ LAB_substate4_done:
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
                      0x492);
         *(unsigned char *)((int)model + 0x88) = 0xff;
-        *(float *)((int)model + 0x48) = 0.6f;    // 0x3f19999a (el port tenia 0.575)
+        *(float *)((int)model + 0x48) = 0.6f;    // 0x3f19999a
         *(float *)((int)model + 0x4c) = 0.6f;
         *(float *)((int)model + 0x50) = 0.6f;
         goto LAB_standard_render;
@@ -563,12 +563,6 @@ LAB_substate4_done:
         goto LAB_standard_render;
     }
 
-    // 2026-09-04: aca habia un segundo bloque para sType 0x14a gateado por
-    // `SceneFlag == 2` (login).  Draw_RenderObject (0x4FAE00) NO consulta
-    // SceneFlag en ninguna parte -- su switch tiene UN solo `case 330`.  Era
-    // una copia del bloque de abajo sin el chequeo de frames, o sea el patron
-    // [[bloque-duplicado-dentro-de-una-funcion]].  Removido.
-
     if (sType == 0x14a) {
         // ── Estatua de Blood Castle (entidad 330) ────────────────────────────
         // IDA Draw_RenderObject (0x4FAE00) case 330:
@@ -585,13 +579,8 @@ LAB_substate4_done:
         // (`*(BYTE *)o = 0`) para que corra un unico frame.
         //
         // `o + 380` lo siembra CreateCharacterPointer con el MoveSceneFrame del
-        // spawn.
-        //
-        // 2026-09-04: el port usaba `param_3` en vez de MoveSceneFrame -> la
-        // resta daba siempre < 25 y la estatua quedaba rompiendose EN LOOP.
-        // 2026-09-05: y con `CurrentAction == 6` caia a LAB_standard_render en
-        // vez de a la rama de fragmentos, asi que al matarla no se veia la
-        // animacion de romperse.
+        // spawn. La resta es contra MoveSceneFrame (no contra param_3), y con
+        // `CurrentAction == 6` se va a la rama de fragmentos.
         const bool bDead = (param_1[0x105] == 6);
         bool bNormalRender = false;
 

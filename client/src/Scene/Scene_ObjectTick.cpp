@@ -1,5 +1,4 @@
 // Scene_ObjectTick.cpp
-// Extracted from stubs.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -11,19 +10,13 @@
 // ── Named aliases ────────────────────────────────────────────────────────────
 
 // Object_MoveUpdate — alias for MoveObjects (FUN_004FF260, per-frame
-// world-objects animation/render-update dispatcher). The historical naming
-// "Object_MoveUpdate" came from a Ghidra mis-id of FUN_0043E050 which is
-// actually Movement_Tick (angle math). The CALLERS (Game_SceneUpdate /
-// Game_EnterWorldTick / Game_CharSelectTick) want a per-frame objects tick,
-// which IS MoveObjects (0x004FF260). Wire them here so the world-objects
-// pool actually advances each frame.
+// world-objects animation/render-update dispatcher). The CALLERS
+// (Game_SceneUpdate / Game_EnterWorldTick / Game_CharSelectTick) want a
+// per-frame objects tick, which IS MoveObjects (0x004FF260).
 //
-// 2026-05-07 (revert): MoveObjects iterates the world-objects bucket
-// grid (DAT_083a021c..) which is only properly populated when a world is
-// loaded (state 5 = in-game). During Login/CharSelect/Loading the bucket
-// linked-list pointers are uninitialized garbage → AV in FUN_004fdc00 →
-// Alpha reading param_1 + 0x161. Gate on SceneFlag == 5 so this
-// is only active in-game where the pool is real.
+// Sólo con SceneFlag == 5: MoveObjects recorre la grilla de buckets de objetos
+// (DAT_083a021c..), que sólo está poblada con un mundo cargado; en
+// Login/CharSelect/Loading los punteros de la lista no son válidos.
 extern void __stdcall MoveObjects(void);
 void __cdecl Object_MoveUpdate(void) {
     if (SceneFlag == 5) {
@@ -31,12 +24,9 @@ void __cdecl Object_MoveUpdate(void) {
         return;
     }
 
-    // Login / CharSelect:
-    // Keep this path inert for now. Multiple attempts to drive the login scene
-    // objects from here ended in second-frame crashes, which strongly suggests
-    // the original scene uses a narrower update path than the generic object
-    // mover. We'll recover the logo / ship glows from the render side instead
-    // of mutating login objects here.
+    // Login / CharSelect: este camino queda inerte. Los objetos de la escena de
+    // login no se mueven desde acá (el mover genérico crasheaba al segundo frame);
+    // el logo y los brillos de los barcos salen del lado del render.
     if (SceneFlag == 2 || SceneFlag == 4) {
         return;
     }

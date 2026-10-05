@@ -191,8 +191,8 @@ extern DWORD   DAT_005538a0;
 
 // ── Entity / render constants (0x005590xx – 0x00559dxx) ───────────────────────
 extern BYTE    PacketXorKey16[16];   // DAT_00559050 — 16-byte XOR key table (Crypto/anti-tamper)
-// DAT_00559050 is retained only as a reference alias for stubs_IDA_ports.cpp,
-// which is intentionally preserved as IDA infrastructure.
+// DAT_00559050 es un alias de compatibilidad (nombre de Ghidra) de PacketXorKey16;
+// lo usa Combat/Combat_AttackEffect.cpp.
 extern BYTE (&DAT_00559050)[16];
 extern float  _DAT_00559070;   // Verlet physics damping/gravity scalar
 extern DWORD   DAT_00559070;
@@ -301,7 +301,7 @@ extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
 #define PTR_s_connect_muonline_co_kr_005615b8  szServerIpAddress
 extern WORD    g_ServerPort; // IDA: g_ServerPort (0x005615BC)
 
-// ── ConnectServer flow (2026-07-15) ──────────────────────────────────────────
+// ── ConnectServer flow ──────────────────────────────────────────
 extern int             g_HasConnectServer;       // server.cfg tiene 2 líneas → flujo CS
 extern int             g_ConnectServerMode;      // 1 = socket actual habla con el ConnectServer
 extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
@@ -327,9 +327,8 @@ extern char*   g_lpszMp3[6];
 // de quest activo.  Lo escriben CSQuest::ShowDialogText (0x4017E7) y sub_51D840,
 // y lo leen sub_401AF0 y UI_InGameMenu.  La etiqueta vieja ("login/scene misc
 // flag") era una misidentificación.
-// 2026-08-21: `g_iCurrentDialogScript` era un global APARTE en globals.cpp, así
-// que el writer y el reader no se veían (mismo patrón que SetTextColor_0 /
-// DAT_00559c7c).  Ahora es un alias.
+// `g_iCurrentDialogScript` es un alias de este global: writer y reader tienen que
+// ver la misma memoria.
 extern DWORD   DAT_005615dc;
 #define g_iCurrentDialogScript  (*(int*)&DAT_005615dc)
 extern DWORD   DAT_005615e0;
@@ -402,10 +401,8 @@ extern char    s__s__s_00561924[];
 // el objeto.  Lo confirman los xrefs: ReceiveQuestHistory / State / Result
 // referencian 0x583D8C y el decompile los muestra como `g_csQuest`; el objeto
 // es `unk_567500` (= DAT_00567500), que es a donde apunta.
-// 2026-08-21: acá estaba declarado como un objeto de 0x1D000 bytes, o sea
-// convivían DOS objetos CSQuest: éste (donde cargaba Quest.bmd) y DAT_00567500
-// (al que apunta g_csQuest).  Todos los consumidores ya lo usan como puntero
-// (`(uintptr_t)DAT_00583d8c + 0x1c87f`), así que el alias los arregla a todos.
+// Todos los consumidores lo usan como puntero (`(uintptr_t)DAT_00583d8c +
+// 0x1c87f`), por eso es un alias de g_csQuest y no un objeto propio.
 #define DAT_00583d8c   g_csQuest
 extern DWORD   DAT_00583dac;
 extern DWORD   DAT_00585e7c;
@@ -460,9 +457,8 @@ extern DWORD   DAT_055c9e48;
 // RandomTable @ 0x055C9E58 — 100 enteros (`rand() % 360`) que siembra WinMain
 // (0x41E8A0 L522-525).  Sólo lo usa Entity_Render (0x5038E0) para repartir en
 // círculo las monedas del montón de Zen del suelo.
-// 2026-08-21: estaba declarado como un único DWORD = 0 y nadie lo sembraba, así
-// que los ángulos y radios salían todos 0 y las monedas se apilaban en un mismo
-// punto (el "Zen sin sprite expandido").
+// Tiene que ser el array completo y estar sembrado: si no, las monedas se apilan
+// en un mismo punto.
 extern int     DAT_055c9e58[100];
 #define RandomTable  DAT_055c9e58
 extern DWORD   DAT_055c9ff0;   // HGLRC (OpenGL context)
@@ -523,9 +519,9 @@ extern DWORD   g_dwLatestMagicTick; // IDA: g_dwLatestMagicTick (0x05826CF4)
 extern DWORD   LogIn; // IDA: DAT_05826CF8 (0x05826CF8)
 extern DWORD   ChatTime; // IDA: ChatTime (0x05826D08)
 // Teleport es 0x05826D14 (ida_xrefs_to: ReceiveTeleport, Attack, CheckGate,
-// Skills_PacketHandler, sub_482BE0, sub_4D23B0...).  Hasta 2026-09-12 Attack
-// escribia un global aparte (DAT_05826d04) y el resto leia Teleport: el
-// gate del Town Portal no se enteraba del teleport en curso.
+// Skills_PacketHandler, sub_482BE0, sub_4D23B0...).
+// DAT_05826d04 es un alias para que Attack escriba el mismo global que leen los
+// demás (si no, el gate del Town Portal no se entera del teleport en curso).
 #define DAT_05826d04 Teleport
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
 extern char    Teleport; // IDA: Teleport (0x05826D14)
@@ -535,7 +531,7 @@ extern DWORD   BuyCost; // IDA: BuyCost (0x05826D18)
                                // lo escribe ProtocolCore y lo lee sub_4D23B0.
 extern DWORD   EnableUse;      // IDA: EnableUse (0x05826D1C) — cooldown de equipar/usar item;
                                // lo ponen en 10 los usos y lo resetean las respuestas del server
-#define DAT_05826d1c   EnableUse   // 2026-09-17: eran dos globals; los usos escribian uno y los handlers el otro
+#define DAT_05826d1c   EnableUse   // mismo global: lo escriben los usos y lo leen los handlers
 extern DWORD   DAT_05826d20;
 extern DWORD   SummonLife; // IDA: DAT_05826d24 (0x05826D24)
 // AttackPlayer (IDA @0x05826D28): indice de slot del ULTIMO atacante.  Lo
@@ -571,7 +567,7 @@ extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos
 // Los offsets de abajo se calculan relativos a 0x06970a9c (la etiqueta de Ghidra que
 // fija el slot 0). Cada macro produce un lvalue DWORD, así que `&DAT_06970XXX` devuelve
 // un puntero al inicio del slot y se mantiene la semántica vieja de leer/escribir DWORD.
-extern char    g_BoneScratch[200 * 0x30];   // 2026-07-17: MAX_BONES=200 (era 0x1000=85, desbordaba al preview char)
+extern char    g_BoneScratch[200 * 0x30];   // MAX_BONES=200 (más chico desborda sobre el preview char)
 #define DAT_06970a9c   (*(DWORD*)(g_BoneScratch + 0x000))  // root bone slot
 #define DAT_06970acc   (*(DWORD*)(g_BoneScratch + 0x030))
 #define DAT_06970afc   (*(DWORD*)(g_BoneScratch + 0x060))
@@ -594,15 +590,12 @@ extern char    g_BoneScratch[200 * 0x30];   // 2026-07-17: MAX_BONES=200 (era 0x
 #define DAT_0697160c   (*(DWORD*)(g_BoneScratch + 0xb70))
 
 // ── Preview character entity (0x07abf050) ─────────────────────────────────────
-// BUG-FIX 2026-07-17: DAT_07abf050 ES el struct de entidad del PREVIEW char de
-// char-select (creado por CreateCharacterPointer/CreateCharacterPointer con model 0xab).
-// Es un entity struct COMPLETO (stride 0x394; el original lo espacia 0x580 hasta
-// el array en 0x07abf5d0). Estaba declarado como un DWORD de 4 bytes, así que
-// CreateCharacterPointer (que escribe hasta +908) desbordaba ~900 bytes sobre los
-// globales BSS adyacentes → corrupción → type@+2 basura (16247) → crash al animar/
-// renderizar el preview (MoveCharacter/RenderCharacter). Los símbolos _DAT_07abf05c
-// … _DAT_07abf5cc eran CAMPOS de esta entidad mal-separados por Ghidra; ahora son
-// macros que proyectan dentro del buffer. Ver globals.cpp.
+// DAT_07abf050 ES el struct de entidad del PREVIEW char de char-select (creado
+// por CreateCharacterPointer con model 0xab). Es un entity struct COMPLETO (stride
+// 0x394; el original lo espacia 0x580 hasta el array en 0x07abf5d0):
+// CreateCharacterPointer escribe hasta +908. Los símbolos _DAT_07abf05c …
+// _DAT_07abf5cc son CAMPOS de esta entidad (Ghidra los separó) y son macros que
+// proyectan dentro del buffer. Ver globals.cpp.
 extern char    DAT_07abf050[0x580];
 #define _DAT_07abf05c (*(float*)(DAT_07abf050 + 0x00c))
 #define  DAT_07abf05c (*(DWORD*)(DAT_07abf050 + 0x00c))
@@ -668,10 +661,9 @@ extern DWORD   DAT_07c74ae8;   // rain Y offset (driven by fsin)
 extern DWORD   DAT_07c74aec;   // rain position counter (0..2000)
 
 // ── Player render pool ─────────────────────────────────────────────────────────
-// 2026-05-07: re-allocado propiamente. v1 walker de Player_Render arranca en
-// DAT_07c74f54 y lee offsets NEGATIVOS hasta -0xEC. El pool REAL es
-// g_PlayerRenderPool[100 × 0x1BC] cubriendo todos los slots; DAT_07c74f54 es
-// pointer alias a offset +0xEC (donde v1 vive en cada slot iter).
+// El walker v1 de Player_Render arranca en DAT_07c74f54 y lee offsets NEGATIVOS
+// hasta -0xEC. El pool REAL es g_PlayerRenderPool[100 × 0x1BC] cubriendo todos
+// los slots; DAT_07c74f54 es un alias a offset +0xEC (donde v1 vive en cada slot).
 extern char    g_PlayerRenderPool[100 * 0x1BC];
 extern DWORD*  DAT_07c74f54;   // = g_PlayerRenderPool + 0xEC (v1 anchor)
 
@@ -735,21 +727,12 @@ extern DWORD   DAT_07d78094;            // UI click/selection flag
 extern BYTE    DAT_07d780a8[40];         // username field length (memset writes 40 bytes)
 // InputLength[1] — el largo del campo 1 (destino del susurro).
 //
-// 2026-08-26: esto era un `DWORD` SEPARADO mientras que `WM_CHAR` lee el largo
-// como `((DWORD*)DAT_07d780a8)[slot]`, o sea los bytes +4..+7 del array. En el
-// binario las dos cosas son la misma memoria (0x07D780A8 es InputLength[10] y
-// 0x07D780AC es su elemento 1); en el port eran dos, y los SEIS sitios que
-// escriben el largo del susurro (historial de flechas, tab-complete, click
-// derecho sobre un jugador, cierre del menu) le escribian a la copia huerfana
-// — nadie la leia nunca.
-//
-// Sintoma: al usar las flechas del historial, el buffer se limpiaba pero el
-// largo quedaba con el valor viejo, asi que lo que se tipeaba despues entraba
-// detras de N bytes vacios y a los 10 caracteres se bloqueaba. Cerrar y
-// reabrir el chat lo destrababa porque ese camino si resetea el array.
-//
-// El buffer companero (DAT_07db8810) ya se habia unificado como alias del slot
-// 1; esto es la mitad que habia quedado afuera.
+// No es un DWORD aparte: `WM_CHAR` lee el largo como `((DWORD*)DAT_07d780a8)[slot]`,
+// o sea los bytes +4..+7 del array. En el binario las dos cosas son la misma
+// memoria (0x07D780A8 es InputLength[10] y 0x07D780AC es su elemento 1), y los
+// sitios que escriben el largo del susurro (historial de flechas, tab-complete,
+// click derecho sobre un jugador, cierre del menu) tienen que llegar al array.
+// El buffer companero (DAT_07db8810) es igualmente un alias del slot 1.
 #define DAT_07d780ac   (*(DWORD*)&DAT_07d780a8[4])
 // IDA: InputText[10][256] @ 0x07db8710. Slot 0 = username/chat, slot 1 =
 // contraseña/destino-del-susurro. DAT_07db8810 es el alias +0x100 del slot 1 que usan
@@ -887,7 +870,7 @@ extern float   DAT_07eab200[256 * 256];  // water-wave heights (row*256+col floa
 extern DWORD   DAT_07eab24c;   // BackTerrainHeight array base
 extern DWORD   DAT_07eab250;   // MISLABEL: NO es PrimaryTerrainLight (ese es
                                // DAT_081cb608 @0x081CB608). Global muerto, sin
-                               // usos desde 2026-08-23 — no reintroducirlo.
+                               // usos — no reintroducirlo.
 extern DWORD   FrustrumFaceD;   // IDA: DAT_07eeb200 (0x07EEB200)
 extern DWORD   DAT_07eeb204;
 extern DWORD   DAT_07eeb208;
@@ -900,7 +883,7 @@ extern float   DAT_07eeb238[256 * 256 * 3];   // TerrainLight RGB ambient buffer
 extern DWORD   DAT_07feb238;
 extern DWORD   DAT_07feb23c;
 extern float   g_TerrainTexCoord[8];   // TerrainTextureCoord[4][2] — UVs per tile face (RenderTerrainFace/FaceTexture)
-// 2026-04-28: tile pick corners buffer (12 floats contiguous, 4 vec3 corners)
+// Tile pick corners buffer (12 floats contiguous, 4 vec3 corners)
 extern float   g_TilePickBuf[12];
 #define DAT_07feb258  (g_TilePickBuf[0])
 #define DAT_07feb25c  (g_TilePickBuf[1])
@@ -931,9 +914,9 @@ extern DWORD   DAT_0814b2dc;
 // &DAT_081cb2ed == &g_TerrainObjTable[5].
 extern BYTE    g_TerrainObjTable[0x328];
 #define DAT_081cb2ed  (g_TerrainObjTable[5])
-// 2026-05-04: buffer de iluminación por tile, vivo — dimensionado para 256×256 tiles × 3
-// floats. Antes era un DWORD de 4 bytes; las macros de abajo proyectan DAT_081cb60c/610
-// en los campos del 2do/3er slot, como el layout contiguo del binario original.
+// Buffer de iluminación por tile, vivo — dimensionado para 256×256 tiles × 3
+// floats. Las macros de abajo proyectan DAT_081cb60c/610 en el 2do/3er DWORD del
+// slot, como el layout contiguo del binario original.
 extern float   DAT_081cb608[256 * 256 * 3];
 extern float   DAT_0828b608[256 * 256 * 3];   // TerrainLightData[256*256][3] post-normal lighting
 // cb60c/cb610 son el 2do/3er DWORD del slot 0 de cb608 (y análogamente para
@@ -980,11 +963,9 @@ extern char    DAT_083a2e90[10 * 0x1bc];   // Boids pool: 10 entries × 0x1bc by
 // consumidores lo indexan `Operates[3 * SelectedOperate]`, que salta de entrada
 // en entrada (3 DWORDs = los 12 bytes de stride).
 //
-// 2026-09-04 FIX: estaba declarado como un DWORD SUELTO inicializado en 0 -- otra
-// memoria distinta de la lista.  `((int*)&DAT_083a2378)[i*3]` leia entonces ese
-// global y lo que le siguiera; para SelectedOperate == 0 devolvia 0 y
-// `*(short*)(0 + 2)` crasheaba leyendo la direccion 2 (visto: CRASH addr=...
-// param1=0x00000002 al pasar el mouse por una silla).
+// No es un DWORD suelto: `((int*)&DAT_083a2378)[i*3]` tiene que caer dentro de
+// la lista (con un global aparte, SelectedOperate == 0 da `*(short*)(0 + 2)` →
+// crash).
 #define DAT_083a2378  (*(DWORD*)&DAT_083a2370[8])
 extern float  _DAT_083a0210;
 extern DWORD   DAT_083a0210;
@@ -995,10 +976,7 @@ extern DWORD   DAT_083a0210;
 //   cell+8  → puntero tail  (el insert de CreateObject appendea acá; la descarga arranca el recorrido desde acá)
 //   cell+12 → visibility flag (Terrain_Render writes *(chunk_ptr+8))
 // IMPORTANTE: g_ObjectBucketGrid[0] representa la dirección 0x083a0218, así que DAT_083a0218 está
-// en el offset 0 y DAT_083a021c en el +4. Antes DAT_083a021c estaba en el offset 0
-// y DAT_083a0218 era un DWORD aparte — eso hacía que la descarga (`puVar5 = &DAT_083a0218;
-// while (head = *(puVar5+8)) ...`) leyera BSS sin inicializar adyacente al DWORD huérfano,
-// y crasheara con el primer valor basura no nulo.
+// en el offset 0 y DAT_083a021c en el +4 (el walker de descarga depende de eso).
 extern char    g_ObjectBucketGrid[0x1000];
 #define DAT_083a0218  (*(DWORD*)(g_ObjectBucketGrid + 0))
 #define DAT_083a021c  (*(DWORD*)(g_ObjectBucketGrid + 4))
@@ -1104,22 +1082,15 @@ extern float&  DAT_083a7ad0;   // alias → CurrentCameraAngle[0]
 extern float&  DAT_083a7ad4;   // alias → CurrentCameraAngle[1]
 extern float&  DAT_083a7ad8;   // alias → CurrentCameraAngle[2]
 extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
-// ── FUN_004fdc00 (Object_RenderUpdate) full IDA port activation ──────────────
-// Activa el port completo de sub_4FDC00 en stubs_IDA_ports.cpp y desactiva el
-// minimal de stubs_linker.cpp. Aliases IDA→DAT que el port full necesita.
+// ── FUN_004fdc00 / MoveObjects (sub_4FDC00): gate del port completo de IDA ──────
+// El port completo vive en Scene/Scene_ObjectUpdate.cpp (sin #if); esta macro
+// sólo desactiva la versión mínima de Scene/Scene_ObjectLegacy.cpp (#ifndef).
 #define IDA_PORT_004FDC00 1
 
-// ── AttackEffect full IDA port activation ─────────────────────
-// 2026-08-16: `AttackEffect` es la que spawnea los efectos VISUALES de los
-// skills (CreateEffect 191/200/201/223/240/241/568/1210/1211/1271, CreateJoint
-// 1253...). El port fiel de IDA (2043 lineas) vivia en stubs_IDA_ports.cpp pero
-// su gate nunca se definio, asi que se compilaba una version PARCIAL de 374
-// lineas en stubs_misc2.cpp -> Lightning no mostraba nada y Evil Spirit /
-// Inferno salian incompletos. Activado el port completo.
-// El ruido anti-tamper crudo (CErrorReport::Write/aHashTableFullG, hash table
-// FUN_004041e0/HashTable_Insert con otras firmas, delete__, PACKET_ENCRYPT, `Models`)
-// quedo neutralizado con shims locales al inicio del bloque gated en
-// stubs_IDA_ports.cpp (con sus #undef al final). Ver CLAUDE.md 2026-08-16.
+// ── AttackEffect (0x00445230): gate del port completo de IDA ──────────────────
+// El port fiel vive en Combat/Combat_AttackEffect.cpp (sin #if, con sus shims
+// anti-tamper locales); esta macro desactiva la versión parcial de
+// Combat/Combat_LegacyAttackEffects.cpp (`#if !defined(IDA_PORT_00445230)`).
 #define IDA_PORT_00445230 1
 #define CameraWalkCut       DAT_083a7af4
 #define CurrentCameraCount  DAT_005615e8
@@ -1223,8 +1194,8 @@ extern float   DAT_06f42a5c[200*3];    // bbox min, 3 floats por hueso
 
 // ── UI name-list panel data (ShowCheckBox) ────────────────────────────────────
 // DAT_083a430c  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
-// 2026-05-08: alias por macro que proyecta en el offset +0x26 (line[1]) dentro del
-// properly-sized DAT_083a44c4 buffer (g_lpszMessageBoxCustom).
+// DAT_083a44ea: alias por macro que proyecta en el offset +0x26 (line[1]) dentro
+// del buffer DAT_083a44c4 (g_lpszMessageBoxCustom).
 #define DAT_083a44ea   (DAT_083a44c4[0x26])
 extern byte    DAT_005618b8;       // item class name format ptr A
 extern byte    DAT_005618bc;       // item class name format ptr B
@@ -1234,7 +1205,7 @@ extern char    s____s___005618c8[];// list entry format string (" %s " etc.)
 
 // ── Entity / animation tick globals ───────────────────────────────────────────
 extern float   DAT_05826e08;   // WorldTime — absolute milliseconds, per 0.97k CalcFPS
-// DAT_05826d31 — declared above (line 416)
+// DAT_05826d31 — declared above
 extern char    DAT_05826d33;   // SoccerObserver (IDA @0x05826D33) - lo escriben
                                // InitGame y el F3/23, y lo lee RenderCharacter.
                                // La etiqueta vieja ("guild name flag B") era falsa.
@@ -1259,9 +1230,8 @@ extern float  _DAT_00552954;   // sin animation frequency constant
 
 // ── Teleport-anim pool (0x07c80110, stride 0x70, 100 slots) ──────────────────
 // Sized via IDA bound: (0x7c82cd0 - 0x7c80110) / 0x70 = 0x2BC0 / 0x70 = 100.
-// Antes era `extern char DAT_07c80110;` (1 byte) — Entity_TeleportAnim en stubs.cpp:3324
-// recorría los 100 slots escribiendo 0x70 bytes por paso → corrupción de heap en el primer
-// teleport. Now properly sized.
+// Entity_TeleportAnim recorre los 100 slots escribiendo 0x70 bytes por paso: tiene
+// que ser el array completo.
 extern char    DAT_07c80110[100 * 0x70];   // active-flag at +0; slot stride 0x70
 
 // ── Character/effect update pool (0x07c85890, stride 0x1BC, 1002 slots) ──────
@@ -1305,16 +1275,15 @@ extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por l
 // extern char    DAT_07d358a4;        // class name / info buffer C   // -> alias a GlobalText, ver el final del archivo
 extern int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
 // ── Posición del item que se está arrastrando ───────────────────────────────
-// 2026-07-20.  En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
+// En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
 // slot 32, campo Type en offset 0) — lo usan sub_47D410 (preview de stats) y el
 // render del footprint durante el drag.
 //
-// Nuestro build lo estaba guardando en DAT_07ea9844, que es OTRA cosa: en el
-// binario esa dirección se escribe SOLO como byte (`mov byte ptr [7EA9844], bl`
-// en 0x4D2586 y `..., 0` en 0x4D1D8B) y se lee únicamente en Scene_MapTick, para
-// pasarla como 4º parámetro (bSell) a RenderItemInfo/RenderRepairInfo.
-// Al meterle índices de slot, cualquier slot != 0 dejaba el byte bajo en no-cero
-// → el tooltip mostraba el PRECIO DE VENTA sin estar en una tienda.
+// NO usar DAT_07ea9844 para esto: en el binario esa dirección se escribe SOLO
+// como byte (`mov byte ptr [7EA9844], bl` en 0x4D2586 y `..., 0` en 0x4D1D8B) y
+// se lee únicamente en Scene_MapTick, como 4º parámetro (bSell) de
+// RenderItemInfo/RenderRepairInfo: un índice de slot != 0 haría que el tooltip
+// muestre el PRECIO DE VENTA fuera de una tienda.
 extern "C" BYTE Inventory[];
 #define ItemPickedPos  (*(int*)&Inventory[32 * 68])   // Inventory[32].Type
 
@@ -1372,10 +1341,9 @@ extern char    DAT_0055a630[];   // secondary stats line
 //   +0x10C          type/channel DWORD (0..5)
 //   +0x114          cached text-extent cx (LONG)
 // DAT_07df938b, DAT_07df948c, DAT_07df9494 en el binario original son ALIASES
-// dentro de este buffer a los offsets 0x0B / 0x10C / 0x114 del slot 0. Ghidra
-// los recuperó como globales independientes; sin este fix el writer escribía
-// al buffer y el reader leía las variables sueltas (siempre 0), por eso el
-// countdown azul del Exit no aparecía en pantalla.
+// dentro de este buffer a los offsets 0x0B / 0x10C / 0x114 del slot 0 (Ghidra
+// los recuperó como globales independientes); acá son macros para que writer y
+// reader vean la misma memoria.
 extern char    DAT_07df9380[0x77 * 0x118];
 // Alias del primer byte del campo msg (slot 0). Las fórmulas
 // `&DAT_07df938b + slot*0x118` del decompile de Ghidra resuelven al byte
@@ -1407,8 +1375,7 @@ extern DWORD   DAT_07ea8408;           // UI cursor / hotkey Y position
 extern char    MacroText[10 * 0x100];   // macro hotkey table: 10 slots × 256 bytes  [IDA 0x07E0FFC8]
 // Fila 9 de la tabla de arriba (0x07E0FFC8 + 0x900 = 0x07E108C8), no un global
 // aparte: es el buffer del destinatario de susurro y lo llenan FUN_00494520,
-// strcmp/strlen/memcpy.  2026-08-22: estaba declarado como UN char, o sea
-// escribia 255 bytes sobre los globals vecinos.
+// strcmp/strlen/memcpy (hasta 255 bytes).
 #define DAT_07e108c8   (MacroText[0x900])
 
 // Player name (for chat name-match / tab-complete)
@@ -1435,11 +1402,9 @@ extern DWORD   DAT_07e11dac;           // command-result flag (1=whisper, 0=pvp-
 // B-key toggle guards
 // 0x07EAA130 ES g_bServerDivisionEnable (confirmado por xrefs de IDA:
 // ReceiveTalk, SendMove, sub_492F10, Chat_InputTick, GetScreenWidth,
-// RenderServerDivision).  2026-08-22: estaba partido en dos variables —
-// el writer era g_bServerDivisionEnable (Net_Process, ReceiveTalk sub 5) y
-// los readers ServerDivisionOpened, que nadie seteaba nunca.  Por eso el panel de
-// division de servidor no se dibujaba y GetScreenWidth no lo contaba.
-// El byte 1 de ese int es 0x07EAA131, que ya se usa asi en stubs_externs.
+// RenderServerDivision).  ServerDivisionOpened es un alias: el writer
+// (Net_Process, ReceiveTalk sub 5) y los readers tienen que ver el mismo byte.
+// El byte 1 de ese int es 0x07EAA131 (en el port, DAT_07eaa131 es un global aparte).
 #define ServerDivisionOpened   (*(char*)&g_bServerDivisionEnable)
 extern char    DAT_07eaa132;           // guard for B-key toggle enable
 extern char    DAT_07eaa134;           // RepairEnable_0
@@ -1453,7 +1418,7 @@ extern DWORD   DAT_07ea9848;           // connection context for Connection_Chec
 
 // DAT_05826ceb — rolling packet counter byte (declared above near 0x05826xxx block)
 
-// ── Timers de cuenta regresiva de chat/UI (los usan Sound_Queue.cpp + stubs.cpp) ──
+// ── Timers de cuenta regresiva de chat/UI (los usan Sound_Queue.cpp y UI/Chat.cpp) ──
 extern int     DAT_00559cdc;           // system-message scroll timer (reset to 300 on Chat_AddMessage)
 extern int     DAT_00559ce4;           // player-chat scroll timer   (reset to 0x96 on UI_ShowDialog)
 // Strings que Sound_Countdown1 / Sound_Countdown2 vuelven a mostrar al vencer el timer:
@@ -1469,7 +1434,7 @@ extern char    DAT_07e11ddc[12];       // byte_7E11DDC     (arg1 de UIChatLogWin
 extern char    DAT_07db80d8[6 * 0x108];   // system chat ring buffer (6 slots × 0x108 bytes)
 #define        DAT_07db81dc   (DAT_07db80d8[0x104])  // flag byte alias (slot 0 +0x104)
 
-// 2026-05-04: server-config globals (popullados por opcodes 0xDD/DE/DF).
+// Server-config globals (poblados por los opcodes 0xDD/DE/DF).
 extern "C" {
     extern DWORD g_MaxCharacterLevel;     // 0xDF — cap de level (default 400)
     extern WORD  g_CharDeleteMaxLevel;    // 0xDD — max level que permite delete
@@ -1496,11 +1461,11 @@ extern char    DAT_00559d54;           // s__s___s: " %s - %s" style format stri
 extern char    DAT_00559d5c;           // player-list alternate format string
 
 // ── Guild system globals (opcodes 0x90-0x99) ──────────────────────────────────
-// DAT_07eaa117 — declared above as char (line 613)
-// DAT_07eaa116 — declared above as char (line 612)
-// GoldenArcherOpenType — declared above as DWORD (line 620)
+// DAT_07eaa117 — declared above as char
+// DAT_07eaa116 — declared above as char
+// GoldenArcherOpenType — declared above as DWORD
 extern int     GoldenArcherItemCount;           // g_shEventChipCount (IDA 0x07EAA12C)  [IDA 0x07EAA12C]
-// StorageGoldFlag — guild UI flag — declared above as DWORD (line 609)
+// StorageGoldFlag — guild UI flag — declared above as DWORD
 extern BYTE    GoldenArcherLuckyNumberText[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)  [IDA 0x07EA97C0]
 extern char    GoldenArcherLuckyNumberTicket;           // char-select flag D (set 1 when guild stage==3)  [IDA 0x07E11D73]
 // Guild message string buffers (shown via ShowGuildMessage / CreateOkMessageBox):
@@ -1517,12 +1482,9 @@ extern char    param_2_07d58fd4;       // guild request error format string (wsp
 extern DWORD   GoldenArcherLuckyNumber;          // guild target tile X (4-byte, overlapping)  [IDA 0x00559F58]
 extern WORD    DAT_00559f5c;           // guild target tile Y (2-byte)
 // Campos del sub-estado de login (también los escribe la rama 3 del guild 0x94):
-// InputTextMax — declared above as float (line 202)
-// DAT_00559c84  — declared above as DWORD (line 198)
-// InputNumber  — declared above as DWORD (line 199)
+// InputTextMax (int&), InputEnable (= DAT_00559c84) e InputNumber: declarados más arriba.
 // ── Estado de la UI de guild (bloque 0x083a, usado por ShowGuildMessage / la lista de miembros) ──
-// DAT_083a4324  — declared above as DWORD (line 749)
-// DAT_083a44c4  — declared above as DWORD (line 755)
+// DAT_083a4324 (DWORD) y DAT_083a44c4 (char[7 * 0x26]): declarados más arriba.
 // ── Dialog button rects (0x083A42F8, 2 entradas × 5 ints = 0x28 bytes) ───────
 // Layout por entrada: [0]=bitmapId-240 (1..4) [1]=x [2]=y [3]=width [4]=height.
 // Escrito por CreateOkMessageBox/CreateDialogInterface/ShowCheckBox/sub_51D9E0/
@@ -1531,25 +1493,19 @@ extern WORD    DAT_00559f5c;           // guild target tile Y (2-byte)
 // campo width de la entrada 0, avanzando de a 5 ints) y por el hit-test de
 // UI_InGameMenu (&unk_83A42FC = campo x).
 //
-// 2026-08-08 FIX (botones Yes/No del cartel de venta invisibles): en el binario
-// original 42F8 / 42FC / 4304 / 430C son OFFSETS DENTRO DE ESTA MISMA REGION,
-// pero aca estaban declarados como CUATRO globals independientes -> los
-// writers poblaban DAT_083a42f8[]/DAT_083a430c[] y los readers leian
-// &DAT_083a42fc / &DAT_083a4304, que eran otra memoria (ceros) -> el gate
-// `1 <= id <= 4` nunca pasaba y no se dibujaba ningun boton.
+// En el binario 42F8 / 42FC / 4304 / 430C son OFFSETS DENTRO DE ESTA MISMA REGION:
+// por eso 42FC / 4304 / 430C son macros sobre DAT_083a42f8 y no globals propios.
 extern DWORD   DAT_083a42f8[10];       // UI panel descriptor array (set by guild funcs)
 #define DAT_083a42fc   (DAT_083a42f8[1])                 // entry0.x
 #define DAT_083a4304   (*(int*)&DAT_083a42f8[3])         // entry0.width
 #define DAT_083a430c   ((DWORD*)&DAT_083a42f8[5])        // entry1 base
-// DAT_083a7c24  — declared above as DWORD (line 780)
-// DAT_083a7c28  — declared above as DWORD (line 781)
+// DAT_083a7c24  — declared above as DWORD
+// DAT_083a7c28  — declared above as DWORD
 extern int     DAT_083a7c30;           // guild member count for UI
 extern int     DAT_083a7c34;           // guild UI auxiliary param
 
 
-// ── Declaraciones perdidas al restaurar globals.h desde git (2026-09-03) ──────
-// Estos globals ya existian en globals.cpp; sus `extern` estaban entre los
-// cambios sin commitear del header.
+// ── Más declaraciones de globals definidos en globals.cpp ─────────────────────
 extern char    LockInputStatus; // IDA: DAT_07e11d6f (0x07E11D6F)
 extern DWORD   DAT_07e11d84;              // UseSkillWarrior 43: tick de activacion
 extern char    DAT_07e11dec;
@@ -1559,9 +1515,8 @@ extern int     m_iDevilSquareLimitLevel[4][2];
 extern int     m_iBloodCastleLimitLevel[12][2];
 
 // Tabla de miembros de guild: 11 registros de 0x18 bytes (0x083A7AF8..0x083A7C00).
-// 2026-09-03: eran SEIS escalares sueltos (24 bytes = una sola entrada) mientras
 // `GuildMemberList_Set` copia `count * 0x18` bytes y el render lee
-// `base + iMod*0x18`; con mas de un miembro se escribia sobre los globals vecinos.
+// `base + iMod*0x18`.
 #define GUILD_MEMBER_TABLE_BYTES  0x108
 #define GUILD_MEMBER_STRIDE       0x18
 extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
@@ -1612,7 +1567,7 @@ extern float   _DAT_00552a28;
 // FPS timer (0x07e016f0) — DWORD millisecond timestamp, accessed via _DAT_ Ghidra alias:
 extern DWORD   _DAT_07e016f0;  // last FPS tick timestamp (timeGetTime value)
 
-// Sound emitter pool base (0x083a1218) — referenced in stubs.cpp Sound_SpawnEmitter:
+// Pool en 0x083a1218 (array Butterfles; lo recorren SMD_Parser.cpp y Entity_Render.cpp, entre otros):
 extern char    DAT_083a1218[0x1158];   // Butterfles OBJECT array (10 entries × 0x1BC stride)
 
 // Float aliases for view/projection matrix globals (0x083a4xxx):
@@ -1667,8 +1622,8 @@ extern float  _DAT_00552d40;   // panel X offset
 extern float  _DAT_00552d44;   // UV scale U  (Texture_Draw2D)
 // Dialog text color control
 extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
-// SetBackgroundTextColor — declared above as DWORD (line 197)
-// DAT_00559c8c — declared above as DWORD (line 200)
+// SetBackgroundTextColor — declared above as DWORD
+// DAT_00559c8c — declared above as DWORD
 // Toggle flags
 extern char    m_bAutoAttack;   // IDA: m_bAutoAttack (0x00559C5C)
 extern char    m_bWhisperSound;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
@@ -1696,11 +1651,11 @@ extern char    DAT_07d69c30;   // NPC entry 0 line B
 extern char    DAT_083a4348[10][1][38];
 #define g_lpszDialogAnswer  DAT_083a4348
 // Guild message decode state
-// DAT_083a7c08 — declared above as DWORD (line 772)
+// DAT_083a7c08 — declared above as DWORD
 extern char    DAT_083a7c09;   // guild dialog flag B
-// DAT_083a7c0c — declared above as DWORD (line 774)
+// DAT_083a7c0c — declared above as DWORD
 // Zona del cursor / hit-test (también se usa en otros paneles)
-// DAT_083a4124 — declared above as DWORD (line 713)
+// DAT_083a4124 — declared above as DWORD
 // Y del cursor de selección en la lista de servers (también se usa en el panel 0x96)
 extern float  _DAT_00552cac;   // panel cursor bound Y-min
 // String literals at fixed addresses (Ghidra: s__s_xxx_address)
@@ -1943,13 +1898,9 @@ extern float   _DAT_00552984;
 extern float   _DAT_00552988;
 extern float   _DAT_0055298c;
 // ── Weather particle pool (40 slots × 0x1bc bytes = 0x4560 bytes) ────────────
-// BUG-FIX 2026-05-04: antes los 30+ globals DAT_0839bc?? eran chars sueltos
-// en BSS, pero Weather_Update y Particle_PathUpdate los acceden con stride 0x1bc
-// (slot stride) o 0x6f (int stride = 0x1bc/4). Sin un buffer contiguo, escribir
-// a slot 1+ corrompe globals adyacentes; leer slot 1+ leía garbage o causaba AV
-// (visible como crash en RenderNumArrow al entrar al mundo, addr=0x004BF712,
-// param1=0x0839BCB0). Ahora ALL son macros que indexan dentro de un único
-// buffer contiguo.
+// Los 30+ globals DAT_0839bc?? son macros que indexan dentro de un único buffer
+// contiguo: Weather_Update y Particle_PathUpdate los acceden con stride 0x1bc
+// (slot stride) o 0x6f (int stride = 0x1bc/4).
 extern char    g_WeatherSlotPool[40 * 0x1bc];
 #define DAT_0839bcb0  g_WeatherSlotPool[0x000]                              // slot[0] active flag (char)
 #define DAT_0839bcb2  (*(short        *)&g_WeatherSlotPool[0x002])          // slot[0] type (short, stride 0xde × short)
@@ -2066,8 +2017,7 @@ extern BYTE    DAT_07e11f78[0x880];
 // CloseInventoryRelatedWindows 0x4CBD36-0x4CBD9C y los errores de
 // ida_get_function): en el binario no son copias sino el mismo pool abordado
 // desde otro campo.  Los bucles originales escriben Type en `ptr - 0x38` y
-// Key en `ptr`, o sea DAT_x + 0x38 = Key del slot 0.  Antes eran arrays
-// propios: todo lo que se escribia ahi no llegaba a los pools reales.
+// Key en `ptr`, o sea DAT_x + 0x38 = Key del slot 0 (no son arrays propios).
 //   0x07EA5298 Inventory              0x07EA52D0 Inventory.Key
 //   0x07EA7B88 OffsetTradeItems       0x07EA7BC0 OffsetTradeItems.Key
 //   0x07EA9880 OffsetMixItems.Key     0x07EA8448 OffsetInventoryItems.Key
@@ -2112,7 +2062,7 @@ extern char    DAT_07c80128[100 * 0x70];   // Spark-effect pool: 100 × 0x70
 // ── Terrain_Light globals ─────────────────────────────────────────────────────
 extern DWORD   DAT_0839bc84;
 extern float   _DAT_00552a08;  // terrain light float constant
-// 2026-05-04: cb60c / 0828b60c / cb610 / 0828b610 NO son globals separados —
+// cb60c / 0828b60c / cb610 / 0828b610 NO son globals separados —
 // son el 2do/3er DWORD del slot 0 de cb608 / 0828b608. Las macros están
 // definidas junto a las declaraciones de cb608 / 0828b608, más arriba en este header.
 
@@ -2241,14 +2191,12 @@ extern char    DAT_07d73104[20000];  // word-filter table (1000 × 20 bytes, Fil
 extern char    GlobalText[GLOBALTEXT_ROWS][300];
 void __cdecl OpenTextData(void);
 int  __cdecl LoadTextData_Bin(const char *FileName);
-// BUG-FIX 2026-07-17: DAT_07d4b4b0/5dc son GlobalText[457]/[458] (name-filter blocked
-// words, cargados de Text.bmd). Estaban como chars sueltos =0 (string vacío) → FindText
-// devolvía 1 → nombres rechazados. `&DAT_07d4b4b0` ahora = GlobalText[457].
+// DAT_07d4b4b0/5dc son GlobalText[457]/[458] (name-filter blocked words, cargados
+// de Text.bmd): `&DAT_07d4b4b0` = GlobalText[457].
 // DAT_07d29d24: base de la tabla de nombres de clase, recorrida con
 // `&DAT_07d29d24 + i * 300`.  Es una fila de GlobalText -- sus dos lectores
 // (UI_StatsPanel y SecondPassword) usan indices ~601-607, que en Text.bmd son
-// los nombres de clase.  Estaba declarada como un `char` suelto, asi que esas
-// lecturas se iban ~180 KB fuera del global y terminaban en lstrlenA.
+// los nombres de clase.
 #define DAT_07d29d24 (GlobalText[0][0])
 #define DAT_07d4b4b0 (GlobalText[457][0])
 #define DAT_07d4b5dc (GlobalText[458][0])
@@ -2297,10 +2245,6 @@ extern DWORD   GateAttribute;       // gate data array base (stride 9 bytes, 100
 //   0x07CF5738 = m_iLinkForAnswer   (+0x130)  — índice del diálogo siguiente
 //   0x07CF5760 = m_iReturnForAnswer (+0x158)  — acción de la respuesta (1/2/3)
 // Cierra exacto: 0x180 + 10*0x40 = 0x400, y 0x130 + 10*4 = 0x158 + 10*4 = 0x180.
-//
-// 2026-08-21: los cuatro campos estaban como globals ESCALARES sueltos y los
-// consumidores hacían `&DAT_07cf5734 + idx * 0x400` sobre punteros tipados
-// (paso 4x) — lecturas fuera de rango garantizadas.  Ahora hay una sola tabla.
 #define DIALOG_SCRIPT_COUNT   200
 struct DIALOG_SCRIPT {
     /*+0x000*/ char m_lpszText[300];
@@ -2369,9 +2313,8 @@ extern int     DAT_0055a3fc;   // auth mode param B
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
 extern DWORD   DAT_07eaa120;   // SecondPassword_Screen5 mode (0=normal, 1=equip-select)
 extern char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
-// 2026-08-25: buffers del editor de creacion de GUILD (la etiqueta "PIN entry"
-// era falsa). Estaban como escalares y el render los recorre como arrays —
-// 64 bytes de mark sobre un `char`. Ver la nota en globals.cpp.
+// Buffers del editor de creacion de GUILD (no "PIN entry"): el render los recorre
+// como arrays (64 bytes de mark). Ver la nota en globals.cpp.
 extern char    DAT_07ea51ec[8];    // GuildName
 #define DAT_07ea51f0 (*(DWORD*)&DAT_07ea51ec[4])   // 2do DWORD del nombre
 extern char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
@@ -2383,15 +2326,14 @@ extern float  _DAT_00552c28;   // Screen5 button Y base
 extern short   DAT_00559f5a;   // second-password level check B (short)
 extern int     DAT_00559f80;   // level threshold array base (index by slot)
 extern int     DAT_00559f84;   // level threshold array upper (index by slot)
-// 2026-09-07: DAT_00559f60 / DAT_00559f64 SON m_iDevilSquareLimitLevel.
+// DAT_00559f60 / DAT_00559f64 SON m_iDevilSquareLimitLevel.
 // Verificado con ida_get_function: m_iDevilSquareLimitLevel = 0x00559F60 y
 // m_iBloodCastleLimitLevel = 0x00559F80 (32 bytes despues = 4 niveles x 2 int).
-// Estaban partidos en dos: el handler del 0x8E llenaba el array C y
-// `SecondPassword_Screen5` leia `(&DAT_00559f60)[i*2]`, un int suelto -> el chequeo de
-// nivel del Devil Square comparaba contra basura de los globals vecinos.
+// El handler del 0x8E llena el array y `SecondPassword_Screen5` lee
+// `(&DAT_00559f60)[i*2]`: tienen que ser la misma memoria.
 #define DAT_00559f60   (m_iDevilSquareLimitLevel[0][0])
 #define DAT_00559f64   (m_iDevilSquareLimitLevel[0][1])
-// DAT_07ea7b88 — declared above as DWORD (line 1474)
+// DAT_07ea7b88 — declared above as DWORD
 extern char    DAT_07ea5b30;   // second-password char-slot list base
 
 // BMD_DrawMesh / BMD_DrawBoneSlot_Anim (BMD__RenderMesh / BMD__RenderMeshTranslate) buffers
@@ -2518,13 +2460,12 @@ extern char    lpText_07d2aa08[];  // fatal-error message string (shown by ExitP
 #ifndef World
 
 // ── Pools de items y atributos de terreno ────────────────────────────────────
-// Centralizadas acá por el refactor B3 (2026-08-16). Antes cada .cpp las
-// redeclaraba con su propio `extern`, y eso rompia el movimiento de funciones
-// entre modulos: la funcion movida dejaba de ver la global de su archivo.
+// Centralizadas acá (un único `extern` por global) para que mover funciones entre
+// módulos no rompa la visibilidad de las globals.
 //
 // Los cuatro pools de items son grids de slots ITEM (stride 0x44). Ojo: su
 // indice de celda es `slot - 12`; los 12 wear slots NO viven aca sino en
-// `CharacterMachine + 536 + 68*slot` (ver la entrada de 2026-08-08 g).
+// `CharacterMachine + 536 + 68*slot`.
 extern BYTE  OffsetInventoryItems[];
 extern BYTE  OffsetTradeItems[];
 extern BYTE  OffsetWarehouseItems[];
@@ -2540,8 +2481,6 @@ extern unsigned char* TerrainWall;
 // de a 0x28 (40) bytes por entrada, así que la stride es 40 — no 300.  Los
 // consumidores indexan por BYTE: `&SkillAttribute[8 * (5*Level + 150)]`
 // (= entrada 30+Level), con el nombre en el offset 0 de la entrada.
-// 2026-08-21: antes era un único bloque de 300 bytes, así que cualquier índice
-// leía fuera del objeto.
 struct _SkillAttrEntry { char Raw[2560]; };
 extern _SkillAttrEntry SkillAttribute;  // base of table @ 0x07D29D20
 
@@ -2556,11 +2495,10 @@ extern char    DAT_0814b6e0;   // water wave buffer A (256×256 ints, 2 banks ×
 extern char    DAT_0814b2e0[0x80000];   // grass-wind/water-wave double buffer (2×0x40000, sub_4F98C0/4F9A30)
 
 // ── Small-function batch globals ─────────────────────────────────────────────
-// Base de la tabla de quests — IDA la trata como un buffer de ~0x1C900 bytes. El código en
-// stubs.cpp escribe en &DAT_00567500 + 0x1C8F8..+0x1C8FD (líneas 26586-26589)
-// y HUD_Pass2:GetScreenWidth lee `g_csQuest + 0x1C8FF`. Un DWORD de 4 bytes
-// acá significa que esos accesos caen más allá del final de nuestros globals →
-// AVs aleatorios. Lo exponemos como array de BYTE del tamaño correcto.
+// Base de la tabla de quests (el objeto CSQuest al que apunta g_csQuest) — IDA la
+// trata como un buffer de ~0x1C900 bytes y los accesos llegan hasta cerca del final
+// (p.ej. el flag del panel de quest en +0x1C87F que lee GetScreenWidth). Por eso es
+// un array de BYTE del tamaño real y no un DWORD.
 extern BYTE    DAT_00567500[0x1C900];   // Quest table base (was DWORD)
 extern DWORD   DAT_00590b00;       // Sound device context
 extern DWORD   DAT_055c9b78;       // RefCount / tick counter
@@ -2603,7 +2541,7 @@ extern DWORD   DAT_005527f8;
 extern DWORD   DAT_00552810;
 extern DWORD   DAT_0055389c;
 
-extern DWORD   DAT_07e11e50;       // _PartyNumber (already in line 574 - reuse)
+extern DWORD   DAT_07e11e50;       // _PartyNumber
 extern DWORD   DAT_07e11e54;       // _PartyKey
 
 extern HANDLE  lpTargetHandle_00563b5c; // GameGuard pipe handle B
@@ -2614,7 +2552,7 @@ extern LPVOID  lpParameter;             // IDA: lpParameter (0x083BBAE8) — con
 extern char    g_GameGuardGameName[];   // IDA: aMu (0x0055910C) — el nombre de juego que
                                         // recibe PreInitNPGameMon: "Mu". NO es un nombre de
                                         // ventana: el cliente no crea ninguna ventana de
-                                        // GameGuard (ver CLAUDE.md, seccion GameGuard).
+                                        // GameGuard.
 
 extern DWORD   g_csQuest;         // Quest system state (0=inactive)
 
@@ -2667,17 +2605,16 @@ extern float   CameraAngle[3];     // DAT_083a42e0 (3 floats)
 extern float   CameraPosition[3];  // DAT_083a42d4 (3 floats)
 
 // Quest/NPC window
-// g_bEventChipDialogEnable es 0x07EAA128 (GoldenArcherOpenType).  Hasta 2026-09-11 era
-// un global aparte: el 0x94 lo escribia y el panel del Golden Archer leia
-// GoldenArcherOpenType, asi que nunca se enteraba.
+// g_bEventChipDialogEnable es 0x07EAA128 (GoldenArcherOpenType): alias, para que
+// el 0x94 (writer) y el panel del Golden Archer (reader) vean el mismo global.
 #define _g_bEventChipDialogEnable (*(int*)&GoldenArcherOpenType)
 
-// 2026-04-30: los flags de los paneles de UI ahora aliasan los bytes reales DAT_07eaa11x (per
-// el Offsets.h del proyecto companion de IDA, líneas 59-69). Las direcciones de la época de
-// Ghidra 0x07e5ba84/88 para InventoryOpened/CharacterOpened eran misidentificaciones — los
-// flags reales están en DAT_07eaa116..11c (de un byte). Usamos #define para que tanto
-// el código de toggle portado de IDA (escribe DAT_07eaa117) como los gates
-// de render del HUD (leen `if (InventoryOpened)`) peguen en el mismo byte de memoria.
+// Los flags de los paneles de UI aliasan los bytes reales DAT_07eaa11x (per el
+// Offsets.h del proyecto companion de IDA). Los flags reales están en
+// DAT_07eaa116..11c (de un byte), no en 0x07e5ba84/88 (misidentificación de la
+// época de Ghidra). Usamos #define para que tanto el código de toggle portado de
+// IDA (escribe DAT_07eaa117) como los gates de render del HUD (leen
+// `if (InventoryOpened)`) peguen en el mismo byte de memoria.
 #define InventoryOpened    DAT_07eaa117
 #define CharacterOpened    DAT_07eaa116
 #define GuildOpened        DAT_07eaa114
@@ -2689,10 +2626,9 @@ extern float   CameraPosition[3];  // DAT_083a42d4 (3 floats)
 #define EventWindowOpened  DAT_07eaa11c
 #define GuildCreatorOpened DAT_07eaa124
 
-// 2026-04-30: Inventory/Trade panel origin coords. Same unification pattern
-// que los flags *Opened de arriba — IDA escribe/lee vía DAT_07ea5284..5290 y
-// los pases de render del HUD usan los nombres de C++. Forzarlos a la misma memoria
-// fixes the "panel right, items left" misalignment.
+// Inventory/Trade panel origin coords. Mismo patrón de unificación que los flags
+// *Opened de arriba — IDA escribe/lee vía DAT_07ea5284..5290 y los pases de render
+// del HUD usan los nombres de C++: tienen que ser la misma memoria.
 #define InventoryStartX      DAT_07ea5288
 #define InventoryStartY      DAT_07ea5284
 #define TradeInventoryStartX DAT_07ea5290
@@ -2719,23 +2655,19 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 // g_iNumAnswer — alias de DAT_083a7c0c (ver arriba).
 // g_iNumLineMessageBoxCustom — alias de DAT_083a4324 (ver arriba).
 // g_lpszMessageBoxCustom — alias de DAT_083a44c4 (el buffer real de 7 lineas x
-// 0x26).  2026-08-21: era un array de 16 PUNTEROS en NULL, o sea los writers
-// (ShowDialogText, CreateOkMessageBox) llenaban DAT_083a44c4 y los readers
-// (sub_402FF0) leian punteros nulos → el texto del dialogo de quest nunca se
-// dibujaba.  Sexto global partido en dos de este subsistema.
+// 0x26): los writers (ShowDialogText, CreateOkMessageBox) llenan DAT_083a44c4 y
+// los readers (sub_402FF0) leen por este nombre.
 #define g_lpszMessageBoxCustom  ((char (*)[0x26])DAT_083a44c4)
 // g_iCurrentDialogScript — alias de DAT_005615dc (ver arriba).
 // g_lpszDialogAnswer — alias de DAT_083a4348 (ver arriba).
-// 2026-07-19: m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace
+// m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace
 // `m_hFontDC = CreateCompatibleDC(hdc)` y ese mismo DC es DAT_055c9fec (el font
-// memory DC, declarado en stdafx.h). Tenerlos separados dejaba m_hFontDC en NULL
-// para siempre (125 usos, 0 asignaciones) -> GetTextExtentPoint32A fallaba.
+// memory DC, declarado en stdafx.h).
 #define m_hFontDC  DAT_055c9fec
-// 2026-09-04 FIX -- las tres fuentes estaban PARTIDAS EN DOS.  WinMain crea los
-// handles en DAT_055ca00c / 010 / 014 (normal / bold / big, esta ultima al doble
-// de altura), pero `g_hFont` y `g_hFontBold` estaban declaradas como HFONT
-// APARTE que nadie asignaba -- quedaban en NULL, asi que los ~80
-// `SelectObject(m_hFontDC, g_hFontBold)` del arbol no cambiaban de fuente.
+// Las tres fuentes: WinMain crea los handles en DAT_055ca00c / 010 / 014 (normal /
+// bold / big, esta ultima al doble de altura); `g_hFont` y `g_hFontBold` son alias
+// de esos globals (no HFONT aparte), asi los `SelectObject(m_hFontDC, g_hFontBold)`
+// usan la fuente creada.
 // IDA: g_hFont = 0x055CA00C, g_hFontBold = 0x055CA010, g_hFontBig = 0x055CA014.
 #define g_hFontBold  ((HFONT)(uintptr_t)DAT_055ca010)
 #define g_hFontBig   ((HFONT)(uintptr_t)DAT_055ca014)
@@ -2903,8 +2835,8 @@ extern short   DAT_00559d64;        // guild mark suffix 2-byte (e.g. "]")
 extern char    DAT_00559d66;        // guild mark suffix trailing byte
 
 // ── HUD render globals (Phase-2 port) ────────────────────────────────────────
-// Agregados el 2026-04-29 para el port de RenderPartyHP / RenderMainFrameWindow /
-// RenderBooleans / Render_HotbarItems3D from IDA.
+// Para el port de RenderPartyHP / RenderMainFrameWindow / RenderBooleans /
+// Render_HotbarItems3D from IDA.
 //
 // Estado de party / soccer / guild war — binding mínimo para que los renderers
 // sigan funcionando antes de que se porten los sistemas completos de party/guild.
@@ -2953,15 +2885,10 @@ extern void   *CharacterMachine;     // pointer to encrypted CHARACTER struct
 
 
 // ─── Filas de GlobalText que el port habia partido en globals sueltos ────────
-// 2026-09-07.  El pool de textos vive en `GlobalText[1000][300]` con base
+// El pool de textos vive en `GlobalText[1000][300]` con base
 // 0x07D29D24 (verificado: 0x07D4B4B0 == GlobalText[457]).  Estos simbolos caen
 // EXACTAMENTE en multiplos de 300 desde esa base, o sea son filas del pool, no
-// buffers propios.  Estaban declarados como `char`/`BYTE` sueltos (1 byte) y
-// nadie los llenaba, asi que todo texto que pasara por ellos salia VACIO.
-//
-// Sintoma que lo destapo: el cartel del Devil Square salia sin texto.  La sonda
-// OKBOX mostro `CreateOkMessageBox` recibiendo "" desde sub_4E6C40, que en IDA
-// llama con GlobalText[677] / [686] / [687] / [854].
+// buffers propios.
 //
 // Mismo patron que DAT_081cb60c: un macro que proyecta dentro del array real,
 // asi `&DAT_x` sigue siendo un `char*` a la fila.

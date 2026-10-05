@@ -1,17 +1,4 @@
 // Item_Durability.cpp
-//
-// Extracted from stubs_helpers.cpp; original IDA comments and DAT_* provenance retained.
-
-// stubs_helpers.cpp
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 12638-13754 (1117 lines).
-//
-// Originally tagged "New helpers needed by SecondPassword implementations" but
-// content is mixed: item/inventory helpers (GetItemCount/GetItemSlot/
-// CalcMaxDurability/ConvertItemType/ItemValue/ConvertGold), render helpers
-// (CreateOkMessageBox/BMD::Animation/RenderObjectScreen), math helpers
-// (VectorMA/VectorNormalize/RandomXY), effect helpers (SpawnEffectAtBone/
-// JointBetweenBones), Pipe helpers (Pipe_Send/Recv/SetTarget), CSQuest helpers.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -52,19 +39,11 @@ extern void __cdecl operator_delete(void* ptr);
 //   3. Level bonus: +1 si Level<4, +2 si <9, +3 si =9, +4 si >=10 (per-level loop)
 //   4. Si Option1 & 0x3F != 0 (excellent options), excluyendo types 19/146/170/387-390:
 //      result += 15
-//
-// BUG-FIX 2026-05-01: stub anterior leía *(uint*)(attrBase+0x8) que cae en
-// Name[8..11] del struct ITEM_ATTRIBUTE. Para "Light Saber", Name[8..11] = "ber"
-// = 0x00726562 = 25954 — exact valor visto en RenderBrokenItem ("0/25954").
-// Corregido a leer p->Durability (offset +41 = +0x29).
 unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int Level)
 {
-    // 2026-05-08: bug-fix — antes solo chequeaba `attrBase == 0`, pero callers
-    // pasan `Type * 0x40 + DAT_07d78068` y si DAT_07d78068 == 0 entonces
-    // attrBase = Type*0x40 (un valor pequeño tipo 0x2A00 para Type=168).
-    // Eso pasa el `!= 0` check pero defereferenciar p->MagicDurability (offset
-    // 42) crashea con AV en addr 0x2A2A. Validamos que attrBase sea un puntero
-    // razonable de heap (>= 0x100000) y que `item` también sea válido.
+    // Valida que attrBase sea un puntero razonable (>= 0x100000): si DAT_07d78068
+    // está en 0, los callers pasan `Type * 0x40` y deref p->MagicDurability crashea.
+    // También valida `item`.
     if ((uintptr_t)attrBase < 0x100000 || (uintptr_t)attrBase >= 0x80000000)
         return 255;
     if (item == nullptr || (uintptr_t)item < 0x100000) return 255;
@@ -100,8 +79,7 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
 
 // IDA: FUN_0047C690
 //
-// IDA-ported 2026-04-26 (audit #3): el stub anterior devolvía "número de dígitos"
-// en vez del valor real. Calcula precio gold del item considerando type/level/
+// Calcula precio gold del item considerando type/level/
 // durabilidad/options. Si sellMode!=0 aplica reducción ×1/3 y penalty por durab.
 //
 // Caso especial #135 = Wings stage 1 / #143 = Wings stage 2 (jewel pricing).
@@ -120,10 +98,8 @@ int __cdecl Item_CalculateValue(void* item_v, int a2)
 // Port de IDA, sin uso mientras el server sea MuEmu.
 int __cdecl ItemValue_Vanilla(void* item_v, int a2)
 {
-    // 2026-05-08: defensive — same problem as CalcMaxDurability/RenderItemInfo:
-    // si DAT_07d78068 está en 0 (table base no inicializada), el cómputo
-    // `(int)DAT_07d78068 + type * 0x40` da un valor pequeño y crashea al
-    // dereferenciar p->Money / p->Level. Bail con 0 en ese caso.
+    // Defensivo (igual que CalcMaxDurability/RenderItemInfo): si DAT_07d78068 está
+    // en 0, `(int)DAT_07d78068 + type * 0x40` da un valor pequeño; se devuelve 0.
     if (!item_v || (uintptr_t)item_v < 0x100000) return 0;
     if ((uintptr_t)DAT_07d78068 < 0x100000 || (uintptr_t)DAT_07d78068 >= 0x80000000)
         return 0;
@@ -406,8 +382,7 @@ LABEL_148:
 
 // IDA: FUN_004C3EF0
 //
-// IDA-ported 2026-04-26 (audit #3): el stub anterior solo escribía "%u / %u"
-// pero el real calcula gold de reparación: sqrt(sqrt(Gold)) * sqrt(Gold) * 3 *
+// Calcula gold de reparación: sqrt(sqrt(Gold)) * sqrt(Gold) * 3 *
 // (1 - dur/maxDur) + 1, con bonus 1.4× si rota, +5% si RepairEnable, redondeo
 // a múltiplos de 100/10, y formato "1,234,567" en Text. Devuelve gold final.
 unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxDurability, short Type, char* Text)
@@ -490,10 +465,9 @@ void __cdecl Item_RecalculateRepairCost(void)
             unsigned int uVar8  = (unsigned int)itemType;
             maxDur &= 0xffff;
             // Skip ring/wingtype/etc equipment IDs that don't degrade
-            // BUG-FIX 2026-04-26 (audit #3): IDA real:
+            // IDA:
             //   gold = ItemValue(item, 2);
             //   DAT_07eaa0f8 += ConvertRepairGold(gold, dur, maxDur, type, buf);
-            // El stub anterior pasaba (curDur, type, item, 2) → desordenado.
             if ((itemType < 416 || itemType > 419) &&
                 itemType != 426 && itemType != 135 && itemType != 143 &&
                 itemType < 448 &&
@@ -511,10 +485,7 @@ void __cdecl Item_RecalculateRepairCost(void)
 
     // IDA sub_4C4080: segundo bucle sobre el grid del inventario,
     // OffsetInventoryItems .. 0x7EA9510 = 64 celdas de 0x44 (8x8), filtrando
-    // por Key.  2026-09-12: el port recorria 8 "items" desde &DAT_07ea8410, que
-    // en este build es un DWORD suelto: leia los globals vecinos (entre ellos
-    // DAT_07ea840c/8408, las coordenadas del tooltip) y el costo de "reparar
-    // todo" cambiaba segun el item bajo el mouse.
+    // por Key.
     short *psVar12 = (short *)OffsetInventoryItems;
     for (int i = 0; i < 64; i++, psVar12 += 0x22) {
         if (*(int *)((char *)psVar12 + 0x38) != 0) {
@@ -540,7 +511,3 @@ void __cdecl Item_RecalculateRepairCost(void)
     }
     // (Second HashTable ref-decrement + unaff_EBP block skipped — anti-tamper)
 }
-
-// FUN_004233e0 @ 0x004233E0 — HashTable_Unlock (2-arg, release read lock)
-// STUB: HashTable obfuscation helper.
-void __cdecl FUN_004233e0(int a, int b) { (void)a; (void)b; }

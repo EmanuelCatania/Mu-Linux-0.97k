@@ -1,14 +1,14 @@
 // Render_PlayerEquipment.cpp
 //
 // Port directo del IDA RenderCharacter (sub_456770) líneas 1267-1981 — render
-// de Helper, Wing y Weapons del player. Este bloque se llamaba en Entity_UpdateRender
-// pero estaba parcialmente portado (solo wing+algunos weapons), faltaba:
+// de Helper, Wing y Weapons del player, llamado desde Entity_UpdateRender.
+// Incluye:
 //   - Render de Helper (819 = pet hada / 817 = otro)
 //   - Loop principal de armas (v234=0..1) que dibuja Weapon[0] y Weapon[1]
 //   - 30+ weapon-specific particle effects (glows de espadas/staffs/bows)
 //
-// 2026-05-04: agregado port directo de `CWeaponView::RenderCharacterBackItem`
-// (DLL source `Mu-linux-97K/Source/Client/Main/WeaponView.cpp:49`) que decide
+// Incluye además el port de `CWeaponView::RenderCharacterBackItem`
+// (DLL, `WeaponView.cpp`) que decide
 // si el arma se renderiza en la ESPALDA (LinkBone 47) o en la mano. Conditions:
 //   - safe-zone (entity+0x34E set por terrain bit 0)
 //   - greeting anim (93..124)
@@ -37,7 +37,7 @@
 //   sub_4553C0(model, type, bone, scale, color, owner) → Model_BoneParticle
 //
 // Anti-tamper hash-table operations (líneas IDA 1290-1505) elididas — pure
-// obfuscation por CLAUDE.md, no afectan render.
+// obfuscation, no afectan render.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -58,7 +58,7 @@ extern "C" void DbgLogPublic(const char*);
 // paquete N, esta funcion lo ve recien en la pasada N+1.
 //
 // Es barato (12 lecturas por paquete) y queda permanente hasta encontrar al
-// escritor -- lleva sin aparecer desde 2026-08-08.
+// escritor.
 extern "C" void EquipWipe_Tick(int op, int sub)
 {
     static int s_prevOccupied = -1;
@@ -160,22 +160,14 @@ bool __cdecl CheckFullSet(int c) {
                     return CheckFullSet_Tail(c, true);  // Full set + matched levels
                 }
             }
-            // 2026-08-08 FIX (glow pegado al desequiparse la armadura): acá el
-            // port devolvía `true` ("tiene las 5 piezas aunque no matcheen").
-            // En IDA ese camino es un `break` del while EXTERNO, y justo
-            // después del while está `v26 = 0;` — o sea devuelve **false**.
-            // El único camino que deja `v26 = 1` es el `goto LABEL_15` de
-            // arriba (set completo Y todos los niveles >= 9).
-            //
-            // Por qué se notaba al desequiparse: al sacar la armadura las
-            // body-parts de la entidad NO quedan en 0xFFFF sino en el modelo
-            // por defecto de la clase, así que el while externo recorre las 5
-            // piezas y entra acá; con niveles 0 el while interno no corre y
-            // caía en este `return true` → `v230 = true` en el case 0x186 de
-            // Entity_UpdateRender → se seguía ejecutando la sección 5
-            // (PartObjectColor + 6 sprites en los huesos del arma) = el glow.
-            // Un pj que nunca tuvo armadura sale antes por el while externo
-            // (alguna pieza en 0xFFFF) y por eso se veía normal.
+            // IDA: este camino es un `break` del while EXTERNO, y justo después del
+            // while está `v26 = 0;` — o sea devuelve **false**. El único camino que deja
+            // `v26 = 1` es el `goto LABEL_15` de arriba (set completo Y todos los
+            // niveles >= 9).
+            // Ojo: al sacar la armadura las body-parts NO quedan en 0xFFFF sino en el
+            // modelo por defecto de la clase, así que se llega acá con niveles 0;
+            // devolver true dejaría el glow del set (sección 5 del case 0x186 de
+            // Entity_UpdateRender) pegado.
             EquipmentLevelSet = 0;
             return CheckFullSet_Tail(c, false);
         }
@@ -228,11 +220,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
     float TargetPosition[3];
     int   bone = *(unsigned char*)(v121 + 4);
     float* boneMat = BoneMat48(entity_o, bone);
-    // BUGFIX 2026-09-01: aca habia `float WorldTime = (float)DAT_05826e08;`, pero
-    // `WorldTime` es un MACRO a DAT_05826e08 (structs.h:438), asi que declaraba un
-    // local que se sombreaba a si mismo y quedaba con basura (C4700): los cases que
-    // animan con sin(WorldTime * ...) usaban tiempo random.  Removido: los usos de
-    // abajo ya resuelven al global por el macro.
+    // `WorldTime` es un MACRO a DAT_05826e08 (structs.h): no declarar un local
+    // con ese nombre (se sombrearía a sí mismo y quedaría con basura).
     short Type = *(short*)v121;
 
     switch (Type) {
@@ -487,7 +476,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
 extern "C" BYTE OffsetInventoryItems[];
 
 // Llamada por Entity_UpdateRender al inicio del render del hero in-game.
-// Restaura equipment slots si fueron borrados.
+// Ya no restaura slots: reconstruye el hero (SetCharacterClass) sólo cuando
+// cambia el equipo.
 extern "C" void HeroEquipWatchdog(int c)
 {
     if (SceneFlag != 5) return;
@@ -497,21 +487,12 @@ extern "C" void HeroEquipWatchdog(int c)
     BYTE* cm = (BYTE*)(uintptr_t)DAT_07cf1ffc;
 
     if (cm) {
-        // ── 2026-08-08: RE-SIEMBRA DESDE EL STASH — REMOVIDA ─────────────────
-        // Era el último resto del watchdog: si un wear slot de CharacterMachine
-        // estaba en -1, lo rellenaba desde `g_HeroEquipStash_*`. O sea disparaba
-        // EXACTAMENTE al desequipar → el item volvía a aparecer en su caja
-        // (pants que "siguen equipados", escudo que se dibuja con un arma a dos
-        // manos, etc.).
+        // En el binario NADA re-siembra CharacterMachine por frame: el equipo lo
+        // escribe sólo el server — F3/10 (ReceiveInventory), el ack del move 0x24 y
+        // los acks de equipar —, y el render (`RenderEquipment3D` 0x4E3100) lo lee
+        // directo. No rellenar wear slots vacíos desde ningún stash.
         //
-        // Validado contra IDA: en el binario NADA re-siembra CharacterMachine
-        // por frame. El equipo lo escribe sólo el server —  F3/10
-        // (ReceiveInventory), el ack del move 0x24 y los acks de equipar —, y
-        // el render (`RenderEquipment3D` 0x4E3100) lo lee directo. Este watchdog
-        // era 100% invención del port para tapar que el equipo se reseteaba
-        // después del F3/03.
-        //
-        // Si el reseteo tras F3/03 vuelve a aparecer, el diagnóstico de abajo
+        // Si el equipo se resetea (p.ej. tras F3/03), el diagnóstico de abajo
         // (EQUIPWIPE) lo registra: es el bug real a arreglar, no a tapar.
         {
             static int  s_prevOccupied = -1;
@@ -525,48 +506,21 @@ extern "C" void HeroEquipWatchdog(int c)
             }
             s_prevOccupied = occupied;
         }
-        // ── 2026-08-08: RE-SIEMBRA DESDE EL INVENTARIO — REMOVIDA ────────────
-        // Acá había un loop que, para cada slot de equipo VACÍO en
-        // CharacterMachine, lo rellenaba desde `((ITEM*)OffsetInventoryItems)[slotIdx]`
-        // con slotIdx = 0..11. Eso es memoria EQUIVOCADA por construcción:
-        // `OffsetInventoryItems` es el pool del grid 8×8 y su índice de celda es
-        // `slotIdx - 12` (ver AddItemToGrid:396) — o sea `[0..11]` son las
-        // CELDAS 0..11 del grid visible (la primera fila y media del
-        // inventario), NO los wear slots. Los wear slots viven sólo en
-        // `CharacterMachine + 536 + 68*slot`.
+        // No rellenar wear slots desde `OffsetInventoryItems`: ese es el pool del
+        // grid 8×8 y su índice de celda es `slotIdx - 12` (ver AddItemToGrid), o sea
+        // `[0..11]` son CELDAS del grid visible, NO los wear slots. Los wear slots
+        // viven sólo en `CharacterMachine + 536 + 68*slot`.
         //
-        // Consecuencias que explicaba, las dos reportadas por el usuario:
-        //  · Render equivocado: la celda 1 del grid (p. ej. un item de mascota,
-        //    tipo 418) se copiaba al slot 1 = caja del ESCUDO → el escudo se
-        //    dibujaba como Uniria (modelo = Type+400 = 818). Las celdas 9/10/11
-        //    caían en Ring1/Ring2/Pendant → "los anillos figuran como guantes".
-        //  · El "clon" al levantar un item equipado: UI_Main limpiaba el slot y
-        //    este loop lo volvía a llenar al frame siguiente con lo que hubiera
-        //    en la celda del grid — de ahí el "a veces sale otro item".
-        //
-        // (El stash `g_HeroEquipStash_*` se borro el 2026-09-18: no tenia lectores.)
         // IDA/source base path: let SetCharacterClass rebuild the world hero
         // from CharacterMachine, instead of keeping a partial local mirror.
-        //
-        // ── 2026-08-15: el rebuild ya NO corre por frame ─────────────────────
-        // `SetCharacterClass` (0x45C130) termina cancelando la animación en
-        // curso cuando la acción está fuera de [0x22, 0x5B]:
+        // Sólo cuando CAMBIA el equipo: en IDA `SetCharacterClass` (0x45C130) se
+        // llama desde ReceiveAddPoint / ProtocolCore / char-select, nunca por frame,
+        // y termina cancelando la animación en curso fuera de [0x22, 0x5B]:
         //     if (!(v11 >= 0x85 && v11 <= 0x8C) && (v11 < 0x22 || v11 > 0x5B))
         //         SetPlayerStop(c);
-        // La caminata es la acción 13 (0x0D) → entraba SIEMPRE. Como este
-        // watchdog corre en cada frame del render del hero, el ciclo por tick
-        // era: acción 13 → SetPlayerStop pone 1 (frame=0) → SetPlayerWalk la
-        // devuelve a 13 (frame=0 otra vez). El frame nunca pasaba de 0.3 y la
-        // caminata se veía "mueve un pie y se resetea".
-        // Medido con el probe FRAMEDBG (2026-08-15):
-        //     act=13 spd=0.300 f=0.000->0.300   ← en CADA tick
-        // mientras que las acciones de idle (1 y 9), que no pasan por este
-        // camino, progresaban normal (0.28 → 0.56 → 0.84 … loop en nF=6).
-        //
-        // En IDA `SetCharacterClass` se llama sólo cuando CAMBIA el equipo
-        // (ReceiveAddPoint / ProtocolCore / char-select), nunca por frame.
-        // Reproducimos eso: rebuild sólo si los wear slots (o la entidad del
-        // hero) cambiaron respecto del frame anterior.
+        // Llamada por frame resetearía la caminata (acción 13) en cada tick.
+        // Rebuild sólo si los wear slots (o la entidad del hero) cambiaron respecto
+        // del frame anterior.
         {
             unsigned int sig = 0u;
             for (int i = 0; i < 12; ++i) {
@@ -618,7 +572,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
     // igual que el `if (!Bind)` de LABEL_330.
     int Bind = 0;
 
-    // DESVIACION DEL PORT (2026-05-04, conservada): gate por state=5 (in-game).
+    // DESVIACION DEL PORT: gate por state=5 (in-game).
     // IDA no lo tiene.  Sin el, char-select dibujaba el arma dos veces.
     if (SceneFlag != 5)
         return 0;
@@ -645,8 +599,8 @@ extern "C" int RenderCharacterBackItem(int c, int o)
         return Bind;
 
     // ── Que items van a la espalda ──────────────────────────────────────────
-    // PORT DEL DLL (CWeaponView::RenderCharacterBackItem, WeaponView.cpp:49),
-    // 2026-09-01.  Este main.exe cuelga UN SOLO item: verificado instruccion por
+    // PORT DEL DLL (CWeaponView::RenderCharacterBackItem, WeaponView.cpp).
+    // Este main.exe cuelga UN SOLO item: verificado instruccion por
     // instruccion en 0x458370-0x4584C0 --
     //     004583bb  LEA   ECX, [EAX+EAX*2+0x4E]      ; 3*Hand + 78
     //     004583c7  MOVSX EBX, word ptr [EDI+ECX*8]  ; un unico Type

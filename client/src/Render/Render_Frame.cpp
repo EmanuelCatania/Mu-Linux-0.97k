@@ -209,12 +209,6 @@
 #include "Render/Render.h"
 #include "Render/Camera.h"
 #include "Render/Player_Render.h"
-// 2026-05-08: backup of DAT_07d78068 — defined here (not in globals.cpp) so
-// it lives in a different .obj's BSS, NOT adjacent to DAT_07d78068. The
-// unknown writer that sets DAT_07d78068=0x1 also clobbers the next 4 bytes
-// to 0 (8-byte write). Putting the backup far away keeps it intact.
-// Plus a CANARY before/after to detect if even this gets clobbered.
-// (g_ItemAttribute_Backup here)
 
 // Forward decls for HUD helpers defined later in this TU.
 void Render_CharInfoPanel(void);
@@ -247,30 +241,23 @@ unsigned int Game_RenderTick(void)
     // mostraba un buffer sin dibujar (pantalla negra al usar un gate).
     if (DAT_07e11d1c > 30) return 0;
 
-    // BUG-FIX 2026-05-04: drain residual GL errors antes del frame para que el
-    // diagnostic logging de GL_DisableDepthTest no spamee con 0x504 stale (de pops
-    // sin push del frame previo durante la transición login→in-game).
+    // Drena errores GL residuales antes del frame (pops sin push del frame previo
+    // durante la transición login→in-game).
     while (glGetError() != GL_NO_ERROR) {}
 
-    // BUG-FIX 2026-04-28: anteriormente esto llamaba Render_GameFrame que a su
-    // vez llamaba Render_Scene3D al final → recursión infinita cuando porteamos
-    // Render_Scene3D para que invocara los UI sub-renderers internamente.
-    // Ahora Game_RenderTick → Render_Scene3D directamente (que ES la función
-    // RenderMainScene de IDA @ 0x00525A00, hace todo el flujo: BeginOpengl,
-    // 3D passes, BeginBitmap, HUD via Render_GameFrame, EndBitmap, EndOpengl).
+    // Render_Scene3D ES la RenderMainScene de IDA (@ 0x00525A00) y hace todo el
+    // flujo: BeginOpengl, 3D passes, BeginBitmap, HUD via Render_GameFrame,
+    // EndBitmap, EndOpengl. No llamar Render_GameFrame acá (recursión).
     Render_Scene3D();
     return 1;
 }
 
-// Render_GameFrame — full HUD render pass.  Reconciled 2026-04-29 against
-// IDA sub_4BBFB0 of the original mu.exe.  Previously several entries were
-// mislabeled "AntiTamper_HashMaintain_*" which they are NOT — IDA shows
-// them as plain UI render functions, and several real call sites
-// (RenderMainFrameWindow vtable dispatch on dword_55C9FF0, sub_4BFDE0 3D
-// hotbar, sub_4F6050 / sub_4EB070) were missing entirely.
+// Render_GameFrame — full HUD render pass (IDA sub_4BBFB0).
+// Varios nombres heredados ("AntiTamper_HashMaintain_*" y otros marcados
+// "was misnamed") NO son anti-tamper: IDA los muestra como funciones de UI.
 //
 // IDA verified call order (off + name + size in bytes):
-//   if (World==8) { swirling-water bg via RenderBitmapUV }       — TODO
+//   if (World==8) { swirling-water bg via RenderBitmapUV }
 //   glColor3f(1,1,1)
 //   sub_4BC220   Render_CharInfoPanel       guild-war/soccer
 //   RenderPartyHP                            party HP bars (0x4BCA20, 735 b)
@@ -288,21 +275,14 @@ unsigned int Game_RenderTick(void)
 //   sub_4BD650                               LARGE HUD pass (3734 b — was misnamed C)
 //   sub_4BCD20                               HUD pass D (867 b — was misnamed D)
 //   sub_4BFDE0                               3D-projected hotbar items (434 b)
-//   sub_4F6050                               unknown HUD pass (973 b)
-//   sub_4EB070                               unknown HUD pass (1342 b)
-//
-// Functions tagged "TODO port" below are scaffold-only; their bodies are
-// pending 1:1 IDA ports in dedicated sessions because each pulls in 5-15
-// new globals (GuildWarScore[], HeroSoccerTeam, EnableGuildWar, ...) plus
-// CRT/Win32 helpers (CreateGuildMark, RenderText_1, RenderBitmap, ...).
+//   sub_4F6050                               HUD pass (973 b, HUD_Pass3.cpp)
+//   sub_4EB070                               HUD pass (1342 b, HUD_Pass3.cpp)
 
 static inline float ConvertX_RF(float x) { return x * (float)((double)WindowWidth  / 640.0); }
 static inline float ConvertY_RF(float y) { return y * (float)((double)WindowHeight / 480.0); }
 
 // ── RenderBitmapUV (0x005128C0) ─────────────────────────────────────────────
-// 2026-08-23: no estaba implementada (functions.h la declaraba mal, como
-// `(int,int,int,int)`), asi que el unico caller —la tormenta de arena de
-// Tarkan— usaba `RenderBitmap` (0x5125A0) en su lugar.  No son intercambiables:
+// No es intercambiable con `RenderBitmap` (0x5125A0):
 //
 //   RenderBitmap   toma (u0, v0, u1, v1) y mapea un RECTANGULO de UV.
 //   RenderBitmapUV toma (u, v, uWidth, vHeight) y mapea un cuadrilatero
@@ -310,15 +290,16 @@ static inline float ConvertY_RF(float y) { return y * (float)((double)WindowHeig
 //                  `v + 0.25*vHeight` y `v + 0.75*vHeight`, mientras las
 //                  derechas van a `v + vHeight` y `v`.
 //
-// Ese sesgo es lo que da el arrastre/perspectiva de la arena; con el rectangulo
-// plano de RenderBitmap la textura se lee como un mosaico.
+// Ese sesgo es lo que da el arrastre/perspectiva de la arena (tormenta de
+// Tarkan); con el rectangulo plano de RenderBitmap la textura se lee como un
+// mosaico.
 //
 // Decodificado del decompile por offsets de stack: el loop
 // `glTexCoord2f(t[v9-1], t[v9]); glVertex2f(ya[v9-1], ya[v9])` con v9 = 0,2,4,6
 // desborda los arrays `t[5]`/`ya[2]` a proposito y toca los locales vecinos
 // (`s`, `v15`, `v16`, `xa`, `v19`..`v23`), o sea depende del layout del frame
-// original — [[locales-contiguos-ghidra]].  Aca se escriben las 4 esquinas
-// explicitas, que es lo mismo sin depender del stack.
+// original.  Aca se escriben las 4 esquinas explicitas, que es lo mismo sin
+// depender del stack.
 static void RenderBitmapUV(int Texture, float x, float y, float Width, float Height,
                            float u, float v, float uWidth, float vHeight)
 {
@@ -352,10 +333,8 @@ void Render_GameFrame(void)
         const float scrollA = (float)((long long)DAT_05826e08 % 100000) * _DAT_00552b88; // 0.0002
         const float scrollB = (float)((long long)DAT_05826e08 % 100000) * _DAT_00552500; // 0.001
 
-        // 2026-08-23: antes esto llamaba a `RenderBitmap` (0x5125A0) con
-        // (u0,v0,u1,v1), que mapea un RECTANGULO — la textura se leia como un
-        // mosaico.  El original usa `RenderBitmapUV` (0x5128C0), que mapea un
-        // cuadrilatero SESGADO en V y produce el arrastre de la arena.
+        // El original usa `RenderBitmapUV` (0x5128C0), que mapea un cuadrilatero
+        // SESGADO en V (el arrastre de la arena), no `RenderBitmap` (0x5125A0).
         RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, 435.0f, scrollA, 0.0f, 0.30000001f, 0.30000001f);
         RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, 435.0f, scrollB, 0.0f, 3.0f, 2.0f);
     }
@@ -391,8 +370,8 @@ void Render_GameFrame(void)
     AntiTamper_HashMaintain_C();    // sub_4BD650 (1000L HUD pass — NOT anti-tamper)
     AntiTamper_HashMaintain_D();    // sub_4BCD20 (240L HUD pass — NOT anti-tamper)
     Render_HotbarItems3D();         // sub_4BFDE0 (3D hotbar items)
-    Render_HudPass_4F6050();        // sub_4F6050 (TODO port)
-    Render_HudPass_4EB070();        // sub_4EB070 (TODO port)
+    Render_HudPass_4F6050();        // sub_4F6050
+    Render_HudPass_4EB070();        // sub_4EB070
 }
 
 // Render_CharInfoPanel (sub_4BC220) is implemented in
@@ -475,10 +454,9 @@ void Render_HPBars_OLD(void)
 
 // Render_ChatBox (sub_4BE4F0) is implemented in src/Render/HUD_Pass2.cpp.
 
-// 2026-04-29: name "AntiTamper_HashMaintain_X" was a misidentification.
-// IDA shows these are plain HUD render passes, NOT anti-tamper code.
-// Renamed conceptually but symbol kept (callers remain in Render_GameFrame
-// only) until the bodies are ported and a final naming pass happens.
+// Los nombres "AntiTamper_HashMaintain_X" vienen de una identificación
+// errónea: IDA muestra que son pasadas de HUD normales, NO código anti-tamper.
+// Se conserva el símbolo (sus únicos callers están en Render_GameFrame).
 
 // AntiTamper_HashMaintain_A (= RenderNumArrow @ 0x004BF540) is now
 // implemented in src/Render/HUD_Pass3.cpp.
@@ -567,11 +545,6 @@ void Render_Scene3D(void)
         camPos[0] = camPos[1] = camPos[2] = 0.0f;
     }
 
-    // ── 2b. MoveMainCamera ────────────────────────────────────────────────────
-    // Llama al port mínimo de MoveMainCamera (stubs.cpp), que setea
-    // CameraAngle/CameraPosition relativos al Hero. Pitch -48.5° (= EarthQuake
-    // - 48.5° per IDA), seguimiento 3rd-person.
-
     // ── 3. Top strip viewport for frustum ─────────────────────────────────────
     int w = GetScreenWidth();
     GL_BeginViewport(0, 0, w, 0x30);
@@ -599,16 +572,13 @@ void Render_Scene3D(void)
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
-    // BUG-FIX 2026-04-28: faltaba la llamada a RenderTerrain que
-    // dibuja la malla de tiles del terreno. Sin ella, el cliente entraba al
-    // mundo pero quedaba 100% negro.
+    // RenderTerrain dibuja la malla de tiles del terreno.
     if (worldId != 10) {
         RenderTerrain('\0');                      // RenderTerrain(EditFlag=0) — tile mesh
     }
     Terrain_Render();                              // Terrain_Render — UNCONDICIONAL en IDA (object walker)
-    // 2026-05-07: Particle_Render (FUN_0046BE40) — port FIEL desde IDA
-    // Game_RenderTick:113. Itera el effect pool y renderiza partículas
-    // (gate sparks, magic glow, etc). ANTES no estaba wireado.
+    // Particle_Render (FUN_0046BE40) — IDA Game_RenderTick:113. Itera el effect
+    // pool y renderiza partículas (gate sparks, magic glow, etc).
     Particle_RenderAll();                         // particle system draw
     RenderBoids();                              // RenderBoids (decoration animals)
     Entity_RenderAll_3D();
@@ -618,8 +588,8 @@ void Render_Scene3D(void)
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
         Entity_Render();                          // Entity_Render (sprites)
     }
-    // 2026-05-07: RenderFishs + RenderBugs — port FIEL desde IDA
-    // Game_RenderTick:124-125. Fauna decorativa (peces, mariposas).
+    // RenderFishs + RenderBugs — IDA Game_RenderTick:124-125. Fauna decorativa
+    // (peces, mariposas).
     RenderFishs(0, 0, 0, 0);                    // RenderFishs
     RenderBugs();                              // RenderBugs
     SkillEffects_RenderAll();
@@ -635,10 +605,10 @@ void Render_Scene3D(void)
     }
     Render_DrawSpritePool();                              // RenderSprites
     RenderParticles();                              // RenderParticles (effect pool)
-    // 2026-05-06: damage popup numbers (port FIEL desde IDA Game_RenderTick:139).
-    // Llamado entre RenderParticles y glPopMatrix para que los números floten en
-    // world-space. CreatePoint (= FUN_004792c0 en stubs.cpp:3407) los populeya
-    // desde Net_Process case 0x15 (ReceiveAttackDamage).
+    // Números de daño flotantes (IDA Game_RenderTick:139). Va entre
+    // RenderParticles y glPopMatrix para que los números floten en world-space.
+    // CreatePoint (0x004792C0, Entity/Entity_LegacyTeleport.cpp) los crea desde
+    // Net_Process case 0x15 (ReceiveAttackDamage).
     RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
@@ -647,9 +617,8 @@ void Render_Scene3D(void)
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
     GL_Begin2D();                              // BeginBitmap (Ortho2D)
 
-    // 2026-05-07: sub_4CB6F0 (Target_Render) — port FIEL desde IDA
-    // Game_RenderTick:143. Renderiza nombre del NPC/mob/player hovered.
-    // Sin esto el user no ve qué está hovereando.
+    // sub_4CB6F0 (Target_Render) — IDA Game_RenderTick:143. Renderiza el nombre
+    // del NPC/mob/player hovered.
     RenderMonsterName(0, 0, 0, 0);
 
     // IDA Render_Scene3D always enters the HUD 2D pass once the ortho layer

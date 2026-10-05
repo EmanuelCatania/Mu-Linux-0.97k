@@ -108,35 +108,14 @@
 #pragma warning(disable: 4244 4305 4309 4700)
 
 
-// 2026-09-03 FIX (la banda que cruzaba la pantalla desde el personaje).
-//
-// Dos campos DWORD del slot de clima se accedian con el indice mal escalado --
-// el patron `&DAT_x + i*stride` sobre puntero tipado que ya mordio antes en
-// este proyecto:
-//
-//   (&DAT_0839bd8c)[iVar2]          -- DAT_0839bd8c es `unsigned int`, o sea el
-//     compilador multiplica el indice POR 4.  Pero `iVar2` ya es el offset en
-//     BYTES (`iVar14 * 0x1bc`), asi que el paso real era 0x6f0 en vez de 0x1bc.
-//     A partir del slot 10 escribe FUERA del pool: en Icarus el bucle llega
-//     hasta el slot 12 (`if (0xc < iVar14) return`), mientras que en los demas
-//     mapas corta en 4 -- por eso el sintoma salia solo ahi.
-//     Medido: g_WeatherSlotPool = 016DC520..016E0A80 y el pool de joints
-//     arranca en 016E0AA0, o sea 32 bytes despues.  Con iVar14 = 10 la
-//     escritura cae en 0xdc + 0x6f0*10 = 0x463C = **joint slot 0 + 0xBC**, que
-//     es la Y del vertice 0 de la fila 2 del anillo de segmentos.  Escribe `1`,
-//     y `1` leido como float es el denormal 1.4e-45: el vertice se iba al
-//     origen del mapa y el quad entre esa fila y la anterior barria la pantalla.
-//     De ahi que lo mostraran el aura del Soul Barrier, el efecto de subir de
-//     nivel y el halo del set +11 -- los joints que ocupan los primeros slots.
-//
-//   (&DAT_0839bcb4)[iVar14*0x6f]    -- el caso simetrico: DAT_0839bcb4 esta
-//     declarado `char`, asi que el indice NO se escala y el paso quedaba en
-//     0x6f en vez de 0x1bc.  No sale del pool, pero pisa los slots vecinos.
-//     Que el campo es un DWORD lo confirma su propio uso mas abajo:
-//     `(int)... + 1` y `if (1 < (int)...)` -- es un contador.
-//
-// Los dos pasan por este accesor, que fija el paso en 0x1bc bytes y el ancho
-// en 4, que es lo que el binario hace (`0x6f * 4 == 0x1bc`).
+// Accesor de los campos DWORD del slot de clima: fija el paso en 0x1bc bytes
+// y el ancho en 4, que es lo que el binario hace (`0x6f * 4 == 0x1bc`).
+// No indexar con el tipo declarado del simbolo: `(&DAT_0839bd8c)[iVar2]`
+// (unsigned int) multiplica el offset en bytes por 4 y escribe fuera del pool
+// -- encima del pool de joints, que esta justo despues --, y
+// `(&DAT_0839bcb4)[iVar14*0x6f]` (char) deja el paso en 0x6f y pisa los slots
+// vecinos (el campo +0x04 tambien es un DWORD: es un contador, `(int)... + 1`,
+// `if (1 < (int)...)`).
 #define WSLOT_DW(off) (*(unsigned int *)&g_WeatherSlotPool[(off) + iVar14 * 0x1bc])
 uint __cdecl Weather_Update(void)
 {
@@ -168,11 +147,6 @@ uint __cdecl Weather_Update(void)
     // vectores de 3 floats: `&fStack_38`, `&fStack_2c`, `&fStack_20`.
     // Declarados como escalares sueltos MSVC no garantiza que queden contiguos
     // ni en ese orden, asi que el callee leia los componentes 1 y 2 de otro lado.
-    //
-    // Medido: las nubes de Icarus (Weather_Update -> CreateEffect 1150) nacian en
-    // pos=(6936, 0, 0) — X bien, Y y Z en cero — o sea fuera del mapa y por eso
-    // no se veian. Mismo patron que ya mordio en MoveJoint, CreateJoint,
-    // CreateEffect y los texcoords de los sprites.
     float   __fr[12] = { 0.0f };
     float  &fStack_38 = __fr[0],  &fStack_34 = __fr[1],  &fStack_30 = __fr[2];
     float  &fStack_2c = __fr[3],  &fStack_28 = __fr[4],  &fStack_24 = __fr[5];
@@ -378,16 +352,13 @@ LAB_00501064:
 
             // Non-storm: spawn by game state.
             //
-            // 2026-09-03 -- IDA (0x00500E80 L690-706) manda los TRES caminos al
-            // MISMO spawn (los tres hacen `break` del while y caen en el
-            // `memset(v17, 0, 0x1BC)` + init del slot):
+            // IDA (0x00500E80 L690-706) manda los TRES caminos al MISMO spawn (los tres
+            // hacen `break` del while y caen en el `memset(v17, 0, 0x1BC)` + init del
+            // slot):
             //     if ( !v15 || v15 == 1 || v15 == 3 || v15 == 4 || v15 == 10 ) break;
             //     if ( v15 == 7 ) { v24 = TerrainWall[v113];
             //                       if (!v24 || v24 == 2) break; }
             //     else if ( v15 >= 11 && v15 <= 16 ) break;
-            // El port tenia los dos ultimos como `else if` con el cuerpo VACIO y
-            // un comentario ("Same as state 0..4 spawn"), asi que Atlans (7) y
-            // los mundos 11-16 no spawneaban nada.
             //
             // Nota: el DLL de inyeccion NOPea justo estos dos tests en 0x00501292
             // ("Fix Atlans and Icarus Goldens Overflow"), o sea el binario SI los
@@ -676,10 +647,8 @@ LAB_00501cb5:
                 // ── Movement: apply direction vector ─────────────────────────
                 if ((&DAT_0839bdb4)[iVar2] != '\x02') {
                     if ((&DAT_0839bcb2)[iVar14*0xde] != 0xaf) {
-                        // BUG-FIX 2026-05-04: era literal `0x839bcb0` (dirección absoluta del binario
-                        // fuente). En nuestro build DAT_0839bcb0 vive en otra dirección; pasar el
-                        // literal hacía que Particle_PathUpdate leyera memoria random → AV at 0x004BF712 al
-                        // entrar al mundo (param0=0 read, param1=0x0839BCB0).
+                        // Pasar la dirección real de DAT_0839bcb0, no el literal `0x839bcb0` del
+                        // binario fuente (en este build el símbolo vive en otra dirección).
                         Particle_PathUpdate((int)pcVar3, iVar14, (int)(uintptr_t)&DAT_0839bcb0, 0x28);
                     }
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));

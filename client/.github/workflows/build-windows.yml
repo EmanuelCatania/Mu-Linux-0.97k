@@ -1,0 +1,206 @@
+# Build del cliente en Windows (Win32 / v143).
+#
+# - cmake:   configura con CMake (-A Win32 -T v143) y compila Debug y Release.
+#            Sube main.exe + main.map como artefacto.
+# - msbuild: compila mu97k.sln con msbuild, para comparar contra CMake.
+# - compare: compara las líneas de comando de cl/link/lib de los dos builds
+#            (tools/compare_build_flags.py), por configuración.
+# - map-symbols (sólo PRs, informativo): compara los símbolos de main.map entre la base y
+#            el head del PR (tools/compare_map_symbols.py).
+
+name: build-windows
+
+on:
+  push:
+    branches: [ "fase/*", "main" ]
+  pull_request:
+    branches: [ "fase/*", "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cmake:
+    name: cmake (${{ matrix.config }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fuentes de CMake == .vcxproj
+        run: python tools/check_cmake_sources.py
+
+      - name: Configurar
+        run: cmake -S . -B build -A Win32 -T v143
+
+      - name: Compilar
+        run: cmake --build build --config ${{ matrix.config }} --parallel -- /v:minimal
+
+      - name: Juntar tlogs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force tlogs | Out-Null
+          Get-ChildItem build -Recurse -Filter *.tlog |
+            Where-Object { $_.FullName -notmatch 'CMakeFiles' -and $_.Name -match 'command' } |
+            ForEach-Object {
+              $rel = $_.FullName.Substring((Resolve-Path build).Path.Length + 1)
+              $dst = Join-Path tlogs $rel
+              New-Item -ItemType Directory -Force (Split-Path $dst) | Out-Null
+              Copy-Item $_.FullName $dst
+            }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu97k-cmake-${{ matrix.config }}
+          path: |
+            bin/Client/main.exe
+            bin/Client/main.map
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tlogs-cmake-${{ matrix.config }}
+          path: tlogs
+
+  msbuild:
+    name: msbuild (${{ matrix.config }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar mu97k.sln
+        run: msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+
+      - name: Juntar tlogs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force tlogs | Out-Null
+          foreach ($root in @('obj', 'lib/libjpeg/obj')) {
+            if (-not (Test-Path $root)) { continue }
+            Get-ChildItem $root -Recurse -Filter *.tlog |
+              Where-Object { $_.Name -match 'command' } |
+              ForEach-Object {
+                $rel = $_.FullName.Substring((Resolve-Path .).Path.Length + 1)
+                $dst = Join-Path tlogs $rel
+                New-Item -ItemType Directory -Force (Split-Path $dst) | Out-Null
+                Copy-Item $_.FullName $dst
+              }
+          }
+
+      # El .vcxproj sólo genera main.map en Debug.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu97k-msbuild-${{ matrix.config }}
+          path: |
+            bin/Client/main.exe
+            bin/Client/main.map
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tlogs-msbuild-${{ matrix.config }}
+          path: tlogs
+
+  compare:
+    name: comparar flags (${{ matrix.config }})
+    needs: [ cmake, msbuild ]
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tlogs-msbuild-${{ matrix.config }}
+          path: tlogs-msbuild
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tlogs-cmake-${{ matrix.config }}
+          path: tlogs-cmake
+
+      - name: Comparar líneas de comando cl/link/lib
+        run: python tools/compare_build_flags.py tlogs-msbuild tlogs-cmake
+
+  # Sólo en PRs: compila la base y el head del PR con msbuild y compara los
+  # símbolos de main.map (tools/compare_map_symbols.py). El .vcxproj sólo pide
+  # el .map en Debug; acá se fuerza en las dos configs con _LINK_=/MAP. No
+  # bloquea el PR: el resultado queda en el log y en el resumen del job.
+  map-symbols:
+    name: símbolos del .map vs base (${{ matrix.config }})
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    env:
+      _LINK_: /MAP
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: microsoft/setup-msbuild@v2
+
+      # Base y head se compilan en el MISMO directorio: los símbolos de
+      # JustMyCode, del PCH y de los namespaces anónimos llevan un hash de la
+      # ruta del archivo, así que compilar en otra carpeta da falsos cambios.
+      - name: Compilar el head del PR
+        shell: pwsh
+        run: |
+          Copy-Item tools/compare_map_symbols.py $env:RUNNER_TEMP/
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item bin/Client/main.map $env:RUNNER_TEMP/head.map
+
+      - name: Compilar la base del PR
+        shell: pwsh
+        run: |
+          git clean -xdfq
+          git checkout -q --force ${{ github.event.pull_request.base.sha }}
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item bin/Client/main.map $env:RUNNER_TEMP/base.map
+
+      - name: Comparar símbolos
+        shell: pwsh
+        run: |
+          Set-Location $env:RUNNER_TEMP
+          python compare_map_symbols.py base.map head.map | Tee-Object -FilePath map-diff.txt
+          $rc = $LASTEXITCODE
+          "### main.map ${{ matrix.config }}: base vs head" >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+          Get-Content map-diff.txt >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+          # Informativo: un renombre o un borrado a propósito no debe poner el PR en
+          # rojo. Si desaparecen símbolos queda un aviso y la lista en el resumen.
+          if ($rc -ne 0) {
+            "::warning title=main.map ${{ matrix.config }}::Desaparecen símbolos respecto de la base; revisar la lista en el resumen del job."
+          }
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: map-symbols-${{ matrix.config }}
+          path: |
+            ${{ runner.temp }}/base.map
+            ${{ runner.temp }}/head.map
+            ${{ runner.temp }}/map-diff.txt

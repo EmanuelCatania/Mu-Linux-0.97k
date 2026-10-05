@@ -1,5 +1,4 @@
 // UI_LegacyGameHelpers.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos ------------------
+// Cloth_Integrate esta en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -48,12 +47,6 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Item_ReturnPickedItem @ 0x004CD3B0 — UI_ItemGrid_Fill
 // Fills 2D grid buffers with current item slot data (DAT_07e91350) for equipment display.
 // Dispatches by DAT_07ea9800; each grid entry = 0x11 dwords, selection flag at offset 0x38.
-//
-// 2026-09-11: reescrita contra IDA.  La version anterior escribia en bases
-// DAT_ corridas 0x38 que en este build son OTRA memoria (no los Offset*Items),
-// borraba con memset un buffer de 64 celdas que el original no toca, tomaba la
-// posicion de ItemPickedPos y no soltaba el item de la mano: el item "levantado
-// y devuelto" nunca volvia a su celda.
 //
 // IDA sub_4CD3B0:
 //   pos = Inventory[32].Type (= DAT_07ea5b18, slot de origen)
@@ -123,14 +116,8 @@ void __cdecl Item_ReturnPickedItem(void)
 //       }
 //   }
 //
-// 2026-09-04 -- BUG-FIX ("asigno el skill con Ctrl+N pero al apretar el numero
-// no cambia").  El port tenia la firma `void SelectSkillByHotkey(void)`: Ghidra perdio
-// el argumento (viaja en registro) y quien lo porteo comparo la tabla de
-// asignaciones contra la CONSTANTE 1 en vez de contra el numero apretado.  O sea
-// solo podia seleccionar la skill asignada al 1 -- y como los dos call sites
-// llamaban sin argumento, cualquier tecla 0..9 hacia lo mismo.
-//
-// Los globals si estaban bien mapeados (verificado con ida_get_function):
+// El numero llega como argumento (Ghidra lo pierde: viaja en registro).
+// Globals (verificados con ida_get_function):
 // SelectedHero = 0x5616AC, m_bAutoAttack = 0x559C5C, Attacking = 0x559C58,
 // CharacterAttribute = 0x7CF1FF4;  +87 = tipo de skill, +215 = numero de hotkey
 // (la tabla es por personaje: SelectedHero << 6).

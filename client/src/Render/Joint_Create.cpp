@@ -41,18 +41,14 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   float fVar24;
   undefined4 uVar25;
   byte *pbVar26;
-  // 2026-08-10 FIX (haces oscuros de las alas) — tercera instancia del patrón
-  // "locales que Ghidra separó y el código asume contiguos". Acá el código hace:
+  // El frame original se reconstruye como UN bloque: el código depende de que
+  // {local_90,local_8c,local_88} y {local_78,local_74,local_70} sean tríos
+  // contiguos (vec3 de entrada y salida de Vector_Rotate):
   //     local_90 = Scale * -0.5f;  local_8c = 0;  local_88 = 0;
   //     Vector_Rotate(&local_90, local_6c, &local_78);   // in y out son vec3
   //     *(float*)(slot+0x58) = local_78 + Position.x;   // out[0]
   //     *(float*)(slot+0x5c) = local_74 + Position.y;   // out[1]
   //     *(float*)(slot+0x60) = local_70 + Position.z;   // out[2]
-  // o sea depende de que {local_90,local_8c,local_88} y {local_78,local_74,
-  // local_70} sean tríos contiguos del frame. Con locales sueltos sólo out[0]
-  // caía donde el código lo lee → la esquina X del segmento salía bien y la Y/Z
-  // quedaban con basura, que es justo lo que mostró el probe JOINTDBG
-  // (v0=(13480.6, 1.08e9, 3.86e10)).
   // Varios de estos slots son dual-use (float o byte*), así que se respalda todo
   // con un bloque de bytes y los nombres quedan como referencias tipadas al
   // offset correcto: ebp-0x98 → __fr[0x00] … ebp-0x3C → __fr[0x5C], total 0x98.
@@ -70,13 +66,9 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   float &local_70 = *(float  *)(__fr + 0x28);
   float *const local_6c = (float *)(__fr + 0x2c);   // 12 floats
   float *const local_3c = (float *)(__fr + 0x5c);   // 15 floats
-  // 2026-08-10 — vistas FLOAT de los slots que Ghidra tipó como `byte*`.
-  // Ghidra los llamó punteros, pero cuando forman el vec3 de Vector_Rotate
-  // guardan FLOATS. El port los leía con `local_8cf`, que
-  // CONVIERTE el valor entero en vez de reinterpretar los bits: un 2.16
-  // (bits 0x400B0000 = 1074413568) salía como 1074413568.0 ≈ 1.07e9 — la
-  // causa exacta de los haces (x usaba local_90, que sí era float, y salía
-  // sana; y/z pasaban por esta conversión y explotaban).
+  // Vistas FLOAT de los slots que Ghidra tipó como `byte*`: cuando forman el
+  // vec3 de Vector_Rotate guardan FLOATS, así que hay que reinterpretar los bits
+  // (no convertir el valor entero).
   float &local_94f = *(float *)(__fr + 0x04);
   float &local_8cf = *(float *)(__fr + 0x0c);
   float &local_88f = *(float *)(__fr + 0x10);
@@ -103,17 +95,14 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   pcVar14[0x9c1] = '\0';
   pcVar14[0x9c2] = '\0';
   pcVar14[0x9c3] = '\0';
-  // 2026-09-04 -- DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
+  // DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
   // +0x9C8 y +0x9CC son el avance por tick de la TargetPosition que aplica
   // LABEL_439 de MoveJoint (`TargetPos.x += o+2504`, `TargetPos.y += o+2508`),
   // o sea la velocidad del joint.  El binario limpia +0x9C0 aca pero NO estos
-  // dos, asi que un subtipo que no los escriba en su propio case hereda los
-  // del joint anterior que ocupo el slot.  El 1249/sub7 -- los disparos del
-  // ataque de Alquamos (AttackEffect case 0x45) -- es justamente uno de esos:
-  // su case en CreateJoint fija vida, escala, segMax y fase, y nada mas.  Si
-  // el slot venia de un 1249/sub14, que pone +0x9C8 en `rand()%500 - 250`, el
-  // disparo arranca con hasta 250 unidades de deriva por tick y se va de lado.
-  // Limpiarlos deja a cada joint con la velocidad que define su propio case.
+  // dos, asi que un subtipo que no los escriba en su propio case (p.ej. el
+  // 1249/sub7, los disparos de Alquamos) heredaria los del joint anterior que
+  // ocupo el slot.  Limpiarlos deja a cada joint con la velocidad que define su
+  // propio case.
   *(int *)(pcVar14 + 0x9c8) = 0;
   *(int *)(pcVar14 + 0x9cc) = 0;
   pcVar14[0x40] = '\0';
@@ -2052,34 +2041,20 @@ switchD_0046dee7_default:
     pcVar14[0x57] = '\0';
   }
   {
-    // 2026-09-03 -- DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
+    // DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
     //
     // El binario inicializa UNICAMENTE la fila 0 del anillo de segmentos
     // (`v11+22..v11+33` = 0x58..0x87, los 4 vertices) y deja el resto como
-    // estaba.  En el juego original eso no se nota porque el pool de joints se
-    // recicla sin parar: las filas altas conservan las coordenadas del joint
-    // anterior, que son valores de mundo plausibles, asi que los quads de mas
-    // salen diminutos o degenerados.
+    // estaba.  En el original el pool de joints se recicla sin parar y las filas
+    // altas conservan coordenadas plausibles del joint anterior.  Aca el pool es
+    // un global en BSS: la primera vez que se usa un slot esas filas valen 0 y el
+    // renderer (0x00473710) dibujaria un quad hasta el origen del mapa.
     //
-    // En nuestro build el pool es un global en BSS: la PRIMERA vez que se usa
-    // un slot esas filas valen 0, y el renderer (0x00473710) dibuja un quad
-    // entre la ultima fila con datos y una fila en el origen -- la banda que
-    // cruza la pantalla desde el personaje.  La muestran justo los tres joints
-    // reportados: aura del Soul Barrier (266), efecto de subir de nivel y halo
-    // del set +11 (1249).  Medido con la sonda JROWS: el vertice lejano salia
-    // en (1046, 0, 295) con el cercano en (1112, 1489, 381).  Y verificado por
-    // contraste: cuando el slot venia RECICLADO (con datos del joint anterior)
-    // el anillo se comportaba perfecto durante 200 muestras seguidas.
-    //
-    // Replicar la fila 0 en todo el anillo reproduce la condicion que el
-    // original obtiene gratis por reciclaje: los quads sobrantes quedan
-    // degenerados sobre la propia posicion del joint en vez de barrer el mapa.
-    // 2026-09-12: arranca DESPUES de las filas que la creacion ya construyo
-    // (0..segCount).  Antes empezaba en la 1 y pisaba los segmentos armados por
+    // Se replica la fila 0 en el resto del anillo (quads sobrantes degenerados
+    // sobre la posicion del joint), arrancando DESPUES de las filas que la
+    // creacion ya construyo (0..segCount) para no pisar los segmentos armados por
     // los bucles de creacion (1254 sub 14 / 1253 sub 4 de las alas del MG, y
-    // cualquier subtipo que llame a sub_46FE90 dentro de CreateJoint): la estela
-    // quedaba colapsada en un punto (sonda JOINTWING, largo 0.0) y la luz del
-    // ala no recorria las plumas.
+    // cualquier subtipo que llame a sub_46FE90 dentro de CreateJoint).
     const int __rowBytes = 0x30;
     const int __maxRows  = (0x9d8 - 0x58) / __rowBytes;
     int __n = *(int *)(pcVar14 + 0x54);
@@ -2335,13 +2310,10 @@ LAB_0046ee73:
   pcVar14[0x9b9] = '\0';
   pcVar14[0x9ba] = '\0';
   pcVar14[0x9bb] = '\0';
-    // 2026-09-02: Ghidra tipo este slot como `float**` y le asigno `param_4`,
-    // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
-    // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
-    // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
-    // Scale; MaxTails = 6  -- los otros tres valores de este mismo
-    // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
-    // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
+    // Este slot es la **Scale** del joint (+0x0C): Ghidra lo tipo como `float**`
+    // y le asignaba `param_4` (el PUNTERO al vec3 de angulos).  Confirmado con
+    // MU 5.2 CreateJoint, case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70;
+    // LifeTime = 49; Scale; MaxTails = 6.
     *(float *)(pcVar14 + 0xc) = param_7;
   pcVar14[0x54] = '\f';
   pcVar14[0x55] = '\0';
@@ -2603,13 +2575,10 @@ LAB_0046e970:
   pcVar14[0x9b9] = '\0';
   pcVar14[0x9ba] = '\0';
   pcVar14[0x9bb] = '\0';
-    // 2026-09-02: Ghidra tipo este slot como `float**` y le asigno `param_4`,
-    // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
-    // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
-    // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
-    // Scale; MaxTails = 6  -- los otros tres valores de este mismo
-    // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
-    // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
+    // Este slot es la **Scale** del joint (+0x0C): Ghidra lo tipo como `float**`
+    // y le asignaba `param_4` (el PUNTERO al vec3 de angulos).  Confirmado con
+    // MU 5.2 CreateJoint, case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70;
+    // LifeTime = 49; Scale; MaxTails = 6.
     *(float *)(pcVar14 + 0xc) = param_7;
   pcVar14[0x54] = '\x06';
   pcVar14[0x55] = '\0';
@@ -2618,7 +2587,7 @@ LAB_0046e970:
   goto switchD_0046dee7_default;
 }
 
-// IDA compatibility bridge: stubs_IDA_ports.cpp intentionally retains this ABI name.
+// Puente de compatibilidad IDA: conserva el nombre ABI CreateJoint y delega en Joint_Create.
 void* __cdecl CreateJoint(int type, float* p1, float* p2, float* p3, unsigned int subType,
                             int owner, float scale, short link, unsigned char flag)
 {

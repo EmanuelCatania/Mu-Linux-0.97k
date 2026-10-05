@@ -92,13 +92,9 @@ static void LoginScene_ApplySafeObjectAnim()
             *(float*)(obj + 104) = ramp;
         }
 
-        // BUG-FIX 2026-07-13: NO spawnear efectos aquí. Este call site duplicaba
-        // el spawn de Entity_SpawnEffects: los barcos/objetos ya lo reciben desde
-        // el pass de render (Terrain_Render.cpp:149, tras Entity_PrepareRender que computa
-        // los bones world-space frescos). Aquí, Calc_RenderObject NO refresca bien el
-        // bone scratch → los 2 flares del barco salían con bones stale (mismo valor
-        // para los 3 barcos) → aparecían flotando en el centro/al lado. El original
-        // llama Entity_SpawnEffects UNA vez por entidad, desde el render. Removido.
+        // No spawnear efectos acá: Entity_SpawnEffects se llama una vez por entidad
+        // desde el pase de render (tras Entity_PrepareRender, con los bones frescos),
+        // como en el original.
     }
 
     // Login uses the Butterfles pool for the floating fairy/angel helper
@@ -367,7 +363,7 @@ int Game_SceneUpdate(void)
         DAT_083a7c48 = 1;
         DAT_083a7c40 = 0;
 
-        // ── Flujo ConnectServer (2026-07-15) ──────────────────────────────────
+        // ── Flujo ConnectServer ──────────────────────────────────
         // Si server.cfg trae 2 líneas (línea 1 = ConnectServer), conectamos YA
         // al ConnectServer para recibir la lista real + el load. A diferencia
         // del GameServer, el ConnectServer NO responde JoinServer al conectar:
@@ -397,17 +393,10 @@ int Game_SceneUpdate(void)
         }
 
         // Spawn background world objects.
-        // ── BUG-FIX MASIVO (2026-04-20) ───────────────────────────────────────
-        // Valores canónicos de Ghidra @ 0x0051F900 (MoveLogInScene) líneas
-        // 100-260. El port previo tenía inventados los cálculos de pos y
-        // había perdido el reset de `rot` antes del mu banner (0xA2) y del
-        // sky4 (0xA3), haciendo que esos 2 últimos rendereasen con
-        // rot_z=180 heredado → banner volteado, sky4 volteado.
-        // También el port metía Z=180 a los 3 ships cuando original es Z=0,
-        // y posición del primer barco estaba como (-79,158,102) cuando la
-        // real es (-700,700,0).
+        // Valores de Ghidra @ 0x0051F900 (MoveLogInScene) líneas 100-260. `rot` se
+        // resetea antes del mu banner (0xA2) y del sky4 (0xA3).
         {
-            // ── VALORES CANÓNICOS (2026-04-21) ─────────────────────────────
+            // ── VALORES CANÓNICOS ─────────────────────────────
             // Restaurados desde Ghidra/IDA @ 0x0051F900 líneas 150-235.
             // CreateObject aplica scale override vía
             // byte_4FFAA4[type-60] cuando SceneFlag==2||4:
@@ -474,7 +463,7 @@ int Game_SceneUpdate(void)
         LoginScene_ClearPreviewEquipmentMeta(loginPreview2);
         {
             int base = DAT_07abf5d0;
-            // Entity 2 (elf) — BUG-FIX: Y era -802, el canónico es -770.
+            // Entity 2 (elf).
             // Ghidra @ 0x0051F900 línea 239: CharactersClient[2].Position[1] = -770.0
             *(float*)(base + 0x734) = 0.6f;
             *(int*)  (base + 0x744) = 0;
@@ -547,13 +536,8 @@ int Game_SceneUpdate(void)
         #endif
 
         // Camera initial position from server-slot table
-        // ── BUG FIX: DAT_005615ec/f0/f4/f8/fc/600 son aliases DWORD& sobre el
-        // storage float CameraWalk_005615ec[]. Si los leemos como int y los
-        // asignamos a un float& (DAT_083a7ad0/4/8 y _DAT_083a4334), MSVC hace
-        // conversión int→float que destruye el bit pattern (200.0f leído como
-        // 0x43480000 → asignado como float 1128792064.0f). El log CAM mostró
-        // CurrentCameraAngle=(3.27e9, 0, 3.24e9) y CurrentCameraPosition[2]=1.13e9.
-        // Forzamos lectura via cast a float* para reinterpretar correctamente.
+        // DAT_005615ec/f0/f4/f8/fc/600 son aliases DWORD& sobre el storage float
+        // CameraWalk_005615ec[]: se leen vía float* para no convertir int→float.
         _DAT_083a42d4 = 0; _DAT_083a42d8 = 0; _DAT_083a42dc = 0;
         DAT_083a42b8 = 0;
         DAT_083a7ad0  = *((float*)&DAT_005615f8 + DAT_083a7c3c * 6);
@@ -576,12 +560,9 @@ int Game_SceneUpdate(void)
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
     Object_MoveUpdate();
-    // IDA Game_SceneUpdate (0x51F900) llama MoveParticles() cada frame. Nuestro
-    // Particle_Update() es en realidad Trail_RenderAll (0x46C3E0, mal nombrado) y
-    // NO decrementa el lifetime de las partículas. MoveParticles (0x477090)
-    // sí las tickea/expira. Faltaba acá → las partículas del hada (Particle_Spawn
-    // 1175 + sparkle 1150) se acumulaban forever additive → whiteout dorado en el
-    // server-select. Mismo fix que Game_EnterWorldTick.
+    // IDA Game_SceneUpdate (0x51F900) llama MoveParticles() cada frame: tickea y
+    // expira las partículas. Nuestro Particle_Update() es en realidad
+    // Trail_RenderAll (0x46C3E0, mal nombrado) y no decrementa el lifetime.
     MoveParticles();
     Character_UpdateAll();
 
@@ -655,7 +636,7 @@ int Game_SceneUpdate(void)
                     pkt[4] = 0; pkt[5] = 0;
                     Net_SendBuf((char*)pkt, 6);
                     // IDA 0x0051F900 L445-446: these are GlobalText[470]/[471],
-                    // not independent empty buffers.  Same fix as L612-613.
+                    // not independent empty buffers.
                     UIChatLogWindow_AddText((const char*)&DAT_083a7c74, GlobalText[470], 1);
                     UIChatLogWindow_AddText((const char*)&DAT_083a7c78, GlobalText[471], 1);
                 }
@@ -843,13 +824,9 @@ int Game_SceneUpdate(void)
                 // pkt[1] := serial is set later by Net_SendSmallPacket
 
                 // ── LoginKey chain XOR ──────────────────────────────────────
-                // ANTES: aplicado inline aquí (solo F1/01).
-                // AHORA: aplicado universalmente en Net_SendSmallPacket /
-                // Net_SendLargePacket — para que TODOS los paquetes salientes
-                // (F1/05 HWID incluido) lleven el chain, igual que el companion
-                // (Mu-linux-97K Source/Client/Main/Protocol.cpp:983 ExtractPacket).
-                // Sin chain en F1/05 el server veía subh=0x7D en vez de 0x05 y
-                // dejaba HardwareID="" → F1/01 devolvía code=05 (HWID empty).
+                // Se aplica en Net_SendSmallPacket / Net_SendLargePacket, para TODOS los
+                // paquetes salientes (F1/05 HWID incluido), igual que el companion
+                // (Protocol.cpp ExtractPacket).
                 int totalLen = pos;
 
                 // Compute CRC and build final send buffer
@@ -860,13 +837,9 @@ int Game_SceneUpdate(void)
                     Net_SendLargePacket(pkt, totalLen);
                 }
 
-                // 2026-07-25 (#1): log de cada intento de login para diagnosticar
-                // el "primer enter = dato mal, segundo enter entra".  Correlacionar
-                // con "F1/01 LOGIN-RESULT code=..." en Net_Process: si el intento N
-                // manda len iguales pero el server responde fail en el 1ro y OK en
-                // el 2do, el problema es el primer paquete (serial/encriptación) o
-                // un estado stale de conexión, no las credenciales.  NO logueamos
-                // la password, solo longitudes + serial actual.
+                // Diagnóstico: log de cada intento de login (longitudes + serial actual,
+                // nunca la password), para correlacionar con "F1/01 LOGIN-RESULT code=..."
+                // en Net_Process.
                 {
                     static int s_loginAttempt = 0;
                     s_loginAttempt++;
@@ -989,23 +962,11 @@ state_fail_common:
                 {
                     // Send 0xC1/0xF3/0x00 char-list request (4 bytes).
                     //
-                    // BUG-FIX (2026-04-25 v2): el companion SÍ aplica chain XOR
-                    // a paquetes C1, no solo a C3.  CPacketManager::ExtractPacket
-                    // (Source/Client/Main/PacketManager.cpp:438) llama XorData
-                    // con start=end+1=3 (C1 header de 2 bytes), end=size, sobre
-                    // el buffer completo ANTES de evaluar si se hace C3 wrap.
-                    // Los C1 conservan el header pero el chain XOR ya fue
-                    // aplicado.  Solo los C3/C4 entran al branch de re-encrypt.
-                    //
-                    // Antes: removí el chain XOR pensando que C1 path no lo
-                    // usaba → server recibía `C1 04 F3 00` plain, hacía reverse
-                    // XOR, veía subop corrupto → descarta silencioso (13s gap
-                    // en log sin FD_READ).
-                    //
-                    // Bug original era simplemente OOB en pkt[4]: el formula
-                    // correcta es `pkt[i] ^= pkt[i-1] ^ key[i]` — para
-                    // totalLen=4 una sola iteración, `pkt[3] ^= pkt[2] ^ key[3]`.
-                    // No hay acceso fuera del buffer.
+                    // El chain XOR también se aplica a los C1: el companion
+                    // (CPacketManager::ExtractPacket) llama XorData con start=3, end=size sobre el
+                    // buffer completo antes de decidir el wrap C3. Fórmula:
+                    // `pkt[i] ^= pkt[i-1] ^ key[i]`; con totalLen=4 es una sola iteración,
+                    // `pkt[3] ^= pkt[2] ^ key[3]`.
                     BYTE pkt[4];
                     pkt[0] = 0xC1; pkt[1] = 4; pkt[2] = 0xF3;
                     pkt[3] = 0;

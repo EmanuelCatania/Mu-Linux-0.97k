@@ -1,5 +1,4 @@
 // SMD_Legacy.cpp
-// Extracted from stubs_bulk_misc.cpp.
 
 #include "stdafx.h"
 #include "globals.h"

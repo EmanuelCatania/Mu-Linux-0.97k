@@ -151,9 +151,8 @@ void Texture_BindLocalCached(int id)
     // caches se desincronizan y se omiten binds → textura equivocada.
     //
     // Se conserva porque forma parte del port de este módulo, pero NO
-    // instrumentar acá para diagnosticar el render: en la sesión del 2026-08-16
-    // se puso un probe en esta función, dio 0 hits, y ese silencio se tomó como
-    // evidencia de que las texturas estaban bien — costó una ronda entera.
+    // instrumentar acá para diagnosticar el render: un probe acá da 0 hits
+    // aunque las texturas estén mal.
     if (g_bound_texture_id == id)
         return;
     g_bound_texture_id = id;
@@ -353,7 +352,7 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
     char  bit = *(char*) (pak + idx); idx += 1;
     idx += 1;
 
-    // BUG-FIX (2026-04-21): mismo issue que en OZJ — 256 era muy bajo.
+    // Límite 1024 (igual que en OZJ; 256 era muy bajo).
     if (bit != 32 || nx > 1024 || ny > 1024) {
         delete[] pak;
         return 0;
@@ -532,23 +531,19 @@ void Texture_Draw2D(int id,
 // ============================================================
 // (Implementation not reproduced — same pipeline as Texture_Load above)
 
-// =============================================================================
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 4805-5199 (395 lines)
-// OpenJPG (Texture_Load OZJ/JPEG raw), OpenTGA (OpenTGA), UnloadImage (Texture_FreeSlot)
-// =============================================================================
 // ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
 // Loads JPEG or OZJ texture from disk, decompresses with libjpeg, uploads to GL.
 // Path mode:
 //   DAT_0055a7c4 == 0 → full_path = g_tex_base_dir + filename
 //   DAT_0055a7c4 != 0 → strip extension, try g_tex_ext_hq then g_tex_ext_lq
 // OZJ files: fseek(f, 24, SEEK_SET) to skip 24-byte Webzen header before JPEG data.
-// Limits: 256x256 max, rounds to power-of-2 before GL upload.
+// Limits: 1024x1024 max, rounds to power-of-2 before GL upload.
 int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, char show_err)
 {
     // --- Path construction ---
     char full_path[256];
 
-    // 2026-05-05: Strip "Data\" / "Data/" prefix si el BMD lo guardó como
+    // Strip "Data\" / "Data/" prefix si el BMD lo guardó como
     // path absoluto desde root. Sin esto el path final queda
     // "Data\Data\Npc\foo.OZJ" y fopen falla.
     const char* nameForPath = path;
@@ -592,17 +587,14 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     }
 
     // --- OZJ header (skip 24 bytes) ---
-    // NOTA / BUG PENDIENTE (sistema de texturas): varios .OZJ (Effect\Spark02.OZJ,
+    // BUG PENDIENTE (sistema de texturas): varios .OZJ (Effect\Spark02.OZJ,
     // Local\Webzenlogo.OZJ, ships, logos) son JPEG PLANO de Photoshop (SOI 0xFFD8
     // sin header OZJ) con estructura: THUMBNAIL RGB embebido en APP1/APP13 +
     // imagen PRINCIPAL en CMYK. El skip-24 a ciegas hace que libjpeg lea el SOI del
     // THUMBNAIL (RGB, con color) — por eso los ships/logos se ven bien pero Spark02
-    // queda 4x4 (su thumbnail es diminuto). Intentos previos:
-    //   - Detectar SOI + leer imagen principal → crash (CMYK, 4 comp, overflow).
-    //   - + JCS_RGB → sin crash pero TODO gris (CMYK Adobe invertido mal convertido).
-    // Solución correcta pendiente: leer el thumbnail RGB SIEMPRE (que es lo que hace
-    // el skip-24 por casualidad), o portar el decode CMYK-Adobe fiel. Por ahora se
-    // mantiene skip-24 (colores OK); Spark02 queda chico como efecto secundario.
+    // queda 4x4 (su thumbnail es diminuto). Solución correcta pendiente: leer el
+    // thumbnail RGB SIEMPRE, o portar el decode CMYK-Adobe fiel. Por ahora se
+    // mantiene skip-24 (colores OK).
     fseek(f, 0x18, SEEK_SET);
 
     // --- libjpeg decompress ---
@@ -724,7 +716,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     char local_200[256];
     char local_100[256];
 
-    // 2026-05-05: BMDs de NPC almacenan el nombre de textura como path
+    // BMDs de NPC almacenan el nombre de textura como path
     // completo "Data\Npc\foo.OZT". Sin strip, la concatenación con base
     // "Data\" produce "Data\Data\Npc\foo.OZT" → fopen FAIL → NPCs blancos.
     // Si szFileName empieza con "Data\" o "Data/", strip ese prefijo.
@@ -802,13 +794,13 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         if (s_tgahdr < 250) { s_tgahdr++;
         }
     }
-    // [FIX #4 2026-06-30] Límite de tamaño <=256 removido — match companion-DLL
+    // Sin límite de tamaño <=256, igual que el companion-DLL
     // Patchs.cpp "Remove TGA size limit" (NOPea el size-check + fuerza los jumps
     // de width/height). Las object textures del mundo (chair2.OZT etc.) son >256,
     // el límite original las rechazaba → renderizaban cyan (textura sin subir).
     // Se mantiene `depth == 0x20` (32bpp) — el patch tampoco lo toca.
     if (depth == 0x20) {
-        // Round up to next power-of-2 (max 256)
+        // Round up to next power-of-2 (sin tope)
         int pw = 1; while (pw < width)  pw <<= 1;
         int ph = 1; while (ph < height) ph <<= 1;
 
@@ -863,11 +855,9 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         glBindTexture(GL_TEXTURE_2D, glHandle);
         glTexImage2D(GL_TEXTURE_2D, 0, 4, pw, ph, 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, pixBuf);
-        // BUG-FIX: el valor original era 8192.0f. GL_MODULATE = 0x2100 = 8448.0f.
-        // 8192 = 0x2000 = GL_NICEST, que NO es un valor válido para
-        // GL_TEXTURE_ENV_MODE → setea glGetError = GL_INVALID_ENUM (0x500),
-        // que el driver NVIDIA acumula y eventualmente convierte en AV en una
-        // llamada GL siguiente (visto en GL_DisableDepthTest → glDisable).
+        // GL_MODULATE = 0x2100 = 8448.0f. No usar 8192 (0x2000 = GL_NICEST): no es
+        // válido para GL_TEXTURE_ENV_MODE → GL_INVALID_ENUM, que el driver NVIDIA
+        // acumula y puede convertir en AV en una llamada GL siguiente.
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, (float)GL_MODULATE); // 0x2100 = 8448.0f
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, uiFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, uiFilter);

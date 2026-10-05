@@ -1,8 +1,7 @@
 // Net_LegacyRuntime.cpp
 //
-// Final network/session functions extracted from stubs_game.cpp.  The code
-// retains each IDA symbol/address in its leading comment; this relocation does
-// not change packet, initialization, or anti-tamper behaviour.
+// Funciones de red/sesión (InitGame, ReceiveChat, SendCheck, ...). Cada una
+// conserva su símbolo/dirección de IDA en el comentario que la precede.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -14,12 +13,10 @@ extern void ClearActionObject(void);
 extern void __cdecl Effect_PhysicsTick(DWORD Object);
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx);
 
-// 2026-05-08 BUG-FIX MAYÚSCULO: en el binario original `OffsetInventoryItems`
-// y `DAT_07ea8410` son el mismo símbolo (idem para Mix/Warehouse). En nuestra
-// build son globals separados, así que comparaciones tipo
-// `DAT_07ea9800 == &DAT_07ea8410` siempre fallaban → drop dispatcher tomaba
-// el fallback "Other context" y enviaba srcType=3 con srcIdx==dstIdx, lo cual
-// era no-op del lado del server y no liberaba el lock EnableUse.
+// En el binario original `OffsetInventoryItems` y `DAT_07ea8410` son el mismo
+// símbolo (idem para Mix/Warehouse). En nuestra build son globals separados,
+// así que comparaciones tipo `DAT_07ea9800 == &DAT_07ea8410` tienen que usar
+// las direcciones reales del pool.
 // Forward-decls a nivel TU para usar las direcciones reales del pool.
 extern "C" BYTE OffsetInventoryItems[];   // HUD_Pass3.cpp — main inv (8x8 + 12 wear)
 extern "C" BYTE OffsetTradeItems[];       // HUD_Pass3.cpp
@@ -30,7 +27,7 @@ extern "C" BYTE Inventory[];              // HUD_Pass3.cpp
 extern "C" int dword_7EAA0C8;             // HUD_Pass3.cpp
 extern "C" int dword_7EAA0CC;             // HUD_Pass3.cpp
 
-// IDA Hex-Rays intrinsic shims (mirror of stubs.cpp shims).
+// IDA Hex-Rays intrinsic shims.
 #ifndef LODWORD
 #define LODWORD(x)           (*((DWORD*)&(x)))
 #define HIDWORD(x)           (*(((DWORD*)&(x))+1))
@@ -78,14 +75,9 @@ void __stdcall InitGame(void)
     EnableUse = 0;
     DAT_07e11998 = -1;    // SendGetItem
     // IDA InitGame L31 es `SummonLife = 0`, y SummonLife vive en 0x05826D24
-    // (verificado con ida_xrefs_to: lo escriben InitGame, ReceiveRevival x3 y
-    // ProtocolCore, y lo lee RenderEquipedHelperLife).  El port escribia
-    // DAT_07E11D28, que es **MouseUpdateTime** -- el contador del debounce de
-    // movimiento de Player_InputTick.  Dos efectos: SummonLife nunca se
-    // limpiaba al salir de la sesion, y ponerlo en 0 aca hacia que al volver
-    // al mundo el primer click quedara bloqueado hasta contar de nuevo hasta
-    // MouseUpdateTimeMax (que InitGame no toca y puede venir en ~28-49 del
-    // ultimo camino recorrido) = hasta ~2 s sin poder caminar.
+    // (lo escriben InitGame, ReceiveRevival x3 y ProtocolCore, y lo lee
+    // RenderEquipedHelperLife).  No confundir con DAT_07E11D28, que es
+    // MouseUpdateTime -- el contador del debounce de movimiento de Player_InputTick.
     DAT_05826d24 = 0;     // SummonLife
     DAT_05826c08 = 0;     // SoccerTime    (IDA InitGame @0x4244B4)
     DAT_05826d33 = 0;     // SoccerObserver (IDA InitGame @0x4244BA)
@@ -109,27 +101,22 @@ void __stdcall InitGame(void)
     m_bAutoAttack = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
     // IDA InitGame L40 es `CheckInventory = 0`, y CheckInventory vive en
     // 0x07EAA160 -- es el puntero al ITEM bajo el mouse que Scene_MapTick le
-    // pasa a RenderItemInfo para dibujar el tooltip.  El port limpiaba
-    // DAT_07E11D24, que es otro global (el tipo de item de la ventana F1, el
-    // que indexa sub_4C2E20).  Es el mismo error de alias que ya se habia
-    // corregido en Item_ClickHandler.cpp en 2026-08-22, aca sin corregir.
-    //
-    // Efecto: al salir del mundo el tooltip NO se limpiaba y se quedaba
-    // dibujado encima del char-select y del select-server (reportado
-    // 2026-09-27: "un tooltip llego hasta el login").
+    // pasa a RenderItemInfo para dibujar el tooltip.  No confundir con
+    // DAT_07E11D24 (el tipo de item de la ventana F1, el que indexa sub_4C2E20).
+    // Si no se limpia, el tooltip queda dibujado encima del char-select y del
+    // select-server.
     DAT_07eaa160 = 0;     // CheckInventory
 
     // IDA InitGame tiene ADEMAS esta linea, sobre otro global (ojo: D20, no
     // D24).  Es el modo de la ventana de ayuda F1.
     DAT_07e11d20 = 0;
-    // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World).
-    // El port escribia DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de
-    // la taberna — asi que cada InitGame lo dejaba en -1 y PlayMp3 recibia (char*)-1.
+    // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World), no
+    // DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de la taberna.
     World = -1;   // World
     // CSQuest__ClearQuest(g_csQuest);
     // IDA InitGame L43 es `LockInputStatus = 0`, y LockInputStatus vive en
     // 0x07E11D6F (xrefs: WndProc x4, InitGame, ReceiveJoinMapServer,
-    // RenderIME_Status).  El port escribia DAT_07E11D1C, que es **LoadingWorld**
+    // RenderIME_Status).  No confundir con DAT_07E11D1C, que es **LoadingWorld**
     // -- el contador que gatea el frame de render (`if (LoadingWorld > 30) return`).
     DAT_07e11d6f = 0;     // LockInputStatus
     DAT_07eaa134 = 0;     // RepairEnable_0 (IDA InitGame 0x4244FC)
@@ -172,24 +159,24 @@ void __stdcall InitGame(void)
 // ─────────────────────────────────────────────────────────────────────────────
 // ReceiveChat @ 0x00427630 (692 bytes, ~156 lines)
 // Packet handler for opcode 0x00 (chat message from server).
-// Packet layout: [C1][len][00][sender:10][msg:60][type:1][text...]
+// Packet layout: [C1][len][00][sender:10][prefijo:1][msg...]
 //
-// If SceneFlag == 2 (in-game):
+// Si SceneFlag == 2 (escena de login):
 //   Sends a 4-byte ACK packet {0xC1, 0x04, 0x0E, ...} back to server
 //   (keep-alive/chat ACK). Handles WSAEWOULDBLOCK by queuing to send buffer.
 //
-// Otherwise (login/charselect scene):
-//   Extracts sender name (10 bytes @ offset 3) and message text (59 bytes @ offset 0xE).
-//   Routes by chat type byte at offset 0x0D:
-//     '~' (0x7E) → AddText(sender, msg, 4)        — whisper
-//     '@' (0x40) → AddText(sender, msg, 5)        — GM/announce
-//     '#' (0x23) → AssignChat(sender, msg, 1)     — party chat
-//     default    → AssignChat(sender, msg, 0) + AddText(sender, msg, 3) — normal chat
+// En el resto de las escenas:
+//   Extracts sender name (10 bytes @ offset 3) y rutea por el byte de prefijo
+//   en 0x0D (el mensaje empieza en 0x0E):
+//     '~' (0x7E) → AddText(sender, msg, 4)        — party
+//     '@' (0x40) → AddText(sender, msg, 5)        — guild
+//     '#' (0x23) → AssignChat(sender, msg, 1)     — sólo burbuja
+//     default    → AssignChat(sender, msg, 0) + AddText(sender, msg, 3) — chat
+//                  normal (el mensaje se toma desde 0x0D)
 // ─────────────────────────────────────────────────────────────────────────────
 void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 {
-    // BUG-FIX: DAT_07e11980 no existe en PE. SceneFlag real = SceneFlag.
-    // El comentario "(in-game)" era incorrecto: 2 = Login en este cliente.
+    // SceneFlag 2 = escena de login en este cliente (no in-game).
     if (SceneFlag == 2) {  // SceneFlag == 2 (Login scene)
         // Send 4-byte ACK: C1 04 0E xx
         char ackPkt[4];
@@ -225,7 +212,7 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
         return;
     }
 
-    // --- Chat message processing (login/charselect scene) ---
+    // --- Chat message processing (escenas que no son el login) ---
     char sender[11];
     char msg[61];
     memset(sender, 0, sizeof(sender));
@@ -237,10 +224,8 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
     // Copy message text (up to 59 bytes)
     memset(msg, 0, 61);
 
-    // FIX 2026-07-19: las 3 ramas llamaban `FUN_00481a40(0, sender, 0)` — función y
-    // argumentos equivocados, y el canal siempre 0. IDA ReceiveChat (0x427630) usa
-    // UIChatLogWindow_AddText(strID, strText, <canal>) con el canal correcto por
-    // prefijo. Sin esto el mensaje nunca entraba al chat log con su color/canal.
+    // IDA ReceiveChat (0x427630) usa UIChatLogWindow_AddText(strID, strText, <canal>)
+    // con el canal correcto por prefijo.
     extern void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mode);
 
     BYTE chatType = ReceiveBuffer[0x0D];
@@ -433,7 +418,7 @@ void __stdcall FUN_00422074(void)
 //
 // The key is re-initialized (forward order, then reverse order) around
 // each XOR loop — this is a compiler artifact / anti-tamper pattern,
-// not meaningful crypto variation (see CLAUDE.md notes).
+// not meaningful crypto variation.
 //
 // == Hash table operations ==
 //
@@ -494,7 +479,7 @@ void __stdcall SendCheck(void)
     }
 
     // --- Hash table anti-tamper: lookup CharacterMachine key ---
-    // (obfuscation pattern — see CLAUDE.md anti-tamper notes)
+    // (patrón de ofuscación anti-tamper, no es lógica de juego)
     // Inserts/clones CharacterAttribute data into hash table,
     // XOR-encrypts the 0x584-byte block with secondary key.
 

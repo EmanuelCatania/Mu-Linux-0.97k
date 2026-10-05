@@ -1,16 +1,3 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
-
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -65,18 +52,15 @@ static void Warrior_SendSkill19(BYTE skill, WORD targetKey)
 // hookea como `SendContinueDeathStab` (Patchs.cpp, 0x00486136).
 // `packedOffset` es IDA v316.
 //
-// 2026-09-03 -- DESVIACION DE PROTOCOLO (servidor MuEmu), la misma que ya
-// aplican `Combat_SendDuration1E_97k` y `SendSkillPacket1E_Local`:
+// DESVIACION DE PROTOCOLO (servidor MuEmu), la misma que aplican
+// `Combat_SendDuration1E_97k` y `SendSkillPacket1E_Local`:
 // el 0.97k vanilla arma 9 bytes y NO manda la key del objetivo, pero
 // PMSG_DURATION_SKILL_ATTACK_RECV (GameServer/SkillManager.h:96) son 11 y el
 // server lee `index[]` SIEMPRE:
 //     short bIndex = MAKE_NUMBERW(lpMsg->index[0], lpMsg->index[1]);
 //     this->UseDurationSkillAttack(..., bIndex, ...);   // SkillManager.cpp:2045
-// Con 9 bytes lee esos dos bytes FUERA del paquete: `bIndex` sale basura y
-// `MultiSkillAttack -> BasicSkillAttack(aIndex, bIndex, ...)` le pega a otra
-// entidad o a ninguna.  Este era el UNICO de los tres emisores de C3:1E que
-// habia quedado en la forma vanilla -- descartaba `targetKey` con un
-// `(void)targetKey` explicito.
+// Con 9 bytes lee esos dos bytes FUERA del paquete y le pega a otra entidad o
+// a ninguna.
 static void Warrior_SendSkill1E(BYTE skill, BYTE x, BYTE y, BYTE direction,
                                 BYTE packedOffset, BYTE angle, WORD targetKey)
 {
@@ -310,8 +294,6 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     }
 }
 
-// ── Entity action stubs (Skills.cpp / Combat.cpp externs) ────────────────────
-
 // Legacy helper only; no canonical FUN mapping retained here. Previous `FUN_004742B0`
 // label was incorrect: IDA FUN_004742B0 is documented as CreateTeleportBegin in Entity_LegacyTeleport.cpp.
 // Hit reaction: Entity_SetAnimation(0x57), clear +0x164, set +0x7C=1,
@@ -449,10 +431,8 @@ LAB_00445110:
 // Slots: [0x00]=active, [0x04]=entity_id, [0x10..0x18]=src_pos, [0x1C..0x24]=dst_pos,
 //        [0x0C]=param_4, [0x38..0x3B]=phase_flags, [0x48..0x4B]=state_chars.
 void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_pos, float param_4) {
-    // BUG-FIX 2026-05-03: was `while ((int)pcVar1 < 0x7c82cd0)` (absolute source-binary
-    // bound). With DAT_07c80110 sized as 1 byte and the loop walking 100 × 0x70 bytes,
-    // every teleport effect spawn corrupted the heap. Pool now sized to 100 slots in
-    // globals.cpp; bound is iteration count.
+    // El bound es la cantidad de iteraciones (pool de 100 slots en globals.cpp),
+    // no la dirección absoluta del binario (`pcVar1 < 0x7c82cd0`).
     char *pcVar1 = (char*)&DAT_07c80110[0];
     for (int i = 0; i < 100; ++i) {
         if (*pcVar1 == '\0') {

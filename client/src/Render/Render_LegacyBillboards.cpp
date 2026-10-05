@@ -1,5 +1,4 @@
 // Render_LegacyBillboards.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos -----------------
+// Cloth_Integrate vive en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -92,9 +91,8 @@ void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
     glPopMatrix();
     GL_ResetState();
 }
-// BMD__PlayAnimation (BMD::PlayAnimation / BMD_AnimTick) — moved to src/Render/BMD_Anim.cpp
-// CharacterAnimation @ 0x00448600       — moved to src/Render/BMD_Anim.cpp
-// (B3 refactor 2026-05-07)
+// BMD__PlayAnimation (BMD::PlayAnimation / BMD_AnimTick) — en src/Render/BMD_Anim.cpp
+// CharacterAnimation @ 0x00448600       — en src/Render/BMD_Anim.cpp
 
 // ── Weapon/Entity color helpers ───────────────────────────────────────────────
 

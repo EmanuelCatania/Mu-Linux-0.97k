@@ -1,5 +1,3 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -38,60 +36,39 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_CODE 63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
 // EnableAlphaBlend @ 0x00511710 — GL additive blending setup.
-// 2026-06-29 BUG-FIX (depth-mask cache desync → estructuras opacas desaparecen):
-// esta copia llamaba glDepthMask(0) y glDisable(GL_CULL_FACE) DIRECTOS, sin tocar
-// los caches DAT_083a42e8 (depth mask) ni DAT_083a411c (cull). El render de meshes
-// usa la versión cacheada GL_SetBlendAdditive (GL_State.cpp); cuando algún caller pasaba
-// por ESTA copia, el cache quedaba en "depth write ON" mientras el GL real estaba
-// en OFF → el EnableDepthMask cacheado de DisableAlphaBlend se volvía no-op → el
-// objeto opaco siguiente renderizaba con mask=0, no escribía depth, y geometría
-// más lejana lo tapaba. El source 5.2 (ZzzOpenglUtil.cpp:468) confirma que
-// EnableAlphaBlend usa el DisableDepthMask CACHEADO, nunca glDepthMask directo.
-// Fix: delegar a la versión canónica cacheada (idéntico address 0x00511710).
+// Delega en la versión canónica cacheada GL_SetBlendAdditive (GL_State.cpp,
+// misma dirección). No llamar glDepthMask/glDisable(GL_CULL_FACE) directos:
+// desincroniza los caches DAT_083a42e8 (depth mask) y DAT_083a411c (cull) y
+// el objeto opaco siguiente puede quedar sin escribir depth. El source 5.2
+// (ZzzOpenglUtil.cpp:468) confirma que EnableAlphaBlend usa el DisableDepthMask
+// CACHEADO, nunca glDepthMask directo.
 void __cdecl EnableAlphaBlend(void) {
     GL_SetBlendAdditive();
 }
 
 // EnableAlphaTest @ 0x00511680 — GL standard alpha blend + alpha test.
-// 2026-06-29 BUG-FIX (mismo desync de cache que EnableAlphaBlend): esta copia
-// llamaba glDepthMask(1)/glDisable(GL_CULL_FACE) DIRECTOS sin tocar los caches.
-// El source 5.2 (ZzzOpenglUtil.cpp:443) confirma que EnableAlphaTest(DepthMask)
-// usa el EnableDepthMask CACHEADO condicional. Fix: delegar a la versión canónica
-// cacheada GL_SetBlendSrcOver (idéntico address 0x00511680; param = flag DepthMask).
+// Delega en la versión canónica cacheada GL_SetBlendSrcOver (misma dirección;
+// param = flag DepthMask), por el mismo motivo que EnableAlphaBlend. El source
+// 5.2 (ZzzOpenglUtil.cpp:443) confirma que EnableAlphaTest(DepthMask) usa el
+// EnableDepthMask CACHEADO condicional.
 void __cdecl EnableAlphaTest(bool enable) {
     GL_SetBlendSrcOver(enable ? '\x01' : '\0');
 }
 
 
-// Linker stubs — external functions called by OpenNpc/RenderEquipment3D/RenderItems3D
-// These are placeholders until the actual implementations are decompiled.
+// Funciones externas que usan OpenNpc/RenderEquipment3D/RenderItems3D.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // AccessModelWithTextures - DESVIACION DEL PORT, no existe en IDA.
 //
 // Envuelve a AccessModel (0x005060B0, el loader BMD crudo) y le agrega los dos
 // pasos que el port necesita para que un NPC quede utilizable: cargar su
-// textura y sembrar las velocidades de animacion.  Los ~42 call sites que la
-// usan son los que antes llamaban al nombre AccessModel cuando el loader crudo
-// todavia se llamaba FUN_005060b0.
+// textura (OpenTexture; sin ella el NPC sale en blanco) y sembrar las
+// velocidades de animacion.  La usan los ~42 call sites de carga de NPCs.
 //
-// 2026-09-25: hasta el renombrado esta funcion SE llamaba AccessModel y convivia
-// con FUN_005060b0.  Al renombrar el loader crudo a AccessModel las dos quedaron
-// como sobrecargas (char* vs const char*), functions.h solo declaro la del loader
-// y este puente quedo muerto: los NPC cargaban su BMD pero sin velocidades de
-// animacion, o sea congelados -- y el herrero, cuyo sonido se dispara por rango
-// de frame, lo reproducia en loop.  Ver [[simbolo-duplicado-patron]].
-//
-// 2026-05-05: AccessModel era stub vacio -> ningun BMD de NPC se cargaba.
-// Solo el guardia (type=249) renderizaba porque usa player model 390 ya
-// cargado. Los demas NPCs (Storage, Smith, Wizard, etc.) llamaban a
-// AccessModel(0x149, "Data\\Npc\\", "Storage", 1) etc pero el modelo nunca
-// cargaba -> invisible.
-//
-// 2026-05-05 (followup): ademas llamar OpenTexture post-BMD load. Sin esto los
-// NPCs cargaban geometria pero las texturas no se resolvian en los slots
-// (IndexTexture[]) -> render en blanco. El cliente original si hace este paso
-// despues del BMD load para NPCs.
+// Ojo: no volver a llamarla AccessModel.  Con el mismo nombre que el loader
+// crudo quedan como sobrecargas (char* vs const char*), functions.h declara
+// solo la del loader y este puente queda muerto (NPCs congelados).
 void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) {
     AccessModel(id, path, name, param);
     // Path para OpenTexture: typically "Npc\" sin "Data\" prefijo (los
@@ -99,15 +76,14 @@ void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) 
     if (path) {
         OpenTexture(id, path, 0x2600, '\x01');
     }
-    // 2026-05-05: setup de animation speeds (idéntico al patrón que
-    // OpenMonsterModel hace para monsters). Sin esto, los NPCs cargan
-    // geometry/textures pero entity[+0x105] action speed = 0 →
-    // CharacterAnimation no avanza el frame → NPCs estáticos.
+    // Velocidades de animación (mismo patrón que OpenMonsterModel para monsters):
+    // sin esto entity[+0x105] action speed = 0 y CharacterAnimation no avanza el
+    // frame (NPCs estáticos).
     //
     // CharacterAnimation lee de model+48 (=bones table per BMD__Open
     // alloc) con stride 16 bytes. Esa tabla tiene `numBones` entries de 0x10
-    // bytes c/u. Para evitar buffer overflow (crashes vimos con NPCs de
-    // pocos bones), solo escribir speeds hasta el límite de bones disponibles.
+    // bytes c/u: sólo escribir speeds hasta el límite de bones disponibles
+    // (overflow con NPCs de pocos bones).
     int slotBase = DAT_05828d58 + id * 0xbc;
     int actionsTable = *(int*)(slotBase + 48);
     short numBones = *(short*)(slotBase + 38);   // realmente numBones, but anim speed lookup uses this
@@ -247,16 +223,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         ofsXmul = 0.50f; ofsYmul = 0.70f; resolved = true;
     }
 
-    // 2026-08-11 — REMOVIDO: bloque inventado por el port (el comentario original
-    // decía que estos items "expect to be centered ... not biased downward",
-    // o sea una heurística a ojo, no un decompile). Forzaba ofsYmul = 0.50 para
-    // 416-419/428/429 y, al no llevar guard `!resolved`, PISABA el valor correcto
-    // de IDA para el rango [416,448) que asigna la rama de arriba (0.50/0.70).
-    // Efecto: la Uniria (tipo 418) se anclaba en el centro de la casilla en vez
-    // de al 70% → se veía más arriba que en el original. IDA `RenderItem3D`
-    // (0x4E1BE0): `if (Type >= 416 && Type < 448) { _sx += W*0.5; _sy += H*0.7; }`
-    // sin ninguna excepción para esos tipos.
-
     if (!resolved) {
         switch (Type) {
             case 457: {
@@ -269,9 +235,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
             // IDA: `case 460: case 459:` comparten cuerpo —
             //   if ((Level & 0xF8) == 24) goto LABEL_62 (0.5/0.5)
             //   else                      LABEL_90      (0.5/0.95)
-            // 2026-08-11 FIX: el 460 estaba agrupado con 465-467 (0.5/0.5 fijo)
-            // y el 459 tenía ramas inventadas (lvl3 13/14/15) que no están en el
-            // 0.97k.
             case 459:
             case 460: {
                 ofsXmul = 0.50f;
@@ -303,11 +266,9 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
             case 473:
             case 474:
                 ofsXmul = 0.50f; ofsYmul = 0.90f; resolved = true; break;
-            // 2026-08-11 — REMOVIDOS los casos 475/476/477/478/479: no existen en
-            // el 0.97k. En IDA caen al final de la cadena y, por estar dentro de
-            // [448,480), terminan en `goto LABEL_90` = 0.50/0.95 (el mismo
-            // fallback de más abajo). Los valores que había (0.90 / 0.5-0.5 /
-            // 0.55-0.80) eran invenciones del port.
+            // IDA no tiene casos 475/476/477/478/479: caen al final de la cadena y, por
+            // estar dentro de [448,480), terminan en `goto LABEL_90` = 0.50/0.95 (el
+            // mismo fallback de más abajo).
         }
     }
 
@@ -318,8 +279,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     }
 
     // IDA (cola): `if (Type < 448 || Type >= 480) { 0.5 / 0.60 } else goto LABEL_90 (0.5/0.95)`
-    // 2026-08-11 FIX: el rango era [448,512), así que los tipos 480-511 tomaban
-    // 0.95 cuando en IDA les corresponde 0.60.
     if (!resolved && Type >= 448 && Type < 480) {
         ofsXmul = 0.50f;
         ofsYmul = 0.95f;
@@ -399,8 +358,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
                  0, Position, Success ? 1 : 0, PickUp ? 1 : 0);
 }
 
-// Batch 21 — helper function stubs (called by MoveObjects, CollisionDetectLineToMesh, CheckMixRecipe)
-// MoveObject_Special (IDA-activated, was Ghidra stub)
+// MoveObject_Special (IDA-activated)
 void __cdecl MoveObject_Special(int a1)
 {
   int v1; // edi
