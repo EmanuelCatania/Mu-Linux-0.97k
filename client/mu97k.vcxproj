@@ -121,6 +121,7 @@
     <ClInclude Include="src\Sound\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Net\Network.h" />
+    <ClInclude Include="src\Net\Recv\NetRecv.h" />
     <ClInclude Include="src\Combat\Combat.h" />
     <ClInclude Include="src\Combat\Skills.h" />
     <ClInclude Include="src\Game\Game_CharSelectTick.h" />
@@ -189,6 +190,18 @@
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Core\WndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Account.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Character.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Chat.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Combat.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Event.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Guild.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Item.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Party.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Quest.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Trade.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_Viewport.cpp" />
+    <ClCompile Include="src\Net\Recv\Recv_World.cpp" />
     <ClCompile Include="src\Input\Input_WndProc.cpp" />
     <ClCompile Include="src\Config\UserSettings.cpp" />
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />

@@ -100,6 +100,18 @@ set(MU_SOURCES
     src/Game/MapManager.cpp
     src/Core/WndProc.cpp
     src/Net/Network.cpp
+    src/Net/Recv/Recv_Account.cpp
+    src/Net/Recv/Recv_Character.cpp
+    src/Net/Recv/Recv_Chat.cpp
+    src/Net/Recv/Recv_Combat.cpp
+    src/Net/Recv/Recv_Event.cpp
+    src/Net/Recv/Recv_Guild.cpp
+    src/Net/Recv/Recv_Item.cpp
+    src/Net/Recv/Recv_Party.cpp
+    src/Net/Recv/Recv_Quest.cpp
+    src/Net/Recv/Recv_Trade.cpp
+    src/Net/Recv/Recv_Viewport.cpp
+    src/Net/Recv/Recv_World.cpp
     src/Input/Input_WndProc.cpp
     src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
@@ -355,6 +367,7 @@ set(MU_HEADERS
     src/Sound/SoundManager.h
     src/Game/MapManager.h
     src/Net/Network.h
+    src/Net/Recv/NetRecv.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h
