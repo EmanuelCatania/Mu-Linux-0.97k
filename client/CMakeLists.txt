@@ -98,6 +98,9 @@ set(MU_SOURCES
     src/Core/Font.cpp
     src/Sound/SoundManager.cpp
     src/Game/MapManager.cpp
+    src/Core/WndProc.cpp
+    src/Net/Net_SocketEvents.cpp
+    src/Input/Input_WndProc.cpp
     src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp

@@ -186,6 +186,9 @@
     <ClCompile Include="src\Core\Font.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
     <ClCompile Include="src\Game\MapManager.cpp" />
+    <ClCompile Include="src\Core\WndProc.cpp" />
+    <ClCompile Include="src\Net\Net_SocketEvents.cpp" />
+    <ClCompile Include="src\Input\Input_WndProc.cpp" />
     <ClCompile Include="src\Config\UserSettings.cpp" />
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
