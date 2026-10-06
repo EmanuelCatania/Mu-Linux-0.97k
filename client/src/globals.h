@@ -306,21 +306,7 @@ extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
 extern char            g_GameServerIP[128];      // GameServer fallback (ServerConfig)
 extern unsigned short  g_GameServerPort;
 // SceneFlag (in stdafx.h)
-// g_lpszMp3 @ 0x005615C4 — tabla de 6 rutas de BGM (ver globals.cpp).
-// Los DAT_005615c4..d8 NO son handles independientes: son sus 6 elementos.
-extern char*   g_lpszMp3[6];
-#define DAT_005615c4     ((DWORD)(uintptr_t)g_lpszMp3[0])
-#define DAT_005615c8     ((DWORD)(uintptr_t)g_lpszMp3[1])
-#define DAT_005615cc     ((DWORD)(uintptr_t)g_lpszMp3[2])
-#define DAT_005615d0     ((DWORD)(uintptr_t)g_lpszMp3[3])
-#define DAT_005615d4     ((DWORD)(uintptr_t)g_lpszMp3[4])
-#define DAT_005615d8     ((DWORD)(uintptr_t)g_lpszMp3[5])
-#define PTR_DAT_005615c4 DAT_005615c4
-#define PTR_DAT_005615c8 DAT_005615c8
-#define PTR_DAT_005615cc DAT_005615cc
-#define PTR_DAT_005615d0 DAT_005615d0
-#define PTR_DAT_005615d4 DAT_005615d4
-#define PTR_DAT_005615d8 DAT_005615d8
+// g_lpszMp3 (IDA 0x005615C4, rutas de los BGM): ver CMapManager (Game/MapManager.cpp).
 // DAT_005615dc @ 0x005615DC ES `g_iCurrentDialogScript` — el índice del diálogo
 // de quest activo.  Lo escriben CSQuest::ShowDialogText (0x4017E7) y sub_51D840,
 // y lo leen sub_401AF0 y UI_InGameMenu.  La etiqueta vieja ("login/scene misc

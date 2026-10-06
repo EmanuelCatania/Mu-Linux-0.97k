@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/Game_SceneUpdate.h"
 #include "Game/Game_EnterWorldTick.h"
@@ -390,7 +391,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     #endif
 
     // DESVIACION: IDA 0x525D40 pide g_lpszMp3[1] (MuTheme) en el login, el
-    // mismo slot que Lorencia. Acá el login pide su propio archivo,
+    // mismo tema que Lorencia. Acá el login pide su propio archivo,
     // Data\Music\MuTheme.mp3, como el DLL (Patchs.cpp parchea ese nombre en
     // 0x5616D0). El pack no lo trae, así que PlayMp3 no encuentra el archivo y
     // el login queda sin música, como en el 0.97k con la opción de música en su
@@ -401,9 +402,9 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     if (SceneFlag != 5) return;
 
-    // ── BGM STATE MACHINE (World) ───────────────────────────────────
+    // ── Sonidos ambientales por mapa ───────────────────────────────────────
     switch (World) {
-    case 0:  // Connecting
+    case 0:  // Lorencia
         if (DAT_07e118e8 == 4) {
             Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
@@ -412,16 +413,16 @@ void __cdecl Game_MainLoop(HDC param_1)
                 PlayBuffer(1, 0, 1);
         }
         break;
-    case 1:  // Entering world
+    case 1:  // Dungeon
         PlayBuffer(3, 0, 1);
         break;
-    case 2:  // In-world
+    case 2:  // Devias
         if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9)
             Sound_StopBuffer(0);
         else
             PlayBuffer(0, 0, 1);
         break;
-    case 3:  // Outdoor
+    case 3:  // Noria
         PlayBuffer(0, 0, 1);
         if ((_rand() & 0x1ff) == 0)
             PlayBuffer(2, 0, 0);  // ambient rare
@@ -438,7 +439,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         break;
     }
 
-    // Stop tracks not active in this sub-state
+    // Corta los ambientales de los otros mapas
     if (World != 0 && World != 2 && World != 3) Sound_StopBuffer(0);
     if (World != 0 && World != 9)                       Sound_StopBuffer(1);
     if (World != 1)                                             Sound_StopBuffer(3);
@@ -448,61 +449,6 @@ void __cdecl Game_MainLoop(HDC param_1)
     if (World != 8)                                             Sound_StopBuffer(7);
     if (World != 10)                                            Sound_StopBuffer(0x14);
 
-    // ── WINDOW TITLE (sub-state 0) ────────────────────────────────────────────
-    if (World == 0) {
-        char dead = *(char*)(DAT_07abf5d8 + 0x34e);
-        if (dead != '\0') {
-            if (DAT_07e118e8 == 4)
-                Music_PlayTrack(PTR_DAT_005615c4, 0);
-            else
-                Music_PlayTrack(PTR_DAT_005615c8, 0);
-        }
-    } else {
-        Music_StopTrack(PTR_DAT_005615c4, 0);
-        Music_StopTrack(PTR_DAT_005615c8, 0);
-    }
-
-    // ── SUB-STATE 2: IN-WORLD ANTI-TAMPER CHECK ───────────────────────────────
-    // Tracks entity position fields (0x388, 0x38c) via hash table.
-    // The chain: if val > 0xCC → check again; if < 0xD7 → check 0x38C;
-    // if 0x38C value < 0x20 → BGM_Play(track_cc,0) (login BGM?)
-    // Otherwise BGM_Play(track_d0,0). This is anti-cheat, not game logic.
-    if (World == 2) {
-        char dead = *(char*)(DAT_07abf5d8 + 0x34e);
-        if (dead != '\0') {
-            int val388 = *(int*)(DAT_07abf5d8 + 0x388);
-            if (val388 > 0xcc) {
-                val388 = *(int*)(DAT_07abf5d8 + 0x388); // re-read after hash tracking
-                if (val388 < 0xd7) {
-                    int val38c = *(int*)(DAT_07abf5d8 + 0x38c);
-                    if (val38c > 0xc) {
-                        val38c = *(int*)(DAT_07abf5d8 + 0x38c); // re-read
-                        if (val38c < 0x20) {
-                            Music_PlayTrack(PTR_DAT_005615cc, 0);
-                            goto LAB_00527402;
-                        }
-                    }
-                }
-            }
-            Music_PlayTrack(PTR_DAT_005615d0, 0);
-        }
-    } else {
-        Music_StopTrack(PTR_DAT_005615cc, 0);
-        Music_StopTrack(PTR_DAT_005615d0, 0);
-    }
-
-LAB_00527402:
-    // Sub-state 3 window title
-    if (World == 3) {
-        if (*(char*)(DAT_07abf5d8 + 0x34e) != '\0')
-            Music_PlayTrack(PTR_DAT_005615d4, 0);
-    } else {
-        Music_StopTrack(PTR_DAT_005615d4, 0);
-    }
-
-    // Sub-states 1/5 window title
-    if (World == 1 || World == 5)
-        Music_PlayTrack(PTR_DAT_005615d8, 0);
-    else
-        Music_StopTrack(PTR_DAT_005615d8, 0);
+    // Música de fondo del mapa (IDA 0x00526D0C..0x00527475): ver CMapManager.
+    gMapManager.UpdateMusic();
 }

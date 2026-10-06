@@ -97,6 +97,7 @@ set(MU_SOURCES
     src/Core/Window.cpp
     src/Core/Font.cpp
     src/Sound/SoundManager.cpp
+    src/Game/MapManager.cpp
     src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
@@ -350,6 +351,7 @@ set(MU_HEADERS
     src/Core/Window.h
     src/Core/Font.h
     src/Sound/SoundManager.h
+    src/Game/MapManager.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h

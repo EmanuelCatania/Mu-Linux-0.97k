@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -605,14 +606,9 @@ WORD __cdecl DecryptCheckSumKey(WORD wSource) {
     return (uVar1 >> 6 ^ uVar1) & 0xf ^ uVar1 >> 6;
 }
 
-// StopMusic @ 0x00513420 (32 bytes) — corta los 6 BGM de la tabla.
-//
-// IDA:  v0 = g_lpszMp3;  do { StopMp3(*v0++, 0); } while ((int)v0 < (int)&g_iCurrentDialogScript);
-// El bound `< 0x5615DC` es &g_lpszMp3[6], asi que son 6 iteraciones (la tabla
-// está en globals.cpp).
+// IDA: StopMusic (0x00513420) — corta la música del mapa; ver CMapManager.
 void __cdecl StopMusic(void) {
-    for (int i = 0; i < 6; i++)
-        StopMp3(g_lpszMp3[i], 0);
+    gMapManager.StopMusic();
 }
 
 // ── 33-byte ─────────────────────────────────────────────────────────────────

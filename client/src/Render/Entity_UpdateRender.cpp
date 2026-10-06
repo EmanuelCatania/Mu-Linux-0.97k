@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Game/MapManager.h"
 
 // GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
 // RELEE como puntero (`*(int*)(thiz+4)`). Convertir el puntero a float lo
@@ -560,7 +561,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
         BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
-        if (World == 7 && (bAnim == 0x15 || bAnim == 0x1d))
+        if (gMapManager.IsSwimmable(World) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
             local_74 = (void *)1;
         if (World > 10 && World < 0x11)
             local_74 = (void *)0;

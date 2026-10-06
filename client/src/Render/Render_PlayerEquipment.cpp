@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -587,7 +588,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
         Bind = 1;
     else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
         Bind = 1;
-    else if (iWorld == 7 && (anim == 21 || anim == 29))
+    else if (gMapManager.IsSwimmable(iWorld) && (anim == 21 || anim == 29))   // IDA: World == 7
         Bind = 1;
 
     if (iWorld >= 11 && iWorld <= 16)               // InBloodCastle()
