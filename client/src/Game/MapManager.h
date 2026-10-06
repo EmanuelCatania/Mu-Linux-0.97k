@@ -1,5 +1,5 @@
 #pragma once
-// MapManager.h — CMapManager: datos por mapa (nombre, nado y música).
+// MapManager.h — CMapManager: datos por mapa (nombre, nado, música y minimapa).
 //
 // En el binario esos datos están repartidos en comparaciones contra `World`:
 //   IDA: GetMapName (0x004EF120) y la copia inline de RenderParty (0x004EF44F)
@@ -20,11 +20,17 @@ class CMapManager {
 public:
     static constexpr int MaxMaps = 32;   // DLL: MAX_MAPS
 
+    // Modo del minimapa (DLL MapManager.txt, columna MiniMap). La imagen no es
+    // un asset por mapa: CMiniMap la arma al cargar el mapa a partir de
+    // TerrainWall (.att), así que todo mapa integrado la tiene.
+    enum class MiniMapMode : unsigned char { None = 0, MiniMap = 1, FullMap = 2 };
+
     struct MapInfo {
         bool swimmable = false;          // se nada en vez de caminar (Atlans)
         bool musicSafeZoneOnly = false;  // la música arranca sólo en zona segura
         const char* name = nullptr;      // nullptr = GlobalText, como GetMapName
         const char* music = nullptr;     // nullptr = sin música
+        MiniMapMode miniMap = MiniMapMode::None;
     };
 
     CMapManager();
@@ -33,6 +39,8 @@ public:
     const char* GetName(int map) const;
 
     bool IsSwimmable(int map) const;
+
+    MiniMapMode GetMiniMap(int map) const;
 
     // Selección de la música de fondo; se llama una vez por frame con el héroe
     // en el mundo (IDA Game_MainLoop, g_GameState == 5).

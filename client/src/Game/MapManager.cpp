@@ -24,6 +24,7 @@ constexpr int kDevias   = 2;
 constexpr int kNoria    = 3;
 constexpr int kDungeon2 = 5;   // el binario le pone la música del Dungeon
 constexpr int kAtlans   = 7;
+constexpr int kMapCount = 17;  // mapas del 0.97k: 0..16 (Blood Castle 1..6 = 11..16)
 
 // HeroTile 4 = el piso de la taberna de Lorencia.
 constexpr int kPubTile = 4;
@@ -62,6 +63,10 @@ CMapManager::CMapManager()
     m_Maps[kDungeon2].music = kMusicDungeon;
 
     m_Maps[kAtlans].swimmable = true;
+
+    // Como el MapManager.txt del DLL: minimapa completo en todos los mapas.
+    for (int map = 0; map < kMapCount; ++map)
+        m_Maps[map].miniMap = MiniMapMode::FullMap;
 }
 
 const CMapManager::MapInfo* CMapManager::Get(int map) const
@@ -86,6 +91,12 @@ bool CMapManager::IsSwimmable(int map) const
 {
     const MapInfo* info = Get(map);
     return info && info->swimmable;
+}
+
+CMapManager::MiniMapMode CMapManager::GetMiniMap(int map) const
+{
+    const MapInfo* info = Get(map);
+    return info ? info->miniMap : MiniMapMode::None;
 }
 
 // Temas de una zona del mapa que reemplazan al del mapa (reglas del binario).
