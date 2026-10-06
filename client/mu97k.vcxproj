@@ -119,6 +119,7 @@
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\Sound\SoundManager.h" />
+    <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Combat\Combat.h" />
     <ClInclude Include="src\Combat\Skills.h" />
     <ClInclude Include="src\Game\Game_CharSelectTick.h" />
@@ -184,6 +185,7 @@
     <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\Core\Font.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
+    <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Config\UserSettings.cpp" />
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />

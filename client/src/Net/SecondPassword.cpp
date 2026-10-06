@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "structs.h"
 #include "globals.h"
 #include "functions.h"
@@ -1802,7 +1803,7 @@ void __cdecl SetPlayerStop(int c) {
         // también dispara la animación de flotar. En char-select (SceneFlag==4)
         // queda solo Fly.
         bool gateA = false;
-        if (SceneFlag == 5 && World == 7) {
+        if (SceneFlag == 5 && gMapManager.IsSwimmable(World)) {   // IDA: World == 7
             int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
             int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
             int v3 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
@@ -1933,7 +1934,7 @@ void __cdecl SetPlayerWalk(int param_1) {
             // 3) Si no, si c+0x258 (Helper) != -1 Y c+0x25a > 4, incrementa.
             if ((*(unsigned char *)(param_1 + 0x1bc) & 7) == 3) {
                 *(unsigned char *)(param_1 + 0x300) = v2 + 1;
-            } else if (World == 7) {
+            } else if (gMapManager.IsSwimmable(World)) {   // IDA: World == 7
                 if (*(short *)(param_1 + 0x240) != -1 &&
                     *(unsigned char *)(param_1 + 0x242) > 4)
                     *(unsigned char *)(param_1 + 0x300) = v2 + 1;
@@ -1988,7 +1989,7 @@ void __cdecl SetPlayerWalk(int param_1) {
         //   v6 = c+846 (SafeZone); v7 = (v6 == 0);
         //   if (!v6) { si hay alas → SetAction 30/31 y sale; si no, v7 = 1; }
         // O sea en zona segura NO se nada (ni se vuela): se camina.
-        if (!bSafeZone && World == 7) {
+        if (!bSafeZone && gMapManager.IsSwimmable(World)) {   // IDA: World == 7
             SetAction(param_1, (stamina < 0x28) ? 21 : 29);
             goto label_119;
         }

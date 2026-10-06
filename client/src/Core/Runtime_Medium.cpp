@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -56,12 +57,9 @@ void __cdecl RenderInformation(void) {
     RenderInfomation3D(); // RenderInfomation3D
 }
 
-// GetMapName @ 0x004EF120 (64 bytes) -- nombre del mapa desde GlobalText.
+// IDA: GetMapName (0x004EF120) — nombre del mapa; ver CMapManager.
 char *__cdecl GetMapName(int iMap) {
-    if (iMap >= 11 && iMap <= 16) return GlobalText[56];   // Blood Castle
-    if (iMap == 10)               return GlobalText[55];   // Icarus
-    if (iMap < 17)                return GlobalText[iMap + 30];
-    return GlobalText[iMap + 40];
+    return (char*)gMapManager.GetName(iMap);
 }
 
 // CErrorReport::WriteFile @ 0x004054B0 (65 bytes) — XOR + write to log

@@ -332,32 +332,7 @@ int             g_ConnectServerRequested = 0; // 1 = ya mandamos C1 04 F4 02 en 
 char            g_GameServerIP[128]     = ""; // GameServer fallback (ServerConfig)
 unsigned short  g_GameServerPort        = 0;
 // SceneFlag (above)
-// g_lpszMp3 @ 0x005615C4 — tabla de 6 punteros a las rutas de los BGM.
-// NO son handles: son `char*`. Los DAT_005615c4..d8 son sus 6 elementos (cuarto
-// caso del patron "DAT_ vecinos = una sola tabla"). Los consumen Game_MainLoop
-// (seleccion de BGM por mapa) y StopMusic (0x513420), que recorre la tabla con
-// bound `< 0x5615DC` = &g_lpszMp3[6].
-//
-// En nuestro build valian 0, asi que PlayMp3 recibia NULL y nunca sonaba nada.
-//
-// DESVIACION DELIBERADA: el binario apunta a nombres coreanos
-// (data\music\ÁÖÁ¡.mp3 = taberna, ¹ÂÅ×¸¶ = MuTheme, ¼º´ç = catedral,
-//  µ¥ºñ¾Æ½º = Devias, ³ë¸®¾Æ = Noria, ´øÁ¯ = Dungeon) que NO existen en
-// bin/Client/Data/Music — nuestro pack de assets viene renombrado al ingles.
-// Se apunta a los archivos reales. MuTheme (slot 1) es Lorencia.mp3 (mismo MD5
-// que el MuTheme.mp3 del cliente japonés 0.98). El login no usa este slot: pide
-// Data\Music\MuTheme.mp3 aparte (ver Game_MainLoop).
-//
-// La catedral de Devias (¼º´ç) es el Church.mp3 del cliente japonés 0.98,
-// agregado al pack como Cathedral.mp3.
-char*    g_lpszMp3[6] = {
-    (char*)"Data\\Music\\Pub.mp3",        // [0] 0x5615C4 — taberna de Lorencia (HeroTile == 4)
-    (char*)"Data\\Music\\Lorencia.mp3",   // [1] 0x5615C8 — MuTheme: Lorencia (el login va aparte)
-    (char*)"Data\\Music\\Cathedral.mp3",  // [2] 0x5615CC — catedral de Devias
-    (char*)"Data\\Music\\Devias.mp3",     // [3] 0x5615D0 — Devias
-    (char*)"Data\\Music\\Noria.mp3",      // [4] 0x5615D4 — Noria
-    (char*)"Data\\Music\\Dungeon.mp3",    // [5] 0x5615D8 — Dungeon (World 1 y 5)
-};
+// g_lpszMp3 (IDA 0x005615C4, rutas de los BGM): ver CMapManager (Game/MapManager.cpp).
 DWORD    DAT_005615e0  = 0;
 DWORD    DAT_005615e8  = 0;
 

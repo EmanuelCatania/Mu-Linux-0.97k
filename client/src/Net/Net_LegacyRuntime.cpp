@@ -111,7 +111,7 @@ void __stdcall InitGame(void)
     // D24).  Es el modo de la ventana de ayuda F1.
     DAT_07e11d20 = 0;
     // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World), no
-    // DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de la taberna.
+    // DAT_005615c4 (el puntero al mp3 de la taberna).
     World = -1;   // World
     // CSQuest__ClearQuest(g_csQuest);
     // IDA InitGame L43 es `LockInputStatus = 0`, y LockInputStatus vive en

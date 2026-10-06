@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -477,9 +478,9 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 
 // Sound_PlayFootstep @ 0x00451A90 — Sound_PlayFootstep
 // Plays a terrain-appropriate footstep sound.
-//   World 2 (Lost Tower): tile < 10 and != 3 → snd 10
-//   World 0 or 3 (Lorencia/Devias): tile == 0 → snd 9
-//   World 7 (Devil Square), alive → snd 11
+//   World 2 (Devias): tile < 10 and != 3 → snd 10
+//   World 0 or 3 (Lorencia/Noria): tile == 0 → snd 9
+//   mapa con nado (Atlans) fuera de zona segura → snd 11
 //   Default → snd 8
 // Sound_PlayFootstep (IDA-activated)
 char Sound_PlayFootstep()
@@ -498,7 +499,7 @@ char Sound_PlayFootstep()
     }
     else if ( World && World != 3 )
     {
-      if ( World == 7 && !*(BYTE *)(Hero + 846) )
+      if ( gMapManager.IsSwimmable(World) && !*(BYTE *)(Hero + 846) )   // IDA: World == 7
       {
         return PlayBuffer(11, 0, 0);
       }

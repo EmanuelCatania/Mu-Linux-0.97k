@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -568,14 +569,9 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         DWORD* slot = (DWORD*)Party;
         for (int row = 0; row < PartyNumber; ++row) {
             BYTE* v4 = (BYTE*)(slot + row * 9);
-            // +12 NO es la clase: es el MAPA (IDA lo resuelve con
-            // GlobalText[map + 30], y GlobalText[55]/[56] para fuera de rango).
-            int classByte = v4[12];
-            const char* className;
-            if (classByte == 10) className = GlobalText[55];
-            else if (classByte >= 11 && classByte <= 16) className = GlobalText[56];
-            else if (classByte <= 16) className = GlobalText[classByte + 30];
-            else                       className = GlobalText[classByte + 40];
+            // +12 NO es la clase: es el MAPA. IDA (0x004EF44F) copia inline el
+            // cuerpo de GetMapName; acá se resuelve con CMapManager.
+            const char* className = gMapManager.GetName(v4[12]);
 
             int level = *(int*)(v4 + 16);
             int maxLevel = *(int*)(v4 + 20);
