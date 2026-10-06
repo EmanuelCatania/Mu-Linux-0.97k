@@ -14,6 +14,7 @@
 // BufferName[][], SoundLoadCount.
 
 #include "stdafx.h"
+#include "Sound/SoundManager.h"
 #pragma warning(disable: 4996)
 #include "Sound.h"
 #include <dsound.h>
@@ -308,6 +309,9 @@ void __cdecl LoadWaveFile(int Buffer, const char* strFileName,
     strncpy(BufferName[Buffer], strFileName, 0x3F);
     BufferName[Buffer][0x3F] = 0;
     ++SoundLoadCount;
+
+    // DESVIACION (DLL): volumen de efectos de Config.ini [Sound] SoundLevel.
+    gSound.ApplySoundVolume(Buffer);
 }
 
 

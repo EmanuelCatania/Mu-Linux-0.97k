@@ -96,6 +96,7 @@ set(MU_SOURCES
     src/Config/Config_Load.cpp
     src/Core/Window.cpp
     src/Core/Font.cpp
+    src/Sound/SoundManager.cpp
     src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
@@ -348,6 +349,7 @@ set(MU_HEADERS
     src/Config/UserSettings.h
     src/Core/Window.h
     src/Core/Font.h
+    src/Sound/SoundManager.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h
@@ -432,6 +434,7 @@ set_target_properties(mu97k PROPERTIES
 target_include_directories(mu97k PRIVATE
     src
     lib/libjpeg/jpeg-6b
+    lib/miniaudio
 )
 
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.

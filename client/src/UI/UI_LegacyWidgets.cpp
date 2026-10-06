@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
+#include "Sound/SoundManager.h"
 
 // SMD2BMDModel @ 0x0040BBA0 (~226 lines) — Convert parsed SMD data into BMD model structure
 void __cdecl SMD2BMDModel_stub(int ID, int Actions) {
@@ -329,14 +330,9 @@ void Game_DestroyWindow(void) {
         DAT_055c9ff4 = 0;
     }
 
-    // Mata el reproductor de musica.  ESTA es la parte con efecto observable:
-    // MuPlayer.exe es un proceso EXTERNO, asi que si no se cierra la musica
-    // sigue sonando despues de que el cliente termino.  IDA manda WM_DESTROY
-    // (2); Music.cpp usa WM_CLOSE para lo mismo desde StopMp3.
-    {
-        HWND hPlayer = FindWindowA(NULL, s_MuPlayer_00559110);
-        if (hPlayer) SendMessageA(hPlayer, WM_DESTROY, 0, 0);
-    }
+    // Corta la música (IDA cerraba acá la ventana de MuPlayer.exe; ahora el
+    // reproductor es CSound, dentro del cliente).
+    gSound.Shutdown();
 }
 
 // WinMain @ 0x0041E8A0 (~1493 lines) — This is the ACTUAL WinMain entry point.

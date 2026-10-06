@@ -31,6 +31,8 @@
 #include "Debug/MiniDump.h"
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
+#include "Sound/SoundManager.h"
+#include "Config/UserSettings.h"
 #ifdef _DEBUG
 #  define _CRTDBG_MAP_ALLOC
 #  include <crtdbg.h>
@@ -663,6 +665,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     {
         HRESULT hrDS = InitDirectSound(gWindow.GetHwnd());
         DbgLog(SUCCEEDED(hrDS) ? "InitDirectSound OK" : "InitDirectSound FAILED");
+        // Volúmenes de Config.ini [Sound] (CSound, Sound/SoundManager.h).
+        gSound.SetLevels(gUserSettings.GetSoundLevel(), gUserSettings.GetMusicLevel());
     }
 
     // 14c: STATIC SERVER LIST — workaround hasta que Net_ProcessPacket implemente
@@ -856,24 +860,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     }
 
 
-    // ── Cola de DestroyWindow (0x004145C0) ──────────────────────────────────
-    // El binario cierra el reproductor externo al salir; sin esto MuPlayer.exe
-    // queda vivo reproduciendo despues de cerrar el cliente.
-    //   WindowA = FindWindowA(0, "MuPlayer");
-    //   if (WindowA) SendMessageA(WindowA, 2 /*WM_CLOSE*/, 0, 0);
-    // El resto de DestroyWindow (liberar fonts, modelos, texturas, el hash de
-    // SkillAttribute/CharacterMachine) es cleanup de memoria previo a terminar
-    // el proceso y no esta portado.
-    {
-        HWND hMuPlayer = FindWindowA(NULL, "MuPlayer");
-        if (hMuPlayer) {
-            SendMessageA(hMuPlayer, WM_CLOSE, 0, 0);
-        }
-    }
-
-    // IDA WinMain 0x42207B: la limpieza de salida va aca, despues del bucle de
-    // mensajes.  Lo importante es que cierra MuPlayer.exe, que es un proceso
-    // externo y si no seguiria sonando despues de que el cliente termino.
+    // IDA WinMain 0x42207B: la limpieza de salida va acá, después del bucle de
+    // mensajes (DestroyWindow 0x4145C0: fuentes, widgets y la música).
     Game_DestroyWindow();
 
     return (int)msg.wParam;
