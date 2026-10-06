@@ -102,7 +102,7 @@ int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int
 void __cdecl RenderCenterText(int x, int y, char *text) {
     int len = lstrlenA(text);
     SIZE sz;
-    GetTextExtentPointA(m_hFontDC, text, len, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), text, len, &sz);
     // Convert pixel width to virtual 640-wide coords, halve for centering
     int halfWidth = (int)((unsigned int)(sz.cx * 0x280) / (unsigned int)gWindow.GetWidth()) >> 1;
     RenderText(x - halfWidth, y, text, 0, 0, NULL);

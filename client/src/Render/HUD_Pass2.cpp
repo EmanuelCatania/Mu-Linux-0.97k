@@ -124,7 +124,7 @@ SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
     UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
 
     int n = lstrlenA(lpString);
-    GetTextExtentPointA(m_hFontDC, lpString, n, &TextSize);
+    GetTextExtentPointA(gFont.GetTextDC(), lpString, n, &TextSize);
     TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
     TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
     return &TextSize;
@@ -218,7 +218,7 @@ extern "C" void __cdecl Render_ChatBox_(void);
 void Render_ChatBox_(void)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!(InputEnable || DAT_07e11d71)) return;
 
@@ -247,7 +247,7 @@ void Render_ChatBox_(void)
         if (v1 != v0) {
             UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
             int n = lstrlenA(v2);
-            GetTextExtentPointA(m_hFontDC, v2, n, &TextSize);
+            GetTextExtentPointA(gFont.GetTextDC(), v2, n, &TextSize);
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             v0 = (int)dword_55C9CC4;
             TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -300,7 +300,7 @@ char Render_CharInfoPanel_(void)
     if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + 474) != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
@@ -311,7 +311,7 @@ char Render_CharInfoPanel_(void)
         int iPos_x = (int)x + 13;
         UI_DrawText(iPos_x, 4, String, 0, 1, 0);
         int n = lstrlenA(String);
-        GetTextExtentPointA(m_hFontDC, String, n, &TextSize);
+        GetTextExtentPointA(gFont.GetTextDC(), String, n, &TextSize);
 
         const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
         int v2 = (int)x + 30;
@@ -341,7 +341,7 @@ LABEL_7:
         EnableAlphaTest(true);
         v24_y0 = 4.0f;
         x = 320.0f - 20.0f;
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF008000u;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
@@ -437,7 +437,7 @@ int RenderEquipedHelperLife_(bool a2)
         else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
         if (!text) text = "";
 
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
@@ -446,7 +446,7 @@ int RenderEquipedHelperLife_(bool a2)
         // y x+50 como 2do arg).  Nuestra reimplementacion de esa funcion toma
         // (x, y, texto), asi que el centrado se calcula aca.
         SIZE ts = { 0, 0 };
-        GetTextExtentPointA(m_hFontDC, text, lstrlenA(text), &ts);
+        GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
@@ -464,14 +464,14 @@ int RenderEquipedHelperLife_(bool a2)
     if (SummonLife) {
         const float xs = (float)GetScreenWidth() - 50.0f - 150.0f;
 
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
         SIZE ts = { 0, 0 };
-        GetTextExtentPointA(m_hFontDC, summonText, lstrlenA(summonText), &ts);
+        GetTextExtentPointA(gFont.GetTextDC(), summonText, lstrlenA(summonText), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;

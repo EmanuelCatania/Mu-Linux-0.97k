@@ -567,7 +567,6 @@ DWORD    DAT_055c9ff8  = 0;
 // DAT_055c9ffc = g_hWnd (gWindow.GetHwnd())
 // Font memory DC (GDI-only, DIB-backed). Set by Font_BuildLayout.
 // NOT the window DC — that is g_hDC (DAT_055ca004) que vive en CWindow.
-HDC      DAT_055c9fec  = NULL;
 // DAT_055ca000 = g_hInst (above)
 // DAT_055ca004 = g_hDC — defined via macro in stdafx.h (no separate storage)
 DWORD    DAT_055ca008  = 0;
@@ -2377,7 +2376,6 @@ int     EditMonsterNumber    = 0;       // NPC name count (EditMonsterNumber)
 // getMonsterName leia de otro → nombres de NPC/mob vacios.  Ahora es UNA tabla
 // real: N entradas × 0x36 (Type[0], Name[1..32], Level, Attribute).
 // Definida abajo como MonsterScript[]; DAT_07cf2000/2001 son macros a ella.
-void   *ppvBits_055c9e4c = nullptr; // DIB bitmap pointer
 DWORD   DAT_01c5e200    = 0x01c5e200;  // item BMD checksum seed A (literal = su propia dirección original)
 DWORD   DAT_00b43000    = 0x00b43000;  // skill BMD checksum seed B
 // BuxConvert_0 indexa (&DAT_00559bb4)[i % 3]: tiene que ser un array de 3 bytes,
@@ -2715,8 +2713,7 @@ DWORD  DAT_0055339c       = 0;
 // setea m_dwTextColor (HUD_Pass1/2/3, ChatListBox render) tiene que llegar al
 // global que lee el render de texto (CUIRenderText_RenderText, lee DAT_00559c78).
 // g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
-// m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
-// g_hFontBold es ahora un alias de DAT_055ca0xx (ver globals.h).
+// m_hFontDC y las fuentes viven en CFont (Core/Font.h).
 
 // Batch 18 — InitGame / ReceiveChat globals
 DWORD  EnableUse          = 0;

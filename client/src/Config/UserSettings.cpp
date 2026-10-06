@@ -62,9 +62,33 @@ void CUserSettings::Load(const char* iniPath)
 
     GetPrivateProfileStringA("User", "Username", "", m_Username, sizeof(m_Username), iniPath);
 
+    // [Font]: si la sección existe, cada clave que falte toma el default del DLL.
+    char section[8] = {};
+    if (GetPrivateProfileSectionA("Font", section, sizeof(section), iniPath) > 0) {
+        UserFontSettings& f = m_Font;
+        f.present = true;
+        GetPrivateProfileStringA("Font", "FontName", "Verdana", f.faceName, sizeof(f.faceName), iniPath);
+        f.height    = GetPrivateProfileIntA("Font", "FontHeight",    13, iniPath);
+        if (f.height > 25) f.height = 25;
+        f.bold      = GetPrivateProfileIntA("Font", "FontBold",      0, iniPath);
+        f.italic    = GetPrivateProfileIntA("Font", "FontItalic",    0, iniPath);
+        f.charset   = GetPrivateProfileIntA("Font", "FontCharset",   DEFAULT_CHARSET, iniPath);
+        f.width     = GetPrivateProfileIntA("Font", "FontWidth",     0, iniPath);
+        f.underline = GetPrivateProfileIntA("Font", "FontUnderline", 0, iniPath);
+        f.quality   = GetPrivateProfileIntA("Font", "FontQuality",   NONANTIALIASED_QUALITY, iniPath);
+        f.strikeOut = GetPrivateProfileIntA("Font", "FontStrikeOut", 0, iniPath);
+    }
+
     char line[160];
     wsprintfA(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
                     "EnableSound=%d EnableMusic=%d (-1 = no está)",
               m_WindowMode, m_Borderless, m_Resolution, m_EnableSound, m_EnableMusic);
+    DbgLogPublic(line);
+    if (m_Font.present) {
+        wsprintfA(line, "Config.ini: Font='%s' %d (bold=%d quality=%d)",
+                  m_Font.faceName, m_Font.height, m_Font.bold, m_Font.quality);
+    } else {
+        wsprintfA(line, "Config.ini: sin [Font], se usa la fuente del binario (Arial)");
+    }
     DbgLogPublic(line);
 }

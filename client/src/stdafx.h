@@ -64,14 +64,10 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // Ventana, instancia, DC de OpenGL (el que recibe SwapBuffers) y tamaño:
 // CWindow (Core/Window.h), a través de gWindow. IDA: g_hWnd 0x055C9FFC,
 // g_hInst 0x055CA000, g_hDC 0x055CA004, WindowWidth/Height 0x0056156C/70.
-// El DC de OpenGL NO es el DC de memoria de las fuentes (DAT_055c9fec, abajo).
+// Fuentes y DC de memoria del texto: CFont (Core/Font.h), a través de gFont.
+// El DC de OpenGL NO es el DC de memoria del texto (gFont.GetTextDC()).
 #include "Core/Window.h"
 #include "Core/Font.h"
-
-// Font memory DC (GDI compatible DC with DIB bitmap selected, used to rasterize
-// glyphs into a DIB surface). Assigned by Font_BuildLayout. Do NOT pass to
-// SwapBuffers — it is an in-memory DC with no backing window surface.
-extern HDC DAT_055c9fec;
 
 // ── Primitive type aliases (Ghidra pseudo-types) ─────────────────────────────
 #include "types.h"

@@ -436,7 +436,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     ((FnVoid)vt[20])(self);  // *this+80 — render header
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    if (m_hFontDC) SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
+    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
 
     int i = 0;
     while (i < (int)self[35]) {
@@ -1163,7 +1163,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         }
     }
     if (v40[0]) {
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
         wsprintfA(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
@@ -1171,7 +1171,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         EnableAlphaTest(true);
         UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
         GL_ResetState();
-        if (m_hFontDC) SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+        if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
 
     // Incrementa el contador de frames — lo usa el slot 23 para hacer parpadear el cursor.
@@ -1250,8 +1250,8 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         }
         wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
         UI_DrawText(x, y, Buffer, 0, 1, 0);
-        if (m_hFontDC)
-            GetTextExtentPointA(m_hFontDC, Buffer, lstrlenA(Buffer), &sz);
+        if (gFont.GetTextDC())
+            GetTextExtentPointA(gFont.GetTextDC(), Buffer, lstrlenA(Buffer), &sz);
         // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
         sz.cx = (LONG)((float)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
     }
@@ -1428,7 +1428,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
         const char* sender = (const char*)(self[25] + 8);
         SIZE sz = {0,0};
         int len = lstrlenA(sender);
-        if (m_hFontDC) GetTextExtentPointA(m_hFontDC, sender, len, &sz);
+        if (gFont.GetTextDC()) GetTextExtentPointA(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
             int v10 = (int)self[25];
             if (Hero && strcmp((const char*)(v10 + 8), (const char*)(Hero + 449))) {
@@ -1812,7 +1812,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     else
         v5 = (int)self[12] - 13 * a2 - 16;
 
-    if (m_hFontDC) SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Avance del cursor tal cual el binario: `self[25] = cursor->next`, y acto
     // seguido `self[25] = (cursor->next)->prev`.  Con la lista circular eso
@@ -1878,7 +1878,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         }
     }
 
-    if (m_hFontDC) SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
+    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();                                             // DisableAlphaBlend
     return 1;
 }
@@ -2204,7 +2204,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         if (reverse != 1) off = fwdOff;
         char* line = (char*)(dst + off);
         SIZE sz;
-        GetTextExtentPointA(m_hFontDC, cur, lstrlenA(cur), &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), cur, lstrlenA(cur), &sz);
         int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
         if (!sz.cx) return lines;
         int avail = width - (lines == 0 ? (int)firstIndent : 0);
@@ -2222,7 +2222,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         while (step) {
             step = (int)(((double)half + 1.0) * 0.5);
             half = step;
-            GetTextExtentPointA(m_hFontDC, cur, cut, &sz);
+            GetTextExtentPointA(gFont.GetTextDC(), cur, cut, &sz);
             double cutW = (double)sz.cx / gWindow.GetScreenRateX();
             if (cutW <= (double)(avail + 4)) {
                 if (cutW >= (double)(avail - 4)) break;
