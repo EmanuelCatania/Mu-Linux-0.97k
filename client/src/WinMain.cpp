@@ -775,14 +775,15 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             if (!GetMessageA(&msg, NULL, 0, 0))
                 break; // WM_QUIT
 
-            // WM_SYSKEYDOWN/UP no pasan a DispatchMessage (para evitar Alt+key del sistema)
-            if (msg.message != WM_SYSKEYDOWN && msg.message != WM_SYSKEYUP) {
-                // TranslateMessage convierte WM_KEYDOWN → WM_CHAR. Sin esto
-                // el WndProc nunca recibe los caracteres tipeados — faltaba
-                // y por eso el input de login/chat parecía "muerto".
-                TranslateMessage(&msg);
+            // IDA WinMain (0x0041E8A0): TranslateMessage va para TODOS los
+            // mensajes y sólo se filtra el DispatchMessage de WM_SYSKEYDOWN/UP
+            // (para que Alt+tecla no active el menú del sistema).
+            // TranslateMessage es quien arma el WM_CHAR, incluidos los de
+            // Alt + código numérico (Alt+64 = '@'), que llegan como
+            // WM_SYSKEYDOWN mientras se mantiene Alt.
+            TranslateMessage(&msg);
+            if (msg.message != WM_SYSKEYDOWN && msg.message != WM_SYSKEYUP)
                 DispatchMessageA(&msg);
-            }
         }
         else
         {
