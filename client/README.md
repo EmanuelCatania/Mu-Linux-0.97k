@@ -45,7 +45,7 @@ el movimiento de NPCs y monstruos.
 | Inventario, equipo, baúl, tienda, trade | Funcional |
 | Chat, party, guild | Funcional |
 | Sonido (DirectSound) | Funcional |
-| Música (BGM) | el original lanza `MuPlayer.exe` |
+| Música (BGM) | Completo: la reproduce miniaudio dentro del cliente; acepta mp3, wav y flac (el original lanzaba `MuPlayer.exe`) |
 | Textos e idioma | UI en español. El port abre `Text.bmd` fijo, que acá es la variante `_Spn`; las variantes `_Eng`/`_Por` vienen en `Data/Local/`, pero el selector de idioma lo aporta el DLL y no está portado |
 | Combate | `Attack`, `Action` y `MoveCharacterVisual` auditadas 1:1 contra IDA, con sus cadenas de ejecutores |
 | Movimiento de NPCs / monstruos | Parcial |
@@ -80,8 +80,7 @@ port futuro antes de poder recibir un nombre semántico seguro.
 ## Qué necesitás además de este repo
 
 Casi nada: los **assets del juego ya están incluidos** en `bin/Client/Data/`
-(~209 MB — modelos `.bmd`, texturas `.ozj`/`.ozt`, mapas, sonidos y música),
-junto con `MuPlayer.exe`, que es lo que el cliente lanza para reproducir el BGM.
+(~209 MB — modelos `.bmd`, texturas `.ozj`/`.ozt`, mapas, sonidos y música).
 Clonás, compilás y arranca.
 
 Lo único que **no** está es el **`main.exe` original**, que sólo hace falta si
@@ -201,13 +200,14 @@ Lo que se aplicó queda en `debug.log` (línea `Config.ini: ...`).
 | `[Window] Borderless` | — (desviación) | `1` = sin barra de título ni borde. Sólo aplica en modo ventana. |
 | `[Window] Resolution` | `0` (640x480) | Índices del DLL: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Ojo: el `4` no es el mismo del registro (ahí es 1600x1200). Las panorámicas (`4` a `7`) todavía no están probadas en este cliente. |
 | `[Sound] EnableSound` | `1` | Efectos de sonido (DirectSound). |
-| `[Sound] EnableMusic` | `0` (apagada) | El `Config.ini` del repo la trae en `1`. El cliente no decodifica el mp3: lanza `MuPlayer.exe` (incluido en `bin/Client/`). |
+| `[Sound] EnableMusic` | `0` (apagada) | El `Config.ini` del repo la trae en `1`. Cada tema suena una vez; el del login es `Data\Music\MuTheme.mp3`, que el pack no trae. |
+| `[Sound] SoundLevel`, `MusicLevel` | — (desviación) | Volumen de efectos y de música, de `0` (mudo) a `9` (volumen original); como en el DLL, cada nivel son 6,25 dB. El `Config.ini` del repo trae `4`. |
 | `[User] Username` | — | Precarga el campo de usuario del login. |
 | `[Font] FontName`, `FontHeight`, `FontBold`, `FontItalic`, `FontCharset`, `FontWidth`, `FontUnderline`, `FontQuality`, `FontStrikeOut` | Arial, alto según la resolución | Como el DLL: alto fijo (tope 25) y la fuente grande al doble. El `Config.ini` del repo trae Verdana 13. Si se borra la sección `[Font]` completa, el cliente vuelve a la fuente original. |
 
 Las secciones `[Antilag]`, `[MiniMap]` y `[Language]` del `Config.ini`
 del DLL se van a leer a medida que se integren esos sistemas (Fase 2 de la hoja
-de ruta); `SoundLevel` y `MusicLevel` se leen pero todavía no se aplican.
+de ruta).
 
 ---
 
@@ -352,7 +352,7 @@ MIT — ver [LICENSE](LICENSE).
 
 La licencia cubre **el código**: todo lo que está bajo `src/`.
 
-**No** cubre los assets de `bin/Client/Data/` ni `MuPlayer.exe`, que son
+**No** cubre los assets de `bin/Client/Data/`, que son
 copyright de WebZen Inc. y están en el repo sólo porque es privado y de uso
 interno entre colaboradores.
 
