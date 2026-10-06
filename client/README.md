@@ -203,8 +203,9 @@ Lo que se aplicó queda en `debug.log` (línea `Config.ini: ...`).
 | `[Sound] EnableSound` | `1` | Efectos de sonido (DirectSound). |
 | `[Sound] EnableMusic` | `0` (apagada) | El `Config.ini` del repo la trae en `1`. El cliente no decodifica el mp3: lanza `MuPlayer.exe` (incluido en `bin/Client/`). |
 | `[User] Username` | — | Precarga el campo de usuario del login. |
+| `[Font] FontName`, `FontHeight`, `FontBold`, `FontItalic`, `FontCharset`, `FontWidth`, `FontUnderline`, `FontQuality`, `FontStrikeOut` | Arial, alto según la resolución | Como el DLL: alto fijo (tope 25) y la fuente grande al doble. El `Config.ini` del repo trae Verdana 13. Si se borra la sección `[Font]` completa, el cliente vuelve a la fuente original. |
 
-Las secciones `[Font]`, `[Antilag]`, `[MiniMap]` y `[Language]` del `Config.ini`
+Las secciones `[Antilag]`, `[MiniMap]` y `[Language]` del `Config.ini`
 del DLL se van a leer a medida que se integren esos sistemas (Fase 2 de la hoja
 de ruta); `SoundLevel` y `MusicLevel` se leen pero todavía no se aplican.
 
