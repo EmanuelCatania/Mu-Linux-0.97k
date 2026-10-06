@@ -450,7 +450,10 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             return false;
         }
 
-        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + (int)MovementSkillTarget * 0x394 + 476);
+        // IDA: SkillElf (0x0048BD70).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x0048C6F9): usar SelectedCharacter si CheckAttack permite atacarlo; conservar la ruta sin blanco.
+        const int targetIndex = CheckAttack() ? (int)SelectedCharacter : (int)MovementSkillTarget;
+        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * 0x394 + 476);
         if (targetKey == 0xFFFF) {
             continue;
         }
