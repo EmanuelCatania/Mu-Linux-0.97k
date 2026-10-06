@@ -28,20 +28,20 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         } else {
             SIZE sz;
             int prefixLen = lstrlenA(p9);
-            GetTextExtentPointA(m_hFontDC, p9, prefixLen, &sz);
+            GetTextExtentPointA(gFont.GetTextDC(), p9, prefixLen, &sz);
             prefixWidth = sz.cx;
 
             // Output prefix text at (p6, 0)
             int slen = lstrlenA(p9);
-            TextOutA(m_hFontDC, p6, 0, p9, slen);
+            TextOutA(gFont.GetTextDC(), p6, 0, p9, slen);
         }
 
         // Set text color to white for main text
-        SetTextColor(m_hFontDC, 0xffffff);
+        SetTextColor(gFont.GetTextDC(), 0xffffff);
 
         // Output main text at (prefixWidth + p6, 0)
         int mainLen = lstrlenA(p3);
-        TextOutA(m_hFontDC, prefixWidth + p6, 0, p3, mainLen);
+        TextOutA(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
     }
 
     // If p8 == 0, use p1 (bitmap width) as the color-split boundary
@@ -76,7 +76,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     // Bitmaps[0] buffer stride = 0x100 DWORDs per row (256 pixels * 4 bytes)
     // ppvBits stride = 0x600 bytes per row (512 pixels * 3 bytes, or 256 * 6 — double-height?)
     DWORD* dstRow = (DWORD*)(uintptr_t)DAT_083a7cd4;
-    char*  srcRow = (char*)ppvBits_055c9e4c;
+    char*  srcRow = (char*)gFont.GetTextBits();
 
     // Guard (no está en IDA): `srcRow = ppvBits_055c9e4c` es el puntero a los
     // bits del DIB de la fuente (lo crea Font_BuildLayout vía CreateDIBSection,

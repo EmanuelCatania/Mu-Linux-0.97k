@@ -1703,7 +1703,7 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 
     // ── Epilogo: alto del recuadro y dibujo (identico al port anterior) ─────
     SIZE sz = { 0, 0 };
-    GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
     const int h = sz.cy * DAT_07eaa158 / 2 + sz.cy * (DAT_07eaa154 - DAT_07eaa158);
     int y = sy - (int)((float)h / gWindow.GetScreenRateY());
     if (y < 0) y = sy + 20 * p->Height;
@@ -2031,7 +2031,7 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
 
         tStack_6c.cx = 0;
         tStack_6c.cy = 0;
-        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &tStack_6c);
+        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &tStack_6c);
         iVar21 = DAT_07eaa154;
         iStack_70 = (DAT_07eaa154 - DAT_07eaa158) * tStack_6c.cy +
                     (DAT_07eaa158 * tStack_6c.cy) / 2;
@@ -2193,7 +2193,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
 
         sz.cx = 0;
         sz.cy = 0;
-        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
         h = (DAT_07eaa154 - DAT_07eaa158) * sz.cy + (DAT_07eaa158 * sz.cy) / 2;
         yBox = param_2 - (int)((unsigned int)(h * 15 * 32) / gWindow.GetHeight());
         if (yBox < 0) {

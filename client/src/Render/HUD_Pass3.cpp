@@ -153,7 +153,7 @@ extern "C" int DAT_07d78068;
 
 #define byte_7E11D6E             DAT_07e11d6e
 #define byte_7E919BC             DAT_07e919bc
-#define ppvBits                  ppvBits_055c9e4c
+#define ppvBits                  gFont.GetTextBits()
 #define g_pRenderText            g_pRenderText                       // exposed above
 #define dword_7EAA14C_alias      dword_7EAA14C
 #define m_Resolution_alias       m_Resolution
@@ -169,7 +169,7 @@ SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
 {
     SIZE sz = {0,0};
     int n = lstrlenA(pszText);
-    GetTextExtentPointA(m_hFontDC, pszText, n, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), pszText, n, &sz);
     int adjustedX = iPos_x - ((640 * sz.cx / (int)gWindow.GetWidth()) >> 1);
     RenderText(adjustedX, iPos_y, (char*)pszText, 0, 0, 0);
     return &TextSize;
@@ -256,7 +256,7 @@ bool __cdecl RenderNumArrow_(void)
         case 4: baseY = 10; break;
     }
 
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!CharacterMachine) return drewSomething;
 
@@ -273,7 +273,7 @@ bool __cdecl RenderNumArrow_(void)
             EnableAlphaTest(true);
             int n = lstrlenA(String);
             SIZE sz = {0,0};
-            GetTextExtentPointA(m_hFontDC, String, n, &sz);
+            GetTextExtentPointA(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
             drewSomething = true;
         }
@@ -290,7 +290,7 @@ bool __cdecl RenderNumArrow_(void)
             EnableAlphaTest(true);
             int n = lstrlenA(String);
             SIZE sz = {0,0};
-            GetTextExtentPointA(m_hFontDC, String, n, &sz);
+            GetTextExtentPointA(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
             drewSomething = true;
         }
@@ -459,7 +459,7 @@ void Render_HudPass_4EB070_(void)
     }
     GL_DrawTexture(252, 213.0f, (float)Width, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFC4C4u;   // -15164
 
@@ -507,14 +507,14 @@ void Render_HudPass_4EB070_(void)
     float x = 320.0f - v21;
     GL_DrawTexture(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
 
     CHAR String[29];
     String[0] = (char)byte_7EAA1A4;
     memset(&String[1], 0, sizeof(String) - 1);
     m_dwTextColor = 0xFFC44400u;   // -3899264
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
     int v5 = 0;
     int len = (int)strlen(dword_7EA9814);
     if (len > 0) {

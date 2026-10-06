@@ -368,13 +368,13 @@ int Scene_CharSelect(void)
                     else if (bVar2 & 8)    { SetBackgroundTextColor = 0x80ff0000; DAT_00559c78 = 0xff000000; }
                     else                   { SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffc8b4; }
                     // Name (top, bold font) — IDA L194-198: sprintf(String, "%s", entity+449)
-                    SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+                    SelectObject((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
                     {
                         const char* charName = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
                         crt_sprintf(aCStack_50, DAT_00561a30, charName);
                     }
                     iVar4 = lstrlenA(aCStack_50);
-                    GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, aCStack_50, iVar4, &tStack_68);
+                    GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), aCStack_50, iVar4, &tStack_68);
                     UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
                                  (nameProjY - tStack_68.cy) + -3,
                                  aCStack_50, (LPSIZE)0x0, '\0', 3);
@@ -384,7 +384,7 @@ int Scene_CharSelect(void)
                     //           level)
                     // klass byte at entity+0x1bc (444): DW=0, DK=1, ELF=2, MG=3, SM=8, BK=9, ME=10
                     SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffffff;
-                    SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+                    SelectObject((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
                     {
                         BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + 0x1bc];
                         WORD lvl   = *(WORD*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1be);
@@ -405,7 +405,7 @@ int Scene_CharSelect(void)
                         crt_sprintf(aCStack_50, s__s__d_00561a34, cn, (int)lvl);
                     }
                     iVar4 = lstrlenA(aCStack_50);
-                    GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, aCStack_50, iVar4, &tStack_68);
+                    GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), aCStack_50, iVar4, &tStack_68);
                     UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
                                  nameProjY, aCStack_50, (LPSIZE)0x0, '\0', 0);
                     pcVar5 = (char*)DAT_07abf5d0;
@@ -417,30 +417,30 @@ int Scene_CharSelect(void)
         // ── Warning text ──────────────────────────────────────────────────────
         if (DAT_083a7c4d != '\0') {
             SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000;
-            SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+            SelectObject((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
             iVar9 = lstrlenA((LPCSTR)lpString_07d49c14);
-            GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49c14, iVar9, &tStack_68);
+            GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)lpString_07d49c14, iVar9, &tStack_68);
             UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x14a,
                          (LPCSTR)lpString_07d49c14, (LPSIZE)0x0, '\0', 0);
             iVar9 = lstrlenA((LPCSTR)lpString_07d49d40);
-            GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49d40, iVar9, &tStack_68);
+            GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)lpString_07d49d40, iVar9, &tStack_68);
             UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x15c,
                          (LPCSTR)lpString_07d49d40, (LPSIZE)0x0, '\0', 0);
         }
 
         // ── Server info text (bottom right, blue) ─────────────────────────────
         SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xff67bfdf;
-        SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        SelectObject((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a3c);
-        GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a3c, iVar9, &tStack_68);
+        GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)&lpString_00561a3c, iVar9, &tStack_68);
         UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x186,
                      (LPCSTR)&lpString_00561a3c, (LPSIZE)0x0, '\0', 0);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a58);
-        GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a58, iVar9, &tStack_68);
+        GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)&lpString_00561a58, iVar9, &tStack_68);
         UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x19a,
                      (LPCSTR)&lpString_00561a58, (LPSIZE)0x0, '\0', 0);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a68);
-        GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a68, iVar9, &tStack_68);
+        GetTextExtentPointA((HDC)(uintptr_t)gFont.GetTextDC(), (LPCSTR)&lpString_00561a68, iVar9, &tStack_68);
         UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x1ae,
                      (LPCSTR)&lpString_00561a68, (LPSIZE)0x0, '\0', 0);
 
@@ -528,7 +528,7 @@ int Scene_CharSelect(void)
                 GL_DrawTexture(0x19, 335.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
             }
 
-            SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+            SelectObject((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
             DAT_00559c8c = 0x49;
             // IDA: `if (dword_5616B0 >= 0)`. DAT_005616b0 es DWORD (unsigned): comparar
             // con signo, `-1 < DAT_005616b0` sería siempre falso.

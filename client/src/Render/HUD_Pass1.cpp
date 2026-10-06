@@ -96,13 +96,13 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     GetLastError();
     int n;
     n = lstrlenA(lpString);
-    GetTextExtentPoint32A(m_hFontDC, lpString, n, &psizl);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString, n, &psizl);
     n = lstrlenA(lpString + 44);
-    GetTextExtentPoint32A(m_hFontDC, lpString + 44, n, &v12);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 44, n, &v12);
     n = lstrlenA(lpString + 300);
-    GetTextExtentPoint32A(m_hFontDC, lpString + 300, n, &v13);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 300, n, &v13);
     n = lstrlenA(lpString + 24);
-    GetTextExtentPoint32A(m_hFontDC, lpString + 24, n, &v14);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 24, n, &v14);
     GetLastError();
 
     int result = psizl.cx + 3;
@@ -245,7 +245,7 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 extern "C" void __cdecl RenderBooleans_(void);
 void RenderBooleans_(void)
 {
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     // Pass 1: project owner→screen, set entry [+4]/[+8] (screen X/Y).
     // v0 = (float*)&unk_7E0192C  is base+8 (entry 0's owner field)

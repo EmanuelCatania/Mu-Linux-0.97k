@@ -66,7 +66,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     float v38[3];
     String[0] = '\0';
 
-    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));   // g_hFont
+    SelectObject(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));   // g_hFont
     const short v7 = *(short*)(o + 2);
 
     // &ItemAttribute[v7 - 400] — ITEM_ATTRIBUTE stride 0x40, Name en offset 0.
@@ -88,13 +88,13 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
 
     case 861: case 862: case 864:               // joyas
     case 799: case 870: case 830:
-        SelectObject(m_hFontDC, (HGDIOBJ)gFont.GetFont(FONT_BOLD));
+        SelectObject(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
         glColor3f(1.0f, 0.8f, 0.1f);
         sprintf(String, "%s", name);
         goto renderLabel;
 
     case 865: case 866: case 867:               // Devil (Chaos) items
-        SelectObject(m_hFontDC, (HGDIOBJ)gFont.GetFont(FONT_BOLD));
+        SelectObject(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
         glColor3f(1.0f, 0.8f, 0.1f);
         if ((v5 & 0x78) != 0) sprintf(String, "%s +%d", name, v6);
         else                  sprintf(String, "%s", name);
@@ -221,7 +221,7 @@ renderLabel:
     {
         int  textLen = lstrlenA(String);
         SIZE sz;
-        GetTextExtentPointA(m_hFontDC, String, textLen, &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), String, textLen, &sz);
         if (Sort) {
             // Centrado sobre la posición de pantalla del item (o+0x5c / o+0x5e)
             int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();

@@ -423,7 +423,7 @@ extern DWORD   DAT_00590924;
 #define DAT_00583da8  g_dwBufferBytes
 
 // ── Engine / Window handles (0x055c9xxx – 0x055caxxx) ─────────────────────────
-// Nota: g_hWnd (DAT_055c9ffc) y g_hDC (DAT_055c9fec) están en stdafx.h.
+// Nota: g_hWnd y g_hDC viven en CWindow; el DC del texto (DAT_055c9fec) en CFont.
 extern char    lpData_055c9ba0[12];     // version string buffer (login packet)
 extern DWORD   DAT_055c9b40;   // g_EnableSound
 extern DWORD   DAT_055c9b60;   // sound channel index offset
@@ -2265,7 +2265,6 @@ extern int     EditMonsterNumber;       // NPC name count  [IDA 0x07D78078]
 // primer byte del campo Name de la entrada 0.
 #define DAT_07cf2000   (MonsterScript[0])
 #define DAT_07cf2001   (MonsterScript[1])
-extern void   *ppvBits_055c9e4c;   // DIB section bitmap pointer (Font_BuildLayout)
 extern DWORD   DAT_01c5e200;       // item/skill BMD checksum seed A
 extern DWORD   DAT_00b43000;       // item/skill BMD checksum seed B
 extern char    DAT_00559bb4[3];    // XOR cipher key for BuxConvert_0 (0xFC,0xCF,0xAB)
@@ -2652,10 +2651,8 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 #define g_lpszMessageBoxCustom  ((char (*)[0x26])DAT_083a44c4)
 // g_iCurrentDialogScript — alias de DAT_005615dc (ver arriba).
 // g_lpszDialogAnswer — alias de DAT_083a4348 (ver arriba).
-// m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace
-// `m_hFontDC = CreateCompatibleDC(hdc)` y ese mismo DC es DAT_055c9fec (el font
-// memory DC, declarado en stdafx.h).
-#define m_hFontDC  DAT_055c9fec
+// m_hFontDC (IDA 0x055C9FEC) y los bits del DIB del texto (0x055C9E4C) viven en
+// CFont: gFont.GetTextDC() / gFont.GetTextBits().
 // Las tres fuentes (IDA g_hFont 0x055CA00C, g_hFontBold 0x055CA010, g_hFontBig
 // 0x055CA014) viven en CFont: gFont.GetFont(FONT_NORMAL / FONT_BOLD / FONT_BIG).
 

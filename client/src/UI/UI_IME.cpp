@@ -75,7 +75,7 @@ void __stdcall RenderIME_Status(void) {
     RenderText(100, 100, local_64, 0, 1, NULL);
     int iVar1 = lstrlenA(local_64);
     SIZE sz;
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 2: Sentence mode (current IME conversion status)
     HIMC hImc = ImmGetContext(gWindow.GetHwnd());
@@ -85,17 +85,17 @@ void __stdcall RenderIME_Status(void) {
     sprintf(local_64, "Sentence Mode : %d", dwSent);
     RenderText(100, 0x6e, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 3: Old sentence mode
     sprintf(local_64, "Old Sentence Mode : %d", DAT_00559cd8);
     RenderText(100, 0x78, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 4: Lock input status
     sprintf(local_64, "LockInputStatus %d", (int)DAT_07e11d6f);
     RenderText(100, 0x82, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 }

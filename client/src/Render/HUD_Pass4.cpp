@@ -177,7 +177,7 @@ int Render_MacroTimer_(void)
         EnableAlphaTest(true);
         UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
         int n = lstrlenA(aMacroTime);
-        GetTextExtentPointA(m_hFontDC, aMacroTime, n, &TextSize);
+        GetTextExtentPointA(gFont.GetTextDC(), aMacroTime, n, &TextSize);
         TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
         TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         float Bar = (float)v8;
@@ -243,12 +243,12 @@ void Render_MapLoadText_(void)
             CHAR String[256];
             int gtIdx = (m_byMatchType == 5) ? 866 : 864;
             wsprintfA(String, GlobalText[gtIdx], m_iKillMonster, m_iMaxKillMonster);
-            SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             m_dwTextColor = 0xFFFF7700u;
             RenderCenteredText(570, 345, String);
             v1 = 357.0f;
         }
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         CHAR String[256];
         wsprintfA(String, GlobalText[865]);
         RenderCenteredText(570, (int)v1, String);
@@ -271,7 +271,7 @@ void Render_MapLoadText_(void)
         // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de
         // altura.  El port ponia bold porque `g_hFontBig` era un alias local que
         // apuntaba justamente a la bold; ahora sale de globals.h.
-        SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         RenderCenteredText(570, (int)v2, String);
     }
 }
@@ -343,7 +343,7 @@ void Render_QuickButtons_(void)
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)iconX, (int)iconY - 12, GlobalText[233]);
@@ -359,7 +359,7 @@ void Render_QuickButtons_(void)
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)iconX, (int)iconY - 13, GlobalText[225]);
@@ -524,7 +524,7 @@ check_quest_overlay:
                 float y_pos = v36 + 5.0f;
                 GL_DrawTexture(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
                 glColor3f(1.0f, 1.0f, 1.0f);
-                SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
+                SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000052u;
                 int boxW = (int)((double)gWindow.GetWidth() * sxe * 0.0015625);
@@ -585,7 +585,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     int v7 = InputTextWidth;
     UI_DrawText(x, y, Text, InputTextWidth, 1, 0);
     int n = lstrlenA(Text);
-    GetTextExtentPointA(m_hFontDC, Text, n, &TextSize);
+    GetTextExtentPointA(gFont.GetTextDC(), Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
 
     // IDA (RenderInputText 0x47F0B0) posiciona el caret con el TextSize ya
@@ -603,14 +603,14 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
             if (strlen(ime) != 0) {
                 if (InputTextHide[Index] == 1) {
                     UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0);
-                    GetTextExtentPointA(m_hFontDC, "**", 2, &TextSize);
+                    GetTextExtentPointA(gFont.GetTextDC(), "**", 2, &TextSize);
                 } else {
                     UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0);
-                    GetTextExtentPointA(m_hFontDC, ime, lstrlenA(ime), &TextSize);
+                    GetTextExtentPointA(gFont.GetTextDC(), ime, lstrlenA(ime), &TextSize);
                 }
             } else {
                 UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
-                GetTextExtentPointA(m_hFontDC, "_", 1, &TextSize);
+                GetTextExtentPointA(gFont.GetTextDC(), "_", 1, &TextSize);
             }
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -630,9 +630,9 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
 {
     SIZE sz = {0,0};
-    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     int n = lstrlenA(Text);
-    GetTextExtentPointA(m_hFontDC, Text, n, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), Text, n, &sz);
     int prevBlend = AlphaBlendType;
 
     EnableAlphaTest(true);
@@ -741,13 +741,13 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
 
     if (lpString) {
         int n = lstrlenA(lpString);
-        GetTextExtentPointA(m_hFontDC, lpString, n, &sz);
-        TextOutA(m_hFontDC, x, 0, lpString, (int)strlen(lpString));
+        GetTextExtentPointA(gFont.GetTextDC(), lpString, n, &sz);
+        TextOutA(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
     } else {
         sz.cx = 0;
     }
-    SetTextColor(m_hFontDC, RGB(0xFF, 0xFF, 0xFF));
-    TextOutA(m_hFontDC, x + sz.cx, 0, a3, (int)strlen(a3));
+    SetTextColor(gFont.GetTextDC(), RGB(0xFF, 0xFF, 0xFF));
+    TextOutA(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
 
     if (!a8) a8 = v10;
     int Height = (int)Bitmaps[0].Height;
@@ -767,9 +767,9 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     const int MaxW = (int)Bitmaps[0].Width;
     if (MaxW > 0 && v10 > MaxW) v10 = MaxW;
 
-    if (v9 > 0 && Bitmaps[0].Buffer && ppvBits_055c9e4c) {
+    if (v9 > 0 && Bitmaps[0].Buffer && gFont.GetTextBits()) {
         BYTE* dst = Bitmaps[0].Buffer;
-        const BYTE* src = (const BYTE*)ppvBits_055c9e4c;
+        const BYTE* src = (const BYTE*)gFont.GetTextBits();
         int rows = v9;
         do {
             BYTE* dRow = dst;

@@ -78,15 +78,14 @@ extern char    GlobalText[GLOBALTEXT_ROWS][300];   // ver globals.h
 extern char    lpString_07e90798[];
 extern int     DAT_07e91708[30];
 extern int     DAT_07ea7b10[30];
-extern HDC     m_hFontDC;
 }
 
 static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int count)
 {
-    if (count <= 0 || !m_hFontDC) return;
+    if (count <= 0 || !gFont.GetTextDC()) return;
 
     TEXTMETRICA tm = {};
-    GetTextMetricsA(m_hFontDC, &tm);
+    GetTextMetricsA(gFont.GetTextDC(), &tm);
     const int lineH = tm.tmHeight + tm.tmExternalLeading;
     const int padX = 4;
     const int padY = 3;
@@ -94,7 +93,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     int maxWidth = 0;
     for (int i = 0; i < count; ++i) {
         SIZE sz = {};
-        GetTextExtentPointA(m_hFontDC, lines[i], (int)strlen(lines[i]), &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), lines[i], (int)strlen(lines[i]), &sz);
         if (sz.cx > maxWidth) maxWidth = sz.cx;
     }
 
@@ -267,7 +266,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     // Compute Y position from text height
     SIZE sz; sz.cx = 0; sz.cy = 0;
-    GetTextExtentPointA(m_hFontDC, TextList0, 1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), TextList0, 1, &sz);
     int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
     float yPos = (float)v31 / gWindow.GetScreenRateY();
 
@@ -424,7 +423,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
         SIZE sz;
         sz.cx = 0;
         sz.cy = 0;
-        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
         int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
         int yBox = a2 - (int)((float)v31 / gWindow.GetScreenRateY());
         CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
@@ -474,7 +473,7 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     //   param_4  -> pixel -> / g_fScreenRate_x -> logico
     //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
     //   x        -> logico + logico  -> lo convierte CUIRenderText_RenderText
-    if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
+    if (param_5 >= 2 && param_4 > 0 && gFont.GetTextDC()) {
         const float rateX  = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
         const int   boxLog = (int)((float)param_4 / rateX);
         int textW = Text_MeasureOrthoWidth(param_3);
@@ -593,7 +592,7 @@ extern "C" float Text_GetOrthoScaleX(void)
 extern "C" int Text_MeasureOrthoWidth(const char* text)
 {
     if (!text || !*text) return 0;
-    HDC hFontDC = DAT_055c9fec;
+    HDC hFontDC = gFont.GetTextDC();
     if (!hFontDC) return 0;
     SIZE sz = {0, 0};
     if (!GetTextExtentPointA(hFontDC, text, (int)strlen(text), &sz)) return 0;
@@ -716,7 +715,7 @@ static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
     dst[w] = '\0';
 
     // pixelX = GetTextExtentPointA(texto limpio, charIndex).cx − 1  (o 0).
-    HDC hFontDC = DAT_055c9fec;
+    HDC hFontDC = gFont.GetTextDC();
     for (int i = 0; i < n; ++i) {
         SIZE sz = {0, 0};
         int  nch = out[i].charIndex;
@@ -790,7 +789,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     HGLRC hRC = wglGetCurrentContext();
     if (!hRC) return;
 
-    HDC hFontDC = DAT_055c9fec;
+    HDC hFontDC = gFont.GetTextDC();
     if (hFontDC == NULL) return;
 
     // ── FUENTE ACTIVA ───────────────────────────────────────────────────────

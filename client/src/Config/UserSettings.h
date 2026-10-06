@@ -11,9 +11,11 @@
 //   [Window]  WindowMode=0|1   Borderless=0|1   Resolution=0..7 (tabla de abajo)
 //   [Sound]   EnableSound=0|1  EnableMusic=0|1  SoundLevel=0..9  MusicLevel=0..9
 //   [User]    Username=        (precarga el campo de usuario del login)
+//   [Font]    FontName FontHeight FontBold FontItalic FontCharset FontWidth
+//             FontUnderline FontQuality FontStrikeOut  (ver UserFontSettings)
 //
-// Las secciones [Font], [Antilag], [MiniMap] y [Language] del Config.ini del DLL
-// se van a leer cuando se integren esos sistemas.
+// Las secciones [Antilag], [MiniMap] y [Language] del Config.ini del DLL se van
+// a leer cuando se integren esos sistemas.
 
 #include "stdafx.h"
 
@@ -32,6 +34,22 @@ enum eUserResolution {
     MAX_USER_RESOLUTION
 };
 
+// Config.ini [Font], con los mismos defaults que el DLL (Font.cpp) para las
+// claves que falten. `present` es false si la sección no existe: entonces
+// CFont usa la fuente del binario (Arial, alto según la resolución).
+struct UserFontSettings {
+    bool present      = false;
+    char faceName[32] = "Verdana";
+    int  height       = 13;                       // tope 25, como el DLL
+    int  bold         = 0;
+    int  italic       = 0;
+    int  charset      = DEFAULT_CHARSET;
+    int  width        = 0;
+    int  underline    = 0;
+    int  quality      = NONANTIALIASED_QUALITY;
+    int  strikeOut    = 0;
+};
+
 class CUserSettings {
 public:
     // Lee `iniPath`. Lo que no está queda en -1 (o vacío) y no se aplica.
@@ -46,6 +64,7 @@ public:
     int GetSoundLevel()  const { return m_SoundLevel; }
     int GetMusicLevel()  const { return m_MusicLevel; }
     const char* GetUsername() const { return m_Username; }
+    const UserFontSettings& GetFont() const { return m_Font; }
 
     // Ancho y alto de un índice de resolución; false si el índice no existe.
     static bool GetResolutionSize(int index, DWORD* width, DWORD* height);
@@ -59,6 +78,7 @@ private:
     int  m_SoundLevel  = -1;
     int  m_MusicLevel  = -1;
     char m_Username[11] = {};
+    UserFontSettings m_Font;
 };
 
 extern CUserSettings gUserSettings;

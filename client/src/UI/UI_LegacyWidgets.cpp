@@ -199,7 +199,7 @@ void __cdecl FUN_004104b0(LONG _this, char *Source)
           v13 = *(v12 - 1);
           sz.cx = 0;
           sz.cy = 0;
-          GetTextExtentPointA(m_hFontDC, Source, v13, &sz);
+          GetTextExtentPointA(gFont.GetTextDC(), Source, v13, &sz);
           v14 = sz.cx;
           if ( sz.cx )
           {

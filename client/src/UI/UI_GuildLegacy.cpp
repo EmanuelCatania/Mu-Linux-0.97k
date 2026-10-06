@@ -126,7 +126,7 @@ int __cdecl GuildOverview_Render(void)
     glColor3f(0.5f, 0.5f, 0.5f);
     const char *title, *subtitle;
     tagSIZE sz = {};
-    HDC hdc = (HDC)(uintptr_t)DAT_055c9fec;
+    HDC hdc = (HDC)(uintptr_t)gFont.GetTextDC();
     if (DAT_083a7c30 == 0) {
         title    = lpString_07d68bc8;
         subtitle = lpString_07d68cf4;
