@@ -245,7 +245,7 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 extern "C" void __cdecl RenderBooleans_(void);
 void RenderBooleans_(void)
 {
-    SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     // Pass 1: project owner→screen, set entry [+4]/[+8] (screen X/Y).
     // v0 = (float*)&unk_7E0192C  is base+8 (entry 0's owner field)

@@ -147,7 +147,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     if (!param_1) return;
     char *notice = (char *)&DAT_07db80d8[0];
 
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     SIZE sz = {0, 0};
     GetTextExtentPointA(m_hFontDC, param_1, lstrlenA(param_1), &sz);
 
@@ -205,7 +205,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
   char local_200 [256];
   char local_100 [256];
 
-  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
+  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   lpsz = &local_208;
   iVar2 = lstrlenA(param_1);
   GetTextExtentPointA(DAT_055c9fec,param_1,iVar2,lpsz);
@@ -361,7 +361,7 @@ void UI_RenderNotices(void)
   tagSIZE local_8;
 
   GL_SetBlendSrcOver('\x01');
-  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
+  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   glColor3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
@@ -420,7 +420,7 @@ void UI_RenderChatLogOverlay(void)
 
   // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
   glColor3f(1.0f, 1.0f, 1.0f);
-  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
+  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   iVar7 = 0;
   local_10c = 0;
   do {

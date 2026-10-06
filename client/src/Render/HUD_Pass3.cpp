@@ -256,7 +256,7 @@ bool __cdecl RenderNumArrow_(void)
         case 4: baseY = 10; break;
     }
 
-    SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!CharacterMachine) return drewSomething;
 
@@ -459,7 +459,7 @@ void Render_HudPass_4EB070_(void)
     }
     GL_DrawTexture(252, 213.0f, (float)Width, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFC4C4u;   // -15164
 
@@ -507,14 +507,14 @@ void Render_HudPass_4EB070_(void)
     float x = 320.0f - v21;
     GL_DrawTexture(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
 
     CHAR String[29];
     String[0] = (char)byte_7EAA1A4;
     memset(&String[1], 0, sizeof(String) - 1);
     m_dwTextColor = 0xFFC44400u;   // -3899264
-    SelectObject(m_hFontDC, g_hFontBig);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
     int v5 = 0;
     int len = (int)strlen(dword_7EA9814);
     if (len > 0) {

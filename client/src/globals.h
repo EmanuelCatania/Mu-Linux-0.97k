@@ -462,9 +462,6 @@ extern DWORD   DAT_055c9ff4;
 extern DWORD   DAT_055c9ff8;
 // DAT_055ca004 = g_hDC — vive en CWindow (gWindow.GetHdc()).
 extern DWORD   DAT_055ca008;
-extern DWORD   DAT_055ca00c;
-extern DWORD   DAT_055ca010;
-extern DWORD   DAT_055ca014;
 extern DWORD   DAT_055ca018;
 extern char    DAT_055ca019;
 extern DWORD   DAT_055ca01c;
@@ -2659,13 +2656,8 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 // `m_hFontDC = CreateCompatibleDC(hdc)` y ese mismo DC es DAT_055c9fec (el font
 // memory DC, declarado en stdafx.h).
 #define m_hFontDC  DAT_055c9fec
-// Las tres fuentes: WinMain crea los handles en DAT_055ca00c / 010 / 014 (normal /
-// bold / big, esta ultima al doble de altura); `g_hFont` y `g_hFontBold` son alias
-// de esos globals (no HFONT aparte), asi los `SelectObject(m_hFontDC, g_hFontBold)`
-// usan la fuente creada.
-// IDA: g_hFont = 0x055CA00C, g_hFontBold = 0x055CA010, g_hFontBig = 0x055CA014.
-#define g_hFontBold  ((HFONT)(uintptr_t)DAT_055ca010)
-#define g_hFontBig   ((HFONT)(uintptr_t)DAT_055ca014)
+// Las tres fuentes (IDA g_hFont 0x055CA00C, g_hFontBold 0x055CA010, g_hFontBig
+// 0x055CA014) viven en CFont: gFont.GetFont(FONT_NORMAL / FONT_BOLD / FONT_BIG).
 
 // Batch 18 — InitGame / ReceiveChat globals
 // EnableUse declarado arriba junto a DAT_05826d1c.
@@ -2863,7 +2855,6 @@ extern char    SoccerTeamName[2][80];// team names
 
 // Globals de fuente / medición de texto que consumen sub_480C60 y el HUD
 // renderers (HFONT object handles + DC + computed dimensions).
-#define g_hFont      ((HFONT)(uintptr_t)DAT_055ca00c)              // primary plain font handle
 // FontHeight se declara mas arriba (0x07D78080).
 extern SIZE    TextSize;             // shared scratch SIZE for text extent
 

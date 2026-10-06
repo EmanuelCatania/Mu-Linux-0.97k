@@ -66,6 +66,7 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // g_hInst 0x055CA000, g_hDC 0x055CA004, WindowWidth/Height 0x0056156C/70.
 // El DC de OpenGL NO es el DC de memoria de las fuentes (DAT_055c9fec, abajo).
 #include "Core/Window.h"
+#include "Core/Font.h"
 
 // Font memory DC (GDI compatible DC with DIB bitmap selected, used to rasterize
 // glyphs into a DIB surface). Assigned by Font_BuildLayout. Do NOT pass to

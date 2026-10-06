@@ -311,9 +311,7 @@ DWORD __cdecl GenerateCheckSum(BYTE* pbyBuffer, DWORD dwSize, WORD wKey) {
 //    no un objeto con vtable real, asi que no tiene destructor que llamar.
 void Game_DestroyWindow(void) {
     // Fuentes GDI (IDA L1-12).
-    if (g_hFont)     DeleteObject(g_hFont);
-    if (g_hFontBold) DeleteObject(g_hFontBold);
-    if (g_hFontBig)  DeleteObject(g_hFontBig);
+    gFont.Release();
 
     // Los dos widgets de lista, por el slot 0 de su vtable con flag 1
     // ("scalar deleting destructor": ademas libera la memoria).  IDA L~200.

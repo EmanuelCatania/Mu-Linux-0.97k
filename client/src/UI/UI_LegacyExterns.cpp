@@ -800,7 +800,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
     HFONT hFont = (HFONT)GetCurrentObject(hFontDC, OBJ_FONT);
-    if (hFont == NULL) hFont = (HFONT)(uintptr_t)DAT_055ca00c;
+    if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
     if (hFont == NULL) return;
 
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
