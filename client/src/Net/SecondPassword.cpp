@@ -1098,7 +1098,8 @@ void __cdecl SecondPassword_Screen9(void) {
         ClearInput(0);
         InputGold = 0;
         StorageGoldFlag = 0;
-        InputTextMax = 8;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004EB6C3): depósito de Zen con diez dígitos.
+        InputTextMax = 10;
         InputNumber = 1;
         DAT_00559c84 = 0;
         GoldInputEnable = 1;
@@ -1107,7 +1108,8 @@ void __cdecl SecondPassword_Screen9(void) {
         SetErrorMessage(0x74);
         ClearInput(0);
         InputGold = 0;
-        InputTextMax = 8;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004EB6FE): extracción de Zen con diez dígitos.
+        InputTextMax = 10;
         InputNumber = 1;
         DAT_00559c84 = 0;
         GoldInputEnable = 1;
@@ -1156,7 +1158,8 @@ void __cdecl FUN_004eb7f0(void) {
         DAT_083a4124 = '\0';
         SetErrorMessage(0x74);
         ClearInput(0);
-        InputTextMax = 8;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004EB8C7): oferta de Zen con diez dígitos.
+        InputTextMax = 10;
         InputNumber = 1;
         DAT_00559c84 = 0;
         GoldInputEnable = 1;
