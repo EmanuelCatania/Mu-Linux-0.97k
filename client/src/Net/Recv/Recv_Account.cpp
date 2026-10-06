@@ -355,7 +355,6 @@ void NetRecv_F4(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
 }
 
-// ── IN-GAME OPCODES ─────────────────────────────────────────────
 // 0x0E
 void NetRecv_0E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
