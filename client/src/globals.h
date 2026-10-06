@@ -1981,12 +1981,7 @@ extern float   FPS;  // smoothed FPS value  [IDA 0x05826DF8]
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
 extern DWORD   m_MusicOnOff;            // 0x055C9E3C — flag on/off de la musica (ver globals.cpp)
 // IDA: DAT_055C9D04
-extern char    MusicCurrentTrack[256];  // track currently playing in MuPlayer
-extern char    s_MuPlayer_00559110[];   // "MuPlayer" string
-extern char    s_MuPlayer_exe_00559154[]; // "MuPlayer.exe" string
-extern char    s_MuPlayer_exe__s_00559130[]; // "MuPlayer.exe %s" format
-extern char    s_StopMp3_cmd_0055911c[];    // stop command string
-extern char    s_PlayMp3_cmd_00559140[];    // play command string
+extern char    MusicCurrentTrack[256];  // tema de fondo en reproducción (IDA 0x055C9D04)
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 extern DWORD   DAT_0058443c;   // DS3D state dword

@@ -2028,11 +2028,6 @@ DWORD   m_MusicOnOff                = 0;
 // declarado como UN char, asi que la copia pisaba los globals de al lado.
 // IDA: DAT_055C9D04
 char    MusicCurrentTrack[256]      = {};
-char    s_MuPlayer_00559110[]       = "MuPlayer";
-char    s_MuPlayer_exe_00559154[]   = "MuPlayer.exe";
-char    s_MuPlayer_exe__s_00559130[] = "MuPlayer.exe %s";
-char    s_StopMp3_cmd_0055911c[]    = ">StopMp3<";
-char    s_PlayMp3_cmd_00559140[]    = ">PlayMp3<";
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 DWORD   DAT_0058443c   = 0;

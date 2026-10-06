@@ -1,72 +1,39 @@
-// Music.cpp
-// BGM (mp3) via el proceso externo MuPlayer.exe.
+// Music.cpp — elección del tema de fondo.
 //
-// IDA: FUN_004127F0 — StopMp3
-// IDA: PlayMp3 — PlayMp3
+// IDA: PlayMp3 y StopMp3 (0x004127F0). Las dos comparan el nombre recibido con
+// el tema en curso (MusicCurrentTrack) y respetan m_MusicOnOff (Config.ini
+// [Sound] EnableMusic, o el registro) y Destroy (DAT_055ca018, el cliente se
+// está cerrando).
 //
-// Las dos comparan el nombre recibido contra el track en curso (MusicCurrentTrack).
-// StopMp3 manda WM_CLOSE a la ventana "MuPlayer"; PlayMp3 ademas la lanza con
-// WinExec si no existe.
-//
-// Globals:
-//   MusicCurrentTrack — IDA: DAT_055C9D04, track en reproduccion (buffer)
-//   m_MusicOnOff  — @ 0x055C9E3C, flag on/off (registro "MusicOnOff", default 0)
-//   DAT_055ca018  — Destroy @ 0x055CA018, la app se esta cerrando (lo pone WndProc)
-//
-// MuPlayer.exe vive en bin/Client/ (36 KB, del patcher oficial de Webzen
-// 00.95.14; usa MCIWndCreateA de MSVFW32). Sin ese exe al lado del cliente,
-// PlayMp3 sale en el primer fopen y no suena nada.
-//
-// El flag "MusicOnOff" del registro arranca en 0 (fiel a IDA), y el toggle del
-// menu de opciones que lo escribe todavia no esta portado, asi que por ahora
-// hay que ponerlo a mano:
-//   reg add "HKCU\SOFTWARE\Webzen\Mu\Config" /v MusicOnOff /t REG_DWORD /d 1 /f
+// DESVIACION: el binario reproducía con un proceso externo, MuPlayer.exe
+// (WinExec para empezar, WM_CLOSE para cortar). Acá lo hace CSound dentro del
+// cliente (Sound/SoundManager.h). El tema suena una vez y no se repite mientras
+// siga siendo el mismo, igual que antes.
 
 #include "stdafx.h"
+#include "Sound/SoundManager.h"
 
-// `qmemcpy` viene del decompile de Ghidra; el proyecto lo define suelto en
-// varios archivos. Conviene centralizarlo en un header común.
-#ifndef qmemcpy
-#define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
-#endif
-
-
-// IDA: FUN_004127F0
-// Detiene el BGM si `name` coincide con el track en reproduccion.
-// Port fiel del raw de IDA; el decompile de Ghidra traia el strcmp expandido
-// a mano byte a byte, que es la misma comparacion.
+// IDA: StopMp3 (0x004127F0) — corta el tema si `Name` es el que está sonando.
 void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 {
     const char* Name = (const char*)(uintptr_t)param_1_d;
-    if (Name == NULL) return;   // guard del port: nuestra tabla de nombres puede estar vacia
+    if (Name == NULL) return;   // guard del port: la tabla de nombres puede venir vacía
 
     if ((m_MusicOnOff || bEnforce) && MusicCurrentTrack[0] && strcmp(Name, MusicCurrentTrack) == 0)
     {
-        CErrorReport_Write(&DAT_055c9bf0, s_StopMp3_cmd_0055911c);
-        HWND hWnd = FindWindowA(NULL, s_MuPlayer_00559110);
-        if (hWnd)
-        {
-            SendMessageA(hWnd, WM_CLOSE, 0, 0);
-            MusicCurrentTrack[0] = 0;
-        }
+        gSound.StopMusic();
+        MusicCurrentTrack[0] = 0;
     }
 }
 
-
-// IDA: PlayMp3
-// Arranca `name` lanzando MuPlayer.exe como proceso externo.
-//   - mismo track ya sonando        -> no hace nada
-//   - otro track sonando            -> lo corta (WM_CLOSE) y sale
-//   - nada sonando / sin ventana    -> WinExec("MuPlayer.exe <name>")
-// Port fiel del raw de IDA. El decompile de Ghidra perdia el 2do argumento del
-// sprintf ("MuPlayer.exe %s" sin el nombre), asi que la linea de comandos salia
-// con basura.
+// IDA: PlayMp3 — empieza `Name`.
+//   - mismo tema ya sonando  -> no hace nada
+//   - otro tema sonando      -> lo corta y sale (el próximo frame arranca el nuevo)
+//   - nada sonando           -> si el archivo existe, lo reproduce
 void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
 {
     const char* Name = (const char*)(uintptr_t)param_1_d;
-    if (Name == NULL) return;   // guard del port: nuestra tabla de nombres puede estar vacia
-
-    CHAR CmdLine[256];
+    if (Name == NULL) return;   // guard del port: la tabla de nombres puede venir vacía
 
     if (DAT_055ca018 != 0 || (!m_MusicOnOff && !bEnforce))
         return;
@@ -76,30 +43,17 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
         if (strcmp(Name, MusicCurrentTrack) == 0)
             return;
 
-        HWND hWnd = FindWindowA(NULL, s_MuPlayer_00559110);
-        if (hWnd)
-        {
-            SendMessageA(hWnd, WM_CLOSE, 0, 0);
-            MusicCurrentTrack[0] = 0;
-            return;
-        }
+        gSound.StopMusic();
+        MusicCurrentTrack[0] = 0;
+        return;
     }
 
-    FILE* fp = crt_fopen(s_MuPlayer_exe_00559154, DAT_005580ac);
+    FILE* fp = crt_fopen(Name, DAT_005580ac);
     if (fp == NULL) return;
     crt_fclose(fp);
 
-    fp = crt_fopen(Name, DAT_005580ac);
-    if (fp == NULL) return;
-    crt_fclose(fp);
-
-    if (FindWindowA(NULL, s_MuPlayer_00559110) == NULL)
-    {
-        CErrorReport_Write(&DAT_055c9bf0, s_PlayMp3_cmd_00559140);
-        crt_sprintf(CmdLine, s_MuPlayer_exe__s_00559130, Name);
-        WinExec(CmdLine, 0);
+    if (gSound.PlayMusic(Name))
         strcpy_s(MusicCurrentTrack, sizeof(MusicCurrentTrack), Name);
-    }
 }
 
 
