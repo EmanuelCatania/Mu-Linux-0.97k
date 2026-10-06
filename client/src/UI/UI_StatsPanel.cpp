@@ -40,7 +40,7 @@ int RenderErrorMessage(void)
   DAT_00559c8c = 0x100;
   GL_ResetState();
   glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
-  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
+  SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
@@ -304,7 +304,7 @@ LAB_0051c13d:
 			// Preserve that representation when forwarding it to OpenGL.
 			glColor3f(*(float*)&uVar10,*(float*)&uVar15,*(float*)&uVar16);
         GL_DrawTexture(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-        SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
+        SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
         DAT_00559c78 = 0xfffff0c8;
         ptVar17 = &local_e4;
         // IDA RenderErrorMessage (0x51AF50) indexes the text table directly:
@@ -321,7 +321,7 @@ LAB_0051c13d:
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(int)lVar8,pCVar6,
                      ptVar12,cVar13,uVar10);
         { float _fdc = *(float*)&local_dc + _DAT_00552854; local_dc = *(unsigned int*)&_fdc; }
-        SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
+        SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         DAT_00559c78 = 0xffffffff;
         if (iVar3 == 0) {
           // General: the two explanatory lines immediately above button 0.
@@ -713,13 +713,13 @@ LAB_0051c13d:
     // GlobalText[418] aporta el formato localizado y GlobalText[419] la línea
     // de confirmación. ErrorMessage 128 es guerra de guild, no Trade.
     crt_sprintf(local_c8, (const char*)DAT_07d486fc, DAT_07ea9834);
-    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca014);
+    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BIG)));
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
-    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
+    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     crt_sprintf(local_c8, GlobalText[419]);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
@@ -883,7 +883,7 @@ LAB_0051c13d:
     return iVar3;
   case 0x8f:
     DAT_00559c78 = 0xff0080ff;
-    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
+    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d5f94c);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d5f94c,iVar3,ptVar17);
@@ -916,7 +916,7 @@ LAB_0051c13d:
       goto LAB_0051d371;
     }
     local_d8 = 0x140;
-    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
+    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
     glColor3f(1.0f, 1.0f, 0.0f);
     uVar5 = ((int)MixType < 0) - 1 & MixType;
     if (MixType == 0xb) {
@@ -935,7 +935,7 @@ LAB_0051d2dd:
     UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
                  (LPSIZE)0x0,'\0',0);
     local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x3b);
-    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
+    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
 LAB_0051d371:
     iVar3 = 0;
     if (DAT_083a4324 < 1) {
@@ -943,7 +943,7 @@ LAB_0051d371:
     }
     do {
       glColor3f(1.0f, 0.7f, 0.0f);
-      SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
+      SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
       if (iVar3 == 0) {
         if (DAT_07eaa13c == 1) {
           uVar10 = 0;

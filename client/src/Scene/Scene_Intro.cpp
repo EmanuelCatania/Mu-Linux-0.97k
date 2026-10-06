@@ -186,7 +186,7 @@ void __cdecl Scene_Intro(HDC param_1)
 
     // Debug overlay (only in bypass mode)
     if (DAT_083a410c != '\0') {
-        SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
+        SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         UI_RenderText(0, 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
     }
 

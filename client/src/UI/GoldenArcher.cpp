@@ -143,14 +143,14 @@ static void GA_Ida_RecvScratch(BYTE* Msg, int Size)
 static void GA_Ida_ButtonState(bool pressed, bool disabled)
 {
     if (pressed) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         glColor3f(0.4f, 0.4f, 0.4f);
         if (GA_MouseLButtonPop) { GA_MouseLButtonPush = 0; GA_MouseLButton = 0; }
     } else if (disabled) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         glColor3f(0.4f, 0.4f, 0.4f);
     } else {
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 }
@@ -208,9 +208,9 @@ static void GA_Ida_Render(void)
         m_dwTextColor = 0xFF67BFDFu;
         RenderCenteredText(cx, cy - 15, GlobalText[916]);
         RenderCenteredText(cx, cy - 5, GlobalText[917]);
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
         RenderCenteredText(cx, cy - 25, GlobalText[894]);
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFF0FF96u;
         GL_DrawTexture(271, xa + 3.0f, yb + 10.0f, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         GA_InputTextWidth = 113 * GA_WindowWidth / 640;
@@ -230,14 +230,14 @@ static void GA_Ida_Render(void)
     const float yb2 = (float)GA_InventoryStartY + 395.0f;
     GL_DrawTexture(280, xb, yb2, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (GA_In((int)xb, (int)yb2, 24, 24)) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText((int)xb, (int)yb2 - 13, GlobalText[225]);
     }
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
 
     const int tx = GA_InventoryStartX + 95;
     switch (mode) {
@@ -257,7 +257,7 @@ static void GA_Ida_Render(void)
         RenderCenteredText(tx, y + 45, GlobalText[898]);
         if (GA_GiftName[0]) {
             glColor3f(0.0f, 0.0f, 0.0f);
-            SelectObject(m_hFontDC, g_hFontBold);
+            SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
             RenderCenteredText(tx + 1, y + 261, GA_GiftName);
             if (sin((double)DAT_05826e08 * 0.0099999998) < 0.0) glColor3f(1.0f, 1.0f, 1.0f);
             else glColor3f(0.6f, 0.6f, 0.6f);
@@ -265,7 +265,7 @@ static void GA_Ida_Render(void)
             RenderCenteredText(tx, y + 260, GA_GiftName);
             glColor3f(1.0f, 1.0f, 1.0f);
             m_dwTextColor = 0xFFF0FF96u;
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         }
         break;
     }
@@ -280,30 +280,30 @@ static void GA_Ida_Render(void)
     }
 
     char buffer[100];
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     if (mode == 1)      RenderText(485, 290, GlobalText[245], 0, 0, 0);
     else if (mode == 2) RenderText(485, 290, GlobalText[819], 0, 0, 0);
     if (mode != 3) {
-        SelectObject(m_hFontDC, g_hFontBig);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         sprintf_s(buffer, "x%d", chips);
         if (mode == 1 || mode == 2) RenderText(560, 300, buffer, 0, 0, 0);
     }
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFD2E6FFu;
     if (mode == 1)      RenderText(485, 325, GlobalText[246], 0, 0, 0);
     else if (mode == 2) RenderText(485, 325, GlobalText[820], 0, 0, 0);
     if (mode != 3) {
-        SelectObject(m_hFontDC, g_hFontBig);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         sprintf_s(buffer, "x%d", (int)GA_ChipCount16);
         if (mode == 1 || mode == 2 || mode == 4) RenderText(560, 335, buffer, 0, 0, 0);
     }
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFD2E6FFu;
     if (mode == 1) RenderText(485, 360, GlobalText[247], 0, 0, 0);
     if (mode != 3 && mode != 4) {
-        SelectObject(m_hFontDC, g_hFontBig);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         if (DAT_07e11e20 == -1 || DAT_07e11e22 == -1 || DAT_07e11e24 == -1)
             sprintf_s(buffer, "xxx - xxx - xxx");
@@ -517,7 +517,7 @@ static void RenderTitle(void)
 {
     EnableAlphaTest(true);
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     m_dwBackColor = Color4b(20, 20, 20, 255);
     m_dwTextColor = Color4b(230, 230, 230, 255);
     int y = kStartY + 12;
@@ -536,7 +536,7 @@ static void TextStyleBody(void)
     EnableAlphaTest(true);
     m_dwBackColor = Color4b(255, 255, 255, 0);
     m_dwTextColor = Color4b(255, 230, 210, 255);
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
 }
 
 static void RenderCollectedRegistered(int y, int textCollected, int textRegistered,
@@ -566,7 +566,7 @@ static void RenderPagination(void)
     EnableAlphaTest(true);
     m_dwBackColor = Color4b(255, 255, 255, 0);
     m_dwTextColor = Color4b(255, 255, 255, 255);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     char text[32];
     sprintf_s(text, "%d/%d", s_CurrentPage, s_TotalPages);
     RenderText(kStartX, CenterTextPosY(text, (int)(y + s / 2)), text, RealWidth(190), 1, nullptr);
@@ -578,7 +578,7 @@ static void RenderPagination(void)
     };
     if (s_CurrentPage > 1) arrow((float)x - 40, 0.0f, 1.0f);
     if (s_CurrentPage < s_TotalPages) arrow((float)x + 21, 1.0f, -1.0f);
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
 }
 
 static bool CheckPagination(void)
@@ -686,19 +686,19 @@ static void RenderStone(void)
             y += 40;
             DrawSeparatedLines(x, y, GlobalText[897], 15);
             m_dwTextColor = Color4b(255, 255, 255, 255);
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
             glColor3f(1.0f, 1.0f, 1.0f);
         } else {
             TextC(x, y, GlobalText[898], 190);
             y += 10;
             m_dwTextColor = Color4b(212, 150, 0, 255);
-            SelectObject(m_hFontDC, g_hFontBig);
+            SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
             const char* n = s_LuckyNumber;
             sprintf_s(buffer, "%c%c%c%c - %c%c%c%c - %c%c%c%c",
                       n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7], n[8], n[9], n[10], n[11]);
             TextC(x, y, buffer, 190);
             m_dwTextColor = Color4b(255, 230, 210, 255);
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
             y += 30;
             RenderBox((float)x + 35, (float)y, 120, 22, GlobalText[899]);
             y += 40;
@@ -756,9 +756,9 @@ static void RenderLucky(void)
     y += 20;
     TextC(x, y, GlobalText[906], 190); y += 15;
     m_dwTextColor = Color4b(223, 191, 103, 255);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     TextC(x, y, GlobalText[907], 190); y += 15;
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
     TextC(x, y, GlobalText[908], 190); y += 15;
     TextC(x, y, GlobalText[909], 190); y += 15;
     TextC(x, y, GlobalText[910], 190); y += 20;
@@ -774,7 +774,7 @@ static void RenderLucky(void)
         const int n = SeparateTextIntoLines(GA_GiftName, lines, 7, 38);
         for (int i = 0; i < n; ++i, y += 15) {
             glColor3f(0.0f, 0.0f, 0.0f);
-            SelectObject(m_hFontDC, g_hFontBold);
+            SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
             TextC(x + 1, y + 1, lines + i * 38, 190);
             if (sin((double)DAT_05826e08 * 0.01) < 0) glColor3f(1.0f, 1.0f, 1.0f);
             else glColor3f(0.6f, 0.6f, 0.6f);
@@ -782,7 +782,7 @@ static void RenderLucky(void)
             TextC(x, y, lines + i * 38, 190);
         }
         m_dwTextColor = Color4b(255, 255, 255, 255);
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 }
@@ -810,18 +810,18 @@ static void RenderBingo(void)
     GL_DrawTexture(279, (float)x, (float)y, 190, 10, 0, 0, 190.0f / 256, 10.0f / 16, 1, 1);
     if (s_MyLuckyNumbers.empty()) {
         y = kStartY + 216;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
         m_dwBackColor = Color4b(255, 255, 255, 0);
         DrawSeparatedLines(x, y, GlobalText[897], 15);
         m_dwTextColor = Color4b(255, 230, 210, 255);
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         return;
     }
     y += 20;
     TextC(x, y, GlobalText[917], 190);
     y += 20;
     m_dwTextColor = Color4b(212, 150, 0, 255);
-    SelectObject(m_hFontDC, g_hFontBig);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BIG));
     bool invert = true;
     const size_t first = (size_t)(s_CurrentPage - 1) * 10;
     for (size_t i = first; i < s_MyLuckyNumbers.size() && i < first + 10; ++i) {
@@ -864,7 +864,7 @@ static void GA_Custom_Render(void)
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(280, (float)cx, (float)cy, 24, 24, 0, 0, 0.75f, 0.75f, 1, 1);
     if (IsWorkZone(cx, cy, 24, 24)) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         m_dwBackColor = Color4b(255, 255, 255, 0);
         m_dwTextColor = Color4b(255, 255, 255, 255);
         RenderTipText(cx + 2, cy - 15, GlobalText[247]);

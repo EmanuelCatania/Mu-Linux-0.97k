@@ -218,7 +218,7 @@ extern "C" void __cdecl Render_ChatBox_(void);
 void Render_ChatBox_(void)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!(InputEnable || DAT_07e11d71)) return;
 
@@ -300,7 +300,7 @@ char Render_CharInfoPanel_(void)
     if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + 474) != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
         int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
@@ -341,7 +341,7 @@ LABEL_7:
         EnableAlphaTest(true);
         v24_y0 = 4.0f;
         x = 320.0f - 20.0f;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF008000u;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
@@ -437,7 +437,7 @@ int RenderEquipedHelperLife_(bool a2)
         else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
         if (!text) text = "";
 
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
@@ -464,7 +464,7 @@ int RenderEquipedHelperLife_(bool a2)
     if (SummonLife) {
         const float xs = (float)GetScreenWidth() - 50.0f - 150.0f;
 
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(m_hFontDC, gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;

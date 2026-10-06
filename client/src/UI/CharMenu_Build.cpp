@@ -359,9 +359,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         do {
             iVar1 = iVar4;
             if (*pCVar3 == '\0') break;          // corta el conteo en la 1ª vacía
-            pHVar9 = (HFONT)(uintptr_t)DAT_055ca00c;
+            pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
             if (*piVar2 != 0) {
-                pHVar9 = (HFONT)(uintptr_t)DAT_055ca010;
+                pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
             }
             SelectObject(m_hFontDC, pHVar9);
             GetTextExtentPointA(m_hFontDC, pCVar3, lstrlenA(pCVar3), &local_8);
@@ -417,9 +417,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         pCVar3 = lpString_07e90798;
         do {
             float fAdvance;
-            pHVar9 = (HFONT)(uintptr_t)DAT_055ca00c;
+            pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
             if (DAT_07ea7b10[iVar1] != 0) {
-                pHVar9 = (HFONT)(uintptr_t)DAT_055ca010;
+                pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
             }
             SelectObject(m_hFontDC, pHVar9);
             if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {

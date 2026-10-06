@@ -10,7 +10,7 @@
 // the FPS counter (DAT_07E11DCC = 0) and updates the timestamp.
 // IDA: RenderDebugWindow
 void __cdecl UI_UpdateFpsCounter(void) {
-    SelectObject(DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
+    SelectObject(DAT_055c9fec, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     DAT_00559c78 = 0xffffffff;
     SetBackgroundTextColor = 0xff000000;
     DWORD DVar1 = timeGetTime();

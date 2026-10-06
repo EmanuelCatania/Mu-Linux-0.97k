@@ -22,7 +22,7 @@ void __fastcall FUN_00402ff0(int param_1) {
         iPos_y = 0xfa;
     }
     int hovered = ((int)MouseY - iPos_y) / 18;
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(m_hFontDC, gFont.GetFont(FONT_BOLD));
     for (int i = 0; i < g_iNumAnswer; ++i) {
         int dx = 556 - (int)MouseX;
         if (dx < 0) dx = -dx;
@@ -74,7 +74,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
     float sy  = 235.0f;
     char  ret = 1;
     if (a3 != 0) {
-        SelectObject(m_hFontDC, (HGDIOBJ)g_hFontBold);
+        SelectObject(m_hFontDC, (HGDIOBJ)gFont.GetFont(FONT_BOLD));
         sy = 240.0f;
         m_dwBackColor = 0;
     }
@@ -163,7 +163,7 @@ void __fastcall FUN_00403320(void* param_1) {
                 MouseLButton = 0;
             }
         }
-        SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
+        SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         GL_DrawTexture(240, 485.0f, 355.0f, 120.0f, 24.0f,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(545, 360, GlobalText[699]);
@@ -186,14 +186,14 @@ void __fastcall FUN_00403320(void* param_1) {
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if ((double)MouseX >= 475.0 && (double)MouseX < 499.0 &&
         (double)MouseY >= 395.0 && (double)MouseY < 419.0) {
-        SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
+        SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText(475, 382, GlobalText[225]);
     }
 
     m_dwBackColor = 0;
-    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
+    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     m_dwTextColor = 0xFFF0FF96u;
 
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A

@@ -694,32 +694,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         srv0[0x2e] = 0;                                      // channel[0] load = 0 (vacío)
     }
 
-    // 15: fuentes — el tamaño depende de la resolución
-    {
-        int fontSize = 0x0c;  // default for 640x480
-        if (gWindow.GetWidth() == 0x320) fontSize = 0x0d;       // 800
-        else if (gWindow.GetWidth() == 0x400) fontSize = 0x0e;   // 1024
-        else if (gWindow.GetWidth() >= 0x500) fontSize = 0x0f;   // 1280+
-        FontHeight = fontSize;
-        // CHARSET — DESVIACIÓN DELIBERADA del binario.
-        // Acá había 129 = HANGEUL_CHARSET, que es lo que usa el cliente coreano
-        // original porque su Text.bmd es coreano.  El nuestro es ESPAÑOL en
-        // Windows-1252, y con HANGEUL_CHARSET la GDI trata los bytes 0x81..0xFE
-        // como lead-byte de una secuencia DBCS: se come el carácter siguiente.
-        // Por eso se veía "da? o" (daño: 0xF1 + 'o' consumidos como par) y
-        // "?xito" (éxito).  Afecta a medir Y a dibujar, así que también
-        // desalineaba los recuadros de fondo.
-        // En el original esto sale de `g_dwCharSet`, que el cliente elige según
-        // el idioma; para datos en 1252 el equivalente es DEFAULT_CHARSET.
-        const DWORD kCharSet = DEFAULT_CHARSET;   // era 129 (HANGEUL_CHARSET)
-        DAT_055ca00c = (DWORD)CreateFontA(fontSize, 0, 0, 0, 400, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-        DAT_055ca010 = (DWORD)CreateFontA(fontSize, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-        // IDA: WinMain 0x41F151 — g_hFontBig mide el doble de la fuente
-        // base (FontHeight - 1), con peso bold. La usan el nombre del modal
-        // Trade y otros textos destacados; no es un segundo alias de bold.
-        const int bigFontHeight = 2 * (fontSize - 1);
-        DAT_055ca014 = (DWORD)CreateFontA(bigFontHeight, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-    }
+    // 15: fuentes (CFont, Core/Font.h). El tamaño depende de la resolución.
+    gFont.Create(gWindow.GetWidth());
 
     // 16: WSAStartup — obligatorio antes de cualquier operación de socket
     {
