@@ -769,26 +769,7 @@ state_fail_common:
                     pkt[3] = 0;
                     // Chain XOR (formula universal: pkt[i] ^= pkt[i-1] ^ key[i])
                     pkt[3] ^= pkt[2] ^ CNetwork::XorKey[3 & 0x1f];
-                    MuEmu::EncryptSend(pkt, 4);
-                    int iVar14 = 0, uVar12 = 4;
-                    if (SocketClientSocket != 0xffffffff) {
-                        do {
-                            int n = send(SocketClientSocket, (char*)pkt + iVar14, uVar12 - iVar14, 0);
-                            if (n == -1) {
-                                int err = WSAGetLastError();
-                                if (err == WSAEWOULDBLOCK && SocketClientSendBufferLength + 4 < 0x2001) {
-                                    memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 4);
-                                    SocketClientSendBufferLength += 4;
-                                } else {
-                                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                                }
-                                break;
-                            }
-                            if (n == 0) break;
-                            if (SocketClientLogPrint) FUN_0043de60();
-                            uVar12 -= n; iVar14 += n;
-                        } while (uVar12 > 0);
-                    }
+                    gNetwork.SendRaw((char*)pkt, 4);
                 }
                 Resource_LoadOrFatal((CHAR*)LogInID);
                 Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)

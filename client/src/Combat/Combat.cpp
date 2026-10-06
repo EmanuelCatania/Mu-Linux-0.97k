@@ -647,14 +647,8 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     // Path correcto para C1 (igual que Pkt_Send en Game_EnterWorldTick):
     // chain-XOR y `send()` directo — el hook de send() aplica el MuEmu byte-XOR
     // automáticamente a los C1 planos.
-    static const BYTE s_MoveKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
     for (unsigned int i = 3; i < payloadLen; i++) {
-        pkt[i] ^= pkt[i - 1] ^ s_MoveKey[i & 0x1f];
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
 
     gNetwork.SendRaw((const char*)pkt, (int)payloadLen);
@@ -1774,15 +1768,9 @@ static void Combat_SendDuration1E_97k(char* entity, int skillType,
 
 static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 {
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
     if (!pkt || len < 3) return;
     for (int i = 3; i < len; ++i) {
-        pkt[i] ^= pkt[i - 1] ^ xorKey[i & 0x1F];
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1F];
     }
     gNetwork.SendRaw((const char*)pkt, len);
 }
@@ -2184,12 +2172,6 @@ void __cdecl Action(DWORD c, DWORD o)
                 // se queda atacando al aire" — síntomas de packets que no
                 // llegaban válidos al server (CSM-encriptado un C1 no se
                 // descifra, server descarta silenciosamente).
-                static const BYTE s_AttackKey[32] = {
-                    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-                };
                 int targetEntityId = *(short*)(pCharsClient + 476); // entity Id
                 // IDA 0x48DF85-0x48DFB0: sx1 = (__int64)((facing + 22.5)
                 // * 0.022222223 + 1.0) & 7.  Al port le faltaba el `+ 1.0`, o
@@ -2212,14 +2194,8 @@ void __cdecl Action(DWORD c, DWORD o)
                     pos[3] = (BYTE)*(int*)(hero + 904);
                     pos[4] = (BYTE)*(int*)(hero + 908);
                     pos[5] = (BYTE)(dirCode << 4);   // nibble bajo = 0 pasos
-                    static const BYTE s_PosKey[32] = {
-                        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-                    };
                     for (int i = 3; i < 6; ++i)
-                        pos[i] ^= pos[i - 1] ^ s_PosKey[i & 0x1F];
+                        pos[i] ^= pos[i - 1] ^ CNetwork::XorKey[i & 0x1F];
                     gNetwork.SendRaw((const char*)pos, 6);
                 }
                 BYTE pkt[8];
@@ -2231,7 +2207,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 pkt[5] = 0x64;     // AT_ATTACK1 = 100 (0.97k action code)
                 pkt[6] = (BYTE)dirCode;
                 for (int i = 3; i < 7; ++i) {
-                    pkt[i] ^= pkt[i - 1] ^ s_AttackKey[i & 0x1F];
+                    pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1F];
                 }
                 gNetwork.SendRaw((const char*)pkt, 7);
                 // (Aca sonaba PlayBuffer(30) — pasos.  IDA no reproduce nada en

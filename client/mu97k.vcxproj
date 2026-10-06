@@ -332,7 +332,6 @@
     <ClCompile Include="src\Scene\Scene_OpenWorld.cpp" />
     <ClCompile Include="src\Scene\Scene_AssetLoad.cpp" />
     <ClCompile Include="src\Render\Camera_Unproject.cpp" />
-    <ClCompile Include="src\Net\Net_CharSelect.cpp" />
     <ClCompile Include="src\Net\Net_PipeQuery.cpp" />
     <ClCompile Include="src\Net\Protocol\Protocol_Check.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />

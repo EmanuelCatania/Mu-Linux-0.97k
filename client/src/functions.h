@@ -629,7 +629,6 @@ double  __cdecl Math_Fmax(float a, float b); // max(a,b)
 int     __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10); // PointInPolygon
 // FUN_00513570 @ 0x00513570
 char  __cdecl Chat_ValidateInputCommand(void);
-void  __cdecl CharSelect_SendSelectPacket(void); // IDA: FUN_00513c10 (0x00513C10)
 void  __cdecl SetErrorMessage(int message); // IDA: SetErrorMessage (0x005142D0)
 void  __cdecl UI_InGameMenu(void);          // UI_InGameMenu state machine
 int   __cdecl RenderErrorMessage(void);  // UI_StatsPanel_Render
@@ -1279,7 +1278,6 @@ void  __cdecl clearMatchInfo(void); // IDA: clearMatchInfo (0x0047EB80)
 int   __cdecl Character_FindByKey_WithClear(int key);                                     // 0x0045ACC0 FindCharacterIndex + limpia el flag +744 de todas
 void  __cdecl Characters_SetActionAll(int Action);                                  // 0x0045AD10 SetAction sobre todos los jugadores visibles
 void  __cdecl FUN_00433830(void);                                        // 0x00433830 — InitPartyList
-void  __stdcall SendCheck(void);                                         // 0x004220A0 — anti-tamper checksum packet
 
 // Batch 20 — forward declarations for implemented stubs
 void  __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3); // Text render

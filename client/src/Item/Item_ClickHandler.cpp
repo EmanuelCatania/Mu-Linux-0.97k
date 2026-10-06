@@ -310,40 +310,6 @@ void __cdecl ShowCheckBox(int num, int index, int message)
 // PressKey helper (Input.cpp)
 extern int __cdecl PressKey(int vk);
 
-// Envío de red: send de bajo nivel por socket, con desborde al buffer encolado.
-// Imita el patrón `send / cola de WSAEWOULDBLOCK` de la función de IDA.
-static void SendPacketBytes(const void* data, int size)
-{
-    if (!data || size <= 0) return;
-    if (SocketClientSocket == (DWORD)INVALID_SOCKET) return;
-
-    const char* p = (const char*)data;
-    int sent = 0, remaining = size;
-    while (remaining > 0) {
-        int r = ::send((SOCKET)SocketClientSocket, p + sent, remaining, 0);
-        if (r == SOCKET_ERROR) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                // Encola la cola no enviada en SocketClientSendBuffer+SocketClientSendBufferLength
-                int qlen = (int)SocketClientSendBufferLength;
-                if (qlen + remaining <= 0x2000) {
-                    memcpy((char*)SocketClientSendBuffer + qlen, p + sent, remaining);
-                    SocketClientSendBufferLength = qlen + remaining;
-                }
-            } else {
-                // Other error: close socket
-                if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
-                    closesocket((SOCKET)SocketClientSocket);
-                    SocketClientSocket = (DWORD)INVALID_SOCKET;
-                }
-            }
-            return;
-        }
-        if (r == 0) return;
-        sent      += r;
-        remaining -= r;
-    }
-}
-
 // Build & send a C1-header packet [C1][size][header...payload].
 //
 // No incrementar acá `DAT_05826ceb` (g_byPacketSerialSend): el serial sólo

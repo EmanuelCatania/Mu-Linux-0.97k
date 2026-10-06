@@ -129,38 +129,7 @@ void CServerSelWin_UpdateWhileActive(void)
                 pkt[2] = (char)0xF4;
                 pkt[3] = 2;            // subcode 2 (F4/02 = request server list)
 
-                unsigned int uVar5 = 4;
-                int iOff = 0;
-                if (SocketClientSocket != 0xffffffff) {
-                    do {
-                        int iVar4b = send(SocketClientSocket, pkt + iOff, (int)uVar5, 0);
-                        if (iVar4b == -1) {
-                            int err = WSAGetLastError();
-                            if (err == WSAEWOULDBLOCK) {
-                                if (SocketClientSendBufferLength + (int)uVar5 < 0x2001) {
-                                    const char *src = pkt;
-                                    char *dst = (char*)SocketClientSendBuffer + SocketClientSendBufferLength;
-                                    for (unsigned int u = uVar5 >> 2; u; u--) {
-                                        *(unsigned int *)dst = *(unsigned int *)src;
-                                        src += 4; dst += 4;
-                                    }
-                                    for (unsigned int u = uVar5 & 3; u; u--)
-                                        *dst++ = *src++;
-                                    SocketClientSendBufferLength += (int)uVar5;
-                                } else {
-                                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                                }
-                            } else {
-                                Net_Disconnect(((int)(uintptr_t)SocketClient));
-                            }
-                            break;
-                        }
-                        if (iVar4b == 0) break;
-                        if (SocketClientLogPrint) FUN_0043de60();
-                        uVar5 -= (unsigned int)iVar4b;
-                        iOff  += iVar4b;
-                    } while ((int)uVar5 > 0);
-                }
+                gNetwork.SendToConnectServer((const BYTE*)pkt, 4);
 
                 ServerSelectHi = local_834;
                 ServerSelectLo = -1;

@@ -1364,12 +1364,6 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     // Anti-tamper: local_d58[0..0x1f] re-initialized repeatedly — compiler artifact, skipped.
     // Envío por socket vía SocketClientSocket, con cola de WSAEWOULDBLOCK en SocketClientSendBuffer.
 
-    static const unsigned char xorKey[32] = {
-        0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
-        0x23, 0xa8, 0xfe, 0xb6, 0x49, 0x5d, 0x39, 0x5d,
-        0x8a, 0xcb, 0x63, 0x8d, 0xea, 0x7d, 0x2b, 0x5f,
-        0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
-    };
 
     // Build packet buffer (max 0x401 bytes)
     unsigned char pktBuf[0x401];
@@ -1384,7 +1378,7 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     {
         unsigned int idx = 3;
         unsigned int keyIdx = idx & 0x1f;
-        pktBuf[idx] = pktBuf[idx] ^ xorKey[keyIdx] ^ pktBuf[idx - 2];
+        pktBuf[idx] = pktBuf[idx] ^ CNetwork::XorKey[keyIdx] ^ pktBuf[idx - 2];
     }
 
     // Escribe el payload de 4 bytes en el offset 4, y después lo encripta con XOR
@@ -1393,7 +1387,7 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
         *(int*)(pktBuf + payloadLen) = param_2;
         for (unsigned int i = payloadLen; i < payloadLen + 4; i++) {
             unsigned int keyIdx = i & 0x1f;
-            pktBuf[i] = pktBuf[i] ^ xorKey[keyIdx] ^ pktBuf[i - 2];
+            pktBuf[i] = pktBuf[i] ^ CNetwork::XorKey[keyIdx] ^ pktBuf[i - 2];
         }
         payloadLen = 8;
     }

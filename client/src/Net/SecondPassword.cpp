@@ -547,7 +547,7 @@ void __cdecl Party_MemberClickHandler(void) {
 // chequea si el mouse clickeó en el área de la fila [DAT_07ea982c+0x7d,+0x95) x [DAT_07ea9830+0x73+row*15, +0x18).
 // Guard de entrada: DAT_07eaa116 tiene que ser distinto de cero. También chequea *(short*)(DAT_07cf1ff4+0x54) != 0.
 // On click: sends 4-byte packet {0xC1,0x01,0x00,opcode_xored}.
-//   opcode plain byte = (byte)(row_index), XOR key[3]=0x89, prev_plain_at[4]=4 → cipher = row^0x89^4
+//   opcode plain byte = (byte)(row_index), XOR CNetwork::XorKey[3]=0x89, prev_plain_at[4]=4 → cipher = row^0x89^4
 //   Después appendea el byte del índice de fila como byte 4 (si total_len+1 < 0x401).
 //   El largo del paquete depende de los datos de cada fila. Clave: la misma de 32 bytes.
 // After click: PlayBuffer(0x19,0,0).
@@ -569,11 +569,6 @@ void __cdecl SecondPassword_Screen3(void) {
     }
 
     // Clave XOR (32 bytes, la misma que se usa en todo el archivo)
-    static const BYTE key[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,
-        0x49,0x5d,0x39,0x5d,0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
 
     int iRow     = 0;
     int iRowAccum = 0;
@@ -1450,32 +1445,9 @@ uint __cdecl Net_Disconnect_Clean(void)
     DAT_07eaa117 = 0;
     CloseInventoryRelatedWindows();
     if (0 < (int)DAT_07e91388) Item_ReturnPickedItem();
-    char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x82;
-    unsigned int uVar4 = 3;
-    int iVar6 = 0;
-    SOCKET SVar2 = SocketClientSocket;
-    if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
-        do {
-            int iVar1 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
-            if (iVar1 == -1) {
-                iVar6 = WSAGetLastError();
-                SVar2 = (SOCKET)SocketClientSendBufferLength;
-                if (iVar6 == 0x2733) {
-                    if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
-                        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar4);
-                        SocketClientSendBufferLength += uVar4;
-                    } else { Net_Disconnect(((int)(uintptr_t)SocketClient)); SVar2 = 0; }
-                } else { Net_Disconnect(((int)(uintptr_t)SocketClient)); SVar2 = 0; }
-                break;
-            }
-            SVar2 = 0;
-            if (iVar1 == 0) break;
-            SVar2 = 0;
-            if (SocketClientLogPrint != 0) { FUN_0043de60(); SVar2 = 0; }
-            uVar4 -= iVar1; iVar6 += iVar1;
-        } while (0 < (int)uVar4);
-    }
-    return CONCAT31((int3)(SVar2 >> 8), 1);
+    const char pkt[3] = { (char)0xC1, 3, (char)0x82 };
+    gNetwork.SendRaw(pkt, 3);
+    return 1;
 }
 
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).

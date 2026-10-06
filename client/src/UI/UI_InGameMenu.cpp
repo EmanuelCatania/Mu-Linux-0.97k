@@ -38,12 +38,6 @@ extern "C" {
 
 // XOR login key (32 bytes), used to encrypt outbound logout/transition packets.
 // Same key as Net/Crypto.cpp login XOR.
-static const BYTE s_xorKey[32] = {
-    0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
-    0x23, 0xa8, 0xfe, 0xb6, 0x49, 0x5d, 0x39, 0x5d,
-    0x8a, 0xcb, 0x63, 0x8d, 0xea, 0x7d, 0x2b, 0x5f,
-    0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
-};
 
 // IDA: sub_50F7A0 (0x0050F7A0) -- guarda las opciones del personaje en el server.
 //
@@ -100,34 +94,6 @@ static void SaveOptionsToServer97k(void)
     gNetwork.SendC1(pkt, sizeof(pkt));
 
     {   // queda en el log: es el unico rastro de que las opciones se guardaron
-    }
-}
-
-// Build a C1-framed packet, XOR it with the login key, encode it via
-// CSimpleModulus_Encode, then send it.  Same send+WSAEWOULDBLOCK queue pattern
-// used throughout Net_Process.cpp.
-static void SendLoginPacket(BYTE *payload, int payloadLen)
-{
-    // XOR-encrypt payload
-    for (int i = 0; i < payloadLen; ++i)
-        payload[i] ^= s_xorKey[i & 0x1f];
-
-    // Encode and send
-    CSimpleModulus_Encode(0, payload, payloadLen);
-
-    int sent = send(SocketClientSocket, (char *)payload, payloadLen, 0);
-    if (sent == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK)
-    {
-        // Queue into overflow buffer (max 0x2001 bytes at SocketClientSendBuffer).
-        // Other send paths append directly at SocketClientSendBuffer + queuedBytes;
-        // the extra +4 here leaves a gap and desynchronises popup/login sends.
-        BYTE *qbuf = (BYTE *)SocketClientSendBuffer;
-        DWORD q    = *(DWORD *)((char *)&SocketClient + 0x0c); // queued byte count
-        if (q + (DWORD)payloadLen <= 0x2001)
-        {
-            memcpy(qbuf + q, payload, payloadLen);
-            *(DWORD *)((char *)&SocketClient + 0x0c) += payloadLen;
-        }
     }
 }
 
@@ -279,7 +245,7 @@ void __cdecl UI_InGameMenu(void)
                             SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
                             FUN_0050f700("Data\\Macro.txt");  // IDA L611
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
-                            SendLoginPacket(pkt, 5);
+                            gNetwork.Send(pkt, 5);
                         }
                         if (SocketClientSocket != 0xffffffff) {
                             closesocket((SOCKET)SocketClientSocket);

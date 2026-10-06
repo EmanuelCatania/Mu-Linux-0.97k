@@ -31,12 +31,6 @@
 extern void OpenGL_Release(void);
 
 // Same 32-byte XOR key used in login packets
-static const BYTE s_PktKey[32] = {
-    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-};
 
 void __cdecl Scene_Dispatch(HDC param_1)
 {
@@ -81,7 +75,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
     #if 0
     if (g_iNoMouseTime > 0x1f) {
         // Build a 6-byte re-auth packet: [0xC1, len, 0xF1, b3, b2, b0]
-        // Each byte after the header is XOR-encrypted with s_PktKey.
+        // Each byte after the header is XOR-encrypted with CNetwork::XorKey.
         BYTE pkt[8];
         pkt[0] = 0xC1;
         pkt[1] = 6;      // packet length
@@ -93,7 +87,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
         // XOR-encrypt fields 3..5
         for (int i = 3; i < 6; i++) {
             int ki = i & 0x1f;
-            pkt[i] ^= s_PktKey[ki] ^ pkt[i - 1];
+            pkt[i] ^= CNetwork::XorKey[ki] ^ pkt[i - 1];
         }
 
         // Append random byte

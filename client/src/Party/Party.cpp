@@ -295,64 +295,6 @@ void Party_Keepalive(void)
 // server.
 //
 // ============================================================
-// Guild_CreateOk  @ 0x00436820  (opcode 0x90)
-// Server ACKs guild creation; displays result message.
-//
-// Sends back a 3-byte packet [C1][03][31] (guild creation ACK).
-// Then switches on pkt[3] (sub-type 1-5) to pick a pre-loaded
-// string buffer and calls CreateOkMessageBox to display it in chat.
-// Standard WSAEWOULDBLOCK retry loop for the send().
-// ============================================================
-void Guild_CreateOk(BYTE* pkt)
-{
-    // Send guild ACK [C1][03][31]
-    BYTE ack[3] = { 0xC1, 0x03, 0x31 };
-    int sent = 0;
-    UINT remaining = 3;
-    DAT_07eaa117 = 0;
-    if (SocketClientSocket != (SOCKET)(~0))
-    {
-        do {
-            int r = send(SocketClientSocket, (const char*)ack + sent, (int)remaining, 0);
-            if (r == -1)
-            {
-                int err = WSAGetLastError();
-                if (err == WSAEWOULDBLOCK)
-                {
-                    if (SocketClientSendBufferLength + 3 < 0x2001)
-                    {
-                        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, ack, 3);
-                        SocketClientSendBufferLength += 3;
-                    }
-                    else
-                        Net_Disconnect(((int)(uintptr_t)SocketClient));
-                }
-                else
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                break;
-            }
-            if (r == 0) break;
-            if (SocketClientLogPrint != 0) FUN_0043de60();
-            remaining -= r;
-            sent += r;
-        } while ((int)remaining > 0);
-    }
-
-    // Select message buffer by sub-type
-    char* msg = NULL;
-    switch (pkt[3])
-    {
-    case 1: msg = (char*)&DAT_07d5b680; break;
-    case 2: msg = (char*)&DAT_07d5b7ac; break;
-    case 3: msg = (char*)&DAT_07d5c10c; break;
-    case 4: msg = (char*)&DAT_07d5c238; break;
-    case 5: msg = (char*)&DAT_07d5b8d8; break;
-    default: return;
-    }
-    CreateOkMessageBox(msg);
-}
-
-
 // ============================================================
 // Guild_AddMemberResult  @ 0x00436cb0  (opcode 0x91)
 // Server reports result of a guild join request or confirmation.

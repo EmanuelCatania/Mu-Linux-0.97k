@@ -38,81 +38,13 @@ extern "C" BYTE OffsetInventoryItems[];
 // ---------------------------------------------------------------------------
 
 // XOR key (32 bytes) — same as login/logout key
-static const BYTE s_xorKey[32] = {
-    0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
-    0x23, 0xa8, 0xfe, 0xb6, 0x49, 0x5d, 0x39, 0x5d,
-    0x8a, 0xcb, 0x63, 0x8d, 0xea, 0x7d, 0x2b, 0x5f,
-    0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
-};
 
 // Send a packet to the server.  Applies the XOR cipher (offset by hdr_skip bytes
 // to skip the C1/len header), encodes via CSimpleModulus_Encode, then send()s.
 // If WSAEWOULDBLOCK, queues into SocketClientSendBufferLength / 0x55ca16c overflow buffer.
-static void Chat_SendPacket(BYTE *pkt, int len, int hdr_skip = 0)
-{
-    // XOR payload bytes starting at hdr_skip
-    for (int i = hdr_skip; i < len; ++i)
-        pkt[i] ^= s_xorKey[i & 0x1f];
-
-    CSimpleModulus_Encode(0, pkt, len);
-
-    if (SocketClientSocket == 0xffffffff)
-        return;
-
-    int sent = 0;
-    int rem  = len;
-    do {
-        int n = send(SocketClientSocket, (char *)pkt + sent, rem, 0);
-        if (n == -1) {
-            int err = WSAGetLastError();
-            if (err == WSAEWOULDBLOCK) {
-                if ((int)(SocketClientSendBufferLength + len) < 0x2001) {
-                    // SocketClientSendBuffer (= SocketClient + 0xC), igual que los otros sitios
-                    // con este patrón (Game_*Tick, Party, Player_InputTick); la dirección literal
-                    // del binario (0x055ca16c) no existe en este build.
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, len);
-                    SocketClientSendBufferLength += len;
-                } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                }
-            } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
-            }
-            break;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint != 0)
-            FUN_0043de60();
-        sent += n;
-        rem  -= n;
-    } while (rem > 0);
-}
-
 // Send a raw 3-byte packet (no XOR, no encode — these class-select packets are
 // pre-encoded in the original code via CSimpleModulus_Encode before this call site).
 extern "C" void HUD_BottomBarButtons_HitTest(void);
-
-static void SendRaw3(BYTE b0, BYTE b1, BYTE b2)
-{
-    BYTE pkt[3] = { b0, b1, b2 };
-    if (SocketClientSocket == 0xffffffff) return;
-    int rem = 3, off = 0;
-    do {
-        int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
-        if (n == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 3);
-                    SocketClientSendBufferLength += 3;
-                } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-            } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-            break;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        off += n; rem -= n;
-    } while (rem > 0);
-}
 
 // Resolves explicit target commands used by Trade and Guild.  Party has its own
 // original interaction below: it does not accept a target name.
@@ -350,33 +282,10 @@ extern "C" void Chat_SendChatLine(const char* text)
     }
 
     memcpy(pkt + 13, text, msgBytes);
-    // Se guarda ANTES del send: el hook de MuEmu (`#define send
-    // MuEmu_send_hook`) encripta el buffer en el lugar y pkt[2] deja de valer 0x02.
     const bool isWhisper = (pkt[2] == 0x02);
 
-    // El server (XorData en PacketManager.cpp) reversa el CHAIN-XOR:
-    // `pkt[i] ^= pkt[i-1] ^ key[i]`, igual que el resto de los C1 (movimiento,
-    // enter-world, char-select). Con un XOR simple el texto llega ilegible.
-    for (int xi = 3; xi < pktLen; ++xi)
-        pkt[xi] ^= pkt[xi - 1] ^ s_xorKey[xi & 0x1f];
-
-    if (SocketClientSocket == 0xffffffff) return;
-    int rem = pktLen, off = 0;
-    do {
-        int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
-        if (n == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);
-                    SocketClientSendBufferLength += pktLen;
-                } else Net_Disconnect((int)(uintptr_t)SocketClient);
-            } else Net_Disconnect((int)(uintptr_t)SocketClient);
-            break;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        off += n; rem -= n;
-    } while (rem > 0);
+    // C1 con chain-XOR (lo aplica CNetwork; el server lo revierte en XorData).
+    gNetwork.SendC1(pkt, pktLen);
 
     // IDA WndProc L2261: el server no le devuelve el susurro a quien lo
     // manda, asi que el cliente agrega la linea con el nombre propio y el
@@ -803,26 +712,9 @@ void __cdecl Chat_InputTick(void)
                                         pkt[1] = (BYTE)pktLen;
                                         memcpy(pkt + 0x0d, &DAT_07e108c8, tlen);
                                         for (int xi = 3; xi < pktLen; ++xi)
-                                            pkt[xi] ^= s_xorKey[xi & 0x1f];
+                                            pkt[xi] ^= CNetwork::XorKey[xi & 0x1f];
                                         CSimpleModulus_Encode(0, pkt, pktLen);
-                                        if (SocketClientSocket != 0xffffffff) {
-                                            int rem = pktLen, off = 0;
-                                            do {
-                                                int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
-                                                if (n == -1) {
-                                                    if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                                                        if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
-                                                            memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);
-                                                            SocketClientSendBufferLength += pktLen;
-                                                        } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-                                                    } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-                                                    break;
-                                                }
-                                                if (n == 0) break;
-                                                if (SocketClientLogPrint) FUN_0043de60();
-                                                off += n; rem -= n;
-                                            } while (rem > 0);
-                                        }
+                                        gNetwork.SendRaw((char *)pkt, pktLen);
                                     }
                                 }
                             } // end if (!bDupWhisper)

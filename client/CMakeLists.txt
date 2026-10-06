@@ -243,7 +243,6 @@ set(MU_SOURCES
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
     src/Render/Camera_Unproject.cpp
-    src/Net/Net_CharSelect.cpp
     src/Net/Net_PipeQuery.cpp
     src/Net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
