@@ -40,7 +40,7 @@ static void ItemEquip_UseManaScroll97k(int inventorySlot /* IDA: sub_482BE0(3) *
 
     EnableUse = 10;
     const BYTE packet[5] = { 0xC1, 5, 0x26, (BYTE)(inventorySlot + 12), 0 };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 
     // IDA: *(&OffsetInventoryItems.Type + 34 * inventorySlot). Type is a
     // WORD, hence the 34-WORD = 68-byte ITEM stride.
@@ -142,7 +142,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             const WORD heroKey = *(WORD*)(Hero + 476); // IDA: *(_WORD *)(Hero + 476)
             BYTE packet[6] = { 0xC1, 6, 0x19, 18,
                                (BYTE)(heroKey >> 8), (BYTE)heroKey };
-            Net_SendSmallPacket(packet, sizeof(packet));
+            gNetwork.Send(packet, sizeof(packet));
             result = 1;                                // IDA L893: v136 = 1
             break;
         }

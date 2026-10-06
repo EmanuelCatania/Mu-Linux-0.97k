@@ -271,7 +271,7 @@ void Party_Keepalive(void)
     const BYTE pkt[3] = { 0xC1, 0x03, 0x71 };
     // IDA: Party_PacketHandler envía la trama C1 por la ruta normal de socket/cola.
     // Este opcode no va cifrado según la política de tramas del cliente.
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 

@@ -245,7 +245,7 @@ void CServerSelWin_UpdateWhileActive(void)
                             *(unsigned short *)((char*)&DAT_083a4604 + (int)ServerSelectHi * 0x21e + local_830b);
                         DAT_083a4328 = (DAT_083a4328 & 0xffff0000) | serverCode;
 
-                        if (g_ConnectServerMode) {
+                        if (gNetwork.IsConnectServerMode()) {
                             // ── Flujo ConnectServer (fiel al binario original) ──
                             // Mandar F4/03 (server-info request) al ConnectServer.
                             // Responde F4/03 con IP:port del GameServer →
@@ -256,8 +256,7 @@ void CServerSelWin_UpdateWhileActive(void)
                             BYTE pkt6[6] = { 0xC1, 0x06, 0xF4, 0x03,
                                              (BYTE)(serverCode & 0xff),
                                              (BYTE)(serverCode >> 8) };
-                            extern void CS_SendPlain(const BYTE* data, int len);
-                            CS_SendPlain(pkt6, 6);
+                            gNetwork.SendToConnectServer(pkt6, 6);
                         } else {
                             // ── Flujo directo (sin ConnectServer) ──────────────
                             // No hay ConnectServer: conectar directo al GameServer

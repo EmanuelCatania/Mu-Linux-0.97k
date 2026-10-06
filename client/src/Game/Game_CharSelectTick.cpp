@@ -57,7 +57,7 @@ void Game_CharSelectTick(void)
             int nameLen = (int)strlen(charName);
             if (nameLen > 10) nameLen = 10;
             memcpy(pkt + 4, charName, nameLen);
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
 
         // Init in-game subsystems

@@ -1,7 +1,7 @@
 // WinMain.cpp
 // WinMain @ 0x0041FC00  (1497 lines, completo)
 // Window_Create @ 0x0041DFF0
-// WndProc @ 0x004149D0  -> Core/WndProc.cpp (red: Net/Net_SocketEvents.cpp, input: Input/Input_WndProc.cpp)
+// WndProc @ 0x004149D0  -> Core/WndProc.cpp (red: Net/Network.cpp, input: Input/Input_WndProc.cpp)
 // OpenGL_Init @ 0x0041DE30
 // OpenGL_Release @ 0x0041AF20
 // GameGuard_Init @ 0x00406F20
@@ -632,7 +632,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     //     +0x2e  byte    load           (<100=LOW verde, 0x80+=FULL rojo, si no NORMAL)
     // Solo en modo directo (sin ConnectServer en ServerConfig). Con ConnectServer la lista
     // la trae el F4/02 como en el original: si el CS no responde, queda vacia.
-    if (!g_HasConnectServer) {
+    if (!gNetwork.HasConnectServer()) {
         char* srv0 = DAT_083a45d8;                           // entry index 0
         memset(srv0, 0, 0x21e);
         lstrcpynA(srv0, "MuServer", 20);                     // +0x00 name

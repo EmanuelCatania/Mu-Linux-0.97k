@@ -385,7 +385,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             *(DWORD*)(pkt + 3) = now;
             *(WORD*)(pkt + 7)  = 0;
             *(WORD*)(pkt + 9)  = 0;
-            Net_SendSmallPacket(pkt, 11);
+            gNetwork.Send(pkt, 11);
         }
     }
     #endif

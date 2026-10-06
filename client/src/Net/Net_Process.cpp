@@ -1188,7 +1188,7 @@ static void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
     }
 
     const BYTE reply[6] = { 0xC1, 0x06, 0xF1, 0x03, 0x00, 0xF1 };
-    Net_SendSmallPacket(reply, sizeof(reply));
+    gNetwork.Send(reply, sizeof(reply));
 }
 
 // Declaración adelantada (la declaración real de DbgLogPublic está más abajo, cerca de la
@@ -2471,14 +2471,14 @@ static void Recv_LogOut(const BYTE* Msg)
         DAT_083a4124 = 0;                // single-click flag
         DAT_005616ac = -1;               // selected slot
         DAT_005616b0 = -1;               // creation slot
-        // Manda el pedido de lista de personajes F3/00 vía Net_SendSmallPacket para que
+        // Manda el pedido de lista de personajes F3/00 vía gNetwork.Send para que
         // salga como C3 (encriptado) con el contador de serial correcto + chain-XOR. Los
         // envíos C1 planos, sin serial, el server los descartaba en silencio en
         // CheckSerial (SocketManager.cpp:328-330) — lee DecBuff[1] como
         // DecSerial y rechaza el paquete si se rompe la monotonía.
         BYTE pkt[4] = { 0xC1, 0x04, 0xF3, 0x00 };
         NetLog("NET:    F3/00 char-list request (post-JoinChar)");
-        Net_SendSmallPacket(pkt, 4);
+        gNetwork.Send(pkt, 4);
 
         // ── Cola de ReceiveLogOut ──────────────────────────────────────────────────
         // IDA 0x4247D0 LABEL_117: DESPUÉS del send, la rama sub==1 hace
@@ -2514,38 +2514,6 @@ static void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
         InitGame();
         return;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Envío PLANO (sin encriptar, sin serial byte) al socket actual. El
-// ConnectServer NO usa la encriptación MuEmu del GameServer, así que sus
-// requests (C1 04 F4 02 / C1 06 F4 03) van crudos. Mismo patrón de
-// WSAEWOULDBLOCK-queue que usa CServerSelWin en el binario original.
-// ---------------------------------------------------------------------------
-void CS_SendPlain(const BYTE* data, int len)
-{
-    if (SocketClientSocket == 0xffffffff) return;
-    unsigned int remain = (unsigned int)len;
-    int off = 0;
-    while ((int)remain > 0) {
-        int r = ::send(SocketClientSocket, (const char*)data + off, (int)remain, 0);
-        if (r == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if (SocketClientSendBufferLength + (int)remain < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
-                    SocketClientSendBufferLength += (int)remain;
-                } else {
-                    Net_Disconnect((int)(uintptr_t)SocketClient);
-                }
-            } else {
-                Net_Disconnect((int)(uintptr_t)SocketClient);
-            }
-            return;
-        }
-        if (r == 0) return;
-        remain -= (unsigned int)r;
-        off += r;
     }
 }
 
@@ -2634,8 +2602,7 @@ static void Recv_Redirect(const BYTE* Msg)
     // Salimos del modo ConnectServer: el socket nuevo habla con el GameServer,
     // que responderá con JoinServer (F1/00) y arranca el login normal.
     // Reactivamos la capa MuEmu (byte-XOR) que el GameServer sí usa.
-    g_ConnectServerMode      = 0;
-    g_ConnectServerRequested = 0;
+    gNetwork.EndConnectServerSession();
     MuEmu::SetActive(true);
     CWsctlc_Close((int)(uintptr_t)SocketClient);   // Net_Disconnect
     CreateSocket(IpAddr, port);                   // Net_Connect
@@ -3629,7 +3596,7 @@ void Net_ProcessPacket(void)
                 // MuEmu byte-XOR) el server ve encrypt=0 → "Packet encryption error"
                 // (Index: 3, Value: -1, Encrypt: [0][1]) → CloseClient.
                 //
-                // Net_SendSmallPacket wrap correcto: chain-XOR + serial counter
+                // gNetwork.Send wrap correcto: chain-XOR + serial counter
                 // + SimpleModulus + envelope C3.
                 NetLog("NET:  → op=0x03 MainCheck challenge size=%d, sending ACK (C3)", Size);
                 if (SocketClientSocket != 0xffffffff && Size >= 3) {
@@ -3642,7 +3609,7 @@ void Net_ProcessPacket(void)
                     if (Size > 3) {
                         memcpy(ack + 3, Msg + 3, ackSize - 3);
                     }
-                    Net_SendSmallPacket(ack, ackSize);
+                    gNetwork.Send(ack, ackSize);
                 }
                 break;
             }
@@ -6081,7 +6048,7 @@ void Net_ProcessPacket(void)
                     //     mobs.
                     {
                         BYTE ackPkt[4] = { 0xC1, 0x04, 0xF3, 0x12 };
-                        Net_SendSmallPacket(ackPkt, 4);
+                        gNetwork.Send(ackPkt, 4);
                         NetLog("NET:    0x1C gate → F3/12 ViewportEnable ACK enviado");
                     }
 

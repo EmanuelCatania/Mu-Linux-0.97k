@@ -625,9 +625,9 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     pkt[1] = (BYTE)len;
 
     // El original arma la trama a mano (chain-XOR + serial + CSimpleModulus).
-    // Net_SendSmallPacket hace exactamente eso y ademas corrige el frame contra
+    // gNetwork.Send hace exactamente eso y ademas corrige el frame contra
     // HackPacketCheck.txt, que es el camino que ya usan todos los demas opcodes.
-    Net_SendSmallPacket(pkt, len);
+    gNetwork.Send(pkt, len);
     return (float*)(uintptr_t)1;
 }
 

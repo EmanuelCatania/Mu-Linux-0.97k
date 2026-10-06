@@ -143,7 +143,6 @@
 #include "Net/Net.h"
 
 // El rango de guild pide C1 plano (Encrypt=0).
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
@@ -228,7 +227,7 @@ unsigned int __cdecl SecondPassword_Handler(void)
                     }
                 } else if (mode == 6) {
                     const BYTE closePkt[3] = { 0xC1, 0x03, 0x31 };
-                    Net_SendC1Packet(closePkt, sizeof(closePkt));
+                    gNetwork.SendC1(closePkt, sizeof(closePkt));
                 } else {
                     // Modos 1, 2 y 3: PMSG_WAREHOUSE_PASSWORD_RECV
                     // [C1][10][83][type][WORD password][PersonalCode:10]
@@ -251,7 +250,7 @@ unsigned int __cdecl SecondPassword_Handler(void)
                         memcpy(pkt + 6, DAT_07ea9814, 10);
                     }
                     memcpy(pkt + 4, &pw, 2);
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                     memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
                 }
             }
@@ -398,7 +397,7 @@ void __cdecl SecondPassword_Screen1(void) {
                             DAT_07ea51ec[c] = DAT_07db8710[0][c];
             
                         // El rango de guild entero es Encrypt=0 -> C1 plano, y
-                        // `Net_SendC1Packet` aplica el mismo chain-XOR sobre 3..len-1
+                        // `gNetwork.SendC1` aplica el mismo chain-XOR sobre 3..len-1
                         // que hace el original.
                         BYTE pkt[43];
                         memset(pkt, 0, sizeof(pkt));
@@ -407,7 +406,7 @@ void __cdecl SecondPassword_Screen1(void) {
                         pkt[2] = 0x55;
                         memcpy(pkt + 3,  DAT_07ea51ec, 8);
                         memcpy(pkt + 11, mark, 32);
-                        Net_SendC1Packet(pkt, 43);
+                        gNetwork.SendC1(pkt, 43);
 
                         // IDA: SecondPassword_Screen1 cae al cierre común inmediatamente
                         // después de encolar 0x55: limpia el input, cierra el
@@ -426,7 +425,7 @@ void __cdecl SecondPassword_Screen1(void) {
                 // IDA: C1:04:54:01 confirma la pregunta previa al Guild Master.
                 {
                     const BYTE pkt[4] = { 0xC1, 0x04, 0x54, 0x01 };
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 }
             }
             PlayBuffer(0x19, 0, 0);
@@ -445,11 +444,11 @@ void __cdecl SecondPassword_Screen1(void) {
             if (DAT_07eaa144 == 0) {
                 // IDA: C1:04:54:00 cancela la pregunta previa al Guild Master.
                 const BYTE pkt2[4] = { 0xC1, 0x04, 0x54, 0x00 };
-                Net_SendC1Packet(pkt2, sizeof(pkt2));
+                gNetwork.SendC1(pkt2, sizeof(pkt2));
             } else {
                 // IDA: C1:03:57 cancela el editor y libera INTERFACE_GUILD_CREATE.
                 const BYTE pkt3[3] = { 0xC1, 0x03, 0x57 };
-                Net_SendC1Packet(pkt3, sizeof(pkt3));
+                gNetwork.SendC1(pkt3, sizeof(pkt3));
                 *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
             }
             PlayBuffer(0x19, 0, 0);
@@ -524,7 +523,7 @@ void __cdecl Party_MemberClickHandler(void) {
             // The original click gate uses the visual row.  MuEmu validates
             // the wire party number, which is explicitly supplied by 0x42.
             const BYTE pkt[4] = { 0xC1, 0x04, 0x43, member[11] };
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
             return;
         }
     }
@@ -602,7 +601,7 @@ void __cdecl SecondPassword_Screen3(void) {
                 DAT_083a4124 = '\0';
 
                 BYTE pkt[5] = { 0xC1, 5, 0xF3, 0x06, (BYTE)iRow };
-                Net_SendSmallPacket(pkt, 5);
+                gNetwork.Send(pkt, 5);
 
                 PlayBuffer(0x19, 0, 0);
                 iX = DAT_083a427c;
@@ -861,7 +860,7 @@ void __cdecl SecondPassword_Screen5(void) {
         // MuEmu PMSG_BLOOD_CASTLE_ENTER_RECV: el server hace `level -= 1` y
         // `slot -= INVENTORY_WEAR_SIZE`.
         const BYTE pkt[5] = { 0xC1, 0x05, 0x9A, (BYTE)(row + 1), (BYTE)(itemSlot + 12) };
-        Net_SendC1Packet(pkt, 5);
+        gNetwork.SendC1(pkt, 5);
         return;
     }
 
@@ -893,7 +892,7 @@ void __cdecl SecondPassword_Screen5(void) {
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(cancel, 3);
+        gNetwork.SendC1(cancel, 3);
         Item_ReturnPickedItem();
         CreateOkMessageBox(GlobalText[686]);
         return;
@@ -902,7 +901,7 @@ void __cdecl SecondPassword_Screen5(void) {
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(cancel, 3);
+        gNetwork.SendC1(cancel, 3);
         Item_ReturnPickedItem();
         CreateOkMessageBox(GlobalText[687]);
         return;
@@ -915,7 +914,7 @@ void __cdecl SecondPassword_Screen5(void) {
     // MuEmu PMSG_DEVIL_SQUARE_ENTER_RECV.  Ojo: Devil Square suma **24** al
     // slot, no 12 como Blood Castle (IDA: `buf[size+2] = v20 + 24`).
     const BYTE pkt[5] = { 0xC1, 0x05, 0x90, (BYTE)row, (BYTE)(itemSlot + 24) };
-    Net_SendC1Packet(pkt, 5);
+    gNetwork.SendC1(pkt, 5);
 }
 
 // CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
@@ -964,7 +963,7 @@ void __cdecl ServerTransfer_HitTest(void) {
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         DAT_07e11d28 = 0;         // MouseUpdateTime
         DAT_00559bec = 6;         // MouseUpdateTimeMax
         mx = (int)DAT_083a427c;
@@ -975,7 +974,7 @@ void __cdecl ServerTransfer_HitTest(void) {
     if (mx >= startX + 25 && mx < startX + 49 && my >= startY + 395 && my < startY + 419 && DAT_083a4124) {
         DAT_083a4124 = 0;
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GoldenArcherOpenType = 0;         // g_bEventChipDialogEnable
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
@@ -1206,7 +1205,7 @@ void __cdecl FUN_004eb7f0(void) {
         // PMSG_TRADE_OK_BUTTON_RECV: C1:3C, flag=1. El emisor compartido
         // aporta correctamente el envoltorio C3, chain-XOR y serial rotativo.
         BYTE pkt[4] = { 0xC1, 0x04, 0x3C, 0x01 };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
     }
 
     // Botón de cancelación: [x+137,x+161) × [y+390,y+414).
@@ -1221,13 +1220,12 @@ void __cdecl FUN_004eb7f0(void) {
             DAT_07eaa0e8 = '\0';
             // CGTradeCancelButtonRecv: C1:3D, no payload.
             BYTE pkt3[3] = { 0xC1, 0x03, 0x3D };
-            Net_SendSmallPacket(pkt3, sizeof(pkt3));
+            gNetwork.Send(pkt3, sizeof(pkt3));
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
         }
     }
 }
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // FUN_004ec330 @ 0x004EC330 — Shop controls and inventory close hit-test (389 lines)
 //   - Handles shop bottom buttons (Buy, Repair, Repair All) when DAT_07eaa132 != 0
@@ -1279,7 +1277,7 @@ void __cdecl FUN_004ec330(void) {
                 IsClickPushed()) {
                 DAT_083a4124 = '\0';
                 BYTE pkt[5] = { 0xC1, 0x05, 0x34, 0xFF, 0x00 };
-                Net_SendSmallPacket(pkt, sizeof(pkt));
+                gNetwork.Send(pkt, sizeof(pkt));
             } else {
                 Item_RecalculateRepairCost();   // sub_4C4080
             }
@@ -1546,7 +1544,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
                 return;
             DAT_083a4124 = 0;
             BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)a5, (BYTE)DAT_07eaa138 };
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            gNetwork.Send(pkt, sizeof(pkt));
             return;
         }
         DAT_083a4124 = 0;
@@ -2455,7 +2453,7 @@ void __cdecl CheckGate(void)
             Teleport = 1;                                   // Teleport
 
         const BYTE packet[6] = { 0xC1, 0x06, 0x1C, (BYTE)gateIndex, 0, 0 };
-        Net_SendSmallPacket(packet, sizeof(packet));
+        gNetwork.Send(packet, sizeof(packet));
 
         SelectedItem = -1;
         SelectedNpc = -1;

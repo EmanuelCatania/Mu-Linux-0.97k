@@ -36,14 +36,8 @@ extern "C" { void DbgLogPublic(const char*); }
 #include "Game/Game_SceneUpdate.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
+#include "Net/Network.h"
 
-// XOR encryption key (32 bytes, used for all login packets)
-static const BYTE s_LoginKey[32] = {
-    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-};
 
 static void LoginScene_ApplySafeObjectAnim()
 {
@@ -140,205 +134,9 @@ static void LoginScene_ClearPreviewEquipmentMeta(unsigned char* c)
 static void Pkt_XorRange(BYTE* pkt, int start, int end)
 {
     for (int i = start; i < end; i++)
-        pkt[i] ^= s_LoginKey[i & 0x1f] ^ pkt[i + 1];
+        pkt[i] ^= CNetwork::XorKey[i & 0x1f] ^ pkt[i + 1];
 }
 
-// Send len bytes from buf over the game socket with WSAEWOULDBLOCK fallback.
-// Returns 0 on success, -1 on hard error.
-//
-// MuEmu integration: the whole buffer is HackCheck-encrypted in place
-// (symmetric byte stream cipher — see MuEmu.h) before hitting the wire.
-// The server blindly decrypts every inbound byte, so sending plaintext
-// results in a "Protocol header error" immediate disconnect.
-int Net_SendBuf(const char* buf, int len)
-{
-    if (SocketClientSocket == 0xffffffff) return 0;
-
-    // Copy to a mutable scratch buffer so we can encrypt in place without
-    // clobbering caller state (some callers reuse `buf` across retries).
-    static BYTE s_scratch[0x2000];
-    if (len <= 0 || (int)sizeof(s_scratch) < len) return -1;
-    memcpy(s_scratch, buf, len);
-    MuEmu::EncryptSend(s_scratch, len);
-
-    int sent = 0;
-    int rem  = len;
-    do {
-        int n = send(SocketClientSocket, (const char*)s_scratch + sent, rem, 0);
-        if (n == -1) {
-            int err = WSAGetLastError();
-            if (err == WSAEWOULDBLOCK) {
-                if (SocketClientSendBufferLength + (len - sent) < 0x2001) {
-                    // Queue the still-unsent ENCRYPTED tail — never re-queue
-                    // plaintext or the prefix we already transmitted.
-                    memcpy(SocketClientSendBuffer + SocketClientSendBufferLength,
-                           s_scratch + sent, (len - sent));
-                    SocketClientSendBufferLength += (len - sent);
-                } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                }
-            } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
-            }
-            return -1;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        sent += n;
-        rem  -= n;
-    } while (rem > 0);
-    return 0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Emisores de paquetes al GameServer
-// ─────────────────────────────────────────────────────────────────────────────
-// `Net_SendFrameC1` y `Net_SendFrameC3` arman cada frame; `Net_SendSmallPacket`
-// y `Net_SendC1Packet` son las entradas publicas y **eligen el frame solas**
-// consultando PacketFrame_WantsEncrypt (tabla portada de HackPacketCheck.txt).
-//
-// Antes cada call site elegia el frame a mano y equivocarse desconectaba sin
-// aviso ("Packet encryption error" -> CloseClient). Ahora el call site puede
-// llamar a cualquiera de las dos: si el server pide el otro frame, se corrige
-// y queda registrado en debug.log.
-//
-// Los dos trabajan sobre una COPIA del buffer del caller. Antes el chain-XOR y
-// el serial se escribian sobre el buffer original, lo que ademas de sorprender
-// al caller haria imposible re-enmarcar (el XOR quedaria aplicado dos veces).
-
-// Net_SendFrameC1 — frame plano.
-//
-// El chain-XOR se aplica igual que en los C3: el server hace `XorData` sobre
-// TODO frame C1 (`CPacketManager::ExtractPacket` -> `XorData(size-1, 2)`), asi
-// que hay que cifrar `pkt[3..len-1]`. Para paquetes de 3 bytes el bucle no
-// itera (no hay payload), que es justo el caso de los pedidos de lista.
-//
-// A diferencia del C3, aca NO se pisa `pkt[1]` con el serial: los frames C1 no
-// lo llevan y `CSerialCheck` no los valida.
-static void Net_SendFrameC1(const BYTE* pkt, int totalLen)
-{
-    BYTE buf[0x402];
-    memcpy(buf, pkt, totalLen);
-    for (int i = 3; i < totalLen; i++) {
-        buf[i] ^= buf[i - 1] ^ s_LoginKey[i & 0x1f];
-    }
-    Net_SendBuf((char*)buf, totalLen);
-}
-
-// Net_SendFrameC3 — frame encriptado: chain-XOR + serial + CSimpleModulus.
-//
-// El companion (Mu-linux-97K Source/Client/Main/Protocol.cpp:983) llama
-// gPacketManager.ExtractPacket(EncBuff) DENTRO de DataSend antes del CSM
-// encrypt, y ExtractPacket aplica XorData sobre todos los bytes del paquete.
-// El server (GameServer/PacketManager.cpp XorData) lo reversa en sentido
-// inverso. Sin este chain el server ve basura (subh corrupto): para F1/05 HWID
-// veia subh=0x7D en vez de 0x05, nunca despachaba CGSetHwidRecv, y
-// lpObj->HardwareID quedaba "" -> F1/01 LoginResult code=05.
-//
-// El chain va ANTES del serial-stomp, en el mismo orden que el companion.
-//
-// Serial: CProtocol::DataSend pisa el byte de tamano con el contador rodante
-// (g_byPacketSerialSend / DAT_05826ceb) justo antes de encriptar, asi que el
-// primer byte DESENCRIPTADO del lado del server es el serial, no el tamano.
-// El server lo lee como DecSerial y exige la secuencia 0,1,2,... via
-// CheckSerial; cualquier salto -> CloseClient.
-static void Net_SendFrameC3(const BYTE* pkt, int totalLen)
-{
-    BYTE plain[0x402];
-    char buf[0x402];
-    memcpy(plain, pkt, totalLen);
-
-    for (int i = 3; i < totalLen; i++) {
-        plain[i] ^= plain[i - 1] ^ s_LoginKey[i & 0x1f];
-    }
-
-    plain[1] = DAT_05826ceb++;           // el byte de tamano pasa a ser el serial
-    int  bodyLen = totalLen - 1;
-    int  encLen  = CSimpleModulus_Encode(0, plain + 1, bodyLen);
-    int  total   = encLen + 2;
-    buf[0] = (char)0xC3;
-    buf[1] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 2), plain + 1, bodyLen);
-    Net_SendBuf(buf, total);
-}
-
-// Elige el frame segun la tabla del server y avisa cuando corrige al caller.
-// `chosenC3` es lo que pidio el call site; se respeta salvo que el server exija
-// lo contrario.
-static void Net_SendResolved(const BYTE* pkt, int totalLen, bool chosenC3, const char* who)
-{
-    if (!pkt || totalLen < 3 || totalLen > 0x400) return;
-
-    const BYTE opcode = pkt[2];
-    const BYTE subop  = (totalLen > 3) ? pkt[3] : 0;
-    const int  want   = PacketFrame_WantsEncrypt(opcode, subop);
-
-    bool useC3 = chosenC3;
-
-    if (want == PACKETFRAME_PLAIN || want == PACKETFRAME_ENCRYPTED) {
-        const bool serverWantsC3 = (want == PACKETFRAME_ENCRYPTED);
-        if (serverWantsC3 != chosenC3) {
-            useC3 = serverWantsC3;
-        }
-    }
-    else if (want == PACKETFRAME_UNKNOWN) {
-        // El server no tiene fila para este par: responde "Packet unknown
-        // error" y cierra. Se manda igual (no queremos cambiar que un paquete
-        // salga o no), pero queda el aviso para no perder una hora buscando
-        // una desconexion sin causa aparente.
-        char line[160];
-        wsprintfA(line,
-                  "PacketFrame: 0x%02X/%02X no figura en HackPacketCheck.txt "
-                  "-> el server va a cerrar la conexion (%s)", opcode, subop, who);
-        DbgLogPublic(line);
-    }
-    // PACKETFRAME_ANY (0xF3): sirve cualquiera, se respeta lo que pidio el caller.
-
-    if (useC3) Net_SendFrameC3(pkt, totalLen);
-    else       Net_SendFrameC1(pkt, totalLen);
-}
-
-// Entrada publica para los call sites que esperan un frame ENCRIPTADO (C3).
-void Net_SendSmallPacket(const BYTE* pkt, int totalLen)
-{
-    Net_SendResolved(pkt, totalLen, true, "Net_SendSmallPacket");
-}
-
-// Entrada publica para los call sites que esperan un frame PLANO (C1).
-void Net_SendC1Packet(const BYTE* pkt, int totalLen)
-{
-    Net_SendResolved(pkt, totalLen, false, "Net_SendC1Packet");
-}
-
-// Send a large packet: input is plaintext [0xC1][len][opcode][payload].
-// Encrypts pkt[1..totalLen-1] and wraps with [0xC4][hi][lo] framing.
-// Same serial-stomp rationale as Net_SendSmallPacket above (companion uses
-// EncBuff[2] for C4 — the byte right after the 2-byte wire size), but our
-// input format has 1-byte size at pkt[1] so we stomp there for consistency.
-void Net_SendLargePacket(const BYTE* pkt, int totalLen)
-{
-    char buf[0x802];
-
-    // Chain XOR universal — ver Net_SendSmallPacket arriba para detalles.
-    // Mismo formato de input (pkt[0]=C1 placeholder, pkt[1]=size, pkt[2]=head,
-    // pkt[3]=subh) → chain desde i=3 igual que el path C3.
-    {
-        BYTE* mp = (BYTE*)pkt;
-        for (int i = 3; i < totalLen; i++) {
-            mp[i] ^= mp[i - 1] ^ s_LoginKey[i & 0x1f];
-        }
-    }
-
-    ((BYTE*)pkt)[1] = DAT_05826ceb++;    // replace size byte with serial
-    int  bodyLen = totalLen - 1;
-    int  encLen  = CSimpleModulus_Encode(0, (unsigned char*)(pkt + 1), bodyLen);
-    int  total   = encLen + 3;
-    buf[0] = (char)0xC4;
-    buf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
-    buf[2] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
-    Net_SendBuf(buf, total);
-}
 
 extern "C" { void DbgLogPublic(const char*); }
 
@@ -371,9 +169,8 @@ int Game_SceneUpdate(void)
         // con F4/04 (nombres) + F4/02 (load). Al elegir server mandamos F4/03 y
         // el redirect nos lleva al GameServer. Si NO hay línea 2, queda el flujo
         // directo clásico (conectar al elegir server).
-        if (g_HasConnectServer) {
-            g_ConnectServerMode      = 1;
-            g_ConnectServerRequested = 0;
+        if (gNetwork.HasConnectServer()) {
+            gNetwork.BeginConnectServerSession();
             // CRÍTICO: el ConnectServer usa paquetes PLANOS (sin el byte-XOR
             // MuEmu del GameServer). Desactivamos la capa MuEmu mientras hablamos
             // con el CS; Recv_Redirect la reactiva al saltar al GameServer.
@@ -634,7 +431,7 @@ int Game_SceneUpdate(void)
                     pkt[0] = 0xC1; pkt[1] = 6; pkt[2] = 0x05;
                     pkt[3] = (BYTE)DAT_083a4328;
                     pkt[4] = 0; pkt[5] = 0;
-                    Net_SendBuf((char*)pkt, 6);
+                    gNetwork.SendRaw((char*)pkt, 6);
                     // IDA 0x0051F900 L445-446: these are GlobalText[470]/[471],
                     // not independent empty buffers.
                     UIChatLogWindow_AddText((const char*)&DAT_083a7c74, GlobalText[470], 1);
@@ -774,7 +571,7 @@ int Game_SceneUpdate(void)
                 // (Mu-linux-97K/Source/Client/Main/Protocol.h:370,
                 //  Reconnect.cpp:218 build sequence):
                 //   pkt[0]=0xC1 placeholder (send-wrapper replaces with 0xC3),
-                //   pkt[1]=size placeholder (stomped with serial in Net_SendSmallPacket),
+                //   pkt[1]=size placeholder (stomped with serial in gNetwork.Send),
                 //   pkt[2]=0xF1 (head — plaintext),
                 //   pkt[3]=0x01 (subh — plaintext, was wrong before → server saw 0x79),
                 //   pkt[4..13]=account (XOR'd with {0xFC,0xCF,0xAB} via
@@ -821,10 +618,10 @@ int Game_SceneUpdate(void)
                 // ClientSerial[16] — raw copy, plaintext.
                 memcpy(pkt + pos, Serial, 16);
                 pos += 16;
-                // pkt[1] := serial is set later by Net_SendSmallPacket
+                // pkt[1] := serial is set later by gNetwork.Send
 
                 // ── LoginKey chain XOR ──────────────────────────────────────
-                // Se aplica en Net_SendSmallPacket / Net_SendLargePacket, para TODOS los
+                // Se aplica en gNetwork.Send / gNetwork.SendLarge, para TODOS los
                 // paquetes salientes (F1/05 HWID incluido), igual que el companion
                 // (Protocol.cpp ExtractPacket).
                 int totalLen = pos;
@@ -832,9 +629,9 @@ int Game_SceneUpdate(void)
                 // Compute CRC and build final send buffer
                 int crc = CSimpleModulus_Encode(0, pkt + 1, totalLen - 1);
                 if (crc < 0x100) {
-                    Net_SendSmallPacket(pkt, totalLen);
+                    gNetwork.Send(pkt, totalLen);
                 } else {
-                    Net_SendLargePacket(pkt, totalLen);
+                    gNetwork.SendLarge(pkt, totalLen);
                 }
 
                 // Diagnóstico: log de cada intento de login (longitudes + serial actual,
@@ -971,7 +768,7 @@ state_fail_common:
                     pkt[0] = 0xC1; pkt[1] = 4; pkt[2] = 0xF3;
                     pkt[3] = 0;
                     // Chain XOR (formula universal: pkt[i] ^= pkt[i-1] ^ key[i])
-                    pkt[3] ^= pkt[2] ^ s_LoginKey[3 & 0x1f];
+                    pkt[3] ^= pkt[2] ^ CNetwork::XorKey[3 & 0x1f];
                     MuEmu::EncryptSend(pkt, 4);
                     int iVar14 = 0, uVar12 = 4;
                     if (SocketClientSocket != 0xffffffff) {

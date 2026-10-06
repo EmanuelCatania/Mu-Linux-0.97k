@@ -27,7 +27,7 @@ static void SendSkillPacket1E_Local(BYTE skillId, BYTE gridX, BYTE gridY, BYTE d
 static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 {
     if (!pkt || len <= 0) return;
-    Net_SendSmallPacket(pkt, len);
+    gNetwork.Send(pkt, len);
 }
 
 // UseSkillWizard @ 0x004889D0 (~1227 lines)
@@ -70,7 +70,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         BYTE movement[6] = { 0xC1, 6, 0x10,
             *(BYTE*)((BYTE*)(uintptr_t)Hero + 904), *(BYTE*)((BYTE*)(uintptr_t)Hero + 908),
             (BYTE)(16 * (((int)((*(float*)((BYTE*)(uintptr_t)Hero + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
-        Net_SendC1Packet(movement, sizeof(movement));
+        gNetwork.SendC1(movement, sizeof(movement));
         *(BYTE*)((BYTE*)(uintptr_t)c + 748) = 0;
     }
 
@@ -428,7 +428,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             usePkt[2] = 0x26;
             usePkt[3] = (BYTE)(slot + 12);
             usePkt[4] = 0;
-            Net_SendSmallPacket(usePkt, 5);
+            gNetwork.Send(usePkt, 5);
 
             // Play sound based on item type
             // El grid vive en OffsetInventoryItems, stride 0x44.

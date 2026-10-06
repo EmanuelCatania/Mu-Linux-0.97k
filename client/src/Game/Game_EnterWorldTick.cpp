@@ -113,7 +113,7 @@ static void Pkt_Send(const BYTE* pkt_in, int len)
 //
 // El buffer arranca en 0 y el XOR encadena con el byte ANTERIOR ya codificado
 // (`pkt[i] ^= pkt[i-1] ^ key[i]`), que es como lo descifra el server (XorData,
-// recorriendo hacia atrás). Mismo patrón que Net_SendSmallPacket.
+// recorriendo hacia atrás). Mismo patrón que gNetwork.Send.
 static void Send_CharSelectPacket(void)
 {
     BYTE pkt[32];

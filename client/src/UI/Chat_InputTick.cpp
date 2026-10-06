@@ -28,8 +28,6 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Inventory grid base — used by section 11 (Q/W/E quick-use sound feedback).
 // Defined in src/Render/HUD_Pass3.cpp.
@@ -165,9 +163,9 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
         // Mandarlo con el frame equivocado = "Packet encryption error" y
         // CloseClient del lado del server.
         if (plainC1)
-            Net_SendC1Packet(packet, sizeof(packet));
+            gNetwork.SendC1(packet, sizeof(packet));
         else
-            Net_SendSmallPacket(packet, sizeof(packet));
+            gNetwork.Send(packet, sizeof(packet));
     }
     return true; // Native command: never forward it as an unknown text command.
 }
@@ -231,7 +229,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const WORD key = *(WORD*)(target + 476);
     PartyKey = key;
     const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 
     const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
@@ -970,7 +968,7 @@ void __cdecl Chat_InputTick(void)
                             // C1 payload, corrupting the slot on the wire and
                             // causing an immediate disconnect.
                             BYTE pkt[5] = { 0xC1, 0x05, 0x26, (BYTE)(slot + 12), 0x00 };
-                            Net_SendSmallPacket(pkt, 5);
+                            gNetwork.Send(pkt, 5);
                             // Sound feedback by item type
                             int itemType = *(int*)(OffsetInventoryItems + slot * 0x44);
                             if (itemType == 448) {

@@ -338,13 +338,11 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
     if (ServerConfig::ConnectServerPort != 0) {
         lstrcpynA(outIP, ServerConfig::ConnectServerIP, 128);
         *outPort = ServerConfig::ConnectServerPort;
-        lstrcpynA(g_GameServerIP, ServerConfig::GameServerIP, sizeof(g_GameServerIP));
-        g_GameServerPort   = ServerConfig::GameServerPort;
-        g_HasConnectServer = 1;
+        gNetwork.SetConnectServer(true);
     } else {
         lstrcpynA(outIP, ServerConfig::GameServerIP, 128);
         *outPort = ServerConfig::GameServerPort;
-        g_HasConnectServer = 0;
+        gNetwork.SetConnectServer(false);
     }
 
     // Serial del login: el server compara 16 bytes contra su m_ServerSerial[17],
@@ -375,7 +373,7 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
 
     char line[256];
     wsprintfA(line, "ServerConfig: %s=%s:%u GameServer=%s:%u version='%s'",
-              g_HasConnectServer ? "ConnectServer" : "GameServer(directo)",
+              gNetwork.HasConnectServer() ? "ConnectServer" : "GameServer(directo)",
               outIP, (unsigned)*outPort,
               ServerConfig::GameServerIP, (unsigned)ServerConfig::GameServerPort, v5);
     DbgLogPublic(line);

@@ -6,7 +6,6 @@
 #include <winsock2.h>
 #include <string.h>
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" int __cdecl GetScreenWidth(void);
 extern "C" void Net_SendNpcTalkClose(void);
@@ -183,7 +182,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
     extern void __cdecl CloseInventoryRelatedWindows(void);
     if (DAT_07eaa11b) {                                     // TradeOpened
         const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
         return true;
     }
     if (DAT_07eaa119) {                                     // WarehouseOpened
@@ -192,7 +191,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
         CloseInventoryRelatedWindows();
         if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
         const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         return true;
     }
     if (DAT_07eaa11a)                                       // ChaosMixOpened
@@ -251,7 +250,7 @@ void HUD_BottomBarButtons_HitTest(void)
         } else {
             // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            gNetwork.SendC1(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
             HUD_PanelTail97k(TAIL_GUILD);
@@ -272,7 +271,7 @@ void HUD_BottomBarButtons_HitTest(void)
         } else {
             PartyNumber = 0;
             const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            gNetwork.SendC1(partyListPkt, sizeof(partyListPkt));
             PartyOpened = 1;
             HUD_PanelTail97k(TAIL_PARTY);
         }
@@ -451,7 +450,7 @@ static void HUD_HotkeyTick(void)
         } else {
             // 0x52: Encrypt=0 en HackPacketCheck.txt -> C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            gNetwork.SendC1(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
             if (!HUD_PanelTail97k(TAIL_GUILD)) DAT_07eaa114 = 0;
@@ -466,7 +465,7 @@ static void HUD_HotkeyTick(void)
         } else {
             PartyNumber = 0;
             const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            gNetwork.SendC1(partyListPkt, sizeof(partyListPkt));
             PartyOpened = 1;
             if (!HUD_PanelTail97k(TAIL_PARTY)) PartyOpened = 0;
         }

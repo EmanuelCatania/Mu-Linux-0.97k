@@ -1,14 +1,13 @@
 // WndProc.cpp — procedimiento de la ventana principal.
 //
 // Despacha los mensajes de la ventana; la red y el input viven en sus módulos:
-//   Net_OnSocketEvent      (Net/Net_SocketEvents.cpp)  — WM_USER
+//   gNetwork.OnSocketEvent      (Net/Network.cpp)  — WM_USER
 //   Input_OnWindowMessage  (Input/Input_WndProc.cpp)   — mouse, IME y WM_CHAR
 
 #include "stdafx.h"
 
 void OpenGL_Release(void);        // WinMain.cpp
 void GameGuard_TickCheck(void);   // WinMain.cpp
-void Net_OnSocketEvent(WORD evt, WORD err);
 void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // ── WndProc @ 0x004149D0 (4074 líneas, ~80% anti-tamper) ────────────────────
@@ -99,7 +98,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_USER:          // 0x400 — eventos de WSAAsyncSelect
-        Net_OnSocketEvent(LOWORD(lParam), HIWORD(lParam));
+        gNetwork.OnSocketEvent(LOWORD(lParam), HIWORD(lParam));
         break;
 
     case WM_USER + 1:      // 0x401 — shutdown

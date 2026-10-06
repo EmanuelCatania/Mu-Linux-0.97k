@@ -9,13 +9,12 @@
 #include "functions.h"
 
 #include "Net/MuEmu.h"
-#include "Net/Net.h"  // Net_SendSmallPacket (proper C3 wrap with serial)
+#include "Net/Net.h"  // gNetwork.Send (proper C3 wrap with serial)
 
 // byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
 // dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.
 #define DAT_07ea5249_byte  (DAT_07ea5240[9])
 // Los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
 extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
 extern "C" void Net_SendNpcTalkClose(void);
@@ -98,7 +97,7 @@ static void SaveOptionsToServer97k(void)
     // HackPacketCheck: 0xF3 acepta cualquier frame (`*`); C1 no toca el serial.
     BYTE pkt[4 + sizeof(opt)] = { 0xC1, (BYTE)sizeof(pkt), 0xF3, 0x30 };
     memcpy(pkt + 4, opt, sizeof(opt));
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 
     {   // queda en el log: es el unico rastro de que las opciones se guardaron
     }
@@ -321,7 +320,7 @@ void __cdecl UI_InGameMenu(void)
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
                                 BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
-                                Net_SendSmallPacket(pkt, 5);
+                                gNetwork.Send(pkt, 5);
                             }
                         } else if (SceneFlag == 2) {
                             // Login: case 1 = Options
@@ -354,7 +353,7 @@ void __cdecl UI_InGameMenu(void)
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
                             FUN_0050f700("Data\\Macro.txt");  // IDA L1081
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
-                            Net_SendSmallPacket(pkt, 5);
+                            gNetwork.Send(pkt, 5);
                             // NO transición local. NO F3/00 send. Dejamos
                             // que Recv_LogOut maneje todo cuando llegue el ack.
                         } else if (SceneFlag == 4) {
@@ -418,7 +417,7 @@ void __cdecl UI_InGameMenu(void)
                 memcpy(pkt + 4, name, n > 10 ? 10 : n);
             }
             memcpy(pkt + 14, (const char*)DAT_07db8710, 10);   // InputText[0]
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            gNetwork.Send(pkt, sizeof(pkt));
         }
         // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
         DAT_083a7c14 = 0x18;
@@ -471,7 +470,7 @@ void __cdecl UI_InGameMenu(void)
             if (m_bMyConfirm != 0) {
                 const BYTE resetConfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
                 m_bMyConfirm = 0;
-                Net_SendSmallPacket(resetConfirm, sizeof(resetConfirm));
+                gNetwork.Send(resetConfirm, sizeof(resetConfirm));
             }
 
             // IDA: UI_InGameMenu 0x51628F/0x5162A2 — el ACK 0x3A no trae el
@@ -486,7 +485,7 @@ void __cdecl UI_InGameMenu(void)
             // PMSG_TRADE_MONEY_RECV::money; Protocol.cpp de MuEmu despacha 0x3A.
             BYTE pkt[8] = { 0xC1, 0x08, 0x3A, 0, 0, 0, 0, 0 };
             memcpy(pkt + 4, &gold, sizeof(DWORD));
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         } else if (gold > 0) {
             Net_SendWarehouseMoney((BYTE)(StorageGoldFlag & 1), (DWORD)gold);
         }
@@ -526,7 +525,7 @@ void __cdecl UI_InGameMenu(void)
         // paquete tiene payload, y el server lo descifra con XorData.
         BYTE pkt[6] = { 0xC1, 0x06, 0x51, (BYTE)(yes ? 1 : 0),
                         (BYTE)(key >> 8), (BYTE)key };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         goto tail;
     }
 
@@ -552,7 +551,7 @@ void __cdecl UI_InGameMenu(void)
         // DAT_07EA9834 al recibir 0x36.
         BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
         memcpy(pkt + 4, DAT_07ea9834, 10);
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         goto tail;
     }
 
@@ -611,7 +610,7 @@ void __cdecl UI_InGameMenu(void)
         pkt[2] = 0x53;
         memcpy(pkt + 3,  &byte_7E91790[13 * memberIdx], 10);
         memcpy(pkt + 13, (const char*)DAT_07db8710, 10);
-        Net_SendC1Packet(pkt, 23);
+        gNetwork.SendC1(pkt, 23);
         goto tail;
     }
 
@@ -857,7 +856,7 @@ void __cdecl UI_InGameMenu(void)
         BYTE pkt[6] = { 0xC1, 0x06, 0x41, (BYTE)(accept ? 1 : 0),
                         (BYTE)(partyKey >> 8), (BYTE)partyKey };
         // El 0x41 pide Encrypt=1 (HackPacketCheck.txt indice 65): aceptar y rechazar
-        // van por C3 (Net_SendSmallPacket).  Un C1 crudo hace que el server responda
+        // van por C3 (gNetwork.Send).  Un C1 crudo hace que el server responda
         // "Packet encryption error" y cierre la conexion.
         //
         //   struct PMSG_PARTY_REQUEST_RESULT_RECV {   // Party.h:19
@@ -865,7 +864,7 @@ void __cdecl UI_InGameMenu(void)
         //       BYTE result;         // +3
         //       BYTE index[2];       // +4, +5  (index[0] = byte ALTO)
         //   };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
 
         DAT_083a4124 = 0;
         DAT_083a7c24 = DAT_083a7c28;
@@ -888,7 +887,7 @@ void __cdecl UI_InGameMenu(void)
         if (!accept && !reject) return;
 
         const BYTE pkt[4] = { 0xC1, 0x04, 0x61, (BYTE)(accept ? 1 : 0) };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GuildWar_ResetClientState();
 
         DAT_083a4124 = 0;
@@ -926,7 +925,7 @@ void __cdecl UI_InGameMenu(void)
             pkt[3] = 1;
             memcpy(pkt + 4, &pin, 2);
             memcpy(pkt + 6, (const char*)DAT_07db8710, 10);    // InputText[0]
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
         memset(DAT_07db8710, 0, 10);                           // InputText[0][0..9]
         *(DWORD*)DAT_07d780a8 = 0;                             // InputLength[0]
@@ -975,7 +974,7 @@ void __cdecl UI_InGameMenu(void)
                 pkt[2] = 0x26;
                 pkt[3] = (BYTE)(slot + 12);
                 pkt[4] = 0;
-                Net_SendSmallPacket(pkt, 5);
+                gNetwork.Send(pkt, 5);
 
                 // Sonido por tipo de item, igual que el resto de los usos.
                 short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slot];

@@ -15,7 +15,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item);
 // -- Declaraciones de funciones que viven en otros modulos --------------
@@ -1265,7 +1264,7 @@ static void Quest_SendState(void *pThis)
     pkt[2] = 0xA2;
     pkt[3] = *(BYTE *)((int)pThis + 0x1c87a);   // indice de quest actual
     pkt[4] = 0x01;
-    Net_SendSmallPacket(pkt, 5);
+    gNetwork.Send(pkt, 5);
 }
 
 void __fastcall FUN_00401af0(void *param_1)
@@ -1406,7 +1405,7 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
         *(unsigned short*)(pktBuf + 1) = payloadLen;
     }
 
-    Net_SendSmallPacket(pktBuf, payloadLen);
+    gNetwork.Send(pktBuf, payloadLen);
 }
 
 // IDA: STRUCT_ENCRYPT (0x0043D1D0)

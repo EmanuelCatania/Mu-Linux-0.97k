@@ -29,7 +29,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // C1:8E / C1:8F are extensions emitted by the in-tree GameServer before its
 // normal C3:30 event-NPC result.  Their destination arrays are exactly the
@@ -79,7 +78,7 @@ void Recv_MoveToDevilSquareResult(BYTE* Msg, int Size)
 
     // El original manda [C1][03][31] antes de mostrar el cartel.
     const BYTE ack[3] = { 0xC1, 0x03, 0x31 };
-    Net_SendC1Packet(ack, 3);
+    gNetwork.SendC1(ack, 3);
 
     if (Size < 4) return;
 
@@ -97,7 +96,7 @@ void Recv_MoveToBloodCastleResult(BYTE* Msg, int Size)
     CloseInventoryRelatedWindows();
 
     const BYTE ack[3] = { 0xC1, 0x03, 0x31 };
-    Net_SendC1Packet(ack, 3);
+    gNetwork.SendC1(ack, 3);
     if (Size < 4) return;
 
     static const int kText[5] = { 854, 852, 686, 687, 853 };

@@ -322,15 +322,9 @@ char    *szServerIpAddress  = g_ServerIPBuf; // IDA: szServerIpAddress (0x005615
 WORD     g_ServerPort  = 55901; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow ──────────────────────────────────────────
-// Con ConnectServer en ServerConfig: szServerIpAddress/g_ServerPort = ConnectServer,
-// línea 2 = GameServer fallback (g_GameServerIP/Port). g_HasConnectServer activa
-// el flujo original: conectar al CS → recibir lista+load (F4/04/F4/02) → al
+// Con ConnectServer en ServerConfig: szServerIpAddress/g_ServerPort = ConnectServer
+// y gNetwork.HasConnectServer() activa el flujo original: conectar al CS → recibir lista+load (F4/04/F4/02) → al
 // elegir server mandar F4/03 → redirect al GameServer → login.
-int             g_HasConnectServer      = 0;  // ServerConfig tiene ConnectServer
-int             g_ConnectServerMode     = 0;  // 1 = socket actual habla con el CS
-int             g_ConnectServerRequested = 0; // 1 = ya mandamos C1 04 F4 02 en esta conexión CS
-char            g_GameServerIP[128]     = ""; // GameServer fallback (ServerConfig)
-unsigned short  g_GameServerPort        = 0;
 // SceneFlag (above)
 // g_lpszMp3 (IDA 0x005615C4, rutas de los BGM): ver CMapManager (Game/MapManager.cpp).
 DWORD    DAT_005615e0  = 0;

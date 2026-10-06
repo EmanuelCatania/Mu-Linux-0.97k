@@ -33,12 +33,11 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include "Net/Net.h"      // Net_SendSmallPacket (C3 + serial + chain-XOR)
+#include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
 #include <gl/GL.h>
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" void Net_SendNpcTalkClose(void);
 extern "C" void Net_SendNpcTalkClose(void);

@@ -99,7 +99,7 @@ set(MU_SOURCES
     src/Sound/SoundManager.cpp
     src/Game/MapManager.cpp
     src/Core/WndProc.cpp
-    src/Net/Net_SocketEvents.cpp
+    src/Net/Network.cpp
     src/Input/Input_WndProc.cpp
     src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
@@ -355,6 +355,7 @@ set(MU_HEADERS
     src/Core/Font.h
     src/Sound/SoundManager.h
     src/Game/MapManager.h
+    src/Net/Network.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h
