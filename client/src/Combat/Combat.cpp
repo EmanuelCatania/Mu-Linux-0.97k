@@ -489,21 +489,21 @@ static void SendMove_CloseWindows97k(void)
 
     if (TradeOpened) {
         const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };            // cancelar trade (C3)
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
     } else if (WarehouseOpened) {
         if (!DAT_07eaa165) {                                 // EquipmentItem
             InventoryOpened = 0;
             CloseInventoryRelatedWindows();
             if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
             const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };        // cerrar baul
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
     } else if (ChaosMixOpened) {
         if (!Connection_Check(OffsetMixItems, 8, 4) || (int)DAT_07e91388 > 0) {
             UIChatLogWindow_AddText("", GlobalText[593], 2);
         } else {
             const BYTE pkt[3] = { 0xC1, 0x03, 0x87 };        // cerrar Chaos Machine
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
     } else if (GoldenArcherOpenType) {                               // g_bEventChipDialogEnable
         // Evento propio del server: fix del DLL (SendMove_GoldenArcherFixClose,
@@ -513,7 +513,7 @@ static void SendMove_CloseWindows97k(void)
             Net_SendNpcTalkClose();
         } else {
             const BYTE pkt[3] = { 0xC1, 0x03, 0x97 };
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
         if (GoldenArcherOpenType == 3) {
             ClearInput(0);
@@ -537,14 +537,14 @@ static void SendMove_CloseWindows97k(void)
             // 0x31 lo libera (los botones de la ventana ya lo mandan).  Mismo
             // criterio que el Golden Archer.
             const BYTE closePkt[3] = { 0xC1, 0x03, 0x31 };
-            Net_SendC1Packet(closePkt, sizeof(closePkt));
+            gNetwork.SendC1(closePkt, sizeof(closePkt));
             CloseInventoryRelatedWindows();
             g_bServerDivisionEnable = 0;
             g_bServerDivisionAccept = 0;
         }
     } else {                                                 // ventana de eventos
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         CloseInventoryRelatedWindows();
         InventoryOpened = 0;
     }
@@ -641,23 +641,17 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     pkt[1] = (BYTE)payloadLen;
 
     // El paquete de movimiento es un **C1 plano** (`C1 len 10 X Y path…`): NO usar
-    // `Net_SendSmallPacket`, que es el path C3 (pisa pkt[1] con el serial y lo
+    // `gNetwork.Send`, que es el path C3 (pisa pkt[1] con el serial y lo
     // re-enmarca cifrado) y además aplica su propio chain-XOR.
     //
     // Path correcto para C1 (igual que Pkt_Send en Game_EnterWorldTick):
     // chain-XOR y `send()` directo — el hook de send() aplica el MuEmu byte-XOR
     // automáticamente a los C1 planos.
-    static const BYTE s_MoveKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
     for (unsigned int i = 3; i < payloadLen; i++) {
-        pkt[i] ^= pkt[i - 1] ^ s_MoveKey[i & 0x1f];
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
 
-    Net_SendBuf((const char*)pkt, (int)payloadLen);
+    gNetwork.SendRaw((const char*)pkt, (int)payloadLen);
     }
 
     // IDA 00491C40, justo después del camino de envío por la red:
@@ -757,11 +751,11 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 //     sub_404400) están skipped per project policy. En el binario original son
 //     refcount + XOR encryption sobre CharacterMachine.
 //   - Las XOR keys de packet body (los 32 bytes v998..v1023) están skipped:
-//     usamos Net_SendSmallPacket() que ya las aplica via MuEmu::EncryptSend.
+//     usamos gNetwork.Send() que ya las aplica via MuEmu::EncryptSend.
 //   - Las strings webzen anti-cheat (aWebzen_17..aWebzen_31 = "WEBZEN") son
 //     cliente-side anti-mod check; siempre pasan en builds limpios — no port.
 //   - Los 65 send-blocks inline (cada uno ~130 líneas C0/C1/C3/C4 wrapping)
-//     se reducen a una sola call Net_SendSmallPacket().
+//     se reducen a una sola call gNetwork.Send().
 //
 // CALLER: MoveCharacter — llama esta función cuando el hero
 // tiene flag de attack activo. También llamada desde UseSkillWarrior y
@@ -858,7 +852,7 @@ static void Attack_UseManaScroll97k()
     pkt[0] = 0xC1; pkt[1] = 5; pkt[2] = 0x26;
     pkt[3] = (unsigned char)(scrollSlot + 12);
     pkt[4] = 0;
-    Net_SendSmallPacket(pkt, 5);
+    gNetwork.Send(pkt, 5);
     const int itemType = *(int*)(OffsetInventoryItems + (size_t)scrollSlot * 0x44);
     if (itemType == 448)                       PlayBuffer(33, 0, 0);
     else if (itemType >= 449 && itemType <= 457) PlayBuffer(32, 0, 0);
@@ -889,7 +883,7 @@ static void Attack_SendSkill19_97k(int iType, WORD key)
     g_dwLatestMagicTick = GetTickCount();
     BYTE packet[6] = { 0xC1, 6, 0x19, (BYTE)iType,
                        (BYTE)(key >> 8), (BYTE)key };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 }
 
 // Byte `dis` del C3:1E (cases 55 y 56, y Triple Shot).
@@ -1338,7 +1332,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // previo al ultimo append, no la longitud enviada.
         BYTE packet[6] = { 0xC1, 0x06, 0x1C, 0x00,
                            (BYTE)TargetX, (BYTE)TargetY };
-        Net_SendSmallPacket(packet, sizeof(packet));
+        gNetwork.Send(packet, sizeof(packet));
         // IDA L9682 LABEL_1762 -> LABEL_1763: sub_444B30(c) = SetPlayerTeleport,
         // o sea la animacion de casteo (accion 87) sobre el propio heroe.
         // MU 5.2 ZzzInterface.cpp:6130 hace lo mismo tras SendRequestMagicTeleport.
@@ -1724,7 +1718,7 @@ static void Combat_SendPartyRecall97k(char* entity, int targetIdx,
     pkt[4] = (unsigned char)((tgtKey >> 8) & 0xFF);
     pkt[5] = destinationX;
     pkt[6] = destinationY;
-    Net_SendSmallPacket(pkt, 7);
+    gNetwork.Send(pkt, 7);
 }
 
 // Constructor nativo del 0.97k: C1:09:1E con seis bytes de payload
@@ -1769,22 +1763,16 @@ static void Combat_SendDuration1E_97k(char* entity, int skillType,
     pkt[8] = field8;                              // DLL: angle
     pkt[9]  = (BYTE)((targetIndex >> 8) & 0xFF);  // DLL: HIBYTE(target)
     pkt[10] = (BYTE)(targetIndex & 0xFF);         // DLL: LOBYTE(target)
-    Net_SendSmallPacket(pkt, sizeof(pkt));
+    gNetwork.Send(pkt, sizeof(pkt));
 }
 
 static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 {
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
     if (!pkt || len < 3) return;
     for (int i = 3; i < len; ++i) {
-        pkt[i] ^= pkt[i - 1] ^ xorKey[i & 0x1F];
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1F];
     }
-    Net_SendBuf((const char*)pkt, len);
+    gNetwork.SendRaw((const char*)pkt, len);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1811,7 +1799,7 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 //  - El binario original arma cada packet a mano: chained-XOR los bytes,
 //    aplica CSimpleModulus (sub_53CC30) para encrypt, prefija C3/C4 framing,
 //    y manda via send() con WSAEWOULDBLOCK queue. En nuestro port usamos el
-//    helper Net_SendSmallPacket() que hace exactamente lo mismo + serial stomp.
+//    helper gNetwork.Send() que hace exactamente lo mismo + serial stomp.
 //
 // Notas para la implementación:
 //  - Caso 2 (attack): calcula distancia al target, llama
@@ -1858,7 +1846,7 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 //   PlayBuffer              PlayBuffer — sound effect by id
 //   SetAction               SetAction — set entity action
 //   sub_4889D0              FUN_004889d0 — skill-attack-finalize helper
-//   Net_SendSmallPacket     project helper (Net.h) — does C3 wrap + chain XOR +
+//   gNetwork.Send     project helper (Net.h) — does C3 wrap + chain XOR +
 //                                                    CSimpleModulus + serial
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -1882,7 +1870,7 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     const BYTE facing = (BYTE)(16 * (((int)((*(float*)(Hero + 36) + 22.5f) *
                                            0.022222223f + 1.0f)) & 7));
     BYTE movement[6] = { 0xC1, 6, 0x10, gridX, gridY, facing };
-    Net_SendC1Packet(movement, sizeof(movement));
+    gNetwork.SendC1(movement, sizeof(movement));
 
     const BYTE skillId = attributes[(BYTE)DAT_07d7809c + 87];
     BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + 916 * targetIndex;
@@ -1910,7 +1898,7 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, skillId,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
-        Net_SendSmallPacket(packet, sizeof(packet));
+        gNetwork.Send(packet, sizeof(packet));
         SetPlayerMagic(c);
         return;
     }
@@ -1926,7 +1914,7 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, 51,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
-        Net_SendSmallPacket(packet, sizeof(packet));
+        gNetwork.Send(packet, sizeof(packet));
         SetPlayerAttack(c, 0, 0, 0);
     }
 }
@@ -2002,7 +1990,7 @@ void __cdecl Action(DWORD c, DWORD o)
         DAT_07e11998 = (int)groundKey;
         BYTE pkt[5] = { 0xC1, 0x05, 0x22,
                         (BYTE)(groundKey >> 8), (BYTE)groundKey };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
         return;
     }
 
@@ -2056,7 +2044,7 @@ void __cdecl Action(DWORD c, DWORD o)
         if (DAT_00583d8c != 0 &&
             *(unsigned char*)((uintptr_t)DAT_00583d8c + 4) == 0xFF) {
             BYTE questPkt[3] = { 0xC1, 0x03, 0xA0 };
-            Net_SendSmallPacket(questPkt, sizeof(questPkt));
+            gNetwork.Send(questPkt, sizeof(questPkt));
         }
 
         // IDA LABEL_297 (L952-1189): PMSG_NPC_TALK_RECV
@@ -2065,7 +2053,7 @@ void __cdecl Action(DWORD c, DWORD o)
         const unsigned short npcKey = *(unsigned short*)(npcEnt + 0x1DC);
         BYTE pkt[5] = { 0xC1, 0x05, 0x30,
                         (BYTE)((npcKey >> 8) & 0xFF), (BYTE)(npcKey & 0xFF) };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
 
         return;
     }
@@ -2171,7 +2159,7 @@ void __cdecl Action(DWORD c, DWORD o)
 
                 // ─── Send packet 0x15 ATTACK ──────────────────────────────────────────────────────────────────────────
                 // PMSG_ATTACK_RECV es un paquete C1. El PacketManager del server
-                // revierte su chain-XOR antes de despachar; Net_SendBuf después agrega
+                // revierte su chain-XOR antes de despachar; gNetwork.SendRaw después agrega
                 // el cifrado de transporte de MuEmu. No se usa C3/CSimpleModulus.
                 //
                 // Wire format CORRECTO per server PMSG_ATTACK_RECV:
@@ -2184,12 +2172,6 @@ void __cdecl Action(DWORD c, DWORD o)
                 // se queda atacando al aire" — síntomas de packets que no
                 // llegaban válidos al server (CSM-encriptado un C1 no se
                 // descifra, server descarta silenciosamente).
-                static const BYTE s_AttackKey[32] = {
-                    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-                };
                 int targetEntityId = *(short*)(pCharsClient + 476); // entity Id
                 // IDA 0x48DF85-0x48DFB0: sx1 = (__int64)((facing + 22.5)
                 // * 0.022222223 + 1.0) & 7.  Al port le faltaba el `+ 1.0`, o
@@ -2212,15 +2194,9 @@ void __cdecl Action(DWORD c, DWORD o)
                     pos[3] = (BYTE)*(int*)(hero + 904);
                     pos[4] = (BYTE)*(int*)(hero + 908);
                     pos[5] = (BYTE)(dirCode << 4);   // nibble bajo = 0 pasos
-                    static const BYTE s_PosKey[32] = {
-                        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-                    };
                     for (int i = 3; i < 6; ++i)
-                        pos[i] ^= pos[i - 1] ^ s_PosKey[i & 0x1F];
-                    Net_SendBuf((const char*)pos, 6);
+                        pos[i] ^= pos[i - 1] ^ CNetwork::XorKey[i & 0x1F];
+                    gNetwork.SendRaw((const char*)pos, 6);
                 }
                 BYTE pkt[8];
                 pkt[0] = 0xC1;
@@ -2231,9 +2207,9 @@ void __cdecl Action(DWORD c, DWORD o)
                 pkt[5] = 0x64;     // AT_ATTACK1 = 100 (0.97k action code)
                 pkt[6] = (BYTE)dirCode;
                 for (int i = 3; i < 7; ++i) {
-                    pkt[i] ^= pkt[i - 1] ^ s_AttackKey[i & 0x1F];
+                    pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1F];
                 }
-                Net_SendBuf((const char*)pkt, 7);
+                gNetwork.SendRaw((const char*)pkt, 7);
                 // (Aca sonaba PlayBuffer(30) — pasos.  IDA no reproduce nada en
                 //  este punto: el sonido del golpe lo pone SetPlayerAttack.)
             }

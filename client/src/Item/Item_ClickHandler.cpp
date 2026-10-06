@@ -310,51 +310,16 @@ void __cdecl ShowCheckBox(int num, int index, int message)
 // PressKey helper (Input.cpp)
 extern int __cdecl PressKey(int vk);
 
-// Envío de red: send de bajo nivel por socket, con desborde al buffer encolado.
-// Imita el patrón `send / cola de WSAEWOULDBLOCK` de la función de IDA.
-static void SendPacketBytes(const void* data, int size)
-{
-    if (!data || size <= 0) return;
-    if (SocketClientSocket == (DWORD)INVALID_SOCKET) return;
-
-    const char* p = (const char*)data;
-    int sent = 0, remaining = size;
-    while (remaining > 0) {
-        int r = ::send((SOCKET)SocketClientSocket, p + sent, remaining, 0);
-        if (r == SOCKET_ERROR) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                // Encola la cola no enviada en SocketClientSendBuffer+SocketClientSendBufferLength
-                int qlen = (int)SocketClientSendBufferLength;
-                if (qlen + remaining <= 0x2000) {
-                    memcpy((char*)SocketClientSendBuffer + qlen, p + sent, remaining);
-                    SocketClientSendBufferLength = qlen + remaining;
-                }
-            } else {
-                // Other error: close socket
-                if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
-                    closesocket((SOCKET)SocketClientSocket);
-                    SocketClientSocket = (DWORD)INVALID_SOCKET;
-                }
-            }
-            return;
-        }
-        if (r == 0) return;
-        sent      += r;
-        remaining -= r;
-    }
-}
-
 // Build & send a C1-header packet [C1][size][header...payload].
 //
 // No incrementar acá `DAT_05826ceb` (g_byPacketSerialSend): el serial sólo
 // viaja en los frames C3/C4 y el server sólo avanza su contador con esos
-// (CSerialCheck::CheckSerial). El bump lo hace Net_SendSmallPacket, que es
+// (CSerialCheck::CheckSerial). El bump lo hace gNetwork.Send, que es
 // quien escribe el serial en el frame.
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // SendC1Packet — envuelve un payload en frame C1 y lo manda.
 //
-// Delega en Net_SendC1Packet, que aplica el chain-XOR (el server aplica
+// Delega en gNetwork.SendC1, que aplica el chain-XOR (el server aplica
 // `XorData` a TODO frame C1) y resuelve el frame contra la tabla de
 // HackPacketCheck.
 static void SendC1Packet(BYTE* payload, int payloadSize)
@@ -365,23 +330,22 @@ static void SendC1Packet(BYTE* payload, int payloadSize)
     pkt[0] = 0xC1;
     pkt[1] = (BYTE)(payloadSize + 2);   // total size = header(2) + payload
     memcpy(pkt + 2, payload, payloadSize);
-    Net_SendC1Packet(pkt, payloadSize + 2);
+    gNetwork.SendC1(pkt, payloadSize + 2);
 }
 
 // Envío C3 (CSimpleModulus + serial) para los opcodes de tienda
 // que el server exige con Encrypt=1 (HackPacketCheck.txt): 0x32 buy, 0x33 sell,
 // 0x23 drop; como C1 el server los rechaza y cierra la conexión.
-// Net_SendSmallPacket arma [C1][len][head]..., pisa len con el serial,
+// gNetwork.Send arma [C1][len][head]..., pisa len con el serial,
 // aplica chain-XOR + CSM y emite el frame C3 final.
-void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 static void SendC3Packet(BYTE* payload, int payloadSize)
 {
     if (payloadSize <= 0 || payloadSize > 250) return;
     BYTE pkt[256];
     pkt[0] = 0xC1;
-    pkt[1] = (BYTE)(payloadSize + 2);   // total size (Net_SendSmallPacket lo pisa con serial)
+    pkt[1] = (BYTE)(payloadSize + 2);   // total size (gNetwork.Send lo pisa con serial)
     memcpy(pkt + 2, payload, payloadSize);
-    Net_SendSmallPacket(pkt, payloadSize + 2);
+    gNetwork.Send(pkt, payloadSize + 2);
 }
 
 // Tile del terreno donde dropear un item al suelo. El server (CGItemDropRecv)
@@ -1208,7 +1172,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             DAT_07eaa0e8 = 1;
 
             BYTE pkt[4] = { 0xC1, 0x04, 0x3C, (BYTE)m_bMyConfirm };
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            gNetwork.Send(pkt, sizeof(pkt));
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0;
             DAT_00559f5e = 0;

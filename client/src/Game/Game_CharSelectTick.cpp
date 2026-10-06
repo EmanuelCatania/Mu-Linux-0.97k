@@ -28,13 +28,6 @@
 
 extern "C" void Bisect_ChatMode(const char* tag);
 
-// Same 32-byte XOR key
-static const BYTE s_Key[32] = {
-    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-};
 
 void Game_CharSelectTick(void)
 {
@@ -57,7 +50,7 @@ void Game_CharSelectTick(void)
             int nameLen = (int)strlen(charName);
             if (nameLen > 10) nameLen = 10;
             memcpy(pkt + 4, charName, nameLen);
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
 
         // Init in-game subsystems

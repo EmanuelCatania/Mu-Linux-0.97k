@@ -26,7 +26,6 @@
 #include <vector>
 #include <gl/GL.h>
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 void __cdecl CloseInventoryRelatedWindows(void);
 extern "C" void   __cdecl RenderInventoryInterface(int StartX, int StartY, int Flag);
 extern "C" SIZE*  __cdecl RenderCenteredText(int x, int y, const char* text);
@@ -329,7 +328,7 @@ static void GA_Ida_Check(void)
                 const int slot = GetItemSlot(kItemRena, mode - 1);
                 if (slot != -1) {
                     const BYTE pkt[5] = { 0xC1, 0x05, 0x95, (BYTE)(mode - 1), (BYTE)slot };
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 }
             }
             if (mode == 1) {
@@ -342,7 +341,7 @@ static void GA_Ida_Check(void)
                 }
                 if (send) {
                     const BYTE pkt[3] = { 0xC1, 0x03, 0x96 };
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 } else if (DAT_07e11e20 != -1 && DAT_07e11e22 != -1 && DAT_07e11e24 != -1 &&
                            GA_In(485, 202, 120, 22) && GA_MouseLButtonPop) {
                     GA_MouseLButtonPop = 0;
@@ -360,7 +359,7 @@ static void GA_Ida_Check(void)
                     memcpy(pkt + 3, text + 0, 4);  pkt[7] = 0;
                     memcpy(pkt + 8, text + 4, 4);  pkt[12] = 0;
                     memcpy(pkt + 13, text + 8, 4); pkt[17] = 0;
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 } else {
                     CreateOkMessageBox(GlobalText[896]);
                 }
@@ -369,7 +368,7 @@ static void GA_Ida_Check(void)
         }
     } else if (GA_In(485, 220, 120, 24) && GA_MouseLButtonPop) {
         const BYTE pkt[4] = { 0xC1, 0x04, 0x98, 0x01 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GA_MouseLButtonPop = 0;
     }
 
@@ -377,7 +376,7 @@ static void GA_Ida_Check(void)
     if (GA_In(GA_InventoryStartX + 25, GA_InventoryStartY + 395, 24, 24) && GA_MouseLButtonPush) {
         GA_MouseLButtonPush = 0;
         const BYTE pkt[3] = { 0xC1, 0x03, 0x97 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GA_OpenType = 0;
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
@@ -473,34 +472,34 @@ static void DrawSeparatedLines(int x, int& y, const char* text, int step)
 static void SendRegister(int type)
 {
     const BYTE pkt[4] = { 0xC1, 0x04, 0x95, (BYTE)type };
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendExchange(int type, int count)
 {
     BYTE pkt[8] = { 0xC1, 0x08, 0x97, 0x02, (BYTE)type, 0, 0, 0 };
     *(short*)(pkt + 6) = (short)count;
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendRegisterLucky(const char* number)
 {
     BYTE pkt[17] = { 0xC1, 17, 0x97, 0x03 };
     memcpy(pkt + 4, number, 13);
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendExchangeLucky(const char* number)
 {
     BYTE pkt[16] = { 0xC1, 16, 0x9D };
     strncpy_s((char*)pkt + 3, 13, number, _TRUNCATE);
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendClose(void)
 {
     const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 extern "C" void __cdecl GoldenArcher_CustomCloseProc(void)

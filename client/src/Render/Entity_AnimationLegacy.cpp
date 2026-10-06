@@ -8,7 +8,6 @@
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))

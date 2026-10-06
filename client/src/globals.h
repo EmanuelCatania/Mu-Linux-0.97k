@@ -300,11 +300,6 @@ extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
 extern WORD    g_ServerPort; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow ──────────────────────────────────────────
-extern int             g_HasConnectServer;       // ServerConfig tiene ConnectServer → flujo CS
-extern int             g_ConnectServerMode;      // 1 = socket actual habla con el ConnectServer
-extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
-extern char            g_GameServerIP[128];      // GameServer fallback (ServerConfig)
-extern unsigned short  g_GameServerPort;
 // SceneFlag (in stdafx.h)
 // g_lpszMp3 (IDA 0x005615C4, rutas de los BGM): ver CMapManager (Game/MapManager.cpp).
 // DAT_005615dc @ 0x005615DC ES `g_iCurrentDialogScript` — el índice del diálogo

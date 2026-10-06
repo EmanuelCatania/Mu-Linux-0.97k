@@ -9,7 +9,7 @@
 //
 // El servidor exige Encrypt=1 para el opcode 0x24 (HackPacketCheck.txt:
 // "36 * 1 0 0 0"); como C1 plano lo desconecta. Por eso va por
-// `Net_SendSmallPacket` (Game_SceneUpdate.cpp), el mismo helper que login
+// `gNetwork.Send` (Game_SceneUpdate.cpp), el mismo helper que login
 // (F1/01) y combat. Hace:
 //   1. Chain XOR con s_LoginKey (i=3..len)
 //   2. Stomp pkt[1] = DAT_05826ceb++ (serial counter — server valida que sea
@@ -18,7 +18,7 @@
 //   4. C3 wrap: [C3][outerLen][encryptedBlob]
 //   5. Send vía socket con WSAEWOULDBLOCK queue
 //
-// Layout plaintext esperado por Net_SendSmallPacket: [C1][size][head][payload].
+// Layout plaintext esperado por gNetwork.Send: [C1][size][head][payload].
 // Para 0x24 PMSG_ITEM_MOVE_RECV (ItemManager.h:39):
 //   struct {
 //     PBMSG_HEAD header;        // C1 : len=11 : 0x24
@@ -41,7 +41,6 @@
 // `iDstIndex` codifica destino: para inventario es slot index puro (0..63);
 // los callers ya pasan el slot encoded.
 // C++-linkage forward decl matching Net.h:89.
-void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 static BYTE InventoryPoolToMoveFlag(const BYTE* poolBase) {
     if (poolBase == &OffsetTradeItems[0] || poolBase == &Inventory[0]) {
@@ -74,7 +73,7 @@ void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
     itemBytes[3] = pItem->Unknown;
 
     // Build plaintext packet: [C1][len=11][0x24][srcF][srcS][i0..i3][tgtF][tgtS].
-    // Net_SendSmallPacket will overwrite pkt[1] with the serial byte, do the
+    // gNetwork.Send will overwrite pkt[1] with the serial byte, do the
     // chain-XOR + CSM encrypt, and emit the final C3 frame.
     BYTE pkt[16];
     memset(pkt, 0, sizeof(pkt));
@@ -90,7 +89,7 @@ void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
     pkt[9]  = (BYTE)dstFlag;
     pkt[10] = (BYTE)iDstIndex;
 
-    Net_SendSmallPacket(pkt, 11);
+    gNetwork.Send(pkt, 11);
 
     // IDA: sub_4CDC70 y FUN_004D6470 — toda modificación de la oferta local
     // (inventario <-> Trade o Trade <-> Trade) bloquea la confirmación durante

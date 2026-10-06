@@ -6,7 +6,6 @@
 #include <winsock2.h>
 #include <string.h>
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" int __cdecl GetScreenWidth(void);
 extern "C" void Net_SendNpcTalkClose(void);
@@ -183,7 +182,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
     extern void __cdecl CloseInventoryRelatedWindows(void);
     if (DAT_07eaa11b) {                                     // TradeOpened
         const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
         return true;
     }
     if (DAT_07eaa119) {                                     // WarehouseOpened
@@ -192,7 +191,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
         CloseInventoryRelatedWindows();
         if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
         const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         return true;
     }
     if (DAT_07eaa11a)                                       // ChaosMixOpened
@@ -251,7 +250,7 @@ void HUD_BottomBarButtons_HitTest(void)
         } else {
             // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            gNetwork.SendC1(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
             HUD_PanelTail97k(TAIL_GUILD);
@@ -272,7 +271,7 @@ void HUD_BottomBarButtons_HitTest(void)
         } else {
             PartyNumber = 0;
             const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            gNetwork.SendC1(partyListPkt, sizeof(partyListPkt));
             PartyOpened = 1;
             HUD_PanelTail97k(TAIL_PARTY);
         }
@@ -451,7 +450,7 @@ static void HUD_HotkeyTick(void)
         } else {
             // 0x52: Encrypt=0 en HackPacketCheck.txt -> C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            gNetwork.SendC1(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
             if (!HUD_PanelTail97k(TAIL_GUILD)) DAT_07eaa114 = 0;
@@ -466,7 +465,7 @@ static void HUD_HotkeyTick(void)
         } else {
             PartyNumber = 0;
             const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            gNetwork.SendC1(partyListPkt, sizeof(partyListPkt));
             PartyOpened = 1;
             if (!HUD_PanelTail97k(TAIL_PARTY)) PartyOpened = 0;
         }
@@ -536,45 +535,10 @@ static void HUD_HotkeyTick(void)
 //   Facing:       [0xC1][0x07][0x0F] + encoded direction byte
 //   Walk/swim:    [0xC1][0x11] + grid_x,grid_y
 
-// Helper: manda el buffer por el socket, con fallback a la cola de WSAEWOULDBLOCK.
-// Pasa por MuEmu::EncryptSend: con ENCRYPT_STATE=1 el server descifra todo el
-// stream, y un paquete plano llega como basura y lo desconecta.
+// Paquete ya enmarcado (chain-XOR aplicado): lo manda CNetwork.
 static void SendPacket(const char *buf, unsigned int len)
 {
-    if (SocketClientSocket == 0xffffffff)
-        return;
-
-    // Encriptar antes de enviar — capa MuEmu byte-XOR (HackCheck.cpp).
-    BYTE wireBuf[0x800];
-    if ((int)len > (int)sizeof(wireBuf)) return;
-    memcpy(wireBuf, buf, len);
-    MuEmu::EncryptSend(wireBuf, (int)len);
-    buf = (const char*)wireBuf;
-
-    int sent = 0;
-    unsigned int remaining = len;
-    while ((int)remaining > 0) {
-        int r = send(SocketClientSocket, buf + sent, remaining, 0);
-        if (r == -1) {
-            int err = WSAGetLastError();
-            if (err == 0x2733 /*WSAEWOULDBLOCK*/) {
-                if ((int)(SocketClientSendBufferLength + len) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, buf, len);
-                    SocketClientSendBufferLength += len;
-                } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                }
-            } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
-            }
-            break;
-        }
-        if (r == 0) break;
-        if (SocketClientLogPrint != 0)
-            FUN_0043de60();
-        sent += r;
-        remaining -= r;
-    }
+    gNetwork.SendRaw(buf, (int)len);
 }
 
 // IDA: Player_InputTick
@@ -799,12 +763,6 @@ void __cdecl Player_ProcessInput(void)
                     int dy = (hyg - tyg < 0) ? -(hyg - tyg) : (hyg - tyg);
                     int cheb = (dx > dy) ? dx : dy;
                     if (cheb <= 2) {
-                        static const unsigned char s_LoginKey[32] = {
-                            0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                            0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                            0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                            0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-                        };
                         WORD targetId = *(WORD*)(tgt + 0x1dc);
                         extern float __cdecl CreateAngle(float, float, float, float);
                         float ex = *(float*)(ent + 0x10);
@@ -823,7 +781,7 @@ void __cdecl Player_ProcessInput(void)
                         pkt[5] = 0x64;
                         pkt[6] = (unsigned char)dirCode;
                         for (int i = 3; i < 7; ++i) {
-                            pkt[i] ^= pkt[i - 1] ^ s_LoginKey[i & 0x1f];
+                            pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
                         }
                         MuEmu::EncryptSend(pkt, 7);
                         if (SocketClientSocket != 0xFFFFFFFF) {

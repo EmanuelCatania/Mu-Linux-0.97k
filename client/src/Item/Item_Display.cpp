@@ -484,7 +484,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     //       BYTE TargetSlot;          // +4
                     //   };
                     //
-                    // Va por Net_SendSmallPacket porque HackPacketCheck.txt da
+                    // Va por gNetwork.Send porque HackPacketCheck.txt da
                     // Encrypt=1 para el indice 38 -> el frame final tiene que
                     // ser C3 con serial. El 0xC1 que arma IDA es el texto plano
                     // previo al encriptador, no el frame que viaja.
@@ -500,7 +500,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                         pkt[2] = 0x26;                       // ItemUse
                         pkt[3] = (BYTE)(int)DAT_07ea5b18;    // SourceSlot (la jewel)
                         pkt[4] = (BYTE)(int)DAT_07e11e78;    // TargetSlot (el item)
-                        Net_SendSmallPacket(pkt, 5);
+                        gNetwork.Send(pkt, 5);
                         actionTaken = true;
 
                         // Sonido segun el item de origen (IDA LABEL_802).
@@ -607,7 +607,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         // confirmacion propia (0x3C con 0), ANTES del guard de EquipmentItem.
         m_bMyConfirm = 0;                               // m_bMyConfirm
         BYTE unconfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
-        Net_SendSmallPacket(unconfirm, 4);
+        gNetwork.Send(unconfirm, 4);
     }
 
     if (DAT_07eaa165 != '\0') goto drop_done;

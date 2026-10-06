@@ -550,24 +550,11 @@ void __cdecl ItemDrop_Render(void)
 // =============================================
 // Wire formats per server source Mu-linux-97K/Source/MuServer/GameServer/
 // {NpcTalk.h, ItemManager.h, Warehouse.h}.
-// Cada send: plain C1 + chain XOR forward + MuEmu byte XOR + raw socket send.
+// Cada uno sale como C1 por CNetwork (chain-XOR + MuEmu).
 
 namespace {
-    static const BYTE s_NpcKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
     void SendNpcPacket(BYTE* pkt, int totalLen) {
-        for (int i = 3; i < totalLen; ++i) {
-            pkt[i] ^= pkt[i - 1] ^ s_NpcKey[i & 0x1f];
-        }
-        MuEmu::EncryptSend(pkt, totalLen);
-        if (SocketClientSocket != 0xFFFFFFFF) {
-            ::send(SocketClientSocket, (const char*)pkt, totalLen, 0);
-        }
+        gNetwork.SendC1(pkt, totalLen);
     }
 }
 

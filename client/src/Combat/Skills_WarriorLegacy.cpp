@@ -4,7 +4,6 @@
 #include "Net/Net.h"
 
 extern void __cdecl operator_delete(void* ptr);
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
@@ -45,7 +44,7 @@ static void Warrior_SendSkill19(BYTE skill, WORD targetKey)
 {
     BYTE packet[6] = { 0xC1, 6, 0x19, skill,
                        (BYTE)(targetKey >> 8), (BYTE)targetKey };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 }
 
 // IDA: UseSkillWarrior 0x485780, L682-908 -- el sitio que el DLL de inyeccion
@@ -66,7 +65,7 @@ static void Warrior_SendSkill1E(BYTE skill, BYTE x, BYTE y, BYTE direction,
 {
     BYTE packet[11] = { 0xC1, 11, 0x1E, skill, x, y, direction, packedOffset, angle,
                         (BYTE)((targetKey >> 8) & 0xFF), (BYTE)(targetKey & 0xFF) };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 }
 
 // IDA: sub_45FDB0 @ 0x45FDB0.  The warrior's 43 branch starts with the
@@ -123,7 +122,7 @@ static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
         packet[8 + item * 2] = (BYTE)(keys[item] >> 8);
         packet[9 + item * 2] = (BYTE)keys[item];
     }
-    Net_SendSmallPacket(packet, length);
+    gNetwork.Send(packet, length);
 }
 
 // IDA: UseSkillWarrior @ 0x00485780 (2225 lineas de decompile)
@@ -161,7 +160,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     BYTE movePacket[6] = { 0xC1, 6, 0x10,
         *(BYTE*)(character + 904), *(BYTE*)(character + 908),
         (BYTE)(16 * (((int)((*(float*)(object + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
-    Net_SendC1Packet(movePacket, sizeof(movePacket));
+    gNetwork.SendC1(movePacket, sizeof(movePacket));
     *(BYTE*)(c + 0x2EC) = 0;
 
     if (*(short*)(o + 2) == 390) {
@@ -289,7 +288,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
         const BYTE terrain = TerrainWall[((tileY & 0xFF) << 8) | (tileX & 0xFF)];
         if ((terrain & 0x0C) == 0 && skillType != 47 && skillType != 43 && skillType != 49) {
             BYTE confirm[5] = { 0xC1, 5, 0x11, (BYTE)tileX, (BYTE)tileY };
-            Net_SendC1Packet(confirm, sizeof(confirm));
+            gNetwork.SendC1(confirm, sizeof(confirm));
         }
     }
 }

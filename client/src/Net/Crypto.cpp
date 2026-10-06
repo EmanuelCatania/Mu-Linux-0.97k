@@ -755,7 +755,6 @@ void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
 
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // sub_402850 @ 0x00402850 (1774 bytes) — input de la ventana de quest del NPC.
 // IDA, sacando el ruido anti-tamper del armado del paquete:
@@ -791,7 +790,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         pkt[2] = 0xA2;
         pkt[3] = *(BYTE *)((int)param_1 + 0x1c87a);   // índice de quest actual
         pkt[4] = 0x01;
-        Net_SendSmallPacket(pkt, 5);
+        gNetwork.Send(pkt, 5);
 
         DAT_083a4124 = 0;                       // MouseLButtonPush
         DAT_083a42c4 = 0;                       // MouseLButton

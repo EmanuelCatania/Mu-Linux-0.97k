@@ -518,11 +518,6 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
 // Returns 0 on no entities, 1 on packet sent or send error.
 float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
 {
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
     // 1. Read character stat byte for this slot
     BYTE uVar19 = *(BYTE*)((char*)DAT_07cf1ff4 + 0x57 + param_1);
 
@@ -625,9 +620,9 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     pkt[1] = (BYTE)len;
 
     // El original arma la trama a mano (chain-XOR + serial + CSimpleModulus).
-    // Net_SendSmallPacket hace exactamente eso y ademas corrige el frame contra
+    // gNetwork.Send hace exactamente eso y ademas corrige el frame contra
     // HackPacketCheck.txt, que es el camino que ya usan todos los demas opcodes.
-    Net_SendSmallPacket(pkt, len);
+    gNetwork.Send(pkt, len);
     return (float*)(uintptr_t)1;
 }
 

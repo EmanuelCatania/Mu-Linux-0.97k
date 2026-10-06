@@ -398,7 +398,7 @@ void Render_QuickButtons_(void)
     // for in-world. Gated internally on dword_7E91388 > 0 (= player carrying
     // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
     // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
-    // packet via SendRequestEquipmentItem → Net_SendSmallPacket (C3).
+    // packet via SendRequestEquipmentItem → gNetwork.Send (C3).
     // DESVIACION: este llamado es un DUPLICADO del port — en IDA el dispatcher
     // (sub_4DF410) solo lo llama UpdateWindowsMouse (0x4ECB00).  Se deja el
     // llamado (quitarlo requiere probar el drop) pero con el mismo corte que el
