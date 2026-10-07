@@ -536,4 +536,17 @@ static_assert(sizeof(PMSG_GUILD_WAR_DECLARE_SEND) == 12, "C1:61");
 static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, GuildName) == 3, "C1:61 GuildName");
 static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, type) == 11, "C1:61 type");
 
+// Protocol.h del server: PMSG_LIVE_CLIENT_RECV (C3:0E).
+struct PMSG_LIVE_CLIENT_RECV
+{
+    PBMSG_HEAD header;
+    DWORD TickCount;
+    WORD PhysiSpeed;
+    WORD MagicSpeed;
+};
+static_assert(sizeof(PMSG_LIVE_CLIENT_RECV) == 12, "C3:0E");
+static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, TickCount) == 4, "C3:0E TickCount");
+static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, PhysiSpeed) == 8, "C3:0E PhysiSpeed");
+static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, MagicSpeed) == 10, "C3:0E MagicSpeed");
+
 } // namespace Proto
