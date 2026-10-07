@@ -607,14 +607,9 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     }
 
     // ── 6. Ala 790 en zona segura → CurrentAction = 1 ────────────────────────
-    // IDA L380: `if (c->Wing.Type == 790 && c->SafeZone) This->CurrentAction = 1`.
-    // OJO: el gate mira el tipo del ALA (c+0x2A0) pero escribe sobre el modelo
-    // que se está renderizando AHORA (iVar7), que puede ser el arma en la
-    // espalda o el helper. Es un bug del 0.97k original: el DLL lo parchea en
-    // 0x00455C19 (`FixImpAnimationWithWingDarknessInSafeZone`) agregando la
-    // condición `Type == 790` para que sólo afecte al ala.
-    // Se deja FIEL a IDA; si aparece el artefacto, el fix es esa condición.
-    if ((*(short*)(param_4 + 0x2a0) > 0x315) && (*(short*)(param_4 + 0x2a0) < 0x317)
+    // IDA: RenderLinkObject (0x00455430).
+    // DESVIACION (fix del DLL, Patchs.cpp 0x00455C19): limitar la animación de zona segura al modelo del ala 790.
+    if (param_6 == 790 && (*(short*)(param_4 + 0x2a0) > 0x315) && (*(short*)(param_4 + 0x2a0) < 0x317)
         && (*(char*)(param_4 + 0x34e) != '\0'))
     {
         *(unsigned char*)((int)iVar7 + 0xa0) = 1;

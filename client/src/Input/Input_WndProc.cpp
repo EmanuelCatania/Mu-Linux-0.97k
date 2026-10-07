@@ -186,7 +186,18 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 DAT_07e11d78 = 0;                     // InputIndex = 0
                 char* goldBuf = (char*)DAT_07db8710;  // InputText[0]
                 goldBuf[0xFF] = 0;
-                InputGold = atoi(goldBuf);
+                // IDA: WndProc (0x004149D0).
+                // DESVIACION (fix del DLL, Patchs.cpp 0x004EB8C7): validar diez dígitos y rango antes de convertir Zen.
+                int gold = 0;
+                for (const char* digit = goldBuf; *digit; ++digit) {
+                    if (digit - goldBuf >= 10 || *digit < '0' || *digit > '9' ||
+                        gold > (2000000000 - (*digit - '0')) / 10) {
+                        gold = 2000000001; // Valor fuera de rango: el diálogo muestra el error 118 sin enviar.
+                        break;
+                    }
+                    gold = gold * 10 + (*digit - '0');
+                }
+                InputGold = gold;
                 // LABEL_591: limpia el slot y cierra el input (el envío lo hace
                 // UI_InGameMenu case 116 leyendo DAT_055ca038 el frame siguiente).
                 memset(goldBuf, 0, 0x100);

@@ -29,8 +29,8 @@
 // `*(_BYTE *)Type == 0xFF` son del PRIMER uso, o sea `Msg[5] == 0xFF`
 // (= slot vacio); los `Type + 400` son del segundo.
 //
-// Asimetria fiel a IDA: el slot 0 (mano izquierda) escribe el nivel CRUDO,
-// mientras que del 1 al 6 pasan por LevelConvert.  No es un error de port.
+// IDA: ReceiveChangePlayer (0x00429230).
+// DESVIACION (fix del DLL, Patchs.cpp 0x004292BC): convertir también el nivel del arma del slot 0.
 // ---------------------------------------------------------------------------
 
 // LevelConvert (0x0045C850) — mapea el nibble de nivel del paquete al +N real.
@@ -74,9 +74,9 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
            key, idx, slot, type, (unsigned)level, empty ? " (vacio)" : "");
 
     switch (slot) {
-        case 0:   // mano izquierda — nivel CRUDO, sin LevelConvert (fiel a IDA)
+        case 0:   // mano izquierda
             if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
-            else       { *(WORD*)(c + 624) = (WORD)(type + 400); c[626] = level; c[627] = option; }
+            else       { *(WORD*)(c + 624) = (WORD)(type + 400); c[626] = (BYTE)Net_LevelConvert(level); c[627] = option; }
             break;
         case 1:   // mano derecha
             if (empty) { *(WORD*)(c + 648) = (WORD)-1; c[651] = 0; }

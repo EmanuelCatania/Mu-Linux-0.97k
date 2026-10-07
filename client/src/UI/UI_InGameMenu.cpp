@@ -399,7 +399,7 @@ void __cdecl UI_InGameMenu(void)
     // ── Zen input dialog (ErrorMessage 116) — baúl / trade ─────────────────
     // Per IDA 0x514310 L1400-1406: para ErrorMessage==116 el rect del botón OK
     // NO cuenta — la única confirmación es Enter (byte_55CA038). Y L1420-1432:
-    // si InputGold > 50.000.000 se muestra el cartel 118 y se resetea el input.
+    // El original limita a 50.000.000; el límite compatible con el server es 2.000.000.000.
     //
     // StorageGoldFlag (StorageGoldFlag) lo setea quien abrió el diálogo:
     //   0 = guardar zen en el baúl     (sub_4EB5D0 case 0)
@@ -412,13 +412,16 @@ void __cdecl UI_InGameMenu(void)
         if (!enterHit) return;          // el cartel persiste hasta Enter
         DAT_055ca038 = '\0';            // consumimos Enter
 
-        int gold = (int)InputGold;   // InputGold (lo llena WndProc con atoi)
-
-        if (gold > 50000000) {
-            // IDA: UI_InGameMenu 0x515BED/0x517379 — el error reemplaza al
-            // diálogo numérico después de ClearInput; no queda una segunda
-            // capa de entrada activa detrás del cartel 118.
-            DAT_083a7c28 = 118;
+        const int gold = InputGold; // Validado por WndProc antes de la conversión.
+        // IDA: UI_InGameMenu (0x00514310).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00515BF3/0x00515BFB/0x0051667C): máximo del server y errores en el cartel activo.
+        const bool invalidGold = gold < 0 || gold > 2000000000;
+        const bool insufficientTradeGold = !invalidGold && StorageGoldFlag == 2 &&
+            (unsigned long long)gold > (unsigned long long)DAT_07eaa0f4 +
+                *(DWORD*)((BYTE*)CharacterMachine + 1352);
+        if (invalidGold || insufficientTradeGold) {
+            DAT_083a7c24 = invalidGold ? 118 : 117;
+            DAT_083a7c28 = 0;
             ClearInput(0);
             InputTextMax = (DWORD)42;   // InputTextMax[0]
             InputNumber = 2;           // InputNumber
@@ -426,7 +429,9 @@ void __cdecl UI_InGameMenu(void)
             DAT_00559c84 = 0;           // InputEnable
             DAT_07e11d28 = 0;           // MouseUpdateTime
             DAT_00559bec = 6;           // MouseUpdateTimeMax
-            goto tail;
+            InputGold = 0;
+            PlayBuffer(0x19, 0, 0);
+            return; // Conservar el cartel activo; tail lo reemplazaría por el estado pendiente.
         }
 
         if (StorageGoldFlag == 2) {

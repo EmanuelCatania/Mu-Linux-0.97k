@@ -189,14 +189,13 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         BYTE gridX = (BYTE)(int)(*(float*)(heroEntity + 788) * 0.01f);
         BYTE gridY = (BYTE)(int)(*(float*)(heroEntity + 792) * 0.01f);
 
-        // PMSG_DURATION_SKILL_ATTACK uses a 0..255 facing byte. The 97k
-        // Blast sender leaves distance and angle at zero.
-        // 0x4889D0 writes three literal zero bytes after x/y; it does not
-        // append the target key nor the current facing angle in this client.
-        // DLL SendContinueBlast (Patchs.cpp:1385): (dir, 0, 0, index) con
-        // index = -1 cuando CheckAttack() falla.  0 es un slot de objeto VALIDO,
-        // asi que mandar 0 haria que el server aplique el skill sobre gObj[0].
-        SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, 0, 0, 0, 0xFFFF);
+        // IDA: sub_4889D0 (0x004889D0).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00489769): enviar dirección y key del objetivo seleccionado válido.
+        WORD targetKey = 0xFFFF;
+        if (CheckAttack())
+            targetKey = *(WORD*)(entityBase + SelectedCharacter * 0x394 + 476);
+        const BYTE dir = (BYTE)(int)(*(float*)(heroEntity + 36) / 360.0f * 256.0f);
+        SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, dir, 0, 0, targetKey);
         break;
     }
 
@@ -451,7 +450,10 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             return false;
         }
 
-        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + (int)MovementSkillTarget * 0x394 + 476);
+        // IDA: SkillElf (0x0048BD70).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x0048C6F9): usar SelectedCharacter si CheckAttack permite atacarlo; conservar la ruta sin blanco.
+        const int targetIndex = CheckAttack() ? (int)SelectedCharacter : (int)MovementSkillTarget;
+        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * 0x394 + 476);
         if (targetKey == 0xFFFF) {
             continue;
         }

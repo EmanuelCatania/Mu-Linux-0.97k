@@ -781,6 +781,14 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
     if ((484 < DAT_083a427c) && (DAT_083a427c < 605) &&
         (354 < DAT_083a4278) && (DAT_083a4278 < 379) &&
         (DAT_083a4124 != 0)) {
+        // IDA: sub_402850 (0x00402850).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
+        if (*(BYTE*)((BYTE*)param_1 + 0x1c882) == 3) {
+            DAT_083a4124 = 0;
+            DAT_07e11d28 = 0;
+            DAT_00559bec = 6;
+            goto closeButton;
+        }
         // Mismo paquete que las respuestas del diálogo (ver Quest_SendState en
         // Scene_CharSelect_Nav.cpp): el server sólo lee QuestIndex y avanza el
         // estado él mismo.
@@ -797,6 +805,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         PlayBuffer(28, 0, 0);
     }
 
+closeButton:
     // Botón de cerrar.
     if ((0x1da < DAT_083a427c) && (DAT_083a427c < 499) &&
         (0x18a < DAT_083a4278) && (DAT_083a4278 < 0x1a3) &&
