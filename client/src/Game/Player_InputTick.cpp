@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "UI/MoveList.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -436,6 +437,8 @@ static void HUD_HotkeyTick(void)
     int kI = PressKey(0x49); // 'I'  Inventory
     int kG = PressKey(0x47); // 'G'  Guild
     int kP = PressKey(0x50); // 'P'  Party
+    // DESVIACION (DLL Controller.cpp): menú M con destinos recibidos del server.
+    if (PressKey('M')) gMoveList.Toggle();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel

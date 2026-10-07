@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/MoveList.h"
 #include "Net/Recv/NetRecv.h"
 
 void Recv_NewCharacterInfo(const BYTE* Msg)
@@ -1294,8 +1295,12 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             Recv_ItemValueList((const BYTE*)Msg, Size);
             break;
         }
-        case 0xE2: case 0xE5: {
-            // F3/E2 (barras de vida) y F3/E5 (lista de /move): sólo se vuelcan al log.
+        case 0xE5: {
+            gMoveList.Receive(Msg, Size);
+            break;
+        }
+        case 0xE2: {
+            // F3/E2 (barras de vida): sólo se vuelca al log.
             // Sus layouts están en Protocol/GameServerProtocol.h.
             char b[400];
             int p = wsprintfA(b, "NET:  → F3/%02X DUMP size=%d: ", sub, Size);
