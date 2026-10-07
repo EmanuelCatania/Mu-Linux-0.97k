@@ -9,7 +9,7 @@
 // fijan sizeof y el offsetof de los campos que el cliente lee hoy en
 // src/Net/Net_Process.cpp (o en el archivo indicado).
 //
-// Incluir después de stdafx.h. Todavía no lo usa ningún parseo (Fase 2).
+// Incluir después de stdafx.h; usado por los handlers y por Protocol_Check.cpp.
 #pragma once
 
 #include "Net/Protocol/ProtocolBase.h"
@@ -335,6 +335,10 @@ static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, Life) == 36, "F3:E0 Life");
 static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxLife) == 40, "F3:E0 MaxLife");
 static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, Mana) == 44, "F3:E0 Mana");
 static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxMana) == 48, "F3:E0 MaxMana");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, BP) == 52, "F3:E0 BP");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxBP) == 56, "F3:E0 MaxBP");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, FruitAddPoint) == 60, "F3:E0 FruitAddPoint");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxFruitAddPoint) == 64, "F3:E0 MaxFruitAddPoint");
 
 // ── C1:F3:E1 ─ stats calculados ── Protocol.h:566 ─────────────────────────────
 // Net_Process.cpp Recv_NewCharacterCalc.

@@ -98,7 +98,7 @@ void Recv_ServerList(const BYTE* Msg);
 void Recv_Redirect(const BYTE* Msg);
 void Recv_BackToConnecting(void);
 // Recv_Character.cpp
-void Recv_NewCharacterInfo(const BYTE* Msg);
+void Recv_NewCharacterInfo(const BYTE* Msg, int Size);
 extern BYTE s_PendingSkillKey[10];
 extern bool s_HasPendingSkillKey;
 void ApplySkillKeyMap(void);

@@ -4,44 +4,33 @@
 
 #include "stdafx.h"
 #include "Net/Recv/NetRecv.h"
+#include "Net/ServerCharacterStats.h"
 
-void Recv_NewCharacterInfo(const BYTE* Msg)
+void Recv_NewCharacterInfo(const BYTE* Msg, int Size)
 {
-    // CharacterAttribute global ya declarada en globals.h como DAT_07cf1ff4.
-    // Es un void*. Castear a BYTE* para offsets.
-    BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    if (Size < sizeof(Proto::PMSG_NEW_CHARACTER_INFO_SEND)) return;
+    BYTE* CA = (BYTE*)(uintptr_t)CharacterAttribute;
     if (!CA) return;
+    Proto::PMSG_NEW_CHARACTER_INFO_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
 
-    // Skip header (4 bytes: C1, len, F3, E0). Body starts at +4.
-    const BYTE* p = Msg + 4;
-    DWORD Level          = *(const DWORD*)(p + 0);
-    DWORD LevelUpPoint   = *(const DWORD*)(p + 4);
-    DWORD Experience     = *(const DWORD*)(p + 8);
-    DWORD NextExperience = *(const DWORD*)(p + 12);
-    DWORD Strength       = *(const DWORD*)(p + 16);
-    DWORD Dexterity      = *(const DWORD*)(p + 20);
-    DWORD Vitality       = *(const DWORD*)(p + 24);
-    DWORD Energy         = *(const DWORD*)(p + 28);
-    DWORD Life           = *(const DWORD*)(p + 32);
-    DWORD MaxLife        = *(const DWORD*)(p + 36);
-    DWORD Mana           = *(const DWORD*)(p + 40);
-    DWORD MaxMana        = *(const DWORD*)(p + 44);
-    (void)Experience; (void)NextExperience;
-
-    *(WORD*)(CA + 0x0E) = ClampToWord(Level);
-    *(WORD*)(CA + 0x54) = ClampToWord(LevelUpPoint);
-    *(WORD*)(CA + 0x14) = ClampToWord(Strength);
-    *(WORD*)(CA + 0x16) = ClampToWord(Dexterity);
-    *(WORD*)(CA + 0x18) = ClampToWord(Vitality);
-    *(WORD*)(CA + 0x1A) = ClampToWord(Energy);
-    // Life/Mana también van acá (algunas versions no mandan F3/E1):
-    *(WORD*)(CA + 0x1C) = ClampToWord(Life);
-    *(WORD*)(CA + 0x20) = ClampToWord(MaxLife);
-    *(WORD*)(CA + 0x1E) = ClampToWord(Mana);
-    *(WORD*)(CA + 0x22) = ClampToWord(MaxMana);
-    // Experience offsets (per HUD_Pass2.cpp:521-522: curExp=+16, maxExp=+52).
-    *(DWORD*)(CA + 0x10) = Experience;
-    *(DWORD*)(CA + 0x34) = NextExperience;
+    // DESVIACION MuEmu: Protocol.h, PMSG_NEW_CHARACTER_INFO_SEND (F3/E0).
+    *(WORD*)(CA + 0x0E) = ClampToWord(packet.Level);
+    *(WORD*)(CA + 0x54) = ClampToWord(packet.LevelUpPoint);
+    *(WORD*)(CA + 0x14) = ClampToWord(packet.Strength);
+    *(WORD*)(CA + 0x16) = ClampToWord(packet.Dexterity);
+    *(WORD*)(CA + 0x18) = ClampToWord(packet.Vitality);
+    *(WORD*)(CA + 0x1A) = ClampToWord(packet.Energy);
+    *(WORD*)(CA + 0x1C) = ClampToWord(packet.Life);
+    *(WORD*)(CA + 0x20) = ClampToWord(packet.MaxLife);
+    *(WORD*)(CA + 0x1E) = ClampToWord(packet.Mana);
+    *(WORD*)(CA + 0x22) = ClampToWord(packet.MaxMana);
+    *(WORD*)(CA + 0x24) = ClampToWord(packet.BP);
+    *(WORD*)(CA + 0x26) = ClampToWord(packet.MaxBP);
+    *(WORD*)(CA + 0x2E) = ClampToWord(packet.FruitAddPoint);
+    *(WORD*)(CA + 0x30) = ClampToWord(packet.MaxFruitAddPoint);
+    *(DWORD*)(CA + 0x10) = packet.Experience;
+    *(DWORD*)(CA + 0x34) = packet.NextExperience;
 }
 
 BYTE s_PendingSkillKey[10];
@@ -68,54 +57,23 @@ void ApplySkillKeyMap(void)
     NetLog("NET:    skill-keys aplicadas: %d de 10 (hero=%d)", applied, hero);
 }
 
-// ── F3/E1 PMSG_NEW_CHARACTER_CALC_RECV ───────────────────────────────────────
-// Del DLL de inyeccion (Protocol.cpp GCNewCharacterCalcRecv).  Trae los stats
-// ya calculados por el server (MuEmu, con resets y sus propias formulas).
-//
-// Layout real, PMSG_NEW_CHARACTER_CALC_SEND (Protocol.h:566 del server):
-// header(4) + 17 DWORDs.
-//    p+0  CurHP          p+4  MaxHP          p+8  CurMP         p+12 MaxMP
-//    p+16 CurBP          p+20 MaxBP          p+24 PhysiSpeed    p+28 MagicSpeed
-//    p+32 PhysiDmgMin    p+36 PhysiDmgMax    p+40 MagicDmgMin   p+44 MagicDmgMax
-//    p+48 MagicDmgRate   p+52 AttackSuccessRate                 p+56 DamageMultiplier
-//    p+60 Defense        p+64 DefenseSuccessRate
+// DESVIACION MuEmu: Protocol.h, PMSG_NEW_CHARACTER_CALC_SEND (F3/E1).
+// Los recursos se actualizan una vez; los cálculos derivados conservan prioridad.
 void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
 {
-    BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+    if (Size < sizeof(Proto::PMSG_NEW_CHARACTER_CALC_SEND)) return;
+    BYTE* CA = (BYTE*)(uintptr_t)CharacterAttribute;
     if (!CA) return;
-    if (Size < 4 + 17 * 4) return;   // paquete corto: no leer fuera
-
-    const BYTE* p = Msg + 4;
-    DWORD ViewCurHP            = *(const DWORD*)(p + 0);
-    DWORD ViewMaxHP            = *(const DWORD*)(p + 4);
-    DWORD ViewCurMP            = *(const DWORD*)(p + 8);
-    DWORD ViewMaxMP            = *(const DWORD*)(p + 12);
-    DWORD ViewCurBP            = *(const DWORD*)(p + 16);
-    DWORD ViewMaxBP            = *(const DWORD*)(p + 20);
-    DWORD ViewPhysiSpeed       = *(const DWORD*)(p + 24);
-    DWORD ViewMagicSpeed       = *(const DWORD*)(p + 28);
-    DWORD ViewMagicDamageMin   = *(const DWORD*)(p + 40);
-    DWORD ViewMagicDamageMax   = *(const DWORD*)(p + 44);
-    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 52);
-    DWORD ViewDefense          = *(const DWORD*)(p + 60);
-    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 64);
-
-    *(WORD*)(CA + 0x1C) = ClampToWord(ViewCurHP);
-    *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
-    *(WORD*)(CA + 0x1E) = ClampToWord(ViewCurMP);
-    *(WORD*)(CA + 0x22) = ClampToWord(ViewMaxMP);
-    *(WORD*)(CA + 0x24) = ClampToWord(ViewCurBP);
-    *(WORD*)(CA + 0x26) = ClampToWord(ViewMaxBP);
-    *(WORD*)(CA + 0x38) = ClampToWord(ViewPhysiSpeed);
-    *(WORD*)(CA + 0x44) = ClampToWord(ViewMagicSpeed);
-    *(WORD*)(CA + 0x3A) = ClampToWord(ViewAttackSuccessRate);
-    *(WORD*)(CA + 0x4E) = ClampToWord(ViewDefense);
-    *(WORD*)(CA + 0x4C) = ClampToWord(ViewDefenseSuccess);
-    // Los dos campos que el DLL escribe ademas (GCNewCharacterCalcRecv,
-    // Protocol.cpp).  El dano FISICO no viaja por aca -- el DLL tampoco lo
-    // escribe, lo sigue calculando el cliente.
-    *(WORD*)(CA + 0x46) = ClampToWord(ViewMagicDamageMin);
-    *(WORD*)(CA + 0x48) = ClampToWord(ViewMagicDamageMax);
+    Proto::PMSG_NEW_CHARACTER_CALC_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
+    *(WORD*)(CA + 0x1C) = ClampToWord(packet.ViewCurHP);
+    *(WORD*)(CA + 0x20) = ClampToWord(packet.ViewMaxHP);
+    *(WORD*)(CA + 0x1E) = ClampToWord(packet.ViewCurMP);
+    *(WORD*)(CA + 0x22) = ClampToWord(packet.ViewMaxMP);
+    *(WORD*)(CA + 0x24) = ClampToWord(packet.ViewCurBP);
+    *(WORD*)(CA + 0x26) = ClampToWord(packet.ViewMaxBP);
+    gServerCharacterStats.Set(packet);
+    gServerCharacterStats.Apply(CA);
 }
 
 // ── Globals del state machine de login (mapping IDA → nuestro codebase) ────
@@ -344,6 +302,7 @@ void Recv_DeleteChar(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 {
+    gServerCharacterStats.Reset();
     // El F3/03 que envía el server MuEmu (Protocol.cpp GDCharacterInfoSend →
     // DataServer → DGCharacterInfoRecv → cliente) llega con bEncrypted=false: el
     // dispatcher nunca lo setea. El IDA original 0.97K diferenciaba ambos paths
@@ -1275,7 +1234,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // F3/E0 PMSG_NEW_CHARACTER_INFO_RECV: Level/Stats/HP/MP.
             // Port FIEL desde DLL injection (Protocol.cpp:849).
             NetLog("NET:  → F3/E0 NewCharacterInfo");
-            Recv_NewCharacterInfo(Msg);
+            Recv_NewCharacterInfo(Msg, Size);
             break;
         }
         case 0xE1: {
