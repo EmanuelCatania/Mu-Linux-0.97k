@@ -204,6 +204,7 @@ void NetRecv_82(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_83(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_86(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_87(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
+void NetRecv_88(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_23(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_28(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);

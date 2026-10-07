@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ChaosMixRates.h"
 #include "Net/Recv/NetRecv.h"
 
 // ── ShopInsertItem (PORT FIEL de IDA sub_4CC0E0) ──────────────────────────────
@@ -385,6 +386,7 @@ void NetRecv_30(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             DAT_07eaa14c = 0;     // dword_7EAA14C
             break;
         case 3:  // Chaos Machine (mix)
+            gChaosMixRates.Reset();
             ChaosBoxCloseAck();   // mecanismo de cierre de MuEmu (catalogo A)
             ChaosMixOpened = 1;
             DAT_07eaa140 = 0;     // MixState = 0
@@ -796,9 +798,19 @@ void NetRecv_86(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
 }
 
+// ChaosBox.h del server: respuesta C1:88 con rate/money alineados a DWORD.
+void NetRecv_88(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
+{
+    if (Size < (int)sizeof(Proto::PMSG_CHAOS_MIX_RATE_SEND)) return;
+    Proto::PMSG_CHAOS_MIX_RATE_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
+    gChaosMixRates.Receive(packet);
+}
+
 // 0x87
 void NetRecv_87(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
+    gChaosMixRates.Reset();
     // IDA 004367D0 ReceiveMixExit: este ACK es el punto en que el
     // cliente descarta sus vistas; MuEmu ya ejecutó ChaosBoxInit y
     // gObjInventoryCommit antes de responderlo.

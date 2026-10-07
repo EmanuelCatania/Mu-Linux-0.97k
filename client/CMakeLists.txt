@@ -101,6 +101,7 @@ set(MU_SOURCES
     src/Core/WndProc.cpp
     src/Net/Network.cpp
     src/Net/ServerCharacterStats.cpp
+    src/Item/ChaosMixRates.cpp
     src/Net/Recv/Recv_Account.cpp
     src/Net/Recv/Recv_Character.cpp
     src/Net/Recv/Recv_Chat.cpp
@@ -369,6 +370,7 @@ set(MU_HEADERS
     src/Game/MapManager.h
     src/Net/Network.h
     src/Net/ServerCharacterStats.h
+    src/Item/ChaosMixRates.h
     src/Net/Recv/NetRecv.h
     src/Combat/Combat.h
     src/Combat/Skills.h

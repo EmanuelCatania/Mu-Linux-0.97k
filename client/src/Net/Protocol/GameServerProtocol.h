@@ -70,7 +70,15 @@ struct PMSG_GUILD_LIST
 static_assert(sizeof(PMSG_GUILD_LIST) == 12, "C2:52 entrada");
 
 // ── C1:88 ─ porcentaje de Chaos Mix ── ChaosBox.h:31 ──────────────────────────
-// El cliente hoy no lo parsea.
+// Consulta: ChaosBox.h::PMSG_CHAOS_MIX_RATE_RECV, C1:88, padding en +3.
+struct PMSG_CHAOS_MIX_RATE_RECV
+{
+    PBMSG_HEAD header;
+    int type;
+};
+static_assert(sizeof(PMSG_CHAOS_MIX_RATE_RECV) == 8, "C1:88 consulta");
+static_assert(offsetof(PMSG_CHAOS_MIX_RATE_RECV, type) == 4, "C1:88 type");
+
 struct PMSG_CHAOS_MIX_RATE_SEND
 {
     PBMSG_HEAD header;      // C1:88

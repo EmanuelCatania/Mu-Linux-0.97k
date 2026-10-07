@@ -122,6 +122,7 @@
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Net\Network.h" />
     <ClInclude Include="src\Net\ServerCharacterStats.h" />
+    <ClInclude Include="src\Item\ChaosMixRates.h" />
     <ClInclude Include="src\Net\Recv\NetRecv.h" />
     <ClInclude Include="src\Combat\Combat.h" />
     <ClInclude Include="src\Combat\Skills.h" />
@@ -192,6 +193,7 @@
     <ClCompile Include="src\Core\WndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
     <ClCompile Include="src\Net\ServerCharacterStats.cpp" />
+    <ClCompile Include="src\Item\ChaosMixRates.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Account.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Character.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Chat.cpp" />
