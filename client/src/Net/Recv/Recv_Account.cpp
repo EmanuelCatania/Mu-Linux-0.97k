@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/Ping.h"
 #include "Net/Recv/NetRecv.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
@@ -28,7 +29,9 @@ void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 // ---------------------------------------------------------------------------
 void Recv_JoinServer(const BYTE* Msg)
 {
+    gPing.Reset();
     if (Msg[4] == 1) {
+        gPing.SetServer((SOCKET)SocketClientSocket);
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
         // HeroKey (el que usa ClearCharacters vía OpenWorld) tiene que llevar el Key
         // real: con 0, ClearCharacters(0) conservaría las entidades con Key==0

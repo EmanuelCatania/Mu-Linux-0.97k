@@ -100,6 +100,7 @@ set(MU_SOURCES
     src/Game/MapManager.cpp
     src/Core/WndProc.cpp
     src/Net/Network.cpp
+    src/Net/Ping.cpp
     src/Net/Recv/Recv_Account.cpp
     src/Net/Recv/Recv_Character.cpp
     src/Net/Recv/Recv_Chat.cpp
@@ -367,6 +368,7 @@ set(MU_HEADERS
     src/Sound/SoundManager.h
     src/Game/MapManager.h
     src/Net/Network.h
+    src/Net/Ping.h
     src/Net/Recv/NetRecv.h
     src/Combat/Combat.h
     src/Combat/Skills.h
@@ -496,6 +498,7 @@ target_link_libraries(mu97k PRIVATE
     glu32
     winmm
     ws2_32
+    iphlpapi
     version
     dxguid
     dsound
