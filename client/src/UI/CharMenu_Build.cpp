@@ -66,8 +66,9 @@ void RenderHelpWindow(void)
     // ── Modo 3: tabla de valores de un item (DAT_07e11d24 = tipo) ─────────
     GL_ResetState();                        // DisableAlphaBlend
     int colW = 0, pad = 0, colW2 = 0, pad2 = 0;
+    // DESVIACION (fix del DLL, Patchs.cpp 0x004C3803): usar las columnas de 1280 para cualquier ancho mayor de 1024.
     if (gWindow.GetWidth() > 1024) {
-        if (gWindow.GetWidth() == 1280) { colW = 123; pad = 22; colW2 = 123; pad2 = 32; }
+        colW = 123; pad = 22; colW2 = 123; pad2 = 32;
     } else switch (gWindow.GetWidth()) {
         case 1024: colW = 103; pad = 28; colW2 = 103; pad2 = 40; break;
         case 640:  colW = 90;  pad = 38; colW2 = 90;  pad2 = 52; break;
@@ -82,8 +83,9 @@ void RenderHelpWindow(void)
     else if (id >= 224 && id < 384) { kind = 4; maxVal = 3000; }
     else if (id >= 480 && id < 512) {
         kind = 5;
-        if (gWindow.GetWidth() == 640 || gWindow.GetWidth() == 1280)      maxVal = 5940;
-        else if (gWindow.GetWidth() == 800 || gWindow.GetWidth() == 1024) maxVal = 5200;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004C394A): escala válida también fuera de las resoluciones originales.
+        if (gWindow.GetWidth() == 800 || gWindow.GetWidth() == 1024) maxVal = 5200;
+        else maxVal = 5940;
     } else { DAT_07e11d20 = 0; return; }
     bool isKind5 = (kind == 5);
 
