@@ -90,6 +90,9 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
         caster[748] = 1;                              // IDA L150
         caster[749] = 5;                              // IDA L151
+        // IDA: sub_483780 (0x00483780).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00483AC5): avisar al server del camino al perseguir para atacar.
+        Combat_SendMovePathPacket((int)character, (int)character);
         return 1;
     }
 
