@@ -489,4 +489,32 @@ static_assert(sizeof(PMSG_EVENT_TIME) == 40, "F3:E6 entrada");
 static_assert(offsetof(PMSG_EVENT_TIME, status) == 32, "F3:E6 status");
 static_assert(offsetof(PMSG_EVENT_TIME, time) == 36, "F3:E6 time");          // padding en +33
 
+// GoldenArcher.h del server: PMSG_NPC_GOLDEN_ARCHER_SEND (C1:94).
+struct PMSG_NPC_GOLDEN_ARCHER_SEND
+{
+    PBMSG_HEAD header;
+    BYTE Type;
+    short Count;
+    char LuckyNumber[13];
+};
+static_assert(sizeof(PMSG_NPC_GOLDEN_ARCHER_SEND) == 20, "C1:94");
+static_assert(offsetof(PMSG_NPC_GOLDEN_ARCHER_SEND, Type) == 3, "C1:94 Type");
+static_assert(offsetof(PMSG_NPC_GOLDEN_ARCHER_SEND, Count) == 4, "C1:94 Count");
+static_assert(offsetof(PMSG_NPC_GOLDEN_ARCHER_SEND, LuckyNumber) == 6, "C1:94 LuckyNumber");
+
+// GoldenArcher.h: PMSG_GOLDEN_ARCHER_LIST_SEND / LUCKY_NUMBER_INFO (C2:97:01).
+struct PMSG_GOLDEN_ARCHER_LIST_SEND
+{
+    PSWMSG_HEAD header;
+    int count;
+};
+struct LUCKY_NUMBER_INFO
+{
+    char LuckyNumber[13];
+};
+static_assert(sizeof(PMSG_GOLDEN_ARCHER_LIST_SEND) == 12, "C2:97:01");
+static_assert(offsetof(PMSG_GOLDEN_ARCHER_LIST_SEND, count) == 8, "C2:97:01 count");
+static_assert(sizeof(LUCKY_NUMBER_INFO) == 13, "C2:97:01 entrada");
+static_assert(offsetof(LUCKY_NUMBER_INFO, LuckyNumber) == 0, "C2:97:01 LuckyNumber");
+
 } // namespace Proto
