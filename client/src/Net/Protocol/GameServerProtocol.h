@@ -413,6 +413,9 @@ struct ITEM_STACK
     int MaxStack;
 };
 static_assert(sizeof(ITEM_STACK) == 12, "F3:E3 entrada");
+static_assert(offsetof(ITEM_STACK, ItemIndex) == 0, "F3:E3 ItemIndex");
+static_assert(offsetof(ITEM_STACK, Level) == 4, "F3:E3 Level");
+static_assert(offsetof(ITEM_STACK, MaxStack) == 8, "F3:E3 MaxStack");
 
 // ── C2:F3:E4 ─ precios fijos ── ItemValue.h:10 / ItemValue.h:20 ───────────────
 // Item/Item_ServerValue.cpp Recv_ItemValueList (encabezado de 6, entradas de 16).
@@ -432,6 +435,10 @@ struct ITEM_VALUE_INFO
     int SellValue;
 };
 static_assert(sizeof(ITEM_VALUE_INFO) == 16, "F3:E4 entrada");
+static_assert(offsetof(ITEM_VALUE_INFO, Index) == 0, "F3:E4 Index");
+static_assert(offsetof(ITEM_VALUE_INFO, Level) == 4, "F3:E4 Level");
+static_assert(offsetof(ITEM_VALUE_INFO, BuyValue) == 8, "F3:E4 BuyValue");
+static_assert(offsetof(ITEM_VALUE_INFO, SellValue) == 12, "F3:E4 SellValue");
 
 // ── C2:F3:E5 ─ lista de /move ── Move.h:34 / Move.h:41 ────────────────────────
 // El cliente hoy sólo lo vuelca al log.

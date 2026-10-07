@@ -19,14 +19,15 @@
 #include "globals.h"
 #include "functions.h"
 #include <vector>
+#include "Net/Protocol/GameServerProtocol.h"
 
 int __cdecl ItemStack_GetMaxStack(int index, int level);
 
 
 namespace {
 
-struct ItemStackInfo { int Index; int Level; int MaxStack; };
-struct ItemValueInfo { int Index; int Level; int BuyValue; int SellValue; };
+using ItemStackInfo = Proto::ITEM_STACK;
+using ItemValueInfo = Proto::ITEM_VALUE_INFO;
 
 std::vector<ItemStackInfo> s_ItemStack;
 std::vector<ItemValueInfo> s_ItemValue;
@@ -35,18 +36,18 @@ const unsigned long long kMaxItemPrice = 2000000000ULL;   // MAX_ITEM_PRICE
 
 inline int ItemLevelOf(const ITEM* ip) { return (ip->Level >> 3) & 0xF; }
 
-// Encabezado PSWMSG_HEAD (C2, size[2], head, subhead) + BYTE count = 6 bytes.
-template <typename T>
+// ItemStack.h / ItemValue.h del server: no publicar tablas truncadas.
+template <typename Header, typename T>
 void ReadList(std::vector<T>& out, const BYTE* msg, int size)
 {
+    if (size < sizeof(Header)) return;
+    Header header;
+    memcpy(&header, msg, sizeof(header));
+    if (header.count > (size - sizeof(Header)) / sizeof(T)) return;
     out.clear();
-    if (size < 6) return;
-    const int count = msg[5];
-    for (int n = 0; n < count; ++n) {
-        const int off = 6 + (int)sizeof(T) * n;
-        if (off + (int)sizeof(T) > size) break;
+    for (int n = 0; n < header.count; ++n) {
         T info;
-        memcpy(&info, msg + off, sizeof(T));
+        memcpy(&info, msg + sizeof(Header) + sizeof(T) * n, sizeof(info));
         out.push_back(info);
     }
 }
@@ -99,19 +100,19 @@ bool FindValue(const ITEM* ip, bool sell, unsigned long long* value)
 // F3/E3: lista de apilado (DLL CItemStack::GCItemStackListRecv).
 void Recv_ItemStackList(const BYTE* Msg, int Size)
 {
-    ReadList(s_ItemStack, Msg, Size);
+    ReadList<Proto::PMSG_ITEM_STACK_LIST_SEND>(s_ItemStack, Msg, Size);
 }
 
 // F3/E4: precios fijos (DLL CItemValue::GCItemValueListRecv).
 void Recv_ItemValueList(const BYTE* Msg, int Size)
 {
-    ReadList(s_ItemValue, Msg, Size);
+    ReadList<Proto::PMSG_ITEM_VALUE_LIST_SEND>(s_ItemValue, Msg, Size);
 }
 
 int __cdecl ItemStack_GetMaxStack(int index, int level)
 {
     for (const ItemStackInfo& it : s_ItemStack) {
-        if (it.Index != index) continue;
+        if (it.ItemIndex != index) continue;
         if (it.Level != -1 && it.Level != level) continue;
         return it.MaxStack;
     }
