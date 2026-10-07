@@ -517,4 +517,15 @@ static_assert(offsetof(PMSG_GOLDEN_ARCHER_LIST_SEND, count) == 8, "C2:97:01 coun
 static_assert(sizeof(LUCKY_NUMBER_INFO) == 13, "C2:97:01 entrada");
 static_assert(offsetof(LUCKY_NUMBER_INFO, LuckyNumber) == 0, "C2:97:01 LuckyNumber");
 
+// Guild.h del server: PMSG_GUILD_WAR_DECLARE_SEND (C1:61).
+struct PMSG_GUILD_WAR_DECLARE_SEND
+{
+    PBMSG_HEAD header;
+    char GuildName[8];
+    BYTE type;
+};
+static_assert(sizeof(PMSG_GUILD_WAR_DECLARE_SEND) == 12, "C1:61");
+static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, GuildName) == 3, "C1:61 GuildName");
+static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, type) == 11, "C1:61 type");
+
 } // namespace Proto
