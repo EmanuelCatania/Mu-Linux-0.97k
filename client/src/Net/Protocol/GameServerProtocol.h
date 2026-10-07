@@ -459,7 +459,7 @@ static_assert(offsetof(MOVE_LIST_INFO, MinLevel) == 34, "F3:E5 MinLevel");
 static_assert(offsetof(MOVE_LIST_INFO, Money) == 44, "F3:E5 Money");
 
 // ── C2:F3:E6 ─ horarios de eventos ── Protocol.h:601 / Protocol.h:607 ─────────
-// El cliente hoy no lo parsea.
+// Consumido por UI/EventTimer.cpp.
 struct PMSG_EVENT_TIME_SEND
 {
     PSWMSG_HEAD header;     // C2:F3:E6

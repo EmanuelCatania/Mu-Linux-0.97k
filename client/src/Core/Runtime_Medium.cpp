@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "UI/EventTimer.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
@@ -53,6 +54,8 @@ void __cdecl RenderInformation(void) {
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
+    // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): panel de horarios.
+    gEventTimer.Render();
     Cursor_Render(); // RenderCursor
     RenderInfomation3D(); // RenderInfomation3D
 }

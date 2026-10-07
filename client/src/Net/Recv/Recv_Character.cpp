@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/EventTimer.h"
 #include "Net/Recv/NetRecv.h"
 
 void Recv_NewCharacterInfo(const BYTE* Msg)
@@ -1292,6 +1293,10 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xE4: {  // precios fijos (DLL CItemValue)
             extern void Recv_ItemValueList(const BYTE* Msg, int Size);
             Recv_ItemValueList((const BYTE*)Msg, Size);
+            break;
+        }
+        case 0xE6: {
+            gEventTimer.Receive(Msg, Size);
             break;
         }
         case 0xE2: case 0xE5: {

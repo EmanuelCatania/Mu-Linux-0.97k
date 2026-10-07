@@ -118,6 +118,7 @@
     <ClInclude Include="src\Config\UserSettings.h" />
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\Font.h" />
+    <ClInclude Include="src\UI\EventTimer.h" />
     <ClInclude Include="src\Sound\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Net\Network.h" />
@@ -430,6 +431,7 @@
     <ClCompile Include="src\UI\UI_Tooltip.cpp" />
     <ClCompile Include="src\UI\Chat_Gestures.cpp" />
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
+    <ClCompile Include="src\UI\EventTimer.cpp" />
     <ClCompile Include="src\UI\Chat_InputTick.cpp" />
     <ClCompile Include="src\UI\Chat_Send.cpp" />
     <ClCompile Include="src\UI\UI_SkillHotkeys.cpp" />

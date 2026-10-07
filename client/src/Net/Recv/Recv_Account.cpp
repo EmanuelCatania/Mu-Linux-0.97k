@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/EventTimer.h"
 #include "Net/Recv/NetRecv.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
@@ -28,6 +29,7 @@ void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 // ---------------------------------------------------------------------------
 void Recv_JoinServer(const BYTE* Msg)
 {
+    gEventTimer.Clear();
     if (Msg[4] == 1) {
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
         // HeroKey (el que usa ClearCharacters vía OpenWorld) tiene que llevar el Key
@@ -124,6 +126,7 @@ void Recv_LoginResult(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void Recv_LogOut(const BYTE* Msg)
 {
+    gEventTimer.Clear();
     BYTE sub = Msg[4];
     NetLog("NET:    F1/02 LogOut sub=%d gs=%d", sub, (int)SceneFlag);
 
