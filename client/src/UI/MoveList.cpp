@@ -21,6 +21,8 @@ void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
     glColor4f(r, g, b, a);
     GL_DrawRect((float)x, (float)y, (float)w, (float)h);
     GL_ResetState();
+    // DLL MoveList.cpp: el texto no debe heredar el color del fondo o del hover.
+    glColor4f(1, 1, 1, 1);
 }
 void Range(char* out, size_t capacity, const char* label, short low, short high)
 {
