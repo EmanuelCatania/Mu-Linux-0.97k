@@ -9,7 +9,7 @@
 //
 // Frame structure:
 //   1. Net_Recv() poll
-//   2. Busy-wait loop: while (budget > 40ms) { game_logic(); budget -= 40; }
+//   2. Pasos lógicos acumulados de 40 ms; conservan la recuperación tras demoras.
 //   3. GL clear + scene render
 //   4. SwapBuffers
 //   5. Post-render 25fps limiter
@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Game/FrameLimiter.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/Game_SceneUpdate.h"
@@ -335,15 +336,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/post_swap");
 
     // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    {
-        DWORD now = GetTickCount();
-        DWORD elapsed = now - renderStart;
-        while (elapsed < 0x28) {
-            now = GetTickCount();
-            elapsed = now - renderStart;
-        }
-        DAT_005616b8 += elapsed;
-    }
+    DAT_005616b8 += gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port
