@@ -39,6 +39,10 @@ public:
     // Envío plano al ConnectServer (no usa el cifrado de MuEmu).
     void SendToConnectServer(const BYTE* data, int len);
 
+    // Datos recibidos y ventanas de las extensiones; sin enviar paquetes al limpiar.
+    void ResetCharacterData();
+    void ResetSessionData();
+
     // ── Estado de la conexión ───────────────────────────────────────────────
     // ServerConfig trae ConnectServer: el login arranca por ahí y el F4/03
     // redirige al GameServer.

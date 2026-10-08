@@ -6,11 +6,38 @@
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
 #include "Net/PacketFrame.h"
+#include "Net/ServerCharacterStats.h"
+#include "UI/HealthBar.h"
+#include "UI/MoveList.h"
+#include "UI/EventTimer.h"
+#include "UI/GoldenArcher.h"
+#include "Item/ChaosMixRates.h"
+#include "Item/Item_ServerValue.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" void CsmWatchdog(const char *tag);
 
 CNetwork gNetwork;
+
+void CNetwork::ResetCharacterData()
+{
+    gServerCharacterStats.Reset();
+    gHealthBar.Clear();
+    gChaosMixRates.Reset();
+    GoldenArcher_ResetCharacter();
+    // DSProtocol::DGCharacterInfoRecv reenvía M y las tablas para el personaje.
+    gMoveList.Clear();
+    ItemServerValue_ResetSession();
+    gEventTimer.Close(); // El calendario pertenece a la misma conexión.
+}
+
+void CNetwork::ResetSessionData()
+{
+    ResetCharacterData();
+    gPing.Reset();
+    gEventTimer.Clear();
+    GoldenArcher_ResetSession();
+}
 
 // Clave del chain-XOR. Es la misma que arma el binario antes de cada envío
 // (los 32 bytes de `local_d58`).
@@ -57,7 +84,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             RequestServerList();
     }
     if (evt & 0x20) { // FD_CLOSE
-        gPing.Reset();
+        ResetSessionData();
         // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):
         //   UIChatLogWindow_AddText(strID, GlobalText[3], 1);
         //   CWsctlc::Close(&SocketClient);
@@ -83,7 +110,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
 
 void CNetwork::BeginConnectServerSession()
 {
-    gPing.Reset();
+    ResetSessionData();
     m_ConnectServerMode = true;
     m_ServerListRequested = false;
 }

@@ -8,6 +8,10 @@
 
 #include "stdafx.h"
 #include "UI/HealthBar.h"
+#include "UI/MoveList.h"
+#include "UI/EventTimer.h"
+#include "UI/GoldenArcher.h"
+#include "Item/ChaosMixRates.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -273,6 +277,11 @@ void __cdecl DeleteObjects(void) {
 // así que se usa DAT_083a1218 + 0x1158 (end-pointer real).
 void __cdecl ClearCharacters(int param_1) {
     gHealthBar.Clear();
+    // DESVIACION: cerrar las extensiones al reconstruir el mapa, sin borrar catálogos.
+    gMoveList.Close();
+    gEventTimer.Close();
+    gChaosMixRates.Reset();
+    GoldenArcher_ResetCharacter();
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);

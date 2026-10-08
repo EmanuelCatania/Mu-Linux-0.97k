@@ -33,11 +33,7 @@ void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 // ---------------------------------------------------------------------------
 void Recv_JoinServer(const BYTE* Msg)
 {
-    gEventTimer.Clear();
-    gMoveList.Clear();
-    gPing.Reset();
-    gServerCharacterStats.Reset();
-    gHealthBar.Clear();
+    gNetwork.ResetSessionData();
     if (Msg[4] == 1) {
         gPing.SetServer((SOCKET)SocketClientSocket);
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
@@ -135,11 +131,9 @@ void Recv_LoginResult(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void Recv_LogOut(const BYTE* Msg)
 {
-    gEventTimer.Clear();
-    gMoveList.Clear();
-    gServerCharacterStats.Reset();
-    gHealthBar.Clear();
     BYTE sub = Msg[4];
+    if (sub == 1) gNetwork.ResetCharacterData();
+    else gNetwork.ResetSessionData();
     NetLog("NET:    F1/02 LogOut sub=%d gs=%d", sub, (int)SceneFlag);
 
     if (sub == 0) {

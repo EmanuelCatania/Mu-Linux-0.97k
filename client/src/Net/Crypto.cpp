@@ -1371,7 +1371,7 @@ void __cdecl InitGuildWar(void) {
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
 void __cdecl CWsctlc_Close(int ctx) {
-    gPing.Reset();
+    gNetwork.ResetSessionData();
     SocketClientIsGame = 0; // g_bGameServerConnected
     closesocket(*(SOCKET *)(ctx + 8));
     *(int *)(ctx + 8) = -1; // INVALID_SOCKET
