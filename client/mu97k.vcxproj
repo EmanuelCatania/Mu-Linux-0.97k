@@ -121,6 +121,8 @@
     <ClInclude Include="src\Sound\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Net\Network.h" />
+    <ClInclude Include="src\Net\ServerCharacterStats.h" />
+    <ClInclude Include="src\Item\ChaosMixRates.h" />
     <ClInclude Include="src\UI\HealthBar.h" />
     <ClInclude Include="src\Net\Recv\NetRecv.h" />
     <ClInclude Include="src\Combat\Combat.h" />
@@ -192,6 +194,8 @@
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Core\WndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
+    <ClCompile Include="src\Net\ServerCharacterStats.cpp" />
+    <ClCompile Include="src\Item\ChaosMixRates.cpp" />
     <ClCompile Include="src\UI\HealthBar.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Account.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Character.cpp" />

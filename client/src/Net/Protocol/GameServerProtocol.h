@@ -9,7 +9,7 @@
 // fijan sizeof y el offsetof de los campos que el cliente lee hoy en
 // src/Net/Net_Process.cpp (o en el archivo indicado).
 //
-// Incluir después de stdafx.h. Todavía no lo usa ningún parseo (Fase 2).
+// Incluir después de stdafx.h; usado por los handlers y por Protocol_Check.cpp.
 #pragma once
 
 #include "Net/Protocol/ProtocolBase.h"
@@ -70,7 +70,15 @@ struct PMSG_GUILD_LIST
 static_assert(sizeof(PMSG_GUILD_LIST) == 12, "C2:52 entrada");
 
 // ── C1:88 ─ porcentaje de Chaos Mix ── ChaosBox.h:31 ──────────────────────────
-// El cliente hoy no lo parsea.
+// Consulta: ChaosBox.h::PMSG_CHAOS_MIX_RATE_RECV, C1:88, padding en +3.
+struct PMSG_CHAOS_MIX_RATE_RECV
+{
+    PBMSG_HEAD header;
+    int type;
+};
+static_assert(sizeof(PMSG_CHAOS_MIX_RATE_RECV) == 8, "C1:88 consulta");
+static_assert(offsetof(PMSG_CHAOS_MIX_RATE_RECV, type) == 4, "C1:88 type");
+
 struct PMSG_CHAOS_MIX_RATE_SEND
 {
     PBMSG_HEAD header;      // C1:88
@@ -335,6 +343,10 @@ static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, Life) == 36, "F3:E0 Life");
 static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxLife) == 40, "F3:E0 MaxLife");
 static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, Mana) == 44, "F3:E0 Mana");
 static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxMana) == 48, "F3:E0 MaxMana");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, BP) == 52, "F3:E0 BP");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxBP) == 56, "F3:E0 MaxBP");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, FruitAddPoint) == 60, "F3:E0 FruitAddPoint");
+static_assert(offsetof(PMSG_NEW_CHARACTER_INFO_SEND, MaxFruitAddPoint) == 64, "F3:E0 MaxFruitAddPoint");
 
 // ── C1:F3:E1 ─ stats calculados ── Protocol.h:566 ─────────────────────────────
 // Net_Process.cpp Recv_NewCharacterCalc.
@@ -412,6 +424,9 @@ struct ITEM_STACK
     int MaxStack;
 };
 static_assert(sizeof(ITEM_STACK) == 12, "F3:E3 entrada");
+static_assert(offsetof(ITEM_STACK, ItemIndex) == 0, "F3:E3 ItemIndex");
+static_assert(offsetof(ITEM_STACK, Level) == 4, "F3:E3 Level");
+static_assert(offsetof(ITEM_STACK, MaxStack) == 8, "F3:E3 MaxStack");
 
 // ── C2:F3:E4 ─ precios fijos ── ItemValue.h:10 / ItemValue.h:20 ───────────────
 // Item/Item_ServerValue.cpp Recv_ItemValueList (encabezado de 6, entradas de 16).
@@ -431,6 +446,10 @@ struct ITEM_VALUE_INFO
     int SellValue;
 };
 static_assert(sizeof(ITEM_VALUE_INFO) == 16, "F3:E4 entrada");
+static_assert(offsetof(ITEM_VALUE_INFO, Index) == 0, "F3:E4 Index");
+static_assert(offsetof(ITEM_VALUE_INFO, Level) == 4, "F3:E4 Level");
+static_assert(offsetof(ITEM_VALUE_INFO, BuyValue) == 8, "F3:E4 BuyValue");
+static_assert(offsetof(ITEM_VALUE_INFO, SellValue) == 12, "F3:E4 SellValue");
 
 // ── C2:F3:E5 ─ lista de /move ── Move.h:34 / Move.h:41 ────────────────────────
 // El cliente hoy sólo lo vuelca al log.
@@ -480,5 +499,57 @@ struct PMSG_EVENT_TIME
 static_assert(sizeof(PMSG_EVENT_TIME) == 40, "F3:E6 entrada");
 static_assert(offsetof(PMSG_EVENT_TIME, status) == 32, "F3:E6 status");
 static_assert(offsetof(PMSG_EVENT_TIME, time) == 36, "F3:E6 time");          // padding en +33
+
+// GoldenArcher.h del server: PMSG_NPC_GOLDEN_ARCHER_SEND (C1:94).
+struct PMSG_NPC_GOLDEN_ARCHER_SEND
+{
+    PBMSG_HEAD header;
+    BYTE Type;
+    short Count;
+    char LuckyNumber[13];
+};
+static_assert(sizeof(PMSG_NPC_GOLDEN_ARCHER_SEND) == 20, "C1:94");
+static_assert(offsetof(PMSG_NPC_GOLDEN_ARCHER_SEND, Type) == 3, "C1:94 Type");
+static_assert(offsetof(PMSG_NPC_GOLDEN_ARCHER_SEND, Count) == 4, "C1:94 Count");
+static_assert(offsetof(PMSG_NPC_GOLDEN_ARCHER_SEND, LuckyNumber) == 6, "C1:94 LuckyNumber");
+
+// GoldenArcher.h: PMSG_GOLDEN_ARCHER_LIST_SEND / LUCKY_NUMBER_INFO (C2:97:01).
+struct PMSG_GOLDEN_ARCHER_LIST_SEND
+{
+    PSWMSG_HEAD header;
+    int count;
+};
+struct LUCKY_NUMBER_INFO
+{
+    char LuckyNumber[13];
+};
+static_assert(sizeof(PMSG_GOLDEN_ARCHER_LIST_SEND) == 12, "C2:97:01");
+static_assert(offsetof(PMSG_GOLDEN_ARCHER_LIST_SEND, count) == 8, "C2:97:01 count");
+static_assert(sizeof(LUCKY_NUMBER_INFO) == 13, "C2:97:01 entrada");
+static_assert(offsetof(LUCKY_NUMBER_INFO, LuckyNumber) == 0, "C2:97:01 LuckyNumber");
+
+// Guild.h del server: PMSG_GUILD_WAR_DECLARE_SEND (C1:61).
+struct PMSG_GUILD_WAR_DECLARE_SEND
+{
+    PBMSG_HEAD header;
+    char GuildName[8];
+    BYTE type;
+};
+static_assert(sizeof(PMSG_GUILD_WAR_DECLARE_SEND) == 12, "C1:61");
+static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, GuildName) == 3, "C1:61 GuildName");
+static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, type) == 11, "C1:61 type");
+
+// Protocol.h del server: PMSG_LIVE_CLIENT_RECV (C3:0E).
+struct PMSG_LIVE_CLIENT_RECV
+{
+    PBMSG_HEAD header;
+    DWORD TickCount;
+    WORD PhysiSpeed;
+    WORD MagicSpeed;
+};
+static_assert(sizeof(PMSG_LIVE_CLIENT_RECV) == 12, "C3:0E");
+static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, TickCount) == 4, "C3:0E TickCount");
+static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, PhysiSpeed) == 8, "C3:0E PhysiSpeed");
+static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, MagicSpeed) == 10, "C3:0E MagicSpeed");
 
 } // namespace Proto

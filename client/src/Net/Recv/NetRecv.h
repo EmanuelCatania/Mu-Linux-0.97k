@@ -98,7 +98,7 @@ void Recv_ServerList(const BYTE* Msg);
 void Recv_Redirect(const BYTE* Msg);
 void Recv_BackToConnecting(void);
 // Recv_Character.cpp
-void Recv_NewCharacterInfo(const BYTE* Msg);
+void Recv_NewCharacterInfo(const BYTE* Msg, int Size);
 extern BYTE s_PendingSkillKey[10];
 extern bool s_HasPendingSkillKey;
 void ApplySkillKeyMap(void);
@@ -204,6 +204,7 @@ void NetRecv_82(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_83(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_86(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_87(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
+void NetRecv_88(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_23(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);
 void NetRecv_28(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted);

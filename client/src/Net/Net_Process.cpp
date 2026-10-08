@@ -846,6 +846,7 @@ void Net_ProcessPacket(void)
             case 0x83: NetRecv_83(Msg, Size, hdr, sub, bEncrypted); break;
             case 0x86: NetRecv_86(Msg, Size, hdr, sub, bEncrypted); break;
             case 0x87: NetRecv_87(Msg, Size, hdr, sub, bEncrypted); break;
+            case 0x88: NetRecv_88(Msg, Size, hdr, sub, bEncrypted); break;
             case 0x73: NetRecv_73(Msg, Size, hdr, sub, bEncrypted); break;
             case 0x8E: NetRecv_8E(Msg, Size, hdr, sub, bEncrypted); break;
             case 0x8F: NetRecv_8F(Msg, Size, hdr, sub, bEncrypted); break;
