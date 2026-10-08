@@ -1,12 +1,35 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Net/Ping.h"
 #include "Core/Window.h"
 #include "resource.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
 CWindow gWindow;
+
+// DESVIACION DLL: CWindow::ChangeWindowText, sin resets hasta integrar su HUD.
+void CWindow::UpdateTitle()
+{
+    if (!m_hWnd) return;
+    const DWORD now = GetTickCount();
+    if (m_TitleScene == SceneFlag && now - m_LastTitleUpdate < 1000) return;
+    m_TitleScene = SceneFlag;
+    m_LastTitleUpdate = now;
+    char title[160] = "Mu Online";
+    if (SceneFlag == 5 && CharacterAttribute) {
+        const BYTE* attr = (const BYTE*)CharacterAttribute;
+        DWORD milliseconds;
+        char ping[32] = "--";
+        if (gPing.GetMilliseconds(milliseconds))
+            sprintf_s(ping, "%lu ms", milliseconds);
+        sprintf_s(title, "%.10s || Level: %u || PING: %s || FPS: %.0f",
+                  (const char*)attr, (unsigned int)*(const WORD*)(attr + 0x0E), ping, FPS);
+    }
+    SetWindowTextA(m_hWnd, title);
+}
+
 
 void CWindow::SetResolution(DWORD width, DWORD height)
 {

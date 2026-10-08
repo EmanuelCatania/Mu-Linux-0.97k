@@ -86,6 +86,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // ── RECEIVE INCOMING PACKETS ─────────────────────────────────────────────
     Timer_UpdateFrameTiming();
+    gWindow.UpdateTitle();
     CHK("ML/post_recv");
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────

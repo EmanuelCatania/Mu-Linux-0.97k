@@ -71,7 +71,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;iphlpapi.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;iphlpapi.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -121,6 +121,7 @@
     <ClInclude Include="src\Sound\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Net\Network.h" />
+    <ClInclude Include="src\Net\Ping.h" />
     <ClInclude Include="src\Net\ServerCharacterStats.h" />
     <ClInclude Include="src\Item\ChaosMixRates.h" />
     <ClInclude Include="src\UI\HealthBar.h" />
@@ -194,6 +195,7 @@
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Core\WndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
+    <ClCompile Include="src\Net\Ping.cpp" />
     <ClCompile Include="src\Net\ServerCharacterStats.cpp" />
     <ClCompile Include="src\Item\ChaosMixRates.cpp" />
     <ClCompile Include="src\UI\HealthBar.cpp" />
