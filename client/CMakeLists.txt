@@ -94,6 +94,8 @@ set(MU_SOURCES
     src/Render/Render_Frame.cpp
     src/Net/Net_Process.cpp
     src/Config/Config_Load.cpp
+    src/UI/UIState.cpp
+    src/Local/ClientText.cpp
     src/Core/Window.cpp
     src/Core/Font.cpp
     src/Sound/SoundManager.cpp
@@ -369,6 +371,12 @@ set(MU_HEADERS
     src/Config/Config.h
     src/Config/ServerConfig.h
     src/Config/UserSettings.h
+    src/UI/UIState.h
+    src/Entity/EntityView.h
+    src/Entity/CharacterAttributeView.h
+    src/Local/ClientText.h
+    src/Item/Item_ServerValue.h
+    src/UI/GoldenArcher.h
     src/Core/Window.h
     src/Core/Font.h
     src/UI/EventTimer.h

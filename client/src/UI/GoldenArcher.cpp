@@ -19,6 +19,8 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "UI/GoldenArcher.h"
+#include "UI/UIState.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include "globals.h"
 #include "structs.h"
@@ -319,7 +321,7 @@ static void GA_Ida_Check(void)
 {
     const int mode = GA_OpenType;
     if (GA_MouseX >= 450 && GA_MouseX < 640 && GA_MouseY >= 0 && GA_MouseY < 433)
-        GA_MouseOnWindow = 1;
+        UIState::CaptureMouseForUI();
 
     if (mode != 4) {
         if (mode != 3) {
@@ -399,9 +401,31 @@ static int  s_RenaRequired[4];
 static int  s_StoneRequired[4];
 static DWORD s_StoneVipDuration[3];
 static char s_LuckyNumber[13];
-static BYTE s_CurrentPage = 1;
-static BYTE s_TotalPages = 1;
+static int s_CurrentPage = 1;
+static int s_TotalPages = 1;
 static std::vector<std::string> s_MyLuckyNumbers;
+
+void GoldenArcher_ResetCharacter()
+{
+    // Sólo limpiar input si pertenece al NPC; no borrar el login/chat ajeno.
+    if (GA_OpenType || GA_ScratchTicket) GA_ClearInputFields();
+    GA_OpenType = 0;
+    GA_ItemCount = 0;
+    GA_ScratchTicket = 0;
+    memset(GA_GiftName, 0, 64);
+    memset(s_LuckyNumber, 0, sizeof(s_LuckyNumber));
+    s_MyLuckyNumbers.clear();
+    s_CurrentPage = s_TotalPages = 1;
+}
+
+void GoldenArcher_ResetSession()
+{
+    GoldenArcher_ResetCharacter();
+    g_GoldenArcherCustom = 0;
+    memset(s_RenaRequired, 0, sizeof(s_RenaRequired));
+    memset(s_StoneRequired, 0, sizeof(s_StoneRequired));
+    memset(s_StoneVipDuration, 0, sizeof(s_StoneVipDuration));
+}
 
 static const int kStartX = 450;
 static const int kStartY = 0;
@@ -873,7 +897,7 @@ static void GA_Custom_Render(void)
 
 static void GA_Custom_Check(void)
 {
-    if (IsWorkZone(kStartX, kStartY, 190, 433)) GA_MouseOnWindow = 1;
+    if (IsWorkZone(kStartX, kStartY, 190, 433)) UIState::CaptureMouseForUI();
     bool handled = false;
     switch (GA_OpenType) {
     case GA_IF_RENA:  handled = CheckRena();  break;
@@ -925,8 +949,10 @@ static void GA_Custom_RecvList(BYTE* Msg, int Size)
     CharacterOpened = 0;
     GA_OpenType = GA_IF_BINGO;
     s_CurrentPage = 1;
-    s_TotalPages = (BYTE)(count / 10 + 1);
+    // DESVIACION: no crear una página vacía para cantidades múltiplo de diez.
+    s_TotalPages = count ? (count + 9) / 10 : 1;
     s_MyLuckyNumbers.clear();
+    s_MyLuckyNumbers.reserve(count);
     for (int i = 0; i < count; ++i) {
         Proto::LUCKY_NUMBER_INFO entry;
         memcpy(&entry, Msg + sizeof(packet) + i * sizeof(entry), sizeof(entry));
@@ -981,8 +1007,12 @@ void GoldenArcher_Recv96(BYTE* Msg, int Size)
 // 0x97 solo existe en el evento propio (el original no recibe 0x97).
 void GoldenArcher_Recv97(BYTE* Msg, int Size)
 {
+    if (!Msg || Size < 4) return;
     const bool c2 = (Msg[0] == 0xC2 || Msg[0] == 0xC4);
+    if (c2 && Size < 5) return;
     const BYTE sub = c2 ? Msg[4] : Msg[3];
+    // La lista 97/01 usa C2; los demás mensajes usan cabecera corta.
+    if (c2 != (sub == 0x01)) return;
     switch (sub) {
     case 0x00:
         if (Size < 48) return;

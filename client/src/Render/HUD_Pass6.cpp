@@ -30,6 +30,7 @@
 
 #include "stdafx.h"
 #include "Item/ChaosMixRates.h"
+#include "Local/ClientText.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "structs.h"
@@ -1561,8 +1562,9 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = 80; money = bloodMoney[min((int)DAT_07eaa168 - 1, 6)];
     }
 
-    // DESVIACION DLL: C1:88 manda; las fórmulas anteriores quedan de respaldo.
-    gChaosMixRates.Get(rate, money);
+    // DESVIACION: las recetas consultadas por 0x88 muestran pendiente sin respuesta;
+    // no presentar como autoritativo el cálculo local del binario.
+    const bool pendingRate = CChaosMixRates::Supports(mixType) && !gChaosMixRates.Get(rate, money);
     char text[100], moneyText[32];
     ChaosMixFormatZen(moneyText, sizeof(moneyText), money);
     const int recipeText = mixType == 11 ? 7 : (mixType < 0 ? 0 : mixType);
@@ -1571,9 +1573,11 @@ extern "C" void __cdecl RenderChaosMix(void)
     _snprintf_s(text, sizeof(text), _TRUNCATE, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 50, text, 0, 0, 0);
     m_dwTextColor = 0xFFFFFFD2u;
-    _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
+    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosRatePending));
+    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 70, text, 0, 0, 0);
-    _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
+    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosCostPending));
+    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 90, text, 0, 0, 0);
 
     m_dwTextColor = 0xFF1414FFu;

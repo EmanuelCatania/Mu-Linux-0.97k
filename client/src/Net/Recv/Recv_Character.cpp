@@ -305,7 +305,7 @@ void Recv_DeleteChar(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 {
-    gServerCharacterStats.Reset();
+    gNetwork.ResetCharacterData();
     // El F3/03 que envía el server MuEmu (Protocol.cpp GDCharacterInfoSend →
     // DataServer → DGCharacterInfoRecv → cliente) llega con bEncrypted=false: el
     // dispatcher nunca lo setea. El IDA original 0.97K diferenciaba ambos paths

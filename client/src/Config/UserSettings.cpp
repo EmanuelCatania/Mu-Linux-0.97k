@@ -2,6 +2,9 @@
 
 #include "stdafx.h"
 #include "Config/UserSettings.h"
+#include <cerrno>
+#include <climits>
+#include <cctype>
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -17,13 +20,34 @@ constexpr ResolutionSize kResolutions[MAX_USER_RESOLUTION] = {
     { 1280,  720 }, { 1366,  768 }, { 1600,  900 }, { 1920, 1080 },
 };
 
-// -1 si la clave no existe (GetPrivateProfileInt no distingue "no está" de 0).
+// Ausente, truncado o inválido: no reemplazar el valor del registro/default.
+bool TryReadInt(const char* section, const char* key, const char* iniPath, int& result)
+{
+    char value[64] = {};
+    const DWORD length = GetPrivateProfileStringA(section, key, "", value, sizeof(value), iniPath);
+    if (!length || length >= sizeof(value) - 1) return false;
+    char* end;
+    errno = 0;
+    const long parsed = strtol(value, &end, 10);
+    if (end == value || errno == ERANGE || parsed < INT_MIN || parsed > INT_MAX) return false;
+    while (*end && isspace((unsigned char)*end)) ++end;
+    if (*end) return false;
+    result = (int)parsed;
+    return true;
+}
+
 int ReadInt(const char* section, const char* key, const char* iniPath)
 {
-    char value[16] = {};
-    GetPrivateProfileStringA(section, key, "", value, sizeof(value), iniPath);
-    if (value[0] == 0) return -1;
-    return atoi(value);
+    int value;
+    return TryReadInt(section, key, iniPath, value) ? value : -1;
+}
+
+int ReadRange(const char* section, const char* key, const char* iniPath,
+              int low, int high, int fallback)
+{
+    int value;
+    return TryReadInt(section, key, iniPath, value) && value >= low && value <= high
+        ? value : fallback;
 }
 
 int ReadFlag(const char* section, const char* key, const char* iniPath)
@@ -44,11 +68,13 @@ bool CUserSettings::GetResolutionSize(int index, DWORD* width, DWORD* height)
 
 void CUserSettings::Load(const char* iniPath)
 {
-    m_DeleteHealthBar = GetPrivateProfileIntA("Antilag", "DeleteHealthBar", 0, iniPath) != 0;
+    // Una segunda carga no debe conservar la fuente ni preferencias ausentes.
+    *this = CUserSettings{};
+    m_DeleteHealthBar = ReadFlag("Antilag", "DeleteHealthBar", iniPath) > 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);
     m_Borderless  = ReadFlag("Window", "Borderless", iniPath);
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);
-    if (m_Resolution >= MAX_USER_RESOLUTION) {
+    if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
         wsprintfA(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
                   m_Resolution, MAX_USER_RESOLUTION - 1);
@@ -58,8 +84,8 @@ void CUserSettings::Load(const char* iniPath)
 
     m_EnableSound = ReadFlag("Sound", "EnableSound", iniPath);
     m_EnableMusic = ReadFlag("Sound", "EnableMusic", iniPath);
-    m_SoundLevel  = ReadInt ("Sound", "SoundLevel",  iniPath);
-    m_MusicLevel  = ReadInt ("Sound", "MusicLevel",  iniPath);
+    m_SoundLevel  = ReadRange("Sound", "SoundLevel", iniPath, 0, 9, -1);
+    m_MusicLevel  = ReadRange("Sound", "MusicLevel", iniPath, 0, 9, -1);
 
     GetPrivateProfileStringA("User", "Username", "", m_Username, sizeof(m_Username), iniPath);
 
@@ -69,15 +95,16 @@ void CUserSettings::Load(const char* iniPath)
         UserFontSettings& f = m_Font;
         f.present = true;
         GetPrivateProfileStringA("Font", "FontName", "Verdana", f.faceName, sizeof(f.faceName), iniPath);
-        f.height    = GetPrivateProfileIntA("Font", "FontHeight",    13, iniPath);
-        if (f.height > 25) f.height = 25;
-        f.bold      = GetPrivateProfileIntA("Font", "FontBold",      0, iniPath);
-        f.italic    = GetPrivateProfileIntA("Font", "FontItalic",    0, iniPath);
-        f.charset   = GetPrivateProfileIntA("Font", "FontCharset",   DEFAULT_CHARSET, iniPath);
-        f.width     = GetPrivateProfileIntA("Font", "FontWidth",     0, iniPath);
-        f.underline = GetPrivateProfileIntA("Font", "FontUnderline", 0, iniPath);
-        f.quality   = GetPrivateProfileIntA("Font", "FontQuality",   NONANTIALIASED_QUALITY, iniPath);
-        f.strikeOut = GetPrivateProfileIntA("Font", "FontStrikeOut", 0, iniPath);
+        int height;
+        if (TryReadInt("Font", "FontHeight", iniPath, height))
+            f.height = height < -25 ? -25 : (height > 25 ? 25 : height);
+        f.bold = ReadFlag("Font", "FontBold", iniPath) > 0;
+        f.italic = ReadFlag("Font", "FontItalic", iniPath) > 0;
+        f.charset   = ReadRange("Font", "FontCharset", iniPath, 0, 255, DEFAULT_CHARSET);
+        f.width     = ReadRange("Font", "FontWidth", iniPath, -25, 25, 0);
+        f.underline = ReadFlag("Font", "FontUnderline", iniPath) > 0;
+        f.quality   = ReadRange("Font", "FontQuality", iniPath, 0, CLEARTYPE_NATURAL_QUALITY, NONANTIALIASED_QUALITY);
+        f.strikeOut = ReadFlag("Font", "FontStrikeOut", iniPath) > 0;
     }
 
     char line[160];

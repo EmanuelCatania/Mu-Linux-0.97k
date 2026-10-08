@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Item/ChaosMixRates.h"
 #include "Net/Network.h"
+#include "UI/UIState.h"
 
 CChaosMixRates gChaosMixRates;
 
@@ -12,7 +13,13 @@ void CChaosMixRates::Reset()
 void CChaosMixRates::Update(int type, const ITEM* items)
 {
     // Esperar el ACK del movimiento: la vista local puede ser provisional.
-    if (DAT_07eaa165 != 0 || DAT_07eaa140 != 0) return;
+    if (!items || !UIState::CanQueryChaosRate()) {
+        if (UIState::IsMixBusy() && m_State == State::Ready) {
+            m_State = State::Idle;
+            m_Attempts = 0;
+        }
+        return;
+    }
     bool changed = (type != m_Type);
     m_Type = type;
     for (int i = 0; i < 32; ++i) {
@@ -30,37 +37,42 @@ void CChaosMixRates::Update(int type, const ITEM* items)
     }
     if (changed) {
         ++m_Revision;
-        m_Valid = false;
-        m_Requested = false;
+        if (m_State != State::Waiting) m_State = State::Idle;
+        m_Attempts = 0;
     }
     // Mismos tipos que ChaosMixRateSend del DLL. Sin consultas por frame.
-    if (!((type >= 1 && type <= 8) || type == 11) || m_Pending || m_Requested) return;
+    if (!Supports(type) || m_State != State::Idle || m_Attempts >= 3) return;
+    const DWORD now = GetTickCount();
+    if (m_Attempts && now - m_LastSent < 1000) return;
     Proto::PMSG_CHAOS_MIX_RATE_RECV packet{};
     packet.header = { 0xC1, sizeof(packet), 0x88 };
     packet.type = type;
-    m_Pending = true;
-    m_Requested = true;
+    m_State = State::Waiting;
+    m_LastSent = now;
+    ++m_Attempts;
     m_PendingRevision = m_Revision;
     gNetwork.SendC1((const BYTE*)&packet, sizeof(packet));
 }
 
 void CChaosMixRates::Receive(const Proto::PMSG_CHAOS_MIX_RATE_SEND& packet)
 {
-    if (!m_Pending) return;
-    m_Pending = false;
-    // La respuesta no trae receta: una sola consulta pendiente, por revisión.
-    if (!ChaosMixOpened || m_PendingRevision != m_Revision) return;
+    if (m_State != State::Waiting) return;
+    m_State = State::Idle;
+    // La respuesta no trae receta: una sola consulta pendiente, por revisiÃ³n.
+    if (!UIState::CanQueryChaosRate() || m_PendingRevision != m_Revision) return;
+    // 0x88 no tiene ID: drenar la respuesta antes de reintentar, aun si venció.
+    if (GetTickCount() - m_LastSent > 5000) return;
     // La UI existente imprime enteros con signo; no aceptar valores imposibles.
     if (packet.rate > 100 || packet.money > 0x7FFFFFFFu) return;
     m_Rate = (int)packet.rate;
     m_Money = (int)packet.money;
-    m_Valid = true;
+    m_State = State::Ready;
 }
 
 bool CChaosMixRates::Get(int& rate, int& money) const
 {
-    if (!m_Valid || !ChaosMixOpened || (int)MixType != m_Type ||
-        DAT_07eaa165 != 0 || DAT_07eaa140 != 0) return false;
+    if (m_State != State::Ready || !UIState::CanQueryChaosRate() ||
+        (int)MixType != m_Type) return false;
     rate = m_Rate;
     money = m_Money;
     return true;
