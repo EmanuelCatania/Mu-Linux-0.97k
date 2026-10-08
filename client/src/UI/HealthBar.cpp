@@ -95,8 +95,8 @@ void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD backgr
 // IDA: Render_GameFrame (0x004BBFB0), después de RenderPartyHP (0x004BCA20).
 void CHealthBar::DrawViewport() const
 {
-    if (SceneFlag != 5 || gUserSettings.GetDeleteHealthBar() || !DAT_07abf5d0) return;
-    const BYTE* base = (const BYTE*)(uintptr_t)DAT_07abf5d0;
+    if (SceneFlag != 5 || gUserSettings.GetDeleteHealthBar() || !CharactersClient) return;
+    const BYTE* base = (const BYTE*)(uintptr_t)CharactersClient;
     for (int i = 0; i < EntityView::Capacity; ++i) {
         const BYTE* entity = base + i * EntityView::Stride;
         const auto* bar = FindEntity(entity);
