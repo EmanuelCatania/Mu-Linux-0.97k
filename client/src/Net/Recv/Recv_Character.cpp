@@ -1256,31 +1256,16 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             Recv_ItemValueList((const BYTE*)Msg, Size);
             break;
         }
-        case 0xE6: {
-            gEventTimer.Receive(Msg, Size);
-            break;
-        }
-        case 0xE2: case 0xE5: {
-            // F3/E2 (barras de vida) y F3/E5 (lista de /move): sólo se vuelcan al log.
-        case 0xE5: {
-            gMoveList.Receive(Msg, Size);
-            break;
-        }
-        case 0xE2: {
-            // F3/E2 (barras de vida): sólo se vuelca al log.
         case 0xE2: {
             gHealthBar.Receive(Msg, Size);
             break;
         }
         case 0xE5: {
-            // F3/E5 (lista de /move): sólo se vuelca al log.
-            // Sus layouts están en Protocol/GameServerProtocol.h.
-            char b[400];
-            int p = wsprintfA(b, "NET:  → F3/%02X DUMP size=%d: ", sub, Size);
-            int dumpN = Size > 64 ? 64 : Size;
-            for (int i = 0; i < dumpN && p < 380; ++i)
-                p += wsprintfA(b + p, "%02X ", Msg[i]);
-            NetLog("%s", b);
+            gMoveList.Receive(Msg, Size);
+            break;
+        }
+        case 0xE6: {
+            gEventTimer.Receive(Msg, Size);
             break;
         }
         case 0x30: {
