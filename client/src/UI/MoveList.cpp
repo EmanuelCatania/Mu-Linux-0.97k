@@ -8,14 +8,29 @@
 CMoveList gMoveList;
 namespace {
 constexpr int RowsPerPage = 30;
-constexpr int Width = 250;
+// DESVIACION: panel compacto de 180 unidades, con columnas y título centrados.
+struct MoveListLayout {
+    static constexpr int X = 5, Y = 5, Width = 180, Margin = 5;
+    static constexpr int ContentX = X + Margin, ContentWidth = Width - 2 * Margin;
+    static constexpr int MapWidth = 55, LevelWidth = 30, ZenWidth = 60, VipWidth = 25;
+    static constexpr int MapX = ContentX, LevelX = MapX + MapWidth;
+    static constexpr int ZenX = LevelX + LevelWidth, VipX = ZenX + ZenWidth;
+    static constexpr int TitleY = 12, HeaderY = 28, RowsY = 40, RowStep = 12;
+    static constexpr int RowHeight = 10, BaseHeight = 60, FooterY = 45;
+    static constexpr int ButtonWidth = ContentWidth / 3;
+    static constexpr int PreviousX = ContentX, CloseX = X + (Width - ButtonWidth) / 2;
+    static constexpr int NextX = ContentX + ContentWidth - ButtonWidth;
+};
+using Layout = MoveListLayout;
 bool Inside(int x, int y, int w, int h)
 {
     return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
 }
-void Text(int x, int y, const char* text)
+void Text(int x, int y, const char* text, int width)
 {
-    RenderText(x, y, const_cast<char*>(text), 0, 0, nullptr);
+    // DLL MoveList.cpp: centrar dentro de cada columna; ancho físico para RenderText.
+    RenderText(x, y, const_cast<char*>(text),
+        (int)(width * gWindow.GetWidth() / 640), 1, nullptr);
 }
 void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
 {
@@ -92,23 +107,23 @@ void CMoveList::UpdateMouse()
     if (Blocked()) { m_Open = false; return; }
     if (!m_Open) return;
     const int rows = VisibleRows();
-    if (!Inside(5, 5, Width, 60 + rows * 12)) return;
+    if (!Inside(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep)) return;
     UIState::CaptureMouseForUI();
     const bool click = MouseLButtonPush != 0;
     MouseLButton = 0;
     MouseLButtonPush = 0;
     MouseLButtonPop = 0;
     if (!click) return;
-    const int footer = 45 + rows * 12;
-    if (Inside(100, footer, 60, 12)) { Toggle(); return; }
+    const int footer = Layout::FooterY + rows * Layout::RowStep;
+    if (Inside(Layout::CloseX, footer, Layout::ButtonWidth, Layout::RowStep)) { Toggle(); return; }
     if (m_Count > RowsPerPage) {
-        if (Inside(10, footer, 65, 12) && m_Page > 0) { --m_Page; return; }
-        if (Inside(180, footer, 70, 12) && (m_Page + 1) * RowsPerPage < m_Count) {
+        if (Inside(Layout::PreviousX, footer, Layout::ButtonWidth, Layout::RowStep) && m_Page > 0) { --m_Page; return; }
+        if (Inside(Layout::NextX, footer, Layout::ButtonWidth, Layout::RowStep) && (m_Page + 1) * RowsPerPage < m_Count) {
             ++m_Page; return;
         }
     }
     for (int i = 0; i < rows; ++i) {
-        if (!Inside(10, 40 + i * 12, Width - 10, 10)) continue;
+        if (!Inside(Layout::ContentX, Layout::RowsY + i * Layout::RowStep, Layout::ContentWidth, Layout::RowHeight)) continue;
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
         if (!map.CanMove) return;
         char command[64];
@@ -127,35 +142,36 @@ void CMoveList::Render()
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     HGDIOBJ font = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
-    Rect(5, 5, Width, 60 + rows * 12, 0, 0, 0, .8f);
+    Rect(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep, 0, 0, 0, .8f);
     m_dwTextColor = 0xFF00FFFF;
-    Text(75, 12, "Teleport Window");
+    Text(Layout::ContentX, Layout::TitleY, "Teleport Window", Layout::ContentWidth);
     m_dwTextColor = 0xFFFFCC66;
-    Text(10, 28, "Map"); Text(126, 28, "Level"); Text(167, 28, "Zen"); Text(227, 28, "VIP");
+    Text(Layout::MapX, Layout::HeaderY, "Map", Layout::MapWidth);
+    Text(Layout::LevelX, Layout::HeaderY, GlobalText[161], Layout::LevelWidth);
+    Text(Layout::ZenX, Layout::HeaderY, GlobalText[100], Layout::ZenWidth);
+    Text(Layout::VipX, Layout::HeaderY, "VIP", Layout::VipWidth);
     m_dwTextColor = 0xFFFFFFFF;
-    if (!m_Count) Text(40, 40, m_Received ? "NO MOVE INFO" : "WAITING FOR MOVE INFO");
+    if (!m_Count) Text(Layout::ContentX, Layout::RowsY, m_Received ? "NO MOVE INFO" : "WAITING FOR MOVE INFO", Layout::ContentWidth);
     for (int i = 0; i < rows; ++i) {
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
-        const int y = 40 + i * 12;
-        if (Inside(10, y, Width - 10, 10)) {
-            Rect(10, y, Width - 10, 10, .8f, .8f, .1f, .6f);
+        const int y = Layout::RowsY + i * Layout::RowStep;
+        if (Inside(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight)) {
+            Rect(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight, .8f, .8f, .1f, .6f);
         }
         m_dwTextColor = map.CanMove ? 0xFFFFFFFF : 0xFF1127A4;
-        // El ancho en RenderText se expresa en píxeles físicos, como en el DLL.
-        RenderText(10, y, const_cast<char*>(map.MapName),
-            (int)(110 * gWindow.GetWidth() / 640), 0, nullptr);
+        Text(Layout::MapX, y, map.MapName, Layout::MapWidth);
         char text[32];
         if (map.MinLevel == -1) strcpy_s(text, "~"); else sprintf_s(text, "%d", map.MinLevel);
-        Text(126, y, text);
-        sprintf_s(text, "%lu", (unsigned long)map.Money); Text(167, y, text);
-        if (map.AccountLevel > 0) Text(230, y, "*");
+        Text(Layout::LevelX, y, text, Layout::LevelWidth);
+        sprintf_s(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
+        if (map.AccountLevel > 0) Text(Layout::VipX, y, "*", Layout::VipWidth);
     }
     m_dwTextColor = 0xFFFFFFFF;
-    const int footer = 45 + rows * 12;
-    Text(110, footer, "Close");
+    const int footer = Layout::FooterY + rows * Layout::RowStep;
+    Text(Layout::CloseX, footer, GlobalText[247], Layout::ButtonWidth);
     if (m_Count > RowsPerPage) {
-        if (m_Page > 0) Text(10, footer, "< Previous");
-        if ((m_Page + 1) * RowsPerPage < m_Count) Text(180, footer, "Next >");
+        if (m_Page > 0) Text(Layout::PreviousX, footer, "< Previous", Layout::ButtonWidth);
+        if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, "Next >", Layout::ButtonWidth);
     }
     SelectObject(gFont.GetTextDC(), font);
     m_dwTextColor = color;
