@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ChaosMixRates.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "structs.h"
@@ -1560,6 +1561,8 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = 80; money = bloodMoney[min((int)DAT_07eaa168 - 1, 6)];
     }
 
+    // DESVIACION DLL: C1:88 manda; las fórmulas anteriores quedan de respaldo.
+    gChaosMixRates.Get(rate, money);
     char text[100], moneyText[32];
     ChaosMixFormatZen(moneyText, sizeof(moneyText), money);
     const int recipeText = mixType == 11 ? 7 : (mixType < 0 ? 0 : mixType);

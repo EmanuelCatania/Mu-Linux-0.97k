@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "UI/HealthBar.h"
 #include "Render/Render.h"
 #include "Render/Camera.h"
 #include "Render/Player_Render.h"
@@ -343,6 +344,7 @@ void Render_GameFrame(void)
 
     Render_CharInfoPanel();         // sub_4BC220 (guild-war/soccer banner)
     Render_HPBars();                // RenderPartyHP @ 0x4BCA20
+    gHealthBar.DrawViewport();       // DLL HealthBar.cpp, después de las barras de party
     AntiTamper_HashMaintain_A();    // RenderNumArrow @ 0x4BF540 (NOT anti-tamper)
     Render_CharPartyInfo();         // RenderEquipedHelperLife @ 0x4BEC00 (was misnamed)
     Render_CharNameTags();          // RenderBrokenItem @ 0x4BE710 (was misnamed)

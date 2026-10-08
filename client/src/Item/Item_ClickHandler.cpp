@@ -46,6 +46,7 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/ChaosMixRates.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -1121,6 +1122,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // usa el enum normal, por lo que conservamos el resultado exacto del
         // reconocedor para el adaptador 0x86.
         MixType = (DWORD)CheckMixRecipe((short*)OffsetMixItems, 8, 4);
+        // DESVIACION DLL ChaosMix.cpp: consultar valores de la receta al server.
+        gChaosMixRates.Update((int)MixType, (const ITEM*)OffsetMixItems);
     }
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight

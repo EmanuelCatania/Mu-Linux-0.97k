@@ -44,6 +44,7 @@ bool CUserSettings::GetResolutionSize(int index, DWORD* width, DWORD* height)
 
 void CUserSettings::Load(const char* iniPath)
 {
+    m_DeleteHealthBar = GetPrivateProfileIntA("Antilag", "DeleteHealthBar", 0, iniPath) != 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);
     m_Borderless  = ReadFlag("Window", "Borderless", iniPath);
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);

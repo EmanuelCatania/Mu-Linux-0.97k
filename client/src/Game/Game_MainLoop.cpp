@@ -9,7 +9,7 @@
 //
 // Frame structure:
 //   1. Net_Recv() poll
-//   2. Busy-wait loop: while (budget > 40ms) { game_logic(); budget -= 40; }
+//   2. Pasos lógicos acumulados de 40 ms; conservan la recuperación tras demoras.
 //   3. GL clear + scene render
 //   4. SwapBuffers
 //   5. Post-render 25fps limiter
@@ -34,6 +34,8 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Net/ServerCharacterStats.h"
+#include "Game/FrameLimiter.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/Game_SceneUpdate.h"
@@ -336,15 +338,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/post_swap");
 
     // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    {
-        DWORD now = GetTickCount();
-        DWORD elapsed = now - renderStart;
-        while (elapsed < 0x28) {
-            now = GetTickCount();
-            elapsed = now - renderStart;
-        }
-        DAT_005616b8 += elapsed;
-    }
+    DAT_005616b8 += gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port
@@ -365,13 +359,13 @@ void __cdecl Game_MainLoop(HDC param_1)
     #endif
 
     // ── LIVECLIENT KEEPALIVE (opcode 0x0E) ────────────────────────────────────
-    // El server MuEmu (CGLiveClientRecv) espera C1/0E cada ~1-3 s después de
+    // El server MuEmu (CGLiveClientRecv) espera C3/0E cada ~1-3 s después de
     // OBJECT_LOGGED; si no llega, manda F1/02 sub=0 (Exit). Se envía también desde
     // char-select y durante la carga del mapa, porque el server cierra el socket
     // si el cliente queda en silencio en esa transición.
     //
-    // Packet: [C1] [0x0B] [0x0E] [TickCount:DWORD] [PhysiSpeed:WORD] [MagicSpeed:WORD]
-    // Total = 11 bytes.
+    // DESVIACION MuEmu: Protocol.h::PMSG_LIVE_CLIENT_RECV, 12 bytes con padding.
+    // HackPacketCheck exige C3; gNetwork recibe el C1 lógico y lo cifra.
     #if 1
     if (SocketClientSocket != 0xffffffff &&
         (SceneFlag == 4 || SceneFlag == 5 || World == 7)) {
@@ -379,14 +373,20 @@ void __cdecl Game_MainLoop(HDC param_1)
         DWORD now = GetTickCount();
         if (now - s_lastLive >= 1000) {
             s_lastLive = now;
-            BYTE pkt[11];
-            pkt[0]  = 0xC1;
-            pkt[1]  = 0x0B;
-            pkt[2]  = 0x0E;
-            *(DWORD*)(pkt + 3) = now;
-            *(WORD*)(pkt + 7)  = 0;
-            *(WORD*)(pkt + 9)  = 0;
-            gNetwork.Send(pkt, 11);
+            Proto::PMSG_LIVE_CLIENT_RECV pkt{};
+            pkt.header = { 0xC1, sizeof(pkt), 0x0E };
+            pkt.TickCount = now;
+            // F3/E1 ya trae la velocidad del server: no descontar bebida dos veces.
+            if (!gServerCharacterStats.GetSpeeds(pkt.PhysiSpeed, pkt.MagicSpeed) && CharacterAttribute) {
+                const BYTE* attr = (const BYTE*)CharacterAttribute;
+                const WORD physical = *(const WORD*)(attr + 0x38);
+                const WORD magic = *(const WORD*)(attr + 0x44);
+                // Respaldo local como CGLiveClientSend del DLL, sin underflow.
+                const WORD drink = (attr[0x28] & 9) ? 20 : 0;
+                pkt.PhysiSpeed = physical >= drink ? physical - drink : 0;
+                pkt.MagicSpeed = magic >= drink ? magic - drink : 0;
+            }
+            gNetwork.Send((const BYTE*)&pkt, sizeof(pkt));
         }
     }
     #endif
