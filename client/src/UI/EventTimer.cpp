@@ -8,16 +8,27 @@
 CEventTimer gEventTimer;
 namespace {
 constexpr int RowsPerPage = 30;
-constexpr int Width = 250;
+// DESVIACION: layout compacto compartido por dibujo y áreas de clic.
+struct EventTimerLayout {
+    static constexpr int X = 5, Y = 5, Width = 180, Margin = 5;
+    static constexpr int ContentX = X + Margin, ContentWidth = Width - 2 * Margin;
+    static constexpr int NameWidth = 110, TimeWidth = 60, TimeX = ContentX + NameWidth;
+    static constexpr int TitleY = 12, HeaderY = 28, RowsY = 40, RowStep = 12;
+    static constexpr int RowHeight = 10, BaseHeight = 60, FooterY = 45;
+    static constexpr int ButtonWidth = ContentWidth / 3;
+    static constexpr int PreviousX = ContentX, CloseX = X + (Width - ButtonWidth) / 2;
+    static constexpr int NextX = ContentX + ContentWidth - ButtonWidth;
+};
+using Layout = EventTimerLayout;
 enum EventState { Blank, Stand, Open, Start }; // server EventTimeManager.h
 bool Inside(int x, int y, int w, int h)
 {
     return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
 }
-void Text(int x, int y, const char* text, int width = 0)
+void Text(int x, int y, const char* text, int width)
 {
     RenderText(x, y, const_cast<char*>(text),
-        (int)(width * gWindow.GetWidth() / 640), 0, nullptr);
+        (int)(width * gWindow.GetWidth() / 640), 1, nullptr);
 }
 void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
 {
@@ -120,15 +131,17 @@ void CEventTimer::UpdateMouse()
     if (Blocked()) { m_Open = false; return; }
     if (!m_Open) return;
     const int rows = VisibleRows();
-    if (!Inside(5, 5, Width, 60 + rows * 12)) return;
+    if (!Inside(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep)) return;
     UIState::CaptureMouseForUI();
     const bool click = MouseLButtonPush != 0;
     MouseLButton = MouseLButtonPush = MouseLButtonPop = 0;
     if (!click) return;
-    const int footer = 45 + rows * 12;
-    if (Inside(100, footer, 60, 12)) { Toggle(); return; }
-    if (Inside(10, footer, 65, 12) && m_Page > 0) --m_Page;
-    else if (Inside(180, footer, 70, 12) && (m_Page + 1) * RowsPerPage < m_Count) ++m_Page;
+    const int footer = Layout::FooterY + rows * Layout::RowStep;
+    const int closeX = m_Count > RowsPerPage ? Layout::CloseX : Layout::ContentX;
+    const int closeWidth = m_Count > RowsPerPage ? Layout::ButtonWidth : Layout::ContentWidth;
+    if (Inside(closeX, footer, closeWidth, Layout::RowStep)) { Toggle(); return; }
+    if (Inside(Layout::PreviousX, footer, Layout::ButtonWidth, Layout::RowStep) && m_Page > 0) --m_Page;
+    else if (Inside(Layout::NextX, footer, Layout::ButtonWidth, Layout::RowStep) && (m_Page + 1) * RowsPerPage < m_Count) ++m_Page;
 }
 
 void CEventTimer::Render()
@@ -138,30 +151,36 @@ void CEventTimer::Render()
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     HGDIOBJ font = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
-    Rect(5, 5, Width, 60 + rows * 12, 0, 0, 0, .8f);
+    Rect(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep, 0, 0, 0, .8f);
     m_dwTextColor = 0xFF1ACCFF;
-    Text(85, 12, "Event Timer");
+    Text(Layout::ContentX, Layout::TitleY, "Event Timer", Layout::ContentWidth);
     m_dwTextColor = 0xFFFFB27F;
-    Text(10, 28, "EVENT"); Text(180, 28, "TIME");
+    Text(Layout::ContentX, Layout::HeaderY, "EVENT", Layout::NameWidth);
+    Text(Layout::TimeX, Layout::HeaderY, "TIME", Layout::TimeWidth);
     m_dwTextColor = 0xFFFFFFFF;
-    if (!m_Count) Text(40, 40, m_Received ? "NO EVENT INFO" : "WAITING FOR EVENT INFO");
+    if (!m_Count) Text(Layout::ContentX, Layout::RowsY, m_Received ? "NO EVENT INFO" : "WAITING FOR EVENT INFO", Layout::ContentWidth);
     for (int i = 0; i < rows; ++i) {
         const auto& event = m_Events[m_Page * RowsPerPage + i];
-        const int y = 40 + i * 12;
-        if (Inside(10, y, Width - 10, 10)) Rect(10, y, Width - 10, 10, .8f, .8f, .1f, .6f);
+        const int y = Layout::RowsY + i * Layout::RowStep;
+        if (Inside(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight)) Rect(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight, .8f, .8f, .1f, .6f);
         m_dwTextColor = 0xFFFFFFFF;
-        Text(10, y, event.name, 160);
+        Text(Layout::ContentX, y, event.name, Layout::NameWidth);
         m_dwTextColor = TimeColor(event);
         char time[32];
         // DLL EventTimer.cpp: mostrar el tiempo recibido, sin adelantar estados localmente.
         FormatTime(event, time, sizeof(time));
-        Text(180, y, time, 70);
+        Text(Layout::TimeX, y, time, Layout::TimeWidth);
     }
     m_dwTextColor = 0xFFFFFFFF;
-    const int footer = 45 + rows * 12;
-    Text(110, footer, "Close");
-    if (m_Page > 0) Text(10, footer, "< Previous");
-    if ((m_Page + 1) * RowsPerPage < m_Count) Text(180, footer, "Next >");
+    const int footer = Layout::FooterY + rows * Layout::RowStep;
+    const int closeX = m_Count > RowsPerPage ? Layout::CloseX : Layout::ContentX;
+    const int closeWidth = m_Count > RowsPerPage ? Layout::ButtonWidth : Layout::ContentWidth;
+    // Cierre rojo como en el DLL; dejar lugar a los botones si hay paginación.
+    const bool closeHover = Inside(closeX, footer, closeWidth, Layout::RowStep);
+    Rect(closeX, footer, closeWidth, Layout::RowStep, closeHover ? 1.0f : .8f, 0, 0, 1);
+    Text(closeX, footer, GlobalText[247], closeWidth);
+    if (m_Page > 0) Text(Layout::PreviousX, footer, "< Previous", Layout::ButtonWidth);
+    if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, "Next >", Layout::ButtonWidth);
     SelectObject(gFont.GetTextDC(), font);
     m_dwTextColor = color;
     m_dwBackColor = back;

@@ -115,7 +115,9 @@ void CMoveList::UpdateMouse()
     MouseLButtonPop = 0;
     if (!click) return;
     const int footer = Layout::FooterY + rows * Layout::RowStep;
-    if (Inside(Layout::CloseX, footer, Layout::ButtonWidth, Layout::RowStep)) { Toggle(); return; }
+    const int closeX = m_Count > RowsPerPage ? Layout::CloseX : Layout::ContentX;
+    const int closeWidth = m_Count > RowsPerPage ? Layout::ButtonWidth : Layout::ContentWidth;
+    if (Inside(closeX, footer, closeWidth, Layout::RowStep)) { Toggle(); return; }
     if (m_Count > RowsPerPage) {
         if (Inside(Layout::PreviousX, footer, Layout::ButtonWidth, Layout::RowStep) && m_Page > 0) { --m_Page; return; }
         if (Inside(Layout::NextX, footer, Layout::ButtonWidth, Layout::RowStep) && (m_Page + 1) * RowsPerPage < m_Count) {
@@ -168,7 +170,12 @@ void CMoveList::Render()
     }
     m_dwTextColor = 0xFFFFFFFF;
     const int footer = Layout::FooterY + rows * Layout::RowStep;
-    Text(Layout::CloseX, footer, GlobalText[247], Layout::ButtonWidth);
+    const int closeX = m_Count > RowsPerPage ? Layout::CloseX : Layout::ContentX;
+    const int closeWidth = m_Count > RowsPerPage ? Layout::ButtonWidth : Layout::ContentWidth;
+    // Cierre rojo como en el DLL; dejar lugar a los botones si hay paginación.
+    const bool closeHover = Inside(closeX, footer, closeWidth, Layout::RowStep);
+    Rect(closeX, footer, closeWidth, Layout::RowStep, closeHover ? 1.0f : .8f, 0, 0, 1);
+    Text(closeX, footer, GlobalText[247], closeWidth);
     if (m_Count > RowsPerPage) {
         if (m_Page > 0) Text(Layout::PreviousX, footer, "< Previous", Layout::ButtonWidth);
         if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, "Next >", Layout::ButtonWidth);
