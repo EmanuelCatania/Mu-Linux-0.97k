@@ -556,4 +556,13 @@ static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, TickCount) == 4, "C3:0E TickCount"
 static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, PhysiSpeed) == 8, "C3:0E PhysiSpeed");
 static_assert(offsetof(PMSG_LIVE_CLIENT_RECV, MagicSpeed) == 10, "C3:0E MagicSpeed");
 
+// Protocol.h del server: PMSG_LIVE_CLIENT_SEND (C1:0E), eco con padding Win32.
+struct PMSG_LIVE_CLIENT_SEND
+{
+    PBMSG_HEAD header;
+    DWORD TickCount;
+};
+static_assert(sizeof(PMSG_LIVE_CLIENT_SEND) == 8, "C1:0E respuesta");
+static_assert(offsetof(PMSG_LIVE_CLIENT_SEND, TickCount) == 4, "C1:0E eco");
+
 } // namespace Proto

@@ -36,6 +36,7 @@
 #include "stdafx.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/FrameLimiter.h"
+#include "Net/Ping.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/Game_SceneUpdate.h"
@@ -386,6 +387,7 @@ void __cdecl Game_MainLoop(HDC param_1)
                 pkt.PhysiSpeed = physical >= drink ? physical - drink : 0;
                 pkt.MagicSpeed = magic >= drink ? magic - drink : 0;
             }
+            gPing.RecordSend(pkt.TickCount);
             gNetwork.Send((const BYTE*)&pkt, sizeof(pkt));
         }
     }

@@ -39,7 +39,6 @@ void Recv_JoinServer(const BYTE* Msg)
     gServerCharacterStats.Reset();
     gHealthBar.Clear();
     if (Msg[4] == 1) {
-        gPing.SetServer((SOCKET)SocketClientSocket);
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
         // HeroKey (el que usa ClearCharacters vía OpenWorld) tiene que llevar el Key
         // real: con 0, ClearCharacters(0) conservaría las entidades con Key==0
@@ -373,8 +372,10 @@ void NetRecv_F4(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 // 0x0E
 void NetRecv_0E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
-    // LiveClient ACK (server confirma keepalive)
-    NetLog("NET:  → 0x0E LiveClient ACK");
+    if (!Msg || Size != sizeof(Proto::PMSG_LIVE_CLIENT_SEND)) return;
+    Proto::PMSG_LIVE_CLIENT_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
+    gPing.Receive(packet.TickCount);
 }
 
 // 0x03
