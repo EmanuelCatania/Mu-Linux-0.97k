@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "UI/MoveList.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
@@ -43,7 +44,7 @@ int __cdecl FUN_004c3dd0(int param_1) {
     return ((param_1 < 100000) - 1 & (int)0xFF81EC01) - (int)0x692301;
 }
 
-// RenderInformation @ 0x0051E200 (58 bytes) — render all HUD info layers
+// IDA: RenderInformation (0x0051E200), 58 bytes — render all HUD info layers
 void __cdecl RenderInformation(void) {
     RenderErrorMessage(); // RenderErrorMessage / stats panel
     Scene_MapTick(); // Scene_MapTick
@@ -53,6 +54,8 @@ void __cdecl RenderInformation(void) {
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
+    // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): dibujar el menú M.
+    gMoveList.Render();
     Cursor_Render(); // RenderCursor
     RenderInfomation3D(); // RenderInfomation3D
 }

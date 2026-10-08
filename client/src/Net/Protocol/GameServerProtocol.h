@@ -452,7 +452,7 @@ static_assert(offsetof(ITEM_VALUE_INFO, BuyValue) == 8, "F3:E4 BuyValue");
 static_assert(offsetof(ITEM_VALUE_INFO, SellValue) == 12, "F3:E4 SellValue");
 
 // ── C2:F3:E5 ─ lista de /move ── Move.h:34 / Move.h:41 ────────────────────────
-// El cliente hoy sólo lo vuelca al log.
+// Consumido por UI/MoveList.cpp; la autorización final corresponde al server.
 struct PMSG_MOVE_LIST_SEND
 {
     PSWMSG_HEAD header;     // C2:F3:E5
@@ -478,6 +478,10 @@ struct MOVE_LIST_INFO
 static_assert(sizeof(MOVE_LIST_INFO) == 48, "F3:E5 entrada");
 static_assert(offsetof(MOVE_LIST_INFO, CanMove) == 33, "F3:E5 CanMove");
 static_assert(offsetof(MOVE_LIST_INFO, MinLevel) == 34, "F3:E5 MinLevel");
+static_assert(offsetof(MOVE_LIST_INFO, MaxLevel) == 36, "F3:E5 MaxLevel");
+static_assert(offsetof(MOVE_LIST_INFO, MinReset) == 38, "F3:E5 MinReset");
+static_assert(offsetof(MOVE_LIST_INFO, MaxReset) == 40, "F3:E5 MaxReset");
+static_assert(offsetof(MOVE_LIST_INFO, AccountLevel) == 42, "F3:E5 AccountLevel");
 static_assert(offsetof(MOVE_LIST_INFO, Money) == 44, "F3:E5 Money");
 
 // ── C2:F3:E6 ─ horarios de eventos ── Protocol.h:601 / Protocol.h:607 ─────────

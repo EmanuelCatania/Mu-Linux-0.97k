@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/MoveList.h"
 #include "Net/Ping.h"
 #include "UI/HealthBar.h"
 #include "Net/Recv/NetRecv.h"
@@ -31,6 +32,7 @@ void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 // ---------------------------------------------------------------------------
 void Recv_JoinServer(const BYTE* Msg)
 {
+    gMoveList.Clear();
     gPing.Reset();
     gServerCharacterStats.Reset();
     gHealthBar.Clear();
@@ -131,6 +133,7 @@ void Recv_LoginResult(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void Recv_LogOut(const BYTE* Msg)
 {
+    gMoveList.Clear();
     gServerCharacterStats.Reset();
     gHealthBar.Clear();
     BYTE sub = Msg[4];
