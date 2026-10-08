@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -761,7 +762,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         const char* name = (const char*)(ent + 0x1C1);
         if (ent[0] != 0 && name[0]) {
             const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
-            if (kind == 2) {
+            if (kind == 2 && !gHealthBar.DrawSelected((const BYTE*)ent)) {
                 // Monstruo: el nombre va arriba del todo, centrado.
                 //
                 // Fix del DLL: IDA pone el fondo en rojo oscuro (0xFF000064; el formato es
@@ -783,7 +784,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
                 RenderCenteredText(GetScreenWidth() / 2, 10, name);
                 SetBackgroundTextColor = savedBack;
                 DAT_00559c78 = savedText;
-            } else {
+            } else if (kind != 2) {
                 // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
                 // limitaba a kind == 1).
                 CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
