@@ -71,7 +71,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;iphlpapi.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;iphlpapi.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -122,12 +122,17 @@
     <ClInclude Include="src\Sound\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Net\Network.h" />
+    <ClInclude Include="src\Net\Ping.h" />
+    <ClInclude Include="src\Net\ServerCharacterStats.h" />
+    <ClInclude Include="src\Item\ChaosMixRates.h" />
+    <ClInclude Include="src\UI\HealthBar.h" />
     <ClInclude Include="src\Net\Recv\NetRecv.h" />
     <ClInclude Include="src\Combat\Combat.h" />
     <ClInclude Include="src\Combat\Skills.h" />
     <ClInclude Include="src\Game\Game_CharSelectTick.h" />
     <ClInclude Include="src\Game\Game_EnterWorldTick.h" />
     <ClInclude Include="src\Game\Game_MainLoop.h" />
+    <ClInclude Include="src\Game\FrameLimiter.h" />
     <ClInclude Include="src\Game\Game_SceneUpdate.h" />
     <ClInclude Include="src\Game\Movement.h" />
     <ClInclude Include="src\Input\Input.h" />
@@ -191,6 +196,10 @@
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Core\WndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
+    <ClCompile Include="src\Net\Ping.cpp" />
+    <ClCompile Include="src\Net\ServerCharacterStats.cpp" />
+    <ClCompile Include="src\Item\ChaosMixRates.cpp" />
+    <ClCompile Include="src\UI\HealthBar.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Account.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Character.cpp" />
     <ClCompile Include="src\Net\Recv\Recv_Chat.cpp" />
@@ -232,6 +241,7 @@
     <ClCompile Include="src\Render\Entity_Render.cpp" />
     <ClCompile Include="src\Net\Crypto.cpp" />
     <ClCompile Include="src\Game\Timer.cpp" />
+    <ClCompile Include="src\Game\FrameLimiter.cpp" />
     <ClCompile Include="src\Sound\Music.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Tile.cpp" />
     <ClCompile Include="src\Render\GL_2D.cpp" />

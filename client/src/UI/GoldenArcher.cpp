@@ -19,6 +19,7 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "Net/Protocol/GameServerProtocol.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -894,15 +895,16 @@ static void GA_Custom_Check(void)
 
 static void GA_Custom_RecvOpen(BYTE* Msg, int Size)
 {
-    if (Size < 6) return;
+    if (Size < (int)sizeof(Proto::PMSG_NPC_GOLDEN_ARCHER_SEND)) return;
+    Proto::PMSG_NPC_GOLDEN_ARCHER_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
     CloseInventoryRelatedWindows();
     InventoryOpened = 0;
     CharacterOpened = 0;
-    const BYTE type = Msg[3];
+    const BYTE type = packet.Type;
     GA_OpenType = type + 1;
-    GA_ItemCount = *(short*)(Msg + 4);
-    memset(s_LuckyNumber, 0, sizeof(s_LuckyNumber));
-    if (Size >= 19) memcpy(s_LuckyNumber, Msg + 6, 13);
+    GA_ItemCount = packet.Count;
+    memcpy(s_LuckyNumber, packet.LuckyNumber, sizeof(packet.LuckyNumber));
     s_LuckyNumber[12] = 0;
     s_CurrentPage = 1;
     s_TotalPages = 2;
@@ -911,19 +913,25 @@ static void GA_Custom_RecvOpen(BYTE* Msg, int Size)
 
 static void GA_Custom_RecvList(BYTE* Msg, int Size)
 {
+    if (Size < (int)sizeof(Proto::PMSG_GOLDEN_ARCHER_LIST_SEND)) return;
+    Proto::PMSG_GOLDEN_ARCHER_LIST_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
+    const int count = packet.count;
+    if (count < 0 || (size_t)count >
+        (Size - sizeof(packet)) / sizeof(Proto::LUCKY_NUMBER_INFO)) return;
+    // GoldenArcher.h: validar la lista completa antes de modificar la ventana.
     CloseInventoryRelatedWindows();
     InventoryOpened = 0;
     CharacterOpened = 0;
     GA_OpenType = GA_IF_BINGO;
-    // PSWMSG_HEAD (C2, 5 bytes) + int count alineado a 4 -> datos desde +12.
-    const int count = (Size >= 12) ? *(int*)(Msg + 8) : 0;
     s_CurrentPage = 1;
     s_TotalPages = (BYTE)(count / 10 + 1);
     s_MyLuckyNumbers.clear();
-    for (int i = 0; i < count && 12 + (i + 1) * 13 <= Size; ++i) {
-        char number[14] = {};
-        memcpy(number, Msg + 12 + i * 13, 13);
-        s_MyLuckyNumbers.push_back(number);
+    for (int i = 0; i < count; ++i) {
+        Proto::LUCKY_NUMBER_INFO entry;
+        memcpy(&entry, Msg + sizeof(packet) + i * sizeof(entry), sizeof(entry));
+        entry.LuckyNumber[sizeof(entry.LuckyNumber) - 1] = 0;
+        s_MyLuckyNumbers.push_back(entry.LuckyNumber);
     }
 }
 

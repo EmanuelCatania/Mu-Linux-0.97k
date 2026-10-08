@@ -100,6 +100,10 @@ set(MU_SOURCES
     src/Game/MapManager.cpp
     src/Core/WndProc.cpp
     src/Net/Network.cpp
+    src/Net/Ping.cpp
+    src/Net/ServerCharacterStats.cpp
+    src/Item/ChaosMixRates.cpp
+    src/UI/HealthBar.cpp
     src/Net/Recv/Recv_Account.cpp
     src/Net/Recv/Recv_Character.cpp
     src/Net/Recv/Recv_Chat.cpp
@@ -141,6 +145,7 @@ set(MU_SOURCES
     src/Render/Entity_Render.cpp
     src/Net/Crypto.cpp
     src/Game/Timer.cpp
+    src/Game/FrameLimiter.cpp
     src/Sound/Music.cpp
     src/Terrain/Terrain_Tile.cpp
     src/Render/GL_2D.cpp
@@ -369,12 +374,17 @@ set(MU_HEADERS
     src/Sound/SoundManager.h
     src/Game/MapManager.h
     src/Net/Network.h
+    src/Net/Ping.h
+    src/Net/ServerCharacterStats.h
+    src/Item/ChaosMixRates.h
+    src/UI/HealthBar.h
     src/Net/Recv/NetRecv.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h
     src/Game/Game_EnterWorldTick.h
     src/Game/Game_MainLoop.h
+    src/Game/FrameLimiter.h
     src/Game/Game_SceneUpdate.h
     src/Game/Movement.h
     src/Input/Input.h
@@ -498,6 +508,7 @@ target_link_libraries(mu97k PRIVATE
     glu32
     winmm
     ws2_32
+    iphlpapi
     version
     dxguid
     dsound

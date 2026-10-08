@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Net/ServerCharacterStats.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
@@ -2110,6 +2111,8 @@ void __cdecl BuxConvert_0(int buf, int len) {
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
 int __cdecl Stats_CalcMagicDmgRange(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     unsigned short energy = *(unsigned short*)(param_1 + 26);
     unsigned short *minPtr = (unsigned short*)(param_1 + 70);
     unsigned short *maxPtr = (unsigned short*)(param_1 + 72);
@@ -2185,6 +2188,8 @@ void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* p
 //   this[29] = 5*this[7] + (this[10] >> 2) + (this[11] * 3) / 2
 // donde this es un puntero WORD; los offsets +14, +20, +22 y +58 van en bytes.
 int __cdecl Stats_CalcAddStrength(short *param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     int v = 5 * (unsigned short)param_1[7]
           + ((unsigned short)param_1[10] >> 2)
           + ((unsigned short)param_1[11] * 3) / 2;
@@ -2205,6 +2210,8 @@ int __cdecl Stats_CalcAddStrength(short *param_1) {
 //   Flag de estado (this+40 bit 0): +20 a los dos.
 //   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
 int __cdecl CalculateAttackSpeed(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2296,6 +2303,8 @@ int __cdecl CalculateAttackSpeed(int param_1) {
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
 int __cdecl Stats_CalcDefense(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2347,6 +2356,8 @@ int __cdecl Stats_CalcDefense(int param_1) {
 // Then iterates 7 equipment slots checking durability-scaled rate bonus.
 // Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
 int __cdecl Stats_CalcDefenseRate(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
