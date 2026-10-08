@@ -375,6 +375,7 @@ set(MU_HEADERS
     src/Entity/EntityView.h
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
+    src/Item/Item_ServerValue.h
     src/Core/Window.h
     src/Core/Font.h
     src/UI/EventTimer.h

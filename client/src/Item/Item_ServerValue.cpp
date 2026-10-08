@@ -19,6 +19,8 @@
 #include "globals.h"
 #include "functions.h"
 #include <vector>
+#include <climits>
+#include "Item/Item_ServerValue.h"
 #include "Net/Protocol/GameServerProtocol.h"
 
 int __cdecl ItemStack_GetMaxStack(int index, int level);
@@ -36,20 +38,40 @@ const unsigned long long kMaxItemPrice = 2000000000ULL;   // MAX_ITEM_PRICE
 
 inline int ItemLevelOf(const ITEM* ip) { return (ip->Level >> 3) & 0xF; }
 
-// ItemStack.h / ItemValue.h del server: no publicar tablas truncadas.
+bool ValidEntry(const ItemStackInfo& entry)
+{
+    return entry.ItemIndex >= 0 && entry.ItemIndex < 1024 &&
+        entry.Level >= -1 && entry.Level <= 15 && entry.MaxStack >= 0 && entry.MaxStack <= 255;
+}
+
+bool ValidEntry(const ItemValueInfo& entry)
+{
+    // -1 conserva la fórmula por defecto; otros negativos no son precios.
+    return entry.Index >= 0 && entry.Index < 1024 && entry.Level >= -1 && entry.Level <= 15 &&
+        entry.BuyValue >= -1 && entry.SellValue >= -1;
+}
+
+unsigned int DisplayPrice(unsigned long long value)
+{
+    return value > INT_MAX ? INT_MAX : (unsigned int)value;
+}
+
+// ItemStack.h / ItemValue.h del server: no publicar tablas truncadas o inválidas.
 template <typename Header, typename T>
 void ReadList(std::vector<T>& out, const BYTE* msg, int size)
 {
-    if (size < sizeof(Header)) return;
+    if (!msg || size < (int)sizeof(Header)) return;
     Header header;
     memcpy(&header, msg, sizeof(header));
-    if (header.count > (size - sizeof(Header)) / sizeof(T)) return;
-    out.clear();
+    if (header.count > ((size_t)size - sizeof(Header)) / sizeof(T)) return;
+    // Validar antes de reemplazar: un registro inválido conserva la tabla anterior.
     for (int n = 0; n < header.count; ++n) {
         T info;
         memcpy(&info, msg + sizeof(Header) + sizeof(T) * n, sizeof(info));
-        out.push_back(info);
+        if (!ValidEntry(info)) return;
     }
+    out.resize(header.count);
+    if (header.count) memcpy(out.data(), msg + sizeof(Header), header.count * sizeof(T));
 }
 
 // CItem::myCalcMaxDurability del DLL.
@@ -83,7 +105,7 @@ bool FindValue(const ITEM* ip, bool sell, unsigned long long* value)
         if (it.Index != ip->Type) continue;
         if (it.Level != -1 && it.Level != level) continue;
         const int v = sell ? it.SellValue : it.BuyValue;
-        if (v == -1) continue;
+        if (v < 0) continue;
         if (ItemStack_GetMaxStack(it.Index, level) == 0
             || it.Index == 4 * 32 + 7 || it.Index == 4 * 32 + 15) {
             *value = (unsigned long long)v;
@@ -96,6 +118,12 @@ bool FindValue(const ITEM* ip, bool sell, unsigned long long* value)
 }
 
 } // namespace
+
+void ItemServerValue_ResetSession()
+{
+    s_ItemStack.clear();
+    s_ItemValue.clear();
+}
 
 // F3/E3: lista de apilado (DLL CItemStack::GCItemStackListRecv).
 void Recv_ItemStackList(const BYTE* Msg, int Size)
@@ -121,10 +149,11 @@ int __cdecl ItemStack_GetMaxStack(int index, int level)
 
 // CItem::ItemValue del DLL.  goldType 1 = precio de venta; cualquier otro valor
 // devuelve el de compra (el 2 que pasa la reparacion incluido).
+// IDA: ItemValue (0x0047C690); fórmula MuEmu y límites del resultado int.
 int __cdecl ItemValue_MuEmu(void* item, int goldType)
 {
     const ITEM* ip = (const ITEM*)item;
-    if (!ip || ip->Type == -1) return 0;
+    if (!ip || ip->Type == -1 || ip->SpecialNum > MAX_SPECIAL_OPTION) return 0;
     const unsigned int attrBase = ItemAttribute_Base();
     if (!attrBase || ip->Type < 0 || ip->Type >= 1024) return 0;
     const ITEM_ATTRIBUTE* info = (const ITEM_ATTRIBUTE*)(uintptr_t)(attrBase + ip->Type * sizeof(ITEM_ATTRIBUTE));
@@ -134,6 +163,7 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
     const bool luck      = ((ip->Level >> 2) & 1) != 0;
     const int  addOption = (ip->Level & 3) + ((ip->Option1 & 64) >> 4);
 
+    if (info->Money < 0) return 0;
     if (info->Money != 0) {
         unsigned int buy = info->Money;
         buy = buy >= 100 ? buy / 10 * 10 : buy;
@@ -153,7 +183,7 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
             price *= 1ULL << itemLevel;
             price *= ip->Durability;
             if (price > kMaxItemPrice) price = kMaxItemPrice;
-            unsigned int buy = (unsigned int)price;
+            unsigned int buy = DisplayPrice(price);
             buy = buy >= 10 ? buy / 10 * 10 : buy;
             unsigned int sell = (unsigned int)(price / 3);
             sell = sell >= 10 ? sell / 10 * 10 : sell;
@@ -206,16 +236,18 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
         }
     }
 
-    unsigned int buy = (unsigned int)price;
+    unsigned int buy = DisplayPrice(price);
     buy = buy >= 100 ? buy / 10 * 10 : buy;
     buy = buy >= 1000 ? buy / 100 * 100 : buy;
 
     const float baseDur = (float)CalcMaxDurability_MuEmu(ip, info, itemLevel);
     if (!FindValue(ip, true, &price)) price = price / 3;
 
-    unsigned int sell = (unsigned int)price;
-    if (ip->Part <= 11 /* EQUIPMENT_WEAPON_RIGHT..EQUIPMENT_RING_LEFT */ && baseDur > 0.0f)
-        sell = sell - (unsigned int)((sell * 0.6) * (1 - (ip->Durability / baseDur)));
+    unsigned int sell = DisplayPrice(price);
+    if (ip->Part <= 11 /* EQUIPMENT_WEAPON_RIGHT..EQUIPMENT_RING_LEFT */ && baseDur > 0.0f) {
+        const float durability = ip->Durability > baseDur ? baseDur : (float)ip->Durability;
+        sell = sell - (unsigned int)((sell * 0.6) * (1 - durability / baseDur));
+    }
     sell = sell >= 100 ? sell / 10 * 10 : sell;
     sell = sell >= 1000 ? sell / 100 * 100 : sell;
 
@@ -223,9 +255,15 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
 }
 
 // CItem::ConvertRepairGold del DLL.  Gold llega como precio de compra.
+// IDA: ConvertRepairGold (0x004C3EF0).
 unsigned int __cdecl ConvertRepairGold_MuEmu(int Gold, int Durability, int MaxDurability, short Type, char* Text)
 {
     (void)Type;
+    // DESVIACION: rechazar valores inválidos antes de sqrt y de convertir a unsigned.
+    if (Gold < 0 || MaxDurability <= 0 || Durability < 0 || Durability > MaxDurability) {
+        if (Text) strcpy(Text, "0");
+        return 0;
+    }
     const float dur     = (float)Durability;
     const float baseDur = (float)MaxDurability;
 
@@ -239,7 +277,7 @@ unsigned int __cdecl ConvertRepairGold_MuEmu(int Gold, int Durability, int MaxDu
     float value = 3.0f * sq1 * sq2 * (1.0f - (baseDur > 0.0f ? dur / baseDur : 1.0f)) + 1.0f;
     if (dur <= 0) value *= 1.4f;
 
-    int money = (int)(DAT_07eaa138 == 1 ? value * 2.5f : value);   // RepairEnable
+    int money = (int)(RepairEnable == 1 ? value * 2.5f : value);   // RepairEnable
     money = money >= 100 ? money / 10 * 10 : money;
     money = money >= 1000 ? money / 100 * 100 : money;
 
