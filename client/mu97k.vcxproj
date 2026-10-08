@@ -128,6 +128,7 @@
     <ClInclude Include="src\Game\Game_CharSelectTick.h" />
     <ClInclude Include="src\Game\Game_EnterWorldTick.h" />
     <ClInclude Include="src\Game\Game_MainLoop.h" />
+    <ClInclude Include="src\Game\FrameLimiter.h" />
     <ClInclude Include="src\Game\Game_SceneUpdate.h" />
     <ClInclude Include="src\Game\Movement.h" />
     <ClInclude Include="src\Input\Input.h" />
@@ -233,6 +234,7 @@
     <ClCompile Include="src\Render\Entity_Render.cpp" />
     <ClCompile Include="src\Net\Crypto.cpp" />
     <ClCompile Include="src\Game\Timer.cpp" />
+    <ClCompile Include="src\Game\FrameLimiter.cpp" />
     <ClCompile Include="src\Sound\Music.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Tile.cpp" />
     <ClCompile Include="src\Render\GL_2D.cpp" />

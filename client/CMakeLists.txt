@@ -142,6 +142,7 @@ set(MU_SOURCES
     src/Render/Entity_Render.cpp
     src/Net/Crypto.cpp
     src/Game/Timer.cpp
+    src/Game/FrameLimiter.cpp
     src/Sound/Music.cpp
     src/Terrain/Terrain_Tile.cpp
     src/Render/GL_2D.cpp
@@ -375,6 +376,7 @@ set(MU_HEADERS
     src/Game/Game_CharSelectTick.h
     src/Game/Game_EnterWorldTick.h
     src/Game/Game_MainLoop.h
+    src/Game/FrameLimiter.h
     src/Game/Game_SceneUpdate.h
     src/Game/Movement.h
     src/Input/Input.h
