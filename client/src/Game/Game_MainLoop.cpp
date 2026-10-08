@@ -69,7 +69,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     char   nameBuf[256];
     char   tickBuf[100];
     int    renderFlag = 0;
-    DWORD  renderStart;
+    CFrameLimiter::StartTime renderStart;
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -305,7 +305,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
-    renderStart = GetTickCount();
+    renderStart = gFrameLimiter.Start();
     renderFlag  = 0;
 
     // ── SCENE RENDER ──────────────────────────────────────────────────────────

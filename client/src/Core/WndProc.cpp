@@ -6,6 +6,7 @@
 
 #include "stdafx.h"
 #include "Net/Ping.h"
+#include "Game/FrameLimiter.h"
 
 void OpenGL_Release(void);        // WinMain.cpp
 void GameGuard_TickCheck(void);   // WinMain.cpp
@@ -67,6 +68,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_DESTROY:
         gPing.Reset();
+        gFrameLimiter.Shutdown();
         // IDA WndProc (0x4149D0) case WM_DESTROY: marca el cierre, corta la
         // conexión, libera los 420 buffers de sonido y llama a KillGLWindow
         // (OpenGL_Release: DirectSound, contexto OpenGL y modo de video). Sin
