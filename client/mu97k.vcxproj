@@ -121,6 +121,7 @@
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\Item_ServerValue.h" />
+    <ClInclude Include="src\UI\GoldenArcher.h" />
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
