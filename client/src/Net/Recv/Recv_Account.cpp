@@ -4,7 +4,11 @@
 
 #include "stdafx.h"
 #include "UI/EventTimer.h"
+#include "UI/MoveList.h"
+#include "Net/Ping.h"
+#include "UI/HealthBar.h"
 #include "Net/Recv/NetRecv.h"
+#include "Net/ServerCharacterStats.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
 // no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
@@ -30,7 +34,12 @@ void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 void Recv_JoinServer(const BYTE* Msg)
 {
     gEventTimer.Clear();
+    gMoveList.Clear();
+    gPing.Reset();
+    gServerCharacterStats.Reset();
+    gHealthBar.Clear();
     if (Msg[4] == 1) {
+        gPing.SetServer((SOCKET)SocketClientSocket);
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
         // HeroKey (el que usa ClearCharacters vía OpenWorld) tiene que llevar el Key
         // real: con 0, ClearCharacters(0) conservaría las entidades con Key==0
@@ -127,6 +136,9 @@ void Recv_LoginResult(const BYTE* Msg)
 void Recv_LogOut(const BYTE* Msg)
 {
     gEventTimer.Clear();
+    gMoveList.Clear();
+    gServerCharacterStats.Reset();
+    gHealthBar.Clear();
     BYTE sub = Msg[4];
     NetLog("NET:    F1/02 LogOut sub=%d gs=%d", sub, (int)SceneFlag);
 

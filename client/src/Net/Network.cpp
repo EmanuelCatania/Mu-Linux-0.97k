@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Net/Ping.h"
 #include "Net/Network.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
@@ -56,6 +57,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             RequestServerList();
     }
     if (evt & 0x20) { // FD_CLOSE
+        gPing.Reset();
         // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):
         //   UIChatLogWindow_AddText(strID, GlobalText[3], 1);
         //   CWsctlc::Close(&SocketClient);
@@ -81,6 +83,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
 
 void CNetwork::BeginConnectServerSession()
 {
+    gPing.Reset();
     m_ConnectServerMode = true;
     m_ServerListRequested = false;
 }

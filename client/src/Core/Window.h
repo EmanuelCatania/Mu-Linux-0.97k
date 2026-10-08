@@ -32,6 +32,9 @@ public:
     // Idempotente y llamable desde un filtro de excepciones.
     void RestoreDisplay();
 
+    // Título del DLL: personaje, nivel, ping y FPS durante el juego.
+    void UpdateTitle();
+
     // Tamaño del área de dibujo y escala respecto del layout lógico 640x480.
     void SetResolution(DWORD width, DWORD height);
     void SetWindowMode(bool windowMode, bool borderless);
@@ -49,6 +52,9 @@ public:
 
 private:
     void ApplyFullscreen();
+
+    DWORD m_LastTitleUpdate = 0;
+    int m_TitleScene = -1;
 
     HWND      m_hWnd  = NULL;
     HINSTANCE m_hInst = NULL;

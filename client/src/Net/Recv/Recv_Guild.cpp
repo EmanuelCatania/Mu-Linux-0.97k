@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/Protocol/GameServerProtocol.h"
 #include "Net/Recv/NetRecv.h"
 
 int  s_GuildRecordKey[kGuildMarkRecordCount] = { 0 };
@@ -130,10 +131,14 @@ extern "C" void GuildWar_ResetClientState()
 
 void ReceiveDeclareWar97k(const BYTE* packet, int size)
 {
-    if (size < 12) return;
-    GuildWar_CopyOpponentName(packet);
+    if (size < (int)sizeof(Proto::PMSG_GUILD_WAR_DECLARE_SEND)) return;
+    Proto::PMSG_GUILD_WAR_DECLARE_SEND message;
+    memcpy(&message, packet, sizeof(message));
+    memcpy(GuildWarName, message.GuildName, sizeof(message.GuildName));
+    GuildWarName[sizeof(message.GuildName)] = 0;
+    // DESVIACION DLL: GCGuildWarDeclareRecv asigna ambos tipos, sin heredar soccer.
+    EnableSoccer = (message.type == 1);
     SetErrorMessage(128);
-    if (packet[11] == 1) EnableSoccer = 1;
 }
 
 void ReceiveDeclareWarResult97k(const BYTE* packet, int size)

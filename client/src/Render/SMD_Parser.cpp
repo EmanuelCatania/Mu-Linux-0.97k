@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -271,6 +272,7 @@ void __cdecl DeleteObjects(void) {
 // + 0x1158, fin del array Butterfles); acá el array vive en otra dirección,
 // así que se usa DAT_083a1218 + 0x1158 (end-pointer real).
 void __cdecl ClearCharacters(int param_1) {
+    gHealthBar.Clear();
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);

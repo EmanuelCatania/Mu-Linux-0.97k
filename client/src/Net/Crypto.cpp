@@ -15,6 +15,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Net/Ping.h"
 
 void __fastcall FUN_00401af0(void*);
 void  __fastcall SpringNode_Ctor(void *node);
@@ -1370,6 +1371,7 @@ void __cdecl InitGuildWar(void) {
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
 void __cdecl CWsctlc_Close(int ctx) {
+    gPing.Reset();
     SocketClientIsGame = 0; // g_bGameServerConnected
     closesocket(*(SOCKET *)(ctx + 8));
     *(int *)(ctx + 8) = -1; // INVALID_SOCKET
