@@ -26,13 +26,6 @@ void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
     // DLL MoveList.cpp: el texto no debe heredar el color del fondo o del hover.
     glColor4f(1, 1, 1, 1);
 }
-void Range(char* out, size_t capacity, const char* label, short low, short high)
-{
-    char minimum[16], maximum[16];
-    if (low == -1) strcpy_s(minimum, "--"); else sprintf_s(minimum, "%d", low);
-    if (high == -1) strcpy_s(maximum, "--"); else sprintf_s(maximum, "%d", high);
-    sprintf_s(out, capacity, "%s: %s / %s (min/max)", label, minimum, maximum);
-}
 }
 
 bool CMoveList::Receive(const BYTE* packet, int size)
@@ -141,12 +134,10 @@ void CMoveList::Render()
     Text(10, 28, "Map"); Text(126, 28, "Level"); Text(167, 28, "Zen"); Text(227, 28, "VIP");
     m_dwTextColor = 0xFFFFFFFF;
     if (!m_Count) Text(40, 40, m_Received ? "NO MOVE INFO" : "WAITING FOR MOVE INFO");
-    int hovered = -1;
     for (int i = 0; i < rows; ++i) {
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
         const int y = 40 + i * 12;
         if (Inside(10, y, Width - 10, 10)) {
-            hovered = m_Page * RowsPerPage + i;
             Rect(10, y, Width - 10, 10, .8f, .8f, .1f, .6f);
         }
         m_dwTextColor = map.CanMove ? 0xFFFFFFFF : 0xFF1127A4;
@@ -165,20 +156,6 @@ void CMoveList::Render()
     if (m_Count > RowsPerPage) {
         if (m_Page > 0) Text(10, footer, "< Previous");
         if ((m_Page + 1) * RowsPerPage < m_Count) Text(180, footer, "Next >");
-    }
-    if (hovered >= 0) {
-        const auto& map = m_Maps[hovered];
-        const int y = 40 + (hovered % RowsPerPage) * 12;
-        const int top = y > 340 ? 340 : y;
-        Rect(260, top, 280, 88, 0, 0, 0, .9f);
-        char text[128];
-        Text(265, top + 3, map.MapName);
-        Range(text, sizeof(text), "Level", map.MinLevel, map.MaxLevel); Text(265, top + 17, text);
-        Range(text, sizeof(text), "Reset", map.MinReset, map.MaxReset); Text(265, top + 31, text);
-        sprintf_s(text, "Account: %d   Zen: %lu", map.AccountLevel, (unsigned long)map.Money);
-        Text(265, top + 45, text);
-        Text(265, top + 59, m_PKLimitFree ? "PK limit: free" : "PK limit: active");
-        Text(265, top + 73, "Requirements checked by server");
     }
     SelectObject(gFont.GetTextDC(), font);
     m_dwTextColor = color;
