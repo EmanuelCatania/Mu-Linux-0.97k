@@ -345,6 +345,7 @@ set(MU_SOURCES
     src/UI/UI_Tooltip.cpp
     src/UI/Chat_Gestures.cpp
     src/UI/GoldenArcher.cpp
+    src/UI/EventTimer.cpp
     src/UI/MoveList.cpp
     src/UI/Chat_InputTick.cpp
     src/UI/Chat_Send.cpp
@@ -370,6 +371,7 @@ set(MU_HEADERS
     src/Config/UserSettings.h
     src/Core/Window.h
     src/Core/Font.h
+    src/UI/EventTimer.h
     src/UI/MoveList.h
     src/Sound/SoundManager.h
     src/Game/MapManager.h

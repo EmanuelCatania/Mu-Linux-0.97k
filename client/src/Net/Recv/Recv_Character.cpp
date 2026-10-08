@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/EventTimer.h"
 #include "UI/MoveList.h"
 #include "UI/HealthBar.h"
 #include "Net/Recv/NetRecv.h"
@@ -1255,6 +1256,12 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             Recv_ItemValueList((const BYTE*)Msg, Size);
             break;
         }
+        case 0xE6: {
+            gEventTimer.Receive(Msg, Size);
+            break;
+        }
+        case 0xE2: case 0xE5: {
+            // F3/E2 (barras de vida) y F3/E5 (lista de /move): sólo se vuelcan al log.
         case 0xE5: {
             gMoveList.Receive(Msg, Size);
             break;

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "UI/EventTimer.h"
 #include "UI/MoveList.h"
 #include "globals.h"
 #include "functions.h"
@@ -437,6 +438,8 @@ static void HUD_HotkeyTick(void)
     int kI = PressKey(0x49); // 'I'  Inventory
     int kG = PressKey(0x47); // 'G'  Guild
     int kP = PressKey(0x50); // 'P'  Party
+    // DESVIACION (DLL Controller.cpp): H abre los horarios recibidos del server.
+    if (PressKey('H')) gEventTimer.Toggle();
     // DESVIACION (DLL Controller.cpp): menú M con destinos recibidos del server.
     if (PressKey('M')) gMoveList.Toggle();
 
