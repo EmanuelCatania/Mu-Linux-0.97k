@@ -14,8 +14,8 @@
 //   [Font]    FontName FontHeight FontBold FontItalic FontCharset FontWidth
 //             FontUnderline FontQuality FontStrikeOut  (ver UserFontSettings)
 //
-// Las secciones [Antilag], [MiniMap] y [Language] del Config.ini del DLL se van
-// a leer cuando se integren esos sistemas.
+// [Antilag] DeleteHealthBar=0|1 oculta las barras de monstruos.
+// El resto de [Antilag], [MiniMap] y [Language] se integra con sus sistemas.
 
 #include "stdafx.h"
 
@@ -63,6 +63,7 @@ public:
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
     int GetMusicLevel()  const { return m_MusicLevel; }
+    bool GetDeleteHealthBar() const { return m_DeleteHealthBar; }
     const char* GetUsername() const { return m_Username; }
     const UserFontSettings& GetFont() const { return m_Font; }
 
@@ -77,6 +78,7 @@ private:
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;
     int  m_MusicLevel  = -1;
+    bool m_DeleteHealthBar = false;
     char m_Username[11] = {};
     UserFontSettings m_Font;
 };

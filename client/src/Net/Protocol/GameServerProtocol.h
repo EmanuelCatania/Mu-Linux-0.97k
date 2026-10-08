@@ -387,7 +387,7 @@ static_assert(offsetof(PMSG_NEW_CHARACTER_CALC_SEND, ViewDefense) == 64, "F3:E1 
 static_assert(offsetof(PMSG_NEW_CHARACTER_CALC_SEND, ViewDefenseSuccessRate) == 68, "F3:E1 ViewDefenseSuccessRate");
 
 // ── C2:F3:E2 ─ barras de vida ── Protocol.h:588 / Protocol.h:594 ──────────────
-// El cliente hoy sólo lo vuelca al log.
+// UI/HealthBar.cpp valida y consume la lista completa.
 struct PMSG_HEALTH_BAR_SEND
 {
     PSWMSG_HEAD header;     // C2:F3:E2
@@ -403,6 +403,9 @@ struct PMSG_HEALTH_BAR
     BYTE rateHP;
 };
 static_assert(sizeof(PMSG_HEALTH_BAR) == 4, "F3:E2 entrada");
+static_assert(offsetof(PMSG_HEALTH_BAR, index) == 0, "F3:E2 index");
+static_assert(offsetof(PMSG_HEALTH_BAR, type) == 2, "F3:E2 type");
+static_assert(offsetof(PMSG_HEALTH_BAR, rateHP) == 3, "F3:E2 rateHP");
 
 // ── C2:F3:E3 ─ máximo de apilado ── ItemStack.h:9 / ItemStack.h:15 ────────────
 // Item/Item_ServerValue.cpp Recv_ItemStackList (encabezado de 6, entradas de 12).
