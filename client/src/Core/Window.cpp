@@ -3,6 +3,8 @@
 #include "stdafx.h"
 #include "Net/Ping.h"
 #include "Core/Window.h"
+#include "Entity/CharacterAttributeView.h"
+#include "Local/ClientText.h"
 #include "resource.h"
 
 extern "C" void DbgLogPublic(const char* msg);
@@ -19,13 +21,13 @@ void CWindow::UpdateTitle()
     m_LastTitleUpdate = now;
     char title[160] = "Mu Online";
     if (SceneFlag == 5 && CharacterAttribute) {
-        const BYTE* attr = (const BYTE*)CharacterAttribute;
+        const CharacterAttributeView attributes((void*)(uintptr_t)CharacterAttribute);
         DWORD milliseconds;
         char ping[32] = "--";
         if (gPing.GetMilliseconds(milliseconds))
             sprintf_s(ping, "%lu ms", milliseconds);
-        sprintf_s(title, "%.10s || Level: %u || PING: %s || FPS: %.0f",
-                  (const char*)attr, (unsigned int)*(const WORD*)(attr + 0x0E), ping, FPS);
+        sprintf_s(title, gClientText.Get(ClientTextId::WindowTitle),
+                  attributes.Name(), GlobalText[161], (unsigned int)attributes.Level(), ping, FPS);
     }
     SetWindowTextA(m_hWnd, title);
 }

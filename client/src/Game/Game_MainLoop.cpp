@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/FrameLimiter.h"
 #include "Game/MapManager.h"
@@ -378,11 +379,11 @@ void __cdecl Game_MainLoop(HDC param_1)
             pkt.TickCount = now;
             // F3/E1 ya trae la velocidad del server: no descontar bebida dos veces.
             if (!gServerCharacterStats.GetSpeeds(pkt.PhysiSpeed, pkt.MagicSpeed) && CharacterAttribute) {
-                const BYTE* attr = (const BYTE*)CharacterAttribute;
-                const WORD physical = *(const WORD*)(attr + 0x38);
-                const WORD magic = *(const WORD*)(attr + 0x44);
+                const CharacterAttributeView attributes((void*)(uintptr_t)CharacterAttribute);
+                const WORD physical = attributes.PhysicalSpeed();
+                const WORD magic = attributes.MagicSpeed();
                 // Respaldo local como CGLiveClientSend del DLL, sin underflow.
-                const WORD drink = (attr[0x28] & 9) ? 20 : 0;
+                const WORD drink = (attributes.Effects() & 9) ? 20 : 0;
                 pkt.PhysiSpeed = physical >= drink ? physical - drink : 0;
                 pkt.MagicSpeed = magic >= drink ? magic - drink : 0;
             }

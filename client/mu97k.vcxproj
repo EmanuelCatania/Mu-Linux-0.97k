@@ -117,6 +117,9 @@
     <ClInclude Include="src\Config\ServerConfig.h" />
     <ClInclude Include="src\Config\UserSettings.h" />
     <ClInclude Include="src\UI\UIState.h" />
+    <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\CharacterAttributeView.h" />
+    <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
@@ -193,6 +196,7 @@
     <ClCompile Include="src\Net\Net_Process.cpp" />
     <ClCompile Include="src\Config\Config_Load.cpp" />
     <ClCompile Include="src\UI\UIState.cpp" />
+    <ClCompile Include="src\Local\ClientText.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\Core\Font.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
