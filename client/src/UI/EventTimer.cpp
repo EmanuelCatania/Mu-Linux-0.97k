@@ -3,6 +3,7 @@
 #include "UI/MoveList.h"
 #include "Core/Font.h"
 #include "Core/Window.h"
+#include "UI/UIState.h"
 
 CEventTimer gEventTimer;
 namespace {
@@ -96,13 +97,7 @@ void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, si
 
 bool CEventTimer::Blocked() const
 {
-    // DLL Defines.h: CheckInputInterfaces / CheckRightInterfaces.
-    return SceneFlag != 5 || InputEnable || GuildInputEnable || GoldInputEnable ||
-        DAT_07e11d71 || DAT_083a7c24 || DAT_07eaa165 || DAT_07eaa117 || DAT_07eaa116 ||
-        DAT_07eaa114 || DAT_07eaa115 || DAT_07eaa118 || DAT_07eaa119 ||
-        DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa11c || DAT_07eaa124 ||
-        _g_bEventChipDialogEnable || ServerDivisionOpened ||
-        (g_csQuest && *(BYTE*)((uintptr_t)g_csQuest + 0x1c87f));
+    return !UIState::CanOpenInformationalPanel();
 }
 
 int CEventTimer::VisibleRows() const
@@ -126,7 +121,7 @@ void CEventTimer::UpdateMouse()
     if (!m_Open) return;
     const int rows = VisibleRows();
     if (!Inside(5, 5, Width, 60 + rows * 12)) return;
-    DAT_07d78094 = 1; // MouseOnWindow: el clic del panel no llega al mundo.
+    UIState::CaptureMouseForUI();
     const bool click = MouseLButtonPush != 0;
     MouseLButton = MouseLButtonPush = MouseLButtonPop = 0;
     if (!click) return;
