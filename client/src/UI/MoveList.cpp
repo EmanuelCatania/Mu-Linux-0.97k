@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "UI/MoveList.h"
+#include "UI/EventTimer.h"
 #include "Core/Font.h"
 #include "Core/Window.h"
 
@@ -92,6 +93,8 @@ int CMoveList::VisibleRows() const
 void CMoveList::Toggle()
 {
     if (Blocked()) { m_Open = false; return; }
+    // DLL: los paneles M y H comparten espacio y se cierran mutuamente.
+    if (!m_Open) gEventTimer.Close();
     m_Open = !m_Open;
     PlayBuffer(25, 0, 0);
 }
