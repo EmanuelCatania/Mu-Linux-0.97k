@@ -30,6 +30,7 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 
 void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,
@@ -384,7 +385,8 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         //
         // ItemLevelFx ya es el ItemLevel: al principio se hizo
         // `param_5 = ((int)param_5 >> 3) & 0xf;` — no volver a shiftear.
-        uint ItemLevel = (uint)ItemLevelFx;
+        // DESVIACION (antilag propio): sin el brillo de los +N.
+        uint ItemLevel = gUserSettings.GetAntilag(ANTILAG_GLOW) ? 0u : (uint)ItemLevelFx;
 
         bool didExtraRender = false;
         if (ItemLevel > 2 && effectType != 863) {

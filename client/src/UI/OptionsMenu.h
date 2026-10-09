@@ -17,16 +17,24 @@ public:
     bool UpdateMouse();
 
 private:
-    enum Page { PAGE_MAIN, PAGE_GENERAL, PAGE_COUNT };
+    enum Page { PAGE_MAIN, PAGE_GENERAL, PAGE_ANTILAG, PAGE_COUNT,
+                // Submenús de Antilag (no figuran en la lista principal).
+                PAGE_ANTILAG_WORLD, PAGE_ANTILAG_EFFECTS, PAGE_ANTILAG_INTERFACE };
 
     void RenderMain();
     bool UpdateMain();
     void RenderGeneral();
     bool UpdateGeneral();
+    void RenderAntilag();
+    bool UpdateAntilag();
+    void RenderAntilagGroup();
+    bool UpdateAntilagGroup();
 
+    bool UpdateToggle(int y, bool& clicked) const;
     void RenderBox(float x, float y, float width, float height, bool title = false) const;
     void RenderLabel(float x, float y, float width, const char* text) const;
     void RenderToggle(float y, const char* label, bool value) const;
+    void RenderButton(float y, const char* label, bool title = false) const;
     void RenderLevelBar(float y, const char* label, bool enabled, int level) const;
     void RenderLanguage(float y) const;
     void RenderMusicControls(float y) const;

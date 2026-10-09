@@ -7,6 +7,7 @@
 // +0 flag activo, +4 modo de blend), más los timers de avisos y de chat.
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 
 // Render_DrawSpritePool = RenderSprites. Recorre el effect pool
 // y por cada slot activo:
@@ -60,6 +61,8 @@ void __cdecl Render_DrawSpritePool(void)
 void __cdecl Render_DrawSprite(int param_1)
 
 {
+    // DESVIACION (DLL Antilag, ret en 0x00479670): sin efectos estáticos.
+    if (gUserSettings.GetAntilag(ANTILAG_STATIC_EFFECTS)) return;
   float fVar1;
   int iVar2;
 

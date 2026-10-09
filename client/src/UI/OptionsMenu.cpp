@@ -103,10 +103,27 @@ void COptionsMenu::RenderLabel(float x, float y, float width, const char* text) 
 
 void COptionsMenu::RenderToggle(float y, const char* label, bool value) const
 {
-    RenderBox((float)Layout::X, y, (float)Layout::Width, (float)Layout::Height);
     char text[96];
     sprintf_s(text, "%s: %s", label, value ? "On" : "Off");   // "On"/"Off" como el 0.97k
-    RenderLabel((float)Layout::X, y, (float)Layout::Width, text);
+    RenderButton(y, text);
+}
+
+void COptionsMenu::RenderButton(float y, const char* label, bool title) const
+{
+    RenderBox((float)Layout::X, y, (float)Layout::Width, (float)Layout::Height, title);
+    RenderLabel((float)Layout::X, y, (float)Layout::Width, label);
+}
+
+// true si el mouse está sobre la fila; `clicked` indica si se pulsó.
+bool COptionsMenu::UpdateToggle(int y, bool& clicked) const
+{
+    clicked = false;
+    if (!Inside(Layout::X, y, Layout::Width, Layout::Height)) return false;
+    if (Clicked(Layout::X, y, Layout::Width, Layout::Height)) {
+        ConsumeClick();
+        clicked = true;
+    }
+    return true;
 }
 
 void COptionsMenu::RenderLevelBar(float y, const char* label, bool enabled, int level) const
@@ -200,6 +217,10 @@ void COptionsMenu::Render()
     m_dwBackColor = 0;
     switch (m_Page) {
     case PAGE_GENERAL: RenderGeneral(); break;
+    case PAGE_ANTILAG: RenderAntilag(); break;
+    case PAGE_ANTILAG_WORLD:
+    case PAGE_ANTILAG_EFFECTS:
+    case PAGE_ANTILAG_INTERFACE: RenderAntilagGroup(); break;
     default:           RenderMain(); break;
     }
     m_dwTextColor = color;
@@ -210,13 +231,17 @@ bool COptionsMenu::UpdateMouse()
 {
     switch (m_Page) {
     case PAGE_GENERAL: return UpdateGeneral();
+    case PAGE_ANTILAG: return UpdateAntilag();
+    case PAGE_ANTILAG_WORLD:
+    case PAGE_ANTILAG_EFFECTS:
+    case PAGE_ANTILAG_INTERFACE: return UpdateAntilagGroup();
     default:           return UpdateMain();
     }
 }
 
 // ── Lista principal ─────────────────────────────────────────────────────────
-// Título, una caja por página y Cerrar (GlobalText 385, 919, 388).
-namespace { const int MainPageText[] = { 919 }; }
+// Título, una caja por página y Cerrar (GlobalText 385, 919/926, 388).
+namespace { const int MainPageText[] = { 919, 926 }; }
 
 void COptionsMenu::RenderMain()
 {
@@ -266,6 +291,7 @@ void COptionsMenu::RenderGeneral()
     RenderBox((float)Layout::X, (float)RowY(row), (float)Layout::Width, (float)Layout::Height, true);
     RenderLabel((float)Layout::X, (float)RowY(row++), (float)Layout::Width, GlobalText[919]);
     if (LanguageRowVisible()) RenderLanguage((float)RowY(row++));
+    RenderToggle((float)RowY(row++), GlobalText[936], gUserSettings.GetPvPWithoutControl());
     RenderToggle((float)RowY(row++), GlobalText[386], m_bAutoAttack != 0);
     RenderToggle((float)RowY(row++), GlobalText[387], m_bWhisperSound != 0);
     RenderLevelBar((float)RowY(row++), GlobalText[922], g_EnableSound != 0, gSound.GetSoundLevel());
@@ -289,6 +315,11 @@ bool COptionsMenu::UpdateGeneral()
             if (Clicked(x + width - height, y, height, height)) { ConsumeClick(); ChangeLanguage(language + 1); }
             return true;
         }
+    }
+    bool clicked;
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetPvPWithoutControl(!gUserSettings.GetPvPWithoutControl());
+        return true;
     }
     int y = RowY(row++);
     if (Inside(x, y, width, height)) {
@@ -337,4 +368,85 @@ bool COptionsMenu::UpdateGeneral()
         return true;
     }
     return false;
+}
+
+// ── Antilag ─────────────────────────────────────────────────────────────────
+// DESVIACION: el DLL apila una caja por opción.  Con las dos propias (clima y
+// brillo) se agrupan en submenús por lo que ocultan.
+namespace {
+struct AntilagGroup {
+    ClientTextId title;
+    eAntilag options[5];
+    int count;
+};
+const AntilagGroup AntilagGroups[] = {
+    { ClientTextId::AntilagWorld,
+      { ANTILAG_SHADOWS, ANTILAG_OBJECTS, ANTILAG_FLOOR, ANTILAG_WEATHER }, 4 },
+    { ClientTextId::AntilagEffects,
+      { ANTILAG_SKILLS, ANTILAG_STATIC_EFFECTS, ANTILAG_DYNAMIC_EFFECTS, ANTILAG_GLOW,
+        ANTILAG_WINGS }, 5 },
+    { ClientTextId::AntilagInterface,
+      { ANTILAG_INTERFACE, ANTILAG_HEALTH_BAR }, 2 },
+};
+constexpr int AntilagGroupCount = sizeof(AntilagGroups) / sizeof(AntilagGroups[0]);
+
+// Las del DLL tienen texto en Text.bmd (927-935); clima y brillo son propias.
+const char* AntilagLabel(int option)
+{
+    if (option == ANTILAG_WEATHER) return gClientText.Get(ClientTextId::AntilagWeather);
+    if (option == ANTILAG_GLOW) return gClientText.Get(ClientTextId::AntilagGlow);
+    return GlobalText[927 + option];
+}
+}
+
+void COptionsMenu::RenderAntilag()
+{
+    int row = 0;
+    RenderButton((float)RowY(row++), GlobalText[926], true);
+    char text[96];
+    for (const auto& group : AntilagGroups) {
+        sprintf_s(text, "%s >", gClientText.Get(group.title));
+        RenderButton((float)RowY(row++), text);
+    }
+    RenderButton((float)RowY(row), GlobalText[925]);
+}
+
+bool COptionsMenu::UpdateAntilag()
+{
+    int row = 1;
+    bool clicked;
+    for (int i = 0; i < AntilagGroupCount; ++i) {
+        if (!UpdateToggle(RowY(row++), clicked)) continue;
+        if (clicked) m_Page = (Page)(PAGE_ANTILAG_WORLD + i);
+        return true;
+    }
+    if (!UpdateToggle(RowY(row), clicked)) return false;
+    if (clicked) m_Page = PAGE_MAIN;
+    return true;
+}
+
+void COptionsMenu::RenderAntilagGroup()
+{
+    const AntilagGroup& group = AntilagGroups[m_Page - PAGE_ANTILAG_WORLD];
+    int row = 0;
+    RenderButton((float)RowY(row++), gClientText.Get(group.title), true);
+    for (int i = 0; i < group.count; ++i)
+        RenderToggle((float)RowY(row++), AntilagLabel(group.options[i]),
+                     gUserSettings.GetAntilag(group.options[i]));
+    RenderButton((float)RowY(row), GlobalText[925]);
+}
+
+bool COptionsMenu::UpdateAntilagGroup()
+{
+    const AntilagGroup& group = AntilagGroups[m_Page - PAGE_ANTILAG_WORLD];
+    int row = 1;
+    bool clicked;
+    for (int i = 0; i < group.count; ++i) {
+        if (!UpdateToggle(RowY(row++), clicked)) continue;
+        if (clicked) gUserSettings.SetAntilag(group.options[i], !gUserSettings.GetAntilag(group.options[i]));
+        return true;
+    }
+    if (!UpdateToggle(RowY(row), clicked)) return false;
+    if (clicked) m_Page = PAGE_ANTILAG;   // Volver: a la página de Antilag
+    return true;
 }

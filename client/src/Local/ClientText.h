@@ -6,7 +6,8 @@ enum class ClientTextId {
     WindowTitle, ChaosRatePending, ChaosCostPending,
     EventTitle, EventWaiting, EventEmpty, EventDisabled, EventOpen, EventStarted, EventDays,
     MoveTitle, MoveMap, MoveVip, MoveWaiting, MoveEmpty, PagePrevious, PageNext,
-    LanguageDefault,
+    LanguageDefault, AntilagWeather, AntilagGlow,
+    AntilagWorld, AntilagEffects, AntilagInterface,
     Count
 };
 class CClientText {

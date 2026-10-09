@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 
 // GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
@@ -658,8 +659,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             }
         }
 
-        // Tertiary weapon slot (param_1[0xa8] != -1)
-        if (*(short *)(param_1 + 0xa8) != -1) {
+        // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
+        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
@@ -1159,7 +1160,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
 
         // ── 4. Sin full set (v230==false) → no glow, exit ─────────────────
-        if (!v230) {
+        // DESVIACION (antilag propio): sin el brillo del set completo.
+        if (!v230 || gUserSettings.GetAntilag(ANTILAG_GLOW)) {
             return puVar13;
         }
 

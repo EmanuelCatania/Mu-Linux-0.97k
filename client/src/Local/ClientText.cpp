@@ -27,7 +27,12 @@ const char* const English[] = {
     "No destinations",
     "< Previous",
     "Next >",
-    "Default"
+    "Default",
+    "Delete Weather",
+    "Delete Glow",
+    "World",
+    "Effects",
+    "Interface"
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -47,7 +52,12 @@ const char* const Spanish[] = {
     "Sin destinos",
     "< Anterior",
     "Siguiente >",
-    "Predeterminado"
+    "Predeterminado",
+    "Eliminar Clima",
+    "Eliminar Brillo",
+    "Mundo",
+    "Efectos",
+    "Interfaz"
 };
 const char* const Portuguese[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -67,7 +77,12 @@ const char* const Portuguese[] = {
     "Sem destinos",
     "< Anterior",
     "Pr\xF3" "ximo >",
-    "Padr\xE3" "o"
+    "Padr\xE3" "o",
+    "Remover Clima",
+    "Remover Brilho",
+    "Mundo",
+    "Efeitos",
+    "Interface"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");

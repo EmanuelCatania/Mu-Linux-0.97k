@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 #include "structs.h"
 #include "globals.h"
@@ -2471,6 +2472,10 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum
 //     (#2, 0x004F97E0), RenderTerrainTile RenderTerrainTile (#3, 0x004F8480).
 void __cdecl RenderTerrain(char EditFlag) {
+    // DESVIACION (DLL Antilag, ret en 0x004F9AC0): sin piso.  El DLL cortaba
+    // también la pasada de picking (EditFlag=1, Player_InputTick) y el click al
+    // suelo dejaba de mover al personaje; acá sólo se omite el dibujo.
+    if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
     FUN_004f98c0(
         (int)(*(float*)(Hero + 16) * 0.039999999f),   // hero X * 0.04 → tile coord
         (int)(*(float*)(Hero + 20) * 0.039999999f),   // hero Y * 0.04
@@ -3299,6 +3304,7 @@ void __cdecl MoveCharacter(int p1)
             }
             else if ((EnableGuildWar && *(BYTE*)(selSlot + 745) == 2)
                   || (!EnableGuildWar && *(unsigned char*)(selSlot + 746) >= 6u)
+                  || gUserSettings.GetPvPWithoutControl()   // DESVIACION (DLL, 0x0044B532)
                   || ((unsigned short)GetAsyncKeyState(17) >> 8))
             {
                 *(short*)(o + 134) = *(short*)(selSlot + 476);

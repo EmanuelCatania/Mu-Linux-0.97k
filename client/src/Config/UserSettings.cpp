@@ -56,6 +56,13 @@ int ReadFlag(const char* section, const char* key, const char* iniPath)
     return value < 0 ? -1 : (value != 0);
 }
 
+const char* const AntilagKeys[MAX_ANTILAG] = {
+    "DeleteShadows", "DeleteObjects", "DeleteFloor", "DeleteSkills",
+    "DeleteStaticEffects", "DeleteDynamicEffects", "DeleteWings",
+    "DeleteHealthBar", "DeleteInterface", "DeleteWeather", "DeleteGlow"
+};
+const char* AntilagKey(int option) { return AntilagKeys[option]; }
+
 } // namespace
 
 bool CUserSettings::GetResolutionSize(int index, DWORD* width, DWORD* height)
@@ -71,7 +78,8 @@ void CUserSettings::Load(const char* iniPath)
     // Una segunda carga no debe conservar la fuente ni preferencias ausentes.
     *this = CUserSettings{};
     strcpy_s(m_IniPath, iniPath);
-    m_DeleteHealthBar = ReadFlag("Antilag", "DeleteHealthBar", iniPath) > 0;
+    for (int i = 0; i < MAX_ANTILAG; ++i)
+        m_Antilag[i] = ReadFlag("Antilag", AntilagKey(i), iniPath) > 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);
     m_Borderless  = ReadFlag("Window", "Borderless", iniPath);
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);
@@ -165,4 +173,11 @@ void CUserSettings::SetMusicLevel(int level)
 {
     m_MusicLevel = level;
     SaveInt("Sound", "MusicLevel", level);
+}
+
+void CUserSettings::SetAntilag(eAntilag option, bool enabled)
+{
+    if (option < 0 || option >= MAX_ANTILAG) return;
+    m_Antilag[option] = enabled;
+    SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
 }
