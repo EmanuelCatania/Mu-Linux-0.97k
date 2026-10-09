@@ -39,6 +39,10 @@ public:
     void SetResolution(DWORD width, DWORD height);
     void SetWindowMode(bool windowMode, bool borderless);
 
+    // DESVIACION (DLL Window.cpp ChangeWindowState): cambia modo y tamaño con
+    // la ventana ya creada, desde el menú de opciones.
+    void ChangeMode(bool windowMode, bool borderless, DWORD width, DWORD height);
+
     HWND      GetHwnd()        const { return m_hWnd; }
     HINSTANCE GetInstance()    const { return m_hInst; }
     HDC       GetHdc()         const { return m_hDC; }

@@ -56,6 +56,13 @@ int ReadFlag(const char* section, const char* key, const char* iniPath)
     return value < 0 ? -1 : (value != 0);
 }
 
+const char* const AntilagKeys[MAX_ANTILAG] = {
+    "DeleteShadows", "DeleteObjects", "DeleteFloor", "DeleteSkills",
+    "DeleteStaticEffects", "DeleteDynamicEffects", "DeleteWings",
+    "DeleteHealthBar", "DeleteInterface", "DeleteWeather", "DeleteGlow"
+};
+const char* AntilagKey(int option) { return AntilagKeys[option]; }
+
 } // namespace
 
 bool CUserSettings::GetResolutionSize(int index, DWORD* width, DWORD* height)
@@ -70,7 +77,9 @@ void CUserSettings::Load(const char* iniPath)
 {
     // Una segunda carga no debe conservar la fuente ni preferencias ausentes.
     *this = CUserSettings{};
-    m_DeleteHealthBar = ReadFlag("Antilag", "DeleteHealthBar", iniPath) > 0;
+    strcpy_s(m_IniPath, iniPath);
+    for (int i = 0; i < MAX_ANTILAG; ++i)
+        m_Antilag[i] = ReadFlag("Antilag", AntilagKey(i), iniPath) > 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);
     m_Borderless  = ReadFlag("Window", "Borderless", iniPath);
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);
@@ -135,4 +144,79 @@ const char* CUserSettings::GetLanguageSuffix(int language)
 {
     static const char* const Suffix[MAX_USER_LANGUAGE] = { "Eng", "Spn", "Por" };
     return language >= 0 && language < MAX_USER_LANGUAGE ? Suffix[language] : nullptr;
+}
+
+void CUserSettings::SaveInt(const char* section, const char* key, int value) const
+{
+    if (!m_IniPath[0]) return;
+    char text[16];
+    wsprintfA(text, "%d", value);
+    WritePrivateProfileStringA(section, key, text, m_IniPath);
+}
+
+void CUserSettings::SetLanguage(int language)
+{
+    if (language < USER_LANG_DEFAULT || language >= MAX_USER_LANGUAGE) return;
+    m_Language = language;
+    // Sin selección se borra la clave: vuelven los archivos del 0.97k.
+    if (m_IniPath[0])
+        WritePrivateProfileStringA("Language", "LangSelection", GetLanguageSuffix(language), m_IniPath);
+}
+
+void CUserSettings::SetSoundLevel(int level)
+{
+    m_SoundLevel = level;
+    SaveInt("Sound", "SoundLevel", level);
+}
+
+void CUserSettings::SetMusicLevel(int level)
+{
+    m_MusicLevel = level;
+    SaveInt("Sound", "MusicLevel", level);
+}
+
+void CUserSettings::SetAntilag(eAntilag option, bool enabled)
+{
+    if (option < 0 || option >= MAX_ANTILAG) return;
+    m_Antilag[option] = enabled;
+    SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
+}
+
+void CUserSettings::SetWindow(bool windowMode, bool borderless, int resolution)
+{
+    m_WindowMode = windowMode ? 1 : 0;
+    m_Borderless = borderless ? 1 : 0;
+    m_Resolution = resolution;
+    SaveInt("Window", "WindowMode", m_WindowMode);
+    SaveInt("Window", "Borderless", m_Borderless);
+    if (resolution >= 0) SaveInt("Window", "Resolution", resolution);
+}
+
+int CUserSettings::FindResolution(DWORD width, DWORD height)
+{
+    for (int i = 0; i < MAX_USER_RESOLUTION; ++i)
+        if (kResolutions[i].width == width && kResolutions[i].height == height) return i;
+    return -1;
+}
+
+void CUserSettings::SetFont(const UserFontSettings& font)
+{
+    m_Font = font;
+    m_Font.present = true;
+    if (!m_IniPath[0]) return;
+    WritePrivateProfileStringA("Font", "FontName", m_Font.faceName, m_IniPath);
+    SaveInt("Font", "FontHeight", m_Font.height);
+    SaveInt("Font", "FontBold", m_Font.bold);
+    SaveInt("Font", "FontItalic", m_Font.italic);
+    SaveInt("Font", "FontCharset", m_Font.charset);
+    SaveInt("Font", "FontWidth", m_Font.width);
+    SaveInt("Font", "FontUnderline", m_Font.underline);
+    SaveInt("Font", "FontQuality", m_Font.quality);
+    SaveInt("Font", "FontStrikeOut", m_Font.strikeOut);
+}
+
+void CUserSettings::ResetFont()
+{
+    m_Font = UserFontSettings{};
+    if (m_IniPath[0]) WritePrivateProfileStringA("Font", NULL, NULL, m_IniPath);
 }

@@ -22,6 +22,7 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Game/Game_CharSelectTick.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
@@ -112,7 +113,8 @@ void Game_CharSelectTick(void)
     DAT_0055a3e4  = 0xffffffff;
     DAT_07d78094  = 0;
 
-    if (CameraTopViewEnabled == '\0') {
+    // DESVIACION (DLL Antilag, 0x00525483): sin interfaz se saltea como en la vista cenital.
+    if (CameraTopViewEnabled == '\0' && !gUserSettings.GetAntilag(ANTILAG_INTERFACE)) {
         // Standard viewport mode
         DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;

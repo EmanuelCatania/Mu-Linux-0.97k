@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "Render/Render.h"
 #include "Render/Camera.h"
@@ -567,9 +568,12 @@ void Render_Scene3D(void)
 
     // ── 5. Main 3D viewport ──────────────────────────────────────────────────
     bool topView = (CameraTopViewEnabled != 0);
+    // DESVIACION (DLL Antilag, 0x00525B69 / 0x00525CB5): sin interfaz, el 3D
+    // ocupa la pantalla entera y no se dibuja el HUD.
+    const bool noInterface = gUserSettings.GetAntilag(ANTILAG_INTERFACE);
     // IDA Game_RenderTick: v10 = CameraTopViewEnable ? 480 : 432  (0x1e0 : 0x1b0).
     // El topview usa el viewport ALTO (480 = pantalla completa). Antes 0x180 (384).
-    int vpHeight = topView ? 0x1e0 : 0x1b0;
+    int vpHeight = (topView || noInterface) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
 
@@ -627,7 +631,7 @@ void Render_Scene3D(void)
     // is active.  `topView` was a Ghidra-era misread of an unrelated dialog
     // Y/global and ended up hiding the whole HUD whenever certain windows or
     // temporary states were open.
-    Render_GameFrame();                          // full HUD render
+    if (!noInterface) Render_GameFrame();        // full HUD render
     RenderInformation();                        // HUD/notices/chat/help/cursor/info3D
 
     if (DAT_055c9ff8 != 0 && *(BYTE*)(DAT_055c9ff8 + 8) == 1) {

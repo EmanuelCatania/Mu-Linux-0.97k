@@ -16,8 +16,11 @@
 //
 //   [Language] LangSelection=Eng|Spn|Por  (Text/Dialog y textos del cliente)
 //
-// [Antilag] DeleteHealthBar=0|1 oculta las barras de monstruos.
-// El resto de [Antilag] y [MiniMap] se integra con sus sistemas.
+//   [Antilag] DeleteShadows DeleteObjects DeleteFloor DeleteSkills
+//             DeleteStaticEffects DeleteDynamicEffects DeleteWings
+//             DeleteHealthBar DeleteInterface DeleteWeather DeleteGlow
+//             (0|1, ver eAntilag)
+// [MiniMap] se integra con su sistema.
 
 #include "stdafx.h"
 
@@ -43,6 +46,25 @@ enum eUserLanguage {
     USER_LANG_SPANISH,
     USER_LANG_PORTUGUESE,
     MAX_USER_LANGUAGE
+};
+
+// DESVIACION (DLL OptionsMenu.cpp ApplyAntilagDefaults, WeaponView.cpp,
+// HealthBar.cpp): el DLL apagaba funciones de render parcheando bytes; acá
+// cada función consulta su opción.
+enum eAntilag {
+    ANTILAG_SHADOWS,          // BMD__RenderBodyShadow (0x00441F00)
+    ANTILAG_OBJECTS,          // Terrain_Render (0x004FD800)
+    ANTILAG_FLOOR,            // RenderTerrain (0x004F9AC0)
+    ANTILAG_SKILLS,           // RenderJoints, RenderEffects, AddTerrainLight
+    ANTILAG_STATIC_EFFECTS,   // RenderSprite (0x00479670)
+    ANTILAG_DYNAMIC_EFFECTS,  // RenderParticles (0x00478C00)
+    ANTILAG_WINGS,            // alas de RenderCharacter
+    ANTILAG_HEALTH_BAR,       // barras de vida (UI/HealthBar.cpp)
+    ANTILAG_INTERFACE,        // HUD, avisos y viewport 3D a pantalla completa
+    // Propias (no estaban en el DLL; texto en ClientText):
+    ANTILAG_WEATHER,          // RenderLeaves (0x0046CB70): hojas, lluvia, nieve
+    ANTILAG_GLOW,             // brillo +N y del set completo
+    MAX_ANTILAG
 };
 
 // Config.ini [Font], con los mismos defaults que el DLL (Font.cpp) para las
@@ -74,12 +96,32 @@ public:
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
     int GetMusicLevel()  const { return m_MusicLevel; }
-    bool GetDeleteHealthBar() const { return m_DeleteHealthBar; }
+    bool GetDeleteHealthBar() const { return m_Antilag[ANTILAG_HEALTH_BAR]; }
+    bool GetAntilag(eAntilag option) const { return m_Antilag[option]; }
+    void SetAntilag(eAntilag option, bool enabled);
+    // DESVIACION (DLL OptionsMenu PVPWithoutControl): atacar jugadores sin
+    // Ctrl.  Como en el DLL no se guarda: vale hasta cerrar el cliente.
+    bool GetPvPWithoutControl() const { return m_PvPWithoutControl; }
+    void SetPvPWithoutControl(bool enabled) { m_PvPWithoutControl = enabled; }
     const char* GetUsername() const { return m_Username; }
     int GetLanguage() const { return m_Language; }
     // "Eng", "Spn" o "Por"; nullptr para USER_LANG_DEFAULT.
     static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }
+
+    // Cambios desde el menú de opciones: actualizan el valor y lo escriben en
+    // el mismo Config.ini que se leyó.
+    void SetLanguage(int language);
+    void SetSoundLevel(int level);
+    void SetMusicLevel(int level);
+    void SetWindow(bool windowMode, bool borderless, int resolution);
+    // Escribe toda la sección [Font] y la marca presente.
+    void SetFont(const UserFontSettings& font);
+    // Borra [Font]: vuelve la fuente del binario (Arial según la resolución).
+    void ResetFont();
+    // Índice de la tabla para un tamaño, o -1 si no está.
+    static int FindResolution(DWORD width, DWORD height);
+    void SaveInt(const char* section, const char* key, int value) const;
 
     // Ancho y alto de un índice de resolución; false si el índice no existe.
     static bool GetResolutionSize(int index, DWORD* width, DWORD* height);
@@ -92,8 +134,10 @@ private:
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;
     int  m_MusicLevel  = -1;
-    bool m_DeleteHealthBar = false;
+    bool m_Antilag[MAX_ANTILAG] = {};
+    bool m_PvPWithoutControl = false;
     int  m_Language = USER_LANG_DEFAULT;
+    char m_IniPath[MAX_PATH] = {};
     char m_Username[11] = {};
     UserFontSettings m_Font;
 };

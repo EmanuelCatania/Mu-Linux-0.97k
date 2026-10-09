@@ -10,6 +10,8 @@
 // gFont.GetTextDC() y gFont.GetTextBits().
 
 #include <windows.h>
+#include <string>
+#include <vector>
 
 enum eFontTypes {
     FONT_NORMAL = 0,   // texto común
@@ -24,6 +26,17 @@ public:
     // en el DLL (ver CUserSettings); si no, como el binario: Arial con el alto
     // según el ancho de la ventana (WinMain, paso 15).
     void Create(DWORD windowWidth);
+
+    // DESVIACION (DLL Font.cpp ReloadFont): recrea las tres fuentes con la
+    // configuración y la resolución actuales.  La superficie de texto no
+    // cambia: su tamaño sale de FontInput.tga.
+    void Reload(DWORD windowWidth);
+
+    // DESVIACION (DLL Font.cpp GetFonts): familias instaladas, ordenadas, para
+    // el menú de opciones.  Se enumeran una vez.
+    int GetFaceCount();
+    const char* GetFaceName(int index);
+    int FindFace(const char* name);
 
     // Libera las fuentes y la superficie de texto (IDA DestroyWindow 0x4145C0).
     void Release();
@@ -44,6 +57,7 @@ private:
     HDC     m_hTextDC     = NULL;
     HBITMAP m_hTextBitmap = NULL;
     void*   m_pTextBits   = nullptr;
+    std::vector<std::string> m_Faces;
 };
 
 extern CFont gFont;

@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
@@ -368,6 +369,8 @@ void __cdecl Entity_Render(void)
 // IDA: ItemDrop_Render (0x00473710)
 void __cdecl ItemDrop_Render(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x00473710): sin joints de skills.
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     // Pool: DAT_07b27150 (Joint pool) + 0x9b8 stride 0x9d8.
     int* poolBase = (int*)((char*)DAT_07b27150 + 0x9b8);
     const int kStride = 0x9d8 / 4;   // 630 ints = 2520 bytes
@@ -970,6 +973,8 @@ void __cdecl RenderWheelWeapon(DWORD o)
 // IDA: RenderEffects
 void __cdecl EffectPool_RenderAll(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x0046BBA0): sin efectos de skills.
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     // HeadAngle (0x07B11698) está en offset +40 dentro del
     // effect pool DAT_07b11670 (200 entries × 0x1bc bytes = 0x1bc stride = 444B).
     // En IDA: HeadAngle iter es float*, offsets negativos cubren la cabecera del
@@ -1107,7 +1112,12 @@ void __cdecl EffectPool_RenderAll(void)
 //   Wrapper here so functions.h declaration matches a definition.
 extern void SkillEffect_Render(void);
 // IDA: FUN_0046cb70
-void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
+// DESVIACION (antilag propio): sin hojas, lluvia ni nieve.
+void __cdecl SkillEffects_RenderAll(void)
+{
+    if (gUserSettings.GetAntilag(ANTILAG_WEATHER)) return;
+    SkillEffect_Render();
+}
 
 // MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:

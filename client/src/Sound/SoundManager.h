@@ -29,6 +29,15 @@ public:
     bool PlayMusic(const char* fileName);
     void StopMusic();
 
+    int GetSoundLevel() const { return m_SoundLevel; }
+    int GetMusicLevel() const { return m_MusicLevel; }
+
+    // DESVIACION (DLL Sound.cpp ButtonStopMusic/ButtonPlayMusic): el jugador
+    // puede parar la música desde el menú de opciones; mientras esté parada,
+    // Music_PlayTrack no arranca ningún tema.
+    bool IsMusicStoppedByUser() const { return m_UserStopped; }
+    void SetMusicStoppedByUser(bool stopped);
+
     // Para la música y libera el motor de audio (cierre del cliente).
     void Shutdown();
 
@@ -39,6 +48,7 @@ private:
 
     int   m_SoundLevel = 9;
     int   m_MusicLevel = 9;
+    bool  m_UserStopped = false;
 
     void* m_Engine = nullptr;   // ma_engine*
     void* m_Music  = nullptr;   // ma_sound*

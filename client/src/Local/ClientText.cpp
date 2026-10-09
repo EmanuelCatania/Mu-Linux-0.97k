@@ -26,7 +26,18 @@ const char* const English[] = {
     "Waiting for move information",
     "No destinations",
     "< Previous",
-    "Next >"
+    "Next >",
+    "Default",
+    "Delete Weather",
+    "Delete Glow",
+    "World",
+    "Effects",
+    "Interface",
+    "Windowed",
+    "Full screen",
+    "Borderless",
+    "Bold",
+    "Italic"
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -45,7 +56,18 @@ const char* const Spanish[] = {
     "Esperando destinos",
     "Sin destinos",
     "< Anterior",
-    "Siguiente >"
+    "Siguiente >",
+    "Predeterminado",
+    "Eliminar Clima",
+    "Eliminar Brillo",
+    "Mundo",
+    "Efectos",
+    "Interfaz",
+    "Ventana",
+    "Pantalla completa",
+    "Sin bordes",
+    "Negrita",
+    "Cursiva"
 };
 const char* const Portuguese[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -64,7 +86,18 @@ const char* const Portuguese[] = {
     "Aguardando destinos",
     "Sem destinos",
     "< Anterior",
-    "Pr\xF3" "ximo >"
+    "Pr\xF3" "ximo >",
+    "Padr\xE3" "o",
+    "Remover Clima",
+    "Remover Brilho",
+    "Mundo",
+    "Efeitos",
+    "Interface",
+    "Janela",
+    "Tela cheia",
+    "Sem bordas",
+    "Negrito",
+    "It\xE1" "lico"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");

@@ -15,6 +15,7 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ScaleGlobalTextSize — corrige el patrón `lVar = __ftol();` de Ghidra.
@@ -350,6 +351,8 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 // IDA: FUN_0047FCE0
 void UI_RenderNotices(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x0047FCE0): sin interfaz no hay avisos.
+    if (gUserSettings.GetAntilag(ANTILAG_INTERFACE)) return;
   // DAT_07db80d8 tiene 6 slots × 0x108: se recorre con un contador explícito
   // de 6 iteraciones, no con el bound literal del binario (`< 0x7db8708`).
   int iVar1;

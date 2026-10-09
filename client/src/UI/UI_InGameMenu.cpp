@@ -5,6 +5,7 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "UI/OptionsMenu.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -732,51 +733,18 @@ void __cdecl UI_InGameMenu(void)
         return;
     }
 
-    // ── Options submenu (0x96) — 4 buttons ────────────────────────────────
-    // IDA 0x00514310 case 150 (L1336-1377):
-    //   i=0: Back to ESC menu (NextErrorMessage=110 if ErrorMessage still nonzero,
-    //        else ErrorMessage=110).
-    //   i=1: toggle sound effect (m_bAutoAttack == m_bAutoAttack)
-    //   i=2: toggle music (m_bWhisperSound == m_bWhisperSound)
-    //   i=3: close submenu → ErrorMessage = NextErrorMessage; NextErrorMessage = 0.
-    // Buttons at X∈[0x104..0x17c], Y = 10*(3*i+3) = 30,60,90,120; height 22.
+    // ── Options submenu (0x96) ────────────────────────────────────────────
+    // IDA 0x00514310 case 150: 4 botones (volver, ataque automático, susurros,
+    // cerrar).  DESVIACION (DLL OptionsMenu, hook 0x00515954): lo atiende el menú
+    // expandido; un click fuera de él se descarta, como hacía el DLL.
     case 0x96:
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            int btnY = (3 * i + 3) * 10;
-            if (mouseX >= 0x104 && mouseX < 0x17c &&
-                mouseY >= btnY && mouseY < btnY + 22 && IsClickPushed())
-            {
-                DAT_083a4124 = 0;
-                switch (i)
-                {
-                case 0:  // Back → ESC menu (stash para pop en Cancel)
-                    DAT_083a7c28 = 0x6e;
-                    break;
-                case 1:  // Toggle sound
-                    m_bAutoAttack ^= 1;
-                    break;
-                case 2:  // Toggle music
-                    m_bWhisperSound ^= 1;
-                    break;
-                case 3:  // Close — swap NextErrorMessage → ErrorMessage
-                {
-                    DWORD pop = DAT_083a7c28;
-                    DAT_083a7c28 = 0;
-                    DAT_083a7c24 = pop;
-                }
-                break;
-                }
-                // NO goto tail — case 0x96 maneja sus transiciones internamente,
-                // pero sí reproducimos el click sound (IDA L837 PlayBuffer(25))
-                // que en el original viene del LABEL_75 común.
-                PlayBuffer(0x19, 0, 0);
-                return;
-            }
+        if (!gOptionsMenu.UpdateMouse()) {
+            DAT_083a42c4 = 0;   // MouseLButton
+            DAT_083a4124 = 0;   // MouseLButtonPush
+            DAT_07e11d28 = 0;   // MouseUpdateTime
+            DAT_00559bec = 6;   // MouseUpdateTimeMax
         }
         return;
-    }
 
     // ── Yes/No checkbox (sell/drop confirm) — ErrorMessage 151 ─────────────
     // ErrorMessage 151 es un cartel Yes/No. Port IDA UI_InGameMenu L1798-1856:

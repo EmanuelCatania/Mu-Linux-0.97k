@@ -1,6 +1,7 @@
 // Font.cpp — CFont. Ver Font.h.
 
 #include "stdafx.h"
+#include <algorithm>
 #include "Core/Font.h"
 #include "Config/UserSettings.h"
 
@@ -72,6 +73,16 @@ void CFont::CreateTextSurface(HDC hdc, LONG width, LONG height)
     SetBkMode(m_hTextDC, TRANSPARENT);
 }
 
+void CFont::Reload(DWORD windowWidth)
+{
+    for (HFONT& font : m_Fonts) {
+        if (font) DeleteObject(font);
+        font = nullptr;
+    }
+    Create(windowWidth);
+    if (m_hTextDC) SelectObject(m_hTextDC, m_Fonts[FONT_NORMAL]);
+}
+
 void CFont::Release()
 {
     for (HFONT& font : m_Fonts) {
@@ -83,4 +94,45 @@ void CFont::Release()
     m_hTextDC     = NULL;
     m_hTextBitmap = NULL;
     m_pTextBits   = nullptr;
+}
+
+namespace {
+int CALLBACK CollectFace(const LOGFONTA* lf, const TEXTMETRICA*, DWORD, LPARAM param)
+{
+    // Las familias con '@' son las variantes verticales de las fuentes asiáticas.
+    if (lf->lfFaceName[0] && lf->lfFaceName[0] != '@')
+        reinterpret_cast<std::vector<std::string>*>(param)->push_back(lf->lfFaceName);
+    return 1;
+}
+}
+
+int CFont::GetFaceCount()
+{
+    if (m_Faces.empty()) {
+        LOGFONTA lf = {};
+        lf.lfCharSet = DEFAULT_CHARSET;
+        HDC dc = GetDC(NULL);
+        EnumFontFamiliesExA(dc, &lf, CollectFace, (LPARAM)&m_Faces, 0);
+        ReleaseDC(NULL, dc);
+        std::sort(m_Faces.begin(), m_Faces.end(), [](const std::string& a, const std::string& b) {
+            return _stricmp(a.c_str(), b.c_str()) < 0;
+        });
+        m_Faces.erase(std::unique(m_Faces.begin(), m_Faces.end(), [](const std::string& a, const std::string& b) {
+            return _stricmp(a.c_str(), b.c_str()) == 0;
+        }), m_Faces.end());
+    }
+    return (int)m_Faces.size();
+}
+
+const char* CFont::GetFaceName(int index)
+{
+    return index >= 0 && index < GetFaceCount() ? m_Faces[index].c_str() : "";
+}
+
+int CFont::FindFace(const char* name)
+{
+    const int count = GetFaceCount();
+    for (int i = 0; i < count; ++i)
+        if (_stricmp(m_Faces[i].c_str(), name) == 0) return i;
+    return -1;
 }

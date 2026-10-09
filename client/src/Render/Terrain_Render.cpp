@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
 
 // External helpers
@@ -24,6 +25,8 @@ static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈
 
 void Terrain_Render(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x004FD800): sin objetos del mapa.
+    if (gUserSettings.GetAntilag(ANTILAG_OBJECTS)) return;
     float z_offset = 0.0f;
     if (World == 10) {
         z_offset = -10.0f;

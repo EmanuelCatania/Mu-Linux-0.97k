@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "UI/MoveList.h"
 #include "UI/EventTimer.h"
@@ -494,6 +495,8 @@ void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
 // A diferencia de AddTerrainLightClip (0x004F7800) esta NO clampea a 1.0: solo
 // evita valores negativos, que es lo que produce el resplandor del fuego.
 void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer) {
+    // DESVIACION (DLL Antilag, ret en 0x004F76C0): sin luces de skills sobre el terreno.
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     float cx   = xf * _DAT_00552594;
     float cy   = yf * _DAT_00552594;
     int   icx  = (int)cx;
@@ -831,7 +834,8 @@ unsigned int __cdecl CheckAttack(void) {
     const BYTE targetPkLevel = target[746];
     if (!EnableGuildWar) {
         return targetPkLevel >= 6 ||
-               (((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80 &&
+               ((gUserSettings.GetPvPWithoutControl() ||   // DESVIACION (DLL, 0x0048322F)
+                 ((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80) &&
                 target != (BYTE*)(uintptr_t)DAT_07abf5d8);
     }
 
