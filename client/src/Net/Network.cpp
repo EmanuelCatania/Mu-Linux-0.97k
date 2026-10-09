@@ -32,13 +32,15 @@ void CNetwork::ResetCharacterData()
     // DSProtocol::DGCharacterInfoRecv reenvía M y las tablas para el personaje.
     gMoveList.Clear();
     ItemServerValue_ResetSession();
-    gContentCatalog.Clear();
     gEventTimer.Close(); // El calendario pertenece a la misma conexión.
 }
 
 void CNetwork::ResetSessionData()
 {
     ResetCharacterData();
+    // El catálogo llega una vez por conexión (antes de la respuesta del
+    // login), no por personaje: se limpia acá y no en ResetCharacterData.
+    gContentCatalog.Clear();
     gPing.Reset();
     gEventTimer.Clear();
     GoldenArcher_ResetSession();
