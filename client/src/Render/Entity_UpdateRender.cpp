@@ -94,6 +94,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
+    bool bDeferWing = false;           // 0.97.20: ala del catálogo, va después del cuerpo
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
@@ -665,7 +666,13 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
 
         // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
-        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
+        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
+        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
+        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
+        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
+            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
+            bDeferWing = true;
+        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
@@ -880,6 +887,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
                           *(short*)((BYTE*)param_1 + 528));
         }
+    }
+
+    if (bDeferWing) {
+        *(BYTE *)(param_1 + 0xa9) = 0x2f;
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                     (int)*(short *)(param_1 + 0xa8),
+                     *(char *)((int)param_1 + 0x2a2),
+                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
     }
 
     // ── 8. Death / PvP color tint ────────────────────────────────────────────
