@@ -1,6 +1,7 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
@@ -432,7 +433,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             && slotType == 0 && InventoryOpened != 0)
         {
             int targetSlot = mouseGridY * gridWidth + mouseGridX;
-            short targetType = *(short*)(invBase + targetSlot * 0x44);
+            // 0.97.20: un agregado acepta joyas como el vanilla que imita.
+            short targetType = (short)ItemBehaviorType(*(short*)(invBase + targetSlot * 0x44));
             int targetLevel = *(int*)(invBase + targetSlot * 0x44 + 4) >> 3 & 0xf;
             bool validTarget = (targetType < 0x187);
 

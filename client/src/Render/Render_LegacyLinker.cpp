@@ -141,6 +141,10 @@ extern void __cdecl RenderObjectScreen(int param_1, unsigned int param_2,
 void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
                            int Type, int Level, int Option1, int ExtOption, bool PickUp)
 {
+    // 0.97.20: el anclaje en la casilla se decide por rangos de tipo; un
+    // agregado usa el del vanilla que imita y se dibuja con su propio modelo.
+    const int itemType = Type;
+    Type = ItemBehaviorType(Type);
     bool Success = false;
     float Position[3];
 
@@ -306,7 +310,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     Camera_BuildMouseRay((int)_sx, (int)_sy, Position);
 
     // Per-type modelId override (jewels/wings/special).
-    int modelId = ItemModel(Type);   // 0.97.20: el catálogo resuelve los agregados
+    int modelId = ItemModel(itemType);   // 0.97.20: el catálogo resuelve los agregados
     int levelArg = Level;
 
     switch (Type) {
@@ -341,7 +345,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     // (RenderObjectScreen) deferenciaría el modelEntry → libjpeg crash si meshBase
     // o numMesh están en garbage. Retornar silencioso si modelo no listo.
     {
-        if (modelId < 0 || modelId >= 1200) return;
+        if (modelId < 0 || modelId >= MODEL_MAX_TOTAL) return;
         char* modelEntry = (char*)DAT_05828d58 + modelId * 0xbc;
         short numMesh = *(short*)(modelEntry + 0x24);
         int meshBase = *(int*)(modelEntry + 0x28);
