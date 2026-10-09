@@ -518,6 +518,18 @@ static void __fastcall ChatLB_nullsub2(DWORD* /*self*/) {}
 //   unk_83A4128            — acumulador del scroll de rueda (nosotros usamos un static)
 extern "C" int  MouseOnWindow;
 static int g_ChatLB_WheelAccum = 0;     // mirror of unk_83A4128
+static DWORD g_ChatLB_WheelTick = 0;
+
+// DESVIACION: en el binario nadie escribe unk_83A4128 (sólo lo lee y lo pone en
+// 0 sub_411B60), así que la rueda nunca movía las listas.  WM_MOUSEWHEEL lo
+// alimenta en muescas; lo consume el widget bajo el cursor y se descarta si
+// ningún widget lo toma en 200 ms, para que no se aplique al pasar por otro.
+void ChatListBox_AddWheel(int notches)
+{
+    if (GetTickCount() - g_ChatLB_WheelTick > 200) g_ChatLB_WheelAccum = 0;
+    g_ChatLB_WheelAccum += notches;
+    g_ChatLB_WheelTick = GetTickCount();
+}
 
 // Soft helpers — wired to no-ops until the engine sound/keyrepeat is ported.
 static inline void ChatLB_PlayBuffer(int /*id*/, int /*p2*/, int /*p3*/) {}
@@ -580,6 +592,8 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
     // el input (slot 26) de los 3 botones popup.
     if (((FnInt)vt[21])(self)) {
         // Wheel-scroll accumulator drains here.
+        if (g_ChatLB_WheelAccum && GetTickCount() - g_ChatLB_WheelTick > 200)
+            g_ChatLB_WheelAccum = 0;
         if (g_ChatLB_WheelAccum) {
             ((FnVoidI)vt[12])(self, 0, -3 * g_ChatLB_WheelAccum);
             g_ChatLB_WheelAccum = 0;
