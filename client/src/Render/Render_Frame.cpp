@@ -217,6 +217,9 @@
 void Render_CharInfoPanel(void);
 void Render_HPBars(void);
 void Render_CharPartyInfo(void);
+extern "C" bool __cdecl RenderNumArrow_(void);
+extern "C" int  __cdecl RenderEquipedHelperLife_(bool a2);
+extern "C" void __cdecl RenderBrokenItem_(int a1);
 void Render_CharNameTags(void);
 void Render_MacroTimer(void);
 void Render_MapLoadText(void);
@@ -347,9 +350,13 @@ void Render_GameFrame(void)
     Render_CharInfoPanel();         // sub_4BC220 (guild-war/soccer banner)
     Render_HPBars();                // RenderPartyHP @ 0x4BCA20
     gHealthBar.DrawViewport();       // DLL HealthBar.cpp, después de las barras de party
-    AntiTamper_HashMaintain_A();    // RenderNumArrow @ 0x4BF540 (NOT anti-tamper)
-    Render_CharPartyInfo();         // RenderEquipedHelperLife @ 0x4BEC00 (was misnamed)
-    Render_CharNameTags();          // RenderBrokenItem @ 0x4BE710 (was misnamed)
+    // IDA Render_GameFrame L26-28: cada indicador de arriba a la derecha baja
+    // según lo que se dibujó antes (flechas -> vida del helper -> item roto).
+    {
+        const bool arrows = RenderNumArrow_();                 // 0x4BF540
+        const int helperY = RenderEquipedHelperLife_(arrows);  // 0x4BEC00
+        RenderBrokenItem_(helperY);                            // 0x4BE710
+    }
     Render_MacroTimer();            // sub_4BF090
     Render_MapLoadText();           // sub_4BF2D0
     Render_FloatingText();          // RenderBooleans @ 0x4BD090 (was misnamed)
