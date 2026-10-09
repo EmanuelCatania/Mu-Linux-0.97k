@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 #include "structs.h"
@@ -1454,6 +1455,86 @@ uint __cdecl Net_Disconnect_Clean(void)
     return 1;
 }
 
+// Regla de sub_4CDC70 para soltar `item` en el casillero `a5`: clase, dos
+// manos, flechas, stats, nivel y restricciones de mapa.  La comparte el
+// click derecho para equipar (RightClickMove.cpp).
+bool Equip_CanPlace(const ITEM* item, int a5)
+{
+    if (!item || !CharacterMachine || !CharacterAttribute || !DAT_07abf5d8 || !DAT_07d78068) return false;
+    BYTE* const CM = (BYTE*)CharacterMachine;
+    BYTE* const CA = (BYTE*)CharacterAttribute;
+    ITEM_ATTRIBUTE* const IA = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
+    const short pt    = item->Type;
+    const short left  = *(short*)(CM + 536);
+    const short right = *(short*)(CM + 604);
+    const int   cls   = CA[11] & 7;
+    const BYTE* req   = IA[pt].RequireClass;
+    bool ok = true;
+
+    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
+        if (!req[3] && !req[0] && !req[1]) ok = false;
+    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
+        ok = false;
+    }
+
+    bool rightHandChecks = false;
+    if (pt != 135 && pt != 143) {
+        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
+            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
+            if (IA[left].Width >= 2) ok = false;
+        }
+        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
+            if (IA[pt].Width >= 2) ok = false;
+            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
+            rightHandChecks = true;                         // LABEL_118
+        }
+    }
+    if (!rightHandChecks && a5 == 1) {
+        if (pt == 143) ok = false;
+        if (cls == 0 || cls == 2) {
+            if (pt >= 0 && pt < 128) ok = false;
+            if (pt >= 160 && pt < 192) ok = false;
+            if (left == 143) {
+                if (pt == 135 || pt < 128 || pt > 160) ok = false;
+            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
+                ok = false;
+            }
+        }
+    } else if (rightHandChecks || a5 == 0) {
+        // LABEL_118
+        if (pt == 135) ok = false;
+        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
+    }
+
+    // LABEL_164
+    if (pt >= 430 && pt <= 435) ok = false;
+    if (item->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
+    if (item->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
+    if (item->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
+    const BYTE part = item->Part;
+    if ((part >= 7 && part <= 11) && item->RequireLevel > *(WORD*)(CA + 14)) ok = false;
+
+    bool invalid = false;
+    if (part == 7) {
+        if (pt >= 392 && pt < 416) invalid = true;
+    } else if (part == 8) {
+        if ((int)World == 7) {
+            if (pt == 418 || pt == 419) invalid = true;
+        } else if ((int)World == 10 && pt == 418) {
+            invalid = true;
+        }
+    }
+    if (!invalid && !ok) invalid = true;                    // LABEL_231
+    if (!invalid && part != (BYTE)a5) {
+        if (part == 10) {
+            if (a5 != 11) invalid = true;
+        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
+            invalid = true;
+        }
+    }
+    return !invalid;
+}
+
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
 // Port FIEL del IDA: 12 llamadas a sub_4CDC70(x, y, w, h, slotIdx) renderizando
 // los slots del Character panel. STRUCT_DECRYPT/ENCRYPT (HashTable obfuscation)
@@ -1504,7 +1585,17 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         const short type = *(short*)slot;
         if (type == -1 || !inside) return;
         DAT_07eaa164 = 1;                                   // byte_7EAA164
-        if (!DAT_083a4124) {                                // MouseLButtonPush
+        // DESVIACION (DLL RightClickMove.cpp CheckUnequipItem): click derecho
+        // manda el item al primer hueco libre del inventario.
+        const bool rightClick = !DAT_083a4124 && MouseRButtonPush != 0;
+        int unequipTarget = -1;
+        if (rightClick) {
+            MouseRButtonPush = 0;
+            if (DAT_07eaa134) return;                       // modo reparar
+            unequipTarget = RightClickMove_FindInventorySlot(type);
+            if (unequipTarget < 0) return;
+        }
+        if (!DAT_083a4124 && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
             DAT_07eaa160 = (DWORD)(uintptr_t)slot;          // CheckInventory
@@ -1549,6 +1640,12 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
             DeleteBug((int)(uintptr_t)DAT_07abf5d8);
+        if (rightClick) {
+            DAT_07e11e78 = (DWORD)(unequipTarget + 12);
+            DAT_07eaa165 = 1;                               // EquipmentItem
+            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+            SendRequestEquipmentItem(0, a5, picked, 0, unequipTarget + 12);
+        }
         return;
     }
 
@@ -1556,72 +1653,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (!inside) return;
     const short pt    = picked->Type;
     const short left  = *(short*)(CM + 536);
-    const short right = *(short*)(CM + 604);
-    const int   cls   = CA[11] & 7;
-    const BYTE* req   = IA[pt].RequireClass;
-    bool ok = true;
-
-    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
-        if (!req[3] && !req[0] && !req[1]) ok = false;
-    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
-        ok = false;
-    }
-
-    bool rightHandChecks = false;
-    if (pt != 135 && pt != 143) {
-        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
-            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
-            if (IA[left].Width >= 2) ok = false;
-        }
-        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
-            if (IA[pt].Width >= 2) ok = false;
-            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
-            rightHandChecks = true;                         // LABEL_118
-        }
-    }
-    if (!rightHandChecks && a5 == 1) {
-        if (pt == 143) ok = false;
-        if (cls == 0 || cls == 2) {
-            if (pt >= 0 && pt < 128) ok = false;
-            if (pt >= 160 && pt < 192) ok = false;
-            if (left == 143) {
-                if (pt == 135 || pt < 128 || pt > 160) ok = false;
-            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
-                ok = false;
-            }
-        }
-    } else if (rightHandChecks || a5 == 0) {
-        // LABEL_118
-        if (pt == 135) ok = false;
-        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
-    }
-
-    // LABEL_164
-    if (pt >= 430 && pt <= 435) ok = false;
-    if (picked->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
-    if (picked->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
-    if (picked->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
-    const BYTE part = picked->Part;
-    if ((part >= 7 && part <= 11) && picked->RequireLevel > *(WORD*)(CA + 14)) ok = false;
-
-    bool invalid = false;
-    if (part == 7) {
-        if (pt >= 392 && pt < 416) invalid = true;
-    } else if (part == 8) {
-        if ((int)World == 7) {
-            if (pt == 418 || pt == 419) invalid = true;
-        } else if ((int)World == 10 && pt == 418) {
-            invalid = true;
-        }
-    }
-    if (!invalid && !ok) invalid = true;                    // LABEL_231
-    if (!invalid && part != (BYTE)a5) {
-        if (part == 10) {
-            if (a5 != 11) invalid = true;
-        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
-            invalid = true;
-        }
-    }
+    const bool  invalid = !Equip_CanPlace(picked, a5);
     if (invalid) {                                          // LABEL_220
         slot[64] = 3;
         if (DAT_083a4124) {

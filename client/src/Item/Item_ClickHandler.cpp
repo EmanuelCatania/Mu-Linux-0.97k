@@ -46,6 +46,7 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/RightClickMove.h"
 #include "Item/ChaosMixRates.h"
 #include "globals.h"
 #include "functions.h"
@@ -987,13 +988,44 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                 if ((BYTE*)inv_base == (BYTE*)&OffsetInventoryItems[0]) {
                     // Pickup from main inventory
-                    if (DAT_07eaa119 != 0) {
+                    // DESVIACION (DLL RightClickMove.cpp MoveItemToInterface):
+                    // además del baúl, el trade y el chaos (sin mezcla en curso).
+                    if (DAT_07eaa11b != 0) {                         // TradeOpened
+                        byte_83A42EB = (char)sub_4D6020(
+                            (int)(TradeInventoryStartX + 15),
+                            (int)(TradeInventoryStartY + 0x10E),
+                            (int)(uintptr_t)&OffsetTradeItems[0],
+                            8, 4);
+                    } else if (DAT_07eaa11a != 0 && MixState != 1) {  // ChaosMixOpened
+                        byte_83A42EB = (char)sub_4D6020(
+                            (int)(DAT_07eaa0c8 + 15),
+                            (int)(DAT_07eaa0cc + 0x6E),
+                            (int)(uintptr_t)&OffsetMixItems[0],
+                            8, 4);
+                    } else if (DAT_07eaa119 != 0) {
                         // Warehouse open → try auto-drop into warehouse
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
                             (int)(DAT_07eaa0cc + 50),
                             (int)(uintptr_t)&OffsetWarehouseItems[0],
                             8, 15);
+                    } else if (DAT_07eaa165 == 0) {
+                        // DESVIACION (DLL RightClickMove.cpp CheckEquipItem):
+                        // sin ventana abierta, el item va a su casillero.
+                        const int target = RightClickMove_FindEquipSlot((const ITEM*)pPickedItem);
+                        if (target >= 0) {
+                            const int abs = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12;
+                            DAT_07ea5b18 = (DWORD)abs;
+                            UI_Main(abs, inv_base, grid_w);
+                            CheckInventory = 0;
+                            DAT_07e11e78 = (DWORD)target;
+                            DAT_07eaa165 = 1;                        // EquipmentItem
+                            g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            SendRequestEquipmentItem(0, abs, (ITEM*)pPickedItem, 0, target);
+                            PlayBuffer(29, 0, 0);
+                            return;
+                        }
                     }
                     if (byte_83A42EB) {
                         int abs = grid_w * ((BYTE*)rowSlot)[63] +
@@ -1012,7 +1044,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     // Pickup from warehouse / mix / trade
                     // El origen del grid del inventario es (InventoryStartX+15,
                     // InventoryStartY+200) — los VALORES, igual que en el resto de los call sites.
-                    if (DAT_07eaa119 != 0) {
+                    // DESVIACION (DLL RightClickMove.cpp): también desde el
+                    // trade y el chaos, no sólo con el baúl abierto.
+                    if (DAT_07eaa119 != 0 ||
+                        (BYTE*)inv_base == (BYTE*)&OffsetTradeItems[0] ||
+                        (BYTE*)inv_base == (BYTE*)&OffsetMixItems[0]) {
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(InventoryStartX + 15),
                             (int)(InventoryStartY + 200),
