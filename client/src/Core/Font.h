@@ -10,6 +10,8 @@
 // gFont.GetTextDC() y gFont.GetTextBits().
 
 #include <windows.h>
+#include <string>
+#include <vector>
 
 enum eFontTypes {
     FONT_NORMAL = 0,   // texto común
@@ -30,6 +32,12 @@ public:
     // cambia: su tamaño sale de FontInput.tga.
     void Reload(DWORD windowWidth);
 
+    // DESVIACION (DLL Font.cpp GetFonts): familias instaladas, ordenadas, para
+    // el menú de opciones.  Se enumeran una vez.
+    int GetFaceCount();
+    const char* GetFaceName(int index);
+    int FindFace(const char* name);
+
     // Libera las fuentes y la superficie de texto (IDA DestroyWindow 0x4145C0).
     void Release();
 
@@ -49,6 +57,7 @@ private:
     HDC     m_hTextDC     = NULL;
     HBITMAP m_hTextBitmap = NULL;
     void*   m_pTextBits   = nullptr;
+    std::vector<std::string> m_Faces;
 };
 
 extern CFont gFont;

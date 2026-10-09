@@ -115,6 +115,10 @@ public:
     void SetSoundLevel(int level);
     void SetMusicLevel(int level);
     void SetWindow(bool windowMode, bool borderless, int resolution);
+    // Escribe toda la sección [Font] y la marca presente.
+    void SetFont(const UserFontSettings& font);
+    // Borra [Font]: vuelve la fuente del binario (Arial según la resolución).
+    void ResetFont();
     // Índice de la tabla para un tamaño, o -1 si no está.
     static int FindResolution(DWORD width, DWORD height);
     void SaveInt(const char* section, const char* key, int value) const;

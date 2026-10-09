@@ -198,3 +198,25 @@ int CUserSettings::FindResolution(DWORD width, DWORD height)
         if (kResolutions[i].width == width && kResolutions[i].height == height) return i;
     return -1;
 }
+
+void CUserSettings::SetFont(const UserFontSettings& font)
+{
+    m_Font = font;
+    m_Font.present = true;
+    if (!m_IniPath[0]) return;
+    WritePrivateProfileStringA("Font", "FontName", m_Font.faceName, m_IniPath);
+    SaveInt("Font", "FontHeight", m_Font.height);
+    SaveInt("Font", "FontBold", m_Font.bold);
+    SaveInt("Font", "FontItalic", m_Font.italic);
+    SaveInt("Font", "FontCharset", m_Font.charset);
+    SaveInt("Font", "FontWidth", m_Font.width);
+    SaveInt("Font", "FontUnderline", m_Font.underline);
+    SaveInt("Font", "FontQuality", m_Font.quality);
+    SaveInt("Font", "FontStrikeOut", m_Font.strikeOut);
+}
+
+void CUserSettings::ResetFont()
+{
+    m_Font = UserFontSettings{};
+    if (m_IniPath[0]) WritePrivateProfileStringA("Font", NULL, NULL, m_IniPath);
+}

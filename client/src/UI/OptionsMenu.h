@@ -17,7 +17,7 @@ public:
     bool UpdateMouse();
 
 private:
-    enum Page { PAGE_MAIN, PAGE_GENERAL, PAGE_ANTILAG, PAGE_SCREEN, PAGE_COUNT,
+    enum Page { PAGE_MAIN, PAGE_GENERAL, PAGE_ANTILAG, PAGE_SCREEN, PAGE_FONT, PAGE_COUNT,
                 // Submenús de Antilag (no figuran en la lista principal).
                 PAGE_ANTILAG_WORLD, PAGE_ANTILAG_EFFECTS, PAGE_ANTILAG_INTERFACE };
 
@@ -31,6 +31,8 @@ private:
     bool UpdateAntilagGroup();
     void RenderScreen();
     bool UpdateScreen();
+    void RenderFont();
+    bool UpdateFont();
     void RenderSelector(float y, const char* text, bool canLeft, bool canRight) const;
     int  UpdateSelector(int y, bool canLeft, bool canRight) const;
 

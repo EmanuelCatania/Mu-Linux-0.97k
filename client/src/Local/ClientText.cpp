@@ -35,7 +35,9 @@ const char* const English[] = {
     "Interface",
     "Windowed",
     "Full screen",
-    "Borderless"
+    "Borderless",
+    "Bold",
+    "Italic"
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -63,7 +65,9 @@ const char* const Spanish[] = {
     "Interfaz",
     "Ventana",
     "Pantalla completa",
-    "Sin bordes"
+    "Sin bordes",
+    "Negrita",
+    "Cursiva"
 };
 const char* const Portuguese[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -91,7 +95,9 @@ const char* const Portuguese[] = {
     "Interface",
     "Janela",
     "Tela cheia",
-    "Sem bordas"
+    "Sem bordas",
+    "Negrito",
+    "It\xE1" "lico"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");

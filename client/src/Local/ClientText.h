@@ -9,6 +9,7 @@ enum class ClientTextId {
     LanguageDefault, AntilagWeather, AntilagGlow,
     AntilagWorld, AntilagEffects, AntilagInterface,
     ScreenWindowed, ScreenFullscreen, ScreenBorderless,
+    FontBold, FontItalic,
     Count
 };
 class CClientText {

@@ -236,6 +236,7 @@ void COptionsMenu::Render()
     case PAGE_GENERAL: RenderGeneral(); break;
     case PAGE_ANTILAG: RenderAntilag(); break;
     case PAGE_SCREEN: RenderScreen(); break;
+    case PAGE_FONT: RenderFont(); break;
     case PAGE_ANTILAG_WORLD:
     case PAGE_ANTILAG_EFFECTS:
     case PAGE_ANTILAG_INTERFACE: RenderAntilagGroup(); break;
@@ -251,6 +252,7 @@ bool COptionsMenu::UpdateMouse()
     case PAGE_GENERAL: return UpdateGeneral();
     case PAGE_ANTILAG: return UpdateAntilag();
     case PAGE_SCREEN: return UpdateScreen();
+    case PAGE_FONT: return UpdateFont();
     case PAGE_ANTILAG_WORLD:
     case PAGE_ANTILAG_EFFECTS:
     case PAGE_ANTILAG_INTERFACE: return UpdateAntilagGroup();
@@ -259,8 +261,8 @@ bool COptionsMenu::UpdateMouse()
 }
 
 // ── Lista principal ─────────────────────────────────────────────────────────
-// Título, una caja por página y Cerrar (GlobalText 385, 919/926/920, 388).
-namespace { const int MainPageText[] = { 919, 926, 920 }; }
+// Título, una caja por página y Cerrar (GlobalText 385, 919/926/920/921, 388).
+namespace { const int MainPageText[] = { 919, 926, 920, 921 }; }
 
 void COptionsMenu::RenderMain()
 {
@@ -522,6 +524,82 @@ bool COptionsMenu::UpdateScreen()
     const int step = UpdateSelector(RowY(row++), resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
     if (step != INT_MIN) {
         if (step) ApplyScreen(windowMode, borderless, resolution < 0 ? 0 : resolution + step);
+        return true;
+    }
+    if (!UpdateToggle(RowY(row), clicked)) return false;
+    if (clicked) m_Page = PAGE_MAIN;
+    return true;
+}
+
+// ── Fuente ──────────────────────────────────────────────────────────────────
+// Familia (fuentes instaladas), negrita, cursiva, tamaño 1..25 y reiniciar.
+// DESVIACION: "Reiniciar fuente" del DLL volvía a Verdana 13; acá borra [Font]
+// y vuelve la fuente del 0.97k (Arial con el alto según la resolución).
+namespace {
+// Configuración vigente: la de [Font] o, sin ella, la que armó CFont.
+UserFontSettings CurrentFont()
+{
+    UserFontSettings font = gUserSettings.GetFont();
+    if (!font.present) {
+        font = UserFontSettings{};
+        strcpy_s(font.faceName, "Arial");
+        font.height = FontHeight;
+    }
+    return font;
+}
+void ApplyFont(const UserFontSettings& font)
+{
+    gUserSettings.SetFont(font);
+    gFont.Reload(gWindow.GetWidth());
+}
+}
+
+void COptionsMenu::RenderFont()
+{
+    const UserFontSettings font = CurrentFont();
+    const int face = gFont.FindFace(font.faceName);
+    int row = 0;
+    RenderButton((float)RowY(row++), GlobalText[921], true);
+    RenderSelector((float)RowY(row++), font.faceName, face != 0, face < gFont.GetFaceCount() - 1);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontBold), font.bold != 0);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontItalic), font.italic != 0);
+    char text[16];
+    sprintf_s(text, "%d", font.height);
+    RenderSelector((float)RowY(row++), text, font.height > 1, font.height < 25);
+    RenderButton((float)RowY(row++), GlobalText[924]);
+    RenderButton((float)RowY(row), GlobalText[925]);
+}
+
+bool COptionsMenu::UpdateFont()
+{
+    UserFontSettings font = CurrentFont();
+    const int face = gFont.FindFace(font.faceName);
+    int row = 1;
+    bool clicked;
+    int step = UpdateSelector(RowY(row++), face != 0, face < gFont.GetFaceCount() - 1);
+    if (step != INT_MIN) {
+        if (step) {
+            // Una fuente fuera de la lista arranca desde la primera.
+            strcpy_s(font.faceName, gFont.GetFaceName(face < 0 ? 0 : face + step));
+            ApplyFont(font);
+        }
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) { font.bold = !font.bold; ApplyFont(font); }
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) { font.italic = !font.italic; ApplyFont(font); }
+        return true;
+    }
+    step = UpdateSelector(RowY(row++), font.height > 1, font.height < 25);
+    if (step != INT_MIN) {
+        if (step) { font.height += step; ApplyFont(font); }
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) { gUserSettings.ResetFont(); gFont.Reload(gWindow.GetWidth()); }
         return true;
     }
     if (!UpdateToggle(RowY(row), clicked)) return false;
