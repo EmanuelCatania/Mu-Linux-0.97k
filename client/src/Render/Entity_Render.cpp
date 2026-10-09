@@ -305,10 +305,10 @@ uint RenderBugs(void)
         }
 
         if (ownerIsPlayer || typeCode == 0x330) {
-            // 0.97.20: el Angel del héroe se dibuja con el modelo propio del pet
-            // si tiene; la lógica del bug sigue con el tipo vanilla.
-            const int drawModel = (typeCode == 0x330 && ownerPtr == (DWORD)(uintptr_t)DAT_07abf5d8)
-                                ? HeroPetModel(0x330) : typeCode;
+            // 0.97.20: el pet o la montura se dibuja con el modelo propio del
+            // helper puesto (catálogo); la lógica del bug sigue con el tipo vanilla.
+            const int ownModel = ownerPtr ? gContentCatalog.EntityHelperModel((const void*)(uintptr_t)ownerPtr) : -1;
+            const int drawModel = (ownModel >= 0) ? ownModel : typeCode;
             *(short*)(slot + 2) = (short)drawModel;
             Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
             *(short*)(slot + 2) = typeCode;

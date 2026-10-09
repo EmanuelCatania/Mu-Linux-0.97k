@@ -39,7 +39,34 @@ struct ItemExtraData
     int   Model = -1;
     bool  HasWing = false;
     CatalogWing Wing = {};
+    int   EntityModel = -1;
 };
+
+// Piezas puestas: por entidad, modelo lógico -> modelo propio.
+constexpr int MAX_ENTITY = 400;
+constexpr int ENTITY_STRIDE = 0x394;
+constexpr int ENTITY_PARTS = 9;
+struct EntityPart { short Logic; short Own; };
+EntityPart s_EntityParts[MAX_ENTITY][ENTITY_PARTS];
+bool s_EntityPartsInit = false;
+
+int EntityIndex(const void* c)
+{
+    const uintptr_t base = (uintptr_t)CharactersClient;
+    const uintptr_t ptr = (uintptr_t)c;
+    if (!base || ptr < base) return -1;
+    const uintptr_t off = ptr - base;
+    if (off % ENTITY_STRIDE != 0 || off / ENTITY_STRIDE >= MAX_ENTITY) return -1;
+    return (int)(off / ENTITY_STRIDE);
+}
+
+void InitEntityParts()
+{
+    if (s_EntityPartsInit) return;
+    for (EntityPart (&row)[ENTITY_PARTS] : s_EntityParts)
+        for (EntityPart& part : row) part = { -1, -1 };
+    s_EntityPartsInit = true;
+}
 
 std::vector<ItemExtraData> s_Items(ITEM_MAX_EX);
 CatalogMonster s_Monsters[MAX_CATALOG_MONSTER] = {};
@@ -299,6 +326,13 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
         extra.Wing = { (BYTE)(row.CustomWing - 1), row.WingDefenseConstA, row.WingIncDamageConstA,
                        row.WingIncDamageConstB, row.WingDecDamageConstA, row.WingDecDamageConstB };
     }
+    if (row.Flags & Proto::CATALOG_ITEM_HAS_ENTITY) {
+        row.EntityFolder[sizeof(row.EntityFolder) - 1] = 0;
+        row.EntityName[sizeof(row.EntityName) - 1] = 0;
+        extra.EntityModel = LoadModel(row.EntityFolder, row.EntityName, -1);
+        if (extra.EntityModel >= MODEL_MAX_VANILLA && !s_DynamicModelItem.count(extra.EntityModel))
+            s_DynamicModelItem[extra.EntityModel] = row.Index;
+    }
     if (row.Flags & Proto::CATALOG_ITEM_HAS_MODEL) {
         row.ModelFolder[sizeof(row.ModelFolder) - 1] = 0;
         row.ModelName[sizeof(row.ModelName) - 1] = 0;
@@ -453,4 +487,55 @@ int CContentCatalog::GetWingItem(int index) const
 bool CContentCatalog::HasOwnModel(int type) const
 {
     return type >= 0 && type < ITEM_MAX_EX && s_Items[type].Model >= 0;
+}
+
+void CContentCatalog::SetEntityPart(const void* c, int part, int itemType)
+{
+    InitEntityParts();
+    const int idx = EntityIndex(c);
+    if (idx < 0 || part < 0 || part >= ENTITY_PARTS) return;
+    EntityPart& entry = s_EntityParts[idx][part];
+    entry = { -1, -1 };
+    if (itemType < 0 || itemType >= ITEM_MAX_EX) return;
+    const ItemExtraData& extra = s_Items[itemType];
+    const int own = (extra.EntityModel >= 0) ? extra.EntityModel : extra.Model;
+    if (own < 0) return;
+    // El helper guarda el pet vanilla (816..819); el resto, el modelo lógico.
+    const int logic = (part == 8) ? ItemModel(GetItemBehavior(itemType)) : ItemEntityModel(itemType);
+    if (logic == own) return;
+    entry = { (short)logic, (short)own };
+}
+
+void CContentCatalog::ClearEntityParts(const void* c)
+{
+    InitEntityParts();
+    const int idx = EntityIndex(c);
+    if (idx < 0) return;
+    for (EntityPart& part : s_EntityParts[idx]) part = { -1, -1 };
+}
+
+int CContentCatalog::EntityDrawModel(const void* c, int model) const
+{
+    if (!s_EntityPartsInit || model < 0) return model;
+    const int idx = EntityIndex(c);
+    if (idx < 0) return model;
+    for (const EntityPart& part : s_EntityParts[idx])
+        if (part.Logic == model && part.Own >= 0) return part.Own;
+    return model;
+}
+
+int CContentCatalog::EntityHelperModel(const void* c) const
+{
+    if (!s_EntityPartsInit) return -1;
+    const int idx = EntityIndex(c);
+    return (idx < 0) ? -1 : s_EntityParts[idx][8].Own;
+}
+
+int CContentCatalog::LogicModel(int model) const
+{
+    if (model < MODEL_MAX_VANILLA) return model;
+    const int itemType = GetModelItemType(model);
+    if (itemType < 0) return model;
+    const int behavior = GetItemBehavior(itemType);
+    return (behavior >= 0 && behavior < ITEM_MAX_VANILLA) ? ItemModel(behavior) : model;
 }

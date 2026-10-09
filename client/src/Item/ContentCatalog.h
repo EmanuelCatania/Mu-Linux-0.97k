@@ -77,6 +77,21 @@ public:
     // Item del ala custom con ese índice del CharSet (0..6), o -1.
     int GetWingItem(int index) const;
 
+    // Piezas puestas en un personaje.  La entidad guarda el modelo del
+    // vanilla que imita el item (la lógica decide por esos rangos); acá se
+    // recuerda con qué modelo propio se dibuja cada pieza.  part: 0 casco,
+    // 1 armadura, 2 pantalones, 3 guantes, 4 botas, 5 mano izq., 6 mano der.,
+    // 7 alas, 8 helper.
+    void SetEntityPart(const void* c, int part, int itemType);
+    void ClearEntityParts(const void* c);
+    // Modelo a dibujar para una pieza cuyo modelo lógico es `model`.
+    int  EntityDrawModel(const void* c, int model) const;
+    // Modelo propio del helper puesto (pet o montura), o -1.
+    int  EntityHelperModel(const void* c) const;
+    // Modelo vanilla que imita un modelo dinámico (para la lógica de brillo
+    // por nivel y los efectos por tipo); el mismo si no es del catálogo.
+    int  LogicModel(int model) const;
+
     const CatalogMonster* GetMonster(int index) const;
 
     // Niebla del mapa: colores de día y de noche (0..1).  false = sin fila.
@@ -112,22 +127,10 @@ inline int ItemModel(int type) { return gContentCatalog.GetItemModel(type); }
 // trata al item: el vanilla que imita un agregado.  -1 sigue siendo -1.
 inline int ItemBehaviorType(int type) { return (type < 0) ? type : gContentCatalog.GetItemBehavior(type); }
 
-// Pet del héroe: la entidad guarda el pet vanilla que imita (Angel 816, Imp
-// 817) para que la lógica de pets siga igual; al dibujar se usa el modelo
-// propio del item equipado, si tiene.  Los demás jugadores ven el vanilla (el
-// CharSet sólo lleva vanilla).
-inline int HeroPetModel(int behaviorModel)
-{
-    const BYTE* cm = (const BYTE*)(uintptr_t)DAT_07cf1ffc;
-    if (!cm) return behaviorModel;
-    const short pet = *(const short*)(cm + 536 + 68 * 8);
-    return (pet >= 0 && gContentCatalog.HasOwnModel(pet)) ? ItemModel(pet) : behaviorModel;
-}
-
-// Modelo de un item puesto en un personaje.  Un agregado (>= 512) se dibuja
-// con el modelo de su comportamiento: es lo que ven los demás jugadores (el
-// CharSet sólo lleva vanilla) y mantiene intacta la lógica que mira el tipo de
-// arma por rangos de modelo.
+// Modelo LÓGICO de un item puesto en un personaje: el del vanilla que imita un
+// agregado (>= 512).  Es el que guarda la entidad, así la lógica que mira el
+// tipo de arma, ala o helper por rangos de modelo sigue igual.  El modelo
+// propio se dibuja aparte (SetEntityPart / EntityDrawModel).
 inline int ItemEntityModel(int type)
 {
     if (type < ITEM_MAX_VANILLA) return ItemModel(type);

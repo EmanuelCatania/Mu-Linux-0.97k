@@ -573,6 +573,7 @@ const BYTE CATALOG_VERSION = 1;
 const BYTE CATALOG_ITEM_HAS_MODEL = 0x01;
 const BYTE CATALOG_ITEM_HAS_GLOW = 0x02;
 const BYTE CATALOG_ITEM_HAS_POSE = 0x04;
+const BYTE CATALOG_ITEM_HAS_ENTITY = 0x08;   // modelo propio puesto en el personaje
 const WORD CATALOG_MONSTER_HAS_MODEL = 0x01;
 
 struct PMSG_CATALOG_HEAD
@@ -635,8 +636,13 @@ struct CATALOG_ITEM
     WORD WingIncDamageConstB;
     WORD WingDecDamageConstA;
     WORD WingDecDamageConstB;
+    // Modelo con que se dibuja el item puesto (montura, pet) cuando no es el
+    // mismo del inventario.
+    char EntityFolder[40];
+    char EntityName[28];
 };
-static_assert(sizeof(CATALOG_ITEM) == 196, "F3:E7 entrada");
+static_assert(sizeof(CATALOG_ITEM) == 264, "F3:E7 entrada");
+static_assert(offsetof(CATALOG_ITEM, EntityFolder) == 196, "F3:E7 EntityFolder");
 static_assert(offsetof(CATALOG_ITEM, CustomWing) == 184, "F3:E7 CustomWing");
 static_assert(offsetof(CATALOG_ITEM, WingDefenseConstA) == 186, "F3:E7 WingDefenseConstA");
 static_assert(offsetof(CATALOG_ITEM, Name) == 12, "F3:E7 Name");

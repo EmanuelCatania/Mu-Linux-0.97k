@@ -75,6 +75,13 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
     NetLog("NET:  -> 0x25 ChangePlayer key=%d idx=%d slot=%d type=%d lvl=%u%s",
            key, idx, slot, type, (unsigned)level, empty ? " (vacio)" : "");
 
+    // 0.97.20: el modelo propio de la pieza (catálogo).  slot del paquete ->
+    // pieza de la entidad.
+    {
+        static const int kPart[9] = { 5, 6, 0, 1, 2, 3, 4, 7, 8 };
+        if (slot >= 0 && slot < 9) gContentCatalog.SetEntityPart(c, kPart[slot], empty ? -1 : type);
+    }
+
     switch (slot) {
         case 0:   // mano izquierda
             if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
@@ -122,9 +129,11 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
                 *(WORD*)(c + 696) = (WORD)ItemEntityModel(type);
                 c[698] = 0;
                 float* pos = (float*)(c + 16);
-                if (type == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
-                else if (type == 418) CreateBug(195, (void*)pos, (void*)c, 0);
-                else if (type == 419) CreateBug(267, (void*)pos, (void*)c, 0);
+                // 0.97.20: un agregado crea el bug del pet que imita.
+                const int pet = ItemBehaviorType(type);
+                if (pet == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
+                else if (pet == 418) CreateBug(195, (void*)pos, (void*)c, 0);
+                else if (pet == 419) CreateBug(267, (void*)pos, (void*)c, 0);
             }
             break;
         }

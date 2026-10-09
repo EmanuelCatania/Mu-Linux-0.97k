@@ -798,6 +798,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // so the decomp was int-indexed (param_1[0x6f]) not byte-offset.
                 // Byte-offset 0x6f is an unrelated field; reading it here made all
                 // login demo characters render as DW (class=0). Fixed to 0x1bc.
+                // 0.97.20: modelo propio de la pieza (catálogo).
+                iVar9 = gContentCatalog.EntityDrawModel(param_1, iVar9);
                 BYTE bClassByte = *(BYTE *)((int)param_1 + 0x1bc);
                 *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));

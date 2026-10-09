@@ -1909,6 +1909,9 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
     DWORD c = DAT_07abf5d0 + 916 * Key;
     if (*(WORD*)(c + 2) != 390) return;
+    // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
+    // el ala custom (más abajo).
+    gContentCatalog.ClearEntityParts((const void*)(uintptr_t)c);
 
     // Helmet (slot 0)
     if (Equipment[0] == 0xFF) {
@@ -1940,6 +1943,7 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
         const int wingItem = gContentCatalog.GetWingItem((Equipment[8] & 7) - 1);
         if (wingItem >= 0) {
             *(WORD*)(c + 672) = (WORD)ItemEntityModel(wingItem);
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, 7, wingItem);
         } else {
             *(WORD*)(c + 0x2A0) = (WORD)-1;
             *(BYTE*)(c + 0x2A3) = 0;

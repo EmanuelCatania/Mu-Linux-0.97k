@@ -2226,6 +2226,13 @@ void __cdecl SetCharacterClass(int c) {
         if (pet != -1) *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
     }
 
+    // 0.97.20: modelo propio de cada pieza puesta (catálogo).
+    {
+        static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
+        for (int part = 0; part < 9; ++part)
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+    }
+
     // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
     // El pet NO se dibuja desde RenderCharacter: `ChangeCharacterExt`
     // (0x45C8C0 L73-88) lo crea como entidad del pool de bugs —
