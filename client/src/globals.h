@@ -2010,7 +2010,10 @@ extern char    DAT_00559b50[];
 extern char    s__4d__4d_30__4d__4d__1_00559b58[]; // format string
 
 // ── Scene_CharPreview globals ─────────────────────────────────────────────────
-extern DWORD   DAT_07e91354;
+// IDA: pPickedItem.Level (0x07E91354) — el campo +4 del item levantado, no un
+// global aparte.  Como variable propia valía siempre 0 y los chequeos de
+// apilado comparaban contra nivel 0.
+#define DAT_07e91354 (*(DWORD*)&DAT_07e91350[4])
 extern char    DAT_07e9136a;   // picked item durability/option byte
 extern char    DAT_07e9136b;
 // Buffer del item del dialogo ShowCheckBox(153) -- 0x44 bytes, 0x07EA5240.

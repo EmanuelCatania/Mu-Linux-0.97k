@@ -2034,7 +2034,6 @@ char    DAT_00559b50[64] = {};
 char    s__4d__4d_30__4d__4d__1_00559b58[] = "%4d/%4d[0] %4d/%4d[1]";
 
 // ── Scene_CharPreview globals ─────────────────────────────────────────────────
-DWORD   DAT_07e91354   = 0;
 char    DAT_07e9136a   = 0;  // picked item durability/option byte
 char    DAT_07e9136b   = 0;
 // Buffer del item que abrio el dialogo de ShowCheckBox(153) -- el click derecho
