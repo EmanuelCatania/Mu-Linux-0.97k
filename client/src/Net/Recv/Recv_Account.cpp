@@ -9,6 +9,8 @@
 #include "UI/HealthBar.h"
 #include "Net/Recv/NetRecv.h"
 #include "Net/ServerCharacterStats.h"
+#include "Config/UserSettings.h"
+#include "Net/HWID.h"
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
 // no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
@@ -49,10 +51,11 @@ void Recv_JoinServer(const BYTE* Msg)
         // CheckHardwareID en Blacklist.cpp considera el HWID vacío como
         // blacklisted y devuelve code 05.
         //
-        // Compatibilidad MuEmu: el deploy actual corta la sesión temprano si
-        // tras F1/00 no recibe también F1/04 antes de F1/05/F1/01. Esto no
-        // existe en el flujo Webzen original; queda aislado acá.
-        //   Lang_Send(1);
+        // DESVIACION (DLL Language.cpp, SendLanguage): F1/04 con el idioma de
+        // Config.ini, para que el server elija el idioma de sus mensajes.  Sin
+        // selección no se manda y el server usa su default.
+        if (gUserSettings.GetLanguage() != USER_LANG_DEFAULT)
+            Lang_Send(gUserSettings.GetLanguage());
         HWID_Send();
     } else {
         NetLog("NET:    JoinServer FAIL code=%d → SetErrorMessage(113)", Msg[4]);

@@ -13,3 +13,6 @@ public:
     const char* Get(ClientTextId id) const;
 };
 extern CClientText gClientText;
+
+// Ruta de un archivo de Data/Local según el idioma elegido (ver ClientText.cpp).
+const char* LocalizedDataPath(const char* base, const char* ext, char* out, size_t capacity);

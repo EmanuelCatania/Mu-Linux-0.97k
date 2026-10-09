@@ -89,6 +89,16 @@ void CUserSettings::Load(const char* iniPath)
 
     GetPrivateProfileStringA("User", "Username", "", m_Username, sizeof(m_Username), iniPath);
 
+    char language[8] = {};
+    GetPrivateProfileStringA("Language", "LangSelection", "", language, sizeof(language), iniPath);
+    for (int i = 0; language[0] && i < MAX_USER_LANGUAGE; ++i)
+        if (_stricmp(language, GetLanguageSuffix(i)) == 0) m_Language = i;
+    if (language[0] && m_Language == USER_LANG_DEFAULT) {
+        char line[96];
+        wsprintfA(line, "Config.ini: LangSelection=%s IGNORADO (Eng, Spn o Por)", language);
+        DbgLogPublic(line);
+    }
+
     // [Font]: si la sección existe, cada clave que falte toma el default del DLL.
     char section[8] = {};
     if (GetPrivateProfileSectionA("Font", section, sizeof(section), iniPath) > 0) {
@@ -119,4 +129,10 @@ void CUserSettings::Load(const char* iniPath)
         wsprintfA(line, "Config.ini: sin [Font], se usa la fuente del binario (Arial)");
     }
     DbgLogPublic(line);
+}
+
+const char* CUserSettings::GetLanguageSuffix(int language)
+{
+    static const char* const Suffix[MAX_USER_LANGUAGE] = { "Eng", "Spn", "Por" };
+    return language >= 0 && language < MAX_USER_LANGUAGE ? Suffix[language] : nullptr;
 }
