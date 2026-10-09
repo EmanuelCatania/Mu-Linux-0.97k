@@ -223,7 +223,7 @@ bool ItemMove_LooksLikeStackMerge(BYTE* targetPool, int targetSlot, const BYTE* 
     }
 
     ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
-    if (!attr || sourceType > 0xFFF) {
+    if (!attr || sourceType < 0 || sourceType >= ITEM_MAX_EX) {
         return false;
     }
 

@@ -50,6 +50,25 @@ int Net_LevelConvert(BYTE Level)
     }
 }
 
+// 0.97.20: C1:F3:EB — equipo agregado (>= 512) de un jugador del viewport.
+// Llega después del 0x12, que sólo trae vanilla en el CharSet: deja dicho con
+// qué modelo propio se dibuja cada pieza.  La entidad conserva el modelo del
+// vanilla que imita (pet y montura incluidos), así que el bug ya creado por el
+// CharSet se dibuja con el modelo del helper custom.
+void Recv_CustomEquipment(const BYTE* Msg, int Size)
+{
+    if (Size < 24 || !DAT_07abf5d0) return;
+    const int key = ((Msg[4] & 0x7F) << 8) | Msg[5];
+    const int idx = FindCharacterIndex(key);
+    if (idx < 0 || idx >= 400) return;
+    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394;
+    static const int kPart[9] = { 5, 6, 0, 1, 2, 3, 4, 7, 8 };
+    for (int slot = 0; slot < 9; ++slot) {
+        const WORD item = *(const WORD*)(Msg + 6 + slot * 2);
+        if (item != 0xFFFF) gContentCatalog.SetEntityPart(c, kPart[slot], item);
+    }
+}
+
 void Recv_ChangePlayer(const BYTE* Msg, int Size)
 {
     if (Size < 5 + ITEM_INFO_SIZE || !DAT_07abf5d0) return;

@@ -45,7 +45,7 @@ static inline ITEM_ATTRIBUTE* Item_GetAttribute(int type)
 {
     const unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
     if (p < 0x100000u || p >= 0x80000000u) return nullptr;  // tabla sin cargar → no crash
-    if (type < 0 || type > 0xFFF) return nullptr;
+    if (type < 0 || type >= ITEM_MAX_EX) return nullptr;   // 0.97.20: índice de 13 bits
     return &((ITEM_ATTRIBUTE*)(uintptr_t)p)[type];
 }
 

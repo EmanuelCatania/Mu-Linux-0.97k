@@ -1307,6 +1307,11 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 0xE8: gContentCatalog.ReceiveMonsters((const BYTE*)Msg, Size); break;
         case 0xE9: gContentCatalog.ReceiveMapFog((const BYTE*)Msg, Size); break;
         case 0xEA: gContentCatalog.ReceiveEnd((const BYTE*)Msg, Size); break;
+        case 0xEB: {
+            void Recv_CustomEquipment(const BYTE* Msg, int Size);
+            Recv_CustomEquipment((const BYTE*)Msg, Size);
+            break;
+        }
         case 0x30: {
             // ── ReceiveOption (IDA 0x436FB0) — PORT FIEL ─────────────────
             // Layout autoritativo del server MuEmu (Protocol.h,
