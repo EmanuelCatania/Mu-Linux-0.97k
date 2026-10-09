@@ -16,6 +16,7 @@
 //     `ItemAttribute[type].Width / .Height`.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"        // ITEM, ITEM_ATTRIBUTE (también en GameStructs.h — usar uno solo)
@@ -58,8 +59,9 @@ static int FindFirstInventoryTypeInRange(int typeMin, int typeMax)
     }
     ITEM* g = (ITEM*)OffsetInventoryItems;
     for (int i = 0; i < 64; ++i) {
-        if (g[i].Type >= typeMin && g[i].Type <= typeMax) {
-            return g[i].Type;
+        const int kind = ItemBehaviorType(g[i].Type);   // 0.97.20: el hotbar guarda el vanilla
+        if (kind >= typeMin && kind <= typeMax) {
+            return kind;
         }
     }
     return -1;
@@ -71,7 +73,7 @@ static int FindFirstInventoryTypeExact(const int* types, int count)
     for (int idx = 0; idx < count; ++idx) {
         int wanted = types[idx];
         for (int i = 0; i < 64; ++i) {
-            if (g[i].Type == wanted) {
+            if (ItemBehaviorType(g[i].Type) == wanted) {
                 return wanted;
             }
         }

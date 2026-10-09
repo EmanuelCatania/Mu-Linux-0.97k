@@ -1610,9 +1610,10 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         }
         if (Teleport) return;                           // Teleport
         if (DAT_07eaa134) {                                 // RepairEnable_0
-            if ((type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
-                (type >= 430 && type <= 435))
+            const int kind = ItemBehaviorType(type);        // 0.97.20
+            if ((kind >= 416 && kind <= 419) || kind == 426 || kind == 135 ||
+                kind == 143 || kind >= 448 || (kind >= 391 && kind <= 403) ||
+                (kind >= 430 && kind <= 435))
                 return;
             DAT_083a4124 = 0;
             BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)a5, (BYTE)DAT_07eaa138 };
@@ -1624,10 +1625,12 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             // Icarus: no se puede sacar el unico item que permite volar
             // (alas 384..390 o Dinorant 419).
             int flying = 0;
-            const short wing = *(short*)(CM + 1012);
+            // 0.97.20: alas y Dinorant se reconocen por el comportamiento.
+            const short wing = (short)ItemBehaviorType(*(short*)(CM + 1012));
             if (wing >= 384 && wing <= 390) flying = 1;
-            if (*(short*)(CM + 1080) >= 419) ++flying;
-            if (flying <= 1 && ((type >= 384 && type <= 390) || type == 419))
+            if (ItemBehaviorType(*(short*)(CM + 1080)) >= 419) ++flying;
+            const int kind = ItemBehaviorType(type);
+            if (flying <= 1 && ((kind >= 384 && kind <= 390) || kind == 419))
                 return;
         }
         DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
@@ -2433,8 +2436,8 @@ void __cdecl CheckGate(void)
         // Atlans/Tarkan: no con Uniria/Dinorant equipado o agarrado.
         if ((gateIndex >= 45 && gateIndex <= 49) ||
             (gateIndex >= 55 && gateIndex <= 56)) {
-            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
-            const WORD picked = *(const WORD*)DAT_07e91350;
+            const WORD helper = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1080));
+            const WORD picked = (WORD)ItemBehaviorType(*(const short*)DAT_07e91350);
             if ((helper >= 418 && helper <= 419) ||
                 (DAT_07e91388 > 0 && picked >= 418 && picked <= 419)) {
                 UIChatLogWindow_AddText("", GlobalText[261], 2);
@@ -2444,8 +2447,8 @@ void __cdecl CheckGate(void)
 
         // Icarus (62..65): alas (384..390) o Dinorant (419); la Uniria no.
         if (gateIndex >= 62 && gateIndex <= 65) {
-            const WORD wings = *(const WORD*)((const BYTE*)CharacterMachine + 1012);
-            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
+            const WORD wings = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1012));
+            const WORD helper = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1080));
             if ((wings < 384 || wings > 390) && helper != 419) {
                 UIChatLogWindow_AddText("", GlobalText[263], 2);
                 if (level < requiredLevel) {

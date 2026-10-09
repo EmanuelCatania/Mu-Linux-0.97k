@@ -765,10 +765,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // Tipos de item que SE PUEDEN reparar (= armas/armaduras con
                 // durability), excluding stackables like potions/jewels.
                 // Per IDA lines 579-586.
-                if (!((type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                      type == 143 || type >= 448 ||
-                      (type >= 391 && type <= 403) ||
-                      (type >= 430 && type <= 435))
+                const int kind = ItemBehaviorType(type);   // 0.97.20
+                if (!((kind >= 416 && kind <= 419) || kind == 426 || kind == 135 ||
+                      kind == 143 || kind >= 448 ||
+                      (kind >= 391 && kind <= 403) ||
+                      (kind >= 430 && kind <= 435))
                     && DAT_083a4124)
                 {
                     DAT_083a4124 = 0;

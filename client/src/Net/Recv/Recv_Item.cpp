@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/ChaosMixRates.h"
 #include "Net/Recv/NetRecv.h"
@@ -919,7 +920,9 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // ConvertItemType (0x0047B110): Item[0] + (Item[3] & 0x80) * 2.  Con
         // la rama del zen Item apunta a CharacterMachine: sólo los 4 primeros
         // bytes tienen sentido, como en el binario.
-        int type = (int)Item[0] + ((Item[3] & 0x80) ? 256 : 0);
+        // 0.97.20: índice completo del item de 7 bytes y, para un agregado,
+        // el comportamiento (una joya custom suena como joya).
+        int type = ItemBehaviorType(ItemWire_GetType(Item));
         bool jewel = (type == 461 || type == 462 || type == 464 ||
                       type == 399 || type == 470);
         PlayBuffer(jewel ? 49 : 29, (DWORD)(uintptr_t)Hero, 0);

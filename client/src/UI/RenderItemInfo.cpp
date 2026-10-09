@@ -152,7 +152,7 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         "¹Â 10½Ã°£ ¹«·áÀÌ¿ë±Ç"
     };
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
 
     // Primera rama de la cadena del binario (LAB_004c4ced, 0x004C4CED):
     //     if (0x1d6 < Type && Type < 0x1db) { sprintf(linea, "%s", Name); color = 3; }
@@ -469,7 +469,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
     constexpr short ITEM_HELPER_BASE = 416;
     constexpr short ITEM_POTION_BASE = 448;
     constexpr short ITEM_WING_BASE = 384;
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
     constexpr int C_RED = 2;
@@ -756,7 +756,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
     constexpr short ITEM_POTION_BASE = 448;
     constexpr short ITEM_BOW_BASE = 128;
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
 
     auto addLine = [](const char* text, int color, bool bold = false) {
@@ -891,7 +891,7 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         DAT_07eaa154++;
     };
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     const int level = (ip->Level >> 3) & 0xF;
 
     if ((type == ITEM_BOW_BASE + 7 || type == ITEM_BOW_BASE + 15) && level >= 1) {
@@ -1183,7 +1183,7 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAt
     addRequirementLine(GlobalText[73], (int)ip->RequireStrength,  strength, TEXT_COLOR_WHITE);
     addRequirementLine(GlobalText[75], (int)ip->RequireDexterity, agility,  TEXT_COLOR_WHITE);
     addRequirementLine(GlobalText[77], (int)ip->RequireEnergy,    energy,   TEXT_COLOR_WHITE);
-    if (ip->RequireLevel && ip->Type != 0x1ae) {
+    if (ip->RequireLevel && ItemBehaviorType(ip->Type) != 0x1ae) {
         addRequirementLine(GlobalText[76], (int)ip->RequireLevel, level, TEXT_COLOR_WHITE);
     }
 }

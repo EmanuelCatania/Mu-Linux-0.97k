@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
 #include "Item/ChaosMixRates.h"
 #include "Local/ClientText.h"
@@ -936,8 +937,8 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // takes the slot's place for the preview. (dword_7EA9800 / pPickedItem
     // not modeled in our build — skip this branch.)
 
-    short typeL = *(short*)pWeaponLeft;
-    short typeR = *(short*)pWeaponRight;
+    short typeL = (short)ItemBehaviorType(*(short*)pWeaponLeft);    // 0.97.20
+    short typeR = (short)ItemBehaviorType(*(short*)pWeaponRight);
 
     // Damage base picker:
     //   bow/crossbow class items in [128,135) or 145 in right hand → use CA[60..62]

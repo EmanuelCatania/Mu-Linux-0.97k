@@ -18,6 +18,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/Item_ServerValue.h"
 #include "globals.h"
 #include "structs.h"
@@ -464,7 +465,8 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             if ((BYTE)a6) {
                                 // DESVIACION (DLL ItemStack.cpp RenderItemNumber, 0x004E398C):
                                 // también los items que el server declara apilables.
-                                const bool stack = (v7 >= 448 && v7 <= 456) ||
+                                const int kind = ItemBehaviorType(v7);   // 0.97.20
+                                const bool stack = (kind >= 448 && kind <= 456) ||
                                     ItemStack_GetMaxStack(v7, (*(int*)(v6_addr + 4) >> 3) & 0xF) != 0;
                                 if (stack && *(BYTE*)(v6_addr + 0x1A) > 1) {
                                     glColor3f(1.0f, 0.9f, 0.7f);

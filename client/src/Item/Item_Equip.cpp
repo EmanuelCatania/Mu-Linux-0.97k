@@ -7,6 +7,7 @@
 //   a2 (nuestro `object`)    = ITEM* equipado (CharacterMachine + 536 + 68*mano).
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -44,7 +45,7 @@ static void ItemEquip_UseManaScroll97k(int inventorySlot /* IDA: sub_482BE0(3) *
 
     // IDA: *(&OffsetInventoryItems.Type + 34 * inventorySlot). Type is a
     // WORD, hence the 34-WORD = 68-byte ITEM stride.
-    const WORD itemType = ((ITEM*)OffsetInventoryItems)[inventorySlot].Type;
+    const WORD itemType = (WORD)ItemBehaviorType(((ITEM*)OffsetInventoryItems)[inventorySlot].Type);   // 0.97.20
     if (itemType == 448)
         PlayBuffer(33, 0, 0);
     else if (itemType >= 449 && itemType <= 457)

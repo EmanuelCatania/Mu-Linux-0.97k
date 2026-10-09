@@ -1,6 +1,7 @@
 // Item_Durability.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
@@ -53,7 +54,9 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
 
     // Base durability per type (Magic items 160..191 use MagicDurability)
     unsigned int result = (unsigned int)(unsigned char)p->Durability;
-    short Type = ip->Type;
+    // 0.97.20: los rangos (alas, etc.) van por el comportamiento; los datos
+    // salen de attrBase, la fila propia del item.
+    short Type = (short)ItemBehaviorType(ip->Type);
     if (Type >= 160 && Type < 192) {
         result = (unsigned int)(unsigned char)p->MagicDurability;
     }
@@ -469,11 +472,12 @@ void __cdecl Item_RecalculateRepairCost(void)
             // IDA:
             //   gold = ItemValue(item, 2);
             //   DAT_07eaa0f8 += ConvertRepairGold(gold, dur, maxDur, type, buf);
-            if ((itemType < 416 || itemType > 419) &&
-                itemType != 426 && itemType != 135 && itemType != 143 &&
-                itemType < 448 &&
-                (itemType < 391 || itemType > 403) &&
-                (itemType < 430 || itemType > 435) &&
+            const int kind = ItemBehaviorType(itemType);    // 0.97.20
+            if ((kind < 416 || kind > 419) &&
+                kind != 426 && kind != 135 && kind != 143 &&
+                kind < 448 &&
+                (kind < 391 || kind > 403) &&
+                (kind < 430 || kind > 435) &&
                 curDur < maxDur) {
                 char local_68[104]; // buffer for text
                 int gold = Item_CalculateValue((void*)psVar12, 2);
@@ -496,11 +500,12 @@ void __cdecl Item_RecalculateRepairCost(void)
             unsigned int curDur = (unsigned int)*(unsigned char *)((char *)psVar12 + 0x1a);
             unsigned int uVar8  = (unsigned int)itemType;
             maxDur &= 0xffff;
-            if ((itemType < 416 || itemType > 419) &&
-                itemType != 426 && itemType != 135 && itemType != 143 &&
-                itemType < 448 &&
-                (itemType < 391 || itemType > 403) &&
-                (itemType < 430 || itemType > 435) &&
+            const int kind = ItemBehaviorType(itemType);    // 0.97.20
+            if ((kind < 416 || kind > 419) &&
+                kind != 426 && kind != 135 && kind != 143 &&
+                kind < 448 &&
+                (kind < 391 || kind > 403) &&
+                (kind < 430 || kind > 435) &&
                 curDur < maxDur) {
                 char local_68[104];
                 int gold = Item_CalculateValue((void*)psVar12, 2);

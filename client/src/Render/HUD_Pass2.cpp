@@ -20,6 +20,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"
@@ -557,7 +558,8 @@ void RenderBrokenItem_(int a1)
             ITEM_ATTRIBUTE* v19 = (ITEM_ATTRIBUTE*)(attrBase + (unsigned)v12 * 64);
 
             // Skip excluded item types: 135, 143, 416..419
-            if (v12 != 135 && v12 != 143 && (v12 < 416 || v12 > 419)) {
+            const int kind = ItemBehaviorType((short)v12);   // 0.97.20
+            if (kind != 135 && kind != 143 && (kind < 416 || kind > 419)) {
                 int level = (*(int*)(v13 + 4) >> 3) & 0xF;
                 int v30 = (int)Item_CalculateMaxDurability((void*)v13, (int)v19, level);
                 if (*(WORD*)v13 == 426) v30 = 200;
