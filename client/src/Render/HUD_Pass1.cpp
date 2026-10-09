@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -338,8 +339,12 @@ void RenderMainFrameWindow_(void)
     m_dwBackColor = 0xFF000000;
 
     // Two corner decorations (bitmap 0xE9 mirrored at x=532).
-    GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
-    GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
+    // DESVIACION (DLL Interface.cpp, 0x004BD300 / 0x004BD332): con el mapa
+    // abierto, los botones de zoom y transparencia ocupan ese lugar.
+    if (!gMiniMap.HidesLeftDragon())
+        GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
+    if (!gMiniMap.HidesRightDragon())
+        GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
     GL_ResetState();   // DisableAlphaBlend
 
     // Bottom tile #1 (left half).

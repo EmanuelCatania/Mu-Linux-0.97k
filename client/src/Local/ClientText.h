@@ -10,6 +10,7 @@ enum class ClientTextId {
     AntilagWorld, AntilagEffects, AntilagInterface,
     ScreenWindowed, ScreenFullscreen, ScreenBorderless,
     FontBold, FontItalic,
+    MiniMapGate, MiniMapZoom, MiniMapAlpha,
     Count
 };
 class CClientText {

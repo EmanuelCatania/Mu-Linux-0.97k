@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "UI/MiniMap.h"
 #include "UI/MoveList.h"
 #include "Game/MapManager.h"
 #include "globals.h"
@@ -54,7 +55,8 @@ void __cdecl RenderInformation(void) {
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
-    // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): dibujar el menú M.
+    // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): mapa (Tab) y menú M.
+    gMiniMap.Render();
     gMoveList.Render();
     Cursor_Render(); // RenderCursor
     RenderInfomation3D(); // RenderInfomation3D

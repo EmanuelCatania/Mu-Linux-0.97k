@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
 #include "globals.h"
@@ -443,6 +444,8 @@ static void HUD_HotkeyTick(void)
     if (PressKey('H')) gEventTimer.Toggle();
     // DESVIACION (DLL Controller.cpp): menú M con destinos recibidos del server.
     if (PressKey('M')) gMoveList.Toggle();
+    // DESVIACION (DLL Controller.cpp): Tab abre el mapa.
+    if (PressKey(VK_TAB)) gMiniMap.Toggle();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel

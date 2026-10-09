@@ -97,6 +97,8 @@ void CUserSettings::Load(const char* iniPath)
     m_MusicLevel  = ReadRange("Sound", "MusicLevel", iniPath, 0, 9, -1);
 
     GetPrivateProfileStringA("User", "Username", "", m_Username, sizeof(m_Username), iniPath);
+    m_MiniMapAlpha = ReadRange("MiniMap", "Alpha", iniPath, 3, 10, 10);
+    m_MiniMapZoom  = ReadRange("MiniMap", "ZoomLevel", iniPath, 0, 6, 0);
 
     char language[8] = {};
     GetPrivateProfileStringA("Language", "LangSelection", "", language, sizeof(language), iniPath);
@@ -219,4 +221,12 @@ void CUserSettings::ResetFont()
 {
     m_Font = UserFontSettings{};
     if (m_IniPath[0]) WritePrivateProfileStringA("Font", NULL, NULL, m_IniPath);
+}
+
+void CUserSettings::SetMiniMap(int alpha, int zoom)
+{
+    m_MiniMapAlpha = alpha;
+    m_MiniMapZoom = zoom;
+    SaveInt("MiniMap", "Alpha", alpha);
+    SaveInt("MiniMap", "ZoomLevel", zoom);
 }

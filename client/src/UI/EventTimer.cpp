@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
 #include "UI/UIState.h"
@@ -152,6 +153,7 @@ void CEventTimer::Toggle()
     GuildOpened = 0;
     PartyOpened = 0;
     gMoveList.Close();
+    gMiniMap.Close();
     m_Open = true;
     // Mismo par de sonidos que al abrir el inventario (Chat_InputTick 0x004B14F0).
     PlayBuffer(25, 0, 0);

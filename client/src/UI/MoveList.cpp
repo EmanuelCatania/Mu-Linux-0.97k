@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "UI/MiniMap.h"
 #include "UI/MoveList.h"
 #include "UI/EventTimer.h"
 #include "Core/Font.h"
@@ -98,7 +99,7 @@ void CMoveList::Toggle()
 {
     if (Blocked()) { m_Open = false; return; }
     // DLL: los paneles M y H comparten espacio y se cierran mutuamente.
-    if (!m_Open) gEventTimer.Close();
+    if (!m_Open) { gEventTimer.Close(); gMiniMap.Close(); }
     m_Open = !m_Open;
     PlayBuffer(25, 0, 0);
 }
