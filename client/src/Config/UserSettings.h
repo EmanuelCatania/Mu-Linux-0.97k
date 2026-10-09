@@ -14,8 +14,10 @@
 //   [Font]    FontName FontHeight FontBold FontItalic FontCharset FontWidth
 //             FontUnderline FontQuality FontStrikeOut  (ver UserFontSettings)
 //
+//   [Language] LangSelection=Eng|Spn|Por  (Text/Dialog y textos del cliente)
+//
 // [Antilag] DeleteHealthBar=0|1 oculta las barras de monstruos.
-// El resto de [Antilag], [MiniMap] y [Language] se integra con sus sistemas.
+// El resto de [Antilag] y [MiniMap] se integra con sus sistemas.
 
 #include "stdafx.h"
 
@@ -32,6 +34,15 @@ enum eUserResolution {
     RES_1600x900,
     RES_1920x1080,
     MAX_USER_RESOLUTION
+};
+
+// Valores del F1/04 del server (PMSG_SET_LANG_RECV, LANGUAGE_*).
+enum eUserLanguage {
+    USER_LANG_DEFAULT = -1,   // sin selección: archivos del 0.97k (Text.bmd)
+    USER_LANG_ENGLISH = 0,
+    USER_LANG_SPANISH,
+    USER_LANG_PORTUGUESE,
+    MAX_USER_LANGUAGE
 };
 
 // Config.ini [Font], con los mismos defaults que el DLL (Font.cpp) para las
@@ -65,6 +76,9 @@ public:
     int GetMusicLevel()  const { return m_MusicLevel; }
     bool GetDeleteHealthBar() const { return m_DeleteHealthBar; }
     const char* GetUsername() const { return m_Username; }
+    int GetLanguage() const { return m_Language; }
+    // "Eng", "Spn" o "Por"; nullptr para USER_LANG_DEFAULT.
+    static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }
 
     // Ancho y alto de un índice de resolución; false si el índice no existe.
@@ -79,6 +93,7 @@ private:
     int  m_SoundLevel  = -1;
     int  m_MusicLevel  = -1;
     bool m_DeleteHealthBar = false;
+    int  m_Language = USER_LANG_DEFAULT;
     char m_Username[11] = {};
     UserFontSettings m_Font;
 };

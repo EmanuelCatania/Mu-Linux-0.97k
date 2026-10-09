@@ -1,6 +1,7 @@
 // Scene_AssetLoad.cpp
 
 #include "stdafx.h"
+#include "Local/ClientText.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -145,7 +146,9 @@ void __cdecl Scene_LoadGameAssets(void) {
         // variantes Dialog_{Eng,Por,Spn}.bmd y no es cierto: Dialog.bmd esta en
         // Data/Local y es byte por byte identico a Dialog_Spn.bmd, asi que esto
         // no cambia nada hoy — solo deja de hardcodear el idioma.
-        Dialog_LoadBMD("Data/Local/Dialog.bmd");
+        // DESVIACION (DLL Language.cpp): Dialog_<idioma>.bmd si hay selección.
+        char dialogPath[MAX_PATH];
+        Dialog_LoadBMD(LocalizedDataPath("Data/Local/Dialog", ".bmd", dialogPath, sizeof(dialogPath)));
         CSQuest_OpenQuestScript((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
