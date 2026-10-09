@@ -4,6 +4,7 @@
 #include "Core/Font.h"
 #include "Core/Window.h"
 #include "UI/UIState.h"
+#include "Local/ClientText.h"
 
 CMoveList gMoveList;
 namespace {
@@ -146,14 +147,14 @@ void CMoveList::Render()
     m_dwBackColor = 0;
     Rect(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep, 0, 0, 0, .8f);
     m_dwTextColor = 0xFF00FFFF;
-    Text(Layout::ContentX, Layout::TitleY, "Teleport Window", Layout::ContentWidth);
+    Text(Layout::ContentX, Layout::TitleY, gClientText.Get(ClientTextId::MoveTitle), Layout::ContentWidth);
     m_dwTextColor = 0xFFFFCC66;
-    Text(Layout::MapX, Layout::HeaderY, "Map", Layout::MapWidth);
+    Text(Layout::MapX, Layout::HeaderY, gClientText.Get(ClientTextId::MoveMap), Layout::MapWidth);
     Text(Layout::LevelX, Layout::HeaderY, GlobalText[161], Layout::LevelWidth);
     Text(Layout::ZenX, Layout::HeaderY, GlobalText[100], Layout::ZenWidth);
-    Text(Layout::VipX, Layout::HeaderY, "VIP", Layout::VipWidth);
+    Text(Layout::VipX, Layout::HeaderY, gClientText.Get(ClientTextId::MoveVip), Layout::VipWidth);
     m_dwTextColor = 0xFFFFFFFF;
-    if (!m_Count) Text(Layout::ContentX, Layout::RowsY, m_Received ? "NO MOVE INFO" : "WAITING FOR MOVE INFO", Layout::ContentWidth);
+    if (!m_Count) Text(Layout::ContentX, Layout::RowsY, gClientText.Get(m_Received ? ClientTextId::MoveEmpty : ClientTextId::MoveWaiting), Layout::ContentWidth);
     for (int i = 0; i < rows; ++i) {
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
         const int y = Layout::RowsY + i * Layout::RowStep;
@@ -177,8 +178,8 @@ void CMoveList::Render()
     Rect(closeX, footer, closeWidth, Layout::RowStep, closeHover ? 1.0f : .8f, 0, 0, 1);
     Text(closeX, footer, GlobalText[247], closeWidth);
     if (m_Count > RowsPerPage) {
-        if (m_Page > 0) Text(Layout::PreviousX, footer, "< Previous", Layout::ButtonWidth);
-        if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, "Next >", Layout::ButtonWidth);
+        if (m_Page > 0) Text(Layout::PreviousX, footer, gClientText.Get(ClientTextId::PagePrevious), Layout::ButtonWidth);
+        if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, gClientText.Get(ClientTextId::PageNext), Layout::ButtonWidth);
     }
     SelectObject(gFont.GetTextDC(), font);
     m_dwTextColor = color;

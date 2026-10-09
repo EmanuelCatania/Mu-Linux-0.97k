@@ -13,7 +13,14 @@ const char* const English[] = {
     "Disabled",
     "Open now",
     "In progress",
-    "%lu days"
+    "%lu days",
+    "Teleport Window",
+    "Map",
+    "VIP",
+    "Waiting for move information",
+    "No destinations",
+    "< Previous",
+    "Next >"
 };
 static_assert(sizeof(English) / sizeof(English[0]) == (size_t)ClientTextId::Count,
               "Faltan textos del cliente");

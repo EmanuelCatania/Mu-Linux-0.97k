@@ -5,6 +5,7 @@
 enum class ClientTextId {
     WindowTitle, ChaosRatePending, ChaosCostPending,
     EventTitle, EventWaiting, EventEmpty, EventDisabled, EventOpen, EventStarted, EventDays,
+    MoveTitle, MoveMap, MoveVip, MoveWaiting, MoveEmpty, PagePrevious, PageNext,
     Count
 };
 class CClientText {
