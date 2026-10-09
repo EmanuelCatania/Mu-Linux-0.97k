@@ -35,6 +35,16 @@ bool CanOpenInformationalPanel()
         !IsItemMovePending() && !HasRightPanel();
 }
 
+// Panel lateral (H): se alterna con inventario/personaje/guild/party, pero no se
+// abre sobre una ventana de NPC, trade, creador de guild u otra con su propio cierre.
+bool CanOpenSidePanel()
+{
+    return SceneFlag == 5 && !HasTextInput() && !HasModalDialog() && !IsItemMovePending() &&
+        !(ShopOpened || WarehouseOpened || ChaosMixOpened || TradeOpened ||
+          EventWindowOpened || GuildCreatorOpened || _g_bEventChipDialogEnable ||
+          ServerDivisionOpened || IsQuestPanelOpen());
+}
+
 bool CanQueryChaosRate()
 {
     // Chaos debe estar abierto; no comparte el bloqueo de paneles informativos.

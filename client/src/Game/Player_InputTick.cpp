@@ -399,7 +399,8 @@ static bool HUD_IsAnyRightPanelOpen(void)
 {
     return HUD_IsInventoryFamilyActive() ||
            (DAT_07eaa115 != 0) ||   // PartyOpened
-           (DAT_07eaa114 != 0);     // GuildOpened
+           (DAT_07eaa114 != 0) ||   // GuildOpened
+           gEventTimer.IsOpen();    // DESVIACION: panel H
 }
 
 static void HUD_HotkeyTick(void)

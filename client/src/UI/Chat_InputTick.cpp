@@ -23,6 +23,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "UI/EventTimer.h"
 #pragma warning(disable: 4102)
 #include "globals.h"
 #include "functions.h"
@@ -371,16 +372,20 @@ void __cdecl Chat_InputTick(void)
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11970 == 0) {
                 DAT_07e11970 = 1;
-                // Same structural split as newer clean sources:
-                // guild list open -> guild widget, else main chat widget.
-                DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
-                                                  : DAT_055c9ff0);
-                if (obj && *(int*)obj) {
-                    void** vt = (void**)*obj;
-                    typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-                    typedef int (__fastcall *FnRows)(DWORD*, int);
-                    int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
-                    ((FnScroll)vt[12])(obj, 0, -rows);
+                // DESVIACION: con el panel H abierto, la página va a su lista.
+                if (gEventTimer.IsOpen()) gEventTimer.ScrollPages(-1);
+                else {
+                    // Same structural split as newer clean sources:
+                    // guild list open -> guild widget, else main chat widget.
+                    DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
+                                                      : DAT_055c9ff0);
+                    if (obj && *(int*)obj) {
+                        void** vt = (void**)*obj;
+                        typedef int (__fastcall *FnScroll)(DWORD*, int, int);
+                        typedef int (__fastcall *FnRows)(DWORD*, int);
+                        int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
+                        ((FnScroll)vt[12])(obj, 0, -rows);
+                    }
                 }
             }
         } else {
@@ -391,14 +396,18 @@ void __cdecl Chat_InputTick(void)
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11974 == 0) {
                 DAT_07e11974 = 1;
-                DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
-                                                  : DAT_055c9ff0);
-                if (obj && *(int*)obj) {
-                    void** vt = (void**)*obj;
-                    typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-                    typedef int (__fastcall *FnRows)(DWORD*, int);
-                    int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
-                    ((FnScroll)vt[12])(obj, 0, rows);
+                // DESVIACION: con el panel H abierto, la página va a su lista.
+                if (gEventTimer.IsOpen()) gEventTimer.ScrollPages(1);
+                else {
+                    DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
+                                                      : DAT_055c9ff0);
+                    if (obj && *(int*)obj) {
+                        void** vt = (void**)*obj;
+                        typedef int (__fastcall *FnScroll)(DWORD*, int, int);
+                        typedef int (__fastcall *FnRows)(DWORD*, int);
+                        int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
+                        ((FnScroll)vt[12])(obj, 0, rows);
+                    }
                 }
             }
         } else {

@@ -8,6 +8,7 @@
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
+void ChatListBox_AddWheel(int notches);
 extern "C" BYTE InputTextHide[10];
 
 // Chat_TryAssignMacro -- "/1 texto" guarda una macro en la tecla 1.
@@ -116,6 +117,8 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_MOUSEWHEEL:    // 0x20A
+        // DESVIACION: el original la descartaba; ver ChatListBox_AddWheel.
+        ChatListBox_AddWheel(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
         break;
 
     // 0x10F = WM_IME_COMPOSITION — chat coreano DBCS
