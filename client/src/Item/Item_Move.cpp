@@ -61,6 +61,8 @@ static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
     g_ItemMoveTargetPool = (DWORD)(uintptr_t)targetPoolBase;
 }
 
+int g_ItemMoveTargetDurBefore = -1;
+
 void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
                                            int dstFlag, int iDstIndex) {
     if (!pItem) return;
@@ -88,6 +90,15 @@ void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
     pkt[8]  = itemBytes[3];   // type hi | excellent
     pkt[9]  = (BYTE)dstFlag;
     pkt[10] = (BYTE)iDstIndex;
+
+    // Para el merge de stacks: el server responde 0xFF y sólo manda la
+    // durabilidad nueva del destino (0x2A), así que el sobrante del origen se
+    // deduce comparando con la que tenía antes (Recv_Item.cpp NetRecv_24).
+    g_ItemMoveTargetDurBefore = -1;
+    if (srcFlag == 0 && dstFlag == 0 && iDstIndex >= 12 && iDstIndex < 76) {
+        const ITEM* target = (const ITEM*)OffsetInventoryItems + (iDstIndex - 12);
+        if (target->Type == pItem->Type) g_ItemMoveTargetDurBefore = target->Durability;
+    }
 
     gNetwork.Send(pkt, 11);
 

@@ -202,6 +202,8 @@ void ItemMove_UpdateInventoryDurability(int slot, BYTE durability)
     }
 }
 
+extern int g_ItemMoveTargetDurBefore;
+
 bool ItemMove_LooksLikeStackMerge(BYTE* targetPool, int targetSlot, const BYTE* sourceItem68)
 {
     if (!targetPool || !sourceItem68) {
@@ -312,6 +314,18 @@ void NetRecv_24(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // no lo movió). Lo reinsertamos en el origen.
         if (!stackMergeAck) {
             ItemMove_RestoreSlot(sourcePool, (int)DAT_07ea5b18, (BYTE*)DAT_07e91350);
+        } else if (g_ItemMoveTargetDurBefore >= 0) {
+            // Merge parcial o destino lleno: lo que no entró vuelve al origen.
+            // El server no avisa el origen si le queda algo (InventoryAddItemStack).
+            const ITEM* target = (const ITEM*)OffsetInventoryItems + ((int)Msg[4] - 12);
+            const int added = (int)target->Durability - g_ItemMoveTargetDurBefore;
+            const int left = (int)((ITEM*)DAT_07e91350)->Durability - (added > 0 ? added : 0);
+            if (left > 0) {
+                BYTE item[sizeof(ITEM)];
+                memcpy(item, DAT_07e91350, sizeof(ITEM));
+                ((ITEM*)item)->Durability = (BYTE)left;
+                ItemMove_RestoreSlot(sourcePool, (int)DAT_07ea5b18, item);
+            }
         }
         ItemMove_ClearPickedState();
         PlayBuffer(29, 0, 0);
