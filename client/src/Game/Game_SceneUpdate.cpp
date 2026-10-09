@@ -28,6 +28,7 @@
 //   state 2,4,6,8   : Y eases to 0x93  (credentials panel)
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
 #include "Net/PacketFrame.h"
 
 extern "C" void DbgLogPublic(const char* msg);
@@ -584,55 +585,9 @@ int Game_SceneUpdate(void)
                 // Previous implementation XOR-chained every byte starting at pkt[3],
                 // which corrupted the subh byte (server saw 0x79 instead of 0x01) and
                 // caused LoginResult code=0x05 (blacklist path: empty HardwareID).
-                static const BYTE kArgXor[3] = { 0xFC, 0xCF, 0xAB };
-                BYTE pkt[64] = {0};
-                pkt[0] = 0xC1;
-                pkt[1] = 0x01;     // placeholder — serial stomp overwrites
-                pkt[2] = 0xF1;     // head (plaintext)
-                pkt[3] = 0x01;     // subh (plaintext) — CGConnectAccountRecv dispatch
-                int  pos = 4;
-
-                // account[10] — XOR with 3-byte rotating mask (PacketArgumentEncrypt).
-                for (int i = 0; i < 10; i++) {
-                    pkt[pos + i] = (BYTE)(user[i] ^ kArgXor[i % 3]);
-                }
-                pos += 10;
-
-                // password[10] — same XOR.
-                for (int i = 0; i < 10; i++) {
-                    pkt[pos + i] = (BYTE)(pass[i] ^ kArgXor[i % 3]);
-                }
-                pos += 10;
-
-                // TickCount (4 bytes LE) — plaintext.
-                DWORD tick = GetTickCount();
-                memcpy(pkt + pos, &tick, 4);
-                pos += 4;
-
-                // ClientVersion[5] — obfuscated as (v[i] - i - 1), plaintext after.
-                for (int i = 0; i < 5; i++) {
-                    pkt[pos + i] = (BYTE)(Version[i] - (char)i - 1);
-                }
-                pos += 5;
-
-                // ClientSerial[16] — raw copy, plaintext.
-                memcpy(pkt + pos, Serial, 16);
-                pos += 16;
-                // pkt[1] := serial is set later by gNetwork.Send
-
-                // ── LoginKey chain XOR ──────────────────────────────────────
-                // Se aplica en gNetwork.Send / gNetwork.SendLarge, para TODOS los
-                // paquetes salientes (F1/05 HWID incluido), igual que el companion
-                // (Protocol.cpp ExtractPacket).
-                int totalLen = pos;
-
-                // Compute CRC and build final send buffer
-                int crc = CSimpleModulus_Encode(0, pkt + 1, totalLen - 1);
-                if (crc < 0x100) {
-                    gNetwork.Send(pkt, totalLen);
-                } else {
-                    gNetwork.SendLarge(pkt, totalLen);
-                }
+                // Armado del F1/01 en CNetwork::SendLogin (lo comparte la reconexión).
+                gNetwork.SendLogin((const char*)user, (const char*)pass);
+                gReconnect.OnLoginSent((const char*)user, (const char*)pass);
 
                 // Diagnóstico: log de cada intento de login (longitudes + serial actual,
                 // nunca la password), para correlacionar con "F1/01 LOGIN-RESULT code=..."

@@ -5,6 +5,7 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
 #include "UI/OptionsMenu.h"
 #include "globals.h"
 #include "functions.h"
@@ -238,6 +239,11 @@ void __cdecl UI_InGameMenu(void)
                     {
                     case 0:  // Exit / Salir del juego
                     {
+                        // DESVIACION (DLL Reconnect.cpp MenuExitGame, 0x005144DC):
+                        // salir mientras reconecta cierra el cliente; si no, el
+                        // cierre que sigue es voluntario y no reconecta.
+                        if (gReconnect.ExitIfActive()) return;
+                        gReconnect.MarkIntentional();
                         // IDA 00514310 L605-825: el packet F1/02/00 SOLO se manda
                         // cuando estamos in-game (gs==5). En login/char-select
                         // (gs==2/4) la rama de L823-825 solo cierra el socket y
@@ -286,6 +292,7 @@ void __cdecl UI_InGameMenu(void)
                             if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
+                                gReconnect.MarkIntentional();
                                 BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
                                 gNetwork.Send(pkt, 5);
                             }
@@ -319,6 +326,7 @@ void __cdecl UI_InGameMenu(void)
                             //   6. Cliente Recv_CharList puebla slots 0-4
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
                             FUN_0050f700("Data\\Macro.txt");  // IDA L1081
+                            gReconnect.MarkIntentional();
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
                             gNetwork.Send(pkt, 5);
                             // NO transición local. NO F3/00 send. Dejamos

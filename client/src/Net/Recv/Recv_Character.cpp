@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -142,6 +143,9 @@ short s_PendingHeroGuildMarkRow = -1;
 // ---------------------------------------------------------------------------
 void Recv_CharList(const BYTE* Msg, int Size)
 {
+    // DESVIACION (DLL Reconnect.cpp): durante la reconexión se entra directo
+    // con el mismo personaje, sin pasar por char-select.
+    if (gReconnect.OnCharacterList()) return;
     const int CHAR_STRIDE  = 0x394;
     const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
     const int MAX_PREVIEW  = 5;            // slots renderizados en char-select
@@ -591,6 +595,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 
     NetLog("NET:    F3/03 JoinMapServer world=%d pos=(%d,%d) dir=%d rot=%.1f heroIdx=%d",
            world, PosX, PosY, direction, Rotation, (int)heroIndex);
+    gReconnect.OnCharacterInfo();   // fin de la reconexión, si la había
 }
 
 // ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
 #include "Game/MapManager.h"
@@ -48,6 +49,7 @@ int __cdecl FUN_004c3dd0(int param_1) {
 // IDA: RenderInformation (0x0051E200), 58 bytes — render all HUD info layers
 void __cdecl RenderInformation(void) {
     RenderErrorMessage(); // RenderErrorMessage / stats panel
+    gReconnect.Render();  // DESVIACION (DLL Reconnect.cpp, 0x00525CC1)
     Scene_MapTick(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
     if ((g_bUseChatListBox == 1) || (SceneFlag != 5)) {

@@ -7,6 +7,8 @@
 // Initialises the packet hash table for session key tracking.
 
 #include "stdafx.h"
+#include "Net/Network.h"
+#include "Net/Reconnect.h"
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
@@ -19,6 +21,19 @@ extern "C" void DbgLogPublic(const char* msg);
 // Packet_DecryptByte/Packet_EncryptByte).
 // Returns unaff_EBP (register spill — result from lower-level connect call).
 // IDA: CreateSocket (0x00423920)
+// DESVIACION (DLL Reconnect.cpp): CreateSocketNoExit no cierra el cliente si
+// la conexión falla (la usa la reconexión, que reintenta).
+static bool s_NonFatalConnect = false;
+static bool s_LastConnectOk = false;
+
+bool CreateSocketNoExit(const char* ip, unsigned int port)
+{
+    s_NonFatalConnect = true;
+    CreateSocket(ip, port);
+    s_NonFatalConnect = false;
+    return s_LastConnectOk;
+}
+
 void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
 {
   byte bVar1;
@@ -49,6 +64,15 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     char dbg[64];
     wsprintfA(dbg, "NET: CreateSocket Net_Connect returned %d", iVar2);
     DbgLogPublic(dbg);
+  }
+  s_LastConnectOk = iVar2 != 0;
+  // DESVIACION (DLL Reconnect.cpp ReconnectCreateConnection): recordar el
+  // GameServer para poder reconectar.
+  if (iVar2 != 0 && !gNetwork.IsConnectServerMode())
+    gReconnect.OnGameServerConnect(param_1, (WORD)param_2);
+  if (iVar2 == 0 && s_NonFatalConnect) {
+    DbgLogPublic("NET: CreateSocket falló (reconexión: se reintenta)");
+    return;
   }
   if (iVar2 == 0) {
     DbgLogPublic("NET: CreateSocket CONNECT FAILED → abort/SetErrorMessage(0x71)");

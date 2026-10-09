@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
 #include "Net/Ping.h"
@@ -57,6 +58,7 @@ void Recv_JoinServer(const BYTE* Msg)
         if (gUserSettings.GetLanguage() != USER_LANG_DEFAULT)
             Lang_Send(gUserSettings.GetLanguage());
         HWID_Send();
+        gReconnect.OnJoinServer();   // DESVIACION: la reconexión reenvía el login
     } else {
         NetLog("NET:    JoinServer FAIL code=%d → SetErrorMessage(113)", Msg[4]);
         SetErrorMessage(113);        // "Connecting error"
@@ -70,6 +72,8 @@ void Recv_JoinServer(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void Recv_LoginResult(const BYTE* Msg)
 {
+    // DESVIACION (DLL Reconnect.cpp): durante la reconexión no se vuelve al login.
+    if (gReconnect.OnLoginResult(Msg[4])) return;
     DWORD state;
     switch (Msg[4]) {
         case 0x00: state = 21; break;
