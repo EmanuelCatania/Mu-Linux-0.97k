@@ -4,6 +4,7 @@
 // trade y chaos mix.
 
 #include "stdafx.h"
+#include "Item/Item_ServerValue.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -322,6 +323,13 @@ unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short* p
                 if (pickedLevel == cellLevel) {
                     return 1;
                 }
+            }
+            // DESVIACION (DLL ItemStack.cpp CanInsertItem): los apilables del
+            // server (F3/E3) del mismo nivel; el server suma en InventoryAddItemStack.
+            const int cellLevel = (*(int*)((char*)OffsetInventoryItems + cellIdx * 0x44 + 4) >> 3) & 0xf;
+            const int pickedLevel = ((int)DAT_07e91354 >> 3) & 0xf;
+            if (cellLevel == pickedLevel && ItemStack_GetMaxStack(picked, pickedLevel) != 0) {
+                return 1;
             }
         }
     }

@@ -46,6 +46,7 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/Item_ServerValue.h"
 #include "Item/RightClickMove.h"
 #include "Item/ChaosMixRates.h"
 #include "globals.h"
@@ -1025,6 +1026,20 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                             SendRequestEquipmentItem(0, abs, (ITEM*)pPickedItem, 0, target);
                             PlayBuffer(29, 0, 0);
                             return;
+                        }
+                    }
+                    // DESVIACION (DLL ItemStack.cpp CheckItemStackClicked): si no
+                    // se movió ni se equipó, un apilable separa una unidad (C1:2B:00).
+                    if (!byte_83A42EB) {
+                        const ITEM* stackItem = (const ITEM*)pPickedItem;
+                        if (ItemStack_GetMaxStack(stackItem->Type, (stackItem->Level >> 3) & 0xF) != 0) {
+                            if (DAT_07eaa11b || (DAT_07eaa11a && MixState != 1) || DAT_07eaa119) {
+                                UIChatLogWindow_AddText("", GlobalText[474], 2);
+                            } else {
+                                const BYTE slot = (BYTE)(grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12);
+                                const BYTE pkt[6] = { 0xC1, 0x06, 0x2B, 0x00, slot, 1 };
+                                gNetwork.SendC1(pkt, sizeof(pkt));
+                            }
                         }
                     }
                     if (byte_83A42EB) {

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/Item_ServerValue.h"
 
 // RenderItemInfo.cpp  @0x004C4650 / 0x004C8D70
 // Populates the item info tooltip string buffer (lpString_07e90798, stride 100, ~0x18 slots)
@@ -1629,7 +1630,9 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
             if (type == 426) RII_ADD(0, 0, GlobalText[95], ip->Durability);
         } else if (type >= 430 && type <= 435) {
             // LABEL_318: sin linea salvo el 426 (que no cae en este rango)
-        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143) {
+        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143 ||
+                   // DESVIACION (DLL ItemStack): los apilables del server muestran la cantidad.
+                   ItemStack_GetMaxStack(type, Level) != 0) {
             RII_ADD(0, 0, GlobalText[69], ip->Durability);
         } else if (type >= 416 && type <= 423) {
             RII_ADD(0, 0, GlobalText[70], ip->Durability);
