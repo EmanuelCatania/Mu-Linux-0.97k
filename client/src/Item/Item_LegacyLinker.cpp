@@ -218,6 +218,10 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     if (!table) return;
 
     ITEM_ATTRIBUTE* p = &table[wType];
+    // 0.97.20: las reglas por rango de tipo (opciones, skill, excellent,
+    // casillero) usan el vanilla que imita un agregado; los valores salen de
+    // la fila del propio item (`p`).
+    wType = (short)ItemBehaviorType(wType);
     int itemLevel = ((BYTE)Attribute1 >> 3) & 0xF;
     int itemExcel = ((BYTE)Attribute2) & 0x3F;
     int itemExt = (int)ip->byColorState;
@@ -474,8 +478,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         if (Attribute2 & 1) push_special(79);
     }
 
-    // 0.97.20: un agregado (>= 512) toma el casillero del vanilla que imita.
-    const int partType = ItemBehaviorType(wType);
+    const int partType = wType;
     if ((partType >= 128 && partType < 136) || partType == 145) {
         ip->Part = 1;
         ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);

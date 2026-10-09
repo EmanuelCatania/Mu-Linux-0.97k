@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
 
@@ -1354,9 +1355,12 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 {
     const unsigned int attrBase = ItemAttribute_Base();
     if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
-    const short type = ip->Type;
-    if (type < 0 || type >= ITEM_MAX_EX) return;
-    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[type];
+    if (ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
+    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
+    // 0.97.20: las líneas que el tooltip decide por rango de tipo (durabilidad,
+    // una/dos manos, skill, opciones) usan el vanilla que imita un agregado;
+    // nombre y valores salen de la fila del propio item (`p` / `ip`).
+    const short type = (short)ItemBehaviorType(ip->Type);
     const BYTE* CA = (const BYTE*)CharacterAttribute;
     if (!CA) return;
 
