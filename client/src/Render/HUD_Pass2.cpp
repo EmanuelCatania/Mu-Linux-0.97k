@@ -20,6 +20,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -444,7 +445,12 @@ int RenderEquipedHelperLife_(bool a2)
         const int bar = 50 * (int)life / 255;
 
         const char* text = "";
-        if (helperType == 818)      text = GlobalText[355];
+        // 0.97.20: un helper agregado (>= 512) muestra su propio nombre; el
+        // comportamiento sólo decide la lógica de pet o montura.
+        const short helperItem = CharacterMachine ? *(const short*)((const BYTE*)CharacterMachine + 1080) : -1;
+        if (helperItem >= ITEM_MAX_VANILLA && helperItem < ITEM_MAX_EX && ItemAttribute)
+            text = ItemAttribute[helperItem].Name;
+        else if (helperType == 818) text = GlobalText[355];
         else if (helperType == 819) text = GlobalText[354];
         else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
         if (!text) text = "";
