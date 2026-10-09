@@ -2200,22 +2200,23 @@ extern "C" void GuildList_AddMember(const char* name, char connected, char party
 void EventTimer_DrawRow(int index, int x, int y, int width);
 
 namespace {
-constexpr int EventRowStep = 26;   // dos líneas de 13, como el paso del guild
+constexpr int EventRowStep = 34;   // recuadro 245 (21) + línea del tiempo
 }
 
-// slot 22 — fondo: GuildLB_renderBg (sub_40ED80) con alto por filas de 26 en
+// slot 22 — fondo: GuildLB_renderBg (sub_40ED80) con alto por filas de 34 en
 // lugar de 40 cada 3; flechas, riel y pulgar con los mismos assets 1282–1284.
 static int __fastcall EventLB_renderBg(DWORD* self)
 {
     typedef void (__fastcall *FnVoid)(DWORD*);
-    typedef int  (__fastcall *FnInt )(DWORD*);
     void**  vt = (void**)*self;
     float*  f  = (float*)self;
 
     self[14] = (DWORD)(EventRowStep * (int)self[35] + 10);
     ((FnVoid)vt[18])(self);                       // recalcScroll
 
-    if (((FnInt)vt[19])(self) > (int)self[35]) {
+    // DESVIACION: el riel se dibuja siempre, como el del chat; sin desborde el
+    // pulgar ocupa todo el alto (recalcScroll lo limita a 1.0).
+    {
         const float right = (float)((int)self[13] + (int)self[11]);
         GL_DrawTexture(1284, right - 19.0f, (float)((int)self[12] - (int)self[14]) + 8.0f,
                        13.0f, 13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
@@ -2231,7 +2232,7 @@ static int __fastcall EventLB_renderBg(DWORD* self)
     return 1;
 }
 
-// slot 23 — una fila: misma ubicación que GuildLB_renderLine con paso 26.
+// slot 23 — una fila: misma ubicación que GuildLB_renderLine con paso 34.
 static int __fastcall EventLB_renderLine(DWORD* self, int /*edx*/, int row)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
@@ -2246,7 +2247,7 @@ static int __fastcall EventLB_renderLine(DWORD* self, int /*edx*/, int row)
         ? EventRowStep * (count - visible - row) + bottom
         : bottom - EventRowStep * row;
     const int x = (int)self[11] + 8;
-    const int width = (int)self[13] - 8 - 21;   // hasta el riel del scrollbar
+    const int width = (int)self[13] - 8 - 23;   // el recuadro no pisa el riel
     EventTimer_DrawRow((int)node[2], x, y, width);
     return 1;
 }
@@ -2337,7 +2338,9 @@ void EventListBox_Rebuild(void* widget, int count, bool keepPosition)
     // El scroll se cuenta desde el final; conservar la distancia al principio.
     const int fromTop = (int)obj[24] - visible - (int)obj[34];
     ((FnVoid)vt[10])(obj);
-    for (int i = count - 1; i >= 0; --i) ((FnAdd)vt[28])(obj, 0, i);
+    // Como ReceiveGuildList: en orden; la inserción al frente y el dibujo de
+    // abajo hacia arriba dejan el primero arriba.
+    for (int i = 0; i < count; ++i) ((FnAdd)vt[28])(obj, 0, i);
     if (keepPosition && count > visible) {
         int scroll = count - visible - (fromTop > 0 ? fromTop : 0);
         obj[34] = (DWORD)(scroll < 0 ? 0 : scroll);

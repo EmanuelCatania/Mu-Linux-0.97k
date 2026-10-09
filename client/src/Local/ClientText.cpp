@@ -7,7 +7,7 @@ const char* const English[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
     "Success rate: pending",
     "Cost: pending",
-    "Event Timer",
+    "Events",
     "Waiting for event information",
     "No scheduled events",
     "Disabled",

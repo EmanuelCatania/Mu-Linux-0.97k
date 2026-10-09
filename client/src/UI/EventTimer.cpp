@@ -19,9 +19,11 @@ struct EventPanelLayout {
     static constexpr int X = 450, Y = 0;
     static constexpr int TitleX = X + 35, TitleY = Y + 12, TitleWidth = 120;
     static constexpr int MessageX = X + 20, MessageY = Y + 50;
-    static constexpr int ListX = X + 10, ListBottom = Y + 385, ListWidth = 170, ListRows = 12;
+    static constexpr int ListX = X + 10, ListBottom = Y + 385, ListWidth = 170, ListRows = 9;
     static constexpr int CloseX = X + 25, CloseY = Y + 395, CloseSize = 24;
-    static constexpr int LineStep = 13;
+    // Fila: recuadro de etiqueta a la izquierda como las stats del panel de
+    // personaje y el tiempo centrado debajo.
+    static constexpr int BoxWidth = 110, BoxHeight = 21, NameY = 4, TimeY = 22;
 };
 using Layout = EventPanelLayout;
 enum EventState { Blank, Stand, Open, Start }; // server EventTimeManager.h
@@ -151,6 +153,9 @@ void CEventTimer::Toggle()
     PartyOpened = 0;
     gMoveList.Close();
     m_Open = true;
+    // Mismo par de sonidos que al abrir el inventario (Chat_InputTick 0x004B14F0).
+    PlayBuffer(25, 0, 0);
+    PlayBuffer(28, 0, 0);
 }
 
 void CEventTimer::ScrollPages(int pages)
@@ -177,14 +182,30 @@ void CEventTimer::DrawRow(int index, int x, int y, int width) const
 {
     const auto* event = Get(index);
     if (!event) return;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    // Recuadro 245 de las filas de stats del panel de personaje
+    // (RenderCharacterInfoWindow): 75x21 útiles en una textura de 128x32.  Para
+    // el ancho de la fila se estira sólo el centro y se conservan los bordes.
+    constexpr float U = 1.0f / 128.0f, V = 0.65625f, Cap = 12.0f, Used = 75.0f;
+    const float fx = (float)x - 4.0f, fy = (float)y, fw = (float)Layout::BoxWidth;
+    glColor3f(1.0f, 1.0f, 1.0f);
+    GL_DrawTexture(245, fx, fy, Cap, (float)Layout::BoxHeight, 0.0f, 0.0f, Cap * U, V, 1, 1);
+    GL_DrawTexture(245, fx + Cap, fy, fw - 2 * Cap, (float)Layout::BoxHeight,
+                   Cap * U, 0.0f, (Used - 2 * Cap) * U, V, 1, 1);
+    GL_DrawTexture(245, fx + fw - Cap, fy, Cap, (float)Layout::BoxHeight,
+                   (Used - Cap) * U, 0.0f, Cap * U, V, 1, 1);
+    EnableAlphaTest(true);
+
     m_dwBackColor = 0;
-    m_dwTextColor = 0xFFE6E6E6;
-    RenderText(x, y + 1, const_cast<char*>(event->name), PhysicalWidth(width), 0, nullptr);
+    m_dwTextColor = 0xFFE6E6E6u;
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    RenderText(x, y + Layout::NameY, const_cast<char*>(event->name),
+               PhysicalWidth(Layout::BoxWidth - 8), 1, nullptr);
     char time[32];
     FormatTime(*event, time, sizeof(time));
     m_dwTextColor = TimeColor(*event, RemainingSeconds(*event));
-    RenderText(x + 8, y + 1 + Layout::LineStep, time, PhysicalWidth(width - 8), 0, nullptr);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    (void)width;  // el tiempo va centrado bajo el recuadro, no en toda la fila
+    RenderText(x, y + Layout::TimeY, time, PhysicalWidth(Layout::BoxWidth - 8), 1, nullptr);
 }
 
 void CEventTimer::RenderPanel()
