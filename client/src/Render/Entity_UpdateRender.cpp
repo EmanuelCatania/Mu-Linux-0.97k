@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 
@@ -251,10 +252,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // IDA 00456770 groups these MonsterIDs before the individual Icarus
     // branches.  43 and 78..83 need the first 0x48 pass; 67 uses 0x144 for
     // its second pass; 59 is the only half-bright member of the group.
+    // DESVIACION (DLL CustomMonsterGolden, ahora catálogo 0.97.20): un
+    // monstruo marcado golden en el server se dibuja como los Golden 78..83.
+    const CatalogMonster* catalogMonster = (entity_type != 390) ? gContentCatalog.GetMonster(bVar7) : nullptr;
+    const bool catalogGolden = catalogMonster && catalogMonster->Golden;
     if (bVar7 == 38 || bVar7 == 43 || bVar7 == 52 || bVar7 == 59 ||
-        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83)) {
+        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
-        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83)) {
+        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
             RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                          *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
         }

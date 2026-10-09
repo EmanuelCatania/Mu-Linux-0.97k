@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
@@ -1465,11 +1466,14 @@ bool Equip_CanPlace(const ITEM* item, int a5)
     BYTE* const CM = (BYTE*)CharacterMachine;
     BYTE* const CA = (BYTE*)CharacterAttribute;
     ITEM_ATTRIBUTE* const IA = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
-    const short pt    = item->Type;
-    const short left  = *(short*)(CM + 536);
-    const short right = *(short*)(CM + 604);
+    // 0.97.20: las reglas por rango de tipo usan el vanilla que imita un
+    // agregado; la clase requerida es la del propio item.
+    const short pt    = (short)ItemBehaviorType(item->Type);
+    // 0.97.20: los agregados se validan como el vanilla que imitan.
+    const short left  = (short)ItemBehaviorType(*(short*)(CM + 536));
+    const short right = (short)ItemBehaviorType(*(short*)(CM + 604));
     const int   cls   = CA[11] & 7;
-    const BYTE* req   = IA[pt].RequireClass;
+    const BYTE* req   = IA[item->Type].RequireClass;
     bool ok = true;
 
     if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
@@ -2206,7 +2210,7 @@ void __cdecl SetCharacterClass(int c) {
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
         short v = *(short*)(v7 + srcOff);
-        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)(v + 400);
+        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
     };
     // Valor previo del helper, para detectar el CAMBIO abajo.
     const short prevHelper = *(short*)(c + 696);
@@ -2275,27 +2279,27 @@ void __cdecl SetCharacterClass(int c) {
     short v17 = *(short*)(v7 + 136);
     *(short*)(c + 504) = (v17 == -1)
         ? (short)(skinLo + 4 * skinHi + 912)
-        : (short)(v17 + 400);
+        : (short)ItemEntityModel(v17);
 
     short v21 = *(short*)(v7 + 204);
     *(short*)(c + 528) = (v21 == -1)
         ? (short)(skinLo + 4 * skinHi + 919)
-        : (short)(v21 + 400);
+        : (short)ItemEntityModel(v21);
 
     short v22 = *(short*)(v7 + 272);
     *(short*)(c + 552) = (v22 == -1)
         ? (short)(skinLo + 4 * skinHi + 926)
-        : (short)(v22 + 400);
+        : (short)ItemEntityModel(v22);
 
     short v26 = *(short*)(v7 + 340);
     *(short*)(c + 576) = (v26 == -1)
         ? (short)(skinLo + 4 * skinHi + 933)
-        : (short)(v26 + 400);
+        : (short)ItemEntityModel(v26);
 
     short v27 = *(short*)(v7 + 408);
     *(short*)(c + 600) = (v27 == -1)
         ? (short)(skinLo + 4 * skinHi + 940)
-        : (short)(v27 + 400);
+        : (short)ItemEntityModel(v27);
 
     *(unsigned char*)(c + 506) = (unsigned char)((*(int*)(v7 + 140) >> 3) & 0xF);
     *(unsigned char*)(c + 530) = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);

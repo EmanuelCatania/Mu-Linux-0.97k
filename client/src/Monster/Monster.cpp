@@ -481,6 +481,7 @@
 //   Particle_StopLoop       @ 0x00460d20
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Monster/Monster.h"
 
 // CreateMonster @ 0x0045CCF0 — CreateMonster(Type, PositionX, PositionY, Key, [phantom])
@@ -564,6 +565,23 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     int v9, v10;
     int v15;
     unsigned char v16, v17;
+
+    // DESVIACION (DLL CustomMonster, ahora catálogo 0.97.20): un monstruo con
+    // modelo propio en el server se crea con ese modelo en vez del switch.
+    const CatalogMonster* custom = gContentCatalog.GetMonster(Type);
+    if (custom && custom->Model >= 0) {
+        c = CreateCharacter(Key, custom->Model, (unsigned char)PositionX, (unsigned char)PositionY, 0.0f);
+        if (!c) return nullptr;
+        *(float*)(c + 12) = (custom->Scale > 0.0f) ? custom->Scale : 1.0f;
+        const char* name = getMonsterName(Type);
+        if (!name || !name[0]) name = custom->Name;
+        strncpy_s((char*)(uintptr_t)(c + 0x1c1), 32, name, _TRUNCATE);
+        *(unsigned char*)(c + 747) = (unsigned char)Type;
+        *(unsigned short*)(c + 8) = 0;
+        *(unsigned short*)(c + 784) = (unsigned short)HeroIndex;
+        *(unsigned char*)(c + 132) = (custom->Kind == 0) ? 4 : 2;   // 4 NPC, 2 monstruo
+        return (char*)(uintptr_t)c;
+    }
 
     switch (Type) {
     case 1:
@@ -1384,6 +1402,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     } else {
         v10 = Type;
     }
+    if (c && custom && custom->Scale > 0.0f) *(float*)(c + 12) = custom->Scale;
 
     if (c) {
         // Copia el nombre desde la tabla MonsterScript/NPCName (getMonsterName por

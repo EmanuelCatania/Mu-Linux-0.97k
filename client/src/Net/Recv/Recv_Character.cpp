@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
@@ -1301,6 +1302,11 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             gEventTimer.Receive(Msg, Size);
             break;
         }
+        // DESVIACION (0.97.20): catálogo de contenido del server.
+        case 0xE7: gContentCatalog.ReceiveItems((const BYTE*)Msg, Size); break;
+        case 0xE8: gContentCatalog.ReceiveMonsters((const BYTE*)Msg, Size); break;
+        case 0xE9: gContentCatalog.ReceiveMapFog((const BYTE*)Msg, Size); break;
+        case 0xEA: gContentCatalog.ReceiveEnd((const BYTE*)Msg, Size); break;
         case 0x30: {
             // ── ReceiveOption (IDA 0x436FB0) — PORT FIEL ─────────────────
             // Layout autoritativo del server MuEmu (Protocol.h,

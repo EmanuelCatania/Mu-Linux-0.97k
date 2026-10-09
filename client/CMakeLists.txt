@@ -302,6 +302,7 @@ set(MU_SOURCES
     src/Item/Item_ChaosMix.cpp
     src/Item/Item_ClickHandler.cpp
     src/Item/RightClickMove.cpp
+    src/Item/ContentCatalog.cpp
     src/Item/Skill_Data.cpp
     src/Item/Gate_Data.cpp
     src/Item/Filter_Data.cpp
@@ -381,6 +382,7 @@ set(MU_HEADERS
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h
+    src/Item/ContentCatalog.h
     src/Item/ItemDefines.h
     src/Item/Item_ServerValue.h
     src/UI/GoldenArcher.h

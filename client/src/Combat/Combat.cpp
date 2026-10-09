@@ -437,6 +437,7 @@
 //   CharData_RecalcStats @ 0x0047e3c0
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/Item_Equip.h"
 #include "Combat/Combat.h"
 #include "Net/Net.h"
@@ -2090,8 +2091,8 @@ void __cdecl Action(DWORD c, DWORD o)
         // stride 916, esos offsets son otros campos).  Los ids son TIPOS de item (sin
         // el +400 del modelo): 136-142 arcos, 128-134 ballestas, 145 el par arco/ballesta.
         const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
-        const int leftHandType  = CM ? *(const short*)(CM + 536) : -1;   // IDA: v11
-        const int rightHandType = CM ? *(const short*)(CM + 604) : -1;   // IDA: v12
+        const int leftHandType  = CM ? ItemBehaviorType(*(const short*)(CM + 536)) : -1;   // IDA: v11
+        const int rightHandType = CM ? ItemBehaviorType(*(const short*)(CM + 604)) : -1;   // IDA: v12
 
         if (leftHandType >= 96 && leftHandType < 128) Range = 2.2f;       // IDA L1197-1200
         if ((leftHandType >= 136 && leftHandType < 143) ||

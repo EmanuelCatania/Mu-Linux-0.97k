@@ -565,4 +565,115 @@ struct PMSG_LIVE_CLIENT_SEND
 static_assert(sizeof(PMSG_LIVE_CLIENT_SEND) == 8, "C1:0E respuesta");
 static_assert(offsetof(PMSG_LIVE_CLIENT_SEND, TickCount) == 4, "C1:0E eco");
 
+// ── C2:F3:E7..E9 + C1:F3:EA ─ catálogo de contenido ── ContentCatalog.h ───────
+// Item/ContentCatalog.cpp.  El server es la autoridad de las definiciones de
+// items, monstruos y fog; manda la tabla completa antes de la respuesta del
+// login, troceada en paquetes con esta cabecera.
+const BYTE CATALOG_VERSION = 1;
+const BYTE CATALOG_ITEM_HAS_MODEL = 0x01;
+const BYTE CATALOG_ITEM_HAS_GLOW = 0x02;
+const BYTE CATALOG_ITEM_HAS_POSE = 0x04;
+const WORD CATALOG_MONSTER_HAS_MODEL = 0x01;
+
+struct PMSG_CATALOG_HEAD
+{
+    PSWMSG_HEAD header;     // C2:F3:[E7|E8|E9]
+    BYTE version;
+    WORD recordSize;
+    WORD count;
+    WORD chunk;
+    WORD totalChunks;
+};
+static_assert(sizeof(PMSG_CATALOG_HEAD) == 14, "F3:E7 cabecera");
+static_assert(offsetof(PMSG_CATALOG_HEAD, recordSize) == 6, "F3:E7 recordSize");
+static_assert(offsetof(PMSG_CATALOG_HEAD, count) == 8, "F3:E7 count");
+
+struct CATALOG_ITEM
+{
+    WORD Index;
+    WORD Behavior;
+    BYTE Slot;
+    BYTE Skill;
+    BYTE Width;
+    BYTE Height;
+    BYTE TwoHand;
+    BYTE Flags;
+    BYTE Durability;
+    BYTE MagicDurability;
+    char Name[32];
+    WORD Level;
+    WORD DamageMin;
+    WORD DamageMax;
+    WORD AttackSpeed;
+    WORD WalkSpeed;
+    WORD Defense;
+    WORD MagicDefense;
+    WORD DefenseSuccessRate;
+    WORD MagicDamageRate;
+    WORD RequireLevel;
+    WORD RequireStrength;
+    WORD RequireDexterity;
+    WORD RequireEnergy;
+    WORD RequireVitality;
+    BYTE RequireClass[4];
+    BYTE Resistance[4];
+    DWORD Value;
+    DWORD BuyMoney;
+    DWORD GlowColor;
+    float PositionX;
+    float PositionY;
+    float RotationX;
+    float RotationY;
+    float RotationZ;
+    float Scale;
+    char ModelFolder[40];
+    char ModelName[28];
+};
+static_assert(sizeof(CATALOG_ITEM) == 184, "F3:E7 entrada");
+static_assert(offsetof(CATALOG_ITEM, Name) == 12, "F3:E7 Name");
+static_assert(offsetof(CATALOG_ITEM, Level) == 44, "F3:E7 Level");
+static_assert(offsetof(CATALOG_ITEM, RequireClass) == 72, "F3:E7 RequireClass");
+static_assert(offsetof(CATALOG_ITEM, Value) == 80, "F3:E7 Value");
+static_assert(offsetof(CATALOG_ITEM, GlowColor) == 88, "F3:E7 GlowColor");
+static_assert(offsetof(CATALOG_ITEM, PositionX) == 92, "F3:E7 PositionX");
+static_assert(offsetof(CATALOG_ITEM, ModelFolder) == 116, "F3:E7 ModelFolder");
+static_assert(offsetof(CATALOG_ITEM, ModelName) == 156, "F3:E7 ModelName");
+
+struct CATALOG_MONSTER
+{
+    WORD Index;
+    BYTE Kind;              // 0 NPC, 1 monstruo, 0xFF = el vanilla
+    BYTE Golden;
+    float Scale;            // 0 = la vanilla
+    WORD Level;
+    WORD Flags;
+    char Name[32];
+    char ModelFolder[32];
+    char ModelName[20];
+};
+static_assert(sizeof(CATALOG_MONSTER) == 96, "F3:E8 entrada");
+static_assert(offsetof(CATALOG_MONSTER, Scale) == 4, "F3:E8 Scale");
+static_assert(offsetof(CATALOG_MONSTER, Name) == 12, "F3:E8 Name");
+static_assert(offsetof(CATALOG_MONSTER, ModelFolder) == 44, "F3:E8 ModelFolder");
+static_assert(offsetof(CATALOG_MONSTER, ModelName) == 76, "F3:E8 ModelName");
+
+struct CATALOG_MAP_FOG
+{
+    BYTE Map;
+    BYTE DayRGB[3];
+    BYTE NightRGB[3];
+    BYTE Reserved;
+};
+static_assert(sizeof(CATALOG_MAP_FOG) == 8, "F3:E9 entrada");
+
+struct PMSG_CATALOG_END_SEND
+{
+    PSBMSG_HEAD header;     // C1:F3:EA
+    WORD itemCount;
+    WORD monsterCount;
+    DWORD hash;
+};
+static_assert(sizeof(PMSG_CATALOG_END_SEND) == 12, "F3:EA");
+static_assert(offsetof(PMSG_CATALOG_END_SEND, hash) == 8, "F3:EA hash");
+
 } // namespace Proto

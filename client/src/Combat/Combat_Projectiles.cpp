@@ -1,6 +1,7 @@
 // Combat_Projectiles.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -32,11 +33,11 @@ void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill
     // Adjust: add ITEM_BASE_MODEL (400) if not -1
     int adjType0 = weaponType0;
     if (weaponType0 != -1) {
-        adjType0 = weaponType0 + 400;
+        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + 400;   // 0.97.20
     }
     int adjType1 = weaponType1;
     if (weaponType1 != -1) {
-        adjType1 = weaponType1 + 400;
+        adjType1 = gContentCatalog.GetItemBehavior(weaponType1) + 400;
     }
 
     // Play sound based on SKKey

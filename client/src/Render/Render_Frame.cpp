@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "Render/Render.h"
@@ -530,6 +531,9 @@ void Render_Scene3D(void)
     if (DAT_07e11d1c > 0x1e) return;
 
     DAT_083a42ea = 0;   // FogEnable = false
+    // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
+    // el server se prende (el DLL parcheaba este 0 por un 1).
+    if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     MoveMainCamera();
@@ -563,6 +567,12 @@ void Render_Scene3D(void)
         cr = 0.0f;   cg = 0.0f;    cb = 0.039f;
     } else if (worldId == 10) {
         cr = 0.012f; cg = 0.099f;  cb = 0.172f;
+    }
+    if (DAT_083a42ea) {
+        // DLL MapFog glClearColorFog: el fondo toma el color de la niebla.
+        float fog[4];
+        gContentCatalog.GetFogColor(worldId, fog);
+        cr = fog[0]; cg = fog[1]; cb = fog[2];
     }
     glClearColor(cr, cg, cb, 1.0f);
 

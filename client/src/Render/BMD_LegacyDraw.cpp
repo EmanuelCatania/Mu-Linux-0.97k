@@ -2,6 +2,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -1738,6 +1739,13 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
 void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char Option1,
                           unsigned char ExtOption, float* Target, int Select, char PickUp)
 {
+    // 0.97.20: un modelo dinámico del catálogo (agregado >= 512) toma la pose,
+    // escala y altura del vanilla que imita; se dibuja con su propio modelo.
+    const int drawType = Type;
+    if (Type >= MODEL_MAX_VANILLA) {
+        const int itemType = gContentCatalog.GetModelItemType(Type);
+        if (itemType >= 0) Type = ItemEntityModel(itemType);
+    }
 
     float camera[3] = { _CameraRayOriginX, _CameraRayOriginY, _CameraRayOriginZ };
     float direction[3] = {
@@ -1787,6 +1795,18 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
         angle[0] = 270.0f; angle[1] = -10.0f; angle[2] = 0.0f;
     }
 
+    // DESVIACION (DLL ItemPosition, ahora catálogo 0.97.20): pose propia del
+    // item en el inventario.  Desplaza la posición, reemplaza los ángulos y la
+    // escala; el giro del item seleccionado se mantiene.
+    const CatalogItemPose* pose = gContentCatalog.GetItemPose(gContentCatalog.GetModelItemType(drawType));
+    if (pose) {
+        position[0] += pose->PositionX;
+        position[1] += pose->PositionY;
+        angle[0] = pose->RotationX;
+        angle[1] = pose->RotationY;
+        angle[2] = pose->RotationZ;
+    }
+
     if (Select == 1)
         angle[1] = (float)DAT_05826e08 * 0.45f;
 
@@ -1796,8 +1816,8 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     _DAT_07ea9530 = angle[1];
     _DAT_07ea9534 = angle[2];
 
-    short modelType = (short)Type;
-    if (modelType >= 624 && modelType < 784) {
+    short modelType = (short)drawType;
+    if (drawType == Type && modelType >= 624 && modelType < 784) {
         modelType = 390;
     } else if (modelType == 860) {
         if (level == 0) modelType = 947;
@@ -1836,6 +1856,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     else if (Type == 955) scale = 0.0015f;
     else if (Type == 956) scale = 0.0019f;
     else if (Type == 957) scale = 0.0010f;
+    if (pose && pose->Scale > 0.0f) scale = pose->Scale;
 
     ObjectSelect_AnimationFrame = 0;
     ObjectSelect_PriorAnimationFrame = 0;
@@ -1846,7 +1867,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
                  (unsigned int*)renderAngle, headAngle, '\0', '\0');
 
     char object[0x200] = {};
-    *(short*)(object + 2) = (short)Type;
+    *(short*)(object + 2) = (short)drawType;
     ItemObjectAttribute((int)object);
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
@@ -1859,6 +1880,6 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     float light[3] = { 1.0f, 1.0f, 1.0f };
     // Entity_DrawAt's visibility argument is 1.0 in the native UI path used
     // by this client; all OpenGL state setup/teardown stays inside that renderer.
-    RenderPartObject((int)object, Type, 0, light, 1.0f, ItemLevel, Option1,
+    RenderPartObject((int)object, drawType, 0, light, 1.0f, ItemLevel, Option1,
                  '\x01', 1, '\x01', 0, 2);
 }

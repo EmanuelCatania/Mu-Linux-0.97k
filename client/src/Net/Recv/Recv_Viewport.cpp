@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"
 
@@ -77,48 +78,48 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
     switch (slot) {
         case 0:   // mano izquierda
             if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
-            else       { *(WORD*)(c + 624) = (WORD)(type + 400); c[626] = (BYTE)Net_LevelConvert(level); c[627] = option; }
+            else       { *(WORD*)(c + 624) = (WORD)ItemEntityModel(type); c[626] = (BYTE)Net_LevelConvert(level); c[627] = option; }
             break;
         case 1:   // mano derecha
             if (empty) { *(WORD*)(c + 648) = (WORD)-1; c[651] = 0; }
-            else       { *(WORD*)(c + 648) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 648) = (WORD)ItemEntityModel(type);
                          c[650] = (BYTE)Net_LevelConvert(level); c[651] = option; }
             break;
         case 2:   // casco
             if (empty) { *(WORD*)(c + 504) = (WORD)(klass + 912); c[506] = 0; c[507] = 0; }
-            else       { *(WORD*)(c + 504) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 504) = (WORD)ItemEntityModel(type);
                          c[506] = (BYTE)Net_LevelConvert(level); c[507] = option; }
             break;
         case 3:   // armadura
             if (empty) { *(WORD*)(c + 528) = (WORD)(klass + 919); c[530] = 0; c[531] = 0; }
-            else       { *(WORD*)(c + 528) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 528) = (WORD)ItemEntityModel(type);
                          c[530] = (BYTE)Net_LevelConvert(level); c[531] = option; }
             break;
         case 4:   // pantalones
             if (empty) { *(WORD*)(c + 552) = (WORD)(klass + 926); c[554] = 0; c[555] = 0; }
-            else       { *(WORD*)(c + 552) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 552) = (WORD)ItemEntityModel(type);
                          c[554] = (BYTE)Net_LevelConvert(level); c[555] = option; }
             break;
         case 5:   // guantes
             if (empty) { *(WORD*)(c + 576) = (WORD)(klass + 933); c[578] = 0; c[579] = 0; }
-            else       { *(WORD*)(c + 576) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 576) = (WORD)ItemEntityModel(type);
                          c[578] = (BYTE)Net_LevelConvert(level); c[579] = option; }
             break;
         case 6:   // botas
             if (empty) { *(WORD*)(c + 600) = (WORD)(klass + 940); c[602] = 0; c[603] = 0; }
-            else       { *(WORD*)(c + 600) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 600) = (WORD)ItemEntityModel(type);
                          c[602] = (BYTE)Net_LevelConvert(level); c[603] = option; }
             break;
         case 7:   // alas
             if (empty) { *(WORD*)(c + 672) = (WORD)-1; }
-            else       { *(WORD*)(c + 672) = (WORD)(type + 400); c[674] = 0; }
+            else       { *(WORD*)(c + 672) = (WORD)ItemEntityModel(type); c[674] = 0; }
             break;
         case 8: {  // helper / mascota
             if (empty) {
                 *(WORD*)(c + 696) = (WORD)-1;
                 DeleteBug((DWORD)(uintptr_t)c);        // DeleteBug
             } else {
-                *(WORD*)(c + 696) = (WORD)(type + 400);
+                *(WORD*)(c + 696) = (WORD)ItemEntityModel(type);
                 c[698] = 0;
                 float* pos = (float*)(c + 16);
                 if (type == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
@@ -794,7 +795,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             }
         }
         ip[72] = 1;                                    // active flag
-        *(WORD*)(ip + 74) = (WORD)(itemType + 400);    // model index
+        *(WORD*)(ip + 74) = (WORD)ItemModel(itemType);   // model index (0.97.20: catálogo)
         *(int*)(ip + 76) = 1;
 
         // Model overrides (CreateItem switch L58-126): arrows/fruit/etc

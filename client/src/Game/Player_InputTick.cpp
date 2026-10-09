@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -1294,8 +1295,8 @@ void __cdecl Player_ProcessInput(void)
                     }
                     {
                         const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
-                        const int lh = CM ? *(const short*)(CM + 536) : -1;  // IDA: v265
-                        const int rh = CM ? *(const short*)(CM + 604) : -1;  // IDA: v264
+                        const int lh = CM ? ItemBehaviorType(*(const short*)(CM + 536)) : -1;  // IDA: v265
+                        const int rh = CM ? ItemBehaviorType(*(const short*)(CM + 604)) : -1;  // IDA: v264
                         const bool bRanged = (lh >= 136 && lh < 143)
                                           || (lh >= 144 && lh < 160)
                                           || (rh >= 128 && rh < 135)

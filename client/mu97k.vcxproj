@@ -121,6 +121,7 @@
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\RightClickMove.h" />
+    <ClInclude Include="src\Item\ContentCatalog.h" />
     <ClInclude Include="src\Item\ItemDefines.h" />
     <ClInclude Include="src\Item\Item_ServerValue.h" />
     <ClInclude Include="src\UI\GoldenArcher.h" />
@@ -411,6 +412,7 @@
     <ClCompile Include="src\Item\Item_ChaosMix.cpp" />
     <ClCompile Include="src\Item\Item_ClickHandler.cpp" />
     <ClCompile Include="src\Item\RightClickMove.cpp" />
+    <ClCompile Include="src\Item\ContentCatalog.cpp" />
     <ClCompile Include="src\Item\Skill_Data.cpp" />
     <ClCompile Include="src\Item\Gate_Data.cpp" />
     <ClCompile Include="src\Item\Filter_Data.cpp" />

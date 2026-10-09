@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -473,24 +474,26 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         if (Attribute2 & 1) push_special(79);
     }
 
-    if ((wType >= 128 && wType < 136) || wType == 145) {
+    // 0.97.20: un agregado (>= 512) toma el casillero del vanilla que imita.
+    const int partType = ItemBehaviorType(wType);
+    if ((partType >= 128 && partType < 136) || partType == 145) {
         ip->Part = 1;
         ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
         return;
     }
-    if (wType >= 0) {
-        if (wType < 192) { ip->Part = 0; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 224) { ip->Part = 1; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 256) { ip->Part = 2; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 288) { ip->Part = 3; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 320) { ip->Part = 4; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 352) { ip->Part = 5; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 384) { ip->Part = 6; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 391) { ip->Part = 7; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 0) {
+        if (partType < 192) { ip->Part = 0; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 224) { ip->Part = 1; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 256) { ip->Part = 2; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 288) { ip->Part = 3; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 320) { ip->Part = 4; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 352) { ip->Part = 5; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 384) { ip->Part = 6; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 391) { ip->Part = 7; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     }
-    if (wType >= 416 && wType < 424) { ip->Part = 8; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-    if (wType >= 424 && wType < 428) { ip->Part = 10; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-    if (wType >= 428 && wType < 448) { ip->Part = 9; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 416 && partType < 424) { ip->Part = 8; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 424 && partType < 428) { ip->Part = 10; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 428 && partType < 448) { ip->Part = 9; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     ip->Part = (BYTE)-1;
     ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
 }

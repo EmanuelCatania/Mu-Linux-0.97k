@@ -1,6 +1,7 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -101,6 +102,12 @@ void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
 // flag=1 or flag=8 overrides selection for type 0x129/0x1f9.
 void __cdecl PartObjectColor(int param_1, float param_2, float param_3, float *param_4, char param_5)
 {
+    // DESVIACION (DLL CustomGlow, ahora catálogo 0.97.20): un item con color de
+    // brillo propio usa ese color tal cual, como PartObjectColorHook del DLL.
+    {
+        const int itemType = gContentCatalog.GetModelItemType(param_1);
+        if (itemType >= 0 && gContentCatalog.GetItemGlow(itemType, param_4)) return;
+    }
     unsigned int uVar4 = 0;
     // flag overrides
     if (param_5 != '\0' && (param_1 == 0x129 || param_1 == 0x1f9)) { uVar4 = 8; goto apply; }

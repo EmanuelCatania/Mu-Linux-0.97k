@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
 #include "Net/Ping.h"
@@ -31,6 +32,7 @@ void CNetwork::ResetCharacterData()
     // DSProtocol::DGCharacterInfoRecv reenvía M y las tablas para el personaje.
     gMoveList.Clear();
     ItemServerValue_ResetSession();
+    gContentCatalog.Clear();
     gEventTimer.Close(); // El calendario pertenece a la misma conexión.
 }
 

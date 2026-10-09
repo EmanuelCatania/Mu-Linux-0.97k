@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -305,7 +306,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     Camera_BuildMouseRay((int)_sx, (int)_sy, Position);
 
     // Per-type modelId override (jewels/wings/special).
-    int modelId = Type + 400;
+    int modelId = ItemModel(Type);   // 0.97.20: el catálogo resuelve los agregados
     int levelArg = Level;
 
     switch (Type) {
