@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <climits>
 #include "UI/OptionsMenu.h"
 #include "Config/UserSettings.h"
 #include "Core/Font.h"
@@ -164,14 +165,12 @@ int COptionsMenu::LevelBarHit(int y) const
     return -1;
 }
 
-void COptionsMenu::RenderLanguage(float y) const
+// Caja con texto centrado y flechas a los costados (DLL RenderLanguage:
+// bitmaps 0xFE/0xFF/0x100, normal/hover/apretada; la derecha va espejada).
+void COptionsMenu::RenderSelector(float y, const char* text, bool canLeft, bool canRight) const
 {
     RenderBox((float)Layout::X, y, (float)Layout::Width, (float)Layout::Height);
-    const int language = gUserSettings.GetLanguage();
-    const char* name = language >= 0 ? LanguageNames[language]
-                                     : gClientText.Get(ClientTextId::LanguageDefault);
-    RenderLabel((float)Layout::X, y, (float)Layout::Width, name);
-    // DLL RenderLanguage: flechas 0xFE/0xFF/0x100 (normal, hover, apretada).
+    RenderLabel((float)Layout::X, y, (float)Layout::Width, text);
     const float size = (float)Layout::Height;
     auto arrow = [&](float x, bool mirrored) {
         const int tex = !Inside((int)x, (int)y, Layout::Height, Layout::Height) ? 0xFE
@@ -179,8 +178,26 @@ void COptionsMenu::RenderLanguage(float y) const
         GL_DrawTexture(tex, x, y, size, size, mirrored ? 1.0f : 0.0f, 0.0f,
                        mirrored ? -1.0f : 1.0f, 1.0f, 1, 1);
     };
-    if (language > USER_LANG_DEFAULT) arrow((float)Layout::X, false);
-    if (language < MAX_USER_LANGUAGE - 1) arrow((float)(Layout::X + Layout::Width - Layout::Height), true);
+    if (canLeft) arrow((float)Layout::X, false);
+    if (canRight) arrow((float)(Layout::X + Layout::Width - Layout::Height), true);
+}
+
+// -1 / +1 si se pulsó una flecha; 0 si el mouse está encima sin pulsar o en la
+// caja; INT_MIN si está fuera.
+int COptionsMenu::UpdateSelector(int y, bool canLeft, bool canRight) const
+{
+    const int size = Layout::Height, right = Layout::X + Layout::Width - size;
+    if (canLeft && Clicked(Layout::X, y, size, size)) { ConsumeClick(); return -1; }
+    if (canRight && Clicked(right, y, size, size)) { ConsumeClick(); return 1; }
+    return Inside(Layout::X, y, Layout::Width, Layout::Height) ? 0 : INT_MIN;
+}
+
+void COptionsMenu::RenderLanguage(float y) const
+{
+    const int language = gUserSettings.GetLanguage();
+    const char* name = language >= 0 ? LanguageNames[language]
+                                     : gClientText.Get(ClientTextId::LanguageDefault);
+    RenderSelector(y, name, language > USER_LANG_DEFAULT, language < MAX_USER_LANGUAGE - 1);
 }
 
 void COptionsMenu::RenderMusicControls(float y) const
@@ -218,6 +235,7 @@ void COptionsMenu::Render()
     switch (m_Page) {
     case PAGE_GENERAL: RenderGeneral(); break;
     case PAGE_ANTILAG: RenderAntilag(); break;
+    case PAGE_SCREEN: RenderScreen(); break;
     case PAGE_ANTILAG_WORLD:
     case PAGE_ANTILAG_EFFECTS:
     case PAGE_ANTILAG_INTERFACE: RenderAntilagGroup(); break;
@@ -232,6 +250,7 @@ bool COptionsMenu::UpdateMouse()
     switch (m_Page) {
     case PAGE_GENERAL: return UpdateGeneral();
     case PAGE_ANTILAG: return UpdateAntilag();
+    case PAGE_SCREEN: return UpdateScreen();
     case PAGE_ANTILAG_WORLD:
     case PAGE_ANTILAG_EFFECTS:
     case PAGE_ANTILAG_INTERFACE: return UpdateAntilagGroup();
@@ -240,8 +259,8 @@ bool COptionsMenu::UpdateMouse()
 }
 
 // ── Lista principal ─────────────────────────────────────────────────────────
-// Título, una caja por página y Cerrar (GlobalText 385, 919/926, 388).
-namespace { const int MainPageText[] = { 919, 926 }; }
+// Título, una caja por página y Cerrar (GlobalText 385, 919/926/920, 388).
+namespace { const int MainPageText[] = { 919, 926, 920 }; }
 
 void COptionsMenu::RenderMain()
 {
@@ -306,13 +325,11 @@ bool COptionsMenu::UpdateGeneral()
     int row = 1;
     const int width = Layout::Width, height = Layout::Height, x = Layout::X;
     if (LanguageRowVisible()) {
-        const int y = RowY(row++), language = gUserSettings.GetLanguage();
-        if (language > USER_LANG_DEFAULT && Inside(x, y, height, height)) {
-            if (Clicked(x, y, height, height)) { ConsumeClick(); ChangeLanguage(language - 1); }
-            return true;
-        }
-        if (language < MAX_USER_LANGUAGE - 1 && Inside(x + width - height, y, height, height)) {
-            if (Clicked(x + width - height, y, height, height)) { ConsumeClick(); ChangeLanguage(language + 1); }
+        const int language = gUserSettings.GetLanguage();
+        const int step = UpdateSelector(RowY(row++), language > USER_LANG_DEFAULT,
+                                        language < MAX_USER_LANGUAGE - 1);
+        if (step != INT_MIN) {
+            if (step) ChangeLanguage(language + step);
             return true;
         }
     }
@@ -448,5 +465,66 @@ bool COptionsMenu::UpdateAntilagGroup()
     }
     if (!UpdateToggle(RowY(row), clicked)) return false;
     if (clicked) m_Page = PAGE_ANTILAG;   // Volver: a la página de Antilag
+    return true;
+}
+
+// ── Pantalla ────────────────────────────────────────────────────────────────
+// Modo (ventana / pantalla completa), sin bordes (sólo en ventana) y la
+// resolución.  DESVIACION: el DLL lista una caja por resolución; acá es un
+// selector con flechas sobre la misma tabla (CUserSettings).
+namespace {
+void ApplyScreen(bool windowMode, bool borderless, int resolution)
+{
+    DWORD width = gWindow.GetWidth(), height = gWindow.GetHeight();
+    CUserSettings::GetResolutionSize(resolution, &width, &height);
+    gWindow.ChangeMode(windowMode, borderless, width, height);
+    gUserSettings.SetWindow(windowMode, borderless, resolution);
+}
+int CurrentResolution()
+{
+    return CUserSettings::FindResolution(gWindow.GetWidth(), gWindow.GetHeight());
+}
+}
+
+void COptionsMenu::RenderScreen()
+{
+    int row = 0;
+    RenderButton((float)RowY(row++), GlobalText[920], true);
+    RenderButton((float)RowY(row++), gClientText.Get(gWindow.IsWindowMode()
+        ? ClientTextId::ScreenWindowed : ClientTextId::ScreenFullscreen));
+    if (gWindow.IsWindowMode())
+        RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::ScreenBorderless),
+                     gWindow.IsBorderless());
+    char text[32];
+    sprintf_s(text, "%lu x %lu", (unsigned long)gWindow.GetWidth(), (unsigned long)gWindow.GetHeight());
+    const int resolution = CurrentResolution();
+    RenderSelector((float)RowY(row++), text, resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
+    RenderButton((float)RowY(row), GlobalText[925]);
+}
+
+bool COptionsMenu::UpdateScreen()
+{
+    int row = 1;
+    bool clicked;
+    const bool windowMode = gWindow.IsWindowMode(), borderless = gWindow.IsBorderless();
+    const int resolution = CurrentResolution();
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) ApplyScreen(!windowMode, borderless, resolution);
+        return true;
+    }
+    if (windowMode) {
+        if (UpdateToggle(RowY(row++), clicked)) {
+            if (clicked) ApplyScreen(windowMode, !borderless, resolution);
+            return true;
+        }
+    }
+    // Fuera de la tabla (resolución del registro): la flecha va a la primera.
+    const int step = UpdateSelector(RowY(row++), resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
+    if (step != INT_MIN) {
+        if (step) ApplyScreen(windowMode, borderless, resolution < 0 ? 0 : resolution + step);
+        return true;
+    }
+    if (!UpdateToggle(RowY(row), clicked)) return false;
+    if (clicked) m_Page = PAGE_MAIN;
     return true;
 }

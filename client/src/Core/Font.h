@@ -25,6 +25,11 @@ public:
     // según el ancho de la ventana (WinMain, paso 15).
     void Create(DWORD windowWidth);
 
+    // DESVIACION (DLL Font.cpp ReloadFont): recrea las tres fuentes con la
+    // configuración y la resolución actuales.  La superficie de texto no
+    // cambia: su tamaño sale de FontInput.tga.
+    void Reload(DWORD windowWidth);
+
     // Libera las fuentes y la superficie de texto (IDA DestroyWindow 0x4145C0).
     void Release();
 

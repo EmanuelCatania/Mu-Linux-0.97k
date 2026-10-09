@@ -1,6 +1,7 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Core/Font.h"
 #include "Net/Ping.h"
 #include "Core/Window.h"
 #include "Entity/CharacterAttributeView.h"
@@ -50,6 +51,42 @@ void CWindow::SetWindowMode(bool windowMode, bool borderless)
 {
     m_WindowMode = windowMode;
     m_Borderless = borderless;
+}
+
+void CWindow::ChangeMode(bool windowMode, bool borderless, DWORD width, DWORD height)
+{
+    if (!m_hWnd) return;
+    const bool wasFullscreen = !m_WindowMode;
+    SetResolution(width, height);
+    SetWindowMode(windowMode, borderless);
+    if (!windowMode) ApplyFullscreen();          // cambia el modo de video al tamaño nuevo
+    else if (wasFullscreen) RestoreDisplay();
+
+    // Mismo estilo y posición que Create.
+    DWORD style, exStyle;
+    if (!windowMode || borderless) {
+        style = WS_POPUP | WS_VISIBLE;
+        exStyle = windowMode ? (WS_EX_APPWINDOW | WS_EX_WINDOWEDGE) : WS_EX_APPWINDOW;
+    } else {
+        style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE;
+        exStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+    }
+    RECT rc = { 0, 0, (LONG)m_Width, (LONG)m_Height };
+    AdjustWindowRect(&rc, style, FALSE);
+    const int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    int x = 0, y = 0;
+    if (windowMode) {
+        x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
+        y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+    }
+    SetWindowLongPtrA(m_hWnd, GWL_STYLE, style);
+    SetWindowLongPtrA(m_hWnd, GWL_EXSTYLE, exStyle);
+    SetWindowPos(m_hWnd, NULL, x, y, w, h, SWP_SHOWWINDOW | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+    // El alto de la fuente depende del ancho cuando Config.ini no trae [Font].
+    gFont.Reload(m_Width);
 }
 
 void CWindow::RestoreDisplay()

@@ -72,6 +72,16 @@ void CFont::CreateTextSurface(HDC hdc, LONG width, LONG height)
     SetBkMode(m_hTextDC, TRANSPARENT);
 }
 
+void CFont::Reload(DWORD windowWidth)
+{
+    for (HFONT& font : m_Fonts) {
+        if (font) DeleteObject(font);
+        font = nullptr;
+    }
+    Create(windowWidth);
+    if (m_hTextDC) SelectObject(m_hTextDC, m_Fonts[FONT_NORMAL]);
+}
+
 void CFont::Release()
 {
     for (HFONT& font : m_Fonts) {

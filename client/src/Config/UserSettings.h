@@ -114,6 +114,9 @@ public:
     void SetLanguage(int language);
     void SetSoundLevel(int level);
     void SetMusicLevel(int level);
+    void SetWindow(bool windowMode, bool borderless, int resolution);
+    // Índice de la tabla para un tamaño, o -1 si no está.
+    static int FindResolution(DWORD width, DWORD height);
     void SaveInt(const char* section, const char* key, int value) const;
 
     // Ancho y alto de un índice de resolución; false si el índice no existe.

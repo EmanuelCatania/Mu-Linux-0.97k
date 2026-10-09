@@ -32,7 +32,10 @@ const char* const English[] = {
     "Delete Glow",
     "World",
     "Effects",
-    "Interface"
+    "Interface",
+    "Windowed",
+    "Full screen",
+    "Borderless"
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -57,7 +60,10 @@ const char* const Spanish[] = {
     "Eliminar Brillo",
     "Mundo",
     "Efectos",
-    "Interfaz"
+    "Interfaz",
+    "Ventana",
+    "Pantalla completa",
+    "Sin bordes"
 };
 const char* const Portuguese[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -82,7 +88,10 @@ const char* const Portuguese[] = {
     "Remover Brilho",
     "Mundo",
     "Efeitos",
-    "Interface"
+    "Interface",
+    "Janela",
+    "Tela cheia",
+    "Sem bordas"
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");

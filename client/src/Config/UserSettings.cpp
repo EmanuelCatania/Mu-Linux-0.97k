@@ -181,3 +181,20 @@ void CUserSettings::SetAntilag(eAntilag option, bool enabled)
     m_Antilag[option] = enabled;
     SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
 }
+
+void CUserSettings::SetWindow(bool windowMode, bool borderless, int resolution)
+{
+    m_WindowMode = windowMode ? 1 : 0;
+    m_Borderless = borderless ? 1 : 0;
+    m_Resolution = resolution;
+    SaveInt("Window", "WindowMode", m_WindowMode);
+    SaveInt("Window", "Borderless", m_Borderless);
+    if (resolution >= 0) SaveInt("Window", "Resolution", resolution);
+}
+
+int CUserSettings::FindResolution(DWORD width, DWORD height)
+{
+    for (int i = 0; i < MAX_USER_RESOLUTION; ++i)
+        if (kResolutions[i].width == width && kResolutions[i].height == height) return i;
+    return -1;
+}

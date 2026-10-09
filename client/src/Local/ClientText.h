@@ -8,6 +8,7 @@ enum class ClientTextId {
     MoveTitle, MoveMap, MoveVip, MoveWaiting, MoveEmpty, PagePrevious, PageNext,
     LanguageDefault, AntilagWeather, AntilagGlow,
     AntilagWorld, AntilagEffects, AntilagInterface,
+    ScreenWindowed, ScreenFullscreen, ScreenBorderless,
     Count
 };
 class CClientText {
