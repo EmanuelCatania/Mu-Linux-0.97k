@@ -1936,6 +1936,10 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
 #define ACTION_HERO          ((char*)DAT_07abf5d8)
 #endif
 
+// DESVIACION (MU 5.2 g_bAutoGetItem): el levantado con Espacio pide el item a
+// distancia, sin caminar hasta él.  El server no valida la distancia del 0x22.
+bool g_bAutoGetItem = false;
+
 // Como en IDA (0x0048D640), Action solo LEE la cola c+749; la reescribe
 // Player_InputTick en cada click.
 // IDA: Action (0x0048D640)
@@ -1966,7 +1970,9 @@ void __cdecl Action(DWORD c, DWORD o)
         const float deltaY = *(float*)(o + 20) - ((float)TargetY * 100.0f + 50.0f);
         const float deltaX = *(float*)(o + 16) - ((float)TargetX * 100.0f + 50.0f);
 
-        if (sqrtf(deltaX * deltaX + deltaY * deltaY) > 150.0f)
+        const bool autoGet = g_bAutoGetItem;
+        g_bAutoGetItem = false;
+        if (!autoGet && sqrtf(deltaX * deltaX + deltaY * deltaY) > 150.0f)
             return;
 
         DAT_00559bec = 6;                                      // IDA: MouseUpdateTimeMax
