@@ -1,54 +1,59 @@
 #include "stdafx.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
+#include "UI/UIState.h"
 #include "Core/Font.h"
 #include "Core/Window.h"
-#include "UI/UIState.h"
+#include "Local/ClientText.h"
+
+void* EventListBox_Construct(int x, int bottom, int width, int visibleRows);
+void  EventListBox_Rebuild(void* widget, int count, bool keepPosition);
+void  EventListBox_Tick(void* widget);
+void  EventListBox_Render(void* widget);
+void  EventListBox_Scroll(void* widget, int pages);
 
 CEventTimer gEventTimer;
 namespace {
-constexpr int RowsPerPage = 30;
-// DESVIACION: layout compacto compartido por dibujo y áreas de clic.
-struct EventTimerLayout {
-    static constexpr int X = 5, Y = 5, Width = 180, Margin = 5;
-    static constexpr int ContentX = X + Margin, ContentWidth = Width - 2 * Margin;
-    static constexpr int NameWidth = 110, TimeWidth = 60, TimeX = ContentX + NameWidth;
-    static constexpr int TitleY = 12, HeaderY = 28, RowsY = 40, RowStep = 12;
-    static constexpr int RowHeight = 10, BaseHeight = 60, FooterY = 45;
-    static constexpr int ButtonWidth = ContentWidth / 3;
-    static constexpr int PreviousX = ContentX, CloseX = X + (Width - ButtonWidth) / 2;
-    static constexpr int NextX = ContentX + ContentWidth - ButtonWidth;
+// Misma columna y fondo que RenderGuildList (IDA 0x004F0810): 190x433 en x=450.
+struct EventPanelLayout {
+    static constexpr int X = 450, Y = 0;
+    static constexpr int TitleX = X + 35, TitleY = Y + 12, TitleWidth = 120;
+    static constexpr int MessageX = X + 20, MessageY = Y + 50;
+    static constexpr int ListX = X + 10, ListBottom = Y + 385, ListWidth = 170, ListRows = 12;
+    static constexpr int CloseX = X + 25, CloseY = Y + 395, CloseSize = 24;
+    static constexpr int LineStep = 13;
 };
-using Layout = EventTimerLayout;
+using Layout = EventPanelLayout;
 enum EventState { Blank, Stand, Open, Start }; // server EventTimeManager.h
+
 bool Inside(int x, int y, int w, int h)
 {
     return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
 }
-void Text(int x, int y, const char* text, int width)
-{
-    RenderText(x, y, const_cast<char*>(text),
-        (int)(width * gWindow.GetWidth() / 640), 1, nullptr);
-}
-void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
-{
-    EnableAlphaTest(true);
-    glColor4f(r, g, b, a);
-    GL_DrawRect((float)x, (float)y, (float)w, (float)h);
-    GL_ResetState();
-    // DLL EventTimer.cpp: el texto no debe heredar el color del fondo o del hover.
-    glColor4f(1, 1, 1, 1);
-}
-DWORD TimeColor(const Proto::PMSG_EVENT_TIME& event)
+int PhysicalWidth(int width) { return (int)(width * gWindow.GetWidth() / 640); }
+DWORD TimeColor(const Proto::PMSG_EVENT_TIME& event, DWORD remaining)
 {
     switch (event.status) {
     case Blank: return 0xFF0505E6;
-    case Stand: return event.time <= 300 ? 0xFF0505E6 : 0xFF67BFDF;
+    case Stand: return remaining <= 300 ? 0xFF0505E6 : 0xFF67BFDF;
     case Open: return 0xFF00B749;
     case Start: return 0xFFFF9664;
     default: return 0xFF67BFDF;
     }
 }
+}
+
+void EventTimer_DrawRow(int index, int x, int y, int width)
+{
+    gEventTimer.DrawRow(index, x, y, width);
+}
+
+void* CEventTimer::Widget()
+{
+    if (!m_Widget)
+        m_Widget = EventListBox_Construct(Layout::ListX, Layout::ListBottom,
+                                          Layout::ListWidth, Layout::ListRows);
+    return m_Widget;
 }
 
 bool CEventTimer::Receive(const BYTE* packet, int size)
@@ -67,20 +72,31 @@ bool CEventTimer::Receive(const BYTE* packet, int size)
         for (int n = 0; n < 32 && row[n]; ++n)
             if (row[n] < 32 || row[n] == 127) return false;
     }
+    // Los refrescos periódicos sólo traen tiempos nuevos: la lista del widget se
+    // rearma únicamente si cambian la cantidad o los nombres.
+    bool changed = count != m_Count;
+    for (int i = 0; !changed && i < count; ++i)
+        changed = strcmp(m_Events[i].name, (const char*)packet + header + i * stride) != 0;
     if (count) memcpy(m_Events, packet + header, count * stride);
+    const bool hadList = m_Received;
     m_Count = count;
     m_Received = true;
-    // Los refrescos periódicos no deben devolver al usuario a la primera página.
-    if (m_Page * RowsPerPage >= m_Count) m_Page = m_Count ? (m_Count - 1) / RowsPerPage : 0;
+    m_ReceivedAt = GetTickCount();
+    if (changed) EventListBox_Rebuild(Widget(), m_Count, hadList);
     return true;
 }
 
 void CEventTimer::Clear()
 {
     m_Count = 0;
-    m_Page = 0;
     m_Open = false;
     m_Received = false;
+    if (m_Widget) EventListBox_Rebuild(m_Widget, 0, false);
+}
+
+void CEventTimer::Close()
+{
+    m_Open = false;
 }
 
 const Proto::PMSG_EVENT_TIME* CEventTimer::Get(int index) const
@@ -88,101 +104,131 @@ const Proto::PMSG_EVENT_TIME* CEventTimer::Get(int index) const
     return index >= 0 && index < m_Count ? &m_Events[index] : nullptr;
 }
 
-void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, size_t capacity)
+DWORD CEventTimer::RemainingSeconds(const Proto::PMSG_EVENT_TIME& event) const
+{
+    // El server escribe RemainTime (int) en un DWORD; negativo = vencido.
+    const DWORD sent = event.time <= 0x7FFFFFFF ? event.time : 0;
+    const DWORD elapsed = (GetTickCount() - m_ReceivedAt) / 1000;
+    return sent > elapsed ? sent - elapsed : 0;
+}
+
+void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, size_t capacity) const
 {
     switch (event.status) {
-    case Blank: sprintf_s(text, capacity, "Disabled"); break;
-    case Open: sprintf_s(text, capacity, "Open now"); break;
-    case Start: sprintf_s(text, capacity, "Started"); break;
+    case Blank: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventDisabled)); break;
+    case Open: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventOpen)); break;
+    case Start: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventStarted)); break;
     case Stand: {
-        // El server escribe RemainTime (int) en DWORD; un atraso negativo no son miles de días.
-        const DWORD seconds = event.time <= 0x7FFFFFFF ? event.time : 0;
-        if (seconds >= 86400) sprintf_s(text, capacity, "%02lu days", (unsigned long)(seconds / 86400));
-        else sprintf_s(text, capacity, "%02lu:%02lu:%02lu", (unsigned long)(seconds / 3600),
-            (unsigned long)((seconds / 60) % 60), (unsigned long)(seconds % 60));
+        // El estado lo decide el server: al llegar a cero se muestra 00:00:00
+        // hasta el próximo F3/E6, sin adelantar el cambio a abierto.
+        const DWORD seconds = RemainingSeconds(event);
+        if (seconds >= 86400)
+            sprintf_s(text, capacity, gClientText.Get(ClientTextId::EventDays),
+                      (unsigned long)(seconds / 86400));
+        else
+            sprintf_s(text, capacity, "%02lu:%02lu:%02lu", (unsigned long)(seconds / 3600),
+                      (unsigned long)((seconds / 60) % 60), (unsigned long)(seconds % 60));
         break;
     }
-    default: sprintf_s(text, capacity, "--"); break;
+    default: strcpy_s(text, capacity, "--"); break;
     }
-}
-
-bool CEventTimer::Blocked() const
-{
-    return !UIState::CanOpenInformationalPanel();
-}
-
-int CEventTimer::VisibleRows() const
-{
-    const int remaining = m_Count - m_Page * RowsPerPage;
-    return remaining < RowsPerPage ? remaining : RowsPerPage;
 }
 
 void CEventTimer::Toggle()
 {
-    if (Blocked()) { m_Open = false; return; }
-    // DLL: los paneles M y H comparten espacio y se cierran mutuamente.
-    if (!m_Open) gMoveList.Close();
-    m_Open = !m_Open;
-    PlayBuffer(25, 0, 0);
+    if (m_Open) {
+        Close();
+        PlayBuffer(25, 0, 0);
+        PlayBuffer(28, 0, 0);
+        return;
+    }
+    if (!UIState::CanOpenSidePanel()) return;
+    // Comparte la columna x=450 con inventario/personaje/guild/party: se alternan.
+    if (InventoryOpened && (int)DAT_07e91388 > 0) Item_ReturnPickedItem();
+    InventoryOpened = 0;
+    CharacterOpened = 0;
+    GuildOpened = 0;
+    PartyOpened = 0;
+    gMoveList.Close();
+    m_Open = true;
+}
+
+void CEventTimer::ScrollPages(int pages)
+{
+    if (m_Open) EventListBox_Scroll(Widget(), pages);
 }
 
 void CEventTimer::UpdateMouse()
 {
-    if (Blocked()) { m_Open = false; return; }
     if (!m_Open) return;
-    const int rows = VisibleRows();
-    if (!Inside(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep)) return;
-    UIState::CaptureMouseForUI();
-    const bool click = MouseLButtonPush != 0;
-    MouseLButton = MouseLButtonPush = MouseLButtonPop = 0;
-    if (!click) return;
-    const int footer = Layout::FooterY + rows * Layout::RowStep;
-    const int closeX = m_Count > RowsPerPage ? Layout::CloseX : Layout::ContentX;
-    const int closeWidth = m_Count > RowsPerPage ? Layout::ButtonWidth : Layout::ContentWidth;
-    if (Inside(closeX, footer, closeWidth, Layout::RowStep)) { Toggle(); return; }
-    if (Inside(Layout::PreviousX, footer, Layout::ButtonWidth, Layout::RowStep) && m_Page > 0) --m_Page;
-    else if (Inside(Layout::NextX, footer, Layout::ButtonWidth, Layout::RowStep) && (m_Page + 1) * RowsPerPage < m_Count) ++m_Page;
+    // El último panel abierto gana: si se abre otro de la columna, H se cierra.
+    if (SceneFlag != 5 || UIState::HasRightPanel()) { Close(); return; }
+    EventListBox_Tick(Widget());
+    if (UIState::HasModalDialog() || !MouseLButtonPush) return;
+    if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
+        MouseLButtonPush = 0;
+        Close();
+        PlayBuffer(25, 0, 0);
+        PlayBuffer(28, 0, 0);
+    }
 }
 
-void CEventTimer::Render()
+void CEventTimer::DrawRow(int index, int x, int y, int width) const
 {
-    if (!m_Open || Blocked()) return;
-    const int rows = VisibleRows();
-    const DWORD color = m_dwTextColor, back = m_dwBackColor;
-    HGDIOBJ font = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    const auto* event = Get(index);
+    if (!event) return;
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
-    Rect(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep, 0, 0, 0, .8f);
-    m_dwTextColor = 0xFF1ACCFF;
-    Text(Layout::ContentX, Layout::TitleY, "Event Timer", Layout::ContentWidth);
-    m_dwTextColor = 0xFFFFB27F;
-    Text(Layout::ContentX, Layout::HeaderY, "EVENT", Layout::NameWidth);
-    Text(Layout::TimeX, Layout::HeaderY, "TIME", Layout::TimeWidth);
-    m_dwTextColor = 0xFFFFFFFF;
-    if (!m_Count) Text(Layout::ContentX, Layout::RowsY, m_Received ? "NO EVENT INFO" : "WAITING FOR EVENT INFO", Layout::ContentWidth);
-    for (int i = 0; i < rows; ++i) {
-        const auto& event = m_Events[m_Page * RowsPerPage + i];
-        const int y = Layout::RowsY + i * Layout::RowStep;
-        if (Inside(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight)) Rect(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight, .8f, .8f, .1f, .6f);
-        m_dwTextColor = 0xFFFFFFFF;
-        Text(Layout::ContentX, y, event.name, Layout::NameWidth);
-        m_dwTextColor = TimeColor(event);
-        char time[32];
-        // DLL EventTimer.cpp: mostrar el tiempo recibido, sin adelantar estados localmente.
-        FormatTime(event, time, sizeof(time));
-        Text(Layout::TimeX, y, time, Layout::TimeWidth);
+    m_dwTextColor = 0xFFE6E6E6;
+    RenderText(x, y + 1, const_cast<char*>(event->name), PhysicalWidth(width), 0, nullptr);
+    char time[32];
+    FormatTime(*event, time, sizeof(time));
+    m_dwTextColor = TimeColor(*event, RemainingSeconds(*event));
+    RenderText(x + 8, y + 1 + Layout::LineStep, time, PhysicalWidth(width - 8), 0, nullptr);
+}
+
+void CEventTimer::RenderPanel()
+{
+    if (!m_Open) return;
+    const DWORD color = m_dwTextColor, back = m_dwBackColor;
+    glColor3f(1.0f, 1.0f, 1.0f);
+    GL_ResetState();
+    const float x = (float)Layout::X, y = (float)Layout::Y;
+    GL_DrawTexture(260, x, y,          190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,        1, 1);
+    GL_DrawTexture(261, x, y + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
+    EnableAlphaTest(true);
+
+    m_dwBackColor = 0xFF141414u;
+    m_dwTextColor = 0xFFDCDCDCu;
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    RenderText(Layout::TitleX, Layout::TitleY,
+               const_cast<char*>(gClientText.Get(ClientTextId::EventTitle)),
+               PhysicalWidth(Layout::TitleWidth), 1, (SIZE*)3);
+
+    if (m_Count) {
+        EventListBox_Render(Widget());
+    } else {
+        m_dwBackColor = 0;
+        m_dwTextColor = 0xFFE6E6E6u;
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        RenderText(Layout::MessageX, Layout::MessageY, const_cast<char*>(gClientText.Get(
+            m_Received ? ClientTextId::EventEmpty : ClientTextId::EventWaiting)), 0, 0, nullptr);
     }
-    m_dwTextColor = 0xFFFFFFFF;
-    const int footer = Layout::FooterY + rows * Layout::RowStep;
-    const int closeX = m_Count > RowsPerPage ? Layout::CloseX : Layout::ContentX;
-    const int closeWidth = m_Count > RowsPerPage ? Layout::ButtonWidth : Layout::ContentWidth;
-    // Cierre rojo como en el DLL; dejar lugar a los botones si hay paginación.
-    const bool closeHover = Inside(closeX, footer, closeWidth, Layout::RowStep);
-    Rect(closeX, footer, closeWidth, Layout::RowStep, closeHover ? 1.0f : .8f, 0, 0, 1);
-    Text(closeX, footer, GlobalText[247], closeWidth);
-    if (m_Page > 0) Text(Layout::PreviousX, footer, "< Previous", Layout::ButtonWidth);
-    if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, "Next >", Layout::ButtonWidth);
-    SelectObject(gFont.GetTextDC(), font);
+
+    // Botón de cierre como el del panel de personaje (fondo 0x118 + icono 280).
+    const float cx = (float)Layout::CloseX, cy = (float)Layout::CloseY;
+    glColor3f(1.0f, 1.0f, 1.0f);
+    GL_DrawTexture(0x118, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        m_dwTextColor = 0xFFFFFFFFu;
+        m_dwBackColor = 0xFF000000u;
+        RenderTipText(Layout::CloseX, Layout::CloseY - 13, GlobalText[247]);
+    }
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = color;
     m_dwBackColor = back;
+    GL_ResetState();
     glColor4f(1, 1, 1, 1);
 }

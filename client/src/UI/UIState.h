@@ -9,6 +9,7 @@ namespace UIState {
     bool IsQuestPanelOpen();
     bool HasRightPanel();
     bool CanOpenInformationalPanel();
+    bool CanOpenSidePanel();
     bool CanQueryChaosRate();
     void CaptureMouseForUI();
 }

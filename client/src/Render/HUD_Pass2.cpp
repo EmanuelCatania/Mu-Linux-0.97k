@@ -23,6 +23,7 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
+#include "UI/EventTimer.h"
 #include <gl/GL.h>
 
 extern "C" BYTE OffsetInventoryItems[];
@@ -99,7 +100,8 @@ static bool HUD_IsAnyRightPanelOpen(void)
            GuildOpened || GuildCreatorOpened ||
            HUD_IsGoldenArcherPanelRuntime() ||
            HUD_IsQuestPanelOpenRuntime() ||
-           (ServerDivisionOpened != '\0');
+           (ServerDivisionOpened != '\0') ||
+           gEventTimer.IsOpen();   // DESVIACION: panel H (UI/EventTimer.cpp)
 }
 
 // ── Helper PORTS ─────────────────────────────────────────────────────────────

@@ -6,7 +6,14 @@ namespace {
 const char* const English[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
     "Success rate: pending",
-    "Cost: pending"
+    "Cost: pending",
+    "Event Timer",
+    "Waiting for event information",
+    "No scheduled events",
+    "Disabled",
+    "Open now",
+    "In progress",
+    "%lu days"
 };
 static_assert(sizeof(English) / sizeof(English[0]) == (size_t)ClientTextId::Count,
               "Faltan textos del cliente");

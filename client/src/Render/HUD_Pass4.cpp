@@ -21,6 +21,7 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
+#include "UI/EventTimer.h"
 #include <gl/GL.h>
 
 extern "C" {
@@ -380,6 +381,8 @@ void Render_QuickButtons_(void)
     RenderParty(450, 0);
 
     if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
+    // DESVIACION: panel H de horarios en la misma columna (se alterna con los anteriores).
+    gEventTimer.RenderPanel();
     RenderInventoryWindow();
     RenderTrade();
     RenderShopInterface();
