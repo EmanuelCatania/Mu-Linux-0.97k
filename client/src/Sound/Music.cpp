@@ -37,6 +37,11 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
 
     if (DAT_055ca018 != 0 || (!m_MusicOnOff && !bEnforce))
         return;
+    // DESVIACION: música parada desde el menú de opciones (CSound).
+    if (gSound.IsMusicStoppedByUser()) {
+        MusicCurrentTrack[0] = 0;
+        return;
+    }
 
     if (MusicCurrentTrack[0])
     {

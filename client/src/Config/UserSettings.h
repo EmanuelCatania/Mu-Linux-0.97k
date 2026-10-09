@@ -81,6 +81,13 @@ public:
     static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }
 
+    // Cambios desde el menú de opciones: actualizan el valor y lo escriben en
+    // el mismo Config.ini que se leyó.
+    void SetLanguage(int language);
+    void SetSoundLevel(int level);
+    void SetMusicLevel(int level);
+    void SaveInt(const char* section, const char* key, int value) const;
+
     // Ancho y alto de un índice de resolución; false si el índice no existe.
     static bool GetResolutionSize(int index, DWORD* width, DWORD* height);
 
@@ -94,6 +101,7 @@ private:
     int  m_MusicLevel  = -1;
     bool m_DeleteHealthBar = false;
     int  m_Language = USER_LANG_DEFAULT;
+    char m_IniPath[MAX_PATH] = {};
     char m_Username[11] = {};
     UserFontSettings m_Font;
 };

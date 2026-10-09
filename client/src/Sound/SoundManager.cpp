@@ -104,6 +104,12 @@ void CSound::StopMusic()
     m_Music = nullptr;
 }
 
+void CSound::SetMusicStoppedByUser(bool stopped)
+{
+    m_UserStopped = stopped;
+    if (stopped) StopMusic();
+}
+
 void CSound::Shutdown()
 {
     StopMusic();

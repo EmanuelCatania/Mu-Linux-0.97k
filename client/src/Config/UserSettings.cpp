@@ -70,6 +70,7 @@ void CUserSettings::Load(const char* iniPath)
 {
     // Una segunda carga no debe conservar la fuente ni preferencias ausentes.
     *this = CUserSettings{};
+    strcpy_s(m_IniPath, iniPath);
     m_DeleteHealthBar = ReadFlag("Antilag", "DeleteHealthBar", iniPath) > 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);
     m_Borderless  = ReadFlag("Window", "Borderless", iniPath);
@@ -135,4 +136,33 @@ const char* CUserSettings::GetLanguageSuffix(int language)
 {
     static const char* const Suffix[MAX_USER_LANGUAGE] = { "Eng", "Spn", "Por" };
     return language >= 0 && language < MAX_USER_LANGUAGE ? Suffix[language] : nullptr;
+}
+
+void CUserSettings::SaveInt(const char* section, const char* key, int value) const
+{
+    if (!m_IniPath[0]) return;
+    char text[16];
+    wsprintfA(text, "%d", value);
+    WritePrivateProfileStringA(section, key, text, m_IniPath);
+}
+
+void CUserSettings::SetLanguage(int language)
+{
+    if (language < USER_LANG_DEFAULT || language >= MAX_USER_LANGUAGE) return;
+    m_Language = language;
+    // Sin selección se borra la clave: vuelven los archivos del 0.97k.
+    if (m_IniPath[0])
+        WritePrivateProfileStringA("Language", "LangSelection", GetLanguageSuffix(language), m_IniPath);
+}
+
+void CUserSettings::SetSoundLevel(int level)
+{
+    m_SoundLevel = level;
+    SaveInt("Sound", "SoundLevel", level);
+}
+
+void CUserSettings::SetMusicLevel(int level)
+{
+    m_MusicLevel = level;
+    SaveInt("Sound", "MusicLevel", level);
 }

@@ -1,6 +1,7 @@
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
+#include "UI/OptionsMenu.h"
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -38,6 +39,7 @@ int RenderErrorMessage(void)
   CHAR local_64 [100];
 
   DAT_00559c8c = 0x100;
+  gOptionsMenu.OnErrorMessageFrame();   // DESVIACION (DLL OptionsMenu, hook 0x0051AF65)
   GL_ResetState();
   glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
   SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
@@ -128,56 +130,9 @@ int RenderErrorMessage(void)
                    (LPCSTR)lpString_07d45f24,(LPSIZE)0x0,'\0',0);
     }
     else if (DAT_083a7c24 == 0x96) {
-      local_dc = 0x1e;
-      do {
-        fVar1 = (float)(int)local_dc;
-        local_e4.cx = (LONG)fVar1;
-        GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-        if (((0x103 < DAT_083a427c) && (DAT_083a427c < 0x17c)) &&
-           (((int)local_dc <= DAT_083a4278 && (DAT_083a4278 < (int)local_dc + 0x16)))) {
-          glColor3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
-          GL_SetBlendAdditive();
-          GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-          glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
-          GL_ResetState();
-        }
-        local_dc = (int)local_dc + 0x1e;
-      } while ((int)local_dc < 0x96);
-      GL_SetBlendSrcOver('\x01');
-      ptVar17 = &local_e4;
-      iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x23,
-                   (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
-      if (m_bAutoAttack == '\0') {
-        pcVar14 = s__s_Off_00561854;
-      }
-      else {
-        pcVar14 = s__s_On_0056184c;
-      }
-      crt_sprintf(local_64,(const char *)pcVar14);
-      ptVar17 = &local_e4;
-      iVar3 = lstrlenA(local_64);
-      GetTextExtentPointA(gFont.GetTextDC(),local_64,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x41,local_64,
-                   (LPSIZE)0x0,'\0',0);
-      if (m_bWhisperSound == '\0') {
-        pcVar14 = s__s_Off_00561864;
-      }
-      else {
-        pcVar14 = s__s_On_0056185c;
-      }
-      crt_sprintf(local_64,(const char *)pcVar14);
-      ptVar17 = &local_e4;
-      iVar3 = lstrlenA(local_64);
-      GetTextExtentPointA(gFont.GetTextDC(),local_64,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,local_64,
-                   (LPSIZE)0x0,'\0',0);
-      ptVar17 = &local_e4;
-      iVar3 = lstrlenA((LPCSTR)lpString_07d463d4);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d463d4,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x7d,
-                   (LPCSTR)lpString_07d463d4,(LPSIZE)0x0,'\0',0);
+      // DESVIACION (DLL OptionsMenu, hook 0x0051B3CA): menú de opciones expandido
+      // en lugar de los 4 botones del 0.97k (volver, ataque automático, susurros, cerrar).
+      gOptionsMenu.Render();
     }
     else if ((((DAT_083a7c24 == 0x8b) || (DAT_083a7c24 == 0x8e)) || (DAT_083a7c24 == 0x8d)) ||
             ((DAT_083a7c24 == 0x8c || (DAT_083a7c24 == 0x9a)))) {
