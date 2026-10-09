@@ -20,7 +20,7 @@
 //             DeleteStaticEffects DeleteDynamicEffects DeleteWings
 //             DeleteHealthBar DeleteInterface DeleteWeather DeleteGlow
 //             (0|1, ver eAntilag)
-// [MiniMap] se integra con su sistema.
+//   [MiniMap] Alpha=3..10  ZoomLevel=0..6  (UI/MiniMap.cpp)
 
 #include "stdafx.h"
 
@@ -115,6 +115,9 @@ public:
     void SetSoundLevel(int level);
     void SetMusicLevel(int level);
     void SetWindow(bool windowMode, bool borderless, int resolution);
+    int  GetMiniMapAlpha() const { return m_MiniMapAlpha; }
+    int  GetMiniMapZoom()  const { return m_MiniMapZoom; }
+    void SetMiniMap(int alpha, int zoom);
     // Escribe toda la sección [Font] y la marca presente.
     void SetFont(const UserFontSettings& font);
     // Borra [Font]: vuelve la fuente del binario (Arial según la resolución).
@@ -137,6 +140,8 @@ private:
     bool m_Antilag[MAX_ANTILAG] = {};
     bool m_PvPWithoutControl = false;
     int  m_Language = USER_LANG_DEFAULT;
+    int  m_MiniMapAlpha = 10;   // defaults del DLL
+    int  m_MiniMapZoom  = 0;
     char m_IniPath[MAX_PATH] = {};
     char m_Username[11] = {};
     UserFontSettings m_Font;

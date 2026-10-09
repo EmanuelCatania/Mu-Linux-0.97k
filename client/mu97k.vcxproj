@@ -125,6 +125,7 @@
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
+    <ClInclude Include="src\UI\MiniMap.h" />
     <ClInclude Include="src\UI\OptionsMenu.h" />
     <ClInclude Include="src\UI\MoveList.h" />
     <ClInclude Include="src\Sound\SoundManager.h" />
@@ -452,6 +453,7 @@
     <ClCompile Include="src\UI\Chat_Gestures.cpp" />
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\EventTimer.cpp" />
+    <ClCompile Include="src\UI\MiniMap.cpp" />
     <ClCompile Include="src\UI\OptionsMenu.cpp" />
     <ClCompile Include="src\UI\MoveList.cpp" />
     <ClCompile Include="src\UI\Chat_InputTick.cpp" />
