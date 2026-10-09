@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Game/HeroVitals.h"
 #include "Net/Recv/NetRecv.h"
 
 void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
@@ -92,6 +93,16 @@ void CreateMagicShiny97k(BYTE* entity, int hand)
 }
 
 // 0x15
+// DESVIACION (DLL Protocol.cpp GCDamageRecv): con GAMESERVER_EXTRA la vida
+// que le queda al héroe viaja en ViewCurHP (+8); manda sobre la resta local.
+static void SyncHeroLife(const BYTE* Msg, int Size, WORD* life)
+{
+    if (Size < 16) return;
+    const DWORD view = *(const DWORD*)(Msg + 8);
+    *life = view > 0xFFFF ? 0xFFFF : (WORD)view;
+    gHeroVitals.SetCurrent(VITAL_LIFE, view);
+}
+
 void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // Opcode 0x15 server→cliente = GCDamageSend → PMSG_DAMAGE_SEND per
@@ -199,6 +210,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
             if (damage < *pHP) *pHP -= damage; else *pHP = 0;
             *(WORD*)(tgtSlot + 760) = (WORD)damage;
+            SyncHeroLife(Msg, Size, pHP);
         }
         return;
     }
@@ -209,6 +221,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
         if (damage < *pHP) *pHP -= damage;
         else *pHP = 0;
+        SyncHeroLife(Msg, Size, pHP);
     }
 
     // ── Destello de bloqueo (efecto 259) ────────────────────────

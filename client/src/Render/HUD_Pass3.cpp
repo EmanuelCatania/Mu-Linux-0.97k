@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Game/HeroVitals.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -139,6 +140,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
 extern "C" SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
+void RenderNumberCentered(float centerX, float y, int num);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
 
 // g_hFontBig fallback alias.
@@ -333,13 +335,14 @@ void Render_HudPass_4BCD20_(void)
 
     // Anti-tamper #1 — skipped.
 
-    int v3 = *(unsigned short*)((BYTE*)CharacterAttribute + 36);
-    int v23 = *(unsigned short*)((BYTE*)CharacterAttribute + 38);
+    // DESVIACION (DLL PrintPlayer.cpp): AG de 32 bits (CHeroVitals).
+    int v3 = (int)gHeroVitals.GetCurrent(VITAL_AG);
+    int v23 = (int)gHeroVitals.GetMax(VITAL_AG);
     if (v23 == 0) v23 = 1;
 
     // Anti-tamper #2 — skipped.
 
-    int barHeight = 36 * v3 / v23;
+    int barHeight = (int)(36LL * v3 / v23);
     if (barHeight < 0) barHeight = 0;
     if (barHeight > 36) barHeight = 36;
     float Heightb = (float)barHeight;
@@ -347,7 +350,8 @@ void Render_HudPass_4BCD20_(void)
     float y = 473.0f - Heightb;
     GL_DrawTexture(257, 551.0f, y, 15.0f, Heightb, 0.0f, 0.0f, 0.9375f, vHeight, 1, 1);
 
-    RenderNumber2D(571.0f, 467.0f, v3, 9.0f, 10.0f);
+    // DESVIACION: centrado sobre la barra (551..566); el 0.97k usa x=571.
+    RenderNumberCentered(558.5f, 467.0f, v3);
 
     if ((int)MouseX >= 551 && (int)MouseX < 566 &&
         (int)MouseY >= 437 && (int)MouseY < 473) {

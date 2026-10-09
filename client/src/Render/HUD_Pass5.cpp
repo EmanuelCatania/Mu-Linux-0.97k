@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Game/HeroVitals.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -38,6 +39,7 @@
 extern "C" int    GetScreenWidth(void);
 extern "C" SIZE*  __cdecl Text_MeasureBox(int, int, const char*, int, char, int);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
+void RenderNumberCentered(float centerX, float y, int num);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
 extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);
 // PartyOpened/GuildOpened now #defined in globals.h to DAT_07eaa11x bytes.
@@ -249,12 +251,13 @@ void __cdecl Render_HudPass_4BD650_(void)
 
     // Read HP/Mana max+cur.  The engine clamps cur values to max so the
     // orb bar can't render past its full height.
-    int max_HP = *(unsigned short*)(CA + 32);
-    int cur_HP = *(unsigned short*)(CA + 28);
+    // DESVIACION (DLL PrintPlayer.cpp): valores de 32 bits (CHeroVitals).
+    int max_HP = (int)gHeroVitals.GetMax(VITAL_LIFE);
+    int cur_HP = (int)gHeroVitals.GetCurrent(VITAL_LIFE);
     if (cur_HP >= max_HP) cur_HP = max_HP;
 
-    int max_MP = *(unsigned short*)(CA + 34);
-    int cur_MP = *(unsigned short*)(CA + 30);
+    int max_MP = (int)gHeroVitals.GetMax(VITAL_MANA);
+    int cur_MP = (int)gHeroVitals.GetCurrent(VITAL_MANA);
     if (cur_MP >= max_MP) cur_MP = max_MP;
 
     int empty_HP = max_HP - cur_HP;
@@ -401,8 +404,11 @@ void __cdecl Render_HudPass_4BD650_(void)
 
     // ── HP / MP cur values ───────────────────────────────────────────────────
     glColor3f(1.0f, 0.95f, 0.75f);
-    RenderNumber2D(100.0f, 467.0f, *(unsigned short*)(CA + 28), 9.0f, 10.0f);
-    RenderNumber2D(540.0f, 467.0f, *(unsigned short*)(CA + 30), 9.0f, 10.0f);
+    // DESVIACION: centrados en su esfera (97..150 y 489..542) y con 32 bits.
+    // El 0.97k los dibuja en x=100 y x=540, y con 5 cifras el de mana se
+    // pisa con el de AG (el DLL lo corría 20 px).
+    RenderNumberCentered(123.5f, 467.0f, (int)gHeroVitals.GetCurrent(VITAL_LIFE));
+    RenderNumberCentered(515.5f, 467.0f, (int)gHeroVitals.GetCurrent(VITAL_MANA));
 
     // ── Three item-count badges (potion / arrow / etc) at x=226, 257, 288 ───
     for (int i = 0; i < 3; ++i) {

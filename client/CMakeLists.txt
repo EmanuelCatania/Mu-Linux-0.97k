@@ -90,6 +90,7 @@ set(MU_SOURCES
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
     src/Game/Game_MainLoop.cpp
+    src/Game/HeroVitals.cpp
     src/Game/Player_InputTick.cpp
     src/Render/Render_Frame.cpp
     src/Net/Net_Process.cpp
@@ -387,6 +388,7 @@ set(MU_HEADERS
     src/UI/MoveList.h
     src/Sound/SoundManager.h
     src/Game/MapManager.h
+    src/Game/HeroVitals.h
     src/Net/Network.h
     src/Net/Ping.h
     src/Net/ServerCharacterStats.h

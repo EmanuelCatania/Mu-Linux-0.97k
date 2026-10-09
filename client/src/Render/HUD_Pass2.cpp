@@ -184,6 +184,16 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
     return xa;
 }
 
+// RenderNumber2D arranca en x - len*Width/2 y avanza 0.7*Width por cifra, así
+// que el centro visual queda en x - 0.15*Width*(len-1).  Esto lo compensa para
+// centrar el número en `centerX` (HUD de vida, mana y AG).
+void RenderNumberCentered(float centerX, float y, int num)
+{
+    char digits[16];
+    const int len = wsprintfA(digits, "%d", num);
+    RenderNumber2D(centerX + 0.15f * 9.0f * (len - 1), y, num, 9.0f, 10.0f);
+}
+
 // GetScreenWidth — sub_4CB520.  Returns the X coord at which the bottom-
 // HUD's "right edge" sits, depending on which UI panels are open.
 //   * Inventory + (Character | Shop | Warehouse | ChaosMix | Trade | Event)
