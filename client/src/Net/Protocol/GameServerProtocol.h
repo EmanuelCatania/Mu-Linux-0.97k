@@ -681,6 +681,34 @@ struct CATALOG_MAP_FOG
 };
 static_assert(sizeof(CATALOG_MAP_FOG) == 8, "F3:E9 entrada");
 
+// F3:EC — efectos de un item (Data/Custom/Items/*.json del server).
+const BYTE CATALOG_EFFECT_ON_EQUIPPED = 0x01;
+const BYTE CATALOG_EFFECT_SPRITE = 1;      // sprite en huesos, cada frame
+const BYTE CATALOG_EFFECT_PARTICLE = 2;    // partícula vanilla en huesos
+const int  CATALOG_EFFECT_MAX_BONES = 32;
+
+struct CATALOG_EFFECT
+{
+    WORD Item;
+    BYTE On;
+    BYTE Type;
+    WORD Bitmap;        // textura vanilla; 0xFFFF = la de Texture
+    WORD Particle;      // tipo de partícula vanilla
+    BYTE SubType;
+    BYTE Chance;        // 1 de cada N frames
+    BYTE BoneCount;
+    BYTE Reserved;
+    BYTE Bones[CATALOG_EFFECT_MAX_BONES];
+    float Color[3];
+    float Scale;
+    float PulseSpeed;   // pulso |sin(WorldTime * speed)|
+    float PulseScale;
+    float PulseColor;
+    float Offset[3];
+    char Texture[48];
+};
+static_assert(sizeof(CATALOG_EFFECT) == 132, "F3:EC entrada");
+
 struct PMSG_CATALOG_END_SEND
 {
     PSBMSG_HEAD header;     // C1:F3:EA

@@ -50,6 +50,7 @@ public:
     void ReceiveItems(const BYTE* msg, int size);      // F3/E7
     void ReceiveMonsters(const BYTE* msg, int size);   // F3/E8
     void ReceiveMapFog(const BYTE* msg, int size);     // F3/E9
+    void ReceiveEffects(const BYTE* msg, int size);    // F3/EC
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
@@ -92,6 +93,11 @@ public:
     // por nivel y los efectos por tipo); el mismo si no es del catálogo.
     int  LogicModel(int model) const;
 
+    // Efectos del item dibujado con `model` sobre la entidad `c`, en los huesos
+    // que dejó el último render del modelo (g_BoneScratch).  Se llama desde
+    // RenderLinkObject después de dibujar la pieza.
+    void RunEquippedEffects(const void* c, int model, void* modelPtr) const;
+
     const CatalogMonster* GetMonster(int index) const;
 
     // Niebla del mapa: colores de día y de noche (0..1).  false = sin fila.
@@ -107,6 +113,7 @@ private:
     void Publish();
     void ApplyItem(const BYTE* record, int recordSize);
     int  LoadModel(const char* folder, const char* name, int fixedSlot);
+    int  LoadTexture(const char* path);
 
     bool m_Loaded = false;
     bool m_HasFog = false;

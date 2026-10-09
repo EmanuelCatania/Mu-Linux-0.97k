@@ -665,6 +665,11 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // ── 11. Per-weapon-type particle effects ─────────────────────────────────
     int   iVar_rand = rand();
     void* pModel2 = (void*)iVar7;
+
+    // DESVIACION (0.97.20): efectos del item definidos por el server
+    // (Data/Custom/Items/*.json), sobre los huesos que acaba de animar el
+    // render de la pieza.
+    gContentCatalog.RunEquippedEffects((const void*)(uintptr_t)param_4, drawModel, pModel2);
     // Luminosity = (float)(rand()%30 + 70) * _DAT_00552940
     float fLum = (float)(iVar_rand % 0x1e + 0x46) * _DAT_00552940;
     // `Light[3]` de IDA como array real: los 9 cases del switch de abajo lo pasan

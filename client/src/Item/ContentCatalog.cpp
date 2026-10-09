@@ -25,6 +25,16 @@ struct PendingSection
 PendingSection s_PendingItems;
 PendingSection s_PendingMonsters;
 PendingSection s_PendingFog;
+PendingSection s_PendingEffects;
+
+// Efecto ya resuelto (textura cargada) de un item.
+struct ItemEffect
+{
+    Proto::CATALOG_EFFECT Data;
+    int Bitmap;          // slot de textura a usar
+};
+std::map<int, std::vector<ItemEffect>> s_Effects;   // item -> efectos
+std::map<std::string, int> s_LoadedTextures;        // ruta -> slot
 
 std::vector<BYTE> s_VanillaAttributes;   // item.bmd, para volver a él en Clear()
 
@@ -180,6 +190,11 @@ void CContentCatalog::ReceiveMapFog(const BYTE* msg, int size)
     if (!ReadSection(s_PendingFog, msg, size)) Log("ContentCatalog: E9 descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceiveEffects(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingEffects, msg, size)) Log("ContentCatalog: EC descartado (size=%d)", size);
+}
+
 void CContentCatalog::ReceiveEnd(const BYTE* msg, int size)
 {
     if (size < (int)sizeof(Proto::PMSG_CATALOG_END_SEND)) return;
@@ -209,6 +224,8 @@ void CContentCatalog::Clear()
     s_PendingItems = PendingSection();
     s_PendingMonsters = PendingSection();
     s_PendingFog = PendingSection();
+    s_PendingEffects = PendingSection();
+    s_Effects.clear();
     // Los modelos y texturas ya cargados se conservan: si el server vuelve a
     // mandar las mismas rutas se reusan sin volver a leer el disco.
     m_Loaded = false;
@@ -266,6 +283,23 @@ void CContentCatalog::Publish()
     }
     m_HasFog = false;
     for (const FogEntry& fog : s_Fog) m_HasFog = m_HasFog || fog.Present;
+
+    // Efectos: sección opcional (un server sin Data/Custom/Items no la manda
+    // completa y el resto del catálogo vale igual).
+    s_Effects.clear();
+    const int effectSize = s_PendingEffects.recordSize;
+    if (SectionComplete(s_PendingEffects) && effectSize > 0) {
+        for (size_t off = 0; off + effectSize <= s_PendingEffects.records.size(); off += effectSize) {
+            ItemEffect effect = {};
+            memcpy(&effect.Data, &s_PendingEffects.records[off], min((int)sizeof(effect.Data), effectSize));
+            Proto::CATALOG_EFFECT& data = effect.Data;
+            if (data.Item >= ITEM_MAX_EX || data.BoneCount == 0 || data.BoneCount > Proto::CATALOG_EFFECT_MAX_BONES) continue;
+            data.Texture[sizeof(data.Texture) - 1] = 0;
+            effect.Bitmap = (data.Texture[0] != 0) ? LoadTexture(data.Texture) : (data.Bitmap != 0xFFFF ? (int)data.Bitmap : -1);
+            if (data.Type == Proto::CATALOG_EFFECT_SPRITE && effect.Bitmap < 0) continue;
+            s_Effects[data.Item].push_back(effect);
+        }
+    }
     m_FogMap = -1;
     m_Loaded = true;
 }
@@ -394,6 +428,64 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
 
     s_LoadedModels[key] = slot;
     return slot;
+}
+
+// Textura suelta de un efecto, en la región del catálogo.  Una vez por ruta.
+int CContentCatalog::LoadTexture(const char* path)
+{
+    char sub[64];
+    size_t n = 0;
+    for (const char* p = path; *p && n + 1 < sizeof(sub); ++p) sub[n++] = (*p == '/') ? '\\' : *p;
+    sub[n] = 0;
+    if (n < 5 || sub[0] == '\\' || strstr(sub, "..") || strchr(sub, ':')) {
+        Log("ContentCatalog: ruta de textura inválida '%s'", path);
+        return -1;
+    }
+    std::map<std::string, int>::iterator it = s_LoadedTextures.find(sub);
+    if (it != s_LoadedTextures.end()) return it->second;
+
+    if (m_NextTexture == 0) m_NextTexture = BITMAP_MAX_VANILLA;
+    if (m_NextTexture >= BITMAP_MAX_TOTAL) {
+        Log("ContentCatalog: sin espacio de texturas para %s", sub);
+        return -1;
+    }
+    const int slot = m_NextTexture++;
+    const char* ext = strrchr(sub, '.');
+    const bool tga = ext && (_stricmp(ext, ".tga") == 0);
+    if (tga) OpenTGA(sub, slot, 0x2601, 0x2900, 0, '\x01');
+    else     OpenJPG(sub, slot, 0x2601, 0x2900, 0, '\x01');
+    s_LoadedTextures[sub] = slot;
+    return slot;
+}
+
+void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPtr) const
+{
+    if (s_Effects.empty() || !modelPtr) return;
+    const int itemType = GetModelItemType(model);
+    if (itemType < 0) return;
+    std::map<int, std::vector<ItemEffect>>::const_iterator it = s_Effects.find(itemType);
+    if (it == s_Effects.end()) return;
+
+    for (const ItemEffect& effect : it->second) {
+        const Proto::CATALOG_EFFECT& data = effect.Data;
+        if (!(data.On & Proto::CATALOG_EFFECT_ON_EQUIPPED)) continue;
+        const float pulse = (data.PulseSpeed != 0.0f) ? fabsf(sinf(DAT_05826e08 * data.PulseSpeed)) : 0.0f;
+        const float scale = data.Scale + pulse * data.PulseScale;
+        float light[3] = { data.Color[0] + pulse * data.PulseColor,
+                           data.Color[1] + pulse * data.PulseColor,
+                           data.Color[2] + pulse * data.PulseColor };
+        float offset[3] = { data.Offset[0], data.Offset[1], data.Offset[2] };
+        for (int b = 0; b < data.BoneCount; ++b) {
+            if (data.Chance > 1 && rand() % data.Chance != 0) continue;
+            float position[3];
+            BMD_TransformPosition(modelPtr, (float*)(g_BoneScratch + data.Bones[b] * 0x30), offset, position, '\x01');
+            if (data.Type == Proto::CATALOG_EFFECT_SPRITE) {
+                CreateSprite((unsigned short)effect.Bitmap, position, scale, light, (int)(uintptr_t)c, 0.0f, 0);
+            } else if (data.Type == Proto::CATALOG_EFFECT_PARTICLE) {
+                Particle_Spawn(data.Particle, position, (float*)((BYTE*)c + 28), light, data.SubType, scale, 0);
+            }
+        }
+    }
 }
 
 int CContentCatalog::GetItemBehavior(int type) const
