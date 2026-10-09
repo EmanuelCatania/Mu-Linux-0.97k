@@ -67,29 +67,21 @@ void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
                                            int dstFlag, int iDstIndex) {
     if (!pItem) return;
 
-    // Rebuild the 4-byte wire item info from the ITEM struct.
-    BYTE itemBytes[4];
-    itemBytes[0] = (BYTE)(pItem->Type & 0xFF);
-    itemBytes[1] = pItem->Option1;
-    itemBytes[2] = pItem->Durability;
-    itemBytes[3] = pItem->Unknown;
-
-    // Build plaintext packet: [C1][len=11][0x24][srcF][srcS][i0..i3][tgtF][tgtS].
-    // gNetwork.Send will overwrite pkt[1] with the serial byte, do the
-    // chain-XOR + CSM encrypt, and emit the final C3 frame.
+    // [C1][size][0x24][srcF][srcS][item: 7 bytes][tgtF][tgtS].  0.97.20: el
+    // item viaja en 7 bytes (PMSG_ITEM_MOVE_RECV del server con
+    // MAX_ITEM_INFO = 7); antes eran 4 y el paquete medía 11.
+    // gNetwork.Send pisa pkt[1] con el serial, aplica el chain-XOR y CSM y
+    // emite el frame C3.
     BYTE pkt[16];
     memset(pkt, 0, sizeof(pkt));
     pkt[0]  = 0xC1;
-    pkt[1]  = 11;          // size (will be stomped with serial)
-    pkt[2]  = 0x24;        // head
+    pkt[1]  = (BYTE)(7 + ITEM_INFO_SIZE);
+    pkt[2]  = 0x24;
     pkt[3]  = (BYTE)srcFlag;
     pkt[4]  = (BYTE)iSrcIndex;
-    pkt[5]  = itemBytes[0];   // type lo
-    pkt[6]  = itemBytes[1];   // optByte (level<<3 | luck | options)
-    pkt[7]  = itemBytes[2];   // durability
-    pkt[8]  = itemBytes[3];   // type hi | excellent
-    pkt[9]  = (BYTE)dstFlag;
-    pkt[10] = (BYTE)iDstIndex;
+    ItemWire_FromItem((const BYTE*)pItem, pkt + 5);
+    pkt[5 + ITEM_INFO_SIZE] = (BYTE)dstFlag;
+    pkt[6 + ITEM_INFO_SIZE] = (BYTE)iDstIndex;
 
     // Para el merge de stacks: el server responde 0xFF y sólo manda la
     // durabilidad nueva del destino (0x2A), así que el sobrante del origen se
@@ -100,7 +92,7 @@ void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
         if (target->Type == pItem->Type) g_ItemMoveTargetDurBefore = target->Durability;
     }
 
-    gNetwork.Send(pkt, 11);
+    gNetwork.Send(pkt, 7 + ITEM_INFO_SIZE);
 
     // IDA: sub_4CDC70 y FUN_004D6470 — toda modificación de la oferta local
     // (inventario <-> Trade o Trade <-> Trade) bloquea la confirmación durante

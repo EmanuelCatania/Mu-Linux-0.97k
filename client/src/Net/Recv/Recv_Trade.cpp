@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"
 
 void ReceiveTradeExit97k(const BYTE* Msg, int Size)
@@ -138,7 +139,7 @@ void NetRecv_39(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // packet family and discarded every valid MuEmu trade item.
     NetLog("NET:  → 0x39 TradeWarehouseSlot slot=%d size=%d",
            Msg[3], Size);
-    if (Size >= 8) {
+    if (Size >= 4 + ITEM_INFO_SIZE) {
         // IDA 004389A0: C1:39 inserta en la misma grilla remota.
         InsertInventoryItem(Inventory, 8, 4,
                      (int)Msg[3], (BYTE*)Msg + 4, 1);

@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "resource.h"
 #include "Debug/MiniDump.h"
 #include "Net/HWID.h"
@@ -674,9 +675,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     DAT_07cf1ff8 = (int)malloc(0xa00);     memset((void*)DAT_07cf1ff8, 0, 0x280 * 4);
 
     // ItemAttribute — base aleatorizada (anti-tamper, pero igual necesitamos el alloc)
-    DAT_055c9e44 = (DWORD)malloc(0x18000);
+    // DESVIACION (0.97.20): la tabla tiene ITEM_MAX_EX filas (agregados del
+    // catálogo del server por encima de 512); el binario reservaba 0x18000.
+    DAT_055c9e44 = (DWORD)malloc((ITEM_MAX_EX + 0x400) * 0x40);
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
-    memset((void*)DAT_07d78068, 0, 0x2000 * 4);
+    memset((void*)DAT_07d78068, 0, ITEM_MAX_EX * 0x40);
     DAT_07cf1ff0 = (int)malloc(0x8000);
     memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
 
@@ -742,7 +745,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
     if (DAT_05828d58 == 0) {
-        size_t modelPoolSz = 0x5b334;
+        size_t modelPoolSz = (size_t)(MODEL_MAX_TOTAL + 0x400) * 0xbc;
         DAT_06f42a58 = malloc(modelPoolSz);
         memset(DAT_06f42a58, 0, modelPoolSz);
         DAT_05828d58 = (DWORD)DAT_06f42a58;

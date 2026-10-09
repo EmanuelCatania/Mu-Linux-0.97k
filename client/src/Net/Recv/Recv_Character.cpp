@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
 #include "UI/EventTimer.h"
@@ -1070,7 +1071,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // PMSG_ITEM_MODIFY_SEND (ItemManager.h:169) - el server
             // reescribe una celda del inventario.
             //   +4 slot  .  +5.. ItemInfo
-            if (Size < 6) break;
+            if (Size < 5 + ITEM_INFO_SIZE) break;
             NetLog("NET:  -> F3/14 ItemModify slot=%d", Msg[4]);
             DAT_07e91388 = 0;            // suelta el item agarrado
             InsertInventoryItem(OffsetInventoryItems, 8, 8, Msg[4],

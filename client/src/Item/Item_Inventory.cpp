@@ -16,6 +16,7 @@
 //     `ItemAttribute[type].Width / .Height`.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"        // ITEM, ITEM_ATTRIBUTE (también en GameStructs.h — usar uno solo)
 #include "functions.h"
@@ -371,7 +372,7 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
     int  bodyStart  = hdrLen + 1;                    // skip sub-opcode (0x10) → Msg[4]
     BYTE count      = Msg[bodyStart];                // count at Msg[4]
     int  itemsStart = bodyStart + 1;                 // first item byte
-    int  stride     = 5;                             // mu-emu 0.97D stride
+    int  stride     = 1 + ITEM_INFO_SIZE;            // slot + item (7 bytes, 0.97.20)
 
 
 

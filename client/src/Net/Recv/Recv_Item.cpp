@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Item/ChaosMixRates.h"
 #include "Net/Recv/NetRecv.h"
 
@@ -18,7 +19,7 @@
 void ShopInsertItem(int slot, const BYTE* Item)
 {
     int type = ConvertItemType((BYTE*)Item);
-    if (type == 255 || type < 0 || type >= 512) return;
+    if (type == 255 || type < 0 || type >= ITEM_MAX_EX) return;
     BYTE* attrBase = (BYTE*)(uintptr_t)DAT_07d78068;
     if ((uintptr_t)attrBase < 0x100000u || (uintptr_t)attrBase >= 0x80000000u) return;
     BYTE* attr = attrBase + type * 0x40;
@@ -107,12 +108,8 @@ void ItemMove_RestoreSlot(BYTE* pool, int slot, const BYTE* item68)
         // Type-high/Level-int/etc como opciones. Se reconstruye el wire desde los
         // offsets conocidos de la struct (Type@0, Level@4, Durability@26,
         // Unkown@60=byteHi, byColorState@61=ext).
-        BYTE wire[6] = { 0, 0, 0, 0, 0, 0 };
-        wire[0] = item68[0];    // Type low byte
-        wire[1] = item68[4];    // raw optByte (Level int, low byte)
-        wire[2] = item68[26];   // Durability
-        wire[3] = item68[60];   // Unkown (= byteHi, incluye bit8 de type + exc)
-        wire[4] = item68[61];   // byColorState (extByte)
+        BYTE wire[ITEM_INFO_SIZE];
+        ItemWire_FromItem(item68, wire);
         InsertInventoryItem(pool, 8, ItemMove_GetGridH(pool), slotIndex, wire, first);
     }
 }
@@ -330,7 +327,7 @@ void NetRecv_24(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         ItemMove_ClearPickedState();
         PlayBuffer(29, 0, 0);
     } else {
-        if (Size >= 9) {
+        if (Size >= 5 + ITEM_INFO_SIZE) {
             // Server confirmed the move. Msg[4] = target slot,
             // Msg[5..8] = ItemInfo (4 bytes, ItemByteConvert).
             //
@@ -340,8 +337,8 @@ void NetRecv_24(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // (Durability/Option1/x/y/Key…) se reinterpretarían como opciones/serial.
             // InsertInventoryItem lee hasta Item[4]; dejamos ext=0.
             BYTE targetSlot = Msg[4];
-            BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
-            memcpy(itembytes, &Msg[5], 4);
+            BYTE itembytes[ITEM_INFO_SIZE];
+            memcpy(itembytes, &Msg[5], ITEM_INFO_SIZE);
             {
                 int t = ConvertItemType(itembytes);
                 NetLog("NET:    0x24 place slot=%d wire=[%02X %02X %02X %02X] type=%d",
@@ -468,16 +465,17 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             *(DWORD*)(cell + 0x38) = 0;
         }
 
+        const int recordSize = 1 + ITEM_INFO_SIZE;   // slot + item (0.97.20)
         const BYTE* record = Msg + 6;
-        for (int i = 0; i < count && (6 + i * 5 + 5) <= Size;
-             ++i, record += 5) {
+        for (int i = 0; i < count && (6 + i * recordSize + recordSize) <= Size;
+             ++i, record += recordSize) {
             const BYTE slot = record[0];
             if (slot >= 32) {
                 continue;
             }
 
-            BYTE itemInfo[6] = { 0, 0, 0, 0, 0, 0 };
-            memcpy(itemInfo, record + 1, 4);
+            BYTE itemInfo[ITEM_INFO_SIZE];
+            memcpy(itemInfo, record + 1, ITEM_INFO_SIZE);
             InsertInventoryItem(OffsetMixItems, 8, 4, (int)slot,
                          itemInfo, 1);
         }
@@ -532,9 +530,10 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             }
             const BYTE* rec = Msg + 6;
             int placed = 0;
-            for (int i = 0; i < listCount && (6 + i * 5 + 5) <= Size; ++i, rec += 5) {
-                BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
-                memcpy(itembytes, rec + 1, 4);
+            const int recordSize = 1 + ITEM_INFO_SIZE;   // slot + item (0.97.20)
+            for (int i = 0; i < listCount && (6 + i * recordSize + recordSize) <= Size; ++i, rec += recordSize) {
+                BYTE itembytes[ITEM_INFO_SIZE];
+                memcpy(itembytes, rec + 1, ITEM_INFO_SIZE);
                 InsertInventoryItem(OffsetWarehouseItems, 8, 15, (int)rec[0], itembytes, 1);
                 placed++;
             }
@@ -552,7 +551,8 @@ void NetRecv_31(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             }
             const BYTE* rec = Msg + 6;
             int placed = 0;
-            for (int i = 0; i < listCount && (6 + i * 5 + 5) <= Size; ++i, rec += 5) {
+            const int recordSize = 1 + ITEM_INFO_SIZE;   // slot + item (0.97.20)
+            for (int i = 0; i < listCount && (6 + i * recordSize + recordSize) <= Size; ++i, rec += recordSize) {
                 ShopInsertItem(rec[0], rec + 1);
                 placed++;
             }
@@ -617,11 +617,9 @@ void NetRecv_32(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // compra rechazada — el server ya avisó (GCNoticeSend);
         // no hay item que insertar.
         ItemMove_ClearPickedState();
-    } else if (Size >= 8) {
-        // 4-byte ItemInfo → buffer de 6 (InsertInventoryItem lee
-        // Item[4] extByte; lo dejamos en 0 para no leer basura).
-        BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
-        memcpy(itembytes, (BYTE*)Msg + 4, 4);
+    } else if (Size >= 4 + ITEM_INFO_SIZE) {
+        BYTE itembytes[ITEM_INFO_SIZE];
+        memcpy(itembytes, (BYTE*)Msg + 4, ITEM_INFO_SIZE);
         InsertInventoryItem(OffsetInventoryItems, 8, 8,
                      (int)result, itembytes, 1);
         ItemMove_ClearPickedState();
@@ -787,7 +785,7 @@ void NetRecv_86(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             *(short*)item = (short)0xFFFF;
             *(DWORD*)(item + 0x38) = 0;
         }
-        if (Size >= 8)
+        if (Size >= 4 + ITEM_INFO_SIZE)
             InsertInventoryItem(OffsetMixItems, 8, 4, 0, Msg + 4, 1);
         UIChatLogWindow_AddText("", GlobalText[595], 1);
         PlayBuffer(67, 0, 0);
@@ -906,19 +904,21 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // PMSG_ITEM_GET_SEND es [C3][08][22][result][i0..i3] = Size 8
         // (ItemInfo son 4 bytes, MAX_ITEM_INFO): no exigir el formato de 12
         // bytes (`Size >= 16`). InsertInventoryItem lee hasta Item[4]; dejamos ext=0.
-        if (Size >= 8 && slot < 76) {
-            BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
-            memcpy(itembytes, (BYTE*)Msg + 4, 4);
+        if (Size >= 4 + ITEM_INFO_SIZE && slot < 76) {
+            BYTE itembytes[ITEM_INFO_SIZE];
+            memcpy(itembytes, (BYTE*)Msg + 4, ITEM_INFO_SIZE);
             InsertInventoryItem(OffsetInventoryItems, 8, 8, (int)slot, itembytes, 1);
         }
-        if (Size >= 8) Item = (const BYTE*)Msg + 4;   // ConvertItemType lee hasta Item[3]
+        if (Size >= 4 + ITEM_INFO_SIZE) Item = (const BYTE*)Msg + 4;
     }
 
     // Sonido de pickup — IDA L61-71, compartido por las dos ramas:
     //   ConvertItemType(Item) in {461,462,464,399,470} → 49 (eGem.wav)
     //   resto                                          → 29 (pGetItem.wav)
     if (slot != 0xFF && Item != nullptr) {
-        // ConvertItemType (0x0047B110): Item[0] + (Item[3] & 0x80) * 2
+        // ConvertItemType (0x0047B110): Item[0] + (Item[3] & 0x80) * 2.  Con
+        // la rama del zen Item apunta a CharacterMachine: sólo los 4 primeros
+        // bytes tienen sentido, como en el binario.
         int type = (int)Item[0] + ((Item[3] & 0x80) ? 256 : 0);
         bool jewel = (type == 461 || type == 462 || type == 464 ||
                       type == 399 || type == 470);

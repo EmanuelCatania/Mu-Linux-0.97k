@@ -1,6 +1,7 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -76,7 +77,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     {
         int attrIdx = (int)v7 - 400;
         unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < 1024)
+        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }
 

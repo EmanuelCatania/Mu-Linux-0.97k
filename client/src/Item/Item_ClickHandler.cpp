@@ -46,6 +46,7 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
 #include "Item/RightClickMove.h"
 #include "Item/ChaosMixRates.h"
@@ -396,13 +397,8 @@ void RestorePickedItemToSource(void)
     if (srcPool && srcSlot >= 0) {
         // Reconstruir los bytes "wire" desde el ITEM struct guardado y
         // re-insertarlo en su celda original.
-        BYTE* it = (BYTE*)pPickedItem;
-        BYTE wire[6] = { 0, 0, 0, 0, 0, 0 };
-        wire[0] = it[0];     // Type low
-        wire[1] = it[4];     // optByte (Level int, low byte)
-        wire[2] = it[26];    // Durability
-        wire[3] = it[60];    // Unkown (bit8 de type + exc)
-        wire[4] = it[61];    // byColorState
+        BYTE wire[ITEM_INFO_SIZE];
+        ItemWire_FromItem((const BYTE*)pPickedItem, wire);
         int gridH = (srcPool == &OffsetWarehouseItems[0]) ? 15
                   : ((srcPool == &OffsetInventoryItems[0]) ? 8 : 4);
         InsertInventoryItem(srcPool, 8, gridH, srcSlot, wire, 1);
@@ -659,7 +655,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 continue;
             }
             short typeRaw   = rowSlot[0];
-            if (typeRaw < 0 || typeRaw >= 1024) { continue; }
+            if (typeRaw < 0 || typeRaw >= ITEM_MAX_EX) { continue; }
             int   type      = (int)(unsigned short)typeRaw;
             BYTE  slotX     = ((BYTE*)rowSlot)[62];
             BYTE  slotY     = ((BYTE*)rowSlot)[63];
@@ -672,7 +668,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 if ((int)slotX < grid_w && (int)slotY < grid_h) {
                     short* originSlot = (short*)(inv_base + 34 * (grid_w * (int)slotY + (int)slotX));
                     short originType = originSlot[0];
-                    if (originType >= 0 && originType < 1024) {
+                    if (originType >= 0 && originType < ITEM_MAX_EX) {
                         rowSlot = originSlot;
                         typeRaw = originType;
                         type = (int)(unsigned short)originType;

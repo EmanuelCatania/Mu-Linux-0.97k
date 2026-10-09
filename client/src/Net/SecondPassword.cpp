@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
@@ -1785,7 +1786,7 @@ void __cdecl SetPlayerStop(int c) {
         unsigned int base = (unsigned int)(uintptr_t)DAT_07d78068;
         if (base < 0x100000u || base >= 0x80000000u) return 0;
         int idx = type - 399;
-        if (idx < 1 || idx >= 1024) return 0;   // idx>=1: la expresión resta 34
+        if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34
         return *(unsigned char*)((char*)(uintptr_t)base + idx * 64 - 34);
     };
 

@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"
 
 // ---------------------------------------------------------------------------
@@ -50,7 +51,7 @@ int Net_LevelConvert(BYTE Level)
 
 void Recv_ChangePlayer(const BYTE* Msg, int Size)
 {
-    if (Size < 9 || !DAT_07abf5d0) return;
+    if (Size < 5 + ITEM_INFO_SIZE || !DAT_07abf5d0) return;
 
     const int key = Msg[4] + (Msg[3] << 8);
     const int idx = FindCharacterIndex(key);
@@ -739,15 +740,17 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // index[2]+x+y+ItemInfo[MAX_ITEM_INFO+1] = 2+1+1+5 = 9 bytes por
     // item SIEMPRE (Viewport.h), no el stride 8 del 0.97k. Bound y
     // stride son 9.
-    for (int i = 0; i < count && cursor + 9 <= Size; ++i) {
+    // 0.97.20: el item son 7 bytes y el struct del server agrega uno más
+    // (ItemInfo[MAX_ITEM_INFO + 1]): index[2] + x + y + 8 = 12 por entrada.
+    const int entrySize = 4 + ITEM_INFO_SIZE + 1;
+    for (int i = 0; i < count && cursor + entrySize <= Size; ++i) {
         const BYTE* e = Msg + cursor;
         WORD raw = (e[0] << 8) | e[1];
         WORD key = raw & 0x7FFF;
         bool createFlag = (raw & 0x8000) != 0;
         BYTE gx = e[2], gy = e[3];
         const BYTE* itemInfo = e + 4;
-        // ConvertItemType: type = info[0] + (info[3] & 0x80) * 2
-        int itemType = (int)itemInfo[0] + ((itemInfo[3] & 0x80) ? 256 : 0);
+        int itemType = ItemWire_GetType(itemInfo);
 
         if (key >= 1000) key = 0;  // safety clamp per IDA
 

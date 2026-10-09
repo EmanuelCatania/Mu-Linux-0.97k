@@ -16,6 +16,7 @@
 // ItemValue_Vanilla / ConvertRepairGold_Vanilla.
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include <vector>
@@ -40,14 +41,14 @@ inline int ItemLevelOf(const ITEM* ip) { return (ip->Level >> 3) & 0xF; }
 
 bool ValidEntry(const ItemStackInfo& entry)
 {
-    return entry.ItemIndex >= 0 && entry.ItemIndex < 1024 &&
+    return entry.ItemIndex >= 0 && entry.ItemIndex < ITEM_MAX_EX &&
         entry.Level >= -1 && entry.Level <= 15 && entry.MaxStack >= 0 && entry.MaxStack <= 255;
 }
 
 bool ValidEntry(const ItemValueInfo& entry)
 {
     // -1 conserva la fórmula por defecto; otros negativos no son precios.
-    return entry.Index >= 0 && entry.Index < 1024 && entry.Level >= -1 && entry.Level <= 15 &&
+    return entry.Index >= 0 && entry.Index < ITEM_MAX_EX && entry.Level >= -1 && entry.Level <= 15 &&
         entry.BuyValue >= -1 && entry.SellValue >= -1;
 }
 
@@ -155,7 +156,7 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
     const ITEM* ip = (const ITEM*)item;
     if (!ip || ip->Type == -1 || ip->SpecialNum > MAX_SPECIAL_OPTION) return 0;
     const unsigned int attrBase = ItemAttribute_Base();
-    if (!attrBase || ip->Type < 0 || ip->Type >= 1024) return 0;
+    if (!attrBase || ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return 0;
     const ITEM_ATTRIBUTE* info = (const ITEM_ATTRIBUTE*)(uintptr_t)(attrBase + ip->Type * sizeof(ITEM_ATTRIBUTE));
 
     const int  itemLevel = ItemLevelOf(ip);

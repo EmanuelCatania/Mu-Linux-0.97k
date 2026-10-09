@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
@@ -329,7 +330,7 @@ int __fastcall Stats_CalcBase(int a1) {
         // hace en los 3 slots de abajo).  Alla es inofensivo porque
         // ItemAttribute[-1] cae dentro de su propio segmento de datos; aca no.
         short wType = *(short*)(a1 + 1012);
-        if (wType < 0 || wType >= 1024) goto skip_wings;
+        if (wType < 0 || wType >= ITEM_MAX_EX) goto skip_wings;
         {
         ITEM_ATTRIBUTE* attr = &ITEM_ATTR[wType];
         float durP = CalcDurabilityPercent(*(unsigned char*)(a1 + 1038),
@@ -353,7 +354,7 @@ skip_wings: ;
         unsigned char dur = *(unsigned char*)(wp_L + 26);
         if (dur != 0) {
             short sType = *(short*)wp_L;
-            if (sType < 0 || sType >= 1024) sType = 0;
+            if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
                                                *(int*)(wp_L + 4),
@@ -385,7 +386,7 @@ skip_wings: ;
         unsigned char dur = *(unsigned char*)(wp_R + 26);
         if (dur != 0) {
             short sType = *(short*)wp_R;
-            if (sType < 0 || sType >= 1024) sType = 0;
+            if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
                                                *(int*)(wp_R + 4),

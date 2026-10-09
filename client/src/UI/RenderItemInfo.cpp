@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
 
 // RenderItemInfo.cpp  @0x004C4650 / 0x004C8D70
@@ -1354,7 +1355,7 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     const unsigned int attrBase = ItemAttribute_Base();
     if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
     const short type = ip->Type;
-    if (type < 0 || type >= 1024) return;
+    if (type < 0 || type >= ITEM_MAX_EX) return;
     ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[type];
     const BYTE* CA = (const BYTE*)CharacterAttribute;
     if (!CA) return;
@@ -2061,7 +2062,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     if (param_3_v == nullptr || (uintptr_t)param_3_v < 0x100000) return;
     unsigned short* param_3 = (unsigned short*)param_3_v;
     short itemType = (short)*param_3;
-    if (itemType < 0 || (unsigned short)itemType >= 1024) return;
+    if (itemType < 0 || (unsigned short)itemType >= ITEM_MAX_EX) return;
 
     // Class-filter exclusions
     if (itemType > 0x19f && itemType < 0x1a4) return;

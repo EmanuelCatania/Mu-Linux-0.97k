@@ -381,6 +381,7 @@ set(MU_HEADERS
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h
+    src/Item/ItemDefines.h
     src/Item/Item_ServerValue.h
     src/UI/GoldenArcher.h
     src/Core/Window.h

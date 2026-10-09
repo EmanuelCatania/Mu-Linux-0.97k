@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
 #include "globals.h"
 #include "functions.h"
@@ -20,7 +21,7 @@ bool IsCellRangeFree(int x, int y, int width, int height)
 int RightClickMove_FindInventorySlot(int type)
 {
     const ITEM_ATTRIBUTE* attr = (const ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
-    if (!attr || type < 0 || type >= 1024) return -1;
+    if (!attr || type < 0 || type >= ITEM_MAX_EX) return -1;
     const int width = attr[type].Width, height = attr[type].Height;
     if (width <= 0 || width > 8 || height <= 0 || height > 8) return -1;
     for (int y = 0; y < 8; ++y)

@@ -34,14 +34,14 @@ static_assert(offsetof(PMSG_DAMAGE_SEND, ViewDamageHP) == 12, "C1:15 ViewDamageH
 
 // ── C1:25 ─ cambio de equipo visible ── ItemManager.h:108 ─────────────────────
 // Net_Process.cpp Recv_ChangePlayer.
-const int MAX_ITEM_INFO = 4;    // ItemManager.h:10
+const int MAX_ITEM_INFO = 7;    // ItemManager.h:21 (0.97.20: layout 5.2)
 struct PMSG_ITEM_CHANGE_SEND
 {
     PBMSG_HEAD header;      // C1:25
     BYTE index[2];
     BYTE ItemInfo[MAX_ITEM_INFO];
 };
-static_assert(sizeof(PMSG_ITEM_CHANGE_SEND) == 9, "C1:25");
+static_assert(sizeof(PMSG_ITEM_CHANGE_SEND) == 12, "C1:25");
 static_assert(offsetof(PMSG_ITEM_CHANGE_SEND, index) == 3, "C1:25 index");
 static_assert(offsetof(PMSG_ITEM_CHANGE_SEND, ItemInfo) == 5, "C1:25 ItemInfo");
 

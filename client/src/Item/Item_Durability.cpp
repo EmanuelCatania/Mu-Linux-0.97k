@@ -1,6 +1,7 @@
 // Item_Durability.cpp
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -111,7 +112,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
     short v3 = *(short*)a1;
     if ((unsigned short)v3 == 0xFFFF) return 0;
     // Bound type to ItemAttribute table size (1024).
-    if (v3 < 0 || (unsigned short)v3 >= 1024) return 0;
+    if (v3 < 0 || (unsigned short)v3 >= ITEM_MAX_EX) return 0;
 
     ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)((int)DAT_07d78068 + (unsigned short)v3 * 0x40);
     int Money = p->Money;
