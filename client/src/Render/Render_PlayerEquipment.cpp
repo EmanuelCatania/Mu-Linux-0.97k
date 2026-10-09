@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
@@ -699,8 +700,10 @@ extern "C" void Render_PlayerHelper(int c, int o)
     unsigned char v215 = *(unsigned char*)(c + 0x2BB);   // Option1
     *(unsigned char*)(c + 0x2BC) = 34;                   // LinkBone = 34
     *(int*)(c + 0x2C8) = 0x3F000000;                     // PlaySpeed = 0.5f
+    // 0.97.20: el Imp del héroe se dibuja con el modelo propio del pet si tiene.
+    const int impModel = ((DWORD)c == (DWORD)(uintptr_t)DAT_07abf5d8) ? HeroPetModel(817) : 817;
     RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + 0x2B8,
-                 817, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
+                 impModel, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
 
     // Sprite glow at transformed position (20, 0, 15) in bone[34]
     unsigned char v102 = *(unsigned char*)(c + 0x2BC);   // = 34

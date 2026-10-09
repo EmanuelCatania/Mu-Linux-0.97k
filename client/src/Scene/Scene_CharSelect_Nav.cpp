@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/MapManager.h"
 #include "globals.h"
@@ -1928,6 +1929,17 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     if (((Equipment[4] >> 2) & 3) == 3) {
         if ((Equipment[8] & 7) != 0) {
             *(WORD*)(c + 672) = (WORD)((Equipment[8] & 7) + 786);
+        } else {
+            *(WORD*)(c + 0x2A0) = (WORD)-1;
+            *(BYTE*)(c + 0x2A3) = 0;
+        }
+    } else if ((Equipment[8] & 7) != 0) {
+        // DESVIACION (DLL CustomWingChangeCharacterExt, ahora catálogo
+        // 0.97.20): con los bits del ala vanilla en 0..2, Equipment[8] & 7 es
+        // el índice + 1 del ala custom (ObjectManager del server).
+        const int wingItem = gContentCatalog.GetWingItem((Equipment[8] & 7) - 1);
+        if (wingItem >= 0) {
+            *(WORD*)(c + 672) = (WORD)ItemEntityModel(wingItem);
         } else {
             *(WORD*)(c + 0x2A0) = (WORD)-1;
             *(BYTE*)(c + 0x2A3) = 0;

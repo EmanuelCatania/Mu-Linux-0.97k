@@ -37,6 +37,8 @@ struct ItemExtraData
     bool  HasPose = false;
     CatalogItemPose Pose = {};
     int   Model = -1;
+    bool  HasWing = false;
+    CatalogWing Wing = {};
 };
 
 std::vector<ItemExtraData> s_Items(ITEM_MAX_EX);
@@ -292,6 +294,11 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
         extra.HasPose = true;
         extra.Pose = { row.PositionX, row.PositionY, row.RotationX, row.RotationY, row.RotationZ, row.Scale };
     }
+    if (row.CustomWing != 0) {
+        extra.HasWing = true;
+        extra.Wing = { (BYTE)(row.CustomWing - 1), row.WingDefenseConstA, row.WingIncDamageConstA,
+                       row.WingIncDamageConstB, row.WingDecDamageConstA, row.WingDecDamageConstB };
+    }
     if (row.Flags & Proto::CATALOG_ITEM_HAS_MODEL) {
         row.ModelFolder[sizeof(row.ModelFolder) - 1] = 0;
         row.ModelName[sizeof(row.ModelName) - 1] = 0;
@@ -428,4 +435,22 @@ void CContentCatalog::GetFogColor(int map, float rgba[4])
         m_FogColor[3] = 1.0f;
     }
     memcpy(rgba, m_FogColor, sizeof(m_FogColor));
+}
+
+const CatalogWing* CContentCatalog::GetItemWing(int type) const
+{
+    if (type < 0 || type >= ITEM_MAX_EX || !s_Items[type].HasWing) return nullptr;
+    return &s_Items[type].Wing;
+}
+
+int CContentCatalog::GetWingItem(int index) const
+{
+    for (int type = 0; type < ITEM_MAX_EX; ++type)
+        if (s_Items[type].HasWing && s_Items[type].Wing.Index == index) return type;
+    return -1;
+}
+
+bool CContentCatalog::HasOwnModel(int type) const
+{
+    return type >= 0 && type < ITEM_MAX_EX && s_Items[type].Model >= 0;
 }

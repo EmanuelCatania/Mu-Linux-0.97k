@@ -315,6 +315,10 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
             }
             ip->Defense = (WORD)(ip->Defense + ((wType >= 387 && wType <= 390) ? 2 : 3) * min9(itemLevel) + post9_bonus(itemLevel));
         }
+        // DESVIACION (CustomWing, catálogo 0.97.20): el ala custom suma
+        // DefenseConstA por nivel en vez de la escala vanilla, como el server.
+        if (const CatalogWing* wing = gContentCatalog.GetItemWing(ip->Type))
+            ip->Defense = (WORD)(p->Defense + wing->DefenseConstA * itemLevel);
     }
 
     if (p->MagicDefense) {

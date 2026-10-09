@@ -2218,6 +2218,13 @@ void __cdecl SetCharacterClass(int c) {
     writeSlot(68,  648);
     writeSlot(476, 672);
     writeSlot(544, 696);
+    // 0.97.20: el helper guarda el pet vanilla que imita (bugs, monturas y
+    // animaciones se deciden por ese tipo); el modelo propio se dibuja en
+    // RenderBugs / Render_PlayerHelper.
+    {
+        const short pet = *(short*)(v7 + 544);
+        if (pet != -1) *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+    }
 
     // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
     // El pet NO se dibuja desde RenderCharacter: `ChangeCharacterExt`

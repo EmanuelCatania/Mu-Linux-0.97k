@@ -46,6 +46,7 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
 #include "Item/RightClickMove.h"
@@ -838,9 +839,13 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 MouseRButtonPush = 0;
 
                 int slotIdx = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62];
+                // 0.97.20: qué hace el click derecho se decide por el
+                // comportamiento: un consumible agregado se usa como el vanilla
+                // que imita.  Los requisitos siguen siendo los de su fila.
+                const int useType = ItemBehaviorType(type);
 
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
-                if (type == 458) {
+                if (useType == 458) {
                     // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
                     // Teleport = 0x05826D14 (Teleport).
                     if (Teleport != 0) return;
@@ -860,7 +865,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     SendC3Packet(pkt, 3);
 
                     // Sonido: 33 para el tipo 448, 32 para 449..457.
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448) PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
@@ -882,20 +887,20 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // En el decompile de `sub_4D23B0` (raw L1032-1053) `v275 = 73` (0x49) es el
                 // byte 12 de la CLAVE XOR, no un opcode; el opcode real es `v301[4] = -111` =
                 // 0x91, y el EventType es `v302` (1 para el 467, 2 para el 434).
-                if (type == 467 || type == 434) {
+                if (useType == 467 || useType == 434) {
                     int level = (((int*)rowSlot)[1] >> 3) & 0xF;
                     BYTE pkt[3];
                     pkt[0] = 0x91;
-                    pkt[1] = (type == 467) ? 0x01 : 0x02;   // EventType
+                    pkt[1] = (useType == 467) ? 0x01 : 0x02;   // EventType
                     pkt[2] = (BYTE)level;                   // ItemLevel
                     SendC1Packet(pkt, 3);                   // -> [C1][05][91][..][..]
                     continue;
                 }
 
                 // ── Items 448-454 / 456-457 / 468 — potions ───────────────
-                if ((type >= 448 && type <= 454) ||
-                    (type >= 456 && type <= 457) ||
-                     type == 468)
+                if ((useType >= 448 && useType <= 454) ||
+                    (useType >= 456 && useType <= 457) ||
+                     useType == 468)
                 {
                     if (DAT_07eaa119 != 0) {
                         // Baúl abierto → no se puede usar
@@ -916,16 +921,16 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     pkt[2] = 0;
                     SendC3Packet(pkt, 3);
 
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448)               PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
                 // ── Items 480-511 / 391-398 / 400-403 — scrolls/spells ───
-                if ((type >= 480 && type < 512) ||
-                    (type >= 391 && type <= 398) ||
-                    (type >= 400 && type <= 403))
+                if ((useType >= 480 && useType < 512) ||
+                    (useType >= 391 && useType <= 398) ||
+                    (useType >= 400 && useType <= 403))
                 {
                     // Class/level/stat requirement gate (per IDA L1278-1283).
                     BYTE* CA = (BYTE*)DAT_07cf1ff4;
@@ -952,14 +957,14 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     pkt[2] = 0;
                     SendC3Packet(pkt, 3);
 
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448)              PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
                 // ── Item 431 (Pet egg) — open ShowCheckBox dialog ─────────
-                if (type == 431) {
+                if (useType == 431) {
                     BYTE* CA = (BYTE*)DAT_07cf1ff4;
                     if (CA && *(WORD*)(CA + 14) < 10) {
                         // Por debajo de nivel 10 — muestra el mensaje "todavía no podés usar esto"

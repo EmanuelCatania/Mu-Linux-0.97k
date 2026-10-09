@@ -21,6 +21,18 @@ struct CatalogItemPose
     float Scale;
 };
 
+// Ala custom (CustomWing.txt del server): índice que viaja en el CharSet y
+// constantes de defensa y daño.
+struct CatalogWing
+{
+    BYTE Index;          // 0..6
+    WORD DefenseConstA;
+    WORD IncDamageConstA;
+    WORD IncDamageConstB;
+    WORD DecDamageConstA;
+    WORD DecDamageConstB;
+};
+
 struct CatalogMonster
 {
     bool  Present;
@@ -52,12 +64,18 @@ public:
     // Slot de modelo para dibujar el item: type + 400 para los vanilla,
     // el slot dinámico o el del comportamiento para los agregados.
     int GetItemModel(int type) const;
+    // true si el catálogo le da al item un modelo propio.
+    bool HasOwnModel(int type) const;
 
     // Item que se dibuja con ese slot de modelo, o -1.
     int GetModelItemType(int model) const;
 
     bool GetItemGlow(int type, float rgb[3]) const;
     const CatalogItemPose* GetItemPose(int type) const;
+
+    const CatalogWing* GetItemWing(int type) const;
+    // Item del ala custom con ese índice del CharSet (0..6), o -1.
+    int GetWingItem(int index) const;
 
     const CatalogMonster* GetMonster(int index) const;
 
@@ -93,6 +111,18 @@ inline int ItemModel(int type) { return gContentCatalog.GetItemModel(type); }
 // Tipo con el que la lógica hardcodeada (rangos de arco, ballesta, flechas…)
 // trata al item: el vanilla que imita un agregado.  -1 sigue siendo -1.
 inline int ItemBehaviorType(int type) { return (type < 0) ? type : gContentCatalog.GetItemBehavior(type); }
+
+// Pet del héroe: la entidad guarda el pet vanilla que imita (Angel 816, Imp
+// 817) para que la lógica de pets siga igual; al dibujar se usa el modelo
+// propio del item equipado, si tiene.  Los demás jugadores ven el vanilla (el
+// CharSet sólo lleva vanilla).
+inline int HeroPetModel(int behaviorModel)
+{
+    const BYTE* cm = (const BYTE*)(uintptr_t)DAT_07cf1ffc;
+    if (!cm) return behaviorModel;
+    const short pet = *(const short*)(cm + 536 + 68 * 8);
+    return (pet >= 0 && gContentCatalog.HasOwnModel(pet)) ? ItemModel(pet) : behaviorModel;
+}
 
 // Modelo de un item puesto en un personaje.  Un agregado (>= 512) se dibuja
 // con el modelo de su comportamiento: es lo que ven los demás jugadores (el

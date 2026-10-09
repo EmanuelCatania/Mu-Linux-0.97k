@@ -1576,7 +1576,13 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     }
     if (type == 417)                RII_TXT(0, 0, 576);
 
-    if (type >= 384 && type <= 386) {                      // alas de primera
+    // DESVIACION (DLL CustomWing, catálogo 0.97.20): aumento y reducción de
+    // daño del ala custom con sus constantes.
+    if (const CatalogWing* wing = gContentCatalog.GetItemWing(ip->Type)) {
+        RII_ADD(0, 0, GlobalText[577], wing->IncDamageConstA + Level * wing->IncDamageConstB);
+        RII_ADD(0, 0, GlobalText[578], wing->DecDamageConstA + Level * wing->DecDamageConstB);
+        RII_TXT(0, 0, 579);
+    } else if (type >= 384 && type <= 386) {               // alas de primera
         RII_ADD(0, 0, GlobalText[577], 2 * Level + 12);
         RII_ADD(0, 0, GlobalText[578], 2 * Level + 12);
         RII_TXT(0, 0, 579);

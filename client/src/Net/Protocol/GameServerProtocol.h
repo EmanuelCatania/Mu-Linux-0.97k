@@ -628,8 +628,17 @@ struct CATALOG_ITEM
     float Scale;
     char ModelFolder[40];
     char ModelName[28];
+    BYTE CustomWing;        // índice + 1 de CustomWing.txt (0 = no es ala custom)
+    BYTE Reserved;
+    WORD WingDefenseConstA;
+    WORD WingIncDamageConstA;
+    WORD WingIncDamageConstB;
+    WORD WingDecDamageConstA;
+    WORD WingDecDamageConstB;
 };
-static_assert(sizeof(CATALOG_ITEM) == 184, "F3:E7 entrada");
+static_assert(sizeof(CATALOG_ITEM) == 196, "F3:E7 entrada");
+static_assert(offsetof(CATALOG_ITEM, CustomWing) == 184, "F3:E7 CustomWing");
+static_assert(offsetof(CATALOG_ITEM, WingDefenseConstA) == 186, "F3:E7 WingDefenseConstA");
 static_assert(offsetof(CATALOG_ITEM, Name) == 12, "F3:E7 Name");
 static_assert(offsetof(CATALOG_ITEM, Level) == 44, "F3:E7 Level");
 static_assert(offsetof(CATALOG_ITEM, RequireClass) == 72, "F3:E7 RequireClass");
