@@ -37,6 +37,7 @@
 #include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/FrameLimiter.h"
+#include "Net/Ping.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/Game_SceneUpdate.h"
@@ -69,7 +70,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     char   nameBuf[256];
     char   tickBuf[100];
     int    renderFlag = 0;
-    DWORD  renderStart;
+    CFrameLimiter::StartTime renderStart;
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -305,7 +306,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
-    renderStart = GetTickCount();
+    renderStart = gFrameLimiter.Start();
     renderFlag  = 0;
 
     // ── SCENE RENDER ──────────────────────────────────────────────────────────
@@ -387,6 +388,7 @@ void __cdecl Game_MainLoop(HDC param_1)
                 pkt.PhysiSpeed = physical >= drink ? physical - drink : 0;
                 pkt.MagicSpeed = magic >= drink ? magic - drink : 0;
             }
+            gPing.RecordSend(pkt.TickCount);
             gNetwork.Send((const BYTE*)&pkt, sizeof(pkt));
         }
     }

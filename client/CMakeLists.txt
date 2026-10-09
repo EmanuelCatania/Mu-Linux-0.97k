@@ -518,7 +518,6 @@ target_link_libraries(mu97k PRIVATE
     glu32
     winmm
     ws2_32
-    iphlpapi
     version
     dxguid
     dsound
