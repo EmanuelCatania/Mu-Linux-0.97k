@@ -413,6 +413,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // esta fila del protocolo.
                 *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
                 ChangeCharacterExt((int)HeroIndex, (BYTE*)e + 5);
+                Hero_ApplyCatalogEquipment((int)(uintptr_t)hero);
                 ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
             }
             NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
