@@ -1288,12 +1288,7 @@ int      DAT_07ea7b10[30] = {};  // TextBold      - 30 slots, igual que lpString
 int      DAT_07d78068 = 0;
 // El backup de DAT_07d78068 está en Render/Render_Frame.cpp y no acá: junto a
 // DAT_07d78068 lo pisaba el mismo escritor (dos ints consecutivos).
-// FontHeight — alto de la fuente, lo calcula WinMain segun la resolucion
-// (12 en 640x480, 13 en 800, 14 en 1024, 15 en 1280+) y lo leen RenderBoolean
-// (0x00480E00) y sub_480C60.
-// Es la única FontHeight: WinMain la escribe y todo el render la lee.
-// IDA: FontHeight (0x07D78080)
-int      FontHeight = 0;
+// IDA: FontHeight (0x07D78080) vive en CFont.
 // DAT_07e91530/534/53c/540 pasaron a ser macros sobre DAT_07e91528 (ver globals.h):
 // en el binario son COLUMNAS de la misma tabla, no globals sueltos.
 // UI text strings

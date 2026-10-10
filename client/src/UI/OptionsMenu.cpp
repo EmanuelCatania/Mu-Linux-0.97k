@@ -543,7 +543,7 @@ UserFontSettings CurrentFont()
     if (!font.present) {
         font = UserFontSettings{};
         strcpy_s(font.faceName, "Arial");
-        font.height = FontHeight;
+        font.height = gFont.GetHeight();
     }
     return font;
 }

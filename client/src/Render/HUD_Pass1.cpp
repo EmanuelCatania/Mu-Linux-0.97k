@@ -110,12 +110,12 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     if (*((int*)lpString + 140) <= 0) {
         if (*((int*)lpString + 139) <= 0) {
             *((DWORD*)lpString + 144) = (DWORD)(result + v14.cx);
-            *((DWORD*)lpString + 145) = (DWORD)FontHeight;
+            *((DWORD*)lpString + 145) = (DWORD)gFont.GetHeight();
         } else {
             LONG cx = v14.cx + result;
             if (cx <= v12.cx) cx = v12.cx;
             *((DWORD*)lpString + 144) = (DWORD)cx;
-            result = 2 * FontHeight;
+            result = 2 * gFont.GetHeight();
             *((DWORD*)lpString + 145) = (DWORD)result;
         }
     } else {
@@ -127,8 +127,8 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
             if (v12.cx <= v13.cx) v7 = v13.cx;
         }
         *((DWORD*)lpString + 144) = (DWORD)v7;
-        result = FontHeight;
-        *((DWORD*)lpString + 145) = (DWORD)(3 * FontHeight);
+        result = gFont.GetHeight();
+        *((DWORD*)lpString + 145) = (DWORD)(3 * gFont.GetHeight());
     }
     (void)result;
 }

@@ -49,10 +49,15 @@ public:
     {
         return (type >= 0 && type < MAX_FONT_TYPES) ? m_Fonts[type] : nullptr;
     }
+    int GetHeight() const { return m_Height; }
+    // IDA: RenderBoolean (0x00480E00) limita también el estado compartido.
+    void LimitHeight(int maximum) { if (m_Height > maximum) m_Height = maximum; }
+
     HDC   GetTextDC()   const { return m_hTextDC; }
     void* GetTextBits() const { return m_pTextBits; }
 
 private:
+    int m_Height = 0; // IDA: FontHeight (0x07D78080)
     HFONT   m_Fonts[MAX_FONT_TYPES] = {};
     HDC     m_hTextDC     = NULL;
     HBITMAP m_hTextBitmap = NULL;

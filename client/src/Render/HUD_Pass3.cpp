@@ -617,7 +617,8 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     byte_7E11D6E = 1;
     int drawX = x * (int)gWindow.GetWidth() / 640;
     int drawY = y * (int)gWindow.GetHeight() / 480;
-    if (FontHeight > 32) FontHeight = 32;
+    gFont.LimitHeight(32);
+    int fontHeight = gFont.GetHeight();
 
     auto ClearFontRows = [&](int rows) {
         if (rows <= 0 || !ppvBits) return;
@@ -629,7 +630,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
             row += 1536;
         }
     };
-    ClearFontRows(FontHeight);
+    ClearFontRows(fontHeight);
 
     // Constantes de IDA RenderBoolean L180-195.
     //   mode 0: back=-1773129196=0x96503214  SetTextColor_0=-14116=0xFFFFC8DC
@@ -658,8 +659,8 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
         m_dwTextColor = bg;
     }
 
-    Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)c, texW, 0, 0, 0, 0, (LPCSTR)(c + 24));
-    Font_RenderBitmapText(drawX, drawY, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+    Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)c, texW, 0, 0, 0, 0, (LPCSTR)(c + 24));
+    Font_RenderBitmapText(drawX, drawY, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
 
     // IDA L214-224: -1778372066=0x9600321E · -1778384846=0x96000032 ·
     //               -1775100406=0x96321E0A
@@ -674,22 +675,22 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     int fade2 = *(int*)(c + 560);
     if (fade2 > 0) {
         m_dwTextColor = (fade2 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
-        ClearFontRows(FontHeight);
-        Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 300), texW, 0, 0, 0, 0, 0);
-        Font_RenderBitmapText(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+        ClearFontRows(fontHeight);
+        Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)(c + 300), texW, 0, 0, 0, 0, 0);
+        Font_RenderBitmapText(drawX, drawY + fontHeight, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
 
         int fade1 = *(int*)(c + 556);
         m_dwTextColor = (fade1 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
-        ClearFontRows(FontHeight);
-        Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
-        Font_RenderBitmapText(drawX, drawY + 2 * FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+        ClearFontRows(fontHeight);
+        Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
+        Font_RenderBitmapText(drawX, drawY + 2 * fontHeight, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
     } else {
         int fade1 = *(int*)(c + 556);
         if (fade1 > 0) {
             m_dwTextColor = (fade1 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
-            ClearFontRows(FontHeight);
-            Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
-            Font_RenderBitmapText(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+            ClearFontRows(fontHeight);
+            Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
+            Font_RenderBitmapText(drawX, drawY + fontHeight, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
         }
     }
 }
