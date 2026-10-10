@@ -8,6 +8,7 @@ class EntityView {
 public:
     static constexpr int Capacity = 400;
     static constexpr int Stride = 0x394;
+    static constexpr BYTE PlayerKind = 1;
     static constexpr BYTE MonsterKind = 2;
     static constexpr WORD SoccerBall = 200;
     explicit EntityView(const void* entity) : m_Data((const BYTE*)entity) {}
