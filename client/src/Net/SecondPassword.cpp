@@ -4633,7 +4633,10 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 // fijas del binario, que estaban calibradas para el FOV de 35 grados.  Con
 // el FOV y el alcance mayores las esquinas de la pantalla quedaban sin
 // terreno.  El plano va 300 unidades por debajo del héroe y el cuadro se
-// agranda 200 unidades hacia afuera para cubrir desniveles.
+// agranda 800 unidades (8 tiles) hacia afuera: TestFrustrum2D mide la
+// tolerancia de bloques y objetos con el producto cruz sin normalizar, así
+// que con un cuadro más grande esa tolerancia se achica y los bloques de
+// 16x16 cerca del borde quedaban afuera (objetos que no aparecían).
 static bool CreateFrustrum2D_FromFrustum(const float *ground)
 {
     const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
@@ -4663,7 +4666,7 @@ static bool CreateFrustrum2D_FromFrustum(const float *ground)
     for (int i = 0; i < 4; ++i) {
         float dx = p[i][0] - cx, dy = p[i][1] - cy;
         const float len = sqrtf(dx * dx + dy * dy);
-        if (len > 0.001f) { dx = dx / len * 200.0f; dy = dy / len * 200.0f; }
+        if (len > 0.001f) { dx = dx / len * 800.0f; dy = dy / len * 800.0f; }
         FrustrumX[i] = (p[i][0] + dx) * _DAT_005524f8;
         FrustrumY[i] = (p[i][1] + dy) * _DAT_005524f8;
     }
