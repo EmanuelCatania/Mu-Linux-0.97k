@@ -10,6 +10,7 @@
 
 #include <windows.h>
 #include "Item/ItemDefines.h"
+#include "Net/Protocol/GameServerProtocol.h"
 
 struct CatalogItemPose
 {
@@ -51,6 +52,7 @@ public:
     void ReceiveMonsters(const BYTE* msg, int size);   // F3/E8
     void ReceiveMapFog(const BYTE* msg, int size);     // F3/E9
     void ReceiveEffects(const BYTE* msg, int size);    // F3/EC
+    void ReceivePets(const BYTE* msg, int size);       // F3/EE
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
@@ -97,6 +99,14 @@ public:
     // que dejó el último render del modelo (g_BoneScratch).  Se llama desde
     // RenderLinkObject después de dibujar la pieza.
     void RunEquippedEffects(const void* c, int model, void* modelPtr) const;
+
+    // Wear slot (0..11) de un agregado sin comportamiento vanilla (columna
+    // Slot de Item.txt), o -1.
+    int GetItemSlot(int type) const;
+
+    // Pet custom del item, o nullptr.  Para un bug, por su modelo.
+    const Proto::CATALOG_PET* GetPet(int itemType) const;
+    const Proto::CATALOG_PET* GetPetByModel(int model) const;
 
     const CatalogMonster* GetMonster(int index) const;
 

@@ -709,6 +709,24 @@ struct CATALOG_EFFECT
 };
 static_assert(sizeof(CATALOG_EFFECT) == 132, "F3:EC entrada");
 
+// F3:EE — pets custom (Data/Custom/Pets/*.json del server).
+const BYTE CATALOG_PET_MOVE_FOLLOW = 1;    // vuela detrás del dueño
+const BYTE CATALOG_PET_MOVE_ORBIT = 2;     // da vueltas alrededor del dueño
+
+struct CATALOG_PET
+{
+    WORD Item;
+    BYTE Movement;
+    BYTE BlendMesh;     // malla aditiva; 0xFF = ninguna
+    float Radius;
+    float Period;       // ms por vuelta
+    float Height;
+    float Scale;
+    BYTE Action;        // animación del modelo
+    BYTE Reserved[3];
+};
+static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
+
 struct PMSG_CATALOG_END_SEND
 {
     PSBMSG_HEAD header;     // C1:F3:EA

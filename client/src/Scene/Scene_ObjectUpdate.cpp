@@ -3,6 +3,7 @@
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -704,6 +705,48 @@ void __stdcall MoveObjects(void) {
 //   +0x108 frame +0x10C priorFrame        +0x168 alpha-target
 // Owner (CharactersClient) offsets: +0x10/14/18 pos, +0x1c/20/24 ang,
 //   +0x7c(124) state, +0x84(132) Kind, +0x105(261) CurrentAction.
+// CustomPet: movimiento del bug de un pet del catálogo.  `orbit` da vueltas
+// alrededor del dueño (el "stand" del Collecter del 5.2: radio, período y
+// altura); `follow` se queda detrás del dueño.  En los dos acerca la posición
+// al objetivo y mira hacia donde va.
+static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET& pet)
+{
+    if (!owner) return;
+    float target[3];
+    const float* ownerPos = (const float*)(owner + 0x10);
+    if (pet.Movement == Proto::CATALOG_PET_MOVE_ORBIT) {
+        const float t = (float)(GetTickCount() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
+        target[0] = ownerPos[0] + sinf(t) * pet.Radius;
+        target[1] = ownerPos[1] + cosf(t) * pet.Radius;
+    } else {
+        const float a = *(const float*)(owner + 0x24) * 0.017453292f;
+        target[0] = ownerPos[0] + sinf(a) * pet.Radius;
+        target[1] = ownerPos[1] - cosf(a) * pet.Radius;
+    }
+    target[2] = ownerPos[2] + pet.Height;
+
+    float* pos = (float*)(e + 0x10);
+    const float dx = target[0] - pos[0], dy = target[1] - pos[1];
+    if (dx * dx + dy * dy > 900.0f * 900.0f) {
+        pos[0] = target[0]; pos[1] = target[1];   // teleport o muy lejos
+    } else {
+        pos[0] += dx * 0.2f;
+        pos[1] += dy * 0.2f;
+    }
+    pos[2] += (target[2] - pos[2]) * 0.2f;
+    if (dx * dx + dy * dy > 4.0f)
+        *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), CreateAngle(pos[0], pos[1], target[0], target[1]), 20.0f);
+
+    *(float*)(e + 0x0C) = pet.Scale;                // Scale
+    *(float*)(e + 0x168) = 1.0f;                    // Alpha
+    if (pet.BlendMesh != 0xFF) {
+        *(int*)(e + 100) = pet.BlendMesh;           // BlendMesh
+        *(float*)(e + 104) = 1.0f;                  // BlendMeshLight
+    }
+    SetAction((int)(uintptr_t)e, pet.Action);
+    if (*(float*)(e + 0xCC) <= 0.0f) *(float*)(e + 0xCC) = 0.25f;
+}
+
 void __stdcall MoveBugs(void) {
     extern unsigned char* TerrainWall;
 
@@ -842,6 +885,10 @@ void __stdcall MoveBugs(void) {
                      (void*)(e + 0x106), *(float*)(e + 0xCC));   // sub_440AA0 (a6/a7 unused)
 
         short v29 = *(short*)(e + 2);
+        // 0.97.20: pet custom (Data/Custom/Pets del server).
+        if (const Proto::CATALOG_PET* pet = gContentCatalog.GetPetByModel(v29)) {
+            CustomPet_Move(e, (BYTE*)(uintptr_t)*v0, *pet);
+        }
         if (v29 == 816 || v29 == 817) {
             float v30 = *(float*)(e + 0x14);                // posY
             float x1  = *v28;                                // posX

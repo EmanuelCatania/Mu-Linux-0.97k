@@ -2264,6 +2264,7 @@ void __cdecl SetCharacterClass(int c) {
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
             else if (newHelper == 819) bugType = 267;   // Dinorant
+            else if (gContentCatalog.GetPet(*(short*)(v7 + 544))) bugType = newHelper;   // 0.97.20: CustomPet
             // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
             // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
             if (bugType)

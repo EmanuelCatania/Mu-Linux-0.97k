@@ -26,6 +26,8 @@ PendingSection s_PendingItems;
 PendingSection s_PendingMonsters;
 PendingSection s_PendingFog;
 PendingSection s_PendingEffects;
+PendingSection s_PendingPets;
+std::map<int, Proto::CATALOG_PET> s_Pets;           // item -> pet
 
 // Efecto ya resuelto (textura cargada) de un item.
 struct ItemEffect
@@ -50,6 +52,7 @@ struct ItemExtraData
     bool  HasWing = false;
     CatalogWing Wing = {};
     int   EntityModel = -1;
+    int   Slot = -1;
 };
 
 // Piezas puestas: por entidad, modelo lógico -> modelo propio.
@@ -195,6 +198,11 @@ void CContentCatalog::ReceiveEffects(const BYTE* msg, int size)
     if (!ReadSection(s_PendingEffects, msg, size)) Log("ContentCatalog: EC descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceivePets(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingPets, msg, size)) Log("ContentCatalog: EE descartado (size=%d)", size);
+}
+
 void CContentCatalog::ReceiveEnd(const BYTE* msg, int size)
 {
     if (size < (int)sizeof(Proto::PMSG_CATALOG_END_SEND)) return;
@@ -226,6 +234,8 @@ void CContentCatalog::Clear()
     s_PendingFog = PendingSection();
     s_PendingEffects = PendingSection();
     s_Effects.clear();
+    s_PendingPets = PendingSection();
+    s_Pets.clear();
     // Los modelos y texturas ya cargados se conservan: si el server vuelve a
     // mandar las mismas rutas se reusan sin volver a leer el disco.
     m_Loaded = false;
@@ -283,6 +293,17 @@ void CContentCatalog::Publish()
     }
     m_HasFog = false;
     for (const FogEntry& fog : s_Fog) m_HasFog = m_HasFog || fog.Present;
+
+    // Pets: sección opcional, igual que los efectos.
+    s_Pets.clear();
+    const int petSize = s_PendingPets.recordSize;
+    if (SectionComplete(s_PendingPets) && petSize > 0) {
+        for (size_t off = 0; off + petSize <= s_PendingPets.records.size(); off += petSize) {
+            Proto::CATALOG_PET pet = {};
+            memcpy(&pet, &s_PendingPets.records[off], min((int)sizeof(pet), petSize));
+            if (pet.Item < ITEM_MAX_EX) s_Pets[pet.Item] = pet;
+        }
+    }
 
     // Efectos: sección opcional (un server sin Data/Custom/Items no la manda
     // completa y el resto del catálogo vale igual).
@@ -345,6 +366,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
     ItemExtraData& extra = s_Items[row.Index];
     extra.Present = true;
     extra.Behavior = (row.Behavior < ITEM_MAX_EX) ? row.Behavior : row.Index;
+    extra.Slot = (row.Slot < 12) ? row.Slot : -1;
     if (row.Flags & Proto::CATALOG_ITEM_HAS_GLOW) {
         extra.HasGlow = true;
         extra.Glow[0] = ((row.GlowColor >> 16) & 0xFF) / 255.0f;
@@ -630,4 +652,23 @@ int CContentCatalog::LogicModel(int model) const
     if (itemType < 0) return model;
     const int behavior = GetItemBehavior(itemType);
     return (behavior >= 0 && behavior < ITEM_MAX_VANILLA) ? ItemModel(behavior) : model;
+}
+
+int CContentCatalog::GetItemSlot(int type) const
+{
+    if (type < 0 || type >= ITEM_MAX_EX || !s_Items[type].Present) return -1;
+    return s_Items[type].Slot;
+}
+
+const Proto::CATALOG_PET* CContentCatalog::GetPet(int itemType) const
+{
+    std::map<int, Proto::CATALOG_PET>::const_iterator it = s_Pets.find(itemType);
+    return (it == s_Pets.end()) ? nullptr : &it->second;
+}
+
+const Proto::CATALOG_PET* CContentCatalog::GetPetByModel(int model) const
+{
+    if (s_Pets.empty()) return nullptr;
+    const int itemType = GetModelItemType(model);
+    return (itemType < 0) ? nullptr : GetPet(itemType);
 }

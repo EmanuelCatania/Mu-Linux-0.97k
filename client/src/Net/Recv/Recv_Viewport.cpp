@@ -62,6 +62,13 @@ static void ApplyCustomEquipment(BYTE* c, const BYTE* items)
         const WORD item = *(const WORD*)(items + slot * 2);
         if (item != 0xFFFF) gContentCatalog.SetEntityPart(c, kPart[slot], item);
     }
+    // CustomPet: el CharSet lo trajo como "sin helper"; acá se crea su bug.
+    const WORD helper = *(const WORD*)(items + 8 * 2);
+    if (helper != 0xFFFF && gContentCatalog.GetPet(helper)) {
+        *(WORD*)(c + 696) = (WORD)ItemModel(helper);
+        DeleteBug((DWORD)(uintptr_t)c);
+        CreateBug(ItemModel(helper), (void*)(c + 16), (void*)c, 0);
+    }
 }
 
 void Recv_CustomEquipment(const BYTE* Msg, int Size)
@@ -165,9 +172,11 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
                 float* pos = (float*)(c + 16);
                 // 0.97.20: un agregado crea el bug del pet que imita.
                 const int pet = ItemBehaviorType(type);
+                DeleteBug((DWORD)(uintptr_t)c);
                 if (pet == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
                 else if (pet == 418) CreateBug(195, (void*)pos, (void*)c, 0);
                 else if (pet == 419) CreateBug(267, (void*)pos, (void*)c, 0);
+                else if (gContentCatalog.GetPet(type)) CreateBug(ItemModel(type), (void*)pos, (void*)c, 0);   // CustomPet
             }
             break;
         }

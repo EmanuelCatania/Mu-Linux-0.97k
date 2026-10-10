@@ -483,6 +483,14 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     }
 
     const int partType = wType;
+    // 0.97.20: un agregado sin comportamiento vanilla (un pet custom) usa la
+    // columna Slot de Item.txt.
+    if (partType >= ITEM_MAX_VANILLA) {
+        const int slot = gContentCatalog.GetItemSlot(ip->Type);
+        ip->Part = (slot >= 0) ? (BYTE)slot : (BYTE)-1;
+        ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
+        return;
+    }
     if ((partType >= 128 && partType < 136) || partType == 145) {
         ip->Part = 1;
         ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
