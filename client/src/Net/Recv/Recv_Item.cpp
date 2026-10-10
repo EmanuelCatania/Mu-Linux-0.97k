@@ -892,7 +892,17 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             DWORD gold = ((DWORD)Msg[4] << 24) | ((DWORD)Msg[5] << 16)
                        | ((DWORD)Msg[6] << 8)  |  (DWORD)Msg[7];
             BYTE* charMachine = (BYTE*)(uintptr_t)DAT_07cf1ffc;
+            const int before = *(int*)(charMachine + 0x548);
             *(DWORD*)(charMachine + 0x548) = gold;
+            // DESVIACION (DLL CProtocol::CGItemGetRecv): aviso en el chat con
+            // el zen levantado ("<monto> Zen <918>").
+            const int got = (before != -1) ? (int)gold - before : 0;
+            if (got > 0) {
+                char money[32], line[128];
+                ConvertGold64(got, money);
+                wsprintfA(line, "%s %s %s", money, GlobalText[224], GlobalText[918]);
+                UIChatLogWindow_AddText("", line, 1);
+            }
         }
         // IDA ReceiveGetItem L38-40: en la rama del zen `Item` queda
         // apuntando a CharacterMachine, no a los bytes del paquete.
@@ -910,7 +920,24 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             memcpy(itembytes, (BYTE*)Msg + 4, ITEM_INFO_SIZE);
             InsertInventoryItem(OffsetInventoryItems, 8, 8, (int)slot, itembytes, 1);
         }
-        if (Size >= 4 + ITEM_INFO_SIZE) Item = (const BYTE*)Msg + 4;
+        if (Size >= 4 + ITEM_INFO_SIZE) {
+            Item = (const BYTE*)Msg + 4;
+            // DESVIACION (DLL CProtocol::CGItemGetRecv): aviso en el chat con
+            // el item levantado ("<nombre> <918>"), con el mismo nombre que
+            // muestra el tooltip.  Vale también para 0xFD (se apiló).
+            ITEM tmp;
+            memset(&tmp, 0, sizeof(tmp));
+            tmp.Type       = (short)ItemWire_GetType(Item);
+            tmp.Level      = Item[1];
+            tmp.Durability = Item[2];
+            tmp.Option1    = (BYTE)(Item[3] & 0x3F);
+            char name[100], line[160];
+            Item_FormatName(&tmp, name);
+            if (name[0]) {
+                wsprintfA(line, "%s %s", name, GlobalText[918]);
+                UIChatLogWindow_AddText("", line, 1);
+            }
+        }
     }
 
     // Sonido de pickup — IDA L61-71, compartido por las dos ramas:
