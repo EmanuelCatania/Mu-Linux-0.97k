@@ -213,6 +213,167 @@ roadmap).
 
 ---
 
+## How to add custom items
+
+With the injected `Main.dll`, a custom item had to be added on both sides: the
+server defined it in its `Item.txt`, and the client needed a regenerated
+`item.bmd` plus the `Encoder` `.txt` files (`CustomItem.txt`, `CustomGlow.txt`,
+etc.) packed into `ClientInfo.bmd`. If client and server disagreed, the item
+rendered wrong or the server rejected it.
+
+Now **the server is the only source**. On login it sends the client a catalog
+with every definition (items, monsters, effects, pets). The client **only needs
+the model files** (`.bmd` and textures) under `bin/Client/Data`. No `item.bmd`
+to regenerate and no code to touch.
+
+The DLL's `Encoder` `.txt` files are still read from the server's
+`Data/Custom/Encoder`, so a customs folder built for the DLL works without
+converting anything.
+
+### Indexes: the classic range and the extended one
+
+In 0.97k every item section (swords, axes, …, jewels) has **32 indexes** (0 to
+31). On top of that, every section accepts indexes **32 to 511**: those are the
+*added* items. On the wire they use 13 bits (an item is 7 bytes instead of 5),
+so they never collide with a vanilla item.
+
+An added item has to say **which vanilla item it behaves like** (the *Behavior*
+column): that drives the logic 0.97k hardcodes per item type (whether it is a
+bow and uses arrows, whether it is a wing, a jewel, which excellent options it
+can roll). Everything else —name, stats, size, model, glow, effects— comes from
+its own row.
+
+### Example 1: the Knight Blade, the DLL way
+
+The item sits inside the classic range (`0,20`); model and glow are defined in
+the `Encoder`:
+
+```
+// Data/Custom/Encoder/CustomItem.txt
+00,020		22		"Sword21"		// Knight Blade
+
+// Data/Custom/Encoder/CustomGlow.txt
+00,020		191	165	127		// Knight Blade
+```
+
+Client assets: `bin/Client/Data/Item/Custom/20/` (`sword21.bmd` and its
+textures).
+
+### Example 2: the Crimson Knight Blade, outside the classic range
+
+The same model as an added item (`0,32`), all in one row of
+`Data/Item/Item.txt`. After the usual columns come: behavior, model folder and
+name, and the glow color (RGB):
+
+```
+32	0	22	1	4	1	1	0	"Crimson Knight Blade"	...	00,020	"Item\Custom\20\"	"Sword21"	255	40	40
+```
+
+It behaves like the Knight Blade (`00,020`), uses the `Sword21` model and glows
+red. Test command: `/make 0 32`.
+
+### Example 3: the Great Dragon set
+
+Five pieces at index `21` of sections 7 to 11, with the model defined in the
+`Encoder`'s `CustomItem.txt` (as with the DLL):
+
+```
+07,021		0		"HelmMale22"		// Great Dragon Helm
+08,021		0		"ArmorMale22"		// Great Dragon Armor
+09,021		0		"PantMale22"		// Great Dragon Pant
+10,021		0		"GloveMale22"		// Great Dragon Glove
+11,021		0		"BootMale22"		// Great Dragon Boot
+```
+
+Client assets: `bin/Client/Data/Player/Custom/21/`. The same pieces can also be
+defined without the `Encoder`, with the model columns in `Item.txt`
+(`"Player\Custom\21\" "HelmMale22"`).
+
+### Example 4: custom effects and inventory pose
+
+`Data/Custom/Items/<section>_<index>.json` gives an item (custom or vanilla) its
+inventory pose and effects the client draws on the model's bones. For example,
+wings with the sparkles of the 5.2 Wings of Illusion:
+
+```json
+{
+  "item": "12,032",
+  "effects": [
+    { "on": "equipped", "type": "sprite", "texture": "Effect/Flare.jpg",
+      "bones": [5, 6, 7, 8, 18, 19], "color": [0.5, 0.0, 0.0], "scale": 0.6,
+      "pulse": { "speed": 0.002, "scale": 0.2, "color": 0.4 } },
+    { "on": "equipped", "type": "particle", "particle": 1230,
+      "bones": [13, 31], "chance": 2, "color": [0.8, 0.8, 0.3], "scale": 0.5 }
+  ]
+}
+```
+
+The server repo has a real case: `Data/Custom/Items/03_000.json` fixes the
+position of the (vanilla) Light Spear in its inventory cell, using the 5.2
+correction.
+
+### Example 5: a custom pet (Pet Rudolph)
+
+The 5.2 Rudolph as a pet that circles the player and picks up nearby zen. It
+uses a high index (`13,400`) on purpose, to show off the extended range. Four
+files, all included in the repos:
+
+| Where | File | What it defines |
+|---|---|---|
+| client | `bin/Client/Data/Item/Custom/Rudolph/` | the `xmas_deer.bmd` model and its textures |
+| server | `Data/Item/Item.txt` | the item row: `Slot` 8 (helper), behavior `*` (it does not mimic any vanilla pet) and the model |
+| server | `Data/Custom/Items/13_400.json` | the inventory pose |
+| server | `Data/Custom/Pets/13_400.json` | how it moves and what it does |
+
+```json
+{
+  "item": "13,400",
+  "blendMesh": 0,
+  "movement": { "type": "orbit", "radius": 50, "period": 4000, "height": 20 },
+  "abilities": [ { "type": "pickup", "what": "zen", "range": 3, "interval": 1000 } ]
+}
+```
+
+The client draws the movement; the abilities (picking up zen) are run by the
+server, which is the one that decides. Test command: `/make 13 400`.
+
+### Example 6: a custom monster (Karane)
+
+The DLL way, with `Data/Custom/Encoder/CustomMonster.txt` (index, type
+`0`=NPC `1`=monster, golden, scale, folder and model):
+
+```
+152		1		1		2.0		"Monster\\Karane\\"		"Karane"		// Karane
+```
+
+Or directly in `Data/Monster/Monster.txt`, with the same columns at the end of
+the monster's row:
+
+```
+152	0	"Karane"	...	0	0	1	1	2.0	"Monster\Karane\"	"Karane"
+```
+
+Client assets: `bin/Client/Data/Monster/Karane/`.
+
+### Reference
+
+Optional columns at the end of each `Item.txt` row (`*` = no value):
+
+| Column | Example | What it does |
+|---|---|---|
+| Behavior | `00,020` | vanilla item it behaves like |
+| Model folder and name | `"Item\Custom\20\" "Sword21"` | model in the inventory, on the ground and on the character |
+| Glow | `255 40 40` | per-level glow color |
+| Worn model folder and name | `"Item\Custom\FenrirMount\" "fenril_black"` | only if the item looks different when worn (a mount) |
+| Gate | `22` | for scrolls: always takes you to that gate |
+
+For custom wings, `Data/Item/CustomWing.txt` adds the defense and damage
+constants. The `Data/Custom/Items` and `Data/Custom/Pets` JSON files are
+validated when the server starts: a file with errors is dropped whole and the
+reason goes to `GameServer/LOG`.
+
+---
+
 ## Layout
 
 ```
