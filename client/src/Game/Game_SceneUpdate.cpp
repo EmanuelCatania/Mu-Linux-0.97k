@@ -653,8 +653,14 @@ LAB_00520fd8:
         int  slotB   = DAT_083a7c28;
         int  iVar11  = 0;
 
+        // Tabla de salto del binario (0x0052159C, `state - 2` en 0..9):
+        // estado 2 (usuario/contraseña) baja el panel a Y=0x108; los pares
+        // 4..10 lo suben a 0x93; los impares 3..11 lo sacan a 0x1C4 y
+        // atienden la respuesta del server.  El port le daba 0x108 al
+        // estado 0 (que en el binario no anima) y 0x93 al 2: el panel
+        // quedaba 117 px más arriba que en el original.
         switch (state - 2) {
-        case -2: // state 0: ServerSelect bar eases to Y=0x108
+        case 0:  // state 2
             iVar11 = -(0x108 - DAT_005616a4 >> 0x1f);
             DAT_005616a4 += (0x108 - DAT_005616a4) / 3;
             break;
@@ -663,7 +669,9 @@ LAB_00520fd8:
         case 3:  // state 5
         case 5:  // state 7
         case 7:  // state 9
-        case -1: // state 1
+        case 9:  // state 11
+        case -1: // state 1 (no está en la tabla del binario; el flujo de
+                 // conexión del port pasa por acá)
             // Ease dialog up to Y=0x1c4
             iVar11 = (0x1c4 - DAT_005616a4) / 2;
             DAT_005616a4 += iVar11;
@@ -811,10 +819,10 @@ state_alt_error:
             PlayBuffer(0x1b, 0, 0);
             break;
 
-        case 0:  // state 2
         case 2:  // state 4
         case 4:  // state 6
         case 6:  // state 8
+        case 8:  // state 10
             // Ease dialog down to Y=0x93
             iVar11 = (0x93 - DAT_005616a4) * 0x55555556;
             DAT_005616a4 += (0x93 - DAT_005616a4) / 3;
