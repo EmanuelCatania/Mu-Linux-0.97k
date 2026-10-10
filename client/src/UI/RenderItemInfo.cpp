@@ -131,13 +131,6 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
     if (!ip || !p || !dst || dstSize == 0)
         return false;
 
-    constexpr short ITEM_SWORD_BASE  = 0;
-    constexpr short ITEM_MACE_BASE   = 64;
-    constexpr short ITEM_BOW_BASE    = 128;
-    constexpr short ITEM_STAFF_BASE  = 160;
-    constexpr short ITEM_WING_BASE   = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
     static const int kSommonTable[6] = { 2, 7, 14, 8, 9, 41 };
     static const char* kChaosEventName[10] = {
         "È÷µÅ© °íÇâ ¿©Çà±Ç",
@@ -466,9 +459,6 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
     if (!ip || DAT_07eaa154 >= 28)
         return;
 
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr short ITEM_WING_BASE = 384;
     const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
@@ -751,10 +741,6 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
     if (!ip || !p || DAT_07eaa154 >= 28)
         return;
 
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr short ITEM_BOW_BASE = 128;
 
     const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
@@ -860,14 +846,6 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
     if (!ip || !p || DAT_07eaa154 >= 28)
         return;
 
-    constexpr short ITEM_SWORD_BASE = 0;
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr short ITEM_BOW_BASE = 128;
-    constexpr short ITEM_STAFF_BASE = 160;
-    constexpr short ITEM_GLOVES_BASE = 320;
-    constexpr short ITEM_BOOTS_BASE = 352;
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
 
@@ -933,8 +911,6 @@ static bool GetInventorySpecialOptionText(short type, BYTE option, BYTE value, i
 
     dst[0] = '\0';
 
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_WING_BASE = 384;
 
     switch (option) {
     case 18:
@@ -1059,9 +1035,6 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
     if (!ip || !p || DAT_07eaa154 >= 28 || ip->SpecialNum <= 0)
         return;
 
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_SWORD_BASE = 0;
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
     constexpr int C_DARKRED = 5;

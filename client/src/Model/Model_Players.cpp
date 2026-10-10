@@ -14,7 +14,7 @@ void __cdecl Model_LoadItemMeshes(void)
     // ── Korean SMD item models ────────────────────────────────────────────────
     if (DAT_0055a7c4 == '\0') {
         // Swords (slots 0x190-0x1a0, numbered prefix)
-        for (int i = 0x190; i-0x190 < 3; i++)
+        for (int i = MODEL_SWORD; i-MODEL_SWORD < 3; i++)
             OpenModels((int)i, "Data2\\Item\\Sword\\Sword", i - 0x18e);
         OpenModel((int)0x193, "Data2\\Item\\Sword\\", "sword05.smd");
         for (int i = 0x194; i-0x194 < 0x10; i++)
@@ -22,11 +22,11 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x1a0, "Data2\\Item\\", "\xB5\xE6\xB0\xFC.smd"); // µæ°ü.smd
 
         // Axes (0x1b0-0x1b9)
-        for (int i = 0x1b0; i-0x1b0 < 9; i++)
+        for (int i = MODEL_AXE; i-MODEL_AXE < 9; i++)
             OpenModels((int)i, "Data2\\Item\\Axe\\axe", i - 0x1ae);
 
         // Maces (0x1d0-0x1d6)
-        for (int i = 0x1d0; (int)i < 0x1d2; i++)
+        for (int i = MODEL_MACE; (int)i < 0x1d2; i++)
             OpenModels((int)i, "Data2\\Item\\Mace\\Mace", i - 0x1ce);
         OpenModel((int)0x1d2, "Data2\\Item\\Mace\\", "flail02.smd");
         OpenModels((int)0x1d3, "Data2\\Item\\Mace\\Maul", 3);
@@ -35,19 +35,19 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x1d6, "Data2\\Item\\",      "\xB5\xE6\xB0\xFC\xB5\xBF.smd");  // µæ°üµ¿
 
         // Spears (0x1f0-0x1f9)
-        for (int i = 0x1f0; i-0x1f0 < 5; i++)
+        for (int i = MODEL_SPEAR; i-MODEL_SPEAR < 5; i++)
             OpenModels((int)i, "Data2\\Item\\Spear\\Spear", i - 0x1ef);
         for (int i = 0x1f5; i-0x1f5 < 4; i++)
             OpenModels((int)i, "Data2\\Item\\Spear\\Polearms", i - 499);
         OpenModel((int)0x1f9, "Data2\\Item\\Spear\\", "\xC3\xA3\xC0\xDC.smd"); // ÃãÀÜ
 
         // Shields (0x250-0x25e)
-        for (int i = 0x250; i-0x250 < 0xe; i++)
+        for (int i = MODEL_SHIELD; i-MODEL_SHIELD < 0xe; i++)
             OpenModels((int)i, "Data2\\Item\\Shield\\Shield", i - 0x24f);
         OpenModel((int)0x25e, "Data2\\Item\\Shield\\", "\xBD\xBA\xC5\xC0\xBD\xBA.smd"); // ½ºÅÀ½º
 
         // Staffs/Wands (0x230-0x238)
-        for (int i = 0x230; i-0x230 < 5; i++)
+        for (int i = MODEL_STAFF; i-MODEL_STAFF < 5; i++)
             OpenModels((int)i, "Data2\\Item\\Staff\\wand", i - 0x22e);
         OpenModel((int)0x235, "Data2\\Item\\staff\\", "\xBD\xBA\xC5\xC0\xBD\xBA.smd");
         OpenModel((int)0x236, "Data2\\Item\\staff\\", "\xBD\xBA\xC5\xC0\xBD\xBA.smd");
@@ -55,7 +55,7 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x238, "Data2\\Item\\",        "\xBD\xBA\xC5\xC0\xBD\xBA.smd");
 
         // Bows (0x210-0x220)
-        OpenModel((int)0x210, "Data2\\Item\\Bow\\", "bow01.smd");
+        OpenModel((int)MODEL_BOW, "Data2\\Item\\Bow\\", "bow01.smd");
         OpenModel((int)0x211, "Data2\\Item\\Bow\\", "bow02.smd");
         OpenModel((int)0x212, "Data2\\Item\\Bow\\", "bow03.smd");
         OpenModel((int)0x213, "Data2\\Item\\Bow\\", "bow04.smd");
@@ -74,9 +74,9 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x220, "Data2\\Item\\",      "\xBD\xBA\xC5\xC0.smd");
 
         // Helper items (familiars: fairy, satan, etc.)
-        OpenModel((int)0x330, "Data2\\Item\\Helper\\", "fairy.smd");
-        OpenModel((int)0x331, "Data2\\Item\\Helper\\", "satan.smd");
-        OpenModel((int)0x332, "Data2\\Item\\Helper\\", "\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)MODEL_HELPER_ANGEL, "Data2\\Item\\Helper\\", "fairy.smd");
+        OpenModel((int)MODEL_HELPER_IMP, "Data2\\Item\\Helper\\", "satan.smd");
+        OpenModel((int)MODEL_HELPER_UNIRIA, "Data2\\Item\\Helper\\", "\xBD\xBA\xC5\xC0.smd");
 
         // Rings (0x338-0x339)
         for (int i = 0x338; i-0x338 < 2; i++)
@@ -87,7 +87,7 @@ void __cdecl Model_LoadItemMeshes(void)
             OpenModels((int)i, "Data2\\Item\\Helper\\Necklace", i - 0x33b);
 
         // Potions / consumables (0x350-0x360+)
-        OpenModel((int)0x350, "Data2\\Item\\Etc\\", "Apple.smd");
+        OpenModel((int)MODEL_POTION, "Data2\\Item\\Etc\\", "Apple.smd");
         for (int i = 0x351; (int)(i-0xd4) < 3; i++)
             OpenModels((int)i, "Data2\\Item\\Etc\\Red_", (int)(i-0xd4));
         for (int i = 0x354; i-0x354 < 3; i++)
@@ -116,10 +116,10 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x364, "Data2\\Item\\Etc\\", "loveb.smd");
 
         // Wings (0x310-0x313)
-        OpenModel((int)0x310, "Data2\\Item\\Wing\\", "elfin_wing.smd");
-        OpenModel((int)0x311, "Data2\\Item\\Wing\\", "angel.smd");
-        OpenModel((int)0x312, "Data2\\Item\\Wing\\", "devil.smd");
-        OpenModel((int)0x313, "Data2\\Item\\Wing\\", "elfin_wing2.smd");
+        OpenModel((int)MODEL_WING_ELF, "Data2\\Item\\Wing\\", "elfin_wing.smd");
+        OpenModel((int)MODEL_WING_HEAVEN, "Data2\\Item\\Wing\\", "angel.smd");
+        OpenModel((int)MODEL_WING_SATAN, "Data2\\Item\\Wing\\", "devil.smd");
+        OpenModel((int)MODEL_WING_SPIRITS, "Data2\\Item\\Wing\\", "elfin_wing2.smd");
 
         // Gem / pearls (0x317-0x323, excluding 0x31f)
         for (int i = 0x317; i-0x317 < 0xd; i++) {
@@ -135,7 +135,7 @@ void __cdecl Model_LoadItemMeshes(void)
     // Ghidra los mostraba como `i-(start-1)<N`, que pierde el ultimo indice.
     //
     // Swords (0x190-0x1a0) — 17 iter (400-416)
-    for (int i = 400; i-400 < 17; i++)
+    for (int i = MODEL_SWORD; i-MODEL_SWORD < 17; i++)
         AccessModel(i, "Data\\Item\\", "Sword", i - 399);
 
     if (DAT_0055a7c4 == '\0') {
@@ -153,27 +153,27 @@ void __cdecl Model_LoadItemMeshes(void)
     AccessModel(0x1af, "Data\\Item\\", "Sword", 0x20);
 
     // Axes BMD (0x1b0-0x1b8) — 9 iter (432-440)
-    for (int i = 0x1b0; i-0x1b0 < 9; i++)
+    for (int i = MODEL_AXE; i-MODEL_AXE < 9; i++)
         AccessModel(i, "Data\\Item\\", "Axe", i - 0x1af);
 
     // Maces BMD (0x1d0-0x1d6) — 7 iter (464-470)
-    for (int i = 0x1d0; i-0x1d0 < 7; i++)
+    for (int i = MODEL_MACE; i-MODEL_MACE < 7; i++)
         AccessModel(i, "Data\\Item\\", "Mace", i - 0x1cf);
     AccessModel(0x1d7, "Data\\Item\\", "Mace", 8);
 
     // Spears BMD (0x1f0-0x1f9) — 10 iter (496-505)  ← DK weapon=505 vivía aquí
-    for (int i = 0x1f0; i-0x1f0 < 10; i++)
+    for (int i = MODEL_SPEAR; i-MODEL_SPEAR < 10; i++)
         AccessModel(i, "Data\\Item\\", "Spear", i - 0x1ef);
     AccessModel(0x1fa, "Data\\Item\\", "Spear", 0xb);
 
     // Shields BMD (0x250-0x260) — 15 iter (592-606)
-    for (int i = 0x250; i-0x250 < 15; i++)
+    for (int i = MODEL_SHIELD; i-MODEL_SHIELD < 15; i++)
         AccessModel(i, "Data\\Item\\", "Shield", i - 0x24f);
     AccessModel(0x25f, "Data\\Item\\", "Shield", 0x10);
     AccessModel(0x260, "Data\\Item\\", "Shield", 0x11);
 
     // Staffs BMD (0x230-0x238) — 9 iter (560-568)  ← SM weapon=568 vivía aquí
-    for (int i = 0x230; i-0x230 < 9; i++)
+    for (int i = MODEL_STAFF; i-MODEL_STAFF < 9; i++)
         AccessModel(i, "Data\\Item\\", "Staff", i - 0x22f);
 
     if (DAT_0055a7c4 == '\0')
@@ -186,7 +186,7 @@ void __cdecl Model_LoadItemMeshes(void)
     DAT_0055a7c4 = '\x01';
 
     // Bows BMD (0x210-0x216) — 7 iter (528-534)
-    for (int i = 0x210; i-0x210 < 7; i++)
+    for (int i = MODEL_BOW; i-MODEL_BOW < 7; i++)
         AccessModel(i, "Data\\Item\\", "Bow", i - 0x20f);
 
     // Crossbows BMD (0x218-0x21e) — 7 iter (536-542)
@@ -207,7 +207,7 @@ void __cdecl Model_LoadItemMeshes(void)
     DAT_0055a7c4 = '\x01';
 
     // Helpers BMD (familiars 0x330-0x332) — 3 iter (816-818)
-    for (int i = 0x330; i-0x330 < 3; i++)
+    for (int i = MODEL_HELPER_ANGEL; i-MODEL_HELPER_ANGEL < 3; i++)
         AccessModel(i, "Data\\Player\\", "Helper", i - 0x32f);
 
     // Rings BMD — 2 iter (824-825)
@@ -220,11 +220,11 @@ void __cdecl Model_LoadItemMeshes(void)
         AccessModel(i, "Data\\Item\\", "Necklace", i - 0x33b);
 
     if (DAT_0055a7c4 == '\0')
-        OpenModel((int)0x333, "Data2\\Item\\Helper\\", "\xBD\xBA\xC5\xC0.smd");
-    AccessModel(0x333, "Data\\Player\\", "Helper", 4);
+        OpenModel((int)MODEL_HELPER_DINORANT, "Data2\\Item\\Helper\\", "\xBD\xBA\xC5\xC0.smd");
+    AccessModel(MODEL_HELPER_DINORANT, "Data\\Player\\", "Helper", 4);
 
     // Potions / consumables BMD (0x350-0x356)
-    for (int i = 0x350; i-0x34f <= 7; i++)
+    for (int i = MODEL_POTION; i-0x34f <= 7; i++)
         AccessModel(i, "Data\\Item\\", "Potion", i - 0x34f);
 
     AccessModel(0x358, "Data\\Item\\", "Antidote", 1);
@@ -295,20 +295,20 @@ void __cdecl Model_LoadItemMeshes(void)
 
     // Wings BMD (0x310-0x312)
     // IDA 0x005079D0 L216: `while (v31 - 784 < 3)` con v31=784 → 3 iteraciones.
-    for (int i = 0x310; i-0x310 < 3; i++)
+    for (int i = MODEL_WING_ELF; i-MODEL_WING_ELF < 3; i++)
         AccessModel(i, "Data\\Item\\", "Wing", i - 0x30f);
 
     // Wings SMD (Korean)
     if (DAT_0055a7c4 == '\0') {
-        OpenModel((int)0x313, "Data2\\Item\\Wing\\", "elfin_wing2.smd");
-        OpenModel((int)0x314, "Data2\\Item\\Wing\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x315, "Data2\\Item\\Wing\\", "\xBD\xBA\xC5\xC0.smd");
-        OpenModel((int)0x316, "Data2\\Item\\Wing\\", "\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)MODEL_WING_SPIRITS, "Data2\\Item\\Wing\\", "elfin_wing2.smd");
+        OpenModel((int)MODEL_WING_SOUL, "Data2\\Item\\Wing\\", "\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)MODEL_WING_DRAGON, "Data2\\Item\\Wing\\", "\xBD\xBA\xC5\xC0.smd");
+        OpenModel((int)MODEL_WING_DARKNESS, "Data2\\Item\\Wing\\", "\xBD\xBA\xC5\xC0.smd");
     }
 
     // Wings BMD extended (0x313-0x316) — Wing04..Wing07
     // IDA L224: `while (v32 - 787 < 4)` con v32=787 → 4 iteraciones.
-    for (int i = 0x313; i-0x313 < 4; i++)
+    for (int i = MODEL_WING_SPIRITS; i-MODEL_WING_SPIRITS < 4; i++)
         AccessModel(i, "Data\\Item\\", "Wing", i - 0x30f);
 
     DAT_0055a7c4 = 1;
@@ -326,7 +326,7 @@ void __cdecl Model_LoadItemMeshes(void)
     // Magic books BMD (Book01..Book16 / models 0x370..0x37f).
     // IDA OpenItems loads the inclusive range; stopping before 0x37f leaves
     // Book16 unloaded, which is Soul Barrier (type 495/model 895).
-    for (int i = 0x370; i <= 0x37f; i++)
+    for (int i = MODEL_ETC; i <= 0x37f; i++)
         AccessModel(i, "Data\\Item\\", "Book", i - 0x36f);
 
     // NoneBlendMesh flags.

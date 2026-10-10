@@ -1761,17 +1761,17 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
         angle[0] = 0.0f; angle[1] = 270.0f; angle[2] = 15.0f;
     } else if (Type == 545) {
         angle[0] = 0.0f; angle[1] = 90.0f; angle[2] = 15.0f;
-    } else if (Type >= 536 && Type < 560) {
+    } else if (Type >= 536 && Type < MODEL_STAFF) {
         angle[0] = 90.0f; angle[1] = 180.0f; angle[2] = 20.0f;
     } else if (Type == 506) {
         angle[0] = 180.0f; angle[1] = 270.0f; angle[2] = 20.0f;
-    } else if (Type >= 400 && Type < 592) {
+    } else if (Type >= MODEL_SWORD && Type < MODEL_SHIELD) {
         angle[0] = 180.0f;
         angle[1] = 270.0f;
         angle[2] = *(BYTE*)((BYTE*)(uintptr_t)DAT_07d78068 + (Type - 399) * 0x40 - 34) ? 25.0f : 15.0f;
-    } else if (Type >= 592 && Type < 624) {
+    } else if (Type >= MODEL_SHIELD && Type < MODEL_HELM) {
         angle[0] = 270.0f; angle[1] = 270.0f; angle[2] = 0.0f;
-    } else if (Type == 819) {
+    } else if (Type == MODEL_HELPER_DINORANT) {
         angle[0] = -90.0f; angle[1] = -20.0f; angle[2] = 0.0f;
     } else if (Type == 832 || Type == 833) {
         angle[0] = 270.0f; angle[1] = -10.0f; angle[2] = 0.0f;
@@ -1779,7 +1779,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
         angle[0] = 290.0f; angle[1] = 0.0f; angle[2] = 0.0f;
     } else if (Type == 958) {
         angle[0] = -90.0f; angle[1] = -20.0f; angle[2] = -20.0f;
-    } else if (Type >= 828 && Type < 848 && Type != 830 && Type != 831) {
+    } else if (Type >= 828 && Type < MODEL_POTION && Type != 830 && Type != 831) {
         angle[0] = 360.0f; angle[1] = 0.0f; angle[2] = 0.0f;
     } else if (Type == 860) {
         if (level == 0)      { angle[0] = 180.0f; angle[1] = 0.0f;  angle[2] = 0.0f; }
@@ -1817,7 +1817,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     _DAT_07ea9534 = angle[2];
 
     short modelType = (short)drawType;
-    if (drawType == Type && modelType >= 624 && modelType < 784) {
+    if (drawType == Type && modelType >= MODEL_HELM && modelType < MODEL_WING_ELF) {
         modelType = 390;
     } else if (modelType == 860) {
         if (level == 0) modelType = 947;
@@ -1827,29 +1827,29 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
 
     void* model = (void*)(DAT_05828d58 + (int)modelType * 0xBC);
     *(BYTE*)((BYTE*)model + 0xA0) = 0;
-    if (Type >= 624 && Type < 656)      *(float*)((BYTE*)model + 0x84) = -156.0f;
-    else if (Type >= 656 && Type < 688) *(float*)((BYTE*)model + 0x84) = -96.0f;
-    else if (Type >= 688 && Type < 720) *(float*)((BYTE*)model + 0x84) = -48.0f;
-    else if (Type >= 720 && Type < 752) *(float*)((BYTE*)model + 0x84) = -72.0f;
+    if (Type >= MODEL_HELM && Type < MODEL_ARMOR)      *(float*)((BYTE*)model + 0x84) = -156.0f;
+    else if (Type >= MODEL_ARMOR && Type < MODEL_PANTS) *(float*)((BYTE*)model + 0x84) = -96.0f;
+    else if (Type >= MODEL_PANTS && Type < MODEL_GLOVES) *(float*)((BYTE*)model + 0x84) = -48.0f;
+    else if (Type >= MODEL_GLOVES && Type < MODEL_BOOTS) *(float*)((BYTE*)model + 0x84) = -72.0f;
     else                                 *(float*)((BYTE*)model + 0x84) = 0.0f;
 
     float scale = 0.0025f;
-    if (Type >= 624 && Type < 784) {
-        if (Type < 688) scale = 0.0039f;
-        else if (Type < 720) scale = 0.0038f;
-        else if (Type < 752) scale = 0.0032f;
+    if (Type >= MODEL_HELM && Type < MODEL_WING_ELF) {
+        if (Type < MODEL_PANTS) scale = 0.0039f;
+        else if (Type < MODEL_GLOVES) scale = 0.0038f;
+        else if (Type < MODEL_BOOTS) scale = 0.0032f;
         else scale = 0.0033f;
-    } else if (Type == 790 || Type == 958) scale = 0.0015f;
-    else if ((Type >= 784 && Type < 816) || Type == 869 || Type == 832) scale = 0.0020f;
-    else if (Type == 833 || Type == 834 || (Type >= 496 && Type < 528)) scale = 0.0018f;
+    } else if (Type == MODEL_WING_DARKNESS || Type == 958) scale = 0.0015f;
+    else if ((Type >= MODEL_WING_ELF && Type < MODEL_HELPER_ANGEL) || Type == 869 || Type == 832) scale = 0.0020f;
+    else if (Type == 833 || Type == 834 || (Type >= MODEL_SPEAR && Type < MODEL_BOW)) scale = 0.0018f;
     else if (Type == 419) scale = (int)ItemLevel >= 0 ? 0.0025f : 0.0010f;
     else if (Type == 570) scale = (int)ItemLevel >= 0 ? 0.0019f : 0.0010f;
     else if (Type == 546) scale = (int)ItemLevel < 0 ? 0.0015f : 0.0025f;
     else if (Type >= 870 && Type < 873) scale = 0.0025f;
     else if (Type >= 873 && Type < 875) scale = 0.0028f;
     else if (Type == 830 || Type == 831) scale = 0.0030f;
-    else if (Type >= 848 && Type < 880) scale = 0.0035f;
-    else if (Type >= 560 && Type < 592) scale = 0.0022f;
+    else if (Type >= MODEL_POTION && Type < MODEL_ETC) scale = 0.0035f;
+    else if (Type >= MODEL_STAFF && Type < MODEL_SHIELD) scale = 0.0022f;
     else if (Type == 543) scale = 0.0011f;
     else if (Type == 535) scale = 0.0012f;
     else if (Type == 953) scale = 0.0039f;

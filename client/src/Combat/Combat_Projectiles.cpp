@@ -33,11 +33,11 @@ void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill
     // Adjust: add ITEM_BASE_MODEL (400) if not -1
     int adjType0 = weaponType0;
     if (weaponType0 != -1) {
-        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + 400;   // 0.97.20
+        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + ITEM_MODEL_BASE;   // 0.97.20
     }
     int adjType1 = weaponType1;
     if (weaponType1 != -1) {
-        adjType1 = gContentCatalog.GetItemBehavior(weaponType1) + 400;
+        adjType1 = gContentCatalog.GetItemBehavior(weaponType1) + ITEM_MODEL_BASE;
     }
 
     // Play sound based on SKKey
