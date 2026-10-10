@@ -103,7 +103,13 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
     p[0] = p[0] - (float)len * 5.0f - v14;
     p[1] = p[1] - v14;
 
-    const float step = Scale * 0.5f;
+    // DESVIACION (DLL Camera3D.cpp, MyRenderNumber): el binario avanza en
+    // diagonal (+0.5, +0.5) porque la cámara mira siempre a -45 grados; con la
+    // cámara 3D el avance sigue el giro.  Con -45 da exactamente el original.
+    const float yaw = CameraAngle[2] * 0.017453292f;
+    const float spacing = Scale * 0.70710678f;
+    const float stepX = spacing * cosf(yaw);
+    const float stepY = -spacing * sinf(yaw);
     for (int i = 0; i < len; ++i) {
         const float u = (float)(Text[i] - '0') * 0.0625f;
         // V va de 0.5 (abajo) a 0.0 (arriba) — invertida respecto de la
@@ -114,8 +120,8 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
         UV[2][0] = u + 0.0625f;  UV[2][1] = 0.0f;
         UV[3][0] = u;            UV[3][1] = 0.0f;
         RenderSpriteUV(1, p, Scale, Scale, UV, Light, Alpha);
-        p[0] += step;
-        p[1] += step;
+        p[0] += stepX;
+        p[1] += stepY;
     }
 }
 

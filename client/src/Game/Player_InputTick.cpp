@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Item/ContentCatalog.h"
+#include "Render/Camera3D.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -477,6 +478,9 @@ static void HUD_HotkeyTick(void)
     // DESVIACION (DLL Controller.cpp): Tab abre el mapa.
     if (PressKey(VK_TAB)) gMiniMap.Toggle();
     if (PressKey(VK_SPACE)) HUD_PickUpNearestItem();
+    // DESVIACION (DLL Controller.cpp): F10 activa la cámara 3D, F11 la restaura.
+    if (PressKey(VK_F10)) gCamera3D.Toggle();
+    if (PressKey(VK_F11)) gCamera3D.Restore();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
