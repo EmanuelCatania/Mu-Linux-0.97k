@@ -485,8 +485,6 @@ extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
 extern char    LogInID[16]; // IDA: DAT_05826CD4 (0x05826CD4)
-extern char    DAT_05826ceb;
-extern DWORD   g_byPacketSerialRecv; // IDA: DAT_05826CEC (0x05826CEC)
 extern DWORD   g_bGameServerConnected; // IDA: g_bGameServerConnected (0x05826CF0)
 extern float  _DAT_05826cf4;
 extern DWORD   g_dwLatestMagicTick; // IDA: g_dwLatestMagicTick (0x05826CF4)

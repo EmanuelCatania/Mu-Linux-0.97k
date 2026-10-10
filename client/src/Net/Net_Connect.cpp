@@ -36,24 +36,7 @@ bool CreateSocketNoExit(const char* ip, unsigned int port)
 
 void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
 {
-  byte bVar1;
   int iVar2;
-  uint uVar3;
-  void *pvVar4;
-  byte *pbVar5;
-  uint uVar6;
-  int iVar7;
-  char **ppcVar8;
-  byte *pbVar9;
-  byte *pbVar10;
-  bool bVar11;
-  bool bVar12;
-  byte local_4 [4];
-
-  local_4[0] = 1;
-  local_4[1] = 0;
-  local_4[2] = 0;
-  local_4[3] = 0;
   if (First == '\0') {
     First = '\x01';
     CWsctlc_Startup(((int)(uintptr_t)SocketClient));
@@ -99,11 +82,38 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     // touching DAT_05826ceb/cec on a half-initialised ctx.
     return;
   }
-  // Lo que sigue es ofuscación HashTable inlined sobre DAT_05826ceb/cec
+  gNetwork.InitializePacketSerials();
+}
+
+
+// IDA: CreateSocket (0x00423920). Conserva los registros de la HashTable
+// heredada; sus claves apuntan a los mismos miembros durante toda la sesión.
+void CNetwork::InitializePacketSerials()
+{
+    const char* param_1 = nullptr;
+  byte bVar1;
+  int iVar2;
+  uint uVar3;
+  void *pvVar4;
+  byte *pbVar5;
+  uint uVar6;
+  int iVar7;
+  char **ppcVar8;
+  byte *pbVar9;
+  byte *pbVar10;
+  bool bVar11;
+  bool bVar12;
+  byte local_4 [4];
+
+  local_4[0] = 1;
+  local_4[1] = 0;
+  local_4[2] = 0;
+  local_4[3] = 0;
+  // Lo que sigue es ofuscación HashTable inlined sobre m_SendSerial/cec
   // (ref-count de session-key bytes). Neutralizado vía fake vtable en
   // MAIN_HASH_CLASS + capacity (DAT_055c9bd4) = 0 → loops se saltean.
-  param_1 = &DAT_05826ceb;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&DAT_05826ceb);
+  param_1 = &m_SendSerial;
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
   uVar6 = 0;
   param_1 = (char *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -145,11 +155,11 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
       }
       if (iVar7 == 0) {
         if (uVar3 == 0xffffffff) goto LAB_00423a34;
-        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_05826ceb);
+        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&m_SendSerial);
         bVar1 = pbVar5[1];
         pbVar5[1] = bVar1 + 1;
         if ((byte)(bVar1 + 1) < 2) {
-          Packet_DecryptByte(&DAT_05826ceb,pbVar5);
+          Packet_DecryptByte(&m_SendSerial,pbVar5);
         }
         goto LAB_00423a52;
       }
@@ -161,10 +171,10 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
 LAB_00423a34:
   pvVar4 = AntiTamper_HashNode();
   *(undefined1 *)((int)pvVar4 + 1) = 1;
-  HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&DAT_05826ceb);
+  HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_SendSerial);
 LAB_00423a52:
-  DAT_05826ceb = 0;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&DAT_05826ceb);
+  m_SendSerial = 0;
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
   uVar6 = 0;
   if (DAT_055c9bd4 != 0) {
     do {
@@ -205,11 +215,11 @@ LAB_00423a52:
       }
       if (iVar7 == 0) {
         if (uVar3 != 0xffffffff) {
-          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_05826ceb);
+          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&m_SendSerial);
           bVar1 = pbVar5[1];
           pbVar5[1] = bVar1 - 1;
           if ((byte)(bVar1 - 1) == 0) {
-            Packet_EncryptByte(pbVar5,&DAT_05826ceb);
+            Packet_EncryptByte(pbVar5,&m_SendSerial);
           }
         }
         goto LAB_00423b59;
@@ -220,13 +230,13 @@ LAB_00423a52:
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00423b59:
-  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
+  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&m_ReceiveSerial);
   if (uVar3 == 0xffffffff) {
     pvVar4 = AntiTamper_HashNode();
     *(undefined1 *)((int)pvVar4 + 1) = 1;
-    HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&g_byPacketSerialRecv);
+    HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_ReceiveSerial);
   }
-  g_byPacketSerialRecv = 0;
+  m_ReceiveSerial = 0;
   return;
 }
 

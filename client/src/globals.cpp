@@ -613,9 +613,7 @@ DWORD    DAT_05826cc8  = 0;
 char     DAT_05826cc9  = 0;
 // IDA: DAT_05826CD4 (0x05826CD4)
 char     LogInID[16]  = {0};
-char     DAT_05826ceb  = 0;
-// IDA: DAT_05826CEC (0x05826CEC)
-DWORD    g_byPacketSerialRecv  = 0;
+// IDA: seriales 0x05826CEB/CEC: miembros de CNetwork.
 float    _DAT_05826cf4 = 0.0f;
 // IDA: g_dwLatestMagicTick (0x05826CF4)
 DWORD    g_dwLatestMagicTick  = 0;
