@@ -712,6 +712,7 @@ static_assert(sizeof(CATALOG_EFFECT) == 132, "F3:EC entrada");
 // F3:EE — pets custom (Data/Custom/Pets/*.json del server).
 const BYTE CATALOG_PET_MOVE_FOLLOW = 1;    // vuela detrás del dueño
 const BYTE CATALOG_PET_MOVE_ORBIT = 2;     // da vueltas alrededor del dueño
+const BYTE CATALOG_PET_FLAG_COLLECT = 0x01; // vuela hasta el zen cercano antes de levantarlo
 
 struct CATALOG_PET
 {
@@ -723,7 +724,9 @@ struct CATALOG_PET
     float Height;
     float Scale;
     BYTE Action;        // animación del modelo
-    BYTE Reserved[3];
+    BYTE Flags;         // CATALOG_PET_FLAG_*
+    BYTE CollectRange;  // en casillas: hasta dónde va a buscar el zen
+    BYTE Reserved;
 };
 static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
 

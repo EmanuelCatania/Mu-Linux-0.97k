@@ -330,7 +330,7 @@ files, all included in the repos:
   "item": "13,400",
   "blendMesh": 0,
   "movement": { "type": "orbit", "radius": 50, "period": 4000, "height": 20 },
-  "abilities": [ { "type": "pickup", "what": "zen", "range": 3, "interval": 1000 } ]
+  "abilities": [ { "type": "pickup", "what": "zen", "range": 3, "interval": 1000, "delay": 1500 } ]
 }
 ```
 

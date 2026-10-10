@@ -714,7 +714,30 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
     if (!owner) return;
     float target[3];
     const float* ownerPos = (const float*)(owner + 0x10);
-    if (pet.Movement == Proto::CATALOG_PET_MOVE_ORBIT) {
+
+    // Collecter del 5.2: si hay zen cerca del dueño, va hasta el más cercano y
+    // da vueltas cortas sobre él hasta que el server lo levanta (y el zen
+    // desaparece del suelo).  El server decide; esto es sólo lo que se ve.
+    const float* zen = nullptr;
+    if ((pet.Flags & Proto::CATALOG_PET_FLAG_COLLECT) && DAT_07e12840) {
+        const float range = (float)pet.CollectRange * 100.0f + 50.0f;
+        float best = range * range;
+        for (int i = 0; i < 1000; ++i) {
+            const BYTE* ip = (const BYTE*)DAT_07e12840 + i * 0x204;
+            if (ip[72] == 0 || *(const short*)(ip + 74) != 863) continue;   // zen
+            const float* p = (const float*)(ip + 88);
+            const float dx = p[0] - ownerPos[0], dy = p[1] - ownerPos[1];
+            const float d = dx * dx + dy * dy;
+            if (d < best) { best = d; zen = p; }
+        }
+    }
+
+    if (zen) {
+        const float t = (float)(GetTickCount() % 2000) / 2000.0f * 6.2831853f;
+        target[0] = zen[0] + sinf(t) * 20.0f;
+        target[1] = zen[1] + cosf(t) * 20.0f;
+        target[2] = zen[2] + pet.Height;
+    } else if (pet.Movement == Proto::CATALOG_PET_MOVE_ORBIT) {
         const float t = (float)(GetTickCount() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
         target[0] = ownerPos[0] + sinf(t) * pet.Radius;
         target[1] = ownerPos[1] + cosf(t) * pet.Radius;
@@ -723,7 +746,7 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
         target[0] = ownerPos[0] + sinf(a) * pet.Radius;
         target[1] = ownerPos[1] - cosf(a) * pet.Radius;
     }
-    target[2] = ownerPos[2] + pet.Height;
+    if (!zen) target[2] = ownerPos[2] + pet.Height;
 
     float* pos = (float*)(e + 0x10);
     const float dx = target[0] - pos[0], dy = target[1] - pos[1];
