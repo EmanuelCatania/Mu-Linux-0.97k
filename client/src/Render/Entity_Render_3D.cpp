@@ -388,6 +388,11 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_24 = fVar14 * _DAT_00552534;
             local_20 = fVar14 * _DAT_005528b8;
             local_1c = fVar14 * _DAT_005524f4;
+            // IDA pasa como entrada `Position`, que en este camino nadie
+            // inicializó; en el binario ese lugar del stack vale cero.  Acá
+            // era basura y el resplandor de la antorcha (Lost Tower, mapa 6)
+            // nacía en cualquier lado.
+            local_pos_buf[0] = 0.0f; local_pos_buf[1] = 0.0f; local_pos_buf[2] = 0.0f;
             BMD_TransformPosition(pModel, (float *)&DAT_06970acc, &local_18, local_c, '\0');
             fVar14 = fVar14 * _DAT_00552660;
             pfVar3 = local_c;
