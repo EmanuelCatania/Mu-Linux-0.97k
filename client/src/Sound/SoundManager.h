@@ -9,7 +9,7 @@
 // lógica del binario.
 //
 // Los efectos de sonido siguen por DirectSound (Sound.cpp / Sound_DS3D.cpp);
-// pasarlos también a miniaudio es parte de la Fase 4 (Linux).
+// pasarlos también a miniaudio es parte de la Fase 3 (Linux).
 //
 // Volúmenes (DESVIACION, como el DLL): Config.ini [Sound] SoundLevel y
 // MusicLevel, de 0 (mudo) a 9 (volumen original). Sin la clave, 9.
