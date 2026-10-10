@@ -207,7 +207,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x48) = 0.9f;
         *(float *)((int)this_ + 0x4c) = 0.1f;
         *(float *)((int)this_ + 0x50) = 0.1f;
-        rotU = sinf((float)World * 0.0001f);
+        rotU = sinf((float)gMapManager.GetCurrentMap() * 0.0001f);
         *(float *)(param_1 + 0x6c) = rotU;
         *(float *)(param_1 + 0x70) = (float)WorldTime * -0.0005f;
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = 0;
@@ -357,14 +357,14 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     // o+140 chooses a projected shadow, not another opaque body pass.
     // RenderCharacter already drew the body through Entity_PrepareRender.
     if (*(BYTE *)(param_1 + 140) != 0) {
-        if (World == 7) {
+        if (gMapManager.GetCurrentMap() == 7) {
             EnableAlphaTest(true);
             glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
         } else {
             GL_ResetState();
             glColor3f(0.0f, 0.0f, 0.0f);
         }
-        if (World != 10)
+        if (gMapManager.GetCurrentMap() != 10)
             BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 88));
         return;
     }

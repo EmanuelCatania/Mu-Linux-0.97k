@@ -146,7 +146,7 @@ int Game_SceneUpdate(void)
     // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
     if (DAT_083a7c49 == '\0') {
         DAT_083a7c49 = 1;
-        World  = 0xffffffff;
+        gMapManager.SetCurrentMap(0xffffffff);
         DAT_05826cb0  = 0;
 
         // NOTE: the canonical IDA init at 0x0051F900 lines 220-289 does NOT

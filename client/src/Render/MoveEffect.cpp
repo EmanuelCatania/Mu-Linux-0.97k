@@ -91,11 +91,11 @@ static void Tamachan_FaceHero(char *o)
 
 static void Tamachan_Move(char *o, int life)
 {
-    if (World == 7) {
+    if (gMapManager.GetCurrentMap() == 7) {
         *(int *)(o + 96) = 10;
         return;
     }
-    if (World) {
+    if (gMapManager.GetCurrentMap()) {
         *(int *)(o + 96) = -1;
         *o = 0;
         return;

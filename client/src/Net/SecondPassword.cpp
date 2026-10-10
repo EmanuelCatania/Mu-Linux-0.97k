@@ -1523,9 +1523,9 @@ bool Equip_CanPlace(const ITEM* item, int a5)
     if (part == 7) {
         if (pt >= 392 && pt < 416) invalid = true;
     } else if (part == 8) {
-        if ((int)World == 7) {
+        if ((int)gMapManager.GetCurrentMap() == 7) {
             if (pt == 418 || pt == 419) invalid = true;
-        } else if ((int)World == 10 && pt == 418) {
+        } else if ((int)gMapManager.GetCurrentMap() == 10 && pt == 418) {
             invalid = true;
         }
     }
@@ -1621,7 +1621,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             return;
         }
         DAT_083a4124 = 0;
-        if ((int)World == 10) {
+        if ((int)gMapManager.GetCurrentMap() == 10) {
             // Icarus: no se puede sacar el unico item que permite volar
             // (alas 384..390 o Dinorant 419).
             int flying = 0;
@@ -1817,7 +1817,7 @@ void __cdecl SetPlayerStop(int c) {
         // también dispara la animación de flotar. En char-select (SceneFlag==4)
         // queda solo Fly.
         bool gateA = false;
-        if (SceneFlag == 5 && gMapManager.IsSwimmable(World)) {   // IDA: World == 7
+        if (SceneFlag == 5 && gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
             int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
             int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
             int v3 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
@@ -1835,7 +1835,7 @@ void __cdecl SetPlayerStop(int c) {
         // Sin helm/armor o cambiando clase fuera de mapas 11-16 → idle estándar
         if ((v5 == -1 && *(unsigned short*)(c + 648) == 0xFFFF)
             || (*(unsigned char*)(c + 846)
-                && (World < 11 || World > 16))) {
+                && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16))) {
             bool isElf = ((*(unsigned char*)(c + 444) & 7) == 2);
             SetAction_local(isElf ? 2 : 1);
             goto LABEL_129;
@@ -1948,7 +1948,7 @@ void __cdecl SetPlayerWalk(int param_1) {
             // 3) Si no, si c+0x258 (Helper) != -1 Y c+0x25a > 4, incrementa.
             if ((*(unsigned char *)(param_1 + 0x1bc) & 7) == 3) {
                 *(unsigned char *)(param_1 + 0x300) = v2 + 1;
-            } else if (gMapManager.IsSwimmable(World)) {   // IDA: World == 7
+            } else if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
                 if (*(short *)(param_1 + 0x240) != -1 &&
                     *(unsigned char *)(param_1 + 0x242) > 4)
                     *(unsigned char *)(param_1 + 0x300) = v2 + 1;
@@ -2003,13 +2003,13 @@ void __cdecl SetPlayerWalk(int param_1) {
         //   v6 = c+846 (SafeZone); v7 = (v6 == 0);
         //   if (!v6) { si hay alas → SetAction 30/31 y sale; si no, v7 = 1; }
         // O sea en zona segura NO se nada (ni se vuela): se camina.
-        if (!bSafeZone && gMapManager.IsSwimmable(World)) {   // IDA: World == 7
+        if (!bSafeZone && gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
             SetAction(param_1, (stamina < 0x28) ? 21 : 29);
             goto label_119;
         }
         // No weapons equipped (or dead in non-event-map world):
         bool noWeapons = ((unsigned short)LH == 0xFFFF) && ((unsigned short)RH == 0xFFFF);
-        bool bSafeZoneNonEvent = bSafeZone && (World < 11 || World > 16);
+        bool bSafeZoneNonEvent = bSafeZone && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16);
         if (noWeapons || bSafeZoneNonEvent) {
             if (stamina >= 0x28) {
                 // Exhausted: action 22.
@@ -2111,7 +2111,7 @@ void __cdecl SetPlayerWalk(int param_1) {
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
-    if (World != 8 && World != 10) {
+    if (gMapManager.GetCurrentMap() != 8 && gMapManager.GetCurrentMap() != 10) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
             SetAction(param_1, 32);
             goto label_119;
@@ -2173,7 +2173,7 @@ void __cdecl MoveCharacterPosition(int param_1) {
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
     if (*(short*)(param_1 + 0x2b8) == 0x333) {
-        if (World == 8 || World == 10)
+        if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10)
             terrainH += _DAT_00552848;
         else
             terrainH += _DAT_0055284c;
@@ -2437,7 +2437,7 @@ void __cdecl CheckGate(void)
 
     for (int gateIndex = 0; gateIndex < 100; ++gateIndex) {
         const BYTE* const gate = gates + gateIndex * 9; // IDA: GateAttribute + 9*i
-        if (gate[0] != 1 || gate[1] != (BYTE)World)
+        if (gate[0] != 1 || gate[1] != (BYTE)gMapManager.GetCurrentMap())
             continue;
         const int heroX = *(const int*)(hero + 904);
         const int heroY = *(const int*)(hero + 908);
@@ -2558,7 +2558,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         -70,
         (int)DAT_0839bc88);
 
-    if (World == 8)
+    if (gMapManager.GetCurrentMap() == 8)
         DAT_07eeb214 = (float)((long long)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
     else
         DAT_07eeb214 = (float)((long long)WorldTime % 20000) * 0.000049999999f;  // WaterMove
@@ -2582,7 +2582,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         }
     } else {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
-        if (DAT_0055a76c && World != 7) { // overlay (inerte: unk_55A76C nunca seteado)
+        if (DAT_0055a76c && gMapManager.GetCurrentMap() != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             RenderTerrainFrustrum(false);
         }
@@ -3093,11 +3093,11 @@ void __cdecl MoveCharacter(int p1)
     // Evento propio del Golden Archer (DLL MoveCharacter_GoldenArcherMovement,
     // hook en 0x44A31A): tambien en Noria, con la orientacion de Lorencia.
     if (*(BYTE*)(o + 132) == 4
-        && (!World || World == 2 || (g_GoldenArcherCustom && World == 3))
+        && (!gMapManager.GetCurrentMap() || gMapManager.GetCurrentMap() == 2 || (g_GoldenArcherCustom && gMapManager.GetCurrentMap() == 3))
         && *(short*)(o + 2) == 390
         && *(int*)(o + 4) >= 206 && *(int*)(o + 4) <= 208)
     {
-        if (World == 2) {
+        if (gMapManager.GetCurrentMap() == 2) {
             *(DWORD*)(o + 28) = 0;
             *(DWORD*)(o + 32) = 0;
             *(DWORD*)(o + 36) = 0;
@@ -3151,7 +3151,7 @@ void __cdecl MoveCharacter(int p1)
 
     // ─── IDA L545-606: death-dissolve (c+765=ragdoll, c+820=alpha-decay timer)
     if (*(BYTE*)(c + 765)) {
-        if (*(short*)(o + 2) == 302 || World == 7)
+        if (*(short*)(o + 2) == 302 || gMapManager.GetCurrentMap() == 7)
             *(float*)(c + 820) += 0.050000001f;
         else
             *(float*)(c + 820) += 0.02f;
@@ -3167,7 +3167,7 @@ void __cdecl MoveCharacter(int p1)
             DeleteCloth((int)c, (int)o, 0);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
-        if (World >= 11 && World <= 16 && *(BYTE*)(o + 405)) {
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = *(float*)(o + 196); in1[2] = 0.0f;
             AngleMatrix((float*)(o + 408), in2);
@@ -3183,7 +3183,7 @@ void __cdecl MoveCharacter(int p1)
             *(float*)(o + 24) = *(float*)(o + 428) + *(float*)(o + 216);
         }
         // L593-605: Atlans bubble particles (world 7 in-game)
-        if (SceneFlag == 5 && World == 7) {
+        if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7) {
             for (int jj = 0; jj < 4; ++jj) {
                 v407[0] = (float)(rand() % 128 - 64);
                 v407[1] = (float)(rand() % 128 - 64);
@@ -3249,25 +3249,25 @@ void __cdecl MoveCharacter(int p1)
                             if (action >= 90) {
                                 if (action >= 95) {
                                     if (action < 100) {
-                                        TextIndex = (World == 2) ? 905 : 0;
+                                        TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
                                             CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                         SetAction((int)c, 105);
                                     }
                                 } else {
-                                    TextIndex = (World == 2) ? 905 : 0;
+                                    TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
                                         CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                     SetAction((int)c, 111);
                                 }
                             } else {
-                                TextIndex = (World == 2) ? 904 : 823;
+                                TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
                                     CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                 SetAction((int)c, 99);
                             }
                         } else {
-                            TextIndex = (World == 2) ? 904 : 0;
+                            TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
                                 CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                             SetAction((int)c, 97);
@@ -3275,7 +3275,7 @@ void __cdecl MoveCharacter(int p1)
                         skipIdleSelect = true;
                     }
                     if (!skipIdleSelect) {
-                        TextIndex = (World == 2) ? 904 : 0;
+                        TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
                             CreateChat((char*)(c + 0x1C1), GlobalText[TextIndex], c, 0, -1);
                     }
@@ -3284,7 +3284,7 @@ void __cdecl MoveCharacter(int p1)
                 skipIdleSelect = true;  // fall to L195 either way (event NPCs done)
             }
         }
-        else if (World == 1 && *(short*)(o + 2) == 40) {
+        else if (gMapManager.GetCurrentMap() == 1 && *(short*)(o + 2) == 40) {
             SetAction((int)o, 0);
         }
         else if (*(short*)(o + 2) < 270 || *(short*)(o + 2) >= 335) {
@@ -3324,7 +3324,7 @@ void __cdecl MoveCharacter(int p1)
     if (*(BYTE*)(c + 765)) {
         unsigned char inc = (unsigned char)(++*(BYTE*)(c + 765));
         if (inc >= 0xFu) mc_SetPlayerDie(c);
-        if (World >= 11 && World <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(c);
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(c);
     }
 
     // L807-811: setup defaults
@@ -4146,8 +4146,8 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float p[3] = {(float)(rand() % 64 - 32) + *(float *)(entity_ptr + 16),
                               (float)(rand() % 64 - 32) + *(float *)(entity_ptr + 20),
                               (float)(rand() % 32 - 16) + *(float *)(entity_ptr + 24)};
-                Particle_Spawn(World == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
-                              World == 2 ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
+                Particle_Spawn(gMapManager.GetCurrentMap() == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
+                              gMapManager.GetCurrentMap() == 2 ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
             }
             break;
 
@@ -4496,13 +4496,13 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x186:
         {
             float p[3];
-            if (SceneFlag == 5 && World == 7 && (long long)WorldTime % 10000 < 1000) {
+            if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(int *)((int)model + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
-            if (World == 9) {
+            if (gMapManager.GetCurrentMap() == 9) {
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }

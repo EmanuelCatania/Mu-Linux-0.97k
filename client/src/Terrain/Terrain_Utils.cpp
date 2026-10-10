@@ -35,7 +35,7 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
     // Desviación: IDA retorna si SceneFlag != 5, pero Recv_JoinMapServer llama a
     // CreateCharacterPointer antes de que la escena pase a 5. Acá alcanza con que
     // el mundo esté cargado (World válido y DAT_080cb2cc con el height map).
-    if ((int)World < 0) return 0.0f;
+    if ((int)gMapManager.GetCurrentMap() < 0) return 0.0f;
 
     float gx = xf * 0.01f;
     float gy = yf * 0.01f;

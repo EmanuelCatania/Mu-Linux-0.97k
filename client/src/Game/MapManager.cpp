@@ -136,14 +136,14 @@ bool CMapManager::IsAnyMapTrack(const char* track) const
 // login usa el mismo tema que Lorencia, así que entra en ese corte.
 void CMapManager::UpdateMusic() const
 {
-    if (gSound.GetCurrentTrack()[0] && !IsMapTrack(World, gSound.GetCurrentTrack()))
+    if (gSound.GetCurrentTrack()[0] && !IsMapTrack(gMapManager.GetCurrentMap(), gSound.GetCurrentTrack()))
         Music_StopTrack((DWORD)(uintptr_t)gSound.GetCurrentTrack(), 0);
 
-    const MapInfo* info = Get(World);
+    const MapInfo* info = Get(gMapManager.GetCurrentMap());
     if (!info || !info->music) return;
     if (info->musicSafeZoneOnly && !InSafeZone()) return;
 
-    const char* track = SelectZoneMusic(World);
+    const char* track = SelectZoneMusic(gMapManager.GetCurrentMap());
     Music_PlayTrack((DWORD)(uintptr_t)(track ? track : info->music), 0);
 }
 

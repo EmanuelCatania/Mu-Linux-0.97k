@@ -81,7 +81,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
     BYTE* const skillInfo = (BYTE*)SkillAttribute.Raw + skill * 0x28;
     const float routeReach = skillInfo[0x26] * 1.2f;  // IDA L98-99: v33 * 1.2
     float reach = routeReach;                         // IDA: v12
-    if (World >= 11 && World <= 16 && skill >= 19 && skill <= 23)
+    if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && skill >= 19 && skill <= 23)
         reach = 1.8f;                                 // IDA L100-103
 
     if (dx * dx + dy * dy > reach * reach * 10000.0f) {   // IDA L106: v12*100 < sqrt(...)

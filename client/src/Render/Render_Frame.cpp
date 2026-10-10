@@ -328,7 +328,7 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 void Render_GameFrame(void)
 {
 
-    if (World == 8) {
+    if (gMapManager.GetCurrentMap() == 8) {
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
         // IDA Render_GameFrame L14-21.
         GL_SetBlendSrcOver('');                  // EnableAlphaTest(1)
@@ -566,7 +566,7 @@ void Render_Scene3D(void)
     GL_EndOpenGL();
 
     // ── 4. Clear color por World ──────────────────────────────────────────────
-    int worldId = (int)World;  // World
+    int worldId = (int)gMapManager.GetCurrentMap();  // World
     float cr = 0, cg = 0, cb = 0;
     if (worldId == 0) {
         cr = 0.039f; cg = 0.078f; cb = 0.055f;

@@ -297,7 +297,7 @@ DWORD    DAT_0055a798  = 0;
 char     DAT_0055a79c[] = "Data\\";    // texture/asset path prefix ("Data mode")
 char     DAT_0055a7a4[] = "Data2\\";   // texture/asset path prefix ("Data2 / pak mode")
 // IDA: World (0x0055A7AC)
-int      World  = 0; // IDA: World (0x0055A7AC)
+// Estado del mapa actual: CMapManager::GetCurrentMap().
 float    _DAT_0055a7c0 = 0.0f;
 DWORD    DAT_0055a7c0  = 0;
 

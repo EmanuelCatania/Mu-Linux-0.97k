@@ -284,7 +284,7 @@ extern char    s__s_file_not_found__0055a784[];  // "%s file not found" format s
 extern DWORD   DAT_0055a798;
 extern char    DAT_0055a79c[];  // "Data\\"  path prefix
 extern char    DAT_0055a7a4[];  // "Data2\\" path prefix
-extern int     World; // IDA: World (0x0055A7AC)
+// IDA: World (0x0055A7AC): gMapManager.GetCurrentMap().
 extern float  _DAT_0055a7c0;
 extern DWORD   DAT_0055a7c0;
 

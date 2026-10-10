@@ -491,16 +491,16 @@ char Sound_PlayFootstep()
   result = *(BYTE *)(Hero + 261);
   if ( result != 30 && result != 31 )
   {
-    if ( World == 2 )
+    if ( gMapManager.GetCurrentMap() == 2 )
     {
       if ( HeroTile != 3 && HeroTile < 10 )
       {
         return PlayBuffer(10, 0, 0);
       }
     }
-    else if ( World && World != 3 )
+    else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != 3 )
     {
-      if ( gMapManager.IsSwimmable(World) && !*(BYTE *)(Hero + 846) )   // IDA: World == 7
+      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)(Hero + 846) )   // IDA: World == 7
       {
         return PlayBuffer(11, 0, 0);
       }

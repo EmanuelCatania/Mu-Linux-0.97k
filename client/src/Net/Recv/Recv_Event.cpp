@@ -195,7 +195,7 @@ void NetRecv_9B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // Puerta destruida: dispara la animacion de derrumbe
             // sobre el objeto tipo 36 del mapa actual
             // (la consume MoveObject_Special / sub_4FA5F0).
-            SetActionObject((int)World, 36, 20, 1);
+            SetActionObject((int)gMapManager.GetCurrentMap(), 36, 20, 1);
             break;
         default:
             break;

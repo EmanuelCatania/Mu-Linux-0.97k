@@ -168,7 +168,7 @@ void __cdecl RenderBoids(void)
                 }
 
                 // World != 10: render shadow on terrain.
-                if (World != 10) {
+                if (gMapManager.GetCurrentMap() != 10) {
                     BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 188 * entType);
                     // DESINCRONIZACION DE CACHE (2026-10-03): este glEnable crudo no
                     // tocaba DAT_083a412c, asi que el GL quedaba con blending ENCENDIDO
@@ -311,7 +311,7 @@ void __cdecl Entity_Render(void)
                 float v21 = *(float*)(v1 + 20);
                 float v22 = *(float*)(v1 + 24);
 
-                if (World == 10) {  // World 10 (Icarus) — bamboleo
+                if (gMapManager.GetCurrentMap() == 10) {  // World 10 (Icarus) — bamboleo
                     // IDA: sin((v15 + WorldTime) * flt_5528E0) * flt_552488 + z
                     *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)DAT_05826e08)
                                                      * (double)_DAT_005528e0)
@@ -852,7 +852,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
             if (vis) {
                 Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
                 short typeCode = *(short*)(slot + 2);
-                const int __world = (int)World;   // `World` es macro de World: nombrar
+                const int __world = (int)gMapManager.GetCurrentMap();   // `World` es macro de World: nombrar
                                                         // la local `World` la volvia una
                                                         // auto-inicializacion con basura.
                 if (typeCode != 188 && typeCode != 189 && __world != 10) {
@@ -1141,7 +1141,7 @@ bool __cdecl MoveMainCamera(void) {
     CameraFOV = gCamera3D.GetFov();
     CameraAngle[0] = 0.0f;
     CameraAngle[1] = 0.0f;
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         CameraAngle[0] = 0.0f;
         CameraAngle[1] = 0.0f;
     }
@@ -1166,7 +1166,7 @@ bool __cdecl MoveMainCamera(void) {
         CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - gCamera3D.GetHeight();
         CameraAngle[0] = EarthQuake - gCamera3D.GetPitch();       // pitch después de la posición
     }
-    if (World == 5) {
+    if (gMapManager.GetCurrentMap() == 5) {
         float v1 = (float)sin((double)WorldTime * 0.00050000002);
         CameraAngle[0] = v1 + v1 + CameraAngle[0];
         CameraAngle[1] = (float)sin((double)WorldTime * 0.00079999998) * 2.5f + CameraAngle[1];

@@ -210,7 +210,7 @@ int FUN_004f95e0_DISABLED(void)
     iVar4 = (int)((longlong)uVar14 / 36000);
     fVar11 = (float10)(int)((longlong)uVar14 % 36000) * (float10)_DAT_005524f8;
   }
-  iVar2 = World;
+  iVar2 = gMapManager.GetCurrentMap();
   if ((int)uVar8 <= iVar10) {
     iVar9 = uVar8 << 8;
     iVar3 = FrustrumBoundMaxX_1 + 3;

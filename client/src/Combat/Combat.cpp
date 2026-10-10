@@ -1008,7 +1008,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
 
     if (iType >= 30 && iType <= 36) {
         // IDA L2617-2680: invocaciones del arbol Elf.
-        if ((int)World == 10)                        // IDA L2617: World == 10
+        if ((int)gMapManager.GetCurrentMap() == 10)                        // IDA L2617: World == 10
             return AF_RETURN;
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
         SetPlayerMagic((int)(uintptr_t)entity);                 // IDA LABEL_1430
@@ -1483,7 +1483,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
         // 0049CBF0: la continuación automática sólo vale para el
         // Attacking==2 state.  Omitting that state turns any stale selected
         // entidad en un casteo perpetuo después de soltar el botón derecho.
-        const int worldIndex = (int)World;
+        const int worldIndex = (int)gMapManager.GetCurrentMap();
         const bool autoAttackOK = (DAT_07e11e18 != 0)         // m_bAutoAttack
             && worldIndex != 6                                // not in dialog/loading
             && Attacking == 2                              // IDA: Attacking (0x00559C58)
@@ -1513,7 +1513,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // O sea: muerto, o parado en zona segura fuera de los mapas 11..16.
     if (entity[765] != 0) return;
     if (entity[846] != 0) {
-        const int W = (int)World;
+        const int W = (int)gMapManager.GetCurrentMap();
         if (W < 11 || W > 16) return;
     }
 
@@ -1539,7 +1539,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // Player_InputTick L942 (=1) y este Attack (=2/-1), y lo leen el gate de
     // auto-ataque de arriba y Player_InputTick L599.  En nuestro arbol esa
     // direccion es `Attacking`, que Mouse_Hover ya usa con esa semantica.
-    if (DAT_07e11e18 != 0 && (int)World != 6) {  // IDA: m_bAutoAttack, World
+    if (DAT_07e11e18 != 0 && (int)gMapManager.GetCurrentMap() != 6) {  // IDA: m_bAutoAttack, World
         const BYTE movementState = entity[444] & 7;       // IDA: v16 = c[444] & 7 (clase)
         if ((movementState != 2 || iType == 24 || iType == 25 || iType == 52)
             && (movementState != 1 || iType != 48)) {
@@ -2283,7 +2283,7 @@ void __cdecl Action(DWORD c, DWORD o)
         if (diffAbs > 1) return;
 
         // ── 2. World/tile dispatch ──────────────────────────────────────────────────────────────────────────
-        int worldIndex = (int)World;
+        int worldIndex = (int)gMapManager.GetCurrentMap();
         int TileSub  = (int)DAT_07db8708;
         bool v307 = false;
         bool v309 = false;

@@ -197,11 +197,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
         if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
             v11 != 59 && v11 != 63 &&
-            World != 10 && alpha >= 0.3f)
+            gMapManager.GetCurrentMap() != 10 && alpha >= 0.3f)
         {
             // Blood Castle (11..16): clamp Z to terrain height when
             // entity is dead+action-start (Blood Castle special case).
-            if (World >= 11 && World <= 16) {
+            if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
                 if (*(BYTE *)((char *)puVar13 + 0x195) != 0 &&     // o+405 m_bActionStart
                     *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
@@ -470,14 +470,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // simplificacion nuestra.
     {
         char *o = (char *)puVar13;
-        if (*(float *)(o + 360) >= 0.5f && World != 10 &&
+        if (*(float *)(o + 360) >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
             *(short *)(o + 2) == 390)
         {
             const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
             if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
-                if (World >= 11 && World <= 16 &&
+                if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 &&
                     *(BYTE *)(o + 405) != 0 && *((BYTE *)param_1 + 765) != 0)
                 {
                     float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
@@ -568,9 +568,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
         BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
-        if (gMapManager.IsSwimmable(World) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
+        if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
             local_74 = (void *)1;
-        if (World > 10 && World < 0x11)
+        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
             local_74 = (void *)0;
     }
 
@@ -611,7 +611,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
 
             // Override de escala por zona (World - 9 en [1..7])
-            const int iSub = (int)World - 9;
+            const int iSub = (int)gMapManager.GetCurrentMap() - 9;
             const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
             const bool bInRange =
                 (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
@@ -650,7 +650,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
         // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
         // siempre se alcanza.
-        if ((World >= 11) && (World <= 16) &&
+        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
             (*(char *)(param_1 + 0xba) != 0)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
@@ -784,7 +784,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         if (subType >= 206 && subType <= 208) {
             float alphaST = *(float *)((char *)puVar13 + 0x168);
             int   flags   = 0;
-            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)World == 0) {
+            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == 0) {
                 flags = 8 * (int)*(unsigned short *)((char *)param_1 + 446);
             }
             RenderPartObject((int)param_1, subType, 0,

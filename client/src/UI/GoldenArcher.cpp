@@ -1060,10 +1060,10 @@ extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
     else if (action < 100) SetAction(c, 105);
     if (*(BYTE*)(c + 261) != *(BYTE*)(c + 262)) {
         int text = 0;
-        if (World == 0 || World == 3) {
+        if (gMapManager.GetCurrentMap() == 0 || gMapManager.GetCurrentMap() == 3) {
             static const int k[] = { 700, 701, 702, 703, 704 };
             text = k[rand() % 5];
-        } else if (World == 2) {
+        } else if (gMapManager.GetCurrentMap() == 2) {
             static const int k[] = { 818, 819, 820, 821, 822, 823 };
             text = k[rand() % 6];
         }

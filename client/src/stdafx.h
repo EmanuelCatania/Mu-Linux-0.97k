@@ -69,6 +69,7 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 #include "Core/Window.h"
 #include "Net/Network.h"
 #include "Core/Font.h"
+#include "Game/MapManager.h"
 
 // ── Primitive type aliases (Ghidra pseudo-types) ─────────────────────────────
 #include "types.h"

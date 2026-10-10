@@ -189,13 +189,13 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // World Z: terrain height + height offset based on entity type / state
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10),
                                   *(float*)(param_1 + 0x14));
-    if (World == -1 ||
+    if (gMapManager.GetCurrentMap() == -1 ||
         *(short *)(param_1 + 0x2b8) != (short)0x333 ||
         param_1[0x34e] != '\0')
     {
         // Normal spawn
     }
-    else if (World == 8 || World == 10) {
+    else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
         terrainH += (float)_DAT_00552848;
     }
     else {

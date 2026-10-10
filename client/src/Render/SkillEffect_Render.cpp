@@ -99,7 +99,7 @@
 void SkillEffect_Render(void)
 {
     // IDA: World 2/7/10 → EnableAlphaBlend(); resto → EnableAlphaTest(1).
-    if ((World == 2) || (World == 7) || (World == 10))
+    if ((gMapManager.GetCurrentMap() == 2) || (gMapManager.GetCurrentMap() == 7) || (gMapManager.GetCurrentMap() == 10))
         GL_SetBlendAdditive();       // EnableAlphaBlend (0x511710) — NO es un timer
     else
         // IDA llama `EnableAlphaTest(1)` = **0x00511680** (GL_SetBlendSrcOver). No
@@ -125,7 +125,7 @@ void SkillEffect_Render(void)
         const int texId = *(int*)(pfVar1 - 2);
         GL_BindTextureSlot(texId);             // BindTexture
 
-        if (World == 2) {
+        if (gMapManager.GetCurrentMap() == 2) {
             // In-world: flat 2D billboard
             RenderSprite_0(texId, pfVar1 + 1, *pfVar1, *pfVar1,
                          pfVar1 + 7, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);

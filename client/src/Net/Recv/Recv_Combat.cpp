@@ -713,7 +713,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // de la caida sale de si el tile de al lado (indice +1 o -1)
     // tiene 0x08 (TW_NOGROUND).
     entity[405] = 0;
-    if ((int)World >= 11 && (int)World <= 16) {
+    if ((int)gMapManager.GetCurrentMap() >= 11 && (int)gMapManager.GetCurrentMap() <= 16) {
         const int gx = (int)(*(float*)(entity + 16) * 0.01f);
         const int gy = (int)(*(float*)(entity + 20) * 0.01f);
         const int wallIndex = ((gy & 0xFF) << 8) | (gx & 0xFF);

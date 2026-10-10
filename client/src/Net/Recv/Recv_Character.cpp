@@ -442,7 +442,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     }
 
     // (3) World setup: mapa, terreno, tiles.
-    World = world;
+    gMapManager.SetCurrentMap(world);
 
     // WIPE del entity pool de slots stale del CharSelect ANTES de OpenWorld +
     // hero spawn: si no, los slots de chars del CharSelect quedan activos con sus
@@ -725,12 +725,12 @@ void Recv_Revival(const BYTE* Msg, int Size)
     ClearCharacters(g_HeroKey);
 
     // (9) Cambio de mapa (respawn en otro mapa) + altura del terreno.
-    if ((int)World == (int)map) {
+    if ((int)gMapManager.GetCurrentMap() == (int)map) {
         DAT_05826d24 = 0;   // SummonLife = 0
         return;
     }
 
-    World = map;
+    gMapManager.SetCurrentMap(map);
     // OpenWorld tarda ~2 s cargando BMDs y, para que el server no cierre por
     // backpressure, AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese
     // pump entrega WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los
@@ -745,11 +745,11 @@ void Recv_Revival(const BYTE* Msg, int Size)
     --g_WorldLoading;
 
     float z;
-    if ((int)World == -1 ||
+    if ((int)gMapManager.GetCurrentMap() == -1 ||
         *(const WORD*)(heroPtr + 696) != 819 ||        // sin Dinorant
         heroPtr[846] != 0) {
         z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20));
-    } else if (World == 8 || World == 10) {
+    } else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
         z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 90.0f;
     } else {
         z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 30.0f;
@@ -1518,8 +1518,8 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // preserva el offset vertical original antes de terminar el
     // teleport animation.
     float worldZ = RequestTerrainHeight(worldX, worldY);
-    if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
-        worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
+    if (gMapManager.GetCurrentMap() != -1 && *(short*)(hero + 696) == 819 && !hero[846])
+        worldZ += (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 90.0f : 30.0f;
     *(float*)(hero + 24) = worldZ;
     // IDA L141-160: solo +904/+908 (la grilla).  El camino viejo no se
     // retoma porque el final del handler hace c+748 = 0 y SetPlayerStop.
@@ -1536,8 +1536,8 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         ClearItems();
         ClearCharacters((int)HeroKey);
 
-        if (map != (BYTE)World) {
-            World = map;
+        if (map != (BYTE)gMapManager.GetCurrentMap()) {
+            gMapManager.SetCurrentMap(map);
             // OpenWorld tarda ~2 s cargando BMDs y, para que el server no cierre por
             // backpressure, AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese
             // pump entrega WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los
@@ -1554,13 +1554,13 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // OpenWorld replaces terrain data, so IDA evaluates
             // la altura de aterrizaje una segunda vez contra el mapa nuevo.
             worldZ = RequestTerrainHeight(worldX, worldY);
-            if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
-                worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
+            if (gMapManager.GetCurrentMap() != -1 && *(short*)(hero + 696) == 819 && !hero[846])
+                worldZ += (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 90.0f : 30.0f;
             *(float*)(hero + 24) = worldZ;
 
             // IDA L275-277: aviso "<mapa> ..." en el chat.
             char mapNotice[256];
-            sprintf_s(mapNotice, "%s%s", GetMapName(World), GlobalText[484]);
+            sprintf_s(mapNotice, "%s%s", GetMapName(gMapManager.GetCurrentMap()), GlobalText[484]);
             UIChatLogWindow_AddText("", mapNotice, 1);
         }
 

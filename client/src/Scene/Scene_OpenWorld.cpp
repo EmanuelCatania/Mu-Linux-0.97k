@@ -41,8 +41,8 @@ void __cdecl OpenWorld(void) {
 
     OpenWorldModels();             // OpenWorldModels
 
-    int iVar2 = World + 1;
-    if (World >= 11 && World <= 16) iVar2 = 12;
+    int iVar2 = gMapManager.GetCurrentMap() + 1;
+    if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) iVar2 = 12;
 
     crt_sprintf(world_name, "World%d", iVar2);
 

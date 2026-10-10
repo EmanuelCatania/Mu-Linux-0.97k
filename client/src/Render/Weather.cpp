@@ -273,7 +273,7 @@ LAB_00501064:
     }
 
     // ── World == 10: spawn distant lightning clouds ─────────────────
-    if ((World == 10) && (_rand() % 10 == 0)) {
+    if ((gMapManager.GetCurrentMap() == 10) && (_rand() % 10 == 0)) {
         iVar12 = _rand();
         puStack_44 = (DWORD *)(iVar12 % 5000 + -0x9c4);
         fStack_38 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x10);
@@ -292,7 +292,7 @@ LAB_00501064:
     uVar8  = Terrain_GetTileIndex((uint)(long long)(*(float *)(DAT_07abf5d8 + 0x10) * 0.01f),
                           (uint)(long long)(*(float *)(DAT_07abf5d8 + 0x14) * 0.01f));
     iVar14 = 0;
-    iVar12 = World;
+    iVar12 = gMapManager.GetCurrentMap();
     uStack_48 = uVar8;
 
     // ── Main weather slot loop (40 slots) ─────────────────────────────────────
@@ -313,7 +313,7 @@ LAB_00501064:
                 // Thunder/storm mode: random thunder cloud (1/300 chance)
                 iVar11 = _rand();
                 uVar8  = iVar11 / 300;
-                iVar12 = World;
+                iVar12 = gMapManager.GetCurrentMap();
                 if (iVar11 % 300 == 0) {
                     *pcVar3 = '\x01';
                     OpenMonsterModel(0x1f);   // play thunder sound
@@ -343,7 +343,7 @@ LAB_00501064:
                     WSF(DAT_0839bcc0, iVar14 * 0x6f) = (float)((float)(iVar12 % 600 + -100) + *(float *)(DAT_07abf5d8 + 0x10));
                     iVar11 = _rand();
                     uVar8 = (uint)(uintptr_t)DAT_07abf5d8;
-                    iVar12 = World;
+                    iVar12 = gMapManager.GetCurrentMap();
                     WSF(DAT_0839bcc4, iVar14 * 0x6f) = (float)((float)(iVar11 % 400 + 200) + *(float *)(DAT_07abf5d8 + 0x14));
                     WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)(*(float *)(uVar8 + 0x18) + _DAT_00552900);
                 }
@@ -464,7 +464,7 @@ LAB_00501064:
                 sVar5 = (&DAT_0839bcb2)[iVar14 * 0xde];
                 WSF(DAT_0839bcc4, iVar14 * 0x6f) = (float)((float)(int)(uVar13 - 0x200) + *(float *)(uVar8 + 0x14));
                 (&DAT_0839bcc8)[iVar14 * 0x6f] = *(unsigned int *)(uVar8 + 0x18);
-                iVar12 = World;
+                iVar12 = gMapManager.GetCurrentMap();
 
                 // Firefly: init joint chain
                 if (sVar5 == 0x10a) {
@@ -640,7 +640,7 @@ LAB_00501cb5:
                     fVar7  = WSF(DAT_0839bcc4, iVar14*0x6f) - *(float *)(uVar8 + 0x14);
                     if (_DAT_00552d24 <= SQRT(fVar25*fVar25 + fVar7*fVar7)) *pcVar3 = '\0';
                     if (_rand() % 0x1400 == 0) *pcVar3 = '\0';
-                    if (((10 < World) && (World < 0x11)) &&
+                    if (((10 < gMapManager.GetCurrentMap()) && (gMapManager.GetCurrentMap() < 0x11)) &&
                         ((int)(&DAT_0839bd10)[iVar14*0x6f] < 1)) *pcVar3 = '\0';
                 }
 
@@ -654,7 +654,7 @@ LAB_00501cb5:
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
 
                     // Scale velocity by sub-state
-                    if (World == 7) {
+                    if (gMapManager.GetCurrentMap() == 7) {
                         if (_DAT_00552660 <= WSF(DAT_0839bd30, iVar14*0x6f)) {
                             uVar8 = _rand(); uVar8 &= 0x8000001f;
                             if ((int)uVar8 < 0) uVar8 = (uVar8-1|0xffffffe0)+1;
@@ -714,7 +714,7 @@ LAB_00501cb5:
                 }
 
                 // Loop-kill conditions (state 7, terrain type = grass)
-                if ((((int)(&DAT_0839bd10)[iVar14*0x6f] < 1) && (World == 7)) &&
+                if ((((int)(&DAT_0839bd10)[iVar14*0x6f] < 1) && (gMapManager.GetCurrentMap() == 7)) &&
                     ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
                     fVar25 = WSF(DAT_0839bcd4, iVar14*0x6f) + _DAT_005524ec;
                     bVar20 = (_DAT_0055286c <= fVar25);
@@ -789,7 +789,7 @@ LAB_00501cb5:
 
         Alpha((int)pcVar3);
         uVar8 = 0;  // return value unused; Alpha returns void
-        iVar12 = World;
+        iVar12 = gMapManager.GetCurrentMap();
 
         iVar14++;
         if (0x27 < iVar14) return uVar8;
