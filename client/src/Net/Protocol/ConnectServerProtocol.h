@@ -16,15 +16,15 @@ namespace Proto {
 struct PMSG_SERVER_LIST_SEND
 {
     PSWMSG_HEAD header;     // C2:F4:02
-    BYTE count;
+    std::uint8_t count;
 };
 static_assert(sizeof(PMSG_SERVER_LIST_SEND) == 6, "F4:02");
 static_assert(offsetof(PMSG_SERVER_LIST_SEND, count) == 5, "F4:02 count");
 
 struct PMSG_SERVER_LIST
 {
-    WORD ServerCode;
-    BYTE UserTotal;
+    std::uint16_t ServerCode;
+    std::uint8_t UserTotal;
 };
 static_assert(sizeof(PMSG_SERVER_LIST) == 4, "F4:02 entrada");     // 3 + 1 de padding final
 static_assert(offsetof(PMSG_SERVER_LIST, UserTotal) == 2, "F4:02 UserTotal");
@@ -35,7 +35,7 @@ struct PMSG_SERVER_INFO_SEND
 {
     PSBMSG_HEAD header;     // C1:F4:03
     char ServerAddress[16];
-    WORD ServerPort;
+    std::uint16_t ServerPort;
 };
 static_assert(sizeof(PMSG_SERVER_INFO_SEND) == 22, "F4:03");
 static_assert(offsetof(PMSG_SERVER_INFO_SEND, ServerAddress) == 4, "F4:03 ServerAddress");
@@ -48,14 +48,14 @@ static_assert(offsetof(PMSG_SERVER_INFO_SEND, ServerPort) == 20, "F4:03 ServerPo
 struct PMSG_CUSTOM_SERVER_LIST_SEND
 {
     PSWMSG_HEAD header;     // C2:F4:04
-    BYTE count[2];          // [0] = HB, [1] = LB
+    std::uint8_t count[2];          // [0] = HB, [1] = LB
 };
 static_assert(sizeof(PMSG_CUSTOM_SERVER_LIST_SEND) == 7, "F4:04");
 static_assert(offsetof(PMSG_CUSTOM_SERVER_LIST_SEND, count) == 5, "F4:04 count");
 
 struct PMSG_CUSTOM_SERVER_LIST
 {
-    WORD ServerCode;
+    std::uint16_t ServerCode;
     char ServerName[32];
 };
 static_assert(sizeof(PMSG_CUSTOM_SERVER_LIST) == 34, "F4:04 entrada");
