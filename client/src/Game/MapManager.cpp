@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Game/MapManager.h"
+#include "Sound/SoundManager.h"
 
 CMapManager gMapManager;
 
@@ -135,8 +136,8 @@ bool CMapManager::IsAnyMapTrack(const char* track) const
 // login usa el mismo tema que Lorencia, así que entra en ese corte.
 void CMapManager::UpdateMusic() const
 {
-    if (MusicCurrentTrack[0] && !IsMapTrack(World, MusicCurrentTrack))
-        Music_StopTrack((DWORD)(uintptr_t)MusicCurrentTrack, 0);
+    if (gSound.GetCurrentTrack()[0] && !IsMapTrack(World, gSound.GetCurrentTrack()))
+        Music_StopTrack((DWORD)(uintptr_t)gSound.GetCurrentTrack(), 0);
 
     const MapInfo* info = Get(World);
     if (!info || !info->music) return;
@@ -150,6 +151,6 @@ void CMapManager::UpdateMusic() const
 // sea corta el que esté sonando si es un tema de mapa.
 void CMapManager::StopMusic() const
 {
-    if (MusicCurrentTrack[0] && IsAnyMapTrack(MusicCurrentTrack))
-        Music_StopTrack((DWORD)(uintptr_t)MusicCurrentTrack, 0);
+    if (gSound.GetCurrentTrack()[0] && IsAnyMapTrack(gSound.GetCurrentTrack()))
+        Music_StopTrack((DWORD)(uintptr_t)gSound.GetCurrentTrack(), 0);
 }

@@ -316,8 +316,8 @@ void COptionsMenu::RenderGeneral()
     RenderToggle((float)RowY(row++), GlobalText[386], m_bAutoAttack != 0);
     RenderToggle((float)RowY(row++), GlobalText[387], m_bWhisperSound != 0);
     RenderLevelBar((float)RowY(row++), GlobalText[922], g_EnableSound != 0, gSound.GetSoundLevel());
-    RenderLevelBar((float)RowY(row++), GlobalText[923], m_MusicOnOff != 0, gSound.GetMusicLevel());
-    if (m_MusicOnOff) RenderMusicControls((float)RowY(row++));
+    RenderLevelBar((float)RowY(row++), GlobalText[923], gSound.GetMusicEnabled() != 0, gSound.GetMusicLevel());
+    if (gSound.GetMusicEnabled()) RenderMusicControls((float)RowY(row++));
     RenderBox((float)Layout::X, (float)RowY(row), (float)Layout::Width, (float)Layout::Height);
     RenderLabel((float)Layout::X, (float)RowY(row), (float)Layout::Width, GlobalText[925]);
 }
@@ -362,7 +362,7 @@ bool COptionsMenu::UpdateGeneral()
         }
     }
     y = RowY(row++);
-    if (m_MusicOnOff) {
+    if (gSound.GetMusicEnabled()) {
         const int level = LevelBarHit(y);
         if (level > 0) {
             ConsumeClick();

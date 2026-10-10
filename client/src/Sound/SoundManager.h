@@ -29,6 +29,13 @@ public:
     bool PlayMusic(const char* fileName);
     void StopMusic();
 
+    // IDA: PlayMp3 / StopMp3 (0x004127F0): selección y transición por nombre.
+    void PlayTrack(const char* name, int enforce);
+    void StopTrack(const char* name, int enforce);
+    const char* GetCurrentTrack() const { return m_CurrentTrack; }
+    DWORD GetMusicEnabled() const { return m_MusicEnabled; }
+    void SetMusicEnabled(DWORD enabled) { m_MusicEnabled = enabled; }
+
     int GetSoundLevel() const { return m_SoundLevel; }
     int GetMusicLevel() const { return m_MusicLevel; }
 
@@ -46,6 +53,8 @@ private:
     static float LevelToGain(int level);          // ganancia lineal
     bool EnsureEngine();
 
+    DWORD m_MusicEnabled = 0; // IDA: m_MusicOnOff (0x055C9E3C)
+    char m_CurrentTrack[256] = {}; // IDA: Mp3FileName (0x055C9D04)
     int   m_SoundLevel = 9;
     int   m_MusicLevel = 9;
     bool  m_UserStopped = false;

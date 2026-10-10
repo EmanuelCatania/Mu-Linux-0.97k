@@ -1962,9 +1962,7 @@ extern DWORD   FrameTimePreviousMs;  // IDA: DAT_05826dfc
 extern float   FPS;  // smoothed FPS value  [IDA 0x05826DF8]
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
-extern DWORD   m_MusicOnOff;            // 0x055C9E3C — flag on/off de la musica (ver globals.cpp)
 // IDA: DAT_055C9D04
-extern char    MusicCurrentTrack[256];  // tema de fondo en reproducción (IDA 0x055C9D04)
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 extern DWORD   DAT_0058443c;   // DS3D state dword

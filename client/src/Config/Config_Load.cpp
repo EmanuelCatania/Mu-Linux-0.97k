@@ -47,6 +47,7 @@
 #include "Net/MuEmu.h"
 #include "Config/ServerConfig.h"
 #include "Config/UserSettings.h"
+#include "Sound/SoundManager.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -55,8 +56,7 @@ extern "C" void DbgLogPublic(const char* msg);
 // La resolucion se escribe en WindowWidth / WindowHeight (DAT_0056156c/70),
 // igual que el binario; ver el switch de resolucion, mas abajo.
 DWORD g_SoundOn    = 1;      // DAT_?? (default 1 = sound on)
-// g_MusicOn NO se define aca: es un macro-alias de m_MusicOnOff (0x055C9E3C),
-// que vive en globals.cpp. Ver la nota en Config.h.
+// La preferencia de música vive en CSound (IDA 0x055C9E3C).
 DWORD g_Resolution = 0;      // DAT_?? (default 0 = 640x480)
 DWORD g_TextOut    = 0;      // DAT_?? (default 0)
 
@@ -138,8 +138,10 @@ int Config_Load(void)
             g_SoundOn = 1;
 
         dwSize = 4;
-        if (RegQueryValueExA(hKey, "MusicOnOff", NULL, NULL, (LPBYTE)&g_MusicOn, &dwSize) != ERROR_SUCCESS)
-            g_MusicOn = 0;
+        DWORD musicEnabled = gSound.GetMusicEnabled();
+        if (RegQueryValueExA(hKey, "MusicOnOff", NULL, NULL, (LPBYTE)&musicEnabled, &dwSize) != ERROR_SUCCESS)
+            musicEnabled = 0;
+        gSound.SetMusicEnabled(musicEnabled);
 
         dwSize = 4;
         if (RegQueryValueExA(hKey, "Resolution", NULL, NULL, (LPBYTE)&g_Resolution, &dwSize) != ERROR_SUCCESS)
@@ -158,7 +160,7 @@ int Config_Load(void)
     // son el mismo nombre).
     gUserSettings.Load(configPath);
     if (gUserSettings.GetEnableSound() >= 0) g_SoundOn    = (DWORD)gUserSettings.GetEnableSound();
-    if (gUserSettings.GetEnableMusic() >= 0) g_MusicOn    = (DWORD)gUserSettings.GetEnableMusic();
+    if (gUserSettings.GetEnableMusic() >= 0) gSound.SetMusicEnabled((DWORD)gUserSettings.GetEnableMusic());
     {
         const bool windowMode = gUserSettings.GetWindowMode() >= 0
                               ? gUserSettings.GetWindowMode() != 0 : gWindow.IsWindowMode();

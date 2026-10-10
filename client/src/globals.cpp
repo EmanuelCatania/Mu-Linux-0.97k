@@ -1979,19 +1979,7 @@ float   DeltaT  = 0.0f;    // delta time per frame
 DWORD   FrameTimePreviousMs   = 0;
 float   FPS  = 0.0f;    // smoothed FPS value
 
-// ── Music.cpp globals ─────────────────────────────────────────────────────────
-// m_MusicOnOff @ 0x055C9E3C — flag on/off de la musica (BOOL, NO un puntero a
-// datos como decia la etiqueta vieja `lpData_055c9e3c`). Lo escribe Config_Load
-// leyendo HKCU\SOFTWARE\Webzen\Mu\Config -> "MusicOnOff"; lo leen PlayMp3 y
-// StopMp3. Default 0 (musica apagada) = fiel a IDA 0x0041E0A0 L81.
-// Antes estaba partido en dos memorias (`g_MusicOn` escrita + `lpData_055c9e3c`
-// leida) que nunca se veian, asi que la musica jamas arrancaba.
-DWORD   m_MusicOnOff                = 0;
-// Mp3FileName @ 0x055C9D04 — nombre del track en reproduccion. En el binario es
-// un buffer de string (PlayMp3 hace strcpy del path completo, ~25 chars); estaba
-// declarado como UN char, asi que la copia pisaba los globals de al lado.
-// IDA: DAT_055C9D04
-char    MusicCurrentTrack[256]      = {};
+// IDA: m_MusicOnOff (0x055C9E3C) y Mp3FileName (0x055C9D04): CSound.
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 DWORD   DAT_0058443c   = 0;

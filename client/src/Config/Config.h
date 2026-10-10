@@ -27,11 +27,7 @@ int  Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned
 // La resolucion va a WindowWidth / WindowHeight (DAT_0056156c/70, globals.h);
 // no declarar g_ScreenW / g_ScreenH propias.
 extern DWORD g_SoundOn;    // lpData_055c9fe8  (1 = sound on)
-// g_MusicOn es un ALIAS del unico global del binario, m_MusicOnOff @ 0x055C9E3C
-// (definido en globals.cpp). No declarar una variable propia aca: Music.cpp lee
-// m_MusicOnOff y tiene que ser la misma memoria.
-extern DWORD m_MusicOnOff;
-#define g_MusicOn m_MusicOnOff   // 0x055C9E3C  (0 = musica apagada)
+// Música: gSound.GetMusicEnabled()/SetMusicEnabled().
 extern DWORD g_Resolution; // lpData_055c9e38 (0-4)
 extern DWORD g_TextOut;    // lpData_055ca044
 
