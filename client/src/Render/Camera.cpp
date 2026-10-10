@@ -44,11 +44,14 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // vista real: usa tan(FOV/2) como semiancho sin el aspecto 4:3 y el alto
     // en 0.75 de eso.  Con el FOV de 35 alcanzaba; con 50 cortaba objetos y
     // terreno en los bordes.  Acá se arma con la proyección de verdad
-    // (gluPerspective: semialto tan(FOV/2), semiancho * W/H del viewport).
+    // (gluPerspective: semialto tan(FOV/2), semiancho * W/H de la ventana,
+    // que en pantallas anchas no es 4:3).
     if (SceneFlag == 5) {
         const long double depth = (long double)(Ff(DAT_00561550) * _DAT_005526e8);
         near_h = fov_tan * depth + (long double)_DAT_005524f0;
-        near_w = fov_tan * depth * (long double)param_1 * (4.0L / 3.0L) + (long double)_DAT_005524f0;
+        const long double aspect = (gWindow.GetHeight() > 0)
+            ? (long double)gWindow.GetWidth() / (long double)gWindow.GetHeight() : (4.0L / 3.0L);
+        near_w = fov_tan * depth * (long double)param_1 * aspect + (long double)_DAT_005524f0;
     }
     float near_dist     = -(Ff(DAT_00561550) * _DAT_005526e8);  // negative near depth
 
