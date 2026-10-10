@@ -1632,6 +1632,13 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         }
     }
 
+    // ── DESVIACION (0.97.20): líneas propias del item ("tooltip" en
+    // Data/Custom/Items del server), debajo del nombre.
+    for (int i = 0; i < gContentCatalog.GetTooltipCount(ip->Type); ++i) {
+        const Proto::CATALOG_TOOLTIP* line = gContentCatalog.GetTooltipLine(ip->Type, i);
+        if (line) RII_ADD(line->Color, 0, "%s", line->Text);
+    }
+
     // ── Durabilidad (LABEL_307..331) ────────────────────────────────────────
     {
         const bool hasDur =

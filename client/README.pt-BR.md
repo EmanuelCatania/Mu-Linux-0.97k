@@ -365,6 +365,11 @@ Colunas opcionais no fim de cada linha do `Item.txt` (`*` = sem valor):
 | Pasta e modelo equipado | `"Item\Custom\FenrirMount\" "fenril_black"` | só se o item aparece diferente equipado (uma montaria) |
 | Gate | `22` | para pergaminhos: leva sempre a esse gate |
 
+Os JSON de `Data/Custom/Items` também aceitam `"tooltip"`: até 6 linhas
+próprias abaixo do nome do item, como texto (`"Zen picker"`) ou com cor
+(`{ "text": "Zen picker", "color": "gold" }`; cores: `white`, `blue`, `red`,
+`gold`, `green`, `darkred`, `purple`, `darkblue`, `darkgold`).
+
 Para asas custom, `Data/Item/CustomWing.txt` adiciona as constantes de defesa e
 dano. Os JSON de `Data/Custom/Items` e `Data/Custom/Pets` são validados quando o
 server inicia: um arquivo com erros é descartado inteiro e o motivo vai para o

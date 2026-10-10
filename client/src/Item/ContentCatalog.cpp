@@ -27,6 +27,8 @@ PendingSection s_PendingMonsters;
 PendingSection s_PendingFog;
 PendingSection s_PendingEffects;
 PendingSection s_PendingPets;
+PendingSection s_PendingTooltips;
+std::map<int, std::vector<Proto::CATALOG_TOOLTIP>> s_Tooltips;   // item -> líneas
 std::map<int, Proto::CATALOG_PET> s_Pets;           // item -> pet
 
 // Efecto ya resuelto (textura cargada) de un item.
@@ -203,6 +205,11 @@ void CContentCatalog::ReceivePets(const BYTE* msg, int size)
     if (!ReadSection(s_PendingPets, msg, size)) Log("ContentCatalog: EE descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceiveTooltips(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingTooltips, msg, size)) Log("ContentCatalog: EF descartado (size=%d)", size);
+}
+
 void CContentCatalog::ReceiveEnd(const BYTE* msg, int size)
 {
     if (size < (int)sizeof(Proto::PMSG_CATALOG_END_SEND)) return;
@@ -236,6 +243,8 @@ void CContentCatalog::Clear()
     s_Effects.clear();
     s_PendingPets = PendingSection();
     s_Pets.clear();
+    s_PendingTooltips = PendingSection();
+    s_Tooltips.clear();
     // Los modelos y texturas ya cargados se conservan: si el server vuelve a
     // mandar las mismas rutas se reusan sin volver a leer el disco.
     m_Loaded = false;
@@ -293,6 +302,18 @@ void CContentCatalog::Publish()
     }
     m_HasFog = false;
     for (const FogEntry& fog : s_Fog) m_HasFog = m_HasFog || fog.Present;
+
+    // Tooltips: sección opcional.
+    s_Tooltips.clear();
+    const int tooltipSize = s_PendingTooltips.recordSize;
+    if (SectionComplete(s_PendingTooltips) && tooltipSize > 0) {
+        for (size_t off = 0; off + tooltipSize <= s_PendingTooltips.records.size(); off += tooltipSize) {
+            Proto::CATALOG_TOOLTIP line = {};
+            memcpy(&line, &s_PendingTooltips.records[off], min((int)sizeof(line), tooltipSize));
+            line.Text[sizeof(line.Text) - 1] = 0;
+            if (line.Item < ITEM_MAX_EX && line.Color <= 8) s_Tooltips[line.Item].push_back(line);
+        }
+    }
 
     // Pets: sección opcional, igual que los efectos.
     s_Pets.clear();
@@ -671,4 +692,17 @@ const Proto::CATALOG_PET* CContentCatalog::GetPetByModel(int model) const
     if (s_Pets.empty()) return nullptr;
     const int itemType = GetModelItemType(model);
     return (itemType < 0) ? nullptr : GetPet(itemType);
+}
+
+int CContentCatalog::GetTooltipCount(int itemType) const
+{
+    std::map<int, std::vector<Proto::CATALOG_TOOLTIP>>::const_iterator it = s_Tooltips.find(itemType);
+    return (it == s_Tooltips.end()) ? 0 : (int)it->second.size();
+}
+
+const Proto::CATALOG_TOOLTIP* CContentCatalog::GetTooltipLine(int itemType, int index) const
+{
+    std::map<int, std::vector<Proto::CATALOG_TOOLTIP>>::const_iterator it = s_Tooltips.find(itemType);
+    if (it == s_Tooltips.end() || index < 0 || index >= (int)it->second.size()) return nullptr;
+    return &it->second[index];
 }

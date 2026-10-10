@@ -53,6 +53,7 @@ public:
     void ReceiveMapFog(const BYTE* msg, int size);     // F3/E9
     void ReceiveEffects(const BYTE* msg, int size);    // F3/EC
     void ReceivePets(const BYTE* msg, int size);       // F3/EE
+    void ReceiveTooltips(const BYTE* msg, int size);   // F3/EF
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
@@ -106,6 +107,10 @@ public:
 
     // Pet custom del item, o nullptr.  Para un bug, por su modelo.
     const Proto::CATALOG_PET* GetPet(int itemType) const;
+
+    // Líneas propias del tooltip del item.
+    int GetTooltipCount(int itemType) const;
+    const Proto::CATALOG_TOOLTIP* GetTooltipLine(int itemType, int index) const;
     const Proto::CATALOG_PET* GetPetByModel(int model) const;
 
     const CatalogMonster* GetMonster(int index) const;

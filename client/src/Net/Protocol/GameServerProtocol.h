@@ -709,6 +709,17 @@ struct CATALOG_EFFECT
 };
 static_assert(sizeof(CATALOG_EFFECT) == 132, "F3:EC entrada");
 
+// F3:EF — líneas propias del tooltip de un item ("tooltip" en
+// Data/Custom/Items del server).  Color: el índice de color del tooltip.
+struct CATALOG_TOOLTIP
+{
+    WORD Item;
+    BYTE Color;
+    BYTE Reserved;
+    char Text[60];      // Latin-1
+};
+static_assert(sizeof(CATALOG_TOOLTIP) == 64, "F3:EF entrada");
+
 // F3:EE — pets custom (Data/Custom/Pets/*.json del server).
 const BYTE CATALOG_PET_MOVE_FOLLOW = 1;    // vuela detrás del dueño
 const BYTE CATALOG_PET_MOVE_ORBIT = 2;     // da vueltas alrededor del dueño

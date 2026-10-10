@@ -367,6 +367,11 @@ Optional columns at the end of each `Item.txt` row (`*` = no value):
 | Worn model folder and name | `"Item\Custom\FenrirMount\" "fenril_black"` | only if the item looks different when worn (a mount) |
 | Gate | `22` | for scrolls: always takes you to that gate |
 
+`Data/Custom/Items` JSON files also accept `"tooltip"`: up to 6 extra lines
+below the item name, as plain text (`"Zen picker"`) or with a color
+(`{ "text": "Zen picker", "color": "gold" }`; colors: `white`, `blue`, `red`,
+`gold`, `green`, `darkred`, `purple`, `darkblue`, `darkgold`).
+
 For custom wings, `Data/Item/CustomWing.txt` adds the defense and damage
 constants. The `Data/Custom/Items` and `Data/Custom/Pets` JSON files are
 validated when the server starts: a file with errors is dropped whole and the
