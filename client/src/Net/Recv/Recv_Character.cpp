@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Game/HeroVitals.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
 #include "UI/HealthBar.h"
@@ -34,6 +35,12 @@ void Recv_NewCharacterInfo(const BYTE* Msg, int Size)
     *(WORD*)(CA + 0x30) = ClampToWord(packet.MaxFruitAddPoint);
     *(DWORD*)(CA + 0x10) = packet.Experience;
     *(DWORD*)(CA + 0x34) = packet.NextExperience;
+    gHeroVitals.SetCurrent(VITAL_LIFE, packet.Life);
+    gHeroVitals.SetMax(VITAL_LIFE, packet.MaxLife);
+    gHeroVitals.SetCurrent(VITAL_MANA, packet.Mana);
+    gHeroVitals.SetMax(VITAL_MANA, packet.MaxMana);
+    gHeroVitals.SetCurrent(VITAL_AG, packet.BP);
+    gHeroVitals.SetMax(VITAL_AG, packet.MaxBP);
 }
 
 BYTE s_PendingSkillKey[10];
@@ -75,6 +82,12 @@ void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
     *(WORD*)(CA + 0x22) = ClampToWord(packet.ViewMaxMP);
     *(WORD*)(CA + 0x24) = ClampToWord(packet.ViewCurBP);
     *(WORD*)(CA + 0x26) = ClampToWord(packet.ViewMaxBP);
+    gHeroVitals.SetCurrent(VITAL_LIFE, packet.ViewCurHP);
+    gHeroVitals.SetMax(VITAL_LIFE, packet.ViewMaxHP);
+    gHeroVitals.SetCurrent(VITAL_MANA, packet.ViewCurMP);
+    gHeroVitals.SetMax(VITAL_MANA, packet.ViewMaxMP);
+    gHeroVitals.SetCurrent(VITAL_AG, packet.ViewCurBP);
+    gHeroVitals.SetMax(VITAL_AG, packet.ViewMaxBP);
     gServerCharacterStats.Set(packet);
     gServerCharacterStats.Apply(CA);
 }
@@ -642,6 +655,11 @@ void Recv_Revival(const BYTE* Msg, int Size)
         *(WORD*)(CA + 30) = *(const WORD*)(Msg + 10);  // Mana  → MP actual
         *(WORD*)(CA + 36) = *(const WORD*)(Msg + 12);  // BP
         *(DWORD*)(CA + 16) = *(const DWORD*)(Msg + 16);// Experience
+        if (Size >= 36) {                              // ViewCurHP/MP/BP (EXTRA)
+            gHeroVitals.SetCurrent(VITAL_LIFE, *(const DWORD*)(Msg + 24));
+            gHeroVitals.SetCurrent(VITAL_MANA, *(const DWORD*)(Msg + 28));
+            gHeroVitals.SetCurrent(VITAL_AG, *(const DWORD*)(Msg + 32));
+        }
     }
     if (DAT_07cf1ffc) {
         // Money → CharacterMachine + 1352 (mismo campo que puebla el F3/03).
@@ -825,6 +843,11 @@ void Recv_LevelUp(const BYTE* Msg, int Size)
         *(WORD*)(CA + 38) = ClampToWord(*(const DWORD*)(Msg + 36));  // ViewMaxBP
         *(WORD*)(CA + 28) = *(WORD*)(CA + 32);   // Life = MaxLife (full al subir)
         *(WORD*)(CA + 30) = *(WORD*)(CA + 34);   // Mana = MaxMana
+        gHeroVitals.SetMax(VITAL_LIFE, *(const DWORD*)(Msg + 28));
+        gHeroVitals.SetMax(VITAL_MANA, *(const DWORD*)(Msg + 32));
+        gHeroVitals.SetMax(VITAL_AG, *(const DWORD*)(Msg + 36));
+        gHeroVitals.SetCurrent(VITAL_LIFE, *(const DWORD*)(Msg + 28));
+        gHeroVitals.SetCurrent(VITAL_MANA, *(const DWORD*)(Msg + 32));
     } else {
         CalculateNextExperince((int)(uintptr_t)CharacterMachine);
     }
@@ -929,6 +952,9 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
                 *(WORD*)(CA + 0x22) = ClampToWord(ViewMaxMP);
                 *(WORD*)(CA + 0x26) = ClampToWord(*(DWORD*)(Msg + 24));   // MaxBP
+                gHeroVitals.SetMax(VITAL_LIFE, ViewMaxHP);
+                gHeroVitals.SetMax(VITAL_MANA, ViewMaxMP);
+                gHeroVitals.SetMax(VITAL_AG, *(DWORD*)(Msg + 24));
                 NetLog("NET:  → F3/06 AddPoint OK slot=%d pts=%u str=%u agi=%u vit=%u ene=%u",
                        slot, ViewPoint, ViewStr, ViewDex, ViewVit, ViewEne);
             } else {
@@ -968,6 +994,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             BYTE* CA = (BYTE*)CharacterAttribute;
             if (Size >= 16) {
                 *(WORD*)(CA + 28) = ClampToWord(*(const DWORD*)(Msg + 8));
+                gHeroVitals.SetCurrent(VITAL_LIFE, *(const DWORD*)(Msg + 8));
             } else {
                 const WORD dmg = (WORD)(Msg[5] + (Msg[4] << 8));
                 WORD hp = *(WORD*)(CA + 28);
@@ -1612,8 +1639,10 @@ void NetRecv_26(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         EnableUse = 0;
     } else if (sub == 0xFE) {
         *(WORD*)(charAttr + 32) = (WORD)((Msg[4] << 8) | Msg[5]);
+        if (Size >= 12) gHeroVitals.SetMax(VITAL_LIFE, *(const DWORD*)(Msg + 8));   // ViewHP
     } else if (sub == 0xFF) {
         *(WORD*)(charAttr + 28) = (WORD)((Msg[4] << 8) | Msg[5]);
+        if (Size >= 12) gHeroVitals.SetCurrent(VITAL_LIFE, *(const DWORD*)(Msg + 8));
     } else {
         int slot = (int)sub - 12;
         if (slot >= 0 && slot < 64) {
@@ -1645,11 +1674,20 @@ void NetRecv_27(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (sub == 0xFE) {
         *(WORD*)(charAttr + 34) = (WORD)((Msg[4] << 8) | Msg[5]);
         *(WORD*)(charAttr + 38) = (WORD)((Msg[6] << 8) | Msg[7]);
+        if (Size >= 16) {                                   // ViewMP / ViewBP
+            gHeroVitals.SetMax(VITAL_MANA, *(const DWORD*)(Msg + 8));
+            gHeroVitals.SetMax(VITAL_AG, *(const DWORD*)(Msg + 12));
+        }
     } else if (sub == 0xFF) {
         *(WORD*)(charAttr + 30) = (WORD)((Msg[4] << 8) | Msg[5]);
         *(WORD*)(charAttr + 36) = (WORD)((Msg[6] << 8) | Msg[7]);
+        if (Size >= 16) {
+            gHeroVitals.SetCurrent(VITAL_MANA, *(const DWORD*)(Msg + 8));
+            gHeroVitals.SetCurrent(VITAL_AG, *(const DWORD*)(Msg + 12));
+        }
     } else {
         *(WORD*)(charAttr + 30) = (WORD)((Msg[4] << 8) | Msg[5]);
+        if (Size >= 16) gHeroVitals.SetCurrent(VITAL_MANA, *(const DWORD*)(Msg + 8));
         int slot = (int)sub - 12;
         if (slot >= 0 && slot < 64) {
             BYTE* invBase = (BYTE*)&DAT_07ea9328;

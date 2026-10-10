@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Game/HeroVitals.h"
 #include "Item/ChaosMixRates.h"
 #include "Local/ClientText.h"
 #include "Game/MapManager.h"
@@ -1041,9 +1042,9 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 14, iPosY + 240, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-    sprintf(Buffer, GlobalText[211],
-            *(unsigned short*)(CA + 28),
-            *(unsigned short*)(CA + 32));
+    sprintf(Buffer, GlobalText[211],                 // 32 bits (CHeroVitals)
+            (unsigned)gHeroVitals.GetCurrent(VITAL_LIFE),
+            (unsigned)gHeroVitals.GetMax(VITAL_LIFE));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
@@ -1058,8 +1059,8 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[213],
-            *(unsigned short*)(CA + 30),
-            *(unsigned short*)(CA + 34));
+            (unsigned)gHeroVitals.GetCurrent(VITAL_MANA),
+            (unsigned)gHeroVitals.GetMax(VITAL_MANA));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);

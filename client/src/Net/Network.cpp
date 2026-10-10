@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Game/HeroVitals.h"
 #include "Net/Ping.h"
 #include "Net/Network.h"
 #include "Net/Net.h"
@@ -22,6 +23,7 @@ CNetwork gNetwork;
 void CNetwork::ResetCharacterData()
 {
     gServerCharacterStats.Reset();
+    gHeroVitals.Reset();
     gHealthBar.Clear();
     gChaosMixRates.Reset();
     GoldenArcher_ResetCharacter();

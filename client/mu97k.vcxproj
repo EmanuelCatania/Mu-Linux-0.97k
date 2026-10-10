@@ -130,6 +130,7 @@
     <ClInclude Include="src\UI\MoveList.h" />
     <ClInclude Include="src\Sound\SoundManager.h" />
     <ClInclude Include="src\Game\MapManager.h" />
+    <ClInclude Include="src\Game\HeroVitals.h" />
     <ClInclude Include="src\Net\Network.h" />
     <ClInclude Include="src\Net\Ping.h" />
     <ClInclude Include="src\Net\ServerCharacterStats.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
     <ClCompile Include="src\Game\Game_MainLoop.cpp" />
+    <ClCompile Include="src\Game\HeroVitals.cpp" />
     <ClCompile Include="src\Game\Player_InputTick.cpp" />
     <ClCompile Include="src\Render\Render_Frame.cpp" />
     <ClCompile Include="src\Net\Net_Process.cpp" />
