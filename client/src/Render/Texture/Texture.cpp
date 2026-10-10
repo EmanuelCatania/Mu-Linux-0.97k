@@ -249,6 +249,22 @@ static void tex_swap_ext(char* path, const char* newExt /*"OZJ"/"OZT"*/)
     dot[1] = newExt[0]; dot[2] = newExt[1]; dot[3] = newExt[2]; dot[4] = '\0';
 }
 
+// DESVIACION (DLL Patchs.cpp 0x005299E7..0x00529E8B, "Remove JPG/TGA size
+// limit"): el binario rechaza texturas de más de 256 (el port ya las subía a
+// 1024).  El techo ahora es el que admite la placa, para assets custom
+// grandes.  Sin contexto GL todavía, 4096.
+static int tex_max_size(void)
+{
+    static int s_max = 0;
+    if (s_max <= 0) {
+        GLint v = 0;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &v);
+        s_max = (v >= 256) ? (int)v : 0;
+        if (s_max == 0) return 4096;
+    }
+    return s_max;
+}
+
 static int tex_next_pow2(int v, int maxv)
 {
     int i = 1;
@@ -280,14 +296,14 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
     jpeg_read_header(&cinfo, TRUE);
     jpeg_start_decompress(&cinfo);
 
-    if (cinfo.output_width > 1024 || cinfo.output_height > 1024) {
+    if ((int)cinfo.output_width > tex_max_size() || (int)cinfo.output_height > tex_max_size()) {
         jpeg_destroy_decompress(&cinfo);
         fclose(f);
         return 0;
     }
 
-    int w = tex_next_pow2((int)cinfo.output_width,  1024);
-    int h = tex_next_pow2((int)cinfo.output_height, 1024);
+    int w = tex_next_pow2((int)cinfo.output_width,  tex_max_size());
+    int h = tex_next_pow2((int)cinfo.output_height, tex_max_size());
 
     // DIAG: log actual dimensions and decode success
 
@@ -352,14 +368,13 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
     char  bit = *(char*) (pak + idx); idx += 1;
     idx += 1;
 
-    // Límite 1024 (igual que en OZJ; 256 era muy bajo).
-    if (bit != 32 || nx > 1024 || ny > 1024) {
+    if (bit != 32 || nx > tex_max_size() || ny > tex_max_size()) {
         delete[] pak;
         return 0;
     }
 
-    int w = tex_next_pow2(nx, 1024);
-    int h = tex_next_pow2(ny, 1024);
+    int w = tex_next_pow2(nx, tex_max_size());
+    int h = tex_next_pow2(ny, tex_max_size());
 
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);
@@ -536,7 +551,7 @@ void Texture_Draw2D(int id,
 //   DAT_0055a7c4 == 0 → full_path = g_tex_base_dir + filename
 //   DAT_0055a7c4 != 0 → strip extension, try g_tex_ext_hq then g_tex_ext_lq
 // OZJ files: fseek(f, 24, SEEK_SET) to skip 24-byte Webzen header before JPEG data.
-// Limits: 1024x1024 max, rounds to power-of-2 before GL upload.
+// Limits: GL_MAX_TEXTURE_SIZE (tex_max_size), rounds to power-of-2 before GL upload.
 int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, char show_err)
 {
     // --- Path construction ---
@@ -610,10 +625,8 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     unsigned int img_h = cinfo.output_height;
     int components = cinfo.output_components;
 
-    // --- Size limit: 1024x1024 max ---
-    // sky0/sky5 son 512x256, se rechazaban con el límite de 256 y las BMD
-    // del sky quedaban con GL handle 0 → default white. Subido a 1024.
-    if (img_w > 1024 || img_h > 1024) {
+    // --- Size limit: el máximo de la placa (ver tex_max_size) ---
+    if ((int)img_w > tex_max_size() || (int)img_h > tex_max_size()) {
         jpeg_destroy_decompress(&cinfo);
         fclose(f);
         return 0;
@@ -621,9 +634,9 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
 
     // --- Power-of-2 rounding ---
     int pow2_w = 1;
-    while (pow2_w < (int)img_w && pow2_w < 1024) pow2_w *= 2;
+    while (pow2_w < (int)img_w && pow2_w < tex_max_size()) pow2_w *= 2;
     int pow2_h = 1;
-    while (pow2_h < (int)img_h && pow2_h < 1024) pow2_h *= 2;
+    while (pow2_h < (int)img_h && pow2_h < tex_max_size()) pow2_h *= 2;
 
     // --- Setup texture slot (Bitmaps macro from structs.h) ---
     UnloadImage(id);  // Unload any existing texture in this slot
