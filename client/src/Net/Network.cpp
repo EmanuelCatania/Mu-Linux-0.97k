@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
 #include "Net/Ping.h"
@@ -37,6 +38,9 @@ void CNetwork::ResetCharacterData()
 void CNetwork::ResetSessionData()
 {
     ResetCharacterData();
+    // El catálogo llega una vez por conexión (antes de la respuesta del
+    // login), no por personaje: se limpia acá y no en ResetCharacterData.
+    gContentCatalog.Clear();
     gPing.Reset();
     gEventTimer.Clear();
     GoldenArcher_ResetSession();

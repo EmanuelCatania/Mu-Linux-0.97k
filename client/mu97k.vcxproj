@@ -120,12 +120,16 @@
     <ClInclude Include="src\Entity\EntityView.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
+    <ClInclude Include="src\Item\RightClickMove.h" />
+    <ClInclude Include="src\Item\ContentCatalog.h" />
+    <ClInclude Include="src\Item\ItemDefines.h" />
     <ClInclude Include="src\Item\Item_ServerValue.h" />
     <ClInclude Include="src\UI\GoldenArcher.h" />
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
+    <ClInclude Include="src\Render\Camera3D.h" />
     <ClInclude Include="src\UI\OptionsMenu.h" />
     <ClInclude Include="src\UI\MoveList.h" />
     <ClInclude Include="src\Sound\SoundManager.h" />
@@ -408,6 +412,8 @@
     <ClCompile Include="src\Item\Item_InventoryRender.cpp" />
     <ClCompile Include="src\Item\Item_ChaosMix.cpp" />
     <ClCompile Include="src\Item\Item_ClickHandler.cpp" />
+    <ClCompile Include="src\Item\RightClickMove.cpp" />
+    <ClCompile Include="src\Item\ContentCatalog.cpp" />
     <ClCompile Include="src\Item\Skill_Data.cpp" />
     <ClCompile Include="src\Item\Gate_Data.cpp" />
     <ClCompile Include="src\Item\Filter_Data.cpp" />
@@ -458,6 +464,7 @@
     <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\EventTimer.cpp" />
     <ClCompile Include="src\UI\MiniMap.cpp" />
+    <ClCompile Include="src\Render\Camera3D.cpp" />
     <ClCompile Include="src\UI\OptionsMenu.cpp" />
     <ClCompile Include="src\UI\MoveList.cpp" />
     <ClCompile Include="src\UI\Chat_InputTick.cpp" />

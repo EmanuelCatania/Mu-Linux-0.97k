@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"
 
 // ---------------------------------------------------------------------------
@@ -48,9 +50,50 @@ int Net_LevelConvert(BYTE Level)
     }
 }
 
+// 0.97.20: C1:F3:EB — equipo agregado (>= 512) de un jugador del viewport.
+// Llega después del 0x12, que sólo trae vanilla en el CharSet: deja dicho con
+// qué modelo propio se dibuja cada pieza.  La entidad conserva el modelo del
+// vanilla que imita (pet y montura incluidos), así que el bug ya creado por el
+// CharSet se dibuja con el modelo del helper custom.
+static void ApplyCustomEquipment(BYTE* c, const BYTE* items)
+{
+    static const int kPart[9] = { 5, 6, 0, 1, 2, 3, 4, 7, 8 };
+    for (int slot = 0; slot < 9; ++slot) {
+        const WORD item = *(const WORD*)(items + slot * 2);
+        if (item != 0xFFFF) gContentCatalog.SetEntityPart(c, kPart[slot], item);
+    }
+    // CustomPet: el CharSet lo trajo como "sin helper"; acá se crea su bug.
+    const WORD helper = *(const WORD*)(items + 8 * 2);
+    if (helper != 0xFFFF && gContentCatalog.GetPet(helper)) {
+        *(WORD*)(c + 696) = (WORD)ItemModel(helper);
+        DeleteBug((DWORD)(uintptr_t)c);
+        CreateBug(ItemModel(helper), (void*)(c + 16), (void*)c, 0);
+    }
+}
+
+void Recv_CustomEquipment(const BYTE* Msg, int Size)
+{
+    if (Size < 24 || !DAT_07abf5d0) return;
+    const int key = ((Msg[4] & 0x7F) << 8) | Msg[5];
+    const int idx = FindCharacterIndex(key);
+    if (idx < 0 || idx >= 400) return;
+    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394, Msg + 6);
+}
+
+// 0.97.20: C1:F3:ED — lo mismo para un personaje de la lista del
+// char-select.  La entidad es la del slot (ChangeCharacterExt(slot, ...)),
+// y este paquete llega justo después del F3/00.
+void Recv_CharacterListCustom(const BYTE* Msg, int Size)
+{
+    if (Size < 24 || !DAT_07abf5d0) return;
+    const int slot = Msg[4];
+    if (slot >= 400) return;
+    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)slot * 0x394, Msg + 6);
+}
+
 void Recv_ChangePlayer(const BYTE* Msg, int Size)
 {
-    if (Size < 9 || !DAT_07abf5d0) return;
+    if (Size < 5 + ITEM_INFO_SIZE || !DAT_07abf5d0) return;
 
     const int key = Msg[4] + (Msg[3] << 8);
     const int idx = FindCharacterIndex(key);
@@ -73,56 +116,67 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
     NetLog("NET:  -> 0x25 ChangePlayer key=%d idx=%d slot=%d type=%d lvl=%u%s",
            key, idx, slot, type, (unsigned)level, empty ? " (vacio)" : "");
 
+    // 0.97.20: el modelo propio de la pieza (catálogo).  slot del paquete ->
+    // pieza de la entidad.
+    {
+        static const int kPart[9] = { 5, 6, 0, 1, 2, 3, 4, 7, 8 };
+        if (slot >= 0 && slot < 9) gContentCatalog.SetEntityPart(c, kPart[slot], empty ? -1 : type);
+    }
+
     switch (slot) {
         case 0:   // mano izquierda
             if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
-            else       { *(WORD*)(c + 624) = (WORD)(type + 400); c[626] = (BYTE)Net_LevelConvert(level); c[627] = option; }
+            else       { *(WORD*)(c + 624) = (WORD)ItemEntityModel(type); c[626] = (BYTE)Net_LevelConvert(level); c[627] = option; }
             break;
         case 1:   // mano derecha
             if (empty) { *(WORD*)(c + 648) = (WORD)-1; c[651] = 0; }
-            else       { *(WORD*)(c + 648) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 648) = (WORD)ItemEntityModel(type);
                          c[650] = (BYTE)Net_LevelConvert(level); c[651] = option; }
             break;
         case 2:   // casco
             if (empty) { *(WORD*)(c + 504) = (WORD)(klass + 912); c[506] = 0; c[507] = 0; }
-            else       { *(WORD*)(c + 504) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 504) = (WORD)ItemEntityModel(type);
                          c[506] = (BYTE)Net_LevelConvert(level); c[507] = option; }
             break;
         case 3:   // armadura
             if (empty) { *(WORD*)(c + 528) = (WORD)(klass + 919); c[530] = 0; c[531] = 0; }
-            else       { *(WORD*)(c + 528) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 528) = (WORD)ItemEntityModel(type);
                          c[530] = (BYTE)Net_LevelConvert(level); c[531] = option; }
             break;
         case 4:   // pantalones
             if (empty) { *(WORD*)(c + 552) = (WORD)(klass + 926); c[554] = 0; c[555] = 0; }
-            else       { *(WORD*)(c + 552) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 552) = (WORD)ItemEntityModel(type);
                          c[554] = (BYTE)Net_LevelConvert(level); c[555] = option; }
             break;
         case 5:   // guantes
             if (empty) { *(WORD*)(c + 576) = (WORD)(klass + 933); c[578] = 0; c[579] = 0; }
-            else       { *(WORD*)(c + 576) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 576) = (WORD)ItemEntityModel(type);
                          c[578] = (BYTE)Net_LevelConvert(level); c[579] = option; }
             break;
         case 6:   // botas
             if (empty) { *(WORD*)(c + 600) = (WORD)(klass + 940); c[602] = 0; c[603] = 0; }
-            else       { *(WORD*)(c + 600) = (WORD)(type + 400);
+            else       { *(WORD*)(c + 600) = (WORD)ItemEntityModel(type);
                          c[602] = (BYTE)Net_LevelConvert(level); c[603] = option; }
             break;
         case 7:   // alas
             if (empty) { *(WORD*)(c + 672) = (WORD)-1; }
-            else       { *(WORD*)(c + 672) = (WORD)(type + 400); c[674] = 0; }
+            else       { *(WORD*)(c + 672) = (WORD)ItemEntityModel(type); c[674] = 0; }
             break;
         case 8: {  // helper / mascota
             if (empty) {
                 *(WORD*)(c + 696) = (WORD)-1;
                 DeleteBug((DWORD)(uintptr_t)c);        // DeleteBug
             } else {
-                *(WORD*)(c + 696) = (WORD)(type + 400);
+                *(WORD*)(c + 696) = (WORD)ItemEntityModel(type);
                 c[698] = 0;
                 float* pos = (float*)(c + 16);
-                if (type == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
-                else if (type == 418) CreateBug(195, (void*)pos, (void*)c, 0);
-                else if (type == 419) CreateBug(267, (void*)pos, (void*)c, 0);
+                // 0.97.20: un agregado crea el bug del pet que imita.
+                const int pet = ItemBehaviorType(type);
+                DeleteBug((DWORD)(uintptr_t)c);
+                if (pet == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
+                else if (pet == 418) CreateBug(195, (void*)pos, (void*)c, 0);
+                else if (pet == 419) CreateBug(267, (void*)pos, (void*)c, 0);
+                else if (gContentCatalog.GetPet(type)) CreateBug(ItemModel(type), (void*)pos, (void*)c, 0);   // CustomPet
             }
             break;
         }
@@ -359,6 +413,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // esta fila del protocolo.
                 *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
                 ChangeCharacterExt((int)HeroIndex, (BYTE*)e + 5);
+                Hero_ApplyCatalogEquipment((int)(uintptr_t)hero);
                 ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
             }
             NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
@@ -739,15 +794,17 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // index[2]+x+y+ItemInfo[MAX_ITEM_INFO+1] = 2+1+1+5 = 9 bytes por
     // item SIEMPRE (Viewport.h), no el stride 8 del 0.97k. Bound y
     // stride son 9.
-    for (int i = 0; i < count && cursor + 9 <= Size; ++i) {
+    // 0.97.20: el item son 7 bytes y el struct del server agrega uno más
+    // (ItemInfo[MAX_ITEM_INFO + 1]): index[2] + x + y + 8 = 12 por entrada.
+    const int entrySize = 4 + ITEM_INFO_SIZE + 1;
+    for (int i = 0; i < count && cursor + entrySize <= Size; ++i) {
         const BYTE* e = Msg + cursor;
         WORD raw = (e[0] << 8) | e[1];
         WORD key = raw & 0x7FFF;
         bool createFlag = (raw & 0x8000) != 0;
         BYTE gx = e[2], gy = e[3];
         const BYTE* itemInfo = e + 4;
-        // ConvertItemType: type = info[0] + (info[3] & 0x80) * 2
-        int itemType = (int)itemInfo[0] + ((itemInfo[3] & 0x80) ? 256 : 0);
+        int itemType = ItemWire_GetType(itemInfo);
 
         if (key >= 1000) key = 0;  // safety clamp per IDA
 
@@ -791,7 +848,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             }
         }
         ip[72] = 1;                                    // active flag
-        *(WORD*)(ip + 74) = (WORD)(itemType + 400);    // model index
+        *(WORD*)(ip + 74) = (WORD)ItemModel(itemType);   // model index (0.97.20: catálogo)
         *(int*)(ip + 76) = 1;
 
         // Model overrides (CreateItem switch L58-126): arrows/fruit/etc

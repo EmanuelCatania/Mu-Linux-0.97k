@@ -252,10 +252,12 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
     DWORD *param_2 = (DWORD*)param_2_v;
     int param_3 = (int)(uintptr_t)param_3_v;
     if ((*(short*)(param_3 + 2) == 0x186) || (param_1 == 0x330)) {
+        // El original corta en 0x83A236F (fin del pool en el binario); acá el
+        // pool es DAT_083a1218: 10 slots de 0x1BC.
         char *pcVar5 = DAT_083a1218;
         while (*pcVar5 != '\0') {
             pcVar5 += 0x1bc;
-            if (0x83a236f < (int)pcVar5) return;
+            if (pcVar5 >= DAT_083a1218 + 10 * 0x1bc) return;
         }
         *(DWORD*)(pcVar5 + 4)   = param_4;
         pcVar5[0x58] = pcVar5[0x59] = pcVar5[0x5a] = pcVar5[0x5b] = -1;

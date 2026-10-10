@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "Item/Item_ServerValue.h"
 
 // RenderItemInfo.cpp  @0x004C4650 / 0x004C8D70
 // Populates the item info tooltip string buffer (lpString_07e90798, stride 100, ~0x18 slots)
@@ -149,7 +152,7 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         "¹Â 10½Ã°£ ¹«·áÀÌ¿ë±Ç"
     };
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
 
     // Primera rama de la cadena del binario (LAB_004c4ced, 0x004C4CED):
     //     if (0x1d6 < Type && Type < 0x1db) { sprintf(linea, "%s", Name); color = 3; }
@@ -466,7 +469,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
     constexpr short ITEM_HELPER_BASE = 416;
     constexpr short ITEM_POTION_BASE = 448;
     constexpr short ITEM_WING_BASE = 384;
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
     constexpr int C_RED = 2;
@@ -753,7 +756,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
     constexpr short ITEM_POTION_BASE = 448;
     constexpr short ITEM_BOW_BASE = 128;
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
 
     auto addLine = [](const char* text, int color, bool bold = false) {
@@ -888,7 +891,7 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         DAT_07eaa154++;
     };
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     const int level = (ip->Level >> 3) & 0xF;
 
     if ((type == ITEM_BOW_BASE + 7 || type == ITEM_BOW_BASE + 15) && level >= 1) {
@@ -1180,7 +1183,7 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAt
     addRequirementLine(GlobalText[73], (int)ip->RequireStrength,  strength, TEXT_COLOR_WHITE);
     addRequirementLine(GlobalText[75], (int)ip->RequireDexterity, agility,  TEXT_COLOR_WHITE);
     addRequirementLine(GlobalText[77], (int)ip->RequireEnergy,    energy,   TEXT_COLOR_WHITE);
-    if (ip->RequireLevel && ip->Type != 0x1ae) {
+    if (ip->RequireLevel && ItemBehaviorType(ip->Type) != 0x1ae) {
         addRequirementLine(GlobalText[76], (int)ip->RequireLevel, level, TEXT_COLOR_WHITE);
     }
 }
@@ -1352,9 +1355,12 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 {
     const unsigned int attrBase = ItemAttribute_Base();
     if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
-    const short type = ip->Type;
-    if (type < 0 || type >= 1024) return;
-    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[type];
+    if (ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
+    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
+    // 0.97.20: las líneas que el tooltip decide por rango de tipo (durabilidad,
+    // una/dos manos, skill, opciones) usan el vanilla que imita un agregado;
+    // nombre y valores salen de la fila del propio item (`p` / `ip`).
+    const short type = (short)ItemBehaviorType(ip->Type);
     const BYTE* CA = (const BYTE*)CharacterAttribute;
     if (!CA) return;
 
@@ -1570,7 +1576,13 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     }
     if (type == 417)                RII_TXT(0, 0, 576);
 
-    if (type >= 384 && type <= 386) {                      // alas de primera
+    // DESVIACION (DLL CustomWing, catálogo 0.97.20): aumento y reducción de
+    // daño del ala custom con sus constantes.
+    if (const CatalogWing* wing = gContentCatalog.GetItemWing(ip->Type)) {
+        RII_ADD(0, 0, GlobalText[577], wing->IncDamageConstA + Level * wing->IncDamageConstB);
+        RII_ADD(0, 0, GlobalText[578], wing->DecDamageConstA + Level * wing->DecDamageConstB);
+        RII_TXT(0, 0, 579);
+    } else if (type >= 384 && type <= 386) {               // alas de primera
         RII_ADD(0, 0, GlobalText[577], 2 * Level + 12);
         RII_ADD(0, 0, GlobalText[578], 2 * Level + 12);
         RII_TXT(0, 0, 579);
@@ -1620,6 +1632,13 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         }
     }
 
+    // ── DESVIACION (0.97.20): líneas propias del item ("tooltip" en
+    // Data/Custom/Items del server), debajo del nombre.
+    for (int i = 0; i < gContentCatalog.GetTooltipCount(ip->Type); ++i) {
+        const Proto::CATALOG_TOOLTIP* line = gContentCatalog.GetTooltipLine(ip->Type, i);
+        if (line) RII_ADD(line->Color, 0, "%s", line->Text);
+    }
+
     // ── Durabilidad (LABEL_307..331) ────────────────────────────────────────
     {
         const bool hasDur =
@@ -1629,7 +1648,9 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
             if (type == 426) RII_ADD(0, 0, GlobalText[95], ip->Durability);
         } else if (type >= 430 && type <= 435) {
             // LABEL_318: sin linea salvo el 426 (que no cae en este rango)
-        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143) {
+        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143 ||
+                   // DESVIACION (DLL ItemStack): los apilables del server muestran la cantidad.
+                   ItemStack_GetMaxStack(type, Level) != 0) {
             RII_ADD(0, 0, GlobalText[69], ip->Durability);
         } else if (type >= 416 && type <= 423) {
             RII_ADD(0, 0, GlobalText[70], ip->Durability);
@@ -2058,7 +2079,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     if (param_3_v == nullptr || (uintptr_t)param_3_v < 0x100000) return;
     unsigned short* param_3 = (unsigned short*)param_3_v;
     short itemType = (short)*param_3;
-    if (itemType < 0 || (unsigned short)itemType >= 1024) return;
+    if (itemType < 0 || (unsigned short)itemType >= ITEM_MAX_EX) return;
 
     // Class-filter exclusions
     if (itemType > 0x19f && itemType < 0x1a4) return;

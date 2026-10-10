@@ -3,6 +3,8 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
 #include "UI/EventTimer.h"
@@ -1070,7 +1072,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // PMSG_ITEM_MODIFY_SEND (ItemManager.h:169) - el server
             // reescribe una celda del inventario.
             //   +4 slot  .  +5.. ItemInfo
-            if (Size < 6) break;
+            if (Size < 5 + ITEM_INFO_SIZE) break;
             NetLog("NET:  -> F3/14 ItemModify slot=%d", Msg[4]);
             DAT_07e91388 = 0;            // suelta el item agarrado
             InsertInventoryItem(OffsetInventoryItems, 8, 8, Msg[4],
@@ -1298,6 +1300,24 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
         case 0xE6: {
             gEventTimer.Receive(Msg, Size);
+            break;
+        }
+        // DESVIACION (0.97.20): catálogo de contenido del server.
+        case 0xE7: gContentCatalog.ReceiveItems((const BYTE*)Msg, Size); break;
+        case 0xE8: gContentCatalog.ReceiveMonsters((const BYTE*)Msg, Size); break;
+        case 0xE9: gContentCatalog.ReceiveMapFog((const BYTE*)Msg, Size); break;
+        case 0xEA: gContentCatalog.ReceiveEnd((const BYTE*)Msg, Size); break;
+        case 0xEC: gContentCatalog.ReceiveEffects((const BYTE*)Msg, Size); break;
+        case 0xEE: gContentCatalog.ReceivePets((const BYTE*)Msg, Size); break;
+        case 0xEF: gContentCatalog.ReceiveTooltips((const BYTE*)Msg, Size); break;
+        case 0xED: {
+            void Recv_CharacterListCustom(const BYTE* Msg, int Size);
+            Recv_CharacterListCustom((const BYTE*)Msg, Size);
+            break;
+        }
+        case 0xEB: {
+            void Recv_CustomEquipment(const BYTE* Msg, int Size);
+            Recv_CustomEquipment((const BYTE*)Msg, Size);
             break;
         }
         case 0x30: {

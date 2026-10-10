@@ -1148,7 +1148,7 @@ DWORD    DAT_083a7c8c  = 0;
 DWORD    DAT_083a7c90  = 0;
 DWORD    DAT_083a7c94  = 0;
 DWORD    DAT_083a7c98  = 0;
-char     g_BitmapsRaw[0x13D30]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
+char     g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
 DWORD    m_dwUsedTextureMemory  = 0;
 DWORD    DAT_083bbb14  = 0;
 char     lpBuffer_083bbb60[0x400] = {};  // named pipe write buffer
@@ -2034,7 +2034,6 @@ char    DAT_00559b50[64] = {};
 char    s__4d__4d_30__4d__4d__1_00559b58[] = "%4d/%4d[0] %4d/%4d[1]";
 
 // ── Scene_CharPreview globals ─────────────────────────────────────────────────
-DWORD   DAT_07e91354   = 0;
 char    DAT_07e9136a   = 0;  // picked item durability/option byte
 char    DAT_07e9136b   = 0;
 // Buffer del item que abrio el dialogo de ShowCheckBox(153) -- el click derecho

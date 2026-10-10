@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -217,6 +218,10 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     if (!table) return;
 
     ITEM_ATTRIBUTE* p = &table[wType];
+    // 0.97.20: las reglas por rango de tipo (opciones, skill, excellent,
+    // casillero) usan el vanilla que imita un agregado; los valores salen de
+    // la fila del propio item (`p`).
+    wType = (short)ItemBehaviorType(wType);
     int itemLevel = ((BYTE)Attribute1 >> 3) & 0xF;
     int itemExcel = ((BYTE)Attribute2) & 0x3F;
     int itemExt = (int)ip->byColorState;
@@ -310,6 +315,10 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
             }
             ip->Defense = (WORD)(ip->Defense + ((wType >= 387 && wType <= 390) ? 2 : 3) * min9(itemLevel) + post9_bonus(itemLevel));
         }
+        // DESVIACION (CustomWing, catálogo 0.97.20): el ala custom suma
+        // DefenseConstA por nivel en vez de la escala vanilla, como el server.
+        if (const CatalogWing* wing = gContentCatalog.GetItemWing(ip->Type))
+            ip->Defense = (WORD)(p->Defense + wing->DefenseConstA * itemLevel);
     }
 
     if (p->MagicDefense) {
@@ -473,24 +482,33 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         if (Attribute2 & 1) push_special(79);
     }
 
-    if ((wType >= 128 && wType < 136) || wType == 145) {
+    const int partType = wType;
+    // 0.97.20: un agregado sin comportamiento vanilla (un pet custom) usa la
+    // columna Slot de Item.txt.
+    if (partType >= ITEM_MAX_VANILLA) {
+        const int slot = gContentCatalog.GetItemSlot(ip->Type);
+        ip->Part = (slot >= 0) ? (BYTE)slot : (BYTE)-1;
+        ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
+        return;
+    }
+    if ((partType >= 128 && partType < 136) || partType == 145) {
         ip->Part = 1;
         ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
         return;
     }
-    if (wType >= 0) {
-        if (wType < 192) { ip->Part = 0; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 224) { ip->Part = 1; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 256) { ip->Part = 2; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 288) { ip->Part = 3; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 320) { ip->Part = 4; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 352) { ip->Part = 5; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 384) { ip->Part = 6; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (wType < 391) { ip->Part = 7; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 0) {
+        if (partType < 192) { ip->Part = 0; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 224) { ip->Part = 1; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 256) { ip->Part = 2; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 288) { ip->Part = 3; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 320) { ip->Part = 4; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 352) { ip->Part = 5; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 384) { ip->Part = 6; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < 391) { ip->Part = 7; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     }
-    if (wType >= 416 && wType < 424) { ip->Part = 8; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-    if (wType >= 424 && wType < 428) { ip->Part = 10; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-    if (wType >= 428 && wType < 448) { ip->Part = 9; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 416 && partType < 424) { ip->Part = 8; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 424 && partType < 428) { ip->Part = 10; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 428 && partType < 448) { ip->Part = 9; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     ip->Part = (BYTE)-1;
     ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
 }

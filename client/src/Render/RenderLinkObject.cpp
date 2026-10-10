@@ -77,6 +77,7 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include <math.h>   // fsin
@@ -135,7 +136,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     int   iVar7;             // model pointer (same as local_22c for most of fn)
 
     // ── 1. look up model, copy entity fields ──────────────────────────────────
-    iVar7 = DAT_05828d58 + param_6 * 0xbc;
+    // 0.97.20: la pieza guarda el modelo lógico (param_6, que decide la pose y
+    // los efectos por tipo); se dibuja con el modelo propio del catálogo.
+    const int drawModel = gContentCatalog.EntityDrawModel((const void*)(uintptr_t)param_4, param_6);
+    iVar7 = DAT_05828d58 + drawModel * 0xbc;
     *(unsigned char*)(iVar7 + 0x45) = *(unsigned char*)(param_4 + 0xe4);  // ContrastEnable
     *(unsigned int* )(iVar7 + 0x68) = *(unsigned int* )(param_4 + 0x0c);  // Scale
     *(unsigned char*)(iVar7 + 0xa0) = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
@@ -145,7 +149,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // campos del OBJECT, y los bytes sin inicializar cambiarían el comportamiento
     // de RenderPartObjectEffect / BMD_SetupRenderByType entre frames (flicker).
     memset(local_1ec, 0, sizeof(local_1ec));
-    local_1ea = (unsigned short)param_6;  // OBJECT.Type = item type index
+    local_1ea = (unsigned short)drawModel;  // OBJECT.Type = item type index
     local_22c = iVar7;
 
     // ItemObjectAttribute: initialise local_1ec as a minimal OBJECT for the item.
@@ -649,7 +653,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     {
         unsigned char monsterIndex = *(unsigned char*)(param_4 + 0x2eb);
         unsigned int baseRenderFlags = ((monsterIndex == 67) ? 0x102u : 0x2u);
-        RenderPartObjectEffect((int)local_1ec, (int)param_6,
+        RenderPartObjectEffect((int)local_1ec, drawModel,
                      (float*)(param_4 + 800),     // Light offset +0x320
                      *(float*)(param_4 + 0x168),  // alpha
                      8u * (unsigned int)(unsigned char)param_7,  // 8*Level
@@ -661,6 +665,11 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // ── 11. Per-weapon-type particle effects ─────────────────────────────────
     int   iVar_rand = rand();
     void* pModel2 = (void*)iVar7;
+
+    // DESVIACION (0.97.20): efectos del item definidos por el server
+    // (Data/Custom/Items/*.json), sobre los huesos que acaba de animar el
+    // render de la pieza.
+    gContentCatalog.RunEquippedEffects((const void*)(uintptr_t)param_4, drawModel, pModel2);
     // Luminosity = (float)(rand()%30 + 70) * _DAT_00552940
     float fLum = (float)(iVar_rand % 0x1e + 0x46) * _DAT_00552940;
     // `Light[3]` de IDA como array real: los 9 cases del switch de abajo lo pasan

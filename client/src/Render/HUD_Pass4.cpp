@@ -18,6 +18,8 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/Item_ServerValue.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -461,8 +463,12 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                     if (v7 != (short)0xFFFF) {
                         if (*(int*)(v6_addr + 0x38) > 0) {
                             if ((BYTE)a6) {
-                                if (v7 >= 448 && v7 <= 456 &&
-                                    *(BYTE*)(v6_addr + 0x1A) > 1) {
+                                // DESVIACION (DLL ItemStack.cpp RenderItemNumber, 0x004E398C):
+                                // también los items que el server declara apilables.
+                                const int kind = ItemBehaviorType(v7);   // 0.97.20
+                                const bool stack = (kind >= 448 && kind <= 456) ||
+                                    ItemStack_GetMaxStack(v7, (*(int*)(v6_addr + 4) >> 3) & 0xF) != 0;
+                                if (stack && *(BYTE*)(v6_addr + 0x1A) > 1) {
                                     glColor3f(1.0f, 0.9f, 0.7f);
                                     float h = sxa + 13.0f;
                                     RenderNumber2D(h, sy,

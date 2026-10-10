@@ -16,6 +16,8 @@
 // ItemValue_Vanilla / ConvertRepairGold_Vanilla.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include <vector>
@@ -40,14 +42,14 @@ inline int ItemLevelOf(const ITEM* ip) { return (ip->Level >> 3) & 0xF; }
 
 bool ValidEntry(const ItemStackInfo& entry)
 {
-    return entry.ItemIndex >= 0 && entry.ItemIndex < 1024 &&
+    return entry.ItemIndex >= 0 && entry.ItemIndex < ITEM_MAX_EX &&
         entry.Level >= -1 && entry.Level <= 15 && entry.MaxStack >= 0 && entry.MaxStack <= 255;
 }
 
 bool ValidEntry(const ItemValueInfo& entry)
 {
     // -1 conserva la fórmula por defecto; otros negativos no son precios.
-    return entry.Index >= 0 && entry.Index < 1024 && entry.Level >= -1 && entry.Level <= 15 &&
+    return entry.Index >= 0 && entry.Index < ITEM_MAX_EX && entry.Level >= -1 && entry.Level <= 15 &&
         entry.BuyValue >= -1 && entry.SellValue >= -1;
 }
 
@@ -155,8 +157,13 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
     const ITEM* ip = (const ITEM*)item;
     if (!ip || ip->Type == -1 || ip->SpecialNum > MAX_SPECIAL_OPTION) return 0;
     const unsigned int attrBase = ItemAttribute_Base();
-    if (!attrBase || ip->Type < 0 || ip->Type >= 1024) return 0;
+    if (!attrBase || ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return 0;
     const ITEM_ATTRIBUTE* info = (const ITEM_ATTRIBUTE*)(uintptr_t)(attrBase + ip->Type * sizeof(ITEM_ATTRIBUTE));
+    // 0.97.20: igual que CItem::Value del server, los rangos van por el
+    // comportamiento (GetKind), la sección por el índice real y el ala custom
+    // por sus constantes.
+    const int  kind       = ItemBehaviorType(ip->Type);
+    const bool customWing = gContentCatalog.GetItemWing(ip->Type) != nullptr;
 
     const int  itemLevel = ItemLevelOf(ip);
     const bool skill     = ((ip->Level >> 7) & 1) != 0;
@@ -178,8 +185,8 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
     if (FindValue(ip, false, &price)) {
     } else if (info->Value > 0) {
         price = (unsigned long long)info->Value * info->Value * 10 / 12;
-        if (ip->Type >= 14 * 32 && ip->Type <= 14 * 32 + 8) {
-            if (ip->Type == 14 * 32 + 3 || ip->Type == 14 * 32 + 6) price *= 2;
+        if (kind >= 14 * 32 && kind <= 14 * 32 + 8) {
+            if (kind == 14 * 32 + 3 || kind == 14 * 32 + 6) price *= 2;
             price *= 1ULL << itemLevel;
             price *= ip->Durability;
             if (price > kMaxItemPrice) price = kMaxItemPrice;
@@ -192,11 +199,11 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
     } else {
         unsigned long long lvl = info->Level + itemLevel * 3;
         for (int n = 0; n < ip->SpecialNum; ++n) {
-            if (ip->Special[n] != 0 && ip->Type < 12 * 32) { lvl += 25; break; }
+            if (ip->Special[n] != 0 && kind < 12 * 32) { lvl += 25; break; }
         }
 
-        const int group = ip->Type / 32;
-        if ((group == 12 && ip->Type > 12 * 32 + 6) || group == 13 || group == 15) {
+        const int group = GetItemSection(ip->Type);
+        if ((group == 12 && kind > 12 * 32 + 6 && !customWing) || group == 13 || group == 15) {
             price = lvl * lvl * lvl + 100;
             for (int n = 0; n < ip->SpecialNum; ++n) {
                 if (ip->Special[n] == 65 /* ITEM_OPTION_ADD_HP_RECOVERY_RATE */) {
@@ -216,12 +223,12 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
             default: break;
             }
 
-            if (ip->Type >= 12 * 32 && ip->Type <= 12 * 32 + 6)
+            if ((kind >= 12 * 32 && kind <= 12 * 32 + 6) || customWing)
                 price = (lvl + 40) * lvl * lvl * 11 + 40000000;
             else
                 price = (lvl + 40) * lvl * lvl / 8 + 100;
 
-            if (ip->Type >= 0 && ip->Type < 6 * 32 && info->TwoHand == 0)
+            if (kind >= 0 && kind < 6 * 32 && info->TwoHand == 0)
                 price = price * 80 / 100;
             if (skill) price += price * 25 / 100;
             if (luck)  price += price * 25 / 100;
@@ -231,7 +238,7 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
             if (addOption == 4) price += price * 560 / 100;
             for (int n = 0; n < 6; ++n) {
                 if ((ip->Option1 & (1 << n)) != 0)
-                    price += ip->Type < 12 * 32 ? price * 100 / 100 : price * 25 / 100;
+                    price += kind < 12 * 32 ? price * 100 / 100 : price * 25 / 100;
             }
         }
     }

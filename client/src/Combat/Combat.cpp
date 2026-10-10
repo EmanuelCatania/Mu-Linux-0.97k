@@ -437,6 +437,7 @@
 //   CharData_RecalcStats @ 0x0047e3c0
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Item/Item_Equip.h"
 #include "Combat/Combat.h"
 #include "Net/Net.h"
@@ -1936,6 +1937,10 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
 #define ACTION_HERO          ((char*)DAT_07abf5d8)
 #endif
 
+// DESVIACION (MU 5.2 g_bAutoGetItem): el levantado con Espacio pide el item a
+// distancia, sin caminar hasta él.  El server no valida la distancia del 0x22.
+bool g_bAutoGetItem = false;
+
 // Como en IDA (0x0048D640), Action solo LEE la cola c+749; la reescribe
 // Player_InputTick en cada click.
 // IDA: Action (0x0048D640)
@@ -1966,7 +1971,9 @@ void __cdecl Action(DWORD c, DWORD o)
         const float deltaY = *(float*)(o + 20) - ((float)TargetY * 100.0f + 50.0f);
         const float deltaX = *(float*)(o + 16) - ((float)TargetX * 100.0f + 50.0f);
 
-        if (sqrtf(deltaX * deltaX + deltaY * deltaY) > 150.0f)
+        const bool autoGet = g_bAutoGetItem;
+        g_bAutoGetItem = false;
+        if (!autoGet && sqrtf(deltaX * deltaX + deltaY * deltaY) > 150.0f)
             return;
 
         DAT_00559bec = 6;                                      // IDA: MouseUpdateTimeMax
@@ -2084,8 +2091,8 @@ void __cdecl Action(DWORD c, DWORD o)
         // stride 916, esos offsets son otros campos).  Los ids son TIPOS de item (sin
         // el +400 del modelo): 136-142 arcos, 128-134 ballestas, 145 el par arco/ballesta.
         const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
-        const int leftHandType  = CM ? *(const short*)(CM + 536) : -1;   // IDA: v11
-        const int rightHandType = CM ? *(const short*)(CM + 604) : -1;   // IDA: v12
+        const int leftHandType  = CM ? ItemBehaviorType(*(const short*)(CM + 536)) : -1;   // IDA: v11
+        const int rightHandType = CM ? ItemBehaviorType(*(const short*)(CM + 604)) : -1;   // IDA: v12
 
         if (leftHandType >= 96 && leftHandType < 128) Range = 2.2f;       // IDA L1197-1200
         if ((leftHandType >= 136 && leftHandType < 143) ||

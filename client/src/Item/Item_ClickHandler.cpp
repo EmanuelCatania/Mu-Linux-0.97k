@@ -46,6 +46,10 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "Item/Item_ServerValue.h"
+#include "Item/RightClickMove.h"
 #include "Item/ChaosMixRates.h"
 #include "globals.h"
 #include "functions.h"
@@ -394,13 +398,8 @@ void RestorePickedItemToSource(void)
     if (srcPool && srcSlot >= 0) {
         // Reconstruir los bytes "wire" desde el ITEM struct guardado y
         // re-insertarlo en su celda original.
-        BYTE* it = (BYTE*)pPickedItem;
-        BYTE wire[6] = { 0, 0, 0, 0, 0, 0 };
-        wire[0] = it[0];     // Type low
-        wire[1] = it[4];     // optByte (Level int, low byte)
-        wire[2] = it[26];    // Durability
-        wire[3] = it[60];    // Unkown (bit8 de type + exc)
-        wire[4] = it[61];    // byColorState
+        BYTE wire[ITEM_INFO_SIZE];
+        ItemWire_FromItem((const BYTE*)pPickedItem, wire);
         int gridH = (srcPool == &OffsetWarehouseItems[0]) ? 15
                   : ((srcPool == &OffsetInventoryItems[0]) ? 8 : 4);
         InsertInventoryItem(srcPool, 8, gridH, srcSlot, wire, 1);
@@ -657,7 +656,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 continue;
             }
             short typeRaw   = rowSlot[0];
-            if (typeRaw < 0 || typeRaw >= 1024) { continue; }
+            if (typeRaw < 0 || typeRaw >= ITEM_MAX_EX) { continue; }
             int   type      = (int)(unsigned short)typeRaw;
             BYTE  slotX     = ((BYTE*)rowSlot)[62];
             BYTE  slotY     = ((BYTE*)rowSlot)[63];
@@ -670,7 +669,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 if ((int)slotX < grid_w && (int)slotY < grid_h) {
                     short* originSlot = (short*)(inv_base + 34 * (grid_w * (int)slotY + (int)slotX));
                     short originType = originSlot[0];
-                    if (originType >= 0 && originType < 1024) {
+                    if (originType >= 0 && originType < ITEM_MAX_EX) {
                         rowSlot = originSlot;
                         typeRaw = originType;
                         type = (int)(unsigned short)originType;
@@ -766,10 +765,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // Tipos de item que SE PUEDEN reparar (= armas/armaduras con
                 // durability), excluding stackables like potions/jewels.
                 // Per IDA lines 579-586.
-                if (!((type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                      type == 143 || type >= 448 ||
-                      (type >= 391 && type <= 403) ||
-                      (type >= 430 && type <= 435))
+                const int kind = ItemBehaviorType(type);   // 0.97.20
+                if (!((kind >= 416 && kind <= 419) || kind == 426 || kind == 135 ||
+                      kind == 143 || kind >= 448 ||
+                      (kind >= 391 && kind <= 403) ||
+                      (kind >= 430 && kind <= 435))
                     && DAT_083a4124)
                 {
                     DAT_083a4124 = 0;
@@ -840,9 +840,13 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 MouseRButtonPush = 0;
 
                 int slotIdx = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62];
+                // 0.97.20: qué hace el click derecho se decide por el
+                // comportamiento: un consumible agregado se usa como el vanilla
+                // que imita.  Los requisitos siguen siendo los de su fila.
+                const int useType = ItemBehaviorType(type);
 
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
-                if (type == 458) {
+                if (useType == 458) {
                     // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
                     // Teleport = 0x05826D14 (Teleport).
                     if (Teleport != 0) return;
@@ -862,7 +866,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     SendC3Packet(pkt, 3);
 
                     // Sonido: 33 para el tipo 448, 32 para 449..457.
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448) PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
@@ -884,20 +888,20 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // En el decompile de `sub_4D23B0` (raw L1032-1053) `v275 = 73` (0x49) es el
                 // byte 12 de la CLAVE XOR, no un opcode; el opcode real es `v301[4] = -111` =
                 // 0x91, y el EventType es `v302` (1 para el 467, 2 para el 434).
-                if (type == 467 || type == 434) {
+                if (useType == 467 || useType == 434) {
                     int level = (((int*)rowSlot)[1] >> 3) & 0xF;
                     BYTE pkt[3];
                     pkt[0] = 0x91;
-                    pkt[1] = (type == 467) ? 0x01 : 0x02;   // EventType
+                    pkt[1] = (useType == 467) ? 0x01 : 0x02;   // EventType
                     pkt[2] = (BYTE)level;                   // ItemLevel
                     SendC1Packet(pkt, 3);                   // -> [C1][05][91][..][..]
                     continue;
                 }
 
                 // ── Items 448-454 / 456-457 / 468 — potions ───────────────
-                if ((type >= 448 && type <= 454) ||
-                    (type >= 456 && type <= 457) ||
-                     type == 468)
+                if ((useType >= 448 && useType <= 454) ||
+                    (useType >= 456 && useType <= 457) ||
+                     useType == 468)
                 {
                     if (DAT_07eaa119 != 0) {
                         // Baúl abierto → no se puede usar
@@ -918,16 +922,16 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     pkt[2] = 0;
                     SendC3Packet(pkt, 3);
 
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448)               PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
                 // ── Items 480-511 / 391-398 / 400-403 — scrolls/spells ───
-                if ((type >= 480 && type < 512) ||
-                    (type >= 391 && type <= 398) ||
-                    (type >= 400 && type <= 403))
+                if ((useType >= 480 && useType < 512) ||
+                    (useType >= 391 && useType <= 398) ||
+                    (useType >= 400 && useType <= 403))
                 {
                     // Class/level/stat requirement gate (per IDA L1278-1283).
                     BYTE* CA = (BYTE*)DAT_07cf1ff4;
@@ -954,14 +958,14 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     pkt[2] = 0;
                     SendC3Packet(pkt, 3);
 
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448)              PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
                 // ── Item 431 (Pet egg) — open ShowCheckBox dialog ─────────
-                if (type == 431) {
+                if (useType == 431) {
                     BYTE* CA = (BYTE*)DAT_07cf1ff4;
                     if (CA && *(WORD*)(CA + 14) < 10) {
                         // Por debajo de nivel 10 — muestra el mensaje "todavía no podés usar esto"
@@ -987,13 +991,58 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                 if ((BYTE*)inv_base == (BYTE*)&OffsetInventoryItems[0]) {
                     // Pickup from main inventory
-                    if (DAT_07eaa119 != 0) {
+                    // DESVIACION (DLL RightClickMove.cpp MoveItemToInterface):
+                    // además del baúl, el trade y el chaos (sin mezcla en curso).
+                    if (DAT_07eaa11b != 0) {                         // TradeOpened
+                        byte_83A42EB = (char)sub_4D6020(
+                            (int)(TradeInventoryStartX + 15),
+                            (int)(TradeInventoryStartY + 0x10E),
+                            (int)(uintptr_t)&OffsetTradeItems[0],
+                            8, 4);
+                    } else if (DAT_07eaa11a != 0 && MixState != 1) {  // ChaosMixOpened
+                        byte_83A42EB = (char)sub_4D6020(
+                            (int)(DAT_07eaa0c8 + 15),
+                            (int)(DAT_07eaa0cc + 0x6E),
+                            (int)(uintptr_t)&OffsetMixItems[0],
+                            8, 4);
+                    } else if (DAT_07eaa119 != 0) {
                         // Warehouse open → try auto-drop into warehouse
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
                             (int)(DAT_07eaa0cc + 50),
                             (int)(uintptr_t)&OffsetWarehouseItems[0],
                             8, 15);
+                    } else if (DAT_07eaa165 == 0) {
+                        // DESVIACION (DLL RightClickMove.cpp CheckEquipItem):
+                        // sin ventana abierta, el item va a su casillero.
+                        const int target = RightClickMove_FindEquipSlot((const ITEM*)pPickedItem);
+                        if (target >= 0) {
+                            const int abs = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12;
+                            DAT_07ea5b18 = (DWORD)abs;
+                            UI_Main(abs, inv_base, grid_w);
+                            CheckInventory = 0;
+                            DAT_07e11e78 = (DWORD)target;
+                            DAT_07eaa165 = 1;                        // EquipmentItem
+                            g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            SendRequestEquipmentItem(0, abs, (ITEM*)pPickedItem, 0, target);
+                            PlayBuffer(29, 0, 0);
+                            return;
+                        }
+                    }
+                    // DESVIACION (DLL ItemStack.cpp CheckItemStackClicked): si no
+                    // se movió ni se equipó, un apilable separa una unidad (C1:2B:00).
+                    if (!byte_83A42EB) {
+                        const ITEM* stackItem = (const ITEM*)pPickedItem;
+                        if (ItemStack_GetMaxStack(stackItem->Type, (stackItem->Level >> 3) & 0xF) != 0) {
+                            if (DAT_07eaa11b || (DAT_07eaa11a && MixState != 1) || DAT_07eaa119) {
+                                UIChatLogWindow_AddText("", GlobalText[474], 2);
+                            } else {
+                                const BYTE slot = (BYTE)(grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12);
+                                const BYTE pkt[6] = { 0xC1, 0x06, 0x2B, 0x00, slot, 1 };
+                                gNetwork.SendC1(pkt, sizeof(pkt));
+                            }
+                        }
                     }
                     if (byte_83A42EB) {
                         int abs = grid_w * ((BYTE*)rowSlot)[63] +
@@ -1012,7 +1061,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     // Pickup from warehouse / mix / trade
                     // El origen del grid del inventario es (InventoryStartX+15,
                     // InventoryStartY+200) — los VALORES, igual que en el resto de los call sites.
-                    if (DAT_07eaa119 != 0) {
+                    // DESVIACION (DLL RightClickMove.cpp): también desde el
+                    // trade y el chaos, no sólo con el baúl abierto.
+                    if (DAT_07eaa119 != 0 ||
+                        (BYTE*)inv_base == (BYTE*)&OffsetTradeItems[0] ||
+                        (BYTE*)inv_base == (BYTE*)&OffsetMixItems[0]) {
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(InventoryStartX + 15),
                             (int)(InventoryStartY + 200),

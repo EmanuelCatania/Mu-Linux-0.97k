@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 
@@ -93,6 +94,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
+    bool bDeferWing = false;           // 0.97.20: ala del catálogo, va después del cuerpo
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
@@ -251,10 +253,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // IDA 00456770 groups these MonsterIDs before the individual Icarus
     // branches.  43 and 78..83 need the first 0x48 pass; 67 uses 0x144 for
     // its second pass; 59 is the only half-bright member of the group.
+    // DESVIACION (DLL CustomMonsterGolden, ahora catálogo 0.97.20): un
+    // monstruo marcado golden en el server se dibuja como los Golden 78..83.
+    const CatalogMonster* catalogMonster = (entity_type != 390) ? gContentCatalog.GetMonster(bVar7) : nullptr;
+    const bool catalogGolden = catalogMonster && catalogMonster->Golden;
     if (bVar7 == 38 || bVar7 == 43 || bVar7 == 52 || bVar7 == 59 ||
-        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83)) {
+        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
-        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83)) {
+        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
             RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                          *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
         }
@@ -660,7 +666,13 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
 
         // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
-        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
+        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
+        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
+        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
+        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
+            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
+            bDeferWing = true;
+        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
@@ -793,6 +805,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // so the decomp was int-indexed (param_1[0x6f]) not byte-offset.
                 // Byte-offset 0x6f is an unrelated field; reading it here made all
                 // login demo characters render as DW (class=0). Fixed to 0x1bc.
+                // 0.97.20: modelo propio de la pieza (catálogo).
+                iVar9 = gContentCatalog.EntityDrawModel(param_1, iVar9);
                 BYTE bClassByte = *(BYTE *)((int)param_1 + 0x1bc);
                 *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));
@@ -873,6 +887,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
                           *(short*)((BYTE*)param_1 + 528));
         }
+    }
+
+    if (bDeferWing) {
+        *(BYTE *)(param_1 + 0xa9) = 0x2f;
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                     (int)*(short *)(param_1 + 0xa8),
+                     *(char *)((int)param_1 + 0x2a2),
+                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
     }
 
     // ── 8. Death / PvP color tint ────────────────────────────────────────────

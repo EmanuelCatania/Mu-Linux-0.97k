@@ -136,6 +136,9 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "Item/RightClickMove.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 #include "structs.h"
@@ -1454,6 +1457,89 @@ uint __cdecl Net_Disconnect_Clean(void)
     return 1;
 }
 
+// Regla de sub_4CDC70 para soltar `item` en el casillero `a5`: clase, dos
+// manos, flechas, stats, nivel y restricciones de mapa.  La comparte el
+// click derecho para equipar (RightClickMove.cpp).
+bool Equip_CanPlace(const ITEM* item, int a5)
+{
+    if (!item || !CharacterMachine || !CharacterAttribute || !DAT_07abf5d8 || !DAT_07d78068) return false;
+    BYTE* const CM = (BYTE*)CharacterMachine;
+    BYTE* const CA = (BYTE*)CharacterAttribute;
+    ITEM_ATTRIBUTE* const IA = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
+    // 0.97.20: las reglas por rango de tipo usan el vanilla que imita un
+    // agregado; la clase requerida es la del propio item.
+    const short pt    = (short)ItemBehaviorType(item->Type);
+    // 0.97.20: los agregados se validan como el vanilla que imitan.
+    const short left  = (short)ItemBehaviorType(*(short*)(CM + 536));
+    const short right = (short)ItemBehaviorType(*(short*)(CM + 604));
+    const int   cls   = CA[11] & 7;
+    const BYTE* req   = IA[item->Type].RequireClass;
+    bool ok = true;
+
+    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
+        if (!req[3] && !req[0] && !req[1]) ok = false;
+    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
+        ok = false;
+    }
+
+    bool rightHandChecks = false;
+    if (pt != 135 && pt != 143) {
+        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
+            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
+            if (IA[left].Width >= 2) ok = false;
+        }
+        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
+            if (IA[pt].Width >= 2) ok = false;
+            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
+            rightHandChecks = true;                         // LABEL_118
+        }
+    }
+    if (!rightHandChecks && a5 == 1) {
+        if (pt == 143) ok = false;
+        if (cls == 0 || cls == 2) {
+            if (pt >= 0 && pt < 128) ok = false;
+            if (pt >= 160 && pt < 192) ok = false;
+            if (left == 143) {
+                if (pt == 135 || pt < 128 || pt > 160) ok = false;
+            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
+                ok = false;
+            }
+        }
+    } else if (rightHandChecks || a5 == 0) {
+        // LABEL_118
+        if (pt == 135) ok = false;
+        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
+    }
+
+    // LABEL_164
+    if (pt >= 430 && pt <= 435) ok = false;
+    if (item->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
+    if (item->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
+    if (item->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
+    const BYTE part = item->Part;
+    if ((part >= 7 && part <= 11) && item->RequireLevel > *(WORD*)(CA + 14)) ok = false;
+
+    bool invalid = false;
+    if (part == 7) {
+        if (pt >= 392 && pt < 416) invalid = true;
+    } else if (part == 8) {
+        if ((int)World == 7) {
+            if (pt == 418 || pt == 419) invalid = true;
+        } else if ((int)World == 10 && pt == 418) {
+            invalid = true;
+        }
+    }
+    if (!invalid && !ok) invalid = true;                    // LABEL_231
+    if (!invalid && part != (BYTE)a5) {
+        if (part == 10) {
+            if (a5 != 11) invalid = true;
+        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
+            invalid = true;
+        }
+    }
+    return !invalid;
+}
+
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
 // Port FIEL del IDA: 12 llamadas a sub_4CDC70(x, y, w, h, slotIdx) renderizando
 // los slots del Character panel. STRUCT_DECRYPT/ENCRYPT (HashTable obfuscation)
@@ -1504,7 +1590,17 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         const short type = *(short*)slot;
         if (type == -1 || !inside) return;
         DAT_07eaa164 = 1;                                   // byte_7EAA164
-        if (!DAT_083a4124) {                                // MouseLButtonPush
+        // DESVIACION (DLL RightClickMove.cpp CheckUnequipItem): click derecho
+        // manda el item al primer hueco libre del inventario.
+        const bool rightClick = !DAT_083a4124 && MouseRButtonPush != 0;
+        int unequipTarget = -1;
+        if (rightClick) {
+            MouseRButtonPush = 0;
+            if (DAT_07eaa134) return;                       // modo reparar
+            unequipTarget = RightClickMove_FindInventorySlot(type);
+            if (unequipTarget < 0) return;
+        }
+        if (!DAT_083a4124 && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
             DAT_07eaa160 = (DWORD)(uintptr_t)slot;          // CheckInventory
@@ -1514,9 +1610,10 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         }
         if (Teleport) return;                           // Teleport
         if (DAT_07eaa134) {                                 // RepairEnable_0
-            if ((type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
-                (type >= 430 && type <= 435))
+            const int kind = ItemBehaviorType(type);        // 0.97.20
+            if ((kind >= 416 && kind <= 419) || kind == 426 || kind == 135 ||
+                kind == 143 || kind >= 448 || (kind >= 391 && kind <= 403) ||
+                (kind >= 430 && kind <= 435))
                 return;
             DAT_083a4124 = 0;
             BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)a5, (BYTE)DAT_07eaa138 };
@@ -1528,10 +1625,12 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             // Icarus: no se puede sacar el unico item que permite volar
             // (alas 384..390 o Dinorant 419).
             int flying = 0;
-            const short wing = *(short*)(CM + 1012);
+            // 0.97.20: alas y Dinorant se reconocen por el comportamiento.
+            const short wing = (short)ItemBehaviorType(*(short*)(CM + 1012));
             if (wing >= 384 && wing <= 390) flying = 1;
-            if (*(short*)(CM + 1080) >= 419) ++flying;
-            if (flying <= 1 && ((type >= 384 && type <= 390) || type == 419))
+            if (ItemBehaviorType(*(short*)(CM + 1080)) >= 419) ++flying;
+            const int kind = ItemBehaviorType(type);
+            if (flying <= 1 && ((kind >= 384 && kind <= 390) || kind == 419))
                 return;
         }
         DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
@@ -1549,6 +1648,12 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
             DeleteBug((int)(uintptr_t)DAT_07abf5d8);
+        if (rightClick) {
+            DAT_07e11e78 = (DWORD)(unequipTarget + 12);
+            DAT_07eaa165 = 1;                               // EquipmentItem
+            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+            SendRequestEquipmentItem(0, a5, picked, 0, unequipTarget + 12);
+        }
         return;
     }
 
@@ -1556,72 +1661,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (!inside) return;
     const short pt    = picked->Type;
     const short left  = *(short*)(CM + 536);
-    const short right = *(short*)(CM + 604);
-    const int   cls   = CA[11] & 7;
-    const BYTE* req   = IA[pt].RequireClass;
-    bool ok = true;
-
-    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
-        if (!req[3] && !req[0] && !req[1]) ok = false;
-    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
-        ok = false;
-    }
-
-    bool rightHandChecks = false;
-    if (pt != 135 && pt != 143) {
-        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
-            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
-            if (IA[left].Width >= 2) ok = false;
-        }
-        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
-            if (IA[pt].Width >= 2) ok = false;
-            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
-            rightHandChecks = true;                         // LABEL_118
-        }
-    }
-    if (!rightHandChecks && a5 == 1) {
-        if (pt == 143) ok = false;
-        if (cls == 0 || cls == 2) {
-            if (pt >= 0 && pt < 128) ok = false;
-            if (pt >= 160 && pt < 192) ok = false;
-            if (left == 143) {
-                if (pt == 135 || pt < 128 || pt > 160) ok = false;
-            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
-                ok = false;
-            }
-        }
-    } else if (rightHandChecks || a5 == 0) {
-        // LABEL_118
-        if (pt == 135) ok = false;
-        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
-    }
-
-    // LABEL_164
-    if (pt >= 430 && pt <= 435) ok = false;
-    if (picked->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
-    if (picked->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
-    if (picked->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
-    const BYTE part = picked->Part;
-    if ((part >= 7 && part <= 11) && picked->RequireLevel > *(WORD*)(CA + 14)) ok = false;
-
-    bool invalid = false;
-    if (part == 7) {
-        if (pt >= 392 && pt < 416) invalid = true;
-    } else if (part == 8) {
-        if ((int)World == 7) {
-            if (pt == 418 || pt == 419) invalid = true;
-        } else if ((int)World == 10 && pt == 418) {
-            invalid = true;
-        }
-    }
-    if (!invalid && !ok) invalid = true;                    // LABEL_231
-    if (!invalid && part != (BYTE)a5) {
-        if (part == 10) {
-            if (a5 != 11) invalid = true;
-        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
-            invalid = true;
-        }
-    }
+    const bool  invalid = !Equip_CanPlace(picked, a5);
     if (invalid) {                                          // LABEL_220
         slot[64] = 3;
         if (DAT_083a4124) {
@@ -1753,7 +1793,7 @@ void __cdecl SetPlayerStop(int c) {
         unsigned int base = (unsigned int)(uintptr_t)DAT_07d78068;
         if (base < 0x100000u || base >= 0x80000000u) return 0;
         int idx = type - 399;
-        if (idx < 1 || idx >= 1024) return 0;   // idx>=1: la expresión resta 34
+        if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34
         return *(unsigned char*)((char*)(uintptr_t)base + idx * 64 - 34);
     };
 
@@ -2149,6 +2189,26 @@ void __cdecl MoveCharacterPosition(int param_1) {
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
 }
 
+// 0.97.20: vuelve a aplicar al héroe lo que el CharSet no lleva (las piezas
+// del catálogo y el pet custom) a partir de CharacterMachine.  Lo necesita la
+// fila propia del 0x12: `ChangeCharacterExt` limpia las piezas, borra el bug
+// del pet y deja el helper en "ninguno", y como el equipo no cambió,
+// SetCharacterClass no vuelve a correr.
+void Hero_ApplyCatalogEquipment(int c)
+{
+    if (!DAT_07cf1ffc || *(short*)(c + 2) != 390) return;
+    const int v7 = (int)(uintptr_t)DAT_07cf1ffc + 536;
+    static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
+    for (int part = 0; part < 9; ++part)
+        gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+    const short pet = *(short*)(v7 + 544);
+    if (pet != -1 && gContentCatalog.GetPet(pet)) {
+        *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+        DeleteBug((DWORD)(uintptr_t)c);
+        CreateBug(*(short*)(c + 696), (void*)(c + 16), (void*)(uintptr_t)c, 0);
+    }
+}
+
 // SetCharacterClass @ 0x0045C130 — SetCharacterClass(entity)
 //
 // Port completo del decompile de IDA:
@@ -2173,7 +2233,7 @@ void __cdecl SetCharacterClass(int c) {
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
         short v = *(short*)(v7 + srcOff);
-        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)(v + 400);
+        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
     };
     // Valor previo del helper, para detectar el CAMBIO abajo.
     const short prevHelper = *(short*)(c + 696);
@@ -2181,6 +2241,20 @@ void __cdecl SetCharacterClass(int c) {
     writeSlot(68,  648);
     writeSlot(476, 672);
     writeSlot(544, 696);
+    // 0.97.20: el helper guarda el pet vanilla que imita (bugs, monturas y
+    // animaciones se deciden por ese tipo); el modelo propio se dibuja en
+    // RenderBugs / Render_PlayerHelper.
+    {
+        const short pet = *(short*)(v7 + 544);
+        if (pet != -1) *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+    }
+
+    // 0.97.20: modelo propio de cada pieza puesta (catálogo).
+    {
+        static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
+        for (int part = 0; part < 9; ++part)
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+    }
 
     // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
     // El pet NO se dibuja desde RenderCharacter: `ChangeCharacterExt`
@@ -2210,6 +2284,7 @@ void __cdecl SetCharacterClass(int c) {
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
             else if (newHelper == 819) bugType = 267;   // Dinorant
+            else if (gContentCatalog.GetPet(*(short*)(v7 + 544))) bugType = newHelper;   // 0.97.20: CustomPet
             // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
             // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
             if (bugType)
@@ -2242,27 +2317,27 @@ void __cdecl SetCharacterClass(int c) {
     short v17 = *(short*)(v7 + 136);
     *(short*)(c + 504) = (v17 == -1)
         ? (short)(skinLo + 4 * skinHi + 912)
-        : (short)(v17 + 400);
+        : (short)ItemEntityModel(v17);
 
     short v21 = *(short*)(v7 + 204);
     *(short*)(c + 528) = (v21 == -1)
         ? (short)(skinLo + 4 * skinHi + 919)
-        : (short)(v21 + 400);
+        : (short)ItemEntityModel(v21);
 
     short v22 = *(short*)(v7 + 272);
     *(short*)(c + 552) = (v22 == -1)
         ? (short)(skinLo + 4 * skinHi + 926)
-        : (short)(v22 + 400);
+        : (short)ItemEntityModel(v22);
 
     short v26 = *(short*)(v7 + 340);
     *(short*)(c + 576) = (v26 == -1)
         ? (short)(skinLo + 4 * skinHi + 933)
-        : (short)(v26 + 400);
+        : (short)ItemEntityModel(v26);
 
     short v27 = *(short*)(v7 + 408);
     *(short*)(c + 600) = (v27 == -1)
         ? (short)(skinLo + 4 * skinHi + 940)
-        : (short)(v27 + 400);
+        : (short)ItemEntityModel(v27);
 
     *(unsigned char*)(c + 506) = (unsigned char)((*(int*)(v7 + 140) >> 3) & 0xF);
     *(unsigned char*)(c + 530) = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);
@@ -2382,8 +2457,8 @@ void __cdecl CheckGate(void)
         // Atlans/Tarkan: no con Uniria/Dinorant equipado o agarrado.
         if ((gateIndex >= 45 && gateIndex <= 49) ||
             (gateIndex >= 55 && gateIndex <= 56)) {
-            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
-            const WORD picked = *(const WORD*)DAT_07e91350;
+            const WORD helper = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1080));
+            const WORD picked = (WORD)ItemBehaviorType(*(const short*)DAT_07e91350);
             if ((helper >= 418 && helper <= 419) ||
                 (DAT_07e91388 > 0 && picked >= 418 && picked <= 419)) {
                 UIChatLogWindow_AddText("", GlobalText[261], 2);
@@ -2393,8 +2468,8 @@ void __cdecl CheckGate(void)
 
         // Icarus (62..65): alas (384..390) o Dinorant (419); la Uniria no.
         if (gateIndex >= 62 && gateIndex <= 65) {
-            const WORD wings = *(const WORD*)((const BYTE*)CharacterMachine + 1012);
-            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
+            const WORD wings = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1012));
+            const WORD helper = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1080));
             if ((wings < 384 || wings > 390) && helper != 419) {
                 UIChatLogWindow_AddText("", GlobalText[263], 2);
                 if (level < requiredLevel) {
@@ -4552,8 +4627,56 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 // (corners ya transformadas por Camera_SetupFrustum a world coords), lo cual
 // duplicaría la transformación si se invocara — no se llama desde ningún
 // lado y no debe wirearse.
+// DESVIACION (in-game): el cuadro de tiles sale de cortar el frustum 3D que
+// acaba de armar Camera_SetupFrustum (FrustrumVertex: ápice + 4 esquinas en
+// coordenadas de mundo) con el plano del suelo, en vez de las constantes
+// fijas del binario, que estaban calibradas para el FOV de 35 grados.  Con
+// el FOV y el alcance mayores las esquinas de la pantalla quedaban sin
+// terreno.  El plano va 300 unidades por debajo del héroe y el cuadro se
+// agranda 800 unidades (8 tiles) hacia afuera: TestFrustrum2D mide la
+// tolerancia de bloques y objetos con el producto cruz sin normalizar, así
+// que con un cuadro más grande esa tolerancia se achica y los bloques de
+// 16x16 cerca del borde quedaban afuera (objetos que no aparecían).
+static bool CreateFrustrum2D_FromFrustum(const float *ground)
+{
+    const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
+    const float corner[4][3] = {
+        { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 },   // arriba-izquierda
+        { DAT_07eab1c8, DAT_07eab1cc, DAT_07eab1d0 },   // arriba-derecha
+        { DAT_07eab1d4, DAT_07eab1d8, DAT_07eab1dc },   // abajo-derecha
+        { DAT_07eab1e0, DAT_07eab1e4, DAT_07eab1e8 },   // abajo-izquierda
+    };
+    const float groundZ = ground[2] - 300.0f;
+    if (apex[2] <= groundZ) return false;
+
+    float p[4][2];
+    float cx = 0.0f, cy = 0.0f;
+    for (int i = 0; i < 4; ++i) {
+        const float dz = corner[i][2] - apex[2];
+        float t = 1.0f;
+        if (dz < 0.0f) {
+            t = (groundZ - apex[2]) / dz;
+            if (t > 1.0f) t = 1.0f;
+        }
+        p[i][0] = apex[0] + (corner[i][0] - apex[0]) * t;
+        p[i][1] = apex[1] + (corner[i][1] - apex[1]) * t;
+        cx += p[i][0] * 0.25f;
+        cy += p[i][1] * 0.25f;
+    }
+    for (int i = 0; i < 4; ++i) {
+        float dx = p[i][0] - cx, dy = p[i][1] - cy;
+        const float len = sqrtf(dx * dx + dy * dy);
+        if (len > 0.001f) { dx = dx / len * 800.0f; dy = dy / len * 800.0f; }
+        FrustrumX[i] = (p[i][0] + dx) * _DAT_005524f8;
+        FrustrumY[i] = (p[i][1] + dy) * _DAT_005524f8;
+    }
+    return true;
+}
+
 void __cdecl CreateFrustrum2D(float *param_1)
 {
+    if (SceneFlag == 5 && CreateFrustrum2D_FromFrustum(param_1)) return;
+
     float pts[15];   // euler[0..2], then 4×vec3 input offsets [3..14]
     float rot[12];   // 3×4 rotation matrix
     float out[12];   // 4 transformed output positions

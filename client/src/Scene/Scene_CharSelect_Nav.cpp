@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/MapManager.h"
 #include "globals.h"
@@ -1908,6 +1909,9 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
     DWORD c = DAT_07abf5d0 + 916 * Key;
     if (*(WORD*)(c + 2) != 390) return;
+    // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
+    // el ala custom (más abajo).
+    gContentCatalog.ClearEntityParts((const void*)(uintptr_t)c);
 
     // Helmet (slot 0)
     if (Equipment[0] == 0xFF) {
@@ -1928,6 +1932,18 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     if (((Equipment[4] >> 2) & 3) == 3) {
         if ((Equipment[8] & 7) != 0) {
             *(WORD*)(c + 672) = (WORD)((Equipment[8] & 7) + 786);
+        } else {
+            *(WORD*)(c + 0x2A0) = (WORD)-1;
+            *(BYTE*)(c + 0x2A3) = 0;
+        }
+    } else if ((Equipment[8] & 7) != 0) {
+        // DESVIACION (DLL CustomWingChangeCharacterExt, ahora catálogo
+        // 0.97.20): con los bits del ala vanilla en 0..2, Equipment[8] & 7 es
+        // el índice + 1 del ala custom (ObjectManager del server).
+        const int wingItem = gContentCatalog.GetWingItem((Equipment[8] & 7) - 1);
+        if (wingItem >= 0) {
+            *(WORD*)(c + 672) = (WORD)ItemEntityModel(wingItem);
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, 7, wingItem);
         } else {
             *(WORD*)(c + 0x2A0) = (WORD)-1;
             *(BYTE*)(c + 0x2A3) = 0;

@@ -34,14 +34,14 @@ static_assert(offsetof(PMSG_DAMAGE_SEND, ViewDamageHP) == 12, "C1:15 ViewDamageH
 
 // ── C1:25 ─ cambio de equipo visible ── ItemManager.h:108 ─────────────────────
 // Net_Process.cpp Recv_ChangePlayer.
-const int MAX_ITEM_INFO = 4;    // ItemManager.h:10
+const int MAX_ITEM_INFO = 7;    // ItemManager.h:21 (0.97.20: layout 5.2)
 struct PMSG_ITEM_CHANGE_SEND
 {
     PBMSG_HEAD header;      // C1:25
     BYTE index[2];
     BYTE ItemInfo[MAX_ITEM_INFO];
 };
-static_assert(sizeof(PMSG_ITEM_CHANGE_SEND) == 9, "C1:25");
+static_assert(sizeof(PMSG_ITEM_CHANGE_SEND) == 12, "C1:25");
 static_assert(offsetof(PMSG_ITEM_CHANGE_SEND, index) == 3, "C1:25 index");
 static_assert(offsetof(PMSG_ITEM_CHANGE_SEND, ItemInfo) == 5, "C1:25 ItemInfo");
 
@@ -564,5 +564,191 @@ struct PMSG_LIVE_CLIENT_SEND
 };
 static_assert(sizeof(PMSG_LIVE_CLIENT_SEND) == 8, "C1:0E respuesta");
 static_assert(offsetof(PMSG_LIVE_CLIENT_SEND, TickCount) == 4, "C1:0E eco");
+
+// ── C2:F3:E7..E9 + C1:F3:EA ─ catálogo de contenido ── ContentCatalog.h ───────
+// Item/ContentCatalog.cpp.  El server es la autoridad de las definiciones de
+// items, monstruos y fog; manda la tabla completa antes de la respuesta del
+// login, troceada en paquetes con esta cabecera.
+const BYTE CATALOG_VERSION = 1;
+const BYTE CATALOG_ITEM_HAS_MODEL = 0x01;
+const BYTE CATALOG_ITEM_HAS_GLOW = 0x02;
+const BYTE CATALOG_ITEM_HAS_POSE = 0x04;
+const BYTE CATALOG_ITEM_HAS_ENTITY = 0x08;   // modelo propio puesto en el personaje
+const WORD CATALOG_MONSTER_HAS_MODEL = 0x01;
+
+struct PMSG_CATALOG_HEAD
+{
+    PSWMSG_HEAD header;     // C2:F3:[E7|E8|E9]
+    BYTE version;
+    WORD recordSize;
+    WORD count;
+    WORD chunk;
+    WORD totalChunks;
+};
+static_assert(sizeof(PMSG_CATALOG_HEAD) == 14, "F3:E7 cabecera");
+static_assert(offsetof(PMSG_CATALOG_HEAD, recordSize) == 6, "F3:E7 recordSize");
+static_assert(offsetof(PMSG_CATALOG_HEAD, count) == 8, "F3:E7 count");
+
+struct CATALOG_ITEM
+{
+    WORD Index;
+    WORD Behavior;
+    BYTE Slot;
+    BYTE Skill;
+    BYTE Width;
+    BYTE Height;
+    BYTE TwoHand;
+    BYTE Flags;
+    BYTE Durability;
+    BYTE MagicDurability;
+    char Name[32];
+    WORD Level;
+    WORD DamageMin;
+    WORD DamageMax;
+    WORD AttackSpeed;
+    WORD WalkSpeed;
+    WORD Defense;
+    WORD MagicDefense;
+    WORD DefenseSuccessRate;
+    WORD MagicDamageRate;
+    WORD RequireLevel;
+    WORD RequireStrength;
+    WORD RequireDexterity;
+    WORD RequireEnergy;
+    WORD RequireVitality;
+    BYTE RequireClass[4];
+    BYTE Resistance[4];
+    DWORD Value;
+    DWORD BuyMoney;
+    DWORD GlowColor;
+    float PositionX;
+    float PositionY;
+    float RotationX;
+    float RotationY;
+    float RotationZ;
+    float Scale;
+    char ModelFolder[40];
+    char ModelName[28];
+    BYTE CustomWing;        // índice + 1 de CustomWing.txt (0 = no es ala custom)
+    BYTE Reserved;
+    WORD WingDefenseConstA;
+    WORD WingIncDamageConstA;
+    WORD WingIncDamageConstB;
+    WORD WingDecDamageConstA;
+    WORD WingDecDamageConstB;
+    // Modelo con que se dibuja el item puesto (montura, pet) cuando no es el
+    // mismo del inventario.
+    char EntityFolder[40];
+    char EntityName[28];
+};
+static_assert(sizeof(CATALOG_ITEM) == 264, "F3:E7 entrada");
+static_assert(offsetof(CATALOG_ITEM, EntityFolder) == 196, "F3:E7 EntityFolder");
+static_assert(offsetof(CATALOG_ITEM, CustomWing) == 184, "F3:E7 CustomWing");
+static_assert(offsetof(CATALOG_ITEM, WingDefenseConstA) == 186, "F3:E7 WingDefenseConstA");
+static_assert(offsetof(CATALOG_ITEM, Name) == 12, "F3:E7 Name");
+static_assert(offsetof(CATALOG_ITEM, Level) == 44, "F3:E7 Level");
+static_assert(offsetof(CATALOG_ITEM, RequireClass) == 72, "F3:E7 RequireClass");
+static_assert(offsetof(CATALOG_ITEM, Value) == 80, "F3:E7 Value");
+static_assert(offsetof(CATALOG_ITEM, GlowColor) == 88, "F3:E7 GlowColor");
+static_assert(offsetof(CATALOG_ITEM, PositionX) == 92, "F3:E7 PositionX");
+static_assert(offsetof(CATALOG_ITEM, ModelFolder) == 116, "F3:E7 ModelFolder");
+static_assert(offsetof(CATALOG_ITEM, ModelName) == 156, "F3:E7 ModelName");
+
+struct CATALOG_MONSTER
+{
+    WORD Index;
+    BYTE Kind;              // 0 NPC, 1 monstruo, 0xFF = el vanilla
+    BYTE Golden;
+    float Scale;            // 0 = la vanilla
+    WORD Level;
+    WORD Flags;
+    char Name[32];
+    char ModelFolder[32];
+    char ModelName[20];
+};
+static_assert(sizeof(CATALOG_MONSTER) == 96, "F3:E8 entrada");
+static_assert(offsetof(CATALOG_MONSTER, Scale) == 4, "F3:E8 Scale");
+static_assert(offsetof(CATALOG_MONSTER, Name) == 12, "F3:E8 Name");
+static_assert(offsetof(CATALOG_MONSTER, ModelFolder) == 44, "F3:E8 ModelFolder");
+static_assert(offsetof(CATALOG_MONSTER, ModelName) == 76, "F3:E8 ModelName");
+
+struct CATALOG_MAP_FOG
+{
+    BYTE Map;
+    BYTE DayRGB[3];
+    BYTE NightRGB[3];
+    BYTE Reserved;
+};
+static_assert(sizeof(CATALOG_MAP_FOG) == 8, "F3:E9 entrada");
+
+// F3:EC — efectos de un item (Data/Custom/Items/*.json del server).
+const BYTE CATALOG_EFFECT_ON_EQUIPPED = 0x01;
+const BYTE CATALOG_EFFECT_SPRITE = 1;      // sprite en huesos, cada frame
+const BYTE CATALOG_EFFECT_PARTICLE = 2;    // partícula vanilla en huesos
+const int  CATALOG_EFFECT_MAX_BONES = 32;
+
+struct CATALOG_EFFECT
+{
+    WORD Item;
+    BYTE On;
+    BYTE Type;
+    WORD Bitmap;        // textura vanilla; 0xFFFF = la de Texture
+    WORD Particle;      // tipo de partícula vanilla
+    BYTE SubType;
+    BYTE Chance;        // 1 de cada N frames
+    BYTE BoneCount;
+    BYTE Reserved;
+    BYTE Bones[CATALOG_EFFECT_MAX_BONES];
+    float Color[3];
+    float Scale;
+    float PulseSpeed;   // pulso |sin(WorldTime * speed)|
+    float PulseScale;
+    float PulseColor;
+    float Offset[3];
+    char Texture[48];
+};
+static_assert(sizeof(CATALOG_EFFECT) == 132, "F3:EC entrada");
+
+// F3:EF — líneas propias del tooltip de un item ("tooltip" en
+// Data/Custom/Items del server).  Color: el índice de color del tooltip.
+struct CATALOG_TOOLTIP
+{
+    WORD Item;
+    BYTE Color;
+    BYTE Reserved;
+    char Text[60];      // Latin-1
+};
+static_assert(sizeof(CATALOG_TOOLTIP) == 64, "F3:EF entrada");
+
+// F3:EE — pets custom (Data/Custom/Pets/*.json del server).
+const BYTE CATALOG_PET_MOVE_FOLLOW = 1;    // vuela detrás del dueño
+const BYTE CATALOG_PET_MOVE_ORBIT = 2;     // da vueltas alrededor del dueño
+const BYTE CATALOG_PET_FLAG_COLLECT = 0x01; // vuela hasta el zen cercano antes de levantarlo
+
+struct CATALOG_PET
+{
+    WORD Item;
+    BYTE Movement;
+    BYTE BlendMesh;     // malla aditiva; 0xFF = ninguna
+    float Radius;
+    float Period;       // ms por vuelta
+    float Height;
+    float Scale;
+    BYTE Action;        // animación del modelo
+    BYTE Flags;         // CATALOG_PET_FLAG_*
+    BYTE CollectRange;  // en casillas: hasta dónde va a buscar el zen
+    BYTE Reserved;
+};
+static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
+
+struct PMSG_CATALOG_END_SEND
+{
+    PSBMSG_HEAD header;     // C1:F3:EA
+    WORD itemCount;
+    WORD monsterCount;
+    DWORD hash;
+};
+static_assert(sizeof(PMSG_CATALOG_END_SEND) == 12, "F3:EA");
+static_assert(offsetof(PMSG_CATALOG_END_SEND, hash) == 8, "F3:EA hash");
 
 } // namespace Proto

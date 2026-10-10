@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
 #include "globals.h"
 #include "structs.h"
@@ -202,8 +203,9 @@ int __cdecl FUN_00482850_(void)
 
     if (((*(BYTE*)((BYTE*)CharacterAttribute + 11)) & 7) != 2) return 0;
 
-    int v5  = *(short*)((BYTE*)CharacterMachine + 536);
-    int v28 = *(short*)((BYTE*)CharacterMachine + 604);
+    // 0.97.20: arco/ballesta y flechas se reconocen por el comportamiento.
+    int v5  = ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 536));
+    int v28 = ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 604));
 
     int match;
     if ((v28 >= 128 && v28 < 135) || v28 == 145) {
@@ -227,7 +229,7 @@ int __cdecl FUN_00482850_(void)
             // — preserving the IDA pointer-arithmetic.
             short type = *((short*)cell - 28);
             int   qty  = *cell;
-            if (type == match && qty > 0) ++count;
+            if (ItemBehaviorType(type) == match && qty > 0) ++count;   // 0.97.20
             cell -= 136;
         }
         row -= 17;
@@ -264,7 +266,7 @@ bool __cdecl RenderNumArrow_(void)
 
     // Anti-tamper inner block (CharacterMachine decrypt) — skipped.
 
-    if (*(WORD*)((BYTE*)CharacterMachine + 536) == 143) {
+    if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 536)) == 143) {
         int screenW = 640;
         int v10 = *(unsigned char*)((BYTE*)CharacterMachine + 562);
         float v25 = (float)((double)screenW - (double)v27 - 10.0);
@@ -281,7 +283,7 @@ bool __cdecl RenderNumArrow_(void)
         }
     }
 
-    if (*(WORD*)((BYTE*)CharacterMachine + 604) == 135) {
+    if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 604)) == 135) {
         int screenW = 640;
         int v13 = *(unsigned char*)((BYTE*)CharacterMachine + 630);
         float v26 = (float)((double)screenW - (double)v27 - 10.0);

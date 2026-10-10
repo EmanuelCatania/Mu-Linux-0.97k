@@ -1,6 +1,7 @@
 // Quest_Legacy.cpp
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -105,7 +106,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
             }
             const char *name = "";
             unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
-            if (abase >= 0x100000u && abase < 0x80000000u && nType >= 0 && nType < 1024)
+            if (abase >= 0x100000u && abase < 0x80000000u && nType >= 0 && nType < ITEM_MAX_EX)
                 name = (const char *)(uintptr_t)(abase + (unsigned int)nType * 64u);
             crt_sprintf(buf, "%s x %d", name, nCount);
             RenderText(510, (int)sy, buf, 0, 0, nullptr);

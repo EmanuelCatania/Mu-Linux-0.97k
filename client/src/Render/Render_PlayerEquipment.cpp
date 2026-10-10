@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"

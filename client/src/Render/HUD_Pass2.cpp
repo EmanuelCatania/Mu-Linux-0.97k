@@ -20,6 +20,8 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -444,7 +446,12 @@ int RenderEquipedHelperLife_(bool a2)
         const int bar = 50 * (int)life / 255;
 
         const char* text = "";
-        if (helperType == 818)      text = GlobalText[355];
+        // 0.97.20: un helper agregado (>= 512) muestra su propio nombre; el
+        // comportamiento sólo decide la lógica de pet o montura.
+        const short helperItem = CharacterMachine ? *(const short*)((const BYTE*)CharacterMachine + 1080) : -1;
+        if (helperItem >= ITEM_MAX_VANILLA && helperItem < ITEM_MAX_EX && ItemAttribute)
+            text = ItemAttribute[helperItem].Name;
+        else if (helperType == 818) text = GlobalText[355];
         else if (helperType == 819) text = GlobalText[354];
         else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
         if (!text) text = "";
@@ -551,7 +558,8 @@ void RenderBrokenItem_(int a1)
             ITEM_ATTRIBUTE* v19 = (ITEM_ATTRIBUTE*)(attrBase + (unsigned)v12 * 64);
 
             // Skip excluded item types: 135, 143, 416..419
-            if (v12 != 135 && v12 != 143 && (v12 < 416 || v12 > 419)) {
+            const int kind = ItemBehaviorType((short)v12);   // 0.97.20
+            if (kind != 135 && kind != 143 && (kind < 416 || kind > 419)) {
                 int level = (*(int*)(v13 + 4) >> 3) & 0xF;
                 int v30 = (int)Item_CalculateMaxDurability((void*)v13, (int)v19, level);
                 if (*(WORD*)v13 == 426) v30 = 200;

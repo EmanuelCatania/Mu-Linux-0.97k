@@ -211,6 +211,172 @@ DLL vão ser lidas conforme esses sistemas forem integrados (Fase 2 do roteiro).
 
 ---
 
+## Como adicionar itens custom
+
+Com o `Main.dll` de injeção, um item custom era adicionado dos dois lados: o
+server o definia no seu `Item.txt`, e o cliente precisava de um `item.bmd`
+regerado mais os `.txt` do `Encoder` (`CustomItem.txt`, `CustomGlow.txt`, etc.)
+empacotados no `ClientInfo.bmd`. Se cliente e server não batiam, o item
+aparecia errado ou o server o rejeitava.
+
+Agora **o server é a única fonte**. No login ele manda ao cliente um catálogo
+com todas as definições (itens, monstros, efeitos, pets). O cliente **só
+precisa dos arquivos do modelo** (`.bmd` e texturas) dentro de
+`bin/Client/Data`. Não é preciso regerar o `item.bmd` nem mexer no código.
+
+Os `.txt` do `Encoder` do DLL continuam sendo lidos de `Data/Custom/Encoder`
+do server, então uma pasta de customs feita para o DLL funciona sem converter
+nada.
+
+### Índices: a faixa clássica e a estendida
+
+No 0.97k cada seção de itens (espadas, machados, …, joias) tem **32 índices**
+(0 a 31). Além disso, cada seção aceita índices **32 a 511**: são os itens
+*adicionados*. No protocolo eles usam 13 bits (o item ocupa 7 bytes em vez de
+5), então nunca colidem com um item vanilla.
+
+Um item adicionado precisa dizer **qual item vanilla ele imita** (coluna
+*Comportamento*): isso decide a lógica que o 0.97k tem escrita por tipo de item
+(se é um arco e gasta flechas, se é uma asa, uma joia, quais opções excellent
+pode ter). Todo o resto —nome, stats, tamanho, modelo, brilho, efeitos— vem da
+sua própria linha.
+
+### Exemplo 1: a Knight Blade, do jeito do DLL
+
+O item fica dentro da faixa clássica (`0,20`); modelo e brilho são definidos no
+`Encoder`:
+
+```
+// Data/Custom/Encoder/CustomItem.txt
+00,020		22		"Sword21"		// Knight Blade
+
+// Data/Custom/Encoder/CustomGlow.txt
+00,020		191	165	127		// Knight Blade
+```
+
+Assets no cliente: `bin/Client/Data/Item/Custom/20/` (`sword21.bmd` e suas
+texturas).
+
+### Exemplo 2: a Crimson Knight Blade, fora da faixa clássica
+
+O mesmo modelo como item adicionado (`0,32`), tudo em uma linha de
+`Data/Item/Item.txt`. Depois das colunas de sempre vêm: comportamento, pasta e
+nome do modelo, e a cor do brilho (RGB):
+
+```
+32	0	22	1	4	1	1	0	"Crimson Knight Blade"	...	00,020	"Item\Custom\20\"	"Sword21"	255	40	40
+```
+
+Se comporta como a Knight Blade (`00,020`), usa o modelo `Sword21` e brilha em
+vermelho. Comando de teste: `/make 0 32`.
+
+### Exemplo 3: o set Great Dragon
+
+Cinco peças no índice `21` das seções 7 a 11, com o modelo definido no
+`CustomItem.txt` do `Encoder` (como no DLL):
+
+```
+07,021		0		"HelmMale22"		// Great Dragon Helm
+08,021		0		"ArmorMale22"		// Great Dragon Armor
+09,021		0		"PantMale22"		// Great Dragon Pant
+10,021		0		"GloveMale22"		// Great Dragon Glove
+11,021		0		"BootMale22"		// Great Dragon Boot
+```
+
+Assets no cliente: `bin/Client/Data/Player/Custom/21/`. As mesmas peças também
+podem ser definidas sem o `Encoder`, com as colunas de modelo no `Item.txt`
+(`"Player\Custom\21\" "HelmMale22"`).
+
+### Exemplo 4: efeitos próprios e pose no inventário
+
+`Data/Custom/Items/<seção>_<índice>.json` dá a um item (custom ou vanilla) sua
+pose no inventário e efeitos que o cliente desenha sobre os ossos do modelo.
+Por exemplo, asas com os brilhos das Wings of Illusion do 5.2:
+
+```json
+{
+  "item": "12,032",
+  "effects": [
+    { "on": "equipped", "type": "sprite", "texture": "Effect/Flare.jpg",
+      "bones": [5, 6, 7, 8, 18, 19], "color": [0.5, 0.0, 0.0], "scale": 0.6,
+      "pulse": { "speed": 0.002, "scale": 0.2, "color": 0.4 } },
+    { "on": "equipped", "type": "particle", "particle": 1230,
+      "bones": [13, 31], "chance": 2, "color": [0.8, 0.8, 0.3], "scale": 0.5 }
+  ]
+}
+```
+
+No repo do server há um caso real: `Data/Custom/Items/03_000.json` corrige a
+posição da Light Spear (vanilla) na sua casa do inventário, com a correção do
+5.2.
+
+### Exemplo 5: um pet custom (Pet Rudolph)
+
+O Rudolph do 5.2 como pet que dá voltas ao redor do jogador e pega o zen
+próximo. Ele usa um índice alto (`13,400`) de propósito, como exemplo da faixa
+estendida. São quatro arquivos, todos incluídos nos repos:
+
+| Onde | Arquivo | O que define |
+|---|---|---|
+| cliente | `bin/Client/Data/Item/Custom/Rudolph/` | o modelo `xmas_deer.bmd` e suas texturas |
+| server | `Data/Item/Item.txt` | a linha do item: `Slot` 8 (helper), comportamento `*` (não imita nenhum pet vanilla) e o modelo |
+| server | `Data/Custom/Items/13_400.json` | a pose no inventário |
+| server | `Data/Custom/Pets/13_400.json` | como se move e o que faz |
+
+```json
+{
+  "item": "13,400",
+  "blendMesh": 0,
+  "movement": { "type": "orbit", "radius": 50, "period": 4000, "height": 20 },
+  "abilities": [ { "type": "pickup", "what": "zen", "range": 3, "interval": 1000, "delay": 1500 } ]
+}
+```
+
+O cliente desenha o movimento; as habilidades (pegar o zen) são executadas pelo
+server, que é quem decide. Comando de teste: `/make 13 400`.
+
+### Exemplo 6: um monstro custom (Karane)
+
+Do jeito do DLL, com `Data/Custom/Encoder/CustomMonster.txt` (índice, tipo
+`0`=NPC `1`=monstro, dourado, escala, pasta e modelo):
+
+```
+152		1		1		2.0		"Monster\\Karane\\"		"Karane"		// Karane
+```
+
+Ou direto no `Data/Monster/Monster.txt`, com as mesmas colunas no fim da linha
+do monstro:
+
+```
+152	0	"Karane"	...	0	0	1	1	2.0	"Monster\Karane\"	"Karane"
+```
+
+Assets no cliente: `bin/Client/Data/Monster/Karane/`.
+
+### Referência
+
+Colunas opcionais no fim de cada linha do `Item.txt` (`*` = sem valor):
+
+| Coluna | Exemplo | O que faz |
+|---|---|---|
+| Comportamento | `00,020` | item vanilla que imita na lógica |
+| Pasta e modelo | `"Item\Custom\20\" "Sword21"` | modelo no inventário, no chão e no personagem |
+| Brilho | `255 40 40` | cor do brilho por nível |
+| Pasta e modelo equipado | `"Item\Custom\FenrirMount\" "fenril_black"` | só se o item aparece diferente equipado (uma montaria) |
+| Gate | `22` | para pergaminhos: leva sempre a esse gate |
+
+Os JSON de `Data/Custom/Items` também aceitam `"tooltip"`: até 6 linhas
+próprias abaixo do nome do item, como texto (`"Zen picker"`) ou com cor
+(`{ "text": "Zen picker", "color": "gold" }`; cores: `white`, `blue`, `red`,
+`gold`, `green`, `darkred`, `purple`, `darkblue`, `darkgold`).
+
+Para asas custom, `Data/Item/CustomWing.txt` adiciona as constantes de defesa e
+dano. Os JSON de `Data/Custom/Items` e `Data/Custom/Pets` são validados quando o
+server inicia: um arquivo com erros é descartado inteiro e o motivo vai para o
+`GameServer/LOG`.
+
+---
+
 ## Estrutura
 
 ```

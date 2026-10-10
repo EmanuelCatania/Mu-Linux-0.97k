@@ -3,6 +3,7 @@
 // Validación de recetas del chaos mix y su helper del panel de inventario.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -360,6 +361,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     ++*(int*)(counts + 1);
 
                     int attrBase = DAT_07d78068 + itemType * 0x40;
+                    const int kind = ItemBehaviorType(itemType);   // 0.97.20: rangos y recetas por comportamiento
                     int attrW = *(unsigned char*)(attrBase + 0x20);
                     int attrH = *(unsigned char*)(attrBase + 0x21);
                     // 004E40F0 compares directly against ITEM_ATTRIBUTE; it
@@ -371,7 +373,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     char* socketFlagPtr = 0;
                     bool scanSocketFlag = false;
 
-                    if (itemType < 384 || itemType <= 390) {
+                    if (kind < 384 || kind <= 390) {
                         if (itemLevel == 9) {
                             ++*(int*)(counts + 21);
                             DAT_07eaa178 = 0;
@@ -385,7 +387,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         }
                     }
 
-                    switch (itemType) {
+                    switch (kind) {
                     case 384:
                     case 385:
                     case 386:
@@ -445,7 +447,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     default:
                     {
                         bool foundExcellent = false;
-                        if (itemType < 384 && itemLevel >= 4) {
+                        if (kind < 384 && itemLevel >= 4) {
                             DAT_07eaa178 = 0;
                             scanSocketFlag = true;
                             socketFlagPtr = (char*)&DAT_07eaa178;
@@ -456,7 +458,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                             unsigned char v = *(unsigned char*)(itemPtr + 37 + i);
                             if (v >= 0x3C && v <= 0x3F && !foundExcellent) {
                                 ++*(int*)(counts + 9);
-                                if (itemType == 70 || itemType == 134 || itemType == 167) {
+                                if (kind == 70 || kind == 134 || kind == 167) {
                                     ++*(int*)(counts + 65);
                                 }
                                 foundExcellent = true;

@@ -3,6 +3,8 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
+#include "Render/Camera3D.h"
+#include <windowsx.h>
 
 // Helper de src/UI/Chat_InputTick.cpp — envía una línea de chat
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
@@ -70,6 +72,7 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             DAT_083a427c = ((DWORD)(short)LOWORD(lParam) * 640) / sw;
             DAT_083a4278 = ((DWORD)(short)HIWORD(lParam) * 480) / sh;
         }
+        gCamera3D.Drag(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         break;
 
     case WM_LBUTTONDOWN:   // 0x201
@@ -118,7 +121,19 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEWHEEL:    // 0x20A
         // DESVIACION: el original la descartaba; ver ChatListBox_AddWheel.
-        ChatListBox_AddWheel(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
+        // Con la cámara 3D activa la rueda es su zoom (DLL Controller.cpp).
+        if (!gCamera3D.Wheel(GET_WHEEL_DELTA_WPARAM(wParam)))
+            ChatListBox_AddWheel(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
+        break;
+
+    // DESVIACION (DLL Controller.cpp): el botón del medio gira la cámara 3D.
+    case WM_MBUTTONDOWN:
+        gCamera3D.BeginDrag(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        SetCapture(gWindow.GetHwnd());
+        break;
+    case WM_MBUTTONUP:
+        gCamera3D.EndDrag();
+        ReleaseCapture();
         break;
 
     // 0x10F = WM_IME_COMPOSITION — chat coreano DBCS

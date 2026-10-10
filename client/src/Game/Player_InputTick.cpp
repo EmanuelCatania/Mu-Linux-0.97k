@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Render/Camera3D.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -404,6 +406,35 @@ static bool HUD_IsAnyRightPanelOpen(void)
            gEventTimer.IsOpen();    // DESVIACION: panel H
 }
 
+// DESVIACION (MU 5.2 NewUIHotKey.cpp, DLL Controller.cpp): Espacio levanta el
+// primer item visible a menos de 300 unidades del héroe.  Como en el 5.2, se
+// pide directo (g_bAutoGetItem) en vez de caminar hasta él; el DLL no lo hace
+// y sólo funcionaba con el item al lado.
+extern bool g_bAutoGetItem;
+static void HUD_PickUpNearestItem(void)
+{
+    if (!Hero || (int)DAT_07e91388 > 0) return;                 // item en el cursor
+    if ((int)DAT_083a427c >= GetScreenWidth() || (int)DAT_083a4278 >= 429) return;
+    const float heroX = *(const float*)(Hero + 16);
+    const float heroY = *(const float*)(Hero + 20);
+    for (int i = 0; i < 1000; ++i) {
+        const BYTE* item = &DAT_07e12840[0] + (size_t)i * 0x204;
+        if (!item[72] || !item[424]) continue;                   // vivo y visible
+        const float dx = *(const float*)(item + 88) - heroX;
+        const float dy = *(const float*)(item + 92) - heroY;
+        if (dx * dx + dy * dy >= 300.0f * 300.0f) continue;
+        *(unsigned char*)(Hero + 0x2ed) = 1;                     // MOVEMENT_GET
+        ItemKey = (DWORD)i;
+        TargetX = (DWORD)(int)(*(const float*)(item + 88) / 100.0f);
+        TargetY = (DWORD)(int)(*(const float*)(item + 92) / 100.0f);
+        g_bAutoGetItem = true;
+        Action((DWORD)Hero, (DWORD)Hero);
+        g_bAutoGetItem = false;
+        *(unsigned char*)(Hero + 0x2ed) = 0;
+        return;
+    }
+}
+
 static void HUD_HotkeyTick(void)
 {
     ClampChatModeIME("HKT_enter");
@@ -446,6 +477,10 @@ static void HUD_HotkeyTick(void)
     if (PressKey('M')) gMoveList.Toggle();
     // DESVIACION (DLL Controller.cpp): Tab abre el mapa.
     if (PressKey(VK_TAB)) gMiniMap.Toggle();
+    if (PressKey(VK_SPACE)) HUD_PickUpNearestItem();
+    // DESVIACION (DLL Controller.cpp): F10 activa la cámara 3D, F11 la restaura.
+    if (PressKey(VK_F10)) gCamera3D.Toggle();
+    if (PressKey(VK_F11)) gCamera3D.Restore();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
@@ -1264,8 +1299,8 @@ void __cdecl Player_ProcessInput(void)
                     }
                     {
                         const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
-                        const int lh = CM ? *(const short*)(CM + 536) : -1;  // IDA: v265
-                        const int rh = CM ? *(const short*)(CM + 604) : -1;  // IDA: v264
+                        const int lh = CM ? ItemBehaviorType(*(const short*)(CM + 536)) : -1;  // IDA: v265
+                        const int rh = CM ? ItemBehaviorType(*(const short*)(CM + 604)) : -1;  // IDA: v264
                         const bool bRanged = (lh >= 136 && lh < 143)
                                           || (lh >= 144 && lh < 160)
                                           || (rh >= 128 && rh < 135)

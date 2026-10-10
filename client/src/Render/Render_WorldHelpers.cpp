@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Render/Camera3D.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "globals.h"
@@ -1121,7 +1122,7 @@ void __cdecl SkillEffects_RenderAll(void)
 
 // MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
-//   CameraFOV = 35.0
+//   CameraFOV = 35.0 (50.0 con la desviación del DLL, ver abajo)
 //   CameraViewFar = 2000 (o 3200 en topview)
 //   CameraDistance = 1000 + smoothing (CameraDistanceTarget)
 //   CameraPosition vía AngleMatrix(CameraAngle)+VectorIRotate del offset (0,-1000,0)
@@ -1134,7 +1135,10 @@ bool __cdecl MoveMainCamera(void) {
     float out[3];
     float matrix[3][4];
 
-    CameraFOV = 35.0f;
+    // DESVIACION (DLL Camera3D.cpp): el binario pone 35 grados; el FOV, la
+    // inclinación (48.5), la altura (150) y el alcance salen de gCamera3D,
+    // que arranca con FOV 50 y permite moverlos con la cámara 3D.
+    CameraFOV = gCamera3D.GetFov();
     CameraAngle[0] = 0.0f;
     CameraAngle[1] = 0.0f;
     if (World == 10) {
@@ -1147,7 +1151,10 @@ bool __cdecl MoveMainCamera(void) {
         CameraPosition[0] = *(float*)(Hero + 16);
         CameraPosition[1] = *(float*)(Hero + 20);
     } else {
-        CameraViewFar = 2000.0f;
+        // DESVIACION: el binario usa 2000; con el FOV de 50 las esquinas de
+        // arriba quedan más allá del plano lejano y se ven en negro.  El rayo
+        // del ratón sigue con 2000 (kScreenVectorDepth).
+        CameraViewFar = gCamera3D.GetViewFar();
         CameraDistance = 1000.0f;                    // CameraDistance
         in1[0] = 0.0f;
         in1[1] = -1000.0f;
@@ -1156,8 +1163,8 @@ bool __cdecl MoveMainCamera(void) {
         VectorIRotate(in1, matrix, out);
         CameraPosition[0] = out[0] + *(float*)(Hero + 16);
         CameraPosition[1] = out[1] + *(float*)(Hero + 20);
-        CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - 150.0f;
-        CameraAngle[0] = EarthQuake - 48.5f;       // pitch después de la posición
+        CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - gCamera3D.GetHeight();
+        CameraAngle[0] = EarthQuake - gCamera3D.GetPitch();       // pitch después de la posición
     }
     if (World == 5) {
         float v1 = (float)sin((double)WorldTime * 0.00050000002);

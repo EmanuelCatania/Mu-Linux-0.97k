@@ -1,4 +1,5 @@
 #pragma once
+#include "Item/ItemDefines.h"
 // globals.h — extern declarations for all Ghidra DAT_ globals.
 // Los tipos se infieren del contexto; el prefijo _DAT_ = alias float de la misma dirección.
 // NO incluir este header directo — entra vía stdafx.h.
@@ -1114,10 +1115,12 @@ extern DWORD   DAT_083a7c90;
 extern DWORD   DAT_083a7c94;
 extern DWORD   DAT_083a7c98;
 // ── Bitmaps table (contiguous, 1450 entries × 0x38 stride = 0x13D30 bytes) ───
+// DESVIACION (0.97.20): más BITMAP_MAX_CATALOG entradas para las texturas de
+// los modelos del catálogo del server, que no se reciclan al cambiar de mapa.
 // Original address range: 0x083A7CA0 .. 0x083BB9D0
 // Slot layout: +0x00 active, +0x20 width(f), +0x24 height(f), +0x28 bpp(b),
 //              +0x2C gl_handle(u), +0x30 ref_count(b), +0x34 pixels(ptr)
-extern char    g_BitmapsRaw[0x13D30];
+extern char    g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38];
 
 // Accesores retrocompatibles al slot[0] — el código usa (&DAT_xxx)[offset]
 // para indexar la tabla contigua con aritmética de punteros.
@@ -2010,7 +2013,10 @@ extern char    DAT_00559b50[];
 extern char    s__4d__4d_30__4d__4d__1_00559b58[]; // format string
 
 // ── Scene_CharPreview globals ─────────────────────────────────────────────────
-extern DWORD   DAT_07e91354;
+// IDA: pPickedItem.Level (0x07E91354) — el campo +4 del item levantado, no un
+// global aparte.  Como variable propia valía siempre 0 y los chequeos de
+// apilado comparaban contra nivel 0.
+#define DAT_07e91354 (*(DWORD*)&DAT_07e91350[4])
 extern char    DAT_07e9136a;   // picked item durability/option byte
 extern char    DAT_07e9136b;
 // Buffer del item del dialogo ShowCheckBox(153) -- 0x44 bytes, 0x07EA5240.

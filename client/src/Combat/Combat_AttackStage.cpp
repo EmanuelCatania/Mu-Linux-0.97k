@@ -361,34 +361,16 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} g_iLimitAttackTime=5; }
     else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
     else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
-    // -- PENDIENTE: grupo de skills de magia del DLL (mejora, NO esta en IDA) --
-    //
-    // El `else if` de abajo es el `default:` literal de IDA (0x00448930 L356-364):
-    // pone `c+757 = 15` -- o sea deja que el skill dispare -- cuando el frame de
-    // la animacion llega a 5.0 con la accion en 0x22..0x5B.
-    //
-    // Con un AttackSpeed alto, `SetAttackSpeed` (0x00443E70) le da a las acciones
-    // de casteo (82-85) una PlaySpeed (AttackSpeed * 0.004 + 0.29) que puede saltar
-    // el rango [5, 6) del frame; entonces `c+757` no llega a 15 y el efecto del
-    // skill no se crea mientras se mantiene el click.
-    //
-    // LO QUE HACE EL DLL (Source/Client/Main/Patchs.cpp, CPatchs::AttackStage,
-    // enganchado con SetCompleteHook(0xE9, 0x00448930)): agrega un grupo de cases
-    // que el binario NO tiene, y que fuerza el disparo sin esperar el frame 5.0:
-    //
-    //     case SKILL_POISON: case SKILL_METEORITE: case SKILL_LIGHTNING:
-    //     case SKILL_FIRE_BALL: case SKILL_FLAME: case SKILL_ICE:
-    //     case SKILL_TWISTER: case SKILL_EVIL_SPIRIT: case SKILL_POWER_WAVE:
-    //     case SKILL_AQUA_BEAM: case SKILL_BLAST: case SKILL_INFERNO:
-    //     case SKILL_ENERGY_BALL:
-    //         *(BYTE*)(c + 0x2F5) = 15;   // c->AttackTime = 15
-    //         break;
-    //
-    // Para implementarlo aca alcanza con un `else if` sobre esos 13 ids ANTES
-    // del default, poniendo `*(BYTE*)(c+757) = 15`.  Queda como mejora del DLL
-    // pendiente de decision (politica del proyecto: IDA manda, las mejoras del
-    // DLL van al final). Verificar tambien el caso montado (cambia el set de
-    // acciones del casteo y su cuenta de frames).
+    // DESVIACION (DLL Patchs.cpp, CPatchs::AttackStage): estos 13 skills de
+    // magia no esperan el frame 5.0 del default de abajo.  Con un AttackSpeed
+    // alto la acción de casteo (82-85, PlaySpeed AttackSpeed*0.004+0.29) salta
+    // el rango [5, 6) del frame, c+757 no llega a 15 y el skill no sale
+    // mientras se mantiene el click.  IDA no tiene este grupo.
+    //   1 Poison  2 Meteorite  3 Lightning  4 Fire Ball  5 Flame  7 Ice
+    //   8 Twister  9 Evil Spirit  11 Power Wave  12 Aqua Beam  13 Blast
+    //   14 Inferno  17 Energy Ball
+    else if((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || (skill>=11 && skill<=14) || skill==17) *(BYTE*)(c+757)=15;
+    // default de IDA (0x00448930 L356-364).
     else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) *(BYTE*)(c+757)=15;
     return true;
 }

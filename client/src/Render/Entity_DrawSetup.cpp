@@ -30,6 +30,7 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 
 void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
@@ -49,8 +50,11 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         param_5 = 0;
     }
     ItemLevelFx = (int)param_5;
-    if (param_2 > 867) {
-        switch (param_2) {
+    // 0.97.20: un modelo del catálogo usa el brillo por nivel del vanilla que
+    // imita (las alas, por ejemplo, no brillan).
+    const int fxType = gContentCatalog.LogicModel(param_2);
+    if (fxType > 867) {
+        switch (fxType) {
         case 868:
         case 952:
         case 953:
@@ -77,11 +81,11 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             break;
         }
     }
-    else if (param_2 >= 865) {
+    else if (fxType >= 865) {
         ItemLevelFx *= 2;
     }
-    else if (param_2 > 799) {
-        switch (param_2) {
+    else if (fxType > 799) {
+        switch (fxType) {
         case 800:
         case 801:
         case 802:
@@ -102,11 +106,11 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             break;
         }
     }
-    else if (param_2 == 799) {
+    else if (fxType == 799) {
         ItemLevelFx = 8;
     }
-    else if (param_2 > 791) {
-        switch (param_2) {
+    else if (fxType > 791) {
+        switch (fxType) {
         case 795:
             ItemLevelFx = 0;   // IDA LABEL_17
             break;
@@ -119,15 +123,15 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             break;
         }
     }
-    else if (param_2 == 791) {
+    else if (fxType == 791) {
         ItemLevelFx = 9;
     }
-    else if (param_2 > 543) {
-        if (param_2 >= 784) {
+    else if (fxType > 543) {
+        if (fxType >= 784) {
             ItemLevelFx = 0;
         }
     }
-    else if (param_2 == 543 || param_2 == 535) {
+    else if (fxType == 543 || fxType == 535) {
         ItemLevelFx = (ItemLevelFx < 1) ? 0 : (ItemLevelFx * 2 + 1);
     }
 

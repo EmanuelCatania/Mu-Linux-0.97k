@@ -1,6 +1,8 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -76,7 +78,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     {
         int attrIdx = (int)v7 - 400;
         unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < 1024)
+        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }
 
@@ -431,7 +433,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             && slotType == 0 && InventoryOpened != 0)
         {
             int targetSlot = mouseGridY * gridWidth + mouseGridX;
-            short targetType = *(short*)(invBase + targetSlot * 0x44);
+            // 0.97.20: un agregado acepta joyas como el vanilla que imita.
+            short targetType = (short)ItemBehaviorType(*(short*)(invBase + targetSlot * 0x44));
             int targetLevel = *(int*)(invBase + targetSlot * 0x44 + 4) >> 3 & 0xf;
             bool validTarget = (targetType < 0x187);
 

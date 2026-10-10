@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "Render/Render.h"
@@ -216,6 +217,9 @@
 void Render_CharInfoPanel(void);
 void Render_HPBars(void);
 void Render_CharPartyInfo(void);
+extern "C" bool __cdecl RenderNumArrow_(void);
+extern "C" int  __cdecl RenderEquipedHelperLife_(bool a2);
+extern "C" void __cdecl RenderBrokenItem_(int a1);
 void Render_CharNameTags(void);
 void Render_MacroTimer(void);
 void Render_MapLoadText(void);
@@ -346,9 +350,13 @@ void Render_GameFrame(void)
     Render_CharInfoPanel();         // sub_4BC220 (guild-war/soccer banner)
     Render_HPBars();                // RenderPartyHP @ 0x4BCA20
     gHealthBar.DrawViewport();       // DLL HealthBar.cpp, después de las barras de party
-    AntiTamper_HashMaintain_A();    // RenderNumArrow @ 0x4BF540 (NOT anti-tamper)
-    Render_CharPartyInfo();         // RenderEquipedHelperLife @ 0x4BEC00 (was misnamed)
-    Render_CharNameTags();          // RenderBrokenItem @ 0x4BE710 (was misnamed)
+    // IDA Render_GameFrame L26-28: cada indicador de arriba a la derecha baja
+    // según lo que se dibujó antes (flechas -> vida del helper -> item roto).
+    {
+        const bool arrows = RenderNumArrow_();                 // 0x4BF540
+        const int helperY = RenderEquipedHelperLife_(arrows);  // 0x4BEC00
+        RenderBrokenItem_(helperY);                            // 0x4BE710
+    }
     Render_MacroTimer();            // sub_4BF090
     Render_MapLoadText();           // sub_4BF2D0
     Render_FloatingText();          // RenderBooleans @ 0x4BD090 (was misnamed)
@@ -530,6 +538,9 @@ void Render_Scene3D(void)
     if (DAT_07e11d1c > 0x1e) return;
 
     DAT_083a42ea = 0;   // FogEnable = false
+    // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
+    // el server se prende (el DLL parcheaba este 0 por un 1).
+    if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     MoveMainCamera();
@@ -563,6 +574,12 @@ void Render_Scene3D(void)
         cr = 0.0f;   cg = 0.0f;    cb = 0.039f;
     } else if (worldId == 10) {
         cr = 0.012f; cg = 0.099f;  cb = 0.172f;
+    }
+    if (DAT_083a42ea) {
+        // DLL MapFog glClearColorFog: el fondo toma el color de la niebla.
+        float fog[4];
+        gContentCatalog.GetFogColor(worldId, fog);
+        cr = fog[0]; cg = fog[1]; cb = fog[2];
     }
     glClearColor(cr, cg, cb, 1.0f);
 

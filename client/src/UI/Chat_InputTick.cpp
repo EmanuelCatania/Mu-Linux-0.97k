@@ -23,6 +23,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "UI/EventTimer.h"
 #pragma warning(disable: 4102)
 #include "globals.h"
@@ -871,7 +872,7 @@ void __cdecl Chat_InputTick(void)
                             BYTE pkt[5] = { 0xC1, 0x05, 0x26, (BYTE)(slot + 12), 0x00 };
                             gNetwork.Send(pkt, 5);
                             // Sound feedback by item type
-                            int itemType = *(int*)(OffsetInventoryItems + slot * 0x44);
+                            int itemType = ItemBehaviorType(*(short*)(OffsetInventoryItems + slot * 0x44));   // 0.97.20
                             if (itemType == 448) {
                                 PlayBuffer(33, 0, 0);   // potion mana sound
                             } else if (itemType >= 449 && itemType <= 457) {

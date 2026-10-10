@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #pragma warning(disable: 4554 4244 4700)
 #include "Render/Camera.h"
 
@@ -39,6 +40,19 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     long double near_w  = fov_tan * (long double)(Ff(DAT_00561550) * _DAT_005526e8) *
                           (long double)param_1 + (long double)_DAT_005524f0;
     long double near_h  = near_w * (long double)_DAT_00552adc;
+    // DESVIACION (in-game): la pirámide del binario es más angosta que la
+    // vista real: usa tan(FOV/2) como semiancho sin el aspecto 4:3 y el alto
+    // en 0.75 de eso.  Con el FOV de 35 alcanzaba; con 50 cortaba objetos y
+    // terreno en los bordes.  Acá se arma con la proyección de verdad
+    // (gluPerspective: semialto tan(FOV/2), semiancho * W/H de la ventana,
+    // que en pantallas anchas no es 4:3).
+    if (SceneFlag == 5) {
+        const long double depth = (long double)(Ff(DAT_00561550) * _DAT_005526e8);
+        near_h = fov_tan * depth + (long double)_DAT_005524f0;
+        const long double aspect = (gWindow.GetHeight() > 0)
+            ? (long double)gWindow.GetWidth() / (long double)gWindow.GetHeight() : (4.0L / 3.0L);
+        near_w = fov_tan * depth * (long double)param_1 * aspect + (long double)_DAT_005524f0;
+    }
     float near_dist     = -(Ff(DAT_00561550) * _DAT_005526e8);  // negative near depth
 
     // Step 2 — 5 view-space corners ───────────────────────────────────────────
@@ -401,6 +415,19 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   // GLclampf. Como int se convertiría a 1048576000.0f → clamp a 1.0 → el test
   // "alpha > 1.0" siempre falla y todo el UI con alpha-test queda invisible.
   glAlphaFunc(GL_GREATER, 0.25f);
+  if (DAT_083a42ea != '\0' && gContentCatalog.HasMapFog()) {
+    // DESVIACION (DLL MapFog glEnableFog, ahora catálogo 0.97.20): niebla
+    // lineal 2000..2700 con el color del mapa.
+    float fog[4];
+    gContentCatalog.GetFogColor((int)World, fog);
+    glEnable(GL_FOG);
+    glFogi(GL_FOG_MODE, GL_LINEAR);
+    glFogf(GL_FOG_START, 2000.0f);
+    glFogf(GL_FOG_END, 2700.0f);
+    glFogfv(GL_FOG_COLOR, fog);
+    GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
+    return;
+  }
   if (DAT_083a42ea != '\0') {
     glEnable(0xb60);
     glFogi(0xb65,0x801);

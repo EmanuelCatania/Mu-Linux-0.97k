@@ -1,6 +1,7 @@
 // Item_EquipmentAutoSwap.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -51,8 +52,8 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     //   }
     //
     // `v18` es el test de ARCO y `v20` el de BALLESTA.  Segun sub_4824C0 L76-88
-    const short bowSlotType      = *(const short*)(characterMachine + 604);  // IDA: v18
-    const short crossbowSlotType = *(const short*)(characterMachine + 536);  // IDA: v20 / *v25
+    const short bowSlotType      = (short)ItemBehaviorType(*(const short*)(characterMachine + 604));  // IDA: v18
+    const short crossbowSlotType = (short)ItemBehaviorType(*(const short*)(characterMachine + 536));  // IDA: v20 / *v25
 
     int targetEquipmentSlot = -1;
     const char* chatId = nullptr;
