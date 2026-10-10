@@ -40,6 +40,16 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     long double near_w  = fov_tan * (long double)(Ff(DAT_00561550) * _DAT_005526e8) *
                           (long double)param_1 + (long double)_DAT_005524f0;
     long double near_h  = near_w * (long double)_DAT_00552adc;
+    // DESVIACION (in-game): la pirámide del binario es más angosta que la
+    // vista real: usa tan(FOV/2) como semiancho sin el aspecto 4:3 y el alto
+    // en 0.75 de eso.  Con el FOV de 35 alcanzaba; con 50 cortaba objetos y
+    // terreno en los bordes.  Acá se arma con la proyección de verdad
+    // (gluPerspective: semialto tan(FOV/2), semiancho * W/H del viewport).
+    if (SceneFlag == 5) {
+        const long double depth = (long double)(Ff(DAT_00561550) * _DAT_005526e8);
+        near_h = fov_tan * depth + (long double)_DAT_005524f0;
+        near_w = fov_tan * depth * (long double)param_1 * (4.0L / 3.0L) + (long double)_DAT_005524f0;
+    }
     float near_dist     = -(Ff(DAT_00561550) * _DAT_005526e8);  // negative near depth
 
     // Step 2 — 5 view-space corners ───────────────────────────────────────────
