@@ -1121,7 +1121,7 @@ void __cdecl SkillEffects_RenderAll(void)
 
 // MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
-//   CameraFOV = 35.0
+//   CameraFOV = 35.0 (50.0 con la desviación del DLL, ver abajo)
 //   CameraViewFar = 2000 (o 3200 en topview)
 //   CameraDistance = 1000 + smoothing (CameraDistanceTarget)
 //   CameraPosition vía AngleMatrix(CameraAngle)+VectorIRotate del offset (0,-1000,0)
@@ -1134,7 +1134,9 @@ bool __cdecl MoveMainCamera(void) {
     float out[3];
     float matrix[3][4];
 
-    CameraFOV = 35.0f;
+    // DESVIACION (DLL Camera3D.cpp: SetFloat(0x00524CC1, 50.0f)): el binario
+    // pone 35 grados; con 50 la cámara del juego se ve más alejada.
+    CameraFOV = 50.0f;
     CameraAngle[0] = 0.0f;
     CameraAngle[1] = 0.0f;
     if (World == 10) {
