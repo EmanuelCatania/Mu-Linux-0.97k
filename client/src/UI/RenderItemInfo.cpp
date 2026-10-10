@@ -1350,56 +1350,11 @@ static void RII_RequireLine(int textIdx, int required, int have)
     }
 }
 
-// IDA: RenderItemInfo (0x004C4650)
-static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
+// Nombre del item tal como lo arma el tooltip (IDA RenderItemInfo L700-830).
+// `color` sólo se toca en las ramas que lo fijan.
+static void RII_FormatName(const ITEM* ip, const ITEM_ATTRIBUTE* p, short type, int Level,
+                           bool exc, char* name, int& color)
 {
-    const unsigned int attrBase = ItemAttribute_Base();
-    if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
-    if (ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
-    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
-    // 0.97.20: las líneas que el tooltip decide por rango de tipo (durabilidad,
-    // una/dos manos, skill, opciones) usan el vanilla que imita un agregado;
-    // nombre y valores salen de la fila del propio item (`p` / `ip`).
-    const short type = (short)ItemBehaviorType(ip->Type);
-    const BYTE* CA = (const BYTE*)CharacterAttribute;
-    if (!CA) return;
-
-    DAT_07eaa154 = 0;
-    DAT_07eaa158 = 0;
-    for (int i = 0; i < 20; ++i) DAT_07e91708[i] = 0;    // memset(TextListColor, 0, 0x50)
-    memset(lpString_07e90798, 0, 30 * 100);             // TextList .. &pPickedItem
-    RII_GAP();
-
-    const int Level = (ip->Level >> 3) & 0xF;
-    const bool exc = (ip->Option1 & 0x3F) != 0;
-
-    // ── Color del nombre (v316) ─────────────────────────────────────────────
-    int color;
-    switch (type) {
-    case 461: case 462: case 399: case 464: case 470:
-    case 465: case 466: case 467: case 432: case 433:
-        color = 3; break;
-    case 170: case 19: case 146:
-        color = 6; break;
-    default:
-        if (ip->SpecialNum && exc) color = 4;
-        else                       color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
-        break;
-    }
-    if (type >= 387 && type <= 390)
-        color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
-
-    // ── Precio (solo con la tienda abierta) ─────────────────────────────────
-    if (type != 460 && (type < 471 || type > 474) && ShopOpened) {
-        char buf[32];
-        RII_Gold(buf, Item_CalculateValue((void*)ip, Sell ? 0 : 1));
-        RII_ADD(color, 1, GlobalText[Sell ? 62 : 63], buf);
-        RII_GAP();
-    }
-
-    // ── Nombre ──────────────────────────────────────────────────────────────
-    const int nameIdx = DAT_07eaa154;
-    char* name = RII_Line(nameIdx);
     if (type >= 471 && type <= 474) {
         sprintf(name, "%s", p->Name);
         color = 3;
@@ -1473,6 +1428,72 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         }
         break;
     }
+}
+
+// 0.97.20: el mismo nombre para el aviso de "levantaste X" (DLL
+// CProtocol::CGItemGetRecv usa su propio GetItemName con las mismas reglas).
+void Item_FormatName(const ITEM* ip, char* name)
+{
+    name[0] = 0;
+    const unsigned int attrBase = ItemAttribute_Base();
+    if (!attrBase || !ip || ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
+    const ITEM_ATTRIBUTE* p = &((const ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
+    int color = 0;
+    RII_FormatName(ip, p, (short)ItemBehaviorType(ip->Type), (ip->Level >> 3) & 0xF,
+                   (ip->Option1 & 0x3F) != 0, name, color);
+}
+
+// IDA: RenderItemInfo (0x004C4650)
+static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
+{
+    const unsigned int attrBase = ItemAttribute_Base();
+    if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
+    if (ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
+    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
+    // 0.97.20: las líneas que el tooltip decide por rango de tipo (durabilidad,
+    // una/dos manos, skill, opciones) usan el vanilla que imita un agregado;
+    // nombre y valores salen de la fila del propio item (`p` / `ip`).
+    const short type = (short)ItemBehaviorType(ip->Type);
+    const BYTE* CA = (const BYTE*)CharacterAttribute;
+    if (!CA) return;
+
+    DAT_07eaa154 = 0;
+    DAT_07eaa158 = 0;
+    for (int i = 0; i < 20; ++i) DAT_07e91708[i] = 0;    // memset(TextListColor, 0, 0x50)
+    memset(lpString_07e90798, 0, 30 * 100);             // TextList .. &pPickedItem
+    RII_GAP();
+
+    const int Level = (ip->Level >> 3) & 0xF;
+    const bool exc = (ip->Option1 & 0x3F) != 0;
+
+    // ── Color del nombre (v316) ─────────────────────────────────────────────
+    int color;
+    switch (type) {
+    case 461: case 462: case 399: case 464: case 470:
+    case 465: case 466: case 467: case 432: case 433:
+        color = 3; break;
+    case 170: case 19: case 146:
+        color = 6; break;
+    default:
+        if (ip->SpecialNum && exc) color = 4;
+        else                       color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
+        break;
+    }
+    if (type >= 387 && type <= 390)
+        color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
+
+    // ── Precio (solo con la tienda abierta) ─────────────────────────────────
+    if (type != 460 && (type < 471 || type > 474) && ShopOpened) {
+        char buf[32];
+        RII_Gold(buf, Item_CalculateValue((void*)ip, Sell ? 0 : 1));
+        RII_ADD(color, 1, GlobalText[Sell ? 62 : 63], buf);
+        RII_GAP();
+    }
+
+    // ── Nombre ──────────────────────────────────────────────────────────────
+    const int nameIdx = DAT_07eaa154;
+    char* name = RII_Line(nameIdx);
+    RII_FormatName(ip, p, type, Level, exc, name, color);
     RII_Style(nameIdx, color, 1);
     DAT_07eaa154 = nameIdx + 1;
     RII_GAP();
