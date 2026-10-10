@@ -537,14 +537,13 @@ versión.
 flowchart TD
     F0["0.97.00 · Reconstrucción fiel (base)"] --> F1
     F1["0.97.10 · Fase 1: base de ingeniería<br/>CMake, CI, limpieza de código y comentarios, espejo de protocolo"] --> F2
-    F2["0.97.20 · Fase 2: integración nativa del Main.dll + modularización<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados a la lógica base"] --> F3
-    F3["0.97.30 · Fase 3: optimización del código heredado<br/>switches y defines de Webzen → tablas y enums"] --> F4
-    F4["0.97.40 · Fase 4: abstracción de plataforma + Linux"] --> F5
-    F5["0.97.50 · Fase 5: timing real<br/>simulación separada del render, fps altos sin acelerar el juego"] --> F6
-    F6["0.97.60 · Fase 6: renderer moderno (OpenGL 3.3) y x64"] --> F7
-    F7["0.97.70 · Fase 7: contenido compartido cliente + server"] --> F8
-    F8["0.97.80 · Fase 8: autoridad del server + seguridad"] --> F9
-    F9["0.97.90 · Fase 9+: launcher/updater, web, Android"]
+    F2["0.97.20 · Fase 2: integración nativa del Main.dll + modularización + optimización del código heredado<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados a la lógica base; switches y defines de Webzen → tablas y enums"] --> F3
+    F3["0.97.30 · Fase 3: abstracción de plataforma + Linux"] --> F4
+    F4["0.97.40 · Fase 4: timing real<br/>simulación separada del render, fps altos sin acelerar el juego"] --> F5
+    F5["0.97.50 · Fase 5: renderer moderno (OpenGL 3.3) y x64"] --> F6
+    F6["0.97.60 · Fase 6: contenido compartido cliente + server"] --> F7
+    F7["0.97.70 · Fase 7: autoridad del server + seguridad"] --> F8
+    F8["0.97.80 · Fase 8+: launcher/updater, web, Android"]
 ```
 
 Los números de cada fase son la versión prevista al cerrarla; el alcance de cada una
