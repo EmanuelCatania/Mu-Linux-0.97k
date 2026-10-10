@@ -132,6 +132,7 @@
     <ClInclude Include="src\Game\MapManager.h" />
     <ClInclude Include="src\Game\HeroVitals.h" />
     <ClInclude Include="src\Net\Network.h" />
+    <ClInclude Include="src\Net\Reconnect.h" />
     <ClInclude Include="src\Net\Ping.h" />
     <ClInclude Include="src\Net\ServerCharacterStats.h" />
     <ClInclude Include="src\Item\ChaosMixRates.h" />
@@ -209,6 +210,7 @@
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Core\WndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
+    <ClCompile Include="src\Net\Reconnect.cpp" />
     <ClCompile Include="src\Net\Ping.cpp" />
     <ClCompile Include="src\Net\ServerCharacterStats.cpp" />
     <ClCompile Include="src\Item\ChaosMixRates.cpp" />

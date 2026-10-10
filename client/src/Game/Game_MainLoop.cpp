@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
 #include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/FrameLimiter.h"
@@ -187,6 +188,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     if (DAT_055ca018 != '\0') return;
 
     // ── PRE-RENDER SETUP ──────────────────────────────────────────────────────
+    gReconnect.Tick();   // DESVIACION (DLL Reconnect.cpp, 0x00525995)
     Sound_Update3DPositions();
     {
         SYSTEMTIME st;

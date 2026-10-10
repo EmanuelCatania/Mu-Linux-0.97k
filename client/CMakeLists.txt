@@ -103,6 +103,7 @@ set(MU_SOURCES
     src/Game/MapManager.cpp
     src/Core/WndProc.cpp
     src/Net/Network.cpp
+    src/Net/Reconnect.cpp
     src/Net/Ping.cpp
     src/Net/ServerCharacterStats.cpp
     src/Item/ChaosMixRates.cpp
@@ -390,6 +391,7 @@ set(MU_HEADERS
     src/Game/MapManager.h
     src/Game/HeroVitals.h
     src/Net/Network.h
+    src/Net/Reconnect.h
     src/Net/Ping.h
     src/Net/ServerCharacterStats.h
     src/Item/ChaosMixRates.h

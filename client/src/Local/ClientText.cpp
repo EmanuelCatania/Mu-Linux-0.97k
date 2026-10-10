@@ -40,7 +40,11 @@ const char* const English[] = {
     "Italic",
     "Gate to %s",
     "Zoom: %d",
-    "Alpha: %d%%"
+    "Alpha: %d%%",
+    "Reconnecting...",
+    "Logging in...",
+    "Waiting character list...",
+    "Waiting character info..."
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -73,7 +77,11 @@ const char* const Spanish[] = {
     "Cursiva",
     "Puerta a %s",
     "Zoom: %d",
-    "Opacidad: %d%%"
+    "Opacidad: %d%%",
+    "Reconectando...",
+    "Iniciando sesi\xF3" "n...",
+    "Esperando la lista de personajes...",
+    "Esperando los datos del personaje..."
 };
 const char* const Portuguese[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -106,7 +114,11 @@ const char* const Portuguese[] = {
     "It\xE1" "lico",
     "Portal para %s",
     "Zoom: %d",
-    "Opacidade: %d%%"
+    "Opacidade: %d%%",
+    "Reconectando...",
+    "Entrando...",
+    "Aguardando a lista de personagens...",
+    "Aguardando os dados do personagem..."
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");

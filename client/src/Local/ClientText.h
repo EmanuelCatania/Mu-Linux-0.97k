@@ -11,6 +11,7 @@ enum class ClientTextId {
     ScreenWindowed, ScreenFullscreen, ScreenBorderless,
     FontBold, FontItalic,
     MiniMapGate, MiniMapZoom, MiniMapAlpha,
+    ReconnectConnecting, ReconnectLogin, ReconnectCharList, ReconnectCharInfo,
     Count
 };
 class CClientText {

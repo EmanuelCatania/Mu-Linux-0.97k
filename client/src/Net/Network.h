@@ -36,6 +36,10 @@ public:
     // socket devuelve WSAEWOULDBLOCK. 0 = ok, -1 = error.
     int SendRaw(const char* buf, int len);
 
+    // F1/01 PMSG_CONNECT_ACCOUNT_SEND con cuenta y contraseña (hasta 10
+    // caracteres cada una).  Lo usan el login y la reconexión.
+    void SendLogin(const char* account, const char* password);
+
     // Envío plano al ConnectServer (no usa el cifrado de MuEmu).
     void SendToConnectServer(const BYTE* data, int len);
 
