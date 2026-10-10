@@ -9,6 +9,12 @@
 // Converts screen pixel (param_1, param_2) to a world-space ray direction for mouse picking.
 // Uses viewport (DAT_0056156C=W, DAT_00561570=H), projection offsets (DAT_083A429C/A0),
 // projection scale (DAT_083A42A4/A8), z-depth DAT_00561550, and view matrix DAT_083A4140.
+// DESVIACION (DLL Camera3D.cpp, SetDword 0x00511332/60/6C -> 0x005528CC):
+// la profundidad del punto sale de una constante de 2000 y no de
+// CameraViewFar, para que agrandar el alcance no cambie la posición de los
+// items 3D del inventario (RenderItem3D interpola sobre este punto).
+static const float kScreenVectorDepth = 2000.0f;
+
 // FUN_005112F0
 void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     // El original usa locals contiguas en stack (local_18/14/10 es un vec3,
@@ -17,10 +23,10 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     // arrays reales: Vector_InverseRotate lee/escribe 3 floats secuenciales.
     float view_dir[3];
     view_dir[0] =  (float)(int)((UINT)(gWindow.GetWidth() * param_1) / 0x280 - ViewportCenterX)
-                 * _DAT_083a42a4 * Ff(DAT_00561550);
+                 * _DAT_083a42a4 * kScreenVectorDepth;
     view_dir[1] = -((float)(int)((UINT)(gWindow.GetHeight() * param_2) / 0x1e0 - ViewportCenterY)
-                 * _DAT_083a42a8 * Ff(DAT_00561550));
-    view_dir[2] = -Ff(DAT_00561550);
+                 * _DAT_083a42a8 * kScreenVectorDepth);
+    view_dir[2] = -kScreenVectorDepth;
 
     float cam_fwd_neg[3] = {
         -_DAT_083a414c,

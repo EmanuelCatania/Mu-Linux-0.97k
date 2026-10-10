@@ -4627,8 +4627,53 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 // (corners ya transformadas por Camera_SetupFrustum a world coords), lo cual
 // duplicaría la transformación si se invocara — no se llama desde ningún
 // lado y no debe wirearse.
+// DESVIACION (in-game): el cuadro de tiles sale de cortar el frustum 3D que
+// acaba de armar Camera_SetupFrustum (FrustrumVertex: ápice + 4 esquinas en
+// coordenadas de mundo) con el plano del suelo, en vez de las constantes
+// fijas del binario, que estaban calibradas para el FOV de 35 grados.  Con
+// el FOV y el alcance mayores las esquinas de la pantalla quedaban sin
+// terreno.  El plano va 300 unidades por debajo del héroe y el cuadro se
+// agranda 200 unidades hacia afuera para cubrir desniveles.
+static bool CreateFrustrum2D_FromFrustum(const float *ground)
+{
+    const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
+    const float corner[4][3] = {
+        { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 },   // arriba-izquierda
+        { DAT_07eab1c8, DAT_07eab1cc, DAT_07eab1d0 },   // arriba-derecha
+        { DAT_07eab1d4, DAT_07eab1d8, DAT_07eab1dc },   // abajo-derecha
+        { DAT_07eab1e0, DAT_07eab1e4, DAT_07eab1e8 },   // abajo-izquierda
+    };
+    const float groundZ = ground[2] - 300.0f;
+    if (apex[2] <= groundZ) return false;
+
+    float p[4][2];
+    float cx = 0.0f, cy = 0.0f;
+    for (int i = 0; i < 4; ++i) {
+        const float dz = corner[i][2] - apex[2];
+        float t = 1.0f;
+        if (dz < 0.0f) {
+            t = (groundZ - apex[2]) / dz;
+            if (t > 1.0f) t = 1.0f;
+        }
+        p[i][0] = apex[0] + (corner[i][0] - apex[0]) * t;
+        p[i][1] = apex[1] + (corner[i][1] - apex[1]) * t;
+        cx += p[i][0] * 0.25f;
+        cy += p[i][1] * 0.25f;
+    }
+    for (int i = 0; i < 4; ++i) {
+        float dx = p[i][0] - cx, dy = p[i][1] - cy;
+        const float len = sqrtf(dx * dx + dy * dy);
+        if (len > 0.001f) { dx = dx / len * 200.0f; dy = dy / len * 200.0f; }
+        FrustrumX[i] = (p[i][0] + dx) * _DAT_005524f8;
+        FrustrumY[i] = (p[i][1] + dy) * _DAT_005524f8;
+    }
+    return true;
+}
+
 void __cdecl CreateFrustrum2D(float *param_1)
 {
+    if (SceneFlag == 5 && CreateFrustrum2D_FromFrustum(param_1)) return;
+
     float pts[15];   // euler[0..2], then 4×vec3 input offsets [3..14]
     float rot[12];   // 3×4 rotation matrix
     float out[12];   // 4 transformed output positions

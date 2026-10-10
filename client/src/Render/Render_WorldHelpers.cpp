@@ -1149,7 +1149,10 @@ bool __cdecl MoveMainCamera(void) {
         CameraPosition[0] = *(float*)(Hero + 16);
         CameraPosition[1] = *(float*)(Hero + 20);
     } else {
-        CameraViewFar = 2000.0f;
+        // DESVIACION: el binario usa 2000; con el FOV de 50 las esquinas de
+        // arriba quedan más allá del plano lejano y se ven en negro.  El rayo
+        // del ratón sigue con 2000 (kScreenVectorDepth).
+        CameraViewFar = 3000.0f;
         CameraDistance = 1000.0f;                    // CameraDistance
         in1[0] = 0.0f;
         in1[1] = -1000.0f;
