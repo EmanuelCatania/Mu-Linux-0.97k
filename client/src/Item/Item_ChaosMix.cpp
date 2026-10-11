@@ -373,7 +373,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     char* socketFlagPtr = 0;
                     bool scanSocketFlag = false;
 
-                    if (kind < 384 || kind <= 390) {
+                    if (kind < ITEM_WING_ELF || kind <= ITEM_WING_DARKNESS) {
                         if (itemLevel == 9) {
                             ++*(int*)(counts + 21);
                             DAT_07eaa178 = 0;
@@ -388,9 +388,9 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     }
 
                     switch (kind) {
-                    case 384:
-                    case 385:
-                    case 386:
+                    case ITEM_WING_ELF:
+                    case ITEM_WING_HEAVEN:
+                    case ITEM_WING_SATAN:
                     {
                         ++*(int*)(counts + 53);
                         DAT_07eaa170 = 0;
@@ -408,10 +408,10 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         }
                         break;
                     }
-                    case 399:
+                    case ITEM_JEWEL_CHAOS:
                         ++*(int*)(counts + 5);
                         break;
-                    case 418:
+                    case ITEM_HELPER_UNIRIA:
                         if (*(unsigned char*)(itemPtr + 26) == 0xFF) {
                             ++*(int*)(counts + 37);
                         }
@@ -427,10 +427,10 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         levelB1 = itemLevel;
                         ++*(int*)(counts + 73);
                         break;
-                    case 461:
+                    case ITEM_JEWEL_BLESS:
                         ++*(int*)(counts + 29);
                         break;
-                    case 462:
+                    case ITEM_JEWEL_SOUL:
                         ++*(int*)(counts + 33);
                         break;
                     case 465:
@@ -441,13 +441,13 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         levelD2 = itemLevel;
                         ++*(int*)(counts + 17);
                         break;
-                    case 470:
+                    case ITEM_JEWEL_CREATION:
                         ++*(int*)(counts + 45);
                         break;
                     default:
                     {
                         bool foundExcellent = false;
-                        if (kind < 384 && itemLevel >= 4) {
+                        if (kind < ITEM_WING_ELF && itemLevel >= 4) {
                             DAT_07eaa178 = 0;
                             scanSocketFlag = true;
                             socketFlagPtr = (char*)&DAT_07eaa178;

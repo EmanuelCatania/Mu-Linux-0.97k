@@ -126,7 +126,7 @@ void __cdecl PartObjectColor(int param_1, float param_2, float param_3, float *p
     //   MODEL_ARMORINVEN_61 -> color 42
     //   MODEL_ARMORINVEN_62 -> color 18
     {   // range dispatch: (param_1 - 400) / 32 → slot
-        unsigned int uVar5 = (unsigned int)(param_1 - 400);
+        unsigned int uVar5 = (unsigned int)(param_1 - ITEM_MODEL_BASE);
         int iVar3 = (int)(uVar5 + ((int)uVar5 >> 31 & 0x1fu)) >> 5;
         if (iVar3 >= 7 && iVar3 <= 0xb) {
             unsigned int u = uVar5 & 0x8000001fu;
@@ -174,7 +174,7 @@ void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float
     else if (param_1==0x221||param_1==0x239) { iVar4=0; }
     else if (param_1==0x1a4) { iVar4=1; }
     else {
-        unsigned int uVar3 = (unsigned int)(param_1 - 400);
+        unsigned int uVar3 = (unsigned int)(param_1 - ITEM_MODEL_BASE);
         int iVar2 = (int)(uVar3 + ((int)uVar3 >> 31 & 0x1fu)) >> 5;
         if (iVar2 >= 7 && iVar2 <= 0xb) {
             unsigned int u = uVar3 & 0x8000001fu;

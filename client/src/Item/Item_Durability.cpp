@@ -57,7 +57,7 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
     // 0.97.20: los rangos (alas, etc.) van por el comportamiento; los datos
     // salen de attrBase, la fila propia del item.
     short Type = (short)ItemBehaviorType(ip->Type);
-    if (Type >= 160 && Type < 192) {
+    if (Type >= ITEM_STAFF_BASE && Type < ITEM_SHIELD_BASE) {
         result = (unsigned int)(unsigned char)p->MagicDurability;
     }
 
@@ -72,7 +72,7 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
     // Excellent option bonus (+15) — exclude wings/special types.
     BYTE Option1 = (BYTE)ip->Option1;
     if ((Option1 & 0x3F) != 0 &&
-        (Type < 387 || Type > 390) &&
+        (Type < ITEM_WING_SPIRITS || Type > ITEM_WING_DARKNESS) &&
         Type != 19 && Type != 146 && Type != 170)
     {
         result += 15;
@@ -156,13 +156,13 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
     if (v12 != 143) {
         bool handled = true;
         switch (v12) {
-            case 461: v5 = 9000000;  goto LABEL_147;   // 0x895440
-            case 462: v5 = 6000000;  goto LABEL_147;   // 0x5B8D80
-            case 399: v5 = 810000;   goto LABEL_147;
-            case 464: v5 = 45000000; goto LABEL_147;   // 0x2AEA540
-            case 470: v5 = 36000000; goto LABEL_147;   // 0x2255100
+            case ITEM_JEWEL_BLESS: v5 = 9000000;  goto LABEL_147;   // 0x895440
+            case ITEM_JEWEL_SOUL: v5 = 6000000;  goto LABEL_147;   // 0x5B8D80
+            case ITEM_JEWEL_CHAOS: v5 = 810000;   goto LABEL_147;
+            case ITEM_JEWEL_LIFE: v5 = 45000000; goto LABEL_147;   // 0x2AEA540
+            case ITEM_JEWEL_CREATION: v5 = 36000000; goto LABEL_147;   // 0x2255100
             case 430: v5 = 180000;   goto LABEL_147;
-            case 419: {
+            case ITEM_HELPER_DINORANT: {
                 v5 = 960000;
                 v34 = 960000;
                 if (v26) {
@@ -227,7 +227,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
         }
 
         if (v8 == 12) {
-            if (v3 <= 390) goto LABEL_94;
+            if (v3 <= ITEM_WING_DARKNESS) goto LABEL_94;
         } else if (v8 != 13 && v8 != 15) {
             goto LABEL_94;
         }
@@ -256,7 +256,7 @@ LABEL_94:
             default: break;
         }
 
-        if (v8 == 12 && v3 <= 390) {
+        if (v8 == 12 && v3 <= ITEM_WING_DARKNESS) {
             // Staff/Magic-class: (constant 40_000_000 base) + 11 * v11^2 * (v11+40)
             v5 = 40000000 + 11 * v11 * v11 * (v11 + 40);
         } else {
@@ -286,7 +286,7 @@ LABEL_110:
                     break;
 
                 case 0x3C: case 0x3D: case 0x3F: case 0x41:
-                    if (v8 == 12 && v3 <= 390) {
+                    if (v8 == 12 && v3 <= ITEM_WING_DARKNESS) {
                         int v23 = *(unsigned char*)(v21 + a1 + 45);
                         if (opt == 0x41) v23 *= 4;
                         switch (v23) {
@@ -365,7 +365,7 @@ LABEL_148:
     }
 
     short v25 = *(short*)a1;
-    if ((v3 < 416 || v25 > 419)
+    if ((v3 < ITEM_HELPER_ANGEL || v25 > ITEM_HELPER_DINORANT)
         && v25 != 426
         && v25 != 135
         && v25 != 143
@@ -473,9 +473,9 @@ void __cdecl Item_RecalculateRepairCost(void)
             //   gold = ItemValue(item, 2);
             //   DAT_07eaa0f8 += ConvertRepairGold(gold, dur, maxDur, type, buf);
             const int kind = ItemBehaviorType(itemType);    // 0.97.20
-            if ((kind < 416 || kind > 419) &&
+            if ((kind < ITEM_HELPER_ANGEL || kind > ITEM_HELPER_DINORANT) &&
                 kind != 426 && kind != 135 && kind != 143 &&
-                kind < 448 &&
+                kind < ITEM_POTION_BASE &&
                 (kind < 391 || kind > 403) &&
                 (kind < 430 || kind > 435) &&
                 curDur < maxDur) {
@@ -501,9 +501,9 @@ void __cdecl Item_RecalculateRepairCost(void)
             unsigned int uVar8  = (unsigned int)itemType;
             maxDur &= 0xffff;
             const int kind = ItemBehaviorType(itemType);    // 0.97.20
-            if ((kind < 416 || kind > 419) &&
+            if ((kind < ITEM_HELPER_ANGEL || kind > ITEM_HELPER_DINORANT) &&
                 kind != 426 && kind != 135 && kind != 143 &&
-                kind < 448 &&
+                kind < ITEM_POTION_BASE &&
                 (kind < 391 || kind > 403) &&
                 (kind < 430 || kind > 435) &&
                 curDur < maxDur) {

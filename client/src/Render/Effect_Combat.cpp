@@ -66,7 +66,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     const DWORD owner = *(DWORD*)(o + 252);
     if (!owner || !DAT_05828d58 || !DAT_07abf5d8) return;
 
-    const int model_id = *(unsigned char*)(owner + 136) + 400;
+    const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
     if (model_id < 0 || model_id >= 1024) return;
 
     const float alpha = *(float*)(o + 360);

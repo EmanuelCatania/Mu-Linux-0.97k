@@ -19,6 +19,80 @@ constexpr int ITEM_MAX_EX = ITEM_MAX_VANILLA + ITEM_MAX_SECTION * ITEM_MAX_EX_PE
 constexpr int ITEM_INFO_SIZE = 7;
 constexpr int ITEM_MODEL_BASE = 400;
 
+// IDA: OpenItems (0x005079D0), RenderItem3D (0x004E1BE0).
+// Bases vanilla: índices de item y slots de modelo son dominios distintos.
+// Para agregados se mantiene ItemModel/ItemBehaviorType del catálogo.
+constexpr short ITEM_SWORD_BASE = 0 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_AXE_BASE = 1 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_MACE_BASE = 2 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_SPEAR_BASE = 3 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_BOW_BASE = 4 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_STAFF_BASE = 5 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_SHIELD_BASE = 6 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_HELM_BASE = 7 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_ARMOR_BASE = 8 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_PANTS_BASE = 9 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_GLOVES_BASE = 10 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_BOOTS_BASE = 11 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_WING_BASE = 12 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_HELPER_BASE = 13 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_POTION_BASE = 14 * ITEM_MAX_TYPE_VANILLA;
+constexpr short ITEM_ETC_BASE = 15 * ITEM_MAX_TYPE_VANILLA;
+
+constexpr int MODEL_SWORD = ITEM_MODEL_BASE + ITEM_SWORD_BASE;
+constexpr int MODEL_AXE = ITEM_MODEL_BASE + ITEM_AXE_BASE;
+constexpr int MODEL_MACE = ITEM_MODEL_BASE + ITEM_MACE_BASE;
+constexpr int MODEL_SPEAR = ITEM_MODEL_BASE + ITEM_SPEAR_BASE;
+constexpr int MODEL_BOW = ITEM_MODEL_BASE + ITEM_BOW_BASE;
+constexpr int MODEL_STAFF = ITEM_MODEL_BASE + ITEM_STAFF_BASE;
+constexpr int MODEL_SHIELD = ITEM_MODEL_BASE + ITEM_SHIELD_BASE;
+constexpr int MODEL_HELM = ITEM_MODEL_BASE + ITEM_HELM_BASE;
+constexpr int MODEL_ARMOR = ITEM_MODEL_BASE + ITEM_ARMOR_BASE;
+constexpr int MODEL_PANTS = ITEM_MODEL_BASE + ITEM_PANTS_BASE;
+constexpr int MODEL_GLOVES = ITEM_MODEL_BASE + ITEM_GLOVES_BASE;
+constexpr int MODEL_BOOTS = ITEM_MODEL_BASE + ITEM_BOOTS_BASE;
+constexpr int MODEL_WING = ITEM_MODEL_BASE + ITEM_WING_BASE;
+constexpr int MODEL_HELPER = ITEM_MODEL_BASE + ITEM_HELPER_BASE;
+constexpr int MODEL_POTION = ITEM_MODEL_BASE + ITEM_POTION_BASE;
+constexpr int MODEL_ETC = ITEM_MODEL_BASE + ITEM_ETC_BASE;
+constexpr int MODEL_EVENT = 947;
+
+constexpr int ITEM_WING_ELF = ITEM_WING_BASE + 0;
+constexpr int MODEL_WING_ELF = ITEM_MODEL_BASE + ITEM_WING_ELF;
+constexpr int ITEM_WING_HEAVEN = ITEM_WING_BASE + 1;
+constexpr int MODEL_WING_HEAVEN = ITEM_MODEL_BASE + ITEM_WING_HEAVEN;
+constexpr int ITEM_WING_SATAN = ITEM_WING_BASE + 2;
+constexpr int MODEL_WING_SATAN = ITEM_MODEL_BASE + ITEM_WING_SATAN;
+constexpr int ITEM_WING_SPIRITS = ITEM_WING_BASE + 3;
+constexpr int MODEL_WING_SPIRITS = ITEM_MODEL_BASE + ITEM_WING_SPIRITS;
+constexpr int ITEM_WING_SOUL = ITEM_WING_BASE + 4;
+constexpr int MODEL_WING_SOUL = ITEM_MODEL_BASE + ITEM_WING_SOUL;
+constexpr int ITEM_WING_DRAGON = ITEM_WING_BASE + 5;
+constexpr int MODEL_WING_DRAGON = ITEM_MODEL_BASE + ITEM_WING_DRAGON;
+constexpr int ITEM_WING_DARKNESS = ITEM_WING_BASE + 6;
+constexpr int MODEL_WING_DARKNESS = ITEM_MODEL_BASE + ITEM_WING_DARKNESS;
+
+constexpr int ITEM_HELPER_ANGEL = ITEM_HELPER_BASE + 0;
+constexpr int MODEL_HELPER_ANGEL = ITEM_MODEL_BASE + ITEM_HELPER_ANGEL;
+constexpr int ITEM_HELPER_IMP = ITEM_HELPER_BASE + 1;
+constexpr int MODEL_HELPER_IMP = ITEM_MODEL_BASE + ITEM_HELPER_IMP;
+constexpr int ITEM_HELPER_UNIRIA = ITEM_HELPER_BASE + 2;
+constexpr int MODEL_HELPER_UNIRIA = ITEM_MODEL_BASE + ITEM_HELPER_UNIRIA;
+constexpr int ITEM_HELPER_DINORANT = ITEM_HELPER_BASE + 3;
+constexpr int MODEL_HELPER_DINORANT = ITEM_MODEL_BASE + ITEM_HELPER_DINORANT;
+
+// Item.txt del server: (12,15) Chaos; (14,13/14/16/22) Bless/Soul/Life/Creation.
+constexpr int ITEM_JEWEL_CHAOS = ITEM_WING_BASE + 15;
+constexpr int ITEM_JEWEL_BLESS = ITEM_POTION_BASE + 13;
+constexpr int ITEM_JEWEL_SOUL = ITEM_POTION_BASE + 14;
+constexpr int ITEM_JEWEL_LIFE = ITEM_POTION_BASE + 16;
+constexpr int ITEM_JEWEL_CREATION = ITEM_POTION_BASE + 22;
+
+static_assert(MODEL_HELPER_ANGEL == 816 && MODEL_HELPER_DINORANT == 819, "Helpers vanilla");
+static_assert(ITEM_WING_ELF == 384 && ITEM_WING_DARKNESS == 390, "Alas vanilla");
+static_assert(MODEL_WING_ELF == 784 && MODEL_WING_DARKNESS == 790, "Modelos de alas vanilla");
+
+
 // Tabla de modelos: 963 fijos del binario (OpenPlayers) más slots dinámicos
 // para los modelos que define el catálogo del server (items >= 512 y
 // monstruos agregados).

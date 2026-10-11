@@ -1,4 +1,5 @@
 #pragma once
+#include "Item/ItemDefines.h"
 // structs.h — Game type definitions for Mu Online 0.97k reconstruction.
 // Derived from the DLL injector source (same version, same binary).
 // Includes: constants (Defines), enums, and game structs.
@@ -22,7 +23,7 @@
 #define MAX_ITEM_TYPE       32
 #define MAX_ITEM_SECTION    16
 #define MAX_ITEM            (MAX_ITEM_SECTION * MAX_ITEM_TYPE)
-#define ITEM_BASE_MODEL     400
+constexpr int ITEM_BASE_MODEL = ITEM_MODEL_BASE;
 #define GET_ITEM(x,y)       (((x)*MAX_ITEM_TYPE)+(y))
 #define GET_ITEM_MODEL(x,y) (GET_ITEM(x,y)+ITEM_BASE_MODEL)
 #define MAX_SPECIAL_OPTION  9
@@ -211,26 +212,6 @@ enum eTextAligns
     RT3_SORT_CENTER = 1
 };
 
-enum eModelNumbers
-{
-    MODEL_SWORD  = ITEM_BASE_MODEL,
-    MODEL_AXE    = MODEL_SWORD  + MAX_ITEM_TYPE,
-    MODEL_MACE   = MODEL_AXE   + MAX_ITEM_TYPE,
-    MODEL_SPEAR  = MODEL_MACE  + MAX_ITEM_TYPE,
-    MODEL_BOW    = MODEL_SPEAR + MAX_ITEM_TYPE,
-    MODEL_STAFF  = MODEL_BOW   + MAX_ITEM_TYPE,
-    MODEL_SHIELD = MODEL_STAFF + MAX_ITEM_TYPE,
-    MODEL_HELM   = MODEL_SHIELD + MAX_ITEM_TYPE,
-    MODEL_ARMOR  = MODEL_HELM  + MAX_ITEM_TYPE,
-    MODEL_PANTS  = MODEL_ARMOR + MAX_ITEM_TYPE,
-    MODEL_GLOVES = MODEL_PANTS + MAX_ITEM_TYPE,
-    MODEL_BOOTS  = MODEL_GLOVES + MAX_ITEM_TYPE,
-    MODEL_WING   = MODEL_BOOTS + MAX_ITEM_TYPE,
-    MODEL_HELPER = MODEL_WING  + MAX_ITEM_TYPE,
-    MODEL_POTION = MODEL_HELPER + MAX_ITEM_TYPE,
-    MODEL_ETC    = MODEL_POTION + MAX_ITEM_TYPE,
-    MODEL_EVENT  = 947
-};
 
 // ── Game Structs ──────────────────────────────────────────────────────────────
 

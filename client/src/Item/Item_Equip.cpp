@@ -191,7 +191,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
     // IDA L251-283.
     if (skill == 47) {
         const WORD mount = *(WORD*)(Hero + 696);       // IDA: v17
-        if (mount != 818 && mount != 819) {
+        if (mount != MODEL_HELPER_UNIRIA && mount != MODEL_HELPER_DINORANT) {
             // IDA L256: sin montura NO devuelve 0 — cae en LABEL_25 y el skill
             // puede salir igual por la lista de opciones del arma. El port
             // anterior cortaba aca con `return 0`.

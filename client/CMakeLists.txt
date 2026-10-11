@@ -353,6 +353,7 @@ set(MU_SOURCES
     src/UI/GoldenArcher.cpp
     src/UI/EventTimer.cpp
     src/UI/MiniMap.cpp
+    src/Render/Camera3D.cpp
     src/UI/OptionsMenu.cpp
     src/UI/MoveList.cpp
     src/UI/Chat_InputTick.cpp
@@ -390,6 +391,7 @@ set(MU_HEADERS
     src/Core/Font.h
     src/UI/EventTimer.h
     src/UI/MiniMap.h
+    src/Render/Camera3D.h
     src/UI/OptionsMenu.h
     src/UI/MoveList.h
     src/Sound/SoundManager.h

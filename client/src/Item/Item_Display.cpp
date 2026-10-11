@@ -76,7 +76,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     // chicos en algunos caminos, igual que en los guards del tooltip.
     const char* name = "";
     {
-        int attrIdx = (int)v7 - 400;
+        int attrIdx = (int)v7 - ITEM_MODEL_BASE;
         unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
         if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
@@ -156,7 +156,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
             v38[2] = 1.0f;
             v38[1] = 0.1f;
         } else {
-            if ((ItemOption & 0x3F) != 0 && (v7 < 787 || v7 > 790)) {
+            if ((ItemOption & 0x3F) != 0 && (v7 < MODEL_WING_SPIRITS || v7 > MODEL_WING_DARKNESS)) {
                 v38[2] = 0.5f; v38[1] = 1.0f; v38[0] = 0.1f;
                 goto LABEL_118;
             }
@@ -193,7 +193,7 @@ LABEL_121:
         if ((v5 & 0x80) != 0) {
             // IDA escribe " +" (word_55A6B0) sobre el NUL y luego concatena
             // GlobalText[179] para el tipo 819; el resto usa GlobalText[176].
-            if (v7 == 819) {
+            if (v7 == MODEL_HELPER_DINORANT) {
                 strcat(String, " +");
                 strcat(String, GlobalText[179]);
             } else {
@@ -406,7 +406,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                 //   no entra                  -> 3 (rojo)
                 if (spaceFree) {
                     cellBase[0x40] = 2;
-                } else if (pickedType == 0x1cd || pickedType == 0x1ce || pickedType == 0x1d0) {
+                } else if (pickedType == ITEM_JEWEL_BLESS || pickedType == ITEM_JEWEL_SOUL || pickedType == ITEM_JEWEL_LIFE) {
                     cellBase[0x40] = 4;
                 } else {
                     cellBase[0x40] = 3;
@@ -429,7 +429,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         // Check for currency item stacking on existing inventory item
         bool canStack = false;
         if (cursorInsideGrid
-            && (pickedType == 0x1cd || pickedType == 0x1ce || pickedType == 0x1d0)
+            && (pickedType == ITEM_JEWEL_BLESS || pickedType == ITEM_JEWEL_SOUL || pickedType == ITEM_JEWEL_LIFE)
             && slotType == 0 && InventoryOpened != 0)
         {
             int targetSlot = mouseGridY * gridWidth + mouseGridX;
@@ -449,12 +449,12 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             retVal = validTarget;
 
             // Level cap per currency type
-            if (pickedType == 0x1cd && targetLevel > 5) {
+            if (pickedType == ITEM_JEWEL_BLESS && targetLevel > 5) {
                 // Jewel of Bless: max +5
                 canStack = false;
                 goto drop_done;
             }
-            if (pickedType == 0x1ce && targetLevel > 8) {
+            if (pickedType == ITEM_JEWEL_SOUL && targetLevel > 8) {
                 // Jewel of Soul: max +8
                 canStack = false;
                 goto drop_done;

@@ -231,7 +231,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     // 97k: helper/potion inventory items must not inherit excellent state
     // from the ext-byte path. Letting them do so pushes RequireLevel +20 and
     // contaminates tooltip/render with equipment logic.
-    if ((wType >= 416 && wType < 424) || wType >= 448) {
+    if ((wType >= ITEM_HELPER_ANGEL && wType < 424) || wType >= ITEM_POTION_BASE) {
         bExtOption = false;
     }
 
@@ -251,7 +251,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     // color del item (ip->Color / byColorState), que lo consumen
     // Render_PlayerEquipment y HUD_Pass4.  Ese bloque es otro injerto de origen
     // distinto y se audita aparte.
-    if ((wType >= 387 && wType <= 390) || wType == 19 || wType == 146 || wType == 170) {
+    if ((wType >= ITEM_WING_SPIRITS && wType <= ITEM_WING_DARKNESS) || wType == 19 || wType == 146 || wType == 170) {
         itemExcel = 0;
     }
 
@@ -307,13 +307,13 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     }
 
     if (p->Defense) {
-        if (wType >= 192 && wType < 224) {
+        if (wType >= ITEM_SHIELD_BASE && wType < ITEM_HELM_BASE) {
             ip->Defense = (WORD)(ip->Defense + itemLevel);
         } else {
             if (itemExcel > 0 && p->Level) {
                 ip->Defense = (WORD)(ip->Defense + (12 * p->Defense / p->Level + p->Level / 5 + 4));
             }
-            ip->Defense = (WORD)(ip->Defense + ((wType >= 387 && wType <= 390) ? 2 : 3) * min9(itemLevel) + post9_bonus(itemLevel));
+            ip->Defense = (WORD)(ip->Defense + ((wType >= ITEM_WING_SPIRITS && wType <= ITEM_WING_DARKNESS) ? 2 : 3) * min9(itemLevel) + post9_bonus(itemLevel));
         }
         // DESVIACION (CustomWing, catálogo 0.97.20): el ala custom suma
         // DefenseConstA por nivel en vez de la escala vanilla, como el server.
@@ -360,7 +360,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     }
 
     int requireLevelAdd = 4;
-    if (wType >= 387 && wType <= 390) requireLevelAdd = 5;
+    if (wType >= ITEM_WING_SPIRITS && wType <= ITEM_WING_DARKNESS) requireLevelAdd = 5;
     if (p->RequireLevel) {
         ip->RequireLevel = (WORD)(p->RequireLevel + itemLevel * requireLevelAdd);
     } else {
@@ -374,7 +374,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         ip->RequireLevel = (WORD)(ip->RequireLevel + 20);
     }
 
-    if (wType >= 387 && wType <= 390) {
+    if (wType >= ITEM_WING_SPIRITS && wType <= ITEM_WING_DARKNESS) {
         if (Attribute2 & 1)  push_special(80, (BYTE)(5 * (itemLevel + 10)));
         if (Attribute2 & 2)  push_special(81, (BYTE)(5 * (itemLevel + 10)));
         if (Attribute2 & 4)  push_special(82, 3);
@@ -384,73 +384,73 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
 
     if (Attribute1 & 0x80) {
         if (p->RequireClass[1]) {
-            if (ip->Type >= 196 && ip->Type < 224) push_special(18);
+            if (ip->Type >= 196 && ip->Type < ITEM_HELM_BASE) push_special(18);
             if (wType == 4 || wType == 7 || wType == 8) push_special(21);
             if (wType == 3 || wType == 6 || wType == 9 || wType == 11 || (wType >= 97 && wType <= 100)) push_special(20);
             if (wType == 5 || wType == 10 || wType == 13 || wType == 14 || wType == 16 || wType == 96 || (wType >= 103 && wType <= 105)) push_special(22);
-            if (wType == 12 || (wType >= 34 && wType < 64) || wType == 65 || wType == 67 || wType == 68) push_special(19);
+            if (wType == 12 || (wType >= 34 && wType < ITEM_MACE_BASE) || wType == 65 || wType == 67 || wType == 68) push_special(19);
             if (wType == 15 || wType == 69 || wType == 70 || wType == 17) push_special(23);
             if (wType == 19 || wType == 106) push_special(22);
         }
         if (p->RequireClass[2]) {
-            if (wType >= 128 && wType < 160 && wType != 135 && wType != 143) push_special(24, 6);
+            if (wType >= ITEM_BOW_BASE && wType < ITEM_STAFF_BASE && wType != 135 && wType != 143) push_special(24, 6);
         }
         if (p->RequireClass[3]) {
             if (wType == 18) push_special(23);
             else if (wType == 31) push_special(56);
         }
-        if (wType == 419) push_special(49);
+        if (wType == ITEM_HELPER_DINORANT) push_special(49);
     }
 
     if (Attribute1 & 4) {
-        if ((wType >= 0 && wType < 384 && wType != 135 && wType != 143) || (wType >= 384 && wType <= 390)) {
+        if ((wType >= 0 && wType < ITEM_WING_ELF && wType != 135 && wType != 143) || (wType >= ITEM_WING_ELF && wType <= ITEM_WING_DARKNESS)) {
             push_special(64);
         }
     }
 
     int option3 = (Attribute1 & 3) + 4 * ((Attribute2 >> 6) & 1);
     if (option3) {
-        if (wType == 419) {
+        if (wType == ITEM_HELPER_DINORANT) {
             if (option3 & 1) push_special(84, 5);
             if (option3 & 2) push_special(83, 50);
             if (option3 & 4) push_special(77, 5);
         } else {
-            if (wType >= 0 && wType < 160 && wType != 135 && wType != 143) {
+            if (wType >= 0 && wType < ITEM_STAFF_BASE && wType != 135 && wType != 143) {
                 push_special(60, (BYTE)(4 * option3));
                 ip->RequireStrength = (WORD)(ip->RequireStrength + 5 * option3);
             }
-            if (wType >= 160 && wType < 192) {
+            if (wType >= ITEM_STAFF_BASE && wType < ITEM_SHIELD_BASE) {
                 push_special(61, (BYTE)(4 * option3));
                 ip->RequireStrength = (WORD)(ip->RequireStrength + 5 * option3);
             }
-            if (wType >= 192 && wType < 224) {
+            if (wType >= ITEM_SHIELD_BASE && wType < ITEM_HELM_BASE) {
                 push_special(62, (BYTE)(5 * option3));
                 ip->RequireStrength = (WORD)(ip->RequireStrength + 5 * option3);
             }
-            if (wType >= 224 && wType < 384) {
+            if (wType >= ITEM_HELM_BASE && wType < ITEM_WING_ELF) {
                 push_special(63, (BYTE)(4 * option3));
                 ip->RequireStrength = (WORD)(ip->RequireStrength + 5 * option3);
             }
-            if (wType >= 424 && wType < 448) {
+            if (wType >= 424 && wType < ITEM_POTION_BASE) {
                 push_special(65, (BYTE)option3);
             }
             switch (wType) {
-            case 384: push_special(65, (BYTE)option3); break;
-            case 385: push_special(61, (BYTE)(4 * option3)); break;
-            case 386: push_special(60, (BYTE)(4 * option3)); break;
-            case 387:
+            case ITEM_WING_ELF: push_special(65, (BYTE)option3); break;
+            case ITEM_WING_HEAVEN: push_special(61, (BYTE)(4 * option3)); break;
+            case ITEM_WING_SATAN: push_special(60, (BYTE)(4 * option3)); break;
+            case ITEM_WING_SPIRITS:
                 if (itemExcel & 0x20) push_special(65, (BYTE)option3);
                 else push_special(60, (BYTE)(4 * option3));
                 break;
-            case 388:
+            case ITEM_WING_SOUL:
                 if (itemExcel & 0x20) push_special(61, (BYTE)(4 * option3));
                 else push_special(65, (BYTE)option3);
                 break;
-            case 389:
+            case ITEM_WING_DRAGON:
                 if (itemExcel & 0x20) push_special(60, (BYTE)(4 * option3));
                 else push_special(65, (BYTE)option3);
                 break;
-            case 390:
+            case ITEM_WING_DARKNESS:
                 if (itemExcel & 0x20) push_special(60, (BYTE)(4 * option3));
                 else push_special(61, (BYTE)(4 * option3));
                 break;
@@ -459,7 +459,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         }
     }
 
-    if ((wType >= 192 && wType < 384) || (wType >= 424 && wType <= 425)) {
+    if ((wType >= ITEM_SHIELD_BASE && wType < ITEM_WING_ELF) || (wType >= 424 && wType <= 425)) {
         if (Attribute2 & 0x20) push_special(66);
         if (Attribute2 & 0x10) push_special(67);
         if (Attribute2 & 8)    push_special(68);
@@ -468,9 +468,9 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         if (Attribute2 & 1)    push_special(71);
     }
 
-    if ((wType >= 0 && wType < 192) || (wType >= 428 && wType <= 429)) {
+    if ((wType >= 0 && wType < ITEM_SHIELD_BASE) || (wType >= 428 && wType <= 429)) {
         if (Attribute2 & 0x20) push_special(72);
-        if ((wType >= 160 && wType < 192) || wType == 428) {
+        if ((wType >= ITEM_STAFF_BASE && wType < ITEM_SHIELD_BASE) || wType == 428) {
             if (Attribute2 & 0x10) push_special(75, (BYTE)(*(unsigned short*)((BYTE*)CharacterAttribute + 14) / 20));
             if (Attribute2 & 8)    push_special(76);
         } else {
@@ -491,24 +491,24 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
         ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
         return;
     }
-    if ((partType >= 128 && partType < 136) || partType == 145) {
+    if ((partType >= ITEM_BOW_BASE && partType < 136) || partType == 145) {
         ip->Part = 1;
         ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
         return;
     }
     if (partType >= 0) {
-        if (partType < 192) { ip->Part = 0; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (partType < 224) { ip->Part = 1; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (partType < 256) { ip->Part = 2; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (partType < 288) { ip->Part = 3; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (partType < 320) { ip->Part = 4; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (partType < 352) { ip->Part = 5; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-        if (partType < 384) { ip->Part = 6; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_SHIELD_BASE) { ip->Part = 0; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_HELM_BASE) { ip->Part = 1; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_ARMOR_BASE) { ip->Part = 2; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_PANTS_BASE) { ip->Part = 3; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_GLOVES_BASE) { ip->Part = 4; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_BOOTS_BASE) { ip->Part = 5; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+        if (partType < ITEM_WING_ELF) { ip->Part = 6; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
         if (partType < 391) { ip->Part = 7; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     }
-    if (partType >= 416 && partType < 424) { ip->Part = 8; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= ITEM_HELPER_ANGEL && partType < 424) { ip->Part = 8; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     if (partType >= 424 && partType < 428) { ip->Part = 10; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
-    if (partType >= 428 && partType < 448) { ip->Part = 9; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
+    if (partType >= 428 && partType < ITEM_POTION_BASE) { ip->Part = 9; ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0); return; }
     ip->Part = (BYTE)-1;
     ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
 }

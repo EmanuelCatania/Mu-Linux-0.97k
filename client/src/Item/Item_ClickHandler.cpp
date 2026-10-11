@@ -464,9 +464,9 @@ extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool)
 {
     BYTE* const item = pool + 68 * slot;
     const short t = *(short*)item;
-    if (!((t >= 416 && t <= 419) || t == 461 || t == 462 || t == 464 ||
-          (t >= 384 && t <= 390) || t == 399 ||
-          ((item[4] & 0x78) > 0x20 && t < 384) || (item[27] & 0x3F)))
+    if (!((t >= ITEM_HELPER_ANGEL && t <= ITEM_HELPER_DINORANT) || t == ITEM_JEWEL_BLESS || t == ITEM_JEWEL_SOUL || t == ITEM_JEWEL_LIFE ||
+          (t >= ITEM_WING_ELF && t <= ITEM_WING_DARKNESS) || t == ITEM_JEWEL_CHAOS ||
+          ((item[4] & 0x78) > 0x20 && t < ITEM_WING_ELF) || (item[27] & 0x3F)))
         return;
 
     bool sameTypeKept = false;
@@ -766,8 +766,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // durability), excluding stackables like potions/jewels.
                 // Per IDA lines 579-586.
                 const int kind = ItemBehaviorType(type);   // 0.97.20
-                if (!((kind >= 416 && kind <= 419) || kind == 426 || kind == 135 ||
-                      kind == 143 || kind >= 448 ||
+                if (!((kind >= ITEM_HELPER_ANGEL && kind <= ITEM_HELPER_DINORANT) || kind == 426 || kind == 135 ||
+                      kind == 143 || kind >= ITEM_POTION_BASE ||
                       (kind >= 391 && kind <= 403) ||
                       (kind >= 430 && kind <= 435))
                     && DAT_083a4124)
@@ -1344,13 +1344,13 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 // mas abajo.
                 const BYTE sellExcByte = *((BYTE*)pPickedItem + 0x6b - 0x44);
                 bool needConfirm =
-                    (pickType >= 416 && pickType <= 419) ||
-                    pickType == 461 || pickType == 462 || pickType == 464 ||
-                    pickType == 470 ||
-                    (pickType >= 384 && pickType <= 390) ||
+                    (pickType >= ITEM_HELPER_ANGEL && pickType <= ITEM_HELPER_DINORANT) ||
+                    pickType == ITEM_JEWEL_BLESS || pickType == ITEM_JEWEL_SOUL || pickType == ITEM_JEWEL_LIFE ||
+                    pickType == ITEM_JEWEL_CREATION ||
+                    (pickType >= ITEM_WING_ELF && pickType <= ITEM_WING_DARKNESS) ||
                     pickType == 19  || pickType == 170 || pickType == 146 ||
-                    pickType == 399 || pickType == 430 || pickType == 431 ||
-                    (pickLevel > 4 && pickType < 384) ||
+                    pickType == ITEM_JEWEL_CHAOS || pickType == 430 || pickType == 431 ||
+                    (pickLevel > 4 && pickType < ITEM_WING_ELF) ||
                     ((sellExcByte & 0x3F) != 0);
 
                 if (needConfirm) {
@@ -1383,14 +1383,14 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             {
                 BYTE excByte = *((BYTE*)pPickedItem + 0x6b - 0x44);  // byte_7E9136B
                 bool bForbidden =
-                    (pickType >= 416 && pickType <= 419) ||
-                    pickType == 461 || pickType == 462 || pickType == 464 ||
-                    pickType == 470 ||
-                    (pickType >= 384 && pickType <= 390) ||
+                    (pickType >= ITEM_HELPER_ANGEL && pickType <= ITEM_HELPER_DINORANT) ||
+                    pickType == ITEM_JEWEL_BLESS || pickType == ITEM_JEWEL_SOUL || pickType == ITEM_JEWEL_LIFE ||
+                    pickType == ITEM_JEWEL_CREATION ||
+                    (pickType >= ITEM_WING_ELF && pickType <= ITEM_WING_DARKNESS) ||
                     pickType == 19  || pickType == 170 || pickType == 146 ||
-                    pickType == 399 || pickType == 430 || pickType == 431 ||
+                    pickType == ITEM_JEWEL_CHAOS || pickType == 430 || pickType == 431 ||
                     pickType == 435 ||
-                    (pickLevel > 4 && pickType < 384) ||
+                    (pickLevel > 4 && pickType < ITEM_WING_ELF) ||
                     ((excByte & 0x3F) != 0);
                 if (bForbidden) {
                     // (byte_7EAA194 en IDA es el buffer de sender; acá va vacío

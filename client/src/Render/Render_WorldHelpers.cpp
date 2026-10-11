@@ -920,7 +920,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
     if (!owner) return;
 
     // Modelo del arma = itemType + 400 (owner+136 = índice del item).
-    const int model_id = *(unsigned char*)(owner + 136) + 400;
+    const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
     if (model_id < 0 || model_id >= 1024) return;
 
     // Giro: o+200 acumula -30°/frame y se suma al angle[2]; el arma además

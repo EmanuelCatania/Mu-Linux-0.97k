@@ -445,15 +445,15 @@ long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3,
                 if (itemType != -1) {
                     int durability = *(int*)(pCell + 0x1c);  // offset +0x38 bytes = +0x1c shorts
                     if (durability > 0) {
-                        if (itemType == 0x1cd) {
+                        if (itemType == ITEM_JEWEL_BLESS) {
                             totalValue += 100000;
-                        } else if (itemType == 0x1ce) {
+                        } else if (itemType == ITEM_JEWEL_SOUL) {
                             totalValue += 70000;
-                        } else if (itemType == 0x18f) {  // 399
+                        } else if (itemType == ITEM_JEWEL_CHAOS) {  // 399
                             totalValue += 40000;
-                        } else if (itemType == 0x1d0) {
+                        } else if (itemType == ITEM_JEWEL_LIFE) {
                             totalValue += 450000;
-                        } else if (itemType == 0x1d6) {
+                        } else if (itemType == ITEM_JEWEL_CREATION) {
                             totalValue += 450000;
                         } else {
                             // ItemValue(item, sellMode=0).
@@ -461,7 +461,7 @@ long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3,
                             totalValue += itemVal;
                             (void)durability;
                         }
-                        if (*pCell == 0x18f) {  // 399
+                        if (*pCell == ITEM_JEWEL_CHAOS) {  // 399
                             hasItem399 = true;
                         }
                     }

@@ -147,11 +147,11 @@ bool __cdecl CheckFullSet(int c) {
         v3 -= 12;  // -24 bytes (= 12 shorts) — previous body part
         if (v2 < v1) {
             // All required parts present; check set match
-            int v4 = (*(short*)(c + 600) - 400) % 16;  // Boot set_id
+            int v4 = (*(short*)(c + 600) - ITEM_MODEL_BASE) % 16;  // Boot set_id
             int v5 = 5;
             int v6 = *(unsigned char*)(c + 602) & 0xF;  // Boot level
             short* v7 = (short*)(c + 600);
-            while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - 400) % 16) {
+            while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - ITEM_MODEL_BASE) % 16) {
                 if (v6 >= ((v7[1]) & 0xF)) {
                     v6 = (v7[1]) & 0xF;
                     EquipmentLevelSet = v6;

@@ -428,7 +428,7 @@ int RenderEquipedHelperLife_(bool a2)
     DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;
 
-    if (helperType >= 816 && helperType <= 819) {
+    if (helperType >= MODEL_HELPER_ANGEL && helperType <= MODEL_HELPER_DINORANT) {
         const float posY = a2 ? 24.0f : 4.0f;
 
         // x = GetScreenWidth() - 50.0 - (PartyNumber > 0 ? 50.0 : 0.0) - 15.0
@@ -451,9 +451,9 @@ int RenderEquipedHelperLife_(bool a2)
         const short helperItem = CharacterMachine ? *(const short*)((const BYTE*)CharacterMachine + 1080) : -1;
         if (helperItem >= ITEM_MAX_VANILLA && helperItem < ITEM_MAX_EX && ItemAttribute)
             text = ItemAttribute[helperItem].Name;
-        else if (helperType == 818) text = GlobalText[355];
-        else if (helperType == 819) text = GlobalText[354];
-        else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
+        else if (helperType == MODEL_HELPER_UNIRIA) text = GlobalText[355];
+        else if (helperType == MODEL_HELPER_DINORANT) text = GlobalText[354];
+        else if (ItemAttribute)     text = ItemAttribute[helperType - ITEM_MODEL_BASE].Name;
         if (!text) text = "";
 
         SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));

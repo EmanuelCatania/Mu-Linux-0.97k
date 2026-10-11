@@ -1,4 +1,5 @@
 #pragma once
+#include "Item/ItemDefines.h"
 #ifndef GAME_ENUMS_H
 #define GAME_ENUMS_H
 
@@ -224,27 +225,6 @@ enum eSkillNumber
 };
 
 /* Models — ITEM_BASE_MODEL=400, MAX_ITEM_TYPE=32 */
-enum eModelNumbers
-{
-    MODEL_SWORD  = 400,                    // ITEM_BASE_MODEL
-    MODEL_AXE    = MODEL_SWORD   + 32,     // +MAX_ITEM_TYPE
-    MODEL_MACE   = MODEL_AXE    + 32,
-    MODEL_SPEAR  = MODEL_MACE   + 32,
-    MODEL_BOW    = MODEL_SPEAR  + 32,
-    MODEL_STAFF  = MODEL_BOW    + 32,
-    MODEL_SHIELD = MODEL_STAFF  + 32,
-    MODEL_HELM   = MODEL_SHIELD + 32,
-    MODEL_ARMOR  = MODEL_HELM   + 32,
-    MODEL_PANTS  = MODEL_ARMOR  + 32,
-    MODEL_GLOVES = MODEL_PANTS  + 32,
-    MODEL_BOOTS  = MODEL_GLOVES + 32,
-    MODEL_WING   = MODEL_BOOTS  + 32,
-    MODEL_HELPER = MODEL_WING   + 32,
-    MODEL_POTION = MODEL_HELPER + 32,
-    MODEL_ETC    = MODEL_POTION + 32,
-
-    MODEL_EVENT  = 947,
-};
 
 /* Classes */
 enum eClasses
