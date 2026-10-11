@@ -7,9 +7,6 @@
 
 CFont gFont;
 
-// Alto de la fuente base. Lo leen el render de texto y el layout de los paneles.
-extern int FontHeight;
-
 void CFont::Create(DWORD windowWidth)
 {
     const UserFontSettings& cfg = gUserSettings.GetFont();
@@ -18,18 +15,18 @@ void CFont::Create(DWORD windowWidth)
         // DESVIACION (DLL, Font.cpp): la fuente sale de Config.ini [Font]. El
         // alto es fijo (no depende de la resolución), con tope 25; la fuente
         // común puede ir en negrita (FontBold) y la grande mide el doble.
-        FontHeight = cfg.height;
+        m_Height = cfg.height;
         const DWORD pitch = DEFAULT_PITCH;
-        m_Fonts[FONT_NORMAL] = CreateFontA(FontHeight, cfg.width, 0, 0,
+        m_Fonts[FONT_NORMAL] = CreateFontA(m_Height, cfg.width, 0, 0,
                                            cfg.bold ? FW_BOLD : FW_NORMAL,
                                            cfg.italic, cfg.underline, cfg.strikeOut,
                                            cfg.charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                            cfg.quality, pitch, cfg.faceName);
-        m_Fonts[FONT_BOLD]   = CreateFontA(FontHeight, cfg.width, 0, 0, FW_BOLD,
+        m_Fonts[FONT_BOLD]   = CreateFontA(m_Height, cfg.width, 0, 0, FW_BOLD,
                                            cfg.italic, cfg.underline, cfg.strikeOut,
                                            cfg.charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                            cfg.quality, pitch, cfg.faceName);
-        m_Fonts[FONT_BIG]    = CreateFontA(FontHeight * 2, cfg.width, 0, 0, FW_BOLD,
+        m_Fonts[FONT_BIG]    = CreateFontA(m_Height * 2, cfg.width, 0, 0, FW_BOLD,
                                            cfg.italic, cfg.underline, cfg.strikeOut,
                                            cfg.charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                            cfg.quality, pitch, cfg.faceName);
@@ -42,7 +39,7 @@ void CFont::Create(DWORD windowWidth)
     if      (windowWidth == 0x320) fontSize = 0x0d;   // 800
     else if (windowWidth == 0x400) fontSize = 0x0e;   // 1024
     else if (windowWidth >= 0x500) fontSize = 0x0f;   // 1280 o más
-    FontHeight = fontSize;
+    m_Height = fontSize;
 
     // DESVIACION: el binario usa 129 (HANGEUL_CHARSET) porque su Text.bmd es
     // coreano. El nuestro está en Windows-1252, y con HANGEUL_CHARSET la GDI
@@ -53,7 +50,7 @@ void CFont::Create(DWORD windowWidth)
 
     m_Fonts[FONT_NORMAL] = CreateFontA(fontSize, 0, 0, 0, 400, 0, 0, 0, charSet, 0, 0, 0, 0, "Arial");
     m_Fonts[FONT_BOLD]   = CreateFontA(fontSize, 0, 0, 0, 700, 0, 0, 0, charSet, 0, 0, 0, 0, "Arial");
-    // IDA WinMain 0x41F151: el doble de la base (FontHeight - 1), bold.
+    // IDA WinMain 0x41F151: el doble de la base (m_Height - 1), bold.
     m_Fonts[FONT_BIG]    = CreateFontA(2 * (fontSize - 1), 0, 0, 0, 700, 0, 0, 0, charSet, 0, 0, 0, 0, "Arial");
 }
 

@@ -343,7 +343,7 @@ void CNetwork::SendFrameC3(const BYTE* pkt, int totalLen)
         plain[i] ^= plain[i - 1] ^ XorKey[i & 0x1f];
     }
 
-    plain[1] = DAT_05826ceb++;           // el byte de tamano pasa a ser el serial
+    plain[1] = m_SendSerial++;           // el byte de tamano pasa a ser el serial
     int  bodyLen = totalLen - 1;
     int  encLen  = CSimpleModulus_Encode(0, plain + 1, bodyLen);
     int  total   = encLen + 2;
@@ -420,7 +420,7 @@ void CNetwork::SendLarge(const BYTE* pkt, int totalLen)
         }
     }
 
-    ((BYTE*)pkt)[1] = DAT_05826ceb++;    // replace size byte with serial
+    ((BYTE*)pkt)[1] = m_SendSerial++;    // replace size byte with serial
     int  bodyLen = totalLen - 1;
     int  encLen  = CSimpleModulus_Encode(0, (unsigned char*)(pkt + 1), bodyLen);
     int  total   = encLen + 3;

@@ -196,13 +196,13 @@ void Game_CharSelectTick(void)
     //
     // O sea LABEL_108 es SALTEAR.
     bool doLeaves;
-    if (World == 0)
+    if (gMapManager.GetCurrentMap() == 0)
         doLeaves = (DAT_07e118e8 != 4);
-    else if (World == 2)
+    else if (gMapManager.GetCurrentMap() == 2)
         doLeaves = !(DAT_07e118e8 == 3 || DAT_07e118e8 >= 10);
     else
-        doLeaves = (World == 3 || World == 7 ||
-                    World == 9 || World == 10);
+        doLeaves = (gMapManager.GetCurrentMap() == 3 || gMapManager.GetCurrentMap() == 7 ||
+                    gMapManager.GetCurrentMap() == 9 || gMapManager.GetCurrentMap() == 10);
     if (doLeaves) WeatherParticles_Update();
     Bisect_ChatMode("CST_post_skillFX");
     // Full world pipeline

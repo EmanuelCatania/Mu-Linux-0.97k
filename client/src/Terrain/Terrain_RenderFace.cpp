@@ -135,7 +135,7 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         // constante de .data que en el binario vale 1.
         if (TER_ALPHA[TER_IDX1] <= 0.0f && TER_ALPHA[TER_IDX2] <= 0.0f &&
             TER_ALPHA[TER_IDX3] <= 0.0f && TER_ALPHA[TER_IDX4] <= 0.0f &&
-            !DAT_0814b2dc && (World < 11 || World > 16))   // CurrentLayer
+            !DAT_0814b2dc && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16))   // CurrentLayer
         {
             int slot = (int)(unsigned char)TER_L1[TER_IDX1] + 50;
             BITMAP_t* bmp = &Bitmaps[slot];
@@ -188,7 +188,7 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
     FaceTexture(tex, xf, yf, water, 0);     // FaceTexture
     RenderFace(tex);                       // RenderFace
 
-    if (World == 7 && (unsigned char)TER_L2[TER_IDX1] == 5 &&
+    if (gMapManager.GetCurrentMap() == 7 && (unsigned char)TER_L2[TER_IDX1] == 5 &&
         (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
          TER_ALPHA[TER_IDX3] > 0.0f || TER_ALPHA[TER_IDX4] > 0.0f))
     {

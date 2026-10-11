@@ -1,7 +1,7 @@
 // Music.cpp — elección del tema de fondo.
 //
 // IDA: PlayMp3 y StopMp3 (0x004127F0). Las dos comparan el nombre recibido con
-// el tema en curso (MusicCurrentTrack) y respetan m_MusicOnOff (Config.ini
+// el tema en curso (m_CurrentTrack) y respetan m_MusicEnabled (Config.ini
 // [Sound] EnableMusic, o el registro) y Destroy (DAT_055ca018, el cliente se
 // está cerrando).
 //
@@ -14,15 +14,14 @@
 #include "Sound/SoundManager.h"
 
 // IDA: StopMp3 (0x004127F0) — corta el tema si `Name` es el que está sonando.
-void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
+void CSound::StopTrack(const char* Name, int bEnforce)
 {
-    const char* Name = (const char*)(uintptr_t)param_1_d;
     if (Name == NULL) return;   // guard del port: la tabla de nombres puede venir vacía
 
-    if ((m_MusicOnOff || bEnforce) && MusicCurrentTrack[0] && strcmp(Name, MusicCurrentTrack) == 0)
+    if ((m_MusicEnabled || bEnforce) && m_CurrentTrack[0] && strcmp(Name, m_CurrentTrack) == 0)
     {
-        gSound.StopMusic();
-        MusicCurrentTrack[0] = 0;
+        StopMusic();
+        m_CurrentTrack[0] = 0;
     }
 }
 
@@ -30,26 +29,25 @@ void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 //   - mismo tema ya sonando  -> no hace nada
 //   - otro tema sonando      -> lo corta y sale (el próximo frame arranca el nuevo)
 //   - nada sonando           -> si el archivo existe, lo reproduce
-void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
+void CSound::PlayTrack(const char* Name, int bEnforce)
 {
-    const char* Name = (const char*)(uintptr_t)param_1_d;
     if (Name == NULL) return;   // guard del port: la tabla de nombres puede venir vacía
 
-    if (DAT_055ca018 != 0 || (!m_MusicOnOff && !bEnforce))
+    if (DAT_055ca018 != 0 || (!m_MusicEnabled && !bEnforce))
         return;
     // DESVIACION: música parada desde el menú de opciones (CSound).
-    if (gSound.IsMusicStoppedByUser()) {
-        MusicCurrentTrack[0] = 0;
+    if (IsMusicStoppedByUser()) {
+        m_CurrentTrack[0] = 0;
         return;
     }
 
-    if (MusicCurrentTrack[0])
+    if (m_CurrentTrack[0])
     {
-        if (strcmp(Name, MusicCurrentTrack) == 0)
+        if (strcmp(Name, m_CurrentTrack) == 0)
             return;
 
-        gSound.StopMusic();
-        MusicCurrentTrack[0] = 0;
+        StopMusic();
+        m_CurrentTrack[0] = 0;
         return;
     }
 
@@ -57,10 +55,21 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
     if (fp == NULL) return;
     crt_fclose(fp);
 
-    if (gSound.PlayMusic(Name))
-        strcpy_s(MusicCurrentTrack, sizeof(MusicCurrentTrack), Name);
+    if (PlayMusic(Name))
+        strcpy_s(m_CurrentTrack, sizeof(m_CurrentTrack), Name);
 }
 
+
+// IDA: PlayMp3 / StopMp3 (0x004127F0). Puentes para los callers heredados.
+void __cdecl Music_PlayTrack(DWORD name, int enforce)
+{
+    gSound.PlayTrack((const char*)(uintptr_t)name, enforce);
+}
+
+void __cdecl Music_StopTrack(DWORD name, int enforce)
+{
+    gSound.StopTrack((const char*)(uintptr_t)name, enforce);
+}
 
 // FUN_00412180 @ 0x00412180 (~66 lines) — ListBox_HandleInput2: identical structure to
 // FUN_00411a20 (key 7/0xC/0xD/0xE dispatch, scroll adjust, selection tracking).

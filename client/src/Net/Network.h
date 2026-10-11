@@ -44,6 +44,9 @@ public:
     void SendToConnectServer(const BYTE* data, int len);
 
     // Datos recibidos y ventanas de las extensiones; sin enviar paquetes al limpiar.
+    // IDA: CreateSocket (0x00423920): reinicio sólo al conectar con éxito.
+    void InitializePacketSerials();
+
     void ResetCharacterData();
     void ResetSessionData();
 
@@ -63,6 +66,9 @@ private:
     void SendFrameC3(const BYTE* pkt, int len);
     void SendResolved(const BYTE* pkt, int len, bool chosenC3, const char* who);
     void RequestServerList();   // C1 04 F4 02, una sola vez por sesión de CS
+
+    char m_SendSerial = 0; // IDA: DAT_05826CEB (0x05826CEB)
+    DWORD m_ReceiveSerial = 0; // IDA: g_byPacketSerialRecv (0x05826CEC)
 
     bool m_HasConnectServer = false;
     bool m_ConnectServerMode = false;

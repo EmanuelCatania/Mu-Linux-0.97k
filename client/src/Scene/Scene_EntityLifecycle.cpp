@@ -134,7 +134,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
 
     // game-substate overrides; some cases return directly (skipping Entity_InitRenderState),
     // others call it and return; fall-through also calls it.
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0:
         switch (param_1) {
         default: goto lbl_skip_init;

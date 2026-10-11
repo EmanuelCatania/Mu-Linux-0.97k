@@ -232,7 +232,7 @@ extern "C" void __cdecl Render_MapLoadText_(void);
 void Render_MapLoadText_(void)
 {
     if (!m_byMatchType) return;
-    if ((int)World < 11 || (int)World > 16) return;
+    if ((int)gMapManager.GetCurrentMap() < 11 || (int)gMapManager.GetCurrentMap() > 16) return;
 
     GL_ResetState();
     EnableAlphaTest(false);

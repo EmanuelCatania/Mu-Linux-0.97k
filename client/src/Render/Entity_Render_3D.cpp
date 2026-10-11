@@ -167,9 +167,9 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     }
 
     local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
-    pfVar3 = (float *)World;
+    pfVar3 = (float *)gMapManager.GetCurrentMap();
 
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     // ── case 0: login / connecting ────────────────────────────────────────────
     case 0:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);

@@ -30,7 +30,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     short objType = *(short*)(objPtr + 2);
 
     // ── World 9: random terrain lights ──
-    if (World == 9) {
+    if (gMapManager.GetCurrentMap() == 9) {
         // IDA 0x004FDC00: the storm flash is independent from the object type.
         // It happens during the first quarter of the 4-second cycle, one time
         // in 100, around the local player.  The former port kept only sound.
@@ -45,7 +45,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     }
 
     // ── World 0: toggle torch/fire objects by HeroTile ──
-    if (World == 0) {
+    if (gMapManager.GetCurrentMap() == 0) {
         if (objType == 0x7d || objType == 0x7e) {
             if (HeroTile == 4) {
                 *(DWORD*)(objPtr + 0x164) = 0;        // hide (alpha=0)
@@ -56,7 +56,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     }
 
     // ── World 2: toggle water objects by HeroTile ──
-    if (World == 2) {
+    if (gMapManager.GetCurrentMap() == 2) {
         short s = *(short*)(objPtr + 2);
         if (s == 0x51 || s == 0x52 || s == 0x60 || s == 0x62 || s == 99) {
             if (HeroTile == 3 || HeroTile > 9) {
@@ -82,7 +82,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     model[0xa0] = *(char*)(objPtr + 0x105);  // set current action
 
     float animSpeed = *(float*)(objPtr + 0xcc);
-    if (World == 8 && *(short*)(objPtr + 2) == 8) {
+    if (gMapManager.GetCurrentMap() == 8 && *(short*)(objPtr + 2) == 8) {
         animSpeed = animSpeed * _DAT_00552650;  // slow down lava objects
     }
 
@@ -145,7 +145,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     // Worlds 0xb-0x10: types 9,10 → SubType check, type with action==4 → SubType=-2
 
     // Implement key patterns that affect gameplay visibility:
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0:
         switch (objType) {
         case 0x32: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 200.0f); return (float*)0;       // 0x43480000
@@ -422,7 +422,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     }
 
     // For worlds 0xb..0x10: check object type 9/10 visibility
-    if (World >= 0xb && World <= 0x10) {
+    if (gMapManager.GetCurrentMap() >= 0xb && gMapManager.GetCurrentMap() <= 0x10) {
         int t = (int)*(short*)(objPtr + 2);
         if (t >= 9 && t <= 10) {
             if (*(short*)(objPtr + 0x86) == 4) {
@@ -554,10 +554,10 @@ void __stdcall MoveObjects(void) {
     // In World 10 with thunder active, spawns lightning joints on random objects.
 
     float Scale = 0.0f;
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         Scale = (float)MoveHeavenThunder();
     }
-    else if (World > 10 && World < 0x11) {
+    else if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11) {
         // Worlds 11..16: spawn ambient particle near hero
         // IDA 004FF260: Angle is cleared and Light is full white.
         float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -646,7 +646,7 @@ void __stdcall MoveObjects(void) {
                         //   }
                         //
                         // Son los rayos de tormenta que caen sobre los objetos del mapa en Icarus.
-                        if (World == 10 && Scale != 0.0f) {
+                        if (gMapManager.GetCurrentMap() == 10 && Scale != 0.0f) {
                             int r2 = rand();
                             if (r2 % 10 == 0 &&
                                 *(short*)(pcVar6 + 2) >= 0 &&
@@ -840,7 +840,7 @@ void __stdcall MoveBugs(void) {
                 *(DWORD*)(e + 0x10) = *(DWORD*)(v8 + 16);   // posX
                 short v11 = *(short*)(e + 2);               // type
                 *(DWORD*)(e + 0x14) = *(DWORD*)(v8 + 20);   // posY
-                int   v12 = World;
+                int   v12 = gMapManager.GetCurrentMap();
                 float v37 = *(float*)(v8 + 24);
                 *(float*)(e + 0x18) = v37;                  // posZ
                 if (v11 == 267) {
@@ -854,13 +854,13 @@ void __stdcall MoveBugs(void) {
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 3);
                     else                                       SetAction((int)e, 2);
-                    if ((rand() & 1) == 0 && World != 10) {
+                    if ((rand() & 1) == 0 && gMapManager.GetCurrentMap() != 10) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
                         Position[0] = (float)(rand() % 64 - 32) + *(float*)(e + 0x10);
                         Position[1] = (float)(rand() % 64 - 32) + *(float*)(e + 0x14);
                         Position[2] = (float)(rand() % 32 - 16) + *(float*)(e + 0x18);
-                        if (World == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
+                        if (gMapManager.GetCurrentMap() == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                         else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;        // animSpeed = 0.34f
@@ -1003,7 +1003,7 @@ void __cdecl FUN_004fdc00(float o)
   float oa; // [esp+44h] [ebp+4h]
   float ob; // [esp+44h] [ebp+4h]
 
-  if ( World == 9 )
+  if ( gMapManager.GetCurrentMap() == 9 )
   {
     if ( (__int64)WorldTime % 4000 < 1000 && !(rand() % 100) )
     {
@@ -1017,7 +1017,7 @@ void __cdecl FUN_004fdc00(float o)
     }
     PlayBuffer(1, 0, 1);
   }
-  if ( !World )
+  if ( !gMapManager.GetCurrentMap() )
   {
     v3 = *(WORD *)(LODWORD(o) + 2);
     if ( v3 != 125 && v3 != 126 )
@@ -1033,7 +1033,7 @@ void __cdecl FUN_004fdc00(float o)
       *(DWORD *)(LODWORD(o) + 356) = 1065353216;
     }
   }
-  if ( World == 2 )
+  if ( gMapManager.GetCurrentMap() == 2 )
   {
     v4 = *(WORD *)(LODWORD(o) + 2);
     if ( v4 == 81 || v4 == 82 || v4 == 96 || v4 == 98 || v4 == 99 )
@@ -1057,7 +1057,7 @@ LABEL_22:
   v5 = Models + 188 * *(short *)(LODWORD(o) + 2);
   *(BYTE *)(v5 + 160) = *(BYTE *)(LODWORD(o) + 261);
   oa = *(float *)(LODWORD(o) + 204);
-  if ( World == 8 && *(WORD *)(LODWORD(o) + 2) == 8 )
+  if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(LODWORD(o) + 2) == 8 )
   {
     oa = oa * 4.0;
   }
@@ -1100,7 +1100,7 @@ LABEL_22:
     *(float *)(LODWORD(o) + 112) = -(v9 * 0.00025000001);
   }
 LABEL_38:
-  switch ( World )
+  switch ( gMapManager.GetCurrentMap() )
   {
     case 0:
       switch ( *(WORD *)(LODWORD(o) + 2) )

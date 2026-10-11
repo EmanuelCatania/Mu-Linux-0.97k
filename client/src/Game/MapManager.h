@@ -35,6 +35,9 @@ public:
 
     CMapManager();
 
+    int GetCurrentMap() const { return m_CurrentMap; }
+    void SetCurrentMap(int map) { m_CurrentMap = map; }
+
     // Nombre del mapa para el chat y el panel de party.
     const char* GetName(int map) const;
 
@@ -55,6 +58,7 @@ private:
     bool IsMapTrack(int map, const char* track) const;
     bool IsAnyMapTrack(const char* track) const;
 
+    int m_CurrentMap = 0; // IDA: World (0x0055A7AC)
     MapInfo m_Maps[MaxMaps];
 };
 

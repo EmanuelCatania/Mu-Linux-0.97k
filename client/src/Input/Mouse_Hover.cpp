@@ -79,7 +79,7 @@ void Mouse_UpdateHoverTargets(void)
     // ── 2. Reset hover targets ────────────────────────────────────────────────
 
     // `SelectedCharacter >= 0` evita leer entity[+0x2fd] con indice -1 (estado inicial).
-    if (m_bAutoAttack == '\0' || World == 6) {
+    if (m_bAutoAttack == '\0' || gMapManager.GetCurrentMap() == 6) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
         Attacking = -1;
@@ -424,7 +424,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             // sobre un tile 4, y en Devias (World 2) sobre un tile 3, solo se
             // puede elegir si el heroe esta en ese mismo tipo de tile.
             // `World` es el indice de mapa.
-            const int map = (int)World;
+            const int map = (int)gMapManager.GetCurrentMap();
             if (map == 0 || map == 2) {
                 int tx = (int)*(float*)(ent + 0x10) / 100;
                 int ty = (int)*(float*)(ent + 0x14) / 100;

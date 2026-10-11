@@ -384,7 +384,7 @@ void __cdecl MoveObject_Special(int a1)
     return;
   }
   v1 = DAT_0055a7b8;
-  if ( DAT_0055a7b8 < 0 || World != DAT_0055a7b4 )
+  if ( DAT_0055a7b8 < 0 || gMapManager.GetCurrentMap() != DAT_0055a7b4 )
   {
     return;
   }

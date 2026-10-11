@@ -108,7 +108,6 @@ static void AnimateRemoteSkillCaster97k(BYTE* caster)
 
 // External data
 extern BYTE* g_EntityBase;   // DAT_07abf5d0  legacy alias (may be NULL)
-extern int   World; // World
 extern BYTE* g_CharData;     // DAT_07cf1ffc
 
 // g_EntityBase is never wired to the actual entity array — the real
@@ -365,7 +364,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x31:  // 49 Fire Breath
     {
         SetAction((int)(intptr_t)caster,
-                     (World == 8 || World == 10) ? 65 : 64);
+                     (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 65 : 64);
         goto common_tail;
     }
 

@@ -673,7 +673,7 @@ void __cdecl Player_ProcessInput(void)
 
             // IDA L374: el tracking se apaga durante el auto-ataque y con la
             // animación de muerte (62).
-            if ((DAT_07e11e18 == 0 || g_Attacking == -1 || World == 6)
+            if ((DAT_07e11e18 == 0 || g_Attacking == -1 || gMapManager.GetCurrentMap() == 6)
                 && ent[261] != 62)
             {
                 bHeadTrackActive = true;
@@ -1077,7 +1077,7 @@ void __cdecl Player_ProcessInput(void)
         {
             const bool bHasClick = (bMousePush || bClickHeld || bClickLatched);
             const bool bAutoAttackEngaged = (m_bAutoAttack != 0)
-                                         && (World != 6)
+                                         && (gMapManager.GetCurrentMap() != 6)
                                          && (g_Attacking == 1)
                                          && (SelectedCharacter != -1);
             if (!bAutoAttackEngaged && !bHasClick) {
@@ -1199,7 +1199,7 @@ void __cdecl Player_ProcessInput(void)
                 // el ataque continua al soltar mientras el objetivo siga
                 // vivo (sub_4B0310 lo mantiene fijo).
                 const bool bAutoAttackGoOn = m_bAutoAttack != 0          // m_bAutoAttack
-                                          && World != 6           // World
+                                          && gMapManager.GetCurrentMap() != 6           // World
                                           && (int)Attacking == 1;     // Attacking
                 if (SelectedCharacter > -1 && (bClickEdge || bClickHeld || bAutoAttackGoOn)) {
                     // IDA Player.cpp (0x004ACEF0) gates the character-attack

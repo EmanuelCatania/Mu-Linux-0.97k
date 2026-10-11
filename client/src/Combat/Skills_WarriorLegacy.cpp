@@ -170,7 +170,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
         } else if (skillType == 47) {
             SetAction(o, 66);
         } else if (skillType == 49) {
-            if (World == 8 || World == 10) {
+            if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
                 SetAction(o, 65);
             } else {
                 SetAction(o, 64);
@@ -277,7 +277,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     if ((*(DWORD*)(o + 120) & 0x20) == 0) {
         int tileX = (int)(*(float*)(c + 788) * 0.01f);
         int tileY = (int)(*(float*)(c + 792) * 0.01f);
-        if (World >= 11 && World <= 16) {
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
             switch (abs((int)(*(float*)(o + 36) * 0.022222223f)) & 7) {
             case 0: ++tileY; break; case 1: --tileX; ++tileY; break;
             case 2: --tileX; break; case 3: --tileX; --tileY; break;

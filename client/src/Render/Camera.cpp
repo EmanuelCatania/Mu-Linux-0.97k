@@ -419,7 +419,7 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
     // DESVIACION (DLL MapFog glEnableFog, ahora catálogo 0.97.20): niebla
     // lineal 2000..2700 con el color del mapa.
     float fog[4];
-    gContentCatalog.GetFogColor((int)World, fog);
+    gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(), fog);
     glEnable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_LINEAR);
     glFogf(GL_FOG_START, 2000.0f);

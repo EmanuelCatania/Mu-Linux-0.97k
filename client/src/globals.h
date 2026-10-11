@@ -284,7 +284,7 @@ extern char    s__s_file_not_found__0055a784[];  // "%s file not found" format s
 extern DWORD   DAT_0055a798;
 extern char    DAT_0055a79c[];  // "Data\\"  path prefix
 extern char    DAT_0055a7a4[];  // "Data2\\" path prefix
-extern int     World; // IDA: World (0x0055A7AC)
+// IDA: World (0x0055A7AC): gMapManager.GetCurrentMap().
 extern float  _DAT_0055a7c0;
 extern DWORD   DAT_0055a7c0;
 
@@ -485,8 +485,6 @@ extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
 extern char    LogInID[16]; // IDA: DAT_05826CD4 (0x05826CD4)
-extern char    DAT_05826ceb;
-extern DWORD   g_byPacketSerialRecv; // IDA: DAT_05826CEC (0x05826CEC)
 extern DWORD   g_bGameServerConnected; // IDA: g_bGameServerConnected (0x05826CF0)
 extern float  _DAT_05826cf4;
 extern DWORD   g_dwLatestMagicTick; // IDA: g_dwLatestMagicTick (0x05826CF4)
@@ -1270,7 +1268,6 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
     if (p < 0x100000u || p >= 0x80000000u) return 0;
     return p;
 }
-extern int     FontHeight;          // IDA: FontHeight (0x07D78080) — lo setea WinMain por resolucion
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
 // (ver la declaracion de la tabla mas abajo).
 #define DAT_07e91530   (DAT_07e91528[2])
@@ -1963,9 +1960,7 @@ extern DWORD   FrameTimePreviousMs;  // IDA: DAT_05826dfc
 extern float   FPS;  // smoothed FPS value  [IDA 0x05826DF8]
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
-extern DWORD   m_MusicOnOff;            // 0x055C9E3C — flag on/off de la musica (ver globals.cpp)
 // IDA: DAT_055C9D04
-extern char    MusicCurrentTrack[256];  // tema de fondo en reproducción (IDA 0x055C9D04)
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 extern DWORD   DAT_0058443c;   // DS3D state dword
@@ -2834,7 +2829,7 @@ extern char    SoccerTeamName[2][80];// team names
 
 // Globals de fuente / medición de texto que consumen sub_480C60 y el HUD
 // renderers (HFONT object handles + DC + computed dimensions).
-// FontHeight se declara mas arriba (0x07D78080).
+// FontHeight (0x07D78080): gFont.GetHeight().
 extern SIZE    TextSize;             // shared scratch SIZE for text extent
 
 // Anti-tamper hash-table state — already declared above as g_HashTableCtx[4]

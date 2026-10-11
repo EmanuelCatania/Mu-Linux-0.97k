@@ -297,7 +297,7 @@ DWORD    DAT_0055a798  = 0;
 char     DAT_0055a79c[] = "Data\\";    // texture/asset path prefix ("Data mode")
 char     DAT_0055a7a4[] = "Data2\\";   // texture/asset path prefix ("Data2 / pak mode")
 // IDA: World (0x0055A7AC)
-int      World  = 0; // IDA: World (0x0055A7AC)
+// Estado del mapa actual: CMapManager::GetCurrentMap().
 float    _DAT_0055a7c0 = 0.0f;
 DWORD    DAT_0055a7c0  = 0;
 
@@ -613,9 +613,7 @@ DWORD    DAT_05826cc8  = 0;
 char     DAT_05826cc9  = 0;
 // IDA: DAT_05826CD4 (0x05826CD4)
 char     LogInID[16]  = {0};
-char     DAT_05826ceb  = 0;
-// IDA: DAT_05826CEC (0x05826CEC)
-DWORD    g_byPacketSerialRecv  = 0;
+// IDA: seriales 0x05826CEB/CEC: miembros de CNetwork.
 float    _DAT_05826cf4 = 0.0f;
 // IDA: g_dwLatestMagicTick (0x05826CF4)
 DWORD    g_dwLatestMagicTick  = 0;
@@ -1288,12 +1286,7 @@ int      DAT_07ea7b10[30] = {};  // TextBold      - 30 slots, igual que lpString
 int      DAT_07d78068 = 0;
 // El backup de DAT_07d78068 está en Render/Render_Frame.cpp y no acá: junto a
 // DAT_07d78068 lo pisaba el mismo escritor (dos ints consecutivos).
-// FontHeight — alto de la fuente, lo calcula WinMain segun la resolucion
-// (12 en 640x480, 13 en 800, 14 en 1024, 15 en 1280+) y lo leen RenderBoolean
-// (0x00480E00) y sub_480C60.
-// Es la única FontHeight: WinMain la escribe y todo el render la lee.
-// IDA: FontHeight (0x07D78080)
-int      FontHeight = 0;
+// IDA: FontHeight (0x07D78080) vive en CFont.
 // DAT_07e91530/534/53c/540 pasaron a ser macros sobre DAT_07e91528 (ver globals.h):
 // en el binario son COLUMNAS de la misma tabla, no globals sueltos.
 // UI text strings
@@ -1984,19 +1977,7 @@ float   DeltaT  = 0.0f;    // delta time per frame
 DWORD   FrameTimePreviousMs   = 0;
 float   FPS  = 0.0f;    // smoothed FPS value
 
-// ── Music.cpp globals ─────────────────────────────────────────────────────────
-// m_MusicOnOff @ 0x055C9E3C — flag on/off de la musica (BOOL, NO un puntero a
-// datos como decia la etiqueta vieja `lpData_055c9e3c`). Lo escribe Config_Load
-// leyendo HKCU\SOFTWARE\Webzen\Mu\Config -> "MusicOnOff"; lo leen PlayMp3 y
-// StopMp3. Default 0 (musica apagada) = fiel a IDA 0x0041E0A0 L81.
-// Antes estaba partido en dos memorias (`g_MusicOn` escrita + `lpData_055c9e3c`
-// leida) que nunca se veian, asi que la musica jamas arrancaba.
-DWORD   m_MusicOnOff                = 0;
-// Mp3FileName @ 0x055C9D04 — nombre del track en reproduccion. En el binario es
-// un buffer de string (PlayMp3 hace strcpy del path completo, ~25 chars); estaba
-// declarado como UN char, asi que la copia pisaba los globals de al lado.
-// IDA: DAT_055C9D04
-char    MusicCurrentTrack[256]      = {};
+// IDA: m_MusicOnOff (0x055C9E3C) y Mp3FileName (0x055C9D04): CSound.
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 DWORD   DAT_0058443c   = 0;

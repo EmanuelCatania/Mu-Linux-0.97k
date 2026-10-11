@@ -128,7 +128,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
 
     if (DAT_083a410c == '\0') {
         // Per-world magic byte check (sanity vs distributed .att files).
-        switch (World) {
+        switch (gMapManager.GetCurrentMap()) {
         case 0: if (TerrainWall[31623] != 5) Error = true; break;
         case 1: if (TerrainWall[30947] != 4) Error = true; break;
         case 2: if (TerrainWall[14288] != 5) Error = true; break;
@@ -247,13 +247,13 @@ void __cdecl OpenWorldModels(void) {
     char cVar2 = DAT_0055a7c4;
     if (DAT_083a410c != '\0') {
         DAT_0055a7c4 = '\0';
-        World = 7;
+        gMapManager.SetCurrentMap(7);
     }
 
     OpenJPG("Object8/drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
 
     if (DAT_0055a7c4 == '\0') {
-        switch (World) {
+        switch (gMapManager.GetCurrentMap()) {
         case 0:
             OpenModel((int)0xae, "Data2/Object1/Animal/", "bird.smd");
             OpenModel((int)0xb5, "Data2/Object1/Animal/", "fish.smd");
@@ -318,7 +318,7 @@ void __cdecl OpenWorldModels(void) {
 
     // Object type texture/name registration (second pass, all maps)
     SetMaxTextures(0x69);
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0:
         AccessModel(0xae, "Data/Object1/", "bird", 1);
         OpenTexture(0xae, "Object1/", 0x2600, '\x01');
@@ -430,7 +430,7 @@ void __cdecl OpenWorldModels(void) {
 
     // Object model loading for all maps (SetMaxTextures(0x2ee) then per-map loading)
     SetMaxTextures(0x2ee);
-    if (World == 0) {
+    if (gMapManager.GetCurrentMap() == 0) {
         // Lorencia (Object1) — load SMD models on first call
         if (DAT_0055a7c4 == '\0') {
             OpenModel((int)0x00, "Data2/Object1/", "treesmall.smd");
@@ -652,8 +652,8 @@ void __cdecl OpenWorldModels(void) {
         // Numero de carpeta de objetos.  IDA 0x50C4D0:
         //     v33 = World + 1;
         //     if ( World >= 11 && World <= 16 ) v33 = 12;
-        int objFolder = World + 1;
-        if (World >= 11 && World <= 16)
+        int objFolder = gMapManager.GetCurrentMap() + 1;
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16)
             objFolder = 12;
 
         // Dynamic map: load from per-map object file
@@ -685,9 +685,9 @@ void __cdecl OpenWorldModels(void) {
         for (int i = 0; i < 0xa0; i++)
             OpenTexture(i, local_384, 0x2600, '\x01');
         // Map-specific post-load fixups
-        if (World == 1)
+        if (gMapManager.GetCurrentMap() == 1)
             *(unsigned int *)(*(int *)(DAT_05828d58 + 0x1d90) + 0x14) = 0x3ecccccd; // 0.4f
-        else if (World == 8) {
+        else if (gMapManager.GetCurrentMap() == 8) {
             *(unsigned char *)(DAT_05828d58 + 0x89c)  = 0;
             *(unsigned char *)(DAT_05828d58 + 0x958)  = 0;
             *(unsigned char *)(DAT_05828d58 + 0xa14)  = 0;

@@ -581,7 +581,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
 
     // `World` es macro a World (structs.h:389): usar otro nombre o el
     // local se sombrearia a si mismo.
-    const int iWorld = (int)World;
+    const int iWorld = (int)gMapManager.GetCurrentMap();
     const unsigned char anim = *(unsigned char*)(o + 0x105);
 
     // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).

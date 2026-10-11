@@ -23,7 +23,7 @@ void Map_LoadObjectModels(void)
     cVar2 = DAT_0055a7c4;
     if (DAT_083a410c != '\0') {
         DAT_0055a7c4 = '\0';
-        World = 7;
+        gMapManager.SetCurrentMap(7);
     }
 
     // Global drop texture always loaded
@@ -32,7 +32,7 @@ void Map_LoadObjectModels(void)
     if (DAT_0055a7c4 != '\0') goto section2;
 
     // ── Section 1: per-zone animated creature BMD loads ─────────────────────
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0: // Lorencia
         OpenModel(0xae, "Data2/Object1/Animal/", "bird.smd");
         OpenModel(0xb5, "Data2/Object1/Animal/", "fish.smd");
@@ -100,7 +100,7 @@ section2:
     // ── Section 2: per-zone animation + texture loads ────────────────────────
     SetMaxTextures(0x69);
 
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0: // Lorencia
         AccessModel(0xae, "Data/Object1/", "bird"   /* DAT_0055f370 */, 1);
         OpenTexture(0xae, "Object1/", 0x2600, '\x01');
@@ -219,7 +219,7 @@ section2:
     // ── Section 3: main object set (Lorencia ~100 BMDs or custom map file) ──
     SetMaxTextures(0x2ee);
 
-    if (World == 0) {
+    if (gMapManager.GetCurrentMap() == 0) {
         // Lorencia: load all object models if not yet cached
         if (DAT_0055a7c4 == '\0') {
             // Trees
@@ -425,10 +425,10 @@ section2:
             iVar7 = iVar7 + 1;
         } while (iVar7 < 0xa0);
         // Zone-specific post-load fixups
-        if (World == 1) {
+        if (gMapManager.GetCurrentMap() == 1) {
             // Dungeon: set a float property on model slot 0x76 (offset 0x1d90 into table)
             *(float *)(*(int *)(DAT_05828d58 + 0x1d90) + 0x14) = 0.4f; // 0x3ecccccd
-        } else if (World == 8) {
+        } else if (gMapManager.GetCurrentMap() == 8) {
             // Barracks: clear animated flags on several model slots
             *(BYTE *)(DAT_05828d58 + 0x89c)  = 0;
             *(BYTE *)(DAT_05828d58 + 0x958)  = 0;

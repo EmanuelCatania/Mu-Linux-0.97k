@@ -261,7 +261,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         UIChatLogWindow_AddText((const char*)&DAT_083a7c94, nameBuf, 1);
 
     // ── GL CLEAR ──────────────────────────────────────────────────────────────
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         // Sub-state 10: teal clear color
         glClearColor(*(float*)"\x00\x00\x40\x3c",  // 0.047f
                      *(float*)"\x00\x00\xc8\x3d",  // 0.098f
@@ -372,7 +372,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // HackPacketCheck exige C3; gNetwork recibe el C1 lógico y lo cifra.
     #if 1
     if (SocketClientSocket != 0xffffffff &&
-        (SceneFlag == 4 || SceneFlag == 5 || World == 7)) {
+        (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == 7)) {
         static DWORD s_lastLive = 0;
         DWORD now = GetTickCount();
         if (now - s_lastLive >= 1000) {
@@ -409,7 +409,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     if (SceneFlag != 5) return;
 
     // ── Sonidos ambientales por mapa ───────────────────────────────────────
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0:  // Lorencia
         if (DAT_07e118e8 == 4) {
             Sound_StopBuffer(0); Sound_StopBuffer(1);
@@ -446,14 +446,14 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     // Corta los ambientales de los otros mapas
-    if (World != 0 && World != 2 && World != 3) Sound_StopBuffer(0);
-    if (World != 0 && World != 9)                       Sound_StopBuffer(1);
-    if (World != 1)                                             Sound_StopBuffer(3);
-    if (World != 3)                                             Sound_StopBuffer(2);
-    if (World != 4)                                             Sound_StopBuffer(5);
-    if (World != 7)                                             Sound_StopBuffer(6);
-    if (World != 8)                                             Sound_StopBuffer(7);
-    if (World != 10)                                            Sound_StopBuffer(0x14);
+    if (gMapManager.GetCurrentMap() != 0 && gMapManager.GetCurrentMap() != 2 && gMapManager.GetCurrentMap() != 3) Sound_StopBuffer(0);
+    if (gMapManager.GetCurrentMap() != 0 && gMapManager.GetCurrentMap() != 9)                       Sound_StopBuffer(1);
+    if (gMapManager.GetCurrentMap() != 1)                                             Sound_StopBuffer(3);
+    if (gMapManager.GetCurrentMap() != 3)                                             Sound_StopBuffer(2);
+    if (gMapManager.GetCurrentMap() != 4)                                             Sound_StopBuffer(5);
+    if (gMapManager.GetCurrentMap() != 7)                                             Sound_StopBuffer(6);
+    if (gMapManager.GetCurrentMap() != 8)                                             Sound_StopBuffer(7);
+    if (gMapManager.GetCurrentMap() != 10)                                            Sound_StopBuffer(0x14);
 
     // Música de fondo del mapa (IDA 0x00526D0C..0x00527475): ver CMapManager.
     gMapManager.UpdateMusic();

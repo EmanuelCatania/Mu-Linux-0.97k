@@ -132,8 +132,8 @@ int CenterTextY(const char* text, int centerY)
 
 bool CMiniMap::Available() const
 {
-    return SceneFlag == 5 && World >= 0 && Hero &&
-           gMapManager.GetMiniMap(World) == CMapManager::MiniMapMode::FullMap;
+    return SceneFlag == 5 && gMapManager.GetCurrentMap() >= 0 && Hero &&
+           gMapManager.GetMiniMap(gMapManager.GetCurrentMap()) == CMapManager::MiniMapMode::FullMap;
 }
 
 void CMiniMap::Toggle()
@@ -228,7 +228,7 @@ void CMiniMap::BuildTexture()
     const GLfloat border[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
     DAT_00561574 = 0xFFFFFFFF;   // la caché de BindTexture ya no vale
-    m_TextureWorld = World;
+    m_TextureWorld = gMapManager.GetCurrentMap();
 }
 
 void CMiniMap::RenderBackground() const
@@ -282,7 +282,7 @@ void CMiniMap::RenderGates() const
     char text[96];
     for (int i = 0; i < MaxGates; ++i) {
         const GATE_ATTRIBUTE& gate = gates[i];
-        if (gate.Flag != 1 || gate.Map != World || gate.Target >= MaxGates) continue;
+        if (gate.Flag != 1 || gate.Map != gMapManager.GetCurrentMap() || gate.Target >= MaxGates) continue;
         const float gx = gate.StartX + ceilf((gate.EndX - gate.StartX) / 2.0f);
         const float gy = gate.StartY + ceilf((gate.EndY - gate.StartY) / 2.0f);
         if (gx > v.charX + v.range || gx < v.charX - v.range ||
@@ -340,7 +340,7 @@ void CMiniMap::Render()
         m_Zoom = gUserSettings.GetMiniMapZoom();
         m_Loaded = true;
     }
-    if (m_TextureWorld != World) BuildTexture();
+    if (m_TextureWorld != gMapManager.GetCurrentMap()) BuildTexture();
     RenderBackground();
     RenderMarkers();
     RenderGates();

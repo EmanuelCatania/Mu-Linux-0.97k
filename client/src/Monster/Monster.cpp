@@ -616,7 +616,7 @@ void InitializeMonster34(unsigned int c)
     *(unsigned char*)(c + 602) = 9;
     *(unsigned char*)(c + 746) = 6;
     SetCharacterScale((int)c);
-    if (World == 9) {
+    if (gMapManager.GetCurrentMap() == 9) {
         *(unsigned int*)(c + 12) = 1067869798;
     }
 }
@@ -654,7 +654,7 @@ void InitializeMonster77(unsigned int c)
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 88.
 void InitializeMonster88(unsigned int c)
 {
-    if ((World - 9) / 3) {
+    if ((gMapManager.GetCurrentMap() - 9) / 3) {
         *(unsigned char*)(c + 626) = 0;
     } else {
         *(unsigned char*)(c + 626) = 8;
@@ -1077,7 +1077,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     c = CreateMonsterFromDefinition(definition, Key, PositionX, PositionY);
 
     // Ajuste de escala por mundo para los tipos 84..136; se conserva el límite original.
-    v9 = World - 9;
+    v9 = gMapManager.GetCurrentMap() - 9;
     if (v9 > 0 && v9 <= 7) {
         v10 = Type;
         if (Type >= 84 && Type <= 136) {

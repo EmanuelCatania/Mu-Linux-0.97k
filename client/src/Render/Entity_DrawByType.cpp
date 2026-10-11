@@ -174,7 +174,7 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
     // ── Tint overrides based on game sub-state / type ──────────────────────────
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
-    if (World == 10 && *(short *)(param_1 + 2) == 0x12d) {
+    if (gMapManager.GetCurrentMap() == 10 && *(short *)(param_1 + 2) == 0x12d) {
         *(float *)((int)model + 0x48) = 0.02f;          // 0x3ca3d70a R
         *(float *)((int)model + 0x4c) = 0.05f;          // 0x3d4ccccd G
         *(float *)((int)model + 0x50) = 0.15f;          // 0x3e19999a B
@@ -182,7 +182,7 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
     }
 
     // Sub-state 9 (snow) + type 0x120 → icy tint
-    if (World == 9 && *(short *)(param_1 + 2) == 0x120) {
+    if (gMapManager.GetCurrentMap() == 9 && *(short *)(param_1 + 2) == 0x120) {
         *(float *)((int)model + 0x48) = 0.0f;
         *(float *)((int)model + 0x4c) = 0.3f;           // 0x3e99999a G
         *(float *)((int)model + 0x50) = 1.0f;            // 0x3f800000 B
@@ -231,7 +231,7 @@ LAB_render_dispatch:
     if (sType == 0x10b)
         goto LAB_simple_render;
 
-    if (World == 0) {
+    if (gMapManager.GetCurrentMap() == 0) {
         if (sType == 0x69) {
             // IDA 0x004FAE00: Waterspout01 in Lorencia renders 4 explicit mesh
             // passes with mesh indices 0..3 and object fields as the remaining
@@ -254,7 +254,7 @@ LAB_render_dispatch:
             glPopMatrix();
             return;
         }
-    } else if (World == 4) {
+    } else if (gMapManager.GetCurrentMap() == 4) {
         // Char-select scene: specific entity types get extra render passes
         if (sType == 0x17 || sType == 0x13 || sType == 0x14 || sType == 3 || sType == 4) {
             _rand();
@@ -309,7 +309,7 @@ LAB_substate4_done:
                          0xffffffff);
             return;
         }
-    } else if (World == 8) {
+    } else if (gMapManager.GetCurrentMap() == 8) {
         if (sType == 0x51) {
             // Map transition portal
             BMD__BeginRender();
@@ -324,7 +324,7 @@ LAB_substate4_done:
             glPopMatrix();
             return;
         }
-    } else if (World > 10 && World < 0x11) {
+    } else if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11) {
         if (sType == 0x1c || sType == 0x1d) {
             // Map-load transition: render + shadow drop
             BMD__BeginRender();

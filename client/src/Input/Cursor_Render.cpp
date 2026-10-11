@@ -79,7 +79,7 @@ void __cdecl Cursor_Render(void) {
             return;
         }
         short cls = *(short*)(operObj + 2);
-        int world = World;
+        int world = gMapManager.GetCurrentMap();
         bool match = false;
         if      (world == 0) match = (cls == 133);
         else if (world == 1) match = (cls == 60);

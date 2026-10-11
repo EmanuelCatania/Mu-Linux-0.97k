@@ -729,7 +729,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     case 0x1af:  // MODEL_BOW+18 equivalent — wing trail particles
     {
-        if ((*(char*)(param_4 + 0x105) == 'P') && (World != 10))
+        if ((*(char*)(param_4 + 0x105) == 'P') && (gMapManager.GetCurrentMap() != 10))
         {
             unsigned int uv = (unsigned int)rand() & 0x80000001u;
             bool bEven = (uv == 0);
