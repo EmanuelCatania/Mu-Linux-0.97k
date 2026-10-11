@@ -481,35 +481,15 @@
 //   Particle_StopLoop       @ 0x00460d20
 
 #include "stdafx.h"
+#include <array>
 #include "Item/ContentCatalog.h"
 #include "Monster/Monster.h"
 
-// CreateMonster @ 0x0045CCF0 — CreateMonster(Type, PositionX, PositionY, Key, [phantom])
-// Ported from IDA Hex-Rays decompile (10619 bytes).
-//
-// Spawns a monster/NPC entity by Type ID:
-//   1. Loads the BMD model via OpenMonsterModel/OpenNpc.
-//   2. Calls CreateCharacter to allocate/find an entity slot keyed by Key.
-//   3. Writes per-Type scale (+0x0C), weapon item IDs (+624,+648), animation
-//      bases (+504..+600), facing/extra (+446), action flags (+100/+104), etc.
-//   4. For "world-tier" monsters (84..136 in worlds 9..16) bumps scale by world group.
-//   5. Scans MonsterScript table for a matching Type → overrides display name.
-//   6. Tags entity_type at +0x2EB (747) and HeroIndex copy at +0x310 (784).
-//   7. Sets entity flags byte (+0x84/+132): 2=normal monster, 4=NPC, 8=ground item.
-//
-// strcpy(c+449, …) calls in the original switch have been omitted — the trailing
-// MonsterScript scan overrides the name field anyway, and the original byte_5599xx
-// addresses are Korean strings in the data segment we don't reproduce.
-//
-// Helpers used (all already implemented in our codebase):
-//   OpenMonsterModel (OpenMonsterModel)  — Monster_Data.cpp
-//   CreateCharacterPointer — Entity_Spawn.cpp
-//   DeleteCloth (DeleteCloth/Entity_ClearBoneLinks) — Render/Render_LegacyBillboards.cpp
-//   SetCharacterScale — alias macro
-//   SetAction
-//   Joint_Create (CreateJoint)
-//   RequestTerrainHeight
-//   OpenNpc (0x005091D0)
+// IDA: CreateMonster (0x0045CCF0).
+// La definición vanilla carga el modelo y configura escala, equipo y flags.
+// Los casos con joints, altura o escala calculada usan inicializadores específicos.
+// El catálogo conserva prioridad de modelo/escala; getMonsterName resuelve el nombre.
+// Se mantienen el ajuste por mundo y las marcas finales de tipo, clase de entidad y HeroIndex.
 extern "C++" {
 extern void __cdecl OpenNpc(int Type);
 }
@@ -553,8 +533,519 @@ static inline unsigned int CreateChar5(int Key, int Type, int PosX, int PosY)
     return CreateCharacter(Key, Type, (unsigned char)PosX, (unsigned char)PosY, 0.0f);
 }
 
-// CreateMonster — the big switch.
-// Phantom 5th param kept for ABI compat with existing 5-arg call sites.
+
+namespace {
+// IDA: CreateMonster (0x0045CCF0). Los campos ausentes conservan lo que dejó CreateCharacter.
+constexpr int KeepSpawnValue = -32768;
+using SpawnInitializer = void (*)(unsigned int);
+enum class SpawnLoader { None, Monster, Npc };
+
+struct MonsterDefinition {
+    int Model = 270;
+    SpawnLoader Loader = SpawnLoader::Monster;
+    int Resource = 0;
+    int ExtraResource = -1;
+    float Scale = 0.0f;
+    int Right = -1, Left = -1;
+    int RightLevel = -1, LeftLevel = -1, RightExcellent = -1;
+    int BlendMesh = KeepSpawnValue;
+    float BlendLight = -1.0f;
+    int Subtype = -1, HiddenMesh = KeepSpawnValue;
+    int State446 = -1, Flag766 = -1;
+    SpawnInitializer Initialize = nullptr;
+
+    constexpr MonsterDefinition() = default;
+    constexpr MonsterDefinition(int model, SpawnLoader loader, int resource = 0)
+        : Model(model), Loader(loader), Resource(resource) {}
+    constexpr MonsterDefinition& WithScale(float value) { Scale = value; return *this; }
+    constexpr MonsterDefinition& WithRight(int model, int level = -1, int excellent = -1) {
+        Right = model; RightLevel = level; RightExcellent = excellent; return *this;
+    }
+    constexpr MonsterDefinition& WithLeft(int model, int level = -1) {
+        Left = model; LeftLevel = level; return *this;
+    }
+    constexpr MonsterDefinition& WithBlend(int mesh, float light = -1.0f) {
+        BlendMesh = mesh; BlendLight = light; return *this;
+    }
+    constexpr MonsterDefinition& WithSubtype(int value) { Subtype = value; return *this; }
+    constexpr MonsterDefinition& WithHiddenMesh(int value) { HiddenMesh = value; return *this; }
+    constexpr MonsterDefinition& WithState446(int value) { State446 = value; return *this; }
+    constexpr MonsterDefinition& WithFlag766(int value) { Flag766 = value; return *this; }
+    constexpr MonsterDefinition& WithExtraResource(int value) { ExtraResource = value; return *this; }
+    constexpr MonsterDefinition& WithInitializer(SpawnInitializer value) { Initialize = value; return *this; }
+};
+
+// IDA: CreateMonster (0x0045CCF0), monstruos que crean el par de joints 1258.
+void InitializeMonsterJoints(unsigned int c)
+{
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 8.
+void InitializeMonster8(unsigned int c)
+{
+    *(unsigned int*)(c + 120) = 1;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 11.
+void InitializeMonster11(unsigned int c)
+{
+    *(unsigned int*)(c + 356) = 1053609165;
+    *(unsigned short*)(c + 762) = 15;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 25.
+void InitializeMonster25(unsigned int c)
+{
+    *(unsigned char*)(c + 220) = 0;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 34.
+void InitializeMonster34(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = MODEL_HELM + 3;
+    *(unsigned short*)(c + 528) = MODEL_ARMOR + 3;
+    *(unsigned short*)(c + 552) = MODEL_PANTS + 3;
+    *(unsigned short*)(c + 576) = MODEL_GLOVES + 3;
+    *(unsigned short*)(c + 600) = MODEL_BOOTS + 3;
+    *(unsigned char*)(c + 506) = 9;
+    *(unsigned char*)(c + 530) = 9;
+    *(unsigned char*)(c + 554) = 9;
+    *(unsigned char*)(c + 578) = 9;
+    *(unsigned char*)(c + 602) = 9;
+    *(unsigned char*)(c + 746) = 6;
+    SetCharacterScale((int)c);
+    if (World == 9) {
+        *(unsigned int*)(c + 12) = 1067869798;
+    }
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 42.
+void InitializeMonster42(unsigned int c)
+{
+    *(unsigned int*)(c + 292) = 1128792064;
+    *(unsigned int*)(c + 296) = 1125515264;
+    *(unsigned int*)(c + 300) = 1133248512;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 73.
+void InitializeMonster73(unsigned int c)
+{
+    {
+        unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)*(short*)(c + 2) + 40u);
+        unsigned char* dataPtr = *(unsigned char**)modelEntry;
+        if (dataPtr) {
+            dataPtr[0]   = 1;
+            dataPtr[40]  = 0;
+            dataPtr[80]  = 0;
+            dataPtr[120] = 1;
+            dataPtr[160] = 1;
+        }
+    }
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 77.
+void InitializeMonster77(unsigned int c)
+{
+    *(unsigned char*)(uintptr_t)(DAT_05828d58 + 61236u) = 0;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 88.
+void InitializeMonster88(unsigned int c)
+{
+    if ((World - 9) / 3) {
+        *(unsigned char*)(c + 626) = 0;
+    } else {
+        *(unsigned char*)(c + 626) = 8;
+    }
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 131.
+void InitializeMonster131(unsigned int c)
+{
+    *(unsigned char*)(c + 140) = 0;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 230.
+void InitializeMonster230(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = 360;
+    *(unsigned short*)(c + 528) = 363;
+    *(unsigned short*)(c + 576) = 365;
+    *(unsigned short*)(c + 600) = 366;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 232.
+void InitializeMonster232(unsigned int c)
+{
+    *(unsigned char*)(c + 132) = 4;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 234.
+void InitializeMonster234(unsigned int c)
+{
+    *(unsigned char*)(c + 132) = 4;
+    SetAction((int)c, 0);
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 242.
+void InitializeMonster242(unsigned int c)
+{
+    float v13 = *(float*)(c + 16);
+    float v14 = *(float*)(c + 20);
+    *(float*)(c + 24) = RequestTerrainHeight(v13, v14) + 140.0f;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 247.
+void InitializeMonster247(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = MODEL_HELM + 9;
+    *(unsigned short*)(c + 528) = MODEL_ARMOR + 9;
+    *(unsigned short*)(c + 552) = MODEL_PANTS + 9;
+    *(unsigned short*)(c + 576) = MODEL_GLOVES + 9;
+    *(unsigned short*)(c + 600) = MODEL_BOOTS + 9;
+    SetCharacterScale((int)c);
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 248.
+void InitializeMonster248(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = 361;
+    *(unsigned short*)(c + 528) = 363;
+    *(unsigned short*)(c + 576) = 365;
+    *(unsigned short*)(c + 600) = 367;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 250.
+void InitializeMonster250(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = 360;
+    *(unsigned short*)(c + 528) = 362;
+    *(unsigned short*)(c + 576) = 364;
+    *(unsigned short*)(c + 600) = 366;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 253.
+void InitializeMonster253(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = 368;
+    *(unsigned short*)(c + 528) = 370;
+    *(unsigned short*)(c + 552) = 372;
+}
+
+// IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 255.
+void InitializeMonster255(unsigned int c)
+{
+    *(unsigned short*)(c + 504) = 351;
+    *(unsigned short*)(c + 528) = 353;
+    *(unsigned short*)(c + 552) = 355;
+    *(unsigned short*)(c + 600) = 359;
+}
+
+// Tabla indexada por tipo vanilla; los huecos y los tipos extendidos sin modelo propio
+// conservan el caso default. El nombre sigue saliendo de getMonsterName/MonsterScript,
+// sin reintroducir los strings fijos omitidos por el port. Los inicializadores se ejecutan después de los datos comunes.
+constexpr std::array<MonsterDefinition, 256> MakeMonsterDefinitions()
+{
+    std::array<MonsterDefinition, 256> definitions{};
+    definitions[0] = MonsterDefinition(270, SpawnLoader::Monster, 0).WithScale(0.8f).WithRight(MODEL_AXE + 6).WithHiddenMesh(0);
+    definitions[1] = MonsterDefinition(271, SpawnLoader::Monster, 1).WithScale(0.85f).WithRight(MODEL_SWORD + 4).WithHiddenMesh(0);
+    definitions[2] = MonsterDefinition(272, SpawnLoader::Monster, 2).WithScale(0.5f);
+    definitions[3] = MonsterDefinition(279, SpawnLoader::Monster, 9).WithScale(0.4f);
+    definitions[4] = MonsterDefinition(270, SpawnLoader::Monster, 0).WithScale(1.15f).WithRight(MODEL_SPEAR + 7).WithState446(1);
+    definitions[5] = MonsterDefinition(271, SpawnLoader::Monster, 1)
+        .WithScale(1.1f)
+        .WithRight(MODEL_SWORD + 7)
+        .WithLeft(MODEL_SHIELD + 9)
+        .WithHiddenMesh(1)
+        .WithState446(1);
+    definitions[6] = MonsterDefinition(274, SpawnLoader::Monster, 4).WithScale(0.85f).WithRight(MODEL_STAFF + 2);
+    definitions[7] = MonsterDefinition(275, SpawnLoader::Monster, 5).WithScale(1.6f).WithRight(MODEL_AXE + 2).WithLeft(MODEL_AXE + 2);
+    definitions[8] = MonsterDefinition(270, SpawnLoader::Monster, 0)
+        .WithScale(1.0f)
+        .WithRight(MODEL_SPEAR + 8)
+        .WithState446(2)
+        .WithInitializer(InitializeMonster8);
+    definitions[9] = MonsterDefinition(274, SpawnLoader::Monster, 4).WithScale(1.1f).WithRight(MODEL_STAFF + 3).WithState446(1);
+    definitions[10] = MonsterDefinition(273, SpawnLoader::Monster, 3).WithScale(0.8f).WithRight(MODEL_SWORD + 13).WithState446(1);
+    definitions[11] = MonsterDefinition(277, SpawnLoader::Monster, 7).WithFlag766(1).WithInitializer(InitializeMonster11);
+    definitions[12] = MonsterDefinition(276, SpawnLoader::Monster, 6).WithScale(0.6f);
+    definitions[13] = MonsterDefinition(278, SpawnLoader::Monster, 8).WithScale(1.1f).WithRight(MODEL_STAFF + 2);
+    definitions[14] = MonsterDefinition(390, SpawnLoader::None)
+        .WithScale(0.95f)
+        .WithRight(MODEL_SWORD + 6)
+        .WithLeft(MODEL_SHIELD + 4)
+        .WithSubtype(206)
+        .WithFlag766(1);
+    definitions[15] = MonsterDefinition(390, SpawnLoader::None)
+        .WithScale(1.1f)
+        .WithLeft(MODEL_BOW + 2)
+        .WithSubtype(207)
+        .WithState446(1)
+        .WithFlag766(1);
+    definitions[16] = MonsterDefinition(390, SpawnLoader::None)
+        .WithScale(1.2f)
+        .WithRight(MODEL_AXE + 3)
+        .WithLeft(MODEL_SHIELD + 6)
+        .WithSubtype(208)
+        .WithState446(1)
+        .WithFlag766(1);
+    definitions[17] = MonsterDefinition(280, SpawnLoader::Monster, 10).WithRight(MODEL_AXE + 8);
+    definitions[18] = MonsterDefinition(281, SpawnLoader::Monster, 11).WithScale(1.5f).WithRight(MODEL_STAFF + 4).WithBlend(1, 1.0f);
+    definitions[19] = MonsterDefinition(282, SpawnLoader::Monster, 12).WithScale(1.1f);
+    definitions[20] = MonsterDefinition(283, SpawnLoader::Monster, 13).WithScale(1.4f);
+    definitions[21] = MonsterDefinition(284, SpawnLoader::Monster, 14).WithScale(0.95f);
+    definitions[22] = MonsterDefinition(285, SpawnLoader::Monster, 15).WithBlend(0, 1.0f);
+    definitions[23] = MonsterDefinition(286, SpawnLoader::Monster, 16).WithScale(1.15f).WithRight(MODEL_AXE + 7).WithLeft(MODEL_SHIELD + 10);
+    definitions[24] = MonsterDefinition(287, SpawnLoader::Monster, 17);
+    definitions[25] = MonsterDefinition(288, SpawnLoader::Monster, 18)
+        .WithScale(1.1f)
+        .WithRight(MODEL_STAFF + 1)
+        .WithBlend(2, 1.0f)
+        .WithState446(3)
+        .WithInitializer(InitializeMonster25);
+    definitions[26] = MonsterDefinition(289, SpawnLoader::Monster, 19).WithScale(0.8f).WithRight(MODEL_AXE);
+    definitions[27] = MonsterDefinition(290, SpawnLoader::Monster, 20).WithScale(1.1f);
+    definitions[28] = MonsterDefinition(291, SpawnLoader::Monster, 21).WithScale(0.8f).WithRight(MODEL_SPEAR + 1).WithBlend(1);
+    definitions[29] = MonsterDefinition(292, SpawnLoader::Monster, 22).WithScale(0.95f).WithRight(MODEL_BOW + 10);
+    definitions[30] = MonsterDefinition(293, SpawnLoader::Monster, 23).WithScale(0.75f);
+    definitions[31] = MonsterDefinition(294, SpawnLoader::Monster, 24).WithScale(1.3f).WithRight(MODEL_SWORD + 8).WithLeft(MODEL_SWORD + 8);
+    definitions[32] = MonsterDefinition(295, SpawnLoader::Monster, 25);
+    definitions[33] = MonsterDefinition(289, SpawnLoader::Monster, 19)
+        .WithScale(1.2f)
+        .WithRight(MODEL_MACE + 1)
+        .WithLeft(MODEL_SHIELD + 1)
+        .WithState446(1);
+    definitions[34] = MonsterDefinition(390, SpawnLoader::None)
+        .WithRight(MODEL_STAFF + 5)
+        .WithLeft(MODEL_SHIELD + 14)
+        .WithInitializer(InitializeMonster34);
+    definitions[35] = MonsterDefinition(281, SpawnLoader::Monster, 11)
+        .WithScale(1.3f)
+        .WithRight(MODEL_AXE + 8)
+        .WithLeft(MODEL_AXE + 8)
+        .WithBlend(1, 1.0f)
+        .WithState446(2);
+    definitions[36] = MonsterDefinition(298, SpawnLoader::Monster, 28).WithScale(1.2f);
+    definitions[37] = MonsterDefinition(296, SpawnLoader::Monster, 26).WithScale(1.1f);
+    definitions[38] = MonsterDefinition(297, SpawnLoader::Monster, 27).WithScale(1.6f).WithRight(MODEL_SPEAR + 9, 9);
+    definitions[39] = MonsterDefinition(298, SpawnLoader::Monster, 28).WithScale(1.2f).WithState446(1);
+    definitions[40] = MonsterDefinition(299, SpawnLoader::Monster, 29).WithScale(1.3f).WithRight(MODEL_SWORD + 14);
+    definitions[41] = MonsterDefinition(300, SpawnLoader::Monster, 30).WithScale(1.1f).WithRight(MODEL_MACE + 3);
+    definitions[42] = MonsterDefinition(301, SpawnLoader::Monster, 31).WithScale(1.3f).WithInitializer(InitializeMonster42);
+    definitions[43] = MonsterDefinition(272, SpawnLoader::Monster, 2).WithScale(0.7f);
+    definitions[44] = MonsterDefinition(301, SpawnLoader::Monster, 31).WithScale(0.9f);
+    definitions[45] = MonsterDefinition(303, SpawnLoader::Monster, 33).WithScale(0.6f);
+    definitions[46] = MonsterDefinition(304, SpawnLoader::Monster, 34).WithScale(1.0f);
+    definitions[47] = MonsterDefinition(305, SpawnLoader::Monster, 35).WithScale(1.1f).WithRight(MODEL_BOW + 13).WithBlend(0, 1.0f);
+    definitions[48] = MonsterDefinition(306, SpawnLoader::Monster, 36).WithScale(1.4f).WithRight(MODEL_STAFF + 6);
+    definitions[49] = MonsterDefinition(307, SpawnLoader::Monster, 37).WithScale(1.0f).WithBlend(5, 0.0f);
+    definitions[50] = MonsterDefinition(308, SpawnLoader::Monster, 38).WithScale(1.8f);
+    definitions[51] = MonsterDefinition(303, SpawnLoader::Monster, 33).WithScale(1.0f).WithState446(1);
+    definitions[52] = MonsterDefinition(305, SpawnLoader::Monster, 35).WithScale(1.4f).WithRight(MODEL_BOW + 13);
+    definitions[53] = MonsterDefinition(309, SpawnLoader::Monster, 39)
+        .WithScale(1.8f)
+        .WithBlend(2, 1.0f)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[54] = MonsterDefinition(310, SpawnLoader::Monster, 40).WithScale(1.1f).WithLeft(MODEL_BOW + 14);
+    definitions[55] = MonsterDefinition(390, SpawnLoader::None)
+        .WithScale(1.4f)
+        .WithRight(MODEL_SPEAR + 9)
+        .WithSubtype(206)
+        .WithState446(1)
+        .WithFlag766(1);
+    definitions[56] = MonsterDefinition(390, SpawnLoader::None).WithScale(0.8f).WithRight(MODEL_SPEAR + 8).WithSubtype(206).WithFlag766(1);
+    definitions[57] = MonsterDefinition(311, SpawnLoader::Monster, 41)
+        .WithScale(1.4f)
+        .WithRight(MODEL_BOW + 14)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[58] = MonsterDefinition(312, SpawnLoader::Monster, 42)
+        .WithScale(1.8f)
+        .WithRight(MODEL_SWORD + 16)
+        .WithBlend(2, 1.0f)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[59] = MonsterDefinition(312, SpawnLoader::Monster, 42)
+        .WithScale(2.1f)
+        .WithRight(MODEL_STAFF + 8)
+        .WithBlend(2, 1.0f)
+        .WithSubtype(1)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[60] = MonsterDefinition(313, SpawnLoader::Monster, 43).WithScale(2.2f).WithInitializer(InitializeMonsterJoints);
+    definitions[61] = MonsterDefinition(314, SpawnLoader::Monster, 44).WithScale(1.5f).WithInitializer(InitializeMonsterJoints);
+    definitions[62] = MonsterDefinition(315, SpawnLoader::Monster, 45).WithScale(1.5f).WithInitializer(InitializeMonsterJoints);
+    definitions[63] = MonsterDefinition(314, SpawnLoader::Monster, 44)
+        .WithScale(1.9f)
+        .WithBlend(-2, 1.0f)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[64] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.2f).WithLeft(MODEL_BOW + 3, 3);
+    definitions[65] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.3f);
+    definitions[66] = MonsterDefinition(318, SpawnLoader::Monster, 48).WithScale(1.7f);
+    definitions[67] = MonsterDefinition(297, SpawnLoader::Monster, 27).WithScale(1.6f).WithRight(MODEL_SPEAR + 9, 9);
+    definitions[68] = MonsterDefinition(319, SpawnLoader::Monster, 49).WithScale(1.4f);
+    definitions[69] = MonsterDefinition(320, SpawnLoader::Monster, 50).WithScale(1.0f).WithBlend(0);
+    definitions[70] = MonsterDefinition(321, SpawnLoader::Monster, 51).WithScale(1.3f).WithBlend(-2, 1.0f);
+    definitions[71] = MonsterDefinition(322, SpawnLoader::Monster, 52)
+        .WithScale(1.1f)
+        .WithRight(MODEL_SWORD + 18, 5)
+        .WithLeft(MODEL_SHIELD + 14, 0)
+        .WithBlend(1, 1.0f);
+    definitions[72] = MonsterDefinition(323, SpawnLoader::Monster, 53).WithScale(1.45f).WithRight(MODEL_SWORD + 17, 5);
+    definitions[73] = MonsterDefinition(324, SpawnLoader::Monster, 54).WithScale(0.8f).WithInitializer(InitializeMonster73);
+    definitions[74] = MonsterDefinition(322, SpawnLoader::Monster, 52)
+        .WithScale(1.3f)
+        .WithRight(MODEL_SWORD + 18, 9)
+        .WithLeft(MODEL_SHIELD + 14, 9)
+        .WithBlend(1, 1.0f);
+    definitions[75] = MonsterDefinition(324, SpawnLoader::Monster, 54).WithScale(1.0f).WithInitializer(InitializeMonster73);
+    definitions[77] = MonsterDefinition(325, SpawnLoader::Monster, 55)
+        .WithExtraResource(56)
+        .WithScale(1.0f)
+        .WithInitializer(InitializeMonster77);
+    definitions[78] = MonsterDefinition(289, SpawnLoader::Monster, 19).WithScale(0.8f).WithRight(MODEL_AXE, 9);
+    definitions[79] = MonsterDefinition(301, SpawnLoader::Monster, 31).WithScale(0.9f);
+    definitions[80] = MonsterDefinition(306, SpawnLoader::Monster, 36).WithScale(1.4f).WithRight(MODEL_STAFF + 7, -1, 63);
+    definitions[81] = MonsterDefinition(304, SpawnLoader::Monster, 34).WithScale(1.0f);
+    definitions[82] = MonsterDefinition(312, SpawnLoader::Monster, 42)
+        .WithScale(1.8f)
+        .WithRight(MODEL_SWORD + 16, -1, 63)
+        .WithBlend(2, 1.0f)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[83] = MonsterDefinition(311, SpawnLoader::Monster, 41)
+        .WithScale(1.4f)
+        .WithRight(MODEL_BOW + 14, -1, 63)
+        .WithInitializer(InitializeMonsterJoints);
+    definitions[84] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
+    definitions[85] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
+    definitions[86] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
+    definitions[87] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
+    definitions[88] = MonsterDefinition(327, SpawnLoader::Monster, 57)
+        .WithScale(1.19f)
+        .WithRight(MODEL_MACE + 6)
+        .WithInitializer(InitializeMonster88);
+    definitions[89] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
+    definitions[90] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
+    definitions[91] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
+    definitions[92] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
+    definitions[93] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
+    definitions[94] = MonsterDefinition(327, SpawnLoader::Monster, 57)
+        .WithScale(1.19f)
+        .WithRight(MODEL_MACE + 6)
+        .WithInitializer(InitializeMonster88);
+    definitions[95] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
+    definitions[96] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
+    definitions[97] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
+    definitions[98] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
+    definitions[99] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
+    definitions[100] = MonsterDefinition(39, SpawnLoader::None);
+    definitions[101] = MonsterDefinition(40, SpawnLoader::None);
+    definitions[102] = MonsterDefinition(51, SpawnLoader::None);
+    definitions[103] = MonsterDefinition(25, SpawnLoader::None);
+    definitions[111] = MonsterDefinition(327, SpawnLoader::Monster, 57)
+        .WithScale(1.19f)
+        .WithRight(MODEL_MACE + 6)
+        .WithInitializer(InitializeMonster88);
+    definitions[112] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
+    definitions[113] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
+    definitions[114] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
+    definitions[115] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
+    definitions[116] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
+    definitions[117] = MonsterDefinition(327, SpawnLoader::Monster, 57)
+        .WithScale(1.19f)
+        .WithRight(MODEL_MACE + 6)
+        .WithInitializer(InitializeMonster88);
+    definitions[118] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
+    definitions[119] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
+    definitions[120] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
+    definitions[121] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
+    definitions[122] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
+    definitions[123] = MonsterDefinition(327, SpawnLoader::Monster, 57)
+        .WithScale(1.19f)
+        .WithRight(MODEL_MACE + 6)
+        .WithInitializer(InitializeMonster88);
+    definitions[124] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
+    definitions[125] = MonsterDefinition(317, SpawnLoader::Monster, 47).WithScale(1.1f);
+    definitions[126] = MonsterDefinition(316, SpawnLoader::Monster, 46).WithScale(1.1f).WithLeft(MODEL_BOW + 3, 1);
+    definitions[127] = MonsterDefinition(329, SpawnLoader::Monster, 59).WithScale(1.0f).WithRight(MODEL_AXE + 8, 0).WithLeft(MODEL_AXE + 8, 0);
+    definitions[128] = MonsterDefinition(328, SpawnLoader::Monster, 58).WithScale(0.8f);
+    definitions[129] = MonsterDefinition(327, SpawnLoader::Monster, 57)
+        .WithScale(1.19f)
+        .WithRight(MODEL_MACE + 6)
+        .WithInitializer(InitializeMonster88);
+    definitions[130] = MonsterDefinition(332, SpawnLoader::Monster, 62).WithScale(1.2f).WithRight(MODEL_STAFF, 11);
+    definitions[131] = MonsterDefinition(331, SpawnLoader::Monster, 61).WithScale(0.8f).WithInitializer(InitializeMonster131);
+    definitions[132] = MonsterDefinition(330, SpawnLoader::Monster, 60).WithScale(0.8f).WithInitializer(InitializeMonster131);
+    definitions[133] = MonsterDefinition(330, SpawnLoader::Monster, 60).WithScale(0.8f).WithInitializer(InitializeMonster131);
+    definitions[134] = MonsterDefinition(330, SpawnLoader::Monster, 60).WithScale(0.8f).WithInitializer(InitializeMonster131);
+    definitions[150] = MonsterDefinition(302, SpawnLoader::Monster, 32).WithScale(0.12f);
+    definitions[151] = MonsterDefinition(310, SpawnLoader::Monster, 40).WithScale(1.3f).WithLeft(MODEL_BOW + 14);
+    definitions[200] = MonsterDefinition(236, SpawnLoader::None).WithScale(1.8f).WithBlend(2).WithState446(1);
+    definitions[230] = MonsterDefinition(336, SpawnLoader::Npc, 336).WithInitializer(InitializeMonster230);
+    definitions[231] = MonsterDefinition(377, SpawnLoader::Npc, 377);
+    definitions[232] = MonsterDefinition(375, SpawnLoader::Npc, 375).WithScale(1.0f).WithInitializer(InitializeMonster232);
+    definitions[233] = MonsterDefinition(376, SpawnLoader::Npc, 376).WithScale(1.0f).WithInitializer(InitializeMonster232);
+    definitions[234] = MonsterDefinition(289, SpawnLoader::Monster, 19)
+        .WithScale(1.5f)
+        .WithRight(MODEL_STAFF, 4)
+        .WithInitializer(InitializeMonster234);
+    definitions[235] = MonsterDefinition(374, SpawnLoader::Npc, 374).WithScale(1.0f).WithInitializer(InitializeMonster232);
+    definitions[236] = MonsterDefinition(390, SpawnLoader::Npc, 390)
+        .WithScale(1.0f)
+        .WithSubtype(207)
+        .WithState446(8)
+        .WithInitializer(InitializeMonster232);
+    definitions[237] = MonsterDefinition(349, SpawnLoader::Npc, 349);
+    definitions[238] = MonsterDefinition(348, SpawnLoader::Npc, 348).WithBlend(1);
+    definitions[239] = MonsterDefinition(347, SpawnLoader::Npc, 347);
+    definitions[240] = MonsterDefinition(346, SpawnLoader::Npc, 346);
+    definitions[241] = MonsterDefinition(345, SpawnLoader::Npc, 345);
+    definitions[242] = MonsterDefinition(343, SpawnLoader::Npc, 343).WithBlend(1).WithInitializer(InitializeMonster242);
+    definitions[243] = MonsterDefinition(344, SpawnLoader::Npc, 344);
+    definitions[244] = MonsterDefinition(340, SpawnLoader::Npc, 340);
+    definitions[245] = MonsterDefinition(342, SpawnLoader::Npc, 342);
+    definitions[246] = MonsterDefinition(341, SpawnLoader::Npc, 341);
+    definitions[247] = MonsterDefinition(390, SpawnLoader::None)
+        .WithRight(MODEL_BOW + 11)
+        .WithLeft(MODEL_BOW + 7)
+        .WithInitializer(InitializeMonster247);
+    definitions[248] = MonsterDefinition(336, SpawnLoader::Npc, 336).WithInitializer(InitializeMonster248);
+    definitions[249] = MonsterDefinition(390, SpawnLoader::None).WithRight(MODEL_SPEAR + 7).WithInitializer(InitializeMonster247);
+    definitions[250] = MonsterDefinition(336, SpawnLoader::Npc, 336).WithInitializer(InitializeMonster250);
+    definitions[251] = MonsterDefinition(338, SpawnLoader::Npc, 338).WithScale(0.95f);
+    definitions[253] = MonsterDefinition(337, SpawnLoader::Npc, 337).WithInitializer(InitializeMonster253);
+    definitions[254] = MonsterDefinition(339, SpawnLoader::Npc, 339);
+    definitions[255] = MonsterDefinition(335, SpawnLoader::Npc, 335).WithInitializer(InitializeMonster255);
+    return definitions;
+}
+constexpr auto MonsterDefinitions = MakeMonsterDefinitions();
+constexpr MonsterDefinition DefaultMonsterDefinition{};
+
+// IDA: CreateMonster (0x0045CCF0), escrituras comunes después de CreateCharacter.
+unsigned int CreateMonsterFromDefinition(const MonsterDefinition& def, int key, int x, int y)
+{
+    if (def.Loader == SpawnLoader::Monster) OpenMonsterModel(def.Resource);
+    else if (def.Loader == SpawnLoader::Npc) OpenNpc(def.Resource);
+    if (def.ExtraResource >= 0) OpenMonsterModel(def.ExtraResource);
+    const unsigned int c = CreateChar5(key, def.Model, x, y);
+    if (def.Scale > 0.0f) *(float*)(c + 12) = def.Scale;
+    if (def.Right >= 0) *(unsigned short*)(c + 624) = (unsigned short)def.Right;
+    if (def.Left >= 0) *(unsigned short*)(c + 648) = (unsigned short)def.Left;
+    if (def.RightLevel >= 0) *(unsigned char*)(c + 626) = (unsigned char)def.RightLevel;
+    if (def.LeftLevel >= 0) *(unsigned char*)(c + 650) = (unsigned char)def.LeftLevel;
+    if (def.RightExcellent >= 0) *(unsigned char*)(c + 627) = (unsigned char)def.RightExcellent;
+    if (def.BlendMesh != KeepSpawnValue) *(int*)(c + 100) = def.BlendMesh;
+    if (def.BlendLight >= 0.0f) *(float*)(c + 104) = def.BlendLight;
+    if (def.Subtype >= 0) *(int*)(c + 4) = def.Subtype;
+    if (def.HiddenMesh != KeepSpawnValue) *(int*)(c + 88) = def.HiddenMesh;
+    if (def.State446 >= 0) *(unsigned short*)(c + 446) = (unsigned short)def.State446;
+    if (def.Flag766 >= 0) *(unsigned char*)(c + 766) = (unsigned char)def.Flag766;
+    if (def.Initialize) def.Initialize(c);
+    return c;
+}
+} // namespace
+
+// Creación por definición vanilla o por modelo del catálogo.
+// Se conserva el quinto parámetro por compatibilidad ABI con los callers existentes.
 // IDA: CreateMonster (0x0045CCF0)
 char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
                             int Key, int /*phantom_unused*/)
@@ -563,11 +1054,9 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     unsigned int c = 0;
     int v8 = 0;
     int v9, v10;
-    int v15;
-    unsigned char v16, v17;
 
     // DESVIACION (DLL CustomMonster, ahora catálogo 0.97.20): un monstruo con
-    // modelo propio en el server se crea con ese modelo en vez del switch.
+    // modelo propio en el server se crea con ese modelo en vez de la definición vanilla.
     const CatalogMonster* custom = gContentCatalog.GetMonster(Type);
     if (custom && custom->Model >= 0) {
         c = CreateCharacter(Key, custom->Model, (unsigned char)PositionX, (unsigned char)PositionY, 0.0f);
@@ -583,815 +1072,11 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         return (char*)(uintptr_t)c;
     }
 
-    switch (Type) {
-    case 1:
-    case 5:
-        OpenMonsterModel(1);
-        c = CreateChar5(Key, 271, PositionX, PositionY);
-        if (Type == 1) {
-            *(unsigned int*)(c + 88) = 0;
-            *(unsigned int*)(c + 12) = 1062836634;  // 1.05f
-            *(unsigned short*)(c + 624) = 404;
-        } else {
-            *(unsigned int*)(c + 88) = 1;
-            *(unsigned short*)(c + 624) = 407;
-            *(unsigned short*)(c + 648) = 601;
-            *(unsigned int*)(c + 12) = 1066192077;  // 1.20f
-            *(unsigned short*)(c + 446) = 1;
-        }
-        break;
-    case 2:
-        OpenMonsterModel(2);
-        c = CreateChar5(Key, 272, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1056964608;
-        break;
-    case 3:
-        OpenMonsterModel(9);
-        c = CreateChar5(Key, 279, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1053609165;
-        break;
-    case 6:
-    case 9:
-        OpenMonsterModel(4);
-        c = CreateChar5(Key, 274, PositionX, PositionY);
-        if (Type == 6) {
-            *(unsigned short*)(c + 624) = 562;
-            *(unsigned int*)(c + 12) = 1062836634;
-        } else {
-            *(unsigned short*)(c + 624) = 563;
-            *(unsigned short*)(c + 446) = 1;
-            *(unsigned int*)(c + 12) = 1066192077;
-        }
-        break;
-    case 7:
-        OpenMonsterModel(5);
-        c = CreateChar5(Key, 275, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 434;
-        *(unsigned short*)(c + 648) = 434;
-        *(unsigned int*)(c + 12) = 1070386381;
-        break;
-    case 10:
-        OpenMonsterModel(3);
-        c = CreateChar5(Key, 273, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1061997773;
-        *(unsigned short*)(c + 446) = 1;
-        *(unsigned short*)(c + 624) = 413;
-        break;
-    case 11:
-        OpenMonsterModel(7);
-        c = CreateChar5(Key, 277, PositionX, PositionY);
-        *(unsigned int*)(c + 356) = 1053609165;
-        *(unsigned short*)(c + 762) = 15;
-        *(unsigned char*)(c + 766) = 1;
-        break;
-    case 12:
-        OpenMonsterModel(6);
-        c = CreateChar5(Key, 276, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1058642330;
-        break;
-    case 13:
-        OpenMonsterModel(8);
-        c = CreateChar5(Key, 278, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 562;
-        *(unsigned int*)(c + 12) = 1066192077;
-        break;
-    case 14:
-    case 55:
-    case 56:
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned int*)(c + 4) = 206;
-        *(unsigned char*)(c + 766) = 1;
-        if (Type == 14) {
-            *(unsigned int*)(c + 12) = 1064514355;
-            *(unsigned short*)(c + 624) = 406;
-            *(unsigned short*)(c + 648) = 596;
-        } else if (Type == 56) {
-            *(unsigned int*)(c + 12) = 1061997773;
-            *(unsigned short*)(c + 624) = 504;
-        } else {
-            *(unsigned short*)(c + 446) = 1;
-            *(unsigned int*)(c + 12) = 1068708659;
-            *(unsigned short*)(c + 624) = 505;
-        }
-        break;
-    case 15:
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        *(unsigned short*)(c + 648) = 530;
-        *(unsigned int*)(c + 4) = 207;
-        *(unsigned short*)(c + 446) = 1;
-        *(unsigned char*)(c + 766) = 1;
-        break;
-    case 16:
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067030938;
-        *(unsigned short*)(c + 624) = 435;
-        *(unsigned short*)(c + 648) = 598;
-        *(unsigned int*)(c + 4) = 208;
-        *(unsigned short*)(c + 446) = 1;
-        *(unsigned char*)(c + 766) = 1;
-        break;
-    case 17:
-        OpenMonsterModel(10);
-        c = CreateChar5(Key, 280, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 440;
-        break;
-    case 18:
-        OpenMonsterModel(11);
-        c = CreateChar5(Key, 281, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1069547520;
-        *(unsigned short*)(c + 624) = 564;
-        *(unsigned int*)(c + 100) = 1;
-        *(unsigned int*)(c + 104) = 1065353216;  // 1.0f
-        break;
-    case 19:
-        OpenMonsterModel(12);
-        c = CreateChar5(Key, 282, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        break;
-    case 20:
-        OpenMonsterModel(13);
-        c = CreateChar5(Key, 283, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        break;
-    case 21:
-        OpenMonsterModel(14);
-        c = CreateChar5(Key, 284, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1064514355;
-        break;
-    case 22:
-        OpenMonsterModel(15);
-        c = CreateChar5(Key, 285, PositionX, PositionY);
-        *(unsigned int*)(c + 100) = 0;
-        *(unsigned int*)(c + 104) = 1065353216;
-        break;
-    case 23:
-        OpenMonsterModel(16);
-        c = CreateChar5(Key, 286, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 439;
-        *(unsigned short*)(c + 648) = 602;
-        *(unsigned int*)(c + 12) = 1066611507;
-        break;
-    case 24:
-        OpenMonsterModel(17);
-        c = CreateChar5(Key, 287, PositionX, PositionY);
-        break;
-    case 25:
-        OpenMonsterModel(18);
-        c = CreateChar5(Key, 288, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 561;
-        *(unsigned int*)(c + 100) = 2;
-        *(unsigned int*)(c + 104) = 1065353216;
-        *(unsigned int*)(c + 12) = 1066192077;
-        *(unsigned char*)(c + 220) = 0;
-        *(unsigned short*)(c + 446) = 3;
-        break;
-    case 26:
-        OpenMonsterModel(19);
-        c = CreateChar5(Key, 289, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 432;
-        *(unsigned int*)(c + 12) = 1061997773;
-        break;
-    case 27:
-        OpenMonsterModel(20);
-        c = CreateChar5(Key, 290, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        break;
-    case 28:
-        OpenMonsterModel(21);
-        c = CreateChar5(Key, 291, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 497;
-        *(unsigned int*)(c + 12) = 1061997773;
-        *(unsigned int*)(c + 100) = 1;
-        break;
-    case 29:
-        OpenMonsterModel(22);
-        c = CreateChar5(Key, 292, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 538;
-        *(unsigned int*)(c + 12) = 1064514355;
-        break;
-    case 30:
-        OpenMonsterModel(23);
-        c = CreateChar5(Key, 293, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1061158912;
-        break;
-    case 31:
-        OpenMonsterModel(24);
-        c = CreateChar5(Key, 294, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067869798;
-        *(unsigned short*)(c + 624) = 408;
-        *(unsigned short*)(c + 648) = 408;
-        break;
-    case 32:
-        OpenMonsterModel(25);
-        c = CreateChar5(Key, 295, PositionX, PositionY);
-        break;
-    case 33:
-        OpenMonsterModel(19);
-        c = CreateChar5(Key, 289, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 465;
-        *(unsigned short*)(c + 648) = 593;
-        *(unsigned int*)(c + 12) = 1067030938;
-        *(unsigned short*)(c + 446) = 1;
-        break;
-    case 34:
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 627;
-        *(unsigned short*)(c + 528) = 659;
-        *(unsigned short*)(c + 552) = 691;
-        *(unsigned short*)(c + 576) = 723;
-        *(unsigned short*)(c + 600) = 755;
-        *(unsigned short*)(c + 624) = 565;
-        *(unsigned short*)(c + 648) = 606;
-        *(unsigned char*)(c + 506) = 9;
-        *(unsigned char*)(c + 530) = 9;
-        *(unsigned char*)(c + 554) = 9;
-        *(unsigned char*)(c + 578) = 9;
-        *(unsigned char*)(c + 602) = 9;
-        *(unsigned char*)(c + 746) = 6;
-        SetCharacterScale((int)c);
-        if (World == 9) {
-            // LABEL_64 path: scale 1067869798
-            *(unsigned int*)(c + 12) = 1067869798;
-        }
-        break;
-    case 35:
-        OpenMonsterModel(11);
-        c = CreateChar5(Key, 281, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067869798;
-        *(unsigned short*)(c + 624) = 440;
-        *(unsigned short*)(c + 648) = 440;
-        *(unsigned int*)(c + 100) = 1;
-        *(unsigned int*)(c + 104) = 1065353216;
-        *(unsigned short*)(c + 446) = 2;
-        break;
-    case 36:
-        OpenMonsterModel(28);
-        c = CreateChar5(Key, 298, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067030938;
-        break;
-    case 37:
-        OpenMonsterModel(26);
-        c = CreateChar5(Key, 296, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        break;
-    case 38:
-    case 67:
-        OpenMonsterModel(27);
-        c = CreateChar5(Key, 297, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 505;
-        *(unsigned char*)(c + 626) = 9;
-        *(unsigned int*)(c + 12) = 1070386381;
-        break;
-    case 39:
-        OpenMonsterModel(28);
-        c = CreateChar5(Key, 298, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067030938;
-        *(unsigned short*)(c + 446) = 1;
-        break;
-    case 40:
-        OpenMonsterModel(29);
-        c = CreateChar5(Key, 299, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 414;
-        *(unsigned int*)(c + 12) = 1067869798;
-        break;
-    case 41:
-        OpenMonsterModel(30);
-        c = CreateChar5(Key, 300, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 467;
-        *(unsigned int*)(c + 12) = 1066192077;
-        break;
-    case 42:
-        OpenMonsterModel(31);
-        c = CreateChar5(Key, 301, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067869798;
-        *(unsigned int*)(c + 292) = 1128792064;
-        *(unsigned int*)(c + 296) = 1125515264;
-        *(unsigned int*)(c + 300) = 1133248512;
-        break;
-    case 43:
-        OpenMonsterModel(2);
-        c = CreateChar5(Key, 272, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1060320051;
-        break;
-    case 44:
-    case 79:
-        OpenMonsterModel(31);
-        c = CreateChar5(Key, 301, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1063675494;
-        break;
-    case 45:
-        OpenMonsterModel(33);
-        c = CreateChar5(Key, 303, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1058642330;
-        break;
-    case 46:
-    case 81:
-        OpenMonsterModel(34);
-        c = CreateChar5(Key, 304, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1065353216;
-        break;
-    case 47:
-        OpenMonsterModel(35);
-        c = CreateChar5(Key, 305, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        *(unsigned short*)(c + 624) = 541;
-        *(unsigned int*)(c + 100) = 0;
-        *(unsigned int*)(c + 104) = 1065353216;
-        break;
-    case 48:
-        OpenMonsterModel(36);
-        c = CreateChar5(Key, 306, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        *(unsigned short*)(c + 624) = 566;
-        break;
-    case 49:
-        OpenMonsterModel(37);
-        c = CreateChar5(Key, 307, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned int*)(c + 100) = 5;
-        *(unsigned int*)(c + 104) = 0;
-        break;
-    case 50:
-        OpenMonsterModel(38);
-        c = CreateChar5(Key, 308, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1072064102;
-        break;
-    case 51:
-        OpenMonsterModel(33);
-        c = CreateChar5(Key, 303, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned short*)(c + 446) = 1;
-        break;
-    case 52:
-        OpenMonsterModel(35);
-        c = CreateChar5(Key, 305, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        *(unsigned short*)(c + 624) = 541;
-        break;
-    case 53:
-        OpenMonsterModel(39);
-        c = CreateChar5(Key, 309, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1072064102;
-        *(unsigned int*)(c + 100) = 2;
-        *(unsigned int*)(c + 104) = 1065353216;
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 54:
-    case 151:
-        OpenMonsterModel(40);
-        c = CreateChar5(Key, 310, PositionX, PositionY);
-        *(unsigned short*)(c + 648) = 542;
-        if (Type == 54) {
-            *(unsigned int*)(c + 12) = 1066192077;
-        } else {
-            *(unsigned int*)(c + 12) = 1067869798;
-        }
-        break;
-    case 57:
-        OpenMonsterModel(41);
-        c = CreateChar5(Key, 311, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        *(unsigned short*)(c + 624) = 542;
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 58:
-    case 59:
-        OpenMonsterModel(42);
-        c = CreateChar5(Key, 312, PositionX, PositionY);
-        *(unsigned int*)(c + 100) = 2;
-        *(unsigned int*)(c + 104) = 1065353216;
-        if (Type == 58) {
-            *(unsigned int*)(c + 12) = 1072064102;
-            *(unsigned short*)(c + 624) = 416;
-        } else {
-            *(unsigned int*)(c + 12) = 1074161254;
-            *(unsigned int*)(c + 4) = 1;
-            *(unsigned short*)(c + 624) = 568;
-        }
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 60:
-        OpenMonsterModel(43);
-        c = CreateChar5(Key, 313, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1074580685;
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 61:
-    case 63:
-        OpenMonsterModel(44);
-        c = CreateChar5(Key, 314, PositionX, PositionY);
-        if (Type == 63) {
-            *(unsigned int*)(c + 12) = 1072902963;
-            *(unsigned int*)(c + 100) = (unsigned int)-2;
-            *(unsigned int*)(c + 104) = 1065353216;
-        } else {
-            *(unsigned int*)(c + 12) = 1069547520;
-        }
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 62:
-        OpenMonsterModel(45);
-        c = CreateChar5(Key, 315, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1069547520;
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 64:
-        OpenMonsterModel(46);
-        c = CreateChar5(Key, 316, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067030938;
-        *(unsigned short*)(c + 648) = 531;
-        *(unsigned char*)(c + 650) = 3;
-        break;
-    case 65:
-        OpenMonsterModel(47);
-        c = CreateChar5(Key, 317, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067869798;
-        break;
-    case 66:
-        OpenMonsterModel(48);
-        c = CreateChar5(Key, 318, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1071225242;
-        break;
-    case 68:
-        OpenMonsterModel(49);
-        c = CreateChar5(Key, 319, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        break;
-    case 69:
-        OpenMonsterModel(50);
-        c = CreateChar5(Key, 320, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned int*)(c + 100) = 0;
-        break;
-    case 70:
-        OpenMonsterModel(51);
-        c = CreateChar5(Key, 321, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1067869798;
-        *(unsigned int*)(c + 100) = (unsigned int)-2;
-        *(unsigned int*)(c + 104) = 1065353216;
-        break;
-    case 71:
-    case 74:
-        OpenMonsterModel(52);
-        c = CreateChar5(Key, 322, PositionX, PositionY);
-        if (Type == 71) {
-            *(unsigned int*)(c + 12) = 1066192077;
-            *(unsigned short*)(c + 624) = 418;
-            *(unsigned char*)(c + 626) = 5;
-            *(unsigned short*)(c + 648) = 606;
-            *(unsigned char*)(c + 650) = 0;
-        } else {
-            *(unsigned int*)(c + 12) = 1067869798;
-            *(unsigned short*)(c + 624) = 418;
-            *(unsigned char*)(c + 626) = 9;
-            *(unsigned short*)(c + 648) = 606;
-            *(unsigned char*)(c + 650) = 9;
-        }
-        *(unsigned int*)(c + 100) = 1;
-        *(unsigned int*)(c + 104) = 1065353216;
-        break;
-    case 72:
-        OpenMonsterModel(53);
-        c = CreateChar5(Key, 323, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1069128090;
-        *(unsigned short*)(c + 624) = 417;
-        *(unsigned char*)(c + 626) = 5;
-        break;
-    case 73:
-    case 75:
-        OpenMonsterModel(54);
-        c = CreateChar5(Key, 324, PositionX, PositionY);
-        if (Type == 75) {
-            *(unsigned int*)(c + 12) = 1065353216;
-        } else {
-            *(unsigned int*)(c + 12) = 1061997773;
-        }
-        // Models[entity_type].Data sub-table flag writes
-        {
-            unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)*(short*)(c + 2) + 40u);
-            unsigned char* dataPtr = *(unsigned char**)modelEntry;
-            if (dataPtr) {
-                dataPtr[0]   = 1;
-                dataPtr[40]  = 0;
-                dataPtr[80]  = 0;
-                dataPtr[120] = 1;
-                dataPtr[160] = 1;
-            }
-        }
-        break;
-    case 77:
-        OpenMonsterModel(55);
-        OpenMonsterModel(56);
-        c = CreateChar5(Key, 325, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned char*)(uintptr_t)(DAT_05828d58 + 61236u) = 0;
-        break;
-    case 78:
-        OpenMonsterModel(19);
-        c = CreateChar5(Key, 289, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 432;
-        *(unsigned char*)(c + 626) = 9;
-        *(unsigned int*)(c + 12) = 1061997773;
-        break;
-    case 80:
-        OpenMonsterModel(36);
-        c = CreateChar5(Key, 306, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        *(unsigned short*)(c + 624) = 567;
-        *(unsigned char*)(c + 627) = 63;
-        break;
-    case 82:
-        OpenMonsterModel(42);
-        c = CreateChar5(Key, 312, PositionX, PositionY);
-        *(unsigned int*)(c + 100) = 2;
-        *(unsigned int*)(c + 104) = 1065353216;
-        *(unsigned int*)(c + 12) = 1072064102;
-        *(unsigned short*)(c + 624) = 416;
-        *(unsigned char*)(c + 627) = 63;
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 83:
-        OpenMonsterModel(41);
-        c = CreateChar5(Key, 311, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1068708659;
-        *(unsigned short*)(c + 624) = 542;
-        *(unsigned char*)(c + 627) = 63;
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
-        break;
-    case 84: case 90: case 96: case 113: case 119: case 125:
-        OpenMonsterModel(47);
-        c = CreateChar5(Key, 317, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        break;
-    case 85: case 91: case 97: case 114: case 120: case 126:
-        OpenMonsterModel(46);
-        c = CreateChar5(Key, 316, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1066192077;
-        *(unsigned short*)(c + 648) = 531;
-        *(unsigned char*)(c + 650) = 1;
-        break;
-    case 86: case 92: case 98: case 115: case 121: case 127:
-        OpenMonsterModel(59);
-        c = CreateChar5(Key, 329, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 440;
-        *(unsigned char*)(c + 626) = 0;
-        *(unsigned short*)(c + 648) = 440;
-        *(unsigned char*)(c + 650) = 0;
-        *(unsigned int*)(c + 12) = 1065353216;
-        break;
-    case 87: case 93: case 99: case 116: case 122: case 128:
-        OpenMonsterModel(58);
-        c = CreateChar5(Key, 328, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1061997773;
-        break;
-    case 88: case 94: case 111: case 117: case 123: case 129:
-        OpenMonsterModel(57);
-        c = CreateChar5(Key, 327, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 470;
-        if ((World - 9) / 3) {
-            *(unsigned char*)(c + 626) = 0;
-        } else {
-            *(unsigned char*)(c + 626) = 8;
-        }
-        *(unsigned int*)(c + 12) = 1066947052;
-        break;
-    case 89: case 95: case 112: case 118: case 124: case 130:
-        OpenMonsterModel(62);
-        c = CreateChar5(Key, 332, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 560;
-        *(unsigned char*)(c + 626) = 11;
-        *(unsigned int*)(c + 12) = 1067030938;
-        break;
-    case 100:
-        c = CreateChar5(Key, 39, PositionX, PositionY);
-        break;
-    case 101:
-        c = CreateChar5(Key, 40, PositionX, PositionY);
-        break;
-    case 102:
-        c = CreateChar5(Key, 51, PositionX, PositionY);
-        break;
-    case 103:
-        c = CreateChar5(Key, 25, PositionX, PositionY);
-        break;
-    case 131:
-        OpenMonsterModel(61);
-        c = CreateChar5(Key, 331, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1061997773;
-        *(unsigned char*)(c + 140) = 0;
-        break;
-    case 132: case 133: case 134:
-        OpenMonsterModel(60);
-        c = CreateChar5(Key, 330, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1061997773;
-        *(unsigned char*)(c + 140) = 0;
-        break;
-    case 150:
-        OpenMonsterModel(32);
-        c = CreateChar5(Key, 302, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1039516303;
-        break;
-    case 200:
-        c = CreateChar5(Key, 236, PositionX, PositionY);
-        *(unsigned int*)(c + 100) = 2;
-        *(unsigned int*)(c + 12) = 1072064102;
-        *(unsigned short*)(c + 446) = 1;
-        break;
-    case 230:
-        OpenNpc(336);
-        c = CreateChar5(Key, 336, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 360;
-        *(unsigned short*)(c + 528) = 363;
-        *(unsigned short*)(c + 576) = 365;
-        *(unsigned short*)(c + 600) = 366;
-        break;
-    case 231:
-        OpenNpc(377);
-        c = CreateChar5(Key, 377, PositionX, PositionY);
-        break;
-    case 232:
-        OpenNpc(375);
-        v17 = (unsigned char)PositionY;
-        v16 = (unsigned char)PositionX;
-        v15 = 375;
-        c = CreateCharacter(Key, v15, v16, v17, 0.0f);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned char*)(c + 132) = 4;
-        break;
-    case 233:
-        OpenNpc(376);
-        v17 = (unsigned char)PositionY;
-        v16 = (unsigned char)PositionX;
-        v15 = 376;
-        c = CreateCharacter(Key, v15, v16, v17, 0.0f);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned char*)(c + 132) = 4;
-        break;
-    case 234:
-        OpenMonsterModel(19);
-        c = CreateChar5(Key, 289, PositionX, PositionY);
-        *(unsigned short*)(c + 624) = 560;
-        *(unsigned char*)(c + 626) = 4;
-        *(unsigned int*)(c + 12) = 1069547520;
-        *(unsigned char*)(c + 132) = 4;
-        SetAction((int)c, 0);
-        break;
-    case 235:
-        OpenNpc(374);
-        v17 = (unsigned char)PositionY;
-        v16 = (unsigned char)PositionX;
-        v15 = 374;
-        c = CreateCharacter(Key, v15, v16, v17, 0.0f);
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned char*)(c + 132) = 4;
-        break;
-    case 236:
-        OpenNpc(390);
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned int*)(c + 4) = 207;
-        *(unsigned int*)(c + 12) = 1065353216;
-        *(unsigned char*)(c + 132) = 4;
-        *(unsigned short*)(c + 446) = 8;
-        break;
-    case 237:
-        OpenNpc(349);
-        c = CreateChar5(Key, 349, PositionX, PositionY);
-        break;
-    case 238:
-        OpenNpc(348);
-        c = CreateChar5(Key, 348, PositionX, PositionY);
-        *(unsigned int*)(c + 100) = 1;
-        break;
-    case 239:
-        OpenNpc(347);
-        c = CreateChar5(Key, 347, PositionX, PositionY);
-        break;
-    case 240:
-        OpenNpc(346);
-        c = CreateChar5(Key, 346, PositionX, PositionY);
-        break;
-    case 241:
-        OpenNpc(345);
-        c = CreateChar5(Key, 345, PositionX, PositionY);
-        break;
-    case 242: {
-        OpenNpc(343);
-        c = CreateChar5(Key, 343, PositionX, PositionY);
-        float v13 = *(float*)(c + 16);
-        float v14 = *(float*)(c + 20);
-        *(unsigned int*)(c + 100) = 1;
-        *(float*)(c + 24) = RequestTerrainHeight(v13, v14) + 140.0f;
-        break;
-    }
-    case 243:
-        OpenNpc(344);
-        c = CreateChar5(Key, 344, PositionX, PositionY);
-        break;
-    case 244:
-        OpenNpc(340);
-        c = CreateChar5(Key, 340, PositionX, PositionY);
-        break;
-    case 245:
-        OpenNpc(342);
-        c = CreateChar5(Key, 342, PositionX, PositionY);
-        break;
-    case 246:
-        OpenNpc(341);
-        c = CreateChar5(Key, 341, PositionX, PositionY);
-        break;
-    case 247:
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 633;
-        *(unsigned short*)(c + 528) = 665;
-        *(unsigned short*)(c + 552) = 697;
-        *(unsigned short*)(c + 576) = 729;
-        *(unsigned short*)(c + 600) = 761;
-        *(unsigned short*)(c + 624) = 539;
-        *(unsigned short*)(c + 648) = 535;
-        SetCharacterScale((int)c);
-        break;
-    case 248:
-        OpenNpc(336);
-        c = CreateChar5(Key, 336, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 361;
-        *(unsigned short*)(c + 528) = 363;
-        *(unsigned short*)(c + 576) = 365;
-        *(unsigned short*)(c + 600) = 367;
-        break;
-    case 249:
-        c = CreateChar5(Key, 390, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 633;
-        *(unsigned short*)(c + 528) = 665;
-        *(unsigned short*)(c + 552) = 697;
-        *(unsigned short*)(c + 576) = 729;
-        *(unsigned short*)(c + 600) = 761;
-        *(unsigned short*)(c + 624) = 503;
-        SetCharacterScale((int)c);
-        break;
-    case 250:
-        OpenNpc(336);
-        c = CreateChar5(Key, 336, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 360;
-        *(unsigned short*)(c + 528) = 362;
-        *(unsigned short*)(c + 576) = 364;
-        *(unsigned short*)(c + 600) = 366;
-        break;
-    case 251:
-        OpenNpc(338);
-        c = CreateChar5(Key, 338, PositionX, PositionY);
-        *(unsigned int*)(c + 12) = 1064514355;
-        break;
-    case 253:
-        OpenNpc(337);
-        c = CreateChar5(Key, 337, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 368;
-        *(unsigned short*)(c + 528) = 370;
-        *(unsigned short*)(c + 552) = 372;
-        break;
-    case 254:
-        OpenNpc(339);
-        c = CreateChar5(Key, 339, PositionX, PositionY);
-        break;
-    case 255:
-        OpenNpc(335);
-        c = CreateChar5(Key, 335, PositionX, PositionY);
-        *(unsigned short*)(c + 504) = 351;
-        *(unsigned short*)(c + 528) = 353;
-        *(unsigned short*)(c + 552) = 355;
-        *(unsigned short*)(c + 600) = 359;
-        break;
-    default:
-        OpenMonsterModel(0);
-        c = CreateChar5(Key, 270, PositionX, PositionY);
-        if (Type) {
-            if (Type == 4) {
-                *(unsigned short*)(c + 624) = 503;
-                *(unsigned int*)(c + 12) = 1066611507;
-                *(unsigned short*)(c + 446) = 1;
-            } else if (Type == 8) {
-                *(unsigned short*)(c + 624) = 504;
-                *(unsigned int*)(c + 12) = 1065353216;
-                *(unsigned short*)(c + 446) = 2;
-                *(unsigned int*)(c + 120) = 1;
-            }
-        } else {
-            *(unsigned int*)(c + 88) = 0;
-            *(unsigned int*)(c + 12) = 1061997773;
-            *(unsigned short*)(c + 624) = 438;
-        }
-        break;
-    }
+    const MonsterDefinition& definition = (Type_ < MonsterDefinitions.size())
+        ? MonsterDefinitions[Type_] : DefaultMonsterDefinition;
+    c = CreateMonsterFromDefinition(definition, Key, PositionX, PositionY);
 
-    // World-tier scale bump for monsters 84..136 in worlds 9..16
+    // Ajuste de escala por mundo para los tipos 84..136; se conserva el límite original.
     v9 = World - 9;
     if (v9 > 0 && v9 <= 7) {
         v10 = Type;

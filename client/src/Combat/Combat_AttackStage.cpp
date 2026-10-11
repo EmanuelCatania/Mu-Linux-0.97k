@@ -1,6 +1,7 @@
 // Combat_AttackStage.cpp
 
 #include "stdafx.h"
+#include "Entity/EntityView.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -361,15 +362,10 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} g_iLimitAttackTime=5; }
     else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
     else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
-    // DESVIACION (DLL Patchs.cpp, CPatchs::AttackStage): estos 13 skills de
-    // magia no esperan el frame 5.0 del default de abajo.  Con un AttackSpeed
-    // alto la acción de casteo (82-85, PlaySpeed AttackSpeed*0.004+0.29) salta
-    // el rango [5, 6) del frame, c+757 no llega a 15 y el skill no sale
-    // mientras se mantiene el click.  IDA no tiene este grupo.
-    //   1 Poison  2 Meteorite  3 Lightning  4 Fire Ball  5 Flame  7 Ice
-    //   8 Twister  9 Evil Spirit  11 Power Wave  12 Aqua Beam  13 Blast
-    //   14 Inferno  17 Energy Ball
-    else if((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || (skill>=11 && skill<=14) || skill==17) *(BYTE*)(c+757)=15;
+    // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.
+    // Los monstruos conservan las etapas intermedias que consume AttackEffect (Alquamos 1, Queen Rainer 5).
+    else if (EntityView((const void*)(uintptr_t)c).Kind() == EntityView::PlayerKind && type == 390 &&
+             ((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || (skill>=11 && skill<=14) || skill==17)) *(BYTE*)(c+757)=15;
     // default de IDA (0x00448930 L356-364).
     else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) *(BYTE*)(c+757)=15;
     return true;
