@@ -394,12 +394,8 @@ void MoveEffect(float *param_1, int param_2)
     if (0x1f0 < iVar9) {
       if (iVar9 < 0x4b1) {
         if (iVar9 == 0x4b0) {
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000007;
+          uVar8 = _rand() % 8;
           bVar16 = uVar8 == 0;
-          if ((int)uVar8 < 0) {
-            bVar16 = (uVar8 - 1 | 0xfffffff8) == 0xffffffff;
-          }
           if (bVar16) {
             bVar28 = 0;
             pfVar25 = (float *)0x0;
@@ -867,12 +863,8 @@ LAB_0046a366:
       if (fVar13 == 0.0) {
         if (_DAT_00552660 <= param_1[0x42]) {
           param_1[0x33] = 0.0;
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000001;
+          uVar8 = _rand() % 2;
           bVar16 = uVar8 == 0;
-          if ((int)uVar8 < 0) {
-            bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
-          }
           if (bVar16) {
             uVar8 = _rand() % 64;
             local_1d0 = (float)(int)(uVar8 - 0x20) + param_1[4];
@@ -1200,12 +1192,8 @@ LAB_00468772:
       param_1[0x1b] = (float)iVar12 * _DAT_005529d0;
       iVar9 = _rand();
       _DAT_083a0210 = (float)(iVar9 % 6 + -6) * _DAT_005524f4;
-      uVar8 = _rand();
-      uVar8 = uVar8 & 0x80000003;
+      uVar8 = _rand() % 4;
       bVar16 = uVar8 == 0;
-      if ((int)uVar8 < 0) {
-        bVar16 = (uVar8 - 1 | 0xfffffffc) == 0xffffffff;
-      }
       if (bVar16) {
         local_200 = 0.0;
         iVar9 = _rand();
@@ -1299,24 +1287,16 @@ LAB_00468772:
       local_32c = param_1[9];
       local_334 = 90.0;
       local_330 = 0.0;
-      uVar8 = _rand();
-      uVar8 = uVar8 & 0x80000001;
+      uVar8 = _rand() % 2;
       bVar16 = uVar8 == 0;
-      if ((int)uVar8 < 0) {
-        bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
-      }
       if (bVar16) {
         local_354 = *pfVar15 - _DAT_0055285c;
         local_350 = param_1[5];
         local_34c = param_1[6] + _DAT_005529c4;
         Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
       }
-      uVar8 = _rand();
-      uVar8 = uVar8 & 0x80000001;
+      uVar8 = _rand() % 2;
       bVar16 = uVar8 == 0;
-      if ((int)uVar8 < 0) {
-        bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
-      }
       if (bVar16) {
         local_354 = *pfVar15 + _DAT_0055285c;
         local_350 = param_1[5];
@@ -1325,12 +1305,8 @@ LAB_00468772:
       }
       fVar17 = RequestTerrainHeight(param_1[4], param_1[5]);
       param_1[6] = (float)fVar17;
-      uVar8 = _rand();
-      uVar8 = uVar8 & 0x80000003;
+      uVar8 = _rand() % 4;
       bVar16 = uVar8 == 0;
-      if ((int)uVar8 < 0) {
-        bVar16 = (uVar8 - 1 | 0xfffffffc) == 0xffffffff;
-      }
       if (bVar16) {
         bVar28 = 0;
         pfVar27 = (float *)0x0;
@@ -2281,12 +2257,8 @@ LAB_004695c0:
       }
       break;
     case 0x100:
-      uVar8 = _rand();
-      uVar8 = uVar8 & 0x80000001;
+      uVar8 = _rand() % 2;
       bVar16 = uVar8 == 0;
-      if ((int)uVar8 < 0) {
-        bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
-      }
       if (bVar16) {
         Particle_Spawn(0x4c4,param_1 + 4,param_1 + 7,&local_368,0,1.0,0);
       }

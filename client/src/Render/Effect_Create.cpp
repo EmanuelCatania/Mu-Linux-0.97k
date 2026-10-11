@@ -725,10 +725,7 @@ LAB_00463e3d:
         param_8 = (float *)(iVar9 % 10 + 0xf);
         pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
         uVar10 = _rand();
-        param_8 = (float *)(uVar10 & 0x8000001f);
-        if ((int)param_8 < 0) {
-          param_8 = (float *)(((int)param_8 - 1U | 0xffffffe0) + 1);
-        }
+        param_8 = (float*)(uVar10 % 32);
         pfVar17[4] = (float)(int)param_8 + pfVar17[4] + _DAT_00552980;
         pfVar17[6] = pfVar17[6] + _DAT_00552850;
         pfVar17[0x30] = 0.0;
@@ -973,10 +970,7 @@ switchD_00461001_caseD_c7:
     param_8 = (float *)(uVar10 + 6);
     pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
     uVar10 = _rand();
-    param_8 = (float *)(uVar10 & 0x80000003);
-    if ((int)param_8 < 0) {
-      param_8 = (float *)(((int)param_8 - 1U | 0xfffffffc) + 1);
-    }
+    param_8 = (float*)(uVar10 % 4);
     pfVar17[0x36] = -(float)(int)param_8;
     uVar10 = _rand() % 64;
     param_8 = (float *)(uVar10 - 0x20);
