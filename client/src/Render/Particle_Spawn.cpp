@@ -189,6 +189,45 @@ void ApplyParticleLinearMotion(char* particle, const ParticleLinearMotion& defin
     }
     *(float*)(particle + ParticleRotationOffset) = (float)rotation;
 }
+// IDA: Particle_Spawn (0x00475220), tipos 1268/subtipo 6 y 1382.
+void InitializeRotatingImpulse(char* particle, float scale)
+{
+    *(int*)(particle + ParticleLifetimeOffset) = _rand() % 5 + 25;
+    const int rotation = _rand() % 360;
+    *(float*)(particle + ParticleScaleOffset) = scale;
+    *(float*)(particle + ParticleRotationOffset) = (float)rotation;
+    const int speedStep = _rand() % 10;
+    float* drift = (float*)(particle + ParticleDriftOffset);
+    drift[1] = 0.0f;
+    drift[0] = (float)(speedStep + 5) * _DAT_005528b4;
+    drift[2] = (float)(_rand() % 10 + 5) * _DAT_005526e4;
+}
+
+// IDA: Particle_Spawn (0x00475220), tipo 1381: cero y no cero son variantes distintas.
+struct ParticleImpulse {
+    const float* ScaleFactor;
+    const float* ScaleBase;
+    const float* HorizontalFactor;
+    const float* VerticalFactor;
+};
+constexpr ParticleImpulse ParticleImpulses[] = {
+    { &_DAT_00552914, &_DAT_00552504, &_DAT_005528b4, &_DAT_005526e4 },
+    { &_DAT_005524f4, &_DAT_0055256c, &_DAT_005526e4, &_DAT_005524f4 },
+};
+
+void InitializeParticleImpulse(char* particle, int subtype)
+{
+    const int lifetime = _rand() % 5 + 20;
+    *(float*)(particle + ParticleRotationOffset) = 0.0f;
+    *(int*)(particle + ParticleLifetimeOffset) = lifetime;
+    const auto& definition = ParticleImpulses[subtype != 0 ? 1 : 0];
+    *(float*)(particle + ParticleScaleOffset) =
+        (float)(_rand() % 10) * *definition.ScaleFactor + *definition.ScaleBase;
+    float* drift = (float*)(particle + ParticleDriftOffset);
+    drift[0] = (float)(_rand() % 10 + 5) * *definition.HorizontalFactor;
+    drift[1] = (float)(_rand() % 10 - 5) * *definition.HorizontalFactor;
+    drift[2] = (float)(_rand() % 10 + 5) * *definition.VerticalFactor;
+}
 } // namespace
 
 // IDA: Particle_Spawn (0x00475220)
@@ -901,43 +940,16 @@ lab_4e1_skip_size:
             *(float *)(pcVar11 + 0x58) = (float)(iVar7 % 0x1e) * _DAT_00552594 + param_6;
             return iVar6;
         }
-        iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 5 + 0x19;
-        iVar7 = _rand();
-        pcVar11[0x0c] = (char)-0x33; pcVar11[0x0d] = (char)-0x34; pcVar11[0x0e] = 'L'; pcVar11[0x0f] = '>';
-        *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-        iVar7 = _rand();
-        pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
-        *pfVar3 = (float)(iVar7 % 10 + 5) * _DAT_005528b4;
-        iVar7 = _rand(); fVar4 = (float)(iVar7 % 10 + 5);
-        break;   // → shared tail: fVar4 * _DAT_005526e4
+        InitializeRotatingImpulse(pcVar11, 0.2f);
+        return iVar6;
 
     case 0x565:
-        iVar7 = _rand();
-        pcVar11[0x40] = '\0'; pcVar11[0x41] = '\0'; pcVar11[0x42] = '\0'; pcVar11[0x43] = '\0';
-        *(int *)(pcVar11 + 0x38) = iVar7 % 5 + 0x14;
-        if (*(int *)(pcVar11 + 8) != 0) {
-            iVar7 = _rand(); *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 10) * _DAT_005524f4 + _DAT_0055256c;
-            iVar7 = _rand(); *pfVar3                   = (float)(iVar7 % 10 + 5)  * _DAT_005526e4;
-            iVar7 = _rand(); *(float *)(pcVar11 + 0x50) = (float)(iVar7 % 10 + -5) * _DAT_005526e4;
-            iVar7 = _rand(); *(float *)(pcVar11 + 0x54) = (float)(iVar7 % 10 + 5)  * _DAT_005524f4;
-            return iVar6;
-        }
-        iVar7 = _rand(); *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 10) * _DAT_00552914 + _DAT_00552504;
-        iVar7 = _rand(); *pfVar3                   = (float)(iVar7 % 10 + 5)  * _DAT_005528b4;
-        iVar7 = _rand(); *(float *)(pcVar11 + 0x50) = (float)(iVar7 % 10 + -5) * _DAT_005528b4;
-        iVar7 = _rand(); fVar4 = (float)(iVar7 % 10 + 5);
-        break;   // → shared tail
+        InitializeParticleImpulse(pcVar11, param_5);
+        return iVar6;
 
     case 0x566:
-        iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 5 + 0x19;
-        iVar7 = _rand();
-        pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = '\0'; pcVar11[0x0f] = '?';
-        *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-        iVar7 = _rand();
-        pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
-        *pfVar3 = (float)(iVar7 % 10 + 5) * _DAT_005528b4;
-        iVar7 = _rand(); fVar4 = (float)(iVar7 % 10 + 5);
-        break;   // → shared tail
+        InitializeRotatingImpulse(pcVar11, 0.5f);
+        return iVar6;
 
     case 0x598:
         pcVar11[0x38] = '\x05'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
@@ -964,10 +976,6 @@ lab_4e1_skip_size:
     default:
         return iVar6;
     }
-
-    // ── shared tail for 0x4f4/0x565/0x566 break paths ────────────────────────
-    *(float *)(pcVar11 + 0x54) = fVar4 * _DAT_005526e4;
-    return iVar6;
 
     // ── 0x4ab/0x4ad/0x47f shared implementation ──────────────────────────────
 switchD_4ab_impl:
