@@ -228,6 +228,11 @@ void InitializeParticleImpulse(char* particle, int subtype)
     drift[1] = (float)(_rand() % 10 - 5) * *definition.HorizontalFactor;
     drift[2] = (float)(_rand() % 10 + 5) * *definition.VerticalFactor;
 }
+// IDA: Particle_Spawn (0x00475220), tipo 1191: sólo subtipos 0..3.
+struct ParticleScalePreset { int Lifetime; float Scale; };
+constexpr ParticleScalePreset ParticleScalePresets[] = {
+    { -1, 0.15f }, { 10, 0.0f }, { 20, 1.0f }, { 1, -1.0f },
+};
 } // namespace
 
 // IDA: Particle_Spawn (0x00475220)
@@ -247,7 +252,6 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     char *pcVar11;
     long double fVar12;
     long double fVar13;
-    unsigned long long uVar14;
     // Locales contiguos: IDA Particle_Spawn (0x00475220) declara `float in1[3]`
     // en [ebp-3Ch] y lo pasa entero a VectorRotate.  Ghidra lo emitio como TRES
     // escalares sueltos (local_3c/38/34 = ebp-0x3C/-0x38/-0x34) y los seis call
@@ -292,11 +296,11 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     // scale
     *(float *)(pcVar11 + 0x0c) = param_6;
     // clear extra / rotation fields
-    pcVar11[0x48] = '\0'; pcVar11[0x49] = '\0'; pcVar11[0x4a] = '\0'; pcVar11[0x4b] = '\0';
-    pcVar11[0x44] = '\0'; pcVar11[0x45] = '\0'; pcVar11[0x46] = '\0'; pcVar11[0x47] = '\0';
-    pcVar11[0x40] = '\0'; pcVar11[0x41] = '\0'; pcVar11[0x42] = '\0'; pcVar11[0x43] = '\0';
+    *(float*)(pcVar11 + 0x48) = 0.0f;
+    *(float*)(pcVar11 + 0x44) = 0.0f;
+    *(float*)(pcVar11 + ParticleRotationOffset) = 0.0f;
     // lifetime default = 2
-    pcVar11[0x38] = '\x02'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+    *(int*)(pcVar11 + ParticleLifetimeOffset) = 2;
     *(int *)(pcVar11 + 0x3c) = param_7;            // entity_ptr
     // dir
     *pfVar2                    = *param_3;
@@ -305,429 +309,296 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     pfVar3 = (float *)(pcVar11 + 0x4c);
     *pfVar3 = 0.0f;
     // clear vel
-    pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
-    pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+    *(float*)(pcVar11 + ParticleDriftOffset + 4) = 0.0f;
+    *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
 
-    // ── per-type customisation ────────────────────────────────────────────────
-    if (param_1 < 0x4c5) {
-        if (param_1 == 0x4c4) {
-            // 0x4c4 — fire/ember type; sub_type selects variant
-            switch (param_5) {
-            case 0: case 4: case 9:
-                pcVar11[0x38] = '\x10'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000001f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-                *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x30) * _DAT_005524f8;
-                iVar7 = _rand();
-                *pfVar2 = (float)(iVar7 % 0x168);
-                // IDA: `*((float *)v8 + 16) = (float)((__int64)WorldTime % 360);`
-                *(float *)(pcVar11 + 0x40) = (float)(int)((__int64)WorldTime % 360);
-                return iVar6;
-            case 1:
-                pcVar11[0x38] = '2'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000001f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-                *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x50) * _DAT_005524f8;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *pfVar1 = (float)(int)(uVar8 - 0x20) + *pfVar1;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 0x20) + *(float *)(pcVar11 + 0x14);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *(float *)(pcVar11 + 0x18) = (float)(int)(uVar8 + 0x20) + *(float *)(pcVar11 + 0x18);
-                iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
-                iVar7 = _rand(); *pfVar3 = 0.0f;
-                *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000007;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-                pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-                *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
-                return iVar6;
-            case 2:
-                pcVar11[0x38] = '2'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x40) * _DAT_005524f8;
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000001f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-                *(float *)(pcVar11 + 0x48) = (float)(int)(uVar8 + 0x3c) * _DAT_005524f4;
-                return iVar6;
-            case 3:
-                pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000001f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-                *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x50) * _DAT_005524f8;
-                iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
-                iVar7 = _rand(); *pfVar3 = 0.0f;
-                *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000007;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-                pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-                *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
-                return iVar6;
-            case 5:
-                pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x62) * _DAT_005524f8;
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000001f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-                *(float *)(pcVar11 + 0x48) = (float)(int)(uVar8 + 0x3c) * _DAT_005524f4;
-                return iVar6;
-            case 6:
-                pcVar11[0x38] = '\x1e'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 1000);
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 0x14 + 0xb4) * _DAT_005524f8;
-                iVar7 = _rand();
-                *pfVar1 = (float)(iVar7 % 200 + -100) * param_6 + *pfVar1;
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x14) = (float)(iVar7 % 200 + -100) * param_6 + *(float *)(pcVar11 + 0x14);
-                iVar7 = _rand();
-                *pfVar3 = 0.0f;
-                pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
-                pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-                fVar4 = (float)(iVar7 % 0x14 + 0x14) + *(float *)(pcVar11 + 0x18);
-                *(float *)(pcVar11 + 0x18) = fVar4;
-                *(float *)(pcVar11 + 0x40) = fVar4;
-                return iVar6;
-            case 7:
-                pcVar11[0x38] = '\x1e'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                *pfVar3 = 0.0f;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000003;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-                pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-                *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 6) * *(float *)(pcVar11 + 0x0c);
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 200) * _DAT_00552abc;
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x0c) =
-                    (float)(iVar7 % 0x14 + 0x78) * *(float *)(pcVar11 + 0x0c) * _DAT_005524f8;
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-                return iVar6;
-            case 8:
-                pcVar11[0x38] = '\x18'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                *pfVar3 = 0.0f;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000007;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-                pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-                *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 0x20) * _DAT_005529c0;
-                *(float *)(pcVar11 + 0x0c) = *(float *)(pcVar11 + 0x0c) * _DAT_00552530;
-                iVar7 = _rand();
-                *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-                return iVar6;
-            case 10:
-                pcVar11[0x38] = '\x10'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                return iVar6;
-            case 0xb:
-                pcVar11[0x38] = '2'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *pfVar1 = (float)(int)(uVar8 - 0x20) + *pfVar1;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 0x20) + *(float *)(pcVar11 + 0x14);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x8000003f;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-                *(float *)(pcVar11 + 0x18) = (float)(int)(uVar8 + 0x20) + *(float *)(pcVar11 + 0x18);
-                iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
-                iVar7 = _rand(); *pfVar3 = 0.0f;
-                *(unsigned int *)(pcVar11 + 0x5c) = *(unsigned int *)(pcVar11 + 0x2c);
-                *(unsigned int *)(pcVar11 + 0x60) = *(unsigned int *)(pcVar11 + 0x30);
-                *(unsigned int *)(pcVar11 + 0x58) = *(unsigned int *)(pcVar11 + 0x28);
-                *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000007;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-                pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-                *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
-                return iVar6;
-            default:
-                return iVar6;
-            }
-        }
-
-        if (param_1 < 0x4a7) {
-            if (param_1 == 0x4a6) {
-                // 0x4a6 — up-burst with fixed scale
-                pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                pcVar11[0x0c] = 'f'; pcVar11[0x0d] = 'f'; pcVar11[0x0e] = (char)-0x1a; pcVar11[0x0f] = '?';
-                *pfVar2 = 30.0f;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000003;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-                *(float *)(pcVar11 + 0x28) = (float)(int)(uVar8 + 6) * _DAT_005524f4;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000003;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-                *(float *)(pcVar11 + 0x2c) = (float)(int)(uVar8 + 6) * _DAT_005524f4;
-                uVar8 = _rand();
-                uVar8 = uVar8 & 0x80000003;
-                if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-                *(float *)(pcVar11 + 0x30) = (float)(int)(uVar8 + 6) * _DAT_005524f4;
-                *(float *)(pcVar11 + 0x18) = *(float *)(pcVar11 + 0x18) + _DAT_005529e0;
-                return iVar6;
-            }
-            if (param_1 < 0x498) {
-                if (param_1 == 0x497) {
-                    // 0x497 — matrix-transformed directional burst
-                    uVar8 = _rand();
-                    uVar8 = uVar8 & 0x80000003;
-                    if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-                    iVar7 = *(int *)(pcVar11 + 8);
-                    *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 4) * _DAT_005524f4;
-                    if (((iVar7 != 0) && (iVar7 != 2)) && (iVar7 != 3)) {
-                        uVar8 = _rand();
-                        uVar8 = uVar8 & 0x80000007;
-                        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-                        *(unsigned int *)(pcVar11 + 0x38) = uVar8 + 8;
-                        return iVar6;
-                    }
-                    uVar8 = _rand();
-                    uVar8 = uVar8 & 0x8000000f;
-                    if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-                    *(unsigned int *)(pcVar11 + 0x38) = uVar8 + 0x18;
-                    iVar7 = _rand();
-                    *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                    Matrix_BuildFromEuler(pfVar2, local_30);
-                    uVar8 = _rand();
-                    uVar8 = uVar8 & 0x8000000f;
-                    if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-                    local_3c = 0.0f;
-                    *(float *)(pcVar11 + 0x48) = (float)(int)(uVar8 + 6);
-                    iVar7 = _rand();
-                    local_38 = (float)(iVar7 % 0x14 + 0x14) * _DAT_005524f4;
-                    if (*(int *)(pcVar11 + 8) == 2) {
-                        *(float *)(pcVar11 + 0x0c) = *(float *)(pcVar11 + 0x0c) + *(float *)(pcVar11 + 0x0c);
-                        local_3c = local_3c * _DAT_00552540;
-                        local_38 = local_38 * _DAT_00552540;
-                    }
-                    local_34 = 0.0f;
-                    Vector_Rotate(&local_3c, local_30, pfVar3);
-                    return iVar6;
-                }
-                if (0x47f < param_1) {
-                    if (param_1 == 0x490) {
-                        // 0x490 — glow with RGBA
-                        fVar4 = *(float *)(pcVar11 + 0x24) + _DAT_0055293c;
-                        pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                        pcVar11[0x48] = (char)-0x33; pcVar11[0x49] = (char)-0x34;
-                        pcVar11[0x4a] = (char)-0x34; pcVar11[0x4b] = '=';
-                        *(float *)(pcVar11 + 0x40) = fVar4;
-                        return iVar6;
-                    }
-                    return iVar6;
-                }
-                if (param_1 == 0x47f) {
-                    // IDA 0x475220 L810-814: `if (Type == 1151) { life =
-                    // rand() % 8 + 20; return; }`.  El port lo mandaba con un
-                    // goto al codigo de 0x4ab (vida 24), y el cuerpo real de
-                    // 1151 habia quedado suelto mas abajo (ver la nota del
-                    // bloque `< 0x4a7`).
-                    *(int *)(pcVar11 + 0x38) = _rand() % 8 + 20;
-                    return iVar6;
-                }
-                // 0x67/0x68 range
-                if (param_1 < 0x67) return iVar6;
-                if (param_1 < 0x69) {
-                    pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                    iVar7 = _rand();
-                    *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 6 + 8) * _DAT_005524f4;
-                    if ((*(int *)(pcVar11 + 4) != 0x68) && (*(int *)(pcVar11 + 8) != 1))
-                        return iVar6;
-                    iVar7 = _rand(); *pfVar1 = (float)(iVar7 % 10 + -5) + *pfVar1;
-                    iVar7 = _rand(); *(float *)(pcVar11 + 0x14) = (float)(iVar7 % 10 + -5) + *(float *)(pcVar11 + 0x14);
-                    iVar7 = _rand(); *(float *)(pcVar11 + 0x18) = (float)(iVar7 % 10 + -5) + *(float *)(pcVar11 + 0x18);
-                    if (*(int *)(pcVar11 + 8) != 1) return iVar6;
-                    *(float *)(pcVar11 + 0x0c) = param_6;
-                    iVar7 = _rand();
-                    pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = (char)-0x80; pcVar11[0x53] = '?';
-                    *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 100) * _DAT_00552890;
-                    return iVar6;
-                }
-                if (param_1 != 0x47e) return iVar6;
-                // 0x47e — misc bubble/spark
-                if (param_5 == 0) {
-                    iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 10 + 10;
-                    iVar7 = _rand(); *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 10) + _DAT_00552488;
-                    iVar7 = _rand();
-                } else if (param_5 == 1) {
-                    pcVar11[0x38] = '2'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                    return iVar6;
-                } else if (param_5 == 2) {
-                    iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 10 + 10;
-                    iVar7 = _rand(); *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 10) + _DAT_00552488;
-                    iVar7 = _rand();
-                } else if (param_5 == 3) {
-                    pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                    return iVar6;
-                } else if (param_5 == 4) {
-                    pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                    pcVar11[0x48] = '\0'; pcVar11[0x49] = '\0'; pcVar11[0x4a] = '\0'; pcVar11[0x4b] = '\0';
-                    *(float *)(pcVar11 + 0x40) = param_6;
-                    pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = '\0'; pcVar11[0x0f] = '@';
-                    return iVar6;
-                } else if (param_5 == 5) {
-                    pcVar11[0x38] = '\x19'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                    return iVar6;
-                } else {
-                    return iVar6;
-                }
-                *(float *)(pcVar11 + 0x0c) =
-                    ((float)(iVar7 % 0x32) + _DAT_00552598) * param_6 * _DAT_00552594;
-                return iVar6;
-            }
-            // IDA: los tipos entre 0x498 y 0x4a5 van a su case o salen por el default con
-            // la vida por defecto; el cuerpo de 0x47f (vida rand%8+20) no va aca.
-        }
-
-        if (param_1 == 0x498) {
-            // 0x498 — directional smoke/mist
-            if (param_5 == 1) {
-                iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
-                iVar7 = _rand(); *(float *)(pcVar11 + 0x20) = (float)(iVar7 % 0x168);
-                iVar7 = _rand(); *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                Matrix_BuildFromEuler(pfVar2, local_30);
-                local_3c = 0.0f; local_38 = -50.0f; local_34 = 0.0f;
-                Vector_Rotate(&local_3c, local_30, pfVar3);
-                return iVar6;
-            }
-            if (param_5 == 3) {
-                pcVar11[0x38] = '\x05'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                return iVar6;
-            }
-            if (param_5 == 2) {
-                pcVar11[0x38] = '\x0f'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-                *pfVar2 = 0.0f;
-                pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
-                pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';
-                *(unsigned int *)(pcVar11 + 0x68) = *(unsigned int *)(pcVar11 + 0x14);
-                *(float *)(pcVar11 + 100) = *pfVar1;
-                *(unsigned int *)(pcVar11 + 0x6c) = *(unsigned int *)(pcVar11 + 0x18);
-                *pfVar3 = (*(float *)(param_7 + 0x10) - *pfVar1) * _DAT_00552a00;
-                *(float *)(pcVar11 + 0x50) =
-                    (*(float *)(param_7 + 0x14) - *(float *)(pcVar11 + 0x14)) * _DAT_00552a00;
-                *(float *)(pcVar11 + 0x54) =
-                    (*(float *)(param_7 + 0x18) - *(float *)(pcVar11 + 0x18)) * _DAT_00552a00;
-                return iVar6;
-            }
+    // IDA: Particle_Spawn (0x00475220). Despacho directo por tipo;
+    // cada familia conserva sus subtipos y el orden de inicialización.
+    switch (param_1) {
+    case 1220: {
+        // 0x4c4 — fire/ember type; sub_type selects variant
+        switch (param_5) {
+        case 0: case 4: case 9:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 16;
+            uVar8 = _rand() % 32;
+            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x30) * _DAT_005524f8;
+            iVar7 = _rand();
+            *pfVar2 = (float)(iVar7 % 0x168);
+            // IDA: `*((float *)v8 + 16) = (float)((__int64)WorldTime % 360);`
+            *(float *)(pcVar11 + 0x40) = (float)(int)((__int64)WorldTime % 360);
             return iVar6;
-        }
-
-        // 0x499 fallthrough → same as 0x4b5/0x4b6
-        if (param_1 == 0x499) goto switchD_4b5;
-        if (param_1 == 0x49c) {
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000007;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 6) * param_6 * _DAT_005524f4;
+        case 1:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 50;
+            uVar8 = _rand() % 32;
+            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x50) * _DAT_005524f8;
+            uVar8 = _rand() % 64;
+            *pfVar1 = (float)(int)(uVar8 - 0x20) + *pfVar1;
+            uVar8 = _rand() % 64;
+            *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 0x20) + *(float *)(pcVar11 + 0x14);
+            uVar8 = _rand() % 64;
+            *(float *)(pcVar11 + 0x18) = (float)(int)(uVar8 + 0x20) + *(float *)(pcVar11 + 0x18);
+            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
+            iVar7 = _rand(); *pfVar3 = 0.0f;
+            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
+            uVar8 = _rand() % 8;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
+            *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
+            return iVar6;
+        case 2: case 5:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = param_5 == 2 ? 50 : 20;
+            uVar8 = _rand() % 64;
+            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + (param_5 == 2 ? 0x40 : 0x62)) * _DAT_005524f8;
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
+            uVar8 = _rand() % 32;
+            *(float *)(pcVar11 + 0x48) = (float)(int)(uVar8 + 0x3c) * _DAT_005524f4;
+            return iVar6;
+        case 3:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+            uVar8 = _rand() % 32;
+            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x50) * _DAT_005524f8;
+            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
+            iVar7 = _rand(); *pfVar3 = 0.0f;
+            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
+            uVar8 = _rand() % 8;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
+            *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
+            return iVar6;
+        case 6:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 30;
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 1000);
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 0x14 + 0xb4) * _DAT_005524f8;
+            iVar7 = _rand();
+            *pfVar1 = (float)(iVar7 % 200 + -100) * param_6 + *pfVar1;
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x14) = (float)(iVar7 % 200 + -100) * param_6 + *(float *)(pcVar11 + 0x14);
+            iVar7 = _rand();
+            *pfVar3 = 0.0f;
+            *(float*)(pcVar11 + ParticleDriftOffset + 4) = 0.0f;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
+            fVar4 = (float)(iVar7 % 0x14 + 0x14) + *(float *)(pcVar11 + 0x18);
+            *(float *)(pcVar11 + 0x18) = fVar4;
+            *(float *)(pcVar11 + 0x40) = fVar4;
+            return iVar6;
+        case 7:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 30;
+            *pfVar3 = 0.0f;
+            uVar8 = _rand() % 4;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
+            *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 6) * *(float *)(pcVar11 + 0x0c);
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 200) * _DAT_00552abc;
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x0c) =
+                (float)(iVar7 % 0x14 + 0x78) * *(float *)(pcVar11 + 0x0c) * _DAT_005524f8;
             iVar7 = _rand();
             *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
             return iVar6;
+        case 8:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 24;
+            *pfVar3 = 0.0f;
+            uVar8 = _rand() % 8;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
+            *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 0x20) * _DAT_005529c0;
+            *(float *)(pcVar11 + 0x0c) = *(float *)(pcVar11 + 0x0c) * _DAT_00552530;
+            iVar7 = _rand();
+            *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
+            return iVar6;
+        case 10:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 16;
+            return iVar6;
+        case 0xb:
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 50;
+            uVar8 = _rand() % 64;
+            *pfVar1 = (float)(int)(uVar8 - 0x20) + *pfVar1;
+            uVar8 = _rand() % 64;
+            *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 0x20) + *(float *)(pcVar11 + 0x14);
+            uVar8 = _rand() % 64;
+            *(float *)(pcVar11 + 0x18) = (float)(int)(uVar8 + 0x20) + *(float *)(pcVar11 + 0x18);
+            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
+            iVar7 = _rand(); *pfVar3 = 0.0f;
+            *(unsigned int *)(pcVar11 + 0x5c) = *(unsigned int *)(pcVar11 + 0x2c);
+            *(unsigned int *)(pcVar11 + 0x60) = *(unsigned int *)(pcVar11 + 0x30);
+            *(unsigned int *)(pcVar11 + 0x58) = *(unsigned int *)(pcVar11 + 0x28);
+            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
+            uVar8 = _rand() % 8;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
+            *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
+            return iVar6;
+        default:
+            return iVar6;
         }
-        // Sin `return` aca: los tipos entre 0x49c y 0x4c4 sin case propio en este
-        // arbol tienen su inicializacion en el switch de mas abajo:
-        //   0x4a7, 0x4ab (fuego), 0x4ac, 0x4ad, 0x4b0 (Flame01), 0x4b5, 0x4b6,
-        //   0x4bf, 0x4c0.
-        // El `if (param_1 < 0x4c5)` de arriba NO es un rango real: es el arbol
-        // binario de busqueda que genera Ghidra para un switch disperso.
-        goto particleSpawn_outerSwitch;
-
-        // 0x4b5/0x4b6 shared path
-switchD_4b5:
-        pcVar11[0x38] = '\f'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000003;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
+    }
+    case 1190: {
+        // 0x4a6 — up-burst with fixed scale
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+        *(float*)(pcVar11 + ParticleScaleOffset) = 1.8f;
+        *pfVar2 = 30.0f;
+        uVar8 = _rand() % 4;
+        *(float *)(pcVar11 + 0x28) = (float)(int)(uVar8 + 6) * _DAT_005524f4;
+        uVar8 = _rand() % 4;
+        *(float *)(pcVar11 + 0x2c) = (float)(int)(uVar8 + 6) * _DAT_005524f4;
+        uVar8 = _rand() % 4;
+        *(float *)(pcVar11 + 0x30) = (float)(int)(uVar8 + 6) * _DAT_005524f4;
+        *(float *)(pcVar11 + 0x18) = *(float *)(pcVar11 + 0x18) + _DAT_005529e0;
+        return iVar6;
+    }
+    case 1175: {
+        // 0x497 — matrix-transformed directional burst
+        uVar8 = _rand() % 4;
+        iVar7 = *(int *)(pcVar11 + 8);
+        *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 4) * _DAT_005524f4;
+        if (((iVar7 != 0) && (iVar7 != 2)) && (iVar7 != 3)) {
+            uVar8 = _rand() % 8;
+            *(unsigned int *)(pcVar11 + 0x38) = uVar8 + 8;
+            return iVar6;
+        }
+        uVar8 = _rand() % 16;
+        *(unsigned int *)(pcVar11 + 0x38) = uVar8 + 0x18;
+        iVar7 = _rand();
+        *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
+        Matrix_BuildFromEuler(pfVar2, local_30);
+        uVar8 = _rand() % 16;
+        local_3c = 0.0f;
+        *(float *)(pcVar11 + 0x48) = (float)(int)(uVar8 + 6);
+        iVar7 = _rand();
+        local_38 = (float)(iVar7 % 0x14 + 0x14) * _DAT_005524f4;
+        if (*(int *)(pcVar11 + 8) == 2) {
+            *(float *)(pcVar11 + 0x0c) = *(float *)(pcVar11 + 0x0c) + *(float *)(pcVar11 + 0x0c);
+            local_3c = local_3c * _DAT_00552540;
+            local_38 = local_38 * _DAT_00552540;
+        }
+        local_34 = 0.0f;
+        Vector_Rotate(&local_3c, local_30, pfVar3);
+        return iVar6;
+    }
+    case 1168: {
+        // 0x490 — glow with RGBA
+        fVar4 = *(float *)(pcVar11 + 0x24) + _DAT_0055293c;
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+        *(float*)(pcVar11 + 0x48) = 0.1f;
+        *(float *)(pcVar11 + 0x40) = fVar4;
+        return iVar6;
+    }
+    case 1151: {
+        // IDA 0x475220 L810-814: `if (Type == 1151) { life =
+        // rand() % 8 + 20; return; }`.  El port lo mandaba con un
+        // goto al codigo de 0x4ab (vida 24), y el cuerpo real de
+        // 1151 habia quedado suelto mas abajo (ver la nota del
+        // bloque `< 0x4a7`).
+        *(int *)(pcVar11 + 0x38) = _rand() % 8 + 20;
+        return iVar6;
+    }
+    // IDA 0.98j: polvo de Tamachan, tipos 103/104; se conserva el camino activo.
+    case 103: case 104: {
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 20;
+        iVar7 = _rand();
+        *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 6 + 8) * _DAT_005524f4;
+        if ((*(int *)(pcVar11 + 4) != 0x68) && (*(int *)(pcVar11 + 8) != 1))
+            return iVar6;
+        iVar7 = _rand(); *pfVar1 = (float)(iVar7 % 10 + -5) + *pfVar1;
+        iVar7 = _rand(); *(float *)(pcVar11 + 0x14) = (float)(iVar7 % 10 + -5) + *(float *)(pcVar11 + 0x14);
+        iVar7 = _rand(); *(float *)(pcVar11 + 0x18) = (float)(iVar7 % 10 + -5) + *(float *)(pcVar11 + 0x18);
+        if (*(int *)(pcVar11 + 8) != 1) return iVar6;
+        *(float *)(pcVar11 + 0x0c) = param_6;
+        iVar7 = _rand();
+        *(float*)(pcVar11 + ParticleDriftOffset + 4) = 1.0f;
+        *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 100) * _DAT_00552890;
+        return iVar6;
+    }
+    case 1150: {
+        // 0x47e — misc bubble/spark
+        if (param_5 == 0 || param_5 == 2) {
+            iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 10 + 10;
+            iVar7 = _rand(); *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 10) + _DAT_00552488;
+            iVar7 = _rand();
+        } else if (param_5 == 1) {
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 50;
+            return iVar6;
+        } else if (param_5 == 3) {
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+            return iVar6;
+        } else if (param_5 == 4) {
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+            *(float*)(pcVar11 + 0x48) = 0.0f;
+            *(float *)(pcVar11 + 0x40) = param_6;
+            *(float*)(pcVar11 + ParticleScaleOffset) = 2.0f;
+            return iVar6;
+        } else if (param_5 == 5) {
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 25;
+            return iVar6;
+        } else {
+            return iVar6;
+        }
+        *(float *)(pcVar11 + 0x0c) =
+            ((float)(iVar7 % 0x32) + _DAT_00552598) * param_6 * _DAT_00552594;
+        return iVar6;
+    }
+    case 1176: {
+        // 0x498 — directional smoke/mist
+        if (param_5 == 1) {
+            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
+            iVar7 = _rand(); *(float *)(pcVar11 + 0x20) = (float)(iVar7 % 0x168);
+            iVar7 = _rand(); *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
+            Matrix_BuildFromEuler(pfVar2, local_30);
+            local_3c = 0.0f; local_38 = -50.0f; local_34 = 0.0f;
+            Vector_Rotate(&local_3c, local_30, pfVar3);
+            return iVar6;
+        }
+        if (param_5 == 3) {
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 5;
+            return iVar6;
+        }
+        if (param_5 == 2) {
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 15;
+            *pfVar2 = 0.0f;
+            *(float*)(pcVar11 + ParticleAngleOffset + 4) = 0.0f;
+            *(float*)(pcVar11 + ParticleAngleOffset + 8) = 0.0f;
+            *(unsigned int *)(pcVar11 + 0x68) = *(unsigned int *)(pcVar11 + 0x14);
+            *(float *)(pcVar11 + 100) = *pfVar1;
+            *(unsigned int *)(pcVar11 + 0x6c) = *(unsigned int *)(pcVar11 + 0x18);
+            *pfVar3 = (*(float *)(param_7 + 0x10) - *pfVar1) * _DAT_00552a00;
+            *(float *)(pcVar11 + 0x50) =
+                (*(float *)(param_7 + 0x14) - *(float *)(pcVar11 + 0x14)) * _DAT_00552a00;
+            *(float *)(pcVar11 + 0x54) =
+                (*(float *)(param_7 + 0x18) - *(float *)(pcVar11 + 0x18)) * _DAT_00552a00;
+            return iVar6;
+        }
+        return iVar6;
+    }
+    case 1177: case 1205: case 1206: {
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 12;
+        uVar8 = _rand() % 4;
         *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 8) * _DAT_00552874;
         iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
         Matrix_BuildFromEuler(param_3, local_30);
         local_3c = 0.0f;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000000f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
+        uVar8 = _rand() % 16;
         local_38 = -(float)(int)(uVar8 + 8);
         iVar7 = _rand(); local_34 = (float)(iVar7 % 6 + -3);
         Vector_Rotate(&local_3c, local_30, pfVar3);
         if (*(int *)(pcVar11 + 4) == 0x4b6) {
-            pcVar11[0x28] = (char)-0x33; pcVar11[0x29] = (char)-0x34; pcVar11[0x2a] = (char)-0x34; pcVar11[0x2b] = '=';
-            pcVar11[0x2c] = '\0'; pcVar11[0x2d] = '\0'; pcVar11[0x2e] = '\0'; pcVar11[0x2f] = '\0';
-            pcVar11[0x30] = '\0'; pcVar11[0x31] = '\0'; pcVar11[0x32] = '\0'; pcVar11[0x33] = '\0';
+            *(float*)(pcVar11 + ParticleColorOffset) = 0.1f;
+            *(float*)(pcVar11 + ParticleColorOffset + 4) = 0.0f;
+            *(float*)(pcVar11 + ParticleColorOffset + 8) = 0.0f;
         }
         return iVar6;
     }
-
-    // ── switch por tipo (los `case` de aca cubren tipos a ambos lados de
-    //    0x4c5; ver la nota del `goto particleSpawn_outerSwitch` de arriba) ────
-particleSpawn_outerSwitch:
-    switch (param_1) {
-    // IDA 0.98j CreateParticle (sub_482370): tipos 103/104, el polvo del
-    // Tamachan (no existen en el 0.97k).  Usan el bitmap 103 = World1/rain02,
-    // igual en los dos binarios, y el render cae al caso por defecto.
-    case 103:
-    case 104: {
-        *(int *)(pcVar11 + 0x38) = 20;
-        iVar7 = _rand() % 6;
-        *(float *)(pcVar11 + 0x0c) = (float)((double)(iVar7 + 8) * 0.1);
-        if (*(int *)(pcVar11 + 4) == 104 || *(int *)(pcVar11 + 8) == 1) {
-            *pfVar1 = (float)(_rand() % 10 - 5) + *pfVar1;
-            *(float *)(pcVar11 + 0x14) = (float)(_rand() % 10 - 5) + *(float *)(pcVar11 + 0x14);
-            iVar7 = _rand() % 10;
-            *(float *)(pcVar11 + 0x18) = (float)(iVar7 - 5) + *(float *)(pcVar11 + 0x18);
-            if (*(int *)(pcVar11 + 8) == 1) {
-                *(float *)(pcVar11 + 0x0c) = param_6;
-                iVar7 = _rand() % 100;
-                *(float *)(pcVar11 + 0x50) = 1.0f;
-                *(float *)(pcVar11 + 0x48) = (float)((double)iVar7 * 0.001);
-            }
-        }
+    case 1180: {
+        uVar8 = _rand() % 8;
+        *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 6) * param_6 * _DAT_005524f4;
+        iVar7 = _rand();
+        *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
         return iVar6;
     }
     case 0x4a7: {
-        switch (param_5) {
-        case 0:
-            pcVar11[0x0c] = (char)-0x66; pcVar11[0x0d] = (char)-0x67;
-            pcVar11[0x0e] = '\x19';      pcVar11[0x0f] = '>';
-            break;
-        case 1:
-            pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = '\0'; pcVar11[0x0f] = '\0';
-            break;
-        case 2:
-            pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = (char)-0x80; pcVar11[0x0f] = '?';
-            break;
-        case 3:
-            pcVar11[0x38] = '\x01'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            *(float *)(pcVar11 + 0x0c) = param_6;
-            break;
-        default:
-            break;
+        if (param_5 >= 0 && param_5 < 4) {
+            const auto& preset = ParticleScalePresets[param_5];
+            if (preset.Lifetime >= 0)
+                *(int*)(pcVar11 + ParticleLifetimeOffset) = preset.Lifetime;
+            *(float*)(pcVar11 + ParticleScaleOffset) = param_5 == 3 ? param_6 : preset.Scale;
         }
         *(float *)(pcVar11 + 0x28) = *param_4    + _DAT_00552504;
         *(float *)(pcVar11 + 0x2c) = param_4[1]  + _DAT_00552504;
@@ -737,7 +608,6 @@ particleSpawn_outerSwitch:
 
     case 0x4ab:
     case 0x4ad:
-switchD_4ab:
         goto switchD_4ab_impl;
 
     case 0x4ac:
@@ -748,46 +618,36 @@ switchD_4ab:
     case 0x4b0: {
         switch (param_5) {
         case 0:
-            pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 20;
             *pfVar3 = 0.0f;
-            pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000007f;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffff80) + 1;
+            *(float*)(pcVar11 + ParticleDriftOffset + 4) = 0.0f;
+            uVar8 = _rand() % 128;
             *(float *)(pcVar11 + 0x54) = (float)(int)(uVar8 + 0x80) * _DAT_00552934;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000003f;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
+            uVar8 = _rand() % 64;
             *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x40) * _DAT_005524f8;
             return iVar6;
         case 1:
-            pcVar11[0x38] = '\x0f'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000001f;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 15;
+            uVar8 = _rand() % 32;
             *pfVar3 = 0.0f;
             *(float *)(pcVar11 + 0x0c) =
                 (float)(int)(uVar8 + 0x20) * _DAT_005524f8 + *(float *)(pcVar11 + 0x0c);
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000003;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
+            uVar8 = _rand() % 4;
             break;
         case 2:
-            pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000001f;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+            uVar8 = _rand() % 32;
             *(float *)(pcVar11 + 0x0c) =
                 (float)(int)(uVar8 + 0x20) * _DAT_005524f8 + *(float *)(pcVar11 + 0x0c);
             iVar7 = _rand();
             fVar4 = *param_4; *pfVar3 = 0.0f;
-            pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
             fVar5 = (float)(iVar7 % 0x50) * fVar4 * _DAT_00552594;
             *(float *)(pcVar11 + 0x50) = fVar5;
             Vector_AddRotated(pfVar1, pfVar2, pfVar3);
             fVar4 = *param_4; *pfVar3 = 0.0f;
             fVar4 = (fVar4 - fVar5) * _DAT_00552a48;
-            pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
             *(float *)(pcVar11 + 0x50) = fVar4;
             fVar13 = (long double)fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0);
             fVar13 = fVar13 * (long double)_DAT_005528b8 + (long double)_DAT_00552928;
@@ -797,14 +657,12 @@ switchD_4ab:
             *(float *)(pcVar11 + 0x30) = (float)fVar13;
             return iVar6;
         case 3:
-            pcVar11[0x38] = '\n'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000001f;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
+            uVar8 = _rand() % 32;
             *pfVar3 = 0.0f;
-            pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
+            *(float*)(pcVar11 + ParticleDriftOffset + 4) = 0.0f;
             fVar4 = (float)(int)(uVar8 + 0x20) * _DAT_005524f8;
-            pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
             *(float *)(pcVar11 + 0x0c) = fVar4 + *(float *)(pcVar11 + 0x0c);
             fVar13 = (long double)fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0);
             fVar13 = fVar13 * (long double)_DAT_005528b8 + (long double)_DAT_00552928;
@@ -814,11 +672,9 @@ switchD_4ab:
             *(float *)(pcVar11 + 0x30) = (float)fVar13;
             return iVar6;
         case 4:
-            pcVar11[0x38] = '\x05'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000001f;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-            pcVar11[0x48] = '\0'; pcVar11[0x49] = '\0'; pcVar11[0x4a] = ' '; pcVar11[0x4b] = 'A';
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 5;
+            uVar8 = _rand() % 32;
+            *(float*)(pcVar11 + 0x48) = 10.0f;
             iVar7 = *(int *)(pcVar11 + 0x3c);
             *(float *)(pcVar11 + 0x0c) =
                 (float)(int)(uVar8 + 0x20) * _DAT_005524f8 + *(float *)(pcVar11 + 0x0c);
@@ -835,24 +691,18 @@ switchD_4ab:
             *(float *)(pcVar11 + 0x30) = (float)fVar13;
             return iVar6;
         case 5:
-            pcVar11[0x38] = '\x04'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 4;
             *pfVar3 = 0.0f;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000003;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
+            uVar8 = _rand() % 4;
             break;
         default:
             return iVar6;
         }
         fVar4 = (float)(int)(uVar8 + 4) * _DAT_00552934;
-        pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+        *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
         *(float *)(pcVar11 + 0x50) = fVar4;
         return iVar6;
     }
-
-    case 0x4b5:
-    case 0x4b6:
-        goto switchD_4b5;
 
     case 0x4bf: case 0x4c0: case 0x4ce: case 0x4cf:
     case 0x4d0: case 0x4d2: case 0x596:
@@ -871,8 +721,8 @@ switchD_4ab:
         return iVar6;
 
     case 0x4df:
-        pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';
-        pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
+        *(float*)(pcVar11 + ParticleAngleOffset + 8) = 0.0f;
+        *(float*)(pcVar11 + ParticleAngleOffset + 4) = 0.0f;
         *pfVar2 = 0.0f;
         iVar7 = _rand(); *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
         if (param_5 != -1) {
@@ -881,23 +731,23 @@ switchD_4ab:
             iVar9 = _rand(); *pfVar3                  = (float)(iVar9 % iVar7 - iVar10) * _DAT_00552934;
             iVar9 = _rand(); *(float *)(pcVar11 + 0x50) = (float)(iVar9 % iVar7 - iVar10) * _DAT_00552934;
             iVar9 = _rand();
-            pcVar11[0x38] = '2'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-            pcVar11[0x0c] = (char)-0x33; pcVar11[0x0d] = (char)-0x34; pcVar11[0x0e] = (char)-0x34; pcVar11[0x0f] = '=';
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 50;
+            *(float*)(pcVar11 + ParticleScaleOffset) = 0.1f;
             *(float *)(pcVar11 + 0x54) = (float)(iVar9 % iVar7 - iVar10) * _DAT_00552934 + _DAT_00552488;
             return iVar6;
         }
-        pcVar11[0x38] = '\x02'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = (char)-0x80; pcVar11[0x0f] = '>';
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 2;
+        *(float*)(pcVar11 + ParticleScaleOffset) = 0.25f;
         return iVar6;
 
     case 0x4e1: {
-        pcVar11[0x38] = '<'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 60;
         if ((param_5 == 0) || (param_5 == 3)) {
             iVar7 = _rand();
             fVar4 = (float)(iVar7 % 100) * _DAT_00552594 * _DAT_00552650;
             fVar4 = fVar4 + _DAT_0055256c;
         } else if (param_5 == 4) {
-            pcVar11[0x38] = '('; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 40;
             iVar7 = _rand();
             fVar4 = (float)(iVar7 % 100) * _DAT_00552594 * _DAT_00552660;
             fVar4 = fVar4 + _DAT_0055256c;
@@ -913,8 +763,8 @@ lab_4e1_skip_size:
         iVar7 = _rand(); *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 6) * _DAT_005524f8 + param_6;
         iVar7 = _rand();
         *pfVar2 = 0.0f;
-        pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
-        pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';
+        *(float*)(pcVar11 + ParticleAngleOffset + 4) = 0.0f;
+        *(float*)(pcVar11 + ParticleAngleOffset + 8) = 0.0f;
         *(unsigned int *)(pcVar11 + 0x68) = *(unsigned int *)(pcVar11 + 0x14);
         *(unsigned int *)(pcVar11 + 0x6c) = *(unsigned int *)(pcVar11 + 0x18);
         *(float *)(pcVar11 + 100) = *pfVar1;
@@ -924,7 +774,7 @@ lab_4e1_skip_size:
 
     case 0x4f4:
         if (param_5 != 6) {
-            pcVar11[0x38] = '\x1e'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+            *(int*)(pcVar11 + ParticleLifetimeOffset) = 30;
             iVar7 = _rand(); *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 1000);
             iVar7 = _rand(); *pfVar1 = (float)(iVar7 % 500 + -0xfa) + *pfVar1;
             iVar7 = _rand(); *(float *)(pcVar11 + 0x14) = (float)(iVar7 % 500 + -0xfa) + *(float *)(pcVar11 + 0x14);
@@ -935,8 +785,8 @@ lab_4e1_skip_size:
             iVar7 = _rand(); *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 0x14 + 0xb4) * _DAT_005524f8;
             iVar7 = _rand();
             *pfVar3 = 0.0f;
-            pcVar11[0x50] = '\0'; pcVar11[0x51] = '\0'; pcVar11[0x52] = '\0'; pcVar11[0x53] = '\0';
-            pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+            *(float*)(pcVar11 + ParticleDriftOffset + 4) = 0.0f;
+            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
             *(float *)(pcVar11 + 0x58) = (float)(iVar7 % 0x1e) * _DAT_00552594 + param_6;
             return iVar6;
         }
@@ -952,22 +802,22 @@ lab_4e1_skip_size:
         return iVar6;
 
     case 0x598:
-        pcVar11[0x38] = '\x05'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        pcVar11[0x48] = '\0'; pcVar11[0x49] = '\0'; pcVar11[0x4a] = '\0'; pcVar11[0x4b] = '\0';
-        pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = (char)-0x80; pcVar11[0x0f] = '@';
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 5;
+        *(float*)(pcVar11 + 0x48) = 0.0f;
+        *(float*)(pcVar11 + ParticleScaleOffset) = 4.0f;
         if (param_5 == 0) {
-            pcVar11[0x40] = '\0'; pcVar11[0x41] = '\0'; pcVar11[0x42] = '\0'; pcVar11[0x43] = '\0';
+            *(float*)(pcVar11 + ParticleRotationOffset) = 0.0f;
         } else if (param_5 == 1) {
-            pcVar11[0x40] = '\0'; pcVar11[0x41] = '\0'; pcVar11[0x42] = '4'; pcVar11[0x43] = 'B';
+            *(float*)(pcVar11 + ParticleRotationOffset) = 45.0f;
         } else if (param_5 == 2) {
             pcVar11[0x40] = '\0'; pcVar11[0x41] = (char)-0x80; pcVar11[0x42] = (char)-99; pcVar11[0x43] = 'C';
         }
         return iVar6;
 
     case 0x599:
-        pcVar11[0x38] = '\a'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = 7;
         iVar7 = _rand();
-        pcVar11[0x0c] = (char)-0x66; pcVar11[0x0d] = (char)-0x67; pcVar11[0x0e] = (char)-0x67; pcVar11[0x0f] = '?';
+        *(float*)(pcVar11 + ParticleScaleOffset) = 1.2f;
         *(float *)(pcVar11 + 0x48) = (float)(iVar7 % 0x32 + 0x96) * _DAT_00552594;
         iVar7 = _rand();
         *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
@@ -977,31 +827,23 @@ lab_4e1_skip_size:
         return iVar6;
     }
 
-    // ── 0x4ab/0x4ad/0x47f shared implementation ──────────────────────────────
+    // ── 0x4ab/0x4ad shared implementation ──────────────────────────────
 switchD_4ab_impl:
-    pcVar11[0x38] = '\x18'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
+    *(int*)(pcVar11 + ParticleLifetimeOffset) = 24;
     *pfVar3 = 0.0f;
-    uVar8 = _rand();
-    uVar8 = uVar8 & 0x8000000f;
-    if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-    pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+    uVar8 = _rand() % 16;
+    *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
     iVar7 = *(int *)(pcVar11 + 8);
     *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 0x20) * _DAT_005529c8;
     if ((iVar7 == 0) || (iVar7 == 5)) {
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000003f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
+        uVar8 = _rand() % 64;
         fVar4 = (float)(int)(uVar8 + 0x80) * _DAT_005524f8;
     } else if (iVar7 == 7) {
         *pfVar3 = 0.0f;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
+        uVar8 = _rand() % 32;
+        *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
         *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 - 0x10) * _DAT_005529c8;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000003f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
+        uVar8 = _rand() % 64;
         fVar4 = (float)(int)(uVar8 + 0x80) * _DAT_00552ac0;
     } else if (iVar7 == 9) {
         iVar7 = _rand();
@@ -1018,9 +860,7 @@ switchD_4ab_impl:
     *(float *)(pcVar11 + 0x0c) = fVar4;
 lab_4ab_setscale:
     if (*(int *)(pcVar11 + 8) == 1) {
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000003;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
+        uVar8 = _rand() % 4;
         *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 10) * _DAT_005524f8;
     }
     iVar7 = _rand();
