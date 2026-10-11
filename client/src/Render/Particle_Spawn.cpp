@@ -68,6 +68,39 @@ void ApplyParticlePreset(char* particle, int type, int subtype)
         (preset.RenderSetup == ParticleRenderSetup::ExceptSubtype99 && subtype != 99))
         ItemDrop_SetupRenderRef((int)particle);
 }
+// IDA: Particle_Spawn (0x00475220), tipos 1241..1244.
+// rand() es no negativo: los restos conservan el orden y número de llamadas.
+struct ParticleDispersion {
+    int MinimumLifetime;
+    int ScaleVariants;
+    bool HasVelocity;
+};
+constexpr ParticleDispersion ParticleDispersions[] = {
+    { 30, 6, false },
+    { 15, 8, true },
+    { 15, 8, true },
+    { 15, 8, true },
+};
+constexpr int ParticleColorOffset = 0x28;
+constexpr int ParticleDriftOffset = 0x4c;
+
+void ApplyParticleDispersion(char* particle, int type)
+{
+    const auto& definition = ParticleDispersions[type - 1241];
+    *(int*)(particle + ParticleLifetimeOffset) = _rand() % 10 + definition.MinimumLifetime;
+    const int scaleStep = _rand() % definition.ScaleVariants;
+    float* color = (float*)(particle + ParticleColorOffset);
+    color[0] = 1.0f;
+    color[1] = 1.0f;
+    color[2] = 1.0f;
+    *(float*)(particle + ParticleScaleOffset) = (float)(scaleStep + 4) * _DAT_00552910;
+    if (definition.HasVelocity) {
+        float* drift = (float*)(particle + ParticleDriftOffset);
+        drift[0] = (float)(_rand() % 32 - 16) * _DAT_005524f4;
+        drift[1] = (float)(_rand() % 32 - 16) * _DAT_005524f4;
+        drift[2] = (float)(_rand() % 32 - 32) * _DAT_005524f4;
+    }
+}
 } // namespace
 
 // IDA: Particle_Spawn (0x00475220)
@@ -760,36 +793,8 @@ switchD_4ab:
         pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';
         return iVar6;
 
-    case 0x4d9:
-        iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 10 + 0x1e;
-        iVar7 = _rand();
-        pcVar11[0x28] = '\0'; pcVar11[0x29] = '\0'; pcVar11[0x2a] = (char)-0x80; pcVar11[0x2b] = '?';
-        pcVar11[0x2c] = '\0'; pcVar11[0x2d] = '\0'; pcVar11[0x2e] = (char)-0x80; pcVar11[0x2f] = '?';
-        pcVar11[0x30] = '\0'; pcVar11[0x31] = '\0'; pcVar11[0x32] = (char)-0x80; pcVar11[0x33] = '?';
-        *(float *)(pcVar11 + 0x0c) = (float)(iVar7 % 6 + 4) * _DAT_00552910;
-        return iVar6;
-
-    case 0x4da: case 0x4db: case 0x4dc:
-        iVar7 = _rand(); *(int *)(pcVar11 + 0x38) = iVar7 % 10 + 0xf;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000007;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-        pcVar11[0x28] = '\0'; pcVar11[0x29] = '\0'; pcVar11[0x2a] = (char)-0x80; pcVar11[0x2b] = '?';
-        pcVar11[0x2c] = '\0'; pcVar11[0x2d] = '\0'; pcVar11[0x2e] = (char)-0x80; pcVar11[0x2f] = '?';
-        pcVar11[0x30] = '\0'; pcVar11[0x31] = '\0'; pcVar11[0x32] = (char)-0x80; pcVar11[0x33] = '?';
-        *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 4) * _DAT_00552910;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        *pfVar3 = (float)(int)(uVar8 - 0x10) * _DAT_005524f4;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 - 0x10) * _DAT_005524f4;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        *(float *)(pcVar11 + 0x54) = (float)(int)(uVar8 - 0x20) * _DAT_005524f4;
+    case 0x4d9: case 0x4da: case 0x4db: case 0x4dc:
+        ApplyParticleDispersion(pcVar11, param_1);
         return iVar6;
 
     case 0x4df:
