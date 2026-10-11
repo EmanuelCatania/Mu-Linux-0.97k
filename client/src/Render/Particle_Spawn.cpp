@@ -22,11 +22,55 @@
 //   +0x64  float[3] prev_xyz     (copy of world_xyz for some types)
 
 #include "stdafx.h"
+#include <array>
 #include "globals.h"
 #include "functions.h"
 
 
-// IDA: FUN_00475220
+namespace {
+// IDA: Particle_Spawn (0x00475220). Presets sin azar; el switch limita
+// la consulta a estos siete tipos. Los demás conservan su inicialización.
+enum class ParticleRenderSetup : unsigned char { None, Always, ExceptSubtype99 };
+struct ParticlePreset {
+    int Lifetime;
+    bool Angle45;
+    bool UnitScale;
+    bool ImpactSound;
+    ParticleRenderSetup RenderSetup;
+};
+
+constexpr int FirstPresetType = 0x4bf;
+constexpr auto MakeParticlePresets()
+{
+    std::array<ParticlePreset, 0x596 - FirstPresetType + 1> presets{};
+    presets[0x4bf - FirstPresetType] = { 20, false, false, true, ParticleRenderSetup::None };
+    presets[0x4c0 - FirstPresetType] = { 12, false, false, true, ParticleRenderSetup::None };
+    presets[0x4ce - FirstPresetType] = { 18, true, false, false, ParticleRenderSetup::None };
+    presets[0x4cf - FirstPresetType] = { 36, true, false, false, ParticleRenderSetup::ExceptSubtype99 };
+    presets[0x4d0 - FirstPresetType] = { 18, false, false, false, ParticleRenderSetup::Always };
+    presets[0x4d2 - FirstPresetType] = { 20, false, false, false, ParticleRenderSetup::None };
+    presets[0x596 - FirstPresetType] = { 1, false, true, false, ParticleRenderSetup::None };
+    return presets;
+}
+constexpr auto ParticlePresets = MakeParticlePresets();
+constexpr int ParticleScaleOffset = 0x0c;
+constexpr int ParticleAngleOffset = 0x1c;
+constexpr int ParticleLifetimeOffset = 0x38;
+
+void ApplyParticlePreset(char* particle, int type, int subtype)
+{
+    const auto& preset = ParticlePresets[type - FirstPresetType];
+    *(int*)(particle + ParticleLifetimeOffset) = preset.Lifetime;
+    if (preset.Angle45) *(float*)(particle + ParticleAngleOffset) = 45.0f;
+    if (preset.UnitScale) *(float*)(particle + ParticleScaleOffset) = 1.0f;
+    if (preset.ImpactSound) PlayBuffer(0x2c, 0, 0);
+    if (preset.RenderSetup == ParticleRenderSetup::Always ||
+        (preset.RenderSetup == ParticleRenderSetup::ExceptSubtype99 && subtype != 99))
+        ItemDrop_SetupRenderRef((int)particle);
+}
+} // namespace
+
+// IDA: Particle_Spawn (0x00475220)
 int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *param_4,
                          int param_5, float param_6, int param_7)
 {
@@ -658,16 +702,9 @@ switchD_4ab:
     case 0x4b6:
         goto switchD_4b5;
 
-    case 0x4bf:
-        pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        *(float *)(pcVar11 + 0x0c) = param_6;
-        PlayBuffer(0x2c, 0, 0);
-        return iVar6;
-
-    case 0x4c0:
-        pcVar11[0x38] = '\f'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        *(float *)(pcVar11 + 0x0c) = param_6;
-        PlayBuffer(0x2c, 0, 0);
+    case 0x4bf: case 0x4c0: case 0x4ce: case 0x4cf:
+    case 0x4d0: case 0x4d2: case 0x596:
+        ApplyParticlePreset(pcVar11, param_1, param_5);
         return iVar6;
 
     case 0x4c5:
@@ -721,26 +758,6 @@ switchD_4ab:
         *pfVar2 = 0.0f;
         pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
         pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';
-        return iVar6;
-
-    case 0x4ce:
-        *pfVar2 = 45.0f;
-        pcVar11[0x38] = '\x12'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        return iVar6;
-
-    case 0x4cf:
-        pcVar11[0x38] = '$'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        *pfVar2 = 45.0f;
-        if (param_5 != 99) ItemDrop_SetupRenderRef((int)pcVar11);
-        return iVar6;
-
-    case 0x4d0:
-        pcVar11[0x38] = '\x12'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        ItemDrop_SetupRenderRef((int)pcVar11);
-        return iVar6;
-
-    case 0x4d2:
-        pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
         return iVar6;
 
     case 0x4d9:
@@ -900,11 +917,6 @@ lab_4e1_skip_size:
         pcVar11[0x2c] = '\0'; pcVar11[0x2d] = '\0'; pcVar11[0x2e] = '\0'; pcVar11[0x2f] = '?';
         pcVar11[0x30] = '\0'; pcVar11[0x31] = '\0'; pcVar11[0x32] = '\0'; pcVar11[0x33] = '?';
         *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-        return iVar6;
-
-    case 0x596:
-        pcVar11[0x38] = '\x01'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        pcVar11[0x0c] = '\0'; pcVar11[0x0d] = '\0'; pcVar11[0x0e] = (char)-0x80; pcVar11[0x0f] = '?';
         return iVar6;
 
     case 0x598:
