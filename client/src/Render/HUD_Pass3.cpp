@@ -16,6 +16,7 @@
 #include "stdafx.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
+#include "Entity/EntityView.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -578,8 +579,10 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 
 
 // =============================================================================
-// RenderBoolean — sub_480E00.
+// IDA: RenderBoolean (0x00480E00).
 // =============================================================================
+
+extern "C" const BYTE* Guild_GetMarkPixels(int row);
 
 void __cdecl RenderBoolean(int x, int y, DWORD c)
 {
@@ -690,6 +693,29 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
             ClearFontRows(FontHeight);
             Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
             Font_RenderBitmapText(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+        }
+    }
+
+    const void* owner = *(const void**)(c + 564);
+    if (owner) {
+        const EntityView player(owner);
+        const int markIndex = player.GuildMarkIndex();
+        if (player.Kind() == EntityView::PlayerKind && markIndex >= 0 &&
+            Guild_GetMarkPixels(markIndex) && Bitmaps[0x22].Buffer &&
+            Bitmaps[0x22].Width > 0 && Bitmaps[0x22].Height > 0) {
+            // DESVIACIÓN (DLL GuildLogo.cpp, 0x004BD28B): logo junto a la etiqueta ya desplazada.
+            // Se conserva la medición del texto; el logo no amplía el hover ni su caja de separación.
+            constexpr float MarkSize = 16.0f;
+            constexpr float MarkOffset = 21.0f;
+            const int previousTextureSlot = DAT_00561574;
+            glPushAttrib(GL_CURRENT_BIT | GL_TEXTURE_BIT);
+            // Alpha/blend ya están preparados al entrar; estos helpers sólo cambian la textura.
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            CreateGuildMark(markIndex, true);
+            RenderBitmap(0x22, (float)x - MarkOffset, (float)y, MarkSize, MarkSize,
+                         0.0f, 0.0f, 1.0f, 1.0f, true, true);
+            glPopAttrib();
+            DAT_00561574 = previousTextureSlot;
         }
     }
 }
