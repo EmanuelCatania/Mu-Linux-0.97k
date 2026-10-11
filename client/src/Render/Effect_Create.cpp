@@ -12,6 +12,27 @@ struct EffectDebrisPreset { int SpeedBase; short BoostedType; };
 constexpr EffectDebrisPreset EffectDebrisPresets[] = { { 32, 261 }, { 64, 262 } };
 constexpr int EffectLifetimeIndex = 0x18; // DWORD, no float.
 constexpr int EffectBlendMeshIndex = 0x19; // Índice con signo, no float.
+// IDA: CreateEffect (0x00460DC0), flechas 216..224.
+// 217/221 conservan BlendMesh; sólo 223/224 escriben gravedad.
+struct EffectArrowPreset {
+    int BlendMesh;
+    bool SetBlendMesh;
+    float Scale;
+    float ForwardSpeed;
+    bool HasGravity;
+    int Lifetime;
+};
+constexpr EffectArrowPreset EffectArrowPresets[] = {
+    { 1, true, 0.8f, -70.0f, false, 30 },
+    { 0, false, 0.8f, -70.0f, false, 30 },
+    { 0, true, 0.8f, -70.0f, false, 30 },
+    { 0, true, 0.8f, -70.0f, false, 30 },
+    { 0, true, 0.8f, -70.0f, false, 30 },
+    { 0, false, 0.8f, -70.0f, false, 30 },
+    { -2, true, 0.8f, -70.0f, false, 30 },
+    { 0, true, 1.0f, -30.0f, true, 40 },
+    { 0, true, 1.8f, -50.0f, true, 30 },
+};
 } // namespace
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -186,29 +207,16 @@ LAB_00460dd8:
     if (param_1 < 0x1f1) {
       if (param_1 == 0x1f0) goto LAB_00464ed8;
       switch(param_1) {
-      case 0xf7:
+      case 0xf7: case 0xfa:
         *(int*)&pfVar17[EffectLifetimeIndex] = 35;
         pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
         return (float *)(int)(short)param_7;
-      case 0xf8:
-        *(int*)&pfVar17[EffectLifetimeIndex] = 35;
+      case 0xf8: case 0xfb:
+        *(int*)&pfVar17[EffectLifetimeIndex] = param_1 == 0xf8 ? 35 : 40;
         pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         return pfVar8;
-      case 0xf9:
-        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
-        fVar27 = (float)(int)(short)param_7;
-        break;
-      case 0xfa:
-        *(int*)&pfVar17[EffectLifetimeIndex] = 35;
-        pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
-        return (float *)(int)(short)param_7;
-      case 0xfb:
-        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
-        pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
-        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-        return pfVar8;
-      case 0xfc:
+      case 0xf9: case 0xfc:
         *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         fVar27 = (float)(int)(short)param_7;
         break;
@@ -993,17 +1001,10 @@ switchD_00461001_caseD_c7:
   case 0xdd:
   case 0xde:
   case 0xdf:
-  case 0xe0:
-    if (param_1 == 0xd8) {
-      *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
-    }
-    else if (param_1 == 0xde) {
-      *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
-    }
-    else if ((((param_1 == 0xda) || (param_1 == 0xdb)) || (param_1 == 0xdc)) ||
-            ((param_1 == 0xe0 || (param_1 == 0xdf)))) {
-      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    }
+  case 0xe0: {
+    const auto& arrow = EffectArrowPresets[param_1 - 0xd8];
+    if (arrow.SetBlendMesh)
+      *(int*)&pfVar17[EffectBlendMeshIndex] = arrow.BlendMesh;
     pfVar12 = pfVar17 + 7;
     pfVar17[0x33] = 1.0;
     *(int*)&pfVar17[EffectLifetimeIndex] = 30;
@@ -1015,21 +1016,10 @@ switchD_00461001_caseD_c7:
     pfVar17[4] = local_60 + pfVar17[4];
     pfVar17[5] = local_5c + pfVar17[5];
     pfVar17[6] = local_58 + pfVar17[6];
-    if (param_1 == 0xe0) {
-      pfVar17[3] = 1.8;
-      pfVar17[0x31] = -50.0;
-      pfVar17[0x36] = -10.0;
-    }
-    else if (param_1 == 0xdf) {
-      pfVar17[3] = 1.0;
-      pfVar17[0x31] = -30.0;
-      pfVar17[0x36] = -10.0;
-      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
-    }
-    else {
-      pfVar17[3] = 0.8;
-      pfVar17[0x31] = -70.0;
-    }
+    pfVar17[3] = arrow.Scale;
+    pfVar17[0x31] = arrow.ForwardSpeed;
+    if (arrow.HasGravity) pfVar17[0x36] = -10.0f;
+    if (arrow.Lifetime != 30) *(int*)&pfVar17[EffectLifetimeIndex] = arrow.Lifetime;
     // IDA CreateEffect L685-693 (cases 216-224):
     //     if ( *((_DWORD *)i + 1) == 2 )        // SubType == 2 (flecha de Penetration)
     //     {
@@ -1073,6 +1063,7 @@ switchD_00461001_caseD_c7:
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_00462bfb;
     goto LAB_00462b8a;
+  }
   case 0xe1:
     *(int*)&pfVar17[EffectLifetimeIndex] = 10000;
     pfVar17[0x33] = 0.3;
