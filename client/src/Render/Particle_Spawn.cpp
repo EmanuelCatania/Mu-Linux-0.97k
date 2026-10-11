@@ -101,6 +101,59 @@ void ApplyParticleDispersion(char* particle, int type)
         drift[2] = (float)(_rand() % 32 - 32) * _DAT_005524f4;
     }
 }
+// IDA: Particle_Spawn (0x00475220), tipos 1221/1222. Cada trayectoria
+// conserva sus matrices, destino y orden de rand; los vectores son contiguos.
+constexpr int ParticlePositionOffset = 0x10;
+constexpr int ParticlePreviousPositionOffset = 0x64;
+
+void InitializeDirectedParticle(char* particle, int subtype, float* sourceAngle)
+{
+    float* position = (float*)(particle + ParticlePositionOffset);
+    float* angle = (float*)(particle + ParticleAngleOffset);
+    *(float*)(particle + ParticleScaleOffset) = (float)(_rand() % 32 + 32) * _DAT_005524f8;
+    position[0] = (float)(_rand() % 16 - 8) + position[0];
+    position[1] = (float)(_rand() % 16 - 8) + position[1];
+    float matrix[12];
+    float direction[3] = { 0.0f, 3.0f, 0.0f };
+    if (subtype == 0) {
+        Matrix_BuildFromEuler(sourceAngle, matrix);
+    } else {
+        angle[2] = (float)(_rand() % 360);
+        Matrix_BuildFromEuler(angle, matrix);
+        direction[1] = 15.0f;
+    }
+    Vector_Rotate(direction, matrix, (float*)(particle + ParticleDriftOffset));
+    angle[0] = (float)(_rand() % 360);
+}
+
+void InitializeRadialParticle(char* particle, int, float*)
+{
+    float* angle = (float*)(particle + ParticleAngleOffset);
+    const int scaleStep = _rand() % 32;
+    angle[0] = 0.0f;
+    angle[1] = 0.0f;
+    *(float*)(particle + ParticleScaleOffset) = (float)(scaleStep + 64) * _DAT_005524f8;
+    angle[2] = (float)(_rand() % 360);
+    float matrix[12];
+    Matrix_BuildFromEuler(angle, matrix);
+    float direction[3];
+    direction[0] = 0.0f;
+    direction[1] = (float)(_rand() % 64);
+    direction[2] = (float)(_rand() % 16 + 16);
+    Vector_Rotate(direction, matrix, (float*)(particle + ParticlePreviousPositionOffset));
+    angle[0] = 0.0f;
+    angle[1] = 0.0f;
+    angle[2] = 0.0f;
+}
+
+struct ParticleTrajectory {
+    int Lifetime;
+    void (*Initialize)(char*, int, float*);
+};
+constexpr ParticleTrajectory ParticleTrajectories[] = {
+    { 32, InitializeDirectedParticle }, // 1221: dirección de entrada o giro aleatorio.
+    { 50, InitializeRadialParticle },   // 1222: offset rotado, ángulos finales a cero.
+};
 } // namespace
 
 // IDA: Particle_Spawn (0x00475220)
@@ -740,58 +793,12 @@ switchD_4ab:
         ApplyParticlePreset(pcVar11, param_1, param_5);
         return iVar6;
 
-    case 0x4c5:
-        pcVar11[0x38] = ' '; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x20) * _DAT_005524f8;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000000f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-        *pfVar1 = (float)(int)(uVar8 - 8) + *pfVar1;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000000f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-        *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 8) + *(float *)(pcVar11 + 0x14);
-        if (param_5 == 0) {
-            Matrix_BuildFromEuler(param_3, local_30);
-            local_38 = 3.0f;
-        } else {
-            iVar7 = _rand();
-            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-            Matrix_BuildFromEuler(pfVar2, local_30);
-            local_38 = 15.0f;
-        }
-        local_3c = 0.0f; local_34 = 0.0f;
-        Vector_Rotate(&local_3c, local_30, pfVar3);
-        iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
+    case 0x4c5: case 0x4c6: {
+        const auto& trajectory = ParticleTrajectories[param_1 - 1221];
+        *(int*)(pcVar11 + ParticleLifetimeOffset) = trajectory.Lifetime;
+        trajectory.Initialize(pcVar11, param_5, param_3);
         return iVar6;
-
-    case 0x4c6:
-        pcVar11[0x38] = '2'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        *pfVar2 = 0.0f;
-        pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
-        *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x40) * _DAT_005524f8;
-        iVar7 = _rand(); *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-        Matrix_BuildFromEuler(pfVar2, local_30);
-        local_3c = 0.0f;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000003f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-        local_38 = (float)(int)uVar8;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000000f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-        local_34 = (float)(int)(uVar8 + 0x10);
-        Vector_Rotate(&local_3c, local_30, (float *)(pcVar11 + 100));
-        *pfVar2 = 0.0f;
-        pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
-        pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';
-        return iVar6;
+    }
 
     case 0x4d9: case 0x4da: case 0x4db: case 0x4dc:
         ApplyParticleDispersion(pcVar11, param_1);
