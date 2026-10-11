@@ -154,6 +154,41 @@ constexpr ParticleTrajectory ParticleTrajectories[] = {
     { 32, InitializeDirectedParticle }, // 1221: dirección de entrada o giro aleatorio.
     { 50, InitializeRadialParticle },   // 1222: offset rotado, ángulos finales a cero.
 };
+// IDA: Particle_Spawn (0x00475220), tipos 1196/1383.
+// Desplazamiento en Y: se conserva el orden del azar y la escala de cada tipo.
+struct ParticleLinearMotion {
+    int Lifetime;
+    int SpeedVariants;
+    const float* SpeedFactor;
+    bool RandomScaleAndGray;
+};
+constexpr ParticleLinearMotion ParticleLinearMotions[] = {
+    { 12, 8, &_DAT_005529c0, false }, // 1196: escala fija, color de entrada.
+    { 24, 16, &_DAT_005529c8, true }, // 1383: escala aleatoria, gris.
+};
+constexpr int ParticleRotationOffset = 0x40;
+
+void ApplyParticleLinearMotion(char* particle, const ParticleLinearMotion& definition)
+{
+    *(int*)(particle + ParticleLifetimeOffset) = definition.Lifetime;
+    float* drift = (float*)(particle + ParticleDriftOffset);
+    drift[0] = 0.0f;
+    const int speedStep = _rand() % definition.SpeedVariants;
+    drift[2] = 0.0f;
+    if (!definition.RandomScaleAndGray)
+        *(float*)(particle + ParticleScaleOffset) = 0.8f;
+    drift[1] = (float)(speedStep + 32) * *definition.SpeedFactor;
+    if (definition.RandomScaleAndGray)
+        *(float*)(particle + ParticleScaleOffset) = (float)(_rand() % 128 + 128) * _DAT_005524f8;
+    const int rotation = _rand() % 360;
+    if (definition.RandomScaleAndGray) {
+        float* color = (float*)(particle + ParticleColorOffset);
+        color[0] = 0.5f;
+        color[1] = 0.5f;
+        color[2] = 0.5f;
+    }
+    *(float*)(particle + ParticleRotationOffset) = (float)rotation;
+}
 } // namespace
 
 // IDA: Particle_Spawn (0x00475220)
@@ -667,16 +702,8 @@ switchD_4ab:
         goto switchD_4ab_impl;
 
     case 0x4ac:
-        pcVar11[0x38] = '\f'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        *pfVar3 = 0.0f;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000007;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-        pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-        pcVar11[0x0c] = (char)-0x33; pcVar11[0x0d] = (char)-0x34; pcVar11[0x0e] = 'L'; pcVar11[0x0f] = '?';
-        *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 0x20) * _DAT_005529c0;
-        iVar7 = _rand();
-        *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
+    case 0x567:
+        ApplyParticleLinearMotion(pcVar11, ParticleLinearMotions[param_1 == 0x4ac ? 0 : 1]);
         return iVar6;
 
     case 0x4b0: {
@@ -911,25 +938,6 @@ lab_4e1_skip_size:
         *pfVar3 = (float)(iVar7 % 10 + 5) * _DAT_005528b4;
         iVar7 = _rand(); fVar4 = (float)(iVar7 % 10 + 5);
         break;   // → shared tail
-
-    case 0x567:
-        pcVar11[0x38] = '\x18'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        *pfVar3 = 0.0f;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000000f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-        pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
-        *(float *)(pcVar11 + 0x50) = (float)(int)(uVar8 + 0x20) * _DAT_005529c8;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000007f;
-        if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffff80) + 1;
-        *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x80) * _DAT_005524f8;
-        iVar7 = _rand();
-        pcVar11[0x28] = '\0'; pcVar11[0x29] = '\0'; pcVar11[0x2a] = '\0'; pcVar11[0x2b] = '?';
-        pcVar11[0x2c] = '\0'; pcVar11[0x2d] = '\0'; pcVar11[0x2e] = '\0'; pcVar11[0x2f] = '?';
-        pcVar11[0x30] = '\0'; pcVar11[0x31] = '\0'; pcVar11[0x32] = '\0'; pcVar11[0x33] = '?';
-        *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
-        return iVar6;
 
     case 0x598:
         pcVar11[0x38] = '\x05'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
