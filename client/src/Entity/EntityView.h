@@ -15,6 +15,8 @@ public:
     bool IsActive() const { return m_Data && m_Data[0] != 0; }
     BYTE Kind() const { return m_Data[0x84]; }
     WORD ModelType() const { return Read<WORD>(0x2EB); }
+    // IDA: CreateChat (0x00481BA0), índice firmado; -1 indica sin guild.
+    short GuildMarkIndex() const { return Read<short>(0x1DA); }
     WORD NetworkKey() const { return Read<WORD>(0x1DC); }
     const char* Name() const { return (const char*)(m_Data + 0x1C1); }
     float X() const { return Read<float>(0x10); }

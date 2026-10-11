@@ -154,16 +154,9 @@ found_new:
             *(char *)(slot + 0x18) = '\0';
         } else {
             *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);  // GuildTeam
-            // Build "[GuildName]" string at +0x18
-            strcpy(slot + 0x18, &DAT_00559d60);  // prefix "["
-            // Append guild mark name (stride 0x50 per guild, from GuildMark global)
-            // GuildMark not yet declared — leave guild bracket empty for now
-            // strcat(slot + 0x18, &GuildMark + guildIdx * 0x50);
-            strcat(slot + 0x18, Guild_GetMarkName(guildIdx));
-            // Append suffix
-            char *end = slot + 0x18 + strlen(slot + 0x18);
-            *(short *)end = DAT_00559d64;
-            end[2] = DAT_00559d66;
+            // IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ".
+            // El prefijo completo determina el corte de color en sub_47F360.
+            sprintf_s(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
         }
     }
 
@@ -195,11 +188,8 @@ found_existing:
             *(char *)(slot + 0x18) = '\0';
         } else {
             *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);
-            strcpy(slot + 0x18, &DAT_00559d60);
-            strcat(slot + 0x18, Guild_GetMarkName(guildIdx2));
-            char *end2 = slot + 0x18 + strlen(slot + 0x18);
-            *(short *)end2 = DAT_00559d64;
-            end2[2] = DAT_00559d66;
+            // IDA: mismo prefijo al actualizar una etiqueta existente.
+            sprintf_s(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
         }
     }
 
