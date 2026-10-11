@@ -6,6 +6,14 @@
 #include "stdafx.h"
 
 
+namespace {
+// IDA: CreateEffect (0x00460DC0), fragmentos 260..263.
+struct EffectDebrisPreset { int SpeedBase; short BoostedType; };
+constexpr EffectDebrisPreset EffectDebrisPresets[] = { { 32, 261 }, { 64, 262 } };
+constexpr int EffectLifetimeIndex = 0x18; // DWORD, no float.
+constexpr int EffectBlendMeshIndex = 0x19; // Índice con signo, no float.
+} // namespace
+
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 // Tamachan -- IDA 0.98j CreateEffect (sub_46C290) case 183.
@@ -132,7 +140,7 @@ LAB_00460dd8:
   *(DWORD *)(pfVar17 + 1) = (DWORD)(uintptr_t)param_5;
   *(undefined1 *)(pfVar17 + 0x37) = 1;
   *(int*)&pfVar17[0x16] = -1;
-  *(int*)&pfVar17[0x19] = -1;
+  *(int*)&pfVar17[EffectBlendMeshIndex] = -1;
   pfVar17[0x1a] = 1.0;
   pfVar17[0x1b] = 0.0;
   pfVar17[0x1c] = 0.0;
@@ -179,41 +187,41 @@ LAB_00460dd8:
       if (param_1 == 0x1f0) goto LAB_00464ed8;
       switch(param_1) {
       case 0xf7:
-        pfVar17[0x18] = 4.90454e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 35;
         pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
         return (float *)(int)(short)param_7;
       case 0xf8:
-        pfVar17[0x18] = 4.90454e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 35;
         pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
-        pfVar17[0x19] = 0.0;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         return pfVar8;
       case 0xf9:
-        pfVar17[0x18] = 5.60519e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         fVar27 = (float)(int)(short)param_7;
         break;
       case 0xfa:
-        pfVar17[0x18] = 4.90454e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 35;
         pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
         return (float *)(int)(short)param_7;
       case 0xfb:
-        pfVar17[0x18] = 5.60519e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
-        pfVar17[0x19] = 0.0;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         return pfVar8;
       case 0xfc:
-        pfVar17[0x18] = 5.60519e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         fVar27 = (float)(int)(short)param_7;
         break;
       case 0xfd:
-        pfVar17[0x19] = 0.0;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         pfVar17[0x1a] = 1.5;
         pfVar17[3] = 0.5;
-        pfVar17[0x18] = 2.10195e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 15;
         pfVar17[6] = pfVar17[6] - _DAT_00552834;
         goto LAB_004658be;
       case 0xfe:
-        *(int*)&pfVar17[0x19] = -2;
-        pfVar17[0x18] = 8.40779e-45;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 6;
         pfVar17[3] = 1.0;
         pfVar17[0x36] = 80.0;
         pfVar17[0x3a] = 0.5;
@@ -224,8 +232,8 @@ LAB_00460dd8:
         pfVar17[9] = 45.0;
         return pfVar8;
       case 0xff:
-        pfVar17[0x18] = 1.4013e-43;
-        pfVar17[0x19] = 0.0;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 100;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         pfVar17[0x1a] = 1.0;
         pfVar17[0x36] = 0.0;
         if (param_5 == (float *)0x0) {
@@ -253,81 +261,24 @@ LAB_00460dd8:
       default:
         return (float *)0x0;
       case 0x103:
-        pfVar17[0x18] = 2.8026e-44;
-        pfVar17[0x19] = 0.0;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         pfVar17[0x1a] = 1.0;
         return pfVar8;
       case 0x104:
       case 0x105:
-        local_6c = 0.0;
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x8000007f;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xffffff80) + 1;
-        }
-        param_8 = (float *)(uVar10 + 0x20);
-        local_64 = 0.0;
-        local_68 = (float)(int)param_8 * _DAT_005524f4;
-        pfVar17[6] = pfVar17[6] + _DAT_00552598;
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x8000000f;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
-        }
-        *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x80000003;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xfffffffc) + 1;
-        }
-        param_8 = (float *)(uVar10 + 8);
-        pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
-        iVar9 = _rand();
-        param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[9] = (float)(int)param_8;
-        Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
-        Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
-        iVar9 = _rand();
-        param_8 = (float *)(iVar9 % 5 + 2);
-        pfVar17[0x36] = (float)(int)param_8;
-        if ((*(short *)((int)pfVar17 + 2) == 0x105) && (pfVar17[1] == 0.0)) {
-          pfVar17[1] = 1.4013e-45;
-          iVar9 = _rand();
-          param_8 = (float *)(iVar9 % 5);
-          pfVar17[0x36] = (float)(int)param_8 + pfVar17[0x36];
-        }
-        iVar9 = _rand();
-        param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[7] = (float)(int)param_8;
-        iVar9 = _rand();
-        param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[8] = (float)(int)param_8;
-        iVar9 = _rand();
-        pfVar17[9] = (float)(iVar9 % 0x168);
-        return (float *)(iVar9 / 0x168);
       case 0x106:
-      case 0x107:
+      case 0x107: {
+        const auto& debris = EffectDebrisPresets[param_1 < 0x106 ? 0 : 1];
         local_6c = 0.0;
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x8000007f;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xffffff80) + 1;
-        }
-        param_8 = (float *)(uVar10 + 0x40);
+        uVar10 = _rand() % 128;
+        param_8 = (float *)(uVar10 + debris.SpeedBase);
         local_64 = 0.0;
         local_68 = (float)(int)param_8 * _DAT_005524f4;
         pfVar17[6] = pfVar17[6] + _DAT_00552598;
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x8000000f;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
-        }
+        uVar10 = _rand() % 16;
         *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x80000003;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xfffffffc) + 1;
-        }
+        uVar10 = _rand() % 4;
         param_8 = (float *)(uVar10 + 8);
         pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
         iVar9 = _rand();
@@ -338,7 +289,7 @@ LAB_00460dd8:
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 5 + 2);
         pfVar17[0x36] = (float)(int)param_8;
-        if ((*(short *)((int)pfVar17 + 2) == 0x106) && (pfVar17[1] == 0.0)) {
+        if ((*(short *)((int)pfVar17 + 2) == debris.BoostedType) && (pfVar17[1] == 0.0)) {
           pfVar17[1] = 1.4013e-45;
           iVar9 = _rand();
           param_8 = (float *)(iVar9 % 5);
@@ -353,11 +304,12 @@ LAB_00460dd8:
         iVar9 = _rand();
         pfVar17[9] = (float)(iVar9 % 0x168);
         return (float *)(iVar9 / 0x168);
+      }
       case 0x109:
-        pfVar17[0x18] = 8.40779e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 60;
         return pfVar8;
       case 0x10a:
-        pfVar17[0x18] = 2.8026e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         pfVar17[3] = 1.5;
         fVar24 = (float10)fsin((float10)pfVar17[9] * (float10)_DAT_0055253c);
         pfVar17[0x30] = (float)(fVar24 * (float10)_DAT_00552660);
@@ -365,15 +317,15 @@ LAB_00460dd8:
         pfVar17[0x31] = (float)(fVar24 * (float10)_DAT_00552828);
         return pfVar8;
       case 0x10c:
-        pfVar17[0x18] = 1.4013e-45;
-        pfVar17[0x19] = 0.0;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 1;
+        *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         pfVar17[0x1a] = 1.0;
         pfVar17[3] = 5.0;
         return pfVar8;
       }
 LAB_004649e0:
       pfVar17[3] = fVar27 * _DAT_00552594;
-      pfVar17[0x19] = 0.0;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
       if (param_5 != (float *)0x1) {
         return param_5;
       }
@@ -399,7 +351,7 @@ LAB_004649e0:
         param_8 = (float *)(iVar9 % 9 + -4);
         pfVar17[0x31] = (float)(int)param_8;
         pfVar17[0x32] = 26.0;
-        pfVar17[0x18] = 1.68156e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 12;
         pfVar12 = (float *)PlayBuffer(0x44,(int)pfVar17,0);
         return pfVar12;
       case 0x4e0:
@@ -407,22 +359,22 @@ LAB_004649e0:
         pfVar17[8] = 0.0;
         pfVar17[9] = 0.0;
         pfVar17[6] = 100.0;
-        pfVar17[0x18] = 1.05097e-43;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 75;
         return pfVar8;
       case 0x4f0:
       case 0x4f1:
-        pfVar17[0x18] = 2.8026e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         // IDA `if (*((_DWORD *)i + 1) == 4)` — SubType es un DWORD. Leerlo como float
         // y convertir (`(int)pfVar17[1]`) daría 0 para cualquier SubType chico.
         if (*(int*)&pfVar17[1] != 4) {
           return (float*)(uintptr_t)*(int*)&pfVar17[1];
         }
-        pfVar17[0x18] = 8.40779e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 60;
         iVar9 = _rand();
         pfVar17[3] = (float)(iVar9 % 0x32 + 0x32) * _DAT_0055295c;
         return (float *)(iVar9 / 0x32);
       case 0x4f3:
-        pfVar17[0x18] = 1.4013e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         if (pfVar17[1] == 0.0) {
           local_6c = 0.0;
           local_68 = -100.0;
@@ -444,7 +396,7 @@ LAB_004649e0:
         // It is not a pointer-as-float field.
         pfVar17[0x5d] = param_2[1];
         pfVar17[0x5e] = fVar27;
-        pfVar17[0x18] = 2.8026e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         return pfVar12;
       case 0x4f7:
         iVar9 = _rand();
@@ -471,20 +423,20 @@ LAB_004649e0:
         pfVar12 = (float *)PlayBuffer(0x2e,0,0);
         return pfVar12;
       case 0x4fa:
-        pfVar17[0x18] = 1.4013e-42;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 1000;
         pfVar12 = (float*)(uintptr_t)*(int*)&pfVar17[1];   // SubType (DWORD)
         if (pfVar12 == (float *)0x1) {
-          pfVar17[0x18] = 1.31722e-42;
+          *(int*)&pfVar17[EffectLifetimeIndex] = 940;
           return pfVar12;
         }
         if (pfVar12 != (float *)0x2) {
           return pfVar12;
         }
-        pfVar17[0x18] = 1.12104e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 8;
         pfVar17[6] = pfVar17[6] + _DAT_0055297c;
         return pfVar12;
       case 0x566:
-        pfVar17[0x18] = 1.4013e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         pfVar17[0x33] = 1.0;
         pfVar12 = pfVar17 + 7;
         pfVar17[0x30] = 0.0;
@@ -540,7 +492,7 @@ LAB_004649e0:
         } while ((int)param_8 < 0x168);
         return pfVar17;
       case 0x596:
-        pfVar17[0x18] = 4.2039e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 30;
         pfVar17[3] = 1.0;
 LAB_004658be:
         pfVar17[0x3a] = 1.0;
@@ -550,7 +502,7 @@ LAB_004658be:
       }
     }
     if (param_1 == 0x4b0) {
-      pfVar17[0x18] = 5.60519e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       param_5 = pfVar4;
       uVar10 = (**(code **)(iVar9 + 0xc))(pfVar4);
       param_8 = (float *)0x0;
@@ -561,7 +513,7 @@ LAB_004658be:
     if (0x498 < param_1) {
       switch(param_1) {
       case 0x49c:
-        pfVar17[0x18] = 2.8026e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         pfVar17[0x30] = 0.0;
         pfVar17[0x31] = -60.0;
         pfVar17[0x32] = 0.0;
@@ -574,13 +526,13 @@ LAB_004658be:
         return pfVar8;
       default:
         return (float *)0x0;
-      case 0x4a7:        pfVar17[0x18] = 1.4013e-44;
+      case 0x4a7:        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         pfVar17[3] = 1.5;
         return pfVar8;
       case 0x4ab:
         goto switchD_00464efe_caseD_4ab;
       case 0x4ac:
-        pfVar17[0x18] = 1.4013e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
         Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
         local_6c = 0.0;
         local_68 = -60.0;
@@ -594,7 +546,7 @@ LAB_004658be:
     }
     if (param_1 == 0x498) {
 LAB_00464ed8:
-      pfVar17[0x18] = 1.4013e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 10;
       return pfVar8;
     }
     if (param_1 < 0x47f) {
@@ -613,28 +565,28 @@ LAB_00464ed8:
           fVar25 = (float10)fsin((float10)_DAT_00552968);
           pfVar17[0x32] = (float)(fVar25 * fVar24);
           pfVar17[3] = 3.0;
-          pfVar17[0x18] = 5.60519e-43;
+          *(int*)&pfVar17[EffectLifetimeIndex] = 400;
           return (float *)(iVar9 / 5);
         }
         if (*(int*)&pfVar17[1] != 1) {
           return (float *)0x0;
         }
 switchD_00464efe_caseD_4ab:
-        pfVar17[0x18] = 1.4013e-42;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 1000;
         return pfVar8;
       }
       if (param_1 == 0x1f1) {
         pfVar17[9] = 0.0;
         pfVar17[8] = 0.0;
         pfVar17[7] = 0.0;
-        pfVar17[0x18] = 7.00649e-45;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 5;
         return pfVar8;
       }
       if (param_1 != 0x238) {
         return (float *)0x0;
       }
-      pfVar17[0x18] = 4.2039e-44;
-      *(int*)&pfVar17[0x19] = -2;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
       pfVar17[3] = 1.0;
       pfVar17[6] = pfVar17[6] + _DAT_00552970;
       pfVar17[7] = pfVar17[7] + _DAT_005524fc;
@@ -647,7 +599,7 @@ switchD_00464efe_caseD_4ab:
       return (float *)0x0;
     }
     fVar27 = pfVar12[2] + _DAT_00552844;
-    pfVar17[0x18] = 4.2039e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
     pfVar17[0x3a] = 0.8;
     pfVar17[0x3b] = 0.8;
     pfVar17[0x3c] = 0.8;
@@ -657,14 +609,14 @@ switchD_00464efe_caseD_4ab:
     goto LAB_00463e3d;
   }
   if (param_1 == 0xf6) {
-    pfVar17[0x18] = 2.8026e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     fVar27 = (float)(int)(short)param_7;
     goto LAB_004649e0;
   }
   switch(param_1) {
   case 0xb6:
-    pfVar17[0x18] = 2.8026e-45;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 2;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     pfVar17[3] = 10.0;
     pfVar17[5] = pfVar17[5] + _DAT_0055285c;
     pfVar17[6] = pfVar17[6] - _DAT_00552974;
@@ -673,18 +625,18 @@ switchD_00464efe_caseD_4ab:
   default:
     goto switchD_00460f25_caseD_101;
   case 0xb9:
-    pfVar17[0x18] = 1.4013e-45;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 1;
     pfVar17[0x5a] = 0.5;
     pfVar17[3] = 1.5;
     return pfVar8;
   case 0xbe:
     fVar27 = pfVar17[1];
     if (fVar27 == 0.0) {
-      pfVar17[0x18] = 7.00649e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 50;
       pfVar17[3] = 0.8;
       pfVar17[0x33] = 1.0;
       pfVar17[7] = 0.0;
-      pfVar17[0x19] = 0.0;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
       return pfVar8;
     }
     // SubType viaja en los BITS del float (IDA: *((_DWORD *)i + 1)).  Con
@@ -696,10 +648,10 @@ switchD_00464efe_caseD_4ab:
     if (2 < *(int *)&fVar27) {
       return (float *)0x0;
     }
-    pfVar17[0x18] = 2.8026e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     pfVar17[3] = 0.8;
     pfVar17[7] = -20.0;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     pfVar17[0x1a] = 0.5;
     pfVar17[0x36] = 5.0;
     pfVar17[10] = 0.0;
@@ -709,25 +661,13 @@ switchD_00464efe_caseD_4ab:
     iVar9 = 3;
     pfVar17[0xc] = (float)(int)param_8;
     do {
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000003f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffffc0) + 1;
-      }
+      uVar10 = _rand() % 64;
       param_8 = (float *)(uVar10 - 0x20);
       local_48 = (float)(int)param_8 + pfVar17[4];
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000003f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffffc0) + 1;
-      }
+      uVar10 = _rand() % 64;
       param_8 = (float *)(uVar10 - 0x20);
       local_44 = (float)(int)param_8 + pfVar17[5];
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000007f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffff80) + 1;
-      }
+      uVar10 = _rand() % 128;
       param_8 = (float *)(uVar10 + 0x20);
       local_40 = (float)(int)param_8 + pfVar17[6];
       Particle_Spawn(0x4c4,&local_48,pfVar17 + 7,pfVar17 + 0x3a,0,1.0,0);
@@ -744,31 +684,19 @@ LAB_00463e3d:
     pfVar17[0x5e] = pfVar17[6];
     return (float*)(uintptr_t)(int)pfVar17[5];
   case 0xbf:
-    pfVar17[0x19] = 1.4013e-45;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
     fVar27 = pfVar17[1];
     if (fVar27 == 0.0) {
-      pfVar17[0x18] = 5.60519e-44;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x80000007;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xfffffff8) + 1;
-      }
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+      uVar10 = _rand() % 8;
       param_8 = (float *)(uVar10 + 10);
       pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000001f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffffe0) + 1;
-      }
+      uVar10 = _rand() % 32;
     }
     else {
       if (*(int*)&fVar27 == 2) {
-        pfVar17[0x18] = 5.60519e-44;
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x80000007;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xfffffff8) + 1;
-        }
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+        uVar10 = _rand() % 8;
         pfVar17[3] = (float)(int)(uVar10 + 10) * _DAT_005524f4;
         pfVar17[0x30] = 0.0;
         pfVar17[0x31] = 0.0;
@@ -776,7 +704,7 @@ LAB_00463e3d:
         return (float *)0x0;
       }
       if (*(int*)&fVar27 == 3) {
-        pfVar17[0x18] = 1.12104e-43;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 80;
         pfVar17[3] = 0.3;
         pfVar17[0x30] = 0.0;
         pfVar17[0x31] = -12.0;
@@ -784,7 +712,7 @@ LAB_00463e3d:
         return pfVar8;
       }
       if (*(int*)&fVar27 == 4) {
-        pfVar17[0x18] = 5.60519e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 10 + 0xf);
         pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
@@ -807,7 +735,7 @@ LAB_00463e3d:
         return (float *)(iVar9 / 10);
       }
       if (*(int*)&fVar27 == 5) {
-        pfVar17[0x18] = 5.60519e-44;
+        *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         pfVar17[0x36] = 5.0;
         pfVar17[0x30] = 0.0;
         pfVar17[0x31] = -30.0;
@@ -815,12 +743,8 @@ LAB_00463e3d:
         return pfVar8;
       }
       if (*(int*)&fVar27 != 6) {
-        pfVar17[0x18] = 8.40779e-44;
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x80000003;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xfffffffc) + 1;
-        }
+        *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+        uVar10 = _rand() % 4;
         pfVar17[3] = (float)(int)(uVar10 + 8) * _DAT_005524f4;
         pfVar17[6] = pfVar17[6] + _DAT_00552908;
         pfVar17[0x30] = 0.0;
@@ -828,19 +752,11 @@ LAB_00463e3d:
         pfVar17[0x32] = 0.0;
         return (float *)0x0;
       }
-      pfVar17[0x18] = 5.60519e-44;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x80000007;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xfffffff8) + 1;
-      }
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+      uVar10 = _rand() % 8;
       param_8 = (float *)(uVar10 + 0xf);
       pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000001f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffffe0) + 1;
-      }
+      uVar10 = _rand() % 32;
     }
     pfVar17[4] = (float)(int)uVar10 + pfVar17[4] + _DAT_00552980;
     pfVar17[6] = pfVar17[6] + _DAT_00552850;
@@ -852,40 +768,36 @@ LAB_00463e3d:
     pfVar17[9] = 0.0;
     return (float *)0x0;
   case 0xc0:
-    pfVar17[0x19] = 1.4013e-45;
-    pfVar17[0x18] = 5.60519e-44;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 40;
     pfVar17[3] = 1.0;
     return pfVar8;
   case 0xc2:
-    pfVar17[0x18] = 7.00649e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 50;
     pfVar17[3] = 0.7;
     if (param_5 != (float *)0x0) {
-      *(int*)&pfVar17[0x19] = -4;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = -4;
       pfVar17[7] = 0.0;
       pfVar17[8] = 0.0;
       pfVar17[9] = 45.0;
       return pfVar8;
     }
-    *(int*)&pfVar17[0x19] = -3;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -3;
     pfVar17[7] = 0.0;
     pfVar17[8] = 0.0;
     pfVar17[9] = 45.0;
     return pfVar8;
   case 0xc4:
-    pfVar17[0x18] = 1.4013e-44;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 10;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   case 0xc5:
   case 0xc6:
   case 0xd5:
   case 0xd6:
     if (*(int*)&pfVar17[1] == 5) {
-      pfVar17[0x18] = 8.40779e-44;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x80000003;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xfffffffc) + 1;
-      }
+      *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+      uVar10 = _rand() % 4;
       pfVar17[3] = (float)(int)(uVar10 + 8) * _DAT_005524f4;
       return (float *)(uVar10 + 8);
     }
@@ -894,8 +806,8 @@ LAB_00463e3d:
   case 0xe8:
     goto switchD_00461001_caseD_c7;
   case 200:
-    pfVar17[0x18] = 6.30584e-44;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 45;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != pfVar3) {
       return (float*)(uintptr_t)*(int*)&pfVar17[0x3f];
     }
@@ -908,20 +820,20 @@ LAB_00463e3d:
     fVar27 = 300.0;
     goto LAB_00463ca2;
   case 0xc9:
-    pfVar17[0x18] = 5.60519e-44;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 40;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     if (param_5 != (float *)0x1) {
       return (float *)0x0;
     }
     *(undefined1 *)(pfVar17 + 0x1d) = 0x80;
     return pfVar8;
   case 0xca:
-    pfVar17[0x18] = 2.8026e-44;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   case 0xcb:
-    pfVar17[0x19] = 0.0;
-    pfVar17[0x18] = 2.8026e-44;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     pfVar17[0x30] = 0.0;
     pfVar17[0x31] = -60.0;
     pfVar17[0x32] = 0.0;
@@ -930,8 +842,8 @@ LAB_00463e3d:
     }
     break;
   case 0xcc:
-    pfVar17[0x18] = 8.26766e-44;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 59;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     pfVar17[0x30] = 0.0;
     pfVar17[0x31] = -10.0;
     pfVar17[0x32] = 0.0;
@@ -941,10 +853,10 @@ LAB_00463e3d:
     break;
   case 0xcd:
     if ((pfVar17[1] == 0.0) || (*(int*)&pfVar17[1] == 3)) {
-      pfVar17[0x18] = 1.4013e-45;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 1;
     }
     else {
-      pfVar17[0x18] = 4.2039e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 30;
       pfVar17[6] = pfVar17[6] + _DAT_0055297c;
       pfVar17[0x30] = 0.0;
       pfVar17[0x31] = -80.0;
@@ -953,13 +865,13 @@ LAB_00463e3d:
       pfVar17[0x3b] = 0.0;
       pfVar17[0x3c] = 0.0;
     }
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     pfVar17[0x1a] = pfVar17[0x3a];
     pfVar17[3] = 1.3;
     *(undefined1 *)(pfVar17 + 0x1d) = 0x80;
     return pfVar8;
   case 0xd1:
-    pfVar17[0x18] = 1.4013e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 10;
     pfVar17[6] = pfVar17[6] + _DAT_00552980;
     Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
     local_6c = 0.0;
@@ -973,12 +885,8 @@ LAB_00463e3d:
     pfVar17[6] = pfVar17[6] + _DAT_005524f0;
 switchD_00461001_caseD_e2:
     if (*(int*)&pfVar17[1] == 5) {
-      pfVar17[0x18] = 8.40779e-44;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x80000003;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xfffffffc) + 1;
-      }
+      *(int*)&pfVar17[EffectLifetimeIndex] = 60;
+      uVar10 = _rand() % 4;
       pfVar17[3] = (float)(int)(uVar10 + 8) * _DAT_005524f4;
       pfVar17[0x5c] = pfVar17[4];
       pfVar17[0x5d] = pfVar17[5];
@@ -990,18 +898,10 @@ switchD_00461001_caseD_e2:
     }
 switchD_00461001_caseD_c7:
     if ((*(short *)((int)pfVar17 + 2) == 0xe2) || (*(short *)((int)pfVar17 + 2) == 0xe3)) {
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000007f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffff80) + 1;
-      }
+      uVar10 = _rand() % 128;
       param_8 = (float *)(uVar10 - 0x40);
       local_6c = (float)(int)param_8;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x8000007f;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffff80) + 1;
-      }
+      uVar10 = _rand() % 128;
       param_8 = (float *)(uVar10 - 0x40);
       local_68 = (float)(int)param_8;
       iVar9 = _rand();
@@ -1012,14 +912,10 @@ switchD_00461001_caseD_c7:
       pfVar17[6] = local_64 + pfVar17[6];
     }
     if (param_1 == 199) {
-      pfVar17[0x19] = 0.0;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
       pfVar17[0x1a] = 0.3;
       local_6c = 0.0;
-      uVar10 = _rand();
-      uVar10 = uVar10 & 0x800000ff;
-      if ((int)uVar10 < 0) {
-        uVar10 = (uVar10 - 1 | 0xffffff00) + 1;
-      }
+      uVar10 = _rand() % 256;
       param_8 = (float *)(uVar10 + 0x40);
       local_68 = (float)(int)param_8 * _DAT_005524f4;
       pfVar17[6] = pfVar17[6] + _DAT_00552598;
@@ -1030,27 +926,15 @@ switchD_00461001_caseD_c7:
         local_68 = 0.0;
       }
       else {
-        uVar10 = _rand();
-        uVar10 = uVar10 & 0x800000ff;
-        if ((int)uVar10 < 0) {
-          uVar10 = (uVar10 - 1 | 0xffffff00) + 1;
-        }
+        uVar10 = _rand() % 256;
         param_8 = (float *)(uVar10 + 0x40);
         local_68 = (float)(int)param_8 * _DAT_005524f4;
       }
     }
     local_64 = 0.0;
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x8000000f;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
-    }
+    uVar10 = _rand() % 16;
     *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x80000003;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xfffffffc) + 1;
-    }
+    uVar10 = _rand() % 4;
     param_8 = (float *)(uVar10 + 8);
     pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
     iVar9 = _rand();
@@ -1058,11 +942,7 @@ switchD_00461001_caseD_c7:
     pfVar17[9] = (float)(int)param_8;
     Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
     Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x8000000f;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
-    }
+    uVar10 = _rand() % 16;
     pfVar17[0x36] = (float)(int)(uVar10 + 8);
     return (float *)(uVar10 + 8);
   case 0xd4:
@@ -1075,21 +955,13 @@ switchD_00461001_caseD_c7:
     pfVar17[5] = local_5c + pfVar17[5];
     pfVar17[6] = local_58 + pfVar17[6];
     pfVar17[0x31] = -40.0;
-    pfVar17[0x32] = 10.0;    pfVar17[0x18] = 2.8026e-44;
+    pfVar17[0x32] = 10.0;    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     pfVar17[3] = 1.2;
     return pfVar12;
   case 0xd7:
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x8000000f;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xfffffff0) + 1;
-    }
+    uVar10 = _rand() % 16;
     *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x80000007;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xfffffff8) + 1;
-    }
+    uVar10 = _rand() % 8;
     param_8 = (float *)(uVar10 + 6);
     pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
     uVar10 = _rand();
@@ -1098,25 +970,13 @@ switchD_00461001_caseD_c7:
       param_8 = (float *)(((int)param_8 - 1U | 0xfffffffc) + 1);
     }
     pfVar17[0x36] = -(float)(int)param_8;
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x8000003f;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xffffffc0) + 1;
-    }
+    uVar10 = _rand() % 64;
     param_8 = (float *)(uVar10 - 0x20);
     local_6c = (float)(int)param_8;
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x8000001f;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xffffffe0) + 1;
-    }
+    uVar10 = _rand() % 32;
     param_8 = (float *)(uVar10 + 0x32);
     local_68 = -(float)(int)param_8;
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x8000007f;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xffffff80) + 1;
-    }
+    uVar10 = _rand() % 128;
     param_8 = (float *)(uVar10 + 200);
     local_64 = (float)(int)param_8;
     Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
@@ -1135,18 +995,18 @@ switchD_00461001_caseD_c7:
   case 0xdf:
   case 0xe0:
     if (param_1 == 0xd8) {
-      pfVar17[0x19] = 1.4013e-45;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
     }
     else if (param_1 == 0xde) {
-      *(int*)&pfVar17[0x19] = -2;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
     }
     else if ((((param_1 == 0xda) || (param_1 == 0xdb)) || (param_1 == 0xdc)) ||
             ((param_1 == 0xe0 || (param_1 == 0xdf)))) {
-      pfVar17[0x19] = 0.0;
+      *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     }
     pfVar12 = pfVar17 + 7;
     pfVar17[0x33] = 1.0;
-    pfVar17[0x18] = 4.2039e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
     Matrix_BuildFromEuler(pfVar12,local_3c + 3);
     local_6c = -10.0;
     local_68 = -60.0;
@@ -1164,7 +1024,7 @@ switchD_00461001_caseD_c7:
       pfVar17[3] = 1.0;
       pfVar17[0x31] = -30.0;
       pfVar17[0x36] = -10.0;
-      pfVar17[0x18] = 5.60519e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
     }
     else {
       pfVar17[3] = 0.8;
@@ -1193,7 +1053,7 @@ switchD_00461001_caseD_c7:
     }
     pfVar8 = (float*)DAT_07abf5d8;
     if ((param_1 == 0xd8) && (*(int*)&pfVar17[1] == 3)) {
-      pfVar17[0x18] = 5.60519e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       fVar27 = pfVar8[5];
       pfVar17[0x5c] = pfVar8[4];
       fVar2 = pfVar8[6];
@@ -1214,9 +1074,9 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_00462bfb;
     goto LAB_00462b8a;
   case 0xe1:
-    pfVar17[0x18] = 1.4013e-41;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 10000;
     pfVar17[0x33] = 0.3;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   case 0xe2:
   case 0xe3:
@@ -1224,7 +1084,7 @@ switchD_00461001_caseD_c7:
   case 0xe4:
   case 0xe5:
   case 0xe6:
-    pfVar17[0x18] = 1.4013e-43;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 100;
     iVar9 = _rand();
     pfVar17[3] = (float)(iVar9 % 10 + 4) * _DAT_005524f4;
     fVar27 = _DAT_00552988;
@@ -1234,28 +1094,28 @@ switchD_00461001_caseD_c7:
     pfVar17[1] = 1.4013e-45;
     return (float *)(iVar9 / 10);
   case 0xe9:
-    pfVar17[0x18] = 4.2039e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
     pfVar17[3] = 0.7;
-    *(int*)&pfVar17[0x19] = -2;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
     if (*(int*)&pfVar17[1] != 1) {
       pfVar17[0x33] = 0.1;
       return pfVar8;
     }
-    pfVar17[0x18] = 2.8026e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     pfVar17[0x33] = 0.1;
     pfVar17[0x16] = 0.0;
     return pfVar8;
   case 0xed:
-    pfVar17[0x18] = 7.00649e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 50;
     pfVar17[3] = 0.8;
     pfVar17[0x33] = 1.0;
     pfVar17[7] = 0.0;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     pfVar17[0x31] = -50.0;
     pfVar17[0x36] = -10.0;
     return pfVar8;
   case 0xee:
-    pfVar17[0x18] = 7.00649e-45;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 5;
     param_8 = pfVar4;
     param_7 = pfVar4;
     uVar10 = (**(code **)(iVar9 + 0xc))(pfVar4);
@@ -1264,7 +1124,7 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_0046320b;
     goto LAB_004631b2;
   case 0xef:
-    pfVar17[0x18] = 3.50325e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 25;
     param_5 = pfVar4;
     uVar10 = (**(code **)(iVar9 + 0xc))(pfVar4);
     param_8 = (float *)0x0;
@@ -1272,13 +1132,9 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_0046371e;
     goto LAB_004636ad;
   case 0xf0:
-    pfVar17[0x18] = 4.2039e-44;
-    pfVar17[0x19] = 0.0;
-    uVar10 = _rand();
-    uVar10 = uVar10 & 0x80000007;
-    if ((int)uVar10 < 0) {
-      uVar10 = (uVar10 - 1 | 0xfffffff8) + 1;
-    }
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
+    uVar10 = _rand() % 8;
     param_8 = (float *)(uVar10 + 10);
     pfVar12 = pfVar17 + 4;
     pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
@@ -1311,7 +1167,7 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_004611cb;
     goto LAB_0046115a;
   case 0xf1:
-    *(int*)&pfVar17[0x19] = -2;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
     pfVar17[3] = 0.9;
     pfVar17[0x33] = 0.5;
     // SubType es un DWORD: leer los BITS, no convertir el float (daba 0 siempre).
@@ -1320,19 +1176,19 @@ switchD_00461001_caseD_c7:
       pfVar17[0x3a] = 0.8;
       pfVar17[0x3b] = 0.8;
       pfVar17[0x3c] = 0.8;
-      pfVar17[0x18] = 2.10195e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 15;
       break;
     case 1:
       pfVar17[0x3a] = 1.0;
       pfVar17[0x3b] = 0.5;
       pfVar17[0x3c] = 0.2;
-      pfVar17[0x18] = 4.90454e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 35;
       break;
     case 2:
       pfVar17[0x3a] = 0.8;
       pfVar17[0x3b] = 0.8;
       pfVar17[0x3c] = 0.8;
-      pfVar17[0x18] = 1.68156e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 12;
       pfVar17[0x16] = 0.0;
       pfVar17[3] = 0.5;
       break;
@@ -1340,7 +1196,7 @@ switchD_00461001_caseD_c7:
       pfVar17[0x3a] = 0.8;
       pfVar17[0x3b] = 0.8;
       pfVar17[0x3c] = 0.8;
-      pfVar17[0x18] = 5.60519e-45;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 4;
       pfVar17[0x16] = 1.4013e-45;
       pfVar17[3] = 0.02;
       pfVar17[0x33] = 1.0;
@@ -1352,7 +1208,7 @@ switchD_00461001_caseD_c7:
       pfVar17[0x3a] = 0.8;
       pfVar17[0x3b] = 0.8;
       pfVar17[0x3c] = 0.8;
-      pfVar17[0x18] = 4.90454e-44;
+      *(int*)&pfVar17[EffectLifetimeIndex] = 35;
       pfVar17[0x16] = 1.4013e-45;
       pfVar17[3] = 0.1;
       pfVar17[0x36] = 0.0;
@@ -1375,8 +1231,8 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_00461843;
     goto LAB_004617d3;
   case 0xf2:
-    pfVar17[0x18] = 4.2039e-44;
-    *(int*)&pfVar17[0x19] = -2;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
     pfVar17[3] = 1.0;
     pfVar12 = pfVar17 + 4;
     pfVar17[6] = pfVar17[6] + _DAT_00552980;
@@ -1401,8 +1257,8 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_00461f5f;
     goto LAB_00461eee;
   case 0xf3:
-    pfVar17[0x18] = 4.2039e-44;
-    *(int*)&pfVar17[0x19] = -2;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 30;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
     pfVar17[3] = 1.0;
     iVar9 = 0;
     pfVar17[6] = pfVar17[6] + _DAT_00552980;
@@ -1499,7 +1355,7 @@ LAB_004625aa:
     pfVar17[0x5c] = pfVar17[4];
     pfVar17[0x5d] = pfVar17[5];
     pfVar17[0x5e] = pfVar17[6];
-    pfVar17[0x18] = 2.8026e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     iVar9 = _rand();
     // IDA: `*((_DWORD *)i + 1) = rand() % 100;` -- el SubType es un DWORD.
     // Guardarlo con una conversion a float dejaba los BITS del float en el
@@ -1512,9 +1368,9 @@ LAB_004625aa:
     pfVar17[0x36] = 50.0;
     break;
   case 0xf5:
-    pfVar17[0x18] = 4.90454e-44;
+    *(int*)&pfVar17[EffectLifetimeIndex] = 35;
     pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
-    pfVar17[0x19] = 0.0;
+    *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   }
   pfVar12 = (float*)DAT_07cf1ffc;
@@ -1526,7 +1382,7 @@ LAB_004625aa:
 switchD_00460f25_caseD_100:
   pfVar12 = pfVar17 + 7;
   pfVar17[0x33] = 1.0;
-  pfVar17[0x18] = 4.2039e-44;
+  *(int*)&pfVar17[EffectLifetimeIndex] = 30;
   Matrix_BuildFromEuler(pfVar12,local_3c + 3);
   local_6c = -10.0;
   local_68 = -60.0;
@@ -3852,7 +3708,7 @@ switchD_00465549_caseD_4ba:
   // (o `(0, -15, 0)` para el 1212): X y Z en 0, no un valor sobrante de otra rama.
   // El campo +0xC0 es el paso que `RenderEffects` usa para los 30 sprites 1176
   // de la estela.
-  pfVar17[0x18] = 2.8026e-44;
+  *(int*)&pfVar17[EffectLifetimeIndex] = 20;
   if (param_1 == 0x4ba) {
     pfVar17[0x3a] = 0.5;
     pfVar17[0x3b] = 0.7;
