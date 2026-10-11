@@ -233,6 +233,45 @@ struct ParticleScalePreset { int Lifetime; float Scale; };
 constexpr ParticleScalePreset ParticleScalePresets[] = {
     { -1, 0.15f }, { 10, 0.0f }, { 20, 1.0f }, { 1, -1.0f },
 };
+// IDA: Particle_Spawn (0x00475220), fuego 1220/subtipos 1, 3 y 11.
+struct ParticleFirePreset {
+    int Lifetime;
+    bool RandomScale;
+    bool OffsetPosition;
+    bool CopyColor;
+};
+constexpr ParticleFirePreset ParticleFires[] = {
+    { 50, true, true, false }, { 10, true, false, false }, { 50, false, true, true },
+};
+constexpr int ParticleSecondaryColorOffset = 0x58;
+constexpr float ParticleFixedRotations[] = { 0.0f, 45.0f, 315.0f };
+
+void InitializeFireParticle(char* particle, const ParticleFirePreset& preset)
+{
+    *(int*)(particle + ParticleLifetimeOffset) = preset.Lifetime;
+    if (preset.RandomScale)
+        *(float*)(particle + ParticleScaleOffset) = (float)(_rand() % 32 + 80) * _DAT_005524f8;
+    if (preset.OffsetPosition) {
+        float* position = (float*)(particle + ParticlePositionOffset);
+        position[0] = (float)(_rand() % 64 - 32) + position[0];
+        position[1] = (float)(_rand() % 64 - 32) + position[1];
+        position[2] = (float)(_rand() % 64 + 32) + position[2];
+    }
+    float* angle = (float*)(particle + ParticleAngleOffset);
+    angle[0] = (float)(_rand() % 90 - 45);
+    const int rotation = _rand() % 360;
+    float* drift = (float*)(particle + ParticleDriftOffset);
+    drift[0] = 0.0f;
+    if (preset.CopyColor) {
+        auto* color = (unsigned int*)(particle + ParticleColorOffset);
+        auto* copy = (unsigned int*)(particle + ParticleSecondaryColorOffset);
+        copy[1] = color[1]; copy[2] = color[2]; copy[0] = color[0];
+    }
+    angle[2] = (float)rotation;
+    const int speedStep = _rand() % 8;
+    drift[2] = 0.0f;
+    drift[1] = -(float)(speedStep + 40);
+}
 } // namespace
 
 // IDA: Particle_Spawn (0x00475220)
@@ -327,22 +366,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             // IDA: `*((float *)v8 + 16) = (float)((__int64)WorldTime % 360);`
             *(float *)(pcVar11 + 0x40) = (float)(int)((__int64)WorldTime % 360);
             return iVar6;
-        case 1:
-            *(int*)(pcVar11 + ParticleLifetimeOffset) = 50;
-            uVar8 = _rand() % 32;
-            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x50) * _DAT_005524f8;
-            uVar8 = _rand() % 64;
-            *pfVar1 = (float)(int)(uVar8 - 0x20) + *pfVar1;
-            uVar8 = _rand() % 64;
-            *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 0x20) + *(float *)(pcVar11 + 0x14);
-            uVar8 = _rand() % 64;
-            *(float *)(pcVar11 + 0x18) = (float)(int)(uVar8 + 0x20) + *(float *)(pcVar11 + 0x18);
-            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
-            iVar7 = _rand(); *pfVar3 = 0.0f;
-            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-            uVar8 = _rand() % 8;
-            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
-            *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
+        case 1: case 3: case 11:
+            InitializeFireParticle(pcVar11, ParticleFires[param_5 == 1 ? 0 : (param_5 == 3 ? 1 : 2)]);
             return iVar6;
         case 2: case 5:
             *(int*)(pcVar11 + ParticleLifetimeOffset) = param_5 == 2 ? 50 : 20;
@@ -352,17 +377,6 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
             uVar8 = _rand() % 32;
             *(float *)(pcVar11 + 0x48) = (float)(int)(uVar8 + 0x3c) * _DAT_005524f4;
-            return iVar6;
-        case 3:
-            *(int*)(pcVar11 + ParticleLifetimeOffset) = 10;
-            uVar8 = _rand() % 32;
-            *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x50) * _DAT_005524f8;
-            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
-            iVar7 = _rand(); *pfVar3 = 0.0f;
-            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-            uVar8 = _rand() % 8;
-            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
-            *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
             return iVar6;
         case 6:
             *(int*)(pcVar11 + ParticleLifetimeOffset) = 30;
@@ -408,24 +422,6 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             return iVar6;
         case 10:
             *(int*)(pcVar11 + ParticleLifetimeOffset) = 16;
-            return iVar6;
-        case 0xb:
-            *(int*)(pcVar11 + ParticleLifetimeOffset) = 50;
-            uVar8 = _rand() % 64;
-            *pfVar1 = (float)(int)(uVar8 - 0x20) + *pfVar1;
-            uVar8 = _rand() % 64;
-            *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 0x20) + *(float *)(pcVar11 + 0x14);
-            uVar8 = _rand() % 64;
-            *(float *)(pcVar11 + 0x18) = (float)(int)(uVar8 + 0x20) + *(float *)(pcVar11 + 0x18);
-            iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x5a + -0x2d);
-            iVar7 = _rand(); *pfVar3 = 0.0f;
-            *(unsigned int *)(pcVar11 + 0x5c) = *(unsigned int *)(pcVar11 + 0x2c);
-            *(unsigned int *)(pcVar11 + 0x60) = *(unsigned int *)(pcVar11 + 0x30);
-            *(unsigned int *)(pcVar11 + 0x58) = *(unsigned int *)(pcVar11 + 0x28);
-            *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-            uVar8 = _rand() % 8;
-            *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
-            *(float *)(pcVar11 + 0x50) = -(float)(int)(uVar8 + 0x28);
             return iVar6;
         default:
             return iVar6;
@@ -805,13 +801,8 @@ lab_4e1_skip_size:
         *(int*)(pcVar11 + ParticleLifetimeOffset) = 5;
         *(float*)(pcVar11 + 0x48) = 0.0f;
         *(float*)(pcVar11 + ParticleScaleOffset) = 4.0f;
-        if (param_5 == 0) {
-            *(float*)(pcVar11 + ParticleRotationOffset) = 0.0f;
-        } else if (param_5 == 1) {
-            *(float*)(pcVar11 + ParticleRotationOffset) = 45.0f;
-        } else if (param_5 == 2) {
-            pcVar11[0x40] = '\0'; pcVar11[0x41] = (char)-0x80; pcVar11[0x42] = (char)-99; pcVar11[0x43] = 'C';
-        }
+        if (param_5 >= 0 && param_5 < 3)
+            *(float*)(pcVar11 + ParticleRotationOffset) = ParticleFixedRotations[param_5];
         return iVar6;
 
     case 0x599:
