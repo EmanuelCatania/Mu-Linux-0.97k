@@ -63,6 +63,20 @@
 
 #include "stdafx.h"
 
+namespace {
+// IDA: MoveEffect (0x00466AD0), desvanecimiento 247/248/250/251.
+struct EffectFadePreset { int DescentThreshold; const float* AlphaFactor; };
+constexpr EffectFadePreset EffectFadePresets[] = {
+    { 13, &_DAT_00552a00 }, { 10, &_DAT_005529d4 },
+};
+// IDA: MoveEffect (0x00466AD0), fragmentos 260..263.
+struct EffectBouncePreset { const float* Gravity; const float* Bounce; };
+constexpr EffectBouncePreset EffectBouncePresets[] = {
+    { &_DAT_00552540, &_DAT_00552570 }, { &_DAT_00552650, &_DAT_00552a14 },
+};
+constexpr float EffectTrailAlpha[] = { 0.6f, 0.5f, 0.4f, 0.3f };
+} // namespace
+
 // Tamachan -- IDA 0.98j MoveEffect (sub_4723F0) case 183 (aca, tipo 193; ver
 // Tamachan_Create en CreateEffect.cpp).  `life` es el contador +96 leido
 // ANTES del decremento de la cola, como el `v3` del binario.  Al volver, el
@@ -357,11 +371,7 @@ void MoveEffect(float *param_1, int param_2)
   float (&local_6c)[13] = *(float(*)[13])&__mfr[0x300];
   float (&local_38)[14] = *(float(*)[14])&__mfr[0x334];
   do {
-    uVar8 = _rand();
-    uVar8 = uVar8 & 0x80000003;
-    if ((int)uVar8 < 0) {
-      uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-    }
+    uVar8 = _rand() % 4;
     local_35c = (float *)(uVar8 + 7);
     // El counter (+96) es un DWORD. IDA: `v4 = *(int *)(o + 96)` y compara `v4`;
     // `v356 = *(float *)&v4` es solo la copia de los BITS.
@@ -399,11 +409,7 @@ void MoveEffect(float *param_1, int param_2)
             pfVar22 = (float *)0x0;
             pfVar10 = param_1 + 7;
             pfVar15 = param_1 + 4;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000001;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-            }
+            uVar8 = _rand() % 2;
             CreateEffect(uVar8 + 0xc5,pfVar15,pfVar10,pfVar14,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
           }
           pfVar10 = param_1 + 4;
@@ -515,11 +521,7 @@ void MoveEffect(float *param_1, int param_2)
                   pfVar21 = (float *)0x0;
                   pfVar14 = pfVar10;
                   pfVar22 = param_1 + 7;
-                  uVar8 = _rand();
-                  uVar8 = uVar8 & 0x80000001;
-                  if ((int)uVar8 < 0) {
-                    uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-                  }
+                  uVar8 = _rand() % 2;
                   CreateEffect(uVar8 + 0xc5,pfVar14,pfVar22,pfVar15,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
                   iVar9 = iVar9 + -1;
                 } while (iVar9 != 0);
@@ -596,11 +598,7 @@ void MoveEffect(float *param_1, int param_2)
             iVar9 = _rand();
             iVar12 = _rand();
             local_368 = (float)(iVar12 % 3) * _DAT_005528b8 + _DAT_005528b4;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000003;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-            }
+            uVar8 = _rand() % 4;
             local_360 = 0.0;
             iVar12 = 0x50;
             local_364 = (float)(int)uVar8 * _DAT_005524f4;
@@ -676,11 +674,7 @@ void MoveEffect(float *param_1, int param_2)
               pfVar15 = param_1 + 0x3a;
               fVar13 = (float)(iVar12 % 0x168);
               pfVar14 = param_1;
-              uVar8 = _rand();
-              uVar8 = uVar8 & 0x80000007;
-              if ((int)uVar8 < 0) {
-                uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-              }
+              uVar8 = _rand() % 8;
               CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005526e4,pfVar15,(int)pfVar14,fVar13,uVar29);
             }
             else {
@@ -689,11 +683,7 @@ void MoveEffect(float *param_1, int param_2)
               pfVar15 = param_1 + 0x3a;
               fVar13 = (float)(iVar12 % 0x168);
               pfVar14 = param_1;
-              uVar8 = _rand();
-              uVar8 = uVar8 & 0x80000007;
-              if ((int)uVar8 < 0) {
-                uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-              }
+              uVar8 = _rand() % 8;
               CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005528b8,pfVar15,(int)pfVar14,fVar13,uVar29);
               pfVar15 = param_1;
               iVar12 = _rand();
@@ -726,11 +716,7 @@ void MoveEffect(float *param_1, int param_2)
             fVar13 = (float)(iVar9 % 0x168);
             pfVar14 = pfVar15;
             pfVar22 = param_1;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000003;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-            }
+            uVar8 = _rand() % 4;
             CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 4) * _DAT_005526e4,pfVar14,(int)pfVar22,fVar13,uVar29);
             uVar29 = 0;
             iVar9 = _rand();
@@ -744,11 +730,7 @@ void MoveEffect(float *param_1, int param_2)
               local_368 = 1.0;
               local_364 = 1.0;
               local_360 = 1.0;
-              uVar8 = _rand();
-              uVar8 = uVar8 & 0x8000001f;
-              if ((int)uVar8 < 0) {
-                uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-              }
+              uVar8 = _rand() % 32;
               Particle_Spawn(0x4c4,&local_354,param_1 + 7,&local_368,0xb,
                            (float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar9);
             }
@@ -892,23 +874,11 @@ LAB_0046a366:
             bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
           }
           if (bVar16) {
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000003f;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-            }
+            uVar8 = _rand() % 64;
             local_1d0 = (float)(int)(uVar8 - 0x20) + param_1[4];
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000003f;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-            }
+            uVar8 = _rand() % 64;
             local_1cc = (float)(int)(uVar8 - 0x20) + param_1[5];
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000007f;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xffffff80) + 1;
-            }
+            uVar8 = _rand() % 128;
             local_1c8 = (float)(int)(uVar8 + 0x20) + param_1[6];
             Particle_Spawn(0x4c4,&local_1d0,param_1 + 7,param_1 + 0x3a,0,1.0,0);
           }
@@ -1015,11 +985,7 @@ LAB_00469366:
               pfVar22 = (float *)0x0;
               pfVar15 = param_1 + 4;
               pfVar14 = param_1 + 7;
-              uVar8 = _rand();
-              uVar8 = uVar8 & 0x80000001;
-              if ((int)uVar8 < 0) {
-                uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-              }
+              uVar8 = _rand() % 2;
               CreateEffect(uVar8 + 0xc5,pfVar15,pfVar14,pfVar10,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
               iVar9 = iVar9 + -1;
             } while (iVar9 != 0);
@@ -1044,11 +1010,7 @@ LAB_00469772:
           fVar17 = RequestTerrainHeight(param_1[4], param_1[5]);
           local_344 = (float)fVar17;
           if (param_1[6] < local_344) {
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000003;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-            }
+            uVar8 = _rand() % 4;
             iVar9 = 0;
             _DAT_083a0210 = (float)(int)(uVar8 - 4) * _DAT_005524f4;
             do {
@@ -1099,11 +1061,7 @@ LAB_004698ca:
           pfVar23 = (float *)0x0;
           pfVar22 = pfVar15;
           pfVar21 = pfVar10;
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000001;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-          }
+          uVar8 = _rand() % 2;
           CreateEffect(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
@@ -1119,11 +1077,7 @@ LAB_004698ca:
             local_360 = 0.2;
             local_2b4 = (float)(iVar12 % 0xa0 + -100) + param_1[5];
             local_2b0 = param_1[6] + _DAT_00552598;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x8000001f;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-            }
+            uVar8 = _rand() % 32;
             Particle_Spawn(0x4c4,&local_2b8,pfVar10,&local_368,0xb,
                          (float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar24);
             iVar9 = iVar9 + -1;
@@ -1152,20 +1106,12 @@ LAB_00469ab9:
           param_1[0x1a] = 0.0;
         }
         else if (fVar13 == 0.0) {
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000003;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-          }
+          uVar8 = _rand() % 4;
           param_1[0x1a] = (float)(int)(uVar8 + 4) * _DAT_005524f4;
         }
         else {
           if (*(int*)&fVar13 != 6) goto LAB_00469ab9;
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000003;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
-          }
+          uVar8 = _rand() % 4;
           param_1[0x1a] = (float)(int)(uVar8 + 4) * _DAT_005524f4;
         }
         if (*(int*)&param_1[1] == 6) {
@@ -1282,11 +1228,7 @@ LAB_00468772:
         pfVar21 = (float *)0x0;
         pfVar22 = (float *)0x1;
         local_2c8 = local_2c8 + param_1[6];
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000001;
-        if ((int)uVar8 < 0) {
-          uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-        }
+        uVar8 = _rand() % 2;
         CreateEffect(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
       }
       local_364 = local_36c * _DAT_00552530;
@@ -1330,11 +1272,7 @@ LAB_00468772:
         iVar9 = _rand();
         iVar12 = 0;
         local_32c = (float)(iVar9 % 10 + -5) + local_32c;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x8000001f;
-        if ((int)uVar8 < 0) {
-          uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-        }
+        uVar8 = _rand() % 32;
         Particle_Spawn(0x4c4,pfVar15,pfVar10,&local_368,0xb,(float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar12);
         local_34c = local_34c + _DAT_00552598;
         local_26c = 0x3f800000;
@@ -1400,11 +1338,7 @@ LAB_00468772:
         pfVar23 = (float *)0x0;
         pfVar21 = (float *)0x2;
         pfVar22 = pfVar15;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000001;
-        if ((int)uVar8 < 0) {
-          uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-        }
+        uVar8 = _rand() % 2;
         CreateEffect(uVar8 + 0xc5,pfVar22,pfVar10,pfVar14,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
       }
       local_368 = local_36c * _DAT_00552990;
@@ -1549,23 +1483,11 @@ switchD_00466b93_caseD_c7:
         CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000001f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-          }
+          uVar8 = _rand() % 32;
           local_354 = (float)(int)(uVar8 - 0x10);
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000003f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xffffffc0) + 1;
-          }
+          uVar8 = _rand() % 64;
           local_350 = (float)(int)(uVar8 - 0x20);
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000001f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
-          }
+          uVar8 = _rand() % 32;
           iVar30 = 0;
           fVar13 = 1.0;
           local_354 = local_354 + *pfVar10;
@@ -1592,23 +1514,11 @@ switchD_00466b93_caseD_c7:
         CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         local_35c = (float *)0x4;
         do {
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000000f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-          }
+          uVar8 = _rand() % 16;
           local_354 = (float)(int)(uVar8 - 8);
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000000f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-          }
+          uVar8 = _rand() % 16;
           local_350 = (float)(int)(uVar8 - 8);
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000000f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-          }
+          uVar8 = _rand() % 16;
           local_354 = local_354 + *pfVar10;
           local_350 = local_350 + param_1[5];
           local_34c = (float)(int)(uVar8 - 8) + param_1[6];
@@ -1630,23 +1540,11 @@ switchD_00466b93_caseD_c7:
         CreateSprite(0x47e,pfVar10,2.0f,&local_368,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000000f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-          }
+          uVar8 = _rand() % 16;
           local_354 = (float)(int)(uVar8 - 8);
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000000f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-          }
+          uVar8 = _rand() % 16;
           local_350 = (float)(int)(uVar8 - 8);
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x8000000f;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-          }
+          uVar8 = _rand() % 16;
           local_354 = local_354 + *pfVar10;
           local_350 = local_350 + param_1[5];
           local_34c = (float)(int)(uVar8 - 8) + param_1[6];
@@ -1699,11 +1597,7 @@ switchD_00466b93_caseD_c7:
          (fVar17 = RequestTerrainHeight(param_1[4], param_1[5]), (float10)param_1[6] < fVar17)) {
         param_1[6] = (float)fVar17;
         *(undefined1 *)param_1 = 0;
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000007;
-        if ((int)uVar8 < 0) {
-          uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-        }
+        uVar8 = _rand() % 8;
         iVar9 = 5;
         _DAT_083a0210 = (float)(int)(uVar8 - 8) * _DAT_005524f4;
         do {
@@ -1715,11 +1609,7 @@ switchD_00466b93_caseD_c7:
           pfVar15 = param_1 + 7;
           pfVar14 = pfVar10;
           pfVar22 = param_1 + 0x3a;
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000001;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-          }
+          uVar8 = _rand() % 2;
           CreateEffect(uVar8 + 0xe7,pfVar14,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
@@ -1759,19 +1649,8 @@ switchD_00466b93_caseD_c7:
                                      *(undefined1 *)((int)param_1 + 0x85)),*(byte *)(param_1 + 0x21));
       break;
     case 0xef:
-      switch(*(int*)&param_1[1]) {
-      case 1:   // 1.4013e-45f
-        param_1[0x5a] = 0.6f;
-        break;
-      case 2:   // 2.8026e-45f
-        param_1[0x5a] = 0.5f;
-        break;
-      case 3:   // 4.2039e-45f
-        param_1[0x5a] = 0.4f;
-        break;
-      case 4:   // 5.60519e-45f
-        param_1[0x5a] = 0.3f;
-      }
+      if (*(unsigned int*)&param_1[1] >= 1 && *(unsigned int*)&param_1[1] <= 4)
+        param_1[0x5a] = EffectTrailAlpha[*(unsigned int*)&param_1[1] - 1];
       if ((*(byte *)(*(int*)&param_1[0x3f] + 0x88) < 0x60) ||
          (0x7f < *(byte *)(*(int*)&param_1[0x3f] + 0x88))) {
         local_318 = 0xc3160000;
@@ -1867,11 +1746,7 @@ switchD_00466b93_caseD_c7:
           pfVar23 = (float *)0x0;
           pfVar22 = pfVar10;
           pfVar21 = pfVar15;
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000001;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-          }
+          uVar8 = _rand() % 2;
           CreateEffect(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
@@ -2222,11 +2097,7 @@ LAB_00466e5e:
         param_1[6] = param_1[6] - _DAT_00552504;
       }
       if ((0xf < __cnt) && (__cnt % 3 == 0)) {
-        uVar8 = _rand();
-        uVar8 = uVar8 & 0x80000007;
-        if ((int)uVar8 < 0) {
-          uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-        }
+        uVar8 = _rand() % 8;
         _DAT_083a0210 = (float)(int)(uVar8 - 4) * _DAT_005524f4;
       }
       break;
@@ -2264,11 +2135,7 @@ LAB_00466e5e:
             pfVar21 = (float *)0x0;
             pfVar22 = (float *)0x0;
             local_2a4 = local_2a4 + param_1[6];
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000001;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-            }
+            uVar8 = _rand() % 2;
             CreateEffect(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
           }
         }
@@ -2277,20 +2144,14 @@ LAB_00466e5e:
         param_1[0x1a] = (float)(0x14 - (int)local_358) * _DAT_005524f4;
       }
       goto LAB_00467f78;
-    case 0xf7:
-    case 0xfa:
-      param_1[0x1a] = (float)__cnt * _DAT_005524f4 * _DAT_00552a00;
-      if (__cnt < 0xd) {
+    case 0xf7: case 0xfa:
+    case 0xf8: case 0xfb: {
+      const auto& fade = EffectFadePresets[(iVar9 == 0xf7 || iVar9 == 0xfa) ? 0 : 1];
+      param_1[0x1a] = (float)__cnt * _DAT_005524f4 * *fade.AlphaFactor;
+      if (__cnt < fade.DescentThreshold)
         param_1[6] = param_1[6] - _DAT_00552504;
-      }
       break;
-    case 0xf8:
-    case 0xfb:
-      param_1[0x1a] = (float)__cnt * _DAT_005524f4 * _DAT_005529d4;
-      if (__cnt < 10) {
-        param_1[6] = param_1[6] - _DAT_00552504;
-      }
-      break;
+    }
     case 0xf9:
       if (__cnt < 0x1e) {
         if (__cnt < 0xf) {
@@ -2321,11 +2182,7 @@ LAB_00466e5e:
             pfVar21 = (float *)0x0;
             pfVar22 = (float *)0x0;
             local_2d4 = local_2d4 + param_1[6];
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000001;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-            }
+            uVar8 = _rand() % 2;
             CreateEffect(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
           }
         }
@@ -2417,11 +2274,7 @@ LAB_004695c0:
           pfVar15 = &local_368;
           fVar13 = (float)(iVar9 % 0x168);
           pfVar14 = param_1;
-          uVar8 = _rand();
-          uVar8 = uVar8 & 0x80000007;
-          if ((int)uVar8 < 0) {
-            uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-          }
+          uVar8 = _rand() % 8;
           CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005526e4,pfVar15,(int)pfVar14,fVar13,uVar29);
         }
         param_1[0xb] = param_1[0x36];
@@ -2447,33 +2300,10 @@ LAB_004695c0:
       break;
     case 0x104:
     case 0x105:
-      param_1[4] = param_1[0x30] + param_1[4];
-      param_1[5] = param_1[5] + param_1[0x31];
-      param_1[6] = param_1[0x32] + param_1[6];
-      fVar13 = param_1[0x30] * _DAT_005526e8;
-      param_1[0x30] = fVar13;
-      local_348 = param_1[0x31] * _DAT_005526e8;
-      param_1[0x31] = local_348;
-      local_344 = param_1[0x32] * _DAT_005526e8;
-      param_1[0x32] = local_344;
-      param_1[6] = param_1[6] + param_1[0x36];
-      if (*(int*)&param_1[1] == 1) {
-        param_1[0x30] = fVar13 * _DAT_005529b4;
-        param_1[0x31] = local_348 * _DAT_005529b4;
-        param_1[0x32] = local_344 * _DAT_005529b4;
-      }
-      param_1[0x36] = param_1[0x36] - _DAT_00552540;
-      fVar17 = RequestTerrainHeight(param_1[4], param_1[5]);
-      if ((float10)param_1[6] < fVar17) {
-        param_1[6] = (float)fVar17;
-        fVar13 = param_1[0x36] * _DAT_00552570;
-        goto LAB_0046a000;
-      }
-LAB_0046a01d:
-      fVar13 = param_1[3] * _DAT_005526e0;
-      goto LAB_0046a02b;
     case 0x106:
-    case 0x107:
+    case 0x107: {
+      const bool firstPair = iVar9 < 0x106;
+      const auto& bounce = EffectBouncePresets[firstPair ? 0 : 1];
       param_1[4] = param_1[0x30] + param_1[4];
       param_1[5] = param_1[5] + param_1[0x31];
       param_1[6] = param_1[0x32] + param_1[6];
@@ -2489,16 +2319,17 @@ LAB_0046a01d:
         param_1[0x31] = local_348 * _DAT_005529b4;
         param_1[0x32] = local_344 * _DAT_005529b4;
       }
-      param_1[0x36] = param_1[0x36] - _DAT_00552650;
+      param_1[0x36] = param_1[0x36] - *bounce.Gravity;
       fVar17 = RequestTerrainHeight(param_1[4], param_1[5]);
-      if (fVar17 <= (float10)param_1[6]) goto LAB_0046a01d;
-      param_1[6] = (float)fVar17;
-      fVar13 = param_1[0x36] * _DAT_00552a14;
-LAB_0046a000:
-      param_1[0x36] = fVar13;
-      fVar13 = param_1[3] * _DAT_005529bc;
-      *(int*)&param_1[0x18] = *(int*)&param_1[0x18] + -5;   // counter DWORD
-LAB_0046a02b:
+      // Se conservan ambos predicados del port, incluso ante valores no ordenados.
+      if (firstPair ? (float10)param_1[6] < fVar17 : !(fVar17 <= (float10)param_1[6])) {
+        param_1[6] = (float)fVar17;
+        param_1[0x36] = param_1[0x36] * *bounce.Bounce;
+        fVar13 = param_1[3] * _DAT_005529bc;
+        *(int*)&param_1[0x18] = *(int*)&param_1[0x18] - 5;
+      } else {
+        fVar13 = param_1[3] * _DAT_005526e0;
+      }
       pfVar10 = param_1 + 7;
       *pfVar10 = *pfVar10 - fVar13;
       iVar9 = _rand();
@@ -2506,6 +2337,7 @@ LAB_0046a02b:
         Particle_Spawn(0x4c5,&local_354,pfVar10,&local_368,0,1.0,0);
       }
       break;
+    }
     case 0x109:
       if ((((byte)*(undefined4 *)((char *)*(int*)&param_1[0x3f] + 0x78) & 0x20) == 0x20) &&
          (*(char *)*(int*)&param_1[0x3f] != '\0')) {
@@ -2530,11 +2362,7 @@ LAB_0046a02b:
             local_32c = (float)(iVar12 % 0x168);
             pfVar14 = param_1 + 0x3a;
             pfVar22 = param_1;
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000001;
-            if ((int)uVar8 < 0) {
-              uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
-            }
+            uVar8 = _rand() % 2;
             CreateEffect(uVar8 + 0xe2,pfVar10,pfVar15,pfVar14,pfVar21,pfVar22,pfVar23,pfVar25,bVar28);
             iVar9 = iVar9 + -1;
           } while (iVar9 != 0);
