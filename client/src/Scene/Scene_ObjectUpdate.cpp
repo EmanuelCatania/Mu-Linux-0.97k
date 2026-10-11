@@ -3,6 +3,7 @@
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
+#include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
@@ -957,6 +958,51 @@ next_bug:
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
 }
 
+namespace {
+// IDA: sub_4FDC00 (0x004FDC00), emisores fijos de Lorencia, Dungeon y Devias.
+struct SceneFlamePreset {
+    int Variant;
+    int Count;
+    float Offset[2][3];
+    bool RandomAlpha;
+    bool HideMesh;
+};
+constexpr SceneFlamePreset SceneFlames[] = {
+    { 0, 1, {{0, 0, 200}}, false, false },
+    { 0, 1, {{0, -30, 60}}, false, false },
+    { 0, 1, {{0, 0, 60}}, true, false },
+    { 0, 2, {{-150, -150, 140}, {150, -150, 140}}, false, false },
+    { 0, 2, {{90, -200, 30}, {90, 200, 30}}, false, false },
+    { 0, 1, {{0, 0, 0}}, false, true },
+    { 1, 1, {{0, 0, 0}}, false, true },
+    { 2, 1, {{0, 0, 0}}, false, true },
+    { 0, 1, {{0, -30, 240}}, false, false },
+    { 0, 1, {{0, 0, 190}}, false, false },
+    { 0, 1, {{0, 0, 50}}, false, false },
+};
+constexpr auto MakeLorenciaFlameIndices()
+{
+    std::array<unsigned char, 133> indices{};
+    indices[50] = 0; indices[51] = 1; indices[52] = 2;
+    indices[55] = 3; indices[80] = 4;
+    indices[130] = 5; indices[131] = 6; indices[132] = 7;
+    return indices;
+}
+constexpr auto LorenciaFlameIndices = MakeLorenciaFlameIndices();
+
+void EmitSceneFlames(char* object, const SceneFlamePreset& preset)
+{
+    for (int i = 0; i < preset.Count; ++i) {
+        const auto& offset = preset.Offset[i];
+        FUN_0046c7f0(preset.Variant, (int)object, offset[0], offset[1], offset[2]);
+    }
+    if (preset.RandomAlpha)
+        *(float*)(object + 104) = (double)(rand() % 6 + 4) * 0.1;
+    if (preset.HideMesh)
+        *(int*)(object + 88) = -2;
+}
+} // namespace
+
 // === FUN_004fdc00 / MoveObjects (0x004FDC00) ===
 // Gateada por IDA_PORT_004FDC00, que esta definida.
 // Es la copia VIVA: el `MoveObject_PerWorld` de mas arriba en este archivo es
@@ -1105,23 +1151,9 @@ LABEL_38:
     case 0:
       switch ( *(WORD *)(LODWORD(o) + 2) )
       {
-        case 0x32:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 200.0);
-          break;
-        case 0x33:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, -30.0, 60.0);
-          break;
-        case 0x34:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 60.0);
-          *(float *)(LODWORD(o) + 104) = (double)(rand() % 6 + 4) * 0.1;
-          break;
-        case 0x37:
-          FUN_0046c7f0(0, (int)LODWORD(o), -150.0, -150.0, 140.0);
-          FUN_0046c7f0(0, (int)LODWORD(o), 150.0, -150.0, 140.0);
-          break;
-        case 0x50:
-          FUN_0046c7f0(0, (int)LODWORD(o), 90.0, -200.0, 30.0);
-          FUN_0046c7f0(0, (int)LODWORD(o), 90.0, 200.0, 30.0);
+        case 0x32: case 0x33: case 0x34: case 0x37: case 0x50:
+        case 0x82: case 0x83: case 0x84:
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[LorenciaFlameIndices[*(WORD*)(LODWORD(o) + 2)]]);
           break;
         case 0x5A:
           v10 = (double)(rand() % 2 + 6) * 0.1;
@@ -1135,18 +1167,6 @@ LABEL_38:
         case 0x76:
         case 0x77:
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
-          break;
-        case 0x82:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 0.0);
-          *(DWORD *)(LODWORD(o) + 88) = -2;
-          break;
-        case 0x83:
-          FUN_0046c7f0(1, (int)LODWORD(o), 0.0, 0.0, 0.0);
-          *(DWORD *)(LODWORD(o) + 88) = -2;
-          break;
-        case 0x84:
-          FUN_0046c7f0(2, (int)LODWORD(o), 0.0, 0.0, 0.0);
-          *(DWORD *)(LODWORD(o) + 88) = -2;
           break;
         case 0x96:
           v12 = (double)(rand() % 4 + 3) * 0.1;
@@ -1169,10 +1189,10 @@ LABEL_38:
         case 0x33:
           goto LABEL_132;
         case 0x29:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, -30.0, 240.0);
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[8]);
           break;
         case 0x2A:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 190.0);
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[9]);
           break;
         case 0x34:
           if ( rand() % 3 )
@@ -1260,7 +1280,7 @@ LABEL_38:
           break;
         case 30:
         case 66:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 50.0);
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[10]);
           break;
         case 78:
 LABEL_59:
@@ -1425,15 +1445,12 @@ LABEL_116:
           v30[2] = v11;
           AddTerrainLight(*v7, *(float *)(LODWORD(o) + 20), v30, 3, PrimaryTerrainLight[0]);
           return;
-        case 0xB:
+        case 0xB: case 0xD: case 0x49: case 0x4B: case 0x4F:
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
           return;
         case 0xC:
           *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
-          return;
-        case 0xD:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
           return;
         case 0x3D:
           *(DWORD *)(LODWORD(o) + 100) = 1;
@@ -1456,15 +1473,6 @@ LABEL_123:
           break;
         case 0x48:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
-          break;
-        case 0x49:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
-          break;
-        case 0x4B:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
-          break;
-        case 0x4F:
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
           break;
         case 0x52:
