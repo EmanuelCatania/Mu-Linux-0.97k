@@ -30,6 +30,8 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Config/UserSettings.h"
 
 void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,
@@ -48,8 +50,11 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         param_5 = 0;
     }
     ItemLevelFx = (int)param_5;
-    if (param_2 > 867) {
-        switch (param_2) {
+    // 0.97.20: un modelo del catálogo usa el brillo por nivel del vanilla que
+    // imita (las alas, por ejemplo, no brillan).
+    const int fxType = gContentCatalog.LogicModel(param_2);
+    if (fxType > 867) {
+        switch (fxType) {
         case 868:
         case 952:
         case 953:
@@ -76,11 +81,11 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             break;
         }
     }
-    else if (param_2 >= 865) {
+    else if (fxType >= 865) {
         ItemLevelFx *= 2;
     }
-    else if (param_2 > 799) {
-        switch (param_2) {
+    else if (fxType > 799) {
+        switch (fxType) {
         case 800:
         case 801:
         case 802:
@@ -101,11 +106,11 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             break;
         }
     }
-    else if (param_2 == 799) {
+    else if (fxType == 799) {
         ItemLevelFx = 8;
     }
-    else if (param_2 > 791) {
-        switch (param_2) {
+    else if (fxType > 791) {
+        switch (fxType) {
         case 795:
             ItemLevelFx = 0;   // IDA LABEL_17
             break;
@@ -118,15 +123,15 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             break;
         }
     }
-    else if (param_2 == 791) {
+    else if (fxType == 791) {
         ItemLevelFx = 9;
     }
-    else if (param_2 > 543) {
-        if (param_2 >= 784) {
+    else if (fxType > 543) {
+        if (fxType >= 784) {
             ItemLevelFx = 0;
         }
     }
-    else if (param_2 == 543 || param_2 == 535) {
+    else if (fxType == 543 || fxType == 535) {
         ItemLevelFx = (ItemLevelFx < 1) ? 0 : (ItemLevelFx * 2 + 1);
     }
 
@@ -202,7 +207,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x48) = 0.9f;
         *(float *)((int)this_ + 0x4c) = 0.1f;
         *(float *)((int)this_ + 0x50) = 0.1f;
-        rotU = sinf((float)World * 0.0001f);
+        rotU = sinf((float)gMapManager.GetCurrentMap() * 0.0001f);
         *(float *)(param_1 + 0x6c) = rotU;
         *(float *)(param_1 + 0x70) = (float)WorldTime * -0.0005f;
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = 0;
@@ -352,14 +357,14 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     // o+140 chooses a projected shadow, not another opaque body pass.
     // RenderCharacter already drew the body through Entity_PrepareRender.
     if (*(BYTE *)(param_1 + 140) != 0) {
-        if (World == 7) {
+        if (gMapManager.GetCurrentMap() == 7) {
             EnableAlphaTest(true);
             glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
         } else {
             GL_ResetState();
             glColor3f(0.0f, 0.0f, 0.0f);
         }
-        if (World != 10)
+        if (gMapManager.GetCurrentMap() != 10)
             BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 88));
         return;
     }
@@ -384,7 +389,8 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         //
         // ItemLevelFx ya es el ItemLevel: al principio se hizo
         // `param_5 = ((int)param_5 >> 3) & 0xf;` — no volver a shiftear.
-        uint ItemLevel = (uint)ItemLevelFx;
+        // DESVIACION (antilag propio): sin el brillo de los +N.
+        uint ItemLevel = gUserSettings.GetAntilag(ANTILAG_GLOW) ? 0u : (uint)ItemLevelFx;
 
         bool didExtraRender = false;
         if (ItemLevel > 2 && effectType != 863) {

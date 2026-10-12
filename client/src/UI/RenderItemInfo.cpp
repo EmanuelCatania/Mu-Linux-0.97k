@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "Item/Item_ServerValue.h"
 
 // RenderItemInfo.cpp  @0x004C4650 / 0x004C8D70
 // Populates the item info tooltip string buffer (lpString_07e90798, stride 100, ~0x18 slots)
@@ -128,13 +131,6 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
     if (!ip || !p || !dst || dstSize == 0)
         return false;
 
-    constexpr short ITEM_SWORD_BASE  = 0;
-    constexpr short ITEM_MACE_BASE   = 64;
-    constexpr short ITEM_BOW_BASE    = 128;
-    constexpr short ITEM_STAFF_BASE  = 160;
-    constexpr short ITEM_WING_BASE   = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
     static const int kSommonTable[6] = { 2, 7, 14, 8, 9, 41 };
     static const char* kChaosEventName[10] = {
         "È÷µÅ© °íÇâ ¿©Çà±Ç",
@@ -149,7 +145,7 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         "¹Â 10½Ã°£ ¹«·áÀÌ¿ë±Ç"
     };
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
 
     // Primera rama de la cadena del binario (LAB_004c4ced, 0x004C4CED):
     //     if (0x1d6 < Type && Type < 0x1db) { sprintf(linea, "%s", Name); color = 3; }
@@ -463,10 +459,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
     if (!ip || DAT_07eaa154 >= 28)
         return;
 
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr short ITEM_WING_BASE = 384;
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
     constexpr int C_RED = 2;
@@ -748,12 +741,8 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
     if (!ip || !p || DAT_07eaa154 >= 28)
         return;
 
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr short ITEM_BOW_BASE = 128;
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     constexpr int C_WHITE = 0;
 
     auto addLine = [](const char* text, int color, bool bold = false) {
@@ -857,14 +846,6 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
     if (!ip || !p || DAT_07eaa154 >= 28)
         return;
 
-    constexpr short ITEM_SWORD_BASE = 0;
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr short ITEM_BOW_BASE = 128;
-    constexpr short ITEM_STAFF_BASE = 160;
-    constexpr short ITEM_GLOVES_BASE = 320;
-    constexpr short ITEM_BOOTS_BASE = 352;
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
 
@@ -888,7 +869,7 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         DAT_07eaa154++;
     };
 
-    const short type = ip->Type;
+    const short type = (short)ItemBehaviorType(ip->Type);   // 0.97.20: rangos por comportamiento
     const int level = (ip->Level >> 3) & 0xF;
 
     if ((type == ITEM_BOW_BASE + 7 || type == ITEM_BOW_BASE + 15) && level >= 1) {
@@ -930,8 +911,6 @@ static bool GetInventorySpecialOptionText(short type, BYTE option, BYTE value, i
 
     dst[0] = '\0';
 
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_WING_BASE = 384;
 
     switch (option) {
     case 18:
@@ -1056,9 +1035,6 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
     if (!ip || !p || DAT_07eaa154 >= 28 || ip->SpecialNum <= 0)
         return;
 
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_SWORD_BASE = 0;
     constexpr int C_WHITE = 0;
     constexpr int C_BLUE = 1;
     constexpr int C_DARKRED = 5;
@@ -1180,7 +1156,7 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAt
     addRequirementLine(GlobalText[73], (int)ip->RequireStrength,  strength, TEXT_COLOR_WHITE);
     addRequirementLine(GlobalText[75], (int)ip->RequireDexterity, agility,  TEXT_COLOR_WHITE);
     addRequirementLine(GlobalText[77], (int)ip->RequireEnergy,    energy,   TEXT_COLOR_WHITE);
-    if (ip->RequireLevel && ip->Type != 0x1ae) {
+    if (ip->RequireLevel && ItemBehaviorType(ip->Type) != 0x1ae) {
         addRequirementLine(GlobalText[76], (int)ip->RequireLevel, level, TEXT_COLOR_WHITE);
     }
 }
@@ -1347,53 +1323,11 @@ static void RII_RequireLine(int textIdx, int required, int have)
     }
 }
 
-// IDA: RenderItemInfo (0x004C4650)
-static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
+// Nombre del item tal como lo arma el tooltip (IDA RenderItemInfo L700-830).
+// `color` sólo se toca en las ramas que lo fijan.
+static void RII_FormatName(const ITEM* ip, const ITEM_ATTRIBUTE* p, short type, int Level,
+                           bool exc, char* name, int& color)
 {
-    const unsigned int attrBase = ItemAttribute_Base();
-    if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
-    const short type = ip->Type;
-    if (type < 0 || type >= 1024) return;
-    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[type];
-    const BYTE* CA = (const BYTE*)CharacterAttribute;
-    if (!CA) return;
-
-    DAT_07eaa154 = 0;
-    DAT_07eaa158 = 0;
-    for (int i = 0; i < 20; ++i) DAT_07e91708[i] = 0;    // memset(TextListColor, 0, 0x50)
-    memset(lpString_07e90798, 0, 30 * 100);             // TextList .. &pPickedItem
-    RII_GAP();
-
-    const int Level = (ip->Level >> 3) & 0xF;
-    const bool exc = (ip->Option1 & 0x3F) != 0;
-
-    // ── Color del nombre (v316) ─────────────────────────────────────────────
-    int color;
-    switch (type) {
-    case 461: case 462: case 399: case 464: case 470:
-    case 465: case 466: case 467: case 432: case 433:
-        color = 3; break;
-    case 170: case 19: case 146:
-        color = 6; break;
-    default:
-        if (ip->SpecialNum && exc) color = 4;
-        else                       color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
-        break;
-    }
-    if (type >= 387 && type <= 390)
-        color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
-
-    // ── Precio (solo con la tienda abierta) ─────────────────────────────────
-    if (type != 460 && (type < 471 || type > 474) && ShopOpened) {
-        char buf[32];
-        RII_Gold(buf, Item_CalculateValue((void*)ip, Sell ? 0 : 1));
-        RII_ADD(color, 1, GlobalText[Sell ? 62 : 63], buf);
-        RII_GAP();
-    }
-
-    // ── Nombre ──────────────────────────────────────────────────────────────
-    const int nameIdx = DAT_07eaa154;
-    char* name = RII_Line(nameIdx);
     if (type >= 471 && type <= 474) {
         sprintf(name, "%s", p->Name);
         color = 3;
@@ -1467,6 +1401,72 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         }
         break;
     }
+}
+
+// 0.97.20: el mismo nombre para el aviso de "levantaste X" (DLL
+// CProtocol::CGItemGetRecv usa su propio GetItemName con las mismas reglas).
+void Item_FormatName(const ITEM* ip, char* name)
+{
+    name[0] = 0;
+    const unsigned int attrBase = ItemAttribute_Base();
+    if (!attrBase || !ip || ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
+    const ITEM_ATTRIBUTE* p = &((const ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
+    int color = 0;
+    RII_FormatName(ip, p, (short)ItemBehaviorType(ip->Type), (ip->Level >> 3) & 0xF,
+                   (ip->Option1 & 0x3F) != 0, name, color);
+}
+
+// IDA: RenderItemInfo (0x004C4650)
+static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
+{
+    const unsigned int attrBase = ItemAttribute_Base();
+    if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
+    if (ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
+    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
+    // 0.97.20: las líneas que el tooltip decide por rango de tipo (durabilidad,
+    // una/dos manos, skill, opciones) usan el vanilla que imita un agregado;
+    // nombre y valores salen de la fila del propio item (`p` / `ip`).
+    const short type = (short)ItemBehaviorType(ip->Type);
+    const BYTE* CA = (const BYTE*)CharacterAttribute;
+    if (!CA) return;
+
+    DAT_07eaa154 = 0;
+    DAT_07eaa158 = 0;
+    for (int i = 0; i < 20; ++i) DAT_07e91708[i] = 0;    // memset(TextListColor, 0, 0x50)
+    memset(lpString_07e90798, 0, 30 * 100);             // TextList .. &pPickedItem
+    RII_GAP();
+
+    const int Level = (ip->Level >> 3) & 0xF;
+    const bool exc = (ip->Option1 & 0x3F) != 0;
+
+    // ── Color del nombre (v316) ─────────────────────────────────────────────
+    int color;
+    switch (type) {
+    case 461: case 462: case 399: case 464: case 470:
+    case 465: case 466: case 467: case 432: case 433:
+        color = 3; break;
+    case 170: case 19: case 146:
+        color = 6; break;
+    default:
+        if (ip->SpecialNum && exc) color = 4;
+        else                       color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
+        break;
+    }
+    if (type >= 387 && type <= 390)
+        color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
+
+    // ── Precio (solo con la tienda abierta) ─────────────────────────────────
+    if (type != 460 && (type < 471 || type > 474) && ShopOpened) {
+        char buf[32];
+        RII_Gold(buf, Item_CalculateValue((void*)ip, Sell ? 0 : 1));
+        RII_ADD(color, 1, GlobalText[Sell ? 62 : 63], buf);
+        RII_GAP();
+    }
+
+    // ── Nombre ──────────────────────────────────────────────────────────────
+    const int nameIdx = DAT_07eaa154;
+    char* name = RII_Line(nameIdx);
+    RII_FormatName(ip, p, type, Level, exc, name, color);
     RII_Style(nameIdx, color, 1);
     DAT_07eaa154 = nameIdx + 1;
     RII_GAP();
@@ -1570,7 +1570,13 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     }
     if (type == 417)                RII_TXT(0, 0, 576);
 
-    if (type >= 384 && type <= 386) {                      // alas de primera
+    // DESVIACION (DLL CustomWing, catálogo 0.97.20): aumento y reducción de
+    // daño del ala custom con sus constantes.
+    if (const CatalogWing* wing = gContentCatalog.GetItemWing(ip->Type)) {
+        RII_ADD(0, 0, GlobalText[577], wing->IncDamageConstA + Level * wing->IncDamageConstB);
+        RII_ADD(0, 0, GlobalText[578], wing->DecDamageConstA + Level * wing->DecDamageConstB);
+        RII_TXT(0, 0, 579);
+    } else if (type >= 384 && type <= 386) {               // alas de primera
         RII_ADD(0, 0, GlobalText[577], 2 * Level + 12);
         RII_ADD(0, 0, GlobalText[578], 2 * Level + 12);
         RII_TXT(0, 0, 579);
@@ -1620,6 +1626,13 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         }
     }
 
+    // ── DESVIACION (0.97.20): líneas propias del item ("tooltip" en
+    // Data/Custom/Items del server), debajo del nombre.
+    for (int i = 0; i < gContentCatalog.GetTooltipCount(ip->Type); ++i) {
+        const Proto::CATALOG_TOOLTIP* line = gContentCatalog.GetTooltipLine(ip->Type, i);
+        if (line) RII_ADD(line->Color, 0, "%s", line->Text);
+    }
+
     // ── Durabilidad (LABEL_307..331) ────────────────────────────────────────
     {
         const bool hasDur =
@@ -1629,7 +1642,9 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
             if (type == 426) RII_ADD(0, 0, GlobalText[95], ip->Durability);
         } else if (type >= 430 && type <= 435) {
             // LABEL_318: sin linea salvo el 426 (que no cae en este rango)
-        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143) {
+        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143 ||
+                   // DESVIACION (DLL ItemStack): los apilables del server muestran la cantidad.
+                   ItemStack_GetMaxStack(type, Level) != 0) {
             RII_ADD(0, 0, GlobalText[69], ip->Durability);
         } else if (type >= 416 && type <= 423) {
             RII_ADD(0, 0, GlobalText[70], ip->Durability);
@@ -1703,9 +1718,9 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 
     // ── Epilogo: alto del recuadro y dibujo (identico al port anterior) ─────
     SIZE sz = { 0, 0 };
-    GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
     const int h = sz.cy * DAT_07eaa158 / 2 + sz.cy * (DAT_07eaa154 - DAT_07eaa158);
-    int y = sy - (int)((float)h / g_fScreenRate_y);
+    int y = sy - (int)((float)h / gWindow.GetScreenRateY());
     if (y < 0) y = sy + 20 * p->Height;
     CharMenu_RenderTextList(sx, y, DAT_07eaa154 < 30 ? DAT_07eaa154 : 30, 0, 2, 1);
 }
@@ -2031,11 +2046,11 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
 
         tStack_6c.cx = 0;
         tStack_6c.cy = 0;
-        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &tStack_6c);
+        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &tStack_6c);
         iVar21 = DAT_07eaa154;
         iStack_70 = (DAT_07eaa154 - DAT_07eaa158) * tStack_6c.cy +
                     (DAT_07eaa158 * tStack_6c.cy) / 2;
-        iVar15 = (int)(uintptr_t)param_2 - (int)((float)iStack_70 / _DAT_055c9b74);
+        iVar15 = (int)(uintptr_t)param_2 - (int)((float)iStack_70 / gWindow.GetScreenRateY());
         if (iVar15 < 0) {
             iVar15 = (int)(uintptr_t)param_2 +
                      (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK)[itemType].Height * 0x14;
@@ -2058,7 +2073,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     if (param_3_v == nullptr || (uintptr_t)param_3_v < 0x100000) return;
     unsigned short* param_3 = (unsigned short*)param_3_v;
     short itemType = (short)*param_3;
-    if (itemType < 0 || (unsigned short)itemType >= 1024) return;
+    if (itemType < 0 || (unsigned short)itemType >= ITEM_MAX_EX) return;
 
     // Class-filter exclusions
     if (itemType > 0x19f && itemType < 0x1a4) return;
@@ -2193,9 +2208,9 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
 
         sz.cx = 0;
         sz.cy = 0;
-        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
         h = (DAT_07eaa154 - DAT_07eaa158) * sz.cy + (DAT_07eaa158 * sz.cy) / 2;
-        yBox = param_2 - (int)((unsigned int)(h * 15 * 32) / DAT_00561570);
+        yBox = param_2 - (int)((unsigned int)(h * 15 * 32) / gWindow.GetHeight());
         if (yBox < 0) {
             yBox = param_2 +
                    (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK_)[itemType].Height * 0x14;

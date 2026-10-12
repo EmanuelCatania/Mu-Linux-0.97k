@@ -26,8 +26,8 @@ void RenderInfomation3D(void)
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
-  GL_SetViewport(0, 0, DAT_0056156c, DAT_00561570);
-  aspect = (float)((double)DAT_0056156c / (double)(int)DAT_00561570);
+  GL_SetViewport(0, 0, gWindow.GetWidth(), gWindow.GetHeight());
+  aspect = (float)((double)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
   GL_SetPerspective(0x3f800000, aspect, (int)DAT_0056154c, DAT_00561550);
 
   glMatrixMode(GL_MODELVIEW);

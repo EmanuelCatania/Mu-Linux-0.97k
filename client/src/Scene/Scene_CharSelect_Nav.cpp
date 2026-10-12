@@ -11,10 +11,12 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Net/ServerCharacterStats.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item);
 // -- Declaraciones de funciones que viven en otros modulos --------------
@@ -477,9 +479,9 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 
 // Sound_PlayFootstep @ 0x00451A90 — Sound_PlayFootstep
 // Plays a terrain-appropriate footstep sound.
-//   World 2 (Lost Tower): tile < 10 and != 3 → snd 10
-//   World 0 or 3 (Lorencia/Devias): tile == 0 → snd 9
-//   World 7 (Devil Square), alive → snd 11
+//   World 2 (Devias): tile < 10 and != 3 → snd 10
+//   World 0 or 3 (Lorencia/Noria): tile == 0 → snd 9
+//   mapa con nado (Atlans) fuera de zona segura → snd 11
 //   Default → snd 8
 // Sound_PlayFootstep (IDA-activated)
 char Sound_PlayFootstep()
@@ -489,16 +491,16 @@ char Sound_PlayFootstep()
   result = *(BYTE *)(Hero + 261);
   if ( result != 30 && result != 31 )
   {
-    if ( World == 2 )
+    if ( gMapManager.GetCurrentMap() == 2 )
     {
       if ( HeroTile != 3 && HeroTile < 10 )
       {
         return PlayBuffer(10, 0, 0);
       }
     }
-    else if ( World && World != 3 )
+    else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != 3 )
     {
-      if ( World == 7 && !*(BYTE *)(Hero + 846) )
+      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)(Hero + 846) )   // IDA: World == 7
       {
         return PlayBuffer(11, 0, 0);
       }
@@ -1264,7 +1266,7 @@ static void Quest_SendState(void *pThis)
     pkt[2] = 0xA2;
     pkt[3] = *(BYTE *)((int)pThis + 0x1c87a);   // indice de quest actual
     pkt[4] = 0x01;
-    Net_SendSmallPacket(pkt, 5);
+    gNetwork.Send(pkt, 5);
 }
 
 void __fastcall FUN_00401af0(void *param_1)
@@ -1364,12 +1366,6 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     // Anti-tamper: local_d58[0..0x1f] re-initialized repeatedly — compiler artifact, skipped.
     // Envío por socket vía SocketClientSocket, con cola de WSAEWOULDBLOCK en SocketClientSendBuffer.
 
-    static const unsigned char xorKey[32] = {
-        0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
-        0x23, 0xa8, 0xfe, 0xb6, 0x49, 0x5d, 0x39, 0x5d,
-        0x8a, 0xcb, 0x63, 0x8d, 0xea, 0x7d, 0x2b, 0x5f,
-        0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
-    };
 
     // Build packet buffer (max 0x401 bytes)
     unsigned char pktBuf[0x401];
@@ -1384,7 +1380,7 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     {
         unsigned int idx = 3;
         unsigned int keyIdx = idx & 0x1f;
-        pktBuf[idx] = pktBuf[idx] ^ xorKey[keyIdx] ^ pktBuf[idx - 2];
+        pktBuf[idx] = pktBuf[idx] ^ CNetwork::XorKey[keyIdx] ^ pktBuf[idx - 2];
     }
 
     // Escribe el payload de 4 bytes en el offset 4, y después lo encripta con XOR
@@ -1393,7 +1389,7 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
         *(int*)(pktBuf + payloadLen) = param_2;
         for (unsigned int i = payloadLen; i < payloadLen + 4; i++) {
             unsigned int keyIdx = i & 0x1f;
-            pktBuf[i] = pktBuf[i] ^ xorKey[keyIdx] ^ pktBuf[i - 2];
+            pktBuf[i] = pktBuf[i] ^ CNetwork::XorKey[keyIdx] ^ pktBuf[i - 2];
         }
         payloadLen = 8;
     }
@@ -1405,7 +1401,7 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
         *(unsigned short*)(pktBuf + 1) = payloadLen;
     }
 
-    Net_SendSmallPacket(pktBuf, payloadLen);
+    gNetwork.Send(pktBuf, payloadLen);
 }
 
 // IDA: STRUCT_ENCRYPT (0x0043D1D0)
@@ -1913,6 +1909,9 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
     DWORD c = DAT_07abf5d0 + 916 * Key;
     if (*(WORD*)(c + 2) != 390) return;
+    // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
+    // el ala custom (más abajo).
+    gContentCatalog.ClearEntityParts((const void*)(uintptr_t)c);
 
     // Helmet (slot 0)
     if (Equipment[0] == 0xFF) {
@@ -1933,6 +1932,18 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     if (((Equipment[4] >> 2) & 3) == 3) {
         if ((Equipment[8] & 7) != 0) {
             *(WORD*)(c + 672) = (WORD)((Equipment[8] & 7) + 786);
+        } else {
+            *(WORD*)(c + 0x2A0) = (WORD)-1;
+            *(BYTE*)(c + 0x2A3) = 0;
+        }
+    } else if ((Equipment[8] & 7) != 0) {
+        // DESVIACION (DLL CustomWingChangeCharacterExt, ahora catálogo
+        // 0.97.20): con los bits del ala vanilla en 0..2, Equipment[8] & 7 es
+        // el índice + 1 del ala custom (ObjectManager del server).
+        const int wingItem = gContentCatalog.GetWingItem((Equipment[8] & 7) - 1);
+        if (wingItem >= 0) {
+            *(WORD*)(c + 672) = (WORD)ItemEntityModel(wingItem);
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, 7, wingItem);
         } else {
             *(WORD*)(c + 0x2A0) = (WORD)-1;
             *(BYTE*)(c + 0x2A3) = 0;
@@ -2116,6 +2127,8 @@ void __cdecl BuxConvert_0(int buf, int len) {
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
 int __cdecl Stats_CalcMagicDmgRange(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     unsigned short energy = *(unsigned short*)(param_1 + 26);
     unsigned short *minPtr = (unsigned short*)(param_1 + 70);
     unsigned short *maxPtr = (unsigned short*)(param_1 + 72);
@@ -2191,6 +2204,8 @@ void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* p
 //   this[29] = 5*this[7] + (this[10] >> 2) + (this[11] * 3) / 2
 // donde this es un puntero WORD; los offsets +14, +20, +22 y +58 van en bytes.
 int __cdecl Stats_CalcAddStrength(short *param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     int v = 5 * (unsigned short)param_1[7]
           + ((unsigned short)param_1[10] >> 2)
           + ((unsigned short)param_1[11] * 3) / 2;
@@ -2211,6 +2226,8 @@ int __cdecl Stats_CalcAddStrength(short *param_1) {
 //   Flag de estado (this+40 bit 0): +20 a los dos.
 //   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
 int __cdecl CalculateAttackSpeed(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2302,6 +2319,8 @@ int __cdecl CalculateAttackSpeed(int param_1) {
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
 int __cdecl Stats_CalcDefense(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2353,6 +2372,8 @@ int __cdecl Stats_CalcDefense(int param_1) {
 // Then iterates 7 equipment slots checking durability-scaled rate bonus.
 // Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
 int __cdecl Stats_CalcDefenseRate(int param_1) {
+    // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
+    if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;

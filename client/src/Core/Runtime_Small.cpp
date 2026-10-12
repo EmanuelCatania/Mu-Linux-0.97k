@@ -9,6 +9,8 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -114,10 +116,10 @@ void __cdecl InitPartyList(void) {
 }
 
 // CenterMouseX @ 0x005110D0 (13 bytes)
-void __cdecl CenterMouseX(void) { MouseX = (unsigned int)WindowWidth >> 1; }
+void __cdecl CenterMouseX(void) { MouseX = (unsigned int)gWindow.GetWidth() >> 1; }
 
 // CenterMouseY @ 0x005110F0 (13 bytes)
-void __cdecl CenterMouseY(void) { MouseY = (unsigned int)WindowHeight >> 1; }
+void __cdecl CenterMouseY(void) { MouseY = (unsigned int)gWindow.GetHeight() >> 1; }
 
 
 // ── 15-byte ─────────────────────────────────────────────────────────────────
@@ -328,7 +330,7 @@ int __fastcall Stats_CalcBase(int a1) {
         // hace en los 3 slots de abajo).  Alla es inofensivo porque
         // ItemAttribute[-1] cae dentro de su propio segmento de datos; aca no.
         short wType = *(short*)(a1 + 1012);
-        if (wType < 0 || wType >= 1024) goto skip_wings;
+        if (wType < 0 || wType >= ITEM_MAX_EX) goto skip_wings;
         {
         ITEM_ATTRIBUTE* attr = &ITEM_ATTR[wType];
         float durP = CalcDurabilityPercent(*(unsigned char*)(a1 + 1038),
@@ -352,7 +354,7 @@ skip_wings: ;
         unsigned char dur = *(unsigned char*)(wp_L + 26);
         if (dur != 0) {
             short sType = *(short*)wp_L;
-            if (sType < 0 || sType >= 1024) sType = 0;
+            if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
                                                *(int*)(wp_L + 4),
@@ -384,7 +386,7 @@ skip_wings: ;
         unsigned char dur = *(unsigned char*)(wp_R + 26);
         if (dur != 0) {
             short sType = *(short*)wp_R;
-            if (sType < 0 || sType >= 1024) sType = 0;
+            if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
                                                *(int*)(wp_R + 4),
@@ -605,14 +607,9 @@ WORD __cdecl DecryptCheckSumKey(WORD wSource) {
     return (uVar1 >> 6 ^ uVar1) & 0xf ^ uVar1 >> 6;
 }
 
-// StopMusic @ 0x00513420 (32 bytes) — corta los 6 BGM de la tabla.
-//
-// IDA:  v0 = g_lpszMp3;  do { StopMp3(*v0++, 0); } while ((int)v0 < (int)&g_iCurrentDialogScript);
-// El bound `< 0x5615DC` es &g_lpszMp3[6], asi que son 6 iteraciones (la tabla
-// está en globals.cpp).
+// IDA: StopMusic (0x00513420) — corta la música del mapa; ver CMapManager.
 void __cdecl StopMusic(void) {
-    for (int i = 0; i < 6; i++)
-        StopMp3(g_lpszMp3[i], 0);
+    gMapManager.StopMusic();
 }
 
 // ── 33-byte ─────────────────────────────────────────────────────────────────

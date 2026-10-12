@@ -101,7 +101,7 @@ void __cdecl AmbientParticles_Update(void)
 
     local_20 = 0;
     puVar9 = (unsigned int *)DAT_083a2f78;   // base of pool (now real array)
-    iVar8  = World;
+    iVar8  = gMapManager.GetCurrentMap();
 
     // Las comparaciones del original contra 0x83a34ac / 0x83a40cf son direcciones
     // absolutas del binario; acá los bounds son relativos al array real
@@ -140,15 +140,15 @@ void __cdecl AmbientParticles_Update(void)
                 uVar6  = (unsigned int)lVar12;
                 lVar12 = (long long)(unsigned int)__ftol();
                 iVar7  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
-                iVar8  = World;
+                iVar8  = gMapManager.GetCurrentMap();
 
                 // ── Spawn logic per game state ────────────────────────────────
-                if (World == 0) {
+                if (gMapManager.GetCurrentMap() == 0) {
                     // Connecting state: water bubble on water tiles
                     if (*(char *)((int)&TerrainMappingLayer1 + iVar7) == '\x05') goto LAB_0050245e;
                     goto switchD_caseD_2;
                 }
-                if (World == 1) {
+                if (gMapManager.GetCurrentMap() == 1) {
                     bVar2 = (unsigned char)DAT_0838bc70[iVar7];
                     goto joined_spawn_check;
                 }
@@ -181,7 +181,7 @@ LAB_0050245e:
                     puVar9[-0x22] = uVar6;  // lifetime = rand & 0x7f
 
                     uVar6 = _rand();
-                    iVar8 = World;
+                    iVar8 = gMapManager.GetCurrentMap();
                     uVar6 &= 0x80000003;
                     if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
                     puVar9[-4]    = 0x41500000; // size = 13.0f
@@ -199,7 +199,7 @@ LAB_0050245e:
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[0x1f] = (unsigned int)((float)(int)(uVar6 + 2) * _DAT_005524f4);
                         *(float*)&puVar9[-7] = _DAT_00552534 / *(float*)&puVar9[-0x37];
-                        iVar8 = World;
+                        iVar8 = gMapManager.GetCurrentMap();
                         break;
                     case 1:
                         fVar3 = _DAT_00552534 / fVar3;
@@ -219,7 +219,7 @@ LAB_0050245e:
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[-0x37] = (unsigned int)((float)(int)(uVar6 + 8) * _DAT_005524f4);
                         // More snow-specific initialization follows in binary...
-                        iVar8 = World;
+                        iVar8 = gMapManager.GetCurrentMap();
                         break;
                     case 8:
                         // Type 0xb3 — lightning bolt
@@ -240,7 +240,7 @@ LAB_0050245e:
                                      (float *)(puVar9 + -0x33), 4,
                                      (int)(puVar9 + -0x3a),
                                      30.0f, -1, 0);
-                        iVar8 = World;
+                        iVar8 = gMapManager.GetCurrentMap();
                         break;
                     }
                 }
@@ -294,7 +294,7 @@ switchD_caseD_2:
                 local_c[2] = 0.0f;
                 Vector_Rotate(local_c, (float *)(puVar9 + -0x16), &local_18);
 
-                bVar10 = (World != 7);
+                bVar10 = (gMapManager.GetCurrentMap() != 7);
                 *pfVar1 = local_18 + *pfVar1;            // pos_x += vel_x
                 *(float*)&puVar9[-0x35] = local_14 + *(float*)&puVar9[-0x35]; // pos_y
                 *(float*)&puVar9[-0x34] = local_10 + *(float*)&puVar9[-0x34]; // pos_z
@@ -330,7 +330,7 @@ switchD_caseD_2:
                     iVar8 = puVar9[-0x39] + 1;
                     puVar9[-0x39] = iVar8;
                 } else {
-                    if (World == 7 || World == 8) {
+                    if (gMapManager.GetCurrentMap() == 7 || gMapManager.GetCurrentMap() == 8) {
                         bVar2 = (unsigned char)DAT_0838bc70[iVar8];
                         if ((bVar2 == 1) || (7 < bVar2)) {
                             fVar3 = (float)puVar9[-0x31] + _DAT_005524ec;
@@ -395,7 +395,7 @@ skip_decrement:
             }
 
             Alpha((int)(puVar9 + -0x3a));  // commit particle state
-            iVar8 = World;
+            iVar8 = gMapManager.GetCurrentMap();
         }
 
 LAB_00502b38:

@@ -40,6 +40,8 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -145,11 +147,11 @@ bool __cdecl CheckFullSet(int c) {
         v3 -= 12;  // -24 bytes (= 12 shorts) — previous body part
         if (v2 < v1) {
             // All required parts present; check set match
-            int v4 = (*(short*)(c + 600) - 400) % 16;  // Boot set_id
+            int v4 = (*(short*)(c + 600) - ITEM_MODEL_BASE) % 16;  // Boot set_id
             int v5 = 5;
             int v6 = *(unsigned char*)(c + 602) & 0xF;  // Boot level
             short* v7 = (short*)(c + 600);
-            while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - 400) % 16) {
+            while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - ITEM_MODEL_BASE) % 16) {
                 if (v6 >= ((v7[1]) & 0xF)) {
                     v6 = (v7[1]) & 0xF;
                     EquipmentLevelSet = v6;
@@ -579,7 +581,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
 
     // `World` es macro a World (structs.h:389): usar otro nombre o el
     // local se sombrearia a si mismo.
-    const int iWorld = (int)World;
+    const int iWorld = (int)gMapManager.GetCurrentMap();
     const unsigned char anim = *(unsigned char*)(o + 0x105);
 
     // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).
@@ -587,7 +589,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
         Bind = 1;
     else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
         Bind = 1;
-    else if (iWorld == 7 && (anim == 21 || anim == 29))
+    else if (gMapManager.IsSwimmable(iWorld) && (anim == 21 || anim == 29))   // IDA: World == 7
         Bind = 1;
 
     if (iWorld >= 11 && iWorld <= 16)               // InBloodCastle()

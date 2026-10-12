@@ -68,6 +68,7 @@
 // +0x17c = base_level (int)
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include <windows.h>
@@ -93,6 +94,9 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // Net result: entity[0x388] = grid_x, entity[0x38c] = grid_y.
     // Omitted per project policy (hash table operations are not game logic).
     // ─────────────────────────────────────────────────────────────────────────
+
+    // 0.97.20: la entidad nueva no hereda los modelos propios del slot.
+    gContentCatalog.ClearEntityParts(param_1);
 
     unsigned int grid_x      = (unsigned int)PositionX;
     unsigned int grid_y      = (unsigned int)PositionY;
@@ -185,13 +189,13 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // World Z: terrain height + height offset based on entity type / state
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10),
                                   *(float*)(param_1 + 0x14));
-    if (World == -1 ||
+    if (gMapManager.GetCurrentMap() == -1 ||
         *(short *)(param_1 + 0x2b8) != (short)0x333 ||
         param_1[0x34e] != '\0')
     {
         // Normal spawn
     }
-    else if (World == 8 || World == 10) {
+    else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
         terrainH += (float)_DAT_00552848;
     }
     else {

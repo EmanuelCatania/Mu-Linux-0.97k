@@ -1,6 +1,7 @@
 // Item_EquipmentQueries.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -30,8 +31,9 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
     if ((caBytes[11] & 7) != 2)                       // IDA: CharacterAttribute + 11
         return -1;
 
-    const short slot0 = *(const short*)(cmBytes + 536);   // IDA: v6
-    const short slot1 = *(const short*)(cmBytes + 604);   // IDA: v28
+    // 0.97.20: un arco o ballesta agregado se trata como el vanilla que imita.
+    const short slot0 = (short)ItemBehaviorType(*(const short*)(cmBytes + 536));   // IDA: v6
+    const short slot1 = (short)ItemBehaviorType(*(const short*)(cmBytes + 604));   // IDA: v28
 
     int weaponGroup;                                       // IDA: v12
     if ((slot1 >= 128 && slot1 < 135) || slot1 == 145)

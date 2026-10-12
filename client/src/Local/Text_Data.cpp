@@ -14,6 +14,7 @@
 // an empty pool (UI strings just render blank rather than killing the client).
 
 #include "stdafx.h"
+#include "Local/ClientText.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -88,7 +89,9 @@ int __cdecl LoadTextData_Bin(const char *FileName)
 void __cdecl OpenTextData(void)
 {
     if (DAT_0055a7c4) {
-        LoadTextData_Bin("Data\\Local\\Text.bmd");
+        // DESVIACION (DLL Language.cpp): Text_<idioma>.bmd si hay selección.
+        char path[MAX_PATH];
+        LoadTextData_Bin(LocalizedDataPath("Data\\Local\\Text", ".bmd", path, sizeof(path)));
         OpenMacro("Data\\Macro.txt");   // macros de chat (Alt+1..0)
     } else {
         // Plain-text branch — not taken in our build, but implement for parity.

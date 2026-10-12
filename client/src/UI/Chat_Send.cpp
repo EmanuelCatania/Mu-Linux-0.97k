@@ -117,53 +117,9 @@ void __cdecl SendChat(char* Text) {
 
     short totalLen = (short)pos;
 
-    // XOR-encrypt payload bytes 3..pos with 32-byte key (chained XOR)
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-    // IDA 004C1B90 encrypts each payload byte against the PREVIOUS
-    // transmitted byte (the opcode for the first character), in ascending
-    // order.  Using pkt[i+1] here changes the command text before MuEmu sees
-    // it, which is especially visible with /move destinations.
-    // Encrypt hero ID region (bytes 3..12).
-    for (int i = 3; i < 13 && i < pos; i++) {
-        pkt[i] ^= xorKey[i & 0x1f] ^ pkt[i - 1];
-    }
-    // Encrypt text region (bytes 13..pos)
-    for (int i = 13; i < pos; i++) {
-        pkt[i] ^= xorKey[i & 0x1f] ^ pkt[i - 1];
-    }
-
-    // Fix header length
     pkt[1] = (BYTE)totalLen;
 
-    // Send via socket — SocketClientSocket is the socket handle
-    SOCKET sock = (SOCKET)SocketClientSocket;
-    if (sock != INVALID_SOCKET) {
-        int sent = 0;
-        int toSend = (int)(totalLen & 0xffff);
-        while (sent < toSend) {
-            int ret = send(sock, (char*)(pkt + sent), toSend - sent, 0);
-            if (ret == SOCKET_ERROR) {
-                int err = WSAGetLastError();
-                if (err != WSAEWOULDBLOCK) {
-                    CWsctlc_Close(((int)(uintptr_t)SocketClient));
-                    return;
-                }
-                if ((int)(SocketClientSendBufferLength + (DWORD)toSend) > 0x2000) {
-                    CWsctlc_Close(((int)(uintptr_t)SocketClient));
-                    return;
-                }
-                memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, toSend);
-                SocketClientSendBufferLength += (DWORD)toSend;
-                return;
-            }
-            if (ret == 0) return;
-            if (SocketClientLogPrint != 0) FUN_0043de60();
-            sent += ret;
-        }
-    }
+    // IDA 004C1B90 cifra cada byte contra el ANTERIOR ya transmitido (chain-XOR
+    // ascendente desde el byte 3); es el mismo que aplica CNetwork en los C1.
+    gNetwork.SendC1(pkt, totalLen);
 }

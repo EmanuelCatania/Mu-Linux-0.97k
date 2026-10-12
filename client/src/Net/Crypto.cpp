@@ -15,6 +15,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Net/Ping.h"
 
 void __fastcall FUN_00401af0(void*);
 void  __fastcall SpringNode_Ctor(void *node);
@@ -755,7 +756,6 @@ void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
 
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // sub_402850 @ 0x00402850 (1774 bytes) — input de la ventana de quest del NPC.
 // IDA, sacando el ruido anti-tamper del armado del paquete:
@@ -782,6 +782,14 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
     if ((484 < DAT_083a427c) && (DAT_083a427c < 605) &&
         (354 < DAT_083a4278) && (DAT_083a4278 < 379) &&
         (DAT_083a4124 != 0)) {
+        // IDA: sub_402850 (0x00402850).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
+        if (*(BYTE*)((BYTE*)param_1 + 0x1c882) == 3) {
+            DAT_083a4124 = 0;
+            DAT_07e11d28 = 0;
+            DAT_00559bec = 6;
+            goto closeButton;
+        }
         // Mismo paquete que las respuestas del diálogo (ver Quest_SendState en
         // Scene_CharSelect_Nav.cpp): el server sólo lee QuestIndex y avanza el
         // estado él mismo.
@@ -791,13 +799,14 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         pkt[2] = 0xA2;
         pkt[3] = *(BYTE *)((int)param_1 + 0x1c87a);   // índice de quest actual
         pkt[4] = 0x01;
-        Net_SendSmallPacket(pkt, 5);
+        gNetwork.Send(pkt, 5);
 
         DAT_083a4124 = 0;                       // MouseLButtonPush
         DAT_083a42c4 = 0;                       // MouseLButton
         PlayBuffer(28, 0, 0);
     }
 
+closeButton:
     // Botón de cerrar.
     if ((0x1da < DAT_083a427c) && (DAT_083a427c < 499) &&
         (0x18a < DAT_083a4278) && (DAT_083a4278 < 0x1a3) &&
@@ -1362,6 +1371,7 @@ void __cdecl InitGuildWar(void) {
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
 void __cdecl CWsctlc_Close(int ctx) {
+    gNetwork.ResetSessionData();
     SocketClientIsGame = 0; // g_bGameServerConnected
     closesocket(*(SOCKET *)(ctx + 8));
     *(int *)(ctx + 8) = -1; // INVALID_SOCKET

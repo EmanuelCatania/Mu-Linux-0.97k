@@ -20,9 +20,12 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
+#include "UI/EventTimer.h"
 #include <gl/GL.h>
 
 extern "C" BYTE OffsetInventoryItems[];
@@ -99,7 +102,8 @@ static bool HUD_IsAnyRightPanelOpen(void)
            GuildOpened || GuildCreatorOpened ||
            HUD_IsGoldenArcherPanelRuntime() ||
            HUD_IsQuestPanelOpenRuntime() ||
-           (ServerDivisionOpened != '\0');
+           (ServerDivisionOpened != '\0') ||
+           gEventTimer.IsOpen();   // DESVIACION: panel H (UI/EventTimer.cpp)
 }
 
 // ── Helper PORTS ─────────────────────────────────────────────────────────────
@@ -124,9 +128,9 @@ SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
     UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
 
     int n = lstrlenA(lpString);
-    GetTextExtentPointA(m_hFontDC, lpString, n, &TextSize);
-    TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
-    TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+    GetTextExtentPointA(gFont.GetTextDC(), lpString, n, &TextSize);
+    TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
+    TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
     return &TextSize;
 }
 
@@ -182,6 +186,16 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
     return xa;
 }
 
+// RenderNumber2D arranca en x - len*Width/2 y avanza 0.7*Width por cifra, así
+// que el centro visual queda en x - 0.15*Width*(len-1).  Esto lo compensa para
+// centrar el número en `centerX` (HUD de vida, mana y AG).
+void RenderNumberCentered(float centerX, float y, int num)
+{
+    char digits[16];
+    const int len = wsprintfA(digits, "%d", num);
+    RenderNumber2D(centerX + 0.15f * 9.0f * (len - 1), y, num, 9.0f, 10.0f);
+}
+
 // GetScreenWidth — sub_4CB520.  Returns the X coord at which the bottom-
 // HUD's "right edge" sits, depending on which UI panels are open.
 //   * Inventory + (Character | Shop | Warehouse | ChaosMix | Trade | Event)
@@ -218,7 +232,7 @@ extern "C" void __cdecl Render_ChatBox_(void);
 void Render_ChatBox_(void)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!(InputEnable || DAT_07e11d71)) return;
 
@@ -227,11 +241,11 @@ void Render_ChatBox_(void)
     GL_DrawTexture(249, 320.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
     EnableAlphaTest(true);
 
-    InputTextWidth = 180 * (int)WindowWidth / 0x280;
-    if ((int)(180 * WindowWidth / 0x280) > 256) InputTextWidth = 256;
+    InputTextWidth = 180 * (int)gWindow.GetWidth() / 0x280;
+    if ((int)(180 * gWindow.GetWidth() / 0x280) > 256) InputTextWidth = 256;
     RenderInputText(191, 422, 0);
 
-    InputTextWidth = 50 * (int)WindowWidth / 0x280;
+    InputTextWidth = 50 * (int)gWindow.GetWidth() / 0x280;
     RenderInputText(376, 422, 1);
 
     int v0 = (int)dword_55C9CC4;
@@ -247,10 +261,10 @@ void Render_ChatBox_(void)
         if (v1 != v0) {
             UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
             int n = lstrlenA(v2);
-            GetTextExtentPointA(m_hFontDC, v2, n, &TextSize);
-            TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
+            GetTextExtentPointA(gFont.GetTextDC(), v2, n, &TextSize);
+            TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             v0 = (int)dword_55C9CC4;
-            TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+            TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         }
         v2 += 256;
         ++v1;
@@ -300,7 +314,7 @@ char Render_CharInfoPanel_(void)
     if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + 474) != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
@@ -311,7 +325,7 @@ char Render_CharInfoPanel_(void)
         int iPos_x = (int)x + 13;
         UI_DrawText(iPos_x, 4, String, 0, 1, 0);
         int n = lstrlenA(String);
-        GetTextExtentPointA(m_hFontDC, String, n, &TextSize);
+        GetTextExtentPointA(gFont.GetTextDC(), String, n, &TextSize);
 
         const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
         int v2 = (int)x + 30;
@@ -341,7 +355,7 @@ LABEL_7:
         EnableAlphaTest(true);
         v24_y0 = 4.0f;
         x = 320.0f - 20.0f;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF008000u;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
@@ -414,7 +428,7 @@ int RenderEquipedHelperLife_(bool a2)
     DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;
 
-    if (helperType >= 816 && helperType <= 819) {
+    if (helperType >= MODEL_HELPER_ANGEL && helperType <= MODEL_HELPER_DINORANT) {
         const float posY = a2 ? 24.0f : 4.0f;
 
         // x = GetScreenWidth() - 50.0 - (PartyNumber > 0 ? 50.0 : 0.0) - 15.0
@@ -432,12 +446,17 @@ int RenderEquipedHelperLife_(bool a2)
         const int bar = 50 * (int)life / 255;
 
         const char* text = "";
-        if (helperType == 818)      text = GlobalText[355];
-        else if (helperType == 819) text = GlobalText[354];
-        else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
+        // 0.97.20: un helper agregado (>= 512) muestra su propio nombre; el
+        // comportamiento sólo decide la lógica de pet o montura.
+        const short helperItem = CharacterMachine ? *(const short*)((const BYTE*)CharacterMachine + 1080) : -1;
+        if (helperItem >= ITEM_MAX_VANILLA && helperItem < ITEM_MAX_EX && ItemAttribute)
+            text = ItemAttribute[helperItem].Name;
+        else if (helperType == MODEL_HELPER_UNIRIA) text = GlobalText[355];
+        else if (helperType == MODEL_HELPER_DINORANT) text = GlobalText[354];
+        else if (ItemAttribute)     text = ItemAttribute[helperType - ITEM_MODEL_BASE].Name;
         if (!text) text = "";
 
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
@@ -446,8 +465,8 @@ int RenderEquipedHelperLife_(bool a2)
         // y x+50 como 2do arg).  Nuestra reimplementacion de esa funcion toma
         // (x, y, texto), asi que el centrado se calcula aca.
         SIZE ts = { 0, 0 };
-        GetTextExtentPointA(m_hFontDC, text, lstrlenA(text), &ts);
-        ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
+        GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &ts);
+        ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
         Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
@@ -464,15 +483,15 @@ int RenderEquipedHelperLife_(bool a2)
     if (SummonLife) {
         const float xs = (float)GetScreenWidth() - 50.0f - 150.0f;
 
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
         SIZE ts = { 0, 0 };
-        GetTextExtentPointA(m_hFontDC, summonText, lstrlenA(summonText), &ts);
-        ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
+        GetTextExtentPointA(gFont.GetTextDC(), summonText, lstrlenA(summonText), &ts);
+        ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
         Text_MeasureBox(textX, 4, summonText, 0, 0, 0);
@@ -539,7 +558,8 @@ void RenderBrokenItem_(int a1)
             ITEM_ATTRIBUTE* v19 = (ITEM_ATTRIBUTE*)(attrBase + (unsigned)v12 * 64);
 
             // Skip excluded item types: 135, 143, 416..419
-            if (v12 != 135 && v12 != 143 && (v12 < 416 || v12 > 419)) {
+            const int kind = ItemBehaviorType((short)v12);   // 0.97.20
+            if (kind != 135 && kind != 143 && (kind < 416 || kind > 419)) {
                 int level = (*(int*)(v13 + 4) >> 3) & 0xF;
                 int v30 = (int)Item_CalculateMaxDurability((void*)v13, (int)v19, level);
                 if (*(WORD*)v13 == 426) v30 = 200;

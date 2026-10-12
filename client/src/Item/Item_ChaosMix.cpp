@@ -3,6 +3,7 @@
 // Validación de recetas del chaos mix y su helper del panel de inventario.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -360,6 +361,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     ++*(int*)(counts + 1);
 
                     int attrBase = DAT_07d78068 + itemType * 0x40;
+                    const int kind = ItemBehaviorType(itemType);   // 0.97.20: rangos y recetas por comportamiento
                     int attrW = *(unsigned char*)(attrBase + 0x20);
                     int attrH = *(unsigned char*)(attrBase + 0x21);
                     // 004E40F0 compares directly against ITEM_ATTRIBUTE; it
@@ -371,7 +373,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     char* socketFlagPtr = 0;
                     bool scanSocketFlag = false;
 
-                    if (itemType < 384 || itemType <= 390) {
+                    if (kind < ITEM_WING_ELF || kind <= ITEM_WING_DARKNESS) {
                         if (itemLevel == 9) {
                             ++*(int*)(counts + 21);
                             DAT_07eaa178 = 0;
@@ -385,10 +387,10 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         }
                     }
 
-                    switch (itemType) {
-                    case 384:
-                    case 385:
-                    case 386:
+                    switch (kind) {
+                    case ITEM_WING_ELF:
+                    case ITEM_WING_HEAVEN:
+                    case ITEM_WING_SATAN:
                     {
                         ++*(int*)(counts + 53);
                         DAT_07eaa170 = 0;
@@ -406,10 +408,10 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         }
                         break;
                     }
-                    case 399:
+                    case ITEM_JEWEL_CHAOS:
                         ++*(int*)(counts + 5);
                         break;
-                    case 418:
+                    case ITEM_HELPER_UNIRIA:
                         if (*(unsigned char*)(itemPtr + 26) == 0xFF) {
                             ++*(int*)(counts + 37);
                         }
@@ -425,10 +427,10 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         levelB1 = itemLevel;
                         ++*(int*)(counts + 73);
                         break;
-                    case 461:
+                    case ITEM_JEWEL_BLESS:
                         ++*(int*)(counts + 29);
                         break;
-                    case 462:
+                    case ITEM_JEWEL_SOUL:
                         ++*(int*)(counts + 33);
                         break;
                     case 465:
@@ -439,13 +441,13 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         levelD2 = itemLevel;
                         ++*(int*)(counts + 17);
                         break;
-                    case 470:
+                    case ITEM_JEWEL_CREATION:
                         ++*(int*)(counts + 45);
                         break;
                     default:
                     {
                         bool foundExcellent = false;
-                        if (itemType < 384 && itemLevel >= 4) {
+                        if (kind < ITEM_WING_ELF && itemLevel >= 4) {
                             DAT_07eaa178 = 0;
                             scanSocketFlag = true;
                             socketFlagPtr = (char*)&DAT_07eaa178;
@@ -456,7 +458,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                             unsigned char v = *(unsigned char*)(itemPtr + 37 + i);
                             if (v >= 0x3C && v <= 0x3F && !foundExcellent) {
                                 ++*(int*)(counts + 9);
-                                if (itemType == 70 || itemType == 134 || itemType == 167) {
+                                if (kind == 70 || kind == 134 || kind == 167) {
                                     ++*(int*)(counts + 65);
                                 }
                                 foundExcellent = true;

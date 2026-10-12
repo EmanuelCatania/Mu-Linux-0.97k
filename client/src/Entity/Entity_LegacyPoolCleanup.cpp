@@ -1,13 +1,13 @@
 // Entity_LegacyPoolCleanup.cpp — DeleteCharacter y DeleteEffect.
 
 #include "stdafx.h"
+#include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
 #include "Party/Party.h"
 
 extern void __cdecl operator_delete(void* ptr);
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
@@ -41,6 +41,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 extern void __cdecl DeleteCloth(int c, int o, int flag);  // DeleteCloth
 extern "C" void __cdecl DeleteCharacter(int Key)
 {
+    gHealthBar.Remove((WORD)Key);
     DWORD v1 = (DWORD)DAT_07abf5d0;
     int v2 = 0;
     while (!*(BYTE*)v1 || *(short*)(v1 + 0x1DC) != (short)Key) {

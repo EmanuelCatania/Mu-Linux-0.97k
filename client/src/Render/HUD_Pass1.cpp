@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -96,25 +97,25 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     GetLastError();
     int n;
     n = lstrlenA(lpString);
-    GetTextExtentPoint32A(m_hFontDC, lpString, n, &psizl);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString, n, &psizl);
     n = lstrlenA(lpString + 44);
-    GetTextExtentPoint32A(m_hFontDC, lpString + 44, n, &v12);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 44, n, &v12);
     n = lstrlenA(lpString + 300);
-    GetTextExtentPoint32A(m_hFontDC, lpString + 300, n, &v13);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 300, n, &v13);
     n = lstrlenA(lpString + 24);
-    GetTextExtentPoint32A(m_hFontDC, lpString + 24, n, &v14);
+    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 24, n, &v14);
     GetLastError();
 
     int result = psizl.cx + 3;
     if (*((int*)lpString + 140) <= 0) {
         if (*((int*)lpString + 139) <= 0) {
             *((DWORD*)lpString + 144) = (DWORD)(result + v14.cx);
-            *((DWORD*)lpString + 145) = (DWORD)FontHeight;
+            *((DWORD*)lpString + 145) = (DWORD)gFont.GetHeight();
         } else {
             LONG cx = v14.cx + result;
             if (cx <= v12.cx) cx = v12.cx;
             *((DWORD*)lpString + 144) = (DWORD)cx;
-            result = 2 * FontHeight;
+            result = 2 * gFont.GetHeight();
             *((DWORD*)lpString + 145) = (DWORD)result;
         }
     } else {
@@ -126,8 +127,8 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
             if (v12.cx <= v13.cx) v7 = v13.cx;
         }
         *((DWORD*)lpString + 144) = (DWORD)v7;
-        result = FontHeight;
-        *((DWORD*)lpString + 145) = (DWORD)(3 * FontHeight);
+        result = gFont.GetHeight();
+        *((DWORD*)lpString + 145) = (DWORD)(3 * gFont.GetHeight());
     }
     (void)result;
 }
@@ -245,7 +246,7 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 extern "C" void __cdecl RenderBooleans_(void);
 void RenderBooleans_(void)
 {
-    SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     // Pass 1: project owner→screen, set entry [+4]/[+8] (screen X/Y).
     // v0 = (float*)&unk_7E0192C  is base+8 (entry 0's owner field)
@@ -268,7 +269,7 @@ void RenderBooleans_(void)
                 Projection(v0 + 5, &sx, &sy);
             }
             FloatingLabel_MeasureText((int)((LPCSTR)v0 - 564), 0, 0);
-            *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)WindowWidth / 2);
+            *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)gWindow.GetWidth() / 2);
             *((DWORD*)v0 + 2) = (DWORD)(sy - 36);
         }
         v0 += 149;
@@ -288,15 +289,15 @@ void RenderBooleans_(void)
 
             int v5 = v3[3];
             int v6 = v4[3];
-            if (v5 + 640 * v3[5] / (int)WindowWidth <= v6) continue;
-            if (v5 >= v6 + 640 * v4[5] / (int)WindowWidth) continue;
+            if (v5 + 640 * v3[5] / (int)gWindow.GetWidth() <= v6) continue;
+            if (v5 >= v6 + 640 * v4[5] / (int)gWindow.GetWidth()) continue;
 
             int v7 = v3[4];
             int v8 = v4[4];
-            int v13 = 480 * v3[6] / (int)WindowHeight;
+            int v13 = 480 * v3[6] / (int)gWindow.GetHeight();
             if (v7 + v13 <= v8) continue;
 
-            int v9 = 480 * v4[6] / (int)WindowHeight;
+            int v9 = 480 * v4[6] / (int)gWindow.GetHeight();
             if (v7 >= v9 + v8) continue;
 
             if (v7 >= v8 + v9 / 2) v3[4] = v9 + v8;
@@ -338,8 +339,12 @@ void RenderMainFrameWindow_(void)
     m_dwBackColor = 0xFF000000;
 
     // Two corner decorations (bitmap 0xE9 mirrored at x=532).
-    GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
-    GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
+    // DESVIACION (DLL Interface.cpp, 0x004BD300 / 0x004BD332): con el mapa
+    // abierto, los botones de zoom y transparencia ocupan ese lugar.
+    if (!gMiniMap.HidesLeftDragon())
+        GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
+    if (!gMiniMap.HidesRightDragon())
+        GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
     GL_ResetState();   // DisableAlphaBlend
 
     // Bottom tile #1 (left half).
@@ -439,8 +444,8 @@ void Render_HotbarItems3D_(void)
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    GL_SetViewport(0, 0, (int)WindowWidth, (int)WindowHeight);
-    float aspectF = (float)((double)(int)WindowWidth / (double)(int)WindowHeight);
+    GL_SetViewport(0, 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
+    float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;
     int   nearBits = *(int*)&CameraViewNear;

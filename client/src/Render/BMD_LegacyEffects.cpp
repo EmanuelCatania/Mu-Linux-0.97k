@@ -3,6 +3,7 @@
 // (BMD__RenderBodyShadow).
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -79,6 +80,8 @@ void __cdecl BMD__RenderMeshEffect(void *model, int param_1, int param_2)
 // Ojo que no son el mismo criterio: uno compara un campo y el otro el indice.
 void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
 {
+    // DESVIACION (DLL Antilag, 0x00441F0D): sin sombras.
+    if (gUserSettings.GetAntilag(ANTILAG_SHADOWS)) return;
     char *this_ = (char*)model;
     if (*(short*)(this_ + 0x24) == 0) return;
 

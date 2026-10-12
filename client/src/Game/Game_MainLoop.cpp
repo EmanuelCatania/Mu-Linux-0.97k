@@ -9,7 +9,7 @@
 //
 // Frame structure:
 //   1. Net_Recv() poll
-//   2. Busy-wait loop: while (budget > 40ms) { game_logic(); budget -= 40; }
+//   2. Pasos lógicos acumulados de 40 ms; conservan la recuperación tras demoras.
 //   3. GL clear + scene render
 //   4. SwapBuffers
 //   5. Post-render 25fps limiter
@@ -34,6 +34,12 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
+#include "Entity/CharacterAttributeView.h"
+#include "Net/ServerCharacterStats.h"
+#include "Game/FrameLimiter.h"
+#include "Net/Ping.h"
+#include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/Game_SceneUpdate.h"
 #include "Game/Game_EnterWorldTick.h"
@@ -65,7 +71,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     char   nameBuf[256];
     char   tickBuf[100];
     int    renderFlag = 0;
-    DWORD  renderStart;
+    CFrameLimiter::StartTime renderStart;
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -83,6 +89,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // ── RECEIVE INCOMING PACKETS ─────────────────────────────────────────────
     Timer_UpdateFrameTiming();
+    gWindow.UpdateTitle();
     CHK("ML/post_recv");
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
@@ -181,6 +188,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     if (DAT_055ca018 != '\0') return;
 
     // ── PRE-RENDER SETUP ──────────────────────────────────────────────────────
+    gReconnect.Tick();   // DESVIACION (DLL Reconnect.cpp, 0x00525995)
     Sound_Update3DPositions();
     {
         SYSTEMTIME st;
@@ -253,7 +261,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         UIChatLogWindow_AddText((const char*)&DAT_083a7c94, nameBuf, 1);
 
     // ── GL CLEAR ──────────────────────────────────────────────────────────────
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         // Sub-state 10: teal clear color
         glClearColor(*(float*)"\x00\x00\x40\x3c",  // 0.047f
                      *(float*)"\x00\x00\xc8\x3d",  // 0.098f
@@ -300,7 +308,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
-    renderStart = GetTickCount();
+    renderStart = gFrameLimiter.Start();
     renderFlag  = 0;
 
     // ── SCENE RENDER ──────────────────────────────────────────────────────────
@@ -334,15 +342,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/post_swap");
 
     // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    {
-        DWORD now = GetTickCount();
-        DWORD elapsed = now - renderStart;
-        while (elapsed < 0x28) {
-            now = GetTickCount();
-            elapsed = now - renderStart;
-        }
-        DAT_005616b8 += elapsed;
-    }
+    DAT_005616b8 += gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port
@@ -363,41 +363,54 @@ void __cdecl Game_MainLoop(HDC param_1)
     #endif
 
     // ── LIVECLIENT KEEPALIVE (opcode 0x0E) ────────────────────────────────────
-    // El server MuEmu (CGLiveClientRecv) espera C1/0E cada ~1-3 s después de
+    // El server MuEmu (CGLiveClientRecv) espera C3/0E cada ~1-3 s después de
     // OBJECT_LOGGED; si no llega, manda F1/02 sub=0 (Exit). Se envía también desde
     // char-select y durante la carga del mapa, porque el server cierra el socket
     // si el cliente queda en silencio en esa transición.
     //
-    // Packet: [C1] [0x0B] [0x0E] [TickCount:DWORD] [PhysiSpeed:WORD] [MagicSpeed:WORD]
-    // Total = 11 bytes.
+    // DESVIACION MuEmu: Protocol.h::PMSG_LIVE_CLIENT_RECV, 12 bytes con padding.
+    // HackPacketCheck exige C3; gNetwork recibe el C1 lógico y lo cifra.
     #if 1
     if (SocketClientSocket != 0xffffffff &&
-        (SceneFlag == 4 || SceneFlag == 5 || World == 7)) {
+        (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == 7)) {
         static DWORD s_lastLive = 0;
         DWORD now = GetTickCount();
         if (now - s_lastLive >= 1000) {
             s_lastLive = now;
-            BYTE pkt[11];
-            pkt[0]  = 0xC1;
-            pkt[1]  = 0x0B;
-            pkt[2]  = 0x0E;
-            *(DWORD*)(pkt + 3) = now;
-            *(WORD*)(pkt + 7)  = 0;
-            *(WORD*)(pkt + 9)  = 0;
-            Net_SendSmallPacket(pkt, 11);
+            Proto::PMSG_LIVE_CLIENT_RECV pkt{};
+            pkt.header = { 0xC1, sizeof(pkt), 0x0E };
+            pkt.TickCount = now;
+            // F3/E1 ya trae la velocidad del server: no descontar bebida dos veces.
+            if (!gServerCharacterStats.GetSpeeds(pkt.PhysiSpeed, pkt.MagicSpeed) && CharacterAttribute) {
+                const CharacterAttributeView attributes((void*)(uintptr_t)CharacterAttribute);
+                const WORD physical = attributes.PhysicalSpeed();
+                const WORD magic = attributes.MagicSpeed();
+                // Respaldo local como CGLiveClientSend del DLL, sin underflow.
+                const WORD drink = (attributes.Effects() & 9) ? 20 : 0;
+                pkt.PhysiSpeed = physical >= drink ? physical - drink : 0;
+                pkt.MagicSpeed = magic >= drink ? magic - drink : 0;
+            }
+            gPing.RecordSend(pkt.TickCount);
+            gNetwork.Send((const BYTE*)&pkt, sizeof(pkt));
         }
     }
     #endif
 
-    // Login BGM
+    // DESVIACION: IDA 0x525D40 pide g_lpszMp3[1] (MuTheme) en el login, el
+    // mismo tema que Lorencia. Acá el login pide su propio archivo,
+    // Data\Music\MuTheme.mp3, como el DLL (Patchs.cpp parchea ese nombre en
+    // 0x5616D0). El pack no lo trae, así que PlayMp3 no encuentra el archivo y
+    // el login queda sin música, como en el 0.97k con la opción de música en su
+    // default (apagada). Para tener música en el login alcanza con dejar un mp3
+    // con ese nombre. MuTheme es el Lorencia.mp3 del pack (mismo MD5).
     if (SceneFlag == 2)
-        Music_PlayTrack(PTR_DAT_005615c8, 0);
+        Music_PlayTrack((DWORD)(uintptr_t)"Data\\Music\\MuTheme.mp3", 0);
 
     if (SceneFlag != 5) return;
 
-    // ── BGM STATE MACHINE (World) ───────────────────────────────────
-    switch (World) {
-    case 0:  // Connecting
+    // ── Sonidos ambientales por mapa ───────────────────────────────────────
+    switch (gMapManager.GetCurrentMap()) {
+    case 0:  // Lorencia
         if (DAT_07e118e8 == 4) {
             Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
@@ -406,16 +419,16 @@ void __cdecl Game_MainLoop(HDC param_1)
                 PlayBuffer(1, 0, 1);
         }
         break;
-    case 1:  // Entering world
+    case 1:  // Dungeon
         PlayBuffer(3, 0, 1);
         break;
-    case 2:  // In-world
+    case 2:  // Devias
         if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9)
             Sound_StopBuffer(0);
         else
             PlayBuffer(0, 0, 1);
         break;
-    case 3:  // Outdoor
+    case 3:  // Noria
         PlayBuffer(0, 0, 1);
         if ((_rand() & 0x1ff) == 0)
             PlayBuffer(2, 0, 0);  // ambient rare
@@ -432,71 +445,16 @@ void __cdecl Game_MainLoop(HDC param_1)
         break;
     }
 
-    // Stop tracks not active in this sub-state
-    if (World != 0 && World != 2 && World != 3) Sound_StopBuffer(0);
-    if (World != 0 && World != 9)                       Sound_StopBuffer(1);
-    if (World != 1)                                             Sound_StopBuffer(3);
-    if (World != 3)                                             Sound_StopBuffer(2);
-    if (World != 4)                                             Sound_StopBuffer(5);
-    if (World != 7)                                             Sound_StopBuffer(6);
-    if (World != 8)                                             Sound_StopBuffer(7);
-    if (World != 10)                                            Sound_StopBuffer(0x14);
+    // Corta los ambientales de los otros mapas
+    if (gMapManager.GetCurrentMap() != 0 && gMapManager.GetCurrentMap() != 2 && gMapManager.GetCurrentMap() != 3) Sound_StopBuffer(0);
+    if (gMapManager.GetCurrentMap() != 0 && gMapManager.GetCurrentMap() != 9)                       Sound_StopBuffer(1);
+    if (gMapManager.GetCurrentMap() != 1)                                             Sound_StopBuffer(3);
+    if (gMapManager.GetCurrentMap() != 3)                                             Sound_StopBuffer(2);
+    if (gMapManager.GetCurrentMap() != 4)                                             Sound_StopBuffer(5);
+    if (gMapManager.GetCurrentMap() != 7)                                             Sound_StopBuffer(6);
+    if (gMapManager.GetCurrentMap() != 8)                                             Sound_StopBuffer(7);
+    if (gMapManager.GetCurrentMap() != 10)                                            Sound_StopBuffer(0x14);
 
-    // ── WINDOW TITLE (sub-state 0) ────────────────────────────────────────────
-    if (World == 0) {
-        char dead = *(char*)(DAT_07abf5d8 + 0x34e);
-        if (dead != '\0') {
-            if (DAT_07e118e8 == 4)
-                Music_PlayTrack(PTR_DAT_005615c4, 0);
-            else
-                Music_PlayTrack(PTR_DAT_005615c8, 0);
-        }
-    } else {
-        Music_StopTrack(PTR_DAT_005615c4, 0);
-        Music_StopTrack(PTR_DAT_005615c8, 0);
-    }
-
-    // ── SUB-STATE 2: IN-WORLD ANTI-TAMPER CHECK ───────────────────────────────
-    // Tracks entity position fields (0x388, 0x38c) via hash table.
-    // The chain: if val > 0xCC → check again; if < 0xD7 → check 0x38C;
-    // if 0x38C value < 0x20 → BGM_Play(track_cc,0) (login BGM?)
-    // Otherwise BGM_Play(track_d0,0). This is anti-cheat, not game logic.
-    if (World == 2) {
-        char dead = *(char*)(DAT_07abf5d8 + 0x34e);
-        if (dead != '\0') {
-            int val388 = *(int*)(DAT_07abf5d8 + 0x388);
-            if (val388 > 0xcc) {
-                val388 = *(int*)(DAT_07abf5d8 + 0x388); // re-read after hash tracking
-                if (val388 < 0xd7) {
-                    int val38c = *(int*)(DAT_07abf5d8 + 0x38c);
-                    if (val38c > 0xc) {
-                        val38c = *(int*)(DAT_07abf5d8 + 0x38c); // re-read
-                        if (val38c < 0x20) {
-                            Music_PlayTrack(PTR_DAT_005615cc, 0);
-                            goto LAB_00527402;
-                        }
-                    }
-                }
-            }
-            Music_PlayTrack(PTR_DAT_005615d0, 0);
-        }
-    } else {
-        Music_StopTrack(PTR_DAT_005615cc, 0);
-        Music_StopTrack(PTR_DAT_005615d0, 0);
-    }
-
-LAB_00527402:
-    // Sub-state 3 window title
-    if (World == 3) {
-        if (*(char*)(DAT_07abf5d8 + 0x34e) != '\0')
-            Music_PlayTrack(PTR_DAT_005615d4, 0);
-    } else {
-        Music_StopTrack(PTR_DAT_005615d4, 0);
-    }
-
-    // Sub-states 1/5 window title
-    if (World == 1 || World == 5)
-        Music_PlayTrack(PTR_DAT_005615d8, 0);
-    else
-        Music_StopTrack(PTR_DAT_005615d8, 0);
+    // Música de fondo del mapa (IDA 0x00526D0C..0x00527475): ver CMapManager.
+    gMapManager.UpdateMusic();
 }

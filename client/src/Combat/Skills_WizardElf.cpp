@@ -27,7 +27,7 @@ static void SendSkillPacket1E_Local(BYTE skillId, BYTE gridX, BYTE gridY, BYTE d
 static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 {
     if (!pkt || len <= 0) return;
-    Net_SendSmallPacket(pkt, len);
+    gNetwork.Send(pkt, len);
 }
 
 // UseSkillWizard @ 0x004889D0 (~1227 lines)
@@ -70,7 +70,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         BYTE movement[6] = { 0xC1, 6, 0x10,
             *(BYTE*)((BYTE*)(uintptr_t)Hero + 904), *(BYTE*)((BYTE*)(uintptr_t)Hero + 908),
             (BYTE)(16 * (((int)((*(float*)((BYTE*)(uintptr_t)Hero + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
-        Net_SendC1Packet(movement, sizeof(movement));
+        gNetwork.SendC1(movement, sizeof(movement));
         *(BYTE*)((BYTE*)(uintptr_t)c + 748) = 0;
     }
 
@@ -189,14 +189,13 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         BYTE gridX = (BYTE)(int)(*(float*)(heroEntity + 788) * 0.01f);
         BYTE gridY = (BYTE)(int)(*(float*)(heroEntity + 792) * 0.01f);
 
-        // PMSG_DURATION_SKILL_ATTACK uses a 0..255 facing byte. The 97k
-        // Blast sender leaves distance and angle at zero.
-        // 0x4889D0 writes three literal zero bytes after x/y; it does not
-        // append the target key nor the current facing angle in this client.
-        // DLL SendContinueBlast (Patchs.cpp:1385): (dir, 0, 0, index) con
-        // index = -1 cuando CheckAttack() falla.  0 es un slot de objeto VALIDO,
-        // asi que mandar 0 haria que el server aplique el skill sobre gObj[0].
-        SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, 0, 0, 0, 0xFFFF);
+        // IDA: sub_4889D0 (0x004889D0).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00489769): enviar dirección y key del objetivo seleccionado válido.
+        WORD targetKey = 0xFFFF;
+        if (CheckAttack())
+            targetKey = *(WORD*)(entityBase + SelectedCharacter * 0x394 + 476);
+        const BYTE dir = (BYTE)(int)(*(float*)(heroEntity + 36) / 360.0f * 256.0f);
+        SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, dir, 0, 0, targetKey);
         break;
     }
 
@@ -428,7 +427,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             usePkt[2] = 0x26;
             usePkt[3] = (BYTE)(slot + 12);
             usePkt[4] = 0;
-            Net_SendSmallPacket(usePkt, 5);
+            gNetwork.Send(usePkt, 5);
 
             // Play sound based on item type
             // El grid vive en OffsetInventoryItems, stride 0x44.
@@ -451,7 +450,10 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             return false;
         }
 
-        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + (int)MovementSkillTarget * 0x394 + 476);
+        // IDA: SkillElf (0x0048BD70).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x0048C6F9): usar SelectedCharacter si CheckAttack permite atacarlo; conservar la ruta sin blanco.
+        const int targetIndex = CheckAttack() ? (int)SelectedCharacter : (int)MovementSkillTarget;
+        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + targetIndex * 0x394 + 476);
         if (targetKey == 0xFFFF) {
             continue;
         }

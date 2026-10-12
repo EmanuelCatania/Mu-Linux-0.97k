@@ -206,6 +206,9 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Config/UserSettings.h"
+#include "UI/HealthBar.h"
 #include "Render/Render.h"
 #include "Render/Camera.h"
 #include "Render/Player_Render.h"
@@ -214,6 +217,9 @@
 void Render_CharInfoPanel(void);
 void Render_HPBars(void);
 void Render_CharPartyInfo(void);
+extern "C" bool __cdecl RenderNumArrow_(void);
+extern "C" int  __cdecl RenderEquipedHelperLife_(bool a2);
+extern "C" void __cdecl RenderBrokenItem_(int a1);
 void Render_CharNameTags(void);
 void Render_MacroTimer(void);
 void Render_MapLoadText(void);
@@ -278,8 +284,8 @@ unsigned int Game_RenderTick(void)
 //   sub_4F6050                               HUD pass (973 b, HUD_Pass3.cpp)
 //   sub_4EB070                               HUD pass (1342 b, HUD_Pass3.cpp)
 
-static inline float ConvertX_RF(float x) { return x * (float)((double)WindowWidth  / 640.0); }
-static inline float ConvertY_RF(float y) { return y * (float)((double)WindowHeight / 480.0); }
+static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetWidth()  / 640.0); }
+static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.GetHeight() / 480.0); }
 
 // ── RenderBitmapUV (0x005128C0) ─────────────────────────────────────────────
 // No es intercambiable con `RenderBitmap` (0x5125A0):
@@ -304,7 +310,7 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
                            float u, float v, float uWidth, float vHeight)
 {
     const float x0 = ConvertX_RF(x);
-    const float y0 = (float)WindowHeight - ConvertY_RF(y);
+    const float y0 = (float)gWindow.GetHeight() - ConvertY_RF(y);
     const float w  = ConvertX_RF(Width);
     const float h  = ConvertY_RF(Height);
     const float q  = vHeight * 0.25f;
@@ -322,7 +328,7 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 void Render_GameFrame(void)
 {
 
-    if (World == 8) {
+    if (gMapManager.GetCurrentMap() == 8) {
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
         // IDA Render_GameFrame L14-21.
         GL_SetBlendSrcOver('');                  // EnableAlphaTest(1)
@@ -343,9 +349,14 @@ void Render_GameFrame(void)
 
     Render_CharInfoPanel();         // sub_4BC220 (guild-war/soccer banner)
     Render_HPBars();                // RenderPartyHP @ 0x4BCA20
-    AntiTamper_HashMaintain_A();    // RenderNumArrow @ 0x4BF540 (NOT anti-tamper)
-    Render_CharPartyInfo();         // RenderEquipedHelperLife @ 0x4BEC00 (was misnamed)
-    Render_CharNameTags();          // RenderBrokenItem @ 0x4BE710 (was misnamed)
+    gHealthBar.DrawViewport();       // DLL HealthBar.cpp, después de las barras de party
+    // IDA Render_GameFrame L26-28: cada indicador de arriba a la derecha baja
+    // según lo que se dibujó antes (flechas -> vida del helper -> item roto).
+    {
+        const bool arrows = RenderNumArrow_();                 // 0x4BF540
+        const int helperY = RenderEquipedHelperLife_(arrows);  // 0x4BEC00
+        RenderBrokenItem_(helperY);                            // 0x4BE710
+    }
     Render_MacroTimer();            // sub_4BF090
     Render_MapLoadText();           // sub_4BF2D0
     Render_FloatingText();          // RenderBooleans @ 0x4BD090 (was misnamed)
@@ -527,6 +538,9 @@ void Render_Scene3D(void)
     if (DAT_07e11d1c > 0x1e) return;
 
     DAT_083a42ea = 0;   // FogEnable = false
+    // DESVIACION (DLL MapFog, ahora catálogo 0.97.20): con niebla definida por
+    // el server se prende (el DLL parcheaba este 0 por un 1).
+    if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
     MoveMainCamera();
@@ -552,7 +566,7 @@ void Render_Scene3D(void)
     GL_EndOpenGL();
 
     // ── 4. Clear color por World ──────────────────────────────────────────────
-    int worldId = (int)World;  // World
+    int worldId = (int)gMapManager.GetCurrentMap();  // World
     float cr = 0, cg = 0, cb = 0;
     if (worldId == 0) {
         cr = 0.039f; cg = 0.078f; cb = 0.055f;
@@ -561,13 +575,22 @@ void Render_Scene3D(void)
     } else if (worldId == 10) {
         cr = 0.012f; cg = 0.099f;  cb = 0.172f;
     }
+    if (DAT_083a42ea) {
+        // DLL MapFog glClearColorFog: el fondo toma el color de la niebla.
+        float fog[4];
+        gContentCatalog.GetFogColor(worldId, fog);
+        cr = fog[0]; cg = fog[1]; cb = fog[2];
+    }
     glClearColor(cr, cg, cb, 1.0f);
 
     // ── 5. Main 3D viewport ──────────────────────────────────────────────────
     bool topView = (CameraTopViewEnabled != 0);
+    // DESVIACION (DLL Antilag, 0x00525B69 / 0x00525CB5): sin interfaz, el 3D
+    // ocupa la pantalla entera y no se dibuja el HUD.
+    const bool noInterface = gUserSettings.GetAntilag(ANTILAG_INTERFACE);
     // IDA Game_RenderTick: v10 = CameraTopViewEnable ? 480 : 432  (0x1e0 : 0x1b0).
     // El topview usa el viewport ALTO (480 = pantalla completa). Antes 0x180 (384).
-    int vpHeight = topView ? 0x1e0 : 0x1b0;
+    int vpHeight = (topView || noInterface) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
 
@@ -625,7 +648,7 @@ void Render_Scene3D(void)
     // is active.  `topView` was a Ghidra-era misread of an unrelated dialog
     // Y/global and ended up hiding the whole HUD whenever certain windows or
     // temporary states were open.
-    Render_GameFrame();                          // full HUD render
+    if (!noInterface) Render_GameFrame();        // full HUD render
     RenderInformation();                        // HUD/notices/chat/help/cursor/info3D
 
     if (DAT_055c9ff8 != 0 && *(BYTE*)(DAT_055c9ff8 + 8) == 1) {

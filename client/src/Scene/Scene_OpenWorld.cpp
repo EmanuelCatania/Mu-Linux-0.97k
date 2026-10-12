@@ -41,8 +41,8 @@ void __cdecl OpenWorld(void) {
 
     OpenWorldModels();             // OpenWorldModels
 
-    int iVar2 = World + 1;
-    if (World >= 11 && World <= 16) iVar2 = 12;
+    int iVar2 = gMapManager.GetCurrentMap() + 1;
+    if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) iVar2 = 12;
 
     crt_sprintf(world_name, "World%d", iVar2);
 
@@ -110,7 +110,7 @@ void __cdecl OpenFont(void) {
     PathFinder_ResetContext();
     OpenTGA("Interface/FontInput.tga", 0, 0x2600, 0x2900, 0, '\x01');
     OpenTGA("Interface/FontTest.tga",  1, 0x2600, 0x2900, 0, '\x01');
-    Font_CreateTextDib(DAT_055ca004);
-    Font_CreateRenderer(DAT_055c9ff8, (int)lpData_055ca044, DAT_055ca004);
+    Font_CreateTextDib(((DWORD)(uintptr_t)gWindow.GetHdc()));
+    Font_CreateRenderer(DAT_055c9ff8, (int)lpData_055ca044, ((DWORD)(uintptr_t)gWindow.GetHdc()));
 }
 // Scene resource load/unload routines are implemented in src/Scene/Scene_Resources.cpp.

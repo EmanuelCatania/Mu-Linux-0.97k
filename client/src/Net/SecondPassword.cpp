@@ -136,13 +136,17 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "Item/RightClickMove.h"
+#include "Config/UserSettings.h"
+#include "Game/MapManager.h"
 #include "structs.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
 
 // El rango de guild pide C1 plano (Encrypt=0).
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
@@ -227,7 +231,7 @@ unsigned int __cdecl SecondPassword_Handler(void)
                     }
                 } else if (mode == 6) {
                     const BYTE closePkt[3] = { 0xC1, 0x03, 0x31 };
-                    Net_SendC1Packet(closePkt, sizeof(closePkt));
+                    gNetwork.SendC1(closePkt, sizeof(closePkt));
                 } else {
                     // Modos 1, 2 y 3: PMSG_WAREHOUSE_PASSWORD_RECV
                     // [C1][10][83][type][WORD password][PersonalCode:10]
@@ -250,7 +254,7 @@ unsigned int __cdecl SecondPassword_Handler(void)
                         memcpy(pkt + 6, DAT_07ea9814, 10);
                     }
                     memcpy(pkt + 4, &pw, 2);
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                     memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
                 }
             }
@@ -397,7 +401,7 @@ void __cdecl SecondPassword_Screen1(void) {
                             DAT_07ea51ec[c] = DAT_07db8710[0][c];
             
                         // El rango de guild entero es Encrypt=0 -> C1 plano, y
-                        // `Net_SendC1Packet` aplica el mismo chain-XOR sobre 3..len-1
+                        // `gNetwork.SendC1` aplica el mismo chain-XOR sobre 3..len-1
                         // que hace el original.
                         BYTE pkt[43];
                         memset(pkt, 0, sizeof(pkt));
@@ -406,7 +410,7 @@ void __cdecl SecondPassword_Screen1(void) {
                         pkt[2] = 0x55;
                         memcpy(pkt + 3,  DAT_07ea51ec, 8);
                         memcpy(pkt + 11, mark, 32);
-                        Net_SendC1Packet(pkt, 43);
+                        gNetwork.SendC1(pkt, 43);
 
                         // IDA: SecondPassword_Screen1 cae al cierre común inmediatamente
                         // después de encolar 0x55: limpia el input, cierra el
@@ -425,7 +429,7 @@ void __cdecl SecondPassword_Screen1(void) {
                 // IDA: C1:04:54:01 confirma la pregunta previa al Guild Master.
                 {
                     const BYTE pkt[4] = { 0xC1, 0x04, 0x54, 0x01 };
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 }
             }
             PlayBuffer(0x19, 0, 0);
@@ -444,11 +448,11 @@ void __cdecl SecondPassword_Screen1(void) {
             if (DAT_07eaa144 == 0) {
                 // IDA: C1:04:54:00 cancela la pregunta previa al Guild Master.
                 const BYTE pkt2[4] = { 0xC1, 0x04, 0x54, 0x00 };
-                Net_SendC1Packet(pkt2, sizeof(pkt2));
+                gNetwork.SendC1(pkt2, sizeof(pkt2));
             } else {
                 // IDA: C1:03:57 cancela el editor y libera INTERFACE_GUILD_CREATE.
                 const BYTE pkt3[3] = { 0xC1, 0x03, 0x57 };
-                Net_SendC1Packet(pkt3, sizeof(pkt3));
+                gNetwork.SendC1(pkt3, sizeof(pkt3));
                 *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
             }
             PlayBuffer(0x19, 0, 0);
@@ -523,7 +527,7 @@ void __cdecl Party_MemberClickHandler(void) {
             // The original click gate uses the visual row.  MuEmu validates
             // the wire party number, which is explicitly supplied by 0x42.
             const BYTE pkt[4] = { 0xC1, 0x04, 0x43, member[11] };
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
             return;
         }
     }
@@ -547,7 +551,7 @@ void __cdecl Party_MemberClickHandler(void) {
 // chequea si el mouse clickeó en el área de la fila [DAT_07ea982c+0x7d,+0x95) x [DAT_07ea9830+0x73+row*15, +0x18).
 // Guard de entrada: DAT_07eaa116 tiene que ser distinto de cero. También chequea *(short*)(DAT_07cf1ff4+0x54) != 0.
 // On click: sends 4-byte packet {0xC1,0x01,0x00,opcode_xored}.
-//   opcode plain byte = (byte)(row_index), XOR key[3]=0x89, prev_plain_at[4]=4 → cipher = row^0x89^4
+//   opcode plain byte = (byte)(row_index), XOR CNetwork::XorKey[3]=0x89, prev_plain_at[4]=4 → cipher = row^0x89^4
 //   Después appendea el byte del índice de fila como byte 4 (si total_len+1 < 0x401).
 //   El largo del paquete depende de los datos de cada fila. Clave: la misma de 32 bytes.
 // After click: PlayBuffer(0x19,0,0).
@@ -569,11 +573,6 @@ void __cdecl SecondPassword_Screen3(void) {
     }
 
     // Clave XOR (32 bytes, la misma que se usa en todo el archivo)
-    static const BYTE key[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,
-        0x49,0x5d,0x39,0x5d,0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
 
     int iRow     = 0;
     int iRowAccum = 0;
@@ -601,7 +600,7 @@ void __cdecl SecondPassword_Screen3(void) {
                 DAT_083a4124 = '\0';
 
                 BYTE pkt[5] = { 0xC1, 5, 0xF3, 0x06, (BYTE)iRow };
-                Net_SendSmallPacket(pkt, 5);
+                gNetwork.Send(pkt, 5);
 
                 PlayBuffer(0x19, 0, 0);
                 iX = DAT_083a427c;
@@ -860,7 +859,7 @@ void __cdecl SecondPassword_Screen5(void) {
         // MuEmu PMSG_BLOOD_CASTLE_ENTER_RECV: el server hace `level -= 1` y
         // `slot -= INVENTORY_WEAR_SIZE`.
         const BYTE pkt[5] = { 0xC1, 0x05, 0x9A, (BYTE)(row + 1), (BYTE)(itemSlot + 12) };
-        Net_SendC1Packet(pkt, 5);
+        gNetwork.SendC1(pkt, 5);
         return;
     }
 
@@ -892,7 +891,7 @@ void __cdecl SecondPassword_Screen5(void) {
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(cancel, 3);
+        gNetwork.SendC1(cancel, 3);
         Item_ReturnPickedItem();
         CreateOkMessageBox(GlobalText[686]);
         return;
@@ -901,7 +900,7 @@ void __cdecl SecondPassword_Screen5(void) {
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(cancel, 3);
+        gNetwork.SendC1(cancel, 3);
         Item_ReturnPickedItem();
         CreateOkMessageBox(GlobalText[687]);
         return;
@@ -914,7 +913,7 @@ void __cdecl SecondPassword_Screen5(void) {
     // MuEmu PMSG_DEVIL_SQUARE_ENTER_RECV.  Ojo: Devil Square suma **24** al
     // slot, no 12 como Blood Castle (IDA: `buf[size+2] = v20 + 24`).
     const BYTE pkt[5] = { 0xC1, 0x05, 0x90, (BYTE)row, (BYTE)(itemSlot + 24) };
-    Net_SendC1Packet(pkt, 5);
+    gNetwork.SendC1(pkt, 5);
 }
 
 // CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
@@ -963,7 +962,7 @@ void __cdecl ServerTransfer_HitTest(void) {
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         DAT_07e11d28 = 0;         // MouseUpdateTime
         DAT_00559bec = 6;         // MouseUpdateTimeMax
         mx = (int)DAT_083a427c;
@@ -974,7 +973,7 @@ void __cdecl ServerTransfer_HitTest(void) {
     if (mx >= startX + 25 && mx < startX + 49 && my >= startY + 395 && my < startY + 419 && DAT_083a4124) {
         DAT_083a4124 = 0;
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GoldenArcherOpenType = 0;         // g_bEventChipDialogEnable
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
@@ -1103,7 +1102,8 @@ void __cdecl SecondPassword_Screen9(void) {
         ClearInput(0);
         InputGold = 0;
         StorageGoldFlag = 0;
-        InputTextMax = 8;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004EB6C3): depósito de Zen con diez dígitos.
+        InputTextMax = 10;
         InputNumber = 1;
         DAT_00559c84 = 0;
         GoldInputEnable = 1;
@@ -1112,7 +1112,8 @@ void __cdecl SecondPassword_Screen9(void) {
         SetErrorMessage(0x74);
         ClearInput(0);
         InputGold = 0;
-        InputTextMax = 8;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004EB6FE): extracción de Zen con diez dígitos.
+        InputTextMax = 10;
         InputNumber = 1;
         DAT_00559c84 = 0;
         GoldInputEnable = 1;
@@ -1161,7 +1162,8 @@ void __cdecl FUN_004eb7f0(void) {
         DAT_083a4124 = '\0';
         SetErrorMessage(0x74);
         ClearInput(0);
-        InputTextMax = 8;
+        // DESVIACION (fix del DLL, Patchs.cpp 0x004EB8C7): oferta de Zen con diez dígitos.
+        InputTextMax = 10;
         InputNumber = 1;
         DAT_00559c84 = 0;
         GoldInputEnable = 1;
@@ -1205,7 +1207,7 @@ void __cdecl FUN_004eb7f0(void) {
         // PMSG_TRADE_OK_BUTTON_RECV: C1:3C, flag=1. El emisor compartido
         // aporta correctamente el envoltorio C3, chain-XOR y serial rotativo.
         BYTE pkt[4] = { 0xC1, 0x04, 0x3C, 0x01 };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
     }
 
     // Botón de cancelación: [x+137,x+161) × [y+390,y+414).
@@ -1220,13 +1222,12 @@ void __cdecl FUN_004eb7f0(void) {
             DAT_07eaa0e8 = '\0';
             // CGTradeCancelButtonRecv: C1:3D, no payload.
             BYTE pkt3[3] = { 0xC1, 0x03, 0x3D };
-            Net_SendSmallPacket(pkt3, sizeof(pkt3));
+            gNetwork.Send(pkt3, sizeof(pkt3));
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
         }
     }
 }
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // FUN_004ec330 @ 0x004EC330 — Shop controls and inventory close hit-test (389 lines)
 //   - Handles shop bottom buttons (Buy, Repair, Repair All) when DAT_07eaa132 != 0
@@ -1278,7 +1279,7 @@ void __cdecl FUN_004ec330(void) {
                 IsClickPushed()) {
                 DAT_083a4124 = '\0';
                 BYTE pkt[5] = { 0xC1, 0x05, 0x34, 0xFF, 0x00 };
-                Net_SendSmallPacket(pkt, sizeof(pkt));
+                gNetwork.Send(pkt, sizeof(pkt));
             } else {
                 Item_RecalculateRepairCost();   // sub_4C4080
             }
@@ -1451,32 +1452,92 @@ uint __cdecl Net_Disconnect_Clean(void)
     DAT_07eaa117 = 0;
     CloseInventoryRelatedWindows();
     if (0 < (int)DAT_07e91388) Item_ReturnPickedItem();
-    char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x82;
-    unsigned int uVar4 = 3;
-    int iVar6 = 0;
-    SOCKET SVar2 = SocketClientSocket;
-    if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
-        do {
-            int iVar1 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
-            if (iVar1 == -1) {
-                iVar6 = WSAGetLastError();
-                SVar2 = (SOCKET)SocketClientSendBufferLength;
-                if (iVar6 == 0x2733) {
-                    if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
-                        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar4);
-                        SocketClientSendBufferLength += uVar4;
-                    } else { Net_Disconnect(((int)(uintptr_t)SocketClient)); SVar2 = 0; }
-                } else { Net_Disconnect(((int)(uintptr_t)SocketClient)); SVar2 = 0; }
-                break;
-            }
-            SVar2 = 0;
-            if (iVar1 == 0) break;
-            SVar2 = 0;
-            if (SocketClientLogPrint != 0) { FUN_0043de60(); SVar2 = 0; }
-            uVar4 -= iVar1; iVar6 += iVar1;
-        } while (0 < (int)uVar4);
+    const char pkt[3] = { (char)0xC1, 3, (char)0x82 };
+    gNetwork.SendRaw(pkt, 3);
+    return 1;
+}
+
+// Regla de sub_4CDC70 para soltar `item` en el casillero `a5`: clase, dos
+// manos, flechas, stats, nivel y restricciones de mapa.  La comparte el
+// click derecho para equipar (RightClickMove.cpp).
+bool Equip_CanPlace(const ITEM* item, int a5)
+{
+    if (!item || !CharacterMachine || !CharacterAttribute || !DAT_07abf5d8 || !DAT_07d78068) return false;
+    BYTE* const CM = (BYTE*)CharacterMachine;
+    BYTE* const CA = (BYTE*)CharacterAttribute;
+    ITEM_ATTRIBUTE* const IA = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
+    // 0.97.20: las reglas por rango de tipo usan el vanilla que imita un
+    // agregado; la clase requerida es la del propio item.
+    const short pt    = (short)ItemBehaviorType(item->Type);
+    // 0.97.20: los agregados se validan como el vanilla que imitan.
+    const short left  = (short)ItemBehaviorType(*(short*)(CM + 536));
+    const short right = (short)ItemBehaviorType(*(short*)(CM + 604));
+    const int   cls   = CA[11] & 7;
+    const BYTE* req   = IA[item->Type].RequireClass;
+    bool ok = true;
+
+    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
+        if (!req[3] && !req[0] && !req[1]) ok = false;
+    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
+        ok = false;
     }
-    return CONCAT31((int3)(SVar2 >> 8), 1);
+
+    bool rightHandChecks = false;
+    if (pt != 135 && pt != 143) {
+        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
+            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
+            if (IA[left].Width >= 2) ok = false;
+        }
+        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
+            if (IA[pt].Width >= 2) ok = false;
+            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
+            rightHandChecks = true;                         // LABEL_118
+        }
+    }
+    if (!rightHandChecks && a5 == 1) {
+        if (pt == 143) ok = false;
+        if (cls == 0 || cls == 2) {
+            if (pt >= 0 && pt < 128) ok = false;
+            if (pt >= 160 && pt < 192) ok = false;
+            if (left == 143) {
+                if (pt == 135 || pt < 128 || pt > 160) ok = false;
+            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
+                ok = false;
+            }
+        }
+    } else if (rightHandChecks || a5 == 0) {
+        // LABEL_118
+        if (pt == 135) ok = false;
+        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
+    }
+
+    // LABEL_164
+    if (pt >= 430 && pt <= 435) ok = false;
+    if (item->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
+    if (item->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
+    if (item->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
+    const BYTE part = item->Part;
+    if ((part >= 7 && part <= 11) && item->RequireLevel > *(WORD*)(CA + 14)) ok = false;
+
+    bool invalid = false;
+    if (part == 7) {
+        if (pt >= 392 && pt < 416) invalid = true;
+    } else if (part == 8) {
+        if ((int)gMapManager.GetCurrentMap() == 7) {
+            if (pt == 418 || pt == 419) invalid = true;
+        } else if ((int)gMapManager.GetCurrentMap() == 10 && pt == 418) {
+            invalid = true;
+        }
+    }
+    if (!invalid && !ok) invalid = true;                    // LABEL_231
+    if (!invalid && part != (BYTE)a5) {
+        if (part == 10) {
+            if (a5 != 11) invalid = true;
+        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
+            invalid = true;
+        }
+    }
+    return !invalid;
 }
 
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
@@ -1529,7 +1590,17 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         const short type = *(short*)slot;
         if (type == -1 || !inside) return;
         DAT_07eaa164 = 1;                                   // byte_7EAA164
-        if (!DAT_083a4124) {                                // MouseLButtonPush
+        // DESVIACION (DLL RightClickMove.cpp CheckUnequipItem): click derecho
+        // manda el item al primer hueco libre del inventario.
+        const bool rightClick = !DAT_083a4124 && MouseRButtonPush != 0;
+        int unequipTarget = -1;
+        if (rightClick) {
+            MouseRButtonPush = 0;
+            if (DAT_07eaa134) return;                       // modo reparar
+            unequipTarget = RightClickMove_FindInventorySlot(type);
+            if (unequipTarget < 0) return;
+        }
+        if (!DAT_083a4124 && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
             DAT_07eaa160 = (DWORD)(uintptr_t)slot;          // CheckInventory
@@ -1539,24 +1610,27 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         }
         if (Teleport) return;                           // Teleport
         if (DAT_07eaa134) {                                 // RepairEnable_0
-            if ((type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
-                (type >= 430 && type <= 435))
+            const int kind = ItemBehaviorType(type);        // 0.97.20
+            if ((kind >= 416 && kind <= 419) || kind == 426 || kind == 135 ||
+                kind == 143 || kind >= 448 || (kind >= 391 && kind <= 403) ||
+                (kind >= 430 && kind <= 435))
                 return;
             DAT_083a4124 = 0;
             BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)a5, (BYTE)DAT_07eaa138 };
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            gNetwork.Send(pkt, sizeof(pkt));
             return;
         }
         DAT_083a4124 = 0;
-        if ((int)World == 10) {
+        if ((int)gMapManager.GetCurrentMap() == 10) {
             // Icarus: no se puede sacar el unico item que permite volar
             // (alas 384..390 o Dinorant 419).
             int flying = 0;
-            const short wing = *(short*)(CM + 1012);
+            // 0.97.20: alas y Dinorant se reconocen por el comportamiento.
+            const short wing = (short)ItemBehaviorType(*(short*)(CM + 1012));
             if (wing >= 384 && wing <= 390) flying = 1;
-            if (*(short*)(CM + 1080) >= 419) ++flying;
-            if (flying <= 1 && ((type >= 384 && type <= 390) || type == 419))
+            if (ItemBehaviorType(*(short*)(CM + 1080)) >= 419) ++flying;
+            const int kind = ItemBehaviorType(type);
+            if (flying <= 1 && ((kind >= 384 && kind <= 390) || kind == 419))
                 return;
         }
         DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
@@ -1574,6 +1648,12 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
             DeleteBug((int)(uintptr_t)DAT_07abf5d8);
+        if (rightClick) {
+            DAT_07e11e78 = (DWORD)(unequipTarget + 12);
+            DAT_07eaa165 = 1;                               // EquipmentItem
+            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+            SendRequestEquipmentItem(0, a5, picked, 0, unequipTarget + 12);
+        }
         return;
     }
 
@@ -1581,72 +1661,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (!inside) return;
     const short pt    = picked->Type;
     const short left  = *(short*)(CM + 536);
-    const short right = *(short*)(CM + 604);
-    const int   cls   = CA[11] & 7;
-    const BYTE* req   = IA[pt].RequireClass;
-    bool ok = true;
-
-    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
-        if (!req[3] && !req[0] && !req[1]) ok = false;
-    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
-        ok = false;
-    }
-
-    bool rightHandChecks = false;
-    if (pt != 135 && pt != 143) {
-        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
-            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
-            if (IA[left].Width >= 2) ok = false;
-        }
-        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
-            if (IA[pt].Width >= 2) ok = false;
-            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
-            rightHandChecks = true;                         // LABEL_118
-        }
-    }
-    if (!rightHandChecks && a5 == 1) {
-        if (pt == 143) ok = false;
-        if (cls == 0 || cls == 2) {
-            if (pt >= 0 && pt < 128) ok = false;
-            if (pt >= 160 && pt < 192) ok = false;
-            if (left == 143) {
-                if (pt == 135 || pt < 128 || pt > 160) ok = false;
-            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
-                ok = false;
-            }
-        }
-    } else if (rightHandChecks || a5 == 0) {
-        // LABEL_118
-        if (pt == 135) ok = false;
-        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
-    }
-
-    // LABEL_164
-    if (pt >= 430 && pt <= 435) ok = false;
-    if (picked->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
-    if (picked->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
-    if (picked->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
-    const BYTE part = picked->Part;
-    if ((part >= 7 && part <= 11) && picked->RequireLevel > *(WORD*)(CA + 14)) ok = false;
-
-    bool invalid = false;
-    if (part == 7) {
-        if (pt >= 392 && pt < 416) invalid = true;
-    } else if (part == 8) {
-        if ((int)World == 7) {
-            if (pt == 418 || pt == 419) invalid = true;
-        } else if ((int)World == 10 && pt == 418) {
-            invalid = true;
-        }
-    }
-    if (!invalid && !ok) invalid = true;                    // LABEL_231
-    if (!invalid && part != (BYTE)a5) {
-        if (part == 10) {
-            if (a5 != 11) invalid = true;
-        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
-            invalid = true;
-        }
-    }
+    const bool  invalid = !Equip_CanPlace(picked, a5);
     if (invalid) {                                          // LABEL_220
         slot[64] = 3;
         if (DAT_083a4124) {
@@ -1778,7 +1793,7 @@ void __cdecl SetPlayerStop(int c) {
         unsigned int base = (unsigned int)(uintptr_t)DAT_07d78068;
         if (base < 0x100000u || base >= 0x80000000u) return 0;
         int idx = type - 399;
-        if (idx < 1 || idx >= 1024) return 0;   // idx>=1: la expresión resta 34
+        if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34
         return *(unsigned char*)((char*)(uintptr_t)base + idx * 64 - 34);
     };
 
@@ -1802,7 +1817,7 @@ void __cdecl SetPlayerStop(int c) {
         // también dispara la animación de flotar. En char-select (SceneFlag==4)
         // queda solo Fly.
         bool gateA = false;
-        if (SceneFlag == 5 && World == 7) {
+        if (SceneFlag == 5 && gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
             int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
             int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
             int v3 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
@@ -1820,7 +1835,7 @@ void __cdecl SetPlayerStop(int c) {
         // Sin helm/armor o cambiando clase fuera de mapas 11-16 → idle estándar
         if ((v5 == -1 && *(unsigned short*)(c + 648) == 0xFFFF)
             || (*(unsigned char*)(c + 846)
-                && (World < 11 || World > 16))) {
+                && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16))) {
             bool isElf = ((*(unsigned char*)(c + 444) & 7) == 2);
             SetAction_local(isElf ? 2 : 1);
             goto LABEL_129;
@@ -1933,7 +1948,7 @@ void __cdecl SetPlayerWalk(int param_1) {
             // 3) Si no, si c+0x258 (Helper) != -1 Y c+0x25a > 4, incrementa.
             if ((*(unsigned char *)(param_1 + 0x1bc) & 7) == 3) {
                 *(unsigned char *)(param_1 + 0x300) = v2 + 1;
-            } else if (World == 7) {
+            } else if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
                 if (*(short *)(param_1 + 0x240) != -1 &&
                     *(unsigned char *)(param_1 + 0x242) > 4)
                     *(unsigned char *)(param_1 + 0x300) = v2 + 1;
@@ -1988,13 +2003,13 @@ void __cdecl SetPlayerWalk(int param_1) {
         //   v6 = c+846 (SafeZone); v7 = (v6 == 0);
         //   if (!v6) { si hay alas → SetAction 30/31 y sale; si no, v7 = 1; }
         // O sea en zona segura NO se nada (ni se vuela): se camina.
-        if (!bSafeZone && World == 7) {
+        if (!bSafeZone && gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
             SetAction(param_1, (stamina < 0x28) ? 21 : 29);
             goto label_119;
         }
         // No weapons equipped (or dead in non-event-map world):
         bool noWeapons = ((unsigned short)LH == 0xFFFF) && ((unsigned short)RH == 0xFFFF);
-        bool bSafeZoneNonEvent = bSafeZone && (World < 11 || World > 16);
+        bool bSafeZoneNonEvent = bSafeZone && (gMapManager.GetCurrentMap() < 11 || gMapManager.GetCurrentMap() > 16);
         if (noWeapons || bSafeZoneNonEvent) {
             if (stamina >= 0x28) {
                 // Exhausted: action 22.
@@ -2096,7 +2111,7 @@ void __cdecl SetPlayerWalk(int param_1) {
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
-    if (World != 8 && World != 10) {
+    if (gMapManager.GetCurrentMap() != 8 && gMapManager.GetCurrentMap() != 10) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
             SetAction(param_1, 32);
             goto label_119;
@@ -2158,7 +2173,7 @@ void __cdecl MoveCharacterPosition(int param_1) {
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
     if (*(short*)(param_1 + 0x2b8) == 0x333) {
-        if (World == 8 || World == 10)
+        if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10)
             terrainH += _DAT_00552848;
         else
             terrainH += _DAT_0055284c;
@@ -2172,6 +2187,26 @@ void __cdecl MoveCharacterPosition(int param_1) {
         *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
     }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
+}
+
+// 0.97.20: vuelve a aplicar al héroe lo que el CharSet no lleva (las piezas
+// del catálogo y el pet custom) a partir de CharacterMachine.  Lo necesita la
+// fila propia del 0x12: `ChangeCharacterExt` limpia las piezas, borra el bug
+// del pet y deja el helper en "ninguno", y como el equipo no cambió,
+// SetCharacterClass no vuelve a correr.
+void Hero_ApplyCatalogEquipment(int c)
+{
+    if (!DAT_07cf1ffc || *(short*)(c + 2) != 390) return;
+    const int v7 = (int)(uintptr_t)DAT_07cf1ffc + 536;
+    static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
+    for (int part = 0; part < 9; ++part)
+        gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+    const short pet = *(short*)(v7 + 544);
+    if (pet != -1 && gContentCatalog.GetPet(pet)) {
+        *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+        DeleteBug((DWORD)(uintptr_t)c);
+        CreateBug(*(short*)(c + 696), (void*)(c + 16), (void*)(uintptr_t)c, 0);
+    }
 }
 
 // SetCharacterClass @ 0x0045C130 — SetCharacterClass(entity)
@@ -2198,7 +2233,7 @@ void __cdecl SetCharacterClass(int c) {
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
         short v = *(short*)(v7 + srcOff);
-        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)(v + 400);
+        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
     };
     // Valor previo del helper, para detectar el CAMBIO abajo.
     const short prevHelper = *(short*)(c + 696);
@@ -2206,6 +2241,20 @@ void __cdecl SetCharacterClass(int c) {
     writeSlot(68,  648);
     writeSlot(476, 672);
     writeSlot(544, 696);
+    // 0.97.20: el helper guarda el pet vanilla que imita (bugs, monturas y
+    // animaciones se deciden por ese tipo); el modelo propio se dibuja en
+    // RenderBugs / Render_PlayerHelper.
+    {
+        const short pet = *(short*)(v7 + 544);
+        if (pet != -1) *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+    }
+
+    // 0.97.20: modelo propio de cada pieza puesta (catálogo).
+    {
+        static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
+        for (int part = 0; part < 9; ++part)
+            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+    }
 
     // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
     // El pet NO se dibuja desde RenderCharacter: `ChangeCharacterExt`
@@ -2235,6 +2284,7 @@ void __cdecl SetCharacterClass(int c) {
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
             else if (newHelper == 819) bugType = 267;   // Dinorant
+            else if (gContentCatalog.GetPet(*(short*)(v7 + 544))) bugType = newHelper;   // 0.97.20: CustomPet
             // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
             // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
             if (bugType)
@@ -2267,27 +2317,27 @@ void __cdecl SetCharacterClass(int c) {
     short v17 = *(short*)(v7 + 136);
     *(short*)(c + 504) = (v17 == -1)
         ? (short)(skinLo + 4 * skinHi + 912)
-        : (short)(v17 + 400);
+        : (short)ItemEntityModel(v17);
 
     short v21 = *(short*)(v7 + 204);
     *(short*)(c + 528) = (v21 == -1)
         ? (short)(skinLo + 4 * skinHi + 919)
-        : (short)(v21 + 400);
+        : (short)ItemEntityModel(v21);
 
     short v22 = *(short*)(v7 + 272);
     *(short*)(c + 552) = (v22 == -1)
         ? (short)(skinLo + 4 * skinHi + 926)
-        : (short)(v22 + 400);
+        : (short)ItemEntityModel(v22);
 
     short v26 = *(short*)(v7 + 340);
     *(short*)(c + 576) = (v26 == -1)
         ? (short)(skinLo + 4 * skinHi + 933)
-        : (short)(v26 + 400);
+        : (short)ItemEntityModel(v26);
 
     short v27 = *(short*)(v7 + 408);
     *(short*)(c + 600) = (v27 == -1)
         ? (short)(skinLo + 4 * skinHi + 940)
-        : (short)(v27 + 400);
+        : (short)ItemEntityModel(v27);
 
     *(unsigned char*)(c + 506) = (unsigned char)((*(int*)(v7 + 140) >> 3) & 0xF);
     *(unsigned char*)(c + 530) = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);
@@ -2387,7 +2437,7 @@ void __cdecl CheckGate(void)
 
     for (int gateIndex = 0; gateIndex < 100; ++gateIndex) {
         const BYTE* const gate = gates + gateIndex * 9; // IDA: GateAttribute + 9*i
-        if (gate[0] != 1 || gate[1] != (BYTE)World)
+        if (gate[0] != 1 || gate[1] != (BYTE)gMapManager.GetCurrentMap())
             continue;
         const int heroX = *(const int*)(hero + 904);
         const int heroY = *(const int*)(hero + 908);
@@ -2407,8 +2457,8 @@ void __cdecl CheckGate(void)
         // Atlans/Tarkan: no con Uniria/Dinorant equipado o agarrado.
         if ((gateIndex >= 45 && gateIndex <= 49) ||
             (gateIndex >= 55 && gateIndex <= 56)) {
-            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
-            const WORD picked = *(const WORD*)DAT_07e91350;
+            const WORD helper = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1080));
+            const WORD picked = (WORD)ItemBehaviorType(*(const short*)DAT_07e91350);
             if ((helper >= 418 && helper <= 419) ||
                 (DAT_07e91388 > 0 && picked >= 418 && picked <= 419)) {
                 UIChatLogWindow_AddText("", GlobalText[261], 2);
@@ -2418,8 +2468,8 @@ void __cdecl CheckGate(void)
 
         // Icarus (62..65): alas (384..390) o Dinorant (419); la Uniria no.
         if (gateIndex >= 62 && gateIndex <= 65) {
-            const WORD wings = *(const WORD*)((const BYTE*)CharacterMachine + 1012);
-            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
+            const WORD wings = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1012));
+            const WORD helper = (WORD)ItemBehaviorType(*(const short*)((const BYTE*)CharacterMachine + 1080));
             if ((wings < 384 || wings > 390) && helper != 419) {
                 UIChatLogWindow_AddText("", GlobalText[263], 2);
                 if (level < requiredLevel) {
@@ -2454,7 +2504,7 @@ void __cdecl CheckGate(void)
             Teleport = 1;                                   // Teleport
 
         const BYTE packet[6] = { 0xC1, 0x06, 0x1C, (BYTE)gateIndex, 0, 0 };
-        Net_SendSmallPacket(packet, sizeof(packet));
+        gNetwork.Send(packet, sizeof(packet));
 
         SelectedItem = -1;
         SelectedNpc = -1;
@@ -2497,6 +2547,10 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum
 //     (#2, 0x004F97E0), RenderTerrainTile RenderTerrainTile (#3, 0x004F8480).
 void __cdecl RenderTerrain(char EditFlag) {
+    // DESVIACION (DLL Antilag, ret en 0x004F9AC0): sin piso.  El DLL cortaba
+    // también la pasada de picking (EditFlag=1, Player_InputTick) y el click al
+    // suelo dejaba de mover al personaje; acá sólo se omite el dibujo.
+    if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
     FUN_004f98c0(
         (int)(*(float*)(Hero + 16) * 0.039999999f),   // hero X * 0.04 → tile coord
         (int)(*(float*)(Hero + 20) * 0.039999999f),   // hero Y * 0.04
@@ -2504,7 +2558,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         -70,
         (int)DAT_0839bc88);
 
-    if (World == 8)
+    if (gMapManager.GetCurrentMap() == 8)
         DAT_07eeb214 = (float)((long long)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
     else
         DAT_07eeb214 = (float)((long long)WorldTime % 20000) * 0.000049999999f;  // WaterMove
@@ -2528,7 +2582,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         }
     } else {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
-        if (DAT_0055a76c && World != 7) { // overlay (inerte: unk_55A76C nunca seteado)
+        if (DAT_0055a76c && gMapManager.GetCurrentMap() != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             RenderTerrainFrustrum(false);
         }
@@ -3039,11 +3093,11 @@ void __cdecl MoveCharacter(int p1)
     // Evento propio del Golden Archer (DLL MoveCharacter_GoldenArcherMovement,
     // hook en 0x44A31A): tambien en Noria, con la orientacion de Lorencia.
     if (*(BYTE*)(o + 132) == 4
-        && (!World || World == 2 || (g_GoldenArcherCustom && World == 3))
+        && (!gMapManager.GetCurrentMap() || gMapManager.GetCurrentMap() == 2 || (g_GoldenArcherCustom && gMapManager.GetCurrentMap() == 3))
         && *(short*)(o + 2) == 390
         && *(int*)(o + 4) >= 206 && *(int*)(o + 4) <= 208)
     {
-        if (World == 2) {
+        if (gMapManager.GetCurrentMap() == 2) {
             *(DWORD*)(o + 28) = 0;
             *(DWORD*)(o + 32) = 0;
             *(DWORD*)(o + 36) = 0;
@@ -3097,7 +3151,7 @@ void __cdecl MoveCharacter(int p1)
 
     // ─── IDA L545-606: death-dissolve (c+765=ragdoll, c+820=alpha-decay timer)
     if (*(BYTE*)(c + 765)) {
-        if (*(short*)(o + 2) == 302 || World == 7)
+        if (*(short*)(o + 2) == 302 || gMapManager.GetCurrentMap() == 7)
             *(float*)(c + 820) += 0.050000001f;
         else
             *(float*)(c + 820) += 0.02f;
@@ -3113,7 +3167,7 @@ void __cdecl MoveCharacter(int p1)
             DeleteCloth((int)c, (int)o, 0);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
-        if (World >= 11 && World <= 16 && *(BYTE*)(o + 405)) {
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = *(float*)(o + 196); in1[2] = 0.0f;
             AngleMatrix((float*)(o + 408), in2);
@@ -3129,7 +3183,7 @@ void __cdecl MoveCharacter(int p1)
             *(float*)(o + 24) = *(float*)(o + 428) + *(float*)(o + 216);
         }
         // L593-605: Atlans bubble particles (world 7 in-game)
-        if (SceneFlag == 5 && World == 7) {
+        if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7) {
             for (int jj = 0; jj < 4; ++jj) {
                 v407[0] = (float)(rand() % 128 - 64);
                 v407[1] = (float)(rand() % 128 - 64);
@@ -3195,25 +3249,25 @@ void __cdecl MoveCharacter(int p1)
                             if (action >= 90) {
                                 if (action >= 95) {
                                     if (action < 100) {
-                                        TextIndex = (World == 2) ? 905 : 0;
+                                        TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
                                             CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                         SetAction((int)c, 105);
                                     }
                                 } else {
-                                    TextIndex = (World == 2) ? 905 : 0;
+                                    TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
                                         CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                     SetAction((int)c, 111);
                                 }
                             } else {
-                                TextIndex = (World == 2) ? 904 : 823;
+                                TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
                                     CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                 SetAction((int)c, 99);
                             }
                         } else {
-                            TextIndex = (World == 2) ? 904 : 0;
+                            TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
                                 CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                             SetAction((int)c, 97);
@@ -3221,7 +3275,7 @@ void __cdecl MoveCharacter(int p1)
                         skipIdleSelect = true;
                     }
                     if (!skipIdleSelect) {
-                        TextIndex = (World == 2) ? 904 : 0;
+                        TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
                             CreateChat((char*)(c + 0x1C1), GlobalText[TextIndex], c, 0, -1);
                     }
@@ -3230,7 +3284,7 @@ void __cdecl MoveCharacter(int p1)
                 skipIdleSelect = true;  // fall to L195 either way (event NPCs done)
             }
         }
-        else if (World == 1 && *(short*)(o + 2) == 40) {
+        else if (gMapManager.GetCurrentMap() == 1 && *(short*)(o + 2) == 40) {
             SetAction((int)o, 0);
         }
         else if (*(short*)(o + 2) < 270 || *(short*)(o + 2) >= 335) {
@@ -3270,7 +3324,7 @@ void __cdecl MoveCharacter(int p1)
     if (*(BYTE*)(c + 765)) {
         unsigned char inc = (unsigned char)(++*(BYTE*)(c + 765));
         if (inc >= 0xFu) mc_SetPlayerDie(c);
-        if (World >= 11 && World <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(c);
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(c);
     }
 
     // L807-811: setup defaults
@@ -3325,6 +3379,7 @@ void __cdecl MoveCharacter(int p1)
             }
             else if ((EnableGuildWar && *(BYTE*)(selSlot + 745) == 2)
                   || (!EnableGuildWar && *(unsigned char*)(selSlot + 746) >= 6u)
+                  || gUserSettings.GetPvPWithoutControl()   // DESVIACION (DLL, 0x0044B532)
                   || ((unsigned short)GetAsyncKeyState(17) >> 8))
             {
                 *(short*)(o + 134) = *(short*)(selSlot + 476);
@@ -4091,8 +4146,8 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float p[3] = {(float)(rand() % 64 - 32) + *(float *)(entity_ptr + 16),
                               (float)(rand() % 64 - 32) + *(float *)(entity_ptr + 20),
                               (float)(rand() % 32 - 16) + *(float *)(entity_ptr + 24)};
-                Particle_Spawn(World == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
-                              World == 2 ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
+                Particle_Spawn(gMapManager.GetCurrentMap() == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
+                              gMapManager.GetCurrentMap() == 2 ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
             }
             break;
 
@@ -4441,13 +4496,13 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x186:
         {
             float p[3];
-            if (SceneFlag == 5 && World == 7 && (long long)WorldTime % 10000 < 1000) {
+            if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(int *)((int)model + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
-            if (World == 9) {
+            if (gMapManager.GetCurrentMap() == 9) {
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
@@ -4572,8 +4627,56 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 // (corners ya transformadas por Camera_SetupFrustum a world coords), lo cual
 // duplicaría la transformación si se invocara — no se llama desde ningún
 // lado y no debe wirearse.
+// DESVIACION (in-game): el cuadro de tiles sale de cortar el frustum 3D que
+// acaba de armar Camera_SetupFrustum (FrustrumVertex: ápice + 4 esquinas en
+// coordenadas de mundo) con el plano del suelo, en vez de las constantes
+// fijas del binario, que estaban calibradas para el FOV de 35 grados.  Con
+// el FOV y el alcance mayores las esquinas de la pantalla quedaban sin
+// terreno.  El plano va 300 unidades por debajo del héroe y el cuadro se
+// agranda 800 unidades (8 tiles) hacia afuera: TestFrustrum2D mide la
+// tolerancia de bloques y objetos con el producto cruz sin normalizar, así
+// que con un cuadro más grande esa tolerancia se achica y los bloques de
+// 16x16 cerca del borde quedaban afuera (objetos que no aparecían).
+static bool CreateFrustrum2D_FromFrustum(const float *ground)
+{
+    const float apex[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };
+    const float corner[4][3] = {
+        { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 },   // arriba-izquierda
+        { DAT_07eab1c8, DAT_07eab1cc, DAT_07eab1d0 },   // arriba-derecha
+        { DAT_07eab1d4, DAT_07eab1d8, DAT_07eab1dc },   // abajo-derecha
+        { DAT_07eab1e0, DAT_07eab1e4, DAT_07eab1e8 },   // abajo-izquierda
+    };
+    const float groundZ = ground[2] - 300.0f;
+    if (apex[2] <= groundZ) return false;
+
+    float p[4][2];
+    float cx = 0.0f, cy = 0.0f;
+    for (int i = 0; i < 4; ++i) {
+        const float dz = corner[i][2] - apex[2];
+        float t = 1.0f;
+        if (dz < 0.0f) {
+            t = (groundZ - apex[2]) / dz;
+            if (t > 1.0f) t = 1.0f;
+        }
+        p[i][0] = apex[0] + (corner[i][0] - apex[0]) * t;
+        p[i][1] = apex[1] + (corner[i][1] - apex[1]) * t;
+        cx += p[i][0] * 0.25f;
+        cy += p[i][1] * 0.25f;
+    }
+    for (int i = 0; i < 4; ++i) {
+        float dx = p[i][0] - cx, dy = p[i][1] - cy;
+        const float len = sqrtf(dx * dx + dy * dy);
+        if (len > 0.001f) { dx = dx / len * 800.0f; dy = dy / len * 800.0f; }
+        FrustrumX[i] = (p[i][0] + dx) * _DAT_005524f8;
+        FrustrumY[i] = (p[i][1] + dy) * _DAT_005524f8;
+    }
+    return true;
+}
+
 void __cdecl CreateFrustrum2D(float *param_1)
 {
+    if (SceneFlag == 5 && CreateFrustrum2D_FromFrustum(param_1)) return;
+
     float pts[15];   // euler[0..2], then 4×vec3 input offsets [3..14]
     float rot[12];   // 3×4 rotation matrix
     float out[12];   // 4 transformed output positions

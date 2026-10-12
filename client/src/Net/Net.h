@@ -79,18 +79,4 @@ void Net_ProcessPacket(void);
 // @ address TBD
 void Net_SendPacket(const void* data, int size);
 
-// Send raw bytes over the socket (applies MuEmu/HackCheck byte cipher).
-// Used for plaintext C1-framed packets like keep-alives and HWID.
-// Returns 0 on success, -1 on hard error.
-int  Net_SendBuf(const char* buf, int len);
-
-// Send a small packet: plaintext [0xC1][len][opcode][payload].
-// Encrypts pkt[1..totalLen-1] via CSimpleModulus and wraps with C3 framing.
-void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
-
-// Envía una trama C1 sin cifrar según la política de tramas del protocolo.
-void Net_SendC1Packet(const BYTE* pkt, int totalLen);
-
-// Send a large packet: plaintext [0xC1][len][opcode][payload].
-// Encrypts pkt[1..totalLen-1] and wraps with [0xC4][hi][lo] framing.
-void Net_SendLargePacket(const BYTE* pkt, int totalLen);
+// Envío de paquetes: CNetwork (Net/Network.h).

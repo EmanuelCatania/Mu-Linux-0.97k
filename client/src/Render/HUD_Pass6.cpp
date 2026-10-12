@@ -29,15 +29,19 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Game/HeroVitals.h"
+#include "Item/ChaosMixRates.h"
+#include "Local/ClientText.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include "Net/Net.h"      // Net_SendSmallPacket (C3 + serial + chain-XOR)
+#include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
 #include <gl/GL.h>
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" void Net_SendNpcTalkClose(void);
 extern "C" void Net_SendNpcTalkClose(void);
@@ -117,8 +121,8 @@ extern "C" void __cdecl SyncPickedItemVisualState(void)
 
 // Aliases for IDA float constants used by sub_5126E0.
 // ConvertX/Y map 640×480 game coords to actual screen pixels.
-static inline float ConvertX(float x) { return x * (float)((double)WindowWidth  / 640.0); }
-static inline float ConvertY(float y) { return y * (float)((double)WindowHeight / 480.0); }
+static inline float ConvertX(float x) { return x * (float)((double)gWindow.GetWidth()  / 640.0); }
+static inline float ConvertY(float y) { return y * (float)((double)gWindow.GetHeight() / 480.0); }
 static inline void  BindTexture(int tex) { GL_BindTextureSlot(tex); }
 
 // =============================================================================
@@ -193,7 +197,7 @@ extern "C" void __cdecl sub_5126E0(int tex, float a2, float a3,
     float in2[3][4];
     AngleMatrix(angles, in2);
 
-    float yBase = (float)WindowHeight - v27;
+    float yBase = (float)gWindow.GetHeight() - v27;
 
     glBegin(GL_TRIANGLE_STRIP);
     for (int i = 0; i < 4; ++i) {
@@ -325,7 +329,7 @@ extern "C" void __cdecl RenderServerDivision(void)
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Title block — 8 lines from GlobalText[462..469].
     int v0 = (int)((double)InventoryStartX + 95.0);
@@ -335,7 +339,7 @@ extern "C" void __cdecl RenderServerDivision(void)
         y += 20.0f;
     }
 
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     float xa = (float)((double)InventoryStartX + 25.0);
     if (DAT_07eaa131 != 0) {
         m_dwTextColor = 0xFFFF55FFu;   // -16738604
@@ -346,7 +350,7 @@ extern "C" void __cdecl RenderServerDivision(void)
     }
     RenderText((int)(xa + 19.0f), 245, GlobalText[447], 0, 0, 0);
 
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = 0xFFD0D8FFu;       // -2955521
     float xc = (float)((double)InventoryStartX + 35.0);
     GL_DrawTexture(240, xc, 350.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
@@ -390,11 +394,11 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     RenderItemsBoxes(fPosX, fPosY, (DWORD)(uintptr_t)OffsetInventoryItems, 8, 8);
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;       // -15461356
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText(InventoryStartX + 35, InventoryStartY + 12, GlobalText[223],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     float x = (float)((double)InventoryStartX + 50.0);
     float y = (float)((double)InventoryStartY + 367.7);
@@ -431,7 +435,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
         if ((double)MouseX >= xa && (double)MouseX < xa + 24.0 &&
             (double)MouseY >= ya && (double)MouseY < ya + 24.0)
         {
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)xa, (int)ya - 13, GlobalText[225]);
@@ -450,7 +454,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
         if ((double)MouseX >= xb && (double)MouseX < xb + 24.0 &&
             (double)MouseY >= yb && (double)MouseY < yb + 24.0)
         {
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)xb, (int)yb - 12, GlobalText[233]);
@@ -510,7 +514,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // branch above is conditional on a live CharactersClient index.
             glColor3f(1.0f, 1.0f, 1.0f);
             EnableAlphaTest(true);
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             // Name string is at v38 - 24 (from IDA: v43 = v67 - 24).
             RenderText((int)v64, (int)v60 + 2, (char*)((BYTE*)slotBase + i * 36 - 24), 0, 0, 0);
             v60 += 19.0f;
@@ -540,13 +544,13 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(a1 + 35, a2 + 12, GlobalText[190],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;       // -1644826
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     if (PartyNumber == 0) {
         for (int i = 0; i < 7; ++i) {
@@ -568,14 +572,9 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         DWORD* slot = (DWORD*)Party;
         for (int row = 0; row < PartyNumber; ++row) {
             BYTE* v4 = (BYTE*)(slot + row * 9);
-            // +12 NO es la clase: es el MAPA (IDA lo resuelve con
-            // GlobalText[map + 30], y GlobalText[55]/[56] para fuera de rango).
-            int classByte = v4[12];
-            const char* className;
-            if (classByte == 10) className = GlobalText[55];
-            else if (classByte >= 11 && classByte <= 16) className = GlobalText[56];
-            else if (classByte <= 16) className = GlobalText[classByte + 30];
-            else                       className = GlobalText[classByte + 40];
+            // +12 NO es la clase: es el MAPA. IDA (0x004EF44F) copia inline el
+            // cuerpo de GetMapName; acá se resuelve con CMapManager.
+            const char* className = gMapManager.GetName(v4[12]);
 
             int level = *(int*)(v4 + 16);
             int maxLevel = *(int*)(v4 + 20);
@@ -592,11 +591,11 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
             wsprintfA(Buffer, "%s", (char*)v4);   // name[10] en +0
-            SelectObject(m_hFontDC, g_hFontBold);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;
             m_dwTextColor = 0xFFD2E6FFu;
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             wsprintfA(Buffer, "%s", className);
             RenderText(a1 + 40, a2 + 60 + 35 * row, Buffer, 0, 0, 0);
             wsprintfA(Buffer, "%d,%d", v4[13], v4[14]);
@@ -642,7 +641,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         if (MouseLButton) {
             GL_DrawTexture(281, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         }
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText((int)v59, (int)v63 - 13, GlobalText[221]);
@@ -772,7 +771,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     GL_DrawTexture(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
     GL_DrawTexture(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
     EnableAlphaTest(true);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Title: name + class.  Class string formula from IDA:
     //   GlobalText[4*(CA[11]>>3)+20][300*(CA[11]&7)]
@@ -787,7 +786,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     m_dwBackColor = 0xFF141414u;
     SetPlayerColor(*(BYTE*)((char*)Hero + 0x2EA));
-    RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+    RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Zone label: "ServerName - Channel" via GlobalText[460]/[461].
     // GlobalText[460]/[461] es el FORMATO (contiene "%s - %d"), no un dato.
@@ -820,9 +819,9 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     float pulse = (float)sin((double)WorldTime * 0.001) + 1.0f;
     float alpha = 2.0f - pulse;
     glColor4f(1.0f, 1.0f, 1.0f, alpha);
-    RenderText(iPosX + 22, iPosY + 22, String,  150 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 22, iPosY + 22, String,  150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     glColor4f(1.0f, 1.0f, 1.0f, pulse);
-    RenderText(iPosX + 22, iPosY + 22, pszText, 150 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 22, iPosY + 22, pszText, 150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // 5 stat-row backdrops (sprite 245) at y = (60-4)+i*60, x = (19-6)
@@ -834,7 +833,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
                          75.0f, 21.0f, 0.0f, 0.0f, 0.5859375f, 0.65625f, 1, 1);
         }
     }
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // ── Level (label) ───────────────────────────────────────────────────────
     // GlobalText[200] format = "Nivel: %d / %d" (CharacterLevel /
@@ -847,14 +846,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             (unsigned)g_MaxCharacterLevel);
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
-    RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
     // ── Experience (cur / max) ──────────────────────────────────────────────
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[201], *(int*)(CA + 16), *(int*)(CA + 52));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 80, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 80, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── "Puntos: NNNN" (LevelUpPoint) — top-center, blue background ──────────
     // Per IDA `ReceiveAddPoint` line 48: `--*(_WORD *)(CharacterAttribute + 84);`
@@ -863,7 +862,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // the truncated `if (LevelUpPoint > 0)` block in IDA RenderCharacterInfoWindow.
     unsigned short levelUpPoint = *(unsigned short*)(CA + 84);
     if (levelUpPoint > 0) {
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwBackColor = 0xFF1E6EC8u;     // (30, 110, 200) blue band
         m_dwTextColor = 0xFF000000u;     // black text
         char ptsBuf[64];
@@ -871,7 +870,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         const char* ptsFmt = GlobalText[217][0] ? GlobalText[217] : "Puntos: %d";
         wsprintfA(ptsBuf, ptsFmt, (int)levelUpPoint);
         RenderText(iPosX + 95, iPosY + 49, ptsBuf,
-                   80 * (int)WindowWidth / 0x280, 1, 0);
+                   80 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     }
 
     // ── "Puntos de reposición: %d / %d" (reset points, CA+46/+48) ───────────
@@ -884,10 +883,10 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         wsprintfA(Buffer, GlobalText[199],
                   *(short*)(CA + 46), *(short*)(CA + 48));
     }
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFF9664u;
-    RenderText(iPosX + 24, iPosY + 95, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 95, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Stat-add [+] buttons (sprites 0x120 / 0x121) ────────────────────────
     // La geometría sale de IDA sub_4E5DE0 L94-98, que es donde el binario testea
@@ -921,13 +920,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     };
 
     // ── Strength row + Damage range ─────────────────────────────────────────
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(0, 0);  // Strength = slot 0
     sprintf(Buffer, GlobalText[202], (unsigned)*(unsigned short*)(CA + 20));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF66CCDFu;   // -9977889
-    RenderText(iPosX + 14, iPosY + 120, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
-    SelectObject(m_hFontDC, g_hFont);
+    RenderText(iPosX + 14, iPosY + 120, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     // Compute damage range:  pick weapon slots, magic-class bonus, set bonus.
     // pWeapon = CharacterMachine + 536 (left-hand slot).
@@ -938,8 +937,8 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // takes the slot's place for the preview. (dword_7EA9800 / pPickedItem
     // not modeled in our build — skip this branch.)
 
-    short typeL = *(short*)pWeaponLeft;
-    short typeR = *(short*)pWeaponRight;
+    short typeL = (short)ItemBehaviorType(*(short*)pWeaponLeft);    // 0.97.20
+    short typeR = (short)ItemBehaviorType(*(short*)pWeaponRight);
 
     // Damage base picker:
     //   bow/crossbow class items in [128,135) or 145 in right hand → use CA[60..62]
@@ -990,7 +989,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
     m_dwTextColor = dualBonus ? 0xFFFF9664u : 0xFFFFFFFFu;
     m_dwBackColor = 0x80000000u;
-    RenderText(iPosX + 24, iPosY + 140, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 140, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // Equipment-set bonus check — original walks 5 equipment slots looking
     // for matching set indexes (offset +740, stride 68 from +136..+408).
@@ -998,13 +997,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // delta; we leave as default.
 
     // ── Agility row + Defense + Defense Rate ────────────────────────────────
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(1, 1);  // Agility = slot 1
     sprintf(Buffer, GlobalText[205], (unsigned)*(unsigned short*)(CA + 22));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
-    RenderText(iPosX + 14, iPosY + 180, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
-    SelectObject(m_hFontDC, g_hFont);
+    RenderText(iPosX + 14, iPosY + 180, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     bool agiBonus = false;
     if (agiBonus) {
@@ -1027,45 +1026,45 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 200, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 200, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // Defense rate (different field per class)
     unsigned short defRate = *(unsigned short*)(CA + 56);
     if ((CA[11] & 7) == 0) defRate = *(unsigned short*)(CA + 68);
     sprintf(Buffer, GlobalText[64], defRate);
-    RenderText(iPosX + 24, iPosY + 215, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 215, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Vitality row + HP ───────────────────────────────────────────────────
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(2, 2);  // Vitality = slot 2
     sprintf(Buffer, GlobalText[210], (unsigned)*(unsigned short*)(CA + 24));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
-    RenderText(iPosX + 14, iPosY + 240, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 240, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
-    SelectObject(m_hFontDC, g_hFont);
-    sprintf(Buffer, GlobalText[211],
-            *(unsigned short*)(CA + 28),
-            *(unsigned short*)(CA + 32));
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    sprintf(Buffer, GlobalText[211],                 // 32 bits (CHeroVitals)
+            (unsigned)gHeroVitals.GetCurrent(VITAL_LIFE),
+            (unsigned)gHeroVitals.GetMax(VITAL_LIFE));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Energy row + Mana ───────────────────────────────────────────────────
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(3, 3);  // Energy = slot 3
     sprintf(Buffer, GlobalText[212], (unsigned)*(unsigned short*)(CA + 26));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
-    RenderText(iPosX + 14, iPosY + 300, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 300, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[213],
-            *(unsigned short*)(CA + 30),
-            *(unsigned short*)(CA + 34));
+            (unsigned)gHeroVitals.GetCurrent(VITAL_MANA),
+            (unsigned)gHeroVitals.GetMax(VITAL_MANA));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── DW (class 0) / MG (class 3): magic skill damage line ────────────────
     int classFlag = *(BYTE*)((char*)Hero + 444) & 7;
@@ -1093,7 +1092,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         } else {
             sprintf(Buffer, GlobalText[216], piMin, piMax);
         }
-        RenderText(iPosX + 24, yMagic, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+        RenderText(iPosX + 24, yMagic, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     }
 
     // ── Class-specific extra text (Charisma / Command for DK/MG) ────────────
@@ -1101,11 +1100,11 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // DK: Command from Energy/10 + 200
         sprintf(Buffer, GlobalText[582],
                 *(unsigned short*)(CA + 26) / 10 + 200);
-        RenderText(iPosX + 24, iPosY + 335, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+        RenderText(iPosX + 24, iPosY + 335, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     } else if (classFlag == 3) {
         // MG: fixed 200
         sprintf(Buffer, GlobalText[582], 200);
-        RenderText(iPosX + 24, iPosY + 350, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+        RenderText(iPosX + 24, iPosY + 350, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     }
 
     // The original IDA function ends here; close button is NOT drawn by
@@ -1132,7 +1131,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Hero+474 holds the player's guild-mark index (-1 if no guild).
     short guildIdx = *(short*)((char*)Hero + 474);
@@ -1142,11 +1141,11 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
         sprintf(Text, "%s (Score:%d)",
                 Guild_GetMarkName(guildIdx), GuildTotalScore);
     }
-    RenderText(StartX + 35, StartY + 12, Text, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+    RenderText(StartX + 35, StartY + 12, Text, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     if (g_nGuildMemberCount == 0) {
         // 3-line "no guild" message.
@@ -1210,9 +1209,9 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(iPosX + 35, iPosY + 12, GlobalText[180],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     if (g_iKeyPadEnable) {
         // Name input field + virtual keypad (PIN-style).
@@ -1221,7 +1220,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
         GL_DrawTexture(271, v19, v17, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         int v3 = (int)v17 + 2;
         int v4 = (int)v19;
         RenderText(v4 - 38, v3, GlobalText[182], 0, 0, 0);
@@ -1257,7 +1256,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         RenderText(iPosX + 50, iPosY + 230, GlobalText[183], 0, 0, 0);
         RenderText(iPosX + 50, iPosY + 245, GlobalText[184], 0, 0, 0);
 
@@ -1297,11 +1296,11 @@ extern "C" void __cdecl RenderTrade(void)
     RenderInventoryInterface(TradeInventoryStartX, TradeInventoryStartY, 1);
 
     // Trader name title
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(TradeInventoryStartX + 35, TradeInventoryStartY + 12,
-               GlobalText[226], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[226], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // IDA / mapeo C1:38-39: oferta remota arriba (Inventory) y oferta local
     // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
@@ -1338,11 +1337,11 @@ extern "C" void __cdecl RenderTrade(void)
     glColor3f(1, 1, 1);
     GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
 
-    if (overZen) { SelectObject(m_hFontDC, g_hFont); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
+    if (overZen) { SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
     if (MouseX >= confirmX && MouseX < confirmX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
-        { SelectObject(m_hFontDC, g_hFont); RenderText((int)confirmX, (int)buttonsY - 13, GlobalText[228], 0, 0, 0); }
+        { SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)confirmX, (int)buttonsY - 13, GlobalText[228], 0, 0, 0); }
     if (MouseX >= cancelX && MouseX < cancelX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
-        { SelectObject(m_hFontDC, g_hFont); RenderText((int)cancelX, (int)buttonsY - 13, GlobalText[229], 0, 0, 0); }
+        { SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)cancelX, (int)buttonsY - 13, GlobalText[229], 0, 0, 0); }
 
     // IDA: RenderTrade busca DAT_00559F54 en la misma tabla de 80 bytes que Guild.
     const int remoteGuildRow = GuildMark_FindRecordByKey((int)TradeRemoteGuildKey);
@@ -1365,13 +1364,13 @@ extern "C" void __cdecl RenderTrade(void)
         else if (gold[i] < 1000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
         else if (gold[i] < 1000000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
         else _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF96DCFFu;
         RenderText(x - 30, goldY[i] + 2, GlobalText[224], 0, 0, 0);
         RenderText(x + 10, goldY[i] + 2, amount, 0, 0, 0);
     }
     // El port no expone g_hFontBig; g_hFontBold conserva el contrato de texto legible.
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFFFFFD2u;
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
@@ -1401,11 +1400,11 @@ extern "C" void __cdecl RenderShopInterface(void)
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               GlobalText[230], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[230], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Shop items start at `&Inventory[32].WalkSpeed` in the original client.
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
@@ -1422,7 +1421,7 @@ extern "C" void __cdecl RenderShopInterface(void)
                    (double)MouseY >= by && (double)MouseY < by + 24.0;
         };
         auto tip = [](float bx, float by, int text) {
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             RenderTipText((int)bx, (int)by - 12, GlobalText[text]);
         };
         float bx = (float)((double)dword_7EAA0C8 + 25.0);
@@ -1468,7 +1467,7 @@ extern "C" void __cdecl RenderShopInterface(void)
             else                        wsprintfA(Buffer, "%d,%03d,%03d,%03d", cost / 1000000000,
                                                   cost % 1000000000 / 1000000, cost % 1000000 / 1000,
                                                   cost % 1000);
-            SelectObject(m_hFontDC, g_hFontBold);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             const int ty = (int)by + 3;
             RenderText((int)bx - 35, ty, GlobalText[239], 0, 0, 0);
             if (cost < 10000000)
@@ -1522,8 +1521,12 @@ extern "C" void __cdecl RenderChaosMix(void)
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
                      (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+    // IDA 004F27F0: RenderItemsBoxes deja puesto el color de la última celda
+    // (InventoryColor), y sin este reset los textos y el botón salían teñidos
+    // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
+    glColor3f(1.0f, 1.0f, 1.0f);
 
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     // IDA 004F27F0: la elección local del modal 143 cambia el encabezado y
@@ -1531,7 +1534,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     const int chaosCategory = (int)DAT_083a7c2c;
     const int chaosTitle = chaosCategory == 1 ? 736 : (chaosCategory ? 583 : 735);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12, GlobalText[chaosTitle],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     if (DAT_07eaa140 >= 2) return; // el resultado/animación ocupa sólo la grilla
 
@@ -1561,6 +1564,9 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = 80; money = bloodMoney[min((int)DAT_07eaa168 - 1, 6)];
     }
 
+    // DESVIACION: las recetas consultadas por 0x88 muestran pendiente sin respuesta;
+    // no presentar como autoritativo el cálculo local del binario.
+    const bool pendingRate = CChaosMixRates::Supports(mixType) && !gChaosMixRates.Get(rate, money);
     char text[100], moneyText[32];
     ChaosMixFormatZen(moneyText, sizeof(moneyText), money);
     const int recipeText = mixType == 11 ? 7 : (mixType < 0 ? 0 : mixType);
@@ -1569,9 +1575,11 @@ extern "C" void __cdecl RenderChaosMix(void)
     _snprintf_s(text, sizeof(text), _TRUNCATE, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 50, text, 0, 0, 0);
     m_dwTextColor = 0xFFFFFFD2u;
-    _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
+    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosRatePending));
+    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 70, text, 0, 0, 0);
-    _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
+    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosCostPending));
+    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 90, text, 0, 0, 0);
 
     m_dwTextColor = 0xFF1414FFu;
@@ -1598,7 +1606,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     GL_DrawTexture((hover && MouseLButton) ? 293 : 292, x, y, 44.0f, 32.0f,
                    0.0f, 0.0f, 0.6875f, 1.0f, 1, 1);
     if (hover) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0x80303030u;
         RenderTipText((int)x, (int)y - 13, GlobalText[591]);
@@ -1633,7 +1641,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     // IDA: wsprintfA(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
     // con glColor amarillo cuando el baúl está bloqueado por password.
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     const int lock = (DAT_00559f5f != 0) ? 1 : 0;
@@ -1641,14 +1649,14 @@ extern "C" void __cdecl RenderWarehouse(void)
     CHAR Title[128];
     wsprintfA(Title, "%s (%s)", GlobalText[234], GlobalText[240 + lock]);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               Title, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               Title, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // ── Barra del zen guardado (bitmap 271 = 0x10F) ──────────────────────────
     float x = (float)((double)dword_7EAA0C8 + 50.0);
     float y = (float)((double)dword_7EAA0CC + 352.7);
     GL_DrawTexture(271, x, y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // WarehouseMoney = CharacterMachine[+0x54C]; (el inventario usa +0x548).
     int whZen = CharacterMachine ? *(int*)((BYTE*)CharacterMachine + 1356) : 0;
@@ -1680,7 +1688,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     // a decenas (>=100) o centenas (>=1000), mínimo 1.
     m_dwBackColor = 0xFF282828u;
     m_dwTextColor = 0xFF0000FFu;
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     const int taxX = dword_7EAA0C8 + 50;    // 310
     const int taxY = dword_7EAA0CC + 374;   // 374
     RenderText(taxX, taxY, GlobalText[266], 0, 0, 0);
@@ -1736,7 +1744,7 @@ extern "C" void __cdecl RenderWarehouse(void)
                 GL_DrawTexture(kTexPressed[v], bx, by, 24.0f, 24.0f,
                              0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             }
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             RenderTipText((int)bx, (int)by - 13, GlobalText[kBtnTip[i]]);
         }
         if (i == 2 && DAT_07eaa14c) {
@@ -1780,7 +1788,7 @@ extern "C" void __cdecl RenderEventWindow(void)
     const float height = bloodCastle ? 33.0f : 35.0f;
     const int   count  = bloodCastle ? 6 : 4;
 
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     const WORD charLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
     // v46 = fila + ((Hero[444] & 7) == 3 ? 6 : 0): el Magic Gladiator usa el
@@ -1816,7 +1824,7 @@ extern "C" void __cdecl RenderEventWindow(void)
         else         sprintf_s(label, bloodCastle ? GlobalText[848] : GlobalText[646],
                                row + 1, minLevel);
         RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
-                   (bloodCastle ? 120 : 116) * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+                   (bloodCastle ? 120 : 116) * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
         y += stride;
     }
@@ -1825,9 +1833,9 @@ extern "C" void __cdecl RenderEventWindow(void)
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               GlobalText[bloodCastle ? 846 : 39], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[bloodCastle ? 846 : 39], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     EnableAlphaTest(1);
@@ -1839,12 +1847,12 @@ extern "C" void __cdecl RenderEventWindow(void)
         const int n = SeparateTextIntoLines(GlobalText[832], lines, 7, 26);
         for (int i = 0, dy = 0; i < n; ++i, dy += 20)
             RenderText(dword_7EAA0C8 + 30, dy + dword_7EAA0CC + 64, lines + i * 26,
-                       130 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+                       130 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     } else {
         // Seis filas consecutivas de GlobalText a partir de la 670.
         for (int dy = 80, i = 0; dy < 200; dy += 20, ++i)
             RenderText(dword_7EAA0C8 + 30, dy + dword_7EAA0CC, GlobalText[670 + i],
-                       130 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+                       130 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     }
     GL_ResetState();   // = DisableAlphaBlend
 

@@ -90,10 +90,38 @@ set(MU_SOURCES
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
     src/Game/Game_MainLoop.cpp
+    src/Game/HeroVitals.cpp
     src/Game/Player_InputTick.cpp
     src/Render/Render_Frame.cpp
     src/Net/Net_Process.cpp
     src/Config/Config_Load.cpp
+    src/UI/UIState.cpp
+    src/Local/ClientText.cpp
+    src/Core/Window.cpp
+    src/Core/Font.cpp
+    src/Sound/SoundManager.cpp
+    src/Game/MapManager.cpp
+    src/Core/WndProc.cpp
+    src/Net/Network.cpp
+    src/Net/Reconnect.cpp
+    src/Net/Ping.cpp
+    src/Net/ServerCharacterStats.cpp
+    src/Item/ChaosMixRates.cpp
+    src/UI/HealthBar.cpp
+    src/Net/Recv/Recv_Account.cpp
+    src/Net/Recv/Recv_Character.cpp
+    src/Net/Recv/Recv_Chat.cpp
+    src/Net/Recv/Recv_Combat.cpp
+    src/Net/Recv/Recv_Event.cpp
+    src/Net/Recv/Recv_Guild.cpp
+    src/Net/Recv/Recv_Item.cpp
+    src/Net/Recv/Recv_Party.cpp
+    src/Net/Recv/Recv_Quest.cpp
+    src/Net/Recv/Recv_Trade.cpp
+    src/Net/Recv/Recv_Viewport.cpp
+    src/Net/Recv/Recv_World.cpp
+    src/Input/Input_WndProc.cpp
+    src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
@@ -121,6 +149,7 @@ set(MU_SOURCES
     src/Render/Entity_Render.cpp
     src/Net/Crypto.cpp
     src/Game/Timer.cpp
+    src/Game/FrameLimiter.cpp
     src/Sound/Music.cpp
     src/Terrain/Terrain_Tile.cpp
     src/Render/GL_2D.cpp
@@ -235,7 +264,6 @@ set(MU_SOURCES
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
     src/Render/Camera_Unproject.cpp
-    src/Net/Net_CharSelect.cpp
     src/Net/Net_PipeQuery.cpp
     src/Net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
@@ -273,6 +301,8 @@ set(MU_SOURCES
     src/Item/Item_InventoryRender.cpp
     src/Item/Item_ChaosMix.cpp
     src/Item/Item_ClickHandler.cpp
+    src/Item/RightClickMove.cpp
+    src/Item/ContentCatalog.cpp
     src/Item/Skill_Data.cpp
     src/Item/Gate_Data.cpp
     src/Item/Filter_Data.cpp
@@ -321,6 +351,11 @@ set(MU_SOURCES
     src/UI/UI_Tooltip.cpp
     src/UI/Chat_Gestures.cpp
     src/UI/GoldenArcher.cpp
+    src/UI/EventTimer.cpp
+    src/UI/MiniMap.cpp
+    src/Render/Camera3D.cpp
+    src/UI/OptionsMenu.cpp
+    src/UI/MoveList.cpp
     src/UI/Chat_InputTick.cpp
     src/UI/Chat_Send.cpp
     src/UI/UI_SkillHotkeys.cpp
@@ -341,11 +376,40 @@ set(MU_HEADERS
     src/ghidra_compat.h
     src/types.h
     src/Config/Config.h
+    src/Config/ServerConfig.h
+    src/Config/UserSettings.h
+    src/UI/UIState.h
+    src/Entity/EntityView.h
+    src/Entity/CharacterAttributeView.h
+    src/Local/ClientText.h
+    src/Item/RightClickMove.h
+    src/Item/ContentCatalog.h
+    src/Item/ItemDefines.h
+    src/Item/Item_ServerValue.h
+    src/UI/GoldenArcher.h
+    src/Core/Window.h
+    src/Core/Font.h
+    src/UI/EventTimer.h
+    src/UI/MiniMap.h
+    src/Render/Camera3D.h
+    src/UI/OptionsMenu.h
+    src/UI/MoveList.h
+    src/Sound/SoundManager.h
+    src/Game/MapManager.h
+    src/Game/HeroVitals.h
+    src/Net/Network.h
+    src/Net/Reconnect.h
+    src/Net/Ping.h
+    src/Net/ServerCharacterStats.h
+    src/Item/ChaosMixRates.h
+    src/UI/HealthBar.h
+    src/Net/Recv/NetRecv.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h
     src/Game/Game_EnterWorldTick.h
     src/Game/Game_MainLoop.h
+    src/Game/FrameLimiter.h
     src/Game/Game_SceneUpdate.h
     src/Game/Movement.h
     src/Input/Input.h
@@ -414,7 +478,7 @@ set_target_properties(mu97k PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
     # Igual que el .vcxproj: se enlaza directo sobre bin/Client/, donde están
-    # Data/ y server.cfg.
+    # Data/ y Config.ini.
     RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/bin/Client"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/bin/Client"
     PDB_OUTPUT_DIRECTORY_DEBUG       "${CMAKE_CURRENT_SOURCE_DIR}/bin/Client"
@@ -425,6 +489,7 @@ set_target_properties(mu97k PROPERTIES
 target_include_directories(mu97k PRIVATE
     src
     lib/libjpeg/jpeg-6b
+    lib/miniaudio
 )
 
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.

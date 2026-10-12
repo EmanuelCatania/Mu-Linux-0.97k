@@ -12,6 +12,10 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
+#include "UI/MiniMap.h"
+#include "UI/MoveList.h"
+#include "Game/MapManager.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -29,10 +33,10 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 
 // SaveIME_Status @ 0x0047ED45 (56 bytes) — save IME conversion status
 void __cdecl SaveIME_Status(void) {
-    HIMC hImc = ImmGetContext(g_hWnd);
+    HIMC hImc = ImmGetContext(gWindow.GetHwnd());
     DWORD dwConv, dwSent;
     ImmGetConversionStatus(hImc, &dwConv, &dwSent);
-    ImmReleaseContext(g_hWnd, hImc);
+    ImmReleaseContext(gWindow.GetHwnd(), hImc);
 }
 
 // FUN_004c3dd0 @ 0x004C3DD0 (56 bytes) — color value from gold amount
@@ -42,9 +46,10 @@ int __cdecl FUN_004c3dd0(int param_1) {
     return ((param_1 < 100000) - 1 & (int)0xFF81EC01) - (int)0x692301;
 }
 
-// RenderInformation @ 0x0051E200 (58 bytes) — render all HUD info layers
+// IDA: RenderInformation (0x0051E200), 58 bytes — render all HUD info layers
 void __cdecl RenderInformation(void) {
     RenderErrorMessage(); // RenderErrorMessage / stats panel
+    gReconnect.Render();  // DESVIACION (DLL Reconnect.cpp, 0x00525CC1)
     Scene_MapTick(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
     if ((g_bUseChatListBox == 1) || (SceneFlag != 5)) {
@@ -52,16 +57,16 @@ void __cdecl RenderInformation(void) {
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
+    // DESVIACION (DLL Interface.cpp, hook 0x00525CEC): mapa (Tab) y menú M.
+    gMiniMap.Render();
+    gMoveList.Render();
     Cursor_Render(); // RenderCursor
     RenderInfomation3D(); // RenderInfomation3D
 }
 
-// GetMapName @ 0x004EF120 (64 bytes) -- nombre del mapa desde GlobalText.
+// IDA: GetMapName (0x004EF120) — nombre del mapa; ver CMapManager.
 char *__cdecl GetMapName(int iMap) {
-    if (iMap >= 11 && iMap <= 16) return GlobalText[56];   // Blood Castle
-    if (iMap == 10)               return GlobalText[55];   // Icarus
-    if (iMap < 17)                return GlobalText[iMap + 30];
-    return GlobalText[iMap + 40];
+    return (char*)gMapManager.GetName(iMap);
 }
 
 // CErrorReport::WriteFile @ 0x004054B0 (65 bytes) — XOR + write to log

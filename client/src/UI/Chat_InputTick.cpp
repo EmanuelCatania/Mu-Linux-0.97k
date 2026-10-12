@@ -23,13 +23,13 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "UI/EventTimer.h"
 #pragma warning(disable: 4102)
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Inventory grid base — used by section 11 (Q/W/E quick-use sound feedback).
 // Defined in src/Render/HUD_Pass3.cpp.
@@ -40,81 +40,13 @@ extern "C" BYTE OffsetInventoryItems[];
 // ---------------------------------------------------------------------------
 
 // XOR key (32 bytes) — same as login/logout key
-static const BYTE s_xorKey[32] = {
-    0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
-    0x23, 0xa8, 0xfe, 0xb6, 0x49, 0x5d, 0x39, 0x5d,
-    0x8a, 0xcb, 0x63, 0x8d, 0xea, 0x7d, 0x2b, 0x5f,
-    0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
-};
 
 // Send a packet to the server.  Applies the XOR cipher (offset by hdr_skip bytes
 // to skip the C1/len header), encodes via CSimpleModulus_Encode, then send()s.
 // If WSAEWOULDBLOCK, queues into SocketClientSendBufferLength / 0x55ca16c overflow buffer.
-static void Chat_SendPacket(BYTE *pkt, int len, int hdr_skip = 0)
-{
-    // XOR payload bytes starting at hdr_skip
-    for (int i = hdr_skip; i < len; ++i)
-        pkt[i] ^= s_xorKey[i & 0x1f];
-
-    CSimpleModulus_Encode(0, pkt, len);
-
-    if (SocketClientSocket == 0xffffffff)
-        return;
-
-    int sent = 0;
-    int rem  = len;
-    do {
-        int n = send(SocketClientSocket, (char *)pkt + sent, rem, 0);
-        if (n == -1) {
-            int err = WSAGetLastError();
-            if (err == WSAEWOULDBLOCK) {
-                if ((int)(SocketClientSendBufferLength + len) < 0x2001) {
-                    // SocketClientSendBuffer (= SocketClient + 0xC), igual que los otros sitios
-                    // con este patrón (Game_*Tick, Party, Player_InputTick); la dirección literal
-                    // del binario (0x055ca16c) no existe en este build.
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, len);
-                    SocketClientSendBufferLength += len;
-                } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                }
-            } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
-            }
-            break;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint != 0)
-            FUN_0043de60();
-        sent += n;
-        rem  -= n;
-    } while (rem > 0);
-}
-
 // Send a raw 3-byte packet (no XOR, no encode — these class-select packets are
 // pre-encoded in the original code via CSimpleModulus_Encode before this call site).
 extern "C" void HUD_BottomBarButtons_HitTest(void);
-
-static void SendRaw3(BYTE b0, BYTE b1, BYTE b2)
-{
-    BYTE pkt[3] = { b0, b1, b2 };
-    if (SocketClientSocket == 0xffffffff) return;
-    int rem = 3, off = 0;
-    do {
-        int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
-        if (n == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 3);
-                    SocketClientSendBufferLength += 3;
-                } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-            } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-            break;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        off += n; rem -= n;
-    } while (rem > 0);
-}
 
 // Resolves explicit target commands used by Trade and Guild.  Party has its own
 // original interaction below: it does not accept a target name.
@@ -165,9 +97,9 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
         // Mandarlo con el frame equivocado = "Packet encryption error" y
         // CloseClient del lado del server.
         if (plainC1)
-            Net_SendC1Packet(packet, sizeof(packet));
+            gNetwork.SendC1(packet, sizeof(packet));
         else
-            Net_SendSmallPacket(packet, sizeof(packet));
+            gNetwork.Send(packet, sizeof(packet));
     }
     return true; // Native command: never forward it as an unknown text command.
 }
@@ -231,7 +163,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const WORD key = *(WORD*)(target + 476);
     PartyKey = key;
     const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 
     const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
@@ -352,33 +284,10 @@ extern "C" void Chat_SendChatLine(const char* text)
     }
 
     memcpy(pkt + 13, text, msgBytes);
-    // Se guarda ANTES del send: el hook de MuEmu (`#define send
-    // MuEmu_send_hook`) encripta el buffer en el lugar y pkt[2] deja de valer 0x02.
     const bool isWhisper = (pkt[2] == 0x02);
 
-    // El server (XorData en PacketManager.cpp) reversa el CHAIN-XOR:
-    // `pkt[i] ^= pkt[i-1] ^ key[i]`, igual que el resto de los C1 (movimiento,
-    // enter-world, char-select). Con un XOR simple el texto llega ilegible.
-    for (int xi = 3; xi < pktLen; ++xi)
-        pkt[xi] ^= pkt[xi - 1] ^ s_xorKey[xi & 0x1f];
-
-    if (SocketClientSocket == 0xffffffff) return;
-    int rem = pktLen, off = 0;
-    do {
-        int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
-        if (n == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);
-                    SocketClientSendBufferLength += pktLen;
-                } else Net_Disconnect((int)(uintptr_t)SocketClient);
-            } else Net_Disconnect((int)(uintptr_t)SocketClient);
-            break;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        off += n; rem -= n;
-    } while (rem > 0);
+    // C1 con chain-XOR (lo aplica CNetwork; el server lo revierte en XorData).
+    gNetwork.SendC1(pkt, pktLen);
 
     // IDA WndProc L2261: el server no le devuelve el susurro a quien lo
     // manda, asi que el cliente agrega la linea con el nombre propio y el
@@ -430,7 +339,7 @@ void __cdecl Chat_InputTick(void)
             const char *activePtr = (const char *)&DAT_07df938b + slot * 0x118;
             const char *typePtr   = (const char *)&DAT_07df948c + slot * 0x118;
             const int  *posXPtr   = (const int *)((const char *)&DAT_07df9494 + slot * 0x118);
-            int         posX_scaled = (int)((unsigned int)(*posXPtr * 0x280) / DAT_0056156c);
+            int         posX_scaled = (int)((unsigned int)(*posXPtr * 0x280) / gWindow.GetWidth());
 
             if (*activePtr != '\0' &&
                 (DAT_00559bf1 != '\0' || *typePtr != 3) &&
@@ -464,16 +373,20 @@ void __cdecl Chat_InputTick(void)
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11970 == 0) {
                 DAT_07e11970 = 1;
-                // Same structural split as newer clean sources:
-                // guild list open -> guild widget, else main chat widget.
-                DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
-                                                  : DAT_055c9ff0);
-                if (obj && *(int*)obj) {
-                    void** vt = (void**)*obj;
-                    typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-                    typedef int (__fastcall *FnRows)(DWORD*, int);
-                    int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
-                    ((FnScroll)vt[12])(obj, 0, -rows);
+                // DESVIACION: con el panel H abierto, la página va a su lista.
+                if (gEventTimer.IsOpen()) gEventTimer.ScrollPages(-1);
+                else {
+                    // Same structural split as newer clean sources:
+                    // guild list open -> guild widget, else main chat widget.
+                    DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
+                                                      : DAT_055c9ff0);
+                    if (obj && *(int*)obj) {
+                        void** vt = (void**)*obj;
+                        typedef int (__fastcall *FnScroll)(DWORD*, int, int);
+                        typedef int (__fastcall *FnRows)(DWORD*, int);
+                        int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
+                        ((FnScroll)vt[12])(obj, 0, -rows);
+                    }
                 }
             }
         } else {
@@ -484,14 +397,18 @@ void __cdecl Chat_InputTick(void)
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11974 == 0) {
                 DAT_07e11974 = 1;
-                DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
-                                                  : DAT_055c9ff0);
-                if (obj && *(int*)obj) {
-                    void** vt = (void**)*obj;
-                    typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-                    typedef int (__fastcall *FnRows)(DWORD*, int);
-                    int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
-                    ((FnScroll)vt[12])(obj, 0, rows);
+                // DESVIACION: con el panel H abierto, la página va a su lista.
+                if (gEventTimer.IsOpen()) gEventTimer.ScrollPages(1);
+                else {
+                    DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
+                                                      : DAT_055c9ff0);
+                    if (obj && *(int*)obj) {
+                        void** vt = (void**)*obj;
+                        typedef int (__fastcall *FnScroll)(DWORD*, int, int);
+                        typedef int (__fastcall *FnRows)(DWORD*, int);
+                        int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
+                        ((FnScroll)vt[12])(obj, 0, rows);
+                    }
                 }
             }
         } else {
@@ -805,26 +722,9 @@ void __cdecl Chat_InputTick(void)
                                         pkt[1] = (BYTE)pktLen;
                                         memcpy(pkt + 0x0d, &DAT_07e108c8, tlen);
                                         for (int xi = 3; xi < pktLen; ++xi)
-                                            pkt[xi] ^= s_xorKey[xi & 0x1f];
+                                            pkt[xi] ^= CNetwork::XorKey[xi & 0x1f];
                                         CSimpleModulus_Encode(0, pkt, pktLen);
-                                        if (SocketClientSocket != 0xffffffff) {
-                                            int rem = pktLen, off = 0;
-                                            do {
-                                                int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
-                                                if (n == -1) {
-                                                    if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                                                        if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
-                                                            memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);
-                                                            SocketClientSendBufferLength += pktLen;
-                                                        } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-                                                    } else Net_Disconnect(((int)(uintptr_t)SocketClient));
-                                                    break;
-                                                }
-                                                if (n == 0) break;
-                                                if (SocketClientLogPrint) FUN_0043de60();
-                                                off += n; rem -= n;
-                                            } while (rem > 0);
-                                        }
+                                        gNetwork.SendRaw((char *)pkt, pktLen);
                                     }
                                 }
                             } // end if (!bDupWhisper)
@@ -970,9 +870,9 @@ void __cdecl Chat_InputTick(void)
                             // C1 payload, corrupting the slot on the wire and
                             // causing an immediate disconnect.
                             BYTE pkt[5] = { 0xC1, 0x05, 0x26, (BYTE)(slot + 12), 0x00 };
-                            Net_SendSmallPacket(pkt, 5);
+                            gNetwork.Send(pkt, 5);
                             // Sound feedback by item type
-                            int itemType = *(int*)(OffsetInventoryItems + slot * 0x44);
+                            int itemType = ItemBehaviorType(*(short*)(OffsetInventoryItems + slot * 0x44));   // 0.97.20
                             if (itemType == 448) {
                                 PlayBuffer(33, 0, 0);   // potion mana sound
                             } else if (itemType >= 449 && itemType <= 457) {

@@ -2,6 +2,8 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include <array>
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -1732,12 +1734,110 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
 }
 #endif
 
-// RenderObjectScreen @ 0x004E13A0 — RenderObjectScreen.
-// Literal control-flow port of the 0.97k IDA routine.  This is the common 3D
-// item path for inventory, equipment, shop, warehouse, trade and Chaos grids.
+namespace {
+// IDA: RenderObjectScreen (0x004E13A0). Rangos inclusivos; las excepciones
+// posteriores reemplazan al grupo. La tabla se resuelve al compilar.
+enum class InventoryAngleMode : unsigned char { Fixed, ItemAttribute, Level };
+
+struct InventoryPoseDefinition {
+    float Angle[3] = { 270.0f, -10.0f, 0.0f };
+    float BodyHeight = 0.0f;
+    float Scale = 0.0025f;
+    float NegativeLevelScale = 0.0025f;
+    InventoryAngleMode AngleMode = InventoryAngleMode::Fixed;
+};
+
+constexpr std::array<InventoryPoseDefinition, MODEL_MAX_VANILLA> MakeInventoryPoses()
+{
+    std::array<InventoryPoseDefinition, MODEL_MAX_VANILLA> poses{};
+    struct AngleRule {
+        int First, Last;
+        float X, Y, Z;
+        InventoryAngleMode Mode = InventoryAngleMode::Fixed;
+    };
+    constexpr AngleRule angles[] = {
+        { MODEL_SWORD, MODEL_SHIELD - 1, 180.0f, 270.0f, 15.0f, InventoryAngleMode::ItemAttribute },
+        { MODEL_SHIELD, MODEL_HELM - 1, 270.0f, 270.0f, 0.0f },
+        { 536, MODEL_STAFF - 1, 90.0f, 180.0f, 20.0f },
+        { 506, 506, 180.0f, 270.0f, 20.0f },
+        { 535, 535, 0.0f, 270.0f, 15.0f },
+        { 543, 543, 0.0f, 270.0f, 15.0f },
+        { 545, 545, 0.0f, 90.0f, 15.0f },
+        { MODEL_HELPER_DINORANT, MODEL_HELPER_DINORANT, -90.0f, -20.0f, 0.0f },
+        { 828, MODEL_POTION - 1, 360.0f, 0.0f, 0.0f },
+        { 830, 833, 270.0f, -10.0f, 0.0f }, // Anillos, Blood Bone y Scroll of Archangel.
+        { 834, 834, 290.0f, 0.0f, 0.0f },   // Cloak of Invisibility: no es un ala.
+        { 860, 860, 90.0f, 0.0f, 0.0f, InventoryAngleMode::Level },
+        { 868, 868, 270.0f, 0.0f, 0.0f },
+        { 952, 954, 270.0f, 0.0f, 0.0f },
+        { 953, 953, 270.0f, 90.0f, 0.0f },
+        { 958, 958, -90.0f, -20.0f, -20.0f },
+    };
+    for (const auto& rule : angles) {
+        for (int type = rule.First; type <= rule.Last; ++type) {
+            poses[type].Angle[0] = rule.X;
+            poses[type].Angle[1] = rule.Y;
+            poses[type].Angle[2] = rule.Z;
+            poses[type].AngleMode = rule.Mode;
+        }
+    }
+
+    struct SizeRule { int First, Last; float Height, Scale; };
+    constexpr SizeRule sizes[] = {
+        { MODEL_HELM, MODEL_ARMOR - 1, -156.0f, 0.0039f },
+        { MODEL_ARMOR, MODEL_PANTS - 1, -96.0f, 0.0039f },
+        { MODEL_PANTS, MODEL_GLOVES - 1, -48.0f, 0.0038f },
+        { MODEL_GLOVES, MODEL_BOOTS - 1, -72.0f, 0.0032f },
+        { MODEL_BOOTS, MODEL_WING_ELF - 1, 0.0f, 0.0033f },
+        { MODEL_WING_ELF, MODEL_HELPER_ANGEL - 1, 0.0f, 0.0020f },
+        { MODEL_WING_DARKNESS, MODEL_WING_DARKNESS, 0.0f, 0.0015f },
+        { MODEL_SPEAR, MODEL_BOW - 1, 0.0f, 0.0018f },
+        { MODEL_STAFF, MODEL_SHIELD - 1, 0.0f, 0.0022f },
+        { MODEL_POTION, MODEL_ETC - 1, 0.0f, 0.0035f },
+        { 535, 535, 0.0f, 0.0012f },
+        { 543, 543, 0.0f, 0.0011f },
+        { 570, 570, 0.0f, 0.0019f },
+        { 830, 831, 0.0f, 0.0030f },
+        { 832, 832, 0.0f, 0.0020f },
+        { 833, 834, 0.0f, 0.0018f },
+        { 869, 869, 0.0f, 0.0020f },
+        { 870, 872, 0.0f, 0.0025f },
+        { 873, 874, 0.0f, 0.0028f },
+        { 953, 953, 0.0f, 0.0039f },
+        { 955, 955, 0.0f, 0.0015f },
+        { 956, 956, 0.0f, 0.0019f },
+        { 957, 957, 0.0f, 0.0010f },
+        { 958, 958, 0.0f, 0.0015f },
+    };
+    for (const auto& rule : sizes) {
+        for (int type = rule.First; type <= rule.Last; ++type) {
+            poses[type].BodyHeight = rule.Height;
+            poses[type].Scale = rule.Scale;
+            poses[type].NegativeLevelScale = rule.Scale;
+        }
+    }
+    poses[419].NegativeLevelScale = 0.0010f;
+    poses[570].NegativeLevelScale = 0.0010f;
+    poses[546].NegativeLevelScale = 0.0015f;
+    return poses;
+}
+
+constexpr auto InventoryPoses = MakeInventoryPoses();
+constexpr InventoryPoseDefinition DefaultInventoryPose{};
+} // namespace
+
+// IDA: RenderObjectScreen (0x004E13A0).
+// Pose común a inventario, equipo, tienda, baúl, trade y Chaos.
 void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char Option1,
                           unsigned char ExtOption, float* Target, int Select, char PickUp)
 {
+    // 0.97.20: un modelo dinámico del catálogo (agregado >= 512) toma la pose,
+    // escala y altura del vanilla que imita; se dibuja con su propio modelo.
+    const int drawType = Type;
+    if (Type >= MODEL_MAX_VANILLA) {
+        const int itemType = gContentCatalog.GetModelItemType(Type);
+        if (itemType >= 0) Type = ItemEntityModel(itemType);
+    }
 
     float camera[3] = { _CameraRayOriginX, _CameraRayOriginY, _CameraRayOriginZ };
     float direction[3] = {
@@ -1747,44 +1847,26 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     VectorMA(camera, PickUp ? 0.07f : 0.1f, direction, position);
 
     const int level = ((int)ItemLevel >> 3) & 0x0F;
-    float angle[3];
-
-    if (Type == 535 || Type == 543) {
-        angle[0] = 0.0f; angle[1] = 270.0f; angle[2] = 15.0f;
-    } else if (Type == 545) {
-        angle[0] = 0.0f; angle[1] = 90.0f; angle[2] = 15.0f;
-    } else if (Type >= 536 && Type < 560) {
-        angle[0] = 90.0f; angle[1] = 180.0f; angle[2] = 20.0f;
-    } else if (Type == 506) {
-        angle[0] = 180.0f; angle[1] = 270.0f; angle[2] = 20.0f;
-    } else if (Type >= 400 && Type < 592) {
-        angle[0] = 180.0f;
-        angle[1] = 270.0f;
+    const auto& inventoryPose = (Type >= 0 && Type < MODEL_MAX_VANILLA)
+        ? InventoryPoses[Type] : DefaultInventoryPose;
+    float angle[3] = { inventoryPose.Angle[0], inventoryPose.Angle[1], inventoryPose.Angle[2] };
+    if (inventoryPose.AngleMode == InventoryAngleMode::ItemAttribute) {
         angle[2] = *(BYTE*)((BYTE*)(uintptr_t)DAT_07d78068 + (Type - 399) * 0x40 - 34) ? 25.0f : 15.0f;
-    } else if (Type >= 592 && Type < 624) {
-        angle[0] = 270.0f; angle[1] = 270.0f; angle[2] = 0.0f;
-    } else if (Type == 819) {
-        angle[0] = -90.0f; angle[1] = -20.0f; angle[2] = 0.0f;
-    } else if (Type == 832 || Type == 833) {
-        angle[0] = 270.0f; angle[1] = -10.0f; angle[2] = 0.0f;
-    } else if (Type == 834) {
-        angle[0] = 290.0f; angle[1] = 0.0f; angle[2] = 0.0f;
-    } else if (Type == 958) {
-        angle[0] = -90.0f; angle[1] = -20.0f; angle[2] = -20.0f;
-    } else if (Type >= 828 && Type < 848 && Type != 830 && Type != 831) {
-        angle[0] = 360.0f; angle[1] = 0.0f; angle[2] = 0.0f;
-    } else if (Type == 860) {
-        if (level == 0)      { angle[0] = 180.0f; angle[1] = 0.0f;  angle[2] = 0.0f; }
-        else if (level == 1) { angle[0] = 270.0f; angle[1] = 90.0f; angle[2] = 0.0f; }
-        else                 { angle[0] = 90.0f;  angle[1] = 0.0f;  angle[2] = 0.0f; }
-    } else if (Type == 952 || Type == 954) {
-        angle[0] = 270.0f; angle[1] = 0.0f; angle[2] = 0.0f;
-    } else if (Type == 953) {
-        angle[0] = 270.0f; angle[1] = 90.0f; angle[2] = 0.0f;
-    } else if (Type == 868) {
-        angle[0] = 270.0f; angle[1] = 0.0f; angle[2] = 0.0f;
-    } else {
-        angle[0] = 270.0f; angle[1] = -10.0f; angle[2] = 0.0f;
+    } else if (inventoryPose.AngleMode == InventoryAngleMode::Level) {
+        if (level == 0) angle[0] = 180.0f;
+        else if (level == 1) { angle[0] = 270.0f; angle[1] = 90.0f; }
+    }
+
+    // DESVIACION (DLL ItemPosition, ahora catálogo 0.97.20): pose propia del
+    // item en el inventario.  Desplaza la posición, reemplaza los ángulos y la
+    // escala; el giro del item seleccionado se mantiene.
+    const CatalogItemPose* pose = gContentCatalog.GetItemPose(gContentCatalog.GetModelItemType(drawType));
+    if (pose) {
+        position[0] += pose->PositionX;
+        position[1] += pose->PositionY;
+        angle[0] = pose->RotationX;
+        angle[1] = pose->RotationY;
+        angle[2] = pose->RotationZ;
     }
 
     if (Select == 1)
@@ -1796,8 +1878,8 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     _DAT_07ea9530 = angle[1];
     _DAT_07ea9534 = angle[2];
 
-    short modelType = (short)Type;
-    if (modelType >= 624 && modelType < 784) {
+    short modelType = (short)drawType;
+    if (drawType == Type && modelType >= MODEL_HELM && modelType < MODEL_WING_ELF) {
         modelType = 390;
     } else if (modelType == 860) {
         if (level == 0) modelType = 947;
@@ -1807,35 +1889,9 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
 
     void* model = (void*)(DAT_05828d58 + (int)modelType * 0xBC);
     *(BYTE*)((BYTE*)model + 0xA0) = 0;
-    if (Type >= 624 && Type < 656)      *(float*)((BYTE*)model + 0x84) = -156.0f;
-    else if (Type >= 656 && Type < 688) *(float*)((BYTE*)model + 0x84) = -96.0f;
-    else if (Type >= 688 && Type < 720) *(float*)((BYTE*)model + 0x84) = -48.0f;
-    else if (Type >= 720 && Type < 752) *(float*)((BYTE*)model + 0x84) = -72.0f;
-    else                                 *(float*)((BYTE*)model + 0x84) = 0.0f;
-
-    float scale = 0.0025f;
-    if (Type >= 624 && Type < 784) {
-        if (Type < 688) scale = 0.0039f;
-        else if (Type < 720) scale = 0.0038f;
-        else if (Type < 752) scale = 0.0032f;
-        else scale = 0.0033f;
-    } else if (Type == 790 || Type == 958) scale = 0.0015f;
-    else if ((Type >= 784 && Type < 816) || Type == 869 || Type == 832) scale = 0.0020f;
-    else if (Type == 833 || Type == 834 || (Type >= 496 && Type < 528)) scale = 0.0018f;
-    else if (Type == 419) scale = (int)ItemLevel >= 0 ? 0.0025f : 0.0010f;
-    else if (Type == 570) scale = (int)ItemLevel >= 0 ? 0.0019f : 0.0010f;
-    else if (Type == 546) scale = (int)ItemLevel < 0 ? 0.0015f : 0.0025f;
-    else if (Type >= 870 && Type < 873) scale = 0.0025f;
-    else if (Type >= 873 && Type < 875) scale = 0.0028f;
-    else if (Type == 830 || Type == 831) scale = 0.0030f;
-    else if (Type >= 848 && Type < 880) scale = 0.0035f;
-    else if (Type >= 560 && Type < 592) scale = 0.0022f;
-    else if (Type == 543) scale = 0.0011f;
-    else if (Type == 535) scale = 0.0012f;
-    else if (Type == 953) scale = 0.0039f;
-    else if (Type == 955) scale = 0.0015f;
-    else if (Type == 956) scale = 0.0019f;
-    else if (Type == 957) scale = 0.0010f;
+    *(float*)((BYTE*)model + 0x84) = inventoryPose.BodyHeight;
+    float scale = (int)ItemLevel < 0 ? inventoryPose.NegativeLevelScale : inventoryPose.Scale;
+    if (pose && pose->Scale > 0.0f) scale = pose->Scale;
 
     ObjectSelect_AnimationFrame = 0;
     ObjectSelect_PriorAnimationFrame = 0;
@@ -1846,7 +1902,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
                  (unsigned int*)renderAngle, headAngle, '\0', '\0');
 
     char object[0x200] = {};
-    *(short*)(object + 2) = (short)Type;
+    *(short*)(object + 2) = (short)drawType;
     ItemObjectAttribute((int)object);
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
@@ -1859,6 +1915,6 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     float light[3] = { 1.0f, 1.0f, 1.0f };
     // Entity_DrawAt's visibility argument is 1.0 in the native UI path used
     // by this client; all OpenGL state setup/teardown stays inside that renderer.
-    RenderPartObject((int)object, Type, 0, light, 1.0f, ItemLevel, Option1,
+    RenderPartObject((int)object, drawType, 0, light, 1.0f, ItemLevel, Option1,
                  '\x01', 1, '\x01', 0, 2);
 }

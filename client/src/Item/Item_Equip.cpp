@@ -7,6 +7,7 @@
 //   a2 (nuestro `object`)    = ITEM* equipado (CharacterMachine + 536 + 68*mano).
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -40,11 +41,11 @@ static void ItemEquip_UseManaScroll97k(int inventorySlot /* IDA: sub_482BE0(3) *
 
     EnableUse = 10;
     const BYTE packet[5] = { 0xC1, 5, 0x26, (BYTE)(inventorySlot + 12), 0 };
-    Net_SendSmallPacket(packet, sizeof(packet));
+    gNetwork.Send(packet, sizeof(packet));
 
     // IDA: *(&OffsetInventoryItems.Type + 34 * inventorySlot). Type is a
     // WORD, hence the 34-WORD = 68-byte ITEM stride.
-    const WORD itemType = ((ITEM*)OffsetInventoryItems)[inventorySlot].Type;
+    const WORD itemType = (WORD)ItemBehaviorType(((ITEM*)OffsetInventoryItems)[inventorySlot].Type);   // 0.97.20
     if (itemType == 448)
         PlayBuffer(33, 0, 0);
     else if (itemType >= 449 && itemType <= 457)
@@ -80,7 +81,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
     BYTE* const skillInfo = (BYTE*)SkillAttribute.Raw + skill * 0x28;
     const float routeReach = skillInfo[0x26] * 1.2f;  // IDA L98-99: v33 * 1.2
     float reach = routeReach;                         // IDA: v12
-    if (World >= 11 && World <= 16 && skill >= 19 && skill <= 23)
+    if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && skill >= 19 && skill <= 23)
         reach = 1.8f;                                 // IDA L100-103
 
     if (dx * dx + dy * dy > reach * reach * 10000.0f) {   // IDA L106: v12*100 < sqrt(...)
@@ -90,6 +91,9 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
         caster[748] = 1;                              // IDA L150
         caster[749] = 5;                              // IDA L151
+        // IDA: sub_483780 (0x00483780).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00483AC5): avisar al server del camino al perseguir para atacar.
+        Combat_SendMovePathPacket((int)character, (int)character);
         return 1;
     }
 
@@ -142,7 +146,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             const WORD heroKey = *(WORD*)(Hero + 476); // IDA: *(_WORD *)(Hero + 476)
             BYTE packet[6] = { 0xC1, 6, 0x19, 18,
                                (BYTE)(heroKey >> 8), (BYTE)heroKey };
-            Net_SendSmallPacket(packet, sizeof(packet));
+            gNetwork.Send(packet, sizeof(packet));
             result = 1;                                // IDA L893: v136 = 1
             break;
         }
@@ -187,7 +191,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
     // IDA L251-283.
     if (skill == 47) {
         const WORD mount = *(WORD*)(Hero + 696);       // IDA: v17
-        if (mount != 818 && mount != 819) {
+        if (mount != MODEL_HELPER_UNIRIA && mount != MODEL_HELPER_DINORANT) {
             // IDA L256: sin montura NO devuelve 0 — cae en LABEL_25 y el skill
             // puede salir igual por la lista de opciones del arma. El port
             // anterior cortaba aca con `return 0`.

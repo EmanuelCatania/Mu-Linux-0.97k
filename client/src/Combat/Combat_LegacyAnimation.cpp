@@ -70,8 +70,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   P+1044  RIDER_FLY                v33 + 0.3
 //   P+1060  SPEAR                    v33 + 0.3
 //   P+1076  ONE_TO_ONE               v33 + 0.3
-//   P+736..784 (stride 16, at i-12)  BOW attacks  v35 = MagicSpeed*0.002
-//   P+864..880 (stride 16)           RIDE BOW     v35
+//   P+736..784 (stride 16, at i-12)  BOW attacks  v33 + 0.3
+//   P+864..880 (stride 16)           RIDE BOW     v33 + 0.3
 //   P+1300  TWO_HAND_SWORD_TWO       v33 + 0.25
 //   P+1312..1360 (stride 16)         HAND/WEAPON  v34 + 0.29
 //   P+1380  ELF1                     v38 + 0.25
@@ -93,7 +93,6 @@ void __cdecl SetAttackSpeed(void) {
 
     float v34 = (float)attackSpeed * _DAT_005524bc;  // = AttackSpeed * 0.004
     float v39 = (float)magicSpeed  * _DAT_005524bc;  // = MagicSpeed  * 0.004
-    float v35 = (float)magicSpeed  * _DAT_005528e0;  // = MagicSpeed  * 0.002
 
     // Que v33/v38 aparezcan sin inicializar en el decompile es un artefacto de
     // Hex-Rays, no del binario: `v34` (= AttackSpeed*0.004) y `v39` (=
@@ -148,17 +147,20 @@ void __cdecl SetAttackSpeed(void) {
     // Two-hand sword2
     *(float*)(P + 1300) = swordSpeed;
 
-    // BOW attacks: P+i-12 for i ∈ {752,768,784} (loop starts at 736+16)
+    // BOW attacks: P+i-12 for i ∈ {752,768,784} (loop starts at 736+16).
+    // Usan la velocidad de SKILL_SWORD1: IDA L195 reasigna `v35 = v26`
+    // (= AttackSpeed*0.004 + 0.3) antes de los dos bucles; el MagicSpeed*0.002
+    // que v35 tenia antes se descarta.
     int v28 = 736;
     do {
         v28 += 16;
-        *(float*)(P + v28 - 12) = v35;
+        *(float*)(P + v28 - 12) = skillSpeed3;
     } while (v28 <= 784);
 
     // RIDE BOW (IDA L216-218, mismo patron): offsets 868, 884 = acciones 54, 55.
     for (int j = 864; j <= 880; ) {
         j += 16;
-        *(float*)(P + j - 12) = v35;
+        *(float*)(P + j - 12) = skillSpeed3;
     }
 
     // Skills

@@ -84,7 +84,7 @@ int __cdecl Terrain_Water(void)
         fVar11 = (float10)(int)((long long)uVar14 % 36000) * (float10)_DAT_005524f8;
     }
 
-    int iVar2b = World;
+    int iVar2b = gMapManager.GetCurrentMap();
 
     // ── 3) Fill water height table with sine wave ─────────────────────────────
     if ((int)uVar8 <= rowMax) {

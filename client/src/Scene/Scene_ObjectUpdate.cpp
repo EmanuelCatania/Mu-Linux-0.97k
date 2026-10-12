@@ -3,6 +3,8 @@
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
+#include <array>
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -29,7 +31,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     short objType = *(short*)(objPtr + 2);
 
     // ── World 9: random terrain lights ──
-    if (World == 9) {
+    if (gMapManager.GetCurrentMap() == 9) {
         // IDA 0x004FDC00: the storm flash is independent from the object type.
         // It happens during the first quarter of the 4-second cycle, one time
         // in 100, around the local player.  The former port kept only sound.
@@ -44,7 +46,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     }
 
     // ── World 0: toggle torch/fire objects by HeroTile ──
-    if (World == 0) {
+    if (gMapManager.GetCurrentMap() == 0) {
         if (objType == 0x7d || objType == 0x7e) {
             if (HeroTile == 4) {
                 *(DWORD*)(objPtr + 0x164) = 0;        // hide (alpha=0)
@@ -55,7 +57,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     }
 
     // ── World 2: toggle water objects by HeroTile ──
-    if (World == 2) {
+    if (gMapManager.GetCurrentMap() == 2) {
         short s = *(short*)(objPtr + 2);
         if (s == 0x51 || s == 0x52 || s == 0x60 || s == 0x62 || s == 99) {
             if (HeroTile == 3 || HeroTile > 9) {
@@ -81,7 +83,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     model[0xa0] = *(char*)(objPtr + 0x105);  // set current action
 
     float animSpeed = *(float*)(objPtr + 0xcc);
-    if (World == 8 && *(short*)(objPtr + 2) == 8) {
+    if (gMapManager.GetCurrentMap() == 8 && *(short*)(objPtr + 2) == 8) {
         animSpeed = animSpeed * _DAT_00552650;  // slow down lava objects
     }
 
@@ -144,7 +146,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     // Worlds 0xb-0x10: types 9,10 → SubType check, type with action==4 → SubType=-2
 
     // Implement key patterns that affect gameplay visibility:
-    switch (World) {
+    switch (gMapManager.GetCurrentMap()) {
     case 0:
         switch (objType) {
         case 0x32: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 200.0f); return (float*)0;       // 0x43480000
@@ -421,7 +423,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     }
 
     // For worlds 0xb..0x10: check object type 9/10 visibility
-    if (World >= 0xb && World <= 0x10) {
+    if (gMapManager.GetCurrentMap() >= 0xb && gMapManager.GetCurrentMap() <= 0x10) {
         int t = (int)*(short*)(objPtr + 2);
         if (t >= 9 && t <= 10) {
             if (*(short*)(objPtr + 0x86) == 4) {
@@ -553,10 +555,10 @@ void __stdcall MoveObjects(void) {
     // In World 10 with thunder active, spawns lightning joints on random objects.
 
     float Scale = 0.0f;
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         Scale = (float)MoveHeavenThunder();
     }
-    else if (World > 10 && World < 0x11) {
+    else if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11) {
         // Worlds 11..16: spawn ambient particle near hero
         // IDA 004FF260: Angle is cleared and Light is full white.
         float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -645,7 +647,7 @@ void __stdcall MoveObjects(void) {
                         //   }
                         //
                         // Son los rayos de tormenta que caen sobre los objetos del mapa en Icarus.
-                        if (World == 10 && Scale != 0.0f) {
+                        if (gMapManager.GetCurrentMap() == 10 && Scale != 0.0f) {
                             int r2 = rand();
                             if (r2 % 10 == 0 &&
                                 *(short*)(pcVar6 + 2) >= 0 &&
@@ -704,6 +706,71 @@ void __stdcall MoveObjects(void) {
 //   +0x108 frame +0x10C priorFrame        +0x168 alpha-target
 // Owner (CharactersClient) offsets: +0x10/14/18 pos, +0x1c/20/24 ang,
 //   +0x7c(124) state, +0x84(132) Kind, +0x105(261) CurrentAction.
+// CustomPet: movimiento del bug de un pet del catálogo.  `orbit` da vueltas
+// alrededor del dueño (el "stand" del Collecter del 5.2: radio, período y
+// altura); `follow` se queda detrás del dueño.  En los dos acerca la posición
+// al objetivo y mira hacia donde va.
+static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET& pet)
+{
+    if (!owner) return;
+    float target[3];
+    const float* ownerPos = (const float*)(owner + 0x10);
+
+    // Collecter del 5.2: si hay zen cerca del dueño, va hasta el más cercano y
+    // da vueltas cortas sobre él hasta que el server lo levanta (y el zen
+    // desaparece del suelo).  El server decide; esto es sólo lo que se ve.
+    const float* zen = nullptr;
+    if ((pet.Flags & Proto::CATALOG_PET_FLAG_COLLECT) && DAT_07e12840) {
+        const float range = (float)pet.CollectRange * 100.0f + 50.0f;
+        float best = range * range;
+        for (int i = 0; i < 1000; ++i) {
+            const BYTE* ip = (const BYTE*)DAT_07e12840 + i * 0x204;
+            if (ip[72] == 0 || *(const short*)(ip + 74) != 863) continue;   // zen
+            const float* p = (const float*)(ip + 88);
+            const float dx = p[0] - ownerPos[0], dy = p[1] - ownerPos[1];
+            const float d = dx * dx + dy * dy;
+            if (d < best) { best = d; zen = p; }
+        }
+    }
+
+    if (zen) {
+        const float t = (float)(GetTickCount() % 2000) / 2000.0f * 6.2831853f;
+        target[0] = zen[0] + sinf(t) * 20.0f;
+        target[1] = zen[1] + cosf(t) * 20.0f;
+        target[2] = zen[2] + pet.Height;
+    } else if (pet.Movement == Proto::CATALOG_PET_MOVE_ORBIT) {
+        const float t = (float)(GetTickCount() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
+        target[0] = ownerPos[0] + sinf(t) * pet.Radius;
+        target[1] = ownerPos[1] + cosf(t) * pet.Radius;
+    } else {
+        const float a = *(const float*)(owner + 0x24) * 0.017453292f;
+        target[0] = ownerPos[0] + sinf(a) * pet.Radius;
+        target[1] = ownerPos[1] - cosf(a) * pet.Radius;
+    }
+    if (!zen) target[2] = ownerPos[2] + pet.Height;
+
+    float* pos = (float*)(e + 0x10);
+    const float dx = target[0] - pos[0], dy = target[1] - pos[1];
+    if (dx * dx + dy * dy > 900.0f * 900.0f) {
+        pos[0] = target[0]; pos[1] = target[1];   // teleport o muy lejos
+    } else {
+        pos[0] += dx * 0.2f;
+        pos[1] += dy * 0.2f;
+    }
+    pos[2] += (target[2] - pos[2]) * 0.2f;
+    if (dx * dx + dy * dy > 4.0f)
+        *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), CreateAngle(pos[0], pos[1], target[0], target[1]), 20.0f);
+
+    *(float*)(e + 0x0C) = pet.Scale;                // Scale
+    *(float*)(e + 0x168) = 1.0f;                    // Alpha
+    if (pet.BlendMesh != 0xFF) {
+        *(int*)(e + 100) = pet.BlendMesh;           // BlendMesh
+        *(float*)(e + 104) = 1.0f;                  // BlendMeshLight
+    }
+    SetAction((int)(uintptr_t)e, pet.Action);
+    if (*(float*)(e + 0xCC) <= 0.0f) *(float*)(e + 0xCC) = 0.25f;
+}
+
 void __stdcall MoveBugs(void) {
     extern unsigned char* TerrainWall;
 
@@ -774,7 +841,7 @@ void __stdcall MoveBugs(void) {
                 *(DWORD*)(e + 0x10) = *(DWORD*)(v8 + 16);   // posX
                 short v11 = *(short*)(e + 2);               // type
                 *(DWORD*)(e + 0x14) = *(DWORD*)(v8 + 20);   // posY
-                int   v12 = World;
+                int   v12 = gMapManager.GetCurrentMap();
                 float v37 = *(float*)(v8 + 24);
                 *(float*)(e + 0x18) = v37;                  // posZ
                 if (v11 == 267) {
@@ -788,13 +855,13 @@ void __stdcall MoveBugs(void) {
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 3);
                     else                                       SetAction((int)e, 2);
-                    if ((rand() & 1) == 0 && World != 10) {
+                    if ((rand() & 1) == 0 && gMapManager.GetCurrentMap() != 10) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
                         Position[0] = (float)(rand() % 64 - 32) + *(float*)(e + 0x10);
                         Position[1] = (float)(rand() % 64 - 32) + *(float*)(e + 0x14);
                         Position[2] = (float)(rand() % 32 - 16) + *(float*)(e + 0x18);
-                        if (World == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
+                        if (gMapManager.GetCurrentMap() == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                         else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;        // animSpeed = 0.34f
@@ -842,6 +909,10 @@ void __stdcall MoveBugs(void) {
                      (void*)(e + 0x106), *(float*)(e + 0xCC));   // sub_440AA0 (a6/a7 unused)
 
         short v29 = *(short*)(e + 2);
+        // 0.97.20: pet custom (Data/Custom/Pets del server).
+        if (const Proto::CATALOG_PET* pet = gContentCatalog.GetPetByModel(v29)) {
+            CustomPet_Move(e, (BYTE*)(uintptr_t)*v0, *pet);
+        }
         if (v29 == 816 || v29 == 817) {
             float v30 = *(float*)(e + 0x14);                // posY
             float x1  = *v28;                                // posX
@@ -886,6 +957,51 @@ next_bug:
         v0 += 111;                              // +0x1BC bytes
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
 }
+
+namespace {
+// IDA: sub_4FDC00 (0x004FDC00), emisores fijos de Lorencia, Dungeon y Devias.
+struct SceneFlamePreset {
+    int Variant;
+    int Count;
+    float Offset[2][3];
+    bool RandomAlpha;
+    bool HideMesh;
+};
+constexpr SceneFlamePreset SceneFlames[] = {
+    { 0, 1, {{0, 0, 200}}, false, false },
+    { 0, 1, {{0, -30, 60}}, false, false },
+    { 0, 1, {{0, 0, 60}}, true, false },
+    { 0, 2, {{-150, -150, 140}, {150, -150, 140}}, false, false },
+    { 0, 2, {{90, -200, 30}, {90, 200, 30}}, false, false },
+    { 0, 1, {{0, 0, 0}}, false, true },
+    { 1, 1, {{0, 0, 0}}, false, true },
+    { 2, 1, {{0, 0, 0}}, false, true },
+    { 0, 1, {{0, -30, 240}}, false, false },
+    { 0, 1, {{0, 0, 190}}, false, false },
+    { 0, 1, {{0, 0, 50}}, false, false },
+};
+constexpr auto MakeLorenciaFlameIndices()
+{
+    std::array<unsigned char, 133> indices{};
+    indices[50] = 0; indices[51] = 1; indices[52] = 2;
+    indices[55] = 3; indices[80] = 4;
+    indices[130] = 5; indices[131] = 6; indices[132] = 7;
+    return indices;
+}
+constexpr auto LorenciaFlameIndices = MakeLorenciaFlameIndices();
+
+void EmitSceneFlames(char* object, const SceneFlamePreset& preset)
+{
+    for (int i = 0; i < preset.Count; ++i) {
+        const auto& offset = preset.Offset[i];
+        FUN_0046c7f0(preset.Variant, (int)object, offset[0], offset[1], offset[2]);
+    }
+    if (preset.RandomAlpha)
+        *(float*)(object + 104) = (double)(rand() % 6 + 4) * 0.1;
+    if (preset.HideMesh)
+        *(int*)(object + 88) = -2;
+}
+} // namespace
 
 // === FUN_004fdc00 / MoveObjects (0x004FDC00) ===
 // Gateada por IDA_PORT_004FDC00, que esta definida.
@@ -933,7 +1049,7 @@ void __cdecl FUN_004fdc00(float o)
   float oa; // [esp+44h] [ebp+4h]
   float ob; // [esp+44h] [ebp+4h]
 
-  if ( World == 9 )
+  if ( gMapManager.GetCurrentMap() == 9 )
   {
     if ( (__int64)WorldTime % 4000 < 1000 && !(rand() % 100) )
     {
@@ -947,7 +1063,7 @@ void __cdecl FUN_004fdc00(float o)
     }
     PlayBuffer(1, 0, 1);
   }
-  if ( !World )
+  if ( !gMapManager.GetCurrentMap() )
   {
     v3 = *(WORD *)(LODWORD(o) + 2);
     if ( v3 != 125 && v3 != 126 )
@@ -963,7 +1079,7 @@ void __cdecl FUN_004fdc00(float o)
       *(DWORD *)(LODWORD(o) + 356) = 1065353216;
     }
   }
-  if ( World == 2 )
+  if ( gMapManager.GetCurrentMap() == 2 )
   {
     v4 = *(WORD *)(LODWORD(o) + 2);
     if ( v4 == 81 || v4 == 82 || v4 == 96 || v4 == 98 || v4 == 99 )
@@ -987,7 +1103,7 @@ LABEL_22:
   v5 = Models + 188 * *(short *)(LODWORD(o) + 2);
   *(BYTE *)(v5 + 160) = *(BYTE *)(LODWORD(o) + 261);
   oa = *(float *)(LODWORD(o) + 204);
-  if ( World == 8 && *(WORD *)(LODWORD(o) + 2) == 8 )
+  if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(LODWORD(o) + 2) == 8 )
   {
     oa = oa * 4.0;
   }
@@ -1030,28 +1146,14 @@ LABEL_22:
     *(float *)(LODWORD(o) + 112) = -(v9 * 0.00025000001);
   }
 LABEL_38:
-  switch ( World )
+  switch ( gMapManager.GetCurrentMap() )
   {
     case 0:
       switch ( *(WORD *)(LODWORD(o) + 2) )
       {
-        case 0x32:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 200.0);
-          break;
-        case 0x33:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, -30.0, 60.0);
-          break;
-        case 0x34:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 60.0);
-          *(float *)(LODWORD(o) + 104) = (double)(rand() % 6 + 4) * 0.1;
-          break;
-        case 0x37:
-          FUN_0046c7f0(0, (int)LODWORD(o), -150.0, -150.0, 140.0);
-          FUN_0046c7f0(0, (int)LODWORD(o), 150.0, -150.0, 140.0);
-          break;
-        case 0x50:
-          FUN_0046c7f0(0, (int)LODWORD(o), 90.0, -200.0, 30.0);
-          FUN_0046c7f0(0, (int)LODWORD(o), 90.0, 200.0, 30.0);
+        case 0x32: case 0x33: case 0x34: case 0x37: case 0x50:
+        case 0x82: case 0x83: case 0x84:
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[LorenciaFlameIndices[*(WORD*)(LODWORD(o) + 2)]]);
           break;
         case 0x5A:
           v10 = (double)(rand() % 2 + 6) * 0.1;
@@ -1065,18 +1167,6 @@ LABEL_38:
         case 0x76:
         case 0x77:
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
-          break;
-        case 0x82:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 0.0);
-          *(DWORD *)(LODWORD(o) + 88) = -2;
-          break;
-        case 0x83:
-          FUN_0046c7f0(1, (int)LODWORD(o), 0.0, 0.0, 0.0);
-          *(DWORD *)(LODWORD(o) + 88) = -2;
-          break;
-        case 0x84:
-          FUN_0046c7f0(2, (int)LODWORD(o), 0.0, 0.0, 0.0);
-          *(DWORD *)(LODWORD(o) + 88) = -2;
           break;
         case 0x96:
           v12 = (double)(rand() % 4 + 3) * 0.1;
@@ -1099,10 +1189,10 @@ LABEL_38:
         case 0x33:
           goto LABEL_132;
         case 0x29:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, -30.0, 240.0);
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[8]);
           break;
         case 0x2A:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 190.0);
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[9]);
           break;
         case 0x34:
           if ( rand() % 3 )
@@ -1190,7 +1280,7 @@ LABEL_38:
           break;
         case 30:
         case 66:
-          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 50.0);
+          EmitSceneFlames((char*)LODWORD(o), SceneFlames[10]);
           break;
         case 78:
 LABEL_59:
@@ -1355,15 +1445,12 @@ LABEL_116:
           v30[2] = v11;
           AddTerrainLight(*v7, *(float *)(LODWORD(o) + 20), v30, 3, PrimaryTerrainLight[0]);
           return;
-        case 0xB:
+        case 0xB: case 0xD: case 0x49: case 0x4B: case 0x4F:
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
           return;
         case 0xC:
           *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
-          return;
-        case 0xD:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
           return;
         case 0x3D:
           *(DWORD *)(LODWORD(o) + 100) = 1;
@@ -1386,15 +1473,6 @@ LABEL_123:
           break;
         case 0x48:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
-          break;
-        case 0x49:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
-          break;
-        case 0x4B:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
-          break;
-        case 0x4F:
           *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
           break;
         case 0x52:

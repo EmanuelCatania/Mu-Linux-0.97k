@@ -1,7 +1,7 @@
 // WinMain.cpp
 // WinMain @ 0x0041FC00  (1497 lines, completo)
 // Window_Create @ 0x0041DFF0
-// WndProc @ 0x004149D0  (4074 lines, ~80% anti-tamper — ver comentario abajo)
+// WndProc @ 0x004149D0  -> Core/WndProc.cpp (red: Net/Network.cpp, input: Input/Input_WndProc.cpp)
 // OpenGL_Init @ 0x0041DE30
 // OpenGL_Release @ 0x0041AF20
 // GameGuard_Init @ 0x00406F20
@@ -27,310 +27,34 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "resource.h"
 #include "Debug/MiniDump.h"
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
+#include "Sound/SoundManager.h"
+#include "Config/UserSettings.h"
 #ifdef _DEBUG
 #  define _CRTDBG_MAP_ALLOC
 #  include <crtdbg.h>
 #endif
 
-// Helper de src/UI/Chat_InputTick.cpp — envía una línea de chat
-// escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
-// handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
-extern "C" void Chat_SendChatLine(const char* text);
-extern "C" BYTE InputTextHide[10];
 
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 
 // IDA: SceneFlag (0x005615C0)
 int       SceneFlag = 0; // IDA: SceneFlag (0x005615C0)
-HWND      g_hWnd     = NULL;  // 0x055c9ffc
-HINSTANCE g_hInst    = NULL;  // 0x055ca000
-HDC       g_hDC      = NULL;  // 0x055ca004
-HGLRC     g_hRC      = NULL;  // 0x055ca008
+// g_hWnd, g_hInst, g_hDC y g_hRC viven en CWindow (Core/Window.h).
 
-// Forward declarations
+// Core/WndProc.cpp
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static int  OpenGL_Init(void);
 
-// Chat_TryAssignMacro -- "/1 texto" guarda una macro en la tecla 1.
-//
-// DESVIACION DOCUMENTADA.  El 0.97k NO tiene esto: sus macros
-// salen unicamente de Data\\Macro.txt (OpenMacro 0x50F750) y no hay una sola
-// escritura al array fuera de ese loader -- verificado con los xrefs de
-// 0x07E0FFC8.  La asignacion por chat aparece recien en MU 5.2
-// (ZzzInterface.cpp, CheckCommand): compara los dos primeros caracteres contra
-// "/1".."/9" y "/0", y copia el texto desde el indice 3.
-//
-// Se porta de ahi, con dos diferencias deliberadas:
-//   - 5.2 termina el slot con `MacroText[i][iTextSize-3] = NULL` donde
-//     iTextSize quedo en el ULTIMO indice recorrido, asi que se come el ultimo
-//     caracter del mensaje.  Aca se copia entero.
-//   - la lista de comandos prohibidos (CheckMacroLimit) se compara contra los
-//     literales, no contra GlobalText: los indices de esa tabla son los de 5.2
-//     y no tienen por que coincidir con los del 0.97k.
-//
-// Devuelve true si la linea era una asignacion (y entonces no se envia).
-static bool Chat_TryAssignMacro(const char* text)
-{
-    if (!text || text[0] != '/') return false;
-    if (text[1] < '0' || text[1] > '9') return false;
-    if (text[2] != ' ') return false;
-
-    const char* body = text + 3;
-    while (*body == ' ') ++body;
-    if (*body == '\0') return false;   // "/1 " solo: no es asignacion
-
-    // CheckMacroLimit: comandos que abren un dialogo con otro jugador no se
-    // pueden dejar en una macro.
-    static const char* const kBlocked[] = {
-        "/trade", "/party", "/pt", "/guild", "/guildwar", "/battlesoccer"
-    };
-    for (int i = 0; i < (int)(sizeof(kBlocked) / sizeof(kBlocked[0])); ++i) {
-        if (_stricmp(body, kBlocked[i]) == 0)
-            return false;
-    }
-
-    const int slot = (text[1] == '0') ? 9 : (text[1] - '1');
-    char* dst = (char*)MacroText + slot * 0x100;
-    memset(dst, 0, 0x100);
-    lstrcpynA(dst, body, 0x100);
-    PlayBuffer(0x19, 0, 0);   // SOUND_CLICK01
-    return true;
-}
 
 void OpenGL_Release(void);
 static void GameGuard_Init(CHAR* hWnd);
 static int  GameGuard_GetStatus(void);
-static void GameGuard_TickCheck(void);
+void GameGuard_TickCheck(void);
 int  Config_Load(void);  // see Config/Config_Load.cpp
-
-// Modo ventana - ver la nota larga en Config/Config.h.
-extern "C" void DbgLogPublic(const char* msg);   // se re-declara mas abajo
-extern int g_WindowMode;
-extern int g_Borderless;
-
-// true cuando Display_ApplyFullscreen() logro cambiar el modo de video.  Solo
-// entonces OpenGL_Release tiene que restaurarlo: llamar
-// ChangeDisplaySettingsA(NULL,0) sin haberlo cambiado hace parpadear el
-// escritorio del usuario al salir (es el FixDisplaySettingsOnClose del DLL).
-static bool s_DisplayModeChanged = false;
-
-// Devuelve el escritorio a su modo original, si fuimos nosotros los que lo
-// cambiamos.  Tiene que ser idempotente y llamable desde un filtro de
-// excepciones: la llama OpenGL_Release en el cierre normal Y
-// DbgUnhandledException al crashear.
-//
-// Lo segundo NO es de adorno: en pantalla completa el filtro termina el proceso
-// con EXCEPTION_EXECUTE_HANDLER, asi que OpenGL_Release no corre y sin esto el
-// escritorio queda clavado en la resolucion del juego.
-static void Display_RestoreIfChanged(void)
-{
-    if (!s_DisplayModeChanged) return;
-    s_DisplayModeChanged = false;
-    ChangeDisplaySettingsA(NULL, 0);
-}
-
-// -- Display_ApplyFullscreen -------------------------------------------------
-//
-// DESVIACION DELIBERADA respecto de IDA (WinMain 0x41E8A0 L394-418).
-//
-// El original enumera los modos de video y se queda con el primero que cumpla
-// las TRES condiciones ancho == WindowWidth, alto == WindowHeight y
-// dmBitsPerPel == 16.  En Windows 10/11 no se expone ningun modo de 16 bits,
-// asi que ese bucle no encuentra nada, no se llama a ChangeDisplaySettings y
-// el "pantalla completa" del 0.97k queda en la practica como una ventana
-// WS_POPUP del tamano pedido pegada a la esquina del escritorio.
-//
-// Se adopta el criterio del DLL (CWindow::ChangeDisplaySettingsFunction):
-// primero se busca la mayor profundidad de color que ofrezca el sistema y
-// recien despues se compara contra ancho/alto.  A cambio se pierde el 16 bits
-// del original, que hoy no existe de todos modos.
-// ---------------------------------------------------------------------------
-static void Display_ApplyFullscreen(void)
-{
-    DEVMODEA dm = {};
-    dm.dmSize = sizeof(dm);
-
-    DWORD bestBpp = 0;
-    for (int i = 0; EnumDisplaySettingsA(NULL, i, &dm); ++i) {
-        if (dm.dmBitsPerPel > bestBpp) bestBpp = dm.dmBitsPerPel;
-    }
-
-    for (int i = 0; EnumDisplaySettingsA(NULL, i, &dm); ++i) {
-        if (dm.dmPelsWidth  == DAT_0056156c &&
-            dm.dmPelsHeight == DAT_00561570 &&
-            dm.dmBitsPerPel == bestBpp) {
-            if (ChangeDisplaySettingsA(&dm, 0) == DISP_CHANGE_SUCCESSFUL) {
-                s_DisplayModeChanged = true;
-                DbgLogPublic("Display: pantalla completa OK");
-            } else {
-                DbgLogPublic("Display: ChangeDisplaySettings FALLO, sigo en ventana");
-            }
-            return;
-        }
-    }
-
-    // Igual que el DLL: el modo pedido no existe.  No se aborta - la ventana
-    // se crea de todas formas y queda como un popup del tamano pedido.
-    {
-        char line[128];
-        wsprintfA(line, "Display: no hay modo %ux%u a %u bpp, sigo en ventana",
-                  DAT_0056156c, DAT_00561570, bestBpp);
-        DbgLogPublic(line);
-    }
-}
-
-// ── Window_Create @ 0x0041DFF0 ───────────────────────────────────────────────
-//
-// Registra WNDCLASSA y crea la ventana principal.
-//   style:  CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS = 0x2B
-//   exStyle: 0x40008 (WS_EX_APPWINDOW|WS_EX_TOPMOST)
-//   class name: "Dialog" (s_Dialog_005595e0)
-//   window style: WS_POPUP (0x80000000)
-//   Dimensions: DAT_0056156c × DAT_00561570 (de ChangeDisplaySettings)
-//
-// Modo ventana: ver Config/Config.h.  Lo de
-// arriba describe la rama `!g_WindowMode`, que es la del binario.
-// ─────────────────────────────────────────────────────────────────────────────
-static void Window_Create(HINSTANCE hInst)
-{
-    WNDCLASSA wc     = {};
-    wc.style         = 0x2B;            // CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS
-    wc.lpfnWndProc   = WndProc;
-    wc.hInstance     = hInst;
-    // Icono grande (Alt+Tab, barra de tareas), desde los recursos del exe: con
-    // hInstance NULL, LoadIconA busca entre los iconos PREDEFINIDOS del sistema
-    // (ordinales) y un nombre propio nunca matchea.
-    wc.hIcon         = LoadIconA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON));
-    wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName = "Dialog";        // lo usa el FindWindowA de instancia unica
-    RegisterClassA(&wc);
-
-    if (!g_WindowMode) {
-        // Pantalla completa, como el original: WS_POPUP en (0,0) del tamano
-        // configurado.  El cambio de modo va ANTES de crear la ventana, igual
-        // que en IDA (el bucle de EnumDisplaySettings precede a StartWindow).
-        Display_ApplyFullscreen();
-        g_hWnd = CreateWindowExA(
-            WS_EX_APPWINDOW,
-            "Dialog",
-            "Mu Online",
-            WS_POPUP | WS_VISIBLE,
-            0, 0, DAT_0056156c, DAT_00561570,
-            NULL, NULL, hInst, NULL
-        );
-    } else {
-        // Modo ventana (DLL, CWindow::StartWindow).  Tres diferencias con la
-        // rama de pantalla completa:
-        //   - sin WS_EX_TOPMOST: en ventana es una molestia tener el cliente
-        //     siempre encima de todo.
-        //   - AdjustWindowRect convierte el area de cliente pedida en el
-        //     tamano exterior, para que el viewport 3D mida exactamente
-        //     WindowWidth x WindowHeight y no se coma pixeles la barra de
-        //     titulo.  El DLL hace esto mismo pero pasa rc.right y
-        //     rc.bottom + 26 en vez de los anchos reales; aca se usan
-        //     rc.right - rc.left / rc.bottom - rc.top, que es la forma
-        //     correcta (y la que el propio DLL usa en ChangeWindowState).
-        //   - sin WS_THICKFRAME ni WS_MAXIMIZEBOX: la ventana no se puede
-        //     redimensionar.  g_fScreenRate_x/y se calculan una sola vez en
-        //     Config_Load y el WndProc no maneja WM_SIZE, asi que un resize
-        //     descuadraria todo el layout.
-        const DWORD style = g_Borderless
-            ? (WS_POPUP | WS_VISIBLE)
-            : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE);
-
-        RECT rc = { 0, 0, (LONG)DAT_0056156c, (LONG)DAT_00561570 };
-        AdjustWindowRect(&rc, style, FALSE);
-        const int w = rc.right  - rc.left;
-        const int h = rc.bottom - rc.top;
-
-        // Centrada en el escritorio.  Con una resolucion mas grande que la
-        // pantalla el resultado seria negativo; se clampea a 0 para que la
-        // barra de titulo quede alcanzable.
-        int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
-        int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-
-        g_hWnd = CreateWindowExA(
-            WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
-            "Dialog",
-            "Mu Online",
-            style,
-            x, y, w, h,
-            NULL, NULL, hInst, NULL
-        );
-    }
-
-    // El .ico trae una sola imagen de 48x48, asi que para la barra de titulo
-    // Windows tiene que reducirla.  El escalado que hace GDI sobre el icono de
-    // clase es de baja calidad; LoadImage pidiendo directamente el tamano de
-    // icono chico del sistema da un resultado mucho mas limpio.  Es lo mismo
-    // que hace el DLL en CWindow::ChangeWindowState.
-    if (g_hWnd) {
-        HICON hSmall = (HICON)LoadImageA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON),
-                                         IMAGE_ICON,
-                                         GetSystemMetrics(SM_CXSMICON),
-                                         GetSystemMetrics(SM_CYSMICON),
-                                         LR_DEFAULTCOLOR);
-        if (hSmall) SendMessageA(g_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hSmall);
-    }
-    // g_hWnd -> DAT_055c9ffc
-}
-
-// ── OpenGL_Init @ 0x0041DE30 (completo, ~50 líneas) ─────────────────────────
-//
-// PIXELFORMATDESCRIPTOR: nSize=40, nVersion=1, dwFlags=0x25
-//   (PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER), RGBA, 16-bit color, 16-bit depth
-// Secuencia:
-//   1. GetDC(g_hWnd)        → g_hDC (DAT_055ca004)   error: "OpenGL Get DC Error"
-//   2. ChoosePixelFormat                               error: "OpenGL Choose Pixel Format Error"
-//   3. SetPixelFormat                                  error: "OpenGL Set Pixel Format Error"
-//   4. wglCreateContext(hDC)→ g_hRC (DAT_055ca008)   error: "OpenGL Create Context Error"
-//   5. wglMakeCurrent(hDC, hRC)                       error: "OpenGL Make Current Error"
-//   6. ShowWindow(g_hWnd, SW_SHOW=5) + SetForegroundWindow + SetFocus
-//   7. return 1
-// Cada error: CErrorReport_Write(log, errStr) + OpenGL_Release() + MessageBoxA + return 0
-// ─────────────────────────────────────────────────────────────────────────────
-static int OpenGL_Init(void)
-{
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR); // 40 = 0x28
-    pfd.nVersion   = 1;
-    pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER; // 0x25
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 16;
-    pfd.cDepthBits = 16;
-
-    g_hDC = GetDC(g_hWnd); // DAT_055ca004
-    if (!g_hDC) {
-        // CErrorReport_Write(DAT_055c9bf0, "OpenGL Get DC Error");
-        // OpenGL_Release(); MessageBoxA(g_hWnd, ..., "IError", MB_OK);
-        return 0;
-    }
-    int fmt = ChoosePixelFormat(g_hDC, &pfd);
-    if (!fmt) { /* log "OpenGL Choose Pixel Format Error" + release */ return 0; }
-    if (!SetPixelFormat(g_hDC, fmt, &pfd)) { /* log "OpenGL Set Pixel Format Error" + release */ return 0; }
-
-    g_hRC = wglCreateContext(g_hDC); // DAT_055ca008
-    if (!g_hRC) { /* log "OpenGL Create Context Error" + release */ return 0; }
-    if (!wglMakeCurrent(g_hDC, g_hRC)) { /* log "OpenGL Make Current Error" + release */ return 0; }
-
-    // NOTA: experimento previo con glFrontFace(GL_CW) removido. La apariencia
-    // "X-ray" era en realidad causada por el bug NaN en BMD_DrawMesh (param
-    // blendMesh reinterpretado como NaN → EnableAlphaBlend(GL_ONE,GL_ONE) con
-    // depth-mask off), no por el winding. GL_CW rompía los quads 2D (UI/sky
-    // en CCW quedaban culled). Dejamos el default GL_CCW.
-
-    ShowWindow(g_hWnd, SW_SHOW);
-    SetForegroundWindow(g_hWnd);
-    SetFocus(g_hWnd);
-    return 1;
-}
 
 // ── OpenGL_Release @ 0x0041AF20 (34 líneas, completo) ───────────────────────
 //
@@ -351,23 +75,9 @@ static int OpenGL_Init(void)
 void OpenGL_Release(void)
 {
     // Libera DirectSound antes de desarmar OpenGL/la ventana. FreeDirectSound
-    // is a no-op if g_EnableSound is FALSE, so safe to call unconditionally.
+    // no hace nada si g_EnableSound es FALSE.
     FreeDirectSound();
-
-    if (!wglMakeCurrent(NULL, NULL)) {
-        // CErrorReport_Write(DAT_055c9bf0, "GL - Release Of DC And RC Failed");
-    }
-    if (!wglDeleteContext(g_hRC)) {
-        // CErrorReport_Write(DAT_055c9bf0, "GL - Release Rendering Context Failed");
-    }
-    if (!DeleteDC(g_hDC)) {
-        // CErrorReport_Write(DAT_055c9bf0, "GL - Release Device Context Failed");
-    }
-    ReleaseDC(g_hWnd, g_hDC);
-    // Solo se restaura el modo de video si lo cambiamos nosotros.  En modo
-    // ventana nunca se toco, y llamarlo igual hace parpadear el escritorio
-    // (es el FixDisplaySettingsOnClose del DLL, que hookea justo este call).
-    Display_RestoreIfChanged();
+    gWindow.ReleaseOpenGL();
     ShowCursor(1);
 }
 
@@ -418,7 +128,7 @@ static int GameGuard_GetStatus(void)
 // Patch bypass: DAT_005538a0 = 0 y DAT_083bbb14 = NULL
 //   → GameGuard_GetStatus() retorna 0 == DAT_005538a0 → check siempre pasa
 // ─────────────────────────────────────────────────────────────────────────────
-static void GameGuard_TickCheck(void)
+void GameGuard_TickCheck(void)
 {
     // int status = GameGuard_GetStatus();
     // if (status != DAT_005538a0):
@@ -732,7 +442,7 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     // Antes del cartel: si estabamos en pantalla completa hay que devolverle el
     // escritorio al usuario, o el MessageBox sale en la resolucion del juego y,
     // peor, queda asi despues de que el proceso muere.
-    __try { Display_RestoreIfChanged(); } __except (EXCEPTION_EXECUTE_HANDLER) {}
+    __try { gWindow.RestoreDisplay(); } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     __try {
         if (dumpOk) {
@@ -847,7 +557,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         DbgLog("CRT heap debug: ALLOC_MEM + CHECK_EVERY_1024 habilitados (LEAK_CHECK off)");
     }
 #endif
-    g_hInst = hInst;
 
     // 1-5: anti-tamper init, world pre-init, integrity check
     // FUN_00406af0();
@@ -855,9 +564,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // MuExe_IntegrityCheck();
     // Client_GetSystemInfo(local_3d4); // IDA: FUN_004065F0
 
-    // 6: Config_ReadServerAddr — lee server.cfg ("IP PORT" o "IP:PORT") y
+    // 6: Config_ReadServerAddr — toma la dirección de Config/ServerConfig.h y
     // sobreescribe el buffer al que apunta PTR_s_connect_muonline_co_kr_005615b8.
-    // Si server.cfg no existe, se mantiene "connect.muonline.co.kr" (falla el connect).
     {
         extern char g_ServerIPBuf[128];
         unsigned short cfgPort = g_ServerPort;
@@ -889,15 +597,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // error, confirmaciones, cuentas regresivas...) tenga datos reales en vez de vacíos.
     OpenTextData();
 
-    // 11: modo de video — pone los valores por defecto si no está configurado
-    if (DAT_0056156c == 0) DAT_0056156c = 640;
-    if (DAT_00561570 == 0) DAT_00561570 = 480;
-    Window_Create(hInst);
-    if (!g_hWnd) { DbgLog("Window_Create FAILED"); return 0; }
-    if (!OpenGL_Init()) { DbgLog("OpenGL_Init FAILED"); return 0; }
+    // 11: ventana y contexto OpenGL. El tamaño ya lo fijó Config_Load
+    // (CWindow arranca en 640x480 si no lo hubiera hecho).
+    if (!gWindow.Create(hInst, WndProc)) { DbgLog("Window_Create FAILED"); return 0; }
+    if (!gWindow.InitOpenGL()) { DbgLog("OpenGL_Init FAILED"); return 0; }
 
     // 14: GameGuard — HWND casteado a CHAR*
-    GameGuard_Init((CHAR*)g_hWnd);
+    GameGuard_Init((CHAR*)gWindow.GetHwnd());
 
     // 14a: Compute hardware fingerprint (F1/05 SetHwid payload).
     // Lo exige el chequeo de blacklist del GameServer de MuEmu antes del login F1/01.
@@ -908,8 +614,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // y pone en cero todos los arrays por slot. Setea g_EnableSound=TRUE si tuvo éxito
     // (que es a lo que DAT_00590ac8 aliasa ahora vía macro).
     {
-        HRESULT hrDS = InitDirectSound(g_hWnd);
+        HRESULT hrDS = InitDirectSound(gWindow.GetHwnd());
         DbgLog(SUCCEEDED(hrDS) ? "InitDirectSound OK" : "InitDirectSound FAILED");
+        // Volúmenes de Config.ini [Sound] (CSound, Sound/SoundManager.h).
+        gSound.SetLevels(gUserSettings.GetSoundLevel(), gUserSettings.GetMusicLevel());
     }
 
     // 14c: STATIC SERVER LIST — workaround hasta que Net_ProcessPacket implemente
@@ -923,9 +631,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     //   Canales stride 0x1a a partir de +0x1c:
     //     +0x2c  ushort  channel_id     (display index = id%20+1)
     //     +0x2e  byte    load           (<100=LOW verde, 0x80+=FULL rojo, si no NORMAL)
-    // Solo en modo directo (server.cfg de 1 linea). Con ConnectServer la lista
+    // Solo en modo directo (sin ConnectServer en ServerConfig). Con ConnectServer la lista
     // la trae el F4/02 como en el original: si el CS no responde, queda vacia.
-    if (!g_HasConnectServer) {
+    if (!gNetwork.HasConnectServer()) {
         char* srv0 = DAT_083a45d8;                           // entry index 0
         memset(srv0, 0, 0x21e);
         lstrcpynA(srv0, "MuServer", 20);                     // +0x00 name
@@ -941,32 +649,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         srv0[0x2e] = 0;                                      // channel[0] load = 0 (vacío)
     }
 
-    // 15: fuentes — el tamaño depende de la resolución
-    {
-        int fontSize = 0x0c;  // default for 640x480
-        if (DAT_0056156c == 0x320) fontSize = 0x0d;       // 800
-        else if (DAT_0056156c == 0x400) fontSize = 0x0e;   // 1024
-        else if (DAT_0056156c >= 0x500) fontSize = 0x0f;   // 1280+
-        FontHeight = fontSize;
-        // CHARSET — DESVIACIÓN DELIBERADA del binario.
-        // Acá había 129 = HANGEUL_CHARSET, que es lo que usa el cliente coreano
-        // original porque su Text.bmd es coreano.  El nuestro es ESPAÑOL en
-        // Windows-1252, y con HANGEUL_CHARSET la GDI trata los bytes 0x81..0xFE
-        // como lead-byte de una secuencia DBCS: se come el carácter siguiente.
-        // Por eso se veía "da? o" (daño: 0xF1 + 'o' consumidos como par) y
-        // "?xito" (éxito).  Afecta a medir Y a dibujar, así que también
-        // desalineaba los recuadros de fondo.
-        // En el original esto sale de `g_dwCharSet`, que el cliente elige según
-        // el idioma; para datos en 1252 el equivalente es DEFAULT_CHARSET.
-        const DWORD kCharSet = DEFAULT_CHARSET;   // era 129 (HANGEUL_CHARSET)
-        DAT_055ca00c = (DWORD)CreateFontA(fontSize, 0, 0, 0, 400, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-        DAT_055ca010 = (DWORD)CreateFontA(fontSize, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-        // IDA: WinMain 0x41F151 — g_hFontBig mide el doble de la fuente
-        // base (FontHeight - 1), con peso bold. La usan el nombre del modal
-        // Trade y otros textos destacados; no es un segundo alias de bold.
-        const int bigFontHeight = 2 * (fontSize - 1);
-        DAT_055ca014 = (DWORD)CreateFontA(bigFontHeight, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-    }
+    // 15: fuentes (CFont, Core/Font.h). El tamaño depende de la resolución.
+    gFont.Create(gWindow.GetWidth());
 
     // 16: WSAStartup — obligatorio antes de cualquier operación de socket
     {
@@ -975,7 +659,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     }
 
     // 17: GameGuard watchdog timer (20s period)
-    SetTimer(g_hWnd, 1000, 20000, NULL);
+    SetTimer(gWindow.GetHwnd(), 1000, 20000, NULL);
 
     // 18: seed RNG
     srand((unsigned int)time(NULL));
@@ -991,9 +675,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     DAT_07cf1ff8 = (int)malloc(0xa00);     memset((void*)DAT_07cf1ff8, 0, 0x280 * 4);
 
     // ItemAttribute — base aleatorizada (anti-tamper, pero igual necesitamos el alloc)
-    DAT_055c9e44 = (DWORD)malloc(0x18000);
+    // DESVIACION (0.97.20): la tabla tiene ITEM_MAX_EX filas (agregados del
+    // catálogo del server por encima de 512); el binario reservaba 0x18000.
+    DAT_055c9e44 = (DWORD)malloc((ITEM_MAX_EX + 0x400) * 0x40);
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
-    memset((void*)DAT_07d78068, 0, 0x2000 * 4);
+    memset((void*)DAT_07d78068, 0, ITEM_MAX_EX * 0x40);
     DAT_07cf1ff0 = (int)malloc(0x8000);
     memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
 
@@ -1059,7 +745,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
     if (DAT_05828d58 == 0) {
-        size_t modelPoolSz = 0x5b334;
+        size_t modelPoolSz = (size_t)(MODEL_MAX_TOTAL + 0x400) * 0xbc;
         DAT_06f42a58 = malloc(modelPoolSz);
         memset(DAT_06f42a58, 0, modelPoolSz);
         DAT_05828d58 = (DWORD)DAT_06f42a58;
@@ -1092,14 +778,15 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             if (!GetMessageA(&msg, NULL, 0, 0))
                 break; // WM_QUIT
 
-            // WM_SYSKEYDOWN/UP no pasan a DispatchMessage (para evitar Alt+key del sistema)
-            if (msg.message != WM_SYSKEYDOWN && msg.message != WM_SYSKEYUP) {
-                // TranslateMessage convierte WM_KEYDOWN → WM_CHAR. Sin esto
-                // el WndProc nunca recibe los caracteres tipeados — faltaba
-                // y por eso el input de login/chat parecía "muerto".
-                TranslateMessage(&msg);
+            // IDA WinMain (0x0041E8A0): TranslateMessage va para TODOS los
+            // mensajes y sólo se filtra el DispatchMessage de WM_SYSKEYDOWN/UP
+            // (para que Alt+tecla no active el menú del sistema).
+            // TranslateMessage es quien arma el WM_CHAR, incluidos los de
+            // Alt + código numérico (Alt+64 = '@'), que llegan como
+            // WM_SYSKEYDOWN mientras se mantiene Alt.
+            TranslateMessage(&msg);
+            if (msg.message != WM_SYSKEYDOWN && msg.message != WM_SYSKEYUP)
                 DispatchMessageA(&msg);
-            }
         }
         else
         {
@@ -1122,430 +809,18 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
                 DAT_083a4299 = 0;
             }
             // No hay mensajes pendientes: ejecutar frame
-            Scene_Dispatch(g_hDC);
+            Scene_Dispatch(gWindow.GetHdc());
         }
     }
 
 
-    // ── Cola de DestroyWindow (0x004145C0) ──────────────────────────────────
-    // El binario cierra el reproductor externo al salir; sin esto MuPlayer.exe
-    // queda vivo reproduciendo despues de cerrar el cliente.
-    //   WindowA = FindWindowA(0, "MuPlayer");
-    //   if (WindowA) SendMessageA(WindowA, 2 /*WM_CLOSE*/, 0, 0);
-    // El resto de DestroyWindow (liberar fonts, modelos, texturas, el hash de
-    // SkillAttribute/CharacterMachine) es cleanup de memoria previo a terminar
-    // el proceso y no esta portado.
-    {
-        HWND hMuPlayer = FindWindowA(NULL, "MuPlayer");
-        if (hMuPlayer) {
-            SendMessageA(hMuPlayer, WM_CLOSE, 0, 0);
-        }
-    }
-
-    // IDA WinMain 0x42207B: la limpieza de salida va aca, despues del bucle de
-    // mensajes.  Lo importante es que cierra MuPlayer.exe, que es un proceso
-    // externo y si no seguiria sonando despues de que el cliente termino.
+    // IDA WinMain 0x42207B: la limpieza de salida va acá, después del bucle de
+    // mensajes (DestroyWindow 0x4145C0: fuentes, widgets y la música).
     Game_DestroyWindow();
 
     return (int)msg.wParam;
 }
 
-// ── WndProc @ 0x004149D0 (4074 líneas, ~80% anti-tamper) ────────────────────
-//
-// __stdcall 4 params (RET 0x10). Todas las rutas terminan en DefWindowProcA.
-//
-// ── DISPATCH PASS 1 (mensajes 0x02..0x113+) ─────────────────────────────────
-//
-//   uMsg == 0x113 → WM_TIMER @ 0x00414db9 (antes del jump table)
-//   uMsg in [0x2..0x20] → jump table 1 @ 0x41DD55:
-//     WM_DESTROY(02), WM_ACTIVATE(06), WM_CLOSE(10), WM_SETCURSOR(20), otros
-//   uMsg > 0x113 → checks adicionales:
-//     uMsg == WM_USER (0x400) → sub-dispatch por wParam:
-//       wParam==1:    Net_Recv()                — datos listos (WSAAsyncSelect FD_READ)
-//       wParam==2:    Net_Send()                — buffer libre (FD_WRITE)
-//       wParam==0x20: Screenshot() + Net_Connect() — socket conectado (FD_CONNECT)
-//     uMsg == WM_USER+1 (0x401) → OpenGL_Release()   — shutdown message
-//     uMsg == 0x3111            → envía paquete 0xC1/0xF1 (re-auth)
-//     default → DefWindowProcA
-//
-// ── DISPATCH PASS 2 (mouse/IME, desde dentro del body de WM_USER) ───────────
-//
-//   Recarga uMsg @ 0x0041971a y despacha de nuevo:
-//   uMsg == WM_LBUTTONUP  (0x202) @ 0x00419bf4 — suelta click
-//   uMsg == WM_IME_COMPOSITION (0x10F) @ 0x0041a7bd — Korean DBCS chat input:
-//     DAT_07e11cec[DAT_07e11d78 * 4]   = high byte
-//     DAT_07e11ced[DAT_07e11d78 * 4]   = low byte
-//     DAT_07e11cee[DAT_07e11d78 * 4]   = 0 (null terminator)
-//   uMsg == WM_MOUSEMOVE  (0x200) @ 0x00419816 — normaliza coords a 640×480:
-//     g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → DAT_083a427c
-//     g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → DAT_083a4278
-//   uMsg == WM_LBUTTONDOWN (0x201) @ 0x00419859
-//   uMsg - 0x203 in [0..0x7F] → jump table 2 @ 0x41DD88:
-//     WM_RBUTTONDOWN(204), WM_RBUTTONUP(205), WM_MOUSEWHEEL(20A), etc.
-//
-// ── TECLADO ─────────────────────────────────────────────────────────────────
-//   WM_KEYDOWN/WM_KEYUP/WM_CHAR: NO manejados → DefWindowProcA
-//   Movimiento/acción: GetAsyncKeyState() desde Game_SceneUpdate (polled)
-//   WM_IME_COMPOSITION (0x10F): manejado (chat coreano)
-//   IME toggle: IME_SetConversion @ 0x0047ED80 — ImmSetConversionStatus wrapper
-//
-// ── WM_TIMER ─────────────────────────────────────────────────────────────────
-//   id=1000 (period=20000ms):
-//     → GameGuard_TickCheck() — comprueba que el proceso GG sigue vivo
-//     si g_bGameServerConnected != 0 (conectado): envía keep-alive 0xC1/0x0E
-//
-// ── GLOBALS CLAVE ────────────────────────────────────────────────────────────
-//   DAT_083a427c = g_MouseX  (0..639, normalizado 640×480)
-//   DAT_083a4278 = g_MouseY  (0..479)
-//   DAT_083a413c = mouse-moved flag
-//   DAT_083a4299 = flag de ventana activa (0 al desactivarse)
-// ─────────────────────────────────────────────────────────────────────────────
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
-    case WM_CLOSE:
-        DestroyWindow(hWnd);
-        break;
-
-    case WM_ACTIVATE:
-        // DAT_083a4299 = (LOWORD(wParam) != WA_INACTIVE) ? 1 : 0;
-        break;
-
-    case WM_SETCURSOR:
-        // SetCursor(NULL) in-game para ocultar cursor del sistema.
-        // Sin esto el cursor de Windows tapa al sprite de cursor del MU.
-        SetCursor(NULL);
-        return TRUE;  // we handled it; prevent DefWindowProc from setting arrow
-
-    case WM_TIMER:
-        if (wParam == 1000)
-            GameGuard_TickCheck();
-        break;
-
-    case WM_USER:          // 0x400 — WSAAsyncSelect events
-    {
-        // MSDN: wParam = socket handle, LOWORD(lParam) = event code.
-        // El código anterior hacía el switch sobre wParam, que está mal; va lParam.event.
-        WORD evt = LOWORD(lParam);
-        WORD err = HIWORD(lParam);
-        // Compatibilidad MuEmu: tras F4/03 redirect podemos reconectar a un
-        // socket nuevo antes de que Windows entregue el FD_CLOSE del socket
-        // viejo. Si procesamos ese evento tardío como si fuera del socket
-        // actual, cerramos la sesión nueva inmediatamente.
-        extern int  __fastcall CWsctlc_nRecv(void* ctx);
-        extern int  __fastcall CWsctlc_FDWriteSend(int  ctx);
-        extern void Net_ProcessPacket(void);
-        if (evt & 0x01) { // FD_READ
-            CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
-            CsmWatchdog("after-Recv");        // catches any future trample regression
-            // Durante OpenWorld el pump de AccessModel reentra aca.
-            // Se drena el socket (arriba) para que el server no cierre por
-            // backpressure, pero NO se despachan los paquetes: quedan en la cola
-            // y los procesa el frame siguiente, ya con los modelos cargados.
-            // Sin esto, el 0x13 ViewportMonster creaba monstruos a medio cargar.
-            if (!g_WorldLoading)
-                Net_ProcessPacket();
-        }
-        if (evt & 0x02) { // FD_WRITE
-            CWsctlc_FDWriteSend((int)(uintptr_t)SocketClient);
-            // Robustez: la conexión no-bloqueante completa suele señalizarse con
-            // el primer FD_WRITE (el mask WSAAsyncSelect es 0x23, sin FD_CONNECT).
-            // Mandamos el request de lista al ConnectServer acá también; el guard
-            // g_ConnectServerRequested asegura que salga una sola vez.
-            if (g_ConnectServerMode && !g_ConnectServerRequested) {
-                extern void CS_SendPlain(const BYTE* data, int len);
-                BYTE req[4] = { 0xC1, 0x04, 0xF4, 0x02 };
-                CS_SendPlain(req, 4);
-                g_ConnectServerRequested = 1;
-            }
-        }
-        if (evt & 0x10) { // FD_CONNECT
-            extern void CS_SendPlain(const BYTE* data, int len);
-            extern void CreateSocket(const char* server, unsigned int port);
-            if (err == 0 && g_ConnectServerMode && !g_ConnectServerRequested) {
-                // Conectados al ConnectServer → pedir la lista de servers.
-                // C1 04 F4 02 (PMSG_SERVER_LIST_RECV) — plano, sin encriptar.
-                BYTE req[4] = { 0xC1, 0x04, 0xF4, 0x02 };
-                CS_SendPlain(req, 4);
-                g_ConnectServerRequested = 1;
-            }
-        }
-        if (evt & 0x20) { // FD_CLOSE
-            // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):
-            //   UIChatLogWindow_AddText(strID, GlobalText[3], 1);
-            //   CWsctlc::Close(&SocketClient);
-            // ── No MessageBoxA, no PostQuitMessage. Solo log y cierre local.
-            // El cierre del socket por logout limpio (F1/02/* iniciado por el
-            // cliente) NO debe matar el proceso — el countdown de "Salir" o el
-            // local-transition de "Seleccionar Servidor" se encargan de la
-            // siguiente fase. Para FD_CLOSE no solicitado (server kick / red
-            // caída) la UI de login mostrará el chat-log y el usuario verá
-            // "Conexión cerrada" sin que el cliente se mate solo.
-            extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
-            UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
-            if (SocketClientSocket != 0xffffffff) {
-                closesocket((SOCKET)SocketClientSocket);
-                SocketClientSocket = (DWORD)INVALID_SOCKET;
-            }
-        }
-    }
-        // Pass 2: mouse/IME dispatch desde aquí (Ghidra lo muestra como fall-through)
-        break;
-
-    case WM_USER + 1:      // 0x401 — shutdown
-        OpenGL_Release();
-        break;
-
-    case WM_MOUSEMOVE:     // 0x200
-        // g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → DAT_083a427c
-        // g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → DAT_083a4278
-        {
-            DWORD sw = DAT_0056156c ? DAT_0056156c : 640;
-            DWORD sh = DAT_00561570 ? DAT_00561570 : 480;
-            DAT_083a427c = ((DWORD)(short)LOWORD(lParam) * 640) / sw;
-            DAT_083a4278 = ((DWORD)(short)HIWORD(lParam) * 480) / sh;
-        }
-        break;
-
-    case WM_LBUTTONDOWN:   // 0x201
-        DAT_083a413c = 0;                    // cancelar "dialog close" anterior
-        if (DAT_083a42c4 == 0) {
-            DAT_083a4124 = 1;                // g_ClickFlag = 1
-        }
-        DAT_083a42c4 = 1;                    // g_DblClickPending = 1
-        DAT_055ca03c = DAT_083a427c;         // snapshot posición al down
-        DAT_055ca040 = DAT_083a4278;
-        break;
-
-    case WM_LBUTTONUP:     // 0x202
-        DAT_083a4124 = 0;                    // g_ClickFlag = 0
-        // Si no hubo drag desde el down, marcar "dialog close / click confirmado"
-        if (DAT_055ca03c == DAT_083a427c && DAT_055ca040 == DAT_083a4278) {
-            DAT_083a413c = 1;
-        } else {
-            DAT_083a413c = 0;                // fue drag
-        }
-        DAT_083a42c4 = 0;                    // clear pending
-        DAT_055ca03c = DAT_083a427c;
-        DAT_055ca040 = DAT_083a4278;
-        break;
-
-    case WM_LBUTTONDBLCLK: // 0x203
-        DAT_083a4299 = 1;                    // g_DblClickFlag
-        break;
-
-    case WM_RBUTTONDOWN:   // 0x204
-        // 004149D0 WndProc: MouseRButtonPop = 0; if (!MouseRButton)
-        // MouseRButtonPush = 1; MouseRButton = 1.  Attack (0049CBF0)
-    // consume esos dos flags para arrancar y sostener el casteo de un skill.
-        if (DAT_083a42ac == 0) {
-            MouseRButtonPush = 1;                // MouseRButtonPush
-        }
-        DAT_083a42ac = 1;                    // MouseRButton
-        break;
-
-    case WM_RBUTTONUP:     // 0x205
-        // El original limpia Push y suelta MouseRButton (también setea el flag
-        // Pop aparte, que hoy ningún camino de gameplay compilado lee).
-        MouseRButtonPush = 0;
-        DAT_083a42ac = 0;
-        break;
-
-    case WM_MOUSEWHEEL:    // 0x20A
-        break;
-
-    // 0x10F = WM_IME_COMPOSITION — chat coreano DBCS
-    //   DAT_07e11cec[DAT_07e11d78*4] = HIWORD(wParam) >> 8
-    //   DAT_07e11ced[DAT_07e11d78*4] = LOWORD(wParam) & 0xFF
-    //   toggle de IME vía IME_SetConversion @ 0x0047ED80
-    case WM_IME_STARTCOMPOSITION:  // 0x10D
-        DAT_055ca019 = 1;
-        break;
-    case WM_IME_ENDCOMPOSITION:    // 0x10E
-        DAT_055ca019 = 0;
-        break;
-
-    // WM_CHAR — entrada de texto para usuario/contraseña/chat/zen/guild.
-    // Portado del WndProc de IDA @ 0x004149D0 líneas 1890-2010.
-    // Antes no se manejaba (→ DefWindowProcA), lo que descartaba cada tecla
-    // en la pantalla de login, así que no se podía tipear usuario/contraseña.
-    //
-    // Globals mapping (IDA → ours):
-    //   InputIndex            → DAT_07e11d78   (active slot 0..9)
-    //   InputLength[i]        → ((DWORD*)DAT_07d780a8)[i]
-    //   InputText[i][j]       → DAT_07db8710 + i*0x100 + j
-    //   InputEnable           → DAT_00559c84
-    //   InputNumber           → InputNumber
-    //   InputTextMax[0]       → InputTextMax (alias floatizado del DWORD 0x559c94)
-    //   byte_55CA019 (IME)    → DAT_055ca019
-    //   byte_55CA038 (Enter)  → DAT_055ca038   (lo lee el disparador de login de Game_SceneUpdate)
-    case WM_CHAR:          // 0x102
-    {
-        // Diagnóstico: confirma que WM_CHAR está llegando a la ventana y loguea
-        // el estado de los flags del subsistema de input, para poder distinguir
-        // "la tecla se perdió" de "la tecla se ignoró".
-
-        // Clampea el slot a [0,9] para evitar OOB si el índice por slot es basura.
-        DWORD  slot = DAT_07e11d78 & 0x0F;
-        if (slot > 9) slot = 0;
-        DWORD* lens = (DWORD*)DAT_07d780a8;
-        int    len  = (int)lens[slot];
-        char*  buf  = (char*)DAT_07db8710 + slot * 0x100;
-
-        if (!DAT_055ca019) {
-            // Limpia el buffer de composición del IME para este slot (stride 4)
-            *((char*)&DAT_07e11cec + slot * 4) = 0;
-        }
-
-        if (wParam == 8) {           // Backspace
-            if (len > 0) {
-                lens[slot] = (DWORD)(len - 1);
-                buf[len - 1] = 0;
-            }
-            break;
-        }
-        if (wParam == 9) {           // Tab — rotate active slot
-            if (DAT_00559c84 && InputNumber > 1) {
-                DAT_07e11d78 = (DAT_07e11d78 + 1) % InputNumber;
-                PlayBuffer(0x19, 0, 0);   // PlayBuffer(25) — click sfx
-            }
-            break;
-        }
-        if (wParam == 0xD) {         // Enter — signals login/submit + chat toggle
-            DAT_055ca038 = 1;
-
-            // Baúl: guardar/sacar zen. Per IDA WndProc L2047-2051:
-            //   InputIndex = 0;
-            //   if (GoldInputEnable) { InputGold = atoi(InputText[0]); ... }
-            // Así el diálogo de zen del baúl sabe cuánto tecleó el jugador.
-            if (GoldInputEnable) {
-                DAT_07e11d78 = 0;                     // InputIndex = 0
-                char* goldBuf = (char*)DAT_07db8710;  // InputText[0]
-                goldBuf[0xFF] = 0;
-                InputGold = atoi(goldBuf);
-                // LABEL_591: limpia el slot y cierra el input (el envío lo hace
-                // UI_InGameMenu case 116 leyendo DAT_055ca038 el frame siguiente).
-                memset(goldBuf, 0, 0x100);
-                lens[0] = 0;
-                DAT_00559c84 = 0;                     // InputEnable = 0
-                break;
-            }
-
-            // Toggle del chat in-game (per IDA WndProc:2011-2046).
-            //   - state=5 (in-world)
-            //   - input vacío + InputEnable=0  → abre el chat (InputEnable=1)
-            //   - input vacío + InputEnable=1  → cierra el chat (InputEnable=0)
-            //   - input con texto + InputEnable=1  → envía el chat y cierra
-            //
-            // IDA: WndProc reserva Enter cuando hay foco de Guild o cuando
-            // ErrorMessage 126/152 está capturando un Personal Code; en esos
-            // casos el input no puede abrir ni enviar chat.
-            const bool guildDeleteCodeDialog =
-                DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
-            if (SceneFlag == 5 && GuildInputEnable == 0 && !guildDeleteCodeDialog) {
-                bool empty = (lens[slot] == 0);
-                if (empty) {
-                    if (DAT_00559c84) {
-                        // Cierra el input de chat.
-                        DAT_00559c84 = 0;
-                    } else {
-                        // Abre el input de chat — inicializa los campos de texto.
-                        // Per IDA Game.cpp:4326-4327: InputTextMax[0]=42, [1]=10.
-                        _InputTextMaxArr[0] = 42;               // chat msg max
-                        _InputTextMaxArr[1] = 10;               // whisper target name max
-                        // IDA: WndProc restablece el modo visible al abrir
-                        // chat. El diálogo 126 deja este slot enmascarado
-                        // para el Personal Code.
-                        InputTextHide[0] = 0;
-                        InputNumber = 2;                       // InputNumber = 2 (chat + whisper target)
-                        // GoldInputEnable = 0 — ya está en 0 en el juego normal
-                        DAT_00559c84 = 1;                       // InputEnable = 1
-                        DAT_07e11d78 = 0;                       // InputIndex = 0
-                    }
-                    PlayBuffer(0x19, 0, 0);   // click sfx
-                } else if (DAT_00559c84) {
-                    // Con texto + chat abierto → envía la línea (slot 0), limpia y
-                    // cierra. Refleja las líneas 2046-2120 del WndProc de IDA condensadas
-                    // en un solo camino (el original de IDA separa /whisper +
-                    // /pvp + comandos de GM, pero por ahora los reenviamos al
-                    // loop de canales de Chat_InputTick; el envío crudo anda
-                    // bien para el caso del chat normal).
-                    char* line = (char*)DAT_07db8710 + slot * 0x100;
-                    // "/N texto" guarda la macro N en vez de enviarse (desviacion).
-                    if (Chat_TryAssignMacro(line)) {
-                        memset(line, 0, 0x100);
-                        lens[slot] = 0;
-                        DAT_00559c84 = 0;
-                        break;
-                    }
-                    // IDA WndProc L2265-2268: antes del SendChat (no en el
-                    // susurro) revisa los gestos, salvo montado fuera de zona segura.
-                    if (((const char*)&DAT_07db8810)[0] == '\0') {
-                        WORD helper = *(WORD*)(DAT_07abf5d8 + 0x2b8);
-                        if ((helper != 818 && helper != 819) || *(char*)(DAT_07abf5d8 + 0x34e))
-                            CheckChatText(line);
-                    }
-                    Chat_SendChatLine(line);
-
-                    // Limpia el slot de input y su longitud.
-                    memset(line, 0, 0x100);
-                    lens[slot] = 0;
-                    // Cierra el chat (coincide con el comportamiento "enviar + autocerrar";
-                    // la queja del usuario era que Enter-con-texto NO
-                    // close).
-                    DAT_00559c84 = 0;
-                    PlayBuffer(0x19, 0, 0);   // click sfx
-                }
-            }
-            break;
-        }
-        // Carácter imprimible — se agrega si hay algún modo de input activo.
-        // El gate de InputEnable cubre login + chat; GuildInputEnable y los
-        // modales 126/152 comparten el buffer, pero preservan un foco distinto
-        // y no deben abrir el chat.
-        // Per IDA WndProc L1953-1963 el gate es `InputEnable || GoldInputEnable || …`
-        // (el diálogo de zen del baúl abre con InputEnable=0 + GoldInputEnable=1,
-        // sub_4EB5D0) y con GoldInputEnable sólo se aceptan dígitos '0'..'9'.
-        const bool guildDeleteCodeDialog =
-            DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
-        if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
-            BYTE c = (BYTE)wParam;
-            if (GoldInputEnable && (c < '0' || c > '9')) break;
-            // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de
-            // CreateFontA (ver WinMain paso 15).
-            // Acá había `c < 0x7F`, o sea ASCII puro: por eso no se podía
-            // escribir 'ñ' (0xF1 en Windows-1252) ni vocales acentuadas.
-            // El original acepta 0x20..0x7E y manda los bytes >= 0x81 por el
-            // camino DBCS (lead byte + trail byte), porque su entrada es
-            // coreana.  Nuestro texto es Latin-1 de un solo byte, así que ese
-            // camino los destrozaría igual que HANGEUL_CHARSET destrozaba el
-            // render.  Los aceptamos como carácter simple.
-            // 0x7F es DEL: se sigue descartando.
-            if (c >= 0x20 && c != 0x7F) {
-                // InputTextMax[8] @ 0x00559c94 — leído como int desde el array
-                // tipado (NO vía la referencia aliasada a float, que castea el valor).
-                int maxLen = _InputTextMaxArr[slot];
-                if (maxLen <= 0) maxLen = 10;  // login-default fallback
-                if (len < maxLen) {
-                    buf[len]   = (char)c;
-                    lens[slot] = (DWORD)(len + 1);
-                }
-            }
-        }
-        break;
-    }
-
-    default:
-        break;
-    }
-
-    return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-}
 
 // ── Window_FatalError @ 0x004129F0 (~15 líneas, completo) ───────────────────
 //

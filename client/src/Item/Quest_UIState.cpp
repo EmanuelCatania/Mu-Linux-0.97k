@@ -5,7 +5,6 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // CSQuest::clearQuest @ 0x00401960 — cierra la ventana de quest.
 // IDA:
@@ -19,5 +18,5 @@ void __fastcall CSQuest_clearQuest(int param_1) {
     *(BYTE *)(param_1 + 0x1c87f) = 0;
     CloseInventoryRelatedWindows();
     BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-    Net_SendC1Packet(pkt, 3);
+    gNetwork.SendC1(pkt, 3);
 }

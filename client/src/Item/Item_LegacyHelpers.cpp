@@ -1,6 +1,7 @@
 // Item_LegacyHelpers.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -45,7 +46,7 @@ int __cdecl GetItemCount(int siType, int iLevel) {
         int *v4 = v3;
         int v5 = 8;
         do {
-            if ( *((short *)v4 - 28) == siType
+            if ( ItemBehaviorType(*((short *)v4 - 28)) == siType   // 0.97.20: agregados por comportamiento
               && (siType == -1 || *v4 > 0)
               && (iLevel == -1 || ((*(v4 - 13) >> 3) & 0xF) == iLevel) )
             {
@@ -69,7 +70,7 @@ LABEL_2: {
         int v4 = 7;
         int result = v2 + 56;
         int *v6 = v3;
-        while ( *((short *)v6 - 28) != siType || *v6 <= 0
+        while ( ItemBehaviorType(*((short *)v6 - 28)) != siType || *v6 <= 0
                 || (iLevel != -1 && ((*(v6 - 13) >> 3) & 0xF) != iLevel) )
         {
             --v4;

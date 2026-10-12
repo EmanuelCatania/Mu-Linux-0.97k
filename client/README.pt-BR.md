@@ -44,7 +44,7 @@ mais incompleta hoje é a movimentação de NPCs e monstros.
 | Inventário, equipamento, baú, loja, trade | Funcional |
 | Chat, party, guild | Funcional |
 | Som (DirectSound) | Funcional |
-| Música (BGM) | o original executa `MuPlayer.exe` |
+| Música (BGM) | Completo: tocada pelo miniaudio dentro do cliente; aceita mp3, wav e flac (o original executava `MuPlayer.exe`) |
 | Textos e idioma | UI em espanhol. O port abre `Text.bmd` fixo, que aqui é a variante `_Spn`; as variantes `_Eng`/`_Por` vêm em `Data/Local/`, mas o seletor de idioma vem da DLL e não está portado |
 | Combate | `Attack`, `Action` e `MoveCharacterVisual` auditadas 1:1 contra o IDA, junto com suas cadeias de executores |
 | Movimentação de NPCs / monstros | Parcial |
@@ -79,9 +79,8 @@ port futuro antes de receber um nome semântico seguro.
 ## O que você precisa além deste repo
 
 Quase nada: os **assets do jogo já estão incluídos** em `bin/Client/Data/`
-(~209 MB — modelos `.bmd`, texturas `.ozj`/`.ozt`, mapas, sons e música), junto
-com `MuPlayer.exe`, que é o que o cliente executa para tocar o BGM. Clonar,
-compilar e rodar.
+(~209 MB — modelos `.bmd`, texturas `.ozj`/`.ozt`, mapas, sons e música).
+Clonar, compilar e rodar.
 
 O único item que **não** está incluído é o **`main.exe` original**, que só é
 necessário se você quiser decompilá-lo por conta própria para verificar um port
@@ -99,106 +98,282 @@ Windows [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito)
 
 ## Compilar
 
-Requer **Visual Studio 2022** com o toolset de C++ para desktop.
+Requer o **Visual Studio 2022** com o toolset de C++ para desktop (ele já traz o
+CMake). Há duas formas equivalentes, que geram o mesmo exe:
 
-1. Abrir `mu97k.sln`.
-2. Selecionar a configuração **Debug** / plataforma **Win32**.
-3. Compilar.
+- **Visual Studio:** abrir `mu97k.sln`, escolher **Debug** ou **Release** com a
+  plataforma **Win32** e compilar.
+- **CMake:**
+  ```
+  cmake -S . -B build -A Win32 -T v143
+  cmake --build build --config Release
+  ```
+  O primeiro comando também gera `build/mu97k.sln`, caso você queira continuar
+  no Visual Studio com as pastas de `src/` como filtros.
+
+Enquanto os dois convivem, um `.cpp` novo entra no `.vcxproj` **e** no
+`CMakeLists.txt`; a CI falha se as duas listas não baterem.
 
 **A plataforma tem que ser Win32 (x86).** Todo o port assume ponteiros de 32
 bits: os endereços do binário original, os layouts de struct e os pools de
-memória. Em x64 não compila, e se compilasse não funcionaria.
+memória. Em x64 não compila, e se compilasse não serviria.
 
 Saída: `bin/Client/main.exe`. O projeto linka direto em `bin/Client/`, que é
-onde ficam os assets e o `server.cfg`, então não há cópia intermediária nem
-risco de acabar executando um binário antigo.
+onde ficam os assets e o `Config.ini`, então não há cópia intermediária nem
+risco de acabar executando um binário velho.
 
 Bibliotecas linkadas (todas do SDK do Windows, exceto a libjpeg, que vem
 incluída): `opengl32.lib`, `glu32.lib`, `winmm.lib`, `ws2_32.lib`.
 
-### Executar
+### Apontar para o seu servidor
 
-1. Copiar `server.cfg.example` para `bin/Client/server.cfg` e editar (é o único
-   arquivo que não vem no repo).
-2. Executar `bin/Client/main.exe`.
+O endereço e a identidade do servidor ficam **compilados no cliente**, como no
+MU 5.2: não há arquivo de configuração para distribuir. Eles ficam em
+`src/Config/ServerConfig.h` e apontam para o servidor de referência do projeto;
+para usar o seu, edite esse arquivo e recompile.
 
-#### `server.cfg`
+O endereço pode ser um IP ou um nome de host (o cliente resolve por DNS, como o
+original). Um nome é melhor: não fica um IP público fixo no código e o servidor
+pode mudar sem recompilar. Se o domínio estiver na Cloudflare, o registro tem
+que ficar **sem proxy** ("DNS only"): o proxy só deixa passar tráfego web e
+corta as conexões do jogo.
 
-Dois tipos de linha: os endereços (`<IP> <porta>`) e as de identidade do
-servidor (`chave=valor`). As que começam com `#` ou `;` são comentários.
-
+```cpp
+constexpr char           ConnectServerIP[]   = "mu.server-pups.space";
+constexpr unsigned short ConnectServerPort   = 44405;   // 0 = sem ConnectServer
+constexpr char           GameServerIP[]      = "mu.server-pups.space";
+constexpr unsigned short GameServerPort      = 55901;
+constexpr char           CustomerName[]      = "MuLinux";
+constexpr char           ServerSerial[]      = "TbYehR2hFUPBKgZj";
+constexpr char           ClientVersion[]     = "0.97.11";
 ```
-127.0.0.1 44405        <- ConnectServer (lista de servidores + barra de carga)
-127.0.0.1 55901        <- GameServer (fallback)
 
-CustomerName=MuLinux
-ServerSerial=TbYehR2hFUPBKgZj
-ClientVersion=0.97.11
-```
+**Endereços.** Com `ConnectServerPort` diferente de 0 é usado o fluxo do
+ConnectServer: o cliente pede a lista real (`F4/02`), o servidor responde com
+nomes e ocupação, e ao escolher um o `F4/03` redireciona para o GameServer; se o
+ConnectServer não responder, conecta no GameServer. Com `0` conecta direto no
+GameServer e o select-server mostra uma entrada fixa.
 
-**Endereços.** Com duas linhas usa-se o fluxo ConnectServer: o cliente pede a
-lista real (`F4/02`), o servidor responde com nomes e ocupação, e ao escolher um
-o `F4/03` redireciona para o GameServer. Com **uma única linha** conecta direto
-ao GameServer — o comportamento clássico, e nesse caso a tela de seleção de
-servidor mostra uma entrada estática de preenchimento.
+> O select-server aparece **sempre**, mesmo apontando direto para o GameServer:
+> é uma tela do fluxo original, não um sinal de que você está chegando ao
+> ConnectServer.
 
-> A tela de seleção de servidor aparece **sempre**, mesmo apontando direto para
-> o GameServer: é uma tela do fluxo original, não um indício de que você está
-> chegando ao ConnectServer.
-
-**Identidade do servidor.** Os três valores precisam coincidir com os do
+**Identidade do servidor.** Os três valores têm que coincidir com os do
 GameServer (`MuServer/GameServer/DATA/GameServerInfo - StartUp.dat`). Se algum
-não coincidir, o cliente **conecta mas não entra**, e sem nenhuma mensagem útil:
+não coincidir, o cliente **conecta mas não entra**, sem nenhuma mensagem útil:
 
-| Chave | De onde sai | O que acontece se não coincidir |
+| Valor | De onde vem | O que acontece se não coincidir |
 |---|---|---|
-| `CustomerName` | `CustomerName=` do `.dat` | O cliente conecta, descriptografa lixo e fica travado em *"conectando ao GameServer"* para sempre |
-| `ServerSerial` | `ServerSerial=` do `.dat` | Igual ao de cima, **e além disso** o login retorna *"versão incorreta"* |
-| `ClientVersion` | `ServerVersion=` do mesmo `.dat` | Login rejeitado com *"versão incorreta"* |
+| `CustomerName` | `CustomerName=` do `.dat` | O cliente conecta, descriptografa lixo e fica em *"conectando ao GameServer"* para sempre |
+| `ServerSerial` | `ServerSerial=` do `.dat` | Igual ao de cima, **e além disso** o login devolve *"versão incorreta"* |
+| `ClientVersion` | `ServerVersion=` do `.dat` | Login recusado com *"versão incorreta"* |
 
 `CustomerName` e `ServerSerial` alimentam a chave de criptografia, que o
-GameServer deriva da combinação dos dois
-(`GameServer/HackCheck.cpp::InitHackCheck`); é por isso que mudar o nome do
-cliente quebra a conexão mesmo com todo o resto correto. `ServerSerial` cumpre
-duas funções: entra nessa derivação e o servidor ainda o compara byte a byte no
-login.
+GameServer deriva dos dois combinados (`GameServer/HackCheck.cpp::InitHackCheck`).
+`ServerSerial` tem dupla função: entra nessa derivação e o servidor também o
+compara byte a byte no login. `ClientVersion` aceita `0.97.11` ou `09711`.
 
-Se forem omitidos, usam-se os valores padrão deste fork (os do bloco acima).
-`ClientVersion` aceita tanto `0.97.11` quanto `09711`.
-
-**Para diagnosticar**, `bin/Client/debug.log` registra a chave derivada na
-inicialização:
+**Para diagnosticar**, o `bin/Client/debug.log` registra ao iniciar o endereço
+usado e a chave derivada:
 
 ```
+ServerConfig: ConnectServer=mu.server-pups.space:44405 GameServer=mu.server-pups.space:55901 version='09711'
 MuEmu: InitKeys CustomerName='MuLinux' Serial='TbYehR2hFUPBKgZj' -> EncDecKey1=0xC2 EncDecKey2=0x01 (xor=0xC2 add=0xC2)
-server.cfg: ClientVersion='09711'
 ```
 
 Se o cliente travar conectando, essa linha é a primeira coisa a olhar: compare
 com o `CustomerName` do servidor.
 
-**Opções do cliente.** O 0.97k lê estas do registro do Windows, que é onde o
-launcher oficial as deixa. Aqui não há launcher, então também são aceitas no
-`server.cfg` e, quando presentes, ganham do registro — a ideia é poder
-distribuir o cliente já configurado. São aceitas como `0`/`1` ou `on`/`off`, e o
-que foi aplicado fica em `debug.log`; um valor inválido é ignorado e registrado
-como `IGNORADO`.
+### Executar e opções do jogador
 
-| Chave | Padrão do binário | Observações |
+Executar `bin/Client/main.exe`.
+
+As preferências do jogador são lidas de **`bin/Client/Config.ini`**, com as
+mesmas seções e chaves que o `Main.dll` de injeção usava, então o `Config.ini`
+que você já tem serve. O 0.97k original as lia do registro do Windows, onde o
+launcher oficial as deixava: se uma chave não está no `Config.ini`, vale o
+registro, e se também não estiver lá, o padrão do binário. O que foi aplicado
+fica no `debug.log` (linha `Config.ini: ...`).
+
+| Chave | Padrão do binário | Notas |
 |---|---|---|
-| `MusicOnOff` | `0` (desligada) | O `server.cfg.example` traz em `1`. Se você comentar, não vai ouvir BGM e isso **não é bug**: é o padrão original. O cliente não decodifica o mp3, ele executa `MuPlayer.exe` (incluído em `bin/Client/`). |
-| `SoundOnOff` | `1` | Efeitos sonoros (DirectSound). |
-| `Resolution` | `0` (640x480) | Índice `0..4` ou `LARGURAxALTURA`, mas **somente as cinco do binário**: 640x480, 800x600, 1024x768, 1280x1024, 1600x1200. Qualquer outra é ignorada e o cliente inicia em 640x480. |
-| `WindowMode` | — (desvio) | `1` = em janela, `0` = tela cheia. Portado da DLL de injeção: o 0.97k só roda em tela cheia e procura um modo de vídeo de 16 bits de cor que não existe no Windows 10/11, então a troca de modo falha em silêncio e a janela fica sem bordas num canto. |
-| `Borderless` | — (desvio) | `1` = sem barra de título nem borda. Só se aplica no modo janela. |
+| `[Window] WindowMode` | — (desvio) | `1` = em janela, `0` = tela cheia. O 0.97k só roda em tela cheia e procura um modo de vídeo de 16 bits que não existe no Windows 10/11. |
+| `[Window] Borderless` | — (desvio) | `1` = sem barra de título nem borda. Só vale em modo janela. |
+| `[Window] Resolution` | `0` (640x480) | Índices do DLL: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Atenção: o `4` não é o mesmo do registro (lá é 1600x1200). As widescreen (`4` a `7`) ainda não foram testadas neste cliente. |
+| `[Sound] EnableSound` | `1` | Efeitos sonoros (DirectSound). |
+| `[Sound] EnableMusic` | `0` (desligada) | O `Config.ini` do repositório vem com `1`. Cada tema toca uma vez; o do login é `Data\Music\MuTheme.mp3`, que o pacote não traz. |
+| `[Sound] SoundLevel`, `MusicLevel` | — (desvio) | Volume de efeitos e de música, de `0` (mudo) a `9` (volume original); como no DLL, cada nível são 6,25 dB. O `Config.ini` do repositório vem com `4`. |
+| `[User] Username` | — | Preenche o campo de usuário do login. |
+| `[Font] FontName`, `FontHeight`, `FontBold`, `FontItalic`, `FontCharset`, `FontWidth`, `FontUnderline`, `FontQuality`, `FontStrikeOut` | Arial, altura conforme a resolução | Como o DLL: altura fixa (limite 25) e a fonte grande com o dobro. O `Config.ini` do repositório vem com Verdana 13. Se a seção `[Font]` inteira for apagada, o cliente volta à fonte original. |
 
-Para adicionar uma resolução que não esteja entre essas cinco é preciso mexer em
-dois lugares de `src/Config/Config_Load.cpp`: o parser de `Resolution`, que mapeia
-`LARGURAxALTURA` para o índice, e o `switch` da seção 5, que é o que escreve
-`WindowWidth`/`WindowHeight`. Isso basta para o render escalar — as escalas de
-layout (`g_fScreenRate_x/y`) derivam dessas duas variáveis — mas nada do cliente
-foi testado fora das cinco originais, então uma resolução ampla pode expor
-problemas nos painéis e nos hit-tests.
+As seções `[Antilag]`, `[MiniMap]` e `[Language]` do `Config.ini` do
+DLL vão ser lidas conforme esses sistemas forem integrados (Fase 2 do roteiro).
+
+---
+
+## Como adicionar itens custom
+
+Com o `Main.dll` de injeção, um item custom era adicionado dos dois lados: o
+server o definia no seu `Item.txt`, e o cliente precisava de um `item.bmd`
+regerado mais os `.txt` do `Encoder` (`CustomItem.txt`, `CustomGlow.txt`, etc.)
+empacotados no `ClientInfo.bmd`. Se cliente e server não batiam, o item
+aparecia errado ou o server o rejeitava.
+
+Agora **o server é a única fonte**. No login ele manda ao cliente um catálogo
+com todas as definições (itens, monstros, efeitos, pets). O cliente **só
+precisa dos arquivos do modelo** (`.bmd` e texturas) dentro de
+`bin/Client/Data`. Não é preciso regerar o `item.bmd` nem mexer no código.
+
+Os `.txt` do `Encoder` do DLL continuam sendo lidos de `Data/Custom/Encoder`
+do server, então uma pasta de customs feita para o DLL funciona sem converter
+nada.
+
+### Índices: a faixa clássica e a estendida
+
+No 0.97k cada seção de itens (espadas, machados, …, joias) tem **32 índices**
+(0 a 31). Além disso, cada seção aceita índices **32 a 511**: são os itens
+*adicionados*. No protocolo eles usam 13 bits (o item ocupa 7 bytes em vez de
+5), então nunca colidem com um item vanilla.
+
+Um item adicionado precisa dizer **qual item vanilla ele imita** (coluna
+*Comportamento*): isso decide a lógica que o 0.97k tem escrita por tipo de item
+(se é um arco e gasta flechas, se é uma asa, uma joia, quais opções excellent
+pode ter). Todo o resto —nome, stats, tamanho, modelo, brilho, efeitos— vem da
+sua própria linha.
+
+### Exemplo 1: a Knight Blade, do jeito do DLL
+
+O item fica dentro da faixa clássica (`0,20`); modelo e brilho são definidos no
+`Encoder`:
+
+```
+// Data/Custom/Encoder/CustomItem.txt
+00,020		22		"Sword21"		// Knight Blade
+
+// Data/Custom/Encoder/CustomGlow.txt
+00,020		191	165	127		// Knight Blade
+```
+
+Assets no cliente: `bin/Client/Data/Item/Custom/20/` (`sword21.bmd` e suas
+texturas).
+
+### Exemplo 2: a Crimson Knight Blade, fora da faixa clássica
+
+O mesmo modelo como item adicionado (`0,32`), tudo em uma linha de
+`Data/Item/Item.txt`. Depois das colunas de sempre vêm: comportamento, pasta e
+nome do modelo, e a cor do brilho (RGB):
+
+```
+32	0	22	1	4	1	1	0	"Crimson Knight Blade"	...	00,020	"Item\Custom\20\"	"Sword21"	255	40	40
+```
+
+Se comporta como a Knight Blade (`00,020`), usa o modelo `Sword21` e brilha em
+vermelho. Comando de teste: `/make 0 32`.
+
+### Exemplo 3: o set Great Dragon
+
+Cinco peças no índice `21` das seções 7 a 11, com o modelo definido no
+`CustomItem.txt` do `Encoder` (como no DLL):
+
+```
+07,021		0		"HelmMale22"		// Great Dragon Helm
+08,021		0		"ArmorMale22"		// Great Dragon Armor
+09,021		0		"PantMale22"		// Great Dragon Pant
+10,021		0		"GloveMale22"		// Great Dragon Glove
+11,021		0		"BootMale22"		// Great Dragon Boot
+```
+
+Assets no cliente: `bin/Client/Data/Player/Custom/21/`. As mesmas peças também
+podem ser definidas sem o `Encoder`, com as colunas de modelo no `Item.txt`
+(`"Player\Custom\21\" "HelmMale22"`).
+
+### Exemplo 4: efeitos próprios e pose no inventário
+
+`Data/Custom/Items/<seção>_<índice>.json` dá a um item (custom ou vanilla) sua
+pose no inventário e efeitos que o cliente desenha sobre os ossos do modelo.
+Por exemplo, asas com os brilhos das Wings of Illusion do 5.2:
+
+```json
+{
+  "item": "12,032",
+  "effects": [
+    { "on": "equipped", "type": "sprite", "texture": "Effect/Flare.jpg",
+      "bones": [5, 6, 7, 8, 18, 19], "color": [0.5, 0.0, 0.0], "scale": 0.6,
+      "pulse": { "speed": 0.002, "scale": 0.2, "color": 0.4 } },
+    { "on": "equipped", "type": "particle", "particle": 1230,
+      "bones": [13, 31], "chance": 2, "color": [0.8, 0.8, 0.3], "scale": 0.5 }
+  ]
+}
+```
+
+No repo do server há um caso real: `Data/Custom/Items/03_000.json` corrige a
+posição da Light Spear (vanilla) na sua casa do inventário, com a correção do
+5.2.
+
+### Exemplo 5: um pet custom (Pet Rudolph)
+
+O Rudolph do 5.2 como pet que dá voltas ao redor do jogador e pega o zen
+próximo. Ele usa um índice alto (`13,400`) de propósito, como exemplo da faixa
+estendida. São quatro arquivos, todos incluídos nos repos:
+
+| Onde | Arquivo | O que define |
+|---|---|---|
+| cliente | `bin/Client/Data/Item/Custom/Rudolph/` | o modelo `xmas_deer.bmd` e suas texturas |
+| server | `Data/Item/Item.txt` | a linha do item: `Slot` 8 (helper), comportamento `*` (não imita nenhum pet vanilla) e o modelo |
+| server | `Data/Custom/Items/13_400.json` | a pose no inventário |
+| server | `Data/Custom/Pets/13_400.json` | como se move e o que faz |
+
+```json
+{
+  "item": "13,400",
+  "blendMesh": 0,
+  "movement": { "type": "orbit", "radius": 50, "period": 4000, "height": 20 },
+  "abilities": [ { "type": "pickup", "what": "zen", "range": 3, "interval": 1000, "delay": 1500 } ]
+}
+```
+
+O cliente desenha o movimento; as habilidades (pegar o zen) são executadas pelo
+server, que é quem decide. Comando de teste: `/make 13 400`.
+
+### Exemplo 6: um monstro custom (Karane)
+
+Do jeito do DLL, com `Data/Custom/Encoder/CustomMonster.txt` (índice, tipo
+`0`=NPC `1`=monstro, dourado, escala, pasta e modelo):
+
+```
+152		1		1		2.0		"Monster\\Karane\\"		"Karane"		// Karane
+```
+
+Ou direto no `Data/Monster/Monster.txt`, com as mesmas colunas no fim da linha
+do monstro:
+
+```
+152	0	"Karane"	...	0	0	1	1	2.0	"Monster\Karane\"	"Karane"
+```
+
+Assets no cliente: `bin/Client/Data/Monster/Karane/`.
+
+### Referência
+
+Colunas opcionais no fim de cada linha do `Item.txt` (`*` = sem valor):
+
+| Coluna | Exemplo | O que faz |
+|---|---|---|
+| Comportamento | `00,020` | item vanilla que imita na lógica |
+| Pasta e modelo | `"Item\Custom\20\" "Sword21"` | modelo no inventário, no chão e no personagem |
+| Brilho | `255 40 40` | cor do brilho por nível |
+| Pasta e modelo equipado | `"Item\Custom\FenrirMount\" "fenril_black"` | só se o item aparece diferente equipado (uma montaria) |
+| Gate | `22` | para pergaminhos: leva sempre a esse gate |
+
+Os JSON de `Data/Custom/Items` também aceitam `"tooltip"`: até 6 linhas
+próprias abaixo do nome do item, como texto (`"Zen picker"`) ou com cor
+(`{ "text": "Zen picker", "color": "gold" }`; cores: `white`, `blue`, `red`,
+`gold`, `green`, `darkred`, `purple`, `darkblue`, `darkgold`).
+
+Para asas custom, `Data/Item/CustomWing.txt` adiciona as constantes de defesa e
+dano. Os JSON de `Data/Custom/Items` e `Data/Custom/Pets` são validados quando o
+server inicia: um arquivo com erros é descartado inteiro e o motivo vai para o
+`GameServer/LOG`.
 
 ---
 
@@ -331,7 +506,7 @@ MIT — ver [LICENSE](LICENSE).
 
 A licença cobre **o código**: tudo que está em `src/`.
 
-**Não** cobre os assets de `bin/Client/Data/` nem o `MuPlayer.exe`, que são
+**Não** cobre os assets de `bin/Client/Data/`, que são
 copyright da WebZen Inc. e estão no repo apenas porque ele é privado e de uso
 interno entre colaboradores.
 
@@ -350,14 +525,13 @@ versão.
 flowchart TD
     F0["0.97.00 · Reconstrução fiel (base)"] --> F1
     F1["0.97.10 · Fase 1: base de engenharia<br/>CMake, CI, limpeza de código e comentários, espelho de protocolo"] --> F2
-    F2["0.97.20 · Fase 2: integração nativa do Main.dll + modularização<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados à lógica base"] --> F3
-    F3["0.97.30 · Fase 3: otimização do código herdado<br/>switches e defines da Webzen → tabelas e enums"] --> F4
-    F4["0.97.40 · Fase 4: abstração de plataforma + Linux"] --> F5
-    F5["0.97.50 · Fase 5: timing real<br/>simulação separada do render, fps altos sem acelerar o jogo"] --> F6
-    F6["0.97.60 · Fase 6: renderer moderno (OpenGL 3.3) e x64"] --> F7
-    F7["0.97.70 · Fase 7: conteúdo compartilhado cliente + server"] --> F8
-    F8["0.97.80 · Fase 8: autoridade do server + segurança"] --> F9
-    F9["0.97.90 · Fase 9+: launcher/updater, web, Android"]
+    F2["0.97.20 · Fase 2: integração nativa do Main.dll + modularização + otimização do código herdado<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados à lógica base; switches e defines da Webzen → tabelas e enums"] --> F3
+    F3["0.97.30 · Fase 3: abstração de plataforma + Linux"] --> F4
+    F4["0.97.40 · Fase 4: timing real<br/>simulação separada do render, fps altos sem acelerar o jogo"] --> F5
+    F5["0.97.50 · Fase 5: renderer moderno (OpenGL 3.3) e x64"] --> F6
+    F6["0.97.60 · Fase 6: conteúdo compartilhado cliente + server"] --> F7
+    F7["0.97.70 · Fase 7: autoridade do server + segurança"] --> F8
+    F8["0.97.80 · Fase 8+: launcher/updater, web, Android"]
 ```
 
 Os números de cada fase são a versão prevista ao encerrá-la; o escopo de cada uma
@@ -377,8 +551,10 @@ hotfix.
 | `0.97.20` | encerramento da Fase 2, e assim por diante |
 
 O cliente e o [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usam a
-mesma numeração: a mesma tag nos dois repositórios indica que funcionam juntos. Cada
-Season terá sua própria linha (`0.99.FH`, …).
+mesma numeração, mas o servidor só recebe uma tag nova quando muda. Cada
+Release do cliente indica com qual tag do servidor funciona (por exemplo, o
+cliente `0.97.10` funciona com o servidor `0.97.00`). Cada Season terá sua
+própria linha (`0.99.FH`, …).
 
 ### Branches
 

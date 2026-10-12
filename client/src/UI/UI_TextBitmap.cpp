@@ -28,20 +28,20 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         } else {
             SIZE sz;
             int prefixLen = lstrlenA(p9);
-            GetTextExtentPointA(m_hFontDC, p9, prefixLen, &sz);
+            GetTextExtentPointA(gFont.GetTextDC(), p9, prefixLen, &sz);
             prefixWidth = sz.cx;
 
             // Output prefix text at (p6, 0)
             int slen = lstrlenA(p9);
-            TextOutA(m_hFontDC, p6, 0, p9, slen);
+            TextOutA(gFont.GetTextDC(), p6, 0, p9, slen);
         }
 
         // Set text color to white for main text
-        SetTextColor(m_hFontDC, 0xffffff);
+        SetTextColor(gFont.GetTextDC(), 0xffffff);
 
         // Output main text at (prefixWidth + p6, 0)
         int mainLen = lstrlenA(p3);
-        TextOutA(m_hFontDC, prefixWidth + p6, 0, p3, mainLen);
+        TextOutA(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
     }
 
     // If p8 == 0, use p1 (bitmap width) as the color-split boundary
@@ -76,7 +76,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     // Bitmaps[0] buffer stride = 0x100 DWORDs per row (256 pixels * 4 bytes)
     // ppvBits stride = 0x600 bytes per row (512 pixels * 3 bytes, or 256 * 6 — double-height?)
     DWORD* dstRow = (DWORD*)(uintptr_t)DAT_083a7cd4;
-    char*  srcRow = (char*)ppvBits_055c9e4c;
+    char*  srcRow = (char*)gFont.GetTextBits();
 
     // Guard (no está en IDA): `srcRow = ppvBits_055c9e4c` es el puntero a los
     // bits del DIB de la fuente (lo crea Font_BuildLayout vía CreateDIBSection,
@@ -158,15 +158,15 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
   }
   if ( (BYTE)(a7) )
   {
-    v9 = 640 * LODWORD(Width) / WindowWidth;
+    v9 = 640 * LODWORD(Width) / gWindow.GetWidth();
     if ( (int)(v9 + v8) > a8 )
     {
       a1 = a8 - v9;
     }
   }
-  else if ( LODWORD(Width) + v8 > (int)WindowWidth )
+  else if ( LODWORD(Width) + v8 > (int)gWindow.GetWidth() )
   {
-    a1 = WindowWidth - LODWORD(Width);
+    a1 = gWindow.GetWidth() - LODWORD(Width);
   }
   if ( DAT_07e11d6e )
   {
@@ -178,7 +178,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     }
     if ( (BYTE)(a7) )
     {
-      v11 = 480 * LODWORD(Height) / WindowHeight;
+      v11 = 480 * LODWORD(Height) / gWindow.GetHeight();
       if ( v11 + v10 > 0x1B1 )
       {
         a2 = 433 - v11;
@@ -186,7 +186,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     }
     else
     {
-      v12 = WindowHeight - (int)(47 * WindowHeight) / 640;
+      v12 = gWindow.GetHeight() - (int)(47 * gWindow.GetHeight()) / 640;
       if ( LODWORD(Height) + v10 > v12 )
       {
         a2 = v12 - LODWORD(Height);

@@ -436,7 +436,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     ((FnVoid)vt[20])(self);  // *this+80 — render header
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    if (m_hFontDC) SelectObject(m_hFontDC, g_hFontBold);  // we don't have plain g_hFont; bold is closest
+    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
 
     int i = 0;
     while (i < (int)self[35]) {
@@ -517,7 +517,20 @@ static void __fastcall ChatLB_nullsub2(DWORD* /*self*/) {}
 //   PlayBuffer / sub_40C500 — soft-stubbed (sound + key-repeat dispatch)
 //   unk_83A4128            — acumulador del scroll de rueda (nosotros usamos un static)
 extern "C" int  MouseOnWindow;
+extern "C" int  g_ChatLB_MouseOnWindow;
 static int g_ChatLB_WheelAccum = 0;     // mirror of unk_83A4128
+static DWORD g_ChatLB_WheelTick = 0;
+
+// DESVIACION: en el binario nadie escribe unk_83A4128 (sólo lo lee y lo pone en
+// 0 sub_411B60), así que la rueda nunca movía las listas.  WM_MOUSEWHEEL lo
+// alimenta en muescas; lo consume el widget bajo el cursor y se descarta si
+// ningún widget lo toma en 200 ms, para que no se aplique al pasar por otro.
+void ChatListBox_AddWheel(int notches)
+{
+    if (GetTickCount() - g_ChatLB_WheelTick > 200) g_ChatLB_WheelAccum = 0;
+    g_ChatLB_WheelAccum += notches;
+    g_ChatLB_WheelTick = GetTickCount();
+}
 
 // Soft helpers — wired to no-ops until the engine sound/keyrepeat is ported.
 static inline void ChatLB_PlayBuffer(int /*id*/, int /*p2*/, int /*p3*/) {}
@@ -580,6 +593,8 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
     // el input (slot 26) de los 3 botones popup.
     if (((FnInt)vt[21])(self)) {
         // Wheel-scroll accumulator drains here.
+        if (g_ChatLB_WheelAccum && GetTickCount() - g_ChatLB_WheelTick > 200)
+            g_ChatLB_WheelAccum = 0;
         if (g_ChatLB_WheelAccum) {
             ((FnVoidI)vt[12])(self, 0, -3 * g_ChatLB_WheelAccum);
             g_ChatLB_WheelAccum = 0;
@@ -1163,7 +1178,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         }
     }
     if (v40[0]) {
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
         wsprintfA(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
@@ -1171,7 +1186,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         EnableAlphaTest(true);
         UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
         GL_ResetState();
-        if (m_hFontDC) SelectObject(m_hFontDC, g_hFontBold);
+        if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
 
     // Incrementa el contador de frames — lo usa el slot 23 para hacer parpadear el cursor.
@@ -1250,10 +1265,10 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         }
         wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
         UI_DrawText(x, y, Buffer, 0, 1, 0);
-        if (m_hFontDC)
-            GetTextExtentPointA(m_hFontDC, Buffer, lstrlenA(Buffer), &sz);
+        if (gFont.GetTextDC())
+            GetTextExtentPointA(gFont.GetTextDC(), Buffer, lstrlenA(Buffer), &sz);
         // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
-        sz.cx = (LONG)((float)sz.cx / _DAT_055c9b70);   // g_fScreenRate_x
+        sz.cx = (LONG)((float)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
     }
 
     // Texto: segunda paleta (solo cambia el susurro).
@@ -1428,7 +1443,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
         const char* sender = (const char*)(self[25] + 8);
         SIZE sz = {0,0};
         int len = lstrlenA(sender);
-        if (m_hFontDC) GetTextExtentPointA(m_hFontDC, sender, len, &sz);
+        if (gFont.GetTextDC()) GetTextExtentPointA(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
             int v10 = (int)self[25];
             if (Hero && strcmp((const char*)(v10 + 8), (const char*)(Hero + 449))) {
@@ -1812,7 +1827,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     else
         v5 = (int)self[12] - 13 * a2 - 16;
 
-    if (m_hFontDC) SelectObject(m_hFontDC, g_hFontBold);
+    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Avance del cursor tal cual el binario: `self[25] = cursor->next`, y acto
     // seguido `self[25] = (cursor->next)->prev`.  Con la lista circular eso
@@ -1878,7 +1893,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         }
     }
 
-    if (m_hFontDC) SelectObject(m_hFontDC, g_hFont);
+    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();                                             // DisableAlphaBlend
     return 1;
 }
@@ -2167,6 +2182,198 @@ extern "C" void GuildList_AddMember(const char* name, char connected, char party
     ((FnAdd)((void**)*obj)[28])(obj, 0, name, connected, partyNumber);
 }
 
+// ===========================================================================
+// ===  WIDGET DE HORARIOS DE EVENTOS (panel H)                            ===
+// ===========================================================================
+//
+// DESVIACION: el 0.97k no tiene este panel (lo agregaba el DLL como ventana
+// flotante).  Es una tercera instancia de la familia de listbox, con la misma
+// mecánica que la lista de guild (off_5526EC): filas dibujadas de abajo hacia
+// arriba, inserción al frente y scroll inicial en el máximo, de modo que se ve
+// en orden y las flechas/pulgar/bandas (slots 7, 12, 18) funcionan igual.
+// Cambian sólo el fondo (alto por filas de dos líneas), la fila y el nodo.
+//
+// Nodo (0x0C): +0x00 next . +0x04 prev . +0x08 índice en gEventTimer.
+// El contenido se dibuja en EventTimer.cpp; el widget sólo pone la geometría.
+// ===========================================================================
+
+void EventTimer_DrawRow(int index, int x, int y, int width);
+
+namespace {
+constexpr int EventRowStep = 34;   // recuadro 245 (21) + línea del tiempo
+}
+
+// slot 22 — fondo: GuildLB_renderBg (sub_40ED80) con alto por filas de 34 en
+// lugar de 40 cada 3; flechas, riel y pulgar con los mismos assets 1282–1284.
+static int __fastcall EventLB_renderBg(DWORD* self)
+{
+    typedef void (__fastcall *FnVoid)(DWORD*);
+    void**  vt = (void**)*self;
+    float*  f  = (float*)self;
+
+    self[14] = (DWORD)(EventRowStep * (int)self[35] + 10);
+    ((FnVoid)vt[18])(self);                       // recalcScroll
+
+    // DESVIACION: el riel se dibuja siempre, como el del chat; sin desborde el
+    // pulgar ocupa todo el alto (recalcScroll lo limita a 1.0).
+    {
+        const float right = (float)((int)self[13] + (int)self[11]);
+        GL_DrawTexture(1284, right - 19.0f, (float)((int)self[12] - (int)self[14]) + 8.0f,
+                       13.0f, 13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
+        EnableAlphaTest(true);
+        GL_DrawTexture(1284, right - 19.0f, (float)(int)self[12] - 4.0f,
+                       13.0f, -13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
+        GL_ResetState();
+        GL_DrawTexture(1283, right - f[39] - 6.0f, f[36], f[39], f[37] - f[36],
+                       0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
+        GL_DrawTexture(1282, right - f[39] - 5.0f, f[38], f[39] - 2.0f, f[40],
+                       0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
+    }
+    return 1;
+}
+
+// slot 23 — una fila: misma ubicación que GuildLB_renderLine con paso 34.
+static int __fastcall EventLB_renderLine(DWORD* self, int /*edx*/, int row)
+{
+    typedef int (__fastcall *FnInt)(DWORD*);
+    void** vt = (void**)*self;
+    const DWORD* node = (const DWORD*)self[25];
+    if (!node || (DWORD)(uintptr_t)node == self[23]) return 0;
+
+    const int count = ((FnInt)vt[19])(self);
+    const int visible = (int)self[35];
+    const int bottom = (int)self[12] - EventRowStep - 3;
+    const int y = count <= visible
+        ? EventRowStep * (count - visible - row) + bottom
+        : bottom - EventRowStep * row;
+    const int x = (int)self[11] + 8;
+    const int width = (int)self[13] - 8 - 23;   // el recuadro no pisa el riel
+    EventTimer_DrawRow((int)node[2], x, y, width);
+    return 1;
+}
+
+// slot 26 — sin acciones por fila.
+static int __fastcall EventLB_perFrameInput(DWORD* /*self*/) { return 1; }
+
+// slot 28 — agrega un evento al frente, como GuildLB_AddMember.
+static void __fastcall EventLB_AddEvent(DWORD* self, int /*edx*/, int index)
+{
+    typedef int  (__fastcall *FnInt )(DWORD*);
+    void** vt = (void**)*self;
+    DWORD* head = (DWORD*)self[23];
+    if (!head || !head[0]) return;
+    DWORD* next = (DWORD*)head[0];
+    DWORD* node = (DWORD*)malloc(0x0C);
+    if (!node) return;
+    node[0] = (DWORD)(uintptr_t)next;
+    node[1] = (DWORD)(uintptr_t)head;
+    node[2] = (DWORD)index;
+    next[1] = (DWORD)(uintptr_t)node;
+    head[0] = (DWORD)(uintptr_t)node;
+    ++self[24];
+    if (((FnInt)vt[19])(self) > (int)self[35])
+        ++self[34];
+    if (((FnInt)vt[19])(self) >= (int)self[35] &&
+        ((FnInt)vt[19])(self) - (int)self[34] < (int)self[35])
+        self[34] = (DWORD)(((FnInt)vt[19])(self) - (int)self[35]);
+}
+
+static ChatLB_VTable s_EventLB_VTable = { {
+    /*0x00*/ (void*)GuildLB_dtor,
+    /*0x04*/ (void*)ChatLB_setState,
+    /*0x08*/ (void*)ChatLB_setColor1,
+    /*0x0C*/ (void*)ChatLB_setColor2,
+    /*0x10*/ (void*)ChatLB_renderScroll,
+    /*0x14*/ (void*)ChatLB_tick,
+    /*0x18*/ (void*)ChatLB_tickHook,
+    /*0x1C*/ (void*)ChatLB_handleScrollIn,
+    /*0x20*/ (void*)ChatLB_nullsub,
+    /*0x24*/ (void*)GuildLB_keyHandler,
+    /*0x28*/ (void*)ChatLB_clearList,
+    /*0x2C*/ (void*)ChatLB_nullsub2,
+    /*0x30*/ (void*)GuildLB_scrollByN,
+    /*0x34*/ (void*)ChatLB_getVisibleCnt,
+    /*0x38*/ (void*)ChatLB_setVisibleCnt,
+    /*0x3C*/ (void*)ChatLB_setVisibleCnt,
+    /*0x40*/ (void*)ChatLB_incrStep,
+    /*0x44*/ (void*)ChatLB_trimOldest,
+    /*0x48*/ (void*)ChatLB_recalcScroll,
+    /*0x4C*/ (void*)GuildLB_countVisible,
+    /*0x50*/ (void*)GuildLB_advanceCursor,
+    /*0x54*/ (void*)GuildLB_hitTestInput,
+    /*0x58*/ (void*)EventLB_renderBg,
+    /*0x5C*/ (void*)EventLB_renderLine,
+    /*0x60*/ (void*)GuildLB_renderFooter,
+    /*0x64*/ (void*)GuildLB_lineHover,
+    /*0x68*/ (void*)EventLB_perFrameInput,
+    /*0x6C*/ (void*)ChatLB_nullsub2,
+    /*0x70*/ (void*)EventLB_AddEvent,
+    /*0x74*/ (void*)GuildLB_scalarDelete,
+} };
+
+// Mismo armado que ChatListBox_ConstructWhisper (sub_40E990) con la geometría
+// del panel H: x, base inferior, ancho y filas visibles.
+void* EventListBox_Construct(int x, int bottom, int width, int visibleRows)
+{
+    DWORD* obj = (DWORD*)ChatListBox_ConstructWhisper();
+    if (!obj) return nullptr;
+    *(void**)obj = &s_EventLB_VTable;
+    obj[33] = 255;                 // trimOldest: un F3/E6 trae hasta 255 filas
+    obj[35] = (DWORD)visibleRows;
+    obj[11] = (DWORD)x;
+    obj[12] = (DWORD)bottom;
+    obj[13] = (DWORD)width;
+    obj[14] = (DWORD)(EventRowStep * visibleRows + 10);
+    return obj;
+}
+
+void EventListBox_Rebuild(void* widget, int count, bool keepPosition)
+{
+    DWORD* obj = (DWORD*)widget;
+    if (!obj) return;
+    typedef void (__fastcall *FnVoid)(DWORD*);
+    typedef void (__fastcall *FnAdd)(DWORD*, int, int);
+    void** vt = (void**)*obj;
+    const int visible = (int)obj[35];
+    // El scroll se cuenta desde el final; conservar la distancia al principio.
+    const int fromTop = (int)obj[24] - visible - (int)obj[34];
+    ((FnVoid)vt[10])(obj);
+    // Como ReceiveGuildList: en orden; la inserción al frente y el dibujo de
+    // abajo hacia arriba dejan el primero arriba.
+    for (int i = 0; i < count; ++i) ((FnAdd)vt[28])(obj, 0, i);
+    if (keepPosition && count > visible) {
+        int scroll = count - visible - (fromTop > 0 ? fromTop : 0);
+        obj[34] = (DWORD)(scroll < 0 ? 0 : scroll);
+    }
+}
+
+void EventListBox_Tick(void* widget)
+{
+    DWORD* obj = (DWORD*)widget;
+    if (!obj) return;
+    // El slot 7 reescribe el latch de MouseOnWindow; no borrar el de otro widget.
+    const int captured = g_ChatLB_MouseOnWindow;
+    typedef int (__fastcall *FnTick)(DWORD*, int, int);
+    ((FnTick)((void**)*obj)[5])(obj, 0, 0);
+    g_ChatLB_MouseOnWindow |= captured;
+}
+
+void EventListBox_Render(void* widget)
+{
+    DWORD* obj = (DWORD*)widget;
+    if (!obj) return;
+    typedef void (__fastcall *FnVoid)(DWORD*);
+    ((FnVoid)((void**)*obj)[4])(obj);
+}
+
+void EventListBox_Scroll(void* widget, int pages)
+{
+    DWORD* obj = (DWORD*)widget;
+    if (!obj) return;
+    typedef int (__fastcall *FnScroll)(DWORD*, int, int);
+    ((FnScroll)((void**)*obj)[12])(obj, 0, pages * (int)obj[35]);
+}
+
 // ── 29-byte ─────────────────────────────────────────────────────────────────
 
 // TextureScript_setScript @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
@@ -2204,8 +2411,8 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         if (reverse != 1) off = fwdOff;
         char* line = (char*)(dst + off);
         SIZE sz;
-        GetTextExtentPointA(m_hFontDC, cur, lstrlenA(cur), &sz);
-        int textW = (int)((double)sz.cx / _DAT_055c9b70);   // g_fScreenRate_x
+        GetTextExtentPointA(gFont.GetTextDC(), cur, lstrlenA(cur), &sz);
+        int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
         if (!sz.cx) return lines;
         int avail = width - (lines == 0 ? (int)firstIndent : 0);
         if (textW <= avail) {
@@ -2222,8 +2429,8 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         while (step) {
             step = (int)(((double)half + 1.0) * 0.5);
             half = step;
-            GetTextExtentPointA(m_hFontDC, cur, cut, &sz);
-            double cutW = (double)sz.cx / _DAT_055c9b70;
+            GetTextExtentPointA(gFont.GetTextDC(), cur, cut, &sz);
+            double cutW = (double)sz.cx / gWindow.GetScreenRateX();
             if (cutW <= (double)(avail + 4)) {
                 if (cutW >= (double)(avail - 4)) break;
                 cut += step;

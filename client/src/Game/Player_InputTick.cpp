@@ -1,4 +1,9 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Render/Camera3D.h"
+#include "UI/MiniMap.h"
+#include "UI/EventTimer.h"
+#include "UI/MoveList.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -6,7 +11,6 @@
 #include <winsock2.h>
 #include <string.h>
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" int __cdecl GetScreenWidth(void);
 extern "C" void Net_SendNpcTalkClose(void);
@@ -183,7 +187,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
     extern void __cdecl CloseInventoryRelatedWindows(void);
     if (DAT_07eaa11b) {                                     // TradeOpened
         const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
         return true;
     }
     if (DAT_07eaa119) {                                     // WarehouseOpened
@@ -192,7 +196,7 @@ static bool HUD_PanelTail97k(HudPanelTail kind)
         CloseInventoryRelatedWindows();
         if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
         const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         return true;
     }
     if (DAT_07eaa11a)                                       // ChaosMixOpened
@@ -251,7 +255,7 @@ void HUD_BottomBarButtons_HitTest(void)
         } else {
             // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            gNetwork.SendC1(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
             HUD_PanelTail97k(TAIL_GUILD);
@@ -272,7 +276,7 @@ void HUD_BottomBarButtons_HitTest(void)
         } else {
             PartyNumber = 0;
             const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            gNetwork.SendC1(partyListPkt, sizeof(partyListPkt));
             PartyOpened = 1;
             HUD_PanelTail97k(TAIL_PARTY);
         }
@@ -398,7 +402,37 @@ static bool HUD_IsAnyRightPanelOpen(void)
 {
     return HUD_IsInventoryFamilyActive() ||
            (DAT_07eaa115 != 0) ||   // PartyOpened
-           (DAT_07eaa114 != 0);     // GuildOpened
+           (DAT_07eaa114 != 0) ||   // GuildOpened
+           gEventTimer.IsOpen();    // DESVIACION: panel H
+}
+
+// DESVIACION (MU 5.2 NewUIHotKey.cpp, DLL Controller.cpp): Espacio levanta el
+// primer item visible a menos de 300 unidades del héroe.  Como en el 5.2, se
+// pide directo (g_bAutoGetItem) en vez de caminar hasta él; el DLL no lo hace
+// y sólo funcionaba con el item al lado.
+extern bool g_bAutoGetItem;
+static void HUD_PickUpNearestItem(void)
+{
+    if (!Hero || (int)DAT_07e91388 > 0) return;                 // item en el cursor
+    if ((int)DAT_083a427c >= GetScreenWidth() || (int)DAT_083a4278 >= 429) return;
+    const float heroX = *(const float*)(Hero + 16);
+    const float heroY = *(const float*)(Hero + 20);
+    for (int i = 0; i < 1000; ++i) {
+        const BYTE* item = &DAT_07e12840[0] + (size_t)i * 0x204;
+        if (!item[72] || !item[424]) continue;                   // vivo y visible
+        const float dx = *(const float*)(item + 88) - heroX;
+        const float dy = *(const float*)(item + 92) - heroY;
+        if (dx * dx + dy * dy >= 300.0f * 300.0f) continue;
+        *(unsigned char*)(Hero + 0x2ed) = 1;                     // MOVEMENT_GET
+        ItemKey = (DWORD)i;
+        TargetX = (DWORD)(int)(*(const float*)(item + 88) / 100.0f);
+        TargetY = (DWORD)(int)(*(const float*)(item + 92) / 100.0f);
+        g_bAutoGetItem = true;
+        Action((DWORD)Hero, (DWORD)Hero);
+        g_bAutoGetItem = false;
+        *(unsigned char*)(Hero + 0x2ed) = 0;
+        return;
+    }
 }
 
 static void HUD_HotkeyTick(void)
@@ -437,6 +471,16 @@ static void HUD_HotkeyTick(void)
     int kI = PressKey(0x49); // 'I'  Inventory
     int kG = PressKey(0x47); // 'G'  Guild
     int kP = PressKey(0x50); // 'P'  Party
+    // DESVIACION (DLL Controller.cpp): H abre los horarios recibidos del server.
+    if (PressKey('H')) gEventTimer.Toggle();
+    // DESVIACION (DLL Controller.cpp): menú M con destinos recibidos del server.
+    if (PressKey('M')) gMoveList.Toggle();
+    // DESVIACION (DLL Controller.cpp): Tab abre el mapa.
+    if (PressKey(VK_TAB)) gMiniMap.Toggle();
+    if (PressKey(VK_SPACE)) HUD_PickUpNearestItem();
+    // DESVIACION (DLL Controller.cpp): F10 activa la cámara 3D, F11 la restaura.
+    if (PressKey(VK_F10)) gCamera3D.Toggle();
+    if (PressKey(VK_F11)) gCamera3D.Restore();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
@@ -451,7 +495,7 @@ static void HUD_HotkeyTick(void)
         } else {
             // 0x52: Encrypt=0 en HackPacketCheck.txt -> C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            gNetwork.SendC1(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
             if (!HUD_PanelTail97k(TAIL_GUILD)) DAT_07eaa114 = 0;
@@ -466,7 +510,7 @@ static void HUD_HotkeyTick(void)
         } else {
             PartyNumber = 0;
             const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            gNetwork.SendC1(partyListPkt, sizeof(partyListPkt));
             PartyOpened = 1;
             if (!HUD_PanelTail97k(TAIL_PARTY)) PartyOpened = 0;
         }
@@ -536,45 +580,10 @@ static void HUD_HotkeyTick(void)
 //   Facing:       [0xC1][0x07][0x0F] + encoded direction byte
 //   Walk/swim:    [0xC1][0x11] + grid_x,grid_y
 
-// Helper: manda el buffer por el socket, con fallback a la cola de WSAEWOULDBLOCK.
-// Pasa por MuEmu::EncryptSend: con ENCRYPT_STATE=1 el server descifra todo el
-// stream, y un paquete plano llega como basura y lo desconecta.
+// Paquete ya enmarcado (chain-XOR aplicado): lo manda CNetwork.
 static void SendPacket(const char *buf, unsigned int len)
 {
-    if (SocketClientSocket == 0xffffffff)
-        return;
-
-    // Encriptar antes de enviar — capa MuEmu byte-XOR (HackCheck.cpp).
-    BYTE wireBuf[0x800];
-    if ((int)len > (int)sizeof(wireBuf)) return;
-    memcpy(wireBuf, buf, len);
-    MuEmu::EncryptSend(wireBuf, (int)len);
-    buf = (const char*)wireBuf;
-
-    int sent = 0;
-    unsigned int remaining = len;
-    while ((int)remaining > 0) {
-        int r = send(SocketClientSocket, buf + sent, remaining, 0);
-        if (r == -1) {
-            int err = WSAGetLastError();
-            if (err == 0x2733 /*WSAEWOULDBLOCK*/) {
-                if ((int)(SocketClientSendBufferLength + len) < 0x2001) {
-                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, buf, len);
-                    SocketClientSendBufferLength += len;
-                } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
-                }
-            } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
-            }
-            break;
-        }
-        if (r == 0) break;
-        if (SocketClientLogPrint != 0)
-            FUN_0043de60();
-        sent += r;
-        remaining -= r;
-    }
+    gNetwork.SendRaw(buf, (int)len);
 }
 
 // IDA: Player_InputTick
@@ -664,7 +673,7 @@ void __cdecl Player_ProcessInput(void)
 
             // IDA L374: el tracking se apaga durante el auto-ataque y con la
             // animación de muerte (62).
-            if ((DAT_07e11e18 == 0 || g_Attacking == -1 || World == 6)
+            if ((DAT_07e11e18 == 0 || g_Attacking == -1 || gMapManager.GetCurrentMap() == 6)
                 && ent[261] != 62)
             {
                 bHeadTrackActive = true;
@@ -799,12 +808,6 @@ void __cdecl Player_ProcessInput(void)
                     int dy = (hyg - tyg < 0) ? -(hyg - tyg) : (hyg - tyg);
                     int cheb = (dx > dy) ? dx : dy;
                     if (cheb <= 2) {
-                        static const unsigned char s_LoginKey[32] = {
-                            0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                            0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                            0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                            0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-                        };
                         WORD targetId = *(WORD*)(tgt + 0x1dc);
                         extern float __cdecl CreateAngle(float, float, float, float);
                         float ex = *(float*)(ent + 0x10);
@@ -823,7 +826,7 @@ void __cdecl Player_ProcessInput(void)
                         pkt[5] = 0x64;
                         pkt[6] = (unsigned char)dirCode;
                         for (int i = 3; i < 7; ++i) {
-                            pkt[i] ^= pkt[i - 1] ^ s_LoginKey[i & 0x1f];
+                            pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
                         }
                         MuEmu::EncryptSend(pkt, 7);
                         if (SocketClientSocket != 0xFFFFFFFF) {
@@ -1074,7 +1077,7 @@ void __cdecl Player_ProcessInput(void)
         {
             const bool bHasClick = (bMousePush || bClickHeld || bClickLatched);
             const bool bAutoAttackEngaged = (m_bAutoAttack != 0)
-                                         && (World != 6)
+                                         && (gMapManager.GetCurrentMap() != 6)
                                          && (g_Attacking == 1)
                                          && (SelectedCharacter != -1);
             if (!bAutoAttackEngaged && !bHasClick) {
@@ -1196,7 +1199,7 @@ void __cdecl Player_ProcessInput(void)
                 // el ataque continua al soltar mientras el objetivo siga
                 // vivo (sub_4B0310 lo mantiene fijo).
                 const bool bAutoAttackGoOn = m_bAutoAttack != 0          // m_bAutoAttack
-                                          && World != 6           // World
+                                          && gMapManager.GetCurrentMap() != 6           // World
                                           && (int)Attacking == 1;     // Attacking
                 if (SelectedCharacter > -1 && (bClickEdge || bClickHeld || bAutoAttackGoOn)) {
                     // IDA Player.cpp (0x004ACEF0) gates the character-attack
@@ -1296,8 +1299,8 @@ void __cdecl Player_ProcessInput(void)
                     }
                     {
                         const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
-                        const int lh = CM ? *(const short*)(CM + 536) : -1;  // IDA: v265
-                        const int rh = CM ? *(const short*)(CM + 604) : -1;  // IDA: v264
+                        const int lh = CM ? ItemBehaviorType(*(const short*)(CM + 536)) : -1;  // IDA: v265
+                        const int rh = CM ? ItemBehaviorType(*(const short*)(CM + 604)) : -1;  // IDA: v264
                         const bool bRanged = (lh >= 136 && lh < 143)
                                           || (lh >= 144 && lh < 160)
                                           || (rh >= 128 && rh < 135)

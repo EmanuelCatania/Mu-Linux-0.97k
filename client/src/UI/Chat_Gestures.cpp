@@ -16,7 +16,6 @@
 #include "functions.h"
 #include <initializer_list>
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // [C1][05][18][dir][tipo]; dir = octante del facing del heroe.
 void __cdecl SendRequestAction(BYTE actionType)
@@ -28,7 +27,7 @@ void __cdecl SendRequestAction(BYTE actionType)
         (BYTE)((__int64)((*(float*)(hero + 36) + 22.5f) * 0.022222223f + 1.0f) & 7),
         actionType
     };
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 // IDA: SetActionClass (0x00497870). La elfa usa la animacion siguiente salvo

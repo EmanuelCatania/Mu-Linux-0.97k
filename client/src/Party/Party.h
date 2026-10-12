@@ -6,7 +6,6 @@ void Party_Keepalive(void);
 // authoritative in the server's 0x42/0x43 lifecycle.
 void Party_RefreshViewportLinks(void);
 // Guild handlers
-void Guild_CreateOk(BYTE* pkt);
 void Guild_AddMemberResult(BYTE* pkt);
 void Guild_MemberList(BYTE* pkt);
 void Guild_CharSelectResult(BYTE* pkt);

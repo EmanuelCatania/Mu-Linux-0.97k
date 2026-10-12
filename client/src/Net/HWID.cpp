@@ -63,7 +63,7 @@ const char* HWID_Get(void)
 
 // Packet layout on the wire matches PMSG_SET_HWID_SEND from the companion
 // client (Protocol.h): [C3 framing] around 40 plaintext bytes:
-//   pkt[0] = placeholder (Net_SendSmallPacket replaces with C3)
+//   pkt[0] = placeholder (gNetwork.Send replaces with C3)
 //   pkt[1] = size (40, plaintext size incl. header)
 //   pkt[2] = 0xF1 (main opcode)
 //   pkt[3] = 0x05 (sub opcode)
@@ -73,7 +73,7 @@ void HWID_Send(void)
     if (!s_Ready) HWID_Init();
 
     BYTE pkt[40] = { 0 };
-    pkt[0] = 0xC1;     // placeholder, Net_SendSmallPacket overwrites
+    pkt[0] = 0xC1;     // placeholder, gNetwork.Send overwrites
     pkt[1] = 40;       // plaintext size
     pkt[2] = 0xF1;
     pkt[3] = 0x05;
@@ -81,14 +81,14 @@ void HWID_Send(void)
     memcpy(pkt + 4, s_Hwid, 36);
 
     DbgLogPublic("HWID_Send: sending F1/05 packet (encrypted, 40 bytes plain)");
-    Net_SendSmallPacket(pkt, sizeof(pkt));
+    gNetwork.Send(pkt, sizeof(pkt));
 }
 
 // F1/04 SetLanguage — companion (Protocol.cpp:771) calls SendLanguage() inside
 // GCConnectClientRecv before SendHwid().  Without this packet the MuEmu server
 // silently drops F1/01 (it expects the language to have been registered first).
 // Layout per Protocol.h:382  PMSG_SET_LANG_SEND:
-//   pkt[0] = 0xC1 placeholder (Net_SendSmallPacket overwrites with C3)
+//   pkt[0] = 0xC1 placeholder (gNetwork.Send overwrites with C3)
 //   pkt[1] = size (8, plaintext incl. header)
 //   pkt[2] = 0xF1 (head)
 //   pkt[3] = 0x04 (subh)
@@ -105,5 +105,5 @@ void Lang_Send(int langNum)
     char line[64];
     wsprintfA(line, "Lang_Send: sending F1/04 packet (lang=%d)", langNum);
     DbgLogPublic(line);
-    Net_SendSmallPacket(pkt, sizeof(pkt));
+    gNetwork.Send(pkt, sizeof(pkt));
 }

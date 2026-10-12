@@ -19,6 +19,9 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "UI/GoldenArcher.h"
+#include "UI/UIState.h"
+#include "Net/Protocol/GameServerProtocol.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
@@ -26,7 +29,6 @@
 #include <vector>
 #include <gl/GL.h>
 
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 void __cdecl CloseInventoryRelatedWindows(void);
 extern "C" void   __cdecl RenderInventoryInterface(int StartX, int StartY, int Flag);
 extern "C" SIZE*  __cdecl RenderCenteredText(int x, int y, const char* text);
@@ -59,8 +61,8 @@ extern "C" int g_GoldenArcherCustom = 0;
 #define GA_InputNumber       InputNumber
 #define GA_InputTextWidth    DAT_00559c8c
 #define GA_InputIndex        DAT_07e11d78
-#define GA_WindowWidth       ((int)DAT_0056156c)
-#define GA_WindowHeight      ((int)DAT_00561570)
+#define GA_WindowWidth       ((int)gWindow.GetWidth())
+#define GA_WindowHeight      ((int)gWindow.GetHeight())
 
 static const int kItemRena = 469;   // GET_ITEM(14, 21)
 
@@ -143,14 +145,14 @@ static void GA_Ida_RecvScratch(BYTE* Msg, int Size)
 static void GA_Ida_ButtonState(bool pressed, bool disabled)
 {
     if (pressed) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         glColor3f(0.4f, 0.4f, 0.4f);
         if (GA_MouseLButtonPop) { GA_MouseLButtonPush = 0; GA_MouseLButton = 0; }
     } else if (disabled) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         glColor3f(0.4f, 0.4f, 0.4f);
     } else {
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 }
@@ -208,9 +210,9 @@ static void GA_Ida_Render(void)
         m_dwTextColor = 0xFF67BFDFu;
         RenderCenteredText(cx, cy - 15, GlobalText[916]);
         RenderCenteredText(cx, cy - 5, GlobalText[917]);
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         RenderCenteredText(cx, cy - 25, GlobalText[894]);
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFF0FF96u;
         GL_DrawTexture(271, xa + 3.0f, yb + 10.0f, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         GA_InputTextWidth = 113 * GA_WindowWidth / 640;
@@ -230,14 +232,14 @@ static void GA_Ida_Render(void)
     const float yb2 = (float)GA_InventoryStartY + 395.0f;
     GL_DrawTexture(280, xb, yb2, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (GA_In((int)xb, (int)yb2, 24, 24)) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText((int)xb, (int)yb2 - 13, GlobalText[225]);
     }
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     const int tx = GA_InventoryStartX + 95;
     switch (mode) {
@@ -257,7 +259,7 @@ static void GA_Ida_Render(void)
         RenderCenteredText(tx, y + 45, GlobalText[898]);
         if (GA_GiftName[0]) {
             glColor3f(0.0f, 0.0f, 0.0f);
-            SelectObject(m_hFontDC, g_hFontBold);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderCenteredText(tx + 1, y + 261, GA_GiftName);
             if (sin((double)DAT_05826e08 * 0.0099999998) < 0.0) glColor3f(1.0f, 1.0f, 1.0f);
             else glColor3f(0.6f, 0.6f, 0.6f);
@@ -265,7 +267,7 @@ static void GA_Ida_Render(void)
             RenderCenteredText(tx, y + 260, GA_GiftName);
             glColor3f(1.0f, 1.0f, 1.0f);
             m_dwTextColor = 0xFFF0FF96u;
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         }
         break;
     }
@@ -280,30 +282,30 @@ static void GA_Ida_Render(void)
     }
 
     char buffer[100];
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     if (mode == 1)      RenderText(485, 290, GlobalText[245], 0, 0, 0);
     else if (mode == 2) RenderText(485, 290, GlobalText[819], 0, 0, 0);
     if (mode != 3) {
-        SelectObject(m_hFontDC, g_hFontBig);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         sprintf_s(buffer, "x%d", chips);
         if (mode == 1 || mode == 2) RenderText(560, 300, buffer, 0, 0, 0);
     }
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFD2E6FFu;
     if (mode == 1)      RenderText(485, 325, GlobalText[246], 0, 0, 0);
     else if (mode == 2) RenderText(485, 325, GlobalText[820], 0, 0, 0);
     if (mode != 3) {
-        SelectObject(m_hFontDC, g_hFontBig);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         sprintf_s(buffer, "x%d", (int)GA_ChipCount16);
         if (mode == 1 || mode == 2 || mode == 4) RenderText(560, 335, buffer, 0, 0, 0);
     }
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFD2E6FFu;
     if (mode == 1) RenderText(485, 360, GlobalText[247], 0, 0, 0);
     if (mode != 3 && mode != 4) {
-        SelectObject(m_hFontDC, g_hFontBig);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         if (DAT_07e11e20 == -1 || DAT_07e11e22 == -1 || DAT_07e11e24 == -1)
             sprintf_s(buffer, "xxx - xxx - xxx");
@@ -319,7 +321,7 @@ static void GA_Ida_Check(void)
 {
     const int mode = GA_OpenType;
     if (GA_MouseX >= 450 && GA_MouseX < 640 && GA_MouseY >= 0 && GA_MouseY < 433)
-        GA_MouseOnWindow = 1;
+        UIState::CaptureMouseForUI();
 
     if (mode != 4) {
         if (mode != 3) {
@@ -329,7 +331,7 @@ static void GA_Ida_Check(void)
                 const int slot = GetItemSlot(kItemRena, mode - 1);
                 if (slot != -1) {
                     const BYTE pkt[5] = { 0xC1, 0x05, 0x95, (BYTE)(mode - 1), (BYTE)slot };
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 }
             }
             if (mode == 1) {
@@ -342,7 +344,7 @@ static void GA_Ida_Check(void)
                 }
                 if (send) {
                     const BYTE pkt[3] = { 0xC1, 0x03, 0x96 };
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 } else if (DAT_07e11e20 != -1 && DAT_07e11e22 != -1 && DAT_07e11e24 != -1 &&
                            GA_In(485, 202, 120, 22) && GA_MouseLButtonPop) {
                     GA_MouseLButtonPop = 0;
@@ -360,7 +362,7 @@ static void GA_Ida_Check(void)
                     memcpy(pkt + 3, text + 0, 4);  pkt[7] = 0;
                     memcpy(pkt + 8, text + 4, 4);  pkt[12] = 0;
                     memcpy(pkt + 13, text + 8, 4); pkt[17] = 0;
-                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    gNetwork.SendC1(pkt, sizeof(pkt));
                 } else {
                     CreateOkMessageBox(GlobalText[896]);
                 }
@@ -369,7 +371,7 @@ static void GA_Ida_Check(void)
         }
     } else if (GA_In(485, 220, 120, 24) && GA_MouseLButtonPop) {
         const BYTE pkt[4] = { 0xC1, 0x04, 0x98, 0x01 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GA_MouseLButtonPop = 0;
     }
 
@@ -377,7 +379,7 @@ static void GA_Ida_Check(void)
     if (GA_In(GA_InventoryStartX + 25, GA_InventoryStartY + 395, 24, 24) && GA_MouseLButtonPush) {
         GA_MouseLButtonPush = 0;
         const BYTE pkt[3] = { 0xC1, 0x03, 0x97 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GA_OpenType = 0;
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
@@ -399,9 +401,31 @@ static int  s_RenaRequired[4];
 static int  s_StoneRequired[4];
 static DWORD s_StoneVipDuration[3];
 static char s_LuckyNumber[13];
-static BYTE s_CurrentPage = 1;
-static BYTE s_TotalPages = 1;
+static int s_CurrentPage = 1;
+static int s_TotalPages = 1;
 static std::vector<std::string> s_MyLuckyNumbers;
+
+void GoldenArcher_ResetCharacter()
+{
+    // Sólo limpiar input si pertenece al NPC; no borrar el login/chat ajeno.
+    if (GA_OpenType || GA_ScratchTicket) GA_ClearInputFields();
+    GA_OpenType = 0;
+    GA_ItemCount = 0;
+    GA_ScratchTicket = 0;
+    memset(GA_GiftName, 0, 64);
+    memset(s_LuckyNumber, 0, sizeof(s_LuckyNumber));
+    s_MyLuckyNumbers.clear();
+    s_CurrentPage = s_TotalPages = 1;
+}
+
+void GoldenArcher_ResetSession()
+{
+    GoldenArcher_ResetCharacter();
+    g_GoldenArcherCustom = 0;
+    memset(s_RenaRequired, 0, sizeof(s_RenaRequired));
+    memset(s_StoneRequired, 0, sizeof(s_StoneRequired));
+    memset(s_StoneVipDuration, 0, sizeof(s_StoneVipDuration));
+}
 
 static const int kStartX = 450;
 static const int kStartY = 0;
@@ -418,7 +442,7 @@ static bool IsWorkZone(int x, int y, int w, int h)
 static int CenterTextPosY(const char* text, int y)
 {
     SIZE sz = { 0, 0 };
-    GetTextExtentPointA(m_hFontDC, text, lstrlenA(text), &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &sz);
     return y - ((480 * sz.cy / (GA_WindowHeight ? GA_WindowHeight : 480)) >> 1);
 }
 
@@ -473,34 +497,34 @@ static void DrawSeparatedLines(int x, int& y, const char* text, int step)
 static void SendRegister(int type)
 {
     const BYTE pkt[4] = { 0xC1, 0x04, 0x95, (BYTE)type };
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendExchange(int type, int count)
 {
     BYTE pkt[8] = { 0xC1, 0x08, 0x97, 0x02, (BYTE)type, 0, 0, 0 };
     *(short*)(pkt + 6) = (short)count;
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendRegisterLucky(const char* number)
 {
     BYTE pkt[17] = { 0xC1, 17, 0x97, 0x03 };
     memcpy(pkt + 4, number, 13);
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendExchangeLucky(const char* number)
 {
     BYTE pkt[16] = { 0xC1, 16, 0x9D };
     strncpy_s((char*)pkt + 3, 13, number, _TRUNCATE);
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 static void SendClose(void)
 {
     const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 }
 
 extern "C" void __cdecl GoldenArcher_CustomCloseProc(void)
@@ -517,7 +541,7 @@ static void RenderTitle(void)
 {
     EnableAlphaTest(true);
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = Color4b(20, 20, 20, 255);
     m_dwTextColor = Color4b(230, 230, 230, 255);
     int y = kStartY + 12;
@@ -536,7 +560,7 @@ static void TextStyleBody(void)
     EnableAlphaTest(true);
     m_dwBackColor = Color4b(255, 255, 255, 0);
     m_dwTextColor = Color4b(255, 230, 210, 255);
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 }
 
 static void RenderCollectedRegistered(int y, int textCollected, int textRegistered,
@@ -566,7 +590,7 @@ static void RenderPagination(void)
     EnableAlphaTest(true);
     m_dwBackColor = Color4b(255, 255, 255, 0);
     m_dwTextColor = Color4b(255, 255, 255, 255);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     char text[32];
     sprintf_s(text, "%d/%d", s_CurrentPage, s_TotalPages);
     RenderText(kStartX, CenterTextPosY(text, (int)(y + s / 2)), text, RealWidth(190), 1, nullptr);
@@ -578,7 +602,7 @@ static void RenderPagination(void)
     };
     if (s_CurrentPage > 1) arrow((float)x - 40, 0.0f, 1.0f);
     if (s_CurrentPage < s_TotalPages) arrow((float)x + 21, 1.0f, -1.0f);
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 }
 
 static bool CheckPagination(void)
@@ -686,19 +710,19 @@ static void RenderStone(void)
             y += 40;
             DrawSeparatedLines(x, y, GlobalText[897], 15);
             m_dwTextColor = Color4b(255, 255, 255, 255);
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             glColor3f(1.0f, 1.0f, 1.0f);
         } else {
             TextC(x, y, GlobalText[898], 190);
             y += 10;
             m_dwTextColor = Color4b(212, 150, 0, 255);
-            SelectObject(m_hFontDC, g_hFontBig);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
             const char* n = s_LuckyNumber;
             sprintf_s(buffer, "%c%c%c%c - %c%c%c%c - %c%c%c%c",
                       n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7], n[8], n[9], n[10], n[11]);
             TextC(x, y, buffer, 190);
             m_dwTextColor = Color4b(255, 230, 210, 255);
-            SelectObject(m_hFontDC, g_hFont);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             y += 30;
             RenderBox((float)x + 35, (float)y, 120, 22, GlobalText[899]);
             y += 40;
@@ -756,9 +780,9 @@ static void RenderLucky(void)
     y += 20;
     TextC(x, y, GlobalText[906], 190); y += 15;
     m_dwTextColor = Color4b(223, 191, 103, 255);
-    SelectObject(m_hFontDC, g_hFontBold);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     TextC(x, y, GlobalText[907], 190); y += 15;
-    SelectObject(m_hFontDC, g_hFont);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     TextC(x, y, GlobalText[908], 190); y += 15;
     TextC(x, y, GlobalText[909], 190); y += 15;
     TextC(x, y, GlobalText[910], 190); y += 20;
@@ -774,7 +798,7 @@ static void RenderLucky(void)
         const int n = SeparateTextIntoLines(GA_GiftName, lines, 7, 38);
         for (int i = 0; i < n; ++i, y += 15) {
             glColor3f(0.0f, 0.0f, 0.0f);
-            SelectObject(m_hFontDC, g_hFontBold);
+            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             TextC(x + 1, y + 1, lines + i * 38, 190);
             if (sin((double)DAT_05826e08 * 0.01) < 0) glColor3f(1.0f, 1.0f, 1.0f);
             else glColor3f(0.6f, 0.6f, 0.6f);
@@ -782,7 +806,7 @@ static void RenderLucky(void)
             TextC(x, y, lines + i * 38, 190);
         }
         m_dwTextColor = Color4b(255, 255, 255, 255);
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 }
@@ -810,18 +834,18 @@ static void RenderBingo(void)
     GL_DrawTexture(279, (float)x, (float)y, 190, 10, 0, 0, 190.0f / 256, 10.0f / 16, 1, 1);
     if (s_MyLuckyNumbers.empty()) {
         y = kStartY + 216;
-        SelectObject(m_hFontDC, g_hFontBold);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwBackColor = Color4b(255, 255, 255, 0);
         DrawSeparatedLines(x, y, GlobalText[897], 15);
         m_dwTextColor = Color4b(255, 230, 210, 255);
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         return;
     }
     y += 20;
     TextC(x, y, GlobalText[917], 190);
     y += 20;
     m_dwTextColor = Color4b(212, 150, 0, 255);
-    SelectObject(m_hFontDC, g_hFontBig);
+    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
     bool invert = true;
     const size_t first = (size_t)(s_CurrentPage - 1) * 10;
     for (size_t i = first; i < s_MyLuckyNumbers.size() && i < first + 10; ++i) {
@@ -864,7 +888,7 @@ static void GA_Custom_Render(void)
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(280, (float)cx, (float)cy, 24, 24, 0, 0, 0.75f, 0.75f, 1, 1);
     if (IsWorkZone(cx, cy, 24, 24)) {
-        SelectObject(m_hFontDC, g_hFont);
+        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwBackColor = Color4b(255, 255, 255, 0);
         m_dwTextColor = Color4b(255, 255, 255, 255);
         RenderTipText(cx + 2, cy - 15, GlobalText[247]);
@@ -873,7 +897,7 @@ static void GA_Custom_Render(void)
 
 static void GA_Custom_Check(void)
 {
-    if (IsWorkZone(kStartX, kStartY, 190, 433)) GA_MouseOnWindow = 1;
+    if (IsWorkZone(kStartX, kStartY, 190, 433)) UIState::CaptureMouseForUI();
     bool handled = false;
     switch (GA_OpenType) {
     case GA_IF_RENA:  handled = CheckRena();  break;
@@ -895,15 +919,16 @@ static void GA_Custom_Check(void)
 
 static void GA_Custom_RecvOpen(BYTE* Msg, int Size)
 {
-    if (Size < 6) return;
+    if (Size < (int)sizeof(Proto::PMSG_NPC_GOLDEN_ARCHER_SEND)) return;
+    Proto::PMSG_NPC_GOLDEN_ARCHER_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
     CloseInventoryRelatedWindows();
     InventoryOpened = 0;
     CharacterOpened = 0;
-    const BYTE type = Msg[3];
+    const BYTE type = packet.Type;
     GA_OpenType = type + 1;
-    GA_ItemCount = *(short*)(Msg + 4);
-    memset(s_LuckyNumber, 0, sizeof(s_LuckyNumber));
-    if (Size >= 19) memcpy(s_LuckyNumber, Msg + 6, 13);
+    GA_ItemCount = packet.Count;
+    memcpy(s_LuckyNumber, packet.LuckyNumber, sizeof(packet.LuckyNumber));
     s_LuckyNumber[12] = 0;
     s_CurrentPage = 1;
     s_TotalPages = 2;
@@ -912,19 +937,27 @@ static void GA_Custom_RecvOpen(BYTE* Msg, int Size)
 
 static void GA_Custom_RecvList(BYTE* Msg, int Size)
 {
+    if (Size < (int)sizeof(Proto::PMSG_GOLDEN_ARCHER_LIST_SEND)) return;
+    Proto::PMSG_GOLDEN_ARCHER_LIST_SEND packet;
+    memcpy(&packet, Msg, sizeof(packet));
+    const int count = packet.count;
+    if (count < 0 || (size_t)count >
+        (Size - sizeof(packet)) / sizeof(Proto::LUCKY_NUMBER_INFO)) return;
+    // GoldenArcher.h: validar la lista completa antes de modificar la ventana.
     CloseInventoryRelatedWindows();
     InventoryOpened = 0;
     CharacterOpened = 0;
     GA_OpenType = GA_IF_BINGO;
-    // PSWMSG_HEAD (C2, 5 bytes) + int count alineado a 4 -> datos desde +12.
-    const int count = (Size >= 12) ? *(int*)(Msg + 8) : 0;
     s_CurrentPage = 1;
-    s_TotalPages = (BYTE)(count / 10 + 1);
+    // DESVIACION: no crear una página vacía para cantidades múltiplo de diez.
+    s_TotalPages = count ? (count + 9) / 10 : 1;
     s_MyLuckyNumbers.clear();
-    for (int i = 0; i < count && 12 + (i + 1) * 13 <= Size; ++i) {
-        char number[14] = {};
-        memcpy(number, Msg + 12 + i * 13, 13);
-        s_MyLuckyNumbers.push_back(number);
+    s_MyLuckyNumbers.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        Proto::LUCKY_NUMBER_INFO entry;
+        memcpy(&entry, Msg + sizeof(packet) + i * sizeof(entry), sizeof(entry));
+        entry.LuckyNumber[sizeof(entry.LuckyNumber) - 1] = 0;
+        s_MyLuckyNumbers.push_back(entry.LuckyNumber);
     }
 }
 
@@ -974,8 +1007,12 @@ void GoldenArcher_Recv96(BYTE* Msg, int Size)
 // 0x97 solo existe en el evento propio (el original no recibe 0x97).
 void GoldenArcher_Recv97(BYTE* Msg, int Size)
 {
+    if (!Msg || Size < 4) return;
     const bool c2 = (Msg[0] == 0xC2 || Msg[0] == 0xC4);
+    if (c2 && Size < 5) return;
     const BYTE sub = c2 ? Msg[4] : Msg[3];
+    // La lista 97/01 usa C2; los demás mensajes usan cabecera corta.
+    if (c2 != (sub == 0x01)) return;
     switch (sub) {
     case 0x00:
         if (Size < 48) return;
@@ -1023,10 +1060,10 @@ extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
     else if (action < 100) SetAction(c, 105);
     if (*(BYTE*)(c + 261) != *(BYTE*)(c + 262)) {
         int text = 0;
-        if (World == 0 || World == 3) {
+        if (gMapManager.GetCurrentMap() == 0 || gMapManager.GetCurrentMap() == 3) {
             static const int k[] = { 700, 701, 702, 703, 704 };
             text = k[rand() % 5];
-        } else if (World == 2) {
+        } else if (gMapManager.GetCurrentMap() == 2) {
             static const int k[] = { 818, 819, 820, 821, 822, 823 };
             text = k[rand() % 6];
         }

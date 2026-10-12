@@ -5,17 +5,18 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Net/Reconnect.h"
+#include "UI/OptionsMenu.h"
 #include "globals.h"
 #include "functions.h"
 
 #include "Net/MuEmu.h"
-#include "Net/Net.h"  // Net_SendSmallPacket (proper C3 wrap with serial)
+#include "Net/Net.h"  // gNetwork.Send (proper C3 wrap with serial)
 
 // byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
 // dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.
 #define DAT_07ea5249_byte  (DAT_07ea5240[9])
 // Los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
 extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
 extern "C" void Net_SendNpcTalkClose(void);
@@ -39,12 +40,6 @@ extern "C" {
 
 // XOR login key (32 bytes), used to encrypt outbound logout/transition packets.
 // Same key as Net/Crypto.cpp login XOR.
-static const BYTE s_xorKey[32] = {
-    0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
-    0x23, 0xa8, 0xfe, 0xb6, 0x49, 0x5d, 0x39, 0x5d,
-    0x8a, 0xcb, 0x63, 0x8d, 0xea, 0x7d, 0x2b, 0x5f,
-    0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
-};
 
 // IDA: sub_50F7A0 (0x0050F7A0) -- guarda las opciones del personaje en el server.
 //
@@ -98,37 +93,9 @@ static void SaveOptionsToServer97k(void)
     // HackPacketCheck: 0xF3 acepta cualquier frame (`*`); C1 no toca el serial.
     BYTE pkt[4 + sizeof(opt)] = { 0xC1, (BYTE)sizeof(pkt), 0xF3, 0x30 };
     memcpy(pkt + 4, opt, sizeof(opt));
-    Net_SendC1Packet(pkt, sizeof(pkt));
+    gNetwork.SendC1(pkt, sizeof(pkt));
 
     {   // queda en el log: es el unico rastro de que las opciones se guardaron
-    }
-}
-
-// Build a C1-framed packet, XOR it with the login key, encode it via
-// CSimpleModulus_Encode, then send it.  Same send+WSAEWOULDBLOCK queue pattern
-// used throughout Net_Process.cpp.
-static void SendLoginPacket(BYTE *payload, int payloadLen)
-{
-    // XOR-encrypt payload
-    for (int i = 0; i < payloadLen; ++i)
-        payload[i] ^= s_xorKey[i & 0x1f];
-
-    // Encode and send
-    CSimpleModulus_Encode(0, payload, payloadLen);
-
-    int sent = send(SocketClientSocket, (char *)payload, payloadLen, 0);
-    if (sent == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK)
-    {
-        // Queue into overflow buffer (max 0x2001 bytes at SocketClientSendBuffer).
-        // Other send paths append directly at SocketClientSendBuffer + queuedBytes;
-        // the extra +4 here leaves a gap and desynchronises popup/login sends.
-        BYTE *qbuf = (BYTE *)SocketClientSendBuffer;
-        DWORD q    = *(DWORD *)((char *)&SocketClient + 0x0c); // queued byte count
-        if (q + (DWORD)payloadLen <= 0x2001)
-        {
-            memcpy(qbuf + q, payload, payloadLen);
-            *(DWORD *)((char *)&SocketClient + 0x0c) += payloadLen;
-        }
     }
 }
 
@@ -190,7 +157,7 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a7c20 = v3 - 1;
         if ((int)(v3 - 1) <= 0) {
             DAT_083a7c1c = 0;
-            SendMessageA(g_hWnd, WM_DESTROY, 0, 0);
+            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
         }
     }
 
@@ -221,7 +188,7 @@ void __cdecl UI_InGameMenu(void)
         if (okClick || enterHit) {
             DAT_083a4124 = 0;
             DAT_055ca038 = '\0';                     // consume Enter
-            SendMessageA(g_hWnd, WM_DESTROY, 0, 0);  // cierra el cliente
+            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);  // cierra el cliente
             DAT_083a7c24 = DAT_083a7c28;             // ErrorMessage = NextErrorMessage
             DAT_083a7c28 = 0;
         }
@@ -272,6 +239,11 @@ void __cdecl UI_InGameMenu(void)
                     {
                     case 0:  // Exit / Salir del juego
                     {
+                        // DESVIACION (DLL Reconnect.cpp MenuExitGame, 0x005144DC):
+                        // salir mientras reconecta cierra el cliente; si no, el
+                        // cierre que sigue es voluntario y no reconecta.
+                        if (gReconnect.ExitIfActive()) return;
+                        gReconnect.MarkIntentional();
                         // IDA 00514310 L605-825: el packet F1/02/00 SOLO se manda
                         // cuando estamos in-game (gs==5). En login/char-select
                         // (gs==2/4) la rama de L823-825 solo cierra el socket y
@@ -280,7 +252,7 @@ void __cdecl UI_InGameMenu(void)
                             SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
                             FUN_0050f700("Data\\Macro.txt");  // IDA L611
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
-                            SendLoginPacket(pkt, 5);
+                            gNetwork.Send(pkt, 5);
                         }
                         if (SocketClientSocket != 0xffffffff) {
                             closesocket((SOCKET)SocketClientSocket);
@@ -320,8 +292,9 @@ void __cdecl UI_InGameMenu(void)
                             if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
+                                gReconnect.MarkIntentional();
                                 BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
-                                Net_SendSmallPacket(pkt, 5);
+                                gNetwork.Send(pkt, 5);
                             }
                         } else if (SceneFlag == 2) {
                             // Login: case 1 = Options
@@ -353,8 +326,9 @@ void __cdecl UI_InGameMenu(void)
                             //   6. Cliente Recv_CharList puebla slots 0-4
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
                             FUN_0050f700("Data\\Macro.txt");  // IDA L1081
+                            gReconnect.MarkIntentional();
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
-                            Net_SendSmallPacket(pkt, 5);
+                            gNetwork.Send(pkt, 5);
                             // NO transición local. NO F3/00 send. Dejamos
                             // que Recv_LogOut maneje todo cuando llegue el ack.
                         } else if (SceneFlag == 4) {
@@ -418,7 +392,7 @@ void __cdecl UI_InGameMenu(void)
                 memcpy(pkt + 4, name, n > 10 ? 10 : n);
             }
             memcpy(pkt + 14, (const char*)DAT_07db8710, 10);   // InputText[0]
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            gNetwork.Send(pkt, sizeof(pkt));
         }
         // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
         DAT_083a7c14 = 0x18;
@@ -434,7 +408,7 @@ void __cdecl UI_InGameMenu(void)
     // ── Zen input dialog (ErrorMessage 116) — baúl / trade ─────────────────
     // Per IDA 0x514310 L1400-1406: para ErrorMessage==116 el rect del botón OK
     // NO cuenta — la única confirmación es Enter (byte_55CA038). Y L1420-1432:
-    // si InputGold > 50.000.000 se muestra el cartel 118 y se resetea el input.
+    // El original limita a 50.000.000; el límite compatible con el server es 2.000.000.000.
     //
     // StorageGoldFlag (StorageGoldFlag) lo setea quien abrió el diálogo:
     //   0 = guardar zen en el baúl     (sub_4EB5D0 case 0)
@@ -447,13 +421,16 @@ void __cdecl UI_InGameMenu(void)
         if (!enterHit) return;          // el cartel persiste hasta Enter
         DAT_055ca038 = '\0';            // consumimos Enter
 
-        int gold = (int)InputGold;   // InputGold (lo llena WndProc con atoi)
-
-        if (gold > 50000000) {
-            // IDA: UI_InGameMenu 0x515BED/0x517379 — el error reemplaza al
-            // diálogo numérico después de ClearInput; no queda una segunda
-            // capa de entrada activa detrás del cartel 118.
-            DAT_083a7c28 = 118;
+        const int gold = InputGold; // Validado por WndProc antes de la conversión.
+        // IDA: UI_InGameMenu (0x00514310).
+        // DESVIACION (fix del DLL, Patchs.cpp 0x00515BF3/0x00515BFB/0x0051667C): máximo del server y errores en el cartel activo.
+        const bool invalidGold = gold < 0 || gold > 2000000000;
+        const bool insufficientTradeGold = !invalidGold && StorageGoldFlag == 2 &&
+            (unsigned long long)gold > (unsigned long long)DAT_07eaa0f4 +
+                *(DWORD*)((BYTE*)CharacterMachine + 1352);
+        if (invalidGold || insufficientTradeGold) {
+            DAT_083a7c24 = invalidGold ? 118 : 117;
+            DAT_083a7c28 = 0;
             ClearInput(0);
             InputTextMax = (DWORD)42;   // InputTextMax[0]
             InputNumber = 2;           // InputNumber
@@ -461,7 +438,9 @@ void __cdecl UI_InGameMenu(void)
             DAT_00559c84 = 0;           // InputEnable
             DAT_07e11d28 = 0;           // MouseUpdateTime
             DAT_00559bec = 6;           // MouseUpdateTimeMax
-            goto tail;
+            InputGold = 0;
+            PlayBuffer(0x19, 0, 0);
+            return; // Conservar el cartel activo; tail lo reemplazaría por el estado pendiente.
         }
 
         if (StorageGoldFlag == 2) {
@@ -471,7 +450,7 @@ void __cdecl UI_InGameMenu(void)
             if (m_bMyConfirm != 0) {
                 const BYTE resetConfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
                 m_bMyConfirm = 0;
-                Net_SendSmallPacket(resetConfirm, sizeof(resetConfirm));
+                gNetwork.Send(resetConfirm, sizeof(resetConfirm));
             }
 
             // IDA: UI_InGameMenu 0x51628F/0x5162A2 — el ACK 0x3A no trae el
@@ -486,7 +465,7 @@ void __cdecl UI_InGameMenu(void)
             // PMSG_TRADE_MONEY_RECV::money; Protocol.cpp de MuEmu despacha 0x3A.
             BYTE pkt[8] = { 0xC1, 0x08, 0x3A, 0, 0, 0, 0, 0 };
             memcpy(pkt + 4, &gold, sizeof(DWORD));
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         } else if (gold > 0) {
             Net_SendWarehouseMoney((BYTE)(StorageGoldFlag & 1), (DWORD)gold);
         }
@@ -526,7 +505,7 @@ void __cdecl UI_InGameMenu(void)
         // paquete tiene payload, y el server lo descifra con XorData.
         BYTE pkt[6] = { 0xC1, 0x06, 0x51, (BYTE)(yes ? 1 : 0),
                         (BYTE)(key >> 8), (BYTE)key };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         goto tail;
     }
 
@@ -552,7 +531,7 @@ void __cdecl UI_InGameMenu(void)
         // DAT_07EA9834 al recibir 0x36.
         BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
         memcpy(pkt + 4, DAT_07ea9834, 10);
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         goto tail;
     }
 
@@ -611,7 +590,7 @@ void __cdecl UI_InGameMenu(void)
         pkt[2] = 0x53;
         memcpy(pkt + 3,  &byte_7E91790[13 * memberIdx], 10);
         memcpy(pkt + 13, (const char*)DAT_07db8710, 10);
-        Net_SendC1Packet(pkt, 23);
+        gNetwork.SendC1(pkt, 23);
         goto tail;
     }
 
@@ -762,51 +741,18 @@ void __cdecl UI_InGameMenu(void)
         return;
     }
 
-    // ── Options submenu (0x96) — 4 buttons ────────────────────────────────
-    // IDA 0x00514310 case 150 (L1336-1377):
-    //   i=0: Back to ESC menu (NextErrorMessage=110 if ErrorMessage still nonzero,
-    //        else ErrorMessage=110).
-    //   i=1: toggle sound effect (m_bAutoAttack == m_bAutoAttack)
-    //   i=2: toggle music (m_bWhisperSound == m_bWhisperSound)
-    //   i=3: close submenu → ErrorMessage = NextErrorMessage; NextErrorMessage = 0.
-    // Buttons at X∈[0x104..0x17c], Y = 10*(3*i+3) = 30,60,90,120; height 22.
+    // ── Options submenu (0x96) ────────────────────────────────────────────
+    // IDA 0x00514310 case 150: 4 botones (volver, ataque automático, susurros,
+    // cerrar).  DESVIACION (DLL OptionsMenu, hook 0x00515954): lo atiende el menú
+    // expandido; un click fuera de él se descarta, como hacía el DLL.
     case 0x96:
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            int btnY = (3 * i + 3) * 10;
-            if (mouseX >= 0x104 && mouseX < 0x17c &&
-                mouseY >= btnY && mouseY < btnY + 22 && IsClickPushed())
-            {
-                DAT_083a4124 = 0;
-                switch (i)
-                {
-                case 0:  // Back → ESC menu (stash para pop en Cancel)
-                    DAT_083a7c28 = 0x6e;
-                    break;
-                case 1:  // Toggle sound
-                    m_bAutoAttack ^= 1;
-                    break;
-                case 2:  // Toggle music
-                    m_bWhisperSound ^= 1;
-                    break;
-                case 3:  // Close — swap NextErrorMessage → ErrorMessage
-                {
-                    DWORD pop = DAT_083a7c28;
-                    DAT_083a7c28 = 0;
-                    DAT_083a7c24 = pop;
-                }
-                break;
-                }
-                // NO goto tail — case 0x96 maneja sus transiciones internamente,
-                // pero sí reproducimos el click sound (IDA L837 PlayBuffer(25))
-                // que en el original viene del LABEL_75 común.
-                PlayBuffer(0x19, 0, 0);
-                return;
-            }
+        if (!gOptionsMenu.UpdateMouse()) {
+            DAT_083a42c4 = 0;   // MouseLButton
+            DAT_083a4124 = 0;   // MouseLButtonPush
+            DAT_07e11d28 = 0;   // MouseUpdateTime
+            DAT_00559bec = 6;   // MouseUpdateTimeMax
         }
         return;
-    }
 
     // ── Yes/No checkbox (sell/drop confirm) — ErrorMessage 151 ─────────────
     // ErrorMessage 151 es un cartel Yes/No. Port IDA UI_InGameMenu L1798-1856:
@@ -857,7 +803,7 @@ void __cdecl UI_InGameMenu(void)
         BYTE pkt[6] = { 0xC1, 0x06, 0x41, (BYTE)(accept ? 1 : 0),
                         (BYTE)(partyKey >> 8), (BYTE)partyKey };
         // El 0x41 pide Encrypt=1 (HackPacketCheck.txt indice 65): aceptar y rechazar
-        // van por C3 (Net_SendSmallPacket).  Un C1 crudo hace que el server responda
+        // van por C3 (gNetwork.Send).  Un C1 crudo hace que el server responda
         // "Packet encryption error" y cierre la conexion.
         //
         //   struct PMSG_PARTY_REQUEST_RESULT_RECV {   // Party.h:19
@@ -865,7 +811,7 @@ void __cdecl UI_InGameMenu(void)
         //       BYTE result;         // +3
         //       BYTE index[2];       // +4, +5  (index[0] = byte ALTO)
         //   };
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        gNetwork.Send(pkt, sizeof(pkt));
 
         DAT_083a4124 = 0;
         DAT_083a7c24 = DAT_083a7c28;
@@ -888,7 +834,7 @@ void __cdecl UI_InGameMenu(void)
         if (!accept && !reject) return;
 
         const BYTE pkt[4] = { 0xC1, 0x04, 0x61, (BYTE)(accept ? 1 : 0) };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        gNetwork.SendC1(pkt, sizeof(pkt));
         GuildWar_ResetClientState();
 
         DAT_083a4124 = 0;
@@ -926,7 +872,7 @@ void __cdecl UI_InGameMenu(void)
             pkt[3] = 1;
             memcpy(pkt + 4, &pin, 2);
             memcpy(pkt + 6, (const char*)DAT_07db8710, 10);    // InputText[0]
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
         memset(DAT_07db8710, 0, 10);                           // InputText[0][0..9]
         *(DWORD*)DAT_07d780a8 = 0;                             // InputLength[0]
@@ -975,7 +921,7 @@ void __cdecl UI_InGameMenu(void)
                 pkt[2] = 0x26;
                 pkt[3] = (BYTE)(slot + 12);
                 pkt[4] = 0;
-                Net_SendSmallPacket(pkt, 5);
+                gNetwork.Send(pkt, 5);
 
                 // Sonido por tipo de item, igual que el resto de los usos.
                 short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slot];

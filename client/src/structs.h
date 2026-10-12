@@ -1,4 +1,7 @@
 #pragma once
+#include "Item/ItemDefines.h"
+#include <cstdint>
+#include <cstddef>
 // structs.h — Game type definitions for Mu Online 0.97k reconstruction.
 // Derived from the DLL injector source (same version, same binary).
 // Includes: constants (Defines), enums, and game structs.
@@ -22,7 +25,7 @@
 #define MAX_ITEM_TYPE       32
 #define MAX_ITEM_SECTION    16
 #define MAX_ITEM            (MAX_ITEM_SECTION * MAX_ITEM_TYPE)
-#define ITEM_BASE_MODEL     400
+constexpr int ITEM_BASE_MODEL = ITEM_MODEL_BASE;
 #define GET_ITEM(x,y)       (((x)*MAX_ITEM_TYPE)+(y))
 #define GET_ITEM_MODEL(x,y) (GET_ITEM(x,y)+ITEM_BASE_MODEL)
 #define MAX_SPECIAL_OPTION  9
@@ -211,26 +214,6 @@ enum eTextAligns
     RT3_SORT_CENTER = 1
 };
 
-enum eModelNumbers
-{
-    MODEL_SWORD  = ITEM_BASE_MODEL,
-    MODEL_AXE    = MODEL_SWORD  + MAX_ITEM_TYPE,
-    MODEL_MACE   = MODEL_AXE   + MAX_ITEM_TYPE,
-    MODEL_SPEAR  = MODEL_MACE  + MAX_ITEM_TYPE,
-    MODEL_BOW    = MODEL_SPEAR + MAX_ITEM_TYPE,
-    MODEL_STAFF  = MODEL_BOW   + MAX_ITEM_TYPE,
-    MODEL_SHIELD = MODEL_STAFF + MAX_ITEM_TYPE,
-    MODEL_HELM   = MODEL_SHIELD + MAX_ITEM_TYPE,
-    MODEL_ARMOR  = MODEL_HELM  + MAX_ITEM_TYPE,
-    MODEL_PANTS  = MODEL_ARMOR + MAX_ITEM_TYPE,
-    MODEL_GLOVES = MODEL_PANTS + MAX_ITEM_TYPE,
-    MODEL_BOOTS  = MODEL_GLOVES + MAX_ITEM_TYPE,
-    MODEL_WING   = MODEL_BOOTS + MAX_ITEM_TYPE,
-    MODEL_HELPER = MODEL_WING  + MAX_ITEM_TYPE,
-    MODEL_POTION = MODEL_HELPER + MAX_ITEM_TYPE,
-    MODEL_ETC    = MODEL_POTION + MAX_ITEM_TYPE,
-    MODEL_EVENT  = 947
-};
 
 // ── Game Structs ──────────────────────────────────────────────────────────────
 
@@ -269,41 +252,57 @@ struct ITEM_ATTRIBUTE  // size = 64
 {
     /*+00*/ char  Name[30];
     /*+30*/ bool  TwoHand;
-    /*+31*/ BYTE  Level;
-    /*+32*/ BYTE  Width;
-    /*+33*/ BYTE  Height;
-    /*+34*/ BYTE  DamageMin;
-    /*+35*/ BYTE  DamageMax;
-    /*+36*/ BYTE  DefenseRate;
-    /*+37*/ BYTE  Defense;
-    /*+38*/ BYTE  MagicDefense;
-    /*+39*/ BYTE  AttackSpeed;
-    /*+40*/ BYTE  WalkSpeed;
-    /*+41*/ BYTE  Durability;
-    /*+42*/ BYTE  MagicDurability;
-    /*+43*/ BYTE  MagicPower;
-    /*+44*/ WORD  RequireStrength;
-    /*+46*/ WORD  RequireAgility;
-    /*+48*/ BYTE  RequireEnergy;
-    /*+49*/ BYTE  RequireLevel;
-    /*+50*/ BYTE  Value;
-    /*+52*/ int   Money;
-    /*+56*/ BYTE  RequireClass[MAX_CLASS];
-    /*+60*/ BYTE  Resistance[MAX_RESISTANCE];
+    /*+31*/ std::uint8_t  Level;
+    /*+32*/ std::uint8_t  Width;
+    /*+33*/ std::uint8_t  Height;
+    /*+34*/ std::uint8_t  DamageMin;
+    /*+35*/ std::uint8_t  DamageMax;
+    /*+36*/ std::uint8_t  DefenseRate;
+    /*+37*/ std::uint8_t  Defense;
+    /*+38*/ std::uint8_t  MagicDefense;
+    /*+39*/ std::uint8_t  AttackSpeed;
+    /*+40*/ std::uint8_t  WalkSpeed;
+    /*+41*/ std::uint8_t  Durability;
+    /*+42*/ std::uint8_t  MagicDurability;
+    /*+43*/ std::uint8_t  MagicPower;
+    /*+44*/ std::uint16_t  RequireStrength;
+    /*+46*/ std::uint16_t  RequireAgility;
+    /*+48*/ std::uint8_t  RequireEnergy;
+    /*+49*/ std::uint8_t  RequireLevel;
+    /*+50*/ std::uint8_t  Value;
+    /*+52*/ std::int32_t   Money;
+    /*+56*/ std::uint8_t  RequireClass[MAX_CLASS];
+    /*+60*/ std::uint8_t  Resistance[MAX_RESISTANCE];
 };
+// IDA: Item_LoadBMD (0x0047B740): registros de 0x40 bytes tras BuxConvert.
+// TwoHand conserva bool y su representación 0/1 usada por el código de items.
+static_assert(sizeof(bool) == 1, "TwoHand ocupa un byte en item.bmd");
+static_assert(sizeof(ITEM_ATTRIBUTE) == 64, "Registro de item.bmd");
+static_assert(offsetof(ITEM_ATTRIBUTE, TwoHand) == 30, "item.bmd TwoHand");
+static_assert(offsetof(ITEM_ATTRIBUTE, RequireStrength) == 44, "item.bmd RequireStrength");
+static_assert(offsetof(ITEM_ATTRIBUTE, RequireEnergy) == 48, "item.bmd RequireEnergy");
+static_assert(offsetof(ITEM_ATTRIBUTE, Money) == 52, "item.bmd Money");
+static_assert(offsetof(ITEM_ATTRIBUTE, RequireClass) == 56, "item.bmd RequireClass");
+static_assert(offsetof(ITEM_ATTRIBUTE, Resistance) == 60, "item.bmd Resistance");
+
 
 struct GATE_ATTRIBUTE
 {
-    BYTE Flag;
-    BYTE Map;
-    BYTE StartX;
-    BYTE StartY;
-    BYTE EndX;
-    BYTE EndY;
-    BYTE Target;
-    BYTE Direction;
-    BYTE RequireLevel;
+    std::uint8_t Flag;
+    std::uint8_t Map;
+    std::uint8_t StartX;
+    std::uint8_t StartY;
+    std::uint8_t EndX;
+    std::uint8_t EndY;
+    std::uint8_t Target;
+    std::uint8_t Direction;
+    std::uint8_t RequireLevel;
 };
+// IDA: Gate_LoadBMD (0x0047A4D0): registros de nueve bytes tras BuxConvert.
+static_assert(sizeof(GATE_ATTRIBUTE) == 9, "Registro de gate.bmd");
+static_assert(offsetof(GATE_ATTRIBUTE, Target) == 6, "gate.bmd Target");
+static_assert(offsetof(GATE_ATTRIBUTE, RequireLevel) == 8, "gate.bmd RequireLevel");
+
 
 struct PARTY_t
 {
@@ -371,18 +370,11 @@ struct SERVER_LIST_t
 // These provide human-readable names for the DAT_ addresses in globals.h.
 // Access via the named macros; the underlying storage is the DAT_ variable.
 
-// Window / display
-#define WindowWidth         DAT_0056156c     // int
-#define WindowHeight        DAT_00561570     // int
-// Escalas de pixel -> layout logico 640x480. Las calcula Config_Load y son las
-// unicas dos fuentes de escala de texto del binario (IDA 0041E0A0:144-145):
-//     g_fScreenRate_x = WindowWidth  * 0.0015625     (= /640)
-//     g_fScreenRate_y = WindowHeight * 0.0020833334  (= /480)
-// El uso canonico es `TextSize.cx /= g_fScreenRate_x` tras GetTextExtentPointA,
-// que mide en pixeles reales de ventana.
-#define g_fScreenRate_x     _DAT_055c9b70    // float
-#define g_fScreenRate_y     _DAT_055c9b74    // float
-// g_hWnd, g_hDC already in stdafx.h
+// Window / display: tamaño y escalas de layout en CWindow (Core/Window.h).
+// gWindow.GetScreenRateX/Y() son las únicas dos fuentes de escala de texto del
+// binario (IDA g_fScreenRate_x/y, 0041E0A0:144-145). El uso canónico es
+// `TextSize.cx /= gWindow.GetScreenRateX()` tras GetTextExtentPointA, que mide
+// en píxeles reales de ventana.
 
 // State
 // SceneFlag ya está declarado en stdafx.h; World en globals.h.

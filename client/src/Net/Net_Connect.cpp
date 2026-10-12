@@ -7,6 +7,8 @@
 // Initialises the packet hash table for session key tracking.
 
 #include "stdafx.h"
+#include "Net/Network.h"
+#include "Net/Reconnect.h"
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
@@ -19,8 +21,76 @@ extern "C" void DbgLogPublic(const char* msg);
 // Packet_DecryptByte/Packet_EncryptByte).
 // Returns unaff_EBP (register spill — result from lower-level connect call).
 // IDA: CreateSocket (0x00423920)
+// DESVIACION (DLL Reconnect.cpp): CreateSocketNoExit no cierra el cliente si
+// la conexión falla (la usa la reconexión, que reintenta).
+static bool s_NonFatalConnect = false;
+static bool s_LastConnectOk = false;
+
+bool CreateSocketNoExit(const char* ip, unsigned int port)
+{
+    s_NonFatalConnect = true;
+    CreateSocket(ip, port);
+    s_NonFatalConnect = false;
+    return s_LastConnectOk;
+}
+
 void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
 {
+  int iVar2;
+  if (First == '\0') {
+    First = '\x01';
+    CWsctlc_Startup(((int)(uintptr_t)SocketClient));
+  }
+  CWsctlc_Create(&SocketClient,(int)(uintptr_t)gWindow.GetHwnd());
+  iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
+  {
+    char dbg[64];
+    wsprintfA(dbg, "NET: CreateSocket Net_Connect returned %d", iVar2);
+    DbgLogPublic(dbg);
+  }
+  s_LastConnectOk = iVar2 != 0;
+  // DESVIACION (DLL Reconnect.cpp ReconnectCreateConnection): recordar el
+  // GameServer para poder reconectar.
+  if (iVar2 != 0 && !gNetwork.IsConnectServerMode())
+    gReconnect.OnGameServerConnect(param_1, (WORD)param_2);
+  if (iVar2 == 0 && s_NonFatalConnect) {
+    DbgLogPublic("NET: CreateSocket falló (reconexión: se reintenta)");
+    return;
+  }
+  if (iVar2 == 0) {
+    DbgLogPublic("NET: CreateSocket CONNECT FAILED → abort/SetErrorMessage(0x71)");
+    CErrorReport_Write(&DAT_055c9bf0,s_Failed_to_connect__00559688);
+    CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
+    SetErrorMessage(0x71);
+    // Original-client behaviour: the server can't be reached (no listener,
+    // wrong IP/port, firewall) → pop a modal dialog and terminate.  Previous
+    // build silently carried on and the player saw nothing.  Same rationale
+    // as the FD_CLOSE handler in WinMain.cpp:765 — MessageBoxA is modal, then
+    // PostQuitMessage exits the game-loop cleanly.  Guard against re-entry
+    // in case the login retry logic fires Net_Connect a second time.
+    static bool s_ConnFailHandled = false;
+    if (!s_ConnFailHandled) {
+        s_ConnFailHandled = true;
+        MessageBoxA((HWND)(uintptr_t)gWindow.GetHwnd(),
+                    "No se puede conectar con el servidor.",
+                    "Mu Online",
+                    MB_OK | MB_ICONERROR);
+        PostQuitMessage(0);
+    }
+    // Skip the hash-table bootstrap below — it operates on a live session key
+    // and there is no session if connect failed.  Returning here also avoids
+    // touching DAT_05826ceb/cec on a half-initialised ctx.
+    return;
+  }
+  gNetwork.InitializePacketSerials();
+}
+
+
+// IDA: CreateSocket (0x00423920). Conserva los registros de la HashTable
+// heredada; sus claves apuntan a los mismos miembros durante toda la sesión.
+void CNetwork::InitializePacketSerials()
+{
+    const char* param_1 = nullptr;
   byte bVar1;
   int iVar2;
   uint uVar3;
@@ -39,47 +109,11 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   local_4[1] = 0;
   local_4[2] = 0;
   local_4[3] = 0;
-  if (First == '\0') {
-    First = '\x01';
-    CWsctlc_Startup(((int)(uintptr_t)SocketClient));
-  }
-  CWsctlc_Create(&SocketClient,(int)(uintptr_t)DAT_055c9ffc);
-  iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
-  {
-    char dbg[64];
-    wsprintfA(dbg, "NET: CreateSocket Net_Connect returned %d", iVar2);
-    DbgLogPublic(dbg);
-  }
-  if (iVar2 == 0) {
-    DbgLogPublic("NET: CreateSocket CONNECT FAILED → abort/SetErrorMessage(0x71)");
-    CErrorReport_Write(&DAT_055c9bf0,s_Failed_to_connect__00559688);
-    CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
-    SetErrorMessage(0x71);
-    // Original-client behaviour: the server can't be reached (no listener,
-    // wrong IP/port, firewall) → pop a modal dialog and terminate.  Previous
-    // build silently carried on and the player saw nothing.  Same rationale
-    // as the FD_CLOSE handler in WinMain.cpp:765 — MessageBoxA is modal, then
-    // PostQuitMessage exits the game-loop cleanly.  Guard against re-entry
-    // in case the login retry logic fires Net_Connect a second time.
-    static bool s_ConnFailHandled = false;
-    if (!s_ConnFailHandled) {
-        s_ConnFailHandled = true;
-        MessageBoxA((HWND)(uintptr_t)DAT_055c9ffc,
-                    "No se puede conectar con el servidor.",
-                    "Mu Online",
-                    MB_OK | MB_ICONERROR);
-        PostQuitMessage(0);
-    }
-    // Skip the hash-table bootstrap below — it operates on a live session key
-    // and there is no session if connect failed.  Returning here also avoids
-    // touching DAT_05826ceb/cec on a half-initialised ctx.
-    return;
-  }
-  // Lo que sigue es ofuscación HashTable inlined sobre DAT_05826ceb/cec
+  // Lo que sigue es ofuscación HashTable inlined sobre m_SendSerial/cec
   // (ref-count de session-key bytes). Neutralizado vía fake vtable en
   // MAIN_HASH_CLASS + capacity (DAT_055c9bd4) = 0 → loops se saltean.
-  param_1 = &DAT_05826ceb;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&DAT_05826ceb);
+  param_1 = &m_SendSerial;
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
   uVar6 = 0;
   param_1 = (char *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -121,11 +155,11 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
       }
       if (iVar7 == 0) {
         if (uVar3 == 0xffffffff) goto LAB_00423a34;
-        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_05826ceb);
+        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&m_SendSerial);
         bVar1 = pbVar5[1];
         pbVar5[1] = bVar1 + 1;
         if ((byte)(bVar1 + 1) < 2) {
-          Packet_DecryptByte(&DAT_05826ceb,pbVar5);
+          Packet_DecryptByte(&m_SendSerial,pbVar5);
         }
         goto LAB_00423a52;
       }
@@ -137,10 +171,10 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
 LAB_00423a34:
   pvVar4 = AntiTamper_HashNode();
   *(undefined1 *)((int)pvVar4 + 1) = 1;
-  HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&DAT_05826ceb);
+  HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_SendSerial);
 LAB_00423a52:
-  DAT_05826ceb = 0;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&DAT_05826ceb);
+  m_SendSerial = 0;
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
   uVar6 = 0;
   if (DAT_055c9bd4 != 0) {
     do {
@@ -181,11 +215,11 @@ LAB_00423a52:
       }
       if (iVar7 == 0) {
         if (uVar3 != 0xffffffff) {
-          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_05826ceb);
+          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&m_SendSerial);
           bVar1 = pbVar5[1];
           pbVar5[1] = bVar1 - 1;
           if ((byte)(bVar1 - 1) == 0) {
-            Packet_EncryptByte(pbVar5,&DAT_05826ceb);
+            Packet_EncryptByte(pbVar5,&m_SendSerial);
           }
         }
         goto LAB_00423b59;
@@ -196,13 +230,13 @@ LAB_00423a52:
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00423b59:
-  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
+  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&m_ReceiveSerial);
   if (uVar3 == 0xffffffff) {
     pvVar4 = AntiTamper_HashNode();
     *(undefined1 *)((int)pvVar4 + 1) = 1;
-    HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&g_byPacketSerialRecv);
+    HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_ReceiveSerial);
   }
-  g_byPacketSerialRecv = 0;
+  m_ReceiveSerial = 0;
   return;
 }
 

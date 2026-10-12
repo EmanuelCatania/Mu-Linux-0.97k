@@ -71,6 +71,7 @@
 //   MODE_METAL   = bits of 0x00000080 as float = 8.96831e-44
 
 #include "stdafx.h"
+#include "Item/ItemDefines.h"
 #include "../globals.h"
 #include "../functions.h"
 
@@ -240,6 +241,14 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
     bVar4 = (unsigned char)uVar6;
 
+    // DESVIACION (0.97.20, modelos del catálogo): el 5.2 dibuja aditiva la
+    // malla cuya textura lleva la marca `_R` (TextureScript Bright, ver
+    // ZzzBMD.cpp RenderBody: iBlendMesh = i).  El 0.97 la parsea pero no la
+    // usa; se aplica sólo a los modelos dinámicos para no tocar el vanilla.
+    const bool brightMesh =
+        ((int)(((uintptr_t)bmd_obj - (uintptr_t)DAT_05828d58) / 0xbc) >= MODEL_MAX_VANILLA) &&
+        *(int *)(pcVar1 + 0x24) != 0 && *(char *)(*(int *)(pcVar1 + 0x24)) != 0;
+
     if ((bVar4 & 1) == 1) {
         // RENDER_COLOR: flat color, disable texture
         renderMode = MODE_COLOR;
@@ -355,7 +364,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             //     0xffffffff (ver Entity_DrawByType.cpp).
             // MUGAME type 0xa2: obj+100 = DWORD 1 → como int == mesh.Texture=1 (backdrop)
             //   → cond2 TRUE → EnableAlphaBlend (aditivo) sobre backdrop naranja.
-            blendMesh <= -2 || (int)*(short *)(pcVar1 + 2) == blendMesh
+            blendMesh <= -2 || (int)*(short *)(pcVar1 + 2) == blendMesh || brightMesh
         ) {
             // Blend mesh / animated UV variant.
             renderMode = MODE_TEXTURE;
@@ -364,9 +373,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 EnableAlphaBlendMinus();
             else
                 EnableAlphaBlend();
-            glColor3f(blendLight * *(float *)((int)bmd_obj + 0x48),
-                      blendLight * *(float *)((int)bmd_obj + 0x4c),
-                      blendLight * *(float *)((int)bmd_obj + 0x50));
+            const float meshLight = (brightMesh && blendMesh > -2 && (int)*(short *)(pcVar1 + 2) != blendMesh)
+                                  ? 1.0f : blendLight;
+            glColor3f(meshLight * *(float *)((int)bmd_obj + 0x48),
+                      meshLight * *(float *)((int)bmd_obj + 0x4c),
+                      meshLight * *(float *)((int)bmd_obj + 0x50));
             param_2_b0 = '\0';
 
         } else if ((bVar4 & 2) == 2) {

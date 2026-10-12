@@ -1,4 +1,5 @@
 #pragma once
+#include "Item/ItemDefines.h"
 // globals.h — extern declarations for all Ghidra DAT_ globals.
 // Los tipos se infieren del contexto; el prefijo _DAT_ = alias float de la misma dirección.
 // NO incluir este header directo — entra vía stdafx.h.
@@ -283,7 +284,7 @@ extern char    s__s_file_not_found__0055a784[];  // "%s file not found" format s
 extern DWORD   DAT_0055a798;
 extern char    DAT_0055a79c[];  // "Data\\"  path prefix
 extern char    DAT_0055a7a4[];  // "Data2\\" path prefix
-extern int     World; // IDA: World (0x0055A7AC)
+// IDA: World (0x0055A7AC): gMapManager.GetCurrentMap().
 extern float  _DAT_0055a7c0;
 extern DWORD   DAT_0055a7c0;
 
@@ -294,35 +295,14 @@ extern DWORD   DAT_00561550;
 extern DWORD   DAT_00561554;
 extern float   CameraDistanceTarget;   // DAT_005616B4: MoveMainCamera smoothing target
 extern float   CameraDistance;         // DAT_083A45D0: current MoveMainCamera distance
-extern DWORD   DAT_0056156c;
-extern DWORD   DAT_00561570;
 extern DWORD   DAT_00561574;
 extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
 #define PTR_s_connect_muonline_co_kr_005615b8  szServerIpAddress
 extern WORD    g_ServerPort; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow ──────────────────────────────────────────
-extern int             g_HasConnectServer;       // server.cfg tiene 2 líneas → flujo CS
-extern int             g_ConnectServerMode;      // 1 = socket actual habla con el ConnectServer
-extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
-extern char            g_GameServerIP[128];      // GameServer fallback (server.cfg línea 2)
-extern unsigned short  g_GameServerPort;
 // SceneFlag (in stdafx.h)
-// g_lpszMp3 @ 0x005615C4 — tabla de 6 rutas de BGM (ver globals.cpp).
-// Los DAT_005615c4..d8 NO son handles independientes: son sus 6 elementos.
-extern char*   g_lpszMp3[6];
-#define DAT_005615c4     ((DWORD)(uintptr_t)g_lpszMp3[0])
-#define DAT_005615c8     ((DWORD)(uintptr_t)g_lpszMp3[1])
-#define DAT_005615cc     ((DWORD)(uintptr_t)g_lpszMp3[2])
-#define DAT_005615d0     ((DWORD)(uintptr_t)g_lpszMp3[3])
-#define DAT_005615d4     ((DWORD)(uintptr_t)g_lpszMp3[4])
-#define DAT_005615d8     ((DWORD)(uintptr_t)g_lpszMp3[5])
-#define PTR_DAT_005615c4 DAT_005615c4
-#define PTR_DAT_005615c8 DAT_005615c8
-#define PTR_DAT_005615cc DAT_005615cc
-#define PTR_DAT_005615d0 DAT_005615d0
-#define PTR_DAT_005615d4 DAT_005615d4
-#define PTR_DAT_005615d8 DAT_005615d8
+// g_lpszMp3 (IDA 0x005615C4, rutas de los BGM): ver CMapManager (Game/MapManager.cpp).
 // DAT_005615dc @ 0x005615DC ES `g_iCurrentDialogScript` — el índice del diálogo
 // de quest activo.  Lo escriben CSQuest::ShowDialogText (0x4017E7) y sub_51D840,
 // y lo leen sub_401AF0 y UI_InGameMenu.  La etiqueta vieja ("login/scene misc
@@ -425,14 +405,12 @@ extern DWORD   DAT_00590924;
 #define DAT_00583da8  g_dwBufferBytes
 
 // ── Engine / Window handles (0x055c9xxx – 0x055caxxx) ─────────────────────────
-// Nota: g_hWnd (DAT_055c9ffc) y g_hDC (DAT_055c9fec) están en stdafx.h.
+// Nota: g_hWnd y g_hDC viven en CWindow; el DC del texto (DAT_055c9fec) en CFont.
 extern char    lpData_055c9ba0[12];     // version string buffer (login packet)
 extern DWORD   DAT_055c9b40;   // g_EnableSound
 extern DWORD   DAT_055c9b60;   // sound channel index offset
 extern DWORD   DAT_055c9b70;
-extern float  _DAT_055c9b70;
 extern DWORD   DAT_055c9b74;
-extern float  _DAT_055c9b74;   // g_fScreenRate_y
 extern DWORD   DAT_055c9b80;
 extern char    ConfigLoginVersion[12]; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 // Contexto de la ofuscación por HashTable — buffer contiguo (el binario original tiene el
@@ -464,12 +442,8 @@ extern int     DAT_055c9e58[100];
 extern DWORD   DAT_055c9ff0;   // HGLRC (OpenGL context)
 extern DWORD   DAT_055c9ff4;
 extern DWORD   DAT_055c9ff8;
-extern HINSTANCE DAT_055ca000;  // g_hInst (also in stdafx.h as g_hInst)
-// DAT_055ca004 = g_hDC — macro in stdafx.h; no separate storage.
+// DAT_055ca004 = g_hDC — vive en CWindow (gWindow.GetHdc()).
 extern DWORD   DAT_055ca008;
-extern DWORD   DAT_055ca00c;
-extern DWORD   DAT_055ca010;
-extern DWORD   DAT_055ca014;
 extern DWORD   DAT_055ca018;
 extern char    DAT_055ca019;
 extern DWORD   DAT_055ca01c;
@@ -511,8 +485,6 @@ extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
 extern char    LogInID[16]; // IDA: DAT_05826CD4 (0x05826CD4)
-extern char    DAT_05826ceb;
-extern DWORD   g_byPacketSerialRecv; // IDA: DAT_05826CEC (0x05826CEC)
 extern DWORD   g_bGameServerConnected; // IDA: g_bGameServerConnected (0x05826CF0)
 extern float  _DAT_05826cf4;
 extern DWORD   g_dwLatestMagicTick; // IDA: g_dwLatestMagicTick (0x05826CF4)
@@ -1141,10 +1113,12 @@ extern DWORD   DAT_083a7c90;
 extern DWORD   DAT_083a7c94;
 extern DWORD   DAT_083a7c98;
 // ── Bitmaps table (contiguous, 1450 entries × 0x38 stride = 0x13D30 bytes) ───
+// DESVIACION (0.97.20): más BITMAP_MAX_CATALOG entradas para las texturas de
+// los modelos del catálogo del server, que no se reciclan al cambiar de mapa.
 // Original address range: 0x083A7CA0 .. 0x083BB9D0
 // Slot layout: +0x00 active, +0x20 width(f), +0x24 height(f), +0x28 bpp(b),
 //              +0x2C gl_handle(u), +0x30 ref_count(b), +0x34 pixels(ptr)
-extern char    g_BitmapsRaw[0x13D30];
+extern char    g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38];
 
 // Accesores retrocompatibles al slot[0] — el código usa (&DAT_xxx)[offset]
 // para indexar la tabla contigua con aritmética de punteros.
@@ -1294,7 +1268,6 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
     if (p < 0x100000u || p >= 0x80000000u) return 0;
     return p;
 }
-extern int     FontHeight;          // IDA: FontHeight (0x07D78080) — lo setea WinMain por resolucion
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
 // (ver la declaracion de la tabla mas abajo).
 #define DAT_07e91530   (DAT_07e91528[2])
@@ -1987,14 +1960,7 @@ extern DWORD   FrameTimePreviousMs;  // IDA: DAT_05826dfc
 extern float   FPS;  // smoothed FPS value  [IDA 0x05826DF8]
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
-extern DWORD   m_MusicOnOff;            // 0x055C9E3C — flag on/off de la musica (ver globals.cpp)
 // IDA: DAT_055C9D04
-extern char    MusicCurrentTrack[256];  // track currently playing in MuPlayer
-extern char    s_MuPlayer_00559110[];   // "MuPlayer" string
-extern char    s_MuPlayer_exe_00559154[]; // "MuPlayer.exe" string
-extern char    s_MuPlayer_exe__s_00559130[]; // "MuPlayer.exe %s" format
-extern char    s_StopMp3_cmd_0055911c[];    // stop command string
-extern char    s_PlayMp3_cmd_00559140[];    // play command string
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 extern DWORD   DAT_0058443c;   // DS3D state dword
@@ -2042,7 +2008,10 @@ extern char    DAT_00559b50[];
 extern char    s__4d__4d_30__4d__4d__1_00559b58[]; // format string
 
 // ── Scene_CharPreview globals ─────────────────────────────────────────────────
-extern DWORD   DAT_07e91354;
+// IDA: pPickedItem.Level (0x07E91354) — el campo +4 del item levantado, no un
+// global aparte.  Como variable propia valía siempre 0 y los chequeos de
+// apilado comparaban contra nivel 0.
+#define DAT_07e91354 (*(DWORD*)&DAT_07e91350[4])
 extern char    DAT_07e9136a;   // picked item durability/option byte
 extern char    DAT_07e9136b;
 // Buffer del item del dialogo ShowCheckBox(153) -- 0x44 bytes, 0x07EA5240.
@@ -2273,7 +2242,6 @@ extern int     EditMonsterNumber;       // NPC name count  [IDA 0x07D78078]
 // primer byte del campo Name de la entrada 0.
 #define DAT_07cf2000   (MonsterScript[0])
 #define DAT_07cf2001   (MonsterScript[1])
-extern void   *ppvBits_055c9e4c;   // DIB section bitmap pointer (Font_BuildLayout)
 extern DWORD   DAT_01c5e200;       // item/skill BMD checksum seed A
 extern DWORD   DAT_00b43000;       // item/skill BMD checksum seed B
 extern char    DAT_00559bb4[3];    // XOR cipher key for BuxConvert_0 (0xFC,0xCF,0xAB)
@@ -2660,17 +2628,10 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 #define g_lpszMessageBoxCustom  ((char (*)[0x26])DAT_083a44c4)
 // g_iCurrentDialogScript — alias de DAT_005615dc (ver arriba).
 // g_lpszDialogAnswer — alias de DAT_083a4348 (ver arriba).
-// m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace
-// `m_hFontDC = CreateCompatibleDC(hdc)` y ese mismo DC es DAT_055c9fec (el font
-// memory DC, declarado en stdafx.h).
-#define m_hFontDC  DAT_055c9fec
-// Las tres fuentes: WinMain crea los handles en DAT_055ca00c / 010 / 014 (normal /
-// bold / big, esta ultima al doble de altura); `g_hFont` y `g_hFontBold` son alias
-// de esos globals (no HFONT aparte), asi los `SelectObject(m_hFontDC, g_hFontBold)`
-// usan la fuente creada.
-// IDA: g_hFont = 0x055CA00C, g_hFontBold = 0x055CA010, g_hFontBig = 0x055CA014.
-#define g_hFontBold  ((HFONT)(uintptr_t)DAT_055ca010)
-#define g_hFontBig   ((HFONT)(uintptr_t)DAT_055ca014)
+// m_hFontDC (IDA 0x055C9FEC) y los bits del DIB del texto (0x055C9E4C) viven en
+// CFont: gFont.GetTextDC() / gFont.GetTextBits().
+// Las tres fuentes (IDA g_hFont 0x055CA00C, g_hFontBold 0x055CA010, g_hFontBig
+// 0x055CA014) viven en CFont: gFont.GetFont(FONT_NORMAL / FONT_BOLD / FONT_BIG).
 
 // Batch 18 — InitGame / ReceiveChat globals
 // EnableUse declarado arriba junto a DAT_05826d1c.
@@ -2868,8 +2829,7 @@ extern char    SoccerTeamName[2][80];// team names
 
 // Globals de fuente / medición de texto que consumen sub_480C60 y el HUD
 // renderers (HFONT object handles + DC + computed dimensions).
-#define g_hFont      ((HFONT)(uintptr_t)DAT_055ca00c)              // primary plain font handle
-// FontHeight se declara mas arriba (0x07D78080).
+// FontHeight (0x07D78080): gFont.GetHeight().
 extern SIZE    TextSize;             // shared scratch SIZE for text extent
 
 // Anti-tamper hash-table state — already declared above as g_HashTableCtx[4]

@@ -53,7 +53,7 @@
 
 void WeatherParticles_Update(void)
 {
-    int iVar7 = World;   // World
+    int iVar7 = gMapManager.GetCurrentMap();   // World
 
     // ── Intensity ramp for sub-state 10 (dense rain) ─────────────────────────
     if (iVar7 == 10)
@@ -308,6 +308,6 @@ void WeatherParticles_Update(void)
 
         pfVar10 += 0x1c;
         local_d4++;
-        iVar7 = World;
+        iVar7 = gMapManager.GetCurrentMap();
     } while (local_d4 < iVar9);
 }

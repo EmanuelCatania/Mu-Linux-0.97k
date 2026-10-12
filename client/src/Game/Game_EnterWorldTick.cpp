@@ -70,42 +70,11 @@ static void Clk_Watch(const char* label)
 #define CLK_WATCH(LABEL) Clk_Watch(LABEL)
 // IsClickPushed() ahora vive en globals.h para que todo módulo lo use.
 
-// Same 32-byte XOR key
-static const BYTE s_Key[32] = {
-    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-};
 
-// Send a packet (len bytes from pkt) with WSAEWOULDBLOCK fallback
-// MuEmu compat: cifrar in-place antes de send().  Pkt_Send recibe pkt
-// como const → necesitamos un buffer mutable.  Copiamos a buf_local.
+// Paquete ya enmarcado (chain-XOR aplicado): lo manda CNetwork.
 static void Pkt_Send(const BYTE* pkt_in, int len)
 {
-    if (SocketClientSocket == 0xffffffff) return;
-    BYTE pkt[256];
-    if (len > (int)sizeof(pkt)) return;
-    memcpy(pkt, pkt_in, len);
-    MuEmu::EncryptSend(pkt, len);
-
-    int sent = 0, rem = len;
-    do {
-        int n = send(SocketClientSocket, (char*)pkt + sent, rem - sent, 0);
-        if (n == -1) {
-            int err = WSAGetLastError();
-            if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + len) < 0x2001) {
-                memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, len);
-                SocketClientSendBufferLength += len;
-            } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
-            }
-            return;
-        }
-        if (n == 0) break;
-        if (SocketClientLogPrint) FUN_0043de60();
-        sent += n; rem -= n;
-    } while (rem > 0);
+    gNetwork.SendRaw((const char*)pkt_in, len);
 }
 
 // Send the character-enter-world packet:
@@ -113,7 +82,7 @@ static void Pkt_Send(const BYTE* pkt_in, int len)
 //
 // El buffer arranca en 0 y el XOR encadena con el byte ANTERIOR ya codificado
 // (`pkt[i] ^= pkt[i-1] ^ key[i]`), que es como lo descifra el server (XorData,
-// recorriendo hacia atrás). Mismo patrón que Net_SendSmallPacket.
+// recorriendo hacia atrás). Mismo patrón que gNetwork.Send.
 static void Send_CharSelectPacket(void)
 {
     BYTE pkt[32];
@@ -136,7 +105,7 @@ static void Send_CharSelectPacket(void)
     // Forward chain XOR using PREVIOUS byte (matches server's reverse XorData).
     // Iterate i = 3..14 (entire body after pkt[2]). Server reverses n=14..3.
     for (int i = 3; i < 15; i++) {
-        pkt[i] ^= pkt[i - 1] ^ s_Key[i & 0x1f];
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
 
     // Pkt_Send aplica MuEmu byte-XOR + send (C1 path, no SerialModulus).
@@ -165,7 +134,7 @@ static void Send_CharCreatePacket(void)
     pkt[14] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
 
     for (int i = 3; i < 15; i++) {
-        pkt[i] ^= pkt[i - 1] ^ s_Key[i & 0x1f];
+        pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
     Pkt_Send(pkt, 15);
 }

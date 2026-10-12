@@ -151,6 +151,7 @@
 //   DAT_00552488  → Z oscillation scale factor
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Render/Entity_Render.h"
 #include <math.h>
 
@@ -304,7 +305,13 @@ uint RenderBugs(void)
         }
 
         if (ownerIsPlayer || typeCode == 0x330) {
+            // 0.97.20: el pet o la montura se dibuja con el modelo propio del
+            // helper puesto (catálogo); la lógica del bug sigue con el tipo vanilla.
+            const int ownModel = ownerPtr ? gContentCatalog.EntityHelperModel((const void*)(uintptr_t)ownerPtr) : -1;
+            const int drawModel = (ownModel >= 0) ? ownModel : typeCode;
+            *(short*)(slot + 2) = (short)drawModel;
             Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
+            *(short*)(slot + 2) = typeCode;
             if (typeCode == 0x330) {   // IDA: type==816 → sparkle 1150 (pool de efectos, no causa whiteout)
                 // Fairy helper sparkle effect
                 float intensity = (float)(_rand() % 30 + 70) * 0.01f;

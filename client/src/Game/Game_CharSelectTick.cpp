@@ -22,19 +22,13 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Game/Game_CharSelectTick.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
 
 extern "C" void Bisect_ChatMode(const char* tag);
 
-// Same 32-byte XOR key
-static const BYTE s_Key[32] = {
-    0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-    0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-    0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-    0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-};
 
 void Game_CharSelectTick(void)
 {
@@ -57,7 +51,7 @@ void Game_CharSelectTick(void)
             int nameLen = (int)strlen(charName);
             if (nameLen > 10) nameLen = 10;
             memcpy(pkt + 4, charName, nameLen);
-            Net_SendC1Packet(pkt, sizeof(pkt));
+            gNetwork.SendC1(pkt, sizeof(pkt));
         }
 
         // Init in-game subsystems
@@ -119,7 +113,8 @@ void Game_CharSelectTick(void)
     DAT_0055a3e4  = 0xffffffff;
     DAT_07d78094  = 0;
 
-    if (CameraTopViewEnabled == '\0') {
+    // DESVIACION (DLL Antilag, 0x00525483): sin interfaz se saltea como en la vista cenital.
+    if (CameraTopViewEnabled == '\0' && !gUserSettings.GetAntilag(ANTILAG_INTERFACE)) {
         // Standard viewport mode
         DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;
@@ -201,13 +196,13 @@ void Game_CharSelectTick(void)
     //
     // O sea LABEL_108 es SALTEAR.
     bool doLeaves;
-    if (World == 0)
+    if (gMapManager.GetCurrentMap() == 0)
         doLeaves = (DAT_07e118e8 != 4);
-    else if (World == 2)
+    else if (gMapManager.GetCurrentMap() == 2)
         doLeaves = !(DAT_07e118e8 == 3 || DAT_07e118e8 >= 10);
     else
-        doLeaves = (World == 3 || World == 7 ||
-                    World == 9 || World == 10);
+        doLeaves = (gMapManager.GetCurrentMap() == 3 || gMapManager.GetCurrentMap() == 7 ||
+                    gMapManager.GetCurrentMap() == 9 || gMapManager.GetCurrentMap() == 10);
     if (doLeaves) WeatherParticles_Update();
     Bisect_ChatMode("CST_post_skillFX");
     // Full world pipeline

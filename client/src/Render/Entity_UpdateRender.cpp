@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Config/UserSettings.h"
+#include "Game/MapManager.h"
 
 // GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
 // RELEE como puntero (`*(int*)(thiz+4)`). Convertir el puntero a float lo
@@ -91,6 +94,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
+    bool bDeferWing = false;           // 0.97.20: ala del catálogo, va después del cuerpo
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
@@ -193,11 +197,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
         if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
             v11 != 59 && v11 != 63 &&
-            World != 10 && alpha >= 0.3f)
+            gMapManager.GetCurrentMap() != 10 && alpha >= 0.3f)
         {
             // Blood Castle (11..16): clamp Z to terrain height when
             // entity is dead+action-start (Blood Castle special case).
-            if (World >= 11 && World <= 16) {
+            if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
                 if (*(BYTE *)((char *)puVar13 + 0x195) != 0 &&     // o+405 m_bActionStart
                     *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
@@ -249,10 +253,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // IDA 00456770 groups these MonsterIDs before the individual Icarus
     // branches.  43 and 78..83 need the first 0x48 pass; 67 uses 0x144 for
     // its second pass; 59 is the only half-bright member of the group.
+    // DESVIACION (DLL CustomMonsterGolden, ahora catálogo 0.97.20): un
+    // monstruo marcado golden en el server se dibuja como los Golden 78..83.
+    const CatalogMonster* catalogMonster = (entity_type != 390) ? gContentCatalog.GetMonster(bVar7) : nullptr;
+    const bool catalogGolden = catalogMonster && catalogMonster->Golden;
     if (bVar7 == 38 || bVar7 == 43 || bVar7 == 52 || bVar7 == 59 ||
-        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83)) {
+        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
-        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83)) {
+        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
             RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                          *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
         }
@@ -462,14 +470,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // simplificacion nuestra.
     {
         char *o = (char *)puVar13;
-        if (*(float *)(o + 360) >= 0.5f && World != 10 &&
+        if (*(float *)(o + 360) >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
             *(short *)(o + 2) == 390)
         {
             const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
             if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
-                if (World >= 11 && World <= 16 &&
+                if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 &&
                     *(BYTE *)(o + 405) != 0 && *((BYTE *)param_1 + 765) != 0)
                 {
                     float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
@@ -560,9 +568,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
         BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
-        if (World == 7 && (bAnim == 0x15 || bAnim == 0x1d))
+        if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
             local_74 = (void *)1;
-        if (World > 10 && World < 0x11)
+        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
             local_74 = (void *)0;
     }
 
@@ -603,7 +611,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
 
             // Override de escala por zona (World - 9 en [1..7])
-            const int iSub = (int)World - 9;
+            const int iSub = (int)gMapManager.GetCurrentMap() - 9;
             const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
             const bool bInRange =
                 (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
@@ -642,7 +650,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
         // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
         // siempre se alcanza.
-        if ((World >= 11) && (World <= 16) &&
+        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
             (*(char *)(param_1 + 0xba) != 0)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
@@ -657,8 +665,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             }
         }
 
-        // Tertiary weapon slot (param_1[0xa8] != -1)
-        if (*(short *)(param_1 + 0xa8) != -1) {
+        // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
+        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
+        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
+        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
+        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
+            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
+            bDeferWing = true;
+        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
@@ -770,7 +784,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         if (subType >= 206 && subType <= 208) {
             float alphaST = *(float *)((char *)puVar13 + 0x168);
             int   flags   = 0;
-            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)World == 0) {
+            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == 0) {
                 flags = 8 * (int)*(unsigned short *)((char *)param_1 + 446);
             }
             RenderPartObject((int)param_1, subType, 0,
@@ -791,6 +805,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // so the decomp was int-indexed (param_1[0x6f]) not byte-offset.
                 // Byte-offset 0x6f is an unrelated field; reading it here made all
                 // login demo characters render as DW (class=0). Fixed to 0x1bc.
+                // 0.97.20: modelo propio de la pieza (catálogo).
+                iVar9 = gContentCatalog.EntityDrawModel(param_1, iVar9);
                 BYTE bClassByte = *(BYTE *)((int)param_1 + 0x1bc);
                 *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));
@@ -871,6 +887,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
                           *(short*)((BYTE*)param_1 + 528));
         }
+    }
+
+    if (bDeferWing) {
+        *(BYTE *)(param_1 + 0xa9) = 0x2f;
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                     (int)*(short *)(param_1 + 0xa8),
+                     *(char *)((int)param_1 + 0x2a2),
+                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
     }
 
     // ── 8. Death / PvP color tint ────────────────────────────────────────────
@@ -1158,7 +1184,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
 
         // ── 4. Sin full set (v230==false) → no glow, exit ─────────────────
-        if (!v230) {
+        // DESVIACION (antilag propio): sin el brillo del set completo.
+        if (!v230 || gUserSettings.GetAntilag(ANTILAG_GLOW)) {
             return puVar13;
         }
 

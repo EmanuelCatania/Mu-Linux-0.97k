@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
 
 // External helpers
@@ -24,8 +25,10 @@ static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈
 
 void Terrain_Render(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x004FD800): sin objetos del mapa.
+    if (gUserSettings.GetAntilag(ANTILAG_OBJECTS)) return;
     float z_offset = 0.0f;
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         z_offset = -10.0f;
     }
 
@@ -75,7 +78,7 @@ void Terrain_Render(void)
                         {
                             // Terrain_Render in the original only prepares and draws.
                             // Per-frame object animation/update belongs to MoveObjects.
-                            if (World == 2 && *(short*)(entity + 2) == 100)
+                            if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
                             {
                                 void *pvSlot = AntiTamper_HashNode();
                                 *(unsigned char*)((char*)pvSlot + 0x584) = 1;

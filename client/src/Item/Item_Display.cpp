@@ -1,6 +1,8 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -66,7 +68,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     float v38[3];
     String[0] = '\0';
 
-    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);   // g_hFont
+    SelectObject(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));   // g_hFont
     const short v7 = *(short*)(o + 2);
 
     // &ItemAttribute[v7 - 400] — ITEM_ATTRIBUTE stride 0x40, Name en offset 0.
@@ -74,9 +76,9 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     // chicos en algunos caminos, igual que en los guards del tooltip.
     const char* name = "";
     {
-        int attrIdx = (int)v7 - 400;
+        int attrIdx = (int)v7 - ITEM_MODEL_BASE;
         unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < 1024)
+        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }
 
@@ -88,13 +90,13 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
 
     case 861: case 862: case 864:               // joyas
     case 799: case 870: case 830:
-        SelectObject(m_hFontDC, (HGDIOBJ)g_hFontBold);
+        SelectObject(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
         glColor3f(1.0f, 0.8f, 0.1f);
         sprintf(String, "%s", name);
         goto renderLabel;
 
     case 865: case 866: case 867:               // Devil (Chaos) items
-        SelectObject(m_hFontDC, (HGDIOBJ)g_hFontBold);
+        SelectObject(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
         glColor3f(1.0f, 0.8f, 0.1f);
         if ((v5 & 0x78) != 0) sprintf(String, "%s +%d", name, v6);
         else                  sprintf(String, "%s", name);
@@ -154,7 +156,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
             v38[2] = 1.0f;
             v38[1] = 0.1f;
         } else {
-            if ((ItemOption & 0x3F) != 0 && (v7 < 787 || v7 > 790)) {
+            if ((ItemOption & 0x3F) != 0 && (v7 < MODEL_WING_SPIRITS || v7 > MODEL_WING_DARKNESS)) {
                 v38[2] = 0.5f; v38[1] = 1.0f; v38[0] = 0.1f;
                 goto LABEL_118;
             }
@@ -191,7 +193,7 @@ LABEL_121:
         if ((v5 & 0x80) != 0) {
             // IDA escribe " +" (word_55A6B0) sobre el NUL y luego concatena
             // GlobalText[179] para el tipo 819; el resto usa GlobalText[176].
-            if (v7 == 819) {
+            if (v7 == MODEL_HELPER_DINORANT) {
                 strcat(String, " +");
                 strcat(String, GlobalText[179]);
             } else {
@@ -221,14 +223,14 @@ renderLabel:
     {
         int  textLen = lstrlenA(String);
         SIZE sz;
-        GetTextExtentPointA(m_hFontDC, String, textLen, &sz);
+        GetTextExtentPointA(gFont.GetTextDC(), String, textLen, &sz);
         if (Sort) {
             // Centrado sobre la posición de pantalla del item (o+0x5c / o+0x5e)
-            int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)WindowWidth;
+            int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();
             int y = (int)*(short*)(o + 0x5e) - 15;
             RenderText(x, y, String, 0, 0, (SIZE*)3);
         } else {
-            int x = (int)MouseX - 640 * (sz.cx / 2) / (int)WindowWidth;
+            int x = (int)MouseX - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();
             int y = (int)MouseY - 15;
             RenderText(x, y, String, 0, 0, (SIZE*)3);
         }
@@ -404,7 +406,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                 //   no entra                  -> 3 (rojo)
                 if (spaceFree) {
                     cellBase[0x40] = 2;
-                } else if (pickedType == 0x1cd || pickedType == 0x1ce || pickedType == 0x1d0) {
+                } else if (pickedType == ITEM_JEWEL_BLESS || pickedType == ITEM_JEWEL_SOUL || pickedType == ITEM_JEWEL_LIFE) {
                     cellBase[0x40] = 4;
                 } else {
                     cellBase[0x40] = 3;
@@ -427,11 +429,12 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         // Check for currency item stacking on existing inventory item
         bool canStack = false;
         if (cursorInsideGrid
-            && (pickedType == 0x1cd || pickedType == 0x1ce || pickedType == 0x1d0)
+            && (pickedType == ITEM_JEWEL_BLESS || pickedType == ITEM_JEWEL_SOUL || pickedType == ITEM_JEWEL_LIFE)
             && slotType == 0 && InventoryOpened != 0)
         {
             int targetSlot = mouseGridY * gridWidth + mouseGridX;
-            short targetType = *(short*)(invBase + targetSlot * 0x44);
+            // 0.97.20: un agregado acepta joyas como el vanilla que imita.
+            short targetType = (short)ItemBehaviorType(*(short*)(invBase + targetSlot * 0x44));
             int targetLevel = *(int*)(invBase + targetSlot * 0x44 + 4) >> 3 & 0xf;
             bool validTarget = (targetType < 0x187);
 
@@ -446,12 +449,12 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             retVal = validTarget;
 
             // Level cap per currency type
-            if (pickedType == 0x1cd && targetLevel > 5) {
+            if (pickedType == ITEM_JEWEL_BLESS && targetLevel > 5) {
                 // Jewel of Bless: max +5
                 canStack = false;
                 goto drop_done;
             }
-            if (pickedType == 0x1ce && targetLevel > 8) {
+            if (pickedType == ITEM_JEWEL_SOUL && targetLevel > 8) {
                 // Jewel of Soul: max +8
                 canStack = false;
                 goto drop_done;
@@ -484,7 +487,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     //       BYTE TargetSlot;          // +4
                     //   };
                     //
-                    // Va por Net_SendSmallPacket porque HackPacketCheck.txt da
+                    // Va por gNetwork.Send porque HackPacketCheck.txt da
                     // Encrypt=1 para el indice 38 -> el frame final tiene que
                     // ser C3 con serial. El 0xC1 que arma IDA es el texto plano
                     // previo al encriptador, no el frame que viaja.
@@ -500,7 +503,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                         pkt[2] = 0x26;                       // ItemUse
                         pkt[3] = (BYTE)(int)DAT_07ea5b18;    // SourceSlot (la jewel)
                         pkt[4] = (BYTE)(int)DAT_07e11e78;    // TargetSlot (el item)
-                        Net_SendSmallPacket(pkt, 5);
+                        gNetwork.Send(pkt, 5);
                         actionTaken = true;
 
                         // Sonido segun el item de origen (IDA LABEL_802).
@@ -607,7 +610,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         // confirmacion propia (0x3C con 0), ANTES del guard de EquipmentItem.
         m_bMyConfirm = 0;                               // m_bMyConfirm
         BYTE unconfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
-        Net_SendSmallPacket(unconfirm, 4);
+        gNetwork.Send(unconfirm, 4);
     }
 
     if (DAT_07eaa165 != '\0') goto drop_done;

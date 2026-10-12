@@ -7,7 +7,7 @@
 #include "stdafx.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
-// int SceneFlag, HWND g_hWnd, HINSTANCE g_hInst, HDC g_hDC — see WinMain.cpp
+// int SceneFlag — ver WinMain.cpp. g_hWnd, g_hInst y g_hDC viven en CWindow (Core/Window.h).
 
 // ── Low-address constants ─────────────────────────────────────────────────────
 float    _DAT_00000010 = 0.0f;
@@ -297,7 +297,7 @@ DWORD    DAT_0055a798  = 0;
 char     DAT_0055a79c[] = "Data\\";    // texture/asset path prefix ("Data mode")
 char     DAT_0055a7a4[] = "Data2\\";   // texture/asset path prefix ("Data2 / pak mode")
 // IDA: World (0x0055A7AC)
-int      World  = 0; // IDA: World (0x0055A7AC)
+// Estado del mapa actual: CMapManager::GetCurrentMap().
 float    _DAT_0055a7c0 = 0.0f;
 DWORD    DAT_0055a7c0  = 0;
 
@@ -312,12 +312,9 @@ DWORD    DAT_00561550  = 0x44FA0000;  // 2000.0f  CameraViewFar
 DWORD    DAT_00561554  = 0x425C0000;  // 55.0f    CameraFOV (MoveMainCamera lo reescribe a 35.0)
 float    CameraDistanceTarget  = 0.0f;  // DAT_005616B4: MoveMainCamera target
 float    CameraDistance  = 0.0f;        // DAT_083A45D0: current MoveMainCamera distance
-DWORD    DAT_0056156c  = 640;   // WindowWidth default
-DWORD    DAT_00561570  = 480;   // WindowHeight default
 DWORD    DAT_00561574  = 0;
-// Buffer for server IP (writable — Config_ReadServerAddr fills it from server.cfg).
-// szServerIpAddress puntua a este buffer por defecto; si server.cfg existe, se sobreescribe
-// con la IP del ConnectServer local.
+// Buffer de la IP del server: Config_ReadServerAddr lo llena desde Config/ServerConfig.h.
+// szServerIpAddress apunta a este buffer; el valor inicial se reemplaza siempre.
 char     g_ServerIPBuf[128] = "connect.muonline.co.kr";
 // IDA: szServerIpAddress (0x005615B8)
 char    *szServerIpAddress  = g_ServerIPBuf; // IDA: szServerIpAddress (0x005615B8)
@@ -325,46 +322,11 @@ char    *szServerIpAddress  = g_ServerIPBuf; // IDA: szServerIpAddress (0x005615
 WORD     g_ServerPort  = 55901; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow ──────────────────────────────────────────
-// Cuando server.cfg tiene 2 líneas: línea 1 = ConnectServer (szServerIpAddress/bc),
-// línea 2 = GameServer fallback (g_GameServerIP/Port). g_HasConnectServer activa
-// el flujo original: conectar al CS → recibir lista+load (F4/04/F4/02) → al
+// Con ConnectServer en ServerConfig: szServerIpAddress/g_ServerPort = ConnectServer
+// y gNetwork.HasConnectServer() activa el flujo original: conectar al CS → recibir lista+load (F4/04/F4/02) → al
 // elegir server mandar F4/03 → redirect al GameServer → login.
-int             g_HasConnectServer      = 0;  // server.cfg tiene 2 líneas
-int             g_ConnectServerMode     = 0;  // 1 = socket actual habla con el CS
-int             g_ConnectServerRequested = 0; // 1 = ya mandamos C1 04 F4 02 en esta conexión CS
-char            g_GameServerIP[128]     = ""; // GameServer fallback (server.cfg línea 2)
-unsigned short  g_GameServerPort        = 0;
 // SceneFlag (above)
-// g_lpszMp3 @ 0x005615C4 — tabla de 6 punteros a las rutas de los BGM.
-// NO son handles: son `char*`. Los DAT_005615c4..d8 son sus 6 elementos (cuarto
-// caso del patron "DAT_ vecinos = una sola tabla"). Los consumen Game_MainLoop
-// (seleccion de BGM por mapa) y StopMusic (0x513420), que recorre la tabla con
-// bound `< 0x5615DC` = &g_lpszMp3[6].
-//
-// En nuestro build valian 0, asi que PlayMp3 recibia NULL y nunca sonaba nada.
-//
-// DESVIACION DELIBERADA: el binario apunta a nombres coreanos
-// (data\music\ÁÖÁ¡.mp3 = taberna, ¹ÂÅ×¸¶ = MuTheme, ¼º´ç = catedral,
-//  µ¥ºñ¾Æ½º = Devias, ³ë¸®¾Æ = Noria, ´øÁ¯ = Dungeon) que NO existen en
-// bin/Client/Data/Music — nuestro pack de assets viene renombrado al ingles.
-// Se apunta a los archivos reales. El mapeo de MuTheme -> Lorencia.mp3 lo
-// confirma el DLL de inyeccion (Encoder/MapManager.txt: "THE LOGIN MUSIC IS
-// Data\Music\MuTheme.mp3") y encaja con que Game_MainLoop use este mismo slot
-// para el login (SceneFlag == 2) y para Lorencia.
-//
-// ASSET FALTANTE: el track de la catedral de Devias (¼º´ç) no vino en el pack.
-// Se deja el nombre apuntando a un archivo inexistente a proposito: PlayMp3
-// hace fopen y sale sin tocar nada si falla, asi que dentro de la catedral
-// sigue sonando Devias.mp3 sin corte. Si algun dia aparece el asset, funciona
-// solo con dejarlo en Data\Music\Cathedral.mp3.
-char*    g_lpszMp3[6] = {
-    (char*)"Data\\Music\\Pub.mp3",        // [0] 0x5615C4 — taberna de Lorencia (HeroTile == 4)
-    (char*)"Data\\Music\\Lorencia.mp3",   // [1] 0x5615C8 — MuTheme: login + Lorencia
-    (char*)"Data\\Music\\Cathedral.mp3",  // [2] 0x5615CC — catedral de Devias  [FALTA EL ASSET]
-    (char*)"Data\\Music\\Devias.mp3",     // [3] 0x5615D0 — Devias
-    (char*)"Data\\Music\\Noria.mp3",      // [4] 0x5615D4 — Noria
-    (char*)"Data\\Music\\Dungeon.mp3",    // [5] 0x5615D8 — Dungeon (World 1 y 5)
-};
+// g_lpszMp3 (IDA 0x005615C4, rutas de los BGM): ver CMapManager (Game/MapManager.cpp).
 DWORD    DAT_005615e0  = 0;
 DWORD    DAT_005615e8  = 0;
 
@@ -571,16 +533,12 @@ int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
 DWORD    DAT_055c9ff4  = 0;
 DWORD    DAT_055c9ff8  = 0;
-// DAT_055c9ffc = g_hWnd (above)
+// DAT_055c9ffc = g_hWnd (gWindow.GetHwnd())
 // Font memory DC (GDI-only, DIB-backed). Set by Font_BuildLayout.
-// NOT the window DC — that is g_hDC (DAT_055ca004) defined in WinMain.cpp.
-HDC      DAT_055c9fec  = NULL;
+// NOT the window DC — that is g_hDC (DAT_055ca004) que vive en CWindow.
 // DAT_055ca000 = g_hInst (above)
 // DAT_055ca004 = g_hDC — defined via macro in stdafx.h (no separate storage)
 DWORD    DAT_055ca008  = 0;
-DWORD    DAT_055ca00c  = 0;
-DWORD    DAT_055ca010  = 0;
-DWORD    DAT_055ca014  = 0;
 DWORD    DAT_055ca018  = 0;
 char     DAT_055ca019  = 0;
 DWORD    DAT_055ca01c  = 0;
@@ -655,9 +613,7 @@ DWORD    DAT_05826cc8  = 0;
 char     DAT_05826cc9  = 0;
 // IDA: DAT_05826CD4 (0x05826CD4)
 char     LogInID[16]  = {0};
-char     DAT_05826ceb  = 0;
-// IDA: DAT_05826CEC (0x05826CEC)
-DWORD    g_byPacketSerialRecv  = 0;
+// IDA: seriales 0x05826CEB/CEC: miembros de CNetwork.
 float    _DAT_05826cf4 = 0.0f;
 // IDA: g_dwLatestMagicTick (0x05826CF4)
 DWORD    g_dwLatestMagicTick  = 0;
@@ -1190,7 +1146,7 @@ DWORD    DAT_083a7c8c  = 0;
 DWORD    DAT_083a7c90  = 0;
 DWORD    DAT_083a7c94  = 0;
 DWORD    DAT_083a7c98  = 0;
-char     g_BitmapsRaw[0x13D30]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
+char     g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
 DWORD    m_dwUsedTextureMemory  = 0;
 DWORD    DAT_083bbb14  = 0;
 char     lpBuffer_083bbb60[0x400] = {};  // named pipe write buffer
@@ -1330,12 +1286,7 @@ int      DAT_07ea7b10[30] = {};  // TextBold      - 30 slots, igual que lpString
 int      DAT_07d78068 = 0;
 // El backup de DAT_07d78068 está en Render/Render_Frame.cpp y no acá: junto a
 // DAT_07d78068 lo pisaba el mismo escritor (dos ints consecutivos).
-// FontHeight — alto de la fuente, lo calcula WinMain segun la resolucion
-// (12 en 640x480, 13 en 800, 14 en 1024, 15 en 1280+) y lo leen RenderBoolean
-// (0x00480E00) y sub_480C60.
-// Es la única FontHeight: WinMain la escribe y todo el render la lee.
-// IDA: FontHeight (0x07D78080)
-int      FontHeight = 0;
+// IDA: FontHeight (0x07D78080) vive en CFont.
 // DAT_07e91530/534/53c/540 pasaron a ser macros sobre DAT_07e91528 (ver globals.h):
 // en el binario son COLUMNAS de la misma tabla, no globals sueltos.
 // UI text strings
@@ -2026,24 +1977,7 @@ float   DeltaT  = 0.0f;    // delta time per frame
 DWORD   FrameTimePreviousMs   = 0;
 float   FPS  = 0.0f;    // smoothed FPS value
 
-// ── Music.cpp globals ─────────────────────────────────────────────────────────
-// m_MusicOnOff @ 0x055C9E3C — flag on/off de la musica (BOOL, NO un puntero a
-// datos como decia la etiqueta vieja `lpData_055c9e3c`). Lo escribe Config_Load
-// leyendo HKCU\SOFTWARE\Webzen\Mu\Config -> "MusicOnOff"; lo leen PlayMp3 y
-// StopMp3. Default 0 (musica apagada) = fiel a IDA 0x0041E0A0 L81.
-// Antes estaba partido en dos memorias (`g_MusicOn` escrita + `lpData_055c9e3c`
-// leida) que nunca se veian, asi que la musica jamas arrancaba.
-DWORD   m_MusicOnOff                = 0;
-// Mp3FileName @ 0x055C9D04 — nombre del track en reproduccion. En el binario es
-// un buffer de string (PlayMp3 hace strcpy del path completo, ~25 chars); estaba
-// declarado como UN char, asi que la copia pisaba los globals de al lado.
-// IDA: DAT_055C9D04
-char    MusicCurrentTrack[256]      = {};
-char    s_MuPlayer_00559110[]       = "MuPlayer";
-char    s_MuPlayer_exe_00559154[]   = "MuPlayer.exe";
-char    s_MuPlayer_exe__s_00559130[] = "MuPlayer.exe %s";
-char    s_StopMp3_cmd_0055911c[]    = ">StopMp3<";
-char    s_PlayMp3_cmd_00559140[]    = ">PlayMp3<";
+// IDA: m_MusicOnOff (0x055C9E3C) y Mp3FileName (0x055C9D04): CSound.
 
 // ── Sound_DS3D globals ────────────────────────────────────────────────────────
 DWORD   DAT_0058443c   = 0;
@@ -2081,7 +2015,6 @@ char    DAT_00559b50[64] = {};
 char    s__4d__4d_30__4d__4d__1_00559b58[] = "%4d/%4d[0] %4d/%4d[1]";
 
 // ── Scene_CharPreview globals ─────────────────────────────────────────────────
-DWORD   DAT_07e91354   = 0;
 char    DAT_07e9136a   = 0;  // picked item durability/option byte
 char    DAT_07e9136b   = 0;
 // Buffer del item que abrio el dialogo de ShowCheckBox(153) -- el click derecho
@@ -2387,7 +2320,6 @@ int     EditMonsterNumber    = 0;       // NPC name count (EditMonsterNumber)
 // getMonsterName leia de otro → nombres de NPC/mob vacios.  Ahora es UNA tabla
 // real: N entradas × 0x36 (Type[0], Name[1..32], Level, Attribute).
 // Definida abajo como MonsterScript[]; DAT_07cf2000/2001 son macros a ella.
-void   *ppvBits_055c9e4c = nullptr; // DIB bitmap pointer
 DWORD   DAT_01c5e200    = 0x01c5e200;  // item BMD checksum seed A (literal = su propia dirección original)
 DWORD   DAT_00b43000    = 0x00b43000;  // skill BMD checksum seed B
 // BuxConvert_0 indexa (&DAT_00559bb4)[i % 3]: tiene que ser un array de 3 bytes,
@@ -2725,8 +2657,7 @@ DWORD  DAT_0055339c       = 0;
 // setea m_dwTextColor (HUD_Pass1/2/3, ChatListBox render) tiene que llegar al
 // global que lee el render de texto (CUIRenderText_RenderText, lee DAT_00559c78).
 // g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
-// m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
-// g_hFontBold es ahora un alias de DAT_055ca0xx (ver globals.h).
+// m_hFontDC y las fuentes viven en CFont (Core/Font.h).
 
 // Batch 18 — InitGame / ReceiveChat globals
 DWORD  EnableUse          = 0;

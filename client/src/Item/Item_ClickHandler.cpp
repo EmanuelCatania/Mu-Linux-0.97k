@@ -46,6 +46,11 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
+#include "Item/ItemDefines.h"
+#include "Item/Item_ServerValue.h"
+#include "Item/RightClickMove.h"
+#include "Item/ChaosMixRates.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -310,51 +315,16 @@ void __cdecl ShowCheckBox(int num, int index, int message)
 // PressKey helper (Input.cpp)
 extern int __cdecl PressKey(int vk);
 
-// Envío de red: send de bajo nivel por socket, con desborde al buffer encolado.
-// Imita el patrón `send / cola de WSAEWOULDBLOCK` de la función de IDA.
-static void SendPacketBytes(const void* data, int size)
-{
-    if (!data || size <= 0) return;
-    if (SocketClientSocket == (DWORD)INVALID_SOCKET) return;
-
-    const char* p = (const char*)data;
-    int sent = 0, remaining = size;
-    while (remaining > 0) {
-        int r = ::send((SOCKET)SocketClientSocket, p + sent, remaining, 0);
-        if (r == SOCKET_ERROR) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                // Encola la cola no enviada en SocketClientSendBuffer+SocketClientSendBufferLength
-                int qlen = (int)SocketClientSendBufferLength;
-                if (qlen + remaining <= 0x2000) {
-                    memcpy((char*)SocketClientSendBuffer + qlen, p + sent, remaining);
-                    SocketClientSendBufferLength = qlen + remaining;
-                }
-            } else {
-                // Other error: close socket
-                if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
-                    closesocket((SOCKET)SocketClientSocket);
-                    SocketClientSocket = (DWORD)INVALID_SOCKET;
-                }
-            }
-            return;
-        }
-        if (r == 0) return;
-        sent      += r;
-        remaining -= r;
-    }
-}
-
 // Build & send a C1-header packet [C1][size][header...payload].
 //
 // No incrementar acá `DAT_05826ceb` (g_byPacketSerialSend): el serial sólo
 // viaja en los frames C3/C4 y el server sólo avanza su contador con esos
-// (CSerialCheck::CheckSerial). El bump lo hace Net_SendSmallPacket, que es
+// (CSerialCheck::CheckSerial). El bump lo hace gNetwork.Send, que es
 // quien escribe el serial en el frame.
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // SendC1Packet — envuelve un payload en frame C1 y lo manda.
 //
-// Delega en Net_SendC1Packet, que aplica el chain-XOR (el server aplica
+// Delega en gNetwork.SendC1, que aplica el chain-XOR (el server aplica
 // `XorData` a TODO frame C1) y resuelve el frame contra la tabla de
 // HackPacketCheck.
 static void SendC1Packet(BYTE* payload, int payloadSize)
@@ -365,23 +335,22 @@ static void SendC1Packet(BYTE* payload, int payloadSize)
     pkt[0] = 0xC1;
     pkt[1] = (BYTE)(payloadSize + 2);   // total size = header(2) + payload
     memcpy(pkt + 2, payload, payloadSize);
-    Net_SendC1Packet(pkt, payloadSize + 2);
+    gNetwork.SendC1(pkt, payloadSize + 2);
 }
 
 // Envío C3 (CSimpleModulus + serial) para los opcodes de tienda
 // que el server exige con Encrypt=1 (HackPacketCheck.txt): 0x32 buy, 0x33 sell,
 // 0x23 drop; como C1 el server los rechaza y cierra la conexión.
-// Net_SendSmallPacket arma [C1][len][head]..., pisa len con el serial,
+// gNetwork.Send arma [C1][len][head]..., pisa len con el serial,
 // aplica chain-XOR + CSM y emite el frame C3 final.
-void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 static void SendC3Packet(BYTE* payload, int payloadSize)
 {
     if (payloadSize <= 0 || payloadSize > 250) return;
     BYTE pkt[256];
     pkt[0] = 0xC1;
-    pkt[1] = (BYTE)(payloadSize + 2);   // total size (Net_SendSmallPacket lo pisa con serial)
+    pkt[1] = (BYTE)(payloadSize + 2);   // total size (gNetwork.Send lo pisa con serial)
     memcpy(pkt + 2, payload, payloadSize);
-    Net_SendSmallPacket(pkt, payloadSize + 2);
+    gNetwork.Send(pkt, payloadSize + 2);
 }
 
 // Tile del terreno donde dropear un item al suelo. El server (CGItemDropRecv)
@@ -429,13 +398,8 @@ void RestorePickedItemToSource(void)
     if (srcPool && srcSlot >= 0) {
         // Reconstruir los bytes "wire" desde el ITEM struct guardado y
         // re-insertarlo en su celda original.
-        BYTE* it = (BYTE*)pPickedItem;
-        BYTE wire[6] = { 0, 0, 0, 0, 0, 0 };
-        wire[0] = it[0];     // Type low
-        wire[1] = it[4];     // optByte (Level int, low byte)
-        wire[2] = it[26];    // Durability
-        wire[3] = it[60];    // Unkown (bit8 de type + exc)
-        wire[4] = it[61];    // byColorState
+        BYTE wire[ITEM_INFO_SIZE];
+        ItemWire_FromItem((const BYTE*)pPickedItem, wire);
         int gridH = (srcPool == &OffsetWarehouseItems[0]) ? 15
                   : ((srcPool == &OffsetInventoryItems[0]) ? 8 : 4);
         InsertInventoryItem(srcPool, 8, gridH, srcSlot, wire, 1);
@@ -500,9 +464,9 @@ extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool)
 {
     BYTE* const item = pool + 68 * slot;
     const short t = *(short*)item;
-    if (!((t >= 416 && t <= 419) || t == 461 || t == 462 || t == 464 ||
-          (t >= 384 && t <= 390) || t == 399 ||
-          ((item[4] & 0x78) > 0x20 && t < 384) || (item[27] & 0x3F)))
+    if (!((t >= ITEM_HELPER_ANGEL && t <= ITEM_HELPER_DINORANT) || t == ITEM_JEWEL_BLESS || t == ITEM_JEWEL_SOUL || t == ITEM_JEWEL_LIFE ||
+          (t >= ITEM_WING_ELF && t <= ITEM_WING_DARKNESS) || t == ITEM_JEWEL_CHAOS ||
+          ((item[4] & 0x78) > 0x20 && t < ITEM_WING_ELF) || (item[27] & 0x3F)))
         return;
 
     bool sameTypeKept = false;
@@ -692,7 +656,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 continue;
             }
             short typeRaw   = rowSlot[0];
-            if (typeRaw < 0 || typeRaw >= 1024) { continue; }
+            if (typeRaw < 0 || typeRaw >= ITEM_MAX_EX) { continue; }
             int   type      = (int)(unsigned short)typeRaw;
             BYTE  slotX     = ((BYTE*)rowSlot)[62];
             BYTE  slotY     = ((BYTE*)rowSlot)[63];
@@ -705,7 +669,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 if ((int)slotX < grid_w && (int)slotY < grid_h) {
                     short* originSlot = (short*)(inv_base + 34 * (grid_w * (int)slotY + (int)slotX));
                     short originType = originSlot[0];
-                    if (originType >= 0 && originType < 1024) {
+                    if (originType >= 0 && originType < ITEM_MAX_EX) {
                         rowSlot = originSlot;
                         typeRaw = originType;
                         type = (int)(unsigned short)originType;
@@ -801,10 +765,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // Tipos de item que SE PUEDEN reparar (= armas/armaduras con
                 // durability), excluding stackables like potions/jewels.
                 // Per IDA lines 579-586.
-                if (!((type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                      type == 143 || type >= 448 ||
-                      (type >= 391 && type <= 403) ||
-                      (type >= 430 && type <= 435))
+                const int kind = ItemBehaviorType(type);   // 0.97.20
+                if (!((kind >= ITEM_HELPER_ANGEL && kind <= ITEM_HELPER_DINORANT) || kind == 426 || kind == 135 ||
+                      kind == 143 || kind >= ITEM_POTION_BASE ||
+                      (kind >= 391 && kind <= 403) ||
+                      (kind >= 430 && kind <= 435))
                     && DAT_083a4124)
                 {
                     DAT_083a4124 = 0;
@@ -875,9 +840,13 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 MouseRButtonPush = 0;
 
                 int slotIdx = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62];
+                // 0.97.20: qué hace el click derecho se decide por el
+                // comportamiento: un consumible agregado se usa como el vanilla
+                // que imita.  Los requisitos siguen siendo los de su fila.
+                const int useType = ItemBehaviorType(type);
 
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
-                if (type == 458) {
+                if (useType == 458) {
                     // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
                     // Teleport = 0x05826D14 (Teleport).
                     if (Teleport != 0) return;
@@ -897,7 +866,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     SendC3Packet(pkt, 3);
 
                     // Sonido: 33 para el tipo 448, 32 para 449..457.
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448) PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
@@ -919,20 +888,20 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // En el decompile de `sub_4D23B0` (raw L1032-1053) `v275 = 73` (0x49) es el
                 // byte 12 de la CLAVE XOR, no un opcode; el opcode real es `v301[4] = -111` =
                 // 0x91, y el EventType es `v302` (1 para el 467, 2 para el 434).
-                if (type == 467 || type == 434) {
+                if (useType == 467 || useType == 434) {
                     int level = (((int*)rowSlot)[1] >> 3) & 0xF;
                     BYTE pkt[3];
                     pkt[0] = 0x91;
-                    pkt[1] = (type == 467) ? 0x01 : 0x02;   // EventType
+                    pkt[1] = (useType == 467) ? 0x01 : 0x02;   // EventType
                     pkt[2] = (BYTE)level;                   // ItemLevel
                     SendC1Packet(pkt, 3);                   // -> [C1][05][91][..][..]
                     continue;
                 }
 
                 // ── Items 448-454 / 456-457 / 468 — potions ───────────────
-                if ((type >= 448 && type <= 454) ||
-                    (type >= 456 && type <= 457) ||
-                     type == 468)
+                if ((useType >= 448 && useType <= 454) ||
+                    (useType >= 456 && useType <= 457) ||
+                     useType == 468)
                 {
                     if (DAT_07eaa119 != 0) {
                         // Baúl abierto → no se puede usar
@@ -953,16 +922,16 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     pkt[2] = 0;
                     SendC3Packet(pkt, 3);
 
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448)               PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
                 // ── Items 480-511 / 391-398 / 400-403 — scrolls/spells ───
-                if ((type >= 480 && type < 512) ||
-                    (type >= 391 && type <= 398) ||
-                    (type >= 400 && type <= 403))
+                if ((useType >= 480 && useType < 512) ||
+                    (useType >= 391 && useType <= 398) ||
+                    (useType >= 400 && useType <= 403))
                 {
                     // Class/level/stat requirement gate (per IDA L1278-1283).
                     BYTE* CA = (BYTE*)DAT_07cf1ff4;
@@ -989,14 +958,14 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     pkt[2] = 0;
                     SendC3Packet(pkt, 3);
 
-                    short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
+                    short t = (short)ItemBehaviorType(((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx]);
                     if (t == 448)              PlayBuffer(33, 0, 0);
                     else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
                 // ── Item 431 (Pet egg) — open ShowCheckBox dialog ─────────
-                if (type == 431) {
+                if (useType == 431) {
                     BYTE* CA = (BYTE*)DAT_07cf1ff4;
                     if (CA && *(WORD*)(CA + 14) < 10) {
                         // Por debajo de nivel 10 — muestra el mensaje "todavía no podés usar esto"
@@ -1022,13 +991,58 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                 if ((BYTE*)inv_base == (BYTE*)&OffsetInventoryItems[0]) {
                     // Pickup from main inventory
-                    if (DAT_07eaa119 != 0) {
+                    // DESVIACION (DLL RightClickMove.cpp MoveItemToInterface):
+                    // además del baúl, el trade y el chaos (sin mezcla en curso).
+                    if (DAT_07eaa11b != 0) {                         // TradeOpened
+                        byte_83A42EB = (char)sub_4D6020(
+                            (int)(TradeInventoryStartX + 15),
+                            (int)(TradeInventoryStartY + 0x10E),
+                            (int)(uintptr_t)&OffsetTradeItems[0],
+                            8, 4);
+                    } else if (DAT_07eaa11a != 0 && MixState != 1) {  // ChaosMixOpened
+                        byte_83A42EB = (char)sub_4D6020(
+                            (int)(DAT_07eaa0c8 + 15),
+                            (int)(DAT_07eaa0cc + 0x6E),
+                            (int)(uintptr_t)&OffsetMixItems[0],
+                            8, 4);
+                    } else if (DAT_07eaa119 != 0) {
                         // Warehouse open → try auto-drop into warehouse
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
                             (int)(DAT_07eaa0cc + 50),
                             (int)(uintptr_t)&OffsetWarehouseItems[0],
                             8, 15);
+                    } else if (DAT_07eaa165 == 0) {
+                        // DESVIACION (DLL RightClickMove.cpp CheckEquipItem):
+                        // sin ventana abierta, el item va a su casillero.
+                        const int target = RightClickMove_FindEquipSlot((const ITEM*)pPickedItem);
+                        if (target >= 0) {
+                            const int abs = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12;
+                            DAT_07ea5b18 = (DWORD)abs;
+                            UI_Main(abs, inv_base, grid_w);
+                            CheckInventory = 0;
+                            DAT_07e11e78 = (DWORD)target;
+                            DAT_07eaa165 = 1;                        // EquipmentItem
+                            g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            SendRequestEquipmentItem(0, abs, (ITEM*)pPickedItem, 0, target);
+                            PlayBuffer(29, 0, 0);
+                            return;
+                        }
+                    }
+                    // DESVIACION (DLL ItemStack.cpp CheckItemStackClicked): si no
+                    // se movió ni se equipó, un apilable separa una unidad (C1:2B:00).
+                    if (!byte_83A42EB) {
+                        const ITEM* stackItem = (const ITEM*)pPickedItem;
+                        if (ItemStack_GetMaxStack(stackItem->Type, (stackItem->Level >> 3) & 0xF) != 0) {
+                            if (DAT_07eaa11b || (DAT_07eaa11a && MixState != 1) || DAT_07eaa119) {
+                                UIChatLogWindow_AddText("", GlobalText[474], 2);
+                            } else {
+                                const BYTE slot = (BYTE)(grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62] + 12);
+                                const BYTE pkt[6] = { 0xC1, 0x06, 0x2B, 0x00, slot, 1 };
+                                gNetwork.SendC1(pkt, sizeof(pkt));
+                            }
+                        }
                     }
                     if (byte_83A42EB) {
                         int abs = grid_w * ((BYTE*)rowSlot)[63] +
@@ -1047,7 +1061,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     // Pickup from warehouse / mix / trade
                     // El origen del grid del inventario es (InventoryStartX+15,
                     // InventoryStartY+200) — los VALORES, igual que en el resto de los call sites.
-                    if (DAT_07eaa119 != 0) {
+                    // DESVIACION (DLL RightClickMove.cpp): también desde el
+                    // trade y el chaos, no sólo con el baúl abierto.
+                    if (DAT_07eaa119 != 0 ||
+                        (BYTE*)inv_base == (BYTE*)&OffsetTradeItems[0] ||
+                        (BYTE*)inv_base == (BYTE*)&OffsetMixItems[0]) {
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(InventoryStartX + 15),
                             (int)(InventoryStartY + 200),
@@ -1157,6 +1175,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // usa el enum normal, por lo que conservamos el resultado exacto del
         // reconocedor para el adaptador 0x86.
         MixType = (DWORD)CheckMixRecipe((short*)OffsetMixItems, 8, 4);
+        // DESVIACION DLL ChaosMix.cpp: consultar valores de la receta al server.
+        gChaosMixRates.Update((int)MixType, (const ITEM*)OffsetMixItems);
     }
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight
@@ -1208,7 +1228,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             DAT_07eaa0e8 = 1;
 
             BYTE pkt[4] = { 0xC1, 0x04, 0x3C, (BYTE)m_bMyConfirm };
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            gNetwork.Send(pkt, sizeof(pkt));
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0;
             DAT_00559f5e = 0;
@@ -1324,13 +1344,13 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 // mas abajo.
                 const BYTE sellExcByte = *((BYTE*)pPickedItem + 0x6b - 0x44);
                 bool needConfirm =
-                    (pickType >= 416 && pickType <= 419) ||
-                    pickType == 461 || pickType == 462 || pickType == 464 ||
-                    pickType == 470 ||
-                    (pickType >= 384 && pickType <= 390) ||
+                    (pickType >= ITEM_HELPER_ANGEL && pickType <= ITEM_HELPER_DINORANT) ||
+                    pickType == ITEM_JEWEL_BLESS || pickType == ITEM_JEWEL_SOUL || pickType == ITEM_JEWEL_LIFE ||
+                    pickType == ITEM_JEWEL_CREATION ||
+                    (pickType >= ITEM_WING_ELF && pickType <= ITEM_WING_DARKNESS) ||
                     pickType == 19  || pickType == 170 || pickType == 146 ||
-                    pickType == 399 || pickType == 430 || pickType == 431 ||
-                    (pickLevel > 4 && pickType < 384) ||
+                    pickType == ITEM_JEWEL_CHAOS || pickType == 430 || pickType == 431 ||
+                    (pickLevel > 4 && pickType < ITEM_WING_ELF) ||
                     ((sellExcByte & 0x3F) != 0);
 
                 if (needConfirm) {
@@ -1363,14 +1383,14 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             {
                 BYTE excByte = *((BYTE*)pPickedItem + 0x6b - 0x44);  // byte_7E9136B
                 bool bForbidden =
-                    (pickType >= 416 && pickType <= 419) ||
-                    pickType == 461 || pickType == 462 || pickType == 464 ||
-                    pickType == 470 ||
-                    (pickType >= 384 && pickType <= 390) ||
+                    (pickType >= ITEM_HELPER_ANGEL && pickType <= ITEM_HELPER_DINORANT) ||
+                    pickType == ITEM_JEWEL_BLESS || pickType == ITEM_JEWEL_SOUL || pickType == ITEM_JEWEL_LIFE ||
+                    pickType == ITEM_JEWEL_CREATION ||
+                    (pickType >= ITEM_WING_ELF && pickType <= ITEM_WING_DARKNESS) ||
                     pickType == 19  || pickType == 170 || pickType == 146 ||
-                    pickType == 399 || pickType == 430 || pickType == 431 ||
+                    pickType == ITEM_JEWEL_CHAOS || pickType == 430 || pickType == 431 ||
                     pickType == 435 ||
-                    (pickLevel > 4 && pickType < 384) ||
+                    (pickLevel > 4 && pickType < ITEM_WING_ELF) ||
                     ((excByte & 0x3F) != 0);
                 if (bForbidden) {
                     // (byte_7EAA194 en IDA es el buffer de sender; acá va vacío

@@ -9,6 +9,9 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Render/Camera3D.h"
+#include "Config/UserSettings.h"
+#include "UI/HealthBar.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -165,7 +168,7 @@ void __cdecl RenderBoids(void)
                 }
 
                 // World != 10: render shadow on terrain.
-                if (World != 10) {
+                if (gMapManager.GetCurrentMap() != 10) {
                     BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 188 * entType);
                     // DESINCRONIZACION DE CACHE (2026-10-03): este glEnable crudo no
                     // tocaba DAT_083a412c, asi que el GL quedaba con blending ENCENDIDO
@@ -308,7 +311,7 @@ void __cdecl Entity_Render(void)
                 float v21 = *(float*)(v1 + 20);
                 float v22 = *(float*)(v1 + 24);
 
-                if (World == 10) {  // World 10 (Icarus) — bamboleo
+                if (gMapManager.GetCurrentMap() == 10) {  // World 10 (Icarus) — bamboleo
                     // IDA: sin((v15 + WorldTime) * flt_5528E0) * flt_552488 + z
                     *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)DAT_05826e08)
                                                      * (double)_DAT_005528e0)
@@ -367,6 +370,8 @@ void __cdecl Entity_Render(void)
 // IDA: ItemDrop_Render (0x00473710)
 void __cdecl ItemDrop_Render(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x00473710): sin joints de skills.
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     // Pool: DAT_07b27150 (Joint pool) + 0x9b8 stride 0x9d8.
     int* poolBase = (int*)((char*)DAT_07b27150 + 0x9b8);
     const int kStride = 0x9d8 / 4;   // 630 ints = 2520 bytes
@@ -550,24 +555,11 @@ void __cdecl ItemDrop_Render(void)
 // =============================================
 // Wire formats per server source Mu-linux-97K/Source/MuServer/GameServer/
 // {NpcTalk.h, ItemManager.h, Warehouse.h}.
-// Cada send: plain C1 + chain XOR forward + MuEmu byte XOR + raw socket send.
+// Cada uno sale como C1 por CNetwork (chain-XOR + MuEmu).
 
 namespace {
-    static const BYTE s_NpcKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
     void SendNpcPacket(BYTE* pkt, int totalLen) {
-        for (int i = 3; i < totalLen; ++i) {
-            pkt[i] ^= pkt[i - 1] ^ s_NpcKey[i & 0x1f];
-        }
-        MuEmu::EncryptSend(pkt, totalLen);
-        if (SocketClientSocket != 0xFFFFFFFF) {
-            ::send(SocketClientSocket, (const char*)pkt, totalLen, 0);
-        }
+        gNetwork.SendC1(pkt, totalLen);
     }
 }
 
@@ -774,7 +766,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         const char* name = (const char*)(ent + 0x1C1);
         if (ent[0] != 0 && name[0]) {
             const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
-            if (kind == 2) {
+            if (kind == 2 && !gHealthBar.DrawSelected((const BYTE*)ent)) {
                 // Monstruo: el nombre va arriba del todo, centrado.
                 //
                 // Fix del DLL: IDA pone el fondo en rojo oscuro (0xFF000064; el formato es
@@ -796,7 +788,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
                 RenderCenteredText(GetScreenWidth() / 2, 10, name);
                 SetBackgroundTextColor = savedBack;
                 DAT_00559c78 = savedText;
-            } else {
+            } else if (kind != 2) {
                 // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
                 // limitaba a kind == 1).
                 CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
@@ -860,7 +852,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
             if (vis) {
                 Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
                 short typeCode = *(short*)(slot + 2);
-                const int __world = (int)World;   // `World` es macro de World: nombrar
+                const int __world = (int)gMapManager.GetCurrentMap();   // `World` es macro de World: nombrar
                                                         // la local `World` la volvia una
                                                         // auto-inicializacion con basura.
                 if (typeCode != 188 && typeCode != 189 && __world != 10) {
@@ -928,7 +920,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
     if (!owner) return;
 
     // Modelo del arma = itemType + 400 (owner+136 = índice del item).
-    const int model_id = *(unsigned char*)(owner + 136) + 400;
+    const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
     if (model_id < 0 || model_id >= 1024) return;
 
     // Giro: o+200 acumula -30°/frame y se suma al angle[2]; el arma además
@@ -982,6 +974,8 @@ void __cdecl RenderWheelWeapon(DWORD o)
 // IDA: RenderEffects
 void __cdecl EffectPool_RenderAll(void)
 {
+    // DESVIACION (DLL Antilag, ret en 0x0046BBA0): sin efectos de skills.
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     // HeadAngle (0x07B11698) está en offset +40 dentro del
     // effect pool DAT_07b11670 (200 entries × 0x1bc bytes = 0x1bc stride = 444B).
     // En IDA: HeadAngle iter es float*, offsets negativos cubren la cabecera del
@@ -1119,11 +1113,16 @@ void __cdecl EffectPool_RenderAll(void)
 //   Wrapper here so functions.h declaration matches a definition.
 extern void SkillEffect_Render(void);
 // IDA: FUN_0046cb70
-void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
+// DESVIACION (antilag propio): sin hojas, lluvia ni nieve.
+void __cdecl SkillEffects_RenderAll(void)
+{
+    if (gUserSettings.GetAntilag(ANTILAG_WEATHER)) return;
+    SkillEffect_Render();
+}
 
 // MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
-//   CameraFOV = 35.0
+//   CameraFOV = 35.0 (50.0 con la desviación del DLL, ver abajo)
 //   CameraViewFar = 2000 (o 3200 en topview)
 //   CameraDistance = 1000 + smoothing (CameraDistanceTarget)
 //   CameraPosition vía AngleMatrix(CameraAngle)+VectorIRotate del offset (0,-1000,0)
@@ -1136,10 +1135,13 @@ bool __cdecl MoveMainCamera(void) {
     float out[3];
     float matrix[3][4];
 
-    CameraFOV = 35.0f;
+    // DESVIACION (DLL Camera3D.cpp): el binario pone 35 grados; el FOV, la
+    // inclinación (48.5), la altura (150) y el alcance salen de gCamera3D,
+    // que arranca con FOV 50 y permite moverlos con la cámara 3D.
+    CameraFOV = gCamera3D.GetFov();
     CameraAngle[0] = 0.0f;
     CameraAngle[1] = 0.0f;
-    if (World == 10) {
+    if (gMapManager.GetCurrentMap() == 10) {
         CameraAngle[0] = 0.0f;
         CameraAngle[1] = 0.0f;
     }
@@ -1149,7 +1151,10 @@ bool __cdecl MoveMainCamera(void) {
         CameraPosition[0] = *(float*)(Hero + 16);
         CameraPosition[1] = *(float*)(Hero + 20);
     } else {
-        CameraViewFar = 2000.0f;
+        // DESVIACION: el binario usa 2000; con el FOV de 50 las esquinas de
+        // arriba quedan más allá del plano lejano y se ven en negro.  El rayo
+        // del ratón sigue con 2000 (kScreenVectorDepth).
+        CameraViewFar = gCamera3D.GetViewFar();
         CameraDistance = 1000.0f;                    // CameraDistance
         in1[0] = 0.0f;
         in1[1] = -1000.0f;
@@ -1158,10 +1163,10 @@ bool __cdecl MoveMainCamera(void) {
         VectorIRotate(in1, matrix, out);
         CameraPosition[0] = out[0] + *(float*)(Hero + 16);
         CameraPosition[1] = out[1] + *(float*)(Hero + 20);
-        CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - 150.0f;
-        CameraAngle[0] = EarthQuake - 48.5f;       // pitch después de la posición
+        CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - gCamera3D.GetHeight();
+        CameraAngle[0] = EarthQuake - gCamera3D.GetPitch();       // pitch después de la posición
     }
-    if (World == 5) {
+    if (gMapManager.GetCurrentMap() == 5) {
         float v1 = (float)sin((double)WorldTime * 0.00050000002);
         CameraAngle[0] = v1 + v1 + CameraAngle[0];
         CameraAngle[1] = (float)sin((double)WorldTime * 0.00079999998) * 2.5f + CameraAngle[1];

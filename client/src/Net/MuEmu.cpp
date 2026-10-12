@@ -26,7 +26,7 @@ void SetActive(bool on) { g_active = on; }
 BYTE g_EncKey1   = kEncKey1Default;
 BYTE g_EncKeyAdd = kEncKeyAddDefault;
 
-// Valores por defecto de este fork, usados cuando server.cfg no los trae.
+// Valores por defecto de este fork; Config_ReadServerAddr los reemplaza con los de ServerConfig.h.
 static const char kDefaultCustomerName[] = "MuLinux";
 static const char kDefaultServerSerial[] = "TbYehR2hFUPBKgZj";
 

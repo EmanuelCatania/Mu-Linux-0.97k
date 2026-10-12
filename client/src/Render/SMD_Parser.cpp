@@ -7,6 +7,12 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
+#include "UI/HealthBar.h"
+#include "UI/MoveList.h"
+#include "UI/EventTimer.h"
+#include "UI/GoldenArcher.h"
+#include "Item/ChaosMixRates.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -271,6 +277,12 @@ void __cdecl DeleteObjects(void) {
 // + 0x1158, fin del array Butterfles); acá el array vive en otra dirección,
 // así que se usa DAT_083a1218 + 0x1158 (end-pointer real).
 void __cdecl ClearCharacters(int param_1) {
+    gHealthBar.Clear();
+    // DESVIACION: cerrar las extensiones al reconstruir el mapa, sin borrar catálogos.
+    gMoveList.Close();
+    gEventTimer.Close();
+    gChaosMixRates.Reset();
+    GoldenArcher_ResetCharacter();
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
@@ -483,6 +495,8 @@ void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
 // A diferencia de AddTerrainLightClip (0x004F7800) esta NO clampea a 1.0: solo
 // evita valores negativos, que es lo que produce el resplandor del fuego.
 void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer) {
+    // DESVIACION (DLL Antilag, ret en 0x004F76C0): sin luces de skills sobre el terreno.
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
     float cx   = xf * _DAT_00552594;
     float cy   = yf * _DAT_00552594;
     int   icx  = (int)cx;
@@ -518,11 +532,6 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
 // Returns 0 on no entities, 1 on packet sent or send error.
 float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
 {
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
     // 1. Read character stat byte for this slot
     BYTE uVar19 = *(BYTE*)((char*)DAT_07cf1ff4 + 0x57 + param_1);
 
@@ -625,9 +634,9 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     pkt[1] = (BYTE)len;
 
     // El original arma la trama a mano (chain-XOR + serial + CSimpleModulus).
-    // Net_SendSmallPacket hace exactamente eso y ademas corrige el frame contra
+    // gNetwork.Send hace exactamente eso y ademas corrige el frame contra
     // HackPacketCheck.txt, que es el camino que ya usan todos los demas opcodes.
-    Net_SendSmallPacket(pkt, len);
+    gNetwork.Send(pkt, len);
     return (float*)(uintptr_t)1;
 }
 
@@ -825,7 +834,8 @@ unsigned int __cdecl CheckAttack(void) {
     const BYTE targetPkLevel = target[746];
     if (!EnableGuildWar) {
         return targetPkLevel >= 6 ||
-               (((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80 &&
+               ((gUserSettings.GetPvPWithoutControl() ||   // DESVIACION (DLL, 0x0048322F)
+                 ((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80) &&
                 target != (BYTE*)(uintptr_t)DAT_07abf5d8);
     }
 

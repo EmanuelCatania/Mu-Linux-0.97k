@@ -32,8 +32,8 @@ void GL_Begin2D(void)
   if (!(fov > 0.0f && fov < 180.0f))   fov   = 45.0f;
   if (!(near_ > 0.0f))                  near_ = 10.0f;
   if (!(far_ > near_))                  far_  = 10000.0f;
-  DWORD vw = DAT_0056156c ? DAT_0056156c : 640;
-  DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
+  DWORD vw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
+  DWORD vh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
 
   // Desviación (como el 5.2, ZzzOpenglUtil.cpp:1117): el 0.97k empuja la 1ª
   // matriz sobre el modo de ENTRADA (no explícito) y la 2ª sobre PROJECTION,
@@ -98,7 +98,7 @@ void __cdecl GL_DrawRect(float param_1,float param_2,float param_3,float param_4
   float y_off  = (float)Screen_ToGLY(param_2);
   float w      = (float)Screen_ToGLX(param_3);
   float h      = (float)Screen_ToGLY(param_4);
-  float y_top    = (float)DAT_00561570 - y_off;
+  float y_top    = (float)gWindow.GetHeight() - y_off;
   float y_bottom = y_top - h;
 
   verts[0] = x;       verts[1] = y_top;     // TL
@@ -152,7 +152,7 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
       }
   }
   local_40[10] = param_2;
-  local_40[9] = (float)DAT_00561570 - param_3;
+  local_40[9] = (float)gWindow.GetHeight() - param_3;
   local_40[8] = param_2;
   local_40[0] = param_6;
   local_40[1] = param_7;

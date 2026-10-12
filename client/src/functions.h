@@ -265,6 +265,7 @@ void  __cdecl SetPlayerWalk(int entity); // IDA: SetPlayerWalk (0x00443930)
 unsigned int __cdecl Entity_AdvancePath(void *entity, char flag); // IDA: MovePath
 void  __cdecl MoveCharacterPosition(int entity); // IDA: MoveCharacterPosition (0x00454BA0)
 void  __cdecl SetCharacterClass(int entity); // IDA: SetCharacterClass (0x0045C130)
+void  Hero_ApplyCatalogEquipment(int c);       // 0.97.20: piezas del catálogo y pet custom del héroe
 void  __cdecl Character_UpdateEquipSlotAnimations(int entity);        // Character_UpdateEquipSlotAnimations
 void  __cdecl SetAttackSpeed(void);              // IDA: SetAttackSpeed (0x00443E70)
 void  __cdecl SetPlayerAttack(int, int, int, int); // IDA: SetPlayerAttack (0x00444410)
@@ -629,7 +630,6 @@ double  __cdecl Math_Fmax(float a, float b); // max(a,b)
 int     __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10); // PointInPolygon
 // FUN_00513570 @ 0x00513570
 char  __cdecl Chat_ValidateInputCommand(void);
-void  __cdecl CharSelect_SendSelectPacket(void); // IDA: FUN_00513c10 (0x00513C10)
 void  __cdecl SetErrorMessage(int message); // IDA: SetErrorMessage (0x005142D0)
 void  __cdecl UI_InGameMenu(void);          // UI_InGameMenu state machine
 int   __cdecl RenderErrorMessage(void);  // UI_StatsPanel_Render
@@ -1179,6 +1179,8 @@ int   __stdcall FindHotKey(int Skill);                              // 0x004B117
 void  __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height); // 0x004BB940
 void  __cdecl SendChat(char *Text);                                      // 0x004C1B90
 int   __cdecl ConvertGold64(int Zen, char *Buffer);                 // 0x004C3E10
+struct ITEM;
+void  Item_FormatName(const ITEM* ip, char* name);   // 0.97.20: nombre como en el tooltip (RenderItemInfo.cpp)
 void  __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
 void  __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char *param_2); // 0x004CC0E0
 void  __cdecl SetItemGridFlag(int param_1, int param_2, unsigned char param_3); // 0x004CC1E0
@@ -1279,7 +1281,6 @@ void  __cdecl clearMatchInfo(void); // IDA: clearMatchInfo (0x0047EB80)
 int   __cdecl Character_FindByKey_WithClear(int key);                                     // 0x0045ACC0 FindCharacterIndex + limpia el flag +744 de todas
 void  __cdecl Characters_SetActionAll(int Action);                                  // 0x0045AD10 SetAction sobre todos los jugadores visibles
 void  __cdecl FUN_00433830(void);                                        // 0x00433830 — InitPartyList
-void  __stdcall SendCheck(void);                                         // 0x004220A0 — anti-tamper checksum packet
 
 // Batch 20 — forward declarations for implemented stubs
 void  __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3); // Text render

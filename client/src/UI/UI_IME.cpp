@@ -8,7 +8,7 @@
 // Builds a COMPOSITIONFORM-like struct {style=2, x, y} and sends WM_IME_CONTROL
 // (0x283) with IMC_SETCOMPOSITIONWINDOW (0xC) to the default IME window.
 void __stdcall SetPositionIME_Wnd(float x, float y) {
-    int xRight = WindowWidth;
+    int xRight = gWindow.GetWidth();
     DWORD style = 2;  // CFS_POINT
     LONG ptX = (LONG)x;
     LONG ptY = (LONG)y;
@@ -23,9 +23,9 @@ void __stdcall SetPositionIME_Wnd(float x, float y) {
     compForm.dwStyle = style;
     compForm.x = ptX;
     compForm.y = ptY;
-    SetRect(&compForm.rcArea, 0, 0, xRight, WindowHeight);
+    SetRect(&compForm.rcArea, 0, 0, xRight, gWindow.GetHeight());
 
-    HWND hImeWnd = ImmGetDefaultIMEWnd((HWND)g_hWnd);
+    HWND hImeWnd = ImmGetDefaultIMEWnd((HWND)gWindow.GetHwnd());
     SendMessageA(hImeWnd, 0x283, 0xC, (LPARAM)&compForm);
 }
 
@@ -33,7 +33,7 @@ void __stdcall SetPositionIME_Wnd(float x, float y) {
 // Globals: DAT_07e11d94 = g_dwOldConv, DAT_00559cd8 = g_dwOldSent, DAT_07e11d98 = g_dwCurrConv
 bool __cdecl CheckIME_Status(bool change, int mode) {
     bool bIme = false;
-    HIMC hImc = ImmGetContext(g_hWnd);
+    HIMC hImc = ImmGetContext(gWindow.GetHwnd());
     DWORD dwConv = 0, dwSent = 0;
     ImmGetConversionStatus(hImc, &dwConv, &dwSent);
     if (dwConv != 0 || dwSent != 0) {
@@ -50,7 +50,7 @@ bool __cdecl CheckIME_Status(bool change, int mode) {
             ImmSetConversionStatus(hImc, 0, 0);
         }
     }
-    ImmReleaseContext(g_hWnd, hImc);
+    ImmReleaseContext(gWindow.GetHwnd(), hImc);
     DAT_07e11d98 = dwConv;   // always update current conversion status
     return bIme;
 }
@@ -75,27 +75,27 @@ void __stdcall RenderIME_Status(void) {
     RenderText(100, 100, local_64, 0, 1, NULL);
     int iVar1 = lstrlenA(local_64);
     SIZE sz;
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 2: Sentence mode (current IME conversion status)
-    HIMC hImc = ImmGetContext(g_hWnd);
+    HIMC hImc = ImmGetContext(gWindow.GetHwnd());
     DWORD dwConv = 0, dwSent = 0;
     ImmGetConversionStatus(hImc, &dwConv, &dwSent);
-    ImmReleaseContext(g_hWnd, hImc);
+    ImmReleaseContext(gWindow.GetHwnd(), hImc);
     sprintf(local_64, "Sentence Mode : %d", dwSent);
     RenderText(100, 0x6e, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 3: Old sentence mode
     sprintf(local_64, "Old Sentence Mode : %d", DAT_00559cd8);
     RenderText(100, 0x78, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 4: Lock input status
     sprintf(local_64, "LockInputStatus %d", (int)DAT_07e11d6f);
     RenderText(100, 0x82, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
-    GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
+    GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 }

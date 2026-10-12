@@ -5,6 +5,9 @@
 // IDA: UpdateWindowsMouse (0x004ECB00)
 
 #include "stdafx.h"
+#include "UI/MiniMap.h"
+#include "UI/EventTimer.h"
+#include "UI/MoveList.h"
 
 
 // IDA: ClearInventory (0x004CBDF0).  El nombre viejo del port
@@ -62,6 +65,12 @@ void UpdateWindowsMouse(void)
   uint extraout_EDX_00;
   uint uVar2;
 
+  // DESVIACION (DLL Interface.cpp): capturar el mouse del panel de eventos.
+  gEventTimer.UpdateMouse();
+  // DESVIACION (DLL Interface.cpp): botones del mapa (Tab).
+  gMiniMap.UpdateMouse();
+  // DESVIACION (DLL Interface.cpp): captura el mouse del menú M.
+  gMoveList.UpdateMouse();
   if (DAT_083a7c24 == 0x6e) {
     return;
   }

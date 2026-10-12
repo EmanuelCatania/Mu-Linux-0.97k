@@ -108,7 +108,6 @@ static void AnimateRemoteSkillCaster97k(BYTE* caster)
 
 // External data
 extern BYTE* g_EntityBase;   // DAT_07abf5d0  legacy alias (may be NULL)
-extern int   World; // World
 extern BYTE* g_CharData;     // DAT_07cf1ffc
 
 // g_EntityBase is never wired to the actual entity array — the real
@@ -176,10 +175,9 @@ void PacketHandler_0x19(BYTE* pkt)
 
     BYTE* target = (target_idx < 400) ? ENTITY(target_idx) : nullptr;
 
-    // 0042BCA0 turns a remote caster toward its visible target before the
-    // per-skill animation is selected.  The hero is intentionally excluded:
-    // its facing is driven by local input/Attack(), not by the echoed packet.
-    if (caster != (BYTE*)DAT_07abf5d8 && target != nullptr &&
+    // IDA: Skills_PacketHandler (0x0042BCA0).
+    // DESVIACION (fix del DLL, Patchs.cpp 0x0042C417): omitir el giro cuando caster y objetivo son el mismo personaje.
+    if (caster != target && target != nullptr &&
         skill_type != 6 && skill_type != 15 && target[352] != 0) {
         *(float*)(caster + 36) = CreateAngle(
             *(float*)(caster + 16), *(float*)(caster + 20),
@@ -366,7 +364,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x31:  // 49 Fire Breath
     {
         SetAction((int)(intptr_t)caster,
-                     (World == 8 || World == 10) ? 65 : 64);
+                     (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 65 : 64);
         goto common_tail;
     }
 

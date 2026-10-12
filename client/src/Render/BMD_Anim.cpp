@@ -16,6 +16,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
+#include "Entity/EntityView.h"
 
 // BMD__PlayAnimation @ 0x00440AA0 — BMD::PlayAnimation (__thiscall, 7 args in original)
 // Advances animation frame counter (*AnimationFrame) by Speed each call. If the frame
@@ -118,6 +119,14 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
         }
         // Action 63 with frame > 6.0 → half speed (anim slow-down at end)
         if (*(BYTE*)(o + 261) == 63 && *(float*)(o + 264) > 6.0f) speed *= 0.5f;
+    }
+
+    // IDA: AttackStage (0x00448930), lanzamiento al frame 5 de la acción 88.
+    // DESVIACIÓN del adelanto del DLL: Aqua Beam espera ese cruce, sin perderlo por agilidad alta.
+    if (type == 390 && EntityView((const void*)c).Kind() == EntityView::PlayerKind &&
+        modelAction == 88 && *(BYTE*)(c + 770) == 12 && *(BYTE*)(c + 757) != 0 &&
+        *(float*)(o + 264) + speed >= 5.0f) {
+        *(BYTE*)(c + 757) = 15;
     }
 
     // BMD__PlayAnimation(model, &frame, &priorFrame, &priorAction, speed) — advances frame.
