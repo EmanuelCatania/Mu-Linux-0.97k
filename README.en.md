@@ -7,6 +7,56 @@
 
 Native Linux port and operational MuEmu 0.97k stack with Docker, web panel and optional editor.
 
+## What's new in 0.97.20 — Phase 2 completed
+
+**Compatibility: server 0.97.20 ↔ [client 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20).** Upgrade both together: the extended item format is incompatible with older clients and the historical Main.dll.
+
+- At login, the server sends the catalog of items, monsters, effects, pets and tooltips. The client receives definitions while keeping model and texture assets locally.
+- Each item section supports new indices 32..511 and a 7-byte format. The **Behavior** column reuses a classic item's logic in attacks, skills, mixes and events.
+- Item JSON files define effects, inventory poses and tooltip text. Custom equipment also appears on other players and in character selection.
+- Pets are configured through JSON. **Pet Rudolph (13,400)** is included: it flies to nearby zen and collects it under server control.
+- The DLL Encoder's custom configuration files remain supported as catalog inputs.
+- The section/index parsing order in `ItemOption.txt` is fixed for GCC, restoring Triple Shot availability.
+
+### Upgrading from 0.97.00
+
+Back up your Data files before integrating the examples. Do not delete volumes or replace your full custom configurations.
+
+With Docker and the image compose file, update only the server:
+
+```bash
+docker compose -f docker-compose.images.yml pull mu-server
+# Integrate the Data files listed below before starting the new server.
+docker compose -f docker-compose.images.yml up -d --no-deps mu-server
+```
+
+The compose file uses `latest`; to pin the version, change only the `mu-server` image to `emapupi/mu-linux-97k:0.97.20`. Images support `linux/amd64` and `linux/arm64`.
+
+**Pulling an image does not update a persistent volume.** From this release's `MuServer/Data`, integrate these files into your `/opt/mu/Data` volume:
+
+- `Custom/Items/`: `03_000.json` (Light Spear pose) and `13_400.json` (Rudolph pose and tooltip).
+- `Custom/Pets/13_400.json`: Rudolph movement and zen pickup.
+- `Custom/Encoder/`: `CustomBow.txt`, `CustomGlow.txt`, `CustomItem.txt`, `CustomMonster.txt`, `ItemPosition.txt` and `MapFog.txt`. Merge existing custom entries instead of overwriting them.
+- `Item/Item.txt`: add this release's row **400 inside section 13**, unless already present. Preserve all other rows. If you already use 13,400, resolve that conflict before adding the example.
+
+Install matching assets in client 0.97.20 too. Restart the server and check `[ContentCatalog]` messages, including `13_400.json`, its tooltip and inventory pose. Startup must show `MU Linux server 0.97.20` and the compatible client link.
+
+**MySQL, the web and the editor are unchanged in this release:** no schema migration or image rebuild is required for them. If your installation still uses MySQL 8.0, the [earlier 8.4 migration](docs/mysql-8.4-upgrade.md) is a separate task.
+
+**Pterodactyl:** import the updated server egg, which accepts `0.97.20` without a `v`, and set `MU_RELEASE_TAG` accordingly. The Pterodactyl runtime image only contains dependencies: updating it does not update binaries in the volume. For existing installations, stop the server and extract this Release's `mu-linux-97k-server-amd64.tar.gz` or `mu-linux-97k-server-arm64.tar.gz` into a temporary directory; update the four binaries and `start.sh`, then integrate Data as above while preserving your INI files. Do not blindly reinstall: the installer also extracts configuration and data files. Web and MySQL eggs need no changes. Architecture-specific archives must be attached to the Release before installing this version.
+
+### Adding custom items
+
+The server owns the definitions; the client only needs `.bmd` models and their textures. The source-based client does not require regenerating `item.bmd` or `ClientInfo.bmd`.
+
+1. Add the item row to its section in `Data/Item/Item.txt`. For indices 32..511, specify the classic item to imitate in **Behavior** (for example `00,020`), followed by the folder, model and RGB glow. Copy a complete row from the section and adjust its stats; do not use an abbreviated row containing `...`.
+2. For classic customs, keep model/glow definitions in `Data/Custom/Encoder/CustomItem.txt` and `CustomGlow.txt`, along with the other included Encoder tables.
+3. Optionally create `Data/Custom/Items/<section>_<index>.json` with `item`, `effects`, `inventory` and/or `tooltip`. See `03_000.json` and `13_400.json` for working examples.
+4. For a custom pet, add `Data/Custom/Pets/<section>_<index>.json`. Rudolph uses `13,400`, slot 8 and behavior `*`, with movement and zen pickup definitions. The client animates the pet; the server authorizes and executes pickup.
+5. Distribute model assets to the client, restart the server and log in again to receive the catalog. With GM permissions, test Rudolph using `/make 13 400`.
+
+See the [complete examples and client asset paths](https://github.com/EmanuelCatania/Mu-97k-Client-Source/blob/0.97.20/README.md#cómo-agregar-items-custom).
+
 ## Base and reference
 
 Based on Kayito's sources.
