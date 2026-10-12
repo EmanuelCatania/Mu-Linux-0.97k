@@ -365,7 +365,8 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.
     // Los monstruos conservan las etapas intermedias que consume AttackEffect (Alquamos 1, Queen Rainer 5).
     else if (EntityView((const void*)(uintptr_t)c).Kind() == EntityView::PlayerKind && type == 390 &&
-             ((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || (skill>=11 && skill<=14) || skill==17)) *(BYTE*)(c+757)=15;
+             ((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || skill==11 || skill==13 || skill==14 || skill==17)) *(BYTE*)(c+757)=15;
+    // Aqua Beam conserva el frame 5; CharacterAnimation detecta el cruce incluso si el avance da una vuelta.
     // default de IDA (0x00448930 L356-364).
     else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) *(BYTE*)(c+757)=15;
     return true;
