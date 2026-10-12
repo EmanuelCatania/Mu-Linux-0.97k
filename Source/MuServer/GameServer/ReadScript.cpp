@@ -9,6 +9,10 @@ CReadScript::CReadScript()
 
 	this->m_number = -1;
 
+	this->m_lastChar = 0;
+
+	this->m_line = 0;
+
 	memset(this->m_string, 0, sizeof(this->m_string));
 
 	memset(this->m_error, 0, sizeof(this->m_error));
@@ -50,6 +54,8 @@ bool CReadScript::Load(const char* path)
 eTokenResult CReadScript::GetToken(bool wReturn)
 {
 	this->m_number = -1;
+
+	this->m_lastChar = 0;
 
 	memset(this->m_string, 0, sizeof(this->m_string));
 
@@ -120,6 +126,8 @@ eTokenResult CReadScript::GetToken(bool wReturn)
 		}
 
 		*p = 0;
+
+		this->m_lastChar = ch;
 
 		if (strcmp(str, "*") == 0)
 		{
@@ -282,4 +290,88 @@ const char* CReadScript::GetAsString()
 char* CReadScript::GetError()
 {
 	return this->m_error;
+}
+
+void CReadScript::ReadRestOfLine(char* buffer, int size)
+{
+	int count = 0;
+
+	buffer[0] = 0;
+
+	if (this->m_lastChar == '\n')
+	{
+		return;
+	}
+
+	int ch;
+
+	while ((ch = fgetc(this->m_file)) != EOF && ch != '\n')
+	{
+		if (ch != '\r' && count < size - 1)
+		{
+			buffer[count++] = (char)ch;
+		}
+	}
+
+	buffer[count] = 0;
+
+	if (ch == '\n')
+	{
+		this->m_line++;
+	}
+
+	this->m_lastChar = '\n';
+
+	char* comment = strstr(buffer, "//");
+
+	if (comment != 0)
+	{
+		*comment = 0;
+	}
+}
+
+int CReadScript::SplitColumns(char* line, char** columns, int max)
+{
+	int count = 0;
+
+	char* p = line;
+
+	while (*p != 0 && count < max)
+	{
+		while (*p == ' ' || *p == '\t' || *p == ',')
+		{
+			p++;
+		}
+
+		if (*p == 0)
+		{
+			break;
+		}
+
+		if (*p == '"')
+		{
+			columns[count++] = ++p;
+
+			while (*p != 0 && *p != '"')
+			{
+				p++;
+			}
+		}
+		else
+		{
+			columns[count++] = p;
+
+			while (*p != 0 && *p != ' ' && *p != '\t' && *p != ',')
+			{
+				p++;
+			}
+		}
+
+		if (*p != 0)
+		{
+			*p++ = 0;
+		}
+	}
+
+	return count;
 }

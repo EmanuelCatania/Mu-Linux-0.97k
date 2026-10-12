@@ -33,6 +33,12 @@ struct MONSTER_INFO
 	int MaxItemLevel;
 	int Resistance[4];
 	int MonsterSkill;
+	// Columnas opcionales (0.97.20).  Ver ContentCatalog.h.
+	int Kind;              // 0 = NPC, 1 = monstruo; -1 = el vanilla
+	int Golden;
+	float Scale;           // 0 = la vanilla
+	char ModelFolder[64];  // bajo Data\ ; vacío = el modelo vanilla
+	char ModelName[32];
 };
 
 struct MONSTER_ITEM_INFO

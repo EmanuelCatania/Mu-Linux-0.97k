@@ -243,7 +243,7 @@ bool CAttack::Attack(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, bool send, in
 
 		if (skill == SKILL_FALLING_SLASH || skill == SKILL_LUNGE || skill == SKILL_UPPERCUT || skill == SKILL_CYCLONE || skill == SKILL_SLASH || skill == SKILL_TWISTING_SLASH || skill == SKILL_RAGEFUL_BLOW || skill == SKILL_DEATH_STAB || skill == SKILL_IMPALE || skill == SKILL_FIRE_BREATH || skill == SKILL_ICE_ARROW || skill == SKILL_PENETRATION || skill == SKILL_FIRE_SLASH || skill == SKILL_POWER_SLASH)
 		{
-			if (skill != SKILL_IMPALE || lpObj->Inventory[8].m_Index == GET_ITEM(13, 2) || lpObj->Inventory[8].m_Index == GET_ITEM(13, 3))
+			if (skill != SKILL_IMPALE || gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2) || gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 3))
 			{
 				damage = (damage * lpObj->DamageMultiplierRate) / 100;
 			}
@@ -311,8 +311,8 @@ bool CAttack::Attack(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, bool send, in
 			GCManaSend(lpObj->Index, 0xFF, (int)lpObj->Mana, lpObj->BP);
 		}
 
-		if (lpObj->Inventory[0].m_Index == GET_ITEM(2, 4) || lpObj->Inventory[1].m_Index == GET_ITEM(2, 4) // Crystal Morning Star
-			|| lpObj->Inventory[0].m_Index == GET_ITEM(2, 5) || lpObj->Inventory[1].m_Index == GET_ITEM(2, 5)) // Crystal Sword
+		if (lpObj->Inventory[0].GetKind() == GET_ITEM(2, 4) || lpObj->Inventory[1].GetKind() == GET_ITEM(2, 4) // Crystal Morning Star
+			|| lpObj->Inventory[0].GetKind() == GET_ITEM(2, 5) || lpObj->Inventory[1].GetKind() == GET_ITEM(2, 5)) // Crystal Sword
 		{
 			if (rand() % 20 == 0)
 			{
@@ -444,12 +444,12 @@ bool CAttack::Attack(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, bool send, in
 				if (lpTarget->Inventory[8].IsItem())
 				{
 					// Uniria
-					if (lpTarget->Inventory[8].m_Index == GET_ITEM(13, 2) && gServerInfo.m_PetUniriaEnableStuck == 0)
+					if (gItemManager.GetBehavior(lpTarget->Inventory[8].m_Index) == GET_ITEM(13, 2) && gServerInfo.m_PetUniriaEnableStuck == 0)
 					{
 						flag = 0;
 					}
 					// Dinorant
-					else if (lpTarget->Inventory[8].m_Index == GET_ITEM(13, 3) && gServerInfo.m_PetDinorantEnableStuck == 0)
+					else if (gItemManager.GetBehavior(lpTarget->Inventory[8].m_Index) == GET_ITEM(13, 3) && gServerInfo.m_PetDinorantEnableStuck == 0)
 					{
 						flag = 0;
 					}
@@ -485,9 +485,9 @@ bool CAttack::DecreaseArrow(LPOBJ lpObj)
 		return true;
 	}
 
-	if (lpObj->Inventory[0].m_Index >= GET_ITEM(4, 0) && lpObj->Inventory[0].m_Index < GET_ITEM(5, 0) && lpObj->Inventory[0].m_Index != GET_ITEM(4, 15) && lpObj->Inventory[0].m_Slot == 0)
+	if (lpObj->Inventory[0].GetKind() >= GET_ITEM(4, 0) && lpObj->Inventory[0].GetKind() < GET_ITEM(5, 0) && lpObj->Inventory[0].GetKind() != GET_ITEM(4, 15) && lpObj->Inventory[0].m_Slot == 0)
 	{
-		if (lpObj->Inventory[1].m_Index != GET_ITEM(4, 7) || lpObj->Inventory[1].m_Durability < 1)
+		if (lpObj->Inventory[1].GetKind() != GET_ITEM(4, 7) || lpObj->Inventory[1].m_Durability < 1)
 		{
 			return false;
 		}
@@ -497,9 +497,9 @@ bool CAttack::DecreaseArrow(LPOBJ lpObj)
 		}
 	}
 
-	if (lpObj->Inventory[1].m_Index >= GET_ITEM(4, 0) && lpObj->Inventory[1].m_Index < GET_ITEM(5, 0) && lpObj->Inventory[1].m_Index != GET_ITEM(4, 7) && lpObj->Inventory[1].m_Slot == 1)
+	if (lpObj->Inventory[1].GetKind() >= GET_ITEM(4, 0) && lpObj->Inventory[1].GetKind() < GET_ITEM(5, 0) && lpObj->Inventory[1].GetKind() != GET_ITEM(4, 7) && lpObj->Inventory[1].m_Slot == 1)
 	{
-		if (lpObj->Inventory[0].m_Index != GET_ITEM(4, 15) || lpObj->Inventory[0].m_Durability < 1)
+		if (lpObj->Inventory[0].GetKind() != GET_ITEM(4, 15) || lpObj->Inventory[0].m_Durability < 1)
 		{
 			return false;
 		}
@@ -531,11 +531,11 @@ void CAttack::WingSprite(LPOBJ lpObj, LPOBJ lpTarget, int* damage)
 
 			GCLifeSend(lpObj->Index, 0xFF, (int)lpObj->Life);
 
-			if ((lpItem->m_Index >= GET_ITEM(12, 0) && lpItem->m_Index <= GET_ITEM(12, 2))) // 1st wing
+			if (!gCustomWing.CheckCustomWingByItem(lpItem->m_Index) && (lpItem->GetKind() >= GET_ITEM(12, 0) && lpItem->GetKind() <= GET_ITEM(12, 2))) // 1st wing (0.97.20: el ala custom usa sus constantes)
 			{
 				(*damage) = ((*damage) * (112 + (lpItem->m_Level * 2))) / 100;
 			}
-			else if ((lpItem->m_Index >= GET_ITEM(12, 3) && lpItem->m_Index <= GET_ITEM(12, 6))) // 2sd wing
+			else if (!gCustomWing.CheckCustomWingByItem(lpItem->m_Index) && (lpItem->GetKind() >= GET_ITEM(12, 3) && lpItem->GetKind() <= GET_ITEM(12, 6))) // 2sd wing (0.97.20: el ala custom usa sus constantes)
 			{
 				(*damage) = ((*damage) * (132 + (lpItem->m_Level * 1))) / 100;
 			}
@@ -552,11 +552,11 @@ void CAttack::WingSprite(LPOBJ lpObj, LPOBJ lpTarget, int* damage)
 
 		if (lpItem->IsItem() != false && lpItem->m_Durability > 0)
 		{
-			if ((lpItem->m_Index >= GET_ITEM(12, 0) && lpItem->m_Index <= GET_ITEM(12, 2))) // 1st wing
+			if (!gCustomWing.CheckCustomWingByItem(lpItem->m_Index) && (lpItem->GetKind() >= GET_ITEM(12, 0) && lpItem->GetKind() <= GET_ITEM(12, 2))) // 1st wing (0.97.20: el ala custom usa sus constantes)
 			{
 				(*damage) = ((*damage) * (88 - (lpItem->m_Level * 2))) / 100;
 			}
-			else if ((lpItem->m_Index >= GET_ITEM(12, 3) && lpItem->m_Index <= GET_ITEM(12, 6))) // 2sd wing
+			else if (!gCustomWing.CheckCustomWingByItem(lpItem->m_Index) && (lpItem->GetKind() >= GET_ITEM(12, 3) && lpItem->GetKind() <= GET_ITEM(12, 6))) // 2sd wing (0.97.20: el ala custom usa sus constantes)
 			{
 				(*damage) = ((*damage) * (75 - (lpItem->m_Level * 2))) / 100;
 			}
@@ -576,7 +576,7 @@ void CAttack::HelperSprite(LPOBJ lpObj, LPOBJ lpTarget, int* damage)
 
 		if (lpItem->IsItem() != false && lpItem->m_Durability > 0)
 		{
-			if (lpItem->m_Index == GET_ITEM(13, 1)) // Satan
+			if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 1)) // Satan
 			{
 				lpObj->Life -= 3;
 
@@ -584,7 +584,7 @@ void CAttack::HelperSprite(LPOBJ lpObj, LPOBJ lpTarget, int* damage)
 
 				(*damage) = ((*damage) * (100 + gServerInfo.m_SatanIncDamageConstA)) / 100;
 			}
-			else if (lpItem->m_Index == GET_ITEM(13, 3)) // Dinorant
+			else if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 3)) // Dinorant
 			{
 				lpObj->Life -= 1;
 
@@ -601,11 +601,11 @@ void CAttack::HelperSprite(LPOBJ lpObj, LPOBJ lpTarget, int* damage)
 
 		if (lpItem->IsItem() != false && lpItem->m_Durability > 0)
 		{
-			if (lpItem->m_Index == GET_ITEM(13, 0)) // Angel
+			if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 0)) // Angel
 			{
 				(*damage) = ((*damage) * (100 - gServerInfo.m_AngelDecDamageConstA)) / 100;
 			}
-			else if (lpItem->m_Index == GET_ITEM(13, 3)) // Dinorant
+			else if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 3)) // Dinorant
 			{
 				(*damage) = ((*damage) * (100 - gServerInfo.m_DinorantDecDamageConstA - (((lpItem->m_ExceOption & 1) == 0) ? 0 : gServerInfo.m_DinorantDecDamageConstB))) / 100;
 			}
@@ -631,19 +631,19 @@ void CAttack::DamageSprite(LPOBJ lpObj, int damage)
 
 	DurabilityValue = (DurabilityValue / lpObj->GuardianDurabilityRate) * 100;
 
-	if (lpItem->m_Index == GET_ITEM(13, 0)) // Angel
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 0)) // Angel
 	{
 		lpItem->m_Durability -= (damage * (3.0f * DurabilityValue)) / 100;
 	}
-	else if (lpItem->m_Index == GET_ITEM(13, 1)) // Satan
+	else if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 1)) // Satan
 	{
 		lpItem->m_Durability -= (damage * (2.0f * DurabilityValue)) / 100;
 	}
-	else if (lpItem->m_Index == GET_ITEM(13, 2)) // Uniria
+	else if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 2)) // Uniria
 	{
 		lpItem->m_Durability -= (damage * (1.0f * DurabilityValue)) / 100;
 	}
-	else if (lpItem->m_Index == GET_ITEM(13, 3)) // Dinorant
+	else if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 3)) // Dinorant
 	{
 		lpItem->m_Durability -= (damage * (1.0f * DurabilityValue)) / 100;
 	}
@@ -656,7 +656,7 @@ void CAttack::DamageSprite(LPOBJ lpObj, int damage)
 
 	if (lpItem->m_Durability < 1)
 	{
-		if (lpObj->Map == MAP_ICARUS && lpObj->Inventory[7].IsItem() == 0 && lpItem->m_Index == GET_ITEM(13, 3))
+		if (lpObj->Map == MAP_ICARUS && lpObj->Inventory[7].IsItem() == 0 && gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(13, 3))
 		{
 			gObjMoveGate(lpObj->Index, 22);
 		}
@@ -684,7 +684,7 @@ void CAttack::WeaponDurabilityDown(LPOBJ lpObj, LPOBJ lpTarget)
 		{
 			bool result = false;
 
-			switch ((lpObj->Inventory[n].m_Index / MAX_ITEM_TYPE))
+			switch (GET_ITEM_SECTION(lpObj->Inventory[n].m_Index))
 			{
 				case 0:
 				{
@@ -748,7 +748,7 @@ void CAttack::ArmorDurabilityDown(LPOBJ lpObj, LPOBJ lpTarget)
 
 	if (lpTarget->Inventory[slot].IsItem() != false)
 	{
-		if (slot != 1 || (lpTarget->Inventory[slot].m_Index >= GET_ITEM(6, 0) && lpTarget->Inventory[slot].m_Index < GET_ITEM(7, 0)))
+		if (slot != 1 || (lpTarget->Inventory[slot].GetKind() >= GET_ITEM(6, 0) && lpTarget->Inventory[slot].GetKind() < GET_ITEM(7, 0)))
 		{
 			if (lpTarget->Inventory[slot].ArmorDurabilityDown(lpTarget->Index, lpObj->PhysiDamageMin) != false)
 			{
@@ -1049,7 +1049,7 @@ int CAttack::GetAttackDamage(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, WORD*
 	{
 		if (lpObj->Class == CLASS_DK || lpObj->Class == CLASS_MG)
 		{
-			if (Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(4, 0) && Left->m_Index >= GET_ITEM(0, 0) && Left->m_Index < GET_ITEM(4, 0))
+			if (Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(4, 0) && Left->GetKind() >= GET_ITEM(0, 0) && Left->GetKind() < GET_ITEM(4, 0))
 			{
 				if (Right->m_IsValidItem != false && Left->m_IsValidItem != false)
 				{
@@ -1084,19 +1084,19 @@ int CAttack::GetAttackDamage(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, WORD*
 
 			DamageMax = lpObj->PhysiDamageMaxRight + lpObj->PhysiDamageMaxLeft + SkillDamageMax;
 		}
-		else if ((Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(4, 0)) || (Right->m_Index >= GET_ITEM(5, 0) && Right->m_Index < GET_ITEM(6, 0)))
+		else if ((Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(4, 0)) || (Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0)))
 		{
 			DamageMin = lpObj->PhysiDamageMinRight + SkillDamageMin;
 
 			DamageMax = lpObj->PhysiDamageMaxRight + SkillDamageMax;
 		}
-		else if (Right->m_Index >= GET_ITEM(4, 0) && Right->m_Index < GET_ITEM(5, 0) && Right->m_Index != GET_ITEM(4, 15) && Right->m_Slot == 0)
+		else if (Right->GetKind() >= GET_ITEM(4, 0) && Right->GetKind() < GET_ITEM(5, 0) && Right->GetKind() != GET_ITEM(4, 15) && Right->m_Slot == 0)
 		{
 			DamageMin = lpObj->PhysiDamageMinRight + SkillDamageMin;
 
 			DamageMax = lpObj->PhysiDamageMaxRight + SkillDamageMax;
 		}
-		else if (Left->m_Index >= GET_ITEM(4, 0) && Left->m_Index < GET_ITEM(5, 0) && Left->m_Index != GET_ITEM(4, 7) && Left->m_Slot == 1)
+		else if (Left->GetKind() >= GET_ITEM(4, 0) && Left->GetKind() < GET_ITEM(5, 0) && Left->GetKind() != GET_ITEM(4, 7) && Left->m_Slot == 1)
 		{
 			DamageMin = lpObj->PhysiDamageMinLeft + SkillDamageMin;
 
@@ -1178,7 +1178,7 @@ int CAttack::GetAttackDamageWizard(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill,
 		DamageMax += lpObj->AddResistance[type];
 	}
 
-	if (Right->IsItem() != false && Right->m_IsValidItem != false && ((Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(1, 0)) || (Right->m_Index >= GET_ITEM(5, 0) && Right->m_Index < GET_ITEM(6, 0))))
+	if (Right->IsItem() != false && Right->m_IsValidItem != false && ((Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(1, 0)) || (Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0))))
 	{
 		int rise = (int)(((Right->m_MagicDamageRate / 2) + (Right->m_Level * 2)) * Right->m_CurrentDurabilityState);
 
@@ -1239,7 +1239,7 @@ void CAttack::GetPreviewPhysiDamage(LPOBJ lpObj, DWORD* DamageMin, DWORD* Damage
 
 	if (lpObj->Class == CLASS_DK || lpObj->Class == CLASS_MG)
 	{
-		if (Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(4, 0) && Left->m_Index >= GET_ITEM(0, 0) && Left->m_Index < GET_ITEM(4, 0))
+		if (Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(4, 0) && Left->GetKind() >= GET_ITEM(0, 0) && Left->GetKind() < GET_ITEM(4, 0))
 		{
 			if (Right->m_IsValidItem != false && Left->m_IsValidItem != false)
 			{
@@ -1254,19 +1254,19 @@ void CAttack::GetPreviewPhysiDamage(LPOBJ lpObj, DWORD* DamageMin, DWORD* Damage
 
 		(*DamageMax) = lpObj->PhysiDamageMaxRight + lpObj->PhysiDamageMaxLeft;
 	}
-	else if ((Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(4, 0)) || (Right->m_Index >= GET_ITEM(5, 0) && Right->m_Index < GET_ITEM(6, 0)))
+	else if ((Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(4, 0)) || (Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0)))
 	{
 		(*DamageMin) = lpObj->PhysiDamageMinRight;
 
 		(*DamageMax) = lpObj->PhysiDamageMaxRight;
 	}
-	else if (Right->m_Index >= GET_ITEM(4, 0) && Right->m_Index < GET_ITEM(5, 0) && Right->m_Index != GET_ITEM(4, 15) && Right->m_Slot == 0)
+	else if (Right->GetKind() >= GET_ITEM(4, 0) && Right->GetKind() < GET_ITEM(5, 0) && Right->GetKind() != GET_ITEM(4, 15) && Right->m_Slot == 0)
 	{
 		(*DamageMin) = lpObj->PhysiDamageMinRight;
 
 		(*DamageMax) = lpObj->PhysiDamageMaxRight;
 	}
-	else if (Left->m_Index >= GET_ITEM(4, 0) && Left->m_Index < GET_ITEM(5, 0) && Left->m_Index != GET_ITEM(4, 7) && Left->m_Slot == 1)
+	else if (Left->GetKind() >= GET_ITEM(4, 0) && Left->GetKind() < GET_ITEM(5, 0) && Left->GetKind() != GET_ITEM(4, 7) && Left->m_Slot == 1)
 	{
 		(*DamageMin) = lpObj->PhysiDamageMinLeft;
 
@@ -1298,7 +1298,7 @@ void CAttack::GetPreviewMagicDamage(LPOBJ lpObj, DWORD* DamageMin, DWORD* Damage
 
 	(*DamageMax) += lpObj->EffectOption.AddMagicDamage;
 
-	if (Right->IsItem() != false && Right->m_IsValidItem != false && ((Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(1, 0)) || (Right->m_Index >= GET_ITEM(5, 0) && Right->m_Index < GET_ITEM(6, 0))))
+	if (Right->IsItem() != false && Right->m_IsValidItem != false && ((Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(1, 0)) || (Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0))))
 	{
 		(*DamageRate) = (int)(((Right->m_MagicDamageRate / 2) + (Right->m_Level * 2)) * Right->m_CurrentDurabilityState);
 	}

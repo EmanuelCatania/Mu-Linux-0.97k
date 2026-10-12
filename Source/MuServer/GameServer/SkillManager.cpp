@@ -244,9 +244,11 @@ int CSkillManager::GetSkillFrustrum(int* SkillFrustrumX, int* SkillFrustrumY, BY
 
 int CSkillManager::GetSkillNumber(int index, int level)
 {
+	index = gItemManager.GetBehavior(index); // 0.97.20: un pergamino agregado enseña el skill del que imita
+
 	if (index >= GET_ITEM(15, 0) && index <= GET_ITEM(15, 15))
 	{
-		return ((index % MAX_ITEM_TYPE) + 1);
+		return (GET_ITEM_SUB(index) + 1);
 	}
 
 	switch (index)
@@ -1023,7 +1025,7 @@ bool CSkillManager::SkillChangeUse(int aIndex)
 			continue;
 		}
 
-		if (Ring->m_Index == GET_ITEM(13, 10)) // Transformation Ring
+		if (Ring->GetKind() == GET_ITEM(13, 10)) // Transformation Ring
 		{
 			change = Ring->m_Level;
 		}
@@ -1166,7 +1168,7 @@ bool CSkillManager::SkillDefense(int aIndex, int bIndex, CSkill* lpSkill)
 
 	if (lpObj->Inventory[1].IsItem() != 0)
 	{
-		if (lpObj->Inventory[1].m_Index >= GET_ITEM(6, 0) && lpObj->Inventory[1].m_Index < GET_ITEM(7, 0))
+		if (lpObj->Inventory[1].GetKind() >= GET_ITEM(6, 0) && lpObj->Inventory[1].GetKind() < GET_ITEM(7, 0))
 		{
 			if (lpObj->Inventory[1].m_SkillOption != 0)
 			{
@@ -1862,12 +1864,12 @@ void CSkillManager::CGMultiSkillAttackRecv(PMSG_MULTI_SKILL_ATTACK_RECV* lpMsg, 
 			return;
 		}
 
-		if (lpObj->Inventory[0].m_Index < GET_ITEM(4, 0) || lpObj->Inventory[0].m_Index >= GET_ITEM(5, 0))
+		if (lpObj->Inventory[0].GetKind() < GET_ITEM(4, 0) || lpObj->Inventory[0].GetKind() >= GET_ITEM(5, 0))
 		{
 			return;
 		}
 
-		if (lpObj->Inventory[1].m_Index < GET_ITEM(4, 0) || lpObj->Inventory[1].m_Index >= GET_ITEM(5, 0))
+		if (lpObj->Inventory[1].GetKind() < GET_ITEM(4, 0) || lpObj->Inventory[1].GetKind() >= GET_ITEM(5, 0))
 		{
 			return;
 		}

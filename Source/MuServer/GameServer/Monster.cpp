@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Monster.h"
+#include "ItemManager.h"
 #include "Attack.h"
 #include "BattleSoccerManager.h"
 #include "BloodCastle.h"
@@ -110,13 +111,13 @@ void gObjMonsterDieGiveItem(LPOBJ lpObj, LPOBJ lpTarget)
 
 		gItemOptionRate.GetItemExceOption(ExcItemDrop, &ItemExceOption);
 
-		ItemLevel = ((ItemIndex >= GET_ITEM(12, 0)) ? 0 : ItemLevel);
+		ItemLevel = ((gItemManager.GetBehavior(ItemIndex) >= GET_ITEM(12, 0)) ? 0 : ItemLevel);
 
-		ItemSkillOption = ((ItemIndex >= GET_ITEM(12, 0)) ? 0 : ItemSkillOption);
+		ItemSkillOption = ((gItemManager.GetBehavior(ItemIndex) >= GET_ITEM(12, 0)) ? 0 : ItemSkillOption);
 
-		ItemLuckOption = ((ItemIndex >= GET_ITEM(12, 0)) ? 0 : ItemLuckOption);
+		ItemLuckOption = ((gItemManager.GetBehavior(ItemIndex) >= GET_ITEM(12, 0)) ? 0 : ItemLuckOption);
 
-		ItemExceOption = ((ItemIndex >= GET_ITEM(12, 0)) ? 0 : ItemExceOption);
+		ItemExceOption = ((gItemManager.GetBehavior(ItemIndex) >= GET_ITEM(12, 0)) ? 0 : ItemExceOption);
 
 		gItemOptionRate.MakeExceOption(ItemIndex, ItemExceOption, &ItemExceOption);
 

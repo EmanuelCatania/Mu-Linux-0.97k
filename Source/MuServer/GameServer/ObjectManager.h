@@ -48,7 +48,7 @@ public:
 
 	bool CharacterUsePotion(LPOBJ lpObj, CItem* lpItem);
 
-	bool CharacterUsePortal(LPOBJ lpObj, CItem* lpItem);
+	bool CharacterUsePortal(LPOBJ lpObj, CItem* lpItem, int gate = -1);
 
 	bool CharacterUseJewelOfBles(LPOBJ lpObj, int SourceSlot, int TargetSlot);
 

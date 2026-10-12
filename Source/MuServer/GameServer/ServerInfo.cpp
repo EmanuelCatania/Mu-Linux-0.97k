@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "ContentCatalog.h"
+#include "CustomPet.h"
 #include "ServerInfo.h"
 #include "Blacklist.h"
 #include "BloodCastle.h"
@@ -257,6 +259,12 @@ void CServerInfo::ReadItemInfo()
 
 	gCustomWing.Load(gPath.GetFullPath("Item\\CustomWing.txt"));
 
+	gContentCatalog.LoadLegacyItems(gPath.GetFullPath("Custom\\Encoder\\"));
+
+	gContentCatalog.LoadItemJson(gPath.GetFullPath("Custom\\Items\\"));
+
+	gCustomPet.Load(gPath.GetFullPath("Custom\\Pets\\"));
+
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
 		if (gObjIsConnectedGP(n) != 0)
@@ -264,6 +272,8 @@ void CServerInfo::ReadItemInfo()
 			gItemStack.GCItemStackListSend(gObj[n].Index);
 
 			gItemValue.GCItemValueListSend(gObj[n].Index);
+
+			gContentCatalog.Send(gObj[n].Index);
 		}
 	}
 
@@ -296,6 +306,8 @@ void CServerInfo::ReadMapInfo()
 void CServerInfo::ReadMonsterInfo()
 {
 	gMonsterManager.Load(gPath.GetFullPath("Monster\\Monster.txt"));
+
+	gContentCatalog.LoadLegacyMonsters(gPath.GetFullPath("Custom\\Encoder\\"));
 
 	gMonsterSetBase.Load(gPath.GetFullPath("Monster\\MonsterSetBase.txt"));
 

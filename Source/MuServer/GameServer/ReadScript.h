@@ -41,7 +41,18 @@ public:
 
 	char* GetError();
 
+	// Lo que queda de la línea actual, sin el salto ni comentarios "//".
+	// Vacío si el último token ya consumió el fin de línea.  Sirve para leer
+	// columnas opcionales al final de una fila.
+	void ReadRestOfLine(char* buffer, int size);
+
+	// Parte una línea en columnas (separadas por espacios o comas).  Las
+	// comillas se quitan.  Devuelve la cantidad.
+	static int SplitColumns(char* line, char** columns, int max);
+
 private:
+
+	int m_lastChar;
 
 	FILE* m_file;
 

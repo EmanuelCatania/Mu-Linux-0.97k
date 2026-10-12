@@ -36,6 +36,155 @@ CItemManager::~CItemManager()
 
 }
 
+// Una ruta de modelo válida: relativa a Data\, sin "..", sin unidad ni raíz.
+bool IsSafeModelPath(const char* path)
+{
+	if (path == 0 || path[0] == 0)
+	{
+		return 1;
+	}
+
+	if (path[0] == '\\' || path[0] == '/' || strchr(path, ':') != 0 || strstr(path, "..") != 0)
+	{
+		return 0;
+	}
+
+	for (const char* p = path; *p != 0; p++)
+	{
+		if (!isalnum((unsigned char)*p) && *p != '\\' && *p != '/' && *p != '_' && *p != '-' && *p != '.' && *p != ' ')
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+// Columnas opcionales al final de la fila (0.97.20), en orden y con '*' para
+// "el valor vanilla":
+//   Behavior (sección,sub)   "Carpeta"   "Modelo"   GlowR GlowG GlowB
+static void ReadItemDisplayColumns(CReadScript* lpReadScript, ITEM_INFO* info)
+{
+	info->Behavior = -1;
+
+	info->GlowColor = -1;
+
+	info->EntityFolder[0] = 0;
+
+	info->EntityName[0] = 0;
+
+	info->UseGate = -1;
+
+	char line[384];
+
+	lpReadScript->ReadRestOfLine(line, sizeof(line));
+
+	char* columns[12];
+
+	int count = CReadScript::SplitColumns(line, columns, 12);
+
+	int n = 0;
+
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") == 0)
+		{
+			n++;
+		}
+		else if (n + 1 < count)
+		{
+			info->Behavior = SafeGetItem(GET_ITEM(atoi(columns[n]), atoi(columns[n + 1])));
+
+			n += 2;
+		}
+	}
+
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") != 0)
+		{
+			strcpy_s(info->ModelFolder, columns[n]);
+		}
+
+		n++;
+	}
+
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") != 0)
+		{
+			strcpy_s(info->ModelName, columns[n]);
+		}
+
+		n++;
+	}
+
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") == 0)
+		{
+			n++;
+		}
+		else if (n + 2 < count)
+		{
+			info->GlowColor = ((atoi(columns[n]) & 0xFF) << 16) | ((atoi(columns[n + 1]) & 0xFF) << 8) | (atoi(columns[n + 2]) & 0xFF);
+
+			n += 3;
+		}
+	}
+
+	// Modelo puesto: carpeta y nombre (montura o pet cuyo modelo en el
+	// personaje no es el del inventario).
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") != 0)
+		{
+			strcpy_s(info->EntityFolder, columns[n]);
+		}
+
+		n++;
+	}
+
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") != 0)
+		{
+			strcpy_s(info->EntityName, columns[n]);
+		}
+
+		n++;
+	}
+
+	// Gate de destino al usarlo (pergamino de teleport a un mapa fijo).
+	if (n < count)
+	{
+		if (strcmp(columns[n], "*") != 0)
+		{
+			info->UseGate = atoi(columns[n]);
+		}
+
+		n++;
+	}
+
+	if (!IsSafeModelPath(info->EntityFolder) || !IsSafeModelPath(info->EntityName))
+	{
+		LogAdd(LOG_RED, "[ItemManager] Item %d: ruta de modelo puesto inválida, se ignora", info->Index);
+
+		info->EntityFolder[0] = 0;
+
+		info->EntityName[0] = 0;
+	}
+
+	if (!IsSafeModelPath(info->ModelFolder) || !IsSafeModelPath(info->ModelName))
+	{
+		LogAdd(LOG_RED, "[ItemManager] Item %d: ruta de modelo inválida, se ignora", info->Index);
+
+		info->ModelFolder[0] = 0;
+
+		info->ModelName[0] = 0;
+	}
+}
+
 void CItemManager::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
@@ -240,6 +389,8 @@ void CItemManager::Load(const char* path)
 					}
 				}
 
+				ReadItemDisplayColumns(lpReadScript, &info);
+
 				this->m_ItemInfo.insert(std::pair<int, ITEM_INFO>(info.Index, info));
 			}
 		}
@@ -250,6 +401,44 @@ void CItemManager::Load(const char* path)
 	}
 
 	delete lpReadScript;
+}
+
+ITEM_INFO* CItemManager::GetInfoPtr(int index)
+{
+	std::map<int, ITEM_INFO>::iterator it = this->m_ItemInfo.find(index);
+
+	return (it == this->m_ItemInfo.end()) ? 0 : &it->second;
+}
+
+int CItemManager::GetBehavior(int index)
+{
+	ITEM_INFO* lpInfo = this->GetInfoPtr(index);
+
+	return (lpInfo != 0 && lpInfo->Behavior >= 0) ? lpInfo->Behavior : index;
+}
+
+int CItemManager::GetCharSetIndex(int index)
+{
+	if (index < MAX_ITEM_VANILLA)
+	{
+		return index;
+	}
+
+	int behavior = this->GetBehavior(index);
+
+	if (behavior < MAX_ITEM_VANILLA)
+	{
+		return behavior;
+	}
+
+	// 0.97.20: un helper agregado sin comportamiento (un CustomPet) viaja como
+	// "sin helper": el pet se dibuja por el F3/EB, no como Angel.
+	if (GET_ITEM_SECTION(index) == 13)
+	{
+		return GET_ITEM(13, MAX_ITEM_TYPE - 1);
+	}
+
+	return GET_ITEM(GET_ITEM_SECTION(index), 0);
 }
 
 bool CItemManager::GetInfo(int index, ITEM_INFO* lpInfo)
@@ -317,7 +506,7 @@ int CItemManager::GetItemDurability(int index, int level, int ExceOption)
 
 	int ItemDurability = ItemInfo.Durability;
 
-	if (index >= GET_ITEM(5, 0) && index < GET_ITEM(6, 0)) // Staffs
+	if (this->GetBehavior(index) >= GET_ITEM(5, 0) && this->GetBehavior(index) < GET_ITEM(6, 0)) // Staffs
 	{
 		ItemDurability = ItemInfo.MagicDurability;
 	}
@@ -374,7 +563,7 @@ int CItemManager::GetItemRepairMoney(CItem* lpItem, int type)
 		return 0;
 	}
 
-	if (((lpItem->m_Index >= GET_ITEM(5, 0) && lpItem->m_Index < GET_ITEM(6, 0)) ? ItemInfo.MagicDurability : ItemInfo.Durability) == 0)
+	if (((lpItem->GetKind() >= GET_ITEM(5, 0) && lpItem->GetKind() < GET_ITEM(6, 0)) ? ItemInfo.MagicDurability : ItemInfo.Durability) == 0)
 	{
 		return 0;
 	}
@@ -624,7 +813,7 @@ bool CItemManager::CheckItemMoveToInventory(LPOBJ lpObj, CItem* lpItem, int slot
 
 	if (lpObj->Class == CLASS_DW) // DW
 	{
-		if (slot == 1 && !(lpItem->m_Index >= GET_ITEM(6, 0) && lpItem->m_Index < GET_ITEM(7, 0)))
+		if (slot == 1 && !(lpItem->GetKind() >= GET_ITEM(6, 0) && lpItem->GetKind() < GET_ITEM(7, 0)))
 		{
 			return 0;
 		}
@@ -632,29 +821,29 @@ bool CItemManager::CheckItemMoveToInventory(LPOBJ lpObj, CItem* lpItem, int slot
 
 	if (lpObj->Class == CLASS_FE) // FE
 	{
-		if (slot == 0 && ((lpItem->m_Index >= GET_ITEM(4, 0) && lpItem->m_Index < GET_ITEM(4, 8)) || lpItem->m_Index == GET_ITEM(4, 17) // BOWS
-		    || (lpItem->m_Index > GET_ITEM(4, 18) && lpItem->m_Slot == 1))) // Custom Bows
+		if (slot == 0 && ((lpItem->GetKind() >= GET_ITEM(4, 0) && lpItem->GetKind() < GET_ITEM(4, 8)) || lpItem->GetKind() == GET_ITEM(4, 17) // BOWS
+		    || (lpItem->GetKind() > GET_ITEM(4, 18) && lpItem->GetKind() < GET_ITEM(5, 0) && lpItem->m_Slot == 1))) // Custom Bows
 		{
 			return 0;
 		}
 
-		if (slot == 1 && ((lpItem->m_Index >= GET_ITEM(4, 8) && lpItem->m_Index < GET_ITEM(4, 17)) || lpItem->m_Index == GET_ITEM(4, 18) // CROSSBOWS
-		    || (lpItem->m_Index > GET_ITEM(4, 18) && lpItem->m_Slot == 0))) // Custom Crossbows
+		if (slot == 1 && ((lpItem->GetKind() >= GET_ITEM(4, 8) && lpItem->GetKind() < GET_ITEM(4, 17)) || lpItem->GetKind() == GET_ITEM(4, 18) // CROSSBOWS
+		    || (lpItem->GetKind() > GET_ITEM(4, 18) && lpItem->GetKind() < GET_ITEM(5, 0) && lpItem->m_Slot == 0))) // Custom Crossbows
 		{
 			return 0;
 		}
 
-		if (lpItem->m_Index == GET_ITEM(4, 7) && lpObj->Inventory[1].IsItem() != 0) // Bolts when using Arrows
+		if (lpItem->GetKind() == GET_ITEM(4, 7) && lpObj->Inventory[1].IsItem() != 0) // Bolts when using Arrows
 		{
-			if (lpObj->Inventory[1].m_Index == GET_ITEM(4, 15))
+			if (lpObj->Inventory[1].GetKind() == GET_ITEM(4, 15))
 			{
 				return 0;
 			}
 		}
 
-		if (lpItem->m_Index == GET_ITEM(4, 15) && lpObj->Inventory[0].IsItem() != 0) // Arrows when using Bolts
+		if (lpItem->GetKind() == GET_ITEM(4, 15) && lpObj->Inventory[0].IsItem() != 0) // Arrows when using Bolts
 		{
-			if (lpObj->Inventory[0].m_Index == GET_ITEM(4, 7))
+			if (lpObj->Inventory[0].GetKind() == GET_ITEM(4, 7))
 			{
 				return 0;
 			}
@@ -663,7 +852,7 @@ bool CItemManager::CheckItemMoveToInventory(LPOBJ lpObj, CItem* lpItem, int slot
 
 	if (slot == 0 && lpObj->Inventory[1].IsItem() != 0)
 	{
-		if ((lpItem->m_TwoHand != 0 && lpObj->Inventory[1].m_Index != GET_ITEM(4, 7)) || (lpObj->Inventory[1].m_TwoHand != 0 && lpItem->m_Index != GET_ITEM(4, 15)))
+		if ((lpItem->m_TwoHand != 0 && lpObj->Inventory[1].GetKind() != GET_ITEM(4, 7)) || (lpObj->Inventory[1].m_TwoHand != 0 && lpItem->GetKind() != GET_ITEM(4, 15)))
 		{
 			return 0;
 		}
@@ -671,7 +860,7 @@ bool CItemManager::CheckItemMoveToInventory(LPOBJ lpObj, CItem* lpItem, int slot
 
 	if (slot == 1 && lpObj->Inventory[0].IsItem() != 0)
 	{
-		if ((lpItem->m_TwoHand != 0 && lpObj->Inventory[0].m_Index != GET_ITEM(4, 15)) || (lpObj->Inventory[0].m_TwoHand != 0 && lpItem->m_Index != GET_ITEM(4, 7)))
+		if ((lpItem->m_TwoHand != 0 && lpObj->Inventory[0].GetKind() != GET_ITEM(4, 15)) || (lpObj->Inventory[0].m_TwoHand != 0 && lpItem->GetKind() != GET_ITEM(4, 7)))
 		{
 			return 0;
 		}
@@ -679,7 +868,7 @@ bool CItemManager::CheckItemMoveToInventory(LPOBJ lpObj, CItem* lpItem, int slot
 
 	if (lpObj->Map == MAP_ATLANS)
 	{
-		if (lpItem->m_Index == GET_ITEM(13, 2) || lpItem->m_Index == GET_ITEM(13, 3)) // Uniria,Dinorant
+		if (this->GetBehavior(lpItem->m_Index) == GET_ITEM(13, 2) || this->GetBehavior(lpItem->m_Index) == GET_ITEM(13, 3)) // Uniria,Dinorant
 		{
 			return 0;
 		}
@@ -687,13 +876,13 @@ bool CItemManager::CheckItemMoveToInventory(LPOBJ lpObj, CItem* lpItem, int slot
 
 	if (lpObj->Map == MAP_ICARUS)
 	{
-		if (lpItem->m_Index == GET_ITEM(13, 2)) // Uniria
+		if (this->GetBehavior(lpItem->m_Index) == GET_ITEM(13, 2)) // Uniria
 		{
 			return 0;
 		}
 	}
 
-	if (lpItem->m_Index == GET_ITEM(13, 10)) // Rings
+	if (lpItem->GetKind() == GET_ITEM(13, 10)) // Rings
 	{
 		if (lpObj->Inventory[slot ^ 1].IsItem() != 0 && lpObj->Inventory[slot ^ 1].m_Index == lpItem->m_Index)
 		{
@@ -1511,6 +1700,12 @@ void CItemManager::ItemByteConvert(BYTE* lpMsg, CItem item)
 	lpMsg[3] |= (item.m_Index & 256) >> 1;
 	lpMsg[3] |= ((item.m_AddOption > 3) ? 64 : 0);
 	lpMsg[3] |= item.m_ExceOption;
+
+	lpMsg[4] = 0;
+
+	lpMsg[5] = ((item.m_Index >> 9) & 0x0F) << 4;
+
+	lpMsg[6] = 0;
 }
 
 void CItemManager::DBItemByteConvert(BYTE* lpMsg, CItem* lpItem)
@@ -1522,7 +1717,7 @@ void CItemManager::DBItemByteConvert(BYTE* lpMsg, CItem* lpItem)
 		return;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(13, 19))
+	if (lpItem->GetKind() == GET_ITEM(13, 19))
 	{
 		memset(lpMsg, 0xFF, MAX_ITEM_BYTE_SIZE);
 
@@ -1551,8 +1746,11 @@ void CItemManager::DBItemByteConvert(BYTE* lpMsg, CItem* lpItem)
 
 	lpMsg[8] = 0;
 
+	// Nibble alto: bits 9-12 del índice (los lee ConvertItemByte y la lista de
+	// personajes).  Nibble bajo: la sección, como siempre (la lee el editor web).
 	lpMsg[9] = 0;
-	lpMsg[9] |= (lpItem->m_Index & GET_ITEM(15, 0)) >> 5;
+	lpMsg[9] |= ((lpItem->m_Index >> 9) & 0x0F) << 4;
+	lpMsg[9] |= GET_ITEM_SECTION(lpItem->m_Index) & 0x0F;
 }
 
 bool CItemManager::ConvertItemByte(CItem* lpItem, BYTE* lpMsg)
@@ -1731,17 +1929,17 @@ bool CItemManager::RepairItem(LPOBJ lpObj, CItem* lpItem, int slot, int type, DW
 		return false;
 	}
 
-	if (lpItem->m_Slot == 8 && lpItem->m_Index != GET_ITEM(13, 4))
+	if (lpItem->m_Slot == 8 && lpItem->GetKind() != GET_ITEM(13, 4))
 	{
 		return false;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(4, 7) || lpItem->m_Index == GET_ITEM(4, 15)) // Bolt,Arrow
+	if (lpItem->GetKind() == GET_ITEM(4, 7) || lpItem->GetKind() == GET_ITEM(4, 15)) // Bolt,Arrow
 	{
 		return false;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(13, 10)) // Rings
+	if (lpItem->GetKind() == GET_ITEM(13, 10)) // Rings
 	{
 		return false;
 	}
@@ -2346,7 +2544,7 @@ void CItemManager::CGItemGetRecv(PMSG_ITEM_GET_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(14, 15)) // Money
+	if (lpItem->GetKind() == GET_ITEM(14, 15)) // Money
 	{
 		gMap[lpObj->Map].ItemGive(aIndex, index);
 
@@ -2480,7 +2678,7 @@ void CItemManager::CGItemDropRecv(PMSG_ITEM_DROP_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if ((lpItem->m_Index < GET_ITEM(12, 0) && lpItem->m_Level > 4) || lpItem->IsExcItem() != 0)
+	if ((lpItem->GetKind() < GET_ITEM(12, 0) && lpItem->m_Level > 4) || lpItem->IsExcItem() != 0)
 	{
 		DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 
@@ -2700,7 +2898,11 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	if ((lpItem->m_Index >= GET_ITEM(12, 7) && lpItem->m_Index <= GET_ITEM(12, 19)) || lpItem->m_Index >= GET_ITEM(15, 0))
+	// 0.97.20: el efecto se decide por el comportamiento: un consumible
+	// agregado (>= 512) se usa como el vanilla que imita.
+	const int useIndex = this->GetBehavior(lpItem->m_Index);
+
+	if ((useIndex >= GET_ITEM(12, 7) && useIndex <= GET_ITEM(12, 19)) || (useIndex >= GET_ITEM(15, 0) && useIndex < MAX_ITEM_VANILLA))
 	{
 		if (gObjectManager.CharacterUseScroll(lpObj, lpItem) != 0)
 		{
@@ -2709,7 +2911,7 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 			this->GCItemDeleteSend(aIndex, lpMsg->SourceSlot, 1);
 		}
 	}
-	else if (lpItem->m_Index == GET_ITEM(13, 15)) // Fruit
+	else if (useIndex == GET_ITEM(13, 15)) // Fruit
 	{
 		if (gFruit.UseFruit(lpObj, lpItem->m_Level) != 0)
 		{
@@ -2718,14 +2920,14 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 			this->GCItemDeleteSend(aIndex, lpMsg->SourceSlot, 1);
 		}
 	}
-	else if ((lpItem->m_Index >= GET_ITEM(14, 0) && lpItem->m_Index <= GET_ITEM(14, 6)))
+	else if ((useIndex >= GET_ITEM(14, 0) && useIndex <= GET_ITEM(14, 6)))
 	{
 		if (gObjectManager.CharacterUsePotion(lpObj, lpItem) != 0)
 		{
 			this->DecreaseItemDur(lpObj, lpMsg->SourceSlot, 1);
 		}
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 8)) // Antidote
+	else if (useIndex == GET_ITEM(14, 8)) // Antidote
 	{
 		gEffectManager.DelEffect(lpObj, EFFECT_POISON);
 
@@ -2733,7 +2935,7 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 
 		this->DecreaseItemDur(lpObj, lpMsg->SourceSlot, 1);
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 9)) // Ale
+	else if (useIndex == GET_ITEM(14, 9)) // Ale
 	{
 		gObjUseDrink(lpObj, lpItem->m_Level);
 
@@ -2741,16 +2943,21 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 
 		this->GCItemDeleteSend(aIndex, lpMsg->SourceSlot, 1);
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 10)) // Town Portal Scroll
+	else if (useIndex == GET_ITEM(14, 10)) // Town Portal Scroll
 	{
-		if (gObjectManager.CharacterUsePortal(lpObj, lpItem) != 0)
+		// 0.97.20: un pergamino con UseGate lleva siempre a ese gate (sin los
+		// requisitos de nivel y zen del /move; los del mapa, como alas en
+		// Icarus o sin montura en Atlans, los sigue chequeando gObjMoveGate).
+		ITEM_INFO* lpUseInfo = this->GetInfoPtr(lpItem->m_Index);
+
+		if (gObjectManager.CharacterUsePortal(lpObj, lpItem, (lpUseInfo != 0) ? lpUseInfo->UseGate : -1) != 0)
 		{
 			this->InventoryDelItem(aIndex, lpMsg->SourceSlot);
 
 			this->GCItemDeleteSend(aIndex, lpMsg->SourceSlot, 1);
 		}
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 13)) // Jewel of Bless
+	else if (useIndex == GET_ITEM(14, 13)) // Jewel of Bless
 	{
 		if (gObjectManager.CharacterUseJewelOfBles(lpObj, lpMsg->SourceSlot, lpMsg->TargetSlot) != 0)
 		{
@@ -2761,7 +2968,7 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 			this->GCItemModifySend(aIndex, lpMsg->TargetSlot);
 		}
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 14)) // Jewel of Soul
+	else if (useIndex == GET_ITEM(14, 14)) // Jewel of Soul
 	{
 		if (gObjectManager.CharacterUseJewelOfSoul(lpObj, lpMsg->SourceSlot, lpMsg->TargetSlot) != 0)
 		{
@@ -2772,7 +2979,7 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 			this->GCItemModifySend(aIndex, lpMsg->TargetSlot);
 		}
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 16)) // Jewel of Life
+	else if (useIndex == GET_ITEM(14, 16)) // Jewel of Life
 	{
 		if (gObjectManager.CharacterUseJewelOfLife(lpObj, lpMsg->SourceSlot, lpMsg->TargetSlot) != 0)
 		{
@@ -2783,7 +2990,7 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 			this->GCItemModifySend(aIndex, lpMsg->TargetSlot);
 		}
 	}
-	else if (lpItem->m_Index == GET_ITEM(14, 20)) // Remedy of Love
+	else if (useIndex == GET_ITEM(14, 20)) // Remedy of Love
 	{
 		if (lpItem->m_Level == 0)
 		{
@@ -2797,6 +3004,11 @@ void CItemManager::CGItemUseRecv(PMSG_ITEM_USE_RECV* lpMsg, int aIndex)
 	else
 	{
 		EFFECT_INFO* lpInfo = gEffectManager.GetInfoByItem(lpItem->m_Index);
+
+		if (lpInfo == 0)
+		{
+			lpInfo = gEffectManager.GetInfoByItem(useIndex);
+		}
 
 		if (lpInfo != 0)
 		{

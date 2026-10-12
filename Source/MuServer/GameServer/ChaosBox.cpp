@@ -468,7 +468,7 @@ bool CChaosBox::GetChaosItemMixRates(int aIndex, DWORD& rate, DWORD& money)
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			lpObj->ChaosBox[n].OldValue();
 
@@ -485,7 +485,7 @@ bool CChaosBox::GetChaosItemMixRates(int aIndex, DWORD& rate, DWORD& money)
 				JewelMoney += lpObj->ChaosBox[n].m_OldBuyMoney;
 			}
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 13) || lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 14))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 13) || lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 14))
 		{
 			lpObj->ChaosBox[n].OldValue();
 
@@ -621,17 +621,17 @@ bool CChaosBox::GetDevilSquareMixRates(int aIndex, DWORD& rate, DWORD& money, in
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			ChaosCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 17))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 17))
 		{
 			EyeCount++;
 
 			EyeLevel = lpObj->ChaosBox[n].m_Level;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 18))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 18))
 		{
 			KeyCount++;
 
@@ -772,15 +772,15 @@ bool CChaosBox::GetPlusItemLevelMixRates(int aIndex, DWORD& rate, DWORD& money, 
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			ChaosCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 13))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 13))
 		{
 			BlessCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 14))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 14))
 		{
 			SoulCount++;
 		}
@@ -895,11 +895,11 @@ bool CChaosBox::GetDinorantMixRates(int aIndex, DWORD& rate, DWORD& money)
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			ChaosCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(13, 2) && lpObj->ChaosBox[n].m_Durability == 255)
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(13, 2) && lpObj->ChaosBox[n].m_Durability == 255)
 		{
 			UniriaCount++;
 		}
@@ -980,11 +980,11 @@ bool CChaosBox::GetFruitMixRates(int aIndex, DWORD& rate, DWORD& money)
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			ChaosCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 22))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 22))
 		{
 			CreationCount++;
 		}
@@ -1093,7 +1093,7 @@ bool CChaosBox::GetWing1MixRates(int aIndex, DWORD& rate, DWORD& money)
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			lpObj->ChaosBox[n].OldValue();
 
@@ -1110,7 +1110,7 @@ bool CChaosBox::GetWing1MixRates(int aIndex, DWORD& rate, DWORD& money)
 				JewelMoney += lpObj->ChaosBox[n].m_OldBuyMoney;
 			}
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 13) || lpObj->ChaosBox[n].m_Index == GET_ITEM(14, 14))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 13) || lpObj->ChaosBox[n].GetKind() == GET_ITEM(14, 14))
 		{
 			JewelCount++;
 
@@ -1118,7 +1118,7 @@ bool CChaosBox::GetWing1MixRates(int aIndex, DWORD& rate, DWORD& money)
 
 			JewelMoney += lpObj->ChaosBox[n].m_OldBuyMoney;
 		}
-		else if ((lpObj->ChaosBox[n].m_Index == GET_ITEM(2, 6) || lpObj->ChaosBox[n].m_Index == GET_ITEM(4, 6) || lpObj->ChaosBox[n].m_Index == GET_ITEM(5, 7)) && lpObj->ChaosBox[n].m_Level >= 4 && lpObj->ChaosBox[n].m_AddOption >= 1)
+		else if ((lpObj->ChaosBox[n].GetKind() == GET_ITEM(2, 6) || lpObj->ChaosBox[n].GetKind() == GET_ITEM(4, 6) || lpObj->ChaosBox[n].GetKind() == GET_ITEM(5, 7)) && lpObj->ChaosBox[n].m_Level >= 4 && lpObj->ChaosBox[n].m_AddOption >= 1)
 		{
 			if (!IsItem)
 			{
@@ -1252,17 +1252,17 @@ bool CChaosBox::GetBloodCastleMixRates(int aIndex, DWORD& rate, DWORD& money, in
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			ChaosCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(13, 16))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(13, 16))
 		{
 			ScrollCount++;
 
 			ScrollLevel = lpObj->ChaosBox[n].m_Level;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(13, 17))
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(13, 17))
 		{
 			BoneCount++;
 
@@ -1451,15 +1451,15 @@ bool CChaosBox::GetWing2MixRates(int aIndex, DWORD& rate, DWORD& money)
 			continue;
 		}
 
-		if (lpObj->ChaosBox[n].m_Index == GET_ITEM(12, 15))
+		if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(12, 15))
 		{
 			ChaosCount++;
 		}
-		else if (lpObj->ChaosBox[n].m_Index == GET_ITEM(13, 14) && lpObj->ChaosBox[n].m_Level == 0)
+		else if (lpObj->ChaosBox[n].GetKind() == GET_ITEM(13, 14) && lpObj->ChaosBox[n].m_Level == 0)
 		{
 			FeatherCount++;
 		}
-		else if ((lpObj->ChaosBox[n].m_Index >= GET_ITEM(12, 0) && lpObj->ChaosBox[n].m_Index <= GET_ITEM(12, 2)))
+		else if ((lpObj->ChaosBox[n].GetKind() >= GET_ITEM(12, 0) && lpObj->ChaosBox[n].GetKind() <= GET_ITEM(12, 2)))
 		{
 			WingItemCount++;
 

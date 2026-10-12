@@ -185,21 +185,21 @@ void CMove::Move(LPOBJ lpObj, int index)
 		return;
 	}
 
-	if (gGate.GetGateMap(MoveInfo.Gate) == MAP_ATLANS && (lpObj->Inventory[8].m_Index == GET_ITEM(13, 2) || lpObj->Inventory[8].m_Index == GET_ITEM(13, 3))) // Uniria,Dinorant
+	if (gGate.GetGateMap(MoveInfo.Gate) == MAP_ATLANS && (gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2) || gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 3))) // Uniria,Dinorant
 	{
 		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(67, lpObj->Lang));
 
 		return;
 	}
 
-	if (gGate.GetGateMap(MoveInfo.Gate) == MAP_ICARUS && (lpObj->Inventory[7].IsItem() == 0 && lpObj->Inventory[8].m_Index != GET_ITEM(13, 3))) // Wings
+	if (gGate.GetGateMap(MoveInfo.Gate) == MAP_ICARUS && (lpObj->Inventory[7].IsItem() == 0 && gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) != GET_ITEM(13, 3))) // Wings
 	{
 		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(68, lpObj->Lang));
 
 		return;
 	}
 
-	if (gGate.GetGateMap(MoveInfo.Gate) == MAP_ICARUS && lpObj->Inventory[8].m_Index == GET_ITEM(13, 2)) // Uniria
+	if (gGate.GetGateMap(MoveInfo.Gate) == MAP_ICARUS && gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2)) // Uniria
 	{
 		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(67, lpObj->Lang));
 

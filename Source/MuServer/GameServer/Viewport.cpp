@@ -5,8 +5,51 @@
 #include "Map.h"
 #include "MapManager.h"
 #include "Util.h"
+#include "ItemManager.h"
 
 CViewport gViewport;
+
+// 0.97.20: equipo agregado (índice >= 512) de un jugador del viewport.  El
+// CharSet de 11 bytes sólo lleva vanilla (y el ala custom), así que los demás
+// clientes no sabrían con qué modelo dibujar un arma, armadura, pet o montura
+// del catálogo.  Va justo después del 0x12; los cambios posteriores los
+// cubre el 0x25, que ya lleva el índice completo.
+struct PMSG_CUSTOM_EQUIPMENT_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:EB
+	BYTE index[2];
+	WORD item[9];       // slots 0..8 del inventario; 0xFFFF = vanilla o vacío
+};
+
+static_assert(sizeof(PMSG_CUSTOM_EQUIPMENT_SEND) == 24, "F3:EB");
+
+static bool BuildCustomEquipment(LPOBJ lpObj, PMSG_CUSTOM_EQUIPMENT_SEND* pMsg)
+{
+	bool any = false;
+
+	for (int n = 0; n < 9; n++)
+	{
+		pMsg->item[n] = 0xFFFF;
+
+		if (lpObj->Inventory[n].IsItem() != 0 && lpObj->Inventory[n].m_Index >= MAX_ITEM_VANILLA)
+		{
+			pMsg->item[n] = (WORD)lpObj->Inventory[n].m_Index;
+
+			any = true;
+		}
+	}
+
+	if (any)
+	{
+		pMsg->header.set(0xF3, 0xEB, sizeof(PMSG_CUSTOM_EQUIPMENT_SEND));
+
+		pMsg->index[0] = SET_NUMBERHB(lpObj->Index);
+
+		pMsg->index[1] = SET_NUMBERLB(lpObj->Index);
+	}
+
+	return any;
+}
 
 CViewport::CViewport()
 {
@@ -624,6 +667,8 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 	PMSG_VIEWPORT_PLAYER info;
 
+	int custom[MAX_VIEWPORT];
+
 	for (int n = 0; n < MAX_VIEWPORT; n++)
 	{
 		if (lpObj->VpPlayer[n].state != VIEWPORT_SEND)
@@ -683,6 +728,8 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 		size += InfoSize;
 
+		custom[pMsg.count] = lpTarget->Index;
+
 		pMsg.count++;
 	}
 
@@ -695,6 +742,16 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 		memcpy(send, &pMsg, sizeof(pMsg));
 
 		DataSend(aIndex, send, size);
+
+		for (int n = 0; n < pMsg.count; n++)
+		{
+			PMSG_CUSTOM_EQUIPMENT_SEND pCustom;
+
+			if (BuildCustomEquipment(&gObj[custom[n]], &pCustom))
+			{
+				DataSend(aIndex, (BYTE*)&pCustom, sizeof(pCustom));
+			}
+		}
 	}
 }
 
@@ -923,7 +980,7 @@ void CViewport::GCViewportItemSend(int aIndex)
 
 		memset(info.ItemInfo, 0, sizeof(info.ItemInfo));
 
-		if (lpMapItem->m_Index == GET_ITEM(14, 15)) // Money
+		if (lpMapItem->GetKind() == GET_ITEM(14, 15)) // Money
 		{
 			info.ItemInfo[0] = lpMapItem->m_Index & 0xFF;
 
@@ -1281,6 +1338,13 @@ void CViewport::GCViewportSimplePlayerSend(LPOBJ lpObj)
 	DataSend(lpObj->Index, send, size);
 
 	MsgSendV2(lpObj, send, size);
+
+	PMSG_CUSTOM_EQUIPMENT_SEND pCustom;
+
+	if (BuildCustomEquipment(lpObj, &pCustom))
+	{
+		MsgSendV2(lpObj, (BYTE*)&pCustom, sizeof(pCustom));
+	}
 }
 
 void CViewport::GCViewportSimpleMonsterSend(LPOBJ lpObj)
