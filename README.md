@@ -100,7 +100,7 @@ Basado en las sources de Kayito.
 
 ## Estado del cliente
 
-El cliente basado en inyección de DLL está entrando en desuso como implementación principal. Sus archivos permanecen aquí por compatibilidad, referencia y mantenimiento; el desarrollo activo continúa en <https://github.com/EmanuelCatania/Mu-97k-Client-Source>.
+El cliente basado en inyección de DLL está completamente deprecado y fue retirado de este repositorio junto con sus fuentes y el Encoder ejecutable. Usá el [cliente basado en sources 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Los archivos antiguos siguen disponibles en la historia de Git. Las tablas de `MuServer/Data/Custom/Encoder/` se conservan porque las consume el catálogo del servidor.
 
 ## Inicio rápido
 
@@ -156,4 +156,4 @@ Mantiene backups por archivo y snapshots de `MuServer/Data` y `MuServer/GameServ
 - Mensajes: `MuServer/Data/Message_Eng.txt`, `Message_Spn.txt`, `Message_Por.txt` y `MuServer/Data/Util/Notice.txt`.
 - Logs: `docker compose logs -f`.
 
-Estructura: `Source/` (fuentes), `MuServer/` (data), `Client/` y `Encoder/` (componentes históricos), `docker/` (imágenes y scripts).
+Estructura: `Source/` (fuentes), `MuServer/` (data), `docker/` (imágenes y scripts).

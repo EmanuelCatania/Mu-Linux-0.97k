@@ -94,7 +94,7 @@ Based on Kayito's sources.
 
 ## Client status
 
-The DLL injection-based client is being phased out as the main implementation. Its files remain for compatibility, reference and maintenance; active development continues at <https://github.com/EmanuelCatania/Mu-97k-Client-Source>.
+The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
 
 ## Quick start
 
@@ -143,4 +143,4 @@ It keeps per-file backups and snapshots of `MuServer/Data` and `MuServer/GameSer
 
 - `MD5Encryption=2` uses binary MD5; recreate the DB with `docker compose down -v` when migrating from plain text.
 - Save server TXT files as ANSI / Windows-1252 without BOM. Shops live in `MuServer/Data/Shop/*.txt`; `-1 -1` auto-places `SlotX SlotY`.
-- Use `docker compose logs -f` for logs. Main folders: `Source/`, `MuServer/`, `Client/`, `Encoder/`, `docker/`.
+- Use `docker compose logs -f` for logs. Main folders: `Source/`, `MuServer/`, `docker/`.

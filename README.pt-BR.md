@@ -94,7 +94,7 @@ Baseado nas sources do Kayito.
 
 ## Estado do cliente
 
-O cliente baseado em injeção de DLL está deixando de ser a implementação principal. Seus arquivos permanecem para compatibilidade, referência e manutenção; o desenvolvimento ativo continua em <https://github.com/EmanuelCatania/Mu-97k-Client-Source>.
+O cliente baseado em injeção de DLL está totalmente descontinuado e foi removido deste repositório junto com suas fontes e o executável do Encoder. Use o [cliente baseado em sources 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Os arquivos antigos continuam disponíveis no histórico do Git. As tabelas de `MuServer/Data/Custom/Encoder/` são mantidas porque o catálogo do servidor as utiliza.
 
 ## Início rápido
 
@@ -143,4 +143,4 @@ Ele mantém backups por arquivo e snapshots de `MuServer/Data` e `MuServer/GameS
 
 - `MD5Encryption=2` usa MD5 binário; recrie a DB com `docker compose down -v` ao migrar de texto simples.
 - Salve TXT do servidor em ANSI / Windows-1252 sem BOM. Shops ficam em `MuServer/Data/Shop/*.txt`; `-1 -1` posiciona `SlotX SlotY` automaticamente.
-- Logs: `docker compose logs -f`. Pastas principais: `Source/`, `MuServer/`, `Client/`, `Encoder/`, `docker/`.
+- Logs: `docker compose logs -f`. Pastas principais: `Source/`, `MuServer/`, `docker/`.
