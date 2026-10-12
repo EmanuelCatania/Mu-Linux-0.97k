@@ -118,7 +118,10 @@
     <ClInclude Include="CustomNpcMove.h" />
     <ClInclude Include="CustomPkFree.h" />
     <ClInclude Include="CustomSafeZone.h" />
+    <ClInclude Include="ContentCatalog.h" />
+    <ClInclude Include="CustomPet.h" />
     <ClInclude Include="CustomWing.h" />
+    <ClInclude Include="JsonLite.h" />
     <ClInclude Include="DefaultClassInfo.h" />
     <ClInclude Include="DevilSquare.h" />
     <ClInclude Include="DSProtocol.h" />
@@ -220,6 +223,8 @@
     <ClCompile Include="CustomNpcMove.cpp" />
     <ClCompile Include="CustomPkFree.cpp" />
     <ClCompile Include="CustomSafeZone.cpp" />
+    <ClCompile Include="ContentCatalog.cpp" />
+    <ClCompile Include="CustomPet.cpp" />
     <ClCompile Include="CustomWing.cpp" />
     <ClCompile Include="DefaultClassInfo.cpp" />
     <ClCompile Include="DevilSquare.cpp" />

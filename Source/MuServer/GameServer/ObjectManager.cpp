@@ -1144,7 +1144,9 @@ void CObjectManager::CharacterMakePreviewCharSet(int aIndex)
 			}
 			else
 			{
-				TempInventory[n] = lpObj->Inventory[n].m_Index;
+				// El CharSet sólo lleva índices vanilla: un agregado (>= 512) viaja
+				// con su comportamiento, el vanilla que imita.
+				TempInventory[n] = gItemManager.GetCharSetIndex(lpObj->Inventory[n].m_Index);
 			}
 		}
 		else
@@ -1155,7 +1157,7 @@ void CObjectManager::CharacterMakePreviewCharSet(int aIndex)
 			}
 			else
 			{
-				TempInventory[n] = lpObj->Inventory[n].m_Index % MAX_ITEM_TYPE;
+				TempInventory[n] = gItemManager.GetCharSetIndex(lpObj->Inventory[n].m_Index) % MAX_ITEM_TYPE;
 			}
 		}
 	}
@@ -1203,6 +1205,12 @@ void CObjectManager::CharacterMakePreviewCharSet(int aIndex)
 	{
 		lpObj->CharSet[5] |= 12;
 	}
+	else if (gCustomWing.CheckCustomWingByItem(lpObj->Inventory[7].m_Index))
+	{
+		// 0.97.20: el ala custom se decide por el índice real, antes que los
+		// vanilla: un ala custom >= 512 viaja en el CharSet con su comportamiento.
+		lpObj->CharSet[9] |= (gCustomWing.GetCustomWingIndex(lpObj->Inventory[7].m_Index) + 1);
+	}
 	else if (TempInventory[7] >= 0 && TempInventory[7] <= 2)
 	{
 		lpObj->CharSet[5] |= TempInventory[7] << 2;
@@ -1211,10 +1219,6 @@ void CObjectManager::CharacterMakePreviewCharSet(int aIndex)
 	{
 		lpObj->CharSet[5] |= 12;
 		lpObj->CharSet[9] |= TempInventory[7] - 2;
-	}
-	else if (gCustomWing.CheckCustomWingByItem(GET_ITEM(12, TempInventory[7])))
-	{
-		lpObj->CharSet[9] |= (gCustomWing.GetCustomWingIndex(GET_ITEM(12, TempInventory[7])) + 1);
 	}
 
 	if (TempInventory[8] == (MAX_ITEM_TYPE - 1))
@@ -1246,7 +1250,7 @@ bool CObjectManager::CharacterUseScroll(LPOBJ lpObj, CItem* lpItem)
 		return 0;
 	}
 
-	if (lpItem->m_Index >= GET_ITEM(12, 8) && lpItem->m_Index <= GET_ITEM(12, 24))
+	if (lpItem->GetKind() >= GET_ITEM(12, 8) && lpItem->GetKind() <= GET_ITEM(12, 24))
 	{
 		if (lpObj->Level < lpItem->m_RequireLevel)
 		{
@@ -1254,7 +1258,7 @@ bool CObjectManager::CharacterUseScroll(LPOBJ lpObj, CItem* lpItem)
 		}
 	}
 
-	if (lpItem->m_Index == GET_ITEM(15, 18))
+	if (lpItem->GetKind() == GET_ITEM(15, 18))
 	{
 		if (gQuest.CheckQuestListState(lpObj, 2, QUEST_FINISH) == 0)
 		{
@@ -1303,7 +1307,7 @@ bool CObjectManager::CharacterUsePotion(LPOBJ lpObj, CItem* lpItem)
 
 	int BPValue = 0;
 
-	switch (lpItem->m_Index)
+	switch (gItemManager.GetBehavior(lpItem->m_Index))   // 0.97.20: una poción agregada cura como la que imita
 	{
 		case GET_ITEM(14, 0):
 		{
@@ -1389,11 +1393,16 @@ bool CObjectManager::CharacterUsePotion(LPOBJ lpObj, CItem* lpItem)
 	return 1;
 }
 
-bool CObjectManager::CharacterUsePortal(LPOBJ lpObj, CItem* lpItem)
+bool CObjectManager::CharacterUsePortal(LPOBJ lpObj, CItem* lpItem, int gate)
 {
 	if (lpObj->Interface.use != 0)
 	{
 		return 0;
+	}
+
+	if (gate >= 0)
+	{
+		return gObjMoveGate(lpObj->Index, gate) != 0;
 	}
 
 	if (lpObj->Map == MAP_LORENCIA)
@@ -1448,6 +1457,8 @@ bool CObjectManager::CharacterUsePortal(LPOBJ lpObj, CItem* lpItem)
 	return 1;
 }
 
+// 0.97.20: las tres joyas deciden qué items aceptan por el comportamiento:
+// un agregado (>= 512) se trata como el vanilla que imita.
 bool CObjectManager::CharacterUseJewelOfBles(LPOBJ lpObj, int SourceSlot, int TargetSlot)
 {
 	if (INVENTORY_RANGE(SourceSlot) == 0)
@@ -1477,17 +1488,17 @@ bool CObjectManager::CharacterUseJewelOfBles(LPOBJ lpObj, int SourceSlot, int Ta
 
 	CItem* lpItem = &lpObj->Inventory[TargetSlot];
 
-	if (lpItem->m_Index == GET_ITEM(4, 15)) // Disable Arrow
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(4, 15)) // Disable Arrow
 	{
 		return 0;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(4, 7)) // Disable Bolt
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(4, 7)) // Disable Bolt
 	{
 		return 0;
 	}
 
-	if (lpItem->m_Index > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(lpItem->m_Index))
+	if (gItemManager.GetBehavior(lpItem->m_Index) > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(lpItem->m_Index))
 	{
 		return 0;
 	}
@@ -1539,17 +1550,17 @@ bool CObjectManager::CharacterUseJewelOfSoul(LPOBJ lpObj, int SourceSlot, int Ta
 
 	CItem* lpItem = &lpObj->Inventory[TargetSlot];
 
-	if (lpItem->m_Index == GET_ITEM(4, 15)) // Disable Arrow
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(4, 15)) // Disable Arrow
 	{
 		return 0;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(4, 7)) // Disable Bolt
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(4, 7)) // Disable Bolt
 	{
 		return 0;
 	}
 
-	if (lpItem->m_Index > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(lpItem->m_Index))
+	if (gItemManager.GetBehavior(lpItem->m_Index) > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(lpItem->m_Index))
 	{
 		return 0;
 	}
@@ -1622,17 +1633,17 @@ bool CObjectManager::CharacterUseJewelOfLife(LPOBJ lpObj, int SourceSlot, int Ta
 
 	CItem* lpItem = &lpObj->Inventory[TargetSlot];
 
-	if (lpItem->m_Index == GET_ITEM(4, 15)) // Disable Arrow
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(4, 15)) // Disable Arrow
 	{
 		return 0;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(4, 7)) // Disable Bolt
+	if (gItemManager.GetBehavior(lpItem->m_Index) == GET_ITEM(4, 7)) // Disable Bolt
 	{
 		return 0;
 	}
 
-	if (lpItem->m_Index > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(lpItem->m_Index))
+	if (gItemManager.GetBehavior(lpItem->m_Index) > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(lpItem->m_Index))
 	{
 		return 0;
 	}
@@ -1644,7 +1655,7 @@ bool CObjectManager::CharacterUseJewelOfLife(LPOBJ lpObj, int SourceSlot, int Ta
 
 	if ((GetLargeRand() % 100) < gServerInfo.m_JewelOfLifeSuccessRate[lpObj->AccountLevel])
 	{
-		if (lpItem->m_AddOption == 0 && ((lpItem->m_Index >= GET_ITEM(12, 3) && lpItem->m_Index <= GET_ITEM(12, 6)) || gCustomWing.CheckCustomWingByItem(lpItem->m_Index)))
+		if (lpItem->m_AddOption == 0 && ((gItemManager.GetBehavior(lpItem->m_Index) >= GET_ITEM(12, 3) && gItemManager.GetBehavior(lpItem->m_Index) <= GET_ITEM(12, 6)) || gCustomWing.CheckCustomWingByItem(lpItem->m_Index)))
 		{
 			lpItem->m_ExceOption &= 0xDF;
 
@@ -1976,17 +1987,17 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 	{
 		lpObj->HaveWeaponInHand = 0;
 	}
-	else if (Left->IsItem() == 0 && Right->m_Index == GET_ITEM(4, 15)) // Arrow
+	else if (Left->IsItem() == 0 && Right->GetKind() == GET_ITEM(4, 15)) // Arrow
 	{
 		lpObj->HaveWeaponInHand = 0;
 	}
 	else if (Right->IsItem() == 0)
 	{
-		if (Left->m_Index == GET_ITEM(4, 7)) // Bolt
+		if (Left->GetKind() == GET_ITEM(4, 7)) // Bolt
 		{
 			lpObj->HaveWeaponInHand = 0;
 		}
-		else if (Left->m_Index >= GET_ITEM(6, 0) && Left->m_Index < GET_ITEM(7, 0)) // Shields
+		else if (Left->GetKind() >= GET_ITEM(6, 0) && Left->GetKind() < GET_ITEM(7, 0)) // Shields
 		{
 			lpObj->HaveWeaponInHand = 0;
 		}
@@ -2068,7 +2079,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 	}
 	else if (lpObj->Class == CLASS_FE)
 	{
-		if (Right->IsItem() != 0 && Right->m_Index >= GET_ITEM(4, 0) && Right->m_Index < GET_ITEM(5, 0) && Right->m_Index != GET_ITEM(4, 15))
+		if (Right->IsItem() != 0 && Right->GetKind() >= GET_ITEM(4, 0) && Right->GetKind() < GET_ITEM(5, 0) && Right->GetKind() != GET_ITEM(4, 15))
 		{
 			lpObj->PhysiDamageMinRight = (Strength / gServerInfo.m_FEPhysiDamageMinBowConstA) + (Dexterity / gServerInfo.m_FEPhysiDamageMinBowConstB);
 
@@ -2078,7 +2089,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 
 			lpObj->PhysiDamageMaxLeft = (Strength / gServerInfo.m_FEPhysiDamageMaxBowConstA) + (Dexterity / gServerInfo.m_FEPhysiDamageMaxBowConstB);
 		}
-		else if (Left->IsItem() != 0 && Left->m_Index >= GET_ITEM(4, 0) && Left->m_Index < GET_ITEM(5, 0) && Left->m_Index != GET_ITEM(4, 7))
+		else if (Left->IsItem() != 0 && Left->GetKind() >= GET_ITEM(4, 0) && Left->GetKind() < GET_ITEM(5, 0) && Left->GetKind() != GET_ITEM(4, 7))
 		{
 			lpObj->PhysiDamageMinRight = (Strength / gServerInfo.m_FEPhysiDamageMinBowConstA) + (Dexterity / gServerInfo.m_FEPhysiDamageMinBowConstB);
 
@@ -2184,7 +2195,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 
 	bool RightItem = 0;
 
-	if (Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(6, 0) && Right->m_Index != GET_ITEM(4, 7) && Right->m_Index != GET_ITEM(4, 15))
+	if (Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(6, 0) && Right->GetKind() != GET_ITEM(4, 7) && Right->GetKind() != GET_ITEM(4, 15))
 	{
 		if (Right->m_IsValidItem != 0)
 		{
@@ -2194,7 +2205,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 
 	bool LeftItem = 0;
 
-	if (Left->m_Index >= GET_ITEM(0, 0) && Left->m_Index < GET_ITEM(6, 0) && Left->m_Index != GET_ITEM(4, 7) && Left->m_Index != GET_ITEM(4, 15))
+	if (Left->GetKind() >= GET_ITEM(0, 0) && Left->GetKind() < GET_ITEM(6, 0) && Left->GetKind() != GET_ITEM(4, 7) && Left->GetKind() != GET_ITEM(4, 15))
 	{
 		if (Left->m_IsValidItem != 0)
 		{
@@ -2282,7 +2293,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 			continue;
 		}
 
-		if (lpObj->Inventory[n].IsItem() == 0 || lpObj->Inventory[n].m_IsValidItem == 0 || (LastItemIndex != -1 && (lpObj->Inventory[n].m_Index % MAX_ITEM_TYPE) != LastItemIndex))
+		if (lpObj->Inventory[n].IsItem() == 0 || lpObj->Inventory[n].m_IsValidItem == 0 || (LastItemIndex != -1 && GET_ITEM_SUB(lpObj->Inventory[n].m_Index) != LastItemIndex))
 		{
 			lpObj->ArmorSetBonus = 0;
 
@@ -2292,7 +2303,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 		{
 			lpObj->ArmorSetBonus = 1;
 
-			LastItemIndex = lpObj->Inventory[n].m_Index % MAX_ITEM_TYPE;
+			LastItemIndex = GET_ITEM_SUB(lpObj->Inventory[n].m_Index);
 		}
 	}
 
@@ -2419,18 +2430,18 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 
 	gItemOption.CalcItemCommonOption(lpObj);
 
-	if (Right->m_Index >= GET_ITEM(4, 0) && Right->m_Index < GET_ITEM(5, 0) && Right->m_Index != GET_ITEM(4, 15) && Right->m_Slot == 0)
+	if (Right->GetKind() >= GET_ITEM(4, 0) && Right->GetKind() < GET_ITEM(5, 0) && Right->GetKind() != GET_ITEM(4, 15) && Right->m_Slot == 0)
 	{
-		if (Left->m_Index == GET_ITEM(4, 7) && Left->m_Level > 0)
+		if (Left->GetKind() == GET_ITEM(4, 7) && Left->m_Level > 0)
 		{
 			lpObj->PhysiDamageMinRight += ((lpObj->PhysiDamageMinRight * ((Left->m_Level * 2) + 1)) / 100) + 1;
 
 			lpObj->PhysiDamageMaxRight += ((lpObj->PhysiDamageMinRight * ((Left->m_Level * 2) + 1)) / 100) + 1;
 		}
 	}
-	else if (Left->m_Index >= GET_ITEM(4, 0) && Left->m_Index < GET_ITEM(5, 0) && Left->m_Index != GET_ITEM(4, 7) && Left->m_Slot == 1)
+	else if (Left->GetKind() >= GET_ITEM(4, 0) && Left->GetKind() < GET_ITEM(5, 0) && Left->GetKind() != GET_ITEM(4, 7) && Left->m_Slot == 1)
 	{
-		if (Right->m_Index == GET_ITEM(4, 15) && Right->m_Level > 0)
+		if (Right->GetKind() == GET_ITEM(4, 15) && Right->m_Level > 0)
 		{
 			lpObj->PhysiDamageMinLeft += ((lpObj->PhysiDamageMinLeft * ((Right->m_Level * 2) + 1)) / 100) + 1;
 
@@ -2442,7 +2453,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 	{
 		if (Right->IsItem() != 0 && Left->IsItem() != 0)
 		{
-			if (Right->m_Index >= GET_ITEM(0, 0) && Right->m_Index < GET_ITEM(4, 0) && Left->m_Index >= GET_ITEM(0, 0) && Left->m_Index < GET_ITEM(4, 0))
+			if (Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(4, 0) && Left->GetKind() >= GET_ITEM(0, 0) && Left->GetKind() < GET_ITEM(4, 0))
 			{
 				lpObj->PhysiDamageMinRight = (lpObj->PhysiDamageMinRight * 55) / 100;
 
@@ -2469,7 +2480,7 @@ void CObjectManager::CharacterCalcAttribute(int aIndex)
 
 	if (Helper->IsItem() != 0 && Helper->m_IsValidItem != 0)
 	{
-		if (Helper->m_Index == GET_ITEM(13, 0)) // Angel
+		if (gItemManager.GetBehavior(Helper->m_Index) == GET_ITEM(13, 0)) // Angel
 		{
 			lpObj->AddLife += 50;
 		}

@@ -59,9 +59,15 @@ void CItemOption::Load(const char* path)
 
 			info.OptionValue = lpReadScript->GetAsNumber();
 
-			info.ItemMinIndex = SafeGetItem(GET_ITEM(lpReadScript->GetAsNumber(), lpReadScript->GetAsNumber()));
+			// El orden de evaluación de los argumentos no está definido (GCC los
+			// evalúa al revés): sección e índice se leen por separado.
+			int ItemMinIndexSection = lpReadScript->GetAsNumber();
 
-			info.ItemMaxIndex = SafeGetItem(GET_ITEM(lpReadScript->GetAsNumber(), lpReadScript->GetAsNumber()));
+			info.ItemMinIndex = SafeGetItem(GET_ITEM(ItemMinIndexSection, lpReadScript->GetAsNumber()));
+
+			int ItemMaxIndexSection = lpReadScript->GetAsNumber();
+
+			info.ItemMaxIndex = SafeGetItem(GET_ITEM(ItemMaxIndexSection, lpReadScript->GetAsNumber()));
 
 			info.ItemSkillOption = lpReadScript->GetAsNumber();
 
@@ -108,12 +114,12 @@ bool CItemOption::GetItemOption(int index, CItem* lpItem)
 					continue;
 				}
 
-				if (it->ItemMinIndex != -1 && it->ItemMinIndex > lpItem->m_Index)
+				if (it->ItemMinIndex != -1 && it->ItemMinIndex > lpItem->GetKind())
 				{
 					continue;
 				}
 
-				if (it->ItemMaxIndex != -1 && it->ItemMaxIndex < lpItem->m_Index)
+				if (it->ItemMaxIndex != -1 && it->ItemMaxIndex < lpItem->GetKind())
 				{
 					continue;
 				}
@@ -165,12 +171,12 @@ bool CItemOption::GetItemOption(int index, WORD ItemIndex, BYTE ItemSkill, BYTE 
 				continue;
 			}
 
-			if (it->ItemMinIndex != -1 && it->ItemMinIndex > ItemIndex)
+			if (it->ItemMinIndex != -1 && it->ItemMinIndex > gItemManager.GetBehavior(ItemIndex))
 			{
 				continue;
 			}
 
-			if (it->ItemMaxIndex != -1 && it->ItemMaxIndex < ItemIndex)
+			if (it->ItemMaxIndex != -1 && it->ItemMaxIndex < gItemManager.GetBehavior(ItemIndex))
 			{
 				continue;
 			}

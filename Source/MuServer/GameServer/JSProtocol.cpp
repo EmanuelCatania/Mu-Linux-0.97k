@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ContentCatalog.h"
 #include "JSProtocol.h"
 #include "CommandManager.h"
 #include "DSProtocol.h"
@@ -140,6 +141,10 @@ void JGConnectAccountRecv(SDHP_CONNECT_ACCOUNT_RECV* lpMsg)
 	gObj[lpMsg->index].AccountLevel = lpMsg->AccountLevel;
 
 	memcpy(gObj[lpMsg->index].AccountExpireDate, lpMsg->AccountExpireDate, sizeof(gObj[lpMsg->index].AccountExpireDate));
+
+	// El catálogo de contenido va antes de la respuesta: en el mismo stream TCP
+	// llega antes de que el cliente pida la lista de personajes.
+	gContentCatalog.Send(lpMsg->index);
 
 	GCConnectAccountSend(lpMsg->index, 1);
 

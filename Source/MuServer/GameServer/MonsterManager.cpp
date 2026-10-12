@@ -42,6 +42,8 @@ void CMonsterManager::Init()
 	}
 }
 
+bool IsSafeModelPath(const char* path);
+
 void CMonsterManager::Load(const char* path)
 {
 	CReadScript* lpReadScript = new CReadScript;
@@ -132,6 +134,37 @@ void CMonsterManager::Load(const char* path)
 			for (int n = 0; n < MAX_RESISTANCE_TYPE; n++)
 			{
 				info.Resistance[n] = lpReadScript->GetAsNumber();
+			}
+
+			// Columnas opcionales (0.97.20): Kind Golden Scale "Carpeta" "Modelo",
+			// '*' = el valor vanilla.
+			info.Kind = -1;
+
+			char line[256];
+
+			lpReadScript->ReadRestOfLine(line, sizeof(line));
+
+			char* columns[6];
+
+			int count = CReadScript::SplitColumns(line, columns, 6);
+
+			if (count > 0 && strcmp(columns[0], "*") != 0) info.Kind = atoi(columns[0]);
+
+			if (count > 1 && strcmp(columns[1], "*") != 0) info.Golden = atoi(columns[1]);
+
+			if (count > 2 && strcmp(columns[2], "*") != 0) info.Scale = (float)atof(columns[2]);
+
+			if (count > 3 && strcmp(columns[3], "*") != 0) strcpy_s(info.ModelFolder, columns[3]);
+
+			if (count > 4 && strcmp(columns[4], "*") != 0) strcpy_s(info.ModelName, columns[4]);
+
+			if (!IsSafeModelPath(info.ModelFolder) || !IsSafeModelPath(info.ModelName))
+			{
+				LogAdd(LOG_RED, "[MonsterManager] Monster %d: ruta de modelo inválida, se ignora", info.Index);
+
+				info.ModelFolder[0] = 0;
+
+				info.ModelName[0] = 0;
 			}
 
 			this->SetInfo(info);

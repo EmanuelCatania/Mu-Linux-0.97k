@@ -81,9 +81,14 @@ bool CItem::IsItem()
 	}
 }
 
+int CItem::GetKind() const
+{
+	return gItemManager.GetBehavior(this->m_Index);
+}
+
 bool CItem::IsExcItem()
 {
-	if (this->m_Index == GET_ITEM(13, 3)) // Dinorant
+	if (this->GetKind() == GET_ITEM(13, 3)) // Dinorant
 	{
 		return 0;
 	}
@@ -145,7 +150,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 
 	this->m_ExceOption = ExceOption;
 
-	if (this->m_Index == GET_ITEM(0, 19) || this->m_Index == GET_ITEM(2, 13) || this->m_Index == GET_ITEM(4, 18) || this->m_Index == GET_ITEM(5, 10)) // Sword of Archangel,Scepter of Archangel,Crossbow of Archangel,Staff of Archangel
+	if (this->GetKind() == GET_ITEM(0, 19) || this->GetKind() == GET_ITEM(2, 13) || this->GetKind() == GET_ITEM(4, 18) || this->GetKind() == GET_ITEM(5, 10)) // Sword of Archangel,Scepter of Archangel,Crossbow of Archangel,Staff of Archangel
 	{
 		ExceOption = 0;
 	}
@@ -155,12 +160,12 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 		ExceOption = 0;
 	}
 
-	if (this->m_Index == GET_ITEM(13, 3)) // Dinorant
+	if (this->GetKind() == GET_ITEM(13, 3)) // Dinorant
 	{
 		ExceOption = 0;
 	}
 
-	if (this->m_Index == GET_ITEM(14, 23) || this->m_Index == GET_ITEM(14, 24) || this->m_Index == GET_ITEM(14, 25) || this->m_Index == GET_ITEM(14, 26))
+	if (this->GetKind() == GET_ITEM(14, 23) || this->GetKind() == GET_ITEM(14, 24) || this->GetKind() == GET_ITEM(14, 25) || this->GetKind() == GET_ITEM(14, 26))
 	{
 		this->m_QuestItem = 1;
 	}
@@ -266,7 +271,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 		this->m_RequireVitality = (((ItemInfo.RequireVitality * ((this->m_Level * 3) + ItemLevel)) * 3) / 100) + 20;
 	}
 
-	if ((this->m_Index / MAX_ITEM_TYPE) == 5 && ItemInfo.Slot == 1)
+	if (GET_ITEM_SECTION(this->m_Index) == 5 && ItemInfo.Slot == 1)
 	{
 		if (ItemInfo.RequireEnergy != 0)
 		{
@@ -283,16 +288,16 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 
 	if (ItemInfo.RequireLevel != 0)
 	{
-		if (this->m_Index >= GET_ITEM(0, 0) && this->m_Index < GET_ITEM(12, 0))
+		if (this->GetKind() >= GET_ITEM(0, 0) && this->GetKind() < GET_ITEM(12, 0))
 		{
 			this->m_RequireLevel = ItemInfo.RequireLevel;
 		}
-		else if ((this->m_Index >= GET_ITEM(12, 3) && this->m_Index <= GET_ITEM(12, 6)) // Wings
+		else if ((this->GetKind() >= GET_ITEM(12, 3) && this->GetKind() <= GET_ITEM(12, 6)) // Wings
 			|| gCustomWing.CheckCustomWingByItem(this->m_Index)) // Custom Wings
 		{
 			this->m_RequireLevel = ItemInfo.RequireLevel + (this->m_Level * 5);
 		}
-		else if ((this->m_Index >= GET_ITEM(12, 7) && this->m_Index <= GET_ITEM(12, 19) && this->m_Index != GET_ITEM(12, 15))) // Orbs,Scrolls
+		else if ((this->GetKind() >= GET_ITEM(12, 7) && this->GetKind() <= GET_ITEM(12, 19) && this->GetKind() != GET_ITEM(12, 15))) // Orbs,Scrolls
 		{
 			this->m_RequireLevel = ItemInfo.RequireLevel;
 		}
@@ -302,7 +307,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 		}
 	}
 
-	if (this->m_Index == GET_ITEM(13, 10)) // Transformation Ring
+	if (this->GetKind() == GET_ITEM(13, 10)) // Transformation Ring
 	{
 		if (ItemLevel <= 2)
 		{
@@ -316,7 +321,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 
 	if (ExceOption != 0 && this->m_RequireLevel > 0)
 	{
-		if (this->m_Index >= GET_ITEM(12, 0))
+		if (this->GetKind() >= GET_ITEM(12, 0))
 		{
 			this->m_RequireLevel += 20;
 		}
@@ -324,15 +329,15 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 
 	int ChaosItem = 0;
 
-	if (this->m_Index == GET_ITEM(2, 6))
+	if (this->GetKind() == GET_ITEM(2, 6))
 	{
 		ChaosItem = 15;
 	}
-	else if (this->m_Index == GET_ITEM(5, 7))
+	else if (this->GetKind() == GET_ITEM(5, 7))
 	{
 		ChaosItem = 25;
 	}
-	else if (this->m_Index == GET_ITEM(4, 6))
+	else if (this->GetKind() == GET_ITEM(4, 6))
 	{
 		ChaosItem = 30;
 	}
@@ -420,7 +425,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 
 	if (this->m_Defense > 0)
 	{
-		if (this->m_Index >= GET_ITEM(6, 0) && this->m_Index < GET_ITEM(7, 0)) // Shields
+		if (this->GetKind() >= GET_ITEM(6, 0) && this->GetKind() < GET_ITEM(7, 0)) // Shields
 		{
 			this->m_Defense += this->m_Level;
 		}
@@ -431,13 +436,15 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 				this->m_Defense += (((this->m_Defense * 12) / ItemInfo.Level) + (ItemInfo.Level / 5)) + 4;
 			}
 
-			if ((this->m_Index >= GET_ITEM(12, 3) && this->m_Index <= GET_ITEM(12, 6))) // 2sd Wings
-			{
-				this->m_Defense += (this->m_Level * 2);
-			}
-			else if (gCustomWing.CheckCustomWingByItem(this->m_Index)) // Custom Wings
+			// 0.97.20: el ala custom va primero: su comportamiento puede ser un
+			// ala de segunda, pero la defensa sale de sus propias constantes.
+			if (gCustomWing.CheckCustomWingByItem(this->m_Index)) // Custom Wings
 			{
 				this->m_Defense += gCustomWing.GetCustomWingDefense(this->m_Index, this->m_Level);
+			}
+			else if ((this->GetKind() >= GET_ITEM(12, 3) && this->GetKind() <= GET_ITEM(12, 6))) // 2sd Wings
+			{
+				this->m_Defense += (this->m_Level * 2);
 			}
 			else
 			{
@@ -570,7 +577,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 		this->m_AddOption = 0;
 	}
 
-	if (this->m_Index >= GET_ITEM(12, 0) && this->m_Index <= GET_ITEM(12, 6) // Wings
+	if (this->GetKind() >= GET_ITEM(12, 0) && this->GetKind() <= GET_ITEM(12, 6) // Wings
 	    || gCustomWing.CheckCustomWingByItem(this->m_Index)) // Custom Wings
 	{
 		ToInsertOptions.insert(ToInsertOptions.end(), ToInsertLuckOption.begin(), ToInsertLuckOption.end());
@@ -611,7 +618,7 @@ void CItem::Convert(int index, BYTE SkillOption, BYTE LuckOption, BYTE AddOption
 
 	this->Value();
 
-	if (this->m_Index != GET_ITEM(4, 7) && this->m_Index != GET_ITEM(4, 15)) // Arrow,Bolt
+	if (this->GetKind() != GET_ITEM(4, 7) && this->GetKind() != GET_ITEM(4, 15)) // Arrow,Bolt
 	{
 		this->m_BaseDamageMin = this->m_DamageMin;
 
@@ -668,9 +675,9 @@ void CItem::Value()
 	{
 		price = ((ItemInfo.Value * ItemInfo.Value) * 10) / 12;
 
-		if (this->m_Index >= GET_ITEM(14, 0) && this->m_Index <= GET_ITEM(14, 8))
+		if (this->GetKind() >= GET_ITEM(14, 0) && this->GetKind() <= GET_ITEM(14, 8))
 		{
-			if (this->m_Index == GET_ITEM(14, 3) || this->m_Index == GET_ITEM(14, 6))
+			if (this->GetKind() == GET_ITEM(14, 3) || this->GetKind() == GET_ITEM(14, 6))
 			{
 				price *= 2;
 			}
@@ -698,7 +705,7 @@ void CItem::Value()
 
 		for (int n = 0; n < this->m_OptionsQuant; n++)
 		{
-			if (this->m_SpecialIndex[n] != 0 && this->m_Index < GET_ITEM(12, 0))
+			if (this->m_SpecialIndex[n] != 0 && this->GetKind() < GET_ITEM(12, 0))
 			{
 				ItemLevel += 25;
 
@@ -706,7 +713,7 @@ void CItem::Value()
 			}
 		}
 
-		if (((this->m_Index / MAX_ITEM_TYPE) == 12 && this->m_Index > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(this->m_Index)) || (this->m_Index / MAX_ITEM_TYPE) == 13 || (this->m_Index / MAX_ITEM_TYPE) == 15)
+		if ((GET_ITEM_SECTION(this->m_Index) == 12 && this->GetKind() > GET_ITEM(12, 6) && !gCustomWing.CheckCustomWingByItem(this->m_Index)) || GET_ITEM_SECTION(this->m_Index) == 13 || GET_ITEM_SECTION(this->m_Index) == 15)
 		{
 			price = ((ItemLevel * ItemLevel) * ItemLevel) + 100;
 
@@ -774,7 +781,7 @@ void CItem::Value()
 				}
 			}
 
-			if ((this->m_Index >= GET_ITEM(12, 0) && this->m_Index <= GET_ITEM(12, 6)) // Wings
+			if ((this->GetKind() >= GET_ITEM(12, 0) && this->GetKind() <= GET_ITEM(12, 6)) // Wings
 			    || gCustomWing.CheckCustomWingByItem(this->m_Index)) // Custom Wings
 			{
 				price = ((((ItemLevel + 40) * ItemLevel) * ItemLevel) * 11) + 40000000;
@@ -784,7 +791,7 @@ void CItem::Value()
 				price = ((((ItemLevel + 40) * ItemLevel) * ItemLevel) / 8) + 100;
 			}
 
-			if (this->m_Index >= GET_ITEM(0, 0) && this->m_Index < GET_ITEM(6, 0))
+			if (this->GetKind() >= GET_ITEM(0, 0) && this->GetKind() < GET_ITEM(6, 0))
 			{
 				if (ItemInfo.TwoHand == 0)
 				{
@@ -817,7 +824,7 @@ void CItem::Value()
 			{
 				if ((this->m_ExceOption & (1 << n)) != 0)
 				{
-					price += ((this->m_Index < GET_ITEM(12, 0)) ? ((price * 100) / 100) : ((price * 25) / 100));
+					price += ((this->GetKind() < GET_ITEM(12, 0)) ? ((price * 100) / 100) : ((price * 25) / 100));
 				}
 			}
 		}
@@ -850,23 +857,23 @@ void CItem::OldValue()
 		return;
 	}
 
-	if (this->m_Index == GET_ITEM(14, 13)) // Jewel of Bless
+	if (this->GetKind() == GET_ITEM(14, 13)) // Jewel of Bless
 	{
 		this->m_OldBuyMoney = 100000;
 	}
-	else if (this->m_Index == GET_ITEM(14, 14)) // Jewel of Soul
+	else if (this->GetKind() == GET_ITEM(14, 14)) // Jewel of Soul
 	{
 		this->m_OldBuyMoney = 70000;
 	}
-	else if (this->m_Index == GET_ITEM(12, 15)) // Jewel of Chaos
+	else if (this->GetKind() == GET_ITEM(12, 15)) // Jewel of Chaos
 	{
 		this->m_OldBuyMoney = 40000;
 	}
-	else if (this->m_Index == GET_ITEM(14, 22)) // Jewel of Creation
+	else if (this->GetKind() == GET_ITEM(14, 22)) // Jewel of Creation
 	{
 		this->m_OldBuyMoney = 450000;
 	}
-	else if (this->m_Index == GET_ITEM(14, 16)) // Jewel of Life
+	else if (this->GetKind() == GET_ITEM(14, 16)) // Jewel of Life
 	{
 		this->m_OldBuyMoney = 450000;
 	}
@@ -960,7 +967,7 @@ bool CItem::WeaponDurabilityDown(int aIndex, int defense, int type)
 		return 0;
 	}
 
-	if (this->m_Index == GET_ITEM(4, 7) || this->m_Index == GET_ITEM(4, 15))
+	if (this->GetKind() == GET_ITEM(4, 7) || this->GetKind() == GET_ITEM(4, 15))
 	{
 		return 0;
 	}
@@ -1059,7 +1066,7 @@ bool CItem::ArmorDurabilityDown(int aIndex, int damage)
 
 	int MaxDurSmall = (69 * gServerInfo.m_ArmorDurabilityRate) / 100;
 
-	if (this->m_Index >= GET_ITEM(6, 0) && this->m_Index < GET_ITEM(7, 0)) // Shield
+	if (this->GetKind() >= GET_ITEM(6, 0) && this->GetKind() < GET_ITEM(7, 0)) // Shield
 	{
 		defense *= 5;
 

@@ -1380,7 +1380,7 @@ void CDevilSquare::CGDevilSquareEnterRecv(PMSG_DEVIL_SQUARE_ENTER_RECV* lpMsg, i
 		return;
 	}
 
-	if (lpObj->Inventory[lpMsg->slot].m_Index != GET_ITEM(14, 19) && lpObj->Inventory[lpMsg->slot].m_Index != GET_ITEM(13, 46))
+	if (lpObj->Inventory[lpMsg->slot].GetKind() != GET_ITEM(14, 19) && lpObj->Inventory[lpMsg->slot].GetKind() != GET_ITEM(13, 46))
 	{
 		pMsg.result = 1;
 
@@ -1389,7 +1389,7 @@ void CDevilSquare::CGDevilSquareEnterRecv(PMSG_DEVIL_SQUARE_ENTER_RECV* lpMsg, i
 		return;
 	}
 
-	if (lpObj->Inventory[lpMsg->slot].m_Index == GET_ITEM(14, 19) && lpObj->Inventory[lpMsg->slot].m_Level != (lpMsg->level + 1))
+	if (lpObj->Inventory[lpMsg->slot].GetKind() == GET_ITEM(14, 19) && lpObj->Inventory[lpMsg->slot].m_Level != (lpMsg->level + 1))
 	{
 		pMsg.result = 1;
 

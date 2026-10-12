@@ -7,6 +7,56 @@
 
 Port nativo para Linux e stack operacional do MuEmu 0.97k com Docker, painel web e editor opcional.
 
+## Novidades da 0.97.20 — conclusão da Fase 2
+
+**Compatibilidade: server 0.97.20 ↔ [cliente 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20).** Atualize os dois juntos: o formato estendido de itens não é compatível com clientes anteriores nem com o Main.dll histórico.
+
+- Ao entrar, o servidor envia o catálogo de itens, monstros, efeitos, pets e tooltips. O cliente recebe as definições e mantém os modelos e texturas em seus arquivos locais.
+- Cada seção aceita novos índices 32..511 e formato de 7 bytes. A coluna **Comportamento** reutiliza a lógica de um item clássico em ataques, skills, combinações e eventos.
+- Os JSON de itens definem efeitos, pose no inventário e textos do tooltip. O equipamento custom também aparece nos outros jogadores e na seleção de personagens.
+- Os pets são configurados em JSON. Inclui **Pet Rudolph (13,400)**, que voa até o zen próximo e o recolhe sob controle do servidor.
+- Os arquivos de customs do Encoder da DLL continuam sendo aceitos como entrada do catálogo.
+- Corrigida a ordem de leitura da seção e do índice em `ItemOption.txt` no GCC, que impedia o aparecimento de Triple Shot.
+
+### Como atualizar da 0.97.00
+
+Faça backup dos arquivos de Data antes de integrar os exemplos. Não apague os volumes nem substitua suas configurações personalizadas completas.
+
+Com Docker e o compose de imagens, atualize apenas o servidor:
+
+```bash
+docker compose -f docker-compose.images.yml pull mu-server
+# Integre os arquivos de Data abaixo antes de iniciar o novo servidor.
+docker compose -f docker-compose.images.yml up -d --no-deps mu-server
+```
+
+O compose usa `latest`; para fixar a versão, altere apenas a imagem de `mu-server` para `emapupi/mu-linux-97k:0.97.20`. As imagens suportam `linux/amd64` e `linux/arm64`.
+
+**O pull da imagem não atualiza um volume persistente.** A partir de `MuServer/Data` desta versão, integre os arquivos ao volume `/opt/mu/Data`:
+
+- `Custom/Items/`: `03_000.json` (pose da Light Spear) e `13_400.json` (pose e tooltip do Rudolph).
+- `Custom/Pets/13_400.json`: movimento e coleta de zen do Rudolph.
+- `Custom/Encoder/`: `CustomBow.txt`, `CustomGlow.txt`, `CustomItem.txt`, `CustomMonster.txt`, `ItemPosition.txt` e `MapFog.txt`. Mescle as entradas custom existentes em vez de sobrescrevê-las.
+- `Item/Item.txt`: adicione a linha **400 dentro da seção 13** desta versão, se ainda não existir. Preserve as demais linhas. Se já utiliza 13,400, resolva o conflito antes de incorporar o exemplo.
+
+Instale também os assets correspondentes no cliente 0.97.20. Reinicie o servidor e confira as mensagens `[ContentCatalog]`, incluindo `13_400.json`, seu tooltip e sua pose. O início deve mostrar `MU Linux server 0.97.20` e o link do cliente compatível.
+
+**MySQL, web e editor não mudam nesta versão:** não há migração de esquema nem necessidade de reconstruir suas imagens. Se sua instalação ainda usa MySQL 8.0, a [migração anterior para 8.4](docs/mysql-8.4-upgrade.md) é uma tarefa separada.
+
+**Pterodactyl:** importe o egg de servidor atualizado, que aceita `0.97.20` sem `v`, e configure esse valor em `MU_RELEASE_TAG`. A imagem de runtime do Pterodactyl contém apenas dependências: atualizá-la não altera os binários do volume. Em instalações existentes, pare o servidor e extraia `mu-linux-97k-server-amd64.tar.gz` ou `mu-linux-97k-server-arm64.tar.gz` deste Release em uma pasta temporária; atualize os quatro binários e `start.sh`, e integre Data como acima, preservando seus INI. Não reinstale sem revisar: o instalador também extrai configurações e dados. Os eggs de web e MySQL não precisam mudar. Os arquivos por arquitetura devem estar anexados ao Release antes da instalação desta versão.
+
+### Como adicionar itens custom
+
+O servidor é a fonte das definições; o cliente só precisa dos modelos `.bmd` e das texturas. O cliente baseado em sources não exige regenerar `item.bmd` ou `ClientInfo.bmd`.
+
+1. Adicione a linha do item à sua seção em `Data/Item/Item.txt`. Para índices 32..511, informe o item clássico imitado em **Comportamento** (por exemplo `00,020`), seguido da pasta, modelo e brilho RGB. Copie uma linha completa da seção e ajuste os atributos; não use uma linha abreviada com `...`.
+2. Para customs clássicos, mantenha as definições de modelo/brilho em `Data/Custom/Encoder/CustomItem.txt` e `CustomGlow.txt`, além das demais tabelas do Encoder incluídas.
+3. Opcionalmente, crie `Data/Custom/Items/<seção>_<índice>.json` com `item`, `effects`, `inventory` e/ou `tooltip`. Os exemplos `03_000.json` e `13_400.json` mostram o formato real.
+4. Para um pet custom, adicione `Data/Custom/Pets/<seção>_<índice>.json`. Rudolph usa `13,400`, slot 8, comportamento `*`, e define movimento e coleta de zen. O cliente anima o pet; o servidor autoriza e executa a coleta.
+5. Distribua os assets do modelo ao cliente, reinicie o servidor e entre novamente para receber o catálogo. Com permissão de GM, teste Rudolph usando `/make 13 400`.
+
+Consulte os [exemplos completos e caminhos dos assets do cliente](https://github.com/EmanuelCatania/Mu-97k-Client-Source/blob/0.97.20/README.md#cómo-agregar-items-custom).
+
 ## Base e referência
 
 Baseado nas sources do Kayito.
@@ -44,7 +94,7 @@ Baseado nas sources do Kayito.
 
 ## Estado do cliente
 
-O cliente baseado em injeção de DLL está deixando de ser a implementação principal. Seus arquivos permanecem para compatibilidade, referência e manutenção; o desenvolvimento ativo continua em <https://github.com/EmanuelCatania/Mu-97k-Client-Source>.
+O cliente baseado em injeção de DLL está totalmente descontinuado e foi removido deste repositório junto com suas fontes e o executável do Encoder. Use o [cliente baseado em sources 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Os arquivos antigos continuam disponíveis no histórico do Git. As tabelas de `MuServer/Data/Custom/Encoder/` são mantidas porque o catálogo do servidor as utiliza.
 
 ## Início rápido
 
@@ -93,4 +143,4 @@ Ele mantém backups por arquivo e snapshots de `MuServer/Data` e `MuServer/GameS
 
 - `MD5Encryption=2` usa MD5 binário; recrie a DB com `docker compose down -v` ao migrar de texto simples.
 - Salve TXT do servidor em ANSI / Windows-1252 sem BOM. Shops ficam em `MuServer/Data/Shop/*.txt`; `-1 -1` posiciona `SlotX SlotY` automaticamente.
-- Logs: `docker compose logs -f`. Pastas principais: `Source/`, `MuServer/`, `Client/`, `Encoder/`, `docker/`.
+- Logs: `docker compose logs -f`. Pastas principais: `Source/`, `MuServer/`, `docker/`.

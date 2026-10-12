@@ -363,6 +363,15 @@
     <ClInclude Include="ReadScript.h">
       <Filter>Util Files</Filter>
     </ClInclude>
+    <ClInclude Include="ContentCatalog.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomPet.h">
+      <Filter>Items</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonLite.h">
+      <Filter>Items</Filter>
+    </ClInclude>
     <ClInclude Include="CustomWing.h">
       <Filter>Items</Filter>
     </ClInclude>
@@ -658,6 +667,12 @@
     </ClCompile>
     <ClCompile Include="ReadScript.cpp">
       <Filter>Util Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentCatalog.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomPet.cpp">
+      <Filter>Items</Filter>
     </ClCompile>
     <ClCompile Include="CustomWing.cpp">
       <Filter>Items</Filter>

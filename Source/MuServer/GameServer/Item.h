@@ -34,6 +34,12 @@ public:
 
 	bool IsItem();
 
+	// 0.97.20: índice con el que la lógica decide qué clase de item es (arco,
+	// ala, joya, poción...): el del vanilla que imita un agregado (>= 512),
+	// el propio para un vanilla.  m_Index sigue siendo el item real (tabla,
+	// formato del item, base de datos).
+	int GetKind() const;
+
 	bool IsExcItem();
 
 	bool IsClass(int Class, int ChangeUp);

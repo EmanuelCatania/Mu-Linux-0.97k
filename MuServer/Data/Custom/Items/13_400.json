@@ -1,0 +1,9 @@
+// Pet Rudolph (13,400): ejemplo de pet custom.  Este archivo sólo define cómo
+// se ve en el inventario (pose del 5.2, ZzzInventory.cpp MODEL_HELPER+67);
+// el pet en sí está en Data/Custom/Pets/13_400.json.  "tooltip" agrega
+// líneas propias debajo del nombre.
+{
+  "item": "13,400",
+  "inventory": { "position": [0.0, -0.05], "rotation": [270, 40, 0], "scale": 0.0015 },
+  "tooltip": [ { "text": "Zen picker", "color": "gold" } ]
+}

@@ -1720,7 +1720,7 @@ bool CBloodCastle::CheckEventItemSerial(int map, CMapItem* lpItem)
 		return 0;
 	}
 
-	if (lpItem->m_Index == GET_ITEM(13, 19) && lpItem->m_Serial == this->m_BloodCastleLevel[level].EventItemSerial)
+	if (lpItem->GetKind() == GET_ITEM(13, 19) && lpItem->m_Serial == this->m_BloodCastleLevel[level].EventItemSerial)
 	{
 		return 1;
 	}
@@ -2113,7 +2113,7 @@ void CBloodCastle::CGBloodCastleEnterRecv(PMSG_BLOOD_CASTLE_ENTER_RECV* lpMsg, i
 		return;
 	}
 
-	if (lpObj->Inventory[lpMsg->slot].m_Index != GET_ITEM(13, 18) && lpObj->Inventory[lpMsg->slot].m_Index != GET_ITEM(13, 47))
+	if (lpObj->Inventory[lpMsg->slot].GetKind() != GET_ITEM(13, 18) && lpObj->Inventory[lpMsg->slot].GetKind() != GET_ITEM(13, 47))
 	{
 		pMsg.result = 1;
 
@@ -2122,7 +2122,7 @@ void CBloodCastle::CGBloodCastleEnterRecv(PMSG_BLOOD_CASTLE_ENTER_RECV* lpMsg, i
 		return;
 	}
 
-	if (lpObj->Inventory[lpMsg->slot].m_Index == GET_ITEM(13, 18) && lpObj->Inventory[lpMsg->slot].m_Level != (lpMsg->level + 1))
+	if (lpObj->Inventory[lpMsg->slot].GetKind() == GET_ITEM(13, 18) && lpObj->Inventory[lpMsg->slot].m_Level != (lpMsg->level + 1))
 	{
 		pMsg.result = 1;
 

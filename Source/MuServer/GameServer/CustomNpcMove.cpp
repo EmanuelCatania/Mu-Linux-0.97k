@@ -151,21 +151,21 @@ bool CCustomNpcMove::GetNpcMove(LPOBJ lpObj, int MonsterClass, int Map, int X, i
 				return 1;
 			}
 
-			if (it->second.MoveMap == MAP_ATLANS && (lpObj->Inventory[8].m_Index == GET_ITEM(13, 2) || lpObj->Inventory[8].m_Index == GET_ITEM(13, 3))) // Uniria, Dinorant
+			if (it->second.MoveMap == MAP_ATLANS && (gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2) || gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 3))) // Uniria, Dinorant
 			{
 				gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(67, lpObj->Lang));
 
 				return 1;
 			}
 
-			if (it->second.MoveMap == MAP_ICARUS && (lpObj->Inventory[7].IsItem() == 0 && lpObj->Inventory[8].m_Index != GET_ITEM(13, 3))) // Dinorant
+			if (it->second.MoveMap == MAP_ICARUS && (lpObj->Inventory[7].IsItem() == 0 && gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) != GET_ITEM(13, 3))) // Dinorant
 			{
 				gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(68, lpObj->Lang));
 
 				return 1;
 			}
 
-			if (it->second.MoveMap == MAP_ICARUS && lpObj->Inventory[8].m_Index == GET_ITEM(13, 2)) // Uniria
+			if (it->second.MoveMap == MAP_ICARUS && gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2)) // Uniria
 			{
 				gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(67, lpObj->Lang));
 

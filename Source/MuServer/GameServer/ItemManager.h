@@ -6,10 +6,39 @@
 
 #define MAX_ITEM_SECTION 16
 #define MAX_ITEM_TYPE 32
-#define MAX_ITEM (MAX_ITEM_SECTION*MAX_ITEM_TYPE)
-#define MAX_ITEM_INFO 4
+// Numeración extendida (0.97.20): los sub-índices 0..31 de cada sección son los
+// vanilla de siempre (index = sección*32 + sub, 0..511).  Item.txt acepta
+// sub-índices 32..511, que van a un rango aparte por encima de 512, así ningún
+// literal vanilla cambia de valor.
+#define MAX_ITEM_TYPE_EX 512
+#define MAX_ITEM_VANILLA (MAX_ITEM_SECTION*MAX_ITEM_TYPE)
+#define MAX_ITEM_EX_PER_SECTION (MAX_ITEM_TYPE_EX-MAX_ITEM_TYPE)
+#define MAX_ITEM (MAX_ITEM_VANILLA+(MAX_ITEM_SECTION*MAX_ITEM_EX_PER_SECTION))
+// Item en la red: 7 bytes, layout 5.2.  El nibble alto del byte 5 lleva los
+// bits 9-12 del índice; los bytes 4 y 6 quedan reservados (0).
+#define MAX_ITEM_INFO 7
 
-#define GET_ITEM(x,y) (((x)*MAX_ITEM_TYPE)+(y))
+// Funciones y no macros: los loaders hacen GET_ITEM(x, lpReadScript->GetAsNumber())
+// y cada argumento tiene que evaluarse una sola vez.  Son constexpr para que
+// sigan valiendo en los `case`.
+constexpr int GetItemIndex(int section, int sub)
+{
+	return (sub < MAX_ITEM_TYPE) ? ((section * MAX_ITEM_TYPE) + sub) : (MAX_ITEM_VANILLA + (section * MAX_ITEM_EX_PER_SECTION) + (sub - MAX_ITEM_TYPE));
+}
+
+constexpr int GetItemSection(int index)
+{
+	return (index < MAX_ITEM_VANILLA) ? (index / MAX_ITEM_TYPE) : ((index - MAX_ITEM_VANILLA) / MAX_ITEM_EX_PER_SECTION);
+}
+
+constexpr int GetItemSub(int index)
+{
+	return (index < MAX_ITEM_VANILLA) ? (index % MAX_ITEM_TYPE) : (((index - MAX_ITEM_VANILLA) % MAX_ITEM_EX_PER_SECTION) + MAX_ITEM_TYPE);
+}
+
+#define GET_ITEM(x,y) GetItemIndex((x),(y))
+#define GET_ITEM_SECTION(i) GetItemSection(i)
+#define GET_ITEM_SUB(i) GetItemSub(i)
 #define CHECK_ITEM(x) (((x)<0)?-1:((x)>=MAX_ITEM)?-1:x)
 #define INVENTORY_RANGE(x) (((x)<0)?0:((x)>=INVENTORY_SIZE)?0:1)
 #define INVENTORY_WEAR_RANGE(x) (((x)<0)?0:((x)>=INVENTORY_WEAR_SIZE)?0:1)
@@ -209,6 +238,14 @@ struct ITEM_INFO
 	int RequireEnergy;
 	int RequireVitality;
 	int RequireClass[MAX_CLASS];
+	// Columnas opcionales (0.97.20).  Ver ContentCatalog.h.
+	int Behavior;          // vanilla cuyo comportamiento usa; -1 = el propio
+	char ModelFolder[64];  // bajo Data\ ; vacío = el modelo vanilla del índice
+	char ModelName[32];
+	int GlowColor;         // 0xRRGGBB; -1 = el brillo vanilla
+	char EntityFolder[64]; // modelo puesto (montura, pet) si no es el del inventario
+	char EntityName[32];
+	int UseGate;           // gate al que lleva al usarlo (pergamino); -1 = el comportamiento
 };
 
 class CItemManager
@@ -222,6 +259,17 @@ public:
 	void Load(const char* path);
 
 	bool GetInfo(int index, ITEM_INFO* lpInfo);
+
+	ITEM_INFO* GetInfoPtr(int index);
+
+	const std::map<int, ITEM_INFO>& GetInfoMap() const { return this->m_ItemInfo; }
+
+	// Vanilla cuyo comportamiento usa el item (el propio si no tiene columna).
+	int GetBehavior(int index);
+
+	// Índice para el CharSet, que sólo admite vanilla: un agregado viaja con
+	// su comportamiento.
+	int GetCharSetIndex(int index);
 
 	int GetItemSkill(int index);
 

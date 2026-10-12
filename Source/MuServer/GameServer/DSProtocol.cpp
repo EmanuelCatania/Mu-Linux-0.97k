@@ -316,6 +316,19 @@ void GDCharacterListSend(int aIndex)
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
 
+// 0.97.20: C1:F3:ED — equipo agregado (>= 512) de un personaje de la lista.
+// El CharSet sólo lleva vanilla; esto le dice al char-select con qué modelo
+// propio dibujar cada pieza (mismo formato que el F3:EB del viewport).
+struct PMSG_CHARACTER_LIST_CUSTOM_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:ED
+	BYTE slot;
+	BYTE reserved;
+	WORD item[9];       // slots 0..8 del inventario; 0xFFFF = vanilla o vacío
+};
+
+static_assert(sizeof(PMSG_CHARACTER_LIST_CUSTOM_SEND) == 24, "F3:ED");
+
 void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 {
 	if (gObjIsAccountValid(lpMsg->index, lpMsg->account) == 0)
@@ -341,6 +354,8 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 
 	WORD CharacterCreationLevel = 0;
 
+	std::vector<PMSG_CHARACTER_LIST_CUSTOM_SEND> custom;
+
 	for (int n = 0; n < lpMsg->count; n++)
 	{
 		SDHP_CHARACTER_LIST* lpInfo = (SDHP_CHARACTER_LIST*)(((BYTE*)lpMsg) + sizeof(SDHP_CHARACTER_LIST_RECV) + (sizeof(SDHP_CHARACTER_LIST) * n));
@@ -365,6 +380,38 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 
 		WORD TempInventory[12];
 
+		PMSG_CHARACTER_LIST_CUSTOM_SEND customInfo;
+
+		bool hasCustom = false;
+
+		for (int i = 0; i < 9; i++)
+		{
+			customInfo.item[i] = 0xFFFF;
+
+			if (!(lpInfo->Inventory[0 + (i * 5)] == 0xFF && (lpInfo->Inventory[2 + (i * 5)] & 0x80) == 0x80 && (lpInfo->Inventory[4 + (i * 5)] & 0xF0) == 0xF0))
+			{
+				int index = lpInfo->Inventory[0 + (i * 5)] + ((lpInfo->Inventory[2 + (i * 5)] & 0x80) * 2) + ((lpInfo->Inventory[4 + (i * 5)] & 0xF0) * 32);
+
+				if (index >= MAX_ITEM_VANILLA && index < MAX_ITEM)
+				{
+					customInfo.item[i] = (WORD)index;
+
+					hasCustom = true;
+				}
+			}
+		}
+
+		if (hasCustom)
+		{
+			customInfo.header.set(0xF3, 0xED, sizeof(customInfo));
+
+			customInfo.slot = lpInfo->slot;
+
+			customInfo.reserved = 0;
+
+			custom.push_back(customInfo);
+		}
+
 		for (int i = 0; i < 9; i++)
 		{
 			if (i == 0 || i == 1)
@@ -375,7 +422,7 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 				}
 				else
 				{
-					TempInventory[i] = (lpInfo->Inventory[0 + (i * 5)] + ((lpInfo->Inventory[2 + (i * 5)] & 0x80) * 2) + ((lpInfo->Inventory[4 + (i * 5)] & 0xF0) * 32));
+					TempInventory[i] = gItemManager.GetCharSetIndex(lpInfo->Inventory[0 + (i * 5)] + ((lpInfo->Inventory[2 + (i * 5)] & 0x80) * 2) + ((lpInfo->Inventory[4 + (i * 5)] & 0xF0) * 32));
 				}
 			}
 			else
@@ -386,7 +433,7 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 				}
 				else
 				{
-					TempInventory[i] = (lpInfo->Inventory[0 + (i * 5)] + ((lpInfo->Inventory[2 + (i * 5)] & 0x80) * 2) + ((lpInfo->Inventory[4 + (i * 5)] & 0xF0) * 32)) % MAX_ITEM_TYPE;
+					TempInventory[i] = gItemManager.GetCharSetIndex(lpInfo->Inventory[0 + (i * 5)] + ((lpInfo->Inventory[2 + (i * 5)] & 0x80) * 2) + ((lpInfo->Inventory[4 + (i * 5)] & 0xF0) * 32)) % MAX_ITEM_TYPE;
 				}
 			}
 		}
@@ -481,6 +528,11 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 	memcpy(send, &pMsg, sizeof(pMsg));
 
 	DataSend(lpMsg->index, send, size);
+
+	for (size_t n = 0; n < custom.size(); n++)
+	{
+		DataSend(lpMsg->index, (BYTE*)&custom[n], sizeof(custom[n]));
+	}
 
 	GCCharacterDeleteLevelSend(lpMsg->index, gServerInfo.m_CharacterDeleteMaxLevel[gObj[lpMsg->index].AccountLevel]);
 

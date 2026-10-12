@@ -1,0 +1,7 @@
+// Light Spear (vanilla 3,0): el 0.97 lo dibuja corrido en su casilla.
+// Corrección del 5.2 (ZzzInventory.cpp, RenderObjectScreen MODEL_SPEAR+0):
+// Position[1] += 0.05 y ángulo (0, 90, 20).  Escala 0 = la vanilla.
+{
+  "item": "3,0",
+  "inventory": { "position": [0.0, 0.05], "rotation": [0, 90, 20] }
+}

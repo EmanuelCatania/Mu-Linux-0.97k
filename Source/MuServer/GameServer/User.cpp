@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "CustomPet.h"
 #include "User.h"
 #include "Attack.h"
 #include "BattleSoccerManager.h"
@@ -1891,21 +1892,21 @@ BOOL gObjMoveGate(int aIndex, int gate)
 		goto ERROR_JUMP;
 	}
 
-	if (map == MAP_ATLANS && (lpObj->Inventory[8].m_Index == GET_ITEM(13, 2) || lpObj->Inventory[8].m_Index == GET_ITEM(13, 3))) // Uniria, Dinorant
+	if (map == MAP_ATLANS && (gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2) || gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 3))) // Uniria, Dinorant
 	{
 		gNotice.GCNoticeSend(aIndex, 1, gMessage.GetTextMessage(67, gObj[aIndex].Lang));
 
 		goto ERROR_JUMP;
 	}
 
-	if (map == MAP_ICARUS && (lpObj->Inventory[7].IsItem() == 0 && lpObj->Inventory[8].m_Index != GET_ITEM(13, 3))) // Wings
+	if (map == MAP_ICARUS && (lpObj->Inventory[7].IsItem() == 0 && gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) != GET_ITEM(13, 3))) // Wings
 	{
 		gNotice.GCNoticeSend(aIndex, 1, gMessage.GetTextMessage(68, gObj[aIndex].Lang));
 
 		goto ERROR_JUMP;
 	}
 
-	if (map == MAP_ICARUS && lpObj->Inventory[8].m_Index == GET_ITEM(13, 2)) // Uniria
+	if (map == MAP_ICARUS && gItemManager.GetBehavior(lpObj->Inventory[8].m_Index) == GET_ITEM(13, 2)) // Uniria
 	{
 		gNotice.GCNoticeSend(aIndex, 1, gMessage.GetTextMessage(67, gObj[aIndex].Lang));
 
@@ -2258,6 +2259,8 @@ void gObjSecondProc()
 				}
 
 				gObjectManager.CharacterAutoRecuperation(lpObj);
+
+				gCustomPet.MainProc(lpObj);
 
 				if (lpObj->Type == OBJECT_USER && lpObj->LastTeleportTime > 0)
 				{
