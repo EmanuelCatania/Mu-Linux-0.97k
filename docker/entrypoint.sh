@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "MU Linux server 0.97.20 | Cliente compatible: https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20"
+
 DB_HOST=${DB_HOST:-mysql}
 DB_PORT=${DB_PORT:-3306}
 DB_USER=${DB_USER:-admin}
