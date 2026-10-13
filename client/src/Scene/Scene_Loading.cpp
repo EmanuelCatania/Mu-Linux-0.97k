@@ -88,7 +88,7 @@ void __cdecl Scene_Loading(HDC param_1)
     GL_End2D();    // GL_End2D
     GL_PopMatrixAll();
     glFlush();
-    SwapBuffers(param_1);
+    gWindow.Present();
 
     // Transition to InGame
     SceneFlag = 5;

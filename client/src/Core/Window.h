@@ -12,7 +12,7 @@
 // Config_Load (resolución y modo) y esta clase lo escriben.
 //
 // WndProc vive en Core/WndProc.cpp; su orden de despacho se conserva.
-// La ventana nativa vive en Platform/Win32; OpenGL se extrae por separado.
+// La ventana nativa y su contexto OpenGL viven en Platform/Win32.
 
 #include <windows.h>
 
@@ -27,6 +27,9 @@ public:
 
     // Libera el contexto OpenGL y restaura el modo de video si se cambió.
     void ReleaseOpenGL();
+
+    // Presenta el frame en el mismo punto que el SwapBuffers original.
+    void Present();
 
     // Devuelve el escritorio a su modo original si lo cambiamos nosotros.
     // Idempotente y llamable desde un filtro de excepciones.
@@ -48,8 +51,8 @@ public:
 
     HWND      GetHwnd()        const;
     HINSTANCE GetInstance()    const;
-    HDC       GetHdc()         const { return m_hDC; }
-    HGLRC     GetGLContext()   const { return m_hRC; }
+    HDC       GetHdc()         const;
+    HGLRC     GetGLContext()   const;
     DWORD     GetWidth()       const { return m_Width; }
     DWORD     GetHeight()      const { return m_Height; }
     float     GetScreenRateX() const { return m_ScreenRateX; }
@@ -60,9 +63,6 @@ public:
 private:
     DWORD m_LastTitleUpdate = 0;
     int m_TitleScene = -1;
-
-    HDC       m_hDC   = NULL;
-    HGLRC     m_hRC   = NULL;
 
     DWORD m_Width       = 640;
     DWORD m_Height      = 480;

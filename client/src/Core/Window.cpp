@@ -7,6 +7,7 @@
 #include "Entity/CharacterAttributeView.h"
 #include "Local/ClientText.h"
 #include "Platform/Win32/Win32Window.h"
+#include "Platform/Win32/Win32GLContext.h"
 
 CWindow gWindow;
 
@@ -72,42 +73,21 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
     return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless});
 }
 
-// IDA: OpenGL_Init (0x0041DE30).
-// PIXELFORMATDESCRIPTOR: PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,
-// RGBA, 16 bits de color y 16 de profundidad.
+// IDA: OpenGL_Init (0x0041DE30): mostrar la ventana después de activar el contexto.
 bool CWindow::InitOpenGL()
 {
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion   = 1;
-    pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER; // 0x25
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 16;
-    pfd.cDepthBits = 16;
-
-    m_hDC = GetDC(GetHwnd());
-    if (!m_hDC) return false;               // "OpenGL Get DC Error"
-    int fmt = ChoosePixelFormat(m_hDC, &pfd);
-    if (!fmt) return false;                 // "OpenGL Choose Pixel Format Error"
-    if (!SetPixelFormat(m_hDC, fmt, &pfd)) return false;   // "OpenGL Set Pixel Format Error"
-
-    m_hRC = wglCreateContext(m_hDC);
-    if (!m_hRC) return false;               // "OpenGL Create Context Error"
-    if (!wglMakeCurrent(m_hDC, m_hRC)) return false;       // "OpenGL Make Current Error"
-
+    if (!Platform::GetGLContext().Initialize()) return false;
     Platform::GetWindow().ShowAndFocus();
     return true;
 }
 
-// IDA: OpenGL_Release (0x0041AF20), la parte de ventana y video.
+// IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
-    wglMakeCurrent(NULL, NULL);     // "GL - Release Of DC And RC Failed"
-    wglDeleteContext(m_hRC);        // "GL - Release Rendering Context Failed"
-    DeleteDC(m_hDC);                // "GL - Release Device Context Failed"
-    ReleaseDC(GetHwnd(), m_hDC);
-    // Sólo se restaura el modo de video si lo cambiamos nosotros: hacerlo igual
-    // en modo ventana hace parpadear el escritorio al salir (es el
-    // FixDisplaySettingsOnClose del DLL).
+    Platform::GetGLContext().Release();
     RestoreDisplay();
 }
+
+void CWindow::Present() { Platform::GetGLContext().Present(); }
+HDC CWindow::GetHdc() const { return Platform::GetWin32GLContext().GetHdc(); }
+HGLRC CWindow::GetGLContext() const { return Platform::GetWin32GLContext().GetHandle(); }

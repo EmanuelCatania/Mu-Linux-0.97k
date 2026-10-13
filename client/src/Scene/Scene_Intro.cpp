@@ -193,7 +193,7 @@ void __cdecl Scene_Intro(HDC param_1)
     GL_End2D();           // GL_End2D
     GL_PopMatrixAll();
     glFlush();
-    SwapBuffers(param_1);
+    gWindow.Present();
 
     // Unload splash textures immediately after display
     UnloadImage(0xd);   // Texture_Unload(Everyone)
