@@ -14,6 +14,7 @@
 // an empty pool (UI strings just render blank rather than killing the client).
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "globals.h"
 #include "functions.h"
@@ -28,7 +29,7 @@ extern "C" { void DbgLogPublic(const char *msg); }
 // ─────────────────────────────────────────────────────────────────────────────
 int __cdecl LoadTextData_Bin(const char *FileName)
 {
-    FILE *fp = fopen(FileName, "rb");
+    FILE *fp = Platform::GetFileSystem().Open(FileName, "rb");
     if (!fp) {
         char msg[256];
         wsprintfA(msg, "OpenTextData: %s file not found", FileName);

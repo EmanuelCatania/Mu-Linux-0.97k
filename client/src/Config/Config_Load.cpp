@@ -43,6 +43,7 @@
 //     SetByte(0x0041EFB5, 0xEB);  // Crack gg init
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Config/Config.h"
 #include "Net/MuEmu.h"
 #include "Config/ServerConfig.h"
@@ -76,7 +77,7 @@ int Config_Load(void)
     //   strcat(localBuf, "config.ini")
     //   -> stored in local_120 (stack buffer, MAX_PATH)
     char configPath[MAX_PATH];
-    GetCurrentDirectoryA(MAX_PATH, configPath);
+    Platform::GetFileSystem().WorkingDirectory(MAX_PATH, configPath);
     int pathLen = (int)strlen(configPath);
     if (pathLen > 0 && configPath[pathLen - 1] != '\\')
     {
@@ -103,7 +104,7 @@ int Config_Load(void)
     // declara FileVersion 0.97.11.0, asi que sale "0.97" + la letra 11 = 'k':
     // de ahi viene el nombre "0.97k".
     char m_Version[12] = {};   // IDA: m_Version (solo lo usa este bloque)
-    GetPrivateProfileStringA("LOGIN", "Version", "", m_Version, 11, configPath);
+    Platform::GetFileSystem().ReadIniString("LOGIN", "Version", "", m_Version, 11, configPath);
 
     char  exeNameBuf[MAX_PATH] = {};
     unsigned short versionWords[4] = {};

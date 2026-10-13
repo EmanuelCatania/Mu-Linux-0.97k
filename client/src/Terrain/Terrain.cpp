@@ -390,6 +390,7 @@
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Terrain/Terrain.h"
 
 // InitTerrainMappingLayer @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
@@ -513,7 +514,7 @@ uint __cdecl OpenTerrainHeight(char *filename)
         strcat(FileName, filename);
     }
 
-    FILE *fp = fopen(FileName, "rb");
+    FILE *fp = Platform::GetFileSystem().Open(FileName, "rb");
     if (!fp) {
         crt_sprintf(Text, "%s file not found.", FileName);
         CErrorReport_Write(&DAT_055c9bf0, Text);
@@ -587,7 +588,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
     }
 
     // --- Open file ---
-    FILE* f = fopen(full_path, "rb");
+    FILE* f = Platform::GetFileSystem().Open(full_path, "rb");
     if (f == NULL) {
         char msg[256];
         sprintf(msg, "%s : File not exist!", full_path);

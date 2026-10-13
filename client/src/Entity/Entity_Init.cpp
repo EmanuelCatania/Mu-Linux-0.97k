@@ -9,6 +9,7 @@
 // Max slots: 0x59740 / 0x394 = 640
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 
 
 // CreateHero — CreateHero (Ghidra-confirmed signature)
@@ -64,7 +65,7 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
 // Exporta posiciones de monstruos; las coordenadas se truncan antes de reducir a byte.
 void __cdecl Monster_SaveSetBase(LPCSTR path)
 {
-  FILE* file = fopen(path, "wt");
+  FILE* file = Platform::GetFileSystem().Open(path, "wt");
   // DESVIACION: si falla la apertura, no escribir mediante un FILE nulo.
   if (!file) return;
   fprintf(file, "2\n");

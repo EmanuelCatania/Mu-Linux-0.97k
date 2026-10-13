@@ -3,6 +3,7 @@
 // WriteJpeg.
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -120,7 +121,7 @@ long double __cdecl Screen_ToGLY(float v) {
 // Ghidra: local_1d8=3 (components), local_1d4=2 (JCS_RGB), quality from param_5.
 unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality)
 {
-    FILE* f = fopen(path, "wb");
+    FILE* f = Platform::GetFileSystem().Open(path, "wb");
     if (f == NULL) return 0;
 
     struct jpeg_compress_struct cinfo;

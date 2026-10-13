@@ -1,6 +1,7 @@
 // Terrain_LegacyLoad.cpp
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -95,7 +96,7 @@ void __cdecl OpenTerrainMapping(const char *path) {
 // known offsets validates the right map. Any byte >= 0x80 triggers Error.
 unsigned char* TerrainWall = (unsigned char*)&DAT_0838bc70;
 int __cdecl OpenTerrainAttribute(const char *FileName) {
-    FILE *fp = fopen(FileName, "rb");
+    FILE *fp = Platform::GetFileSystem().Open(FileName, "rb");
     if (!fp) {
         // Falla en silencio: el caller prueba dos formatos (Terrain*.att y
         // EncTerrain*.att) y un MessageBox bloqueante impediría el fallback.
@@ -660,7 +661,7 @@ void __cdecl OpenWorldModels(void) {
         if (DAT_0055a7c4 == '\0') {
             char local_384[32];
             crt_sprintf(local_384, "Data2/Object%d/", objFolder);
-            ParserFileHandle = fopen(local_384, "rt");
+            ParserFileHandle = Platform::GetFileSystem().Open(local_384, "rt");
             if (ParserFileHandle != nullptr) {
                 char local_300[256], local_200[256], local_100[256];
                 while (ParseNextToken() != 2) {

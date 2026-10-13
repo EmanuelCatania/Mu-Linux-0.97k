@@ -88,6 +88,7 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Texture.h"
 
 extern "C" {
@@ -275,7 +276,7 @@ static int tex_next_pow2(int v, int maxv)
 // Internal: decode OZJ (JPEG with 24-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 {
-    FILE* f = fopen(fullPath, "rb");
+    FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
     if (!f) return 0;
 
     // Skip 24-byte dump header (OZJ prefix)
@@ -349,7 +350,7 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 // Internal: decode OZT (TGA 32-bit with 4-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
 {
-    FILE* f = fopen(fullPath, "rb");
+    FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
     if (!f) return 0;
 
     fseek(f, 0, SEEK_END);
@@ -590,7 +591,7 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     }
 
     // --- Open file ---
-    FILE* f = fopen(full_path, "rb");
+    FILE* f = Platform::GetFileSystem().Open(full_path, "rb");
     // DIAG: registrar cada intento. Cap general 60 + cap adicional para Logo/Ship
     // (los archivos que nos interesan para diagnosticar el login scene caen
     // después del cap y antes los perdíamos).
@@ -768,7 +769,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     }
 
     // ── Open file ─────────────────────────────────────────────────────────────
-    FILE* Stream = (FILE*)fopen(local_200, DAT_005580ac);
+    FILE* Stream = (FILE*)Platform::GetFileSystem().Open(local_200, DAT_005580ac);
     // DIAG: log TGA loads + specifically log slots 0xc/0x10/0x11 (Account textures)
     {
         static int s_tga = 0;

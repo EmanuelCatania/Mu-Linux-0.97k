@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
@@ -80,7 +81,7 @@ static bool GetInventoryItemAddOption(short type, INVENTORY_ITEM_ADD_OPTION& out
         char relPath1[MAX_PATH] = "Data\\Local\\ItemAddOption.bmd";
         char relPath2[MAX_PATH] = "bin\\Client\\Data\\Local\\ItemAddOption.bmd";
 
-        if (GetModuleFileNameA(nullptr, exePath, MAX_PATH) > 0) {
+        if (Platform::GetFileSystem().ExecutablePath(exePath, MAX_PATH) > 0) {
             char* slash = strrchr(exePath, '\\');
             if (slash) {
                 *slash = '\0';
@@ -99,7 +100,7 @@ static bool GetInventoryItemAddOption(short type, INVENTORY_ITEM_ADD_OPTION& out
                 continue;
             }
 
-            FILE* fp = fopen(path, "rb");
+            FILE* fp = Platform::GetFileSystem().Open(path, "rb");
             if (!fp) {
                 continue;
             }

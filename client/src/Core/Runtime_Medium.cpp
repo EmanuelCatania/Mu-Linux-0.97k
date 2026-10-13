@@ -14,6 +14,7 @@
 #include "stdafx.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
+#include "Platform/IFileSystem.h"
 #include "Net/Reconnect.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
@@ -96,7 +97,7 @@ int __cdecl LevelConvert(BYTE Level) {
 // `fgets` + recorte del salto de linea y se limpia el array antes de leer,
 // como el DLL.
 void __cdecl OpenMacro(char *FileName) {
-    FILE *fp = fopen(FileName, "rt");
+    FILE *fp = Platform::GetFileSystem().Open(FileName, "rt");
     if (!fp) return;
     memset(MacroText, 0, 10 * 0x100);
     for (int i = 0; i < 10; ++i) {
@@ -446,7 +447,7 @@ void __cdecl MoveCharacterCamera(float *Origin, float *Position, float *Angle) {
 // que existan los parsers.  Devuelve false (el 0.97k sólo trae .bmd).
 bool __cdecl OpenSMDFile(char *FileName, int /*Type*/, bool /*Flip*/) {
     if (FileName == NULL) return false;
-    FILE* probe = fopen(FileName, "r");
+    FILE* probe = Platform::GetFileSystem().Open(FileName, "r");
     if (!probe) return false;
     fclose(probe);
     // SMDFile global intentionally untouched — parsers are stubs and consumers

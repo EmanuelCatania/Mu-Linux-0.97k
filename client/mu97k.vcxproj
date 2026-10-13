@@ -131,6 +131,7 @@
     <ClInclude Include="src\Platform\IInput.h" />
     <ClInclude Include="src\Platform\IWindow.h" />
     <ClInclude Include="src\Platform\Win32\Win32Window.h" />
+    <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
@@ -219,6 +220,7 @@
     <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Window.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32FileSystem.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
     <ClCompile Include="src\Core\Font.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />

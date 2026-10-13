@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "Config/UserSettings.h"
 
@@ -145,7 +146,7 @@ const char* LocalizedDataPath(const char* base, const char* ext, char* out, size
     const char* suffix = CUserSettings::GetLanguageSuffix(gUserSettings.GetLanguage());
     if (suffix) {
         sprintf_s(out, capacity, "%s_%s%s", base, suffix, ext);
-        if (GetFileAttributesA(out) != INVALID_FILE_ATTRIBUTES) return out;
+        if (Platform::GetFileSystem().Exists(out)) return out;
         char line[160];
         wsprintfA(line, "Idioma: falta %s, se usa %s%s", out, base, ext);
         DbgLogPublic(line);
