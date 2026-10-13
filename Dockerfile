@@ -9,6 +9,7 @@ RUN apt-get update \
 
 WORKDIR /src
 COPY Source/MuServer /src/Source/MuServer
+COPY cmake /src/cmake
 WORKDIR /src/Source/MuServer
 
 RUN cmake -S . -B /build -DCMAKE_BUILD_TYPE=Release \

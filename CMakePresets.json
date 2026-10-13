@@ -1,0 +1,121 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "windows-x86-debug",
+      "binaryDir": "${sourceDir}/out/build/windows-x86-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "Win32",
+      "toolset": "v143"
+    },
+    {
+      "name": "windows-x86-release",
+      "binaryDir": "${sourceDir}/out/build/windows-x86-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "Win32",
+      "toolset": "v143"
+    },
+    {
+      "name": "linux-x64-debug",
+      "binaryDir": "${sourceDir}/out/build/linux-x64-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "linux-x64-release",
+      "binaryDir": "${sourceDir}/out/build/linux-x64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "linux-arm64-debug",
+      "binaryDir": "${sourceDir}/out/build/linux-arm64-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "linux-arm64-release",
+      "binaryDir": "${sourceDir}/out/build/linux-arm64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "generator": "Unix Makefiles"
+    },
+    {
+      "name": "windows-x64-debug",
+      "binaryDir": "${sourceDir}/out/build/windows-x64-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "toolset": "v143",
+      "description": "Pendiente: requiere Connector/C++ 8.0.33 x64 mediante MU_MYSQL_ROOT; fuera del CI actual."
+    },
+    {
+      "name": "windows-x64-release",
+      "binaryDir": "${sourceDir}/out/build/windows-x64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "toolset": "v143",
+      "description": "Pendiente: requiere Connector/C++ 8.0.33 x64 mediante MU_MYSQL_ROOT; fuera del CI actual."
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-x86-debug",
+      "configurePreset": "windows-x86-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-x86-release",
+      "configurePreset": "windows-x86-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-x64-debug",
+      "configurePreset": "linux-x64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-x64-release",
+      "configurePreset": "linux-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-arm64-debug",
+      "configurePreset": "linux-arm64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-arm64-release",
+      "configurePreset": "linux-arm64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-x64-debug",
+      "configurePreset": "windows-x64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-x64-release",
+      "configurePreset": "windows-x64-release",
+      "configuration": "Release"
+    }
+  ]
+}
