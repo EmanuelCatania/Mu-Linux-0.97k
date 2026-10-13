@@ -1083,3 +1083,21 @@ textarea.invalid {
     grid-template-columns: 1fr;
   }
 }
+
+.settings-panel { max-width: 1040px; margin: 32px auto; }
+.settings-panel h1 { margin-bottom: 12px; }
+.editor-connection { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px; margin: 24px 0; background: #171d25; border: 1px solid #394452; border-radius: 8px; }
+.editor-connection button { margin-left: auto; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: #a9956d; }
+.status-dot.connected { background: #6bc699; }
+.status-dot.disconnected { background: #e18070; }
+.theme-picker { border: 0; padding: 0; margin: 24px 0; display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 16px; }
+.theme-picker legend { margin-bottom: 12px; }
+.theme-option { display: block; padding: 12px; border: 1px solid #45505c; border-radius: 8px; cursor: pointer; }
+.theme-option:has(input:checked) { border-color: #f3b557; outline: 2px solid #f3b557; }
+.theme-option input { width: auto; margin-right: 8px; }
+.theme-preview { display: block; height: 160px; margin: 10px 0; background: #1c1512 center / contain no-repeat; border-radius: 4px; }
+.preview-classic { background-image: url('/assets/images/background.jpg'); background-size: cover; }
+.preview-daedalus-elf { background-color: #eaf4fc; background-image: url('/themes/daedalus/elf.jpeg'), url('/themes/daedalus/elf-sanctuary.png'); background-size: auto 100%, cover; }
+.preview-daedalus-dk { background-image: url('/themes/daedalus/dk.png'); }
+.preview-daedalus-dw { background-color: #070f25; background-image: url('/themes/daedalus/dw.png'), url('/themes/daedalus/wizard-observatory.png'); background-size: auto 100%, cover; }

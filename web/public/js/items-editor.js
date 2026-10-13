@@ -90,7 +90,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -108,7 +108,7 @@
 
   function renderItemRaw() {
     const container = root.querySelector('#items-content');
-    container.innerHTML = `
+    container.innerHTML = window.MuText.html`
       <div class="alert warning">
         Item.txt es avanzado. Cualquier error puede romper el server.
       </div>
@@ -119,7 +119,7 @@
 
   function renderValueEditor() {
     const container = root.querySelector('#items-content');
-    container.innerHTML = `
+    container.innerHTML = window.MuText.html`
       <div class="spawn-editor">
         <div class="spawn-list">
           <h3>ItemValue</h3>
@@ -150,7 +150,7 @@
 
   function renderStackEditor() {
     const container = root.querySelector('#items-content');
-    container.innerHTML = `
+    container.innerHTML = window.MuText.html`
       <div class="spawn-editor">
         <div class="spawn-list">
           <h3>ItemStack</h3>
@@ -351,16 +351,16 @@
         body: JSON.stringify({ content })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       const reload = await fetch('/admin/server-editor/api/reload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: 'item' })
       });
       if (!reload.ok) {
-        setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+        setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
       } else {
-        setMessage('Guardado y recargado en el servidor.', 'success');
+        setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
       }
     } catch (err) {
       setMessage(err.message, 'error');
@@ -376,9 +376,9 @@
     const itemData = await itemRes.json();
     const valueData = await valueRes.json();
     const stackData = await stackRes.json();
-    if (!itemRes.ok) throw new Error(itemData.error || 'No se pudo cargar Item.txt');
-    if (!valueRes.ok) throw new Error(valueData.error || 'No se pudo cargar ItemValue.txt');
-    if (!stackRes.ok) throw new Error(stackData.error || 'No se pudo cargar ItemStack.txt');
+    if (!itemRes.ok) throw new Error(itemData.error || window.MuText.t('No se pudo cargar Item.txt'));
+    if (!valueRes.ok) throw new Error(valueData.error || window.MuText.t('No se pudo cargar ItemValue.txt'));
+    if (!stackRes.ok) throw new Error(stackData.error || window.MuText.t('No se pudo cargar ItemStack.txt'));
     state.itemRaw = itemData.content || '';
     state.valueRows = parseItemValue(valueData.content || '');
     state.stackRows = parseItemStack(stackData.content || '');

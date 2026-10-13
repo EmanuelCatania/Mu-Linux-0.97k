@@ -2,170 +2,169 @@
 
 <section class="card">
   <div class="row-between">
-    <h2>Editor del servidor</h2>
+    <h2><%= t("Editor del servidor") %></h2>
     <div class="admin-links">
-      <a class="button-link" href="/admin/accounts">Cuentas</a>
-      <a class="button-link" href="/admin/downloads">Descargas</a>
-      <a class="button-link" href="/admin/news">Noticias</a>
-      <a class="button-link" href="/admin/logout">Salir</a>
+      <a class="button-link" href="/admin/accounts"><%= t("Cuentas") %></a>
+      <a class="button-link" href="/admin/downloads"><%= t("Descargas") %></a>
+      <a class="button-link" href="/admin/news"><%= t("Noticias") %></a>
+      <a class="button-link" href="/admin/logout"><%= t("Salir") %></a>
     </div>
   </div>
 
   <% if (!editorEnabled) { %>
     <div class="alert">
-      El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con
-      <code>EDITOR_ENABLED=1</code> y el compose del editor.
+      <%= t("El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con") %>
+      <code>EDITOR_ENABLED=1</code> <%= t("y el compose del editor.") %>
     </div>
   <% } else { %>
     <div class="alert success">
-      Editor habilitado. API: <code><%= editorApiUrl %></code>
+      <%= t("Editor habilitado. API:") %> <code><%= editorApiUrl %></code>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de shops</h3>
-      <p class="muted">Edita los archivos <code>MuServer/Data/Shop</code> con grid grafico.</p>
-      <a class="button-link" href="/admin/server-editor/shops">Abrir editor de shops</a>
+      <h3><%= t("Editor de shops") %></h3>
+      <p class="muted"><%= t("Edita los archivos") %> <code>MuServer/Data/Shop</code> <%= t("con grid grafico.") %></p>
+      <a class="button-link" href="/admin/server-editor/shops"><%= t("Abrir editor de shops") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de spawns</h3>
-      <p class="muted">Edita <code>MonsterSetBase.txt</code> con mapa y posiciones.</p>
-      <a class="button-link" href="/admin/server-editor/spawns">Abrir editor de spawns</a>
+      <h3><%= t("Editor de spawns") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>MonsterSetBase.txt</code> <%= t("con mapa y posiciones.") %></p>
+      <a class="button-link" href="/admin/server-editor/spawns"><%= t("Abrir editor de spawns") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de monsters</h3>
-      <p class="muted">Edita <code>Monster.txt</code> (HP, daño, exp, etc).</p>
-      <a class="button-link" href="/admin/server-editor/monsters">Abrir editor de monsters</a>
+      <h3><%= t("Editor de monsters") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>Monster.txt</code> <%= t("(HP, daÃ±o, exp, etc).") %></p>
+      <a class="button-link" href="/admin/server-editor/monsters"><%= t("Abrir editor de monsters") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de gates</h3>
-      <p class="muted">Edita <code>Gate.txt</code> con mapa y rectangulos.</p>
-      <a class="button-link" href="/admin/server-editor/gates">Abrir editor de gates</a>
+      <h3><%= t("Editor de gates") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>Gate.txt</code> <%= t("con mapa y rectangulos.") %></p>
+      <a class="button-link" href="/admin/server-editor/gates"><%= t("Abrir editor de gates") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de moves</h3>
-      <p class="muted">Edita <code>Move.txt</code> (lista del boton M).</p>
-      <a class="button-link" href="/admin/server-editor/moves">Abrir editor de moves</a>
+      <h3><%= t("Editor de moves") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>Move.txt</code> <%= t("(lista del boton M).") %></p>
+      <a class="button-link" href="/admin/server-editor/moves"><%= t("Abrir editor de moves") %></a>
     </div>
 
     <div class="card-sub">
       <h3>Customs</h3>
       <p class="muted">
-        Edita <code>CustomSafeZone.txt</code>, <code>CustomPkFree.txt</code> y <code>CustomNpcMove.txt</code>.
+        <%= t("Edita") %> <code>CustomSafeZone.txt</code>, <code>CustomPkFree.txt</code> <%= t("y") %> <code>CustomNpcMove.txt</code>.
       </p>
-      <a class="button-link" href="/admin/server-editor/customs">Abrir customs</a>
+      <a class="button-link" href="/admin/server-editor/customs"><%= t("Abrir customs") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de items base</h3>
-      <p class="muted">Edita <code>Item.txt</code>, <code>ItemValue.txt</code> y <code>ItemStack.txt</code>.</p>
-      <a class="button-link" href="/admin/server-editor/items">Abrir editor de items</a>
+      <h3><%= t("Editor de items base") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>Item.txt</code>, <code>ItemValue.txt</code> <%= t("y") %> <code>ItemStack.txt</code>.</p>
+      <a class="button-link" href="/admin/server-editor/items"><%= t("Abrir editor de items") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de drop</h3>
-      <p class="muted">Edita <code>ItemDrop.txt</code> (drops especiales por mapa/monster).</p>
-      <a class="button-link" href="/admin/server-editor/drop">Abrir editor de drop</a>
+      <h3><%= t("Editor de drop") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>ItemDrop.txt</code> <%= t("(drops especiales por mapa/monster).") %></p>
+      <a class="button-link" href="/admin/server-editor/drop"><%= t("Abrir editor de drop") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de reset/exp</h3>
-      <p class="muted">Edita <code>ResetTable.txt</code> y <code>ExperienceTable.txt</code>.</p>
-      <a class="button-link" href="/admin/server-editor/reset-exp">Abrir editor de reset/exp</a>
+      <h3><%= t("Editor de reset/exp") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>ResetTable.txt</code> <%= t("y") %> <code>ExperienceTable.txt</code>.</p>
+      <a class="button-link" href="/admin/server-editor/reset-exp"><%= t("Abrir editor de reset/exp") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de mapas</h3>
-      <p class="muted">Edita <code>MapManager.txt</code> (indices y rates de mapas).</p>
-      <a class="button-link" href="/admin/server-editor/mapmanager">Abrir editor de mapas</a>
+      <h3><%= t("Editor de mapas") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>MapManager.txt</code> <%= t("(indices y rates de mapas).") %></p>
+      <a class="button-link" href="/admin/server-editor/mapmanager"><%= t("Abrir editor de mapas") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de GM</h3>
-      <p class="muted">Edita <code>GameMaster.txt</code> con niveles por personaje.</p>
-      <a class="button-link" href="/admin/server-editor/gms">Abrir editor de GM</a>
+      <h3><%= t("Editor de GM") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>GameMaster.txt</code> <%= t("con niveles por personaje.") %></p>
+      <a class="button-link" href="/admin/server-editor/gms"><%= t("Abrir editor de GM") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de notices</h3>
-      <p class="muted">Edita <code>Notice.txt</code> (mensajes automaticos).</p>
-      <a class="button-link" href="/admin/server-editor/notices">Abrir editor de notices</a>
+      <h3><%= t("Editor de notices") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>Notice.txt</code> <%= t("(mensajes automaticos).") %></p>
+      <a class="button-link" href="/admin/server-editor/notices"><%= t("Abrir editor de notices") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Editor de blacklist</h3>
-      <p class="muted">Edita <code>Blacklist.dat</code> (IP y HWID).</p>
-      <a class="button-link" href="/admin/server-editor/blacklist">Abrir editor de blacklist</a>
+      <h3><%= t("Editor de blacklist") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>Blacklist.dat</code> <%= t("(IP y HWID).") %></p>
+      <a class="button-link" href="/admin/server-editor/blacklist"><%= t("Abrir editor de blacklist") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>CFG general</h3>
-      <p class="muted">Edita toda la configuracion del <code>GameServerInfo - Common.dat</code>.</p>
-      <a class="button-link" href="/admin/server-editor/rates">Abrir CFG general</a>
+      <h3><%= t("CFG general") %></h3>
+      <p class="muted"><%= t("Edita toda la configuracion del") %> <code>GameServerInfo - Common.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/rates"><%= t("Abrir CFG general") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>CFG comandos</h3>
-      <p class="muted">Edita <code>GameServerInfo - Command.dat</code>.</p>
-      <a class="button-link" href="/admin/server-editor/commands">Abrir CFG comandos</a>
+      <h3><%= t("CFG comandos") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>GameServerInfo - Command.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/commands"><%= t("Abrir CFG comandos") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>CFG skills</h3>
-      <p class="muted">Edita <code>GameServerInfo - Skill.dat</code>.</p>
-      <a class="button-link" href="/admin/server-editor/skills">Abrir CFG skills</a>
+      <h3><%= t("CFG skills") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>GameServerInfo - Skill.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/skills"><%= t("Abrir CFG skills") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>CFG eventos</h3>
-      <p class="muted">Edita <code>GameServerInfo - Event.dat</code>.</p>
-      <a class="button-link" href="/admin/server-editor/events">Abrir CFG eventos</a>
+      <h3><%= t("CFG eventos") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>GameServerInfo - Event.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/events"><%= t("Abrir CFG eventos") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>CFG chaos mix</h3>
-      <p class="muted">Edita <code>GameServerInfo - ChaosMix.dat</code> (maquina del chaos).</p>
-      <a class="button-link" href="/admin/server-editor/chaosmix">Abrir CFG chaos mix</a>
+      <h3><%= t("CFG chaos mix") %></h3>
+      <p class="muted"><%= t("Edita") %> <code>GameServerInfo - ChaosMix.dat</code> <%= t("(maquina del chaos).") %></p>
+      <a class="button-link" href="/admin/server-editor/chaosmix"><%= t("Abrir CFG chaos mix") %></a>
     </div>
 
     <div class="card-sub">
       <h3>Event ItemBag</h3>
       <p class="muted">
-        Edita <code>EventItemBagManager.txt</code> y los bags de <code>Data/EventItemBag</code>.
+        <%= t("Edita") %> <code>EventItemBagManager.txt</code> <%= t("y los bags de") %> <code>Data/EventItemBag</code>.
       </p>
-      <a class="button-link" href="/admin/server-editor/event-item-bag">Abrir Event ItemBag</a>
+      <a class="button-link" href="/admin/server-editor/event-item-bag"><%= t("Abrir Event ItemBag") %></a>
     </div>
 
     <div class="card-sub">
-      <h3>Backups del servidor</h3>
+      <h3><%= t("Backups del servidor") %></h3>
       <p class="muted">
-        Se guardan hasta <strong><%= editorMaxBackups %></strong> backups por archivo y
-        hasta <strong><%= editorMaxSnapshots %></strong> snapshots completos.
+        <%= t("Se guardan hasta") %> <strong><%= editorMaxBackups %></strong> <%= t("backups por archivo y hasta") %> <strong><%= editorMaxSnapshots %></strong> <%= t("snapshots completos.") %>
       </p>
 
       <div class="backup-actions">
-        <label>Nombre (opcional)</label>
+        <label><%= t("Nombre (opcional)") %></label>
         <input type="text" id="backupLabel" placeholder="ej: antes-de-spawns" maxlength="40" />
-        <button type="button" id="createBackupBtn">Crear backup</button>
+        <button type="button" id="createBackupBtn"><%= t("Crear backup") %></button>
       </div>
 
       <div class="backup-restore">
-        <label>Restaurar snapshot</label>
+        <label><%= t("Restaurar snapshot") %></label>
         <select id="backupSelect"></select>
-        <button type="button" class="btn-danger" id="restoreBackupBtn">Restaurar</button>
+        <button type="button" class="btn-danger" id="restoreBackupBtn"><%= t("Restaurar") %></button>
       </div>
 
       <div id="backupMessage" class="muted"></div>
     </div>
 
     <div class="card-sub">
-      <h3>Notas</h3>
+      <h3><%= t("Notas") %></h3>
       <ul>
-        <li>Restaurar un snapshot sobrescribe <code>Data</code> y <code>GameServer/Data</code> dentro del contenedor.</li>
-        <li>Recomendado reiniciar el contenedor del GameServer despues de restaurar.</li>
+        <li><%= t("Restaurar un snapshot sobrescribe") %> <code>Data</code> <%= t("y") %> <code>GameServer/Data</code> <%= t("dentro del contenedor.") %></li>
+        <li><%= t("Recomendado reiniciar el contenedor del GameServer despues de restaurar.") %></li>
       </ul>
     </div>
   <% } %>
@@ -180,7 +179,7 @@
   const restoreBtn = document.getElementById('restoreBackupBtn');
 
   function setMessage(text, isError) {
-    messageEl.textContent = text || '';
+    messageEl.textContent = window.MuText.t(text || '');
     messageEl.style.color = isError ? 'var(--danger)' : 'var(--muted)';
   }
 
@@ -194,7 +193,7 @@
       if (snapshots.length === 0) {
         const option = document.createElement('option');
         option.value = '';
-        option.textContent = 'No hay backups';
+        option.textContent = window.MuText.t('No hay backups');
         selectEl.appendChild(option);
         restoreBtn.disabled = true;
         return;
@@ -232,7 +231,7 @@
   restoreBtn?.addEventListener('click', async () => {
     const name = selectEl.value;
     if (!name) return;
-    if (!confirm(`Restaurar el snapshot ${name}? Esto sobrescribira los datos actuales.`)) return;
+    if (!confirm(window.MuText.t('Restaurar el snapshot {name}? Esto sobrescribira los datos actuales.', {name}))) return;
     setMessage('Restaurando backup...', false);
     try {
       const res = await fetch('/admin/server-editor/api/backups/restore', {
@@ -254,5 +253,3 @@
 <% } %>
 
 <%- include('partials/footer') %>
-
-

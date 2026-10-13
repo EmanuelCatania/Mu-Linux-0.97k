@@ -8,6 +8,8 @@ const rateLimit = require('express-rate-limit');
 const sanitizeHtml = require('sanitize-html');
 const fs = require('fs');
 const path = require('path');
+const { ensureSettings, readSettings, registerSettings } = require('./lib/site-settings');
+const { translator, locales, registerCatalogs, resolveLanguage } = require('./lib/i18n');
 
 const app = express();
 
@@ -65,7 +67,8 @@ app.use(helmet({
 app.set('trust proxy', trustProxyEnabled ? 1 : false);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.use((req, res, next) => {
@@ -108,6 +111,7 @@ function requireAdmin(req, res, next) {
 
 function requireAdminPasswordChange(req, res, next) {
   if (req.session.admin?.mustChange) return res.redirect('/admin/password');
+  if (!res.locals.siteSettings.setup_complete && !['/admin/setup', '/admin/settings', '/admin/settings/editor-status'].includes(req.path)) return res.redirect('/admin/setup');
   return next();
 }
 
@@ -217,7 +221,8 @@ async function editorRequest(method, endpoint, payload) {
     method,
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    signal: endpoint === '/api/status' ? AbortSignal.timeout(3000) : undefined
   };
 
   if (payload) {
@@ -645,6 +650,7 @@ async function fetchPlayersOnline() {
 }
 
 async function ensureSchema() {
+  await ensureSettings(pool);
   const conn = await pool.getConnection();
   try {
     await conn.query(`
@@ -748,6 +754,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// La misma configuración alimenta las vistas públicas, el admin y el editor.
+app.use(async (req, res, next) => {
+  try {
+    const settings = await readSettings(pool);
+    res.locals.siteSettings = settings;
+    // El visitante elige su idioma sin modificar el predeterminado del servidor.
+    const language = resolveLanguage(req, settings.language);
+    res.locals.language = language;
+    res.locals.currentQuery = req.query;
+    res.locals.isAdminPage = req.path.startsWith('/admin');
+    res.locals.locale = locales[language];
+    res.locals.t = translator(language);
+    const json = res.json.bind(res);
+    res.json = (body) => json(body && typeof body.error === 'string' ? { ...body, error: res.locals.t(body.error) } : body);
+    next();
+  } catch (err) { next(err); }
+});
+registerCatalogs(app);
+registerSettings(app, { pool, requireAdmin, requirePassword: requireAdminPasswordChange, editorEnabled, editorRequest });
+
 app.get('/', async (req, res) => {
   const [newsRows] = await pool.query('SELECT id, title, body, body_is_html, hide_title, created_at FROM web_news WHERE published = 1 ORDER BY created_at DESC LIMIT 5');
   const news = newsRows.map((row) => ({
@@ -772,7 +798,7 @@ app.get('/', async (req, res) => {
   const timeOptions = resolvedTimeZone
     ? { hour12: false, timeZone: resolvedTimeZone }
     : { hour12: false };
-  const serverTime = new Date().toLocaleTimeString('es-ES', timeOptions);
+  const serverTime = new Date().toLocaleTimeString(res.locals.locale, timeOptions);
   const eventConfig = loadEventConfig();
   const now = new Date();
   const events = (eventConfig.events || []).map((ev) => {
@@ -1114,11 +1140,11 @@ app.get('/admin/login', (req, res) => {
   res.render('admin_login', { error: null });
 });
 
-app.get('/admin', (req, res) => {
-  res.redirect('/admin/login');
+app.get('/admin', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.redirect('/admin/news');
 });
 
-app.post('/admin/login', authLimiter, async (req, res) => {
+app.post('/admin/login', authLimiter, async (req, res, next) => {
   const { username, password } = req.body;
   const [rows] = await pool.query('SELECT id, username, password_hash, must_change_password FROM web_admin WHERE username = ? LIMIT 1', [username]);
   if (rows.length === 0) return res.render('admin_login', { error: 'Credenciales invalidas.' });
@@ -1132,8 +1158,11 @@ app.post('/admin/login', authLimiter, async (req, res) => {
     mustChange: rows[0].must_change_password === 1
   };
 
-  if (req.session.admin.mustChange) return res.redirect('/admin/password');
-  return res.redirect('/admin/news');
+  // Persistir antes de redirigir: la siguiente petición debe ver el login en MySQL.
+  req.session.save((err) => {
+    if (err) return next(err);
+    res.redirect(req.session.admin.mustChange ? '/admin/password' : (res.locals.siteSettings.setup_complete ? '/admin/news' : '/admin/setup'));
+  });
 });
 
 app.get('/admin/logout', (req, res) => {
@@ -1145,7 +1174,7 @@ app.get('/admin/password', requireAdmin, (req, res) => {
   res.render('admin_password', { error: null });
 });
 
-app.post('/admin/password', requireAdmin, async (req, res) => {
+app.post('/admin/password', requireAdmin, async (req, res, next) => {
   const { password, confirm } = req.body;
   if (!password || password.length < 8 || password !== confirm) {
     return res.render('admin_password', { error: 'Minimo 8 caracteres y deben coincidir.' });
@@ -1154,7 +1183,10 @@ app.post('/admin/password', requireAdmin, async (req, res) => {
   const hash = await bcrypt.hash(password, 10);
   await pool.query('UPDATE web_admin SET password_hash = ?, must_change_password = 0 WHERE id = ?', [hash, req.session.admin.id]);
   req.session.admin.mustChange = false;
-  return res.redirect('/admin/news');
+  req.session.save((err) => {
+    if (err) return next(err);
+    res.redirect(res.locals.siteSettings.setup_complete ? '/admin/news' : '/admin/setup');
+  });
 });
 
 app.get('/admin/downloads', requireAdmin, requireAdminPasswordChange, (req, res) => {

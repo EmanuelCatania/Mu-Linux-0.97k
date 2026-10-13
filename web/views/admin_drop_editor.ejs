@@ -2,20 +2,20 @@
 
 <section class="card">
   <div class="row-between">
-    <h2>Editor de drop</h2>
+    <h2><%= t("Editor de drop") %></h2>
     <div class="admin-links">
-      <a class="button-link" href="/admin/server-editor">Editor servidor</a>
-      <a class="button-link" href="/admin/accounts">Cuentas</a>
-      <a class="button-link" href="/admin/downloads">Descargas</a>
-      <a class="button-link" href="/admin/news">Noticias</a>
-      <a class="button-link" href="/admin/logout">Salir</a>
+      <a class="button-link" href="/admin/server-editor"><%= t("Editor servidor") %></a>
+      <a class="button-link" href="/admin/accounts"><%= t("Cuentas") %></a>
+      <a class="button-link" href="/admin/downloads"><%= t("Descargas") %></a>
+      <a class="button-link" href="/admin/news"><%= t("Noticias") %></a>
+      <a class="button-link" href="/admin/logout"><%= t("Salir") %></a>
     </div>
   </div>
 
   <% if (!editorEnabled) { %>
     <div class="alert">
-      El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con
-      <code>EDITOR_ENABLED=1</code> y el compose del editor.
+      <%= t("El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con") %>
+      <code>EDITOR_ENABLED=1</code> <%= t("y el compose del editor.") %>
     </div>
   <% } else { %>
     <div
@@ -31,5 +31,3 @@
 <% } %>
 
 <%- include('partials/footer') %>
-
-

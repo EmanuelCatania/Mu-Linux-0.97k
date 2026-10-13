@@ -55,7 +55,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -144,7 +144,7 @@
       };
       state.notices.push(notice);
       selectNotice(notice, state.notices.length - 1);
-      setMessage('Notice agregado.', 'success');
+      setMessage(window.MuText.t('Notice agregado.'), 'success');
     });
 
     root.querySelector('#update-notice').addEventListener('click', () => {
@@ -156,7 +156,7 @@
         repeat: Number(root.querySelector('#notice-repeat').value)
       };
       selectNotice(state.notices[index], index);
-      setMessage('Notice actualizado.', 'success');
+      setMessage(window.MuText.t('Notice actualizado.'), 'success');
     });
 
     root.querySelector('#delete-notice').addEventListener('click', () => {
@@ -164,7 +164,7 @@
       state.notices.splice(state.selected.index, 1);
       state.selected = null;
       renderList();
-      setMessage('Notice eliminado.', 'success');
+      setMessage(window.MuText.t('Notice eliminado.'), 'success');
     });
 
     root.querySelector('#save-notice').addEventListener('click', async () => {
@@ -176,16 +176,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'util' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -196,7 +196,7 @@
   async function loadInitialData() {
     const res = await fetch('/admin/server-editor/api/notices');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     state.notices = parseNotice(data.content || '');
   }
 

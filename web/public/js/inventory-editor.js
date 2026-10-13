@@ -218,10 +218,10 @@
 
   function render() {
     const equipHtml = mode === 'inventory'
-      ? `<div class="equip-grid">
+      ? window.MuText.html`<div class="equip-grid">
           ${EQUIP_META.map((slot) => {
             const rect = EQUIP_RECTS[slot.index] || { x: 0, y: 0, w: 0, h: 0 };
-            return `
+            return window.MuText.html`
             <div class="equip-slot"
                  data-equip="${slot.index}"
                  data-x="${rect.x}"
@@ -239,15 +239,15 @@
       : 'inventory-frame inventory-frame--warehouse';
 
     const overlayHtml = mode === 'inventory'
-      ? `<div class="frame-overlay frame-overlay--equip"></div>
+      ? window.MuText.html`<div class="frame-overlay frame-overlay--equip"></div>
          <div class="frame-overlay frame-overlay--bag"></div>`
-      : `<div class="frame-overlay frame-overlay--bag"></div>`;
+      : window.MuText.html`<div class="frame-overlay frame-overlay--bag"></div>`;
 
     const frameContent = mode === 'inventory'
-      ? `${overlayHtml}${equipHtml}<div class="inventory-grid" data-grid="bag"></div>`
-      : `${overlayHtml}<div class="inventory-grid" data-grid="bag"></div>`;
+      ? window.MuText.html`${overlayHtml}${equipHtml}<div class="inventory-grid" data-grid="bag"></div>`
+      : window.MuText.html`${overlayHtml}<div class="inventory-grid" data-grid="bag"></div>`;
 
-    const pickerHtml = `
+    const pickerHtml = window.MuText.html`
       <div class="picker">
         <h3>Item</h3>
         <input type="text" id="item-search" placeholder="Buscar item..." />
@@ -270,7 +270,7 @@
       </div>
     `;
 
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="inventory-editor">
         <div class="inventory-panels">
@@ -527,12 +527,12 @@
 
     root.querySelector('#place-item').addEventListener('click', () => {
       placeMode = true;
-      setMessage('Selecciona una casilla libre para colocar el item.', 'success');
+      setMessage(window.MuText.t('Selecciona una casilla libre para colocar el item.'), 'success');
     });
 
     root.querySelector('#update-item').addEventListener('click', () => {
       if (!selectedItemId) {
-        setMessage('Selecciona un item primero.', 'error');
+        setMessage(window.MuText.t('Selecciona un item primero.'), 'error');
         return;
       }
       const item = state.items.get(selectedItemId) || state.equip.find((it) => it && it.id === selectedItemId);
@@ -545,12 +545,12 @@
       item.excellent = Number(root.querySelector('#item-exc').value || 0);
       item.bytes = encodeItem(item);
       renderItems();
-      setMessage('Item actualizado.', 'success');
+      setMessage(window.MuText.t('Item actualizado.'), 'success');
     });
 
     root.querySelector('#remove-item').addEventListener('click', () => {
       if (!selectedItemId) {
-        setMessage('Selecciona un item primero.', 'error');
+        setMessage(window.MuText.t('Selecciona un item primero.'), 'error');
         return;
       }
       const item = state.items.get(selectedItemId);
@@ -576,11 +576,11 @@
         if (placeMode) {
           const newItem = createItemFromPicker();
           if (!newItem) {
-            setMessage('Selecciona un item para colocar.', 'error');
+            setMessage(window.MuText.t('Selecciona un item para colocar.'), 'error');
             return;
           }
           if (!canPlace(newItem, slotIndex)) {
-            setMessage('No hay espacio para el item en esa posicion.', 'error');
+            setMessage(window.MuText.t('No hay espacio para el item en esa posicion.'), 'error');
             return;
           }
           newItem.area = 'bag';
@@ -591,7 +591,7 @@
           placeMode = false;
           selectedItemId = newItem.id;
           renderItems();
-          setMessage('Item colocado.', 'success');
+          setMessage(window.MuText.t('Item colocado.'), 'success');
           return;
         }
 
@@ -601,7 +601,7 @@
             if (moveItemToBag(item, slotIndex)) {
               renderItems();
             } else {
-              setMessage('No se puede mover a esa posicion.', 'error');
+              setMessage(window.MuText.t('No se puede mover a esa posicion.'), 'error');
             }
             return;
           }
@@ -615,11 +615,11 @@
         if (placeMode) {
           const newItem = createItemFromPicker();
           if (!newItem) {
-            setMessage('Selecciona un item para colocar.', 'error');
+            setMessage(window.MuText.t('Selecciona un item para colocar.'), 'error');
             return;
           }
           if (!canEquip(newItem, slotIndex)) {
-            setMessage('Ese item no puede equiparse ahi.', 'error');
+            setMessage(window.MuText.t('Ese item no puede equiparse ahi.'), 'error');
             return;
           }
           if (state.equip[slotIndex]) {
@@ -634,7 +634,7 @@
           placeMode = false;
           selectedItemId = newItem.id;
           renderItems();
-          setMessage('Item equipado.', 'success');
+          setMessage(window.MuText.t('Item equipado.'), 'success');
           return;
         }
 
@@ -645,7 +645,7 @@
               renderItems();
               return;
             }
-            setMessage('No se puede equipar en ese slot.', 'error');
+            setMessage(window.MuText.t('No se puede equipar en ese slot.'), 'error');
             return;
           }
         }
@@ -723,6 +723,6 @@
       render();
     })
     .catch(() => {
-      setMessage('No se pudo cargar la lista de items.', 'error');
+      setMessage(window.MuText.t('No se pudo cargar la lista de items.'), 'error');
     });
 })();

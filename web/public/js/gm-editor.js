@@ -57,7 +57,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -139,16 +139,16 @@
   async function loadCharacters() {
     const account = String(root.querySelector('#gm-account').value || '').trim();
     if (!account) {
-      setMessage('Ingresa una cuenta.', 'error');
+      setMessage(window.MuText.t('Ingresa una cuenta.'), 'error');
       return;
     }
     const select = root.querySelector('#gm-character');
-    select.innerHTML = '<option value="">Cargando...</option>';
+    select.innerHTML = window.MuText.html`<option value="">Cargando...</option>`;
     try {
       const res = await fetch(`/admin/server-editor/api/characters?account=${encodeURIComponent(account)}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
-      select.innerHTML = '<option value="">-</option>';
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
+      select.innerHTML = window.MuText.html`<option value="">-</option>`;
       (data.characters || []).forEach((name) => {
         const option = document.createElement('option');
         option.value = name;
@@ -156,11 +156,11 @@
         select.appendChild(option);
       });
       if ((data.characters || []).length === 0) {
-        setMessage('No se encontraron personajes.', 'error');
+        setMessage(window.MuText.t('No se encontraron personajes.'), 'error');
       }
     } catch (err) {
       setMessage(err.message, 'error');
-      select.innerHTML = '<option value="">-</option>';
+      select.innerHTML = window.MuText.html`<option value="">-</option>`;
     }
   }
 
@@ -169,20 +169,20 @@
     const name = String(root.querySelector('#gm-character').value || '').trim();
     const level = Number(root.querySelector('#gm-level-add').value);
     if (!account || !name) {
-      setMessage('Selecciona cuenta y personaje.', 'error');
+      setMessage(window.MuText.t('Selecciona cuenta y personaje.'), 'error');
       return;
     }
     const existing = state.entries.find((e) => e.account === account && e.name === name);
     if (existing) {
       existing.level = level;
       selectEntry(existing);
-      setMessage('GM actualizado.', 'success');
+      setMessage(window.MuText.t('GM actualizado.'), 'success');
       return;
     }
     const entry = { account, name, level };
     state.entries.push(entry);
     selectEntry(entry);
-    setMessage('GM agregado.', 'success');
+    setMessage(window.MuText.t('GM agregado.'), 'success');
   }
 
   function bindEvents() {
@@ -209,7 +209,7 @@
       state.selected.name = String(root.querySelector('#gm-name-edit').value || '').trim();
       state.selected.level = Number(root.querySelector('#gm-level-edit').value);
       renderList();
-      setMessage('GM actualizado.', 'success');
+      setMessage(window.MuText.t('GM actualizado.'), 'success');
     });
 
     root.querySelector('#delete-gm').addEventListener('click', () => {
@@ -219,7 +219,7 @@
       );
       state.selected = null;
       renderList();
-      setMessage('GM eliminado.', 'success');
+      setMessage(window.MuText.t('GM eliminado.'), 'success');
     });
 
     root.querySelector('#save-gm').addEventListener('click', async () => {
@@ -231,16 +231,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'util' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -255,7 +255,7 @@
     try {
       const res = await fetch('/admin/server-editor/api/accounts');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudieron cargar las cuentas');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudieron cargar las cuentas'));
       (data.accounts || []).forEach((account) => {
         const option = document.createElement('option');
         option.value = account;
@@ -269,7 +269,7 @@
   async function loadInitialData() {
     const res = await fetch('/admin/server-editor/api/gamemaster');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     state.entries = parseGameMaster(data.content || '');
   }
 

@@ -595,7 +595,7 @@
   }
 
   function buildPresetOptions(list) {
-    const options = ['<option value="">Sin Option</option>'];
+    const options = [window.MuText.html`<option value="">Sin Option</option>`];
     if (!list || !list.length) return options.join('');
     list.forEach((entry) => {
       options.push(`<option value="${entry.index}">${presetLabel(entry)}</option>`);
@@ -621,7 +621,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -654,11 +654,11 @@
     if (state.mode === 'advanced') {
       convertBtn.textContent = 'Convertir a Normal';
       noteEl.textContent =
-        'Este bag esta en modo avanzado. Al convertir, se simplifican los items y se pierden rates detallados.';
+        window.MuText.t('Este bag esta en modo avanzado. Al convertir, se simplifican los items y se pierden rates detallados.');
     } else {
       convertBtn.textContent = 'Convertir a Avanzado';
       noteEl.textContent =
-        'Este bag esta en modo normal. Al convertir, se generan secciones avanzadas con valores por defecto.';
+        window.MuText.t('Este bag esta en modo normal. Al convertir, se generan secciones avanzadas con valores por defecto.');
     }
   }
 
@@ -671,7 +671,7 @@
     const optionOptions = buildPresetOptions(state.optionPresets.option);
     const excellentOptions = buildPresetOptions(state.optionPresets.excellent);
     if (state.mode === 'advanced') {
-      panel.innerHTML = `
+      panel.innerHTML = window.MuText.html`
         <div class="spawn-form">
           <h3>Configuracion general</h3>
           <div class="custom-form-grid">
@@ -768,7 +768,7 @@
       bindAdvancedEvents();
       renderAdvancedLists();
     } else {
-      panel.innerHTML = `
+      panel.innerHTML = window.MuText.html`
         <div class="spawn-form">
           <h3>Configuracion general</h3>
           <div class="custom-form-grid">
@@ -822,7 +822,7 @@
   function renderManagerPanel() {
     const panel = root.querySelector('#manager-panel');
     if (!panel) return;
-    panel.innerHTML = `
+    panel.innerHTML = window.MuText.html`
       <div class="spawn-editor">
         <div class="spawn-list">
           <h3>EventItemBagManager</h3>
@@ -958,7 +958,7 @@
       item.exce = String(root.querySelector('#normal-item-exce')?.value || '0').trim();
       item.comment = String(root.querySelector('#normal-item-comment')?.value || '').trim();
       renderNormalList();
-      setMessage('Item actualizado.', 'success');
+      setMessage(window.MuText.t('Item actualizado.'), 'success');
     });
 
     deleteBtn?.addEventListener('click', () => {
@@ -967,7 +967,7 @@
       state.normalItems.splice(idx, 1);
       state.selected.normalItem = null;
       renderNormalList();
-      setMessage('Item eliminado.', 'success');
+      setMessage(window.MuText.t('Item eliminado.'), 'success');
     });
 
     if (pickerInput && pickerList) {
@@ -1293,7 +1293,7 @@
   async function loadBagList() {
     const res = await fetch('/admin/server-editor/api/event-item-bag/list');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar la lista');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar la lista'));
     state.bagFiles = Array.isArray(data.files) ? data.files : [];
     const select = root.querySelector('#bag-file');
     if (!select) return;
@@ -1317,7 +1317,7 @@
     if (!name) return;
     const res = await fetch(`/admin/server-editor/api/event-item-bag/file?name=${encodeURIComponent(name)}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar el bag');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar el bag'));
     const parsed = parseBag(data.content || '');
     state.header = parsed.header;
     state.normalItems = parsed.normalItems;
@@ -1335,7 +1335,7 @@
   async function loadManager() {
     const res = await fetch('/admin/server-editor/api/event-item-bag/manager');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar el manager');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar el manager'));
     state.manager = parseManager(data.content || '');
   }
 
@@ -1353,16 +1353,16 @@
         body: JSON.stringify({ name: state.currentFile, content })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       const reload = await fetch('/admin/server-editor/api/reload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: 'eventitembag' })
       });
       if (!reload.ok) {
-        setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+        setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
       } else {
-        setMessage('Bag guardado y recargado en el servidor.', 'success');
+        setMessage(window.MuText.t('Bag guardado y recargado en el servidor.'), 'success');
       }
     } catch (err) {
       setMessage(err.message, 'error');
@@ -1373,7 +1373,7 @@
     try {
       activateTab('manager');
       if (!validateManagerRows()) {
-        setMessage('Hay reglas del manager con valores inválidos.', 'error');
+        setMessage(window.MuText.t('Hay reglas del manager con valores inválidos.'), 'error');
         return;
       }
       const content = buildManagerContent();
@@ -1383,14 +1383,14 @@
         body: JSON.stringify({ content })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       const reload = await fetch('/admin/server-editor/api/reload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: 'eventitembag' })
       });
       if (!reload.ok) {
-        setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+        setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
       } else {
         setMessage('Manager guardado y recargado.', 'success');
       }
@@ -1449,7 +1449,7 @@
       state.itemDefs = Array.isArray(data.items) ? data.items : [];
       state.itemMap = new Map(state.itemDefs.map((item) => [itemKey(item.section, item.index), item]));
     } catch {
-      setMessage('No se pudo cargar la lista de items.', 'error');
+      setMessage(window.MuText.t('No se pudo cargar la lista de items.'), 'error');
     }
   }
 
@@ -1457,7 +1457,7 @@
     try {
       const res = await fetch('/admin/server-editor/api/item-option-rate');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar ItemOptionRate');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar ItemOptionRate'));
       const sections = parseOptionRate(data.content || '');
       state.optionPresets.level = sections[0] || [];
       state.optionPresets.skill = sections[1] || [];

@@ -1,0 +1,34 @@
+<%- include('partials/header') %>
+<section class="card settings-panel">
+  <p class="muted"><%= t(setup ? 'Primer inicio' : 'Administración') %></p>
+  <h1><%= t(setup ? 'Configura tu servidor' : 'Configuración de la web') %></h1>
+  <p><%= t('Elige el idioma predeterminado de la web y del editor. Los visitantes pueden elegir su propio idioma.') %></p>
+  <% if (saved) { %><div class="alert success"><%= t('Configuración guardada.') %></div><% } %>
+  <% if (error) { %><div class="alert"><%= t(error) %></div><% } %>
+  <div class="editor-connection" role="status" data-editor-status data-connected="<%= t('Editor conectado') %>" data-disconnected="<%= t('Editor sin conexión') %>" data-disabled="<%= t('Editor deshabilitado') %>">
+    <span class="status-dot <%= editorStatus %>"></span>
+    <span data-status-label><%= t({connected:'Editor conectado',disconnected:'Editor sin conexión',disabled:'Editor deshabilitado'}[editorStatus]) %></span>
+    <button type="button" id="check-editor"><%= t('Comprobar conexión') %></button>
+  </div>
+  <form method="post" action="<%= setup ? '/admin/setup' : '/admin/settings' %>">
+    <input type="hidden" name="csrf" value="<%= csrf %>">
+    <label for="site-language"><%= t('Idioma') %></label>
+    <select name="language" id="site-language">
+      <% Object.entries(languages).forEach(([id, label]) => { %><option value="<%= id %>" <%= siteSettings.language === id ? 'selected' : '' %>><%= label %></option><% }) %>
+    </select>
+    <fieldset class="theme-picker">
+      <legend><%= t('Diseño de la página') %></legend>
+      <% Object.entries(themes).forEach(([id, label]) => { %>
+      <label class="theme-option">
+        <input type="radio" name="theme" value="<%= id %>" <%= siteSettings.theme === id ? 'checked' : '' %> required>
+        <span class="theme-preview preview-<%= id %>"></span><strong><%= t(label) %></strong>
+      </label>
+      <% }) %>
+    </fieldset>
+    <p class="muted"><%= t('Después del primer inicio, cambia estas opciones desde Configuración en el admin.') %></p>
+    <button type="submit"><%= t(setup ? 'Finalizar configuración' : 'Guardar cambios') %></button>
+    <% if (!setup) { %><a class="button-link" href="/admin/news"><%= t('Volver al admin') %></a><% } %>
+  </form>
+</section>
+<script src="/js/site-settings.js?v=20261013-layers-language2" defer></script>
+<%- include('partials/footer') %>

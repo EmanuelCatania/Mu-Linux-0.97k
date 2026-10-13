@@ -284,7 +284,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -504,9 +504,9 @@
 
   function getAttrLabel(attr) {
     const labels = [];
-    if (attr & 0x04) labels.push('Bloqueado');
+    if (attr & 0x04) labels.push(window.MuText.t('Bloqueado'));
     if (attr & 0x01) labels.push('Safe');
-    if (attr & 0x10) labels.push('Agua');
+    if (attr & 0x10) labels.push(window.MuText.t('Agua'));
     if (attr & 0x08) labels.push('Hueco');
     if (labels.length === 0) return 'Libre';
     return labels.join(', ');
@@ -534,16 +534,16 @@
 
     root.querySelector('#add-gate').addEventListener('click', () => {
       state.placeMode = true;
-      setMessage('Arrastra en el mapa para crear el gate.', 'success');
+      setMessage(window.MuText.t('Arrastra en el mapa para crear el gate.'), 'success');
     });
 
     root.querySelector('#resize-gate').addEventListener('click', () => {
       if (!state.selectedGate) {
-        setMessage('Selecciona un gate para ajustar.', 'error');
+        setMessage(window.MuText.t('Selecciona un gate para ajustar.'), 'error');
         return;
       }
       state.resizeMode = true;
-      setMessage('Arrastra en el mapa para ajustar el area.', 'success');
+      setMessage(window.MuText.t('Arrastra en el mapa para ajustar el area.'), 'success');
     });
 
     root.querySelector('#save-gates').addEventListener('click', async () => {
@@ -554,7 +554,7 @@
           root.querySelector('#map-select').value = String(state.selectedMap);
           await loadTerrain(state.selectedMap);
           selectGate(invalidGate);
-          setMessage('Hay gates con valores inválidos. Revisar el detalle antes de guardar.', 'error');
+          setMessage(window.MuText.t('Hay gates con valores inválidos. Revisar el detalle antes de guardar.'), 'error');
           return;
         }
         const content = buildGateTxt();
@@ -564,16 +564,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'move' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -584,7 +584,7 @@
       if (!state.selectedGate) return;
       const validation = validateGateForm();
       if (!validation.ok) {
-        setMessage('Hay campos inválidos. Revisar resaltados.', 'error');
+        setMessage(window.MuText.t('Hay campos inválidos. Revisar resaltados.'), 'error');
         return;
       }
       const gate = state.selectedGate;
@@ -607,7 +607,7 @@
       root.querySelector('#map-select').value = String(state.selectedMap);
       renderGateList();
       drawMap();
-      setMessage('Gate actualizado.', 'success');
+      setMessage(window.MuText.t('Gate actualizado.'), 'success');
     });
 
     root.querySelector('#delete-gate').addEventListener('click', () => {
@@ -701,7 +701,7 @@
         state.gates.push(newGate);
         selectGate(newGate);
         state.placeMode = false;
-        setMessage('Gate creado.', 'success');
+        setMessage(window.MuText.t('Gate creado.'), 'success');
       } else if (state.resizeMode || state.selectedGate) {
         const gate = state.selectedGate;
         if (gate) {
@@ -730,7 +730,7 @@
     try {
       const res = await fetch(`/admin/server-editor/api/terrain?map=${mapId}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
       const terrain = decodeTerrain(data.base64);
       state.terrainCache.set(mapId, terrain);
       drawMap();
@@ -747,8 +747,8 @@
     ]);
     const mapsData = await mapsRes.json();
     const gatesData = await gatesRes.json();
-    if (!mapsRes.ok) throw new Error(mapsData.error || 'No se pudo cargar mapas');
-    if (!gatesRes.ok) throw new Error(gatesData.error || 'No se pudo cargar gates');
+    if (!mapsRes.ok) throw new Error(mapsData.error || window.MuText.t('No se pudo cargar mapas'));
+    if (!gatesRes.ok) throw new Error(gatesData.error || window.MuText.t('No se pudo cargar gates'));
     state.maps = Array.isArray(mapsData.maps) ? mapsData.maps : [];
     state.gates = parseGateTxt(gatesData.content || '');
     state.selectedMap = state.maps[0]?.id ?? 0;

@@ -187,8 +187,8 @@
     t = t.replace(/Rate/gi, 'Tasa');
     t = t.replace(/Time/gi, 'Tiempo');
     t = t.replace(/Money/gi, 'Zen');
-    t = t.replace(/Character/gi, 'Personaje');
-    t = t.replace(/Level/gi, 'Nivel');
+    t = t.replace(/Character/gi, window.MuText.t('Personaje'));
+    t = t.replace(/Level/gi, window.MuText.t('Nivel'));
     return t.trim();
   }
 
@@ -314,7 +314,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -351,7 +351,7 @@
     const resetBtn = document.createElement('button');
     resetBtn.type = 'button';
     resetBtn.className = 'cfg-reset';
-    resetBtn.textContent = 'Restaurar seccion';
+    resetBtn.textContent = window.MuText.t('Restaurar seccion');
     resetBtn.addEventListener('click', () => {
       state.entries
         .filter((entry) => entry.section === sectionName)
@@ -384,7 +384,7 @@
       if (entry.help) {
         const help = document.createElement('div');
         help.className = 'cfg-help';
-        help.textContent = entry.help;
+        help.textContent = window.MuText.t(entry.help);
         meta.appendChild(help);
       }
 
@@ -434,7 +434,7 @@
       const reset = document.createElement('button');
       reset.type = 'button';
       reset.className = 'cfg-reset';
-      reset.textContent = 'Restaurar';
+      reset.textContent = window.MuText.t('Restaurar');
       reset.addEventListener('click', () => {
         entry.value = entry.originalValue;
         if (isBooleanEntry(entry)) {
@@ -513,7 +513,7 @@
     const badge = root.querySelector('#cfg-dirty');
     if (!badge) return;
     const dirtyCount = state.entries.filter((entry) => entry.value !== entry.originalValue).length;
-    badge.textContent = dirtyCount ? `Cambios: ${dirtyCount}` : 'Sin cambios';
+    badge.textContent = dirtyCount ? window.MuText.t('Cambios: {count}', {count:dirtyCount}) : window.MuText.t('Sin cambios');
   }
 
   function buildContent() {
@@ -536,14 +536,14 @@
 
     root.querySelector('#reset-cfg').addEventListener('click', () => {
       if (!state.originalRaw) return;
-      const ok = confirm('Restaurar los valores del archivo? Se perderan cambios sin guardar.');
+      const ok = confirm(window.MuText.t('Restaurar los valores del archivo? Se perderan cambios sin guardar.'));
       if (!ok) return;
       state.raw = state.originalRaw;
       parseCommon(state.raw);
       root.querySelector('#cfg-search').value = '';
       renderList('');
       updateDirtyBadge();
-      setMessage('Valores restaurados desde el archivo.', 'success');
+      setMessage(window.MuText.t('Valores restaurados desde el archivo.'), 'success');
     });
 
     root.querySelector('#save-cfg').addEventListener('click', async () => {
@@ -555,7 +555,7 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         state.raw = content;
         state.originalRaw = content;
         state.entries.forEach((entry) => {
@@ -568,9 +568,9 @@
           body: JSON.stringify({ target: reloadTarget })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -581,7 +581,7 @@
   async function loadInitialData() {
     const res = await fetch(apiGet);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     state.raw = data.content || '';
     state.originalRaw = state.raw;
     parseCommon(state.raw);

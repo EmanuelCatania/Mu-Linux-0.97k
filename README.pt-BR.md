@@ -144,3 +144,9 @@ Ele mantém backups por arquivo e snapshots de `MuServer/Data` e `MuServer/GameS
 - `MD5Encryption=2` usa MD5 binário; recrie a DB com `docker compose down -v` ao migrar de texto simples.
 - Salve TXT do servidor em ANSI / Windows-1252 sem BOM. Shops ficam em `MuServer/Data/Shop/*.txt`; `-1 -1` posiciona `SlotX SlotY` automaticamente.
 - Logs: `docker compose logs -f`. Pastas principais: `Source/`, `MuServer/`, `docker/`.
+
+## Site e editor 0.97.20
+
+Primeiro acesso a /admin: troca obrigatória de senha e configuração do idioma padrão (ES/EN/PT), tema clássico, Elf, Dark Knight ou Dark Wizard e estado da conexão do editor. Alterações posteriores ficam em /admin/settings. Visitantes podem escolher seu idioma pelas bandeiras; isso não altera o idioma do admin/editor nem traduz notícias ou dados do jogo.
+
+As configurações são salvas automaticamente no MySQL (web_site_settings); preserve seu volume. Atualize apenas emapupi/mu-linux-97k-web:0.97.20 e emapupi/mu-linux-97k-mu-editor:0.97.20 e recrie esses serviços. Não é necessário reconstruir o servidor ou MySQL. As telas do editor são servidas pela web; a API do editor mantém o comportamento anterior.

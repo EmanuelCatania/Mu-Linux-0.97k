@@ -74,7 +74,7 @@
   }
 
   function buildPresetOptions(list) {
-    const options = ['<option value="*">Sin Option</option>'];
+    const options = [window.MuText.html`<option value="*">Sin Option</option>`];
     if (!list || !list.length) return options.join('');
     list.forEach((entry) => {
       options.push(`<option value="${entry.index}">${presetLabel(entry)}</option>`);
@@ -202,7 +202,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -429,13 +429,13 @@
     markField('drop-item-index', indexOk, 'Usa un numero >= 0.');
 
     const levelOk = isWildcard(level) || (isInteger(level) && Number(level) >= 0 && Number(level) <= 15);
-    markField('drop-item-level', levelOk, 'Usa * o un numero entre 0 y 15.');
+    markField('drop-item-level', levelOk, window.MuText.t('Usa * o un numero entre 0 y 15.'));
 
     const gradeOk = isInteger(grade) && Number(grade) >= 0 && Number(grade) <= 15;
-    markField('drop-item-grade', gradeOk, 'Usa un numero entre 0 y 15.');
+    markField('drop-item-grade', gradeOk, window.MuText.t('Usa un numero entre 0 y 15.'));
 
     const mapOk = isWildcard(map) || (isInteger(map) && Number(map) >= 0 && Number(map) <= 255);
-    markField('drop-map', mapOk, 'Usa * o un numero entre 0 y 255.');
+    markField('drop-map', mapOk, window.MuText.t('Usa * o un numero entre 0 y 255.'));
 
     const monsterOk = isWildcard(monster) || (isInteger(monster) && Number(monster) >= 0);
     markField('drop-monster', monsterOk, 'Usa * o un numero >= 0.');
@@ -450,7 +450,7 @@
     markField('drop-monster-max', maxOk && rangeOk, 'Usa * o un numero >= 0.');
 
     const rateOk = isInteger(dropRate) && Number(dropRate) >= 0 && Number(dropRate) <= 1000000;
-    markField('drop-rate', rateOk, 'Usa un numero entre 0 y 1000000.');
+    markField('drop-rate', rateOk, window.MuText.t('Usa un numero entre 0 y 1000000.'));
 
     const percentInput = root.querySelector('#drop-rate-percent');
     if (percentInput) {
@@ -497,7 +497,7 @@
 
     root.querySelector('#update-drop')?.addEventListener('click', () => {
       if (!validateInputs()) {
-        setMessage('Hay campos invalidos. Revisar resaltados.', 'error');
+        setMessage(window.MuText.t('Hay campos invalidos. Revisar resaltados.'), 'error');
         return;
       }
       const idx = state.selected;
@@ -520,7 +520,7 @@
       row.dropRate = readValue('drop-rate', '0');
       row.comment = readValue('drop-comment', '');
       renderList();
-      setMessage('Drop actualizado.', 'success');
+      setMessage(window.MuText.t('Drop actualizado.'), 'success');
     });
 
     root.querySelector('#delete-drop')?.addEventListener('click', () => {
@@ -529,7 +529,7 @@
       state.rows.splice(idx, 1);
       state.selected = null;
       renderList();
-      setMessage('Drop eliminado.', 'success');
+      setMessage(window.MuText.t('Drop eliminado.'), 'success');
     });
 
     root.querySelector('#save-drop')?.addEventListener('click', saveDrop);
@@ -589,7 +589,7 @@
   async function loadDrop() {
     const res = await fetch(apiGet);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar el drop');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar el drop'));
     state.rows = parseDrop(data.content || '');
     state.selected = null;
   }
@@ -597,7 +597,7 @@
   async function saveDrop() {
     try {
       if (state.selected != null && !validateInputs()) {
-        setMessage('Hay campos invalidos. Revisar resaltados.', 'error');
+        setMessage(window.MuText.t('Hay campos invalidos. Revisar resaltados.'), 'error');
         return;
       }
       for (let i = 0; i < state.rows.length; i += 1) {
@@ -615,16 +615,16 @@
         body: JSON.stringify({ content })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       const reload = await fetch('/admin/server-editor/api/reload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: reloadTarget })
       });
       if (!reload.ok) {
-        setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+        setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
       } else {
-        setMessage('Drop guardado y recargado en el servidor.', 'success');
+        setMessage(window.MuText.t('Drop guardado y recargado en el servidor.'), 'success');
       }
     } catch (err) {
       setMessage(err.message, 'error');
@@ -638,7 +638,7 @@
       state.itemDefs = Array.isArray(data.items) ? data.items : [];
       state.itemMap = new Map(state.itemDefs.map((item) => [itemKey(item.section, item.index), item]));
     } catch {
-      setMessage('No se pudo cargar la lista de items.', 'error');
+      setMessage(window.MuText.t('No se pudo cargar la lista de items.'), 'error');
     }
   }
 
@@ -646,7 +646,7 @@
     try {
       const res = await fetch('/admin/server-editor/api/item-option-rate');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar ItemOptionRate');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar ItemOptionRate'));
       const sections = parseOptionRate(data.content || '');
       state.optionPresets.level = sections[0] || [];
       state.optionPresets.skill = sections[1] || [];

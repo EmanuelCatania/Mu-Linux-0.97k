@@ -4,13 +4,13 @@
   <div class="row-between">
     <h2>Baul - <%= accountId %></h2>
     <div class="admin-links">
-      <a class="button-link" href="/admin/accounts/<%= accountId %>">Cuenta</a>
-      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <a class="button-link" href="/admin/accounts/<%= accountId %>"><%= t("Cuenta") %></a>
+      <a class="button-link" href="/admin/accounts"><%= t("Cuentas") %></a>
       <% if (editorEnabled) { %>
-        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+        <a class="button-link" href="/admin/server-editor"><%= t("Editor servidor") %></a>
       <% } %>
-      <a class="button-link" href="/admin/downloads">Descargas</a>
-      <a class="button-link" href="/admin/logout">Salir</a>
+      <a class="button-link" href="/admin/downloads"><%= t("Descargas") %></a>
+      <a class="button-link" href="/admin/logout"><%= t("Salir") %></a>
     </div>
   </div>
 
@@ -22,7 +22,7 @@
   <% } %>
 
   <% if (!offline) { %>
-    <div class="alert">La cuenta esta en linea. Desconectala para guardar cambios.</div>
+    <div class="alert"><%= t("La cuenta esta en linea. Desconectala para guardar cambios.") %></div>
   <% } %>
 
   <div id="inventory-editor"
@@ -34,8 +34,8 @@
   <form method="post" action="/admin/accounts/<%= accountId %>/warehouse/editor">
     <input type="hidden" name="items_hex" id="inventory-hex" value="<%= itemsHex %>" />
     <div class="row-between">
-      <button type="submit">Guardar baul</button>
-      <a class="button-link" href="/admin/accounts/<%= accountId %>/warehouse">Volver</a>
+      <button type="submit"><%= t("Guardar baul") %></button>
+      <a class="button-link" href="/admin/accounts/<%= accountId %>/warehouse"><%= t("Volver") %></a>
     </div>
   </form>
 </section>
@@ -43,5 +43,3 @@
 <script src="/js/inventory-editor.js"></script>
 
 <%- include('partials/footer') %>
-
-

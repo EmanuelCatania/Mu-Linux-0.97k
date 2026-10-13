@@ -166,3 +166,12 @@ footer a:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.language-picker { display: flex; align-items: center; gap: 4px; margin: 4px 10px; }
+.language-picker select, .language-picker button { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid #75899a; border-radius: 4px; background: #f0f5fa; color: #20364b; }
+
+.language-picker { display:flex; gap:6px; }
+.language-flag { display:flex; align-items:center; gap:5px; padding:6px 8px; border:1px solid #8aa4b566; border-radius:6px; background:#132438; color:#fff!important; text-decoration:none; font:600 11px system-ui; }
+.language-flag img { border-radius:2px; }
+.language-flag:is(:hover,:focus-visible,.selected) { border-color:#8cdaff; box-shadow:0 0 0 1px #8cdaff; }
+.theme-daedalus-elf .language-flag { background:#eff8ff; color:#203e56!important; }
