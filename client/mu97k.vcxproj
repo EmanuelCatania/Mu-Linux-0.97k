@@ -129,6 +129,8 @@
     <ClInclude Include="src\Platform\CompilerCompat.h" />
     <ClInclude Include="src\Platform\IWindow.h" />
     <ClInclude Include="src\Platform\Win32\Win32Window.h" />
+    <ClInclude Include="src\Platform\IGLContext.h" />
+    <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
@@ -213,6 +215,7 @@
     <ClCompile Include="src\Local\ClientText.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Window.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
     <ClCompile Include="src\Core\Font.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
     <ClCompile Include="src\Game\MapManager.cpp" />

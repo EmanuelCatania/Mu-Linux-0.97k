@@ -337,7 +337,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // ── SWAP BUFFERS ──────────────────────────────────────────────────────────
     if (renderFlag & 0xff) {
         glFlush();
-        SwapBuffers(param_1);
+        gWindow.Present();
     }
     CHK("ML/post_swap");
 
