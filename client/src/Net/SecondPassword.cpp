@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
@@ -3380,7 +3381,7 @@ void __cdecl MoveCharacter(int p1)
             else if ((EnableGuildWar && *(BYTE*)(selSlot + 745) == 2)
                   || (!EnableGuildWar && *(unsigned char*)(selSlot + 746) >= 6u)
                   || gUserSettings.GetPvPWithoutControl()   // DESVIACION (DLL, 0x0044B532)
-                  || ((unsigned short)GetAsyncKeyState(17) >> 8))
+                  || ((unsigned short)Platform::GetInput().KeyState(17) >> 8))
             {
                 *(short*)(o + 134) = *(short*)(selSlot + 476);
             }

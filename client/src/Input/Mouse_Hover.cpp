@@ -36,6 +36,7 @@
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
 #include <windows.h>
@@ -132,7 +133,7 @@ void Mouse_UpdateHoverTargets(void)
     if (DAT_07d78094 != '\0') goto process_click;
 
     {
-        SHORT altState = GetAsyncKeyState(0x12);  // VK_MENU = Alt
+        SHORT altState = Platform::GetInput().KeyState(0x12);  // VK_MENU = Alt
         if ((char)((unsigned short)altState >> 8) == (char)0x80)
         {
             // Alt held: item-on-ground first, then NPC, mob, player

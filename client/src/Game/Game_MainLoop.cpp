@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Net/Reconnect.h"
 #include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
@@ -254,7 +255,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     shiftHeld = 1;
-    if ((GetAsyncKeyState(VK_SHIFT) >> 8) != 0)
+    if ((Platform::GetInput().KeyState(VK_SHIFT) >> 8) != 0)
         shiftHeld = 1 - shiftHeld;
 
     if (DAT_083a42ec != '\0' && shiftHeld == 1)

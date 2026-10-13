@@ -23,6 +23,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "UI/EventTimer.h"
 #pragma warning(disable: 4102)
@@ -369,7 +370,7 @@ void __cdecl Chat_InputTick(void)
 
     // ── 2. PageUp / PageDown (vtable scroll) ───────────────────────────────
     {
-        SHORT sv = GetAsyncKeyState(0x21); // VK_PRIOR = PageUp
+        SHORT sv = Platform::GetInput().KeyState(0x21); // VK_PRIOR = PageUp
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11970 == 0) {
                 DAT_07e11970 = 1;
@@ -393,7 +394,7 @@ void __cdecl Chat_InputTick(void)
             DAT_07e11970 = 0;
         }
 
-        sv = GetAsyncKeyState(0x22); // VK_NEXT = PageDown
+        sv = Platform::GetInput().KeyState(0x22); // VK_NEXT = PageDown
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11974 == 0) {
                 DAT_07e11974 = 1;
@@ -423,7 +424,7 @@ void __cdecl Chat_InputTick(void)
     for (int dir = 0; dir < 2; ++dir) {
         int    vk   = dir == 0 ? 0x26 : 0x28;             // VK_UP / VK_DOWN
         DWORD& edge = dir == 0 ? DAT_07e11984 : DAT_07e1198c;
-        SHORT sv = GetAsyncKeyState(vk);
+        SHORT sv = Platform::GetInput().KeyState(vk);
         if ((char)((unsigned short)sv >> 8) != (char)(-0x80)) {
             edge = 0;
             continue;
@@ -523,12 +524,12 @@ void __cdecl Chat_InputTick(void)
                                 // IDA L2406-2589: con Ctrl apretado, las teclas
                                 // 1..9 y 0 asignan ese numero a la skill bajo el
                                 // cursor (y lo sacan de la que lo tenia).
-                                if (((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) != 0)
+                                if (((unsigned short)Platform::GetInput().KeyState(VK_CONTROL) >> 8) != 0)
                                 {
                                     for (int k = 1; k <= 10; ++k)
                                     {
                                         int key = k % 10;          // 1..9, despues 0
-                                        if (((unsigned short)GetAsyncKeyState(0x30 + key) >> 8) == 0)
+                                        if (((unsigned short)Platform::GetInput().KeyState(0x30 + key) >> 8) == 0)
                                             continue;
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
@@ -559,13 +560,13 @@ void __cdecl Chat_InputTick(void)
             //   }
             if ((DAT_00559c84 == 0) && (DAT_07e11d71 == 0))
             {
-                if (((unsigned short)GetAsyncKeyState(VK_MENU) >> 8) != 0x80)
+                if (((unsigned short)Platform::GetInput().KeyState(VK_MENU) >> 8) != 0x80)
                 {
                     for (int n = 1; n <= 9; ++n) {
-                        if (((unsigned short)GetAsyncKeyState(0x30 + n) >> 8) != 0)
+                        if (((unsigned short)Platform::GetInput().KeyState(0x30 + n) >> 8) != 0)
                             SelectSkillByHotkey(n);
                     }
-                    if (((unsigned short)GetAsyncKeyState(0x30) >> 8) != 0)
+                    if (((unsigned short)Platform::GetInput().KeyState(0x30) >> 8) != 0)
                         SelectSkillByHotkey(0);
                 }
             }
@@ -587,13 +588,13 @@ void __cdecl Chat_InputTick(void)
             // El disparo es ALT + el numero, NO Enter: el texto que se tipea
             // en el chat vive en InputText (DAT_07db8710) y lo envia el WndProc.
             if (DAT_07e11d7c == 0 &&
-                ((unsigned short)GetAsyncKeyState(VK_MENU) >> 8) != 0)
+                ((unsigned short)Platform::GetInput().KeyState(VK_MENU) >> 8) != 0)
             {
                 {
                     for (int ch = 0; ch < 9; ++ch)
                     {
                         // Alt+1 .. Alt+9  ->  macros 0..8  (IDA: v221 + 49)
-                        if (((unsigned short)GetAsyncKeyState('1' + ch) >> 8) == 0)
+                        if (((unsigned short)Platform::GetInput().KeyState('1' + ch) >> 8) == 0)
                             continue;
                         BYTE *chBuf = (BYTE *)&MacroText + ch * 0x100;
                         if (chBuf[0] == '\0') { DAT_07e11d7c = 100; continue; }
@@ -686,7 +687,7 @@ void __cdecl Chat_InputTick(void)
                 // Uses DAT_07e108c8 buffer (offset 0x900 from MacroText).
                 {
                     // Alt+0 -> macro 10 (IDA: GetAsyncKeyState(48), o sea '0')
-                    DWORD uVar9 = (((unsigned short)GetAsyncKeyState('0') >> 8) == 0)
+                    DWORD uVar9 = (((unsigned short)Platform::GetInput().KeyState('0') >> 8) == 0)
                                 ? 1u
                                 : (DWORD)(unsigned char)FUN_00494520((BYTE *)&DAT_07e108c8, '\x01');
                     if ((char)uVar9 == '\0') {
@@ -767,7 +768,7 @@ void __cdecl Chat_InputTick(void)
     // ── 9. 'B' key — toggle body rendering / battle mode ────────────────────
     // HashTable ops are obfuscation noise around the real toggle.
     {
-        SHORT sv = GetAsyncKeyState(0x42); // 'B'
+        SHORT sv = Platform::GetInput().KeyState(0x42); // 'B'
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e119f4 == 0) {
                 DAT_07e119f4 = 1;
@@ -804,7 +805,7 @@ void __cdecl Chat_InputTick(void)
 
     // ── 10. 'R' key ─────────────────────────────────────────────────────────
     {
-        SHORT sv = GetAsyncKeyState(0x52); // 'R'
+        SHORT sv = Platform::GetInput().KeyState(0x52); // 'R'
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11a34 == 0) {
                 DAT_07e11a34 = 1;
@@ -854,7 +855,7 @@ void __cdecl Chat_InputTick(void)
         // KeyState locals for Q=81, W=87, E=69 — using existing edge-tracking globals
         static BYTE s_qweEdge[3] = {0,0,0};
         for (int i = 0; i < 3; ++i) {
-            SHORT sv = GetAsyncKeyState(qwe[i].vk);
+            SHORT sv = Platform::GetInput().KeyState(qwe[i].vk);
             if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
                 if (s_qweEdge[i] == 0) {
                     s_qweEdge[i] = 1;

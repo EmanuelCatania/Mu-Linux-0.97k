@@ -1,6 +1,7 @@
 // UI_IME.cpp
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -8,34 +9,15 @@
 // Builds a COMPOSITIONFORM-like struct {style=2, x, y} and sends WM_IME_CONTROL
 // (0x283) with IMC_SETCOMPOSITIONWINDOW (0xC) to the default IME window.
 void __stdcall SetPositionIME_Wnd(float x, float y) {
-    int xRight = gWindow.GetWidth();
-    DWORD style = 2;  // CFS_POINT
-    LONG ptX = (LONG)x;
-    LONG ptY = (LONG)y;
-
-    // COMPOSITIONFORM-like struct: {dwStyle, ptCurrentPos.x, ptCurrentPos.y, rcArea}
-    struct {
-        DWORD dwStyle;
-        LONG  x;
-        LONG  y;
-        RECT  rcArea;
-    } compForm;
-    compForm.dwStyle = style;
-    compForm.x = ptX;
-    compForm.y = ptY;
-    SetRect(&compForm.rcArea, 0, 0, xRight, gWindow.GetHeight());
-
-    HWND hImeWnd = ImmGetDefaultIMEWnd((HWND)gWindow.GetHwnd());
-    SendMessageA(hImeWnd, 0x283, 0xC, (LPARAM)&compForm);
+    Platform::GetInput().PositionIme((int)x, (int)y, gWindow.GetWidth(), gWindow.GetHeight());
 }
 
 // CheckIME_Status @ 0x0047EDC0 (~32 lines) — checks/saves/resets IME conversion status
 // Globals: DAT_07e11d94 = g_dwOldConv, DAT_00559cd8 = g_dwOldSent, DAT_07e11d98 = g_dwCurrConv
 bool __cdecl CheckIME_Status(bool change, int mode) {
     bool bIme = false;
-    HIMC hImc = ImmGetContext(gWindow.GetHwnd());
-    DWORD dwConv = 0, dwSent = 0;
-    ImmGetConversionStatus(hImc, &dwConv, &dwSent);
+    const auto state = Platform::GetInput().ReadImeState(change);
+    DWORD dwConv = state.conversion, dwSent = state.sentence;
     if (dwConv != 0 || dwSent != 0) {
         bIme = true;
         if (((BYTE)mode & 1) == 1) {
@@ -47,10 +29,8 @@ bool __cdecl CheckIME_Status(bool change, int mode) {
         if (change) {
             dwConv = 0;
             dwSent = 0;
-            ImmSetConversionStatus(hImc, 0, 0);
         }
     }
-    ImmReleaseContext(gWindow.GetHwnd(), hImc);
     DAT_07e11d98 = dwConv;   // always update current conversion status
     return bIme;
 }
@@ -78,10 +58,8 @@ void __stdcall RenderIME_Status(void) {
     GetTextExtentPointA(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 2: Sentence mode (current IME conversion status)
-    HIMC hImc = ImmGetContext(gWindow.GetHwnd());
-    DWORD dwConv = 0, dwSent = 0;
-    ImmGetConversionStatus(hImc, &dwConv, &dwSent);
-    ImmReleaseContext(gWindow.GetHwnd(), hImc);
+    const auto state = Platform::GetInput().ReadImeState();
+    DWORD dwConv = state.conversion, dwSent = state.sentence;
     sprintf(local_64, "Sentence Mode : %d", dwSent);
     RenderText(100, 0x6e, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);

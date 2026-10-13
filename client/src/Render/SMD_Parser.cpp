@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "UI/MoveList.h"
@@ -835,7 +836,7 @@ unsigned int __cdecl CheckAttack(void) {
     if (!EnableGuildWar) {
         return targetPkLevel >= 6 ||
                ((gUserSettings.GetPvPWithoutControl() ||   // DESVIACION (DLL, 0x0048322F)
-                 ((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80) &&
+                 ((unsigned short)Platform::GetInput().KeyState(VK_CONTROL) >> 8) == 0x80) &&
                 target != (BYTE*)(uintptr_t)DAT_07abf5d8);
     }
 

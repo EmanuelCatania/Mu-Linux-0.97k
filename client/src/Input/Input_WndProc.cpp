@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "Render/Camera3D.h"
-#include <windowsx.h>
+#include "Input/Input.h"
 
 // Helper de src/UI/Chat_InputTick.cpp — envía una línea de chat
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
@@ -59,23 +59,23 @@ static bool Chat_TryAssignMacro(const char* text)
     return true;
 }
 
-void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
+void Input_OnEvent(const Platform::InputEvent& event)
 {
-    switch (uMsg)
+    switch (event.type)
     {
-    case WM_MOUSEMOVE:     // 0x200
+    case Platform::InputEventType::MouseMove:     // 0x200
         // g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → DAT_083a427c
         // g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → DAT_083a4278
         {
             DWORD sw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
             DWORD sh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
-            DAT_083a427c = ((DWORD)(short)LOWORD(lParam) * 640) / sw;
-            DAT_083a4278 = ((DWORD)(short)HIWORD(lParam) * 480) / sh;
+            DAT_083a427c = ((DWORD)event.x * 640) / sw;
+            DAT_083a4278 = ((DWORD)event.y * 480) / sh;
         }
-        gCamera3D.Drag(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        gCamera3D.Drag(event.x, event.y);
         break;
 
-    case WM_LBUTTONDOWN:   // 0x201
+    case Platform::InputEventType::LeftDown:   // 0x201
         DAT_083a413c = 0;                    // cancelar "dialog close" anterior
         if (DAT_083a42c4 == 0) {
             DAT_083a4124 = 1;                // g_ClickFlag = 1
@@ -85,7 +85,7 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         DAT_055ca040 = DAT_083a4278;
         break;
 
-    case WM_LBUTTONUP:     // 0x202
+    case Platform::InputEventType::LeftUp:     // 0x202
         DAT_083a4124 = 0;                    // g_ClickFlag = 0
         // Si no hubo drag desde el down, marcar "dialog close / click confirmado"
         if (DAT_055ca03c == DAT_083a427c && DAT_055ca040 == DAT_083a4278) {
@@ -98,11 +98,11 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         DAT_055ca040 = DAT_083a4278;
         break;
 
-    case WM_LBUTTONDBLCLK: // 0x203
+    case Platform::InputEventType::LeftDoubleClick: // 0x203
         DAT_083a4299 = 1;                    // g_DblClickFlag
         break;
 
-    case WM_RBUTTONDOWN:   // 0x204
+    case Platform::InputEventType::RightDown:   // 0x204
         // 004149D0 WndProc: MouseRButtonPop = 0; if (!MouseRButton)
         // MouseRButtonPush = 1; MouseRButton = 1.  Attack (0049CBF0)
     // consume esos dos flags para arrancar y sostener el casteo de un skill.
@@ -112,38 +112,38 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         DAT_083a42ac = 1;                    // MouseRButton
         break;
 
-    case WM_RBUTTONUP:     // 0x205
+    case Platform::InputEventType::RightUp:     // 0x205
         // El original limpia Push y suelta MouseRButton (también setea el flag
         // Pop aparte, que hoy ningún camino de gameplay compilado lee).
         MouseRButtonPush = 0;
         DAT_083a42ac = 0;
         break;
 
-    case WM_MOUSEWHEEL:    // 0x20A
+    case Platform::InputEventType::Wheel:    // 0x20A
         // DESVIACION: el original la descartaba; ver ChatListBox_AddWheel.
         // Con la cámara 3D activa la rueda es su zoom (DLL Controller.cpp).
-        if (!gCamera3D.Wheel(GET_WHEEL_DELTA_WPARAM(wParam)))
-            ChatListBox_AddWheel(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
+        if (!gCamera3D.Wheel(event.wheel))
+            ChatListBox_AddWheel(event.wheel / 120);
         break;
 
     // DESVIACION (DLL Controller.cpp): el botón del medio gira la cámara 3D.
-    case WM_MBUTTONDOWN:
-        gCamera3D.BeginDrag(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        SetCapture(gWindow.GetHwnd());
+    case Platform::InputEventType::MiddleDown:
+        gCamera3D.BeginDrag(event.x, event.y);
+        Platform::GetInput().CaptureMouse(true);
         break;
-    case WM_MBUTTONUP:
+    case Platform::InputEventType::MiddleUp:
         gCamera3D.EndDrag();
-        ReleaseCapture();
+        Platform::GetInput().CaptureMouse(false);
         break;
 
     // 0x10F = WM_IME_COMPOSITION — chat coreano DBCS
     //   DAT_07e11cec[DAT_07e11d78*4] = HIWORD(wParam) >> 8
     //   DAT_07e11ced[DAT_07e11d78*4] = LOWORD(wParam) & 0xFF
     //   toggle de IME vía IME_SetConversion @ 0x0047ED80
-    case WM_IME_STARTCOMPOSITION:  // 0x10D
+    case Platform::InputEventType::ImeStart:  // 0x10D
         DAT_055ca019 = 1;
         break;
-    case WM_IME_ENDCOMPOSITION:    // 0x10E
+    case Platform::InputEventType::ImeEnd:    // 0x10E
         DAT_055ca019 = 0;
         break;
 
@@ -161,7 +161,7 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     //   InputTextMax[0]       → InputTextMax (alias floatizado del DWORD 0x559c94)
     //   byte_55CA019 (IME)    → DAT_055ca019
     //   byte_55CA038 (Enter)  → DAT_055ca038   (lo lee el disparador de login de Game_SceneUpdate)
-    case WM_CHAR:          // 0x102
+    case Platform::InputEventType::Text:          // 0x102
     {
         // Diagnóstico: confirma que WM_CHAR está llegando a la ventana y loguea
         // el estado de los flags del subsistema de input, para poder distinguir
@@ -179,21 +179,21 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             *((char*)&DAT_07e11cec + slot * 4) = 0;
         }
 
-        if (wParam == 8) {           // Backspace
+        if (event.character == 8) {           // Backspace
             if (len > 0) {
                 lens[slot] = (DWORD)(len - 1);
                 buf[len - 1] = 0;
             }
             break;
         }
-        if (wParam == 9) {           // Tab — rotate active slot
+        if (event.character == 9) {           // Tab — rotate active slot
             if (DAT_00559c84 && InputNumber > 1) {
                 DAT_07e11d78 = (DAT_07e11d78 + 1) % InputNumber;
                 PlayBuffer(0x19, 0, 0);   // PlayBuffer(25) — click sfx
             }
             break;
         }
-        if (wParam == 0xD) {         // Enter — signals login/submit + chat toggle
+        if (event.character == 0xD) {         // Enter — signals login/submit + chat toggle
             DAT_055ca038 = 1;
 
             // Baúl: guardar/sacar zen. Per IDA WndProc L2047-2051:
@@ -302,7 +302,7 @@ void Input_OnWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         const bool guildDeleteCodeDialog =
             DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
         if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
-            BYTE c = (BYTE)wParam;
+            BYTE c = (BYTE)event.character;
             if (GoldInputEnable && (c < '0' || c > '9')) break;
             // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de
             // CreateFontA (ver WinMain paso 15).

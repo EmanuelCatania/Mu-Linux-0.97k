@@ -73,6 +73,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include <mbstring.h>
 #include "globals.h"
 #include "structs.h"
@@ -554,11 +555,11 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
 
     // ── Scroll con flechas (sólo cuando este widget tiene el foco del teclado) ──
     if (self[26] == 1 && dword_55C9B88 == self[7]) {
-        GetAsyncKeyState(VK_LEFT);
-        GetAsyncKeyState(VK_RIGHT);
+        Platform::GetInput().KeyState(VK_LEFT);
+        Platform::GetInput().KeyState(VK_RIGHT);
 
         // Up arrow → scrollByN(+1) with ramp.
-        if (((WORD)GetAsyncKeyState(VK_UP) >> 8) == 0x80) {
+        if (((WORD)Platform::GetInput().KeyState(VK_UP) >> 8) == 0x80) {
             keyHandled = true;
             DWORD ramp = self[27];
             if (ramp == 0) {
@@ -571,7 +572,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             }
         }
         // Down arrow → scrollByN(-1) with ramp.
-        if (((WORD)GetAsyncKeyState(VK_DOWN) >> 8) == 0x80) {
+        if (((WORD)Platform::GetInput().KeyState(VK_DOWN) >> 8) == 0x80) {
             DWORD ramp = self[27];
             if (ramp == 0) {
                 ChatLB_DispatchKey(self, 14, 0, 0);

@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Render/Camera3D.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
@@ -803,7 +804,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     static int s_altNameToggle = 0;
     if (PressKey(VK_MENU))
         s_altNameToggle = !s_altNameToggle;
-    if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
+    if (s_altNameToggle || (Platform::GetInput().KeyState(VK_MENU) & 0x8000) != 0) {
         for (int i = 0; i < 1000; ++i) {
             if (i == hovered) continue;
             BYTE* o = itemPool + i * 0x204 + 72;
