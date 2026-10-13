@@ -9,6 +9,6 @@
 void __cdecl ExitProgram(void)
 {
     MessageBoxA(gWindow.GetHwnd(), lpText_07d2aa08, NULL, 0);
-    SendMessageA(gWindow.GetHwnd(), 2, 0, 0);  // WM_DESTROY
+    gWindow.RequestCloseApplication();  // WM_DESTROY
 }
 

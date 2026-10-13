@@ -118,7 +118,7 @@ void __cdecl Item_LoadBMD(const char *path)
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        gWindow.RequestCloseApplication();
         return;
     }
     char *buf = (char *)operator_new(0x8000);
@@ -141,7 +141,7 @@ void __cdecl Item_LoadBMD(const char *path)
         crt_sprintf(msg, (const char *)s__s___File_corrupted__00559bd4);
         CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        gWindow.RequestCloseApplication();
         operator_delete(buf);
         return;
     }

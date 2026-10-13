@@ -144,7 +144,7 @@ void Recv_LogOut(const BYTE* Msg)
 
     if (sub == 0) {
         // Exit: WM_DESTROY → WndProc cleanup → PostQuitMessage
-        SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+        gWindow.RequestCloseApplication();
         return;
     }
 
