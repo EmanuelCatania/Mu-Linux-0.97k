@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="<%= language %>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,23 +8,28 @@
     <% if (turnstileSiteKey) { %>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <% } %>
-  </head>
-  <body>
+    <script src="/js/i18n.js"></script>
+  <script src="/locales/<%= language %>.js"></script>
+  <% if (!isAdminPage && siteSettings.theme !== "classic") { %><link rel="stylesheet" href="/css/daedalus.css?v=20261013-layers-language2"><% } %>
+</head>
+  <body class="<%= isAdminPage ? 'admin-page' : 'theme-' + siteSettings.theme %>">
     <header class="site-header">
       <div class="container header-row">
         <div class="logo"><%= appName %></div>
         <nav class="nav">
-          <a href="/">Inicio</a>
-          <a href="/news">Noticias</a>
+          <% if (session.admin && !session.admin.mustChange && siteSettings.setup_complete) { %><a href="/admin/settings"><%= t('Configuración') %></a><% } %>
+          <a href="/"><%= t("Inicio") %></a>
+          <a href="/news"><%= t("Noticias") %></a>
           <a href="/rankings">Rankings</a>
           <% if (session.user) { %>
-            <a href="/account">Cuenta</a>
-            <a href="/logout">Salir</a>
+            <a href="/account"><%= t("Cuenta") %></a>
+            <a href="/logout"><%= t("Salir") %></a>
           <% } else { %>
-            <a href="/login">Ingresar</a>
-            <a href="/register">Registro</a>
+            <a href="/login"><%= t("Ingresar") %></a>
+            <a href="/register"><%= t("Registro") %></a>
           <% } %>
         </nav>
       </div>
     </header>
+    <% if (!isAdminPage) { %><%- include('theme_hero') %><% } %>
     <main class="container">

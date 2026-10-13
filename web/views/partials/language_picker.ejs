@@ -1,0 +1,7 @@
+<nav class="language-picker" aria-label="<%= t('Idioma') %>">
+<% [['es','Español','ar'],['en','English','us'],['pt','Português','br']].forEach(([id,label,flag]) => {
+ const params = new URLSearchParams();
+ Object.entries(typeof currentQuery === 'undefined' ? {} : currentQuery).forEach(([key,value]) => { if(key !== 'lang' && typeof value === 'string') params.set(key,value); });
+ params.set('lang',id);
+%><a href="?<%= params.toString() %>" class="language-flag <%= language === id ? 'selected' : '' %>" title="<%= label %>" aria-label="<%= label %>" <%- language === id ? 'aria-current="true"' : '' %>><img src="/assets/images/flags/<%= flag %>.svg" width="24" height="16" alt=""><span><%= id.toUpperCase() %></span></a><% }) %>
+</nav>

@@ -362,7 +362,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="shop-toolbar">
         <div class="shop-file">
@@ -459,19 +459,19 @@
 
     root.querySelector('#place-item').addEventListener('click', () => {
       placeMode = true;
-      setMessage('Selecciona una casilla libre para colocar el item.', 'success');
+      setMessage(window.MuText.t('Selecciona una casilla libre para colocar el item.'), 'success');
     });
 
     root.querySelector('#update-item').addEventListener('click', () => {
       if (!selectedItemId) {
-        setMessage('Selecciona un item primero.', 'error');
+        setMessage(window.MuText.t('Selecciona un item primero.'), 'error');
         return;
       }
       const item = state.items.get(selectedItemId);
       if (!item) return;
       const newDef = getSelectedDef();
       if (!newDef) {
-        setMessage('Selecciona un item para aplicar.', 'error');
+        setMessage(window.MuText.t('Selecciona un item para aplicar.'), 'error');
         return;
       }
       const newSlotX = Number(root.querySelector('#item-slotx').value);
@@ -481,7 +481,7 @@
         return;
       }
       if (newSlotX < 0 || newSlotX >= cols || newSlotY < 0 || newSlotY >= rows) {
-        setMessage('Slot X/Y fuera de rango.', 'error');
+        setMessage(window.MuText.t('Slot X/Y fuera de rango.'), 'error');
         return;
       }
 
@@ -493,7 +493,7 @@
         index: newDef.index
       };
       if (!canPlace(candidate, targetSlot, item.id)) {
-        setMessage('No hay espacio para ese item en la posicion.', 'error');
+        setMessage(window.MuText.t('No hay espacio para ese item en la posicion.'), 'error');
         return;
       }
       clearOccupancy(item);
@@ -516,12 +516,12 @@
         ? commentInput.value.trim()
         : newDef.name;
       renderItems();
-      setMessage('Item actualizado.', 'success');
+      setMessage(window.MuText.t('Item actualizado.'), 'success');
     });
 
     root.querySelector('#remove-item').addEventListener('click', () => {
       if (!selectedItemId) {
-        setMessage('Selecciona un item primero.', 'error');
+        setMessage(window.MuText.t('Selecciona un item primero.'), 'error');
         return;
       }
       const item = state.items.get(selectedItemId);
@@ -542,11 +542,11 @@
       if (placeMode) {
         const newItem = createItemFromPicker();
         if (!newItem) {
-          setMessage('Selecciona un item para colocar.', 'error');
+          setMessage(window.MuText.t('Selecciona un item para colocar.'), 'error');
           return;
           }
           if (!canPlace(newItem, slotIndex)) {
-            setMessage('No hay espacio para el item en esa posicion.', 'error');
+            setMessage(window.MuText.t('No hay espacio para el item en esa posicion.'), 'error');
             return;
           }
         newItem.slotIndex = slotIndex;
@@ -557,7 +557,7 @@
           placeMode = false;
           selectedItemId = newItem.id;
           renderItems();
-          setMessage('Item colocado.', 'success');
+          setMessage(window.MuText.t('Item colocado.'), 'success');
           selectItem(newItem);
           return;
         }
@@ -590,7 +590,7 @@
     root.querySelector('#save-shop')?.addEventListener('click', async () => {
       const fileName = root.querySelector('#shop-file').value;
       if (!fileName) {
-        setMessage('Selecciona un shop para guardar.', 'error');
+        setMessage(window.MuText.t('Selecciona un shop para guardar.'), 'error');
         return;
       }
       await saveShopFile(fileName);
@@ -611,7 +611,7 @@
           const option = Array.from(selectEl.options).find((opt) => opt.value === file.name);
           if (option) selectEl.value = file.name;
         }
-        setMessage('Shop importado. Guardalo para subirlo al servidor.', 'success');
+        setMessage(window.MuText.t('Shop importado. Guardalo para subirlo al servidor.'), 'success');
       };
       reader.readAsText(file);
       event.target.value = '';
@@ -637,7 +637,7 @@
     try {
       const res = await fetch('/admin/server-editor/api/shops');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
       const files = Array.isArray(data.files) ? data.files : [];
       selectEl.innerHTML = '';
       files.forEach((name) => {
@@ -656,11 +656,11 @@
 
   async function loadShopFile(name) {
     if (!name) return;
-    setMessage('Cargando shop...', 'success');
+    setMessage(window.MuText.t('Cargando shop...'), 'success');
     try {
       const res = await fetch(`/admin/server-editor/api/shops/file?name=${encodeURIComponent(name)}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
       loadFromContent(data.content || '', name);
       setMessage('Shop cargado.', 'success');
     } catch (err) {
@@ -678,12 +678,12 @@
         body: JSON.stringify({ name, content })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       const reloaded = await triggerReload();
       if (reloaded) {
-        setMessage('Shop guardado y recargado en el servidor.', 'success');
+        setMessage(window.MuText.t('Shop guardado y recargado en el servidor.'), 'success');
       } else {
-        setMessage('Shop guardado. No se pudo recargar automaticamente.', 'error');
+        setMessage(window.MuText.t('Shop guardado. No se pudo recargar automaticamente.'), 'error');
       }
     } catch (err) {
       setMessage(err.message, 'error');
@@ -698,7 +698,7 @@
         body: JSON.stringify({ target: 'shop' })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo recargar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo recargar'));
       return true;
     } catch {
       return false;
@@ -715,7 +715,7 @@
       itemDefsMap = new Map(itemDefs.map((def) => [`${def.section}:${def.index}`, def]));
       populatePicker();
     } catch {
-      setMessage('No se pudo cargar la lista de items.', 'error');
+      setMessage(window.MuText.t('No se pudo cargar la lista de items.'), 'error');
     }
     await loadShopList();
     const selectEl = root.querySelector('#shop-file');

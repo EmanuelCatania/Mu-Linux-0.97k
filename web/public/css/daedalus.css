@@ -1,0 +1,174 @@
+/* Adaptación del template Daedalus (WebEngine, Cepoide) a las vistas de MuLinux.
+   El fondo original con DL se conserva en los assets fuente, fuera del tema 0.97k. */
+body[class*="theme-daedalus"] { background: #100c0b url('/themes/daedalus/landscape.png') center top / 1964px auto no-repeat; color: #ddd3c3; --bs-primary-rgb: 166,98,36; }
+body[class*="theme-daedalus"] .container { max-width: 1080px; }
+body[class*="theme-daedalus"] .top-navbar { background: #130e0de8 url('/themes/daedalus/topbar.png') center top no-repeat; border-bottom: 1px solid #755134; }
+body[class*="theme-daedalus"] .transparent-header { background: #130e0d99; margin-bottom: 0!important; }
+.daedalus-hero { position: relative; width: min(1080px,100%); margin: auto; min-height: 330px; overflow: hidden; }
+.hero-character { position: absolute; inset: 0 42% 0 0; background: center 10% / contain no-repeat; filter: drop-shadow(0 12px 16px #000); }
+.theme-daedalus-dk .hero-character { background-image: url('/themes/daedalus/dk.png'); }
+.theme-daedalus-dw .hero-character { background-image: url('/themes/daedalus/dw.png'); }
+.theme-daedalus-elf .hero-character { background-image: url('/themes/daedalus/elf.jpeg'); background-size: auto 470px; mask-image: radial-gradient(ellipse 46% 70% at 50% 45%, #000 45%, transparent 100%); }
+body[class*="theme-daedalus"] main > .container { margin-top: 20px!important; }
+body[class*="theme-daedalus"] .bg-white, body[class*="theme-daedalus"] .bg-light { background: #1b1513f5!important; color: #ddd3c3; }
+body[class*="theme-daedalus"] .border { border-color: #51402d!important; }
+body[class*="theme-daedalus"] .text-dark, body[class*="theme-daedalus"] .text-muted { color: #d9cbbb!important; }
+body[class*="theme-daedalus"] h2 { background: #231913 url('/themes/daedalus/sidebar_box_head.jpg') center / cover; color: #f0c887!important; padding: 18px; font-family: Georgia,serif; }
+body[class*="theme-daedalus"] a.text-primary { color: #f1b65e!important; }
+body[class*="theme-daedalus"] .btn-primary { background: #743b20; border-color: #a66d32; }
+body[class*="theme-daedalus"] .table { --bs-table-bg: #1b1513; --bs-table-color: #ddd3c3; --bs-table-border-color: #51402d; }
+body[class*="theme-daedalus"] footer { background: #100c0b!important; color: #c9b799; }
+body[class*="theme-daedalus"] .table { --bs-table-striped-color: #ddd3c3; --bs-table-striped-bg: #291e17; --bs-table-hover-color: #ffe1a0; --bs-table-hover-bg: #38291e; }
+body[class*="theme-daedalus"] .table td, body[class*="theme-daedalus"] .table th { color: #ddd3c3!important; }
+body[class*="theme-daedalus"] .text-decoration-none { color: #f0ba73!important; }
+body[class*="theme-daedalus"] .navbar-toggler { color: #f8d8a6; }
+.theme-daedalus-elf .hero-character { left: 10%; right: auto; width: 265px; background-size: auto 410px; background-position: center 5%; mask-image: radial-gradient(ellipse 50% 58% at 50% 48%, #000 35%, transparent 100%); }
+@media(max-width:600px) { .theme-daedalus-elf .hero-character { left: 0; width: 52%; background-size: auto 320px; } }
+
+/* Identidades propias de Elf y Dark Wizard; los IDs guardados siguen siendo compatibles. */
+body.theme-daedalus-elf {
+  --bg: #eaf4fc; --card: #ffffffed; --text: #233f55; --muted: #49677e; --accent: #18618d;
+  --theme-border: #bad4e5; --theme-heading: linear-gradient(110deg, #e0f1fc, #ffffff);
+  --theme-nav: #f5fbfff0; --theme-stripe: #eef7fc; --theme-hover: #dceef9;
+  --theme-title: #194969; --theme-button: #246a96; --bs-primary-rgb: 36,106,150;
+  background: #eaf4fc url('/themes/daedalus/elf-sanctuary.png') center top / 1920px auto no-repeat;
+  color: var(--text);
+}
+body.theme-daedalus-dw {
+  --bg: #070f25; --card: #0c1c37f5; --text: #d2e4f7; --muted: #a4bddb; --accent: #91d8ff;
+  --theme-border: #315579; --theme-heading: linear-gradient(110deg, #163258, #0c1b36);
+  --theme-nav: #09152bef; --theme-stripe: #112645; --theme-hover: #193859;
+  --theme-title: #b6e9ff; --theme-button: #215588; --bs-primary-rgb: 33,85,136;
+  background: #070f25 url('/themes/daedalus/wizard-observatory.png') center top / 1920px auto no-repeat;
+  color: var(--text);
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.top-navbar, .transparent-header, .site-header, .offcanvas, .dropdown-menu) {
+  background: var(--theme-nav)!important; border-color: var(--theme-border)!important;
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.bg-white, .bg-light, .bg-dark, .card, .card-sub) {
+  background: var(--card)!important; color: var(--text)!important; border-color: var(--theme-border)!important;
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.text-dark, .text-muted, .text-light, .text-decoration-none),
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) nav :is(a, .text-white),
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .navbar-brand {
+  color: var(--text)!important;
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.border, .border-bottom) { border-color: var(--theme-border)!important; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) h2 {
+  background: var(--theme-heading); color: var(--theme-title)!important; border-bottom: 1px solid var(--theme-border);
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) a.text-primary { color: var(--accent)!important; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .btn-primary {
+  background: var(--theme-button); border-color: var(--theme-border); color: #fff;
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(input, select, textarea) {
+  background: var(--bg); color: var(--text); border-color: var(--theme-border);
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) input::placeholder { color: var(--muted); opacity: 1; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .table {
+  --bs-table-bg: var(--card); --bs-table-color: var(--text); --bs-table-border-color: var(--theme-border);
+  --bs-table-striped-color: var(--text); --bs-table-striped-bg: var(--theme-stripe);
+  --bs-table-hover-color: var(--text); --bs-table-hover-bg: var(--theme-hover);
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .table :is(td, th) { color: var(--text)!important; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) footer { background: var(--bg)!important; color: var(--muted)!important; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .navbar-toggler { color: var(--text); filter: none; }
+.theme-daedalus-elf .hero-character { filter: drop-shadow(0 8px 12px #b8d3e4); }
+body.theme-daedalus-elf :is(.card, main .bg-white) { border-radius: 16px!important; box-shadow: 0 6px 22px #4381aa15; }
+body.theme-daedalus-dw :is(.card, main .bg-white) { border-radius: 2px!important; box-shadow: inset 0 1px #82ceff22, 0 6px 24px #0005; }
+.theme-daedalus-dw .hero-character { left: 48%; right: 0; filter: drop-shadow(0 0 20px #3c83ce66); }
+@media(max-width:600px) {
+  .theme-daedalus-dw .hero-character { left: 49%; }
+  body:is(.theme-daedalus-elf, .theme-daedalus-dw) { background-size: auto 800px; }
+}
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.transparent-header, .offcanvas) .nav-link { color: var(--text)!important; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.btn-outline-primary, .btn-outline-dark, .btn-outline-secondary) { color: var(--accent); border-color: var(--theme-border); }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) :is(.btn-outline-primary, .btn-outline-dark, .btn-outline-secondary):hover { background: var(--theme-button); color: #fff; }
+body.theme-daedalus-dw .offcanvas .btn-close { filter: invert(1); }
+
+/* Personaje a la derecha del estado del servidor, apoyado sobre el contenido. */
+body[class*="theme-daedalus"] .home-showcase { position: relative; min-height: 410px; display: flex; align-items: flex-end; }
+.home-showcase > .row { width: 100%; position: relative; z-index: 1; pointer-events: none; }
+.home-showcase > .row > div { pointer-events: auto; }
+body[class*="theme-daedalus"] .daedalus-hero { min-height: 240px; }
+body[class*="theme-daedalus"] .home-showcase .daedalus-hero { position: absolute; inset: 0; width: 100%; min-height: 0; pointer-events: none; }
+body[class*="theme-daedalus"] .hero-character { left: auto; right: 2%; top: 0; bottom: 0; width: 53%; background-position: center bottom; background-size: contain; }
+/* La máscara coincide con el ancho real del JPEG; evita bordes internos y conserva el centro opaco. */
+body.theme-daedalus-elf .hero-character { width: 250px; background-size: 100% auto; background-position: center 12%; mask-image: linear-gradient(to right, transparent, #000 20%, #000 80%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 78%, transparent); mask-composite: intersect; }
+body.theme-daedalus-elf .home-showcase .hero-character { width: 275px; right: 12%; }
+@media(max-width:600px) {
+  body[class*="theme-daedalus"] .home-showcase { min-height: 490px; }
+  body[class*="theme-daedalus"] .home-showcase .daedalus-hero { bottom: 185px; }
+  body[class*="theme-daedalus"] .hero-character { width: 85%; right: 0; }
+  body.theme-daedalus-elf .hero-character, body.theme-daedalus-elf .home-showcase .hero-character { width: 200px; right: 4%; }
+}
+/* Dark Wizard invierte la composición: personaje izquierdo y estado derecho. */
+body.theme-daedalus-dw .home-showcase .daedalus-hero { overflow: visible; }
+body.theme-daedalus-dw .home-showcase .hero-character { left: 2%; right: auto; transform: translateY(20px); }
+body.theme-daedalus-dw .home-showcase > .row { justify-content: flex-end; }
+@media(max-width:600px) {
+  body.theme-daedalus-dw .home-showcase .hero-character { left: 0; }
+}
+
+/* El personaje continúa detrás del contenido; la caja opaca oculta su parte inferior. */
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .home-showcase { isolation: isolate; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .home-showcase .daedalus-hero { overflow: visible; z-index: -1; }
+body:is(.theme-daedalus-elf, .theme-daedalus-dw) .home-showcase + .container { position: relative; z-index: 1; }
+body.theme-daedalus-dw .home-showcase + .container > .bg-light { background: #0c1c37!important; }
+body.theme-daedalus-elf .home-showcase + .container > .bg-light { background: #fff!important; }
+body.theme-daedalus-dw .home-showcase .hero-character { top: 30px; bottom: -150px; width: 60%; left: -3%; transform: none; }
+body.theme-daedalus-elf .home-showcase .hero-character { top: 5px; bottom: -200px; width: 350px; right: 7%; background-position: center top; }
+
+/* Cada navegación conserva su paleta y tiene una silueta propia. */
+body[class*="theme-daedalus"] :is(.transparent-header, .top-navbar, .offcanvas) .nav-link {
+  padding: 10px 24px; margin: 3px 6px; border: 1px solid transparent;
+  transition: background-color .15s, box-shadow .15s; text-decoration: none;
+}
+body.theme-daedalus-dw :is(.transparent-header, .top-navbar, .offcanvas) .nav-link {
+  background: linear-gradient(135deg, #163757, #0a172f); border-color: #427197;
+  border-radius: 2px 14px 2px 14px; letter-spacing: .09em; font-size: 13px;
+  box-shadow: inset 0 1px #a2dfff26;
+}
+body.theme-daedalus-dw :is(.transparent-header, .top-navbar, .offcanvas) .nav-link:is(:hover, :focus-visible, .active) {
+  background: #21496e; border-color: #98dfff; box-shadow: inset 0 -2px #91d8ff, 0 0 14px #4aa3dc55;
+}
+body.theme-daedalus-elf :is(.transparent-header, .top-navbar, .offcanvas) .nav-link {
+  background: linear-gradient(#fff, #e3f2fa); border-color: #b3d5e7;
+  border-radius: 24px 4px; font-family: Georgia, serif; letter-spacing: .04em;
+  box-shadow: inset 0 1px #fff, 0 2px 6px #4a7b9215;
+}
+body.theme-daedalus-elf :is(.transparent-header, .top-navbar, .offcanvas) .nav-link:is(:hover, :focus-visible, .active) {
+  background: #d2eaf7; border-color: #548eaf; box-shadow: inset 0 -2px #72aeca, 0 2px 10px #72aeca40;
+}
+body.theme-daedalus-dk :is(.transparent-header, .top-navbar, .offcanvas) .nav-link {
+  background: linear-gradient(#382a20, #17110e); border-color: #85603c;
+  border-radius: 2px; font-family: Georgia, serif; color: #f0ce97!important;
+  box-shadow: inset 0 1px #c1925555, inset 0 -2px #0008;
+}
+body.theme-daedalus-dk :is(.transparent-header, .top-navbar, .offcanvas) .nav-link:is(:hover, :focus-visible, .active) {
+  background: #4a291a; border-color: #d7a362; box-shadow: inset 0 -2px #e38c39, 0 0 12px #dc612433;
+}
+body.theme-daedalus-dw .btn-primary { border-radius: 2px 12px!important; box-shadow: inset 0 1px #99dfff44; }
+body.theme-daedalus-elf .btn-primary { border-radius: 22px 4px!important; background: linear-gradient(#337fa8, #20587f); }
+body.theme-daedalus-dk .btn-primary { border-radius: 2px!important; background: linear-gradient(#864c29, #472516); box-shadow: inset 0 1px #e0b27055; }
+@media(max-width:600px) {
+  body.theme-daedalus-dw .home-showcase .hero-character { width: 95%; left: 0; top: 15px; bottom: -110px; }
+  body.theme-daedalus-elf .home-showcase .hero-character { width: 265px; right: 0; top: 0; bottom: -160px; }
+}
+/* La cabecera compartida conserva escala y posición en todas las páginas públicas. */
+body[class*="theme-daedalus"] > .home-showcase { margin-top: 20px!important; margin-bottom: 0; }
+body[class*="theme-daedalus"] > main { position: relative; z-index: 1; }
+body.theme-daedalus-dw main > .container > .bg-light { background: #0c1c37!important; }
+body.theme-daedalus-elf main > .container > .bg-light { background: #fff!important; }
+body.theme-daedalus-dk .home-showcase > .row { margin-left: 30px; width: calc(100% - 60px); }
+@media(max-width:600px) {
+  body.theme-daedalus-dk .home-showcase > .row { margin-left: 0; width: 100%; }
+}
+
+@media(min-width:992px) { body[class*="theme-daedalus"] .home-showcase > .row > .col-lg-4 { width: 380px; } }
+
+/* Orden explícito: decoración debajo, contenido opaco encima. */
+body[class*="theme-daedalus"] > .home-showcase { z-index:0; }
+body[class*="theme-daedalus"] > main { isolation:isolate; z-index:2; }
+body.theme-daedalus-elf main > .container > .bg-light { background:#fff!important; }
+body.theme-daedalus-dw main > .container > .bg-light { background:#0c1c37!important; }

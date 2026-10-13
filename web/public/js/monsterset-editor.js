@@ -319,7 +319,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -487,9 +487,9 @@
 
   function getAttrLabel(attr) {
     const labels = [];
-    if (attr & 0x04) labels.push('Bloqueado');
+    if (attr & 0x04) labels.push(window.MuText.t('Bloqueado'));
     if (attr & 0x01) labels.push('Safe');
-    if (attr & 0x10) labels.push('Agua');
+    if (attr & 0x10) labels.push(window.MuText.t('Agua'));
     if (attr & 0x08) labels.push('Hueco');
     if (labels.length === 0) return 'Libre';
     return labels.join(', ');
@@ -670,16 +670,16 @@
 
     root.querySelector('#add-spawn').addEventListener('click', () => {
       state.placeMode = true;
-      setMessage('Selecciona una posicion en el mapa para crear el spawn.', 'success');
+      setMessage(window.MuText.t('Selecciona una posicion en el mapa para crear el spawn.'), 'success');
     });
 
     root.querySelector('#resize-area').addEventListener('click', () => {
       if (!state.selectedEntry || !isBoxType(state.selectedType)) {
-        setMessage('Selecciona un spawn de area (Spots/Invasiones) para ajustar.', 'error');
+        setMessage(window.MuText.t('Selecciona un spawn de area (Spots/Invasiones) para ajustar.'), 'error');
         return;
       }
       state.resizeMode = true;
-      setMessage('Arrastra en el mapa para definir el area.', 'success');
+      setMessage(window.MuText.t('Arrastra en el mapa para definir el area.'), 'success');
     });
 
     root.querySelector('#save-spawns').addEventListener('click', async () => {
@@ -694,7 +694,7 @@
           renderSpawnList();
           await loadTerrain(state.selectedMap);
           selectEntry(invalidEntry);
-          setMessage('Hay spawns con valores inválidos. Revisar el detalle antes de guardar.', 'error');
+          setMessage(window.MuText.t('Hay spawns con valores inválidos. Revisar el detalle antes de guardar.'), 'error');
           return;
         }
         const content = buildMonsterSet();
@@ -704,16 +704,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'monster' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -722,12 +722,12 @@
 
     root.querySelector('#update-spawn').addEventListener('click', () => {
       if (!state.selectedEntry) {
-        setMessage('Selecciona un spawn.', 'error');
+        setMessage(window.MuText.t('Selecciona un spawn.'), 'error');
         return;
       }
       const validation = validateEntryForm();
       if (!validation.ok) {
-        setMessage('Hay campos inválidos. Revisar resaltados.', 'error');
+        setMessage(window.MuText.t('Hay campos inválidos. Revisar resaltados.'), 'error');
         return;
       }
       const entry = state.selectedEntry;
@@ -750,7 +750,7 @@
       root.querySelector('#map-select').value = String(state.selectedMap);
       renderSpawnList();
       drawMap();
-      setMessage('Spawn actualizado.', 'success');
+      setMessage(window.MuText.t('Spawn actualizado.'), 'success');
     });
 
     root.querySelector('#delete-spawn').addEventListener('click', () => {
@@ -785,7 +785,7 @@
       if (state.placeMode) {
         state.placeMode = false;
         createEntryAt(x, y);
-        setMessage('Spawn creado.', 'success');
+        setMessage(window.MuText.t('Spawn creado.'), 'success');
         return;
       }
       const entry = getEntryAt(x, y);
@@ -861,7 +861,7 @@
     try {
       const res = await fetch(`/admin/server-editor/api/terrain?map=${mapId}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+      if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
       const terrain = decodeTerrain(data.base64);
       state.terrainCache.set(mapId, terrain);
       drawMap();
@@ -882,9 +882,9 @@
     const monstersData = await monstersRes.json();
     const setData = await setRes.json();
 
-    if (!mapsRes.ok) throw new Error(mapsData.error || 'No se pudo cargar mapas');
-    if (!monstersRes.ok) throw new Error(monstersData.error || 'No se pudo cargar monstruos');
-    if (!setRes.ok) throw new Error(setData.error || 'No se pudo cargar MonsterSetBase');
+    if (!mapsRes.ok) throw new Error(mapsData.error || window.MuText.t('No se pudo cargar mapas'));
+    if (!monstersRes.ok) throw new Error(monstersData.error || window.MuText.t('No se pudo cargar monstruos'));
+    if (!setRes.ok) throw new Error(setData.error || window.MuText.t('No se pudo cargar MonsterSetBase'));
 
     state.maps = Array.isArray(mapsData.maps) ? mapsData.maps : [];
     state.monsters = Array.isArray(monstersData.monsters) ? monstersData.monsters : [];

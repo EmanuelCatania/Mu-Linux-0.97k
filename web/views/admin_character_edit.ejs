@@ -2,16 +2,16 @@
 
 <section class="card">
   <div class="row-between">
-    <h2>Editar personaje</h2>
+    <h2><%= t("Editar personaje") %></h2>
     <div class="admin-links">
-      <a class="button-link" href="/admin/accounts/<%= accountId %>/characters/<%= encodeURIComponent(character.Name) %>/inventory">Inventario</a>
-      <a class="button-link" href="/admin/accounts/<%= accountId %>">Cuenta</a>
-      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <a class="button-link" href="/admin/accounts/<%= accountId %>/characters/<%= encodeURIComponent(character.Name) %>/inventory"><%= t("Inventario") %></a>
+      <a class="button-link" href="/admin/accounts/<%= accountId %>"><%= t("Cuenta") %></a>
+      <a class="button-link" href="/admin/accounts"><%= t("Cuentas") %></a>
       <% if (editorEnabled) { %>
-        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+        <a class="button-link" href="/admin/server-editor"><%= t("Editor servidor") %></a>
       <% } %>
-      <a class="button-link" href="/admin/downloads">Descargas</a>
-      <a class="button-link" href="/admin/logout">Salir</a>
+      <a class="button-link" href="/admin/downloads"><%= t("Descargas") %></a>
+      <a class="button-link" href="/admin/logout"><%= t("Salir") %></a>
     </div>
   </div>
 
@@ -22,16 +22,16 @@
     <div class="alert"><%= error.text %></div>
   <% } %>
 
-  <p class="muted">Para editar, la cuenta debe estar desconectada.</p>
+  <p class="muted"><%= t("Para editar, la cuenta debe estar desconectada.") %></p>
 
   <form method="post" action="/admin/accounts/<%= accountId %>/characters/<%= encodeURIComponent(character.Name) %>">
-    <label>Cuenta</label>
+    <label><%= t("Cuenta") %></label>
     <input type="text" value="<%= accountId %>" readonly />
 
-    <label>Personaje</label>
+    <label><%= t("Personaje") %></label>
     <input type="text" value="<%= character.Name %>" readonly />
 
-    <label>Nivel</label>
+    <label><%= t("Nivel") %></label>
     <input type="number" name="level" value="<%= character.cLevel %>" min="1" />
 
     <label>Resets</label>
@@ -40,61 +40,59 @@
     <label>Grand Resets</label>
     <input type="number" name="grand_reset" value="<%= character.GrandResetCount %>" min="0" />
 
-    <label>Clase</label>
+    <label><%= t("Clase") %></label>
     <select name="class_id">
       <% classOptions.forEach(opt => { %>
         <option value="<%= opt.value %>" <%= opt.value === character.Class ? 'selected' : '' %>><%= opt.label %></option>
       <% }) %>
     </select>
 
-    <label>Tipo</label>
+    <label><%= t("Tipo") %></label>
     <select name="ctl_code">
       <% typeOptions.forEach(opt => { %>
         <option value="<%= opt.value %>" <%= opt.value === character.CtlCode ? 'selected' : '' %>><%= opt.label %></option>
       <% }) %>
     </select>
 
-    <label>Puntos</label>
+    <label><%= t("Puntos") %></label>
     <input type="number" name="points" value="<%= character.LevelUpPoint %>" min="0" />
 
-    <label>Fuerza</label>
+    <label><%= t("Fuerza") %></label>
     <input type="number" name="strength" value="<%= character.Strength %>" min="0" />
 
-    <label>Agilidad</label>
+    <label><%= t("Agilidad") %></label>
     <input type="number" name="dexterity" value="<%= character.Dexterity %>" min="0" />
 
-    <label>Vitalidad</label>
+    <label><%= t("Vitalidad") %></label>
     <input type="number" name="vitality" value="<%= character.Vitality %>" min="0" />
 
-    <label>Energia</label>
+    <label><%= t("Energia") %></label>
     <input type="number" name="energy" value="<%= character.Energy %>" min="0" />
 
     <label>Zen</label>
     <input type="number" name="money" value="<%= character.Money %>" min="0" />
 
-    <label>Mapa</label>
+    <label><%= t("Mapa") %></label>
     <select name="map_number">
       <% mapOptions.forEach(opt => { %>
         <option value="<%= opt.value %>" <%= opt.value === character.MapNumber ? 'selected' : '' %>><%= opt.label %></option>
       <% }) %>
     </select>
 
-    <label>Posicion X</label>
+    <label><%= t("Posicion X") %></label>
     <input type="number" name="pos_x" value="<%= character.MapPosX %>" min="0" max="255" />
 
-    <label>Posicion Y</label>
+    <label><%= t("Posicion Y") %></label>
     <input type="number" name="pos_y" value="<%= character.MapPosY %>" min="0" max="255" />
 
-    <label>Direccion</label>
+    <label><%= t("Direccion") %></label>
     <input type="number" name="map_dir" value="<%= character.MapDir %>" min="0" max="255" />
 
     <div class="row-between">
-      <button type="submit">Guardar</button>
-      <a class="button-link" href="/admin/accounts/<%= accountId %>">Volver</a>
+      <button type="submit"><%= t("Guardar") %></button>
+      <a class="button-link" href="/admin/accounts/<%= accountId %>"><%= t("Volver") %></a>
     </div>
   </form>
 </section>
 
 <%- include('partials/footer') %>
-
-

@@ -1,0 +1,23 @@
+<% if (siteSettings.theme !== "classic" || page === "home") { %>
+<div class="container mt-5 <%= siteSettings.theme !== 'classic' ? 'home-showcase' : '' %>">
+    <%- include('theme_hero') %>
+    <% if (page === 'home') { %>
+    <div class="row justify-content-left">
+      <div class="col-lg-4">
+        <div class="bg-dark bg-opacity-50 rounded-4 p-3 shadow-lg overflow-hidden">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="flex-shrink-0 rounded-full p-2">
+              <img src="/assets/images/icon.png" width="130" height="70" alt="Server Icon" class="img-fluid">
+            </div>
+            <div class="flex-1 text-end ms-4">
+              <p class="text-light text-sm mb-2"><%= t("Jugadores en linea:") %> <span class="badge bg-primary text-white text-xs font-semibold" id="players-online"><%= playersOnline %></span></p>
+              <p class="text-light text-sm mb-2"><%= t("Hora del servidor:") %> <span class="badge bg-danger text-white text-xs font-semibold" id="server-time" data-tz="<%= timeZone || '' %>"><%= serverTime %></span></p>
+              <p class="text-light text-sm mb-2"><%= t("Tu hora:") %> <span class="badge bg-success text-white text-xs font-semibold" id="user-time">--:--:--</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </div>
+<% } %>

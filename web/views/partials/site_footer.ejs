@@ -9,8 +9,8 @@
       </div>
       <div class="row justify-content-center mt-3">
         <div class="col-auto">
-          <p class="mb-0">&copy; <%= year %> <%= appName %>. Todos los derechos reservados.</p>
-          <p class="mb-0">Template by Trifon Dinev</p>
+          <p class="mb-0">&copy; <%= year %> <%= appName %><%= t(". Todos los derechos reservados.") %></p>
+          <p class="mb-0"><%= siteSettings.theme === "classic" ? "Template by Trifon Dinev" : "Daedalus · Cepoide / MuLinux" %></p>
         </div>
       </div>
     </div>

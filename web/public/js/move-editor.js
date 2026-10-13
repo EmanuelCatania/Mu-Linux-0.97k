@@ -247,7 +247,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -364,7 +364,7 @@
       };
       state.moves.push(newMove);
       selectMove(newMove);
-      setMessage('Move creado.', 'success');
+      setMessage(window.MuText.t('Move creado.'), 'success');
     });
 
     root.querySelector('#save-moves').addEventListener('click', async () => {
@@ -372,7 +372,7 @@
         const invalidMove = state.moves.find((move) => !isMoveValid(move));
         if (invalidMove) {
           selectMove(invalidMove);
-          setMessage('Hay moves con valores inválidos. Revisar el detalle antes de guardar.', 'error');
+          setMessage(window.MuText.t('Hay moves con valores inválidos. Revisar el detalle antes de guardar.'), 'error');
           return;
         }
         const content = buildMoveTxt();
@@ -382,16 +382,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'move' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -402,7 +402,7 @@
       if (!state.selectedMove) return;
       const validation = validateMoveForm();
       if (!validation.ok) {
-        setMessage('Hay campos inválidos. Revisar resaltados.', 'error');
+        setMessage(window.MuText.t('Hay campos inválidos. Revisar resaltados.'), 'error');
         return;
       }
       const move = state.selectedMove;
@@ -418,7 +418,7 @@
       move.gate = formMove.gate;
       updateGateHint();
       renderMoveList();
-      setMessage('Move actualizado.', 'success');
+      setMessage(window.MuText.t('Move actualizado.'), 'success');
     });
 
     root.querySelector('#delete-move').addEventListener('click', () => {
@@ -426,7 +426,7 @@
       state.moves = state.moves.filter((m) => m.index !== state.selectedMove.index);
       state.selectedMove = null;
       renderMoveList();
-      setMessage('Move eliminado.', 'success');
+      setMessage(window.MuText.t('Move eliminado.'), 'success');
     });
 
     root.querySelector('#move-list').addEventListener('click', (event) => {
@@ -449,9 +449,9 @@
     const movesData = await movesRes.json();
     const gatesData = await gatesRes.json();
     const mapsData = await mapsRes.json();
-    if (!movesRes.ok) throw new Error(movesData.error || 'No se pudo cargar moves');
-    if (!gatesRes.ok) throw new Error(gatesData.error || 'No se pudo cargar gates');
-    if (!mapsRes.ok) throw new Error(mapsData.error || 'No se pudo cargar mapas');
+    if (!movesRes.ok) throw new Error(movesData.error || window.MuText.t('No se pudo cargar moves'));
+    if (!gatesRes.ok) throw new Error(gatesData.error || window.MuText.t('No se pudo cargar gates'));
+    if (!mapsRes.ok) throw new Error(mapsData.error || window.MuText.t('No se pudo cargar mapas'));
     state.moves = parseMoveTxt(movesData.content || '');
     state.gates = parseGateTxt(gatesData.content || '');
     state.maps = Array.isArray(mapsData.maps) ? mapsData.maps : [];

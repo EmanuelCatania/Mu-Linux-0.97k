@@ -68,7 +68,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -138,16 +138,16 @@
         body: JSON.stringify({ content })
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'No se pudo guardar');
+      if (!res.ok) throw new Error(json.error || window.MuText.t('No se pudo guardar'));
       const reload = await fetch('/admin/server-editor/api/reload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: 'util' })
       });
       if (!reload.ok) {
-        setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+        setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
       } else {
-        setMessage('Guardado y recargado en el servidor.', 'success');
+        setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
       }
     } catch (err) {
       setMessage(err.message, 'error');
@@ -161,8 +161,8 @@
     ]);
     const resetData = await resetRes.json();
     const expData = await expRes.json();
-    if (!resetRes.ok) throw new Error(resetData.error || 'No se pudo cargar ResetTable');
-    if (!expRes.ok) throw new Error(expData.error || 'No se pudo cargar ExperienceTable');
+    if (!resetRes.ok) throw new Error(resetData.error || window.MuText.t('No se pudo cargar ResetTable'));
+    if (!expRes.ok) throw new Error(expData.error || window.MuText.t('No se pudo cargar ExperienceTable'));
     state.reset = parseTable(resetData.content || '');
     state.experience = parseTable(expData.content || '');
   }

@@ -7,12 +7,12 @@
       label: 'Safe Zone',
       title: 'Zonas seguras',
       fields: [
-        { key: 'map', label: 'Mapa', type: 'number' },
+        { key: 'map', label: window.MuText.t('Mapa'), type: 'number' },
         { key: 'x', label: 'X', type: 'number' },
         { key: 'y', label: 'Y', type: 'number' },
         { key: 'tx', label: 'TX', type: 'number' },
         { key: 'ty', label: 'TY', type: 'number' },
-        { key: 'comment', label: 'Comentario', type: 'text' }
+        { key: 'comment', label: window.MuText.t('Comentario'), type: 'text' }
       ],
       listLabel: (row) => `Mapa ${row.map} (${row.x},${row.y}) -> (${row.tx},${row.ty})`
     },
@@ -20,12 +20,12 @@
       label: 'PK Free',
       title: 'Zonas PK Free',
       fields: [
-        { key: 'map', label: 'Mapa', type: 'number' },
+        { key: 'map', label: window.MuText.t('Mapa'), type: 'number' },
         { key: 'x', label: 'X', type: 'number' },
         { key: 'y', label: 'Y', type: 'number' },
         { key: 'tx', label: 'TX', type: 'number' },
         { key: 'ty', label: 'TY', type: 'number' },
-        { key: 'comment', label: 'Comentario', type: 'text' }
+        { key: 'comment', label: window.MuText.t('Comentario'), type: 'text' }
       ],
       listLabel: (row) => `Mapa ${row.map} (${row.x},${row.y}) -> (${row.tx},${row.ty})`
     },
@@ -40,13 +40,13 @@
         { key: 'moveMap', label: 'MoveMap', type: 'number' },
         { key: 'moveX', label: 'MoveX', type: 'number' },
         { key: 'moveY', label: 'MoveY', type: 'number' },
-        { key: 'minLvl', label: 'Min Lvl', type: 'text', placeholder: '*' },
-        { key: 'maxLvl', label: 'Max Lvl', type: 'text', placeholder: '*' },
-        { key: 'minRes', label: 'Min Reset', type: 'text', placeholder: '*' },
-        { key: 'maxRes', label: 'Max Reset', type: 'text', placeholder: '*' },
+        { key: 'minLvl', label: window.MuText.t('Min Lvl'), type: 'text', placeholder: '*' },
+        { key: 'maxLvl', label: window.MuText.t('Max Lvl'), type: 'text', placeholder: '*' },
+        { key: 'minRes', label: window.MuText.t('Min Reset'), type: 'text', placeholder: '*' },
+        { key: 'maxRes', label: window.MuText.t('Max Reset'), type: 'text', placeholder: '*' },
         { key: 'vipLvl', label: 'VIP', type: 'number' },
         { key: 'pkMove', label: 'PK Move', type: 'number' },
-        { key: 'comment', label: 'Comentario', type: 'text' }
+        { key: 'comment', label: window.MuText.t('Comentario'), type: 'text' }
       ],
       listLabel: (row) =>
         `Npc ${row.npc} (${row.npcMap}:${row.npcX},${row.npcY}) -> ${row.moveMap}:${row.moveX},${row.moveY}`
@@ -212,7 +212,7 @@
     const panels = Object.entries(TAB_CONFIG)
       .map(([key, config], index) => {
         const active = index === 0 ? 'active' : '';
-        return `
+        return window.MuText.html`
         <div class="custom-panel ${active}" data-tab="${key}">
           <div class="spawn-editor">
             <div class="spawn-list">
@@ -225,7 +225,7 @@
       })
       .join('');
 
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -250,7 +250,7 @@
     const fields = config.fields
       .map((field) => {
         const placeholder = field.placeholder ? `placeholder="${field.placeholder}"` : '';
-        return `
+        return window.MuText.html`
           <div class="field">
             <label>${field.label}</label>
             <input type="${field.type}" data-field="${field.key}" ${placeholder} />
@@ -259,7 +259,7 @@
       })
       .join('');
 
-    form.innerHTML = `
+    form.innerHTML = window.MuText.html`
       <h3>Detalle</h3>
       <div class="custom-form-grid">${fields}</div>
       <div class="spawn-actions">
@@ -358,27 +358,27 @@
   function updateSelected(tabKey) {
     const idx = state[tabKey].selected;
     if (idx == null) {
-      setMessage('Selecciona un registro para actualizar.', 'error');
+      setMessage(window.MuText.t('Selecciona un registro para actualizar.'), 'error');
       return;
     }
     const data = readForm(tabKey);
     if (!data) return;
     state[tabKey].rows[idx] = data;
     renderList(tabKey);
-    setMessage('Registro actualizado.', 'success');
+    setMessage(window.MuText.t('Registro actualizado.'), 'success');
   }
 
   function deleteSelected(tabKey) {
     const idx = state[tabKey].selected;
     if (idx == null) {
-      setMessage('Selecciona un registro para eliminar.', 'error');
+      setMessage(window.MuText.t('Selecciona un registro para eliminar.'), 'error');
       return;
     }
     state[tabKey].rows.splice(idx, 1);
     state[tabKey].selected = null;
     renderList(tabKey);
     fillForm(tabKey, null);
-    setMessage('Registro eliminado.', 'success');
+    setMessage(window.MuText.t('Registro eliminado.'), 'success');
   }
 
   async function saveAll() {
@@ -408,7 +408,7 @@
       const responses = await Promise.all(requests);
       for (const res of responses) {
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
       }
 
       const reload = await fetch('/admin/server-editor/api/reload', {
@@ -417,9 +417,9 @@
         body: JSON.stringify({ target: 'custom' })
       });
       if (!reload.ok) {
-        setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+        setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
       } else {
-        setMessage('Guardado y recargado en el servidor.', 'success');
+        setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
       }
     } catch (err) {
       setMessage(err.message, 'error');
@@ -443,9 +443,9 @@
     const safeData = await safeRes.json();
     const pkData = await pkRes.json();
     const npcData = await npcRes.json();
-    if (!safeRes.ok) throw new Error(safeData.error || 'No se pudo cargar SafeZone');
-    if (!pkRes.ok) throw new Error(pkData.error || 'No se pudo cargar PKFree');
-    if (!npcRes.ok) throw new Error(npcData.error || 'No se pudo cargar NpcMove');
+    if (!safeRes.ok) throw new Error(safeData.error || window.MuText.t('No se pudo cargar SafeZone'));
+    if (!pkRes.ok) throw new Error(pkData.error || window.MuText.t('No se pudo cargar PKFree'));
+    if (!npcRes.ok) throw new Error(npcData.error || window.MuText.t('No se pudo cargar NpcMove'));
     state.safezone.rows = parseZone(safeData.content || '');
     state.pkfree.rows = parseZone(pkData.content || '');
     state.npcmove.rows = parseNpcMove(npcData.content || '');

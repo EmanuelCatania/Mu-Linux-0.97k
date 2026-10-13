@@ -157,3 +157,9 @@ Mantiene backups por archivo y snapshots de `MuServer/Data` y `MuServer/GameServ
 - Logs: `docker compose logs -f`.
 
 Estructura: `Source/` (fuentes), `MuServer/` (data), `docker/` (imágenes y scripts).
+
+## Web y editor 0.97.20
+
+Primer inicio en /admin: cambio obligatorio de contraseña y asistente de idioma predeterminado (ES/EN/PT), diseño clásico, Elf, Dark Knight o Dark Wizard y estado de conexión del editor. Después se modifica desde /admin/settings. Cada visitante puede elegir su idioma con las banderas; no cambia el idioma del admin/editor ni traduce noticias o datos del juego.
+
+La configuración se guarda automáticamente en MySQL (web_site_settings); conserve su volumen. Actualice únicamente las imágenes emapupi/mu-linux-97k-web:0.97.20 y emapupi/mu-linux-97k-mu-editor:0.97.20 y recree esos servicios. No hace falta reconstruir el servidor ni MySQL. Las pantallas del editor se sirven desde la web; su API conserva el comportamiento anterior.

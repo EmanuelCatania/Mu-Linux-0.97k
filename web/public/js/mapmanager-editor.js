@@ -86,7 +86,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -202,7 +202,7 @@
       };
       state.maps.push(newMap);
       selectMap(newMap);
-      setMessage('Mapa creado.', 'success');
+      setMessage(window.MuText.t('Mapa creado.'), 'success');
     });
 
     root.querySelector('#update-map').addEventListener('click', () => {
@@ -219,7 +219,7 @@
       map.spawnInPlace = Number(root.querySelector('#map-spawn').value);
       map.flyingDragons = Number(root.querySelector('#map-dragons').value);
       renderList();
-      setMessage('Mapa actualizado.', 'success');
+      setMessage(window.MuText.t('Mapa actualizado.'), 'success');
     });
 
     root.querySelector('#delete-map').addEventListener('click', () => {
@@ -227,7 +227,7 @@
       state.maps = state.maps.filter((m) => m.index !== state.selected.index);
       state.selected = null;
       renderList();
-      setMessage('Mapa eliminado.', 'success');
+      setMessage(window.MuText.t('Mapa eliminado.'), 'success');
     });
 
     root.querySelector('#save-map').addEventListener('click', async () => {
@@ -239,16 +239,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'map' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -259,7 +259,7 @@
   async function loadInitialData() {
     const res = await fetch('/admin/server-editor/api/mapmanager');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     state.maps = parseMapManager(data.content || '');
   }
 

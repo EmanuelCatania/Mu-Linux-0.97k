@@ -66,7 +66,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -103,7 +103,7 @@
       text.textContent = value;
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = 'Eliminar';
+      btn.textContent = window.MuText.t('Eliminar');
       btn.className = 'link-button';
       btn.addEventListener('click', () => {
         if (type === 'ip') {
@@ -150,16 +150,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'util' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -170,7 +170,7 @@
   async function loadInitialData() {
     const res = await fetch('/admin/server-editor/api/blacklist');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     const parsed = parseBlacklist(data.content || '');
     state.ips = parsed.ips;
     state.hwids = parsed.hwids;

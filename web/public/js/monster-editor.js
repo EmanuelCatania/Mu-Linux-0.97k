@@ -5,7 +5,7 @@
   const FIELD_ORDER = [
     { key: 'index', label: 'Index' },
     { key: 'rate', label: 'Rate' },
-    { key: 'name', label: 'Nombre' },
+    { key: 'name', label: window.MuText.t('Nombre') },
     { key: 'level', label: 'Level' },
     { key: 'maxLife', label: 'MaxLife' },
     { key: 'maxMana', label: 'MaxMana' },
@@ -119,7 +119,7 @@
   }
 
   function buildLayout() {
-    root.innerHTML = `
+    root.innerHTML = window.MuText.html`
       <div class="editor-message alert hidden"></div>
       <div class="spawn-toolbar">
         <div class="spawn-toolbar-group">
@@ -245,7 +245,7 @@
       };
       state.monsters.push(monster);
       selectMonster(monster);
-      setMessage('Monster agregado.', 'success');
+      setMessage(window.MuText.t('Monster agregado.'), 'success');
     });
 
     root.querySelector('#update-monster').addEventListener('click', () => {
@@ -261,7 +261,7 @@
         }
       });
       renderList();
-      setMessage('Monster actualizado.', 'success');
+      setMessage(window.MuText.t('Monster actualizado.'), 'success');
     });
 
     root.querySelector('#delete-monster').addEventListener('click', () => {
@@ -270,7 +270,7 @@
       state.selected = null;
       renderList();
       renderForm(null);
-      setMessage('Monster eliminado.', 'success');
+      setMessage(window.MuText.t('Monster eliminado.'), 'success');
     });
 
     root.querySelector('#save-monsters').addEventListener('click', async () => {
@@ -282,16 +282,16 @@
           body: JSON.stringify({ content })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+        if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo guardar'));
         const reload = await fetch('/admin/server-editor/api/reload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ target: 'monster' })
         });
         if (!reload.ok) {
-          setMessage('Guardado, pero no se pudo recargar en el server.', 'error');
+          setMessage(window.MuText.t('Guardado, pero no se pudo recargar en el server.'), 'error');
         } else {
-          setMessage('Guardado y recargado en el servidor.', 'success');
+          setMessage(window.MuText.t('Guardado y recargado en el servidor.'), 'success');
         }
       } catch (err) {
         setMessage(err.message, 'error');
@@ -302,7 +302,7 @@
   async function loadInitialData() {
     const res = await fetch('/admin/server-editor/api/monster-file');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+    if (!res.ok) throw new Error(data.error || window.MuText.t('No se pudo cargar'));
     state.monsters = parseMonsterTxt(data.content || '');
   }
 

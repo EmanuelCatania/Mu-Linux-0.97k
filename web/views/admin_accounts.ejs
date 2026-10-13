@@ -2,15 +2,15 @@
 
 <section class="card">
   <div class="row-between">
-    <h2>Cuentas</h2>
+    <h2><%= t("Cuentas") %></h2>
     <div class="admin-links">
-      <a class="button-link" href="/admin/accounts/new">Nueva cuenta</a>
+      <a class="button-link" href="/admin/accounts/new"><%= t("Nueva cuenta") %></a>
       <% if (editorEnabled) { %>
-        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+        <a class="button-link" href="/admin/server-editor"><%= t("Editor servidor") %></a>
       <% } %>
-      <a class="button-link" href="/admin/downloads">Descargas</a>
-      <a class="button-link" href="/admin/news">Noticias</a>
-      <a class="button-link" href="/admin/logout">Salir</a>
+      <a class="button-link" href="/admin/downloads"><%= t("Descargas") %></a>
+      <a class="button-link" href="/admin/news"><%= t("Noticias") %></a>
+      <a class="button-link" href="/admin/logout"><%= t("Salir") %></a>
     </div>
   </div>
 
@@ -22,24 +22,24 @@
   <% } %>
 
   <form method="get" action="/admin/accounts">
-    <label>Buscar (usuario, nombre o email)</label>
+    <label><%= t("Buscar (usuario, nombre o email)") %></label>
     <input type="text" name="q" value="<%= q %>" maxlength="50" />
-    <button type="submit">Buscar</button>
+    <button type="submit"><%= t("Buscar") %></button>
   </form>
 
   <% if (accounts.length === 0) { %>
-    <p class="muted">No hay cuentas para mostrar.</p>
+    <p class="muted"><%= t("No hay cuentas para mostrar.") %></p>
   <% } else { %>
     <table class="table">
       <thead>
         <tr>
-          <th>Usuario</th>
-          <th>Nombre</th>
+          <th><%= t("Usuario") %></th>
+          <th><%= t("Nombre") %></th>
           <th>Email</th>
-          <th>Nivel</th>
-          <th>Estado</th>
+          <th><%= t("Nivel") %></th>
+          <th><%= t("Estado") %></th>
           <th>Online</th>
-          <th>Acciones</th>
+          <th><%= t("Acciones") %></th>
         </tr>
       </thead>
       <tbody>
@@ -49,10 +49,10 @@
             <td><%= item.memb_name %></td>
             <td><%= item.mail_addr || '-' %></td>
             <td><%= item.AccountLevel %></td>
-            <td><%= String(item.bloc_code) === '1' ? 'Bloqueado' : 'OK' %></td>
+            <td><%= t(String(item.bloc_code) === '1' ? 'Bloqueado' : 'OK') %></td>
             <td><%= item.ConnectStat === 1 ? 'Online' : 'Offline' %></td>
             <td class="actions">
-              <a href="/admin/accounts/<%= item.memb___id %>">Editar</a>
+              <a href="/admin/accounts/<%= item.memb___id %>"><%= t("Editar") %></a>
             </td>
           </tr>
         <% }) %>
@@ -62,5 +62,3 @@
 </section>
 
 <%- include('partials/footer') %>
-
-
