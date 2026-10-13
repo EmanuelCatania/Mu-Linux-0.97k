@@ -339,6 +339,7 @@ set(MU_HEADERS
     src/Item/Item_ServerValue.h
     src/UI/GoldenArcher.h
     src/Core/Window.h
+    src/Platform/CompilerCompat.h
     src/Platform/IWindow.h
     src/Platform/Win32/Win32Window.h
     src/Core/Font.h

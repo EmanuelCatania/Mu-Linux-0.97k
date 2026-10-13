@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Platform/CompilerCompat.h"
+
 // WinSock2 must come before windows.h
 #include <winsock2.h>
 #include <ws2tcpip.h>
