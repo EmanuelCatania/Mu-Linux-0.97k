@@ -42,7 +42,6 @@ extern "C" {
 
 // Ghidra intrinsic stubs (not available in MSVC)
 #define _rand() rand()
-static inline long long __ftol() { return (long long)GetTickCount(); }
 static inline double    fsin(double x) { return sin(x); }
 #ifndef SQRT
 #define SQRT sqrtf
