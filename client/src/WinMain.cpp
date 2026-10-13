@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Item/ItemDefines.h"
 #include "resource.h"
 #include "Debug/MiniDump.h"
@@ -513,11 +514,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // el proceso al directorio de main.exe antes de que corra cualquier loader de recursos.
     {
         char exePath[MAX_PATH] = {};
-        if (GetModuleFileNameA(nullptr, exePath, MAX_PATH)) {
+        if (Platform::GetFileSystem().ExecutablePath(exePath, MAX_PATH)) {
             char* slash = strrchr(exePath, '\\');
             if (slash) {
                 *slash = '\0';
-                SetCurrentDirectoryA(exePath);
+                Platform::GetFileSystem().SetWorkingDirectory(exePath);
             }
         }
     }

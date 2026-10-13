@@ -1,6 +1,7 @@
 // Scene_EntityLifecycle.cpp
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -19,7 +20,7 @@
 // Guard propio del port: el original no chequea el fopen y deferencia el NULL.
 void __cdecl FUN_0050f700(const char* map_name)
 {
-    FILE* fp = fopen(map_name, "wt");
+    FILE* fp = Platform::GetFileSystem().Open(map_name, "wt");
     if (!fp) return;
     for (int i = 0; i < 10; ++i)
         fprintf(fp, "%s\n", &MacroText[i * 0x100]);

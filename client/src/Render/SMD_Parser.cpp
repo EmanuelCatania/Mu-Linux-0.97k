@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "UI/MoveList.h"
@@ -69,7 +70,7 @@ void __cdecl OpenModels(int Model, const char* FileName, int i) {
 
 // CRT file helpers
 FILE* __cdecl crt_fopen(const char* path, const void* mode) {
-    return fopen(path, (const char*)mode);
+    return Platform::GetFileSystem().Open(path, (const char*)mode);
 }
 void __cdecl crt_fclose(FILE* f) {
     if (f) fclose(f);

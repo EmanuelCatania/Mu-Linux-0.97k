@@ -49,6 +49,7 @@ set(MU_SOURCES
     src/Local/ClientText.cpp
     src/Core/Window.cpp
     src/Platform/Win32/Win32Window.cpp
+    src/Platform/Win32/Win32FileSystem.cpp
     src/Platform/Win32/Win32GLContext.cpp
     src/Core/Font.cpp
     src/Sound/SoundManager.cpp
@@ -343,6 +344,7 @@ set(MU_HEADERS
     src/Platform/CompilerCompat.h
     src/Platform/IWindow.h
     src/Platform/Win32/Win32Window.h
+    src/Platform/IFileSystem.h
     src/Platform/IGLContext.h
     src/Platform/Win32/Win32GLContext.h
     src/Core/Font.h

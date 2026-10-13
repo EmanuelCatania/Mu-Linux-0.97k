@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/MapManager.h"
@@ -793,7 +794,7 @@ int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 // cada string de nombre en SkillAttribute[index*300 + 4].
 void __cdecl SkillAttribute_LoadNames(const char *param_1)
 {
-    DAT_07d7806c = (FILE *)fopen(param_1, (const char *)DAT_005580ac);
+    DAT_07d7806c = (FILE *)Platform::GetFileSystem().Open(param_1, (const char *)DAT_005580ac);
     if (DAT_07d7806c == NULL) return;
 
     int iVar2;
@@ -830,7 +831,7 @@ void __cdecl LoadGlobalTextBin(const char *param_1)
 void __cdecl SkillAttribute_SaveBin(const char *param_1)
 {
     return;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
-    FILE *pFile = fopen(param_1, (const char *)&DAT_005597d4);
+    FILE *pFile = Platform::GetFileSystem().Open(param_1, (const char *)&DAT_005597d4);
     BYTE *Buffer = (BYTE *)operator_new(300);
 
     char *pcVar3 = (char *)((int)&SkillAttribute + 4);
