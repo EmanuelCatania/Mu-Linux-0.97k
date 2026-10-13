@@ -1,6 +1,7 @@
 // Scene_LegacyHelpers.cpp
 
 #include "stdafx.h"
+#include "Platform/IAudio.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -76,33 +77,4 @@ void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
 //   3. Bounds-check Buffer < 420.
 //   4. Enable3DSound check usa el slot Buffer, no v2 (era bug del IDA).
 HRESULT __cdecl Sound_ReleaseBuffer(int Buffer)
-{
-  if (!g_EnableSound) return 0;
-  if (Buffer < 0 || Buffer >= 420) return 0;
-
-  int channels = MaxBufferChannel[Buffer];
-  if (channels < 0) channels = 0;
-  if (channels > 4) channels = 4;
-
-  for (int ch = 0; ch < channels; ++ch) {
-    LPDIRECTSOUNDBUFFER v4 = g_lpDSBuffer[Buffer][ch];
-    if (v4) {
-      v4->Release();
-      g_lpDSBuffer[Buffer][ch] = nullptr;
-    }
-    if (Enable3DSound[Buffer]) {
-      LPDIRECTSOUND3DBUFFER v5 = g_lpDS3DBuffer[Buffer][ch];
-      if (v5) {
-        v5->Release();
-        g_lpDS3DBuffer[Buffer][ch] = nullptr;
-      }
-    }
-  }
-  MaxBufferChannel[Buffer] = 0;
-  Object3DSound[Buffer][0] = 0;
-  Object3DSound[Buffer][1] = 0;
-  Object3DSound[Buffer][2] = 0;
-  Object3DSound[Buffer][3] = 0;
-  if (SoundLoadCount > 0) --SoundLoadCount;
-  return 0;
-}
+{ return Platform::GetAudio().ReleaseBuffer(Buffer); }

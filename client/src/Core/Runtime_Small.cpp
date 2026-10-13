@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Platform/IAudio.h"
 #include "Item/ItemDefines.h"
 #include "Game/MapManager.h"
 #include "globals.h"
@@ -683,23 +684,7 @@ void __cdecl DeleteBug(int Owner) {
 // FreeDirectSound @ 0x00404B80 (42 bytes) — release DirectSound device.
 // Also releases per-slot buffer arrays and the 3D listener added by our
 // DirectSound8 rewrite, so a clean shutdown doesn't leak COM refs.
-void __cdecl FreeDirectSound(void) {
-    if (!g_EnableSound) return;
-
-    for (int i = 0; i < 420; ++i) {
-        for (int c = 0; c < 4; ++c) {
-            if (g_lpDS3DBuffer[i][c]) { g_lpDS3DBuffer[i][c]->Release(); g_lpDS3DBuffer[i][c] = NULL; }
-            if (g_lpDSBuffer  [i][c]) { g_lpDSBuffer  [i][c]->Release(); g_lpDSBuffer  [i][c] = NULL; }
-        }
-        MaxBufferChannel[i] = 0;
-        BufferChannel[i]    = 0;
-        Enable3DSound[i]    = false;
-    }
-    if (g_lpDS3DListener) { g_lpDS3DListener->Release(); g_lpDS3DListener = NULL; }
-    if (g_lpDS)           { g_lpDS->Release();           g_lpDS = NULL; }
-
-    g_EnableSound = FALSE;
-}
+void __cdecl FreeDirectSound(void) { Platform::GetAudio().Shutdown(); }
 
 // ── 43-byte ─────────────────────────────────────────────────────────────────
 
