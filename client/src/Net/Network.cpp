@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Net/Reconnect.h"
@@ -110,7 +111,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
         if (!reconnecting)
             UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
         if (SocketClientSocket != 0xffffffff) {
-            closesocket((SOCKET)SocketClientSocket);
+            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
             SocketClientSocket = (DWORD)INVALID_SOCKET;
         }
     }
@@ -213,7 +214,7 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
     while ((int)remain > 0) {
         int r = ::send(SocketClientSocket, (const char*)data + off, (int)remain, 0);
         if (r == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
+            if (Platform::GetSocket().LastError() == WSAEWOULDBLOCK) {
                 if (SocketClientSendBufferLength + (int)remain < 0x2001) {
                     memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
                     SocketClientSendBufferLength += (int)remain;
@@ -258,7 +259,7 @@ int CNetwork::SendRaw(const char* buf, int len)
     do {
         int n = send(SocketClientSocket, (const char*)s_scratch + sent, rem, 0);
         if (n == -1) {
-            int err = WSAGetLastError();
+            int err = Platform::GetSocket().LastError();
             if (err == WSAEWOULDBLOCK) {
                 if (SocketClientSendBufferLength + (len - sent) < 0x2001) {
                     // Queue the still-unsent ENCRYPTED tail — never re-queue

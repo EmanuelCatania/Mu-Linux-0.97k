@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
 #include "Net/ServerCharacterStats.h"
@@ -547,7 +548,7 @@ int __fastcall CWsctlc_FDWriteSend(int param_1)
                          (char *)(iVar2 + param_1 + 0xc),
                          *(int *)(param_1 + 0x200c) - iVar2, 0);
             if (iVar1 == -1) {
-                int err = WSAGetLastError();
+                int err = Platform::GetSocket().LastError();
                 if (err == WSAEWOULDBLOCK) return 1;
                 CWsctlc_Close(param_1);
                 return 0;
@@ -570,12 +571,12 @@ int __fastcall CWsctlc_FDWriteSend(int param_1)
 // IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
 int __fastcall CWsctlc_nRecv(void *param_1)
 {
-    int iVar2 = recv(*(SOCKET *)((int)param_1 + 8),
+    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)((int)param_1 + 8),
                      (char *)(*(int *)((int)param_1 + 0x4010) + 0x2010 + (int)param_1),
                      0x2000 - *(int *)((int)param_1 + 0x4010), 0);
     if (iVar2 == 0) { DbgLogPublic("NET: Net_Recv recv=0 (peer closed)"); return 1; }
     if (iVar2 == -1) {
-        int err = WSAGetLastError();
+        int err = Platform::GetSocket().LastError();
         char dbg[96];
         wsprintfA(dbg, "NET: Net_Recv recv=-1 WSA=%d", err);
         DbgLogPublic(dbg);

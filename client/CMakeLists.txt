@@ -48,6 +48,7 @@ set(MU_SOURCES
     src/UI/UIState.cpp
     src/Local/ClientText.cpp
     src/Core/Window.cpp
+    src/Platform/Win32/Win32Socket.cpp
     src/Platform/Win32/Win32Timer.cpp
     src/Platform/Win32/Win32Input.cpp
     src/Platform/Win32/Win32Window.cpp
@@ -344,6 +345,7 @@ set(MU_HEADERS
     src/UI/GoldenArcher.h
     src/Core/Window.h
     src/Platform/CompilerCompat.h
+    src/Platform/ISocket.h
     src/Platform/ITimer.h
     src/Platform/IInput.h
     src/Platform/IWindow.h
