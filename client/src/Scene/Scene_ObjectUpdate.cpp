@@ -3,6 +3,7 @@
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"
@@ -734,12 +735,12 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
     }
 
     if (zen) {
-        const float t = (float)(GetTickCount() % 2000) / 2000.0f * 6.2831853f;
+        const float t = (float)(Platform::GetTimer().Ticks() % 2000) / 2000.0f * 6.2831853f;
         target[0] = zen[0] + sinf(t) * 20.0f;
         target[1] = zen[1] + cosf(t) * 20.0f;
         target[2] = zen[2] + pet.Height;
     } else if (pet.Movement == Proto::CATALOG_PET_MOVE_ORBIT) {
-        const float t = (float)(GetTickCount() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
+        const float t = (float)(Platform::GetTimer().Ticks() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
         target[0] = ownerPos[0] + sinf(t) * pet.Radius;
         target[1] = ownerPos[1] + cosf(t) * pet.Radius;
     } else {

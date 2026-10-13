@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -212,7 +213,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // CFG at 0x485A2B continues through every family and serializes v285 as
     // read, including the sentinel value when the selected slot is stale.
     if (skillType == 43) {
-            DAT_07e11d84 = GetTickCount();
+            DAT_07e11d84 = Platform::GetTimer().Ticks();
             float step[3] = { *(float*)(c + 788) - *(float*)(o + 16),
                               *(float*)(c + 792) - *(float*)(o + 20),
                               *(float*)(c + 796) - *(float*)(o + 24) }; // IDA: v320/v321/v322
@@ -268,8 +269,8 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
                               (float*)(intptr_t)skillIndex, 0);
                 angle[2] += 20.0f;
             }
-    } else if ((DWORD)(GetTickCount() - g_dwLatestMagicTick) > 300) {
-            g_dwLatestMagicTick = GetTickCount();
+    } else if ((DWORD)(Platform::GetTimer().Ticks() - g_dwLatestMagicTick) > 300) {
+            g_dwLatestMagicTick = Platform::GetTimer().Ticks();
             Warrior_SendSkill19(skillType, targetKey);
     }
 

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Net/Network.h"
 #include "Core/Font.h"
@@ -40,7 +41,7 @@ void CReconnect::OnLoginSent(const char* account, const char* password)
 void CReconnect::SetProgress(Progress progress, DWORD retryWait)
 {
     m_Progress = progress;
-    m_StepTime = GetTickCount();
+    m_StepTime = Platform::GetTimer().Ticks();
     m_RetryWait = retryWait;
 }
 
@@ -55,7 +56,7 @@ bool CReconnect::OnConnectionLost()
         return false;
 
     m_Status = STATUS_RECONNECT;
-    m_StartTime = GetTickCount();
+    m_StartTime = Platform::GetTimer().Ticks();
     m_LoginSent = false;
     SetProgress(PROGRESS_CONNECT, 0);
     memset(m_Name, 0, sizeof(m_Name));
@@ -97,7 +98,7 @@ void CReconnect::Tick()
 {
     if (m_Status != STATUS_RECONNECT) return;
     DAT_083a7c24 = ErrorMessageReconnect;   // ErrorMessage, como el DLL
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     if (now - m_StartTime > ReconnectTimeout) { GiveUp(); return; }
     if (now - m_StepTime < m_RetryWait) return;
 
@@ -187,7 +188,7 @@ void CReconnect::Render()
     if (m_Status != STATUS_RECONNECT) return;
     constexpr float Width = 150.0f, Height = 18.0f;
     const float x = 320.0f - Width / 2.0f, y = 240.0f - Height / 2.0f;
-    float progress = (GetTickCount() - m_StartTime) * Width / (float)ReconnectTimeout;
+    float progress = (Platform::GetTimer().Ticks() - m_StartTime) * Width / (float)ReconnectTimeout;
     if (progress > Width) progress = Width;
     EnableAlphaTest(true);
     glColor4f(0.0f, 0.0f, 0.0f, 1.0f);

@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/RightClickMove.h"
@@ -2494,7 +2495,7 @@ void __cdecl CheckGate(void)
         }
 
         DAT_07e11d1c = 9999999;                                 // LoadingWorld
-        if (Teleport || DAT_07e11dc4 || GetTickCount() - DAT_07e11dc8 < 3000) {
+        if (Teleport || DAT_07e11dc4 || Platform::GetTimer().Ticks() - DAT_07e11dc8 < 3000) {
             DAT_07e11dc4 = 0;
             DAT_07e11d1c = 0;
             continue;

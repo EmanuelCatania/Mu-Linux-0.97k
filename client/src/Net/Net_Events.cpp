@@ -26,6 +26,7 @@
 // entradas de evento.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -140,7 +141,7 @@ void Recv_StartMatchCountDown(BYTE* Msg, int Size)
 {
     if (Size < 4) return;
     m_iMatchCountDownType   = (int)Msg[3] + 1;
-    m_dwMatchCountDownStart = GetTickCount();
+    m_dwMatchCountDownStart = Platform::GetTimer().Ticks();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

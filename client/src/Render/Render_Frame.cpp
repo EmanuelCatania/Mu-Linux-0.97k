@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
@@ -523,7 +524,7 @@ void Render_Scene3D(void)
     // ── DIAG: log every frame entry to track in-game render flow
     {
         static DWORD s_lastR3 = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastR3 > 1000) {
             s_lastR3 = now;
             BYTE* hero = (BYTE*)DAT_07abf5d8;

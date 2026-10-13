@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
@@ -144,7 +145,7 @@ void CNetwork::SendLogin(const char* account, const char* password)
     pos += 10;
 
     // TickCount (4 bytes LE) — plaintext.
-    DWORD tick = GetTickCount();
+    DWORD tick = Platform::GetTimer().Ticks();
     memcpy(pkt + pos, &tick, 4);
     pos += 4;
 

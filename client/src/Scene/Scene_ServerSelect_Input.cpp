@@ -38,6 +38,7 @@
 //   DAT_083a4328          — updated with selected port
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -206,7 +207,7 @@ void CServerSelWin_UpdateWhileActive(void)
                         DAT_083a7c44 = 0x32;
                         DAT_083a7c24 = DAT_083a7c28;
                         DAT_083a7c28 = 0;
-                        DAT_083a7ac8 = GetTickCount();
+                        DAT_083a7ac8 = Platform::GetTimer().Ticks();
                         DAT_083a4320 = 0;
 
                         // Selected server's ServerCode (channel_id, +0x2c field).

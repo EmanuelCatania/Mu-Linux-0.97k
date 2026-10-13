@@ -18,6 +18,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_ServerValue.h"
 #include "globals.h"
@@ -190,7 +191,7 @@ int Render_MacroTimer_(void)
 
     int v1 = m_iMatchCountDownType;
     if (v1 > 0) {
-        DWORD TickCount = GetTickCount();
+        DWORD TickCount = Platform::GetTimer().Ticks();
         DWORD elapsed   = TickCount - m_dwMatchCountDownStart;
         if (elapsed <= 0x7530) {   // 30s
             GL_ResetState();          // DisableAlphaBlend

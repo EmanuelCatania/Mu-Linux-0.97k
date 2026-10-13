@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Game/MapManager.h"
 #include "globals.h"
@@ -803,7 +804,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
             int csSlot = (int)(((uintptr_t)c - (uintptr_t)DAT_07abf5d0) / 0x394);
             if (csSlot >= 0 && csSlot < 5) {
                 static DWORD s_lastWP[5][2] = {{0,0},{0,0},{0,0},{0,0},{0,0}};
-                DWORD now = GetTickCount();
+                DWORD now = Platform::GetTimer().Ticks();
                 if (now - s_lastWP[csSlot][v234] > 1000) {
                     s_lastWP[csSlot][v234] = now;
                     char b[256];

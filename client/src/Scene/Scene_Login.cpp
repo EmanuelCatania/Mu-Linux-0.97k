@@ -56,6 +56,7 @@
 //   DAT_083a4320   — retry counter
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Scene/Scene_Login.h"
 #include "Scene/Scene_Login_ServerSelect.h"
 
@@ -244,9 +245,9 @@ uint Scene_Login(void)
                      0.0f, 0.0f, 0.78125f, 1.0f, '\x01', '\x01');
 
         // Progress bar fill
-        DVar4 = GetTickCount();
+        DVar4 = Platform::GetTimer().Ticks();
         if (DVar4 - DAT_083a7ac8 < 15000) {
-            DVar4 = GetTickCount();
+            DVar4 = Platform::GetTimer().Ticks();
             iVar3 = DVar4 - DAT_083a7ac8;
         } else {
             iVar3 = 15000;

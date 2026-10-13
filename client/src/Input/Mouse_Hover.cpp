@@ -36,6 +36,7 @@
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 #include <windows.h>
@@ -256,7 +257,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     // [DIAG] one-shot per ~half second to see camera/ray
     {
         static DWORD s_lastTilePick = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastTilePick > 500) {
             s_lastTilePick = now;
             float* eye = (float*)&CameraRayOriginX_arr[0];
@@ -372,7 +373,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     for (int ofs = 0; ofs < 0x59740; ofs += 0x394, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
         if (diagFilt && ent_idx < 5) {
-            DWORD now = GetTickCount();
+            DWORD now = Platform::GetTimer().Ticks();
             if (now - s_lastFilt[ent_idx] > 1000) {
                 s_lastFilt[ent_idx] = now;
             }

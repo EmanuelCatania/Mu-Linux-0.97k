@@ -2,6 +2,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"
@@ -699,7 +700,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     //   · Si difieren, el corrimiento medido ES el bug y su magnitud dice cuánto.
     {
         static DWORD s_lastI = 0;
-        DWORD nowI = GetTickCount();
+        DWORD nowI = Platform::GetTimer().Ticks();
         if (nowI - s_lastI > 1000) {
             s_lastI = nowI;
             int tx = 0, ty = 0, px = 0, py = 0;
