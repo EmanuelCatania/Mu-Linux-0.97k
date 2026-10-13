@@ -47,6 +47,7 @@
 
 #include "stdafx.h"
 #include "Platform/ITimer.h"
+#include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
@@ -1094,7 +1095,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // ── BRANCH F: Ctrl + Q/W/E → hotkey assignment ─────────────────
             // Per líneas 989-1009 de IDA. Guarda el tipo de item en la tabla de 3 slots
             // table at dword_559C60[0..2].
-            SHORT ctrl = GetAsyncKeyState(0x11);   // VK_CONTROL
+            SHORT ctrl = Platform::GetInput().KeyState(0x11);   // VK_CONTROL
             if ((char)((unsigned short)ctrl >> 8) == (char)0x80) {
                 int hk = -1;
                 if (PressKey(0x51))      hk = 0;   // Q

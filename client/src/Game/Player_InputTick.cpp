@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Camera3D.h"
 #include "UI/MiniMap.h"
@@ -1516,7 +1517,7 @@ void __cdecl Player_ProcessInput(void)
                 }
             }
             {
-                SHORT shift = GetAsyncKeyState(0x10);
+                SHORT shift = Platform::GetInput().KeyState(0x10);
                 bool shiftHeld = ((char)((unsigned short)shift >> 8) == -0x80);
                 if (!shiftHeld) {
                     // Reset del closest-hit sentinel ANTES de cada scan: si DAT_083a4120 (t_max)

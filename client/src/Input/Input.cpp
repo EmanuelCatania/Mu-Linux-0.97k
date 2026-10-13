@@ -1,6 +1,7 @@
 // Input.cpp
 // Sistema de input del cliente — análisis completo
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Input/Input.h"
 
 //
@@ -269,7 +270,7 @@ int NumPad_HitTest(void);
 // IDA: PressKey
 int __cdecl PressKey(int param_1)
 {
-  SHORT SVar1 = GetAsyncKeyState(param_1);
+  SHORT SVar1 = Platform::GetInput().KeyState(param_1);
   // &KeyState + param_1*4: byte offset correcto para el slot DWORD
   // (disasm @ 0x0047ec35 = MOV EAX,[ESI*0x4 + 0x7e118ec]). Necesario castear
   // la base a char* porque KeyState es DWORD[256].
@@ -326,7 +327,7 @@ void Input_ProcessFunctionKeys(void)
   undefined4 uVar6;
   undefined4 uVar7;
 
-  SVar3 = GetAsyncKeyState(0x70);
+  SVar3 = Platform::GetInput().KeyState(0x70);
   if ((char)((ushort)SVar3 >> 8) == -0x80) {
     if (DAT_07e11aac == 0) {
       DAT_07e11aac = 1;
@@ -342,7 +343,7 @@ void Input_ProcessFunctionKeys(void)
   else {
     DAT_07e11aac = 0;
   }
-  SVar3 = GetAsyncKeyState(0x71);
+  SVar3 = Platform::GetInput().KeyState(0x71);
   if ((char)((ushort)SVar3 >> 8) == -0x80) {
     if (DAT_07e11ab0 == 0) {
       DAT_00559bf1 = DAT_00559bf1 == '\0';
@@ -360,7 +361,7 @@ void Input_ProcessFunctionKeys(void)
   else {
     DAT_07e11ab0 = 0;
   }
-  SVar3 = GetAsyncKeyState(0x72);
+  SVar3 = Platform::GetInput().KeyState(0x72);
   if ((char)((ushort)SVar3 >> 8) == -0x80) {
     if (DAT_07e11ab4 == 0) {
       DAT_07e11ab4 = 1;
@@ -371,7 +372,7 @@ void Input_ProcessFunctionKeys(void)
   else {
     DAT_07e11ab4 = 0;
   }
-  SVar3 = GetAsyncKeyState(0x73);
+  SVar3 = Platform::GetInput().KeyState(0x73);
   if ((char)((ushort)SVar3 >> 8) != -0x80) {
     DAT_07e11ab8 = 0;
     return;

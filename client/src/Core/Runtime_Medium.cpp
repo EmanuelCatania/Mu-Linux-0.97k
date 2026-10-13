@@ -13,6 +13,7 @@
 
 #include "stdafx.h"
 #include "Platform/ITimer.h"
+#include "Platform/IInput.h"
 #include "Net/Reconnect.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
@@ -34,10 +35,7 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 
 // SaveIME_Status @ 0x0047ED45 (56 bytes) — save IME conversion status
 void __cdecl SaveIME_Status(void) {
-    HIMC hImc = ImmGetContext(gWindow.GetHwnd());
-    DWORD dwConv, dwSent;
-    ImmGetConversionStatus(hImc, &dwConv, &dwSent);
-    ImmReleaseContext(gWindow.GetHwnd(), hImc);
+    Platform::GetInput().ReadImeState();
 }
 
 // FUN_004c3dd0 @ 0x004C3DD0 (56 bytes) — color value from gold amount
