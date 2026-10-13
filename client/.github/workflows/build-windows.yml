@@ -12,7 +12,7 @@ name: build-windows
 
 on:
   push:
-    branches: [ "fase/*", "main" ]
+    branches: [ "fase/*", "platform/**", "main" ]
   pull_request:
     branches: [ "fase/*", "main" ]
   workflow_dispatch:
@@ -23,10 +23,12 @@ permissions:
 jobs:
   cmake:
     name: cmake (${{ matrix.config }})
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +37,7 @@ jobs:
         run: python tools/check_cmake_sources.py
 
       - name: Configurar
-        run: cmake -S . -B build -A Win32 -T v143
+        run: cmake -S . -B build -A ${{ matrix.target.architecture }} -T v143
 
       - name: Compilar
         run: cmake --build build --config ${{ matrix.config }} --parallel -- /v:minimal
@@ -68,10 +70,12 @@ jobs:
 
   msbuild:
     name: msbuild (${{ matrix.config }})
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +83,7 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
 
       - name: Compilar mu97k.sln
-        run: msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+        run: msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
 
       - name: Juntar tlogs
         shell: pwsh
@@ -114,10 +118,12 @@ jobs:
   compare:
     name: comparar flags (${{ matrix.config }})
     needs: [ cmake, msbuild ]
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
@@ -144,11 +150,13 @@ jobs:
   map-symbols:
     name: símbolos del .map vs base (${{ matrix.config }})
     if: github.event_name == 'pull_request'
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     env:
       _LINK_: /MAP
@@ -166,7 +174,7 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item tools/compare_map_symbols.py $env:RUNNER_TEMP/
-          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item bin/Client/main.map $env:RUNNER_TEMP/head.map
 
@@ -175,7 +183,7 @@ jobs:
         run: |
           git clean -xdfq
           git checkout -q --force ${{ github.event.pull_request.base.sha }}
-          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item bin/Client/main.map $env:RUNNER_TEMP/base.map
 
