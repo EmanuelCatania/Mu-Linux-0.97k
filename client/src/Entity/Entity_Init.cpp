@@ -60,30 +60,22 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
 }
 
 
-// SaveMonsters — Monster_SaveSetBase
-// Writes entity positions to a file param_1 in a proprietary format.
-// Opens file, iterates active entities (stride 0x394, count up to 0x59740/0x394),
-// writes position with format string s__4d__4d_30__4d__4d__1_00559b58, closes file.
-void __cdecl Monster_SaveSetBase(LPCSTR param_1)
+// IDA: SaveMonsters (0x0045FA20).
+// Exporta posiciones de monstruos; las coordenadas se truncan antes de reducir a byte.
+void __cdecl Monster_SaveSetBase(LPCSTR path)
 {
-  FILE *pFVar1;
-  int iVar2;
-  int iVar3;
-
-  pFVar1 = (FILE *)crt_fopen(param_1,DAT_00559b74);
-  crt_fprintf((int *)pFVar1,&DAT_00559b70);
-  iVar2 = 0;
-  iVar3 = DAT_07abf5d0;
-  do {
-    if ((*(char *)(iVar2 + iVar3) != '\0') && (*(char *)(iVar2 + 0x84 + iVar3) == ' ')) {
-      __ftol();
-      __ftol();
-      crt_fprintf((int *)pFVar1,(byte *)s__4d__4d_30__4d__4d__1_00559b58);
-      iVar3 = DAT_07abf5d0;
+  FILE* file = fopen(path, "wt");
+  // DESVIACION: si falla la apertura, no escribir mediante un FILE nulo.
+  if (!file) return;
+  fprintf(file, "2\n");
+  for (int offset = 0; offset < 0x59740; offset += 0x394) {
+    const unsigned char* entity = (const unsigned char*)(uintptr_t)DAT_07abf5d0 + offset;
+    if (entity[0] && entity[0x84] == 32) {
+      const unsigned char x = (unsigned char)(long long)(*(const float*)(entity + 0x10) * 0.0099999998);
+      const unsigned char y = (unsigned char)(long long)(*(const float*)(entity + 0x14) * 0.0099999998);
+      fprintf(file, "%4d %4d 30 %4d %4d -1\n", entity[0x2eb], gMapManager.GetCurrentMap(), x, y);
     }
-    iVar2 = iVar2 + 0x394;
-  } while (iVar2 < 0x59740);
-  crt_fprintf((int *)pFVar1,&DAT_00559b50);
-  crt_fclose(pFVar1);
-  return;
+  }
+  fprintf(file, "end\n");
+  fclose(file);
 }

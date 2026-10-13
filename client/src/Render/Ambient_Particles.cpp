@@ -130,15 +130,15 @@ void __cdecl AmbientParticles_Update(void)
                 iVar8  = (int)DAT_07abf5d8;
                 uVar6 &= 0x800003ff;
                 if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffc00) + 1;
-                puVar9[-0x35] = *(unsigned int *)((char *)&fVar3);  // pos_y = rand + player_y
-                (void)fVar3;
-                puVar9[-0x35] = (unsigned int)((float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x14));
+                // IDA: Ambient_ParticleUpdate (0x00502320): posición Y almacenada como float.
+                *(float*)&puVar9[-0x35] = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x14);
                 puVar9[-0x34] = *(unsigned int *)(iVar8 + 0x18);    // pos_z = player_z
 
                 // Get terrain type at spawn position
-                lVar12 = (long long)(unsigned int)__ftol();
+                // IDA: Ambient_ParticleUpdate (0x00502320): truncar la posición / 100.
+                lVar12 = (long long)(*(float*)&puVar9[-0x35] * 0.0099999998);
                 uVar6  = (unsigned int)lVar12;
-                lVar12 = (long long)(unsigned int)__ftol();
+                lVar12 = (long long)(*pfVar1 * 0.0099999998);
                 iVar7  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
                 iVar8  = gMapManager.GetCurrentMap();
 
@@ -311,9 +311,10 @@ switchD_caseD_2:
                 puVar9[-9]  = (unsigned int)(local_14 * _DAT_00552540 + (float)puVar9[-0x35]);
 
                 // Terrain type check for special effects
-                lVar12 = (long long)(unsigned int)__ftol();
+                // IDA: Ambient_ParticleUpdate (0x00502320): truncar la posición / 100.
+                lVar12 = (long long)(*(float*)&puVar9[-0x35] * 0.0099999998);
                 uVar6  = (unsigned int)lVar12;
-                lVar12 = (long long)(unsigned int)__ftol();
+                lVar12 = (long long)(*pfVar1 * 0.0099999998);
                 iVar8  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
                 sVar5  = *(short *)((int)puVar9 + -0xe6);
 

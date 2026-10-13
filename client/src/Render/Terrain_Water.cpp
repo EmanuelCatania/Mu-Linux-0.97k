@@ -40,7 +40,7 @@ int __cdecl Terrain_Water(void)
     float *pfVar6;
     float10 fVar11;
     float10 fVar12, fVar13;
-    ulonglong uVar14;
+    long long uVar14;
 
     // ── 1) Copy lighting data into live buffer for viewport rect ──────────────
     int rowMax = FrustrumBoundMaxY_1 + 3;
@@ -71,15 +71,16 @@ int __cdecl Terrain_Water(void)
         } while ((int)uVar7 <= rowMax);
     }
 
-    // ── 2) Compute time phase for water waves ─────────────────────────────────
+    // IDA: Terrain_Water (0x004F95E0): la fase usa WorldTime, no otra lectura del reloj.
+    // DESVIACION: mantener 64 bits hasta el módulo evita truncar el uptime a 32 bits.
     if (DAT_083a3ff0 == 0) {
         // Ocean / water mode: long period (720000 units)
-        uVar14 = (ulonglong)(unsigned int)__ftol();
+        uVar14 = (long long)DAT_05826e08;
         iVar4  = (int)((long long)uVar14 / 720000);
         fVar11 = (float10)(int)((long long)uVar14 % 720000) * (float10)_DAT_005528e0;
     } else {
         // Terrain wave mode: short period (36000 units)
-        uVar14 = (ulonglong)(unsigned int)__ftol();
+        uVar14 = (long long)DAT_05826e08;
         iVar4  = (int)((long long)uVar14 / 36000);
         fVar11 = (float10)(int)((long long)uVar14 % 36000) * (float10)_DAT_005524f8;
     }

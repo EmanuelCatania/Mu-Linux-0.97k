@@ -46,7 +46,7 @@
 #include "functions.h"
 #include <math.h>
 
-// fsin/__ftol are defined as inline functions in stdafx.h (Ghidra intrinsic stubs)
+// fsin se define en stdafx.h como puente al seno de la CRT.
 // _rand is a macro defined as rand() in stdafx.h
 
 // ─────────────────────────────────────────────────────────────────────────────

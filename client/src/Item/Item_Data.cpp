@@ -51,19 +51,8 @@ LAB_loop:
             crt_fclose(DAT_07d7806c);
             return;
         }
-        if (recType == 1) {
-            // row index
-            long long lv = 0; __ftol();  // read row
-            lv = 0; // Ghidra emits __ftol() as float-to-long conversion
-            // NOTE: the actual implementation uses a streaming float parser;
-            // here we document the structure faithfully as a stub that calls
-            // the real parser. The logic below mirrors the Ghidra decompilation.
-
-            // row = (int)__ftol result from first TextParser_GetToken
-            // col = (int)__ftol result from second TextParser_GetToken
-            // slot = (row*0x20 + col) * 0x40
-            // The loop runs until iVar4==0 && strcmp(TextParserTokenString, "END")==0
-        }
+        // IDA: sub_47B130 (0x0047B130) convierte TokenNumber, no el reloj.
+        // Este parser sigue incompleto: consumir tokens no carga la tabla de items.
         goto LAB_loop;
     }
 }
