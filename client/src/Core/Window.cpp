@@ -1,6 +1,7 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Core/Font.h"
 #include "Net/Ping.h"
 #include "Core/Window.h"
@@ -15,7 +16,7 @@ CWindow gWindow;
 void CWindow::UpdateTitle()
 {
     if (!Platform::GetWindow().IsCreated()) return;
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     if (m_TitleScene == SceneFlag && now - m_LastTitleUpdate < 1000) return;
     m_TitleScene = SceneFlag;
     m_LastTitleUpdate = now;

@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
@@ -192,7 +193,7 @@ void __cdecl CreateClassAttributes(void) {
 // UpdateFile @ 0x0041E500 (90 bytes) — copy+delete with retry
 BOOL __cdecl UpdateFile(char *lpszOld, char *lpszNew) {
     for (int i = 0; i < 0x14; i++) {
-        Sleep(500);
+        Platform::GetTimer().SleepMilliseconds(500);
         if (CopyFileA(lpszOld, lpszNew, FALSE)) {
             DeleteFileA(lpszOld);
             return TRUE;

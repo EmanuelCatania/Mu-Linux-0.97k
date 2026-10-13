@@ -1,6 +1,7 @@
 // System_Legacy.cpp
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -162,7 +163,7 @@ long long __cdecl Cpu_MeasureClockRate(DWORD param_1) {
     LARGE_INTEGER qpcStart, qpcEnd;
     QueryPerformanceCounter(&qpcStart);
     unsigned __int64 tscStart = __rdtsc();
-    Sleep(param_1);
+    Platform::GetTimer().SleepMilliseconds(param_1);
     QueryPerformanceCounter(&qpcEnd);
     unsigned __int64 tscEnd = __rdtsc();
 

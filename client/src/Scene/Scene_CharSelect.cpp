@@ -178,6 +178,7 @@
 //   GL_SetBlendAdditive   → Frame_UpdateTimer()
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Scene/Scene_CharSelect.h"
 
 
@@ -263,7 +264,7 @@ int Scene_CharSelect(void)
         // ── DIAG: log 5 slots once a second so we can verify MG entity state ──
         {
             static DWORD s_lastDiag = 0;
-            DWORD now = GetTickCount();
+            DWORD now = Platform::GetTimer().Ticks();
             if (now - s_lastDiag > 1000) {
                 s_lastDiag = now;
                 for (int s = 0; s < 5; ++s) {
@@ -274,7 +275,7 @@ int Scene_CharSelect(void)
         // ── DIAG: dump camera + current-camera state once/sec
         {
             static DWORD s_lastCAM = 0;
-            DWORD now = GetTickCount();
+            DWORD now = Platform::GetTimer().Ticks();
             if (now - s_lastCAM > 1000) {
                 s_lastCAM = now;
             }
@@ -315,7 +316,7 @@ int Scene_CharSelect(void)
         // ── Name labels (no char hovered) ────────────────────────────────────
         {
             static DWORD s_lastNL = 0;
-            DWORD now = GetTickCount();
+            DWORD now = Platform::GetTimer().Ticks();
             if (now - s_lastNL > 1000) {
                 s_lastNL = now;
             }
@@ -340,7 +341,7 @@ int Scene_CharSelect(void)
                     {
                         static DWORD s_lastNI[5] = {0};
                         int slotIdx = iVar9 / 0x394;
-                        DWORD now2 = GetTickCount();
+                        DWORD now2 = Platform::GetTimer().Ticks();
                         if (slotIdx >= 0 && slotIdx < 5 && now2 - s_lastNI[slotIdx] > 1000) {
                             s_lastNI[slotIdx] = now2;
                             char b[400];
@@ -355,7 +356,7 @@ int Scene_CharSelect(void)
                     {
                         static DWORD s_lastNO[5] = {0};
                         int slotIdx2 = iVar9 / 0x394;
-                        DWORD now3 = GetTickCount();
+                        DWORD now3 = Platform::GetTimer().Ticks();
                         if (slotIdx2 >= 0 && slotIdx2 < 5 && now3 - s_lastNO[slotIdx2] > 1000) {
                             s_lastNO[slotIdx2] = now3;
                         }

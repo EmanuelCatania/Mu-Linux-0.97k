@@ -73,6 +73,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include <mbstring.h>
 #include "globals.h"
 #include "structs.h"
@@ -527,9 +528,9 @@ static DWORD g_ChatLB_WheelTick = 0;
 // ningún widget lo toma en 200 ms, para que no se aplique al pasar por otro.
 void ChatListBox_AddWheel(int notches)
 {
-    if (GetTickCount() - g_ChatLB_WheelTick > 200) g_ChatLB_WheelAccum = 0;
+    if (Platform::GetTimer().Ticks() - g_ChatLB_WheelTick > 200) g_ChatLB_WheelAccum = 0;
     g_ChatLB_WheelAccum += notches;
-    g_ChatLB_WheelTick = GetTickCount();
+    g_ChatLB_WheelTick = Platform::GetTimer().Ticks();
 }
 
 // Soft helpers — wired to no-ops until the engine sound/keyrepeat is ported.
@@ -593,7 +594,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
     // el input (slot 26) de los 3 botones popup.
     if (((FnInt)vt[21])(self)) {
         // Wheel-scroll accumulator drains here.
-        if (g_ChatLB_WheelAccum && GetTickCount() - g_ChatLB_WheelTick > 200)
+        if (g_ChatLB_WheelAccum && Platform::GetTimer().Ticks() - g_ChatLB_WheelTick > 200)
             g_ChatLB_WheelAccum = 0;
         if (g_ChatLB_WheelAccum) {
             ((FnVoidI)vt[12])(self, 0, -3 * g_ChatLB_WheelAccum);

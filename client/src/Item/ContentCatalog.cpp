@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Protocol/GameServerProtocol.h"
@@ -586,7 +587,7 @@ bool CContentCatalog::GetMapFog(int map, float day[3], float night[3]) const
 
 void CContentCatalog::GetFogColor(int map, float rgba[4])
 {
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     if (map != m_FogMap || now - m_FogTick >= 10000) {
         m_FogMap = map;
         m_FogTick = now;

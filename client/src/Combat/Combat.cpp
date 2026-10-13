@@ -437,6 +437,7 @@
 //   CharData_RecalcStats @ 0x0047e3c0
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_Equip.h"
 #include "Combat/Combat.h"
@@ -876,12 +877,12 @@ static void Attack_SeedSkillTarget97k()
 // Envio comun de C1:06:19 con el gate de 300 ms sobre g_dwLatestMagicTick.
 static void Attack_SendSkill19_97k(int iType, WORD key)
 {
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     DWORD elapsed = now - g_dwLatestMagicTick;                      // IDA: g_dwLatestMagicTick
     if (elapsed > 0x80000000u) elapsed = (DWORD)(-(int)elapsed);   // IDA: abs32
     if ((int)elapsed <= 300)
         return;
-    g_dwLatestMagicTick = GetTickCount();
+    g_dwLatestMagicTick = Platform::GetTimer().Ticks();
     BYTE packet[6] = { 0xC1, 6, 0x19, (BYTE)iType,
                        (BYTE)(key >> 8), (BYTE)key };
     gNetwork.Send(packet, sizeof(packet));
@@ -1324,7 +1325,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // binario. `Teleport` de IDA es 0x05826D14 (Teleport), el mismo flag que
         // limpian ReceiveTeleport, el 0x19/0x0F, ReceiveRevival y CheckGate (no
         // DAT_05826d04, que es otro global).
-        if (Teleport || DAT_07e11dc4 || (GetTickCount() - DAT_07e11dc8) < 3000)
+        if (Teleport || DAT_07e11dc4 || (Platform::GetTimer().Ticks() - DAT_07e11dc8) < 3000)
             return;
         Teleport = 1;                                     // IDA L9307: Teleport = 1
         // IDA Attack @0x49CBF0 arma el buffer con longitud inicial 3 y luego
@@ -1886,7 +1887,7 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     // UseSkillElf (0x0048A180) no filtra `targetKey == 0xFFFF`: manda el paquete
     // con la key tal cual la lee y despues SIEMPRE anima (SetPlayerMagic o
     // SetPlayerAttack).
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
 
     if (skillId >= 26 && skillId <= 28) {
         DWORD elapsed = now - g_dwLatestMagicTick;

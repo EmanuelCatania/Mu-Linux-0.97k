@@ -46,6 +46,7 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
@@ -603,7 +604,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
     // move perdido bloquearía el inventario/baúl para siempre).
     if (DAT_07eaa165 != 0) {
         static DWORD s_guardSince = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (s_guardSince == 0) s_guardSince = now;
         else if (now - s_guardSince > 2000) {
             s_guardSince = 0;

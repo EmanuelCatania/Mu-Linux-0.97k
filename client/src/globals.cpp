@@ -5,6 +5,7 @@
 // replaced by pointer aliases to the original binary's addresses.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
 // int SceneFlag — ver WinMain.cpp. g_hWnd, g_hInst y g_hDC viven en CWindow (Core/Window.h).
@@ -639,7 +640,7 @@ DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
-float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)timeGetTime()
+float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)Platform::GetTimer().MultimediaTicks()
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};

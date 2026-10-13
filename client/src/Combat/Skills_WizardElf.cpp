@@ -3,6 +3,7 @@
 // Helpers de despacho de skills de wizard/elf.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -126,13 +127,13 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         }
 
         // 300ms cooldown check on magic tick
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         DWORD elapsed = now - g_dwLatestMagicTick;
         // Ghidra: abs(elapsed) > 300
         if (elapsed > 0x80000000) elapsed = (DWORD)(-(int)elapsed);  // abs
         if ((int)elapsed <= 300) break;
 
-        g_dwLatestMagicTick = GetTickCount();
+        g_dwLatestMagicTick = Platform::GetTimer().Ticks();
 
         // Get target entity key (CharactersClient[MovementSkillTarget].Key)
         // Key is at entity offset +0x??? — Ghidra shows CharactersClient[target].Key

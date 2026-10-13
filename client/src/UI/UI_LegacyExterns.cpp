@@ -1,6 +1,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -767,7 +768,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // ── DIAG: log first call per second to see what text is being requested
     {
         static DWORD s_lastTxt = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastTxt > 1000) {
             s_lastTxt = now;
         }

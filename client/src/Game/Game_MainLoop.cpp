@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
@@ -80,7 +81,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     {
         static int s_lastEnterState = -1;
         static DWORD s_lastEnterT = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (SceneFlag != s_lastEnterState || now - s_lastEnterT > 2000) {
             s_lastEnterState = SceneFlag;
             s_lastEnterT = now;
@@ -374,7 +375,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     if (SocketClientSocket != 0xffffffff &&
         (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == 7)) {
         static DWORD s_lastLive = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastLive >= 1000) {
             s_lastLive = now;
             Proto::PMSG_LIVE_CLIENT_RECV pkt{};

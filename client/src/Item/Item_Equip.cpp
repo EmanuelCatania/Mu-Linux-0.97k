@@ -7,6 +7,7 @@
 //   a2 (nuestro `object`)    = ITEM* equipado (CharacterMachine + 536 + 68*mano).
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
@@ -140,7 +141,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             else
                 SetPlayerAttack((int)character, 0, 0, 0); // IDA: SetPlayerAttack(v4)
 
-            const DWORD now = GetTickCount();          // IDA L599-603
+            const DWORD now = Platform::GetTimer().Ticks();          // IDA L599-603
             if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }
             g_dwLatestMagicTick = now;
             const WORD heroKey = *(WORD*)(Hero + 476); // IDA: *(_WORD *)(Hero + 476)

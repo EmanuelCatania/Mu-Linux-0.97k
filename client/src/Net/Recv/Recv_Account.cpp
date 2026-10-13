@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -100,7 +101,7 @@ void Recv_LoginResult(const BYTE* Msg)
     // Log del resultado de login crudo por intento.  Msg[4]=code server,
     // state=nuestro DAT_05826cb0.
     NetLog("NET:  → F1/01 LOGIN-RESULT code=0x%02X -> state=%u (t=%lu)",
-           Msg[4], state, (unsigned long)GetTickCount());
+           Msg[4], state, (unsigned long)Platform::GetTimer().Ticks());
 
     // DESVIACIÓN: auto-reintento del PRIMER login fallido con code 0x02.  Contra
     // MuEmu el 1er F1/01 se rechaza (0x02 = pass incorrecta) con datos IDÉNTICOS al

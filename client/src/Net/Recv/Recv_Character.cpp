@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Reconnect.h"
@@ -1599,7 +1600,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // Temporizadores de "cargando mundo" (IDA LABEL_108).
         // DAT_07e11d1c = LoadingWorld: Render_GameFrame saltea el
         // frame mientras sea > 30, que es la "pantalla de carga".
-        DAT_07e11dc8 = GetTickCount();
+        DAT_07e11dc8 = Platform::GetTimer().Ticks();
         DAT_07e11dc4 = 0;
         DAT_07e11d1c = 30;
 

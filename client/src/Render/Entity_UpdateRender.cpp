@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
@@ -816,7 +817,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
                     if (csSlot >= 0 && csSlot < 5) {
                         static DWORD s_lastDA[5] = {0,0,0,0,0};
-                        DWORD now = GetTickCount();
+                        DWORD now = Platform::GetTimer().Ticks();
                         if (now - s_lastDA[csSlot] > 1000) {
                             // log only the FIRST body-part draw of this slot per second
                             s_lastDA[csSlot] = now;

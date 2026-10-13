@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ItemDefines.h"
 #include "resource.h"
 #include "Debug/MiniDump.h"
@@ -270,7 +271,7 @@ static void DbgLog(const char* msg)
 
     char buf[600];
     const char* safeMsg = msg ? msg : "(null)";
-    DWORD t = GetTickCount();
+    DWORD t = Platform::GetTimer().Ticks();
 
     // Sanitiza msg a ASCII printable: el debugger de VS intercepta WriteFile en
     // debug.log y crashea si el contenido tiene caracteres no printables.

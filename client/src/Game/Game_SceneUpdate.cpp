@@ -28,6 +28,7 @@
 //   state 2,4,6,8   : Y eases to 0x93  (credentials panel)
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Net/PacketFrame.h"
 
@@ -416,7 +417,7 @@ int Game_SceneUpdate(void)
 
     // ── STATE 1 / 12: CONNECTING / ERROR ─────────────────────────────────────
     if (DAT_083a7c14 == 1 || DAT_083a7c14 == 0xc) {
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         DWORD elapsed = now - DAT_083a7ac8;
 
         if (elapsed < 0x3a99) {
@@ -446,7 +447,7 @@ int Game_SceneUpdate(void)
         } else {
             // state == 12: restart timestamp
             if (DAT_083a7c14 == 0xc)
-                DAT_083a7ac8 = GetTickCount();
+                DAT_083a7ac8 = Platform::GetTimer().Ticks();
         }
 
         // Click "back" button (0x11d-0x162, Y: 0x106-0x119)
@@ -546,7 +547,7 @@ int Game_SceneUpdate(void)
                               (code > 0x14 && code < 0x22));
             if (validCode) {
                 CErrorReport_Write(&DAT_055c9bf0, "> Login Request");
-                DAT_083a7ac8 = GetTickCount();
+                DAT_083a7ac8 = Platform::GetTimer().Ticks();
                 DAT_083a4320 = 0;
                 CErrorReport_Write(&DAT_055c9bf0, "> Try to Login ... %s",
                              (char*)DAT_07db8710);

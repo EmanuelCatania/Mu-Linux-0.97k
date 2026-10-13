@@ -1,6 +1,7 @@
 // Input_Timing.cpp
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -13,9 +14,9 @@ void __cdecl UI_UpdateFpsCounter(void) {
     SelectObject(gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     DAT_00559c78 = 0xffffffff;
     SetBackgroundTextColor = 0xff000000;
-    DWORD DVar1 = timeGetTime();
+    DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {
-        _DAT_07e016f0 = timeGetTime();
+        _DAT_07e016f0 = Platform::GetTimer().MultimediaTicks();
         TotalPacketSize = 0;
     }
 }

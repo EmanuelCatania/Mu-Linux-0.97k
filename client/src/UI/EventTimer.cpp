@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -84,7 +85,7 @@ bool CEventTimer::Receive(const BYTE* packet, int size)
     const bool hadList = m_Received;
     m_Count = count;
     m_Received = true;
-    m_ReceivedAt = GetTickCount();
+    m_ReceivedAt = Platform::GetTimer().Ticks();
     if (changed) EventListBox_Rebuild(Widget(), m_Count, hadList);
     return true;
 }
@@ -111,7 +112,7 @@ DWORD CEventTimer::RemainingSeconds(const Proto::PMSG_EVENT_TIME& event) const
 {
     // El server escribe RemainTime (int) en un DWORD; negativo = vencido.
     const DWORD sent = event.time <= 0x7FFFFFFF ? event.time : 0;
-    const DWORD elapsed = (GetTickCount() - m_ReceivedAt) / 1000;
+    const DWORD elapsed = (Platform::GetTimer().Ticks() - m_ReceivedAt) / 1000;
     return sent > elapsed ? sent - elapsed : 0;
 }
 
