@@ -19,17 +19,23 @@ public:
 
 	void Clear();
 
-	bool GetRandomElement(int* value);
-
-	bool GetRandomElement(WORD* value);
-
-	bool GetRandomElement(BYTE* value);
-
-	bool GetRandomElement(intptr_t* value);
+	template<typename T>
+	bool GetRandomElement(T* value)
+	{
+		intptr_t selected;
+		if (!this->SelectRandomElement(&selected))
+		{
+			return false;
+		}
+		*value = static_cast<T>(selected);
+		return true;
+	}
 
 	void AddElement(intptr_t value, int rate);
 
 private:
+
+	bool SelectRandomElement(intptr_t* value);
 
 	int m_MaxRate;
 
