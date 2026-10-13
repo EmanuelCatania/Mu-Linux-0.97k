@@ -176,7 +176,7 @@ void CReconnect::OnCharacterInfo()
 bool CReconnect::ExitIfActive()
 {
     if (m_Status != STATUS_RECONNECT) return false;
-    SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+    gWindow.RequestCloseApplication();
     return true;
 }
 

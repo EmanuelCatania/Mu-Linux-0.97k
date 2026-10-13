@@ -69,7 +69,7 @@ void __cdecl Gate_LoadBMD(const char *path)
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        gWindow.RequestCloseApplication();
         return;
     }
     char *buf = (char *)operator_new(9);

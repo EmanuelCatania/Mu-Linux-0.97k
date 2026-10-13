@@ -157,7 +157,7 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a7c20 = v3 - 1;
         if ((int)(v3 - 1) <= 0) {
             DAT_083a7c1c = 0;
-            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+            gWindow.RequestCloseApplication();
         }
     }
 
@@ -188,7 +188,7 @@ void __cdecl UI_InGameMenu(void)
         if (okClick || enterHit) {
             DAT_083a4124 = 0;
             DAT_055ca038 = '\0';                     // consume Enter
-            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);  // cierra el cliente
+            gWindow.RequestCloseApplication();  // cierra el cliente
             DAT_083a7c24 = DAT_083a7c28;             // ErrorMessage = NextErrorMessage
             DAT_083a7c28 = 0;
         }

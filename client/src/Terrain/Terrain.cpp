@@ -519,7 +519,7 @@ uint __cdecl OpenTerrainHeight(char *filename)
         CErrorReport_Write(&DAT_055c9bf0, Text);
         if (gWindow.GetHwnd()) {
             MessageBoxA(gWindow.GetHwnd(), Text, nullptr, 0);
-            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+            gWindow.RequestCloseApplication();
         }
         return 0;
     }
@@ -594,7 +594,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
         CErrorReport__Write(0x55c9bf0, msg);
         CErrorReport__Write(0x55c9bf0, (char*)"\n");
         MessageBoxA((HWND)gWindow.GetHwnd(), msg, NULL, 0);
-        SendMessageA((HWND)gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+        gWindow.RequestCloseApplication();
         return;
     }
 
