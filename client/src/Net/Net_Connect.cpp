@@ -7,6 +7,7 @@
 // Initialises the packet hash table for session key tracking.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Net/Network.h"
 #include "Net/Reconnect.h"
 #include "Net/Net.h"
@@ -275,30 +276,19 @@ extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
         return 0;
     }
 
-    sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port   = htons(port);
-    addr.sin_addr.s_addr = inet_addr(ip_addr);
-
-    if (addr.sin_addr.s_addr == INADDR_NONE) {
-        struct hostent* host = gethostbyname(ip_addr);
-        if (!host || !host->h_addr_list || !host->h_addr_list[0]) {
-            return 2;  // host resolution failure
-        }
-        memcpy(&addr.sin_addr, host->h_addr_list[0], host->h_length);
-    }
+    uint32_t address;
+    if (!Platform::GetSocket().ResolveIPv4(ip_addr, address)) return 2;
 
     SOCKET sock = (SOCKET)*(DWORD*)(This + 8);
-    int conn = connect(sock, (const sockaddr*)&addr, sizeof(addr));
-    if (conn != -1 || WSAGetLastError() == WSAEWOULDBLOCK) {
+    int conn = Platform::GetSocket().ConnectIPv4(sock, address, port);
+    if (conn != -1 || Platform::GetSocket().LastError() == WSAEWOULDBLOCK) {
         // Async select: FD_READ|FD_WRITE|FD_CONNECT|FD_CLOSE = 0x23
         // (per IDA constant — matches FD_READ(1) | FD_CONNECT(0x10) |
         //  FD_CLOSE(0x20) — the binary uses 0x35 in some calls, 0x23 here.)
-        if (WSAAsyncSelect(sock, *(HWND*)This, WinMsgNum, 0x23) != -1) {
+        if (Platform::GetSocket().NotifyWindow(sock, *(HWND*)This, WinMsgNum, 0x23) != -1) {
             return 1;
         }
     }
-    closesocket(sock);
+    Platform::GetSocket().Close(sock);
     return 0;
 }

@@ -15,6 +15,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Net/Ping.h"
 
 void __fastcall FUN_00401af0(void*);
@@ -1373,7 +1374,7 @@ void __cdecl InitGuildWar(void) {
 void __cdecl CWsctlc_Close(int ctx) {
     gNetwork.ResetSessionData();
     SocketClientIsGame = 0; // g_bGameServerConnected
-    closesocket(*(SOCKET *)(ctx + 8));
+    Platform::GetSocket().Close(*(SOCKET *)(ctx + 8));
     *(int *)(ctx + 8) = -1; // INVALID_SOCKET
 }
 

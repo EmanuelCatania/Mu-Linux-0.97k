@@ -5,6 +5,7 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Net/Reconnect.h"
 #include "UI/OptionsMenu.h"
 #include "globals.h"
@@ -255,7 +256,7 @@ void __cdecl UI_InGameMenu(void)
                             gNetwork.Send(pkt, 5);
                         }
                         if (SocketClientSocket != 0xffffffff) {
-                            closesocket((SOCKET)SocketClientSocket);
+                            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
                             SocketClientSocket = (DWORD)INVALID_SOCKET;
                         }
                         DAT_083a7c1c = 1;

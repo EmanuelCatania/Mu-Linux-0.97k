@@ -53,6 +53,7 @@ set(MU_SOURCES
     src/Platform/Win32/Win32Input.cpp
     src/Platform/Win32/Win32Window.cpp
     src/Platform/Win32/Win32FileSystem.cpp
+    src/Platform/Win32/Win32Socket.cpp
     src/Platform/Win32/Win32GLContext.cpp
     src/Core/Font.cpp
     src/Sound/SoundManager.cpp
@@ -351,6 +352,7 @@ set(MU_HEADERS
     src/Platform/IWindow.h
     src/Platform/Win32/Win32Window.h
     src/Platform/IFileSystem.h
+    src/Platform/ISocket.h
     src/Platform/IGLContext.h
     src/Platform/Win32/Win32GLContext.h
     src/Core/Font.h
