@@ -684,7 +684,16 @@ void __cdecl DeleteBug(int Owner) {
 // FreeDirectSound @ 0x00404B80 (42 bytes) — release DirectSound device.
 // Also releases per-slot buffer arrays and the 3D listener added by our
 // DirectSound8 rewrite, so a clean shutdown doesn't leak COM refs.
-void __cdecl FreeDirectSound(void) { Platform::GetAudio().Shutdown(); }
+void __cdecl FreeDirectSound(void) {
+    if (!g_EnableSound) return;
+    Platform::GetAudio().Shutdown();
+    for (int slot = 0; slot < 420; ++slot) {
+        MaxBufferChannel[slot] = 0;
+        BufferChannel[slot] = 0;
+        Enable3DSound[slot] = false;
+    }
+    g_EnableSound = FALSE;
+}
 
 // ── 43-byte ─────────────────────────────────────────────────────────────────
 

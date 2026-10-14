@@ -228,6 +228,7 @@
     <ClCompile Include="src\Platform\SDL3\SDLTimer.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLFileSystem.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLNativeBridge.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\Win32\Win32Audio.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />

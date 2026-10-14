@@ -77,4 +77,11 @@ void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
 //   3. Bounds-check Buffer < 420.
 //   4. Enable3DSound check usa el slot Buffer, no v2 (era bug del IDA).
 HRESULT __cdecl Sound_ReleaseBuffer(int Buffer)
-{ return Platform::GetAudio().ReleaseBuffer(Buffer); }
+{
+    if (!g_EnableSound || Buffer < 0 || Buffer >= 420) return 0;
+    const HRESULT result = Platform::GetAudio().ReleaseBuffer(Buffer);
+    MaxBufferChannel[Buffer] = 0;
+    for (int channel = 0; channel < 4; ++channel) Object3DSound[Buffer][channel] = 0;
+    if (SoundLoadCount > 0) --SoundLoadCount;
+    return result;
+}
