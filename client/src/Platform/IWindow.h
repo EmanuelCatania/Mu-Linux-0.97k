@@ -13,6 +13,10 @@ struct WindowSettings {
 class IWindow {
 public:
     virtual ~IWindow() = default;
+    virtual void ServiceEvents() {}
+    virtual bool UsesPlatformPump() const { return false; }
+    virtual bool CloseRequested() const { return false; }
+    virtual void Shutdown() {}
     virtual bool Create(const WindowSettings& settings) = 0;
     virtual bool IsCreated() const = 0;
     virtual void ChangeMode(const WindowSettings& settings) = 0;

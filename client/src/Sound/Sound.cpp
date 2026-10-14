@@ -3,7 +3,19 @@
 #include "Sound/SoundManager.h"
 
 // IDA: InitDirectSound (0x004044A0)
-HRESULT __cdecl InitDirectSound(HWND window) { return Platform::GetAudio().Initialize(window); }
+HRESULT __cdecl InitDirectSound(HWND window) {
+    if (g_EnableSound) return S_OK;
+    const HRESULT result = Platform::GetAudio().Initialize(window);
+    if (FAILED(result)) return result;
+    for (int slot = 0; slot < 420; ++slot) {
+        MaxBufferChannel[slot] = 0;
+        BufferChannel[slot] = 0;
+        Enable3DSound[slot] = false;
+        for (int channel = 0; channel < 4; ++channel) Object3DSound[slot][channel] = 0;
+    }
+    g_EnableSound = TRUE;
+    return result;
+}
 // IDA: CreateStaticBuffer (0x00404650)
 HRESULT __cdecl CreateStaticBuffer(int slot, const char* path, int channels, bool spatial) {
     return Platform::GetAudio().CreateBuffer(slot, path, channels, spatial);

@@ -34,7 +34,16 @@
 // ============================================================================
 // IDA: PlayBuffer (0x00404BC0)
 HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
-{ return Platform::GetAudio().Play(Buffer, Object, bLooped != 0); }
+{
+    if (!g_EnableSound || Buffer < 0 || Buffer >= 420) return S_OK;
+    if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) BufferChannel[Buffer] = 0;
+    const HRESULT result = Platform::GetAudio().Play(Buffer, BufferChannel[Buffer], bLooped != 0);
+    if (FAILED(result)) return result;
+    if (Enable3DSound[Buffer]) Object3DSound[Buffer][BufferChannel[Buffer]] = Object;
+    // IDA: PlayBuffer (0x00404BC0), sólo wrap: FillBuffer no crea canales adicionales.
+    if (BufferChannel[Buffer] >= MaxBufferChannel[Buffer]) BufferChannel[Buffer] = 0;
+    return S_OK;
+}
 
 
 
@@ -99,7 +108,7 @@ void Sound_Update3DPositions(void)
 // For non-zero Buffer, also rewind to position 0. Uses g_lpDSBuffer[Buffer][0]
 // (only channel 0 is populated in this binary's pipeline — FillBuffer is a no-op).
 // IDA: FUN_00404C60
-void __cdecl Sound_StopBuffer(int Buffer) { Platform::GetAudio().Stop(Buffer); }
+void __cdecl Sound_StopBuffer(int Buffer) { if (g_EnableSound && Buffer >= 0) Platform::GetAudio().Stop(Buffer); }
 
 // waveIO__dtor @ 0x00404E40 — CWaveFile ~dtor (calls waveIO__CloseWaveFile)
 

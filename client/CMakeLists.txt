@@ -22,7 +22,21 @@ project(mu97k LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(MuPlatform)
+if(MU_PLATFORM_ONLY)
+    if(NOT MU_PLATFORM_BACKEND STREQUAL "SDL3")
+        message(FATAL_ERROR "MU_PLATFORM_ONLY requiere SDL3")
+    endif()
+    include(MuSDLDependencies)
+    add_subdirectory(src/Platform/SDL3)
+    return()
+endif()
 include(MuCompilerOptions)
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    include(MuSDLDependencies)
+    add_subdirectory(src/Platform/SDL3)
+else()
+    set(MU_MINIAUDIO_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/miniaudio")
+endif()
 
 add_subdirectory(lib/libjpeg)
 
@@ -48,6 +62,14 @@ set(MU_SOURCES
     src/UI/UIState.cpp
     src/Local/ClientText.cpp
     src/Core/Window.cpp
+    src/Platform/Win32/Win32NativeBridge.cpp
+    src/Platform/SDL3/SDLWindow.cpp
+    src/Platform/SDL3/SDLInput.cpp
+    src/Platform/SDL3/SDLGLContext.cpp
+    src/Platform/SDL3/SDLTimer.cpp
+    src/Platform/SDL3/SDLFileSystem.cpp
+    src/Platform/SDL3/SDLNativeBridge.cpp
+    src/Platform/SDL3/SDLAudio.cpp
     src/Platform/Win32/Win32Audio.cpp
     src/Platform/Win32/Win32Timer.cpp
     src/Platform/Win32/Win32Input.cpp
@@ -346,6 +368,8 @@ set(MU_HEADERS
     src/UI/GoldenArcher.h
     src/Core/Window.h
     src/Platform/CompilerCompat.h
+    src/Platform/NativeBridge.h
+    src/Platform/SDL3/SDLPlatform.h
     src/Platform/IAudio.h
     src/Platform/ITimer.h
     src/Platform/IInput.h
@@ -434,6 +458,11 @@ add_library(mu97k_res OBJECT ${MU_RESOURCES})
 set_target_properties(mu97k_res PROPERTIES FOLDER lib)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src" FILES ${MU_RESOURCES})
 
+# Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
+list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio)\\.cpp$")
+endif()
 add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src"
@@ -456,7 +485,7 @@ set_target_properties(mu97k PROPERTIES
 target_include_directories(mu97k PRIVATE
     src
     lib/libjpeg/jpeg-6b
-    lib/miniaudio
+    ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.
@@ -493,6 +522,11 @@ set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
+
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    target_link_libraries(mu97k PRIVATE mu_platform_sdl)
+    target_compile_definitions(mu97k PRIVATE MU_MINIAUDIO_LINKED)
+endif()
 
 target_link_libraries(mu97k PRIVATE
     jpeg

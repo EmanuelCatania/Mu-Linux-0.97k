@@ -27,6 +27,8 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Platform/NativeBridge.h"
+#include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Platform/IFileSystem.h"
@@ -776,7 +778,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     MSG msg = {};
     for (;;)
     {
-        if (PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE))
+        Platform::GetWindow().ServiceEvents();
+        if (Platform::GetWindow().CloseRequested()) break;
+        if (!Platform::GetWindow().UsesPlatformPump() && PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE))
         {
             if (!GetMessageA(&msg, NULL, 0, 0))
                 break; // WM_QUIT
@@ -788,8 +792,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             // Alt + código numérico (Alt+64 = '@'), que llegan como
             // WM_SYSKEYDOWN mientras se mantiene Alt.
             TranslateMessage(&msg);
-            if (msg.message != WM_SYSKEYDOWN && msg.message != WM_SYSKEYUP)
-                DispatchMessageA(&msg);
+            Platform::DispatchNativeMessage(msg);
         }
         else
         {
@@ -820,6 +823,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // IDA WinMain 0x42207B: la limpieza de salida va acá, después del bucle de
     // mensajes (DestroyWindow 0x4145C0: fuentes, widgets y la música).
     Game_DestroyWindow();
+    Platform::GetWindow().Shutdown();
 
     return (int)msg.wParam;
 }

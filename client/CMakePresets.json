@@ -28,22 +28,44 @@
       "binaryDir": "${sourceDir}/build/linux-x86-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "MU_PLATFORM_BACKEND": "Pendiente"
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "MU_PLATFORM_ONLY": "ON"
       },
       "generator": "Unix Makefiles",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-x86.cmake",
-      "description": "Pendiente de la elección e implementación del backend Linux; aún no compila."
+      "description": "Biblioteca SDL3 x86; el ejecutable completo aún depende de audio, red, fuentes y otros usos Windows."
     },
     {
       "name": "linux-x86-release",
       "binaryDir": "${sourceDir}/build/linux-x86-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "MU_PLATFORM_BACKEND": "Pendiente"
+        "MU_PLATFORM_BACKEND": "SDL3",
+        "MU_PLATFORM_ONLY": "ON"
       },
       "generator": "Unix Makefiles",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-x86.cmake",
-      "description": "Pendiente de la elección e implementación del backend Linux; aún no compila."
+      "description": "Biblioteca SDL3 x86; el ejecutable completo aún depende de audio, red, fuentes y otros usos Windows."
+    },
+    {
+      "name": "windows-sdl3-x86-debug",
+      "binaryDir": "${sourceDir}/build/windows-sdl3-x86-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MU_PLATFORM_BACKEND": "SDL3"
+      },
+      "architecture": "Win32",
+      "toolset": "v143"
+    },
+    {
+      "name": "windows-sdl3-x86-release",
+      "binaryDir": "${sourceDir}/build/windows-sdl3-x86-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MU_PLATFORM_BACKEND": "SDL3"
+      },
+      "architecture": "Win32",
+      "toolset": "v143"
     }
   ],
   "buildPresets": [
@@ -65,6 +87,16 @@
     {
       "name": "linux-x86-release",
       "configurePreset": "linux-x86-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-sdl3-x86-debug",
+      "configurePreset": "windows-sdl3-x86-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-sdl3-x86-release",
+      "configurePreset": "windows-sdl3-x86-release",
       "configuration": "Release"
     }
   ]

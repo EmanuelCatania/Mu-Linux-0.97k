@@ -33,7 +33,7 @@ class Win32Audio final : public IAudio {
 public:
     int32_t Initialize(void* window) override;
     int32_t CreateBuffer(int Buffer, const char* strFileName, int MaxChannel, bool Enable) override;
-    int32_t Play(int Buffer, uint32_t Object, bool bLooped) override;
+    int32_t Play(int Buffer, uint32_t Channel, bool bLooped) override;
     void Stop(int Buffer) override;
     int32_t ReleaseBuffer(int Buffer) override;
     void SetVolume(int slot, int channel, int32_t hundredthsDb) override;
@@ -301,51 +301,15 @@ fail_release:
 
 
 
-static int SetHall(int /*Buffer*/) { return 1; }
+// SetHall (0x00404BB0) no tiene efectos en el binario.
 
 // IDA: PlayBuffer (0x00404BC0)
-int32_t Win32Audio::Play(int Buffer, uint32_t Object, bool bLooped)
+int32_t Win32Audio::Play(int Buffer, uint32_t Channel, bool bLooped)
 {
-    if (!g_EnableSound)   return S_OK;
-    if (Buffer < 0)       return S_OK;
-    if (Buffer >= 420)    return S_OK;
-
-    // Guard del port (IDA no lo tiene): g_lpDSBuffer es [420][4], asi que un
-    // BufferChannel fuera de rango indexaria memoria ajena.
-    if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) {
-        BufferChannel[Buffer] = 0;
-    }
-
-    LPDIRECTSOUNDBUFFER pBuf = g_lpDSBuffer[Buffer][BufferChannel[Buffer]];
-    if (!pBuf) return E_FAIL;   // IDA devuelve 0x80004005
-
-    DWORD flags = bLooped ? DSBPLAY_LOOPING : 0;
-    HRESULT hr = pBuf->Play(0, 0, flags);
-    if (FAILED(hr)) return hr;
-
-    if (Enable3DSound[Buffer]) {
-        Object3DSound[Buffer][BufferChannel[Buffer]] = Object;
-        SetHall(Buffer);
-    }
-
-    // OJO: NO incrementar BufferChannel aca.
-    //
-    // IDA 0x00404BC0 hace solo el wrap, sin INC previo:
-    //     if (BufferChannel[Buffer] >= MaxBufferChannel[Buffer]) BufferChannel[Buffer] = 0;
-    // O sea el canal queda clavado en 0 — que es el UNICO que existe, porque
-    // FillBuffer (0x00404A00) es `return 0` y nunca crea los canales 1..3.
-    //
-    // Un port previo agrego un `BufferChannel[Buffer]++` aca ("el disassembly
-    // muestra un INC, lo restauro") y eso mataba el audio: al rotar al canal 1
-    // el puntero es NULL, la funcion retorna ANTES del wrap y el slot queda
-    // trabado en 1 para siempre. Efecto: todo sonido cargado con MaxChannel>=2
-    // (pasos 8-11, golpes 50-56, swing 40-42, arco 65-67, gritos 75-80, magias
-    // 86-92) sonaba UNA vez y despues enmudecia; los de MaxChannel==1 (jewel 49,
-    // herrero 120, ambientes) seguian andando porque 1 >= 1 los devolvia a 0.
-    if (BufferChannel[Buffer] >= MaxBufferChannel[Buffer]) {
-        BufferChannel[Buffer] = 0;
-    }
-    return S_OK;
+    if (Buffer < 0 || Buffer >= 420 || Channel >= 4) return E_FAIL;
+    LPDIRECTSOUNDBUFFER buffer = g_lpDSBuffer[Buffer][Channel];
+    if (!buffer) return E_FAIL;
+    return buffer->Play(0, 0, bLooped ? DSBPLAY_LOOPING : 0);
 }
 
 // IDA: Sound_StopBuffer (0x00404C60)
@@ -382,12 +346,6 @@ int32_t Win32Audio::ReleaseBuffer(int Buffer)
       }
     }
   }
-  MaxBufferChannel[Buffer] = 0;
-  Object3DSound[Buffer][0] = 0;
-  Object3DSound[Buffer][1] = 0;
-  Object3DSound[Buffer][2] = 0;
-  Object3DSound[Buffer][3] = 0;
-  if (SoundLoadCount > 0) --SoundLoadCount;
   return 0;
 }
 
