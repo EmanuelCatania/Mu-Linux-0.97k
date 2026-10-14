@@ -262,9 +262,8 @@ int32_t Win32Audio::CreateBuffer(int Buffer, const char* strFileName,
         LPDIRECTSOUND3DBUFFER* pp3D = &g_lpDS3DBuffer[Buffer][0];
         hr = (*ppBuf)->QueryInterface(IID_IDirectSound3DBuffer, (LPVOID*)pp3D);
         if (SUCCEEDED(hr) && *pp3D) {
-            // Far-away deferred position so sample is inaudible until the
-            // per-frame Sound_UpdatePositions repositions it near the listener.
-            (*pp3D)->SetPosition(-2.0f, 0.0f, 2.0f, DS3D_DEFERRED);
+            // IDA: CreateStaticBuffer (0x00404650), posición inicial inmediata.
+            (*pp3D)->SetPosition(-2.0f, 0.0f, 2.0f, DS3D_IMMEDIATE);
         }
     }
 
@@ -427,7 +426,8 @@ void __fastcall waveIO__dtor(int ecx, int /*edx*/, BYTE param_1) {
 void Win32Audio::SetVolume(int slot, int channel, int32_t hundredthsDb) {
     if (g_lpDSBuffer[slot][channel]) g_lpDSBuffer[slot][channel]->SetVolume(hundredthsDb);
 }
+// IDA: Set3DSoundPosition (0x00404CD0): coordenadas ya transformadas, aplicación inmediata.
 void Win32Audio::SetPosition(int slot, int channel, float x, float y, float z) {
     if (g_lpDS3DBuffer[slot][channel])
-        g_lpDS3DBuffer[slot][channel]->SetPosition(x, y, z, DS3D_DEFERRED);
+        g_lpDS3DBuffer[slot][channel]->SetPosition(x, y, z, DS3D_IMMEDIATE);
 }

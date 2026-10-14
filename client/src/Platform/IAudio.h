@@ -11,6 +11,7 @@ public:
     virtual void Stop(int slot) = 0;
     virtual int32_t ReleaseBuffer(int slot) = 0;
     virtual void SetVolume(int slot, int channel, int32_t hundredthsDb) = 0;
+    // Espacio del oyente: (-X rotada, 0, -Y rotada), escala 0.004; aplicar inmediatamente.
     virtual void SetPosition(int slot, int channel, float x, float y, float z) = 0;
     virtual void Shutdown() = 0;
 };
