@@ -1,0 +1,47 @@
+name: build-sdl3
+on:
+  push:
+    branches: [ "fase/*", "platform/**", "main" ]
+  pull_request:
+    branches: [ "fase/*", "main" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    name: SDL3 (${{ matrix.target.name }}, ${{ matrix.config }})
+    runs-on: ${{ matrix.target.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: windows-x86, os: windows-latest }
+          - { name: linux-x86-biblioteca, os: ubuntu-22.04 }
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar fuentes
+        run: python tools/check_cmake_sources.py
+      - name: Dependencias de sistema Linux x86
+        if: runner.os == 'Linux'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libasound2-dev:i386 ninja-build pkg-config
+      - name: Configurar Windows
+        if: runner.os == 'Windows'
+        run: cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
+      - name: Configurar biblioteca Linux
+        if: runner.os == 'Linux'
+        env:
+          PKG_CONFIG_LIBDIR: /usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
+        run: cmake -S . -B build -G Ninja -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=ON -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+      - name: Compilar
+        run: cmake --build build --config ${{ matrix.config }} --parallel 4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdl3-${{ matrix.target.name }}-${{ matrix.config }}
+          path: |
+            bin/Client/main.exe
+            build/src/Platform/SDL3/libmu_platform_sdl.a
+          if-no-files-found: error

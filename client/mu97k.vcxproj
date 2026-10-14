@@ -127,6 +127,8 @@
     <ClInclude Include="src\UI\GoldenArcher.h" />
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Platform\CompilerCompat.h" />
+    <ClInclude Include="src\Platform\NativeBridge.h" />
+    <ClInclude Include="src\Platform\SDL3\SDLPlatform.h" />
     <ClInclude Include="src\Platform\ITimer.h" />
     <ClInclude Include="src\Platform\IInput.h" />
     <ClInclude Include="src\Platform\IWindow.h" />
@@ -217,6 +219,13 @@
     <ClCompile Include="src\UI\UIState.cpp" />
     <ClCompile Include="src\Local\ClientText.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32NativeBridge.cpp" />
+    <ClCompile Include="src\Platform\SDL3\SDLWindow.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLInput.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLGLContext.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLTimer.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLFileSystem.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLNativeBridge.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Window.cpp" />

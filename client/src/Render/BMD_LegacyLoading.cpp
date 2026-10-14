@@ -3,6 +3,7 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -321,8 +322,11 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
     {
         static int s_pumpCounter = 0;
         if ((s_pumpCounter++ & 0x07) == 0) {  // cada 8 BMDs
+            // SDL_PumpEvents drena también WSAAsyncSelect; g_WorldLoading sigue
+            // difiriendo el despacho de paquetes hasta crear al héroe.
+            Platform::GetWindow().ServiceEvents();
             MSG msg;
-            for (int i = 0; i < 16 && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE); ++i) {
+            for (int i = 0; !Platform::GetWindow().UsesPlatformPump() && i < 16 && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE); ++i) {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }

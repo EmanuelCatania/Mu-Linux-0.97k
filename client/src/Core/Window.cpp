@@ -7,8 +7,9 @@
 #include "Core/Window.h"
 #include "Entity/CharacterAttributeView.h"
 #include "Local/ClientText.h"
-#include "Platform/Win32/Win32Window.h"
-#include "Platform/Win32/Win32GLContext.h"
+#include "Platform/NativeBridge.h"
+#include "Platform/IWindow.h"
+#include "Platform/IGLContext.h"
 
 CWindow gWindow;
 
@@ -64,13 +65,13 @@ void CWindow::ChangeMode(bool windowMode, bool borderless, DWORD width, DWORD he
 
 void CWindow::RestoreDisplay() { Platform::GetWindow().RestoreDisplay(); }
 void CWindow::RequestCloseApplication() { Platform::GetWindow().RequestCloseApplication(); }
-HWND CWindow::GetHwnd() const { return Platform::GetWin32Window().GetHwnd(); }
-HINSTANCE CWindow::GetInstance() const { return Platform::GetWin32Window().GetInstance(); }
+HWND CWindow::GetHwnd() const { return Platform::NativeWindow(); }
+HINSTANCE CWindow::GetInstance() const { return Platform::NativeInstance(); }
 
 // IDA: Window_Create (0x0041DFF0). WndProc conserva el despacho existente.
 bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 {
-    Platform::GetWin32Window().BindDispatch(hInst, wndProc);
+    Platform::BindNativeDispatch(hInst, wndProc);
     return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless});
 }
 
@@ -90,5 +91,5 @@ void CWindow::ReleaseOpenGL()
 }
 
 void CWindow::Present() { Platform::GetGLContext().Present(); }
-HDC CWindow::GetHdc() const { return Platform::GetWin32GLContext().GetHdc(); }
-HGLRC CWindow::GetGLContext() const { return Platform::GetWin32GLContext().GetHandle(); }
+HDC CWindow::GetHdc() const { return Platform::NativeDC(); }
+HGLRC CWindow::GetGLContext() const { return Platform::NativeGLContext(); }
