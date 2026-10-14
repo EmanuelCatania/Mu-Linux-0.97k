@@ -54,7 +54,6 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "MU_PLATFORM_BACKEND": "SDL3"
       },
-      "generator": "Visual Studio 17 2022",
       "architecture": "Win32",
       "toolset": "v143"
     },
@@ -65,7 +64,6 @@
         "CMAKE_BUILD_TYPE": "Release",
         "MU_PLATFORM_BACKEND": "SDL3"
       },
-      "generator": "Visual Studio 17 2022",
       "architecture": "Win32",
       "toolset": "v143"
     }

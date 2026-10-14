@@ -4,7 +4,7 @@ set(SDL_SHARED OFF CACHE BOOL "" FORCE)
 set(SDL_STATIC ON CACHE BOOL "" FORCE)
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
-# Primera validaciÃ³n Linux: X11. Wayland se verifica en una tanda propia.
+# Primera validación Linux: X11. Wayland se verifica en una tanda propia.
 set(SDL_WAYLAND OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(mu_sdl
     URL https://github.com/libsdl-org/SDL/archive/7f3ae3d57459e59943a4ecfefc8f6277ec6bf540.tar.gz)
