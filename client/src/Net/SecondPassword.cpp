@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
@@ -1430,7 +1431,7 @@ undefined4 __cdecl SecondPassword_CancelReturn(void)
         do {
             int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar3 == -1) {
-                iVar6 = WSAGetLastError();
+                iVar6 = Platform::GetSocket().LastError();
                 if (iVar6 != 0x2733) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
                 if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
                 memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar8);

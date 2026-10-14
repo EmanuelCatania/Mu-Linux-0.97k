@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/IInput.h"
 #include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
@@ -88,19 +89,19 @@ void __cdecl putc(int ch, int *fp) {
 // clears param_1+8, returns 1. On failure: logs error, shows MessageBox, returns 0.
 // IDA: CWsctlc::Startup (0x0043DB30)
 void __cdecl CWsctlc_Startup(int param_1) {
-    WSADATA wsaData;
-    int r = WSAStartup(0x202, &wsaData);
+    uint16_t socketVersion = 0;
+    int r = Platform::GetSocket().Startup(0x202, socketVersion);
     if (r != 0) {
         CErrorReport_Write(&DAT_055c9bf0, "Winsock DLL Initialize error");
         MessageBoxA(NULL, "Winsock error", "IError", 0);
         return;
     }
-    if (((char)wsaData.wVersion == '\x02') && ((char)(wsaData.wVersion >> 8) == '\x02')) {
+    if (((char)socketVersion == '\x02') && ((char)(socketVersion >> 8) == '\x02')) {
         *(unsigned int*)(param_1 + 8) = 0;
-        *(unsigned int*)(param_1 + 4) = wsaData.wVersion & 0xffff;
+        *(unsigned int*)(param_1 + 4) = socketVersion & 0xffff;
         CWsctlc__LogPrintOn();
     } else {
-        WSACleanup();
+        Platform::GetSocket().Cleanup();
         CErrorReport_Write(&DAT_055c9bf0, "Winsock version low");
         MessageBoxA(NULL, "Winsock version error", "IError", 0);
     }
@@ -110,12 +111,12 @@ void __cdecl CWsctlc_Startup(int param_1) {
 // Creates TCP socket, stores in *(this+8). Logs and shows MessageBox on failure.
 // IDA: CWsctlc::Create (0x0043DBF0)
 void __cdecl CWsctlc_Create(void* ctx, int param_1) {
-    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    SOCKET s = Platform::GetSocket().CreateTcp(0);
     *(SOCKET*)((char*)ctx + 8) = s;
     g_bGameServerConnected = 0;
     if (s == INVALID_SOCKET) {
         char buf[128];
-        int err = WSAGetLastError();
+        int err = Platform::GetSocket().LastError();
         wsprintfA(buf, "Socket error: %d", err);
         CErrorReport_Write(&DAT_055c9bf0, buf);
         MessageBoxA(NULL, buf, "IError", 0);
@@ -874,22 +875,18 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     if (ctx == nullptr || ip == nullptr) return 0;
 
     // 1. Resolve IP (dotted or hostname)
-    unsigned long addr = inet_addr(ip);
-    if (addr == INADDR_NONE) {
-        HOSTENT* h = gethostbyname(ip);
-        if (h == nullptr || h->h_addr_list == nullptr || h->h_addr_list[0] == nullptr) {
-            char buf[160];
-            wsprintfA(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, WSAGetLastError());
-            CErrorReport_Write(&DAT_055c9bf0, buf);
-            return 0;
-        }
-        addr = *(unsigned long*)h->h_addr_list[0];
+    uint32_t addr;
+    if (!Platform::GetSocket().ResolveIPv4(ip, addr)) {
+        char buf[160];
+        wsprintfA(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, Platform::GetSocket().LastError());
+        CErrorReport_Write(&DAT_055c9bf0, buf);
+        return 0;
     }
 
     // 2. Ensure socket exists (CWsctlc_Create already created one into ctx+8)
     SOCKET s = *(SOCKET*)((char*)ctx + 8);
     if (s == INVALID_SOCKET || s == 0) {
-        s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        s = Platform::GetSocket().CreateTcp(IPPROTO_TCP);
         if (s == INVALID_SOCKET) {
             CErrorReport_Write(&DAT_055c9bf0, "socket() failed");
             return 0;
@@ -900,20 +897,14 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     // 3. Put socket in non-blocking mode so connect() returns WSAEWOULDBLOCK
     //    instead of blocking the game thread. WSAAsyncSelect implicitly switches
     //    to non-blocking; we keep the ordering the binary uses (connect first, then async).
-    sockaddr_in sa = {};
-    sa.sin_family = AF_INET;
-    sa.sin_port   = htons(port);
-    sa.sin_addr.S_un.S_addr = addr;
-
-    // Arm async notifications BEFORE connect so FD_CONNECT is delivered.
     HWND hWnd = *(HWND*)ctx;
     if (hWnd != nullptr) {
-        WSAAsyncSelect(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CLOSE);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
+        Platform::GetSocket().NotifyWindow(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CLOSE);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
     }
 
-    int r = connect(s, (sockaddr*)&sa, sizeof(sa));
+    int r = Platform::GetSocket().ConnectIPv4(s, addr, port);
     if (r == SOCKET_ERROR) {
-        int err = WSAGetLastError();
+        int err = Platform::GetSocket().LastError();
         if (err != WSAEWOULDBLOCK) {
             char buf[160];
             wsprintfA(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);

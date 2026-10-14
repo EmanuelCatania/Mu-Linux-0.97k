@@ -1,6 +1,7 @@
 // Net_Disconnect.cpp
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/MuEmu.h"
@@ -12,7 +13,7 @@
 int __cdecl Net_Disconnect(int ctx) {
     (void)ctx;
     if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
-        closesocket((SOCKET)SocketClientSocket);
+        Platform::GetSocket().Close((SOCKET)SocketClientSocket);
         SocketClientSocket = (DWORD)INVALID_SOCKET;
     }
     return 0;

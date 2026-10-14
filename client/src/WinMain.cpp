@@ -29,6 +29,7 @@
 #include "stdafx.h"
 #include "Platform/NativeBridge.h"
 #include "Platform/IWindow.h"
+#include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Platform/IFileSystem.h"
 #include "Item/ItemDefines.h"
@@ -658,8 +659,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // 16: WSAStartup — obligatorio antes de cualquier operación de socket
     {
-        WSADATA wsaData;
-        WSAStartup(MAKEWORD(2, 2), &wsaData);
+        uint16_t socketVersion = 0;
+        Platform::GetSocket().Startup(0x0202, socketVersion);
     }
 
     // 17: GameGuard watchdog timer (20s period)

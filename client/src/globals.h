@@ -1046,7 +1046,7 @@ extern char    DAT_083a45d8[0x3600];   // server list buffer (stride 0x21e, 24 e
 extern char    DAT_07d52c34[24 * 300];
 
 // Login/scene init flags (byte-sized)
-extern char    DAT_083a7ac8;
+extern DWORD   DAT_083a7ac8;   // IDA: unk_83A7AC8 (0x083A7AC8), GetTickCount al empezar a conectar
 extern char    DAT_083a7acc;
 // CurrentCameraAngle[3] contiguous (see globals.cpp).
 extern float   CurrentCameraAngle[3];

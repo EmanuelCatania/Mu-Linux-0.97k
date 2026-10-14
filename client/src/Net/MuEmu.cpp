@@ -3,6 +3,7 @@
 // port's GameServer/HackCheck.cpp.  See MuEmu.h for the key-derivation story.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Net/MuEmu.h"
 #include <winsock2.h>
 
@@ -169,5 +170,5 @@ extern "C" int __stdcall MuEmu_send_hook(SOCKET s, const char* buf, int len, int
             MuEmu::EncryptSend((BYTE*)(uintptr_t)buf, len);
         }
     }
-    return ::send(s, buf, len, flags);
+    return Platform::GetSocket().Send(s, buf, len, flags);
 }

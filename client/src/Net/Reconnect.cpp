@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Net/Network.h"
@@ -79,7 +80,7 @@ void CReconnect::GiveUp()
     m_Status = STATUS_DISCONNECT;
     DAT_083a7c24 = 0;   // ErrorMessage
     if (SocketClientSocket != 0xffffffff) {
-        closesocket((SOCKET)SocketClientSocket);
+        Platform::GetSocket().Close((SOCKET)SocketClientSocket);
         SocketClientSocket = (DWORD)INVALID_SOCKET;
     }
     extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
@@ -115,14 +116,14 @@ void CReconnect::Tick()
         if (!m_LoginSent) { SendLogin(); break; }      // no llegó el F1/00
         // Sin respuesta: empezar de nuevo.
         if (SocketClientSocket != 0xffffffff) {
-            closesocket((SOCKET)SocketClientSocket);
+            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
             SocketClientSocket = (DWORD)INVALID_SOCKET;
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;
     default:
         if (SocketClientSocket != 0xffffffff) {
-            closesocket((SOCKET)SocketClientSocket);
+            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
             SocketClientSocket = (DWORD)INVALID_SOCKET;
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);

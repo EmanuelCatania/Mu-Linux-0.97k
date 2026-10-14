@@ -1,6 +1,7 @@
 // SoundManager.cpp — CSound. Ver SoundManager.h.
 
 #include "stdafx.h"
+#include "Platform/IAudio.h"
 #include "Sound/SoundManager.h"
 
 #define MINIAUDIO_IMPLEMENTATION
@@ -20,9 +21,9 @@ long CSound::LevelToDirectSound(int level)
 {
     // Fórmula del DLL (CSound::UpdateSoundVolumeLevel): 0 es mudo y cada nivel
     // suma 6,25 dB hasta llegar a 0 dB (sin atenuación) en el 9.
-    if (level <= 0) return DSBVOLUME_MIN;
+    if (level <= 0) return -10000;
     long vol = 625 * (level - 1) - 5000;
-    return vol > DSBVOLUME_MAX ? DSBVOLUME_MAX : vol;
+    return vol > 0 ? 0 : vol;
 }
 
 float CSound::LevelToGain(int level)
@@ -52,8 +53,7 @@ void CSound::ApplySoundVolume(int buffer)
 {
     if (!g_EnableSound || buffer < 0 || buffer >= 420) return;
     for (int channel = 0; channel < 4; ++channel) {
-        if (g_lpDSBuffer[buffer][channel])
-            g_lpDSBuffer[buffer][channel]->SetVolume(LevelToDirectSound(m_SoundLevel));
+        Platform::GetAudio().SetVolume(buffer, channel, LevelToDirectSound(m_SoundLevel));
     }
 }
 
