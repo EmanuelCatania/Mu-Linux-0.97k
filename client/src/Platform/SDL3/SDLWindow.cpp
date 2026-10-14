@@ -1,5 +1,6 @@
 #include "Platform/SDL3/SDLPlatform.h"
 #include "Platform/IWindow.h"
+#include "Platform/ISocket.h"
 #include <string>
 namespace Platform {
 namespace {
@@ -48,6 +49,7 @@ public:
     }
     void ServiceEvents() override {
         ServiceSDLEvents(true);
+        if (!closing) GetSocket().Poll();
     }
     bool UsesPlatformPump() const override { return true; }
     bool CloseRequested() const override { return closing; }

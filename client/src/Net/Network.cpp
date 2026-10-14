@@ -196,7 +196,7 @@ void CNetwork::EndConnectServerSession()
 // C1 04 F4 02 (PMSG_SERVER_LIST_RECV), plano. Sale una sola vez por sesión.
 void CNetwork::RequestServerList()
 {
-    if (!m_ConnectServerMode || m_ServerListRequested) return;
+    if (!m_ConnectServerMode || m_ServerListRequested || !Platform::GetSocket().IsConnected(SocketClientSocket)) return;
     const BYTE req[4] = { 0xC1, 0x04, 0xF4, 0x02 };
     SendToConnectServer(req, 4);
     m_ServerListRequested = true;
@@ -210,7 +210,7 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
 {
     if (SocketClientSocket == 0xffffffff) return;
     if (len <= 0) return;
-    if (SocketClientSendBufferLength > 0) {
+    if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len <= 0x2000 - SocketClientSendBufferLength) {
             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);
             SocketClientSendBufferLength += len;
@@ -262,7 +262,7 @@ int CNetwork::SendRaw(const char* buf, int len)
     memcpy(s_scratch, buf, len);
     MuEmu::EncryptSend(s_scratch, len);
 
-    if (SocketClientSendBufferLength > 0) {
+    if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len > 0x2000 - SocketClientSendBufferLength) {
             Net_Disconnect((int)(uintptr_t)SocketClient);
             return -1;

@@ -70,6 +70,7 @@ set(MU_SOURCES
     src/Platform/SDL3/SDLFileSystem.cpp
     src/Platform/SDL3/SDLNativeBridge.cpp
     src/Platform/SDL3/SDLAudio.cpp
+    src/Platform/SDL3/SDLSocket.cpp
     src/Platform/Win32/Win32Audio.cpp
     src/Platform/Win32/Win32Timer.cpp
     src/Platform/Win32/Win32Input.cpp
@@ -461,7 +462,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src" FILES ${MU_RESO
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
-    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio)\\.cpp$")
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
 endif()
 add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
 
