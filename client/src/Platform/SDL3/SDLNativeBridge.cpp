@@ -2,31 +2,23 @@
 #include "Platform/NativeBridge.h"
 #include "Platform/SDL3/SDLPlatform.h"
 #include "Platform/IWindow.h"
+#include "Platform/ISocket.h"
 #include <GL/gl.h>
 void Input_OnEvent(const Platform::InputEvent& event);
 namespace Platform {
 namespace {
 HINSTANCE instance = nullptr;
 WNDPROC gameProcedure = nullptr;
-// TEMPORAL: WSAAsyncSelect y timers hasta extraer el poll. No subclass de HWND.
-bool SDLCALL MessageHook(void*, MSG* message) {
-    if (message->hwnd != NativeWindow()) return true;
-    switch (message->message) {
-    case WM_USER: case WM_USER + 1: case WM_TIMER:
-        gameProcedure(message->hwnd, message->message, message->wParam, message->lParam);
-        return false;
-    case WM_CLOSE:
-        GetWindow().RequestCloseApplication();
-        return false;
-    default: return true;
-    }
+// El poll portable entrega los mismos eventos al dispatcher del cliente.
+void SocketEvent(uint16_t event, uint16_t error) {
+    if (gameProcedure && NativeWindow()) gameProcedure(NativeWindow(), WM_USER, 0, MAKELPARAM(event, error));
 }
 void Close() { if (gameProcedure && NativeWindow()) gameProcedure(NativeWindow(), WM_DESTROY, 0, 0); }
 }
 void BindNativeDispatch(HINSTANCE value, WNDPROC procedure) {
     instance = value; gameProcedure = procedure;
     BindSDLCallbacks(Input_OnEvent, Close);
-    SDL_SetWindowsMessageHook(MessageHook, nullptr);
+    GetSocket().BindEvents(SocketEvent);
 }
 // TEMPORAL: GDI y consumidores heredados acceden sólo por la fachada CWindow.
 HWND NativeWindow() {

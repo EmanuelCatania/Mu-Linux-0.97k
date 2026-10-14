@@ -9,6 +9,6 @@ void BindSDLCallbacks(InputSink input, CloseSink close);
 SDL_Window* SDLWindow();
 void InstallSDLInput();
 void RemoveSDLInput();
-// El pump SDL entrega los mensajes Windows al hook temporal de WSAAsyncSelect.
+// Bombeo de input; IWindow::ServiceEvents también sondea el transporte.
 void ServiceSDLEvents(bool pumpNative);
 }

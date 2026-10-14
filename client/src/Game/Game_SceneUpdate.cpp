@@ -739,10 +739,12 @@ state_fail_common:
                 Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)
                 return 0;
 
-            // Login error codes 0x13-0x24: show error, back to CredentialInput
-            case 0x13: case 0x15: case 0x16: case 0x17: case 0x18:
+            // IDA: Game_SceneUpdate (0x0051F900), errores de login 21..38.
+            // El estado 19 espera la respuesta: no abre un mensaje de error.
+            case 0x15: case 0x16: case 0x17: case 0x18:
             case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e:
             case 0x1f: case 0x20: case 0x21: case 0x22: case 0x23: case 0x24:
+            case 0x25: case 0x26:
                 if (respCode == 0x15) {
                     DAT_07e11d78 = 1;
                 } else {

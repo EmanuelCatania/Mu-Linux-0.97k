@@ -540,25 +540,16 @@ int __fastcall NetContext_ClearSendBuffer(int param_1)
 // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
 int __fastcall CWsctlc_FDWriteSend(int param_1)
 {
-    int iVar2 = 0;
-    if (0 < *(int *)(param_1 + 0x200c)) {
-        int iVar1;
-        do {
-            iVar1 = send(*(SOCKET *)(param_1 + 8),
-                         (char *)(iVar2 + param_1 + 0xc),
-                         *(int *)(param_1 + 0x200c) - iVar2, 0);
-            if (iVar1 == -1) {
-                int err = Platform::GetSocket().LastError();
-                if (err == WSAEWOULDBLOCK) return 1;
-                CWsctlc_Close(param_1);
-                return 0;
-            }
-            if (iVar1 < 1) { CWsctlc_Close(param_1); return 0; }
-            if (*(int *)(param_1 + 0x4014) != 0) FUN_0043de60();
-            iVar2 += iVar1;
-            iVar1 = *(int *)(param_1 + 0x200c) - iVar1;
-            *(int *)(param_1 + 0x200c) = iVar1;
-        } while (0 < iVar1);
+    char* buffer = (char*)(param_1 + 0xc);
+    int& pending = *(int*)(param_1 + 0x200c);
+    while (pending > 0) {
+        const int sent = send(*(SOCKET*)(param_1 + 8), buffer, pending, 0);
+        if (sent == -1 && Platform::GetSocket().LastError() == WSAEWOULDBLOCK) return 1;
+        if (sent <= 0) { CWsctlc_Close(param_1); return 0; }
+        if (*(int*)(param_1 + 0x4014) != 0) FUN_0043de60();
+        pending -= sent;
+        // Conserva sólo la cola no enviada, incluso si el siguiente send bloquea.
+        if (pending > 0) memmove(buffer, buffer + sent, pending);
     }
     return 1;
 }
