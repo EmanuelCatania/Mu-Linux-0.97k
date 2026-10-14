@@ -1095,7 +1095,7 @@ char     DAT_083a45d8[0x3600] = {};  // 13824 bytes covers the original 0x3502 s
 // (CCCustomServerListSend del ConnectServer: {WORD ServerCode; char Name[32]}).
 // 24 grupos * 300 bytes de stride.
 char     DAT_07d52c34[24 * 300] = {};
-char     DAT_083a7ac8  = 0;
+DWORD    DAT_083a7ac8  = 0;   // 32 bits: guarda GetTickCount (Game_SceneUpdate 0x0051F900)
 char     DAT_083a7acc  = 0;
 // CurrentCameraAngle[3] @ 0x083a7ad0 — 3 floats (pitch, yaw, roll).
 // Prior definition used `char` which would truncate float writes to 1 byte
