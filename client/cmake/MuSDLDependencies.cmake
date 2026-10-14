@@ -15,3 +15,14 @@ FetchContent_Declare(mu_miniaudio
 FetchContent_MakeAvailable(mu_miniaudio)
 # SDL enlaza la biblioteca miniaudio; Win32 conserva la implementación de CSound.
 set(MU_MINIAUDIO_INCLUDE_DIR "${mu_miniaudio_SOURCE_DIR}")
+
+# FreeType se construye desde fuentes, también en Linux -m32; sin SDL_ttf.
+set(FT_DISABLE_ZLIB ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BZIP2 ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BROTLI ON CACHE BOOL "" FORCE)
+FetchContent_Declare(mu_freetype
+    URL https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz
+    URL_HASH SHA256=174d9e53402e1bf9ec7277e22ec199ba3e55a6be2c0740cb18c0ee9850fc8c34)
+FetchContent_MakeAvailable(mu_freetype)
