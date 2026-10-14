@@ -209,6 +209,14 @@ void CNetwork::RequestServerList()
 void CNetwork::SendToConnectServer(const BYTE* data, int len)
 {
     if (SocketClientSocket == 0xffffffff) return;
+    if (len <= 0) return;
+    if (SocketClientSendBufferLength > 0) {
+        if (len <= 0x2000 - SocketClientSendBufferLength) {
+            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);
+            SocketClientSendBufferLength += len;
+        } else Net_Disconnect((int)(uintptr_t)SocketClient);
+        return;
+    }
     unsigned int remain = (unsigned int)len;
     int off = 0;
     while ((int)remain > 0) {
@@ -254,6 +262,15 @@ int CNetwork::SendRaw(const char* buf, int len)
     memcpy(s_scratch, buf, len);
     MuEmu::EncryptSend(s_scratch, len);
 
+    if (SocketClientSendBufferLength > 0) {
+        if (len > 0x2000 - SocketClientSendBufferLength) {
+            Net_Disconnect((int)(uintptr_t)SocketClient);
+            return -1;
+        }
+        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, s_scratch, len);
+        SocketClientSendBufferLength += len;
+        return 0;
+    }
     int sent = 0;
     int rem  = len;
     do {
