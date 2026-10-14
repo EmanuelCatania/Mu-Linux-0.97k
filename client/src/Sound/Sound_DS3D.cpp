@@ -87,8 +87,8 @@ void Sound_Update3DPositions(void)
             offset[1] *= unitScale;
             offset[2] *= unitScale;
 
-            // IDA: Sound_Update3DPositions (0x00404CD0): mismo espacio y actualización diferida.
-            Platform::GetAudio().SetPosition(slot, ch, -offset[0], 0.0f, -offset[2]);
+            // IDA: Set3DSoundPosition (0x00404CD0): XY rotado pasa a XZ del audio, altura cero.
+            Platform::GetAudio().SetPosition(slot, ch, -offset[0], 0.0f, -offset[1]);
         }
     }
 }
