@@ -14,6 +14,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     // p8 = color split X (0 = use p1), p9 = prefix string (optional)
     (void)p4; (void)p5; (void)p7;
 
+    gFont.BeginTextMask();
     int bmpWidth = p1;
     // IDA inicializa `sz.cx = a1` ANTES del check de '\n' (sub_47F360 L21-23).
     // Si el texto empieza en '\n' la función saltea todo el TextOut y sz.cx
@@ -28,12 +29,12 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         } else {
             SIZE sz;
             int prefixLen = lstrlenA(p9);
-            GetTextExtentPointA(gFont.GetTextDC(), p9, prefixLen, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), p9, prefixLen, &sz);
             prefixWidth = sz.cx;
 
             // Output prefix text at (p6, 0)
             int slen = lstrlenA(p9);
-            TextOutA(gFont.GetTextDC(), p6, 0, p9, slen);
+            gFont.DrawTextMask(gFont.GetTextDC(), p6, 0, p9, slen);
         }
 
         // Set text color to white for main text
@@ -41,7 +42,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
 
         // Output main text at (prefixWidth + p6, 0)
         int mainLen = lstrlenA(p3);
-        TextOutA(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
+        gFont.DrawTextMask(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
     }
 
     // If p8 == 0, use p1 (bitmap width) as the color-split boundary

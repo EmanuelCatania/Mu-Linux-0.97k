@@ -64,7 +64,7 @@ UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_
   UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6);
   lpsz = &lpsz_07e113d0;
   c = lstrlenA(param_3);
-  GetTextExtentPointA(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
+  gFont.MeasureText(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
   if ((0 < (int)param_4) && ((int)param_4 < (int)lpsz_07e113d0)) {
     lpsz_07e113d0 = param_4;
   }
@@ -110,7 +110,7 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
 
     const int width = (int)DAT_00559c8c;
     UI_DrawText(x, y, text, width, 1, 0);
-    GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &g_TextExtent07E113D0);
+    gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &g_TextExtent07E113D0);
     if (width > 0 && g_TextExtent07E113D0.cx > width)
         g_TextExtent07E113D0.cx = width;
     ScaleGlobalTextSize();
@@ -124,7 +124,7 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
             if (*cursor == 0) cursor = "_";
             else if (hide == 1) cursor = "**";
             UI_DrawText(x + g_TextExtent07E113D0.cx, y, (char*)cursor, 0, 1, 0);
-            GetTextExtentPointA(gFont.GetTextDC(), cursor, lstrlenA(cursor), &g_TextExtent07E113D0);
+            gFont.MeasureText(gFont.GetTextDC(), cursor, lstrlenA(cursor), &g_TextExtent07E113D0);
             ScaleGlobalTextSize();
         }
     }
@@ -150,7 +150,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     SIZE sz = {0, 0};
-    GetTextExtentPointA(gFont.GetTextDC(), param_1, lstrlenA(param_1), &sz);
+    gFont.MeasureText(gFont.GetTextDC(), param_1, lstrlenA(param_1), &sz);
 
     auto shiftUp = [notice]() {
         for (int s = 0; s < 5; ++s) {
@@ -209,7 +209,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
   SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   lpsz = &local_208;
   iVar2 = lstrlenA(param_1);
-  GetTextExtentPointA(gFont.GetTextDC(),param_1,iVar2,lpsz);
+  gFont.MeasureText(gFont.GetTextDC(),param_1,iVar2,lpsz);
   if (5 < DAT_07e11d9c) {
     DAT_07e11d9c = 5;
     pcVar6 = (char *)&DAT_07db80d8;
@@ -378,7 +378,7 @@ void UI_RenderNotices(void)
     }
     lpsz = &local_8;
     iVar1 = lstrlenA(lpString);
-    GetTextExtentPointA(gFont.GetTextDC(),lpString,iVar1,lpsz);
+    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,lpsz);
     iVar1 = iVar2;
     if (g_bUseChatListBox == 1) {
       iVar1 = iVar2 + -0x118;
@@ -386,7 +386,7 @@ void UI_RenderNotices(void)
     UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0);
     lpsz_00 = &lpsz_07e113d0;
     iVar1 = lstrlenA(lpString);
-    GetTextExtentPointA(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
+    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
     // IDA RenderNotices @0x47FCE0 hace exactamente esto acá.
     ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     lpString = lpString + 0x108;
@@ -482,7 +482,7 @@ void UI_RenderChatLogOverlay(void)
       }
       lpsz = &local_108;
       iVar3 = lstrlenA(local_100);
-      GetTextExtentPointA(gFont.GetTextDC(),local_100,iVar3,lpsz);
+      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar3,lpsz);
       iVar3 = DAT_083a427c;
       bVar8 = -1 < DAT_083a427c;
       // &DAT_07df9494 es int* (alias a offset
@@ -520,7 +520,7 @@ LAB_00480b8e:
       UI_DrawText(0,iVar7,local_100,0,1,0);
       lpsz_00 = &lpsz_07e113d0;
       iVar5 = lstrlenA(local_100);
-      GetTextExtentPointA(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
+      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
       ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     }
     iVar7 = iVar7 + 0xd;

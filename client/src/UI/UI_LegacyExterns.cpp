@@ -86,7 +86,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     if (count <= 0 || !gFont.GetTextDC()) return;
 
     TEXTMETRICA tm = {};
-    GetTextMetricsA(gFont.GetTextDC(), &tm);
+    gFont.TextMetrics(gFont.GetTextDC(), &tm);
     const int lineH = tm.tmHeight + tm.tmExternalLeading;
     const int padX = 4;
     const int padY = 3;
@@ -94,7 +94,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     int maxWidth = 0;
     for (int i = 0; i < count; ++i) {
         SIZE sz = {};
-        GetTextExtentPointA(gFont.GetTextDC(), lines[i], (int)strlen(lines[i]), &sz);
+        gFont.MeasureText(gFont.GetTextDC(), lines[i], (int)strlen(lines[i]), &sz);
         if (sz.cx > maxWidth) maxWidth = sz.cx;
     }
 
@@ -267,7 +267,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     // Compute Y position from text height
     SIZE sz; sz.cx = 0; sz.cy = 0;
-    GetTextExtentPointA(gFont.GetTextDC(), TextList0, 1, &sz);
+    gFont.MeasureText(gFont.GetTextDC(), TextList0, 1, &sz);
     int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
     float yPos = (float)v31 / gWindow.GetScreenRateY();
 
@@ -424,7 +424,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
         SIZE sz;
         sz.cx = 0;
         sz.cy = 0;
-        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
+        gFont.MeasureText(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
         int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
         int yBox = a2 - (int)((float)v31 / gWindow.GetScreenRateY());
         CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
@@ -596,7 +596,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text)
     HDC hFontDC = gFont.GetTextDC();
     if (!hFontDC) return 0;
     SIZE sz = {0, 0};
-    if (!GetTextExtentPointA(hFontDC, text, (int)strlen(text), &sz)) return 0;
+    if (!gFont.MeasureText(hFontDC, text, (int)strlen(text), &sz)) return 0;
     float sx, sy;
     Text_PixelToOrthoScale(&sx, &sy);
     return (int)((float)sz.cx / sx);
@@ -721,7 +721,7 @@ static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
         SIZE sz = {0, 0};
         int  nch = out[i].charIndex;
         if (nch > (int)w) nch = (int)w;
-        if (hFontDC && nch > 0) GetTextExtentPointA(hFontDC, dst, nch, &sz);
+        if (hFontDC && nch > 0) gFont.MeasureText(hFontDC, dst, nch, &sz);
         out[i].pixelStart = sz.cx;
         out[i].pixelX     = sz.cx ? sz.cx - 1 : 0;
     }
@@ -805,13 +805,13 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
 
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
     // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { HGLRC rc; HFONT font; GLuint base; int ascent; };
+    struct FontLists { HGLRC rc; HFONT font; GLuint base; int ascent; unsigned generation; };
     static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
     static int       s_next = 0;
 
     int slot = -1;
     for (int i = 0; i < 4; ++i) {
-        if (s_cache[i].base != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont) {
+        if (s_cache[i].base != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
             slot = i;
             break;
         }
@@ -855,7 +855,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         GLint prevAlign = 4;
         glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        const BOOL fontOk = wglUseFontBitmapsA(hFontDC, 0, 256, base);
+        const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
         glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
         if (!fontOk) {
             glDeleteLists(base, 256);
@@ -863,11 +863,12 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         }
         TEXTMETRICA tm;
         int ascent = 11;
-        if (GetTextMetricsA(hFontDC, &tm)) ascent = tm.tmAscent;
+        if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
         s_cache[slot].rc     = hRC;
         s_cache[slot].font   = hFont;
         s_cache[slot].base   = base;
         s_cache[slot].ascent = ascent;
+        s_cache[slot].generation = gFont.Generation();
     }
     const GLuint s_fontListBase = s_cache[slot].base;
     const int    s_ascent       = s_cache[slot].ascent;
@@ -893,7 +894,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         // contra WindowWidth/Height directamente — igual que `sub_47F4C0` con
         // a7 = 0:  `else if (Width + x > WindowWidth) x = WindowWidth - Width;`
         SIZE tot = {0, 0};
-        GetTextExtentPointA(hFontDC, drawText, (int)strlen(drawText), &tot);
+        gFont.MeasureText(hFontDC, drawText, (int)strlen(drawText), &tot);
         float wOrtho = (float)tot.cx;
         float hOrtho = (float)tot.cy;
         if (x < 0) x = 0;
@@ -978,7 +979,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             float runX  = (float)x + (float)runPx;   // pixel + pixel
 
             SIZE bsz = {0, 0};
-            BOOL haveExtent = GetTextExtentPointA(hFontDC, drawText + startChar,
+            BOOL haveExtent = gFont.MeasureText(hFontDC, drawText + startChar,
                                                   endChar - startChar, &bsz);
 
             GLubyte bA = (GLubyte)((bc >> 24) & 0xFF);

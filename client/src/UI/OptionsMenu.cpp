@@ -36,7 +36,7 @@ bool Inside(int x, int y, int width, int height)
 int CenterTextY(const char* text, int centerY)
 {
     SIZE size = {};
-    GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &size);
+    gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &size);
     return centerY - ((480 * size.cy / (int)gWindow.GetHeight()) >> 1);
 }
 

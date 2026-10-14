@@ -6,6 +6,12 @@
 #include <algorithm>
 #include <limits>
 #include <unordered_map>
+#include "Platform/IFileSystem.h"
+#include <SDL3/SDL.h>
+#include <filesystem>
+#include <cstdlib>
+#include <cstdio>
+#include <cctype>
 
 namespace Platform {
 namespace {
@@ -60,6 +66,8 @@ struct SDLFont::Impl {
     FT_Face face = nullptr;
     std::vector<uint8_t> bytes;
     FontMetrics metrics;
+    bool underline = false;
+    bool strikeOut = false;
     std::unordered_map<uint32_t, FontGlyph> glyphs;
     ~Impl() {
         if (face) FT_Done_Face(face);
@@ -122,6 +130,24 @@ const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
                 glyph.coverage[size_t(y) * glyph.width + x] = (row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0;
         }
     }
+    if (impl->face && (impl->underline || impl->strikeOut) && glyph.advance > 0) {
+        const int underlineY = 1;
+        const int strikeY = -impl->metrics.ascent / 3;
+        const int left = std::min(0, glyph.left);
+        const int right = std::max(glyph.advance, glyph.left + glyph.width);
+        const int top = std::min(-glyph.top, impl->strikeOut ? strikeY : underlineY);
+        const int bottom = std::max(glyph.height - glyph.top, impl->underline ? underlineY + 1 : strikeY + 1);
+        std::vector<uint8_t> decorated(size_t(right - left) * (bottom - top), 0);
+        for (int y = 0; y < glyph.height; ++y)
+            for (int x = 0; x < glyph.width; ++x)
+                decorated[size_t(y - glyph.top - top) * (right - left) + x + glyph.left - left] = glyph.coverage[size_t(y) * glyph.width + x];
+        for (int x = 0; x < glyph.advance; ++x) {
+            if (impl->underline) decorated[size_t(underlineY - top) * (right - left) + x - left] = 255;
+            if (impl->strikeOut) decorated[size_t(strikeY - top) * (right - left) + x - left] = 255;
+        }
+        glyph.left = left; glyph.top = -top; glyph.width = right - left; glyph.height = bottom - top;
+        glyph.coverage.swap(decorated);
+    }
     return impl->glyphs.emplace(codepoint, std::move(glyph)).first->second;
 }
 FontMetrics SDLFont::Metrics() const { return impl->metrics; }
@@ -135,5 +161,140 @@ int SDLFont::Measure(const uint32_t* text, size_t count)
         width += advance;
     }
     return width;
+}
+
+namespace {
+std::string LowerFamily(std::string value)
+{
+    for (char& c : value) c = char(std::tolower(static_cast<unsigned char>(c)));
+    return value;
+}
+std::vector<uint8_t> ReadFont(const std::string& path)
+{
+    FILE* stream = GetFileSystem().Open(path.c_str(), "rb");
+    if (!stream) return {};
+    std::vector<uint8_t> bytes;
+    uint8_t block[8192];
+    size_t count;
+    while ((count = std::fread(block, 1, sizeof(block), stream)) != 0) {
+        if (bytes.size() + count > 64 * 1024 * 1024) { bytes.clear(); break; }
+        bytes.insert(bytes.end(), block, block + count);
+    }
+    if (std::ferror(stream)) bytes.clear();
+    std::fclose(stream);
+    return bytes;
+}
+// Se inspeccionan nombres de familia y estilo del archivo, no nombres de archivo.
+// La búsqueda se cachea y no necesita fontconfig ni paquetes FreeType del sistema.
+const std::unordered_map<std::string, std::string>& InstalledFonts()
+{
+    static const auto fonts = [] {
+        std::unordered_map<std::string, std::string> result;
+        std::vector<std::filesystem::path> roots;
+#ifdef _WIN32
+        if (const char* root = std::getenv("WINDIR")) roots.emplace_back(std::filesystem::path(root) / "Fonts");
+        if (const char* root = std::getenv("LOCALAPPDATA")) roots.emplace_back(std::filesystem::path(root) / "Microsoft/Windows/Fonts");
+#else
+        roots.emplace_back("/usr/share/fonts");
+        roots.emplace_back("/usr/local/share/fonts");
+        if (const char* root = std::getenv("HOME")) {
+            roots.emplace_back(std::filesystem::path(root) / ".fonts");
+            roots.emplace_back(std::filesystem::path(root) / ".local/share/fonts");
+        }
+        if (const char* root = std::getenv("XDG_DATA_HOME")) roots.emplace_back(std::filesystem::path(root) / "fonts");
+#endif
+        FT_Library library = nullptr;
+        if (FT_Init_FreeType(&library)) return result;
+        std::vector<std::string> paths;
+        for (const auto& root : roots) {
+            std::error_code error;
+            std::filesystem::recursive_directory_iterator entry(root, std::filesystem::directory_options::skip_permission_denied, error), end;
+            for (; !error && entry != end; entry.increment(error)) {
+                const auto extension = LowerFamily(entry->path().extension().string());
+                if (extension == ".ttf" || extension == ".otf") paths.push_back(entry->path().string());
+            }
+        }
+        std::sort(paths.begin(), paths.end());
+        for (const auto& path : paths) {
+            auto bytes = ReadFont(path);
+            FT_Face face = nullptr;
+            if (!bytes.empty() && !FT_New_Memory_Face(library, bytes.data(), FT_Long(bytes.size()), 0, &face)) {
+                if (FT_IS_SCALABLE(face) && face->family_name) {
+                    std::string key = LowerFamily(face->family_name);
+                    key += (face->style_flags & FT_STYLE_FLAG_BOLD) ? "/b" : "/r";
+                    key += (face->style_flags & FT_STYLE_FLAG_ITALIC) ? "i" : "n";
+                    result.emplace(key, path);
+                }
+                FT_Done_Face(face);
+            }
+        }
+        FT_Done_FreeType(library);
+        return result;
+    }();
+    return fonts;
+}
+}
+
+uint32_t SDLFont::DecodeByte(uint8_t byte)
+{
+    static const uint16_t extended[32] = {
+        0x20ac,0x81,0x201a,0x192,0x201e,0x2026,0x2020,0x2021,
+        0x2c6,0x2030,0x160,0x2039,0x152,0x8d,0x17d,0x8f,
+        0x90,0x2018,0x2019,0x201c,0x201d,0x2022,0x2013,0x2014,
+        0x2dc,0x2122,0x161,0x203a,0x153,0x9d,0x17e,0x178
+    };
+    return byte >= 0x80 && byte < 0xa0 ? extended[byte - 0x80] : byte;
+}
+
+bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
+    int width, bool underline, bool strikeOut, std::string& error, const char* assetRoot)
+{
+    if (width < -4096 || width > 4096) { error = "Ancho de fuente inválido"; return false; }
+    const std::string requested = family && *family ? family : "Arial";
+    // System es bitmap en GDI: el default portable es Arial o su respaldo.
+    const std::string name = LowerFamily(requested) == "system" ? "arial" : LowerFamily(requested);
+    std::string path;
+    if (name != "liberation sans") {
+        const auto& installed = InstalledFonts();
+        const auto found = installed.find(name + (bold ? "/b" : "/r") + (italic ? "i" : "n"));
+        if (found != installed.end()) path = found->second;
+    }
+    auto bytes = path.empty() ? std::vector<uint8_t>{} : ReadFont(path);
+    bool fallback = bytes.empty();
+    if (fallback) {
+        const char* root = assetRoot && *assetRoot ? assetRoot : std::getenv("MU_ASSET_ROOT");
+        std::filesystem::path base;
+        if (root && *root) base = root;
+        else {
+            const char* executable = SDL_GetBasePath();
+            base = std::filesystem::path(executable ? executable : ".") / "assets";
+        }
+        const char* style = bold ? (italic ? "BoldItalic" : "Bold") : (italic ? "Italic" : "Regular");
+        path = (base / "fonts/LiberationSans" / (std::string("LiberationSans-") + style + ".ttf")).string();
+        bytes = ReadFont(path);
+    }
+    if (!Load(std::move(bytes), height, error)) {
+        error += ": " + path;
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Fuente: %s", error.c_str());
+        return false;
+    }
+    impl->underline = underline;
+    impl->strikeOut = strikeOut;
+    if (width != 0) {
+        width = std::abs(width);
+        const auto os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(impl->face, ft_sfnt_os2));
+        const auto average = os2 ? FT_MulFix(os2->xAvgCharWidth, impl->face->size->metrics.x_scale) : 0;
+        if (average > 0) {
+            FT_Matrix transform = { FT_Fixed((int64_t(width) * 64 * 65536) / average), 0, 0, 65536 };
+            FT_Set_Transform(impl->face, &transform, nullptr);
+        }
+    }
+    SDL_Log("Fuente %s -> %s, altura %d%s", requested.c_str(), path.c_str(), height, fallback ? " (respaldo)" : "");
+    // Log persistente junto al resto de logs del cliente, también si no hay consola.
+    if (FILE* log = std::fopen("fonts.log", "a")) {
+        std::fprintf(log, "%s -> %s; altura=%d; bold=%d; italic=%d%s\n", requested.c_str(), path.c_str(), height, bold, italic, fallback ? "; respaldo" : "");
+        std::fclose(log);
+    }
+    return true;
 }
 }

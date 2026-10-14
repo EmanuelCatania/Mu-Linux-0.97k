@@ -75,55 +75,55 @@ int RenderErrorMessage(void)
       GL_SetBlendSrcOver('\x01');
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d45ba0);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45ba0,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45ba0,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x41,
                    (LPCSTR)lpString_07d45ba0,(LPSIZE)0x0,'\0',0);
       if (SceneFlag == 5) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,
                      (LPCSTR)lpString_07d45ccc,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45df8);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45df8,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45df8,iVar3,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x7d,
                      (LPCSTR)lpString_07d45df8,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x9b,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0xb9;
       }
       else if (SceneFlag == 4) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,
                      (LPCSTR)lpString_07d45ccc,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x7d,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0x9b;
       }
       else {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46050,iVar3,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
-        GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0x7d;
       }
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),uVar10,
@@ -268,7 +268,7 @@ LAB_0051c13d:
         // frame rendered but its labels were blank.
         pCVar6 = GlobalText[735 + iVar3];
         iVar4 = lstrlenA(pCVar6);
-        GetTextExtentPointA(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
         uVar10 = 0;
         cVar13 = '\0';
         ptVar12 = (LPSIZE)0x0;
@@ -385,7 +385,7 @@ LAB_0051c13d:
   case 0x47:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47a18);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47a18,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47a18,iVar3,ptVar17);
     ppCVar11 = lpString_07d47a18;
     break;
   case 0x16:
@@ -394,74 +394,74 @@ LAB_0051c13d:
   case 0x45:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4824c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4824c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4824c,iVar3,ptVar17);
     ppCVar11 = lpString_07d4824c;
     break;
   case 0x17:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d48378);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48378,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48378,iVar3,ptVar17);
     ppCVar11 = lpString_07d48378;
     break;
   case 0x18:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d484a4);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d484a4,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d484a4,iVar3,ptVar17);
     ppCVar11 = lpString_07d484a4;
     break;
   case 0x19:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d485d0);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d485d0,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d485d0,iVar3,ptVar17);
     ppCVar11 = lpString_07d485d0;
     break;
   case 0x1a:
   case 0x70:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d477c0);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d477c0,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d477c0,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d477c0,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d478ec);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d478ec,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d478ec,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d478ec;
     break;
   case 0x1b:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47b44);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47b44,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47b44,iVar3,ptVar17);
     ppCVar11 = lpString_07d47b44;
     break;
   case 0x1c:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47c70);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47c70,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47c70,iVar3,ptVar17);
     ppCVar11 = lpString_07d47c70;
     break;
   case 0x1d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47d9c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47d9c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47d9c,iVar3,ptVar17);
     ppCVar11 = lpString_07d47d9c;
     break;
   case 0x1e:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47ec8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47ec8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47ec8,iVar3,ptVar17);
     ppCVar11 = lpString_07d47ec8;
     break;
   case 0x1f:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47ff4);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47ff4,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47ff4,iVar3,ptVar17);
     ppCVar11 = lpString_07d47ff4;
     break;
   case 0x20:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d48120);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48120,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48120,iVar3,ptVar17);
     ppCVar11 = lpString_07d48120;
     break;
   default:
@@ -469,87 +469,87 @@ LAB_0051c13d:
   case 0x22:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d558c0);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d558c0,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d558c0,iVar3,ptVar17);
     ppCVar11 = lpString_07d558c0;
     break;
   case 0x23:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d559ec);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d559ec,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d559ec,iVar3,ptVar17);
     ppCVar11 = lpString_07d559ec;
     break;
   case 0x24:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d55b18);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d55b18,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d55b18,iVar3,ptVar17);
     ppCVar11 = lpString_07d55b18;
     break;
   case 0x25:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d49890);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d49890,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d49890,iVar3,ptVar17);
     ppCVar11 = lpString_07d49890;
     break;
   case 0x26:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d49ae8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d49ae8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d49ae8,iVar3,ptVar17);
     ppCVar11 = lpString_07d49ae8;
     break;
   case 0x36:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46adc);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46adc,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46adc,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d46adc,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46c08);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46c08,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46c08,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d46c08;
     goto LAB_0051ca70;
   case 0x37:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46d34);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46d34,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46d34,iVar3,ptVar17);
     ppCVar11 = lpString_07d46d34;
     goto LAB_0051ca70;
   case 0x3a:
     if (DAT_05826d20 == 0) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d49e6c);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d49e6c,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d49e6c,iVar3,ptVar17);
       ppCVar11 = lpString_07d49e6c;
     }
     else if (DAT_05826d20 == 3) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d49f98);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d49f98,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d49f98,iVar3,ptVar17);
       ppCVar11 = lpString_07d49f98;
     }
     else {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d47310);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47310,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47310,iVar3,ptVar17);
       ppCVar11 = lpString_07d47310;
     }
     goto LAB_0051ca70;
   case 100:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47568);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47568,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47568,iVar3,ptVar17);
     ppCVar11 = lpString_07d47568;
     goto LAB_0051ca70;
   case 0x65:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47694);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47694,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47694,iVar3,ptVar17);
     ppCVar11 = lpString_07d47694;
     goto LAB_0051ca70;
   case 0x71:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4743c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4743c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4743c,iVar3,ptVar17);
     ppCVar11 = lpString_07d4743c;
     goto LAB_0051ca70;
   case 0x72:
@@ -562,24 +562,24 @@ LAB_0051c13d:
                 (const char *)(CharactersClient + 916 * SelectedHero + 0x1C1));
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46f8c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46f8c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46f8c,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d46f8c;
     break;
   case 0x73:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46884);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46884,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46884,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d46884,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d469b0);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d469b0,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d469b0,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d469b0;
     break;
@@ -587,32 +587,32 @@ LAB_0051c13d:
     if (StorageGoldFlag == 0) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48954);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48954,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48954,iVar3,ptVar17);
       ppCVar11 = lpString_07d48954;
     }
     else if (StorageGoldFlag == 1) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48a80);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48a80,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48a80,iVar3,ptVar17);
       ppCVar11 = lpString_07d48a80;
     }
     else {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48bac);
-      GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48bac,iVar3,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48bac,iVar3,ptVar17);
       ppCVar11 = lpString_07d48bac;
     }
     goto LAB_0051ca70;
   case 0x75:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d48cd8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48cd8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48cd8,iVar3,ptVar17);
     ppCVar11 = lpString_07d48cd8;
     goto LAB_0051ca70;
   case 0x76:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d48e04);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d48e04,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d48e04,iVar3,ptVar17);
     ppCVar11 = lpString_07d48e04;
     goto LAB_0051ca70;
   case 0x77:
@@ -627,13 +627,13 @@ LAB_0051c13d:
     }
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     crt_sprintf(local_c8,&DAT_07d493e0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     ppCVar11 = local_c8;
     pCVar6 = pCVar2 + 0x15;
     goto LAB_0051ca70;
@@ -650,14 +650,14 @@ LAB_0051c13d:
                 (const char*)&DAT_07d486fc, inviterName);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
                 (const char*)&DAT_07d48f30, inviterName);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     ppCVar11 = local_c8;
     pCVar6 = pCVar2 + 0x15;
     goto LAB_0051ca70;
@@ -671,46 +671,46 @@ LAB_0051c13d:
     SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BIG)));
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     crt_sprintf(local_c8, GlobalText[419]);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     ppCVar11 = local_c8;
     pCVar6 = pCVar2 + 0x1a;
     goto LAB_0051ca70;
   case 0x7a:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4662c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4662c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4662c,iVar3,ptVar17);
     ppCVar11 = lpString_07d4662c;
     goto LAB_0051ca70;
   case 0x7b:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46758);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d46758,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d46758,iVar3,ptVar17);
     ppCVar11 = lpString_07d46758;
     goto LAB_0051ca70;
   case 0x7e:
     ptVar17 = &local_e4;
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d49188);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d49188,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d49188,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d49188,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d492b4);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d492b4,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d492b4,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d492b4;
     break;
   case 0x7f:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4905c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4905c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4905c,iVar3,ptVar17);
     ppCVar11 = lpString_07d4905c;
     goto LAB_0051ca70;
   case 0x80:
@@ -718,13 +718,13 @@ LAB_0051c13d:
     crt_sprintf(local_c8, GlobalText[430], GuildWarName);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     crt_sprintf(local_c8, GlobalText[EnableSoccer ? 432 : 431]);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     ppCVar11 = local_c8;
     pCVar6 = pCVar2 + 0x15;
     break;
@@ -732,49 +732,49 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d470b8);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d470b8,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d470b8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d470b8,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d471e4);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d471e4,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d471e4,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d471e4;
     goto LAB_0051ca70;
   case 0x85:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d499bc);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d499bc,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d499bc,iVar3,ptVar17);
     ppCVar11 = lpString_07d499bc;
     break;
   case 0x86:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a0c4);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4a0c4,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4a0c4,iVar3,ptVar17);
     ppCVar11 = lpString_07d4a0c4;
     break;
   case 0x87:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a1f0);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4a1f0,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4a1f0,iVar3,ptVar17);
     ppCVar11 = lpString_07d4a1f0;
     break;
   case 0x88:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a31c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4a31c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4a31c,iVar3,ptVar17);
     ppCVar11 = lpString_07d4a31c;
     break;
   case 0x89:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a6a0);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4a6a0,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4a6a0,iVar3,ptVar17);
     ppCVar11 = lpString_07d4a6a0;
     break;
   case 0x8a:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47310);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47310,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47310,iVar3,ptVar17);
     ppCVar11 = lpString_07d47310;
     break;
   case 0x8b:
@@ -790,7 +790,7 @@ LAB_0051c13d:
       do {
         ptVar17 = &local_e4;
         iVar4 = lstrlenA(pCVar6);
-        GetTextExtentPointA(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
+        gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),iVar3,pCVar6,
                      (LPSIZE)0x0,'\0',0);
         iVar3 = iVar3 + 0x12;
@@ -820,7 +820,7 @@ LAB_0051c13d:
           if (*pCVar6 == '\0') break;
           ptVar17 = &local_d0;
           iVar4 = lstrlenA(pCVar6);
-          GetTextExtentPointA(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
+          gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
           UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),iVar3,pCVar6,
                        (LPSIZE)0x0,'\0',0);
           iVar3 = iVar3 + 0x12;
@@ -841,19 +841,19 @@ LAB_0051c13d:
     SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d5f94c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d5f94c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d5f94c,iVar3,ptVar17);
     ppCVar11 = lpString_07d5f94c;
     break;
   case 0x90:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d47310);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d47310,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d47310,iVar3,ptVar17);
     ppCVar11 = lpString_07d47310;
     break;
   case 0x91:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)&lpString_0056186c);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)&lpString_0056186c,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)&lpString_0056186c,iVar3,ptVar17);
     ppCVar11 = lpString_0056186c;
     break;
   case 0x97:
@@ -886,7 +886,7 @@ LAB_0051d2dd:
     ptVar17 = &local_d0;
     pCVar6 = &DAT_07d29d24 + iVar3 * 300;
     iVar3 = lstrlenA(pCVar6);
-    GetTextExtentPointA(gFont.GetTextDC(),pCVar6,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
                  (LPSIZE)0x0,'\0',0);
     local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x3b);
@@ -916,7 +916,7 @@ LAB_0051d3cf:
       ptVar17 = &local_d0;
       pCVar6 = (LPCSTR)((int)&DAT_083a44c4 + iVar3 * 0x26);
       iVar4 = lstrlenA(pCVar6);
-      GetTextExtentPointA(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
+      gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
       pCVar2 = (LPCSTR)(uintptr_t)local_dc;
       UI_RenderText((int)local_d8 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),local_dc,pCVar6
                    ,(LPSIZE)0x0,'\0',0);
@@ -930,12 +930,12 @@ LAB_0051d3cf:
     ptVar17 = &local_e4;
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a448);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4a448,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4a448,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d4a448,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a574);
-    GetTextExtentPointA(gFont.GetTextDC(),(LPCSTR)lpString_07d4a574,iVar3,ptVar17);
+    gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d4a574,iVar3,ptVar17);
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d4a574;
 LAB_0051ca70:

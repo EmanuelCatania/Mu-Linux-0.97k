@@ -181,7 +181,7 @@ int Render_MacroTimer_(void)
         EnableAlphaTest(true);
         UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
         int n = lstrlenA(aMacroTime);
-        GetTextExtentPointA(gFont.GetTextDC(), aMacroTime, n, &TextSize);
+        gFont.MeasureText(gFont.GetTextDC(), aMacroTime, n, &TextSize);
         TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
         TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         float Bar = (float)v8;
@@ -595,7 +595,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     int v7 = InputTextWidth;
     UI_DrawText(x, y, Text, InputTextWidth, 1, 0);
     int n = lstrlenA(Text);
-    GetTextExtentPointA(gFont.GetTextDC(), Text, n, &TextSize);
+    gFont.MeasureText(gFont.GetTextDC(), Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
 
     // IDA (RenderInputText 0x47F0B0) posiciona el caret con el TextSize ya
@@ -613,14 +613,14 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
             if (strlen(ime) != 0) {
                 if (InputTextHide[Index] == 1) {
                     UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0);
-                    GetTextExtentPointA(gFont.GetTextDC(), "**", 2, &TextSize);
+                    gFont.MeasureText(gFont.GetTextDC(), "**", 2, &TextSize);
                 } else {
                     UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0);
-                    GetTextExtentPointA(gFont.GetTextDC(), ime, lstrlenA(ime), &TextSize);
+                    gFont.MeasureText(gFont.GetTextDC(), ime, lstrlenA(ime), &TextSize);
                 }
             } else {
                 UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
-                GetTextExtentPointA(gFont.GetTextDC(), "_", 1, &TextSize);
+                gFont.MeasureText(gFont.GetTextDC(), "_", 1, &TextSize);
             }
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -642,7 +642,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     SIZE sz = {0,0};
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     int n = lstrlenA(Text);
-    GetTextExtentPointA(gFont.GetTextDC(), Text, n, &sz);
+    gFont.MeasureText(gFont.GetTextDC(), Text, n, &sz);
     int prevBlend = AlphaBlendType;
 
     EnableAlphaTest(true);
@@ -749,15 +749,16 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     SIZE sz = {a1, a2};
     if (!a3 || *a3 == 10) return (int)Bitmaps[0].Height;
 
+    gFont.BeginTextMask();
     if (lpString) {
         int n = lstrlenA(lpString);
-        GetTextExtentPointA(gFont.GetTextDC(), lpString, n, &sz);
-        TextOutA(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
+        gFont.MeasureText(gFont.GetTextDC(), lpString, n, &sz);
+        gFont.DrawTextMask(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
     } else {
         sz.cx = 0;
     }
     SetTextColor(gFont.GetTextDC(), RGB(0xFF, 0xFF, 0xFF));
-    TextOutA(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
+    gFont.DrawTextMask(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
 
     if (!a8) a8 = v10;
     int Height = (int)Bitmaps[0].Height;
