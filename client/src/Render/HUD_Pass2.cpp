@@ -21,6 +21,7 @@
 
 #include "stdafx.h"
 #include "Platform/Text.h"
+#include "Platform/GuardedOperation.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
@@ -554,8 +555,16 @@ void RenderBrokenItem_(int a1)
 
         if (v12 != 0xFFFF) {
             // Usar ItemAttribute_Base() para recuperar de corrupción de DAT_07d78068 a 0x1.
-            unsigned int attrBase = ItemAttribute_Base();
-            if (attrBase == 0) { v33 += 68; continue; }
+            // La reserva contiene ITEM_MAX_EX filas mas 0x400 filas de
+            // desplazamiento aleatorio (WinMain). Validar antes de calcular
+            // v19 o llamar a Item_CalculateMaxDurability, no solo al copiar.
+            const uintptr_t allocation = (uintptr_t)DAT_055c9e44;
+            const uintptr_t attrBase = (uintptr_t)DAT_07d78068;
+            if (v12 >= ITEM_MAX_EX || allocation == 0 || attrBase < allocation ||
+                attrBase - allocation > 0x400u * sizeof(ITEM_ATTRIBUTE) ||
+                (attrBase - allocation) % sizeof(ITEM_ATTRIBUTE) != 0) {
+                v33 += 68; continue;
+            }
             ITEM_ATTRIBUTE* v19 = (ITEM_ATTRIBUTE*)(attrBase + (unsigned)v12 * 64);
 
             // Skip excluded item types: 135, 143, 416..419
@@ -590,15 +599,10 @@ void RenderBrokenItem_(int a1)
                 }
 
                 CHAR Buffer[100];
-                // Guarda propia: v19->Name es `char[30]` inline (address = v19) y wsprintfA
-                // lo lee; validar que v19 esté en rango de heap antes de leerlo.
-                if ((uintptr_t)v19 < 0x100000 || (uintptr_t)v19 >= 0x80000000) {
-                    v33 += 68; continue;   // bogus pointer — skip slot
-                }
-                // Defensive: copy Name to local buffer with a hard byte cap to
-                // avoid reading past end of struct (Name field is 30 bytes).
+                // Name es un campo inline de 30 bytes de la fila validada.
+                // No depender de una terminacion NUL dentro del archivo BMD.
                 char nameLocal[31];
-                __try {
+                if (!Platform::RunValidatedOperation([&]() {
                     int ni = 0;
                     for (; ni < 30; ++ni) {
                         char c = v19->Name[ni];
@@ -606,8 +610,7 @@ void RenderBrokenItem_(int a1)
                         if (c == '\0') break;
                     }
                     nameLocal[30] = '\0';
-                    if (ni == 30) nameLocal[30] = '\0';
-                } __except (EXCEPTION_EXECUTE_HANDLER) {
+                })) {
                     nameLocal[0] = '\0';
                 }
                 Platform::TextFormat(Buffer, "%s (%d/%d)", nameLocal, v21, v30);

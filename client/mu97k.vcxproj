@@ -117,6 +117,7 @@
     <ClInclude Include="src\Platform\Posix\PosixIdentity.h" />
     <ClInclude Include="src\Platform\LocalTime.h" />
     <ClInclude Include="src\Platform\Text.h" />
+    <ClInclude Include="src\Platform\GuardedOperation.h" />
     <ClInclude Include="src\Platform\PlatformHeaders.h" />
     <ClInclude Include="src\Platform\DebugHeaders.h" />
     <ClInclude Include="src\Platform\Posix\WinTypes.h" />
