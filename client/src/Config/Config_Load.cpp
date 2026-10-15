@@ -85,7 +85,7 @@ int Config_Load(void)
         configPath[pathLen]     = '\\';
         configPath[pathLen + 1] = '\0';
     }
-    strcat_s(configPath, MAX_PATH, "config.ini");
+    Platform::TextConcatSecure(configPath, MAX_PATH, "config.ini");
 
     // --- 2/3. Version que muestra el pie del login (m_ExeVersion) ---
     //
@@ -116,7 +116,7 @@ int Config_Load(void)
         if (versionWords[2]) {
             const char kLetterBase = 'a';   // IDA: word_559470
             char suffix[2] = { (char)(kLetterBase + versionWords[2] - 1), '\0' };
-            strcat_s(ConfigLoginVersion, sizeof(ConfigLoginVersion), suffix);
+            Platform::TextConcatSecure(ConfigLoginVersion, sizeof(ConfigLoginVersion), suffix);
         }
     } else {
         Platform::TextCopy(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
