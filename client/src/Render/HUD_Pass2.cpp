@@ -20,6 +20,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
@@ -127,7 +128,7 @@ SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
     // same with default style.  Keep the call signature compatible.
     UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
 
-    int n = lstrlenA(lpString);
+    int n = Platform::TextLength(lpString);
     gFont.MeasureText(gFont.GetTextDC(), lpString, n, &TextSize);
     TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
     TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -260,7 +261,7 @@ void Render_ChatBox_(void)
     while (v2 < end) {
         if (v1 != v0) {
             UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
-            int n = lstrlenA(v2);
+            int n = Platform::TextLength(v2);
             gFont.MeasureText(gFont.GetTextDC(), v2, n, &TextSize);
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             v0 = (int)dword_55C9CC4;
@@ -324,7 +325,7 @@ char Render_CharInfoPanel_(void)
         wsprintfA(String, "%d", GuildWarScore[0]);
         int iPos_x = (int)x + 13;
         UI_DrawText(iPos_x, 4, String, 0, 1, 0);
-        int n = lstrlenA(String);
+        int n = Platform::TextLength(String);
         gFont.MeasureText(gFont.GetTextDC(), String, n, &TextSize);
 
         const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
@@ -465,7 +466,7 @@ int RenderEquipedHelperLife_(bool a2)
         // y x+50 como 2do arg).  Nuestra reimplementacion de esa funcion toma
         // (x, y, texto), asi que el centrado se calcula aca.
         SIZE ts = { 0, 0 };
-        gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &ts);
+        gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
@@ -490,7 +491,7 @@ int RenderEquipedHelperLife_(bool a2)
 
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
         SIZE ts = { 0, 0 };
-        gFont.MeasureText(gFont.GetTextDC(), summonText, lstrlenA(summonText), &ts);
+        gFont.MeasureText(gFont.GetTextDC(), summonText, Platform::TextLength(summonText), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;

@@ -56,6 +56,7 @@
 //   DAT_083a4320   — retry counter
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_Login.h"
 #include "Scene/Scene_Login_ServerSelect.h"
@@ -130,7 +131,7 @@ uint Scene_Login(void)
                          0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
         }
         ptVar10 = &tStack_74;
-        iVar2 = lstrlenA((LPCSTR)lpString_07d4aed4);
+        iVar2 = Platform::TextLength((LPCSTR)lpString_07d4aed4);
         gFont.MeasureText(gFont.GetTextDC(), (LPCSTR)lpString_07d4aed4, iVar2, ptVar10);
         UI_RenderText(0x165 - ((uint)(tStack_74.cx * 0x280) / gWindow.GetWidth() >> 1),
                      iVar3 + 100, (LPCSTR)lpString_07d4aed4, (LPSIZE)0x0, '\0', 0);
@@ -144,7 +145,7 @@ uint Scene_Login(void)
                          0.0f, 0.0f, 0.546875f, 0.625f, '\x01', '\x01');
         }
         ptVar10 = &tStack_74;
-        iVar2 = lstrlenA((LPCSTR)lpString_07d4b000);
+        iVar2 = Platform::TextLength((LPCSTR)lpString_07d4b000);
         gFont.MeasureText(gFont.GetTextDC(), (LPCSTR)lpString_07d4b000, iVar2, ptVar10);
         UI_RenderText(0x13f - ((uint)(tStack_74.cx * 0x280) / gWindow.GetWidth() >> 1),
                      iVar3 + 0xb9, (LPCSTR)lpString_07d4b000, (LPSIZE)0x0, '\0', 0);
@@ -178,7 +179,7 @@ uint Scene_Login(void)
         *pcVar9 = *pcVar8; pcVar8++; pcVar9++;
     }
     ptVar10 = &tStack_6c;
-    iVar3   = lstrlenA(acStack_64);
+    iVar3   = Platform::TextLength(acStack_64);
     gFont.MeasureText(gFont.GetTextDC(), acStack_64, iVar3, ptVar10);
     UI_RenderText(0x14f - (uint)(tStack_6c.cx * 0x280) / gWindow.GetWidth(),
                  0x1df - (uint)(tStack_6c.cy * 0x280) / gWindow.GetWidth(),
@@ -206,7 +207,7 @@ uint Scene_Login(void)
         *pcVar9 = *pcVar8; pcVar8++; pcVar9++;
     }
     ptVar10 = &tStack_6c;
-    iVar3   = lstrlenA(acStack_64);
+    iVar3   = Platform::TextLength(acStack_64);
     gFont.MeasureText(gFont.GetTextDC(), acStack_64, iVar3, ptVar10);
     // IDA 0x521630 L92: `RenderText(335, 479 - 640*cy/WindowWidth, String, 0,0,0)`.
     // Estaba en x=0 y la de abajo en 335, o sea cruzadas: el copyright y la
@@ -222,7 +223,7 @@ uint Scene_Login(void)
     // si esa clave no existe queda vacio, que es lo fiel.
     crt_sprintf(acStack_64, &DAT_07d4b384, ConfigLoginVersion);
     ptVar10 = &tStack_6c;
-    iVar3   = lstrlenA(acStack_64);
+    iVar3   = Platform::TextLength(acStack_64);
     gFont.MeasureText(gFont.GetTextDC(), acStack_64, iVar3, ptVar10);
     // IDA 0x521630 L96: esta va en x=0.
     UI_RenderText(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / gWindow.GetWidth(),
@@ -275,7 +276,7 @@ uint Scene_Login(void)
         // IDA 0x00521630 L134-136: these reference GlobalText[471] (localized
         // "Conectando..." status string), not the standalone empty buffer
         // lpString_07d4c518 that Ghidra emitted.
-        iVar3 = lstrlenA((LPCSTR)GlobalText[471]);
+        iVar3 = Platform::TextLength((LPCSTR)GlobalText[471]);
         gFont.MeasureText(gFont.GetTextDC(), (LPCSTR)GlobalText[471], iVar3, ptVar10);
         UI_RenderText(0x140 - ((uint)(tStack_74.cx * 0x280) / gWindow.GetWidth() >> 1), 0xd0,
                      (LPCSTR)GlobalText[471], (LPSIZE)0x0, '\0', 0);

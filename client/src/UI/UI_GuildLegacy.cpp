@@ -1,6 +1,7 @@
 // UI_GuildLegacy.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -134,12 +135,12 @@ int __cdecl GuildOverview_Render(void)
         title    = lpString_07d68970;
         subtitle = lpString_07d68a9c;
     }
-    int len = lstrlenA(title);
+    int len = Platform::TextLength(title);
     gFont.MeasureText(hdc, title, len, &sz);
     int cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x46, title, (LPSIZE)0, '\0', 0);
 
-    len = lstrlenA(subtitle);
+    len = Platform::TextLength(subtitle);
     gFont.MeasureText(hdc, subtitle, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x56, subtitle, (LPSIZE)0, '\0', 0);
@@ -152,7 +153,7 @@ int __cdecl GuildOverview_Render(void)
     char buf[256];
     DAT_00559c78 = 0xffd2ffd2;
     wsprintfA(buf, &param_2_07d68e20);
-    len = lstrlenA(buf);
+    len = Platform::TextLength(buf);
     gFont.MeasureText(hdc, buf, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x6a, buf, (LPSIZE)0, '\0', 0);
@@ -161,7 +162,7 @@ int __cdecl GuildOverview_Render(void)
     if (DAT_083a7c30 != 0) {
         DAT_00559c78 = 0xffd2d2ff;
         wsprintfA(buf, &param_2_07d68f4c, DAT_083a7b0c);
-        len = lstrlenA(buf);
+        len = Platform::TextLength(buf);
         gFont.MeasureText(hdc, buf, len, &sz);
         cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
         UI_RenderText(0x140 - cx, 0x82, buf, (LPSIZE)0, '\0', 0);
@@ -169,7 +170,7 @@ int __cdecl GuildOverview_Render(void)
     }
     DAT_00559c78 = 0xffffd2d2;
     wsprintfA(buf, &param_2_07d69078, DAT_083a7b04);
-    len = lstrlenA(buf);
+    len = Platform::TextLength(buf);
     gFont.MeasureText(hdc, buf, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     return (int)UI_RenderText(0x140 - cx, iY, buf, (LPSIZE)0, '\0', 0);

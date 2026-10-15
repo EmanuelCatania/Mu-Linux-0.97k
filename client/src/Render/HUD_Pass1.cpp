@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
@@ -96,13 +97,13 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 
     GetLastError();
     int n;
-    n = lstrlenA(lpString);
+    n = Platform::TextLength(lpString);
     gFont.MeasureText32(gFont.GetTextDC(), lpString, n, &psizl);
-    n = lstrlenA(lpString + 44);
+    n = Platform::TextLength(lpString + 44);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 44, n, &v12);
-    n = lstrlenA(lpString + 300);
+    n = Platform::TextLength(lpString + 300);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 300, n, &v13);
-    n = lstrlenA(lpString + 24);
+    n = Platform::TextLength(lpString + 24);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 24, n, &v14);
     GetLastError();
 

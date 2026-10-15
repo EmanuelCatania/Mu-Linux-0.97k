@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include <climits>
 #include "UI/OptionsMenu.h"
 #include "Config/UserSettings.h"
@@ -36,7 +37,7 @@ bool Inside(int x, int y, int width, int height)
 int CenterTextY(const char* text, int centerY)
 {
     SIZE size = {};
-    gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &size);
+    gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &size);
     return centerY - ((480 * size.cy / (int)gWindow.GetHeight()) >> 1);
 }
 

@@ -18,6 +18,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_ServerValue.h"
@@ -180,7 +181,7 @@ int Render_MacroTimer_(void)
         int v8 = 50 * MacroTime / 100;
         EnableAlphaTest(true);
         UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
-        int n = lstrlenA(aMacroTime);
+        int n = Platform::TextLength(aMacroTime);
         gFont.MeasureText(gFont.GetTextDC(), aMacroTime, n, &TextSize);
         TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
         TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -594,7 +595,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 
     int v7 = InputTextWidth;
     UI_DrawText(x, y, Text, InputTextWidth, 1, 0);
-    int n = lstrlenA(Text);
+    int n = Platform::TextLength(Text);
     gFont.MeasureText(gFont.GetTextDC(), Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
 
@@ -616,7 +617,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
                     gFont.MeasureText(gFont.GetTextDC(), "**", 2, &TextSize);
                 } else {
                     UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0);
-                    gFont.MeasureText(gFont.GetTextDC(), ime, lstrlenA(ime), &TextSize);
+                    gFont.MeasureText(gFont.GetTextDC(), ime, Platform::TextLength(ime), &TextSize);
                 }
             } else {
                 UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
@@ -641,7 +642,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
 {
     SIZE sz = {0,0};
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
-    int n = lstrlenA(Text);
+    int n = Platform::TextLength(Text);
     gFont.MeasureText(gFont.GetTextDC(), Text, n, &sz);
     int prevBlend = AlphaBlendType;
 
@@ -751,7 +752,7 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
 
     gFont.BeginTextMask();
     if (lpString) {
-        int n = lstrlenA(lpString);
+        int n = Platform::TextLength(lpString);
         gFont.MeasureText(gFont.GetTextDC(), lpString, n, &sz);
         gFont.DrawTextMask(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
     } else {

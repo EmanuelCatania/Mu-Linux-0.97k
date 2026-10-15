@@ -1,5 +1,6 @@
 // UI_LegacyText.cpp
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -100,7 +101,7 @@ int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int
 // RenderCenterText @ 0x00514270 (18 lines) — Draw horizontally centered text
 // Measures text width via GDI, converts to 640-based virtual coords, centers.
 void __cdecl RenderCenterText(int x, int y, char *text) {
-    int len = lstrlenA(text);
+    int len = Platform::TextLength(text);
     SIZE sz;
     gFont.MeasureText(gFont.GetTextDC(), text, len, &sz);
     // Convert pixel width to virtual 640-wide coords, halve for centering

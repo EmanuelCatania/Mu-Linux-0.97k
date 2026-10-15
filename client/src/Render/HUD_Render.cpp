@@ -509,7 +509,7 @@
 //                      (subMode == 0x333) ? &DAT_07d43bfc :
 //                      (char*)((subMode - 400) * 0x40 + DAT_07d78068);  // sprite
 //
-//       // lstrlenA(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
+//       // Platform::TextLength(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
 //       // Text_MeasureBox(ftol()+0x32, ftol(), name, 0, '\0', 0)
 //       //   → DrawText(x+50, y, name, shadow=0, italic=0, flags=0)
 //
@@ -708,4 +708,5 @@
 //   GL_SetBlendSrcOver   → SetBlendMode(mode)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Render/HUD_Render.h"

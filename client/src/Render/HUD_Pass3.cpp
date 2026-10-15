@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
 #include "Entity/EntityView.h"
@@ -172,7 +173,7 @@ extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y,
 SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
 {
     SIZE sz = {0,0};
-    int n = lstrlenA(pszText);
+    int n = Platform::TextLength(pszText);
     gFont.MeasureText(gFont.GetTextDC(), pszText, n, &sz);
     int adjustedX = iPos_x - ((640 * sz.cx / (int)gWindow.GetWidth()) >> 1);
     RenderText(adjustedX, iPos_y, (char*)pszText, 0, 0, 0);
@@ -276,7 +277,7 @@ bool __cdecl RenderNumArrow_(void)
             CHAR String[100];
             wsprintfA(String, GlobalText[351], v10, v11);
             EnableAlphaTest(true);
-            int n = lstrlenA(String);
+            int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
@@ -293,7 +294,7 @@ bool __cdecl RenderNumArrow_(void)
             CHAR String[100];
             wsprintfA(String, GlobalText[352], v13, v14);
             EnableAlphaTest(true);
-            int n = lstrlenA(String);
+            int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
