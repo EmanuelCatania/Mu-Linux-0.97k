@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
@@ -119,9 +120,9 @@ DWORD CEventTimer::RemainingSeconds(const Proto::PMSG_EVENT_TIME& event) const
 void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, size_t capacity) const
 {
     switch (event.status) {
-    case Blank: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventDisabled)); break;
-    case Open: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventOpen)); break;
-    case Start: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventStarted)); break;
+    case Blank: Platform::TextCopySecure(text, capacity, gClientText.Get(ClientTextId::EventDisabled)); break;
+    case Open: Platform::TextCopySecure(text, capacity, gClientText.Get(ClientTextId::EventOpen)); break;
+    case Start: Platform::TextCopySecure(text, capacity, gClientText.Get(ClientTextId::EventStarted)); break;
     case Stand: {
         // El estado lo decide el server: al llegar a cero se muestra 00:00:00
         // hasta el próximo F3/E6, sin adelantar el cambio a abierto.
@@ -134,7 +135,7 @@ void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, si
                       (unsigned long)((seconds / 60) % 60), (unsigned long)(seconds % 60));
         break;
     }
-    default: strcpy_s(text, capacity, "--"); break;
+    default: Platform::TextCopySecure(text, capacity, "--"); break;
     }
 }
 

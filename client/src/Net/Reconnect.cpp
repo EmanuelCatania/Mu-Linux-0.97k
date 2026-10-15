@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
@@ -25,7 +26,7 @@ constexpr int ErrorMessageReconnect = 0x1B;   // DLL ReconnectMainProc
 void CReconnect::OnGameServerConnect(const char* ip, WORD port)
 {
     if (!ip || !port) return;
-    strncpy_s(m_Address, ip, _TRUNCATE);
+    Platform::TextCopySecure(m_Address, ip, Platform::TruncateText);
     m_Port = port;
 }
 

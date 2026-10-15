@@ -246,8 +246,8 @@ void __cdecl Game_MainLoop(HDC param_1)
         const char* charName   = DAT_07abf5d8 ? (DAT_07abf5d8 + 0x1c1) : "";
         // Copia defensiva con tope: %s puede ser largo si DAT_07abf5d8+0x1c1
         // apunta a bytes no-inicializados; wsprintfA no trunca.
-        char srvTrim[32];  strncpy_s(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
-        char chrTrim[32];  strncpy_s(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
+        char srvTrim[32];  Platform::TextCopySecure(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
+        char chrTrim[32];  Platform::TextCopySecure(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
         Platform::TextFormat(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
         // Append titleBuf to nameBuf
         int tlen = (int)strlen(titleBuf);

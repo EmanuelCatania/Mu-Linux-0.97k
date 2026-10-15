@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
 #include "UI/EventTimer.h"
@@ -165,7 +166,7 @@ void CMoveList::Render()
         m_dwTextColor = map.CanMove ? 0xFFFFFFFF : 0xFF1127A4;
         Text(Layout::MapX, y, map.MapName, Layout::MapWidth);
         char text[32];
-        if (map.MinLevel == -1) strcpy_s(text, "~"); else sprintf_s(text, "%d", map.MinLevel);
+        if (map.MinLevel == -1) Platform::TextCopySecure(text, "~"); else sprintf_s(text, "%d", map.MinLevel);
         Text(Layout::LevelX, y, text, Layout::LevelWidth);
         sprintf_s(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
         if (map.AccountLevel > 0) Text(Layout::VipX, y, "*", Layout::VipWidth);

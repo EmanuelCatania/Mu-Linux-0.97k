@@ -518,7 +518,7 @@ static void SendRegisterLucky(const char* number)
 static void SendExchangeLucky(const char* number)
 {
     BYTE pkt[16] = { 0xC1, 16, 0x9D };
-    strncpy_s((char*)pkt + 3, 13, number, _TRUNCATE);
+    Platform::TextCopySecure((char*)pkt + 3, 13, number, Platform::TruncateText);
     gNetwork.SendC1(pkt, sizeof(pkt));
 }
 

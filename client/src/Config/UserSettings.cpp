@@ -79,7 +79,7 @@ void CUserSettings::Load(const char* iniPath)
 {
     // Una segunda carga no debe conservar la fuente ni preferencias ausentes.
     *this = CUserSettings{};
-    strcpy_s(m_IniPath, iniPath);
+    Platform::TextCopySecure(m_IniPath, iniPath);
     for (int i = 0; i < MAX_ANTILAG; ++i)
         m_Antilag[i] = ReadFlag("Antilag", AntilagKey(i), iniPath) > 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);

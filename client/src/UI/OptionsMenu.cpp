@@ -543,7 +543,7 @@ UserFontSettings CurrentFont()
     UserFontSettings font = gUserSettings.GetFont();
     if (!font.present) {
         font = UserFontSettings{};
-        strcpy_s(font.faceName, "Arial");
+        Platform::TextCopySecure(font.faceName, "Arial");
         font.height = gFont.GetHeight();
     }
     return font;
@@ -581,7 +581,7 @@ bool COptionsMenu::UpdateFont()
     if (step != INT_MIN) {
         if (step) {
             // Una fuente fuera de la lista arranca desde la primera.
-            strcpy_s(font.faceName, gFont.GetFaceName(face < 0 ? 0 : face + step));
+            Platform::TextCopySecure(font.faceName, gFont.GetFaceName(face < 0 ? 0 : face + step));
             ApplyFont(font);
         }
         return true;

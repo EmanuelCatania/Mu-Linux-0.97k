@@ -2,6 +2,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -308,7 +309,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     else if (skillStatRec && ((const char*)skillStatRec)[0] != '\0')
         skillName = (const char*)skillStatRec;
     if (skillName && skillName[0]) {
-        strncpy_s(szName, sizeof(szName), skillName, 31);
+        Platform::TextCopySecure(szName, sizeof(szName), skillName, 31);
         szName[31] = '\0';
     }
     GetSkillInformation((int)skillType, 1, szName[0] ? NULL : szName, &piMana, &piDistance, &piSkillMana);
@@ -369,7 +370,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     DAT_07ea7b10[idx] = 0;
     idx++;
 
-    _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", szName);
+    _snprintf_s(TextListN(idx), 100, Platform::TruncateText, "%s", szName);
     DAT_07e91708[idx] = 1;
     DAT_07ea7b10[idx] = 1;
     idx++;
@@ -380,28 +381,28 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     idx++;
 
     if (piMinDamage > 0 || piMaxDamage > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        _snprintf_s(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(170, "Wizardry Dmg:%d~%d"), piMinDamage, piMaxDamage);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     if (piDistance > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        _snprintf_s(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(174, "Range: %d"), piDistance);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        _snprintf_s(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(175, "Mana: %d"), piMana);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     if (piSkillMana > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        _snprintf_s(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(360, "AG: %d"), piSkillMana);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
@@ -411,7 +412,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
     if (Hero && ((*(BYTE*)((char*)Hero + 0x1BC) & 7) == 1) && skillType == 47) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", GlobalTextOr(96, ""));
+        _snprintf_s(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
         DAT_07e91708[idx] = 5;
         DAT_07ea7b10[idx] = 0;
         idx++;

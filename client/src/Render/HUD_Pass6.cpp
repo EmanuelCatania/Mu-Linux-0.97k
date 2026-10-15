@@ -722,9 +722,9 @@ extern "C" void SetGuildNoticeText(const char* text)
         return;
     }
     if (GlobalText[483] && GlobalText[483][0]) {
-        _snprintf_s(g_GuildNotice[0], sizeof(g_GuildNotice[0]), _TRUNCATE, GlobalText[483], text);
+        _snprintf_s(g_GuildNotice[0], sizeof(g_GuildNotice[0]), Platform::TruncateText, GlobalText[483], text);
     } else {
-        _snprintf_s(g_GuildNotice[0], sizeof(g_GuildNotice[0]), _TRUNCATE, "%s", text);
+        _snprintf_s(g_GuildNotice[0], sizeof(g_GuildNotice[0]), Platform::TruncateText, "%s", text);
     }
     g_GuildNotice[1][0] = 0;
 }
@@ -1362,10 +1362,10 @@ extern "C" void __cdecl RenderTrade(void)
         const int x = TradeInventoryStartX + 50;
         GL_DrawTexture(271, (float)x, (float)goldY[i], 113, 18, 0, 0, .8828125f, .5625f, 1, 1);
         char amount[32];
-        if (gold[i] < 1000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u", (unsigned)gold[i]);
-        else if (gold[i] < 1000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
-        else if (gold[i] < 1000000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
-        else _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        if (gold[i] < 1000) _snprintf_s(amount, sizeof(amount), Platform::TruncateText, "%u", (unsigned)gold[i]);
+        else if (gold[i] < 1000000) _snprintf_s(amount, sizeof(amount), Platform::TruncateText, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
+        else if (gold[i] < 1000000000) _snprintf_s(amount, sizeof(amount), Platform::TruncateText, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        else _snprintf_s(amount, sizeof(amount), Platform::TruncateText, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF96DCFFu;
         RenderText(x - 30, goldY[i] + 2, GlobalText[224], 0, 0, 0);
@@ -1380,7 +1380,7 @@ extern "C" void __cdecl RenderTrade(void)
     const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
                           TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
     char levelText[64];
-    _snprintf_s(levelText, sizeof(levelText), _TRUNCATE, GlobalText[369], levelBand);
+    _snprintf_s(levelText, sizeof(levelText), Platform::TruncateText, GlobalText[369], levelBand);
     m_dwTextColor = TradeRemoteLevel < 50 ? 0xFF0000FFu : TradeRemoteLevel < 100 ? 0xFF1FFFFFu :
                     TradeRemoteLevel < 200 ? 0xFF18C900u : TradeRemoteLevel < 300 ? 0xFFFFFFD2u : 0xFFFF9900u;
     RenderText(TradeInventoryStartX + 140, TradeInventoryStartY + 45, GlobalText[368], 0, 0, 0);
@@ -1506,10 +1506,10 @@ static int ChaosMixLegacyValue()
 
 static void ChaosMixFormatZen(char* out, size_t outSize, int value)
 {
-    if (value < 1000) _snprintf_s(out, outSize, _TRUNCATE, "%d", value);
-    else if (value < 1000000) _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d", value / 1000, value % 1000);
-    else if (value < 1000000000) _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d,%03d", value / 1000000, (value / 1000) % 1000, value % 1000);
-    else _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d,%03d,%03d", value / 1000000000, (value / 1000000) % 1000, (value / 1000) % 1000, value % 1000);
+    if (value < 1000) _snprintf_s(out, outSize, Platform::TruncateText, "%d", value);
+    else if (value < 1000000) _snprintf_s(out, outSize, Platform::TruncateText, "%d,%03d", value / 1000, value % 1000);
+    else if (value < 1000000000) _snprintf_s(out, outSize, Platform::TruncateText, "%d,%03d,%03d", value / 1000000, (value / 1000) % 1000, value % 1000);
+    else _snprintf_s(out, outSize, Platform::TruncateText, "%d,%03d,%03d,%03d", value / 1000000000, (value / 1000000) % 1000, (value / 1000) % 1000, value % 1000);
 }
 
 extern "C" void __cdecl RenderChaosMix(void)
@@ -1574,14 +1574,14 @@ extern "C" void __cdecl RenderChaosMix(void)
     const int recipeText = mixType == 11 ? 7 : (mixType < 0 ? 0 : mixType);
     m_dwTextColor = recipeText ? 0xFF30F0FFu : 0xFF2FF0FFu;
     m_dwBackColor = 0x80303030u;
-    _snprintf_s(text, sizeof(text), _TRUNCATE, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
+    _snprintf_s(text, sizeof(text), Platform::TruncateText, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 50, text, 0, 0, 0);
     m_dwTextColor = 0xFFFFFFD2u;
-    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosRatePending));
-    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
+    if (pendingRate) Platform::TextCopySecure(text, gClientText.Get(ClientTextId::ChaosRatePending));
+    else _snprintf_s(text, sizeof(text), Platform::TruncateText, GlobalText[584], rate);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 70, text, 0, 0, 0);
-    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosCostPending));
-    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
+    if (pendingRate) Platform::TextCopySecure(text, gClientText.Get(ClientTextId::ChaosCostPending));
+    else _snprintf_s(text, sizeof(text), Platform::TruncateText, GlobalText[585], moneyText);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 90, text, 0, 0, 0);
 
     m_dwTextColor = 0xFF1414FFu;
