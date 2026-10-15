@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <execinfo.h>
+#include <chrono>
+#include <thread>
+#include <cpuid.h>
+#include <x86intrin.h>
 namespace Platform {
 class PosixDiagnostics final : public IDiagnostics {
     inline static int descriptor = -1;
@@ -20,6 +24,20 @@ class PosixDiagnostics final : public IDiagnostics {
         _exit(128 + signal);
     }
 public:
+    std::int64_t MeasureClockRate(std::uint32_t milliseconds) override {
+        // El port Linux no modifica prioridad ni afinidad. Esto mide TSC,
+        // no la frecuencia dinamica del nucleo en CPUs con TSC invariante.
+        unsigned int a, b, c, d;
+        if (!__get_cpuid(1, &a, &b, &c, &d) || !(d & 0x10)) return 0;
+        __cpuid(0, a, b, c, d);
+        const auto start = std::chrono::steady_clock::now();
+        const auto ticks = __rdtsc();
+        std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+        const auto end = std::chrono::steady_clock::now();
+        const auto elapsedTicks = __rdtsc() - ticks;
+        const double seconds = std::chrono::duration<double>(end - start).count();
+        return seconds > 0 ? static_cast<std::int64_t>(elapsedTicks / seconds) : 0;
+    }
     bool Install(DiagnosticLog log) override {
         if (descriptor >= 0) return true;
         const int fd = ::open("debug.log", O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);

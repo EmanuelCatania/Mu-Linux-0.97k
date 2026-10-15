@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Platform/ITimer.h"
+#include "Platform/Diagnostics.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -139,43 +140,7 @@ void __cdecl GetOSVersion(DWORD si) {
 // Port faithful from IDA sub_405E20: cpuid(1) check TSC bit, QPF, boost priority to
 // realtime, pin to CPU 0, measure RDTSC across Sleep(ms), restore state, compute ratio.
 long long __cdecl Cpu_MeasureClockRate(DWORD param_1) {
-    // CPUID(1) — check TSC support (EDX bit 4)
-    int regs[4] = {0,0,0,0};
-    __cpuid(regs, 1);
-    if ((regs[3] & 0x10) == 0) return 0;  // no TSC
-
-    LARGE_INTEGER freq;
-    if (!QueryPerformanceFrequency(&freq)) return 0;
-
-    HANDLE hProc = GetCurrentProcess();
-    HANDLE hThread = GetCurrentThread();
-    DWORD priClass = GetPriorityClass(hProc);
-    int   threadPri = GetThreadPriority(hThread);
-    DWORD_PTR procAff = 0, sysAff = 0;
-    GetProcessAffinityMask(hProc, &procAff, &sysAff);
-
-    SetPriorityClass(hProc, REALTIME_PRIORITY_CLASS);
-    SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL);
-    SetProcessAffinityMask(hProc, 1);
-
-    // cpuid as serializing barrier before RDTSC
-    __cpuid(regs, 0);
-    LARGE_INTEGER qpcStart, qpcEnd;
-    QueryPerformanceCounter(&qpcStart);
-    unsigned __int64 tscStart = __rdtsc();
-    Platform::GetTimer().SleepMilliseconds(param_1);
-    QueryPerformanceCounter(&qpcEnd);
-    unsigned __int64 tscEnd = __rdtsc();
-
-    SetProcessAffinityMask(hProc, procAff);
-    SetThreadPriority(hThread, threadPri);
-    SetPriorityClass(hProc, priClass);
-
-    double tscDelta = (double)(__int64)(tscEnd - tscStart);
-    double qpcDelta = (double)(qpcEnd.QuadPart - qpcStart.QuadPart);
-    double seconds  = qpcDelta / (double)freq.QuadPart;
-    if (seconds <= 0.0) return 0;
-    return (long long)(tscDelta / seconds);
+    return Platform::GetDiagnostics().MeasureClockRate(param_1);
 }
 
 // GetCPUInfo @ 0x00405F40 (~336 lines) — Detect CPU vendor + model string
