@@ -1428,7 +1428,7 @@ undefined4 __cdecl SecondPassword_CancelReturn(void)
     char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x87;
     unsigned int uVar8 = 3;
     int iVar6 = 0;
-    if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
+    if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         do {
             int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar3 == -1) {

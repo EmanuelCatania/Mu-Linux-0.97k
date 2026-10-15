@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
@@ -392,7 +393,7 @@ void NetRecv_03(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // gNetwork.Send wrap correcto: chain-XOR + serial counter
     // + SimpleModulus + envelope C3.
     NetLog("NET:  → op=0x03 MainCheck challenge size=%d, sending ACK (C3)", Size);
-    if (SocketClientSocket != 0xffffffff && Size >= 3) {
+    if (Platform::GetSocket().IsOpen(SocketClientSocket) && Size >= 3) {
         BYTE ack[16];
         int ackSize = Size > (int)sizeof(ack) ? (int)sizeof(ack) : Size;
         ack[0] = 0xC1;

@@ -256,9 +256,9 @@ void __cdecl UI_InGameMenu(void)
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             gNetwork.Send(pkt, 5);
                         }
-                        if (SocketClientSocket != 0xffffffff) {
+                        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-                            SocketClientSocket = (DWORD)INVALID_SOCKET;
+                            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
                         }
                         DAT_083a7c1c = 1;
                         DAT_083a7c20 = 50;   // 50 ticks = 5 s at 10 FPS refresh

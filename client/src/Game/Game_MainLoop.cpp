@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -374,7 +375,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // DESVIACION MuEmu: Protocol.h::PMSG_LIVE_CLIENT_RECV, 12 bytes con padding.
     // HackPacketCheck exige C3; gNetwork recibe el C1 lógico y lo cifra.
     #if 1
-    if (SocketClientSocket != 0xffffffff &&
+    if (Platform::GetSocket().IsOpen(SocketClientSocket) &&
         (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == 7)) {
         static DWORD s_lastLive = 0;
         DWORD now = Platform::GetTimer().Ticks();

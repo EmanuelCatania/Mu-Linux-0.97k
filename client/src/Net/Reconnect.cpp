@@ -79,9 +79,9 @@ void CReconnect::GiveUp()
 {
     m_Status = STATUS_DISCONNECT;
     DAT_083a7c24 = 0;   // ErrorMessage
-    if (SocketClientSocket != 0xffffffff) {
+    if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-        SocketClientSocket = (DWORD)INVALID_SOCKET;
+        SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
     }
     extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
     UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
@@ -115,16 +115,16 @@ void CReconnect::Tick()
     case PROGRESS_LOGIN:
         if (!m_LoginSent) { SendLogin(); break; }      // no llegó el F1/00
         // Sin respuesta: empezar de nuevo.
-        if (SocketClientSocket != 0xffffffff) {
+        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-            SocketClientSocket = (DWORD)INVALID_SOCKET;
+            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;
     default:
-        if (SocketClientSocket != 0xffffffff) {
+        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-            SocketClientSocket = (DWORD)INVALID_SOCKET;
+            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;

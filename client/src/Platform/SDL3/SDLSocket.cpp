@@ -53,6 +53,7 @@ class SDLSocket final : public ISocket {
     NativeSocket Native() const { return static_cast<NativeSocket>(active); }
     void Fail(int reason) { failure = reason; state = State::Failed; }
 public:
+    bool IsOpen(SocketHandle socket) const override { return socket != InvalidSocket; }
     void BindEvents(SocketEventSink value) override { sink = value; }
     bool IsConnected(SocketHandle s) const override { return s == active && state == State::Connected; }
     int Startup(uint16_t requested, uint16_t& actual) override {
