@@ -260,7 +260,10 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
         if (found != installed.end()) path = found->second;
     }
     auto bytes = path.empty() ? std::vector<uint8_t>{} : ReadFont(path);
-    bool fallback = bytes.empty();
+    // Una familia instalada puede ser de símbolos (Webdings/Wingdings) o
+    // resultar incompatible. El respaldo depende de cargarla, no sólo de leerla.
+    bool loaded = !bytes.empty() && Load(std::move(bytes), height, error);
+    const bool fallback = !loaded;
     if (fallback) {
         const char* root = assetRoot && *assetRoot ? assetRoot : std::getenv("MU_ASSET_ROOT");
         std::filesystem::path base;
@@ -272,8 +275,9 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
         const char* style = bold ? (italic ? "BoldItalic" : "Bold") : (italic ? "Italic" : "Regular");
         path = (base / "fonts/LiberationSans" / (std::string("LiberationSans-") + style + ".ttf")).string();
         bytes = ReadFont(path);
+        loaded = Load(std::move(bytes), height, error);
     }
-    if (!Load(std::move(bytes), height, error)) {
+    if (!loaded) {
         error += ": " + path;
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Fuente: %s", error.c_str());
         return false;
