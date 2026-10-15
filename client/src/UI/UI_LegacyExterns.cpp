@@ -1,6 +1,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -283,7 +284,9 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
 {
     int skillTipX = *(int*)&a1;
-    if (a3 < 0 || a3 >= 60 || !CharacterAttribute || !Hero) return;
+    // Skill[60] comienza en +87 dentro de la reserva de 0x584 bytes.
+    if (a3 < 0 || a3 >= 60 || !CharacterAttribute || !Hero ||
+        CharacterAttribute != DAT_07cf1ffc) return;
 
     unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
     if (skillType == 0 || skillType >= 64) return;
@@ -321,14 +324,16 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     if (piMana < 0 || piMana > 5000) piMana = 0;
     if (piSkillMana < 0 || piSkillMana > 5000) piSkillMana = 0;
 
-    if (CharacterMachine && skillStatRec) {
-        __try {
+    // La fila ya esta acotada a 64 * 0x28; Damage ocupa +0x24..25.
+    // Los bonus +70/+72 pertenecen al CharacterMachine reservado en WinMain.
+    if (CharacterMachine && CharacterMachine == DAT_07cf1ffc && skillStatRec) {
+        if (!Platform::RunValidatedOperation([&]() {
             int baseDamage = (int)*(WORD*)(skillStatRec + 0x24);
             if (baseDamage > 0 && baseDamage < 5000) {
                 piMinDamage = baseDamage + *(unsigned short*)((char*)CharacterMachine + 70);
                 piMaxDamage = baseDamage + (baseDamage >> 1) + *(unsigned short*)((char*)CharacterMachine + 72);
             }
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
+        })) {
             piMinDamage = 0;
             piMaxDamage = 0;
         }
