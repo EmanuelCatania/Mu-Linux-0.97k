@@ -1,6 +1,7 @@
 // Scene_EntityLifecycle.cpp
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
 #include "Platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
@@ -48,6 +49,8 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     UINT  uVar2 = (UINT)bVar4;
 
     UINT* puVar3 = (UINT*)operator_new(0x1bc);
+    if (!puVar3) return nullptr;
+    SceneObjects::Register(puVar3);
     UINT* p = puVar3;
     for (int i = 0x6f; i != 0; i--) *p++ = 0;
 

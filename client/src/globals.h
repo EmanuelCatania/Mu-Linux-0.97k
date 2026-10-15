@@ -1265,7 +1265,11 @@ extern "C" BYTE Inventory[];
 // que los callers no computen attrBase = type*0x40 + basura.
 static __forceinline unsigned int ItemAttribute_Base(void) {
     const unsigned int p = (unsigned int)DAT_07d78068;
-    if (p < 0x100000u || p >= 0x80000000u) return 0;
+    const unsigned int allocation = (unsigned int)DAT_055c9e44;
+    // Reserva: (ITEM_MAX_EX + 0x400) filas de 64 bytes, con base
+    // desplazada hasta 0x3ff filas. No asumir un mapa virtual de Windows.
+    if (!allocation || p < allocation || p - allocation > 0x400u * 64u ||
+        (p - allocation) % 64u != 0) return 0;
     return p;
 }
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528

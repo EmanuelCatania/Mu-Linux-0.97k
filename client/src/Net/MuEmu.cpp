@@ -3,9 +3,10 @@
 // port's GameServer/HackCheck.cpp.  See MuEmu.h for the key-derivation story.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/MuEmu.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 
 // Disable the global send() redirect macro inside this TU so MuEmu_send_hook
 // can call the real WS2_32 send().
@@ -49,8 +50,8 @@ void InitKeys(const char* customerName, const char* serverSerial)
 
     char cust[32] = { 0 };   // CServerInfo::m_CustomerName[32]
     char ser[17]  = { 0 };   // CServerInfo::m_ServerSerial[17]
-    lstrcpynA(cust, customerName, sizeof(cust));
-    lstrcpynA(ser,  serverSerial, sizeof(ser));
+    Platform::TextCopy(cust, customerName, sizeof(cust));
+    Platform::TextCopy(ser,  serverSerial, sizeof(ser));
 
     WORD encDecKey = 0;
     for (int n = 0; n < (int)sizeof(cust); ++n) {
@@ -68,7 +69,7 @@ void InitKeys(const char* customerName, const char* serverSerial)
 
     {
         char line[192];
-        wsprintfA(line,
+        Platform::TextFormat(line,
                   "MuEmu: InitKeys CustomerName='%s' Serial='%s' -> "
                   "EncDecKey1=0x%02X EncDecKey2=0x%02X (xor=0x%02X add=0x%02X)",
                   cust, ser, encDecKey1, encDecKey2, g_EncKey1, g_EncKeyAdd);
@@ -90,8 +91,8 @@ static void DumpHex(const char* tag, const BYTE* buf, int len)
     char hex[1024]; hex[0] = 0;
     int n = len > 256 ? 256 : len;
     for (int i = 0; i < n; ++i) {
-        char t[8]; wsprintfA(t, "%02X ", buf[i]);
-        lstrcatA(hex, t);
+        char t[8]; Platform::TextFormat(t, "%02X ", buf[i]);
+        Platform::TextConcat(hex, sizeof(hex), t);
     }
 #else
     (void)tag; (void)buf; (void)len;

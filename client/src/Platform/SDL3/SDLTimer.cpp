@@ -1,9 +1,11 @@
 #include "Platform/ITimer.h"
+#include "Platform/LocalTime.h"
 #include <SDL3/SDL.h>
 namespace Platform {
 namespace {
 class SDLTimer final : public ITimer {
 public:
+    LocalDateTime LocalTime() override { return ReadLocalTime(); }
     // Origen monotónico SDL; conserva el wrap de 32 bits usado por el cliente.
     uint32_t Ticks() override { return static_cast<uint32_t>(SDL_GetTicks()); }
     uint32_t MultimediaTicks() override { return Ticks(); }

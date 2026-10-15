@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/GuardedOperation.h"
+#include "Item/ItemDefines.h"
 #include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
 
@@ -47,14 +50,14 @@ void Terrain_Render(void)
             if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
             {
                 char *entity = (char*)*chunk_ptr;
-                __try {
+                Platform::RunValidatedOperation([&]() {
                     int chunkIter = 0;
                     while (entity != nullptr &&
                            chunkIter++ < 4096 &&
-                           (uintptr_t)entity >= 0x10000u &&
-                           (uintptr_t)entity < 0x80000000u)
+                           SceneObjects::Contains(entity))
                     {
-                        if (*entity == '\0')
+                        if (*entity == '\0' || !DAT_05828d58 ||
+                            *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= MODEL_MAX_TOTAL)
                         {
                             entity = *(char**)(entity + 0x1b8);
                             continue;
@@ -91,9 +94,7 @@ void Terrain_Render(void)
 
                         entity = *(char**)(entity + 0x1b8);
                     }
-                } __except (EXCEPTION_EXECUTE_HANDLER) {
-                    // Corrupt node in chunk linked list; abandon this chunk.
-                }
+                }); // SEH adicional en Windows; nodos y tipos validados en ambos sistemas.
             }
 
             chunk_ptr += 4;

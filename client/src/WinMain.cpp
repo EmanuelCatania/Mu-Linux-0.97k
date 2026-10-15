@@ -27,6 +27,8 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Platform/Diagnostics.h"
+#include "Platform/Text.h"
 #include "Platform/NativeBridge.h"
 #include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
@@ -289,7 +291,7 @@ static void DbgLog(const char* msg)
         sanitized[j] = 0;
     }
 
-    int n = wsprintfA(buf, "[%u] %s\r\n", t, sanitized);
+    int n = Platform::TextFormat(buf, "[%u] %s\r\n", t, sanitized);
     if (n > 0) {
         // Salida a debug.log, con kill-switch si no se puede abrir (bajo debugger se
         // usa OutputDebugStringA, ver abajo).
@@ -336,132 +338,6 @@ extern "C" void ChkHeapPublic(const char* tag)
 #endif
 }
 
-static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
-{
-    // Anti-recursion guard: Si DbgLog crashea (e.g., WriteFile AV),
-    // el filter se reentra → recursion infinita → otra AV en KernelBase.
-    static __declspec(thread) int s_handlerDepth = 0;
-    if (s_handlerDepth > 0) return EXCEPTION_CONTINUE_SEARCH;
-    s_handlerDepth++;
-
-    // El .dmp se escribe PRIMERO, antes de loguear nada.  Todo lo que sigue
-    // (recorrido de frames, escaneo de stack) puede fallar por su cuenta si la
-    // memoria quedo hecha un desastre, y en ese caso igual queremos el volcado.
-    // Ver Debug/MiniDump.h: no esta en el binario original, se agrega con el
-    // enfoque del MuServer.
-    char dumpPath[MAX_PATH] = {};
-    bool dumpOk = false;
-    __try {
-        dumpOk = CMiniDump::Write(ep, dumpPath, sizeof(dumpPath));
-    } __except (EXCEPTION_EXECUTE_HANDLER) { dumpOk = false; }
-
-    char line1[256], line2[256], full[600];
-    __try {
-        _snprintf_s(line1, sizeof(line1), _TRUNCATE,
-            "CRASH: code=0x%08X  addr=0x%p",
-            ep->ExceptionRecord->ExceptionCode,
-            ep->ExceptionRecord->ExceptionAddress);
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        line1[0] = 0;
-    }
-    line2[0] = 0;
-    __try {
-        if (ep && ep->ExceptionRecord && ep->ExceptionRecord->NumberParameters >= 2) {
-            _snprintf_s(line2, sizeof(line2), _TRUNCATE,
-                "param0=%u  param1=0x%p",
-                (unsigned)ep->ExceptionRecord->ExceptionInformation[0],
-                (void*)ep->ExceptionRecord->ExceptionInformation[1]);
-        }
-    } __except (EXCEPTION_EXECUTE_HANDLER) { line2[0] = 0; }
-    __try { DbgLog(line1); } __except (EXCEPTION_EXECUTE_HANDLER) {}
-    if (line2[0]) __try { DbgLog(line2); } __except (EXCEPTION_EXECUTE_HANDLER) {}
-    // ── Stack trace desde el contexto del crash ──────────────────────────────
-    __try {
-        if (ep && ep->ContextRecord) {
-            CONTEXT* ctx = ep->ContextRecord;
-            char trace[800];
-            int n = 0;
-            n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
-                "STACK_PC: 0x%p (esp=0x%p ebp=0x%p)",
-                (void*)ctx->Eip, (void*)ctx->Esp, (void*)ctx->Ebp);
-            DbgLog(trace);
-
-            // Volcado de registros — los valores de los argumentos suelen ir en eax/ecx/edx
-            _snprintf_s(trace, sizeof(trace), _TRUNCATE,
-                "REGS: eax=%08X ecx=%08X edx=%08X ebx=%08X esi=%08X edi=%08X",
-                (unsigned)ctx->Eax, (unsigned)ctx->Ecx, (unsigned)ctx->Edx,
-                (unsigned)ctx->Ebx, (unsigned)ctx->Esi, (unsigned)ctx->Edi);
-            DbgLog(trace);
-
-            // ── Recorrido de frames por EBP (direcciones de retorno reales) ─────
-            // Por cada frame: prev_ebp = *ebp, return_addr = *(ebp+4),
-            // then ebp = prev_ebp.
-            n = _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_FRAMES:");
-            DWORD ebp = ctx->Ebp;
-            DWORD prev_ebp_value = 0;
-            for (int frame = 0; frame < 12 && n < (int)sizeof(trace) - 16; ++frame) {
-                __try {
-                    if (ebp < 0x10000 || ebp > 0x7FFFFFFF) break;
-                    if (ebp & 3) break; // misaligned
-                    DWORD ret = *(DWORD*)(ebp + 4);
-                    DWORD next = *(DWORD*)(ebp);
-                    if (next != 0 && next <= ebp) break; // sanity: ebp must grow upward
-                    n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
-                        " 0x%X", ret);
-                    prev_ebp_value = ebp;
-                    ebp = next;
-                    if (ebp == prev_ebp_value) break;
-                } __except (EXCEPTION_EXECUTE_HANDLER) { break; }
-            }
-            DbgLog(trace);
-
-            // ── Escaneo crudo del stack (250 dwords desde esp): atrapa frames FPO/sin-EBP ──
-            // El loop emite hasta ~25 direcciones candidatas (filtradas al código del juego).
-            int dumped = 0;
-            n = _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_SCAN:");
-            DWORD esp = ctx->Esp;
-            for (int i = 0; i < 250 && n < (int)sizeof(trace) - 16 && dumped < 25; ++i) {
-                __try {
-                    DWORD val = *(DWORD*)(esp + i * 4);
-                    if (val >= 0x401000 && val < 0x600000) {
-                        n += _snprintf_s(trace + n, sizeof(trace) - n, _TRUNCATE,
-                            " %X:%X", esp + i*4, val);
-                        dumped++;
-                    }
-                } __except (EXCEPTION_EXECUTE_HANDLER) { break; }
-            }
-            DbgLog(trace);
-        }
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-
-    __try {
-        if (dumpOk) {
-            char b[MAX_PATH + 32];
-            _snprintf_s(b, sizeof(b), _TRUNCATE, "MINIDUMP: %s", dumpPath);
-            DbgLog(b);
-        } else {
-            DbgLog("MINIDUMP: no se pudo escribir (dbghelp.dll?)");
-        }
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-
-    // Antes del cartel: si estabamos en pantalla completa hay que devolverle el
-    // escritorio al usuario, o el MessageBox sale en la resolucion del juego y,
-    // peor, queda asi despues de que el proceso muere.
-    __try { gWindow.RestoreDisplay(); } __except (EXCEPTION_EXECUTE_HANDLER) {}
-
-    __try {
-        if (dumpOk) {
-            _snprintf_s(full, sizeof(full), _TRUNCATE,
-                        "%s\n%s\n\nVolcado guardado en:\n%s", line1, line2, dumpPath);
-        } else {
-            _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
-        }
-        MessageBoxA(NULL, full, "Crash", MB_OK | MB_ICONERROR);
-    } __except (EXCEPTION_EXECUTE_HANDLER) {}
-
-    s_handlerDepth--;
-    return EXCEPTION_EXECUTE_HANDLER;
-}
 
 extern int Config_Load(void);
 extern int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort);
@@ -527,14 +403,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         }
     }
     _set_invalid_parameter_handler(SilentInvalidParameterHandler);
-    // SEM_FAILCRITICALERRORS: sin esto Windows puede interponer su propio
-    // dialogo de error critico y matar el proceso antes de que corra nuestro
-    // filtro, o sea sin .dmp.  Es lo mismo que hace CMiniDump::Start del server.
-    SetErrorMode(SEM_FAILCRITICALERRORS);
-    SetUnhandledExceptionFilter(DbgUnhandledException);
-    // dbghelp.dll y la reserva de emergencia, ANTES de que haga falta: si el
-    // crash es por falta de memoria, durante el filtro ya no se puede cargar.
-    CMiniDump::Preload();
+    if (!Platform::GetDiagnostics().Install(DbgLogPublic)) {
+        Platform::GetWindow().ShowError("No se pudo inicializar el diagnóstico de crashes", "Mu Online", false, true);
+        return 1;
+    }
 #ifdef _DEBUG
     // DIAG: CRT debug heap con guard bytes. La corrupción se detecta en el
     // siguiente alloc/free que toque el bloque dañado — rápido sin O(n^2) de
@@ -641,7 +513,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     if (!gNetwork.HasConnectServer()) {
         char* srv0 = DAT_083a45d8;                           // entry index 0
         memset(srv0, 0, 0x21e);
-        lstrcpynA(srv0, "MuServer", 20);                     // +0x00 name
+        Platform::TextCopy(srv0, "MuServer", 20);                     // +0x00 name
         srv0[0x14] = 1;                                      // +0x14 num_channels
         *(unsigned short*)(srv0 + 0x2c) = 1;                 // channel[0] id → "1"
         // Load byte = ocupación del server (0..100). El original lo recibe por
@@ -768,7 +640,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             "Soul Master", "Blade Knight", "Muse Elf"
         };
         for (int i = 0; i < 7; ++i)
-            lstrcpynA(DAT_07d2b494 + i * 300, kCN[i], 300);
+            Platform::TextCopy(DAT_07d2b494 + i * 300, kCN[i], 300);
     }
 
     SceneFlag = 1;  // SceneFlag: 1=Intro, 2=Login, 3=Loading, 4=CharSelect, 5=InGame

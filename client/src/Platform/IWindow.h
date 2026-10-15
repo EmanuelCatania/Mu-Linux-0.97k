@@ -17,6 +17,7 @@ public:
     virtual bool UsesPlatformPump() const { return false; }
     virtual bool CloseRequested() const { return false; }
     virtual void Shutdown() {}
+    virtual void ShowError(const char* text, const char* title, bool attach, bool errorIcon) = 0;
     virtual bool Create(const WindowSettings& settings) = 0;
     virtual bool IsCreated() const = 0;
     virtual void ChangeMode(const WindowSettings& settings) = 0;

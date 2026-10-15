@@ -65,7 +65,7 @@
 //     Similar all-same-digits check → SetErrorMessage(0x88) or proceed
 //
 //   Other keys / character input:
-//     wsprintfA(&local_d20, format, (&DAT_07e91394)[iVar5])
+//     Platform::TextFormat(&local_d20, format, (&DAT_07e91394)[iVar5])
 //     Append formatted char to DAT_07ea9814 buffer (strlen-based)
 //     Trimmed to uVar14 max length
 //
@@ -136,6 +136,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -198,7 +199,7 @@ unsigned int __cdecl SecondPassword_Handler(void)
                 DAT_07eaa14c = 0;
             } else if (len < maxLen) {         // digito (el teclado esta barajado)
                 char digit[8];
-                wsprintfA(digit, "%d", (int)DAT_07e91394[btn]);
+                Platform::TextFormat(digit, "%d", (int)DAT_07e91394[btn]);
                 strcat(DAT_07ea9814, digit);
             }
         } else if (len == maxLen || (maxLen != 4 && len > 0)) {   // aceptar
@@ -1427,7 +1428,7 @@ undefined4 __cdecl SecondPassword_CancelReturn(void)
     char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x87;
     unsigned int uVar8 = 3;
     int iVar6 = 0;
-    if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
+    if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
         do {
             int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar3 == -1) {

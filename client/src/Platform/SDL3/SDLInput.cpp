@@ -129,6 +129,14 @@ bool SDLCALL Watch(void*, SDL_Event* event) {
 }
 class SDLInput final : public IInput {
 public:
+    bool HasImeModeIndicator() const override {
+#ifdef _WIN32
+        return true;
+#else
+        // DESVIACION aprobada: Linux no muestra un modo IMM que SDL no proporciona.
+        return false;
+#endif
+    }
     int16_t KeyState(int key) override {
         if (key < 0 || key >= 256) return 0;
         const auto result = static_cast<int16_t>((held[key] ? 0x8000 : 0) | (pressed[key] ? 1 : 0));

@@ -1,6 +1,7 @@
 // SoundManager.cpp — CSound. Ver SoundManager.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IAudio.h"
 #include "Sound/SoundManager.h"
 
@@ -91,7 +92,7 @@ bool CSound::PlayMusic(const char* fileName)
     m_Music = sound;
 
     char line[300];
-    wsprintfA(line, "Music: %s", fileName);
+    Platform::TextFormat(line, "Music: %s", fileName);
     DbgLogPublic(line);
     return true;
 }

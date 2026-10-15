@@ -6,6 +6,7 @@
 namespace Platform {
 class Win32Input final : public IInput {
 public:
+    bool HasImeModeIndicator() const override { return true; }
     int16_t KeyState(int key) override { return GetAsyncKeyState(key); }
     void CaptureMouse(bool capture) override {
         if (capture) SetCapture(GetWin32Window().GetHwnd());

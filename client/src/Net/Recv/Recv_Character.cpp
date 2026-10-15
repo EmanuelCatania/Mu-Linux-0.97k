@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -435,9 +436,9 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         // Volcado hex de la región del paquete con los stats, para verificación
         char hexBuf[256];
         int hexN = 0;
-        hexN = wsprintfA(hexBuf, "NET:    F3/03 RB[8..50] hex:");
+        hexN = Platform::TextFormat(hexBuf, "NET:    F3/03 RB[8..50] hex:");
         for (int i = 8; i <= 50 && hexN < (int)sizeof(hexBuf) - 4; ++i) {
-            hexN += wsprintfA(hexBuf + hexN, " %02X", RB[i]);
+            hexN += Platform::TextFormat(hexBuf + hexN, " %02X", RB[i]);
         }
         NetLog("%s", hexBuf);
     }
@@ -1396,10 +1397,10 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // Protocol/GameServerProtocol.h).  El server MuEmu los manda en loop; hoy
             // se ignoran (inofensivo), pero acá queda el hex para identificarlos.
             char b[420];
-            int p = wsprintfA(b, "NET:  → F3/%02X UNHANDLED-DUMP size=%d: ", sub, Size);
+            int p = Platform::TextFormat(b, "NET:  → F3/%02X UNHANDLED-DUMP size=%d: ", sub, Size);
             int dumpN = Size > 80 ? 80 : Size;
             for (int i = 0; i < dumpN && p < 400; ++i)
-                p += wsprintfA(b + p, "%02X ", Msg[i]);
+                p += Platform::TextFormat(b + p, "%02X ", Msg[i]);
             NetLog("%s", b);
             // También logueá los bytes imprimibles (nombres de evento, etc.)
             char t[100]; int q = 0;
@@ -1477,7 +1478,7 @@ void NetRecv_2C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         char buf[300];
         // GlobalText[377] = texto de suma, [379] = texto de resta.
-        wsprintfA(buf, GlobalText[outcome == 0 ? 377 : 379],
+        Platform::TextFormat(buf, GlobalText[outcome == 0 ? 377 : 379],
                   GlobalText[kStatText[statIdx]], amount);
         CreateOkMessageBox(buf);
     }

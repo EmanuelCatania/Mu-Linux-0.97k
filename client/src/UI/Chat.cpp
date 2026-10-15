@@ -15,6 +15,7 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Config/UserSettings.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,9 +62,9 @@ UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_
   int c;
   LPSIZE *lpsz;
 
-  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6);
+  c = Platform::TextLength(param_3);
+  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6, (size_t)c + 1);
   lpsz = &lpsz_07e113d0;
-  c = lstrlenA(param_3);
   gFont.MeasureText(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
   if ((0 < (int)param_4) && ((int)param_4 < (int)lpsz_07e113d0)) {
     lpsz_07e113d0 = param_4;
@@ -109,8 +110,8 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
     }
 
     const int width = (int)DAT_00559c8c;
-    UI_DrawText(x, y, text, width, 1, 0);
-    gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &g_TextExtent07E113D0);
+    UI_DrawText(x, y, text, width, 1, 0, sizeof(text));
+    gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &g_TextExtent07E113D0);
     if (width > 0 && g_TextExtent07E113D0.cx > width)
         g_TextExtent07E113D0.cx = width;
     ScaleGlobalTextSize();
@@ -121,10 +122,11 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
             // IDA 0x47F25B: lea esi, InputTextIME[index*4]. Taking
             // &DAT_07e11cec would multiply by the whole 40-byte array again.
             const char* cursor = DAT_07e11cec + index * 4;
-            if (*cursor == 0) cursor = "_";
-            else if (hide == 1) cursor = "**";
-            UI_DrawText(x + g_TextExtent07E113D0.cx, y, (char*)cursor, 0, 1, 0);
-            gFont.MeasureText(gFont.GetTextDC(), cursor, lstrlenA(cursor), &g_TextExtent07E113D0);
+            size_t cursorCapacity = 4;
+            if (*cursor == 0) { cursor = "_"; cursorCapacity = 2; }
+            else if (hide == 1) { cursor = "**"; cursorCapacity = 3; }
+            UI_DrawText(x + g_TextExtent07E113D0.cx, y, (char*)cursor, 0, 1, 0, cursorCapacity);
+            gFont.MeasureText(gFont.GetTextDC(), cursor, Platform::TextLength(cursor), &g_TextExtent07E113D0);
             ScaleGlobalTextSize();
         }
     }
@@ -150,7 +152,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     SIZE sz = {0, 0};
-    gFont.MeasureText(gFont.GetTextDC(), param_1, lstrlenA(param_1), &sz);
+    gFont.MeasureText(gFont.GetTextDC(), param_1, Platform::TextLength(param_1), &sz);
 
     auto shiftUp = [notice]() {
         for (int s = 0; s < 5; ++s) {
@@ -208,7 +210,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 
   SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   lpsz = &local_208;
-  iVar2 = lstrlenA(param_1);
+  iVar2 = Platform::TextLength(param_1);
   gFont.MeasureText(gFont.GetTextDC(),param_1,iVar2,lpsz);
   if (5 < DAT_07e11d9c) {
     DAT_07e11d9c = 5;
@@ -377,15 +379,15 @@ void UI_RenderNotices(void)
       DAT_00559c78 = -0x37009c;
     }
     lpsz = &local_8;
-    iVar1 = lstrlenA(lpString);
+    iVar1 = Platform::TextLength(lpString);
     gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,lpsz);
     iVar1 = iVar2;
     if (g_bUseChatListBox == 1) {
       iVar1 = iVar2 + -0x118;
     }
-    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0);
+    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0, 256);
     lpsz_00 = &lpsz_07e113d0;
-    iVar1 = lstrlenA(lpString);
+    iVar1 = Platform::TextLength(lpString);
     gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
     // IDA RenderNotices @0x47FCE0 hace exactamente esto acá.
     ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
@@ -481,7 +483,7 @@ void UI_RenderChatLogOverlay(void)
         }
       }
       lpsz = &local_108;
-      iVar3 = lstrlenA(local_100);
+      iVar3 = Platform::TextLength(local_100);
       gFont.MeasureText(gFont.GetTextDC(),local_100,iVar3,lpsz);
       iVar3 = DAT_083a427c;
       bVar8 = -1 < DAT_083a427c;
@@ -517,9 +519,9 @@ LAB_00480b8e:
           DAT_00559c78 = uVar2;
         }
       }
-      UI_DrawText(0,iVar7,local_100,0,1,0);
+      UI_DrawText(0,iVar7,local_100,0,1,0, sizeof(local_100));
       lpsz_00 = &lpsz_07e113d0;
-      iVar5 = lstrlenA(local_100);
+      iVar5 = Platform::TextLength(local_100);
       gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
       ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     }

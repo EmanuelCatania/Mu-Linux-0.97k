@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
@@ -110,9 +111,9 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
         extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
         if (!reconnecting)
             UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
-        if (SocketClientSocket != 0xffffffff) {
+        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
-            SocketClientSocket = (DWORD)INVALID_SOCKET;
+            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
     }
 }
@@ -208,7 +209,7 @@ void CNetwork::RequestServerList()
 // binario.
 void CNetwork::SendToConnectServer(const BYTE* data, int len)
 {
-    if (SocketClientSocket == 0xffffffff) return;
+    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return;
     if (len <= 0) return;
     if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len <= 0x2000 - SocketClientSendBufferLength) {
@@ -253,7 +254,7 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
 // results in a "Protocol header error" immediate disconnect.
 int CNetwork::SendRaw(const char* buf, int len)
 {
-    if (SocketClientSocket == 0xffffffff) return 0;
+    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return 0;
 
     // Copy to a mutable scratch buffer so we can encrypt in place without
     // clobbering caller state (some callers reuse `buf` across retries).
@@ -397,7 +398,7 @@ void CNetwork::SendResolved(const BYTE* pkt, int totalLen, bool chosenC3, const 
         // salga o no), pero queda el aviso para no perder una hora buscando
         // una desconexion sin causa aparente.
         char line[160];
-        wsprintfA(line,
+        Platform::TextFormat(line,
                   "PacketFrame: 0x%02X/%02X no figura en HackPacketCheck.txt "
                   "-> el server va a cerrar la conexion (%s)", opcode, subop, who);
         DbgLogPublic(line);

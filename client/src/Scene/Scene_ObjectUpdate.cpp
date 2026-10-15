@@ -3,6 +3,8 @@
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
@@ -591,19 +593,15 @@ void __stdcall MoveObjects(void) {
             char* pcVar6;
             char bucketFlag = *(char*)(puVar4 + 2);  // +8 bytes: bucket type flag
 
-            // Guard contra punteros corruptos en la lista de buckets: el deref va dentro de
-            // SEH, así un AV corta el recorrido del bucket en vez de tirar el proceso. Más
-            // range check + tope de iteraciones para los loops que no fallan.
-            #define MOV_OBJ_VALID_PTR(p) \
-                ((uintptr_t)(p) >= 0x00010000u && (uintptr_t)(p) < 0x80000000u)
+            // Cada enlace debe identificar un nodo aun vivo de CreateObject.
             int bucketIter = 0;
             const int kBucketIterMax = 4096;
 
-            __try {
+            Platform::RunValidatedOperation([&]() {
             if (bucketFlag == '\0') {
                 // Static objects: just animate, don't render-update
                 pcVar6 = (char*)*puVar4;
-                while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
+                while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0') {
                         MoveObject_Special((int)pcVar6);
@@ -615,7 +613,7 @@ void __stdcall MoveObjects(void) {
             else {
                 // Dynamic objects: render-update + animate
                 pcVar6 = (char*)*puVar4;
-                while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
+                while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0' && pcVar6[0x160] != '\0') {
                         // `FUN_004fdc00` tiene la firma `(float o)` — un artefacto de Hex-Rays: el
@@ -678,10 +676,7 @@ void __stdcall MoveObjects(void) {
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
                 } // end while linked list
             }
-            } __except (EXCEPTION_EXECUTE_HANDLER) {
-                // Corrupt next-pointer hit unmapped memory; truncate this
-                // bucket and continue with the next one.
-            }
+            }); // Windows conserva la proteccion SEH del recorrido.
             puVar4 += 4;  // next bucket entry (16 bytes)
             bucketsLeft--;
         } while (bucketsLeft != 0);

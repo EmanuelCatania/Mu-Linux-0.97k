@@ -390,6 +390,7 @@
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
 #include "Terrain/Terrain.h"
 
@@ -519,7 +520,7 @@ uint __cdecl OpenTerrainHeight(char *filename)
         crt_sprintf(Text, "%s file not found.", FileName);
         CErrorReport_Write(&DAT_055c9bf0, Text);
         if (gWindow.GetHwnd()) {
-            MessageBoxA(gWindow.GetHwnd(), Text, nullptr, 0);
+            Platform::GetWindow().ShowError(Text, nullptr, true, false);
             gWindow.RequestCloseApplication();
         }
         return 0;
@@ -594,7 +595,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
         sprintf(msg, "%s : File not exist!", full_path);
         CErrorReport__Write(0x55c9bf0, msg);
         CErrorReport__Write(0x55c9bf0, (char*)"\n");
-        MessageBoxA((HWND)gWindow.GetHwnd(), msg, NULL, 0);
+        Platform::GetWindow().ShowError(msg, NULL, true, false);
         gWindow.RequestCloseApplication();
         return;
     }

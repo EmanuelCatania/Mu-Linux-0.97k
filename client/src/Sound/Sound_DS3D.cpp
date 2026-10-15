@@ -8,6 +8,7 @@
 // State lives in globals.cpp. See src/Sound/Sound.cpp for the loader side.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Platform/IAudio.h"
 
 
@@ -156,8 +157,7 @@ void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
 // Logs current local date/time via CErrorReport_Write (debug log sink at DAT_055C9BF0).
 // If param_1 != 0, logs an additional data block from DAT_00558128.
 void CErrorReport_WriteCurrentTime(int param_1) {
-    _SYSTEMTIME local_10;
-    GetLocalTime(&local_10);
+    const auto local_10 = Platform::GetTimer().LocalTime();
     CErrorReport_Write(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
     if (param_1 != 0) {
         CErrorReport_Write(&DAT_055c9bf0, DAT_00558128);

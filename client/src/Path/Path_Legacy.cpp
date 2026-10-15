@@ -1,6 +1,7 @@
 // Path_Legacy.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -231,7 +232,7 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
         static int s_pflogF = 0;
         if (s_pflogF++ < 30) {
             char b[200];
-            wsprintfA(b, "A* FAIL #%d: src=(%d,%d) dst=(%d,%d) iWall=%d rad=%d errChk=%d explored=%d",
+            Platform::TextFormat(b, "A* FAIL #%d: src=(%d,%d) dst=(%d,%d) iWall=%d rad=%d errChk=%d explored=%d",
                       s_pflogF, sx, sy, tx, ty, iWall, (int)fDistance, (int)bErrorCheck, explored);
             DbgLogPublic(b);
         }

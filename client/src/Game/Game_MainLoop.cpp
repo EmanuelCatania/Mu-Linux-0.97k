@@ -34,6 +34,8 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include "Net/Reconnect.h"
@@ -193,8 +195,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     gReconnect.Tick();   // DESVIACION (DLL Reconnect.cpp, 0x00525995)
     Sound_Update3DPositions();
     {
-        SYSTEMTIME st;
-        GetLocalTime(&st);
+        const auto st = Platform::GetTimer().LocalTime();
         // IDA 0x525D40 L308:
         //   sprintf(GrabFileName, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
         //           st.wMonth, st.wDay, st.wHour, st.wMinute, GrabScreen);
@@ -247,7 +248,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         // apunta a bytes no-inicializados; wsprintfA no trunca.
         char srvTrim[32];  strncpy_s(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
         char chrTrim[32];  strncpy_s(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
-        wsprintfA(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
+        Platform::TextFormat(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
         // Append titleBuf to nameBuf
         int tlen = (int)strlen(titleBuf);
         int nlen = (int)strlen(nameBuf);
@@ -373,7 +374,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // DESVIACION MuEmu: Protocol.h::PMSG_LIVE_CLIENT_RECV, 12 bytes con padding.
     // HackPacketCheck exige C3; gNetwork recibe el C1 lógico y lo cifra.
     #if 1
-    if (SocketClientSocket != 0xffffffff &&
+    if (Platform::GetSocket().IsOpen(SocketClientSocket) &&
         (SceneFlag == 4 || SceneFlag == 5 || gMapManager.GetCurrentMap() == 7)) {
         static DWORD s_lastLive = 0;
         DWORD now = Platform::GetTimer().Ticks();

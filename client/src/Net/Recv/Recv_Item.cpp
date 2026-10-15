@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/ChaosMixRates.h"
@@ -900,7 +901,7 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             if (got > 0) {
                 char money[32], line[128];
                 ConvertGold64(got, money);
-                wsprintfA(line, "%s %s %s", money, GlobalText[224], GlobalText[918]);
+                Platform::TextFormat(line, "%s %s %s", money, GlobalText[224], GlobalText[918]);
                 UIChatLogWindow_AddText("", line, 1);
             }
         }
@@ -934,7 +935,7 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             char name[100], line[160];
             Item_FormatName(&tmp, name);
             if (name[0]) {
-                wsprintfA(line, "%s %s", name, GlobalText[918]);
+                Platform::TextFormat(line, "%s %s", name, GlobalText[918]);
                 UIChatLogWindow_AddText("", line, 1);
             }
         }

@@ -26,7 +26,7 @@
 // header C1 normal ya cifrado.
 
 #pragma once
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 namespace MuEmu {
 

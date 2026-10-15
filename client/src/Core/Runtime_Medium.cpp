@@ -121,8 +121,7 @@ void __fastcall CSQuest__setQuestLists(int ecx, int /*edx*/, BYTE *byList, int n
 
 // FUN_005404c0 @ 0x005404C0 (71 bytes) — GameGuard: seed RNG from system time
 int __fastcall FUN_005404c0(int param_1) {
-    SYSTEMTIME st;
-    GetLocalTime(&st);
+    const auto st = Platform::GetTimer().LocalTime();
     // DAT_083bbb74 = (st.wSecond | ((int)st.wMinute << 16)) * st.wMonth * st.wYear ^ 0xdad53a;
     return param_1;
 }

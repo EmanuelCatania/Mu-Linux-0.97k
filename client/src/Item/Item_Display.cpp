@@ -1,6 +1,7 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
@@ -221,7 +222,7 @@ LABEL_121:
 
 renderLabel:
     {
-        int  textLen = lstrlenA(String);
+        int  textLen = Platform::TextLength(String);
         SIZE sz;
         gFont.MeasureText(gFont.GetTextDC(), String, textLen, &sz);
         if (Sort) {

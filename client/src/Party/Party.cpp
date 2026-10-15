@@ -123,6 +123,7 @@
 //   packet[3] == 1 → SetErrorMessage(0x91)  — guild join decline UI
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Party.h"
 #include "Net/Net.h"    // Net_Disconnect, SocketClientSocket / WSAEWOULDBLOCK queue
 
@@ -319,7 +320,7 @@ void Guild_AddMemberResult(BYTE* pkt)
         }
         else
         {
-            wsprintfA(buf, &param_2_07d58fd4, (UINT)pkt[4]);
+            Platform::TextFormat(buf, &param_2_07d58fd4, (UINT)pkt[4]);
             CreateOkMessageBox((char*)buf);
         }
     }
@@ -331,7 +332,7 @@ void Guild_AddMemberResult(BYTE* pkt)
         }
         else
         {
-            wsprintfA(buf, &param_2_07d68268, (UINT)pkt[4]);
+            Platform::TextFormat(buf, &param_2_07d68268, (UINT)pkt[4]);
             CreateOkMessageBox((char*)buf);
         }
     }

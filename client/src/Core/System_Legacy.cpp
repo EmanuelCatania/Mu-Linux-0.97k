@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Platform/ITimer.h"
+#include "Platform/Diagnostics.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -139,43 +140,7 @@ void __cdecl GetOSVersion(DWORD si) {
 // Port faithful from IDA sub_405E20: cpuid(1) check TSC bit, QPF, boost priority to
 // realtime, pin to CPU 0, measure RDTSC across Sleep(ms), restore state, compute ratio.
 long long __cdecl Cpu_MeasureClockRate(DWORD param_1) {
-    // CPUID(1) — check TSC support (EDX bit 4)
-    int regs[4] = {0,0,0,0};
-    __cpuid(regs, 1);
-    if ((regs[3] & 0x10) == 0) return 0;  // no TSC
-
-    LARGE_INTEGER freq;
-    if (!QueryPerformanceFrequency(&freq)) return 0;
-
-    HANDLE hProc = GetCurrentProcess();
-    HANDLE hThread = GetCurrentThread();
-    DWORD priClass = GetPriorityClass(hProc);
-    int   threadPri = GetThreadPriority(hThread);
-    DWORD_PTR procAff = 0, sysAff = 0;
-    GetProcessAffinityMask(hProc, &procAff, &sysAff);
-
-    SetPriorityClass(hProc, REALTIME_PRIORITY_CLASS);
-    SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL);
-    SetProcessAffinityMask(hProc, 1);
-
-    // cpuid as serializing barrier before RDTSC
-    __cpuid(regs, 0);
-    LARGE_INTEGER qpcStart, qpcEnd;
-    QueryPerformanceCounter(&qpcStart);
-    unsigned __int64 tscStart = __rdtsc();
-    Platform::GetTimer().SleepMilliseconds(param_1);
-    QueryPerformanceCounter(&qpcEnd);
-    unsigned __int64 tscEnd = __rdtsc();
-
-    SetProcessAffinityMask(hProc, procAff);
-    SetThreadPriority(hThread, threadPri);
-    SetPriorityClass(hProc, priClass);
-
-    double tscDelta = (double)(__int64)(tscEnd - tscStart);
-    double qpcDelta = (double)(qpcEnd.QuadPart - qpcStart.QuadPart);
-    double seconds  = qpcDelta / (double)freq.QuadPart;
-    if (seconds <= 0.0) return 0;
-    return (long long)(tscDelta / seconds);
+    return Platform::GetDiagnostics().MeasureClockRate(param_1);
 }
 
 // GetCPUInfo @ 0x00405F40 (~336 lines) — Detect CPU vendor + model string
@@ -220,30 +185,8 @@ DWORD __stdcall GetDXVersion_stub(void) {
 // declaration since the call sites (vtable dispatch via CErrorReport) are not
 // active in our build.
 void __stdcall CErrorReport_DumpCallStack(void) {
-    // No-op: CErrorReport vtable not wired up in our build. The implementation
-    // logic is preserved as CErrorReport_DumpCallStack_impl below for future use.
-}
-extern "C" void CErrorReport_DumpCallStack_impl(DWORD This) {
-    CONTEXT ctx;
-    memset(&ctx, 0, sizeof(ctx));
-    ctx.ContextFlags = CONTEXT_FULL;
-    if (!GetThreadContext(GetCurrentThread(), &ctx)) return;
-
-    CErrorReport__Write(This, (char*)"<Register>\r\n");
-    CErrorReport__Write(This, (char*)"EAX = 0x%08X  EBX = 0x%08X  ECX = 0x%08X  EDX = 0x%08X\r\n",
-                        ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx);
-    CErrorReport__Write(This, (char*)"ESI = 0x%08X  EDI = 0x%08X  EBP = 0x%08X  EIP = 0x%08X\r\n",
-                        ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Eip);
-    CErrorReport__Write(This, (char*)"<Call Stack>\r\n");
-
-    DWORD* ebp = (DWORD*)(uintptr_t)ctx.Ebp;
-    int count = 0;
-    while (ebp && !IsBadReadPtr(ebp, sizeof(DWORD) * 2) && *ebp != 0 && count < 1024) {
-        DWORD ret = ebp[1];  // return address sits at [ebp+4]
-        CErrorReport__Write(This, (char*)"0x%08X\r\n", ret);
-        ebp = (DWORD*)(uintptr_t)*ebp;
-        ++count;
-    }
+    // Vtable historica no conectada. El diagnostico activo se instala mediante
+    // Platform::IDiagnostics; se conserva esta entrada ABI sin callers activos.
 }
 
 // IDA: FUN_00406bd0 @ 0x00406BD0 — Packet cipher init (constructor)

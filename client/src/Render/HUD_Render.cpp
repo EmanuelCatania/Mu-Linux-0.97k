@@ -278,7 +278,7 @@
 //       else:
 //         pCVar4 = &DAT_07d65e14 + DAT_07e11d8c * 300;
 //       // Mostrar "SkillName (%d)" con segundos restantes
-//       wsprintfA(local_100, pCVar4, 30 - (DVar3-DAT_07e11d90)/1000);
+//       Platform::TextFormat(local_100, pCVar4, 30 - (DVar3-DAT_07e11d90)/1000);
 //       DrawText(10, 0x174, local_100, 0,1,0);
 //     }
 //   }
@@ -509,7 +509,7 @@
 //                      (subMode == 0x333) ? &DAT_07d43bfc :
 //                      (char*)((subMode - 400) * 0x40 + DAT_07d78068);  // sprite
 //
-//       // lstrlenA(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
+//       // Platform::TextLength(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
 //       // Text_MeasureBox(ftol()+0x32, ftol(), name, 0, '\0', 0)
 //       //   → DrawText(x+50, y, name, shadow=0, italic=0, flags=0)
 //
@@ -654,22 +654,22 @@
 //         // Línea 1: "jugadores actuales / máximo" (solo si hay límite)
 //         if (DAT_00559cd0 != 0xffff) {
 //           LPCSTR fmt = (DAT_07e11d88 == 5) ? &DAT_07d693fc : &DAT_07d691a4;
-//           wsprintfA(local_100, fmt, DAT_00559cd4, DAT_00559cd0);
+//           Platform::TextFormat(local_100, fmt, DAT_00559cd4, DAT_00559cd0);
 //           SelectObject(g_hDC, DAT_055ca010);        // fuente bold
 //           FUN_00514270(0x23a, 0x159, local_100);    // DrawTextCenter(570, 345, str)
 //         }
 //
 //         // Línea 2: timer total (vía ftol())
 //         SelectObject(g_hDC, DAT_055ca010);
-//         wsprintfA(local_100, &param_2_07d692d0);
+//         Platform::TextFormat(local_100, &param_2_07d692d0);
 //         FUN_00514270(0x23a, (int)__ftol(), local_100);
 //
 //         // Calcular y construir string "MM:SS" mediante strcat inline:
 //         int mins = DAT_00559ccc / 60;
 //         int secs = DAT_00559ccc - mins * 60;
-//         wsprintfA(local_100, s___2d___00559f3c, mins);   // "%2d:"
+//         Platform::TextFormat(local_100, s___2d___00559f3c, mins);   // "%2d:"
 //         if (secs >= 0) {
-//           wsprintfA(local_10c, s___2d_00559f44, secs);   // "%2d"
+//           Platform::TextFormat(local_10c, s___2d_00559f44, secs);   // "%2d"
 //           // strcat(local_100, local_10c) — inline strlen+memcpy
 //         }
 //
@@ -677,7 +677,7 @@
 //
 //         if (mins < 15) {
 //           // Parpadeo de segundos: (int)(ftol() % 60)
-//           // wsprintfA(local_10c, ":%2d", blink_sec)
+//           // Platform::TextFormat(local_10c, ":%2d", blink_sec)
 //           // strcat inline → local_100 += local_10c
 //         }
 //
@@ -708,4 +708,5 @@
 //   GL_SetBlendSrcOver   → SetBlendMode(mode)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Render/HUD_Render.h"

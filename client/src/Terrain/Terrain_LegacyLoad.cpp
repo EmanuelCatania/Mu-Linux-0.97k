@@ -1,6 +1,7 @@
 // Terrain_LegacyLoad.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -54,7 +55,7 @@ void __cdecl OpenTerrainMapping(const char *path) {
     Terrain_Clear(); // InitTerrainMappingLayer (IDA)
     FILE *f = crt_fopen(path, DAT_005580ac);
     if (!f) {
-        char d[256]; wsprintfA(d, "TerrainMap LOAD FAIL: %s", path);
+        char d[256]; Platform::TextFormat(d, "TerrainMap LOAD FAIL: %s", path);
         DbgLogPublic(d);
         return;
     }
@@ -101,7 +102,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
         // Falla en silencio: el caller prueba dos formatos (Terrain*.att y
         // EncTerrain*.att) y un MessageBox bloqueante impediría el fallback.
         char dbg[260];
-        wsprintfA(dbg, "OpenTerrainAttribute: file not found '%s'", FileName);
+        Platform::TextFormat(dbg, "OpenTerrainAttribute: file not found '%s'", FileName);
         DbgLogPublic(dbg);
         return 0;
     }
@@ -110,7 +111,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
     fseek(fp, 0, SEEK_SET);
     if (iSize != 65539) {
         char dbg[260];
-        wsprintfA(dbg, "OpenTerrainAttribute: '%s' wrong size %d (expected 65539)",
+        Platform::TextFormat(dbg, "OpenTerrainAttribute: '%s' wrong size %d (expected 65539)",
                   FileName, iSize);
         DbgLogPublic(dbg);
         fclose(fp);
@@ -372,7 +373,7 @@ void __cdecl OpenWorldModels(void) {
 
                 const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
                 _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtLeaf, v4);
-                lstrcpynA(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
+                Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
             }
         }
         break;

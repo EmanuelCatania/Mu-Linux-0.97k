@@ -1,6 +1,7 @@
 // UI_IME.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
@@ -40,6 +41,7 @@ bool __cdecl CheckIME_Status(bool change, int mode) {
 // at screen positions (100, 100/110/120/130).
 // Uses DAT_07e11d94 (g_dwOldConv), DAT_00559cd8 (g_dwOldSent).
 void __stdcall RenderIME_Status(void) {
+    if (!Platform::GetInput().HasImeModeIndicator()) return;
     char local_64[100];
 
     // Line 1: Korean/English mode based on bit 0 of g_dwOldConv
@@ -53,7 +55,7 @@ void __stdcall RenderIME_Status(void) {
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     RenderText(100, 100, local_64, 0, 1, NULL);
-    int iVar1 = lstrlenA(local_64);
+    int iVar1 = Platform::TextLength(local_64);
     SIZE sz;
     gFont.MeasureText(gFont.GetTextDC(), local_64, iVar1, &sz);
 
@@ -62,18 +64,18 @@ void __stdcall RenderIME_Status(void) {
     DWORD dwConv = state.conversion, dwSent = state.sentence;
     sprintf(local_64, "Sentence Mode : %d", dwSent);
     RenderText(100, 0x6e, local_64, 0, 1, NULL);
-    iVar1 = lstrlenA(local_64);
+    iVar1 = Platform::TextLength(local_64);
     gFont.MeasureText(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 3: Old sentence mode
     sprintf(local_64, "Old Sentence Mode : %d", DAT_00559cd8);
     RenderText(100, 0x78, local_64, 0, 1, NULL);
-    iVar1 = lstrlenA(local_64);
+    iVar1 = Platform::TextLength(local_64);
     gFont.MeasureText(gFont.GetTextDC(), local_64, iVar1, &sz);
 
     // Line 4: Lock input status
     sprintf(local_64, "LockInputStatus %d", (int)DAT_07e11d6f);
     RenderText(100, 0x82, local_64, 0, 1, NULL);
-    iVar1 = lstrlenA(local_64);
+    iVar1 = Platform::TextLength(local_64);
     gFont.MeasureText(gFont.GetTextDC(), local_64, iVar1, &sz);
 }

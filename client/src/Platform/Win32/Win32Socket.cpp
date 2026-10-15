@@ -6,6 +6,7 @@ namespace Platform {
 namespace {
 class Win32Socket final : public ISocket {
 public:
+    bool IsOpen(SocketHandle socket) const override { return socket != InvalidSocket; }
     int Startup(uint16_t requested, uint16_t& actual) override {
         WSADATA data;
         int result = WSAStartup(requested, &data);

@@ -1,6 +1,7 @@
 // UserSettings.cpp — preferencias del jugador desde Config.ini. Ver UserSettings.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
 #include <cerrno>
@@ -86,7 +87,7 @@ void CUserSettings::Load(const char* iniPath)
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
-        wsprintfA(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
+        Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
                   m_Resolution, MAX_USER_RESOLUTION - 1);
         DbgLogPublic(line);
         m_Resolution = -1;
@@ -107,7 +108,7 @@ void CUserSettings::Load(const char* iniPath)
         if (_stricmp(language, GetLanguageSuffix(i)) == 0) m_Language = i;
     if (language[0] && m_Language == USER_LANG_DEFAULT) {
         char line[96];
-        wsprintfA(line, "Config.ini: LangSelection=%s IGNORADO (Eng, Spn o Por)", language);
+        Platform::TextFormat(line, "Config.ini: LangSelection=%s IGNORADO (Eng, Spn o Por)", language);
         DbgLogPublic(line);
     }
 
@@ -130,15 +131,15 @@ void CUserSettings::Load(const char* iniPath)
     }
 
     char line[160];
-    wsprintfA(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
+    Platform::TextFormat(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
                     "EnableSound=%d EnableMusic=%d (-1 = no está)",
               m_WindowMode, m_Borderless, m_Resolution, m_EnableSound, m_EnableMusic);
     DbgLogPublic(line);
     if (m_Font.present) {
-        wsprintfA(line, "Config.ini: Font='%s' %d (bold=%d quality=%d)",
+        Platform::TextFormat(line, "Config.ini: Font='%s' %d (bold=%d quality=%d)",
                   m_Font.faceName, m_Font.height, m_Font.bold, m_Font.quality);
     } else {
-        wsprintfA(line, "Config.ini: sin [Font], se usa la fuente del binario (Arial)");
+        Platform::TextFormat(line, "Config.ini: sin [Font], se usa la fuente del binario (Arial)");
     }
     DbgLogPublic(line);
 }
@@ -153,7 +154,7 @@ void CUserSettings::SaveInt(const char* section, const char* key, int value) con
 {
     if (!m_IniPath[0]) return;
     char text[16];
-    wsprintfA(text, "%d", value);
+    Platform::TextFormat(text, "%d", value);
     Platform::GetFileSystem().WriteIniString(section, key, text, m_IniPath);
 }
 

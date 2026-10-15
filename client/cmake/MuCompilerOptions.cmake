@@ -1,6 +1,13 @@
 # Sólo existen Debug y Release, como en el .sln.
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE STRING "" FORCE)
 
+# Conservar los flags inicializados por el toolchain (especialmente -m32).
+# El ejecutable Linux sigue en integración; sus presets públicos son platform-only.
+if(NOT MSVC)
+    set(MU_COMMON_COMPILE_OPTIONS -fsigned-char -mfpmath=sse -msse2)
+    return()
+endif()
+
 # Se vacían los flags por defecto de CMake (/RTC1, /Ob0, /Ob2, /DNDEBUG, /W1...,
 # y -DWIN32/-D_DEBUG de rc.exe) para que sólo queden los que pone cada target,
 # igual que en el .vcxproj.

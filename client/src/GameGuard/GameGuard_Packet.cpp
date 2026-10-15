@@ -1,6 +1,7 @@
 // GameGuard_Packet.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -26,11 +27,11 @@ BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn) {
 int __stdcall FUN_004070d0(int param_1, int param_2) {
     (void)param_1; (void)param_2;
     // switch(param_1):
-    //   case 0x3E9/0x3EA: wsprintfA(buf, param_2_template, param_2); MessageBoxA; CloseHack
+    //   case 0x3E9/0x3EA: Platform::TextFormat(buf, param_2_template, param_2); MessageBoxA; CloseHack
     //   case 0x3F3: MessageBoxA(error); CloseHack(g_hWnd, true)
-    //   case 0x3F4: wsprintfA(buf, template, param_1); MessageBoxA; CloseHack
-    //   case 0x3F5: wsprintfA(buf, template, param_2)
-    //   case 0x3F6: wsprintfA(buf, param_2_template, param_2); MessageBoxA; CloseHack
+    //   case 0x3F4: Platform::TextFormat(buf, template, param_1); MessageBoxA; CloseHack
+    //   case 0x3F5: Platform::TextFormat(buf, template, param_2)
+    //   case 0x3F6: Platform::TextFormat(buf, param_2_template, param_2); MessageBoxA; CloseHack
     //   case 0x3F8: build XOR-encrypted C1 packet:
     //     32-byte key = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,...}
     //     XOR payload with key[i%32] ^ prev_byte

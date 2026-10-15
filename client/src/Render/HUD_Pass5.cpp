@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Game/HeroVitals.h"
 #include "globals.h"
 #include "structs.h"
@@ -284,7 +285,7 @@ void __cdecl Render_HudPass_4BD650_(void)
     if ((double)MouseX >= 97.0 && (double)MouseX < 150.0 &&
         (double)MouseY >= 432.0 && (double)MouseY < 480.0) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, GlobalText[358], cur_HP, max_HP);
+        Platform::TextFormat(Buffer, GlobalText[358], cur_HP, max_HP);
         RenderTipText(103, 419, Buffer);
     }
 
@@ -299,7 +300,7 @@ void __cdecl Render_HudPass_4BD650_(void)
     if ((double)MouseX >= 489.0 && (double)MouseX < 542.0 &&
         (double)MouseY >= 432.0 && (double)MouseY < 480.0) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, GlobalText[359], cur_MP, max_MP);
+        Platform::TextFormat(Buffer, GlobalText[359], cur_MP, max_MP);
         RenderTipText(495, 419, Buffer);
     }
 

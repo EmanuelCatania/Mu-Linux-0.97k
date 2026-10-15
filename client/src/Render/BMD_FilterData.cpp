@@ -2,6 +2,7 @@
 // Carga y guardado de los filtros de texto (filtro de chat y de nombres).
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
@@ -56,7 +57,7 @@ void __cdecl OpenFilterFile(const char* path)
     FILE* Stream = Platform::GetFileSystem().Open(path, "rb");
     if (!Stream) {
         sprintf(local_100, "%s - File not exist.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
         gWindow.RequestCloseApplication();
         return;
     }
@@ -77,7 +78,7 @@ void __cdecl OpenFilterFile(const char* path)
     }
     if (Checksum != acc) {
         sprintf(local_100, "%s - File corrupted.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
         gWindow.RequestCloseApplication();
         operator_delete(Buffer);
         return;
@@ -160,7 +161,7 @@ void __cdecl OpenNameFilterFile(const char* path)
     FILE* Stream = Platform::GetFileSystem().Open(path, "rb");
     if (!Stream) {
         sprintf(local_100, "%s - File not exist.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
         gWindow.RequestCloseApplication();
         return;
     }
@@ -180,7 +181,7 @@ void __cdecl OpenNameFilterFile(const char* path)
     }
     if (Checksum != acc) {
         sprintf(local_100, "%s - File corrupted.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
         gWindow.RequestCloseApplication();
         operator_delete(Buffer);
         return;

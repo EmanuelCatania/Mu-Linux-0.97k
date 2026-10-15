@@ -594,8 +594,7 @@ void CContentCatalog::GetFogColor(int map, float rgba[4])
         float day[3] = { 127 / 255.0f, 178 / 255.0f, 1.0f };   // MapFog.h del DLL
         float night[3] = { 51 / 255.0f, 51 / 255.0f, 51 / 255.0f };
         GetMapFog(map, day, night);
-        SYSTEMTIME time;
-        GetLocalTime(&time);
+        const auto time = Platform::GetTimer().LocalTime();
         const float minute = time.wMinute / 60.0f;
         float t = 0.0f;
         if (time.wHour == 7) t = minute;

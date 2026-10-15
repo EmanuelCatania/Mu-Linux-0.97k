@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Camera3D.h"
@@ -9,7 +10,7 @@
 #include "functions.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 #include <string.h>
 
 
@@ -830,7 +831,7 @@ void __cdecl Player_ProcessInput(void)
                             pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
                         }
                         MuEmu::EncryptSend(pkt, 7);
-                        if (SocketClientSocket != 0xFFFFFFFF) {
+                        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             ::send(SocketClientSocket, (const char*)pkt, 7, 0);
                         }
                         SetPlayerAttack((int)ent, 0, 0, 0);

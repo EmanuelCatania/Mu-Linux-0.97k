@@ -8,7 +8,7 @@
 // asset: se arma con TerrainWall cada vez que cambia el mapa.  El modo de
 // minimapa en una esquina no se porta porque ningún mapa lo usa.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 class CMiniMap {
 public:

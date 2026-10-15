@@ -350,6 +350,21 @@ set(MU_SOURCES
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
 set(MU_HEADERS
+    src/Platform/IDiagnostics.h
+    src/Platform/Diagnostics.h
+    src/Platform/Win32/Win32Diagnostics.h
+    src/Platform/Posix/PosixDiagnostics.h
+    src/Platform/IIdentity.h
+    src/Platform/Identity.h
+    src/Platform/Win32/Win32Identity.h
+    src/Platform/Posix/PosixIdentity.h
+    src/Platform/LocalTime.h
+    src/Platform/Text.h
+    src/Platform/GuardedOperation.h
+    src/Scene/ObjectRegistry.h
+    src/Platform/PlatformHeaders.h
+    src/Platform/DebugHeaders.h
+    src/Platform/Posix/WinTypes.h
     src/stdafx.h
     src/functions.h
     src/globals.h
@@ -457,16 +472,23 @@ set(MU_RESOURCES
 # El .rc va en una librería OBJECT aparte: el generador de Visual Studio copia
 # los defines de C++ al ResourceCompile del mismo target, y el .vcxproj no le
 # pasa ningún define a rc.exe. El .res resultante se enlaza igual en main.exe.
+if(WIN32)
 add_library(mu97k_res OBJECT ${MU_RESOURCES})
 set_target_properties(mu97k_res PROPERTIES FOLDER lib)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src" FILES ${MU_RESOURCES})
+
+endif()
 
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
 endif()
-add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
+if(WIN32)
+    add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
+else()
+    add_executable(mu97k ${MU_SOURCES} ${MU_HEADERS})
+endif()
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src"
     FILES ${MU_SOURCES} ${MU_HEADERS})
@@ -491,6 +513,7 @@ target_include_directories(mu97k PRIVATE
     ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
+if(MSVC)
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.
 # Van como opciones /D y no con target_compile_definitions porque el
 # generador de Visual Studio ignora $<COMPILE_LANGUAGE> en las definiciones y
@@ -526,6 +549,15 @@ set_source_files_properties(${MU_PCH_USERS} PROPERTIES
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
 
+else()
+    target_compile_options(mu97k PRIVATE ${MU_COMMON_COMPILE_OPTIONS})
+    target_compile_definitions(mu97k PRIVATE $<$<CONFIG:Debug>:_DEBUG>)
+    # Mantener los artefactos Linux separados del cliente Windows de prueba.
+    set_target_properties(mu97k PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/bin")
+endif()
+
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     target_link_libraries(mu97k PRIVATE mu_platform_sdl)
     target_compile_definitions(mu97k PRIVATE MU_MINIAUDIO_LINKED MU_SDL_FONTS)
@@ -534,6 +566,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
             "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts" "$<TARGET_FILE_DIR:mu97k>/assets/fonts")
 endif()
 
+if(WIN32)
 target_link_libraries(mu97k PRIVATE
     jpeg
     opengl32
@@ -564,5 +597,11 @@ target_link_options(mu97k PRIVATE
     $<$<CONFIG:Release>:/OPT:ICF>
     $<$<CONFIG:Release>:/LTCG>
 )
+
+else()
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(mu97k PRIVATE jpeg OpenGL::GL OpenGL::GLU)
+    target_link_options(mu97k PRIVATE "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
+endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT mu97k)

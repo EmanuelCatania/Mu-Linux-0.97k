@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include "Platform/ITimer.h"
+#include "Platform/LocalTime.h"
 #include <cmath>
 namespace Platform {
 class Win32Timer final : public ITimer {
 public:
+    LocalDateTime LocalTime() override { return ReadLocalTime(); }
     uint32_t Ticks() override { return GetTickCount(); }
     uint32_t MultimediaTicks() override { return timeGetTime(); }
     void SleepMilliseconds(uint32_t milliseconds) override { Sleep(milliseconds); }

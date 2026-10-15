@@ -1,6 +1,7 @@
 // UI_TextBitmap.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -28,12 +29,12 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
             prefixWidth = 0;
         } else {
             SIZE sz;
-            int prefixLen = lstrlenA(p9);
+            int prefixLen = Platform::TextLength(p9);
             gFont.MeasureText(gFont.GetTextDC(), p9, prefixLen, &sz);
             prefixWidth = sz.cx;
 
             // Output prefix text at (p6, 0)
-            int slen = lstrlenA(p9);
+            int slen = Platform::TextLength(p9);
             gFont.DrawTextMask(gFont.GetTextDC(), p6, 0, p9, slen);
         }
 
@@ -41,7 +42,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         SetTextColor(gFont.GetTextDC(), 0xffffff);
 
         // Output main text at (prefixWidth + p6, 0)
-        int mainLen = lstrlenA(p3);
+        int mainLen = Platform::TextLength(p3);
         gFont.DrawTextMask(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
     }
 

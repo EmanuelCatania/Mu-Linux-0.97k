@@ -88,6 +88,7 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
 #include "Texture.h"
 
@@ -451,7 +452,7 @@ int Texture_Load(const char* path, int id,
     if (!ok && show_err) {
         char msg[600];
         _snprintf_s(msg, _TRUNCATE, "File not found:\n%s", full);
-        MessageBoxA(gWindow.GetHwnd(), msg, "IError", MB_OK);
+        Platform::GetWindow().ShowError(msg, "IError", true, false);
         if (gWindow.GetHwnd()) SendMessageA(gWindow.GetHwnd(), WM_CLOSE, 0, 0);
     }
     return ok;

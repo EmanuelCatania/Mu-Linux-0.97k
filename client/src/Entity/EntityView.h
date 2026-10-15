@@ -1,5 +1,5 @@
 #pragma once
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 #include <cstring>
 
 // Vista mínima del layout legado (0x394); no posee ni modifica la entidad.

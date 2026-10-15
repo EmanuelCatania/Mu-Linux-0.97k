@@ -14,7 +14,7 @@
 // WndProc vive en Core/WndProc.cpp; su orden de despacho se conserva.
 // La ventana nativa y su contexto OpenGL viven en Platform/Win32.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 class CWindow {
 public:

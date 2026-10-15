@@ -19,6 +19,7 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/GoldenArcher.h"
 #include "UI/UIState.h"
 #include "Net/Protocol/GameServerProtocol.h"
@@ -442,7 +443,7 @@ static bool IsWorkZone(int x, int y, int w, int h)
 static int CenterTextPosY(const char* text, int y)
 {
     SIZE sz = { 0, 0 };
-    gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &sz);
+    gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &sz);
     return y - ((480 * sz.cy / (GA_WindowHeight ? GA_WindowHeight : 480)) >> 1);
 }
 

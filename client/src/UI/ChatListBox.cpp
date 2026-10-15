@@ -73,6 +73,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include <mbstring.h>
@@ -1182,11 +1183,11 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
     if (v40[0]) {
         SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
-        wsprintfA(Buffer, "%s: %s", GlobalText[754], v40);
+        Platform::TextFormat(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
         m_dwBackColor = g_bUseChatListBox ? 0u : 0x96000000u;
         EnableAlphaTest(true);
-        UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
+        UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0, sizeof(Buffer));
         GL_ResetState();
         if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
@@ -1265,10 +1266,10 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
             m_dwTextColor = back;
             m_dwBackColor = t;
         }
-        wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
-        UI_DrawText(x, y, Buffer, 0, 1, 0);
+        Platform::TextFormat(Buffer, "%s: ", (const char*)(self[25] + 8));
+        UI_DrawText(x, y, Buffer, 0, 1, 0, sizeof(Buffer));
         if (gFont.GetTextDC())
-            gFont.MeasureText(gFont.GetTextDC(), Buffer, lstrlenA(Buffer), &sz);
+            gFont.MeasureText(gFont.GetTextDC(), Buffer, Platform::TextLength(Buffer), &sz);
         // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
         sz.cx = (LONG)((float)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
     }
@@ -1284,8 +1285,8 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         default: break;
     }
     if (g_bUseChatListBox && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
-    lstrcpynA(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
-    UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0);
+    Platform::TextCopy(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
+    UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0, sizeof(Buffer));
 
     GL_ResetState();   // DisableAlphaBlend
     return 1;
@@ -1444,7 +1445,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
     if (Hero && *(BYTE*)(Hero + 846) && InputEnable) {
         const char* sender = (const char*)(self[25] + 8);
         SIZE sz = {0,0};
-        int len = lstrlenA(sender);
+        int len = Platform::TextLength(sender);
         if (gFont.GetTextDC()) gFont.MeasureText(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
             int v10 = (int)self[25];
@@ -1860,13 +1861,13 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     memset(Buffer, 0, sizeof(Buffer));
     const char* name = (const char*)(self[25] + 8);
     _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "%s", name);
-    UI_DrawText(v4, v5, Buffer, 0, 1, 0);
+    UI_DrawText(v4, v5, Buffer, 0, 1, 0, sizeof(Buffer));
 
     if (party != 0xFF) {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFF00C4FFu;                        // -16726785
         _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "(%d)", party + 1);
-        UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0);
+        UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0, sizeof(Buffer));
     }
 
     // Boton de expulsar: solo lo ve el master (self[46]==1) o la propia fila.
@@ -2413,7 +2414,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         if (reverse != 1) off = fwdOff;
         char* line = (char*)(dst + off);
         SIZE sz;
-        gFont.MeasureText(gFont.GetTextDC(), cur, lstrlenA(cur), &sz);
+        gFont.MeasureText(gFont.GetTextDC(), cur, Platform::TextLength(cur), &sz);
         int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
         if (!sz.cx) return lines;
         int avail = width - (lines == 0 ? (int)firstIndent : 0);
@@ -2423,7 +2424,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         }
         // Desviacion defensiva: con un ancho medio por caracter < 1 px el
         // binario divide por cero; aca se toma 1.
-        int perChar = textW / lstrlenA(cur);
+        int perChar = textW / Platform::TextLength(cur);
         if (perChar <= 0) perChar = 1;
         int cut = avail / perChar;                 // IDA: v14
         int step = (int)(((double)cut + 1.0) * 0.5);

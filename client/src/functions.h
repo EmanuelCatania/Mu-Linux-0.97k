@@ -392,7 +392,7 @@ void  __cdecl UI_RenderInputField(int, unsigned int, int);
 undefined8  __cdecl UI_RenderText(undefined4 x, undefined4 y, LPCSTR str, LPSIZE max_w, char bold, undefined4 extra);
 void  __cdecl Text_MeasureBox(int, int, int);
 // FUN_0047F7A0 @ 0x0047F7A0
-void  __cdecl UI_DrawText(int x, int y, char* text, int max_width, int style, int extra);
+void  __cdecl UI_DrawText(int x, int y, char* text, int max_width, int style, int extra, size_t textCapacity);
 // FUN_0047FAE0 @ 0x0047FAE0
 void  __cdecl UI_AddNotice(char *, unsigned char);
 void  __cdecl Chat_TickNoticeTimer(void);                // IDA: MoveNotices

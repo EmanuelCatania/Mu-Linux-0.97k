@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
 
@@ -106,7 +107,7 @@ void __cdecl Item_LoadBMD(const char *path)
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
-        MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
+        Platform::GetWindow().ShowError(msg, nullptr, true, false);
         gWindow.RequestCloseApplication();
         return;
     }
@@ -129,7 +130,7 @@ void __cdecl Item_LoadBMD(const char *path)
     if (stored_cs != cs) {
         crt_sprintf(msg, (const char *)s__s___File_corrupted__00559bd4);
         CErrorReport_Write(&DAT_055c9bf0, msg);
-        MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
+        Platform::GetWindow().ShowError(msg, nullptr, true, false);
         gWindow.RequestCloseApplication();
         operator_delete(buf);
         return;

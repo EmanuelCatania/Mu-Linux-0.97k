@@ -12,6 +12,8 @@ public:
     virtual void BindEvents(SocketEventSink) {}
     virtual void Poll() {}
     virtual bool IsConnected(SocketHandle) const { return true; } // Win32 conserva WSAAsyncSelect.
+    // Consulta de handle; no implica conexión TCP completada.
+    virtual bool IsOpen(SocketHandle socket) const = 0;
     virtual int Startup(uint16_t requested, uint16_t& actual) = 0;
     virtual int Cleanup() = 0;
     virtual SocketHandle CreateTcp(int protocol) = 0;

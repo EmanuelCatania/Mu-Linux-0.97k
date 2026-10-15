@@ -1,5 +1,5 @@
 #pragma once
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 // RTT de la conexión MU: eco del TickCount de 0x0E, sin tráfico adicional.
 // Todos los accesos ocurren en el hilo de ventana/red del cliente.

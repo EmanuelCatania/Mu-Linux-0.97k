@@ -1,6 +1,7 @@
 // Scene_LegacyHelpers.cpp
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
 #include "Platform/IAudio.h"
 #include "globals.h"
 #include "functions.h"
@@ -41,6 +42,7 @@ void __cdecl VTable_Release(void *obj, int param_1)
 void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
     char *param_1 = (char*)param_1_v;
     if (!param_1) return;
+    SceneObjects::Unregister(param_1);
     int iVar1 = *(int*)(param_1 + 0x1b8); // next
     int iVar2 = *(int*)(param_1 + 0x1b4); // prev
     if (iVar1 != 0) {

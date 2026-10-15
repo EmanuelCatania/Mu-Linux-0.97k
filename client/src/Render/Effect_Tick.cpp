@@ -13,6 +13,8 @@
 // Joint pool:   DAT_07b27150, stride 0x9d8 bytes
 
 #include "stdafx.h"
+#include "Platform/GuardedOperation.h"
+#include "Platform/Text.h"
 extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
 
 
@@ -28,16 +30,11 @@ void Effect_TickAll(void)
   int iVar2 = 0;
   do {
     if (*(char *)pfVar1 != '\0') {
-      // ── OWNERDBG — red de seguridad + diagnostico (DESVIACION) ───────────────
-      // Algun caller crea el efecto sin dueno y MoveEffect deref `owner + 0x10` con
-      // owner NULL (AV `0xC0000005 param1=0x10`). En el binario eso no pasa (el
-      // owner siempre es valido para los tipos que lo deref), asi que el original
-      // no valida nada. Hasta ubicar al caller, se contiene el crash: se desactiva
-      // ese slot y se loguea su Type/SubType UNA vez por tipo.
-      __try {
+      // MoveEffect valida owners en los pools y en cada rama que requiere uno.
+      // Windows conserva ademas su captura SEH y diagnostico heredados.
+      if (!Platform::RunValidatedOperation([&]() {
         MoveEffect(pfVar1,iVar2);
-      }
-      __except (EXCEPTION_EXECUTE_HANDLER) {
+      })) {
         const int   type    = (int)*(short*)((char*)pfVar1 + 2);
         const int   subType = *(int*)((char*)pfVar1 + 4);
         const int   owner   = *(int*)((char*)pfVar1 + 252);
@@ -45,7 +42,7 @@ void Effect_TickAll(void)
         if (type >= 0 && type < 2048 && !s_seen[type]) {
           s_seen[type] = 1;
           char dbg[176];
-          wsprintfA(dbg, "OWNERDBG: MoveEffect crash -> Type=%d SubType=%d owner=0x%08X (slot %d, desactivado)",
+          Platform::TextFormat(dbg, "OWNERDBG: MoveEffect crash -> Type=%d SubType=%d owner=0x%08X (slot %d, desactivado)",
                     type, subType, (unsigned)owner, iVar2);
           DbgLogPublic(dbg);
         }

@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
@@ -96,13 +97,13 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 
     GetLastError();
     int n;
-    n = lstrlenA(lpString);
+    n = Platform::TextLength(lpString);
     gFont.MeasureText32(gFont.GetTextDC(), lpString, n, &psizl);
-    n = lstrlenA(lpString + 44);
+    n = Platform::TextLength(lpString + 44);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 44, n, &v12);
-    n = lstrlenA(lpString + 300);
+    n = Platform::TextLength(lpString + 300);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 300, n, &v13);
-    n = lstrlenA(lpString + 24);
+    n = Platform::TextLength(lpString + 24);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 24, n, &v14);
     GetLastError();
 
@@ -192,7 +193,7 @@ void RenderPartyHP_(void)
                 && (int)MouseY < sy + 6)
             {
                 CHAR String[100];
-                wsprintfA(String, "HP : %d0%%", *(unsigned char*)v1);
+                Platform::TextFormat(String, "HP : %d0%%", *(unsigned char*)v1);
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000000u;
                 RenderTipText(sx, sy - 15, String);
@@ -372,7 +373,7 @@ void RenderMainFrameWindow_(void)
     // buffer por separado, así que el efecto es inobservable; lo salteamos.
     if (CharacterAttribute) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, "%d/%d",
+        Platform::TextFormat(Buffer, "%d/%d",
                   *(int*)((BYTE*)CharacterAttribute + 16),
                   *(int*)((BYTE*)CharacterAttribute + 52));
         (void)Buffer;

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "Config/UserSettings.h"
@@ -148,7 +149,7 @@ const char* LocalizedDataPath(const char* base, const char* ext, char* out, size
         sprintf_s(out, capacity, "%s_%s%s", base, suffix, ext);
         if (Platform::GetFileSystem().Exists(out)) return out;
         char line[160];
-        wsprintfA(line, "Idioma: falta %s, se usa %s%s", out, base, ext);
+        Platform::TextFormat(line, "Idioma: falta %s, se usa %s%s", out, base, ext);
         DbgLogPublic(line);
     }
     sprintf_s(out, capacity, "%s%s", base, ext);

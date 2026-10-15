@@ -37,7 +37,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 #include <GL/gl.h>
 #include <math.h>
 

@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
 #include "Entity/EntityView.h"
@@ -172,7 +173,7 @@ extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y,
 SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
 {
     SIZE sz = {0,0};
-    int n = lstrlenA(pszText);
+    int n = Platform::TextLength(pszText);
     gFont.MeasureText(gFont.GetTextDC(), pszText, n, &sz);
     int adjustedX = iPos_x - ((640 * sz.cx / (int)gWindow.GetWidth()) >> 1);
     RenderText(adjustedX, iPos_y, (char*)pszText, 0, 0, 0);
@@ -274,9 +275,9 @@ bool __cdecl RenderNumArrow_(void)
         int v11 = FUN_00482850_();
         if (v10 > 0 || v11 > 0) {
             CHAR String[100];
-            wsprintfA(String, GlobalText[351], v10, v11);
+            Platform::TextFormat(String, GlobalText[351], v10, v11);
             EnableAlphaTest(true);
-            int n = lstrlenA(String);
+            int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
@@ -291,9 +292,9 @@ bool __cdecl RenderNumArrow_(void)
         int v14 = FUN_00482850_();
         if (v13 > 0 || v14 > 0) {
             CHAR String[100];
-            wsprintfA(String, GlobalText[352], v13, v14);
+            Platform::TextFormat(String, GlobalText[352], v13, v14);
             EnableAlphaTest(true);
-            int n = lstrlenA(String);
+            int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
@@ -359,7 +360,7 @@ void Render_HudPass_4BCD20_(void)
     if ((int)MouseX >= 551 && (int)MouseX < 566 &&
         (int)MouseY >= 437 && (int)MouseY < 473) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, GlobalText[214], v3, v23);
+        Platform::TextFormat(Buffer, GlobalText[214], v3, v23);
         RenderTipText(546, 419, Buffer);
     }
 
@@ -556,7 +557,7 @@ void Render_HudPass_4EB070_(void)
             int v10 = (v20 == v7 && v8) ? 278 : 277;
             GL_DrawTexture(v10, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
             CHAR pszText[32];
-            wsprintfA(pszText, "%d", word_7E91394[v7]);
+            Platform::TextFormat(pszText, "%d", word_7E91394[v7]);
             m_dwBackColor = 0;
             RenderText(40 * (v7 % 5) + 235, v22 - (v8 != 0) + 6, pszText, 0, 0, 0);
         }
