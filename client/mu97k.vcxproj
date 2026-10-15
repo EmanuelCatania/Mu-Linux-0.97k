@@ -107,6 +107,10 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Platform\IDiagnostics.h" />
+    <ClInclude Include="src\Platform\Diagnostics.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Diagnostics.h" />
+    <ClInclude Include="src\Platform\Posix\PosixDiagnostics.h" />
     <ClInclude Include="src\Platform\IIdentity.h" />
     <ClInclude Include="src\Platform\Identity.h" />
     <ClInclude Include="src\Platform\Win32\Win32Identity.h" />
