@@ -1,3 +1,4 @@
+#include <cstdint>
 // BMD_LegacyDraw.cpp
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
@@ -157,7 +158,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
             const float *pos = (const float *)((char *)&DAT_0584621c + (vtx + meshIdx * 15000) * 12);
             float moved[3];
             if (deform) {
-                // IDA: v56 = (__int64)WorldTime + 931 * vtx;
+                // IDA: v56 = (std::int64_t)WorldTime + 931 * vtx;
                 //      pos + sin(v56 * 0.007) * normal * 28
                 const int phase = (int)(long long)DAT_05826e08 + 0x3a3 * vtx;
                 const float sn = (float)sin((double)phase * (double)_DAT_005528c4);

@@ -1,3 +1,4 @@
+#include <cstdint>
 // ChatListBox.cpp — engine chat-widget object behind dword_55C9FF0.
 //
 // What this is
@@ -1000,8 +1001,8 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
         return 1;
     }
     // Return condition #2 — IDA:
-    //   this[48] == 1 && sub_40C490((__int64)flt_5590B0, (__int64)flt_5590B4,
-    //                               (__int64)(flt_5590B8 * 3.0), 16, 1)
+    //   this[48] == 1 && sub_40C490((std::int64_t)flt_5590B0, (std::int64_t)flt_5590B4,
+    //                               (std::int64_t)(flt_5590B8 * 3.0), 16, 1)
     // = la franja COMPLETA de los 3 botones: x∈[295, 349), y∈[417, 433).
     if (self[48] == 1 && FUN_0040c490((int)ChatListBox_TabButtonsX, (int)ChatListBox_TabButtonsY,
                                       (int)(ChatListBox_TabButtonSpacing * 3.0f), 16, 1)) {

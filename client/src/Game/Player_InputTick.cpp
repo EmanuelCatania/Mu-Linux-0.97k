@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "stdafx.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
@@ -732,7 +733,7 @@ void __cdecl Player_ProcessInput(void)
                     // binario: sin ella el walker nunca se apaga.
                     *(unsigned char*)(ent + 748) = 0;
                     SetPlayerStop((int)ent);
-                    // IDA L401: `dword_7E11DBC = (__int64)*(float *)(v0 + 36);`
+                    // IDA L401: `dword_7E11DBC = (std::int64_t)*(float *)(v0 + 36);`
                     // — es el FACING del héroe, no un timestamp.
                     DAT_07e11dbc = (int)*(float*)(ent + 36);
                     DAT_07e11db8 = 0;
@@ -1372,8 +1373,8 @@ void __cdecl Player_ProcessInput(void)
             if (mountOk && tgtEntityPtr != 0) {
                 // TargetX/TargetY salen de la POSICION DEL OBJETO, no del tile bajo el
                 // cursor.  IDA L1138:
-                //     TargetX = (__int64)(o->Position[0] * 0.01);
-                //     TargetY = (__int64)(o->Position[1] * 0.01);
+                //     TargetX = (std::int64_t)(o->Position[0] * 0.01);
+                //     TargetY = (std::int64_t)(o->Position[1] * 0.01);
                 TargetX = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
                 TargetY = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
 
@@ -1629,8 +1630,8 @@ end_tick:
 
     // ── HeroTile: atributo de terreno bajo el HÉROE ───────────────────────────
     // IDA Player_InputTick L570-582:
-    //     v227 = (__int64)*(float *)(Hero + 16) / 100
-    //          + (((__int64)*(float *)(Hero + 20) / 100) << 8);
+    //     v227 = (std::int64_t)*(float *)(Hero + 16) / 100
+    //          + (((std::int64_t)*(float *)(Hero + 20) / 100) << 8);
     //     clamp [0, 0xFFFF]
     //     HeroTile = TerrainMappingLayer1[v227];
     //

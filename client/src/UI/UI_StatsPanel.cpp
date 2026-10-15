@@ -1,3 +1,4 @@
+#include <cstdint>
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
@@ -273,7 +274,7 @@ LAB_0051c13d:
         uVar10 = 0;
         cVar13 = '\0';
         ptVar12 = (LPSIZE)0x0;
-        lVar8 = (longlong)(*(float*)&local_dc + 12.0f);   // IDA RenderErrorMessage case 143: (__int64)(Height + 12.0)
+        lVar8 = (longlong)(*(float*)&local_dc + 12.0f);   // IDA RenderErrorMessage case 143: (std::int64_t)(Height + 12.0)
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(int)lVar8,pCVar6,
                      ptVar12,cVar13,uVar10);
         { float _fdc = *(float*)&local_dc + _DAT_00552854; local_dc = *(unsigned int*)&_fdc; }

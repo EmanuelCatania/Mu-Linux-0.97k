@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat_InputTick.cpp — Chat_InputTick @ 0x004b14f0
 // Per-frame chat input + hotkey + character-preview tick.
 // Called from Game_MainLoop every frame.
@@ -553,7 +554,7 @@ void __cdecl Chat_InputTick(void)
             // ── 6. Numeros 1-9 / 0: elegir la skill asignada ─────────────────
             // IDA Chat_InputTick L2611-2627:
             //   if (!InputEnable && !TabInputEnable &&
-            //       (unsigned __int16)GetAsyncKeyState(18) >> 8 != 0x80) {
+            //       (std::uint16_t)GetAsyncKeyState(18) >> 8 != 0x80) {
             //       for (n = 1; n <= 9; n++)
             //           if (GetAsyncKeyState(n + 48) >> 8) sub_4B0E80(n);
             //       if (GetAsyncKeyState(48) >> 8)         sub_4B0E80(0);

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Scene_EntityLifecycle.cpp
 
 #include "stdafx.h"
@@ -177,7 +178,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             //   HeadTargetAngle[0..2] (+52,+56,+60) = Position[0..2]
             // y normaliza el giro:  Angle[2] = HeadAngle[2] = (int)Angle[2] % 360.
             // El `% 360` es sobre el VALOR truncado, no sobre los bits del float (IDA:
-            // `(__int64)*((float *)v6 + 9) % 360`); el tick compara HeadAngle[2] con
+            // `(std::int64_t)*((float *)v6 + 9) % 360`); el tick compara HeadAngle[2] con
             // 90/270/0/180.
             puVar3[0xb]=puVar3[8]; puVar3[0xf]=puVar3[6]; puVar3[0xd]=puVar3[4];
             puVar3[0xa]=puVar3[7]; puVar3[0xe]=puVar3[5];

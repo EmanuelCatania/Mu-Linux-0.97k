@@ -1,3 +1,4 @@
+#include <cstdint>
 // MoveEffect.cpp
 // MoveEffect @ 0x00466AD0  [Kayito: MoveEffect]
 //
@@ -1009,8 +1010,8 @@ LAB_00469366:
             param_1[0x31] = param_1[0x31] * _DAT_00552504;
             param_1[3] = param_1[3] * _DAT_005529b4;
           }
-          lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((__int64)(x*0.01),...)
-          lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(__int64)(y*0.01))
+          lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((std::int64_t)(x*0.01),...)
+          lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(std::int64_t)(y*0.01))
           iVar9 = Terrain_GetTileIndex((uint)lVar19,(uint)lVar20);
           if ((*(int*)&param_1[0x18] == 1) || (((DAT_0838bc70)[iVar9] & 8) == 8)) {
             local_224 = param_1[4];
@@ -1043,8 +1044,8 @@ LAB_00469366:
 LAB_00469769:
       if (*(int*)&fVar13 == 4) {
 LAB_00469772:
-        lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((__int64)(x*0.01),...)
-        lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(__int64)(y*0.01))
+        lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((std::int64_t)(x*0.01),...)
+        lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(std::int64_t)(y*0.01))
         iVar9 = Terrain_GetTileIndex((uint)lVar19,(uint)lVar20);
         if (((DAT_0838bc70)[iVar9] & 8) == 8) {
           if (param_1[6] < _DAT_005529b0) {
@@ -1485,8 +1486,8 @@ switchD_00466b93_caseD_c7:
         if (_DAT_00552844 < fVar13) {
           *pfVar10 = 45.0;
         }
-        lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((__int64)(x*0.01),...)
-        lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(__int64)(y*0.01))
+        lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((std::int64_t)(x*0.01),...)
+        lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(std::int64_t)(y*0.01))
         iVar9 = Terrain_GetTileIndex((uint)lVar19,(uint)lVar20);
         if ((((DAT_0838bc70)[iVar9] & 8) != 8) &&
            (fVar17 = RequestTerrainHeight(param_1[4], param_1[5]), (float10)param_1[6] < fVar17)) {
@@ -1510,10 +1511,10 @@ switchD_00466b93_caseD_c7:
         pfVar15 = param_1 + 0x3a;
         pfVar10 = param_1 + 4;
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime * 0.1
+        lVar19 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: -(__int64)WorldTime * 0.1
+        lVar19 = (longlong)DAT_05826e08;   // IDA: -(std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
@@ -1541,10 +1542,10 @@ switchD_00466b93_caseD_c7:
         pfVar15 = param_1 + 0x3a;
         pfVar10 = param_1 + 4;
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime * 0.1
+        lVar19 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: -(__int64)WorldTime * 0.1
+        lVar19 = (longlong)DAT_05826e08;   // IDA: -(std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         local_35c = (float *)0x4;
         do {
@@ -1567,10 +1568,10 @@ switchD_00466b93_caseD_c7:
         local_360 = 0.4;
         pfVar10 = param_1 + 4;
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime * 0.1
+        lVar19 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime * 0.1
         CreateSprite(0x47e,pfVar10,1.0f,&local_368,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: -(__int64)WorldTime * 0.1
+        lVar19 = (longlong)DAT_05826e08;   // IDA: -(std::int64_t)WorldTime * 0.1
         CreateSprite(0x47e,pfVar10,2.0f,&local_368,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
@@ -1971,8 +1972,8 @@ LAB_00466e5e:
           iVar9 = _rand();
           local_35c = (float *)(iVar9 % 0x1e + -0xf);
           local_338 = (float)(int)local_35c + _DAT_00552844;
-          lVar19 = (longlong)(local_328 * 0.0099999998f);   // IDA TERRAIN_INDEX((__int64)(TargetPosition[0]*0.01),...)
-          lVar20 = (longlong)(local_324 * 0.0099999998f);   // IDA TERRAIN_INDEX(...,(__int64)(TargetPosition[1]*0.01))
+          lVar19 = (longlong)(local_328 * 0.0099999998f);   // IDA TERRAIN_INDEX((std::int64_t)(TargetPosition[0]*0.01),...)
+          lVar20 = (longlong)(local_324 * 0.0099999998f);   // IDA TERRAIN_INDEX(...,(std::int64_t)(TargetPosition[1]*0.01))
           iVar9 = TERRAIN_INDEX((int)lVar19,(int)lVar20);
           bVar28 = (DAT_0838bc70)[iVar9];
           if ((((bVar28 & 4) != 4) || ((bVar28 & 8) != 8)) || ((bVar28 & 0x10) != 0x10)) {
@@ -2038,8 +2039,8 @@ LAB_00466e5e:
             *pfVar14 = local_328 + pfVar15[-1];
             *pfVar15 = local_324 + *pfVar15;
             pfVar15[1] = local_320 + pfVar15[1];
-            lVar19 = (longlong)(pfVar15[-1] * 0.0099999998f);   // IDA TERRAIN_INDEX((__int64)(*(v74-1)*0.01),...)
-            lVar20 = (longlong)(pfVar15[0] * 0.0099999998f);   // IDA TERRAIN_INDEX(...,(__int64)(*v74*0.01))
+            lVar19 = (longlong)(pfVar15[-1] * 0.0099999998f);   // IDA TERRAIN_INDEX((std::int64_t)(*(v74-1)*0.01),...)
+            lVar20 = (longlong)(pfVar15[0] * 0.0099999998f);   // IDA TERRAIN_INDEX(...,(std::int64_t)(*v74*0.01))
             iVar9 = TERRAIN_INDEX((int)lVar19,(int)lVar20);
             bVar28 = (DAT_0838bc70)[iVar9];
             if ((((bVar28 & 4) != 4) || ((bVar28 & 8) != 8)) || ((bVar28 & 0x10) != 0x10)) {

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Particle_Render.cpp
 // Particle_Render @ 0x0046BE40  (145 lines, 36 basic blocks)
 //
@@ -200,7 +201,7 @@ void __cdecl Particle_RenderAll(void)
         case 1265: {
             // IDA repeats EnableAlphaBlend for type 1265.
             GL_SetBlendAdditive();
-            float v24 = (float)(((__int64)WorldTime) % 3600) * 0.1f;
+            float v24 = (float)(((std::int64_t)WorldTime) % 3600) * 0.1f;
             float v5 = 1.0f;
             float v0val = 0.0f;
             if (variant == 2) {

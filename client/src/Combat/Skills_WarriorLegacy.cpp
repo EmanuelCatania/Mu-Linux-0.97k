@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "stdafx.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
@@ -87,7 +88,7 @@ static void Warrior_CollectMultiTargets(const float* centre, float radius,
         if (!candidate[0] || !candidate[0x160] || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || candidate[0x2FD])
             continue;
 
-        const int key = *(short*)(candidate + 0x1DC); // IDA: *(__int16 *)(v9 + 456)
+        const int key = *(short*)(candidate + 0x1DC); // IDA: *(std::int16_t *)(v9 + 456)
         const BYTE type = candidate[0x84]; // IDA: v10 = *(_BYTE *)(v9 + 112)
         if (type != 2 && (type != 1 || key != relationKey))
             continue;
@@ -133,7 +134,7 @@ static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
 //   selectedSlot = dword_7D7809C (0x07D7809C, el slot que siembra Attack)
 //   targetIdx    = MovementSkillTarget (0x07D780A0)
 //   targetEntity = CharactersClient + 916 * MovementSkillTarget
-//   targetKey    = v285   (*(__int16 *)(targetEntity + 476))
+//   targetKey    = v285   (*(std::int16_t *)(targetEntity + 476))
 //   centre       = Angle[3] (L624-642, el centro desplazado 120u del multiataque)
 //   keys/count   = &v285 / SkillIndex (el par que llena sub_45FDB0)
 //   serial       = *(BYTE *)(CharacterMachine + 1408)  ->  o+136
@@ -231,7 +232,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             // mundo del objetivo (c+788/792) que usaba el port.
             const BYTE tileX = (BYTE)*(DWORD*)(c + 904);   // IDA: *(_DWORD *)v39
             const BYTE tileY = (BYTE)*(DWORD*)(c + 908);   // IDA: LOBYTE(x2), v38
-            // IDA L818: v50 = (__int64)(*(float *)(o + 36) * 0.71111113) — el mismo
+            // IDA L818: v50 = (std::int64_t)(*(float *)(o + 36) * 0.71111113) — el mismo
             // paso de 256/360 que usan el resto de los constructores C3:1E del port.
             // El port aplicaba aca el empaquetado de 8 direcciones (16*(a&7)), que
             // en el binario solo se usa para el paquete de movimiento 0x10.

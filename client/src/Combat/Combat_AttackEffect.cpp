@@ -1,3 +1,4 @@
+#include <cstdint>
 // Combat_AttackEffect.cpp
 //
 // AttackEffect (IDA 0x00445230) -- los efectos visuales del ataque de los
@@ -1873,7 +1874,7 @@ LABEL_75:
             PlayBuffer(60, 0, 0);
           }
           v219 = 0;
-          Ownerw = 45.0 - (double)((int)((__int64)WorldTime / 10 + 3 * *(unsigned char *)(Owner + 757)) % 90) + 180.0;
+          Ownerw = 45.0 - (double)((int)((std::int64_t)WorldTime / 10 + 3 * *(unsigned char *)(Owner + 757)) % 90) + 180.0;
           do
           {
             TransformPosition(
@@ -2114,7 +2115,7 @@ LABEL_75:
             PlayBuffer(60, 0, 0);
           }
           v220 = 0;
-          Ownerx = 45.0 - (double)((int)((__int64)WorldTime / 10 + 3 * *(unsigned char *)(Owner + 757)) % 90) + 180.0;
+          Ownerx = 45.0 - (double)((int)((std::int64_t)WorldTime / 10 + 3 * *(unsigned char *)(Owner + 757)) % 90) + 180.0;
           do
           {
             TransformPosition(

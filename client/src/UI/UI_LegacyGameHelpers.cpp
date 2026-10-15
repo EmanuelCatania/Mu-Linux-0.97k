@@ -1,3 +1,4 @@
+#include <cstdint>
 // UI_LegacyGameHelpers.cpp
 
 #include "stdafx.h"
@@ -61,7 +62,7 @@ void __cdecl Item_ReturnPickedItem(void)
 {
     if ((int)DAT_07e91388 < 1) return;
 
-    const int type = (int)*(short*)DAT_07e91350;           // (__int16)pPickedItem
+    const int type = (int)*(short*)DAT_07e91350;           // (std::int16_t)pPickedItem
     const BYTE* attr = (const BYTE*)(uintptr_t)DAT_07d78068 + type * 0x40;
     const int w = attr[0x20];
     const int h = attr[0x21];

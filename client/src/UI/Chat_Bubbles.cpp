@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat_Bubbles.cpp
 
 #include "stdafx.h"
@@ -106,7 +107,7 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
     // Guard: entity must be alive and visible
     // IDA CreateChat @0x481BA0:
     //     if ( *(_BYTE *)Owner && *(_BYTE *)(Owner + 352) )
-    //     v5 = *(unsigned __int8 *)(Owner + 746);          // PK
+    //     v5 = *(std::uint8_t *)(Owner + 746);          // PK
     //     if ( *(_BYTE *)(Owner + 132) == 4 ) v5 = 0;      // Kind
     if (*(BYTE *)entity == 0) return;              // Object.Live   → +0
     if (*(BYTE *)(entity + 352) == 0) return;      // Object.Visible → +352 (0x160)

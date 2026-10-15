@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_Durability.cpp
 
 #include "stdafx.h"
@@ -334,7 +335,7 @@ LABEL_110:
                 default: break;
                 }
                 if (didAdd) {
-                    v5 += (int)(__int64)v22;
+                    v5 += (int)(std::int64_t)v22;
                     v34 = v5;
                 }
                 (void)didMul;
@@ -377,7 +378,7 @@ LABEL_148:
         unsigned int maxDur = Item_CalculateMaxDurability((void*)a1, (int)((unsigned short)v25) * 0x40 + (int)DAT_07d78068, Level) & 0xffff;
         double penalty = (1.0 - (double)*(unsigned char*)(a1 + 26) / (double)maxDur)
                        * (double)v34 * -0.60000002;
-        v5 += (int)(__int64)penalty;
+        v5 += (int)(std::int64_t)penalty;
     }
     if (v5 >= 1000) return 100 * (v5 / 100);
     if (v5 >= 100)  return 10  * (v5 / 10);
@@ -417,7 +418,7 @@ unsigned int __cdecl ConvertRepairGold_Vanilla(int Gold, int Durability, int Max
     // RepairEnable byte (treated as 0/1 multiplier). El símbolo no está
     // mapeado en mu97k-src todavía → asumimos 0 (no extra tax).
     double withTax = 0.0 * v8 * 0.050000001 + v8;
-    int v9 = (int)(__int64)withTax;
+    int v9 = (int)(std::int64_t)withTax;
     int v10 = v9;
     if (v9 < 1000) {
         if (v9 >= 100) v10 = 10 * (v9 / 10);

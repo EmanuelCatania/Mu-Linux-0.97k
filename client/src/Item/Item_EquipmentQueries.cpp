@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_EquipmentQueries.cpp
 
 #include "stdafx.h"
@@ -14,8 +15,8 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
 
     // IDA sub_4824C0 L41-88:
     //   CharacterAttribute + 11
-    //   v6  = *(__int16 *)(CharacterMachine + 536)
-    //   v28 = *(__int16 *)(CharacterMachine + 604)
+    //   v6  = *(std::int16_t *)(CharacterMachine + 536)
+    //   v28 = *(std::int16_t *)(CharacterMachine + 604)
     // (offsets en BYTES; 268/302 serían los índices de short).
     //
     // Reparto de slots (confirmado por sub_4824C0 y por CreateArrow 0x474370):

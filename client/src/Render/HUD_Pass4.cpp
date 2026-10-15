@@ -1,3 +1,4 @@
+#include <cstdint>
 // HUD_Pass4.cpp — fourth and final batch of small/medium HUD ports.
 //
 // Functions ported (1:1 from IDA):
@@ -270,7 +271,7 @@ void Render_MapLoadText_(void)
         if (v0 < 15) {
             CHAR v3[12];
             // WorldTime is the engine animation tick (used as 60Hz seconds approx).
-            Platform::TextFormat(v3, ": %.2d", (int)((__int64)WorldTime % 60));
+            Platform::TextFormat(v3, ": %.2d", (int)((std::int64_t)WorldTime % 60));
             strcat(String, v3);
         }
         // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de
@@ -495,7 +496,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             float green = (float)((double)(rand() % 4 + 4) * 0.1);
                             float red   = (float)((double)(rand() % 6 + 6) * 0.1);
                             glColor3f(red, green, 0.2f);
-                            int seed = (int)((double)((__int64)WorldTime % 100) * 20.0);
+                            int seed = (int)((double)((std::int64_t)WorldTime % 100) * 20.0);
                             float v20 = (float)(rand() % 10 + 5);
                             float v28 = (float)(rand() % 20) + sxa;
                             float sxb = (float)(rand() % 20) + sy;

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Particle_Spawn.cpp — IDA: FUN_00475220 @ 0x00475220
 // Allocates a free slot in the particle pool and initialises it.
 // The pool starts at DAT_07abf5f0; each slot is 0x70 bytes.
@@ -363,8 +364,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x30) * _DAT_005524f8;
             iVar7 = _rand();
             *pfVar2 = (float)(iVar7 % 0x168);
-            // IDA: `*((float *)v8 + 16) = (float)((__int64)WorldTime % 360);`
-            *(float *)(pcVar11 + 0x40) = (float)(int)((__int64)WorldTime % 360);
+            // IDA: `*((float *)v8 + 16) = (float)((std::int64_t)WorldTime % 360);`
+            *(float *)(pcVar11 + 0x40) = (float)(int)((std::int64_t)WorldTime % 360);
             return iVar6;
         case 1: case 3: case 11:
             InitializeFireParticle(pcVar11, ParticleFires[param_5 == 1 ? 0 : (param_5 == 3 ? 1 : 2)]);

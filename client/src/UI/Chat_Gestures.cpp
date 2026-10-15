@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat_Gestures.cpp — gestos del personaje disparados por el texto del chat.
 //
 // IDA: sub_497C70 (0x00497C70) revisa la linea que se envia contra grupos de
@@ -24,7 +25,7 @@ void __cdecl SendRequestAction(BYTE actionType)
     if (!hero) return;
     BYTE pkt[5] = {
         0xC1, 0x05, 0x18,
-        (BYTE)((__int64)((*(float*)(hero + 36) + 22.5f) * 0.022222223f + 1.0f) & 7),
+        (BYTE)((std::int64_t)((*(float*)(hero + 36) + 22.5f) * 0.022222223f + 1.0f) & 7),
         actionType
     };
     gNetwork.SendC1(pkt, sizeof(pkt));

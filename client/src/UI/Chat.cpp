@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat.cpp
 // In-game chat log rendering and message management.
 //
@@ -27,8 +28,8 @@
 // (RenderText 0x47F650, RenderNotices 0x47FCE0 — ambas idénticas):
 //
 //     GetTextExtentPointA(m_hFontDC, pszText, len, &TextSize);
-//     TextSize.cx = (__int64)((double)TextSize.cx / g_fScreenRate_x);
-//     TextSize.cy = (__int64)((double)TextSize.cy / g_fScreenRate_y);
+//     TextSize.cx = (std::int64_t)((double)TextSize.cx / g_fScreenRate_x);
+//     TextSize.cy = (std::int64_t)((double)TextSize.cy / g_fScreenRate_y);
 //
 // `TextSize` es el par de globals (lpsz_07e113d0 = cx, _DAT_07e113d4 = cy);
 // _DAT_055c9b70 = g_fScreenRate_x, _DAT_055c9b74 = g_fScreenRate_y.

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Particle.cpp
 #include "stdafx.h"
 extern "C" { void DbgLogPublic(const char* msg); }
@@ -117,10 +118,10 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
     if (0 < iVar8) {
       fVar1 = *(float *)(param_1 + 0x10);
       fVar2 = *(float *)(param_1 + 0x14);
-      lVar9 = (longlong)(*(float *)(param_1 + 0xd8));   // IDA sub_43E680: (__int64)*(float*)(a1+216)
+      lVar9 = (longlong)(*(float *)(param_1 + 0xd8));   // IDA sub_43E680: (std::int64_t)*(float*)(a1+216)
       iVar7 = (int)lVar9;
       iVar8 = Math_GetAngleFromPoints(fVar1,fVar2,fVar3 / (float)iVar8 + fVar1,fVar5 / (float)iVar8 + fVar2);
-      lVar9 = (longlong)(*(float *)(param_1 + 0x24));   // IDA sub_43E680: (__int64)*(float*)(a1+36)
+      lVar9 = (longlong)(*(float *)(param_1 + 0x24));   // IDA sub_43E680: (std::int64_t)*(float*)(a1+36)
       iVar7 = Angle_Clamp((int)lVar9,iVar8,iVar7);
       *(float *)(param_1 + 0x24) = (float)iVar7;
       return;

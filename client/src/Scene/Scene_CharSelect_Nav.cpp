@@ -1,3 +1,4 @@
+#include <cstdint>
 // Scene_CharSelect_Nav.cpp
 //
 // Char-select slot navigation helpers:
@@ -793,7 +794,7 @@ void __cdecl SkillAttribute_LoadNames(const char *param_1)
     int iVar2;
     while ((iVar2 = GetToken()) != 2) {
         if (iVar2 == 1) {
-            long long lVar7 = (longlong)ParserTokenNumber;   // IDA: (__int64)TokenNumber  (ParserTokenNumber)
+            long long lVar7 = (longlong)ParserTokenNumber;   // IDA: (std::int64_t)TokenNumber  (ParserTokenNumber)
             GetToken();
             // Copia TokenString a la entrada de SkillAttribute en el índice lVar7
             size_t uLen = strlen(TokenString) + 1;
@@ -1313,7 +1314,7 @@ void __fastcall FUN_00401af0(void *param_1)
         uint ok = CSQuest_CheckRequestCondition(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
-            // IDA L145: `v65 = *(__int16 *)(v1 + 116864);` — es un SHORT.
+            // IDA L145: `v65 = *(std::int16_t *)(v1 + 116864);` — es un SHORT.
             // Leerlo como int se lleva ademas el byte de estado (0x1c882),
             // que CheckRequestCondition acaba de poner en 5, asi que el
             // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.

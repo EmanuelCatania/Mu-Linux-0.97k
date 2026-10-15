@@ -1,3 +1,4 @@
+#include <cstdint>
 // globals.cpp — Definitions for all DAT_ global variables.
 // In the original binary these are fixed addresses; here they are regular
 // zero-initialized globals that the linker places wherever it chooses.
@@ -2453,7 +2454,7 @@ float  _DAT_00552aa8  = 0.1113f;  // Ring_ComputeOrbit ring trig scale Z
 // Leida de 0x00559B78: 19 1a 1b 14 22 23 24 00.
 // Unico consumidor: MoveEffect (0x0046A3D1), que la lee en las DOS direcciones:
 // hacia adelante desde 0x559B78 y hacia ATRAS desde 0x559B7F
-//   IDA: Scalex = *((unsigned __int8 *)&unk_559B7F - v227);
+//   IDA: Scalex = *((std::uint8_t *)&unk_559B7F - v227);
 // Por eso DAT_00559b7f no es un array aparte sino un alias al offset 7 de esta
 // misma tabla (mismo patron que DAT_081cb60c). Con dos arrays sueltos el indice
 // negativo leia fuera de rango.

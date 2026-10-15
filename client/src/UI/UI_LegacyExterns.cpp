@@ -1,3 +1,4 @@
+#include <cstdint>
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
@@ -740,8 +741,8 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     //     CUIRenderText::RenderText(g_pRenderText, iPos_x, iPos_y, ..., 640)
     // y ese 640 es el ancho del espacio de referencia. Quien convierte a pixel
     // es el subclass, `sub_410AF0` (L101-103):
-    //     sub_47F4C0((__int64)(v22 * g_fScreenRate_x + (v15 << 8)),
-    //                (__int64)(v24 * g_fScreenRate_y), Width, Height, ...);
+    //     sub_47F4C0((std::int64_t)(v22 * g_fScreenRate_x + (v15 << 8)),
+    //                (std::int64_t)(v24 * g_fScreenRate_y), Width, Height, ...);
     // o sea logico * escala = pixel. `sub_47F4C0` ya recibe TODO en pixeles y
     // por eso compara contra WindowWidth directamente.
     //

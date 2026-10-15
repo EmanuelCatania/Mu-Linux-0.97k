@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_ClickHandler.cpp
 //
 // Port FIEL del IDA decompile `sub_4D23B0` (`004D23B0_sub_4D23B0.c`, 14783
@@ -13,7 +14,7 @@
 //   - Mix: 8x4
 //
 // La firma original en IDA es:
-//   void __cdecl sub_4D23B0(char *a1, int a2, __int16 *a3, int a4, int a5,
+//   void __cdecl sub_4D23B0(char *a1, int a2, std::int16_t *a3, int a4, int a5,
 //                            char a6)
 // Donde:
 //   a1 = origin_x  (top-left grid X en pantalla)
@@ -575,7 +576,7 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
         }
     }
 
-    if (inv_base == (__int16*)Inventory) {
+    if (inv_base == (std::int16_t*)Inventory) {
         SortInventory(inv_base);
     }
 }

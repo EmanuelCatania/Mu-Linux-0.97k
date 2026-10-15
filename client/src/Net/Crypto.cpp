@@ -1,3 +1,4 @@
+#include <cstdint>
 // Crypto.cpp
 // Packet encryption / decryption routines and hash table operations.
 //
@@ -498,7 +499,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     DWORD *xorKey = ctx + 13;   // this+52 (XorKey[0..3])
     for (int i = 0; i < 4; ++i) {
         DWORD w    = src[i] ^ xorKey[i];
-        DWORD tmp  = (DWORD)((unsigned __int64)encKey[i] * (prevLow ^ w) % modKey[i]);
+        DWORD tmp  = (DWORD)((std::uint64_t)encKey[i] * (prevLow ^ w) % modKey[i]);
         packed[i]  = tmp;
         prevLow    = tmp & 0xFFFF;
     }
@@ -665,7 +666,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     WORD  *outW   = (WORD *)dst;
     WORD   prevLo = 0;
     for (int i = 0; i < 4; ++i) {
-        DWORD m   = (DWORD)(((unsigned __int64)packed[i] * decKey[i]) % modKey[i]);
+        DWORD m   = (DWORD)(((std::uint64_t)packed[i] * decKey[i]) % modKey[i]);
         WORD  w   = (WORD)(xorKey[i] ^ m);
         outW[i]   = (WORD)(prevLo ^ w);
         prevLo    = (WORD)packed[i];

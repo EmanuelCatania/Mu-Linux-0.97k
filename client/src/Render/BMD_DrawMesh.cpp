@@ -1,3 +1,4 @@
+#include <cstdint>
 // BMD_DrawMesh.cpp
 // BMD__RenderMesh @ 0x00440D50  [Kayito: unnamed; S6 equivalent = BMD::RenderMesh]
 //
@@ -171,7 +172,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     }
 
     // WorldTime wave value (for animated texcoords)
-    // IDA sub_440D50: `v42 = (__int64)WorldTime % 10000 * 0.0001`. Hay que leer
+    // IDA sub_440D50: `v42 = (std::int64_t)WorldTime % 10000 * 0.0001`. Hay que leer
     // WorldTime = DAT_05826e08 explícitamente: `__ftol()` lee el tope de la pila
     // x87 (ST0), que no tiene por qué ser WorldTime, y con una fase basura el
     // scroll de texcoords del glow +N (chrome, textura 1170) sale sólido y
@@ -282,7 +283,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             renderMode = MODE_CHROME;
 
             // Recompute WorldTime-based phase for OIL (misma corrección: usar
-            // WorldTime explícito, no ST0 basura). IDA: `(__int64)WorldTime % 5000`.
+            // WorldTime explícito, no ST0 basura). IDA: `(std::int64_t)WorldTime % 5000`.
             iVar12 = 0;
             fVar11 = (float)(int)(worldTime % 5000) * _DAT_005528c0 - _DAT_005528b4;
 
@@ -347,7 +348,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
         } else if (
             // El binario original compara como INT, no float. IDA sub_440D50:
-            //   else if ( a5 <= -2 || *(__int16 *)(v40 + 2) == a5 )
+            //   else if ( a5 <= -2 || *(std::int16_t *)(v40 + 2) == a5 )
             // `a5` llega como `*(_DWORD *)(obj+100)` → bits raw del entero
             // (MUGAME escribe DWORD 1 en obj+100 vía `v6[25]=1`). Nuestro port
             // pasa eso por un `float` param → 0x00000001 se interpreta como

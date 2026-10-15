@@ -1,3 +1,4 @@
+#include <cstdint>
 // Entity_Render_3D.cpp
 // Entity_Render_3D @ 0x004FC070  (667 lines, decompile completo)
 //
@@ -189,7 +190,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         if (pfVar3 == (float *)0x69) {
             // Type 105 — NPC: Y-offset scroll + random smoke puffs (50% chance)
             *(undefined4 *)(param_1 + 0x68) = 0x3f800000;
-            lVar10 = (longlong)DAT_05826e08;   // IDA: (-(__int64)WorldTime % 1000) * 0.001
+            lVar10 = (longlong)DAT_05826e08;   // IDA: (-(std::int64_t)WorldTime % 1000) * 0.001
             *(float *)(param_1 + 0x70) = (float)(-(int)lVar10 % 1000) * _DAT_00552500;
             uVar4 = _rand();
             pfVar3 = (float *)(uVar4 & 0x80000001);
@@ -227,7 +228,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         if (pfVar3 == (float *)0x64) {
             // Type 100 — player: rotating spark pair at z=150
             local_24 = fVar14; local_20 = fVar14; local_1c = fVar14;
-            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(__int64)(WorldTime*0.1) % 360
+            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(std::int64_t)(WorldTime*0.1) % 360
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 150.0f;
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
@@ -299,7 +300,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_24 = fVar14 * _DAT_005528b4;
             local_20 = fVar14 * _DAT_00552530;
             local_1c = fVar14;
-            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(__int64)(WorldTime*0.1) % 360
+            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(std::int64_t)(WorldTime*0.1) % 360
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
             BMD_TransformPosition(pModel, (float *)&DAT_0697154c, local_c, &local_18, '\0');
@@ -356,7 +357,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
                 uVar5 = 0x4a7; local_1c = fVar14; local_20 = _DAT_00552530;
             }
             local_20 = fVar14 * local_20;
-            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(__int64)(WorldTime*0.1) % 360
+            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(std::int64_t)(WorldTime*0.1) % 360
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
             BMD_TransformPosition(pModel, (float *)&DAT_06970d6c, local_c, &local_18, '\0');
@@ -372,7 +373,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             pfVar3 = (float *)CreateSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngleN, 0);
         } else if (pfVar3 == (float *)0x28) {
             local_24 = fVar14; local_20 = fVar14; local_1c = fVar14;
-            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(__int64)(WorldTime*0.1) % 360
+            uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(std::int64_t)(WorldTime*0.1) % 360
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 260.0f;
             local_14 = *(float *)(param_1 + 0x14);
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
@@ -451,7 +452,7 @@ LAB_004fc55a:
             break;
         case 0x4c:
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
-            uVar11 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime % 5000 > 4500
+            uVar11 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime % 5000 > 4500
             uVar11 = (ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20 | uVar11 & 0xffffffff;
             if (0x1194 < (int)((longlong)uVar11 % 5000)) {
                 pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
@@ -460,9 +461,9 @@ LAB_004fc55a:
             break;
         case 0x53:
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
-            lVar10 = (longlong)(*(float *)(param_1 + 0x24));   // IDA: 10 * (__int64)*(float*)(o+36)
+            lVar10 = (longlong)(*(float *)(param_1 + 0x24));   // IDA: 10 * (std::int64_t)*(float*)(o+36)
             iVar7 = (int)lVar10 * 10;
-            uVar11 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime % 10000
+            uVar11 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime % 10000
             iVar2 = (int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20 | uVar11 & 0xffffffff) % 10000);
             if (((int)(iVar7 + 0xdac) < iVar2) && (iVar2 < iVar7 + 4000)) {
                 pfVar13 = (float *)(param_1 + 0xe8);
@@ -596,7 +597,7 @@ LAB_004fc55a:
             bVar8 = (uVar4 == 0);
             if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xfffffffe) == 0xffffffff);
             if (bVar8) {
-                uVar11 = (longlong)(*(float *)(param_1 + 0x80) + 2.0f);   // IDA: (int)(__int64)(*(float*)(o+128)+2.0) % 4
+                uVar11 = (longlong)(*(float *)(param_1 + 0x80) + 2.0f);   // IDA: (int)(std::int64_t)(*(float*)(o+128)+2.0) % 4
                 uVar4 = (uint)uVar11 & 0x80000003;
                 bVar8 = ((uVar11 & 0x80000003) == 0);
                 if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xfffffffc) == 0xffffffff);
@@ -610,7 +611,7 @@ LAB_004fc55a:
             pfVar3 = (float *)(uVar4);
             if ((int)pfVar3 < 0) pfVar3 = (float *)(((int)pfVar3 - 1U | 0xfffffffe) + 1);
             if (pfVar3 == (float *)0x0) {
-                uVar11 = (longlong)(*(float *)(param_1 + 0x80));   // IDA: (__int64)*(float*)(o+128) % 4
+                uVar11 = (longlong)(*(float *)(param_1 + 0x80));   // IDA: (std::int64_t)*(float*)(o+128) % 4
                 pfVar3 = (float *)((uint)uVar11 & 0x80000003);
                 bVar8 = ((uVar11 & 0x80000003) == 0);
                 if ((int)pfVar3 < 0) {

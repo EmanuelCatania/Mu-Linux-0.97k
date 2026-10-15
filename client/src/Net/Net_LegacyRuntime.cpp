@@ -1,3 +1,4 @@
+#include <cstdint>
 // Net_LegacyRuntime.cpp
 //
 // Funciones de red/sesión (InitGame, ReceiveChat, SendCheck, ...). Cada una
@@ -46,7 +47,7 @@ extern "C" int dword_7EAA0CC;             // HUD_Pass3.cpp
 #define COERCE_FLOAT(x)      (*(float*)&(x))
 #endif
 #ifndef __PAIR64__
-#define __PAIR64__(hi,lo)    (((unsigned __int64)(DWORD)(hi)<<32)|(DWORD)(lo))
+#define __PAIR64__(hi,lo)    (((std::uint64_t)(DWORD)(hi)<<32)|(DWORD)(lo))
 #endif
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))

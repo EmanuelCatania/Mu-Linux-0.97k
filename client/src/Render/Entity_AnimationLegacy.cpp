@@ -1,3 +1,4 @@
+#include <cstdint>
 // Animación de modelos (Calc_RenderObject, BMD_Animation, Skeleton_Transform)
 // y algunos helpers sueltos (CIsin, Screen_ToGLx/y).
 
@@ -146,7 +147,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
     // C nuestra lo declara `unsigned int` porque el caller en Calc_RenderObject lo
     // carga con *(DWORD*)(entity+0x10c) y los bits del float caben en un DWORD.
     // Hay que reinterpretar las bits → float y truncar a int
-    // (== IDA: v12 = (__int64)PriorFrame; v39 = v12).
+    // (== IDA: v12 = (std::int64_t)PriorFrame; v39 = v12).
     float priorFrame;
     memcpy(&priorFrame, &param_3, 4);
     int v39 = (int)priorFrame;
@@ -154,7 +155,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
         int* animA = (int*)(*(int*)((char*)this_ + 0x30) + (unsigned int)param_4 * 0x10);
         if (*(short*)(animA + 2) <= v39) v39 = 0;
         // IDA también clamp this[+0xA8] contra anim[this+0xA0]'s length:
-        //   if ( v11 >= *(__int16 *)(16 * *(unsigned __int8*)(This+160) + v13 + 8) )
+        //   if ( v11 >= *(std::int16_t *)(16 * *(std::uint8_t*)(This+160) + v13 + 8) )
         //       *(_WORD *)(This + 168) = 0;
         int animBIdxClamp = *(unsigned char*)((char*)this_ + 0xa0);
         int* animBHdr = (int*)(*(int*)((char*)this_ + 0x30) + animBIdxClamp * 0x10);

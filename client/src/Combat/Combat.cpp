@@ -1,3 +1,4 @@
+#include <cstdint>
 // Combat.cpp
 // Sistema de combate — ataques, animaciones, muerte, skills, ítems en suelo
 //
@@ -2086,8 +2087,8 @@ void __cdecl Action(DWORD c, DWORD o)
         if (targetIdx < 0) return;
 
         // IDA Action 0x0048D640 L1194-1212 — alcance segun el arma equipada.
-        //   v11 = *(__int16 *)(CharacterMachine + 536);   // wear slot 0 (mano izq)
-        //   v12 = *(__int16 *)(CharacterMachine + 604);   // wear slot 1 (mano der)
+        //   v11 = *(std::int16_t *)(CharacterMachine + 536);   // wear slot 0 (mano izq)
+        //   v12 = *(std::int16_t *)(CharacterMachine + 604);   // wear slot 1 (mano der)
         // OJO: el original lee el global CharacterMachine, NO `c` (en la entidad,
         // stride 916, esos offsets son otros campos).  Los ids son TIPOS de item (sin
         // el +400 del modelo): 136-142 arcos, 128-134 ballestas, 145 el par arco/ballesta.
@@ -2181,7 +2182,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 // llegaban válidos al server (CSM-encriptado un C1 no se
                 // descifra, server descarta silenciosamente).
                 int targetEntityId = *(short*)(pCharsClient + 476); // entity Id
-                // IDA 0x48DF85-0x48DFB0: sx1 = (__int64)((facing + 22.5)
+                // IDA 0x48DF85-0x48DFB0: sx1 = (std::int64_t)((facing + 22.5)
                 // * 0.022222223 + 1.0) & 7.  Al port le faltaba el `+ 1.0`, o
                 // sea el server recibia la direccion corrida un octante.
                 const float heroFacing = *(float*)((char*)(uintptr_t)ACTION_HERO + 36);

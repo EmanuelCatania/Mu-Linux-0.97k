@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "stdafx.h"
 #include "../globals.h"
 #include "../functions.h"
@@ -391,7 +392,7 @@ section2:
             if (ParserFileHandle != NULL) {
                 while (true) {
                     int typeId = ParseNextToken();
-                    long long lv = (longlong)ParserTokenNumber;   // IDA: (__int64)TokenNumber  (ParserTokenNumber)
+                    long long lv = (longlong)ParserTokenNumber;   // IDA: (std::int64_t)TokenNumber  (ParserTokenNumber)
                     int puVar10 = (int)lv;
                     if (typeId == 2) break;
                     ParseNextToken();

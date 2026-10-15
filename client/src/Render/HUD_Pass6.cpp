@@ -1,3 +1,4 @@
+#include <cstdint>
 // HUD_Pass6.cpp — última tanda de paneles del HUD.
 //
 // Each function in this file is a real port from IDA (1:1 structure) — the
@@ -1089,7 +1090,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             double pct  = CalcDurabilityPercent(pWeaponLeft->Durability, magicDur,
                                                 pWeaponLeft->Level, pWeaponLeft->Option1);
             sprintf(Buffer, GlobalText[215], piMin, piMax,
-                    (unsigned int)(__int64)((mult - pct * mult) * (double)piMax));
+                    (unsigned int)(std::int64_t)((mult - pct * mult) * (double)piMax));
         } else {
             sprintf(Buffer, GlobalText[216], piMin, piMax);
         }

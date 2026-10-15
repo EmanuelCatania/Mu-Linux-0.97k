@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_Equip.cpp
 // IDA: Item_Equip @ 0x00483B30 (7193 bytes) — char __cdecl Item_Equip(DWORD o, int a2).
 // El nombre historico engania: NO es una operacion de UI de inventario. Es el
@@ -14,7 +15,7 @@
 #include "Net/Net.h"
 #include "Item_Equip.h"
 
-// IDA L239: v13 = *(unsigned __int8 *)(dword_7D7809C + CharacterAttribute + 87).
+// IDA L239: v13 = *(std::uint8_t *)(dword_7D7809C + CharacterAttribute + 87).
 // El indice es dword_7D7809C (el slot que Attack acaba de sembrar en L1425 con
 // *(BYTE *)(Hero + 913)), no Hero+913 releido. Coinciden en el camino de Attack,
 // pero UseSkillWarrior usa el mismo global y conviene mantenerlos atados.
