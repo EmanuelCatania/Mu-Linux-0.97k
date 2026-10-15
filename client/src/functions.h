@@ -3,7 +3,7 @@
 // No agregar declaraciones FUN_ sin definición para direcciones que ya tienen su
 // función declarada con el nombre de IDA: un segundo símbolo C++ para la misma
 // dirección del binario termina en puentes muertos.
-#include <intrin.h>   // _ReturnAddress (used por HashTable_GetIndex defensive log)
+#include "Platform/CompilerCompat.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
