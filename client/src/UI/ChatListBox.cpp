@@ -1285,7 +1285,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         default: break;
     }
     if (g_bUseChatListBox && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
-    lstrcpynA(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
+    Platform::TextCopy(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
     UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0);
 
     GL_ResetState();   // DisableAlphaBlend

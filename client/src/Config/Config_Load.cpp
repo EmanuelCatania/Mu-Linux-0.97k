@@ -43,6 +43,7 @@
 //     SetByte(0x0041EFB5, 0xEB);  // Crack gg init
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Config/Config.h"
 #include "Net/MuEmu.h"
@@ -109,7 +110,7 @@ int Config_Load(void)
     char  exeNameBuf[MAX_PATH] = {};
     unsigned short versionWords[4] = {};
     if (!Path_GetBasename(exeNameBuf, GetCommandLineA())) {
-        lstrcpynA(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
+        Platform::TextCopy(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
     } else if (FileVersion_Get(exeNameBuf, versionWords)) {
         wsprintfA(ConfigLoginVersion, "%d.%02d", versionWords[0], versionWords[1]);
         if (versionWords[2]) {
@@ -118,7 +119,7 @@ int Config_Load(void)
             strcat_s(ConfigLoginVersion, sizeof(ConfigLoginVersion), suffix);
         }
     } else {
-        lstrcpynA(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
+        Platform::TextCopy(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
     }
 
     // --- 4. Registry: HKCU\SOFTWARE\Webzen\Mu\Config ---
@@ -170,7 +171,7 @@ int Config_Load(void)
         gWindow.SetWindowMode(windowMode, borderless);
     }
     if (gUserSettings.GetUsername()[0] != 0)
-        lstrcpynA((char*)lpData_055c9ba0, gUserSettings.GetUsername(), 11);
+        Platform::TextCopy((char*)lpData_055c9ba0, gUserSettings.GetUsername(), 11);
 
     // --- 5. Resolution -> screen dimensions ---
     //
@@ -339,11 +340,11 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
     if (outIP == nullptr || outPort == nullptr) return 0;
 
     if (ServerConfig::ConnectServerPort != 0) {
-        lstrcpynA(outIP, ServerConfig::ConnectServerIP, 128);
+        Platform::TextCopy(outIP, ServerConfig::ConnectServerIP, 128);
         *outPort = ServerConfig::ConnectServerPort;
         gNetwork.SetConnectServer(true);
     } else {
-        lstrcpynA(outIP, ServerConfig::GameServerIP, 128);
+        Platform::TextCopy(outIP, ServerConfig::GameServerIP, 128);
         *outPort = ServerConfig::GameServerPort;
         gNetwork.SetConnectServer(false);
     }

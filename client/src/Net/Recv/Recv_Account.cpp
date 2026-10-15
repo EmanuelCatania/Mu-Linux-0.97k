@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "UI/EventTimer.h"
@@ -237,7 +238,7 @@ void Recv_CustomServerList(const BYTE* Msg)
         const char* name = (const char*)(p + 2);
         int group = serverCode / 20;
         if (group >= 0 && group < 24)
-            lstrcpynA(DAT_07d52c34 + 300 * group, name, 32);  // deja hueco null-term
+            Platform::TextCopy(DAT_07d52c34 + 300 * group, name, 32);  // deja hueco null-term
         p += 34;
     }
     NetLog("NET:  → F4/04 CustomServerList count=%d (names populated)", count);
@@ -275,12 +276,12 @@ void Recv_ServerList(const BYTE* Msg)
         if (group == 12) {
             slot = 24;
             // grupo evento: nombre desde GlobalText[559] (si existe)
-            if (GlobalText[559]) lstrcpynA(DAT_083a78a8, (const char*)GlobalText[559], 20);
+            if (GlobalText[559]) Platform::TextCopy(DAT_083a78a8, (const char*)GlobalText[559], 20);
         } else {
             slot = 23 - group;
             if (slot < 0 || slot > 24) continue;
             // nombre desde la tabla local poblada por F4/04
-            lstrcpynA(DAT_083a45d8 + 542 * slot, DAT_07d52c34 + 300 * group, 20);
+            Platform::TextCopy(DAT_083a45d8 + 542 * slot, DAT_07d52c34 + 300 * group, 20);
         }
         char* slotBase = DAT_083a45d8 + 542 * slot;
         unsigned char chan = *(unsigned char*)(slotBase + 0x14);   // num_channels actual

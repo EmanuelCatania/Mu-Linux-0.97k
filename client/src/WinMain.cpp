@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/NativeBridge.h"
 #include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
@@ -641,7 +642,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     if (!gNetwork.HasConnectServer()) {
         char* srv0 = DAT_083a45d8;                           // entry index 0
         memset(srv0, 0, 0x21e);
-        lstrcpynA(srv0, "MuServer", 20);                     // +0x00 name
+        Platform::TextCopy(srv0, "MuServer", 20);                     // +0x00 name
         srv0[0x14] = 1;                                      // +0x14 num_channels
         *(unsigned short*)(srv0 + 0x2c) = 1;                 // channel[0] id → "1"
         // Load byte = ocupación del server (0..100). El original lo recibe por
@@ -768,7 +769,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             "Soul Master", "Blade Knight", "Muse Elf"
         };
         for (int i = 0; i < 7; ++i)
-            lstrcpynA(DAT_07d2b494 + i * 300, kCN[i], 300);
+            Platform::TextCopy(DAT_07d2b494 + i * 300, kCN[i], 300);
     }
 
     SceneFlag = 1;  // SceneFlag: 1=Intro, 2=Login, 3=Loading, 4=CharSelect, 5=InGame

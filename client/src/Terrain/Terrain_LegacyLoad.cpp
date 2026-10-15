@@ -1,6 +1,7 @@
 // Terrain_LegacyLoad.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -372,7 +373,7 @@ void __cdecl OpenWorldModels(void) {
 
                 const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
                 _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtLeaf, v4);
-                lstrcpynA(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
+                Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
             }
         }
         break;

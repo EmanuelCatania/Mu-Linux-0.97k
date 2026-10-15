@@ -3,6 +3,7 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Render/Camera3D.h"
 #include "Input/Input.h"
 
@@ -54,7 +55,7 @@ static bool Chat_TryAssignMacro(const char* text)
     const int slot = (text[1] == '0') ? 9 : (text[1] - '1');
     char* dst = (char*)MacroText + slot * 0x100;
     memset(dst, 0, 0x100);
-    lstrcpynA(dst, body, 0x100);
+    Platform::TextCopy(dst, body, 0x100);
     PlayBuffer(0x19, 0, 0);   // SOUND_CLICK01
     return true;
 }

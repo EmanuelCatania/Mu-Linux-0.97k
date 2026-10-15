@@ -3,6 +3,7 @@
 // Source/MuServer/ConnectServer/MiniDump.cpp.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Debug/MiniDump.h"
 
 #include <dbghelp.h>
@@ -95,6 +96,6 @@ bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int out
         return false;
     }
 
-    if (outPath && outPathSize) lstrcpynA(outPath, path, (int)outPathSize);
+    if (outPath && outPathSize) Platform::TextCopy(outPath, path, (int)outPathSize);
     return true;
 }

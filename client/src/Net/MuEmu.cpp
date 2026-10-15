@@ -3,6 +3,7 @@
 // port's GameServer/HackCheck.cpp.  See MuEmu.h for the key-derivation story.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/MuEmu.h"
 #include "Platform/PlatformHeaders.h"
@@ -49,8 +50,8 @@ void InitKeys(const char* customerName, const char* serverSerial)
 
     char cust[32] = { 0 };   // CServerInfo::m_CustomerName[32]
     char ser[17]  = { 0 };   // CServerInfo::m_ServerSerial[17]
-    lstrcpynA(cust, customerName, sizeof(cust));
-    lstrcpynA(ser,  serverSerial, sizeof(ser));
+    Platform::TextCopy(cust, customerName, sizeof(cust));
+    Platform::TextCopy(ser,  serverSerial, sizeof(ser));
 
     WORD encDecKey = 0;
     for (int n = 0; n < (int)sizeof(cust); ++n) {
