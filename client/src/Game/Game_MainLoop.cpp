@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -217,8 +218,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         {
             static int s_dirReady = -1;   // -1 sin probar, 1 lista, 0 fallback
             if (s_dirReady < 0) {
-                s_dirReady = (CreateDirectoryA("Screenshots", NULL) != 0 ||
-                              GetLastError() == ERROR_ALREADY_EXISTS) ? 1 : 0;
+                s_dirReady = Platform::GetFileSystem().EnsureDirectory("Screenshots") ? 1 : 0;
             }
             if (s_dirReady == 1) shotDir = "Screenshots/";
         }

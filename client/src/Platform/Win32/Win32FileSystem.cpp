@@ -10,6 +10,9 @@ public:
     uint32_t WorkingDirectory(uint32_t capacity, char* output) override {
         return GetCurrentDirectoryA(capacity, output);
     }
+    bool EnsureDirectory(const char* path) override {
+        return CreateDirectoryA(path, nullptr) != 0 || GetLastError() == ERROR_ALREADY_EXISTS;
+    }
     bool Exists(const char* path) override {
         return GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES;
     }
