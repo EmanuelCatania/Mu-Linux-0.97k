@@ -62,8 +62,31 @@
 //   TERRAIN_INDEX (terrain helper)
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/Text.h"
+extern "C" void DbgLogPublic(const char*);
 
 namespace {
+// Owner puede ser un personaje, efecto, objeto del mapa o de los pools
+// ambientales. Aceptar solo comienzos de slots, nunca direcciones interiores.
+static bool IsEffectOwner(const void* owner)
+{
+    if (!owner) return false;
+    const auto allocation = (uintptr_t)DAT_055c9e48;
+    const auto characters = (uintptr_t)DAT_07abf5d0;
+    if (allocation && characters >= allocation &&
+        characters - allocation < 0x80u * 0x394u &&
+        (characters - allocation) % 0x394u == 0 &&
+        SceneObjects::IsSlot(owner, (void*)characters, 0x59740, 0x394)) return true;
+    return SceneObjects::Contains(owner) ||
+        SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), 0x1bc) ||
+        SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), 0x1bc) ||
+        SceneObjects::IsSlot(owner, DAT_07c74ec8, sizeof(DAT_07c74ec8), 0x1bc) ||
+        SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), 0x1bc) ||
+        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc) ||
+        SceneObjects::IsSlot(owner, DAT_083a2f78, sizeof(DAT_083a2f78), 0x1bc);
+}
+
 // IDA: MoveEffect (0x00466AD0), desvanecimiento 247/248/250/251.
 struct EffectFadePreset { int DescentThreshold; const float* AlphaFactor; };
 constexpr EffectFadePreset EffectFadePresets[] = {
@@ -202,6 +225,25 @@ newLife:
 // IDA: MoveEffect (0x00466AD0)
 void MoveEffect(float *param_1, int param_2)
 {
+  const auto validOwner = [param_1](const void* owner) {
+    if (IsEffectOwner(owner)) return true;
+    const int type = *(short*)((char*)param_1 + 2);
+    static bool reported[2048] = {};
+    if (type >= 0 && type < 2048 && !reported[type]) {
+      reported[type] = true;
+      char message[160];
+      Platform::TextFormat(message, "MoveEffect: owner fuera de los pools, Type=%d owner=%08X; efecto desactivado",
+                           type, (unsigned)(uintptr_t)owner);
+      DbgLogPublic(message);
+    }
+    *(char*)param_1 = 0;
+    return false;
+  };
+  const void* owner = *(const void**)((char*)param_1 + 0xfc);
+  // Null es legitimo en efectos sin seguimiento. Los no nulos siempre
+  // deben pertenecer a un pool; validar null solo en las ramas que lo leen.
+  if (owner && !validOwner(owner)) return;
+
   // Locales contiguos: el codigo pasa `&local_XXX` a funciones que leen 3 floats
   // consecutivos (Position, Light, matrices), o sea depende de que los locales
   // queden contiguos y en el orden del frame original.  MSVC no lo garantiza:
@@ -627,8 +669,16 @@ void MoveEffect(float *param_1, int param_2)
             local_31c = 0.0;
             local_318 = 0;
             local_314 = 0x41200000;
+            if (!validOwner(owner)) return;
             iVar9 = *(int *)(*(int*)&param_1[0x3f] + 0x114);
-            pvVar1 = (void *)(DAT_05828d58 + *(short *)(*(int*)&param_1[0x3f] + 2) * 0xbc);
+            if (!SceneObjects::HasBoneRange(owner, (void*)(uintptr_t)iVar9, 0x630, 12)) {
+              *(char*)param_1 = 0; return;
+            }
+            const int ownerModel = *(const short*)((const char*)owner + 2);
+            if (!DAT_05828d58 || ownerModel < 0 || ownerModel >= MODEL_MAX_TOTAL) {
+              *(char*)param_1 = 0; return;
+            }
+            pvVar1 = (void *)(DAT_05828d58 + ownerModel * 0xbc);
             *(float *)((int)pvVar1 + 0x6c) = param_1[0x5c];
             *(float *)((int)pvVar1 + 0x70) = param_1[0x5d];
             *(float *)((int)pvVar1 + 0x74) = param_1[0x5e];
@@ -733,6 +783,7 @@ void MoveEffect(float *param_1, int param_2)
           }
           break;
         case 0x4fa:
+          if (!validOwner(owner)) return;
           if (*(char *)*(int*)&param_1[0x3f] == '\0') {
             param_1[0x18] = 0.0;
             goto LAB_0046a85e;
@@ -753,6 +804,7 @@ void MoveEffect(float *param_1, int param_2)
               if (fVar13 == 4.2039e-45f) {
                 fVar17 = -fVar17;
               }
+              if (!validOwner(owner)) return;
               __owner_fVar4 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
               fVar18 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552998 +
                                      (float10)(int)local_35c * (float10)_DAT_0055299c);
@@ -824,6 +876,7 @@ void MoveEffect(float *param_1, int param_2)
           }
           break;
         case 0x596:
+          if (!validOwner(owner)) return;
           pcVar11 = (char *)*(int*)&param_1[0x3f];
           if ((*pcVar11 == '\0') || (((byte)*(undefined4 *)(pcVar11 + 0x78) & 2) != 2)) {
 LAB_0046a366:
@@ -928,6 +981,7 @@ LAB_00469366:
         param_1[0x36] = (float)(fVar17 * (float10)_DAT_005524fc + (float10)_DAT_0055284c);
         Matrix_BuildFromEuler(param_1 + 10,local_1a4 + 6);
         Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
+        if (!validOwner(owner)) return;
         __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
         local_354 = local_354 + *(float *)(__owner_fVar13 + 0x10);
         local_350 = local_350 + *(float *)(__owner_fVar13 + 0x14);
@@ -1161,6 +1215,7 @@ LAB_004695b5:
       goto LAB_004695c0;
     case 0xc2:
     case 0x103:
+      if (!validOwner(owner)) return;
       __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
       fVar4 = *(float *)(__owner_fVar13 + 0x14);
       fVar5 = *(float *)(__owner_fVar13 + 0x18);
@@ -1173,6 +1228,7 @@ LAB_004695b5:
     case 0xd5:
     case 0xd6:
       if (*(int*)&param_1[1] != 5) goto switchD_00466b93_caseD_c7;
+      if (!validOwner(owner)) return;
       pcVar11 = (char *)*(int*)&param_1[0x3f];
 LAB_00468772:
       param_1[4] = *(float *)(pcVar11 + 0x10) + param_1[0x5c];
@@ -1224,6 +1280,7 @@ LAB_00468772:
       local_360 = local_36c * _DAT_005526e4;
       goto LAB_00468736;
     case 0xca:
+      if (!validOwner(owner)) return;
       __owner_fVar4 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
       fVar6 = *(float *)(__owner_fVar4 + 0x18) + _DAT_005524f0;
       fVar5 = *(float *)(__owner_fVar4 + 0x14);
@@ -1334,6 +1391,7 @@ LAB_00468772:
     case 0xe2:
     case 0xe3:
       if (*(int*)&param_1[1] == 5) {
+        if (!validOwner(owner)) return;
         pcVar11 = (char *)*(int*)&param_1[0x3f];
         if (*pcVar11 == '\0') {
           *(undefined1 *)param_1 = 0;
@@ -1548,6 +1606,7 @@ switchD_00466b93_caseD_c7:
       Effect_CollisionCheck((int)param_1);
       break;
     case 0xe1:
+      if (!validOwner(owner)) return;
       pcVar11 = (char *)*(int*)&param_1[0x3f];
       param_1[0x1a] = 1.3;
       fVar13 = *(float *)(pcVar11 + 0x14);
@@ -1607,6 +1666,7 @@ switchD_00466b93_caseD_c7:
         param_1[0x1a] = (float)(*(int*)&param_1[0x18]) * _DAT_00552a00;
       }
       else {
+        if (!validOwner(owner)) return;
         __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
         fVar4 = *(float *)(__owner_fVar13 + 0x10);
         fVar5 = *(float *)(__owner_fVar13 + 0x14);
@@ -1627,6 +1687,7 @@ switchD_00466b93_caseD_c7:
     case 0xef:
       if (*(unsigned int*)&param_1[1] >= 1 && *(unsigned int*)&param_1[1] <= 4)
         param_1[0x5a] = EffectTrailAlpha[*(unsigned int*)&param_1[1] - 1];
+      if (!validOwner(owner)) return;
       if ((*(byte *)(*(int*)&param_1[0x3f] + 0x88) < 0x60) ||
          (0x7f < *(byte *)(*(int*)&param_1[0x3f] + 0x88))) {
         local_318 = 0xc3160000;
@@ -1639,6 +1700,7 @@ switchD_00466b93_caseD_c7:
       local_314 = 0;
       Matrix_BuildFromEuler(pfVar10,local_1a4 + 6);
       Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
+      if (!validOwner(owner)) return;
       __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
       pfVar15 = param_1 + 4;
       *pfVar15 = local_354 + *(float *)(__owner_fVar13 + 0x10);
@@ -1752,15 +1814,18 @@ LAB_00466e5e:
       }
       else {
         if (*(int*)&fVar4 == 3) {
+          if (!validOwner(owner)) return;
           __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
           param_1[5] = *(float *)(__owner_fVar5 + 0x14);
           iVar9 = *(int *)(__owner_fVar5 + 0xfc);
+          if (!validOwner((void*)(uintptr_t)iVar9)) return;
           param_1[6] = *(float *)(__owner_fVar5 + 0x18);
           param_1[4] = *(float *)(iVar9 + 0x10) + _DAT_0055297c;
           goto LAB_00466e5e;
         }
         if (*(int*)&fVar4 == 4) {
           fVar7 = param_1[3] + _DAT_00552a08;
+          if (!validOwner(owner)) return;
           __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
           fVar6 = *(float *)(__owner_fVar5 + 0x10);
           param_1[3] = fVar7;
@@ -1831,6 +1896,7 @@ LAB_00466e5e:
         local_310 = -25.0;
         local_30c = -80.0;
         local_308 = 0;
+        if (!validOwner(owner)) return;
         Matrix_BuildFromEuler((float *)(*(int*)&param_1[0x3f] + 0x1c),local_15c);
         Vector_Rotate(&local_310,local_15c,&local_328);
         local_348 = local_328 + param_1[4];
@@ -2016,6 +2082,7 @@ LAB_00466e5e:
           local_310 = -25.0;
           local_30c = -40.0;
           local_308 = 0;
+          if (!validOwner(owner)) return;
           Matrix_BuildFromEuler((float *)(*(int*)&param_1[0x3f] + 0x1c),local_15c);
           Vector_Rotate(&local_310,local_15c,&local_328);
           local_304 = local_328 + param_1[4];
@@ -2219,6 +2286,7 @@ LAB_004695c0:
       param_1[0x1a] = (float)__cnt * _DAT_00552a10;
       break;
     case 0xff:
+      if (!validOwner(owner)) return;
       pcVar11 = (char *)*(int*)&param_1[0x3f];
       if (*pcVar11 == '\0') {
         *(int *)&param_1[0x18] = -1;   // IDA: lifetime = -1
@@ -2311,6 +2379,7 @@ LAB_004695c0:
       break;
     }
     case 0x109:
+      if (!validOwner(owner)) return;
       if ((((byte)*(undefined4 *)((char *)*(int*)&param_1[0x3f] + 0x78) & 0x20) == 0x20) &&
          (*(char *)*(int*)&param_1[0x3f] != '\0')) {
         if (0x32 < __cnt) {

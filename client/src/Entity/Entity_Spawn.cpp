@@ -68,6 +68,7 @@
 // +0x17c = base_level (int)
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
@@ -292,6 +293,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // Ojo: el bone count es el short en +0x22 del MODEL_t (el mismo campo que usa
     // BMD_Animation para su loop).  Leerlo de otro offset deja el buffer corto y
     // el render escribe el ultimo hueso fuera de el.
+    SceneObjects::UnregisterBones(param_1);
     if (*(unsigned char **)(param_1 + 0x114) != NULL) {
         operator_delete(*(unsigned char **)(param_1 + 0x114));
         *(int *)(param_1 + 0x114) = 0;
@@ -310,6 +312,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
         if (boneBuf && boneCount > 0)
             memset(boneBuf, 0, (size_t)boneCount * 0x30);
         *(void **)(param_1 + 0x114) = boneBuf;
+        SceneObjects::RegisterBones(param_1, boneBuf, (size_t)boneCount * 0x30);
     }
 
     // ── Equip slot init ───────────────────────────────────────────────────────
