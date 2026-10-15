@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/GuardedOperation.h"
 #include "Platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -1730,16 +1731,44 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 #undef RII_OPT
 #undef RII_GAP
 
+// Pools que pueden entregar el item seleccionado (Item_ClickHandler y
+// SecondPassword). No leer Type ni opciones hasta comprobar slot y alineacion.
+extern "C" BYTE ShopItems[120 * 68];
+static bool IsTooltipItem(const void* candidate)
+{
+    if (!candidate) return false;
+    const uintptr_t address = (uintptr_t)candidate;
+    const auto inSlots = [address](const void* base, size_t count) {
+        const uintptr_t start = (uintptr_t)base;
+        return start && address >= start && address - start < count * sizeof(ITEM) &&
+               (address - start) % sizeof(ITEM) == 0;
+    };
+    const bool known = candidate == DAT_07e91350 ||
+        inSlots(OffsetInventoryItems, 64) || inSlots(OffsetTradeItems, 64) ||
+        inSlots(OffsetMixItems, 64) || inSlots(OffsetWarehouseItems, 120) ||
+        inSlots(Inventory, 160) || inSlots(ShopItems, 120) ||
+        (CharacterMachine && CharacterMachine == DAT_07cf1ffc &&
+         inSlots((const BYTE*)CharacterMachine + 536, 12));
+    if (!known) return false;
+    const ITEM* item = static_cast<const ITEM*>(candidate);
+    const unsigned int base = ItemAttribute_Base();
+    if (!base || item->Type < 0 || item->Type >= ITEM_MAX_EX ||
+        item->SpecialNum > MAX_SPECIAL_OPTION) return false;
+    const ITEM_ATTRIBUTE& attr = ((const ITEM_ATTRIBUTE*)(uintptr_t)base)[item->Type];
+    return memchr(attr.Name, 0, sizeof(attr.Name)) != nullptr;
+}
+
 void __cdecl RenderItemInfo(void* param_1, void* param_2, void* param_3_v, int param_4)
 {
-    __try {
+    if (!IsTooltipItem(param_3_v)) { DAT_07eaa160 = 0; return; }
+    if (!Platform::RunValidatedOperation([&]() {
 #if RENDERITEMINFO_FIEL
         RenderItemInfo_IDA((int)(uintptr_t)param_1, (int)(uintptr_t)param_2,
                            (ITEM*)param_3_v, param_4 != 0);
 #else
         RenderItemInfo_impl(param_1, param_2, param_3_v, param_4);
 #endif
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
+    })) {
         DbgLogPublic("RIP CRASHED inside _impl — caught by SEH");
         extern DWORD DAT_07eaa160;
         DAT_07eaa160 = 0;
@@ -1749,9 +1778,10 @@ void __cdecl RenderItemInfo(void* param_1, void* param_2, void* param_3_v, int p
 // IDA: RenderRepairInfo (0x004C8D70)
 void __cdecl RenderRepairInfo(void* param_1, int param_2, void* param_3_v)
 {
-    __try {
+    if (!IsTooltipItem(param_3_v)) { DAT_07eaa160 = 0; return; }
+    if (!Platform::RunValidatedOperation([&]() {
         RenderRepairInfo_impl(param_1, param_2, param_3_v);
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
+    })) {
         DbgLogPublic("RRI CRASHED inside _impl — caught by SEH");
         extern DWORD DAT_07eaa160;
         DAT_07eaa160 = 0;
