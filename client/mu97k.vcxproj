@@ -107,6 +107,9 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Platform\PlatformHeaders.h" />
+    <ClInclude Include="src\Platform\DebugHeaders.h" />
+    <ClInclude Include="src\Platform\Posix\WinTypes.h" />
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\functions.h" />
     <ClInclude Include="src\globals.h" />

@@ -7,7 +7,7 @@
 // (F1/01), pide la lista (F3/00) y entra con el mismo personaje (F3/03), con
 // una barra de progreso.  Si no lo logra en ReconnectTimeout, se rinde.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 class CReconnect {
 public:

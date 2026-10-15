@@ -42,7 +42,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@
 #include "functions.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 #include <string.h>
 
 

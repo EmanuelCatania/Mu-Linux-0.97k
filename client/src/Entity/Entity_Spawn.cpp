@@ -71,7 +71,7 @@
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 // Terrain attribute table: 1 byte per attr index, bit 0 = impassable/death flag
 // (declared in globals.h as char[]; cast to unsigned char on use)

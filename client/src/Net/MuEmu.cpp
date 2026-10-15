@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "Platform/ISocket.h"
 #include "Net/MuEmu.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 
 // Disable the global send() redirect macro inside this TU so MuEmu_send_hook
 // can call the real WS2_32 send().

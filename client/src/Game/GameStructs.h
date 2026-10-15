@@ -4,7 +4,7 @@
 
 // Forward declaration for OpenGL type used in BITMAP_t
 #ifndef APIENTRY
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 #endif
 #include <GL/gl.h>
 

@@ -40,7 +40,7 @@
 #include "Platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 
 

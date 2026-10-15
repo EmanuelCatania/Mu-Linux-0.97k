@@ -12,7 +12,7 @@
 //
 // Formato de entrada de todos los Send*: [C1][len][opcode][payload] en claro.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 class CNetwork {
 public:

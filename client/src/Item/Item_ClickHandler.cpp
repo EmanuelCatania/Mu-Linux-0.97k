@@ -57,7 +57,7 @@
 #include "functions.h"
 #include "structs.h"
 #include "Net/Net.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 
 
 // ── Globals referenced (declared elsewhere) ──────────────────────────────────

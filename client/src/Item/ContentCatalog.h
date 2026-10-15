@@ -8,7 +8,7 @@
 // El cliente aplica la tabla sobre la de item.bmd (que queda como respaldo si
 // el server no la manda) y sólo resuelve los assets locales.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 #include "Item/ItemDefines.h"
 #include "Net/Protocol/GameServerProtocol.h"
 
