@@ -350,6 +350,10 @@ set(MU_SOURCES
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
 set(MU_HEADERS
+    src/Platform/IIdentity.h
+    src/Platform/Identity.h
+    src/Platform/Win32/Win32Identity.h
+    src/Platform/Posix/PosixIdentity.h
     src/Platform/LocalTime.h
     src/Platform/Text.h
     src/Platform/PlatformHeaders.h

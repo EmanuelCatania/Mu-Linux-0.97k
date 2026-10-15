@@ -107,6 +107,10 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Platform\IIdentity.h" />
+    <ClInclude Include="src\Platform\Identity.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Identity.h" />
+    <ClInclude Include="src\Platform\Posix\PosixIdentity.h" />
     <ClInclude Include="src\Platform\LocalTime.h" />
     <ClInclude Include="src\Platform\Text.h" />
     <ClInclude Include="src\Platform\PlatformHeaders.h" />
