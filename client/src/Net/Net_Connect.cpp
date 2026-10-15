@@ -7,6 +7,7 @@
 // Initialises the packet hash table for session key tracking.
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/Network.h"
@@ -73,10 +74,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     static bool s_ConnFailHandled = false;
     if (!s_ConnFailHandled) {
         s_ConnFailHandled = true;
-        MessageBoxA((HWND)(uintptr_t)gWindow.GetHwnd(),
-                    "No se puede conectar con el servidor.",
-                    "Mu Online",
-                    MB_OK | MB_ICONERROR);
+        Platform::GetWindow().ShowError("No se puede conectar con el servidor.", "Mu Online", true, true);
         PostQuitMessage(0);
     }
     // Skip the hash-table bootstrap below — it operates on a live session key
@@ -273,7 +271,7 @@ extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
                                        unsigned short port, DWORD WinMsgNum)
 {
     if (!This || !*(DWORD*)This) {
-        MessageBoxA(0, "Window handle missing", "CWsctlc::Connect error", 0);
+        Platform::GetWindow().ShowError("Window handle missing", "CWsctlc::Connect error", false, false);
         return 0;
     }
 

@@ -7,6 +7,9 @@ namespace Platform {
 class Win32Window final : public IWindow {
 public:
     void BindDispatch(HINSTANCE instance, WNDPROC procedure);
+    void ShowError(const char* text, const char* title, bool attach, bool errorIcon) override {
+        MessageBoxA(attach ? m_hWnd : nullptr, text, title, MB_OK | (errorIcon ? MB_ICONERROR : 0));
+    }
     bool Create(const WindowSettings& settings) override;
     bool IsCreated() const override { return m_hWnd != nullptr; }
     void ChangeMode(const WindowSettings& settings) override;

@@ -2,6 +2,9 @@
 #include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
 #include <string>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 namespace Platform {
 namespace {
 // El título del cliente conserva Windows-1252; SDL recibe UTF-8 en ambos sistemas.
@@ -24,6 +27,19 @@ class SDLWindowBackend final : public IWindow {
 public:
     SDL_Window* window = nullptr;
     bool closing = false;
+    void ShowError(const char* text, const char* title, bool attach, bool errorIcon) override {
+#ifdef _WIN32
+        auto hwnd = window ? static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window),
+            SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr)) : nullptr;
+        MessageBoxA(attach ? hwnd : nullptr, text, title, MB_OK | (errorIcon ? MB_ICONERROR : 0));
+#else
+        const auto caption = TitleUTF8(title ? title : "Error");
+        const auto body = TitleUTF8(text);
+        if (!SDL_ShowSimpleMessageBox(errorIcon ? SDL_MESSAGEBOX_ERROR : 0,
+            caption.c_str(), body.c_str(), attach ? window : nullptr))
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error al mostrar diálogo: %s; %s", SDL_GetError(), body.c_str());
+#endif
+    }
     bool Create(const WindowSettings& settings) override {
         if (window) return true;
         closing = false;

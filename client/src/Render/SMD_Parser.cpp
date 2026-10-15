@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
@@ -94,7 +95,7 @@ void __cdecl CWsctlc_Startup(int param_1) {
     int r = Platform::GetSocket().Startup(0x202, socketVersion);
     if (r != 0) {
         CErrorReport_Write(&DAT_055c9bf0, "Winsock DLL Initialize error");
-        MessageBoxA(NULL, "Winsock error", "IError", 0);
+        Platform::GetWindow().ShowError("Winsock error", "IError", false, false);
         return;
     }
     if (((char)socketVersion == '\x02') && ((char)(socketVersion >> 8) == '\x02')) {
@@ -104,7 +105,7 @@ void __cdecl CWsctlc_Startup(int param_1) {
     } else {
         Platform::GetSocket().Cleanup();
         CErrorReport_Write(&DAT_055c9bf0, "Winsock version low");
-        MessageBoxA(NULL, "Winsock version error", "IError", 0);
+        Platform::GetWindow().ShowError("Winsock version error", "IError", false, false);
     }
 }
 
@@ -120,7 +121,7 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
         int err = Platform::GetSocket().LastError();
         Platform::TextFormat(buf, "Socket error: %d", err);
         CErrorReport_Write(&DAT_055c9bf0, buf);
-        MessageBoxA(NULL, buf, "IError", 0);
+        Platform::GetWindow().ShowError(buf, "IError", false, false);
         return;
     }
     *(DWORD*)ctx = (DWORD)param_1;

@@ -1,6 +1,7 @@
 // Process_Exit.cpp
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -8,7 +9,7 @@
 // Shows the fatal error message at lpText_07d2aa08 then destroys the main window.
 void __cdecl ExitProgram(void)
 {
-    MessageBoxA(gWindow.GetHwnd(), lpText_07d2aa08, NULL, 0);
+    Platform::GetWindow().ShowError(lpText_07d2aa08, NULL, true, false);
     gWindow.RequestCloseApplication();  // WM_DESTROY
 }
 

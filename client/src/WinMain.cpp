@@ -457,7 +457,7 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
         } else {
             _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
         }
-        MessageBoxA(NULL, full, "Crash", MB_OK | MB_ICONERROR);
+        Platform::GetWindow().ShowError(full, "Crash", false, true);
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     s_handlerDepth--;
