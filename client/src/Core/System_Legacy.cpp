@@ -220,30 +220,8 @@ DWORD __stdcall GetDXVersion_stub(void) {
 // declaration since the call sites (vtable dispatch via CErrorReport) are not
 // active in our build.
 void __stdcall CErrorReport_DumpCallStack(void) {
-    // No-op: CErrorReport vtable not wired up in our build. The implementation
-    // logic is preserved as CErrorReport_DumpCallStack_impl below for future use.
-}
-extern "C" void CErrorReport_DumpCallStack_impl(DWORD This) {
-    CONTEXT ctx;
-    memset(&ctx, 0, sizeof(ctx));
-    ctx.ContextFlags = CONTEXT_FULL;
-    if (!GetThreadContext(GetCurrentThread(), &ctx)) return;
-
-    CErrorReport__Write(This, (char*)"<Register>\r\n");
-    CErrorReport__Write(This, (char*)"EAX = 0x%08X  EBX = 0x%08X  ECX = 0x%08X  EDX = 0x%08X\r\n",
-                        ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx);
-    CErrorReport__Write(This, (char*)"ESI = 0x%08X  EDI = 0x%08X  EBP = 0x%08X  EIP = 0x%08X\r\n",
-                        ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Eip);
-    CErrorReport__Write(This, (char*)"<Call Stack>\r\n");
-
-    DWORD* ebp = (DWORD*)(uintptr_t)ctx.Ebp;
-    int count = 0;
-    while (ebp && !IsBadReadPtr(ebp, sizeof(DWORD) * 2) && *ebp != 0 && count < 1024) {
-        DWORD ret = ebp[1];  // return address sits at [ebp+4]
-        CErrorReport__Write(This, (char*)"0x%08X\r\n", ret);
-        ebp = (DWORD*)(uintptr_t)*ebp;
-        ++count;
-    }
+    // Vtable historica no conectada. El diagnostico activo se instala mediante
+    // Platform::IDiagnostics; se conserva esta entrada ABI sin callers activos.
 }
 
 // IDA: FUN_00406bd0 @ 0x00406BD0 — Packet cipher init (constructor)
