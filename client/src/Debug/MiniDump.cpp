@@ -3,6 +3,7 @@
 // Source/MuServer/ConnectServer/MiniDump.cpp.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Platform/Text.h"
 #include "Debug/MiniDump.h"
 
@@ -62,8 +63,7 @@ bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int out
     // Nombre con fecha y hora, como los del server.  Se le antepone "MuClient_"
     // para poder distinguirlos de los del GameServer cuando se juntan los dos
     // en la misma carpeta al reportar un problema.
-    SYSTEMTIME st;
-    GetLocalTime(&st);
+    const auto st = Platform::GetTimer().LocalTime();
 
     char path[MAX_PATH];
     Platform::TextFormat(path, "MuClient_%04d-%02d-%02d_%02dh%02dm%02ds.dmp",

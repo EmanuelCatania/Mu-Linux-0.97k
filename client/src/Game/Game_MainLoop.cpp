@@ -195,8 +195,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     gReconnect.Tick();   // DESVIACION (DLL Reconnect.cpp, 0x00525995)
     Sound_Update3DPositions();
     {
-        SYSTEMTIME st;
-        GetLocalTime(&st);
+        const auto st = Platform::GetTimer().LocalTime();
         // IDA 0x525D40 L308:
         //   sprintf(GrabFileName, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
         //           st.wMonth, st.wDay, st.wHour, st.wMinute, GrabScreen);

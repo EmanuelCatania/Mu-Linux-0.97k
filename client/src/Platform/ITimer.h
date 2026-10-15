@@ -1,10 +1,12 @@
 #pragma once
 #include <cstdint>
 namespace Platform {
+struct LocalDateTime { uint16_t wYear, wMonth, wDayOfWeek, wDay, wHour, wMinute, wSecond, wMilliseconds; };
 struct TimerStart { int64_t counter = 0; uint32_t ticks = 0; };
 class ITimer {
 public:
     virtual ~ITimer() = default;
+    virtual LocalDateTime LocalTime() = 0;
     virtual uint32_t Ticks() = 0;
     virtual uint32_t MultimediaTicks() = 0;
     virtual void SleepMilliseconds(uint32_t milliseconds) = 0;
