@@ -546,7 +546,7 @@ int __fastcall CWsctlc_FDWriteSend(int param_1)
     int& pending = *(int*)(param_1 + 0x200c);
     while (pending > 0) {
         const int sent = send(*(SOCKET*)(param_1 + 8), buffer, pending, 0);
-        if (sent == -1 && Platform::GetSocket().LastError() == WSAEWOULDBLOCK) return 1;
+        if (sent == -1 && Platform::GetSocket().LastError() == Platform::SocketWouldBlock) return 1;
         if (sent <= 0) { CWsctlc_Close(param_1); return 0; }
         if (*(int*)(param_1 + 0x4014) != 0) FUN_0043de60();
         pending -= sent;
