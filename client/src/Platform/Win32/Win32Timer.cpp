@@ -5,6 +5,16 @@
 namespace Platform {
 class Win32Timer final : public ITimer {
 public:
+    int64_t CounterFrequency() override {
+        LARGE_INTEGER value{};
+        return QueryPerformanceFrequency(&value) ? value.QuadPart : 0;
+    }
+    bool ReadCounter(int64_t& counter) override {
+        LARGE_INTEGER value{};
+        if (!QueryPerformanceCounter(&value)) return false;
+        counter = value.QuadPart;
+        return true;
+    }
     LocalDateTime LocalTime() override { return ReadLocalTime(); }
     uint32_t Ticks() override { return GetTickCount(); }
     uint32_t MultimediaTicks() override { return timeGetTime(); }

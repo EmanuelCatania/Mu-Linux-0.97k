@@ -14,13 +14,13 @@ private:
     static constexpr double TimeoutSeconds = 5.0;
     struct Pending {
         DWORD tick = 0;
-        LARGE_INTEGER sent{};
+        int64_t sent{};
         bool active = false;
     };
     Pending m_Pending[Capacity]{};
     unsigned int m_Next = 0;
-    LARGE_INTEGER m_Frequency{};
-    LARGE_INTEGER m_LastReply{};
+    int64_t m_Frequency{};
+    int64_t m_LastReply{};
     DWORD m_Milliseconds = 0;
     bool m_HasSample = false;
 };
