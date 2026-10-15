@@ -449,22 +449,17 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 // IDA original delega al `CUIRenderText::RenderText` que maneja iSort
 // internamente; lo replicamos inline acá.
 // IDA: FUN_0047F7A0
-void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6) {
+void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6, size_t textCapacity) {
     (void)param_6;
-    if (param_3 == nullptr) return;
-    // Validar el puntero antes de cualquier strlen: llegan punteros chicos
-    // (< 0x100000, p.ej. 0x2A00 = type*64 con DAT_07d78068=0).
-    // Range: heap user-space [0x100000..0x80000000). rdata strings in our
-    // exe live in [0x004XXXXX..0x00500000) — also valid.
-    {
-        uintptr_t p = (uintptr_t)param_3;
-        if (p < 0x100000 || p >= 0x80000000) return;
-    }
-    __try {
-        if (strlen(param_3) == 0 && param_4 == 0) return;
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        return;   // strlen crashed — bogus param_3
-    }
+    if (!param_3 || textCapacity == 0) return;
+    // El caller entrega la capacidad de su array/slot, o la longitud ya
+    // medida por su API de cadena. No inferir validez de direcciones virtuales.
+    bool valid = false;
+    bool empty = false;
+    if (!Platform::RunValidatedOperation([&]() {
+        valid = memchr(param_3, 0, textCapacity) != nullptr;
+        if (valid) empty = param_3[0] == 0;
+    }) || !valid || (empty && param_4 == 0)) return;
 
     int x = param_1;
 

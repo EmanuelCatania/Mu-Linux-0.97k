@@ -180,7 +180,7 @@ int Render_MacroTimer_(void)
         float x = (float)(((double)GetScreenWidth() - 50.0) * 0.5);
         int v8 = 50 * MacroTime / 100;
         EnableAlphaTest(true);
-        UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
+        UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0, sizeof(aMacroTime));
         int n = Platform::TextLength(aMacroTime);
         gFont.MeasureText(gFont.GetTextDC(), aMacroTime, n, &TextSize);
         TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
@@ -211,7 +211,7 @@ int Render_MacroTimer_(void)
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
             Platform::TextFormat(String, fmt, 30 - (int)secs);
-            UI_DrawText(10, 372, String, 0, 1, 0);
+            UI_DrawText(10, 372, String, 0, 1, 0, sizeof(String));
         } else {
             m_iMatchCountDownType = 0;
         }
@@ -594,7 +594,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     }
 
     int v7 = InputTextWidth;
-    UI_DrawText(x, y, Text, InputTextWidth, 1, 0);
+    UI_DrawText(x, y, Text, InputTextWidth, 1, 0, sizeof(Text));
     int n = Platform::TextLength(Text);
     gFont.MeasureText(gFont.GetTextDC(), Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
@@ -613,14 +613,14 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
             const char* ime = InputTextIME[Index];
             if (strlen(ime) != 0) {
                 if (InputTextHide[Index] == 1) {
-                    UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0);
+                    UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0, 3);
                     gFont.MeasureText(gFont.GetTextDC(), "**", 2, &TextSize);
                 } else {
-                    UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0);
+                    UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0, sizeof(InputTextIME[Index]));
                     gFont.MeasureText(gFont.GetTextDC(), ime, Platform::TextLength(ime), &TextSize);
                 }
             } else {
-                UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
+                UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0, 2);
                 gFont.MeasureText(gFont.GetTextDC(), "_", 1, &TextSize);
             }
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
@@ -674,7 +674,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
-    UI_DrawText(sx, sy, (char*)Text, 0, 1, 0);
+    UI_DrawText(sx, sy, (char*)Text, 0, 1, 0, (size_t)n + 1);
 
     switch (prevBlend) {
         case 1: EnableLightMap();        break;

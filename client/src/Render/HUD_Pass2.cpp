@@ -127,9 +127,8 @@ SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
     // Forward to our existing RenderText_1.  The IDA original uses style
     // (0/1) + 1 to pick palette and box rendering; RenderText_1 does the
     // same with default style.  Keep the call signature compatible.
-    UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
-
     int n = Platform::TextLength(lpString);
+    UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize, (size_t)n + 1);
     gFont.MeasureText(gFont.GetTextDC(), lpString, n, &TextSize);
     TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
     TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -261,7 +260,7 @@ void Render_ChatBox_(void)
     char* end = (char*)flt_7E118E4_PTR;
     while (v2 < end) {
         if (v1 != v0) {
-            UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
+            UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0, 256);
             int n = Platform::TextLength(v2);
             gFont.MeasureText(gFont.GetTextDC(), v2, n, &TextSize);
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
@@ -318,6 +317,7 @@ char Render_CharInfoPanel_(void)
         x = 320.0f - 20.0f;
         SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
+        if (v20 < 0 || (size_t)v20 >= sizeof(DAT_07e919bc) / 80) return ret;
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
@@ -325,13 +325,13 @@ char Render_CharInfoPanel_(void)
         CHAR String[100];
         Platform::TextFormat(String, "%d", GuildWarScore[0]);
         int iPos_x = (int)x + 13;
-        UI_DrawText(iPos_x, 4, String, 0, 1, 0);
+        UI_DrawText(iPos_x, 4, String, 0, 1, 0, sizeof(String));
         int n = Platform::TextLength(String);
         gFont.MeasureText(gFont.GetTextDC(), String, n, &TextSize);
 
         const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
         int v2 = (int)x + 30;
-        UI_DrawText(v2, 4, (char*)v1, 0, 1, 0);
+        UI_DrawText(v2, 4, (char*)v1, 0, 1, 0, 80);
 
         // Walk the name table to find the GuildWarName slot index.
         int v23 = 0;
@@ -349,8 +349,8 @@ LABEL_7:
         CreateGuildMark(v5, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         Platform::TextFormat(String, "%d", GuildWarScore[1]);
-        UI_DrawText(iPos_x, 19, String, 0, 1, 0);
-        UI_DrawText(v2, 19, GuildWarName, 0, 1, 0);
+        UI_DrawText(iPos_x, 19, String, 0, 1, 0, sizeof(String));
+        UI_DrawText(v2, 19, GuildWarName, 0, 1, 0, sizeof(GuildWarName));
     }
 
     if (DAT_07e11e14_alias) {  // SoccerObserver
@@ -366,16 +366,16 @@ LABEL_7:
         Platform::TextFormat(String, "%d", GuildWarScore[0]);
         int v9 = (int)x;
         int v10 = v9 + 13;
-        UI_DrawText(v10, 4, String, 0, 1, 0);
+        UI_DrawText(v10, 4, String, 0, 1, 0, sizeof(String));
         int iPos_xa = v9 + 30;
-        UI_DrawText(iPos_xa, 4, SoccerTeamName[0], 0, 1, 0);
+        UI_DrawText(iPos_xa, 4, SoccerTeamName[0], 0, 1, 0, sizeof(SoccerTeamName[0]));
 
         m_dwTextColor = 0xFFFF9560;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         Platform::TextFormat(String, "%d", GuildWarScore[1]);
-        UI_DrawText(v10, 19, String, 0, 1, 0);
-        UI_DrawText(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0);
+        UI_DrawText(v10, 19, String, 0, 1, 0, sizeof(String));
+        UI_DrawText(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0, sizeof(SoccerTeamName[1]));
     }
 
     if (DAT_07e11e10_alias > 0) {   // SoccerTime
@@ -385,8 +385,8 @@ LABEL_7:
         m_dwTextColor = 0xFF969500u;
         int v15 = (int)v24_y0;
         int v16 = (int)x + 100;
-        UI_DrawText(v16, v15, (char*)aTime_0, 0, 1, 0);
-        UI_DrawText(v16, v15 + 13, String, 0, 1, 0);
+        UI_DrawText(v16, v15, (char*)aTime_0, 0, 1, 0, sizeof(aTime_0));
+        UI_DrawText(v16, v15 + 13, String, 0, 1, 0, sizeof(String));
     }
 
     return ret;
