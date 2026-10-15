@@ -31,6 +31,7 @@ public:
     bool LoadFamily(const char* family, bool bold, bool italic, int height,
                     int width, bool underline, bool strikeOut, std::string& error,
                     const char* assetRoot = nullptr);
+    static std::vector<std::string> InstalledFamilies();
     static uint32_t DecodeByte(uint8_t byte); // recursos del cliente: Windows-1252
     const FontGlyph& Glyph(uint32_t codepoint);
     FontMetrics Metrics() const;

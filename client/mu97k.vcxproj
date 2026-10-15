@@ -254,7 +254,7 @@
     <ClCompile Include="src\Platform\Win32\Win32FileSystem.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Socket.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
-    <ClCompile Include="src\Core\Font.cpp" />
+    <ClCompile Include="src\Platform\FontFrontend.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
     <ClCompile Include="src\Game\MapManager.cpp" />
     <ClCompile Include="src\Core\WndProc.cpp" />

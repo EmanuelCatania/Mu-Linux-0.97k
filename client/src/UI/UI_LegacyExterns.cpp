@@ -800,7 +800,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // vía CUIRenderText::SetFont; g_hFontBig: HUD_Pass3, doble tamaño) y miden el
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
-    HFONT hFont = (HFONT)GetCurrentObject(hFontDC, OBJ_FONT);
+    HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
     if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
     if (hFont == NULL) return;
 

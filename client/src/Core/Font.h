@@ -57,6 +57,8 @@ public:
     void* GetTextBits() const { return m_pTextBits; }
 
     // Adaptadores de la selección legacy; GDI en Win32, FreeType en SDL3.
+    HGDIOBJ SelectFont(HDC dc, HGDIOBJ font);
+    HFONT CurrentFont(HDC dc) const;
     BOOL MeasureText(HDC dc, LPCSTR text, int count, SIZE* size);
     BOOL MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size);
     BOOL TextMetrics(HDC dc, TEXTMETRICA* metrics);
@@ -68,6 +70,7 @@ public:
 private:
     void CreatePortableFonts(DWORD windowWidth);
     int SelectedFont(HDC dc) const;
+    int m_SelectedFont = FONT_NORMAL;
     unsigned m_Generation = 0;
     int m_SurfaceWidth = 0;
     int m_SurfaceHeight = 0;

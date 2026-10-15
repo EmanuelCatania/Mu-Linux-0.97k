@@ -144,7 +144,7 @@ void CMoveList::Render()
     if (!m_Open || Blocked()) return;
     const int rows = VisibleRows();
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
-    HGDIOBJ font = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    HGDIOBJ font = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
     Rect(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep, 0, 0, 0, .8f);
     m_dwTextColor = 0xFF00FFFF;
@@ -182,7 +182,7 @@ void CMoveList::Render()
         if (m_Page > 0) Text(Layout::PreviousX, footer, gClientText.Get(ClientTextId::PagePrevious), Layout::ButtonWidth);
         if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, gClientText.Get(ClientTextId::PageNext), Layout::ButtonWidth);
     }
-    SelectObject(gFont.GetTextDC(), font);
+    gFont.SelectFont(gFont.GetTextDC(), font);
     m_dwTextColor = color;
     m_dwBackColor = back;
     glColor4f(1, 1, 1, 1);

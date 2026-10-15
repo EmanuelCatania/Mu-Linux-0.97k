@@ -77,7 +77,7 @@ void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD backgr
     sprintf_s(text, "%.31s: %u%%", EntityView(entity).Name(), (unsigned int)percent);
     const DWORD savedBack = m_dwBackColor;
     const DWORD savedText = m_dwTextColor;
-    HGDIOBJ oldFont = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    HGDIOBJ oldFont = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     EnableAlphaTest(true);
     glColor4f(1, 1, 1, 1);
     m_dwBackColor = background;
@@ -85,7 +85,7 @@ void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD backgr
     RenderCenteredText(center, y, text);
     m_dwBackColor = savedBack;
     m_dwTextColor = savedText;
-    SelectObject(gFont.GetTextDC(), oldFont);
+    gFont.SelectFont(gFont.GetTextDC(), oldFont);
     GL_ResetState();
 }
 

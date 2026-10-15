@@ -200,13 +200,13 @@ void CEventTimer::DrawRow(int index, int x, int y, int width) const
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(x, y + Layout::NameY, const_cast<char*>(event->name),
                PhysicalWidth(Layout::BoxWidth - 8), 1, nullptr);
     char time[32];
     FormatTime(*event, time, sizeof(time));
     m_dwTextColor = TimeColor(*event, RemainingSeconds(*event));
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     (void)width;  // el tiempo va centrado bajo el recuadro, no en toda la fila
     RenderText(x, y + Layout::TimeY, time, PhysicalWidth(Layout::BoxWidth - 8), 1, nullptr);
 }
@@ -224,7 +224,7 @@ void CEventTimer::RenderPanel()
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(Layout::TitleX, Layout::TitleY,
                const_cast<char*>(gClientText.Get(ClientTextId::EventTitle)),
                PhysicalWidth(Layout::TitleWidth), 1, (SIZE*)3);
@@ -234,7 +234,7 @@ void CEventTimer::RenderPanel()
     } else {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         RenderText(Layout::MessageX, Layout::MessageY, const_cast<char*>(gClientText.Get(
             m_Received ? ClientTextId::EventEmpty : ClientTextId::EventWaiting)), 0, 0, nullptr);
     }
@@ -245,12 +245,12 @@ void CEventTimer::RenderPanel()
     GL_DrawTexture(0x118, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     GL_DrawTexture(280, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText(Layout::CloseX, Layout::CloseY - 13, GlobalText[247]);
     }
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = color;
     m_dwBackColor = back;
     GL_ResetState();

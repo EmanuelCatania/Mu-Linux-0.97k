@@ -63,6 +63,7 @@ using LPDIRECTSOUND3DLISTENER = IDirectSound3DListener*;
 struct POINT { LONG x, y; };
 struct SIZE { LONG cx, cy; };
 using LPSIZE = SIZE*;
+using tagSIZE = SIZE;
 struct RECT { LONG left, top, right, bottom; };
 union LARGE_INTEGER { std::int64_t QuadPart; };
 struct TEXTMETRICA {

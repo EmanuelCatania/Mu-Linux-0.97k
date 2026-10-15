@@ -440,7 +440,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     ((FnVoid)vt[20])(self);  // *this+80 — render header
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
 
     int i = 0;
     while (i < (int)self[35]) {
@@ -1182,7 +1182,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         }
     }
     if (v40[0]) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
         Platform::TextFormat(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
@@ -1190,7 +1190,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         EnableAlphaTest(true);
         UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0, sizeof(Buffer));
         GL_ResetState();
-        if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
 
     // Incrementa el contador de frames — lo usa el slot 23 para hacer parpadear el cursor.
@@ -1831,7 +1831,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     else
         v5 = (int)self[12] - 13 * a2 - 16;
 
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Avance del cursor tal cual el binario: `self[25] = cursor->next`, y acto
     // seguido `self[25] = (cursor->next)->prev`.  Con la lista circular eso
@@ -1897,7 +1897,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         }
     }
 
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();                                             // DisableAlphaBlend
     return 1;
 }

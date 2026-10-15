@@ -23,7 +23,7 @@ void __fastcall FUN_00402ff0(int param_1) {
         iPos_y = 0xfa;
     }
     int hovered = ((int)MouseY - iPos_y) / 18;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     for (int i = 0; i < g_iNumAnswer; ++i) {
         int dx = 556 - (int)MouseX;
         if (dx < 0) dx = -dx;
@@ -75,7 +75,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
     float sy  = 235.0f;
     char  ret = 1;
     if (a3 != 0) {
-        SelectObject(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
         sy = 240.0f;
         m_dwBackColor = 0;
     }
@@ -164,7 +164,7 @@ void __fastcall FUN_00403320(void* param_1) {
                 MouseLButton = 0;
             }
         }
-        SelectObject(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         GL_DrawTexture(240, 485.0f, 355.0f, 120.0f, 24.0f,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(545, 360, GlobalText[699]);
@@ -187,14 +187,14 @@ void __fastcall FUN_00403320(void* param_1) {
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if ((double)MouseX >= 475.0 && (double)MouseX < 499.0 &&
         (double)MouseY >= 395.0 && (double)MouseY < 419.0) {
-        SelectObject(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText(475, 382, GlobalText[225]);
     }
 
     m_dwBackColor = 0;
-    SelectObject(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     m_dwTextColor = 0xFFF0FF96u;
 
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A
@@ -250,7 +250,7 @@ void __fastcall FUN_00403a40(void* param_1) {
     RenderInventoryInterface(0x1c2, 0, 1);
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
-    // SelectObject(m_hFontDC, g_hFont); // globals not yet declared
+    // gFont.SelectFont(m_hFontDC, g_hFont); // globals not yet declared
     // Render 3 tab buttons (stride 0x37, bitmaps 0x115/0x116 for normal/selected)
     // Tab click sets *(param_1+0x1c87d)
     // Render separator lines (bitmap 0x117) and border lines (bitmap 0x104)

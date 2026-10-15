@@ -235,6 +235,16 @@ const std::unordered_map<std::string, std::string>& InstalledFonts()
 }
 }
 
+std::vector<std::string> SDLFont::InstalledFamilies()
+{
+    std::vector<std::string> names;
+    for (const auto& font : InstalledFonts())
+        names.push_back(font.first.substr(0, font.first.rfind('/')));
+    std::sort(names.begin(), names.end());
+    names.erase(std::unique(names.begin(), names.end()), names.end());
+    return names;
+}
+
 uint32_t SDLFont::DecodeByte(uint8_t byte)
 {
     static const uint16_t extended[32] = {

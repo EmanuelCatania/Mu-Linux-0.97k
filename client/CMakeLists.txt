@@ -79,7 +79,7 @@ set(MU_SOURCES
     src/Platform/Win32/Win32FileSystem.cpp
     src/Platform/Win32/Win32Socket.cpp
     src/Platform/Win32/Win32GLContext.cpp
-    src/Core/Font.cpp
+    src/Platform/FontFrontend.cpp
     src/Sound/SoundManager.cpp
     src/Game/MapManager.cpp
     src/Core/WndProc.cpp

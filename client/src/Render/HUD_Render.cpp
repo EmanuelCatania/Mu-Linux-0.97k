@@ -70,7 +70,7 @@
 //       GL_SetBlendSrcOver('\x01');   // GL_SetMode(1)
 //       iVar3 = GetScreenWidth(); // Screen_GetWidth()
 //       fVar2 = (float)iVar3 * 0.5f - _DAT_005524fc;   // X centrado
-//       SelectObject(DC, font_small);
+//       gFont.SelectFont(DC, font_small);
 //       // Color según DAT_05826d32:
 //       DAT_00559c78 = DAT_05826d32 ? 0x005901 : 0xffc301;   // verde o amarillo
 //       CreateGuildMark((int)*(short*)(DAT_07abf5d8+0x1da), '\x01'); // compone el mark propio
@@ -204,7 +204,7 @@
 //   void Render_ChatBox(void)
 //   {
 //     glColor3f(1,1,1);
-//     SelectObject(DC, font_normal);
+//     gFont.SelectFont(DC, font_normal);
 //     if (DAT_00559c84 != '\0' || DAT_07e11d71 != '\0') {
 //       GL_ResetBlend();
 //       Texture_Draw2D(0xf8, 186, 415, 134, 29, 0,0,0.520,0.906, ...); // input bg left
@@ -300,7 +300,7 @@
 //
 //   void Render_FloatingText(void)
 //   {
-//     SelectObject(DC, font_normal);
+//     gFont.SelectFont(DC, font_normal);
 //     // Array en &DAT_07e0192c, stride 0x95*4 = 0x254
 //     // Pasada 1: project world→screen
 //     piVar7 = &DAT_07e0192c;
@@ -655,12 +655,12 @@
 //         if (DAT_00559cd0 != 0xffff) {
 //           LPCSTR fmt = (DAT_07e11d88 == 5) ? &DAT_07d693fc : &DAT_07d691a4;
 //           Platform::TextFormat(local_100, fmt, DAT_00559cd4, DAT_00559cd0);
-//           SelectObject(g_hDC, DAT_055ca010);        // fuente bold
+//           gFont.SelectFont(g_hDC, DAT_055ca010);        // fuente bold
 //           FUN_00514270(0x23a, 0x159, local_100);    // DrawTextCenter(570, 345, str)
 //         }
 //
 //         // Línea 2: timer total (vía ftol())
-//         SelectObject(g_hDC, DAT_055ca010);
+//         gFont.SelectFont(g_hDC, DAT_055ca010);
 //         Platform::TextFormat(local_100, &param_2_07d692d0);
 //         FUN_00514270(0x23a, (int)__ftol(), local_100);
 //
@@ -682,7 +682,7 @@
 //         }
 //
 //         // Línea final: "MM:SS" con fuente grande
-//         SelectObject(g_hDC, DAT_055ca014);            // fuente bold2
+//         gFont.SelectFont(g_hDC, DAT_055ca014);            // fuente bold2
 //         FUN_00514270(0x23a, (int)__ftol(), local_100);
 //       }
 //     }

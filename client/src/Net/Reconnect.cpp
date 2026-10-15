@@ -204,7 +204,7 @@ void CReconnect::Render()
         ClientTextId::ReconnectCharList, ClientTextId::ReconnectCharInfo };
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     EnableAlphaTest(true);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText((int)x, (int)y + 5, const_cast<char*>(gClientText.Get(Steps[m_Progress])),
