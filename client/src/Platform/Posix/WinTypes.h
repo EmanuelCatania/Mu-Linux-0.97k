@@ -3,7 +3,7 @@
 #include <cstddef>
 #include "Platform/CompilerCompat.h"
 
-// SÃ³lo representaciÃ³n de datos heredados. No declara ni emula APIs Windows.
+// Sólo representación de datos heredados. No declara ni emula APIs Windows.
 using BYTE = std::uint8_t;
 using WORD = std::uint16_t;
 using DWORD = std::uint32_t;

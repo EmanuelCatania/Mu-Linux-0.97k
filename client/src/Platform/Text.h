@@ -4,11 +4,110 @@
 #include <cstdio>
 #include <cstdint>
 #include <algorithm>
+#include <cerrno>
+#include <utility>
 #ifndef _WIN32
 #include <strings.h>
 #endif
 
 namespace Platform {
+
+// Adaptadores CRT acotados. Windows conserva la CRT nativa; POSIX mantiene
+// NUL y retornos (-1 para formato truncado, ERANGE para copia sin espacio).
+constexpr std::size_t TruncateText = static_cast<std::size_t>(-1);
+inline int TextCopySecure(char* out, std::size_t capacity, const char* input, std::size_t count)
+{
+#ifdef _WIN32
+    return strncpy_s(out, capacity, input, count);
+#else
+    if (!out || !capacity) return EINVAL;
+    if (!input && count) { out[0] = 0; return EINVAL; }
+    std::size_t length = 0;
+    while (length < count && input && input[length]) ++length;
+    if (length >= capacity) {
+        if (count != TruncateText) { out[0] = 0; return ERANGE; }
+        std::memcpy(out, input, capacity - 1); out[capacity - 1] = 0;
+        return 80; // STRUNCATE de la CRT de Windows.
+    }
+    if (length) std::memcpy(out, input, length);
+    out[length] = 0; return 0;
+#endif
+}
+template<std::size_t N>
+inline int TextCopySecure(char (&out)[N], const char* input, std::size_t count)
+{ return TextCopySecure(out, N, input, count); }
+inline int TextCopySecure(char* out, std::size_t capacity, const char* input)
+{
+#ifdef _WIN32
+    return strcpy_s(out, capacity, input);
+#else
+    if (!input) { if (out && capacity) out[0] = 0; return EINVAL; }
+    return TextCopySecure(out, capacity, input, std::strlen(input));
+#endif
+}
+template<std::size_t N>
+inline int TextCopySecure(char (&out)[N], const char* input)
+{ return TextCopySecure(out, N, input); }
+inline int TextConcatSecure(char* out, std::size_t capacity, const char* input)
+{
+#ifdef _WIN32
+    return strcat_s(out, capacity, input);
+#else
+    if (!out || !capacity) return EINVAL;
+    if (!input) { out[0] = 0; return EINVAL; }
+    std::size_t used = 0;
+    while (used < capacity && out[used]) ++used;
+    if (used == capacity) { out[0] = 0; return EINVAL; }
+    const int result = TextCopySecure(out + used, capacity - used, input);
+    if (result) out[0] = 0;
+    return result;
+#endif
+}
+inline int TextVFormatTruncated(char* out, std::size_t capacity, std::size_t count,
+                               const char* format, va_list args)
+{
+#ifdef _WIN32
+    return _vsnprintf_s(out, capacity, count, format, args);
+#else
+    if (!out || !capacity || !format) { if (out && capacity) out[0] = 0; return -1; }
+    const auto limit = count == TruncateText ? capacity : (std::min)(capacity, count + 1);
+    const int written = std::vsnprintf(out, limit, format, args);
+    if (written < 0) { out[0] = 0; return -1; }
+    if (static_cast<std::size_t>(written) >= limit) {
+        if (count != TruncateText && count >= capacity) out[0] = 0;
+        return -1;
+    }
+    return written;
+#endif
+}
+inline int TextFormatTruncated(char* out, std::size_t capacity, std::size_t count,
+                              const char* format, ...)
+{
+    va_list args; va_start(args, format);
+    const int result = TextVFormatTruncated(out, capacity, count, format, args);
+    va_end(args); return result;
+}
+template<std::size_t N, class... Args>
+inline int TextFormatTruncated(char (&out)[N], std::size_t count, const char* format, Args... args)
+{ return TextFormatTruncated(out, N, count, format, args...); }
+template<class... Args>
+inline int TextFormatSecure(char* out, std::size_t capacity, const char* format, Args... args)
+{
+#ifdef _WIN32
+    return sprintf_s(out, capacity, format, args...);
+#else
+    if (!out || !capacity || !format) { if (out && capacity) out[0] = 0; return -1; }
+    const int result = std::snprintf(out, capacity, format, args...);
+    if (result < 0 || static_cast<std::size_t>(result) >= capacity) {
+        out[0] = 0; return -1;
+    }
+    return result;
+#endif
+}
+template<std::size_t N, class... Args>
+inline int TextFormatSecure(char (&out)[N], const char* format, Args... args)
+{ return TextFormatSecure(out, N, format, args...); }
+
 inline int TextCompareIgnoreCase(const char* left, const char* right)
 {
 #ifdef _WIN32
@@ -33,7 +132,7 @@ inline int TextLength(const char* text)
     return text ? static_cast<int>(std::strlen(text)) : 0;
 }
 // Capacidad incluye NUL. Como lstrcpynA, no rellena el resto del buffer.
-// Origen/destino deben apuntar a memoria vÃ¡lida y no solaparse.
+// Origen/destino deben apuntar a memoria válida y no solaparse.
 inline char* TextCopy(char* destination, const char* source, int capacity)
 {
     if (!destination || !source) return nullptr;
@@ -46,8 +145,8 @@ inline char* TextCopy(char* destination, const char* source, int capacity)
     destination[count] = '\0';
     return destination;
 }
-// Capacidad explÃ­cita: conserva el retorno destino para concatenaciones vÃ¡lidas.
-// En desborde no escribe y devuelve nullptr; los callers actuales caben por diseÃ±o.
+// Capacidad explícita: conserva el retorno destino para concatenaciones válidas.
+// En desborde no escribe y devuelve nullptr; los callers actuales caben por diseño.
 inline char* TextConcat(char* destination, std::size_t capacity, const char* source)
 {
     if (!destination || !source) return nullptr;
@@ -59,9 +158,9 @@ inline char* TextConcat(char* destination, std::size_t capacity, const char* sou
     std::memcpy(destination + used, source, extra + 1);
     return destination;
 }
-// Contrato wsprintfA del cliente: mÃ¡ximo 1024 bytes escritos mÃ¡s NUL.
+// Contrato wsprintfA del cliente: máximo 1024 bytes escritos más NUL.
 // El destino debe tener espacio para el resultado (como en la API original).
-// No admite floats: una conversiÃ³n desconocida no consume argumentos.
+// No admite floats: una conversión desconocida no consume argumentos.
 inline int TextFormat(char* destination, const char* format, ...)
 {
     va_list args;
@@ -124,7 +223,7 @@ inline int TextFormat(char* destination, const char* format, ...)
                 const auto number = wideInteger ? va_arg(args, unsigned long long) :
                     static_cast<unsigned long long>(va_arg(args, unsigned int));
                 std::snprintf(value, sizeof(value), spec, number);
-                // wsprintfA conserva el prefijo hexadecimal tambiÃ©n para cero.
+                // wsprintfA conserva el prefijo hexadecimal también para cero.
                 if (alternate && number == 0 && (conversion == 'x' || conversion == 'X')) {
                     const int digits = (std::max)(1, precision);
                     const int total = (std::max)(width, digits + 2);
