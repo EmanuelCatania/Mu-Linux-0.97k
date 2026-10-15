@@ -41,6 +41,7 @@ bool __cdecl CheckIME_Status(bool change, int mode) {
 // at screen positions (100, 100/110/120/130).
 // Uses DAT_07e11d94 (g_dwOldConv), DAT_00559cd8 (g_dwOldSent).
 void __stdcall RenderIME_Status(void) {
+    if (!Platform::GetInput().HasImeModeIndicator()) return;
     char local_64[100];
 
     // Line 1: Korean/English mode based on bit 0 of g_dwOldConv

@@ -8,6 +8,7 @@ class IInput {
 public:
     virtual ~IInput() = default;
     // Códigos lógicos heredados 0..255; conserva bits alto/bajo y consumo por consulta.
+    virtual bool HasImeModeIndicator() const = 0;
     virtual int16_t KeyState(int key) = 0;
     virtual void CaptureMouse(bool capture) = 0;
     virtual ImeState ReadImeState(bool clearActive = false) = 0;
