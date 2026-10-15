@@ -4,8 +4,28 @@
 #include <cstdio>
 #include <cstdint>
 #include <algorithm>
+#ifndef _WIN32
+#include <strings.h>
+#endif
 
 namespace Platform {
+inline int TextCompareIgnoreCase(const char* left, const char* right)
+{
+#ifdef _WIN32
+    return _stricmp(left, right);
+#else
+    return strcasecmp(left, right);
+#endif
+}
+inline int TextCompareIgnoreCaseN(const char* left, const char* right, std::size_t count)
+{
+#ifdef _WIN32
+    return _strnicmp(left, right, count);
+#else
+    return strncasecmp(left, right, count);
+#endif
+}
+
 // Contrato lstrlenA: cero para puntero nulo; longitud de bytes sin el NUL.
 // Los textos del cliente caben en int (buffers y longitudes de protocolo x86).
 inline int TextLength(const char* text)
@@ -13,7 +33,7 @@ inline int TextLength(const char* text)
     return text ? static_cast<int>(std::strlen(text)) : 0;
 }
 // Capacidad incluye NUL. Como lstrcpynA, no rellena el resto del buffer.
-// Origen/destino deben apuntar a memoria válida y no solaparse.
+// Origen/destino deben apuntar a memoria vÃ¡lida y no solaparse.
 inline char* TextCopy(char* destination, const char* source, int capacity)
 {
     if (!destination || !source) return nullptr;
@@ -26,8 +46,8 @@ inline char* TextCopy(char* destination, const char* source, int capacity)
     destination[count] = '\0';
     return destination;
 }
-// Capacidad explícita: conserva el retorno destino para concatenaciones válidas.
-// En desborde no escribe y devuelve nullptr; los callers actuales caben por diseño.
+// Capacidad explÃ­cita: conserva el retorno destino para concatenaciones vÃ¡lidas.
+// En desborde no escribe y devuelve nullptr; los callers actuales caben por diseÃ±o.
 inline char* TextConcat(char* destination, std::size_t capacity, const char* source)
 {
     if (!destination || !source) return nullptr;
@@ -39,9 +59,9 @@ inline char* TextConcat(char* destination, std::size_t capacity, const char* sou
     std::memcpy(destination + used, source, extra + 1);
     return destination;
 }
-// Contrato wsprintfA del cliente: máximo 1024 bytes escritos más NUL.
+// Contrato wsprintfA del cliente: mÃ¡ximo 1024 bytes escritos mÃ¡s NUL.
 // El destino debe tener espacio para el resultado (como en la API original).
-// No admite floats: una conversión desconocida no consume argumentos.
+// No admite floats: una conversiÃ³n desconocida no consume argumentos.
 inline int TextFormat(char* destination, const char* format, ...)
 {
     va_list args;
@@ -104,7 +124,7 @@ inline int TextFormat(char* destination, const char* format, ...)
                 const auto number = wideInteger ? va_arg(args, unsigned long long) :
                     static_cast<unsigned long long>(va_arg(args, unsigned int));
                 std::snprintf(value, sizeof(value), spec, number);
-                // wsprintfA conserva el prefijo hexadecimal también para cero.
+                // wsprintfA conserva el prefijo hexadecimal tambiÃ©n para cero.
                 if (alternate && number == 0 && (conversion == 'x' || conversion == 'X')) {
                     const int digits = (std::max)(1, precision);
                     const int total = (std::max)(width, digits + 2);

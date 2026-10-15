@@ -3,6 +3,7 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IWindow.h"
 #include "globals.h"
 #include "functions.h"
@@ -95,7 +96,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     char baseName[128];
     crt_sprintf(baseName, "%s", ModelFileName);
     int blen = (int)strlen(baseName);
-    if (blen > 4 && _stricmp(baseName + blen - 4, ".smd") == 0)
+    if (blen > 4 && Platform::TextCompareIgnoreCase(baseName + blen - 4, ".smd") == 0)
         baseName[blen - 4] = 0;
 
     // Hardcoded SMD→BMD name remaps for known mismatches in Lorencia
@@ -132,7 +133,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
         // Carriage / fence / etc. (already PascalCase variant works)
     };
     for (size_t i = 0; i < sizeof(remaps)/sizeof(remaps[0]); ++i) {
-        if (_stricmp(baseName, remaps[i].smd) == 0) {
+        if (Platform::TextCompareIgnoreCase(baseName, remaps[i].smd) == 0) {
             AccessModel(Type, bmdDir, remaps[i].bmd, -1);
             meshCount = *(short*)(slot + 0x22);
             if (meshCount > 0) return;

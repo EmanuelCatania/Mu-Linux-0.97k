@@ -105,7 +105,7 @@ void CUserSettings::Load(const char* iniPath)
     char language[8] = {};
     Platform::GetFileSystem().ReadIniString("Language", "LangSelection", "", language, sizeof(language), iniPath);
     for (int i = 0; language[0] && i < MAX_USER_LANGUAGE; ++i)
-        if (_stricmp(language, GetLanguageSuffix(i)) == 0) m_Language = i;
+        if (Platform::TextCompareIgnoreCase(language, GetLanguageSuffix(i)) == 0) m_Language = i;
     if (language[0] && m_Language == USER_LANG_DEFAULT) {
         char line[96];
         Platform::TextFormat(line, "Config.ini: LangSelection=%s IGNORADO (Eng, Spn o Por)", language);

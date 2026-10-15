@@ -24,6 +24,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "UI/EventTimer.h"
@@ -64,7 +65,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
         for (int i = 0; i < 400; ++i, candidate += 916) {
             if (candidate[0] && *(short*)(candidate + 2) == 390 &&
                 candidate[132] == 1 &&
-                _stricmp(candidate + 449, requestedName) == 0) {
+                Platform::TextCompareIgnoreCase(candidate + 449, requestedName) == 0) {
                 entity = candidate;
                 break;
             }
@@ -85,7 +86,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
                                       bool plainC1)
 {
     const size_t commandLen = strlen(command);
-    if (!text || _strnicmp(text, command, commandLen) != 0 ||
+    if (!text || Platform::TextCompareIgnoreCaseN(text, command, commandLen) != 0 ||
         (text[commandLen] != '\0' && text[commandLen] != ' '))
         return false;
 
@@ -113,7 +114,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
 // viewport key required by MuEmu's PMSG_PARTY_REQUEST_RECV.
 static bool Chat_TrySendPartyRequest(const char* text)
 {
-    if (!text || _stricmp(text, "/party") != 0)
+    if (!text || Platform::TextCompareIgnoreCase(text, "/party") != 0)
         return false;
 
     char* const hero = DAT_07abf5d8;

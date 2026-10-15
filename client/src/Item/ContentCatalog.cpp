@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -495,7 +496,7 @@ int CContentCatalog::LoadTexture(const char* path)
     }
     const int slot = m_NextTexture++;
     const char* ext = strrchr(sub, '.');
-    const bool tga = ext && (_stricmp(ext, ".tga") == 0);
+    const bool tga = ext && (Platform::TextCompareIgnoreCase(ext, ".tga") == 0);
     if (tga) OpenTGA(sub, slot, 0x2601, 0x2900, 0, '\x01');
     else     OpenJPG(sub, slot, 0x2601, 0x2900, 0, '\x01');
     s_LoadedTextures[sub] = slot;
