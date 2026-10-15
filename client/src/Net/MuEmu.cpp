@@ -92,7 +92,7 @@ static void DumpHex(const char* tag, const BYTE* buf, int len)
     int n = len > 256 ? 256 : len;
     for (int i = 0; i < n; ++i) {
         char t[8]; wsprintfA(t, "%02X ", buf[i]);
-        lstrcatA(hex, t);
+        Platform::TextConcat(hex, sizeof(hex), t);
     }
 #else
     (void)tag; (void)buf; (void)len;

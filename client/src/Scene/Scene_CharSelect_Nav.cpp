@@ -11,6 +11,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/IFileSystem.h"
 #include "Item/ContentCatalog.h"
@@ -587,7 +588,7 @@ int __fastcall CWsctlc_nRecv(void *param_1)
         char hexbuf[128]; hexbuf[0] = 0;
         for (int hi = 0; hi < nShow; ++hi) {
             char tmp[8]; wsprintfA(tmp, "%02X ", p[hi]);
-            lstrcatA(hexbuf, tmp);
+            Platform::TextConcat(hexbuf, sizeof(hexbuf), tmp);
         }
     }
 

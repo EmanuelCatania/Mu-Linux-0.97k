@@ -22,4 +22,17 @@ inline char* TextCopy(char* destination, const char* source, int capacity)
     destination[count] = '\0';
     return destination;
 }
+// Capacidad explícita: conserva el retorno destino para concatenaciones válidas.
+// En desborde no escribe y devuelve nullptr; los callers actuales caben por diseño.
+inline char* TextConcat(char* destination, std::size_t capacity, const char* source)
+{
+    if (!destination || !source) return nullptr;
+    std::size_t used = 0;
+    while (used < capacity && destination[used]) ++used;
+    if (used == capacity) return nullptr;
+    const std::size_t extra = std::strlen(source);
+    if (extra >= capacity - used) return nullptr;
+    std::memcpy(destination + used, source, extra + 1);
+    return destination;
+}
 } // namespace Platform
