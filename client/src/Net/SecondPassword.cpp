@@ -2479,7 +2479,7 @@ void __cdecl CheckGate(void)
                 UIChatLogWindow_AddText("", GlobalText[263], 2);
                 if (level < requiredLevel) {
                     char levelMessage[100];
-                    sprintf_s(levelMessage, GlobalText[350], requiredLevel);
+                    Platform::TextFormatSecure(levelMessage, GlobalText[350], requiredLevel);
                     UIChatLogWindow_AddText("", levelMessage, 2);
                 }
                 continue;
@@ -2493,7 +2493,7 @@ void __cdecl CheckGate(void)
         if (level < requiredLevel) {
             DAT_07e11d1c = 50;                                  // LoadingWorld
             char message[100];
-            sprintf_s(message, GlobalText[350], requiredLevel);
+            Platform::TextFormatSecure(message, GlobalText[350], requiredLevel);
             UIChatLogWindow_AddText("", message, 2);
             continue;
         }

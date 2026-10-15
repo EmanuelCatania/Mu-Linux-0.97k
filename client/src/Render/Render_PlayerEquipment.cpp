@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Game/MapManager.h"
@@ -75,7 +76,7 @@ extern "C" void EquipWipe_Tick(int op, int sub)
         }
         if (s_prevOccupied > 0 && occupied == 0) {
             char b[192];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
+            Platform::TextFormatTruncated(b, sizeof(b), Platform::TruncateText,
                 "EQUIPWIPE: los 12 wear slots pasaron a -1 durante el paquete "
                 "op=%02X sub=%02X (el siguiente fue op=%02X sub=%02X)",
                 s_prevOp, s_prevSub, op, sub);

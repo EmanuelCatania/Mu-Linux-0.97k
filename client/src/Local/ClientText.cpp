@@ -146,12 +146,12 @@ const char* LocalizedDataPath(const char* base, const char* ext, char* out, size
 {
     const char* suffix = CUserSettings::GetLanguageSuffix(gUserSettings.GetLanguage());
     if (suffix) {
-        sprintf_s(out, capacity, "%s_%s%s", base, suffix, ext);
+        Platform::TextFormatSecure(out, capacity, "%s_%s%s", base, suffix, ext);
         if (Platform::GetFileSystem().Exists(out)) return out;
         char line[160];
         Platform::TextFormat(line, "Idioma: falta %s, se usa %s%s", out, base, ext);
         DbgLogPublic(line);
     }
-    sprintf_s(out, capacity, "%s%s", base, ext);
+    Platform::TextFormatSecure(out, capacity, "%s%s", base, ext);
     return out;
 }

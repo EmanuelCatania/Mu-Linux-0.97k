@@ -128,10 +128,10 @@ void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, si
         // hasta el próximo F3/E6, sin adelantar el cambio a abierto.
         const DWORD seconds = RemainingSeconds(event);
         if (seconds >= 86400)
-            sprintf_s(text, capacity, gClientText.Get(ClientTextId::EventDays),
+            Platform::TextFormatSecure(text, capacity, gClientText.Get(ClientTextId::EventDays),
                       (unsigned long)(seconds / 86400));
         else
-            sprintf_s(text, capacity, "%02lu:%02lu:%02lu", (unsigned long)(seconds / 3600),
+            Platform::TextFormatSecure(text, capacity, "%02lu:%02lu:%02lu", (unsigned long)(seconds / 3600),
                       (unsigned long)((seconds / 60) % 60), (unsigned long)(seconds % 60));
         break;
     }

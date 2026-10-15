@@ -1,6 +1,7 @@
 #include <cstdint>
 // Particle.cpp
 #include "stdafx.h"
+#include "Platform/Text.h"
 extern "C" { void DbgLogPublic(const char* msg); }
 // IDA: Alpha (0x0043E5C0)
 // Particle_PathUpdate @ 0x0043e680  — Particle_PathUpdate
@@ -172,7 +173,7 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
     if (!s_logged) {
       s_logged = true;
       char b[256];
-      _snprintf_s(b, sizeof(b), _TRUNCATE,
+      Platform::TextFormatTruncated(b, sizeof(b), Platform::TruncateText,
         "CreateSprite NULL-arg: type=0x%x scale=%.3f param_2=%p param_4=%p param_5=%d param_7=%d",
         param_1, param_3, param_2, param_4, param_5, param_7);
       DbgLogPublic(b);

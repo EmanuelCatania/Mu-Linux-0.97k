@@ -132,7 +132,7 @@ void CMoveList::UpdateMouse()
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
         if (!map.CanMove) return;
         char command[64];
-        sprintf_s(command, "/move %s", map.MapName);
+        Platform::TextFormatSecure(command, "/move %s", map.MapName);
         // DESVIACION (DLL MoveList.cpp): el server valida saldo, PK, equipo y requisitos.
         SendChat(command); // C1/00 mediante gNetwork; conserva el límite de frecuencia.
         Toggle();
@@ -166,9 +166,9 @@ void CMoveList::Render()
         m_dwTextColor = map.CanMove ? 0xFFFFFFFF : 0xFF1127A4;
         Text(Layout::MapX, y, map.MapName, Layout::MapWidth);
         char text[32];
-        if (map.MinLevel == -1) Platform::TextCopySecure(text, "~"); else sprintf_s(text, "%d", map.MinLevel);
+        if (map.MinLevel == -1) Platform::TextCopySecure(text, "~"); else Platform::TextFormatSecure(text, "%d", map.MinLevel);
         Text(Layout::LevelX, y, text, Layout::LevelWidth);
-        sprintf_s(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
+        Platform::TextFormatSecure(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
         if (map.AccountLevel > 0) Text(Layout::VipX, y, "*", Layout::VipWidth);
     }
     m_dwTextColor = 0xFFFFFFFF;

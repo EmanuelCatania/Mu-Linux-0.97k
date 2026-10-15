@@ -108,7 +108,7 @@ void Log(const char* fmt, ...)
     char text[256];
     va_list args;
     va_start(args, fmt);
-    _vsnprintf_s(text, sizeof(text), _TRUNCATE, fmt, args);
+    Platform::TextVFormatTruncated(text, sizeof(text), Platform::TruncateText, fmt, args);
     va_end(args);
     DbgLogPublic(text);
 }
@@ -448,7 +448,7 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     }
 
     char dir[128];
-    _snprintf_s(dir, sizeof(dir), _TRUNCATE, "Data\\%s", sub);
+    Platform::TextFormatTruncated(dir, sizeof(dir), Platform::TruncateText, "Data\\%s", sub);
     AccessModel(slot, dir, name, -1);
     const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
     if (*(const short*)(model + 0x24) <= 0) {

@@ -1,6 +1,7 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Core/Font.h"
 #include "Net/Ping.h"
@@ -27,8 +28,8 @@ void CWindow::UpdateTitle()
         DWORD milliseconds;
         char ping[32] = "--";
         if (gPing.GetMilliseconds(milliseconds))
-            sprintf_s(ping, "%lu ms", milliseconds);
-        sprintf_s(title, gClientText.Get(ClientTextId::WindowTitle),
+            Platform::TextFormatSecure(ping, "%lu ms", milliseconds);
+        Platform::TextFormatSecure(title, gClientText.Get(ClientTextId::WindowTitle),
                   attributes.Name(), GlobalText[161], (unsigned int)attributes.Level(), ping, FPS);
     }
     Platform::GetWindow().SetTitle(title);

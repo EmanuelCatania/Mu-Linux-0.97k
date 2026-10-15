@@ -106,7 +106,7 @@ void COptionsMenu::RenderLabel(float x, float y, float width, const char* text) 
 void COptionsMenu::RenderToggle(float y, const char* label, bool value) const
 {
     char text[96];
-    sprintf_s(text, "%s: %s", label, value ? "On" : "Off");   // "On"/"Off" como el 0.97k
+    Platform::TextFormatSecure(text, "%s: %s", label, value ? "On" : "Off");   // "On"/"Off" como el 0.97k
     RenderButton(y, text);
 }
 
@@ -133,11 +133,11 @@ void COptionsMenu::RenderLevelBar(float y, const char* label, bool enabled, int 
     RenderBox((float)Layout::X, y, (float)Layout::Width, (float)Layout::Height);
     char text[96];
     if (!enabled) {
-        sprintf_s(text, "%s: Off", label);
+        Platform::TextFormatSecure(text, "%s: Off", label);
         RenderLabel((float)Layout::X, y, (float)Layout::Width, text);
         return;
     }
-    sprintf_s(text, "%s:", label);
+    Platform::TextFormatSecure(text, "%s:", label);
     RenderLabel((float)Layout::X, y, (float)Layout::BarLabelWidth, text);
     // DLL RenderSoundVolume: marco gris, fondo negro y un segmento blanco por nivel.
     const float bx = (float)Layout::BarX, by = y + Layout::BarY;
@@ -425,7 +425,7 @@ void COptionsMenu::RenderAntilag()
     RenderButton((float)RowY(row++), GlobalText[926], true);
     char text[96];
     for (const auto& group : AntilagGroups) {
-        sprintf_s(text, "%s >", gClientText.Get(group.title));
+        Platform::TextFormatSecure(text, "%s >", gClientText.Get(group.title));
         RenderButton((float)RowY(row++), text);
     }
     RenderButton((float)RowY(row), GlobalText[925]);
@@ -499,7 +499,7 @@ void COptionsMenu::RenderScreen()
         RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::ScreenBorderless),
                      gWindow.IsBorderless());
     char text[32];
-    sprintf_s(text, "%lu x %lu", (unsigned long)gWindow.GetWidth(), (unsigned long)gWindow.GetHeight());
+    Platform::TextFormatSecure(text, "%lu x %lu", (unsigned long)gWindow.GetWidth(), (unsigned long)gWindow.GetHeight());
     const int resolution = CurrentResolution();
     RenderSelector((float)RowY(row++), text, resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
     RenderButton((float)RowY(row), GlobalText[925]);
@@ -565,7 +565,7 @@ void COptionsMenu::RenderFont()
     RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontBold), font.bold != 0);
     RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontItalic), font.italic != 0);
     char text[16];
-    sprintf_s(text, "%d", font.height);
+    Platform::TextFormatSecure(text, "%d", font.height);
     RenderSelector((float)RowY(row++), text, font.height > 1, font.height < 25);
     RenderButton((float)RowY(row++), GlobalText[924]);
     RenderButton((float)RowY(row), GlobalText[925]);

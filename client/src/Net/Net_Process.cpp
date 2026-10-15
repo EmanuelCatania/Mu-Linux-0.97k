@@ -641,6 +641,7 @@
 //     Busca en HashTable, retorna undefined4 (ptr o índice)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Net/Recv/NetRecv.h"
 
 void NetLog(const char* fmt, ...)
@@ -649,7 +650,7 @@ void NetLog(const char* fmt, ...)
                           // ucrtbased recursaba sobre format=NULL.
     char buf[256];
     va_list ap; va_start(ap, fmt);
-    int n = _vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
+    int n = Platform::TextVFormatTruncated(buf, sizeof(buf), Platform::TruncateText, fmt, ap);
     va_end(ap);
     if (n < 0) buf[0] = 0;
 }

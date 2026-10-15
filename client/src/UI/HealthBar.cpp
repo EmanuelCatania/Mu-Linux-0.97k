@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/HealthBar.h"
 #include "Config/UserSettings.h"
 #include "Entity/EntityView.h"
@@ -74,7 +75,7 @@ void DrawBar(int x, int y, float width, float height, BYTE percent, bool selecte
 void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD background)
 {
     char text[64];
-    sprintf_s(text, "%.31s: %u%%", EntityView(entity).Name(), (unsigned int)percent);
+    Platform::TextFormatSecure(text, "%.31s: %u%%", EntityView(entity).Name(), (unsigned int)percent);
     const DWORD savedBack = m_dwBackColor;
     const DWORD savedText = m_dwTextColor;
     HGDIOBJ oldFont = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));

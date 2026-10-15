@@ -1861,13 +1861,13 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     char Buffer[256];
     memset(Buffer, 0, sizeof(Buffer));
     const char* name = (const char*)(self[25] + 8);
-    _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "%s", name);
+    Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "%s", name);
     UI_DrawText(v4, v5, Buffer, 0, 1, 0, sizeof(Buffer));
 
     if (party != 0xFF) {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFF00C4FFu;                        // -16726785
-        _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "(%d)", party + 1);
+        Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "(%d)", party + 1);
         UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0, sizeof(Buffer));
     }
 

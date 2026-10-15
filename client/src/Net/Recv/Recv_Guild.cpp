@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include "Net/Recv/NetRecv.h"
 
@@ -166,7 +167,7 @@ void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
     GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
 
     char notice[300] = {};
-    _snprintf_s(notice, sizeof(notice), _TRUNCATE,
+    Platform::TextFormatTruncated(notice, sizeof(notice), Platform::TruncateText,
                 GlobalText[soccer ? 533 : 526], GuildWarName);
     UI_AddNotice(notice, 1);
     GuildWar_RefreshEntityRelations();
@@ -184,7 +185,7 @@ void ReceiveGuildEndWar97k(const BYTE* packet, int size)
     const BYTE result = packet[3];
     if (result < _countof(kText)) {
         char notice[300] = {};
-        _snprintf_s(notice, sizeof(notice), _TRUNCATE, "%s", GlobalText[kText[result]]);
+        Platform::TextFormatTruncated(notice, sizeof(notice), Platform::TruncateText, "%s", GlobalText[kText[result]]);
         UI_AddNotice(notice, 1);
     }
 

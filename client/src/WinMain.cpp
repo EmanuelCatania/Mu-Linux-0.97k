@@ -329,7 +329,7 @@ extern "C" void ChkHeapPublic(const char* tag)
 #ifdef _DEBUG
     if (!_CrtCheckMemory()) {
         char b[192];
-        _snprintf_s(b, sizeof(b), _TRUNCATE, "HEAP_CORRUPT at %s", tag ? tag : "(null)");
+        Platform::TextFormatTruncated(b, sizeof(b), Platform::TruncateText, "HEAP_CORRUPT at %s", tag ? tag : "(null)");
         DbgLog(b);
         DebugBreak();
     }
@@ -371,7 +371,7 @@ static int __cdecl HeapAssertReportHook(int reportType, char* msg, int* retVal)
         }
         buf[n] = 0;
         char full[680];
-        _snprintf_s(full, sizeof(full), _TRUNCATE,
+        Platform::TextFormatTruncated(full, sizeof(full), Platform::TruncateText,
             "*** CRT_HEAP type=%d: %s", reportType, buf);
         DbgLog(full);
     }

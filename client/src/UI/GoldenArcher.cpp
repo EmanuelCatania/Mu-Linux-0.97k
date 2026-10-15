@@ -289,7 +289,7 @@ static void GA_Ida_Render(void)
     if (mode != 3) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
-        sprintf_s(buffer, "x%d", chips);
+        Platform::TextFormatSecure(buffer, "x%d", chips);
         if (mode == 1 || mode == 2) RenderText(560, 300, buffer, 0, 0, 0);
     }
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -299,7 +299,7 @@ static void GA_Ida_Render(void)
     if (mode != 3) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
-        sprintf_s(buffer, "x%d", (int)GA_ChipCount16);
+        Platform::TextFormatSecure(buffer, "x%d", (int)GA_ChipCount16);
         if (mode == 1 || mode == 2 || mode == 4) RenderText(560, 335, buffer, 0, 0, 0);
     }
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -309,9 +309,9 @@ static void GA_Ida_Render(void)
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
         if (DAT_07e11e20 == -1 || DAT_07e11e22 == -1 || DAT_07e11e24 == -1)
-            sprintf_s(buffer, "xxx - xxx - xxx");
+            Platform::TextFormatSecure(buffer, "xxx - xxx - xxx");
         else
-            sprintf_s(buffer, "%.3d - %.3d - %.3d", DAT_07e11e20, DAT_07e11e22, DAT_07e11e24);
+            Platform::TextFormatSecure(buffer, "%.3d - %.3d - %.3d", DAT_07e11e20, DAT_07e11e22, DAT_07e11e24);
         if (mode == 1) RenderCenteredText(545, 370, buffer);
     }
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -593,7 +593,7 @@ static void RenderPagination(void)
     m_dwTextColor = Color4b(255, 255, 255, 255);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     char text[32];
-    sprintf_s(text, "%d/%d", s_CurrentPage, s_TotalPages);
+    Platform::TextFormatSecure(text, "%d/%d", s_CurrentPage, s_TotalPages);
     RenderText(kStartX, CenterTextPosY(text, (int)(y + s / 2)), text, RealWidth(190), 1, nullptr);
     const int x = kStartX + 95;
     auto arrow = [&](float ax, float u, float uw) {
@@ -645,7 +645,7 @@ static void RenderRena(void)
     char buffer[256];
     for (int i = 0; i < 4; ++i) {
         if (s_RenaRequired[i] <= 0) continue;
-        sprintf_s(buffer, GlobalText[888], s_RenaRequired[i]);
+        Platform::TextFormatSecure(buffer, GlobalText[888], s_RenaRequired[i]);
         RenderBox((float)x + 35, (float)y, 120, 22, buffer, GA_ItemCount >= s_RenaRequired[i]);
         y += 30;
     }
@@ -694,19 +694,19 @@ static void RenderStone(void)
     if (s_CurrentPage == 1) {
         for (int i = 0; i < 3; ++i) {
             if (s_StoneRequired[i] <= 0) continue;
-            sprintf_s(buffer, GlobalText[894], s_StoneRequired[i], s_StoneVipDuration[i], i + 1);
+            Platform::TextFormatSecure(buffer, GlobalText[894], s_StoneRequired[i], s_StoneVipDuration[i], i + 1);
             TextC(x, y, buffer, 190);
             y += 10;
-            sprintf_s(buffer, GlobalText[895], s_StoneRequired[i]);
+            Platform::TextFormatSecure(buffer, GlobalText[895], s_StoneRequired[i]);
             RenderBox((float)x + 35, (float)y, 120, 22, buffer, GA_ItemCount >= s_StoneRequired[i]);
             y += 35;
         }
     } else if (s_CurrentPage == 2) {
         if (s_LuckyNumber[0] == '\0') {
-            sprintf_s(buffer, GlobalText[896], s_StoneRequired[3]);
+            Platform::TextFormatSecure(buffer, GlobalText[896], s_StoneRequired[3]);
             TextC(x, y, buffer, 190);
             y += 10;
-            sprintf_s(buffer, GlobalText[895], s_StoneRequired[3]);
+            Platform::TextFormatSecure(buffer, GlobalText[895], s_StoneRequired[3]);
             RenderBox((float)x + 35, (float)y, 120, 22, buffer, GA_ItemCount >= s_StoneRequired[3]);
             y += 40;
             DrawSeparatedLines(x, y, GlobalText[897], 15);
@@ -719,7 +719,7 @@ static void RenderStone(void)
             m_dwTextColor = Color4b(212, 150, 0, 255);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
             const char* n = s_LuckyNumber;
-            sprintf_s(buffer, "%c%c%c%c - %c%c%c%c - %c%c%c%c",
+            Platform::TextFormatSecure(buffer, "%c%c%c%c - %c%c%c%c - %c%c%c%c",
                       n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7], n[8], n[9], n[10], n[11]);
             TextC(x, y, buffer, 190);
             m_dwTextColor = Color4b(255, 230, 210, 255);
@@ -854,10 +854,10 @@ static void RenderBingo(void)
         const std::string& n = s_MyLuckyNumbers[i];
         char text[64];
         if (n.size() >= 12)
-            sprintf_s(text, "%c%c%c%c - %c%c%c%c - %c%c%c%c",
+            Platform::TextFormatSecure(text, "%c%c%c%c - %c%c%c%c - %c%c%c%c",
                       n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7], n[8], n[9], n[10], n[11]);
         else
-            sprintf_s(text, "%s", n.c_str());
+            Platform::TextFormatSecure(text, "%s", n.c_str());
         RenderText(x + 13, y, text, RealWidth(190 - 26), 1, nullptr);
         y += 20;
         invert = !invert;
@@ -1043,7 +1043,7 @@ void GoldenArcher_Recv9D(BYTE* Msg, int Size)
     if (Size < 4) return;
     const BYTE r = Msg[3];
     char text[300];
-    sprintf_s(text, "%s", GlobalText[r < 4 ? 911 + r : 901]);
+    Platform::TextFormatSecure(text, "%s", GlobalText[r < 4 ? 911 + r : 901]);
     CreateOkMessageBox(text);
     memcpy(GA_GiftName, text, 64);
     GA_GiftName[63] = 0;

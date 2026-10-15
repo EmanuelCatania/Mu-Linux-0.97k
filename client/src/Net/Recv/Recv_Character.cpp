@@ -1562,7 +1562,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
             // IDA L275-277: aviso "<mapa> ..." en el chat.
             char mapNotice[256];
-            sprintf_s(mapNotice, "%s%s", GetMapName(gMapManager.GetCurrentMap()), GlobalText[484]);
+            Platform::TextFormatSecure(mapNotice, "%s%s", GetMapName(gMapManager.GetCurrentMap()), GlobalText[484]);
             UIChatLogWindow_AddText("", mapNotice, 1);
         }
 

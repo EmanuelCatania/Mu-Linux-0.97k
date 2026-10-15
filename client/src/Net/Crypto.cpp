@@ -16,6 +16,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/Ping.h"
 
@@ -580,7 +581,7 @@ extern "C" void DbgLogPublic(const char* msg);
 static void CsmTrace(const char *fmt, ...) {
     char buf[256];
     va_list ap; va_start(ap, fmt);
-    _vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
+    Platform::TextVFormatTruncated(buf, sizeof(buf), Platform::TruncateText, fmt, ap);
     va_end(ap);
 }
 
@@ -597,7 +598,7 @@ extern "C" void CsmWatchdog(const char *tag)
     }
     if (s_known != 0 && cur != s_known) {
         char buf[160];
-        _snprintf_s(buf, sizeof(buf), _TRUNCATE,
+        Platform::TextFormatTruncated(buf, sizeof(buf), Platform::TruncateText,
             "CSM-WD[%s] ★TRAMPLED★ mod0 was %08X now %08X",
             tag, s_known, cur);
         DbgLogPublic(buf);

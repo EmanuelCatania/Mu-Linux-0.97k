@@ -648,14 +648,14 @@ LAB_0051c13d:
     const char* inviterName = (characterIndex < 400 && DAT_07abf5d0)
         ? (const char*)(uintptr_t)(DAT_07abf5d0 + characterIndex * 916 + 449)
         : "";
-    _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
+    Platform::TextFormatTruncated(local_c8, sizeof(local_c8), Platform::TruncateText,
                 (const char*)&DAT_07d486fc, inviterName);
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
-    _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
+    Platform::TextFormatTruncated(local_c8, sizeof(local_c8), Platform::TruncateText,
                 (const char*)&DAT_07d48f30, inviterName);
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);

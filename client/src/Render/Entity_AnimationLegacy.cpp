@@ -3,6 +3,7 @@
 // y algunos helpers sueltos (CIsin, Screen_ToGLx/y).
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -346,7 +347,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
             if (!s_loggedNoMeshs) {
                 s_loggedNoMeshs = true;
                 char _nb[120];
-                _snprintf_s(_nb, sizeof(_nb), _TRUNCATE,
+                Platform::TextFormatTruncated(_nb, sizeof(_nb), Platform::TruncateText,
                     "XFORM_NO_MESHS etype=%d meshsPtr=%08x meshCount=%d",
                     (int)*(short*)((char*)this_ + 2), meshsPtr, meshCount);
                 DbgLogPublic(_nb);
@@ -374,7 +375,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
                 if (!s_loggedInvMesh) {
                     s_loggedInvMesh = true;
                     char _ib[160];
-                    _snprintf_s(_ib, sizeof(_ib), _TRUNCATE,
+                    Platform::TextFormatTruncated(_ib, sizeof(_ib), Platform::TruncateText,
                         "XFORM_INVALID_MESH etype=%d meshsPtr=%p mesh=%d/%d vArr=%08x nArr=%08x vc=%d nc=%d",
                         (int)*(short*)((char*)this_ + 2), (void*)(intptr_t)*(int*)((char*)this_ + 0x28),
                         local_58, meshCount, vArr, nArr, vertCount, nCount);
@@ -406,7 +407,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
                 if (!s_loggedBadBone) {
                     s_loggedBadBone = true;
                     char _bb[180];
-                    _snprintf_s(_bb, sizeof(_bb), _TRUNCATE,
+                    Platform::TextFormatTruncated(_bb, sizeof(_bb), Platform::TruncateText,
                         "XFORM_BAD_BONE etype=%d mesh=%d/%d vert=%d/%d bone=%d nBones=%d bt=%p",
                         (int)*(short*)((char*)this_ + 2), local_58, meshCount,
                         vi, vertCount, boneIdx, nBonesGuard, (void*)param_1);

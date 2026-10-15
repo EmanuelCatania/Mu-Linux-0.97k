@@ -368,11 +368,11 @@ void __cdecl OpenWorldModels(void) {
             char Buffer[64];
             for (int v4 = 0; v4 < 32; v4++) {
                 const char* fmtFull = (v4 >= 10) ? "Object8/wt%d.jpg" : "Object8/wt0%d.jpg";
-                _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtFull, v4);
+                Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, fmtFull, v4);
                 OpenJPG(Buffer, v4 + 65, 0x2601, 0x2901, 0, '\0');
 
                 const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
-                _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtLeaf, v4);
+                Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, fmtLeaf, v4);
                 Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
             }
         }

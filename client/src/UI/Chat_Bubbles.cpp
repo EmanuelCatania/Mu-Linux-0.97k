@@ -2,6 +2,7 @@
 // Chat_Bubbles.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -157,7 +158,7 @@ found_new:
             *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);  // GuildTeam
             // IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ".
             // El prefijo completo determina el corte de color en sub_47F360.
-            sprintf_s(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
+            Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
         }
     }
 
@@ -190,7 +191,7 @@ found_existing:
         } else {
             *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);
             // IDA: mismo prefijo al actualizar una etiqueta existente.
-            sprintf_s(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
+            Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
         }
     }
 
