@@ -3,6 +3,9 @@
 // Updates de objetos especiales de la escena y mouse picking.
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/GuardedOperation.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -37,16 +40,20 @@ char* __stdcall PickObject_Mouse(void) {
             char* obj = (char*)(DWORD)*pCell;
             // SEH alrededor del recorrido de la lista de buckets (punteros next corruptos),
             // igual que el guard de MoveObjects.
-            __try {
+            Platform::RunValidatedOperation([&]() {
             int pickIter = 0;
             while (obj != NULL && pickIter++ < 4096 &&
-                   (uintptr_t)obj >= 0x10000u && (uintptr_t)obj < 0x80000000u) {
+                   SceneObjects::Contains(obj)) {
                 // Check: object alive, visible, and alpha above threshold
                 if ((obj[0] != '\0') && (obj[0x160] != '\0') &&
                     (_DAT_005524f8 <= *(float*)(obj + 0x168)))
                 {
                     // Get model from entity type
                     short modelType = *(short*)(obj + 2);
+                    if (modelType < 0 || modelType >= MODEL_MAX_TOTAL || !DAT_05828d58) {
+                        obj = *(char**)(obj + 0x1B8);
+                        continue;
+                    }
                     char* modelBase = (char*)DAT_05828d58;
                     // BMD stride is 0xBC; Models = DAT_05828d58
                     char* model = modelBase + modelType * 0xBC;
@@ -91,9 +98,7 @@ char* __stdcall PickObject_Mouse(void) {
                 }
                 obj = *(char**)(obj + 0x1B8);  // next in linked list
             }
-            } __except (EXCEPTION_EXECUTE_HANDLER) {
-                // Corrupt linked-list node — abandon this cell.
-            }
+            }); // Windows conserva SEH; POSIX valida cada nodo antes de leerlo.
             pCell += 4;  // 4 DWORDs per cell
             cellCount--;
         } while (cellCount != 0);
