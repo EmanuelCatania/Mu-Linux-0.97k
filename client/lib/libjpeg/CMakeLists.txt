@@ -79,6 +79,7 @@ set_target_properties(jpeg PROPERTIES
 
 target_include_directories(jpeg PRIVATE jpeg-6b)
 
+if(MSVC)
 target_compile_definitions(jpeg PRIVATE
     WIN32
     $<$<CONFIG:Debug>:_DEBUG>
@@ -100,3 +101,7 @@ target_compile_options(jpeg PRIVATE
 # WholeProgramOptimization en Release: la .lib se arma con /LTCG.
 set_property(TARGET jpeg APPEND PROPERTY STATIC_LIBRARY_OPTIONS
     $<$<CONFIG:Release>:/LTCG>)
+
+else()
+    target_compile_options(jpeg PRIVATE ${MU_COMMON_COMPILE_OPTIONS})
+endif()
