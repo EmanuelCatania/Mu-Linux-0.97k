@@ -27,7 +27,7 @@
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 extern "C" {
     void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY);

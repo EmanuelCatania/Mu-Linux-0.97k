@@ -21,7 +21,7 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 // sub_4E38B0 / sub_47F360 / sub_47F4C0 are now ported in HUD_Pass4.cpp.
 // sub_4E9300 is ported in HUD_Pass6.cpp.

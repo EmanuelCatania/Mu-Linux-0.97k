@@ -3,7 +3,7 @@
 #include <cstddef>
 #include "Platform/CompilerCompat.h"
 
-// Sólo representación de datos heredados. No declara ni emula APIs Windows.
+// SÃ³lo representaciÃ³n de datos heredados. No declara ni emula APIs Windows.
 using BYTE = std::uint8_t;
 using WORD = std::uint16_t;
 using DWORD = std::uint32_t;
@@ -61,9 +61,9 @@ using LPDIRECTSOUNDBUFFER = IDirectSoundBuffer*;
 using LPDIRECTSOUND3DBUFFER = IDirectSound3DBuffer*;
 using LPDIRECTSOUND3DLISTENER = IDirectSound3DListener*;
 struct POINT { LONG x, y; };
-struct SIZE { LONG cx, cy; };
+struct tagSIZE { LONG cx, cy; };
+using SIZE = tagSIZE;
 using LPSIZE = SIZE*;
-using tagSIZE = SIZE;
 struct RECT { LONG left, top, right, bottom; };
 union LARGE_INTEGER { std::int64_t QuadPart; };
 struct TEXTMETRICA {
@@ -94,3 +94,24 @@ static_assert(sizeof(WPARAM) == 4 && sizeof(LPARAM) == 4 && sizeof(SOCKET) == 4)
 static_assert(sizeof(POINT) == 8 && sizeof(SIZE) == 8 && sizeof(RECT) == 16);
 static_assert(sizeof(LARGE_INTEGER) == 8 && sizeof(TEXTMETRICA) == 56);
 static_assert(offsetof(TEXTMETRICA, tmFirstChar) == 44);
+
+// Códigos lógicos de IInput; mismos valores en ambos backends.
+#define VK_TAB 0x09
+#define VK_RETURN 0x0d
+#define VK_SHIFT 0x10
+#define VK_CONTROL 0x11
+#define VK_MENU 0x12
+#define VK_ESCAPE 0x1b
+#define VK_SPACE 0x20
+#define VK_PRIOR 0x21
+#define VK_NEXT 0x22
+#define VK_LEFT 0x25
+#define VK_UP 0x26
+#define VK_RIGHT 0x27
+#define VK_DOWN 0x28
+#define VK_F10 0x79
+#define VK_F11 0x7a
+#define VK_F12 0x7b
+#define DEFAULT_CHARSET 1
+#define NONANTIALIASED_QUALITY 3
+#define _countof(array) (sizeof(array) / sizeof((array)[0]))

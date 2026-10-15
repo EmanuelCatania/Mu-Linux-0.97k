@@ -24,8 +24,8 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <gl/GL.h>
-#include <gl/GLU.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 extern "C" BYTE OffsetInventoryItems[];     // src/Render/HUD_Pass3.cpp
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);

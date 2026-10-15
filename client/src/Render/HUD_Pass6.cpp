@@ -40,7 +40,7 @@
 #include "structs.h"
 #include "functions.h"
 #include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
-#include <gl/GL.h>
+#include <GL/gl.h>
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
 

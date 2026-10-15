@@ -28,7 +28,7 @@
 #include "functions.h"
 #include <string>
 #include <vector>
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 void __cdecl CloseInventoryRelatedWindows(void);
 extern "C" void   __cdecl RenderInventoryInterface(int StartX, int StartY, int Flag);

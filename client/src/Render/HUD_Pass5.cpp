@@ -35,7 +35,7 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 // External helpers ported in earlier passes.
 extern "C" int    GetScreenWidth(void);
