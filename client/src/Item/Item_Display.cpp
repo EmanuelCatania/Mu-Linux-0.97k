@@ -223,7 +223,7 @@ renderLabel:
     {
         int  textLen = lstrlenA(String);
         SIZE sz;
-        GetTextExtentPointA(gFont.GetTextDC(), String, textLen, &sz);
+        gFont.MeasureText(gFont.GetTextDC(), String, textLen, &sz);
         if (Sort) {
             // Centrado sobre la posición de pantalla del item (o+0x5c / o+0x5e)
             int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();

@@ -136,6 +136,7 @@
     <ClInclude Include="src\Platform\Win32\Win32Window.h" />
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
+    <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
@@ -230,6 +231,7 @@
     <ClCompile Include="src\Platform\SDL3\SDLNativeBridge.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLSocket.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLFont.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\Win32\Win32Audio.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />

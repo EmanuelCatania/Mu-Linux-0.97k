@@ -1268,7 +1268,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
         UI_DrawText(x, y, Buffer, 0, 1, 0);
         if (gFont.GetTextDC())
-            GetTextExtentPointA(gFont.GetTextDC(), Buffer, lstrlenA(Buffer), &sz);
+            gFont.MeasureText(gFont.GetTextDC(), Buffer, lstrlenA(Buffer), &sz);
         // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
         sz.cx = (LONG)((float)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
     }
@@ -1445,7 +1445,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
         const char* sender = (const char*)(self[25] + 8);
         SIZE sz = {0,0};
         int len = lstrlenA(sender);
-        if (gFont.GetTextDC()) GetTextExtentPointA(gFont.GetTextDC(), sender, len, &sz);
+        if (gFont.GetTextDC()) gFont.MeasureText(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
             int v10 = (int)self[25];
             if (Hero && strcmp((const char*)(v10 + 8), (const char*)(Hero + 449))) {
@@ -2413,7 +2413,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         if (reverse != 1) off = fwdOff;
         char* line = (char*)(dst + off);
         SIZE sz;
-        GetTextExtentPointA(gFont.GetTextDC(), cur, lstrlenA(cur), &sz);
+        gFont.MeasureText(gFont.GetTextDC(), cur, lstrlenA(cur), &sz);
         int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
         if (!sz.cx) return lines;
         int avail = width - (lines == 0 ? (int)firstIndent : 0);
@@ -2431,7 +2431,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         while (step) {
             step = (int)(((double)half + 1.0) * 0.5);
             half = step;
-            GetTextExtentPointA(gFont.GetTextDC(), cur, cut, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), cur, cut, &sz);
             double cutW = (double)sz.cx / gWindow.GetScreenRateX();
             if (cutW <= (double)(avail + 4)) {
                 if (cutW >= (double)(avail - 4)) break;

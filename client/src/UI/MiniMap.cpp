@@ -111,7 +111,7 @@ void PointRotate(float ix, float iy, float iw, float ih, float rotateLocal,
     const float dy = (py + H / 2.0f) * (480.0f / H) + ih / 4.0f;
     if (!Inside((int)dx, (int)(480.0f - dy), (int)(iw / 2.0f), (int)(ih / 2.0f))) return;
     SIZE size = {};
-    GetTextExtentPointA(gFont.GetTextDC(), tooltip, lstrlenA(tooltip), &size);
+    gFont.MeasureText(gFont.GetTextDC(), tooltip, lstrlenA(tooltip), &size);
     const int textWidth = (int)(size.cx * 640 / gWindow.GetWidth());
     const DWORD text = m_dwTextColor, back = m_dwBackColor;
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -125,7 +125,7 @@ void PointRotate(float ix, float iy, float iw, float ih, float rotateLocal,
 int CenterTextY(const char* text, int centerY)
 {
     SIZE size = {};
-    GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &size);
+    gFont.MeasureText(gFont.GetTextDC(), text, lstrlenA(text), &size);
     return centerY - ((480 * size.cy / (int)gWindow.GetHeight()) >> 1);
 }
 }

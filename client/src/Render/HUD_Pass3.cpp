@@ -173,7 +173,7 @@ SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
 {
     SIZE sz = {0,0};
     int n = lstrlenA(pszText);
-    GetTextExtentPointA(gFont.GetTextDC(), pszText, n, &sz);
+    gFont.MeasureText(gFont.GetTextDC(), pszText, n, &sz);
     int adjustedX = iPos_x - ((640 * sz.cx / (int)gWindow.GetWidth()) >> 1);
     RenderText(adjustedX, iPos_y, (char*)pszText, 0, 0, 0);
     return &TextSize;
@@ -278,7 +278,7 @@ bool __cdecl RenderNumArrow_(void)
             EnableAlphaTest(true);
             int n = lstrlenA(String);
             SIZE sz = {0,0};
-            GetTextExtentPointA(gFont.GetTextDC(), String, n, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
             drewSomething = true;
         }
@@ -295,7 +295,7 @@ bool __cdecl RenderNumArrow_(void)
             EnableAlphaTest(true);
             int n = lstrlenA(String);
             SIZE sz = {0,0};
-            GetTextExtentPointA(gFont.GetTextDC(), String, n, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
             drewSomething = true;
         }

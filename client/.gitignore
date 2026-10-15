@@ -101,3 +101,6 @@ Terrain_Render.obj
 
 # Notas de trabajo del port (Codex): utiles en local, no van al repo.
 doc-port/
+
+# Copia de distribución de assets/fonts producida por CMake SDL3.
+/bin/Client/assets/fonts/

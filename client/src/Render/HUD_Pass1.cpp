@@ -97,13 +97,13 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     GetLastError();
     int n;
     n = lstrlenA(lpString);
-    GetTextExtentPoint32A(gFont.GetTextDC(), lpString, n, &psizl);
+    gFont.MeasureText32(gFont.GetTextDC(), lpString, n, &psizl);
     n = lstrlenA(lpString + 44);
-    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 44, n, &v12);
+    gFont.MeasureText32(gFont.GetTextDC(), lpString + 44, n, &v12);
     n = lstrlenA(lpString + 300);
-    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 300, n, &v13);
+    gFont.MeasureText32(gFont.GetTextDC(), lpString + 300, n, &v13);
     n = lstrlenA(lpString + 24);
-    GetTextExtentPoint32A(gFont.GetTextDC(), lpString + 24, n, &v14);
+    gFont.MeasureText32(gFont.GetTextDC(), lpString + 24, n, &v14);
     GetLastError();
 
     int result = psizl.cx + 3;
