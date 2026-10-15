@@ -193,7 +193,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
 void RenderNumberCentered(float centerX, float y, int num)
 {
     char digits[16];
-    const int len = wsprintfA(digits, "%d", num);
+    const int len = Platform::TextFormat(digits, "%d", num);
     RenderNumber2D(centerX + 0.15f * 9.0f * (len - 1), y, num, 9.0f, 10.0f);
 }
 
@@ -322,7 +322,7 @@ char Render_CharInfoPanel_(void)
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         CHAR String[100];
-        wsprintfA(String, "%d", GuildWarScore[0]);
+        Platform::TextFormat(String, "%d", GuildWarScore[0]);
         int iPos_x = (int)x + 13;
         UI_DrawText(iPos_x, 4, String, 0, 1, 0);
         int n = Platform::TextLength(String);
@@ -347,7 +347,7 @@ char Render_CharInfoPanel_(void)
 LABEL_7:
         CreateGuildMark(v5, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        wsprintfA(String, "%d", GuildWarScore[1]);
+        Platform::TextFormat(String, "%d", GuildWarScore[1]);
         UI_DrawText(iPos_x, 19, String, 0, 1, 0);
         UI_DrawText(v2, 19, GuildWarName, 0, 1, 0);
     }
@@ -362,7 +362,7 @@ LABEL_7:
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         CHAR String[100];
-        wsprintfA(String, "%d", GuildWarScore[0]);
+        Platform::TextFormat(String, "%d", GuildWarScore[0]);
         int v9 = (int)x;
         int v10 = v9 + 13;
         UI_DrawText(v10, 4, String, 0, 1, 0);
@@ -372,14 +372,14 @@ LABEL_7:
         m_dwTextColor = 0xFFFF9560;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        wsprintfA(String, "%d", GuildWarScore[1]);
+        Platform::TextFormat(String, "%d", GuildWarScore[1]);
         UI_DrawText(v10, 19, String, 0, 1, 0);
         UI_DrawText(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0);
     }
 
     if (DAT_07e11e10_alias > 0) {   // SoccerTime
         CHAR String[100];
-        wsprintfA(String, "%d:%d",
+        Platform::TextFormat(String, "%d:%d",
                   DAT_07e11e10_alias / 60, DAT_07e11e10_alias % 60);
         m_dwTextColor = 0xFF969500u;
         int v15 = (int)v24_y0;
@@ -610,7 +610,7 @@ void RenderBrokenItem_(int a1)
                 } __except (EXCEPTION_EXECUTE_HANDLER) {
                     nameLocal[0] = '\0';
                 }
-                wsprintfA(Buffer, "%s (%d/%d)", nameLocal, v21, v30);
+                Platform::TextFormat(Buffer, "%s (%d/%d)", nameLocal, v21, v30);
                 byte_7E11D6E = 1;
                 Text_MeasureBox((int)v38, v34 + (int)v37, Buffer, 0, 0, 0);
                 v34 += 12;
@@ -688,7 +688,7 @@ void RenderExperience_(void)
     double my = (double)MouseY;
     if (mx >= 219.0 && mx < 421.0 && my >= 439.0 && my < 445.0) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, GlobalText[357],
+        Platform::TextFormat(Buffer, GlobalText[357],
                   *(int*)((BYTE*)v3 + 16),
                   *(int*)((BYTE*)v3 + 52));
         RenderTipText(223, 424, Buffer);

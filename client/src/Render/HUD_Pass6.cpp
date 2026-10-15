@@ -29,6 +29,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
 #include "Item/ChaosMixRates.h"
@@ -407,11 +408,11 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     // Zen counter — read from CharacterMachine[+1352] (anti-tamper bypassed).
     int zen = CharacterMachine ? *(int*)((BYTE*)CharacterMachine + 1352) : 0;
     CHAR Buffer[100];
-    if      (zen <  1000)        wsprintfA(Buffer, "%d",     zen % 1000);
-    else if (zen <  1000000)     wsprintfA(Buffer, "%d,%03d", zen / 1000, zen % 1000);
-    else if (zen <  1000000000)  wsprintfA(Buffer, "%d,%03d,%03d",
+    if      (zen <  1000)        Platform::TextFormat(Buffer, "%d",     zen % 1000);
+    else if (zen <  1000000)     Platform::TextFormat(Buffer, "%d,%03d", zen / 1000, zen % 1000);
+    else if (zen <  1000000000)  Platform::TextFormat(Buffer, "%d,%03d,%03d",
                                            zen / 1000000, (zen % 1000000) / 1000, zen % 1000);
-    else                          wsprintfA(Buffer, "%d,%03d,%03d,%03d",
+    else                          Platform::TextFormat(Buffer, "%d,%03d,%03d,%03d",
                                            zen / 1000000000,
                                            (zen % 1000000000) / 1000000,
                                            (zen % 1000000) / 1000,
@@ -590,15 +591,15 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // Member name renders from v4-24 in IDA — that's the 24-byte
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
-            wsprintfA(Buffer, "%s", (char*)v4);   // name[10] en +0
+            Platform::TextFormat(Buffer, "%s", (char*)v4);   // name[10] en +0
             SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;
             m_dwTextColor = 0xFFD2E6FFu;
             SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-            wsprintfA(Buffer, "%s", className);
+            Platform::TextFormat(Buffer, "%s", className);
             RenderText(a1 + 40, a2 + 60 + 35 * row, Buffer, 0, 0, 0);
-            wsprintfA(Buffer, "%d,%d", v4[13], v4[14]);
+            Platform::TextFormat(Buffer, "%d,%d", v4[13], v4[14]);
             RenderText(a1 + 90, a2 + 60 + 35 * row, Buffer, 0, 0, 0);
 
             // HP bar (red on darker red).
@@ -608,7 +609,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             GL_DrawRect((float)(a1 + 40), (float)(a2 + 69 + 35 * row), (float)barW, 3.0f);
             EnableAlphaTest(true);
             glColor3f(1.0f, 1.0f, 1.0f);
-            wsprintfA(Buffer, "( %d / %d )", level, maxLevel);
+            Platform::TextFormat(Buffer, "( %d / %d )", level, maxLevel);
             RenderText(a1 + 65, a2 + 77 + 35 * row, Buffer, 0, 0, 0);
             if (!strcmp((const char*)Party, (const char*)((BYTE*)Hero + 449)) ||
                 !strcmp((const char*)v4, (const char*)((BYTE*)Hero + 449)))
@@ -868,7 +869,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         char ptsBuf[64];
         // Use GlobalText[217] if available; defensive fallback to a literal.
         const char* ptsFmt = GlobalText[217][0] ? GlobalText[217] : "Puntos: %d";
-        wsprintfA(ptsBuf, ptsFmt, (int)levelUpPoint);
+        Platform::TextFormat(ptsBuf, ptsFmt, (int)levelUpPoint);
         RenderText(iPosX + 95, iPosY + 49, ptsBuf,
                    80 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     }
@@ -878,9 +879,9 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // and CA+48 — these are the RESET points (different from CA+84 above).
     // In the user's screenshot this renders as "Puntos de reposición: 0 / 62".
     if (*(unsigned short*)(CA + 14) <= 5) {
-        wsprintfA(Buffer, GlobalText[199], 0, 0);
+        Platform::TextFormat(Buffer, GlobalText[199], 0, 0);
     } else {
-        wsprintfA(Buffer, GlobalText[199],
+        Platform::TextFormat(Buffer, GlobalText[199],
                   *(short*)(CA + 46), *(short*)(CA + 48));
     }
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1460,11 +1461,11 @@ extern "C" void __cdecl RenderShopInterface(void)
             m_dwTextColor = 0xFF96DCFFu;      // -6890241
             const int cost = (int)DAT_07eaa0f8;
             CHAR Buffer[64];
-            if      (cost < 1000)       wsprintfA(Buffer, "%d", cost % 1000);
-            else if (cost < 1000000)    wsprintfA(Buffer, "%d,%03d", cost % 1000000 / 1000, cost % 1000);
-            else if (cost < 1000000000) wsprintfA(Buffer, "%d,%03d,%03d", cost % 1000000000 / 1000000,
+            if      (cost < 1000)       Platform::TextFormat(Buffer, "%d", cost % 1000);
+            else if (cost < 1000000)    Platform::TextFormat(Buffer, "%d,%03d", cost % 1000000 / 1000, cost % 1000);
+            else if (cost < 1000000000) Platform::TextFormat(Buffer, "%d,%03d,%03d", cost % 1000000000 / 1000000,
                                                   cost % 1000000 / 1000, cost % 1000);
-            else                        wsprintfA(Buffer, "%d,%03d,%03d,%03d", cost / 1000000000,
+            else                        Platform::TextFormat(Buffer, "%d,%03d,%03d,%03d", cost / 1000000000,
                                                   cost % 1000000000 / 1000000, cost % 1000000 / 1000,
                                                   cost % 1000);
             SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1638,7 +1639,7 @@ extern "C" void __cdecl RenderWarehouse(void)
                      (DWORD)(uintptr_t)OffsetWarehouseItems, 8, 15);
 
     // ── Título: "Baúl (Abierto|Cerrado)" ─────────────────────────────────────
-    // IDA: wsprintfA(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
+    // IDA: Platform::TextFormat(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
     // con glColor amarillo cuando el baúl está bloqueado por password.
     glColor3f(1.0f, 1.0f, 1.0f);
     SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1647,7 +1648,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     const int lock = (DAT_00559f5f != 0) ? 1 : 0;
     if (lock) glColor3f(1.0f, 1.0f, 0.0f);
     CHAR Title[128];
-    wsprintfA(Title, "%s (%s)", GlobalText[234], GlobalText[240 + lock]);
+    Platform::TextFormat(Title, "%s (%s)", GlobalText[234], GlobalText[240 + lock]);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
                Title, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -1661,13 +1662,13 @@ extern "C" void __cdecl RenderWarehouse(void)
     // WarehouseMoney = CharacterMachine[+0x54C]; (el inventario usa +0x548).
     int whZen = CharacterMachine ? *(int*)((BYTE*)CharacterMachine + 1356) : 0;
     CHAR Buffer[100];
-    if      (whZen <  1000)       wsprintfA(Buffer, "%d", whZen % 1000);
-    else if (whZen <  1000000)    wsprintfA(Buffer, "%d,%03d",
+    if      (whZen <  1000)       Platform::TextFormat(Buffer, "%d", whZen % 1000);
+    else if (whZen <  1000000)    Platform::TextFormat(Buffer, "%d,%03d",
                                             (whZen % 1000000) / 1000, whZen % 1000);
-    else if (whZen <  1000000000) wsprintfA(Buffer, "%d,%03d,%03d",
+    else if (whZen <  1000000000) Platform::TextFormat(Buffer, "%d,%03d,%03d",
                                             (whZen % 1000000000) / 1000000,
                                             (whZen % 1000000) / 1000, whZen % 1000);
-    else                          wsprintfA(Buffer, "%d,%03d,%03d,%03d",
+    else                          Platform::TextFormat(Buffer, "%d,%03d,%03d,%03d",
                                             whZen / 1000000000,
                                             (whZen % 1000000000) / 1000000,
                                             (whZen % 1000000) / 1000, whZen % 1000);
@@ -1703,10 +1704,10 @@ extern "C" void __cdecl RenderWarehouse(void)
     else if (tax >= 100)    tax =  10 * (tax /  10);
 
     CHAR TaxStr[64];
-    if      (tax <  1000)       wsprintfA(TaxStr, "%d", tax % 1000);
-    else if (tax <  1000000)    wsprintfA(TaxStr, "%d,%03d",
+    if      (tax <  1000)       Platform::TextFormat(TaxStr, "%d", tax % 1000);
+    else if (tax <  1000000)    Platform::TextFormat(TaxStr, "%d,%03d",
                                           (tax % 1000000) / 1000, tax % 1000);
-    else                        wsprintfA(TaxStr, "%d,%03d,%03d",
+    else                        Platform::TextFormat(TaxStr, "%d,%03d,%03d",
                                           (tax % 1000000000) / 1000000,
                                           (tax % 1000000) / 1000, tax % 1000);
     // DESVIACIÓN CONSCIENTE (única de esta función): el binario original hace

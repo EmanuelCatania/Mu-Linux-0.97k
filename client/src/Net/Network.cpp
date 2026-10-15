@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
@@ -397,7 +398,7 @@ void CNetwork::SendResolved(const BYTE* pkt, int totalLen, bool chosenC3, const 
         // salga o no), pero queda el aviso para no perder una hora buscando
         // una desconexion sin causa aparente.
         char line[160];
-        wsprintfA(line,
+        Platform::TextFormat(line,
                   "PacketFrame: 0x%02X/%02X no figura en HackPacketCheck.txt "
                   "-> el server va a cerrar la conexion (%s)", opcode, subop, who);
         DbgLogPublic(line);

@@ -13,6 +13,7 @@
 // Joint pool:   DAT_07b27150, stride 0x9d8 bytes
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
 
 
@@ -45,7 +46,7 @@ void Effect_TickAll(void)
         if (type >= 0 && type < 2048 && !s_seen[type]) {
           s_seen[type] = 1;
           char dbg[176];
-          wsprintfA(dbg, "OWNERDBG: MoveEffect crash -> Type=%d SubType=%d owner=0x%08X (slot %d, desactivado)",
+          Platform::TextFormat(dbg, "OWNERDBG: MoveEffect crash -> Type=%d SubType=%d owner=0x%08X (slot %d, desactivado)",
                     type, subType, (unsigned)owner, iVar2);
           DbgLogPublic(dbg);
         }

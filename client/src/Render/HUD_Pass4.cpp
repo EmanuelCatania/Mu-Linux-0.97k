@@ -210,7 +210,7 @@ int Render_MacroTimer_(void)
             int idx = (v1 < 4 || v1 > 7) ? (639 + v1) : (820 + v1);
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
-            wsprintfA(String, fmt, 30 - (int)secs);
+            Platform::TextFormat(String, fmt, 30 - (int)secs);
             UI_DrawText(10, 372, String, 0, 1, 0);
         } else {
             m_iMatchCountDownType = 0;
@@ -247,7 +247,7 @@ void Render_MapLoadText_(void)
         if ((int)m_iMaxKillMonster != 0xFFFF) {
             CHAR String[256];
             int gtIdx = (m_byMatchType == 5) ? 866 : 864;
-            wsprintfA(String, GlobalText[gtIdx], m_iKillMonster, m_iMaxKillMonster);
+            Platform::TextFormat(String, GlobalText[gtIdx], m_iKillMonster, m_iMaxKillMonster);
             SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             m_dwTextColor = 0xFFFF7700u;
             RenderCenteredText(570, 345, String);
@@ -255,22 +255,22 @@ void Render_MapLoadText_(void)
         }
         SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         CHAR String[256];
-        wsprintfA(String, GlobalText[865]);
+        Platform::TextFormat(String, GlobalText[865]);
         RenderCenteredText(570, (int)v1, String);
 
         float v2 = v1 + 10.0f;
         int v0 = m_iMatchTime / 60;
-        wsprintfA(String, " %.2d :", v0);
+        Platform::TextFormat(String, " %.2d :", v0);
         if (m_iMatchTime - 60 * v0 >= 0) {
             CHAR v3[12];
-            wsprintfA(v3, " %.2d", m_iMatchTime - 60 * v0);
+            Platform::TextFormat(v3, " %.2d", m_iMatchTime - 60 * v0);
             strcat(String, v3);
         }
         if (v0 < 5) m_dwTextColor = 0xFF1FFFFFu;     // -14671617
         if (v0 < 15) {
             CHAR v3[12];
             // WorldTime is the engine animation tick (used as 60Hz seconds approx).
-            wsprintfA(v3, ": %.2d", (int)((__int64)WorldTime % 60));
+            Platform::TextFormat(v3, ": %.2d", (int)((__int64)WorldTime % 60));
             strcat(String, v3);
         }
         // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de

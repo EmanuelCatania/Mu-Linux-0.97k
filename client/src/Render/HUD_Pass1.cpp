@@ -193,7 +193,7 @@ void RenderPartyHP_(void)
                 && (int)MouseY < sy + 6)
             {
                 CHAR String[100];
-                wsprintfA(String, "HP : %d0%%", *(unsigned char*)v1);
+                Platform::TextFormat(String, "HP : %d0%%", *(unsigned char*)v1);
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000000u;
                 RenderTipText(sx, sy - 15, String);
@@ -373,7 +373,7 @@ void RenderMainFrameWindow_(void)
     // buffer por separado, así que el efecto es inobservable; lo salteamos.
     if (CharacterAttribute) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, "%d/%d",
+        Platform::TextFormat(Buffer, "%d/%d",
                   *(int*)((BYTE*)CharacterAttribute + 16),
                   *(int*)((BYTE*)CharacterAttribute + 52));
         (void)Buffer;

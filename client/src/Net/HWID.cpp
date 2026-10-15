@@ -11,6 +11,7 @@
 // in the companion client.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Net/HWID.h"
 #include "Net/Net.h"
 #include <rpc.h>
@@ -46,11 +47,11 @@ bool HWID_Init(void)
     DWORD id4 = ((SystemInfo.wProcessorLevel & 0xFFFF)
                  | (SystemInfo.wProcessorRevision << 16)) ^ 0xB542D8E1;
 
-    wsprintfA(s_Hwid, "%08X-%08X-%08X-%08X", id1, id2, id3, id4);
+    Platform::TextFormat(s_Hwid, "%08X-%08X-%08X-%08X", id1, id2, id3, id4);
     s_Ready = true;
 
     char line[128];
-    wsprintfA(line, "HWID_Init: hwid='%s' ok=%d", s_Hwid, (int)ok);
+    Platform::TextFormat(line, "HWID_Init: hwid='%s' ok=%d", s_Hwid, (int)ok);
     DbgLogPublic(line);
     return ok ? true : false;
 }
@@ -103,7 +104,7 @@ void Lang_Send(int langNum)
     memcpy(pkt + 4, &langNum, 4);
 
     char line[64];
-    wsprintfA(line, "Lang_Send: sending F1/04 packet (lang=%d)", langNum);
+    Platform::TextFormat(line, "Lang_Send: sending F1/04 packet (lang=%d)", langNum);
     DbgLogPublic(line);
     gNetwork.Send(pkt, sizeof(pkt));
 }

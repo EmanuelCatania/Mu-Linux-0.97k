@@ -66,7 +66,7 @@ bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int out
     GetLocalTime(&st);
 
     char path[MAX_PATH];
-    wsprintfA(path, "MuClient_%04d-%02d-%02d_%02dh%02dm%02ds.dmp",
+    Platform::TextFormat(path, "MuClient_%04d-%02d-%02d_%02dh%02dm%02ds.dmp",
               st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 
     HANDLE hFile = CreateFileA(path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,

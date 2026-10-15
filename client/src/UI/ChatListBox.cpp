@@ -1183,7 +1183,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
     if (v40[0]) {
         SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
-        wsprintfA(Buffer, "%s: %s", GlobalText[754], v40);
+        Platform::TextFormat(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
         m_dwBackColor = g_bUseChatListBox ? 0u : 0x96000000u;
         EnableAlphaTest(true);
@@ -1266,7 +1266,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
             m_dwTextColor = back;
             m_dwBackColor = t;
         }
-        wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
+        Platform::TextFormat(Buffer, "%s: ", (const char*)(self[25] + 8));
         UI_DrawText(x, y, Buffer, 0, 1, 0);
         if (gFont.GetTextDC())
             gFont.MeasureText(gFont.GetTextDC(), Buffer, Platform::TextLength(Buffer), &sz);

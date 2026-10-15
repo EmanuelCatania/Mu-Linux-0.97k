@@ -33,7 +33,7 @@ int __cdecl LoadTextData_Bin(const char *FileName)
     FILE *fp = Platform::GetFileSystem().Open(FileName, "rb");
     if (!fp) {
         char msg[256];
-        wsprintfA(msg, "OpenTextData: %s file not found", FileName);
+        Platform::TextFormat(msg, "OpenTextData: %s file not found", FileName);
         DbgLogPublic(msg);
         return 0;
     }
@@ -55,7 +55,7 @@ int __cdecl LoadTextData_Bin(const char *FileName)
     size_t got = fread(buf, 1, poolBytes, fp);
     if (got != poolBytes) {
         char msg[256];
-        wsprintfA(msg, "OpenTextData: short read (%u/%u)", (unsigned)got, (unsigned)poolBytes);
+        Platform::TextFormat(msg, "OpenTextData: short read (%u/%u)", (unsigned)got, (unsigned)poolBytes);
         DbgLogPublic(msg);
         free(buf);
         fclose(fp);
@@ -119,12 +119,12 @@ void __cdecl OpenTextData(void)
     // Our buffers s__s_On_0056184c / s__s_Off_00561854 etc are 32 bytes each,
     // so pre-compose once to keep the render code path unchanged.
     if (GlobalText[386][0]) {
-        wsprintfA(s__s_On_0056184c,  "%s  On",  GlobalText[386]);  // Auto-attack
-        wsprintfA(s__s_Off_00561854, "%s  Off", GlobalText[386]);
+        Platform::TextFormat(s__s_On_0056184c,  "%s  On",  GlobalText[386]);  // Auto-attack
+        Platform::TextFormat(s__s_Off_00561854, "%s  Off", GlobalText[386]);
     }
     if (GlobalText[387][0]) {
-        wsprintfA(s__s_On_0056185c,  "%s  On",  GlobalText[387]);  // Whisper sound
-        wsprintfA(s__s_Off_00561864, "%s  Off", GlobalText[387]);
+        Platform::TextFormat(s__s_On_0056185c,  "%s  On",  GlobalText[387]);  // Whisper sound
+        Platform::TextFormat(s__s_Off_00561864, "%s  Off", GlobalText[387]);
     }
 
     // ── Dialog/error message strings (IDA 0x07d4662c .. 0x07d68cf4) ──────────

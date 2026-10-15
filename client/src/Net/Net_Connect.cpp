@@ -7,6 +7,7 @@
 // Initialises the packet hash table for session key tracking.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/Network.h"
 #include "Net/Reconnect.h"
@@ -46,7 +47,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
   {
     char dbg[64];
-    wsprintfA(dbg, "NET: CreateSocket Net_Connect returned %d", iVar2);
+    Platform::TextFormat(dbg, "NET: CreateSocket Net_Connect returned %d", iVar2);
     DbgLogPublic(dbg);
   }
   s_LastConnectOk = iVar2 != 0;

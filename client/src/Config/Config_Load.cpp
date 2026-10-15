@@ -112,7 +112,7 @@ int Config_Load(void)
     if (!Path_GetBasename(exeNameBuf, GetCommandLineA())) {
         Platform::TextCopy(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
     } else if (FileVersion_Get(exeNameBuf, versionWords)) {
-        wsprintfA(ConfigLoginVersion, "%d.%02d", versionWords[0], versionWords[1]);
+        Platform::TextFormat(ConfigLoginVersion, "%d.%02d", versionWords[0], versionWords[1]);
         if (versionWords[2]) {
             const char kLetterBase = 'a';   // IDA: word_559470
             char suffix[2] = { (char)(kLetterBase + versionWords[2] - 1), '\0' };
@@ -376,7 +376,7 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
     MuEmu::InitKeys(ServerConfig::CustomerName, ServerConfig::ServerSerial);
 
     char line[256];
-    wsprintfA(line, "ServerConfig: %s=%s:%u GameServer=%s:%u version='%s'",
+    Platform::TextFormat(line, "ServerConfig: %s=%s:%u GameServer=%s:%u version='%s'",
               gNetwork.HasConnectServer() ? "ConnectServer" : "GameServer(directo)",
               outIP, (unsigned)*outPort,
               ServerConfig::GameServerIP, (unsigned)ServerConfig::GameServerPort, v5);

@@ -38,6 +38,7 @@
 //   DAT_055ca038   — "select" button confirm flag
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
@@ -61,7 +62,7 @@ static void Clk_Watch(const char* label)
         if (s_count < 60) {
             s_count++;
             char dbg[160];
-            wsprintfA(dbg, "CLK-CORRUPT @ %s: 0x%08X (decimal %u)", label, v, v);
+            Platform::TextFormat(dbg, "CLK-CORRUPT @ %s: 0x%08X (decimal %u)", label, v, v);
             DbgLogPublic(dbg);
         }
         DAT_083a4124 = 0;  // clamp — only WndProc-set value 1 is trusted

@@ -60,7 +60,7 @@ int __cdecl RenderMatchScore(void)
 
     glColor3f(0.5f, 1.0f, 0.5f);
     UI_RenderText(229, 70, GlobalText[647], (LPSIZE)0, '\0', 0);
-    wsprintfA(buf, GlobalText[648], (const char *)((int)DAT_07abf5d8 + 0x1c1));
+    Platform::TextFormat(buf, GlobalText[648], (const char *)((int)DAT_07abf5d8 + 0x1c1));
     UI_RenderText(229, 86, buf, (LPSIZE)0, '\0', 0);
 
     // Encabezados 680..684.  El original SALTEA el 681 ("Personaje") y le suma
@@ -88,9 +88,9 @@ int __cdecl RenderMatchScore(void)
             glColor3f(0.9f, 0.9f, 0.0f);
             UI_RenderText(219, 286, GlobalText[685], (LPSIZE)0, '\0', 0);
             y = 302;
-            wsprintfA(buf, "%2d", DAT_083a7c34);
+            Platform::TextFormat(buf, "%2d", DAT_083a7c34);
         } else {
-            wsprintfA(buf, "%2d", i + 1);
+            Platform::TextFormat(buf, "%2d", i + 1);
         }
         m_dwTextColor = 0xFFFFFFFFu;
         UI_RenderText(kCol[0], y, buf, (LPSIZE)0, '\0', 0);
@@ -101,15 +101,15 @@ int __cdecl RenderMatchScore(void)
         UI_RenderText(kCol[1], y, name, (LPSIZE)0, '\0', 0);
 
         m_dwTextColor = 0xFFFFD2D2u;
-        wsprintfA(buf, "%10d", *(const int *)(e + 12));
+        Platform::TextFormat(buf, "%10d", *(const int *)(e + 12));
         UI_RenderText(kCol[2], y, buf, (LPSIZE)0, '\0', 0);
 
         m_dwTextColor = 0xFFD2FFD2u;
-        wsprintfA(buf, "%6d", *(const int *)(e + 16));
+        Platform::TextFormat(buf, "%6d", *(const int *)(e + 16));
         UI_RenderText(kCol[3], y, buf, (LPSIZE)0, '\0', 0);
 
         m_dwTextColor = 0xFFD2D2FFu;
-        wsprintfA(buf, "%6d", *(const int *)(e + 20));
+        Platform::TextFormat(buf, "%6d", *(const int *)(e + 20));
         UI_RenderText(kCol[4], y, buf, (LPSIZE)0, '\0', 0);
 
         y += 16;
@@ -152,7 +152,7 @@ int __cdecl GuildOverview_Render(void)
     // Score total
     char buf[256];
     DAT_00559c78 = 0xffd2ffd2;
-    wsprintfA(buf, &param_2_07d68e20);
+    Platform::TextFormat(buf, &param_2_07d68e20);
     len = Platform::TextLength(buf);
     gFont.MeasureText(hdc, buf, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
@@ -161,7 +161,7 @@ int __cdecl GuildOverview_Render(void)
     int iY = 0x82;
     if (DAT_083a7c30 != 0) {
         DAT_00559c78 = 0xffd2d2ff;
-        wsprintfA(buf, &param_2_07d68f4c, DAT_083a7b0c);
+        Platform::TextFormat(buf, &param_2_07d68f4c, DAT_083a7b0c);
         len = Platform::TextLength(buf);
         gFont.MeasureText(hdc, buf, len, &sz);
         cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
@@ -169,7 +169,7 @@ int __cdecl GuildOverview_Render(void)
         iY = 0x9a;
     }
     DAT_00559c78 = 0xffffd2d2;
-    wsprintfA(buf, &param_2_07d69078, DAT_083a7b04);
+    Platform::TextFormat(buf, &param_2_07d69078, DAT_083a7b04);
     len = Platform::TextLength(buf);
     gFont.MeasureText(hdc, buf, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
@@ -264,7 +264,7 @@ int __cdecl ItemList_Select(int param_1) {
     if (nAnswer > 0) {
         char *dst = &g_lpszDialogAnswer[0][0][0];
         do {
-            wsprintfA(szText, "%d) %s", i + 1, dlg->m_lpszAnswer[i]);
+            Platform::TextFormat(szText, "%d) %s", i + 1, dlg->m_lpszAnswer[i]);
             int nLine = SeparateTextIntoLines(szText, dst, 1, 38);
             if (nLine < 0) g_lpszDialogAnswer[i][nLine][0] = 0;
             ++i;
@@ -273,7 +273,7 @@ int __cdecl ItemList_Select(int param_1) {
         } while (i < nAnswer);
     }
     if (dlg->m_iNumAnswer == 0) {
-        wsprintfA(szText, "%d) %s", i + 1, GlobalText[609]);
+        Platform::TextFormat(szText, "%d) %s", i + 1, GlobalText[609]);
         g_iNumAnswer = 1;
         strcpy(&g_lpszDialogAnswer[0][0][0], szText);
     }

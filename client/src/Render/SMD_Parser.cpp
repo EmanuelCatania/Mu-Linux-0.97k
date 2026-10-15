@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
 #include "Platform/IFileSystem.h"
@@ -117,7 +118,7 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
     if (s == INVALID_SOCKET) {
         char buf[128];
         int err = Platform::GetSocket().LastError();
-        wsprintfA(buf, "Socket error: %d", err);
+        Platform::TextFormat(buf, "Socket error: %d", err);
         CErrorReport_Write(&DAT_055c9bf0, buf);
         MessageBoxA(NULL, buf, "IError", 0);
         return;
@@ -878,7 +879,7 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     uint32_t addr;
     if (!Platform::GetSocket().ResolveIPv4(ip, addr)) {
         char buf[160];
-        wsprintfA(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, Platform::GetSocket().LastError());
+        Platform::TextFormat(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, Platform::GetSocket().LastError());
         CErrorReport_Write(&DAT_055c9bf0, buf);
         return 0;
     }
@@ -907,7 +908,7 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
         int err = Platform::GetSocket().LastError();
         if (err != WSAEWOULDBLOCK) {
             char buf[160];
-            wsprintfA(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
+            Platform::TextFormat(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
             CErrorReport_Write(&DAT_055c9bf0, buf);
             return 0;
         }

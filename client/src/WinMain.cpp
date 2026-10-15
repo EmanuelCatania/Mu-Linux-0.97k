@@ -290,7 +290,7 @@ static void DbgLog(const char* msg)
         sanitized[j] = 0;
     }
 
-    int n = wsprintfA(buf, "[%u] %s\r\n", t, sanitized);
+    int n = Platform::TextFormat(buf, "[%u] %s\r\n", t, sanitized);
     if (n > 0) {
         // Salida a debug.log, con kill-switch si no se puede abrir (bajo debugger se
         // usa OutputDebugStringA, ver abajo).

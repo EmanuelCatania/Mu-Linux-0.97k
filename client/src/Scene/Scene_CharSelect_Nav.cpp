@@ -570,7 +570,7 @@ int __fastcall CWsctlc_nRecv(void *param_1)
     if (iVar2 == -1) {
         int err = Platform::GetSocket().LastError();
         char dbg[96];
-        wsprintfA(dbg, "NET: Net_Recv recv=-1 WSA=%d", err);
+        Platform::TextFormat(dbg, "NET: Net_Recv recv=-1 WSA=%d", err);
         DbgLogPublic(dbg);
         return 1;
     }
@@ -587,7 +587,7 @@ int __fastcall CWsctlc_nRecv(void *param_1)
         int nShow = iVar2 > 24 ? 24 : iVar2;
         char hexbuf[128]; hexbuf[0] = 0;
         for (int hi = 0; hi < nShow; ++hi) {
-            char tmp[8]; wsprintfA(tmp, "%02X ", p[hi]);
+            char tmp[8]; Platform::TextFormat(tmp, "%02X ", p[hi]);
             Platform::TextConcat(hexbuf, sizeof(hexbuf), tmp);
         }
     }
@@ -611,7 +611,7 @@ int __fastcall CWsctlc_nRecv(void *param_1)
             // así que cualquier cosa que no arranque con C1/C2/C3/C4 es un error real
             // de protocolo — se descarta el buffer y se sale.
             char dbg[96];
-            wsprintfA(dbg, "NET: Net_Recv UNKNOWN hdr=%02X at off=%d → discard buffer", hdr, iOff);
+            Platform::TextFormat(dbg, "NET: Net_Recv UNKNOWN hdr=%02X at off=%d → discard buffer", hdr, iOff);
             DbgLogPublic(dbg);
             *(int *)((int)param_1 + 0x4010) = 0;
             return 0;
@@ -1176,7 +1176,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
         int iVar7 = 0;
         do {
             iVar3 = iVar7 + 1;
-            wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3,
+            Platform::TextFormat((LPSTR)local_48, s__d___s_005580b0, iVar3,
                       dlg->m_lpszAnswer[iVar7]);
             int iVar2 = SeparateTextIntoLines(local_48, pbVar6, 1, 0x26);
             if (iVar2 < 0) {
@@ -1191,7 +1191,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
     if (charCount == 0) {
         // Sin respuestas: el binario ofrece la de cerrar, GlobalText[609]
         // (disasm 0x4018B9: `push offset GlobalText+2C9Ah`, y 0x2C9AC/300 = 609).
-        wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
+        Platform::TextFormat((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
         // Copy string to DAT_083a4348
         uint uVar4 = (uint)strlen(local_48) + 1;
         DAT_083a7c0c = 1;

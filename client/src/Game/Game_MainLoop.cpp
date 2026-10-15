@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include "Net/Reconnect.h"
@@ -247,7 +248,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         // apunta a bytes no-inicializados; wsprintfA no trunca.
         char srvTrim[32];  strncpy_s(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
         char chrTrim[32];  strncpy_s(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
-        wsprintfA(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
+        Platform::TextFormat(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
         // Append titleBuf to nameBuf
         int tlen = (int)strlen(titleBuf);
         int nlen = (int)strlen(nameBuf);
