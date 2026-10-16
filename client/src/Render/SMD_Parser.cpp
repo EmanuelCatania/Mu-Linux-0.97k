@@ -18,6 +18,7 @@
 #include "UI/EventTimer.h"
 #include "UI/GoldenArcher.h"
 #include "Item/ChaosMixRates.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -758,10 +759,14 @@ float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float 
 // loop de mallas hace `if (NULL && i != HiddenMesh) goto render;`, con la
 // comparación `i != HiddenMesh` como INT (no float).
 void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
-    // DESVIACION: validar el puntero model (rango user-space 0x100000..0x80000000)
-    // y meshBase antes de usarlo; algunos callers pasaban punteros inválidos.
-    if (model == nullptr) return;
-    if ((uintptr_t)model < 0x100000 || (uintptr_t)model >= 0x80000000) return;
+    // Valida un slot completo del pool real, no una dirección virtual de Windows.
+    // Linux ELF32 puede reservar este pool por encima de 2 GB.
+    const uintptr_t base = static_cast<uintptr_t>(DAT_05828d58);
+    const uintptr_t address = reinterpret_cast<uintptr_t>(model);
+    constexpr size_t stride = 0xbc;
+    if (!base || address < base) return;
+    const uintptr_t offset = address - base;
+    if (offset % stride != 0 || offset / stride >= MODEL_MAX_TOTAL) return;
     if (*(short*)((char*)model + 0x24) == 0) return;
     int meshBase_check = *(int*)((char*)model + 0x28);
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
