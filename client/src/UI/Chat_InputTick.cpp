@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat_InputTick.cpp — Chat_InputTick @ 0x004b14f0
 // Per-frame chat input + hotkey + character-preview tick.
 // Called from Game_MainLoop every frame.
@@ -23,6 +24,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "UI/EventTimer.h"
@@ -63,7 +65,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
         for (int i = 0; i < 400; ++i, candidate += 916) {
             if (candidate[0] && *(short*)(candidate + 2) == 390 &&
                 candidate[132] == 1 &&
-                _stricmp(candidate + 449, requestedName) == 0) {
+                Platform::TextCompareIgnoreCase(candidate + 449, requestedName) == 0) {
                 entity = candidate;
                 break;
             }
@@ -84,7 +86,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
                                       bool plainC1)
 {
     const size_t commandLen = strlen(command);
-    if (!text || _strnicmp(text, command, commandLen) != 0 ||
+    if (!text || Platform::TextCompareIgnoreCaseN(text, command, commandLen) != 0 ||
         (text[commandLen] != '\0' && text[commandLen] != ' '))
         return false;
 
@@ -112,7 +114,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
 // viewport key required by MuEmu's PMSG_PARTY_REQUEST_RECV.
 static bool Chat_TrySendPartyRequest(const char* text)
 {
-    if (!text || _stricmp(text, "/party") != 0)
+    if (!text || Platform::TextCompareIgnoreCase(text, "/party") != 0)
         return false;
 
     char* const hero = DAT_07abf5d8;
@@ -553,7 +555,7 @@ void __cdecl Chat_InputTick(void)
             // ── 6. Numeros 1-9 / 0: elegir la skill asignada ─────────────────
             // IDA Chat_InputTick L2611-2627:
             //   if (!InputEnable && !TabInputEnable &&
-            //       (unsigned __int16)GetAsyncKeyState(18) >> 8 != 0x80) {
+            //       (std::uint16_t)GetAsyncKeyState(18) >> 8 != 0x80) {
             //       for (n = 1; n <= 9; n++)
             //           if (GetAsyncKeyState(n + 48) >> 8) sub_4B0E80(n);
             //       if (GetAsyncKeyState(48) >> 8)         sub_4B0E80(0);

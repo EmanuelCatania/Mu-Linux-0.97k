@@ -147,7 +147,7 @@ int __cdecl GuildOverview_Render(void)
 
     glColor3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffffffff;
-    SelectObject(hdc, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+    gFont.SelectFont(hdc, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
 
     // Score total
     char buf[256];

@@ -364,6 +364,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         unsigned int uVar16 = 0;
         unsigned char* pbStack_26c = nullptr;
         unsigned char* pbStack_270 = pbVar1;
+        unsigned char* pbVar12 = nullptr; // Visible también desde la salida temprana de GetIndex.
 
         // -- GetIndex loop --
         if (DAT_055c9bd4 != 0)
@@ -462,7 +463,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             // followed by a GetIndex + ref-count increment on local_23c / local_238
 
             // Simplified: increment ref-count slot [1] and conditionally obfuscate *pbVar1
-            unsigned char* pbVar12 = nullptr;
+            pbVar12 = nullptr;
             uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
             uVar16 = 0;
 

@@ -3,6 +3,7 @@
 // Helpers de despacho de skills de wizard/elf.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
@@ -290,7 +291,7 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
     BYTE* const entry = (BYTE*)SkillAttribute.Raw + iType * 0x28;
 
     if (lpszName != NULL) {
-        strncpy_s(lpszName, 256, (const char*)entry, 31);
+        Platform::TextCopySecure(lpszName, 256, (const char*)entry, 31);
         lpszName[31] = '\0';
     }
     if (piMana != NULL) {

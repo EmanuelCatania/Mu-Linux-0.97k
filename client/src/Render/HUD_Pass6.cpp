@@ -1,3 +1,4 @@
+#include <cstdint>
 // HUD_Pass6.cpp — última tanda de paneles del HUD.
 //
 // Each function in this file is a real port from IDA (1:1 structure) — the
@@ -29,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include <algorithm>
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
@@ -39,7 +41,7 @@
 #include "structs.h"
 #include "functions.h"
 #include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
-#include <gl/GL.h>
+#include <GL/gl.h>
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
 
@@ -330,7 +332,7 @@ extern "C" void __cdecl RenderServerDivision(void)
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Title block — 8 lines from GlobalText[462..469].
     int v0 = (int)((double)InventoryStartX + 95.0);
@@ -340,7 +342,7 @@ extern "C" void __cdecl RenderServerDivision(void)
         y += 20.0f;
     }
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     float xa = (float)((double)InventoryStartX + 25.0);
     if (DAT_07eaa131 != 0) {
         m_dwTextColor = 0xFFFF55FFu;   // -16738604
@@ -351,7 +353,7 @@ extern "C" void __cdecl RenderServerDivision(void)
     }
     RenderText((int)(xa + 19.0f), 245, GlobalText[447], 0, 0, 0);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = 0xFFD0D8FFu;       // -2955521
     float xc = (float)((double)InventoryStartX + 35.0);
     GL_DrawTexture(240, xc, 350.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
@@ -395,7 +397,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     RenderItemsBoxes(fPosX, fPosY, (DWORD)(uintptr_t)OffsetInventoryItems, 8, 8);
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;       // -15461356
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText(InventoryStartX + 35, InventoryStartY + 12, GlobalText[223],
@@ -436,7 +438,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
         if ((double)MouseX >= xa && (double)MouseX < xa + 24.0 &&
             (double)MouseY >= ya && (double)MouseY < ya + 24.0)
         {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)xa, (int)ya - 13, GlobalText[225]);
@@ -455,7 +457,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
         if ((double)MouseX >= xb && (double)MouseX < xb + 24.0 &&
             (double)MouseY >= yb && (double)MouseY < yb + 24.0)
         {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)xb, (int)yb - 12, GlobalText[233]);
@@ -515,7 +517,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // branch above is conditional on a live CharactersClient index.
             glColor3f(1.0f, 1.0f, 1.0f);
             EnableAlphaTest(true);
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             // Name string is at v38 - 24 (from IDA: v43 = v67 - 24).
             RenderText((int)v64, (int)v60 + 2, (char*)((BYTE*)slotBase + i * 36 - 24), 0, 0, 0);
             v60 += 19.0f;
@@ -545,13 +547,13 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(a1 + 35, a2 + 12, GlobalText[190],
                120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;       // -1644826
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     if (PartyNumber == 0) {
         for (int i = 0; i < 7; ++i) {
@@ -592,11 +594,11 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
             Platform::TextFormat(Buffer, "%s", (char*)v4);   // name[10] en +0
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;
             m_dwTextColor = 0xFFD2E6FFu;
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             Platform::TextFormat(Buffer, "%s", className);
             RenderText(a1 + 40, a2 + 60 + 35 * row, Buffer, 0, 0, 0);
             Platform::TextFormat(Buffer, "%d,%d", v4[13], v4[14]);
@@ -642,7 +644,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         if (MouseLButton) {
             GL_DrawTexture(281, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         }
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText((int)v59, (int)v63 - 13, GlobalText[221]);
@@ -721,9 +723,9 @@ extern "C" void SetGuildNoticeText(const char* text)
         return;
     }
     if (GlobalText[483] && GlobalText[483][0]) {
-        _snprintf_s(g_GuildNotice[0], sizeof(g_GuildNotice[0]), _TRUNCATE, GlobalText[483], text);
+        Platform::TextFormatTruncated(g_GuildNotice[0], sizeof(g_GuildNotice[0]), Platform::TruncateText, GlobalText[483], text);
     } else {
-        _snprintf_s(g_GuildNotice[0], sizeof(g_GuildNotice[0]), _TRUNCATE, "%s", text);
+        Platform::TextFormatTruncated(g_GuildNotice[0], sizeof(g_GuildNotice[0]), Platform::TruncateText, "%s", text);
     }
     g_GuildNotice[1][0] = 0;
 }
@@ -772,7 +774,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     GL_DrawTexture(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
     GL_DrawTexture(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
     EnableAlphaTest(true);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Title: name + class.  Class string formula from IDA:
     //   GlobalText[4*(CA[11]>>3)+20][300*(CA[11]&7)]
@@ -834,7 +836,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
                          75.0f, 21.0f, 0.0f, 0.0f, 0.5859375f, 0.65625f, 1, 1);
         }
     }
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // ── Level (label) ───────────────────────────────────────────────────────
     // GlobalText[200] format = "Nivel: %d / %d" (CharacterLevel /
@@ -850,7 +852,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
     // ── Experience (cur / max) ──────────────────────────────────────────────
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[201], *(int*)(CA + 16), *(int*)(CA + 52));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
@@ -863,7 +865,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // the truncated `if (LevelUpPoint > 0)` block in IDA RenderCharacterInfoWindow.
     unsigned short levelUpPoint = *(unsigned short*)(CA + 84);
     if (levelUpPoint > 0) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwBackColor = 0xFF1E6EC8u;     // (30, 110, 200) blue band
         m_dwTextColor = 0xFF000000u;     // black text
         char ptsBuf[64];
@@ -884,7 +886,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         Platform::TextFormat(Buffer, GlobalText[199],
                   *(short*)(CA + 46), *(short*)(CA + 48));
     }
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFF9664u;
     RenderText(iPosX + 24, iPosY + 95, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
@@ -921,13 +923,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     };
 
     // ── Strength row + Damage range ─────────────────────────────────────────
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(0, 0);  // Strength = slot 0
     sprintf(Buffer, GlobalText[202], (unsigned)*(unsigned short*)(CA + 20));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF66CCDFu;   // -9977889
     RenderText(iPosX + 14, iPosY + 120, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     // Compute damage range:  pick weapon slots, magic-class bonus, set bonus.
     // pWeapon = CharacterMachine + 536 (left-hand slot).
@@ -998,13 +1000,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // delta; we leave as default.
 
     // ── Agility row + Defense + Defense Rate ────────────────────────────────
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(1, 1);  // Agility = slot 1
     sprintf(Buffer, GlobalText[205], (unsigned)*(unsigned short*)(CA + 22));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
     RenderText(iPosX + 14, iPosY + 180, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     bool agiBonus = false;
     if (agiBonus) {
@@ -1036,14 +1038,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 24, iPosY + 215, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Vitality row + HP ───────────────────────────────────────────────────
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(2, 2);  // Vitality = slot 2
     sprintf(Buffer, GlobalText[210], (unsigned)*(unsigned short*)(CA + 24));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
     RenderText(iPosX + 14, iPosY + 240, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[211],                 // 32 bits (CHeroVitals)
             (unsigned)gHeroVitals.GetCurrent(VITAL_LIFE),
             (unsigned)gHeroVitals.GetMax(VITAL_LIFE));
@@ -1052,14 +1054,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Energy row + Mana ───────────────────────────────────────────────────
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     draw_plus_button(3, 3);  // Energy = slot 3
     sprintf(Buffer, GlobalText[212], (unsigned)*(unsigned short*)(CA + 26));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
     RenderText(iPosX + 14, iPosY + 300, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[213],
             (unsigned)gHeroVitals.GetCurrent(VITAL_MANA),
             (unsigned)gHeroVitals.GetMax(VITAL_MANA));
@@ -1089,7 +1091,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             double pct  = CalcDurabilityPercent(pWeaponLeft->Durability, magicDur,
                                                 pWeaponLeft->Level, pWeaponLeft->Option1);
             sprintf(Buffer, GlobalText[215], piMin, piMax,
-                    (unsigned int)(__int64)((mult - pct * mult) * (double)piMax));
+                    (unsigned int)(std::int64_t)((mult - pct * mult) * (double)piMax));
         } else {
             sprintf(Buffer, GlobalText[216], piMin, piMax);
         }
@@ -1132,7 +1134,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Hero+474 holds the player's guild-mark index (-1 if no guild).
     short guildIdx = *(short*)((char*)Hero + 474);
@@ -1146,7 +1148,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
 
     if (g_nGuildMemberCount == 0) {
         // 3-line "no guild" message.
@@ -1210,7 +1212,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(iPosX + 35, iPosY + 12, GlobalText[180],
                120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
@@ -1221,7 +1223,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
         GL_DrawTexture(271, v19, v17, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         int v3 = (int)v17 + 2;
         int v4 = (int)v19;
         RenderText(v4 - 38, v3, GlobalText[182], 0, 0, 0);
@@ -1257,7 +1259,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         RenderText(iPosX + 50, iPosY + 230, GlobalText[183], 0, 0, 0);
         RenderText(iPosX + 50, iPosY + 245, GlobalText[184], 0, 0, 0);
 
@@ -1297,7 +1299,7 @@ extern "C" void __cdecl RenderTrade(void)
     RenderInventoryInterface(TradeInventoryStartX, TradeInventoryStartY, 1);
 
     // Trader name title
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(TradeInventoryStartX + 35, TradeInventoryStartY + 12,
@@ -1338,11 +1340,11 @@ extern "C" void __cdecl RenderTrade(void)
     glColor3f(1, 1, 1);
     GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
 
-    if (overZen) { SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
+    if (overZen) { gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
     if (MouseX >= confirmX && MouseX < confirmX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
-        { SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)confirmX, (int)buttonsY - 13, GlobalText[228], 0, 0, 0); }
+        { gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)confirmX, (int)buttonsY - 13, GlobalText[228], 0, 0, 0); }
     if (MouseX >= cancelX && MouseX < cancelX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
-        { SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)cancelX, (int)buttonsY - 13, GlobalText[229], 0, 0, 0); }
+        { gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)cancelX, (int)buttonsY - 13, GlobalText[229], 0, 0, 0); }
 
     // IDA: RenderTrade busca DAT_00559F54 en la misma tabla de 80 bytes que Guild.
     const int remoteGuildRow = GuildMark_FindRecordByKey((int)TradeRemoteGuildKey);
@@ -1361,25 +1363,25 @@ extern "C" void __cdecl RenderTrade(void)
         const int x = TradeInventoryStartX + 50;
         GL_DrawTexture(271, (float)x, (float)goldY[i], 113, 18, 0, 0, .8828125f, .5625f, 1, 1);
         char amount[32];
-        if (gold[i] < 1000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u", (unsigned)gold[i]);
-        else if (gold[i] < 1000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
-        else if (gold[i] < 1000000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
-        else _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        if (gold[i] < 1000) Platform::TextFormatTruncated(amount, sizeof(amount), Platform::TruncateText, "%u", (unsigned)gold[i]);
+        else if (gold[i] < 1000000) Platform::TextFormatTruncated(amount, sizeof(amount), Platform::TruncateText, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
+        else if (gold[i] < 1000000000) Platform::TextFormatTruncated(amount, sizeof(amount), Platform::TruncateText, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        else Platform::TextFormatTruncated(amount, sizeof(amount), Platform::TruncateText, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF96DCFFu;
         RenderText(x - 30, goldY[i] + 2, GlobalText[224], 0, 0, 0);
         RenderText(x + 10, goldY[i] + 2, amount, 0, 0, 0);
     }
     // El port no expone g_hFontBig; g_hFontBold conserva el contrato de texto legible.
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFFFFFD2u;
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
-               Hero ? (const char*)((BYTE*)Hero + 449) : "", 0, 0, 0);
+               const_cast<char*>(Hero ? (const char*)((BYTE*)Hero + 449) : ""), 0, 0, 0);
     const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
                           TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
     char levelText[64];
-    _snprintf_s(levelText, sizeof(levelText), _TRUNCATE, GlobalText[369], levelBand);
+    Platform::TextFormatTruncated(levelText, sizeof(levelText), Platform::TruncateText, GlobalText[369], levelBand);
     m_dwTextColor = TradeRemoteLevel < 50 ? 0xFF0000FFu : TradeRemoteLevel < 100 ? 0xFF1FFFFFu :
                     TradeRemoteLevel < 200 ? 0xFF18C900u : TradeRemoteLevel < 300 ? 0xFFFFFFD2u : 0xFFFF9900u;
     RenderText(TradeInventoryStartX + 140, TradeInventoryStartY + 45, GlobalText[368], 0, 0, 0);
@@ -1401,7 +1403,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
@@ -1422,7 +1424,7 @@ extern "C" void __cdecl RenderShopInterface(void)
                    (double)MouseY >= by && (double)MouseY < by + 24.0;
         };
         auto tip = [](float bx, float by, int text) {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             RenderTipText((int)bx, (int)by - 12, GlobalText[text]);
         };
         float bx = (float)((double)dword_7EAA0C8 + 25.0);
@@ -1468,7 +1470,7 @@ extern "C" void __cdecl RenderShopInterface(void)
             else                        Platform::TextFormat(Buffer, "%d,%03d,%03d,%03d", cost / 1000000000,
                                                   cost % 1000000000 / 1000000, cost % 1000000 / 1000,
                                                   cost % 1000);
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             const int ty = (int)by + 3;
             RenderText((int)bx - 35, ty, GlobalText[239], 0, 0, 0);
             if (cost < 10000000)
@@ -1505,10 +1507,10 @@ static int ChaosMixLegacyValue()
 
 static void ChaosMixFormatZen(char* out, size_t outSize, int value)
 {
-    if (value < 1000) _snprintf_s(out, outSize, _TRUNCATE, "%d", value);
-    else if (value < 1000000) _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d", value / 1000, value % 1000);
-    else if (value < 1000000000) _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d,%03d", value / 1000000, (value / 1000) % 1000, value % 1000);
-    else _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d,%03d,%03d", value / 1000000000, (value / 1000000) % 1000, (value / 1000) % 1000, value % 1000);
+    if (value < 1000) Platform::TextFormatTruncated(out, outSize, Platform::TruncateText, "%d", value);
+    else if (value < 1000000) Platform::TextFormatTruncated(out, outSize, Platform::TruncateText, "%d,%03d", value / 1000, value % 1000);
+    else if (value < 1000000000) Platform::TextFormatTruncated(out, outSize, Platform::TruncateText, "%d,%03d,%03d", value / 1000000, (value / 1000) % 1000, value % 1000);
+    else Platform::TextFormatTruncated(out, outSize, Platform::TruncateText, "%d,%03d,%03d,%03d", value / 1000000000, (value / 1000000) % 1000, (value / 1000) % 1000, value % 1000);
 }
 
 extern "C" void __cdecl RenderChaosMix(void)
@@ -1527,7 +1529,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     // IDA 004F27F0: la elección local del modal 143 cambia el encabezado y
@@ -1547,7 +1549,7 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = 0; money = 0;
     } else if (mixType == 2 && DAT_07eaa168 > 0) {
         static const int devilMoney[] = { 10000, 10000, 20000, 40000, 70000 };
-        const int i = min((int)DAT_07eaa168 - 1, 4);
+        const int i = (std::min)((int)DAT_07eaa168 - 1, 4);
         rate = (DAT_07eaa168 == 1) ? 60 : rate;
         money = devilMoney[i];
     } else if (mixType == 3) {
@@ -1562,7 +1564,7 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = DAT_07eaa174; money = 5000000;
     } else if (mixType == 8 && DAT_07eaa168 > 0) {
         static const int bloodMoney[] = { 50000, 8000, 20000, 40000, 80000, 120000, 160000 };
-        rate = 80; money = bloodMoney[min((int)DAT_07eaa168 - 1, 6)];
+        rate = 80; money = bloodMoney[(std::min)((int)DAT_07eaa168 - 1, 6)];
     }
 
     // DESVIACION: las recetas consultadas por 0x88 muestran pendiente sin respuesta;
@@ -1573,14 +1575,14 @@ extern "C" void __cdecl RenderChaosMix(void)
     const int recipeText = mixType == 11 ? 7 : (mixType < 0 ? 0 : mixType);
     m_dwTextColor = recipeText ? 0xFF30F0FFu : 0xFF2FF0FFu;
     m_dwBackColor = 0x80303030u;
-    _snprintf_s(text, sizeof(text), _TRUNCATE, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
+    Platform::TextFormatTruncated(text, sizeof(text), Platform::TruncateText, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 50, text, 0, 0, 0);
     m_dwTextColor = 0xFFFFFFD2u;
-    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosRatePending));
-    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
+    if (pendingRate) Platform::TextCopySecure(text, gClientText.Get(ClientTextId::ChaosRatePending));
+    else Platform::TextFormatTruncated(text, sizeof(text), Platform::TruncateText, GlobalText[584], rate);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 70, text, 0, 0, 0);
-    if (pendingRate) strcpy_s(text, gClientText.Get(ClientTextId::ChaosCostPending));
-    else _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
+    if (pendingRate) Platform::TextCopySecure(text, gClientText.Get(ClientTextId::ChaosCostPending));
+    else Platform::TextFormatTruncated(text, sizeof(text), Platform::TruncateText, GlobalText[585], moneyText);
     RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 90, text, 0, 0, 0);
 
     m_dwTextColor = 0xFF1414FFu;
@@ -1607,7 +1609,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     GL_DrawTexture((hover && MouseLButton) ? 293 : 292, x, y, 44.0f, 32.0f,
                    0.0f, 0.0f, 0.6875f, 1.0f, 1, 1);
     if (hover) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0x80303030u;
         RenderTipText((int)x, (int)y - 13, GlobalText[591]);
@@ -1642,7 +1644,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     // IDA: Platform::TextFormat(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
     // con glColor amarillo cuando el baúl está bloqueado por password.
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     const int lock = (DAT_00559f5f != 0) ? 1 : 0;
@@ -1657,7 +1659,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     float x = (float)((double)dword_7EAA0C8 + 50.0);
     float y = (float)((double)dword_7EAA0CC + 352.7);
     GL_DrawTexture(271, x, y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // WarehouseMoney = CharacterMachine[+0x54C]; (el inventario usa +0x548).
     int whZen = CharacterMachine ? *(int*)((BYTE*)CharacterMachine + 1356) : 0;
@@ -1689,7 +1691,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     // a decenas (>=100) o centenas (>=1000), mínimo 1.
     m_dwBackColor = 0xFF282828u;
     m_dwTextColor = 0xFF0000FFu;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     const int taxX = dword_7EAA0C8 + 50;    // 310
     const int taxY = dword_7EAA0CC + 374;   // 374
     RenderText(taxX, taxY, GlobalText[266], 0, 0, 0);
@@ -1745,7 +1747,7 @@ extern "C" void __cdecl RenderWarehouse(void)
                 GL_DrawTexture(kTexPressed[v], bx, by, 24.0f, 24.0f,
                              0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             }
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             RenderTipText((int)bx, (int)by - 13, GlobalText[kBtnTip[i]]);
         }
         if (i == 2 && DAT_07eaa14c) {
@@ -1789,7 +1791,7 @@ extern "C" void __cdecl RenderEventWindow(void)
     const float height = bloodCastle ? 33.0f : 35.0f;
     const int   count  = bloodCastle ? 6 : 4;
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     const WORD charLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
     // v46 = fila + ((Hero[444] & 7) == 3 ? 6 : 0): el Magic Gladiator usa el
@@ -1820,9 +1822,9 @@ extern "C" void __cdecl RenderEventWindow(void)
 
         char label[96];
         const bool withMax = (maxLevel <= 10000);
-        if (withMax) sprintf_s(label, bloodCastle ? GlobalText[847] : GlobalText[645],
+        if (withMax) Platform::TextFormatSecure(label, bloodCastle ? GlobalText[847] : GlobalText[645],
                                row + 1, minLevel, maxLevel);
-        else         sprintf_s(label, bloodCastle ? GlobalText[848] : GlobalText[646],
+        else         Platform::TextFormatSecure(label, bloodCastle ? GlobalText[848] : GlobalText[646],
                                row + 1, minLevel);
         RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
                    (bloodCastle ? 120 : 116) * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
@@ -1836,7 +1838,7 @@ extern "C" void __cdecl RenderEventWindow(void)
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
                GlobalText[bloodCastle ? 846 : 39], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     EnableAlphaTest(1);

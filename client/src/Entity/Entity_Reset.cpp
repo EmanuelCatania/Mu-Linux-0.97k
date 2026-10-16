@@ -1,3 +1,4 @@
+#include <cstdint>
 // Entity_Reset.cpp
 // ItemObjectAttribute @ 0x00502BA0 — Entity_Reset
 // Initializes/resets an effect-entity slot with default field values,
@@ -107,7 +108,7 @@ switchD_00502c73_caseD_1af:
     case 0x1d5:
       goto switchD_00502c73_caseD_1d5;
     case 0x1f9:
-      uVar5 = (longlong)DAT_05826e08;   // IDA ItemObjectAttribute case 505: (__int64)WorldTime % 2000
+      uVar5 = (longlong)DAT_05826e08;   // IDA ItemObjectAttribute case 505: (std::int64_t)WorldTime % 2000
       uVar5 = (ulonglong)(uint)((int)uVar5 >> 0x1f) << 0x20 | uVar5 & 0xffffffff;
       *(float *)(param_1 + 0x70) = (float)(int)((longlong)uVar5 % 2000) * _DAT_0055291c;
       return (int)((longlong)uVar5 / 2000);

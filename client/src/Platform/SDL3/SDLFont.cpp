@@ -235,6 +235,16 @@ const std::unordered_map<std::string, std::string>& InstalledFonts()
 }
 }
 
+std::vector<std::string> SDLFont::InstalledFamilies()
+{
+    std::vector<std::string> names;
+    for (const auto& font : InstalledFonts())
+        names.push_back(font.first.substr(0, font.first.rfind('/')));
+    std::sort(names.begin(), names.end());
+    names.erase(std::unique(names.begin(), names.end()), names.end());
+    return names;
+}
+
 uint32_t SDLFont::DecodeByte(uint8_t byte)
 {
     static const uint16_t extended[32] = {
@@ -266,14 +276,10 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
     const bool fallback = !loaded;
     if (fallback) {
         const char* root = assetRoot && *assetRoot ? assetRoot : std::getenv("MU_ASSET_ROOT");
-        std::filesystem::path base;
-        if (root && *root) base = root;
-        else {
-            const char* executable = SDL_GetBasePath();
-            base = std::filesystem::path(executable ? executable : ".") / "assets";
-        }
+        // Igual que el resto de los assets: relativo a la carpeta del cliente.
+        std::filesystem::path base = root && *root ? std::filesystem::path(root) : std::filesystem::path();
         const char* style = bold ? (italic ? "BoldItalic" : "Bold") : (italic ? "Italic" : "Regular");
-        path = (base / "fonts/LiberationSans" / (std::string("LiberationSans-") + style + ".ttf")).string();
+        path = (base / "Data/Font" / (std::string("LiberationSans-") + style + ".ttf")).generic_string();
         bytes = ReadFont(path);
         loaded = Load(std::move(bytes), height, error);
     }

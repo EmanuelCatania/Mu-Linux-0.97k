@@ -5,6 +5,7 @@ namespace {
 class SDLGLContext final : public IGLContext {
     SDL_GLContext context = nullptr;
 public:
+    void* CurrentIdentity() const override { return SDL_GL_GetCurrentContext(); }
     bool Initialize() override {
         if (context) return true;
         context = SDL_GL_CreateContext(SDLWindow());

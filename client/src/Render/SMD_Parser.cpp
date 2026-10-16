@@ -18,6 +18,7 @@
 #include "UI/EventTimer.h"
 #include "UI/GoldenArcher.h"
 #include "Item/ChaosMixRates.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -116,7 +117,7 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
     SOCKET s = Platform::GetSocket().CreateTcp(0);
     *(SOCKET*)((char*)ctx + 8) = s;
     g_bGameServerConnected = 0;
-    if (s == INVALID_SOCKET) {
+    if (s == Platform::InvalidSocket) {
         char buf[128];
         int err = Platform::GetSocket().LastError();
         Platform::TextFormat(buf, "Socket error: %d", err);
@@ -758,10 +759,14 @@ float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float 
 // loop de mallas hace `if (NULL && i != HiddenMesh) goto render;`, con la
 // comparación `i != HiddenMesh` como INT (no float).
 void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
-    // DESVIACION: validar el puntero model (rango user-space 0x100000..0x80000000)
-    // y meshBase antes de usarlo; algunos callers pasaban punteros inválidos.
-    if (model == nullptr) return;
-    if ((uintptr_t)model < 0x100000 || (uintptr_t)model >= 0x80000000) return;
+    // Valida un slot completo del pool real, no una dirección virtual de Windows.
+    // Linux ELF32 puede reservar este pool por encima de 2 GB.
+    const uintptr_t base = static_cast<uintptr_t>(DAT_05828d58);
+    const uintptr_t address = reinterpret_cast<uintptr_t>(model);
+    constexpr size_t stride = 0xbc;
+    if (!base || address < base) return;
+    const uintptr_t offset = address - base;
+    if (offset % stride != 0 || offset / stride >= MODEL_MAX_TOTAL) return;
     if (*(short*)((char*)model + 0x24) == 0) return;
     int meshBase_check = *(int*)((char*)model + 0x28);
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
@@ -887,9 +892,9 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
 
     // 2. Ensure socket exists (CWsctlc_Create already created one into ctx+8)
     SOCKET s = *(SOCKET*)((char*)ctx + 8);
-    if (s == INVALID_SOCKET || s == 0) {
-        s = Platform::GetSocket().CreateTcp(IPPROTO_TCP);
-        if (s == INVALID_SOCKET) {
+    if (s == Platform::InvalidSocket || s == 0) {
+        s = Platform::GetSocket().CreateTcp(Platform::TcpProtocol);
+        if (s == Platform::InvalidSocket) {
             CErrorReport_Write(&DAT_055c9bf0, "socket() failed");
             return 0;
         }
@@ -901,13 +906,13 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     //    to non-blocking; we keep the ordering the binary uses (connect first, then async).
     HWND hWnd = *(HWND*)ctx;
     if (hWnd != nullptr) {
-        Platform::GetSocket().NotifyWindow(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CLOSE);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
+        Platform::GetSocket().NotifyWindow(s, hWnd, wMsg, Platform::SocketReadEvent | Platform::SocketWriteEvent | Platform::SocketCloseEvent);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
     }
 
     int r = Platform::GetSocket().ConnectIPv4(s, addr, port);
-    if (r == SOCKET_ERROR) {
+    if (r == Platform::SocketError) {
         int err = Platform::GetSocket().LastError();
-        if (err != WSAEWOULDBLOCK) {
+        if (err != Platform::SocketWouldBlock) {
             char buf[160];
             Platform::TextFormat(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
             CErrorReport_Write(&DAT_055c9bf0, buf);

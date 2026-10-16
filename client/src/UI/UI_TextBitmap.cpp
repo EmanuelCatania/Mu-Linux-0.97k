@@ -1,3 +1,4 @@
+#include <cstdint>
 // UI_TextBitmap.cpp
 
 #include "stdafx.h"
@@ -39,7 +40,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         }
 
         // Set text color to white for main text
-        SetTextColor(gFont.GetTextDC(), 0xffffff);
+        gFont.SetMaskColor(0xffffff);
 
         // Output main text at (prefixWidth + p6, 0)
         int mainLen = Platform::TextLength(p3);
@@ -146,8 +147,8 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     0xDE1u,
     0,
     Bitmaps[0].Components,
-    (__int64)Bitmaps[0].Width,
-    (__int64)Bitmaps[0].Height,
+    (std::int64_t)Bitmaps[0].Width,
+    (std::int64_t)Bitmaps[0].Height,
     0,
     0x1908u,
     0x1401u,

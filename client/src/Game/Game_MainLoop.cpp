@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -217,8 +218,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         {
             static int s_dirReady = -1;   // -1 sin probar, 1 lista, 0 fallback
             if (s_dirReady < 0) {
-                s_dirReady = (CreateDirectoryA("Screenshots", NULL) != 0 ||
-                              GetLastError() == ERROR_ALREADY_EXISTS) ? 1 : 0;
+                s_dirReady = Platform::GetFileSystem().EnsureDirectory("Screenshots") ? 1 : 0;
             }
             if (s_dirReady == 1) shotDir = "Screenshots/";
         }
@@ -246,8 +246,8 @@ void __cdecl Game_MainLoop(HDC param_1)
         const char* charName   = DAT_07abf5d8 ? (DAT_07abf5d8 + 0x1c1) : "";
         // Copia defensiva con tope: %s puede ser largo si DAT_07abf5d8+0x1c1
         // apunta a bytes no-inicializados; wsprintfA no trunca.
-        char srvTrim[32];  strncpy_s(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
-        char chrTrim[32];  strncpy_s(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
+        char srvTrim[32];  Platform::TextCopySecure(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
+        char chrTrim[32];  Platform::TextCopySecure(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
         Platform::TextFormat(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
         // Append titleBuf to nameBuf
         int tlen = (int)strlen(titleBuf);

@@ -27,7 +27,6 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for functions defined later in this batch
-static void __cdecl FUN_00405320_impl(int param_1);
 
 // ── 1-byte: nop ──────────────────────────────────────────────────────────────
 
@@ -263,11 +262,11 @@ int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
 int __fastcall Stats_CalcBase(int a1) {
     // Guarda de a1: abajo se lee `*(short*)(a1 + 536)` /
     // `(a1 + 604)` (slots de arma) sin chequear.
-    if (a1 == 0 || (uintptr_t)a1 < 0x100000 || (uintptr_t)a1 >= 0x80000000) return 0;
+    if (a1 == 0 || (uintptr_t)a1 < 0x100000) return 0;
 
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
-    if ((uintptr_t)ca < 0x100000 || (uintptr_t)ca >= 0x80000000) return 0;
+    if ((uintptr_t)ca < 0x100000) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
 
     // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese
@@ -467,11 +466,7 @@ void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
 
 // ── 22-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00405320 @ 0x00405320 (22 bytes) — close handle + field init
-static void __cdecl FUN_00405320_impl(int param_1) {
-    CloseHandle(*(HANDLE *)(param_1 + 4));
-    FUN_00405290_impl(param_1);
-}
+
 
 // FUN_00406d20 @ 0x00406D20 (22 bytes) — initialize hash table fields
 void __fastcall FUN_00406d20(int param_1) {

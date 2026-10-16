@@ -48,7 +48,7 @@ static bool Chat_TryAssignMacro(const char* text)
         "/trade", "/party", "/pt", "/guild", "/guildwar", "/battlesoccer"
     };
     for (int i = 0; i < (int)(sizeof(kBlocked) / sizeof(kBlocked[0])); ++i) {
-        if (_stricmp(body, kBlocked[i]) == 0)
+        if (Platform::TextCompareIgnoreCase(body, kBlocked[i]) == 0)
             return false;
     }
 

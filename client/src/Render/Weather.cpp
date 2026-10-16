@@ -1,3 +1,4 @@
+#include <cstdint>
 // Weather.cpp
 // IDA: Weather_Update (0x00500E80)
 //
@@ -288,7 +289,7 @@ LAB_00501064:
     }
 
     // Get terrain tile at player position
-    // IDA: Terrain_Load((__int64)(Hero.x * 0.01), (__int64)(Hero.y * 0.01)).
+    // IDA: Terrain_Load((std::int64_t)(Hero.x * 0.01), (std::int64_t)(Hero.y * 0.01)).
     uVar8  = Terrain_GetTileIndex((uint)(long long)(*(float *)(DAT_07abf5d8 + 0x10) * 0.01f),
                           (uint)(long long)(*(float *)(DAT_07abf5d8 + 0x14) * 0.01f));
     iVar14 = 0;
@@ -519,7 +520,7 @@ LAB_00501734:
                     // Cloud life-cycle: rising(0) → hovering(1) → descending(2) → fading(3)
                     if ((&DAT_0839bdb4)[iVar2] == '\0') {
                         // Phase 0: move upward, check distance
-                        lVar24 = (long long)DAT_05826e08;   // IDA: (__int64)WorldTime
+                        lVar24 = (long long)DAT_05826e08;   // IDA: (std::int64_t)WorldTime
                         uVar8  = (uint)lVar24 & 0x80001fff;
                         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffe000) + 1;
                         if (((int)uVar8 < 0x800) &&

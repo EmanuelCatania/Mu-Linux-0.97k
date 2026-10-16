@@ -481,6 +481,7 @@
 //   Particle_StopLoop       @ 0x00460d20
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "Monster/Monster.h"
@@ -1064,7 +1065,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(float*)(c + 12) = (custom->Scale > 0.0f) ? custom->Scale : 1.0f;
         const char* name = getMonsterName(Type);
         if (!name || !name[0]) name = custom->Name;
-        strncpy_s((char*)(uintptr_t)(c + 0x1c1), 32, name, _TRUNCATE);
+        Platform::TextCopySecure((char*)(uintptr_t)(c + 0x1c1), 32, name, Platform::TruncateText);
         *(unsigned char*)(c + 747) = (unsigned char)Type;
         *(unsigned short*)(c + 8) = 0;
         *(unsigned short*)(c + 784) = (unsigned short)HeroIndex;

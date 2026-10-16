@@ -1,3 +1,4 @@
+#include <cstdint>
 // UI_SkillHotkeys.cpp
 
 #include "stdafx.h"
@@ -13,7 +14,7 @@
 // IDA: FindHotKey @ 0x004B1170 — int __cdecl FindHotKey(int Skill)
 //   v17 = 0;                                        // <- valor por defecto
 //   v4  = 0;
-//   while ( *(unsigned __int8 *)(CharacterAttribute + v4 + 87) != Skill )
+//   while ( *(std::uint8_t *)(CharacterAttribute + v4 + 87) != Skill )
 //     if ( ++v4 >= 20 ) goto LABEL_22;
 //   v17 = v4;
 // LABEL_22:

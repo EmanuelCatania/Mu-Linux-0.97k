@@ -2,6 +2,10 @@
 
 #include "stdafx.h"
 #include <algorithm>
+#ifndef _WIN32
+#include <strings.h>
+#define _stricmp strcasecmp
+#endif
 #include "Core/Font.h"
 #include "Config/UserSettings.h"
 #ifdef MU_SDL_FONTS
@@ -12,10 +16,42 @@ namespace { Platform::SDLFont portableFonts[MAX_FONT_TYPES]; }
 
 CFont gFont;
 
+HGDIOBJ CFont::SelectFont(HDC dc, HGDIOBJ font)
+{
+#ifdef _WIN32
+    return ::SelectObject(dc, font);
+#else
+    if (dc != m_hTextDC) return nullptr;
+    for (int i = 0; i < MAX_FONT_TYPES; ++i) {
+        if (font == m_Fonts[i]) {
+            auto previous = m_Fonts[m_SelectedFont];
+            m_SelectedFont = i;
+            return previous;
+        }
+    }
+    return nullptr;
+#endif
+}
+HFONT CFont::CurrentFont(HDC dc) const
+{
+#ifdef _WIN32
+    return (HFONT)::GetCurrentObject(dc, OBJ_FONT);
+#else
+    return dc == m_hTextDC ? m_Fonts[m_SelectedFont] : nullptr;
+#endif
+}
+
+
 void CFont::Create(DWORD windowWidth)
 {
     const UserFontSettings& cfg = gUserSettings.GetFont();
-
+#ifndef _WIN32
+    m_Height = cfg.present ? cfg.height : windowWidth == 800 ? 13 : windowWidth == 1024 ? 14 : windowWidth >= 1280 ? 15 : 12;
+    CreatePortableFonts(windowWidth);
+    for (int i = 0; i < MAX_FONT_TYPES; ++i)
+        m_Fonts[i] = reinterpret_cast<HFONT>(&portableFonts[i]);
+    m_SelectedFont = FONT_NORMAL;
+#else
     if (cfg.present) {
         // DESVIACION (DLL, Font.cpp): la fuente sale de Config.ini [Font]. El
         // alto es fijo (no depende de la resolución), con tope 25; la fuente
@@ -59,6 +95,7 @@ void CFont::Create(DWORD windowWidth)
     // IDA WinMain 0x41F151: el doble de la base (m_Height - 1), bold.
     m_Fonts[FONT_BIG]    = CreateFontA(2 * (fontSize - 1), 0, 0, 0, 700, 0, 0, 0, charSet, 0, 0, 0, 0, "Arial");
     CreatePortableFonts(windowWidth);
+#endif
 }
 
 void CFont::CreateTextSurface(HDC hdc, LONG width, LONG height)
@@ -68,11 +105,15 @@ void CFont::CreateTextSurface(HDC hdc, LONG width, LONG height)
 #ifdef MU_SDL_FONTS
     // El DC conserva temporalmente la selección HFONT de los callers Windows.
     // FreeType escribe en memoria propia, nunca en una superficie GDI.
+#ifdef _WIN32
     m_hTextDC = CreateCompatibleDC(hdc);
+#else
+    m_hTextDC = reinterpret_cast<HDC>(this);
+#endif
     m_Mask.assign(size_t((width * 3 + 3) & ~3) * height, 0);
     m_pTextBits = m_Mask.data();
     return;
-#endif
+#else
     BITMAPINFO bmi = {};
     bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
     bmi.bmiHeader.biWidth       = width;
@@ -85,31 +126,41 @@ void CFont::CreateTextSurface(HDC hdc, LONG width, LONG height)
     m_hTextDC     = CreateCompatibleDC(hdc);
     SelectObject(m_hTextDC, m_hTextBitmap);
     SetBkMode(m_hTextDC, TRANSPARENT);
+#endif
 }
 
 void CFont::Reload(DWORD windowWidth)
 {
     for (HFONT& font : m_Fonts) {
+#ifdef _WIN32
         if (font) DeleteObject(font);
+#endif
         font = nullptr;
     }
     Create(windowWidth);
-    if (m_hTextDC) SelectObject(m_hTextDC, m_Fonts[FONT_NORMAL]);
+    if (m_hTextDC) SelectFont(m_hTextDC, m_Fonts[FONT_NORMAL]);
 }
 
 void CFont::Release()
 {
     for (HFONT& font : m_Fonts) {
+#ifdef _WIN32
         if (font) DeleteObject(font);
+#endif
         font = nullptr;
     }
+#ifdef _WIN32
     if (m_hTextDC)     DeleteDC(m_hTextDC);
     if (m_hTextBitmap) DeleteObject(m_hTextBitmap);
+#else
+    m_Mask.clear();
+#endif
     m_hTextDC     = NULL;
     m_hTextBitmap = NULL;
     m_pTextBits   = nullptr;
 }
 
+#ifdef _WIN32
 namespace {
 int CALLBACK CollectFace(const LOGFONTA* lf, const TEXTMETRICA*, DWORD, LPARAM param)
 {
@@ -120,17 +171,23 @@ int CALLBACK CollectFace(const LOGFONTA* lf, const TEXTMETRICA*, DWORD, LPARAM p
 }
 }
 
+#endif
 int CFont::GetFaceCount()
 {
     if (m_Faces.empty()) {
 #ifdef MU_SDL_FONTS
         m_Faces.emplace_back("Liberation Sans");
 #endif
+#ifdef _WIN32
         LOGFONTA lf = {};
         lf.lfCharSet = DEFAULT_CHARSET;
         HDC dc = GetDC(NULL);
         EnumFontFamiliesExA(dc, &lf, CollectFace, (LPARAM)&m_Faces, 0);
         ReleaseDC(NULL, dc);
+#else
+        auto installed = Platform::SDLFont::InstalledFamilies();
+        m_Faces.insert(m_Faces.end(), installed.begin(), installed.end());
+#endif
         std::sort(m_Faces.begin(), m_Faces.end(), [](const std::string& a, const std::string& b) {
             return _stricmp(a.c_str(), b.c_str()) < 0;
         });
@@ -173,7 +230,7 @@ void CFont::CreatePortableFonts(DWORD windowWidth)
 
 int CFont::SelectedFont(HDC dc) const
 {
-    const auto selected = GetCurrentObject(dc, OBJ_FONT);
+    const auto selected = CurrentFont(dc);
     for (int i = 0; i < MAX_FONT_TYPES; ++i) if (selected == m_Fonts[i]) return i;
     return FONT_NORMAL;
 }
@@ -217,6 +274,13 @@ BOOL CFont::TextMetrics(HDC dc, TEXTMETRICA* metrics)
     return GetTextMetricsA(dc, metrics);
 #endif
 }
+void CFont::SetMaskColor(DWORD color)
+{
+    m_MaskColor = color;
+#ifdef _WIN32
+    SetTextColor(m_hTextDC, color);
+#endif
+}
 void CFont::BeginTextMask()
 {
 #ifdef MU_SDL_FONTS
@@ -239,7 +303,9 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
                 const int dx = x + glyph.left + col;
                 if (dx < 0 || dx >= m_SurfaceWidth || !glyph.coverage[size_t(row) * glyph.width + col]) continue;
                 auto* pixel = static_cast<unsigned char*>(m_pTextBits) + dy * stride + dx * 3;
-                pixel[0] = pixel[1] = pixel[2] = 255;
+                pixel[0] = (m_MaskColor >> 16) & 255;
+                pixel[1] = (m_MaskColor >> 8) & 255;
+                pixel[2] = m_MaskColor & 255;
             }
         }
         x += glyph.advance;

@@ -88,6 +88,7 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
 #include "Texture.h"
@@ -432,7 +433,7 @@ int Texture_Load(const char* path, int id,
     if (hasDataPrefix) {
         strncpy(full, path, sizeof(full) - 8);
     } else {
-        _snprintf_s(full, _TRUNCATE, "Data\\%s", path);
+        Platform::TextFormatTruncated(full, Platform::TruncateText, "Data\\%s", path);
     }
     full[sizeof(full) - 8] = '\0';
 
@@ -451,9 +452,9 @@ int Texture_Load(const char* path, int id,
 
     if (!ok && show_err) {
         char msg[600];
-        _snprintf_s(msg, _TRUNCATE, "File not found:\n%s", full);
+        Platform::TextFormatTruncated(msg, Platform::TruncateText, "File not found:\n%s", full);
         Platform::GetWindow().ShowError(msg, "IError", true, false);
-        if (gWindow.GetHwnd()) SendMessageA(gWindow.GetHwnd(), WM_CLOSE, 0, 0);
+        if (Platform::GetWindow().IsCreated()) Platform::GetWindow().CloseWindow();
     }
     return ok;
 }
@@ -894,7 +895,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         static int s_tgafail = 0;
         if (s_tgafail < 60) { s_tgafail++;
             char m[256];
-            _snprintf_s(m, sizeof(m), _TRUNCATE,
+            Platform::TextFormatTruncated(m, sizeof(m), Platform::TruncateText,
                 "TGA_Fail id=0x%x (rejected: w=%d h=%d depth=0x%x)",
                 uiTextureIndex, width, height, depth);
             DbgLogPublic(m);

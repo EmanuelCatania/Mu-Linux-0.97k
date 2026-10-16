@@ -27,10 +27,11 @@ public:
     SDLFont& operator=(const SDLFont&) = delete;
     // Altura positiva de celda, como CreateFont; los bytes pertenecen al objeto.
     bool Load(std::vector<uint8_t> bytes, int height, std::string& error);
-    // MU_ASSET_ROOT o <directorio del ejecutable>/assets; permite una raÃ­z explÃ­cita.
+    // Respaldo en Data/Font, relativo a la carpeta del cliente o a MU_ASSET_ROOT.
     bool LoadFamily(const char* family, bool bold, bool italic, int height,
                     int width, bool underline, bool strikeOut, std::string& error,
                     const char* assetRoot = nullptr);
+    static std::vector<std::string> InstalledFamilies();
     static uint32_t DecodeByte(uint8_t byte); // recursos del cliente: Windows-1252
     const FontGlyph& Glyph(uint32_t codepoint);
     FontMetrics Metrics() const;

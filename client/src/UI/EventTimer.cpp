@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
@@ -119,22 +120,22 @@ DWORD CEventTimer::RemainingSeconds(const Proto::PMSG_EVENT_TIME& event) const
 void CEventTimer::FormatTime(const Proto::PMSG_EVENT_TIME& event, char* text, size_t capacity) const
 {
     switch (event.status) {
-    case Blank: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventDisabled)); break;
-    case Open: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventOpen)); break;
-    case Start: strcpy_s(text, capacity, gClientText.Get(ClientTextId::EventStarted)); break;
+    case Blank: Platform::TextCopySecure(text, capacity, gClientText.Get(ClientTextId::EventDisabled)); break;
+    case Open: Platform::TextCopySecure(text, capacity, gClientText.Get(ClientTextId::EventOpen)); break;
+    case Start: Platform::TextCopySecure(text, capacity, gClientText.Get(ClientTextId::EventStarted)); break;
     case Stand: {
         // El estado lo decide el server: al llegar a cero se muestra 00:00:00
         // hasta el próximo F3/E6, sin adelantar el cambio a abierto.
         const DWORD seconds = RemainingSeconds(event);
         if (seconds >= 86400)
-            sprintf_s(text, capacity, gClientText.Get(ClientTextId::EventDays),
+            Platform::TextFormatSecure(text, capacity, gClientText.Get(ClientTextId::EventDays),
                       (unsigned long)(seconds / 86400));
         else
-            sprintf_s(text, capacity, "%02lu:%02lu:%02lu", (unsigned long)(seconds / 3600),
+            Platform::TextFormatSecure(text, capacity, "%02lu:%02lu:%02lu", (unsigned long)(seconds / 3600),
                       (unsigned long)((seconds / 60) % 60), (unsigned long)(seconds % 60));
         break;
     }
-    default: strcpy_s(text, capacity, "--"); break;
+    default: Platform::TextCopySecure(text, capacity, "--"); break;
     }
 }
 
@@ -200,13 +201,13 @@ void CEventTimer::DrawRow(int index, int x, int y, int width) const
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(x, y + Layout::NameY, const_cast<char*>(event->name),
                PhysicalWidth(Layout::BoxWidth - 8), 1, nullptr);
     char time[32];
     FormatTime(*event, time, sizeof(time));
     m_dwTextColor = TimeColor(*event, RemainingSeconds(*event));
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     (void)width;  // el tiempo va centrado bajo el recuadro, no en toda la fila
     RenderText(x, y + Layout::TimeY, time, PhysicalWidth(Layout::BoxWidth - 8), 1, nullptr);
 }
@@ -224,7 +225,7 @@ void CEventTimer::RenderPanel()
 
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     RenderText(Layout::TitleX, Layout::TitleY,
                const_cast<char*>(gClientText.Get(ClientTextId::EventTitle)),
                PhysicalWidth(Layout::TitleWidth), 1, (SIZE*)3);
@@ -234,7 +235,7 @@ void CEventTimer::RenderPanel()
     } else {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         RenderText(Layout::MessageX, Layout::MessageY, const_cast<char*>(gClientText.Get(
             m_Received ? ClientTextId::EventEmpty : ClientTextId::EventWaiting)), 0, 0, nullptr);
     }
@@ -245,12 +246,12 @@ void CEventTimer::RenderPanel()
     GL_DrawTexture(0x118, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     GL_DrawTexture(280, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText(Layout::CloseX, Layout::CloseY - 13, GlobalText[247]);
     }
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = color;
     m_dwBackColor = back;
     GL_ResetState();

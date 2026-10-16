@@ -36,12 +36,18 @@
 #include "Platform/IFileSystem.h"
 #include "Item/ItemDefines.h"
 #include "resource.h"
+#ifdef _WIN32
 #include "Debug/MiniDump.h"
+#else
+#include "Platform/SDL3/SDLPlatform.h"
+#include "Net/Ping.h"
+#include "Game/FrameLimiter.h"
+#endif
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
 #include "Sound/SoundManager.h"
 #include "Config/UserSettings.h"
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(_WIN32)
 #  define _CRTDBG_MAP_ALLOC
 #  include <crtdbg.h>
 #endif
@@ -85,7 +91,11 @@ void OpenGL_Release(void)
     // no hace nada si g_EnableSound es FALSE.
     FreeDirectSound();
     gWindow.ReleaseOpenGL();
+#ifdef _WIN32
     ShowCursor(1);
+#else
+    SDL_ShowCursor();
+#endif
 }
 
 // ── GameGuard_Init @ 0x00406F20 (15 líneas, completo) ────────────────────────
@@ -268,7 +278,7 @@ static void DbgLog(const char* msg)
     // Sin guard IsDebuggerPresent acá: el volcado binario de MuEmu::DumpHex (que
     // hacía crashear VS) está bajo #ifdef MUEMU_TRACE. El sanitizado a ASCII
     // printable de abajo queda como segunda red de seguridad.
-    static __declspec(thread) bool s_inside = false;
+    static thread_local bool s_inside = false;
     if (s_inside) return;
     s_inside = true;
 
@@ -295,6 +305,7 @@ static void DbgLog(const char* msg)
     if (n > 0) {
         // Salida a debug.log, con kill-switch si no se puede abrir (bajo debugger se
         // usa OutputDebugStringA, ver abajo).
+#ifdef _WIN32
         static HANDLE h = INVALID_HANDLE_VALUE;
         if (h == INVALID_HANDLE_VALUE) {
             h = CreateFileA("debug.log", GENERIC_WRITE, FILE_SHARE_READ,
@@ -312,6 +323,11 @@ static void DbgLog(const char* msg)
                 s_killed = 1;
             }
         }
+#else
+        static FILE* log = std::fopen("debug.log", "ab");
+        if (!log || std::fwrite(buf, 1, n, log) != static_cast<size_t>(n)) s_killed = 1;
+        if (log) std::fflush(log);
+#endif
     }
     s_inside = false;
 }
@@ -326,10 +342,10 @@ extern "C" void DbgLogPublic(const char* msg) { DbgLog(msg); }
 // tag apunta al intervalo [prev_tag, this_tag].
 extern "C" void ChkHeapPublic(const char* tag)
 {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(_WIN32)
     if (!_CrtCheckMemory()) {
         char b[192];
-        _snprintf_s(b, sizeof(b), _TRUNCATE, "HEAP_CORRUPT at %s", tag ? tag : "(null)");
+        Platform::TextFormatTruncated(b, sizeof(b), Platform::TruncateText, "HEAP_CORRUPT at %s", tag ? tag : "(null)");
         DbgLog(b);
         DebugBreak();
     }
@@ -347,6 +363,7 @@ extern "C" void  HUD_InitInventoryPools(void);        // src/Render/HUD_Pass3.cp
 
 // Silent CRT invalid_parameter handler — sin esto, snprintf con format
 // inválido (NULL fmt, etc.) recursa infinitamente vía ucrtbased y crashea.
+#ifdef _WIN32
 static void __cdecl SilentInvalidParameterHandler(
     const wchar_t*, const wchar_t*, const wchar_t*, unsigned, uintptr_t)
 {
@@ -371,7 +388,7 @@ static int __cdecl HeapAssertReportHook(int reportType, char* msg, int* retVal)
         }
         buf[n] = 0;
         char full[680];
-        _snprintf_s(full, sizeof(full), _TRUNCATE,
+        Platform::TextFormatTruncated(full, sizeof(full), Platform::TruncateText,
             "*** CRT_HEAP type=%d: %s", reportType, buf);
         DbgLog(full);
     }
@@ -379,8 +396,32 @@ static int __cdecl HeapAssertReportHook(int reportType, char* msg, int* retVal)
     return TRUE;               // we handled it
 }
 
+#endif
+
+#ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
+#else
+void Client_SocketEvent(uint16_t event, uint16_t error) { gNetwork.OnSocketEvent(event, error); }
+void Client_ClosePortable() {
+    gPing.Reset(); gFrameLimiter.Shutdown();
+    DAT_055ca018 = 1;
+    CWsctlc_Close((int)(uintptr_t)SocketClient);
+    for (int buffer = 0; buffer < 420; ++buffer) Sound_ReleaseBuffer(buffer);
+    OpenGL_Release();
+}
+int main(int, char**)
+#endif
 {
+#ifndef _WIN32
+    HINSTANCE hInst = nullptr;
+    char commandLine[] = "";
+    char* lpCmdLine = commandLine;
+    const char* clientRoot = std::getenv("MU_CLIENT_ROOT");
+    if (clientRoot && *clientRoot && !Platform::GetFileSystem().SetWorkingDirectory(clientRoot)) {
+        std::fprintf(stderr, "No se pudo abrir MU_CLIENT_ROOT: %s\n", clientRoot);
+        return 1;
+    }
+#endif
     // CSQuest: en el binario el objeto lo construye `unknown_libname_1`
     // (0x401010), que esta en la tabla de inicializadores estaticos del CRT y
     // corre ANTES de WinMain.  Aca hay que llamarlo explicitamente: sin esto
@@ -402,12 +443,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             }
         }
     }
+#ifdef _WIN32
     _set_invalid_parameter_handler(SilentInvalidParameterHandler);
+#endif
     if (!Platform::GetDiagnostics().Install(DbgLogPublic)) {
         Platform::GetWindow().ShowError("No se pudo inicializar el diagnóstico de crashes", "Mu Online", false, true);
         return 1;
     }
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(_WIN32)
     // DIAG: CRT debug heap con guard bytes. La corrupción se detecta en el
     // siguiente alloc/free que toque el bloque dañado — rápido sin O(n^2) de
     // CHECK_ALWAYS. Si el detector no lo atrapa a tiempo, subir a
@@ -476,7 +519,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // 11: ventana y contexto OpenGL. El tamaño ya lo fijó Config_Load
     // (CWindow arranca en 640x480 si no lo hubiera hecho).
-    if (!gWindow.Create(hInst, WndProc)) { DbgLog("Window_Create FAILED"); return 0; }
+#ifdef _WIN32
+    const WNDPROC procedure = WndProc;
+#else
+    const WNDPROC procedure = nullptr;
+#endif
+    if (!gWindow.Create(hInst, procedure)) { DbgLog("Window_Create FAILED"); return 0; }
     if (!gWindow.InitOpenGL()) { DbgLog("OpenGL_Init FAILED"); return 0; }
 
     // 14: GameGuard — HWND casteado a CHAR*
@@ -536,7 +584,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     }
 
     // 17: GameGuard watchdog timer (20s period)
+#ifdef _WIN32
     SetTimer(gWindow.GetHwnd(), 1000, 20000, NULL);
+#endif
 
     // 18: seed RNG
     srand((unsigned int)time(NULL));
@@ -647,11 +697,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // ── MESSAGE LOOP ─────────────────────────────────────────────────────────
     // PeekMessage (non-blocking): cuando no hay mensajes → Scene_Dispatch
+#ifdef _WIN32
     MSG msg = {};
+#endif
     for (;;)
     {
         Platform::GetWindow().ServiceEvents();
         if (Platform::GetWindow().CloseRequested()) break;
+#ifdef _WIN32
         if (!Platform::GetWindow().UsesPlatformPump() && PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE))
         {
             if (!GetMessageA(&msg, NULL, 0, 0))
@@ -667,6 +720,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             Platform::DispatchNativeMessage(msg);
         }
         else
+#endif
         {
             // ── CLICK-FLAG CLAMP (global) ───────────────────────────────────
             // DAT_083a4124 (MouseLButtonPush) sólo debe valer {0,1} (lo
@@ -697,7 +751,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     Game_DestroyWindow();
     Platform::GetWindow().Shutdown();
 
+#ifdef _WIN32
     return (int)msg.wParam;
+#else
+    return 0;
+#endif
 }
 
 

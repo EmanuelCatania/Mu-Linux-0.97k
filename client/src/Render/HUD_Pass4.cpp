@@ -1,3 +1,4 @@
+#include <cstdint>
 // HUD_Pass4.cpp — fourth and final batch of small/medium HUD ports.
 //
 // Functions ported (1:1 from IDA):
@@ -26,7 +27,7 @@
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 extern "C" {
     void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY);
@@ -248,12 +249,12 @@ void Render_MapLoadText_(void)
             CHAR String[256];
             int gtIdx = (m_byMatchType == 5) ? 866 : 864;
             Platform::TextFormat(String, GlobalText[gtIdx], m_iKillMonster, m_iMaxKillMonster);
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             m_dwTextColor = 0xFFFF7700u;
             RenderCenteredText(570, 345, String);
             v1 = 357.0f;
         }
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         CHAR String[256];
         Platform::TextFormat(String, GlobalText[865]);
         RenderCenteredText(570, (int)v1, String);
@@ -270,13 +271,13 @@ void Render_MapLoadText_(void)
         if (v0 < 15) {
             CHAR v3[12];
             // WorldTime is the engine animation tick (used as 60Hz seconds approx).
-            Platform::TextFormat(v3, ": %.2d", (int)((__int64)WorldTime % 60));
+            Platform::TextFormat(v3, ": %.2d", (int)((std::int64_t)WorldTime % 60));
             strcat(String, v3);
         }
         // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de
         // altura.  El port ponia bold porque `g_hFontBig` era un alias local que
         // apuntaba justamente a la bold; ahora sale de globals.h.
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         RenderCenteredText(570, (int)v2, String);
     }
 }
@@ -348,7 +349,7 @@ void Render_QuickButtons_(void)
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)iconX, (int)iconY - 12, GlobalText[233]);
@@ -364,7 +365,7 @@ void Render_QuickButtons_(void)
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)iconX, (int)iconY - 13, GlobalText[225]);
@@ -495,7 +496,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             float green = (float)((double)(rand() % 4 + 4) * 0.1);
                             float red   = (float)((double)(rand() % 6 + 6) * 0.1);
                             glColor3f(red, green, 0.2f);
-                            int seed = (int)((double)((__int64)WorldTime % 100) * 20.0);
+                            int seed = (int)((double)((std::int64_t)WorldTime % 100) * 20.0);
                             float v20 = (float)(rand() % 10 + 5);
                             float v28 = (float)(rand() % 20) + sxa;
                             float sxb = (float)(rand() % 20) + sy;
@@ -535,7 +536,7 @@ check_quest_overlay:
                 float y_pos = v36 + 5.0f;
                 GL_DrawTexture(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
                 glColor3f(1.0f, 1.0f, 1.0f);
-                SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+                gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000052u;
                 int boxW = (int)((double)gWindow.GetWidth() * sxe * 0.0015625);
@@ -641,7 +642,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
 {
     SIZE sz = {0,0};
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     int n = Platform::TextLength(Text);
     gFont.MeasureText(gFont.GetTextDC(), Text, n, &sz);
     int prevBlend = AlphaBlendType;
@@ -758,7 +759,7 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     } else {
         sz.cx = 0;
     }
-    SetTextColor(gFont.GetTextDC(), RGB(0xFF, 0xFF, 0xFF));
+    gFont.SetMaskColor(0xffffff);
     gFont.DrawTextMask(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
 
     if (!a8) a8 = v10;

@@ -1,6 +1,8 @@
+#include <cstdint>
 // Chat_Bubbles.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -106,7 +108,7 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
     // Guard: entity must be alive and visible
     // IDA CreateChat @0x481BA0:
     //     if ( *(_BYTE *)Owner && *(_BYTE *)(Owner + 352) )
-    //     v5 = *(unsigned __int8 *)(Owner + 746);          // PK
+    //     v5 = *(std::uint8_t *)(Owner + 746);          // PK
     //     if ( *(_BYTE *)(Owner + 132) == 4 ) v5 = 0;      // Kind
     if (*(BYTE *)entity == 0) return;              // Object.Live   → +0
     if (*(BYTE *)(entity + 352) == 0) return;      // Object.Visible → +352 (0x160)
@@ -156,7 +158,7 @@ found_new:
             *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);  // GuildTeam
             // IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ".
             // El prefijo completo determina el corte de color en sub_47F360.
-            sprintf_s(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
+            Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
         }
     }
 
@@ -189,7 +191,7 @@ found_existing:
         } else {
             *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);
             // IDA: mismo prefijo al actualizar una etiqueta existente.
-            sprintf_s(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
+            Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
         }
     }
 

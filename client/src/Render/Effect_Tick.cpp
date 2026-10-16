@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/Text.h"
-extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
+extern "C" void DbgLogPublic(const char* msg);
 
 
 // MoveEffects — Effect_TickAll

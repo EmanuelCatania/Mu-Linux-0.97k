@@ -1,15 +1,18 @@
+#include <cstdint>
 #pragma once
 // types.h — Primitive type aliases for the Mu Online 0.97k client reconstruction.
 // Names follow the 5.2 source conventions (vec3_t, BYTE, etc.) where possible.
 // The Ghidra decompiler pseudo-types are mapped to Win32/standard equivalents.
-// Windows.h is assumed to already be included via stdafx.h.
+// Los aliases tienen el mismo ancho en MSVC y GCC x86.
+using byte = std::uint8_t;
+static_assert(sizeof(byte) == 1, "byte debe ocupar un octeto");
 
 // ── Ghidra pseudo-types ───────────────────────────────────────────────────────
 typedef unsigned char   undefined;    // generic 1-byte unknown (bare Ghidra type)
 typedef unsigned char   undefined1;   // 1-byte unknown
 typedef unsigned short  undefined2;   // 2-byte unknown
 typedef unsigned int    undefined4;   // 4-byte unknown
-typedef unsigned __int64 undefined8;  // 8-byte unknown
+typedef std::uint64_t undefined8;  // 8-byte unknown
 
 typedef long double     float10;      // x87 80-bit extended precision (fsin etc.)
 typedef long long       longlong;
@@ -32,8 +35,8 @@ typedef int code(...);
 #define CONCAT21(a,b)  ((unsigned int)(((unsigned short)(a) << 8) | (unsigned char)(b)))
 #define CONCAT22(a,b)  ((unsigned int)(((unsigned short)(a) << 16) | (unsigned short)(b)))
 #define CONCAT31(a,b)  ((unsigned int)(((unsigned int)(a) << 8) | (unsigned char)(b)))
-#define CONCAT41(a,b)  ((unsigned __int64)(((unsigned int)(a) << 8) | (unsigned char)(b)))
-#define CONCAT44(a,b)  ((__int64)(((unsigned __int64)(unsigned int)(a) << 32) | (unsigned int)(b)))
+#define CONCAT41(a,b)  ((std::uint64_t)(((unsigned int)(a) << 8) | (unsigned char)(b)))
+#define CONCAT44(a,b)  ((std::int64_t)(((std::uint64_t)(unsigned int)(a) << 32) | (unsigned int)(b)))
 
 // int3: Ghidra 3-byte int — treated as 32-bit here (x86 has no 3-byte registers)
 typedef unsigned int int3;

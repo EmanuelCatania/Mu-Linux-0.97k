@@ -1,3 +1,4 @@
+#include <cstdint>
 // Scene_CharSelect_Nav.cpp
 //
 // Char-select slot navigation helpers:
@@ -545,7 +546,7 @@ int __fastcall CWsctlc_FDWriteSend(int param_1)
     int& pending = *(int*)(param_1 + 0x200c);
     while (pending > 0) {
         const int sent = send(*(SOCKET*)(param_1 + 8), buffer, pending, 0);
-        if (sent == -1 && Platform::GetSocket().LastError() == WSAEWOULDBLOCK) return 1;
+        if (sent == -1 && Platform::GetSocket().LastError() == Platform::SocketWouldBlock) return 1;
         if (sent <= 0) { CWsctlc_Close(param_1); return 0; }
         if (*(int*)(param_1 + 0x4014) != 0) FUN_0043de60();
         pending -= sent;
@@ -793,7 +794,7 @@ void __cdecl SkillAttribute_LoadNames(const char *param_1)
     int iVar2;
     while ((iVar2 = GetToken()) != 2) {
         if (iVar2 == 1) {
-            long long lVar7 = (longlong)ParserTokenNumber;   // IDA: (__int64)TokenNumber  (ParserTokenNumber)
+            long long lVar7 = (longlong)ParserTokenNumber;   // IDA: (std::int64_t)TokenNumber  (ParserTokenNumber)
             GetToken();
             // Copia TokenString a la entrada de SkillAttribute en el índice lVar7
             size_t uLen = strlen(TokenString) + 1;
@@ -1313,7 +1314,7 @@ void __fastcall FUN_00401af0(void *param_1)
         uint ok = CSQuest_CheckRequestCondition(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
-            // IDA L145: `v65 = *(__int16 *)(v1 + 116864);` — es un SHORT.
+            // IDA L145: `v65 = *(std::int16_t *)(v1 + 116864);` — es un SHORT.
             // Leerlo como int se lleva ademas el byte de estado (0x1c882),
             // que CheckRequestCondition acaba de poner en 5, asi que el
             // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
@@ -1596,6 +1597,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
 
     // Player path
     SetAttackSpeed();  // SetAttackSpeed
+    { // El salto de salida no entra en el ámbito de estas variables.
     short v2 = *(short*)(c + 696);  // Helper.Type
 
     // Helper path (818/819 = pet/fairy ranged)
@@ -1692,6 +1694,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         }
     }
 
+    }
 LABEL_85:
     if (*(float*)(c + 264) == 0.0f) {
         if (*(short*)(c + 2) == 390) {

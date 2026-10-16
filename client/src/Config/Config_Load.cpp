@@ -43,6 +43,7 @@
 //     SetByte(0x0041EFB5, 0xEB);  // Crack gg init
 
 #include "stdafx.h"
+#include "Platform/ClientSettings.h"
 #include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Config/Config.h"
@@ -67,8 +68,7 @@ char  ConfigLoginVersion[12] = {}; // IDA: m_ExeVersion — config.ini [LOGIN] V
 // Forward declarations
 // Path_GetBasename  @ 0x00412BE0 — extracts filename from a full path/cmdline string
 // FileVersion_Get   @ 0x00414500 — reads PE version info from a file (4 shorts out)
-static int  Path_GetBasename(char* outBuf, char* fullPath);
-static int  FileVersion_Get(LPCSTR filename, unsigned short outVer[4]);
+
 
 int Config_Load(void)
 {
@@ -85,7 +85,7 @@ int Config_Load(void)
         configPath[pathLen]     = '\\';
         configPath[pathLen + 1] = '\0';
     }
-    strcat_s(configPath, MAX_PATH, "config.ini");
+    Platform::TextConcatSecure(configPath, MAX_PATH, "config.ini");
 
     // --- 2/3. Version que muestra el pie del login (m_ExeVersion) ---
     //
@@ -107,54 +107,27 @@ int Config_Load(void)
     char m_Version[12] = {};   // IDA: m_Version (solo lo usa este bloque)
     Platform::GetFileSystem().ReadIniString("LOGIN", "Version", "", m_Version, 11, configPath);
 
-    char  exeNameBuf[MAX_PATH] = {};
     unsigned short versionWords[4] = {};
-    if (!Path_GetBasename(exeNameBuf, GetCommandLineA())) {
-        Platform::TextCopy(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
-    } else if (FileVersion_Get(exeNameBuf, versionWords)) {
+    if (Platform::GetClientSettings().ExecutableVersion(versionWords)) {
         Platform::TextFormat(ConfigLoginVersion, "%d.%02d", versionWords[0], versionWords[1]);
         if (versionWords[2]) {
             const char kLetterBase = 'a';   // IDA: word_559470
             char suffix[2] = { (char)(kLetterBase + versionWords[2] - 1), '\0' };
-            strcat_s(ConfigLoginVersion, sizeof(ConfigLoginVersion), suffix);
+            Platform::TextConcatSecure(ConfigLoginVersion, sizeof(ConfigLoginVersion), suffix);
         }
     } else {
         Platform::TextCopy(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
     }
 
     // --- 4. Registry: HKCU\SOFTWARE\Webzen\Mu\Config ---
-    HKEY hKey = NULL;
-    if (RegCreateKeyExA(HKEY_CURRENT_USER,
-        "SOFTWARE\\Webzen\\Mu\\Config",
-        0, NULL, 0, KEY_ALL_ACCESS, NULL, &hKey, NULL) == ERROR_SUCCESS)
-    {
-        // "ID" value — 11-byte username buffer -> lpData_055c9ba0 (m_ID)
-        // Ghidra @ 0x0041e272: RegQueryValueExA(hKey, lpValueName_00559450, NULL, NULL,
-        //                       (LPBYTE)0x055c9ba0, &DStack_330=0xb)
-        // Usado luego por MoveLogInScene para prefilear DAT_07db8710 (InputText[0]=username).
-        DWORD dwSize = 11;
-        RegQueryValueExA(hKey, "ID", NULL, NULL, (LPBYTE)lpData_055c9ba0, &dwSize);
-
-        dwSize = 4;
-        if (RegQueryValueExA(hKey, "SoundOnOff", NULL, NULL, (LPBYTE)&g_SoundOn, &dwSize) != ERROR_SUCCESS)
-            g_SoundOn = 1;
-
-        dwSize = 4;
-        DWORD musicEnabled = gSound.GetMusicEnabled();
-        if (RegQueryValueExA(hKey, "MusicOnOff", NULL, NULL, (LPBYTE)&musicEnabled, &dwSize) != ERROR_SUCCESS)
-            musicEnabled = 0;
-        gSound.SetMusicEnabled(musicEnabled);
-
-        dwSize = 4;
-        if (RegQueryValueExA(hKey, "Resolution", NULL, NULL, (LPBYTE)&g_Resolution, &dwSize) != ERROR_SUCCESS)
-            g_Resolution = 0;
-
-        dwSize = 4;
-        if (RegQueryValueExA(hKey, "TextOut", NULL, NULL, (LPBYTE)&g_TextOut, &dwSize) != ERROR_SUCCESS)
-            g_TextOut = 0;
-
-        RegCloseKey(hKey);
-    }
+    Platform::InitialClientSettings initial;
+    std::memcpy(initial.username, lpData_055c9ba0, sizeof(initial.username));
+    initial.sound = g_SoundOn; initial.music = gSound.GetMusicEnabled();
+    initial.resolution = g_Resolution; initial.textOut = g_TextOut;
+    Platform::GetClientSettings().ReadDefaults(initial, configPath);
+    std::memcpy(lpData_055c9ba0, initial.username, sizeof(initial.username));
+    g_SoundOn = initial.sound; gSound.SetMusicEnabled(initial.music);
+    g_Resolution = initial.resolution; g_TextOut = initial.textOut;
 
     // --- 4b. Preferencias de Config.ini (DESVIACION, ver UserSettings.h) ---
     // Se aplican DESPUES del registro: lo que esté en Config.ini gana.
@@ -215,79 +188,6 @@ int Config_Load(void)
 //
 // Called from Config_Load to extract the exe name for FileVersion_Get.
 // -----------------------------------------------------------------------
-static int Path_GetBasename(char* outBuf, char* fullPath)
-{
-    // Find last '\\' in fullPath
-    char* lastSlash = fullPath;
-    char* p = fullPath;
-    while (p) {
-        char* next = strchr(p + 1, '\\');
-        lastSlash = p;
-        p = next;
-    }
-
-    // If at least one '\\' exists, skip past it
-    char* src = (strchr(fullPath, '\\') != nullptr) ? lastSlash + 1 : lastSlash;
-
-    // Copy src → outBuf (mimics 4-byte word copy + remainder)
-    size_t len = strlen(src) + 1;
-    memcpy(outBuf, src, len);
-
-    // Null-terminate at first delimiter
-    for (char* q = outBuf; *q; ++q) {
-        char c = *q;
-        if (c == ' ' || c == '"' || c == '/' || c == '\\') {
-            *q = '\0';
-            break;
-        }
-    }
-    return 1;
-}
-
-// -----------------------------------------------------------------------
-// FileVersion_Get @ 0x00414500  (__cdecl)
-//
-// Reads the PE version resource from the given file.
-// Uses Win32: GetFileVersionInfoSizeA → GetFileVersionInfoA →
-//             VerQueryValueA("\\") → VS_FIXEDFILEINFO
-//
-// outVer[0] = HIWORD(FileVersionMS)  — major
-// outVer[1] = LOWORD(FileVersionMS)  — minor
-// outVer[2] = HIWORD(FileVersionLS)  — build
-// outVer[3] = LOWORD(FileVersionLS)  — revision
-//
-// Returns 1 on success, 0 on failure.
-// Uses operator_new / operator_delete for the info buffer.
-// lpSubBlock_005592d0 = "\\" (root query, retrieves VS_FIXEDFILEINFO).
-// -----------------------------------------------------------------------
-static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
-{
-    DWORD  dummy;
-    DWORD  dwLen = GetFileVersionInfoSizeA(filename, &dummy);
-    if (dwLen == 0) return 0;
-
-    BYTE* lpData = new BYTE[dwLen];
-    if (!GetFileVersionInfoA(filename, 0, dwLen, lpData)) {
-        delete[] lpData;
-        return 0;
-    }
-
-    VS_FIXEDFILEINFO* pInfo = nullptr;
-    UINT  infoLen = 0;
-    if (!VerQueryValueA(lpData, "\\", (LPVOID*)&pInfo, &infoLen)) {
-        delete[] lpData;
-        return 0;
-    }
-
-    outVer[0] = (unsigned short)(pInfo->dwFileVersionMS >> 16);
-    outVer[1] = (unsigned short)(pInfo->dwFileVersionMS & 0xFFFF);
-    outVer[2] = (unsigned short)(pInfo->dwFileVersionLS >> 16);
-    outVer[3] = (unsigned short)(pInfo->dwFileVersionLS & 0xFFFF);
-
-    delete[] lpData;
-    return 1;
-}
-
 // -----------------------------------------------------------------------
 // Config_ReadServerAddr @ 0x0041E800  (__thiscall)
 //

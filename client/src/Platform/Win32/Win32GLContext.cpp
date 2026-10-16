@@ -8,6 +8,7 @@ Win32GLContext& GetWin32GLContext()
     static Win32GLContext context;
     return context;
 }
+void* Win32GLContext::CurrentIdentity() const { return wglGetCurrentContext(); }
 IGLContext& GetGLContext() { return GetWin32GLContext(); }
 
 // IDA: OpenGL_Init (0x0041DE30).

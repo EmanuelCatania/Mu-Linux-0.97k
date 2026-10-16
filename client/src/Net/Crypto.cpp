@@ -1,3 +1,4 @@
+#include <cstdint>
 // Crypto.cpp
 // Packet encryption / decryption routines and hash table operations.
 //
@@ -15,6 +16,8 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
+#include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/Ping.h"
 
@@ -36,7 +39,7 @@ void __fastcall SpringNode_GetPos(void *node, float *out);
 float __fastcall SpringNode_Delta(void *a, int b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
-void __cdecl FUN_0053cc00_impl(int param_1);
+static void __cdecl FUN_0053cc00_impl(int param_1);
 
 
 
@@ -498,7 +501,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     DWORD *xorKey = ctx + 13;   // this+52 (XorKey[0..3])
     for (int i = 0; i < 4; ++i) {
         DWORD w    = src[i] ^ xorKey[i];
-        DWORD tmp  = (DWORD)((unsigned __int64)encKey[i] * (prevLow ^ w) % modKey[i]);
+        DWORD tmp  = (DWORD)((std::uint64_t)encKey[i] * (prevLow ^ w) % modKey[i]);
         packed[i]  = tmp;
         prevLow    = tmp & 0xFFFF;
     }
@@ -579,7 +582,7 @@ extern "C" void DbgLogPublic(const char* msg);
 static void CsmTrace(const char *fmt, ...) {
     char buf[256];
     va_list ap; va_start(ap, fmt);
-    _vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
+    Platform::TextVFormatTruncated(buf, sizeof(buf), Platform::TruncateText, fmt, ap);
     va_end(ap);
 }
 
@@ -596,7 +599,7 @@ extern "C" void CsmWatchdog(const char *tag)
     }
     if (s_known != 0 && cur != s_known) {
         char buf[160];
-        _snprintf_s(buf, sizeof(buf), _TRUNCATE,
+        Platform::TextFormatTruncated(buf, sizeof(buf), Platform::TruncateText,
             "CSM-WD[%s] ★TRAMPLED★ mod0 was %08X now %08X",
             tag, s_known, cur);
         DbgLogPublic(buf);
@@ -665,7 +668,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     WORD  *outW   = (WORD *)dst;
     WORD   prevLo = 0;
     for (int i = 0; i < 4; ++i) {
-        DWORD m   = (DWORD)(((unsigned __int64)packed[i] * decKey[i]) % modKey[i]);
+        DWORD m   = (DWORD)(((std::uint64_t)packed[i] * decKey[i]) % modKey[i]);
         WORD  w   = (WORD)(xorKey[i] ^ m);
         outW[i]   = (WORD)(prevLo ^ w);
         prevLo    = (WORD)packed[i];
@@ -1504,14 +1507,12 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
                           int a4, int a5, int a6, int a7)
 {
     DWORD *_this = (DWORD *)self;
-    HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ,
-                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) return 0;
+    FILE* hFile = Platform::GetFileSystem().Open(filename, "rb");
+    if (!hFile) return 0;
 
     BYTE hdrBuf[6] = {0};
-    DWORD nRead = 0;
-    if (!ReadFile(hFile, hdrBuf, 6, &nRead, NULL) || nRead != 6) {
-        CloseHandle(hFile);
+    if (fread(hdrBuf, 1, 6, hFile) != 6) {
+        fclose(hFile);
         return 0;
     }
     short mg = (short)(hdrBuf[0] | (hdrBuf[1] << 8));
@@ -1519,28 +1520,28 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
                      (hdrBuf[4] << 16) | (hdrBuf[5] << 24));
     int expected = 16 * (a4 + a5 + a6 + a7) + 6;
     if (mg != magic || sz != expected) {
-        CloseHandle(hFile);
+        fclose(hFile);
         return 0;
     }
 
     DWORD buf[4];
     if (a4) {  // ModKey → this+4
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[1 + i] = buf[i] ^ DAT_00562e48[i];
     }
     if (a5) {  // EncKey → this+20
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[5 + i] = buf[i] ^ DAT_00562e48[i];
     }
     if (a6) {  // DecKey → this+36
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[9 + i] = buf[i] ^ DAT_00562e48[i];
     }
     if (a7) {  // XorKey → this+52
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[13 + i] = buf[i] ^ DAT_00562e48[i];
     }
-    CloseHandle(hFile);
+    fclose(hFile);
     return 1;
 }
 

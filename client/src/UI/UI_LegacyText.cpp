@@ -4,7 +4,6 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
-#include <mbstring.h>   // _mbclen (SeparateTextIntoLines, fiel a 0x0051D600)
 
 extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
 extern void __cdecl operator_delete(void* ptr);
@@ -62,7 +61,7 @@ int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int
 
     if (*lpszText) {
         while (true) {
-            const unsigned int nChar = (unsigned int)_mbclen(pSrc);
+            const unsigned int nChar = (unsigned int)Platform::TextCharacterBytes(pSrc);
 
             if ((int)(nChar + (unsigned int)(pSrc - (const unsigned char *)pLineHead)) >= iLineSize) {
                 if (pPrevSpc) {

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat.cpp
 // In-game chat log rendering and message management.
 //
@@ -27,8 +28,8 @@
 // (RenderText 0x47F650, RenderNotices 0x47FCE0 — ambas idénticas):
 //
 //     GetTextExtentPointA(m_hFontDC, pszText, len, &TextSize);
-//     TextSize.cx = (__int64)((double)TextSize.cx / g_fScreenRate_x);
-//     TextSize.cy = (__int64)((double)TextSize.cy / g_fScreenRate_y);
+//     TextSize.cx = (std::int64_t)((double)TextSize.cx / g_fScreenRate_x);
+//     TextSize.cy = (std::int64_t)((double)TextSize.cy / g_fScreenRate_y);
 //
 // `TextSize` es el par de globals (lpsz_07e113d0 = cx, _DAT_07e113d4 = cy);
 // _DAT_055c9b70 = g_fScreenRate_x, _DAT_055c9b74 = g_fScreenRate_y.
@@ -150,7 +151,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     if (!param_1) return;
     char *notice = (char *)&DAT_07db80d8[0];
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     SIZE sz = {0, 0};
     gFont.MeasureText(gFont.GetTextDC(), param_1, Platform::TextLength(param_1), &sz);
 
@@ -208,7 +209,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
   char local_200 [256];
   char local_100 [256];
 
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   lpsz = &local_208;
   iVar2 = Platform::TextLength(param_1);
   gFont.MeasureText(gFont.GetTextDC(),param_1,iVar2,lpsz);
@@ -366,7 +367,7 @@ void UI_RenderNotices(void)
   tagSIZE local_8;
 
   GL_SetBlendSrcOver('\x01');
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   glColor3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
@@ -425,7 +426,7 @@ void UI_RenderChatLogOverlay(void)
 
   // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
   glColor3f(1.0f, 1.0f, 1.0f);
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   iVar7 = 0;
   local_10c = 0;
   do {
@@ -701,7 +702,7 @@ char Chat_ValidateInputCommand(void)
       pcVar5 = pcVar5 + 0x14;
     } while (iVar3 < DAT_07d78074);
   }
-  if ((char)DAT_07db8710 != '/') {
+  if ((char)(uintptr_t)DAT_07db8710 != '/') {
     uVar2 = 0xffffffff;
     iVar3 = 0;
     iVar4 = 0;

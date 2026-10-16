@@ -4,8 +4,145 @@
 #include <cstdio>
 #include <cstdint>
 #include <algorithm>
+#include <cerrno>
+#include <utility>
+#ifdef _WIN32
+#include <mbstring.h>
+#else
+#include <strings.h>
+#endif
 
 namespace Platform {
+// CP949: verificado contra IsDBCSLeadByteEx para los 256 valores.
+inline unsigned KoreanCharacterBytes(unsigned char first)
+{ return first >= 0x81 && first <= 0xfe ? 2u : 1u; }
+
+// El cliente Linux consume los mismos textos Windows-1252 que SDLFont::DecodeByte.
+// Windows conserva la página de códigos de la CRT para los cortes heredados.
+inline unsigned TextCharacterBytes(const unsigned char* text)
+{
+#ifdef _WIN32
+    return _mbclen(text);
+#else
+    (void)text;
+    return 1; // Windows-1252 es una codificación de un byte, incluso para acentos.
+#endif
+}
+
+
+// Adaptadores CRT acotados. Windows conserva la CRT nativa; POSIX mantiene
+// NUL y retornos (-1 para formato truncado, ERANGE para copia sin espacio).
+constexpr std::size_t TruncateText = static_cast<std::size_t>(-1);
+inline int TextCopySecure(char* out, std::size_t capacity, const char* input, std::size_t count)
+{
+#ifdef _WIN32
+    return strncpy_s(out, capacity, input, count);
+#else
+    if (!out || !capacity) return EINVAL;
+    if (!input && count) { out[0] = 0; return EINVAL; }
+    std::size_t length = 0;
+    while (length < count && input && input[length]) ++length;
+    if (length >= capacity) {
+        if (count != TruncateText) { out[0] = 0; return ERANGE; }
+        std::memcpy(out, input, capacity - 1); out[capacity - 1] = 0;
+        return 80; // STRUNCATE de la CRT de Windows.
+    }
+    if (length) std::memcpy(out, input, length);
+    out[length] = 0; return 0;
+#endif
+}
+template<std::size_t N>
+inline int TextCopySecure(char (&out)[N], const char* input, std::size_t count)
+{ return TextCopySecure(out, N, input, count); }
+inline int TextCopySecure(char* out, std::size_t capacity, const char* input)
+{
+#ifdef _WIN32
+    return strcpy_s(out, capacity, input);
+#else
+    if (!input) { if (out && capacity) out[0] = 0; return EINVAL; }
+    return TextCopySecure(out, capacity, input, std::strlen(input));
+#endif
+}
+template<std::size_t N>
+inline int TextCopySecure(char (&out)[N], const char* input)
+{ return TextCopySecure(out, N, input); }
+inline int TextConcatSecure(char* out, std::size_t capacity, const char* input)
+{
+#ifdef _WIN32
+    return strcat_s(out, capacity, input);
+#else
+    if (!out || !capacity) return EINVAL;
+    if (!input) { out[0] = 0; return EINVAL; }
+    std::size_t used = 0;
+    while (used < capacity && out[used]) ++used;
+    if (used == capacity) { out[0] = 0; return EINVAL; }
+    const int result = TextCopySecure(out + used, capacity - used, input);
+    if (result) out[0] = 0;
+    return result;
+#endif
+}
+inline int TextVFormatTruncated(char* out, std::size_t capacity, std::size_t count,
+                               const char* format, va_list args)
+{
+#ifdef _WIN32
+    return _vsnprintf_s(out, capacity, count, format, args);
+#else
+    if (!out || !capacity || !format) { if (out && capacity) out[0] = 0; return -1; }
+    const auto limit = count == TruncateText ? capacity : (std::min)(capacity, count + 1);
+    const int written = std::vsnprintf(out, limit, format, args);
+    if (written < 0) { out[0] = 0; return -1; }
+    if (static_cast<std::size_t>(written) >= limit) {
+        if (count != TruncateText && count >= capacity) out[0] = 0;
+        return -1;
+    }
+    return written;
+#endif
+}
+inline int TextFormatTruncated(char* out, std::size_t capacity, std::size_t count,
+                              const char* format, ...)
+{
+    va_list args; va_start(args, format);
+    const int result = TextVFormatTruncated(out, capacity, count, format, args);
+    va_end(args); return result;
+}
+template<std::size_t N, class... Args>
+inline int TextFormatTruncated(char (&out)[N], std::size_t count, const char* format, Args... args)
+{ return TextFormatTruncated(out, N, count, format, args...); }
+template<class... Args>
+inline int TextFormatSecure(char* out, std::size_t capacity, const char* format, Args... args)
+{
+#ifdef _WIN32
+    return sprintf_s(out, capacity, format, args...);
+#else
+    if (!out || !capacity || !format) { if (out && capacity) out[0] = 0; return -1; }
+    const int result = std::snprintf(out, capacity, format, args...);
+    if (result < 0 || static_cast<std::size_t>(result) >= capacity) {
+        out[0] = 0; return -1;
+    }
+    return result;
+#endif
+}
+template<std::size_t N, class... Args>
+inline int TextFormatSecure(char (&out)[N], const char* format, Args... args)
+{ return TextFormatSecure(out, N, format, args...); }
+
+inline int TextCompareIgnoreCase(const char* left, const char* right)
+{
+#ifdef _WIN32
+    return _stricmp(left, right);
+#else
+    return strcasecmp(left, right);
+#endif
+}
+inline int TextCompareIgnoreCaseN(const char* left, const char* right, std::size_t count)
+{
+#ifdef _WIN32
+    return _strnicmp(left, right, count);
+#else
+    return strncasecmp(left, right, count);
+#endif
+}
+
 // Contrato lstrlenA: cero para puntero nulo; longitud de bytes sin el NUL.
 // Los textos del cliente caben en int (buffers y longitudes de protocolo x86).
 inline int TextLength(const char* text)
@@ -42,10 +179,10 @@ inline char* TextConcat(char* destination, std::size_t capacity, const char* sou
 // Contrato wsprintfA del cliente: máximo 1024 bytes escritos más NUL.
 // El destino debe tener espacio para el resultado (como en la API original).
 // No admite floats: una conversión desconocida no consume argumentos.
-inline int TextFormat(char* destination, const char* format, ...)
+inline int TextVFormat(char* destination, const char* format, va_list input)
 {
     va_list args;
-    va_start(args, format);
+    va_copy(args, input);
     int written = 0;
     auto emit = [&](char c) { if (written < 1024) destination[written++] = c; };
     while (*format && written < 1024) {
@@ -128,5 +265,12 @@ inline int TextFormat(char* destination, const char* format, ...)
     va_end(args);
     destination[written] = 0;
     return written;
+}
+inline int TextFormat(char* destination, const char* format, ...)
+{
+    va_list args; va_start(args, format);
+    const int result = TextVFormat(destination, format, args);
+    va_end(args);
+    return result;
 }
 } // namespace Platform

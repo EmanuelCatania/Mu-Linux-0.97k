@@ -1,3 +1,4 @@
+#include <cstdint>
 // Scene_ObjectUpdate.cpp
 //
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
@@ -38,7 +39,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         // IDA 0x004FDC00: the storm flash is independent from the object type.
         // It happens during the first quarter of the 4-second cycle, one time
         // in 100, around the local player.  The former port kept only sound.
-        if (((__int64)WorldTime % 4000) < 1000 && !(rand() % 100) && Hero) {
+        if (((std::int64_t)WorldTime % 4000) < 1000 && !(rand() % 100) && Hero) {
             const float intensity = (float)(rand() % 12 + 4) * 0.1f;
             float light[3] = { intensity * 0.2f, intensity * 0.3f, intensity * 0.5f };
             const float x = (float)(rand() % 1200) + *(float*)(Hero + 16) - 600.0f;
@@ -104,7 +105,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     if (SceneFlag == 2 || SceneFlag == 4) {
         short t = *(short*)(objPtr + 2);
         if (t == 160 || t == 161) {
-            *(float*)(objPtr + 112) = -((float)((__int64)WorldTime % 4000) * 0.00025f);
+            *(float*)(objPtr + 112) = -((float)((std::int64_t)WorldTime % 4000) * 0.00025f);
         } else if (t == 162) {
             // CameraWalkCut → over-bright final; si no, rampa 0..0.08.
             float v8 = (DAT_083a7af4 != 0) ? 1.5f
@@ -181,7 +182,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             break;
         case 0x76:
         case 0x77:
-            *(float*)(objPtr + 0x70) = (float)(-((__int64)WorldTime % 1000)) * 0.001f;
+            *(float*)(objPtr + 0x70) = (float)(-((std::int64_t)WorldTime % 1000)) * 0.001f;
             break;
         case 0x82:
         case 0x83:
@@ -213,7 +214,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x18:
             // IDA writes the model loop flag (+136) and scrolls texture V.
             model[136] = 1;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x27:
         case 0x28:
@@ -275,22 +276,22 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     case 3:
         switch (objType) {
         case 0x12:
-            *(float*)(objPtr + 112) = (float)((__int64)WorldTime % 1000) * 0.001f;
+            *(float*)(objPtr + 112) = (float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x27:
             *(int*)(objPtr + 100) = 1;
             break;
         case 0x29:
             *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 112) = (float)((__int64)WorldTime % 2000) * 0.0005f;
+            *(float*)(objPtr + 112) = (float)((std::int64_t)WorldTime % 2000) * 0.0005f;
             break;
         case 0x2a:
             model[136] = 0;
-            *(float*)(objPtr + 108) = (float)((__int64)WorldTime % 500) * -0.002f;
+            *(float*)(objPtr + 108) = (float)((std::int64_t)WorldTime % 500) * -0.002f;
             break;
         case 0x2b:
             model[136] = 0;
-            *(float*)(objPtr + 108) = (float)((__int64)WorldTime % 500) * 0.002f;
+            *(float*)(objPtr + 108) = (float)((std::int64_t)WorldTime % 500) * 0.002f;
             break;
         }
         break;
@@ -299,7 +300,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         switch (objType) {
         case 3:
         case 4:
-            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            *(float*)(objPtr + 108) = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x12:
         case 0x17:
@@ -308,7 +309,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x13:
         case 0x14:
             *(int*)(objPtr + 100) = 4;
-            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            *(float*)(objPtr + 108) = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x18:
             *(int*)(objPtr + 88) = -2;
@@ -337,7 +338,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     case 6:
         if (objType == 0x15) {
             *(int*)(objPtr + 100) = 3;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
         } else if (objType == 0x26) {
             *(int*)(objPtr + 0x58) = -2;  // SubType = -2
         }
@@ -376,14 +377,14 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     case 8:
         if (objType == 2) {
             *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            *(float*)(objPtr + 108) = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             return (float*)0;
         }
         if (objType == 4) {
             const float wave = sinf((float)WorldTime * 0.002f) * 0.35f + 0.65f;
             *(int*)(objPtr + 100) = 0;
             *(float*)(objPtr + 104) = wave;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0001f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 10000) * 0.0001f;
         } else if (objType == 7) {
             const float wave = sinf((*(float*)(objPtr + 36) * 100.0f + (float)WorldTime) * 0.002f) * 0.35f + 0.65f;
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
@@ -392,18 +393,18 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         } else if (objType == 0x0b) {
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
             return (float*)0;
         } else if (objType == 0x0c) {
-            const float scroll = -(float)((__int64)WorldTime % 50000) * 0.00005f;
+            const float scroll = -(float)((std::int64_t)WorldTime % 50000) * 0.00005f;
             *(float*)(objPtr + 108) = scroll;
             *(float*)(objPtr + 112) = scroll;
             return (float*)0;
         } else if (objType == 0x0d) {
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
             return (float*)0;
         } else if (objType == 0x3d || objType == 0x41 || objType == 0x42) {
-            const float scroll = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            const float scroll = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             const float wave = sinf((float)WorldTime * 0.002f) * 0.35f + 0.65f;
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
             *(int*)(objPtr + 100) = 1;
@@ -413,9 +414,9 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             *(int*)(objPtr + 88) = -2;
         } else if (objType == 0x48) {
             *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
         } else if (objType == 0x49 || objType == 0x4b || objType == 0x4f) {
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            *(float*)(objPtr + 112) = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
         } else if (objType == 0x52) {
             *(DWORD*)(objPtr + 100) = 0;
             *(DWORD*)(objPtr + 0xe8) = 0x3f800000;  // light R = 1.0
@@ -779,6 +780,7 @@ void __stdcall MoveBugs(void) {
         if (*(BYTE*)e == 0)                    // !Live
             goto next_bug;
 
+    { // El salto de salida no entra en el ámbito de estas variables.
         DWORD owner = *v0;                     // *v0 — Owner ptr
         if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
@@ -949,6 +951,7 @@ void __stdcall MoveBugs(void) {
         }
         }
 
+    }
 next_bug:
         v0 += 111;                              // +0x1BC bytes
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
@@ -1047,7 +1050,7 @@ void __cdecl FUN_004fdc00(float o)
 
   if ( gMapManager.GetCurrentMap() == 9 )
   {
-    if ( (__int64)WorldTime % 4000 < 1000 && !(rand() % 100) )
+    if ( (std::int64_t)WorldTime % 4000 < 1000 && !(rand() % 100) )
     {
       v1 = (double)(rand() % 12 + 4) * 0.1;
       Light[0] = v1 * 0.2;
@@ -1114,7 +1117,7 @@ LABEL_22:
   {
     if ( *(WORD *)(LODWORD(o) + 2) == 160 )
     {
-      v9 = (double)((__int64)WorldTime % 4000);
+      v9 = (double)((std::int64_t)WorldTime % 4000);
     }
     else
     {
@@ -1137,7 +1140,7 @@ LABEL_22:
         }
         goto LABEL_38;
       }
-      v9 = (double)((__int64)WorldTime % 4000);
+      v9 = (double)((std::int64_t)WorldTime % 4000);
     }
     *(float *)(LODWORD(o) + 112) = -(v9 * 0.00025000001);
   }
@@ -1162,7 +1165,7 @@ LABEL_38:
           goto LABEL_59;
         case 0x76:
         case 0x77:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x96:
           v12 = (double)(rand() % 4 + 3) * 0.1;
@@ -1178,7 +1181,7 @@ LABEL_38:
         case 0x17:
         case 0x18:
           *(BYTE *)(Models + 188 * *(short *)(LODWORD(o) + 2) + 136) = 1;
-          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 1000) * -0.001;
+          *(float *)(LODWORD(o) + 112) = (double)((std::int64_t)WorldTime % 1000) * -0.001;
           break;
         case 0x27:
         case 0x28:
@@ -1291,21 +1294,21 @@ LABEL_59:
       switch ( *(WORD *)(LODWORD(o) + 2) )
       {
         case 0x12:
-          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 112) = (double)((std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x27:
           goto LABEL_92;
         case 0x29:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 2000) * 0.00050000002;
+          *(float *)(LODWORD(o) + 112) = (double)((std::int64_t)WorldTime % 2000) * 0.00050000002;
           break;
         case 0x2A:
           *(BYTE *)(Models + 188 * v17 + 136) = 0;
-          *(float *)(LODWORD(o) + 108) = (double)((__int64)WorldTime % 500) * -0.0020000001;
+          *(float *)(LODWORD(o) + 108) = (double)((std::int64_t)WorldTime % 500) * -0.0020000001;
           break;
         case 0x2B:
           *(BYTE *)(Models + 188 * v17 + 136) = 0;
-          *(float *)(LODWORD(o) + 108) = (double)((__int64)WorldTime % 500) * 0.0020000001;
+          *(float *)(LODWORD(o) + 108) = (double)((std::int64_t)WorldTime % 500) * 0.0020000001;
           break;
         default:
           return;
@@ -1316,7 +1319,7 @@ LABEL_59:
       {
         case 3:
         case 4:
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x12:
         case 0x17:
@@ -1326,7 +1329,7 @@ LABEL_92:
         case 0x13:
         case 0x14:
           *(DWORD *)(LODWORD(o) + 100) = 4;
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x18:
           *(DWORD *)(LODWORD(o) + 88) = -2;
@@ -1368,7 +1371,7 @@ LABEL_111:
       if ( v20 == 21 )
       {
         *(DWORD *)(LODWORD(o) + 100) = 3;
-        *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+        *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
       }
       else if ( v20 == 38 )
       {
@@ -1417,14 +1420,14 @@ LABEL_111:
       {
         case 2:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           return;
         case 4:
           v23 = WorldTime * 0.0020000001;
           *(DWORD *)(LODWORD(o) + 100) = 0;
           v11 = sin(v23) * 0.34999999 + 0.64999998;
           *(float *)(LODWORD(o) + 104) = v11;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.000099999997;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 10000) * 0.000099999997;
           v30[0] = v11;
           v30[1] = v11;
           goto LABEL_116;
@@ -1442,15 +1445,15 @@ LABEL_116:
           AddTerrainLight(*v7, *(float *)(LODWORD(o) + 20), v30, 3, PrimaryTerrainLight[0]);
           return;
         case 0xB: case 0xD: case 0x49: case 0x4B: case 0x4F:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 10000) * 0.00019999999;
           return;
         case 0xC:
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 50000) * 0.000049999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 50000) * 0.000049999999;
           return;
         case 0x3D:
           *(DWORD *)(LODWORD(o) + 100) = 1;
-          v25 = (double)(-(__int64)WorldTime % 1000);
+          v25 = (double)(-(std::int64_t)WorldTime % 1000);
           goto LABEL_123;
         case 0x3F:
         case 0x40:
@@ -1458,7 +1461,7 @@ LABEL_116:
         case 0x41:
         case 0x42:
           *(DWORD *)(LODWORD(o) + 100) = 1;
-          v25 = (double)(-(__int64)WorldTime % 1000);
+          v25 = (double)(-(std::int64_t)WorldTime % 1000);
 LABEL_123:
           *(float *)(LODWORD(o) + 112) = v25 * 0.001;
           v26 = sin(WorldTime * 0.0020000001) * 0.34999999 + 0.64999998;
@@ -1469,7 +1472,7 @@ LABEL_123:
           break;
         case 0x48:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 10000) * 0.00019999999;
           break;
         case 0x52:
           *(DWORD *)(LODWORD(o) + 100) = 0;

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Entity_DrawByType.cpp — Draw_RenderObject @ 0x004fae00
 // Dispatches entity render based on entity type (*(short*)(param_1+2)).
 //
@@ -676,7 +677,7 @@ LAB_postprocess:
         BMD__BeginRender();
         float wave2 = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
-        int texFrame = *(short *)(*(int *)((int)model + 0x38) + 0xc);   // IDA: (__int16) de la malla 0
+        int texFrame = *(short *)(*(int *)((int)model + 0x38) + 0xc);   // IDA: (std::int16_t) de la malla 0
         BMD__RenderMesh(model, 0.0f, 2,
                      *(float *)(param_1 + 0x168), 0, wave2,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),

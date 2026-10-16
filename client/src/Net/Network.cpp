@@ -223,7 +223,7 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
     while ((int)remain > 0) {
         int r = ::send(SocketClientSocket, (const char*)data + off, (int)remain, 0);
         if (r == -1) {
-            if (Platform::GetSocket().LastError() == WSAEWOULDBLOCK) {
+            if (Platform::GetSocket().LastError() == Platform::SocketWouldBlock) {
                 if (SocketClientSendBufferLength + (int)remain < 0x2001) {
                     memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
                     SocketClientSendBufferLength += (int)remain;
@@ -278,7 +278,7 @@ int CNetwork::SendRaw(const char* buf, int len)
         int n = send(SocketClientSocket, (const char*)s_scratch + sent, rem, 0);
         if (n == -1) {
             int err = Platform::GetSocket().LastError();
-            if (err == WSAEWOULDBLOCK) {
+            if (err == Platform::SocketWouldBlock) {
                 if (SocketClientSendBufferLength + (len - sent) < 0x2001) {
                     // Queue the still-unsent ENCRYPTED tail — never re-queue
                     // plaintext or the prefix we already transmitted.

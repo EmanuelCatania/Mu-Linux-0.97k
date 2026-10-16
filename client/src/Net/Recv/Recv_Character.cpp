@@ -467,15 +467,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // OpenWorld bloquea ~2 segundos cargando BMDs. Los dos pumps de mensajes
     // alrededor de la carga quedan desactivados (`false &&`): el drenaje del socket
     // durante la carga lo hace AccessModel (ver `g_WorldLoading` abajo).
-    {
-        MSG msg;
-        // Se mantiene estructuralmente sólo para diagnóstico. 00425840 no despacha
-        // los paquetes de viewport encolados antes de crear al héroe, más abajo.
-        for (int i = 0; false && i < 32 && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE); ++i) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+    // Pump desactivado en el original de esta ruta: no despachar antes del héroe.
 
     // OpenWorld tarda ~2 s cargando BMDs y, para que el server no cierre por
     // backpressure, AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese
@@ -491,13 +483,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     --g_WorldLoading;
 
     // Pump messages POST-load para drenar lo que llegó durante el bloqueo.
-    {
-        MSG msg;
-        for (int i = 0; false && i < 64 && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE); ++i) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+    // Pump desactivado en el original de esta ruta: no despachar antes del héroe.
 
     // (4-5) Random hero slot + spawn at packet position.
     HeroIndex = (DWORD)(_rand() % 400);
@@ -1562,7 +1548,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
             // IDA L275-277: aviso "<mapa> ..." en el chat.
             char mapNotice[256];
-            sprintf_s(mapNotice, "%s%s", GetMapName(gMapManager.GetCurrentMap()), GlobalText[484]);
+            Platform::TextFormatSecure(mapNotice, "%s%s", GetMapName(gMapManager.GetCurrentMap()), GlobalText[484]);
             UIChatLogWindow_AddText("", mapNotice, 1);
         }
 

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Math_LegacyAngle.cpp — Math_GetAngleFromPoints.
 
 #include "stdafx.h"
@@ -44,7 +45,7 @@ int __cdecl Math_GetAngleFromPoints(float param_1, float param_2, float param_3,
     } else {
         fVar2 = ((double)param_2 - (double)param_4) / ((double)param_3 - (double)param_1);
     }
-    // IDA: (__int64)(atan2(v5, 1.0) * 57.295776) -- en GRADOS.  El port
+    // IDA: (std::int64_t)(atan2(v5, 1.0) * 57.295776) -- en GRADOS.  El port
     // truncaba los radianes (quedaba en -1..1), asi que el agrupamiento de los
     // pajaros (sub_43E680, unico caller) solo giraba hacia 0 o 180 grados y no
     // formaban los circulos del original.

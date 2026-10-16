@@ -54,41 +54,6 @@ void* AntiTamper_HashNode(void)
 
 // InitDirectSound @ 0x004044A0 — real implementation in src/Sound/Sound.cpp.
 
-// FUN_00405340 @ 0x00405340 — CErrorReport_RotateLog (215 bytes IDA, port FIEL).
-// __thiscall(this). Reads error log file (this+4 = HANDLE), decrypts with
-// Xor_ConvertBuffer (this+0x10c = key state), keeps last 4 entries, rewrites file.
-//
-// Layout (per IDA):
-//   this+4   HANDLE (file)
-//   this+8   LPCSTR file path
-//   this+0x10c  XOR key state DWORD
-// Xor_ConvertBuffer is declared in functions.h
-char* __stdcall CErrorReport_FindLogMarker(char* param_1);
-extern "C" void CErrorReport_RotateLog_impl(DWORD This) {
-    static char Buffer[0x1FFFF + 1];
-    DWORD numRead = 0;
-    HANDLE hFile = *(HANDLE*)(This + 4);
-    if (hFile == INVALID_HANDLE_VALUE || hFile == nullptr) return;
-    if (!ReadFile(hFile, Buffer, 0x1FFFF, &numRead, nullptr)) return;
-    *(DWORD*)(This + 0x10C) = (DWORD)Xor_ConvertBuffer(Buffer, numRead, 0);
-    Buffer[numRead] = '\0';
-    char* trimAt = CErrorReport_FindLogMarker(Buffer);
-    if (numRead < 0x7FFF && trimAt == Buffer) return;
-    char* keepFrom = (trimAt == Buffer) ? Buffer : trimAt;
-    DWORD keepLen = numRead - (DWORD)(keepFrom - Buffer);
-    CloseHandle(hFile);
-    LPCSTR path = (LPCSTR)(This + 8);
-    DeleteFileA(path);
-    HANDLE newH = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
-                              nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    *(HANDLE*)(This + 4) = newH;
-    *(DWORD*)(This + 0x10C) = 0;
-    if (newH != INVALID_HANDLE_VALUE) {
-        DWORD wr = 0;
-        WriteFile(newH, keepFrom, keepLen, &wr, nullptr);
-    }
-}
-
 // IDA: FUN_00405420 @ 0x00405420 — CErrorReport_FindLogMarker (143 bytes IDA, port FIEL).
 // Scans buffer for "###Log Begin###" markers, returns pointer to 4th-from-last marker
 // (so newer log can keep the last 4 entries), or original buffer if < 5 markers found.

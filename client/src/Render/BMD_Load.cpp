@@ -9,6 +9,7 @@
 //   BMD__Save (BMD_SaveToFile)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -77,7 +78,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
 
     if (fileSize < 0x2a) {
         char diag[200];
-        _snprintf_s(diag, sizeof(diag), _TRUNCATE, "BMD::Open too-small: %s size=%d", local_4c, fileSize);
+        Platform::TextFormatTruncated(diag, sizeof(diag), Platform::TruncateText, "BMD::Open too-small: %s size=%d", local_4c, fileSize);
         DbgLogPublic(diag);
         fclose(fp);
         return;
@@ -101,7 +102,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         (verByte != 0x0A && verByte != 0x0C))
     {
         char line[160];
-        _snprintf_s(line, sizeof(line), _TRUNCATE,
+        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
             "BMD skip (unsupported): %s ver=0x%02x size=%d",
             local_4c, verByte, fileSize);
         DbgLogPublic(line);
@@ -112,7 +113,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
     if (verByte == 0x0C) {
         if (fileSize < 0x2a + 4) {
             char line[160];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD v12 too-small: %s size=%d", local_4c, fileSize);
             DbgLogPublic(line);
             operator_delete(Buffer);
@@ -121,7 +122,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         int encSize = *(int *)(Buffer + 4);
         if (encSize <= 0 || encSize > fileSize - 8) {
             char line[160];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD v12 bad encSize: %s encSize=%d file=%d",
                 local_4c, encSize, fileSize);
             DbgLogPublic(line);
@@ -183,7 +184,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         *(int   *)((int)thisPtr + 0x38) = 0;
         {
             char line[200];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD_SanityFail: %s nMesh=%d nAction=%d nBone=%d  thisPtr=%p",
                 local_4c, (int)numMeshes, (int)numActions, (int)numBones, thisPtr);
             DbgLogPublic(line);

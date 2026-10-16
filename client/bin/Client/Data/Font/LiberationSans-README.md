@@ -9,7 +9,7 @@ SHA-256 del archivo de origen:
 `7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0`
 
 Licencia: SIL Open Font License 1.1. El texto completo y los avisos de copyright
-originales se conservan en [LICENSE](LICENSE). Distribuir ese archivo junto a
+originales se conservan en [LiberationSans-LICENSE.txt](LiberationSans-LICENSE.txt). Distribuir ese archivo junto a
 las fuentes. El nombre reservado Liberation y los avisos se mantienen intactos.
 
 La compatibilidad métrica de diseño con Arial no garantiza por sí sola igualdad

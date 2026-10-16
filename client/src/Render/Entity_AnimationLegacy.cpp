@@ -1,7 +1,9 @@
+#include <cstdint>
 // Animación de modelos (Calc_RenderObject, BMD_Animation, Skeleton_Transform)
 // y algunos helpers sueltos (CIsin, Screen_ToGLx/y).
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -146,7 +148,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
     // C nuestra lo declara `unsigned int` porque el caller en Calc_RenderObject lo
     // carga con *(DWORD*)(entity+0x10c) y los bits del float caben en un DWORD.
     // Hay que reinterpretar las bits → float y truncar a int
-    // (== IDA: v12 = (__int64)PriorFrame; v39 = v12).
+    // (== IDA: v12 = (std::int64_t)PriorFrame; v39 = v12).
     float priorFrame;
     memcpy(&priorFrame, &param_3, 4);
     int v39 = (int)priorFrame;
@@ -154,7 +156,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
         int* animA = (int*)(*(int*)((char*)this_ + 0x30) + (unsigned int)param_4 * 0x10);
         if (*(short*)(animA + 2) <= v39) v39 = 0;
         // IDA también clamp this[+0xA8] contra anim[this+0xA0]'s length:
-        //   if ( v11 >= *(__int16 *)(16 * *(unsigned __int8*)(This+160) + v13 + 8) )
+        //   if ( v11 >= *(std::int16_t *)(16 * *(std::uint8_t*)(This+160) + v13 + 8) )
         //       *(_WORD *)(This + 168) = 0;
         int animBIdxClamp = *(unsigned char*)((char*)this_ + 0xa0);
         int* animBHdr = (int*)(*(int*)((char*)this_ + 0x30) + animBIdxClamp * 0x10);
@@ -340,12 +342,12 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // modelo válido), abortar antes de deferenciar.
     {
         unsigned int meshsPtr = (unsigned int)*(int*)((char*)this_ + 0x28);
-        if (meshsPtr < 0x10000u || meshsPtr >= 0x80000000u || meshCount < 0 || meshCount > 200) {
+        if (meshsPtr < 0x10000u || meshCount < 0 || meshCount > 200) {
             static bool s_loggedNoMeshs = false;
             if (!s_loggedNoMeshs) {
                 s_loggedNoMeshs = true;
                 char _nb[120];
-                _snprintf_s(_nb, sizeof(_nb), _TRUNCATE,
+                Platform::TextFormatTruncated(_nb, sizeof(_nb), Platform::TruncateText,
                     "XFORM_NO_MESHS etype=%d meshsPtr=%08x meshCount=%d",
                     (int)*(short*)((char*)this_ + 2), meshsPtr, meshCount);
                 DbgLogPublic(_nb);
@@ -364,8 +366,8 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
             unsigned int vArr = (unsigned int)*(int*)(meshPtr + 0x10);
             unsigned int nArr = (unsigned int)*(int*)(meshPtr + 0x14);
             int nCount = (int)(short)*(short*)(meshPtr + 6);
-            bool bad = (vArr < 0x10000u || vArr >= 0x80000000u ||
-                        nArr < 0x10000u || nArr >= 0x80000000u ||
+            bool bad = (vArr < 0x10000u ||
+                        nArr < 0x10000u ||
                         vertCount < 0 || vertCount > 20000 ||
                         nCount   < 0 || nCount   > 20000);
             if (bad) {
@@ -373,7 +375,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
                 if (!s_loggedInvMesh) {
                     s_loggedInvMesh = true;
                     char _ib[160];
-                    _snprintf_s(_ib, sizeof(_ib), _TRUNCATE,
+                    Platform::TextFormatTruncated(_ib, sizeof(_ib), Platform::TruncateText,
                         "XFORM_INVALID_MESH etype=%d meshsPtr=%p mesh=%d/%d vArr=%08x nArr=%08x vc=%d nc=%d",
                         (int)*(short*)((char*)this_ + 2), (void*)(intptr_t)*(int*)((char*)this_ + 0x28),
                         local_58, meshCount, vArr, nArr, vertCount, nCount);
@@ -405,7 +407,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
                 if (!s_loggedBadBone) {
                     s_loggedBadBone = true;
                     char _bb[180];
-                    _snprintf_s(_bb, sizeof(_bb), _TRUNCATE,
+                    Platform::TextFormatTruncated(_bb, sizeof(_bb), Platform::TruncateText,
                         "XFORM_BAD_BONE etype=%d mesh=%d/%d vert=%d/%d bone=%d nBones=%d bt=%p",
                         (int)*(short*)((char*)this_ + 2), local_58, meshCount,
                         vi, vertCount, boneIdx, nBonesGuard, (void*)param_1);

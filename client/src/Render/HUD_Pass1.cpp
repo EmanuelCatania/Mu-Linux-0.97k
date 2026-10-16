@@ -24,8 +24,8 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <gl/GL.h>
-#include <gl/GLU.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 extern "C" BYTE OffsetInventoryItems[];     // src/Render/HUD_Pass3.cpp
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
@@ -95,7 +95,6 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
 
-    GetLastError();
     int n;
     n = Platform::TextLength(lpString);
     gFont.MeasureText32(gFont.GetTextDC(), lpString, n, &psizl);
@@ -105,7 +104,6 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 300, n, &v13);
     n = Platform::TextLength(lpString + 24);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 24, n, &v14);
-    GetLastError();
 
     int result = psizl.cx + 3;
     if (*((int*)lpString + 140) <= 0) {
@@ -247,7 +245,7 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 extern "C" void __cdecl RenderBooleans_(void);
 void RenderBooleans_(void)
 {
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     // Pass 1: project owner→screen, set entry [+4]/[+8] (screen X/Y).
     // v0 = (float*)&unk_7E0192C  is base+8 (entry 0's owner field)

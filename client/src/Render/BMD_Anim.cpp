@@ -46,11 +46,10 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
     BYTE action = *(BYTE*)(self + 0xa0);
     int actionsBase = *(int*)(self + 0x30);
     // Guarda propia: actionsBase puede ser basura si el slot fue parcialmente
-    // inicializado (ej. particle pool con stale data). Sanity-check del rango:
-    // ptr válido en el address space del proceso (heap).
-    if (actionsBase < 0x100000 || actionsBase > 0x7FFFFFFF) return true;
-    short* pAction = (short*)(actionsBase + action * 0x10);
-    if ((uintptr_t)pAction < 0x100000 || (uintptr_t)pAction > 0x7FFFFFFF) return true;
+    // inicializado (ej. particle pool con stale data). Sólo se descartan
+    // direcciones bajas: en Linux x86 el heap puede estar por encima de 2 GB.
+    if ((uintptr_t)(unsigned int)actionsBase < 0x100000u) return true;
+    short* pAction = (short*)(uintptr_t)((unsigned int)actionsBase + action * 0x10u);
     short frameCount = *(short*)((BYTE*)pAction + 8);
     if (frameCount <= 1) return true;
 

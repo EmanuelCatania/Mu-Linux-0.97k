@@ -290,7 +290,7 @@ void CMiniMap::RenderGates() const
             gy > v.charY + v.range || gy < v.charY - v.range) continue;
         const float tx = (gx / 256.0f - v.offsetX) * (MaxSize * v.scale);
         const float ty = ((256.0f - gy) / 256.0f - v.offsetY) * (MaxSize * v.scale);
-        sprintf_s(text, gClientText.Get(ClientTextId::MiniMapGate),
+        Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapGate),
                   gMapManager.GetName(gates[gate.Target].Map));
         EnableAlphaTest(true);
         GL_BindTextureSlot(PointTexture);
@@ -318,9 +318,9 @@ void CMiniMap::RenderButton(bool left) const
     glColor3f(1.0f, 1.0f, 1.0f);
 
     char text[64];
-    if (left) sprintf_s(text, gClientText.Get(ClientTextId::MiniMapZoom), m_Zoom);
-    else      sprintf_s(text, gClientText.Get(ClientTextId::MiniMapAlpha), m_Alpha * 10);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    if (left) Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapZoom), m_Zoom);
+    else      Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapAlpha), m_Alpha * 10);
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     EnableAlphaTest(true);
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     m_dwBackColor = 0;
@@ -329,7 +329,7 @@ void CMiniMap::RenderButton(bool left) const
                (int)(60 * gWindow.GetWidth() / 640), 0, nullptr);
     m_dwTextColor = color;
     m_dwBackColor = back;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();
 }
 

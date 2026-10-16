@@ -1,3 +1,4 @@
+#include <cstdint>
 // Terrain_Light.cpp
 // Terrain light map computation and per-entity light colour lookup.
 //
@@ -38,9 +39,9 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
   if ((SceneFlag == 5) && (DAT_0839bc84 != '\0')) {
     fVar3 = param_1 * _DAT_00552594;
     fVar2 = param_2 * _DAT_00552594;
-    lVar11 = (longlong)fVar3;   // IDA RequestTerrainLight: v3 = (__int64)xfa  (xf*0.01)
+    lVar11 = (longlong)fVar3;   // IDA RequestTerrainLight: v3 = (std::int64_t)xfa  (xf*0.01)
     iVar4 = (int)lVar11;
-    lVar11 = (longlong)fVar2;   // IDA RequestTerrainLight: v4 = (__int64)yfa  (yf*0.01)
+    lVar11 = (longlong)fVar2;   // IDA RequestTerrainLight: v4 = (std::int64_t)yfa  (yf*0.01)
     iVar9 = (int)lVar11;
     if ((-1 < iVar4) && (((-1 < iVar9 && (iVar4 < 0xff)) && (iVar9 < 0xff)))) {
       iVar6 = iVar9 * 0x100 + iVar4;
@@ -199,13 +200,13 @@ int FUN_004f95e0_DISABLED(void)
     } while ((int)uVar7 <= iVar10);
   }
   if (DAT_083a3ff0 == 0) {
-    uVar14 = (longlong)DAT_05826e08;   // IDA Terrain_Water: (__int64)WorldTime
+    uVar14 = (longlong)DAT_05826e08;   // IDA Terrain_Water: (std::int64_t)WorldTime
     uVar14 = (ulonglong)(uint)((int)uVar14 >> 0x1f) << 0x20 | uVar14 & 0xffffffff;
     iVar4 = (int)((longlong)uVar14 / 720000);
     fVar11 = (float10)(int)((longlong)uVar14 % 720000) * (float10)_DAT_005528e0;
   }
   else {
-    uVar14 = (longlong)DAT_05826e08;   // IDA Terrain_Water: (__int64)WorldTime
+    uVar14 = (longlong)DAT_05826e08;   // IDA Terrain_Water: (std::int64_t)WorldTime
     uVar14 = (ulonglong)(uint)((int)uVar14 >> 0x1f) << 0x20 | uVar14 & 0xffffffff;
     iVar4 = (int)((longlong)uVar14 / 36000);
     fVar11 = (float10)(int)((longlong)uVar14 % 36000) * (float10)_DAT_005524f8;

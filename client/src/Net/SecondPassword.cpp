@@ -1,3 +1,4 @@
+#include <cstdint>
 // SecondPassword.cpp
 // SecondPassword_Handler @ 0x004E93A0  (1542 lines, 287 basic blocks)
 //
@@ -1794,8 +1795,8 @@ void __cdecl SetPlayerStop(int c) {
     // como 0xFFFF con la mano vacía), igual que el resto de los accesos a
     // ItemAttribute.
     auto ItemTwoHand = [](int type) -> unsigned char {
-        unsigned int base = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (base < 0x100000u || base >= 0x80000000u) return 0;
+        unsigned int base = ItemAttribute_Base();
+        if (!base) return 0;
         int idx = type - 399;
         if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34
         return *(unsigned char*)((char*)(uintptr_t)base + idx * 64 - 34);
@@ -1974,6 +1975,7 @@ void __cdecl SetPlayerWalk(int param_1) {
 
     // Player path. Read pendant (c+696), L-hand (c+624), R-hand (c+648),
     // wings (c+672), stamina (c+768), is-dead (c+846).
+    { // El salto de salida no entra en el ámbito de estas variables.
     short pendant = *(short *)(param_1 + 696);
     short LH      = *(short *)(param_1 + 624);
     short RH      = *(short *)(param_1 + 648);
@@ -2127,6 +2129,7 @@ void __cdecl SetPlayerWalk(int param_1) {
     SetAction(param_1,
                  ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) ? 76 : 77);
 
+    }
 label_119:
 
     // Entity type 0x129 — special case with a fixed sound
@@ -2478,7 +2481,7 @@ void __cdecl CheckGate(void)
                 UIChatLogWindow_AddText("", GlobalText[263], 2);
                 if (level < requiredLevel) {
                     char levelMessage[100];
-                    sprintf_s(levelMessage, GlobalText[350], requiredLevel);
+                    Platform::TextFormatSecure(levelMessage, GlobalText[350], requiredLevel);
                     UIChatLogWindow_AddText("", levelMessage, 2);
                 }
                 continue;
@@ -2492,7 +2495,7 @@ void __cdecl CheckGate(void)
         if (level < requiredLevel) {
             DAT_07e11d1c = 50;                                  // LoadingWorld
             char message[100];
-            sprintf_s(message, GlobalText[350], requiredLevel);
+            Platform::TextFormatSecure(message, GlobalText[350], requiredLevel);
             UIChatLogWindow_AddText("", message, 2);
             continue;
         }
@@ -2544,7 +2547,7 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //     en nuestro codebase es int g_AnimTick y todos sus readers lo usan como int.
 //     Se lee `(long long)WorldTime % N`, NO `(int)`.  `timeGetTime()`
 //     pasa de 2^31 ms a las ~24.8 dias de uptime y ahi el cast a int satura, con
-//     lo que la animacion de agua queda congelada.  IDA usa `(__int64)WorldTime`
+//     lo que la animacion de agua queda congelada.  IDA usa `(std::int64_t)WorldTime`
 //     en todos sus sitios justamente por eso.
 //   - unk_55A76C: único xref es el read de abajo (sin writer en el binario) → el
 //     2º pass overlay (TerrainFlag=2) es inerte también en el original.
@@ -3019,7 +3022,7 @@ static inline void mc_SetPlayerDie(DWORD c)
     // sólo de ReceiveDie.
     // El bloque que llama aca (LABEL_195, IDA L796-806) usa +765 como CONTADOR:
     //     if ( *(_BYTE *)(c + 765) )
-    //         if ( (unsigned __int8)++*(_BYTE *)(c + 765) >= 0xFu )  SetPlayerDie(c);
+    //         if ( (std::uint8_t)++*(_BYTE *)(c + 765) >= 0xFu )  SetPlayerDie(c);
     // y +765 es el filtro de "vivo" del barrido de sub_45FEC0 (IDA L168
     // `!v16[18]`), que reporta los blancos al server con el 0x1D.  Con 0x34e=1 el
     // render (bDead = c+0x34e) trata al héroe como muerto (body light rojo).
@@ -4724,7 +4727,7 @@ int __cdecl FUN_004f98c0(int a1, int a2, int a3, int a4, int a5)
   int v12; // ebx
   int v13; // esi
   int v14; // ebp
-  __int64 v15; // rax
+  std::int64_t v15; // rax
   char *v16; // [esp+0h] [ebp-10h]
   float v17; // [esp+8h] [ebp-8h]
   int v18; // [esp+Ch] [ebp-4h]
@@ -4783,7 +4786,7 @@ int __cdecl FUN_004f98c0(int a1, int a2, int a3, int a4, int a5)
         {
           if ( v14 + v13 * v13 < v8 )
           {
-            v15 = (__int64)((cos(sqrt((double)(v14 + v13 * v13) * v17)) + 65535.0) * (double)a4);
+            v15 = (std::int64_t)((cos(sqrt((double)(v14 + v13 * v13) * v17)) + 65535.0) * (double)a4);
             v11 = v20;
             *(DWORD *)&v16[4 * v12 + 4 * v13] += (int)v15 >> 19;
             v8 = v18;

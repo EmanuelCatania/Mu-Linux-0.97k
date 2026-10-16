@@ -1,3 +1,4 @@
+#include <cstdint>
 // HUD_Pass5.cpp — port of sub_4BD650, the largest HUD pass (3734 bytes).
 //
 // Despite its size, sub_4BD650 is structurally simple — most of the byte
@@ -34,7 +35,7 @@
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 // External helpers ported in earlier passes.
 extern "C" int    GetScreenWidth(void);
@@ -162,10 +163,10 @@ extern "C" int __cdecl sub_482E40(int a1)
     // Se conserva la forma legible de `main` (recorrer el inventario como
     // ITEM[64]) en vez del walk de punteros del decompile: son equivalentes —
     // IDA visita cada (tipo buscado, slot) y acá se filtra por rango, y el
-    // acumulador `*((unsigned __int8 *)v6 - 30)` es el byte +26 = Durability.
+    // acumulador `*((std::uint8_t *)v6 - 30)` es el byte +26 = Durability.
     //
     // Lo unico que se corrige es el GATE.  IDA sub_482E40 usa
-    // `*((__int16 *)v6 - 28) == v9 && *v6 > 0`, donde `*v6` es el campo en
+    // `*((std::int16_t *)v6 - 28) == v9 && *v6 > 0`, donde `*v6` es el campo en
     // slot+56 = ITEM::Key, no Durability.  Coinciden casi siempre porque
     // InsertInventoryItem hace `Key = max(Durability, 1)`, pero no cuando la
     // durabilidad es 0: ahi el item sigue teniendo Key = 1 y el original lo

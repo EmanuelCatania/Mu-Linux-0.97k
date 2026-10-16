@@ -1,3 +1,4 @@
+#include <cstdint>
 #pragma once
 #include "Platform/IDiagnostics.h"
 #include "Platform/IWindow.h"
@@ -164,16 +165,16 @@ public:
     __cpuid(regs, 0);
     LARGE_INTEGER qpcStart, qpcEnd;
     QueryPerformanceCounter(&qpcStart);
-    unsigned __int64 tscStart = __rdtsc();
+    std::uint64_t tscStart = __rdtsc();
     Platform::GetTimer().SleepMilliseconds(param_1);
     QueryPerformanceCounter(&qpcEnd);
-    unsigned __int64 tscEnd = __rdtsc();
+    std::uint64_t tscEnd = __rdtsc();
 
     SetProcessAffinityMask(hProc, procAff);
     SetThreadPriority(hThread, threadPri);
     SetPriorityClass(hProc, priClass);
 
-    double tscDelta = (double)(__int64)(tscEnd - tscStart);
+    double tscDelta = (double)(std::int64_t)(tscEnd - tscStart);
     double qpcDelta = (double)(qpcEnd.QuadPart - qpcStart.QuadPart);
     double seconds  = qpcDelta / (double)freq.QuadPart;
     if (seconds <= 0.0) return 0;

@@ -209,16 +209,16 @@ LAB_00460dd8:
       switch(param_1) {
       case 0xf7: case 0xfa:
         *(int*)&pfVar17[EffectLifetimeIndex] = 35;
-        pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
-        return (float *)(int)(short)param_7;
+        pfVar17[3] = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+        return (float *)(int)(short)(uintptr_t)param_7;
       case 0xf8: case 0xfb:
         *(int*)&pfVar17[EffectLifetimeIndex] = param_1 == 0xf8 ? 35 : 40;
-        pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
+        pfVar17[3] = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         return pfVar8;
       case 0xf9: case 0xfc:
         *(int*)&pfVar17[EffectLifetimeIndex] = 40;
-        fVar27 = (float)(int)(short)param_7;
+        fVar27 = (float)(int)(short)(uintptr_t)param_7;
         break;
       case 0xfd:
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
@@ -256,7 +256,7 @@ LAB_00460dd8:
         }
         pfVar12 = pfVar17 + 7;
         pfVar8 = pfVar17 + 4;
-        bVar6 = (byte)param_5;
+        bVar6 = (byte)(uintptr_t)param_5;
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,0,(int)pfVar17,pfVar17[3],0x1e,bVar6);
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(int)pfVar17,pfVar17[3],0x1e,bVar6);
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(int)pfVar17,pfVar17[3],0x1e,bVar6);
@@ -618,7 +618,7 @@ switchD_00464efe_caseD_4ab:
   }
   if (param_1 == 0xf6) {
     *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-    fVar27 = (float)(int)(short)param_7;
+    fVar27 = (float)(int)(short)(uintptr_t)param_7;
     goto LAB_004649e0;
   }
   switch(param_1) {
@@ -1354,7 +1354,7 @@ LAB_004625aa:
     break;
   case 0xf5:
     *(int*)&pfVar17[EffectLifetimeIndex] = 35;
-    pfVar17[3] = (float)(int)(short)param_7 * _DAT_00552594;
+    pfVar17[3] = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   }

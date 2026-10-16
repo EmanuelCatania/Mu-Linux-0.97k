@@ -6,6 +6,9 @@
 #if !defined(__i386__)
 #error "El cliente requiere GCC/Clang de 32 bits (-m32)."
 #endif
+#ifndef __forceinline
+#define __forceinline inline __attribute__((always_inline))
+#endif
 #ifndef __cdecl
 #define __cdecl __attribute__((cdecl))
 #endif

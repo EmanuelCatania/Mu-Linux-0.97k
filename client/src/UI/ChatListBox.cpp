@@ -1,3 +1,4 @@
+#include <cstdint>
 // ChatListBox.cpp — engine chat-widget object behind dword_55C9FF0.
 //
 // What this is
@@ -76,7 +77,6 @@
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
-#include <mbstring.h>
 #include "globals.h"
 #include "structs.h"
 #include <new>
@@ -439,7 +439,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     ((FnVoid)vt[20])(self);  // *this+80 — render header
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
 
     int i = 0;
     while (i < (int)self[35]) {
@@ -614,6 +614,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         ((FnVoid)vt[26])(self);   // recompute scrollbar thumb geometry
 
         // Adjust scrollbar offset for chat list-box mode (8-px nudge).
+        {
         DWORD modeFlag = self[45];
         int v6 = (modeFlag == 1) ? 8 : 0;
 
@@ -691,6 +692,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             } else {
                 self[43] = r + 1;
             }
+        }
         }
 LABEL_53:
         v17 = 1; MouseOnWindow = 1;
@@ -1000,8 +1002,8 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
         return 1;
     }
     // Return condition #2 — IDA:
-    //   this[48] == 1 && sub_40C490((__int64)flt_5590B0, (__int64)flt_5590B4,
-    //                               (__int64)(flt_5590B8 * 3.0), 16, 1)
+    //   this[48] == 1 && sub_40C490((std::int64_t)flt_5590B0, (std::int64_t)flt_5590B4,
+    //                               (std::int64_t)(flt_5590B8 * 3.0), 16, 1)
     // = la franja COMPLETA de los 3 botones: x∈[295, 349), y∈[417, 433).
     if (self[48] == 1 && FUN_0040c490((int)ChatListBox_TabButtonsX, (int)ChatListBox_TabButtonsY,
                                       (int)(ChatListBox_TabButtonSpacing * 3.0f), 16, 1)) {
@@ -1181,7 +1183,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         }
     }
     if (v40[0]) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
         Platform::TextFormat(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
@@ -1189,7 +1191,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         EnableAlphaTest(true);
         UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0, sizeof(Buffer));
         GL_ResetState();
-        if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
 
     // Incrementa el contador de frames — lo usa el slot 23 para hacer parpadear el cursor.
@@ -1830,7 +1832,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     else
         v5 = (int)self[12] - 13 * a2 - 16;
 
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Avance del cursor tal cual el binario: `self[25] = cursor->next`, y acto
     // seguido `self[25] = (cursor->next)->prev`.  Con la lista circular eso
@@ -1860,13 +1862,13 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     char Buffer[256];
     memset(Buffer, 0, sizeof(Buffer));
     const char* name = (const char*)(self[25] + 8);
-    _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "%s", name);
+    Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "%s", name);
     UI_DrawText(v4, v5, Buffer, 0, 1, 0, sizeof(Buffer));
 
     if (party != 0xFF) {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFF00C4FFu;                        // -16726785
-        _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "(%d)", party + 1);
+        Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "(%d)", party + 1);
         UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0, sizeof(Buffer));
     }
 
@@ -1896,7 +1898,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         }
     }
 
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();                                             // DisableAlphaBlend
     return 1;
 }
@@ -2443,7 +2445,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
             }
         }
         int j;
-        for (j = 0; j < cut; j += (int)_mbclen((const unsigned char*)&cur[j]))
+        for (j = 0; j < cut; j += (int)Platform::TextCharacterBytes((const unsigned char*)&cur[j]))
             ;
         strncpy(line, cur, j);
         fwdOff += lineSize;

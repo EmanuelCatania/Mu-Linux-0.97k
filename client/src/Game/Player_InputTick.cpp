@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "stdafx.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
@@ -732,7 +733,7 @@ void __cdecl Player_ProcessInput(void)
                     // binario: sin ella el walker nunca se apaga.
                     *(unsigned char*)(ent + 748) = 0;
                     SetPlayerStop((int)ent);
-                    // IDA L401: `dword_7E11DBC = (__int64)*(float *)(v0 + 36);`
+                    // IDA L401: `dword_7E11DBC = (std::int64_t)*(float *)(v0 + 36);`
                     // — es el FACING del héroe, no un timestamp.
                     DAT_07e11dbc = (int)*(float*)(ent + 36);
                     DAT_07e11db8 = 0;
@@ -853,6 +854,7 @@ void __cdecl Player_ProcessInput(void)
     // Desviación: con el walker idle (wp_count == 0) los clicks se aceptan de
     // inmediato; mientras se mueve se mantiene el gate por tiempo para no spamear
     // el server con paths intermedios.
+    { // El salto de salida no entra en el ámbito de estas variables.
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
     // DAT_07e11dc0 ("movement lock flag B"): según IDA solo lo escriben Attack
     // (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío en nuestro build
@@ -1372,8 +1374,8 @@ void __cdecl Player_ProcessInput(void)
             if (mountOk && tgtEntityPtr != 0) {
                 // TargetX/TargetY salen de la POSICION DEL OBJETO, no del tile bajo el
                 // cursor.  IDA L1138:
-                //     TargetX = (__int64)(o->Position[0] * 0.01);
-                //     TargetY = (__int64)(o->Position[1] * 0.01);
+                //     TargetX = (std::int64_t)(o->Position[0] * 0.01);
+                //     TargetY = (std::int64_t)(o->Position[1] * 0.01);
                 TargetX = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
                 TargetY = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
 
@@ -1623,14 +1625,15 @@ void __cdecl Player_ProcessInput(void)
 end_tick_inc:
     DAT_07e11d28 = DAT_07e11d28 + 1;
 
+    }
 end_tick:
     // ── Per-frame entity state update ─────────────────────────────────────────
     Combat_DispatchHeroSkillAttack(DAT_07abf5d8);
 
     // ── HeroTile: atributo de terreno bajo el HÉROE ───────────────────────────
     // IDA Player_InputTick L570-582:
-    //     v227 = (__int64)*(float *)(Hero + 16) / 100
-    //          + (((__int64)*(float *)(Hero + 20) / 100) << 8);
+    //     v227 = (std::int64_t)*(float *)(Hero + 16) / 100
+    //          + (((std::int64_t)*(float *)(Hero + 20) / 100) << 8);
     //     clamp [0, 0xFFFF]
     //     HeroTile = TerrainMappingLayer1[v227];
     //

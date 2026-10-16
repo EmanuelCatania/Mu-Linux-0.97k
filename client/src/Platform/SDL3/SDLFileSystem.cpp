@@ -111,6 +111,17 @@ public:
         if (resolved.empty()) return nullptr;
         return std::fopen(resolved.string().c_str(), mode);
     }
+    bool EnsureDirectory(const char* path) override {
+#ifdef _WIN32
+        return CreateDirectoryA(path, nullptr) != 0 || GetLastError() == ERROR_ALREADY_EXISTS;
+#else
+        const auto resolved = Resolve(path, true);
+        if (resolved.empty()) return false;
+        std::error_code error;
+        if (fs::create_directory(resolved, error)) return true;
+        return !error && fs::is_directory(resolved, error);
+#endif
+    }
     bool Exists(const char* path) override { return !Resolve(path).empty(); }
     bool SetWorkingDirectory(const char* path) override {
         auto resolved = Resolve(path);

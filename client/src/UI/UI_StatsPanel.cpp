@@ -1,3 +1,4 @@
+#include <cstdint>
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
@@ -43,7 +44,7 @@ int RenderErrorMessage(void)
   gOptionsMenu.OnErrorMessageFrame();   // DESVIACION (DLL OptionsMenu, hook 0x0051AF65)
   GL_ResetState();
   glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
@@ -260,7 +261,7 @@ LAB_0051c13d:
 			// Preserve that representation when forwarding it to OpenGL.
 			glColor3f(*(float*)&uVar10,*(float*)&uVar15,*(float*)&uVar16);
         GL_DrawTexture(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-        SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+        gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
         DAT_00559c78 = 0xfffff0c8;
         ptVar17 = &local_e4;
         // IDA RenderErrorMessage (0x51AF50) indexes the text table directly:
@@ -273,11 +274,11 @@ LAB_0051c13d:
         uVar10 = 0;
         cVar13 = '\0';
         ptVar12 = (LPSIZE)0x0;
-        lVar8 = (longlong)(*(float*)&local_dc + 12.0f);   // IDA RenderErrorMessage case 143: (__int64)(Height + 12.0)
+        lVar8 = (longlong)(*(float*)&local_dc + 12.0f);   // IDA RenderErrorMessage case 143: (std::int64_t)(Height + 12.0)
         UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(int)lVar8,pCVar6,
                      ptVar12,cVar13,uVar10);
         { float _fdc = *(float*)&local_dc + _DAT_00552854; local_dc = *(unsigned int*)&_fdc; }
-        SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         DAT_00559c78 = 0xffffffff;
         if (iVar3 == 0) {
           // General: the two explanatory lines immediately above button 0.
@@ -647,14 +648,14 @@ LAB_0051c13d:
     const char* inviterName = (characterIndex < 400 && DAT_07abf5d0)
         ? (const char*)(uintptr_t)(DAT_07abf5d0 + characterIndex * 916 + 449)
         : "";
-    _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
+    Platform::TextFormatTruncated(local_c8, sizeof(local_c8), Platform::TruncateText,
                 (const char*)&DAT_07d486fc, inviterName);
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
-    _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
+    Platform::TextFormatTruncated(local_c8, sizeof(local_c8), Platform::TruncateText,
                 (const char*)&DAT_07d48f30, inviterName);
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
@@ -669,13 +670,13 @@ LAB_0051c13d:
     // GlobalText[418] aporta el formato localizado y GlobalText[419] la línea
     // de confirmación. ErrorMessage 128 es guerra de guild, no Trade.
     crt_sprintf(local_c8, (const char*)DAT_07d486fc, DAT_07ea9834);
-    SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BIG)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BIG)));
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
-    SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     crt_sprintf(local_c8, GlobalText[419]);
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
@@ -839,7 +840,7 @@ LAB_0051c13d:
     return iVar3;
   case 0x8f:
     DAT_00559c78 = 0xff0080ff;
-    SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)lpString_07d5f94c);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)lpString_07d5f94c,iVar3,ptVar17);
@@ -872,7 +873,7 @@ LAB_0051c13d:
       goto LAB_0051d371;
     }
     local_d8 = 0x140;
-    SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
     glColor3f(1.0f, 1.0f, 0.0f);
     uVar5 = ((int)MixType < 0) - 1 & MixType;
     if (MixType == 0xb) {
@@ -891,7 +892,7 @@ LAB_0051d2dd:
     UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
                  (LPSIZE)0x0,'\0',0);
     local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x3b);
-    SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
 LAB_0051d371:
     iVar3 = 0;
     if (DAT_083a4324 < 1) {
@@ -899,7 +900,7 @@ LAB_0051d371:
     }
     do {
       glColor3f(1.0f, 0.7f, 0.0f);
-      SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+      gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
       if (iVar3 == 0) {
         if (DAT_07eaa13c == 1) {
           uVar10 = 0;

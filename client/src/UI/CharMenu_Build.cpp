@@ -366,7 +366,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             if (*piVar2 != 0) {
                 pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
             }
-            SelectObject(gFont.GetTextDC(), pHVar9);
+            gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             gFont.MeasureText(gFont.GetTextDC(), pCVar3, Platform::TextLength(pCVar3), &local_8);
             if (local_18 < (float)local_8.cx) {
                 local_18 = (float)local_8.cx;
@@ -424,7 +424,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             if (DAT_07ea7b10[iVar1] != 0) {
                 pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
             }
-            SelectObject(gFont.GetTextDC(), pHVar9);
+            gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {
                 gFont.MeasureText(gFont.GetTextDC(), pCVar3, Platform::TextLength(pCVar3), &local_8);
                 if (*pCVar3 == '\n') {

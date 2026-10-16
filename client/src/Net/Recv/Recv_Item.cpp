@@ -22,8 +22,8 @@ void ShopInsertItem(int slot, const BYTE* Item)
 {
     int type = ConvertItemType((BYTE*)Item);
     if (type == 255 || type < 0 || type >= ITEM_MAX_EX) return;
-    BYTE* attrBase = (BYTE*)(uintptr_t)DAT_07d78068;
-    if ((uintptr_t)attrBase < 0x100000u || (uintptr_t)attrBase >= 0x80000000u) return;
+    BYTE* attrBase = (BYTE*)(uintptr_t)ItemAttribute_Base();
+    if (!attrBase) return;
     BYTE* attr = attrBase + type * 0x40;
     int W = attr[32]; int H = attr[33];   // ITEM_ATTRIBUTE.Width / .Height
     if (W < 1) W = 1;

@@ -3,7 +3,7 @@
 // No agregar declaraciones FUN_ sin definición para direcciones que ya tienen su
 // función declarada con el nombre de IDA: un segundo símbolo C++ para la misma
 // dirección del binario termina en puentes muertos.
-#include <intrin.h>   // _ReturnAddress (used por HashTable_GetIndex defensive log)
+#include "Platform/CompilerCompat.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
@@ -80,7 +80,6 @@ void  __cdecl Client_GetSystemInfo(int, int, int, int); // IDA: FUN_004065F0; av
 void  __cdecl FUN_00406af0(int, int, int, int);
 int   __cdecl Packet_IsValidSockType(int server_idx, int channel);      // PVP flag query
 bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: CheckSpecialText
-void  __cdecl Resource_LoadOrFatal(char *);
 
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl Widget_NodeInit(int);           // Widget_BaseRelease — releases core widget struct
@@ -650,7 +649,6 @@ int   __cdecl OpenTGA(const char *path, int id,               // Texture_LoadTGA
 void  __cdecl UnloadImage(int id); // IDA: UnloadImage (0x0052A050)
 int   __cdecl CSimpleModulus_Encode(int mode, BYTE* src, int len); // IDA: FUN_0053CC30 (0x0053CC30)
 int   __cdecl CSimpleModulus_Decode(int, int, int, int); // IDA: FUN_0053CCA0 (0x0053CCA0)
-uint  __cdecl Pipe_QueryResource(char *);  // Texture_GetSlot — returns slot index
 float10 __cdecl CIsin(void);  // GetTickCount-based time accumulator → float10
 
 // ── MSVC CRT stubs (obfuscation / anti-tamper wrappers) ───────────────────────
@@ -806,14 +804,9 @@ void  __cdecl RenderRepairInfo(void*, int,   void*);        // RenderItemInfo_Sh
 void  __cdecl RenderSkillTooltip(float a1, int a2, int a3);   // Skill_RenderTooltip @ 0x004C9730
 
 // ── Texture helpers ───────────────────────────────────────────────────────────
-uint  __cdecl Pipe_SendQuery(void *mgr, CHAR *name); // IDA: FUN_0053ed00 (0x0053ED00)
-void  __cdecl Pipe_SetTarget(void *mgr, CHAR *name);      // Pipe_SetTarget — copies name, sends 0x613
-void  __cdecl Pipe_Write(LPCVOID param_1, int param_2, CHAR *param_3);  // Pipe_Write wrapper
-void  __cdecl Pipe_WriteFile(LPCVOID param_1, int param_2, CHAR *param_3);  // Pipe_WriteFile — WriteFile to named pipe
 
 // ── WinMain helpers ───────────────────────────────────────────────────────────
 void  __cdecl Window_FatalError(HWND hwnd, char shutdown);  // 0x004129F0
-UINT  __cdecl Resource_Load(char* filename);  // Resource_Load — loads a resource file
 
 // ── Misc/Util helpers ─────────────────────────────────────────────────────────
 void  __cdecl ItemAngle(int); // IDA: ItemAngle (0x005030C0)
@@ -944,7 +937,6 @@ void  __cdecl FUN_0053d430(BYTE *gameName);                          // GameGuar
 int   __cdecl GameGuard_HealthCheck(void *ptr);                               // GameGuard query
 
 // Vtable init / class chains (thiscall emulated as fastcall)
-int   __cdecl    FUN_00405280(HANDLE *This);                         // CErrorReport vtable+init
 int   __cdecl    FUN_00405290(int param_1);                          // CErrorReport field init
 void  __cdecl    FUN_004052b0(void *This, const char *filename);     // CErrorReport open log
 void  __cdecl    FUN_00407de0(DWORD *This);                          // CWaveFile vtable set
@@ -1093,7 +1085,6 @@ void  __stdcall FUN_00405340(void);                                  // CErrorRe
 char* __stdcall CErrorReport_FindLogMarker(char* param_1);           // IDA: FUN_00405420
 void  __fastcall CErrorReport_WriteSystemInfo(void* report);           // IDA: CErrorReport__WriteSystemInfo
 void  __fastcall CErrorReport_WriteOpenGLInfo(void* report);           // IDA: FUN_004056B0
-void  __fastcall CErrorReport_WriteImeInfo(void* report, void* edx, HWND hwnd); // IDA: CErrorReport__WriteImeInfo
 void  __cdecl GetOSVersion(DWORD si);                                // detect Windows version
 long long __cdecl Cpu_MeasureClockRate(DWORD param_1);               // IDA: FUN_00405e20
 void  __cdecl GetCPUInfo(DWORD si);                                  // detect CPU vendor+model
@@ -1148,7 +1139,6 @@ int   __stdcall FUN_0053fcf0(void);                                     // Toolh
 void  __cdecl FUN_0053fdd0(void);                                       // GG process snapshot
 void  __cdecl FUN_0053feb0(void);                                       // GG module snapshot
 unsigned int __stdcall FUN_005400d0(int param_1, unsigned int param_2);  // GG error dispatch
-// Pipe_Write — already declared above (Pipe_Write wrapper)
 // FUN_005404c0, FUN_00540a70, FUN_00540ac0 — already implemented in batch 10/11
 int   __fastcall FUN_005406f0(int param_1);                             // GG pipe/handle cleanup
 
@@ -1273,7 +1263,6 @@ void  __stdcall InitGame(void);                                          // 0x00
 void  __cdecl ReceiveChat(BYTE *ReceiveBuffer);                          // 0x00427630 — chat packet handler (opcode 0x00)
 void  __fastcall FUN_00422c50(int param_1);                              // 0x00422C50 — BST node cleanup for session obj
 void  __cdecl AppearMonster(DWORD c);                                    // 0x0042A0C0 — monster spawn animation+sound
-void  __stdcall FUN_00422074(void);                                      // 0x00422074 — SEH __finally handler (DestroyWindow)
 void  __cdecl FUN_0051d740(void);                                        // 0x0051D740 — ClearNotice
 void  __cdecl FUN_00482350(void);                                        // 0x00482350 — ClearWhisperID
 void  __cdecl FUN_004827a0(void);                                        // 0x004827A0 (mismap: NO es clearMatchInfo, esa direccion cae dentro de sub_4824C0)

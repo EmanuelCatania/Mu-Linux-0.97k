@@ -18,16 +18,12 @@
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
 // no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
-// mientras que un 0x73 cifrado lleva el puntero de recurso consumido por 53D5C0.
+// El 0x73 cifrado pertenecía al pipe GameGuard desactivado.
 void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 {
-    if (encrypted) {
-        if (size >= 8) {
-            char* resource = *(char**)(packet + 4);
-            if (resource) Pipe_QueryResource(resource);
-        }
-        return;
-    }
+    // El pipe de GameGuard nunca se inicializa en este port.
+    // Conserva el bypass existente sin interpretar punteros recibidos por red.
+    if (encrypted) return;
 
     const BYTE reply[6] = { 0xC1, 0x06, 0xF1, 0x03, 0x00, 0xF1 };
     gNetwork.Send(reply, sizeof(reply));

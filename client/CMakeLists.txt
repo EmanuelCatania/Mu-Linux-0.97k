@@ -46,7 +46,7 @@ add_subdirectory(lib/libjpeg)
 # (tools/check_cmake_sources.py).
 set(MU_SOURCES
     src/stdafx.cpp
-    src/WinMain.cpp
+    src/Platform/ClientEntry.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
     src/Scene/Scene_Intro.cpp
@@ -79,10 +79,10 @@ set(MU_SOURCES
     src/Platform/Win32/Win32FileSystem.cpp
     src/Platform/Win32/Win32Socket.cpp
     src/Platform/Win32/Win32GLContext.cpp
-    src/Core/Font.cpp
+    src/Platform/FontFrontend.cpp
     src/Sound/SoundManager.cpp
     src/Game/MapManager.cpp
-    src/Core/WndProc.cpp
+    src/Platform/Win32/ClientWndProc.cpp
     src/Net/Network.cpp
     src/Net/Reconnect.cpp
     src/Net/Ping.cpp
@@ -174,7 +174,7 @@ set(MU_SOURCES
     src/Render/Camera_Login.cpp
     src/UI/Chat_Log.cpp
     src/Terrain/Terrain_RayCollision.cpp
-    src/Debug/MiniDump.cpp
+    src/Platform/Win32/MiniDump.cpp
     src/Combat/Combat_AttackEffect.cpp
     src/Core/Runtime_Small.cpp
     src/Core/Runtime_Medium.cpp
@@ -192,7 +192,6 @@ set(MU_SOURCES
     src/Render/BMD_LegacyDraw.cpp
     src/Config/Config_TokenParser.cpp
     src/Entity/Entity_BoneEffects.cpp
-    src/Net/Pipe_Legacy.cpp
     src/Core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
@@ -245,7 +244,6 @@ set(MU_SOURCES
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
     src/Render/Camera_Unproject.cpp
-    src/Net/Net_PipeQuery.cpp
     src/Net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
     src/Render/Render_WorldHelpers.cpp
@@ -350,6 +348,8 @@ set(MU_SOURCES
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
 set(MU_HEADERS
+    src/Platform/IClientSettings.h
+    src/Platform/ClientSettings.h
     src/Platform/IDiagnostics.h
     src/Platform/Diagnostics.h
     src/Platform/Win32/Win32Diagnostics.h
@@ -481,6 +481,9 @@ endif()
 
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+if(NOT WIN32)
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/")
+endif()
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
 endif()
@@ -561,9 +564,6 @@ endif()
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     target_link_libraries(mu97k PRIVATE mu_platform_sdl)
     target_compile_definitions(mu97k PRIVATE MU_MINIAUDIO_LINKED MU_SDL_FONTS)
-    add_custom_command(TARGET mu97k POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts" "$<TARGET_FILE_DIR:mu97k>/assets/fonts")
 endif()
 
 if(WIN32)

@@ -75,7 +75,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     if (!s_ConnFailHandled) {
         s_ConnFailHandled = true;
         Platform::GetWindow().ShowError("No se puede conectar con el servidor.", "Mu Online", true, true);
-        PostQuitMessage(0);
+        Platform::GetWindow().QuitLoop();
     }
     // Skip the hash-table bootstrap below — it operates on a live session key
     // and there is no session if connect failed.  Returning here also avoids
@@ -280,7 +280,7 @@ extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
 
     SOCKET sock = (SOCKET)*(DWORD*)(This + 8);
     int conn = Platform::GetSocket().ConnectIPv4(sock, address, port);
-    if (conn != -1 || Platform::GetSocket().LastError() == WSAEWOULDBLOCK) {
+    if (conn != -1 || Platform::GetSocket().LastError() == Platform::SocketWouldBlock) {
         // Async select: FD_READ|FD_WRITE|FD_CONNECT|FD_CLOSE = 0x23
         // (per IDA constant — matches FD_READ(1) | FD_CONNECT(0x10) |
         //  FD_CLOSE(0x20) — the binary uses 0x35 in some calls, 0x23 here.)

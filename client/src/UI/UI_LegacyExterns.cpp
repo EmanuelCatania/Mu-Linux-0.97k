@@ -1,6 +1,9 @@
+#include <cstdint>
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Platform/IGLContext.h"
+#include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -147,10 +150,10 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     char lines[5][100] = {};
     int count = 0;
-    sprintf_s(lines[count++], 100, "%s", szName);
-    if (piDistance > 0) sprintf_s(lines[count++], 100, "Distance: %d", piDistance);
-    sprintf_s(lines[count++], 100, "Mana: %d", piMana);
-    if (piSkillMana > 0) sprintf_s(lines[count++], 100, "Skill Mana: %d", piSkillMana);
+    Platform::TextFormatSecure(lines[count++], 100, "%s", szName);
+    if (piDistance > 0) Platform::TextFormatSecure(lines[count++], 100, "Distance: %d", piDistance);
+    Platform::TextFormatSecure(lines[count++], 100, "Mana: %d", piMana);
+    if (piSkillMana > 0) Platform::TextFormatSecure(lines[count++], 100, "Skill Mana: %d", piSkillMana);
     SkillTooltip_RenderLines((int)a1, a2, lines, count);
     return;
 
@@ -173,11 +176,11 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     int* TextListColor = DAT_07e91708;
     int* TextBold = DAT_07ea7b10;
 
-    sprintf_s(TextList0, 100, "\n");
-    sprintf_s(TextListN(1), 100, "%s", szName);
+    Platform::TextFormatSecure(TextList0, 100, "\n");
+    Platform::TextFormatSecure(TextListN(1), 100, "%s", szName);
     TextListColor[1] = 1;
     TextBold[1] = 1;
-    sprintf_s(TextListN(2), 100, "\n");
+    Platform::TextFormatSecure(TextListN(2), 100, "\n");
 
     int v10 = 3;
     int heroClassFlag = *(unsigned char*)(Hero + 444) & 7;
@@ -192,15 +195,15 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
             int dmg = (int)((double)agi * 0.02 + (double)ene * 0.0049999999 + 10.0);
             int strBoost = (int)((double)str * 0.02);
             int dur = (int)((double)ene * 0.025 + 60.0);
-            sprintf_s(TextListN(3), 100, GlobalText[578], (unsigned int)dmg);
+            Platform::TextFormatSecure(TextListN(3), 100, GlobalText[578], (unsigned int)dmg);
             TextListColor[3] = 0; TextBold[3] = 0;
-            sprintf_s(TextListN(4), 100, GlobalText[880], strBoost);
+            Platform::TextFormatSecure(TextListN(4), 100, GlobalText[880], strBoost);
             TextListColor[4] = 0; TextBold[4] = 0;
-            sprintf_s(TextListN(5), 100, GlobalText[881], (unsigned int)dur);
+            Platform::TextFormatSecure(TextListN(5), 100, GlobalText[881], (unsigned int)dur);
             TextListColor[5] = 0; TextBold[5] = 0;
             v10 = 6;
         } else {
-            sprintf_s(TextListN(3), 100, GlobalText[170], piMinDamage, piMaxDamage);
+            Platform::TextFormatSecure(TextListN(3), 100, GlobalText[170], piMinDamage, piMaxDamage);
             TextListColor[3] = 0; TextBold[3] = 0;
             v10 = 4;
         }
@@ -212,13 +215,13 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
         bool emitted = true;
         switch (skillType) {
         case 0x1A:
-            sprintf_s(TextListN(v10), 100, GlobalText[171], ene / 5 + 5);
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[171], ene / 5 + 5);
             break;
         case 0x1B:
-            sprintf_s(TextListN(v10), 100, GlobalText[172], (ene >> 3) + 2);
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[172], (ene >> 3) + 2);
             break;
         case 0x1C:
-            sprintf_s(TextListN(v10), 100, GlobalText[173], ene / 7 + 3);
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[173], ene / 7 + 3);
             break;
         default:
             emitted = false;
@@ -233,21 +236,21 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     // Distance line
     if (piDistance) {
-        sprintf_s(TextListN(v10), 100, GlobalText[174], piDistance);
+        Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[174], piDistance);
         TextListColor[v10] = 0;
         TextBold[v10] = 0;
         v10++;
     }
 
     // Mana line
-    sprintf_s(TextListN(v10), 100, GlobalText[175], piMana);
+    Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[175], piMana);
     TextListColor[v10] = 0;
     TextBold[v10] = 0;
     int v15 = v10 + 1;
 
     // SkillMana (if > 0)
     if (piSkillMana > 0) {
-        sprintf_s(TextListN(v15), 100, GlobalText[360], piSkillMana);
+        Platform::TextFormatSecure(TextListN(v15), 100, GlobalText[360], piSkillMana);
         TextListColor[v15] = 0;
         TextBold[v15] = 0;
         v15++;
@@ -255,13 +258,13 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     // Class 1 (DK) + skill 47 → "cannot use" message
     if (heroClassFlag == 1 && skillType == 47) {
-        sprintf_s(TextListN(v15), 100, "%s", GlobalText[96]);
+        Platform::TextFormatSecure(TextListN(v15), 100, "%s", GlobalText[96]);
         TextListColor[v15] = 5;
         TextBold[v15] = 0;
         v15++;
     }
 
-    sprintf_s(TextListN(v15), 100, "\n");
+    Platform::TextFormatSecure(TextListN(v15), 100, "\n");
     int v16 = v15 + 1;
 
     // Anti-tamper XOR encryption pass on CharacterMachine — skipped (anti-tamper).
@@ -307,7 +310,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     else if (skillStatRec && ((const char*)skillStatRec)[0] != '\0')
         skillName = (const char*)skillStatRec;
     if (skillName && skillName[0]) {
-        strncpy_s(szName, sizeof(szName), skillName, 31);
+        Platform::TextCopySecure(szName, sizeof(szName), skillName, 31);
         szName[31] = '\0';
     }
     GetSkillInformation((int)skillType, 1, szName[0] ? NULL : szName, &piMana, &piDistance, &piSkillMana);
@@ -368,7 +371,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     DAT_07ea7b10[idx] = 0;
     idx++;
 
-    _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", szName);
+    Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", szName);
     DAT_07e91708[idx] = 1;
     DAT_07ea7b10[idx] = 1;
     idx++;
@@ -379,28 +382,28 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     idx++;
 
     if (piMinDamage > 0 || piMaxDamage > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(170, "Wizardry Dmg:%d~%d"), piMinDamage, piMaxDamage);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     if (piDistance > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(174, "Range: %d"), piDistance);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(175, "Mana: %d"), piMana);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     if (piSkillMana > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(360, "AG: %d"), piSkillMana);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
@@ -410,7 +413,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
     if (Hero && ((*(BYTE*)((char*)Hero + 0x1BC) & 7) == 1) && skillType == 47) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", GlobalTextOr(96, ""));
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
         DAT_07e91708[idx] = 5;
         DAT_07ea7b10[idx] = 0;
         idx++;
@@ -740,8 +743,8 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     //     CUIRenderText::RenderText(g_pRenderText, iPos_x, iPos_y, ..., 640)
     // y ese 640 es el ancho del espacio de referencia. Quien convierte a pixel
     // es el subclass, `sub_410AF0` (L101-103):
-    //     sub_47F4C0((__int64)(v22 * g_fScreenRate_x + (v15 << 8)),
-    //                (__int64)(v24 * g_fScreenRate_y), Width, Height, ...);
+    //     sub_47F4C0((std::int64_t)(v22 * g_fScreenRate_x + (v15 << 8)),
+    //                (std::int64_t)(v24 * g_fScreenRate_y), Width, Height, ...);
     // o sea logico * escala = pixel. `sub_47F4C0` ya recibe TODO en pixeles y
     // por eso compara contra WindowWidth directamente.
     //
@@ -787,7 +790,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         if (*drawText == '\0') return;
     }
 
-    HGLRC hRC = wglGetCurrentContext();
+    void* hRC = Platform::GetGLContext().CurrentIdentity();
     if (!hRC) return;
 
     HDC hFontDC = gFont.GetTextDC();
@@ -799,13 +802,13 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // vía CUIRenderText::SetFont; g_hFontBig: HUD_Pass3, doble tamaño) y miden el
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
-    HFONT hFont = (HFONT)GetCurrentObject(hFontDC, OBJ_FONT);
+    HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
     if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
     if (hFont == NULL) return;
 
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
     // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { HGLRC rc; HFONT font; GLuint base; int ascent; unsigned generation; };
+    struct FontLists { void* rc; HFONT font; GLuint base; int ascent; unsigned generation; };
     static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
     static int       s_next = 0;
 

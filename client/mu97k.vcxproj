@@ -107,6 +107,8 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Platform\IClientSettings.h" />
+    <ClInclude Include="src\Platform\ClientSettings.h" />
     <ClInclude Include="src\Platform\IDiagnostics.h" />
     <ClInclude Include="src\Platform\Diagnostics.h" />
     <ClInclude Include="src\Platform\Win32\Win32Diagnostics.h" />
@@ -221,7 +223,7 @@
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\WinMain.cpp" />
+    <ClCompile Include="src\Platform\ClientEntry.cpp" />
     <ClCompile Include="src\Local\Text_Data.cpp" />
     <ClCompile Include="src\Scene\Scene_Dispatch.cpp" />
     <ClCompile Include="src\Scene\Scene_Intro.cpp" />
@@ -254,10 +256,10 @@
     <ClCompile Include="src\Platform\Win32\Win32FileSystem.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Socket.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
-    <ClCompile Include="src\Core\Font.cpp" />
+    <ClCompile Include="src\Platform\FontFrontend.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
     <ClCompile Include="src\Game\MapManager.cpp" />
-    <ClCompile Include="src\Core\WndProc.cpp" />
+    <ClCompile Include="src\Platform\Win32\ClientWndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
     <ClCompile Include="src\Net\Reconnect.cpp" />
     <ClCompile Include="src\Net\Ping.cpp" />
@@ -349,7 +351,7 @@
     <ClCompile Include="src\Render\Camera_Login.cpp" />
     <ClCompile Include="src\UI\Chat_Log.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
-    <ClCompile Include="src\Debug\MiniDump.cpp" />
+    <ClCompile Include="src\Platform\Win32\MiniDump.cpp" />
     <ClCompile Include="src\Combat\Combat_AttackEffect.cpp" />
     <ClCompile Include="src\Core\Runtime_Small.cpp" />
     <ClCompile Include="src\Core\Runtime_Medium.cpp" />
@@ -367,7 +369,6 @@
     <ClCompile Include="src\Render\BMD_LegacyDraw.cpp" />
     <ClCompile Include="src\Config\Config_TokenParser.cpp" />
     <ClCompile Include="src\Entity\Entity_BoneEffects.cpp" />
-    <ClCompile Include="src\Net\Pipe_Legacy.cpp" />
     <ClCompile Include="src\Core\Runtime_Linker.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
     <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
@@ -420,7 +421,6 @@
     <ClCompile Include="src\Scene\Scene_OpenWorld.cpp" />
     <ClCompile Include="src\Scene\Scene_AssetLoad.cpp" />
     <ClCompile Include="src\Render\Camera_Unproject.cpp" />
-    <ClCompile Include="src\Net\Net_PipeQuery.cpp" />
     <ClCompile Include="src\Net\Protocol\Protocol_Check.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />
     <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />
