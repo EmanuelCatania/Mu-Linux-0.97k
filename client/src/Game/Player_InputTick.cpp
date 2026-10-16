@@ -854,6 +854,7 @@ void __cdecl Player_ProcessInput(void)
     // Desviación: con el walker idle (wp_count == 0) los clicks se aceptan de
     // inmediato; mientras se mueve se mantiene el gate por tiempo para no spamear
     // el server con paths intermedios.
+    { // El salto de salida no entra en el ámbito de estas variables.
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
     // DAT_07e11dc0 ("movement lock flag B"): según IDA solo lo escriben Attack
     // (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío en nuestro build
@@ -1624,6 +1625,7 @@ void __cdecl Player_ProcessInput(void)
 end_tick_inc:
     DAT_07e11d28 = DAT_07e11d28 + 1;
 
+    }
 end_tick:
     // ── Per-frame entity state update ─────────────────────────────────────────
     Combat_DispatchHeroSkillAttack(DAT_07abf5d8);

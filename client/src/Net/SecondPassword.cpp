@@ -1975,6 +1975,7 @@ void __cdecl SetPlayerWalk(int param_1) {
 
     // Player path. Read pendant (c+696), L-hand (c+624), R-hand (c+648),
     // wings (c+672), stamina (c+768), is-dead (c+846).
+    { // El salto de salida no entra en el ámbito de estas variables.
     short pendant = *(short *)(param_1 + 696);
     short LH      = *(short *)(param_1 + 624);
     short RH      = *(short *)(param_1 + 648);
@@ -2128,6 +2129,7 @@ void __cdecl SetPlayerWalk(int param_1) {
     SetAction(param_1,
                  ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) ? 76 : 77);
 
+    }
 label_119:
 
     // Entity type 0x129 — special case with a fixed sound

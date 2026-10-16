@@ -780,6 +780,7 @@ void __stdcall MoveBugs(void) {
         if (*(BYTE*)e == 0)                    // !Live
             goto next_bug;
 
+    { // El salto de salida no entra en el ámbito de estas variables.
         DWORD owner = *v0;                     // *v0 — Owner ptr
         if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
@@ -950,6 +951,7 @@ void __stdcall MoveBugs(void) {
         }
         }
 
+    }
 next_bug:
         v0 += 111;                              // +0x1BC bytes
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);

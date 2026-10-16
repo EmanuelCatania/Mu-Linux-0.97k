@@ -1597,6 +1597,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
 
     // Player path
     SetAttackSpeed();  // SetAttackSpeed
+    { // El salto de salida no entra en el ámbito de estas variables.
     short v2 = *(short*)(c + 696);  // Helper.Type
 
     // Helper path (818/819 = pet/fairy ranged)
@@ -1693,6 +1694,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         }
     }
 
+    }
 LABEL_85:
     if (*(float*)(c + 264) == 0.0f) {
         if (*(short*)(c + 2) == 390) {
