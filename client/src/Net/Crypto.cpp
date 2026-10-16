@@ -16,6 +16,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Platform/IFileSystem.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/Ping.h"
@@ -1506,14 +1507,12 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
                           int a4, int a5, int a6, int a7)
 {
     DWORD *_this = (DWORD *)self;
-    HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ,
-                               NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) return 0;
+    FILE* hFile = Platform::GetFileSystem().Open(filename, "rb");
+    if (!hFile) return 0;
 
     BYTE hdrBuf[6] = {0};
-    DWORD nRead = 0;
-    if (!ReadFile(hFile, hdrBuf, 6, &nRead, NULL) || nRead != 6) {
-        CloseHandle(hFile);
+    if (fread(hdrBuf, 1, 6, hFile) != 6) {
+        fclose(hFile);
         return 0;
     }
     short mg = (short)(hdrBuf[0] | (hdrBuf[1] << 8));
@@ -1521,28 +1520,28 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
                      (hdrBuf[4] << 16) | (hdrBuf[5] << 24));
     int expected = 16 * (a4 + a5 + a6 + a7) + 6;
     if (mg != magic || sz != expected) {
-        CloseHandle(hFile);
+        fclose(hFile);
         return 0;
     }
 
     DWORD buf[4];
     if (a4) {  // ModKey → this+4
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[1 + i] = buf[i] ^ DAT_00562e48[i];
     }
     if (a5) {  // EncKey → this+20
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[5 + i] = buf[i] ^ DAT_00562e48[i];
     }
     if (a6) {  // DecKey → this+36
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[9 + i] = buf[i] ^ DAT_00562e48[i];
     }
     if (a7) {  // XorKey → this+52
-        ReadFile(hFile, buf, 16, &nRead, NULL);
+        if (fread(buf, 1, 16, hFile) != 16) { fclose(hFile); return 0; }
         for (int i = 0; i < 4; ++i) _this[13 + i] = buf[i] ^ DAT_00562e48[i];
     }
-    CloseHandle(hFile);
+    fclose(hFile);
     return 1;
 }
 
