@@ -107,6 +107,8 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Platform\IClientSettings.h" />
+    <ClInclude Include="src\Platform\ClientSettings.h" />
     <ClInclude Include="src\Platform\IDiagnostics.h" />
     <ClInclude Include="src\Platform\Diagnostics.h" />
     <ClInclude Include="src\Platform\Win32\Win32Diagnostics.h" />
