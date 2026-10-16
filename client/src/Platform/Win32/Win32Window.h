@@ -17,6 +17,7 @@ public:
     void RestoreDisplay() override;
     void SetTitle(const char* title) override;
     void ShowAndFocus() override;
+    void QuitLoop() override { PostQuitMessage(0); }
     void CloseWindow() override;
     void RequestCloseApplication() override;
     HWND GetHwnd() const { return m_hWnd; }

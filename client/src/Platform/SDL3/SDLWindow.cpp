@@ -97,6 +97,13 @@ public:
     void RestoreDisplay() override { if (window) SDL_SetWindowFullscreen(window, false); }
     void SetTitle(const char* title) override { if (window) SDL_SetWindowTitle(window, TitleUTF8(title).c_str()); }
     void ShowAndFocus() override { if (window) { SDL_ShowWindow(window); SDL_RaiseWindow(window); } }
+    void QuitLoop() override {
+#ifdef _WIN32
+        PostQuitMessage(0); // Conserva el comportamiento del cliente SDL Windows.
+#else
+        closing = true; // El cierre de recursos ocurre al salir del bucle.
+#endif
+    }
     void CloseWindow() override { RequestCloseApplication(); }
     void RequestCloseApplication() override;
 };

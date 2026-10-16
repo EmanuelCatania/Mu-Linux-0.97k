@@ -75,7 +75,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     if (!s_ConnFailHandled) {
         s_ConnFailHandled = true;
         Platform::GetWindow().ShowError("No se puede conectar con el servidor.", "Mu Online", true, true);
-        PostQuitMessage(0);
+        Platform::GetWindow().QuitLoop();
     }
     // Skip the hash-table bootstrap below — it operates on a live session key
     // and there is no session if connect failed.  Returning here also avoids

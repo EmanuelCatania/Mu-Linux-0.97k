@@ -25,6 +25,7 @@ public:
     virtual void RestoreDisplay() = 0;
     virtual void SetTitle(const char* title) = 0;
     virtual void ShowAndFocus() = 0;
+    virtual void QuitLoop() = 0;
     virtual void CloseWindow() = 0;
     virtual void RequestCloseApplication() = 0;
 };
