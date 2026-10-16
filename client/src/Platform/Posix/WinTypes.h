@@ -115,3 +115,8 @@ static_assert(offsetof(TEXTMETRICA, tmFirstChar) == 44);
 #define DEFAULT_CHARSET 1
 #define NONANTIALIASED_QUALITY 3
 #define _countof(array) (sizeof(array) / sizeof((array)[0]))
+
+#define CLEARTYPE_NATURAL_QUALITY 6
+#define S_OK static_cast<HRESULT>(0)
+#define FAILED(result) (static_cast<HRESULT>(result) < 0)
+#define SUCCEEDED(result) (static_cast<HRESULT>(result) >= 0)
