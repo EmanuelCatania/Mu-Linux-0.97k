@@ -46,7 +46,7 @@ add_subdirectory(lib/libjpeg)
 # (tools/check_cmake_sources.py).
 set(MU_SOURCES
     src/stdafx.cpp
-    src/WinMain.cpp
+    src/Platform/ClientEntry.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
     src/Scene/Scene_Intro.cpp
@@ -82,7 +82,7 @@ set(MU_SOURCES
     src/Platform/FontFrontend.cpp
     src/Sound/SoundManager.cpp
     src/Game/MapManager.cpp
-    src/Core/WndProc.cpp
+    src/Platform/Win32/ClientWndProc.cpp
     src/Net/Network.cpp
     src/Net/Reconnect.cpp
     src/Net/Ping.cpp
@@ -174,7 +174,7 @@ set(MU_SOURCES
     src/Render/Camera_Login.cpp
     src/UI/Chat_Log.cpp
     src/Terrain/Terrain_RayCollision.cpp
-    src/Debug/MiniDump.cpp
+    src/Platform/Win32/MiniDump.cpp
     src/Combat/Combat_AttackEffect.cpp
     src/Core/Runtime_Small.cpp
     src/Core/Runtime_Medium.cpp
