@@ -80,7 +80,6 @@ void  __cdecl Client_GetSystemInfo(int, int, int, int); // IDA: FUN_004065F0; av
 void  __cdecl FUN_00406af0(int, int, int, int);
 int   __cdecl Packet_IsValidSockType(int server_idx, int channel);      // PVP flag query
 bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: CheckSpecialText
-void  __cdecl Resource_LoadOrFatal(char *);
 
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl Widget_NodeInit(int);           // Widget_BaseRelease — releases core widget struct
@@ -650,7 +649,6 @@ int   __cdecl OpenTGA(const char *path, int id,               // Texture_LoadTGA
 void  __cdecl UnloadImage(int id); // IDA: UnloadImage (0x0052A050)
 int   __cdecl CSimpleModulus_Encode(int mode, BYTE* src, int len); // IDA: FUN_0053CC30 (0x0053CC30)
 int   __cdecl CSimpleModulus_Decode(int, int, int, int); // IDA: FUN_0053CCA0 (0x0053CCA0)
-uint  __cdecl Pipe_QueryResource(char *);  // Texture_GetSlot — returns slot index
 float10 __cdecl CIsin(void);  // GetTickCount-based time accumulator → float10
 
 // ── MSVC CRT stubs (obfuscation / anti-tamper wrappers) ───────────────────────
@@ -806,14 +804,9 @@ void  __cdecl RenderRepairInfo(void*, int,   void*);        // RenderItemInfo_Sh
 void  __cdecl RenderSkillTooltip(float a1, int a2, int a3);   // Skill_RenderTooltip @ 0x004C9730
 
 // ── Texture helpers ───────────────────────────────────────────────────────────
-uint  __cdecl Pipe_SendQuery(void *mgr, CHAR *name); // IDA: FUN_0053ed00 (0x0053ED00)
-void  __cdecl Pipe_SetTarget(void *mgr, CHAR *name);      // Pipe_SetTarget — copies name, sends 0x613
-void  __cdecl Pipe_Write(LPCVOID param_1, int param_2, CHAR *param_3);  // Pipe_Write wrapper
-void  __cdecl Pipe_WriteFile(LPCVOID param_1, int param_2, CHAR *param_3);  // Pipe_WriteFile — WriteFile to named pipe
 
 // ── WinMain helpers ───────────────────────────────────────────────────────────
 void  __cdecl Window_FatalError(HWND hwnd, char shutdown);  // 0x004129F0
-UINT  __cdecl Resource_Load(char* filename);  // Resource_Load — loads a resource file
 
 // ── Misc/Util helpers ─────────────────────────────────────────────────────────
 void  __cdecl ItemAngle(int); // IDA: ItemAngle (0x005030C0)
@@ -1146,7 +1139,6 @@ int   __stdcall FUN_0053fcf0(void);                                     // Toolh
 void  __cdecl FUN_0053fdd0(void);                                       // GG process snapshot
 void  __cdecl FUN_0053feb0(void);                                       // GG module snapshot
 unsigned int __stdcall FUN_005400d0(int param_1, unsigned int param_2);  // GG error dispatch
-// Pipe_Write — already declared above (Pipe_Write wrapper)
 // FUN_005404c0, FUN_00540a70, FUN_00540ac0 — already implemented in batch 10/11
 int   __fastcall FUN_005406f0(int param_1);                             // GG pipe/handle cleanup
 

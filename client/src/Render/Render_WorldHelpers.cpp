@@ -1182,27 +1182,6 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 
 
 
-// Resource_LoadOrFatal @ 0x00406F50 — Resource_LoadOrFatal(filename).
-// Original: llama a Resource_Load; si falla muestra el MessageBox "IError" y
-// termina con Window_FatalError.
-//
-// DESVIACION: el contexto del resource manager (DAT_083bbb14) no se
-// inicializa en el port, así que Resource_Load siempre devuelve 0 y todo
-// caller terminaría en error fatal (p.ej. el flujo post-login de la lista de
-// personajes, que pasa el nombre de usuario como filename).  Se sigue llamando
-// a Resource_Load (por si aparece algún efecto lateral cuando el manager esté
-// portado) pero se suprimen el modal y la salida fatal.  Cuando el resource
-// loading esté portado, este guard se puede quitar.
-void __cdecl Resource_LoadOrFatal(char* param_1) {
-    (void)Resource_Load(param_1);
-    // Suppressed:
-    // if ((char)uVar1 == '\0') {
-    //     MessageBoxA((HWND)0, (LPCSTR)&lpText_07d63aec, "IError", 0);
-    //     Window_FatalError(DAT_055c9ffc, '\x01');
-    // }
-}
-
-
 // BMD__RotationPosition @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp
 // ItemObjectAttribute @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp
 // Model_BoneParticle @ 0x004553c0 — implemented in Render/BMD_SetupRender.cpp

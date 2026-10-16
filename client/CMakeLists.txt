@@ -192,7 +192,6 @@ set(MU_SOURCES
     src/Render/BMD_LegacyDraw.cpp
     src/Config/Config_TokenParser.cpp
     src/Entity/Entity_BoneEffects.cpp
-    src/Net/Pipe_Legacy.cpp
     src/Core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
@@ -245,7 +244,6 @@ set(MU_SOURCES
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
     src/Render/Camera_Unproject.cpp
-    src/Net/Net_PipeQuery.cpp
     src/Net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
     src/Render/Render_WorldHelpers.cpp

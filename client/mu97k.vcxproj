@@ -369,7 +369,6 @@
     <ClCompile Include="src\Render\BMD_LegacyDraw.cpp" />
     <ClCompile Include="src\Config\Config_TokenParser.cpp" />
     <ClCompile Include="src\Entity\Entity_BoneEffects.cpp" />
-    <ClCompile Include="src\Net\Pipe_Legacy.cpp" />
     <ClCompile Include="src\Core\Runtime_Linker.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
     <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
@@ -422,7 +421,6 @@
     <ClCompile Include="src\Scene\Scene_OpenWorld.cpp" />
     <ClCompile Include="src\Scene\Scene_AssetLoad.cpp" />
     <ClCompile Include="src\Render\Camera_Unproject.cpp" />
-    <ClCompile Include="src\Net\Net_PipeQuery.cpp" />
     <ClCompile Include="src\Net\Protocol\Protocol_Check.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />
     <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />

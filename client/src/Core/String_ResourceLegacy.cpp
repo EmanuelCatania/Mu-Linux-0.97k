@@ -53,18 +53,3 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 int __cdecl mbclen(const byte *param_1) {
     return Platform::KoreanCharacterBytes(*param_1);
 }
-// Resource_Load @ 0x0053D5A0 — Resource_Load(filename)
-// Calls Pipe_SetTarget(DAT_083bbb14, filename) if resource manager is initialized.
-// Returns non-zero on success. DAT_083bbb14 is the resource manager context pointer.
-unsigned int  __cdecl Resource_Load(char *path)
-{
-    if (DAT_083bbb14 == 0) return 0;
-    Pipe_SetTarget((void *)(ULONG_PTR)DAT_083bbb14, path);
-    return 1;
-}
-// Pipe_QueryResource @ 0x0053D5C0 — Pipe_QueryResource
-unsigned int  __cdecl Pipe_QueryResource(char *path)
-{
-    if (DAT_083bbb14 == 0) return 0;
-    return Pipe_SendQuery((void *)(ULONG_PTR)DAT_083bbb14, path);
-}

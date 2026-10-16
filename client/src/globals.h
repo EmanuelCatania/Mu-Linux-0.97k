@@ -1130,15 +1130,11 @@ extern char    g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38];
 #define DAT_083a7cd0  (*(char*)  &g_BitmapsRaw[0x30])
 #define DAT_083a7cd4  (*(DWORD*) &g_BitmapsRaw[0x34])
 extern DWORD   m_dwUsedTextureMemory;   // IDA: DAT_083bb9d0 (0x083BB9D0)
-extern DWORD   DAT_083bbb14;
-extern char    lpBuffer_083bbb60[0x400]; // named pipe write buffer (Pipe_WriteFile)
-extern DWORD   DAT_083bbb64;             // named pipe bytes written count
 extern DWORD   DAT_083bbb68;
 extern DWORD   DAT_083bbb6c;
 extern DWORD   DAT_083bbb74;
 
 // ── Named pipe handle (0x00563b58) ────────────────────────────────────────────
-extern HANDLE  lpTargetHandle_00563b58;  // handle to named pipe (MuHelper/plugin IPC)
 
 // ── Model data table (0x05828d58, stride 0xbc per entity_type) ────────────────
 extern DWORD   DAT_05828d58;   // model data array base; slot = DAT_05828d58 + type*0xbc
@@ -2516,7 +2512,6 @@ extern DWORD   DAT_0055389c;
 extern DWORD   DAT_07e11e50;       // _PartyNumber
 extern DWORD   DAT_07e11e54;       // _PartyKey
 
-extern HANDLE  lpTargetHandle_00563b5c; // GameGuard pipe handle B
 extern HANDLE  hEvent;                  // GameGuard sync event
 extern LPVOID  lpParameter;             // IDA: lpParameter (0x083BBAE8) — contexto de
                                         // GameGuard (0x34C bytes) que aloca el pre-init;

@@ -736,7 +736,6 @@ state_fail_common:
                     pkt[3] ^= pkt[2] ^ CNetwork::XorKey[3 & 0x1f];
                     gNetwork.SendRaw((char*)pkt, 4);
                 }
-                Resource_LoadOrFatal((CHAR*)LogInID);
                 Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)
                 return 0;
 

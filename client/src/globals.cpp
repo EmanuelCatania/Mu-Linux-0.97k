@@ -1151,13 +1151,9 @@ DWORD    DAT_083a7c94  = 0;
 DWORD    DAT_083a7c98  = 0;
 char     g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
 DWORD    m_dwUsedTextureMemory  = 0;
-DWORD    DAT_083bbb14  = 0;
-char     lpBuffer_083bbb60[0x400] = {};  // named pipe write buffer
-DWORD    DAT_083bbb64  = 0;
 DWORD    DAT_083bbb68  = 0;
 DWORD    DAT_083bbb6c  = 0;
 DWORD    DAT_083bbb74  = 0;
-HANDLE   lpTargetHandle_00563b58 = NULL;
 
 // Input / player name buffers
 char     DAT_007d29e5  = 0;
@@ -2206,7 +2202,6 @@ HANDLE  DAT_083bbb10    = NULL; // GG child process handle
 DWORD   DAT_083bbaf0    = 0;    // GG error state flag
 DWORD   DAT_083bbaf4    = 0;    // main thread ID
 DWORD   DAT_083bbaf8    = 10000;// event timeout (ms)
-// DAT_083bbb14 — defined above (DWORD)
 char    DAT_00562e5c     = 0;
 char    DAT_00562e58     = 0;
 char    lpString1_083bb9e0[0x104] = {0};  // GG log/data directory path
@@ -2600,7 +2595,6 @@ DWORD  DAT_00552810 = 0;
 DWORD  DAT_0055389c = 0;
 
 // DAT_07e11e54 already defined above (line ~532)
-HANDLE lpTargetHandle_00563b5c = INVALID_HANDLE_VALUE;
 HANDLE hEvent             = NULL;
 LPVOID lpParameter        = NULL;
 char   g_GameGuardGameName[64] = "Mu";  // IDA: aMu (0x0055910C)
