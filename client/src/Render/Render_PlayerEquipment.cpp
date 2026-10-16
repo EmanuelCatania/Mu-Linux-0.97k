@@ -126,8 +126,9 @@ static bool CheckFullSet_Tail(int c, bool v26) {
     if (((*(unsigned char*)(c + 444) & 7) == 3) && v26) {   // Magic Gladiator
         // IDA: v20 = *(_WORD *)(CharacterMachine + 740)  → wear slot 3 (Armor),
         // 536 + 68*3 = 740. Sólo los armors 271 y 276 conservan el bonus.
-        unsigned int cm = (unsigned int)(uintptr_t)CharacterAttribute;
-        if (cm >= 0x100000u && cm < 0x80000000u) {
+        const uintptr_t cm = (uintptr_t)CharacterAttribute;
+        // La ficha pertenece al bloque de 0x584 bytes creado para CharacterMachine.
+        if (cm && CharacterAttribute == DAT_07cf1ffc) {
             unsigned short armor = *(unsigned short*)((char*)(uintptr_t)cm + 740);
             if (armor != 271 && armor != 276) {
                 g_bAddDefense = 0;
