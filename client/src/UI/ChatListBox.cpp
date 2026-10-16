@@ -77,7 +77,6 @@
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
-#include <mbstring.h>
 #include "globals.h"
 #include "structs.h"
 #include <new>
@@ -2444,7 +2443,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
             }
         }
         int j;
-        for (j = 0; j < cut; j += (int)_mbclen((const unsigned char*)&cur[j]))
+        for (j = 0; j < cut; j += (int)Platform::TextCharacterBytes((const unsigned char*)&cur[j]))
             ;
         strncpy(line, cur, j);
         fwdOff += lineSize;

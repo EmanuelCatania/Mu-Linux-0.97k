@@ -365,7 +365,7 @@ int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
     int i = 0;
     while (true) {
         if (*Token == '\0') return 0;
-        if (FindText(param_1, Token, false)) break;
+        if (FindTextA(param_1, Token, false)) break;
         i++;
         Token += 0x100;
         if (i > 4) return 0;

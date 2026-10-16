@@ -63,14 +63,14 @@ static char s_Kr_Caret[]  = "\xA4\xD1^";           // 0x559E74
 static bool AnyGlobal(char* text, int first, int last)
 {
     for (int i = first; i <= last; ++i)
-        if (FindText(text, GlobalText[i], false)) return true;
+        if (FindTextA(text, GlobalText[i], false)) return true;
     return false;
 }
 
 static bool AnyOf(char* text, std::initializer_list<char*> words)
 {
     for (char* w : words)
-        if (FindText(text, w, false)) return true;
+        if (FindTextA(text, w, false)) return true;
     return false;
 }
 

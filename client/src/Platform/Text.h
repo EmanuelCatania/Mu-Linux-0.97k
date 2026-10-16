@@ -6,11 +6,25 @@
 #include <algorithm>
 #include <cerrno>
 #include <utility>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <mbstring.h>
+#else
 #include <strings.h>
 #endif
 
 namespace Platform {
+// El cliente Linux consume los mismos textos Windows-1252 que SDLFont::DecodeByte.
+// Windows conserva la página de códigos de la CRT para los cortes heredados.
+inline unsigned TextCharacterBytes(const unsigned char* text)
+{
+#ifdef _WIN32
+    return _mbclen(text);
+#else
+    (void)text;
+    return 1; // Windows-1252 es una codificación de un byte, incluso para acentos.
+#endif
+}
+
 
 // Adaptadores CRT acotados. Windows conserva la CRT nativa; POSIX mantiene
 // NUL y retornos (-1 para formato truncado, ERANGE para copia sin espacio).
