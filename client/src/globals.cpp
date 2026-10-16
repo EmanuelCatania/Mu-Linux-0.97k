@@ -6,6 +6,7 @@
 // replaced by pointer aliases to the original binary's addresses.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
@@ -568,7 +569,7 @@ DWORD    DAT_055ca050  = 0;
 // IDA: SocketClient (0x055CA160)
 char     SocketClient[0x260000] = {};
 // Static init: socket field must start as INVALID_SOCKET (0xFFFFFFFF)
-struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(SocketClient + 8) = INVALID_SOCKET; } } g_NetCtxInitObj;
+struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(SocketClient + 8) = Platform::InvalidSocket; } } g_NetCtxInitObj;
 // IDA: SocketClient.m_nSendBufLen (0x055CC16C)
 DWORD    SocketClientSendBufferLength  = 0;
 // IDA: SocketClient.m_LogPrint (0x055CE174)

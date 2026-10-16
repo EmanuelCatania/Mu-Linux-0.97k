@@ -5,6 +5,9 @@ using SocketHandle = uintptr_t;
 constexpr SocketHandle InvalidSocket = static_cast<SocketHandle>(-1);
 // Códigos heredados del transporte Win32; no se modifica la política de reintento.
 constexpr int SocketWouldBlock = 10035;
+constexpr int SocketError = -1;
+constexpr int TcpProtocol = 6;
+constexpr int SocketReadEvent = 1, SocketWriteEvent = 2, SocketCloseEvent = 32;
 using SocketEventSink = void (*)(uint16_t event, uint16_t error);
 class ISocket {
 public:

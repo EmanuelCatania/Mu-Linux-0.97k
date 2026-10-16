@@ -116,7 +116,7 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
     SOCKET s = Platform::GetSocket().CreateTcp(0);
     *(SOCKET*)((char*)ctx + 8) = s;
     g_bGameServerConnected = 0;
-    if (s == INVALID_SOCKET) {
+    if (s == Platform::InvalidSocket) {
         char buf[128];
         int err = Platform::GetSocket().LastError();
         Platform::TextFormat(buf, "Socket error: %d", err);
@@ -887,9 +887,9 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
 
     // 2. Ensure socket exists (CWsctlc_Create already created one into ctx+8)
     SOCKET s = *(SOCKET*)((char*)ctx + 8);
-    if (s == INVALID_SOCKET || s == 0) {
-        s = Platform::GetSocket().CreateTcp(IPPROTO_TCP);
-        if (s == INVALID_SOCKET) {
+    if (s == Platform::InvalidSocket || s == 0) {
+        s = Platform::GetSocket().CreateTcp(Platform::TcpProtocol);
+        if (s == Platform::InvalidSocket) {
             CErrorReport_Write(&DAT_055c9bf0, "socket() failed");
             return 0;
         }
@@ -901,13 +901,13 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     //    to non-blocking; we keep the ordering the binary uses (connect first, then async).
     HWND hWnd = *(HWND*)ctx;
     if (hWnd != nullptr) {
-        Platform::GetSocket().NotifyWindow(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CLOSE);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
+        Platform::GetSocket().NotifyWindow(s, hWnd, wMsg, Platform::SocketReadEvent | Platform::SocketWriteEvent | Platform::SocketCloseEvent);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
     }
 
     int r = Platform::GetSocket().ConnectIPv4(s, addr, port);
-    if (r == SOCKET_ERROR) {
+    if (r == Platform::SocketError) {
         int err = Platform::GetSocket().LastError();
-        if (err != WSAEWOULDBLOCK) {
+        if (err != Platform::SocketWouldBlock) {
             char buf[160];
             Platform::TextFormat(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
             CErrorReport_Write(&DAT_055c9bf0, buf);
