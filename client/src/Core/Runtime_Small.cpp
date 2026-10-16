@@ -262,11 +262,11 @@ int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
 int __fastcall Stats_CalcBase(int a1) {
     // Guarda de a1: abajo se lee `*(short*)(a1 + 536)` /
     // `(a1 + 604)` (slots de arma) sin chequear.
-    if (a1 == 0 || (uintptr_t)a1 < 0x100000 || (uintptr_t)a1 >= 0x80000000) return 0;
+    if (a1 == 0 || (uintptr_t)a1 < 0x100000) return 0;
 
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
-    if ((uintptr_t)ca < 0x100000 || (uintptr_t)ca >= 0x80000000) return 0;
+    if ((uintptr_t)ca < 0x100000) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
 
     // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese

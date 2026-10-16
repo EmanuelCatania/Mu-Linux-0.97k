@@ -1795,8 +1795,8 @@ void __cdecl SetPlayerStop(int c) {
     // como 0xFFFF con la mano vacía), igual que el resto de los accesos a
     // ItemAttribute.
     auto ItemTwoHand = [](int type) -> unsigned char {
-        unsigned int base = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (base < 0x100000u || base >= 0x80000000u) return 0;
+        unsigned int base = ItemAttribute_Base();
+        if (!base) return 0;
         int idx = type - 399;
         if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34
         return *(unsigned char*)((char*)(uintptr_t)base + idx * 64 - 34);

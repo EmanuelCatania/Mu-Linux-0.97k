@@ -1268,6 +1268,13 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
         (p - allocation) % 64u != 0) return 0;
     return p;
 }
+// Fila `p` de la tabla ItemAttribute (base + type*64), validada contra la
+// tabla cargada y no contra rangos de direcciones: en Linux x86 el heap puede
+// quedar por encima de 2 GB.
+static __forceinline bool ItemAttribute_IsRow(uintptr_t p) {
+    const uintptr_t base = ItemAttribute_Base();
+    return base && p >= base && (p - base) % 64u == 0 && (p - base) / 64u < (uintptr_t)ITEM_MAX_EX;
+}
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
 // (ver la declaracion de la tabla mas abajo).
 #define DAT_07e91530   (DAT_07e91528[2])

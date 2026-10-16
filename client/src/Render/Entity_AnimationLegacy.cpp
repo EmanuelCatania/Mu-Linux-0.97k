@@ -342,7 +342,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // modelo válido), abortar antes de deferenciar.
     {
         unsigned int meshsPtr = (unsigned int)*(int*)((char*)this_ + 0x28);
-        if (meshsPtr < 0x10000u || meshsPtr >= 0x80000000u || meshCount < 0 || meshCount > 200) {
+        if (meshsPtr < 0x10000u || meshCount < 0 || meshCount > 200) {
             static bool s_loggedNoMeshs = false;
             if (!s_loggedNoMeshs) {
                 s_loggedNoMeshs = true;
@@ -366,8 +366,8 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
             unsigned int vArr = (unsigned int)*(int*)(meshPtr + 0x10);
             unsigned int nArr = (unsigned int)*(int*)(meshPtr + 0x14);
             int nCount = (int)(short)*(short*)(meshPtr + 6);
-            bool bad = (vArr < 0x10000u || vArr >= 0x80000000u ||
-                        nArr < 0x10000u || nArr >= 0x80000000u ||
+            bool bad = (vArr < 0x10000u ||
+                        nArr < 0x10000u ||
                         vertCount < 0 || vertCount > 20000 ||
                         nCount   < 0 || nCount   > 20000);
             if (bad) {

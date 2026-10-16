@@ -47,7 +47,7 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
     // Valida que attrBase sea un puntero razonable (>= 0x100000): si DAT_07d78068
     // está en 0, los callers pasan `Type * 0x40` y deref p->MagicDurability crashea.
     // También valida `item`.
-    if ((uintptr_t)attrBase < 0x100000 || (uintptr_t)attrBase >= 0x80000000)
+    if (!ItemAttribute_IsRow((uintptr_t)attrBase))
         return 255;
     if (item == nullptr || (uintptr_t)item < 0x100000) return 255;
     ITEM* ip          = (ITEM*)item;
@@ -106,7 +106,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
     // Defensivo (igual que CalcMaxDurability/RenderItemInfo): si DAT_07d78068 está
     // en 0, `(int)DAT_07d78068 + type * 0x40` da un valor pequeño; se devuelve 0.
     if (!item_v || (uintptr_t)item_v < 0x100000) return 0;
-    if ((uintptr_t)DAT_07d78068 < 0x100000 || (uintptr_t)DAT_07d78068 >= 0x80000000)
+    if (!ItemAttribute_Base())
         return 0;
 
     int a1 = (int)item_v;

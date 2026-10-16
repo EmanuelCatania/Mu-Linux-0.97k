@@ -259,7 +259,8 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         // → entrada 30+Level de SkillAttribute, que tiene stride 40, con el
         // nombre en el offset 0.
         const char* skillName = (const char*)((char*)&SkillAttribute + 8 * (5 * (int)level + 150));
-        if ((uintptr_t)skillName > 0x100000 && (uintptr_t)skillName < 0x80000000 && skillName[0]) {
+        // La entrada 30+Level tiene que caer dentro de las 64 de la tabla.
+        if (level < 34 && skillName[0]) {
             snprintf(dst, dstSize, "%s %s", skillName, GlobalText[102]);
         } else {
             snprintf(dst, dstSize, "%s", p->Name);
@@ -1899,7 +1900,7 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
         ITEM* it = (ITEM*)param_3;
         ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)(uintptr_t)attrBase;
         const char* itemName = (const char*)attrBase;   // p->Name at +0
-        if ((uintptr_t)itemName < 0x100000 || (uintptr_t)itemName >= 0x80000000)
+        if (!ItemAttribute_IsRow((uintptr_t)itemName))
             itemName = "";
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         unsigned char optFlags = *(unsigned char*)((char*)param_3 + 0x1b) & 0x3f;

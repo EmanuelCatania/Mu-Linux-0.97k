@@ -95,8 +95,8 @@ std::map<int, int> s_DynamicModelItem;        // slot dinámico -> primer item q
 
 ITEM_ATTRIBUTE* Attributes()
 {
-    const uintptr_t base = (uintptr_t)DAT_07d78068;
-    return (base >= 0x100000u && base < 0x80000000u) ? (ITEM_ATTRIBUTE*)base : nullptr;
+    const uintptr_t base = ItemAttribute_Base();
+    return base ? (ITEM_ATTRIBUTE*)base : nullptr;
 }
 
 BYTE ClampByte(int value)

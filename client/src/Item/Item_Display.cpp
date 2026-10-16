@@ -78,8 +78,8 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     const char* name = "";
     {
         int attrIdx = (int)v7 - ITEM_MODEL_BASE;
-        unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
+        unsigned int abase = ItemAttribute_Base();
+        if (abase && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }
 

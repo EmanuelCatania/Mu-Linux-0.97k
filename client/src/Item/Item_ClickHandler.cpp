@@ -650,14 +650,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // ── Hovered cell with item: highlight footprint (color=2) ──────
             // Guards defensivos: DAT_07d78068 sin inicializar (loader race) o `type` fuera
             // de rango darían `attr + type*64` inválido.
-            ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
+            ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)ItemAttribute_Base();
             if (!attr) { continue; }
-            // Reject implausible attr base.
-            if ((uintptr_t)attr < 0x100000 || (uintptr_t)attr >= 0x80000000) {
-                if (DAT_083a4124) {
-                }
-                continue;
-            }
             short typeRaw   = rowSlot[0];
             if (typeRaw < 0 || typeRaw >= ITEM_MAX_EX) { continue; }
             int   type      = (int)(unsigned short)typeRaw;
