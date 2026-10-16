@@ -564,9 +564,6 @@ endif()
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     target_link_libraries(mu97k PRIVATE mu_platform_sdl)
     target_compile_definitions(mu97k PRIVATE MU_MINIAUDIO_LINKED MU_SDL_FONTS)
-    add_custom_command(TARGET mu97k POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts" "$<TARGET_FILE_DIR:mu97k>/assets/fonts")
 endif()
 
 if(WIN32)
