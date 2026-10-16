@@ -730,7 +730,7 @@ extern DWORD   DAT_07e127f8;
 extern unsigned char DAT_07e12840[1000 * 0x204];   // GroundItem pool: 1000 × 0x204 bytes
 extern DWORD   DAT_07e12945;   // sprite render loop base (stride 0x204)
 extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
-extern DWORD   DAT_07e91388;
+extern "C" DWORD   DAT_07e91388;
 extern byte    DAT_07e9138e;   // UI grid selected column (byte, Item_ReturnPickedItem)
 extern byte    DAT_07e9138f;   // UI grid selected row (byte, Item_ReturnPickedItem)
 extern short   DAT_07e91394[10];   // IDA: word_7E91394
@@ -805,8 +805,8 @@ extern char    DAT_07eaa11a;
 extern char    DAT_07eaa11b;
 extern char    DAT_07eaa11c;
 extern DWORD   DAT_07eaa124;
-extern DWORD   GoldenArcherOpenType;   // IDA: DAT_07eaa128 (0x07EAA128)
-extern DWORD   DAT_07eaa13c;
+extern "C" DWORD   GoldenArcherOpenType;   // IDA: DAT_07eaa128 (0x07EAA128)
+extern "C" DWORD   DAT_07eaa13c;
 extern DWORD   MixType;   // guild join/select current selection index  [IDA 0x07EAA16C]
 extern DWORD   DAT_07eaa144;
 extern DWORD   DAT_07eaa148;   // shop/item selection C
@@ -1247,7 +1247,7 @@ extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por l
 // extern char    DAT_07d34134;        // class name table B (first entry base)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d34260;        // class info list B (stride 300, limit 0x7d358a4)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d358a4;        // class name / info buffer C   // -> alias a GlobalText, ver el final del archivo
-extern int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
+extern "C" int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
 // ── Posición del item que se está arrastrando ───────────────────────────────
 // En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
 // slot 32, campo Type en offset 0) — lo usan sub_47D410 (preview de stats) y el
@@ -2267,7 +2267,7 @@ extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiquet
                                // vieja ("SecondPassword timeout") era falsa: IDA lo
                                // llama MixState y sus writers son ReceiveMix (0x4366C0),
                                // el envio del mix y ReceiveTalk.
-extern DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
+extern "C" DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
 extern DWORD   RepairEnable; // IDA: DAT_07eaa138 (0x07EAA138)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
@@ -2284,12 +2284,12 @@ extern int     DAT_0055a3fc;   // auth mode param B
 
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
 extern DWORD   DAT_07eaa120;   // SecondPassword_Screen5 mode (0=normal, 1=equip-select)
-extern char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
+extern "C" char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
 // Buffers del editor de creacion de GUILD (no "PIN entry"): el render los recorre
 // como arrays (64 bytes de mark). Ver la nota en globals.cpp.
 extern char    DAT_07ea51ec[8];    // GuildName
 #define DAT_07ea51f0 (*(DWORD*)&DAT_07ea51ec[4])   // 2do DWORD del nombre
-extern char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
+extern "C" char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
 extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
@@ -2438,10 +2438,10 @@ extern char    lpText_07d2aa08[];  // fatal-error message string (shown by ExitP
 // Los cuatro pools de items son grids de slots ITEM (stride 0x44). Ojo: su
 // indice de celda es `slot - 12`; los 12 wear slots NO viven aca sino en
 // `CharacterMachine + 536 + 68*slot`.
-extern BYTE  OffsetInventoryItems[];
-extern BYTE  OffsetTradeItems[];
-extern BYTE  OffsetWarehouseItems[];
-extern BYTE  OffsetMixItems[];
+extern "C" BYTE  OffsetInventoryItems[];
+extern "C" BYTE  OffsetTradeItems[];
+extern "C" BYTE  OffsetWarehouseItems[];
+extern "C" BYTE  OffsetMixItems[];
 // TerrainWall = &DAT_0838bc70 (256x256 flags de tile: bit0 safezone, bit1
 // ocupado por entidad, bit3 no-caminable).
 extern unsigned char* TerrainWall;
