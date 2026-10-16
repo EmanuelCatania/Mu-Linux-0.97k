@@ -274,6 +274,13 @@ BOOL CFont::TextMetrics(HDC dc, TEXTMETRICA* metrics)
     return GetTextMetricsA(dc, metrics);
 #endif
 }
+void CFont::SetMaskColor(DWORD color)
+{
+    m_MaskColor = color;
+#ifdef _WIN32
+    SetTextColor(m_hTextDC, color);
+#endif
+}
 void CFont::BeginTextMask()
 {
 #ifdef MU_SDL_FONTS
@@ -296,7 +303,9 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
                 const int dx = x + glyph.left + col;
                 if (dx < 0 || dx >= m_SurfaceWidth || !glyph.coverage[size_t(row) * glyph.width + col]) continue;
                 auto* pixel = static_cast<unsigned char*>(m_pTextBits) + dy * stride + dx * 3;
-                pixel[0] = pixel[1] = pixel[2] = 255;
+                pixel[0] = (m_MaskColor >> 16) & 255;
+                pixel[1] = (m_MaskColor >> 8) & 255;
+                pixel[2] = m_MaskColor & 255;
             }
         }
         x += glyph.advance;

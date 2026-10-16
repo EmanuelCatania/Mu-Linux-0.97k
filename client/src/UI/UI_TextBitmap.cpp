@@ -40,7 +40,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         }
 
         // Set text color to white for main text
-        SetTextColor(gFont.GetTextDC(), 0xffffff);
+        gFont.SetMaskColor(0xffffff);
 
         // Output main text at (prefixWidth + p6, 0)
         int mainLen = Platform::TextLength(p3);

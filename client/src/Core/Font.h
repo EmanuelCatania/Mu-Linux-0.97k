@@ -65,11 +65,13 @@ public:
     BOOL DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count);
     BOOL BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base);
     void BeginTextMask();
+    void SetMaskColor(DWORD color);
     unsigned Generation() const { return m_Generation; }
 
 private:
     void CreatePortableFonts(DWORD windowWidth);
     int SelectedFont(HDC dc) const;
+    DWORD m_MaskColor = 0xffffff;
     int m_SelectedFont = FONT_NORMAL;
     unsigned m_Generation = 0;
     int m_SurfaceWidth = 0;

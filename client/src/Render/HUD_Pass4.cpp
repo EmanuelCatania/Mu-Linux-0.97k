@@ -759,7 +759,7 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     } else {
         sz.cx = 0;
     }
-    SetTextColor(gFont.GetTextDC(), RGB(0xFF, 0xFF, 0xFF));
+    gFont.SetMaskColor(0xffffff);
     gFont.DrawTextMask(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
 
     if (!a8) a8 = v10;
