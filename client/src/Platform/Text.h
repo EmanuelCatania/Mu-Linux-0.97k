@@ -175,10 +175,10 @@ inline char* TextConcat(char* destination, std::size_t capacity, const char* sou
 // Contrato wsprintfA del cliente: máximo 1024 bytes escritos más NUL.
 // El destino debe tener espacio para el resultado (como en la API original).
 // No admite floats: una conversión desconocida no consume argumentos.
-inline int TextFormat(char* destination, const char* format, ...)
+inline int TextVFormat(char* destination, const char* format, va_list input)
 {
     va_list args;
-    va_start(args, format);
+    va_copy(args, input);
     int written = 0;
     auto emit = [&](char c) { if (written < 1024) destination[written++] = c; };
     while (*format && written < 1024) {
@@ -261,5 +261,12 @@ inline int TextFormat(char* destination, const char* format, ...)
     va_end(args);
     destination[written] = 0;
     return written;
+}
+inline int TextFormat(char* destination, const char* format, ...)
+{
+    va_list args; va_start(args, format);
+    const int result = TextVFormat(destination, format, args);
+    va_end(args);
+    return result;
 }
 } // namespace Platform

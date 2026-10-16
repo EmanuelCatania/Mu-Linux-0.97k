@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
+#include "Platform/Text.h"
 
 extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
 extern void __cdecl operator_delete(void* ptr);
@@ -39,12 +40,12 @@ extern void ClearActionObject(void);
 // SetPlayerStop @ 0x004430C0: el port real está en Net/SecondPassword.cpp.
 // No agregar un stub acá: entity+0x1BC es el byte de CLASE/skin, no move flags.
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
-// Formats message via wvsprintfA then passes to debug info string writer.
+// Conserva el formato heredado; el destino de este logger sigue sin conectar.
 void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {
-    char buf[0x400];
+    char buf[1025];
     va_list args;
     va_start(args, fmt);
-    wvsprintfA(buf, fmt, args);
+    Platform::TextVFormat(buf, fmt, args);
     va_end(args);
     // In original: CErrorReport__WriteDebugInfoStr(ctx, buf);
     // For now, just format — actual file write not critical for stub
