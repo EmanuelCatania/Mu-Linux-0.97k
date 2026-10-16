@@ -3,6 +3,7 @@
 // WriteJpeg.
 
 #include "stdafx.h"
+#include "Render/Texture/ImageCodec.h"
 #include "Platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
@@ -116,7 +117,7 @@ long double __cdecl Screen_ToGLY(float v) {
     return (long double)((float)(int)gWindow.GetHeight() * v * _DAT_00552838);
 }
 // WriteJpeg @ 0x00529000 — WriteJpeg(path, width, height, pixel_buf, quality)
-// Writes RGB pixel buffer to JPEG file using libjpeg compression.
+// Writes RGB pixel buffer to JPEG file using the pinned stb_image_write encoder.
 // Rows are written bottom-up (flipped) to match OpenGL framebuffer layout.
 // Ghidra: local_1d8=3 (components), local_1d4=2 (JCS_RGB), quality from param_5.
 unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality)
@@ -124,33 +125,7 @@ unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pi
     FILE* f = Platform::GetFileSystem().Open(path, "wb");
     if (f == NULL) return 0;
 
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-
-    cinfo.err = jpeg_std_error(&jerr);
-    jpeg_create_compress(&cinfo);
-    jpeg_stdio_dest(&cinfo, f);
-
-    cinfo.image_width = width;
-    cinfo.image_height = height;
-    cinfo.input_components = 3;
-    cinfo.in_color_space = JCS_RGB;
-
-    jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, quality, TRUE);
-    jpeg_start_compress(&cinfo, TRUE);
-
-    int row_stride = width * 3;
-    unsigned char* buf = (unsigned char*)pixelBuf;
-
-    // Write rows bottom-up (flip for OpenGL framebuffer origin)
-    while (cinfo.next_scanline < cinfo.image_height) {
-        JSAMPROW row_pointer = buf + (height - 1 - cinfo.next_scanline) * row_stride;
-        jpeg_write_scanlines(&cinfo, &row_pointer, 1);
-    }
-
-    jpeg_finish_compress(&cinfo);
-    fclose(f);
-    jpeg_destroy_compress(&cinfo);
-    return 1;
+    const bool written = ImageCodec::WriteJpeg(f, width, height, pixelBuf, quality);
+    const int closed = fclose(f);
+    return written && closed == 0 ? 1u : 0u;
 }

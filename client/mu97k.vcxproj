@@ -203,6 +203,7 @@
     <ClInclude Include="src\Render\SkillEffect_Render.h" />
     <ClInclude Include="src\Render\Sprite_Draw.h" />
     <ClInclude Include="src\Render\Terrain_Render.h" />
+    <ClInclude Include="src\Render\Texture\ImageCodec.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Scene\Scene_CharSelect.h" />
@@ -493,6 +494,9 @@
     <ClCompile Include="src\Render\Render_SpriteHelpers.cpp" />
     <ClCompile Include="src\Render\Terrain_Render.cpp" />
     <ClCompile Include="src\Render\Terrain_Water.cpp" />
+    <ClCompile Include="src\Render\Texture\ImageCodec.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\Texture\Texture.cpp" />
     <ClCompile Include="src\Render\Trail_Render.cpp" />
     <ClCompile Include="src\Render\Weather.cpp" />

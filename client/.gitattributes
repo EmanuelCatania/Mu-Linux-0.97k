@@ -61,3 +61,6 @@ CMakeLists.txt text eol=lf
 # tal cual, sin normalizar finales de línea.
 bin/Client/Data/**/*.txt binary
 bin/Client/Data/*.txt    binary
+
+# Upstream stb headers: stable bytes for the documented SHA256 on every OS.
+lib/stb/*.h -text

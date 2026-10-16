@@ -316,6 +316,7 @@ set(MU_SOURCES
     src/Render/Render_SpriteHelpers.cpp
     src/Render/Terrain_Render.cpp
     src/Render/Terrain_Water.cpp
+    src/Render/Texture/ImageCodec.cpp
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
     src/Render/Weather.cpp
@@ -444,6 +445,7 @@ set(MU_HEADERS
     src/Render/SkillEffect_Render.h
     src/Render/Sprite_Draw.h
     src/Render/Terrain_Render.h
+    src/Render/Texture/ImageCodec.h
     src/Render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
@@ -546,7 +548,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
