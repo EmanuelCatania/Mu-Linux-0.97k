@@ -40,19 +40,9 @@
 //   DAT_00561570   int   g_screen_height      used in Texture_Draw2D for Y-flip
 //   m_dwUsedTextureMemory   int   g_vram_used          running tally of texture memory (bpp*w*h bytes)
 //
-// ── FILE FORMAT ───────────────────────────────────────────────────────────────
-//
-//   OZJ = Webzen JPEG variant — libjpeg decode pipeline
-//         Decoder objects: FUN_0052acc0, _0052ae70, _0052b540, _0052af50, _0052b2e0, _0052b4a0
-//         (jpeg_create_decompress, jpeg_read_header, jpeg_start_decompress,
-//          jpeg_read_scanlines, jpeg_finish_decompress / destroy)
-//
-//   OZT = alternate format, processed with crt_fseek(file_ptr, 0x18, 0)
-//         (likely a Webzen proprietary compressed texture, possibly zlib or RLE)
-//
-//   Both decode to: width × height × 3 bytes (GL_RGB, GL_UNSIGNED_BYTE)
-//   Max supported size: 256 × 256  (sizes > 0x100 silently skipped)
-//   Width and height are rounded up to the next power of 2 before GPU upload.
+// File decoding: stb_image, pinned in lib/stb. OZJ skips 24 bytes, OZT 4.
+// JPEG is RGB top-down; legacy TGA is raw 32-bit BGRA, reversed to RGBA.
+// Zero-filled power-of-two padding and GL_MAX_TEXTURE_SIZE apply to both.
 //
 // ── TEXTURE PATH MODES ────────────────────────────────────────────────────────
 //
@@ -93,10 +83,7 @@
 #include "Platform/IFileSystem.h"
 #include "Texture.h"
 
-extern "C" {
-#include "jpeglib.h"
-}
-#include <setjmp.h>
+#include "ImageCodec.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -216,34 +203,9 @@ void Texture_Unload(int id)
 //     Strip extension from path (up to last '.').
 //     Append g_tex_ext_hq or g_tex_ext_lq based on current quality mode.
 //
-// Decode pipeline:
-//   g_tex_ext_mode == 0: SaveImage(0x18, g_tex_ext_lq, path, NULL, 0)
-//                        — inner loader, re-opens file internally
-//   g_tex_ext_mode != 0: crt_fseek(file_ptr, 0x18, 0)
-//                        — alternate format decoder (OZT / proprietary)
-//   Both eventually call libjpeg-style functions to produce RGB scanlines.
-//
-// After decode, if width <= 256 and height <= 256:
-//   1. Round width and height up to the next power of 2.
-//   2. Texture_Unload(id)  — free any existing slot data.
-//   3. Set slot: bpp=3, width=pow2_w, height=pow2_h.
-//   4. malloc(pow2_w * pow2_h * 3) → slot.pixels.
-//   5. Read scanlines into pixel buffer (upward from row 0).
-//   6. ref_count++.
-//   7. glGenTextures, glBindTexture, glTexImage2D(GL_RGB, GL_UNSIGNED_BYTE).
-//   8. glTexParameteri × 4 (min, mag, wrap_s, wrap_t).
-//   9. g_vram_used += bpp * pow2_w * pow2_h.
+// Decode completes before replacing a slot. Invalid/missing data returns 0.
+// Padding stays zero; texture size is bounded by tex_max_size().
 // ============================================================
-// libjpeg error handler — longjmp out instead of exit()
-struct tex_jerr_mgr {
-    struct jpeg_error_mgr pub;
-    jmp_buf setjmp_buffer;
-};
-static void tex_jpeg_error_exit(j_common_ptr cinfo)
-{
-    longjmp(((tex_jerr_mgr*)cinfo->err)->setjmp_buffer, 1);
-}
-
 // Swap file extension in-place: "Local/Webzenlogo.jpg" -> "Local/Webzenlogo.OZJ"
 static void tex_swap_ext(char* path, const char* newExt /*"OZJ"/"OZT"*/)
 {
@@ -268,45 +230,18 @@ static int tex_max_size(void)
     return s_max;
 }
 
-static int tex_next_pow2(int v, int maxv)
-{
-    int i = 1;
-    while (i < v && i < maxv) i <<= 1;
-    return i;
-}
-
 // Internal: decode OZJ (JPEG with 24-byte prefix) into TexSlot + GPU upload
 static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 {
     FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
     if (!f) return 0;
 
-    // Skip 24-byte dump header (OZJ prefix)
-    fseek(f, 24, SEEK_SET);
-
-    struct jpeg_decompress_struct cinfo;
-    tex_jerr_mgr jerr;
-    cinfo.err = jpeg_std_error(&jerr.pub);
-    jerr.pub.error_exit = tex_jpeg_error_exit;
-    if (setjmp(jerr.setjmp_buffer)) {
-        jpeg_destroy_decompress(&cinfo);
-        fclose(f);
-        return 0;
-    }
-
-    jpeg_create_decompress(&cinfo);
-    jpeg_stdio_src(&cinfo, f);
-    jpeg_read_header(&cinfo, TRUE);
-    jpeg_start_decompress(&cinfo);
-
-    if ((int)cinfo.output_width > tex_max_size() || (int)cinfo.output_height > tex_max_size()) {
-        jpeg_destroy_decompress(&cinfo);
-        fclose(f);
-        return 0;
-    }
-
-    int w = tex_next_pow2((int)cinfo.output_width,  tex_max_size());
-    int h = tex_next_pow2((int)cinfo.output_height, tex_max_size());
+    ImageCodec::Image image;
+    const bool decoded = ImageCodec::Decode(f, 24, ImageCodec::Format::Jpeg, tex_max_size(), image);
+    fclose(f);
+    if (!decoded) return 0;
+    int w = ImageCodec::PaddedExtent(image.width, tex_max_size());
+    int h = ImageCodec::PaddedExtent(image.height, tex_max_size());
 
     // DIAG: log actual dimensions and decode success
 
@@ -321,18 +256,9 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
     memset(slot->pixels, 0, w * h * 3);
     g_vram_used    += 3 * w * h;
 
-    int row_stride = cinfo.output_width * cinfo.output_components;
-    JSAMPARRAY rowBuf = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
-    int bufSize = w * h * 3;
-    int offset  = 0;
-    while (cinfo.output_scanline < cinfo.output_height)
-    {
-        if (offset + row_stride > bufSize) break;
-        jpeg_read_scanlines(&cinfo, rowBuf, 1);
-        memcpy((BYTE*)slot->pixels + (cinfo.output_scanline - 1) * w * 3,
-               rowBuf[0], row_stride);
-        offset += row_stride;
-    }
+    for (int y = 0; y < image.height; ++y)
+        memcpy((BYTE*)slot->pixels + y * w * 3, image.pixels + y * image.width * 3,
+            image.width * 3);
 
     slot->ref_count++;
     glGenTextures(1, &slot->gl_handle);
@@ -343,9 +269,6 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     wrap);
 
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
-    fclose(f);
     return 1;
 }
 
@@ -355,29 +278,12 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
     FILE* f = Platform::GetFileSystem().Open(fullPath, "rb");
     if (!f) return 0;
 
-    fseek(f, 0, SEEK_END);
-    int size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (size < 20) { fclose(f); return 0; }
-
-    BYTE* pak = new BYTE[size];
-    fread(pak, 1, size, f);
+    ImageCodec::Image image;
+    const bool decoded = ImageCodec::Decode(f, 4, ImageCodec::Format::Tga32, tex_max_size(), image);
     fclose(f);
-
-    // 4-byte OZT prefix + TGA header (12 bytes skipped, then w/h/bpp)
-    int idx = 12 + 4;
-    short nx  = *(short*)(pak + idx); idx += 2;
-    short ny  = *(short*)(pak + idx); idx += 2;
-    char  bit = *(char*) (pak + idx); idx += 1;
-    idx += 1;
-
-    if (bit != 32 || nx > tex_max_size() || ny > tex_max_size()) {
-        delete[] pak;
-        return 0;
-    }
-
-    int w = tex_next_pow2(nx, tex_max_size());
-    int h = tex_next_pow2(ny, tex_max_size());
+    if (!decoded) return 0;
+    int w = ImageCodec::PaddedExtent(image.width, tex_max_size());
+    int h = ImageCodec::PaddedExtent(image.height, tex_max_size());
 
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);
@@ -391,17 +297,9 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
     memset(slot->pixels, 0, bufSize);
     g_vram_used += 4 * w * h;
 
-    // BGRA → RGBA + vertical flip
-    BYTE* dstBase = (BYTE*)slot->pixels;
-    for (int y = 0; y < ny; y++) {
-        BYTE* src = pak + idx;   idx += nx * 4;
-        BYTE* dst = dstBase + (ny - 1 - y) * w * 4;
-        for (int x = 0; x < nx; x++) {
-            dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; dst[3] = src[3];
-            src += 4; dst += 4;
-        }
-    }
-    delete[] pak;
+    for (int y = 0; y < image.height; ++y)
+        memcpy((BYTE*)slot->pixels + y * w * 4, image.pixels + y * image.width * 4,
+            image.width * 4);
 
     slot->ref_count++;
     glGenTextures(1, &slot->gl_handle);
@@ -549,7 +447,7 @@ void Texture_Draw2D(int id,
 // (Implementation not reproduced — same pipeline as Texture_Load above)
 
 // ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
-// Loads JPEG or OZJ texture from disk, decompresses with libjpeg, uploads to GL.
+// Loads JPEG or OZJ texture from disk, decompresses with stb_image, uploads to GL.
 // Path mode:
 //   DAT_0055a7c4 == 0 → full_path = g_tex_base_dir + filename
 //   DAT_0055a7c4 != 0 → strip extension, try g_tex_ext_hq then g_tex_ext_lq
@@ -603,43 +501,15 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
         return 0;
     }
 
-    // --- OZJ header (skip 24 bytes) ---
-    // BUG PENDIENTE (sistema de texturas): varios .OZJ (Effect\Spark02.OZJ,
-    // Local\Webzenlogo.OZJ, ships, logos) son JPEG PLANO de Photoshop (SOI 0xFFD8
-    // sin header OZJ) con estructura: THUMBNAIL RGB embebido en APP1/APP13 +
-    // imagen PRINCIPAL en CMYK. El skip-24 a ciegas hace que libjpeg lea el SOI del
-    // THUMBNAIL (RGB, con color) — por eso los ships/logos se ven bien pero Spark02
-    // queda 4x4 (su thumbnail es diminuto). Solución correcta pendiente: leer el
-    // thumbnail RGB SIEMPRE, o portar el decode CMYK-Adobe fiel. Por ahora se
-    // mantiene skip-24 (colores OK).
-    fseek(f, 0x18, SEEK_SET);
-
-    // --- libjpeg decompress ---
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-
-    cinfo.err = jpeg_std_error(&jerr);
-    jpeg_create_decompress(&cinfo);
-    jpeg_stdio_src(&cinfo, f);
-    jpeg_read_header(&cinfo, TRUE);
-    jpeg_start_decompress(&cinfo);
-
-    unsigned int img_w = cinfo.output_width;
-    unsigned int img_h = cinfo.output_height;
-    int components = cinfo.output_components;
-
-    // --- Size limit: el máximo de la placa (ver tex_max_size) ---
-    if ((int)img_w > tex_max_size() || (int)img_h > tex_max_size()) {
-        jpeg_destroy_decompress(&cinfo);
-        fclose(f);
-        return 0;
-    }
-
-    // --- Power-of-2 rounding ---
-    int pow2_w = 1;
-    while (pow2_w < (int)img_w && pow2_w < tex_max_size()) pow2_w *= 2;
-    int pow2_h = 1;
-    while (pow2_h < (int)img_h && pow2_h < tex_max_size()) pow2_h *= 2;
+    // Preserve the 24-byte OZJ prefix; decode fully before altering the slot.
+    ImageCodec::Image image;
+    const bool decoded = ImageCodec::Decode(f, 24, ImageCodec::Format::Jpeg, tex_max_size(), image);
+    fclose(f);
+    if (!decoded) return 0;
+    const int img_w = image.width;
+    const int img_h = image.height;
+    const int pow2_w = ImageCodec::PaddedExtent(img_w, tex_max_size());
+    const int pow2_h = ImageCodec::PaddedExtent(img_h, tex_max_size());
 
     // --- Setup texture slot (Bitmaps macro from structs.h) ---
     UnloadImage(id);  // Unload any existing texture in this slot
@@ -679,17 +549,9 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     // Track VRAM usage (m_dwUsedTextureMemory)
     *(int*)&m_dwUsedTextureMemory += 3 * pow2_w * pow2_h;
 
-    // --- Read scanlines ---
-    int row_stride = components * img_w;
-    JSAMPARRAY row_buf = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
-
-    while (cinfo.output_scanline < cinfo.output_height) {
-        unsigned int scanline = cinfo.output_scanline;
-        jpeg_read_scanlines(&cinfo, row_buf, 1);
-        // Copy scanline into pixel buffer (scanline N → row N)
-        BYTE* dst = pixels + scanline * pow2_w * 3;
-        memcpy(dst, row_buf[0], row_stride);
-    }
+    // JPEG row N remains row N. Padding stays zero.
+    for (int y = 0; y < img_h; ++y)
+        memcpy(pixels + y * pow2_w * 3, image.pixels + y * img_w * 3, img_w * 3);
 
     // --- Ref count increment ---
     slot->Ref++;
@@ -704,10 +566,6 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
-    // --- Cleanup ---
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
-    fclose(f);
     return 1;
 }
 
@@ -786,39 +644,23 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         return 0;
     }
 
-    // ── Read entire file into buffer ──────────────────────────────────────────
-    crt_fseek((int*)Stream, 0, 2);            // fseek SEEK_END
-    unsigned int uVar5 = (unsigned int)crt_ftell((char*)Stream); // ftell
-    crt_fseek((int*)Stream, 0, 0);            // fseek SEEK_SET
-    BYTE* PakBuffer = (BYTE*)operator_new(uVar5);
-    fread(PakBuffer, 1, uVar5, Stream);
+    ImageCodec::Image image;
+    const int prefix = (g_tex_ext_mode == '\0') ? 0 : 4;
+    const bool decoded = ImageCodec::Decode(Stream, prefix, ImageCodec::Format::Tga32,
+        tex_max_size(), image);
     fclose(Stream);
-
-    // hdrOff: 0x0C for Data2 (pak with 12-byte header), 0x10 for Data (16-byte)
-    int hdrOff = (g_tex_ext_mode == '\0') ? 0x0c : 0x10;
-
-    // ── Validate header ───────────────────────────────────────────────────────
-    int width  = (int)(*(short*)(PakBuffer + hdrOff));
-    int height = (int)(*(short*)(PakBuffer + hdrOff + 2));
-    BYTE depth = PakBuffer[hdrOff + 4];
-
-    // DIAG: log dimensions/depth for account slots to see if they pass validation
-    // [DIAG TEMP #4] ungate: ver header real de TODAS las OZT (chair2 etc.). REMOVER al cerrar #4.
-    {
-        static int s_tgahdr = 0;
-        if (s_tgahdr < 250) { s_tgahdr++;
-        }
+    if (!decoded) {
+        char message[256];
+        Platform::TextFormatTruncated(message, sizeof(message), Platform::TruncateText,
+            "TGA_Fail id=0x%x (invalid, truncated, unsupported or oversized): %s",
+            uiTextureIndex, local_200);
+        DbgLogPublic(message);
+        return 0;
     }
-    // Sin límite de tamaño <=256, igual que el companion-DLL
-    // Patchs.cpp "Remove TGA size limit" (NOPea el size-check + fuerza los jumps
-    // de width/height). Las object textures del mundo (chair2.OZT etc.) son >256,
-    // el límite original las rechazaba → renderizaban cyan (textura sin subir).
-    // Se mantiene `depth == 0x20` (32bpp) — el patch tampoco lo toca.
-    if (depth == 0x20) {
-        // Round up to next power-of-2 (sin tope)
-        int pw = 1; while (pw < width)  pw <<= 1;
-        int ph = 1; while (ph < height) ph <<= 1;
-
+    const int width = image.width, height = image.height;
+    const int pw = ImageCodec::PaddedExtent(width, tex_max_size());
+    const int ph = ImageCodec::PaddedExtent(height, tex_max_size());
+    {
         // ── Unload existing slot ──────────────────────────────────────────────
         UnloadImage(uiTextureIndex);
 
@@ -843,22 +685,9 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;
         *(int*)&m_dwUsedTextureMemory += 4 * pw * ph;
 
-        // ── BGR(A) → RGBA copy, TGA row-0 = bottom → flip vertically ─────────
-        BYTE* src = PakBuffer + hdrOff + 6;
-        for (int row = 0; row < height; row++) {
-            int   dstRow = height - 1 - row;            // vertical flip
-            BYTE* dst    = pixBuf + 4 * dstRow * pw;
-            for (int col = 0; col < width; col++) {
-                dst[0] = src[2];   // R ← B
-                dst[1] = src[1];   // G ← G
-                dst[2] = src[0];   // B ← R
-                dst[3] = src[3];   // A ← A
-                dst += 4;
-                src += 4;
-            }
-        }
-
-        operator_delete(PakBuffer);
+        // The codec preserves the legacy vertical flip and BGRA conversion.
+        for (int row = 0; row < height; ++row)
+            memcpy(pixBuf + row * pw * 4, image.pixels + row * width * 4, width * 4);
 
         // ── Increment ref count ───────────────────────────────────────────────
         texRef[byteStride]++;
@@ -890,19 +719,6 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         return 1;
     }
 
-    // Reporte de textura rechazada (dimensiones o profundidad no soportadas).
-    {
-        static int s_tgafail = 0;
-        if (s_tgafail < 60) { s_tgafail++;
-            char m[256];
-            Platform::TextFormatTruncated(m, sizeof(m), Platform::TruncateText,
-                "TGA_Fail id=0x%x (rejected: w=%d h=%d depth=0x%x)",
-                uiTextureIndex, width, height, depth);
-            DbgLogPublic(m);
-        }
-    }
-    operator_delete(PakBuffer);
-    return 0;
 }
 
 // Scene/render helpers

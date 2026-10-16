@@ -38,7 +38,6 @@ else()
     set(MU_MINIAUDIO_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/miniaudio")
 endif()
 
-add_subdirectory(lib/libjpeg)
 
 # ── Fuentes ─────────────────────────────────────────────────────────────
 # Copiadas de los <ClCompile> del .vcxproj, en el mismo orden. NO usar glob:
@@ -316,6 +315,7 @@ set(MU_SOURCES
     src/Render/Render_SpriteHelpers.cpp
     src/Render/Terrain_Render.cpp
     src/Render/Terrain_Water.cpp
+    src/Render/Texture/ImageCodec.cpp
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
     src/Render/Weather.cpp
@@ -444,6 +444,7 @@ set(MU_HEADERS
     src/Render/SkillEffect_Render.h
     src/Render/Sprite_Draw.h
     src/Render/Terrain_Render.h
+    src/Render/Texture/ImageCodec.h
     src/Render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
@@ -512,7 +513,6 @@ set_target_properties(mu97k PROPERTIES
 
 target_include_directories(mu97k PRIVATE
     src
-    lib/libjpeg/jpeg-6b
     ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
@@ -546,7 +546,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
@@ -568,7 +568,6 @@ endif()
 
 if(WIN32)
 target_link_libraries(mu97k PRIVATE
-    jpeg
     opengl32
     glu32
     winmm
@@ -600,7 +599,7 @@ target_link_options(mu97k PRIVATE
 
 else()
     find_package(OpenGL REQUIRED)
-    target_link_libraries(mu97k PRIVATE jpeg OpenGL::GL OpenGL::GLU)
+    target_link_libraries(mu97k PRIVATE OpenGL::GL OpenGL::GLU)
     target_link_options(mu97k PRIVATE "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
 endif()
 

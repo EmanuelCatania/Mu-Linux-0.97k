@@ -390,6 +390,7 @@
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
+#include "Render/Texture/ImageCodec.h"
 #include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
 #include "Terrain/Terrain.h"
@@ -600,61 +601,21 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
         return;
     }
 
-    // --- Skip OZJ 24-byte header ---
-    if (DAT_0055a7c4 == '\0') {
-        fseek(f, 0x18, SEEK_SET);
-    } else {
-        fseek(f, 0x18, SEEK_SET);
-    }
-
-    // --- libjpeg decompress ---
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-
-    cinfo.err = jpeg_std_error(&jerr);
-    jpeg_create_decompress(&cinfo);
-    jpeg_stdio_src(&cinfo, f);
-    jpeg_read_header(&cinfo, TRUE);
-    jpeg_start_decompress(&cinfo);
-
-    unsigned int img_w = cinfo.output_width;
-    unsigned int img_h = cinfo.output_height;
-    int components = cinfo.output_components;
-    int row_stride = components * img_w;
-
-    // Allocate temp buffer for raw pixel data
-    JSAMPARRAY row_buf = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
-    unsigned char* rawBuf = (unsigned char*)operator_new(img_h * row_stride);
-
-    // Read scanlines into temp buffer (flipped: row 0 of JPEG → bottom of buffer)
-    while (cinfo.output_scanline < cinfo.output_height) {
-        unsigned int scanline = cinfo.output_scanline;
-        jpeg_read_scanlines(&cinfo, row_buf, 1);
-        unsigned char* rowDst = rawBuf + (img_h - 1 - scanline) * row_stride;
-        memcpy(rowDst, row_buf[0], row_stride);
-    }
-
-    // --- Convert bytes to floats ---
-    // Output: 3 floats per pixel (R, G, B), stored sequentially
-    float* outFloat = (float*)dst;
-    int idx = 0;
-    for (unsigned int y = img_h; y > 0; ) {
-        y--;
-        for (unsigned int x = 0; x < img_w; x++) {
-            int srcOff = idx;
-            outFloat[0] = (float)rawBuf[srcOff]     * _DAT_00552b70;
-            outFloat[1] = (float)rawBuf[srcOff + 1]  * _DAT_00552b70;
-            outFloat[2] = (float)rawBuf[srcOff + 2]  * _DAT_00552b70;
-            outFloat += 3;
-            idx += 3;
-        }
-    }
-
-    // --- Cleanup ---
-    operator_delete(rawBuf);
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
+    // TerrainLight writes into the fixed 256x256 RGB float array.
+    ImageCodec::Image image;
+    const bool decoded = ImageCodec::Decode(f, 24, ImageCodec::Format::Jpeg, 256, image);
     fclose(f);
+    if (!decoded) {
+        CErrorReport__Write(0x55c9bf0, (char*)"Invalid TerrainLight JPEG\n");
+        return;
+    }
+    float* outFloat = (float*)(uintptr_t)(unsigned int)dst;
+    for (int y = image.height - 1; y >= 0; --y) {
+        const unsigned char* row = image.pixels + y * image.width * 3;
+        for (int x = 0; x < image.width * 3; ++x)
+            *outFloat++ = (float)row[x] * _DAT_00552b70;
+    }
+
 }
 
 // CharacterMoveSpeed @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10

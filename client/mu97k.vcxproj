@@ -60,7 +60,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\libjpeg\jpeg-6b;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <!-- Disable /RTC (run-time checks). Ghidra decompilations commonly declare
            locals used as output-params/register-aliases that trip the "used
            without being initialized" check, even though the binary runs fine. -->
@@ -71,8 +71,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <FixedBaseAddress>true</FixedBaseAddress>
@@ -92,7 +92,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\libjpeg\jpeg-6b;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -101,8 +101,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 
@@ -203,6 +203,7 @@
     <ClInclude Include="src\Render\SkillEffect_Render.h" />
     <ClInclude Include="src\Render\Sprite_Draw.h" />
     <ClInclude Include="src\Render\Terrain_Render.h" />
+    <ClInclude Include="src\Render\Texture\ImageCodec.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Scene\Scene_CharSelect.h" />
@@ -493,6 +494,9 @@
     <ClCompile Include="src\Render\Render_SpriteHelpers.cpp" />
     <ClCompile Include="src\Render\Terrain_Render.cpp" />
     <ClCompile Include="src\Render\Terrain_Water.cpp" />
+    <ClCompile Include="src\Render\Texture\ImageCodec.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\Texture\Texture.cpp" />
     <ClCompile Include="src\Render\Trail_Render.cpp" />
     <ClCompile Include="src\Render\Weather.cpp" />
@@ -532,11 +536,6 @@
     <ResourceCompile Include="src\resource.rc" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="lib\libjpeg\libjpeg.vcxproj">
-      <Project>{B1A2C3D4-E5F6-7890-ABCD-EF1234567890}</Project>
-    </ProjectReference>
-  </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

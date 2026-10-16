@@ -15,16 +15,6 @@
 #include <time.h>
 #include "Platform/DebugHeaders.h"
 
-// libjpeg 6b (IJG)
-// XMD_H prevents jmorecfg.h from redefining INT32 (already in basetsd.h)
-#define XMD_H
-#undef FAR
-extern "C" {
-#include "jpeglib.h"
-}
-#undef FAR
-#define FAR
-
 // Ghidra intrinsic stubs (not available in MSVC)
 #define _rand() rand()
 static inline double    fsin(double x) { return sin(x); }

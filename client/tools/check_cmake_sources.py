@@ -3,8 +3,6 @@
 
 Compara, en orden y sin duplicados:
   - CMakeLists.txt (MU_SOURCES / MU_HEADERS)  vs  mu97k.vcxproj (ClCompile / ClInclude)
-  - lib/libjpeg/CMakeLists.txt (JPEG_SOURCES / JPEG_HEADERS)
-                                              vs  lib/libjpeg/libjpeg.vcxproj
 
 Sale con código 1 si hay cualquier diferencia. Lo corre el CI.
 
@@ -55,7 +53,7 @@ def compare(label, expected, actual):
         print("[%s] mismo contenido pero distinto orden" % label)
         ok = False
     for x in actual:
-        if not os.path.isfile(os.path.join(ROOT, x if label.startswith("mu97k") else os.path.join("lib/libjpeg", x))):
+        if not os.path.isfile(os.path.join(ROOT, x)):
             print("[%s] el archivo no existe: %s" % (label, x))
             ok = False
     print("[%s] %d entradas: %s" % (label, len(actual), "OK" if ok else "ERROR"))
@@ -70,12 +68,6 @@ def main():
         compare("mu97k ClInclude",
                 vcxproj_items(os.path.join(ROOT, "mu97k.vcxproj"), "ClInclude"),
                 cmake_list(os.path.join(ROOT, "CMakeLists.txt"), "MU_HEADERS")),
-        compare("libjpeg ClCompile",
-                vcxproj_items(os.path.join(ROOT, "lib/libjpeg/libjpeg.vcxproj"), "ClCompile"),
-                cmake_list(os.path.join(ROOT, "lib/libjpeg/CMakeLists.txt"), "JPEG_SOURCES")),
-        compare("libjpeg ClInclude",
-                vcxproj_items(os.path.join(ROOT, "lib/libjpeg/libjpeg.vcxproj"), "ClInclude"),
-                cmake_list(os.path.join(ROOT, "lib/libjpeg/CMakeLists.txt"), "JPEG_HEADERS")),
     ]
     return 0 if all(results) else 1
 
