@@ -27,5 +27,5 @@ void __cdecl Font_CreateTextDib(int dc)
         return;
     }
 
-    gFont.CreateTextSurface((HDC)(HANDLE_PTR)dc, 2 * fontW, fontH);
+    gFont.CreateTextSurface((HDC)(uintptr_t)dc, 2 * fontW, fontH);
 }

@@ -6,6 +6,7 @@ namespace Platform {
 // Puente nativo transitorio para WndProc, GDI, audio y red aún no abstraídos.
 class Win32Window final : public IWindow {
 public:
+    void ServiceLoadingEvents(unsigned maximum) override;
     void BindDispatch(HINSTANCE instance, WNDPROC procedure);
     void ShowError(const char* text, const char* title, bool attach, bool errorIcon) override {
         MessageBoxA(attach ? m_hWnd : nullptr, text, title, MB_OK | (errorIcon ? MB_ICONERROR : 0));
@@ -16,6 +17,7 @@ public:
     void RestoreDisplay() override;
     void SetTitle(const char* title) override;
     void ShowAndFocus() override;
+    void CloseWindow() override;
     void RequestCloseApplication() override;
     HWND GetHwnd() const { return m_hWnd; }
     HINSTANCE GetInstance() const { return m_hInst; }

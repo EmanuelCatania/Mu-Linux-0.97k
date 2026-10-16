@@ -454,7 +454,7 @@ int Texture_Load(const char* path, int id,
         char msg[600];
         Platform::TextFormatTruncated(msg, Platform::TruncateText, "File not found:\n%s", full);
         Platform::GetWindow().ShowError(msg, "IError", true, false);
-        if (gWindow.GetHwnd()) SendMessageA(gWindow.GetHwnd(), WM_CLOSE, 0, 0);
+        if (Platform::GetWindow().IsCreated()) Platform::GetWindow().CloseWindow();
     }
     return ok;
 }

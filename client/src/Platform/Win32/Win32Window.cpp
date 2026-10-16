@@ -5,6 +5,14 @@
 extern "C" void DbgLogPublic(const char* msg);
 
 namespace Platform {
+void Win32Window::ServiceLoadingEvents(unsigned maximum) {
+    MSG message;
+    for (unsigned i = 0; i < maximum && PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE); ++i) {
+        TranslateMessage(&message);
+        DispatchMessageA(&message);
+    }
+}
+
 Win32Window& GetWin32Window()
 {
     static Win32Window window;
@@ -31,6 +39,8 @@ void Win32Window::ShowAndFocus()
     SetForegroundWindow(m_hWnd);
     SetFocus(m_hWnd);
 }
+void Win32Window::CloseWindow() { SendMessageA(m_hWnd, WM_CLOSE, 0, 0); }
+
 void Win32Window::RequestCloseApplication()
 {
     // IDA: WndProc (0x004149D0): conservar el cierre síncrono de los loaders.

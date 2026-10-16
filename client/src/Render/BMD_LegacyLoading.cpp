@@ -325,12 +325,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         if ((s_pumpCounter++ & 0x07) == 0) {  // cada 8 BMDs
             // ServiceEvents bombea SDL y drena el socket por poll; g_WorldLoading sigue
             // difiriendo el despacho de paquetes hasta crear al héroe.
-            Platform::GetWindow().ServiceEvents();
-            MSG msg;
-            for (int i = 0; !Platform::GetWindow().UsesPlatformPump() && i < 16 && PeekMessage(&msg, NULL, 0, 0, PM_REMOVE); ++i) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
+            Platform::GetWindow().ServiceLoadingEvents(16);
         }
     }
 

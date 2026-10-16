@@ -63,6 +63,7 @@ public:
         SDL_StartTextInput(window);
         return true;
     }
+    void ServiceLoadingEvents(unsigned) override { ServiceEvents(); }
     void ServiceEvents() override {
         ServiceSDLEvents(true);
         if (!closing) GetSocket().Poll();
@@ -96,6 +97,7 @@ public:
     void RestoreDisplay() override { if (window) SDL_SetWindowFullscreen(window, false); }
     void SetTitle(const char* title) override { if (window) SDL_SetWindowTitle(window, TitleUTF8(title).c_str()); }
     void ShowAndFocus() override { if (window) { SDL_ShowWindow(window); SDL_RaiseWindow(window); } }
+    void CloseWindow() override { RequestCloseApplication(); }
     void RequestCloseApplication() override;
 };
 SDLWindowBackend& Window() { static auto* instance = new SDLWindowBackend; return *instance; }

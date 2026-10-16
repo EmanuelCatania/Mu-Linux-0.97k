@@ -13,6 +13,7 @@ struct WindowSettings {
 class IWindow {
 public:
     virtual ~IWindow() = default;
+    virtual void ServiceLoadingEvents(unsigned maximum) = 0;
     virtual void ServiceEvents() {}
     virtual bool UsesPlatformPump() const { return false; }
     virtual bool CloseRequested() const { return false; }
@@ -24,6 +25,7 @@ public:
     virtual void RestoreDisplay() = 0;
     virtual void SetTitle(const char* title) = 0;
     virtual void ShowAndFocus() = 0;
+    virtual void CloseWindow() = 0;
     virtual void RequestCloseApplication() = 0;
 };
 IWindow& GetWindow();
