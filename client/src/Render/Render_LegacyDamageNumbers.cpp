@@ -95,7 +95,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
     }
 
     char Text[32];
-    _itoa(Num, Text, 10);
+    std::sprintf(Text, "%d", Num);
     const int len = (int)strlen(Text);
     if (len <= 0) return;
 

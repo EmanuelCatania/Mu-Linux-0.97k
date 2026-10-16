@@ -95,7 +95,6 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
 
-    GetLastError();
     int n;
     n = Platform::TextLength(lpString);
     gFont.MeasureText32(gFont.GetTextDC(), lpString, n, &psizl);
@@ -105,7 +104,6 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 300, n, &v13);
     n = Platform::TextLength(lpString + 24);
     gFont.MeasureText32(gFont.GetTextDC(), lpString + 24, n, &v14);
-    GetLastError();
 
     int result = psizl.cx + 3;
     if (*((int*)lpString + 140) <= 0) {

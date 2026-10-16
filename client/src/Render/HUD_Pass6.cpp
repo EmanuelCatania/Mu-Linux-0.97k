@@ -1377,7 +1377,7 @@ extern "C" void __cdecl RenderTrade(void)
     m_dwTextColor = 0xFFFFFFD2u;
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
-               Hero ? (const char*)((BYTE*)Hero + 449) : "", 0, 0, 0);
+               const_cast<char*>(Hero ? (const char*)((BYTE*)Hero + 449) : ""), 0, 0, 0);
     const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
                           TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
     char levelText[64];

@@ -256,7 +256,7 @@ LAB_00460dd8:
         }
         pfVar12 = pfVar17 + 7;
         pfVar8 = pfVar17 + 4;
-        bVar6 = (byte)param_5;
+        bVar6 = (byte)(uintptr_t)param_5;
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,0,(int)pfVar17,pfVar17[3],0x1e,bVar6);
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(int)pfVar17,pfVar17[3],0x1e,bVar6);
         Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(int)pfVar17,pfVar17[3],0x1e,bVar6);

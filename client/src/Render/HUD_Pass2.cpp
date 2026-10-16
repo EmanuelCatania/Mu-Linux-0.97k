@@ -173,7 +173,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
                                float Width, float Height)
 {
     char Buffer[32];
-    _itoa(Num, Buffer, 10);
+    std::sprintf(Buffer, "%d", Num);
     int n = (int)strlen(Buffer);
     float xa = x - (double)(n) * Width * 0.5;
     if (n <= 0) return xa;

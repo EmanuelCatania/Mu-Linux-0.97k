@@ -614,6 +614,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         ((FnVoid)vt[26])(self);   // recompute scrollbar thumb geometry
 
         // Adjust scrollbar offset for chat list-box mode (8-px nudge).
+        {
         DWORD modeFlag = self[45];
         int v6 = (modeFlag == 1) ? 8 : 0;
 
@@ -691,6 +692,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             } else {
                 self[43] = r + 1;
             }
+        }
         }
 LABEL_53:
         v17 = 1; MouseOnWindow = 1;
