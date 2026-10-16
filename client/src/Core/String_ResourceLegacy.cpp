@@ -1,6 +1,7 @@
 // String_ResourceLegacy.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -48,9 +49,9 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // mbclen @ 0x00541EAB — IsLeadByte(str)
 // DBCS lead-byte check using CRT _pctype table at DAT_083bc1a0.
 // Bit 2 of table[*str+1] set → double-byte (return 2), else single-byte (return 1).
-// Implemented via Win32 IsDBCSLeadByteEx(949) to avoid needing the 256-byte table.
+// Conserva la tabla de bytes iniciales CP949 en ambos sistemas.
 int __cdecl mbclen(const byte *param_1) {
-    return IsDBCSLeadByteEx(949, *param_1) ? 2 : 1;
+    return Platform::KoreanCharacterBytes(*param_1);
 }
 // Resource_Load @ 0x0053D5A0 — Resource_Load(filename)
 // Calls Pipe_SetTarget(DAT_083bbb14, filename) if resource manager is initialized.

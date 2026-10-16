@@ -13,6 +13,10 @@
 #endif
 
 namespace Platform {
+// CP949: verificado contra IsDBCSLeadByteEx para los 256 valores.
+inline unsigned KoreanCharacterBytes(unsigned char first)
+{ return first >= 0x81 && first <= 0xfe ? 2u : 1u; }
+
 // El cliente Linux consume los mismos textos Windows-1252 que SDLFont::DecodeByte.
 // Windows conserva la página de códigos de la CRT para los cortes heredados.
 inline unsigned TextCharacterBytes(const unsigned char* text)
