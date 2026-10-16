@@ -702,7 +702,7 @@ char Chat_ValidateInputCommand(void)
       pcVar5 = pcVar5 + 0x14;
     } while (iVar3 < DAT_07d78074);
   }
-  if ((char)DAT_07db8710 != '/') {
+  if ((char)(uintptr_t)DAT_07db8710 != '/') {
     uVar2 = 0xffffffff;
     iVar3 = 0;
     iVar4 = 0;

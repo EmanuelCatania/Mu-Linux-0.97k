@@ -38,7 +38,7 @@ void __fastcall SpringNode_GetPos(void *node, float *out);
 float __fastcall SpringNode_Delta(void *a, int b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
-void __cdecl FUN_0053cc00_impl(int param_1);
+static void __cdecl FUN_0053cc00_impl(int param_1);
 
 
 

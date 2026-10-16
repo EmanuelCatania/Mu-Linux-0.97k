@@ -501,7 +501,7 @@ static void* g_FakeHashVtable[8] = {
 //
 // AntiTamper_HashNode() (System_Legacy.cpp) ya usaba 0x585; al centinela se le
 // habia pasado.
-__declspec(align(4)) static unsigned char g_HashSentinelNode[0x585] = {0};
+alignas(4) static unsigned char g_HashSentinelNode[0x585] = {0};
 
 // Single-slot hash arrays. Both point into static storage so we don't need
 // to allocate. Slot 0 of g_HashValueArr is initialized to &sentinel; slot 0
@@ -1167,11 +1167,11 @@ char     DAT_007eaa11  = 0;
 // DigitOnly): esos flags aparecían pisados con 0xFF cada frame por un desborde
 // vecino nunca localizado. Los canarios absorben el desborde si cae cerca de
 // d70/d71/d72 (si siguen en 0xCC, el escritor está más lejos).
-char     g_PadBeforeChatMode[64] = { 0xCC };
+char     g_PadBeforeChatMode[64] = { static_cast<char>(0xCC) };
 char     GuildInputEnable  = 0;
 char     DAT_07e11d71  = 0;
 char     GoldInputEnable  = 0;
-char     g_PadAfterChatMode[64]  = { 0xCC };
+char     g_PadAfterChatMode[64]  = { static_cast<char>(0xCC) };
 DWORD    DAT_07e11d78  = 0;
 DWORD    DAT_07e11d30  = 0;
 DWORD    DAT_07e11d1c  = 0;

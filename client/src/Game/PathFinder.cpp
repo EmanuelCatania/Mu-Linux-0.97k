@@ -439,7 +439,7 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
       if (((((char)param_5 != '\0') && (param_6 <= (int)(uint)pbVar1[*(int *)((int)_this + 0xc)])) &&
           (pbVar4 = (byte *)(CONCAT31((int3)((uint)pbVar4 >> 8),
                                       pbVar4[param_3 + *(int *)((int)_this + 0xc)]) & 0xffffff20),
-           (char)pbVar4 != ' ')) ||
+           (char)(uintptr_t)pbVar4 != ' ')) ||
          ((pbVar1[*(int *)((int)_this + 0x3fc)] = 4, (int)pbVar1 < 0 ||
           (*(int *)((int)_this + 8) <= (int)pbVar1)))) goto LAB_0043fd21;
       pbVar4 = *(byte **)((int)_this + 0x400);

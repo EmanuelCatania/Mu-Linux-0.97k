@@ -28,6 +28,7 @@
 //   state 2,4,6,8   : Y eases to 0x93  (credentials panel)
 
 #include "stdafx.h"
+#include <algorithm>
 #include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Net/PacketFrame.h"
@@ -560,8 +561,8 @@ int Game_SceneUpdate(void)
 
                 // Build login packet [0xC1][0xF1] + user(10) + pass(10) + tick(4) + 5 obf + 16 raw
                 BYTE user[10] = {0}, pass[10] = {0};
-                memcpy(user, DAT_07db8710, min(ulen - 1, 10));
-                memcpy(pass, DAT_07db8810, min((int)strlen((char*)DAT_07db8810), 10));
+                memcpy(user, DAT_07db8710, (std::min)(ulen - 1, 10));
+                memcpy(pass, DAT_07db8810, (std::min)((int)strlen((char*)DAT_07db8810), 10));
                 // NOTE: companion client (Mu-linux-97K/Source/Client/Main/Reconnect.cpp:222-224)
                 // does NOT pre-process account/password — they're fed RAW into
                 // PacketArgumentEncrypt (the 3-byte XOR below).  We used to call

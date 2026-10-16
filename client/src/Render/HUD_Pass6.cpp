@@ -30,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include <algorithm>
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
@@ -1548,7 +1549,7 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = 0; money = 0;
     } else if (mixType == 2 && DAT_07eaa168 > 0) {
         static const int devilMoney[] = { 10000, 10000, 20000, 40000, 70000 };
-        const int i = min((int)DAT_07eaa168 - 1, 4);
+        const int i = (std::min)((int)DAT_07eaa168 - 1, 4);
         rate = (DAT_07eaa168 == 1) ? 60 : rate;
         money = devilMoney[i];
     } else if (mixType == 3) {
@@ -1563,7 +1564,7 @@ extern "C" void __cdecl RenderChaosMix(void)
         rate = DAT_07eaa174; money = 5000000;
     } else if (mixType == 8 && DAT_07eaa168 > 0) {
         static const int bloodMoney[] = { 50000, 8000, 20000, 40000, 80000, 120000, 160000 };
-        rate = 80; money = bloodMoney[min((int)DAT_07eaa168 - 1, 6)];
+        rate = 80; money = bloodMoney[(std::min)((int)DAT_07eaa168 - 1, 6)];
     }
 
     // DESVIACION: las recetas consultadas por 0x88 muestran pendiente sin respuesta;
