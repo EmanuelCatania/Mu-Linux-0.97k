@@ -2,6 +2,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Platform/IGLContext.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/ITimer.h"
@@ -789,7 +790,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         if (*drawText == '\0') return;
     }
 
-    HGLRC hRC = wglGetCurrentContext();
+    void* hRC = Platform::GetGLContext().CurrentIdentity();
     if (!hRC) return;
 
     HDC hFontDC = gFont.GetTextDC();
@@ -807,7 +808,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
 
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
     // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { HGLRC rc; HFONT font; GLuint base; int ascent; unsigned generation; };
+    struct FontLists { void* rc; HFONT font; GLuint base; int ascent; unsigned generation; };
     static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
     static int       s_next = 0;
 

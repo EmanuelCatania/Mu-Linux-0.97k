@@ -5,6 +5,7 @@
 namespace Platform {
 class Win32GLContext final : public IGLContext {
 public:
+    void* CurrentIdentity() const override;
     bool Initialize() override;
     void Release() override;
     void Present() override;
