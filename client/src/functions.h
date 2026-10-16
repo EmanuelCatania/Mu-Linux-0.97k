@@ -944,7 +944,6 @@ void  __cdecl FUN_0053d430(BYTE *gameName);                          // GameGuar
 int   __cdecl GameGuard_HealthCheck(void *ptr);                               // GameGuard query
 
 // Vtable init / class chains (thiscall emulated as fastcall)
-int   __cdecl    FUN_00405280(HANDLE *This);                         // CErrorReport vtable+init
 int   __cdecl    FUN_00405290(int param_1);                          // CErrorReport field init
 void  __cdecl    FUN_004052b0(void *This, const char *filename);     // CErrorReport open log
 void  __cdecl    FUN_00407de0(DWORD *This);                          // CWaveFile vtable set

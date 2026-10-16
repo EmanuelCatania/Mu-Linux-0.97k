@@ -114,25 +114,9 @@ void __cdecl Sound_StopBuffer(int Buffer) { if (g_EnableSound && Buffer >= 0) Pl
 // waveIO__dtor @ 0x00404E40 — CWaveFile ~dtor (calls waveIO__CloseWaveFile)
 
 
-// FUN_00405260 @ 0x00405260 — CErrorReport ~dtor
-void __fastcall FUN_00405260(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00405280((HANDLE *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
-}
-
-// FUN_00405280 @ 0x00405280 (11 bytes)
-// FUN_00405280 (IDA-activated)
-int __cdecl FUN_00405280(HANDLE *_this)
-{
-  *_this = (HANDLE)DAT_005524c4;
-  CloseHandle(_this[1]);
-  return FUN_00405290((int)_this);
-}
-
 // IDA signature is __thiscall(this); function.h decl is __stdcall(void).
 // No live callers in our build (vtable dispatch via CErrorReport disabled),
-// so this is a NOP placeholder. The truncation logic ported below as
-// CErrorReport_RotateLog_impl(this) for when the vtable is wired up.
+// El logger activo del cliente es debug.log.
 void __stdcall FUN_00405340(void) {
     // No-op — CErrorReport vtable not yet active.
 }

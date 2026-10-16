@@ -69,15 +69,6 @@ char *__cdecl GetMapName(int iMap) {
     return (char*)gMapManager.GetName(iMap);
 }
 
-// CErrorReport::WriteFile @ 0x004054B0 (65 bytes) — XOR + write to log
-int __fastcall CErrorReport__WriteFile(int ecx, int /*edx*/,
-    HANDLE hFile, void *lpBuffer, DWORD nBytes, LPDWORD lpWritten, LPOVERLAPPED lpOvl) {
-    // Xor_ConvertBuffer: XOR each byte with running key
-    int iVar1 = *(int *)(ecx + 0x10c); // stub — actual XOR omitted
-    *(int *)(ecx + 0x10c) = iVar1;
-    return WriteFile(hFile, lpBuffer, nBytes, lpWritten, lpOvl);
-}
-
 // LevelConvert @ 0x0045C850 (66 bytes) — wing level to display level
 int __cdecl LevelConvert(BYTE Level) {
     switch (Level) {
@@ -128,16 +119,6 @@ int __fastcall FUN_005404c0(int param_1) {
 
 
 
-// FUN_00540a70 @ 0x00540A70 (75 bytes) — GameGuard: init crypto context
-int *__fastcall FUN_00540a70(int *param_1) {
-    param_1[5] = 0; param_1[3] = 0; *param_1 = 0; param_1[1] = 0; param_1[2] = 0;
-    param_1[9] = 0; param_1[0xe] = 0; param_1[0x10] = 0; param_1[0xf] = 0;
-    param_1[6] = 0; *(BYTE *)(param_1 + 7) = 0; param_1[8] = 0; param_1[0x11] = 0;
-    BOOL r = CryptAcquireContextA((HCRYPTPROV *)param_1, NULL, MS_DEF_PROV_A, PROV_RSA_FULL, 0xf0000000);
-    if (!r) *param_1 = 0;
-    return param_1;
-}
-
 // CheckMouseIn @ 0x0040C490 (110 bytes) — check if mouse is within rectangle
 int __cdecl CheckMouseIn(int x, int y, int width, int height, int direction) {
     if (direction == 2) {
@@ -186,18 +167,6 @@ void __cdecl CreateClassAttributes(void) {
     CreateClassAttribute(1, 0x1c,0x14,0x19,0x0a,0x6e,0x14, 2,1,2,1);
     CreateClassAttribute(2, 0x32,0x32,0x32,0x1e,0x6e,0x1e, 0x6e,0x1e,6,3);
     CreateClassAttribute(3, 0x1e,0x1e,0x1e,0x1e,0x78,0x50, 1,1,2,2);
-}
-
-// UpdateFile @ 0x0041E500 (90 bytes) — copy+delete with retry
-BOOL __cdecl UpdateFile(char *lpszOld, char *lpszNew) {
-    for (int i = 0; i < 0x14; i++) {
-        Platform::GetTimer().SleepMilliseconds(500);
-        if (CopyFileA(lpszOld, lpszNew, FALSE)) {
-            DeleteFileA(lpszOld);
-            return TRUE;
-        }
-    }
-    return FALSE;
 }
 
 // DecryptCheckSumKey @ 0x00412D30 (32 bytes) — already implemented above in batch 1
@@ -266,17 +235,6 @@ void __fastcall FUN_00408070(void *param_1_raw) {
     if ((void *)param_1[0x13] != NULL) operator_delete((void *)param_1[0x13]);
 }
 
-// FUN_00540ac0 @ 0x00540AC0 (108 bytes) — GameGuard: release crypto resources
-void __fastcall FUN_00540ac0(int *param_1) {
-    if ((void *)param_1[1] != NULL) FUN_00543c98((void *)param_1[1]);
-    if ((void *)param_1[5] != NULL) FUN_00543c98((void *)param_1[5]);
-    if (param_1[3] != 0) CryptDestroyHash((HCRYPTHASH)param_1[3]);
-    if (param_1[4] != 0) CryptDestroyKey((HCRYPTKEY)param_1[4]);
-    if (param_1[0xf] != 0) CryptDestroyKey((HCRYPTKEY)param_1[0xf]);
-    if (param_1[0x10] != 0) CryptDestroyHash((HCRYPTHASH)param_1[0x10]);
-    if (*param_1 != 0) CryptReleaseContext((HCRYPTPROV)*param_1, 0);
-}
-
 // Xor_ConvertBlock @ 0x00405130 (131 bytes) — XOR buffer with 16-byte key
 void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey) {
     BYTE byXorKey[16] = {0x7c,0xbd,0x81,0x9f,0x3d,0x93,0xe2,0x56,
@@ -302,19 +260,6 @@ int __cdecl Xor_ConvertBuffer(void *lpBuffer, DWORD nBytes, int iKey) {
     }
     Xor_ConvertBlock(p, rem, 0);
     return rem;
-}
-
-// FUN_004052b0 @ 0x004052B0 (108 bytes) — CErrorReport: open log file
-void __fastcall FUN_004052b0_impl(int ecx, int /*edx*/, char *param_1) {
-    // Copy filename to this+8
-    char *dst = (char *)(ecx + 8);
-    while (*param_1) *dst++ = *param_1++;
-    *dst = 0;
-    *(int *)(ecx + 0x10c) = 0;
-    HANDLE h = CreateFileA((LPCSTR)(ecx + 8), 0xc0000000, 1, NULL, 4, 0x80, NULL);
-    *(HANDLE *)(ecx + 4) = h;
-    // FUN_00405340(); // log header — skip
-    SetFilePointer(h, 0, NULL, 2);
 }
 
 // FindTextureByName @ 0x00505BF0 (141 bytes) — search texture table by name

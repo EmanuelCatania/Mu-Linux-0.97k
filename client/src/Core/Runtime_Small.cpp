@@ -27,7 +27,6 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for functions defined later in this batch
-static void __cdecl FUN_00405320_impl(int param_1);
 
 // ── 1-byte: nop ──────────────────────────────────────────────────────────────
 
@@ -467,11 +466,7 @@ void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
 
 // ── 22-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00405320 @ 0x00405320 (22 bytes) — close handle + field init
-static void __cdecl FUN_00405320_impl(int param_1) {
-    CloseHandle(*(HANDLE *)(param_1 + 4));
-    FUN_00405290_impl(param_1);
-}
+
 
 // FUN_00406d20 @ 0x00406D20 (22 bytes) — initialize hash table fields
 void __fastcall FUN_00406d20(int param_1) {
