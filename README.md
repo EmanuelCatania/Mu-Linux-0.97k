@@ -121,6 +121,32 @@ docker compose -f docker-compose.images.yml up -d
 
 En ARM con 1 GB de RAM o menos, habilitá 2 GB de swap antes del primer build. `uname -m`: `x86_64` = amd64, `aarch64` = arm64.
 
+## Compilar y correr en Windows (sin Docker)
+
+Disponible desde la rama `fase/3` (próximo `0.97.30`).
+
+1. Requisitos: Visual Studio 2022 o 2026 con "Desarrollo para el escritorio con C++" (toolset v143, incluye CMake) y MySQL 8.
+2. Compilar desde la raíz del repo:
+
+   ```
+   cmake -S . -B out/win-x86 -A Win32 -T v143
+   cmake --build out/win-x86 --config Release
+   ```
+
+   Los ejecutables quedan en `Source/MuServer/bin/Release/`.
+3. Copiar cada ejecutable a su carpeta de `MuServer/`, junto a su `.ini`:
+   - `ConnectServer/ConnectServer.exe` → `MuServer/ConnectServer/`
+   - `GameServer/GameServer.exe` → `MuServer/GameServer/` (lee los datos de `MuServer/Data/`)
+   - `MYSQL/JoinServer/JoinServer.exe` → `MuServer/MySQL/JoinServer/`
+   - `MYSQL/DataServer/DataServer.exe` → `MuServer/MySQL/DataServer/`
+
+   Junto a `JoinServer.exe` y `DataServer.exe` van también las DLL de `Source/MuServer/Dependencies/mysql-connector-8.0.33/ForClient/`.
+4. Base de datos: ejecutar `MuServer/MySQL/DB/CreateDatabase.sql` y después `PoblateDatabase.sql`. El usuario por defecto es `admin` / `asd123`; si usás otro, cambialo en `DataServer.ini` y `JoinServer.ini`.
+5. En `MuServer/ConnectServer/ServerList.dat`, poner la IP del server (`127.0.0.1` para probar en la misma PC).
+6. Arrancar en este orden: DataServer, JoinServer, ConnectServer y GameServer.
+
+El cliente `0.97.20` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
+
 ## Variables de entorno
 
 `.env` se basa en `.env.example`. Cambiá los valores antes de producción.
