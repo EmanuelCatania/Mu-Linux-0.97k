@@ -483,6 +483,9 @@ endif()
 
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+if(NOT WIN32)
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/")
+endif()
 if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
 endif()

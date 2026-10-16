@@ -35,4 +35,22 @@ void DispatchNativeMessage(const MSG& message) { DispatchMessageW(&message); }
 }
 // SDL entrega mouse/texto/IME; no duplicarlos por la ruta de WM_CHAR heredada.
 void Input_OnWindowMessage(UINT, WPARAM, LPARAM) {}
+#else
+#include "Platform/NativeBridge.h"
+#include "Platform/SDL3/SDLPlatform.h"
+#include "Platform/ISocket.h"
+void Input_OnEvent(const Platform::InputEvent& event);
+void Client_ClosePortable();
+void Client_SocketEvent(uint16_t event, uint16_t error);
+namespace Platform {
+void BindNativeDispatch(HINSTANCE, WNDPROC) {
+    BindSDLCallbacks(Input_OnEvent, Client_ClosePortable);
+    GetSocket().BindEvents(Client_SocketEvent);
+}
+// Identidades opacas de la ventana/superficie SDL; nunca se pasan a GDI en Linux.
+HWND NativeWindow() { return reinterpret_cast<HWND>(SDLWindow()); }
+HINSTANCE NativeInstance() { return nullptr; } // Linux no tiene instancia Win32.
+HDC NativeDC() { return reinterpret_cast<HDC>(SDLWindow()); }
+HGLRC NativeGLContext() { return reinterpret_cast<HGLRC>(SDL_GL_GetCurrentContext()); }
+}
 #endif
