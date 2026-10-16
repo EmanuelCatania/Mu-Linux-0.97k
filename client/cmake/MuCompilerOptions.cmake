@@ -22,7 +22,7 @@ foreach(kind EXE STATIC SHARED MODULE)
     set(CMAKE_${kind}_LINKER_FLAGS_RELEASE "")
 endforeach()
 
-# Opciones de compilación comunes a mu97k y libjpeg, equivalentes a los defaults
+# Opciones de compilación del cliente mu97k, equivalentes a los defaults
 # de v143 que el .vcxproj no pisa (msbuild las pasa explícitas a cl):
 #   /EHsc  ExceptionHandling=Sync          /FC  UseFullPaths (afecta a __FILE__)
 #   /Gd /Gm- /GS /Zc:forScope /Zc:inline /Zc:wchar_t   defaults de v143

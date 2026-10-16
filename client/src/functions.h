@@ -733,7 +733,7 @@ void  __cdecl OpenTexture(int id, const char* prefix, int flags, char loop);   /
 void  __cdecl GL_DisableCullFace(void);           // GL_SetTextureState
 void  __cdecl GL_DisableDepthWrites(void);           // GL_SetDepthState
 void  __cdecl GL_EnableCullFace(void);           // GL_TexEnable
-unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality); // IDA: WriteJpeg (0x00529000) -- libjpeg, filas invertidas
+unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality); // IDA: WriteJpeg (0x00529000) -- stb_image_write, filas invertidas
 // ── Particle path-finding helpers ────────────────────────────────────────────
 int   __cdecl Math_GetAngleFromPoints(float x1, float y1, float x2, float y2); // IDA: FUN_0043e430
 int   __cdecl Angle_Clamp(int a, int b, int c);                     // Angle_Clamp
@@ -1112,7 +1112,7 @@ void  __cdecl ParseTriangles(bool Flip);                             // SMD pars
 // FUN_0040b350 already declared above (line ~1017) as SMD skip-line
 void  __stdcall FixupSMD_stub(void);                                 // SMD fixup post-process
 
-// ─── Batch 12: JPEG codec (statically-linked libjpeg IJG) ───────────────────
+// ─── Batch 12: JPEG codec (declaraciones heredadas) ───────────────────
 // IAT thunks at 0x0052A0D0-0x0052A100 are linker-generated (IMM32 + dsound), no decl needed.
 
 // Batch 13 — GameGuard / Crypto / IAT thunks (0x0053CB86–0x005406F0)

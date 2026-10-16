@@ -89,7 +89,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force tlogs | Out-Null
-          foreach ($root in @('obj', 'lib/libjpeg/obj')) {
+          foreach ($root in @('obj')) {
             if (-not (Test-Path $root)) { continue }
             Get-ChildItem $root -Recurse -Filter *.tlog |
               Where-Object { $_.Name -match 'command' } |

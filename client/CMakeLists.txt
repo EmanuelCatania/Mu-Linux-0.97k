@@ -38,7 +38,6 @@ else()
     set(MU_MINIAUDIO_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/miniaudio")
 endif()
 
-add_subdirectory(lib/libjpeg)
 
 # ── Fuentes ─────────────────────────────────────────────────────────────
 # Copiadas de los <ClCompile> del .vcxproj, en el mismo orden. NO usar glob:
@@ -514,7 +513,6 @@ set_target_properties(mu97k PROPERTIES
 
 target_include_directories(mu97k PRIVATE
     src
-    lib/libjpeg/jpeg-6b
     ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
@@ -570,7 +568,6 @@ endif()
 
 if(WIN32)
 target_link_libraries(mu97k PRIVATE
-    jpeg
     opengl32
     glu32
     winmm
@@ -602,7 +599,7 @@ target_link_options(mu97k PRIVATE
 
 else()
     find_package(OpenGL REQUIRED)
-    target_link_libraries(mu97k PRIVATE jpeg OpenGL::GL OpenGL::GLU)
+    target_link_libraries(mu97k PRIVATE OpenGL::GL OpenGL::GLU)
     target_link_options(mu97k PRIVATE "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
 endif()
 
