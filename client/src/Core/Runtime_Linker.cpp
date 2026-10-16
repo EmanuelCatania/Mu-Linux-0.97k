@@ -41,7 +41,7 @@ extern void ClearActionObject(void);
 // No agregar un stub acá: entity+0x1BC es el byte de CLASE/skin, no move flags.
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
 // Conserva el formato heredado; el destino de este logger sigue sin conectar.
-void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {
+void __cdecl CErrorReport__Write(DWORD ctx, char *fmt, ...) {
     char buf[1025];
     va_list args;
     va_start(args, fmt);
