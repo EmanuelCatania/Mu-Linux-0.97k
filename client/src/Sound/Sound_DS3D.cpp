@@ -182,22 +182,3 @@ void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 
-// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: CErrorReport__WriteImeInfo).
-// Logs IME description, IME file, keyboard layout name.
-void __fastcall CErrorReport_WriteImeInfo(void* This_v, void* /*edx*/, HWND hWnd) {
-    DWORD This = (DWORD)(uintptr_t)This_v;
-    char lpszTemp[256];
-    CErrorReport__Write(This, (char*)"<IME information>\r\n");
-    HIMC hImc = ImmGetContext(hWnd);
-    if (hImc) {
-        HKL hKl = GetKeyboardLayout(0);
-        ImmGetDescriptionA(hKl, lpszTemp, sizeof(lpszTemp));
-        CErrorReport__Write(This, (char*)"IME Name \t\t: %s\r\n", lpszTemp);
-        ImmGetIMEFileNameA(hKl, lpszTemp, sizeof(lpszTemp));
-        CErrorReport__Write(This, (char*)"IME File Name \t\t: %s\r\n", lpszTemp);
-        ImmReleaseContext(hWnd, hImc);
-    }
-    if (GetKeyboardLayoutNameA(lpszTemp)) {
-        CErrorReport__Write(This, (char*)"Keyboard type \t\t: %s\r\n", lpszTemp);
-    }
-}

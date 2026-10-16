@@ -323,30 +323,3 @@ void __cdecl AppearMonster(DWORD c)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_00422074 @ 0x00422074 (34 bytes, ~13 lines)
-// SEH cleanup handler: sets exception cookie to -1, calls DestroyWindow(),
-// restores ExceptionList, returns saved value from stack frame.
-// This is a compiler-generated __finally block, not game logic.
-// ─────────────────────────────────────────────────────────────────────────────
-void __stdcall FUN_00422074(void)
-{
-    // Compiler-generated SEH __finally handler
-    // Sets EBP[-4] = 0xFFFFFFFF (exception state sentinel)
-    // Calls DestroyWindow()
-    // Restores ExceptionList from EBP[-0xC]
-    // Returns EBP[-0x24]
-    DestroyWindow(NULL);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// END BATCH 18
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// Catch@0042206e @ 0x0042206E (6 bytes) — SEH catch block, returns FUN_00422074
-void * __stdcall Catch_0042206e(void) {
-    return (void *)FUN_00422074;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// END BATCH 19
-// ═══════════════════════════════════════════════════════════════════════════════

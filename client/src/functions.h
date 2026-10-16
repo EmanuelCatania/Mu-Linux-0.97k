@@ -1092,7 +1092,6 @@ void  __stdcall FUN_00405340(void);                                  // CErrorRe
 char* __stdcall CErrorReport_FindLogMarker(char* param_1);           // IDA: FUN_00405420
 void  __fastcall CErrorReport_WriteSystemInfo(void* report);           // IDA: CErrorReport__WriteSystemInfo
 void  __fastcall CErrorReport_WriteOpenGLInfo(void* report);           // IDA: FUN_004056B0
-void  __fastcall CErrorReport_WriteImeInfo(void* report, void* edx, HWND hwnd); // IDA: CErrorReport__WriteImeInfo
 void  __cdecl GetOSVersion(DWORD si);                                // detect Windows version
 long long __cdecl Cpu_MeasureClockRate(DWORD param_1);               // IDA: FUN_00405e20
 void  __cdecl GetCPUInfo(DWORD si);                                  // detect CPU vendor+model
@@ -1272,7 +1271,6 @@ void  __stdcall InitGame(void);                                          // 0x00
 void  __cdecl ReceiveChat(BYTE *ReceiveBuffer);                          // 0x00427630 — chat packet handler (opcode 0x00)
 void  __fastcall FUN_00422c50(int param_1);                              // 0x00422C50 — BST node cleanup for session obj
 void  __cdecl AppearMonster(DWORD c);                                    // 0x0042A0C0 — monster spawn animation+sound
-void  __stdcall FUN_00422074(void);                                      // 0x00422074 — SEH __finally handler (DestroyWindow)
 void  __cdecl FUN_0051d740(void);                                        // 0x0051D740 — ClearNotice
 void  __cdecl FUN_00482350(void);                                        // 0x00482350 — ClearWhisperID
 void  __cdecl FUN_004827a0(void);                                        // 0x004827A0 (mismap: NO es clearMatchInfo, esa direccion cae dentro de sub_4824C0)
