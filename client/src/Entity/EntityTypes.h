@@ -36,24 +36,31 @@ struct OBJECT {
     float    BlendMeshLight;        // 0x068
     float    BlendMeshTexCoordU;    // 0x06C
     float    BlendMeshTexCoordV;    // 0x070
-    BYTE     _unk074[8];
+    BYTE     RenderType;            // 0x074  IDA: CreateEffect (0x00460DC0)
+    BYTE     _unk075[7];
     BYTE     Teleport;              // 0x07C
     BYTE     _unk07D[3];
     float    Timer;                 // 0x080
     BYTE     Kind;                  // 0x084
-    BYTE     _unk085[7];
+    BYTE     Skill;                 // 0x085  IDA: CreateEffect (0x00460DC0)
+    short    PKKey;                 // 0x086  IDA: CreateEffect (0x00460DC0)
+    BYTE     _unk088[4];
     BYTE     EnableShadow;          // 0x08C
-    BYTE     _unk08D[0x3F];
+    BYTE     _unk08D[0x33];
+    vec3_t   Direction;             // 0x0C0  IDA: CreateEffect (0x00460DC0)
     float    Velocity;              // 0x0CC
     float    CollisionRange;        // 0x0D0
     float    ShadowScale;           // 0x0D4
-    BYTE     _unk0D8[4];
+    float    Gravity;               // 0x0D8  IDA: CreateEffect (0x00460DC0)
     BYTE     LightEnable;           // 0x0DC
     BYTE     _unk0DD[7];
     BYTE     ContrastEnable;        // 0x0E4
     BYTE     _unk0E5[3];
     vec3_t   Light;                 // 0x0E8
-    BYTE     _unk0F4[0x11];
+    int      AttackPoint;           // 0x0F4  5.2: AttackPoint[0]
+    BYTE     _unk0F8[4];
+    OBJECT*  Owner;                 // 0x0FC  IDA: CreateEffect (0x00460DC0)
+    BYTE     _unk100[5];
     BYTE     CurrentAction;         // 0x105
     BYTE     PriorAction;           // 0x106
     BYTE     _unk107;
@@ -70,7 +77,8 @@ struct OBJECT {
     BYTE     _unk162[2];
     float    AlphaTarget;           // 0x164
     float    Alpha;                 // 0x168
-    BYTE     _unk16C[0x10];
+    BYTE     _unk16C[4];
+    vec3_t   StartPosition;         // 0x170  IDA: CreateEffect (0x00460DC0)
     int      InitialSceneFrame;     // 0x17C  MoveSceneFrame del spawn
     BYTE     _unk180[0x3C];
 };
@@ -165,14 +173,21 @@ MU_ASSERT_FIELD(OBJECT, Position, 0x010);
 MU_ASSERT_FIELD(OBJECT, HiddenMesh, 0x058);
 MU_ASSERT_FIELD(OBJECT, LifeTime, 0x060);
 MU_ASSERT_FIELD(OBJECT, BlendMesh, 0x064);
+MU_ASSERT_FIELD(OBJECT, RenderType, 0x074);
 MU_ASSERT_FIELD(OBJECT, Teleport, 0x07C);
 MU_ASSERT_FIELD(OBJECT, Timer, 0x080);
 MU_ASSERT_FIELD(OBJECT, Kind, 0x084);
+MU_ASSERT_FIELD(OBJECT, Skill, 0x085);
+MU_ASSERT_FIELD(OBJECT, PKKey, 0x086);
 MU_ASSERT_FIELD(OBJECT, EnableShadow, 0x08C);
+MU_ASSERT_FIELD(OBJECT, Direction, 0x0C0);
 MU_ASSERT_FIELD(OBJECT, Velocity, 0x0CC);
+MU_ASSERT_FIELD(OBJECT, Gravity, 0x0D8);
 MU_ASSERT_FIELD(OBJECT, LightEnable, 0x0DC);
 MU_ASSERT_FIELD(OBJECT, ContrastEnable, 0x0E4);
 MU_ASSERT_FIELD(OBJECT, Light, 0x0E8);
+MU_ASSERT_FIELD(OBJECT, AttackPoint, 0x0F4);
+MU_ASSERT_FIELD(OBJECT, Owner, 0x0FC);
 MU_ASSERT_FIELD(OBJECT, CurrentAction, 0x105);
 MU_ASSERT_FIELD(OBJECT, AnimationFrame, 0x108);
 MU_ASSERT_FIELD(OBJECT, EnableBoneMatrix, 0x110);
@@ -183,6 +198,7 @@ MU_ASSERT_FIELD(OBJECT, OBB, 0x130);
 MU_ASSERT_FIELD(OBJECT, Visible, 0x160);
 MU_ASSERT_FIELD(OBJECT, AlphaTarget, 0x164);
 MU_ASSERT_FIELD(OBJECT, Alpha, 0x168);
+MU_ASSERT_FIELD(OBJECT, StartPosition, 0x170);
 MU_ASSERT_FIELD(OBJECT, InitialSceneFrame, 0x17C);
 MU_ASSERT_FIELD(PART_t, LinkBone, 0x04);
 MU_ASSERT_FIELD(PART_t, AnimationFrame, 0x08);

@@ -153,48 +153,48 @@ LAB_00460dd8:
     if (!found_slot) return (float *)0x0;
   }
   *(undefined1 *)pfVar17 = 1;
-  *(short *)((int)pfVar17 + 2) = (short)param_1;
+  AsObject(pfVar17)->Type = (short)param_1;
   // 00460DC0 writes SubType and Owner as raw DWORD fields.  The reconstructed
   // prototype still carries them as float pointers, so numeric casts corrupt
   // every non-zero subtype/owner (notably all skill effects) instead of
   // preserving the original bit pattern.
-  *(DWORD *)(pfVar17 + 1) = (DWORD)(uintptr_t)param_5;
-  *(undefined1 *)(pfVar17 + 0x37) = 1;
-  *(int*)&pfVar17[0x16] = -1;
+  *(DWORD *)&AsObject(pfVar17)->SubType = (DWORD)(uintptr_t)param_5;
+  AsObject(pfVar17)->LightEnable = 1;
+  AsObject(pfVar17)->HiddenMesh = -1;
   *(int*)&pfVar17[EffectBlendMeshIndex] = -1;
-  pfVar17[0x1a] = 1.0;
-  pfVar17[0x1b] = 0.0;
-  pfVar17[0x1c] = 0.0;
-  pfVar17[0x42] = 0.0;
-  *(undefined1 *)((int)pfVar17 + 0x161) = 0;
-  pfVar17[0x5a] = 1.0;
-  pfVar17[0x43] = 0.0;
-  pfVar17[3] = 0.9;
-  *(DWORD *)(pfVar17 + 0x3f) = (DWORD)(uintptr_t)param_6;
-  pfVar17[0x33] = 0.3;
-  *(short *)((int)pfVar17 + 0x86) = (short)(uintptr_t)param_7;
-  *(byte *)(pfVar17 + 0x21) = param_9;
+  AsObject(pfVar17)->BlendMeshLight = 1.0;
+  AsObject(pfVar17)->BlendMeshTexCoordU = 0.0;
+  AsObject(pfVar17)->BlendMeshTexCoordV = 0.0;
+  AsObject(pfVar17)->AnimationFrame = 0.0;
+  AsObject(pfVar17)->AlphaEnable = 0;
+  AsObject(pfVar17)->Alpha = 1.0;
+  AsObject(pfVar17)->PriorAnimationFrame = 0.0;
+  AsObject(pfVar17)->Scale = 0.9;
+  *(DWORD *)&AsObject(pfVar17)->Owner = (DWORD)(uintptr_t)param_6;
+  AsObject(pfVar17)->Velocity = 0.3;
+  AsObject(pfVar17)->PKKey = (short)(uintptr_t)param_7;
+  AsObject(pfVar17)->Kind = param_9;
   fVar27 = *param_4;
   // CreateEffect's eighth argument is SkillIndex (an integer), not a pointer.
   // IDA writes its low byte directly to effect+0x85.
-  *(undefined1 *)((int)pfVar17 + 0x85) = (byte)(uintptr_t)param_8;
+  AsObject(pfVar17)->Skill = (byte)(uintptr_t)param_8;
   _param_9 = pfVar17 + 0x3a;
-  *(undefined1 *)(pfVar17 + 0x1d) = 0;
-  pfVar17[0x3d] = 0.0;
+  AsObject(pfVar17)->RenderType = 0;
+  *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
   *_param_9 = fVar27;
   fVar27 = param_4[2];
-  pfVar17[0x3b] = param_4[1];
-  pfVar17[0x3c] = fVar27;
+  AsObject(pfVar17)->Light[1] = param_4[1];
+  AsObject(pfVar17)->Light[2] = fVar27;
   pfVar14 = pfVar17 + 4;
-  pfVar17[7] = *pfVar12;
-  pfVar17[8] = pfVar12[1];
-  pfVar17[9] = pfVar12[2];
+  AsObject(pfVar17)->Angle[0] = *pfVar12;
+  AsObject(pfVar17)->Angle[1] = pfVar12[1];
+  AsObject(pfVar17)->Angle[2] = pfVar12[2];
   *pfVar14 = *param_2;
-  pfVar17[5] = param_2[1];
-  pfVar17[6] = param_2[2];
-  pfVar17[0x30] = 0.0;
-  pfVar17[0x31] = 0.0;
-  pfVar17[0x32] = 0.0;
+  AsObject(pfVar17)->Position[1] = param_2[1];
+  AsObject(pfVar17)->Position[2] = param_2[2];
+  AsObject(pfVar17)->Direction[0] = 0.0;
+  AsObject(pfVar17)->Direction[1] = 0.0;
+  AsObject(pfVar17)->Direction[2] = 0.0;
   if (param_1 == 0xc1) {                     // Tamachan (0.98j case 183)
     Tamachan_Create((char *)pfVar17);
     return pfVar8;
@@ -209,11 +209,11 @@ LAB_00460dd8:
       switch(param_1) {
       case 0xf7: case 0xfa:
         *(int*)&pfVar17[EffectLifetimeIndex] = 35;
-        pfVar17[3] = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+        AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
         return (float *)(int)(short)(uintptr_t)param_7;
       case 0xf8: case 0xfb:
         *(int*)&pfVar17[EffectLifetimeIndex] = param_1 == 0xf8 ? 35 : 40;
-        pfVar17[3] = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+        AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
         return pfVar8;
       case 0xf9: case 0xfc:
@@ -222,47 +222,47 @@ LAB_00460dd8:
         break;
       case 0xfd:
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-        pfVar17[0x1a] = 1.5;
-        pfVar17[3] = 0.5;
+        AsObject(pfVar17)->BlendMeshLight = 1.5;
+        AsObject(pfVar17)->Scale = 0.5;
         *(int*)&pfVar17[EffectLifetimeIndex] = 15;
-        pfVar17[6] = pfVar17[6] - _DAT_00552834;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] - _DAT_00552834;
         goto LAB_004658be;
       case 0xfe:
         *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
         *(int*)&pfVar17[EffectLifetimeIndex] = 6;
-        pfVar17[3] = 1.0;
-        pfVar17[0x36] = 80.0;
-        pfVar17[0x3a] = 0.5;
-        pfVar17[0x3b] = 0.5;
-        pfVar17[0x3c] = 0.5;
-        pfVar17[7] = 0.0;
-        pfVar17[8] = 0.0;
-        pfVar17[9] = 45.0;
+        AsObject(pfVar17)->Scale = 1.0;
+        AsObject(pfVar17)->Gravity = 80.0;
+        AsObject(pfVar17)->Light[0] = 0.5;
+        AsObject(pfVar17)->Light[1] = 0.5;
+        AsObject(pfVar17)->Light[2] = 0.5;
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 0.0;
+        AsObject(pfVar17)->Angle[2] = 45.0;
         return pfVar8;
       case 0xff:
         *(int*)&pfVar17[EffectLifetimeIndex] = 100;
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-        pfVar17[0x1a] = 1.0;
-        pfVar17[0x36] = 0.0;
+        AsObject(pfVar17)->BlendMeshLight = 1.0;
+        AsObject(pfVar17)->Gravity = 0.0;
         if (param_5 == (float *)0x0) {
-          pfVar17[3] = 12.0;
-          pfVar17[0x5c] = *(float *)(*(int*)&pfVar17[0x3f] + 0x10);
-          pfVar17[0x5d] = *(float *)(*(int*)&pfVar17[0x3f] + 0x14);
-          pfVar17[0x5e] = *(float *)(*(int*)&pfVar17[0x3f] + 0x18);
+          AsObject(pfVar17)->Scale = 12.0;
+          AsObject(pfVar17)->StartPosition[0] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x10);
+          AsObject(pfVar17)->StartPosition[1] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x14);
+          AsObject(pfVar17)->StartPosition[2] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x18);
         }
         else if (param_5 == (float *)0x1) {
-          pfVar17[0x16] = 0.0;
-          pfVar17[3] = 24.0;
+          *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
+          AsObject(pfVar17)->Scale = 24.0;
         }
         pfVar12 = pfVar17 + 7;
         pfVar8 = pfVar17 + 4;
         bVar6 = (byte)(uintptr_t)param_5;
-        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,0,(int)pfVar17,pfVar17[3],0x1e,bVar6);
-        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(int)pfVar17,pfVar17[3],0x1e,bVar6);
-        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(int)pfVar17,pfVar17[3],0x1e,bVar6);
-        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,3,(int)pfVar17,pfVar17[3],0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,0,(int)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(int)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(int)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,3,(int)pfVar17,AsObject(pfVar17)->Scale,0x1e,bVar6);
         pfVar12 = (float *)PlayBuffer(0x5c,0,0);
-        pfVar17[3] = 1.0;
+        AsObject(pfVar17)->Scale = 1.0;
         return pfVar12;
       case 0x100:
         goto switchD_00460f25_caseD_100;
@@ -271,7 +271,7 @@ LAB_00460dd8:
       case 0x103:
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-        pfVar17[0x1a] = 1.0;
+        AsObject(pfVar17)->BlendMeshLight = 1.0;
         return pfVar8;
       case 0x104:
       case 0x105:
@@ -283,34 +283,34 @@ LAB_00460dd8:
         param_8 = (float *)(uVar10 + debris.SpeedBase);
         local_64 = 0.0;
         local_68 = (float)(int)param_8 * _DAT_005524f4;
-        pfVar17[6] = pfVar17[6] + _DAT_00552598;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552598;
         uVar10 = _rand() % 16;
-        *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
+        AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
         uVar10 = _rand() % 4;
         param_8 = (float *)(uVar10 + 8);
-        pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+        AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[9] = (float)(int)param_8;
-        Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
-        Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
+        AsObject(pfVar17)->Angle[2] = (float)(int)param_8;
+        Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+        Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 5 + 2);
-        pfVar17[0x36] = (float)(int)param_8;
-        if ((*(short *)((int)pfVar17 + 2) == debris.BoostedType) && (pfVar17[1] == 0.0)) {
-          pfVar17[1] = 1.4013e-45;
+        AsObject(pfVar17)->Gravity = (float)(int)param_8;
+        if ((AsObject(pfVar17)->Type == debris.BoostedType) && (*(float *)&AsObject(pfVar17)->SubType == 0.0)) {
+          *(float *)&AsObject(pfVar17)->SubType = 1.4013e-45;
           iVar9 = _rand();
           param_8 = (float *)(iVar9 % 5);
-          pfVar17[0x36] = (float)(int)param_8 + pfVar17[0x36];
+          AsObject(pfVar17)->Gravity = (float)(int)param_8 + AsObject(pfVar17)->Gravity;
         }
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[7] = (float)(int)param_8;
+        AsObject(pfVar17)->Angle[0] = (float)(int)param_8;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[8] = (float)(int)param_8;
+        AsObject(pfVar17)->Angle[1] = (float)(int)param_8;
         iVar9 = _rand();
-        pfVar17[9] = (float)(iVar9 % 0x168);
+        AsObject(pfVar17)->Angle[2] = (float)(iVar9 % 0x168);
         return (float *)(iVar9 / 0x168);
       }
       case 0x109:
@@ -318,26 +318,26 @@ LAB_00460dd8:
         return pfVar8;
       case 0x10a:
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-        pfVar17[3] = 1.5;
-        fVar24 = (float10)fsin((float10)pfVar17[9] * (float10)_DAT_0055253c);
-        pfVar17[0x30] = (float)(fVar24 * (float10)_DAT_00552660);
-        fVar24 = (float10)fcos((float10)pfVar17[9] * (float10)_DAT_0055253c);
-        pfVar17[0x31] = (float)(fVar24 * (float10)_DAT_00552828);
+        AsObject(pfVar17)->Scale = 1.5;
+        fVar24 = (float10)fsin((float10)AsObject(pfVar17)->Angle[2] * (float10)_DAT_0055253c);
+        AsObject(pfVar17)->Direction[0] = (float)(fVar24 * (float10)_DAT_00552660);
+        fVar24 = (float10)fcos((float10)AsObject(pfVar17)->Angle[2] * (float10)_DAT_0055253c);
+        AsObject(pfVar17)->Direction[1] = (float)(fVar24 * (float10)_DAT_00552828);
         return pfVar8;
       case 0x10c:
         *(int*)&pfVar17[EffectLifetimeIndex] = 1;
         *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-        pfVar17[0x1a] = 1.0;
-        pfVar17[3] = 5.0;
+        AsObject(pfVar17)->BlendMeshLight = 1.0;
+        AsObject(pfVar17)->Scale = 5.0;
         return pfVar8;
       }
 LAB_004649e0:
-      pfVar17[3] = fVar27 * _DAT_00552594;
+      AsObject(pfVar17)->Scale = fVar27 * _DAT_00552594;
       *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
       if (param_5 != (float *)0x1) {
         return param_5;
       }
-      *(undefined1 *)(pfVar17 + 0x1d) = 0x80;
+      AsObject(pfVar17)->RenderType = 0x80;
       return (float *)0x1;
     }
     if (0x4b0 < param_1) {
@@ -349,90 +349,90 @@ LAB_004649e0:
       default:
         return (float *)0x0;
       case 0x4df:
-        pfVar17[0x3a] = 1.0;
-        pfVar17[0x3b] = 1.0;
-        pfVar17[0x3c] = 1.0;
+        AsObject(pfVar17)->Light[0] = 1.0;
+        AsObject(pfVar17)->Light[1] = 1.0;
+        AsObject(pfVar17)->Light[2] = 1.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 9 + -4);
-        pfVar17[0x30] = (float)(int)param_8;
+        AsObject(pfVar17)->Direction[0] = (float)(int)param_8;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 9 + -4);
-        pfVar17[0x31] = (float)(int)param_8;
-        pfVar17[0x32] = 26.0;
+        AsObject(pfVar17)->Direction[1] = (float)(int)param_8;
+        AsObject(pfVar17)->Direction[2] = 26.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 12;
         pfVar12 = (float *)PlayBuffer(0x44,(int)pfVar17,0);
         return pfVar12;
       case 0x4e0:
-        pfVar17[7] = 0.0;
-        pfVar17[8] = 0.0;
-        pfVar17[9] = 0.0;
-        pfVar17[6] = 100.0;
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 0.0;
+        AsObject(pfVar17)->Angle[2] = 0.0;
+        AsObject(pfVar17)->Position[2] = 100.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 75;
         return pfVar8;
       case 0x4f0:
       case 0x4f1:
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         // IDA `if (*((_DWORD *)i + 1) == 4)` — SubType es un DWORD. Leerlo como float
-        // y convertir (`(int)pfVar17[1]`) daría 0 para cualquier SubType chico.
-        if (*(int*)&pfVar17[1] != 4) {
-          return (float*)(uintptr_t)*(int*)&pfVar17[1];
+        // y convertir (`(int)*(float *)&AsObject(pfVar17)->SubType`) daría 0 para cualquier SubType chico.
+        if (AsObject(pfVar17)->SubType != 4) {
+          return (float*)(uintptr_t)AsObject(pfVar17)->SubType;
         }
         *(int*)&pfVar17[EffectLifetimeIndex] = 60;
         iVar9 = _rand();
-        pfVar17[3] = (float)(iVar9 % 0x32 + 0x32) * _DAT_0055295c;
+        AsObject(pfVar17)->Scale = (float)(iVar9 % 0x32 + 0x32) * _DAT_0055295c;
         return (float *)(iVar9 / 0x32);
       case 0x4f3:
         *(int*)&pfVar17[EffectLifetimeIndex] = 10;
-        if (pfVar17[1] == 0.0) {
+        if (*(float *)&AsObject(pfVar17)->SubType == 0.0) {
           local_6c = 0.0;
           local_68 = -100.0;
           local_64 = 0.0;
-          Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+          Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
           pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-          pfVar17[4] = local_60 + pfVar17[4];
-          pfVar17[5] = local_5c + pfVar17[5];
-          pfVar17[6] = local_58 + pfVar17[6] + _DAT_0055297c;
+          AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+          AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+          AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2] + _DAT_0055297c;
           return pfVar12;
         }
-        if (*(int*)&pfVar17[1] != 1) {
+        if (AsObject(pfVar17)->SubType != 1) {
           return (float *)0x0;
         }
         pfVar12 = (float*)(uintptr_t)(int)param_2[1];
         fVar27 = param_2[2];
-        pfVar17[0x5c] = *param_2;
+        AsObject(pfVar17)->StartPosition[0] = *param_2;
         // 00460DC0 case 1267/subtype 1 copies Position[1] as a float.
         // It is not a pointer-as-float field.
-        pfVar17[0x5d] = param_2[1];
-        pfVar17[0x5e] = fVar27;
+        AsObject(pfVar17)->StartPosition[1] = param_2[1];
+        AsObject(pfVar17)->StartPosition[2] = fVar27;
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
         return pfVar12;
       case 0x4f7:
         iVar9 = _rand();
-        *(int*)&pfVar17[0x18] = (int)(iVar9 % 0xf + 0xf);   // lifetime: DWORD, no float
-        pfVar17[0x36] = -20.0;
+        AsObject(pfVar17)->LifeTime = (int)(iVar9 % 0xf + 0xf);   // lifetime: DWORD, no float
+        AsObject(pfVar17)->Gravity = -20.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        pfVar17[0x33] = (float)(int)param_8;
-        pfVar17[0x3a] = 0.0;
-        pfVar17[0x3b] = 0.0;
-        pfVar17[0x3c] = 0.0;
+        AsObject(pfVar17)->Velocity = (float)(int)param_8;
+        AsObject(pfVar17)->Light[0] = 0.0;
+        AsObject(pfVar17)->Light[1] = 0.0;
+        AsObject(pfVar17)->Light[2] = 0.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 200);
-        pfVar17[4] = ((float)(int)param_8 + pfVar17[4]) - _DAT_005524f0;
+        AsObject(pfVar17)->Position[0] = ((float)(int)param_8 + AsObject(pfVar17)->Position[0]) - _DAT_005524f0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 200);
-        pfVar17[5] = ((float)(int)param_8 + pfVar17[5]) - _DAT_005524f0;
-        pfVar17[6] = pfVar17[6] + _DAT_005528e8;
-        fVar27 = pfVar17[4] + _DAT_005524f0;
-        pfVar17[4] = fVar27;
-        pfVar17[0x5c] = fVar27;
-        pfVar17[0x5d] = pfVar17[5];
-        pfVar17[0x5e] = pfVar17[6];
+        AsObject(pfVar17)->Position[1] = ((float)(int)param_8 + AsObject(pfVar17)->Position[1]) - _DAT_005524f0;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005528e8;
+        fVar27 = AsObject(pfVar17)->Position[0] + _DAT_005524f0;
+        AsObject(pfVar17)->Position[0] = fVar27;
+        AsObject(pfVar17)->StartPosition[0] = fVar27;
+        AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+        AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
         pfVar12 = (float *)PlayBuffer(0x2e,0,0);
         return pfVar12;
       case 0x4fa:
         *(int*)&pfVar17[EffectLifetimeIndex] = 1000;
-        pfVar12 = (float*)(uintptr_t)*(int*)&pfVar17[1];   // SubType (DWORD)
+        pfVar12 = (float*)(uintptr_t)AsObject(pfVar17)->SubType;   // SubType (DWORD)
         if (pfVar12 == (float *)0x1) {
           *(int*)&pfVar17[EffectLifetimeIndex] = 940;
           return pfVar12;
@@ -441,31 +441,31 @@ LAB_004649e0:
           return pfVar12;
         }
         *(int*)&pfVar17[EffectLifetimeIndex] = 8;
-        pfVar17[6] = pfVar17[6] + _DAT_0055297c;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_0055297c;
         return pfVar12;
       case 0x566:
         *(int*)&pfVar17[EffectLifetimeIndex] = 10;
-        pfVar17[0x33] = 1.0;
+        AsObject(pfVar17)->Velocity = 1.0;
         pfVar12 = pfVar17 + 7;
-        pfVar17[0x30] = 0.0;
-        pfVar17[0x31] = -30.0;
-        pfVar17[0x32] = 0.0;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -30.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
         Matrix_BuildFromEuler(pfVar12,local_3c + 3);
         local_6c = 0.0;
         local_68 = -20.0;
         local_64 = 50.0;
         Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-        pfVar17[4] = local_60 + pfVar17[4];
+        AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
         local_6c = -20.0;
         local_68 = -20.0;
         local_64 = 60.0;
-        pfVar17[5] = local_5c + pfVar17[5];
-        pfVar17[6] = local_58 + pfVar17[6];
+        AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+        AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
         Vector_Rotate(&local_6c,local_3c + 3,&local_60);
         local_48 = local_60 + *param_2;
         local_54 = *pfVar12;
-        local_50 = pfVar17[8];
-        local_4c = pfVar17[9];
+        local_50 = AsObject(pfVar17)->Angle[1];
+        local_4c = AsObject(pfVar17)->Angle[2];
         local_44 = local_5c + param_2[1];
         param_8 = (float *)0x0;
         local_40 = local_58 + param_2[2];
@@ -484,8 +484,8 @@ LAB_004649e0:
         Vector_Rotate(local_3c,local_3c + 3,&local_60);
         local_48 = local_60 + *param_2;
         local_54 = *pfVar12;
-        local_50 = pfVar17[8];
-        local_4c = pfVar17[9];
+        local_50 = AsObject(pfVar17)->Angle[1];
+        local_4c = AsObject(pfVar17)->Angle[2];
         local_44 = local_5c + param_2[1];
         local_40 = local_58 + param_2[2];
         param_8 = (float *)0x0;
@@ -501,11 +501,11 @@ LAB_004649e0:
         return pfVar17;
       case 0x596:
         *(int*)&pfVar17[EffectLifetimeIndex] = 30;
-        pfVar17[3] = 1.0;
+        AsObject(pfVar17)->Scale = 1.0;
 LAB_004658be:
-        pfVar17[0x3a] = 1.0;
-        pfVar17[0x3b] = 1.0;
-        pfVar17[0x3c] = 1.0;
+        AsObject(pfVar17)->Light[0] = 1.0;
+        AsObject(pfVar17)->Light[1] = 1.0;
+        AsObject(pfVar17)->Light[2] = 1.0;
         return (float *)0x3f800000;
       }
     }
@@ -522,33 +522,33 @@ LAB_004658be:
       switch(param_1) {
       case 0x49c:
         *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-        pfVar17[0x30] = 0.0;
-        pfVar17[0x31] = -60.0;
-        pfVar17[0x32] = 0.0;
-        pfVar17[6] = pfVar17[6] + _DAT_005524f0;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -60.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005524f0;
         // IDA 0x460DC0 L2881-2885: `if (SubType == 1) Scale = 1.5; break;`.
         // El port devolvia NULL para cualquier otro subtipo; Energy Ball lo crea
         // con subtipo 0 (MoveCharacter, skill 17).
-        if (*(int*)&pfVar17[1] == 1)
-          pfVar17[3] = 1.5;
+        if (AsObject(pfVar17)->SubType == 1)
+          AsObject(pfVar17)->Scale = 1.5;
         return pfVar8;
       default:
         return (float *)0x0;
       case 0x4a7:        *(int*)&pfVar17[EffectLifetimeIndex] = 10;
-        pfVar17[3] = 1.5;
+        AsObject(pfVar17)->Scale = 1.5;
         return pfVar8;
       case 0x4ab:
         goto switchD_00464efe_caseD_4ab;
       case 0x4ac:
         *(int*)&pfVar17[EffectLifetimeIndex] = 10;
-        Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+        Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
         local_6c = 0.0;
         local_68 = -60.0;
         local_64 = 0.0;
         pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-        pfVar17[4] = local_60 + pfVar17[4];
-        pfVar17[5] = local_5c + pfVar17[5];
-        pfVar17[6] = local_58 + pfVar17[6] + _DAT_00552980;
+        AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+        AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+        AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2] + _DAT_00552980;
         return pfVar12;
       }
     }
@@ -559,24 +559,24 @@ LAB_00464ed8:
     }
     if (param_1 < 0x47f) {
       if (param_1 == 0x47e) {
-        if (pfVar17[1] == 0.0) {
-          pfVar17[0x3a] = 0.3;
-          pfVar17[0x3b] = 0.3;
-          pfVar17[0x3c] = 0.3;
+        if (*(float *)&AsObject(pfVar17)->SubType == 0.0) {
+          AsObject(pfVar17)->Light[0] = 0.3;
+          AsObject(pfVar17)->Light[1] = 0.3;
+          AsObject(pfVar17)->Light[2] = 0.3;
           iVar9 = _rand();
           fVar24 = (float10)(iVar9 % 5 + 9) * (float10)_DAT_00552504;
           fVar25 = (float10)fcos((float10)_DAT_00552968);
           fVar26 = (float10)fsin((float10)_DAT_00552960);
-          pfVar17[0x30] = (float)(fVar26 * fVar25 * fVar24);
+          AsObject(pfVar17)->Direction[0] = (float)(fVar26 * fVar25 * fVar24);
           fVar26 = (float10)fcos((float10)_DAT_00552960);
-          pfVar17[0x31] = (float)(fVar26 * fVar25 * fVar24);
+          AsObject(pfVar17)->Direction[1] = (float)(fVar26 * fVar25 * fVar24);
           fVar25 = (float10)fsin((float10)_DAT_00552968);
-          pfVar17[0x32] = (float)(fVar25 * fVar24);
-          pfVar17[3] = 3.0;
+          AsObject(pfVar17)->Direction[2] = (float)(fVar25 * fVar24);
+          AsObject(pfVar17)->Scale = 3.0;
           *(int*)&pfVar17[EffectLifetimeIndex] = 400;
           return (float *)(iVar9 / 5);
         }
-        if (*(int*)&pfVar17[1] != 1) {
+        if (AsObject(pfVar17)->SubType != 1) {
           return (float *)0x0;
         }
 switchD_00464efe_caseD_4ab:
@@ -584,9 +584,9 @@ switchD_00464efe_caseD_4ab:
         return pfVar8;
       }
       if (param_1 == 0x1f1) {
-        pfVar17[9] = 0.0;
-        pfVar17[8] = 0.0;
-        pfVar17[7] = 0.0;
+        AsObject(pfVar17)->Angle[2] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 0.0;
+        AsObject(pfVar17)->Angle[0] = 0.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 5;
         return pfVar8;
       }
@@ -595,12 +595,12 @@ switchD_00464efe_caseD_4ab:
       }
       *(int*)&pfVar17[EffectLifetimeIndex] = 30;
       *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
-      pfVar17[3] = 1.0;
-      pfVar17[6] = pfVar17[6] + _DAT_00552970;
-      pfVar17[7] = pfVar17[7] + _DAT_005524fc;
-      pfVar17[0x30] = 0.0;
-      pfVar17[0x31] = -80.0;
-      pfVar17[0x32] = -10.0;
+      AsObject(pfVar17)->Scale = 1.0;
+      AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552970;
+      AsObject(pfVar17)->Angle[0] = AsObject(pfVar17)->Angle[0] + _DAT_005524fc;
+      AsObject(pfVar17)->Direction[0] = 0.0;
+      AsObject(pfVar17)->Direction[1] = -80.0;
+      AsObject(pfVar17)->Direction[2] = -10.0;
       return pfVar8;
     }
     if (param_1 != 0x490) {
@@ -608,12 +608,12 @@ switchD_00464efe_caseD_4ab:
     }
     fVar27 = pfVar12[2] + _DAT_00552844;
     *(int*)&pfVar17[EffectLifetimeIndex] = 30;
-    pfVar17[0x3a] = 0.8;
-    pfVar17[0x3b] = 0.8;
-    pfVar17[0x3c] = 0.8;
-    pfVar17[10] = 0.0;
-    pfVar17[0xb] = 0.0;
-    pfVar17[0xc] = fVar27;
+    AsObject(pfVar17)->Light[0] = 0.8;
+    AsObject(pfVar17)->Light[1] = 0.8;
+    AsObject(pfVar17)->Light[2] = 0.8;
+    AsObject(pfVar17)->HeadAngle[0] = 0.0;
+    AsObject(pfVar17)->HeadAngle[1] = 0.0;
+    AsObject(pfVar17)->HeadAngle[2] = fVar27;
     goto LAB_00463e3d;
   }
   if (param_1 == 0xf6) {
@@ -625,25 +625,25 @@ switchD_00464efe_caseD_4ab:
   case 0xb6:
     *(int*)&pfVar17[EffectLifetimeIndex] = 2;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    pfVar17[3] = 10.0;
-    pfVar17[5] = pfVar17[5] + _DAT_0055285c;
-    pfVar17[6] = pfVar17[6] - _DAT_00552974;
-    *(undefined1 *)(pfVar17 + 0x37) = 0;
+    AsObject(pfVar17)->Scale = 10.0;
+    AsObject(pfVar17)->Position[1] = AsObject(pfVar17)->Position[1] + _DAT_0055285c;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] - _DAT_00552974;
+    AsObject(pfVar17)->LightEnable = 0;
     return pfVar8;
   default:
     goto switchD_00460f25_caseD_101;
   case 0xb9:
     *(int*)&pfVar17[EffectLifetimeIndex] = 1;
-    pfVar17[0x5a] = 0.5;
-    pfVar17[3] = 1.5;
+    AsObject(pfVar17)->Alpha = 0.5;
+    AsObject(pfVar17)->Scale = 1.5;
     return pfVar8;
   case 0xbe:
-    fVar27 = pfVar17[1];
+    fVar27 = *(float *)&AsObject(pfVar17)->SubType;
     if (fVar27 == 0.0) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 50;
-      pfVar17[3] = 0.8;
-      pfVar17[0x33] = 1.0;
-      pfVar17[7] = 0.0;
+      AsObject(pfVar17)->Scale = 0.8;
+      AsObject(pfVar17)->Velocity = 1.0;
+      AsObject(pfVar17)->Angle[0] = 0.0;
       *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
       return pfVar8;
     }
@@ -657,140 +657,140 @@ switchD_00464efe_caseD_4ab:
       return (float *)0x0;
     }
     *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-    pfVar17[3] = 0.8;
-    pfVar17[7] = -20.0;
+    AsObject(pfVar17)->Scale = 0.8;
+    AsObject(pfVar17)->Angle[0] = -20.0;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    pfVar17[0x1a] = 0.5;
-    pfVar17[0x36] = 5.0;
-    pfVar17[10] = 0.0;
-    pfVar17[0xb] = 0.0;
+    AsObject(pfVar17)->BlendMeshLight = 0.5;
+    AsObject(pfVar17)->Gravity = 5.0;
+    AsObject(pfVar17)->HeadAngle[0] = 0.0;
+    AsObject(pfVar17)->HeadAngle[1] = 0.0;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x168);
     iVar9 = 3;
-    pfVar17[0xc] = (float)(int)param_8;
+    AsObject(pfVar17)->HeadAngle[2] = (float)(int)param_8;
     do {
       uVar10 = _rand() % 64;
       param_8 = (float *)(uVar10 - 0x20);
-      local_48 = (float)(int)param_8 + pfVar17[4];
+      local_48 = (float)(int)param_8 + AsObject(pfVar17)->Position[0];
       uVar10 = _rand() % 64;
       param_8 = (float *)(uVar10 - 0x20);
-      local_44 = (float)(int)param_8 + pfVar17[5];
+      local_44 = (float)(int)param_8 + AsObject(pfVar17)->Position[1];
       uVar10 = _rand() % 128;
       param_8 = (float *)(uVar10 + 0x20);
-      local_40 = (float)(int)param_8 + pfVar17[6];
-      Particle_Spawn(0x4c4,&local_48,pfVar17 + 7,pfVar17 + 0x3a,0,1.0,0);
+      local_40 = (float)(int)param_8 + AsObject(pfVar17)->Position[2];
+      Particle_Spawn(0x4c4,&local_48,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,0,1.0,0);
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
-    fVar27 = pfVar17[4];
+    fVar27 = AsObject(pfVar17)->Position[0];
     *param_4 = 0.4;
     param_4[1] = 0.3;
     param_4[2] = 0.2;
-    AddTerrainLight(fVar27,pfVar17[5], (float*)param_4,2, (float*)&DAT_081cb608[0]);
+    AddTerrainLight(fVar27,AsObject(pfVar17)->Position[1], (float*)param_4,2, (float*)&DAT_081cb608[0]);
 LAB_00463e3d:
-    pfVar17[0x5c] = pfVar17[4];
-    pfVar17[0x5d] = pfVar17[5];
-    pfVar17[0x5e] = pfVar17[6];
-    return (float*)(uintptr_t)(int)pfVar17[5];
+    AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+    return (float*)(uintptr_t)(int)AsObject(pfVar17)->Position[1];
   case 0xbf:
     *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
-    fVar27 = pfVar17[1];
+    fVar27 = *(float *)&AsObject(pfVar17)->SubType;
     if (fVar27 == 0.0) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       uVar10 = _rand() % 8;
       param_8 = (float *)(uVar10 + 10);
-      pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+      AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
       uVar10 = _rand() % 32;
     }
     else {
       if (*(int*)&fVar27 == 2) {
         *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         uVar10 = _rand() % 8;
-        pfVar17[3] = (float)(int)(uVar10 + 10) * _DAT_005524f4;
-        pfVar17[0x30] = 0.0;
-        pfVar17[0x31] = 0.0;
-        pfVar17[0x32] = -50.0;
+        AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 10) * _DAT_005524f4;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = 0.0;
+        AsObject(pfVar17)->Direction[2] = -50.0;
         return (float *)0x0;
       }
       if (*(int*)&fVar27 == 3) {
         *(int*)&pfVar17[EffectLifetimeIndex] = 80;
-        pfVar17[3] = 0.3;
-        pfVar17[0x30] = 0.0;
-        pfVar17[0x31] = -12.0;
-        pfVar17[0x32] = 0.0;
+        AsObject(pfVar17)->Scale = 0.3;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -12.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
         return pfVar8;
       }
       if (*(int*)&fVar27 == 4) {
         *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 10 + 0xf);
-        pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+        AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
         uVar10 = _rand();
         param_8 = (float*)(uVar10 % 32);
-        pfVar17[4] = (float)(int)param_8 + pfVar17[4] + _DAT_00552980;
-        pfVar17[6] = pfVar17[6] + _DAT_00552850;
-        pfVar17[0x30] = 0.0;
+        AsObject(pfVar17)->Position[0] = (float)(int)param_8 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552850;
+        AsObject(pfVar17)->Direction[0] = 0.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x14);
-        pfVar17[0x31] = -((float)(int)param_8 + _DAT_00552488);
+        AsObject(pfVar17)->Direction[1] = -((float)(int)param_8 + _DAT_00552488);
         iVar9 = _rand();
-        pfVar17[0x32] = -((float)(iVar9 % 10) + _DAT_005524fc);
-        pfVar17[7] = 0.0;
-        pfVar17[8] = 20.0;
-        pfVar17[9] = 0.0;
+        AsObject(pfVar17)->Direction[2] = -((float)(iVar9 % 10) + _DAT_005524fc);
+        AsObject(pfVar17)->Angle[0] = 0.0;
+        AsObject(pfVar17)->Angle[1] = 20.0;
+        AsObject(pfVar17)->Angle[2] = 0.0;
         return (float *)(iVar9 / 10);
       }
       if (*(int*)&fVar27 == 5) {
         *(int*)&pfVar17[EffectLifetimeIndex] = 40;
-        pfVar17[0x36] = 5.0;
-        pfVar17[0x30] = 0.0;
-        pfVar17[0x31] = -30.0;
-        pfVar17[0x32] = 0.0;
+        AsObject(pfVar17)->Gravity = 5.0;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -30.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
         return pfVar8;
       }
       if (*(int*)&fVar27 != 6) {
         *(int*)&pfVar17[EffectLifetimeIndex] = 60;
         uVar10 = _rand() % 4;
-        pfVar17[3] = (float)(int)(uVar10 + 8) * _DAT_005524f4;
-        pfVar17[6] = pfVar17[6] + _DAT_00552908;
-        pfVar17[0x30] = 0.0;
-        pfVar17[0x31] = -50.0;
-        pfVar17[0x32] = 0.0;
+        AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 8) * _DAT_005524f4;
+        AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552908;
+        AsObject(pfVar17)->Direction[0] = 0.0;
+        AsObject(pfVar17)->Direction[1] = -50.0;
+        AsObject(pfVar17)->Direction[2] = 0.0;
         return (float *)0x0;
       }
       *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       uVar10 = _rand() % 8;
       param_8 = (float *)(uVar10 + 0xf);
-      pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+      AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
       uVar10 = _rand() % 32;
     }
-    pfVar17[4] = (float)(int)uVar10 + pfVar17[4] + _DAT_00552980;
-    pfVar17[6] = pfVar17[6] + _DAT_00552850;
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = 0.0;
-    pfVar17[0x32] = -50.0;
-    pfVar17[7] = 0.0;
-    pfVar17[8] = 20.0;
-    pfVar17[9] = 0.0;
+    AsObject(pfVar17)->Position[0] = (float)(int)uVar10 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552850;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = 0.0;
+    AsObject(pfVar17)->Direction[2] = -50.0;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    AsObject(pfVar17)->Angle[1] = 20.0;
+    AsObject(pfVar17)->Angle[2] = 0.0;
     return (float *)0x0;
   case 0xc0:
     *(int*)&pfVar17[EffectBlendMeshIndex] = 1;
     *(int*)&pfVar17[EffectLifetimeIndex] = 40;
-    pfVar17[3] = 1.0;
+    AsObject(pfVar17)->Scale = 1.0;
     return pfVar8;
   case 0xc2:
     *(int*)&pfVar17[EffectLifetimeIndex] = 50;
-    pfVar17[3] = 0.7;
+    AsObject(pfVar17)->Scale = 0.7;
     if (param_5 != (float *)0x0) {
       *(int*)&pfVar17[EffectBlendMeshIndex] = -4;
-      pfVar17[7] = 0.0;
-      pfVar17[8] = 0.0;
-      pfVar17[9] = 45.0;
+      AsObject(pfVar17)->Angle[0] = 0.0;
+      AsObject(pfVar17)->Angle[1] = 0.0;
+      AsObject(pfVar17)->Angle[2] = 45.0;
       return pfVar8;
     }
     *(int*)&pfVar17[EffectBlendMeshIndex] = -3;
-    pfVar17[7] = 0.0;
-    pfVar17[8] = 0.0;
-    pfVar17[9] = 45.0;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    AsObject(pfVar17)->Angle[1] = 0.0;
+    AsObject(pfVar17)->Angle[2] = 45.0;
     return pfVar8;
   case 0xc4:
     *(int*)&pfVar17[EffectLifetimeIndex] = 10;
@@ -800,10 +800,10 @@ LAB_00463e3d:
   case 0xc6:
   case 0xd5:
   case 0xd6:
-    if (*(int*)&pfVar17[1] == 5) {
+    if (AsObject(pfVar17)->SubType == 5) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 60;
       uVar10 = _rand() % 4;
-      pfVar17[3] = (float)(int)(uVar10 + 8) * _DAT_005524f4;
+      AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 8) * _DAT_005524f4;
       return (float *)(uVar10 + 8);
     }
   case 199:
@@ -813,14 +813,14 @@ LAB_00463e3d:
   case 200:
     *(int*)&pfVar17[EffectLifetimeIndex] = 45;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != pfVar3) {
-      return (float*)(uintptr_t)*(int*)&pfVar17[0x3f];
+    if ((float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner != pfVar3) {
+      return (float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner;
     }
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
     *(char *)(pfVar17 + 0x22) = cVar5;
     *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
-    sVar28 = *(short *)((int)pfVar17 + 0x86);
+    sVar28 = AsObject(pfVar17)->PKKey;
     bVar6 = *(byte *)(pfVar17 + 0x22);
     fVar27 = 300.0;
     goto LAB_00463ca2;
@@ -830,7 +830,7 @@ LAB_00463e3d:
     if (param_5 != (float *)0x1) {
       return (float *)0x0;
     }
-    *(undefined1 *)(pfVar17 + 0x1d) = 0x80;
+    AsObject(pfVar17)->RenderType = 0x80;
     return pfVar8;
   case 0xca:
     *(int*)&pfVar17[EffectLifetimeIndex] = 20;
@@ -839,70 +839,70 @@ LAB_00463e3d:
   case 0xcb:
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = -60.0;
-    pfVar17[0x32] = 0.0;
-    if (*(int*)&pfVar17[1] != 2) {                      // SubType (DWORD)
-      return (float*)(uintptr_t)*(int*)&pfVar17[1];
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -60.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    if (AsObject(pfVar17)->SubType != 2) {                      // SubType (DWORD)
+      return (float*)(uintptr_t)AsObject(pfVar17)->SubType;
     }
     break;
   case 0xcc:
     *(int*)&pfVar17[EffectLifetimeIndex] = 59;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = -10.0;
-    pfVar17[0x32] = 0.0;
-    // Se pasa (xf, yf) explícito — effect pos en pfVar17[4]/[5]
-    fVar24 = (float10)RequestTerrainHeight(pfVar17[4], pfVar17[5]);
-    pfVar17[6] = (float)fVar24;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -10.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    // Se pasa (xf, yf) explícito — effect pos en AsObject(pfVar17)->Position[0]/[5]
+    fVar24 = (float10)RequestTerrainHeight(AsObject(pfVar17)->Position[0], AsObject(pfVar17)->Position[1]);
+    AsObject(pfVar17)->Position[2] = (float)fVar24;
     break;
   case 0xcd:
-    if ((pfVar17[1] == 0.0) || (*(int*)&pfVar17[1] == 3)) {
+    if ((*(float *)&AsObject(pfVar17)->SubType == 0.0) || (AsObject(pfVar17)->SubType == 3)) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 1;
     }
     else {
       *(int*)&pfVar17[EffectLifetimeIndex] = 30;
-      pfVar17[6] = pfVar17[6] + _DAT_0055297c;
-      pfVar17[0x30] = 0.0;
-      pfVar17[0x31] = -80.0;
-      pfVar17[0x32] = 0.0;
-      pfVar17[0x3a] = 1.0;
-      pfVar17[0x3b] = 0.0;
-      pfVar17[0x3c] = 0.0;
+      AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_0055297c;
+      AsObject(pfVar17)->Direction[0] = 0.0;
+      AsObject(pfVar17)->Direction[1] = -80.0;
+      AsObject(pfVar17)->Direction[2] = 0.0;
+      AsObject(pfVar17)->Light[0] = 1.0;
+      AsObject(pfVar17)->Light[1] = 0.0;
+      AsObject(pfVar17)->Light[2] = 0.0;
     }
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    pfVar17[0x1a] = pfVar17[0x3a];
-    pfVar17[3] = 1.3;
-    *(undefined1 *)(pfVar17 + 0x1d) = 0x80;
+    AsObject(pfVar17)->BlendMeshLight = AsObject(pfVar17)->Light[0];
+    AsObject(pfVar17)->Scale = 1.3;
+    AsObject(pfVar17)->RenderType = 0x80;
     return pfVar8;
   case 0xd1:
     *(int*)&pfVar17[EffectLifetimeIndex] = 10;
-    pfVar17[6] = pfVar17[6] + _DAT_00552980;
-    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552980;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
     local_6c = 0.0;
     local_68 = -60.0;
     local_64 = 0.0;
-    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
     return pfVar12;
   case 0xd2:
-    pfVar17[6] = pfVar17[6] + _DAT_00552598;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552598;
   case 0xd3:
-    pfVar17[6] = pfVar17[6] + _DAT_005524f0;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005524f0;
 switchD_00461001_caseD_e2:
-    if (*(int*)&pfVar17[1] == 5) {
+    if (AsObject(pfVar17)->SubType == 5) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 60;
       uVar10 = _rand() % 4;
-      pfVar17[3] = (float)(int)(uVar10 + 8) * _DAT_005524f4;
-      pfVar17[0x5c] = pfVar17[4];
-      pfVar17[0x5d] = pfVar17[5];
-      pfVar17[0x5e] = pfVar17[6];
-      pfVar17[4] = *(float *)(*(int*)&pfVar17[0x3f] + 0x10);
-      pfVar17[5] = *(float *)(*(int*)&pfVar17[0x3f] + 0x14);
-      pfVar17[6] = ((float*)(uintptr_t)*(int*)&pfVar17[0x3f])[6];
-      return (float*)(uintptr_t)*(int*)&pfVar17[0x3f];
+      AsObject(pfVar17)->Scale = (float)(int)(uVar10 + 8) * _DAT_005524f4;
+      AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
+      AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+      AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
+      AsObject(pfVar17)->Position[0] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x10);
+      AsObject(pfVar17)->Position[1] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x14);
+      AsObject(pfVar17)->Position[2] = ((float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner)[6];
+      return (float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner;
     }
 switchD_00461001_caseD_c7:
-    if ((*(short *)((int)pfVar17 + 2) == 0xe2) || (*(short *)((int)pfVar17 + 2) == 0xe3)) {
+    if ((AsObject(pfVar17)->Type == 0xe2) || (AsObject(pfVar17)->Type == 0xe3)) {
       uVar10 = _rand() % 128;
       param_8 = (float *)(uVar10 - 0x40);
       local_6c = (float)(int)param_8;
@@ -912,22 +912,22 @@ switchD_00461001_caseD_c7:
       iVar9 = _rand();
       param_8 = (float *)(iVar9 % 0xb4);
       local_64 = (float)(int)param_8;
-      pfVar17[4] = local_6c + pfVar17[4];
-      pfVar17[5] = local_68 + pfVar17[5];
-      pfVar17[6] = local_64 + pfVar17[6];
+      AsObject(pfVar17)->Position[0] = local_6c + AsObject(pfVar17)->Position[0];
+      AsObject(pfVar17)->Position[1] = local_68 + AsObject(pfVar17)->Position[1];
+      AsObject(pfVar17)->Position[2] = local_64 + AsObject(pfVar17)->Position[2];
     }
     if (param_1 == 199) {
       *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-      pfVar17[0x1a] = 0.3;
+      AsObject(pfVar17)->BlendMeshLight = 0.3;
       local_6c = 0.0;
       uVar10 = _rand() % 256;
       param_8 = (float *)(uVar10 + 0x40);
       local_68 = (float)(int)param_8 * _DAT_005524f4;
-      pfVar17[6] = pfVar17[6] + _DAT_00552598;
+      AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552598;
     }
     else {
       local_6c = 0.0;
-      if (*(int*)&pfVar17[1] == 1) {
+      if (AsObject(pfVar17)->SubType == 1) {
         local_68 = 0.0;
       }
       else {
@@ -938,40 +938,40 @@ switchD_00461001_caseD_c7:
     }
     local_64 = 0.0;
     uVar10 = _rand() % 16;
-    *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
+    AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
     uVar10 = _rand() % 4;
     param_8 = (float *)(uVar10 + 8);
-    pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x168);
-    pfVar17[9] = (float)(int)param_8;
-    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
-    Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
+    AsObject(pfVar17)->Angle[2] = (float)(int)param_8;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+    Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
     uVar10 = _rand() % 16;
-    pfVar17[0x36] = (float)(int)(uVar10 + 8);
+    AsObject(pfVar17)->Gravity = (float)(int)(uVar10 + 8);
     return (float *)(uVar10 + 8);
   case 0xd4:
-    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
     local_6c = 0.0;
     local_68 = -40.0;
     local_64 = 150.0;
     pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-    pfVar17[4] = local_60 + pfVar17[4];
-    pfVar17[5] = local_5c + pfVar17[5];
-    pfVar17[6] = local_58 + pfVar17[6];
-    pfVar17[0x31] = -40.0;
-    pfVar17[0x32] = 10.0;    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-    pfVar17[3] = 1.2;
+    AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Direction[1] = -40.0;
+    AsObject(pfVar17)->Direction[2] = 10.0;    *(int*)&pfVar17[EffectLifetimeIndex] = 20;
+    AsObject(pfVar17)->Scale = 1.2;
     return pfVar12;
   case 0xd7:
     uVar10 = _rand() % 16;
-    *(int*)&pfVar17[0x18] = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float
+    AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float
     uVar10 = _rand() % 8;
     param_8 = (float *)(uVar10 + 6);
-    pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
     uVar10 = _rand();
     param_8 = (float*)(uVar10 % 4);
-    pfVar17[0x36] = -(float)(int)param_8;
+    AsObject(pfVar17)->Gravity = -(float)(int)param_8;
     uVar10 = _rand() % 64;
     param_8 = (float *)(uVar10 - 0x20);
     local_6c = (float)(int)param_8;
@@ -981,11 +981,11 @@ switchD_00461001_caseD_c7:
     uVar10 = _rand() % 128;
     param_8 = (float *)(uVar10 + 200);
     local_64 = (float)(int)param_8;
-    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
     pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-    pfVar17[4] = local_60 + pfVar17[4];
-    pfVar17[5] = local_5c + pfVar17[5];
-    pfVar17[6] = local_58 + pfVar17[6];
+    AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
     return pfVar12;
   case 0xd8:
   case 0xd9:
@@ -1000,19 +1000,19 @@ switchD_00461001_caseD_c7:
     if (arrow.SetBlendMesh)
       *(int*)&pfVar17[EffectBlendMeshIndex] = arrow.BlendMesh;
     pfVar12 = pfVar17 + 7;
-    pfVar17[0x33] = 1.0;
+    AsObject(pfVar17)->Velocity = 1.0;
     *(int*)&pfVar17[EffectLifetimeIndex] = 30;
     Matrix_BuildFromEuler(pfVar12,local_3c + 3);
     local_6c = -10.0;
     local_68 = -60.0;
     local_64 = 135.0;
     Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-    pfVar17[4] = local_60 + pfVar17[4];
-    pfVar17[5] = local_5c + pfVar17[5];
-    pfVar17[6] = local_58 + pfVar17[6];
-    pfVar17[3] = arrow.Scale;
-    pfVar17[0x31] = arrow.ForwardSpeed;
-    if (arrow.HasGravity) pfVar17[0x36] = -10.0f;
+    AsObject(pfVar17)->Position[0] = local_60 + AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Scale = arrow.Scale;
+    AsObject(pfVar17)->Direction[1] = arrow.ForwardSpeed;
+    if (arrow.HasGravity) AsObject(pfVar17)->Gravity = -10.0f;
     if (arrow.Lifetime != 30) *(int*)&pfVar17[EffectLifetimeIndex] = arrow.Lifetime;
     // IDA CreateEffect L685-693 (cases 216-224):
     //     if ( *((_DWORD *)i + 1) == 2 )        // SubType == 2 (flecha de Penetration)
@@ -1026,26 +1026,26 @@ switchD_00461001_caseD_c7:
     // blancos al server con el 0x1D.  El original compara el campo como DWORD;
     // el port lo hacia contra el denormal 2.8026e-45, o sea leyendo el slot como
     // float.  Se lee por BITS, igual que ya se hace en la linea 386 de este mismo
-    // archivo (`*(int*)&pfVar17[1] != 4`).
-    if (*(int*)&pfVar17[1] == 2) {
+    // archivo (`AsObject(pfVar17)->SubType != 4`).
+    if (AsObject(pfVar17)->SubType == 2) {
       if (param_1 != 0xdf) {
-        CreateEffect(0xff,pfVar17 + 4,pfVar12,pfVar17 + 0x3a,(float *)0x0,pfVar17,
+        CreateEffect(0xff,AsObject(pfVar17)->Position,pfVar12,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,
                      (float *)0xffffffff,(float *)0x0,0);
       }
-      pfVar17[0x3d] = 0.0;
-      *(undefined1 *)(pfVar17 + 0x21) = 1;
+      *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
+      AsObject(pfVar17)->Kind = 1;
     }
     pfVar8 = (float*)DAT_07abf5d8;
-    if ((param_1 == 0xd8) && (*(int*)&pfVar17[1] == 3)) {
+    if ((param_1 == 0xd8) && (AsObject(pfVar17)->SubType == 3)) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       fVar27 = pfVar8[5];
-      pfVar17[0x5c] = pfVar8[4];
+      AsObject(pfVar17)->StartPosition[0] = pfVar8[4];
       fVar2 = pfVar8[6];
-      pfVar17[0x5d] = fVar27;
-      pfVar17[0x5e] = fVar2;
+      AsObject(pfVar17)->StartPosition[1] = fVar27;
+      AsObject(pfVar17)->StartPosition[2] = fVar2;
       iVar9 = _rand();
       param_8 = (float *)(iVar9 % 0x1e);
-      pfVar17[0x31] = -((float)(int)param_8 + _DAT_0055284c);
+      AsObject(pfVar17)->Direction[1] = -((float)(int)param_8 + _DAT_0055284c);
       iVar9 = _rand();
       param_8 = (float *)(iVar9 % 0x14);
       *pfVar12 = -((float)(int)param_8 + _DAT_00552844);
@@ -1060,7 +1060,7 @@ switchD_00461001_caseD_c7:
   }
   case 0xe1:
     *(int*)&pfVar17[EffectLifetimeIndex] = 10000;
-    pfVar17[0x33] = 0.3;
+    AsObject(pfVar17)->Velocity = 0.3;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   case 0xe2:
@@ -1071,33 +1071,33 @@ switchD_00461001_caseD_c7:
   case 0xe6:
     *(int*)&pfVar17[EffectLifetimeIndex] = 100;
     iVar9 = _rand();
-    pfVar17[3] = (float)(iVar9 % 10 + 4) * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(iVar9 % 10 + 4) * _DAT_005524f4;
     fVar27 = _DAT_00552988;
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = fVar27 / pfVar17[3];
-    pfVar17[0x32] = _DAT_00552984 / pfVar17[3];
-    pfVar17[1] = 1.4013e-45;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = fVar27 / AsObject(pfVar17)->Scale;
+    AsObject(pfVar17)->Direction[2] = _DAT_00552984 / AsObject(pfVar17)->Scale;
+    *(float *)&AsObject(pfVar17)->SubType = 1.4013e-45;
     return (float *)(iVar9 / 10);
   case 0xe9:
     *(int*)&pfVar17[EffectLifetimeIndex] = 30;
-    pfVar17[3] = 0.7;
+    AsObject(pfVar17)->Scale = 0.7;
     *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
-    if (*(int*)&pfVar17[1] != 1) {
-      pfVar17[0x33] = 0.1;
+    if (AsObject(pfVar17)->SubType != 1) {
+      AsObject(pfVar17)->Velocity = 0.1;
       return pfVar8;
     }
     *(int*)&pfVar17[EffectLifetimeIndex] = 20;
-    pfVar17[0x33] = 0.1;
-    pfVar17[0x16] = 0.0;
+    AsObject(pfVar17)->Velocity = 0.1;
+    *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
     return pfVar8;
   case 0xed:
     *(int*)&pfVar17[EffectLifetimeIndex] = 50;
-    pfVar17[3] = 0.8;
-    pfVar17[0x33] = 1.0;
-    pfVar17[7] = 0.0;
+    AsObject(pfVar17)->Scale = 0.8;
+    AsObject(pfVar17)->Velocity = 1.0;
+    AsObject(pfVar17)->Angle[0] = 0.0;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    pfVar17[0x31] = -50.0;
-    pfVar17[0x36] = -10.0;
+    AsObject(pfVar17)->Direction[1] = -50.0;
+    AsObject(pfVar17)->Gravity = -10.0;
     return pfVar8;
   case 0xee:
     *(int*)&pfVar17[EffectLifetimeIndex] = 5;
@@ -1122,28 +1122,28 @@ switchD_00461001_caseD_c7:
     uVar10 = _rand() % 8;
     param_8 = (float *)(uVar10 + 10);
     pfVar12 = pfVar17 + 4;
-    pfVar17[3] = (float)(int)param_8 * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(int)param_8 * _DAT_005524f4;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 100 + 200);
     *pfVar12 = (float)(int)param_8 + *pfVar12;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 100 + -0x32);
-    pfVar17[5] = (float)(int)param_8 + pfVar17[5];
+    AsObject(pfVar17)->Position[1] = (float)(int)param_8 + AsObject(pfVar17)->Position[1];
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 500 + 300);
-    pfVar17[6] = (float)(int)param_8 + pfVar17[6];
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = 0.0;
+    AsObject(pfVar17)->Position[2] = (float)(int)param_8 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = 0.0;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x32);
-    pfVar17[0x32] = _DAT_0055298c - (float)(int)param_8;
-    pfVar17[7] = 0.0;
-    pfVar17[8] = 20.0;
-    pfVar17[9] = 0.0;
+    AsObject(pfVar17)->Direction[2] = _DAT_0055298c - (float)(int)param_8;
+    AsObject(pfVar17)->Angle[0] = 0.0;
+    AsObject(pfVar17)->Angle[1] = 20.0;
+    AsObject(pfVar17)->Angle[2] = 0.0;
     pfVar17[0x10] = *pfVar12;
-    pfVar17[0x11] = pfVar17[5];
-    pfVar17[0x12] = pfVar17[6];
-    Joint_Create(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
+    pfVar17[0x11] = AsObject(pfVar17)->Position[1];
+    pfVar17[0x12] = AsObject(pfVar17)->Position[2];
+    Joint_Create(0x4ea,pfVar12,pfVar12,AsObject(pfVar17)->Angle,5,(int)pfVar17,100.0,-1,0);
     pfVar12 = (float*)DAT_07cf1ffc;
     param_5 = (float*)DAT_07cf1ffc;
     uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
@@ -1153,60 +1153,60 @@ switchD_00461001_caseD_c7:
     goto LAB_0046115a;
   case 0xf1:
     *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
-    pfVar17[3] = 0.9;
-    pfVar17[0x33] = 0.5;
+    AsObject(pfVar17)->Scale = 0.9;
+    AsObject(pfVar17)->Velocity = 0.5;
     // SubType es un DWORD: leer los BITS, no convertir el float (daba 0 siempre).
-    switch(*(int*)&pfVar17[1]) {
+    switch(AsObject(pfVar17)->SubType) {
     case 0:
-      pfVar17[0x3a] = 0.8;
-      pfVar17[0x3b] = 0.8;
-      pfVar17[0x3c] = 0.8;
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
       *(int*)&pfVar17[EffectLifetimeIndex] = 15;
       break;
     case 1:
-      pfVar17[0x3a] = 1.0;
-      pfVar17[0x3b] = 0.5;
-      pfVar17[0x3c] = 0.2;
+      AsObject(pfVar17)->Light[0] = 1.0;
+      AsObject(pfVar17)->Light[1] = 0.5;
+      AsObject(pfVar17)->Light[2] = 0.2;
       *(int*)&pfVar17[EffectLifetimeIndex] = 35;
       break;
     case 2:
-      pfVar17[0x3a] = 0.8;
-      pfVar17[0x3b] = 0.8;
-      pfVar17[0x3c] = 0.8;
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
       *(int*)&pfVar17[EffectLifetimeIndex] = 12;
-      pfVar17[0x16] = 0.0;
-      pfVar17[3] = 0.5;
+      *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
+      AsObject(pfVar17)->Scale = 0.5;
       break;
     case 3:
-      pfVar17[0x3a] = 0.8;
-      pfVar17[0x3b] = 0.8;
-      pfVar17[0x3c] = 0.8;
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
       *(int*)&pfVar17[EffectLifetimeIndex] = 4;
-      pfVar17[0x16] = 1.4013e-45;
-      pfVar17[3] = 0.02;
-      pfVar17[0x33] = 1.0;
-      pfVar17[7] = 90.0;
-      pfVar17[8] = 0.0;
-      pfVar17[9] = 0.0;
+      *(float *)&AsObject(pfVar17)->HiddenMesh = 1.4013e-45;
+      AsObject(pfVar17)->Scale = 0.02;
+      AsObject(pfVar17)->Velocity = 1.0;
+      AsObject(pfVar17)->Angle[0] = 90.0;
+      AsObject(pfVar17)->Angle[1] = 0.0;
+      AsObject(pfVar17)->Angle[2] = 0.0;
       break;
     case 4:
-      pfVar17[0x3a] = 0.8;
-      pfVar17[0x3b] = 0.8;
-      pfVar17[0x3c] = 0.8;
+      AsObject(pfVar17)->Light[0] = 0.8;
+      AsObject(pfVar17)->Light[1] = 0.8;
+      AsObject(pfVar17)->Light[2] = 0.8;
       *(int*)&pfVar17[EffectLifetimeIndex] = 35;
-      pfVar17[0x16] = 1.4013e-45;
-      pfVar17[3] = 0.1;
-      pfVar17[0x36] = 0.0;
+      *(float *)&AsObject(pfVar17)->HiddenMesh = 1.4013e-45;
+      AsObject(pfVar17)->Scale = 0.1;
+      AsObject(pfVar17)->Gravity = 0.0;
     }
     pfVar8 = (float*)DAT_07cf1ffc;
-    // pfVar17[0x3f] (= slot+252) es el PUNTERO al owner: hay que reinterpretar
+    // *(float *)&AsObject(pfVar17)->Owner (= slot+252) es el PUNTERO al owner: hay que reinterpretar
     // los bits, no convertir el float (eso destruia el puntero y la comparacion
     // con Hero nunca daba true).
-    pfVar12 = (float*)(uintptr_t)*(unsigned int*)&pfVar17[0x3f];
+    pfVar12 = (float*)(uintptr_t)*(unsigned int *)&AsObject(pfVar17)->Owner;
     if (pfVar12 != (float*)DAT_07abf5d8) {
       return pfVar12;
     }
-    if (1 < *(int*)&pfVar17[1]) {                      // SubType (DWORD)
+    if (1 < AsObject(pfVar17)->SubType) {                      // SubType (DWORD)
       return pfVar12;
     }
     param_5 = (float*)DAT_07cf1ffc;
@@ -1218,21 +1218,21 @@ switchD_00461001_caseD_c7:
   case 0xf2:
     *(int*)&pfVar17[EffectLifetimeIndex] = 30;
     *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
-    pfVar17[3] = 1.0;
+    AsObject(pfVar17)->Scale = 1.0;
     pfVar12 = pfVar17 + 4;
-    pfVar17[6] = pfVar17[6] + _DAT_00552980;
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = -70.0;
-    pfVar17[0x32] = 0.0;
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552980;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -70.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
     pfVar17[0x10] = *pfVar12;
-    pfVar17[0x11] = pfVar17[5];
-    pfVar17[0x12] = pfVar17[6];
-    Joint_Create(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
-    if (pfVar17[1] != 0.0) {
-      CreateEffect(0xff,pfVar12,pfVar17 + 7,pfVar17 + 0x3a,(float *)0x0,pfVar17,(float *)0xffffffff,
+    pfVar17[0x11] = AsObject(pfVar17)->Position[1];
+    pfVar17[0x12] = AsObject(pfVar17)->Position[2];
+    Joint_Create(0x4ea,pfVar12,pfVar12,AsObject(pfVar17)->Angle,5,(int)pfVar17,100.0,-1,0);
+    if (*(float *)&AsObject(pfVar17)->SubType != 0.0) {
+      CreateEffect(0xff,pfVar12,AsObject(pfVar17)->Angle,AsObject(pfVar17)->Light,(float *)0x0,pfVar17,(float *)0xffffffff,
                    (float *)0x0,0);
-      pfVar17[0x3d] = 0.0;
-      *(undefined1 *)(pfVar17 + 0x21) = 1;
+      *(float *)&AsObject(pfVar17)->AttackPoint = 0.0;
+      AsObject(pfVar17)->Kind = 1;
     }
     pfVar12 = (float*)DAT_07cf1ffc;
     param_5 = (float*)DAT_07cf1ffc;
@@ -1244,28 +1244,28 @@ switchD_00461001_caseD_c7:
   case 0xf3:
     *(int*)&pfVar17[EffectLifetimeIndex] = 30;
     *(int*)&pfVar17[EffectBlendMeshIndex] = -2;
-    pfVar17[3] = 1.0;
+    AsObject(pfVar17)->Scale = 1.0;
     iVar9 = 0;
-    pfVar17[6] = pfVar17[6] + _DAT_00552980;
-    pfVar17[0x30] = 0.0;
-    pfVar17[0x31] = -30.0;
-    pfVar17[0x32] = 0.0;
-    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+    AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552980;
+    AsObject(pfVar17)->Direction[0] = 0.0;
+    AsObject(pfVar17)->Direction[1] = -30.0;
+    AsObject(pfVar17)->Direction[2] = 0.0;
+    Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
     local_6c = -10.0;
     local_68 = -100.0;
     local_64 = 15.0;
     Vector_Rotate(&local_6c,local_3c + 3,&local_60);
     pfVar8 = pfVar17 + 0x5c;
-    *pfVar8 = pfVar17[4];
-    pfVar17[0x5d] = pfVar17[5];
-    pfVar17[0x5e] = pfVar17[6];
+    *pfVar8 = AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
     fVar27 = *pfVar8;
     *pfVar12 = 0.0;
     pfVar12[1] = 0.0;
     *pfVar8 = local_60 + fVar27;
-    pfVar17[0x5d] = local_5c + pfVar17[0x5d];
-    pfVar17[0x5e] = local_58 + pfVar17[0x5e];
-    pfVar12[2] = pfVar17[9];
+    AsObject(pfVar17)->StartPosition[1] = local_5c + AsObject(pfVar17)->StartPosition[1];
+    AsObject(pfVar17)->StartPosition[2] = local_58 + AsObject(pfVar17)->StartPosition[2];
+    pfVar12[2] = AsObject(pfVar17)->Angle[2];
     do {
       Joint_Create(0x4e1,pfVar8,pfVar8,pfVar12,0xb,(int)pfVar17,50.0,-1,iVar9 == 1);
       pfVar14 = (float*)DAT_07cf1ffc;
@@ -1334,27 +1334,27 @@ LAB_004625aa:
     HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar14);
     goto LAB_004625ca;
   case 0xf4:
-    pfVar17[10] = pfVar17[7];
-    pfVar17[0xb] = pfVar17[8];
-    pfVar17[0xc] = pfVar17[9];
-    pfVar17[0x5c] = pfVar17[4];
-    pfVar17[0x5d] = pfVar17[5];
-    pfVar17[0x5e] = pfVar17[6];
+    AsObject(pfVar17)->HeadAngle[0] = AsObject(pfVar17)->Angle[0];
+    AsObject(pfVar17)->HeadAngle[1] = AsObject(pfVar17)->Angle[1];
+    AsObject(pfVar17)->HeadAngle[2] = AsObject(pfVar17)->Angle[2];
+    AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
+    AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
     *(int*)&pfVar17[EffectLifetimeIndex] = 20;
     iVar9 = _rand();
     // IDA: `*((_DWORD *)i + 1) = rand() % 100;` -- el SubType es un DWORD.
     // Guardarlo con una conversion a float dejaba los BITS del float en el
     // campo, y MoveEffect lo lee por bits: el angulo de las grietas del
     // suelo (IDA L2095) salia ~1.1e9 en vez de 0..99.
-    *(DWORD *)(pfVar17 + 1) = (DWORD)(iVar9 % 100);
-    pfVar17[9] = pfVar17[9] + _DAT_00552978;
-    pfVar17[10] = pfVar17[10] + _DAT_00552878;
-    pfVar17[0xc] = pfVar17[0xc] + _DAT_005524ec;
-    pfVar17[0x36] = 50.0;
+    *(DWORD *)&AsObject(pfVar17)->SubType = (DWORD)(iVar9 % 100);
+    AsObject(pfVar17)->Angle[2] = AsObject(pfVar17)->Angle[2] + _DAT_00552978;
+    AsObject(pfVar17)->HeadAngle[0] = AsObject(pfVar17)->HeadAngle[0] + _DAT_00552878;
+    AsObject(pfVar17)->HeadAngle[2] = AsObject(pfVar17)->HeadAngle[2] + _DAT_005524ec;
+    AsObject(pfVar17)->Gravity = 50.0;
     break;
   case 0xf5:
     *(int*)&pfVar17[EffectLifetimeIndex] = 35;
-    pfVar17[3] = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
+    AsObject(pfVar17)->Scale = (float)(int)(short)(uintptr_t)param_7 * _DAT_00552594;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
     return pfVar8;
   }
@@ -1366,7 +1366,7 @@ LAB_004625aa:
   return pfVar12;
 switchD_00460f25_caseD_100:
   pfVar12 = pfVar17 + 7;
-  pfVar17[0x33] = 1.0;
+  AsObject(pfVar17)->Velocity = 1.0;
   *(int*)&pfVar17[EffectLifetimeIndex] = 30;
   Matrix_BuildFromEuler(pfVar12,local_3c + 3);
   local_6c = -10.0;
@@ -1379,10 +1379,10 @@ switchD_00460f25_caseD_100:
   param_7 = (float *)0xffffffff;
   *pfVar14 = local_60 + *pfVar14;
   param_1 = 0xff;
-  pfVar17[5] = local_5c + pfVar17[5];
-  pfVar17[6] = local_58 + pfVar17[6];
-  pfVar17[3] = 0.8;
-  pfVar17[0x31] = -70.0;
+  AsObject(pfVar17)->Position[1] = local_5c + AsObject(pfVar17)->Position[1];
+  AsObject(pfVar17)->Position[2] = local_58 + AsObject(pfVar17)->Position[2];
+  AsObject(pfVar17)->Scale = 0.8;
+  AsObject(pfVar17)->Direction[1] = -70.0;
   param_2 = pfVar14;
   param_6 = pfVar17;
   goto LAB_00460dd8;
@@ -3695,52 +3695,52 @@ switchD_00465549_caseD_4ba:
   // de la estela.
   *(int*)&pfVar17[EffectLifetimeIndex] = 20;
   if (param_1 == 0x4ba) {
-    pfVar17[0x3a] = 0.5;
-    pfVar17[0x3b] = 0.7;
-    pfVar17[0x3c] = 1.0;
+    AsObject(pfVar17)->Light[0] = 0.5;
+    AsObject(pfVar17)->Light[1] = 0.7;
+    AsObject(pfVar17)->Light[2] = 1.0;
   }
   else {
     if (param_1 != 0x4bb) {
       if (param_1 == 0x4bc) {
         local_6c = 0.0f;   // IDA: in1[0] = 0.0
         local_64 = 0.0f;   // IDA: in1[2] = 0.0
-        pfVar17[0x3a] = 1.0;
-        pfVar17[0x3b] = 0.4;
-        pfVar17[0x3c] = 0.2;
+        AsObject(pfVar17)->Light[0] = 1.0;
+        AsObject(pfVar17)->Light[1] = 0.4;
+        AsObject(pfVar17)->Light[2] = 0.2;
         local_68 = -15.0;
-        pfVar17[3] = 5.0;
+        AsObject(pfVar17)->Scale = 5.0;
       }
       goto LAB_00465641;
     }
-    pfVar17[0x3a] = 1.0;
-    pfVar17[0x3b] = 0.4;
-    pfVar17[0x3c] = 0.2;
+    AsObject(pfVar17)->Light[0] = 1.0;
+    AsObject(pfVar17)->Light[1] = 0.4;
+    AsObject(pfVar17)->Light[2] = 0.2;
   }
   local_6c = 0.0f;   // IDA: in1[0] = 0.0
   local_64 = 0.0f;   // IDA: in1[2] = 0.0
   local_68 = -50.0;
-  pfVar17[3] = 16.0;
+  AsObject(pfVar17)->Scale = 16.0;
 LAB_00465641:
-  Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
-  Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
-  if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != (float*)DAT_07abf5d8) {
+  Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
+  Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
+  if ((float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner != (float*)DAT_07abf5d8) {
     return (float*)DAT_07abf5d8;
   }
-  fVar27 = pfVar17[5];
-  fVar2 = pfVar17[6];
-  *param_2 = pfVar17[4];
+  fVar27 = AsObject(pfVar17)->Position[1];
+  fVar2 = AsObject(pfVar17)->Position[2];
+  *param_2 = AsObject(pfVar17)->Position[0];
   param_2[1] = fVar27;
   param_2[2] = fVar2;
   local_6c = 0.0;
   local_68 = -150.0;
   local_64 = 0.0;
-  Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+  Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
   Vector_Rotate(&local_6c,local_3c + 3,&local_48);
   iVar9 = 4;
   do {
-    sVar28 = *(short *)((int)pfVar17 + 0x86);
+    sVar28 = AsObject(pfVar17)->PKKey;
     bVar6 = *(byte *)(pfVar17 + 0x22);
-    bVar1 = *(byte *)((int)pfVar17 + 0x85);
+    bVar1 = AsObject(pfVar17)->Skill;
     *param_2 = local_48 + *param_2;
     param_2[1] = local_44 + param_2[1];
     param_2[2] = local_40 + param_2[2];
@@ -3960,11 +3960,11 @@ LAB_00461a9e:
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00461ce3:
-  sVar28 = *(short *)((int)pfVar17 + 0x86);
+  sVar28 = AsObject(pfVar17)->PKKey;
   bVar6 = *(byte *)(pfVar17 + 0x22);
   fVar27 = 400.0;
 LAB_00463ca2:
-  pfVar12 = (float *)Entity_FindNearby_SendPacket((uint)*(byte *)((int)pfVar17 + 0x85),pfVar17 + 4,fVar27,bVar6,
+  pfVar12 = (float *)Entity_FindNearby_SendPacket((uint)AsObject(pfVar17)->Skill,AsObject(pfVar17)->Position,fVar27,bVar6,
                                   sVar28);
   return pfVar12;
   while( true ) {
