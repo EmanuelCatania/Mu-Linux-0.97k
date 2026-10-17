@@ -68,6 +68,7 @@
 // +0x17c = base_level (int)
 
 #include "stdafx.h"
+#include "Entity/EntityTypes.h"
 #include "Scene/ObjectRegistry.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
@@ -80,10 +81,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// IDA: CreateCharacterPointer (0x0045ADC0)
+/// IDA: CreateCharacterPointer (0x0045ADC0)
 void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
                           int PositionX, int PositionY, float Rotation)
 {
+    CHARACTER* c = AsCharacter(param_1);
+    OBJECT*    o = &c->Object;
+
     // DIAG: trace first 6 calls
     static int s_spawn_dbg = 0;
     if (s_spawn_dbg < 6) {
@@ -104,95 +108,91 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     unsigned int entity_type = (unsigned int)Type;
 
     // Store grid coords into entity (the value the HashTable block also writes)
-    *(unsigned int *)(param_1 + 0x388) = grid_x;
-    *(unsigned int *)(param_1 + 0x38c) = grid_y;
+    *(unsigned int *)&c->PositionX = grid_x;
+    *(unsigned int *)&c->PositionY = grid_y;
     // IDA L354-355: la casilla destino arranca en la de spawn.
-    param_1[0x306] = (unsigned char)PositionX;
-    param_1[0x307] = (unsigned char)PositionY;
+    c->TargetX = (unsigned char)PositionX;
+    c->TargetY = (unsigned char)PositionY;
 
     // ── Real initialization (lines 481+ in Ghidra) ───────────────────────────
 
     // Atributo del terreno en la posición de spawn → SafeZone (+0x34E)
     int terrainAttr = Terrain_GetTileIndex((int)grid_x, (int)grid_y);
     if ((unsigned char)DAT_0838bc70[terrainAttr] & 1) {
-        param_1[0x34e] = 1;   // spawn dentro de zona segura
+        c->SafeZone = 1;   // spawn dentro de zona segura
     } else {
-        param_1[0x34e] = 0;
+        c->SafeZone = 0;
     }
 
     // Reset movement/path state
-    param_1[0x356] = 0;     // path_wp_count
-    param_1[0x354] = 0;     // path_current_wp
-    param_1[0x2ec] = 0;     // misc combat flag
+    c->PathNum     = 0;
+    c->PathCurrent = 0;
+    c->Movement    = 0;
 
     // Mark active + reset anim/combat fields
-    param_1[0x00]  = 1;
-    param_1[0x160] = 0;
-    param_1[0x161] = 1;
-    param_1[0xdc]  = 1;
-    param_1[0xe4]  = 0;
-    param_1[0x110] = 1;
-    param_1[0x8c]  = 0;
-    param_1[0x2fd] = 0;   // dead_flag (IDA L440 `*(BYTE*)(v5+765) = 0`) — es el
-                          // campo que `ReceiveDie` pone en 1; la etiqueta vieja
-                          // ("render_visible") era falsa.
-    param_1[0x2fe] = 0;
-    param_1[0x2e9] = 0;
-    param_1[0x300] = 0;   // stamina_counter
+    o->Live             = 1;
+    o->Visible          = 0;
+    o->AlphaEnable      = 1;
+    o->LightEnable      = 1;
+    o->ContrastEnable   = 0;
+    o->EnableBoneMatrix = 1;
+    o->EnableShadow     = 0;
+    c->Dead             = 0;
+    c->Blood            = 0;
+    c->GuildTeam        = 0;
+    c->Run              = 0;
 
     // Entity type and initial values
-    *(short  *)(param_1 + 0x1da) = (short)0xffff;       // entity+474 (entity_index) = -1
-    param_1[0x2ea]               = 3;
-    *(short  *)(param_1 + 2)     = (short)entity_type;
-    *(float  *)(param_1 + 0x0c)  = 0.9f;         // 0x3f666666
-    *(int    *)(param_1 + 0x80)  = 0;
-    *(float  *)(param_1 + 0x168) = 1.0f;          // scale
-    *(float  *)(param_1 + 0x164) = 1.0f;
-    *(int    *)(param_1 + 0xcc)  = 0;
-    *(int    *)(param_1 + 0xd4)  = 0;
-    param_1[0x194]               = 0;
+    c->GuildMarkIndex          = (short)0xffff;
+    c->PK                      = 3;
+    o->Type                    = (short)entity_type;
+    o->Scale                   = 0.9f;         // 0x3f666666
+    *(int *)&o->Timer          = 0;
+    o->Alpha                   = 1.0f;
+    o->AlphaTarget             = 1.0f;
+    *(int *)&o->Velocity       = 0;
+    *(int *)&o->ShadowScale    = 0;
+    param_1[0x194]             = 0;
 
-    // move_type_flags: clear unless entity type is a swim-type (0xaa..0xad)
+    // Class: se limpia salvo para los tipos 0xaa..0xad
     if ((int)entity_type < 0xaa || 0xad < (int)entity_type) {
-        param_1[0x1bc] = 0;
+        c->Class = 0;
     }
 
-    // anim state for hero (Type==390): entity[261]=1, entity[262]=1
-    // (IDA L458-466 — only set to 1 when Type==390/0x186; otherwise 0)
+    // IDA L458-466: acción 1 sólo para el jugador (Type 390)
     if (entity_type == 0x186) {
-        param_1[0x106] = 1;
-        param_1[0x105] = 1;
+        o->PriorAction   = 1;
+        o->CurrentAction = 1;
     } else {
-        param_1[0x106] = 0;
-        param_1[0x105] = 0;
+        o->PriorAction   = 0;
+        o->CurrentAction = 0;
     }
 
-    *(int    *)(param_1 + 0x108) = 0;
-    *(int    *)(param_1 + 0x10c) = 0;
-    param_1[0x305]               = 0;
-    *(int    *)(param_1 + 0x58)  = -1;          // facing / slot = none
-    *(short  *)(param_1 + 0x2fa) = 10;
-    *(int    *)(param_1 + 0x78)  = 0;
-    param_1[0x7c]                = 0;
-    param_1[0x84]                = 1;            // alive state
-    param_1[0x34f]               = 0;
-    *(int    *)(param_1 + 4)     = 0;
-    param_1[0x2eb]               = 0xff;
-    *(float  *)(param_1 + 0x6c)  = 0.0f;
-    *(float  *)(param_1 + 0x70)  = 0.0f;
+    *(int *)&o->AnimationFrame      = 0;
+    *(int *)&o->PriorAnimationFrame = 0;
+    c->JumpTime                     = 0;
+    o->HiddenMesh                   = -1;
+    *(short *)&c->MoveSpeed         = 10;
+    *(int *)(param_1 + 0x78)        = 0;
+    o->Teleport                     = 0;
+    o->Kind                         = 1;
+    c->Change                       = 0;
+    o->SubType                      = 0;
+    c->MonsterIndex                 = 0xff;
+    o->BlendMeshTexCoordU           = 0.0f;
+    o->BlendMeshTexCoordV           = 0.0f;
 
     // ── World position from grid coords ────────────────────────────────────────
     // Hash table blocks operate on param_1+0x388 and param_1+0x38c again here
     // (same anti-tamper pattern). Omitted.
-    *(float *)(param_1 + 0x10) = (float)(int)grid_x * _DAT_005524f0 + _DAT_00552598;
-    *(float *)(param_1 + 0x14) = (float)(int)grid_y * _DAT_005524f0 + _DAT_00552598;
+    o->Position[0] = (float)(int)grid_x * _DAT_005524f0 + _DAT_00552598;
+    o->Position[1] = (float)(int)grid_y * _DAT_005524f0 + _DAT_00552598;
 
     // World Z: terrain height + height offset based on entity type / state
-    float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10),
-                                  *(float*)(param_1 + 0x14));
+    float terrainH = RequestTerrainHeight(o->Position[0], o->Position[1]);
     if (gMapManager.GetCurrentMap() == -1 ||
-        *(short *)(param_1 + 0x2b8) != (short)0x333 ||
-        param_1[0x34e] != '\0')
+        c->Helper.Type != (short)0x333 ||
+        c->SafeZone != '\0')
     {
         // Normal spawn
     }
@@ -202,104 +202,81 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     else {
         terrainH += (float)_DAT_0055284c;
     }
-    *(float *)(param_1 + 0x18) = terrainH;
+    o->Position[2] = terrainH;
 
     // ── Object.Angle init + Rotation (IDA L640-651) ──────────────────────────
-    // entity+0x1c = Angle[0] = 0 (pitch)
-    // entity+0x20 = Angle[1] = 0 (roll)
-    // entity+0x24 = Angle[2] = Rotation (yaw / facing) ← CRITICAL for char-select
-    *(int   *)(param_1 + 0x1c)   = 0;
-    *(int   *)(param_1 + 0x20)   = 0;
-    *(float *)(param_1 + 0x24)   = Rotation;
+    *(int *)&o->Angle[0] = 0;
+    *(int *)&o->Angle[1] = 0;
+    o->Angle[2]          = Rotation;
 
-    // entity+0x118/0x11c (=280/284): bone offset / pivot for wing render.
-    // IDA L641-642: -1032847360 = 0xC2700000 = -60.0f. Set ONCE — don't overwrite.
-    *(int    *)(param_1 + 0x118) = 0xc2700000;   // -60.0f
-    *(int    *)(param_1 + 0x11c) = 0xc2700000;
-    *(int    *)(param_1 + 0x320) = 0;   // IDA L645 (+800)
-    *(int    *)(param_1 + 0x324) = 0;
-    *(int    *)(param_1 + 0x328) = 0;
-    *(int    *)(param_1 + 0xe8)  = 0;
-    *(int    *)(param_1 + 0xec)  = 0;
-    *(int    *)(param_1 + 0xf0)  = 0;
-    *(int    *)(param_1 + 0x120) = 0;            // entity+288 = 0 (IDA L651)
+    // IDA L641-642: -1032847360 = 0xC2700000 = -60.0f.
+    *(int *)&o->BoundingBoxMin[0] = 0xc2700000;   // -60.0f
+    *(int *)&o->BoundingBoxMin[1] = 0xc2700000;
+    *(int *)&c->Light[0]          = 0;   // IDA L645 (+800)
+    *(int *)&c->Light[1]          = 0;
+    *(int *)&c->Light[2]          = 0;
+    *(int *)&o->Light[0]          = 0;
+    *(int *)&o->Light[1]          = 0;
+    *(int *)&o->Light[2]          = 0;
+    *(int *)&o->BoundingBoxMin[2] = 0;            // IDA L651
 
-    // ── Per-Type scale/translation (IDA L652-704) ────────────────────────────
-    // entity+0x124 (292) and +0x128 (296) = scale base; +0x12C (300) = scale top.
-    // For Type=390 (hero): 40.0f, 40.0f, 120.0f.
-    // Default (most monsters): 50.0f, 50.0f, 150.0f.
+    // ── Per-Type bounding box (IDA L652-704) ─────────────────────────────────
     switch ((int)entity_type) {
         case 272: case 276: case 279: case 287: case 289: case 290:
-            *(int *)(param_1 + 0x124) = 1112014848;
-            *(int *)(param_1 + 0x128) = 1112014848;
-            *(int *)(param_1 + 0x12c) = 1117782016;
+            *(int *)&o->BoundingBoxMax[0] = 1112014848;
+            *(int *)&o->BoundingBoxMax[1] = 1112014848;
+            *(int *)&o->BoundingBoxMax[2] = 1117782016;
             break;
         case 281: case 301: case 309: case 312: case 314:
-            *(int *)(param_1 + 0x124) = 1116471296;
-            *(int *)(param_1 + 0x128) = 1116471296;
-            *(int *)(param_1 + 0x12c) = 1132068864;
+            *(int *)&o->BoundingBoxMax[0] = 1116471296;
+            *(int *)&o->BoundingBoxMax[1] = 1116471296;
+            *(int *)&o->BoundingBoxMax[2] = 1132068864;
             break;
         case 307:
-            *(int *)(param_1 + 0x124) = 1120403456;
-            *(int *)(param_1 + 0x128) = 1120403456;
-            *(int *)(param_1 + 0x12c) = 1125515264;
+            *(int *)&o->BoundingBoxMax[0] = 1120403456;
+            *(int *)&o->BoundingBoxMax[1] = 1120403456;
+            *(int *)&o->BoundingBoxMax[2] = 1125515264;
             break;
         case 330:
-            *(int *)(param_1 + 0x118) = (int)0xC2380000;  // -46.0
-            *(int *)(param_1 + 0x11c) = (int)0xC2200000;  // -40.0
-            *(int *)(param_1 + 0x120) = 0;
-            *(int *)(param_1 + 0x124) = 1119092736;
-            *(int *)(param_1 + 0x128) = 1112014848;
-            *(int *)(param_1 + 0x12c) = 1128792064;
+            *(int *)&o->BoundingBoxMin[0] = (int)0xC2380000;  // -46.0
+            *(int *)&o->BoundingBoxMin[1] = (int)0xC2200000;  // -40.0
+            *(int *)&o->BoundingBoxMin[2] = 0;
+            *(int *)&o->BoundingBoxMax[0] = 1119092736;
+            *(int *)&o->BoundingBoxMax[1] = 1112014848;
+            *(int *)&o->BoundingBoxMax[2] = 1128792064;
             break;
         case 331:
-            *(int *)(param_1 + 0x120) = 0;
-            *(int *)(param_1 + 0x118) = (int)0xC2C00000;
-            *(int *)(param_1 + 0x11c) = (int)0xC2C00000;
-            *(int *)(param_1 + 0x124) = 1120403456;
-            *(int *)(param_1 + 0x128) = 1120403456;
-            *(int *)(param_1 + 0x12c) = 1133903872;
+            *(int *)&o->BoundingBoxMin[2] = 0;
+            *(int *)&o->BoundingBoxMin[0] = (int)0xC2C00000;
+            *(int *)&o->BoundingBoxMin[1] = (int)0xC2C00000;
+            *(int *)&o->BoundingBoxMax[0] = 1120403456;
+            *(int *)&o->BoundingBoxMax[1] = 1120403456;
+            *(int *)&o->BoundingBoxMax[2] = 1133903872;
             break;
         case 390:  // hero (CRITICAL for char-select rendering)
-            // 1109393408 = 0x42200000 = 40.0f
-            // 1123024896 = 0x42F00000 = 120.0f
-            *(int *)(param_1 + 0x124) = 1109393408;  // 40.0f
-            *(int *)(param_1 + 0x128) = 1109393408;  // 40.0f
-            *(int *)(param_1 + 0x12c) = 1123024896;  // 120.0f
+            *(int *)&o->BoundingBoxMax[0] = 1109393408;  // 40.0f
+            *(int *)&o->BoundingBoxMax[1] = 1109393408;  // 40.0f
+            *(int *)&o->BoundingBoxMax[2] = 1123024896;  // 120.0f
             break;
         default:
-            *(int *)(param_1 + 0x124) = 1112014848;  // 52.0f
-            *(int *)(param_1 + 0x128) = 1112014848;
-            *(int *)(param_1 + 0x12c) = 1125515264;  // 156.0f
+            *(int *)&o->BoundingBoxMax[0] = 1112014848;
+            *(int *)&o->BoundingBoxMax[1] = 1112014848;
+            *(int *)&o->BoundingBoxMax[2] = 1125515264;
             break;
     }
 
-    *(int    *)(param_1 + 0x17c) = DAT_083a7c00; // base_level from global
+    o->InitialSceneFrame = DAT_083a7c00;
 
-    // ── BoneTransform2 buffer allocation ──────────────────────────────────────
-    //
-    // Field entity[+0x114] es BoneTransform2: array de matrices 3×4 (48 B=0x30)
-    // por bone.  BMD_Animation (Sprite_Draw) itera hasta model[+0x22] (boneCount)
-    // y escribe cada bone en buf[boneIdx*0x30]. El buffer necesita al menos
-    // `boneCount * 0x30` bytes.
-    //
-    // ASM original (0045bb70..0045bb8e):
-    //   MOV EAX,[0x05828d58]                       ; Models base ptr
-    //   MOVSX EAX, word ptr [EAX + type*0xbc + 0x22] ; bone count
-    //   LEA ECX,[EAX + EAX*2]                      ; count*3
-    //   SHL ECX,0x4                                ; count*0x30
-    //   PUSH ECX; CALL operator_new
-    //
-    // Ojo: el bone count es el short en +0x22 del MODEL_t (el mismo campo que usa
-    // BMD_Animation para su loop).  Leerlo de otro offset deja el buffer corto y
-    // el render escribe el ultimo hueso fuera de el.
+    // ── BoneTransform ─────────────────────────────────────────────────────────
+    // Una matriz 3x4 (0x30 bytes) por hueso; la cantidad es el short en +0x22
+    // del MODEL_t, el mismo campo que recorre BMD_Animation.
     SceneObjects::UnregisterBones(param_1);
-    if (*(unsigned char **)(param_1 + 0x114) != NULL) {
-        operator_delete(*(unsigned char **)(param_1 + 0x114));
-        *(int *)(param_1 + 0x114) = 0;
+    if (*(unsigned char **)&o->BoneMatrices != NULL) {
+        operator_delete(*(unsigned char **)&o->BoneMatrices);
+        *(int *)&o->BoneMatrices = 0;
     }
     {
-        short etype     = *(short *)(param_1 + 2);
+        short etype     = o->Type;
         short boneCount = *(short *)(DAT_05828d58 + etype * 0xbc + 0x22);
         if (boneCount < 0) boneCount = 0;   // defense: short garbage → signed neg
         void *boneBuf = operator_new((unsigned int)boneCount * 0x30);
@@ -311,14 +288,14 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
         // cero, que es lo que el original obtiene de hecho.
         if (boneBuf && boneCount > 0)
             memset(boneBuf, 0, (size_t)boneCount * 0x30);
-        *(void **)(param_1 + 0x114) = boneBuf;
+        *(void **)&o->BoneMatrices = boneBuf;
         SceneObjects::RegisterBones(param_1, boneBuf, (size_t)boneCount * 0x30);
     }
 
-    // ── Equip slot init ───────────────────────────────────────────────────────
-    // 2 slots at param_1+0x272 (stride 0x18)
+    // ── Partes ────────────────────────────────────────────────────────────────
+    // Weapon[0..1]
     {
-        unsigned char *slot = param_1 + 0x272;
+        unsigned char *slot = (unsigned char *)&c->Weapon[0].Level;
         for (int i = 0; i < 2; i++) {
             *(short *)(slot - 2) = (short)0xffff;
             slot[0] = 0;
@@ -326,9 +303,9 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
             slot += 0x18;
         }
     }
-    // 6 slots at param_1+0x1e2 (stride 0x18)
+    // BodyPart[0..5]
     {
-        unsigned char *slot = param_1 + 0x1e2;
+        unsigned char *slot = (unsigned char *)&c->BodyPart[0].Level;
         for (int i = 0; i < 6; i++) {
             *(short *)(slot - 2) = (short)0xffff;
             slot[0] = 0;
@@ -338,50 +315,49 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     }
 
     // ── Final fixed values ────────────────────────────────────────────────────
-    *(short *)(param_1 + 0x2a0) = (short)0xffff;
-    *(short *)(param_1 + 0x2b8) = (short)0xffff;  // char_class = none
-    *(short *)(param_1 + 0x2d0) = (short)0xffff;
-    *(int   *)(param_1 + 0x330) = -1;              // 0xffffffff
-    param_1[0x32c]               = 0;
-    *(int   *)(param_1 + 0xd0)  = 0x43480000;      // 200.0f
-    *(int   *)(param_1 + 0x334) = 0;
-    *(short *)(param_1 + 0x1be) = 0;
-    *(int   *)(param_1 + 0x33c) = -1;
-    *(int   *)(param_1 + 100)   = -1;
-    *(float *)(param_1 + 0x68)  = 1.0f;
+    c->Wing.Type                 = (short)0xffff;
+    c->Helper.Type               = (short)0xffff;
+    c->Flag.Type                 = (short)0xffff;
+    c->LongRangeAttack           = -1;              // 0xffffffff
+    c->CollisionTime             = 0;
+    *(int *)&o->CollisionRange   = 0x43480000;      // 200.0f
+    *(int *)&c->Rot              = 0;
+    *(short *)&c->Level          = 0;
+    c->Item                      = -1;
+    o->BlendMesh                 = -1;
+    o->BlendMeshLight            = 1.0f;
 
     // Weapon attachment bones. IDA 0045ADC0 L744-857 selects these from the
     // parent model; RenderLinkObject then uses Weapon[n].LinkBone.
+    BYTE& lb0 = c->Weapon[0].LinkBone;
+    BYTE& lb1 = c->Weapon[1].LinkBone;
     switch ((int)entity_type) {
-        case 270: case 300: param_1[0x274] = 42; param_1[0x28c] = 33; break;
-        case 271:           param_1[0x274] = 19; param_1[0x28c] = 14; break;
-        case 273:           param_1[0x274] = 26; param_1[0x28c] = 36; break;
-        case 274: case 275: case 280: param_1[0x274] = 41; param_1[0x28c] = 32; break;
-        case 278:           param_1[0x274] = 29; param_1[0x28c] = 38; break;
+        case 270: case 300: lb0 = 42; lb1 = 33; break;
+        case 271:           lb0 = 19; lb1 = 14; break;
+        case 273:           lb0 = 26; lb1 = 36; break;
+        case 274: case 275: case 280: lb0 = 41; lb1 = 32; break;
+        case 278:           lb0 = 29; lb1 = 38; break;
         case 281: case 286: case 299: case 304: case 305: case 323: case 327:
-                            param_1[0x274] = 30; param_1[0x28c] = 39; break;
-        case 288:           param_1[0x274] = 26; param_1[0x28c] = 35; break;
-        case 289:           param_1[0x274] = 31; param_1[0x28c] = 22; break;
-        case 291:           param_1[0x274] = 24; param_1[0x28c] = 19; break;
-        case 292:           param_1[0x274] = 25; param_1[0x28c] = 16; break;
-        case 294:           param_1[0x274] = 39; param_1[0x28c] = 30; break;
-        case 296:           param_1[0x274] = 16; param_1[0x28c] = 25; break;
-        case 297:           param_1[0x274] = 17; param_1[0x28c] = 28; break;
-        case 306:           param_1[0x274] = 52; param_1[0x28c] = 65; break;
-        case 310:           param_1[0x274] = 20; param_1[0x28c] = 33; break;
-        case 311:           param_1[0x274] = 23; break;
-        case 312:           param_1[0x274] = 43; break;
-        case 314:           param_1[0x274] = 55; param_1[0x28c] = 70; break;
-        case 316:           param_1[0x274] = 39; param_1[0x28c] = 39; break;
-        case 317:           param_1[0x274] = 27; param_1[0x28c] = 38; break;
-        case 318:           param_1[0x274] = 32; param_1[0x28c] = 43; break;
-        case 322:           param_1[0x274] = 36; param_1[0x28c] = 45; break;
-        case 325:           param_1[0x274] = 27; param_1[0x28c] = 18; break;
-        case 329:           param_1[0x274] = 33; param_1[0x28c] = 20; break;
-        case 330:           param_1[0x274] = 1;  param_1[0x28c] = 1;  break;
-        default:             param_1[0x274] = 33; param_1[0x28c] = 42; break;
+                            lb0 = 30; lb1 = 39; break;
+        case 288:           lb0 = 26; lb1 = 35; break;
+        case 289:           lb0 = 31; lb1 = 22; break;
+        case 291:           lb0 = 24; lb1 = 19; break;
+        case 292:           lb0 = 25; lb1 = 16; break;
+        case 294:           lb0 = 39; lb1 = 30; break;
+        case 296:           lb0 = 16; lb1 = 25; break;
+        case 297:           lb0 = 17; lb1 = 28; break;
+        case 306:           lb0 = 52; lb1 = 65; break;
+        case 310:           lb0 = 20; lb1 = 33; break;
+        case 311:           lb0 = 23; break;
+        case 312:           lb0 = 43; break;
+        case 314:           lb0 = 55; lb1 = 70; break;
+        case 316:           lb0 = 39; lb1 = 39; break;
+        case 317:           lb0 = 27; lb1 = 38; break;
+        case 318:           lb0 = 32; lb1 = 43; break;
+        case 322:           lb0 = 36; lb1 = 45; break;
+        case 325:           lb0 = 27; lb1 = 18; break;
+        case 329:           lb0 = 33; lb1 = 20; break;
+        case 330:           lb0 = 1;  lb1 = 1;  break;
+        default:            lb0 = 33; lb1 = 42; break;
     }
-    // NOTE: IDA writes Rotation to entity+0x24 (Angle[2]) via the type-switch
-    // block earlier in this function — do NOT write to +0x28 (that's the
-    // BoneAngle / AngleVel slot and writing Rotation there breaks facing).
 }
