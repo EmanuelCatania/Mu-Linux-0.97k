@@ -659,11 +659,11 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
     #define local_8 local_18[4]
     #define local_4 local_18[5]
     // scroll: shift all existing segments one step back
-    int iVar4 = *(int*)(param_1 + 0x50) + 1;
-    int iVar1 = *(int*)(param_1 + 0x54) - 1;
-    *(int*)(param_1 + 0x50) = iVar4;
-    if (iVar1 < iVar4) *(int*)(param_1 + 0x50) = iVar1;
-    iVar1 = *(int*)(param_1 + 0x50);
+    int iVar4 = AsJoint(param_1)->NumTails + 1;
+    int iVar1 = AsJoint(param_1)->MaxTails - 1;
+    AsJoint(param_1)->NumTails = iVar4;
+    if (iVar1 < iVar4) AsJoint(param_1)->NumTails = iVar1;
+    iVar1 = AsJoint(param_1)->NumTails;
     if (0 <= iVar1 - 1) {
         // IDA lleva DOS punteros: `v6` = base de la fila (retrocede 0x30 por
         // segmento) y `v7` = cursor que camina esa fila; `v7` se RE-INICIALIZA desde
@@ -671,7 +671,7 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
         //     v6 = 48*(count-1) + a1 + 136;
         //     do { v7 = v6; <4 × copiar vec3, v7 += 3>; v6 -= 48; } while(--v5);
         // No colapsarlos en uno: el paso neto por vuelta tiene que ser -48.
-        char* rowBase = (char*)param_1 + 0x88 + (iVar1 - 1) * 0x30;
+        char* rowBase = (char*)&AsJoint(param_1)->Tails[iVar1][0][0];
         do {
             unsigned int* puVar3 = (unsigned int*)rowBase;
             for (int k = 0; k < 4; k++) {
@@ -685,32 +685,32 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
         } while (iVar1 != 0);
     }
     // compute new tip vertices
-    local_18[0] = *(float*)(param_1 + 0x0c) * _DAT_00552a14;
+    local_18[0] = AsJoint(param_1)->Scale * _DAT_00552a14;
     local_18[1] = 0.0f; local_18[2] = 0.0f;
     Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[1] = 0.0f; local_18[2] = 0.0f;
-    *(float*)(param_1 + 0x58) = local_18[3] + *(float*)(param_1 + 0x10);
-    *(float*)(param_1 + 0x5c) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x60) = local_4    + *(float*)(param_1 + 0x18);
-    local_18[0] = *(float*)(param_1 + 0x0c) * _DAT_00552504;
+    AsJoint(param_1)->Tails[0][0][0] = local_18[3] + AsJoint(param_1)->Position[0];
+    AsJoint(param_1)->Tails[0][0][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][0][2] = local_4    + AsJoint(param_1)->Position[2];
+    local_18[0] = AsJoint(param_1)->Scale * _DAT_00552504;
     Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[0] = 0.0f;
-    *(float*)(param_1 + 100) = local_18[3] + *(float*)(param_1 + 0x10);
+    AsJoint(param_1)->Tails[0][1][0] = local_18[3] + AsJoint(param_1)->Position[0];
     local_18[1] = 0.0f;
-    *(float*)(param_1 + 0x68) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x6c) = local_4    + *(float*)(param_1 + 0x18);
-    local_18[2] = *(float*)(param_1 + 0x0c) * _DAT_00552a14;
+    AsJoint(param_1)->Tails[0][1][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][1][2] = local_4    + AsJoint(param_1)->Position[2];
+    local_18[2] = AsJoint(param_1)->Scale * _DAT_00552a14;
     Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[0] = 0.0f;
-    *(float*)(param_1 + 0x70) = local_18[3] + *(float*)(param_1 + 0x10);
+    AsJoint(param_1)->Tails[0][2][0] = local_18[3] + AsJoint(param_1)->Position[0];
     local_18[1] = 0.0f;
-    *(float*)(param_1 + 0x74) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x78) = local_4    + *(float*)(param_1 + 0x18);
-    local_18[2] = *(float*)(param_1 + 0x0c) * _DAT_00552504;
+    AsJoint(param_1)->Tails[0][2][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][2][2] = local_4    + AsJoint(param_1)->Position[2];
+    local_18[2] = AsJoint(param_1)->Scale * _DAT_00552504;
     Vector_Rotate(local_18, param_2, local_18 + 3);
-    *(float*)(param_1 + 0x7c) = local_18[3] + *(float*)(param_1 + 0x10);
-    *(float*)(param_1 + 0x80) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x84) = local_4    + *(float*)(param_1 + 0x18);
+    AsJoint(param_1)->Tails[0][3][0] = local_18[3] + AsJoint(param_1)->Position[0];
+    AsJoint(param_1)->Tails[0][3][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][3][2] = local_4    + AsJoint(param_1)->Position[2];
     #undef local_8
     #undef local_4
 }

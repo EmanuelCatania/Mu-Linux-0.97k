@@ -356,10 +356,9 @@ void __cdecl Entity_Render(void)
     }
 }
 
-// FUN_00473710 @ 0x00473710 — Trail/Particle Effects Render
-// Port FIEL del IDA decompile: itera unk_7B27B08 pool stride 2520B (= 630 ints).
-// El pool está dentro del Joint pool DAT_07b27150 (200 × 0x9d8B), offset +0x9b8
-// por entry. Itera 84 entries.
+// FUN_00473710 @ 0x00473710 — render de joints.
+// IDA ancla cada joint en &LifeTime (unk_7B27B08) y lee el resto con índices
+// negativos; acá se usan los campos de JOINT.
 //
 // Per entry, render trail con:
 //   - EnableAlphaBlend (o Minus para types específicos)
@@ -373,28 +372,22 @@ void __cdecl ItemDrop_Render(void)
 {
     // DESVIACION (DLL Antilag, ret en 0x00473710): sin joints de skills.
     if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
-    // Pool: DAT_07b27150 (Joint pool) + 0x9b8 stride 0x9d8.
-    int* poolBase = (int*)((char*)DAT_07b27150 + 0x9b8);
-    const int kStride = 0x9d8 / 4;   // 630 ints = 2520 bytes
-    // El binario itera de &unk_7B27B08 a &unk_7C5B4E8 con stride 0x9d8 = 500
-    // entradas; se itera sobre el tamaño real de DAT_07b27150.
-    const int kEntries = (int)(sizeof(DAT_07b27150) / 0x9d8);   // 500
-    const char* poolEnd = (const char*)DAT_07b27150 + sizeof(DAT_07b27150);
+    JOINT* joints = AsJoint(DAT_07b27150);
+    const int kEntries = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
 
     for (int eIdx = 0; eIdx < kEntries; ++eIdx) {
-        int* v0 = poolBase + eIdx * kStride;
-        // active flag at byte offset -2488 (negative = before v0 base)
-        if (!*((BYTE*)v0 - 2488)) continue;
+        JOINT* j = &joints[eIdx];
+        if (!j->Live) continue;
 
-        int type = *(v0 - 621);    // type code at offset -621*4 = -2484
+        int type = j->Type;
         // Decide blend mode per type/subtype.
         bool useMinus = (type == 1253 || type == 1250);
         if (type == 1253) {
-            int sub = *(v0 - 620);
+            int sub = j->SubType;
             if (sub == 2 || sub == 3 || sub == 4 || sub == 5) useMinus = false;
         }
         if (type == 1250) {
-            if (*(v0 - 620) != 4) useMinus = false;
+            if (j->SubType != 4) useMinus = false;
         }
         // IDA: la rama else llama `EnableAlphaBlend()` = **0x00511710 =
         // GL_SetBlendAdditive** (blend tipo 3), NO GL_SetBlendSrcOver: con alpha
@@ -406,55 +399,45 @@ void __cdecl ItemDrop_Render(void)
         // 0/1/2 escalan el color por la vida (clamp 20); el 3 no escala; el
         // resto no bindea ni setea color.
         if (type == 266) {
-            int sub = *(v0 - 620);
+            int sub = j->SubType;
             int texId = 0;
             if (sub == 0 || sub == 4)      texId = 1277;
             else if (sub == 1 || sub == 3) texId = 1253;
             else if (sub == 2)             texId = 1278;
             if (texId) GL_BindTextureSlot(texId);
             if (sub >= 0 && sub <= 4 && sub != 3) {
-                int life = *v0;
+                int life = j->LifeTime;
                 if (life >= 20) life = 20;
                 float scale = (float)((double)life * 0.050000001);
-                glColor3f(scale * *((float*)v0 - 609),
-                          scale * *((float*)v0 - 608),
-                          scale * *((float*)v0 - 607));
+                glColor3f(scale * j->Light[0],
+                          scale * j->Light[1],
+                          scale * j->Light[2]);
             } else if (sub == 3) {
-                glColor3f(*((float*)v0 - 609), *((float*)v0 - 608), *((float*)v0 - 607));
+                glColor3f(j->Light[0], j->Light[1], j->Light[2]);
             }
         } else {
             int texId = (type == 1255) ? 1254 : type;
             GL_BindTextureSlot(texId);
-            glColor3fv((const GLfloat*)v0 - 609);
+            glColor3fv(j->Light);
         }
 
         // Iterate segments.
-        int segCount = *(v0 - 602);
+        int segCount = j->NumTails;
         if (segCount <= 0) continue;
 
-        int segMax  = *(v0 - 601);
-        int* v6     = v0 - 599;   // segment data pointer
-        // DESVIACION (guard): segCount sale del slot del pool; si un slot queda con
-        // basura, el loop avanzaría v6 de a 12 ints sin techo y le pasaría a
-        // glVertex3fv un puntero fuera de lo mapeado (crash dentro del driver GL). El
-        // binario no acota; acá se clampea al espacio de datos del propio slot (cada
-        // entrada son 630 ints; desde v0-599 entran (630-599+31)/12 segmentos con
-        // margen).
-        {
-            const char* slotEnd = (const char*)v0 + (kStride - 599) * 4;
-            if (slotEnd > poolEnd) slotEnd = poolEnd;
-            int maxSeg = (int)((slotEnd - (const char*)v6) / (12 * 4)) - 2;
-            if (maxSeg < 0) maxSeg = 0;
-            if (segCount > maxSeg) segCount = maxSeg;
-            if (segCount <= 0) continue;
-        }
+        int segMax  = j->MaxTails;
+        int* v6     = (int*)&j->Tails[0][0][1];   // IDA lee la fila como v6-1..v6+10
+        // DESVIACION (guard): si NumTails queda con basura, el loop avanzaría v6 sin
+        // techo y le pasaría a glVertex3fv un puntero fuera de lo mapeado (crash
+        // dentro del driver GL). El binario no acota.
+        if (segCount > MAX_JOINT_TAILS) segCount = MAX_JOINT_TAILS;
 
         // Loop de segmentos, fiel a IDA L114-273.  Cada fila son 4 vec3:
         // v6-1 / v6+2 / v6+5 / v6+8, y la siguiente fila +12.  Por segmento se
         // dibujan DOS quads cruzados (vert2/vert3 y vert0/vert1); el 1262 solo
         // el segundo, y el 1253 subtipo 2 omite el primero.
-        const int sub = *(v0 - 620);
-        const float* light = (const float*)v0 - 609;
+        const int sub = j->SubType;
+        const float* light = j->Light;
         for (int segIdx = 0; segIdx < segCount; ++segIdx) {
             float s, v28;
             bool stepPow2 = (type == 1260 || type == 1261 ||
@@ -490,7 +473,7 @@ void __cdecl ItemDrop_Render(void)
                     // Fade por altura: lo que sube por encima de ownerZ+50 se
                     // oscurece (por eso el aura nunca pasa de la cabeza).
                     float c[3] = { light[0], light[1], light[2] };
-                    int owner = *(v0 - 606);
+                    int owner = (int)(uintptr_t)j->Target;
                     if (owner) {
                         double d = ((double)*((const float*)v6 + 1)
                                   - ((double)*(const float*)(owner + 24) + 50.0)) * 0.0099999998;

@@ -194,6 +194,7 @@
     <ClInclude Include="src\Render\Entity_DrawAt.h" />
     <ClInclude Include="src\Render\Entity_PrepareRender.h" />
     <ClInclude Include="src\Render\Entity_Render.h" />
+    <ClInclude Include="src\Render\JointTypes.h" />
     <ClInclude Include="src\Render\Entity_Render_3D.h" />
     <ClInclude Include="src\Render\Entity_RenderAll_3D.h" />
     <ClInclude Include="src\Render\HUD_Render.h" />

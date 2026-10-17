@@ -56,22 +56,17 @@ void Effect_TickAll(void)
 
 
 // MoveJoints — Joint_TickAll
-// Iterates the joint pool (base DAT_07b27150, stride 0x9d8, end 0x7c5ab30).
-// For each active slot (first byte != 0), calls MoveJoint(slot, index).
+// Llama a MoveJoint(joint, índice) para cada joint activo del pool.
 // IDA: MoveJoints
 void Joint_TickAll(void)
 {
-  // Pool real DAT_07b27150[500 × 0x9d8].
-  char *pcVar1 = DAT_07b27150;
-  const uintptr_t poolEnd = (uintptr_t)DAT_07b27150 + sizeof(DAT_07b27150);
-  uint uVar2 = 0;
-  do {
-    if (*pcVar1 != '\0') {
-      MoveJoint((undefined1 *)pcVar1, (uint)uVar2);
+  JOINT* joints = AsJoint(DAT_07b27150);
+  const uint count = (uint)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
+  for (uint i = 0; i < count; ++i) {
+    if (joints[i].Live != 0) {
+      MoveJoint((undefined1 *)&joints[i], i);
     }
-    pcVar1 = pcVar1 + 0x9d8;
-    uVar2 = uVar2 + 1;
-  } while ((uintptr_t)pcVar1 < poolEnd);
+  }
 }
 
 

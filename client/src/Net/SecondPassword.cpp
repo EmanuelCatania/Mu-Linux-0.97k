@@ -2904,21 +2904,16 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
 
 static inline char mc_JointFind(int Type, DWORD Owner, int flag)
 {
-    // sub_46FE40 (SearchJoint) - port fiel.  IDA ancla en `&Joints` = pool+0x40
-    // (el campo Owner) y lee los otros campos con indices negativos:
-    //     *(v3 - 64 bytes) = +0x00 activo
-    //     *(v3 - 15)       = +0x04 Type
-    //     *v3              = +0x40 Owner
-    //     *(v3 - 14)       = +0x08 SubType   (se ignora si flag == -1)
-    // El paso es 630 DWORDs = 0x9D8, el stride del slot.
-    const int stride = 0x9d8;
-    const int slots  = (int)(sizeof(DAT_07b27150) / stride);
-    for (int i = 0; i < slots; ++i) {
-        const char* slot = &DAT_07b27150[i * stride];
-        if (slot[0] == 0) continue;
-        if (*(const int*)(slot + 0x04) != Type)         continue;
-        if (*(const DWORD*)(slot + 0x40) != Owner)      continue;
-        if (flag != -1 && *(const int*)(slot + 0x08) != flag) continue;
+    // sub_46FE40 (SearchJoint). IDA ancla en &Joints[0].Target y lee los otros
+    // campos con índices negativos; flag == -1 ignora el SubType.
+    const JOINT* joints = AsJoint(DAT_07b27150);
+    const int count = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));
+    for (int i = 0; i < count; ++i) {
+        const JOINT* j = &joints[i];
+        if (j->Live == 0) continue;
+        if (j->Type != Type) continue;
+        if ((DWORD)(uintptr_t)j->Target != Owner) continue;
+        if (flag != -1 && j->SubType != flag) continue;
         return 1;
     }
     return 0;
