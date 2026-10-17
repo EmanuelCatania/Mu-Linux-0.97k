@@ -782,11 +782,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int count = Msg[3 + hdrOff];
     NetLog("NET:  → 0x20 ViewportItem count=%d size=%d", count, Size);
     int cursor = 4 + hdrOff;
-    // Escribir sobre el ITEM-BASE (DAT_07e127f8), no
-    // sobre DAT_07e12840 (= item-base+72). Los offsets de abajo son
-    // ip-relativos de CreateItem (ip+4 type, ip+72 active, ip+88 pos);
-    // con la base correcta el active queda en ip+72 = DAT_07e12840+0,
-    // que es donde Entity_Render lo lee.
+    // Cada entrada del pool es un ITEM_t (structs.h): Key, Item y Object.
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
     extern void __cdecl ItemAngle(int);   // ItemAngle
@@ -808,53 +804,45 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         if (key >= 1000) key = 0;  // safety clamp per IDA
 
-        BYTE* ip = itemPool + (size_t)key * 0x204;
+        BYTE* ip = itemPool + (size_t)key * sizeof(ITEM_t);
+        ITEM_t* gi = AsGroundItem(ip);
+        OBJECT* o = &gi->Object;
 
-        // Per IDA CreateItem layout:
-        //   ip+4   short type (raw, sin +400)
-        //   ip+8   int level/option (Item[1] o packed for type 463)
-        //   ip+30  byte exc_option (Item[2])
-        //   ip+31  byte ?           (Item[3])
-        //   ip+72  byte active_flag = 1
-        //   ip+74  short model_index = type+400 (con overrides)
-        //   ip+76  int unknown = 1
-        //   ip+88  float pos[3] (X, Y, Z)
-        //   ip+352..364 float scale (-12.5..-12.5..-12.5..25.0..25.0..25.0)
-        *(WORD*)(ip + 4) = (WORD)itemType;
+        *(WORD *)&gi->Item.Type = (WORD)itemType;   // sin el +400 del modelo
         if (itemType == 463) {
             // Zen (GET_ITEM(14,15)): la CANTIDAD viaja en 24 bits
             // repartidos en info[1] (bits 16-23), info[2] (8-15) e
             // info[4] (0-7) — ver Viewport.cpp:926 del server.
-            // Queda en ip+8, que es de donde la leen Entity_Render
+            // Queda en Item.Level, que es de donde la leen Entity_Render
             // (para el tamaño del montón de monedas) y RenderItemName
             // (para el texto "Zen <cantidad>").
             int v5 = (int)itemInfo[4] + (((int)itemInfo[2] + ((int)itemInfo[1] << 8)) << 8);
-            *(int*)(ip + 8) = v5;
-            ip[30] = 0;
-            ip[31] = 0;
+            gi->Item.Level = v5;
+            gi->Item.Durability = 0;
+            gi->Item.Option1 = 0;
             if (createFlag) PlayBuffer(31, 0, 0);   // pDropMoney.wav
         } else {
-            *(int*)(ip + 8) = (int)itemInfo[1];
-            ip[30] = itemInfo[2];
-            ip[31] = itemInfo[3];
+            gi->Item.Level = (int)itemInfo[1];
+            gi->Item.Durability = itemInfo[2];
+            gi->Item.Option1 = itemInfo[3];
             if (createFlag) {
                 // IDA CreateItem L38-46: joyas y pergaminos suenan
                 // distinto que el resto.
                 if (itemType == 461 || itemType == 462 || itemType == 464 ||
                     itemType == 399 || itemType == 470)
-                    PlayBuffer(49, (DWORD)(uintptr_t)(ip + 72), 0);
+                    PlayBuffer(49, (DWORD)(uintptr_t)o, 0);
                 else
-                    PlayBuffer(30, (DWORD)(uintptr_t)(ip + 72), 0);
+                    PlayBuffer(30, (DWORD)(uintptr_t)o, 0);
             }
         }
-        ip[72] = 1;                                    // active flag
-        *(WORD*)(ip + 74) = (WORD)ItemModel(itemType);   // model index (0.97.20: catálogo)
-        *(int*)(ip + 76) = 1;
+        o->Live = 1;
+        *(WORD *)&o->Type = (WORD)ItemModel(itemType);   // modelo (0.97.20: catálogo)
+        o->SubType = 1;
 
         // Model overrides (CreateItem switch L58-126): arrows/fruit/etc
         // cuyo modelo NO es type+400.
         {
-            int lvl = *(int*)(ip + 8) >> 3;
+            int lvl = gi->Item.Level >> 3;
             if (itemType == 459) {                     // arrows
                 switch (lvl) {
                     case 1: *(WORD*)(ip + 74) = 951; break;
@@ -877,49 +865,49 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
 
         // ItemObjectAttribute (CreateItem LABEL_33): setea atributos
-        // de render del objeto (ip+72). Sin esto el modelo puede
+        // de render del objeto. Sin esto el modelo puede
         // quedar sin scale/flags → invisible.
-        ItemObjectAttribute((int)(ip + 72));
+        ItemObjectAttribute((int)(uintptr_t)o);
 
         // BoundingBox del objeto (IDA CreateItem L129-134):
         // min = (-30,-30,-30), max = (30,30,30).
-        *(int*)(ip + 352) = (int)0xC1F00000;  // -30.0f
-        *(int *)&AsObject(ip)->AlphaTarget = (int)0xC1F00000;
-        *(int *)&AsObject(ip)->Alpha = (int)0xC1F00000;
-        *(int*)(ip + 364) = (int)0x41F00000;  //  30.0f
-        *(int *)&AsObject(ip)->StartPosition[0] = (int)0x41F00000;
-        *(int *)&AsObject(ip)->StartPosition[1] = (int)0x41F00000;
+        o->BoundingBoxMin[0] = -30.0f;
+        o->BoundingBoxMin[1] = -30.0f;
+        o->BoundingBoxMin[2] = -30.0f;
+        o->BoundingBoxMax[0] = 30.0f;
+        o->BoundingBoxMax[1] = 30.0f;
+        o->BoundingBoxMax[2] = 30.0f;
 
         // World position: ((grid + 0.5) * 100.0)
-        *(float *)&AsObject(ip)->HiddenMesh = ((float)gx + 0.5f) * 100.0f;
-        *(float*)(ip + 92) = ((float)gy + 0.5f) * 100.0f;
+        o->Position[0] = ((float)gx + 0.5f) * 100.0f;
+        o->Position[1] = ((float)gy + 0.5f) * 100.0f;
         // Z: terrain height (RequestTerrainHeight 0x004F7500).
         extern float __cdecl RequestTerrainHeight(float, float);
-        float terrainH = RequestTerrainHeight(*(float *)&AsObject(ip)->HiddenMesh, *(float*)(ip + 92));
+        float terrainH = RequestTerrainHeight(o->Position[0], o->Position[1]);
 
         // Caída del item recién dropeado (IDA CreateItem L139-172):
-        // nace por encima del suelo con velocidad Z en ip+288 y
+        // nace por encima del suelo con velocidad Z en Gravity y
         // MoveItems (0x503760) lo hace caer y rebotar.  Sin esto el
         // item aparecía clavado en el suelo, sin animación de drop.
         // Omitido: los CreateEffect(250)/CreateEffect(248) de las
         // flechas/bolts (modelos 955/956), que necesitan los args
         // vec3 de CreateEffect.
         if (createFlag) {
-            WORD model = *(WORD*)(ip + 74);
+            WORD model = *(WORD *)&o->Type;
             if (model == 955 || model == 956) {
-                *(int *)&AsObject(ip)->BoundingBoxMin[2]   = (int)0x42480000;   // 50.0f
-                *(float *)&AsObject(ip)->LifeTime  = terrainH + 3.0f;
+                o->Gravity     = 50.0f;
+                o->Position[2] = terrainH + 3.0f;
             } else {
-                *(int *)&AsObject(ip)->BoundingBoxMin[2]   = (int)0x41A00000;   // 20.0f
-                *(float *)&AsObject(ip)->LifeTime  = terrainH + 180.0f;
+                o->Gravity     = 20.0f;
+                o->Position[2] = terrainH + 180.0f;
             }
         } else {
-            *(float *)&AsObject(ip)->LifeTime = terrainH;
+            o->Position[2] = terrainH;
         }
 
         // ItemAngle (CreateItem final): setea rotación del item en
         // el suelo según el terreno.
-        ItemAngle((int)(ip + 72));
+        ItemAngle((int)(uintptr_t)o);
 
         NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                i, key, itemType, createFlag, gx, gy);

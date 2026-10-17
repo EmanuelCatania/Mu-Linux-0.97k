@@ -280,6 +280,22 @@ inline ITEM* AsItem(uintptr_t p) { return reinterpret_cast<ITEM*>(p); }
 inline ITEM* AsItem(void* p) { return static_cast<ITEM*>(p); }
 inline const ITEM* AsItem(const void* p) { return static_cast<const ITEM*>(p); }
 
+// IDA: ITEM_t, 0x204 bytes; items en el suelo, pool de 1000 en DAT_07e12840.
+// Mismo struct que en MU 5.2 (_struct.h). CreateItem (handler 0x20) escribe
+// Item.Type/Level/Durability/Option1 y Object.
+struct ITEM_t {
+    short  Key;          // 0x000
+    BYTE   _unk002[2];
+    ITEM   Item;         // 0x004
+    OBJECT Object;       // 0x048
+};
+static_assert(sizeof(ITEM_t) == 0x204, "ITEM_t");
+static_assert(offsetof(ITEM_t, Item) == 0x004, "ITEM_t::Item");
+static_assert(offsetof(ITEM_t, Object) == 0x048, "ITEM_t::Object");
+inline ITEM_t* AsGroundItem(uintptr_t p) { return reinterpret_cast<ITEM_t*>(p); }
+inline ITEM_t* AsGroundItem(void* p) { return static_cast<ITEM_t*>(p); }
+inline const ITEM_t* AsGroundItem(const void* p) { return static_cast<const ITEM_t*>(p); }
+
 struct ITEM_ATTRIBUTE  // size = 64
 {
     /*+00*/ char  Name[30];
