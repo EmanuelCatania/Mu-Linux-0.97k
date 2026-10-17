@@ -36,9 +36,9 @@ bool __cdecl CheckTarget(DWORD c) {
         // IDA 0049CAE0 stores TargetPosition at +788/+792/+796, not in
         // Object.Angle (+0x28..+0x30).  The old offsets corrupt the model
         // transform whenever a character is selected as a skill target.
-        *(float*)(c + 788) = posX;
-        *(float*)(c + 792) = posY;
-        *(float*)(c + 796) = posZ;
+        AsCharacter(c)->TargetPosition[0] = posX;
+        AsCharacter(c)->TargetPosition[1] = posY;
+        AsCharacter(c)->TargetPosition[2] = posZ;
         return true;
     }
 
@@ -58,9 +58,9 @@ bool __cdecl CheckTarget(DWORD c) {
     );
 
     if (hit) {
-        *(float*)(c + 788) = DAT_083a4130;
-        *(float*)(c + 792) = DAT_083a4134;
-        *(float*)(c + 796) = DAT_083a4138;
+        AsCharacter(c)->TargetPosition[0] = DAT_083a4130;
+        AsCharacter(c)->TargetPosition[1] = DAT_083a4134;
+        AsCharacter(c)->TargetPosition[2] = DAT_083a4138;
         TargetX = (DWORD)(int)(DAT_083a4130 * 0.01f);
         TargetY = (DWORD)(int)(DAT_083a4134 * 0.01f);
         return true;

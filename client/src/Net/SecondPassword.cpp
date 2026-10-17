@@ -3783,8 +3783,8 @@ void __cdecl MoveCharacter(int p1)
     if (*(BYTE*)(c + 912)) {
         AsObject(o)->BlendMesh = -2;
         AsObject(o)->BlendMeshLight += 0.1f;
-        float v384f = (*(float*)(c + 788) - AsObject(o)->Position[0]) * 0.30000001f;
-        float v385f = (*(float*)(c + 792) - AsObject(o)->Position[1]) * 0.30000001f;
+        float v384f = (AsCharacter(c)->TargetPosition[0] - AsObject(o)->Position[0]) * 0.30000001f;
+        float v385f = (AsCharacter(c)->TargetPosition[1] - AsObject(o)->Position[1]) * 0.30000001f;
         AsObject(o)->Position[0] += v384f;
         AsObject(o)->Position[1] += v385f;
         float v33f = RequestTerrainHeight(AsObject(o)->Position[0], AsObject(o)->Position[1]);
