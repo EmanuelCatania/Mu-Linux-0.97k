@@ -5,7 +5,7 @@ Toma los nombres de las secciones "Publics by Value" y "Static symbols" (las
 direcciones se ignoran: cambian con cualquier edición) y lista los símbolos
 que desaparecen o aparecen entre <base.map> y <head.map>.
 
-Uso: python tools/compare_map_symbols.py <base.map> <head.map>
+Uso: python .github/scripts/compare_map_symbols.py <base.map> <head.map>
 Sale con código 1 si desaparece algún símbolo.
 """
 import re

@@ -2,7 +2,7 @@
 #
 # Replica mu97k.vcxproj (Win32, toolset v143). Los flags se fijan a mano en vez
 # de usar los defaults de CMake para que la linea de comandos de cl/link sea la
-# misma que la del .vcxproj. tools/check_cmake_sources.py verifica en CI que la
+# misma que la del .vcxproj. .github/scripts/check_cmake_sources.py verifica en CI que la
 # lista de fuentes coincide con los ClCompile/ClInclude del .vcxproj.
 #
 # Uso:
@@ -42,7 +42,7 @@ endif()
 # ── Fuentes ─────────────────────────────────────────────────────────────
 # Copiadas de los <ClCompile> del .vcxproj, en el mismo orden. NO usar glob:
 # la lista explícita es la que se compara contra el .vcxproj
-# (tools/check_cmake_sources.py).
+# (.github/scripts/check_cmake_sources.py).
 set(MU_SOURCES
     src/stdafx.cpp
     src/Platform/ClientEntry.cpp

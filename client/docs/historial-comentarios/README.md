@@ -40,10 +40,11 @@ línea donde estaba en el tag `0.97.00`, y copia el texto **tal cual**.
 
 ## Verificación
 
-Cada PR de limpieza se verifica con `tools/strip_comments_diff.py`, que quita
+Cada PR de limpieza se verificó con `strip_comments_diff.py` (herramienta de
+desarrollo, fuera del repo), que quita
 los comentarios de las dos versiones de cada archivo, normaliza whitespace y
 compara: tiene que dar 0 diferencias de código.
 
 ```
-python tools/strip_comments_diff.py --base fase/1 --head HEAD
+python strip_comments_diff.py --base fase/1 --head HEAD
 ```

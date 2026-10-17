@@ -4,9 +4,9 @@
 #            Sube main.exe + main.map como artefacto.
 # - msbuild: compila mu97k.sln con msbuild, para comparar contra CMake.
 # - compare: compara las líneas de comando de cl/link/lib de los dos builds
-#            (tools/compare_build_flags.py), por configuración.
+#            (.github/scripts/compare_build_flags.py), por configuración.
 # - map-symbols (sólo PRs, informativo): compara los símbolos de main.map entre la base y
-#            el head del PR (tools/compare_map_symbols.py).
+#            el head del PR (.github/scripts/compare_map_symbols.py).
 
 name: build-windows
 
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fuentes de CMake == .vcxproj
-        run: python tools/check_cmake_sources.py
+        run: python .github/scripts/check_cmake_sources.py
 
       - name: Configurar
         run: cmake -S . -B build -A ${{ matrix.target.architecture }} -T v143
@@ -141,10 +141,10 @@ jobs:
           path: tlogs-cmake
 
       - name: Comparar líneas de comando cl/link/lib
-        run: python tools/compare_build_flags.py tlogs-msbuild tlogs-cmake
+        run: python .github/scripts/compare_build_flags.py tlogs-msbuild tlogs-cmake
 
   # Sólo en PRs: compila la base y el head del PR con msbuild y compara los
-  # símbolos de main.map (tools/compare_map_symbols.py). El .vcxproj sólo pide
+  # símbolos de main.map (.github/scripts/compare_map_symbols.py). El .vcxproj sólo pide
   # el .map en Debug; acá se fuerza en las dos configs con _LINK_=/MAP. No
   # bloquea el PR: el resultado queda en el log y en el resumen del job.
   map-symbols:
@@ -173,7 +173,7 @@ jobs:
       - name: Compilar el head del PR
         shell: pwsh
         run: |
-          Copy-Item tools/compare_map_symbols.py $env:RUNNER_TEMP/
+          Copy-Item .github/scripts/compare_map_symbols.py $env:RUNNER_TEMP/
           msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item bin/Client/main.map $env:RUNNER_TEMP/head.map

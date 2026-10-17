@@ -6,13 +6,13 @@ Compara, en orden y sin duplicados:
 
 Sale con código 1 si hay cualquier diferencia. Lo corre el CI.
 
-Uso: python tools/check_cmake_sources.py
+Uso: python .github/scripts/check_cmake_sources.py
 """
 import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def vcxproj_items(path, kind):
