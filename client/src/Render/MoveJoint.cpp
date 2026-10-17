@@ -1375,7 +1375,7 @@ switchD_caseD_4fd:
         float jointMatrix_v304[12];               // IDA: v304[3][4]
         if (jsub == 8) {
             // 00470030 LABEL_301/case 8: rotate the fixed vertical offset
-            // by the raw +0x44 vector, anchor it at +0x1c, then advance +0x4c.
+            // by TargetPosition, anchor it at StartPosition, then advance TargetPosition[2].
             float offset[3] = { 0.0f, -50.0f, 0.0f };   // IDA: in1
             float rotated[3];                           // IDA: Position
             Matrix_BuildFromEuler(AsJoint(param_1)->TargetPosition, jointMatrix_v304);
@@ -1383,13 +1383,13 @@ switchD_caseD_4fd:
             *jposX                     = rotated[0] + AsJoint(param_1)->StartPosition[0];
             AsJoint(param_1)->Position[1] = rotated[1] + AsJoint(param_1)->StartPosition[1];
             AsJoint(param_1)->Position[2] = rotated[2] + AsJoint(param_1)->StartPosition[2];
-            Matrix_BuildFromEuler((float *)(param_1 + 0x40), jointMatrix_v304);
+            Matrix_BuildFromEuler(AsJoint(param_1)->Angle, jointMatrix_v304);
             AsJoint(param_1)->TargetPosition[2] += 10.0f;
             goto switchD_caseD_4ef;
         }
         if (jsub == 9) {
             // 00470030 LABEL_301/case 9.
-            Matrix_BuildFromEuler((float *)(param_1 + 0x40), jointMatrix_v304);
+            Matrix_BuildFromEuler(AsJoint(param_1)->Angle, jointMatrix_v304);
             const int segments = AsJoint(param_1)->MaxTails;   // IDA: *(int *)(o + 84)
             for (int i = 0; i < segments; ++i) {             // IDA: v180 / iIndex
                 *jposX                     += AsJoint(param_1)->StartPosition[0];
