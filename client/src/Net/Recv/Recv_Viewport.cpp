@@ -884,18 +884,18 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // BoundingBox del objeto (IDA CreateItem L129-134):
         // min = (-30,-30,-30), max = (30,30,30).
         *(int*)(ip + 352) = (int)0xC1F00000;  // -30.0f
-        *(int*)(ip + 356) = (int)0xC1F00000;
-        *(int*)(ip + 360) = (int)0xC1F00000;
+        *(int *)&AsObject(ip)->AlphaTarget = (int)0xC1F00000;
+        *(int *)&AsObject(ip)->Alpha = (int)0xC1F00000;
         *(int*)(ip + 364) = (int)0x41F00000;  //  30.0f
-        *(int*)(ip + 368) = (int)0x41F00000;
-        *(int*)(ip + 372) = (int)0x41F00000;
+        *(int *)&AsObject(ip)->StartPosition[0] = (int)0x41F00000;
+        *(int *)&AsObject(ip)->StartPosition[1] = (int)0x41F00000;
 
         // World position: ((grid + 0.5) * 100.0)
-        *(float*)(ip + 88) = ((float)gx + 0.5f) * 100.0f;
+        *(float *)&AsObject(ip)->HiddenMesh = ((float)gx + 0.5f) * 100.0f;
         *(float*)(ip + 92) = ((float)gy + 0.5f) * 100.0f;
         // Z: terrain height (RequestTerrainHeight 0x004F7500).
         extern float __cdecl RequestTerrainHeight(float, float);
-        float terrainH = RequestTerrainHeight(*(float*)(ip + 88), *(float*)(ip + 92));
+        float terrainH = RequestTerrainHeight(*(float *)&AsObject(ip)->HiddenMesh, *(float*)(ip + 92));
 
         // Caída del item recién dropeado (IDA CreateItem L139-172):
         // nace por encima del suelo con velocidad Z en ip+288 y
@@ -907,14 +907,14 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (createFlag) {
             WORD model = *(WORD*)(ip + 74);
             if (model == 955 || model == 956) {
-                *(int*)(ip + 288)   = (int)0x42480000;   // 50.0f
-                *(float*)(ip + 96)  = terrainH + 3.0f;
+                *(int *)&AsObject(ip)->BoundingBoxMin[2]   = (int)0x42480000;   // 50.0f
+                *(float *)&AsObject(ip)->LifeTime  = terrainH + 3.0f;
             } else {
-                *(int*)(ip + 288)   = (int)0x41A00000;   // 20.0f
-                *(float*)(ip + 96)  = terrainH + 180.0f;
+                *(int *)&AsObject(ip)->BoundingBoxMin[2]   = (int)0x41A00000;   // 20.0f
+                *(float *)&AsObject(ip)->LifeTime  = terrainH + 180.0f;
             }
         } else {
-            *(float*)(ip + 96) = terrainH;
+            *(float *)&AsObject(ip)->LifeTime = terrainH;
         }
 
         // ItemAngle (CreateItem final): setea rotación del item en

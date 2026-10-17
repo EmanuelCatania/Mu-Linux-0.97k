@@ -61,32 +61,32 @@ static void LoginScene_ApplySafeObjectAnim()
         // Match the original order more closely: Alpha(o) runs before the
         // animation tick and can early-out nearly invisible objects.
         MoveObject_Special((int)obj);
-        if (*(float*)(obj + 0x168) < 0.01f)
+        if (AsObject(obj)->Alpha < 0.01f)
             continue;
 
-        short type = *(short*)(obj + 2);
+        short type = AsObject(obj)->Type;
         char* model = (char*)(DAT_05828d58 + type * 0xbc);
         if (model) {
-            model[0xa0] = *(char*)(obj + 0x105);
+            model[0xa0] = *(char *)&AsObject(obj)->CurrentAction;
             BMD__PlayAnimation((void*)model,
                 (float*)(obj + 0x108),
                 (float*)(obj + 0x10c),
                 (void*)(obj + 0x106),
-                *(float*)(obj + 0xcc));
+                AsObject(obj)->Velocity);
         }
 
         if (type == 160 || type == 161) {
             float v = (float)((long long)DAT_05826e08 % 4000);
-            *(float*)(obj + 112) = -(v * 0.00025f);
+            AsObject(obj)->BlendMeshTexCoordV = -(v * 0.00025f);
             continue;
         }
 
         if (type == 162) {
             float ramp = (DAT_083a7af4 != 0) ? 1.5f : ((float)(int)DAT_005615e8 * 0.002f);
-            *(float*)(obj + 232) = ramp;
-            *(float*)(obj + 236) = ramp;
-            *(float*)(obj + 240) = ramp;
-            *(float*)(obj + 104) = ramp;
+            AsObject(obj)->Light[0] = ramp;
+            AsObject(obj)->Light[1] = ramp;
+            AsObject(obj)->Light[2] = ramp;
+            AsObject(obj)->BlendMeshLight = ramp;
         }
 
         // No spawnear efectos acá: Entity_SpawnEffects se llama una vez por entidad

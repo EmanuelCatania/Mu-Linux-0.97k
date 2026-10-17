@@ -45,11 +45,11 @@ char* __stdcall PickObject_Mouse(void) {
             while (obj != NULL && pickIter++ < 4096 &&
                    SceneObjects::Contains(obj)) {
                 // Check: object alive, visible, and alpha above threshold
-                if ((obj[0] != '\0') && (obj[0x160] != '\0') &&
-                    (_DAT_005524f8 <= *(float*)(obj + 0x168)))
+                if ((*(char *)&AsObject(obj)->Live != '\0') && (*(char *)&AsObject(obj)->Visible != '\0') &&
+                    (_DAT_005524f8 <= AsObject(obj)->Alpha))
                 {
                     // Get model from entity type
-                    short modelType = *(short*)(obj + 2);
+                    short modelType = AsObject(obj)->Type;
                     if (modelType < 0 || modelType >= MODEL_MAX_TOTAL || !DAT_05828d58) {
                         obj = *(char**)(obj + 0x1B8);
                         continue;
@@ -59,19 +59,19 @@ char* __stdcall PickObject_Mouse(void) {
                     char* model = modelBase + modelType * 0xBC;
 
                     // Set model data fields from object
-                    *(DWORD*)(model + 0x68) = *(DWORD*)(obj + 0x0C);
-                    *(char*)(model + 0xA0) = obj[0x105];
-                    *(DWORD*)(model + 0x6C) = *(DWORD*)(obj + 0x10);
-                    *(DWORD*)(model + 0x70) = *(DWORD*)(obj + 0x14);
-                    *(DWORD*)(model + 0x74) = *(DWORD*)(obj + 0x18);
+                    *(DWORD*)(model + 0x68) = *(DWORD *)&AsObject(obj)->Scale;
+                    *(char*)(model + 0xA0) = *(char *)&AsObject(obj)->CurrentAction;
+                    *(DWORD*)(model + 0x6C) = *(DWORD *)&AsObject(obj)->Position[0];
+                    *(DWORD*)(model + 0x70) = *(DWORD *)&AsObject(obj)->Position[1];
+                    *(DWORD*)(model + 0x74) = *(DWORD *)&AsObject(obj)->Position[2];
 
                     // BMD::Animation — set up bone matrices
                     // BMD_Animation(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
                     // Phantom regs make exact mapping impractical; the key effect is populating BoneTransform.
-                    float angles[3] = { 0.0f, 0.0f, *(float*)(obj + 0x28) };
+                    float angles[3] = { 0.0f, 0.0f, AsObject(obj)->HeadAngle[0] };
                     float headAngles[3] = { 0.0f, 0.0f, 0.0f };
-                    BMD_Animation(model, 0, *(float*)(obj + 0x10C),
-                                 (unsigned int)(unsigned char)obj[0x106],
+                    BMD_Animation(model, 0, AsObject(obj)->PriorAnimationFrame,
+                                 (unsigned int)(unsigned char)*(char *)&AsObject(obj)->PriorAction,
                                  (unsigned char)obj[0x1C], (unsigned int*)angles, headAngles,
                                  0, 0);
 

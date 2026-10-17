@@ -1059,7 +1059,7 @@ extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
     else if (action < 90)  SetAction(c, 99);
     else if (action < 95)  SetAction(c, 111);
     else if (action < 100) SetAction(c, 105);
-    if (*(BYTE*)(c + 261) != *(BYTE*)(c + 262)) {
+    if (AsObject(c)->CurrentAction != AsObject(c)->PriorAction) {
         int text = 0;
         if (gMapManager.GetCurrentMap() == 0 || gMapManager.GetCurrentMap() == 3) {
             static const int k[] = { 700, 701, 702, 703, 704 };

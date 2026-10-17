@@ -178,10 +178,10 @@ void PacketHandler_0x19(BYTE* pkt)
     // IDA: Skills_PacketHandler (0x0042BCA0).
     // DESVIACION (fix del DLL, Patchs.cpp 0x0042C417): omitir el giro cuando caster y objetivo son el mismo personaje.
     if (caster != target && target != nullptr &&
-        skill_type != 6 && skill_type != 15 && target[352] != 0) {
+        skill_type != 6 && skill_type != 15 && AsObject(target)->Visible != 0) {
         AsCharacter(caster)->Object.Angle[2] = CreateAngle(
             AsCharacter(caster)->Object.Position[0], AsCharacter(caster)->Object.Position[1],
-            *(float*)(target + 16), *(float*)(target + 20));
+            AsObject(target)->Position[0], AsObject(target)->Position[1]);
     }
 
     // -------------------------------------------------------
@@ -215,7 +215,7 @@ void PacketHandler_0x19(BYTE* pkt)
         // the target before entering LABEL_107 (the shared magic path).
         PlayBuffer(60, 0, 0);
         if (target != nullptr) {
-            const BYTE targetAction = target[261];
+            const BYTE targetAction = AsObject(target)->CurrentAction;
             if (targetAction == 0x8B || targetAction == 0x8C ||
                 targetAction == 0x85 || targetAction == 0x87) {
                 SetPlayerStop((int)(intptr_t)target);
@@ -378,7 +378,7 @@ void PacketHandler_0x19(BYTE* pkt)
         {
             DeleteEffect(190, (DWORD)(uintptr_t)target, 1);
             float angle[3] = {
-                *(float*)(target + 28), *(float*)(target + 32), *(float*)(target + 36)
+                AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
             };
             CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)1, (float*)target, (float*)-1, nullptr, 0);

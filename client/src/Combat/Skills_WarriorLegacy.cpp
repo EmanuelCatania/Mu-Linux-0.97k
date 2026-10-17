@@ -462,9 +462,9 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 void __cdecl Entity_MeleeAttackStart(int param_1) {
     SetAttackSpeed();
     SetAction(param_1, 0x57);
-    *(float*)(param_1 + 0x108) = 5.0f;   // 0x40A00000
-    *(BYTE *)(param_1 + 0x7c)  = 3;      // melee attack mode
-    *(float*)(param_1 + 0x164) = 1.0f;   // 0x3F800000
+    AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000
+    AsObject(param_1)->Teleport  = 3;      // melee attack mode
+    AsObject(param_1)->AlphaTarget = 1.0f;   // 0x3F800000
     CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);

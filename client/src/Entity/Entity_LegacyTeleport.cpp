@@ -104,9 +104,9 @@ extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
     if (!o) return;
     SetAttackSpeed();
     (void)SetAction((int)o, 87);
-    *(unsigned int*)(o + 264) = 0x40A00000u;        // anim_speed = 5.0f
-    *(BYTE*)(o + 124) = 3;                           // state byte = 3 (end)
-    *(unsigned int*)(o + 356) = 0x3F800000u;        // alpha = 1.0f (fade-in)
+    *(unsigned int *)&AsObject(o)->AnimationFrame = 0x40A00000u;        // anim_speed = 5.0f
+    AsObject(o)->Teleport = 3;                           // state byte = 3 (end)
+    *(unsigned int *)&AsObject(o)->AlphaTarget = 0x3F800000u;        // alpha = 1.0f (fade-in)
     (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
                        (float*)(o + 232), nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);

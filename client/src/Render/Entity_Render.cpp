@@ -379,7 +379,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
   // _DAT_005597c8 is float; param_5 is a float passed as undefined4. Reinterpret
   // the bit pattern (cast through uint) so we don't do an int→float conversion.
   *(unsigned int *)&_DAT_005597c8 = (unsigned int)param_5;
-  if (*(char *)(param_2 + 0x110) == '\x01') {
+  if (*(char *)&AsObject(param_2)->EnableBoneMatrix == '\x01') {
     puVar1 = *(undefined **)(param_2 + 0x114);
   }
   else {
@@ -388,9 +388,9 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
   }
   Skeleton_Transform(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
                (float *)(param_2 + 0x130),param_4);
-  BMD__RenderBody(param_1,(uint)param_3,*(float *)(param_2 + 0x168),*(int *)(param_2 + 100),
-               *(float *)(param_2 + 0x68),*(float *)(param_2 + 0x6c),*(float *)(param_2 + 0x70),
-               *(int *)(param_2 + 0x58),0xffffffff);
+  BMD__RenderBody(param_1,(uint)param_3,AsObject(param_2)->Alpha,AsObject(param_2)->BlendMesh,
+               AsObject(param_2)->BlendMeshLight,AsObject(param_2)->BlendMeshTexCoordU,AsObject(param_2)->BlendMeshTexCoordV,
+               AsObject(param_2)->HiddenMesh,0xffffffff);
   _DAT_005597c8 = 1.0f;   // reset LOD scale
   return;
 }

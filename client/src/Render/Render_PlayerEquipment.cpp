@@ -734,18 +734,18 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
     if (*(unsigned char*)c == 0) return;       // active flag
 
     float Targetj = (float)((rand() % 30 + 70) * 0.0099999998);
-    unsigned char v118 = *(unsigned char*)(o + 261);   // CurrentAction
+    unsigned char v118 = AsObject(o)->CurrentAction;   // CurrentAction
     unsigned char Scalee = AsCharacter(c)->Skill; // anim flag (HashTable result en IDA — usamos byte directo como fallback)
 
     int v234 = 0;
     do {
         // Anim-state skip: action 62 + frame <= 4 + hand 0 cancela
         if (Scalee == 41) {
-            if ((v118 == 62 && !v234 && *(float*)(o + 264) <= 4.0f)
+            if ((v118 == 62 && !v234 && AsObject(o)->AnimationFrame <= 4.0f)
                 || (v118 == 61 && !v234)) {
                 goto label_419;
             }
-        } else if (v118 == 62 && !v234 && *(float*)(o + 264) <= 4.0f) {
+        } else if (v118 == 62 && !v234 && AsObject(o)->AnimationFrame <= 4.0f) {
             goto label_419;
         }
 

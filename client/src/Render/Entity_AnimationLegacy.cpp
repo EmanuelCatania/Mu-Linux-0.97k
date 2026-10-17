@@ -43,33 +43,33 @@ extern void __cdecl operator_delete(void* ptr);
 // Returns 1 on success, 0 if out of range.
 // IDA: Calc_RenderObject (0x004FAA70)
 int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
-    float fVar2 = *(float*)(param_1 + 0x168);
+    float fVar2 = AsObject(param_1)->Alpha;
     if (fVar2 < _DAT_005524f8)
         return 0;
-    void* this_ = (void*)(DAT_05828d58 + *(short*)(param_1 + 2) * 0xbc);
+    void* this_ = (void*)(DAT_05828d58 + AsObject(param_1)->Type * 0xbc);
     *(DWORD*)((int)this_ + 0x84) = 0;
-    *(BYTE *)((int)this_ + 0x45) = *(BYTE*)(param_1 + 0xe4);
+    *(BYTE *)((int)this_ + 0x45) = AsObject(param_1)->ContrastEnable;
     Entity_GetLightScale(param_1, (int)this_);
-    *(DWORD*)((int)this_ + 0x68) = *(DWORD*)(param_1 + 0x0c);
-    *(BYTE *)((int)this_ + 0xa0) = *(BYTE*)(param_1 + 0x105);
-    *(DWORD*)((int)this_ + 0x6c) = *(DWORD*)(param_1 + 0x10);
-    *(DWORD*)((int)this_ + 0x70) = *(DWORD*)(param_1 + 0x14);
-    *(DWORD*)((int)this_ + 0x74) = *(DWORD*)(param_1 + 0x18);
+    *(DWORD*)((int)this_ + 0x68) = *(DWORD *)&AsObject(param_1)->Scale;
+    *(BYTE *)((int)this_ + 0xa0) = AsObject(param_1)->CurrentAction;
+    *(DWORD*)((int)this_ + 0x6c) = *(DWORD *)&AsObject(param_1)->Position[0];
+    *(DWORD*)((int)this_ + 0x70) = *(DWORD *)&AsObject(param_1)->Position[1];
+    *(DWORD*)((int)this_ + 0x74) = *(DWORD *)&AsObject(param_1)->Position[2];
     // Special-case position Y offset for Elf (0x14B) and variant (0x14A)
-    short cls = *(short*)(param_1 + 2);
+    short cls = AsObject(param_1)->Type;
     if (cls == 0x14b) {
-        *(DWORD*)((int)this_ + 0x6c) = *(DWORD*)(param_1 + 0x10);
-        *(float *)((int)this_ + 0x70) = *(float*)(param_1 + 0x14) + _DAT_0055290c;
-        *(DWORD*)((int)this_ + 0x74) = *(DWORD*)(param_1 + 0x18);
+        *(DWORD*)((int)this_ + 0x6c) = *(DWORD *)&AsObject(param_1)->Position[0];
+        *(float *)((int)this_ + 0x70) = AsObject(param_1)->Position[1] + _DAT_0055290c;
+        *(DWORD*)((int)this_ + 0x74) = *(DWORD *)&AsObject(param_1)->Position[2];
     } else if (cls == 0x14a) {
-        *(DWORD*)((int)this_ + 0x6c) = *(DWORD*)(param_1 + 0x10);
-        *(float *)((int)this_ + 0x70) = *(float*)(param_1 + 0x14) + _DAT_00552908;
-        *(DWORD*)((int)this_ + 0x74) = *(DWORD*)(param_1 + 0x18);
+        *(DWORD*)((int)this_ + 0x6c) = *(DWORD *)&AsObject(param_1)->Position[0];
+        *(float *)((int)this_ + 0x70) = AsObject(param_1)->Position[1] + _DAT_00552908;
+        *(DWORD*)((int)this_ + 0x74) = *(DWORD *)&AsObject(param_1)->Position[2];
     }
-    BYTE  bVar4  = *(BYTE*)(param_1 + 0x106);
-    DWORD uVar1  = *(DWORD*)(param_1 + 0x10c);
-    float fVar2b = *(float*)(param_1 + 0x108);
-    void* puVar3 = (*(char*)(param_1 + 0x110) == '\0') ? &DAT_06970a9c
+    BYTE  bVar4  = AsObject(param_1)->PriorAction;
+    DWORD uVar1  = *(DWORD *)&AsObject(param_1)->PriorAnimationFrame;
+    float fVar2b = AsObject(param_1)->AnimationFrame;
+    void* puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix == '\0') ? &DAT_06970a9c
                                                          : *(void**)(param_1 + 0x114);
     BMD_Animation(this_, (int)puVar3, fVar2b, uVar1, bVar4,
                  (unsigned int*)(param_1+0x1c), (float*)(param_1+0x28), '\0', param_2=='\0');
@@ -83,7 +83,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
         // pasada que depende de Kind (4 = NPC), y el caso Kind == 4 en el
         // factor de escala.
         *(BYTE *)((int)this_+0x44) = 0;
-        const bool npc = (*(char*)(param_1+0x84) == '\x04');
+        const bool npc = (*(char *)&AsObject(param_1)->Kind == '\x04');
         for (int pass = 0; pass < 2; ++pass) {
             if (npc) {
                 *(float*)((int)this_+0x48) = pass ? 0.16f : 0.02f;
@@ -95,22 +95,22 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
                 if (cls == 0x12e)
                     _DAT_005597c8 = pass ? 1.08f : 1.2f;
                 else
-                    _DAT_005597c8 = (pass ? 0.039999999f : 0.1f) / *(float*)(param_1+0x0c) + 1.0f;
+                    _DAT_005597c8 = (pass ? 0.039999999f : 0.1f) / AsObject(param_1)->Scale + 1.0f;
             }
             *(float*)((int)this_+0x50) = 0.0f;
-            puVar3 = (*(char*)(param_1+0x110)=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
+            puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
             // IDA pasa `Translate` tal cual a sub_4404E0 (BMD_Animation recibe !Translate).
             Skeleton_Transform(this_, (int)puVar3, (float*)(param_1+0x118),
                          (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
             BMD__RenderBody(this_, 0x40,
-                         *(float*)(param_1+0x168), *(int *)(param_1+100),
-                         *(float*)(param_1+0x68),  *(float*)(param_1+0x6c),
-                         *(float*)(param_1+0x70),  *(int *)(param_1+0x58), 0xffffffff);
+                         AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
+                         AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
+                         AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh, 0xffffffff);
         }
         Entity_GetLightScale(param_1, (int)this_);
         _DAT_005597c8 = 1.0f;
     }
-    puVar3 = (*(char*)(param_1+0x110)=='\0') ? (void*)&DAT_06970a9c : *(void**)(param_1+0x114);
+    puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? (void*)&DAT_06970a9c : *(void**)(param_1+0x114);
     Skeleton_Transform(this_, (int)puVar3, (float*)(param_1+0x118),
                  (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
     return 1;

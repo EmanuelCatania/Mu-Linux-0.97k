@@ -888,9 +888,9 @@ LAB_0046a366:
           }
           else {
             fVar4 = *(float *)(pcVar11 + 0x15c);
-            fVar5 = *(float *)(pcVar11 + 0x18);
-            AsObject(param_1)->Position[0] = *(float *)(pcVar11 + 0x10);
-            AsObject(param_1)->Position[1] = *(float *)(pcVar11 + 0x14);
+            fVar5 = AsObject(pcVar11)->Position[2];
+            AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0];
+            AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1];
             AsObject(param_1)->Position[2] = fVar4 + fVar5 + _DAT_00552878;
             Particle_Spawn(0x596,AsObject(param_1)->Position,AsObject(param_1)->Angle,AsObject(param_1)->Light,(0x1e - __cnt) / 2,1.0,0);
           }
@@ -946,8 +946,8 @@ LAB_0046a366:
         AsObject(param_1)->Alpha = AsObject(param_1)->Alpha - _DAT_00552874;
       }
       else {
-        bVar28 = pcVar11[0x105];
-        if (*(short *)(pcVar11 + 2) == 0x186) {
+        bVar28 = *(char *)&AsObject(pcVar11)->CurrentAction;
+        if (AsObject(pcVar11)->Type == 0x186) {
           if (((0xc < bVar28) && (bVar28 < 0x22)) || ((0x4b < bVar28 && (bVar28 < 0x4e)))) {
             AsObject(param_1)->AnimationFrame = 0.0;
             AsObject(param_1)->PriorAnimationFrame = 0.0;
@@ -964,9 +964,9 @@ LAB_00469366:
           AsObject(param_1)->HiddenMesh = -2;   // IDA LABEL_246: HiddenMesh = -2 (oculta el hielo)
         }
         bVar16 = _DAT_00552650 <= AsObject(param_1)->AnimationFrame;
-        AsObject(param_1)->Position[0] = *(float *)(pcVar11 + 0x10);
-        fVar4 = *(float *)(pcVar11 + 0x18);
-        AsObject(param_1)->Position[1] = *(float *)(pcVar11 + 0x14);
+        AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0];
+        fVar4 = AsObject(pcVar11)->Position[2];
+        AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1];
         AsObject(param_1)->Position[2] = fVar4;
         if (bVar16) {
           AsObject(param_1)->AnimationFrame = 4.0;
@@ -1063,12 +1063,12 @@ LAB_00469772:
             do {
               local_348 = AsObject(param_1)->Position[0] - *(float *)(iVar9 + 0x10 + DAT_07abf5d0);
               pcVar11 = (char *)(iVar9 + DAT_07abf5d0);
-              local_35c = (float *)(int)(AsObject(param_1)->Position[1] - *(float *)(pcVar11 + 0x14));
-              if ((((*pcVar11 != '\0') && (pcVar11[0x160] != '\0')) && (pcVar11 != DAT_07abf5d8)) &&
+              local_35c = (float *)(int)(AsObject(param_1)->Position[1] - AsObject(pcVar11)->Position[1]);
+              if ((((*pcVar11 != '\0') && (*(char *)&AsObject(pcVar11)->Visible != '\0')) && (pcVar11 != DAT_07abf5d8)) &&
                  ((pcVar11[0x2fd] == '\0' &&
                   (SQRT(local_348 * local_348 + (float)(int)local_35c * (float)(int)local_35c) <=
                    _DAT_0055285c)))) {
-                if (*(short *)(pcVar11 + 2) == 0x186) {
+                if (AsObject(pcVar11)->Type == 0x186) {
                   uVar8 = 0x82;
                 }
                 else {
@@ -1232,9 +1232,9 @@ LAB_004695b5:
       if (!validOwner(owner)) return;
       pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
 LAB_00468772:
-      AsObject(param_1)->Position[0] = *(float *)(pcVar11 + 0x10) + AsObject(param_1)->StartPosition[0];
-      AsObject(param_1)->Position[1] = *(float *)(pcVar11 + 0x14) + AsObject(param_1)->StartPosition[1];
-      AsObject(param_1)->Position[2] = *(float *)(pcVar11 + 0x18) + AsObject(param_1)->StartPosition[2];
+      AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0] + AsObject(param_1)->StartPosition[0];
+      AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1] + AsObject(param_1)->StartPosition[1];
+      AsObject(param_1)->Position[2] = AsObject(pcVar11)->Position[2] + AsObject(param_1)->StartPosition[2];
       break;
     case 0xc9:
       // IDA uses the DWORD at o+0x60 as an integer counter here
@@ -1610,14 +1610,14 @@ switchD_00466b93_caseD_c7:
       if (!validOwner(owner)) return;
       pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
       AsObject(param_1)->BlendMeshLight = 1.3;
-      fVar13 = *(float *)(pcVar11 + 0x14);
+      fVar13 = AsObject(pcVar11)->Position[1];
       fVar4 = AsObject(param_1)->Angle[2] + _DAT_00552488;
-      AsObject(param_1)->Position[0] = *(float *)(pcVar11 + 0x10);
-      AsObject(param_1)->Position[2] = *(float *)(pcVar11 + 0x18);
+      AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0];
+      AsObject(param_1)->Position[2] = AsObject(pcVar11)->Position[2];
       cVar2 = *pcVar11;
       AsObject(param_1)->Angle[2] = fVar4;
       AsObject(param_1)->Position[1] = fVar13;
-      if ((cVar2 == '\0') || (pcVar11[0x160] == '\0')) {
+      if ((cVar2 == '\0') || (*(char *)&AsObject(pcVar11)->Visible == '\0')) {
         *(undefined1 *)param_1 = 0;
       }
       break;
@@ -2294,19 +2294,19 @@ LAB_004695c0:
       }
       else {
         pfVar10 = param_1 + 4;
-        AsObject(param_1)->Angle[0] = *(float *)(pcVar11 + 0x1c);
-        AsObject(param_1)->Angle[1] = *(float *)(pcVar11 + 0x20);
-        AsObject(param_1)->Angle[2] = *(float *)(pcVar11 + 0x24);
-        AsObject(param_1)->HeadAngle[0] = *(float *)(pcVar11 + 0x1c);
-        AsObject(param_1)->HeadAngle[1] = *(float *)(pcVar11 + 0x20);
-        AsObject(param_1)->HeadAngle[2] = *(float *)(pcVar11 + 0x24);
+        AsObject(param_1)->Angle[0] = AsObject(pcVar11)->Angle[0];
+        AsObject(param_1)->Angle[1] = AsObject(pcVar11)->Angle[1];
+        AsObject(param_1)->Angle[2] = AsObject(pcVar11)->Angle[2];
+        AsObject(param_1)->HeadAngle[0] = AsObject(pcVar11)->Angle[0];
+        AsObject(param_1)->HeadAngle[1] = AsObject(pcVar11)->Angle[1];
+        AsObject(param_1)->HeadAngle[2] = AsObject(pcVar11)->Angle[2];
         AsObject(param_1)->StartPosition[0] = *pfVar10;
         AsObject(param_1)->StartPosition[1] = AsObject(param_1)->Position[1];
         fVar4 = AsObject(param_1)->Gravity + _DAT_00552848;
         AsObject(param_1)->StartPosition[2] = AsObject(param_1)->Position[2];
-        *pfVar10 = *(float *)(pcVar11 + 0x10);
-        fVar13 = *(float *)(pcVar11 + 0x18);
-        AsObject(param_1)->Position[1] = *(float *)(pcVar11 + 0x14);
+        *pfVar10 = AsObject(pcVar11)->Position[0];
+        fVar13 = AsObject(pcVar11)->Position[2];
+        AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1];
         AsObject(param_1)->Gravity = fVar4;
         AsObject(param_1)->Position[2] = fVar13;
         if (AsObject(param_1)->SubType == 1) {

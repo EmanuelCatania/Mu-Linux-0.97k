@@ -60,8 +60,8 @@ void __cdecl Effect_SpawnBombRing(float *a1)
 // animacion del efecto y lo restaura.  Hermana de RenderWheelWeapon (0x46B7C0),
 // pero sin el save/restore de posicion: este no mueve el slot.
 void __cdecl ItemDrop_RenderGroundWeapon(int o) {
-    // IDA: if ((double)*(int *)(o + 96) > 10.0)  -- o+96 es la vida del efecto.
-    if (_DAT_00552488 >= (float)*(int*)(o + 96)) return;
+    // IDA: if ((double)AsObject(o)->LifeTime > 10.0)  -- o+96 es la vida del efecto.
+    if (_DAT_00552488 >= (float)AsObject(o)->LifeTime) return;
 
     const DWORD owner = *(DWORD*)(o + 252);
     if (!owner || !DAT_05828d58 || !DAT_07abf5d8) return;
@@ -69,40 +69,40 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
     if (model_id < 0 || model_id >= 1024) return;
 
-    const float alpha = *(float*)(o + 360);
+    const float alpha = AsObject(o)->Alpha;
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
 
     // Volcar posicion / accion / clase al slot del modelo compartido.
-    *(int*) (mdl + 108) = *(int*)(o + 16);
-    *(int*) (mdl + 112) = *(int*)(o + 20);
-    *(int*) (mdl + 116) = *(int*)(o + 24);
+    *(int*) (mdl + 108) = *(int *)&AsObject(o)->Position[0];
+    *(int*) (mdl + 112) = *(int *)&AsObject(o)->Position[1];
+    *(int*) (mdl + 116) = *(int *)&AsObject(o)->Position[2];
     *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7);
-    *(BYTE*)(mdl + 160) = *(BYTE*)(o + 261);
+    *(BYTE*)(mdl + 160) = AsObject(o)->CurrentAction;
 
-    const short savedType = *(short*)(o + 2);
-    *(short*)(o + 2) = (short)model_id;
+    const short savedType = AsObject(o)->Type;
+    AsObject(o)->Type = (short)model_id;
 
-    const DWORD saved216 = *(DWORD*)(o + 216);
+    const DWORD saved216 = *(DWORD *)&AsObject(o)->Gravity;
     ItemObjectAttribute(o);
-    *(DWORD*)(o + 216) = saved216;   // ItemObjectAttribute lo pisa
+    *(DWORD *)&AsObject(o)->Gravity = saved216;   // ItemObjectAttribute lo pisa
 
     float Light[3];
-    RequestTerrainLight(*(float*)(o + 16), *(float*)(o + 20), Light);
-    Light[0] += *(float*)(o + 232);
-    Light[1] += *(float*)(o + 236);
-    Light[2] += *(float*)(o + 240);
+    RequestTerrainLight(AsObject(o)->Position[0], AsObject(o)->Position[1], Light);
+    Light[0] += AsObject(o)->Light[0];
+    Light[1] += AsObject(o)->Light[1];
+    Light[2] += AsObject(o)->Light[2];
 
-    float Angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) };
+    float Angle[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
     BMD_Animation(mdl, (int)&DAT_06970a9c,
-                  *(float*)(o + 264), *(unsigned int*)(o + 268),
-                  *(BYTE*)(o + 262),
+                  AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
+                  AsObject(o)->PriorAction,
                   (unsigned int*)Angle, (float*)(o + 40), 0, 0);
 
     RenderPartObject(o, model_id, 0, Light, alpha,
                      (unsigned int)(8 * *(unsigned char*)(owner + 137)),
                      0, 1, 1, 1, 0, 2);
 
-    *(short*)(o + 2) = savedType;
+    AsObject(o)->Type = savedType;
 }
 
 // Puentes de compatibilidad con IDA: se conservan estos nombres ABI FUN_*

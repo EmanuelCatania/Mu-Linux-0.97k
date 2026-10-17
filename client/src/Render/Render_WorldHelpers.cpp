@@ -909,13 +909,13 @@ void __cdecl RenderWheelWeapon(DWORD o)
     if (!o || !DAT_05828d58 || !DAT_07abf5d8) return;
 
     // ── guardar el estado original del slot ──
-    const int savedX     = *(int*)(o + 16);
-    const int savedY     = *(int*)(o + 20);
-    const int savedZ     = *(int*)(o + 24);
-    const int savedAng0  = *(int*)(o + 28);
-    const int savedAng1  = *(int*)(o + 32);
-    const int savedAng2  = *(int*)(o + 36);
-    const short savedType = *(short*)(o + 2);
+    const int savedX     = *(int *)&AsObject(o)->Position[0];
+    const int savedY     = *(int *)&AsObject(o)->Position[1];
+    const int savedZ     = *(int *)&AsObject(o)->Position[2];
+    const int savedAng0  = *(int *)&AsObject(o)->Angle[0];
+    const int savedAng1  = *(int *)&AsObject(o)->Angle[1];
+    const int savedAng2  = *(int *)&AsObject(o)->Angle[2];
+    const short savedType = AsObject(o)->Type;
 
     const DWORD owner = *(DWORD*)(o + 252);
     if (!owner) return;
@@ -926,50 +926,50 @@ void __cdecl RenderWheelWeapon(DWORD o)
 
     // Giro: o+200 acumula -30°/frame y se suma al angle[2]; el arma además
     // flota 100 unidades sobre su posición y fija angle[1] = 90°.
-    const float spin = *(float*)(o + 200) - 30.0f;
-    *(float*)(o + 200) = spin;
-    *(float*)(o + 36)  = spin + *(float*)(o + 36);
-    *(int*)  (o + 32)  = 1119092736;              // 90.0f
-    const float zUp    = *(float*)(o + 24) + 100.0f;
-    *(float*)(o + 24)  = zUp;
+    const float spin = AsObject(o)->Direction[2] - 30.0f;
+    AsObject(o)->Direction[2] = spin;
+    AsObject(o)->Angle[2]  = spin + AsObject(o)->Angle[2];
+    *(int *)&AsObject(o)->Angle[1]  = 1119092736;              // 90.0f
+    const float zUp    = AsObject(o)->Position[2] + 100.0f;
+    AsObject(o)->Position[2]  = zUp;
 
-    const float alpha = *(float*)(o + 360);
+    const float alpha = AsObject(o)->Alpha;
 
     // Volcar posición/acción/skin al slot del modelo compartido.
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
     *(float*)(mdl + 116) = zUp;
-    *(BYTE*) (mdl + 160) = *(BYTE*)(o + 261);                       // CurrentAction
+    *(BYTE*) (mdl + 160) = AsObject(o)->CurrentAction;                       // CurrentAction
     *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7); // clase
-    *(int*)  (mdl + 108) = *(int*)(o + 16);
-    *(int*)  (mdl + 112) = *(int*)(o + 20);
+    *(int*)  (mdl + 108) = *(int *)&AsObject(o)->Position[0];
+    *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
 
-    *(short*)(o + 2) = (short)model_id;
+    AsObject(o)->Type = (short)model_id;
     ItemObjectAttribute((int)o);                          // ItemObjectAttribute
 
-    float angles_in[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) };
+    float angles_in[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
     BMD_Animation(mdl, (int)&DAT_06970a9c,
-                 *(float*)(o + 264), *(unsigned int*)(o + 268),
-                 *(BYTE*)(o + 262),
+                 AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
+                 AsObject(o)->PriorAction,
                  (unsigned int*)angles_in, (float*)(o + 40), 0, 0);
 
     float Light[3];
-    RequestTerrainLight(*(float*)(o + 16), *(float*)(o + 20), Light);
-    Light[0] += *(float*)(o + 232);
-    Light[1] += *(float*)(o + 236);
-    Light[2] += *(float*)(o + 240);
+    RequestTerrainLight(AsObject(o)->Position[0], AsObject(o)->Position[1], Light);
+    Light[0] += AsObject(o)->Light[0];
+    Light[1] += AsObject(o)->Light[1];
+    Light[2] += AsObject(o)->Light[2];
 
     RenderPartObject((int)o, model_id, 0, Light, alpha,
                  (unsigned int)(8 * *(unsigned char*)(owner + 137)),
                  0, 1, 1, 1, 0, 2);
 
     // ── restaurar ──
-    *(short*)(o + 2)  = savedType;
-    *(int*)  (o + 16) = savedX;
-    *(int*)  (o + 20) = savedY;
-    *(int*)  (o + 24) = savedZ;
-    *(int*)  (o + 28) = savedAng0;
-    *(int*)  (o + 32) = savedAng1;
-    *(int*)  (o + 36) = savedAng2;
+    AsObject(o)->Type  = savedType;
+    *(int *)&AsObject(o)->Position[0] = savedX;
+    *(int *)&AsObject(o)->Position[1] = savedY;
+    *(int *)&AsObject(o)->Position[2] = savedZ;
+    *(int *)&AsObject(o)->Angle[0] = savedAng0;
+    *(int *)&AsObject(o)->Angle[1] = savedAng1;
+    *(int *)&AsObject(o)->Angle[2] = savedAng2;
 }
 
 // IDA: RenderEffects

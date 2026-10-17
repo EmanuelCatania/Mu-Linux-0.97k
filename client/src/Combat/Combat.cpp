@@ -1301,14 +1301,14 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
     if (iType == 6) {                                         // IDA L9266 — Teleport
         if (DAT_07e91388 > 0)                                 // IDA L9268: pPickedItem
             return;
-        const BYTE currentAction = (BYTE)entity[261];         // IDA: v946
-        if (*(WORD*)(entity + 2) == 390) {
+        const BYTE currentAction = (BYTE)*(char *)&AsObject(entity)->CurrentAction;         // IDA: v946
+        if (*(WORD *)&AsObject(entity)->Type == 390) {
             if (currentAction == 87) return;                  // IDA L9275
         } else if (currentAction == 5) {
             return;                                           // IDA L9280
         }
-        const BYTE fadeState = (BYTE)entity[124];             // IDA: v947
-        if (fadeState == 1 || fadeState == 2 || *(float*)(entity + 360) < 0.69999999f)
+        const BYTE fadeState = (BYTE)*(char *)&AsObject(entity)->Teleport;             // IDA: v947
+        if (fadeState == 1 || fadeState == 2 || AsObject(entity)->Alpha < 0.69999999f)
             return;                                           // IDA L9285
         extern unsigned char* TerrainWall;
         BYTE terrainAttr = TerrainWall[(((unsigned)TargetY & 0xFF) << 8)
@@ -1317,8 +1317,8 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             terrainAttr -= 0x20;                              // IDA L9290-9292
         if (terrainAttr != 0)
             return;                                           // IDA L9294
-        *(float*)(entity + 36) = CreateAngle(                // IDA L9298
-            *(float*)(entity + 16), *(float*)(entity + 20),
+        AsObject(entity)->Angle[2] = CreateAngle(                // IDA L9298
+            AsObject(entity)->Position[0], AsObject(entity)->Position[1],
             *(float*)(entity + 788), *(float*)(entity + 792));
         // IDA L9303: Teleport || dword_7E11DC4 || GetTickCount() - dword_7E11DC8 < 3000.
         // Los tres globals los escribe el handler 0x1C de Net_Process
@@ -1371,8 +1371,8 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             return;
             }
         extern unsigned char* TerrainWall;
-        const int heroGX = (int)(*(float*)(entity + 16) * 0.01f);
-        const int heroGY = (int)(*(float*)(entity + 20) * 0.01f);
+        const int heroGX = (int)(AsObject(entity)->Position[0] * 0.01f);
+        const int heroGY = (int)(AsObject(entity)->Position[1] * 0.01f);
         for (int attempt = 0; attempt <= 10; ++attempt) {       // IDA L9781-9795
             const int rx = rand() % 3;                          // IDA: v909
             const int ry = rand() % 3;                          // IDA: v910

@@ -396,9 +396,9 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     // Helper: equivalente a SetAction — setea anim_state guardando el previo en cache
     auto SetAnim = [](BYTE* s, BYTE animId) {
-        s[0x106] = s[0x105];
-        s[0x105] = animId;
-        *(float*)(s + 0x108) = 0.0f;
+        AsObject(s)->PriorAction = AsObject(s)->CurrentAction;
+        AsObject(s)->CurrentAction = animId;
+        AsObject(s)->AnimationFrame = 0.0f;
     };
     bool walking = (AsCharacter(slot)->Class & 7) == 2;
 
