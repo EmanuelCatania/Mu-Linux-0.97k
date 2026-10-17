@@ -202,22 +202,22 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // Action establish this index before entering this helper; adding a local
     // rejection here changes the original tail (state + C1:11 confirmation).
     char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * 0x394; // IDA: v285 source
-    *(float*)(c + 0x314) = *(float*)(targetEntity + 0x10); // TargetPosition.x
-    *(float*)(c + 0x318) = *(float*)(targetEntity + 0x14); // TargetPosition.y
-    *(float*)(c + 0x31C) = *(float*)(targetEntity + 0x18); // TargetPosition.z
+    AsCharacter(c)->TargetPosition[0] = *(float*)(targetEntity + 0x10); // TargetPosition.x
+    AsCharacter(c)->TargetPosition[1] = *(float*)(targetEntity + 0x14); // TargetPosition.y
+    AsCharacter(c)->TargetPosition[2] = *(float*)(targetEntity + 0x18); // TargetPosition.z
 
     *(float*)(o + 36) = CreateAngle(
         *(float*)(o + 0x10), *(float*)(o + 0x14),
-        *(float*)(c + 0x314), *(float*)(c + 0x318));
+        AsCharacter(c)->TargetPosition[0], AsCharacter(c)->TargetPosition[1]);
     const WORD targetKey = *(WORD*)(targetEntity + 476); // IDA: v285
     // There is deliberately no key-validity early return here.  The native
     // CFG at 0x485A2B continues through every family and serializes v285 as
     // read, including the sentinel value when the selected slot is stale.
     if (skillType == 43) {
             DAT_07e11d84 = Platform::GetTimer().Ticks();
-            float step[3] = { *(float*)(c + 788) - *(float*)(o + 16),
-                              *(float*)(c + 792) - *(float*)(o + 20),
-                              *(float*)(c + 796) - *(float*)(o + 24) }; // IDA: v320/v321/v322
+            float step[3] = { AsCharacter(c)->TargetPosition[0] - *(float*)(o + 16),
+                              AsCharacter(c)->TargetPosition[1] - *(float*)(o + 20),
+                              AsCharacter(c)->TargetPosition[2] - *(float*)(o + 24) }; // IDA: v320/v321/v322
             float length = sqrtf(step[0] * step[0] + step[1] * step[1] + step[2] * step[2]);
             if (length < 1.0f) length = 1.0f;
             step[0] *= 120.0f / length;
@@ -239,7 +239,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             const BYTE direction = (BYTE)(int)(*(float*)(o + 36) * (256.0f / 360.0f));
             // Exact odd-looking native packing at 0x48608B..0x4860A6:
             // both nibbles derive from targetX - heroGridX (IDA: v316).
-            const BYTE targetTileX = (BYTE)(int)(*(float*)(c + 788) * 0.01f); // IDA: LOBYTE(x2)
+            const BYTE targetTileX = (BYTE)(int)(AsCharacter(c)->TargetPosition[0] * 0.01f); // IDA: LOBYTE(x2)
             const BYTE deltaX = (BYTE)(targetTileX - tileX);
             const BYTE packedOffset = (BYTE)(((deltaX + 8) << 4) | ((deltaX - 8) & 0x0F));
             Warrior_SendSkill1E(skillType, tileX, tileY, direction, packedOffset, 0, targetKey);
@@ -277,8 +277,8 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 
     AsCharacter(c)->SkillStage = 1;
     if ((*(DWORD*)(o + 120) & 0x20) == 0) {
-        int tileX = (int)(*(float*)(c + 788) * 0.01f);
-        int tileY = (int)(*(float*)(c + 792) * 0.01f);
+        int tileX = (int)(AsCharacter(c)->TargetPosition[0] * 0.01f);
+        int tileY = (int)(AsCharacter(c)->TargetPosition[1] * 0.01f);
         if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
             switch (abs((int)(*(float*)(o + 36) * 0.022222223f)) & 7) {
             case 0: ++tileY; break; case 1: --tileX; ++tileY; break;
@@ -335,9 +335,9 @@ void __cdecl Entity_ResetToWalk(int param_1) {
 // Other types: increments combo_counter (+0x303) and alternates anim 3 / 4.
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
     if (AsCharacter(param_1)->Object.Type != 0x186) {
-        UINT uVar1 = (*(BYTE*)(param_1 + 0x303) % 3 == 0) ? 3 : 4;
+        UINT uVar1 = (AsCharacter(param_1)->SwordCount % 3 == 0) ? 3 : 4;
         SetAction(param_1, uVar1);
-        *(char*)(param_1 + 0x303) = *(char*)(param_1 + 0x303) + 1;
+        *(char *)&AsCharacter(param_1)->SwordCount = *(char *)&AsCharacter(param_1)->SwordCount + 1;
         return;
     }
     SetAttackSpeed();

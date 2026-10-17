@@ -86,11 +86,11 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
     }
   }
   *pcVar14 = '\x01';
-  *(int *)(pcVar14 + 4) = param_1;
-  *(undefined4 *)(pcVar14 + 8) = param_5;
-  pcVar14[0x9bc] = '\0';
-  *(short *)(pcVar14 + 0x9d0) = param_8;
-  pcVar14[0x9d2] = param_9;
+  AsJoint(pcVar14)->Type = param_1;
+  *(undefined4 *)&AsJoint(pcVar14)->SubType = param_5;
+  *(char *)&AsJoint(pcVar14)->Collision = '\0';
+  AsJoint(pcVar14)->PKKey = param_8;
+  *(char *)&AsJoint(pcVar14)->Skill = param_9;
   pcVar14[0x9c0] = '\0';
   pcVar14[0x9c1] = '\0';
   pcVar14[0x9c2] = '\0';
@@ -103,21 +103,21 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   // 1249/sub7, los disparos de Alquamos) heredaria los del joint anterior que
   // ocupo el slot.  Limpiarlos deja a cada joint con la velocidad que define su
   // propio case.
-  *(int *)(pcVar14 + 0x9c8) = 0;
-  *(int *)(pcVar14 + 0x9cc) = 0;
+  *(int *)&AsJoint(pcVar14)->Direction[1] = 0;
+  *(int *)&AsJoint(pcVar14)->Direction[2] = 0;
   pcVar14[0x40] = '\0';
   pcVar14[0x41] = '\0';
   pcVar14[0x42] = '\0';
   pcVar14[0x43] = '\0';
-  pfVar1 = (float *)(pcVar14 + 0x10);
-  pfVar2 = (float *)(pcVar14 + 0x28);
+  pfVar1 = AsJoint(pcVar14)->Position;
+  pfVar2 = AsJoint(pcVar14)->Angle;
   *pfVar1 = *param_2;
-  *(float *)(pcVar14 + 0x14) = param_2[1];
-  *(float *)(pcVar14 + 0x18) = param_2[2];
+  AsJoint(pcVar14)->Position[1] = param_2[1];
+  AsJoint(pcVar14)->Position[2] = param_2[2];
   *pfVar2 = *param_4;
-  *(float *)(pcVar14 + 0x2c) = param_4[1];
-  *(float *)(pcVar14 + 0x30) = param_4[2];
-  pfVar3 = (float *)(pcVar14 + 0x34);
+  AsJoint(pcVar14)->Angle[1] = param_4[1];
+  AsJoint(pcVar14)->Angle[2] = param_4[2];
+  pfVar3 = AsJoint(pcVar14)->Light;
   *pfVar3 = 1.0;
   pcVar14[0x38] = '\0';
   pcVar14[0x39] = '\0';
@@ -128,65 +128,65 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   pcVar14[0x3e] = -0x80;
   pcVar14[0x3f] = '?';
   if (param_6 == 0) {
-    *(float *)(pcVar14 + 0x44) = *param_3;
-    *(float *)(pcVar14 + 0x48) = param_3[1];
-    *(float *)(pcVar14 + 0x4c) = param_3[2];
+    AsJoint(pcVar14)->TargetPosition[0] = *param_3;
+    AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
+    AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
   }
   else {
-    if ((param_1 == 0x10a) && (*(int *)(pcVar14 + 8) == 2)) {
-      *(float *)(pcVar14 + 0x44) = *param_3;
-      *(float *)(pcVar14 + 0x48) = param_3[1];
-      *(float *)(pcVar14 + 0x4c) = param_3[2];
+    if ((param_1 == 0x10a) && (AsJoint(pcVar14)->SubType == 2)) {
+      AsJoint(pcVar14)->TargetPosition[0] = *param_3;
+      AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
+      AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
     }
-    *(int *)(pcVar14 + 0x40) = param_6;
+    *(int *)&AsJoint(pcVar14)->Target = param_6;
   }
   pcVar14[0x50] = '\0';
   pcVar14[0x51] = '\0';
   pcVar14[0x52] = '\0';
   pcVar14[0x53] = '\0';
   Matrix_BuildFromEuler(pfVar2,local_6c);
-  local_90 = *(float *)(pcVar14 + 0xc) * _DAT_00552a14;
+  local_90 = AsJoint(pcVar14)->Scale * _DAT_00552a14;
   local_8c = (byte*)0x0;
   local_88 = (byte*)0x0;
   Vector_Rotate(&local_90,local_6c,&local_78);
-  *(float *)(pcVar14 + 0x58) = local_78 + *pfVar1;
+  AsJoint(pcVar14)->Tails[0][0][0] = local_78 + *pfVar1;
   local_8c = (byte*)0x0;
   local_88 = (byte*)0x0;
-  *(float *)(pcVar14 + 0x5c) = local_74 + *(float *)(pcVar14 + 0x14);
-  *(float *)(pcVar14 + 0x60) = local_70 + *(float *)(pcVar14 + 0x18);
-  local_90 = *(float *)(pcVar14 + 0xc) * _DAT_00552504;
+  AsJoint(pcVar14)->Tails[0][0][1] = local_74 + AsJoint(pcVar14)->Position[1];
+  AsJoint(pcVar14)->Tails[0][0][2] = local_70 + AsJoint(pcVar14)->Position[2];
+  local_90 = AsJoint(pcVar14)->Scale * _DAT_00552504;
   Vector_Rotate(&local_90,local_6c,&local_78);
-  *(float *)(pcVar14 + 100) = local_78 + *pfVar1;
+  AsJoint(pcVar14)->Tails[0][1][0] = local_78 + *pfVar1;
   local_90 = 0.0f;
   local_8c = (byte*)0x0;
-  *(float *)(pcVar14 + 0x68) = local_74 + *(float *)(pcVar14 + 0x14);
-  *(float *)(pcVar14 + 0x6c) = local_70 + *(float *)(pcVar14 + 0x18);
-  local_88f = *(float *)(pcVar14 + 0xc) * _DAT_00552a14;
+  AsJoint(pcVar14)->Tails[0][1][1] = local_74 + AsJoint(pcVar14)->Position[1];
+  AsJoint(pcVar14)->Tails[0][1][2] = local_70 + AsJoint(pcVar14)->Position[2];
+  local_88f = AsJoint(pcVar14)->Scale * _DAT_00552a14;
   Vector_Rotate(&local_90,local_6c,&local_78);
-  *(float *)(pcVar14 + 0x70) = local_78 + *pfVar1;
+  AsJoint(pcVar14)->Tails[0][2][0] = local_78 + *pfVar1;
   local_90 = 0.0f;
   local_8c = (byte*)0x0;
-  *(float *)(pcVar14 + 0x74) = local_74 + *(float *)(pcVar14 + 0x14);
-  *(float *)(pcVar14 + 0x78) = local_70 + *(float *)(pcVar14 + 0x18);
-  local_88f = *(float *)(pcVar14 + 0xc) * _DAT_00552504;
+  AsJoint(pcVar14)->Tails[0][2][1] = local_74 + AsJoint(pcVar14)->Position[1];
+  AsJoint(pcVar14)->Tails[0][2][2] = local_70 + AsJoint(pcVar14)->Position[2];
+  local_88f = AsJoint(pcVar14)->Scale * _DAT_00552504;
   Vector_Rotate(&local_90,local_6c,&local_78);
-  *(float *)(pcVar14 + 0x7c) = local_78 + *pfVar1;
-  *(float *)(pcVar14 + 0x80) = local_74 + *(float *)(pcVar14 + 0x14);
-  *(float *)(pcVar14 + 0x84) = local_70 + *(float *)(pcVar14 + 0x18);
+  AsJoint(pcVar14)->Tails[0][3][0] = local_78 + *pfVar1;
+  AsJoint(pcVar14)->Tails[0][3][1] = local_74 + AsJoint(pcVar14)->Position[1];
+  AsJoint(pcVar14)->Tails[0][3][2] = local_70 + AsJoint(pcVar14)->Position[2];
   pbVar10 = (byte*)DAT_07cf1ffc;
   // 0046D840, Type 1253 / SubType 0 (Evil Spirit): this is the joint
   // initialisation that feeds the per-frame 00470030 branch.  Without these
   // exact counters the slot is allocated but expires as an unconfigured beam.
-  if (param_1 == 1253 && *(int *)(pcVar14 + 8) == 0) {
-    pcVar14[0x9d3] = pbVar10 ? pbVar10[1408] : 0; // CharacterMachine+1408
-    *(float *)(pcVar14 + 0x9c0) = 70.0f;
-    *(int *)(pcVar14 + 0x9b8) = 49;
-    *(float *)(pcVar14 + 0x0c) = param_7;
-    *(int *)(pcVar14 + 0x54) = 6;
+  if (param_1 == 1253 && AsJoint(pcVar14)->SubType == 0) {
+    *(char *)&AsJoint(pcVar14)->Weapon = pbVar10 ? pbVar10[1408] : 0; // CharacterMachine+1408
+    AsJoint(pcVar14)->Velocity = 70.0f;
+    AsJoint(pcVar14)->LifeTime = 49;
+    AsJoint(pcVar14)->Scale = param_7;
+    AsJoint(pcVar14)->MaxTails = 6;
   }
   if (param_1 < 0x4e9) {
     if (param_1 == 0x4e8) {
-      fVar24 = *(float *)(pcVar14 + 0x4c) + _DAT_00552980;
+      fVar24 = AsJoint(pcVar14)->TargetPosition[2] + _DAT_00552980;
       pcVar14[0xc] = '\0';
       pcVar14[0xd] = '\0';
       pcVar14[0xe] = -0x74;
@@ -203,9 +203,9 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
       pcVar14[0x9b9] = '\0';
       pcVar14[0x9ba] = '\0';
       pcVar14[0x9bb] = '\0';
-      *(float *)(pcVar14 + 0x4c) = fVar24;
-      *(undefined4 *)(pcVar14 + 0x44) = *(undefined4 *)(pcVar14 + 0x44);
-      *(undefined4 *)(pcVar14 + 0x48) = *(undefined4 *)(pcVar14 + 0x48);
+      AsJoint(pcVar14)->TargetPosition[2] = fVar24;
+      *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0];
+      *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1];
       goto switchD_0046dee7_default;
     }
     if (param_1 < 0x4e3) {
@@ -227,18 +227,18 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0xd] = '\0';
           pcVar14[0xe] = ' ';
           pcVar14[0xf] = 'A';
-          if (*(int *)(pcVar14 + 8) == 0) {
+          if (AsJoint(pcVar14)->SubType == 0) {
             iVar6 = _rand();
             local_94 = (byte *)(iVar6 % 0x14 + 0x23);
-            *(float *)(pcVar14 + 0x9cc) = (float)(int)local_94;
+            AsJoint(pcVar14)->Direction[2] = (float)(int)local_94;
             iVar6 = _rand();
             pcVar14[0x9b8] = '\x19';
             pcVar14[0x9b9] = '\0';
             pcVar14[0x9ba] = '\0';
             pcVar14[0x9bb] = '\0';
-            *(float *)(pcVar14 + 0xc) = (float)(iVar6 % 0x14) + _DAT_005524fc;
+            AsJoint(pcVar14)->Scale = (float)(iVar6 % 0x14) + _DAT_005524fc;
           }
-          *(float *)(pcVar14 + 0x44) = *pfVar1;
+          AsJoint(pcVar14)->TargetPosition[0] = *pfVar1;
           *pfVar3 = 1.0;
           pcVar14[0x38] = '\0';
           pcVar14[0x39] = '\0';
@@ -248,19 +248,19 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x3d] = '\0';
           pcVar14[0x3e] = -0x80;
           pcVar14[0x3f] = '?';
-          *(undefined4 *)(pcVar14 + 0x48) = *(undefined4 *)(pcVar14 + 0x14);
-          *(undefined4 *)(pcVar14 + 0x4c) = *(undefined4 *)(pcVar14 + 0x18);
+          *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
+          *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
           goto switchD_0046dee7_default;
         }
         if (param_1 != 0x10a) {
           if (param_1 != 0x48e) goto switchD_0046dee7_default;
           goto switchD_0046f0e4_caseD_4ed;
         }
-        iVar6 = *(int *)(pcVar14 + 0x40);
-        *(undefined4 *)(pcVar14 + 0x44) = *(undefined4 *)(iVar6 + 0x10);
-        *(undefined4 *)(pcVar14 + 0x48) = *(undefined4 *)(iVar6 + 0x14);
-        *(undefined4 *)(pcVar14 + 0x4c) = *(undefined4 *)(iVar6 + 0x18);
-        switch(*(undefined4 *)(pcVar14 + 8)) {
+        iVar6 = *(int *)&AsJoint(pcVar14)->Target;
+        *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0] = *(undefined4 *)(iVar6 + 0x10);
+        *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)(iVar6 + 0x14);
+        *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[2] = *(undefined4 *)(iVar6 + 0x18);
+        switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
         case 0:
           *pfVar3 = 1.0;
           pcVar14[0x38] = '\0';
@@ -284,9 +284,9 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x3f] = '>';
           break;
         case 2:
-          *(float *)(pcVar14 + 0x44) = *param_3;
-          *(float *)(pcVar14 + 0x48) = param_3[1];
-          *(float *)(pcVar14 + 0x4c) = param_3[2];
+          AsJoint(pcVar14)->TargetPosition[0] = *param_3;
+          AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
+          AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
           *pfVar3 = 1.0;
           pcVar14[0x38] = -0x66;
           pcVar14[0x39] = -0x67;
@@ -304,7 +304,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x55] = '\0';
           pcVar14[0x56] = '\0';
           pcVar14[0x57] = '\0';
-          *(float *)(pcVar14 + 0xc) = param_7;
+          AsJoint(pcVar14)->Scale = param_7;
           goto switchD_0046dee7_default;
         case 3:
           if (iVar6 == 0) {
@@ -320,8 +320,8 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           }
           else {
             *pfVar3 = *(float *)(iVar6 + 0xe8);
-            *(undefined4 *)(pcVar14 + 0x38) = *(undefined4 *)(iVar6 + 0xec);
-            *(undefined4 *)(pcVar14 + 0x3c) = *(undefined4 *)(iVar6 + 0xf0);
+            *(undefined4 *)&AsJoint(pcVar14)->Light[1] = *(undefined4 *)(iVar6 + 0xec);
+            *(undefined4 *)&AsJoint(pcVar14)->Light[2] = *(undefined4 *)(iVar6 + 0xf0);
           }
           *pfVar2 = -90.0;
           pcVar14[0x2c] = '\0';
@@ -342,9 +342,9 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x9ce] = '\0';
           pcVar14[0x9cf] = '\0';
           local_94 = (byte *)(iVar6 % 500);
-          *(float *)(pcVar14 + 0x9c8) = (float)(int)local_94;
+          AsJoint(pcVar14)->Direction[1] = (float)(int)local_94;
           iVar6 = _rand();
-          *(float *)(pcVar14 + 0x9c0) = (float)(iVar6 % 5) + _DAT_00552660;
+          AsJoint(pcVar14)->Velocity = (float)(iVar6 % 5) + _DAT_00552660;
           break;
         case 4:
           *pfVar3 = 0.4;
@@ -364,7 +364,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x55] = '\0';
           pcVar14[0x56] = '\0';
           pcVar14[0x57] = '\0';
-          *(float *)(pcVar14 + 0xc) = param_7;
+          AsJoint(pcVar14)->Scale = param_7;
           goto switchD_0046dee7_default;
         default:
           goto switchD_0046db06_default;
@@ -378,17 +378,17 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
         pcVar14[0x56] = '\0';
         pcVar14[0x57] = '\0';
 switchD_0046db06_default:
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         goto switchD_0046dee7_default;
       }
       pcVar14[0x9d0] = '\0';
       pcVar14[0x9d1] = '\0';
-      *(int *)(pcVar14 + 0x9b8) = (int)param_8;
+      AsJoint(pcVar14)->LifeTime = (int)param_8;
       pcVar14[0x54] = '2';
       pcVar14[0x55] = '\0';
       pcVar14[0x56] = '\0';
       pcVar14[0x57] = '\0';
-      if (pcVar14[0x9d2] == '\0') {
+      if (*(char *)&AsJoint(pcVar14)->Skill == '\0') {
         pcVar14[0xc] = '\0';
         pcVar14[0xd] = '\0';
         pcVar14[0xe] = -0x60;
@@ -403,7 +403,7 @@ switchD_0046db06_default:
         pcVar14[0x3e] = '\0';
         pcVar14[0x3f] = '?';
       }
-      else if (pcVar14[0x9d2] == '\x01') {
+      else if (*(char *)&AsJoint(pcVar14)->Skill == '\x01') {
         pcVar14[0xc] = '\0';
         pcVar14[0xd] = '\0';
         pcVar14[0xe] = ' ';
@@ -418,7 +418,7 @@ switchD_0046db06_default:
         pcVar14[0x3e] = '\0';
         pcVar14[0x3f] = '\0';
       }
-      switch(*(undefined4 *)(pcVar14 + 8)) {
+      switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
       case 0:
         pcVar14[0x9c0] = '\0';
         pcVar14[0x9c1] = '\0';
@@ -457,7 +457,7 @@ switchD_0046db06_default:
         pcVar14[0x31] = '\0';
         pcVar14[0x32] = '\0';
         pcVar14[0x33] = '\0';
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         *pfVar3 = 1.0;
         pcVar14[0x38] = '\0';
         pcVar14[0x39] = '\0';
@@ -471,19 +471,19 @@ switchD_0046db06_default:
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
         pcVar14[0x57] = '\0';
-        *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
-        *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
-        *(float *)(pcVar14 + 0x24) = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
+        AsJoint(pcVar14)->StartPosition[0] = (*param_3 - *pfVar1) * _DAT_00552a00;
+        AsJoint(pcVar14)->StartPosition[1] = (param_3[1] - AsJoint(pcVar14)->Position[1]) * _DAT_00552a00;
+        AsJoint(pcVar14)->StartPosition[2] = (param_3[2] - AsJoint(pcVar14)->Position[2]) * _DAT_00552a00;
         Matrix_BuildFromEuler(pfVar2,local_6c);
         iVar6 = 0;
-        if (0 < *(int *)(pcVar14 + 0x54)) {
+        if (0 < AsJoint(pcVar14)->MaxTails) {
           do {
-            *pfVar1 = *pfVar1 + *(float *)(pcVar14 + 0x1c);
-            *(float *)(pcVar14 + 0x14) = *(float *)(pcVar14 + 0x14) + *(float *)(pcVar14 + 0x20);
-            *(float *)(pcVar14 + 0x18) = *(float *)(pcVar14 + 0x24) + *(float *)(pcVar14 + 0x18);
+            *pfVar1 = *pfVar1 + AsJoint(pcVar14)->StartPosition[0];
+            AsJoint(pcVar14)->Position[1] = AsJoint(pcVar14)->Position[1] + AsJoint(pcVar14)->StartPosition[1];
+            AsJoint(pcVar14)->Position[2] = AsJoint(pcVar14)->StartPosition[2] + AsJoint(pcVar14)->Position[2];
             Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
-          } while (iVar6 < *(int *)(pcVar14 + 0x54));
+          } while (iVar6 < AsJoint(pcVar14)->MaxTails);
         }
       default:
         goto switchD_0046dd50_default;
@@ -497,15 +497,15 @@ switchD_0046db06_default:
       pcVar14[0x9cd] = '\0';
       pcVar14[0x9ce] = '\0';
       pcVar14[0x9cf] = '\0';
-      *(float *)(pcVar14 + 0x9c4) = fVar24;
+      AsJoint(pcVar14)->Direction[0] = fVar24;
 switchD_0046dd50_default:
-      *(float *)(pcVar14 + 0x44) = *param_3;
-      *(float *)(pcVar14 + 0x48) = param_3[1];
-      *(float *)(pcVar14 + 0x4c) = param_3[2];
+      AsJoint(pcVar14)->TargetPosition[0] = *param_3;
+      AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
+      AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
       goto switchD_0046dee7_default;
     }
     if (param_1 == 0x4e5) {
-      switch(*(undefined4 *)(pcVar14 + 8)) {
+      switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
       case 0:
         local_98 = (byte*)DAT_07cf1ffc;
         local_80 = (byte*)DAT_07cf1ffc;
@@ -630,7 +630,7 @@ LAB_0046e742:
         pcVar14[0x9b9] = '\0';
         pcVar14[0x9ba] = '\0';
         pcVar14[0x9bb] = '\0';
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         pcVar14[0x54] = '\x06';
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
@@ -642,7 +642,7 @@ LAB_0046e742:
         pcVar14[0x9c1] = '\0';
         pcVar14[0x9c2] = 'H';
         pcVar14[0x9c3] = 'B';
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         *pfVar3 = 0.5;
         pcVar14[0x38] = '\0';
         pcVar14[0x39] = '\0';
@@ -660,9 +660,9 @@ LAB_0046e742:
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
         pcVar14[0x57] = '\0';
-        *(float *)(pcVar14 + 0x1c) = *pfVar1;
-        *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
-        *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
+        AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
+        *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
+        *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
         break;
       case 3:
         pcVar14[0x9c0] = '\0';
@@ -673,7 +673,7 @@ LAB_0046e742:
         pcVar14[0x9b9] = '\0';
         pcVar14[0x9ba] = '\0';
         pcVar14[0x9bb] = '\0';
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         pcVar14[0x54] = '\n';
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
@@ -703,7 +703,7 @@ LAB_0046e742:
         pcVar14[0x31] = '\0';
         pcVar14[0x32] = '\0';
         pcVar14[0x33] = '\0';
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         *pfVar3 = 0.3;
         pcVar14[0x38] = -0x66;
         pcVar14[0x39] = -0x67;
@@ -717,33 +717,33 @@ LAB_0046e742:
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
         pcVar14[0x3f] = '?';
-        *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
-        local_90 = *(float *)(pcVar14 + 0x1c);
-        *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
-        local_8c = *(byte **)(pcVar14 + 0x20);
-        local_88f = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
-        *(byte **)(pcVar14 + 0x24) = local_88;
+        AsJoint(pcVar14)->StartPosition[0] = (*param_3 - *pfVar1) * _DAT_00552a00;
+        local_90 = AsJoint(pcVar14)->StartPosition[0];
+        AsJoint(pcVar14)->StartPosition[1] = (param_3[1] - AsJoint(pcVar14)->Position[1]) * _DAT_00552a00;
+        local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
+        local_88f = (param_3[2] - AsJoint(pcVar14)->Position[2]) * _DAT_00552a00;
+        *(byte **)&AsJoint(pcVar14)->StartPosition[2] = local_88;
         Matrix_BuildFromEuler(pfVar2,local_6c);
         iVar6 = 0;
-        if (*(int *)(pcVar14 + 0x54) != 1 && -1 < *(int *)(pcVar14 + 0x54) + -1) {
+        if (AsJoint(pcVar14)->MaxTails != 1 && -1 < AsJoint(pcVar14)->MaxTails + -1) {
           do {
-            if (*(int *)(pcVar14 + 0x40) == 0) {
-              local_90 = *(float *)(pcVar14 + 0x1c);
-              local_8c = *(byte **)(pcVar14 + 0x20);
+            if (*(int *)&AsJoint(pcVar14)->Target == 0) {
+              local_90 = AsJoint(pcVar14)->StartPosition[0];
+              local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
             }
             else {
-              local_90 = *(float *)(pcVar14 + 0x1c);
-              local_8cf = *(float *)(pcVar14 + 0x20);
+              local_90 = AsJoint(pcVar14)->StartPosition[0];
+              local_8cf = AsJoint(pcVar14)->StartPosition[1];
             }
             *pfVar1 = local_90 + *pfVar1;
-            *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
-            *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
+            AsJoint(pcVar14)->Position[1] = local_8cf + AsJoint(pcVar14)->Position[1];
+            AsJoint(pcVar14)->Position[2] = local_88f + AsJoint(pcVar14)->Position[2];
             Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
-            *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
-            *(float *)(pcVar14 + 0x14) =
-                 (*(float *)(pcVar14 + 0x14) - local_8cf) + *(float *)(pcVar14 + 0x20);
-          } while (iVar6 < *(int *)(pcVar14 + 0x54) + -1);
+            *pfVar1 = (*pfVar1 - local_90) + AsJoint(pcVar14)->StartPosition[0];
+            AsJoint(pcVar14)->Position[1] =
+                 (AsJoint(pcVar14)->Position[1] - local_8cf) + AsJoint(pcVar14)->StartPosition[1];
+          } while (iVar6 < AsJoint(pcVar14)->MaxTails + -1);
         }
         goto LAB_0046e37e;
       case 5:
@@ -867,36 +867,36 @@ LAB_0046ec45:
       pcVar14[0x55] = '\0';
       pcVar14[0x56] = '\0';
       pcVar14[0x57] = '\0';
-      *(float *)(pcVar14 + 0xc) = param_7;
+      AsJoint(pcVar14)->Scale = param_7;
       iVar6 = _rand();
       pcVar14[0x9b8] = '\x14';
       pcVar14[0x9b9] = '\0';
       pcVar14[0x9ba] = '\0';
       pcVar14[0x9bb] = '\0';
-      *(float *)(pcVar14 + 0x9c0) = (float)(iVar6 % 0x14) + _DAT_00552878;
-      *(float *)(pcVar14 + 0x3c) = (float)*(int *)(pcVar14 + 0x54);
+      AsJoint(pcVar14)->Velocity = (float)(iVar6 % 0x14) + _DAT_00552878;
+      AsJoint(pcVar14)->Light[2] = (float)AsJoint(pcVar14)->MaxTails;
       goto LAB_0046e043;
     }
     pcVar14[0x9c0] = '\0';
     pcVar14[0x9c1] = '\0';
     pcVar14[0x9c2] = 'H';
     pcVar14[0x9c3] = 'B';
-    *(float *)(pcVar14 + 0xc) = param_7;
+    AsJoint(pcVar14)->Scale = param_7;
     pcVar14[0x54] = '2';
     pcVar14[0x55] = '\0';
     pcVar14[0x56] = '\0';
     pcVar14[0x57] = '\0';
-    switch(*(undefined4 *)(pcVar14 + 8)) {
+    switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
     case 1:
       iVar6 = _rand();
       local_94 = (byte *)(iVar6 % 10);
-      *(float *)(pcVar14 + 0x9c0) = (float)(int)local_94 + _DAT_005524fc;
+      AsJoint(pcVar14)->Velocity = (float)(int)local_94 + _DAT_005524fc;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000007;
       if ((int)uVar9 < 0) {
         uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
       }
-      *(uint *)(pcVar14 + 0x9b8) = uVar9 + 8;
+      *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 8;
       break;
     case 2:
       pcVar14[0x9b8] = '\x02';
@@ -918,22 +918,22 @@ LAB_0046ec45:
       // DAT_05828d58 + 0x11e68 = dirección absoluta 0x0583AB40 (artefacto Ghidra).
       // TransformPosition con base bogus; omitimos hasta resolver bone matrix real.
       // BMD_TransformPosition((void *)(DAT_05828d58 + 0x11e68),
-      //              (float *)(*(int *)(*(int *)(pcVar14 + 0x40) + 0x114) + 0x630),local_3c,
-      //              (float *)(pcVar14 + 0x44),'\x01');
+      //              (float *)(*(int *)(*(int *)&AsJoint(pcVar14)->Target + 0x114) + 0x630),local_3c,
+      //              AsJoint(pcVar14)->TargetPosition,'\x01');
       break;
     case 3:
       pcVar14[0x3c] = '\0';
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
       pcVar14[0x3f] = '?';
-      *(int *)(pcVar14 + 0x9b8) = (int)param_8;
-      *(uint *)(pcVar14 + 0x54) = (uint)param_9;
+      AsJoint(pcVar14)->LifeTime = (int)param_8;
+      *(uint *)&AsJoint(pcVar14)->MaxTails = (uint)param_9;
       *pfVar3 = 0.5;
       pcVar14[0x38] = '\0';
       pcVar14[0x39] = '\0';
       pcVar14[0x3a] = '\0';
       pcVar14[0x3b] = '?';
-      *(float *)(pcVar14 + 0x9c0) = (float)param_9;
+      AsJoint(pcVar14)->Velocity = (float)param_9;
       pcVar14[0x9d0] = -1;
       pcVar14[0x9d1] = -1;
       goto LAB_0046e043;
@@ -972,31 +972,31 @@ LAB_0046ec45:
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
       pcVar14[0x3f] = '?';
-      *(float *)(pcVar14 + 0x44) = *param_3;
-      *(float *)(pcVar14 + 0x48) = param_3[1];
-      *(float *)(pcVar14 + 0x4c) = param_3[2];
-      *(float *)(pcVar14 + 0x1c) = *pfVar1;
-      *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
-      *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
+      AsJoint(pcVar14)->TargetPosition[0] = *param_3;
+      AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
+      AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
+      AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
+      *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
+      *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
       break;
     case 6:
       iVar6 = _rand();
-      *(int *)(pcVar14 + 0x9b8) = iVar6 % 0x14 + 6;
+      AsJoint(pcVar14)->LifeTime = iVar6 % 0x14 + 6;
       iVar6 = _rand();
       local_94 = (byte *)(iVar6 % 10);
-      *(float *)(pcVar14 + 0x9c0) = (float)(int)local_94 + _DAT_00552834;
+      AsJoint(pcVar14)->Velocity = (float)(int)local_94 + _DAT_00552834;
       iVar6 = _rand();
       fVar24 = (float)(iVar6 % 10) * _DAT_00552a48 + _DAT_005524f4;
       *pfVar3 = fVar24;
-      *(float *)(pcVar14 + 0x38) = fVar24;
-      *(float *)(pcVar14 + 0x3c) = fVar24;
+      AsJoint(pcVar14)->Light[1] = fVar24;
+      AsJoint(pcVar14)->Light[2] = fVar24;
       goto LAB_0046e043;
     case 7:
       pcVar14[0x9c0] = '\0';
       pcVar14[0x9c1] = '\0';
       pcVar14[0x9c2] = -0x60;
       pcVar14[0x9c3] = '@';
-      *(float *)(pcVar14 + 0x1c) = *pfVar1;
+      AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
       *pfVar3 = 0.5;
       pcVar14[0x38] = '\0';
       pcVar14[0x39] = '\0';
@@ -1014,9 +1014,9 @@ LAB_0046ec45:
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
       pcVar14[0x3f] = '?';
-      *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
-      *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
-      MoveHumming(pfVar1,pfVar2,(float *)(pcVar14 + 0x44),360.0);
+      *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
+      *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
+      MoveHumming(pfVar1,pfVar2,AsJoint(pcVar14)->TargetPosition,360.0);
       break;
     case 8:
       pcVar14[0xc] = '\0';
@@ -1034,16 +1034,16 @@ LAB_0046ec45:
       pcVar14[0x9ba] = '\0';
       pcVar14[0x9bb] = '\0';
       local_94 = (byte *)(iVar6 % 0x14);
-      *(float *)(pcVar14 + 0x9c0) = (float)(int)local_94 + _DAT_00552878;
+      AsJoint(pcVar14)->Velocity = (float)(int)local_94 + _DAT_00552878;
       iVar6 = _rand();
       fVar24 = (float)(iVar6 % 10) * _DAT_00552a48 + _DAT_005524f4;
       *pfVar3 = fVar24;
-      *(float *)(pcVar14 + 0x38) = fVar24;
-      *(float *)(pcVar14 + 0x3c) = fVar24;
+      AsJoint(pcVar14)->Light[1] = fVar24;
+      AsJoint(pcVar14)->Light[2] = fVar24;
 LAB_0046e043:
-      *(float *)(pcVar14 + 0x1c) = *pfVar1;
-      *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
-      *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
+      AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
+      *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
+      *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
       break;
     case 10:
       *pfVar2 = 0.0;
@@ -1060,7 +1060,7 @@ LAB_0046e043:
       pcVar14[0x31] = '\0';
       pcVar14[0x32] = '\0';
       pcVar14[0x33] = '\0';
-      *(float *)(pcVar14 + 0xc) = param_7;
+      AsJoint(pcVar14)->Scale = param_7;
       *pfVar3 = 0.3;
       pcVar14[0x38] = -0x66;
       pcVar14[0x39] = -0x67;
@@ -1074,29 +1074,29 @@ LAB_0046e043:
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
       pcVar14[0x3f] = '?';
-      *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
-      *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
-      local_90 = *(float *)(pcVar14 + 0x1c);
-      local_8c = *(byte **)(pcVar14 + 0x20);
-      local_88f = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
-      *(byte **)(pcVar14 + 0x24) = local_88;
+      AsJoint(pcVar14)->StartPosition[0] = (*param_3 - *pfVar1) * _DAT_00552a00;
+      AsJoint(pcVar14)->StartPosition[1] = (param_3[1] - AsJoint(pcVar14)->Position[1]) * _DAT_00552a00;
+      local_90 = AsJoint(pcVar14)->StartPosition[0];
+      local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
+      local_88f = (param_3[2] - AsJoint(pcVar14)->Position[2]) * _DAT_00552a00;
+      *(byte **)&AsJoint(pcVar14)->StartPosition[2] = local_88;
       Matrix_BuildFromEuler(pfVar2,local_6c);
       iVar6 = 0;
-      if (*(int *)(pcVar14 + 0x54) != 1 && -1 < *(int *)(pcVar14 + 0x54) + -1) {
+      if (AsJoint(pcVar14)->MaxTails != 1 && -1 < AsJoint(pcVar14)->MaxTails + -1) {
         do {
-          if (*(int *)(pcVar14 + 0x40) == 0) {
+          if (*(int *)&AsJoint(pcVar14)->Target == 0) {
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x80000007);
             if ((int)local_94 < 0) {
               local_94 = (byte *)(((int)local_94 - 1U | 0xfffffff8) + 1);
             }
-            local_90 = ((float)(int)local_94 + *(float *)(pcVar14 + 0x1c)) - _DAT_00552650;
+            local_90 = ((float)(int)local_94 + AsJoint(pcVar14)->StartPosition[0]) - _DAT_00552650;
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x80000007);
             if ((int)local_94 < 0) {
               local_94 = (byte *)(((uint)(local_94 + -1) | 0xfffffff8) + 1);
             }
-            local_8cf = (local_94f + *(float *)(pcVar14 + 0x20)) - _DAT_00552650;
+            local_8cf = (local_94f + AsJoint(pcVar14)->StartPosition[1]) - _DAT_00552650;
           }
           else {
             uVar9 = _rand();
@@ -1104,23 +1104,23 @@ LAB_0046e043:
             if ((int)local_94 < 0) {
               local_94 = (byte *)(((int)local_94 - 1U | 0xfffffff0) + 1);
             }
-            local_90 = ((float)(int)local_94 + *(float *)(pcVar14 + 0x1c)) - _DAT_00552658;
+            local_90 = ((float)(int)local_94 + AsJoint(pcVar14)->StartPosition[0]) - _DAT_00552658;
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x8000000f);
             if ((int)local_94 < 0) {
               local_94 = (byte *)(((uint)(local_94 + -1) | 0xfffffff0) + 1);
             }
-            local_8cf = (local_94f + *(float *)(pcVar14 + 0x20)) - _DAT_00552658;
+            local_8cf = (local_94f + AsJoint(pcVar14)->StartPosition[1]) - _DAT_00552658;
           }
           *pfVar1 = local_90 + *pfVar1;
-          *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
-          *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
+          AsJoint(pcVar14)->Position[1] = local_8cf + AsJoint(pcVar14)->Position[1];
+          AsJoint(pcVar14)->Position[2] = local_88f + AsJoint(pcVar14)->Position[2];
           Joint_SegmentTick((int)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
-          *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
-          *(float *)(pcVar14 + 0x14) =
-               (*(float *)(pcVar14 + 0x14) - local_8cf) + *(float *)(pcVar14 + 0x20);
-        } while (iVar6 < *(int *)(pcVar14 + 0x54) + -1);
+          *pfVar1 = (*pfVar1 - local_90) + AsJoint(pcVar14)->StartPosition[0];
+          AsJoint(pcVar14)->Position[1] =
+               (AsJoint(pcVar14)->Position[1] - local_8cf) + AsJoint(pcVar14)->StartPosition[1];
+        } while (iVar6 < AsJoint(pcVar14)->MaxTails + -1);
       }
       goto LAB_0046e37e;
     case 0xb:
@@ -1187,7 +1187,7 @@ LAB_0046e043:
       pcVar14[0x31] = '\0';
       pcVar14[0x32] = '\0';
       pcVar14[0x33] = '\0';
-      *(float *)(pcVar14 + 0xc) = param_7;
+      AsJoint(pcVar14)->Scale = param_7;
       *pfVar3 = 0.3;
       pcVar14[0x38] = -0x66;
       pcVar14[0x39] = -0x67;
@@ -1201,44 +1201,44 @@ LAB_0046e043:
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
       pcVar14[0x3f] = '?';
-      *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
-      local_90 = *(float *)(pcVar14 + 0x1c);
-      *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
-      local_8c = *(byte **)(pcVar14 + 0x20);
-      local_88f = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
-      *(byte **)(pcVar14 + 0x24) = local_88;
+      AsJoint(pcVar14)->StartPosition[0] = (*param_3 - *pfVar1) * _DAT_00552a00;
+      local_90 = AsJoint(pcVar14)->StartPosition[0];
+      AsJoint(pcVar14)->StartPosition[1] = (param_3[1] - AsJoint(pcVar14)->Position[1]) * _DAT_00552a00;
+      local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
+      local_88f = (param_3[2] - AsJoint(pcVar14)->Position[2]) * _DAT_00552a00;
+      *(byte **)&AsJoint(pcVar14)->StartPosition[2] = local_88;
       Matrix_BuildFromEuler(pfVar2,local_6c);
       iVar6 = 0;
-      if (*(int *)(pcVar14 + 0x54) != 1 && -1 < *(int *)(pcVar14 + 0x54) + -1) {
+      if (AsJoint(pcVar14)->MaxTails != 1 && -1 < AsJoint(pcVar14)->MaxTails + -1) {
         do {
-          if (*(int *)(pcVar14 + 0x40) == 0) {
-            local_90 = *(float *)(pcVar14 + 0x1c);
-            local_8c = *(byte **)(pcVar14 + 0x20);
+          if (*(int *)&AsJoint(pcVar14)->Target == 0) {
+            local_90 = AsJoint(pcVar14)->StartPosition[0];
+            local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
           }
           else {
-            local_90 = *(float *)(pcVar14 + 0x1c);
-            local_8c = *(byte **)(pcVar14 + 0x20);
+            local_90 = AsJoint(pcVar14)->StartPosition[0];
+            local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
           }
           *pfVar1 = local_90 + *pfVar1;
-          *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
-          *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
+          AsJoint(pcVar14)->Position[1] = local_8cf + AsJoint(pcVar14)->Position[1];
+          AsJoint(pcVar14)->Position[2] = local_88f + AsJoint(pcVar14)->Position[2];
           Joint_SegmentTick((int)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
-          *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
-          *(float *)(pcVar14 + 0x14) =
-               (*(float *)(pcVar14 + 0x14) - local_8cf) + *(float *)(pcVar14 + 0x20);
-        } while (iVar6 < *(int *)(pcVar14 + 0x54) + -1);
+          *pfVar1 = (*pfVar1 - local_90) + AsJoint(pcVar14)->StartPosition[0];
+          AsJoint(pcVar14)->Position[1] =
+               (AsJoint(pcVar14)->Position[1] - local_8cf) + AsJoint(pcVar14)->StartPosition[1];
+        } while (iVar6 < AsJoint(pcVar14)->MaxTails + -1);
       }
 LAB_0046e37e:
-      *(undefined4 *)(pcVar14 + 0x10) = *(undefined4 *)(pcVar14 + 0x44);
-      *(undefined4 *)(pcVar14 + 0x14) = *(undefined4 *)(pcVar14 + 0x48);
-      *(undefined4 *)(pcVar14 + 0x18) = *(undefined4 *)(pcVar14 + 0x4c);
+      *(undefined4 *)&AsJoint(pcVar14)->Position[0] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0];
+      *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1];
+      *(undefined4 *)&AsJoint(pcVar14)->Position[2] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[2];
     }
     goto switchD_0046dee7_default;
   }
   switch(param_1) {
   case 0x4e9:
-    iVar6 = *(int *)(pcVar14 + 8);
+    iVar6 = AsJoint(pcVar14)->SubType;
     if (iVar6 == 0) {
       pcVar14[0xc] = '\0';
       pcVar14[0xd] = '\0';
@@ -1248,7 +1248,7 @@ LAB_0046e37e:
       pbVar10 = (byte *)(iVar6 % 0x14 + 6);
       local_98 = pbVar10;
 LAB_0046f415:
-      *(float *)(pcVar14 + 0x9c0) = (float)(int)pbVar10;
+      AsJoint(pcVar14)->Velocity = (float)(int)pbVar10;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000007;
       if ((int)uVar9 < 0) {
@@ -1258,7 +1258,7 @@ LAB_0046f415:
       pcVar14[0x55] = '\0';
       pcVar14[0x56] = '\0';
       pcVar14[0x57] = '\0';
-      *(uint *)(pcVar14 + 0x9b8) = uVar9 + 8;
+      *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 8;
     }
     else {
       if (iVar6 != 1) {
@@ -1280,7 +1280,7 @@ LAB_0046f415:
           pcVar14[0x55] = '\0';
           pcVar14[0x56] = '\0';
           pcVar14[0x57] = '\0';
-          *(uint *)(pcVar14 + 0x9b8) = uVar9 + 4;
+          *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 4;
           *pfVar3 = 0.3;
           pcVar14[0x38] = -0x66;
           pcVar14[0x39] = -0x67;
@@ -1299,7 +1299,7 @@ LAB_0046f415:
       pcVar14[0xf] = '@';
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 0x14 + 0x10);
-      *(float *)(pcVar14 + 0x9c0) = (float)(int)local_98;
+      AsJoint(pcVar14)->Velocity = (float)(int)local_98;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000003;
       if ((int)uVar9 < 0) {
@@ -1309,12 +1309,12 @@ LAB_0046f415:
       pcVar14[0x55] = '\0';
       pcVar14[0x56] = '\0';
       pcVar14[0x57] = '\0';
-      *(uint *)(pcVar14 + 0x9b8) = uVar9 + 4;
+      *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 4;
     }
     break;
   case 0x4ea:
-    iVar6 = *(int *)(pcVar14 + 8);
-    *(float *)(pcVar14 + 0xc) = param_7;
+    iVar6 = AsJoint(pcVar14)->SubType;
+    AsJoint(pcVar14)->Scale = param_7;
     switch(iVar6) {
     case 2:
     case 3:
@@ -1338,16 +1338,16 @@ LAB_0046f415:
         pcVar14[0x57] = '\0';
       }
       if (iVar6 == 3) {
-        *pfVar1 = *(float *)(*(int *)(pcVar14 + 0x40) + 0x4c);
-        *(undefined4 *)(pcVar14 + 0x14) = *(undefined4 *)(*(int *)(pcVar14 + 0x40) + 0x50);
-        uVar23 = *(undefined4 *)(*(int *)(pcVar14 + 0x40) + 0x54);
+        *pfVar1 = *(float *)(*(int *)&AsJoint(pcVar14)->Target + 0x4c);
+        *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x50);
+        uVar23 = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x54);
       }
       else {
-        *pfVar1 = *(float *)(*(int *)(pcVar14 + 0x40) + 0x40);
-        *(undefined4 *)(pcVar14 + 0x14) = *(undefined4 *)(*(int *)(pcVar14 + 0x40) + 0x44);
-        uVar23 = *(undefined4 *)(*(int *)(pcVar14 + 0x40) + 0x48);
+        *pfVar1 = *(float *)(*(int *)&AsJoint(pcVar14)->Target + 0x40);
+        *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x44);
+        uVar23 = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x48);
       }
-      *(undefined4 *)(pcVar14 + 0x18) = uVar23;
+      *(undefined4 *)&AsJoint(pcVar14)->Position[2] = uVar23;
       break;
     case 9:
       *pfVar3 = 0.2;
@@ -1376,7 +1376,7 @@ LAB_0046f415:
       pcVar14[0x9c2] = '@';
       pcVar14[0x9c3] = '@';
     }
-    switch(*(undefined4 *)(pcVar14 + 8)) {
+    switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
     case 0:
     case 6:
       *pfVar3 = 0.4;
@@ -1441,12 +1441,12 @@ LAB_0046f415:
     pcVar14[0x9b9] = '\0';
     pcVar14[0x9ba] = '\0';
     pcVar14[0x9bb] = '\0';
-    *(float *)(pcVar14 + 0xc) = param_7;
+    AsJoint(pcVar14)->Scale = param_7;
     pcVar14[0x9c0] = '\0';
     pcVar14[0x9c1] = '\0';
     pcVar14[0x9c2] = '\0';
     pcVar14[0x9c3] = '\0';
-    iVar6 = *(int *)(pcVar14 + 8);
+    iVar6 = AsJoint(pcVar14)->SubType;
     pcVar14[0x54] = '\x02';
     pcVar14[0x55] = '\0';
     pcVar14[0x56] = '\0';
@@ -1501,16 +1501,16 @@ LAB_0046f415:
       pcVar14[0x4d] = '\0';
       pcVar14[0x4e] = '\0';
       pcVar14[0x4f] = '\0';
-      *(float *)(pcVar14 + 0x44) = (float)(int)(uVar9 - 0x20);
+      AsJoint(pcVar14)->TargetPosition[0] = (float)(int)(uVar9 - 0x20);
       goto switchD_0046dee7_default;
     }
     if (iVar6 != 5) goto switchD_0046dee7_default;
     iVar6 = _rand();
     local_98 = (byte *)(iVar6 % 10 + -5);
-    *(float *)(pcVar14 + 0xc) = (float)(int)local_98 + *(float *)(pcVar14 + 0xc);
+    AsJoint(pcVar14)->Scale = (float)(int)local_98 + AsJoint(pcVar14)->Scale;
     iVar6 = _rand();
     local_98 = (byte *)(iVar6 % 0x14 + 6);
-    *(float *)(pcVar14 + 0x9c0) = (float)(int)local_98;
+    AsJoint(pcVar14)->Velocity = (float)(int)local_98;
     uVar9 = _rand();
     uVar9 = uVar9 & 0x80000007;
     if ((int)uVar9 < 0) {
@@ -1520,7 +1520,7 @@ LAB_0046f415:
     pcVar14[0x55] = '\0';
     pcVar14[0x56] = '\0';
     pcVar14[0x57] = '\0';
-    *(uint *)(pcVar14 + 0x9b8) = uVar9 + 8;
+    *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 8;
     break;
   case 0x4ec:
     pcVar14[0x9c0] = '\0';
@@ -1531,7 +1531,7 @@ LAB_0046f415:
     pcVar14[0x9b9] = '\0';
     pcVar14[0x9ba] = '\0';
     pcVar14[0x9bb] = '\0';
-    *(float *)(pcVar14 + 0xc) = param_7;
+    AsJoint(pcVar14)->Scale = param_7;
     pcVar14[0x54] = '\x06';
     pcVar14[0x55] = '\0';
     pcVar14[0x56] = '\0';
@@ -1556,8 +1556,8 @@ switchD_0046f0e4_caseD_4ed:
     pcVar14[0x9b9] = '\0';
     pcVar14[0x9ba] = '\0';
     pcVar14[0x9bb] = '\0';
-    if (*(int *)(pcVar14 + 8) != 0) {
-      if (*(int *)(pcVar14 + 4) == 0x4ed) {
+    if (AsJoint(pcVar14)->SubType != 0) {
+      if (AsJoint(pcVar14)->Type == 0x4ed) {
         *pfVar3 = 0.35;
         pcVar14[0x38] = -0x33;
         pcVar14[0x39] = -0x34;
@@ -1587,13 +1587,13 @@ switchD_0046f0e4_caseD_4ed:
     pcVar14[0x9c1] = '\0';
     pcVar14[0x9c2] = '\0';
     pcVar14[0x9c3] = '\0';
-    fVar24 = *(float *)(pcVar14 + 0x30) + _DAT_0055284c;
-    *(float *)(pcVar14 + 0xc) = param_7;
-    *(undefined4 *)(pcVar14 + 0x4c) = *(undefined4 *)(pcVar14 + 0x18);
-    *(float *)(pcVar14 + 0x30) = fVar24;
-    *(float *)(pcVar14 + 0x9cc) = fVar24;
-    *(float *)(pcVar14 + 0x44) = *pfVar1;
-    *(undefined4 *)(pcVar14 + 0x48) = *(undefined4 *)(pcVar14 + 0x14);
+    fVar24 = AsJoint(pcVar14)->Angle[2] + _DAT_0055284c;
+    AsJoint(pcVar14)->Scale = param_7;
+    *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
+    AsJoint(pcVar14)->Angle[2] = fVar24;
+    AsJoint(pcVar14)->Direction[2] = fVar24;
+    AsJoint(pcVar14)->TargetPosition[0] = *pfVar1;
+    *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
     pcVar14[0x54] = '\x12';
     pcVar14[0x55] = '\0';
     pcVar14[0x56] = '\0';
@@ -1609,19 +1609,19 @@ switchD_0046f0e4_caseD_4ed:
     local_78 = 0.0;
     local_74 = -180.0;
     local_70 = 0.0;
-    *(float *)(pcVar14 + 0x9c4) = *pfVar2;
-    *(undefined4 *)(pcVar14 + 0x9c8) = *(undefined4 *)(pcVar14 + 0x2c);
+    AsJoint(pcVar14)->Direction[0] = *pfVar2;
+    *(undefined4 *)&AsJoint(pcVar14)->Direction[1] = *(undefined4 *)&AsJoint(pcVar14)->Angle[1];
     Matrix_BuildFromEuler(pfVar2,local_6c);
     Vector_Rotate(&local_78,local_6c,(float *)&local_90);
     *pfVar1 = (float)local_90 + *pfVar1;
-    *(float *)(pcVar14 + 0x14) = *(float*)&local_8c + *(float *)(pcVar14 + 0x14);
-    *(float *)(pcVar14 + 0x18) = *(float*)&local_88 + *(float *)(pcVar14 + 0x18);
+    AsJoint(pcVar14)->Position[1] = *(float*)&local_8c + AsJoint(pcVar14)->Position[1];
+    AsJoint(pcVar14)->Position[2] = *(float*)&local_88 + AsJoint(pcVar14)->Position[2];
     break;
   default:
     goto switchD_0046dee7_default;
   case 0x4fd:
 switchD_0046f0e4_caseD_4fd:
-    iVar6 = *(int *)(pcVar14 + 8);
+    iVar6 = AsJoint(pcVar14)->SubType;
     pcVar14[0x9b8] = 'd';
     pcVar14[0x9b9] = '\0';
     pcVar14[0x9ba] = '\0';
@@ -1635,14 +1635,14 @@ switchD_0046f0e4_caseD_4fd:
     pcVar14[0xe] = ' ';
     pcVar14[0xf] = 'A';
     if (iVar6 == 0) {
-      *(float *)(pcVar14 + 0xc) = param_7;
+      AsJoint(pcVar14)->Scale = param_7;
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 0x96);
-      *(float *)(pcVar14 + 0x9cc) = (float)(int)local_98 * _DAT_00552594;
+      AsJoint(pcVar14)->Direction[2] = (float)(int)local_98 * _DAT_00552594;
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 500 + -0xfa);
-      *(float *)(pcVar14 + 0x9c8) = (float)(int)local_98;
-      if (_DAT_00552488 < *(float *)(pcVar14 + 0xc)) {
+      AsJoint(pcVar14)->Direction[1] = (float)(int)local_98;
+      if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
         pcVar14[0x9b8] = '2';
         pcVar14[0x9b9] = '\0';
         pcVar14[0x9ba] = '\0';
@@ -1650,27 +1650,27 @@ switchD_0046f0e4_caseD_4fd:
         iVar6 = _rand();
         fVar24 = (float)(iVar6 % 0xfa + 200);
 LAB_0046f54e:
-        *(float *)(pcVar14 + 0x9cc) = fVar24 * _DAT_00552594;
+        AsJoint(pcVar14)->Direction[2] = fVar24 * _DAT_00552594;
       }
 LAB_0046f55a:
-      iVar6 = *(int *)(pcVar14 + 0x40);
+      iVar6 = *(int *)&AsJoint(pcVar14)->Target;
       *pfVar3 = *(float *)(iVar6 + 0xe8);
-      *(undefined4 *)(pcVar14 + 0x38) = *(undefined4 *)(iVar6 + 0xec);
-      *(undefined4 *)(pcVar14 + 0x3c) = *(undefined4 *)(iVar6 + 0xf0);
+      *(undefined4 *)&AsJoint(pcVar14)->Light[1] = *(undefined4 *)(iVar6 + 0xec);
+      *(undefined4 *)&AsJoint(pcVar14)->Light[2] = *(undefined4 *)(iVar6 + 0xf0);
     }
     else {
       if (iVar6 == 0xe) {
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x96);
-        *(float *)(pcVar14 + 0x9cc) = (float)(int)local_98 * _DAT_00552594;
+        AsJoint(pcVar14)->Direction[2] = (float)(int)local_98 * _DAT_00552594;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 500 + -0xfa);
-        *(float *)(pcVar14 + 0x9c8) = (float)(int)local_98;
+        AsJoint(pcVar14)->Direction[1] = (float)(int)local_98;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x32);
-        *(float *)(pcVar14 + 0x18) = (float)(int)local_98 + *(float *)(pcVar14 + 0x18);
-        if (_DAT_00552488 < *(float *)(pcVar14 + 0xc)) {
+        AsJoint(pcVar14)->Position[2] = (float)(int)local_98 + AsJoint(pcVar14)->Position[2];
+        if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
           pcVar14[0x9b8] = '2';
           pcVar14[0x9b9] = '\0';
           pcVar14[0x9ba] = '\0';
@@ -1684,8 +1684,8 @@ LAB_0046f55a:
       if (iVar6 == 2) {
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x14 + 0x23);
-        *(float *)(pcVar14 + 0xc) = param_7;
-        *(float *)(pcVar14 + 0x9cc) = (float)(int)local_98;
+        AsJoint(pcVar14)->Scale = param_7;
+        AsJoint(pcVar14)->Direction[2] = (float)(int)local_98;
         iVar6 = _rand();
         *pfVar3 = 1.0;
         pcVar14[0x38] = '\0';
@@ -1696,7 +1696,7 @@ LAB_0046f55a:
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
         pcVar14[0x3f] = '?';
-        *(int *)(pcVar14 + 0x9b8) = iVar6 % 0x32 + 0x19;
+        AsJoint(pcVar14)->LifeTime = iVar6 % 0x32 + 0x19;
       }
       else if (iVar6 == 3) {
         pcVar14[0x9c0] = '\0';
@@ -1704,7 +1704,7 @@ LAB_0046f55a:
         pcVar14[0x9c2] = 'H';
         pcVar14[0x9c3] = 'B';
         *pfVar2 = 0.0;
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         pcVar14[0x9b8] = '\x05';
         pcVar14[0x9b9] = '\0';
         pcVar14[0x9ba] = '\0';
@@ -1728,8 +1728,8 @@ LAB_0046f55a:
         Vector_Rotate(&local_78,local_3c + 3,(float *)&local_90);
         uVar25 = 0;
         *pfVar1 = (float)local_90 + *pfVar1;
-        *(float *)(pcVar14 + 0x14) = *(float*)&local_8c + *(float *)(pcVar14 + 0x14);
-        *(float *)(pcVar14 + 0x18) = *(float*)&local_88 + *(float *)(pcVar14 + 0x18);
+        AsJoint(pcVar14)->Position[1] = *(float*)&local_8c + AsJoint(pcVar14)->Position[1];
+        AsJoint(pcVar14)->Position[2] = *(float*)&local_88 + AsJoint(pcVar14)->Position[2];
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x168);
         fVar24 = (float)(int)local_98;
@@ -1754,11 +1754,11 @@ LAB_0046f55a:
         pcVar14[0x3e] = -0x80;
         pcVar14[0x3f] = '?';
         *pfVar2 = fVar24;
-        *(float *)(pcVar14 + 0x2c) = *(float *)(pcVar14 + 0x2c) * _DAT_005526d8;
-        *(float *)(pcVar14 + 0x30) = *(float *)(pcVar14 + 0x30) * _DAT_005526d8;
+        AsJoint(pcVar14)->Angle[1] = AsJoint(pcVar14)->Angle[1] * _DAT_005526d8;
+        AsJoint(pcVar14)->Angle[2] = AsJoint(pcVar14)->Angle[2] * _DAT_005526d8;
       }
       else if (((iVar6 == 4) || (iVar6 == 6)) || (iVar6 == 0xc)) {
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         if (iVar6 == 0xc) {
           pcVar14[0x9b8] = 'F';
           pcVar14[0x9b9] = '\0';
@@ -1778,11 +1778,11 @@ LAB_0046f55a:
           pcVar14[0x3e] = -0x80;
           pcVar14[0x3f] = '?';
           iVar6 = _rand();
-          *(float *)(pcVar14 + 0x9c4) = (float)(iVar6 % 0x168);
+          AsJoint(pcVar14)->Direction[0] = (float)(iVar6 % 0x168);
           fVar21 = (float10)_DAT_00552a44;
-          fVar20 = (float10)fsin((float10)*(float *)(pcVar14 + 0x30) * fVar21);
-          *(float *)(pcVar14 + 0x9c8) = (float)(fVar20 * (float10)_DAT_00552a34);
-          fVar21 = (float10)fcos((float10)*(float *)(pcVar14 + 0x30) * fVar21);
+          fVar20 = (float10)fsin((float10)AsJoint(pcVar14)->Angle[2] * fVar21);
+          AsJoint(pcVar14)->Direction[1] = (float)(fVar20 * (float10)_DAT_00552a34);
+          fVar21 = (float10)fcos((float10)AsJoint(pcVar14)->Angle[2] * fVar21);
           fVar21 = fVar21 * (float10)_DAT_00552a34;
         }
         else {
@@ -1806,7 +1806,7 @@ LAB_0046f55a:
             pcVar14[0x3f] = '?';
           }
           else {
-            iVar6 = *(int *)(pcVar14 + 0x40);
+            iVar6 = *(int *)&AsJoint(pcVar14)->Target;
             pcVar14[0x9b8] = 'n';
             pcVar14[0x9b9] = '\0';
             pcVar14[0x9ba] = '\0';
@@ -1816,18 +1816,18 @@ LAB_0046f55a:
             pcVar14[0x56] = '\0';
             pcVar14[0x57] = '\0';
             *pfVar3 = *(float *)(iVar6 + 0xe8);
-            *(undefined4 *)(pcVar14 + 0x38) = *(undefined4 *)(iVar6 + 0xec);
-            *(undefined4 *)(pcVar14 + 0x3c) = *(undefined4 *)(iVar6 + 0xf0);
+            *(undefined4 *)&AsJoint(pcVar14)->Light[1] = *(undefined4 *)(iVar6 + 0xec);
+            *(undefined4 *)&AsJoint(pcVar14)->Light[2] = *(undefined4 *)(iVar6 + 0xf0);
           }
           iVar6 = _rand();
-          *(float *)(pcVar14 + 0x9c4) = (float)(iVar6 % 0x168);
+          AsJoint(pcVar14)->Direction[0] = (float)(iVar6 % 0x168);
           fVar21 = (float10)_DAT_00552a44;
-          fVar20 = (float10)fsin((float10)*(float *)(pcVar14 + 0x30) * fVar21);
-          *(float *)(pcVar14 + 0x9c8) = (float)(fVar20 * (float10)_DAT_005529ac);
-          fVar21 = (float10)fcos((float10)*(float *)(pcVar14 + 0x30) * fVar21);
+          fVar20 = (float10)fsin((float10)AsJoint(pcVar14)->Angle[2] * fVar21);
+          AsJoint(pcVar14)->Direction[1] = (float)(fVar20 * (float10)_DAT_005529ac);
+          fVar21 = (float10)fcos((float10)AsJoint(pcVar14)->Angle[2] * fVar21);
           fVar21 = fVar21 * (float10)_DAT_005529ac;
         }
-        *(float *)(pcVar14 + 0x9cc) = (float)fVar21;
+        AsJoint(pcVar14)->Direction[2] = (float)fVar21;
       }
       else if (iVar6 == 5) {
         pcVar14[0x9b8] = '\x02';
@@ -1848,7 +1848,7 @@ LAB_0046f55a:
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
         pcVar14[0x3f] = '?';
-        *(float *)(pcVar14 + 0x9cc) = -(float)(iVar6 % 3 + 0x28);
+        AsJoint(pcVar14)->Direction[2] = -(float)(iVar6 % 3 + 0x28);
       }
       else if (iVar6 == 7) {
         pcVar14[0x3c] = '\0';
@@ -1865,14 +1865,14 @@ LAB_0046f55a:
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
         pcVar14[0x57] = '\0';
-        *(int *)(pcVar14 + 0x9d4) = iVar6 % 10;
-        *(int *)(pcVar14 + 0x9b8) = iVar6 % 10 + 0x1e;
+        AsJoint(pcVar14)->MultiUse = iVar6 % 10;
+        AsJoint(pcVar14)->LifeTime = iVar6 % 10 + 0x1e;
         iVar6 = _rand();
         pcVar14[0xc] = '\0';
         pcVar14[0xd] = '\0';
         pcVar14[0xe] = -0x10;
         pcVar14[0xf] = 'A';
-        *(float *)(pcVar14 + 0x9c4) = (float)(iVar6 % 3000);
+        AsJoint(pcVar14)->Direction[0] = (float)(iVar6 % 3000);
       }
       else if (iVar6 == 8) {
         local_78 = 0.0;
@@ -1897,16 +1897,16 @@ LAB_0046f55a:
         pcVar14[0x9cd] = '\0';
         pcVar14[0x9ce] = '\0';
         pcVar14[0x9cf] = '\0';
-        *(float *)(pcVar14 + 0x1c) = *pfVar1;
-        *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
-        *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
+        AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
+        *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
+        *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
         local_74 = -50.0;
         local_70 = 0.0;
-        Matrix_BuildFromEuler((float *)(pcVar14 + 0x44),local_6c);
+        Matrix_BuildFromEuler(AsJoint(pcVar14)->TargetPosition,local_6c);
         Vector_Rotate(&local_78,local_6c,(float *)&local_90);
-        *pfVar1 = (float)local_90 + *(float *)(pcVar14 + 0x1c);
-        *(float *)(pcVar14 + 0x14) = *(float*)&local_8c + *(float *)(pcVar14 + 0x20);
-        *(float *)(pcVar14 + 0x18) = *(float*)&local_88 + *(float *)(pcVar14 + 0x24);
+        *pfVar1 = (float)local_90 + AsJoint(pcVar14)->StartPosition[0];
+        AsJoint(pcVar14)->Position[1] = *(float*)&local_8c + AsJoint(pcVar14)->StartPosition[1];
+        AsJoint(pcVar14)->Position[2] = *(float*)&local_88 + AsJoint(pcVar14)->StartPosition[2];
       }
       else if (iVar6 == 9) {
         *pfVar2 = 0.0;
@@ -1922,7 +1922,7 @@ LAB_0046f55a:
         pcVar14[0x31] = '\0';
         pcVar14[0x32] = '\0';
         pcVar14[0x33] = '\0';
-        *(float *)(pcVar14 + 0xc) = param_7;
+        AsJoint(pcVar14)->Scale = param_7;
         *pfVar3 = 0.3;
         pcVar14[0x38] = -0x66;
         pcVar14[0x39] = -0x67;
@@ -1936,31 +1936,31 @@ LAB_0046f55a:
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
         pcVar14[0x3f] = '?';
-        *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
-        *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
-        *(float *)(pcVar14 + 0x24) = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
+        AsJoint(pcVar14)->StartPosition[0] = (*param_3 - *pfVar1) * _DAT_00552a00;
+        AsJoint(pcVar14)->StartPosition[1] = (param_3[1] - AsJoint(pcVar14)->Position[1]) * _DAT_00552a00;
+        AsJoint(pcVar14)->StartPosition[2] = (param_3[2] - AsJoint(pcVar14)->Position[2]) * _DAT_00552a00;
         Matrix_BuildFromEuler(pfVar2,local_6c);
         iVar6 = 0;
-        if (0 < *(int *)(pcVar14 + 0x54)) {
+        if (0 < AsJoint(pcVar14)->MaxTails) {
           do {
-            *pfVar1 = *pfVar1 + *(float *)(pcVar14 + 0x1c);
-            *(float *)(pcVar14 + 0x14) = *(float *)(pcVar14 + 0x14) + *(float *)(pcVar14 + 0x20);
-            *(float *)(pcVar14 + 0x18) = *(float *)(pcVar14 + 0x24) + *(float *)(pcVar14 + 0x18);
+            *pfVar1 = *pfVar1 + AsJoint(pcVar14)->StartPosition[0];
+            AsJoint(pcVar14)->Position[1] = AsJoint(pcVar14)->Position[1] + AsJoint(pcVar14)->StartPosition[1];
+            AsJoint(pcVar14)->Position[2] = AsJoint(pcVar14)->StartPosition[2] + AsJoint(pcVar14)->Position[2];
             Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
-          } while (iVar6 < *(int *)(pcVar14 + 0x54));
+          } while (iVar6 < AsJoint(pcVar14)->MaxTails);
         }
       }
       else {
         if (iVar6 == 10) {
-          *(float *)(pcVar14 + 0xc) = param_7;
+          AsJoint(pcVar14)->Scale = param_7;
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 0x96);
-          *(float *)(pcVar14 + 0x9cc) = (float)(int)local_98 * _DAT_00552594;
+          AsJoint(pcVar14)->Direction[2] = (float)(int)local_98 * _DAT_00552594;
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 500 + -0xfa);
-          *(float *)(pcVar14 + 0x9c8) = (float)(int)local_98;
-          if (_DAT_00552488 < *(float *)(pcVar14 + 0xc)) {
+          AsJoint(pcVar14)->Direction[1] = (float)(int)local_98;
+          if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
             pcVar14[0x9b8] = '2';
             pcVar14[0x9b9] = '\0';
             pcVar14[0x9ba] = '\0';
@@ -1998,13 +1998,13 @@ LAB_0046f55a:
           pcVar14[0xd] = '\0';
           pcVar14[0xe] = -0x10;
           pcVar14[0xf] = 'A';
-          *(float *)(pcVar14 + 0x9c4) = (float)(iVar6 % 3000);
+          AsJoint(pcVar14)->Direction[0] = (float)(iVar6 % 3000);
         }
         else if (iVar6 == 0xd) {
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 0x14 + 0x23);
-          *(float *)(pcVar14 + 0xc) = param_7;
-          *(float *)(pcVar14 + 0x9cc) = (float)(int)local_98;
+          AsJoint(pcVar14)->Scale = param_7;
+          AsJoint(pcVar14)->Direction[2] = (float)(int)local_98;
           iVar6 = _rand();
           *pfVar3 = 0.5;
           pcVar14[0x38] = '\0';
@@ -2015,13 +2015,13 @@ LAB_0046f55a:
           pcVar14[0x3d] = '\0';
           pcVar14[0x3e] = '\0';
           pcVar14[0x3f] = '?';
-          *(int *)(pcVar14 + 0x9b8) = iVar6 % 0x32 + 0x19;
+          AsJoint(pcVar14)->LifeTime = iVar6 % 0x32 + 0x19;
         }
       }
     }
-    *(float *)(pcVar14 + 0x44) = *param_3;
-    *(float *)(pcVar14 + 0x48) = param_3[1];
-    *(float *)(pcVar14 + 0x4c) = param_3[2];
+    AsJoint(pcVar14)->TargetPosition[0] = *param_3;
+    AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
+    AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
     goto switchD_0046dee7_default;
   }
   *pfVar3 = 1.0;
@@ -2034,7 +2034,7 @@ LAB_0046f55a:
   pcVar14[0x3e] = -0x80;
   pcVar14[0x3f] = '?';
 switchD_0046dee7_default:
-  if (0x32 < *(int *)(pcVar14 + 0x54)) {
+  if (0x32 < AsJoint(pcVar14)->MaxTails) {
     pcVar14[0x54] = '2';
     pcVar14[0x55] = '\0';
     pcVar14[0x56] = '\0';
@@ -2057,9 +2057,9 @@ switchD_0046dee7_default:
     // cualquier subtipo que llame a sub_46FE90 dentro de CreateJoint).
     const int __rowBytes = 0x30;
     const int __maxRows  = (0x9d8 - 0x58) / __rowBytes;
-    int __n = *(int *)(pcVar14 + 0x54);
+    int __n = AsJoint(pcVar14)->MaxTails;
     if (__n > __maxRows) __n = __maxRows;
-    const int __built = *(int *)(pcVar14 + 0x50);
+    const int __built = AsJoint(pcVar14)->NumTails;
     for (int __r = __built + 1; __r < __n; ++__r)
         memcpy(pcVar14 + 0x58 + __r * __rowBytes, pcVar14 + 0x58, __rowBytes);
   }
@@ -2157,7 +2157,7 @@ LAB_0046ec6d:
   iVar6 = MAIN_HASH_CLASS;
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
-  pcVar14[0x9d3] = ((byte*)DAT_07cf1ffc)[0x580];
+  *(char *)&AsJoint(pcVar14)->Weapon = ((byte*)DAT_07cf1ffc)[0x580];
   uVar9 = (**(code **)(iVar6 + 0xc))(pbVar10);
   pbVar10 = (byte *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -2314,7 +2314,7 @@ LAB_0046ee73:
     // y le asignaba `param_4` (el PUNTERO al vec3 de angulos).  Confirmado con
     // MU 5.2 CreateJoint, case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70;
     // LifeTime = 49; Scale; MaxTails = 6.
-    *(float *)(pcVar14 + 0xc) = param_7;
+    AsJoint(pcVar14)->Scale = param_7;
   pcVar14[0x54] = '\f';
   pcVar14[0x55] = '\0';
   pcVar14[0x56] = '\0';
@@ -2422,7 +2422,7 @@ LAB_0046e76a:
   iVar6 = MAIN_HASH_CLASS;
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
-  pcVar14[0x9d3] = ((byte*)DAT_07cf1ffc)[0x580];
+  *(char *)&AsJoint(pcVar14)->Weapon = ((byte*)DAT_07cf1ffc)[0x580];
   uVar9 = (**(code **)(iVar6 + 0xc))(pbVar10);
   pbVar10 = (byte *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -2579,7 +2579,7 @@ LAB_0046e970:
     // y le asignaba `param_4` (el PUNTERO al vec3 de angulos).  Confirmado con
     // MU 5.2 CreateJoint, case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70;
     // LifeTime = 49; Scale; MaxTails = 6.
-    *(float *)(pcVar14 + 0xc) = param_7;
+    AsJoint(pcVar14)->Scale = param_7;
   pcVar14[0x54] = '\x06';
   pcVar14[0x55] = '\0';
   pcVar14[0x56] = '\0';

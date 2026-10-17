@@ -132,13 +132,15 @@ struct CHARACTER {
     BYTE     Run;                   // 0x300  contador de stamina (>= 0x28 = cansado)
     BYTE     SkillSuccess;          // 0x301  IDA: Skills_PacketHandler (0x0042BCA0)
     BYTE     Skill;                 // 0x302  skill encolado
-    BYTE     _unk303[2];
+    BYTE     SwordCount;            // 0x303  IDA: SetPlayerAttack (0x00444410), variante de la animación
+    BYTE     _unk304;
     BYTE     JumpTime;              // 0x305
     BYTE     TargetX;               // 0x306
     BYTE     TargetY;               // 0x307
     BYTE     _unk308[8];
     short    TargetCharacter;       // 0x310
-    BYTE     _unk312[0x0E];
+    BYTE     _unk312[2];
+    vec3_t   TargetPosition;        // 0x314  IDA: UseSkillWarrior (0x00485780); destino de los joints de c->LongRangeAttack
     vec3_t   Light;                 // 0x320
     BYTE     CollisionTime;         // 0x32C
     BYTE     _unk32D[3];
@@ -221,9 +223,11 @@ MU_ASSERT_FIELD(CHARACTER, MoveSpeed, 0x2FA);
 MU_ASSERT_FIELD(CHARACTER, Dead, 0x2FD);
 MU_ASSERT_FIELD(CHARACTER, Run, 0x300);
 MU_ASSERT_FIELD(CHARACTER, Skill, 0x302);
+MU_ASSERT_FIELD(CHARACTER, SwordCount, 0x303);
 MU_ASSERT_FIELD(CHARACTER, JumpTime, 0x305);
 MU_ASSERT_FIELD(CHARACTER, TargetX, 0x306);
 MU_ASSERT_FIELD(CHARACTER, TargetCharacter, 0x310);
+MU_ASSERT_FIELD(CHARACTER, TargetPosition, 0x314);
 MU_ASSERT_FIELD(CHARACTER, Light, 0x320);
 MU_ASSERT_FIELD(CHARACTER, CollisionTime, 0x32C);
 MU_ASSERT_FIELD(CHARACTER, LongRangeAttack, 0x330);

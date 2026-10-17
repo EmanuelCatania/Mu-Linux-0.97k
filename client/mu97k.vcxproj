@@ -134,6 +134,7 @@
     <ClInclude Include="src\Config\ServerConfig.h" />
     <ClInclude Include="src\Config\UserSettings.h" />
     <ClInclude Include="src\UI\UIState.h" />
+    <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
@@ -194,6 +195,7 @@
     <ClInclude Include="src\Render\Entity_DrawAt.h" />
     <ClInclude Include="src\Render\Entity_PrepareRender.h" />
     <ClInclude Include="src\Render\Entity_Render.h" />
+    <ClInclude Include="src\Render\JointTypes.h" />
     <ClInclude Include="src\Render\Entity_Render_3D.h" />
     <ClInclude Include="src\Render\Entity_RenderAll_3D.h" />
     <ClInclude Include="src\Render\HUD_Render.h" />

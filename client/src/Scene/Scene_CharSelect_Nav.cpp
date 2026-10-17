@@ -1752,14 +1752,14 @@ void __cdecl SetPlayerMagic(int param_1) {
     short entityType = AsCharacter(c)->Object.Type;
     if (entityType != 0x186) {
         int action;
-        if ((UINT)*(BYTE*)(c + 0x303) % 3 == 0) {
+        if ((UINT)AsCharacter(c)->SwordCount % 3 == 0) {
             action = 3;
         } else {
             action = 4;
         }
         // SetAction(entity, action) — SetAction
         SetAction((int)c, action);
-        *(char*)(c + 0x303) = *(char*)(c + 0x303) + 1;
+        *(char *)&AsCharacter(c)->SwordCount = *(char *)&AsCharacter(c)->SwordCount + 1;
         return;
     }
     // Special entity type 0x186: SetAttackSpeed then class-based action

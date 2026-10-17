@@ -53,8 +53,8 @@ void __cdecl RegistWhisperID(int lvl, const char* text) {
 }
 
 // FUN_00481a40 @ 0x00481A40 (~64 lines) — assign chat text to chat entry struct
-// Long text (>19 chars): CutText to split into 2 lines at offsets 0x2c and 300.
-// Short text: direct memcpy to offset 0x2c.
+// Texto largo (>19 caracteres): CutText lo parte en Text[0] y Text[1].
+// Texto corto: va entero a Text[0].
 // param_3==1: system message via vtable call on DAT_055c9ff0.
 void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
     // 0x00481A40 — Assign chat text to chat entry struct
@@ -87,21 +87,19 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 
     if (Length > 0x13) {
         // Long text (>19 chars): split into 2 lines
-        CutText(param_2, param_1 + 0x2c, (void*)(param_1 + 300), Length);
-        *(char**)(param_1 + 0x22c) = displayEnd;
-        *(char**)(param_1 + 0x230) = displayEnd;
+        CutText(param_2, (int)(uintptr_t)AsChat(param_1)->Text[0], AsChat(param_1)->Text[1], Length);
+        AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
+        AsChat(param_1)->LifeTime[1] = (int)(uintptr_t)displayEnd;
         return;
     }
 
     // Short text: direct memcpy to offset 0x2c
-    memcpy((void*)(param_1 + 0x2c), param_2, Length + 1);
-    *(char**)(param_1 + 0x22c) = displayEnd;
+    memcpy(AsChat(param_1)->Text[0], param_2, Length + 1);
+    AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
 }
 
 // CreateChat @ 0x00481BA0 (~396 lines) — creates chat bubble above entity
-// Chat bubble pool: base DAT_07e016f8, stride 0x254, ~96 slots.
-// Each slot has: ID (+0x00), guild (+0x18), color (+0x24), team (+0x25),
-//   timer1 (+0x28), text1 (+0x2c), text2 (+0x12c), disp1 (+0x22c), disp2 (+0x230), owner (+0x234).
+// Pool de burbujas: 100 CHAT (UI/ChatTypes.h) en DAT_07e016f8.
 // Two paths: (1) find existing slot for same owner and update, (2) find empty slot and create.
 // IDA: CreateChat (0x00481BA0)
 void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor) {
@@ -121,50 +119,48 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
         }
     }
 
-    // Pool real: base 0x7E016F8, stride 596, fin 0x7E0FFC8 → (0xE8D0)/596 = 100.
-    // Se recorre por cantidad de slots, no hasta la dirección LITERAL del binario.
     char *pool_base = DAT_07e016f8;
-    const int STRIDE = 0x254;
-    const int POOL_SLOTS = 100;
+    const int STRIDE = (int)sizeof(CHAT);
+    const int POOL_SLOTS = (int)(sizeof(DAT_07e016f8) / sizeof(CHAT));   // 100
 
     // ── Path 1: Find existing slot owned by this entity ──
     char *slot = pool_base;
     for (int si = 0; si < POOL_SLOTS; ++si, slot += STRIDE) {
-        if (*(DWORD *)&AsCharacter(slot)->BodyPart[3].PriorAnimationFrame == entity)
+        if (*(DWORD *)&AsChat(slot)->Owner == entity)
             goto found_existing;
     }
 
     // ── Path 2: Find empty slot (both timers <= 0) ──
     slot = pool_base;
     for (int si = 0; si < POOL_SLOTS; ++si, slot += STRIDE) {
-        if (*(int *)&AsCharacter(slot)->Object.HeadAngle[0] <= 0 && *(int *)(slot + 0x22c) <= 0)
+        if (AsChat(slot)->IDLifeTime <= 0 && AsChat(slot)->LifeTime[0] <= 0)
             goto found_new;
     }
     return;  // no free slot
 
 found_new:
-    *(DWORD *)&AsCharacter(slot)->BodyPart[3].PriorAnimationFrame = entity;
+    *(DWORD *)&AsChat(slot)->Owner = entity;
     // Copy ID
     strcpy(slot, ID);
     // Set color and guild info
-    *(char *)(slot + 0x24) = (char)SetColor;
-    *(char *)(slot + 0x25) = '\0';
+    AsChat(slot)->Color = (char)SetColor;
+    AsChat(slot)->GuildColor = '\0';
 
     {
         short guildIdx = AsCharacter(entity)->GuildMarkIndex;  // GuildMarkIndex — IDA +474 (0x1DA), no 0x1d8
         if (guildIdx < 0) {
-            *(char *)(slot + 0x18) = '\0';
+            AsChat(slot)->Guild[0] = '\0';
         } else {
-            *(char *)(slot + 0x25) = AsCharacter(entity)->GuildTeam;  // GuildTeam
+            AsChat(slot)->GuildColor = AsCharacter(entity)->GuildTeam;  // GuildTeam
             // IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ".
             // El prefijo completo determina el corte de color en sub_47F360.
-            Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
+            Platform::TextFormatSecure(AsChat(slot)->Guild, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
         }
     }
 
     // Set text: empty text → timer=100, return
     if (strlen(Text) == 0) {
-        *(int *)&AsCharacter(slot)->Object.HeadAngle[0] = 100;
+        AsChat(slot)->IDLifeTime = 100;
         return;
     }
 
@@ -181,31 +177,31 @@ found_existing:
     // Copy ID (name) — siempre
     strcpy(slot, ID);
     // Set color and guild info — siempre
-    *(char *)(slot + 0x24) = (char)SetColor;
-    *(char *)(slot + 0x25) = '\0';
+    AsChat(slot)->Color = (char)SetColor;
+    AsChat(slot)->GuildColor = '\0';
 
     {
         short guildIdx2 = AsCharacter(entity)->GuildMarkIndex;
         if (guildIdx2 < 0) {
-            *(char *)(slot + 0x18) = '\0';
+            AsChat(slot)->Guild[0] = '\0';
         } else {
-            *(char *)(slot + 0x25) = AsCharacter(entity)->GuildTeam;
+            AsChat(slot)->GuildColor = AsCharacter(entity)->GuildTeam;
             // IDA: mismo prefijo al actualizar una etiqueta existente.
-            Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
+            Platform::TextFormatSecure(AsChat(slot)->Guild, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
         }
     }
 
     if (strlen(Text) != 0) {
         // Texto nuevo: shift la línea actual a "previa", set owner, asignar texto.
-        if (*(int *)(slot + 0x22c) > 0) {                     // disp1 > 0
-            strcpy(slot + 0x12c, slot + 0x2c);                // text1 → text2
-            *(int *)&AsCharacter(slot)->BodyPart[3].AnimationFrame = *(int *)(slot + 0x22c);  // disp1 → disp2
+        if (AsChat(slot)->LifeTime[0] > 0) {                     // disp1 > 0
+            strcpy(AsChat(slot)->Text[1], AsChat(slot)->Text[0]);                // text1 → text2
+            AsChat(slot)->LifeTime[1] = AsChat(slot)->LifeTime[0];  // disp1 → disp2
         }
-        *(DWORD *)&AsCharacter(slot)->BodyPart[3].PriorAnimationFrame = entity;
+        *(DWORD *)&AsChat(slot)->Owner = entity;
         FUN_00481a40((int)slot, Text, Flag);
     } else {
         // Texto vacío (hover de nombre NPC/target): SOLO refrescar el timer.
-        *(int *)&AsCharacter(slot)->Object.HeadAngle[0] = 10;
+        AsChat(slot)->IDLifeTime = 10;
     }
 }
 

@@ -120,12 +120,23 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
         if (AsObject(o)->CurrentAction == 63 && AsObject(o)->AnimationFrame > 6.0f) speed *= 0.5f;
     }
 
-    // IDA: AttackStage (0x00448930), lanzamiento al frame 5 de la acción 88.
-    // DESVIACIÓN del adelanto del DLL: Aqua Beam espera ese cruce, sin perderlo por agilidad alta.
+    // IDA: AttackStage (0x00448930) default: el ataque sale cuando el frame de una
+    // acción 34..91 llega a 5, y el disparo (MoveCharacter) exige que la acción
+    // siga siendo de ataque. DESVIACIÓN: con la velocidad de ataque de MuEmu
+    // (F3/E1) el avance por tick puede pasar del frame 5 al final de la acción
+    // en un solo tick (arco a 535: 0 -> 2.44 -> 4.88 -> fin), y el héroe vuelve
+    // a quieto sin disparar. Si el avance va a cruzar el 5, en este tick avanza
+    // sólo hasta 5, como IDA frena en 5 a Penetration (skill 52). Quedan fuera
+    // los skills con etapas propias en AttackStage.
     if (type == 390 && EntityView((const void*)c).Kind() == EntityView::PlayerKind &&
-        modelAction == 88 && AsCharacter(c)->Skill == 12 && AsCharacter(c)->SkillStage != 0 &&
-        AsObject(o)->AnimationFrame + speed >= 5.0f) {
-        AsCharacter(c)->SkillStage = 15;
+        modelAction >= 34 && modelAction <= 91 && AsCharacter(c)->SkillStage != 0) {
+        const BYTE skill = AsCharacter(c)->Skill;
+        const bool ownStages = skill == 43 || skill == 47 || skill == 48 || skill == 49 ||
+                               skill == 52 || skill == 55 || skill == 56;
+        if (!ownStages && AsObject(o)->AnimationFrame < 5.0f &&
+            AsObject(o)->AnimationFrame + speed > 5.0f) {
+            speed = 5.0f - AsObject(o)->AnimationFrame;
+        }
     }
 
     // BMD__PlayAnimation(model, &frame, &priorFrame, &priorAction, speed) — advances frame.

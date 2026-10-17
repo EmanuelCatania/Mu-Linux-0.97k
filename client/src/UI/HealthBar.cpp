@@ -49,7 +49,7 @@ const Proto::PMSG_HEALTH_BAR* CHealthBar::Find(WORD index, BYTE type) const
 const Proto::PMSG_HEALTH_BAR* CHealthBar::FindEntity(const BYTE* entity) const
 {
     const EntityView view(entity);
-    if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.ModelType() == EntityView::SoccerBall)
+    if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.MonsterIndex() == EntityView::SoccerBall)
         return nullptr;
     return Find(view.NetworkKey(), view.Kind());
 }

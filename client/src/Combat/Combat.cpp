@@ -996,7 +996,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
 
     if (iType > 36) {                                         // IDA L2160
         // Solo 52 tiene rama propia; el resto cae en LABEL_240.
-        if (iType == 52 && *(WORD*)(entity + 2) == 390) {     // IDA L2162
+        if (iType == 52 && *(WORD *)&AsCharacter(entity)->Object.Type == 390) {     // IDA L2162
             const WORD leftWeapon  = *(WORD*)(Hero + 624);    // IDA: v83
             const WORD rightWeapon = *(WORD*)(Hero + 648);    // IDA: v84
             const bool weaponOk = (leftWeapon >= 536 && leftWeapon < 543)
@@ -1006,15 +1006,15 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
             if (weaponOk && Combat_CheckArrowRequirement()) { // IDA L2175: CheckArrow()
                 const int range = Combat_GetSkillRange97k(52);   // IDA L2196
                 if (!Attack_OutOfRange97k(entity, range)) {   // IDA L2203
-                    *(float*)(entity + 36) = CreateAngle(    // IDA L2207: CreateAngle
-                        *(float*)(entity + 16), *(float*)(entity + 20),
-                        *(float*)(entity + 788), *(float*)(entity + 792));
+                    AsCharacter(entity)->Object.Angle[2] = CreateAngle(    // IDA L2207: CreateAngle
+                        AsCharacter(entity)->Object.Position[0], AsCharacter(entity)->Object.Position[1],
+                        AsCharacter(entity)->TargetPosition[0], AsCharacter(entity)->TargetPosition[1]);
                     CurrentSkill = 52;                        // IDA L2237: CurrentSkill
-                    const BYTE dir = (BYTE)(int)(*(float*)(entity + 36) * 0.71111113f);
+                    const BYTE dir = (BYTE)(int)(AsCharacter(entity)->Object.Angle[2] * 0.71111113f);
                     // IDA L2240-2290: [52][heroGX][heroGY][dir][0][0]
                     Combat_SendDuration1E_97k(entity, 52, dir, 0, 0);
                     SetPlayerAttack((int)(uintptr_t)entity, 0, 0, 0);   // IDA L2579: SetPlayerAttack
-                    if (*(WORD*)(entity + 2) != 390) {        // IDA L2582
+                    if (*(WORD *)&AsCharacter(entity)->Object.Type != 390) {        // IDA L2582
                         // IDA L2586-2601.  Hex-Rays muestra la clave del scan como
                         // `HIBYTE(v1025)` y el 6o argumento como `LOWORD(x1)` — dos
                         // slots de pila que reusa —, pero el disassembly (bytes
@@ -1033,7 +1033,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
                         // El slot de la segunda mano NO viaja como argumento: la
                         // flecha/virote la elige CreateArrow por su cuenta con
                         // `pLeft = *(short *)(CharacterMachine + 604)` (L67).
-                        const BYTE queuedSkill = (BYTE)entity[770];   // IDA: c + 0x302
+                        const BYTE queuedSkill = (BYTE)*(char *)&AsCharacter(entity)->Skill;   // IDA: c + 0x302
                         int skillIndex = 0;                   // IDA: v128 / v129
                         while (skillIndex < 20 && attr[87 + skillIndex] != queuedSkill)
                             ++skillIndex;
@@ -1091,7 +1091,7 @@ static void Attack_WarriorBranch97k(char* entity)
     case 41: {                                                // IDA L2940
         AsCharacter(entity)->Object.Angle[2] = CreateAngle(
             AsCharacter(entity)->Object.Position[0], AsCharacter(entity)->Object.Position[1],
-            *(float*)(entity + 788), *(float*)(entity + 792));
+            AsCharacter(entity)->TargetPosition[0], AsCharacter(entity)->TargetPosition[1]);
         if (lowMana) { Attack_UseManaScroll97k(); return; }
         if (!hasAg) return;                                   // IDA L3163
         CurrentSkill = (DWORD)iType;                          // IDA L3197
@@ -1104,7 +1104,7 @@ static void Attack_WarriorBranch97k(char* entity)
     case 42: {                                                // IDA L3537
         AsCharacter(entity)->Object.Angle[2] = CreateAngle(
             AsCharacter(entity)->Object.Position[0], AsCharacter(entity)->Object.Position[1],
-            *(float*)(entity + 788), *(float*)(entity + 792));
+            AsCharacter(entity)->TargetPosition[0], AsCharacter(entity)->TargetPosition[1]);
         if (lowMana) { Attack_UseManaScroll97k(); return; }
         if (!hasAg) return;                                   // IDA L3762
         if (Attack_OutOfRange97k(entity, Combat_GetSkillRange97k(iType)))
@@ -1133,7 +1133,7 @@ static void Attack_WarriorBranch97k(char* entity)
     case 56: {                                                // IDA L5297
         AsCharacter(entity)->Object.Angle[2] = CreateAngle(
             AsCharacter(entity)->Object.Position[0], AsCharacter(entity)->Object.Position[1],
-            *(float*)(entity + 788), *(float*)(entity + 792));
+            AsCharacter(entity)->TargetPosition[0], AsCharacter(entity)->TargetPosition[1]);
         if (lowMana) { Attack_UseManaScroll97k(); return; }
         if (!hasAg) return;                                   // IDA L4908 / L5522
         const BYTE packedOffset = Attack_PackDestination97k(entity);  // IDA L4914 / L5533, payload field 7
@@ -1235,15 +1235,15 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
     if (hasTarget) {                                          // IDA L7951: HIBYTE(v1025)
         AsCharacter(entity)->Object.Angle[2] = CreateAngle(                // IDA L7953: CreateAngle
             AsCharacter(entity)->Object.Position[0], AsCharacter(entity)->Object.Position[1],
-            *(float*)(entity + 788), *(float*)(entity + 792));
+            AsCharacter(entity)->TargetPosition[0], AsCharacter(entity)->TargetPosition[1]);
         const BYTE dir = (BYTE)(int)(AsCharacter(entity)->Object.Angle[2] * 0.71111113f);
         switch (iType) {
         case 5:                                               // IDA L7962 — Flame
             CurrentSkill = (DWORD)iType;                      // IDA LABEL_1521
             // IDA L8035/L8072: la posicion viene de c+788/792 / 100, no de la grilla.
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0,
-                                      (int)(*(float*)(entity + 788) * 0.01f),
-                                      (int)(*(float*)(entity + 792) * 0.01f));
+                                      (int)(AsCharacter(entity)->TargetPosition[0] * 0.01f),
+                                      (int)(AsCharacter(entity)->TargetPosition[1] * 0.01f));
             SetPlayerMagic((int)(uintptr_t)entity);             // IDA LABEL_1430
             return;
         case 8:                                               // IDA L8369
@@ -1272,7 +1272,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
 // ── IDA L9261-10099: LABEL_1585 (cola exclusiva del Dark Wizard) ─────────────
 static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
 {
-    if ((entity[444] & 7) != 0 || !hasTarget)
+    if ((*(char *)&AsCharacter(entity)->Class & 7) != 0 || !hasTarget)
         return;                                               // IDA L9262
 
     if (iType == 6) {                                         // IDA L9266 — Teleport
@@ -1296,7 +1296,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             return;                                           // IDA L9294
         AsObject(entity)->Angle[2] = CreateAngle(                // IDA L9298
             AsObject(entity)->Position[0], AsObject(entity)->Position[1],
-            *(float*)(entity + 788), *(float*)(entity + 792));
+            AsCharacter(entity)->TargetPosition[0], AsCharacter(entity)->TargetPosition[1]);
         // IDA L9303: Teleport || dword_7E11DC4 || GetTickCount() - dword_7E11DC8 < 3000.
         // Los tres globals los escribe el handler 0x1C de Net_Process
         // (ReceiveTeleport), asi que el cooldown queda compartido igual que en el
@@ -2130,14 +2130,14 @@ void __cdecl Action(DWORD c, DWORD o)
 
                 AsCharacter(c)->SkillStage = 1;  // attack pending
                 // Cache target position for hit confirmation
-                *(DWORD*)(c + 788) = *(DWORD*)(pCharsClient + 16);
-                *(DWORD*)(c + 792) = *(DWORD*)(pCharsClient + 20);
-                *(DWORD*)(c + 796) = *(DWORD*)(pCharsClient + 24);
+                *(DWORD *)&AsCharacter(c)->TargetPosition[0] = *(DWORD*)(pCharsClient + 16);
+                *(DWORD *)&AsCharacter(c)->TargetPosition[1] = *(DWORD*)(pCharsClient + 20);
+                *(DWORD *)&AsCharacter(c)->TargetPosition[2] = *(DWORD*)(pCharsClient + 24);
 
                 // Update facing angle toward target
                 *(float*)(o + 36) = CreateAngle(
                     *(float*)(o + 16), *(float*)(o + 20),
-                    *(float*)(c + 788), *(float*)(c + 792));
+                    AsCharacter(c)->TargetPosition[0], AsCharacter(c)->TargetPosition[1]);
 
                 // Mark action consumed and target locked
                 AsCharacter(c)->Movement = 0;
