@@ -43,7 +43,15 @@ public:
     bool Create(const WindowSettings& settings) override {
         if (window) return true;
         closing = false;
+#ifndef _WIN32
+        // SDL 3.2 prefiere X11 si el compositor no ofrece fifo-v1. La sesión
+        // Wayland debe preferir su backend nativo, respetando SDL_VIDEODRIVER.
+        const char* session = SDL_getenv("XDG_SESSION_TYPE");
+        if (SDL_getenv("WAYLAND_DISPLAY") || (session && SDL_strcmp(session, "wayland") == 0))
+            SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_DEFAULT);
+#endif
         if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
+        SDL_Log("Backend de video: %s", SDL_GetCurrentVideoDriver());
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
         // IDA: OpenGL_Init (0x0041DE30), mínimos de color/profundidad de 16 bits.
