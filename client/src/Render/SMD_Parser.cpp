@@ -172,13 +172,13 @@ void __cdecl crt_fprintf(void* param_1, void* param_2) {
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
 void __cdecl BMD__Release(int param_1) {
-    short numBones   = *(short*)(param_1 + 0x22);
-    short numMeshes  = *(short*)(param_1 + 0x26);
-    short numActions = *(short*)(param_1 + 0x24);
+    short numBones   = AsModel(param_1)->NumBones;
+    short numMeshes  = AsModel(param_1)->NumActions;
+    short numActions = AsModel(param_1)->NumMeshs;
     if (numBones == 0) return;
     // free per-bone sub-mesh vertex arrays
     for (int bi = 0; bi < numBones; bi++) {
-        int bonePtr = *(int*)(param_1 + 0x2c) + bi * 0x8c;
+        int bonePtr = *(int *)&AsModel(param_1)->Bones + bi * 0x8c;
         if (*(char*)(bonePtr + 0x22) == '\0') {
             if (numMeshes > 0) {
                 int meshBase = *(int*)(bonePtr + 0x24);
@@ -194,13 +194,13 @@ void __cdecl BMD__Release(int param_1) {
     }
     // free action keyframe data
     for (int ai = 0; ai < numMeshes; ai++) {
-        int aPtr = *(int*)(param_1 + 0x30) + ai * 0x10;
+        int aPtr = *(int *)&AsModel(param_1)->Actions + ai * 0x10;
         if (*(char*)(aPtr + 10) != '\0')
             operator_delete(*(void**)(aPtr + 0xc));
     }
     // free mesh vertex/normal/UV buffers + unload textures
     for (int mi = 0; mi < numActions; mi++) {
-        int mBase = *(int*)(param_1 + 0x28) + mi * 0x28;
+        int mBase = *(int *)&AsModel(param_1)->Meshs + mi * 0x28;
         operator_delete(*(void**)(mBase + 0x10));
         operator_delete(*(void**)(mBase + 0x14));
         operator_delete(*(void**)(mBase + 0x18));
@@ -209,18 +209,18 @@ void __cdecl BMD__Release(int param_1) {
             operator_delete(*(void**)(mBase + 0x24));
             *(DWORD*)(mBase + 0x24) = 0;
         }
-        int texId = (int)*(short*)(*(int*)(param_1 + 0x38) + *(short*)(mBase + 2) * 2);
+        int texId = (int)*(short*)(*(int *)&AsModel(param_1)->IndexTexture + *(short*)(mBase + 2) * 2);
         if (texId != 0x12d)
             UnloadImage(texId);
     }
-    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD*)(param_1 + 0x28) = 0; }
-    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD*)(param_1 + 0x2c) = 0; }
-    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD*)(param_1 + 0x30) = 0; }
-    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD*)(param_1 + 0x34) = 0; }
-    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD*)(param_1 + 0x38) = 0; }
-    *(short*)(param_1 + 0x22) = 0;
-    *(short*)(param_1 + 0x26) = 0;
-    *(short*)(param_1 + 0x24) = 0;
+    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD *)&AsModel(param_1)->Meshs = 0; }
+    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD *)&AsModel(param_1)->Bones = 0; }
+    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD *)&AsModel(param_1)->Actions = 0; }
+    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD *)&AsModel(param_1)->Textures = 0; }
+    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD *)&AsModel(param_1)->IndexTexture = 0; }
+    AsModel(param_1)->NumBones = 0;
+    AsModel(param_1)->NumActions = 0;
+    AsModel(param_1)->NumMeshs = 0;
 }
 
 // DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
@@ -806,11 +806,11 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
     int base = param_1 * 0xbc + DAT_05828d58;
-    *(short*)(base + 0xaa) = (short)param_2;
-    *(short*)(base + 0xac) = (short)param_3;
-    *(short*)(base + 0xae) = (short)param_4;
-    *(short*)(base + 0xb0) = (short)param_5;
-    *(short*)(base + 0xb2) = (short)param_6;
+    AsModel(base)->Sounds[0] = (short)param_2;
+    AsModel(base)->Sounds[1] = (short)param_3;
+    AsModel(base)->Sounds[2] = (short)param_4;
+    AsModel(base)->Sounds[3] = (short)param_5;
+    AsModel(base)->Sounds[4] = (short)param_6;
 }
 
 // CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.

@@ -42,9 +42,9 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
     bool stillPlaying = true;
     if (!This || !AnimationFrame) return true;
     BYTE* self = (BYTE*)This;
-    if (*(short*)(self + 0x26) == 0) return true;  // model has no animations
-    BYTE action = *(BYTE*)(self + 0xa0);
-    int actionsBase = *(int*)(self + 0x30);
+    if (AsModel(self)->NumActions == 0) return true;  // model has no animations
+    BYTE action = AsModel(self)->CurrentAction;
+    int actionsBase = *(int *)&AsModel(self)->Actions;
     // Guarda propia: actionsBase puede ser basura si el slot fue parcialmente
     // inicializado (ej. particle pool con stale data). Sólo se descartan
     // direcciones bajas: en Linux x86 el heap puede estar por encima de 2 GB.
@@ -79,8 +79,8 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
             *AnimationFrame = (float)frameCount - 0.01f;
         }
     }
-    *(float*)(self + 0xa4) = *AnimationFrame;
-    *(short*)(self + 0xa8) = (short)(int)*AnimationFrame;
+    AsModel(self)->CurrentAnimation = *AnimationFrame;
+    AsModel(self)->CurrentAnimationFrame = (short)(int)*AnimationFrame;
     return stillPlaying;
 }
 

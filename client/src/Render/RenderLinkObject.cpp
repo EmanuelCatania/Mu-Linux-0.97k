@@ -140,10 +140,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // los efectos por tipo); se dibuja con el modelo propio del catálogo.
     const int drawModel = gContentCatalog.EntityDrawModel((const void*)(uintptr_t)param_4, param_6);
     iVar7 = DAT_05828d58 + drawModel * 0xbc;
-    *(unsigned char*)(iVar7 + 0x45) = AsCharacter(param_4)->Object.ContrastEnable;  // ContrastEnable
-    *(unsigned int* )(iVar7 + 0x68) = *(unsigned int *)&AsCharacter(param_4)->Object.Scale;  // Scale
-    *(unsigned char*)(iVar7 + 0xa0) = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
-    *(unsigned int* )(iVar7 + 0x84) = 0;                                   // BodyHeight = 0
+    AsModel(iVar7)->ContrastEnable = AsCharacter(param_4)->Object.ContrastEnable;  // ContrastEnable
+    *(unsigned int *)&AsModel(iVar7)->BodyScale = *(unsigned int *)&AsCharacter(param_4)->Object.Scale;  // Scale
+    AsModel(iVar7)->CurrentAction = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
+    *(unsigned int *)&AsModel(iVar7)->BodyHeight = 0;                                   // BodyHeight = 0
 
     // Se limpia local_1ec antes de ItemObjectAttribute: no escribe TODOS los
     // campos del OBJECT, y los bytes sin inicializar cambiarían el comportamiento
@@ -156,7 +156,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // It sets LightEnable, reads item attributes.
     ItemObjectAttribute((int)local_1ec);
 
-    *(unsigned char*)(iVar7 + 0x44) = 0;  // LightEnable = false
+    AsModel(iVar7)->LightEnable = 0;  // LightEnable = false
 
     // ── 2. bone position resolution ───────────────────────────────────────────
     if (param_9 == '\0')
@@ -181,9 +181,9 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // BodyOrigin = TransformedPosition + entity world position
         // IDA usa `Position[0]` directo: reinterpretar los bits de local_240 (Ghidra
         // lo tipó como void*), no convertir el entero.
-        *(float*)(iVar7 + 0x6c) = *(float*)&local_240 + AsCharacter(param_4)->Object.Position[0];
-        *(float*)(iVar7 + 0x70) = local_23c_f         + AsCharacter(param_4)->Object.Position[1];
-        *(float*)(iVar7 + 0x74) = local_238_f         + AsCharacter(param_4)->Object.Position[2];
+        AsModel(iVar7)->BodyOrigin[0] = *(float*)&local_240 + AsCharacter(param_4)->Object.Position[0];
+        AsModel(iVar7)->BodyOrigin[1] = local_23c_f         + AsCharacter(param_4)->Object.Position[1];
+        AsModel(iVar7)->BodyOrigin[2] = local_238_f         + AsCharacter(param_4)->Object.Position[2];
 
     }
     else
@@ -338,19 +338,19 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         R_ConcatTransforms(pBoneMat, local_228, (float*)&DAT_06989c9c);
 
         // BodyOrigin = entity world position (copy from entity, no local offset added)
-        *(unsigned int*)(iVar7 + 0x6c) = *(unsigned int *)&AsCharacter(param_4)->Object.Position[0];
-        *(unsigned int*)(iVar7 + 0x70) = *(unsigned int *)&AsCharacter(param_4)->Object.Position[1];
-        *(unsigned int*)(iVar7 + 0x74) = *(unsigned int *)&AsCharacter(param_4)->Object.Position[2];
+        *(unsigned int *)&AsModel(iVar7)->BodyOrigin[0] = *(unsigned int *)&AsCharacter(param_4)->Object.Position[0];
+        *(unsigned int *)&AsModel(iVar7)->BodyOrigin[1] = *(unsigned int *)&AsCharacter(param_4)->Object.Position[1];
+        *(unsigned int *)&AsModel(iVar7)->BodyOrigin[2] = *(unsigned int *)&AsCharacter(param_4)->Object.Position[2];
     }
 
     // ── 3. Boss-head special case (TYPE == 0xea = MODEL_BOSS_HEAD) ────────────
     local_1c8 = 0.0f;
     if (param_6 == 0xea)
     {
-        *(float*)(iVar7 + 0x6c) += _DAT_07abf5c4;
-        *(float*)(iVar7 + 0x70) += _DAT_07abf5c8;
-        *(float*)(iVar7 + 0x74) += _DAT_07abf5cc;
-        *(unsigned int*)(iVar7 + 0x54) = 0;      // BoneHead = 0
+        AsModel(iVar7)->BodyOrigin[0] += _DAT_07abf5c4;
+        AsModel(iVar7)->BodyOrigin[1] += _DAT_07abf5c8;
+        AsModel(iVar7)->BodyOrigin[2] += _DAT_07abf5cc;
+        *(unsigned int *)&AsModel(iVar7)->BoneHead = 0;      // BoneHead = 0
         local_1c8 = (float)DAT_05826e08;         // spinning angle = g_AnimTick
     }
 

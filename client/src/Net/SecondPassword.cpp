@@ -3067,11 +3067,11 @@ void __cdecl MoveCharacter(int p1)
     int   v48;          // entType16
 
     // ─── IDA L431-436: sync entity world pos → model render slot
-    *(DWORD*)(v422 + 108) = *(DWORD *)&AsObject(o)->Position[0];   // x
-    *(DWORD*)(v422 + 112) = *(DWORD *)&AsObject(o)->Position[1];   // y
-    *(DWORD*)(v422 + 116) = *(DWORD *)&AsObject(o)->Position[2];   // z
-    *(DWORD*)(v422 + 104) = *(DWORD *)&AsObject(o)->Scale;   // scale
-    *(BYTE*) (v422 + 160) = AsObject(o)->CurrentAction;  // anim_state
+    *(DWORD *)&AsModel(v422)->BodyOrigin[0] = *(DWORD *)&AsObject(o)->Position[0];   // x
+    *(DWORD *)&AsModel(v422)->BodyOrigin[1] = *(DWORD *)&AsObject(o)->Position[1];   // y
+    *(DWORD *)&AsModel(v422)->BodyOrigin[2] = *(DWORD *)&AsObject(o)->Position[2];   // z
+    *(DWORD *)&AsModel(v422)->BodyScale = *(DWORD *)&AsObject(o)->Scale;   // scale
+    AsModel(v422)->CurrentAction = AsObject(o)->CurrentAction;  // anim_state
 
     // ─── IDA L437-477: Hero-only buff timers (anti-tamper stripped)
     if (c == (DWORD)Hero)
@@ -3321,8 +3321,8 @@ void __cdecl MoveCharacter(int p1)
     // ─── LABEL_195 (IDA L783): mid-way joint logic ──────────────────────────
     // L784-795: planta enredadera (tipo 377) — cambio de idle aleatorio al terminar la acción
     if (AsObject(o)->Type == 377
-        && *(short*)(v422 + 168)
-            == *(short*)(*(int*)(v422 + 48) + 16 * (AsObject(o)->CurrentAction) + 8) - 1)
+        && AsModel(v422)->CurrentAnimationFrame
+            == *(short*)(*(int *)&AsModel(v422)->Actions + 16 * (AsObject(o)->CurrentAction) + 8) - 1)
     {
         SetAction((int)o, (rand() % 32) ? 0 : 1);
     }
@@ -3930,9 +3930,9 @@ void __cdecl MoveCharacter(int p1)
                 // Weapon-trail interpolation across 10 sub-frames using BMD_Animation
                 float v368f = 10.0f;
                 float AnimationFrame = AsObject(o)->AnimationFrame
-                                     - *(float*)(*(int*)(v422 + 48) + 16 * (*(BYTE*)(v422 + 160)) + 4);
+                                     - *(float*)(*(int *)&AsModel(v422)->Actions + 16 * (AsModel(v422)->CurrentAction) + 4);
                 float PriorFrame = AsObject(o)->PriorAnimationFrame;
-                float v370f = *(float*)(*(int*)(v422 + 48) + 16 * (*(BYTE*)(v422 + 160)) + 4) / 10.0f;
+                float v370f = *(float*)(*(int *)&AsModel(v422)->Actions + 16 * (AsModel(v422)->CurrentAction) + 4) / 10.0f;
                 for (int kk = 0; kk < (int)v368f; ++kk) {
                     // El 6to argumento de BMD_Animation es el Angle de la entidad, no un
                     // buffer de salida: con ceros los huesos se posarían con facing (0,0,0) y

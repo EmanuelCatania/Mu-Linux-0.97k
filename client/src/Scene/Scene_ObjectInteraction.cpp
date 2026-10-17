@@ -59,11 +59,11 @@ char* __stdcall PickObject_Mouse(void) {
                     char* model = modelBase + modelType * 0xBC;
 
                     // Set model data fields from object
-                    *(DWORD*)(model + 0x68) = *(DWORD *)&AsObject(obj)->Scale;
-                    *(char*)(model + 0xA0) = *(char *)&AsObject(obj)->CurrentAction;
-                    *(DWORD*)(model + 0x6C) = *(DWORD *)&AsObject(obj)->Position[0];
-                    *(DWORD*)(model + 0x70) = *(DWORD *)&AsObject(obj)->Position[1];
-                    *(DWORD*)(model + 0x74) = *(DWORD *)&AsObject(obj)->Position[2];
+                    *(DWORD *)&AsModel(model)->BodyScale = *(DWORD *)&AsObject(obj)->Scale;
+                    *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(obj)->CurrentAction;
+                    *(DWORD *)&AsModel(model)->BodyOrigin[0] = *(DWORD *)&AsObject(obj)->Position[0];
+                    *(DWORD *)&AsModel(model)->BodyOrigin[1] = *(DWORD *)&AsObject(obj)->Position[1];
+                    *(DWORD *)&AsModel(model)->BodyOrigin[2] = *(DWORD *)&AsObject(obj)->Position[2];
 
                     // BMD::Animation — set up bone matrices
                     // BMD_Animation(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)

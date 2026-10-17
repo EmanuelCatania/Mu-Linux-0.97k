@@ -84,7 +84,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     // Setup BMD model: Models base = DAT_05828d58, stride = sizeof(BMD) = 188 (0xBC)
     int modelIdx = (int)AsObject(objPtr)->Type;
     char* model = (char*)(DAT_05828d58 + modelIdx * 0xBC);
-    model[0xa0] = *(char *)&AsObject(objPtr)->CurrentAction;  // set current action
+    *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(objPtr)->CurrentAction;  // set current action
 
     float animSpeed = AsObject(objPtr)->Velocity;
     if (gMapManager.GetCurrentMap() == 8 && AsObject(objPtr)->Type == 8) {
@@ -213,7 +213,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x17:
         case 0x18:
             // IDA writes the model loop flag (+136) and scrolls texture V.
-            model[136] = 1;
+            AsModel(model)->StreamMesh = 1;
             AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x27:
@@ -286,11 +286,11 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             AsObject(objPtr)->BlendMeshTexCoordV = (float)((std::int64_t)WorldTime % 2000) * 0.0005f;
             break;
         case 0x2a:
-            model[136] = 0;
+            AsModel(model)->StreamMesh = 0;
             AsObject(objPtr)->BlendMeshTexCoordU = (float)((std::int64_t)WorldTime % 500) * -0.002f;
             break;
         case 0x2b:
-            model[136] = 0;
+            AsModel(model)->StreamMesh = 0;
             AsObject(objPtr)->BlendMeshTexCoordU = (float)((std::int64_t)WorldTime % 500) * 0.002f;
             break;
         }
