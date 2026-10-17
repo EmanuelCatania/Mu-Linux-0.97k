@@ -598,5 +598,66 @@ gitGraph
   salen de `fase/N` y vuelven por PR.
 - Una corrección sobre una versión publicada sale del tag afectado, se mergea a `main`
   con su nuevo tag y también a la fase en curso.
-- Los Releases publican sólo el código fuente: cada uno compila el cliente con los datos
-  de su server.
+- El CI también prepara un paquete Linux x86. Para otro servidor, compilá con su configuración.
+
+## Cliente Linux x86: paquete y compilación
+
+El CI construye el ejecutable **ELF32 con SSE2** sobre Ubuntu 22.04. SDL3, FreeType y miniaudio se enlazan estáticamente; OpenGL, glibc y las bibliotecas del escritorio son del sistema y deben tener su versión de **32 bits**, incluso en un Linux x64. No es un cliente x64: los tamaños y offsets de las entidades se verifican en compilación y sus asserts no deben relajarse.
+
+El artefacto `mu97k-linux-release` contiene el `.tar.gz`, su SHA256 y el inventario de bibliotecas. El paquete incluye `main`, `Data`, licencias, README y `launch.sh`; no lleva el `Config.ini` del desarrollador. El empaquetado rechaza símbolos GLIBC posteriores a 2.35. Los paquetes de ejecución son:
+
+```sh
+# Arch: [multilib] enabled
+sudo pacman -S --needed lib32-glibc lib32-gcc-libs lib32-glu lib32-libglvnd \
+  lib32-libx11 lib32-libxext lib32-libxrandr lib32-libxcursor lib32-libxi \
+  lib32-wayland lib32-libxkbcommon lib32-libdecor lib32-alsa-lib lib32-libpulse
+# Intel/AMD: lib32-mesa. NVIDIA: lib32-nvidia-utils matching the installed driver.
+
+# Debian 12 / Ubuntu 22.04+
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install libc6:i386 libstdc++6:i386 libgcc-s1:i386 \
+  libglu1-mesa:i386 libgl1:i386 libegl1:i386 libgl1-mesa-dri:i386 \
+  libx11-6:i386 libxext6:i386 libxrandr2:i386 libxcursor1:i386 libxi6:i386 \
+  libwayland-client0:i386 libwayland-cursor0:i386 libwayland-egl1:i386 \
+  libxkbcommon0:i386 libdecor-0-0:i386 libdecor-0-plugin-1-cairo:i386 libpulse0:i386
+# ALSA: libasound2:i386 (Debian 12 / Ubuntu 22.04), libasound2t64:i386 (Ubuntu 24.04+).
+
+# Fedora
+sudo dnf install glibc.i686 libstdc++.i686 libgcc.i686 mesa-libGLU.i686 \
+  libglvnd-glx.i686 libglvnd-egl.i686 mesa-dri-drivers.i686 \
+  libX11.i686 libXext.i686 libXrandr.i686 libXcursor.i686 libXi.i686 \
+  wayland.i686 libxkbcommon.i686 libdecor.i686 alsa-lib.i686 pulseaudio-libs.i686
+```
+
+Descomprimí el tar en el SSD y ejecutá `./launch.sh` desde una terminal de tu sesión, sin sudo. Se guardan configuración, capturas y `debug.log` en `${XDG_DATA_HOME:-$HOME/.local/share}/mu97k`. El primer arranque crea una configuración en ventana, 1024×768; no sobrescribe preferencias existentes. `MU_CLIENT_ROOT` permite elegir otro directorio de escritura.
+
+Para leer los assets del HDD NTFS sin copiarlos, apuntá a la carpeta **que contiene Data**, manteniendo `Data/Font` y sus cuatro fuentes:
+
+```sh
+MU_ASSET_ROOT='/run/media/usuario/HDD/ruta/Client' ./launch.sh
+SDL_VIDEODRIVER=wayland ./launch.sh
+SDL_VIDEODRIVER=x11 ./launch.sh
+```
+
+Sin `SDL_VIDEODRIVER`, una sesión Wayland prueba Wayland y después X11/XWayland. La selección se informa por stderr. `lib32-libdecor` existe en Arch: instalalo para decoraciones del lado del cliente. Sin libdecor, un compositor sin decoraciones del lado del servidor puede mostrar la ventana sin marco. En HiDPI se conserva la resolución lógica del juego y el compositor escala la imagen; puede verse menos nítida. El IME usa la entrada de texto de SDL/Wayland, limitada al repertorio Windows-1252 del juego; no muestra el indicador IMM de Windows. Las pruebas con GPU, escalado, IME, fullscreen y captura de la cámara dependen del compositor.
+
+Para **compilar**, además de las bibliotecas anteriores necesitás Git, CMake 3.25+, Ninja, Python 3, pkg-config y GCC/G++ con soporte `-m32`, más headers de desarrollo:
+
+- Arch: `base-devel gcc cmake ninja git python pkgconf glu wayland-protocols`, y las bibliotecas `lib32-*` anteriores (incluyen los archivos de desarrollo).
+- Debian/Ubuntu: `g++-multilib libc6-dev-i386 cmake ninja-build git python3 pkg-config wayland-protocols libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 libasound2-dev:i386 libpulse-dev:i386`. Ubuntu 22.04 trae CMake 3.22: instalar CMake 3.25+ antes de configurar (por ejemplo, en un entorno virtual de Python).
+- Fedora: `gcc gcc-c++ cmake ninja-build git python3 pkgconf-pkg-config wayland-devel wayland-protocols-devel glibc-devel.i686 libstdc++-devel.i686 mesa-libGLU-devel.i686 libglvnd-devel.i686 libX11-devel.i686 libXext-devel.i686 libXrandr-devel.i686 libXinerama-devel.i686 libXcursor-devel.i686 libXi-devel.i686 wayland-devel.i686 libxkbcommon-devel.i686 libdecor-devel.i686 alsa-lib-devel.i686 pulseaudio-libs-devel.i686`.
+
+```sh
+# PKG_CONFIG_LIBDIR: Arch
+export PKG_CONFIG_LIBDIR=/usr/lib32/pkgconfig:/usr/share/pkgconfig
+# Debian / Ubuntu:
+# export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
+# Fedora:
+# export PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig
+cmake -S . -B build/linux-release -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake \
+  -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_BUILD_TYPE=Release
+cmake --build build/linux-release --parallel 4
+python3 .github/scripts/check_cmake_sources.py
+```

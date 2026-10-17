@@ -2,6 +2,7 @@ name: build-sdl3
 on:
   push:
     branches: [ "fase/*", "platform/**", "main" ]
+    tags: [ "*" ]
   pull_request:
     branches: [ "fase/*", "main" ]
   workflow_dispatch:
@@ -16,7 +17,7 @@ jobs:
       matrix:
         target:
           - { name: windows-x86, os: windows-latest }
-          - { name: linux-x86-biblioteca, os: ubuntu-22.04 }
+          - { name: linux-x86, os: ubuntu-22.04 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
@@ -27,21 +28,36 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libasound2-dev:i386 ninja-build pkg-config
+          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config
       - name: Configurar Windows
         if: runner.os == 'Windows'
         run: cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
-      - name: Configurar biblioteca Linux
+      - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
           PKG_CONFIG_LIBDIR: /usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
-        run: cmake -S . -B build -G Ninja -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=ON -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+        run: cmake -S . -B build -G Ninja -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       - name: Compilar
         run: cmake --build build --config ${{ matrix.config }} --parallel 4
+      - name: Verificar ABI y empaquetar Release Linux
+        if: runner.os == 'Linux' && matrix.config == 'Release'
+        run: |
+          objdump -T build/bin/main > build/symbols.txt
+          ldd build/bin/main > build/ldd.txt
+          python3 .github/scripts/package_linux.py build dist
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux' && matrix.config == 'Release'
+        with:
+          name: mu97k-linux-release
+          path: |
+            dist/*
+            build/symbols.txt
+            build/ldd.txt
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: sdl3-${{ matrix.target.name }}-${{ matrix.config }}
           path: |
             bin/Client/main.exe
-            build/src/Platform/SDL3/libmu_platform_sdl.a
+            build/bin/main
           if-no-files-found: error
