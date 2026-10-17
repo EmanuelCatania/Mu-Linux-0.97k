@@ -7,7 +7,7 @@ para cada archivo compilado y para el link, compara el conjunto de flags.
 Se descartan los argumentos que dependen de la ruta del build (/Fo, /Fd,
 /Fp, /I, /OUT, /PDB, /MAP:..., el .obj/.lib de entrada, etc.).
 
-Uso: python tools/compare_build_flags.py <dir_vcxproj> <dir_cmake>
+Uso: python .github/scripts/compare_build_flags.py <dir_vcxproj> <dir_cmake>
 Sale con código 1 si hay diferencias.
 """
 import os
