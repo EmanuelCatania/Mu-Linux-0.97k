@@ -4553,7 +4553,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 // MoveMonsterClient @ 0x00454CD0 — Entity_PathTick(entity, player_entity)
 // Tick de camino por frame: si +0x2fd (teleport) está seteado → saltea. Si +0x2ec (flag de movimiento) está seteado →
 //   avanza el waypoint (Entity_AdvancePath), y al llegar limpia +0x2ec y cancela la acción.
-// Si no se está moviendo y la grilla objetivo difiere del cached_wp → llama a PathFinding2.
+// Si no se está moviendo y la grilla objetivo difiere de PositionX/Y → llama a PathFinding2.
 // param_1 es el puntero a la entidad (Ghidra lo tipó float — castear a int).
 // IDA: MoveMonsterClient (0x00454CD0)
 void __cdecl MoveMonsterClient(int param_1_i, int param_2)
@@ -4595,7 +4595,7 @@ void __cdecl MoveMonsterClient(int param_1_i, int param_2)
     if (*(char*)(entity + 0x350) != '\0') return;
     if (*(short*)(param_2 + 2) == 0x115) return;
 
-    // Lee cached_wp_x y cached_wp_y (las decoraciones de HashTable son ruido anti-tamper)
+    // Lee PositionX y PositionY (las decoraciones de HashTable son ruido anti-tamper)
     unsigned int cachedX = *(unsigned int *)&AsCharacter(entity)->PositionX;
     unsigned int cachedY = *(unsigned int *)&AsCharacter(entity)->PositionY;
 
@@ -4604,7 +4604,7 @@ void __cdecl MoveMonsterClient(int param_1_i, int param_2)
         cachedY == AsCharacter(entity)->TargetY)
         return;
 
-    // Pathfind desde cached_wp hasta target_grid
+    // Pathfind desde PositionX/Y hasta target_grid
     unsigned int found = Path_FindRoute(cachedX, (float)cachedY,
                                       (unsigned int)AsCharacter(entity)->TargetX,
                                       (unsigned int)AsCharacter(entity)->TargetY,

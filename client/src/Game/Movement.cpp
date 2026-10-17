@@ -29,49 +29,7 @@
 //   Base del array:   DAT_07abf5d0 (aleatorizada con rand()%0x80*0x394 al inicio)
 //   Entidad del jugador: DAT_07abf5d8 (= base + 0x394)
 //
-//   Offset  Tipo    Nombre                  Descripción
-//   +0x02   short   entity_type             Tipo (0x186=skeleton, 0x129=player, etc.)
-//   +0x04   int     entity_id               ID de red (coincide con HeroKey para el jugador)
-//   +0x10   float   world_x                 Posición X world (OpenGL)
-//   +0x14   float   world_y                 Posición Y world (OpenGL)
-//   +0x18   float   world_z                 Elevación Z (del heightmap)
-//   +0x24   float   facing_angle            Ángulo de orientación en grados (0..360)
-//   +0x34   float   idle_jitter_x           Offset de animación idle (generado con rand)
-//   +0x38   float   idle_jitter_y
-//   +0x68   float   height_bob              Oscilación vertical de animación
-//   +0x78   int     flags                   Flags varios (bit1 = doble velocidad, etc.)
-//   +0x105  byte    anim_state              ID de animación actual
-//   +0x106  byte    anim_state_prev         Animación anterior (para blending)
-//   +0x108  int     anim_timer              Timer de frame de animación actual
-//   +0x10c  int     anim_timer_prev         Timer de animación anterior
-//   +0x161  char    smooth_angle_flag       0=lerp suave, 1=snap directo
-//   +0x164  float   target_angle            Ángulo destino para interpolación
-//   +0x168  float   current_smooth_angle    Ángulo suavizado actual
-//   +0x1bc  byte    move_type_flags         Bits 0-2: 1=normal, 2=nado, 3=carrera
-//   +0x240  short   mount_id                Montura (-1=ninguna)
-//   +0x242  byte    mount_speed_tier        Nivel de velocidad de montura
-//   +0x258  short   action_target           Objetivo de acción (weapon/NPC slot)
-//   +0x25a  byte    action_speed_tier
-//   +0x270  short   weapon_item_id          Arma equipada (-1=ninguna)
-//   +0x288  short   shield_item_id          Escudo equipado (-1=ninguna)
-//   +0x2a0  short   ride_state              Estado de montura (-1=no montado)
-//   +0x2b8  short   char_class              Clase (0x332=DK, 0x333=DW, etc.)
-//   +0x2ec  byte    move_pending            1=movimiento en cola de acción
-//   +0x2fd  byte    locked                  1=entidad bloqueada (no procesar mov.)
-//   +0x300  byte    stamina_counter         Contador agotamiento (0..0x28; >=0x28 = cansado)
-//   +0x305  byte    move_trigger            1=ejecutar movimiento inmediato
-//   +0x306  byte    target_grid_x           Destino X en grid (recibido del servidor)
-//   +0x307  byte    target_grid_y           Destino Y en grid
-//   +0x310  short   attack_target_index     Índice de entidad objetivo de ataque (-1=ninguno)
-//   +0x34e  char    SafeZone                1=parado en zona segura
-//   +0x350  char    state_flag              Estado especial de movimiento
-//   +0x354  byte    path_current_wp         Índice del waypoint actual (0..N-1)
-//   +0x355  byte    path_substep            Sub-paso dentro del waypoint (0..3)
-//   +0x356  byte    path_wp_count           Total de waypoints en el path actual
-//   +0x357  byte[15] path_wp_x             Coordenadas X de waypoints (grid, 15 max)
-//   +0x366  byte[15] path_wp_y             Coordenadas Y de waypoints (grid, 15 max)
-//   +0x388  int     cached_wp_x             Caché de coordenada X del waypoint actual (grid)
-//   +0x38c  int     cached_wp_y             Caché de coordenada Y del waypoint actual
+//   Campos: Entity/EntityTypes.h (CHARACTER / OBJECT).
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // IDs DE ANIMACIÓN (entity+0x105)
@@ -268,7 +226,7 @@ void Entity_SetWalkAnimation(int entity);
 // 0x00443930  Entity_UpdateWalkAnim(int entity)
 //   Versión extendida de Entity_SetWalkAnimation para entidad type==0x186 (y otras).
 //   Gestiona adicionalmente:
-//     entity+0x300 (stamina): si move_type_flags bit2==1 (fast), incrementa contador.
+//     c->Run (+0x300): contador de cansancio; se incrementa al correr.
 //     Si entity_type == 0x186: inicializa tabla de bone weights en DAT_05828d58+0x11E98:
 //       Offsets 0xD0..0x140 (step 0x10): peso = 0x3EA8F5C3 (≈ 0.083f)
 //       Offsets 0x160..0x210 (step 0x10): peso = 0x3EAE147B (≈ 0.085f)

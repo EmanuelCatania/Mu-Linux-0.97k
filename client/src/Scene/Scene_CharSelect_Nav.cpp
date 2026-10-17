@@ -433,7 +433,7 @@ void Characters_FreeAllBMDBuffers()
 // Character_UpdateEquipSlotAnimations @ 0x0045C720 — Character_UpdateEquipSlotAnimations
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
 // equipment-slot model indices, selecting the correct animated variant based
-// on move_type_flags (bits 0-2 = weapon style, bits 3+ = sub-variant offset).
+// on Class (bits 0-2 = clase, bits 3+ = segunda clase).
 void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 {
     if (AsCharacter(param_1)->Object.Type != 0x186) return;
@@ -1791,16 +1791,7 @@ void __cdecl SetPlayerMagic(int param_1) {
 // función. Los llamadores que quieran el comportamiento IgnoreRandom deberían
 // gatear con `*(WORD*)(c+2) != 390` antes de llamar.
 //
-// Entity offsets:
-//   +2    short  entity_type        (390 = player)
-//   +4    int    sub_class
-//   +0x105 byte  current_action     (62/63 = currently dying anim → skip)
-//   +0x10 float[3] world position
-//   +0x1C float[3] world angle
-//   +0x1BC byte   move_type_flags   (& 7 == 2 = swimming)
-//   +0x2B8 short  weapon_type       (818/819 = certain mounts that skip shock)
-//   +0x2EC byte   alive_flag        (se limpia en el shock del jugador, per IDA)
-//   +0x2FD byte   dead_flag         (set ⇒ skip)
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
 // Forward decls (signatures match functions.h / existing impls — return type
 // de SetAction en algunos headers es `void*`, así que delegamos vía el global
 // header rather than re-declaring locally).

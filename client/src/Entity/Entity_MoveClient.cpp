@@ -32,12 +32,12 @@ void __stdcall MoveCharactersClient(void) {
             // anti-tamper hash table — skipped (encrypt ent+0x38c waypoint)
             // anti-tamper hash table — skipped (decrypt ent+0x38c waypoint)
 
-            int val_38c = AsCharacter(ent)->PositionY;  // cached_wp_y (audit #10: comment was swapped)
+            int val_38c = AsCharacter(ent)->PositionY;
 
             // anti-tamper hash table — skipped (encrypt ent+0x388 waypoint)
             // anti-tamper hash table — skipped (decrypt ent+0x388 waypoint)
 
-            int val_388 = AsCharacter(ent)->PositionX;  // cached_wp_x (audit #10: comment was swapped)
+            int val_388 = AsCharacter(ent)->PositionX;
 
             // Compute terrain index from cached waypoints and set walk-occupied bit
             // Call order from asm: Terrain_GetTileIndex(val_388, val_38c)

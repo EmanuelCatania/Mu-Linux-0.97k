@@ -5,30 +5,7 @@
 // Cubre los packet handlers de combate (opcodes 0x12..0x20, 0x22, 0x1e)
 // y las funciones de lógica de combate del cliente.
 //
-// ─── ENTITY STRUCT — OFFSETS NUEVOS (combate, stride 0x394) ─────────────────────────────────────────────────────────
-//
-//   Offset | Type   | Field
-//   ──────────────────────────────────────────────────────────────────────────
-//   +0x7C  | byte   | attack_state        — 3 = en animación de ataque melee
-//   +0x108 | float  | anim_frame_time     — tiempo del frame actual (5.0 = atacando)
-//   +0x10C | float  | anim_frame_time_previó? frame previo (guardado al cambiar anim)
-//   +0x114 | int*   | bone_transforms_ptr — puntero a array de matrices de huesos
-//   +0x164 | float  | attack_intensity    — 1.0 en ataque normal
-//   +0x195 | byte   | ragdoll_active      — 1 = física ragdoll activa (post-muerte)
-//   +0x198 | float  | ragdoll_vel_x       — velocidad X al morir
-//   +0x19C | float  | ragdoll_vel_y       — velocidad Y al morir
-//   +0x1A0 | float  | ragdoll_vel_z       — velocidad Z al morir (??rand%10)
-//   +0x1A4 | float  | death_pos_x         — posición X al momento de morir
-//   +0x1A8 | float  | death_pos_y         — posición Y al momento de morir
-//   +0x1AC | float  | death_pos_z         — posición Z al momento de morir
-//   +0x21  | byte   | is_attacking        — 1 cuando el servidor confirma ataque
-//   +0x274 | byte[] | bone_slot_indices   — índices de huesos de equipo (stride 0x18)
-//   +0x2BC | byte   | attack_combo_idx    — = (flags & 0x10 | attack_type) >> 1
-//   +0x2EA | byte   | attack_dir          — dirección hacia el objetivo
-//   +0x2EC | byte   | attack_cleared      — 0 después de ataque/muerte (reset)
-//   +0x2F5 | byte   | is_selected         — 1 = entidad seleccionada como objetivo
-//   +0x2FD | byte   | is_dead             — 1 = entidad muerta
-//   +0x304 | byte   | physics_active      — ragdoll en zona PvP/mapa específico
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
 //
 // ─── ENTITY_SETANIMATION (0x0043e820) ──────────────────────────────────────────────────────────────────────────
 //
@@ -147,8 +124,8 @@
 //       — busca/spawna entidad por ID, tipo y posición
 //
 //     FUN_0043bde0(flags, entity)    — Entity_SetTarget (actualiza objetivo del mapa)
-//     entity[+0x388] = (float)grid_x  // cached_wp_x
-//     entity[+0x38C] = (float)grid_y  // cached_wp_y
+//     entity[+0x388] = (float)grid_x  // PositionX
+//     entity[+0x38C] = (float)grid_y  // PositionY
 //     entity[+0x306] = grid_x (byte)
 //     entity[+0x307] = grid_y (byte)
 //     entity[+0x24]  = facing_angle
@@ -259,7 +236,7 @@
 //
 //       0x64:  SetPlayerAttack(entity)               // Entity_SelectTarget
 //              DAT_05826D28 = entity_idx           // global selected entity
-//              entity[+0x2F5] = 1                  // is_selected = true
+//              entity[+0x2F5] = 1                  // SkillStage
 //              entity[+0x108] = 0                  // reset frame
 //              entity[+0x310] = 0xFFFF             // clear attack target
 //

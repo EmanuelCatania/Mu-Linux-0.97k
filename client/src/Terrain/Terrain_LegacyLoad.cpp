@@ -641,10 +641,6 @@ void __cdecl OpenWorldModels(void) {
             char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * slotIdx);
             if (AsModel(slotPtr)->NumBones > 0) continue;  // already loaded (e.g. SMD worked)
             AccessModel(slotIdx, "Data/Object1/", lorenciaSlots[i].bmd, -1);
-            // Post-load verification log
-            short nMesh   = AsModel(slotPtr)->NumMeshs;
-            short nAction = AsModel(slotPtr)->NumBones;
-            short nBone   = AsModel(slotPtr)->NumActions;
         }
 
         // Register all Object1 slots 0..0x9f

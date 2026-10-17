@@ -492,7 +492,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
-    // CreateCharacterPointer setea cached_wp (+0x388/0x38c) pero NO
+    // CreateCharacterPointer setea PositionX/Y (+0x388/0x38c) pero NO
     // target_grid (+0x306/0x307). El per-frame walker Entity_AdvancePath en
     // Player_InputTick lee target_grid: con 0,0 el hero caminaría solo a la
     // esquina del mapa.

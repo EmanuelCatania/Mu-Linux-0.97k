@@ -606,7 +606,7 @@ char __cdecl Party_HPBar_HoverCheck(void)
     float local_24 = 5.0f;                              // top of first bar (Y)
     char result = 0;
 
-    UINT  uVar7 = *(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7;  // player move_type_flags & 7
+    UINT  uVar7 = *(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7;  // clase del heroe (c->Class & 7)
     UINT *puVar5 = (UINT*)&DAT_07e11e9c;                // party slot base (stride 9 uints = 0x24)
 
     for (int i = 0; i < (int)DAT_07eaa0e0; i++, puVar5 += 9) {

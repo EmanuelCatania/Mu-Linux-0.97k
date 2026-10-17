@@ -21,41 +21,8 @@
 //   param_10     = Translate — passed to BMD_Transform
 //   param_11     = RenderType — render flags OR'd into RenderPartObjectEffect call
 //
-// PART slot offsets (param_5):
-//   +0x04  BYTE  LinkBone       — bone index on parent model
-//   +0x05  BYTE  (CurrentAction carried at param_5+5 → model+0xa0)
-//   +0x06  BYTE  PriorAction
-//   +0x08  float AnimationFrame
-//   +0x0c  float PriorAnimationFrame
-//   +0x10  float PlaySpeed
-//
-// OBJECT offsets (param_4):
-//   +0x02  short Type (model index of parent)
-//   +0x0c  DWORD (scale field → model+0x68)
-//   +0x10  float world_x
-//   +0x14  float world_y
-//   +0x18  float world_z
-//   +0x2a0 short char_class
-//   +0x2eb BYTE  magic_channel_flag  (0x84-0x86 = cloaking/magic channel)
-//   +0x105 BYTE  CurrentAction
-//   +0x108 float AnimationFrame
-//   +0x114 DWORD BoneTransform ptr   (float[][3][4], stride 0x30 per bone)
-//   +0x34e char  SafeZone
-//   +0xe4  BYTE  ContrastEnable → model+0x45
-//   +0x168 float (alpha, passed to RenderPartObjectEffect)
-//   +0x24  float facing_angle
-//   +0x302 BYTE  (param_4+0x302 = hash-table key / ref-count target)
-//
-// Model offsets (iVar7 = DAT_05828d58 + Type*0xbc):
-//   +0x44  BYTE  LightEnable (set 0)
-//   +0x45  BYTE  ContrastEnable (copied from entity +0xe4)
-//   +0x54  DWORD (cleared for TYPE=0xea boss-head case)
-//   +0x68  DWORD (Scale copied from entity +0xc)
-//   +0x6c  float BodyOrigin.x
-//   +0x70  float BodyOrigin.y
-//   +0x74  float BodyOrigin.z
-//   +0x84  DWORD (cleared = BodyHeight 0)
-//   +0xa0  BYTE  CurrentAction (from PART +5)
+// Layout del PART (param_5) y del OBJECT (param_4): Entity/EntityTypes.h.
+// Layout del modelo (DAT_05828d58 + Type*0xbc): Model/ModelTypes.h.
 //
 // Key globals:
 //   DAT_05828d58       — Models base pointer (stride 0xBC per BMD)

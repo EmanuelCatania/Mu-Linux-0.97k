@@ -530,8 +530,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
         int next_wp = (int)cur_wp + 1;
         int max_wp  = (int)wp_count - 1;
         if (max_wp < next_wp) next_wp = max_wp;
-        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + 0x357 + next_wp); // cached_wp_x
-        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + 0x366 + next_wp); // cached_wp_y
+        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + 0x357 + next_wp);
+        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + 0x366 + next_wp);
     }
 
     // 2026-04-30 SIMPLIFIED: en lugar de Catmull-Rom (que con coeficientes

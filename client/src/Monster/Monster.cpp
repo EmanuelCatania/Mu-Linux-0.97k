@@ -132,12 +132,12 @@
 //     // Función de 797 líneas, mayormente HashTable anti-tamper.
 //     // Lógica real:
 //
-//     // Registra entity[+0x388] (cached_wp_x) en HashTable
+//     // Registra entity[+0x388] (PositionX) en HashTable
 //     HashTable_GetIndex(entity + 0x388)
 //     if not found: new node, add to table
 //     entity[+0x388] = entity_type & 0xFF   // escribe type en low byte
 //
-//     // Registra entity[+0x38C] (cached_wp_y) en HashTable
+//     // Registra entity[+0x38C] (PositionY) en HashTable
 //     entity[+0x38C] = entity_type >> 8     // high byte del type
 //
 //   Propósito: el HashTable registra las entidades activas para tracking

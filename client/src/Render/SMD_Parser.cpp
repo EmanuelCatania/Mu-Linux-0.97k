@@ -129,7 +129,7 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
 }
 
 // IDA: SetCharacterScale (0x0045C050)
-// Sets entity speed (+0x0c) based on move_type_flags (+0x1bc) and swim flag (+0x1bd).
+// Sets entity scale (+0x0c) based on Class (+0x1bc) and Skin (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
 void __cdecl SetCharacterScale(int param_1) {
     if (*(char *)&AsCharacter(param_1)->Change == '\0') {

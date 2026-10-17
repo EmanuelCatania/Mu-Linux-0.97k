@@ -5,21 +5,12 @@
 // Packet 0x19 format: [C1][len][0x19][skill_type][caster_hi][caster_lo][target_hi][target_lo][damage_hi][damage_lo]
 // Packet 0x16 format: [C1][len][0x16][caster_hi][caster_lo][target_hi][target_lo][exp_bytes...]
 //
-// Entity offsets referenced here (new, not in other files):
-//   +0x2EB  byte  tipo de monstruo (Monster.txt).  NO es un "magic_channel_flag":
-//                   los unicos writers son CreateCharacterPointer (= -1, o sea 0xFF
-//                   para el heroe) y CreateMonster (= Type).  El `!= 77` de mas
-//                   abajo compara contra un TIPO, no contra la letra 'M'.
-//   +0x301  byte  SkillSuccess        — bit 15 del target del paquete.  NO es
-//                   'is_pvp': el server lo pone con `target[0] |= type * 0x80`
-//                   donde `type` es el flag de EXITO del skill
-//                   (CSkillManager::GCSkillAttackSend).  IDA 0x42BCA0 hace
-//                   `Success = TargetKey >> 15; sc->SkillSuccess = Success != 0`
-//                   y MU 5.2 (WSclient.cpp L3642) lo escribe igual.
-//   +0x303  byte  combo_counter       — incremented on skill_type 0x17
-//   +0x2F4  byte  teleport_state      — 2 = teleporting
-//   +0x2F5  byte  is_skill_active     — set to 1 on most skill hits (common tail)
-//   +0x2F6  short target_id_pvp       — used during teleport
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
+//   c->MonsterIndex (+0x2EB) es el tipo de Monster.txt (0xFF para el heroe):
+//   el `!= 77` de mas abajo compara contra un TIPO, no contra la letra 'M'.
+//   c->SkillSuccess (+0x301) es el bit 15 del target del paquete: el server
+//   lo pone con `target[0] |= type * 0x80` (CSkillManager::GCSkillAttackSend)
+//   e IDA 0x42BCA0 hace `Success = TargetKey >> 15`.
 //
 // Helper functions identified:
 //   FUN_004742b0  = CreateTeleportBegin — canonical mapping; the port's `Entity_WeaponHit`
@@ -41,13 +32,13 @@
 //   0x03         Same as 0x01 with extra anim reset check
 //   0x06         Weapon sparkle only   — Entity_WeaponHit(caster)
 //   0x0F         Melee + ranged hit    — Entity_WeaponHit(caster) + Entity_MeleeAttackStart(caster); UI 0x66
-//   0x10         Magic (generic)       — if magic_channel_flag!='M': UI 0x51, Entity_SelectTarget_Player
+//   0x10         Magic (generic)       — if MonsterIndex != 77: UI 0x51, Entity_SelectTarget_Player
 //   0x13         Skill anim 0x38       — UI 0x52
 //   0x14         Skill anim 0x39       — UI 0x53
 //   0x15         Skill anim 0x3A       — UI 0x54
 //   0x17         Combo hit             — entity[+0x303]++, anim=0x3C or 0x29, UI 0x55
 //   0x18 / 0x34  Cancel / reset        — Entity_ResetToWalk(caster)
-//   0x1A..0x24   Magic variants        — same as 0x10 (magic_channel_flag check)
+//   0x1A..0x24   Magic variants        — same as 0x10 (MonsterIndex check)
 //   0x2B         Skill anim 0x43
 //   0x30 (48)    Greater Life (Swell Life) — efecto 1150/sub1 con owner sobre
 //                el objetivo (aura dorada), target[+120]|=0x10, anim=63

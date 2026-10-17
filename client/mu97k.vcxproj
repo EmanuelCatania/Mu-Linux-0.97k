@@ -219,7 +219,6 @@
     <ClInclude Include="src\Trade\Trade.h" />
     <ClInclude Include="src\UI\UI.h" />
     <ClInclude Include="src\Game\GameEnums.h" />
-    <ClInclude Include="src\Game\GameStructs.h" />
   </ItemGroup>
 
   <ItemGroup>

@@ -19,7 +19,7 @@
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
-#include "structs.h"        // ITEM, ITEM_ATTRIBUTE (también en GameStructs.h — usar uno solo)
+#include "structs.h"        // ITEM, ITEM_ATTRIBUTE
 #include "functions.h"
 
 extern "C" int __cdecl ConvertItemType(BYTE* Item);
