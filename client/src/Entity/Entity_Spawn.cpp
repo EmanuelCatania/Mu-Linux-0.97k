@@ -1,71 +1,9 @@
 // IDA: CreateCharacterPointer (0x0045ADC0)
-// Initialize/spawn an entity.
+// Inicializa una entidad del pool CharactersClient. El layout está en
+// Entity/EntityTypes.h.
 //
-// Ghidra-confirmed signature:
-//   void __cdecl CreateCharacterPointer(CHARACTER* c, int Type,
-//                                       int PositionX, int PositionY,
-//                                       float Rotation)
-//   c         = entity pointer (stride 0x394 from DAT_07abf5d0)
-//   Type      = object type code → entity[+0x02] (e.g. 0x186 for hero placeholder)
-//   PositionX = grid X coordinate → entity[+0x388]
-//   PositionY = grid Y coordinate → entity[+0x38c]
-//   Rotation  = initial facing angle (stored into Object.Angle)
-//
-// ── Hash-table obfuscation note ───────────────────────────────────────────────
-// Lines 1-480 (of 797) of the Ghidra decompile consist almost entirely of
-// HashTable encode/decode operations on (param_1+0x388) and (param_1+0x38c)
-// — the two grid coordinate slots. The anti-tamper XOR-encodes those words,
-// then decodes them immediately to use in the terrain-attribute test below.
-// These are reference-count obfuscation, not game logic.
-// The effective result of those 480 lines is:
-//   param_1[0x388] = grid_x  (param_2 & 0xff)
-//   param_1[0x38c] = grid_y  ((param_2 >> 8) & 0xff)
-// — exactly what we write directly here.
-//
-// Lines 481-797 contain the real initialization logic, fully implemented below.
-//
-// ── Entity struct offsets used ────────────────────────────────────────────────
-// +0x00  = active flag (byte, 1=active)
-// +0x02  = entity_type (short)
-// +0x04  = unk_04 (int)
-// +0x0c  = scale base (float, init 0.9)
-// +0x10  = world_x (float)
-// +0x14  = world_y (float)
-// +0x18  = world_z (float)
-// +0x1bc = move_type_flags (byte)
-// +0x1c  = unk_1c
-// +0x1da = unk_1da (short, init 0xffff)
-// +0x1e2 = equip slot 0..5 (stride 0x18, 6 slots)
-// +0x272 = equip slot 6..7 (stride 0x18, 2 slots)
-// +0x2a0 = unk_2a0 (short, init 0xffff)
-// +0x2b8 = char_class (short, init 0xffff)
-// +0x2d0 = unk_2d0 (short, init 0xffff)
-// +0x2e9 = unk_2e9 (byte)
-// +0x2ea = unk_2ea (byte, init 3)
-// +0x2eb = tipo de monstruo (byte).  CreateCharacterPointer lo deja en 0xFF
-//          (= sin tipo, el valor del heroe) y CreateMonster escribe el Type real.
-// +0x2ec = unk_2ec (byte)
-// +0x2ed = unk_2ed (implicit)
-// +0x2fa = unk_2fa (short, init 10)
-// +0x2fd = render_visible (byte)
-// +0x2fe = unk_2fe (byte)
-// +0x300 = stamina_counter (byte)
-// +0x305 = unk_305 (byte)
-// +0x306 = target_grid_x (byte)
-// +0x307 = target_grid_y (byte)
-// +0x330 = unk_330 (int, init 0xffffffff)
-// +0x334 = unk_334 (int)
-// +0x33c = unk_33c (int, init 0xffffffff)
-// +0x340 = g_framecount mirror (int)
-// +0x344 = unk_344
-// +0x34e = SafeZone (byte) — TerrainWall[Terrain_Load(x,y)] & 1. NO es dead
-//         (el dead real es +0x2FD, IDA ReceiveDie L18).
-// +0x34f = unk_34f (byte)
-// +0x354 = path_current_wp (byte)
-// +0x356 = path_wp_count (byte)
-// +0x388 = cached_wp_x (int)
-// +0x38c = cached_wp_y (int)
-// +0x17c = base_level (int)
+// El binario rodea las escrituras de PositionX/PositionY (0x388/0x38C) con la
+// hash-table anti-tamper (líneas 1-480 del decompile); acá se escriben directo.
 
 #include "stdafx.h"
 #include "Entity/EntityTypes.h"
@@ -75,30 +13,12 @@
 #include "functions.h"
 #include "Platform/PlatformHeaders.h"
 
-// Terrain attribute table: 1 byte per attr index, bit 0 = impassable/death flag
-// (declared in globals.h as char[]; cast to unsigned char on use)
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-
-/// IDA: CreateCharacterPointer (0x0045ADC0)
+// IDA: CreateCharacterPointer (0x0045ADC0)
 void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
                           int PositionX, int PositionY, float Rotation)
 {
     CHARACTER* c = AsCharacter(param_1);
     OBJECT*    o = &c->Object;
-
-    // DIAG: trace first 6 calls
-    static int s_spawn_dbg = 0;
-    if (s_spawn_dbg < 6) {
-        s_spawn_dbg++;
-    }
-
-    // ── Anti-tamper block (lines 1-480 in Ghidra) ────────────────────────────
-    // HashTable encode/decode on param_1+0x388 and param_1+0x38c.
-    // Net result: entity[0x388] = grid_x, entity[0x38c] = grid_y.
-    // Omitted per project policy (hash table operations are not game logic).
-    // ─────────────────────────────────────────────────────────────────────────
 
     // 0.97.20: la entidad nueva no hereda los modelos propios del slot.
     gContentCatalog.ClearEntityParts(param_1);
@@ -107,14 +27,11 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     unsigned int grid_y      = (unsigned int)PositionY;
     unsigned int entity_type = (unsigned int)Type;
 
-    // Store grid coords into entity (the value the HashTable block also writes)
     *(unsigned int *)&c->PositionX = grid_x;
     *(unsigned int *)&c->PositionY = grid_y;
     // IDA L354-355: la casilla destino arranca en la de spawn.
     c->TargetX = (unsigned char)PositionX;
     c->TargetY = (unsigned char)PositionY;
-
-    // ── Real initialization (lines 481+ in Ghidra) ───────────────────────────
 
     // Atributo del terreno en la posición de spawn → SafeZone (+0x34E)
     int terrainAttr = Terrain_GetTileIndex((int)grid_x, (int)grid_y);
@@ -182,9 +99,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     o->BlendMeshTexCoordU           = 0.0f;
     o->BlendMeshTexCoordV           = 0.0f;
 
-    // ── World position from grid coords ────────────────────────────────────────
-    // Hash table blocks operate on param_1+0x388 and param_1+0x38c again here
-    // (same anti-tamper pattern). Omitted.
+    // ── Posición de mundo desde la casilla ───────────────────────────────────
     o->Position[0] = (float)(int)grid_x * _DAT_005524f0 + _DAT_00552598;
     o->Position[1] = (float)(int)grid_y * _DAT_005524f0 + _DAT_00552598;
 
