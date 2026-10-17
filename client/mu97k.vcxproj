@@ -135,6 +135,8 @@
     <ClInclude Include="src\Config\UserSettings.h" />
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\EntityTypes.h" />
+    <ClInclude Include="src\Model\ModelTypes.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\RightClickMove.h" />
@@ -217,7 +219,6 @@
     <ClInclude Include="src\Trade\Trade.h" />
     <ClInclude Include="src\UI\UI.h" />
     <ClInclude Include="src\Game\GameEnums.h" />
-    <ClInclude Include="src\Game\GameStructs.h" />
   </ItemGroup>
 
   <ItemGroup>

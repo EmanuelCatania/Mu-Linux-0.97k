@@ -42,9 +42,9 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
     bool stillPlaying = true;
     if (!This || !AnimationFrame) return true;
     BYTE* self = (BYTE*)This;
-    if (*(short*)(self + 0x26) == 0) return true;  // model has no animations
-    BYTE action = *(BYTE*)(self + 0xa0);
-    int actionsBase = *(int*)(self + 0x30);
+    if (AsModel(self)->NumActions == 0) return true;  // model has no animations
+    BYTE action = AsModel(self)->CurrentAction;
+    int actionsBase = *(int *)&AsModel(self)->Actions;
     // Guarda propia: actionsBase puede ser basura si el slot fue parcialmente
     // inicializado (ej. particle pool con stale data). Sólo se descartan
     // direcciones bajas: en Linux x86 el heap puede estar por encima de 2 GB.
@@ -79,8 +79,8 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
             *AnimationFrame = (float)frameCount - 0.01f;
         }
     }
-    *(float*)(self + 0xa4) = *AnimationFrame;
-    *(short*)(self + 0xa8) = (short)(int)*AnimationFrame;
+    AsModel(self)->CurrentAnimation = *AnimationFrame;
+    AsModel(self)->CurrentAnimationFrame = (short)(int)*AnimationFrame;
     return stillPlaying;
 }
 
@@ -94,7 +94,7 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
 // and the sub_440AA0 call.
 extern "C" bool __cdecl CharacterAnimation(int c, int o)
 {
-    short type = *(short*)(o + 2);
+    short type = AsObject(o)->Type;
     BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * type;
     float speed = 0.0f;
 
@@ -104,7 +104,7 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
     // Note: offset semantics here are functional — they match what
     // OpenMonsterModel writes to (and what works for monsters). Don't change.
     short actionCount = *(short*)(model + 38);
-    BYTE  modelAction = *(BYTE*)(o + 261);  // entity[+0x105] — current action
+    BYTE  modelAction = AsObject(o)->CurrentAction;  // entity[+0x105] — current action
     int   actionsBase = (actionCount > 0) ? *(int*)(model + 48) : 0;
     if (actionCount > 0) {
         if (actionsBase) {
@@ -112,20 +112,20 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
             if (speed < 0.0f) speed = 0.0f;
         }
         // c[847] (==entity[+0x34F]): "fast walk" flag → 1.5× for actions 3..4
-        if (*(BYTE*)(c + 847)) {
-            BYTE act = *(BYTE*)(o + 261);
+        if (AsCharacter(c)->Change) {
+            BYTE act = AsObject(o)->CurrentAction;
             if (act >= 3 && act <= 4) speed *= 1.5f;
         }
         // Action 63 with frame > 6.0 → half speed (anim slow-down at end)
-        if (*(BYTE*)(o + 261) == 63 && *(float*)(o + 264) > 6.0f) speed *= 0.5f;
+        if (AsObject(o)->CurrentAction == 63 && AsObject(o)->AnimationFrame > 6.0f) speed *= 0.5f;
     }
 
     // IDA: AttackStage (0x00448930), lanzamiento al frame 5 de la acción 88.
     // DESVIACIÓN del adelanto del DLL: Aqua Beam espera ese cruce, sin perderlo por agilidad alta.
     if (type == 390 && EntityView((const void*)c).Kind() == EntityView::PlayerKind &&
-        modelAction == 88 && *(BYTE*)(c + 770) == 12 && *(BYTE*)(c + 757) != 0 &&
-        *(float*)(o + 264) + speed >= 5.0f) {
-        *(BYTE*)(c + 757) = 15;
+        modelAction == 88 && AsCharacter(c)->Skill == 12 && AsCharacter(c)->SkillStage != 0 &&
+        AsObject(o)->AnimationFrame + speed >= 5.0f) {
+        AsCharacter(c)->SkillStage = 15;
     }
 
     // BMD__PlayAnimation(model, &frame, &priorFrame, &priorAction, speed) — advances frame.

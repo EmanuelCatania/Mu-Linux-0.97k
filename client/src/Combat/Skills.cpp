@@ -5,21 +5,12 @@
 // Packet 0x19 format: [C1][len][0x19][skill_type][caster_hi][caster_lo][target_hi][target_lo][damage_hi][damage_lo]
 // Packet 0x16 format: [C1][len][0x16][caster_hi][caster_lo][target_hi][target_lo][exp_bytes...]
 //
-// Entity offsets referenced here (new, not in other files):
-//   +0x2EB  byte  tipo de monstruo (Monster.txt).  NO es un "magic_channel_flag":
-//                   los unicos writers son CreateCharacterPointer (= -1, o sea 0xFF
-//                   para el heroe) y CreateMonster (= Type).  El `!= 77` de mas
-//                   abajo compara contra un TIPO, no contra la letra 'M'.
-//   +0x301  byte  SkillSuccess        — bit 15 del target del paquete.  NO es
-//                   'is_pvp': el server lo pone con `target[0] |= type * 0x80`
-//                   donde `type` es el flag de EXITO del skill
-//                   (CSkillManager::GCSkillAttackSend).  IDA 0x42BCA0 hace
-//                   `Success = TargetKey >> 15; sc->SkillSuccess = Success != 0`
-//                   y MU 5.2 (WSclient.cpp L3642) lo escribe igual.
-//   +0x303  byte  combo_counter       — incremented on skill_type 0x17
-//   +0x2F4  byte  teleport_state      — 2 = teleporting
-//   +0x2F5  byte  is_skill_active     — set to 1 on most skill hits (common tail)
-//   +0x2F6  short target_id_pvp       — used during teleport
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
+//   c->MonsterIndex (+0x2EB) es el tipo de Monster.txt (0xFF para el heroe):
+//   el `!= 77` de mas abajo compara contra un TIPO, no contra la letra 'M'.
+//   c->SkillSuccess (+0x301) es el bit 15 del target del paquete: el server
+//   lo pone con `target[0] |= type * 0x80` (CSkillManager::GCSkillAttackSend)
+//   e IDA 0x42BCA0 hace `Success = TargetKey >> 15`.
 //
 // Helper functions identified:
 //   FUN_004742b0  = CreateTeleportBegin — canonical mapping; the port's `Entity_WeaponHit`
@@ -41,13 +32,13 @@
 //   0x03         Same as 0x01 with extra anim reset check
 //   0x06         Weapon sparkle only   — Entity_WeaponHit(caster)
 //   0x0F         Melee + ranged hit    — Entity_WeaponHit(caster) + Entity_MeleeAttackStart(caster); UI 0x66
-//   0x10         Magic (generic)       — if magic_channel_flag!='M': UI 0x51, Entity_SelectTarget_Player
+//   0x10         Magic (generic)       — if MonsterIndex != 77: UI 0x51, Entity_SelectTarget_Player
 //   0x13         Skill anim 0x38       — UI 0x52
 //   0x14         Skill anim 0x39       — UI 0x53
 //   0x15         Skill anim 0x3A       — UI 0x54
 //   0x17         Combo hit             — entity[+0x303]++, anim=0x3C or 0x29, UI 0x55
 //   0x18 / 0x34  Cancel / reset        — Entity_ResetToWalk(caster)
-//   0x1A..0x24   Magic variants        — same as 0x10 (magic_channel_flag check)
+//   0x1A..0x24   Magic variants        — same as 0x10 (MonsterIndex check)
 //   0x2B         Skill anim 0x43
 //   0x30 (48)    Greater Life (Swell Life) — efecto 1150/sub1 con owner sobre
 //                el objetivo (aura dorada), target[+120]|=0x10, anim=63
@@ -79,16 +70,16 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
 static void SetPlayerBow97k(BYTE* entity)
 {
     if (!entity) return;
-    const short leftType = *(short*)(entity + 648);
+    const short leftType = AsCharacter(entity)->Weapon[1].Type;
     if ((leftType >= 528 && leftType < 535) || leftType == 545) {
         SetAction((int)(intptr_t)entity,
-                     ((entity[444] & 7) != 2 || *(unsigned short*)(entity + 672) == 0xFFFF) ? 46 : 48);
+                     ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 46 : 48);
         return;
     }
-    const short rightType = *(short*)(entity + 624);
+    const short rightType = AsCharacter(entity)->Weapon[0].Type;
     if ((rightType >= 536 && rightType < 543) || rightType == 544) {
         SetAction((int)(intptr_t)entity,
-                     ((entity[444] & 7) != 2 || *(unsigned short*)(entity + 672) == 0xFFFF) ? 47 : 49);
+                     ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 47 : 49);
     }
 }
 
@@ -160,15 +151,15 @@ void PacketHandler_0x19(BYTE* pkt)
     // reaches its attack-frame limit; without this assignment it only sees
     // stale/zero data and therefore plays the pose without creating the spell
     // effect.
-    *(BYTE*) (caster + 770) = (BYTE)skill_type;
+    AsCharacter(caster)->Skill = (BYTE)skill_type;
 
-    *(short*)(caster + 0x310) = (short)target_idx;
+    AsCharacter(caster)->TargetCharacter = (short)target_idx;
     // IDA 0x42BCA0 escribe `sc->SkillSuccess = (TargetKey >> 15) != 0`, y el
     // server MuEmu pone ese bit justamente cuando el skill tuvo exito
     // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`). Lo consumen el aura
     // de Greater Defense (MoveCharacter case 27), el buff de Greater Damage
     // (case 28) y el congelamiento del Ice Arrow (0x33) y de Lightning (0x37).
-    *(BYTE*) (caster + 0x301) = (BYTE)(skill_ok != 0);
+    AsCharacter(caster)->SkillSuccess = (BYTE)(skill_ok != 0);
 
     if (skill_type == 3 || skill_type == 7) {
     }
@@ -178,10 +169,10 @@ void PacketHandler_0x19(BYTE* pkt)
     // IDA: Skills_PacketHandler (0x0042BCA0).
     // DESVIACION (fix del DLL, Patchs.cpp 0x0042C417): omitir el giro cuando caster y objetivo son el mismo personaje.
     if (caster != target && target != nullptr &&
-        skill_type != 6 && skill_type != 15 && target[352] != 0) {
-        *(float*)(caster + 36) = CreateAngle(
-            *(float*)(caster + 16), *(float*)(caster + 20),
-            *(float*)(target + 16), *(float*)(target + 20));
+        skill_type != 6 && skill_type != 15 && AsObject(target)->Visible != 0) {
+        AsCharacter(caster)->Object.Angle[2] = CreateAngle(
+            AsCharacter(caster)->Object.Position[0], AsCharacter(caster)->Object.Position[1],
+            AsObject(target)->Position[0], AsObject(target)->Position[1]);
     }
 
     // -------------------------------------------------------
@@ -215,7 +206,7 @@ void PacketHandler_0x19(BYTE* pkt)
         // the target before entering LABEL_107 (the shared magic path).
         PlayBuffer(60, 0, 0);
         if (target != nullptr) {
-            const BYTE targetAction = target[261];
+            const BYTE targetAction = AsObject(target)->CurrentAction;
             if (targetAction == 0x8B || targetAction == 0x8C ||
                 targetAction == 0x85 || targetAction == 0x87) {
                 SetPlayerStop((int)(intptr_t)target);
@@ -268,7 +259,7 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // 0042BCA0 first plays 81 unless the channel state is 77, then
         // enters LABEL_98 for the remote caster animation.
-        if (caster[747] != 77)
+        if (AsCharacter(caster)->MonsterIndex != 77)
             PlayBuffer(81, 0, 0);
 
         // LABEL_98 applies this animation to remote casters only.
@@ -330,8 +321,8 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x2B:  // 43 Death Stab
     {
         SetAction((int)(intptr_t)caster, 67);
-        if (caster != (BYTE*)DAT_07abf5d8 && *(WORD*)(caster + 2) == 390)
-            *(DWORD*)(caster + 264) = 0;
+        if (caster != (BYTE*)DAT_07abf5d8 && *(WORD *)&AsCharacter(caster)->Object.Type == 390)
+            *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
         goto common_tail;
     }
 
@@ -374,11 +365,11 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x33:  // 51 Ice Arrow
     {
         SetPlayerBow97k(caster);
-        if (target != nullptr && caster[769])
+        if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
             DeleteEffect(190, (DWORD)(uintptr_t)target, 1);
             float angle[3] = {
-                *(float*)(target + 28), *(float*)(target + 32), *(float*)(target + 36)
+                AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
             };
             CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)1, (float*)target, (float*)-1, nullptr, 0);
@@ -396,7 +387,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x37:  // 55 Fire Slash
     {
-        if (target != nullptr && caster[769])
+        if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
             DeleteEffect(1274, (DWORD)(uintptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -423,7 +414,7 @@ void PacketHandler_0x19(BYTE* pkt)
 common_tail:
     // Common tail: mark skill as active on caster
     // Almost all skill_type cases jump here
-    *(BYTE*)(caster + 0x2F5) = 1;
+    AsCharacter(caster)->SkillStage = 1;
 }
 
 

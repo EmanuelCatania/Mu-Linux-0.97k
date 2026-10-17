@@ -30,30 +30,30 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
   CreateCharacterPointer(puVar1, 0x186, 0, 0, Rotate);
 
   // Object.Light[0..2] = 0.3f (0x3e99999a)
-  *(unsigned int *)(puVar1 + 0xe8) = 0x3e99999a;
-  *(unsigned int *)(puVar1 + 0xec) = 0x3e99999a;
-  *(unsigned int *)(puVar1 + 0xf0) = 0x3e99999a;
+  *(unsigned int *)&AsCharacter(puVar1)->Object.Light[0] = 0x3e99999a;
+  *(unsigned int *)&AsCharacter(puVar1)->Object.Light[1] = 0x3e99999a;
+  *(unsigned int *)&AsCharacter(puVar1)->Object.Light[2] = 0x3e99999a;
 
   // Object.Position[0..1] = (x, y) — world coords for char-preview slots
-  *(float *)(puVar1 + 0x10) = x;
-  *(float *)(puVar1 + 0x14) = y;
+  AsCharacter(puVar1)->Object.Position[0] = x;
+  AsCharacter(puVar1)->Object.Position[1] = y;
 
   // c->Class (byte), c->Skin (byte)
-  puVar1[0x1bc] = (unsigned char)Class;
-  puVar1[0x1bd] = (unsigned char)Skin;
+  AsCharacter(puVar1)->Class = (unsigned char)Class;
+  AsCharacter(puVar1)->Skin = (unsigned char)Skin;
 
   // BodyPart[1..5].Type and Weapon/Wing/Helper types
   uVar2 = (unsigned short)Class & 7;
-  *(unsigned short *)(puVar1 + 0x1f8) = uVar2 + 0x390;  // BodyPart[1]
-  *(unsigned short *)(puVar1 + 0x210) = uVar2 + 0x397;  // BodyPart[2]
-  *(short         *)(puVar1 + 0x1dc) = (short)Index;
-  *(unsigned short *)(puVar1 + 600)   = uVar2 + 0x3ac;  // BodyPart[5]
-  *(unsigned short *)(puVar1 + 0x228) = uVar2 + 0x39e;  // BodyPart[3]
-  *(unsigned short *)(puVar1 + 0x240) = uVar2 + 0x3a5;  // BodyPart[4]
-  *(unsigned short *)(puVar1 + 0x270) = 0xffff;         // Weapon[0].Type
-  *(unsigned short *)(puVar1 + 0x288) = 0xffff;         // Weapon[1].Type
-  *(unsigned short *)(puVar1 + 0x2a0) = 0xffff;         // Wing.Type
-  *(unsigned short *)(puVar1 + 0x2b8) = 0xffff;         // Helper.Type
+  *(unsigned short *)&AsCharacter(puVar1)->BodyPart[1].Type = uVar2 + 0x390;  // BodyPart[1]
+  *(unsigned short *)&AsCharacter(puVar1)->BodyPart[2].Type = uVar2 + 0x397;  // BodyPart[2]
+  *(short *)&AsCharacter(puVar1)->Key = (short)Index;
+  *(unsigned short *)&AsCharacter(puVar1)->BodyPart[5].Type   = uVar2 + 0x3ac;  // BodyPart[5]
+  *(unsigned short *)&AsCharacter(puVar1)->BodyPart[3].Type = uVar2 + 0x39e;  // BodyPart[3]
+  *(unsigned short *)&AsCharacter(puVar1)->BodyPart[4].Type = uVar2 + 0x3a5;  // BodyPart[4]
+  *(unsigned short *)&AsCharacter(puVar1)->Weapon[0].Type = 0xffff;         // Weapon[0].Type
+  *(unsigned short *)&AsCharacter(puVar1)->Weapon[1].Type = 0xffff;         // Weapon[1].Type
+  *(unsigned short *)&AsCharacter(puVar1)->Wing.Type = 0xffff;         // Wing.Type
+  *(unsigned short *)&AsCharacter(puVar1)->Helper.Type = 0xffff;         // Helper.Type
 
   SetCharacterScale((int)puVar1);    // SetCharacterScale
   SetPlayerStop((int)puVar1);    // SetPlayerStop

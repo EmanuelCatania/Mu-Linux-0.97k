@@ -91,20 +91,20 @@ void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int)
 {
     BYTE* entity = (BYTE*)(uintptr_t)entityAddress;
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
-    if (!entity || !entity[0] || !hero) return;
+    if (!entity || !AsCharacter(entity)->Object.Live || !hero) return;
 
-    entity[745] = 0;
+    AsCharacter(entity)->GuildTeam = 0;
     const short heroGuild = *(short*)(hero + 474);
-    if (heroGuild != -1 && *(short*)(entity + 474) == heroGuild)
-        entity[745] = 1;
+    if (heroGuild != -1 && AsCharacter(entity)->GuildMarkIndex == heroGuild)
+        AsCharacter(entity)->GuildTeam = 1;
 
     if (!EnableGuildWar) return;
     if (GuildWarIndex == -1) {
         if (!GuildWarName[0]) return;
         GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
     }
-    if (GuildWarIndex >= 0 && *(short*)(entity + 474) == GuildWarIndex)
-        entity[745] = 2;
+    if (GuildWarIndex >= 0 && AsCharacter(entity)->GuildMarkIndex == GuildWarIndex)
+        AsCharacter(entity)->GuildTeam = 2;
 }
 
 void GuildWar_RefreshEntityRelations()
@@ -507,15 +507,15 @@ void NetRecv_5B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // IDA sub_435110: si la clave no esta en la tabla de marcas,
             // +474 queda como estaba (el bucle sale sin escribir).
             if (guildRow >= 0)
-                *(short*)(slot + 474) = (short)guildRow;
-            if (!slot[0]) continue;          // entidad inactiva
-            slot[745] = 0;
+                AsCharacter(slot)->GuildMarkIndex = (short)guildRow;
+            if (!AsCharacter(slot)->Object.Live) continue;          // entidad inactiva
+            AsCharacter(slot)->GuildTeam = 0;
             // Mismo guild que el heroe.  IDA no excluye al heroe: el
             // propio personaje tambien queda marcado con 1.
             if (DAT_07abf5d8) {
                 const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
-                if (heroGuild != -1 && *(short*)(slot + 474) == heroGuild)
-                    slot[745] = 1;
+                if (heroGuild != -1 && AsCharacter(slot)->GuildMarkIndex == heroGuild)
+                    AsCharacter(slot)->GuildTeam = 1;
             }
             if (!EnableGuildWar) continue;
             // Guerra: si la fila enemiga todavia no se resolvio, se busca
@@ -524,8 +524,8 @@ void NetRecv_5B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 if (!GuildWarName[0]) continue;
                 GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
             }
-            if (GuildWarIndex >= 0 && *(short*)(slot + 474) == GuildWarIndex)
-                slot[745] = 2;  // guild enemiga en la guerra activa
+            if (GuildWarIndex >= 0 && AsCharacter(slot)->GuildMarkIndex == GuildWarIndex)
+                AsCharacter(slot)->GuildTeam = 2;  // guild enemiga en la guerra activa
         }
     }
 }

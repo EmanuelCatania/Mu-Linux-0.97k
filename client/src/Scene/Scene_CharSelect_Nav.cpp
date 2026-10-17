@@ -433,12 +433,12 @@ void Characters_FreeAllBMDBuffers()
 // Character_UpdateEquipSlotAnimations @ 0x0045C720 — Character_UpdateEquipSlotAnimations
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
 // equipment-slot model indices, selecting the correct animated variant based
-// on move_type_flags (bits 0-2 = weapon style, bits 3+ = sub-variant offset).
+// on Class (bits 0-2 = clase, bits 3+ = segunda clase).
 void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 {
-    if (*(short *)(param_1 + 2) != 0x186) return;
+    if (AsCharacter(param_1)->Object.Type != 0x186) return;
 
-    BYTE v1 = *(BYTE *)(param_1 + 0x105);
+    BYTE v1 = AsCharacter(param_1)->Object.CurrentAction;
     bool v2 = true;
     if (v1 >= 0x85u && v1 <= 0x8Cu) {
         v2 = false;
@@ -447,32 +447,32 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
         SetPlayerStop((int)(uintptr_t)param_1);
     }
 
-    int v3 = *(BYTE *)(param_1 + 0x1bc) & 7;
-    int v4 = *(unsigned char *)(param_1 + 0x1bc) >> 3;
-    if (*(short *)(param_1 + 504) == v3 + 912) {
-        *(BYTE *)(param_1 + 506) = 0;
-        *(WORD *)(param_1 + 504) = (WORD)(v3 + 4 * v4 + 912);
-        *(BYTE *)(param_1 + 507) = 0;
+    int v3 = AsCharacter(param_1)->Class & 7;
+    int v4 = AsCharacter(param_1)->Class >> 3;
+    if (AsCharacter(param_1)->BodyPart[1].Type == v3 + 912) {
+        AsCharacter(param_1)->BodyPart[1].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[1].Type = (WORD)(v3 + 4 * v4 + 912);
+        AsCharacter(param_1)->BodyPart[1].Option1 = 0;
     }
-    if (*(short *)(param_1 + 552) == v3 + 919) {
-        *(BYTE *)(param_1 + 530) = 0;
-        *(WORD *)(param_1 + 528) = (WORD)(v3 + 4 * v4 + 919);
-        *(BYTE *)(param_1 + 531) = 0;
+    if (AsCharacter(param_1)->BodyPart[3].Type == v3 + 919) {
+        AsCharacter(param_1)->BodyPart[2].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[2].Type = (WORD)(v3 + 4 * v4 + 919);
+        AsCharacter(param_1)->BodyPart[2].Option1 = 0;
     }
-    if (*(short *)(param_1 + 576) == v3 + 926) {
-        *(BYTE *)(param_1 + 554) = 0;
-        *(WORD *)(param_1 + 552) = (WORD)(v3 + 4 * v4 + 926);
-        *(BYTE *)(param_1 + 555) = 0;
+    if (AsCharacter(param_1)->BodyPart[4].Type == v3 + 926) {
+        AsCharacter(param_1)->BodyPart[3].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[3].Type = (WORD)(v3 + 4 * v4 + 926);
+        AsCharacter(param_1)->BodyPart[3].Option1 = 0;
     }
-    if (*(short *)(param_1 + 600) == v3 + 933) {
-        *(BYTE *)(param_1 + 578) = 0;
-        *(WORD *)(param_1 + 576) = (WORD)(v3 + 4 * v4 + 933);
-        *(BYTE *)(param_1 + 579) = 0;
+    if (AsCharacter(param_1)->BodyPart[5].Type == v3 + 933) {
+        AsCharacter(param_1)->BodyPart[4].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[4].Type = (WORD)(v3 + 4 * v4 + 933);
+        AsCharacter(param_1)->BodyPart[4].Option1 = 0;
     }
-    if (*(short *)(param_1 + 624) == v3 + 940) {
-        *(BYTE *)(param_1 + 602) = 0;
-        *(WORD *)(param_1 + 600) = (WORD)(v3 + 4 * v4 + 940);
-        *(BYTE *)(param_1 + 603) = 0;
+    if (AsCharacter(param_1)->Weapon[0].Type == v3 + 940) {
+        AsCharacter(param_1)->BodyPart[5].Level = 0;
+        *(WORD *)&AsCharacter(param_1)->BodyPart[5].Type = (WORD)(v3 + 4 * v4 + 940);
+        AsCharacter(param_1)->BodyPart[5].Option1 = 0;
     }
     SetCharacterScale((int)param_1);
 }
@@ -1555,7 +1555,7 @@ float __cdecl TurnAngle2(float a1, float a2, float a3)
 void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
     DWORD c = (DWORD)c_entity;
     if (c == 0) return;
-    short v1 = *(short*)(c + 2);
+    short v1 = AsCharacter(c)->Object.Type;
 
     if (v1 != 390) {
         // Non-player entities
@@ -1598,13 +1598,13 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
     // Player path
     SetAttackSpeed();  // SetAttackSpeed
     { // El salto de salida no entra en el ámbito de estas variables.
-    short v2 = *(short*)(c + 696);  // Helper.Type
+    short v2 = AsCharacter(c)->Helper.Type;  // Helper.Type
 
     // Helper path (818/819 = pet/fairy ranged)
-    if ((v2 != 818 && v2 != 819) || *(unsigned char*)(c + 846)) {
+    if ((v2 != 818 && v2 != 819) || AsCharacter(c)->SafeZone) {
         // No helper → weapon-based
-        short v5 = *(short*)(c + 624);  // Helmet/LH? Actually weapon left
-        if (v5 != -1 || *(unsigned short*)(c + 648) != 0xFFFF) {
+        short v5 = AsCharacter(c)->Weapon[0].Type;  // Helmet/LH? Actually weapon left
+        if (v5 != -1 || *(unsigned short *)&AsCharacter(c)->Weapon[1].Type != 0xFFFF) {
             // Sword (400-495) — ItemAttribute[v5-399].TwoHand at offset -34
             if (v5 >= 400 && v5 < 496) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
@@ -1614,7 +1614,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
                         SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 39);
                     }
                 } else {
-                    short v6 = *(short*)(c + 648);
+                    short v6 = AsCharacter(c)->Weapon[1].Type;
                     if (v6 < 400 || v6 >= 496) {
                         SetAction((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
                     } else {
@@ -1628,7 +1628,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
                 }
                 goto LABEL_85;
             }
-            short v7 = *(short*)(c + 648);
+            short v7 = AsCharacter(c)->Weapon[1].Type;
             if (v7 >= 400 && v7 < 496) {
                 SetAction((int)c, rand() % 2 + 37);
                 goto LABEL_85;
@@ -1654,11 +1654,11 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             }
             // Bow/crossbow type detection on right hand
             if ((v7 >= 528 && v7 < 535) || v7 == 545) {
-                SetAction((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 46 : 48);
+                SetAction((int)c, (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 46 : 48);
                 goto LABEL_85;
             }
             if ((v5 >= 536 && v5 < 543) || (v5 >= 544 && v5 < 545) || v5 == 546) {
-                SetAction((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 47 : 49);
+                SetAction((int)c, (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 47 : 49);
                 goto LABEL_85;
             }
         }
@@ -1668,7 +1668,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
 
     // Helper-active path (helper attack animations)
     {
-        short v3 = *(short*)(c + 624);
+        short v3 = AsCharacter(c)->Weapon[0].Type;
         if (v3 < 496) {
             // fall through to LABEL_11 (right-hand weapon check)
         } else if (v3 < 501) {
@@ -1681,7 +1681,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             goto LABEL_85;
         }
         // LABEL_11: weapon checks
-        short v4 = *(short*)(c + 648);
+        short v4 = AsCharacter(c)->Weapon[1].Type;
         if ((v4 >= 528 && v4 < 535) || v4 == 545) {
             SetAction((int)c, 54);
         } else if ((v3 >= 536 && v3 < 543) || (v3 >= 544 && v3 < 545) || v3 == 546) {
@@ -1696,15 +1696,15 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
 
     }
 LABEL_85:
-    if (*(float*)(c + 264) == 0.0f) {
-        if (*(short*)(c + 2) == 390) {
-            int v13 = *(int*)(c + 4);
+    if (AsCharacter(c)->Object.AnimationFrame == 0.0f) {
+        if (AsCharacter(c)->Object.Type == 390) {
+            int v13 = AsCharacter(c)->Object.SubType;
             if (v13 < 206 || v13 > 208) {
-                short v14 = *(short*)(c + 648);
+                short v14 = AsCharacter(c)->Weapon[1].Type;
                 if ((v14 >= 528 && v14 < 535) || v14 == 545) {
                     PlayBuffer(65, c, 0);
                 } else {
-                    short v15 = *(short*)(c + 624);
+                    short v15 = AsCharacter(c)->Weapon[0].Type;
                     if ((v15 >= 536 && v15 < 543) || (v15 >= 544 && v15 < 545) || v15 == 546) {
                         PlayBuffer(66, c, 0);
                     } else if (v15 == 410 || v15 == 496) {
@@ -1714,11 +1714,11 @@ LABEL_85:
                     }
                 }
             } else {
-                int v17 = *(int*)(c + 4);
+                int v17 = AsCharacter(c)->Object.SubType;
                 if (v17 >= 206 && v17 <= 208) {
                     PlayBuffer(rand() % 2 + 40, c, 0);
                 }
-                short modelType = *(short*)(c + 2);
+                short modelType = AsCharacter(c)->Object.Type;
                 int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
                 if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
                     int idx = rand() % 2 + 94 * modelType;
@@ -1726,11 +1726,11 @@ LABEL_85:
                 }
             }
         } else {
-            int v17 = *(int*)(c + 4);
+            int v17 = AsCharacter(c)->Object.SubType;
             if (v17 >= 206 && v17 <= 208) {
                 PlayBuffer(rand() % 2 + 40, c, 0);
             }
-            short modelType = *(short*)(c + 2);
+            short modelType = AsCharacter(c)->Object.Type;
             int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
             if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
                 int idx = rand() % 2 + 94 * modelType;
@@ -1749,7 +1749,7 @@ LABEL_85:
 void __cdecl SetPlayerMagic(int param_1) {
     DWORD c = (DWORD)param_1;
     if (c == 0) return;
-    short entityType = *(short*)(c + 2);
+    short entityType = AsCharacter(c)->Object.Type;
     if (entityType != 0x186) {
         int action;
         if ((UINT)*(BYTE*)(c + 0x303) % 3 == 0) {
@@ -1764,12 +1764,12 @@ void __cdecl SetPlayerMagic(int param_1) {
     }
     // Special entity type 0x186: SetAttackSpeed then class-based action
     SetAttackSpeed();  // SetAttackSpeed
-    short charClass = *(short*)(c + 0x2b8);
-    if ((charClass == 0x332 || charClass == 0x333) && *(char*)(c + 0x34e) == '\0') {
+    short charClass = AsCharacter(c)->Helper.Type;
+    if ((charClass == 0x332 || charClass == 0x333) && *(char *)&AsCharacter(c)->SafeZone == '\0') {
         SetAction((int)c, 0x5b);
         return;
     }
-    if ((*(BYTE*)(c + 0x1bc) & 7) == 2) {
+    if ((AsCharacter(c)->Class & 7) == 2) {
         SetAction((int)c, 0x56);
         return;
     }
@@ -1791,16 +1791,7 @@ void __cdecl SetPlayerMagic(int param_1) {
 // función. Los llamadores que quieran el comportamiento IgnoreRandom deberían
 // gatear con `*(WORD*)(c+2) != 390` antes de llamar.
 //
-// Entity offsets:
-//   +2    short  entity_type        (390 = player)
-//   +4    int    sub_class
-//   +0x105 byte  current_action     (62/63 = currently dying anim → skip)
-//   +0x10 float[3] world position
-//   +0x1C float[3] world angle
-//   +0x1BC byte   move_type_flags   (& 7 == 2 = swimming)
-//   +0x2B8 short  weapon_type       (818/819 = certain mounts that skip shock)
-//   +0x2EC byte   alive_flag        (se limpia en el shock del jugador, per IDA)
-//   +0x2FD byte   dead_flag         (set ⇒ skip)
+// Layout de la entidad (CHARACTER / OBJECT): Entity/EntityTypes.h.
 // Forward decls (signatures match functions.h / existing impls — return type
 // de SetAction en algunos headers es `void*`, así que delegamos vía el global
 // header rather than re-declaring locally).
@@ -1809,28 +1800,28 @@ void __cdecl SetPlayerMagic(int param_1) {
 void __cdecl SetPlayerShock(int c, int Hit)
 {
     if (!c) return;
-    if (*(BYTE*)(c + 765)) return;            // already dead
-    short v2 = *(short*)(c + 696);
+    if (AsCharacter(c)->Dead) return;            // already dead
+    short v2 = AsCharacter(c)->Helper.Type;
     if (v2 == 818 || v2 == 819) return;      // mount-skip
-    BYTE v3 = *(BYTE*)(c + 261);
+    BYTE v3 = AsCharacter(c)->Object.CurrentAction;
     if (v3 == 62 || v3 == 63 || Hit <= 0) return; // dying anim or no damage
 
-    short etype = *(short*)(c + 2);
+    short etype = AsCharacter(c)->Object.Type;
     if (etype == 390) {
         // Player: shock anim, clear alive flag
         (void)SetAction(c, 130);
-        *(BYTE*)(c + 748) = 0;
+        AsCharacter(c)->Movement = 0;
     } else if (v3 < 3 || v3 > 4) {
         // Monstruos/NPCs (que no estén en las anims de caminar/correr 3-4): anim de shock genérica
         (void)SetAction(c, 5);
     }
 
     // Sonido: sólo cuando no está a mitad de una animación (frame == 0)
-    if (*(float*)(c + 264) == 0.0f) {
+    if (AsCharacter(c)->Object.AnimationFrame == 0.0f) {
         if (etype == 390) {
-            int sub = *(int*)(c + 4);
+            int sub = AsCharacter(c)->Object.SubType;
             if (sub < 206 || sub > 208) {
-                if ((*(BYTE*)(c + 444) & 7) == 2) {
+                if ((AsCharacter(c)->Class & 7) == 2) {
                     // Swimming: alternate splash sound 79 or 80
                     int v7 = rand() % 2;
                     PlayBuffer(v7 + 79, c, 0);
@@ -1841,7 +1832,7 @@ void __cdecl SetPlayerShock(int c, int Hit)
                 goto label_26;
             }
         }
-        int v8 = *(int*)(c + 4);
+        int v8 = AsCharacter(c)->Object.SubType;
         if (v8 >= 206 && v8 <= 208) {
             PlayBuffer(93, c, 0);           // Lorencia skeleton-NPC hit sound
             goto label_26;
@@ -1866,9 +1857,9 @@ label_26:
             if (fire) {
                 int v12 = rand() % 128;
                 float pos[3];
-                pos[0] = (float)(v12 - 64) + *(float*)(c + 16);
-                pos[1] = *(float*)(c + 20);
-                pos[2] = (float)(rand() % 50) + *(float*)(c + 24) + 200.0f;
+                pos[0] = (float)(v12 - 64) + AsCharacter(c)->Object.Position[0];
+                pos[1] = AsCharacter(c)->Object.Position[1];
+                pos[2] = (float)(rand() % 50) + AsCharacter(c)->Object.Position[2] + 200.0f;
                 Particle_Spawn(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
             }
         }
@@ -1905,33 +1896,33 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
     DWORD c = DAT_07abf5d0 + 916 * Key;
-    if (*(WORD*)(c + 2) != 390) return;
+    if (*(WORD *)&AsCharacter(c)->Object.Type != 390) return;
     // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
     // el ala custom (más abajo).
     gContentCatalog.ClearEntityParts((const void*)(uintptr_t)c);
 
     // Helmet (slot 0)
     if (Equipment[0] == 0xFF) {
-        *(WORD*)(c + 624) = (WORD)-1;
-        *(BYTE*)(c + 627) = 0;
+        *(WORD *)&AsCharacter(c)->Weapon[0].Type = (WORD)-1;
+        AsCharacter(c)->Weapon[0].Option1 = 0;
     } else {
-        *(WORD*)(c + 624) = (WORD)(Equipment[0] + 400);
+        *(WORD *)&AsCharacter(c)->Weapon[0].Type = (WORD)(Equipment[0] + 400);
     }
     // Armor (slot 1)
     BYTE Type = Equipment[1];
     if (Type == 0xFF) {
-        *(WORD*)(c + 648) = (WORD)-1;
-        *(BYTE*)(c + 651) = 0;
+        *(WORD *)&AsCharacter(c)->Weapon[1].Type = (WORD)-1;
+        AsCharacter(c)->Weapon[1].Option1 = 0;
     } else {
-        *(WORD*)(c + 648) = (WORD)(Type + 400);
+        *(WORD *)&AsCharacter(c)->Weapon[1].Type = (WORD)(Type + 400);
     }
     // Right-hand weapon (slot at +672 / 0x2A0)
     if (((Equipment[4] >> 2) & 3) == 3) {
         if ((Equipment[8] & 7) != 0) {
-            *(WORD*)(c + 672) = (WORD)((Equipment[8] & 7) + 786);
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)((Equipment[8] & 7) + 786);
         } else {
-            *(WORD*)(c + 0x2A0) = (WORD)-1;
-            *(BYTE*)(c + 0x2A3) = 0;
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)-1;
+            AsCharacter(c)->Wing.Option1 = 0;
         }
     } else if ((Equipment[8] & 7) != 0) {
         // DESVIACION (DLL CustomWingChangeCharacterExt, ahora catálogo
@@ -1939,14 +1930,14 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
         // el índice + 1 del ala custom (ObjectManager del server).
         const int wingItem = gContentCatalog.GetWingItem((Equipment[8] & 7) - 1);
         if (wingItem >= 0) {
-            *(WORD*)(c + 672) = (WORD)ItemEntityModel(wingItem);
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)ItemEntityModel(wingItem);
             gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, 7, wingItem);
         } else {
-            *(WORD*)(c + 0x2A0) = (WORD)-1;
-            *(BYTE*)(c + 0x2A3) = 0;
+            *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)-1;
+            AsCharacter(c)->Wing.Option1 = 0;
         }
     } else {
-        *(WORD*)(c + 672) = (WORD)(((Equipment[4] >> 2) & 3) + 784);
+        *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)(((Equipment[4] >> 2) & 3) + 784);
     }
 
     // Wings: clear class-FX, then spawn type-specific
@@ -1954,15 +1945,15 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     Type = Equipment[4] & 3;
     if (Type == 3) {
         if ((Equipment[9] & 1) == 1) {
-            *(WORD*)(c + 696) = 819;
+            *(WORD *)&AsCharacter(c)->Helper.Type = 819;
             float* pos = (float*)(c + 16);
             CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
         } else {
-            *(WORD*)(c + 696) = (WORD)-1;
-            *(BYTE*)(c + 699) = 0;
+            *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)-1;
+            AsCharacter(c)->Helper.Option1 = 0;
         }
     } else {
-        *(WORD*)(c + 696) = (WORD)(Type + 816);
+        *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)(Type + 816);
         float* pos = (float*)(c + 16);
         if (Type == 0) {
             CreateBug(816, (void*)pos, (void*)(uintptr_t)c, 0);
@@ -1976,74 +1967,74 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
 
     // 19-bit packed level field (Equipment[5..7] bigendian)
     int Level = Equipment[7] + ((Equipment[6] + (Equipment[5] << 8)) << 8);
-    *(BYTE*)(c + 626) = (BYTE)LevelConvert(Equipment[7] & 7);          // weapon[0] exc lvl
-    *(BYTE*)(c + 650) = (BYTE)LevelConvert((Level >> 3) & 7);          // weapon[1] exc lvl
-    char Change = *(char*)(c + 847);  // class change flag
-    *(BYTE*)(c + 674) = 0;
-    *(BYTE*)(c + 698) = 0;
+    AsCharacter(c)->Weapon[0].Level = (BYTE)LevelConvert(Equipment[7] & 7);          // weapon[0] exc lvl
+    AsCharacter(c)->Weapon[1].Level = (BYTE)LevelConvert((Level >> 3) & 7);          // weapon[1] exc lvl
+    char Change = *(char *)&AsCharacter(c)->Change;  // class change flag
+    AsCharacter(c)->Wing.Level = 0;
+    AsCharacter(c)->Helper.Level = 0;
     if (Change) return;  // class-changed chars get default body parts; skip detailed slots
 
     // 5 body-part slots at c+504, +528, +552, +576, +600 (stride 24)
     {
         short v7 = Equipment[2] >> 4;
         if ((BYTE)v7 + 16 * (Equipment[8] >> 7) == 31) {
-            BYTE v8 = *(BYTE*)(c + 444);
+            BYTE v8 = AsCharacter(c)->Class;
             v7 = v8 >> 3;
-            *(WORD*)(c + 504) = (WORD)((v8 & 7) + 4 * (BYTE)v7 + 912);
+            *(WORD *)&AsCharacter(c)->BodyPart[1].Type = (WORD)((v8 & 7) + 4 * (BYTE)v7 + 912);
         } else {
             v7 = (BYTE)v7 + 16 * (Equipment[8] >> 7);
-            *(WORD*)(c + 504) = (WORD)((BYTE)v7 + 624);
+            *(WORD *)&AsCharacter(c)->BodyPart[1].Type = (WORD)((BYTE)v7 + 624);
         }
     }
     {
         short v9 = Equipment[2] & 0xF;
         if ((BYTE)v9 + 16 * ((Equipment[8] & 0x40) != 0) == 31) {
-            BYTE b = *(BYTE*)(c + 444);
-            *(WORD*)(c + 528) = (WORD)((b & 7) + 4 * (b >> 3) + 919);
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[2].Type = (WORD)((b & 7) + 4 * (b >> 3) + 919);
         } else {
             v9 = (BYTE)v9 + 16 * ((Equipment[8] & 0x40) != 0);
-            *(WORD*)(c + 528) = (WORD)((BYTE)v9 + 656);
+            *(WORD *)&AsCharacter(c)->BodyPart[2].Type = (WORD)((BYTE)v9 + 656);
         }
     }
     {
         char v10 = Equipment[3] >> 4;
         if (v10 + 16 * ((Equipment[8] & 0x20) != 0) == 31) {
-            BYTE b = *(BYTE*)(c + 444);
-            *(WORD*)(c + 552) = (WORD)((b & 7) + 4 * (b >> 3) + 926);
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[3].Type = (WORD)((b & 7) + 4 * (b >> 3) + 926);
         } else {
-            *(WORD*)(c + 552) = (WORD)((BYTE)(v10 + 16 * ((Equipment[8] & 0x20) != 0)) + 688);
+            *(WORD *)&AsCharacter(c)->BodyPart[3].Type = (WORD)((BYTE)(v10 + 16 * ((Equipment[8] & 0x20) != 0)) + 688);
         }
     }
     {
         char v11 = Equipment[3] & 0xF;
         if (v11 + 16 * ((Equipment[8] & 0x10) != 0) == 31) {
-            BYTE b = *(BYTE*)(c + 444);
-            *(WORD*)(c + 576) = (WORD)((b & 7) + 4 * (b >> 3) + 933);
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[4].Type = (WORD)((b & 7) + 4 * (b >> 3) + 933);
         } else {
-            *(WORD*)(c + 576) = (WORD)((BYTE)(v11 + 16 * ((Equipment[8] & 0x10) != 0)) + 720);
+            *(WORD *)&AsCharacter(c)->BodyPart[4].Type = (WORD)((BYTE)(v11 + 16 * ((Equipment[8] & 0x10) != 0)) + 720);
         }
     }
     {
         char v12 = Equipment[4] >> 4;
         if (v12 + 16 * ((Equipment[8] & 8) != 0) == 31) {
-            BYTE b = *(BYTE*)(c + 444);
-            *(WORD*)(c + 600) = (WORD)((b & 7) + 4 * (b >> 3) + 940);
+            BYTE b = AsCharacter(c)->Class;
+            *(WORD *)&AsCharacter(c)->BodyPart[5].Type = (WORD)((b & 7) + 4 * (b >> 3) + 940);
         } else {
-            *(WORD*)(c + 600) = (WORD)((BYTE)(v12 + 16 * ((Equipment[8] & 8) != 0)) + 752);
+            *(WORD *)&AsCharacter(c)->BodyPart[5].Type = (WORD)((BYTE)(v12 + 16 * ((Equipment[8] & 8) != 0)) + 752);
         }
     }
-    *(BYTE*)(c + 506) = (BYTE)LevelConvert((Level >> 6) & 7);
-    *(BYTE*)(c + 530) = (BYTE)LevelConvert((Level >> 9) & 7);
-    *(BYTE*)(c + 554) = (BYTE)LevelConvert((Level >> 12) & 7);
-    *(BYTE*)(c + 578) = (BYTE)LevelConvert((Level >> 15) & 7);
-    *(BYTE*)(c + 602) = (BYTE)LevelConvert((Level >> 18) & 7);
-    *(BYTE*)(c + 507) = Equipment[9] >> 7;
-    *(BYTE*)(c + 531) = (Equipment[9] & 0x40) != 0;
-    *(BYTE*)(c + 555) = (Equipment[9] & 0x20) != 0;
-    *(BYTE*)(c + 579) = (Equipment[9] & 0x10) != 0;
-    *(BYTE*)(c + 603) = (Equipment[9] & 8) != 0;
-    *(BYTE*)(c + 627) = (Equipment[9] & 4) != 0;
-    *(BYTE*)(c + 651) = (Equipment[9] & 2) != 0;
+    AsCharacter(c)->BodyPart[1].Level = (BYTE)LevelConvert((Level >> 6) & 7);
+    AsCharacter(c)->BodyPart[2].Level = (BYTE)LevelConvert((Level >> 9) & 7);
+    AsCharacter(c)->BodyPart[3].Level = (BYTE)LevelConvert((Level >> 12) & 7);
+    AsCharacter(c)->BodyPart[4].Level = (BYTE)LevelConvert((Level >> 15) & 7);
+    AsCharacter(c)->BodyPart[5].Level = (BYTE)LevelConvert((Level >> 18) & 7);
+    AsCharacter(c)->BodyPart[1].Option1 = Equipment[9] >> 7;
+    AsCharacter(c)->BodyPart[2].Option1 = (Equipment[9] & 0x40) != 0;
+    AsCharacter(c)->BodyPart[3].Option1 = (Equipment[9] & 0x20) != 0;
+    AsCharacter(c)->BodyPart[4].Option1 = (Equipment[9] & 0x10) != 0;
+    AsCharacter(c)->BodyPart[5].Option1 = (Equipment[9] & 8) != 0;
+    AsCharacter(c)->Weapon[0].Option1 = (Equipment[9] & 4) != 0;
+    AsCharacter(c)->Weapon[1].Option1 = (Equipment[9] & 2) != 0;
     SetCharacterScale((int)c);
 }
 
@@ -2153,13 +2144,13 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
 
     // WeaponL (this+536) magic damage bonus
     if (*(unsigned short*)weaponL != 0xFFFF) {
-        unsigned char dur = *(unsigned char*)(weaponL + 26);
+        unsigned char dur = AsItem(weaponL)->Durability;
         if (dur != 0) {
             short type = *(short*)weaponL;
             ITEM_ATTRIBUTE* attr = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[type];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
-                                               *(int*)(weaponL + 4),
-                                               *(unsigned char*)(weaponL + 27));
+                                               AsItem(weaponL)->Level,
+                                               AsItem(weaponL)->Option1);
             int specId = (type == 31) ? 60 : 61;  // Wand uses special 60
             unsigned short minBonus = 0, maxBonus = 0;
             PlusSpecial(&minBonus, specId, weaponL);
@@ -2332,10 +2323,10 @@ int __cdecl Stats_CalcDefense(int param_1) {
 
     short v3 = *(short*)(param_1 + 604);  // WeaponR/Shield item type
     if (v3 != -1) {
-        unsigned char dur = *(unsigned char*)(param_1 + 630);  // shield durability
+        unsigned char dur = AsCharacter(param_1)->Weapon[0].PriorAction;  // shield durability
         if (dur != 0) {
             unsigned char maxDur = ((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3].Durability;
-            int level = *(int*)(param_1 + 608);
+            int level = *(int *)&AsCharacter(param_1)->BodyPart[5].AnimationFrame;
             unsigned char opt = *(unsigned char*)(param_1 + 631);
             float durP = CalcDurabilityPercent(dur, maxDur, level, opt);
             unsigned char defenseBase = *(unsigned char*)(param_1 + 620);

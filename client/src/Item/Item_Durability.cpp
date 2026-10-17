@@ -127,10 +127,10 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
         return Money;
     }
 
-    int Level = (*(int*)(a1 + 4) >> 3) & 0xF;
+    int Level = (AsItem(a1)->Level >> 3) & 0xF;
     char v7 = 0;
     int v8 = (int)v3 / 32;
-    int v26 = *(unsigned char*)(a1 + 36);
+    int v26 = AsItem(a1)->SpecialNum;
 
     if (v26) {
         for (int v9 = 0; v9 < v26; v9++) {
@@ -222,7 +222,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
                 v5 = 10 * (int)p->Value * (int)p->Value / 12;
                 v34 = v5;
                 if (v3 < 448 || v3 > 456) goto LABEL_148;
-                v5 *= *(unsigned char*)(a1 + 26);   // durability multiplier (Excellent ancient)
+                v5 *= AsItem(a1)->Durability;   // durability multiplier (Excellent ancient)
                 goto LABEL_147;
             }
         }
@@ -354,7 +354,7 @@ LABEL_110:
 
 LABEL_36:
     if (Durability) {
-        v5 = v13 * (int)*(unsigned char*)(a1 + 26) / Durability;
+        v5 = v13 * (int)AsItem(a1)->Durability / Durability;
 LABEL_147:
         v34 = v5;
     }
@@ -376,7 +376,7 @@ LABEL_148:
         && a2 == 1)
     {
         unsigned int maxDur = Item_CalculateMaxDurability((void*)a1, (int)((unsigned short)v25) * 0x40 + (int)DAT_07d78068, Level) & 0xffff;
-        double penalty = (1.0 - (double)*(unsigned char*)(a1 + 26) / (double)maxDur)
+        double penalty = (1.0 - (double)AsItem(a1)->Durability / (double)maxDur)
                        * (double)v34 * -0.60000002;
         v5 += (int)(std::int64_t)penalty;
     }

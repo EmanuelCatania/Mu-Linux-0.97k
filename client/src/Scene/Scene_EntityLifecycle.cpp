@@ -264,26 +264,26 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
             pcVar5 += 0x1bc;
             if (pcVar5 >= DAT_083a1218 + 10 * 0x1bc) return;
         }
-        *(DWORD*)(pcVar5 + 4)   = param_4;
+        *(DWORD *)&AsObject(pcVar5)->SubType   = param_4;
         pcVar5[0x58] = pcVar5[0x59] = pcVar5[0x5a] = pcVar5[0x5b] = -1;
         pcVar5[100]  = pcVar5[0x65] = pcVar5[0x66] = pcVar5[0x67] = -1;
-        *(short*)(pcVar5 + 2)   = (short)param_1;
+        AsObject(pcVar5)->Type   = (short)param_1;
         pcVar5[0x68] = pcVar5[0x69] = '\0'; pcVar5[0x6a] = (char)0x80; pcVar5[0x6b] = '?';
         pcVar5[0x164]= pcVar5[0x165]= '\0'; pcVar5[0x166]= (char)0x80; pcVar5[0x167]= '?';
         *pcVar5 = '\x01';
-        pcVar5[0x160] = '\0';
-        pcVar5[0xdc]  = '\x01';
-        pcVar5[0xe4]  = '\0';
-        pcVar5[0x161] = '\0';
-        pcVar5[0x110] = '\0';
+        *(char *)&AsObject(pcVar5)->Visible = '\0';
+        *(char *)&AsObject(pcVar5)->LightEnable  = '\x01';
+        *(char *)&AsObject(pcVar5)->ContrastEnable  = '\0';
+        *(char *)&AsObject(pcVar5)->AlphaEnable = '\0';
+        *(char *)&AsObject(pcVar5)->EnableBoneMatrix = '\0';
         *(int*)(pcVar5 + 0xfc)  = param_3;
         pcVar5[0x0c]='3'; pcVar5[0x0d]='3'; pcVar5[0x0e]='3'; pcVar5[0x0f]='?';
         pcVar5[0x60]='\x1e'; pcVar5[0x61]=pcVar5[0x62]=pcVar5[63]='\0';
         pcVar5[0x168]=pcVar5[0x169]=pcVar5[0x16a]=pcVar5[0x16b]='\0';
-        *(DWORD*)(pcVar5+0x10)=param_2[0]; *(DWORD*)(pcVar5+0x14)=param_2[1]; *(DWORD*)(pcVar5+0x18)=param_2[2];
-        *(DWORD*)(pcVar5+0x1c)=*(DWORD*)(param_3+0x1c);
-        *(DWORD*)(pcVar5+0x20)=*(DWORD*)(param_3+0x20);
-        *(DWORD*)(pcVar5+0x24)=*(DWORD*)(param_3+0x24);
+        *(DWORD *)&AsObject(pcVar5)->Position[0]=param_2[0]; *(DWORD *)&AsObject(pcVar5)->Position[1]=param_2[1]; *(DWORD *)&AsObject(pcVar5)->Position[2]=param_2[2];
+        *(DWORD *)&AsObject(pcVar5)->Angle[0]=*(DWORD*)(param_3+0x1c);
+        *(DWORD *)&AsObject(pcVar5)->Angle[1]=*(DWORD*)(param_3+0x20);
+        *(DWORD *)&AsObject(pcVar5)->Angle[2]=*(DWORD*)(param_3+0x24);
         pcVar5[0x10c]=pcVar5[0x10d]=pcVar5[0x10e]=pcVar5[0x10f]='\0';
         pcVar5[0x108]=pcVar5[0x109]=pcVar5[0x10a]=pcVar5[0x10b]='\0';
         pcVar5[0xe8]=pcVar5[0xe9]='\0'; pcVar5[0xea]=pcVar5[0xeb]='@';
@@ -293,15 +293,15 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
         short sVar4 = (short)param_1;
         if (sVar4 == 0x330) {
             UINT u; int v;
-            u=_rand()&0x800001ff; if((int)u<0)u=(u-1|0xfffffe00)+1; *(float*)(pcVar5+0x10)=(float)(int)(u-0x100)+*(float*)(param_3+0x10);
-            u=_rand()&0x800001ff; if((int)u<0)u=(u-1|0xfffffe00)+1; *(float*)(pcVar5+0x14)=(float)(int)(u-0x100)+*(float*)(param_3+0x14);
-            u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; *(float*)(pcVar5+0x18)=(float)(int)(u+0x80)+*(float*)(param_3+0x18);
+            u=_rand()&0x800001ff; if((int)u<0)u=(u-1|0xfffffe00)+1; AsObject(pcVar5)->Position[0]=(float)(int)(u-0x100)+*(float*)(param_3+0x10);
+            u=_rand()&0x800001ff; if((int)u<0)u=(u-1|0xfffffe00)+1; AsObject(pcVar5)->Position[1]=(float)(int)(u-0x100)+*(float*)(param_3+0x14);
+            u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; AsObject(pcVar5)->Position[2]=(float)(int)(u+0x80)+*(float*)(param_3+0x18);
         } else if (sVar4 == 0x331) {
             UINT u;
-            u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; *(float*)(pcVar5+0x10)=(float)(int)(u-0x40)+*(float*)(param_3+0x10);
-            u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; *(float*)(pcVar5+0x14)=(float)(int)(u-0x40)+*(float*)(param_3+0x14);
-            *(DWORD*)(pcVar5+0x18)=*(DWORD*)(param_3+0x18);
-            *(float*)(pcVar5+0x18)=(float)(_rand()%100)+RequestTerrainHeight(*(float*)(pcVar5+0x10), *(float*)(pcVar5+0x14));
+            u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; AsObject(pcVar5)->Position[0]=(float)(int)(u-0x40)+*(float*)(param_3+0x10);
+            u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; AsObject(pcVar5)->Position[1]=(float)(int)(u-0x40)+*(float*)(param_3+0x14);
+            *(DWORD *)&AsObject(pcVar5)->Position[2]=*(DWORD*)(param_3+0x18);
+            AsObject(pcVar5)->Position[2]=(float)(_rand()%100)+RequestTerrainHeight(AsObject(pcVar5)->Position[0], AsObject(pcVar5)->Position[1]);
         } else if ((sVar4==0xc3)||(sVar4==0x10b)) {
             strncpy(pcVar5+0x0c,"fff?",4);
         }

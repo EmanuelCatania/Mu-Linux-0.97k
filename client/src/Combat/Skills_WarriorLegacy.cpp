@@ -85,16 +85,16 @@ static void Warrior_CollectMultiTargets(const float* centre, float radius,
     BYTE* characters = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int index = 0; index < 400 && *count < maximum; ++index) {
         BYTE* candidate = characters + index * 0x394;
-        if (!candidate[0] || !candidate[0x160] || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || candidate[0x2FD])
+        if (!AsCharacter(candidate)->Object.Live || !AsCharacter(candidate)->Object.Visible || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || AsCharacter(candidate)->Dead)
             continue;
 
-        const int key = *(short*)(candidate + 0x1DC); // IDA: *(std::int16_t *)(v9 + 456)
-        const BYTE type = candidate[0x84]; // IDA: v10 = *(_BYTE *)(v9 + 112)
+        const int key = *(short *)&AsCharacter(candidate)->Key; // IDA: *(std::int16_t *)(v9 + 456)
+        const BYTE type = AsCharacter(candidate)->Object.Kind; // IDA: v10 = *(_BYTE *)(v9 + 112)
         if (type != 2 && (type != 1 || key != relationKey))
             continue;
 
-        const float dx = *(float*)(candidate + 0x10) - centre[0];
-        const float dy = *(float*)(candidate + 0x14) - centre[1];
+        const float dx = AsCharacter(candidate)->Object.Position[0] - centre[0];
+        const float dy = AsCharacter(candidate)->Object.Position[1] - centre[1];
         // IDA v16/v17 use the X/Y plane only; Z is intentionally ignored.
         if (dx * dx + dy * dy > radiusSquared)
             continue;
@@ -163,7 +163,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
         *(BYTE*)(character + 904), *(BYTE*)(character + 908),
         (BYTE)(16 * (((int)((*(float*)(object + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
     gNetwork.SendC1(movePacket, sizeof(movePacket));
-    *(BYTE*)(c + 0x2EC) = 0;
+    AsCharacter(c)->Movement = 0;
 
     if (*(short*)(o + 2) == 390) {
         SetAttackSpeed(); // SetAttackSpeed
@@ -230,8 +230,8 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             // IDA L687-690 / L738 / L780: los dos bytes de grilla salen de
             // `c + 904` y `c + 908` (la grilla del HEROE), no de la posicion de
             // mundo del objetivo (c+788/792) que usaba el port.
-            const BYTE tileX = (BYTE)*(DWORD*)(c + 904);   // IDA: *(_DWORD *)v39
-            const BYTE tileY = (BYTE)*(DWORD*)(c + 908);   // IDA: LOBYTE(x2), v38
+            const BYTE tileX = (BYTE)*(DWORD *)&AsCharacter(c)->PositionX;   // IDA: *(_DWORD *)v39
+            const BYTE tileY = (BYTE)*(DWORD *)&AsCharacter(c)->PositionY;   // IDA: LOBYTE(x2), v38
             // IDA L818: v50 = (std::int64_t)(*(float *)(o + 36) * 0.71111113) — el mismo
             // paso de 256/360 que usan el resto de los constructores C3:1E del port.
             // El port aplicaba aca el empaquetado de 8 direcciones (16*(a&7)), que
@@ -275,7 +275,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             Warrior_SendSkill19(skillType, targetKey);
     }
 
-    *(BYTE*)(c + 757) = 1;
+    AsCharacter(c)->SkillStage = 1;
     if ((*(DWORD*)(o + 120) & 0x20) == 0) {
         int tileX = (int)(*(float*)(c + 788) * 0.01f);
         int tileY = (int)(*(float*)(c + 792) * 0.01f);
@@ -316,11 +316,11 @@ void __cdecl Entity_WeaponHit(int param_1) {
 //   if prev anim (+0x270) was wind-up (0x218-0x21E or 0x220): set walk/swim-walk.
 // If currently in attack anim: immediately revert to walk (0x2E) or swim-walk (0x30).
 void __cdecl Entity_ResetToWalk(int param_1) {
-    short sVar1    = *(short*)(param_1 + 0x288);
-    bool swimming  = ((*(BYTE*)(param_1 + 0x1bc) & 7) == 2);
-    bool has_water = (*(short*)(param_1 + 0x2a0) != -1);
+    short sVar1    = AsCharacter(param_1)->Weapon[1].Type;
+    bool swimming  = ((AsCharacter(param_1)->Class & 7) == 2);
+    bool has_water = (AsCharacter(param_1)->Wing.Type != -1);
     if (((sVar1 < 0x210) || (0x216 < sVar1)) && (sVar1 != 0x221)) {
-        sVar1 = *(short*)(param_1 + 0x270);
+        sVar1 = AsCharacter(param_1)->Weapon[0].Type;
         if (((0x217 < sVar1) && (sVar1 < 0x21f)) || (sVar1 == 0x220)) {
             SetAction(param_1, (swimming && has_water) ? 0x31 : 0x2f);
         }
@@ -334,19 +334,19 @@ void __cdecl Entity_ResetToWalk(int param_1) {
 // entity_type 0x186 (special NPC): picks idle/stance anim from 0x52/0x53/0x56/0x5B.
 // Other types: increments combo_counter (+0x303) and alternates anim 3 / 4.
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
-    if (*(short*)(param_1 + 2) != 0x186) {
+    if (AsCharacter(param_1)->Object.Type != 0x186) {
         UINT uVar1 = (*(BYTE*)(param_1 + 0x303) % 3 == 0) ? 3 : 4;
         SetAction(param_1, uVar1);
         *(char*)(param_1 + 0x303) = *(char*)(param_1 + 0x303) + 1;
         return;
     }
     SetAttackSpeed();
-    if (((*(short*)(param_1 + 0x2b8) == 0x332) || (*(short*)(param_1 + 0x2b8) == 0x333)) &&
-         (*(char*)(param_1 + 0x34e) == '\0')) {
+    if (((AsCharacter(param_1)->Helper.Type == 0x332) || (AsCharacter(param_1)->Helper.Type == 0x333)) &&
+         (*(char *)&AsCharacter(param_1)->SafeZone == '\0')) {
         SetAction(param_1, 0x5b); // death anim for special class
         return;
     }
-    if ((*(BYTE*)(param_1 + 0x1bc) & 7) == 2) {
+    if ((AsCharacter(param_1)->Class & 7) == 2) {
         SetAction(param_1, 0x56); // swim idle
         return;
     }
@@ -462,9 +462,9 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 void __cdecl Entity_MeleeAttackStart(int param_1) {
     SetAttackSpeed();
     SetAction(param_1, 0x57);
-    *(float*)(param_1 + 0x108) = 5.0f;   // 0x40A00000
-    *(BYTE *)(param_1 + 0x7c)  = 3;      // melee attack mode
-    *(float*)(param_1 + 0x164) = 1.0f;   // 0x3F800000
+    AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000
+    AsObject(param_1)->Teleport  = 3;      // melee attack mode
+    AsObject(param_1)->AlphaTarget = 1.0f;   // 0x3F800000
     CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);

@@ -444,15 +444,15 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
 {
     // 0043EA20 without its hash-table obfuscation blocks.  Offsets are decimal
     // in the original: current=852, subframe=853, count=854, X=855, Y=870.
-    byte current = *(byte *)(ent + 852);
-    const byte count = *(byte *)(ent + 854);
+    byte current = AsCharacter(ent)->PathCurrent;
+    const byte count = AsCharacter(ent)->PathNum;
     if (current >= count) return 0;
 
-    if (!*(byte *)(ent + 853)) {
+    if (!AsCharacter(ent)->PathSubstep) {
         int next = current + 1;
         if (next > count - 1) next = count - 1;
-        *(int *)(ent + 904) = *(byte *)(ent + 855 + next);
-        *(int *)(ent + 908) = *(byte *)(ent + 870 + next);
+        AsCharacter(ent)->PositionX = *(byte *)(ent + 855 + next);
+        AsCharacter(ent)->PositionY = *(byte *)(ent + 870 + next);
     }
 
     float x[4], y[4];
@@ -465,7 +465,7 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     }
 
     float targetX = x[1], targetY = y[1];
-    switch (*(byte *)(ent + 853)) {
+    switch (AsCharacter(ent)->PathSubstep) {
     case 0: targetX=x[2]*.2265625f-x[3]*.0234375f+x[1]*.8671875f-x[0]*.0703125f;
             targetY=y[2]*.2265625f-y[3]*.0234375f+y[1]*.8671875f-y[0]*.0703125f; break;
     case 1: targetX=x[2]*.5625f-x[3]*.0625f+x[1]*.5625f-x[0]*.0625f;
@@ -475,32 +475,32 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     case 3: targetX=x[2]; targetY=y[2]; break;
     }
 
-    const float dx = *(float *)(ent + 16) - targetX;
-    const float dy = *(float *)(ent + 20) - targetY;
+    const float dx = AsCharacter(ent)->Object.Position[0] - targetX;
+    const float dy = AsCharacter(ent)->Object.Position[1] - targetY;
     // IDA L150-166: las tres condiciones (lejos del punto, subpaso <= 3, o
     // waypoint siguiente sin llegar al final) comparten el mismo cuerpo, que
     // gira al personaje.  El port no giraba en la tercera.
-    bool stillMoving = sqrtf(dx*dx + dy*dy) > 20.0f || ++*(byte *)(ent + 853) <= 3;
+    bool stillMoving = sqrtf(dx*dx + dy*dy) > 20.0f || ++AsCharacter(ent)->PathSubstep <= 3;
     if (!stillMoving) {
-        ++*(byte *)(ent + 852);
-        *(byte *)(ent + 853) = 0;
-        current = *(byte *)(ent + 852);
+        ++AsCharacter(ent)->PathCurrent;
+        AsCharacter(ent)->PathSubstep = 0;
+        current = AsCharacter(ent)->PathCurrent;
         stillMoving = current < count - 1;
     }
     if (stillMoving) {
         if (turn) {
-            const float angle = CreateAngle(*(float *)(ent + 16), *(float *)(ent + 20), targetX, targetY);
-            const float delta = FarAngle(*(float *)(ent + 36), angle, 1);
-            *(float *)(ent + 36) = (delta >= 45.0f) ? angle : TurnAngle2(*(float *)(ent + 36), angle, delta * 0.5f);
+            const float angle = CreateAngle(AsCharacter(ent)->Object.Position[0], AsCharacter(ent)->Object.Position[1], targetX, targetY);
+            const float delta = FarAngle(AsCharacter(ent)->Object.Angle[2], angle, 1);
+            AsCharacter(ent)->Object.Angle[2] = (delta >= 45.0f) ? angle : TurnAngle2(AsCharacter(ent)->Object.Angle[2], angle, delta * 0.5f);
         }
         return 0;
     }
 
-    *(byte *)(ent + 852) = count - 1;
-    *(int *)(ent + 904) = *(byte *)(ent + 855 + count - 1);
-    *(int *)(ent + 908) = *(byte *)(ent + 870 + count - 1);
-    *(float *)(ent + 16) = targetX;
-    *(float *)(ent + 20) = targetY;
+    AsCharacter(ent)->PathCurrent = count - 1;
+    AsCharacter(ent)->PositionX = *(byte *)(ent + 855 + count - 1);
+    AsCharacter(ent)->PositionY = *(byte *)(ent + 870 + count - 1);
+    AsCharacter(ent)->Object.Position[0] = targetX;
+    AsCharacter(ent)->Object.Position[1] = targetY;
     return 1;
 }
 
@@ -518,20 +518,20 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     // Si retornábamos 0 cuando no hay path → caller llamaba al mover →
     // hero caminaba en facing direction sin importar si había path.
     // Por eso "se movía solo" sin click.
-    if (*(byte *)(ent + 0x356) <= *(byte *)(ent + 0x354))
+    if (AsCharacter(ent)->PathNum <= AsCharacter(ent)->PathCurrent)
         return 1;
 
-    byte cur_wp   = *(byte *)(ent + 0x354);
-    byte wp_count = *(byte *)(ent + 0x356);
-    byte substep  = *(byte *)(ent + 0x355);
+    byte cur_wp   = AsCharacter(ent)->PathCurrent;
+    byte wp_count = AsCharacter(ent)->PathNum;
+    byte substep  = AsCharacter(ent)->PathSubstep;
 
     // path_substep == 0: initialize cached waypoint grid coords
     if (substep == 0) {
         int next_wp = (int)cur_wp + 1;
         int max_wp  = (int)wp_count - 1;
         if (max_wp < next_wp) next_wp = max_wp;
-        *(int *)(ent + 0x388) = (int)*(byte *)(ent + 0x357 + next_wp); // cached_wp_x
-        *(int *)(ent + 0x38c) = (int)*(byte *)(ent + 0x366 + next_wp); // cached_wp_y
+        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + 0x357 + next_wp);
+        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + 0x366 + next_wp);
     }
 
     // 2026-04-30 SIMPLIFIED: en lugar de Catmull-Rom (que con coeficientes
@@ -547,8 +547,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     float target_y = ((float)*(byte *)(ent + 0x366 + next_wp) + _DAT_00552504) * _DAT_005524f0;
 
     // Distance check
-    float dx   = *(float *)(ent + 0x10) - target_x;
-    float dy   = *(float *)(ent + 0x14) - target_y;
+    float dx   = AsCharacter(ent)->Object.Position[0] - target_x;
+    float dy   = AsCharacter(ent)->Object.Position[1] - target_y;
     float dist = sqrtf(dx * dx + dy * dy);
 
     // Threshold: ~25 units tight enough to prevent overshoot, generous
@@ -558,11 +558,11 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
 
     if (dist <= threshold) {
         // Arrived at this waypoint — snap to it and advance
-        *(float *)(ent + 0x10) = target_x;
-        *(float *)(ent + 0x14) = target_y;
+        AsCharacter(ent)->Object.Position[0] = target_x;
+        AsCharacter(ent)->Object.Position[1] = target_y;
         cur_wp++;
-        *(byte *)(ent + 0x354) = cur_wp;
-        *(byte *)(ent + 0x355) = 0;
+        AsCharacter(ent)->PathCurrent = cur_wp;
+        AsCharacter(ent)->PathSubstep = 0;
         if ((int)(wp_count - 1) <= (int)cur_wp) {
             return 1;   // arrived at final
         }
@@ -592,15 +592,15 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     // (Versión v2 usaba atan2(dx, dy) que daba ángulo OPUESTO — click
     //  arriba mandaba al hero hacia abajo y caminaba infinito al sur.)
     if (flag != '\0') {
-        float ent_x = *(float*)(ent + 0x10);
-        float ent_y = *(float*)(ent + 0x14);
+        float ent_x = AsCharacter(ent)->Object.Position[0];
+        float ent_y = AsCharacter(ent)->Object.Position[1];
         float ddx = target_x - ent_x;
         float ddy = target_y - ent_y;
         if (ddx * ddx + ddy * ddy > 0.01f) {
             float facingDeg = (float)(atan2((double)ddx, -(double)ddy) * 57.29577951);
             // Normalize to [0..360)
             if (facingDeg < 0.0f) facingDeg += 360.0f;
-            *(float*)(ent + 0x24) = facingDeg;
+            AsCharacter(ent)->Object.Angle[2] = facingDeg;
         }
     }
     return 0;

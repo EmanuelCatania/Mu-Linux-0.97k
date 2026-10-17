@@ -15,8 +15,8 @@
 // adjusted weapon-type (+400) for the trail effect.
 void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
     // Read weapon types from character equipment slots
-    int weaponType0 = (int)*(short*)(c + 0x270);  // Weapon[0].Type
-    int weaponType1 = (int)*(short*)(c + 0x288);  // Weapon[1].Type
+    int weaponType0 = (int)AsCharacter(c)->Weapon[0].Type;  // Weapon[0].Type
+    int weaponType1 = (int)AsCharacter(c)->Weapon[1].Type;  // Weapon[1].Type
 
     bool isHero = (c == (DWORD)DAT_07abf5d8);
 

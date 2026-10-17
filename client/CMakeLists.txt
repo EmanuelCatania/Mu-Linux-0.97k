@@ -376,6 +376,8 @@ set(MU_HEADERS
     src/Config/UserSettings.h
     src/UI/UIState.h
     src/Entity/EntityView.h
+    src/Entity/EntityTypes.h
+    src/Model/ModelTypes.h
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h
@@ -458,7 +460,6 @@ set(MU_HEADERS
     src/Trade/Trade.h
     src/UI/UI.h
     src/Game/GameEnums.h
-    src/Game/GameStructs.h
     src/Debug/MiniDump.h
     src/resource.h
     src/Net/Protocol/ProtocolBase.h

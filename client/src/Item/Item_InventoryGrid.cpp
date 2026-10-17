@@ -76,8 +76,8 @@ void __cdecl SetItemGridFlag(int param_1, int param_2, unsigned char param_3) {
     ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)DAT_07d78068;
     BYTE width  = attr[itemType].Width;
     BYTE height = attr[itemType].Height;
-    unsigned int originX = (unsigned int)*(BYTE*)(itemBase + 0x3e);
-    unsigned int originY = (unsigned int)*(BYTE*)(itemBase + 0x3f);
+    unsigned int originX = (unsigned int)AsItem(itemBase)->x;
+    unsigned int originY = (unsigned int)AsItem(itemBase)->y;
     unsigned int gy = originY;
     if (gy < originY + height) {
         do {

@@ -129,31 +129,31 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
 }
 
 // IDA: SetCharacterScale (0x0045C050)
-// Sets entity speed (+0x0c) based on move_type_flags (+0x1bc) and swim flag (+0x1bd).
+// Sets entity scale (+0x0c) based on Class (+0x1bc) and Skin (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
 void __cdecl SetCharacterScale(int param_1) {
-    if (*(char*)(param_1 + 0x34f) == '\0') {
-        short sVar1 = *(short*)(param_1 + 0x1f8);
+    if (*(char *)&AsCharacter(param_1)->Change == '\0') {
+        short sVar1 = AsCharacter(param_1)->BodyPart[1].Type;
         if (((sVar1 == 0x270) || (sVar1 == 0x272)) || ((0x279 < sVar1 && (sVar1 < 0x27e)))) {
-            *(unsigned short*)(param_1 + 0x1e0) =
-                (*(unsigned char*)(param_1 + 0x1bc) & 7) + 0x390 +
-                (unsigned short)(*(unsigned char*)(param_1 + 0x1bc) >> 3) * 4;
+            *(unsigned short *)&AsCharacter(param_1)->BodyPart[0].Type =
+                (AsCharacter(param_1)->Class & 7) + 0x390 +
+                (unsigned short)(AsCharacter(param_1)->Class >> 3) * 4;
         } else {
-            *(unsigned short*)(param_1 + 0x1e0) = 0xffff;
+            *(unsigned short *)&AsCharacter(param_1)->BodyPart[0].Type = 0xffff;
         }
-        if (*(char*)(param_1 + 0x1bd) != '\0') {
-            switch (*(unsigned char*)(param_1 + 0x1bc) & 7) {
-            case 0: case 1: *(unsigned int*)(param_1 + 0x0c) = 0x3f6e147b; return; // 0.93f
-            case 2:         *(unsigned int*)(param_1 + 0x0c) = 0x3f5c28f6; return; // 0.86f
+        if (*(char *)&AsCharacter(param_1)->Skin != '\0') {
+            switch (AsCharacter(param_1)->Class & 7) {
+            case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6e147b; return; // 0.93f
+            case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f5c28f6; return; // 0.86f
             case 3:         goto case3;
             default:        return;
             }
         }
-        switch (*(unsigned char*)(param_1 + 0x1bc) & 7) {
-        case 0: case 1: *(unsigned int*)(param_1 + 0x0c) = 0x3f666666; return; // 0.9f
-        case 2:         *(unsigned int*)(param_1 + 0x0c) = 0x3f6147ae; return; // 0.88f
+        switch (AsCharacter(param_1)->Class & 7) {
+        case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f666666; return; // 0.9f
+        case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6147ae; return; // 0.88f
         case 3:
-        case3:          *(unsigned int*)(param_1 + 0x0c) = 0x3f733333; return; // 0.95f
+        case3:          *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f733333; return; // 0.95f
         }
     }
 }
@@ -172,13 +172,13 @@ void __cdecl crt_fprintf(void* param_1, void* param_2) {
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
 void __cdecl BMD__Release(int param_1) {
-    short numBones   = *(short*)(param_1 + 0x22);
-    short numMeshes  = *(short*)(param_1 + 0x26);
-    short numActions = *(short*)(param_1 + 0x24);
+    short numBones   = AsModel(param_1)->NumBones;
+    short numMeshes  = AsModel(param_1)->NumActions;
+    short numActions = AsModel(param_1)->NumMeshs;
     if (numBones == 0) return;
     // free per-bone sub-mesh vertex arrays
     for (int bi = 0; bi < numBones; bi++) {
-        int bonePtr = *(int*)(param_1 + 0x2c) + bi * 0x8c;
+        int bonePtr = *(int *)&AsModel(param_1)->Bones + bi * 0x8c;
         if (*(char*)(bonePtr + 0x22) == '\0') {
             if (numMeshes > 0) {
                 int meshBase = *(int*)(bonePtr + 0x24);
@@ -194,13 +194,13 @@ void __cdecl BMD__Release(int param_1) {
     }
     // free action keyframe data
     for (int ai = 0; ai < numMeshes; ai++) {
-        int aPtr = *(int*)(param_1 + 0x30) + ai * 0x10;
+        int aPtr = *(int *)&AsModel(param_1)->Actions + ai * 0x10;
         if (*(char*)(aPtr + 10) != '\0')
             operator_delete(*(void**)(aPtr + 0xc));
     }
     // free mesh vertex/normal/UV buffers + unload textures
     for (int mi = 0; mi < numActions; mi++) {
-        int mBase = *(int*)(param_1 + 0x28) + mi * 0x28;
+        int mBase = *(int *)&AsModel(param_1)->Meshs + mi * 0x28;
         operator_delete(*(void**)(mBase + 0x10));
         operator_delete(*(void**)(mBase + 0x14));
         operator_delete(*(void**)(mBase + 0x18));
@@ -209,18 +209,18 @@ void __cdecl BMD__Release(int param_1) {
             operator_delete(*(void**)(mBase + 0x24));
             *(DWORD*)(mBase + 0x24) = 0;
         }
-        int texId = (int)*(short*)(*(int*)(param_1 + 0x38) + *(short*)(mBase + 2) * 2);
+        int texId = (int)*(short*)(*(int *)&AsModel(param_1)->IndexTexture + *(short*)(mBase + 2) * 2);
         if (texId != 0x12d)
             UnloadImage(texId);
     }
-    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD*)(param_1 + 0x28) = 0; }
-    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD*)(param_1 + 0x2c) = 0; }
-    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD*)(param_1 + 0x30) = 0; }
-    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD*)(param_1 + 0x34) = 0; }
-    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD*)(param_1 + 0x38) = 0; }
-    *(short*)(param_1 + 0x22) = 0;
-    *(short*)(param_1 + 0x26) = 0;
-    *(short*)(param_1 + 0x24) = 0;
+    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD *)&AsModel(param_1)->Meshs = 0; }
+    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD *)&AsModel(param_1)->Bones = 0; }
+    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD *)&AsModel(param_1)->Actions = 0; }
+    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD *)&AsModel(param_1)->Textures = 0; }
+    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD *)&AsModel(param_1)->IndexTexture = 0; }
+    AsModel(param_1)->NumBones = 0;
+    AsModel(param_1)->NumActions = 0;
+    AsModel(param_1)->NumMeshs = 0;
 }
 
 // DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
@@ -565,25 +565,25 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     short nearbyIds[5] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
     for (int i = 0; i < 400 && count < 5; i++, pcEnt += 0x394) {
-        if (pcEnt[0] == '\0') continue;                    // IDA: *(v16 - 747)
-        if (pcEnt[0x160] == '\0') continue;                // IDA: *(v16 - 395)
+        if (*(char *)&AsCharacter(pcEnt)->Object.Live == '\0') continue;                    // IDA: *(v16 - 747)
+        if (*(char *)&AsCharacter(pcEnt)->Object.Visible == '\0') continue;                // IDA: *(v16 - 395)
         if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
-        if (pcEnt[765] != '\0') continue;                   // IDA: v16[18] = ent + 765
+        if (*(char *)&AsCharacter(pcEnt)->Dead != '\0') continue;                   // IDA: v16[18] = ent + 765
 
         // IDA L160-163: v17 = a2[1] - ent.y ; v19 = a2[0] - ent.x ; sqrt <= a3
-        float dx = param_2[0] - *(float*)(pcEnt + 0x10);
-        float dy = param_2[1] - *(float*)(pcEnt + 0x14);
+        float dx = param_2[0] - AsCharacter(pcEnt)->Object.Position[0];
+        float dy = param_2[1] - AsCharacter(pcEnt)->Object.Position[1];
         if (SQRT(dx*dx + dy*dy) > param_3) continue;
 
         // IDA L170-171: Kind == 2 (monstruo) o Kind == 1 (jugador) con Key == a5
-        char cType = pcEnt[0x84];                          // IDA: *(v16 - 615)
-        short sKey  = *(short*)(pcEnt + 0x1dc);            // IDA: *(_WORD *)(v16 - 271)
+        char cType = *(char *)&AsCharacter(pcEnt)->Object.Kind;                          // IDA: *(v16 - 615)
+        short sKey  = *(short *)&AsCharacter(pcEnt)->Key;            // IDA: *(_WORD *)(v16 - 271)
         if (cType != '\x02' && !(cType == '\x01' && sKey == param_5))
             continue;
 
         // IDA L173-180: marca de AOE para los grupos de skill 8 y 9.
         if ((uVar19 == 8) || (uVar19 == 9)) {
-            char monsterType = pcEnt[747];                 // IDA: *v16
+            char monsterType = *(char *)&AsCharacter(pcEnt)->MonsterIndex;                 // IDA: *v16
             if (monsterType != 77 && monsterType != 75 && monsterType != 73 &&
                 monsterType != (char)-125 && monsterType != (char)-124 &&
                 monsterType != (char)-123 && monsterType != (char)-122)
@@ -806,11 +806,11 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
     int base = param_1 * 0xbc + DAT_05828d58;
-    *(short*)(base + 0xaa) = (short)param_2;
-    *(short*)(base + 0xac) = (short)param_3;
-    *(short*)(base + 0xae) = (short)param_4;
-    *(short*)(base + 0xb0) = (short)param_5;
-    *(short*)(base + 0xb2) = (short)param_6;
+    AsModel(base)->Sounds[0] = (short)param_2;
+    AsModel(base)->Sounds[1] = (short)param_3;
+    AsModel(base)->Sounds[2] = (short)param_4;
+    AsModel(base)->Sounds[3] = (short)param_5;
+    AsModel(base)->Sounds[4] = (short)param_6;
 }
 
 // CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.
@@ -833,7 +833,7 @@ unsigned int __cdecl CheckAttack(void) {
     }
 
     BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * SelectedCharacter;
-    const BYTE kind = target[132];
+    const BYTE kind = AsCharacter(target)->Object.Kind;
     if (kind == 2) {
         return 1;
     }
@@ -841,7 +841,7 @@ unsigned int __cdecl CheckAttack(void) {
         return 0;
     }
 
-    const BYTE targetPkLevel = target[746];
+    const BYTE targetPkLevel = AsCharacter(target)->PK;
     if (!EnableGuildWar) {
         return targetPkLevel >= 6 ||
                ((gUserSettings.GetPvPWithoutControl() ||   // DESVIACION (DLL, 0x0048322F)
@@ -853,7 +853,7 @@ unsigned int __cdecl CheckAttack(void) {
     // opponent-relation test.  The original indexes the same 80-byte guild
     // name table used by GuildMark_AssociateEntities.
     if (targetPkLevel >= 6) {
-        const short targetGuild = *(short*)(target + 474);
+        const short targetGuild = AsCharacter(target)->GuildMarkIndex;
         if (targetGuild != -1) {
             const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 474);
             if (strcmp(DAT_07e919bc + 80 * heroGuild,
@@ -863,7 +863,7 @@ unsigned int __cdecl CheckAttack(void) {
         }
     }
 
-    if (target[745] == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
+    if (AsCharacter(target)->GuildTeam == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
         return 1;
     }
 

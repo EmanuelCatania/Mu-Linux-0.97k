@@ -59,19 +59,19 @@ void* __cdecl SetAction(int entity_ptr, int anim_id)
 {
     if (entity_ptr == 0) return NULL;
     if (DAT_05828d58 == 0) return NULL;           // tabla aún no inicializada
-    short objType = *(short*)(entity_ptr + 0x02); // OBJECT.Type
+    short objType = AsObject(entity_ptr)->Type; // OBJECT.Type
     short numActions = *(short*)(DAT_05828d58 + (int)objType * 0xBC + 0x26);
 
     // Allow action if < numActions, or if it's 77 (0x4D) or 76 (0x4C)
     if (anim_id >= numActions && anim_id != 77 && anim_id != 76)
         return NULL;
 
-    BYTE curAction = *(BYTE*)(entity_ptr + 0x105); // OBJECT.CurrentAction
+    BYTE curAction = AsObject(entity_ptr)->CurrentAction; // OBJECT.CurrentAction
     if ((int)(unsigned int)curAction != anim_id) {
-        *(BYTE*)(entity_ptr + 0x106) = curAction;             // PriorAction
-        *(float*)(entity_ptr + 0x10C) = *(float*)(entity_ptr + 0x108); // PriorAnimationFrame = AnimationFrame
-        *(BYTE*)(entity_ptr + 0x105) = (BYTE)anim_id;         // CurrentAction
-        *(float*)(entity_ptr + 0x108) = 0.0f;                 // AnimationFrame = 0
+        AsObject(entity_ptr)->PriorAction = curAction;             // PriorAction
+        AsObject(entity_ptr)->PriorAnimationFrame = AsObject(entity_ptr)->AnimationFrame; // PriorAnimationFrame = AnimationFrame
+        AsObject(entity_ptr)->CurrentAction = (BYTE)anim_id;         // CurrentAction
+        AsObject(entity_ptr)->AnimationFrame = 0.0f;                 // AnimationFrame = 0
     }
     return (void*)entity_ptr;
 }

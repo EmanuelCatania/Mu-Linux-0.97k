@@ -139,7 +139,7 @@ static bool CheckFullSet_Tail(int c, bool v26) {
 }
 
 bool __cdecl CheckFullSet(int c) {
-    int v1 = ((*(unsigned char*)(c + 444) & 7) == 3) ? 2 : 1;  // MG=2, otros=1
+    int v1 = ((AsCharacter(c)->Class & 7) == 3) ? 2 : 1;  // MG=2, otros=1
     int v2 = 5;
     EquipmentLevelSet = 0;
 
@@ -150,9 +150,9 @@ bool __cdecl CheckFullSet(int c) {
         v3 -= 12;  // -24 bytes (= 12 shorts) — previous body part
         if (v2 < v1) {
             // All required parts present; check set match
-            int v4 = (*(short*)(c + 600) - ITEM_MODEL_BASE) % 16;  // Boot set_id
+            int v4 = (AsCharacter(c)->BodyPart[5].Type - ITEM_MODEL_BASE) % 16;  // Boot set_id
             int v5 = 5;
-            int v6 = *(unsigned char*)(c + 602) & 0xF;  // Boot level
+            int v6 = AsCharacter(c)->BodyPart[5].Level & 0xF;  // Boot level
             short* v7 = (short*)(c + 600);
             while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - ITEM_MODEL_BASE) % 16) {
                 if (v6 >= ((v7[1]) & 0xF)) {
@@ -588,7 +588,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
     const unsigned char anim = *(unsigned char*)(o + 0x105);
 
     // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).
-    if (*(unsigned char*)(c + 0x34E) != 0)          // c->SafeZone
+    if (AsCharacter(c)->SafeZone != 0)          // c->SafeZone
         Bind = 1;
     else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
         Bind = 1;
@@ -626,9 +626,9 @@ extern "C" int RenderCharacterBackItem(int c, int o)
 
     for (int i = 0; i < 2; ++i) {
         const int partBase = c + 24 * i;
-        int iType    = *(short*)(partBase + 0x270);
-        int iLevel   = *(unsigned char*)(partBase + 0x272);
-        int iOption1 = *(unsigned char*)(partBase + 0x273);
+        int iType    = AsCharacter(partBase)->Weapon[0].Type;
+        int iLevel   = AsCharacter(partBase)->Weapon[0].Level;
+        int iOption1 = AsCharacter(partBase)->Weapon[0].Option1;
 
         if (iType < 0)
             continue;
@@ -659,12 +659,12 @@ extern "C" int RenderCharacterBackItem(int c, int o)
             continue;
 
         // ── Render en el hueso 47 (espalda), reusando el PART del ala ────────
-        const unsigned int fAnimationFrameBackUp = *(unsigned int*)(c + 0x2A8);
-        *(unsigned char*)(c + 0x2A4) = 47;                  // w->LinkBone
+        const unsigned int fAnimationFrameBackUp = *(unsigned int *)&AsCharacter(c)->Wing.AnimationFrame;
+        AsCharacter(c)->Wing.LinkBone = 47;                  // w->LinkBone
         if (anim == 30 || anim == 31)                       // PLAYER_FLY / FLY_CROSSBOW
-            *(float*)(c + 0x2B0) = 1.0f;
+            AsCharacter(c)->Wing.PlaySpeed = 1.0f;
         else
-            *(float*)(c + 0x2B0) = 0.25f;
+            AsCharacter(c)->Wing.PlaySpeed = 0.25f;
 
         // Hex-Rays llama `Scale` a esta local, pero el 9no parametro de
         // RenderLinkObject es `Link`.  Para armas/escudos (400..623) va 1.
@@ -675,7 +675,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
             //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
             int actions = *(int*)(DAT_05828d58 + 390 * 0xbc + 0x30);
             if (actions != 0)
-                *(unsigned int*)(c + 0x2B0) = *(unsigned int*)(actions + 20);
+                *(unsigned int *)&AsCharacter(c)->Wing.PlaySpeed = *(unsigned int*)(actions + 20);
         }
 
         g_BackItemHand = i;      // lo lee la tabla de poses de RenderLinkObject
@@ -684,7 +684,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
                      Link, '\x01', 0);
         g_BackItemHand = 0;
 
-        *(unsigned int*)(c + 0x2A8) = fAnimationFrameBackUp;
+        *(unsigned int *)&AsCharacter(c)->Wing.AnimationFrame = fAnimationFrameBackUp;
     }
 
     return Bind;
@@ -696,18 +696,18 @@ extern "C" int RenderCharacterBackItem(int c, int o)
 // un sprite-glow rojo en la mano del char (LinkBone=34).
 extern "C" void Render_PlayerHelper(int c, int o)
 {
-    if (*(short*)(c + 0x2B8) != 817) return;
+    if (AsCharacter(c)->Helper.Type != 817) return;
 
     float Targetj = (float)((rand() % 30 + 70) * 0.0099999998);
-    unsigned char v101 = *(unsigned char*)(c + 0x2BA);   // Type@2 = level
-    unsigned char v215 = *(unsigned char*)(c + 0x2BB);   // Option1
-    *(unsigned char*)(c + 0x2BC) = 34;                   // LinkBone = 34
-    *(int*)(c + 0x2C8) = 0x3F000000;                     // PlaySpeed = 0.5f
+    unsigned char v101 = AsCharacter(c)->Helper.Level;   // Type@2 = level
+    unsigned char v215 = AsCharacter(c)->Helper.Option1;   // Option1
+    AsCharacter(c)->Helper.LinkBone = 34;                   // LinkBone = 34
+    *(int *)&AsCharacter(c)->Helper.PlaySpeed = 0x3F000000;                     // PlaySpeed = 0.5f
     RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + 0x2B8,
                  817, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
 
     // Sprite glow at transformed position (20, 0, 15) in bone[34]
-    unsigned char v102 = *(unsigned char*)(c + 0x2BC);   // = 34
+    unsigned char v102 = AsCharacter(c)->Helper.LinkBone;   // = 34
     void* model = (void*)(uintptr_t)((char*)(uintptr_t)DAT_05828d58
                                      + 188 * (int)*(short*)(o + 2));
     void* entity_o = (void*)(uintptr_t)o;
@@ -734,18 +734,18 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
     if (*(unsigned char*)c == 0) return;       // active flag
 
     float Targetj = (float)((rand() % 30 + 70) * 0.0099999998);
-    unsigned char v118 = *(unsigned char*)(o + 261);   // CurrentAction
-    unsigned char Scalee = *(unsigned char*)(c + 770); // anim flag (HashTable result en IDA — usamos byte directo como fallback)
+    unsigned char v118 = AsObject(o)->CurrentAction;   // CurrentAction
+    unsigned char Scalee = AsCharacter(c)->Skill; // anim flag (HashTable result en IDA — usamos byte directo como fallback)
 
     int v234 = 0;
     do {
         // Anim-state skip: action 62 + frame <= 4 + hand 0 cancela
         if (Scalee == 41) {
-            if ((v118 == 62 && !v234 && *(float*)(o + 264) <= 4.0f)
+            if ((v118 == 62 && !v234 && AsObject(o)->AnimationFrame <= 4.0f)
                 || (v118 == 61 && !v234)) {
                 goto label_419;
             }
-        } else if (v118 == 62 && !v234 && *(float*)(o + 264) <= 4.0f) {
+        } else if (v118 == 62 && !v234 && AsObject(o)->AnimationFrame <= 4.0f) {
             goto label_419;
         }
 
@@ -853,8 +853,8 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
         }
 
         // ── Weapon-specific FX (sólo en world bajo 6 y level != 4) ──────────
-        unsigned char v126 = *(unsigned char*)(c + 746);
-        if (SceneFlag == 4 || (v126 < 6 && *(short*)(c + 446) != 4)) {
+        unsigned char v126 = AsCharacter(c)->PK;
+        if (SceneFlag == 4 || (v126 < 6 && *(short *)&AsCharacter(c)->Level != 4)) {
             RenderWeaponFX(c, o, v121, Targetj, Light);
         }
         }

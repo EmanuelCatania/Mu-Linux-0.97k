@@ -627,15 +627,15 @@ float10 __cdecl CharacterMoveSpeed(int c)
   short v2; // dx
   short v3; // cx
 
-  result = (double)*(unsigned short *)(c + 762);
-  if ( *(WORD *)(c + 2) != 390 || *(BYTE *)(c + 132) != 1 )
+  result = (double)AsCharacter(c)->MoveSpeed;
+  if ( *(WORD *)&AsCharacter(c)->Object.Type != 390 || AsCharacter(c)->Object.Kind != 1 )
   {
     goto LABEL_12;
   }
-  v2 = *(WORD *)(c + 672);
-  if ( v2 == -1 && ((v3 = *(WORD *)(c + 696), v3 < 818) || v3 > 819) || *(BYTE *)(c + 846) )
+  v2 = *(WORD *)&AsCharacter(c)->Wing.Type;
+  if ( v2 == -1 && ((v3 = *(WORD *)&AsCharacter(c)->Helper.Type, v3 < 818) || v3 > 819) || AsCharacter(c)->SafeZone )
   {
-    if ( *(BYTE *)(c + 768) < 0x28u )
+    if ( AsCharacter(c)->Run < 0x28u )
     {
       result = 12.0;
       goto LABEL_12;
@@ -643,7 +643,7 @@ float10 __cdecl CharacterMoveSpeed(int c)
   }
   else
   {
-    *(BYTE *)(c + 768) = 40;
+    AsCharacter(c)->Run = 40;
     if ( v2 == 789 )
     {
       result = 16.0;

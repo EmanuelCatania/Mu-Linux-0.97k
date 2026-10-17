@@ -88,7 +88,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
 
     if (dx * dx + dy * dy > reach * reach * 10000.0f) {   // IDA L106: v12*100 < sqrt(...)
         // IDA L145-146: el pathfind usa routeReach, NO el override de 1.8.
-        if (!Path_FindRoute(*(int*)(character + 904), *(int*)(character + 908),
+        if (!Path_FindRoute(AsCharacter(character)->PositionX, AsCharacter(character)->PositionY,
                             targetX, targetY, caster + 852, routeReach))
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
         caster[748] = 1;                              // IDA L150

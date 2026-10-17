@@ -194,7 +194,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         }
 
         // entity+0x1BE = Level (WORD)
-        *(WORD*)(c + 0x1BE) = level;
+        AsCharacter(c)->Level = level;
         // entity+0x1C0 = CtlCode (BYTE)
         c[0x1C0] = ctlCode;
         // entity+0x1C1..0x1CA = Name (10 bytes), entity+0x1CB = NUL
@@ -202,7 +202,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         c[0x1CB] = 0;
         // entity+444 (0x1BC) = clase (BYTE) — lo necesita Recv_JoinMapServer para
         // propagarlo a la entidad del héroe al entrar al mundo.
-        c[444] = (BYTE)klass;
+        AsCharacter(c)->Class = (BYTE)klass;
 
         char name[11]; for (int k = 0; k < 10; ++k) name[k] = (char)rec[1+k]; name[10] = 0;
         NetLog("NET:    F3/00 slot=%d class=%d level=%d name='%s'",
@@ -492,45 +492,45 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
-    // CreateCharacterPointer setea cached_wp (+0x388/0x38c) pero NO
+    // CreateCharacterPointer setea PositionX/Y (+0x388/0x38c) pero NO
     // target_grid (+0x306/0x307). El per-frame walker Entity_AdvancePath en
     // Player_InputTick lee target_grid: con 0,0 el hero caminaría solo a la
     // esquina del mapa.
     // Forzar target == position para que el walker quede idle hasta el primer click.
-    heroPtr[0x306] = PosX;
-    heroPtr[0x307] = PosY;
-    heroPtr[0x305] = 0;             // move-pending OFF
-    heroPtr[0x354] = 0;             // path_current_wp = 0
-    heroPtr[0x355] = 0;             // path_substep = 0
-    heroPtr[0x356] = 0;             // path_wp_count = 0
+    AsCharacter(heroPtr)->TargetX = PosX;
+    AsCharacter(heroPtr)->TargetY = PosY;
+    AsCharacter(heroPtr)->JumpTime = 0;             // move-pending OFF
+    AsCharacter(heroPtr)->PathCurrent = 0;             // path_current_wp = 0
+    AsCharacter(heroPtr)->PathSubstep = 0;             // path_substep = 0
+    AsCharacter(heroPtr)->PathNum = 0;             // path_wp_count = 0
     // Init de anim_state post-wipe: el wipe deja 0x105=0 y anim 0 puede no ser
     // "idle" para algunos models. anim_state=1 es el idle1 standard.
-    heroPtr[0x105] = 1;             // anim_state = idle
-    heroPtr[0x106] = 1;             // anim_state_prev
-    *(float*)(heroPtr + 0x108) = 0.0f;  // anim_frame
+    AsCharacter(heroPtr)->Object.CurrentAction = 1;             // anim_state = idle
+    AsCharacter(heroPtr)->Object.PriorAction = 1;             // anim_state_prev
+    AsCharacter(heroPtr)->Object.AnimationFrame = 0.0f;  // anim_frame
 
     // (6) Hero binding + class/skill bonus bytes from packet.
-    *(unsigned short*)(heroPtr + 0x1DC) = g_HeroKey;
+    AsCharacter(heroPtr)->Key = g_HeroKey;
     BYTE* charAttr = (BYTE*)CharacterAttribute;
-    heroPtr[444] = charAttr[11];
+    AsCharacter(heroPtr)->Class = charAttr[11];
 
     // El ReceiveJoinMapServer de IDA NO espeja el cuerpo/equipo desde
     // las entidades del char-select. Asocia al Hero, copia clase/flags, y después reconstruye
     // desde CharacterMachine vía SetCharacterClass(). Acá dejamos sólo la
     // siembra de luz, porque CreateCharacterPointer deja Light en 0.
-    *(unsigned int*)(heroPtr + 0xe8) = 0x3e99999a; // 0.3f
-    *(unsigned int*)(heroPtr + 0xec) = 0x3e99999a;
-    *(unsigned int*)(heroPtr + 0xf0) = 0x3e99999a;
-    heroPtr[445] = 0;
-    heroPtr[746] = Msg[44];      // skill bonus / curse-of-equipment slot
+    *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[0] = 0x3e99999a; // 0.3f
+    *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[1] = 0x3e99999a;
+    *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[2] = 0x3e99999a;
+    AsCharacter(heroPtr)->Skin = 0;
+    AsCharacter(heroPtr)->PK = Msg[44];      // skill bonus / curse-of-equipment slot
     heroPtr[448] = Msg[45];      // magic bonus / second-pwd flag
-    heroPtr[132] = 1;            // alive flag
+    AsCharacter(heroPtr)->Object.Kind = 1;            // alive flag
     DAT_07abf5d8 = (char*)heroPtr;   // bind global Hero pointer
 
     // Si C1:5C llegó durante OpenWorld, la tabla de marks ya contiene la
     // marca real; falta únicamente restaurar su fila sobre el nuevo Character.
     if (s_HasPendingHeroGuildMark) {
-        *(short*)(heroPtr + 474) = s_PendingHeroGuildMarkRow;
+        AsCharacter(heroPtr)->GuildMarkIndex = s_PendingHeroGuildMarkRow;
         s_HasPendingHeroGuildMark = false;
         s_PendingHeroGuildMarkRow = -1;
         GuildWar_UpdateEntityRelation((int)(uintptr_t)heroPtr, 0, 0, 0);
@@ -541,7 +541,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     *(DWORD*)(heroPtr + 453) = *(DWORD*)(charAttr + 4);
     *(WORD*)(heroPtr + 457)  = *(WORD*)(charAttr + 8);
     NetLog("NET:    F3/03 hero spawn: heroSlot=%d heroClass=%d",
-           (int)heroIndex, (int)heroPtr[444]);
+           (int)heroIndex, (int)AsCharacter(heroPtr)->Class);
 
     // Dejamos intacto el equipo de CharacterMachine. En nuestro cliente 97k ésa es la
     // fuente viva tanto para reconstruir el cuerpo en el mundo como para sincronizar el panel/HUD.
@@ -682,16 +682,16 @@ void Recv_Revival(const BYTE* Msg, int Size)
     const float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
-    *(WORD*)(heroPtr + 476) = g_HeroKey;
+    AsCharacter(heroPtr)->Key = g_HeroKey;
 
     // (6) Clase / flags.
-    heroPtr[445] = 0;
+    AsCharacter(heroPtr)->Skin = 0;
     if (CharacterAttribute)
-        heroPtr[444] = *((const BYTE*)CharacterAttribute + 11);
-    heroPtr[746] = saved746;
-    heroPtr[132] = 1;                                  // vivo
-    *(WORD*)(heroPtr + 474) = savedW474;
-    heroPtr[846] = 1;                                  // SafeZone (ver +0x34E)
+        AsCharacter(heroPtr)->Class = *((const BYTE*)CharacterAttribute + 11);
+    AsCharacter(heroPtr)->PK = saved746;
+    AsCharacter(heroPtr)->Object.Kind = 1;                                  // vivo
+    *(WORD *)&AsCharacter(heroPtr)->GuildMarkIndex = savedW474;
+    AsCharacter(heroPtr)->SafeZone = 1;                                  // SafeZone (ver +0x34E)
 
     DAT_07abf5d8 = (char*)heroPtr;                     // re-bind del puntero Hero
 
@@ -735,14 +735,14 @@ void Recv_Revival(const BYTE* Msg, int Size)
     float z;
     if ((int)gMapManager.GetCurrentMap() == -1 ||
         *(const WORD*)(heroPtr + 696) != 819 ||        // sin Dinorant
-        heroPtr[846] != 0) {
-        z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20));
+        AsCharacter(heroPtr)->SafeZone != 0) {
+        z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]);
     } else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
-        z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 90.0f;
+        z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]) + 90.0f;
     } else {
-        z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 30.0f;
+        z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]) + 30.0f;
     }
-    *(float*)(heroPtr + 24) = z;
+    AsCharacter(heroPtr)->Object.Position[2] = z;
     DAT_05826d24 = 0;       // SummonLife = 0
 }
 
@@ -1013,8 +1013,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             if (pkIdx < 0 || pkIdx >= 400) break;
             BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * 0x394;
             const BYTE pkLevel = Msg[6];
-            pkEnt[746]            = pkLevel;
-            *(WORD*)(pkEnt + 446) = (WORD)(pkLevel >= 6);
+            AsCharacter(pkEnt)->PK            = pkLevel;
+            AsCharacter(pkEnt)->Level = (WORD)(pkLevel >= 6);
             NetLog("NET:  -> F3/08 PKLevel key=%d idx=%d lvl=%u",
                    pkKey, pkIdx, (unsigned)pkLevel);
             // Aviso en el chat.  El decompile perdio los break de
@@ -1498,22 +1498,22 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
     const float worldX = ((float)gridX + 0.5f) * 100.0f;
     const float worldY = ((float)gridY + 0.5f) * 100.0f;
-    *(float*)(hero + 16) = worldX;
-    *(float*)(hero + 20) = worldY;
+    AsCharacter(hero)->Object.Position[0] = worldX;
+    AsCharacter(hero)->Object.Position[1] = worldY;
 
     // ReceiveTeleport @ 00428210 calcula la altura del piso en
     // el tile autorizado por el server. Su rama de montado/zona segura
     // preserva el offset vertical original antes de terminar el
     // teleport animation.
     float worldZ = RequestTerrainHeight(worldX, worldY);
-    if (gMapManager.GetCurrentMap() != -1 && *(short*)(hero + 696) == 819 && !hero[846])
+    if (gMapManager.GetCurrentMap() != -1 && AsCharacter(hero)->Helper.Type == 819 && !AsCharacter(hero)->SafeZone)
         worldZ += (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 90.0f : 30.0f;
-    *(float*)(hero + 24) = worldZ;
+    AsCharacter(hero)->Object.Position[2] = worldZ;
     // IDA L141-160: solo +904/+908 (la grilla).  El camino viejo no se
     // retoma porque el final del handler hace c+748 = 0 y SetPlayerStop.
-    *(DWORD*)(hero + 904) = gridX;
-    *(DWORD*)(hero + 908) = gridY;
-    *(float*)(hero + 36) = ((float)direction - 1.0f) * 45.0f;
+    *(DWORD *)&AsCharacter(hero)->PositionX = gridX;
+    *(DWORD *)&AsCharacter(hero)->PositionY = gridY;
+    AsCharacter(hero)->Object.Angle[2] = ((float)direction - 1.0f) * 45.0f;
 
     if (gate != 0) {
         // ReceiveTeleport's gate branch clears the old viewport
@@ -1542,9 +1542,9 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // OpenWorld replaces terrain data, so IDA evaluates
             // la altura de aterrizaje una segunda vez contra el mapa nuevo.
             worldZ = RequestTerrainHeight(worldX, worldY);
-            if (gMapManager.GetCurrentMap() != -1 && *(short*)(hero + 696) == 819 && !hero[846])
+            if (gMapManager.GetCurrentMap() != -1 && AsCharacter(hero)->Helper.Type == 819 && !AsCharacter(hero)->SafeZone)
                 worldZ += (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 90.0f : 30.0f;
-            *(float*)(hero + 24) = worldZ;
+            AsCharacter(hero)->Object.Position[2] = worldZ;
 
             // IDA L275-277: aviso "<mapa> ..." en el chat.
             char mapNotice[256];
@@ -1608,7 +1608,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         CreateEffect(1265, (float*)(hero + 16), (float*)(hero + 28),
                      (float*)(hero + 232), nullptr, (float*)hero,
                      (float*)-1, nullptr, 0);
-        *(DWORD*)(hero + 0x168) = 0;
+        *(DWORD *)&AsCharacter(hero)->Object.Alpha = 0;
         DAT_083a3ff0 = 0;                  // EnableEvent
         SelectedItem = -1;                 // SelectedItem
         SelectedNpc = -1;                 // SelectedNpc
@@ -1629,7 +1629,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
 
     // Este store es común a las dos ramas en el original.
-    hero[748] = 0;
+    AsCharacter(hero)->Movement = 0;
     SetPlayerStop((int)(uintptr_t)hero);
 }
 

@@ -376,10 +376,10 @@ void __cdecl AttackEffect(int Owner)
   float Ownerw; // [esp+70h] [ebp+4h]
   float Ownerx; // [esp+70h] [ebp+4h]
 
-  v2 = Models + 188 * *(short *)(Owner + 2);
+  v2 = Models + 188 * AsCharacter(Owner)->Object.Type;
   This = v2;
   rand();
-  v3 = *(BYTE *)(Owner + 747);
+  v3 = AsCharacter(Owner)->MonsterIndex;
   memset(v248, 0, sizeof(v248));
   Light[0] = 1.0;
   Light[1] = 1.0;
@@ -492,7 +492,7 @@ LABEL_265:
 LABEL_269:
         CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
       }
-      if ( Ownert == 50 && *(BYTE *)(Owner + 757) == 1 )
+      if ( Ownert == 50 && AsCharacter(Owner)->SkillStage == 1 )
       {
         v186 = 0;
         Owneru = 0;
@@ -572,15 +572,15 @@ LABEL_293:
       PACKET_ENCRYPT(&MAIN_HASH_CLASS, v189);
       if ( v190 == 50 )
       {
-        if ( *(BYTE *)(Owner + 757) == 1 )
+        if ( AsCharacter(Owner)->SkillStage == 1 )
         {
           CreateEffect(200, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           CreateEffect(201, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           PlayBuffer(89, 0, 0);
         }
-        TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
-        v191 = (double)(rand() % 1024) + *(float *)(Owner + 20);
-        TargetPosition[2] = *(float *)(Owner + 24);
+        TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
+        v191 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
+        TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
         TargetPosition[1] = v191 - 512.0;
         CreateEffect(191, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
         goto LABEL_75;
@@ -694,25 +694,25 @@ LABEL_242:
       }
       if ( Ownerr == 50 )
       {
-        if ( *(BYTE *)(Owner + 757) == 1 )
+        if ( AsCharacter(Owner)->SkillStage == 1 )
         {
-          v230 = (float (*)[4])(*(DWORD *)(Owner + 276) + 528);
+          v230 = (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 528);
           memset(v248, 0, sizeof(v248));
           TransformPosition(This, v230, v248, TargetPosition, 1);
-          v167 = *(float *)(Owner + 32);
-          v246[0] = *(float *)(Owner + 28) - 20.0;
-          v246[2] = *(float *)(Owner + 36) - 30.0;
+          v167 = AsCharacter(Owner)->Object.Angle[1];
+          v246[0] = AsCharacter(Owner)->Object.Angle[0] - 20.0;
+          v246[2] = AsCharacter(Owner)->Object.Angle[2] - 30.0;
           v246[1] = v167;
           CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
-          v168 = *(float *)(Owner + 36);
-          v169 = *(float *)(Owner + 28) - 30.0;
-          v246[1] = *(float *)(Owner + 32);
+          v168 = AsCharacter(Owner)->Object.Angle[2];
+          v169 = AsCharacter(Owner)->Object.Angle[0] - 30.0;
+          v246[1] = AsCharacter(Owner)->Object.Angle[1];
           v246[0] = v169;
           v246[2] = v168;
           CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
-          v170 = *(float *)(Owner + 32);
-          v246[0] = *(float *)(Owner + 28) - 20.0;
-          v246[2] = *(float *)(Owner + 36) + 30.0;
+          v170 = AsCharacter(Owner)->Object.Angle[1];
+          v246[0] = AsCharacter(Owner)->Object.Angle[0] - 20.0;
+          v246[2] = AsCharacter(Owner)->Object.Angle[2] + 30.0;
           v246[1] = v170;
           CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 2, 0, -1, 0, 0);
           PlayBuffer(46, 0, 0);
@@ -727,7 +727,7 @@ LABEL_242:
         v248[0] = (float)(rand() % 32 - 16);
         v248[1] = (float)(rand() % 32 - 16);
         v200 = rand() % 32;
-        v201 = *(DWORD *)(Owner + 276);
+        v201 = *(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices;
         v248[2] = (float)(v200 - 16);
         TransformPosition(v2, (float (*)[4])(v201 + 96), v248, TargetPosition, 1);
         Particle_Spawn(1241, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);
@@ -737,9 +737,9 @@ LABEL_242:
       while ( v199 );
       break;
     case 49:
-      if ( *(unsigned char *)(Owner + 757) % 5 == 1 )
+      if ( AsCharacter(Owner)->SkillStage % 5 == 1 )
       {
-        TransformPosition(v2, (float (*)[4])(*(DWORD *)(Owner + 276) + 3024), v248, TargetPosition, 1);
+        TransformPosition(v2, (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 3024), v248, TargetPosition, 1);
         CreateEffect(1211, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
       }
       v131 = (char *)(Owner + 770);
@@ -847,16 +847,16 @@ LABEL_210:
 LABEL_214:
         CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
       }
-      if ( Ownerp == 50 && *(BYTE *)(Owner + 757) == 1 )
+      if ( Ownerp == 50 && AsCharacter(Owner)->SkillStage == 1 )
       {
-        v146 = *(float *)(Owner + 36) + 20.0;
-        v147 = *(float *)(Owner + 32);
-        v148 = *(float *)(Owner + 16);
-        v246[0] = *(float *)(Owner + 28);
-        v149 = *(float *)(Owner + 20);
+        v146 = AsCharacter(Owner)->Object.Angle[2] + 20.0;
+        v147 = AsCharacter(Owner)->Object.Angle[1];
+        v148 = AsCharacter(Owner)->Object.Position[0];
+        v246[0] = AsCharacter(Owner)->Object.Angle[0];
+        v149 = AsCharacter(Owner)->Object.Position[1];
         v246[1] = v147;
         v246[2] = v146;
-        v150 = *(float *)(Owner + 24) + 50.0;
+        v150 = AsCharacter(Owner)->Object.Position[2] + 50.0;
         v248[0] = v148;
         v248[1] = v149;
         Light[0] = 0.42000002;
@@ -876,11 +876,11 @@ LABEL_214:
     case 53:
     case 58:
     case 59:
-      if ( *(BYTE *)(Owner + 757) == 1 )
+      if ( AsCharacter(Owner)->SkillStage == 1 )
       {
         FUN_00466300(Owner + 16);
       }
-      if ( *(BYTE *)(Owner + 757) == 14 && *(BYTE *)(Owner + 747) == 59 )
+      if ( AsCharacter(Owner)->SkillStage == 14 && AsCharacter(Owner)->MonsterIndex == 59 )
       {
         v117 = (char *)(Owner + 770);
         v244 = (const char *)(Owner + 770);
@@ -982,9 +982,9 @@ LABEL_185:
           Ownern = 0;
           do
           {
-            v129 = *(float *)(Owner + 32);
-            v130 = (double)Ownern * 20.0 + *(float *)(Owner + 36);
-            v246[0] = *(float *)(Owner + 28);
+            v129 = AsCharacter(Owner)->Object.Angle[1];
+            v130 = (double)Ownern * 20.0 + AsCharacter(Owner)->Object.Angle[2];
+            v246[0] = AsCharacter(Owner)->Object.Angle[0];
             v246[1] = v129;
             v246[2] = v130;
             CreateEffect(568, (float *)(Owner + 16), v246, (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
@@ -997,20 +997,20 @@ LABEL_185:
     case 54:
     case 57:
     case -105:
-      if ( *(BYTE *)(Owner + 757) == 1 )
+      if ( AsCharacter(Owner)->SkillStage == 1 )
       {
-        v113 = *(DWORD *)(Owner + 276);
-        v114 = *(unsigned char *)(Owner + 628);
+        v113 = *(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices;
+        v114 = AsCharacter(Owner)->Weapon[0].LinkBone;
         v248[0] = 60.0;
         v248[1] = -110.0;
         v248[2] = 0.0;
         TransformPosition(v2, (float (*)[4])(v113 + 48 * v114), v248, TargetPosition, 1);
         CreateEffect(223, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, Owner, -1, 0, 0);
-        if ( *(BYTE *)(Owner + 747) == 57 )
+        if ( AsCharacter(Owner)->MonsterIndex == 57 )
         {
-          v115 = *(float *)(Owner + 28);
-          v116 = *(float *)(Owner + 32);
-          Angle[2] = *(float *)(Owner + 36) + 20.0;
+          v115 = AsCharacter(Owner)->Object.Angle[0];
+          v116 = AsCharacter(Owner)->Object.Angle[1];
+          Angle[2] = AsCharacter(Owner)->Object.Angle[2] + 20.0;
           Angle[0] = v115;
           Angle[1] = v116;
           CreateEffect(223, (float *)(Owner + 16), Angle, (float *)(Owner + 232), 0, Owner, -1, 0, 0);
@@ -1022,7 +1022,7 @@ LABEL_185:
     case 61:
     case 63:
       v19 = v3 == 63;
-      v79 = *(BYTE *)(Owner + 757);
+      v79 = AsCharacter(Owner)->SkillStage;
       if ( v19 )
       {
         if ( v79 == 1 )
@@ -1137,23 +1137,23 @@ LABEL_120:
         }
         if ( Ownerh == 50 )
         {
-          if ( *(BYTE *)(Owner + 747) == 63 )
+          if ( AsCharacter(Owner)->MonsterIndex == 63 )
           {
-            TargetPosition[0] = (double)(rand() % 800) + *(float *)(Owner + 16) - 400.0;
+            TargetPosition[0] = (double)(rand() % 800) + AsCharacter(Owner)->Object.Position[0] - 400.0;
             Ownery = rand() % 800;
-            TargetPosition[2] = *(float *)(Owner + 24);
-            TargetPosition[1] = (double)Ownery + *(float *)(Owner + 20) - 400.0;
+            TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
+            TargetPosition[1] = (double)Ownery + AsCharacter(Owner)->Object.Position[1] - 400.0;
             CreateEffect(240, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           }
-          if ( *(BYTE *)(Owner + 757) == 14 )
+          if ( AsCharacter(Owner)->SkillStage == 14 )
           {
             v95 = 0;
             Owneri = 0;
             do
             {
-              v96 = *(float *)(Owner + 32);
-              v97 = (double)Owneri * 20.0 + *(float *)(Owner + 36);
-              v246[0] = *(float *)(Owner + 28);
+              v96 = AsCharacter(Owner)->Object.Angle[1];
+              v97 = (double)Owneri * 20.0 + AsCharacter(Owner)->Object.Angle[2];
+              v246[0] = AsCharacter(Owner)->Object.Angle[0];
               v246[1] = v96;
               v246[2] = v97;
               CreateEffect(568, (float *)(Owner + 16), v246, (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
@@ -1274,16 +1274,16 @@ LABEL_148:
 LABEL_152:
         CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
       }
-      if ( Ownerk == 50 && *(BYTE *)(Owner + 757) == 1 )
+      if ( Ownerk == 50 && AsCharacter(Owner)->SkillStage == 1 )
       {
         goto LABEL_30;
       }
       break;
     case 70:
-      if ( *(BYTE *)(Owner + 757) == 5 && CharactersClient )  // guard de port
+      if ( AsCharacter(Owner)->SkillStage == 5 && CharactersClient )  // guard de port
       {
         v22 = 20;
-        v23 = CharactersClient + 916 * *(short *)(Owner + 784);
+        v23 = CharactersClient + 916 * AsCharacter(Owner)->TargetCharacter;
         v24 = (float *)(v23 + 28);
         v25 = (float *)(v23 + 16);
         do
@@ -1296,8 +1296,8 @@ LABEL_152:
       break;
     case 71:
     case 74:
-      v26 = *(BYTE *)(Owner + 261);
-      if ( (v26 == 3 || v26 == 4) && *(BYTE *)(Owner + 757) == 5 )
+      v26 = AsCharacter(Owner)->Object.CurrentAction;
+      if ( (v26 == 3 || v26 == 4) && AsCharacter(Owner)->SkillStage == 5 )
       {
         FUN_00466300(Owner + 16);
         CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
@@ -1409,7 +1409,7 @@ LABEL_46:
 LABEL_50:
         CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
       }
-      if ( Ownerd == 50 && *(BYTE *)(Owner + 757) == 14 )
+      if ( Ownerd == 50 && AsCharacter(Owner)->SkillStage == 14 )
       {
         memset(Angle, 0, sizeof(Angle));
         v42 = 36;
@@ -1418,10 +1418,10 @@ LABEL_50:
           Angle[0] = (float)(rand() % 360);
           Angle[1] = (float)(rand() % 360);
           v43 = rand();
-          Position[1] = *(float *)(Owner + 20);
-          Position[0] = *(float *)(Owner + 16);
+          Position[1] = AsCharacter(Owner)->Object.Position[1];
+          Position[0] = AsCharacter(Owner)->Object.Position[0];
           Angle[2] = (float)(v43 % 360);
-          Position[2] = *(float *)(Owner + 24) + 100.0;
+          Position[2] = AsCharacter(Owner)->Object.Position[2] + 100.0;
           CreateJoint(1253, Position, Position, Angle, 1, 0, 60.0, 0, 0);
           --v42;
         }
@@ -1430,8 +1430,8 @@ LABEL_50:
       break;
     case 73:
     case 75:
-      v44 = *(BYTE *)(Owner + 757);
-      if ( *(BYTE *)(Owner + 261) == 3 )
+      v44 = AsCharacter(Owner)->SkillStage;
+      if ( AsCharacter(Owner)->Object.CurrentAction == 3 )
       {
         if ( v44 == 11 )
         {
@@ -1440,13 +1440,13 @@ LABEL_50:
           v45 = 5;
           do
           {
-            v46 = *(float *)(Owner + 36);
-            v47 = *(float *)(Owner + 28) + 45.0;
-            v48 = *(float *)(Owner + 16);
-            v246[1] = *(float *)(Owner + 32);
-            v49 = *(float *)(Owner + 20);
+            v46 = AsCharacter(Owner)->Object.Angle[2];
+            v47 = AsCharacter(Owner)->Object.Angle[0] + 45.0;
+            v48 = AsCharacter(Owner)->Object.Position[0];
+            v246[1] = AsCharacter(Owner)->Object.Angle[1];
+            v49 = AsCharacter(Owner)->Object.Position[1];
             v246[2] = v46;
-            v50 = *(float *)(Owner + 24);
+            v50 = AsCharacter(Owner)->Object.Position[2];
             Light[0] = 1.0;
             v246[0] = v47;
             Light[1] = 0.5;
@@ -1472,10 +1472,10 @@ LABEL_50:
       {
         if ( v44 == 13 )
         {
-          v53 = *(float *)(Owner + 32);
-          v54 = *(float *)(Owner + 28) + 45.0;
-          v246[2] = *(float *)(Owner + 36);
-          v55 = *(DWORD *)(Owner + 276);
+          v53 = AsCharacter(Owner)->Object.Angle[1];
+          v54 = AsCharacter(Owner)->Object.Angle[0] + 45.0;
+          v246[2] = AsCharacter(Owner)->Object.Angle[2];
+          v55 = *(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices;
           v246[1] = v53;
           v246[0] = v54;
           Light[0] = 1.0;
@@ -1495,10 +1495,10 @@ LABEL_50:
         }
         if ( v44 == 9 )
         {
-          v58 = *(float *)(Owner + 32);
-          v59 = *(float *)(Owner + 28) + 45.0;
-          v246[2] = *(float *)(Owner + 36);
-          v60 = *(DWORD *)(Owner + 276);
+          v58 = AsCharacter(Owner)->Object.Angle[1];
+          v59 = AsCharacter(Owner)->Object.Angle[0] + 45.0;
+          v246[2] = AsCharacter(Owner)->Object.Angle[2];
+          v60 = *(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices;
           v246[1] = v58;
           v246[0] = v59;
           Light[0] = 1.0;
@@ -1617,7 +1617,7 @@ LABEL_88:
       }
       if ( Ownerf == 50 )
       {
-        v76 = *(BYTE *)(Owner + 757);
+        v76 = AsCharacter(Owner)->SkillStage;
         if ( v76 == 2 || v76 == 6 )
         {
           memset(Angle, 0, sizeof(Angle));
@@ -1627,10 +1627,10 @@ LABEL_88:
             Angle[0] = (float)(rand() % 360);
             Angle[1] = (float)(rand() % 360);
             v78 = rand();
-            Position[1] = *(float *)(Owner + 20);
-            Position[0] = *(float *)(Owner + 16);
+            Position[1] = AsCharacter(Owner)->Object.Position[1];
+            Position[0] = AsCharacter(Owner)->Object.Position[0];
             Angle[2] = (float)(v78 % 360);
-            Position[2] = *(float *)(Owner + 24) + 100.0;
+            Position[2] = AsCharacter(Owner)->Object.Position[2] + 100.0;
             CreateJoint(1253, Position, Position, Angle, 3, 0, 50.0, 0, 0);
             --v77;
           }
@@ -1756,14 +1756,14 @@ LABEL_12:
         if ( !v19 )
         {
 LABEL_31:
-          TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
-          v21 = (double)(rand() % 1024) + *(float *)(Owner + 20);
-          TargetPosition[2] = *(float *)(Owner + 24);
+          TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
+          v21 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
+          TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
           TargetPosition[1] = v21 - 512.0;
           CreateEffect(191, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
           goto LABEL_75;
         }
-        if ( *(BYTE *)(Owner + 757) == 1 )
+        if ( AsCharacter(Owner)->SkillStage == 1 )
         {
 LABEL_30:
           CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 1, 0, -1, 0, 0);
@@ -1773,9 +1773,9 @@ LABEL_30:
     case 103:
       if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 50 )
       {
-        TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
-        v198 = (double)(rand() % 1024) + *(float *)(Owner + 20);
-        TargetPosition[2] = *(float *)(Owner + 24);
+        TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
+        v198 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
+        TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
         TargetPosition[1] = v198 - 512.0;
         CreateEffect(191, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
 LABEL_75:
@@ -1785,7 +1785,7 @@ LABEL_75:
     default:
       break;
   }
-  v202 = *(WORD *)(Owner + 784);
+  v202 = *(WORD *)&AsCharacter(Owner)->TargetCharacter;
   // `&& CharactersClient` no esta en IDA: en nuestro build el pool arranca en 0
   // hasta que se aloca, y `0 + 916*idx` seria un puntero basura. Mismo guard que
   // Render_Frame.cpp:395.
@@ -1794,10 +1794,10 @@ LABEL_75:
     v203 = CharactersClient + 916 * v202;
     if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
     {
-      switch ( *(BYTE *)(Owner + 747) )
+      switch ( AsCharacter(Owner)->MonsterIndex )
       {
         case 0x25:
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             PlayBuffer(87, 0, 0);
           }
@@ -1805,7 +1805,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (i >= 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (i >= 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -1817,7 +1817,7 @@ LABEL_75:
           }
           break;
         case 0x2E:
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             PlayBuffer(87, 0, 0);
           }
@@ -1826,7 +1826,7 @@ LABEL_75:
             memset(v246, 0, sizeof(v246));
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (j >= 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (j >= 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -1839,7 +1839,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (k >= 3) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (k >= 3) + 628)),
               v248,
               TargetPosition,
               1);
@@ -1849,7 +1849,7 @@ LABEL_75:
             CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 50.0, -1, 0);
             CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 2, v203, 10.0, -1, 0);
           }
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             PlayBuffer(87, 0, 0);
           }
@@ -1857,7 +1857,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (m >= 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (m >= 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -1869,17 +1869,17 @@ LABEL_75:
           }
           break;
         case 0x42:
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             PlayBuffer(60, 0, 0);
           }
           v219 = 0;
-          Ownerw = 45.0 - (double)((int)((std::int64_t)WorldTime / 10 + 3 * *(unsigned char *)(Owner + 757)) % 90) + 180.0;
+          Ownerw = 45.0 - (double)((int)((std::int64_t)WorldTime / 10 + 3 * AsCharacter(Owner)->SkillStage) % 90) + 180.0;
           do
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (v219 % 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (v219 % 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -1894,7 +1894,7 @@ LABEL_75:
           while ( v219 < 4 );
           break;
         case 0x45:
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             // DESVIACION DOCUMENTADA (bug del binario original).
             // Este case (Alquamos, MonsterID 69) usa `TargetPosition` y `v246`
@@ -1907,12 +1907,12 @@ LABEL_75:
             // resto del case: `v213` ya es Owner+16 y el segundo CreateJoint
             // usa el mismo SubType 7, cuyo re-anclado de LABEL_182 deja la
             // Position pegada a la TargetPosition.
-            TargetPosition[0] = *(float *)(Owner + 16);
-            TargetPosition[1] = *(float *)(Owner + 20);
-            TargetPosition[2] = *(float *)(Owner + 24);
-            v246[0] = *(float *)(Owner + 28);
-            v246[1] = *(float *)(Owner + 32);
-            v246[2] = *(float *)(Owner + 36);
+            TargetPosition[0] = AsCharacter(Owner)->Object.Position[0];
+            TargetPosition[1] = AsCharacter(Owner)->Object.Position[1];
+            TargetPosition[2] = AsCharacter(Owner)->Object.Position[2];
+            v246[0] = AsCharacter(Owner)->Object.Angle[0];
+            v246[1] = AsCharacter(Owner)->Object.Angle[1];
+            v246[2] = AsCharacter(Owner)->Object.Angle[2];
             v213 = (float *)(Owner + 16);
             v214 = 4;
             do
@@ -1926,12 +1926,12 @@ LABEL_75:
           break;
         case 0x49:
         case 0x4B:
-          if ( *(BYTE *)(Owner + 261) == 4 && *(BYTE *)(Owner + 757) == 13 )
+          if ( AsCharacter(Owner)->Object.CurrentAction == 4 && AsCharacter(Owner)->SkillStage == 13 )
           {
-            v210 = *(float *)(Owner + 32);
-            v211 = *(float *)(Owner + 28) + 45.0;
-            v246[2] = *(float *)(Owner + 36);
-            v212 = *(DWORD *)(Owner + 276);
+            v210 = AsCharacter(Owner)->Object.Angle[1];
+            v211 = AsCharacter(Owner)->Object.Angle[0] + 45.0;
+            v246[2] = AsCharacter(Owner)->Object.Angle[2];
+            v212 = *(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices;
             v246[1] = v210;
             v246[0] = v211;
             Light[0] = 1.0;
@@ -1946,13 +1946,13 @@ LABEL_75:
           }
           break;
         case 0x4D:
-          if ( *(BYTE *)(Owner + 757) == 14 )
+          if ( AsCharacter(Owner)->SkillStage == 14 )
           {
             memset(v248, 0, sizeof(v248));
             TransformPosition(This, (float (*)[4])Matrix, v248, TargetPosition, 1);
-            v208 = *(float *)(Owner + 32);
-            v209 = *(float *)(Owner + 36);
-            v246[0] = *(float *)(Owner + 28);
+            v208 = AsCharacter(Owner)->Object.Angle[1];
+            v209 = AsCharacter(Owner)->Object.Angle[2];
+            v246[0] = AsCharacter(Owner)->Object.Angle[0];
             v246[1] = v208;
             v246[2] = v209;
             CreateEffect(256, TargetPosition, v246, Light, 1, 0, -1, 0, 0);
@@ -1966,9 +1966,9 @@ LABEL_75:
         case 0x7A:
         case 0x80:
         case 0x86:
-          if ( *(BYTE *)(Owner + 757) == 13 )
+          if ( AsCharacter(Owner)->SkillStage == 13 )
           {
-            v232 = (float (*)[4])(*(DWORD *)(Owner + 276) + 288);
+            v232 = (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 288);
             Light[0] = 1.0;
             Light[1] = 1.0;
             Light[2] = 1.0;
@@ -1976,9 +1976,9 @@ LABEL_75:
             v248[1] = 30.0;
             v248[2] = 0.0;
             TransformPosition(This, v232, v248, TargetPosition, 1);
-            v206 = *(float *)(Owner + 32);
-            v207 = *(float *)(Owner + 36);
-            v246[0] = *(float *)(Owner + 28);
+            v206 = AsCharacter(Owner)->Object.Angle[1];
+            v207 = AsCharacter(Owner)->Object.Angle[2];
+            v246[0] = AsCharacter(Owner)->Object.Angle[0];
             v246[1] = v206;
             v246[2] = v207;
             CreateEffect(191, TargetPosition, v246, (float *)(Owner + 232), 5, 0, -1, 0, 0);
@@ -1991,14 +1991,14 @@ LABEL_75:
         case 0x7C:
         case 0x82:
         case 0x88:
-          if ( *(BYTE *)(Owner + 757) == 14 )
+          if ( AsCharacter(Owner)->SkillStage == 14 )
           {
-            v231 = (float (*)[4])(*(DWORD *)(Owner + 276) + 1584);
+            v231 = (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 1584);
             memset(v248, 0, sizeof(v248));
             TransformPosition(This, v231, v248, TargetPosition, 1);
-            v204 = *(float *)(Owner + 32);
-            v205 = *(float *)(Owner + 36);
-            v246[0] = *(float *)(Owner + 28);
+            v204 = AsCharacter(Owner)->Object.Angle[1];
+            v205 = AsCharacter(Owner)->Object.Angle[2];
+            v246[0] = AsCharacter(Owner)->Object.Angle[0];
             v246[1] = v204;
             v246[2] = v205;
             CreateEffect(256, TargetPosition, v246, Light, 1, 0, -1, 0, 0);
@@ -2011,14 +2011,14 @@ LABEL_75:
     }
     else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 3 )
     {
-      switch ( *(BYTE *)(Owner + 747) )
+      switch ( AsCharacter(Owner)->MonsterIndex )
       {
         case 0x22:
           for ( n = 0; n < 4; ++n )
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (n >= 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (n >= 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -2031,7 +2031,7 @@ LABEL_75:
           }
           break;
         case 0x25:
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             PlayBuffer(87, 0, 0);
           }
@@ -2039,7 +2039,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (ii >= 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (ii >= 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -2051,18 +2051,18 @@ LABEL_75:
           }
           break;
         case 0x27:
-          v19 = *(WORD *)(Owner + 2) == 390;
+          v19 = *(WORD *)&AsCharacter(Owner)->Object.Type == 390;
           v248[0] = 0.0;
           v248[1] = 0.0;
           if ( !v19 )
           {
             v248[1] = -130.0;
           }
-          v225 = *(DWORD *)(Owner + 276);
-          v226 = *(unsigned char *)(Owner + 628);
+          v225 = *(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices;
+          v226 = AsCharacter(Owner)->Weapon[0].LinkBone;
           v248[2] = 0.0;
           TransformPosition(This, (float (*)[4])(v225 + 48 * v226), v248, TargetPosition, 1);
-          v227 = *(float *)(Owner + 36);
+          v227 = AsCharacter(Owner)->Object.Angle[2];
           v246[0] = -60.0;
           v246[1] = 0.0;
           v246[2] = v227;
@@ -2075,7 +2075,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (jj >= 3) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (jj >= 3) + 628)),
               v248,
               TargetPosition,
               1);
@@ -2087,7 +2087,7 @@ LABEL_75:
           }
           break;
         case 0x4D:
-          if ( *(BYTE *)(Owner + 757) >= 8u )
+          if ( AsCharacter(Owner)->SkillStage >= 8u )
           {
             memset(v248, 0, sizeof(v248));
             TransformPosition(This, (float (*)[4])DAT_07abf3e4, v248, TargetPosition, 1);
@@ -2110,17 +2110,17 @@ LABEL_75:
         case 0x7C:
         case 0x82:
         case 0x88:
-          if ( *(BYTE *)(Owner + 757) == 1 )
+          if ( AsCharacter(Owner)->SkillStage == 1 )
           {
             PlayBuffer(60, 0, 0);
           }
           v220 = 0;
-          Ownerx = 45.0 - (double)((int)((std::int64_t)WorldTime / 10 + 3 * *(unsigned char *)(Owner + 757)) % 90) + 180.0;
+          Ownerx = 45.0 - (double)((int)((std::int64_t)WorldTime / 10 + 3 * AsCharacter(Owner)->SkillStage) % 90) + 180.0;
           do
           {
             TransformPosition(
               This,
-              (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 24 * (v220 % 2) + 628)),
+              (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (v220 % 2) + 628)),
               v248,
               TargetPosition,
               1);
@@ -2135,17 +2135,17 @@ LABEL_75:
           while ( v220 < 4 );
           break;
         default:
-          v19 = *(WORD *)(Owner + 2) == 390;
+          v19 = *(WORD *)&AsCharacter(Owner)->Object.Type == 390;
           v248[0] = 0.0;
           v248[1] = 0.0;
           if ( !v19 )
           {
             v248[1] = -130.0;
           }
-          v228 = (float (*)[4])(*(DWORD *)(Owner + 276) + 48 * *(unsigned char *)(Owner + 628));
+          v228 = (float (*)[4])(*(DWORD *)&AsCharacter(Owner)->Object.BoneMatrices + 48 * AsCharacter(Owner)->Weapon[0].LinkBone);
           v248[2] = 0.0;
           TransformPosition(This, v228, v248, TargetPosition, 1);
-          v229 = *(float *)(Owner + 36);
+          v229 = AsCharacter(Owner)->Object.Angle[2];
           v246[0] = -60.0;
           v246[1] = 0.0;
           v246[2] = v229;
