@@ -547,104 +547,40 @@ LAB_00480b8e:
 // IDA: FUN_004821A0
 void UI_TickHoverBubbles(void)
 {
-  char cVar1;
-  byte bVar2;
-  byte *pbVar3;
-  int iVar4;
-  uint uVar5;
-  uint uVar6;
-  int *piVar7;
-  byte *pbVar8;
-  char *pcVar9;
-  bool bVar10;
-
-  // Pool real = DAT_07e01720[26 × 0x254].
-  // Bounds end calculados a partir del array, no de la dirección absoluta.
-  piVar7 = (int*)DAT_07e01720;
-  const uintptr_t poolEnd = (uintptr_t)DAT_07e016f8 + sizeof(DAT_07e016f8);
-  do {
-    if (0 < *piVar7) {
-      *piVar7 = *piVar7 + -1;
+  CHAT* chats = AsChat(DAT_07e016f8);
+  const int count = (int)(sizeof(DAT_07e016f8) / sizeof(CHAT));   // 100
+  for (int i = 0; i < count; ++i) {
+    CHAT* c = &chats[i];
+    if (0 < c->IDLifeTime) {
+      c->IDLifeTime = c->IDLifeTime + -1;
     }
-    if (0 < piVar7[0x81]) {
-      piVar7[0x81] = piVar7[0x81] + -1;
+    if (0 < c->LifeTime[0]) {
+      c->LifeTime[0] = c->LifeTime[0] + -1;
     }
-    if (0 < piVar7[0x82]) {
-      piVar7[0x82] = piVar7[0x82] + -1;
+    if (0 < c->LifeTime[1]) {
+      c->LifeTime[1] = c->LifeTime[1] + -1;
     }
-    pcVar9 = (char *)piVar7[0x83];
-    if ((pcVar9 != (char *)0x0) && ((*pcVar9 == '\0' || (pcVar9[0x160] == '\0')))) {
-      *piVar7 = 0;
-      piVar7[0x81] = 0;
-      piVar7[0x82] = 0;
+    const char* owner = (const char*)c->Owner;
+    if ((owner != nullptr) && ((*owner == '\0' || (owner[0x160] == '\0')))) {
+      c->IDLifeTime = 0;
+      c->LifeTime[0] = 0;
+      c->LifeTime[1] = 0;
     }
-    if ((piVar7[0x84] <= DAT_083a427c) &&
-       (DAT_083a427c < (int)((uint)(piVar7[0x86] * 0x280) / gWindow.GetWidth() + piVar7[0x84]))) {
-      if ((piVar7[0x85] <= DAT_083a4278) &&
-         (((DAT_083a4278 < (int)((uint)(piVar7[0x87] * 0x1e0) / gWindow.GetHeight() + piVar7[0x85]) &&
-           (DAT_00559c84 != '\0')) && (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')))) {
-        pbVar8 = (byte *)(DAT_07abf5d8 + 0x1c1);
-        pbVar3 = (byte *)(piVar7 + -10);
-        do {
-          bVar2 = *pbVar3;
-          bVar10 = bVar2 < *pbVar8;
-          if (bVar2 != *pbVar8) {
-LAB_004822b1:
-            iVar4 = (1 - (uint)bVar10) - (uint)(bVar10 != 0);
-            goto LAB_004822b6;
-          }
-          if (bVar2 == 0) break;
-          bVar2 = pbVar3[1];
-          bVar10 = bVar2 < pbVar8[1];
-          if (bVar2 != pbVar8[1]) goto LAB_004822b1;
-          pbVar3 = pbVar3 + 2;
-          pbVar8 = pbVar8 + 2;
-        } while (bVar2 != 0);
-        iVar4 = 0;
-LAB_004822b6:
-        if ((iVar4 != 0) && (MouseRButtonPush != '\0')) {
-          uVar5 = 0xffffffff;
-          pbVar3 = (byte *)(piVar7 + -10);
-          do {
-            pbVar8 = pbVar3;
-            if (uVar5 == 0) break;
-            uVar5 = uVar5 - 1;
-            pbVar8 = pbVar3 + 1;
-            bVar2 = *pbVar3;
-            pbVar3 = pbVar8;
-          } while (bVar2 != 0);
-          uVar5 = ~uVar5;
-          pbVar3 = pbVar8 + -uVar5;
-          pbVar8 = (byte *)DAT_07db8810;
-          for (uVar6 = uVar5 >> 2; uVar6 != 0; uVar6 = uVar6 - 1) {
-            *(undefined4 *)pbVar8 = *(undefined4 *)pbVar3;
-            pbVar3 = pbVar3 + 4;
-            pbVar8 = pbVar8 + 4;
-          }
-          for (uVar5 = uVar5 & 3; uVar5 != 0; uVar5 = uVar5 - 1) {
-            *pbVar8 = *pbVar3;
-            pbVar3 = pbVar3 + 1;
-            pbVar8 = pbVar8 + 1;
-          }
-          uVar5 = 0xffffffff;
-          pcVar9 = (char *)DAT_07db8810;
-          do {
-            if (uVar5 == 0) break;
-            uVar5 = uVar5 - 1;
-            cVar1 = *pcVar9;
-            pcVar9 = pcVar9 + 1;
-          } while (cVar1 != '\0');
-          DAT_07d780ac = ~uVar5 - 1;
-          MouseRButtonPush = '\0';
-          PlayBuffer(0x19,0,0);
-        }
-      }
+    // Click derecho sobre el nombre de otro jugador (estando en zona segura):
+    // lo copia al campo de destinatario del whisper.
+    if ((c->x <= DAT_083a427c) &&
+        (DAT_083a427c < (int)((uint)(c->Width * 0x280) / gWindow.GetWidth() + c->x)) &&
+        (c->y <= DAT_083a4278) &&
+        (DAT_083a4278 < (int)((uint)(c->Height * 0x1e0) / gWindow.GetHeight() + c->y)) &&
+        (DAT_00559c84 != '\0') && (AsCharacter(DAT_07abf5d8)->SafeZone != '\0') &&
+        strcmp(c->ID, AsCharacter(DAT_07abf5d8)->ID) != 0 &&
+        (MouseRButtonPush != '\0')) {
+      strcpy((char *)DAT_07db8810, c->ID);
+      DAT_07d780ac = (DWORD)strlen((char *)DAT_07db8810);
+      MouseRButtonPush = '\0';
+      PlayBuffer(0x19,0,0);
     }
-    piVar7 = piVar7 + 0x95;
-    if ((uintptr_t)piVar7 >= poolEnd) {
-      return;
-    }
-  } while( true );
+  }
 }
 
 

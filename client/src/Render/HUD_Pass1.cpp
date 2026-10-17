@@ -73,49 +73,38 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 #define dword_55C9BD4        DAT_055c9bd4
 
 // =============================================================================
-// FloatingLabel_MeasureText — port de sub_480C60. Calcula las dimensiones del texto de una
-// etiqueta de número flotante y escribe el cx/cy del bounding box en los slots
-// [+144]/[+145] del struct de la entrada. El layout de la entrada incluye 4 strings
-// distintos (encabezado en +0, valor en +44, valor secundario en +300, remitente en
-// +24) y sub_480C60 elige el caso de layout según los flags de cantidad de líneas
-// at [+139] / [+140].
-// =============================================================================
-// functions.h la declara como `void __cdecl FloatingLabel_MeasureText(int,int,int)`.
-// Respetamos esa firma; el original de IDA devuelve int pero el único llamador
-// (sub_4BD090 → RenderBooleans) no usa el valor de retorno para nada — el int
-// va a una variable que se descarta. Devolver void es correcto.
+// FloatingLabel_MeasureText — port de sub_480C60. Mide la burbuja de chat (CHAT)
+// y guarda el tamaño en Width/Height, con una, dos o tres líneas según cuántos
+// textos estén vivos (LifeTime).
+// IDA devuelve int, pero el único llamador (RenderBooleans) descarta el valor.
 void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 {
-    // La firma de IDA es `int sub_480C60(LPCSTR lpString)` pero nuestra
-    // declaración adelantada en functions.h:409 es `void(int,int,int)`, para coincidir con la
-    // forma declarada (hoy sin uso). Mantenemos la forma (int,int,int) y
-    // tratamos p1 como el puntero base de la entrada.
-    LPCSTR lpString = (LPCSTR)p1;
+    CHAT* c = AsChat((uintptr_t)p1);
     (void)p2; (void)p3;
 
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
 
     int n;
-    n = Platform::TextLength(lpString);
-    gFont.MeasureText32(gFont.GetTextDC(), lpString, n, &psizl);
-    n = Platform::TextLength(lpString + 44);
-    gFont.MeasureText32(gFont.GetTextDC(), lpString + 44, n, &v12);
-    n = Platform::TextLength(lpString + 300);
-    gFont.MeasureText32(gFont.GetTextDC(), lpString + 300, n, &v13);
-    n = Platform::TextLength(lpString + 24);
-    gFont.MeasureText32(gFont.GetTextDC(), lpString + 24, n, &v14);
+    n = Platform::TextLength(c->ID);
+    gFont.MeasureText32(gFont.GetTextDC(), c->ID, n, &psizl);
+    n = Platform::TextLength(c->Text[0]);
+    gFont.MeasureText32(gFont.GetTextDC(), c->Text[0], n, &v12);
+    n = Platform::TextLength(c->Text[1]);
+    gFont.MeasureText32(gFont.GetTextDC(), c->Text[1], n, &v13);
+    n = Platform::TextLength(c->Guild);
+    gFont.MeasureText32(gFont.GetTextDC(), c->Guild, n, &v14);
 
     int result = psizl.cx + 3;
-    if (*((int*)lpString + 140) <= 0) {
-        if (*((int*)lpString + 139) <= 0) {
-            *((DWORD*)lpString + 144) = (DWORD)(result + v14.cx);
-            *((DWORD*)lpString + 145) = (DWORD)gFont.GetHeight();
+    if (c->LifeTime[1] <= 0) {
+        if (c->LifeTime[0] <= 0) {
+            c->Width  = result + v14.cx;
+            c->Height = gFont.GetHeight();
         } else {
             LONG cx = v14.cx + result;
             if (cx <= v12.cx) cx = v12.cx;
-            *((DWORD*)lpString + 144) = (DWORD)cx;
+            c->Width = cx;
             result = 2 * gFont.GetHeight();
-            *((DWORD*)lpString + 145) = (DWORD)result;
+            c->Height = result;
         }
     } else {
         LONG v6 = v12.cx;
@@ -125,9 +114,9 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
             v7 = v12.cx;
             if (v12.cx <= v13.cx) v7 = v13.cx;
         }
-        *((DWORD*)lpString + 144) = (DWORD)v7;
+        c->Width = v7;
         result = gFont.GetHeight();
-        *((DWORD*)lpString + 145) = (DWORD)(3 * gFont.GetHeight());
+        c->Height = 3 * gFont.GetHeight();
     }
     (void)result;
 }
@@ -230,84 +219,80 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 
 
 // =============================================================================
-// RenderBooleans — sub_4BD090.  Drives the floating-number popup pool
-// (~100 entries × 596 bytes at DAT_07e01924).  Three passes:
-//   1. Proyecta la posición de mundo del dueño → pantalla, la guarda en la entrada +4/+8, y después
+// RenderBooleans — sub_4BD090.  Dibuja las burbujas de chat (CHAT, pool de
+// 100 en DAT_07e016f8) sobre los personajes, en tres pasadas:
+//   1. Proyecta la posición de mundo del dueño → pantalla, la guarda en x/y, y después
 //      compute label dimensions (sub_480C60).
 //   2. De-overlap pass: for every pair of active entries, shift one out of
 //      la otra si sus rectángulos de bbox se superponen.
 //   3. Pasada de render: llama a RenderBoolean por entrada (HUD_Pass3.cpp).
 //
-// El original usa el vecino de la lista enlazada de las entradas (`*v0` es el puntero al dueño,
-// non-zero means alive).  Our port preserves the exact pointer-arithmetic
-// mismo idioma para que los offsets coincidan byte a byte.
 // =============================================================================
 extern "C" void __cdecl RenderBooleans_(void);
 void RenderBooleans_(void)
 {
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
-    // Pass 1: project owner→screen, set entry [+4]/[+8] (screen X/Y).
-    // v0 = (float*)&unk_7E0192C  is base+8 (entry 0's owner field)
-    //   Stride: 149 floats (596 bytes).
-    //   End:    base+0x9D8D0 (=&unk_7E101FC).
-    BYTE* base = (BYTE*)DAT_07e01924;
-    float* v0  = (float*)(base + 0x008);   // = &unk_7E0192C
-    float* end = (float*)(base + 0xE8D8);  // = &unk_7E101FC (one past last)
-    while (v0 < end) {
-        if (*((int*)v0 - 131) > 0 || *((int*)v0 - 2) > 0) {
+    // IDA recorre el pool con punteros anclados en Owner (pasada 1) y en
+    // LifeTime[0] (pasadas 2 y 3); acá se usan los campos de CHAT.
+    CHAT* chats = AsChat(DAT_07e016f8);
+    const int kChats = (int)(sizeof(DAT_07e016f8) / sizeof(CHAT));   // 100
+
+    // Pasada 1: proyecta el dueño (o Position si no hay dueño) y ubica la caja.
+    for (int i = 0; i < kChats; ++i) {
+        CHAT* c = &chats[i];
+        if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
             int sx = 0, sy = 0;
-            float* v1 = *(float**)v0;
-            if (*(DWORD*)v0) {
+            if (c->Owner) {
+                const OBJECT* o = &c->Owner->Object;
                 float Position[3];
-                Position[0] = v1[4];
-                Position[1] = v1[5];
-                Position[2] = v1[75] + v1[6] + _DAT_0055290c;
+                Position[0] = o->Position[0];
+                Position[1] = o->Position[1];
+                Position[2] = o->BoundingBoxMax[2] + o->Position[2] + _DAT_0055290c;
                 Projection(Position, &sx, &sy);
             } else {
-                Projection(v0 + 5, &sx, &sy);
+                Projection(c->Position, &sx, &sy);
             }
-            FloatingLabel_MeasureText((int)((LPCSTR)v0 - 564), 0, 0);
-            *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)gWindow.GetWidth() / 2);
-            *((DWORD*)v0 + 2) = (DWORD)(sy - 36);
+            FloatingLabel_MeasureText((int)(uintptr_t)c, 0, 0);
+            c->x = sx - 640 * c->Width / (int)gWindow.GetWidth() / 2;
+            c->y = sy - 36;
         }
-        v0 += 149;
     }
 
-    // Pass 2: de-overlap.  For each active i, scan all active j != i;
-    // si bbox(i) se superpone con bbox(j), corre la Y de i fuera del rango vertical de j.
-    int sx_idx = 0;
-    int* v3_end = (int*)(base + 0xE8D0);   // = &unk_7E101F4
-    for (int* v3 = (int*)(base + 0x000); v3 < v3_end; v3 += 149, ++sx_idx) {
-        if (!(*(v3 - 129) > 0 || *v3 > 0)) continue;
+    // Pasada 2: si dos cajas activas se superponen, corre la Y de la primera
+    // fuera del rango vertical de la otra.
+    for (int i = 0; i < kChats; ++i) {
+        CHAT* a = &chats[i];
+        if (!(a->IDLifeTime > 0 || a->LifeTime[0] > 0)) continue;
 
-        int sy_idx = 0;
-        for (int* v4 = (int*)(base + 0x000); v4 < v3_end; v4 += 149, ++sy_idx) {
-            if (sx_idx == sy_idx) continue;
-            if (!(*(v4 - 129) > 0 || *v4 > 0)) continue;
+        for (int j = 0; j < kChats; ++j) {
+            if (i == j) continue;
+            const CHAT* b = &chats[j];
+            if (!(b->IDLifeTime > 0 || b->LifeTime[0] > 0)) continue;
 
-            int v5 = v3[3];
-            int v6 = v4[3];
-            if (v5 + 640 * v3[5] / (int)gWindow.GetWidth() <= v6) continue;
-            if (v5 >= v6 + 640 * v4[5] / (int)gWindow.GetWidth()) continue;
+            int v5 = a->x;
+            int v6 = b->x;
+            if (v5 + 640 * a->Width / (int)gWindow.GetWidth() <= v6) continue;
+            if (v5 >= v6 + 640 * b->Width / (int)gWindow.GetWidth()) continue;
 
-            int v7 = v3[4];
-            int v8 = v4[4];
-            int v13 = 480 * v3[6] / (int)gWindow.GetHeight();
+            int v7 = a->y;
+            int v8 = b->y;
+            int v13 = 480 * a->Height / (int)gWindow.GetHeight();
             if (v7 + v13 <= v8) continue;
 
-            int v9 = 480 * v4[6] / (int)gWindow.GetHeight();
+            int v9 = 480 * b->Height / (int)gWindow.GetHeight();
             if (v7 >= v9 + v8) continue;
 
-            if (v7 >= v8 + v9 / 2) v3[4] = v9 + v8;
-            else                    v3[4] = v8 - v13;
+            if (v7 >= v8 + v9 / 2) a->y = v9 + v8;
+            else                    a->y = v8 - v13;
         }
     }
 
     // Pasada 3: renderiza cada entrada activa vía RenderBoolean.
-    for (int* v10 = (int*)(base + 0x000); v10 < v3_end; v10 += 149) {
-        if (*(v10 - 129) > 0 || *v10 > 0) {
-            RenderBoolean(v10[3], v10[4], (DWORD)(uintptr_t)(v10 - 139));
+    for (int i = 0; i < kChats; ++i) {
+        CHAT* c = &chats[i];
+        if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
+            RenderBoolean(c->x, c->y, (DWORD)(uintptr_t)c);
         }
     }
 }
