@@ -247,6 +247,38 @@ struct ITEM  // size = 68
     /*+63*/ BYTE   y;
     /*+64*/ BYTE   Color;
 };
+static_assert(sizeof(ITEM) == 68, "ITEM");
+static_assert(offsetof(ITEM, Type) == 0, "ITEM::Type");
+static_assert(offsetof(ITEM, Level) == 4, "ITEM::Level");
+static_assert(offsetof(ITEM, Part) == 8, "ITEM::Part");
+static_assert(offsetof(ITEM, Class) == 9, "ITEM::Class");
+static_assert(offsetof(ITEM, TwoHand) == 10, "ITEM::TwoHand");
+static_assert(offsetof(ITEM, DamageMin) == 12, "ITEM::DamageMin");
+static_assert(offsetof(ITEM, DamageMax) == 14, "ITEM::DamageMax");
+static_assert(offsetof(ITEM, SuccessfulBlocking) == 16, "ITEM::SuccessfulBlocking");
+static_assert(offsetof(ITEM, Defense) == 18, "ITEM::Defense");
+static_assert(offsetof(ITEM, MagicDefense) == 20, "ITEM::MagicDefense");
+static_assert(offsetof(ITEM, WeaponSpeed) == 22, "ITEM::WeaponSpeed");
+static_assert(offsetof(ITEM, WalkSpeed) == 24, "ITEM::WalkSpeed");
+static_assert(offsetof(ITEM, Durability) == 26, "ITEM::Durability");
+static_assert(offsetof(ITEM, Option1) == 27, "ITEM::Option1");
+static_assert(offsetof(ITEM, RequireStrength) == 28, "ITEM::RequireStrength");
+static_assert(offsetof(ITEM, RequireDexterity) == 30, "ITEM::RequireDexterity");
+static_assert(offsetof(ITEM, RequireEnergy) == 32, "ITEM::RequireEnergy");
+static_assert(offsetof(ITEM, RequireLevel) == 34, "ITEM::RequireLevel");
+static_assert(offsetof(ITEM, SpecialNum) == 36, "ITEM::SpecialNum");
+static_assert(offsetof(ITEM, Special) == 37, "ITEM::Special");
+static_assert(offsetof(ITEM, SpecialValue) == 46, "ITEM::SpecialValue");
+static_assert(offsetof(ITEM, Key) == 56, "ITEM::Key");
+static_assert(offsetof(ITEM, Unknown) == 60, "ITEM::Unknown");
+static_assert(offsetof(ITEM, byColorState) == 61, "ITEM::byColorState");
+static_assert(offsetof(ITEM, x) == 62, "ITEM::x");
+static_assert(offsetof(ITEM, y) == 63, "ITEM::y");
+static_assert(offsetof(ITEM, Color) == 64, "ITEM::Color");
+// Acceso tipado a un item que el código heredado guarda como entero o puntero a byte.
+inline ITEM* AsItem(uintptr_t p) { return reinterpret_cast<ITEM*>(p); }
+inline ITEM* AsItem(void* p) { return static_cast<ITEM*>(p); }
+inline const ITEM* AsItem(const void* p) { return static_cast<const ITEM*>(p); }
 
 struct ITEM_ATTRIBUTE  // size = 64
 {

@@ -37,18 +37,18 @@ void ShopInsertItem(int slot, const BYTE* Item)
             // lee Type@+0, Level@+4, Durability@+26, Option1@+27, Key@+0x38 relativo a
             // cada celda. sub_4CC0E0 escribe con el mismo convenio.
             BYTE* cell = ShopItems + idx * 0x44;
-            *(short*)(cell + 0)    = (short)type;                  // Type
-            *(int*)(cell + 4)      = (int)Item[1];                 // Level (raw byte)
-            cell[26]               = Item[2];                      // Durability
-            cell[27]               = Item[3];                      // Option1
-            *(DWORD*)(cell + 0x38) = (r == 0 && c == 0) ? 1u : 0u; // Key (gate render)
+            AsItem(cell)->Type    = (short)type;                  // Type
+            AsItem(cell)->Level      = (int)Item[1];                 // Level (raw byte)
+            AsItem(cell)->Durability               = Item[2];                      // Durability
+            AsItem(cell)->Option1               = Item[3];                      // Option1
+            AsItem(cell)->Key = (r == 0 && c == 0) ? 1u : 0u; // Key (gate render)
             // CRÍTICO: x/y = posición-origen del item en el grid (slot%8, slot/8),
             // escrito en TODAS las celdas del footprint (igual que sub_4CC0E0 ->x=a1%8
             // ->y=a1/8). El hover (Item_ClickHandler.cpp, FUN_004d23b0) normaliza celdas de
             // footprint al origen vía `inv_base + 34*(grid_w*y+x)`; con x/y=0 toda celda
             // normalizaría al slot 0 y el tooltip mostraría siempre el primer item.
-            cell[62]               = (BYTE)(slot % 8);             // x
-            cell[63]               = (BYTE)(slot / 8);             // y
+            AsItem(cell)->x               = (BYTE)(slot % 8);             // x
+            AsItem(cell)->y               = (BYTE)(slot / 8);             // y
             ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
         }
     }

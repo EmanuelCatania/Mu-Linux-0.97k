@@ -2153,13 +2153,13 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
 
     // WeaponL (this+536) magic damage bonus
     if (*(unsigned short*)weaponL != 0xFFFF) {
-        unsigned char dur = *(unsigned char*)(weaponL + 26);
+        unsigned char dur = AsItem(weaponL)->Durability;
         if (dur != 0) {
             short type = *(short*)weaponL;
             ITEM_ATTRIBUTE* attr = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[type];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
-                                               *(int*)(weaponL + 4),
-                                               *(unsigned char*)(weaponL + 27));
+                                               AsItem(weaponL)->Level,
+                                               AsItem(weaponL)->Option1);
             int specId = (type == 31) ? 60 : 61;  // Wand uses special 60
             unsigned short minBonus = 0, maxBonus = 0;
             PlusSpecial(&minBonus, specId, weaponL);

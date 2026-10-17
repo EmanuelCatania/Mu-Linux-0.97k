@@ -192,10 +192,10 @@ short __cdecl FUN_0047d000(short *param_1) {
 extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item)
 {
     if (*(unsigned short*)Item == 0xFFFF) return;
-    int count = *(unsigned char*)(Item + 36);
+    int count = AsItem(Item)->SpecialNum;
     for (int i = 0; i < count; ++i) {
         if (*(unsigned char*)(Item + i + 37) == (unsigned int)Special) {
-            if (*(unsigned char*)(Item + 26)) {
+            if (AsItem(Item)->Durability) {
                 *Value += *(unsigned char*)(i + Item + 45);
             }
         }
@@ -288,9 +288,9 @@ int __fastcall Stats_CalcBase(int a1) {
     short tL = *(short*)wp_L;
     short tR = *(short*)wp_R;
     bool useBowFormula = false;
-    if ((tL >= 136 && tL < 143 && *(unsigned char*)(wp_L + 26))
-        || (((tR >= 128 && tR < 135) || tR == 145) && *(unsigned char*)(wp_R + 26))
-        || (tL >= 144 && tL < 160 && *(unsigned char*)(wp_L + 26))) {
+    if ((tL >= 136 && tL < 143 && AsItem(wp_L)->Durability)
+        || (((tR >= 128 && tR < 135) || tR == 145) && AsItem(wp_R)->Durability)
+        || (tL >= 144 && tL < 160 && AsItem(wp_L)->Durability)) {
         useBowFormula = true;
     }
     if (useBowFormula) {
@@ -351,16 +351,16 @@ skip_wings: ;
 
     // WeaponL (slot 0)
     if (*(unsigned short*)wp_L != 0xFFFF) {
-        unsigned char dur = *(unsigned char*)(wp_L + 26);
+        unsigned char dur = AsItem(wp_L)->Durability;
         if (dur != 0) {
             short sType = *(short*)wp_L;
             if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
-                                               *(int*)(wp_L + 4),
-                                               *(unsigned char*)(wp_L + 27));
-            unsigned short minB = *(unsigned short*)(wp_L + 12);
-            unsigned short maxB = *(unsigned short*)(wp_L + 14);
+                                               AsItem(wp_L)->Level,
+                                               AsItem(wp_L)->Option1);
+            unsigned short minB = AsItem(wp_L)->DamageMin;
+            unsigned short maxB = AsItem(wp_L)->DamageMax;
             PlusSpecial(&minB, 60, wp_L);
             PlusSpecial(&maxB, 60, wp_L);
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
@@ -383,16 +383,16 @@ skip_wings: ;
 
     // WeaponR (slot 1)
     if (*(unsigned short*)wp_R != 0xFFFF) {
-        unsigned char dur = *(unsigned char*)(wp_R + 26);
+        unsigned char dur = AsItem(wp_R)->Durability;
         if (dur != 0) {
             short sType = *(short*)wp_R;
             if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
-                                               *(int*)(wp_R + 4),
-                                               *(unsigned char*)(wp_R + 27));
-            unsigned short minB = *(unsigned short*)(wp_R + 12);
-            unsigned short maxB = *(unsigned short*)(wp_R + 14);
+                                               AsItem(wp_R)->Level,
+                                               AsItem(wp_R)->Option1);
+            unsigned short minB = AsItem(wp_R)->DamageMin;
+            unsigned short maxB = AsItem(wp_R)->DamageMax;
             PlusSpecial(&minB, 60, wp_R);
             PlusSpecial(&maxB, 60, wp_R);
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
@@ -428,8 +428,8 @@ skip_wings: ;
     short tWL = *(short*)wp_L;
     short tWR = *(short*)wp_R;
     if (tWL >= 128 && tWL < 160 && tWR >= 128 && tWR < 160) {
-        int levelL = (*(int*)(wp_L + 4) >> 3) & 0xF;
-        int levelR = (*(int*)(wp_R + 4) >> 3) & 0xF;
+        int levelL = (AsItem(wp_L)->Level >> 3) & 0xF;
+        int levelR = (AsItem(wp_R)->Level >> 3) & 0xF;
         if (tWL == 135 && levelR != 0) {
             // Bow + Arrows: boost L damage by (2*levelR + 1)% + 1
             float boost = (2.0f * levelR + 1.0f) * 0.01f;

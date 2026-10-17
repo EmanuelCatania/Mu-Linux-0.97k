@@ -464,18 +464,18 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                     short v7 = *(WORD*)v6_addr;
                     float sxa = (float)((double)v21 + a1);
                     if (v7 != (short)0xFFFF) {
-                        if (*(int*)(v6_addr + 0x38) > 0) {
+                        if (*(int *)&AsItem(v6_addr)->Key > 0) {
                             if ((BYTE)a6) {
                                 // DESVIACION (DLL ItemStack.cpp RenderItemNumber, 0x004E398C):
                                 // también los items que el server declara apilables.
                                 const int kind = ItemBehaviorType(v7);   // 0.97.20
                                 const bool stack = (kind >= 448 && kind <= 456) ||
-                                    ItemStack_GetMaxStack(v7, (*(int*)(v6_addr + 4) >> 3) & 0xF) != 0;
-                                if (stack && *(BYTE*)(v6_addr + 0x1A) > 1) {
+                                    ItemStack_GetMaxStack(v7, (AsItem(v6_addr)->Level >> 3) & 0xF) != 0;
+                                if (stack && AsItem(v6_addr)->Durability > 1) {
                                     glColor3f(1.0f, 0.9f, 0.7f);
                                     float h = sxa + 13.0f;
                                     RenderNumber2D(h, sy,
-                                                   *(unsigned char*)(v6_addr + 26),
+                                                   AsItem(v6_addr)->Durability,
                                                    9.0f, 10.0f);
                                 }
                             } else {
@@ -483,8 +483,8 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                                 float Height = (float)((double)v8->Height * 20.0);
                                 float Width  = (float)((double)v8->Width  * 20.0);
                                 RenderItem3D(sxa, sy, Width, Height, v7,
-                                             *(int*)(v6_addr + 4),
-                                             *(unsigned char*)(v6_addr + 27), 0, 0);
+                                             AsItem(v6_addr)->Level,
+                                             AsItem(v6_addr)->Option1, 0, 0);
                             }
                             ++v23;
                         }

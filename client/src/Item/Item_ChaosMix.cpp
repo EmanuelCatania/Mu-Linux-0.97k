@@ -357,7 +357,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
             int itemPtr = rowBase;
             for (int col = 0; col < param_2; ++col) {
                 short itemType = *(short*)itemPtr;
-                if (itemType != (short)0xFFFF && *(int*)(itemPtr + 56) > 0) {
+                if (itemType != (short)0xFFFF && *(int *)&AsItem(itemPtr)->Key > 0) {
                     ++*(int*)(counts + 1);
 
                     int attrBase = DAT_07d78068 + itemType * 0x40;
@@ -369,7 +369,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     if (DAT_0055a3f8 <= attrW) DAT_0055a3f8 = attrW;
                     if (DAT_0055a3fc <= attrH) DAT_0055a3fc = attrH;
 
-                    int itemLevel = (*(int*)(itemPtr + 4) >> 3) & 0xF;
+                    int itemLevel = (AsItem(itemPtr)->Level >> 3) & 0xF;
                     char* socketFlagPtr = 0;
                     bool scanSocketFlag = false;
 
@@ -395,7 +395,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         ++*(int*)(counts + 53);
                         DAT_07eaa170 = 0;
                         wingValue = ItemValue((ITEM*)itemPtr, 0);
-                        int socketCount = *(unsigned char*)(itemPtr + 36);
+                        int socketCount = AsItem(itemPtr)->SpecialNum;
                         for (int i = 0; i < socketCount; ++i) {
                             unsigned char v = *(unsigned char*)(itemPtr + 37 + i);
                             if (v >= 0x3C) {
@@ -412,7 +412,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         ++*(int*)(counts + 5);
                         break;
                     case ITEM_HELPER_UNIRIA:
-                        if (*(unsigned char*)(itemPtr + 26) == 0xFF) {
+                        if (AsItem(itemPtr)->Durability == 0xFF) {
                             ++*(int*)(counts + 37);
                         }
                         break;
@@ -453,7 +453,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                             socketFlagPtr = (char*)&DAT_07eaa178;
                         }
 
-                        int socketCount = *(unsigned char*)(itemPtr + 36);
+                        int socketCount = AsItem(itemPtr)->SpecialNum;
                         for (int i = 0; i < socketCount; ++i) {
                             unsigned char v = *(unsigned char*)(itemPtr + 37 + i);
                             if (v >= 0x3C && v <= 0x3F && !foundExcellent) {
@@ -469,7 +469,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                             ++*(int*)(counts + 41);
                         }
 
-                        if ((*(unsigned char*)(itemPtr + 27) & 0x3F) != 0 && itemLevel >= 4) {
+                        if ((AsItem(itemPtr)->Option1 & 0x3F) != 0 && itemLevel >= 4) {
                             ++*(int*)(counts + 57);
                             excellentValue += ItemValue((ITEM*)itemPtr, 0);
                         }
@@ -478,7 +478,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                     }
 
                     if (scanSocketFlag) {
-                        int socketCount = *(unsigned char*)(itemPtr + 36);
+                        int socketCount = AsItem(itemPtr)->SpecialNum;
                         for (int i = 0; i < socketCount; ++i) {
                             if (*(unsigned char*)(itemPtr + 37 + i) == 0x40) {
                                 DAT_07eaa170 = 1;

@@ -432,30 +432,30 @@ void RestorePickedItemToSource(void)
 extern "C" int __cdecl Item_CompareForTradeHistory(const BYTE* p, const BYTE* n)
 {
     if (*(short*)p != *(short*)n) return 2;
-    if (p[9] != n[9]) return 0;
-    const int lp = (*(int*)(p + 4) >> 3) & 0xF;
-    const int ln = (*(int*)(n + 4) >> 3) & 0xF;
+    if (AsItem(p)->Class != AsItem(n)->Class) return 0;
+    const int lp = (AsItem(p)->Level >> 3) & 0xF;
+    const int ln = (AsItem(n)->Level >> 3) & 0xF;
     if (lp != ln) return (lp < ln) ? -1 : 1;
 
-    const int sp = (*(int*)(p + 4) >> 7) & 1, sn = (*(int*)(n + 4) >> 7) & 1;
+    const int sp = (AsItem(p)->Level >> 7) & 1, sn = (AsItem(n)->Level >> 7) & 1;
     if (sp < sn) return -1;
     if (sp > sn) return 1;
-    const int ep = p[27] & 0x3F, en = n[27] & 0x3F;
+    const int ep = AsItem(p)->Option1 & 0x3F, en = AsItem(n)->Option1 & 0x3F;
     if (ep < en) return -1;
     if (ep > en) return 1;
-    if (p[36] < n[36]) return -1;
-    if (p[36] > n[36]) return 1;
+    if (AsItem(p)->SpecialNum < AsItem(n)->SpecialNum) return -1;
+    if (AsItem(p)->SpecialNum > AsItem(n)->SpecialNum) return 1;
     int fp = 0, vp = 0, fn = 0, vn = 0;
-    for (int i = 0; i < n[36]; ++i) {
+    for (int i = 0; i < AsItem(n)->SpecialNum; ++i) {
         if (p[37 + i] >= 0x3C && p[37 + i] <= 0x3F) { fp = 1; vp = p[45 + i]; }
         if (n[37 + i] >= 0x3C && n[37 + i] <= 0x3F) { fn = 1; vn = n[45 + i]; }
     }
-    if (n[36]) {
+    if (AsItem(n)->SpecialNum) {
         if (fp < fn || vp < vn) return -1;
         if (fp != fn && vp != vn) return 1;
     }
-    if (p[26] > n[26]) return 1;
-    return (p[26] < n[26]) ? -1 : 0;
+    if (AsItem(p)->Durability > AsItem(n)->Durability) return 1;
+    return (AsItem(p)->Durability < AsItem(n)->Durability) ? -1 : 0;
 }
 
 // IDA: sub_4CC530 (0x004CC530) — recuerda un item valioso recibido por trade
