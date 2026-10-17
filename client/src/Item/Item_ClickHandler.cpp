@@ -558,17 +558,17 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
         if (heroPtr) {
             switch (slot_idx) {
             case 0:  // Lefthand weapon
-                *(WORD*)(heroPtr + 624) = 0xFFFF;
-                *(BYTE*)(heroPtr + 627) = 0;
+                *(WORD *)&AsCharacter(heroPtr)->Weapon[0].Type = 0xFFFF;
+                AsCharacter(heroPtr)->Weapon[0].Option1 = 0;
                 break;
             case 1:  // Righthand weapon
-                *(WORD*)(heroPtr + 648) = 0xFFFF;
-                *(BYTE*)(heroPtr + 651) = 0;
+                *(WORD *)&AsCharacter(heroPtr)->Weapon[1].Type = 0xFFFF;
+                AsCharacter(heroPtr)->Weapon[1].Option1 = 0;
                 break;
             case 8:  // Pet (Helper)
                 DeleteBug((int)(uintptr_t)heroPtr);
-                *(WORD*)(heroPtr + 696) = 0xFFFF;
-                *(BYTE*)(heroPtr + 699) = 0;
+                *(WORD *)&AsCharacter(heroPtr)->Helper.Type = 0xFFFF;
+                AsCharacter(heroPtr)->Helper.Option1 = 0;
                 break;
             default:
                 break;

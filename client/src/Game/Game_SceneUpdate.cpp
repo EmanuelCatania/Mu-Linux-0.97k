@@ -118,18 +118,18 @@ static void LoginScene_ClearPreviewEquipmentMeta(unsigned char* c)
         c[bodyMetaOff[i] + 3] = 0;
     }
 
-    c[0x28a] = 0;
-    c[0x28b] = 0;
-    c[0x28c] = 0;
-    c[0x28d] = 0;
-    c[0x2a2] = 0;
-    c[0x2a3] = 0;
-    c[0x2a4] = 0;
-    c[0x2a5] = 0;
-    c[0x2ba] = 0;
-    c[0x2bb] = 0;
-    c[0x2bc] = 0;
-    c[0x2bd] = 0;
+    AsCharacter(c)->Weapon[1].Level = 0;
+    AsCharacter(c)->Weapon[1].Option1 = 0;
+    AsCharacter(c)->Weapon[1].LinkBone = 0;
+    AsCharacter(c)->Weapon[1].CurrentAction = 0;
+    AsCharacter(c)->Wing.Level = 0;
+    AsCharacter(c)->Wing.Option1 = 0;
+    AsCharacter(c)->Wing.LinkBone = 0;
+    AsCharacter(c)->Wing.CurrentAction = 0;
+    AsCharacter(c)->Helper.Level = 0;
+    AsCharacter(c)->Helper.Option1 = 0;
+    AsCharacter(c)->Helper.LinkBone = 0;
+    AsCharacter(c)->Helper.CurrentAction = 0;
 }
 
 // Encrypt bytes [start..end) in pkt using the login XOR key.

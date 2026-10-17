@@ -649,7 +649,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     }
     m_dwBackColor = bg;
 
-    int rectX = *(int*)(c + 568);
+    int rectX = *(int *)&AsCharacter(c)->BodyPart[3].PlaySpeed;
     int rectY = *(int*)(c + 572);
     int rectW = 640 * (int)cx / (int)gWindow.GetWidth();
     int rectH = 480 * (int)cy / (int)gWindow.GetHeight();
@@ -676,7 +676,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
 
     // IDA: m_dwTextColor = -3613466 (0xFFC8DCE6), y -2134319898 (0x80C8DCE6)
     // cuando al mensaje le quedan menos de 10 ticks de vida (fade-out).
-    int fade2 = *(int*)(c + 560);
+    int fade2 = *(int *)&AsCharacter(c)->BodyPart[3].AnimationFrame;
     if (fade2 > 0) {
         m_dwTextColor = (fade2 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
         ClearFontRows(fontHeight);

@@ -225,5 +225,7 @@ MU_ASSERT_FIELD(CHARACTER, PositionY, 0x38C);
 // como entero o como puntero a byte.
 inline CHARACTER* AsCharacter(uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 inline CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }
+inline const CHARACTER* AsCharacter(const void* p) { return static_cast<const CHARACTER*>(p); }
 inline OBJECT* AsObject(uintptr_t p) { return reinterpret_cast<OBJECT*>(p); }
 inline OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }
+inline const OBJECT* AsObject(const void* p) { return static_cast<const OBJECT*>(p); }

@@ -140,8 +140,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // los efectos por tipo); se dibuja con el modelo propio del catálogo.
     const int drawModel = gContentCatalog.EntityDrawModel((const void*)(uintptr_t)param_4, param_6);
     iVar7 = DAT_05828d58 + drawModel * 0xbc;
-    *(unsigned char*)(iVar7 + 0x45) = *(unsigned char*)(param_4 + 0xe4);  // ContrastEnable
-    *(unsigned int* )(iVar7 + 0x68) = *(unsigned int* )(param_4 + 0x0c);  // Scale
+    *(unsigned char*)(iVar7 + 0x45) = AsCharacter(param_4)->Object.ContrastEnable;  // ContrastEnable
+    *(unsigned int* )(iVar7 + 0x68) = *(unsigned int *)&AsCharacter(param_4)->Object.Scale;  // Scale
     *(unsigned char*)(iVar7 + 0xa0) = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
     *(unsigned int* )(iVar7 + 0x84) = 0;                                   // BodyHeight = 0
 
@@ -167,13 +167,13 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         local_248      = param_2;
         local_244      = param_3;
 
-        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + *(int*)(param_4+0x114)
+        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + *(int *)&AsCharacter(param_4)->Object.BoneMatrices
         // = BoneTransform base + LinkBone * stride
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
-                                   + *(int*)(param_4 + 0x114));
+                                   + *(int *)&AsCharacter(param_4)->Object.BoneMatrices);
 
         void* ownerModel = (void*)(DAT_05828d58
-                                   + (int)*(short*)(param_4 + 2) * 0xbc);
+                                   + (int)AsCharacter(param_4)->Object.Type * 0xbc);
 
         // BMD__RotationPosition = RotationPosition: transforms pos_in through bone → pos_out
         BMD__RotationPosition(ownerModel, pBoneMat, afStack_264 + 6, (float*)&local_240);
@@ -181,16 +181,16 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // BodyOrigin = TransformedPosition + entity world position
         // IDA usa `Position[0]` directo: reinterpretar los bits de local_240 (Ghidra
         // lo tipó como void*), no convertir el entero.
-        *(float*)(iVar7 + 0x6c) = *(float*)&local_240 + *(float*)(param_4 + 0x10);
-        *(float*)(iVar7 + 0x70) = local_23c_f         + *(float*)(param_4 + 0x14);
-        *(float*)(iVar7 + 0x74) = local_238_f         + *(float*)(param_4 + 0x18);
+        *(float*)(iVar7 + 0x6c) = *(float*)&local_240 + AsCharacter(param_4)->Object.Position[0];
+        *(float*)(iVar7 + 0x70) = local_23c_f         + AsCharacter(param_4)->Object.Position[1];
+        *(float*)(iVar7 + 0x74) = local_238_f         + AsCharacter(param_4)->Object.Position[2];
 
     }
     else
     {
         // ── Linked path: build angle matrix based on weapon type ──────────────
         // Check magic-channel / cloaking flag: byte at param_4+0x2eb
-        unsigned char magicFlag = *(unsigned char*)(param_4 + 0x2eb);
+        unsigned char magicFlag = AsCharacter(param_4)->MonsterIndex;
         bool isMagicChannel = (magicFlag >= 0x84) && (magicFlag <= 0x86);
 
         if (!isMagicChannel)
@@ -332,15 +332,15 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
         // BoneTransform for LinkBone
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
-                                   + *(int*)(param_4 + 0x114));
+                                   + *(int *)&AsCharacter(param_4)->Object.BoneMatrices);
 
         // R_ConcatTransforms: combine bone matrix with local angle matrix → ParentMatrix
         R_ConcatTransforms(pBoneMat, local_228, (float*)&DAT_06989c9c);
 
         // BodyOrigin = entity world position (copy from entity, no local offset added)
-        *(unsigned int*)(iVar7 + 0x6c) = *(unsigned int*)(param_4 + 0x10);
-        *(unsigned int*)(iVar7 + 0x70) = *(unsigned int*)(param_4 + 0x14);
-        *(unsigned int*)(iVar7 + 0x74) = *(unsigned int*)(param_4 + 0x18);
+        *(unsigned int*)(iVar7 + 0x6c) = *(unsigned int *)&AsCharacter(param_4)->Object.Position[0];
+        *(unsigned int*)(iVar7 + 0x70) = *(unsigned int *)&AsCharacter(param_4)->Object.Position[1];
+        *(unsigned int*)(iVar7 + 0x74) = *(unsigned int *)&AsCharacter(param_4)->Object.Position[2];
     }
 
     // ── 3. Boss-head special case (TYPE == 0xea = MODEL_BOSS_HEAD) ────────────
@@ -598,11 +598,11 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // local_23c._3_1_ == '4' check: byte 3 of local_23c_f (the float storage)
         unsigned char highByte = ((unsigned char*)&local_23c_f)[3];
         bool cond = (highByte == '4')
-                 && (*(short*)(param_4 + 2) == 0x186)
-                 && (*(unsigned char*)(param_4 + 0x105) > 0x21)
-                 && (*(unsigned char*)(param_4 + 0x105) < 0x5c)
-                 && (_DAT_00552660 <= *(float*)(param_4 + 0x108))
-                 && (*(float*)(param_4 + 0x108) <= _DAT_00552488);
+                 && (AsCharacter(param_4)->Object.Type == 0x186)
+                 && (AsCharacter(param_4)->Object.CurrentAction > 0x21)
+                 && (AsCharacter(param_4)->Object.CurrentAction < 0x5c)
+                 && (_DAT_00552660 <= AsCharacter(param_4)->Object.AnimationFrame)
+                 && (AsCharacter(param_4)->Object.AnimationFrame <= _DAT_00552488);
         if (cond)
         {
             // Override PART animation frames: PriorAnimFrame = 2.0, AnimFrame = 3.2
@@ -614,8 +614,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // ── 6. Ala 790 en zona segura → CurrentAction = 1 ────────────────────────
     // IDA: RenderLinkObject (0x00455430).
     // DESVIACION (fix del DLL, Patchs.cpp 0x00455C19): limitar la animación de zona segura al modelo del ala 790.
-    if (param_6 == 790 && (*(short*)(param_4 + 0x2a0) > 0x315) && (*(short*)(param_4 + 0x2a0) < 0x317)
-        && (*(char*)(param_4 + 0x34e) != '\0'))
+    if (param_6 == 790 && (AsCharacter(param_4)->Wing.Type > 0x315) && (AsCharacter(param_4)->Wing.Type < 0x317)
+        && (*(char *)&AsCharacter(param_4)->SafeZone != '\0'))
     {
         *(unsigned char*)((int)iVar7 + 0xa0) = 1;
     }
@@ -652,11 +652,11 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // ── 10. RenderPartObject ─────────────────────────────────────────────────
     // RenderPartObjectEffect: (localObj, Type, Light*, alpha, 8*Level, Option1, 0, flags)
     {
-        unsigned char monsterIndex = *(unsigned char*)(param_4 + 0x2eb);
+        unsigned char monsterIndex = AsCharacter(param_4)->MonsterIndex;
         unsigned int baseRenderFlags = ((monsterIndex == 67) ? 0x102u : 0x2u);
         RenderPartObjectEffect((int)local_1ec, drawModel,
                      (float*)(param_4 + 800),     // Light offset +0x320
-                     *(float*)(param_4 + 0x168),  // alpha
+                     AsCharacter(param_4)->Object.Alpha,  // alpha
                      8u * (unsigned int)(unsigned char)param_7,  // 8*Level
                      (unsigned char)param_8,                     // Option1
                      0,
@@ -714,7 +714,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             pfVar10 += 0xc;
         }
 
-        unsigned char bVar6 = *(unsigned char*)(param_4 + 0x105);
+        unsigned char bVar6 = AsCharacter(param_4)->Object.CurrentAction;
         if (((bVar6 < 0x0d) || (bVar6 > 0x21)) && ((bVar6 < 0x38) || (bVar6 > 0x3c)))
         {
             afStack_264[3] = 0.0f;
@@ -730,7 +730,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     case 0x1af:  // MODEL_BOW+18 equivalent — wing trail particles
     {
-        if ((*(char*)(param_4 + 0x105) == 'P') && (gMapManager.GetCurrentMap() != 10))
+        if ((*(char *)&AsCharacter(param_4)->Object.CurrentAction == 'P') && (gMapManager.GetCurrentMap() != 10))
         {
             unsigned int uv = (unsigned int)rand() & 0x80000001u;
             bool bEven = (uv == 0);
@@ -752,7 +752,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                 do {
                     int r3 = rand();
                     afStack_264[1] = 0.0f;
-                    afStack_264[2] = *(float*)(param_4 + 0x24);
+                    afStack_264[2] = AsCharacter(param_4)->Object.Angle[2];
                     afStack_264[0] = (float)(r3 % 0x3c + 0x96);
                     Joint_Create(0x4e9, afStack_264 + 6, afStack_264 + 6, afStack_264, 0, 0, 10.0f, -1, 0);
                     Particle_Spawn(0x497, afStack_264 + 6, afStack_264, Light, 0, 1.0f, 0);

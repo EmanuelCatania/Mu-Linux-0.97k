@@ -79,16 +79,16 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
 static void SetPlayerBow97k(BYTE* entity)
 {
     if (!entity) return;
-    const short leftType = *(short*)(entity + 648);
+    const short leftType = AsCharacter(entity)->Weapon[1].Type;
     if ((leftType >= 528 && leftType < 535) || leftType == 545) {
         SetAction((int)(intptr_t)entity,
-                     ((entity[444] & 7) != 2 || *(unsigned short*)(entity + 672) == 0xFFFF) ? 46 : 48);
+                     ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 46 : 48);
         return;
     }
-    const short rightType = *(short*)(entity + 624);
+    const short rightType = AsCharacter(entity)->Weapon[0].Type;
     if ((rightType >= 536 && rightType < 543) || rightType == 544) {
         SetAction((int)(intptr_t)entity,
-                     ((entity[444] & 7) != 2 || *(unsigned short*)(entity + 672) == 0xFFFF) ? 47 : 49);
+                     ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 47 : 49);
     }
 }
 
@@ -160,15 +160,15 @@ void PacketHandler_0x19(BYTE* pkt)
     // reaches its attack-frame limit; without this assignment it only sees
     // stale/zero data and therefore plays the pose without creating the spell
     // effect.
-    *(BYTE*) (caster + 770) = (BYTE)skill_type;
+    AsCharacter(caster)->Skill = (BYTE)skill_type;
 
-    *(short*)(caster + 0x310) = (short)target_idx;
+    AsCharacter(caster)->TargetCharacter = (short)target_idx;
     // IDA 0x42BCA0 escribe `sc->SkillSuccess = (TargetKey >> 15) != 0`, y el
     // server MuEmu pone ese bit justamente cuando el skill tuvo exito
     // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`). Lo consumen el aura
     // de Greater Defense (MoveCharacter case 27), el buff de Greater Damage
     // (case 28) y el congelamiento del Ice Arrow (0x33) y de Lightning (0x37).
-    *(BYTE*) (caster + 0x301) = (BYTE)(skill_ok != 0);
+    AsCharacter(caster)->SkillSuccess = (BYTE)(skill_ok != 0);
 
     if (skill_type == 3 || skill_type == 7) {
     }
@@ -179,8 +179,8 @@ void PacketHandler_0x19(BYTE* pkt)
     // DESVIACION (fix del DLL, Patchs.cpp 0x0042C417): omitir el giro cuando caster y objetivo son el mismo personaje.
     if (caster != target && target != nullptr &&
         skill_type != 6 && skill_type != 15 && target[352] != 0) {
-        *(float*)(caster + 36) = CreateAngle(
-            *(float*)(caster + 16), *(float*)(caster + 20),
+        AsCharacter(caster)->Object.Angle[2] = CreateAngle(
+            AsCharacter(caster)->Object.Position[0], AsCharacter(caster)->Object.Position[1],
             *(float*)(target + 16), *(float*)(target + 20));
     }
 
@@ -268,7 +268,7 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // 0042BCA0 first plays 81 unless the channel state is 77, then
         // enters LABEL_98 for the remote caster animation.
-        if (caster[747] != 77)
+        if (AsCharacter(caster)->MonsterIndex != 77)
             PlayBuffer(81, 0, 0);
 
         // LABEL_98 applies this animation to remote casters only.
@@ -330,8 +330,8 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x2B:  // 43 Death Stab
     {
         SetAction((int)(intptr_t)caster, 67);
-        if (caster != (BYTE*)DAT_07abf5d8 && *(WORD*)(caster + 2) == 390)
-            *(DWORD*)(caster + 264) = 0;
+        if (caster != (BYTE*)DAT_07abf5d8 && *(WORD *)&AsCharacter(caster)->Object.Type == 390)
+            *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
         goto common_tail;
     }
 
@@ -374,7 +374,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x33:  // 51 Ice Arrow
     {
         SetPlayerBow97k(caster);
-        if (target != nullptr && caster[769])
+        if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
             DeleteEffect(190, (DWORD)(uintptr_t)target, 1);
             float angle[3] = {
@@ -396,7 +396,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x37:  // 55 Fire Slash
     {
-        if (target != nullptr && caster[769])
+        if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
             DeleteEffect(1274, (DWORD)(uintptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -423,7 +423,7 @@ void PacketHandler_0x19(BYTE* pkt)
 common_tail:
     // Common tail: mark skill as active on caster
     // Almost all skill_type cases jump here
-    *(BYTE*)(caster + 0x2F5) = 1;
+    AsCharacter(caster)->SkillStage = 1;
 }
 
 

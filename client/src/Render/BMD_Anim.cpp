@@ -112,7 +112,7 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
             if (speed < 0.0f) speed = 0.0f;
         }
         // c[847] (==entity[+0x34F]): "fast walk" flag → 1.5× for actions 3..4
-        if (*(BYTE*)(c + 847)) {
+        if (AsCharacter(c)->Change) {
             BYTE act = *(BYTE*)(o + 261);
             if (act >= 3 && act <= 4) speed *= 1.5f;
         }
@@ -123,9 +123,9 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
     // IDA: AttackStage (0x00448930), lanzamiento al frame 5 de la acción 88.
     // DESVIACIÓN del adelanto del DLL: Aqua Beam espera ese cruce, sin perderlo por agilidad alta.
     if (type == 390 && EntityView((const void*)c).Kind() == EntityView::PlayerKind &&
-        modelAction == 88 && *(BYTE*)(c + 770) == 12 && *(BYTE*)(c + 757) != 0 &&
+        modelAction == 88 && AsCharacter(c)->Skill == 12 && AsCharacter(c)->SkillStage != 0 &&
         *(float*)(o + 264) + speed >= 5.0f) {
-        *(BYTE*)(c + 757) = 15;
+        AsCharacter(c)->SkillStage = 15;
     }
 
     // BMD__PlayAnimation(model, &frame, &priorFrame, &priorAction, speed) — advances frame.

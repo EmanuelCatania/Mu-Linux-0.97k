@@ -132,28 +132,28 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
 // Sets entity speed (+0x0c) based on move_type_flags (+0x1bc) and swim flag (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
 void __cdecl SetCharacterScale(int param_1) {
-    if (*(char*)(param_1 + 0x34f) == '\0') {
-        short sVar1 = *(short*)(param_1 + 0x1f8);
+    if (*(char *)&AsCharacter(param_1)->Change == '\0') {
+        short sVar1 = AsCharacter(param_1)->BodyPart[1].Type;
         if (((sVar1 == 0x270) || (sVar1 == 0x272)) || ((0x279 < sVar1 && (sVar1 < 0x27e)))) {
-            *(unsigned short*)(param_1 + 0x1e0) =
-                (*(unsigned char*)(param_1 + 0x1bc) & 7) + 0x390 +
-                (unsigned short)(*(unsigned char*)(param_1 + 0x1bc) >> 3) * 4;
+            *(unsigned short *)&AsCharacter(param_1)->BodyPart[0].Type =
+                (AsCharacter(param_1)->Class & 7) + 0x390 +
+                (unsigned short)(AsCharacter(param_1)->Class >> 3) * 4;
         } else {
-            *(unsigned short*)(param_1 + 0x1e0) = 0xffff;
+            *(unsigned short *)&AsCharacter(param_1)->BodyPart[0].Type = 0xffff;
         }
-        if (*(char*)(param_1 + 0x1bd) != '\0') {
-            switch (*(unsigned char*)(param_1 + 0x1bc) & 7) {
-            case 0: case 1: *(unsigned int*)(param_1 + 0x0c) = 0x3f6e147b; return; // 0.93f
-            case 2:         *(unsigned int*)(param_1 + 0x0c) = 0x3f5c28f6; return; // 0.86f
+        if (*(char *)&AsCharacter(param_1)->Skin != '\0') {
+            switch (AsCharacter(param_1)->Class & 7) {
+            case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6e147b; return; // 0.93f
+            case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f5c28f6; return; // 0.86f
             case 3:         goto case3;
             default:        return;
             }
         }
-        switch (*(unsigned char*)(param_1 + 0x1bc) & 7) {
-        case 0: case 1: *(unsigned int*)(param_1 + 0x0c) = 0x3f666666; return; // 0.9f
-        case 2:         *(unsigned int*)(param_1 + 0x0c) = 0x3f6147ae; return; // 0.88f
+        switch (AsCharacter(param_1)->Class & 7) {
+        case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f666666; return; // 0.9f
+        case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6147ae; return; // 0.88f
         case 3:
-        case3:          *(unsigned int*)(param_1 + 0x0c) = 0x3f733333; return; // 0.95f
+        case3:          *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f733333; return; // 0.95f
         }
     }
 }
@@ -565,25 +565,25 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     short nearbyIds[5] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
     for (int i = 0; i < 400 && count < 5; i++, pcEnt += 0x394) {
-        if (pcEnt[0] == '\0') continue;                    // IDA: *(v16 - 747)
-        if (pcEnt[0x160] == '\0') continue;                // IDA: *(v16 - 395)
+        if (*(char *)&AsCharacter(pcEnt)->Object.Live == '\0') continue;                    // IDA: *(v16 - 747)
+        if (*(char *)&AsCharacter(pcEnt)->Object.Visible == '\0') continue;                // IDA: *(v16 - 395)
         if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
-        if (pcEnt[765] != '\0') continue;                   // IDA: v16[18] = ent + 765
+        if (*(char *)&AsCharacter(pcEnt)->Dead != '\0') continue;                   // IDA: v16[18] = ent + 765
 
         // IDA L160-163: v17 = a2[1] - ent.y ; v19 = a2[0] - ent.x ; sqrt <= a3
-        float dx = param_2[0] - *(float*)(pcEnt + 0x10);
-        float dy = param_2[1] - *(float*)(pcEnt + 0x14);
+        float dx = param_2[0] - AsCharacter(pcEnt)->Object.Position[0];
+        float dy = param_2[1] - AsCharacter(pcEnt)->Object.Position[1];
         if (SQRT(dx*dx + dy*dy) > param_3) continue;
 
         // IDA L170-171: Kind == 2 (monstruo) o Kind == 1 (jugador) con Key == a5
-        char cType = pcEnt[0x84];                          // IDA: *(v16 - 615)
-        short sKey  = *(short*)(pcEnt + 0x1dc);            // IDA: *(_WORD *)(v16 - 271)
+        char cType = *(char *)&AsCharacter(pcEnt)->Object.Kind;                          // IDA: *(v16 - 615)
+        short sKey  = *(short *)&AsCharacter(pcEnt)->Key;            // IDA: *(_WORD *)(v16 - 271)
         if (cType != '\x02' && !(cType == '\x01' && sKey == param_5))
             continue;
 
         // IDA L173-180: marca de AOE para los grupos de skill 8 y 9.
         if ((uVar19 == 8) || (uVar19 == 9)) {
-            char monsterType = pcEnt[747];                 // IDA: *v16
+            char monsterType = *(char *)&AsCharacter(pcEnt)->MonsterIndex;                 // IDA: *v16
             if (monsterType != 77 && monsterType != 75 && monsterType != 73 &&
                 monsterType != (char)-125 && monsterType != (char)-124 &&
                 monsterType != (char)-123 && monsterType != (char)-122)
@@ -833,7 +833,7 @@ unsigned int __cdecl CheckAttack(void) {
     }
 
     BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * SelectedCharacter;
-    const BYTE kind = target[132];
+    const BYTE kind = AsCharacter(target)->Object.Kind;
     if (kind == 2) {
         return 1;
     }
@@ -841,7 +841,7 @@ unsigned int __cdecl CheckAttack(void) {
         return 0;
     }
 
-    const BYTE targetPkLevel = target[746];
+    const BYTE targetPkLevel = AsCharacter(target)->PK;
     if (!EnableGuildWar) {
         return targetPkLevel >= 6 ||
                ((gUserSettings.GetPvPWithoutControl() ||   // DESVIACION (DLL, 0x0048322F)
@@ -853,7 +853,7 @@ unsigned int __cdecl CheckAttack(void) {
     // opponent-relation test.  The original indexes the same 80-byte guild
     // name table used by GuildMark_AssociateEntities.
     if (targetPkLevel >= 6) {
-        const short targetGuild = *(short*)(target + 474);
+        const short targetGuild = AsCharacter(target)->GuildMarkIndex;
         if (targetGuild != -1) {
             const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 474);
             if (strcmp(DAT_07e919bc + 80 * heroGuild,
@@ -863,7 +863,7 @@ unsigned int __cdecl CheckAttack(void) {
         }
     }
 
-    if (target[745] == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
+    if (AsCharacter(target)->GuildTeam == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
         return 1;
     }
 

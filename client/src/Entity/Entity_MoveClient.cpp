@@ -27,17 +27,17 @@ void __stdcall MoveCharactersClient(void) {
     char* entBase = (char*)(uintptr_t)DAT_07abf5d0;
     do {
         char* ent = entBase + offset;
-        // entity alive check: ent[0] != 0, ent[0x2fd] == 0, ent[0x84] != 8
-        if (ent[0] != '\0' && ent[0x2fd] == '\0' && ent[0x84] != '\x08') {
+        // entity alive check: *(char *)&AsCharacter(ent)->Object.Live != 0, *(char *)&AsCharacter(ent)->Dead == 0, *(char *)&AsCharacter(ent)->Object.Kind != 8
+        if (*(char *)&AsCharacter(ent)->Object.Live != '\0' && *(char *)&AsCharacter(ent)->Dead == '\0' && *(char *)&AsCharacter(ent)->Object.Kind != '\x08') {
             // anti-tamper hash table — skipped (encrypt ent+0x38c waypoint)
             // anti-tamper hash table — skipped (decrypt ent+0x38c waypoint)
 
-            int val_38c = *(int*)(ent + 0x38c);  // cached_wp_y (audit #10: comment was swapped)
+            int val_38c = AsCharacter(ent)->PositionY;  // cached_wp_y (audit #10: comment was swapped)
 
             // anti-tamper hash table — skipped (encrypt ent+0x388 waypoint)
             // anti-tamper hash table — skipped (decrypt ent+0x388 waypoint)
 
-            int val_388 = *(int*)(ent + 0x388);  // cached_wp_x (audit #10: comment was swapped)
+            int val_388 = AsCharacter(ent)->PositionX;  // cached_wp_x (audit #10: comment was swapped)
 
             // Compute terrain index from cached waypoints and set walk-occupied bit
             // Call order from asm: Terrain_GetTileIndex(val_388, val_38c)

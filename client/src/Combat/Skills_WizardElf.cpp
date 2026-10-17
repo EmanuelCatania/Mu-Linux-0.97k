@@ -460,8 +460,8 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             continue;
         }
         // 0x48BD70 reads the two encrypted grid values at c+904/c+908.
-        BYTE gridX = (BYTE)*(DWORD*)(hero + 904);
-        BYTE gridY = (BYTE)*(DWORD*)(hero + 908);
+        BYTE gridX = (BYTE)*(DWORD *)&AsCharacter(hero)->PositionX;
+        BYTE gridY = (BYTE)*(DWORD *)&AsCharacter(hero)->PositionY;
 
         // Skill type 0x18 = Triple Shot ranged-arrow path.
         {

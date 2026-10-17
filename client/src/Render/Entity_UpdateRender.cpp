@@ -1058,16 +1058,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         {
             BYTE* cb = (BYTE*)param_1_;
             bool bCape = false;
-            if (((cb[444] & 7) == 3) && (*(short*)((char*)puVar13 + 2) == 390))
+            if (((AsCharacter(cb)->Class & 7) == 3) && (*(short*)((char*)puVar13 + 2) == 390))
                 bCape = true;                    // Magic Gladiator
-            if (cb[747] == 55)
+            if (AsCharacter(cb)->MonsterIndex == 55)
                 bCape = true;
 
             // IDA RenderCharacter: Soccer gives the standard cloth cape to
             // both participating guilds.  The observer branch is also kept
             // because it is part of the same original predicate, even though
             // the current MuEmu build does not emit F3/23 observer state.
-            const short guildIndex = *(short*)(cb + 474);
+            const short guildIndex = AsCharacter(cb)->GuildMarkIndex;
             if (guildIndex != -1) {
                 const char* guildName = DAT_07e919bc + 80 * guildIndex;
                 if (EnableSoccer && DAT_07abf5d8) {
@@ -1088,7 +1088,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             if (bCape) {
                 if (param_1[0x61] == 0) {
                     void* cloth = ClothNew();
-                    if (cb[747] == 55) {
+                    if (AsCharacter(cb)->MonsterIndex == 55) {
                         GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
                                      10, 10, 55.0f, 140.0f, 492, 492, 4097);
                         VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 35.0f, 17);

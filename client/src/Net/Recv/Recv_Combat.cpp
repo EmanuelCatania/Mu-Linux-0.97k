@@ -383,16 +383,16 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const bool isHero = (slot == (BYTE*)DAT_07abf5d8);
     NetLog("NET:    0x18 RESOLVED key=0x%04x -> slot=%d isHero=%d type=0x%04x",
            entityKey, slotIdx, isHero ? 1 : 0,
-           (int)*(WORD*)(slot + 2));
+           (int)*(WORD *)&AsCharacter(slot)->Object.Type);
 
     // Update facing per IDA ReceiveAction:21:
     //   *(float*)(c + 36) = (dir - 1) * 45.0
-    *(float*)(slot + 0x24) = ((float)(int)dirByte - 1.0f) * 45.0f;
-    slot[0x2EC] = 0;  // alive flag cleared (per IDA c+748=0)
+    AsCharacter(slot)->Object.Angle[2] = ((float)(int)dirByte - 1.0f) * 45.0f;
+    AsCharacter(slot)->Movement = 0;  // alive flag cleared (per IDA c+748=0)
     // ReceiveAction también aplica la grilla objetivo recibida antes
     // (+774/+775) a la posición de mundo, antes de la animación.
-    *(float*)(slot + 16) = (float)slot[774] * 100.0f + 50.0f;
-    *(float*)(slot + 20) = (float)slot[775] * 100.0f + 50.0f;
+    AsCharacter(slot)->Object.Position[0] = (float)AsCharacter(slot)->TargetX * 100.0f + 50.0f;
+    AsCharacter(slot)->Object.Position[1] = (float)AsCharacter(slot)->TargetY * 100.0f + 50.0f;
 
     // Helper: equivalente a SetAction — setea anim_state guardando el previo en cache
     auto SetAnim = [](BYTE* s, BYTE animId) {
@@ -400,7 +400,7 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         s[0x105] = animId;
         *(float*)(s + 0x108) = 0.0f;
     };
-    bool walking = (slot[0x1bc] & 7) == 2;
+    bool walking = (AsCharacter(slot)->Class & 7) == 2;
 
     switch (action) {
     case 18:
@@ -413,9 +413,9 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         extern void __cdecl SetPlayerAttack(int, int, int, int);
         SetPlayerAttack((int)slot, 0, 0, 0);
         AttackPlayer = slotIdx;      // IDA: AttackPlayer = Index
-        slot[0x2F5] = 1;             // c+757=1 attack pending
-        *(int*)(slot + 0x108) = 0;   // reset frame
-        *(WORD*)(slot + 0x310) = 0xFFFF;  // c+784 = -1 (no skill target)
+        AsCharacter(slot)->SkillStage = 1;             // c+757=1 attack pending
+        *(int *)&AsCharacter(slot)->Object.AnimationFrame = 0;   // reset frame
+        *(WORD *)&AsCharacter(slot)->TargetCharacter = 0xFFFF;  // c+784 = -1 (no skill target)
         break;
     }
     case 102: case 103: {
@@ -531,17 +531,17 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // en c+770 antes de armar c+757. CharacterAnimation después
     // llama a AttackStage, que despacha sus efectos visuales desde
     // this exact byte (Evil Spirit included).
-    caster[770] = skill;
+    AsCharacter(caster)->Skill = skill;
     caster[776] = Msg[6];
     caster[777] = Msg[7];
     if (caster == (BYTE*)DAT_07abf5d8) {
-        caster[757] = 1;
-        *(WORD*)(caster + 784) = 0xFFFF;
+        AsCharacter(caster)->SkillStage = 1;
+        *(WORD *)&AsCharacter(caster)->TargetCharacter = 0xFFFF;
         caster[756] = 0;
         return;
     }
 
-    if (*(WORD*)(caster + 2) == 390) {
+    if (*(WORD *)&AsCharacter(caster)->Object.Type == 390) {
         switch (skill) {
         case 10: SetAction((int)caster, 90); break;
         case 12: SetAction((int)caster, 88); break;
@@ -559,9 +559,9 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         SetPlayerAttack((int)caster, 0, 0, 0);
     }
-    *(DWORD*)(caster + 264) = 0;
-    caster[757] = 1;
-    *(WORD*)(caster + 784) = 0xFFFF;
+    *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
+    AsCharacter(caster)->SkillStage = 1;
+    *(WORD *)&AsCharacter(caster)->TargetCharacter = 0xFFFF;
     caster[756] = 0;
 }
 
@@ -653,8 +653,8 @@ void NetRecv_16(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 *(WORD*) (hero + 784) = (WORD)index;
             }
             CreatePoint((float*)(c + 16), dmg, color, 15.0f);
-            *(BYTE*)(c + 765) = 1;   // dead_flag (+0x2FD)
-            *(BYTE*)(c + 748) = 0;
+            AsCharacter(c)->Dead = 1;   // dead_flag (+0x2FD)
+            AsCharacter(c)->Movement = 0;
         }
 
         if (CharacterAttribute)
@@ -701,8 +701,8 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // ReceiveDie exacta (0042F030): sólo arranca el contador de muerte
     // y detiene el movimiento. MoveCharacter incrementa +765 y
     // despacha SetPlayerDie en el frame terminal nativo.
-    entity[765] = 1;
-    entity[748] = 0;
+    AsCharacter(entity)->Dead = 1;
+    AsCharacter(entity)->Movement = 0;
 
     // Blood Castle: caer del puente al morir (IDA 0x42F030 L18-56).
     //   c+405 = m_bActionStart (lo consume MoveCharacter L572 y
@@ -714,14 +714,14 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // tiene 0x08 (TW_NOGROUND).
     entity[405] = 0;
     if ((int)gMapManager.GetCurrentMap() >= 11 && (int)gMapManager.GetCurrentMap() <= 16) {
-        const int gx = (int)(*(float*)(entity + 16) * 0.01f);
-        const int gy = (int)(*(float*)(entity + 20) * 0.01f);
+        const int gx = (int)(AsCharacter(entity)->Object.Position[0] * 0.01f);
+        const int gy = (int)(AsCharacter(entity)->Object.Position[1] * 0.01f);
         const int wallIndex = ((gy & 0xFF) << 8) | (gx & 0xFF);
         if ((TerrainWall[wallIndex] & 0x20) == 0x20) {
             entity[772] = 0;
             entity[405] = 1;
             *(float*)(entity + 216) = (float)(rand() % 10) + 10.0f;
-            *(float*)(entity + 204) = (float)(rand() % 20) + 20.0f;
+            AsCharacter(entity)->Object.Velocity = (float)(rand() % 20) + 20.0f;
             const float angle = (float)(rand() % 10) + 85.0f;
             if ((TerrainWall[(wallIndex + 1) & 0xFFFF] & 8) == 8) {
                 *(float*)(entity + 416) = -angle;
@@ -732,13 +732,13 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 *(int*)(entity + 408) = 0;
                 *(int*)(entity + 412) = 0;
             }
-            *(int*)(entity + 36)  = *(int*)(entity + 416);
+            *(int *)&AsCharacter(entity)->Object.Angle[2]  = *(int*)(entity + 416);
             *(float*)(entity + 192) = (float)(rand() % 6) + 8.0f;
             *(float*)(entity + 196) = (float)(-(rand() % 2)) + 13.0f;
             const int spin = rand();
-            *(int*)(entity + 424) = *(int*)(entity + 20);
-            *(int*)(entity + 428) = *(int*)(entity + 24);
-            *(int*)(entity + 420) = *(int*)(entity + 16);
+            *(int*)(entity + 424) = *(int *)&AsCharacter(entity)->Object.Position[1];
+            *(int*)(entity + 428) = *(int *)&AsCharacter(entity)->Object.Position[2];
+            *(int*)(entity + 420) = *(int *)&AsCharacter(entity)->Object.Position[0];
             *(float*)(entity + 200) = (float)(spin % 45);
         }
         if (DAT_07abf5d8 && entity == (BYTE*)DAT_07abf5d8) {
@@ -809,8 +809,8 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 *(WORD*) (hero + 784) = (WORD)index;
             }
             CreatePoint((float*)(c + 16), dmg, color, 15.0f);
-            *(BYTE*)(c + 765) = 1;   // dead_flag (+0x2FD)
-            *(BYTE*)(c + 748) = 0;
+            AsCharacter(c)->Dead = 1;   // dead_flag (+0x2FD)
+            AsCharacter(c)->Movement = 0;
         }
 
         if (CharacterAttribute)
@@ -851,11 +851,11 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
     if (caster) {
         CreateMagicShiny97k(caster, 0);
-        caster[0x106] = caster[0x105];
-        caster[0x105] = 90;            // cast anim (action 90)
-        *(float*)(caster + 0x108) = 0.0f;
-        caster[770] = Msg[5];           // ReceiveMagicPosition
-        caster[0x2F5] = 1;             // attack pending
+        AsCharacter(caster)->Object.PriorAction = AsCharacter(caster)->Object.CurrentAction;
+        AsCharacter(caster)->Object.CurrentAction = 90;            // cast anim (action 90)
+        AsCharacter(caster)->Object.AnimationFrame = 0.0f;
+        AsCharacter(caster)->Skill = Msg[5];           // ReceiveMagicPosition
+        AsCharacter(caster)->SkillStage = 1;             // attack pending
         PlayBuffer(88, 0, 0);          // magic cast sound
     }
 

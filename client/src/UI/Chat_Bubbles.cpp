@@ -111,12 +111,12 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
     //     v5 = *(std::uint8_t *)(Owner + 746);          // PK
     //     if ( *(_BYTE *)(Owner + 132) == 4 ) v5 = 0;      // Kind
     if (*(BYTE *)entity == 0) return;              // Object.Live   → +0
-    if (*(BYTE *)(entity + 352) == 0) return;      // Object.Visible → +352 (0x160)
+    if (AsCharacter(entity)->Object.Visible == 0) return;      // Object.Visible → +352 (0x160)
 
     // Resolve SetColor: -1 means use PK color, but Kind==4 forces 0
     if (SetColor == -1) {
-        SetColor = (int)*(BYTE *)(entity + 746);    // Owner->PK      → +746 (0x2EA)
-        if (*(BYTE *)(entity + 132) == 4) {         // Object.Kind==4 → +132 (0x84)
+        SetColor = (int)AsCharacter(entity)->PK;    // Owner->PK      → +746 (0x2EA)
+        if (AsCharacter(entity)->Object.Kind == 4) {         // Object.Kind==4 → +132 (0x84)
             SetColor = 0;
         }
     }
@@ -130,20 +130,20 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
     // ── Path 1: Find existing slot owned by this entity ──
     char *slot = pool_base;
     for (int si = 0; si < POOL_SLOTS; ++si, slot += STRIDE) {
-        if (*(DWORD *)(slot + 0x234) == entity)
+        if (*(DWORD *)&AsCharacter(slot)->BodyPart[3].PriorAnimationFrame == entity)
             goto found_existing;
     }
 
     // ── Path 2: Find empty slot (both timers <= 0) ──
     slot = pool_base;
     for (int si = 0; si < POOL_SLOTS; ++si, slot += STRIDE) {
-        if (*(int *)(slot + 0x28) <= 0 && *(int *)(slot + 0x22c) <= 0)
+        if (*(int *)&AsCharacter(slot)->Object.HeadAngle[0] <= 0 && *(int *)(slot + 0x22c) <= 0)
             goto found_new;
     }
     return;  // no free slot
 
 found_new:
-    *(DWORD *)(slot + 0x234) = entity;
+    *(DWORD *)&AsCharacter(slot)->BodyPart[3].PriorAnimationFrame = entity;
     // Copy ID
     strcpy(slot, ID);
     // Set color and guild info
@@ -151,11 +151,11 @@ found_new:
     *(char *)(slot + 0x25) = '\0';
 
     {
-        short guildIdx = *(short *)(entity + 474);  // GuildMarkIndex — IDA +474 (0x1DA), no 0x1d8
+        short guildIdx = AsCharacter(entity)->GuildMarkIndex;  // GuildMarkIndex — IDA +474 (0x1DA), no 0x1d8
         if (guildIdx < 0) {
             *(char *)(slot + 0x18) = '\0';
         } else {
-            *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);  // GuildTeam
+            *(char *)(slot + 0x25) = AsCharacter(entity)->GuildTeam;  // GuildTeam
             // IDA: CreateChat (0x00481BA0), literales 0x559D60/64: "[" y "] ".
             // El prefijo completo determina el corte de color en sub_47F360.
             Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx));
@@ -164,7 +164,7 @@ found_new:
 
     // Set text: empty text → timer=100, return
     if (strlen(Text) == 0) {
-        *(int *)(slot + 0x28) = 100;
+        *(int *)&AsCharacter(slot)->Object.HeadAngle[0] = 100;
         return;
     }
 
@@ -185,11 +185,11 @@ found_existing:
     *(char *)(slot + 0x25) = '\0';
 
     {
-        short guildIdx2 = *(short *)(entity + 474);
+        short guildIdx2 = AsCharacter(entity)->GuildMarkIndex;
         if (guildIdx2 < 0) {
             *(char *)(slot + 0x18) = '\0';
         } else {
-            *(char *)(slot + 0x25) = *(BYTE *)(entity + 745);
+            *(char *)(slot + 0x25) = AsCharacter(entity)->GuildTeam;
             // IDA: mismo prefijo al actualizar una etiqueta existente.
             Platform::TextFormatSecure(slot + 0x18, 12, "[%.8s] ", Guild_GetMarkName(guildIdx2));
         }
@@ -199,13 +199,13 @@ found_existing:
         // Texto nuevo: shift la línea actual a "previa", set owner, asignar texto.
         if (*(int *)(slot + 0x22c) > 0) {                     // disp1 > 0
             strcpy(slot + 0x12c, slot + 0x2c);                // text1 → text2
-            *(int *)(slot + 0x230) = *(int *)(slot + 0x22c);  // disp1 → disp2
+            *(int *)&AsCharacter(slot)->BodyPart[3].AnimationFrame = *(int *)(slot + 0x22c);  // disp1 → disp2
         }
-        *(DWORD *)(slot + 0x234) = entity;
+        *(DWORD *)&AsCharacter(slot)->BodyPart[3].PriorAnimationFrame = entity;
         FUN_00481a40((int)slot, Text, Flag);
     } else {
         // Texto vacío (hover de nombre NPC/target): SOLO refrescar el timer.
-        *(int *)(slot + 0x28) = 10;
+        *(int *)&AsCharacter(slot)->Object.HeadAngle[0] = 10;
     }
 }
 

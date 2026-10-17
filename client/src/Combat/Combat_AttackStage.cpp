@@ -15,7 +15,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     int Hand = GetHandOfWeapon((int)o);
 
     // anti-tamper hash table — skipped (encrypt/decrypt c->Skill)
-    BYTE skillByte = *(BYTE*)(c + 0x302);
+    BYTE skillByte = AsCharacter(c)->Skill;
 
     g_iLimitAttackTime = 15; // g_iLimitAttackTime = 15
 
@@ -32,7 +32,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         // model stride = type*0x2C (from LEA EDX,[EAX+EAX*2]; SHL EDX,4; SUB EDX,EAX => type*47 => *4 bytes)
         DWORD pModel = modelsBase + modelIdx * 0xBC;
 
-        BYTE attackTime = *(BYTE*)(c + 0x2F5);
+        BYTE attackTime = AsCharacter(c)->SkillStage;
 
         if (attackTime == 8) {
             PlayBuffer(0x53, 0, 0);
@@ -114,13 +114,13 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             }
         }
         // Fall through: set attackTime = 15
-        *(BYTE*)(c + 0x2F5) = 0x0F;
+        AsCharacter(c)->SkillStage = 0x0F;
         break;
     }
 
     // ── case '/' (0x2F) — slash effect with CreateEffect(0x1F0) + projectiles ──
     case 0x2F: {
-        BYTE attackTime = *(BYTE*)(c + 0x2F5);
+        BYTE attackTime = AsCharacter(c)->SkillStage;
         short oType = *(short*)(o + 0x02);
         DWORD pModel = modelsBase + (int)oType * 0xBC;
 
@@ -187,10 +187,10 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 
     // ── case '0' (0x30) — early attackTime check ────────────────────────
     case 0x30: {
-        if (*(BYTE*)(c + 0x2F5) > 9
+        if (AsCharacter(c)->SkillStage > 9
             && *(short*)(o + 0x02) == 0x186
             && *(BYTE*)(o + 0x105) == 0x3F) {
-            *(BYTE*)(c + 0x2F5) = 0x0F;
+            AsCharacter(c)->SkillStage = 0x0F;
             return true;
         }
         break;
@@ -203,11 +203,11 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         if (*(short*)(o + 0x02) != 0x186) return true;
         BYTE curAction = *(BYTE*)(o + 0x105);
         if (curAction == 0x40 || curAction == 0x41) {
-            *(BYTE*)(c + 0x2F5) = 0x0F;
+            AsCharacter(c)->SkillStage = 0x0F;
             return true;
         }
         // Fall through to default: attackTime = 15
-        *(BYTE*)(c + 0x2F5) = 0x0F;
+        AsCharacter(c)->SkillStage = 0x0F;
         break;
     }
 
@@ -224,7 +224,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             }
         }
 
-        if (*(BYTE*)(c + 0x2F5) == 0x03) {
+        if (AsCharacter(c)->SkillStage == 0x03) {
             CreateEffect(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
                          (float*)(o + 0xE8), NULL, (float*)o, NULL, NULL, 0);
             PlayBuffer(100, (DWORD)o, 0);
@@ -245,7 +245,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             return true;
         }
 
-        BYTE attackTime = *(BYTE*)(c + 0x2F5);
+        BYTE attackTime = AsCharacter(c)->SkillStage;
 
         // Spawn effect when attackTime in [1..2]
         if (attackTime != 0 && attackTime < 3) {
@@ -273,7 +273,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         // Final: update Models[0x186] bone data and set attackTime = 15
         DWORD modelData = *(DWORD*)(modelsBase + 0x186 * 0xBC + 0x30);
         *(float*)(modelData + 0x3D4) = (float)(int)c + _DAT_005528f4;
-        *(BYTE*)(c + 0x2F5) = 0x0F;
+        AsCharacter(c)->SkillStage = 0x0F;
         g_iLimitAttackTime = 15;
         return true;
     }
@@ -306,7 +306,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
                          (float*)2, (float*)o, NULL, NULL, 0);
 
             PlayBuffer(0x54, 0, 0);
-            *(BYTE*)(c + 0x2F5) = 0x0F;
+            AsCharacter(c)->SkillStage = 0x0F;
         }
         g_iLimitAttackTime = 15;
         return true;
@@ -327,7 +327,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 bool __cdecl AttackStage(DWORD c, DWORD o)
 {
     const int hand = GetHandOfWeapon((int)o);
-    const BYTE skill = *(BYTE*)(c + 770), stage = *(BYTE*)(c + 757);
+    const BYTE skill = AsCharacter(c)->Skill, stage = AsCharacter(c)->SkillStage;
     const short type = *(short*)(o + 2);
     const DWORD model = DAT_05828d58 + type * 188;
     g_iLimitAttackTime = 15;
@@ -350,25 +350,25 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
             BMD_TransformPosition((void*)model, (float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)), z, p, 1);
             const float r=*(float*)(o+36)*0.017453292f, d=(float)(stage-8)*10.0f+100.0f; p[0]+=sinf(r)*d; p[1]-=cosf(r)*d;
             CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
-            const short target=*(short*)(c+784); if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target*916; if(*v) v[404]=35; }
+            const short target=AsCharacter(c)->TargetCharacter; if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target*916; if(*v) v[404]=35; }
         }
     } else if (skill == 47) {
         if(stage==10) PlayBuffer(95,0,0);
         else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)),z,p,1); CreateEffect(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
         else if(stage==8) { const float r=*(float*)(o+36)*0.017453292f; float p[3]={*(float*)(o+16)+sinf(r)*50.0f,*(float*)(o+20)-cosf(r)*50.0f,*(float*)(o+24)+110.0f},l[3]={1,1,1}; CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
         if(stage>=13 && stage<=14) { const float r=*(float*)(o+36)*0.017453292f; for(int i=0;i<3;++i) { float p[3]={*(float*)(o+16)+sinf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+20)-cosf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+24)+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
-    } else if(skill==48) { if(stage>9 && type==390 && *(BYTE*)(o+261)==63) *(BYTE*)(c+757)=15; }
-    else if(skill==49) { if(*(float*)(o+264)>=5.0f && type==390 && (*(BYTE*)(o+261)==64 || *(BYTE*)(o+261)==65)) *(BYTE*)(c+757)=15; }
+    } else if(skill==48) { if(stage>9 && type==390 && *(BYTE*)(o+261)==63) AsCharacter(c)->SkillStage=15; }
+    else if(skill==49) { if(*(float*)(o+264)>=5.0f && type==390 && (*(BYTE*)(o+261)==64 || *(BYTE*)(o+261)==65)) AsCharacter(c)->SkillStage=15; }
     else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} g_iLimitAttackTime=5; }
-    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
-    else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
+    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
+    else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);AsCharacter(c)->SkillStage=15;} }
     // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.
     // Los monstruos conservan las etapas intermedias que consume AttackEffect (Alquamos 1, Queen Rainer 5).
     else if (EntityView((const void*)(uintptr_t)c).Kind() == EntityView::PlayerKind && type == 390 &&
-             ((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || skill==11 || skill==13 || skill==14 || skill==17)) *(BYTE*)(c+757)=15;
+             ((skill>=1 && skill<=5) || (skill>=7 && skill<=9) || skill==11 || skill==13 || skill==14 || skill==17)) AsCharacter(c)->SkillStage=15;
     // Aqua Beam conserva el frame 5; CharacterAnimation detecta el cruce incluso si el avance da una vuelta.
     // default de IDA (0x00448930 L356-364).
-    else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) *(BYTE*)(c+757)=15;
+    else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) AsCharacter(c)->SkillStage=15;
     return true;
 }
 
