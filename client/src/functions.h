@@ -1127,7 +1127,7 @@ int   __cdecl FUN_0053d7d0(void *self, char *param_1);               // GameGuar
                                                                      // registra hWnd + callback y devuelve
                                                                      // el resultado que guardo el pre-init
 // FUN_0053d890 — sin port en el código compilado (el port de IDA está archivado
-// en docs/codigo-muerto/, ver PR #76).
+// en docs/codigo-muerto/ del tag 0.97.21, ver PR #76).
 void* __cdecl FUN_0053e8c0(void *param_1);                              // GG encrypted string decoder
 // GameGuard_HealthCheck — already declared above (GameGuard query)
 void  __cdecl FUN_0053eba0(int *param_1, void *param_2);                // GG encrypted log writer

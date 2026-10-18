@@ -64,8 +64,8 @@ The ported code is laid out by domain (`Render/`, `Terrain/`, `UI/`, `Item/`,
 `.cpp` files and 58 headers under `src/`.
 
 The raw IDA decompiles that were never activated (formerly in
-`src/stubs_IDA_ports.cpp`) are archived in `docs/codigo-muerto/`, outside the
-build, as a reference for the decompile. The aliases and ABI bridges left in
+`src/stubs_IDA_ports.cpp`) are archived in `docs/codigo-muerto/` of the `0.97.21`
+tag, outside the build, as a reference for the decompile. The aliases and ABI bridges left in
 `functions.h`/`globals.h` are not naming debt: they keep the original contract
 of the ports that use them.
 
