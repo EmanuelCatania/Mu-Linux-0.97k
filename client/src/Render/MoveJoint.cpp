@@ -814,10 +814,12 @@ LAB_0047036e:
             if (lifetime_4e5_2 >= 10) {
                 if (lifetime_4e5_2 > 18 && lifetime_4e5_2 < 20) {
                     float rotation_4e5_2[3] = { 0.0f, 0.0f, (float)(rand() % 360) };
+                    // IDA `o + 28/32/36`: decimal, o sea StartPosition (0x1C), que
+                    // CreateJoint carga con la posición inicial. No Angle (0x28).
                     float position_4e5_2[3] = {
-                        (float)(rand() % 200) + *(float *)(param_1 + 0x28) - 100.0f,
-                        (float)(rand() % 200) + *(float *)(param_1 + 0x2c) - 100.0f,
-                        *(float *)(param_1 + 0x30) - 200.0f
+                        (float)(rand() % 200) + *(float *)(param_1 + 0x1c) - 100.0f,
+                        (float)(rand() % 200) + *(float *)(param_1 + 0x20) - 100.0f,
+                        *(float *)(param_1 + 0x24) - 200.0f
                     };
                     Joint_Create(1249, position_4e5_2, position_4e5_2, rotation_4e5_2,
                                   2, 0, 40.0f, -1, 0);
