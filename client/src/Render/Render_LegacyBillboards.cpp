@@ -338,7 +338,7 @@ void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, floa
     float half = size * _DAT_00552504;
     float inv  = _DAT_0055256c / size;
     float xScale = (sy != 0.0f) ? (sx / sy) : 1.0f;
-    int   itiles = (int)half + 1;
+    int   itiles = (int)size + 1;   // IDA: (int)((__int64)v8 + 1), con v8 = tamano entero
     float loopRadius = (float)itiles;
     float oneTile = _DAT_0055256c;
 

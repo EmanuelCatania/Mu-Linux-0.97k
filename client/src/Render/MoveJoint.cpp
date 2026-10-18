@@ -521,14 +521,13 @@ LAB_00473578_498:
             else {
                 AsJoint(param_1)->Scale =
                     (float)AsJoint(param_1)->LifeTime * _DAT_00552540;
+                // IDA L898-913: rampa de 1 a 0 en los últimos 10 ticks de vida;
+                // el joint viaja del punto de partida al de reunión.
                 float t_raw = (float)(AsJoint(param_1)->LifeTime + -10) * _DAT_00552a00;
                 float t;
-                if ((_DAT_0055256c <= t_raw) || (_DAT_00552580 <= t_raw)) {
-                    t = (_DAT_0055256c <= t_raw) ? 1.0f : 0.0f;
-                }
-                else {
-                    t = 0.0f;
-                }
+                if (t_raw >= _DAT_0055256c)      t = _DAT_0055256c;   // 1.0
+                else if (t_raw >= _DAT_00552580) t = t_raw;           // 0.0 <= t < 1.0
+                else                             t = 0.0f;
                 float inv_t = _DAT_0055256c - t;
                 Ring_ComputeOrbit(param_2 * 0x4539, local_d8, 1.4f);
                 iVar16 = *(int *)&AsJoint(param_1)->Target;
@@ -787,10 +786,12 @@ LAB_0047036e:
             if (lifetime_4e5_2 >= 10) {
                 if (lifetime_4e5_2 > 18 && lifetime_4e5_2 < 20) {
                     float rotation_4e5_2[3] = { 0.0f, 0.0f, (float)(rand() % 360) };
+                    // IDA `o + 28/32/36`: decimal, o sea StartPosition (0x1C), que
+                    // CreateJoint carga con la posición inicial. No Angle (0x28).
                     float position_4e5_2[3] = {
-                        (float)(rand() % 200) + AsJoint(param_1)->Angle[0] - 100.0f,
-                        (float)(rand() % 200) + AsJoint(param_1)->Angle[1] - 100.0f,
-                        AsJoint(param_1)->Angle[2] - 200.0f
+                        (float)(rand() % 200) + AsJoint(param_1)->StartPosition[0] - 100.0f,
+                        (float)(rand() % 200) + AsJoint(param_1)->StartPosition[1] - 100.0f,
+                        AsJoint(param_1)->StartPosition[2] - 200.0f
                     };
                     Joint_Create(1249, position_4e5_2, position_4e5_2, rotation_4e5_2,
                                   2, 0, 40.0f, -1, 0);
