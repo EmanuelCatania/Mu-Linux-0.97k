@@ -64,8 +64,8 @@ depósito geral de `stubs_*.cpp` esperando ser distribuído. A árvore atual tem
 249 arquivos `.cpp` e 58 headers em `src/`.
 
 Os decompilados crus do IDA que nunca foram ativados (antes em
-`src/stubs_IDA_ports.cpp`) estão arquivados em `docs/codigo-muerto/`, fora do
-build, como referência do decompile. Os aliases e bridges de ABI que restam em
+`src/stubs_IDA_ports.cpp`) estão arquivados em `docs/codigo-muerto/` da tag
+`0.97.21`, fora do build, como referência do decompile. Os aliases e bridges de ABI que restam em
 `functions.h`/`globals.h` não são dívida de nomenclatura: mantêm o contrato
 original dos ports que os usam.
 

@@ -2195,7 +2195,7 @@ float   _DAT_00552950   = 2.5f;     // lightning speed constant
 
 // ── GameGuard globals ─────────────────────────────────────────────────────────
 // Sin usos en el código compilado: los usaba el port de IDA de FUN_0053d890
-// (archivado en docs/codigo-muerto/, ver PR #76).
+// (archivado en docs/codigo-muerto/ del tag 0.97.21, ver PR #76).
 DWORD   DAT_083bbb0c    = 0;    // GG child process ID
 HANDLE  DAT_083bbb10    = NULL; // GG child process handle
 DWORD   DAT_083bbaf0    = 0;    // GG error state flag
