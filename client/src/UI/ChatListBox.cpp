@@ -2507,7 +2507,7 @@ int __cdecl ChatListBox_GetFocusState(DWORD *_this)
 }
 
 // Alias con el nombre de IDA.  Sin callers en el código compilado (lo usaban
-// los ports gated que ahora están en docs/codigo-muerto/ida-ports/).
+// los ports gated que quedaron en docs/codigo-muerto/ida-ports/ del tag 0.97.21).
 // IDA: FUN_0040c680
 int __cdecl FUN_0040c680(DWORD *_this)
 {

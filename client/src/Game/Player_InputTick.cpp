@@ -560,7 +560,7 @@ static void HUD_HotkeyTick(void)
 //  12. Atributo de terreno bajo el cursor → DAT_07e118e8
 //
 // Los bloques de ofuscación por HashTable repartidos por la función (~70 % del código) se omiten
-// (ver docs/analisis/hashtable-anti-tamper.md).
+// (ver docs/analisis/hashtable-anti-tamper.md del tag 0.97.21).
 //
 // Key globals:
 //   DAT_07abf5d8          — local player entity ptr

@@ -909,7 +909,6 @@ DWORD    DAT_07eab1f8  = 0;
 // escribe vía `(char*)&DAT_07eab200 + (row*256+col)*4` (Terrain_Water.cpp +
 // Terrain_Light.cpp), así que tiene que ser el array completo.
 float    DAT_07eab200[256 * 256] = {};
-DWORD    DAT_07eab24c  = 0;   // BackTerrainHeight array base
 DWORD    DAT_07eab250  = 0;   // sin usos; NO es PrimaryTerrainLight (ver globals.h)
 DWORD    FrustrumFaceD  = 0;
 DWORD    DAT_07eeb204  = 0;
@@ -2195,7 +2194,7 @@ float   _DAT_00552950   = 2.5f;     // lightning speed constant
 
 // ── GameGuard globals ─────────────────────────────────────────────────────────
 // Sin usos en el código compilado: los usaba el port de IDA de FUN_0053d890
-// (archivado en docs/codigo-muerto/, ver PR #76).
+// (archivado en docs/codigo-muerto/ del tag 0.97.21, ver PR #76).
 DWORD   DAT_083bbb0c    = 0;    // GG child process ID
 HANDLE  DAT_083bbb10    = NULL; // GG child process handle
 DWORD   DAT_083bbaf0    = 0;    // GG error state flag

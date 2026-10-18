@@ -294,7 +294,7 @@ DWORD __cdecl GenerateCheckSum(BYTE* pbyBuffer, DWORD dwSize, WORD wKey) {
 //    y el `SystemParametersInfoA(0x61, 0, ...)`.  **Portarlos seria un bug, no
 //    una mejora**: el lado de ARRANQUE que guarda el valor viejo es el port de
 //    IDA gated por `IDA_PORT_00422074`, que nunca se compila (quedo en
-//    docs/codigo-muerto/ida-ports/FUN_00422074.cpp), asi que nunca
+//    docs/codigo-muerto/ida-ports/FUN_00422074.cpp del tag 0.97.21), asi que nunca
 //    desactivamos el salvapantallas y `g_iScreenSaverOldValue` vale 0.
 //    Restaurar ese 0 le DESACTIVARIA el salvapantallas al usuario de forma
 //    permanente.  Si algun dia se porta ese arranque, estas dos lineas vuelven
