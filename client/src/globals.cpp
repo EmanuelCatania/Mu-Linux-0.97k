@@ -909,7 +909,6 @@ DWORD    DAT_07eab1f8  = 0;
 // escribe vía `(char*)&DAT_07eab200 + (row*256+col)*4` (Terrain_Water.cpp +
 // Terrain_Light.cpp), así que tiene que ser el array completo.
 float    DAT_07eab200[256 * 256] = {};
-DWORD    DAT_07eab24c  = 0;   // BackTerrainHeight array base
 DWORD    DAT_07eab250  = 0;   // sin usos; NO es PrimaryTerrainLight (ver globals.h)
 DWORD    FrustrumFaceD  = 0;
 DWORD    DAT_07eeb204  = 0;
