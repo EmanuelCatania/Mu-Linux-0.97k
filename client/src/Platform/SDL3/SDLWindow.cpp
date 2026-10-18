@@ -2,6 +2,9 @@
 #include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
 #include <string>
+#ifndef _WIN32
+#include <SDL3/SDL_opengl.h>
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -23,6 +26,27 @@ std::string TitleUTF8(const char* text) {
     }
     return result;
 }
+#ifndef _WIN32
+// Crea una ventana oculta con contexto GL y devuelve si el renderer es por
+// software (llvmpipe/softpipe/swrast). Caso real: NVIDIA no publica la
+// plataforma EGL Wayland de 32 bits (egl-wayland es sólo x64), así que un
+// cliente i386 en Wayland cae a Mesa llvmpipe aunque haya GPU. Por GLX/XWayland
+// sí usa el driver propietario.
+bool ProbeSoftwareGL() {
+    SDL_Window* probe = SDL_CreateWindow("probe", 16, 16, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+    if (!probe) return false;
+    bool software = false;
+    if (SDL_GLContext ctx = SDL_GL_CreateContext(probe)) {
+        const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+        software = renderer && (SDL_strcasestr(renderer, "llvmpipe") || SDL_strcasestr(renderer, "softpipe") ||
+                                SDL_strcasestr(renderer, "swrast"));
+        if (software) SDL_Log("Renderer por software en %s: %s", SDL_GetCurrentVideoDriver(), renderer);
+        SDL_GL_DestroyContext(ctx);
+    }
+    SDL_DestroyWindow(probe);
+    return software;
+}
+#endif
 class SDLWindowBackend final : public IWindow {
 public:
     SDL_Window* window = nullptr;
@@ -51,7 +75,32 @@ public:
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_DEFAULT);
 #endif
         if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
+        SetGLAttributes();
+#ifndef _WIN32
+        // Si Wayland sólo ofrece GL por software y el usuario no forzó el
+        // driver, se reintenta con X11 (XWayland), que llega al driver de la GPU.
+        if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0 && !SDL_getenv("SDL_VIDEODRIVER") &&
+            ProbeSoftwareGL()) {
+            SDL_QuitSubSystem(SDL_INIT_VIDEO);
+            SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "x11", SDL_HINT_OVERRIDE);
+            if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+                SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland", SDL_HINT_OVERRIDE);
+                if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
+            }
+            SetGLAttributes();
+        }
+#endif
         SDL_Log("Backend de video: %s", SDL_GetCurrentVideoDriver());
+        window = SDL_CreateWindow("Mu Online", settings.width, settings.height,
+            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+        if (!window) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
+        InstallSDLInput();
+        ChangeMode(settings);
+        SDL_HideCursor();
+        SDL_StartTextInput(window);
+        return true;
+    }
+    static void SetGLAttributes() {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
         // IDA: OpenGL_Init (0x0041DE30), mínimos de color/profundidad de 16 bits.
@@ -62,14 +111,6 @@ public:
         SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 16);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
-        window = SDL_CreateWindow("Mu Online", settings.width, settings.height,
-            SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-        if (!window) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
-        InstallSDLInput();
-        ChangeMode(settings);
-        SDL_HideCursor();
-        SDL_StartTextInput(window);
-        return true;
     }
     void ServiceLoadingEvents(unsigned) override { ServiceEvents(); }
     void ServiceEvents() override {

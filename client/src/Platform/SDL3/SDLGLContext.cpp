@@ -1,5 +1,6 @@
 #include "Platform/SDL3/SDLPlatform.h"
 #include "Platform/IGLContext.h"
+#include <SDL3/SDL_opengl.h>
 namespace Platform {
 namespace {
 class SDLGLContext final : public IGLContext {
@@ -13,6 +14,9 @@ public:
         if (!SDL_GL_MakeCurrent(SDLWindow(), context)) { SDL_GL_DestroyContext(context); context = nullptr; return false; }
         // El paso de 40 ms pertenece a CFrameLimiter, no al swap del monitor.
         SDL_GL_SetSwapInterval(0);
+        SDL_Log("OpenGL: %s | %s | %s",
+            (const char*)glGetString(GL_VENDOR), (const char*)glGetString(GL_RENDERER),
+            (const char*)glGetString(GL_VERSION));
         return true;
     }
     void Release() override {
