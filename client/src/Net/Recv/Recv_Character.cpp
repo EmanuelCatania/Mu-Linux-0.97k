@@ -38,6 +38,7 @@ void Recv_NewCharacterInfo(const BYTE* Msg, int Size)
     *(WORD*)(CA + 0x30) = ClampToWord(packet.MaxFruitAddPoint);
     *(DWORD*)(CA + 0x10) = packet.Experience;
     *(DWORD*)(CA + 0x34) = packet.NextExperience;
+    gMoveList.SetResets(packet.ViewReset);
     gHeroVitals.SetCurrent(VITAL_LIFE, packet.Life);
     gHeroVitals.SetMax(VITAL_LIFE, packet.MaxLife);
     gHeroVitals.SetCurrent(VITAL_MANA, packet.Mana);
