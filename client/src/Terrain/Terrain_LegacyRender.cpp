@@ -41,8 +41,6 @@ extern void ClearActionObject(void);
 // p1/p2 = grid X/Y, p3 = tile size, p4 = index step, p5 = texcoord array ptr,
 // p6 = enable lighting, p7 = alpha value.
 void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
-    // Guard contra BackTerrainHeight (DAT_07eab24c) sin inicializar.
-    if (DAT_07eab24c == 0 || (uintptr_t)DAT_07eab24c < 0x100000) return;
     int iX = (int)p1;
     int iY = (int)p2;
     if (iX < 0 || iY < 0 || iX >= 0xff || iY >= 0xff) return;
@@ -56,16 +54,16 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
     float verts[4][3];
     verts[0][0] = p1 * scale;
     verts[0][1] = p2 * scale;
-    verts[0][2] = *(float *)(DAT_07eab24c + idx0 * 4); // BackTerrainHeight
+    verts[0][2] = DAT_080cb2cc[idx0]; // IDA: BackTerrainHeight (0x080CB2CC)
     verts[1][0] = verts[0][0] + p3 * scale;
     verts[1][1] = verts[0][1];
-    verts[1][2] = *(float *)(DAT_07eab24c + idx1 * 4);
+    verts[1][2] = DAT_080cb2cc[idx1];
     verts[2][0] = verts[1][0];
     verts[2][1] = verts[0][1] + p3 * scale;
-    verts[2][2] = *(float *)(DAT_07eab24c + idx2 * 4);
+    verts[2][2] = DAT_080cb2cc[idx2];
     verts[3][0] = verts[0][0];
     verts[3][1] = verts[2][1];
-    verts[3][2] = *(float *)(DAT_07eab24c + idx3 * 4);
+    verts[3][2] = DAT_080cb2cc[idx3];
 
     float light[4][3];
     if (p6 != '\0') {

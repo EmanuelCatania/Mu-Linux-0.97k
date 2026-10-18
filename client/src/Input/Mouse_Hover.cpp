@@ -49,7 +49,8 @@ void Mouse_UpdateHoverTargets(void)
 {
     // ── 1. Cursor billboard render ────────────────────────────────────────────
     // DESACTIVADO: el billboard 3D (sprite en el suelo del tile hovered) necesita
-    // DAT_07eab24c (BackTerrainHeight), que el port nunca asigna (queda en 0).
+    // Terrain_RenderQuad, que leia BackTerrainHeight de un DWORD sin asignar
+    // (arreglado: ahora usa DAT_080cb2cc). Falta re-habilitarlo y verificarlo.
     // El cursor 2D (Cursor_Render) no depende de esto.
     #if 0
     if (SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5)
