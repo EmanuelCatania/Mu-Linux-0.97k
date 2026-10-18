@@ -65,8 +65,8 @@ general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 249
 archivos `.cpp` y 58 headers bajo `src/`.
 
 Los decompilados crudos de IDA que nunca se activaron (antes en
-`src/stubs_IDA_ports.cpp`) están archivados en `docs/codigo-muerto/`, fuera
-del build, como referencia del decompile. Los aliases o bridges ABI que
+`src/stubs_IDA_ports.cpp`) quedaron archivados en `docs/codigo-muerto/` del tag
+`0.97.21`, fuera del build, como referencia del decompile. Los aliases o bridges ABI que
 quedan en `functions.h`/`globals.h` no son deuda de nomenclatura: mantienen el
 contrato original de los ports que los usan.
 
@@ -434,9 +434,9 @@ Los comentarios describen **el código actual**: la referencia a IDA
 desviaciones vigentes respecto del binario y las advertencias que evitan romper
 algo. La historia de cómo se llegó a un fix (fechas, sondas, intentos
 descartados, lo que hacía el port viejo) no va en el código: va en el mensaje
-del commit o en `docs/`. Los comentarios de desarrollo que ya estaban en el
-código se movieron a [`docs/historial-comentarios/`](docs/historial-comentarios/README.md);
-el texto completo original sigue en el tag `0.97.00`.
+del commit. Los comentarios de desarrollo que ya estaban en el código se
+movieron a `docs/historial-comentarios/` del tag `0.97.21`; el texto completo
+original sigue en el tag `0.97.00`.
 
 ### Trampas conocidas
 
