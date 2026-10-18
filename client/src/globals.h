@@ -2123,7 +2123,12 @@ extern DWORD   DAT_07e12858;
 extern DWORD   DAT_07ea5284;
 extern DWORD   DAT_07ea5288;
 extern DWORD   DAT_07ea9844;
-extern char    DAT_083a2f78[10 * 0x1bc];   // Ambient particle pool: 10 slots × 0x1bc bytes
+// IDA Ambient_ParticleUpdate (0x00502320): el walker arranca en 0x083A2F78, pero
+// cada slot empieza en `v1 - 58` (-0xE8) y el pool que le pasa a
+// Particle_PathUpdate es &unk_83A2E90. O sea es la MISMA tabla que los boids,
+// vista desde el ancla +0xE8. Como array propio, los campos con índice negativo
+// del slot 0 caían 0xE8 bytes antes y pisaban g_PhysicsManager.
+#define DAT_083a2f78   (DAT_083a2e90 + 0xE8)
 extern float   _DAT_00590af0;
 extern DWORD   g_PhysicsManager[4];   // IDA: g_PhysicsManager (0x083A4338)
 extern float   DAT_00590af4;   // 3D sound sin component (updated by Sound_UpdateChannel3D_Tick)

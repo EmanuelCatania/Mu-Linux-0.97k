@@ -84,8 +84,7 @@ static bool IsEffectOwner(const void* owner)
         SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_07c74ec8, sizeof(DAT_07c74ec8), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_083a2f78, sizeof(DAT_083a2f78), 0x1bc);
+        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc);
 }
 
 // IDA: MoveEffect (0x00466AD0), desvanecimiento 247/248/250/251.
