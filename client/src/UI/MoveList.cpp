@@ -77,6 +77,7 @@ void CMoveList::Clear()
     m_Open = false;
     m_Received = false;
     m_PKLimitFree = 0;
+    m_Resets = 0;
 }
 
 const Proto::MOVE_LIST_INFO* CMoveList::Get(int index) const
@@ -87,6 +88,32 @@ const Proto::MOVE_LIST_INFO* CMoveList::Get(int index) const
 bool CMoveList::Blocked() const
 {
     return !UIState::CanOpenInformationalPanel();
+}
+
+// DLL MoveList.cpp CheckMove: el F3:E5 llega una sola vez, al entrar al mapa, y el
+// server no evalúa al personaje (manda CanMove = 1 siempre). El DLL recalculaba la
+// disponibilidad en cada render con el estado actual del héroe; el server sigue
+// validando el /move.
+bool CMoveList::CheckMove(const Proto::MOVE_LIST_INFO& map) const
+{
+    if (!map.CanMove) return false;
+    const BYTE* attr = (const BYTE*)(uintptr_t)CharacterAttribute;
+    const BYTE* hero = (const BYTE*)(uintptr_t)Hero;
+    if (!attr || !hero) return false;
+    const WORD level = *(const WORD*)(attr + 0x0E);
+    if (map.MinLevel != -1 && level < map.MinLevel) return false;
+    if (map.MaxLevel != -1 && level > map.MaxLevel) return false;
+    if (map.MinReset != -1 && m_Resets < (DWORD)map.MinReset) return false;
+    if (map.MaxReset != -1 && m_Resets > (DWORD)map.MaxReset) return false;
+    if (*(const DWORD*)(attr + 0x548) < map.Money) return false;
+    if (m_PKLimitFree == 0 && hero[0x2EA] >= PKLVL_OUTLAW) return false;
+    const short wing = *(const short*)(hero + 0x2A0);
+    const short helper = *(const short*)(hero + 0x2B8);
+    const bool uniria = helper == GET_ITEM_MODEL(13, 2);
+    const bool dinorant = helper == GET_ITEM_MODEL(13, 3);
+    if (map.MapNumber == MAP_ATLANS && (uniria || dinorant)) return false;
+    if (map.MapNumber == MAP_ICARUS && ((wing == -1 && !dinorant) || uniria)) return false;
+    return true;
 }
 
 int CMoveList::VisibleRows() const
@@ -129,7 +156,7 @@ void CMoveList::UpdateMouse()
     for (int i = 0; i < rows; ++i) {
         if (!Inside(Layout::ContentX, Layout::RowsY + i * Layout::RowStep, Layout::ContentWidth, Layout::RowHeight)) continue;
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
-        if (!map.CanMove) return;
+        if (!CheckMove(map)) return;
         char command[64];
         sprintf_s(command, "/move %s", map.MapName);
         // DESVIACION (DLL MoveList.cpp): el server valida saldo, PK, equipo y requisitos.
@@ -162,7 +189,7 @@ void CMoveList::Render()
         if (Inside(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight)) {
             Rect(Layout::ContentX, y, Layout::ContentWidth, Layout::RowHeight, .8f, .8f, .1f, .6f);
         }
-        m_dwTextColor = map.CanMove ? 0xFFFFFFFF : 0xFF1127A4;
+        m_dwTextColor = CheckMove(map) ? 0xFFFFFFFF : 0xFF1127A4;
         Text(Layout::MapX, y, map.MapName, Layout::MapWidth);
         char text[32];
         if (map.MinLevel == -1) strcpy_s(text, "~"); else sprintf_s(text, "%d", map.MinLevel);
