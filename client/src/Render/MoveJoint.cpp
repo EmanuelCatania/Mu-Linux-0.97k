@@ -549,14 +549,13 @@ LAB_00473578_498:
             else {
                 *(float *)(param_1 + 0x0c) =
                     (float)*(int *)(param_1 + 0x9b8) * _DAT_00552540;
+                // IDA L898-913: rampa de 1 a 0 en los últimos 10 ticks de vida;
+                // el joint viaja del punto de partida al de reunión.
                 float t_raw = (float)(*(int *)(param_1 + 0x9b8) + -10) * _DAT_00552a00;
                 float t;
-                if ((_DAT_0055256c <= t_raw) || (_DAT_00552580 <= t_raw)) {
-                    t = (_DAT_0055256c <= t_raw) ? 1.0f : 0.0f;
-                }
-                else {
-                    t = 0.0f;
-                }
+                if (t_raw >= _DAT_0055256c)      t = _DAT_0055256c;   // 1.0
+                else if (t_raw >= _DAT_00552580) t = t_raw;           // 0.0 <= t < 1.0
+                else                             t = 0.0f;
                 float inv_t = _DAT_0055256c - t;
                 Ring_ComputeOrbit(param_2 * 0x4539, local_d8, 1.4f);
                 iVar16 = *(int *)(param_1 + 0x40);
