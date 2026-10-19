@@ -134,12 +134,59 @@ Available from the `fase/3` branch (upcoming `0.97.30`).
    - `MYSQL/JoinServer/JoinServer.exe` → `MuServer/MySQL/JoinServer/`
    - `MYSQL/DataServer/DataServer.exe` → `MuServer/MySQL/DataServer/`
 
-   The DLLs from `Source/MuServer/Dependencies/mysql-connector-8.0.33/ForClient/` go next to `JoinServer.exe` and `DataServer.exe`.
+   Also copy the DLLs, `plugin` directory and `LICENSE-MySQL.txt` that CMake places next to JoinServer and DataServer. Their architecture and configuration must match the executables.
 4. Database: run `MuServer/MySQL/DB/CreateDatabase.sql` and then `PoblateDatabase.sql`. The default user is `admin` / `asd123`; if you use another one, change it in `DataServer.ini` and `JoinServer.ini`.
 5. In `MuServer/ConnectServer/ServerList.dat`, set the server IP (`127.0.0.1` to test on the same PC).
 6. Start them in this order: DataServer, JoinServer, ConnectServer and GameServer.
 
 The `0.97.20` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
+
+### Windows x64 and Phase 3 dependencies
+
+For x64, from the repository root:
+
+```powershell
+cmake --preset windows-x64-release
+cmake --build --preset windows-x64-release --parallel 4
+```
+
+The `windows-x86-release`, `windows-x86-debug` and `windows-x64-debug` presets are also available. CMake downloads MySQL Connector/C++ **8.0.33**, with pinned SHA256 hashes for x86/x64 and Debug/Release; its binaries are no longer checked in. Initial configuration requires access to the official MySQL archives. Legacy MSBuild projects use the same mechanism for `Debug_MySQL` and `Release_MySQL` and require CMake on PATH.
+
+CI builds all four services for Windows x86/x64 and Linux x64/ARM64, Debug and Release. ARM64 remains build-only, without gameplay validation. Phase 3 fixes pointer widths in callbacks, IOCP and timers, and provides a 256 KiB pending send buffer for the login catalog; individual packets remain limited to 8 KiB. Local Windows x64 testing covered login, gameplay, reset, buying/selling and Chaos mixing; it was not a load test.
+
+## Administration: GM events and reloads
+
+GM level 1 or higher only, through in-game chat:
+
+| Command | Event |
+| --- | --- |
+| `/tamastart` | Tamachan |
+| `/bcstart` | Blood Castle, all levels |
+| `/dsstart` | Devil Square, all levels |
+| `/bingostart` | Golden Archer Bingo |
+| `/invasionstart <index>` | Index in `MuServer/Data/Event/InvasionManager.dat` |
+
+These schedule a single occurrence roughly two minutes later, without editing configured schedules or resetting active events. BC/DS also reject requests while entry is open. Starting an invasion does not reset other invasions. The event must be enabled. New commands record the request and result in `COMMAND_LOG`.
+
+For existing installations, append the four new rows from `MuServer/Data/Command.txt` after `/tamastart` and before `end`, in this order: bcstart, dsstart, bingostart, invasionstart. Row order determines command IDs; preserve other configuration. In-game validation of these new commands is still pending.
+
+### Example: reload shops through Docker
+
+Typing only `shop` or `/reload shops` in the console **does not work**: Linux GameServer does not read commands from stdin. From the host terminal, in the Compose directory:
+
+```sh
+docker compose exec -T mu-server sh -c 'printf "shop\n" > "${MU_DATA_PATH:-/opt/mu/Data}/EditorReload.flag"'
+```
+
+If you are already inside the server container shell:
+
+```sh
+printf 'shop\n' > "${MU_DATA_PATH:-/opt/mu/Data}/EditorReload.flag"
+```
+
+The server consumes `EditorReload.flag` within about 10 seconds. Look for `Shop reloaded by editor flag` in the log. For image deployments, add `-f docker-compose.images.yml` to `docker compose`. Without Compose, replace `docker compose exec -T mu-server` with `docker exec <container>`.
+
+Supported tokens: `all`, `common`, `shop`, `monster`, `move`/`gate`, `quest`, `util`, `item`, `skill`, `event`, `eventitembag`, `chaosmix`, `command`, `custom`, `character`, `map`, `hack`. Separate multiple tokens with spaces or commas. Wait for one request to be consumed before sending another. `event` and `all` reinitialize events: do not use them to start an event early or during an active event. Windows retains its reload menu.
 
 ## Environment
 
