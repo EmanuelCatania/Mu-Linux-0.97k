@@ -47,6 +47,7 @@
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
 #include "Game/SimulationPreparation.h"
+#include "Game/RenderSnapshots.h"
 #include "Game/Game_SceneUpdate.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Game/Game_CharSelectTick.h"
@@ -101,6 +102,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
     while (TimeRemain > 0x27) {
+        // DESVIACION: capturas externas por paso, también al recuperar demoras.
+        RenderSnapshots_BeginStep();
 
         // Anti-tamper: periodically re-randomize hash table when counter hits
         // a specific residue (0x39 mod 0x139). Not game logic.
@@ -185,6 +188,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         }
         MoveSceneFrame++;
         Simulation_PrepareStep();
+        RenderSnapshots_EndStep();
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;
