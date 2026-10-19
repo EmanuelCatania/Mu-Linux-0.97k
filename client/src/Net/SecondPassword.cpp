@@ -137,6 +137,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Entity/ObjectBounds.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
@@ -3977,21 +3978,9 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
     // If model has no action data: copy cached transform params to render slots
     if (*(short *)((int)model + 0x26) == 0) {
-        *(unsigned int *)(entity_ptr + 0x140) = 0;
-        *(unsigned int *)(entity_ptr + 0x130) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.BoundingBoxMin[0];
-        *(unsigned int *)(entity_ptr + 0x134) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.BoundingBoxMin[1];
-        *(unsigned int *)(entity_ptr + 0x138) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.BoundingBoxMin[2];
-        *(unsigned int *)(entity_ptr + 0x144) = 0;
-        *(unsigned int *)(entity_ptr + 0x148) = 0;
-        *(unsigned int *)(entity_ptr + 0x150) = 0;
-        *(unsigned int *)(entity_ptr + 0x154) = 0;
-        *(unsigned int *)(entity_ptr + 0x158) = 0;
-        *(float *)(entity_ptr + 0x13c) = AsCharacter(entity_ptr)->Object.BoundingBoxMax[0] - AsCharacter(entity_ptr)->Object.BoundingBoxMin[0];
-        *(float *)(entity_ptr + 0x14c) = AsCharacter(entity_ptr)->Object.BoundingBoxMax[1] - AsCharacter(entity_ptr)->Object.BoundingBoxMin[1];
-        *(float *)(entity_ptr + 0x15c) = AsCharacter(entity_ptr)->Object.BoundingBoxMax[2] - AsCharacter(entity_ptr)->Object.BoundingBoxMin[2];
-        *(float *)(entity_ptr + 0x130) = AsCharacter(entity_ptr)->Object.Position[0] + *(float *)(entity_ptr + 0x130);
-        *(float *)(entity_ptr + 0x134) = AsCharacter(entity_ptr)->Object.Position[1] + *(float *)(entity_ptr + 0x134);
-        *(float *)(entity_ptr + 0x138) = AsCharacter(entity_ptr)->Object.Position[2] + *(float *)(entity_ptr + 0x138);
+        OBJECT& object = AsCharacter(entity_ptr)->Object;
+        ObjectBounds_Build(object.BoundingBoxMin, object.BoundingBoxMax,
+                           object.Position, object.OBB);
         return;
     }
 

@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
+#include "Entity/ObjectBounds.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
@@ -486,28 +487,15 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         local_64 += 180000;
     }
     if (diagInGame && s_xform_dbg < 200) s_xform_dbg++;
-    // output AABB
-    if (DAT_07e11d30 == 2) {
-        param_4[0]=local_54[0]; param_4[1]=local_54[1]; param_4[2]=local_54[2];
-        param_4[3]=local_54[3]-local_54[0]; param_4[7]=local_54[4]-local_54[1];
-        float szZ = local_54[5]-local_54[2];
-        param_4[0xb] = szZ;
-    } else {
-        param_4[0]=*param_2;   param_4[1]=param_2[1]; param_4[2]=param_2[2];
-        param_4[3]=*param_3-*param_2; param_4[7]=param_3[1]-param_2[1];
-        param_4[0xb]=param_3[2]-param_2[2];
-    }
+    // El editor usa los extremos de la malla; la ruta normal, los bounds locales.
+    const float* boundsMin = DAT_07e11d30 == 2 ? local_54 : param_2;
+    const float* boundsMax = DAT_07e11d30 == 2 ? local_54 + 3 : param_3;
+    ObjectBounds_Build(boundsMin, boundsMax, (float*)((char*)this_ + 0x6c), param_4);
     // compute largest dimension for bounding radius
     float dx=local_54[3]-local_54[0], dy=local_54[4]-local_54[1], dz=local_54[5]-local_54[2];
     float maxD = (dy > dx ? dy : dx);
     if (dz > maxD) maxD = (dx <= dy ? dy : dx);
     *(float*)((char*)this_ + 0xb4) = maxD;
-    // apply entity translation offset
-    param_4[0] += *(float*)((char*)this_ + 0x6c);
-    param_4[1] += *(float*)((char*)this_ + 0x70);
-    param_4[2] += *(float*)((char*)this_ + 0x74);
-    param_4[4]=param_4[5]=param_4[6]=0.0f;
-    param_4[8]=param_4[9]=param_4[10]=0.0f;
 }
 // BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformVertex)
 // Triangle_ComputeNormal — implemented in src/Math/Math_3D.cpp

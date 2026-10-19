@@ -136,6 +136,7 @@
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
