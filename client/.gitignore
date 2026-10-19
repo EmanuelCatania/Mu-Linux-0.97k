@@ -14,6 +14,7 @@ obj/
 /out/
 
 bin/Client/main.exe
+bin/Client/mu-linux.sh
 bin/Client/main.pdb
 bin/Client/main.map
 bin/Client/main.ilk
