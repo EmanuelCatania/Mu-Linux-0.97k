@@ -13,6 +13,8 @@
 #include "Render/Particle_Render.h"
 
 void Sprite_ReplayStep();
+void Fauna_TickSprites();
+void EffectPool_TickRenderState();
 
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
 extern "C" void HeroEquipWatchdog(int entity);
@@ -180,6 +182,7 @@ void Simulation_PrepareStep()
     Terrain_TickRenderWater();
     Terrain_PrepareSimulation();
     if (SceneFlag == 5) Particle_PrepareRender();
+    Fauna_TickSprites();
     for (int slot = 0; slot < 400; ++slot) {
         CHARACTER &c = ((CHARACTER *)DAT_07abf5d0)[slot];
         const OBJECT &o = c.Object;
@@ -196,6 +199,7 @@ void Simulation_PrepareStep()
     }
     // IDA: la pasada de picking del editor sigue a los personajes.
     if (SceneFlag == 5 && DAT_07e11d30 != 0) RenderTerrain(1);
+    EffectPool_TickRenderState();
     memcpy(DAT_05826e18, quaternions, sizeof(quaternions));
     memcpy(g_BoneScratch, bonesScratch, sizeof(bonesScratch));
     memcpy(&DAT_06989c9c, root, sizeof(root));

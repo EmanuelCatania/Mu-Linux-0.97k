@@ -11,6 +11,8 @@
 #include "stdafx.h"
 #include "Platform/IInput.h"
 #include "Render/Camera3D.h"
+#include "Render/EquipmentVisuals.h"
+#include "Entity/ObjectPose.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "globals.h"
@@ -86,7 +88,6 @@ void __cdecl RenderBoids(void)
             float xf = v0[-86] * 0.01f;
             float yf = v0[-85] * 0.01f;
             char vis = (char)TestFrustrum2D(xf, yf, -20.0f);
-            *((BYTE*)v0 - 8) = vis;
 
             if (vis) {
                 if (entType == 266) {
@@ -131,42 +132,7 @@ void __cdecl RenderBoids(void)
                 // tuvo dos crashes por pasarle a TransformPosition una matriz
                 // nula (ver los casos 175 y 184 de mas abajo).
 
-                // Type 175: random fire-cloud sparkle.
-                //
-                // IDA RenderBoids L61:
-                //   CreateSprite(1150, v0 - 86, 1.0, v14, (DWORD)(v0 - 90), 0.0, 0);
-                //
-                // Es CreateSprite, no Particle_Spawn (otra funcion con otra firma, que hace
-                // `*param_2` sin guard: con Position nullptr crashea).
-                if (entType == 175) {
-                    float scale = (float)((rand() % 32 + 64) * 0.01);
-                    float color[3] = { scale * 0.2f, scale * 0.4f, scale * 0.4f };
-                    CreateSprite(1150, v0 - 86, 1.0f, color,
-                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
-                }
-
-                // Type 184: dual-side flame jets.
-                if (entType == 184) {
-                    BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 188 * entType);
-                    float locOffsetL[3] = { -5.0f, 0.0f, 0.0f };
-                    float locOffsetR[3] = {  5.0f, 0.0f, 0.0f };
-                    float Position[3];
-                    float scale  = (float)((rand() % 32 + 128) * 0.01);
-                    float color[3] = { scale, scale * 0.2f, 0.0f };
-
-                    // IDA L80-95: TransformPosition(v4, flt_6970ACC, ...) y
-                    // CreateSprite(1150, Position, 0.1, Light, owner, 0.0, 0).
-                    // flt_6970ACC es nuestro DAT_06970acc (g_BoneScratch + 0x30).  No pasar
-                    // nullptr como matriz de hueso: Vector_Transform la deferencia.
-                    // Left jet
-                    BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetL, Position, 1);
-                    CreateSprite(1150, Position, 0.1f, color,
-                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
-                    // Right jet
-                    BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetR, Position, 1);
-                    CreateSprite(1150, Position, 0.1f, color,
-                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
-                }
+                // Sprites de fauna publicados durante SIM.
 
                 // World != 10: render shadow on terrain.
                 if (gMapManager.GetCurrentMap() != 10) {
@@ -911,8 +877,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
 
     // Giro: o+200 acumula -30°/frame y se suma al angle[2]; el arma además
     // flota 100 unidades sobre su posición y fija angle[1] = 90°.
-    const float spin = AsObject(o)->Direction[2] - 30.0f;
-    AsObject(o)->Direction[2] = spin;
+    const float spin = AsObject(o)->Direction[2];
     AsObject(o)->Angle[2]  = spin + AsObject(o)->Angle[2];
     *(int *)&AsObject(o)->Angle[1]  = 1119092736;              // 90.0f
     const float zUp    = AsObject(o)->Position[2] + 100.0f;
@@ -979,7 +944,6 @@ void __cdecl EffectPool_RenderAll(void)
 
         // Frustum cull radio 400 con pos offset (v0-6 = world pos)
         char vis = (char)Frustum_TestSphere((float*)(v0 - 6), 400.0f);
-        *((BYTE*)v0 + 312) = vis;
         if (!vis) continue;
 
         WORD type = *((WORD*)v0 - 19);
@@ -1036,7 +1000,6 @@ void __cdecl EffectPool_RenderAll(void)
                 xf += v0[38];
                 yf += v0[39];
                 zf += v0[40];
-                AddTerrainLight(xf, yf, (float*)(v0 + 48), 2, (float*)PrimaryTerrainLight[0]);
             }
             continue;
         }
@@ -1197,3 +1160,66 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
 // Player_InputTick — implemented in src/Game/Player_InputTick.cpp
 // Mouse_UpdateHoverTargets — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
+
+// DESVIACION: fauna y luces de skills se preparan con pose SIM a 25 Hz.
+void Fauna_TickSprites() {
+    if (!DAT_05828d58) return;
+    if (SceneFlag == 5) {
+        for (int i = 0; i < 40; ++i) {
+            int entity = (int)(g_WeatherSlotPool + i * 0x1bc);
+            OBJECT &o = *AsObject(entity);
+            if (!o.Live) continue;
+            o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);
+            if (!o.Visible || (o.Type != 175 && o.Type != 184)) continue;
+            float brightness = (float)(rand() % 32 + (o.Type == 175 ? 64 : 128)) * 0.01f;
+            float color[3] = {brightness * 0.2f, brightness * 0.4f, brightness * 0.4f};
+            if (o.Type == 175) { CreateSprite(1150, o.Position, 1.0f, color, entity, 0, 0); continue; }
+            void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+            EquipmentModelContext context(model);
+            const float angle = o.Angle[2];
+            o.Angle[2] += 90.0f;
+            ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 1);
+            o.Angle[2] = angle;
+            color[0] = brightness; color[1] = brightness * 0.2f; color[2] = 0;
+            for (int side = 0; side < 2; ++side) {
+                float offset[3] = {side ? 5.0f : -5.0f, 0, 0}, position[3];
+                BMD_TransformPosition(model, (float *)(g_BoneScratch + 0x30), offset, position, 1);
+                CreateSprite(1150, position, 0.1f, color, entity, 0, 0);
+            }
+        }
+    }
+    if (SceneFlag != 2 && SceneFlag != 4 && SceneFlag != 5) return;
+    for (int i = 0; i < 10; ++i) {
+        int entity = (int)((char *)DAT_083a1218 + i * 0x1bc);
+        OBJECT &o = *AsObject(entity);
+        if (!o.Live) continue;
+        o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);
+        if (!o.Visible || o.Type != 816) continue;
+        float brightness = (float)(rand() % 30 + 70) * 0.01f;
+        float light[3] = {brightness * 0.5f, brightness * 0.8f, brightness * 0.6f};
+        CreateSprite(1150, o.Position, 1.0f, light, entity, 0, 0);
+    }
+}
+
+void EffectPool_TickRenderState() {
+    if (SceneFlag != 4 && SceneFlag != 5) return;
+    if (gUserSettings.GetAntilag(ANTILAG_SKILLS) || !DAT_05828d58) return;
+    for (int i = 0; i < 200; ++i) {
+        OBJECT &o = *(OBJECT *)((char *)DAT_07b11670 + i * 0x1bc);
+        if (!o.Live) continue;
+        o.Visible = (BYTE)Frustum_TestSphere(o.Position, 400.0f);
+        if (!o.Visible) continue;
+        if (o.Type == 239 && o.Owner) {
+            const int model = *((BYTE *)o.Owner + 136) + ITEM_MODEL_BASE;
+            if (model >= 0 && model < 1024) o.Direction[2] -= 30.0f;
+        }
+        if (o.Type >= 1210 && o.Type <= 1212) {
+            float x = o.Position[0], y = o.Position[1];
+            const float *velocity = (const float *)((BYTE *)&o + 192);
+            for (int n = 0; n < 30; ++n) {
+                x += velocity[0]; y += velocity[1];
+                AddTerrainLight(x, y, o.Light, 2, (float *)PrimaryTerrainLight[0]);
+            }
+        }
+    }
+}
