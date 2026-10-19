@@ -24,9 +24,9 @@
 //         local_24 = fVar14 * 0.804f, local_20 = fVar14 * 0.25f
 //         local_1c = fVar14 * 0.36f,  local_30 = fVar14 * 0.5f
 //         BMD_TransformPosition(model, &DAT_0697139c, offset, &local_18, '\0')  → Bone_GetTransform
-//         CreateSprite(0x47e, &local_18, 0.5f, &local_24, entity, 0, 0) → Particle_Spawn(0x47e=fire)
+//         WorldEffects_AddSprite(0x47e, &local_18, 0.5f, &local_24, entity, 0, 0) → Particle_Spawn(0x47e=fire)
 //         BMD_TransformPosition(model, &DAT_0697154c, offset, &local_18, '\0')
-//         CreateSprite(0x47e, ...)
+//         WorldEffects_AddSprite(0x47e, ...)
 //
 //       0x69 (type 105 — NPC with random behavior):
 //         entity[+0x68] = 1.0f (scale)
@@ -48,18 +48,18 @@
 //         local_c = {0, 0, 150.0}
 //         local_30 = ftol() % 360 (random rotation angle)
 //         BMD_TransformPosition(model, &DAT_06970a9c, offset, &local_18, '\0')
-//         CreateSprite(0x4a7, &local_18, 3.04f, &local_24, entity, angle, 0)  → fire spark
-//         CreateSprite(0x4a7, &local_18, 3.04f, &local_24, entity, -angle, 0) → mirror spark
+//         WorldEffects_AddSprite(0x4a7, &local_18, 3.04f, &local_24, entity, angle, 0)  → fire spark
+//         WorldEffects_AddSprite(0x4a7, &local_18, 3.04f, &local_24, entity, -angle, 0) → mirror spark
 //
 //   case 3 (char select):
 //     switch entity.type:
-//       1: 3 bone transforms + CreateSprite(0x47e, ..., 0.5f) ×3 — 3 fire jets (gate)
+//       1: 3 bone transforms + WorldEffects_AddSprite(0x47e, ..., 0.5f) ×3 — 3 fire jets (gate)
 //       9: BMD_TransformPosition + fVar14=1.5 → single fire + Particle_Spawn
-//       0x11: 4 bone transforms + CreateSprite(0x47e, ..., 1.0f) ×4 + fVar14=1.0
-//       0x23: BMD_TransformPosition + CreateSprite(0x47e, ..., 1.5f) → 1 fire
+//       0x11: 4 bone transforms + WorldEffects_AddSprite(0x47e, ..., 1.0f) ×4 + fVar14=1.0
+//       0x23: BMD_TransformPosition + WorldEffects_AddSprite(0x47e, ..., 1.5f) → 1 fire
 //       0x27 (type 39 — special portal with sparks):
-//         2× CreateSprite(0x4a7) rotating sparks
-//         Loop 4 bone nodes: BMD_TransformPosition + CreateSprite(0x47e, ..., 1.0f)
+//         2× WorldEffects_AddSprite(0x4a7) rotating sparks
+//         Loop 4 bone nodes: BMD_TransformPosition + WorldEffects_AddSprite(0x47e, ..., 1.0f)
 //         if rand()&7==0: Particle_Spawn(0x4ce, ...) ×2  → spawn extra effects
 //         if rand()&7==0: 8 iterations of Joint_Create(0x4e9, ...) → particle burst
 //       ... (667 líneas totales, continúa con más tipos)
@@ -111,11 +111,13 @@
 //   Los 667 líneas son principalmente switch/case por (World, entity.type).
 
 #include "stdafx.h"
+#include "Render/WorldEffects.h"
 #include <stdio.h>
 #include "Render/Entity_Render_3D.h"
 
 // IDA: Entity_SpawnEffects (0x004FC070)
-// Spawna partículas/efectos visuales en la posición de los huesos de la entidad.
+// DESVIACION: sólo se llama desde WorldEffects_Tick, con huesos SIM frescos.
+// Emite partículas/joints y publica sprites; el draw reproduce esa muestra.
 // Switch principal: World × entity.type.
 float * __cdecl Entity_SpawnEffects(int param_1)
 {
@@ -163,9 +165,9 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         // translate=0 (fiel al IDA Entity_SpawnEffects): la bone matrix ya está en
         // world-space. El barco tiene 2 antorchas (bones c1c/c4c).
         BMD_TransformPosition(pModel, (float *)&DAT_06970c1c, local_c, &local_18, '\0');
-        CreateSprite(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
+        WorldEffects_AddSprite(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
         BMD_TransformPosition(pModel, (float *)&DAT_06970c4c, local_c, &local_18, '\0');
-        CreateSprite(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
+        WorldEffects_AddSprite(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
     }
 
     local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
@@ -183,9 +185,9 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_1c = fVar14 * _DAT_005524f4;
             BMD_TransformPosition(pModel, (float *)&DAT_0697139c, &local_18, local_c, '\0');
             float fSave = local_30;
-            CreateSprite(0x47e, local_c, local_30, &local_24, param_1, 0, 0);
+            WorldEffects_AddSprite(0x47e, local_c, local_30, &local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_0697154c, &local_18, local_c, '\0');
-            pfVar3 = (float *)CreateSprite(0x47e, local_c, fSave, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x47e, local_c, fSave, &local_24, param_1, 0, 0);
             return pfVar3;
         }
         if (pfVar3 == (float *)0x69) {
@@ -234,8 +236,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
             BMD_TransformPosition(pModel, (float *)&DAT_06970a9c, local_c, &local_18, '\0');
-            CreateSprite(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
-            pfVar3 = (float *)CreateSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
+            WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
             return pfVar3;
         }
         // Type 103 — weapon spark trigger (once per anim cycle, 1/32 chance)
@@ -262,9 +264,9 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
             BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
-            CreateSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
+            WorldEffects_AddSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
-            CreateSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
+            WorldEffects_AddSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
             fVar14 = 0.5f;
             break;
@@ -280,11 +282,11 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
-            CreateSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
+            WorldEffects_AddSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970bec, local_c, &local_18, '\0');
-            CreateSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
+            WorldEffects_AddSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970c7c, local_c, &local_18, '\0');
-            CreateSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
+            WorldEffects_AddSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970d0c, local_c, &local_18, '\0');
             pfVar3 = &local_18;
             fVar14 = 1.0f;
@@ -294,7 +296,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
-            pfVar3 = (float *)CreateSprite(0x47e, &local_18, 1.5f,&local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x47e, &local_18, 1.5f,&local_24, param_1, 0, 0);
             return pfVar3;
         case 0x27:
             // Special portal: 2 rotating sparks + 4-bone fire loop + optional burst
@@ -305,8 +307,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
             BMD_TransformPosition(pModel, (float *)&DAT_0697154c, local_c, &local_18, '\0');
-            CreateSprite(0x4a7, &local_18, 1.0f,&local_24, param_1,  local_30, 0);
-            CreateSprite(0x4a7, &local_18, 1.0f,&local_24, param_1, -local_30, 0);
+            WorldEffects_AddSprite(0x4a7, &local_18, 1.0f,&local_24, param_1,  local_30, 0);
+            WorldEffects_AddSprite(0x4a7, &local_18, 1.0f,&local_24, param_1, -local_30, 0);
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
             // El bound del original `< 0x69716cd` es una dirección absoluta del binario
             // (= &DAT_0697160c + 0xC1); DAT_0697160c es un macro a g_BoneScratch en
@@ -314,7 +316,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             pfVar3 = (float *)&DAT_0697160c;
             for (int boneIdx = 0; boneIdx < 4; ++boneIdx, pfVar3 += 0xc) {
                 BMD_TransformPosition(pModel, pfVar3, local_c, &local_18, '\0');
-                CreateSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
+                WorldEffects_AddSprite(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
                 uVar4 = _rand() & 0x8000001f;
                 bVar8 = (uVar4 == 0);
                 if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xffffffe0) == 0xffffffff);
@@ -364,14 +366,14 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             BMD_TransformPosition(pModel, (float *)&DAT_06970d6c, local_c, &local_18, '\0');
             float fAngle1 = local_30;
             float fAngleN = -local_30;
-            CreateSprite(uVar5, &local_18, 0.3f,&local_24, param_1, local_30,  0);
-            CreateSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
+            WorldEffects_AddSprite(uVar5, &local_18, 0.3f,&local_24, param_1, local_30,  0);
+            WorldEffects_AddSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970e2c, local_c, &local_18, '\0');
-            CreateSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngle1,   0);
-            CreateSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
+            WorldEffects_AddSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngle1,   0);
+            WorldEffects_AddSprite(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
             BMD_TransformPosition(pModel, (float *)&DAT_06970e8c, local_c, &local_18, '\0');
-            CreateSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngle1,   0);
-            pfVar3 = (float *)CreateSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngleN, 0);
+            WorldEffects_AddSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngle1,   0);
+            pfVar3 = (float *)WorldEffects_AddSprite(uVar5, &local_18, 1.5f,&local_24, param_1, fAngleN, 0);
         } else if (pfVar3 == (float *)0x28) {
             local_24 = fVar14; local_20 = fVar14; local_1c = fVar14;
             uVar11 = (longlong)(WorldTime * 0.1f);   // IDA: (int)(std::int64_t)(WorldTime*0.1) % 360
@@ -381,8 +383,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
                                                | uVar11 & 0xffffffff) % 0x168);
             local_18 = *(float *)(param_1 + 0x10);
             local_10 = *(float *)(param_1 + 0x18) + _DAT_005529e0;
-            CreateSprite(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
-            pfVar3 = (float *)CreateSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
+            WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
         }
         // fallthrough to case 6
     case 6:
@@ -399,7 +401,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             fVar14 = fVar14 * _DAT_00552660;
             pfVar3 = local_c;
 LAB_004fc55a:
-            pfVar3 = (float *)CreateSprite(0x47e, pfVar3, fVar14, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x47e, pfVar3, fVar14, &local_24, param_1, 0, 0);
             return pfVar3;
         }
         break;
@@ -414,7 +416,7 @@ LAB_004fc55a:
             local_24 = (float)(fVar9 * (float10)_DAT_00552d0c);
             local_20 = (float)fVar9; local_1c = (float)fVar9;
             BMD_TransformPosition(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
-            pfVar3 = (float *)CreateSprite(0x498, &local_18, (float)fVar9 * _DAT_00552660, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x498, &local_18, (float)fVar9 * _DAT_00552660, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x3c:
             if (*(int *)(param_1 + 0x58) != -2) {
@@ -432,7 +434,7 @@ LAB_004fc55a:
             local_24 = (float)(fVar9 * (float10)_DAT_00552d0c);
             local_20 = (float)fVar9; local_1c = (float)fVar9;
             BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
-            pfVar3 = (float *)CreateSprite(0x597, &local_18, (float)fVar9 * _DAT_005528f0, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x597, &local_18, (float)fVar9 * _DAT_005528f0, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x40:
             fVar9 = (float10)fsin(((float10)*(float *)(param_1 + 0x24) * (float10)_DAT_00552660
@@ -441,7 +443,7 @@ LAB_004fc55a:
             local_20 = fVar14 * _DAT_00552d08;
             local_24 = fVar14; local_1c = local_20;
             BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
-            pfVar3 = (float *)CreateSprite(0x597, &local_18, fVar14 * _DAT_005528f0, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x597, &local_18, fVar14 * _DAT_005528f0, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x46:
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
@@ -581,7 +583,7 @@ LAB_004fc55a:
                     // (char*) cast is mandatory — without it DWORD* stride multiplies by 4.
                     (float *)((char *)&DAT_06970a9c + waveBones[iVar7] * 0x30),
                     local_c, &local_18, '\0');
-                pfVar3 = (float *)CreateSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
+                pfVar3 = (float *)WorldEffects_AddSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
                 iVar7++;
             } while (iVar7 < 7);
         } else if (iVar2 == 0xd) {
@@ -590,7 +592,7 @@ LAB_004fc55a:
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
             local_24 = (float)fVar9; local_20 = (float)fVar9; local_1c = (float)fVar9;
             BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
-            pfVar3 = (float *)CreateSprite(0x4e1, &local_18, (float)fVar9 + _DAT_00552504, &local_24, param_1, 0, 0);
+            pfVar3 = (float *)WorldEffects_AddSprite(0x4e1, &local_18, (float)fVar9 + _DAT_00552504, &local_24, param_1, 0, 0);
             return pfVar3;
         } else if ((iVar2 - 0x25) == 0) {
             // Type 0x25 — occasional lightning streaks

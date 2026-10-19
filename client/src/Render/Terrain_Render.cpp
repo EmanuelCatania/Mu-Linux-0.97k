@@ -5,6 +5,7 @@
 #include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
 #include "Entity/ObjectPose.h"
+#include "Render/WorldEffects.h"
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
@@ -46,7 +47,7 @@ static void Terrain_ProcessObjects(bool simulation)
         do
         {
             unsigned short vis = TestFrustrum2D(chunk_yf, (float)chunk_x, -180.0f);
-            *((char*)chunk_ptr + 8) = (char)vis;
+            if (simulation) *((char*)chunk_ptr + 8) = (char)vis;
 
             if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
             {
@@ -76,19 +77,11 @@ static void Terrain_ProcessObjects(bool simulation)
                         // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
                         float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
                         vis = TestFrustrum2D(ex, ey, ez);
-                        entity[0x160] = (char)vis;
+                        if (simulation) entity[0x160] = (char)vis;
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
                             if (simulation) {
-                                void *model = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
-                                char context[0xbc];
-                                memcpy(context, model, sizeof(context));
-                                ObjectPose_PrepareBounds((int)entity, 0);
-                                memcpy(model, context, sizeof(context));
-                            } else {
-                                // Terrain_Render in the original only prepares and draws.
-                                // Per-frame object animation/update belongs to MoveObjects.
                                 if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
                                 {
                                     void *pvSlot = AntiTamper_HashNode();
@@ -96,8 +89,10 @@ static void Terrain_ProcessObjects(bool simulation)
                                     HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                                 }
 
+                                WorldEffects_Tick((int)entity);
+                            } else {
                                 Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
-                                Entity_SpawnEffects((int)entity);
+                                WorldEffects_Draw((int)entity);
                             }
                         }
 
@@ -134,7 +129,7 @@ static void Terrain_ProcessObjects(bool simulation)
     }
 }
 
-// Preparación autoritativa: comparte el culling del walker, sin dibujar,
-// emitir efectos ni ejecutar el bloque de ruido de hash del render.
+// DESVIACION: culling, pose, estado y emisores avanzan por paso SIM.
+// El draw vuelve a probar el frustum sin publicar flags del mundo ni emitir.
 void Terrain_PrepareSimulation() { Terrain_ProcessObjects(true); }
 void Terrain_Render() { Terrain_ProcessObjects(false); }

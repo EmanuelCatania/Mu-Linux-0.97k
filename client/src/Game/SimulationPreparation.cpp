@@ -9,6 +9,7 @@
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 #include "Render/EquipmentVisuals.h"
+#include "Render/WorldEffects.h"
 
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
 extern "C" void HeroEquipWatchdog(int entity);
@@ -159,6 +160,7 @@ bool SceneReady() {
 void Simulation_PrepareStep()
 {
     Equipment_BeginStep();
+    WorldEffects_BeginStep();
     if (!SceneReady() || !DAT_07abf5d0 || !DAT_05828d58) return;
     PrepareCamera();
     // BMD_Animation usa estos temporales compartidos; la publicación SIM sólo

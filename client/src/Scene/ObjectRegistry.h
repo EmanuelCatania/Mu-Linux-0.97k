@@ -36,7 +36,23 @@ inline std::unordered_set<const void*>& LiveNodes()
     static std::unordered_set<const void*> nodes;
     return nodes;
 }
-inline void Register(const void* node) { LiveNodes().insert(node); }
-inline void Unregister(const void* node) { LiveNodes().erase(node); }
+inline std::unordered_map<const void*, std::uint64_t>& Generations()
+{
+    static std::unordered_map<const void*, std::uint64_t> generations;
+    return generations;
+}
+inline std::uint64_t Generation(const void* node)
+{
+    const auto found = Generations().find(node);
+    return found != Generations().end() ? found->second : 0;
+}
+inline void Register(const void* node)
+{
+    // DESVIACION: identidad externa para las muestras, sin ampliar OBJECT.
+    static std::uint64_t nextGeneration = 0;
+    Generations()[node] = ++nextGeneration;
+    LiveNodes().insert(node);
+}
+inline void Unregister(const void* node) { LiveNodes().erase(node); Generations().erase(node); }
 inline bool Contains(const void* node) { return LiveNodes().find(node) != LiveNodes().end(); }
 }
