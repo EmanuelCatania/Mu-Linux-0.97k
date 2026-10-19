@@ -278,7 +278,7 @@ public:
 
 	void GCBloodCastleSimpleStateSend(BLOOD_CASTLE_LEVEL* lpLevel, int state, int aIndex);
 
-	void StartBC();
+	bool StartBC();
 
 	void GCRequiredLevelsSend(int aIndex);
 

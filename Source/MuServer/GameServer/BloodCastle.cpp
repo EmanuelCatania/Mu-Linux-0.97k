@@ -2352,32 +2352,26 @@ void CBloodCastle::GCBloodCastleSimpleStateSend(BLOOD_CASTLE_LEVEL* lpLevel, int
 	}
 }
 
-void CBloodCastle::StartBC()
+bool CBloodCastle::StartBC()
 {
-	time_t theTime = time(NULL);
+	if (!gServerInfo.m_BloodCastleEvent) return false;
+	for (int n = 0; n < MAX_BC_LEVEL; ++n)
+		if (m_BloodCastleLevel[n].State >= BC_STATE_STAND || m_BloodCastleLevel[n].EnterEnabled) return false;
 
+	// One dated occurrence, including rollover through midnight.
+	time_t theTime = time(NULL) + 120;
 	tm aTime;
-
 	localtime_s(&aTime, &theTime);
-
 	int hour = aTime.tm_hour;
-
-	int minute = aTime.tm_min + 2;
-
-	if (minute >= 60)
-	{
-		hour++;
-
-		minute = minute - 60;
-	}
+	int minute = aTime.tm_min;
 
 	BLOOD_CASTLE_START_TIME info;
 
-	info.Year = -1;
+	info.Year = aTime.tm_year + 1900;
 
-	info.Month = -1;
+	info.Month = aTime.tm_mon + 1;
 
-	info.Day = -1;
+	info.Day = aTime.tm_mday;
 
 	info.DayOfWeek = -1;
 
@@ -2392,6 +2386,7 @@ void CBloodCastle::StartBC()
 	LogAdd(LOG_EVENT, "[Set BC Start] At %2d:%2d:00", hour, minute);
 
 	this->Init();
+	return true;
 }
 
 void CBloodCastle::GCRequiredLevelsSend(int aIndex)

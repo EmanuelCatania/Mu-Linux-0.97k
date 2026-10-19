@@ -953,32 +953,25 @@ void CInvasionManager::MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget)
 	}
 }
 
-void CInvasionManager::StartInvasion(int InvasionIndex)
+bool CInvasionManager::StartInvasion(int InvasionIndex)
 {
-	time_t theTime = time(NULL);
+	if (!gServerInfo.m_InvasionManagerSwitch || InvasionIndex < 0 || InvasionIndex >= MAX_INVASION) return false;
+	if (!m_InvasionInfo[InvasionIndex].InvasionName[0] || m_InvasionInfo[InvasionIndex].State == INVASION_STATE_START) return false;
 
+	// One dated occurrence, including rollover through midnight.
+	time_t theTime = time(NULL) + 120;
 	tm aTime;
-
 	localtime_s(&aTime, &theTime);
-
 	int hour = aTime.tm_hour;
-
-	int minute = aTime.tm_min + 2;
-
-	if (minute >= 60)
-	{
-		hour++;
-
-		minute = minute - 60;
-	}
+	int minute = aTime.tm_min;
 
 	INVASION_START_TIME info;
 
-	info.Year = -1;
+	info.Year = aTime.tm_year + 1900;
 
-	info.Month = -1;
+	info.Month = aTime.tm_mon + 1;
 
-	info.Day = -1;
+	info.Day = aTime.tm_mday;
 
 	info.DayOfWeek = -1;
 
@@ -992,6 +985,7 @@ void CInvasionManager::StartInvasion(int InvasionIndex)
 
 	LogAdd(LOG_EVENT, "[Set Invasion Start][%s] At %2d:%2d:00", this->m_InvasionInfo[InvasionIndex].InvasionName, hour, minute);
 
-	this->Init();
+	this->SetState(&this->m_InvasionInfo[InvasionIndex], INVASION_STATE_EMPTY);
+	return true;
 }
 

@@ -119,7 +119,7 @@ public:
 
 	void MonsterDieProc(LPOBJ lpObj, LPOBJ lpTarget);
 
-	void StartInvasion(int InvasionIndex);
+	bool StartInvasion(int InvasionIndex);
 
 	bool IsTamachanInvasion(INVASION_INFO* lpInfo);
 

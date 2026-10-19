@@ -1579,32 +1579,26 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 	}
 }
 
-void CDevilSquare::StartDS()
+bool CDevilSquare::StartDS()
 {
-	time_t theTime = time(NULL);
+	if (!gServerInfo.m_DevilSquareEvent) return false;
+	for (int n = 0; n < MAX_DS_LEVEL; ++n)
+		if (m_DevilSquareLevel[n].State >= DS_STATE_STAND || m_DevilSquareLevel[n].EnterEnabled) return false;
 
+	// One dated occurrence, including rollover through midnight.
+	time_t theTime = time(NULL) + 120;
 	tm aTime;
-
 	localtime_s(&aTime, &theTime);
-
 	int hour = aTime.tm_hour;
-
-	int minute = aTime.tm_min + 2;
-
-	if (minute >= 60)
-	{
-		hour++;
-
-		minute = minute - 60;
-	}
+	int minute = aTime.tm_min;
 
 	DEVIL_SQUARE_START_TIME info;
 
-	info.Year = -1;
+	info.Year = aTime.tm_year + 1900;
 
-	info.Month = -1;
+	info.Month = aTime.tm_mon + 1;
 
-	info.Day = -1;
+	info.Day = aTime.tm_mday;
 
 	info.DayOfWeek = -1;
 
@@ -1619,6 +1613,7 @@ void CDevilSquare::StartDS()
 	LogAdd(LOG_EVENT, "[Set DS Start] At %2d:%2d:00", hour, minute);
 
 	this->Init();
+	return true;
 }
 
 void CDevilSquare::GCRequiredLevelsSend(int aIndex)
