@@ -1,7 +1,9 @@
+#include <cstdint>
 // BMD_LegacyDraw.cpp
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"
@@ -156,7 +158,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
             const float *pos = (const float *)((char *)&DAT_0584621c + (vtx + meshIdx * 15000) * 12);
             float moved[3];
             if (deform) {
-                // IDA: v56 = (__int64)WorldTime + 931 * vtx;
+                // IDA: v56 = (std::int64_t)WorldTime + 931 * vtx;
                 //      pos + sin(v56 * 0.007) * normal * 28
                 const int phase = (int)(long long)DAT_05826e08 + 0x3a3 * vtx;
                 const float sn = (float)sin((double)phase * (double)_DAT_005528c4);
@@ -699,7 +701,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     //   · Si difieren, el corrimiento medido ES el bug y su magnitud dice cuánto.
     {
         static DWORD s_lastI = 0;
-        DWORD nowI = GetTickCount();
+        DWORD nowI = Platform::GetTimer().Ticks();
         if (nowI - s_lastI > 1000) {
             s_lastI = nowI;
             int tx = 0, ty = 0, px = 0, py = 0;

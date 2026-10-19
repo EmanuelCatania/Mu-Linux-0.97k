@@ -32,27 +32,19 @@ extern void __cdecl operator_delete(void* ptr);
 #endif
 
 
-// (61 bytes) — walks Joints pool DAT_07b27150 (500 × 0x9D8) and zeroes any
-// active slot whose Type/Target/SubType match.
-//
-// Slot layout per IDA `CreateJoint` (0x0046D840):
-//   slot+0   byte  active flag
-//   slot+4   int   Type
-//   slot+8   int   SubType
-//   slot+64  DWORD Target  (= entity ptr / owner)
-// Stride 0x9D8 = 2520 bytes per slot.
+// Apaga los joints activos con ese Type, Target y SubType (-1 = cualquiera).
 extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType)
 {
-    BYTE* base = (BYTE*)&DAT_07b27150[0];
-    const int kJointSlots = (int)(sizeof(DAT_07b27150) / 0x9D8);   // 500
-    for (int i = 0; i < kJointSlots; ++i) {
-        BYTE* slot = base + i * 0x9D8;
-        if (slot[0] != 0 &&
-            *(int*)(slot + 4) == Type &&
-            *(DWORD*)(slot + 64) == Target &&
-            (SubType == -1 || *(int*)(slot + 8) == SubType))
+    JOINT* joints = AsJoint(DAT_07b27150);
+    const int count = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
+    for (int i = 0; i < count; ++i) {
+        JOINT* j = &joints[i];
+        if (j->Live != 0 &&
+            j->Type == Type &&
+            (DWORD)(uintptr_t)j->Target == Target &&
+            (SubType == -1 || j->SubType == SubType))
         {
-            slot[0] = 0;
+            j->Live = 0;
         }
     }
 }
@@ -104,9 +96,9 @@ extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
     if (!o) return;
     SetAttackSpeed();
     (void)SetAction((int)o, 87);
-    *(unsigned int*)(o + 264) = 0x40A00000u;        // anim_speed = 5.0f
-    *(BYTE*)(o + 124) = 3;                           // state byte = 3 (end)
-    *(unsigned int*)(o + 356) = 0x3F800000u;        // alpha = 1.0f (fade-in)
+    *(unsigned int *)&AsObject(o)->AnimationFrame = 0x40A00000u;        // anim_speed = 5.0f
+    AsObject(o)->Teleport = 3;                           // state byte = 3 (end)
+    *(unsigned int *)&AsObject(o)->AlphaTarget = 0x3F800000u;        // alpha = 1.0f (fade-in)
     (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
                        (float*)(o + 232), nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);

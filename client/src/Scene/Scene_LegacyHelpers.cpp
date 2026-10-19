@@ -1,6 +1,8 @@
 // Scene_LegacyHelpers.cpp
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/IAudio.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -40,6 +42,7 @@ void __cdecl VTable_Release(void *obj, int param_1)
 void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
     char *param_1 = (char*)param_1_v;
     if (!param_1) return;
+    SceneObjects::Unregister(param_1);
     int iVar1 = *(int*)(param_1 + 0x1b8); // next
     int iVar2 = *(int*)(param_1 + 0x1b4); // prev
     if (iVar1 != 0) {
@@ -77,32 +80,10 @@ void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
 //   4. Enable3DSound check usa el slot Buffer, no v2 (era bug del IDA).
 HRESULT __cdecl Sound_ReleaseBuffer(int Buffer)
 {
-  if (!g_EnableSound) return 0;
-  if (Buffer < 0 || Buffer >= 420) return 0;
-
-  int channels = MaxBufferChannel[Buffer];
-  if (channels < 0) channels = 0;
-  if (channels > 4) channels = 4;
-
-  for (int ch = 0; ch < channels; ++ch) {
-    LPDIRECTSOUNDBUFFER v4 = g_lpDSBuffer[Buffer][ch];
-    if (v4) {
-      v4->Release();
-      g_lpDSBuffer[Buffer][ch] = nullptr;
-    }
-    if (Enable3DSound[Buffer]) {
-      LPDIRECTSOUND3DBUFFER v5 = g_lpDS3DBuffer[Buffer][ch];
-      if (v5) {
-        v5->Release();
-        g_lpDS3DBuffer[Buffer][ch] = nullptr;
-      }
-    }
-  }
-  MaxBufferChannel[Buffer] = 0;
-  Object3DSound[Buffer][0] = 0;
-  Object3DSound[Buffer][1] = 0;
-  Object3DSound[Buffer][2] = 0;
-  Object3DSound[Buffer][3] = 0;
-  if (SoundLoadCount > 0) --SoundLoadCount;
-  return 0;
+    if (!g_EnableSound || Buffer < 0 || Buffer >= 420) return 0;
+    const HRESULT result = Platform::GetAudio().ReleaseBuffer(Buffer);
+    MaxBufferChannel[Buffer] = 0;
+    for (int channel = 0; channel < 4; ++channel) Object3DSound[Buffer][channel] = 0;
+    if (SoundLoadCount > 0) --SoundLoadCount;
+    return result;
 }

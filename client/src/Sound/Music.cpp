@@ -11,6 +11,7 @@
 // siga siendo el mismo, igual que antes.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Sound/SoundManager.h"
 
 // IDA: StopMp3 (0x004127F0) — corta el tema si `Name` es el que está sonando.
@@ -56,7 +57,7 @@ void CSound::PlayTrack(const char* Name, int bEnforce)
     crt_fclose(fp);
 
     if (PlayMusic(Name))
-        strcpy_s(m_CurrentTrack, sizeof(m_CurrentTrack), Name);
+        Platform::TextCopySecure(m_CurrentTrack, sizeof(m_CurrentTrack), Name);
 }
 
 

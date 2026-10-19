@@ -8,7 +8,9 @@
 // State lives in globals.cpp. See src/Sound/Sound.cpp for the loader side.
 
 #include "stdafx.h"
-#include <dsound.h>
+#include "Platform/ITimer.h"
+#include "Platform/IAudio.h"
+
 
 
 
@@ -17,7 +19,7 @@
 // Originally intended to apply a reverb/environment preset via IKsPropertySet
 // (EAX), but the final release left this as a no-op.
 // ============================================================================
-static int SetHall(int /*Buffer*/) { return 1; }
+
 
 
 // ============================================================================
@@ -34,45 +36,13 @@ static int SetHall(int /*Buffer*/) { return 1; }
 // IDA: PlayBuffer (0x00404BC0)
 HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
 {
-    if (!g_EnableSound)   return S_OK;
-    if (Buffer < 0)       return S_OK;
-    if (Buffer >= 420)    return S_OK;
-
-    // Guard del port (IDA no lo tiene): g_lpDSBuffer es [420][4], asi que un
-    // BufferChannel fuera de rango indexaria memoria ajena.
-    if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) {
-        BufferChannel[Buffer] = 0;
-    }
-
-    LPDIRECTSOUNDBUFFER pBuf = g_lpDSBuffer[Buffer][BufferChannel[Buffer]];
-    if (!pBuf) return E_FAIL;   // IDA devuelve 0x80004005
-
-    DWORD flags = bLooped ? DSBPLAY_LOOPING : 0;
-    HRESULT hr = pBuf->Play(0, 0, flags);
-    if (FAILED(hr)) return hr;
-
-    if (Enable3DSound[Buffer]) {
-        Object3DSound[Buffer][BufferChannel[Buffer]] = Object;
-        SetHall(Buffer);
-    }
-
-    // OJO: NO incrementar BufferChannel aca.
-    //
-    // IDA 0x00404BC0 hace solo el wrap, sin INC previo:
-    //     if (BufferChannel[Buffer] >= MaxBufferChannel[Buffer]) BufferChannel[Buffer] = 0;
-    // O sea el canal queda clavado en 0 — que es el UNICO que existe, porque
-    // FillBuffer (0x00404A00) es `return 0` y nunca crea los canales 1..3.
-    //
-    // Un port previo agrego un `BufferChannel[Buffer]++` aca ("el disassembly
-    // muestra un INC, lo restauro") y eso mataba el audio: al rotar al canal 1
-    // el puntero es NULL, la funcion retorna ANTES del wrap y el slot queda
-    // trabado en 1 para siempre. Efecto: todo sonido cargado con MaxChannel>=2
-    // (pasos 8-11, golpes 50-56, swing 40-42, arco 65-67, gritos 75-80, magias
-    // 86-92) sonaba UNA vez y despues enmudecia; los de MaxChannel==1 (jewel 49,
-    // herrero 120, ambientes) seguian andando porque 1 >= 1 los devolvia a 0.
-    if (BufferChannel[Buffer] >= MaxBufferChannel[Buffer]) {
-        BufferChannel[Buffer] = 0;
-    }
+    if (!g_EnableSound || Buffer < 0 || Buffer >= 420) return S_OK;
+    if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) BufferChannel[Buffer] = 0;
+    const HRESULT result = Platform::GetAudio().Play(Buffer, BufferChannel[Buffer], bLooped != 0);
+    if (FAILED(result)) return result;
+    if (Enable3DSound[Buffer]) Object3DSound[Buffer][BufferChannel[Buffer]] = Object;
+    // IDA: PlayBuffer (0x00404BC0), sólo wrap: FillBuffer no crea canales adicionales.
+    if (BufferChannel[Buffer] >= MaxBufferChannel[Buffer]) BufferChannel[Buffer] = 0;
     return S_OK;
 }
 
@@ -127,61 +97,26 @@ void Sound_Update3DPositions(void)
             offset[1] *= unitScale;
             offset[2] *= unitScale;
 
-            LPDIRECTSOUND3DBUFFER p3D = g_lpDS3DBuffer[slot][ch];
-            if (p3D) {
-                // Note: Y is force to 0 and X/Z are negated (IDA decompile),
-                // matching the original's coordinate-system convention.
-                p3D->SetPosition(-offset[0], 0.0f, -offset[2], DS3D_DEFERRED);
-            }
+            // IDA: Set3DSoundPosition (0x00404CD0): XY rotado pasa a XZ del audio, altura cero.
+            Platform::GetAudio().SetPosition(slot, ch, -offset[0], 0.0f, -offset[1]);
         }
     }
 }
 
-static void __cdecl FUN_00404e60_impl(int param_1) {
-    *(int *)param_1 = (int)&PTR_FUN_005524c0;
-    if (*(HANDLE *)(param_1 + 4) != NULL) {
-        mmioClose((HMMIO)*(HANDLE *)(param_1 + 4), 0);
-    }
-}
+
 
 // Sound_StopBuffer @ 0x00404C60 — stop a slot's currently-playing channel.
 // For non-zero Buffer, also rewind to position 0. Uses g_lpDSBuffer[Buffer][0]
 // (only channel 0 is populated in this binary's pipeline — FillBuffer is a no-op).
 // IDA: FUN_00404C60
-void __cdecl Sound_StopBuffer(int Buffer) {
-    if (!g_EnableSound || Buffer < 0) return;
-    LPDIRECTSOUNDBUFFER pBuf = g_lpDSBuffer[Buffer][0];
-    if (pBuf) {
-        pBuf->Stop();
-        if (Buffer != 0) pBuf->SetCurrentPosition(0);
-    }
-}
+void __cdecl Sound_StopBuffer(int Buffer) { if (g_EnableSound && Buffer >= 0) Platform::GetAudio().Stop(Buffer); }
 
 // waveIO__dtor @ 0x00404E40 — CWaveFile ~dtor (calls waveIO__CloseWaveFile)
-void __fastcall waveIO__dtor(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00404e60_impl(ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
-}
 
-// FUN_00405260 @ 0x00405260 — CErrorReport ~dtor
-void __fastcall FUN_00405260(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00405280((HANDLE *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
-}
-
-// FUN_00405280 @ 0x00405280 (11 bytes)
-// FUN_00405280 (IDA-activated)
-int __cdecl FUN_00405280(HANDLE *_this)
-{
-  *_this = (HANDLE)DAT_005524c4;
-  CloseHandle(_this[1]);
-  return FUN_00405290((int)_this);
-}
 
 // IDA signature is __thiscall(this); function.h decl is __stdcall(void).
 // No live callers in our build (vtable dispatch via CErrorReport disabled),
-// so this is a NOP placeholder. The truncation logic ported below as
-// CErrorReport_RotateLog_impl(this) for when the vtable is wired up.
+// El logger activo del cliente es debug.log.
 void __stdcall FUN_00405340(void) {
     // No-op — CErrorReport vtable not yet active.
 }
@@ -206,8 +141,7 @@ void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
 // Logs current local date/time via CErrorReport_Write (debug log sink at DAT_055C9BF0).
 // If param_1 != 0, logs an additional data block from DAT_00558128.
 void CErrorReport_WriteCurrentTime(int param_1) {
-    _SYSTEMTIME local_10;
-    GetLocalTime(&local_10);
+    const auto local_10 = Platform::GetTimer().LocalTime();
     CErrorReport_Write(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
     if (param_1 != 0) {
         CErrorReport_Write(&DAT_055c9bf0, DAT_00558128);
@@ -248,22 +182,3 @@ void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 
-// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: CErrorReport__WriteImeInfo).
-// Logs IME description, IME file, keyboard layout name.
-void __fastcall CErrorReport_WriteImeInfo(void* This_v, void* /*edx*/, HWND hWnd) {
-    DWORD This = (DWORD)(uintptr_t)This_v;
-    char lpszTemp[256];
-    CErrorReport__Write(This, (char*)"<IME information>\r\n");
-    HIMC hImc = ImmGetContext(hWnd);
-    if (hImc) {
-        HKL hKl = GetKeyboardLayout(0);
-        ImmGetDescriptionA(hKl, lpszTemp, sizeof(lpszTemp));
-        CErrorReport__Write(This, (char*)"IME Name \t\t: %s\r\n", lpszTemp);
-        ImmGetIMEFileNameA(hKl, lpszTemp, sizeof(lpszTemp));
-        CErrorReport__Write(This, (char*)"IME File Name \t\t: %s\r\n", lpszTemp);
-        ImmReleaseContext(hWnd, hImc);
-    }
-    if (GetKeyboardLayoutNameA(lpszTemp)) {
-        CErrorReport__Write(This, (char*)"Keyboard type \t\t: %s\r\n", lpszTemp);
-    }
-}

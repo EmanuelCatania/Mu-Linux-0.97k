@@ -60,7 +60,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\libjpeg\jpeg-6b;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <!-- Disable /RTC (run-time checks). Ghidra decompilations commonly declare
            locals used as output-params/register-aliases that trip the "used
            without being initialized" check, even though the binary runs fine. -->
@@ -71,8 +71,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <FixedBaseAddress>true</FixedBaseAddress>
@@ -92,7 +92,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\libjpeg\jpeg-6b;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)lib\miniaudio;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -101,12 +101,29 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jpeg.lib;opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\libjpeg\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Platform\IClientSettings.h" />
+    <ClInclude Include="src\Platform\ClientSettings.h" />
+    <ClInclude Include="src\Platform\IDiagnostics.h" />
+    <ClInclude Include="src\Platform\Diagnostics.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Diagnostics.h" />
+    <ClInclude Include="src\Platform\Posix\PosixDiagnostics.h" />
+    <ClInclude Include="src\Platform\IIdentity.h" />
+    <ClInclude Include="src\Platform\Identity.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Identity.h" />
+    <ClInclude Include="src\Platform\Posix\PosixIdentity.h" />
+    <ClInclude Include="src\Platform\LocalTime.h" />
+    <ClInclude Include="src\Platform\Text.h" />
+    <ClInclude Include="src\Platform\GuardedOperation.h" />
+    <ClInclude Include="src\Scene\ObjectRegistry.h" />
+    <ClInclude Include="src\Platform\PlatformHeaders.h" />
+    <ClInclude Include="src\Platform\DebugHeaders.h" />
+    <ClInclude Include="src\Platform\Posix\WinTypes.h" />
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\functions.h" />
     <ClInclude Include="src\globals.h" />
@@ -117,7 +134,10 @@
     <ClInclude Include="src\Config\ServerConfig.h" />
     <ClInclude Include="src\Config\UserSettings.h" />
     <ClInclude Include="src\UI\UIState.h" />
+    <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\EntityTypes.h" />
+    <ClInclude Include="src\Model\ModelTypes.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\RightClickMove.h" />
@@ -126,6 +146,19 @@
     <ClInclude Include="src\Item\Item_ServerValue.h" />
     <ClInclude Include="src\UI\GoldenArcher.h" />
     <ClInclude Include="src\Core\Window.h" />
+    <ClInclude Include="src\Platform\CompilerCompat.h" />
+    <ClInclude Include="src\Platform\NativeBridge.h" />
+    <ClInclude Include="src\Platform\SDL3\SDLPlatform.h" />
+    <ClInclude Include="src\Platform\IAudio.h" />
+    <ClInclude Include="src\Platform\ITimer.h" />
+    <ClInclude Include="src\Platform\IInput.h" />
+    <ClInclude Include="src\Platform\IWindow.h" />
+    <ClInclude Include="src\Platform\Win32\Win32Window.h" />
+    <ClInclude Include="src\Platform\IFileSystem.h" />
+    <ClInclude Include="src\Platform\ISocket.h" />
+    <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
+    <ClInclude Include="src\Platform\IGLContext.h" />
+    <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
@@ -162,6 +195,7 @@
     <ClInclude Include="src\Render\Entity_DrawAt.h" />
     <ClInclude Include="src\Render\Entity_PrepareRender.h" />
     <ClInclude Include="src\Render\Entity_Render.h" />
+    <ClInclude Include="src\Render\JointTypes.h" />
     <ClInclude Include="src\Render\Entity_Render_3D.h" />
     <ClInclude Include="src\Render\Entity_RenderAll_3D.h" />
     <ClInclude Include="src\Render\HUD_Render.h" />
@@ -173,6 +207,7 @@
     <ClInclude Include="src\Render\SkillEffect_Render.h" />
     <ClInclude Include="src\Render\Sprite_Draw.h" />
     <ClInclude Include="src\Render\Terrain_Render.h" />
+    <ClInclude Include="src\Render\Texture\ImageCodec.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Scene\Scene_CharSelect.h" />
@@ -186,14 +221,13 @@
     <ClInclude Include="src\Trade\Trade.h" />
     <ClInclude Include="src\UI\UI.h" />
     <ClInclude Include="src\Game\GameEnums.h" />
-    <ClInclude Include="src\Game\GameStructs.h" />
   </ItemGroup>
 
   <ItemGroup>
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\WinMain.cpp" />
+    <ClCompile Include="src\Platform\ClientEntry.cpp" />
     <ClCompile Include="src\Local\Text_Data.cpp" />
     <ClCompile Include="src\Scene\Scene_Dispatch.cpp" />
     <ClCompile Include="src\Scene\Scene_Intro.cpp" />
@@ -209,10 +243,27 @@
     <ClCompile Include="src\UI\UIState.cpp" />
     <ClCompile Include="src\Local\ClientText.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
-    <ClCompile Include="src\Core\Font.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32NativeBridge.cpp" />
+    <ClCompile Include="src\Platform\SDL3\SDLWindow.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLInput.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLGLContext.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLTimer.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLFileSystem.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLNativeBridge.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLSocket.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\SDL3\SDLFont.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Platform\Win32\Win32Audio.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Window.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32FileSystem.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32Socket.cpp" />
+    <ClCompile Include="src\Platform\Win32\Win32GLContext.cpp" />
+    <ClCompile Include="src\Platform\FontFrontend.cpp" />
     <ClCompile Include="src\Sound\SoundManager.cpp" />
     <ClCompile Include="src\Game\MapManager.cpp" />
-    <ClCompile Include="src\Core\WndProc.cpp" />
+    <ClCompile Include="src\Platform\Win32\ClientWndProc.cpp" />
     <ClCompile Include="src\Net\Network.cpp" />
     <ClCompile Include="src\Net\Reconnect.cpp" />
     <ClCompile Include="src\Net\Ping.cpp" />
@@ -304,7 +355,7 @@
     <ClCompile Include="src\Render\Camera_Login.cpp" />
     <ClCompile Include="src\UI\Chat_Log.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
-    <ClCompile Include="src\Debug\MiniDump.cpp" />
+    <ClCompile Include="src\Platform\Win32\MiniDump.cpp" />
     <ClCompile Include="src\Combat\Combat_AttackEffect.cpp" />
     <ClCompile Include="src\Core\Runtime_Small.cpp" />
     <ClCompile Include="src\Core\Runtime_Medium.cpp" />
@@ -322,7 +373,6 @@
     <ClCompile Include="src\Render\BMD_LegacyDraw.cpp" />
     <ClCompile Include="src\Config\Config_TokenParser.cpp" />
     <ClCompile Include="src\Entity\Entity_BoneEffects.cpp" />
-    <ClCompile Include="src\Net\Pipe_Legacy.cpp" />
     <ClCompile Include="src\Core\Runtime_Linker.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_LegacyHealth.cpp" />
     <ClCompile Include="src\Item\Item_LegacyLinker.cpp" />
@@ -375,7 +425,6 @@
     <ClCompile Include="src\Scene\Scene_OpenWorld.cpp" />
     <ClCompile Include="src\Scene\Scene_AssetLoad.cpp" />
     <ClCompile Include="src\Render\Camera_Unproject.cpp" />
-    <ClCompile Include="src\Net\Net_PipeQuery.cpp" />
     <ClCompile Include="src\Net\Protocol\Protocol_Check.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />
     <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />
@@ -448,6 +497,9 @@
     <ClCompile Include="src\Render\Render_SpriteHelpers.cpp" />
     <ClCompile Include="src\Render\Terrain_Render.cpp" />
     <ClCompile Include="src\Render\Terrain_Water.cpp" />
+    <ClCompile Include="src\Render\Texture\ImageCodec.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\Texture\Texture.cpp" />
     <ClCompile Include="src\Render\Trail_Render.cpp" />
     <ClCompile Include="src\Render\Weather.cpp" />
@@ -487,11 +539,6 @@
     <ResourceCompile Include="src\resource.rc" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="lib\libjpeg\libjpeg.vcxproj">
-      <Project>{B1A2C3D4-E5F6-7890-ABCD-EF1234567890}</Project>
-    </ProjectReference>
-  </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

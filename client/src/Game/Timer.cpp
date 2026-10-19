@@ -17,6 +17,7 @@
 //   _DAT_00552890 — delta-time scale (1/1000)
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -32,12 +33,12 @@ void Timer_UpdateFrameTiming(void)
 
   if (FpsTimerInitialized == 0) {
     DAT_05826e10 = 0;
-    FpsWindowStartTimeMs = timeGetTime();
+    FpsWindowStartTimeMs = Platform::GetTimer().MultimediaTicks();
     FpsTimerInitialized = 1;
   }
   DAT_05826e10 = DAT_05826e10 + 1;
   DAT_05826e14 = DAT_05826e14 + 1;
-  DVar2 = timeGetTime();
+  DVar2 = Platform::GetTimer().MultimediaTicks();
   // DESVIACION DELIBERADA.  El binario hace
   // `fild qword [timeGetTime()]; fstp dword WorldTime`, o sea guarda los ms
   // DESDE EL ARRANQUE DE WINDOWS en un float de 4 bytes.  Pasadas ~13 horas de
@@ -56,7 +57,7 @@ void Timer_UpdateFrameTiming(void)
   if (WorldTimeEpochMs == 0) WorldTimeEpochMs = DVar2;
   local_8 = (double)(ulonglong)(DWORD)(DVar2 - WorldTimeEpochMs);
   DAT_05826e08 = (float)(longlong)local_8;
-  FrameTimeCurrentMs = timeGetTime();
+  FrameTimeCurrentMs = Platform::GetTimer().MultimediaTicks();
   dVar1 = (double)(int)(FrameTimeCurrentMs - FpsWindowStartTimeMs) * _DAT_005528a8;
   if (dVar1 == FloatZero) {
     local_8 = -1.0;
@@ -67,7 +68,7 @@ void Timer_UpdateFrameTiming(void)
   if ((_DAT_00552898 < dVar1) && (10 < DAT_05826e10)) {
     FpsWindowStartTimeMs = DAT_05826e00;
     DAT_05826e10 = DAT_05826e14;
-    DAT_05826e00 = timeGetTime();
+    DAT_05826e00 = Platform::GetTimer().MultimediaTicks();
     DAT_05826e14 = 0;
   }
   DeltaT = (float)(int)(FrameTimeCurrentMs - FrameTimePreviousMs) * _DAT_00552890;

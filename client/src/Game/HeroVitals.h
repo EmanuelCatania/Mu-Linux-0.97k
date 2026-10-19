@@ -10,7 +10,7 @@
 // Si el WORD de CharacterAttribute ya no coincide con el valor guardado (lo
 // cambió un camino sin View*), manda el WORD: nunca se muestra un dato viejo.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 enum eHeroVital { VITAL_LIFE, VITAL_MANA, VITAL_AG, MAX_HERO_VITAL };
 

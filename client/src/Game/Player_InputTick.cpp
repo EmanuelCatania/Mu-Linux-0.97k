@@ -1,4 +1,7 @@
+#include <cstdint>
 #include "stdafx.h"
+#include "Platform/ISocket.h"
+#include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Camera3D.h"
 #include "UI/MiniMap.h"
@@ -8,7 +11,7 @@
 #include "functions.h"
 #include "Net/Net.h"
 #include "Net/MuEmu.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 #include <string.h>
 
 
@@ -557,7 +560,7 @@ static void HUD_HotkeyTick(void)
 //  12. Atributo de terreno bajo el cursor → DAT_07e118e8
 //
 // Los bloques de ofuscación por HashTable repartidos por la función (~70 % del código) se omiten
-// (ver docs/analisis/hashtable-anti-tamper.md).
+// (ver docs/analisis/hashtable-anti-tamper.md del tag 0.97.21).
 //
 // Key globals:
 //   DAT_07abf5d8          — local player entity ptr
@@ -665,25 +668,25 @@ void __cdecl Player_ProcessInput(void)
             // Ángulo del mouse respecto del centro del viewport, llevado al marco
             // del cuerpo y clampeado a [120, 240]: la cabeza sólo gira ~±60°.
             const float angMouse = CreateAngle(fHalfScreenW, 180.0f, mouseX, mouseY);
-            int v16 = (int)((int)(angMouse + *(float*)(ent + 36)) + 315) % 360;
+            int v16 = (int)((int)(angMouse + AsCharacter(ent)->Object.Angle[2]) + 315) % 360;
             if (v16 >= 120) { if (v16 > 240) v16 = 240; }
             else            { v16 = 120; }
 
-            *(DWORD*)(ent + 60) = 0;                          // HeadTargetAngle[2]
+            *(DWORD *)&AsCharacter(ent)->Object.HeadTargetAngle[2] = 0;                          // HeadTargetAngle[2]
 
             // IDA L374: el tracking se apaga durante el auto-ataque y con la
             // animación de muerte (62).
             if ((DAT_07e11e18 == 0 || g_Attacking == -1 || gMapManager.GetCurrentMap() == 6)
-                && ent[261] != 62)
+                && AsCharacter(ent)->Object.CurrentAction != 62)
             {
                 bHeadTrackActive = true;
-                *(float*)(ent + 52) = (float)((v16 + 180) % 360);   // yaw
-                *(float*)(ent + 56) = (float)(180 - (int)DAT_083a4278) * 0.050000001f; // pitch
+                AsCharacter(ent)->Object.HeadTargetAngle[0] = (float)((v16 + 180) % 360);   // yaw
+                AsCharacter(ent)->Object.HeadTargetAngle[1] = (float)(180 - (int)DAT_083a4278) * 0.050000001f; // pitch
             }
             else
             {
-                *(DWORD*)(ent + 52) = 0;
-                *(DWORD*)(ent + 56) = 0;
+                *(DWORD *)&AsCharacter(ent)->Object.HeadTargetAngle[0] = 0;
+                *(DWORD *)&AsCharacter(ent)->Object.HeadTargetAngle[1] = 0;
             }
         }
     }
@@ -707,7 +710,7 @@ void __cdecl Player_ProcessInput(void)
             // IDA gatea todo este walker con Hero+748. Los contadores de waypoint
             // son internos a MovePath y no hay que usarlos para enganchar la posición
             // de mundo mientras el runner de camino está inactivo.
-            bool isIdle = (ent[748] == 0);
+            bool isIdle = (AsCharacter(ent)->Movement == 0);
             if (!isIdle) {
                 SetPlayerWalk((int)ent);
             }
@@ -718,21 +721,21 @@ void __cdecl Player_ProcessInput(void)
                 } else {
                     // Al llegar al destino se resetean wp_count + cur_wp para que isIdle sea true
                     // en el frame siguiente.
-                    *(unsigned char*)(ent + 0x354) = 0;   // cur_wp
-                    *(unsigned char*)(ent + 0x355) = 0;   // substep
-                    *(unsigned char*)(ent + 0x356) = 0;   // wp_count
-                    *(unsigned char*)(ent + 0x305) = 0;   // move_pending:
+                    AsCharacter(ent)->PathCurrent = 0;   // cur_wp
+                    AsCharacter(ent)->PathSubstep = 0;   // substep
+                    AsCharacter(ent)->PathNum = 0;   // wp_count
+                    AsCharacter(ent)->JumpTime = 0;   // move_pending:
                     // sin esto isIdle queda false → walker sigue ejecutando
                     // SetPlayerWalk cada frame → action=walk persistente.
-                    *(unsigned char*)(ent + 0x2ec) = 0;
+                    AsCharacter(ent)->Movement = 0;
                     // IDA Player_InputTick L399: `*(_BYTE *)(v0 + 748) = 0;`
                     // Es la UNICA escritura a +748 que tiene esa funcion en el
                     // binario: sin ella el walker nunca se apaga.
-                    *(unsigned char*)(ent + 748) = 0;
+                    AsCharacter(ent)->Movement = 0;
                     SetPlayerStop((int)ent);
-                    // IDA L401: `dword_7E11DBC = (__int64)*(float *)(v0 + 36);`
+                    // IDA L401: `dword_7E11DBC = (std::int64_t)*(float *)(v0 + 36);`
                     // — es el FACING del héroe, no un timestamp.
-                    DAT_07e11dbc = (int)*(float*)(ent + 36);
+                    DAT_07e11dbc = (int)AsCharacter(ent)->Object.Angle[2];
                     DAT_07e11db8 = 0;
                     // IDA L397-403: al terminar el camino, Action(c, c) con
                     // la cola que haya (0 = nada).  El port despachaba por
@@ -753,12 +756,12 @@ void __cdecl Player_ProcessInput(void)
                 // facing actual contra el del mouse, y sólo si cambió se rota.
                 // Además espera 40 ticks (~1.6 s a 25 fps) entre rotaciones.
                 ++DAT_07e11db8;
-                if (DAT_07e11db8 >= 40 && !g_MouseOnWindow && !ent[765])
+                if (DAT_07e11db8 >= 40 && !g_MouseOnWindow && !AsCharacter(ent)->Dead)
                 {
-                    const BYTE act = ent[261];
+                    const BYTE act = AsCharacter(ent)->Object.CurrentAction;
                     // 139/140/133/135 = animaciones de gate/teleport: no rotar.
                     if (act != 139 && act != 140 && act != 133 && act != 135
-                        && bHeadTrackActive && !ent[757])
+                        && bHeadTrackActive && !AsCharacter(ent)->SkillStage)
                     {
                         DAT_07e11db8 = 0;
                         const float mouseX = (float)(int)DAT_083a427c;
@@ -766,7 +769,7 @@ void __cdecl Player_ProcessInput(void)
                         const int   angToMouse =
                             (int)CreateAngle(mouseX, mouseY, fHalfScreenW, 180.0f);
 
-                        const float curFacing = *(float*)(ent + 36);
+                        const float curFacing = AsCharacter(ent)->Object.Angle[2];
                         const int   curOct = (int)((curFacing + 22.5f) * 0.022222223f + 1.0f) & 7;
 
                         DAT_07e11dbc = (405 - angToMouse) % 360;
@@ -774,7 +777,7 @@ void __cdecl Player_ProcessInput(void)
                         const int   newOct = (int)((newFacing + 22.5f) * 0.022222223f + 1.0f) & 7;
 
                         if (curOct != newOct) {
-                            *(float*)(ent + 36) = newFacing;
+                            AsCharacter(ent)->Object.Angle[2] = newFacing;
                             // TODO(paquete): el binario avisa acá al server con
                             // PMSG_ACTION_RECV (`C1:18`, Protocol.h:55 —
                             // {BYTE dir; BYTE action; BYTE index[2]}) llevando el
@@ -795,27 +798,27 @@ void __cdecl Player_ProcessInput(void)
     #if 0
     {
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
-        if (ent && ent[0x2ed] == 3 && ent[0x356] == 0) {
+        if (ent && AsCharacter(ent)->MovementType == 3 && AsCharacter(ent)->PathNum == 0) {
             int targetIdx = (int)DAT_00559ce8;
             if (targetIdx >= 0 && targetIdx < 400) {
                 unsigned char *tgt = (unsigned char*)(DAT_07abf5d0 + (uintptr_t)targetIdx * 0x394);
-                if (tgt[0] != 0 && tgt[0x34e] == 0) {
-                    int hxg = (int)*(int*)(ent + 0x388);
-                    int hyg = (int)*(int*)(ent + 0x38c);
-                    int txg = (int)*(int*)(tgt + 0x388);
-                    int tyg = (int)*(int*)(tgt + 0x38c);
+                if (AsCharacter(tgt)->Object.Live != 0 && AsCharacter(tgt)->SafeZone == 0) {
+                    int hxg = (int)AsCharacter(ent)->PositionX;
+                    int hyg = (int)AsCharacter(ent)->PositionY;
+                    int txg = (int)AsCharacter(tgt)->PositionX;
+                    int tyg = (int)AsCharacter(tgt)->PositionY;
                     int dx = (hxg - txg < 0) ? -(hxg - txg) : (hxg - txg);
                     int dy = (hyg - tyg < 0) ? -(hyg - tyg) : (hyg - tyg);
                     int cheb = (dx > dy) ? dx : dy;
                     if (cheb <= 2) {
-                        WORD targetId = *(WORD*)(tgt + 0x1dc);
+                        WORD targetId = AsCharacter(tgt)->Key;
                         extern float __cdecl CreateAngle(float, float, float, float);
-                        float ex = *(float*)(ent + 0x10);
-                        float ey = *(float*)(ent + 0x14);
-                        float ttx = *(float*)(tgt + 0x10);
-                        float tty = *(float*)(tgt + 0x14);
+                        float ex = AsCharacter(ent)->Object.Position[0];
+                        float ey = AsCharacter(ent)->Object.Position[1];
+                        float ttx = AsCharacter(tgt)->Object.Position[0];
+                        float tty = AsCharacter(tgt)->Object.Position[1];
                         float facing = CreateAngle(ex, ey, ttx, tty);
-                        *(float*)(ent + 0x24) = facing;
+                        AsCharacter(ent)->Object.Angle[2] = facing;
                         int dirCode = ((int)((facing + 22.5f) * (1.0f / 45.0f))) & 7;
                         unsigned char pkt[8];
                         pkt[0] = 0xC1;
@@ -829,14 +832,14 @@ void __cdecl Player_ProcessInput(void)
                             pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
                         }
                         MuEmu::EncryptSend(pkt, 7);
-                        if (SocketClientSocket != 0xFFFFFFFF) {
+                        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             ::send(SocketClientSocket, (const char*)pkt, 7, 0);
                         }
                         SetPlayerAttack((int)ent, 0, 0, 0);
                     }
                 }
             }
-            ent[0x2ed] = 0;  // consume attack mode
+            AsCharacter(ent)->MovementType = 0;  // consume attack mode
         }
     }
     #endif // obsolete inline mini-attack disabled
@@ -851,6 +854,7 @@ void __cdecl Player_ProcessInput(void)
     // Desviación: con el walker idle (wp_count == 0) los clicks se aceptan de
     // inmediato; mientras se mueve se mantiene el gate por tiempo para no spamear
     // el server con paths intermedios.
+    { // El salto de salida no entra en el ámbito de estas variables.
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
     // DAT_07e11dc0 ("movement lock flag B"): según IDA solo lo escriben Attack
     // (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío en nuestro build
@@ -908,14 +912,14 @@ void __cdecl Player_ProcessInput(void)
                     // el anim_state del preview de CharSelect.
                     if (DAT_07abf5d8) {
                         BYTE* hero = (BYTE*)DAT_07abf5d8;
-                        hero[0x2ed] = 0;            // action queue
-                        hero[0x105] = 1;            // anim_state = idle
-                        hero[0x106] = 1;            // anim_state_prev
-                        *(float*)(hero + 0x108) = 0.0f;  // anim frame
-                        hero[0x354] = 0;            // path_current_wp
-                        hero[0x355] = 0;            // path_substep
-                        hero[0x356] = 0;            // path_wp_count
-                        hero[0x305] = 0;            // move_pending
+                        *(char *)&AsCharacter(hero)->MovementType = 0;            // action queue
+                        *(char *)&AsCharacter(hero)->Object.CurrentAction = 1;            // anim_state = idle
+                        *(char *)&AsCharacter(hero)->Object.PriorAction = 1;            // anim_state_prev
+                        AsCharacter(hero)->Object.AnimationFrame = 0.0f;  // anim frame
+                        *(char *)&AsCharacter(hero)->PathCurrent = 0;            // path_current_wp
+                        *(char *)&AsCharacter(hero)->PathSubstep = 0;            // path_substep
+                        *(char *)&AsCharacter(hero)->PathNum = 0;            // path_wp_count
+                        *(char *)&AsCharacter(hero)->JumpTime = 0;            // move_pending
                     }
                     // NO wipear el entity pool aquí: Player_InputTick corre DESPUÉS de que F3/03
                     // JoinMapServer pobló el pool con los viewport spawns (0x12/0x13). El wipe se
@@ -1099,10 +1103,10 @@ void __cdecl Player_ProcessInput(void)
         // Faltaba: spameando clicks durante el golpe se re-disparaba Action y
         // el ataque se reiniciaba (doble golpe en la misma animacion).
         if (ent) {
-            const unsigned char act = ent[261];
-            const unsigned char st  = ent[124];
+            const unsigned char act = AsCharacter(ent)->Object.CurrentAction;
+            const unsigned char st  = AsCharacter(ent)->Object.Teleport;
             if (act == 0x82 || st == 1 || st == 2 ||
-                *(float*)(ent + 360) < 0.69999999f ||
+                AsCharacter(ent)->Object.Alpha < 0.69999999f ||
                 (act >= 0x22 && act <= 0x5B)) {
                 // DESVIACION DELIBERADA: la excepcion de IDA es 0x4E..0x50
                 // (78..80 = stop/walk/run_TwoHandTwo).  La extendemos a
@@ -1144,25 +1148,25 @@ void __cdecl Player_ProcessInput(void)
         // La nota anterior decia "NO resetear aca"; era incorrecta.  Sin este
         // reset el contador crecia sin techo, el gate quedaba abierto en todos
         // los frames y con el boton mantenido el bloque corria dos veces por
-        // tick: el primer paso armaba el ataque (ent[0x2ed]=3 + ruta al mob) y
+        // tick: el primer paso armaba el ataque (AsCharacter(ent)->MovementType=3 + ruta al mob) y
         // el segundo caia en el ground click, repathfindeaba al tile del cursor
         // y pisaba la ruta.  Como el heroe quedaba siempre caminando,
-        // `ent[0x2ed]==3 && ent[0x356]==0` nunca se cumplia, Action nunca corria
+        // `AsCharacter(ent)->MovementType==3 && AsCharacter(ent)->PathNum==0` nunca se cumplia, Action nunca corria
         // y el cursor parpadeaba entre ataque y movimiento.
         DAT_07e11d28 = 0;
 
         // ── Movement/attack packet for swimming anim ─────────────────────────
         // Si la entidad está viva y CanAct y en movimiento de nado:
-        if (*(char*)(ent + 0x34e) == '\0') {
+        if (*(char *)&AsCharacter(ent)->SafeZone == '\0') {
             unsigned int canAct = CheckAttack();
             // Desviación: CheckAttack retorna 0 cuando no hay entidad bajo el mouse
             // (SelectedCharacter == -1); con bHoverActive (click real) se pasa igual, para
             // que el click al suelo llegue al pathfind. Los handlers internos siguen
             // gateados por SelectedCharacter/4c/48/54 != -1.
             if ((char)canAct != '\0' || bHoverActive) {
-                if (*(char*)(ent + 0x2ec) != '\0'
-                    && *(char*)(ent + 0x2ed) == '\0'
-                    && (*(unsigned char*)(ent + 0x1bc) & 7) == 2)
+                if (*(char *)&AsCharacter(ent)->Movement != '\0'
+                    && *(char *)&AsCharacter(ent)->MovementType == '\0'
+                    && (AsCharacter(ent)->Class & 7) == 2)
                 {
                     short animA = *(short*)((unsigned char*)DAT_07cf1ffc + 0x86);
                     short animB = *(short*)((unsigned char*)DAT_07cf1ffc + 0x97);
@@ -1181,8 +1185,8 @@ void __cdecl Player_ProcessInput(void)
                         movePkt[0] = 0xC1;
                         movePkt[1] = 1;     // len placeholder
                         movePkt[2] = 0x11;
-                        movePkt[3] = (unsigned char)(*(int*)(ent + 0x388));  // src_x
-                        movePkt[4] = (unsigned char)(*(int*)(ent + 0x38c));  // src_y
+                        movePkt[3] = (unsigned char)(AsCharacter(ent)->PositionX);  // src_x
+                        movePkt[4] = (unsigned char)(AsCharacter(ent)->PositionY);  // src_y
                         movePkt[5] = 0;
                         SendPacket((char*)movePkt, 6);
                     }
@@ -1226,23 +1230,23 @@ void __cdecl Player_ProcessInput(void)
                         goto end_tick_inc;
                     }
                     int tgtEntityBase = (int)(DAT_07abf5d0 + SelectedCharacter * 0x394);
-                    int dstX = *(int*)(tgtEntityBase + 0x388);
-                    int dstY = *(int*)(tgtEntityBase + 0x38c);
+                    int dstX = AsCharacter(tgtEntityBase)->PositionX;
+                    int dstY = AsCharacter(tgtEntityBase)->PositionY;
 
                     DAT_00559ce8 = SelectedCharacter;
                     Attacking  = 1;
-                    *(unsigned char*)(ent + 0x2ed) = 3;
+                    AsCharacter(ent)->MovementType = 3;
                     // Destino = grid del MOB target (no DAT_05826e08, que es el tick counter).
                     TargetX = (DWORD)dstX;
                     TargetY = (DWORD)dstY;
 
-                    DAT_07db8708    = (int)*(short*)(tgtEntityBase + 2);
-                    _DAT_07e118e4   = *(DWORD*)(tgtEntityBase + 0x24);
+                    DAT_07db8708    = (int)AsCharacter(tgtEntityBase)->Object.Type;
+                    _DAT_07e118e4   = *(DWORD *)&AsCharacter(tgtEntityBase)->Object.Angle[2];
                     DAT_00559c70    = SelectedCharacter;
 
                     // Pathfind to hover target
-                    int srcX = *(int*)(ent + 0x388);
-                    int srcY = *(int*)(ent + 0x38c);
+                    int srcX = AsCharacter(ent)->PositionX;
+                    int srcY = AsCharacter(ent)->PositionY;
 
                     // IDA 0x004ACEF0 L986-988: `if (!CheckWall(hx, hy, TargetX,
                     // TargetY)) goto LABEL_390;` — con una pared entre el heroe y
@@ -1305,7 +1309,7 @@ void __cdecl Player_ProcessInput(void)
                                           || (lh >= 144 && lh < 160)
                                           || (rh >= 128 && rh < 135)
                                           || (rh == 145);
-                        if (!bRanged && *(unsigned char*)(ent + 747) != 9) {
+                        if (!bRanged && AsCharacter(ent)->MonsterIndex != 9) {
                             Combat_SendMovePathPacket((int)ent, (int)ent);   // IDA: SendMove
                             goto end_tick_inc;
                         }
@@ -1357,9 +1361,9 @@ void __cdecl Player_ProcessInput(void)
         if (SelectedOperate != -1 && bClickNow) {
             // Gate de montura (IDA L1135): solo se opera si NO se va
             // montado, o si se esta en zona segura.
-            const unsigned short helper = *(unsigned short*)(ent + 0x2b8);
+            const unsigned short helper = *(unsigned short *)&AsCharacter(ent)->Helper.Type;
             const bool mountOk = ((helper != 818 && helper != 819)
-                                  || *(unsigned char*)(ent + 0x34e) != 0);
+                                  || AsCharacter(ent)->SafeZone != 0);
             const int iSrc = SelectedOperate;
             // Bound check (no esta en IDA): SelectedOperate viene del
             // picker del frame anterior.
@@ -1370,21 +1374,21 @@ void __cdecl Player_ProcessInput(void)
             if (mountOk && tgtEntityPtr != 0) {
                 // TargetX/TargetY salen de la POSICION DEL OBJETO, no del tile bajo el
                 // cursor.  IDA L1138:
-                //     TargetX = (__int64)(o->Position[0] * 0.01);
-                //     TargetY = (__int64)(o->Position[1] * 0.01);
+                //     TargetX = (std::int64_t)(o->Position[0] * 0.01);
+                //     TargetY = (std::int64_t)(o->Position[1] * 0.01);
                 TargetX = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
                 TargetY = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
 
                 const int attrIdx = TERRAIN_INDEX((int)TargetX, (int)TargetY);
                 if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
-                    && *(char*)(ent + 0x2ec) == 0)
+                    && *(char *)&AsCharacter(ent)->Movement == 0)
                 {
-                    *(unsigned char*)(ent + 0x2ed) = 4;   // MOVEMENT_OPERATE
+                    AsCharacter(ent)->MovementType = 4;   // MOVEMENT_OPERATE
                     DAT_07db8708  = (int)*(short*)(tgtEntityPtr + 2);
                     _DAT_07e118e4 = *(DWORD*)(tgtEntityPtr + 0x24);
 
-                    const int srcX = *(int*)(ent + 0x388);
-                    const int srcY = *(int*)(ent + 0x38c);
+                    const int srcX = AsCharacter(ent)->PositionX;
+                    const int srcY = AsCharacter(ent)->PositionY;
                     unsigned int ok = Path_FindRoute(srcX, srcY,
                                                      TargetX, TargetY,
                                                      ent + 0x354, 0.0f);
@@ -1404,24 +1408,24 @@ void __cdecl Player_ProcessInput(void)
         }
 
         if (SelectedOperate == -1
-            || ((*(short*)(ent + 0x2b8) == 0x332 || *(short*)(ent + 0x2b8) == 0x333)
-                && *(char*)(ent + 0x34e) == '\0'))
+            || ((AsCharacter(ent)->Helper.Type == 0x332 || AsCharacter(ent)->Helper.Type == 0x333)
+                && *(char *)&AsCharacter(ent)->SafeZone == '\0'))
         {
             if (SelectedNpc != -1 && bClickNow) {
                 // Click sobre un NPC: setea el objetivo de movimiento y pathfindea (gateado por
                 // un click real, bClickEdge, no bHoverActive).
                 if (DAT_07eaa118 == '\0' && DAT_07eaa119 == '\0') {
-                    *(unsigned char*)(ent + 0x2ed) = 2;
+                    AsCharacter(ent)->MovementType = 2;
                     DAT_00559ce8 = SelectedNpc;
                     int tgtBase = (int)(DAT_07abf5d0 + SelectedNpc * 0x394);
-                    DAT_07db8708  = (int)*(short*)(tgtBase + 2);
-                    _DAT_07e118e4 = *(DWORD*)(tgtBase + 0x24);
+                    DAT_07db8708  = (int)AsCharacter(tgtBase)->Object.Type;
+                    _DAT_07e118e4 = *(DWORD *)&AsCharacter(tgtBase)->Object.Angle[2];
                     DAT_00559c70  = SelectedNpc;
 
-                    int srcX = *(int*)(ent + 0x388);
-                    int srcY = *(int*)(ent + 0x38c);
-                    int dstX = *(int*)(tgtBase + 0x388);
-                    int dstY = *(int*)(tgtBase + 0x38c);
+                    int srcX = AsCharacter(ent)->PositionX;
+                    int srcY = AsCharacter(ent)->PositionY;
+                    int dstX = AsCharacter(tgtBase)->PositionX;
+                    int dstY = AsCharacter(tgtBase)->PositionY;
                     // Destino = grid del NPC.
                     TargetX = (DWORD)dstX;
                     TargetY = (DWORD)dstY;
@@ -1442,7 +1446,7 @@ void __cdecl Player_ProcessInput(void)
             // ── Tertiary target (SelectedItem) ───────────────────────────────
             if (SelectedItem != -1 && bClickNow) {
                 // bClickEdge, no bHoverActive (igual que el handler de ataque).
-                *(unsigned char*)(ent + 0x2ed) = 1;
+                AsCharacter(ent)->MovementType = 1;
                 ItemKey = (DWORD)SelectedItem;   // latch, IDA L1281
                 // SelectedItem es índice del pool de items del suelo (DAT_07e12840, stride
                 // 0x204), NO del pool de personajes (DAT_07abf5d0, stride 0x394). El tile del
@@ -1456,8 +1460,8 @@ void __cdecl Player_ProcessInput(void)
                 int dstY = (int)(*(float*)(itemEnt + 92) / 100.0f);
                 TargetX = (DWORD)dstX;
                 TargetY = (DWORD)dstY;
-                int srcX = *(int*)(ent + 0x388);
-                int srcY = *(int*)(ent + 0x38c);
+                int srcX = AsCharacter(ent)->PositionX;
+                int srcY = AsCharacter(ent)->PositionY;
 
                 unsigned int ok = Path_FindRoute(srcX, srcY,
                                                 dstX, dstY,
@@ -1465,7 +1469,7 @@ void __cdecl Player_ProcessInput(void)
                 if ((char)ok == '\0') {
                     // IDA L1318: sin camino -> Action y cola en 0.
                     Action((DWORD)ent, (DWORD)ent);
-                    *(unsigned char*)(ent + 0x2ed) = 0;
+                    AsCharacter(ent)->MovementType = 0;
                 } else {
                     Combat_SendMovePathPacket((int)ent, (int)ent);
                 }
@@ -1516,7 +1520,7 @@ void __cdecl Player_ProcessInput(void)
                 }
             }
             {
-                SHORT shift = GetAsyncKeyState(0x10);
+                SHORT shift = Platform::GetInput().KeyState(0x10);
                 bool shiftHeld = ((char)((unsigned short)shift >> 8) == -0x80);
                 if (!shiftHeld) {
                     // Reset del closest-hit sentinel ANTES de cada scan: si DAT_083a4120 (t_max)
@@ -1565,8 +1569,8 @@ void __cdecl Player_ProcessInput(void)
                         // ranges made a completed cast permanently block all
                         // subsequent ground clicks.
                         {
-                            int srcX = *(int*)(ent + 0x388);
-                            int srcY = *(int*)(ent + 0x38c);
+                            int srcX = AsCharacter(ent)->PositionX;
+                            int srcY = AsCharacter(ent)->PositionY;
 
                             // IDA 0x4ACEF0 L1344-1381, dos gates que faltaban.
                             //
@@ -1581,9 +1585,9 @@ void __cdecl Player_ProcessInput(void)
                             //    ruta y sigue caminando, no se re-rutea: solo
                             //    MouseUpdateTime = 0 (IDA LABEL_389).
                             {
-                                const int heroGX = (int)(*(float*)(ent + 0x10) * 0.01f);
-                                const int heroGY = (int)(*(float*)(ent + 0x14) * 0.01f);
-                                const bool bMoving = (*(unsigned char*)(ent + 0x2ec) != 0);
+                                const int heroGX = (int)(AsCharacter(ent)->Object.Position[0] * 0.01f);
+                                const int heroGY = (int)(AsCharacter(ent)->Object.Position[1] * 0.01f);
+                                const bool bMoving = (AsCharacter(ent)->Movement != 0);
                                 if (bMoving) {
                                     if (abs(srcX - heroGX) >= 2) goto end_tick_inc;
                                     if (abs(srcY - heroGY) >= 2) goto end_tick_inc;
@@ -1599,7 +1603,7 @@ void __cdecl Player_ProcessInput(void)
                                                             TargetX, TargetY,
                                                             ent + 0x354, 0.0f);
                             if ((char)ok != '\0') {
-                                *(unsigned char*)(ent + 0x2ed) = 0;
+                                AsCharacter(ent)->MovementType = 0;
                                 Combat_SendMovePathPacket((int)ent, (int)ent);
                                 goto end_tick_inc;
                             }
@@ -1621,14 +1625,15 @@ void __cdecl Player_ProcessInput(void)
 end_tick_inc:
     DAT_07e11d28 = DAT_07e11d28 + 1;
 
+    }
 end_tick:
     // ── Per-frame entity state update ─────────────────────────────────────────
     Combat_DispatchHeroSkillAttack(DAT_07abf5d8);
 
     // ── HeroTile: atributo de terreno bajo el HÉROE ───────────────────────────
     // IDA Player_InputTick L570-582:
-    //     v227 = (__int64)*(float *)(Hero + 16) / 100
-    //          + (((__int64)*(float *)(Hero + 20) / 100) << 8);
+    //     v227 = (std::int64_t)*(float *)(Hero + 16) / 100
+    //          + (((std::int64_t)*(float *)(Hero + 20) / 100) << 8);
     //     clamp [0, 0xFFFF]
     //     HeroTile = TerrainMappingLayer1[v227];
     //

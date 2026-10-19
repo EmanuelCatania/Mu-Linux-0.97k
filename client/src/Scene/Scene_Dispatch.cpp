@@ -20,6 +20,7 @@
 //   DAT_00559050  — 16-byte XOR key for keepalive re-randomization
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "Scene/Scene_Dispatch.h"
 #include "Scene/Scene_Intro.h"
 #include "Scene/Scene_Loading.h"
@@ -137,11 +138,11 @@ void __cdecl Scene_Dispatch(HDC param_1)
             sbuf[1] = (char)total;
             CSimpleModulus_Encode((int)(sbuf + 2), pkt + payStart, payLen);
             int sent = 0, rem = total;
-            if (SocketClientSocket != 0xffffffff) {
+            if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                 do {
                     int n = send(SocketClientSocket, sbuf + sent, rem - sent, 0);
                     if (n == -1) {
-                        int err = WSAGetLastError();
+                        int err = Platform::GetSocket().LastError();
                         if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + total) < 0x2001) {
                             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, sbuf, total);
                             SocketClientSendBufferLength += total;
@@ -164,11 +165,11 @@ void __cdecl Scene_Dispatch(HDC param_1)
             lbuf[2] = (char)total;
             CSimpleModulus_Encode((int)(lbuf + 3), pkt + payStart, payLen);
             int sent = 0, rem = total;
-            if (SocketClientSocket != 0xffffffff) {
+            if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                 do {
                     int n = send(SocketClientSocket, lbuf + sent, rem - sent, 0);
                     if (n == -1) {
-                        int err = WSAGetLastError();
+                        int err = Platform::GetSocket().LastError();
                         if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + total) < 0x2001) {
                             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, lbuf, total);
                             SocketClientSendBufferLength += total;

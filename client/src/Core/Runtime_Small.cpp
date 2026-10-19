@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Platform/IAudio.h"
 #include "Item/ItemDefines.h"
 #include "Game/MapManager.h"
 #include "globals.h"
@@ -26,7 +27,6 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for functions defined later in this batch
-static void __cdecl FUN_00405320_impl(int param_1);
 
 // ── 1-byte: nop ──────────────────────────────────────────────────────────────
 
@@ -192,10 +192,10 @@ short __cdecl FUN_0047d000(short *param_1) {
 extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item)
 {
     if (*(unsigned short*)Item == 0xFFFF) return;
-    int count = *(unsigned char*)(Item + 36);
+    int count = AsItem(Item)->SpecialNum;
     for (int i = 0; i < count; ++i) {
         if (*(unsigned char*)(Item + i + 37) == (unsigned int)Special) {
-            if (*(unsigned char*)(Item + 26)) {
+            if (AsItem(Item)->Durability) {
                 *Value += *(unsigned char*)(i + Item + 45);
             }
         }
@@ -262,11 +262,11 @@ int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
 int __fastcall Stats_CalcBase(int a1) {
     // Guarda de a1: abajo se lee `*(short*)(a1 + 536)` /
     // `(a1 + 604)` (slots de arma) sin chequear.
-    if (a1 == 0 || (uintptr_t)a1 < 0x100000 || (uintptr_t)a1 >= 0x80000000) return 0;
+    if (a1 == 0 || (uintptr_t)a1 < 0x100000) return 0;
 
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
-    if ((uintptr_t)ca < 0x100000 || (uintptr_t)ca >= 0x80000000) return 0;
+    if ((uintptr_t)ca < 0x100000) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
 
     // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese
@@ -288,9 +288,9 @@ int __fastcall Stats_CalcBase(int a1) {
     short tL = *(short*)wp_L;
     short tR = *(short*)wp_R;
     bool useBowFormula = false;
-    if ((tL >= 136 && tL < 143 && *(unsigned char*)(wp_L + 26))
-        || (((tR >= 128 && tR < 135) || tR == 145) && *(unsigned char*)(wp_R + 26))
-        || (tL >= 144 && tL < 160 && *(unsigned char*)(wp_L + 26))) {
+    if ((tL >= 136 && tL < 143 && AsItem(wp_L)->Durability)
+        || (((tR >= 128 && tR < 135) || tR == 145) && AsItem(wp_R)->Durability)
+        || (tL >= 144 && tL < 160 && AsItem(wp_L)->Durability)) {
         useBowFormula = true;
     }
     if (useBowFormula) {
@@ -351,16 +351,16 @@ skip_wings: ;
 
     // WeaponL (slot 0)
     if (*(unsigned short*)wp_L != 0xFFFF) {
-        unsigned char dur = *(unsigned char*)(wp_L + 26);
+        unsigned char dur = AsItem(wp_L)->Durability;
         if (dur != 0) {
             short sType = *(short*)wp_L;
             if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
-                                               *(int*)(wp_L + 4),
-                                               *(unsigned char*)(wp_L + 27));
-            unsigned short minB = *(unsigned short*)(wp_L + 12);
-            unsigned short maxB = *(unsigned short*)(wp_L + 14);
+                                               AsItem(wp_L)->Level,
+                                               AsItem(wp_L)->Option1);
+            unsigned short minB = AsItem(wp_L)->DamageMin;
+            unsigned short maxB = AsItem(wp_L)->DamageMax;
             PlusSpecial(&minB, 60, wp_L);
             PlusSpecial(&maxB, 60, wp_L);
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
@@ -383,16 +383,16 @@ skip_wings: ;
 
     // WeaponR (slot 1)
     if (*(unsigned short*)wp_R != 0xFFFF) {
-        unsigned char dur = *(unsigned char*)(wp_R + 26);
+        unsigned char dur = AsItem(wp_R)->Durability;
         if (dur != 0) {
             short sType = *(short*)wp_R;
             if (sType < 0 || sType >= ITEM_MAX_EX) sType = 0;
             ITEM_ATTRIBUTE* attr = &ITEM_ATTR[sType];
             float durP = CalcDurabilityPercent(dur, attr->Durability,
-                                               *(int*)(wp_R + 4),
-                                               *(unsigned char*)(wp_R + 27));
-            unsigned short minB = *(unsigned short*)(wp_R + 12);
-            unsigned short maxB = *(unsigned short*)(wp_R + 14);
+                                               AsItem(wp_R)->Level,
+                                               AsItem(wp_R)->Option1);
+            unsigned short minB = AsItem(wp_R)->DamageMin;
+            unsigned short maxB = AsItem(wp_R)->DamageMax;
             PlusSpecial(&minB, 60, wp_R);
             PlusSpecial(&maxB, 60, wp_R);
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
@@ -428,8 +428,8 @@ skip_wings: ;
     short tWL = *(short*)wp_L;
     short tWR = *(short*)wp_R;
     if (tWL >= 128 && tWL < 160 && tWR >= 128 && tWR < 160) {
-        int levelL = (*(int*)(wp_L + 4) >> 3) & 0xF;
-        int levelR = (*(int*)(wp_R + 4) >> 3) & 0xF;
+        int levelL = (AsItem(wp_L)->Level >> 3) & 0xF;
+        int levelR = (AsItem(wp_R)->Level >> 3) & 0xF;
         if (tWL == 135 && levelR != 0) {
             // Bow + Arrows: boost L damage by (2*levelR + 1)% + 1
             float boost = (2.0f * levelR + 1.0f) * 0.01f;
@@ -466,11 +466,7 @@ void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
 
 // ── 22-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00405320 @ 0x00405320 (22 bytes) — close handle + field init
-static void __cdecl FUN_00405320_impl(int param_1) {
-    CloseHandle(*(HANDLE *)(param_1 + 4));
-    FUN_00405290_impl(param_1);
-}
+
 
 // FUN_00406d20 @ 0x00406D20 (22 bytes) — initialize hash table fields
 void __fastcall FUN_00406d20(int param_1) {
@@ -685,19 +681,12 @@ void __cdecl DeleteBug(int Owner) {
 // DirectSound8 rewrite, so a clean shutdown doesn't leak COM refs.
 void __cdecl FreeDirectSound(void) {
     if (!g_EnableSound) return;
-
-    for (int i = 0; i < 420; ++i) {
-        for (int c = 0; c < 4; ++c) {
-            if (g_lpDS3DBuffer[i][c]) { g_lpDS3DBuffer[i][c]->Release(); g_lpDS3DBuffer[i][c] = NULL; }
-            if (g_lpDSBuffer  [i][c]) { g_lpDSBuffer  [i][c]->Release(); g_lpDSBuffer  [i][c] = NULL; }
-        }
-        MaxBufferChannel[i] = 0;
-        BufferChannel[i]    = 0;
-        Enable3DSound[i]    = false;
+    Platform::GetAudio().Shutdown();
+    for (int slot = 0; slot < 420; ++slot) {
+        MaxBufferChannel[slot] = 0;
+        BufferChannel[slot] = 0;
+        Enable3DSound[slot] = false;
     }
-    if (g_lpDS3DListener) { g_lpDS3DListener->Release(); g_lpDS3DListener = NULL; }
-    if (g_lpDS)           { g_lpDS->Release();           g_lpDS = NULL; }
-
     g_EnableSound = FALSE;
 }
 

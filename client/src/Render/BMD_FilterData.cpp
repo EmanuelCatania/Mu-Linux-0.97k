@@ -2,6 +2,8 @@
 // Carga y guardado de los filtros de texto (filtro de chat y de nombres).
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
+#include "Platform/IFileSystem.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -16,7 +18,7 @@ void __cdecl Filter_SaveBMD(const char* path)
 {
     // Port of IDA sub_479A50 (Filter_SaveBMD).  Not called in the .bmd branch
     // (DAT_0055a7c4==1), only in the txt-source branch.  Kept for parity.
-    FILE* pFVar1 = fopen(path, "wb");
+    FILE* pFVar1 = Platform::GetFileSystem().Open(path, "wb");
     if (!pFVar1) return;
     BYTE* lpMem  = (BYTE*)operator_new(20000);
     char* src = DAT_07d73104;
@@ -52,11 +54,11 @@ void __cdecl Filter_SaveBMD(const char* path)
 void __cdecl OpenFilterFile(const char* path)
 {
     char local_100[256];
-    FILE* Stream = fopen(path, "rb");
+    FILE* Stream = Platform::GetFileSystem().Open(path, "rb");
     if (!Stream) {
         sprintf(local_100, "%s - File not exist.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
+        gWindow.RequestCloseApplication();
         return;
     }
     BYTE* Buffer = (BYTE*)operator_new(20000);
@@ -76,8 +78,8 @@ void __cdecl OpenFilterFile(const char* path)
     }
     if (Checksum != acc) {
         sprintf(local_100, "%s - File corrupted.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
+        gWindow.RequestCloseApplication();
         operator_delete(Buffer);
         return;
     }
@@ -103,7 +105,7 @@ void __cdecl OpenFilterFile(const char* path)
 // DAT_07d27610 (stride 0x14), incrementing DAT_07d78074 per token.
 void __cdecl FilterName_LoadData(const char* path)
 {
-    DAT_07d7806c = (FILE*)fopen(path, DAT_005580ac);
+    DAT_07d7806c = (FILE*)Platform::GetFileSystem().Open(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
     int iVar2;
     while ((iVar2 = ParseNextToken()) != 2) {
@@ -122,7 +124,7 @@ void __cdecl FilterName_SaveBMD(const char* path)
 {
     // Port of IDA sub_479D70 (FilterName_SaveBMD).  Not called in the .bmd
     // branch (DAT_0055a7c4==1), only in the txt-source branch.  Kept for parity.
-    FILE* pFVar1 = fopen(path, "wb");
+    FILE* pFVar1 = Platform::GetFileSystem().Open(path, "wb");
     if (!pFVar1) return;
     BYTE* lpMem  = (BYTE*)operator_new(20000);
     char* src = DAT_07d27610;
@@ -156,11 +158,11 @@ void __cdecl FilterName_SaveBMD(const char* path)
 void __cdecl OpenNameFilterFile(const char* path)
 {
     char local_100[256];
-    FILE* Stream = fopen(path, "rb");
+    FILE* Stream = Platform::GetFileSystem().Open(path, "rb");
     if (!Stream) {
         sprintf(local_100, "%s - File not exist.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
+        gWindow.RequestCloseApplication();
         return;
     }
     BYTE* Buffer = (BYTE*)operator_new(20000);
@@ -179,8 +181,8 @@ void __cdecl OpenNameFilterFile(const char* path)
     }
     if (Checksum != acc) {
         sprintf(local_100, "%s - File corrupted.", path);
-        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        Platform::GetWindow().ShowError(local_100, NULL, true, false);
+        gWindow.RequestCloseApplication();
         operator_delete(Buffer);
         return;
     }

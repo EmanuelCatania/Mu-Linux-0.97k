@@ -35,8 +35,7 @@ void __cdecl OpenWorld(void) {
     memset(DAT_07c74ec8, 0, sizeof(DAT_07c74ec8));   // fade-effect pool (40×0x1bc)
     memset(DAT_07c80128, 0, sizeof(DAT_07c80128));   // spark pool (100×0x70)
     memset(DAT_07c82cdc, 0, sizeof(DAT_07c82cdc));   // flare pool (63×0x70)
-    memset(DAT_083a2e90, 0, sizeof(DAT_083a2e90));   // boids pool (10×0x1bc)
-    memset(DAT_083a2f78, 0, sizeof(DAT_083a2f78));   // ambient particle pool (10×0x1bc)
+    memset(DAT_083a2e90, 0, sizeof(DAT_083a2e90));   // boids + partículas ambientales (10×0x1bc)
     memset(DAT_07e016f8, 0, sizeof(DAT_07e016f8));   // tooltip pool (26×0x254)
 
     OpenWorldModels();             // OpenWorldModels

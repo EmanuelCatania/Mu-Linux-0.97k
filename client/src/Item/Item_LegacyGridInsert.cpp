@@ -88,15 +88,15 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
         short oldType = *(short*)slot;
         if (oldType == (short)0xFFFF || oldType < 0) return;
 
-        BYTE ox = slot[62];
-        BYTE oy = slot[63];
+        BYTE ox = AsItem(slot)->x;
+        BYTE oy = AsItem(slot)->y;
         if (ox >= Width || oy >= Height) return;
 
         for (int yy = 0; yy < Height; ++yy) {
             for (int xx = 0; xx < Width; ++xx) {
                 int idx = yy * Width + xx;
                 BYTE* cell = Inv + idx * 0x44;
-                if (*(short*)cell == oldType && cell[62] == ox && cell[63] == oy) {
+                if (*(short*)cell == oldType && AsItem(cell)->x == ox && AsItem(cell)->y == oy) {
                     memset(cell, 0, 0x44);
                     *(short*)cell = (short)0xFFFF;
                 }
@@ -152,22 +152,22 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     //   slot+62 (x grid pos), slot+63 (y grid pos)
     //   slot+56 (Key/dur-int gate, int): MUST be > 0 for the slot to render!
     //
-    // Without slot+56 set, sub_4E38B0 line 60 `*(int*)(slot+0x38) > 0` fails →
+    // Without slot+56 set, sub_4E38B0 line 60 `*(int *)&AsItem(slot)->Key > 0` fails →
     // the item is silently skipped from the render walk → invisible in grid.
     BYTE durability = Item[2];                    // raw durability byte
     if (durability == 0) durability = 1;          // ensure render gate
-    *(int*)(slot + 56) = (int)durability;
+    *(int *)&AsItem(slot)->Key = (int)durability;
 
     // Set grid x/y from Index. For wear slots (Index < 12), use slot index 0
     // for x and 0 for y (wear slots are special-cased downstream). For grid
     // slots, decompose into (Index-12) → (x = idx % Width, y = idx / Width).
     if (Index >= 12) {
         int gridIdx = Index - 12;
-        slot[62] = (BYTE)(gridIdx % Width);
-        slot[63] = (BYTE)(gridIdx / Width);
+        AsItem(slot)->x = (BYTE)(gridIdx % Width);
+        AsItem(slot)->y = (BYTE)(gridIdx / Width);
     } else {
-        slot[62] = 0;
-        slot[63] = 0;
+        AsItem(slot)->x = 0;
+        AsItem(slot)->y = 0;
     }
 
     // IDA InsertInventoryItem L77-80 (LABEL_59).

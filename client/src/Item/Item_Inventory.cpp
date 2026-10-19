@@ -19,7 +19,7 @@
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
-#include "structs.h"        // ITEM, ITEM_ATTRIBUTE (también en GameStructs.h — usar uno solo)
+#include "structs.h"        // ITEM, ITEM_ATTRIBUTE
 #include "functions.h"
 
 extern "C" int __cdecl ConvertItemType(BYTE* Item);
@@ -44,8 +44,8 @@ extern "C" int DAT_07d78068;
 
 static inline ITEM_ATTRIBUTE* Item_GetAttribute(int type)
 {
-    const unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
-    if (p < 0x100000u || p >= 0x80000000u) return nullptr;  // tabla sin cargar → no crash
+    const unsigned int p = ItemAttribute_Base();
+    if (!p) return nullptr;  // tabla sin cargar → no crash
     if (type < 0 || type >= ITEM_MAX_EX) return nullptr;   // 0.97.20: índice de 13 bits
     return &((ITEM_ATTRIBUTE*)(uintptr_t)p)[type];
 }
@@ -203,8 +203,8 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
 
     if (type < 0) {
         memset(slot, 0, sizeof(ITEM));
-        *(short*)(slot + 0)  = -1;
-        *(DWORD*)(slot + 56) = 0;
+        AsItem(slot)->Type  = -1;
+        AsItem(slot)->Key = 0;
         if (SceneFlag == 5 && DAT_07abf5d8) {
             HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
         }
@@ -212,27 +212,27 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     }
 
     memset(slot, 0, sizeof(ITEM));
-    *(short*)(slot + 0)  = (short)type;
+    AsItem(slot)->Type  = (short)type;
     // Se guarda el byte de Option CRUDO (level<<3 codificado), como en
     // AddItemToGrid: el render hace `(Level >> 3) & 0xF` para sacar el +N
     // (sub_4E38B0 / Render_HotbarItems3D → RenderItem3D → RenderObjectScreen).
-    *(int*)(slot + 4)    = (int)optByte;
-    *(BYTE*)(slot + 26)  = durability;
+    AsItem(slot)->Level    = (int)optByte;
+    AsItem(slot)->Durability  = durability;
     // Option1 = Attribute2 (byteHi = Item[3]): ahí viven los flags de EXCELLENT.
     // ItemConvert (0x47B910) hace `iItemExcel = Attribute2 & 63`, y esa es la
     // MISMA mascara 0x3F que testean CalcMaxDurability (0x4C45C0) y
     // RenderItemInfo sobre ip->Option1.
-    *(BYTE*)(slot + 27)  = byteHi;
-    *(DWORD*)(slot + 56) = durability ? (DWORD)durability : 1u;
-    *(BYTE*)(slot + 60)  = byteHi;
-    *(BYTE*)(slot + 61)  = extByte;
+    AsItem(slot)->Option1  = byteHi;
+    AsItem(slot)->Key = durability ? (DWORD)durability : 1u;
+    AsItem(slot)->Unknown  = byteHi;
+    AsItem(slot)->byColorState  = extByte;
     ItemData_FillStats((ITEM*)slot, level);
     ((ITEM*)slot)->Level = (int)optByte;
     ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
     // Slot ocupado real del equipo. En la base más nueva esto vive en Number;
     // en nuestra estructura 97k lo espejamos en Key.
     ITEM* equip = (ITEM*)slot;
-    equip->Key = (*(DWORD*)(slot + 56) > 0) ? 1 : 0;
+    equip->Key = (AsItem(slot)->Key > 0) ? 1 : 0;
     equip->x = (BYTE)slotIdx;
     equip->y = 0;
     equip->Color = 0;

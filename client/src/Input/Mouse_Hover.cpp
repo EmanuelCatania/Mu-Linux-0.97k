@@ -36,9 +36,11 @@
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
+#include "Platform/IInput.h"
 #include "globals.h"
 #include "functions.h"
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 
 
@@ -133,7 +135,7 @@ void Mouse_UpdateHoverTargets(void)
     if (DAT_07d78094 != '\0') goto process_click;
 
     {
-        SHORT altState = GetAsyncKeyState(0x12);  // VK_MENU = Alt
+        SHORT altState = Platform::GetInput().KeyState(0x12);  // VK_MENU = Alt
         if ((char)((unsigned short)altState >> 8) == (char)0x80)
         {
             // Alt held: item-on-ground first, then NPC, mob, player
@@ -257,7 +259,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     // [DIAG] one-shot per ~half second to see camera/ray
     {
         static DWORD s_lastTilePick = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastTilePick > 500) {
             s_lastTilePick = now;
             float* eye = (float*)&CameraRayOriginX_arr[0];
@@ -373,17 +375,17 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     for (int ofs = 0; ofs < 0x59740; ofs += 0x394, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
         if (diagFilt && ent_idx < 5) {
-            DWORD now = GetTickCount();
+            DWORD now = Platform::GetTimer().Ticks();
             if (now - s_lastFilt[ent_idx] > 1000) {
                 s_lastFilt[ent_idx] = now;
             }
         }
-        if ((*ent == '\0') || (ent[0x160] == '\0') ||
-            (!(_DAT_00552580 < *(float *)(ent + 0x168))) || (ent[0x2fd] != '\0'))
+        if ((*ent == '\0') || (*(char *)&AsObject(ent)->Visible == '\0') ||
+            (!(_DAT_00552580 < AsObject(ent)->Alpha)) || (ent[0x2fd] != '\0'))
             continue;
 
         // Party name matching for DarkLord entities
-        if ((*(short *)(ent + 2) == 0x186) && (ent[0x84] == '\x01') && (0 < (int)DAT_07eaa0e0)) {
+        if ((AsObject(ent)->Type == 0x186) && (*(char *)&AsObject(ent)->Kind == '\x01') && (0 < (int)DAT_07eaa0e0)) {
             char *slot = (char *)&DAT_07e11e80;
             for (int pi = 0; pi < (int)DAT_07eaa0e0; pi++, slot += 0x24) {
                 if (*(int *)(slot + 0x1c) == -2) {
@@ -404,7 +406,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 
         // Visibility + nearest check
         if ((!bVar17) && (ent == (char *)DAT_07abf5d8)) continue;
-        if ((ent[0x84] & param_1) != ent[0x84]) continue;
+        if ((*(char *)&AsObject(ent)->Kind & param_1) != *(char *)&AsObject(ent)->Kind) continue;
 
         // IDA sub_4AFDC0 L38-52: test del RAYO del mouse contra la OBB de la
         // entidad (o+0x130, 12 floats que llena Calc_RenderObject) con
@@ -415,9 +417,9 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             if (!Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
                 continue;
 
-            const float dy = *(float*)(ent + 0x14) - _DAT_083a42d8;   // CameraPosition[1]
-            const float dz = *(float*)(ent + 0x18) - _DAT_083a42dc;   // CameraPosition[2]
-            const float dx = *(float*)(ent + 0x10) - _DAT_083a42d4;   // CameraPosition[0]
+            const float dy = AsObject(ent)->Position[1] - _DAT_083a42d8;   // CameraPosition[1]
+            const float dz = AsObject(ent)->Position[2] - _DAT_083a42dc;   // CameraPosition[2]
+            const float dx = AsObject(ent)->Position[0] - _DAT_083a42d4;   // CameraPosition[0]
             const float d2 = dz * dz + dy * dy + dx * dx;
             if (!(d2 < best_perp)) continue;
 
@@ -427,8 +429,8 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             // `World` es el indice de mapa.
             const int map = (int)gMapManager.GetCurrentMap();
             if (map == 0 || map == 2) {
-                int tx = (int)*(float*)(ent + 0x10) / 100;
-                int ty = (int)*(float*)(ent + 0x14) / 100;
+                int tx = (int)AsObject(ent)->Position[0] / 100;
+                int ty = (int)AsObject(ent)->Position[1] / 100;
                 if (tx < 0) tx = 0; if (tx > 255) tx = 255;
                 if (ty < 0) ty = 0; if (ty > 255) ty = 255;
                 const unsigned char tile = TerrainMappingLayer1[tx + (ty << 8)];   // TerrainMappingLayer1
@@ -605,7 +607,7 @@ char __cdecl Party_HPBar_HoverCheck(void)
     float local_24 = 5.0f;                              // top of first bar (Y)
     char result = 0;
 
-    UINT  uVar7 = *(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7;  // player move_type_flags & 7
+    UINT  uVar7 = *(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7;  // clase del heroe (c->Class & 7)
     UINT *puVar5 = (UINT*)&DAT_07e11e9c;                // party slot base (stride 9 uints = 0x24)
 
     for (int i = 0; i < (int)DAT_07eaa0e0; i++, puVar5 += 9) {

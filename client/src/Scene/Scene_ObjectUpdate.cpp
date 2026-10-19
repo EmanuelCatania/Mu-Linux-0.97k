@@ -1,8 +1,12 @@
+#include <cstdint>
 // Scene_ObjectUpdate.cpp
 //
 // Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/GuardedOperation.h"
+#include "Platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "globals.h"
@@ -28,14 +32,14 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     if (objPtr == 0) return (float*)0;
     extern void __cdecl AddTerrainLight(float x, float y, float* light, int range, float* buffer);
 
-    short objType = *(short*)(objPtr + 2);
+    short objType = AsObject(objPtr)->Type;
 
     // ── World 9: random terrain lights ──
     if (gMapManager.GetCurrentMap() == 9) {
         // IDA 0x004FDC00: the storm flash is independent from the object type.
         // It happens during the first quarter of the 4-second cycle, one time
         // in 100, around the local player.  The former port kept only sound.
-        if (((__int64)WorldTime % 4000) < 1000 && !(rand() % 100) && Hero) {
+        if (((std::int64_t)WorldTime % 4000) < 1000 && !(rand() % 100) && Hero) {
             const float intensity = (float)(rand() % 12 + 4) * 0.1f;
             float light[3] = { intensity * 0.2f, intensity * 0.3f, intensity * 0.5f };
             const float x = (float)(rand() % 1200) + *(float*)(Hero + 16) - 600.0f;
@@ -49,21 +53,21 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     if (gMapManager.GetCurrentMap() == 0) {
         if (objType == 0x7d || objType == 0x7e) {
             if (HeroTile == 4) {
-                *(DWORD*)(objPtr + 0x164) = 0;        // hide (alpha=0)
+                *(DWORD *)&AsObject(objPtr)->AlphaTarget = 0;        // hide (alpha=0)
             } else {
-                *(DWORD*)(objPtr + 0x164) = 0x3f800000; // show (alpha=1.0f)
+                *(DWORD *)&AsObject(objPtr)->AlphaTarget = 0x3f800000; // show (alpha=1.0f)
             }
         }
     }
 
     // ── World 2: toggle water objects by HeroTile ──
     if (gMapManager.GetCurrentMap() == 2) {
-        short s = *(short*)(objPtr + 2);
+        short s = AsObject(objPtr)->Type;
         if (s == 0x51 || s == 0x52 || s == 0x60 || s == 0x62 || s == 99) {
             if (HeroTile == 3 || HeroTile > 9) {
-                *(DWORD*)(objPtr + 0x164) = 0;
+                *(DWORD *)&AsObject(objPtr)->AlphaTarget = 0;
             } else {
-                *(DWORD*)(objPtr + 0x164) = 0x3f800000;
+                *(DWORD *)&AsObject(objPtr)->AlphaTarget = 0x3f800000;
             }
         }
     }
@@ -72,18 +76,18 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     Alpha(objPtr);
 
     // Check alpha > 0
-    float alpha = *(float*)(objPtr + 0x168);
+    float alpha = AsObject(objPtr)->Alpha;
     if (alpha < _DAT_005524f8) {
         return (float*)0;  // invisible, skip
     }
 
     // Setup BMD model: Models base = DAT_05828d58, stride = sizeof(BMD) = 188 (0xBC)
-    int modelIdx = (int)*(short*)(objPtr + 2);
+    int modelIdx = (int)AsObject(objPtr)->Type;
     char* model = (char*)(DAT_05828d58 + modelIdx * 0xBC);
-    model[0xa0] = *(char*)(objPtr + 0x105);  // set current action
+    *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(objPtr)->CurrentAction;  // set current action
 
-    float animSpeed = *(float*)(objPtr + 0xcc);
-    if (gMapManager.GetCurrentMap() == 8 && *(short*)(objPtr + 2) == 8) {
+    float animSpeed = AsObject(objPtr)->Velocity;
+    if (gMapManager.GetCurrentMap() == 8 && AsObject(objPtr)->Type == 8) {
         animSpeed = animSpeed * _DAT_00552650;  // slow down lava objects
     }
 
@@ -99,17 +103,17 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     //   162 = Logo03 (banner MU): rampa de Light + alpha-scalar. Sin esto el
     //         banner queda con bodyLight=(0,0,0) → rectángulo negro.
     if (SceneFlag == 2 || SceneFlag == 4) {
-        short t = *(short*)(objPtr + 2);
+        short t = AsObject(objPtr)->Type;
         if (t == 160 || t == 161) {
-            *(float*)(objPtr + 112) = -((float)((__int64)WorldTime % 4000) * 0.00025f);
+            AsObject(objPtr)->BlendMeshTexCoordV = -((float)((std::int64_t)WorldTime % 4000) * 0.00025f);
         } else if (t == 162) {
             // CameraWalkCut → over-bright final; si no, rampa 0..0.08.
             float v8 = (DAT_083a7af4 != 0) ? 1.5f
                                            : (float)(int)DAT_005615e8 * 0.002f;
-            *(float*)(objPtr + 232) = v8;   // Light[0]
-            *(float*)(objPtr + 236) = v8;   // Light[1]
-            *(float*)(objPtr + 240) = v8;   // Light[2]
-            *(float*)(objPtr + 104) = v8;   // alpha-scalar (+0x68)
+            AsObject(objPtr)->Light[0] = v8;   // Light[0]
+            AsObject(objPtr)->Light[1] = v8;   // Light[1]
+            AsObject(objPtr)->Light[2] = v8;   // Light[2]
+            AsObject(objPtr)->BlendMeshLight = v8;   // alpha-scalar (+0x68)
         }
     }
 
@@ -153,7 +157,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x33: FUN_0046c7f0(0, objPtr, 0.0f, -30.0f, 60.0f); return (float*)0;      // 0xc1f00000, 0x42700000
         case 0x34:
             FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 60.0f);
-            *(float*)(objPtr + 0x68) = (float)(rand() % 6 + 4) * _DAT_005524f4;
+            AsObject(objPtr)->BlendMeshLight = (float)(rand() % 6 + 4) * _DAT_005524f4;
             return (float*)0;
         case 0x37:
             FUN_0046c7f0(0, objPtr, -150.0f, -150.0f, 140.0f);   // 0xc3160000, 0x430c0000
@@ -169,16 +173,16 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             terrainLight[0] = light;
             terrainLight[1] = light * 0.8f;
             terrainLight[2] = light * 0.6f;
-            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
+            AddTerrainLight(AsObject(objPtr)->Position[0], AsObject(objPtr)->Position[1], (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         }
         case 0x75:
         case 0x7A:
-            *(float*)(objPtr + 0x68) = (float)(rand() % 4 + 4) * 0.1f;
+            AsObject(objPtr)->BlendMeshLight = (float)(rand() % 4 + 4) * 0.1f;
             break;
         case 0x76:
         case 0x77:
-            *(float*)(objPtr + 0x70) = (float)(-((__int64)WorldTime % 1000)) * 0.001f;
+            AsObject(objPtr)->BlendMeshTexCoordV = (float)(-((std::int64_t)WorldTime % 1000)) * 0.001f;
             break;
         case 0x82:
         case 0x83:
@@ -188,7 +192,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             // el fuego/humo. IDA sub_4FDC00, World 0.
             int kind = objType - 0x82;
             FUN_0046c7f0(kind, objPtr, 0.0f, 0.0f, 0.0f);
-            *(int*)(objPtr + 0x58) = -2;
+            AsObject(objPtr)->HiddenMesh = -2;
             return (float*)0;
         }
         case 0x96: {
@@ -197,7 +201,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             terrainLight[0] = light;
             terrainLight[1] = light * 0.6f;
             terrainLight[2] = light * 0.2f;
-            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
+            AddTerrainLight(AsObject(objPtr)->Position[0], AsObject(objPtr)->Position[1], (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         }
         }
@@ -209,13 +213,13 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x17:
         case 0x18:
             // IDA writes the model loop flag (+136) and scrolls texture V.
-            model[136] = 1;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            AsModel(model)->StreamMesh = 1;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x27:
         case 0x28:
         case 0x33:
-            *(int*)(objPtr + 88) = -2;
+            AsObject(objPtr)->HiddenMesh = -2;
             break;
         case 0x29: FUN_0046c7f0(0, objPtr, 0.0f, -30.0f, 240.0f); return (float*)0;     // 0xc1f00000, 0x43700000
         case 0x2a: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 190.0f); return (float*)0;       // 0x433e0000
@@ -224,7 +228,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
                 CreateEffect(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
                               (float*)(objPtr + 232), 0, 0,
                               (float*)(uintptr_t)0xffffffffu, 0, 0);
-                *(int*)(objPtr + 88) = -2;
+                AsObject(objPtr)->HiddenMesh = -2;
             }
             break;
         }
@@ -240,26 +244,26 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             // until they are close enough, then select the correct turn arc.
             // This is visual state only; it must not synthesize a gate packet.
             if (!DAT_07e11d30 && Hero) {
-                const float dx = *(float*)(Hero + 16) - *(float*)(objPtr + 52);
-                const float dy = *(float*)(Hero + 20) - *(float*)(objPtr + 56);
+                const float dx = *(float*)(Hero + 16) - AsObject(objPtr)->HeadTargetAngle[0];
+                const float dy = *(float*)(Hero + 20) - AsObject(objPtr)->HeadTargetAngle[1];
                 const float distance = sqrtf(dx * dx + dy * dy);
                 if (distance >= 200.0f) {
-                    *(float*)(objPtr + 36) = TurnAngle2(*(float*)(objPtr + 36), *(float*)(objPtr + 48), 10.0f);
-                    *(float*)(objPtr + 16) += (*(float*)(objPtr + 52) - *(float*)(objPtr + 16)) * 0.2f;
-                    *(float*)(objPtr + 20) += (*(float*)(objPtr + 56) - *(float*)(objPtr + 20)) * 0.2f;
+                    AsObject(objPtr)->Angle[2] = TurnAngle2(AsObject(objPtr)->Angle[2], AsObject(objPtr)->HeadAngle[2], 10.0f);
+                    AsObject(objPtr)->Position[0] += (AsObject(objPtr)->HeadTargetAngle[0] - AsObject(objPtr)->Position[0]) * 0.2f;
+                    AsObject(objPtr)->Position[1] += (AsObject(objPtr)->HeadTargetAngle[1] - AsObject(objPtr)->Position[1]) * 0.2f;
                 } else if (objType == 86) {
-                    const float heading = *(float*)(objPtr + 36);
-                    if (heading == 90.0f)  *(float*)(objPtr + 20) = *(float*)(objPtr + 56) + 2.0f * (200.0f - distance);
-                    if (heading == 270.0f) *(float*)(objPtr + 20) = *(float*)(objPtr + 56) - 2.0f * (200.0f - distance);
-                    if (heading == 0.0f)   *(float*)(objPtr + 16) = *(float*)(objPtr + 52) + 2.0f * (200.0f - distance);
-                    if (heading == 180.0f) *(float*)(objPtr + 16) = *(float*)(objPtr + 52) - 2.0f * (200.0f - distance);
+                    const float heading = AsObject(objPtr)->Angle[2];
+                    if (heading == 90.0f)  AsObject(objPtr)->Position[1] = AsObject(objPtr)->HeadTargetAngle[1] + 2.0f * (200.0f - distance);
+                    if (heading == 270.0f) AsObject(objPtr)->Position[1] = AsObject(objPtr)->HeadTargetAngle[1] - 2.0f * (200.0f - distance);
+                    if (heading == 0.0f)   AsObject(objPtr)->Position[0] = AsObject(objPtr)->HeadTargetAngle[0] + 2.0f * (200.0f - distance);
+                    if (heading == 180.0f) AsObject(objPtr)->Position[0] = AsObject(objPtr)->HeadTargetAngle[0] - 2.0f * (200.0f - distance);
                     PlayBuffer(18, 0, 0);
                 } else {
-                    const float targetHeading = *(float*)(objPtr + 48);
-                    if (targetHeading == 90.0f)  *(float*)(objPtr + 36) = 30.0f - (200.0f - distance) * 0.5f;
-                    if (targetHeading == 270.0f) *(float*)(objPtr + 36) = 330.0f + (200.0f - distance) * 0.5f;
-                    if (targetHeading == 0.0f)   *(float*)(objPtr + 36) = 300.0f - (200.0f - distance) * 0.5f;
-                    if (targetHeading == 180.0f) *(float*)(objPtr + 36) = 240.0f + (200.0f - distance) * 0.5f;
+                    const float targetHeading = AsObject(objPtr)->HeadAngle[2];
+                    if (targetHeading == 90.0f)  AsObject(objPtr)->Angle[2] = 30.0f - (200.0f - distance) * 0.5f;
+                    if (targetHeading == 270.0f) AsObject(objPtr)->Angle[2] = 330.0f + (200.0f - distance) * 0.5f;
+                    if (targetHeading == 0.0f)   AsObject(objPtr)->Angle[2] = 300.0f - (200.0f - distance) * 0.5f;
+                    if (targetHeading == 180.0f) AsObject(objPtr)->Angle[2] = 240.0f + (200.0f - distance) * 0.5f;
                     PlayBuffer(17, 0, 0);
                 }
             }
@@ -272,22 +276,22 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     case 3:
         switch (objType) {
         case 0x12:
-            *(float*)(objPtr + 112) = (float)((__int64)WorldTime % 1000) * 0.001f;
+            AsObject(objPtr)->BlendMeshTexCoordV = (float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x27:
-            *(int*)(objPtr + 100) = 1;
+            AsObject(objPtr)->BlendMesh = 1;
             break;
         case 0x29:
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 112) = (float)((__int64)WorldTime % 2000) * 0.0005f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshTexCoordV = (float)((std::int64_t)WorldTime % 2000) * 0.0005f;
             break;
         case 0x2a:
-            model[136] = 0;
-            *(float*)(objPtr + 108) = (float)((__int64)WorldTime % 500) * -0.002f;
+            AsModel(model)->StreamMesh = 0;
+            AsObject(objPtr)->BlendMeshTexCoordU = (float)((std::int64_t)WorldTime % 500) * -0.002f;
             break;
         case 0x2b:
-            model[136] = 0;
-            *(float*)(objPtr + 108) = (float)((__int64)WorldTime % 500) * 0.002f;
+            AsModel(model)->StreamMesh = 0;
+            AsObject(objPtr)->BlendMeshTexCoordU = (float)((std::int64_t)WorldTime % 500) * 0.002f;
             break;
         }
         break;
@@ -296,26 +300,26 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         switch (objType) {
         case 3:
         case 4:
-            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            AsObject(objPtr)->BlendMeshTexCoordU = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x12:
         case 0x17:
-            *(int*)(objPtr + 100) = 1;
+            AsObject(objPtr)->BlendMesh = 1;
             break;
         case 0x13:
         case 0x14:
-            *(int*)(objPtr + 100) = 4;
-            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            AsObject(objPtr)->BlendMesh = 4;
+            AsObject(objPtr)->BlendMeshTexCoordU = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             break;
         case 0x18:
-            *(int*)(objPtr + 88) = -2;
+            AsObject(objPtr)->HiddenMesh = -2;
             if (!(rand() % 64))
                 CreateEffect(1200, (float*)(objPtr + 16), (float*)(objPtr + 28),
                               (float*)(objPtr + 232), 0, 0,
                               (float*)(uintptr_t)0xffffffffu, 0, 0);
             break;
         case 0x19:
-            *(int*)(objPtr + 88) = -2;
+            AsObject(objPtr)->HiddenMesh = -2;
             break;
         case 0x26:
         case 0x27: Effect_PhysicsTick(objPtr); return (float*)0;
@@ -324,112 +328,112 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
 
     case 5:
         if (objType == 2) {
-            *(int*)(objPtr + 100) = 0;
+            AsObject(objPtr)->BlendMesh = 0;
         } else if (objType == 3) {
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 104) = (float)(rand() % 4 + 6) * 0.1f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshLight = (float)(rand() % 4 + 6) * 0.1f;
         }
         break;
 
     case 6:
         if (objType == 0x15) {
-            *(int*)(objPtr + 100) = 3;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            AsObject(objPtr)->BlendMesh = 3;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
         } else if (objType == 0x26) {
-            *(int*)(objPtr + 0x58) = -2;  // SubType = -2
+            AsObject(objPtr)->HiddenMesh = -2;  // SubType = -2
         }
         break;
 
     case 7:
         switch (objType) {
         case 0x16:
-            *(float*)(objPtr + 128) += 0.1f;
-            *(int*)(objPtr + 88) = -2;
-            if (*(float*)(objPtr + 128) > 10.0f) *(float*)(objPtr + 128) = 0.0f;
-            if (*(float*)(objPtr + 128) > 5.0f)
+            AsObject(objPtr)->Timer += 0.1f;
+            AsObject(objPtr)->HiddenMesh = -2;
+            if (AsObject(objPtr)->Timer > 10.0f) AsObject(objPtr)->Timer = 0.0f;
+            if (AsObject(objPtr)->Timer > 5.0f)
                 Particle_Spawn(1241, (float*)(objPtr + 16), (float*)(objPtr + 28),
                                (float*)(objPtr + 232), 0, 1.0f, 0);
             break;
         case 0x17:
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 104) = sinf((float)WorldTime * 0.002f) * 0.3f + 0.5f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshLight = sinf((float)WorldTime * 0.002f) * 0.3f + 0.5f;
             break;
         case 0x20:
         case 0x22:
-            *(int*)(objPtr + 100) = 1;
-            *(float*)(objPtr + 104) = (sinf((float)WorldTime * 0.004f) + 1.0f) * 0.5f;
+            AsObject(objPtr)->BlendMesh = 1;
+            AsObject(objPtr)->BlendMeshLight = (sinf((float)WorldTime * 0.004f) + 1.0f) * 0.5f;
             break;
         case 0x26:
-            *(int*)(objPtr + 100) = 0;
+            AsObject(objPtr)->BlendMesh = 0;
             break;
         case 0x28:
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 204) = 0.03f;
-            *(float*)(objPtr + 104) = sinf((float)WorldTime * 0.004f) * 0.3f + 0.5f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->Velocity = 0.03f;
+            AsObject(objPtr)->BlendMeshLight = sinf((float)WorldTime * 0.004f) * 0.3f + 0.5f;
             break;
         }
         break;
 
     case 8:
         if (objType == 2) {
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshTexCoordU = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             return (float*)0;
         }
         if (objType == 4) {
             const float wave = sinf((float)WorldTime * 0.002f) * 0.35f + 0.65f;
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 104) = wave;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0001f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshLight = wave;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 10000) * 0.0001f;
         } else if (objType == 7) {
-            const float wave = sinf((*(float*)(objPtr + 36) * 100.0f + (float)WorldTime) * 0.002f) * 0.35f + 0.65f;
+            const float wave = sinf((AsObject(objPtr)->Angle[2] * 100.0f + (float)WorldTime) * 0.002f) * 0.35f + 0.65f;
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 104) = wave;
-            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 3, (float*)PrimaryTerrainLight[0]);
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshLight = wave;
+            AddTerrainLight(AsObject(objPtr)->Position[0], AsObject(objPtr)->Position[1], (float*)light, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         } else if (objType == 0x0b) {
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
             return (float*)0;
         } else if (objType == 0x0c) {
-            const float scroll = -(float)((__int64)WorldTime % 50000) * 0.00005f;
-            *(float*)(objPtr + 108) = scroll;
-            *(float*)(objPtr + 112) = scroll;
+            const float scroll = -(float)((std::int64_t)WorldTime % 50000) * 0.00005f;
+            AsObject(objPtr)->BlendMeshTexCoordU = scroll;
+            AsObject(objPtr)->BlendMeshTexCoordV = scroll;
             return (float*)0;
         } else if (objType == 0x0d) {
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
             return (float*)0;
         } else if (objType == 0x3d || objType == 0x41 || objType == 0x42) {
-            const float scroll = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            const float scroll = -(float)((std::int64_t)WorldTime % 1000) * 0.001f;
             const float wave = sinf((float)WorldTime * 0.002f) * 0.35f + 0.65f;
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
-            *(int*)(objPtr + 100) = 1;
-            *(float*)(objPtr + 112) = scroll;
-            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 2, (float*)PrimaryTerrainLight[0]);
+            AsObject(objPtr)->BlendMesh = 1;
+            AsObject(objPtr)->BlendMeshTexCoordV = scroll;
+            AddTerrainLight(AsObject(objPtr)->Position[0], AsObject(objPtr)->Position[1], (float*)light, 2, (float*)PrimaryTerrainLight[0]);
         } else if (objType == 0x3f || objType == 0x40) {
-            *(int*)(objPtr + 88) = -2;
+            AsObject(objPtr)->HiddenMesh = -2;
         } else if (objType == 0x48) {
-            *(int*)(objPtr + 100) = 0;
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            AsObject(objPtr)->BlendMesh = 0;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
         } else if (objType == 0x49 || objType == 0x4b || objType == 0x4f) {
-            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            AsObject(objPtr)->BlendMeshTexCoordV = -(float)((std::int64_t)WorldTime % 10000) * 0.0002f;
         } else if (objType == 0x52) {
-            *(DWORD*)(objPtr + 100) = 0;
-            *(DWORD*)(objPtr + 0xe8) = 0x3f800000;  // light R = 1.0
-            *(DWORD*)(objPtr + 0xec) = 0x3f800000;  // light G = 1.0
-            *(DWORD*)(objPtr + 0xf0) = 0x3f800000;  // light B = 1.0
+            *(DWORD *)&AsObject(objPtr)->BlendMesh = 0;
+            *(DWORD *)&AsObject(objPtr)->Light[0] = 0x3f800000;  // light R = 1.0
+            *(DWORD *)&AsObject(objPtr)->Light[1] = 0x3f800000;  // light G = 1.0
+            *(DWORD *)&AsObject(objPtr)->Light[2] = 0x3f800000;  // light B = 1.0
         }
         break;
     }
 
     // For worlds 0xb..0x10: check object type 9/10 visibility
     if (gMapManager.GetCurrentMap() >= 0xb && gMapManager.GetCurrentMap() <= 0x10) {
-        int t = (int)*(short*)(objPtr + 2);
+        int t = (int)AsObject(objPtr)->Type;
         if (t >= 9 && t <= 10) {
-            if (*(short*)(objPtr + 0x86) == 4) {
+            if (AsObject(objPtr)->PKKey == 4) {
                 return (float*)0;
             }
-            *(int*)(objPtr + 0x58) = -2;  // SubType = -2
+            AsObject(objPtr)->HiddenMesh = -2;  // SubType = -2
         }
     }
 
@@ -590,19 +594,15 @@ void __stdcall MoveObjects(void) {
             char* pcVar6;
             char bucketFlag = *(char*)(puVar4 + 2);  // +8 bytes: bucket type flag
 
-            // Guard contra punteros corruptos en la lista de buckets: el deref va dentro de
-            // SEH, así un AV corta el recorrido del bucket en vez de tirar el proceso. Más
-            // range check + tope de iteraciones para los loops que no fallan.
-            #define MOV_OBJ_VALID_PTR(p) \
-                ((uintptr_t)(p) >= 0x00010000u && (uintptr_t)(p) < 0x80000000u)
+            // Cada enlace debe identificar un nodo aun vivo de CreateObject.
             int bucketIter = 0;
             const int kBucketIterMax = 4096;
 
-            __try {
+            Platform::RunValidatedOperation([&]() {
             if (bucketFlag == '\0') {
                 // Static objects: just animate, don't render-update
                 pcVar6 = (char*)*puVar4;
-                while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
+                while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0') {
                         MoveObject_Special((int)pcVar6);
@@ -614,7 +614,7 @@ void __stdcall MoveObjects(void) {
             else {
                 // Dynamic objects: render-update + animate
                 pcVar6 = (char*)*puVar4;
-                while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
+                while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0' && pcVar6[0x160] != '\0') {
                         // `FUN_004fdc00` tiene la firma `(float o)` — un artefacto de Hex-Rays: el
@@ -677,10 +677,7 @@ void __stdcall MoveObjects(void) {
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
                 } // end while linked list
             }
-            } __except (EXCEPTION_EXECUTE_HANDLER) {
-                // Corrupt next-pointer hit unmapped memory; truncate this
-                // bucket and continue with the next one.
-            }
+            }); // Windows conserva la proteccion SEH del recorrido.
             puVar4 += 4;  // next bucket entry (16 bytes)
             bucketsLeft--;
         } while (bucketsLeft != 0);
@@ -734,12 +731,12 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
     }
 
     if (zen) {
-        const float t = (float)(GetTickCount() % 2000) / 2000.0f * 6.2831853f;
+        const float t = (float)(Platform::GetTimer().Ticks() % 2000) / 2000.0f * 6.2831853f;
         target[0] = zen[0] + sinf(t) * 20.0f;
         target[1] = zen[1] + cosf(t) * 20.0f;
         target[2] = zen[2] + pet.Height;
     } else if (pet.Movement == Proto::CATALOG_PET_MOVE_ORBIT) {
-        const float t = (float)(GetTickCount() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
+        const float t = (float)(Platform::GetTimer().Ticks() % (DWORD)pet.Period) / pet.Period * 6.2831853f;
         target[0] = ownerPos[0] + sinf(t) * pet.Radius;
         target[1] = ownerPos[1] + cosf(t) * pet.Radius;
     } else {
@@ -783,6 +780,7 @@ void __stdcall MoveBugs(void) {
         if (*(BYTE*)e == 0)                    // !Live
             goto next_bug;
 
+    { // El salto de salida no entra en el ámbito de estas variables.
         DWORD owner = *v0;                     // *v0 — Owner ptr
         if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
@@ -796,7 +794,7 @@ void __stdcall MoveBugs(void) {
         int   v2 = (int)owner;
         float x2 = *(float*)(v2 + 16);         // owner posX
         float y2 = *(float*)(v2 + 20);         // owner posY
-        int   v4 = *(short*)(e + 2);           // type
+        int   v4 = AsObject(e)->Type;           // type
         char* v40 = (char*)(DAT_05828d58 + 188 * v4);   // Models[v4]
         float v36 = 0.0f;                      // trackDist (solo usado por 816/817)
 
@@ -810,9 +808,9 @@ void __stdcall MoveBugs(void) {
                     v45[0] = (float)(rand() % 16 - 8);
                     v45[1] = (float)(rand() % 16 - 8);
                     int v27 = rand() % 16;
-                    v45[0] = v45[0] + *(float*)(e + 0x10);
-                    v45[1] = v45[1] + *(float*)(e + 0x14);
-                    v45[2] = (float)(v27 - 8) + *(float*)(e + 0x18);
+                    v45[0] = v45[0] + AsObject(e)->Position[0];
+                    v45[1] = v45[1] + AsObject(e)->Position[1];
+                    v45[2] = (float)(v27 - 8) + AsObject(e)->Position[2];
                     Particle_Spawn(1175, v45, (float*)(e + 0x1c), v49, 1, 1.0f, 0);
                 }
                 v36 = 150.0f;
@@ -827,30 +825,30 @@ void __stdcall MoveBugs(void) {
             int idx = (unsigned char)(int)(*(float*)(v2 + 16) * 0.0099999998f)
                     + (((unsigned char)(int)(*(float*)(v2 + 20) * 0.0099999998f)) << 8);
             if ((TerrainWall[idx] & 1) == 1) {
-                *(DWORD*)(e + 0x168) = 0;      // en muro: apaga alpha, no copia pos
+                *(DWORD *)&AsObject(e)->Alpha = 0;      // en muro: apaga alpha, no copia pos
             } else {
                 int  v8 = *v0;
                 char v9 = *(BYTE*)(v8 + 124);
                 if (v9 == 1 || v9 == 2) {
-                    float v10 = *(float*)(e + 0x168) - 0.1f;
-                    *(float*)(e + 0x168) = v10;
-                    if (v10 < 0.0f) *(DWORD*)(e + 0x168) = 0;
+                    float v10 = AsObject(e)->Alpha - 0.1f;
+                    AsObject(e)->Alpha = v10;
+                    if (v10 < 0.0f) *(DWORD *)&AsObject(e)->Alpha = 0;
                 } else {
-                    *(DWORD*)(e + 0x168) = 0x3F800000;   // 1.0f
+                    *(DWORD *)&AsObject(e)->Alpha = 0x3F800000;   // 1.0f
                 }
-                *(DWORD*)(e + 0x10) = *(DWORD*)(v8 + 16);   // posX
-                short v11 = *(short*)(e + 2);               // type
-                *(DWORD*)(e + 0x14) = *(DWORD*)(v8 + 20);   // posY
+                *(DWORD *)&AsObject(e)->Position[0] = *(DWORD*)(v8 + 16);   // posX
+                short v11 = AsObject(e)->Type;               // type
+                *(DWORD *)&AsObject(e)->Position[1] = *(DWORD*)(v8 + 20);   // posY
                 int   v12 = gMapManager.GetCurrentMap();
                 float v37 = *(float*)(v8 + 24);
-                *(float*)(e + 0x18) = v37;                  // posZ
+                AsObject(e)->Position[2] = v37;                  // posZ
                 if (v11 == 267) {
-                    if (v12 == 8 || v12 == 10)   *(float*)(e + 0x18) = v37 - 10.0f;
-                    else if (v12 != -1)          *(float*)(e + 0x18) = v37 - 30.0f;
+                    if (v12 == 8 || v12 == 10)   AsObject(e)->Position[2] = v37 - 10.0f;
+                    else if (v12 != -1)          AsObject(e)->Position[2] = v37 - 30.0f;
                 }
-                *(DWORD*)(e + 0x1c) = *(DWORD*)(v8 + 28);   // angleX
-                *(DWORD*)(e + 0x20) = *(DWORD*)(v8 + 32);   // angleY
-                *(DWORD*)(e + 0x24) = *(DWORD*)(v8 + 36);   // angleZ
+                *(DWORD *)&AsObject(e)->Angle[0] = *(DWORD*)(v8 + 28);   // angleX
+                *(DWORD *)&AsObject(e)->Angle[1] = *(DWORD*)(v8 + 32);   // angleY
+                *(DWORD *)&AsObject(e)->Angle[2] = *(DWORD*)(v8 + 36);   // angleZ
                 BYTE v14 = *(BYTE*)(v8 + 261);              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 3);
@@ -858,32 +856,32 @@ void __stdcall MoveBugs(void) {
                     if ((rand() & 1) == 0 && gMapManager.GetCurrentMap() != 10) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
-                        Position[0] = (float)(rand() % 64 - 32) + *(float*)(e + 0x10);
-                        Position[1] = (float)(rand() % 64 - 32) + *(float*)(e + 0x14);
-                        Position[2] = (float)(rand() % 32 - 16) + *(float*)(e + 0x18);
+                        Position[0] = (float)(rand() % 64 - 32) + AsObject(e)->Position[0];
+                        Position[1] = (float)(rand() % 64 - 32) + AsObject(e)->Position[1];
+                        Position[2] = (float)(rand() % 32 - 16) + AsObject(e)->Position[2];
                         if (gMapManager.GetCurrentMap() == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                         else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
-                    *(DWORD*)(e + 0xCC) = 0x3EAE147B;        // animSpeed = 0.34f
+                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;        // animSpeed = 0.34f
                     *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
                     if (v12 == 8 || v12 == 10) SetAction((int)e, 7);
                     else                       SetAction((int)e, 6);
-                    *(DWORD*)(e + 0xCC) = 0x3EAE147B;
+                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v14 < 0x22 || v14 > 0x37) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 1);
                     else                                       SetAction((int)e, 0);
-                    *(DWORD*)(e + 0xCC) = 0x3EAE147B;
+                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v11 == 267) {
                     if (v12 == 8 || v12 == 10) SetAction((int)e, 5);
                     else                       SetAction((int)e, 4);
-                    *(DWORD*)(e + 0xCC) = 0x3EAE147B;
+                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else {
                     SetAction((int)e, 3);
-                    *(DWORD*)(e + 0xCC) = 0x3EAE147B;
+                    *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 }
             }
@@ -904,23 +902,23 @@ void __stdcall MoveBugs(void) {
         // ── LABEL_72 — avance BMD común + follow (solo 816/817) ─────────────
         {
         float* v28 = (float*)(e + 0x10);
-        *(BYTE*)(v40 + 160) = *(BYTE*)(e + 0x105);          // model.CurrentAction
+        *(BYTE*)(v40 + 160) = AsObject(e)->CurrentAction;          // model.CurrentAction
         BMD__PlayAnimation((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
-                     (void*)(e + 0x106), *(float*)(e + 0xCC));   // sub_440AA0 (a6/a7 unused)
+                     (void*)(e + 0x106), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
 
-        short v29 = *(short*)(e + 2);
+        short v29 = AsObject(e)->Type;
         // 0.97.20: pet custom (Data/Custom/Pets del server).
         if (const Proto::CATALOG_PET* pet = gContentCatalog.GetPetByModel(v29)) {
             CustomPet_Move(e, (BYTE*)(uintptr_t)*v0, *pet);
         }
         if (v29 == 816 || v29 == 817) {
-            float v30 = *(float*)(e + 0x14);                // posY
+            float v30 = AsObject(e)->Position[1];                // posY
             float x1  = *v28;                                // posX
             float v31 = (y2 - v30) * (y2 - v30) + (x2 - x1) * (x2 - x1);
             float v38 = v36 * v36;
             if (v31 >= v38) {
                 float v41 = CreateAngle(x1, v30, x2, y2);   // Movement_Tick (CreateAngle)
-                *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), v41, 20.0f);
+                AsObject(e)->Angle[2] = TurnAngle2(AsObject(e)->Angle[2], v41, 20.0f);
             }
             // PORT FIEL 1:1: el ASM (0x5007DB) escribe la matriz de
             // AngleMatrix en `[esi+0x90]` (campo scratch), NO en 0x24. Hex-Rays lo
@@ -931,28 +929,29 @@ void __stdcall MoveBugs(void) {
             float out[3];
             Vector_Rotate((float*)(e + 0xC0), (float*)(e + 0x90), out);   // VectorRotate(vel@0xC0, mat@0x90)
             *v28 = out[0] + *v28;
-            *(float*)(e + 0x14) = out[1] + *(float*)(e + 0x14);
-            *(float*)(e + 0x18) = out[2] + *(float*)(e + 0x18);
-            *(float*)(e + 0x18) = (float)(rand() % 16 - 8) + *(float*)(e + 0x18);
+            AsObject(e)->Position[1] = out[1] + AsObject(e)->Position[1];
+            AsObject(e)->Position[2] = out[2] + AsObject(e)->Position[2];
+            AsObject(e)->Position[2] = (float)(rand() % 16 - 8) + AsObject(e)->Position[2];
             if ((rand() & 0x1F) == 0) {
                 if (v31 < v38) {
-                    *(float*)(e + 0xC4) = (float)(rand() % 64 + 16) * -0.1f;
-                    *(float*)(e + 0x24) = (float)(rand() % 360);
+                    AsObject(e)->Direction[1] = (float)(rand() % 64 + 16) * -0.1f;
+                    AsObject(e)->Angle[2] = (float)(rand() % 360);
                 } else {
-                    *(float*)(e + 0xC4) = (float)(rand() % 64 + 128) * -0.1f;
+                    AsObject(e)->Direction[1] = (float)(rand() % 64 + 128) * -0.1f;
                 }
-                *(DWORD*)(e + 0xC0) = 0;
-                *(float*)(e + 0xC8) = (float)(rand() % 64 - 32) * 0.1f;
+                *(DWORD *)&AsObject(e)->Direction[0] = 0;
+                AsObject(e)->Direction[2] = (float)(rand() % 64 - 32) * 0.1f;
             }
             int v35 = *v0;
-            if (*(float*)(*v0 + 24) + 100.0f > *(float*)(e + 0x18))
-                *(float*)(e + 0xC8) = *(float*)(e + 0xC8) + 1.5f;
-            if (*(float*)(v35 + 24) + 200.0f < *(float*)(e + 0x18))
-                *(float*)(e + 0xC8) = *(float*)(e + 0xC8) - 1.5f;
+            if (*(float*)(*v0 + 24) + 100.0f > AsObject(e)->Position[2])
+                AsObject(e)->Direction[2] = AsObject(e)->Direction[2] + 1.5f;
+            if (*(float*)(v35 + 24) + 200.0f < AsObject(e)->Position[2])
+                AsObject(e)->Direction[2] = AsObject(e)->Direction[2] - 1.5f;
         }
         }
         }
 
+    }
 next_bug:
         v0 += 111;                              // +0x1BC bytes
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
@@ -1051,7 +1050,7 @@ void __cdecl FUN_004fdc00(float o)
 
   if ( gMapManager.GetCurrentMap() == 9 )
   {
-    if ( (__int64)WorldTime % 4000 < 1000 && !(rand() % 100) )
+    if ( (std::int64_t)WorldTime % 4000 < 1000 && !(rand() % 100) )
     {
       v1 = (double)(rand() % 12 + 4) * 0.1;
       Light[0] = v1 * 0.2;
@@ -1118,7 +1117,7 @@ LABEL_22:
   {
     if ( *(WORD *)(LODWORD(o) + 2) == 160 )
     {
-      v9 = (double)((__int64)WorldTime % 4000);
+      v9 = (double)((std::int64_t)WorldTime % 4000);
     }
     else
     {
@@ -1141,7 +1140,7 @@ LABEL_22:
         }
         goto LABEL_38;
       }
-      v9 = (double)((__int64)WorldTime % 4000);
+      v9 = (double)((std::int64_t)WorldTime % 4000);
     }
     *(float *)(LODWORD(o) + 112) = -(v9 * 0.00025000001);
   }
@@ -1166,7 +1165,7 @@ LABEL_38:
           goto LABEL_59;
         case 0x76:
         case 0x77:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x96:
           v12 = (double)(rand() % 4 + 3) * 0.1;
@@ -1182,7 +1181,7 @@ LABEL_38:
         case 0x17:
         case 0x18:
           *(BYTE *)(Models + 188 * *(short *)(LODWORD(o) + 2) + 136) = 1;
-          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 1000) * -0.001;
+          *(float *)(LODWORD(o) + 112) = (double)((std::int64_t)WorldTime % 1000) * -0.001;
           break;
         case 0x27:
         case 0x28:
@@ -1295,21 +1294,21 @@ LABEL_59:
       switch ( *(WORD *)(LODWORD(o) + 2) )
       {
         case 0x12:
-          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 112) = (double)((std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x27:
           goto LABEL_92;
         case 0x29:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 2000) * 0.00050000002;
+          *(float *)(LODWORD(o) + 112) = (double)((std::int64_t)WorldTime % 2000) * 0.00050000002;
           break;
         case 0x2A:
           *(BYTE *)(Models + 188 * v17 + 136) = 0;
-          *(float *)(LODWORD(o) + 108) = (double)((__int64)WorldTime % 500) * -0.0020000001;
+          *(float *)(LODWORD(o) + 108) = (double)((std::int64_t)WorldTime % 500) * -0.0020000001;
           break;
         case 0x2B:
           *(BYTE *)(Models + 188 * v17 + 136) = 0;
-          *(float *)(LODWORD(o) + 108) = (double)((__int64)WorldTime % 500) * 0.0020000001;
+          *(float *)(LODWORD(o) + 108) = (double)((std::int64_t)WorldTime % 500) * 0.0020000001;
           break;
         default:
           return;
@@ -1320,7 +1319,7 @@ LABEL_59:
       {
         case 3:
         case 4:
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x12:
         case 0x17:
@@ -1330,7 +1329,7 @@ LABEL_92:
         case 0x13:
         case 0x14:
           *(DWORD *)(LODWORD(o) + 100) = 4;
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           break;
         case 0x18:
           *(DWORD *)(LODWORD(o) + 88) = -2;
@@ -1372,7 +1371,7 @@ LABEL_111:
       if ( v20 == 21 )
       {
         *(DWORD *)(LODWORD(o) + 100) = 3;
-        *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+        *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
       }
       else if ( v20 == 38 )
       {
@@ -1421,14 +1420,14 @@ LABEL_111:
       {
         case 2:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 1000) * 0.001;
           return;
         case 4:
           v23 = WorldTime * 0.0020000001;
           *(DWORD *)(LODWORD(o) + 100) = 0;
           v11 = sin(v23) * 0.34999999 + 0.64999998;
           *(float *)(LODWORD(o) + 104) = v11;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.000099999997;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 10000) * 0.000099999997;
           v30[0] = v11;
           v30[1] = v11;
           goto LABEL_116;
@@ -1446,15 +1445,15 @@ LABEL_116:
           AddTerrainLight(*v7, *(float *)(LODWORD(o) + 20), v30, 3, PrimaryTerrainLight[0]);
           return;
         case 0xB: case 0xD: case 0x49: case 0x4B: case 0x4F:
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 10000) * 0.00019999999;
           return;
         case 0xC:
-          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
+          *(float *)(LODWORD(o) + 108) = (double)(-(std::int64_t)WorldTime % 50000) * 0.000049999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 50000) * 0.000049999999;
           return;
         case 0x3D:
           *(DWORD *)(LODWORD(o) + 100) = 1;
-          v25 = (double)(-(__int64)WorldTime % 1000);
+          v25 = (double)(-(std::int64_t)WorldTime % 1000);
           goto LABEL_123;
         case 0x3F:
         case 0x40:
@@ -1462,7 +1461,7 @@ LABEL_116:
         case 0x41:
         case 0x42:
           *(DWORD *)(LODWORD(o) + 100) = 1;
-          v25 = (double)(-(__int64)WorldTime % 1000);
+          v25 = (double)(-(std::int64_t)WorldTime % 1000);
 LABEL_123:
           *(float *)(LODWORD(o) + 112) = v25 * 0.001;
           v26 = sin(WorldTime * 0.0020000001) * 0.34999999 + 0.64999998;
@@ -1473,7 +1472,7 @@ LABEL_123:
           break;
         case 0x48:
           *(DWORD *)(LODWORD(o) + 100) = 0;
-          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(std::int64_t)WorldTime % 10000) * 0.00019999999;
           break;
         case 0x52:
           *(DWORD *)(LODWORD(o) + 100) = 0;

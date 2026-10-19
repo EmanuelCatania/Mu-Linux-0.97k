@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_ClickHandler.cpp
 //
 // Port FIEL del IDA decompile `sub_4D23B0` (`004D23B0_sub_4D23B0.c`, 14783
@@ -13,7 +14,7 @@
 //   - Mix: 8x4
 //
 // La firma original en IDA es:
-//   void __cdecl sub_4D23B0(char *a1, int a2, __int16 *a3, int a4, int a5,
+//   void __cdecl sub_4D23B0(char *a1, int a2, std::int16_t *a3, int a4, int a5,
 //                            char a6)
 // Donde:
 //   a1 = origin_x  (top-left grid X en pantalla)
@@ -46,6 +47,8 @@
 // dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
+#include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/Item_ServerValue.h"
@@ -55,7 +58,7 @@
 #include "functions.h"
 #include "structs.h"
 #include "Net/Net.h"
-#include <winsock2.h>
+#include "Platform/PlatformHeaders.h"
 
 
 // ── Globals referenced (declared elsewhere) ──────────────────────────────────
@@ -429,30 +432,30 @@ void RestorePickedItemToSource(void)
 extern "C" int __cdecl Item_CompareForTradeHistory(const BYTE* p, const BYTE* n)
 {
     if (*(short*)p != *(short*)n) return 2;
-    if (p[9] != n[9]) return 0;
-    const int lp = (*(int*)(p + 4) >> 3) & 0xF;
-    const int ln = (*(int*)(n + 4) >> 3) & 0xF;
+    if (AsItem(p)->Class != AsItem(n)->Class) return 0;
+    const int lp = (AsItem(p)->Level >> 3) & 0xF;
+    const int ln = (AsItem(n)->Level >> 3) & 0xF;
     if (lp != ln) return (lp < ln) ? -1 : 1;
 
-    const int sp = (*(int*)(p + 4) >> 7) & 1, sn = (*(int*)(n + 4) >> 7) & 1;
+    const int sp = (AsItem(p)->Level >> 7) & 1, sn = (AsItem(n)->Level >> 7) & 1;
     if (sp < sn) return -1;
     if (sp > sn) return 1;
-    const int ep = p[27] & 0x3F, en = n[27] & 0x3F;
+    const int ep = AsItem(p)->Option1 & 0x3F, en = AsItem(n)->Option1 & 0x3F;
     if (ep < en) return -1;
     if (ep > en) return 1;
-    if (p[36] < n[36]) return -1;
-    if (p[36] > n[36]) return 1;
+    if (AsItem(p)->SpecialNum < AsItem(n)->SpecialNum) return -1;
+    if (AsItem(p)->SpecialNum > AsItem(n)->SpecialNum) return 1;
     int fp = 0, vp = 0, fn = 0, vn = 0;
-    for (int i = 0; i < n[36]; ++i) {
+    for (int i = 0; i < AsItem(n)->SpecialNum; ++i) {
         if (p[37 + i] >= 0x3C && p[37 + i] <= 0x3F) { fp = 1; vp = p[45 + i]; }
         if (n[37 + i] >= 0x3C && n[37 + i] <= 0x3F) { fn = 1; vn = n[45 + i]; }
     }
-    if (n[36]) {
+    if (AsItem(n)->SpecialNum) {
         if (fp < fn || vp < vn) return -1;
         if (fp != fn && vp != vn) return 1;
     }
-    if (p[26] > n[26]) return 1;
-    return (p[26] < n[26]) ? -1 : 0;
+    if (AsItem(p)->Durability > AsItem(n)->Durability) return 1;
+    return (AsItem(p)->Durability < AsItem(n)->Durability) ? -1 : 0;
 }
 
 // IDA: sub_4CC530 (0x004CC530) — recuerda un item valioso recibido por trade
@@ -555,17 +558,17 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
         if (heroPtr) {
             switch (slot_idx) {
             case 0:  // Lefthand weapon
-                *(WORD*)(heroPtr + 624) = 0xFFFF;
-                *(BYTE*)(heroPtr + 627) = 0;
+                *(WORD *)&AsCharacter(heroPtr)->Weapon[0].Type = 0xFFFF;
+                AsCharacter(heroPtr)->Weapon[0].Option1 = 0;
                 break;
             case 1:  // Righthand weapon
-                *(WORD*)(heroPtr + 648) = 0xFFFF;
-                *(BYTE*)(heroPtr + 651) = 0;
+                *(WORD *)&AsCharacter(heroPtr)->Weapon[1].Type = 0xFFFF;
+                AsCharacter(heroPtr)->Weapon[1].Option1 = 0;
                 break;
             case 8:  // Pet (Helper)
                 DeleteBug((int)(uintptr_t)heroPtr);
-                *(WORD*)(heroPtr + 696) = 0xFFFF;
-                *(BYTE*)(heroPtr + 699) = 0;
+                *(WORD *)&AsCharacter(heroPtr)->Helper.Type = 0xFFFF;
+                AsCharacter(heroPtr)->Helper.Option1 = 0;
                 break;
             default:
                 break;
@@ -573,7 +576,7 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
         }
     }
 
-    if (inv_base == (__int16*)Inventory) {
+    if (inv_base == (std::int16_t*)Inventory) {
         SortInventory(inv_base);
     }
 }
@@ -603,7 +606,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
     // move perdido bloquearía el inventario/baúl para siempre).
     if (DAT_07eaa165 != 0) {
         static DWORD s_guardSince = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (s_guardSince == 0) s_guardSince = now;
         else if (now - s_guardSince > 2000) {
             s_guardSince = 0;
@@ -647,14 +650,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // ── Hovered cell with item: highlight footprint (color=2) ──────
             // Guards defensivos: DAT_07d78068 sin inicializar (loader race) o `type` fuera
             // de rango darían `attr + type*64` inválido.
-            ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
+            ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)ItemAttribute_Base();
             if (!attr) { continue; }
-            // Reject implausible attr base.
-            if ((uintptr_t)attr < 0x100000 || (uintptr_t)attr >= 0x80000000) {
-                if (DAT_083a4124) {
-                }
-                continue;
-            }
             short typeRaw   = rowSlot[0];
             if (typeRaw < 0 || typeRaw >= ITEM_MAX_EX) { continue; }
             int   type      = (int)(unsigned short)typeRaw;
@@ -1093,7 +1090,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // ── BRANCH F: Ctrl + Q/W/E → hotkey assignment ─────────────────
             // Per líneas 989-1009 de IDA. Guarda el tipo de item en la tabla de 3 slots
             // table at dword_559C60[0..2].
-            SHORT ctrl = GetAsyncKeyState(0x11);   // VK_CONTROL
+            SHORT ctrl = Platform::GetInput().KeyState(0x11);   // VK_CONTROL
             if ((char)((unsigned short)ctrl >> 8) == (char)0x80) {
                 int hk = -1;
                 if (PressKey(0x51))      hk = 0;   // Q

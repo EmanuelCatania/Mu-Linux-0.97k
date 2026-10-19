@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
 #include "Render/Camera3D.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
@@ -355,10 +356,9 @@ void __cdecl Entity_Render(void)
     }
 }
 
-// FUN_00473710 @ 0x00473710 — Trail/Particle Effects Render
-// Port FIEL del IDA decompile: itera unk_7B27B08 pool stride 2520B (= 630 ints).
-// El pool está dentro del Joint pool DAT_07b27150 (200 × 0x9d8B), offset +0x9b8
-// por entry. Itera 84 entries.
+// FUN_00473710 @ 0x00473710 — render de joints.
+// IDA ancla cada joint en &LifeTime (unk_7B27B08) y lee el resto con índices
+// negativos; acá se usan los campos de JOINT.
 //
 // Per entry, render trail con:
 //   - EnableAlphaBlend (o Minus para types específicos)
@@ -372,28 +372,22 @@ void __cdecl ItemDrop_Render(void)
 {
     // DESVIACION (DLL Antilag, ret en 0x00473710): sin joints de skills.
     if (gUserSettings.GetAntilag(ANTILAG_SKILLS)) return;
-    // Pool: DAT_07b27150 (Joint pool) + 0x9b8 stride 0x9d8.
-    int* poolBase = (int*)((char*)DAT_07b27150 + 0x9b8);
-    const int kStride = 0x9d8 / 4;   // 630 ints = 2520 bytes
-    // El binario itera de &unk_7B27B08 a &unk_7C5B4E8 con stride 0x9d8 = 500
-    // entradas; se itera sobre el tamaño real de DAT_07b27150.
-    const int kEntries = (int)(sizeof(DAT_07b27150) / 0x9d8);   // 500
-    const char* poolEnd = (const char*)DAT_07b27150 + sizeof(DAT_07b27150);
+    JOINT* joints = AsJoint(DAT_07b27150);
+    const int kEntries = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
 
     for (int eIdx = 0; eIdx < kEntries; ++eIdx) {
-        int* v0 = poolBase + eIdx * kStride;
-        // active flag at byte offset -2488 (negative = before v0 base)
-        if (!*((BYTE*)v0 - 2488)) continue;
+        JOINT* j = &joints[eIdx];
+        if (!j->Live) continue;
 
-        int type = *(v0 - 621);    // type code at offset -621*4 = -2484
+        int type = j->Type;
         // Decide blend mode per type/subtype.
         bool useMinus = (type == 1253 || type == 1250);
         if (type == 1253) {
-            int sub = *(v0 - 620);
+            int sub = j->SubType;
             if (sub == 2 || sub == 3 || sub == 4 || sub == 5) useMinus = false;
         }
         if (type == 1250) {
-            if (*(v0 - 620) != 4) useMinus = false;
+            if (j->SubType != 4) useMinus = false;
         }
         // IDA: la rama else llama `EnableAlphaBlend()` = **0x00511710 =
         // GL_SetBlendAdditive** (blend tipo 3), NO GL_SetBlendSrcOver: con alpha
@@ -405,55 +399,45 @@ void __cdecl ItemDrop_Render(void)
         // 0/1/2 escalan el color por la vida (clamp 20); el 3 no escala; el
         // resto no bindea ni setea color.
         if (type == 266) {
-            int sub = *(v0 - 620);
+            int sub = j->SubType;
             int texId = 0;
             if (sub == 0 || sub == 4)      texId = 1277;
             else if (sub == 1 || sub == 3) texId = 1253;
             else if (sub == 2)             texId = 1278;
             if (texId) GL_BindTextureSlot(texId);
             if (sub >= 0 && sub <= 4 && sub != 3) {
-                int life = *v0;
+                int life = j->LifeTime;
                 if (life >= 20) life = 20;
                 float scale = (float)((double)life * 0.050000001);
-                glColor3f(scale * *((float*)v0 - 609),
-                          scale * *((float*)v0 - 608),
-                          scale * *((float*)v0 - 607));
+                glColor3f(scale * j->Light[0],
+                          scale * j->Light[1],
+                          scale * j->Light[2]);
             } else if (sub == 3) {
-                glColor3f(*((float*)v0 - 609), *((float*)v0 - 608), *((float*)v0 - 607));
+                glColor3f(j->Light[0], j->Light[1], j->Light[2]);
             }
         } else {
             int texId = (type == 1255) ? 1254 : type;
             GL_BindTextureSlot(texId);
-            glColor3fv((const GLfloat*)v0 - 609);
+            glColor3fv(j->Light);
         }
 
         // Iterate segments.
-        int segCount = *(v0 - 602);
+        int segCount = j->NumTails;
         if (segCount <= 0) continue;
 
-        int segMax  = *(v0 - 601);
-        int* v6     = v0 - 599;   // segment data pointer
-        // DESVIACION (guard): segCount sale del slot del pool; si un slot queda con
-        // basura, el loop avanzaría v6 de a 12 ints sin techo y le pasaría a
-        // glVertex3fv un puntero fuera de lo mapeado (crash dentro del driver GL). El
-        // binario no acota; acá se clampea al espacio de datos del propio slot (cada
-        // entrada son 630 ints; desde v0-599 entran (630-599+31)/12 segmentos con
-        // margen).
-        {
-            const char* slotEnd = (const char*)v0 + (kStride - 599) * 4;
-            if (slotEnd > poolEnd) slotEnd = poolEnd;
-            int maxSeg = (int)((slotEnd - (const char*)v6) / (12 * 4)) - 2;
-            if (maxSeg < 0) maxSeg = 0;
-            if (segCount > maxSeg) segCount = maxSeg;
-            if (segCount <= 0) continue;
-        }
+        int segMax  = j->MaxTails;
+        int* v6     = (int*)&j->Tails[0][0][1];   // IDA lee la fila como v6-1..v6+10
+        // DESVIACION (guard): si NumTails queda con basura, el loop avanzaría v6 sin
+        // techo y le pasaría a glVertex3fv un puntero fuera de lo mapeado (crash
+        // dentro del driver GL). El binario no acota.
+        if (segCount > MAX_JOINT_TAILS) segCount = MAX_JOINT_TAILS;
 
         // Loop de segmentos, fiel a IDA L114-273.  Cada fila son 4 vec3:
         // v6-1 / v6+2 / v6+5 / v6+8, y la siguiente fila +12.  Por segmento se
         // dibujan DOS quads cruzados (vert2/vert3 y vert0/vert1); el 1262 solo
         // el segundo, y el 1253 subtipo 2 omite el primero.
-        const int sub = *(v0 - 620);
-        const float* light = (const float*)v0 - 609;
+        const int sub = j->SubType;
+        const float* light = j->Light;
         for (int segIdx = 0; segIdx < segCount; ++segIdx) {
             float s, v28;
             bool stepPow2 = (type == 1260 || type == 1261 ||
@@ -489,7 +473,7 @@ void __cdecl ItemDrop_Render(void)
                     // Fade por altura: lo que sube por encima de ownerZ+50 se
                     // oscurece (por eso el aura nunca pasa de la cabeza).
                     float c[3] = { light[0], light[1], light[2] };
-                    int owner = *(v0 - 606);
+                    int owner = (int)(uintptr_t)j->Target;
                     if (owner) {
                         double d = ((double)*((const float*)v6 + 1)
                                   - ((double)*(const float*)(owner + 24) + 50.0)) * 0.0099999998;
@@ -803,7 +787,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     static int s_altNameToggle = 0;
     if (PressKey(VK_MENU))
         s_altNameToggle = !s_altNameToggle;
-    if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
+    if (s_altNameToggle || (Platform::GetInput().KeyState(VK_MENU) & 0x8000) != 0) {
         for (int i = 0; i < 1000; ++i) {
             if (i == hovered) continue;
             BYTE* o = itemPool + i * 0x204 + 72;
@@ -908,13 +892,13 @@ void __cdecl RenderWheelWeapon(DWORD o)
     if (!o || !DAT_05828d58 || !DAT_07abf5d8) return;
 
     // ── guardar el estado original del slot ──
-    const int savedX     = *(int*)(o + 16);
-    const int savedY     = *(int*)(o + 20);
-    const int savedZ     = *(int*)(o + 24);
-    const int savedAng0  = *(int*)(o + 28);
-    const int savedAng1  = *(int*)(o + 32);
-    const int savedAng2  = *(int*)(o + 36);
-    const short savedType = *(short*)(o + 2);
+    const int savedX     = *(int *)&AsObject(o)->Position[0];
+    const int savedY     = *(int *)&AsObject(o)->Position[1];
+    const int savedZ     = *(int *)&AsObject(o)->Position[2];
+    const int savedAng0  = *(int *)&AsObject(o)->Angle[0];
+    const int savedAng1  = *(int *)&AsObject(o)->Angle[1];
+    const int savedAng2  = *(int *)&AsObject(o)->Angle[2];
+    const short savedType = AsObject(o)->Type;
 
     const DWORD owner = *(DWORD*)(o + 252);
     if (!owner) return;
@@ -925,50 +909,50 @@ void __cdecl RenderWheelWeapon(DWORD o)
 
     // Giro: o+200 acumula -30°/frame y se suma al angle[2]; el arma además
     // flota 100 unidades sobre su posición y fija angle[1] = 90°.
-    const float spin = *(float*)(o + 200) - 30.0f;
-    *(float*)(o + 200) = spin;
-    *(float*)(o + 36)  = spin + *(float*)(o + 36);
-    *(int*)  (o + 32)  = 1119092736;              // 90.0f
-    const float zUp    = *(float*)(o + 24) + 100.0f;
-    *(float*)(o + 24)  = zUp;
+    const float spin = AsObject(o)->Direction[2] - 30.0f;
+    AsObject(o)->Direction[2] = spin;
+    AsObject(o)->Angle[2]  = spin + AsObject(o)->Angle[2];
+    *(int *)&AsObject(o)->Angle[1]  = 1119092736;              // 90.0f
+    const float zUp    = AsObject(o)->Position[2] + 100.0f;
+    AsObject(o)->Position[2]  = zUp;
 
-    const float alpha = *(float*)(o + 360);
+    const float alpha = AsObject(o)->Alpha;
 
     // Volcar posición/acción/skin al slot del modelo compartido.
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
     *(float*)(mdl + 116) = zUp;
-    *(BYTE*) (mdl + 160) = *(BYTE*)(o + 261);                       // CurrentAction
+    *(BYTE*) (mdl + 160) = AsObject(o)->CurrentAction;                       // CurrentAction
     *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7); // clase
-    *(int*)  (mdl + 108) = *(int*)(o + 16);
-    *(int*)  (mdl + 112) = *(int*)(o + 20);
+    *(int*)  (mdl + 108) = *(int *)&AsObject(o)->Position[0];
+    *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
 
-    *(short*)(o + 2) = (short)model_id;
+    AsObject(o)->Type = (short)model_id;
     ItemObjectAttribute((int)o);                          // ItemObjectAttribute
 
-    float angles_in[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) };
+    float angles_in[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
     BMD_Animation(mdl, (int)&DAT_06970a9c,
-                 *(float*)(o + 264), *(unsigned int*)(o + 268),
-                 *(BYTE*)(o + 262),
+                 AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
+                 AsObject(o)->PriorAction,
                  (unsigned int*)angles_in, (float*)(o + 40), 0, 0);
 
     float Light[3];
-    RequestTerrainLight(*(float*)(o + 16), *(float*)(o + 20), Light);
-    Light[0] += *(float*)(o + 232);
-    Light[1] += *(float*)(o + 236);
-    Light[2] += *(float*)(o + 240);
+    RequestTerrainLight(AsObject(o)->Position[0], AsObject(o)->Position[1], Light);
+    Light[0] += AsObject(o)->Light[0];
+    Light[1] += AsObject(o)->Light[1];
+    Light[2] += AsObject(o)->Light[2];
 
     RenderPartObject((int)o, model_id, 0, Light, alpha,
                  (unsigned int)(8 * *(unsigned char*)(owner + 137)),
                  0, 1, 1, 1, 0, 2);
 
     // ── restaurar ──
-    *(short*)(o + 2)  = savedType;
-    *(int*)  (o + 16) = savedX;
-    *(int*)  (o + 20) = savedY;
-    *(int*)  (o + 24) = savedZ;
-    *(int*)  (o + 28) = savedAng0;
-    *(int*)  (o + 32) = savedAng1;
-    *(int*)  (o + 36) = savedAng2;
+    AsObject(o)->Type  = savedType;
+    *(int *)&AsObject(o)->Position[0] = savedX;
+    *(int *)&AsObject(o)->Position[1] = savedY;
+    *(int *)&AsObject(o)->Position[2] = savedZ;
+    *(int *)&AsObject(o)->Angle[0] = savedAng0;
+    *(int *)&AsObject(o)->Angle[1] = savedAng1;
+    *(int *)&AsObject(o)->Angle[2] = savedAng2;
 }
 
 // IDA: RenderEffects
@@ -1179,27 +1163,6 @@ bool __cdecl MoveMainCamera(void) {
 
 void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); }
 
-
-
-// Resource_LoadOrFatal @ 0x00406F50 — Resource_LoadOrFatal(filename).
-// Original: llama a Resource_Load; si falla muestra el MessageBox "IError" y
-// termina con Window_FatalError.
-//
-// DESVIACION: el contexto del resource manager (DAT_083bbb14) no se
-// inicializa en el port, así que Resource_Load siempre devuelve 0 y todo
-// caller terminaría en error fatal (p.ej. el flujo post-login de la lista de
-// personajes, que pasa el nombre de usuario como filename).  Se sigue llamando
-// a Resource_Load (por si aparece algún efecto lateral cuando el manager esté
-// portado) pero se suprimen el modal y la salida fatal.  Cuando el resource
-// loading esté portado, este guard se puede quitar.
-void __cdecl Resource_LoadOrFatal(char* param_1) {
-    (void)Resource_Load(param_1);
-    // Suppressed:
-    // if ((char)uVar1 == '\0') {
-    //     MessageBoxA((HWND)0, (LPCSTR)&lpText_07d63aec, "IError", 0);
-    //     Window_FatalError(DAT_055c9ffc, '\x01');
-    // }
-}
 
 
 // BMD__RotationPosition @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp

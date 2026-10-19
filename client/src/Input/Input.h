@@ -5,3 +5,6 @@ typedef unsigned char byte;
 uint Key_IsJustPressed(int vk);
 bool IME_GetAndClearState(char clear_mode, byte save_mask);
 int  NumPad_HitTest(void);
+
+#include "Platform/IInput.h"
+void Input_OnEvent(const Platform::InputEvent& event);

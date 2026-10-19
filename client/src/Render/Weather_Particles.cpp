@@ -1,3 +1,4 @@
+#include <cstdint>
 // Weather_Particles.cpp — IDA: MoveLeaves @ 0x0046cc80 — WeatherParticles_Update
 // Per-frame weather particle pool tick.
 //
@@ -46,7 +47,7 @@
 #include "functions.h"
 #include <math.h>
 
-// fsin/__ftol are defined as inline functions in stdafx.h (Ghidra intrinsic stubs)
+// fsin se define en stdafx.h como puente al seno de la CRT.
 // _rand is a macro defined as rand() in stdafx.h
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,8 +64,8 @@ void WeatherParticles_Update(void)
 
     // ── Per-frame wind / oscillation globals ─────────────────────────────────
     // IDA MoveLeaves (0x46CC80):
-    //   RainSpeed = 10 * ((__int64)sin(WorldTime * 0.001) + 3);
-    //   RainAngle = 20 * (__int64)sin(WorldTime * 0.00050000002 + 50.0);
+    //   RainSpeed = 10 * ((std::int64_t)sin(WorldTime * 0.001) + 3);
+    //   RainAngle = 20 * (std::int64_t)sin(WorldTime * 0.00050000002 + 50.0);
     // (_DAT_00559b9c = RainSpeed, DAT_07c74ae8 = RainAngle.)
     _DAT_00559b9c = (int)(10 * ((longlong)sin((double)DAT_05826e08 * 0.001) + 3));
     DAT_07c74ae8  = (int)(20 * (longlong)sin((double)DAT_05826e08 * 0.00050000002 + 50.0));

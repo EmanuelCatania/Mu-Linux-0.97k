@@ -383,23 +383,31 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     }
 
     if (Attribute1 & 0x80) {
-        if (p->RequireClass[1]) {
-            if (ip->Type >= 196 && ip->Type < ITEM_HELM_BASE) push_special(18);
-            if (wType == 4 || wType == 7 || wType == 8) push_special(21);
-            if (wType == 3 || wType == 6 || wType == 9 || wType == 11 || (wType >= 97 && wType <= 100)) push_special(20);
-            if (wType == 5 || wType == 10 || wType == 13 || wType == 14 || wType == 16 || wType == 96 || (wType >= 103 && wType <= 105)) push_special(22);
-            if (wType == 12 || (wType >= 34 && wType < ITEM_MACE_BASE) || wType == 65 || wType == 67 || wType == 68) push_special(19);
-            if (wType == 15 || wType == 69 || wType == 70 || wType == 17) push_special(23);
-            if (wType == 19 || wType == 106) push_special(22);
+        const int catalogSkill = gContentCatalog.GetItemSkill(ip->Type);
+        if (catalogSkill >= 0) {
+            // The server owns weapon skills, including custom items. Zero
+            // explicitly means no skill; only an absent entry uses vanilla rules.
+            if (catalogSkill != 0)
+                push_special((BYTE)catalogSkill, catalogSkill == 24 ? 6 : 0);
+        } else {
+            if (p->RequireClass[1]) {
+                if (ip->Type >= 196 && ip->Type < ITEM_HELM_BASE) push_special(18);
+                if (wType == 4 || wType == 7 || wType == 8) push_special(21);
+                if (wType == 3 || wType == 6 || wType == 9 || wType == 11 || (wType >= 97 && wType <= 100)) push_special(20);
+                if (wType == 5 || wType == 10 || wType == 13 || wType == 14 || wType == 16 || wType == 96 || (wType >= 103 && wType <= 105)) push_special(22);
+                if (wType == 12 || (wType >= 34 && wType < ITEM_MACE_BASE) || wType == 65 || wType == 67 || wType == 68) push_special(19);
+                if (wType == 15 || wType == 69 || wType == 70 || wType == 17) push_special(23);
+                if (wType == 19 || wType == 106) push_special(22);
+            }
+            if (p->RequireClass[2]) {
+                if (wType >= ITEM_BOW_BASE && wType < ITEM_STAFF_BASE && wType != 135 && wType != 143) push_special(24, 6);
+            }
+            if (p->RequireClass[3]) {
+                if (wType == 18) push_special(23);
+                else if (wType == 31) push_special(56);
+            }
+            if (wType == ITEM_HELPER_DINORANT) push_special(49);
         }
-        if (p->RequireClass[2]) {
-            if (wType >= ITEM_BOW_BASE && wType < ITEM_STAFF_BASE && wType != 135 && wType != 143) push_special(24, 6);
-        }
-        if (p->RequireClass[3]) {
-            if (wType == 18) push_special(23);
-            else if (wType == 31) push_special(56);
-        }
-        if (wType == ITEM_HELPER_DINORANT) push_special(49);
     }
 
     if (Attribute1 & 4) {

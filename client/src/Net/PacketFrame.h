@@ -18,7 +18,7 @@
 // Los helpers de envio consultan esta tabla y corrigen el frame solos: no
 // elegir el frame a mano en cada call site.
 #pragma once
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 // Valores devueltos por PacketFrame_WantsEncrypt.
 #define PACKETFRAME_UNKNOWN  (-2)   // el opcode no existe para el server

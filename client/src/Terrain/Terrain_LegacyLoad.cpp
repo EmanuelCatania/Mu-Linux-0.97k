@@ -1,6 +1,8 @@
 // Terrain_LegacyLoad.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/IFileSystem.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -53,7 +55,7 @@ void __cdecl OpenTerrainMapping(const char *path) {
     Terrain_Clear(); // InitTerrainMappingLayer (IDA)
     FILE *f = crt_fopen(path, DAT_005580ac);
     if (!f) {
-        char d[256]; wsprintfA(d, "TerrainMap LOAD FAIL: %s", path);
+        char d[256]; Platform::TextFormat(d, "TerrainMap LOAD FAIL: %s", path);
         DbgLogPublic(d);
         return;
     }
@@ -95,12 +97,12 @@ void __cdecl OpenTerrainMapping(const char *path) {
 // known offsets validates the right map. Any byte >= 0x80 triggers Error.
 unsigned char* TerrainWall = (unsigned char*)&DAT_0838bc70;
 int __cdecl OpenTerrainAttribute(const char *FileName) {
-    FILE *fp = fopen(FileName, "rb");
+    FILE *fp = Platform::GetFileSystem().Open(FileName, "rb");
     if (!fp) {
         // Falla en silencio: el caller prueba dos formatos (Terrain*.att y
         // EncTerrain*.att) y un MessageBox bloqueante impediría el fallback.
         char dbg[260];
-        wsprintfA(dbg, "OpenTerrainAttribute: file not found '%s'", FileName);
+        Platform::TextFormat(dbg, "OpenTerrainAttribute: file not found '%s'", FileName);
         DbgLogPublic(dbg);
         return 0;
     }
@@ -109,7 +111,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
     fseek(fp, 0, SEEK_SET);
     if (iSize != 65539) {
         char dbg[260];
-        wsprintfA(dbg, "OpenTerrainAttribute: '%s' wrong size %d (expected 65539)",
+        Platform::TextFormat(dbg, "OpenTerrainAttribute: '%s' wrong size %d (expected 65539)",
                   FileName, iSize);
         DbgLogPublic(dbg);
         fclose(fp);
@@ -366,12 +368,12 @@ void __cdecl OpenWorldModels(void) {
             char Buffer[64];
             for (int v4 = 0; v4 < 32; v4++) {
                 const char* fmtFull = (v4 >= 10) ? "Object8/wt%d.jpg" : "Object8/wt0%d.jpg";
-                _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtFull, v4);
+                Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, fmtFull, v4);
                 OpenJPG(Buffer, v4 + 65, 0x2601, 0x2901, 0, '\0');
 
                 const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
-                _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtLeaf, v4);
-                lstrcpynA(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
+                Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, fmtLeaf, v4);
+                Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
             }
         }
         break;
@@ -637,12 +639,8 @@ void __cdecl OpenWorldModels(void) {
         for (size_t i = 0; i < sizeof(lorenciaSlots)/sizeof(lorenciaSlots[0]); ++i) {
             int slotIdx = lorenciaSlots[i].slot;
             char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * slotIdx);
-            if (*(short*)(slotPtr + 0x22) > 0) continue;  // already loaded (e.g. SMD worked)
+            if (AsModel(slotPtr)->NumBones > 0) continue;  // already loaded (e.g. SMD worked)
             AccessModel(slotIdx, "Data/Object1/", lorenciaSlots[i].bmd, -1);
-            // Post-load verification log
-            short nMesh   = *(short*)(slotPtr + 0x24);
-            short nAction = *(short*)(slotPtr + 0x22);
-            short nBone   = *(short*)(slotPtr + 0x26);
         }
 
         // Register all Object1 slots 0..0x9f
@@ -660,7 +658,7 @@ void __cdecl OpenWorldModels(void) {
         if (DAT_0055a7c4 == '\0') {
             char local_384[32];
             crt_sprintf(local_384, "Data2/Object%d/", objFolder);
-            ParserFileHandle = fopen(local_384, "rt");
+            ParserFileHandle = Platform::GetFileSystem().Open(local_384, "rt");
             if (ParserFileHandle != nullptr) {
                 char local_300[256], local_200[256], local_100[256];
                 while (ParseNextToken() != 2) {

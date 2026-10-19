@@ -1,6 +1,7 @@
 // Net_Disconnect.cpp
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/MuEmu.h"
@@ -11,9 +12,9 @@
 // Closes the game socket and resets connection state.
 int __cdecl Net_Disconnect(int ctx) {
     (void)ctx;
-    if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
-        closesocket((SOCKET)SocketClientSocket);
-        SocketClientSocket = (DWORD)INVALID_SOCKET;
+    if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+        Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+        SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
     }
     return 0;
 }

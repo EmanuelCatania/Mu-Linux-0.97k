@@ -9,7 +9,7 @@
 //   * casillero de equipo -> primer hueco libre del inventario.
 // Todo usa el mismo 0x24 que el arrastre; el server sigue validando.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 struct ITEM;
 

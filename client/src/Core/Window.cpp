@@ -1,22 +1,24 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
 #include "Core/Font.h"
 #include "Net/Ping.h"
 #include "Core/Window.h"
 #include "Entity/CharacterAttributeView.h"
 #include "Local/ClientText.h"
-#include "resource.h"
-
-extern "C" void DbgLogPublic(const char* msg);
+#include "Platform/NativeBridge.h"
+#include "Platform/IWindow.h"
+#include "Platform/IGLContext.h"
 
 CWindow gWindow;
 
 // DESVIACION DLL: CWindow::ChangeWindowText, sin resets hasta integrar su HUD.
 void CWindow::UpdateTitle()
 {
-    if (!m_hWnd) return;
-    const DWORD now = GetTickCount();
+    if (!Platform::GetWindow().IsCreated()) return;
+    const DWORD now = Platform::GetTimer().Ticks();
     if (m_TitleScene == SceneFlag && now - m_LastTitleUpdate < 1000) return;
     m_TitleScene = SceneFlag;
     m_LastTitleUpdate = now;
@@ -26,11 +28,11 @@ void CWindow::UpdateTitle()
         DWORD milliseconds;
         char ping[32] = "--";
         if (gPing.GetMilliseconds(milliseconds))
-            sprintf_s(ping, "%lu ms", milliseconds);
-        sprintf_s(title, gClientText.Get(ClientTextId::WindowTitle),
+            Platform::TextFormatSecure(ping, "%lu ms", milliseconds);
+        Platform::TextFormatSecure(title, gClientText.Get(ClientTextId::WindowTitle),
                   attributes.Name(), GlobalText[161], (unsigned int)attributes.Level(), ping, FPS);
     }
-    SetWindowTextA(m_hWnd, title);
+    Platform::GetWindow().SetTitle(title);
 }
 
 
@@ -55,202 +57,40 @@ void CWindow::SetWindowMode(bool windowMode, bool borderless)
 
 void CWindow::ChangeMode(bool windowMode, bool borderless, DWORD width, DWORD height)
 {
-    if (!m_hWnd) return;
-    const bool wasFullscreen = !m_WindowMode;
+    if (!Platform::GetWindow().IsCreated()) return;
     SetResolution(width, height);
     SetWindowMode(windowMode, borderless);
-    if (!windowMode) ApplyFullscreen();          // cambia el modo de video al tamaño nuevo
-    else if (wasFullscreen) RestoreDisplay();
-
-    // Mismo estilo y posición que Create.
-    DWORD style, exStyle;
-    if (!windowMode || borderless) {
-        style = WS_POPUP | WS_VISIBLE;
-        exStyle = windowMode ? (WS_EX_APPWINDOW | WS_EX_WINDOWEDGE) : WS_EX_APPWINDOW;
-    } else {
-        style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE;
-        exStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-    }
-    RECT rc = { 0, 0, (LONG)m_Width, (LONG)m_Height };
-    AdjustWindowRect(&rc, style, FALSE);
-    const int w = rc.right - rc.left, h = rc.bottom - rc.top;
-    int x = 0, y = 0;
-    if (windowMode) {
-        x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
-        y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-    }
-    SetWindowLongPtrA(m_hWnd, GWL_STYLE, style);
-    SetWindowLongPtrA(m_hWnd, GWL_EXSTYLE, exStyle);
-    SetWindowPos(m_hWnd, NULL, x, y, w, h, SWP_SHOWWINDOW | SWP_NOZORDER | SWP_FRAMECHANGED);
-
-    // El alto de la fuente depende del ancho cuando Config.ini no trae [Font].
+    Platform::GetWindow().ChangeMode({width, height, windowMode, borderless});
     gFont.Reload(m_Width);
 }
 
-void CWindow::RestoreDisplay()
-{
-    if (!m_DisplayModeChanged) return;
-    m_DisplayModeChanged = false;
-    ChangeDisplaySettingsA(NULL, 0);
-}
+void CWindow::RestoreDisplay() { Platform::GetWindow().RestoreDisplay(); }
+void CWindow::RequestCloseApplication() { Platform::GetWindow().RequestCloseApplication(); }
+HWND CWindow::GetHwnd() const { return Platform::NativeWindow(); }
+HINSTANCE CWindow::GetInstance() const { return Platform::NativeInstance(); }
 
-// DESVIACION respecto de IDA (WinMain 0x41E8A0 L394-418).
-//
-// El original busca un modo de video con ancho == WindowWidth, alto ==
-// WindowHeight y 16 bits de color. En Windows 10/11 no hay modos de 16 bits, así
-// que no encuentra ninguno y el "pantalla completa" queda como una ventana
-// WS_POPUP en la esquina. Se usa el criterio del DLL
-// (CWindow::ChangeDisplaySettingsFunction): la mayor profundidad de color que
-// ofrezca el sistema.
-void CWindow::ApplyFullscreen()
-{
-    DEVMODEA dm = {};
-    dm.dmSize = sizeof(dm);
-
-    DWORD bestBpp = 0;
-    for (int i = 0; EnumDisplaySettingsA(NULL, i, &dm); ++i) {
-        if (dm.dmBitsPerPel > bestBpp) bestBpp = dm.dmBitsPerPel;
-    }
-
-    for (int i = 0; EnumDisplaySettingsA(NULL, i, &dm); ++i) {
-        if (dm.dmPelsWidth  == m_Width &&
-            dm.dmPelsHeight == m_Height &&
-            dm.dmBitsPerPel == bestBpp) {
-            if (ChangeDisplaySettingsA(&dm, 0) == DISP_CHANGE_SUCCESSFUL) {
-                m_DisplayModeChanged = true;
-                DbgLogPublic("Display: pantalla completa OK");
-            } else {
-                DbgLogPublic("Display: ChangeDisplaySettings FALLO, sigo en ventana");
-            }
-            return;
-        }
-    }
-
-    // Igual que el DLL: si el modo pedido no existe, la ventana se crea igual.
-    char line[128];
-    wsprintfA(line, "Display: no hay modo %ux%u a %u bpp, sigo en ventana",
-              m_Width, m_Height, bestBpp);
-    DbgLogPublic(line);
-}
-
-// IDA: Window_Create (0x0041DFF0).
-//   style:  CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS = 0x2B
-//   clase:  "Dialog"; ventana WS_POPUP del tamaño configurado.
-// La rama de pantalla completa es la del binario; el modo ventana es del DLL.
+// IDA: Window_Create (0x0041DFF0). WndProc conserva el despacho existente.
 bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 {
-    m_hInst = hInst;
-
-    WNDCLASSA wc     = {};
-    wc.style         = 0x2B;            // CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS
-    wc.lpfnWndProc   = wndProc;
-    wc.hInstance     = hInst;
-    // Icono grande (Alt+Tab, barra de tareas) desde los recursos del exe.
-    wc.hIcon         = LoadIconA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON));
-    wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName = "Dialog";        // lo usa el FindWindowA de instancia única
-    RegisterClassA(&wc);
-
-    if (!m_WindowMode) {
-        // Pantalla completa, como el original: el cambio de modo va ANTES de
-        // crear la ventana (en IDA, EnumDisplaySettings precede a StartWindow).
-        ApplyFullscreen();
-        m_hWnd = CreateWindowExA(
-            WS_EX_APPWINDOW,
-            "Dialog",
-            "Mu Online",
-            WS_POPUP | WS_VISIBLE,
-            0, 0, m_Width, m_Height,
-            NULL, NULL, hInst, NULL
-        );
-    } else {
-        // Modo ventana (DLL, CWindow::StartWindow), con tres diferencias:
-        //   - sin WS_EX_TOPMOST;
-        //   - AdjustWindowRect para que el área de cliente mida exactamente
-        //     ancho x alto (el DLL suma +26 a mano);
-        //   - sin WS_THICKFRAME ni WS_MAXIMIZEBOX: la escala de layout se
-        //     calcula una sola vez y un resize descuadraría todo.
-        const DWORD style = m_Borderless
-            ? (WS_POPUP | WS_VISIBLE)
-            : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE);
-
-        RECT rc = { 0, 0, (LONG)m_Width, (LONG)m_Height };
-        AdjustWindowRect(&rc, style, FALSE);
-        const int w = rc.right  - rc.left;
-        const int h = rc.bottom - rc.top;
-
-        // Centrada en el escritorio; si no entra, pegada arriba a la izquierda
-        // para que la barra de título quede alcanzable.
-        int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
-        int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-
-        m_hWnd = CreateWindowExA(
-            WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
-            "Dialog",
-            "Mu Online",
-            style,
-            x, y, w, h,
-            NULL, NULL, hInst, NULL
-        );
-    }
-
-    if (!m_hWnd) return false;
-
-    // El .ico trae una sola imagen de 48x48; pedir el tamaño chico del sistema
-    // con LoadImage da un icono de barra de título más limpio que el escalado
-    // de GDI (igual que el DLL en CWindow::ChangeWindowState).
-    HICON hSmall = (HICON)LoadImageA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON),
-                                     IMAGE_ICON,
-                                     GetSystemMetrics(SM_CXSMICON),
-                                     GetSystemMetrics(SM_CYSMICON),
-                                     LR_DEFAULTCOLOR);
-    if (hSmall) SendMessageA(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hSmall);
-    return true;
+    Platform::BindNativeDispatch(hInst, wndProc);
+    return Platform::GetWindow().Create({m_Width, m_Height, m_WindowMode, m_Borderless});
 }
 
-// IDA: OpenGL_Init (0x0041DE30).
-// PIXELFORMATDESCRIPTOR: PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,
-// RGBA, 16 bits de color y 16 de profundidad.
+// IDA: OpenGL_Init (0x0041DE30): mostrar la ventana después de activar el contexto.
 bool CWindow::InitOpenGL()
 {
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion   = 1;
-    pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER; // 0x25
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 16;
-    pfd.cDepthBits = 16;
-
-    m_hDC = GetDC(m_hWnd);
-    if (!m_hDC) return false;               // "OpenGL Get DC Error"
-    int fmt = ChoosePixelFormat(m_hDC, &pfd);
-    if (!fmt) return false;                 // "OpenGL Choose Pixel Format Error"
-    if (!SetPixelFormat(m_hDC, fmt, &pfd)) return false;   // "OpenGL Set Pixel Format Error"
-
-    m_hRC = wglCreateContext(m_hDC);
-    if (!m_hRC) return false;               // "OpenGL Create Context Error"
-    if (!wglMakeCurrent(m_hDC, m_hRC)) return false;       // "OpenGL Make Current Error"
-
-    ShowWindow(m_hWnd, SW_SHOW);
-    SetForegroundWindow(m_hWnd);
-    SetFocus(m_hWnd);
+    if (!Platform::GetGLContext().Initialize()) return false;
+    Platform::GetWindow().ShowAndFocus();
     return true;
 }
 
-// IDA: OpenGL_Release (0x0041AF20), la parte de ventana y video.
+// IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
-    wglMakeCurrent(NULL, NULL);     // "GL - Release Of DC And RC Failed"
-    wglDeleteContext(m_hRC);        // "GL - Release Rendering Context Failed"
-    DeleteDC(m_hDC);                // "GL - Release Device Context Failed"
-    ReleaseDC(m_hWnd, m_hDC);
-    // Sólo se restaura el modo de video si lo cambiamos nosotros: hacerlo igual
-    // en modo ventana hace parpadear el escritorio al salir (es el
-    // FixDisplaySettingsOnClose del DLL).
+    Platform::GetGLContext().Release();
     RestoreDisplay();
 }
+
+void CWindow::Present() { Platform::GetGLContext().Present(); }
+HDC CWindow::GetHdc() const { return Platform::NativeDC(); }
+HGLRC CWindow::GetGLContext() const { return Platform::NativeGLContext(); }

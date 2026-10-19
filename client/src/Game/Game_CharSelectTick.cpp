@@ -253,10 +253,8 @@ void Game_CharSelectTick(void)
     //  caller en IDA es Game_RenderTick, que ya lo llama antes de RenderSprites.)
     Effect_TickFlare();
 
-    // Anti-tamper ftol + frame counter checks
+    // IDA: Game_CharSelectTick (0x00524E30): conserva las dos llamadas de diagnóstico.
     if (DAT_0839bc86 != '\0' && DAT_07e11d30 == 0) {
-        __ftol();
-        __ftol();
         CWsctlc__LogPrintOn();
         CWsctlc__LogPrintOn();
     }

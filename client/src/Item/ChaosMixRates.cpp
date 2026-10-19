@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ChaosMixRates.h"
 #include "Net/Network.h"
 #include "UI/UIState.h"
@@ -42,7 +43,7 @@ void CChaosMixRates::Update(int type, const ITEM* items)
     }
     // Mismos tipos que ChaosMixRateSend del DLL. Sin consultas por frame.
     if (!Supports(type) || m_State != State::Idle || m_Attempts >= 3) return;
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     if (m_Attempts && now - m_LastSent < 1000) return;
     Proto::PMSG_CHAOS_MIX_RATE_RECV packet{};
     packet.header = { 0xC1, sizeof(packet), 0x88 };
@@ -61,7 +62,7 @@ void CChaosMixRates::Receive(const Proto::PMSG_CHAOS_MIX_RATE_SEND& packet)
     // La respuesta no trae receta: una sola consulta pendiente, por revisiÃ³n.
     if (!UIState::CanQueryChaosRate() || m_PendingRevision != m_Revision) return;
     // 0x88 no tiene ID: drenar la respuesta antes de reintentar, aun si venció.
-    if (GetTickCount() - m_LastSent > 5000) return;
+    if (Platform::GetTimer().Ticks() - m_LastSent > 5000) return;
     // La UI existente imprime enteros con signo; no aceptar valores imposibles.
     if (packet.rate > 100 || packet.money > 0x7FFFFFFFu) return;
     m_Rate = (int)packet.rate;

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat_Gestures.cpp — gestos del personaje disparados por el texto del chat.
 //
 // IDA: sub_497C70 (0x00497C70) revisa la linea que se envia contra grupos de
@@ -24,7 +25,7 @@ void __cdecl SendRequestAction(BYTE actionType)
     if (!hero) return;
     BYTE pkt[5] = {
         0xC1, 0x05, 0x18,
-        (BYTE)((__int64)((*(float*)(hero + 36) + 22.5f) * 0.022222223f + 1.0f) & 7),
+        (BYTE)((std::int64_t)((*(float*)(hero + 36) + 22.5f) * 0.022222223f + 1.0f) & 7),
         actionType
     };
     gNetwork.SendC1(pkt, sizeof(pkt));
@@ -62,14 +63,14 @@ static char s_Kr_Caret[]  = "\xA4\xD1^";           // 0x559E74
 static bool AnyGlobal(char* text, int first, int last)
 {
     for (int i = first; i <= last; ++i)
-        if (FindText(text, GlobalText[i], false)) return true;
+        if (FindTextA(text, GlobalText[i], false)) return true;
     return false;
 }
 
 static bool AnyOf(char* text, std::initializer_list<char*> words)
 {
     for (char* w : words)
-        if (FindText(text, w, false)) return true;
+        if (FindTextA(text, w, false)) return true;
     return false;
 }
 

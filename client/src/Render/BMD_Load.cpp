@@ -9,6 +9,7 @@
 //   BMD__Save (BMD_SaveToFile)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -77,7 +78,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
 
     if (fileSize < 0x2a) {
         char diag[200];
-        _snprintf_s(diag, sizeof(diag), _TRUNCATE, "BMD::Open too-small: %s size=%d", local_4c, fileSize);
+        Platform::TextFormatTruncated(diag, sizeof(diag), Platform::TruncateText, "BMD::Open too-small: %s size=%d", local_4c, fileSize);
         DbgLogPublic(diag);
         fclose(fp);
         return;
@@ -101,7 +102,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         (verByte != 0x0A && verByte != 0x0C))
     {
         char line[160];
-        _snprintf_s(line, sizeof(line), _TRUNCATE,
+        Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
             "BMD skip (unsupported): %s ver=0x%02x size=%d",
             local_4c, verByte, fileSize);
         DbgLogPublic(line);
@@ -112,7 +113,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
     if (verByte == 0x0C) {
         if (fileSize < 0x2a + 4) {
             char line[160];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD v12 too-small: %s size=%d", local_4c, fileSize);
             DbgLogPublic(line);
             operator_delete(Buffer);
@@ -121,7 +122,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         int encSize = *(int *)(Buffer + 4);
         if (encSize <= 0 || encSize > fileSize - 8) {
             char line[160];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD v12 bad encSize: %s encSize=%d file=%d",
                 local_4c, encSize, fileSize);
             DbgLogPublic(line);
@@ -183,7 +184,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         *(int   *)((int)thisPtr + 0x38) = 0;
         {
             char line[200];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
+            Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD_SanityFail: %s nMesh=%d nAction=%d nBone=%d  thisPtr=%p",
                 local_4c, (int)numMeshes, (int)numActions, (int)numBones, thisPtr);
             DbgLogPublic(line);
@@ -611,10 +612,10 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
 
     // Write mesh data
     int param_1i = 0;
-    if (0 < *(short *)(thisModel + 0x24)) {
+    if (0 < AsModel(thisModel)->NumMeshs) {
         int local_50 = 0, local_48 = 0;
         do {
-            int iVar8 = *(int *)(thisModel + 0x28) + local_50;
+            int iVar8 = *(int *)&AsModel(thisModel)->Meshs + local_50;
             crt_fwrite((char *)(iVar8 + 4), 2, 1, (int *)pFVar4);
             crt_fwrite((char *)(iVar8 + 6), 2, 1, (int *)pFVar4);
             crt_fwrite((char *)(iVar8 + 8), 2, 1, (int *)pFVar4);
@@ -633,52 +634,52 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
                     local_4c++;
                 } while (local_4c < *psVar1);
             }
-            crt_fwrite((char *)(*(int *)(thisModel + 0x34) + local_48), 0x20, 1, (int *)pFVar4);
+            crt_fwrite((char *)(*(int *)&AsModel(thisModel)->Textures + local_48), 0x20, 1, (int *)pFVar4);
             local_50 += 0x28;
             param_1i++;
             local_48 += 0x20;
-        } while (param_1i < (int)*(short *)(thisModel + 0x24));
+        } while (param_1i < (int)AsModel(thisModel)->NumMeshs);
     }
     // Write action data
     param_1i = 0;
-    if (0 < *(short *)(thisModel + 0x26)) {
+    if (0 < AsModel(thisModel)->NumActions) {
         char *param_2p = (char *)0;
         do {
-            int iVar8 = *(int *)(thisModel + 0x30);
+            int iVar8 = *(int *)&AsModel(thisModel)->Actions;
             crt_fwrite(param_2p + iVar8 + 8, 2, 1, (int *)pFVar4);
             crt_fwrite(param_2p + iVar8 + 10, 1, 1, (int *)pFVar4);
             if (*(param_2p + iVar8 + 10) != '\0')
                 crt_fwrite(*(char **)(param_2p + iVar8 + 0xc), *(short *)(param_2p + iVar8 + 8) * 0xc, 1, (int *)pFVar4);
             param_1i++;
             param_2p += 0x10;
-        } while (param_1i < (int)*(short *)(thisModel + 0x26));
+        } while (param_1i < (int)AsModel(thisModel)->NumActions);
     }
     // Write bone data
     param_1i = 0;
-    if (0 < *(short *)(thisModel + 0x22)) {
+    if (0 < AsModel(thisModel)->NumBones) {
         int local_50 = 0;
         do {
-            char *pcVar11 = (char *)(local_50 + *(int *)(thisModel + 0x2c));
+            char *pcVar11 = (char *)(local_50 + *(int *)&AsModel(thisModel)->Bones);
             crt_fwrite(pcVar11 + 0x22, 1, 1, (int *)pFVar4);
             if (pcVar11[0x22] == '\0') {
                 crt_fwrite(pcVar11, 0x20, 1, (int *)pFVar4);
                 crt_fwrite(pcVar11 + 0x20, 2, 1, (int *)pFVar4);
                 int iVar8 = 0, local_48 = 0;
-                if (0 < *(short *)(thisModel + 0x26)) {
+                if (0 < AsModel(thisModel)->NumActions) {
                     char *param_2p = (char *)0;
                     do {
                         int iVar3 = *(int *)(pcVar11 + 0x24);
-                        crt_fwrite(*(char **)(param_2p + iVar3), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
-                        crt_fwrite(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3), *(short *)(*(int *)&AsModel(thisModel)->Actions + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)&AsModel(thisModel)->Actions + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
                         param_2p += 0xc;
                         local_48++;
                         iVar8 += 0x10;
-                    } while (local_48 < *(short *)(thisModel + 0x26));
+                    } while (local_48 < AsModel(thisModel)->NumActions);
                 }
             }
             local_50 += 0x8c;
             param_1i++;
-        } while (param_1i < (int)*(short *)(thisModel + 0x22));
+        } while (param_1i < (int)AsModel(thisModel)->NumBones);
     }
     crt_fclose(pFVar4);
     return 1;

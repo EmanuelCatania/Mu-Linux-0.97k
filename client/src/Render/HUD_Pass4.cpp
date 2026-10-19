@@ -1,3 +1,4 @@
+#include <cstdint>
 // HUD_Pass4.cpp — fourth and final batch of small/medium HUD ports.
 //
 // Functions ported (1:1 from IDA):
@@ -18,13 +19,15 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_ServerValue.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 extern "C" {
     void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY);
@@ -178,9 +181,9 @@ int Render_MacroTimer_(void)
         float x = (float)(((double)GetScreenWidth() - 50.0) * 0.5);
         int v8 = 50 * MacroTime / 100;
         EnableAlphaTest(true);
-        UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
-        int n = lstrlenA(aMacroTime);
-        GetTextExtentPointA(gFont.GetTextDC(), aMacroTime, n, &TextSize);
+        UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0, sizeof(aMacroTime));
+        int n = Platform::TextLength(aMacroTime);
+        gFont.MeasureText(gFont.GetTextDC(), aMacroTime, n, &TextSize);
         TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
         TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         float Bar = (float)v8;
@@ -190,7 +193,7 @@ int Render_MacroTimer_(void)
 
     int v1 = m_iMatchCountDownType;
     if (v1 > 0) {
-        DWORD TickCount = GetTickCount();
+        DWORD TickCount = Platform::GetTimer().Ticks();
         DWORD elapsed   = TickCount - m_dwMatchCountDownStart;
         if (elapsed <= 0x7530) {   // 30s
             GL_ResetState();          // DisableAlphaBlend
@@ -208,8 +211,8 @@ int Render_MacroTimer_(void)
             int idx = (v1 < 4 || v1 > 7) ? (639 + v1) : (820 + v1);
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
-            wsprintfA(String, fmt, 30 - (int)secs);
-            UI_DrawText(10, 372, String, 0, 1, 0);
+            Platform::TextFormat(String, fmt, 30 - (int)secs);
+            UI_DrawText(10, 372, String, 0, 1, 0, sizeof(String));
         } else {
             m_iMatchCountDownType = 0;
         }
@@ -245,36 +248,36 @@ void Render_MapLoadText_(void)
         if ((int)m_iMaxKillMonster != 0xFFFF) {
             CHAR String[256];
             int gtIdx = (m_byMatchType == 5) ? 866 : 864;
-            wsprintfA(String, GlobalText[gtIdx], m_iKillMonster, m_iMaxKillMonster);
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+            Platform::TextFormat(String, GlobalText[gtIdx], m_iKillMonster, m_iMaxKillMonster);
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             m_dwTextColor = 0xFFFF7700u;
             RenderCenteredText(570, 345, String);
             v1 = 357.0f;
         }
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         CHAR String[256];
-        wsprintfA(String, GlobalText[865]);
+        Platform::TextFormat(String, GlobalText[865]);
         RenderCenteredText(570, (int)v1, String);
 
         float v2 = v1 + 10.0f;
         int v0 = m_iMatchTime / 60;
-        wsprintfA(String, " %.2d :", v0);
+        Platform::TextFormat(String, " %.2d :", v0);
         if (m_iMatchTime - 60 * v0 >= 0) {
             CHAR v3[12];
-            wsprintfA(v3, " %.2d", m_iMatchTime - 60 * v0);
+            Platform::TextFormat(v3, " %.2d", m_iMatchTime - 60 * v0);
             strcat(String, v3);
         }
         if (v0 < 5) m_dwTextColor = 0xFF1FFFFFu;     // -14671617
         if (v0 < 15) {
             CHAR v3[12];
             // WorldTime is the engine animation tick (used as 60Hz seconds approx).
-            wsprintfA(v3, ": %.2d", (int)((__int64)WorldTime % 60));
+            Platform::TextFormat(v3, ": %.2d", (int)((std::int64_t)WorldTime % 60));
             strcat(String, v3);
         }
         // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de
         // altura.  El port ponia bold porque `g_hFontBig` era un alias local que
         // apuntaba justamente a la bold; ahora sale de globals.h.
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         RenderCenteredText(570, (int)v2, String);
     }
 }
@@ -346,7 +349,7 @@ void Render_QuickButtons_(void)
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)iconX, (int)iconY - 12, GlobalText[233]);
@@ -362,7 +365,7 @@ void Render_QuickButtons_(void)
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
-            SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+            gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             RenderTipText((int)iconX, (int)iconY - 13, GlobalText[225]);
@@ -461,18 +464,18 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                     short v7 = *(WORD*)v6_addr;
                     float sxa = (float)((double)v21 + a1);
                     if (v7 != (short)0xFFFF) {
-                        if (*(int*)(v6_addr + 0x38) > 0) {
+                        if (*(int *)&AsItem(v6_addr)->Key > 0) {
                             if ((BYTE)a6) {
                                 // DESVIACION (DLL ItemStack.cpp RenderItemNumber, 0x004E398C):
                                 // también los items que el server declara apilables.
                                 const int kind = ItemBehaviorType(v7);   // 0.97.20
                                 const bool stack = (kind >= 448 && kind <= 456) ||
-                                    ItemStack_GetMaxStack(v7, (*(int*)(v6_addr + 4) >> 3) & 0xF) != 0;
-                                if (stack && *(BYTE*)(v6_addr + 0x1A) > 1) {
+                                    ItemStack_GetMaxStack(v7, (AsItem(v6_addr)->Level >> 3) & 0xF) != 0;
+                                if (stack && AsItem(v6_addr)->Durability > 1) {
                                     glColor3f(1.0f, 0.9f, 0.7f);
                                     float h = sxa + 13.0f;
                                     RenderNumber2D(h, sy,
-                                                   *(unsigned char*)(v6_addr + 26),
+                                                   AsItem(v6_addr)->Durability,
                                                    9.0f, 10.0f);
                                 }
                             } else {
@@ -480,8 +483,8 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                                 float Height = (float)((double)v8->Height * 20.0);
                                 float Width  = (float)((double)v8->Width  * 20.0);
                                 RenderItem3D(sxa, sy, Width, Height, v7,
-                                             *(int*)(v6_addr + 4),
-                                             *(unsigned char*)(v6_addr + 27), 0, 0);
+                                             AsItem(v6_addr)->Level,
+                                             AsItem(v6_addr)->Option1, 0, 0);
                             }
                             ++v23;
                         }
@@ -493,7 +496,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             float green = (float)((double)(rand() % 4 + 4) * 0.1);
                             float red   = (float)((double)(rand() % 6 + 6) * 0.1);
                             glColor3f(red, green, 0.2f);
-                            int seed = (int)((double)((__int64)WorldTime % 100) * 20.0);
+                            int seed = (int)((double)((std::int64_t)WorldTime % 100) * 20.0);
                             float v20 = (float)(rand() % 10 + 5);
                             float v28 = (float)(rand() % 20) + sxa;
                             float sxb = (float)(rand() % 20) + sy;
@@ -533,7 +536,7 @@ check_quest_overlay:
                 float y_pos = v36 + 5.0f;
                 GL_DrawTexture(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
                 glColor3f(1.0f, 1.0f, 1.0f);
-                SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+                gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000052u;
                 int boxW = (int)((double)gWindow.GetWidth() * sxe * 0.0015625);
@@ -592,9 +595,9 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     }
 
     int v7 = InputTextWidth;
-    UI_DrawText(x, y, Text, InputTextWidth, 1, 0);
-    int n = lstrlenA(Text);
-    GetTextExtentPointA(gFont.GetTextDC(), Text, n, &TextSize);
+    UI_DrawText(x, y, Text, InputTextWidth, 1, 0, sizeof(Text));
+    int n = Platform::TextLength(Text);
+    gFont.MeasureText(gFont.GetTextDC(), Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
 
     // IDA (RenderInputText 0x47F0B0) posiciona el caret con el TextSize ya
@@ -611,15 +614,15 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
             const char* ime = InputTextIME[Index];
             if (strlen(ime) != 0) {
                 if (InputTextHide[Index] == 1) {
-                    UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0);
-                    GetTextExtentPointA(gFont.GetTextDC(), "**", 2, &TextSize);
+                    UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0, 3);
+                    gFont.MeasureText(gFont.GetTextDC(), "**", 2, &TextSize);
                 } else {
-                    UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0);
-                    GetTextExtentPointA(gFont.GetTextDC(), ime, lstrlenA(ime), &TextSize);
+                    UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0, sizeof(InputTextIME[Index]));
+                    gFont.MeasureText(gFont.GetTextDC(), ime, Platform::TextLength(ime), &TextSize);
                 }
             } else {
-                UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
-                GetTextExtentPointA(gFont.GetTextDC(), "_", 1, &TextSize);
+                UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0, 2);
+                gFont.MeasureText(gFont.GetTextDC(), "_", 1, &TextSize);
             }
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -639,9 +642,9 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
 {
     SIZE sz = {0,0};
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
-    int n = lstrlenA(Text);
-    GetTextExtentPointA(gFont.GetTextDC(), Text, n, &sz);
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    int n = Platform::TextLength(Text);
+    gFont.MeasureText(gFont.GetTextDC(), Text, n, &sz);
     int prevBlend = AlphaBlendType;
 
     EnableAlphaTest(true);
@@ -672,7 +675,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
-    UI_DrawText(sx, sy, (char*)Text, 0, 1, 0);
+    UI_DrawText(sx, sy, (char*)Text, 0, 1, 0, (size_t)n + 1);
 
     switch (prevBlend) {
         case 1: EnableLightMap();        break;
@@ -748,15 +751,16 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     SIZE sz = {a1, a2};
     if (!a3 || *a3 == 10) return (int)Bitmaps[0].Height;
 
+    gFont.BeginTextMask();
     if (lpString) {
-        int n = lstrlenA(lpString);
-        GetTextExtentPointA(gFont.GetTextDC(), lpString, n, &sz);
-        TextOutA(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
+        int n = Platform::TextLength(lpString);
+        gFont.MeasureText(gFont.GetTextDC(), lpString, n, &sz);
+        gFont.DrawTextMask(gFont.GetTextDC(), x, 0, lpString, (int)strlen(lpString));
     } else {
         sz.cx = 0;
     }
-    SetTextColor(gFont.GetTextDC(), RGB(0xFF, 0xFF, 0xFF));
-    TextOutA(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
+    gFont.SetMaskColor(0xffffff);
+    gFont.DrawTextMask(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
 
     if (!a8) a8 = v10;
     int Height = (int)Bitmaps[0].Height;

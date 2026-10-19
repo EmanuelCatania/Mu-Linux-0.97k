@@ -1,6 +1,8 @@
+#include <cstdint>
 // UI_TextBitmap.cpp
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -14,6 +16,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     // p8 = color split X (0 = use p1), p9 = prefix string (optional)
     (void)p4; (void)p5; (void)p7;
 
+    gFont.BeginTextMask();
     int bmpWidth = p1;
     // IDA inicializa `sz.cx = a1` ANTES del check de '\n' (sub_47F360 L21-23).
     // Si el texto empieza en '\n' la función saltea todo el TextOut y sz.cx
@@ -27,21 +30,21 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
             prefixWidth = 0;
         } else {
             SIZE sz;
-            int prefixLen = lstrlenA(p9);
-            GetTextExtentPointA(gFont.GetTextDC(), p9, prefixLen, &sz);
+            int prefixLen = Platform::TextLength(p9);
+            gFont.MeasureText(gFont.GetTextDC(), p9, prefixLen, &sz);
             prefixWidth = sz.cx;
 
             // Output prefix text at (p6, 0)
-            int slen = lstrlenA(p9);
-            TextOutA(gFont.GetTextDC(), p6, 0, p9, slen);
+            int slen = Platform::TextLength(p9);
+            gFont.DrawTextMask(gFont.GetTextDC(), p6, 0, p9, slen);
         }
 
         // Set text color to white for main text
-        SetTextColor(gFont.GetTextDC(), 0xffffff);
+        gFont.SetMaskColor(0xffffff);
 
         // Output main text at (prefixWidth + p6, 0)
-        int mainLen = lstrlenA(p3);
-        TextOutA(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
+        int mainLen = Platform::TextLength(p3);
+        gFont.DrawTextMask(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
     }
 
     // If p8 == 0, use p1 (bitmap width) as the color-split boundary
@@ -144,8 +147,8 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     0xDE1u,
     0,
     Bitmaps[0].Components,
-    (__int64)Bitmaps[0].Width,
-    (__int64)Bitmaps[0].Height,
+    (std::int64_t)Bitmaps[0].Width,
+    (std::int64_t)Bitmaps[0].Height,
     0,
     0x1908u,
     0x1401u,

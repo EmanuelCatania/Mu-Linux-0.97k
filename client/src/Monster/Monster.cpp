@@ -132,12 +132,12 @@
 //     // Función de 797 líneas, mayormente HashTable anti-tamper.
 //     // Lógica real:
 //
-//     // Registra entity[+0x388] (cached_wp_x) en HashTable
+//     // Registra entity[+0x388] (PositionX) en HashTable
 //     HashTable_GetIndex(entity + 0x388)
 //     if not found: new node, add to table
 //     entity[+0x388] = entity_type & 0xFF   // escribe type en low byte
 //
-//     // Registra entity[+0x38C] (cached_wp_y) en HashTable
+//     // Registra entity[+0x38C] (PositionY) en HashTable
 //     entity[+0x38C] = entity_type >> 8     // high byte del type
 //
 //   Propósito: el HashTable registra las entidades activas para tracking
@@ -481,6 +481,7 @@
 //   Particle_StopLoop       @ 0x00460d20
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
 #include "Monster/Monster.h"
@@ -591,49 +592,49 @@ void InitializeMonster8(unsigned int c)
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 11.
 void InitializeMonster11(unsigned int c)
 {
-    *(unsigned int*)(c + 356) = 1053609165;
-    *(unsigned short*)(c + 762) = 15;
+    *(unsigned int *)&AsCharacter(c)->Object.AlphaTarget = 1053609165;
+    AsCharacter(c)->MoveSpeed = 15;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 25.
 void InitializeMonster25(unsigned int c)
 {
-    *(unsigned char*)(c + 220) = 0;
+    AsCharacter(c)->Object.LightEnable = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 34.
 void InitializeMonster34(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = MODEL_HELM + 3;
-    *(unsigned short*)(c + 528) = MODEL_ARMOR + 3;
-    *(unsigned short*)(c + 552) = MODEL_PANTS + 3;
-    *(unsigned short*)(c + 576) = MODEL_GLOVES + 3;
-    *(unsigned short*)(c + 600) = MODEL_BOOTS + 3;
-    *(unsigned char*)(c + 506) = 9;
-    *(unsigned char*)(c + 530) = 9;
-    *(unsigned char*)(c + 554) = 9;
-    *(unsigned char*)(c + 578) = 9;
-    *(unsigned char*)(c + 602) = 9;
-    *(unsigned char*)(c + 746) = 6;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = MODEL_HELM + 3;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = MODEL_ARMOR + 3;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = MODEL_PANTS + 3;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = MODEL_GLOVES + 3;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = MODEL_BOOTS + 3;
+    AsCharacter(c)->BodyPart[1].Level = 9;
+    AsCharacter(c)->BodyPart[2].Level = 9;
+    AsCharacter(c)->BodyPart[3].Level = 9;
+    AsCharacter(c)->BodyPart[4].Level = 9;
+    AsCharacter(c)->BodyPart[5].Level = 9;
+    AsCharacter(c)->PK = 6;
     SetCharacterScale((int)c);
     if (gMapManager.GetCurrentMap() == 9) {
-        *(unsigned int*)(c + 12) = 1067869798;
+        *(unsigned int *)&AsCharacter(c)->Object.Scale = 1067869798;
     }
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 42.
 void InitializeMonster42(unsigned int c)
 {
-    *(unsigned int*)(c + 292) = 1128792064;
-    *(unsigned int*)(c + 296) = 1125515264;
-    *(unsigned int*)(c + 300) = 1133248512;
+    *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[0] = 1128792064;
+    *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[1] = 1125515264;
+    *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[2] = 1133248512;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 73.
 void InitializeMonster73(unsigned int c)
 {
     {
-        unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)*(short*)(c + 2) + 40u);
+        unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)AsCharacter(c)->Object.Type + 40u);
         unsigned char* dataPtr = *(unsigned char**)modelEntry;
         if (dataPtr) {
             dataPtr[0]   = 1;
@@ -655,92 +656,92 @@ void InitializeMonster77(unsigned int c)
 void InitializeMonster88(unsigned int c)
 {
     if ((gMapManager.GetCurrentMap() - 9) / 3) {
-        *(unsigned char*)(c + 626) = 0;
+        AsCharacter(c)->Weapon[0].Level = 0;
     } else {
-        *(unsigned char*)(c + 626) = 8;
+        AsCharacter(c)->Weapon[0].Level = 8;
     }
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 131.
 void InitializeMonster131(unsigned int c)
 {
-    *(unsigned char*)(c + 140) = 0;
+    AsCharacter(c)->Object.EnableShadow = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 230.
 void InitializeMonster230(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = 360;
-    *(unsigned short*)(c + 528) = 363;
-    *(unsigned short*)(c + 576) = 365;
-    *(unsigned short*)(c + 600) = 366;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 360;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 363;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = 365;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = 366;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 232.
 void InitializeMonster232(unsigned int c)
 {
-    *(unsigned char*)(c + 132) = 4;
+    AsCharacter(c)->Object.Kind = 4;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 234.
 void InitializeMonster234(unsigned int c)
 {
-    *(unsigned char*)(c + 132) = 4;
+    AsCharacter(c)->Object.Kind = 4;
     SetAction((int)c, 0);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 242.
 void InitializeMonster242(unsigned int c)
 {
-    float v13 = *(float*)(c + 16);
-    float v14 = *(float*)(c + 20);
-    *(float*)(c + 24) = RequestTerrainHeight(v13, v14) + 140.0f;
+    float v13 = AsCharacter(c)->Object.Position[0];
+    float v14 = AsCharacter(c)->Object.Position[1];
+    AsCharacter(c)->Object.Position[2] = RequestTerrainHeight(v13, v14) + 140.0f;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 247.
 void InitializeMonster247(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = MODEL_HELM + 9;
-    *(unsigned short*)(c + 528) = MODEL_ARMOR + 9;
-    *(unsigned short*)(c + 552) = MODEL_PANTS + 9;
-    *(unsigned short*)(c + 576) = MODEL_GLOVES + 9;
-    *(unsigned short*)(c + 600) = MODEL_BOOTS + 9;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = MODEL_HELM + 9;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = MODEL_ARMOR + 9;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = MODEL_PANTS + 9;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = MODEL_GLOVES + 9;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = MODEL_BOOTS + 9;
     SetCharacterScale((int)c);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 248.
 void InitializeMonster248(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = 361;
-    *(unsigned short*)(c + 528) = 363;
-    *(unsigned short*)(c + 576) = 365;
-    *(unsigned short*)(c + 600) = 367;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 361;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 363;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = 365;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = 367;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 250.
 void InitializeMonster250(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = 360;
-    *(unsigned short*)(c + 528) = 362;
-    *(unsigned short*)(c + 576) = 364;
-    *(unsigned short*)(c + 600) = 366;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 360;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 362;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = 364;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = 366;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 253.
 void InitializeMonster253(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = 368;
-    *(unsigned short*)(c + 528) = 370;
-    *(unsigned short*)(c + 552) = 372;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 368;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 370;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = 372;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 255.
 void InitializeMonster255(unsigned int c)
 {
-    *(unsigned short*)(c + 504) = 351;
-    *(unsigned short*)(c + 528) = 353;
-    *(unsigned short*)(c + 552) = 355;
-    *(unsigned short*)(c + 600) = 359;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 351;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 353;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = 355;
+    *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = 359;
 }
 
 // Tabla indexada por tipo vanilla; los huecos y los tipos extendidos sin modelo propio
@@ -1027,18 +1028,18 @@ unsigned int CreateMonsterFromDefinition(const MonsterDefinition& def, int key, 
     else if (def.Loader == SpawnLoader::Npc) OpenNpc(def.Resource);
     if (def.ExtraResource >= 0) OpenMonsterModel(def.ExtraResource);
     const unsigned int c = CreateChar5(key, def.Model, x, y);
-    if (def.Scale > 0.0f) *(float*)(c + 12) = def.Scale;
-    if (def.Right >= 0) *(unsigned short*)(c + 624) = (unsigned short)def.Right;
-    if (def.Left >= 0) *(unsigned short*)(c + 648) = (unsigned short)def.Left;
-    if (def.RightLevel >= 0) *(unsigned char*)(c + 626) = (unsigned char)def.RightLevel;
-    if (def.LeftLevel >= 0) *(unsigned char*)(c + 650) = (unsigned char)def.LeftLevel;
-    if (def.RightExcellent >= 0) *(unsigned char*)(c + 627) = (unsigned char)def.RightExcellent;
-    if (def.BlendMesh != KeepSpawnValue) *(int*)(c + 100) = def.BlendMesh;
-    if (def.BlendLight >= 0.0f) *(float*)(c + 104) = def.BlendLight;
-    if (def.Subtype >= 0) *(int*)(c + 4) = def.Subtype;
-    if (def.HiddenMesh != KeepSpawnValue) *(int*)(c + 88) = def.HiddenMesh;
-    if (def.State446 >= 0) *(unsigned short*)(c + 446) = (unsigned short)def.State446;
-    if (def.Flag766 >= 0) *(unsigned char*)(c + 766) = (unsigned char)def.Flag766;
+    if (def.Scale > 0.0f) AsCharacter(c)->Object.Scale = def.Scale;
+    if (def.Right >= 0) *(unsigned short *)&AsCharacter(c)->Weapon[0].Type = (unsigned short)def.Right;
+    if (def.Left >= 0) *(unsigned short *)&AsCharacter(c)->Weapon[1].Type = (unsigned short)def.Left;
+    if (def.RightLevel >= 0) AsCharacter(c)->Weapon[0].Level = (unsigned char)def.RightLevel;
+    if (def.LeftLevel >= 0) AsCharacter(c)->Weapon[1].Level = (unsigned char)def.LeftLevel;
+    if (def.RightExcellent >= 0) AsCharacter(c)->Weapon[0].Option1 = (unsigned char)def.RightExcellent;
+    if (def.BlendMesh != KeepSpawnValue) AsCharacter(c)->Object.BlendMesh = def.BlendMesh;
+    if (def.BlendLight >= 0.0f) AsCharacter(c)->Object.BlendMeshLight = def.BlendLight;
+    if (def.Subtype >= 0) AsCharacter(c)->Object.SubType = def.Subtype;
+    if (def.HiddenMesh != KeepSpawnValue) AsCharacter(c)->Object.HiddenMesh = def.HiddenMesh;
+    if (def.State446 >= 0) AsCharacter(c)->Level = (unsigned short)def.State446;
+    if (def.Flag766 >= 0) AsCharacter(c)->Blood = (unsigned char)def.Flag766;
     if (def.Initialize) def.Initialize(c);
     return c;
 }
@@ -1061,14 +1062,14 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     if (custom && custom->Model >= 0) {
         c = CreateCharacter(Key, custom->Model, (unsigned char)PositionX, (unsigned char)PositionY, 0.0f);
         if (!c) return nullptr;
-        *(float*)(c + 12) = (custom->Scale > 0.0f) ? custom->Scale : 1.0f;
+        AsCharacter(c)->Object.Scale = (custom->Scale > 0.0f) ? custom->Scale : 1.0f;
         const char* name = getMonsterName(Type);
         if (!name || !name[0]) name = custom->Name;
-        strncpy_s((char*)(uintptr_t)(c + 0x1c1), 32, name, _TRUNCATE);
-        *(unsigned char*)(c + 747) = (unsigned char)Type;
+        Platform::TextCopySecure((char*)(uintptr_t)(c + 0x1c1), 32, name, Platform::TruncateText);
+        AsCharacter(c)->MonsterIndex = (unsigned char)Type;
         *(unsigned short*)(c + 8) = 0;
-        *(unsigned short*)(c + 784) = (unsigned short)HeroIndex;
-        *(unsigned char*)(c + 132) = (custom->Kind == 0) ? 4 : 2;   // 4 NPC, 2 monstruo
+        *(unsigned short *)&AsCharacter(c)->TargetCharacter = (unsigned short)HeroIndex;
+        AsCharacter(c)->Object.Kind = (custom->Kind == 0) ? 4 : 2;   // 4 NPC, 2 monstruo
         return (char*)(uintptr_t)c;
     }
 
@@ -1081,13 +1082,13 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     if (v9 > 0 && v9 <= 7) {
         v10 = Type;
         if (Type >= 84 && Type <= 136) {
-            *(unsigned short*)(c + 446) = 0;
-            *(float*)(c + 12) = (float)((double)(v9 / 3) * 0.05000000074505806 + *(float*)(c + 12));
+            AsCharacter(c)->Level = 0;
+            AsCharacter(c)->Object.Scale = (float)((double)(v9 / 3) * 0.05000000074505806 + AsCharacter(c)->Object.Scale);
         }
     } else {
         v10 = Type;
     }
-    if (c && custom && custom->Scale > 0.0f) *(float*)(c + 12) = custom->Scale;
+    if (c && custom && custom->Scale > 0.0f) AsCharacter(c)->Object.Scale = custom->Scale;
 
     if (c) {
         // Copia el nombre desde la tabla MonsterScript/NPCName (getMonsterName por
@@ -1106,20 +1107,20 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         }
         v8 = 0;  // suppress unused-warning
 
-        *(unsigned char*)(c + 747) = (unsigned char)v10;
+        AsCharacter(c)->MonsterIndex = (unsigned char)v10;
         *(unsigned short*)(c + 8) = 0;  // v18 was uninit stack — defaults to 0
-        *(unsigned short*)(c + 784) = (unsigned short)HeroIndex;
+        *(unsigned short *)&AsCharacter(c)->TargetCharacter = (unsigned short)HeroIndex;
 
         if (v10 == 200) {
-            *(unsigned char*)(c + 132) = 2;
+            AsCharacter(c)->Object.Kind = 2;
         } else if (v10 > 200) {
-            *(unsigned char*)(c + 132) = 4;
+            AsCharacter(c)->Object.Kind = 4;
             return (char*)(uintptr_t)c;
         } else if (v10 < 150 && v10 <= 110 && v10 >= 100) {
-            *(unsigned char*)(c + 132) = 8;
+            AsCharacter(c)->Object.Kind = 8;
             return (char*)(uintptr_t)c;
         } else {
-            *(unsigned char*)(c + 132) = 2;
+            AsCharacter(c)->Object.Kind = 2;
         }
     }
     return (char*)(uintptr_t)c;

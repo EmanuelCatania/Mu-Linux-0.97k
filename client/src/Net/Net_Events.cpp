@@ -26,6 +26,8 @@
 // entradas de evento.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -121,11 +123,11 @@ void Recv_EventZoneOpenTime(BYTE* Msg, int Size)
     char strMsg[256];
 
     if (eventType == 1) {           // Devil Square
-        if (remain) { wsprintfA(strMsg, GlobalText[644], remain); CreateOkMessageBox(strMsg); }
+        if (remain) { Platform::TextFormat(strMsg, GlobalText[644], remain); CreateOkMessageBox(strMsg); }
         else        { CreateOkMessageBox(GlobalText[643]); }
     }
     else if (eventType == 2) {      // Blood Castle
-        if (remain) { wsprintfA(strMsg, GlobalText[851], remain); CreateOkMessageBox(strMsg); }
+        if (remain) { Platform::TextFormat(strMsg, GlobalText[851], remain); CreateOkMessageBox(strMsg); }
         else        { CreateOkMessageBox(GlobalText[850]); }
     }
 }
@@ -140,7 +142,7 @@ void Recv_StartMatchCountDown(BYTE* Msg, int Size)
 {
     if (Size < 4) return;
     m_iMatchCountDownType   = (int)Msg[3] + 1;
-    m_dwMatchCountDownStart = GetTickCount();
+    m_dwMatchCountDownStart = Platform::GetTimer().Ticks();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

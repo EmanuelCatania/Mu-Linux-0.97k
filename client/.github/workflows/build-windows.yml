@@ -4,15 +4,15 @@
 #            Sube main.exe + main.map como artefacto.
 # - msbuild: compila mu97k.sln con msbuild, para comparar contra CMake.
 # - compare: compara las líneas de comando de cl/link/lib de los dos builds
-#            (tools/compare_build_flags.py), por configuración.
+#            (.github/scripts/compare_build_flags.py), por configuración.
 # - map-symbols (sólo PRs, informativo): compara los símbolos de main.map entre la base y
-#            el head del PR (tools/compare_map_symbols.py).
+#            el head del PR (.github/scripts/compare_map_symbols.py).
 
 name: build-windows
 
 on:
   push:
-    branches: [ "fase/*", "main" ]
+    branches: [ "fase/*", "platform/**", "main" ]
   pull_request:
     branches: [ "fase/*", "main" ]
   workflow_dispatch:
@@ -23,19 +23,21 @@ permissions:
 jobs:
   cmake:
     name: cmake (${{ matrix.config }})
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
 
       - name: Fuentes de CMake == .vcxproj
-        run: python tools/check_cmake_sources.py
+        run: python .github/scripts/check_cmake_sources.py
 
       - name: Configurar
-        run: cmake -S . -B build -A Win32 -T v143
+        run: cmake -S . -B build -A ${{ matrix.target.architecture }} -T v143
 
       - name: Compilar
         run: cmake --build build --config ${{ matrix.config }} --parallel -- /v:minimal
@@ -68,10 +70,12 @@ jobs:
 
   msbuild:
     name: msbuild (${{ matrix.config }})
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
@@ -79,13 +83,13 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
 
       - name: Compilar mu97k.sln
-        run: msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+        run: msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
 
       - name: Juntar tlogs
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force tlogs | Out-Null
-          foreach ($root in @('obj', 'lib/libjpeg/obj')) {
+          foreach ($root in @('obj')) {
             if (-not (Test-Path $root)) { continue }
             Get-ChildItem $root -Recurse -Filter *.tlog |
               Where-Object { $_.Name -match 'command' } |
@@ -114,15 +118,17 @@ jobs:
   compare:
     name: comparar flags (${{ matrix.config }})
     needs: [ cmake, msbuild ]
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: tools
+          sparse-checkout: .github/scripts
 
       - uses: actions/download-artifact@v4
         with:
@@ -135,20 +141,22 @@ jobs:
           path: tlogs-cmake
 
       - name: Comparar líneas de comando cl/link/lib
-        run: python tools/compare_build_flags.py tlogs-msbuild tlogs-cmake
+        run: python .github/scripts/compare_build_flags.py tlogs-msbuild tlogs-cmake
 
   # Sólo en PRs: compila la base y el head del PR con msbuild y compara los
-  # símbolos de main.map (tools/compare_map_symbols.py). El .vcxproj sólo pide
+  # símbolos de main.map (.github/scripts/compare_map_symbols.py). El .vcxproj sólo pide
   # el .map en Debug; acá se fuerza en las dos configs con _LINK_=/MAP. No
   # bloquea el PR: el resultado queda en el log y en el resumen del job.
   map-symbols:
     name: símbolos del .map vs base (${{ matrix.config }})
     if: github.event_name == 'pull_request'
-    runs-on: windows-latest
+    runs-on: ${{ matrix.target.os }}
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - { os: windows-latest, architecture: Win32 }
         config: [ Debug, Release ]
     env:
       _LINK_: /MAP
@@ -165,8 +173,8 @@ jobs:
       - name: Compilar el head del PR
         shell: pwsh
         run: |
-          Copy-Item tools/compare_map_symbols.py $env:RUNNER_TEMP/
-          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          Copy-Item .github/scripts/compare_map_symbols.py $env:RUNNER_TEMP/
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item bin/Client/main.map $env:RUNNER_TEMP/head.map
 
@@ -175,7 +183,7 @@ jobs:
         run: |
           git clean -xdfq
           git checkout -q --force ${{ github.event.pull_request.base.sha }}
-          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.target.architecture }}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item bin/Client/main.map $env:RUNNER_TEMP/base.map
 

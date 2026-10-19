@@ -17,6 +17,7 @@
 //   Math_DegreesToRadians — degrees-to-radians constant (π/180)
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 
 
 float* __cdecl Vector_Rotate(float *param_1,float *param_2,float *param_3)
@@ -163,7 +164,7 @@ void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,flo
     // ── DIAG: log first call per second per slot to see this_ + 0x6c..74
     {
       static DWORD s_lastTP = 0;
-      DWORD now = GetTickCount();
+      DWORD now = Platform::GetTimer().Ticks();
       if (now - s_lastTP > 1000) {
         s_lastTP = now;
       }

@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_Equip.cpp
 // IDA: Item_Equip @ 0x00483B30 (7193 bytes) — char __cdecl Item_Equip(DWORD o, int a2).
 // El nombre historico engania: NO es una operacion de UI de inventario. Es el
@@ -7,13 +8,14 @@
 //   a2 (nuestro `object`)    = ITEM* equipado (CharacterMachine + 536 + 68*mano).
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
 #include "Item_Equip.h"
 
-// IDA L239: v13 = *(unsigned __int8 *)(dword_7D7809C + CharacterAttribute + 87).
+// IDA L239: v13 = *(std::uint8_t *)(dword_7D7809C + CharacterAttribute + 87).
 // El indice es dword_7D7809C (el slot que Attack acaba de sembrar en L1425 con
 // *(BYTE *)(Hero + 913)), no Hero+913 releido. Coinciden en el camino de Attack,
 // pero UseSkillWarrior usa el mismo global y conviene mantenerlos atados.
@@ -86,7 +88,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
 
     if (dx * dx + dy * dy > reach * reach * 10000.0f) {   // IDA L106: v12*100 < sqrt(...)
         // IDA L145-146: el pathfind usa routeReach, NO el override de 1.8.
-        if (!Path_FindRoute(*(int*)(character + 904), *(int*)(character + 908),
+        if (!Path_FindRoute(AsCharacter(character)->PositionX, AsCharacter(character)->PositionY,
                             targetX, targetY, caster + 852, routeReach))
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
         caster[748] = 1;                              // IDA L150
@@ -140,7 +142,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             else
                 SetPlayerAttack((int)character, 0, 0, 0); // IDA: SetPlayerAttack(v4)
 
-            const DWORD now = GetTickCount();          // IDA L599-603
+            const DWORD now = Platform::GetTimer().Ticks();          // IDA L599-603
             if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }
             g_dwLatestMagicTick = now;
             const WORD heroKey = *(WORD*)(Hero + 476); // IDA: *(_WORD *)(Hero + 476)

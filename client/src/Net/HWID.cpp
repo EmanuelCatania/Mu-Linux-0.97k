@@ -11,10 +11,11 @@
 // in the companion client.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Net/HWID.h"
 #include "Net/Net.h"
-#include <rpc.h>
-#pragma comment(lib, "rpcrt4.lib")
+#include "Platform/Identity.h"
+#include "Platform/IWindow.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -25,32 +26,17 @@ bool HWID_Init(void)
 {
     if (s_Ready) return true;
 
-    DWORD VolumeSerialNumber = 0;
-    BOOL ok = GetVolumeInformationA("C:\\", nullptr, 0, &VolumeSerialNumber,
-                                    nullptr, nullptr, nullptr, 0);
-
-    // Fallback: if the volume read fails (e.g. C: not available), synthesize
-    // a deterministic non-zero value so we still pass the empty-string check.
-    if (!ok) VolumeSerialNumber = 0xDEADBEEF;
-
-    UUID uuid = { 0 };
-    UuidCreateSequential(&uuid);
-
-    SYSTEM_INFO SystemInfo = { 0 };
-    GetSystemInfo(&SystemInfo);
-
-    DWORD id1 = VolumeSerialNumber ^ 0x12B586FE;
-    DWORD id2 = *(DWORD*)(&uuid.Data4[2]) ^ 0x5D78A569;
-    DWORD id3 = ((*(WORD*)(&uuid.Data4[6]) & 0xFFFF)
-                 | (SystemInfo.wProcessorArchitecture << 16)) ^ 0xF45BC123;
-    DWORD id4 = ((SystemInfo.wProcessorLevel & 0xFFFF)
-                 | (SystemInfo.wProcessorRevision << 16)) ^ 0xB542D8E1;
-
-    wsprintfA(s_Hwid, "%08X-%08X-%08X-%08X", id1, id2, id3, id4);
-    s_Ready = true;
+    const char* error = nullptr;
+    const bool ok = Platform::GetIdentity().Read(s_Hwid, error);
+    s_Ready = s_Hwid[0] != 0;
+    if (!s_Ready) {
+        DbgLogPublic(error);
+        Platform::GetWindow().ShowError(error, "Identidad del cliente", true, true);
+        return false;
+    }
 
     char line[128];
-    wsprintfA(line, "HWID_Init: hwid='%s' ok=%d", s_Hwid, (int)ok);
+    Platform::TextFormat(line, "HWID_Init: hwid='%s' ok=%d", s_Hwid, (int)ok);
     DbgLogPublic(line);
     return ok ? true : false;
 }
@@ -71,6 +57,7 @@ const char* HWID_Get(void)
 void HWID_Send(void)
 {
     if (!s_Ready) HWID_Init();
+    if (!s_Ready) return;
 
     BYTE pkt[40] = { 0 };
     pkt[0] = 0xC1;     // placeholder, gNetwork.Send overwrites
@@ -103,7 +90,7 @@ void Lang_Send(int langNum)
     memcpy(pkt + 4, &langNum, 4);
 
     char line[64];
-    wsprintfA(line, "Lang_Send: sending F1/04 packet (lang=%d)", langNum);
+    Platform::TextFormat(line, "Lang_Send: sending F1/04 packet (lang=%d)", langNum);
     DbgLogPublic(line);
     gNetwork.Send(pkt, sizeof(pkt));
 }

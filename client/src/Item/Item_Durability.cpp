@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_Durability.cpp
 
 #include "stdafx.h"
@@ -46,7 +47,7 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
     // Valida que attrBase sea un puntero razonable (>= 0x100000): si DAT_07d78068
     // está en 0, los callers pasan `Type * 0x40` y deref p->MagicDurability crashea.
     // También valida `item`.
-    if ((uintptr_t)attrBase < 0x100000 || (uintptr_t)attrBase >= 0x80000000)
+    if (!ItemAttribute_IsRow((uintptr_t)attrBase))
         return 255;
     if (item == nullptr || (uintptr_t)item < 0x100000) return 255;
     ITEM* ip          = (ITEM*)item;
@@ -105,7 +106,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
     // Defensivo (igual que CalcMaxDurability/RenderItemInfo): si DAT_07d78068 está
     // en 0, `(int)DAT_07d78068 + type * 0x40` da un valor pequeño; se devuelve 0.
     if (!item_v || (uintptr_t)item_v < 0x100000) return 0;
-    if ((uintptr_t)DAT_07d78068 < 0x100000 || (uintptr_t)DAT_07d78068 >= 0x80000000)
+    if (!ItemAttribute_Base())
         return 0;
 
     int a1 = (int)item_v;
@@ -126,10 +127,10 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
         return Money;
     }
 
-    int Level = (*(int*)(a1 + 4) >> 3) & 0xF;
+    int Level = (AsItem(a1)->Level >> 3) & 0xF;
     char v7 = 0;
     int v8 = (int)v3 / 32;
-    int v26 = *(unsigned char*)(a1 + 36);
+    int v26 = AsItem(a1)->SpecialNum;
 
     if (v26) {
         for (int v9 = 0; v9 < v26; v9++) {
@@ -221,7 +222,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
                 v5 = 10 * (int)p->Value * (int)p->Value / 12;
                 v34 = v5;
                 if (v3 < 448 || v3 > 456) goto LABEL_148;
-                v5 *= *(unsigned char*)(a1 + 26);   // durability multiplier (Excellent ancient)
+                v5 *= AsItem(a1)->Durability;   // durability multiplier (Excellent ancient)
                 goto LABEL_147;
             }
         }
@@ -334,7 +335,7 @@ LABEL_110:
                 default: break;
                 }
                 if (didAdd) {
-                    v5 += (int)(__int64)v22;
+                    v5 += (int)(std::int64_t)v22;
                     v34 = v5;
                 }
                 (void)didMul;
@@ -353,7 +354,7 @@ LABEL_110:
 
 LABEL_36:
     if (Durability) {
-        v5 = v13 * (int)*(unsigned char*)(a1 + 26) / Durability;
+        v5 = v13 * (int)AsItem(a1)->Durability / Durability;
 LABEL_147:
         v34 = v5;
     }
@@ -375,9 +376,9 @@ LABEL_148:
         && a2 == 1)
     {
         unsigned int maxDur = Item_CalculateMaxDurability((void*)a1, (int)((unsigned short)v25) * 0x40 + (int)DAT_07d78068, Level) & 0xffff;
-        double penalty = (1.0 - (double)*(unsigned char*)(a1 + 26) / (double)maxDur)
+        double penalty = (1.0 - (double)AsItem(a1)->Durability / (double)maxDur)
                        * (double)v34 * -0.60000002;
-        v5 += (int)(__int64)penalty;
+        v5 += (int)(std::int64_t)penalty;
     }
     if (v5 >= 1000) return 100 * (v5 / 100);
     if (v5 >= 100)  return 10  * (v5 / 10);
@@ -417,7 +418,7 @@ unsigned int __cdecl ConvertRepairGold_Vanilla(int Gold, int Durability, int Max
     // RepairEnable byte (treated as 0/1 multiplier). El símbolo no está
     // mapeado en mu97k-src todavía → asumimos 0 (no extra tax).
     double withTax = 0.0 * v8 * 0.050000001 + v8;
-    int v9 = (int)(__int64)withTax;
+    int v9 = (int)(std::int64_t)withTax;
     int v10 = v9;
     if (v9 < 1000) {
         if (v9 >= 100) v10 = 10 * (v9 / 10);

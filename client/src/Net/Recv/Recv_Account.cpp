@@ -3,6 +3,9 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -15,16 +18,12 @@
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
 // no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
-// mientras que un 0x73 cifrado lleva el puntero de recurso consumido por 53D5C0.
+// El 0x73 cifrado pertenecía al pipe GameGuard desactivado.
 void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
 {
-    if (encrypted) {
-        if (size >= 8) {
-            char* resource = *(char**)(packet + 4);
-            if (resource) Pipe_QueryResource(resource);
-        }
-        return;
-    }
+    // El pipe de GameGuard nunca se inicializa en este port.
+    // Conserva el bypass existente sin interpretar punteros recibidos por red.
+    if (encrypted) return;
 
     const BYTE reply[6] = { 0xC1, 0x06, 0xF1, 0x03, 0x00, 0xF1 };
     gNetwork.Send(reply, sizeof(reply));
@@ -100,7 +99,7 @@ void Recv_LoginResult(const BYTE* Msg)
     // Log del resultado de login crudo por intento.  Msg[4]=code server,
     // state=nuestro DAT_05826cb0.
     NetLog("NET:  → F1/01 LOGIN-RESULT code=0x%02X -> state=%u (t=%lu)",
-           Msg[4], state, (unsigned long)GetTickCount());
+           Msg[4], state, (unsigned long)Platform::GetTimer().Ticks());
 
     // DESVIACIÓN: auto-reintento del PRIMER login fallido con code 0x02.  Contra
     // MuEmu el 1er F1/01 se rechaza (0x02 = pass incorrecta) con datos IDÉNTICOS al
@@ -144,7 +143,7 @@ void Recv_LogOut(const BYTE* Msg)
 
     if (sub == 0) {
         // Exit: WM_DESTROY → WndProc cleanup → PostQuitMessage
-        SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+        gWindow.RequestCloseApplication();
         return;
     }
 
@@ -236,7 +235,7 @@ void Recv_CustomServerList(const BYTE* Msg)
         const char* name = (const char*)(p + 2);
         int group = serverCode / 20;
         if (group >= 0 && group < 24)
-            lstrcpynA(DAT_07d52c34 + 300 * group, name, 32);  // deja hueco null-term
+            Platform::TextCopy(DAT_07d52c34 + 300 * group, name, 32);  // deja hueco null-term
         p += 34;
     }
     NetLog("NET:  → F4/04 CustomServerList count=%d (names populated)", count);
@@ -274,12 +273,12 @@ void Recv_ServerList(const BYTE* Msg)
         if (group == 12) {
             slot = 24;
             // grupo evento: nombre desde GlobalText[559] (si existe)
-            if (GlobalText[559]) lstrcpynA(DAT_083a78a8, (const char*)GlobalText[559], 20);
+            if (GlobalText[559]) Platform::TextCopy(DAT_083a78a8, (const char*)GlobalText[559], 20);
         } else {
             slot = 23 - group;
             if (slot < 0 || slot > 24) continue;
             // nombre desde la tabla local poblada por F4/04
-            lstrcpynA(DAT_083a45d8 + 542 * slot, DAT_07d52c34 + 300 * group, 20);
+            Platform::TextCopy(DAT_083a45d8 + 542 * slot, DAT_07d52c34 + 300 * group, 20);
         }
         char* slotBase = DAT_083a45d8 + 542 * slot;
         unsigned char chan = *(unsigned char*)(slotBase + 0x14);   // num_channels actual
@@ -390,7 +389,7 @@ void NetRecv_03(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // gNetwork.Send wrap correcto: chain-XOR + serial counter
     // + SimpleModulus + envelope C3.
     NetLog("NET:  → op=0x03 MainCheck challenge size=%d, sending ACK (C3)", Size);
-    if (SocketClientSocket != 0xffffffff && Size >= 3) {
+    if (Platform::GetSocket().IsOpen(SocketClientSocket) && Size >= 3) {
         BYTE ack[16];
         int ackSize = Size > (int)sizeof(ack) ? (int)sizeof(ack) : Size;
         ack[0] = 0xC1;

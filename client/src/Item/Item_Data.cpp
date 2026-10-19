@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
 
@@ -51,19 +52,8 @@ LAB_loop:
             crt_fclose(DAT_07d7806c);
             return;
         }
-        if (recType == 1) {
-            // row index
-            long long lv = 0; __ftol();  // read row
-            lv = 0; // Ghidra emits __ftol() as float-to-long conversion
-            // NOTE: the actual implementation uses a streaming float parser;
-            // here we document the structure faithfully as a stub that calls
-            // the real parser. The logic below mirrors the Ghidra decompilation.
-
-            // row = (int)__ftol result from first TextParser_GetToken
-            // col = (int)__ftol result from second TextParser_GetToken
-            // slot = (row*0x20 + col) * 0x40
-            // The loop runs until iVar4==0 && strcmp(TextParserTokenString, "END")==0
-        }
+        // IDA: sub_47B130 (0x0047B130) convierte TokenNumber, no el reloj.
+        // Este parser sigue incompleto: consumir tokens no carga la tabla de items.
         goto LAB_loop;
     }
 }
@@ -117,8 +107,8 @@ void __cdecl Item_LoadBMD(const char *path)
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
-        MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        Platform::GetWindow().ShowError(msg, nullptr, true, false);
+        gWindow.RequestCloseApplication();
         return;
     }
     char *buf = (char *)operator_new(0x8000);
@@ -140,8 +130,8 @@ void __cdecl Item_LoadBMD(const char *path)
     if (stored_cs != cs) {
         crt_sprintf(msg, (const char *)s__s___File_corrupted__00559bd4);
         CErrorReport_Write(&DAT_055c9bf0, msg);
-        MessageBoxA(gWindow.GetHwnd(), msg, nullptr, 0);
-        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
+        Platform::GetWindow().ShowError(msg, nullptr, true, false);
+        gWindow.RequestCloseApplication();
         operator_delete(buf);
         return;
     }

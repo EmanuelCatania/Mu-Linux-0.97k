@@ -3,6 +3,9 @@
 // Updates de objetos especiales de la escena y mouse picking.
 
 #include "stdafx.h"
+#include "Scene/ObjectRegistry.h"
+#include "Platform/GuardedOperation.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -37,34 +40,38 @@ char* __stdcall PickObject_Mouse(void) {
             char* obj = (char*)(DWORD)*pCell;
             // SEH alrededor del recorrido de la lista de buckets (punteros next corruptos),
             // igual que el guard de MoveObjects.
-            __try {
+            Platform::RunValidatedOperation([&]() {
             int pickIter = 0;
             while (obj != NULL && pickIter++ < 4096 &&
-                   (uintptr_t)obj >= 0x10000u && (uintptr_t)obj < 0x80000000u) {
+                   SceneObjects::Contains(obj)) {
                 // Check: object alive, visible, and alpha above threshold
-                if ((obj[0] != '\0') && (obj[0x160] != '\0') &&
-                    (_DAT_005524f8 <= *(float*)(obj + 0x168)))
+                if ((*(char *)&AsObject(obj)->Live != '\0') && (*(char *)&AsObject(obj)->Visible != '\0') &&
+                    (_DAT_005524f8 <= AsObject(obj)->Alpha))
                 {
                     // Get model from entity type
-                    short modelType = *(short*)(obj + 2);
+                    short modelType = AsObject(obj)->Type;
+                    if (modelType < 0 || modelType >= MODEL_MAX_TOTAL || !DAT_05828d58) {
+                        obj = *(char**)(obj + 0x1B8);
+                        continue;
+                    }
                     char* modelBase = (char*)DAT_05828d58;
                     // BMD stride is 0xBC; Models = DAT_05828d58
                     char* model = modelBase + modelType * 0xBC;
 
                     // Set model data fields from object
-                    *(DWORD*)(model + 0x68) = *(DWORD*)(obj + 0x0C);
-                    *(char*)(model + 0xA0) = obj[0x105];
-                    *(DWORD*)(model + 0x6C) = *(DWORD*)(obj + 0x10);
-                    *(DWORD*)(model + 0x70) = *(DWORD*)(obj + 0x14);
-                    *(DWORD*)(model + 0x74) = *(DWORD*)(obj + 0x18);
+                    *(DWORD *)&AsModel(model)->BodyScale = *(DWORD *)&AsObject(obj)->Scale;
+                    *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(obj)->CurrentAction;
+                    *(DWORD *)&AsModel(model)->BodyOrigin[0] = *(DWORD *)&AsObject(obj)->Position[0];
+                    *(DWORD *)&AsModel(model)->BodyOrigin[1] = *(DWORD *)&AsObject(obj)->Position[1];
+                    *(DWORD *)&AsModel(model)->BodyOrigin[2] = *(DWORD *)&AsObject(obj)->Position[2];
 
                     // BMD::Animation — set up bone matrices
                     // BMD_Animation(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
                     // Phantom regs make exact mapping impractical; the key effect is populating BoneTransform.
-                    float angles[3] = { 0.0f, 0.0f, *(float*)(obj + 0x28) };
+                    float angles[3] = { 0.0f, 0.0f, AsObject(obj)->HeadAngle[0] };
                     float headAngles[3] = { 0.0f, 0.0f, 0.0f };
-                    BMD_Animation(model, 0, *(float*)(obj + 0x10C),
-                                 (unsigned int)(unsigned char)obj[0x106],
+                    BMD_Animation(model, 0, AsObject(obj)->PriorAnimationFrame,
+                                 (unsigned int)(unsigned char)*(char *)&AsObject(obj)->PriorAction,
                                  (unsigned char)obj[0x1C], (unsigned int*)angles, headAngles,
                                  0, 0);
 
@@ -91,9 +98,7 @@ char* __stdcall PickObject_Mouse(void) {
                 }
                 obj = *(char**)(obj + 0x1B8);  // next in linked list
             }
-            } __except (EXCEPTION_EXECUTE_HANDLER) {
-                // Corrupt linked-list node — abandon this cell.
-            }
+            }); // Windows conserva SEH; POSIX valida cada nodo antes de leerlo.
             pCell += 4;  // 4 DWORDs per cell
             cellCount--;
         } while (cellCount != 0);

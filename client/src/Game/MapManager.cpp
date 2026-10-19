@@ -1,6 +1,7 @@
 // MapManager.cpp — CMapManager. Ver MapManager.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Game/MapManager.h"
 #include "Sound/SoundManager.h"
 
@@ -112,9 +113,9 @@ bool CMapManager::IsMapTrack(int map, const char* track) const
 {
     const MapInfo* info = Get(map);
     if (!info) return false;
-    if (info->music && _stricmp(info->music, track) == 0) return true;
-    if (map == kLorencia && _stricmp(kMusicPub, track) == 0) return true;
-    if (map == kDevias && _stricmp(kMusicCathedral, track) == 0) return true;
+    if (info->music && Platform::TextCompareIgnoreCase(info->music, track) == 0) return true;
+    if (map == kLorencia && Platform::TextCompareIgnoreCase(kMusicPub, track) == 0) return true;
+    if (map == kDevias && Platform::TextCompareIgnoreCase(kMusicCathedral, track) == 0) return true;
     return false;
 }
 

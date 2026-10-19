@@ -1,3 +1,4 @@
+#include <cstdint>
 // globals.cpp — Definitions for all DAT_ global variables.
 // In the original binary these are fixed addresses; here they are regular
 // zero-initialized globals that the linker places wherever it chooses.
@@ -5,6 +6,8 @@
 // replaced by pointer aliases to the original binary's addresses.
 
 #include "stdafx.h"
+#include "Platform/ISocket.h"
+#include "Platform/ITimer.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
 // int SceneFlag — ver WinMain.cpp. g_hWnd, g_hInst y g_hDC viven en CWindow (Core/Window.h).
@@ -499,7 +502,7 @@ static void* g_FakeHashVtable[8] = {
 //
 // AntiTamper_HashNode() (System_Legacy.cpp) ya usaba 0x585; al centinela se le
 // habia pasado.
-__declspec(align(4)) static unsigned char g_HashSentinelNode[0x585] = {0};
+alignas(4) static unsigned char g_HashSentinelNode[0x585] = {0};
 
 // Single-slot hash arrays. Both point into static storage so we don't need
 // to allocate. Slot 0 of g_HashValueArr is initialized to &sentinel; slot 0
@@ -566,7 +569,7 @@ DWORD    DAT_055ca050  = 0;
 // IDA: SocketClient (0x055CA160)
 char     SocketClient[0x260000] = {};
 // Static init: socket field must start as INVALID_SOCKET (0xFFFFFFFF)
-struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(SocketClient + 8) = INVALID_SOCKET; } } g_NetCtxInitObj;
+struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(SocketClient + 8) = Platform::InvalidSocket; } } g_NetCtxInitObj;
 // IDA: SocketClient.m_nSendBufLen (0x055CC16C)
 DWORD    SocketClientSendBufferLength  = 0;
 // IDA: SocketClient.m_LogPrint (0x055CE174)
@@ -639,7 +642,7 @@ DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
-float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)timeGetTime()
+float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)Platform::GetTimer().MultimediaTicks()
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
@@ -1093,7 +1096,7 @@ char     DAT_083a45d8[0x3600] = {};  // 13824 bytes covers the original 0x3502 s
 // (CCCustomServerListSend del ConnectServer: {WORD ServerCode; char Name[32]}).
 // 24 grupos * 300 bytes de stride.
 char     DAT_07d52c34[24 * 300] = {};
-char     DAT_083a7ac8  = 0;
+DWORD    DAT_083a7ac8  = 0;   // 32 bits: guarda GetTickCount (Game_SceneUpdate 0x0051F900)
 char     DAT_083a7acc  = 0;
 // CurrentCameraAngle[3] @ 0x083a7ad0 — 3 floats (pitch, yaw, roll).
 // Prior definition used `char` which would truncate float writes to 1 byte
@@ -1147,13 +1150,9 @@ DWORD    DAT_083a7c94  = 0;
 DWORD    DAT_083a7c98  = 0;
 char     g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
 DWORD    m_dwUsedTextureMemory  = 0;
-DWORD    DAT_083bbb14  = 0;
-char     lpBuffer_083bbb60[0x400] = {};  // named pipe write buffer
-DWORD    DAT_083bbb64  = 0;
 DWORD    DAT_083bbb68  = 0;
 DWORD    DAT_083bbb6c  = 0;
 DWORD    DAT_083bbb74  = 0;
-HANDLE   lpTargetHandle_00563b58 = NULL;
 
 // Input / player name buffers
 char     DAT_007d29e5  = 0;
@@ -1164,11 +1163,11 @@ char     DAT_007eaa11  = 0;
 // DigitOnly): esos flags aparecían pisados con 0xFF cada frame por un desborde
 // vecino nunca localizado. Los canarios absorben el desborde si cae cerca de
 // d70/d71/d72 (si siguen en 0xCC, el escritor está más lejos).
-char     g_PadBeforeChatMode[64] = { 0xCC };
+char     g_PadBeforeChatMode[64] = { static_cast<char>(0xCC) };
 char     GuildInputEnable  = 0;
 char     DAT_07e11d71  = 0;
 char     GoldInputEnable  = 0;
-char     g_PadAfterChatMode[64]  = { 0xCC };
+char     g_PadAfterChatMode[64]  = { static_cast<char>(0xCC) };
 DWORD    DAT_07e11d78  = 0;
 DWORD    DAT_07e11d30  = 0;
 DWORD    DAT_07e11d1c  = 0;
@@ -2134,9 +2133,8 @@ DWORD   DAT_07e12858   = 0;
 DWORD   DAT_07ea5284   = 0;
 DWORD   DAT_07ea5288   = 0;
 DWORD   DAT_07ea9844   = 0;
-// Ambient particle pool — Ambient_ParticleUpdate itera 10 slots
-// × 0x1bc bytes (stride 0x6f DWORDs).
-char    DAT_083a2f78[10 * 0x1bc] = {};
+// DAT_083a2f78 ya no es un array propio: es el ancla del walker de
+// Ambient_ParticleUpdate dentro de DAT_083a2e90 (ver globals.h).
 float   _DAT_00590af0  = 0.0f;   // IDA: flt_590AF0, magnitud del viento de la tela
 
 // IDA: g_PhysicsManager (0x083A4338) -- CPhysicsManager de 16 bytes
@@ -2196,13 +2194,12 @@ float   _DAT_00552950   = 2.5f;     // lightning speed constant
 
 // ── GameGuard globals ─────────────────────────────────────────────────────────
 // Sin usos en el código compilado: los usaba el port de IDA de FUN_0053d890
-// (archivado en docs/codigo-muerto/, ver PR #76).
+// (archivado en docs/codigo-muerto/ del tag 0.97.21, ver PR #76).
 DWORD   DAT_083bbb0c    = 0;    // GG child process ID
 HANDLE  DAT_083bbb10    = NULL; // GG child process handle
 DWORD   DAT_083bbaf0    = 0;    // GG error state flag
 DWORD   DAT_083bbaf4    = 0;    // main thread ID
 DWORD   DAT_083bbaf8    = 10000;// event timeout (ms)
-// DAT_083bbb14 — defined above (DWORD)
 char    DAT_00562e5c     = 0;
 char    DAT_00562e58     = 0;
 char    lpString1_083bb9e0[0x104] = {0};  // GG log/data directory path
@@ -2451,7 +2448,7 @@ float  _DAT_00552aa8  = 0.1113f;  // Ring_ComputeOrbit ring trig scale Z
 // Leida de 0x00559B78: 19 1a 1b 14 22 23 24 00.
 // Unico consumidor: MoveEffect (0x0046A3D1), que la lee en las DOS direcciones:
 // hacia adelante desde 0x559B78 y hacia ATRAS desde 0x559B7F
-//   IDA: Scalex = *((unsigned __int8 *)&unk_559B7F - v227);
+//   IDA: Scalex = *((std::uint8_t *)&unk_559B7F - v227);
 // Por eso DAT_00559b7f no es un array aparte sino un alias al offset 7 de esta
 // misma tabla (mismo patron que DAT_081cb60c). Con dos arrays sueltos el indice
 // negativo leia fuera de rango.
@@ -2596,7 +2593,6 @@ DWORD  DAT_00552810 = 0;
 DWORD  DAT_0055389c = 0;
 
 // DAT_07e11e54 already defined above (line ~532)
-HANDLE lpTargetHandle_00563b5c = INVALID_HANDLE_VALUE;
 HANDLE hEvent             = NULL;
 LPVOID lpParameter        = NULL;
 char   g_GameGuardGameName[64] = "Mu";  // IDA: aMu (0x0055910C)

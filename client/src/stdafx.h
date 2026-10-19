@@ -1,26 +1,11 @@
 #pragma once
+#include <cstdarg>
 
-// WinSock2 must come before windows.h
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include "Platform/PlatformHeaders.h"
 
-// Win32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#include <mmsystem.h>
-#include <dsound.h>
-
-// OpenGL (legacy fixed-function pipeline, same as original)
-#include <gl/gl.h>
-#include <gl/glu.h>
-
-// CRT debug heap — enable BEFORE stdlib.h to track all malloc/new sites
-// _CRTDBG_MAP_ALLOC redirige new/malloc al debug heap con file/line tracking.
-// Los flags de validación (_CRTDBG_CHECK_EVERY_1024_DF) se setean en WinMain.
-#ifdef _DEBUG
-  #define _CRTDBG_MAP_ALLOC
-#endif
+// OpenGL: capitalización válida también en filesystem Linux.
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 // CRT
 #include <stdio.h>
@@ -28,21 +13,10 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <crtdbg.h>
-
-// libjpeg 6b (IJG)
-// XMD_H prevents jmorecfg.h from redefining INT32 (already in basetsd.h)
-#define XMD_H
-#undef FAR
-extern "C" {
-#include "jpeglib.h"
-}
-#undef FAR
-#define FAR
+#include "Platform/DebugHeaders.h"
 
 // Ghidra intrinsic stubs (not available in MSVC)
 #define _rand() rand()
-static inline long long __ftol() { return (long long)GetTickCount(); }
 static inline double    fsin(double x) { return sin(x); }
 #ifndef SQRT
 #define SQRT sqrtf
@@ -73,6 +47,10 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 
 // ── Primitive type aliases (Ghidra pseudo-types) ─────────────────────────────
 #include "types.h"
+#include "Entity/EntityTypes.h"
+#include "Model/ModelTypes.h"
+#include "UI/ChatTypes.h"
+#include "Render/JointTypes.h"
 
 // ── Game type definitions (structs, enums, constants) ────────────────────────
 #include "structs.h"

@@ -20,13 +20,15 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/GuardedOperation.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 extern "C" BYTE OffsetInventoryItems[];
 
@@ -125,10 +127,9 @@ SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
     // Forward to our existing RenderText_1.  The IDA original uses style
     // (0/1) + 1 to pick palette and box rendering; RenderText_1 does the
     // same with default style.  Keep the call signature compatible.
-    UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
-
-    int n = lstrlenA(lpString);
-    GetTextExtentPointA(gFont.GetTextDC(), lpString, n, &TextSize);
+    int n = Platform::TextLength(lpString);
+    UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize, (size_t)n + 1);
+    gFont.MeasureText(gFont.GetTextDC(), lpString, n, &TextSize);
     TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
     TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
     return &TextSize;
@@ -172,7 +173,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
                                float Width, float Height)
 {
     char Buffer[32];
-    _itoa(Num, Buffer, 10);
+    std::sprintf(Buffer, "%d", Num);
     int n = (int)strlen(Buffer);
     float xa = x - (double)(n) * Width * 0.5;
     if (n <= 0) return xa;
@@ -192,7 +193,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
 void RenderNumberCentered(float centerX, float y, int num)
 {
     char digits[16];
-    const int len = wsprintfA(digits, "%d", num);
+    const int len = Platform::TextFormat(digits, "%d", num);
     RenderNumber2D(centerX + 0.15f * 9.0f * (len - 1), y, num, 9.0f, 10.0f);
 }
 
@@ -232,7 +233,7 @@ extern "C" void __cdecl Render_ChatBox_(void);
 void Render_ChatBox_(void)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!(InputEnable || DAT_07e11d71)) return;
 
@@ -259,9 +260,9 @@ void Render_ChatBox_(void)
     char* end = (char*)flt_7E118E4_PTR;
     while (v2 < end) {
         if (v1 != v0) {
-            UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
-            int n = lstrlenA(v2);
-            GetTextExtentPointA(gFont.GetTextDC(), v2, n, &TextSize);
+            UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0, 256);
+            int n = Platform::TextLength(v2);
+            gFont.MeasureText(gFont.GetTextDC(), v2, n, &TextSize);
             TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             v0 = (int)dword_55C9CC4;
             TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
@@ -314,22 +315,23 @@ char Render_CharInfoPanel_(void)
     if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + 474) != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
+        if (v20 < 0 || (size_t)v20 >= sizeof(DAT_07e919bc) / 80) return ret;
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         CHAR String[100];
-        wsprintfA(String, "%d", GuildWarScore[0]);
+        Platform::TextFormat(String, "%d", GuildWarScore[0]);
         int iPos_x = (int)x + 13;
-        UI_DrawText(iPos_x, 4, String, 0, 1, 0);
-        int n = lstrlenA(String);
-        GetTextExtentPointA(gFont.GetTextDC(), String, n, &TextSize);
+        UI_DrawText(iPos_x, 4, String, 0, 1, 0, sizeof(String));
+        int n = Platform::TextLength(String);
+        gFont.MeasureText(gFont.GetTextDC(), String, n, &TextSize);
 
         const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
         int v2 = (int)x + 30;
-        UI_DrawText(v2, 4, (char*)v1, 0, 1, 0);
+        UI_DrawText(v2, 4, (char*)v1, 0, 1, 0, 80);
 
         // Walk the name table to find the GuildWarName slot index.
         int v23 = 0;
@@ -346,45 +348,45 @@ char Render_CharInfoPanel_(void)
 LABEL_7:
         CreateGuildMark(v5, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        wsprintfA(String, "%d", GuildWarScore[1]);
-        UI_DrawText(iPos_x, 19, String, 0, 1, 0);
-        UI_DrawText(v2, 19, GuildWarName, 0, 1, 0);
+        Platform::TextFormat(String, "%d", GuildWarScore[1]);
+        UI_DrawText(iPos_x, 19, String, 0, 1, 0, sizeof(String));
+        UI_DrawText(v2, 19, GuildWarName, 0, 1, 0, sizeof(GuildWarName));
     }
 
     if (DAT_07e11e14_alias) {  // SoccerObserver
         EnableAlphaTest(true);
         v24_y0 = 4.0f;
         x = 320.0f - 20.0f;
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwTextColor = 0xFF008000u;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         CHAR String[100];
-        wsprintfA(String, "%d", GuildWarScore[0]);
+        Platform::TextFormat(String, "%d", GuildWarScore[0]);
         int v9 = (int)x;
         int v10 = v9 + 13;
-        UI_DrawText(v10, 4, String, 0, 1, 0);
+        UI_DrawText(v10, 4, String, 0, 1, 0, sizeof(String));
         int iPos_xa = v9 + 30;
-        UI_DrawText(iPos_xa, 4, SoccerTeamName[0], 0, 1, 0);
+        UI_DrawText(iPos_xa, 4, SoccerTeamName[0], 0, 1, 0, sizeof(SoccerTeamName[0]));
 
         m_dwTextColor = 0xFFFF9560;
         CreateGuildMark(0, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        wsprintfA(String, "%d", GuildWarScore[1]);
-        UI_DrawText(v10, 19, String, 0, 1, 0);
-        UI_DrawText(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0);
+        Platform::TextFormat(String, "%d", GuildWarScore[1]);
+        UI_DrawText(v10, 19, String, 0, 1, 0, sizeof(String));
+        UI_DrawText(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0, sizeof(SoccerTeamName[1]));
     }
 
     if (DAT_07e11e10_alias > 0) {   // SoccerTime
         CHAR String[100];
-        wsprintfA(String, "%d:%d",
+        Platform::TextFormat(String, "%d:%d",
                   DAT_07e11e10_alias / 60, DAT_07e11e10_alias % 60);
         m_dwTextColor = 0xFF969500u;
         int v15 = (int)v24_y0;
         int v16 = (int)x + 100;
-        UI_DrawText(v16, v15, (char*)aTime_0, 0, 1, 0);
-        UI_DrawText(v16, v15 + 13, String, 0, 1, 0);
+        UI_DrawText(v16, v15, (char*)aTime_0, 0, 1, 0, sizeof(aTime_0));
+        UI_DrawText(v16, v15 + 13, String, 0, 1, 0, sizeof(String));
     }
 
     return ret;
@@ -456,7 +458,7 @@ int RenderEquipedHelperLife_(bool a2)
         else if (ItemAttribute)     text = ItemAttribute[helperType - ITEM_MODEL_BASE].Name;
         if (!text) text = "";
 
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
@@ -465,7 +467,7 @@ int RenderEquipedHelperLife_(bool a2)
         // y x+50 como 2do arg).  Nuestra reimplementacion de esa funcion toma
         // (x, y, texto), asi que el centrado se calcula aca.
         SIZE ts = { 0, 0 };
-        GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &ts);
+        gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
@@ -483,14 +485,14 @@ int RenderEquipedHelperLife_(bool a2)
     if (SummonLife) {
         const float xs = (float)GetScreenWidth() - 50.0f - 150.0f;
 
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         EnableAlphaTest(true);
         SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
         SIZE ts = { 0, 0 };
-        GetTextExtentPointA(gFont.GetTextDC(), summonText, lstrlenA(summonText), &ts);
+        gFont.MeasureText(gFont.GetTextDC(), summonText, Platform::TextLength(summonText), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
@@ -553,8 +555,16 @@ void RenderBrokenItem_(int a1)
 
         if (v12 != 0xFFFF) {
             // Usar ItemAttribute_Base() para recuperar de corrupción de DAT_07d78068 a 0x1.
-            unsigned int attrBase = ItemAttribute_Base();
-            if (attrBase == 0) { v33 += 68; continue; }
+            // La reserva contiene ITEM_MAX_EX filas mas 0x400 filas de
+            // desplazamiento aleatorio (WinMain). Validar antes de calcular
+            // v19 o llamar a Item_CalculateMaxDurability, no solo al copiar.
+            const uintptr_t allocation = (uintptr_t)DAT_055c9e44;
+            const uintptr_t attrBase = (uintptr_t)DAT_07d78068;
+            if (v12 >= ITEM_MAX_EX || allocation == 0 || attrBase < allocation ||
+                attrBase - allocation > 0x400u * sizeof(ITEM_ATTRIBUTE) ||
+                (attrBase - allocation) % sizeof(ITEM_ATTRIBUTE) != 0) {
+                v33 += 68; continue;
+            }
             ITEM_ATTRIBUTE* v19 = (ITEM_ATTRIBUTE*)(attrBase + (unsigned)v12 * 64);
 
             // Skip excluded item types: 135, 143, 416..419
@@ -589,15 +599,10 @@ void RenderBrokenItem_(int a1)
                 }
 
                 CHAR Buffer[100];
-                // Guarda propia: v19->Name es `char[30]` inline (address = v19) y wsprintfA
-                // lo lee; validar que v19 esté en rango de heap antes de leerlo.
-                if ((uintptr_t)v19 < 0x100000 || (uintptr_t)v19 >= 0x80000000) {
-                    v33 += 68; continue;   // bogus pointer — skip slot
-                }
-                // Defensive: copy Name to local buffer with a hard byte cap to
-                // avoid reading past end of struct (Name field is 30 bytes).
+                // Name es un campo inline de 30 bytes de la fila validada.
+                // No depender de una terminacion NUL dentro del archivo BMD.
                 char nameLocal[31];
-                __try {
+                if (!Platform::RunValidatedOperation([&]() {
                     int ni = 0;
                     for (; ni < 30; ++ni) {
                         char c = v19->Name[ni];
@@ -605,11 +610,10 @@ void RenderBrokenItem_(int a1)
                         if (c == '\0') break;
                     }
                     nameLocal[30] = '\0';
-                    if (ni == 30) nameLocal[30] = '\0';
-                } __except (EXCEPTION_EXECUTE_HANDLER) {
+                })) {
                     nameLocal[0] = '\0';
                 }
-                wsprintfA(Buffer, "%s (%d/%d)", nameLocal, v21, v30);
+                Platform::TextFormat(Buffer, "%s (%d/%d)", nameLocal, v21, v30);
                 byte_7E11D6E = 1;
                 Text_MeasureBox((int)v38, v34 + (int)v37, Buffer, 0, 0, 0);
                 v34 += 12;
@@ -687,7 +691,7 @@ void RenderExperience_(void)
     double my = (double)MouseY;
     if (mx >= 219.0 && mx < 421.0 && my >= 439.0 && my < 445.0) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, GlobalText[357],
+        Platform::TextFormat(Buffer, GlobalText[357],
                   *(int*)((BYTE*)v3 + 16),
                   *(int*)((BYTE*)v3 + 52));
         RenderTipText(223, 424, Buffer);

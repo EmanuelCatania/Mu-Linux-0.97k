@@ -1,6 +1,8 @@
 // UserSettings.cpp — preferencias del jugador desde Config.ini. Ver UserSettings.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
 #include <cerrno>
 #include <climits>
@@ -24,7 +26,7 @@ constexpr ResolutionSize kResolutions[MAX_USER_RESOLUTION] = {
 bool TryReadInt(const char* section, const char* key, const char* iniPath, int& result)
 {
     char value[64] = {};
-    const DWORD length = GetPrivateProfileStringA(section, key, "", value, sizeof(value), iniPath);
+    const DWORD length = Platform::GetFileSystem().ReadIniString(section, key, "", value, sizeof(value), iniPath);
     if (!length || length >= sizeof(value) - 1) return false;
     char* end;
     errno = 0;
@@ -77,7 +79,7 @@ void CUserSettings::Load(const char* iniPath)
 {
     // Una segunda carga no debe conservar la fuente ni preferencias ausentes.
     *this = CUserSettings{};
-    strcpy_s(m_IniPath, iniPath);
+    Platform::TextCopySecure(m_IniPath, iniPath);
     for (int i = 0; i < MAX_ANTILAG; ++i)
         m_Antilag[i] = ReadFlag("Antilag", AntilagKey(i), iniPath) > 0;
     m_WindowMode  = ReadFlag("Window", "WindowMode", iniPath);
@@ -85,7 +87,7 @@ void CUserSettings::Load(const char* iniPath)
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
-        wsprintfA(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
+        Platform::TextFormat(line, "Config.ini: Resolution=%d IGNORADO (fuera de 0..%d)",
                   m_Resolution, MAX_USER_RESOLUTION - 1);
         DbgLogPublic(line);
         m_Resolution = -1;
@@ -96,26 +98,26 @@ void CUserSettings::Load(const char* iniPath)
     m_SoundLevel  = ReadRange("Sound", "SoundLevel", iniPath, 0, 9, -1);
     m_MusicLevel  = ReadRange("Sound", "MusicLevel", iniPath, 0, 9, -1);
 
-    GetPrivateProfileStringA("User", "Username", "", m_Username, sizeof(m_Username), iniPath);
+    Platform::GetFileSystem().ReadIniString("User", "Username", "", m_Username, sizeof(m_Username), iniPath);
     m_MiniMapAlpha = ReadRange("MiniMap", "Alpha", iniPath, 3, 10, 10);
     m_MiniMapZoom  = ReadRange("MiniMap", "ZoomLevel", iniPath, 0, 6, 0);
 
     char language[8] = {};
-    GetPrivateProfileStringA("Language", "LangSelection", "", language, sizeof(language), iniPath);
+    Platform::GetFileSystem().ReadIniString("Language", "LangSelection", "", language, sizeof(language), iniPath);
     for (int i = 0; language[0] && i < MAX_USER_LANGUAGE; ++i)
-        if (_stricmp(language, GetLanguageSuffix(i)) == 0) m_Language = i;
+        if (Platform::TextCompareIgnoreCase(language, GetLanguageSuffix(i)) == 0) m_Language = i;
     if (language[0] && m_Language == USER_LANG_DEFAULT) {
         char line[96];
-        wsprintfA(line, "Config.ini: LangSelection=%s IGNORADO (Eng, Spn o Por)", language);
+        Platform::TextFormat(line, "Config.ini: LangSelection=%s IGNORADO (Eng, Spn o Por)", language);
         DbgLogPublic(line);
     }
 
     // [Font]: si la sección existe, cada clave que falte toma el default del DLL.
     char section[8] = {};
-    if (GetPrivateProfileSectionA("Font", section, sizeof(section), iniPath) > 0) {
+    if (Platform::GetFileSystem().ReadIniSection("Font", section, sizeof(section), iniPath) > 0) {
         UserFontSettings& f = m_Font;
         f.present = true;
-        GetPrivateProfileStringA("Font", "FontName", "Verdana", f.faceName, sizeof(f.faceName), iniPath);
+        Platform::GetFileSystem().ReadIniString("Font", "FontName", "Verdana", f.faceName, sizeof(f.faceName), iniPath);
         int height;
         if (TryReadInt("Font", "FontHeight", iniPath, height))
             f.height = height < -25 ? -25 : (height > 25 ? 25 : height);
@@ -129,15 +131,15 @@ void CUserSettings::Load(const char* iniPath)
     }
 
     char line[160];
-    wsprintfA(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
+    Platform::TextFormat(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
                     "EnableSound=%d EnableMusic=%d (-1 = no está)",
               m_WindowMode, m_Borderless, m_Resolution, m_EnableSound, m_EnableMusic);
     DbgLogPublic(line);
     if (m_Font.present) {
-        wsprintfA(line, "Config.ini: Font='%s' %d (bold=%d quality=%d)",
+        Platform::TextFormat(line, "Config.ini: Font='%s' %d (bold=%d quality=%d)",
                   m_Font.faceName, m_Font.height, m_Font.bold, m_Font.quality);
     } else {
-        wsprintfA(line, "Config.ini: sin [Font], se usa la fuente del binario (Arial)");
+        Platform::TextFormat(line, "Config.ini: sin [Font], se usa la fuente del binario (Arial)");
     }
     DbgLogPublic(line);
 }
@@ -152,8 +154,8 @@ void CUserSettings::SaveInt(const char* section, const char* key, int value) con
 {
     if (!m_IniPath[0]) return;
     char text[16];
-    wsprintfA(text, "%d", value);
-    WritePrivateProfileStringA(section, key, text, m_IniPath);
+    Platform::TextFormat(text, "%d", value);
+    Platform::GetFileSystem().WriteIniString(section, key, text, m_IniPath);
 }
 
 void CUserSettings::SetLanguage(int language)
@@ -162,7 +164,7 @@ void CUserSettings::SetLanguage(int language)
     m_Language = language;
     // Sin selección se borra la clave: vuelven los archivos del 0.97k.
     if (m_IniPath[0])
-        WritePrivateProfileStringA("Language", "LangSelection", GetLanguageSuffix(language), m_IniPath);
+        Platform::GetFileSystem().WriteIniString("Language", "LangSelection", GetLanguageSuffix(language), m_IniPath);
 }
 
 void CUserSettings::SetSoundLevel(int level)
@@ -206,7 +208,7 @@ void CUserSettings::SetFont(const UserFontSettings& font)
     m_Font = font;
     m_Font.present = true;
     if (!m_IniPath[0]) return;
-    WritePrivateProfileStringA("Font", "FontName", m_Font.faceName, m_IniPath);
+    Platform::GetFileSystem().WriteIniString("Font", "FontName", m_Font.faceName, m_IniPath);
     SaveInt("Font", "FontHeight", m_Font.height);
     SaveInt("Font", "FontBold", m_Font.bold);
     SaveInt("Font", "FontItalic", m_Font.italic);
@@ -220,7 +222,7 @@ void CUserSettings::SetFont(const UserFontSettings& font)
 void CUserSettings::ResetFont()
 {
     m_Font = UserFontSettings{};
-    if (m_IniPath[0]) WritePrivateProfileStringA("Font", NULL, NULL, m_IniPath);
+    if (m_IniPath[0]) Platform::GetFileSystem().WriteIniString("Font", NULL, NULL, m_IniPath);
 }
 
 void CUserSettings::SetMiniMap(int alpha, int zoom)

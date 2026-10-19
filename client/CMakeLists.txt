@@ -2,7 +2,7 @@
 #
 # Replica mu97k.vcxproj (Win32, toolset v143). Los flags se fijan a mano en vez
 # de usar los defaults de CMake para que la linea de comandos de cl/link sea la
-# misma que la del .vcxproj. tools/check_cmake_sources.py verifica en CI que la
+# misma que la del .vcxproj. .github/scripts/check_cmake_sources.py verifica en CI que la
 # lista de fuentes coincide con los ClCompile/ClInclude del .vcxproj.
 #
 # Uso:
@@ -18,71 +18,34 @@ cmake_minimum_required(VERSION 3.25)
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0141 NEW)
 
-project(mu97k LANGUAGES C CXX RC)
+project(mu97k LANGUAGES C CXX)
 
-if(NOT MSVC)
-    message(FATAL_ERROR "mu97k sólo compila con MSVC (Visual Studio 2022, toolset v143).")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(MuPlatform)
+if(MU_PLATFORM_ONLY)
+    if(NOT MU_PLATFORM_BACKEND STREQUAL "SDL3")
+        message(FATAL_ERROR "MU_PLATFORM_ONLY requiere SDL3")
+    endif()
+    include(MuSDLDependencies)
+    add_subdirectory(src/Platform/SDL3)
+    return()
 endif()
-if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "mu97k es Win32 (x86). Configurar con: cmake -A Win32")
+include(MuCompilerOptions)
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    include(MuSDLDependencies)
+    add_subdirectory(src/Platform/SDL3)
+else()
+    set(MU_MINIAUDIO_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/miniaudio")
 endif()
 
-# Sólo existen Debug y Release, como en el .sln.
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE STRING "" FORCE)
-
-# Se vacían los flags por defecto de CMake (/RTC1, /Ob0, /Ob2, /DNDEBUG, /W1...,
-# y -DWIN32/-D_DEBUG de rc.exe) para que sólo queden los que pone cada target,
-# igual que en el .vcxproj.
-foreach(lang C CXX RC)
-    set(CMAKE_${lang}_FLAGS "")
-    set(CMAKE_${lang}_FLAGS_DEBUG "")
-    set(CMAKE_${lang}_FLAGS_RELEASE "")
-endforeach()
-foreach(kind EXE STATIC SHARED MODULE)
-    set(CMAKE_${kind}_LINKER_FLAGS "")
-    set(CMAKE_${kind}_LINKER_FLAGS_DEBUG "")
-    set(CMAKE_${kind}_LINKER_FLAGS_RELEASE "")
-endforeach()
-
-# Opciones de compilación comunes a mu97k y libjpeg, equivalentes a los defaults
-# de v143 que el .vcxproj no pisa (msbuild las pasa explícitas a cl):
-#   /EHsc  ExceptionHandling=Sync          /FC  UseFullPaths (afecta a __FILE__)
-#   /Gd /Gm- /GS /Zc:forScope /Zc:inline /Zc:wchar_t   defaults de v143
-#   /JMC   SupportJustMyCode (Debug)       /Od  Optimization=Disabled (Debug)
-#   /O2 /Oi /Gy /GL  MaxSpeed + IntrinsicFunctions + FunctionLevelLinking +
-#                    WholeProgramOptimization (Release)
-set(MU_COMMON_COMPILE_OPTIONS
-    /EHsc
-    /FC
-    /Gd
-    /Gm-
-    /GS
-    /Zc:forScope
-    /Zc:inline
-    /Zc:wchar_t
-    $<$<CONFIG:Debug>:/JMC>
-    $<$<CONFIG:Debug>:/Od>
-    $<$<CONFIG:Release>:/O2>
-    $<$<CONFIG:Release>:/Oi>
-    $<$<CONFIG:Release>:/Gy>
-    $<$<CONFIG:Release>:/GL>
-)
-
-# UseDebugLibraries=true en Debug -> /MDd; Release -> /MD.
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-# Debug -> /ZI (EditAndContinue, default de v143 en Debug); Release -> /Zi.
-set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
-    "$<IF:$<CONFIG:Debug>,EditAndContinue,ProgramDatabase>")
-
-add_subdirectory(lib/libjpeg)
 
 # ── Fuentes ─────────────────────────────────────────────────────────────
 # Copiadas de los <ClCompile> del .vcxproj, en el mismo orden. NO usar glob:
 # la lista explícita es la que se compara contra el .vcxproj
-# (tools/check_cmake_sources.py).
+# (.github/scripts/check_cmake_sources.py).
 set(MU_SOURCES
     src/stdafx.cpp
-    src/WinMain.cpp
+    src/Platform/ClientEntry.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
     src/Scene/Scene_Intro.cpp
@@ -98,10 +61,27 @@ set(MU_SOURCES
     src/UI/UIState.cpp
     src/Local/ClientText.cpp
     src/Core/Window.cpp
-    src/Core/Font.cpp
+    src/Platform/Win32/Win32NativeBridge.cpp
+    src/Platform/SDL3/SDLWindow.cpp
+    src/Platform/SDL3/SDLInput.cpp
+    src/Platform/SDL3/SDLGLContext.cpp
+    src/Platform/SDL3/SDLTimer.cpp
+    src/Platform/SDL3/SDLFileSystem.cpp
+    src/Platform/SDL3/SDLNativeBridge.cpp
+    src/Platform/SDL3/SDLAudio.cpp
+    src/Platform/SDL3/SDLSocket.cpp
+    src/Platform/SDL3/SDLFont.cpp
+    src/Platform/Win32/Win32Audio.cpp
+    src/Platform/Win32/Win32Timer.cpp
+    src/Platform/Win32/Win32Input.cpp
+    src/Platform/Win32/Win32Window.cpp
+    src/Platform/Win32/Win32FileSystem.cpp
+    src/Platform/Win32/Win32Socket.cpp
+    src/Platform/Win32/Win32GLContext.cpp
+    src/Platform/FontFrontend.cpp
     src/Sound/SoundManager.cpp
     src/Game/MapManager.cpp
-    src/Core/WndProc.cpp
+    src/Platform/Win32/ClientWndProc.cpp
     src/Net/Network.cpp
     src/Net/Reconnect.cpp
     src/Net/Ping.cpp
@@ -193,7 +173,7 @@ set(MU_SOURCES
     src/Render/Camera_Login.cpp
     src/UI/Chat_Log.cpp
     src/Terrain/Terrain_RayCollision.cpp
-    src/Debug/MiniDump.cpp
+    src/Platform/Win32/MiniDump.cpp
     src/Combat/Combat_AttackEffect.cpp
     src/Core/Runtime_Small.cpp
     src/Core/Runtime_Medium.cpp
@@ -211,7 +191,6 @@ set(MU_SOURCES
     src/Render/BMD_LegacyDraw.cpp
     src/Config/Config_TokenParser.cpp
     src/Entity/Entity_BoneEffects.cpp
-    src/Net/Pipe_Legacy.cpp
     src/Core/Runtime_Linker.cpp
     src/GameGuard/GameGuard_LegacyHealth.cpp
     src/Item/Item_LegacyLinker.cpp
@@ -264,7 +243,6 @@ set(MU_SOURCES
     src/Scene/Scene_OpenWorld.cpp
     src/Scene/Scene_AssetLoad.cpp
     src/Render/Camera_Unproject.cpp
-    src/Net/Net_PipeQuery.cpp
     src/Net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
     src/Render/Render_WorldHelpers.cpp
@@ -337,6 +315,7 @@ set(MU_SOURCES
     src/Render/Render_SpriteHelpers.cpp
     src/Render/Terrain_Render.cpp
     src/Render/Terrain_Water.cpp
+    src/Render/Texture/ImageCodec.cpp
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
     src/Render/Weather.cpp
@@ -369,6 +348,23 @@ set(MU_SOURCES
 
 # <ClInclude> del .vcxproj: sólo para que aparezcan en el IDE.
 set(MU_HEADERS
+    src/Platform/IClientSettings.h
+    src/Platform/ClientSettings.h
+    src/Platform/IDiagnostics.h
+    src/Platform/Diagnostics.h
+    src/Platform/Win32/Win32Diagnostics.h
+    src/Platform/Posix/PosixDiagnostics.h
+    src/Platform/IIdentity.h
+    src/Platform/Identity.h
+    src/Platform/Win32/Win32Identity.h
+    src/Platform/Posix/PosixIdentity.h
+    src/Platform/LocalTime.h
+    src/Platform/Text.h
+    src/Platform/GuardedOperation.h
+    src/Scene/ObjectRegistry.h
+    src/Platform/PlatformHeaders.h
+    src/Platform/DebugHeaders.h
+    src/Platform/Posix/WinTypes.h
     src/stdafx.h
     src/functions.h
     src/globals.h
@@ -379,7 +375,10 @@ set(MU_HEADERS
     src/Config/ServerConfig.h
     src/Config/UserSettings.h
     src/UI/UIState.h
+    src/UI/ChatTypes.h
     src/Entity/EntityView.h
+    src/Entity/EntityTypes.h
+    src/Model/ModelTypes.h
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h
@@ -388,6 +387,19 @@ set(MU_HEADERS
     src/Item/Item_ServerValue.h
     src/UI/GoldenArcher.h
     src/Core/Window.h
+    src/Platform/CompilerCompat.h
+    src/Platform/NativeBridge.h
+    src/Platform/SDL3/SDLPlatform.h
+    src/Platform/IAudio.h
+    src/Platform/ITimer.h
+    src/Platform/IInput.h
+    src/Platform/IWindow.h
+    src/Platform/Win32/Win32Window.h
+    src/Platform/IFileSystem.h
+    src/Platform/ISocket.h
+    src/Platform/SDL3/SDLFont.h
+    src/Platform/IGLContext.h
+    src/Platform/Win32/Win32GLContext.h
     src/Core/Font.h
     src/UI/EventTimer.h
     src/UI/MiniMap.h
@@ -424,6 +436,7 @@ set(MU_HEADERS
     src/Render/Entity_DrawAt.h
     src/Render/Entity_PrepareRender.h
     src/Render/Entity_Render.h
+    src/Render/JointTypes.h
     src/Render/Entity_Render_3D.h
     src/Render/Entity_RenderAll_3D.h
     src/Render/HUD_Render.h
@@ -435,6 +448,7 @@ set(MU_HEADERS
     src/Render/SkillEffect_Render.h
     src/Render/Sprite_Draw.h
     src/Render/Terrain_Render.h
+    src/Render/Texture/ImageCodec.h
     src/Render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
@@ -448,7 +462,6 @@ set(MU_HEADERS
     src/Trade/Trade.h
     src/UI/UI.h
     src/Game/GameEnums.h
-    src/Game/GameStructs.h
     src/Debug/MiniDump.h
     src/resource.h
     src/Net/Protocol/ProtocolBase.h
@@ -463,11 +476,26 @@ set(MU_RESOURCES
 # El .rc va en una librería OBJECT aparte: el generador de Visual Studio copia
 # los defines de C++ al ResourceCompile del mismo target, y el .vcxproj no le
 # pasa ningún define a rc.exe. El .res resultante se enlaza igual en main.exe.
+if(WIN32)
 add_library(mu97k_res OBJECT ${MU_RESOURCES})
 set_target_properties(mu97k_res PROPERTIES FOLDER lib)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src" FILES ${MU_RESOURCES})
 
-add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
+endif()
+
+# Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
+list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+if(NOT WIN32)
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/")
+endif()
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/Win32(Window|Input|GLContext|Timer|FileSystem|NativeBridge|Audio|Socket)\\.cpp$")
+endif()
+if(WIN32)
+    add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
+else()
+    add_executable(mu97k ${MU_SOURCES} ${MU_HEADERS})
+endif()
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src"
     FILES ${MU_SOURCES} ${MU_HEADERS})
@@ -488,10 +516,10 @@ set_target_properties(mu97k PROPERTIES
 
 target_include_directories(mu97k PRIVATE
     src
-    lib/libjpeg/jpeg-6b
-    lib/miniaudio
+    ${MU_MINIAUDIO_INCLUDE_DIR}
 )
 
+if(MSVC)
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.
 # Van como opciones /D y no con target_compile_definitions porque el
 # generador de Visual Studio ignora $<COMPILE_LANGUAGE> en las definiciones y
@@ -521,14 +549,28 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
 
+else()
+    target_compile_options(mu97k PRIVATE ${MU_COMMON_COMPILE_OPTIONS})
+    target_compile_definitions(mu97k PRIVATE $<$<CONFIG:Debug>:_DEBUG>)
+    # Mantener los artefactos Linux separados del cliente Windows de prueba.
+    set_target_properties(mu97k PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/bin")
+endif()
+
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    target_link_libraries(mu97k PRIVATE mu_platform_sdl)
+    target_compile_definitions(mu97k PRIVATE MU_MINIAUDIO_LINKED MU_SDL_FONTS)
+endif()
+
+if(WIN32)
 target_link_libraries(mu97k PRIVATE
-    jpeg
     opengl32
     glu32
     winmm
@@ -557,5 +599,11 @@ target_link_options(mu97k PRIVATE
     $<$<CONFIG:Release>:/OPT:ICF>
     $<$<CONFIG:Release>:/LTCG>
 )
+
+else()
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(mu97k PRIVATE OpenGL::GL OpenGL::GLU)
+    target_link_options(mu97k PRIVATE "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
+endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT mu97k)

@@ -1,5 +1,5 @@
 #pragma once
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 #include <cstring>
 
 // IDA: ReceiveJoinMapServer (0x00425840), atributos del personaje local.

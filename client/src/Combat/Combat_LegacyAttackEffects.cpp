@@ -54,7 +54,7 @@ extern void __cdecl operator_delete(void* ptr);
 void __cdecl AttackEffect(int entity)
 {
     if (!entity) return;
-    const BYTE attackEffectKind = *(BYTE*)(entity + 747);
+    const BYTE attackEffectKind = AsCharacter(entity)->MonsterIndex;
     float* pos   = (float*)(entity + 0x10);  // world position
     float* angle = (float*)(entity + 0x1c);  // world angle
     float* light = (float*)(entity + 0xe8);  // light/color
@@ -67,10 +67,10 @@ void __cdecl AttackEffect(int entity)
 
     // First switch of 00445230 (lines 293..1689): this selector is +747,
     // not the model type. `frame` is +757 and `action` is +261.
-    const BYTE frame = *(BYTE*)(entity + 757);
-    const BYTE action = *(BYTE*)(entity + 261);
-    const DWORD boneMatricesTop = *(DWORD*)(entity + 276);
-    const int modelTypeTop = *(short*)(entity + 2);
+    const BYTE frame = AsCharacter(entity)->SkillStage;
+    const BYTE action = AsCharacter(entity)->Object.CurrentAction;
+    const DWORD boneMatricesTop = *(DWORD *)&AsCharacter(entity)->Object.BoneMatrices;
+    const int modelTypeTop = AsCharacter(entity)->Object.Type;
     void* modelTop = (modelTypeTop >= 0 && DAT_05828d58)
         ? (void*)(DAT_05828d58 + modelTypeTop * 188) : 0;
     float zero[3] = { 0.0f, 0.0f, 0.0f };
@@ -182,8 +182,8 @@ void __cdecl AttackEffect(int entity)
             CreateEffect(241, pos, angle, light, (float*)1, 0, (float*)-1, 0, 0);
         break;
     case 70:
-        if (frame == 5 && *(short*)(entity + 784) >= 0 && *(short*)(entity + 784) < 400) {
-            BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + *(short*)(entity + 784) * 916;
+        if (frame == 5 && AsCharacter(entity)->TargetCharacter >= 0 && AsCharacter(entity)->TargetCharacter < 400) {
+            BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + AsCharacter(entity)->TargetCharacter * 916;
             for (int n = 0; n < 20; ++n) CreateEffect(1271, (float*)(targetTop + 16), (float*)(targetTop + 28), whiteTop, 0, 0, (float*)-1, 0, 0);
         }
         break;
@@ -241,12 +241,12 @@ void __cdecl AttackEffect(int entity)
     }
 
     if (queuedSkill != 3 && queuedSkill != 17) return;
-    const short targetSlot = *(short*)(entity + 784);
+    const short targetSlot = AsCharacter(entity)->TargetCharacter;
     if (targetSlot < 0 || targetSlot >= 400 || !CharactersClient) return;
 
     BYTE* target = (BYTE*)(uintptr_t)CharactersClient + targetSlot * 916;
-    const int modelType = *(short*)(entity + 2);
-    if (modelType < 0 || !DAT_05828d58 || !*(DWORD*)(entity + 276)) return;
+    const int modelType = AsCharacter(entity)->Object.Type;
+    if (modelType < 0 || !DAT_05828d58 || !*(DWORD *)&AsCharacter(entity)->Object.BoneMatrices) return;
 
     // The following switch is the skill-3 switch at 00445230:1898.  The
     // apparent `TargetPosition` in IDA is the transformed hand-bone position;
@@ -256,7 +256,7 @@ void __cdecl AttackEffect(int entity)
     float jointAngle[3] = { 0.0f, 0.0f, 0.0f };
     float white[3] = { 1.0f, 1.0f, 1.0f };
     void* model = (void*)(DAT_05828d58 + modelType * 188);
-    const DWORD boneMatrices = *(DWORD*)(entity + 276);
+    const DWORD boneMatrices = *(DWORD *)&AsCharacter(entity)->Object.BoneMatrices;
     const auto handPosition = [&](int handIndex, float offsetY, int secondHandAt = 2) {
         local[0] = 0.0f;
         local[1] = offsetY;
@@ -271,7 +271,7 @@ void __cdecl AttackEffect(int entity)
     if (queuedSkill == 17) {
         switch (attackEffectKind) {
         case 0x25:
-            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
+            if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
@@ -280,7 +280,7 @@ void __cdecl AttackEffect(int entity)
             }
             break;
         case 0x2E:
-            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
+            if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = 0.0f;
@@ -295,7 +295,7 @@ void __cdecl AttackEffect(int entity)
                 Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 50.0f, -1, 0);
                 Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 10.0f, -1, 0);
             }
-            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
+            if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
@@ -304,9 +304,9 @@ void __cdecl AttackEffect(int entity)
             }
             break;
         case 0x42: {
-            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(60, 0, 0);
+            if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(60, 0, 0);
             float spin = 225.0f - (float)(((long long)DAT_05826e08 / 10 +
-                                           3 * *(BYTE*)(entity + 757)) % 90);
+                                           3 * AsCharacter(entity)->SkillStage) % 90);
             for (int n = 0; n < 4; ++n, spin += 270.0f) {
                 handPosition(n % 2, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = spin;
@@ -317,10 +317,10 @@ void __cdecl AttackEffect(int entity)
         }
         case 0x49:
         case 0x4B:
-            if (*(BYTE*)(entity + 261) == 4 && *(BYTE*)(entity + 757) == 13) {
+            if (AsCharacter(entity)->Object.CurrentAction == 4 && AsCharacter(entity)->SkillStage == 13) {
                 float offset[3] = { -50.0f, 100.0f, 0.0f };
-                float effectAngle[3] = { *(float*)(entity + 28) + 45.0f,
-                                          *(float*)(entity + 32), *(float*)(entity + 36) };
+                float effectAngle[3] = { AsCharacter(entity)->Object.Angle[0] + 45.0f,
+                                          AsCharacter(entity)->Object.Angle[1], AsCharacter(entity)->Object.Angle[2] };
                 float orange[3] = { 1.0f, 0.5f, 0.0f };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 528), offset, source, 1);
                 CreateEffect(256, source, effectAngle, orange, (float*)1, 0, (float*)-1, 0, 0);
@@ -328,26 +328,26 @@ void __cdecl AttackEffect(int entity)
             }
             break;
         case 0x4D:
-            if (*(BYTE*)(entity + 757) == 14) {
+            if (AsCharacter(entity)->SkillStage == 14) {
                 float zero[3] = { 0.0f, 0.0f, 0.0f };
-                float effectAngle[3] = { *(float*)(entity + 28), *(float*)(entity + 32), *(float*)(entity + 36) };
+                float effectAngle[3] = { AsCharacter(entity)->Object.Angle[0], AsCharacter(entity)->Object.Angle[1], AsCharacter(entity)->Object.Angle[2] };
                 BMD_TransformPosition(model, (float*)g_AttackEffectMatrix_04D, zero, source, 1);
                 CreateEffect(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
                 Joint_Create(1254, source, source, effectAngle, 2, (int)target, 50.0f, -1, 0);
             }
             break;
         case 0x57: case 0x5D: case 0x63: case 0x74: case 0x7A: case 0x80: case 0x86:
-            if (*(BYTE*)(entity + 757) == 13) {
+            if (AsCharacter(entity)->SkillStage == 13) {
                 float offset[3] = { 60.0f, 30.0f, 0.0f };
-                float effectAngle[3] = { *(float*)(entity + 28), *(float*)(entity + 32), *(float*)(entity + 36) };
+                float effectAngle[3] = { AsCharacter(entity)->Object.Angle[0], AsCharacter(entity)->Object.Angle[1], AsCharacter(entity)->Object.Angle[2] };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 288), offset, source, 1);
                 CreateEffect(191, source, effectAngle, light, (float*)5, 0, (float*)-1, 0, 0);
             }
             break;
         case 0x59: case 0x5F: case 0x70: case 0x76: case 0x7C: case 0x82: case 0x88:
-            if (*(BYTE*)(entity + 757) == 14) {
+            if (AsCharacter(entity)->SkillStage == 14) {
                 float zero[3] = { 0.0f, 0.0f, 0.0f };
-                float effectAngle[3] = { *(float*)(entity + 28), *(float*)(entity + 32), *(float*)(entity + 36) };
+                float effectAngle[3] = { AsCharacter(entity)->Object.Angle[0], AsCharacter(entity)->Object.Angle[1], AsCharacter(entity)->Object.Angle[2] };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 1584), zero, source, 1);
                 CreateEffect(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
                 Joint_Create(1254, source, source, effectAngle, 2, (int)target, 50.0f, -1, 0);
@@ -372,7 +372,7 @@ void __cdecl AttackEffect(int entity)
         }
         break;
     case 0x25:
-        if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
+        if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(87, 0, 0);
         for (int n = 0; n < 4; ++n) {
             handPosition(n, 0.0f);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
@@ -381,8 +381,8 @@ void __cdecl AttackEffect(int entity)
         }
         break;
     case 0x27:
-        handPosition(0, *(short*)(entity + 2) == 390 ? 0.0f : -130.0f);
-        jointAngle[0] = -60.0f; jointAngle[1] = 0.0f; jointAngle[2] = *(float*)(entity + 36);
+        handPosition(0, AsCharacter(entity)->Object.Type == 390 ? 0.0f : -130.0f);
+        jointAngle[0] = -60.0f; jointAngle[1] = 0.0f; jointAngle[2] = AsCharacter(entity)->Object.Angle[2];
         Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
         Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 10.0f, -1, 0);
         Particle_Spawn(1180, source, (float*)(entity + 28), white, 0, 1.0f, 0);
@@ -396,9 +396,9 @@ void __cdecl AttackEffect(int entity)
         }
         break;
     case 0x59: case 0x5F: case 0x70: case 0x76: case 0x7C: case 0x82: case 0x88: {
-        if (*(BYTE*)(entity + 757) == 1) PlayBuffer(60, 0, 0);
+        if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(60, 0, 0);
         float spin = 225.0f - (float)(((long long)DAT_05826e08 / 10 +
-                                       3 * *(BYTE*)(entity + 757)) % 90);
+                                       3 * AsCharacter(entity)->SkillStage) % 90);
         for (int n = 0; n < 4; ++n, spin += 270.0f) {
             handPosition(n % 2, 0.0f);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = spin;
@@ -408,7 +408,7 @@ void __cdecl AttackEffect(int entity)
         break;
     }
     case 0x4D:
-        if (*(BYTE*)(entity + 757) >= 8) {
+        if (AsCharacter(entity)->SkillStage >= 8) {
             float zero[3] = { 0.0f, 0.0f, 0.0f };
             BMD_TransformPosition(model, (float*)g_AttackEffectMatrix_04D_Alt, zero, source, 1);
             for (int n = 0; n < 4; ++n) {
@@ -418,8 +418,8 @@ void __cdecl AttackEffect(int entity)
         }
         break;
     default:
-        handPosition(0, *(short*)(entity + 2) == 390 ? 0.0f : -130.0f);
-        jointAngle[0] = -60.0f; jointAngle[1] = 0.0f; jointAngle[2] = *(float*)(entity + 36);
+        handPosition(0, AsCharacter(entity)->Object.Type == 390 ? 0.0f : -130.0f);
+        jointAngle[0] = -60.0f; jointAngle[1] = 0.0f; jointAngle[2] = AsCharacter(entity)->Object.Angle[2];
         Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
         Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 10.0f, -1, 0);
         Particle_Spawn(1180, source, (float*)(entity + 28), white, 0, 1.0f, 0);

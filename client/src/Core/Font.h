@@ -1,6 +1,6 @@
 #pragma once
-// Font.h — CFont: las fuentes GDI del cliente y la superficie donde se dibuja
-// el texto.
+// Font.h — CFont: selección, medición y raster de texto.
+// Win32 conserva GDI; SDL3 usa FreeType en los dos caminos de render.
 //
 // Reúne lo que en el binario son globales sueltas:
 //   IDA: g_hFont (0x055CA00C), g_hFontBold (0x055CA010), g_hFontBig (0x055CA014)
@@ -9,7 +9,7 @@
 // Se usan con gFont.GetFont(FONT_NORMAL / FONT_BOLD / FONT_BIG),
 // gFont.GetTextDC() y gFont.GetTextBits().
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 #include <string>
 #include <vector>
 
@@ -56,7 +56,27 @@ public:
     HDC   GetTextDC()   const { return m_hTextDC; }
     void* GetTextBits() const { return m_pTextBits; }
 
+    // Adaptadores de la selección legacy; GDI en Win32, FreeType en SDL3.
+    HGDIOBJ SelectFont(HDC dc, HGDIOBJ font);
+    HFONT CurrentFont(HDC dc) const;
+    BOOL MeasureText(HDC dc, LPCSTR text, int count, SIZE* size);
+    BOOL MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size);
+    BOOL TextMetrics(HDC dc, TEXTMETRICA* metrics);
+    BOOL DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count);
+    BOOL BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base);
+    void BeginTextMask();
+    void SetMaskColor(DWORD color);
+    unsigned Generation() const { return m_Generation; }
+
 private:
+    void CreatePortableFonts(DWORD windowWidth);
+    int SelectedFont(HDC dc) const;
+    DWORD m_MaskColor = 0xffffff;
+    int m_SelectedFont = FONT_NORMAL;
+    unsigned m_Generation = 0;
+    int m_SurfaceWidth = 0;
+    int m_SurfaceHeight = 0;
+    std::vector<unsigned char> m_Mask;
     int m_Height = 0; // IDA: FontHeight (0x07D78080)
     HFONT   m_Fonts[MAX_FONT_TYPES] = {};
     HDC     m_hTextDC     = NULL;

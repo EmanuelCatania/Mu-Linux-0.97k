@@ -1,3 +1,4 @@
+#include <cstdint>
 // Monster_Data.cpp
 // Monster_Data_Load @ 0x00511060
 //
@@ -109,7 +110,7 @@ void __cdecl Monster_ParseSetBase2(LPCSTR param_1)
     TextParser_GetToken();
     while( true ) {
       iVar2 = TextParser_GetToken();
-      lVar7 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
+      lVar7 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (std::int64_t)TokenNumber
       if (iVar2 == 2) break;
       if (iVar2 == 0) {
         pbVar5 = (byte*)TokenString;
@@ -136,9 +137,9 @@ LAB_0047d09b:
       TextParser_GetToken();
       TextParser_GetToken();
       TextParser_GetToken();
-      lVar8 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
+      lVar8 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (std::int64_t)TokenNumber
       TextParser_GetToken();
-      lVar9 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
+      lVar9 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (std::int64_t)TokenNumber
       TextParser_GetToken();
       if (DAT_07d7807c == HeroKey) {
         DAT_07d7807c = DAT_07d7807c + 1;

@@ -1,3 +1,4 @@
+#include <cstdint>
 // ChatListBox.cpp — engine chat-widget object behind dword_55C9FF0.
 //
 // What this is
@@ -73,7 +74,9 @@
 // =============================================================================
 
 #include "stdafx.h"
-#include <mbstring.h>
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
+#include "Platform/IInput.h"
 #include "globals.h"
 #include "structs.h"
 #include <new>
@@ -436,7 +439,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     ((FnVoid)vt[20])(self);  // *this+80 — render header
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
 
     int i = 0;
     while (i < (int)self[35]) {
@@ -527,9 +530,9 @@ static DWORD g_ChatLB_WheelTick = 0;
 // ningún widget lo toma en 200 ms, para que no se aplique al pasar por otro.
 void ChatListBox_AddWheel(int notches)
 {
-    if (GetTickCount() - g_ChatLB_WheelTick > 200) g_ChatLB_WheelAccum = 0;
+    if (Platform::GetTimer().Ticks() - g_ChatLB_WheelTick > 200) g_ChatLB_WheelAccum = 0;
     g_ChatLB_WheelAccum += notches;
-    g_ChatLB_WheelTick = GetTickCount();
+    g_ChatLB_WheelTick = Platform::GetTimer().Ticks();
 }
 
 // Soft helpers — wired to no-ops until the engine sound/keyrepeat is ported.
@@ -554,11 +557,11 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
 
     // ── Scroll con flechas (sólo cuando este widget tiene el foco del teclado) ──
     if (self[26] == 1 && dword_55C9B88 == self[7]) {
-        GetAsyncKeyState(VK_LEFT);
-        GetAsyncKeyState(VK_RIGHT);
+        Platform::GetInput().KeyState(VK_LEFT);
+        Platform::GetInput().KeyState(VK_RIGHT);
 
         // Up arrow → scrollByN(+1) with ramp.
-        if (((WORD)GetAsyncKeyState(VK_UP) >> 8) == 0x80) {
+        if (((WORD)Platform::GetInput().KeyState(VK_UP) >> 8) == 0x80) {
             keyHandled = true;
             DWORD ramp = self[27];
             if (ramp == 0) {
@@ -571,7 +574,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             }
         }
         // Down arrow → scrollByN(-1) with ramp.
-        if (((WORD)GetAsyncKeyState(VK_DOWN) >> 8) == 0x80) {
+        if (((WORD)Platform::GetInput().KeyState(VK_DOWN) >> 8) == 0x80) {
             DWORD ramp = self[27];
             if (ramp == 0) {
                 ChatLB_DispatchKey(self, 14, 0, 0);
@@ -593,7 +596,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
     // el input (slot 26) de los 3 botones popup.
     if (((FnInt)vt[21])(self)) {
         // Wheel-scroll accumulator drains here.
-        if (g_ChatLB_WheelAccum && GetTickCount() - g_ChatLB_WheelTick > 200)
+        if (g_ChatLB_WheelAccum && Platform::GetTimer().Ticks() - g_ChatLB_WheelTick > 200)
             g_ChatLB_WheelAccum = 0;
         if (g_ChatLB_WheelAccum) {
             ((FnVoidI)vt[12])(self, 0, -3 * g_ChatLB_WheelAccum);
@@ -611,6 +614,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         ((FnVoid)vt[26])(self);   // recompute scrollbar thumb geometry
 
         // Adjust scrollbar offset for chat list-box mode (8-px nudge).
+        {
         DWORD modeFlag = self[45];
         int v6 = (modeFlag == 1) ? 8 : 0;
 
@@ -688,6 +692,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             } else {
                 self[43] = r + 1;
             }
+        }
         }
 LABEL_53:
         v17 = 1; MouseOnWindow = 1;
@@ -997,8 +1002,8 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
         return 1;
     }
     // Return condition #2 — IDA:
-    //   this[48] == 1 && sub_40C490((__int64)flt_5590B0, (__int64)flt_5590B4,
-    //                               (__int64)(flt_5590B8 * 3.0), 16, 1)
+    //   this[48] == 1 && sub_40C490((std::int64_t)flt_5590B0, (std::int64_t)flt_5590B4,
+    //                               (std::int64_t)(flt_5590B8 * 3.0), 16, 1)
     // = la franja COMPLETA de los 3 botones: x∈[295, 349), y∈[417, 433).
     if (self[48] == 1 && FUN_0040c490((int)ChatListBox_TabButtonsX, (int)ChatListBox_TabButtonsY,
                                       (int)(ChatListBox_TabButtonSpacing * 3.0f), 16, 1)) {
@@ -1178,15 +1183,15 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         }
     }
     if (v40[0]) {
-        SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         char Buffer[512] = {0};
-        wsprintfA(Buffer, "%s: %s", GlobalText[754], v40);
+        Platform::TextFormat(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
         m_dwBackColor = g_bUseChatListBox ? 0u : 0x96000000u;
         EnableAlphaTest(true);
-        UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
+        UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0, sizeof(Buffer));
         GL_ResetState();
-        if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+        if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
 
     // Incrementa el contador de frames — lo usa el slot 23 para hacer parpadear el cursor.
@@ -1263,10 +1268,10 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
             m_dwTextColor = back;
             m_dwBackColor = t;
         }
-        wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
-        UI_DrawText(x, y, Buffer, 0, 1, 0);
+        Platform::TextFormat(Buffer, "%s: ", (const char*)(self[25] + 8));
+        UI_DrawText(x, y, Buffer, 0, 1, 0, sizeof(Buffer));
         if (gFont.GetTextDC())
-            GetTextExtentPointA(gFont.GetTextDC(), Buffer, lstrlenA(Buffer), &sz);
+            gFont.MeasureText(gFont.GetTextDC(), Buffer, Platform::TextLength(Buffer), &sz);
         // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
         sz.cx = (LONG)((float)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
     }
@@ -1282,8 +1287,8 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         default: break;
     }
     if (g_bUseChatListBox && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
-    lstrcpynA(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
-    UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0);
+    Platform::TextCopy(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
+    UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0, sizeof(Buffer));
 
     GL_ResetState();   // DisableAlphaBlend
     return 1;
@@ -1442,8 +1447,8 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
     if (Hero && *(BYTE*)(Hero + 846) && InputEnable) {
         const char* sender = (const char*)(self[25] + 8);
         SIZE sz = {0,0};
-        int len = lstrlenA(sender);
-        if (gFont.GetTextDC()) GetTextExtentPointA(gFont.GetTextDC(), sender, len, &sz);
+        int len = Platform::TextLength(sender);
+        if (gFont.GetTextDC()) gFont.MeasureText(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
             int v10 = (int)self[25];
             if (Hero && strcmp((const char*)(v10 + 8), (const char*)(Hero + 449))) {
@@ -1827,7 +1832,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     else
         v5 = (int)self[12] - 13 * a2 - 16;
 
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Avance del cursor tal cual el binario: `self[25] = cursor->next`, y acto
     // seguido `self[25] = (cursor->next)->prev`.  Con la lista circular eso
@@ -1857,14 +1862,14 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     char Buffer[256];
     memset(Buffer, 0, sizeof(Buffer));
     const char* name = (const char*)(self[25] + 8);
-    _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "%s", name);
-    UI_DrawText(v4, v5, Buffer, 0, 1, 0);
+    Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "%s", name);
+    UI_DrawText(v4, v5, Buffer, 0, 1, 0, sizeof(Buffer));
 
     if (party != 0xFF) {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFF00C4FFu;                        // -16726785
-        _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "(%d)", party + 1);
-        UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0);
+        Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "(%d)", party + 1);
+        UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0, sizeof(Buffer));
     }
 
     // Boton de expulsar: solo lo ve el master (self[46]==1) o la propia fila.
@@ -1893,7 +1898,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         }
     }
 
-    if (gFont.GetTextDC()) SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();                                             // DisableAlphaBlend
     return 1;
 }
@@ -2411,7 +2416,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         if (reverse != 1) off = fwdOff;
         char* line = (char*)(dst + off);
         SIZE sz;
-        GetTextExtentPointA(gFont.GetTextDC(), cur, lstrlenA(cur), &sz);
+        gFont.MeasureText(gFont.GetTextDC(), cur, Platform::TextLength(cur), &sz);
         int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
         if (!sz.cx) return lines;
         int avail = width - (lines == 0 ? (int)firstIndent : 0);
@@ -2421,7 +2426,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         }
         // Desviacion defensiva: con un ancho medio por caracter < 1 px el
         // binario divide por cero; aca se toma 1.
-        int perChar = textW / lstrlenA(cur);
+        int perChar = textW / Platform::TextLength(cur);
         if (perChar <= 0) perChar = 1;
         int cut = avail / perChar;                 // IDA: v14
         int step = (int)(((double)cut + 1.0) * 0.5);
@@ -2429,7 +2434,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         while (step) {
             step = (int)(((double)half + 1.0) * 0.5);
             half = step;
-            GetTextExtentPointA(gFont.GetTextDC(), cur, cut, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), cur, cut, &sz);
             double cutW = (double)sz.cx / gWindow.GetScreenRateX();
             if (cutW <= (double)(avail + 4)) {
                 if (cutW >= (double)(avail - 4)) break;
@@ -2440,7 +2445,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
             }
         }
         int j;
-        for (j = 0; j < cut; j += (int)_mbclen((const unsigned char*)&cur[j]))
+        for (j = 0; j < cut; j += (int)Platform::TextCharacterBytes((const unsigned char*)&cur[j]))
             ;
         strncpy(line, cur, j);
         fwdOff += lineSize;
@@ -2502,7 +2507,7 @@ int __cdecl ChatListBox_GetFocusState(DWORD *_this)
 }
 
 // Alias con el nombre de IDA.  Sin callers en el código compilado (lo usaban
-// los ports gated que ahora están en docs/codigo-muerto/ida-ports/).
+// los ports gated que quedaron en docs/codigo-muerto/ida-ports/ del tag 0.97.21).
 // IDA: FUN_0040c680
 int __cdecl FUN_0040c680(DWORD *_this)
 {

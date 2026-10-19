@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
 #include "UI/MoveList.h"
@@ -111,7 +112,7 @@ void PointRotate(float ix, float iy, float iw, float ih, float rotateLocal,
     const float dy = (py + H / 2.0f) * (480.0f / H) + ih / 4.0f;
     if (!Inside((int)dx, (int)(480.0f - dy), (int)(iw / 2.0f), (int)(ih / 2.0f))) return;
     SIZE size = {};
-    GetTextExtentPointA(gFont.GetTextDC(), tooltip, lstrlenA(tooltip), &size);
+    gFont.MeasureText(gFont.GetTextDC(), tooltip, Platform::TextLength(tooltip), &size);
     const int textWidth = (int)(size.cx * 640 / gWindow.GetWidth());
     const DWORD text = m_dwTextColor, back = m_dwBackColor;
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -125,7 +126,7 @@ void PointRotate(float ix, float iy, float iw, float ih, float rotateLocal,
 int CenterTextY(const char* text, int centerY)
 {
     SIZE size = {};
-    GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &size);
+    gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &size);
     return centerY - ((480 * size.cy / (int)gWindow.GetHeight()) >> 1);
 }
 }
@@ -289,7 +290,7 @@ void CMiniMap::RenderGates() const
             gy > v.charY + v.range || gy < v.charY - v.range) continue;
         const float tx = (gx / 256.0f - v.offsetX) * (MaxSize * v.scale);
         const float ty = ((256.0f - gy) / 256.0f - v.offsetY) * (MaxSize * v.scale);
-        sprintf_s(text, gClientText.Get(ClientTextId::MiniMapGate),
+        Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapGate),
                   gMapManager.GetName(gates[gate.Target].Map));
         EnableAlphaTest(true);
         GL_BindTextureSlot(PointTexture);
@@ -317,9 +318,9 @@ void CMiniMap::RenderButton(bool left) const
     glColor3f(1.0f, 1.0f, 1.0f);
 
     char text[64];
-    if (left) sprintf_s(text, gClientText.Get(ClientTextId::MiniMapZoom), m_Zoom);
-    else      sprintf_s(text, gClientText.Get(ClientTextId::MiniMapAlpha), m_Alpha * 10);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    if (left) Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapZoom), m_Zoom);
+    else      Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapAlpha), m_Alpha * 10);
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     EnableAlphaTest(true);
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     m_dwBackColor = 0;
@@ -328,7 +329,7 @@ void CMiniMap::RenderButton(bool left) const
                (int)(60 * gWindow.GetWidth() / 640), 0, nullptr);
     m_dwTextColor = color;
     m_dwBackColor = back;
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     GL_ResetState();
 }
 

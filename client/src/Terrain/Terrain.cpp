@@ -390,6 +390,9 @@
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
+#include "Render/Texture/ImageCodec.h"
+#include "Platform/IWindow.h"
+#include "Platform/IFileSystem.h"
 #include "Terrain/Terrain.h"
 
 // InitTerrainMappingLayer @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
@@ -513,13 +516,13 @@ uint __cdecl OpenTerrainHeight(char *filename)
         strcat(FileName, filename);
     }
 
-    FILE *fp = fopen(FileName, "rb");
+    FILE *fp = Platform::GetFileSystem().Open(FileName, "rb");
     if (!fp) {
         crt_sprintf(Text, "%s file not found.", FileName);
         CErrorReport_Write(&DAT_055c9bf0, Text);
         if (gWindow.GetHwnd()) {
-            MessageBoxA(gWindow.GetHwnd(), Text, nullptr, 0);
-            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+            Platform::GetWindow().ShowError(Text, nullptr, true, false);
+            gWindow.RequestCloseApplication();
         }
         return 0;
     }
@@ -587,72 +590,32 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
     }
 
     // --- Open file ---
-    FILE* f = fopen(full_path, "rb");
+    FILE* f = Platform::GetFileSystem().Open(full_path, "rb");
     if (f == NULL) {
         char msg[256];
         sprintf(msg, "%s : File not exist!", full_path);
         CErrorReport__Write(0x55c9bf0, msg);
         CErrorReport__Write(0x55c9bf0, (char*)"\n");
-        MessageBoxA((HWND)gWindow.GetHwnd(), msg, NULL, 0);
-        SendMessageA((HWND)gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+        Platform::GetWindow().ShowError(msg, NULL, true, false);
+        gWindow.RequestCloseApplication();
         return;
     }
 
-    // --- Skip OZJ 24-byte header ---
-    if (DAT_0055a7c4 == '\0') {
-        fseek(f, 0x18, SEEK_SET);
-    } else {
-        fseek(f, 0x18, SEEK_SET);
-    }
-
-    // --- libjpeg decompress ---
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-
-    cinfo.err = jpeg_std_error(&jerr);
-    jpeg_create_decompress(&cinfo);
-    jpeg_stdio_src(&cinfo, f);
-    jpeg_read_header(&cinfo, TRUE);
-    jpeg_start_decompress(&cinfo);
-
-    unsigned int img_w = cinfo.output_width;
-    unsigned int img_h = cinfo.output_height;
-    int components = cinfo.output_components;
-    int row_stride = components * img_w;
-
-    // Allocate temp buffer for raw pixel data
-    JSAMPARRAY row_buf = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
-    unsigned char* rawBuf = (unsigned char*)operator_new(img_h * row_stride);
-
-    // Read scanlines into temp buffer (flipped: row 0 of JPEG → bottom of buffer)
-    while (cinfo.output_scanline < cinfo.output_height) {
-        unsigned int scanline = cinfo.output_scanline;
-        jpeg_read_scanlines(&cinfo, row_buf, 1);
-        unsigned char* rowDst = rawBuf + (img_h - 1 - scanline) * row_stride;
-        memcpy(rowDst, row_buf[0], row_stride);
-    }
-
-    // --- Convert bytes to floats ---
-    // Output: 3 floats per pixel (R, G, B), stored sequentially
-    float* outFloat = (float*)dst;
-    int idx = 0;
-    for (unsigned int y = img_h; y > 0; ) {
-        y--;
-        for (unsigned int x = 0; x < img_w; x++) {
-            int srcOff = idx;
-            outFloat[0] = (float)rawBuf[srcOff]     * _DAT_00552b70;
-            outFloat[1] = (float)rawBuf[srcOff + 1]  * _DAT_00552b70;
-            outFloat[2] = (float)rawBuf[srcOff + 2]  * _DAT_00552b70;
-            outFloat += 3;
-            idx += 3;
-        }
-    }
-
-    // --- Cleanup ---
-    operator_delete(rawBuf);
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
+    // TerrainLight writes into the fixed 256x256 RGB float array.
+    ImageCodec::Image image;
+    const bool decoded = ImageCodec::Decode(f, 24, ImageCodec::Format::Jpeg, 256, image);
     fclose(f);
+    if (!decoded) {
+        CErrorReport__Write(0x55c9bf0, (char*)"Invalid TerrainLight JPEG\n");
+        return;
+    }
+    float* outFloat = (float*)(uintptr_t)(unsigned int)dst;
+    for (int y = image.height - 1; y >= 0; --y) {
+        const unsigned char* row = image.pixels + y * image.width * 3;
+        for (int x = 0; x < image.width * 3; ++x)
+            *outFloat++ = (float)row[x] * _DAT_00552b70;
+    }
+
 }
 
 // CharacterMoveSpeed @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
@@ -664,15 +627,15 @@ float10 __cdecl CharacterMoveSpeed(int c)
   short v2; // dx
   short v3; // cx
 
-  result = (double)*(unsigned short *)(c + 762);
-  if ( *(WORD *)(c + 2) != 390 || *(BYTE *)(c + 132) != 1 )
+  result = (double)AsCharacter(c)->MoveSpeed;
+  if ( *(WORD *)&AsCharacter(c)->Object.Type != 390 || AsCharacter(c)->Object.Kind != 1 )
   {
     goto LABEL_12;
   }
-  v2 = *(WORD *)(c + 672);
-  if ( v2 == -1 && ((v3 = *(WORD *)(c + 696), v3 < 818) || v3 > 819) || *(BYTE *)(c + 846) )
+  v2 = *(WORD *)&AsCharacter(c)->Wing.Type;
+  if ( v2 == -1 && ((v3 = *(WORD *)&AsCharacter(c)->Helper.Type, v3 < 818) || v3 > 819) || AsCharacter(c)->SafeZone )
   {
-    if ( *(BYTE *)(c + 768) < 0x28u )
+    if ( AsCharacter(c)->Run < 0x28u )
     {
       result = 12.0;
       goto LABEL_12;
@@ -680,7 +643,7 @@ float10 __cdecl CharacterMoveSpeed(int c)
   }
   else
   {
-    *(BYTE *)(c + 768) = 40;
+    AsCharacter(c)->Run = 40;
     if ( v2 == 789 )
     {
       result = 16.0;

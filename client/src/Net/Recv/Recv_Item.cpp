@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Item/ChaosMixRates.h"
@@ -21,8 +22,8 @@ void ShopInsertItem(int slot, const BYTE* Item)
 {
     int type = ConvertItemType((BYTE*)Item);
     if (type == 255 || type < 0 || type >= ITEM_MAX_EX) return;
-    BYTE* attrBase = (BYTE*)(uintptr_t)DAT_07d78068;
-    if ((uintptr_t)attrBase < 0x100000u || (uintptr_t)attrBase >= 0x80000000u) return;
+    BYTE* attrBase = (BYTE*)(uintptr_t)ItemAttribute_Base();
+    if (!attrBase) return;
     BYTE* attr = attrBase + type * 0x40;
     int W = attr[32]; int H = attr[33];   // ITEM_ATTRIBUTE.Width / .Height
     if (W < 1) W = 1;
@@ -36,18 +37,18 @@ void ShopInsertItem(int slot, const BYTE* Item)
             // lee Type@+0, Level@+4, Durability@+26, Option1@+27, Key@+0x38 relativo a
             // cada celda. sub_4CC0E0 escribe con el mismo convenio.
             BYTE* cell = ShopItems + idx * 0x44;
-            *(short*)(cell + 0)    = (short)type;                  // Type
-            *(int*)(cell + 4)      = (int)Item[1];                 // Level (raw byte)
-            cell[26]               = Item[2];                      // Durability
-            cell[27]               = Item[3];                      // Option1
-            *(DWORD*)(cell + 0x38) = (r == 0 && c == 0) ? 1u : 0u; // Key (gate render)
+            AsItem(cell)->Type    = (short)type;                  // Type
+            AsItem(cell)->Level      = (int)Item[1];                 // Level (raw byte)
+            AsItem(cell)->Durability               = Item[2];                      // Durability
+            AsItem(cell)->Option1               = Item[3];                      // Option1
+            AsItem(cell)->Key = (r == 0 && c == 0) ? 1u : 0u; // Key (gate render)
             // CRÍTICO: x/y = posición-origen del item en el grid (slot%8, slot/8),
             // escrito en TODAS las celdas del footprint (igual que sub_4CC0E0 ->x=a1%8
             // ->y=a1/8). El hover (Item_ClickHandler.cpp, FUN_004d23b0) normaliza celdas de
             // footprint al origen vía `inv_base + 34*(grid_w*y+x)`; con x/y=0 toda celda
             // normalizaría al slot 0 y el tooltip mostraría siempre el primer item.
-            cell[62]               = (BYTE)(slot % 8);             // x
-            cell[63]               = (BYTE)(slot / 8);             // y
+            AsItem(cell)->x               = (BYTE)(slot % 8);             // x
+            AsItem(cell)->y               = (BYTE)(slot / 8);             // y
             ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
         }
     }
@@ -900,7 +901,7 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             if (got > 0) {
                 char money[32], line[128];
                 ConvertGold64(got, money);
-                wsprintfA(line, "%s %s %s", money, GlobalText[224], GlobalText[918]);
+                Platform::TextFormat(line, "%s %s %s", money, GlobalText[224], GlobalText[918]);
                 UIChatLogWindow_AddText("", line, 1);
             }
         }
@@ -934,7 +935,7 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             char name[100], line[160];
             Item_FormatName(&tmp, name);
             if (name[0]) {
-                wsprintfA(line, "%s %s", name, GlobalText[918]);
+                Platform::TextFormat(line, "%s %s", name, GlobalText[918]);
                 UIChatLogWindow_AddText("", line, 1);
             }
         }

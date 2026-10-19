@@ -1,3 +1,4 @@
+#include <cstdint>
 // Cursor_Render.cpp
 
 #include "stdafx.h"
@@ -33,8 +34,8 @@ void __cdecl Cursor_Render(void) {
     glColor3f(1.0f, 1.0f, 1.0f);
 
     int u_bits = 0, v_bits = 0;
-    // Frame = (int64)(WorldTime * 0.01) % 6  — IDA lo emite con __int64 cast explícito.
-    // Ojo: se multiplica el FLOAT y recien despues se convierte a __int64.  Castear
+    // Frame = (int64)(WorldTime * 0.01) % 6  — IDA lo emite con std::int64_t cast explícito.
+    // Ojo: se multiplica el FLOAT y recien despues se convierte a std::int64_t.  Castear
     // a `int` antes satura cuando WorldTime (timeGetTime) pasa 2^31 ms (~24.8 dias
     // de uptime de la maquina) y el frame queda clavado.
     int frame = (int)(long long)((double)DAT_05826e08 * 0.0099999998) % 6;

@@ -1,6 +1,9 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ISocket.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Net/Reconnect.h"
 #include "Game/HeroVitals.h"
@@ -108,9 +111,9 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
         extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
         if (!reconnecting)
             UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
-        if (SocketClientSocket != 0xffffffff) {
-            closesocket((SOCKET)SocketClientSocket);
-            SocketClientSocket = (DWORD)INVALID_SOCKET;
+        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
     }
 }
@@ -144,7 +147,7 @@ void CNetwork::SendLogin(const char* account, const char* password)
     pos += 10;
 
     // TickCount (4 bytes LE) — plaintext.
-    DWORD tick = GetTickCount();
+    DWORD tick = Platform::GetTimer().Ticks();
     memcpy(pkt + pos, &tick, 4);
     pos += 4;
 
@@ -194,7 +197,7 @@ void CNetwork::EndConnectServerSession()
 // C1 04 F4 02 (PMSG_SERVER_LIST_RECV), plano. Sale una sola vez por sesión.
 void CNetwork::RequestServerList()
 {
-    if (!m_ConnectServerMode || m_ServerListRequested) return;
+    if (!m_ConnectServerMode || m_ServerListRequested || !Platform::GetSocket().IsConnected(SocketClientSocket)) return;
     const BYTE req[4] = { 0xC1, 0x04, 0xF4, 0x02 };
     SendToConnectServer(req, 4);
     m_ServerListRequested = true;
@@ -206,13 +209,21 @@ void CNetwork::RequestServerList()
 // binario.
 void CNetwork::SendToConnectServer(const BYTE* data, int len)
 {
-    if (SocketClientSocket == 0xffffffff) return;
+    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return;
+    if (len <= 0) return;
+    if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
+        if (len <= 0x2000 - SocketClientSendBufferLength) {
+            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);
+            SocketClientSendBufferLength += len;
+        } else Net_Disconnect((int)(uintptr_t)SocketClient);
+        return;
+    }
     unsigned int remain = (unsigned int)len;
     int off = 0;
     while ((int)remain > 0) {
         int r = ::send(SocketClientSocket, (const char*)data + off, (int)remain, 0);
         if (r == -1) {
-            if (WSAGetLastError() == WSAEWOULDBLOCK) {
+            if (Platform::GetSocket().LastError() == Platform::SocketWouldBlock) {
                 if (SocketClientSendBufferLength + (int)remain < 0x2001) {
                     memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
                     SocketClientSendBufferLength += (int)remain;
@@ -243,7 +254,7 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
 // results in a "Protocol header error" immediate disconnect.
 int CNetwork::SendRaw(const char* buf, int len)
 {
-    if (SocketClientSocket == 0xffffffff) return 0;
+    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return 0;
 
     // Copy to a mutable scratch buffer so we can encrypt in place without
     // clobbering caller state (some callers reuse `buf` across retries).
@@ -252,13 +263,22 @@ int CNetwork::SendRaw(const char* buf, int len)
     memcpy(s_scratch, buf, len);
     MuEmu::EncryptSend(s_scratch, len);
 
+    if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
+        if (len > 0x2000 - SocketClientSendBufferLength) {
+            Net_Disconnect((int)(uintptr_t)SocketClient);
+            return -1;
+        }
+        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, s_scratch, len);
+        SocketClientSendBufferLength += len;
+        return 0;
+    }
     int sent = 0;
     int rem  = len;
     do {
         int n = send(SocketClientSocket, (const char*)s_scratch + sent, rem, 0);
         if (n == -1) {
-            int err = WSAGetLastError();
-            if (err == WSAEWOULDBLOCK) {
+            int err = Platform::GetSocket().LastError();
+            if (err == Platform::SocketWouldBlock) {
                 if (SocketClientSendBufferLength + (len - sent) < 0x2001) {
                     // Queue the still-unsent ENCRYPTED tail — never re-queue
                     // plaintext or the prefix we already transmitted.
@@ -378,7 +398,7 @@ void CNetwork::SendResolved(const BYTE* pkt, int totalLen, bool chosenC3, const 
         // salga o no), pero queda el aviso para no perder una hora buscando
         // una desconexion sin causa aparente.
         char line[160];
-        wsprintfA(line,
+        Platform::TextFormat(line,
                   "PacketFrame: 0x%02X/%02X no figura en HackPacketCheck.txt "
                   "-> el server va a cerrar la conexion (%s)", opcode, subop, who);
         DbgLogPublic(line);

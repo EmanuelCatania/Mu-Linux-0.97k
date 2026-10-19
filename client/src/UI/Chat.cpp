@@ -1,3 +1,4 @@
+#include <cstdint>
 // Chat.cpp
 // In-game chat log rendering and message management.
 //
@@ -15,6 +16,7 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Config/UserSettings.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,8 +28,8 @@
 // (RenderText 0x47F650, RenderNotices 0x47FCE0 — ambas idénticas):
 //
 //     GetTextExtentPointA(m_hFontDC, pszText, len, &TextSize);
-//     TextSize.cx = (__int64)((double)TextSize.cx / g_fScreenRate_x);
-//     TextSize.cy = (__int64)((double)TextSize.cy / g_fScreenRate_y);
+//     TextSize.cx = (std::int64_t)((double)TextSize.cx / g_fScreenRate_x);
+//     TextSize.cy = (std::int64_t)((double)TextSize.cy / g_fScreenRate_y);
 //
 // `TextSize` es el par de globals (lpsz_07e113d0 = cx, _DAT_07e113d4 = cy);
 // _DAT_055c9b70 = g_fScreenRate_x, _DAT_055c9b74 = g_fScreenRate_y.
@@ -61,10 +63,10 @@ UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_
   int c;
   LPSIZE *lpsz;
 
-  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6);
+  c = Platform::TextLength(param_3);
+  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6, (size_t)c + 1);
   lpsz = &lpsz_07e113d0;
-  c = lstrlenA(param_3);
-  GetTextExtentPointA(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
+  gFont.MeasureText(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
   if ((0 < (int)param_4) && ((int)param_4 < (int)lpsz_07e113d0)) {
     lpsz_07e113d0 = param_4;
   }
@@ -109,8 +111,8 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
     }
 
     const int width = (int)DAT_00559c8c;
-    UI_DrawText(x, y, text, width, 1, 0);
-    GetTextExtentPointA(gFont.GetTextDC(), text, lstrlenA(text), &g_TextExtent07E113D0);
+    UI_DrawText(x, y, text, width, 1, 0, sizeof(text));
+    gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &g_TextExtent07E113D0);
     if (width > 0 && g_TextExtent07E113D0.cx > width)
         g_TextExtent07E113D0.cx = width;
     ScaleGlobalTextSize();
@@ -121,10 +123,11 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
             // IDA 0x47F25B: lea esi, InputTextIME[index*4]. Taking
             // &DAT_07e11cec would multiply by the whole 40-byte array again.
             const char* cursor = DAT_07e11cec + index * 4;
-            if (*cursor == 0) cursor = "_";
-            else if (hide == 1) cursor = "**";
-            UI_DrawText(x + g_TextExtent07E113D0.cx, y, (char*)cursor, 0, 1, 0);
-            GetTextExtentPointA(gFont.GetTextDC(), cursor, lstrlenA(cursor), &g_TextExtent07E113D0);
+            size_t cursorCapacity = 4;
+            if (*cursor == 0) { cursor = "_"; cursorCapacity = 2; }
+            else if (hide == 1) { cursor = "**"; cursorCapacity = 3; }
+            UI_DrawText(x + g_TextExtent07E113D0.cx, y, (char*)cursor, 0, 1, 0, cursorCapacity);
+            gFont.MeasureText(gFont.GetTextDC(), cursor, Platform::TextLength(cursor), &g_TextExtent07E113D0);
             ScaleGlobalTextSize();
         }
     }
@@ -148,9 +151,9 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     if (!param_1) return;
     char *notice = (char *)&DAT_07db80d8[0];
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     SIZE sz = {0, 0};
-    GetTextExtentPointA(gFont.GetTextDC(), param_1, lstrlenA(param_1), &sz);
+    gFont.MeasureText(gFont.GetTextDC(), param_1, Platform::TextLength(param_1), &sz);
 
     auto shiftUp = [notice]() {
         for (int s = 0; s < 5; ++s) {
@@ -206,10 +209,10 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
   char local_200 [256];
   char local_100 [256];
 
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   lpsz = &local_208;
-  iVar2 = lstrlenA(param_1);
-  GetTextExtentPointA(gFont.GetTextDC(),param_1,iVar2,lpsz);
+  iVar2 = Platform::TextLength(param_1);
+  gFont.MeasureText(gFont.GetTextDC(),param_1,iVar2,lpsz);
   if (5 < DAT_07e11d9c) {
     DAT_07e11d9c = 5;
     pcVar6 = (char *)&DAT_07db80d8;
@@ -364,7 +367,7 @@ void UI_RenderNotices(void)
   tagSIZE local_8;
 
   GL_SetBlendSrcOver('\x01');
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
   glColor3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
@@ -377,16 +380,16 @@ void UI_RenderNotices(void)
       DAT_00559c78 = -0x37009c;
     }
     lpsz = &local_8;
-    iVar1 = lstrlenA(lpString);
-    GetTextExtentPointA(gFont.GetTextDC(),lpString,iVar1,lpsz);
+    iVar1 = Platform::TextLength(lpString);
+    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,lpsz);
     iVar1 = iVar2;
     if (g_bUseChatListBox == 1) {
       iVar1 = iVar2 + -0x118;
     }
-    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0);
+    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0, 256);
     lpsz_00 = &lpsz_07e113d0;
-    iVar1 = lstrlenA(lpString);
-    GetTextExtentPointA(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
+    iVar1 = Platform::TextLength(lpString);
+    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
     // IDA RenderNotices @0x47FCE0 hace exactamente esto acá.
     ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     lpString = lpString + 0x108;
@@ -423,7 +426,7 @@ void UI_RenderChatLogOverlay(void)
 
   // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
   glColor3f(1.0f, 1.0f, 1.0f);
-  SelectObject(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   iVar7 = 0;
   local_10c = 0;
   do {
@@ -481,8 +484,8 @@ void UI_RenderChatLogOverlay(void)
         }
       }
       lpsz = &local_108;
-      iVar3 = lstrlenA(local_100);
-      GetTextExtentPointA(gFont.GetTextDC(),local_100,iVar3,lpsz);
+      iVar3 = Platform::TextLength(local_100);
+      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar3,lpsz);
       iVar3 = DAT_083a427c;
       bVar8 = -1 < DAT_083a427c;
       // &DAT_07df9494 es int* (alias a offset
@@ -517,10 +520,10 @@ LAB_00480b8e:
           DAT_00559c78 = uVar2;
         }
       }
-      UI_DrawText(0,iVar7,local_100,0,1,0);
+      UI_DrawText(0,iVar7,local_100,0,1,0, sizeof(local_100));
       lpsz_00 = &lpsz_07e113d0;
-      iVar5 = lstrlenA(local_100);
-      GetTextExtentPointA(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
+      iVar5 = Platform::TextLength(local_100);
+      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
       ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     }
     iVar7 = iVar7 + 0xd;
@@ -544,104 +547,40 @@ LAB_00480b8e:
 // IDA: FUN_004821A0
 void UI_TickHoverBubbles(void)
 {
-  char cVar1;
-  byte bVar2;
-  byte *pbVar3;
-  int iVar4;
-  uint uVar5;
-  uint uVar6;
-  int *piVar7;
-  byte *pbVar8;
-  char *pcVar9;
-  bool bVar10;
-
-  // Pool real = DAT_07e01720[26 × 0x254].
-  // Bounds end calculados a partir del array, no de la dirección absoluta.
-  piVar7 = (int*)DAT_07e01720;
-  const uintptr_t poolEnd = (uintptr_t)DAT_07e016f8 + sizeof(DAT_07e016f8);
-  do {
-    if (0 < *piVar7) {
-      *piVar7 = *piVar7 + -1;
+  CHAT* chats = AsChat(DAT_07e016f8);
+  const int count = (int)(sizeof(DAT_07e016f8) / sizeof(CHAT));   // 100
+  for (int i = 0; i < count; ++i) {
+    CHAT* c = &chats[i];
+    if (0 < c->IDLifeTime) {
+      c->IDLifeTime = c->IDLifeTime + -1;
     }
-    if (0 < piVar7[0x81]) {
-      piVar7[0x81] = piVar7[0x81] + -1;
+    if (0 < c->LifeTime[0]) {
+      c->LifeTime[0] = c->LifeTime[0] + -1;
     }
-    if (0 < piVar7[0x82]) {
-      piVar7[0x82] = piVar7[0x82] + -1;
+    if (0 < c->LifeTime[1]) {
+      c->LifeTime[1] = c->LifeTime[1] + -1;
     }
-    pcVar9 = (char *)piVar7[0x83];
-    if ((pcVar9 != (char *)0x0) && ((*pcVar9 == '\0' || (pcVar9[0x160] == '\0')))) {
-      *piVar7 = 0;
-      piVar7[0x81] = 0;
-      piVar7[0x82] = 0;
+    const char* owner = (const char*)c->Owner;
+    if ((owner != nullptr) && ((*owner == '\0' || (owner[0x160] == '\0')))) {
+      c->IDLifeTime = 0;
+      c->LifeTime[0] = 0;
+      c->LifeTime[1] = 0;
     }
-    if ((piVar7[0x84] <= DAT_083a427c) &&
-       (DAT_083a427c < (int)((uint)(piVar7[0x86] * 0x280) / gWindow.GetWidth() + piVar7[0x84]))) {
-      if ((piVar7[0x85] <= DAT_083a4278) &&
-         (((DAT_083a4278 < (int)((uint)(piVar7[0x87] * 0x1e0) / gWindow.GetHeight() + piVar7[0x85]) &&
-           (DAT_00559c84 != '\0')) && (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')))) {
-        pbVar8 = (byte *)(DAT_07abf5d8 + 0x1c1);
-        pbVar3 = (byte *)(piVar7 + -10);
-        do {
-          bVar2 = *pbVar3;
-          bVar10 = bVar2 < *pbVar8;
-          if (bVar2 != *pbVar8) {
-LAB_004822b1:
-            iVar4 = (1 - (uint)bVar10) - (uint)(bVar10 != 0);
-            goto LAB_004822b6;
-          }
-          if (bVar2 == 0) break;
-          bVar2 = pbVar3[1];
-          bVar10 = bVar2 < pbVar8[1];
-          if (bVar2 != pbVar8[1]) goto LAB_004822b1;
-          pbVar3 = pbVar3 + 2;
-          pbVar8 = pbVar8 + 2;
-        } while (bVar2 != 0);
-        iVar4 = 0;
-LAB_004822b6:
-        if ((iVar4 != 0) && (MouseRButtonPush != '\0')) {
-          uVar5 = 0xffffffff;
-          pbVar3 = (byte *)(piVar7 + -10);
-          do {
-            pbVar8 = pbVar3;
-            if (uVar5 == 0) break;
-            uVar5 = uVar5 - 1;
-            pbVar8 = pbVar3 + 1;
-            bVar2 = *pbVar3;
-            pbVar3 = pbVar8;
-          } while (bVar2 != 0);
-          uVar5 = ~uVar5;
-          pbVar3 = pbVar8 + -uVar5;
-          pbVar8 = (byte *)DAT_07db8810;
-          for (uVar6 = uVar5 >> 2; uVar6 != 0; uVar6 = uVar6 - 1) {
-            *(undefined4 *)pbVar8 = *(undefined4 *)pbVar3;
-            pbVar3 = pbVar3 + 4;
-            pbVar8 = pbVar8 + 4;
-          }
-          for (uVar5 = uVar5 & 3; uVar5 != 0; uVar5 = uVar5 - 1) {
-            *pbVar8 = *pbVar3;
-            pbVar3 = pbVar3 + 1;
-            pbVar8 = pbVar8 + 1;
-          }
-          uVar5 = 0xffffffff;
-          pcVar9 = (char *)DAT_07db8810;
-          do {
-            if (uVar5 == 0) break;
-            uVar5 = uVar5 - 1;
-            cVar1 = *pcVar9;
-            pcVar9 = pcVar9 + 1;
-          } while (cVar1 != '\0');
-          DAT_07d780ac = ~uVar5 - 1;
-          MouseRButtonPush = '\0';
-          PlayBuffer(0x19,0,0);
-        }
-      }
+    // Click derecho sobre el nombre de otro jugador (estando en zona segura):
+    // lo copia al campo de destinatario del whisper.
+    if ((c->x <= DAT_083a427c) &&
+        (DAT_083a427c < (int)((uint)(c->Width * 0x280) / gWindow.GetWidth() + c->x)) &&
+        (c->y <= DAT_083a4278) &&
+        (DAT_083a4278 < (int)((uint)(c->Height * 0x1e0) / gWindow.GetHeight() + c->y)) &&
+        (DAT_00559c84 != '\0') && (AsCharacter(DAT_07abf5d8)->SafeZone != '\0') &&
+        strcmp(c->ID, AsCharacter(DAT_07abf5d8)->ID) != 0 &&
+        (MouseRButtonPush != '\0')) {
+      strcpy((char *)DAT_07db8810, c->ID);
+      DAT_07d780ac = (DWORD)strlen((char *)DAT_07db8810);
+      MouseRButtonPush = '\0';
+      PlayBuffer(0x19,0,0);
     }
-    piVar7 = piVar7 + 0x95;
-    if ((uintptr_t)piVar7 >= poolEnd) {
-      return;
-    }
-  } while( true );
+  }
 }
 
 
@@ -699,7 +638,7 @@ char Chat_ValidateInputCommand(void)
       pcVar5 = pcVar5 + 0x14;
     } while (iVar3 < DAT_07d78074);
   }
-  if ((char)DAT_07db8710 != '/') {
+  if ((char)(uintptr_t)DAT_07db8710 != '/') {
     uVar2 = 0xffffffff;
     iVar3 = 0;
     iVar4 = 0;

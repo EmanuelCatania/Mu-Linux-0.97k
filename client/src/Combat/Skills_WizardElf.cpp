@@ -3,6 +3,8 @@
 // Helpers de despacho de skills de wizard/elf.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -86,9 +88,9 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     float targetPosZ = *(float*)(entityBase + targetIdx * 0x394 + 0x18);
 
     // Store target position at entity offset +0x314 (TargetPosition[3])
-    *(float*)(heroEntity + 0x314) = targetPosX;
-    *(float*)(heroEntity + 0x318) = targetPosY;
-    *(float*)(heroEntity + 0x31C) = targetPosZ;
+    AsCharacter(heroEntity)->TargetPosition[0] = targetPosX;
+    AsCharacter(heroEntity)->TargetPosition[1] = targetPosY;
+    AsCharacter(heroEntity)->TargetPosition[2] = targetPosZ;
 
     // Compute facing angle toward target
     // CreateAngle(heroX, heroY, targetX, targetY)
@@ -126,13 +128,13 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         }
 
         // 300ms cooldown check on magic tick
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         DWORD elapsed = now - g_dwLatestMagicTick;
         // Ghidra: abs(elapsed) > 300
         if (elapsed > 0x80000000) elapsed = (DWORD)(-(int)elapsed);  // abs
         if ((int)elapsed <= 300) break;
 
-        g_dwLatestMagicTick = GetTickCount();
+        g_dwLatestMagicTick = Platform::GetTimer().Ticks();
 
         // Get target entity key (CharactersClient[MovementSkillTarget].Key)
         // Key is at entity offset +0x??? — Ghidra shows CharactersClient[target].Key
@@ -186,15 +188,15 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
 
         // The sole duration case in this helper is skill 13.  It uses the
         // cached target world point established immediately above.
-        BYTE gridX = (BYTE)(int)(*(float*)(heroEntity + 788) * 0.01f);
-        BYTE gridY = (BYTE)(int)(*(float*)(heroEntity + 792) * 0.01f);
+        BYTE gridX = (BYTE)(int)(AsCharacter(heroEntity)->TargetPosition[0] * 0.01f);
+        BYTE gridY = (BYTE)(int)(AsCharacter(heroEntity)->TargetPosition[1] * 0.01f);
 
         // IDA: sub_4889D0 (0x004889D0).
         // DESVIACION (fix del DLL, Patchs.cpp 0x00489769): enviar dirección y key del objetivo seleccionado válido.
         WORD targetKey = 0xFFFF;
         if (CheckAttack())
             targetKey = *(WORD*)(entityBase + SelectedCharacter * 0x394 + 476);
-        const BYTE dir = (BYTE)(int)(*(float*)(heroEntity + 36) / 360.0f * 256.0f);
+        const BYTE dir = (BYTE)(int)(AsCharacter(heroEntity)->Object.Angle[2] / 360.0f * 256.0f);
         SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, dir, 0, 0, targetKey);
         break;
     }
@@ -289,7 +291,7 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
     BYTE* const entry = (BYTE*)SkillAttribute.Raw + iType * 0x28;
 
     if (lpszName != NULL) {
-        strncpy_s(lpszName, 256, (const char*)entry, 31);
+        Platform::TextCopySecure(lpszName, 256, (const char*)entry, 31);
         lpszName[31] = '\0';
     }
     if (piMana != NULL) {
@@ -458,8 +460,8 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             continue;
         }
         // 0x48BD70 reads the two encrypted grid values at c+904/c+908.
-        BYTE gridX = (BYTE)*(DWORD*)(hero + 904);
-        BYTE gridY = (BYTE)*(DWORD*)(hero + 908);
+        BYTE gridX = (BYTE)*(DWORD *)&AsCharacter(hero)->PositionX;
+        BYTE gridY = (BYTE)*(DWORD *)&AsCharacter(hero)->PositionY;
 
         // Skill type 0x18 = Triple Shot ranged-arrow path.
         {
@@ -474,8 +476,8 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             BYTE skillDistance = SkillAttribute.Raw[(size_t)skillId * 0x28 + 0x26];
 
             // Get hero position
-            float heroPosX = *(float*)(heroEntity + 0x10);  // Object.Position[0]
-            float heroPosY = *(float*)(heroEntity + 0x14);  // Object.Position[1]
+            float heroPosX = AsCharacter(heroEntity)->Object.Position[0];  // Object.Position[0]
+            float heroPosY = AsCharacter(heroEntity)->Object.Position[1];  // Object.Position[1]
 
             // Chequeo de IDA L197-199, que compara contra los globales `TargetX`/`TargetY`
             // -- las coordenadas de GRILLA que deja `CheckTarget` (0x49CAE0).  Ese helper
@@ -497,13 +499,13 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
 
             // Compute facing angle toward target
             // CHARACTER->TargetPosition at offset +0x314 (float[3])
-            float targetPosX = *(float*)(heroEntity + 0x314);
-            float targetPosY = *(float*)(heroEntity + 0x318);
+            float targetPosX = AsCharacter(heroEntity)->TargetPosition[0];
+            float targetPosY = AsCharacter(heroEntity)->TargetPosition[1];
             float angle = ((float (__cdecl*)(float,float,float,float))CreateAngle)(
                 heroPosX, heroPosY, targetPosX, targetPosY);  // CreateAngle
 
             // Set hero facing angle: Object.Angle[2] at entity offset +0x24
-            *(float*)(heroEntity + 0x24) = angle;
+            AsCharacter(heroEntity)->Object.Angle[2] = angle;
 
             // GM name check: compare Hero->ID with "webzen" string
             // Hero->ID at entity offset +0x1C1
@@ -539,7 +541,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             SetPlayerAttack((int)(DWORD)heroEntity, 0, 0, 0);
 
             // If object type is not 0x186 (special entity), create arrow projectiles
-            WORD objType = *(WORD*)(heroEntity + 0x02);  // Object.Type at offset +0x02
+            WORD objType = *(WORD *)&AsCharacter(heroEntity)->Object.Type;  // Object.Type at offset +0x02
             if (objType != 0x186) {
                 // DESVIACION respecto de IDA L223-226, que recorre
                 // `CharacterAttribute + 87` hasta encontrar el skill y pasa ESE

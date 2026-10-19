@@ -32,6 +32,7 @@
 //   0x301 = GL_SRC_ALPHA
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 
 void GL_SetBlendAdditive(void)
 
@@ -102,7 +103,7 @@ void __cdecl GL_BindTextureSlot(int param_1)
       if (false && param_1 >= 1180 && param_1 <= 1300) {
         static DWORD lastWindow = 0;
         static unsigned count = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - lastWindow >= 1000) { lastWindow = now; count = 0; }
         if (count++ < 80) {
         }

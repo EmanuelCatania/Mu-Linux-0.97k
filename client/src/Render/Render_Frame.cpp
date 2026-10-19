@@ -114,14 +114,14 @@
 //                         GL_ResetState() + DAT_07e11d6e=0; hit-test mouse vs bounds
 //                         (_DAT_00552cac, _DAT_00552c24, _DAT_00552c14, _DAT_00552ca8)
 //   UI_RenderNotices()    → PlayerName_Render()         — nombres de jugadores con parpadeo
-//                         SetBlendMode + SelectObject(bold) + glColor3f(1,1,1)
+//                         SetBlendMode + gFont.SelectFont(bold) + glColor3f(1,1,1)
 //                         itera DAT_07db80d8 stride 0x104; parpadeo via DAT_07e11da0 % 10
 //   if (g_bUseChatListBox == 1) || (SceneFlag != 5): UI_RenderChatLogOverlay()
 //                     → SystemText_Render()         — notificaciones del sistema
-//                         glColor3f(1,1,1) + SelectObject(normal_font)
+//                         glColor3f(1,1,1) + gFont.SelectFont(normal_font)
 //                         CHAR buf[256]; renderiza mensajes del sistema
 //   UI_UpdateFpsCounter()    → FPS_TimerReset()            — tick por segundo
-//                         SelectObject(normal_font); timeGetTime() % 1000:
+//                         gFont.SelectFont(normal_font); timeGetTime() % 1000:
 //                         si > 999ms: resetea DAT_07e016f0 + TotalPacketSize=0 (frame counter)
 //   RenderHelpWindow()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
 //                         GL_ResetState() + DAT_07eaa154=0; operaciones de string
@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
@@ -523,7 +524,7 @@ void Render_Scene3D(void)
     // ── DIAG: log every frame entry to track in-game render flow
     {
         static DWORD s_lastR3 = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastR3 > 1000) {
             s_lastR3 = now;
             BYTE* hero = (BYTE*)DAT_07abf5d8;

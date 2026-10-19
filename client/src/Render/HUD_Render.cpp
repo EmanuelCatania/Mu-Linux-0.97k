@@ -70,7 +70,7 @@
 //       GL_SetBlendSrcOver('\x01');   // GL_SetMode(1)
 //       iVar3 = GetScreenWidth(); // Screen_GetWidth()
 //       fVar2 = (float)iVar3 * 0.5f - _DAT_005524fc;   // X centrado
-//       SelectObject(DC, font_small);
+//       gFont.SelectFont(DC, font_small);
 //       // Color según DAT_05826d32:
 //       DAT_00559c78 = DAT_05826d32 ? 0x005901 : 0xffc301;   // verde o amarillo
 //       CreateGuildMark((int)*(short*)(DAT_07abf5d8+0x1da), '\x01'); // compone el mark propio
@@ -204,7 +204,7 @@
 //   void Render_ChatBox(void)
 //   {
 //     glColor3f(1,1,1);
-//     SelectObject(DC, font_normal);
+//     gFont.SelectFont(DC, font_normal);
 //     if (DAT_00559c84 != '\0' || DAT_07e11d71 != '\0') {
 //       GL_ResetBlend();
 //       Texture_Draw2D(0xf8, 186, 415, 134, 29, 0,0,0.520,0.906, ...); // input bg left
@@ -278,7 +278,7 @@
 //       else:
 //         pCVar4 = &DAT_07d65e14 + DAT_07e11d8c * 300;
 //       // Mostrar "SkillName (%d)" con segundos restantes
-//       wsprintfA(local_100, pCVar4, 30 - (DVar3-DAT_07e11d90)/1000);
+//       Platform::TextFormat(local_100, pCVar4, 30 - (DVar3-DAT_07e11d90)/1000);
 //       DrawText(10, 0x174, local_100, 0,1,0);
 //     }
 //   }
@@ -300,7 +300,7 @@
 //
 //   void Render_FloatingText(void)
 //   {
-//     SelectObject(DC, font_normal);
+//     gFont.SelectFont(DC, font_normal);
 //     // Array en &DAT_07e0192c, stride 0x95*4 = 0x254
 //     // Pasada 1: project world→screen
 //     piVar7 = &DAT_07e0192c;
@@ -509,7 +509,7 @@
 //                      (subMode == 0x333) ? &DAT_07d43bfc :
 //                      (char*)((subMode - 400) * 0x40 + DAT_07d78068);  // sprite
 //
-//       // lstrlenA(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
+//       // Platform::TextLength(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
 //       // Text_MeasureBox(ftol()+0x32, ftol(), name, 0, '\0', 0)
 //       //   → DrawText(x+50, y, name, shadow=0, italic=0, flags=0)
 //
@@ -654,22 +654,22 @@
 //         // Línea 1: "jugadores actuales / máximo" (solo si hay límite)
 //         if (DAT_00559cd0 != 0xffff) {
 //           LPCSTR fmt = (DAT_07e11d88 == 5) ? &DAT_07d693fc : &DAT_07d691a4;
-//           wsprintfA(local_100, fmt, DAT_00559cd4, DAT_00559cd0);
-//           SelectObject(g_hDC, DAT_055ca010);        // fuente bold
+//           Platform::TextFormat(local_100, fmt, DAT_00559cd4, DAT_00559cd0);
+//           gFont.SelectFont(g_hDC, DAT_055ca010);        // fuente bold
 //           FUN_00514270(0x23a, 0x159, local_100);    // DrawTextCenter(570, 345, str)
 //         }
 //
 //         // Línea 2: timer total (vía ftol())
-//         SelectObject(g_hDC, DAT_055ca010);
-//         wsprintfA(local_100, &param_2_07d692d0);
+//         gFont.SelectFont(g_hDC, DAT_055ca010);
+//         Platform::TextFormat(local_100, &param_2_07d692d0);
 //         FUN_00514270(0x23a, (int)__ftol(), local_100);
 //
 //         // Calcular y construir string "MM:SS" mediante strcat inline:
 //         int mins = DAT_00559ccc / 60;
 //         int secs = DAT_00559ccc - mins * 60;
-//         wsprintfA(local_100, s___2d___00559f3c, mins);   // "%2d:"
+//         Platform::TextFormat(local_100, s___2d___00559f3c, mins);   // "%2d:"
 //         if (secs >= 0) {
-//           wsprintfA(local_10c, s___2d_00559f44, secs);   // "%2d"
+//           Platform::TextFormat(local_10c, s___2d_00559f44, secs);   // "%2d"
 //           // strcat(local_100, local_10c) — inline strlen+memcpy
 //         }
 //
@@ -677,12 +677,12 @@
 //
 //         if (mins < 15) {
 //           // Parpadeo de segundos: (int)(ftol() % 60)
-//           // wsprintfA(local_10c, ":%2d", blink_sec)
+//           // Platform::TextFormat(local_10c, ":%2d", blink_sec)
 //           // strcat inline → local_100 += local_10c
 //         }
 //
 //         // Línea final: "MM:SS" con fuente grande
-//         SelectObject(g_hDC, DAT_055ca014);            // fuente bold2
+//         gFont.SelectFont(g_hDC, DAT_055ca014);            // fuente bold2
 //         FUN_00514270(0x23a, (int)__ftol(), local_100);
 //       }
 //     }
@@ -708,4 +708,5 @@
 //   GL_SetBlendSrcOver   → SetBlendMode(mode)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Render/HUD_Render.h"

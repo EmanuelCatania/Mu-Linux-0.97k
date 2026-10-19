@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/HealthBar.h"
 #include "Config/UserSettings.h"
 #include "Entity/EntityView.h"
@@ -48,7 +49,7 @@ const Proto::PMSG_HEALTH_BAR* CHealthBar::Find(WORD index, BYTE type) const
 const Proto::PMSG_HEALTH_BAR* CHealthBar::FindEntity(const BYTE* entity) const
 {
     const EntityView view(entity);
-    if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.ModelType() == EntityView::SoccerBall)
+    if (!view.IsActive() || view.Kind() != EntityView::MonsterKind || view.MonsterIndex() == EntityView::SoccerBall)
         return nullptr;
     return Find(view.NetworkKey(), view.Kind());
 }
@@ -74,10 +75,10 @@ void DrawBar(int x, int y, float width, float height, BYTE percent, bool selecte
 void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD background)
 {
     char text[64];
-    sprintf_s(text, "%.31s: %u%%", EntityView(entity).Name(), (unsigned int)percent);
+    Platform::TextFormatSecure(text, "%.31s: %u%%", EntityView(entity).Name(), (unsigned int)percent);
     const DWORD savedBack = m_dwBackColor;
     const DWORD savedText = m_dwTextColor;
-    HGDIOBJ oldFont = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    HGDIOBJ oldFont = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     EnableAlphaTest(true);
     glColor4f(1, 1, 1, 1);
     m_dwBackColor = background;
@@ -85,7 +86,7 @@ void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD backgr
     RenderCenteredText(center, y, text);
     m_dwBackColor = savedBack;
     m_dwTextColor = savedText;
-    SelectObject(gFont.GetTextDC(), oldFont);
+    gFont.SelectFont(gFont.GetTextDC(), oldFont);
     GL_ResetState();
 }
 

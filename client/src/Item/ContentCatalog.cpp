@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include <algorithm>
+#include "Platform/Text.h"
+#include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Protocol/GameServerProtocol.h"
@@ -46,6 +49,7 @@ struct ItemExtraData
 {
     bool  Present = false;
     WORD  Behavior = 0;
+    BYTE  Skill = 0;
     bool  HasGlow = false;
     float Glow[3] = {};
     bool  HasPose = false;
@@ -92,8 +96,8 @@ std::map<int, int> s_DynamicModelItem;        // slot dinámico -> primer item q
 
 ITEM_ATTRIBUTE* Attributes()
 {
-    const uintptr_t base = (uintptr_t)DAT_07d78068;
-    return (base >= 0x100000u && base < 0x80000000u) ? (ITEM_ATTRIBUTE*)base : nullptr;
+    const uintptr_t base = ItemAttribute_Base();
+    return base ? (ITEM_ATTRIBUTE*)base : nullptr;
 }
 
 BYTE ClampByte(int value)
@@ -106,7 +110,7 @@ void Log(const char* fmt, ...)
     char text[256];
     va_list args;
     va_start(args, fmt);
-    _vsnprintf_s(text, sizeof(text), _TRUNCATE, fmt, args);
+    Platform::TextVFormatTruncated(text, sizeof(text), Platform::TruncateText, fmt, args);
     va_end(args);
     DbgLogPublic(text);
 }
@@ -270,7 +274,7 @@ void CContentCatalog::Publish()
     const int monsterSize = s_PendingMonsters.recordSize;
     for (size_t off = 0; off + monsterSize <= s_PendingMonsters.records.size(); off += monsterSize) {
         Proto::CATALOG_MONSTER row = {};
-        memcpy(&row, &s_PendingMonsters.records[off], min((int)sizeof(row), monsterSize));
+        memcpy(&row, &s_PendingMonsters.records[off], (std::min)((int)sizeof(row), monsterSize));
         if (row.Index >= MAX_CATALOG_MONSTER) continue;
         CatalogMonster& monster = s_Monsters[row.Index];
         monster.Present = true;
@@ -291,7 +295,7 @@ void CContentCatalog::Publish()
     const int fogSize = s_PendingFog.recordSize;
     for (size_t off = 0; fogSize > 0 && off + fogSize <= s_PendingFog.records.size(); off += fogSize) {
         Proto::CATALOG_MAP_FOG row = {};
-        memcpy(&row, &s_PendingFog.records[off], min((int)sizeof(row), fogSize));
+        memcpy(&row, &s_PendingFog.records[off], (std::min)((int)sizeof(row), fogSize));
         if (row.Map >= MAX_CATALOG_MAP) continue;
         FogEntry& fog = s_Fog[row.Map];
         fog.Present = true;
@@ -309,7 +313,7 @@ void CContentCatalog::Publish()
     if (SectionComplete(s_PendingTooltips) && tooltipSize > 0) {
         for (size_t off = 0; off + tooltipSize <= s_PendingTooltips.records.size(); off += tooltipSize) {
             Proto::CATALOG_TOOLTIP line = {};
-            memcpy(&line, &s_PendingTooltips.records[off], min((int)sizeof(line), tooltipSize));
+            memcpy(&line, &s_PendingTooltips.records[off], (std::min)((int)sizeof(line), tooltipSize));
             line.Text[sizeof(line.Text) - 1] = 0;
             if (line.Item < ITEM_MAX_EX && line.Color <= 8) s_Tooltips[line.Item].push_back(line);
         }
@@ -321,7 +325,7 @@ void CContentCatalog::Publish()
     if (SectionComplete(s_PendingPets) && petSize > 0) {
         for (size_t off = 0; off + petSize <= s_PendingPets.records.size(); off += petSize) {
             Proto::CATALOG_PET pet = {};
-            memcpy(&pet, &s_PendingPets.records[off], min((int)sizeof(pet), petSize));
+            memcpy(&pet, &s_PendingPets.records[off], (std::min)((int)sizeof(pet), petSize));
             if (pet.Item < ITEM_MAX_EX) s_Pets[pet.Item] = pet;
         }
     }
@@ -333,7 +337,7 @@ void CContentCatalog::Publish()
     if (SectionComplete(s_PendingEffects) && effectSize > 0) {
         for (size_t off = 0; off + effectSize <= s_PendingEffects.records.size(); off += effectSize) {
             ItemEffect effect = {};
-            memcpy(&effect.Data, &s_PendingEffects.records[off], min((int)sizeof(effect.Data), effectSize));
+            memcpy(&effect.Data, &s_PendingEffects.records[off], (std::min)((int)sizeof(effect.Data), effectSize));
             Proto::CATALOG_EFFECT& data = effect.Data;
             if (data.Item >= ITEM_MAX_EX || data.BoneCount == 0 || data.BoneCount > Proto::CATALOG_EFFECT_MAX_BONES) continue;
             data.Texture[sizeof(data.Texture) - 1] = 0;
@@ -351,7 +355,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
     // Registros más largos: se ignora lo que no se conoce.  Más cortos: el
     // resto queda en 0 (formato tolerante, ver el diseño).
     Proto::CATALOG_ITEM row = {};
-    memcpy(&row, record, min((int)sizeof(row), recordSize));
+    memcpy(&row, record, (std::min)((int)sizeof(row), recordSize));
     if (row.Index >= ITEM_MAX_EX) return;
 
     ITEM_ATTRIBUTE* attr = Attributes() + row.Index;
@@ -386,6 +390,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
 
     ItemExtraData& extra = s_Items[row.Index];
     extra.Present = true;
+    extra.Skill = row.Skill;
     extra.Behavior = (row.Behavior < ITEM_MAX_EX) ? row.Behavior : row.Index;
     extra.Slot = (row.Slot < 12) ? row.Slot : -1;
     if (row.Flags & Proto::CATALOG_ITEM_HAS_GLOW) {
@@ -446,7 +451,7 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     }
 
     char dir[128];
-    _snprintf_s(dir, sizeof(dir), _TRUNCATE, "Data\\%s", sub);
+    Platform::TextFormatTruncated(dir, sizeof(dir), Platform::TruncateText, "Data\\%s", sub);
     AccessModel(slot, dir, name, -1);
     const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
     if (*(const short*)(model + 0x24) <= 0) {
@@ -494,7 +499,7 @@ int CContentCatalog::LoadTexture(const char* path)
     }
     const int slot = m_NextTexture++;
     const char* ext = strrchr(sub, '.');
-    const bool tga = ext && (_stricmp(ext, ".tga") == 0);
+    const bool tga = ext && (Platform::TextCompareIgnoreCase(ext, ".tga") == 0);
     if (tga) OpenTGA(sub, slot, 0x2601, 0x2900, 0, '\x01');
     else     OpenJPG(sub, slot, 0x2601, 0x2900, 0, '\x01');
     s_LoadedTextures[sub] = slot;
@@ -529,6 +534,12 @@ void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPt
             }
         }
     }
+}
+
+int CContentCatalog::GetItemSkill(int type) const
+{
+    if (type < 0 || type >= ITEM_MAX_EX || !s_Items[type].Present) return -1;
+    return s_Items[type].Skill;
 }
 
 int CContentCatalog::GetItemBehavior(int type) const
@@ -586,15 +597,14 @@ bool CContentCatalog::GetMapFog(int map, float day[3], float night[3]) const
 
 void CContentCatalog::GetFogColor(int map, float rgba[4])
 {
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     if (map != m_FogMap || now - m_FogTick >= 10000) {
         m_FogMap = map;
         m_FogTick = now;
         float day[3] = { 127 / 255.0f, 178 / 255.0f, 1.0f };   // MapFog.h del DLL
         float night[3] = { 51 / 255.0f, 51 / 255.0f, 51 / 255.0f };
         GetMapFog(map, day, night);
-        SYSTEMTIME time;
-        GetLocalTime(&time);
+        const auto time = Platform::GetTimer().LocalTime();
         const float minute = time.wMinute / 60.0f;
         float t = 0.0f;
         if (time.wHour == 7) t = minute;

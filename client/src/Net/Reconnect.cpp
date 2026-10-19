@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ISocket.h"
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Net/Network.h"
 #include "Core/Font.h"
@@ -23,7 +26,7 @@ constexpr int ErrorMessageReconnect = 0x1B;   // DLL ReconnectMainProc
 void CReconnect::OnGameServerConnect(const char* ip, WORD port)
 {
     if (!ip || !port) return;
-    strncpy_s(m_Address, ip, _TRUNCATE);
+    Platform::TextCopySecure(m_Address, ip, Platform::TruncateText);
     m_Port = port;
 }
 
@@ -40,7 +43,7 @@ void CReconnect::OnLoginSent(const char* account, const char* password)
 void CReconnect::SetProgress(Progress progress, DWORD retryWait)
 {
     m_Progress = progress;
-    m_StepTime = GetTickCount();
+    m_StepTime = Platform::GetTimer().Ticks();
     m_RetryWait = retryWait;
 }
 
@@ -55,7 +58,7 @@ bool CReconnect::OnConnectionLost()
         return false;
 
     m_Status = STATUS_RECONNECT;
-    m_StartTime = GetTickCount();
+    m_StartTime = Platform::GetTimer().Ticks();
     m_LoginSent = false;
     SetProgress(PROGRESS_CONNECT, 0);
     memset(m_Name, 0, sizeof(m_Name));
@@ -77,9 +80,9 @@ void CReconnect::GiveUp()
 {
     m_Status = STATUS_DISCONNECT;
     DAT_083a7c24 = 0;   // ErrorMessage
-    if (SocketClientSocket != 0xffffffff) {
-        closesocket((SOCKET)SocketClientSocket);
-        SocketClientSocket = (DWORD)INVALID_SOCKET;
+    if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+        Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+        SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
     }
     extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
     UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
@@ -97,7 +100,7 @@ void CReconnect::Tick()
 {
     if (m_Status != STATUS_RECONNECT) return;
     DAT_083a7c24 = ErrorMessageReconnect;   // ErrorMessage, como el DLL
-    const DWORD now = GetTickCount();
+    const DWORD now = Platform::GetTimer().Ticks();
     if (now - m_StartTime > ReconnectTimeout) { GiveUp(); return; }
     if (now - m_StepTime < m_RetryWait) return;
 
@@ -113,16 +116,16 @@ void CReconnect::Tick()
     case PROGRESS_LOGIN:
         if (!m_LoginSent) { SendLogin(); break; }      // no llegó el F1/00
         // Sin respuesta: empezar de nuevo.
-        if (SocketClientSocket != 0xffffffff) {
-            closesocket((SOCKET)SocketClientSocket);
-            SocketClientSocket = (DWORD)INVALID_SOCKET;
+        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;
     default:
-        if (SocketClientSocket != 0xffffffff) {
-            closesocket((SOCKET)SocketClientSocket);
-            SocketClientSocket = (DWORD)INVALID_SOCKET;
+        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
         }
         SetProgress(PROGRESS_CONNECT, ConnectRetry);
         break;
@@ -176,7 +179,7 @@ void CReconnect::OnCharacterInfo()
 bool CReconnect::ExitIfActive()
 {
     if (m_Status != STATUS_RECONNECT) return false;
-    SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+    gWindow.RequestCloseApplication();
     return true;
 }
 
@@ -187,7 +190,7 @@ void CReconnect::Render()
     if (m_Status != STATUS_RECONNECT) return;
     constexpr float Width = 150.0f, Height = 18.0f;
     const float x = 320.0f - Width / 2.0f, y = 240.0f - Height / 2.0f;
-    float progress = (GetTickCount() - m_StartTime) * Width / (float)ReconnectTimeout;
+    float progress = (Platform::GetTimer().Ticks() - m_StartTime) * Width / (float)ReconnectTimeout;
     if (progress > Width) progress = Width;
     EnableAlphaTest(true);
     glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
@@ -202,7 +205,7 @@ void CReconnect::Render()
         ClientTextId::ReconnectCharList, ClientTextId::ReconnectCharInfo };
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     EnableAlphaTest(true);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText((int)x, (int)y + 5, const_cast<char*>(gClientText.Get(Steps[m_Progress])),

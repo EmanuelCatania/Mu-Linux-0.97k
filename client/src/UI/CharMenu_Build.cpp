@@ -4,6 +4,7 @@
 // GlobalText[120..159]; 3 es la tabla de valores del item DAT_07e11d24.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -259,7 +260,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     }
     local_8.cx = 0;
     local_8.cy = 0;
-    GetTextExtentPointA(gFont.GetTextDC(), pszText, lstrlenA(pszText), &local_8);
+    gFont.MeasureText(gFont.GetTextDC(), pszText, Platform::TextLength(pszText), &local_8);
     fVar4  = 0.0f;
     iWidth = local_8.cx;
     if (iSort == 1) {
@@ -365,8 +366,8 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             if (*piVar2 != 0) {
                 pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
             }
-            SelectObject(gFont.GetTextDC(), pHVar9);
-            GetTextExtentPointA(gFont.GetTextDC(), pCVar3, lstrlenA(pCVar3), &local_8);
+            gFont.SelectFont(gFont.GetTextDC(), pHVar9);
+            gFont.MeasureText(gFont.GetTextDC(), pCVar3, Platform::TextLength(pCVar3), &local_8);
             if (local_18 < (float)local_8.cx) {
                 local_18 = (float)local_8.cx;
             }
@@ -423,9 +424,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             if (DAT_07ea7b10[iVar1] != 0) {
                 pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
             }
-            SelectObject(gFont.GetTextDC(), pHVar9);
+            gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {
-                GetTextExtentPointA(gFont.GetTextDC(), pCVar3, lstrlenA(pCVar3), &local_8);
+                gFont.MeasureText(gFont.GetTextDC(), pCVar3, Platform::TextLength(pCVar3), &local_8);
                 if (*pCVar3 == '\n') {
                     fAdvance = ((float)local_8.cy / gWindow.GetScreenRateY()) / 2.0f;
                 }
@@ -563,7 +564,7 @@ void __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *valu
 
     SIZE sz = { 0, 0 };
     const char* ref = widthRef ? widthRef : lpString_07e90798 + (DAT_07eaa154 - 1) * 100;
-    GetTextExtentPointA((HDC)gFont.GetTextDC(), ref, lstrlenA(ref), &sz);
+    gFont.MeasureText((HDC)gFont.GetTextDC(), ref, Platform::TextLength(ref), &sz);
     *value += (int)((double)sz.cx / gWindow.GetScreenRateX());
     DAT_07eaa154 = DAT_07eaa154 - 1 - last;
 }

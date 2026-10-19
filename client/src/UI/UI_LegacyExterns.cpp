@@ -1,6 +1,11 @@
+#include <cstdint>
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Platform/IGLContext.h"
+#include "Platform/Text.h"
+#include "Platform/GuardedOperation.h"
+#include "Platform/ITimer.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -85,7 +90,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     if (count <= 0 || !gFont.GetTextDC()) return;
 
     TEXTMETRICA tm = {};
-    GetTextMetricsA(gFont.GetTextDC(), &tm);
+    gFont.TextMetrics(gFont.GetTextDC(), &tm);
     const int lineH = tm.tmHeight + tm.tmExternalLeading;
     const int padX = 4;
     const int padY = 3;
@@ -93,7 +98,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     int maxWidth = 0;
     for (int i = 0; i < count; ++i) {
         SIZE sz = {};
-        GetTextExtentPointA(gFont.GetTextDC(), lines[i], (int)strlen(lines[i]), &sz);
+        gFont.MeasureText(gFont.GetTextDC(), lines[i], (int)strlen(lines[i]), &sz);
         if (sz.cx > maxWidth) maxWidth = sz.cx;
     }
 
@@ -145,10 +150,10 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     char lines[5][100] = {};
     int count = 0;
-    sprintf_s(lines[count++], 100, "%s", szName);
-    if (piDistance > 0) sprintf_s(lines[count++], 100, "Distance: %d", piDistance);
-    sprintf_s(lines[count++], 100, "Mana: %d", piMana);
-    if (piSkillMana > 0) sprintf_s(lines[count++], 100, "Skill Mana: %d", piSkillMana);
+    Platform::TextFormatSecure(lines[count++], 100, "%s", szName);
+    if (piDistance > 0) Platform::TextFormatSecure(lines[count++], 100, "Distance: %d", piDistance);
+    Platform::TextFormatSecure(lines[count++], 100, "Mana: %d", piMana);
+    if (piSkillMana > 0) Platform::TextFormatSecure(lines[count++], 100, "Skill Mana: %d", piSkillMana);
     SkillTooltip_RenderLines((int)a1, a2, lines, count);
     return;
 
@@ -171,11 +176,11 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     int* TextListColor = DAT_07e91708;
     int* TextBold = DAT_07ea7b10;
 
-    sprintf_s(TextList0, 100, "\n");
-    sprintf_s(TextListN(1), 100, "%s", szName);
+    Platform::TextFormatSecure(TextList0, 100, "\n");
+    Platform::TextFormatSecure(TextListN(1), 100, "%s", szName);
     TextListColor[1] = 1;
     TextBold[1] = 1;
-    sprintf_s(TextListN(2), 100, "\n");
+    Platform::TextFormatSecure(TextListN(2), 100, "\n");
 
     int v10 = 3;
     int heroClassFlag = *(unsigned char*)(Hero + 444) & 7;
@@ -190,15 +195,15 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
             int dmg = (int)((double)agi * 0.02 + (double)ene * 0.0049999999 + 10.0);
             int strBoost = (int)((double)str * 0.02);
             int dur = (int)((double)ene * 0.025 + 60.0);
-            sprintf_s(TextListN(3), 100, GlobalText[578], (unsigned int)dmg);
+            Platform::TextFormatSecure(TextListN(3), 100, GlobalText[578], (unsigned int)dmg);
             TextListColor[3] = 0; TextBold[3] = 0;
-            sprintf_s(TextListN(4), 100, GlobalText[880], strBoost);
+            Platform::TextFormatSecure(TextListN(4), 100, GlobalText[880], strBoost);
             TextListColor[4] = 0; TextBold[4] = 0;
-            sprintf_s(TextListN(5), 100, GlobalText[881], (unsigned int)dur);
+            Platform::TextFormatSecure(TextListN(5), 100, GlobalText[881], (unsigned int)dur);
             TextListColor[5] = 0; TextBold[5] = 0;
             v10 = 6;
         } else {
-            sprintf_s(TextListN(3), 100, GlobalText[170], piMinDamage, piMaxDamage);
+            Platform::TextFormatSecure(TextListN(3), 100, GlobalText[170], piMinDamage, piMaxDamage);
             TextListColor[3] = 0; TextBold[3] = 0;
             v10 = 4;
         }
@@ -210,13 +215,13 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
         bool emitted = true;
         switch (skillType) {
         case 0x1A:
-            sprintf_s(TextListN(v10), 100, GlobalText[171], ene / 5 + 5);
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[171], ene / 5 + 5);
             break;
         case 0x1B:
-            sprintf_s(TextListN(v10), 100, GlobalText[172], (ene >> 3) + 2);
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[172], (ene >> 3) + 2);
             break;
         case 0x1C:
-            sprintf_s(TextListN(v10), 100, GlobalText[173], ene / 7 + 3);
+            Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[173], ene / 7 + 3);
             break;
         default:
             emitted = false;
@@ -231,21 +236,21 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     // Distance line
     if (piDistance) {
-        sprintf_s(TextListN(v10), 100, GlobalText[174], piDistance);
+        Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[174], piDistance);
         TextListColor[v10] = 0;
         TextBold[v10] = 0;
         v10++;
     }
 
     // Mana line
-    sprintf_s(TextListN(v10), 100, GlobalText[175], piMana);
+    Platform::TextFormatSecure(TextListN(v10), 100, GlobalText[175], piMana);
     TextListColor[v10] = 0;
     TextBold[v10] = 0;
     int v15 = v10 + 1;
 
     // SkillMana (if > 0)
     if (piSkillMana > 0) {
-        sprintf_s(TextListN(v15), 100, GlobalText[360], piSkillMana);
+        Platform::TextFormatSecure(TextListN(v15), 100, GlobalText[360], piSkillMana);
         TextListColor[v15] = 0;
         TextBold[v15] = 0;
         v15++;
@@ -253,20 +258,20 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 
     // Class 1 (DK) + skill 47 → "cannot use" message
     if (heroClassFlag == 1 && skillType == 47) {
-        sprintf_s(TextListN(v15), 100, "%s", GlobalText[96]);
+        Platform::TextFormatSecure(TextListN(v15), 100, "%s", GlobalText[96]);
         TextListColor[v15] = 5;
         TextBold[v15] = 0;
         v15++;
     }
 
-    sprintf_s(TextListN(v15), 100, "\n");
+    Platform::TextFormatSecure(TextListN(v15), 100, "\n");
     int v16 = v15 + 1;
 
     // Anti-tamper XOR encryption pass on CharacterMachine — skipped (anti-tamper).
 
     // Compute Y position from text height
     SIZE sz; sz.cx = 0; sz.cy = 0;
-    GetTextExtentPointA(gFont.GetTextDC(), TextList0, 1, &sz);
+    gFont.MeasureText(gFont.GetTextDC(), TextList0, 1, &sz);
     int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
     float yPos = (float)v31 / gWindow.GetScreenRateY();
 
@@ -282,7 +287,9 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
 {
     int skillTipX = *(int*)&a1;
-    if (a3 < 0 || a3 >= 60 || !CharacterAttribute || !Hero) return;
+    // Skill[60] comienza en +87 dentro de la reserva de 0x584 bytes.
+    if (a3 < 0 || a3 >= 60 || !CharacterAttribute || !Hero ||
+        CharacterAttribute != DAT_07cf1ffc) return;
 
     unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
     if (skillType == 0 || skillType >= 64) return;
@@ -303,7 +310,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     else if (skillStatRec && ((const char*)skillStatRec)[0] != '\0')
         skillName = (const char*)skillStatRec;
     if (skillName && skillName[0]) {
-        strncpy_s(szName, sizeof(szName), skillName, 31);
+        Platform::TextCopySecure(szName, sizeof(szName), skillName, 31);
         szName[31] = '\0';
     }
     GetSkillInformation((int)skillType, 1, szName[0] ? NULL : szName, &piMana, &piDistance, &piSkillMana);
@@ -320,14 +327,16 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     if (piMana < 0 || piMana > 5000) piMana = 0;
     if (piSkillMana < 0 || piSkillMana > 5000) piSkillMana = 0;
 
-    if (CharacterMachine && skillStatRec) {
-        __try {
+    // La fila ya esta acotada a 64 * 0x28; Damage ocupa +0x24..25.
+    // Los bonus +70/+72 pertenecen al CharacterMachine reservado en WinMain.
+    if (CharacterMachine && CharacterMachine == DAT_07cf1ffc && skillStatRec) {
+        if (!Platform::RunValidatedOperation([&]() {
             int baseDamage = (int)*(WORD*)(skillStatRec + 0x24);
             if (baseDamage > 0 && baseDamage < 5000) {
                 piMinDamage = baseDamage + *(unsigned short*)((char*)CharacterMachine + 70);
                 piMaxDamage = baseDamage + (baseDamage >> 1) + *(unsigned short*)((char*)CharacterMachine + 72);
             }
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
+        })) {
             piMinDamage = 0;
             piMaxDamage = 0;
         }
@@ -362,7 +371,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     DAT_07ea7b10[idx] = 0;
     idx++;
 
-    _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", szName);
+    Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", szName);
     DAT_07e91708[idx] = 1;
     DAT_07ea7b10[idx] = 1;
     idx++;
@@ -373,28 +382,28 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     idx++;
 
     if (piMinDamage > 0 || piMaxDamage > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(170, "Wizardry Dmg:%d~%d"), piMinDamage, piMaxDamage);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     if (piDistance > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(174, "Range: %d"), piDistance);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(175, "Mana: %d"), piMana);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
         idx++;
     }
     if (piSkillMana > 0) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText,
                     GlobalTextOr(360, "AG: %d"), piSkillMana);
         DAT_07e91708[idx] = 0;
         DAT_07ea7b10[idx] = 0;
@@ -404,7 +413,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
     if (Hero && ((*(BYTE*)((char*)Hero + 0x1BC) & 7) == 1) && skillType == 47) {
-        _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", GlobalTextOr(96, ""));
+        Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
         DAT_07e91708[idx] = 5;
         DAT_07ea7b10[idx] = 0;
         idx++;
@@ -423,7 +432,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
         SIZE sz;
         sz.cx = 0;
         sz.cy = 0;
-        GetTextExtentPointA(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
+        gFont.MeasureText(gFont.GetTextDC(), lpString_07e90798, 1, &sz);
         int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
         int yBox = a2 - (int)((float)v31 / gWindow.GetScreenRateY());
         CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
@@ -443,22 +452,17 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 // IDA original delega al `CUIRenderText::RenderText` que maneja iSort
 // internamente; lo replicamos inline acá.
 // IDA: FUN_0047F7A0
-void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6) {
+void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6, size_t textCapacity) {
     (void)param_6;
-    if (param_3 == nullptr) return;
-    // Validar el puntero antes de cualquier strlen: llegan punteros chicos
-    // (< 0x100000, p.ej. 0x2A00 = type*64 con DAT_07d78068=0).
-    // Range: heap user-space [0x100000..0x80000000). rdata strings in our
-    // exe live in [0x004XXXXX..0x00500000) — also valid.
-    {
-        uintptr_t p = (uintptr_t)param_3;
-        if (p < 0x100000 || p >= 0x80000000) return;
-    }
-    __try {
-        if (strlen(param_3) == 0 && param_4 == 0) return;
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        return;   // strlen crashed — bogus param_3
-    }
+    if (!param_3 || textCapacity == 0) return;
+    // El caller entrega la capacidad de su array/slot, o la longitud ya
+    // medida por su API de cadena. No inferir validez de direcciones virtuales.
+    bool valid = false;
+    bool empty = false;
+    if (!Platform::RunValidatedOperation([&]() {
+        valid = memchr(param_3, 0, textCapacity) != nullptr;
+        if (valid) empty = param_3[0] == 0;
+    }) || !valid || (empty && param_4 == 0)) return;
 
     int x = param_1;
 
@@ -595,7 +599,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text)
     HDC hFontDC = gFont.GetTextDC();
     if (!hFontDC) return 0;
     SIZE sz = {0, 0};
-    if (!GetTextExtentPointA(hFontDC, text, (int)strlen(text), &sz)) return 0;
+    if (!gFont.MeasureText(hFontDC, text, (int)strlen(text), &sz)) return 0;
     float sx, sy;
     Text_PixelToOrthoScale(&sx, &sy);
     return (int)((float)sz.cx / sx);
@@ -720,7 +724,7 @@ static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
         SIZE sz = {0, 0};
         int  nch = out[i].charIndex;
         if (nch > (int)w) nch = (int)w;
-        if (hFontDC && nch > 0) GetTextExtentPointA(hFontDC, dst, nch, &sz);
+        if (hFontDC && nch > 0) gFont.MeasureText(hFontDC, dst, nch, &sz);
         out[i].pixelStart = sz.cx;
         out[i].pixelX     = sz.cx ? sz.cx - 1 : 0;
     }
@@ -739,8 +743,8 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     //     CUIRenderText::RenderText(g_pRenderText, iPos_x, iPos_y, ..., 640)
     // y ese 640 es el ancho del espacio de referencia. Quien convierte a pixel
     // es el subclass, `sub_410AF0` (L101-103):
-    //     sub_47F4C0((__int64)(v22 * g_fScreenRate_x + (v15 << 8)),
-    //                (__int64)(v24 * g_fScreenRate_y), Width, Height, ...);
+    //     sub_47F4C0((std::int64_t)(v22 * g_fScreenRate_x + (v15 << 8)),
+    //                (std::int64_t)(v24 * g_fScreenRate_y), Width, Height, ...);
     // o sea logico * escala = pixel. `sub_47F4C0` ya recibe TODO en pixeles y
     // por eso compara contra WindowWidth directamente.
     //
@@ -767,7 +771,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // ── DIAG: log first call per second to see what text is being requested
     {
         static DWORD s_lastTxt = 0;
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         if (now - s_lastTxt > 1000) {
             s_lastTxt = now;
         }
@@ -786,7 +790,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         if (*drawText == '\0') return;
     }
 
-    HGLRC hRC = wglGetCurrentContext();
+    void* hRC = Platform::GetGLContext().CurrentIdentity();
     if (!hRC) return;
 
     HDC hFontDC = gFont.GetTextDC();
@@ -798,19 +802,19 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // vía CUIRenderText::SetFont; g_hFontBig: HUD_Pass3, doble tamaño) y miden el
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
-    HFONT hFont = (HFONT)GetCurrentObject(hFontDC, OBJ_FONT);
+    HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
     if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
     if (hFont == NULL) return;
 
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
     // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { HGLRC rc; HFONT font; GLuint base; int ascent; };
+    struct FontLists { void* rc; HFONT font; GLuint base; int ascent; unsigned generation; };
     static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
     static int       s_next = 0;
 
     int slot = -1;
     for (int i = 0; i < 4; ++i) {
-        if (s_cache[i].base != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont) {
+        if (s_cache[i].base != 0 && s_cache[i].rc == hRC && s_cache[i].font == hFont && s_cache[i].generation == gFont.Generation()) {
             slot = i;
             break;
         }
@@ -854,7 +858,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         GLint prevAlign = 4;
         glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        const BOOL fontOk = wglUseFontBitmapsA(hFontDC, 0, 256, base);
+        const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
         glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
         if (!fontOk) {
             glDeleteLists(base, 256);
@@ -862,11 +866,12 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         }
         TEXTMETRICA tm;
         int ascent = 11;
-        if (GetTextMetricsA(hFontDC, &tm)) ascent = tm.tmAscent;
+        if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
         s_cache[slot].rc     = hRC;
         s_cache[slot].font   = hFont;
         s_cache[slot].base   = base;
         s_cache[slot].ascent = ascent;
+        s_cache[slot].generation = gFont.Generation();
     }
     const GLuint s_fontListBase = s_cache[slot].base;
     const int    s_ascent       = s_cache[slot].ascent;
@@ -892,7 +897,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         // contra WindowWidth/Height directamente — igual que `sub_47F4C0` con
         // a7 = 0:  `else if (Width + x > WindowWidth) x = WindowWidth - Width;`
         SIZE tot = {0, 0};
-        GetTextExtentPointA(hFontDC, drawText, (int)strlen(drawText), &tot);
+        gFont.MeasureText(hFontDC, drawText, (int)strlen(drawText), &tot);
         float wOrtho = (float)tot.cx;
         float hOrtho = (float)tot.cy;
         if (x < 0) x = 0;
@@ -977,7 +982,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             float runX  = (float)x + (float)runPx;   // pixel + pixel
 
             SIZE bsz = {0, 0};
-            BOOL haveExtent = GetTextExtentPointA(hFontDC, drawText + startChar,
+            BOOL haveExtent = gFont.MeasureText(hFontDC, drawText + startChar,
                                                   endChar - startChar, &bsz);
 
             GLubyte bA = (GLubyte)((bc >> 24) & 0xFF);

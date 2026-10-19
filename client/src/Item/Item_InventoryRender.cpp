@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_InventoryRender.cpp
 //
 // Pases de render del inventario y del equipo.
@@ -382,7 +383,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                             float fx = (float)(r4 % 0x14) + x;
                             int r5 = rand();
                             float fy = (float)(r5 % 0x14) + y;
-                            float mixRot = (float)((__int64)DAT_05826e08 % 100) * 20.0f;
+                            float mixRot = (float)((std::int64_t)DAT_05826e08 % 100) * 20.0f;
                             glColor3f(colorR, colorG, 0.2f);
                             GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, 0);
                             GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);

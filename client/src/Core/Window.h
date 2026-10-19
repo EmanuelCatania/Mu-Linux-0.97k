@@ -11,10 +11,10 @@
 // El resto del cliente lee el estado con los getters de `gWindow`; sólo
 // Config_Load (resolución y modo) y esta clase lo escriben.
 //
-// El WndProc todavía vive en WinMain.cpp: mezcla input, red y chat, y se va a
-// repartir entre esos módulos cuando se armen.
+// WndProc vive en Core/WndProc.cpp; su orden de despacho se conserva.
+// La ventana nativa y su contexto OpenGL viven en Platform/Win32.
 
-#include <windows.h>
+#include "Platform/PlatformHeaders.h"
 
 class CWindow {
 public:
@@ -28,9 +28,15 @@ public:
     // Libera el contexto OpenGL y restaura el modo de video si se cambió.
     void ReleaseOpenGL();
 
+    // Presenta el frame en el mismo punto que el SwapBuffers original.
+    void Present();
+
     // Devuelve el escritorio a su modo original si lo cambiamos nosotros.
     // Idempotente y llamable desde un filtro de excepciones.
     void RestoreDisplay();
+
+    // Cierre síncrono de la aplicación, también para errores de carga.
+    void RequestCloseApplication();
 
     // Título del DLL: personaje, nivel, ping y FPS durante el juego.
     void UpdateTitle();
@@ -43,10 +49,10 @@ public:
     // la ventana ya creada, desde el menú de opciones.
     void ChangeMode(bool windowMode, bool borderless, DWORD width, DWORD height);
 
-    HWND      GetHwnd()        const { return m_hWnd; }
-    HINSTANCE GetInstance()    const { return m_hInst; }
-    HDC       GetHdc()         const { return m_hDC; }
-    HGLRC     GetGLContext()   const { return m_hRC; }
+    HWND      GetHwnd()        const;
+    HINSTANCE GetInstance()    const;
+    HDC       GetHdc()         const;
+    HGLRC     GetGLContext()   const;
     DWORD     GetWidth()       const { return m_Width; }
     DWORD     GetHeight()      const { return m_Height; }
     float     GetScreenRateX() const { return m_ScreenRateX; }
@@ -55,15 +61,8 @@ public:
     bool      IsBorderless()   const { return m_Borderless; }
 
 private:
-    void ApplyFullscreen();
-
     DWORD m_LastTitleUpdate = 0;
     int m_TitleScene = -1;
-
-    HWND      m_hWnd  = NULL;
-    HINSTANCE m_hInst = NULL;
-    HDC       m_hDC   = NULL;
-    HGLRC     m_hRC   = NULL;
 
     DWORD m_Width       = 640;
     DWORD m_Height      = 480;
@@ -74,8 +73,6 @@ private:
     bool m_WindowMode = true;
     bool m_Borderless = false;
 
-    // true sólo si ApplyFullscreen cambió el modo de video.
-    bool m_DisplayModeChanged = false;
 };
 
 extern CWindow gWindow;

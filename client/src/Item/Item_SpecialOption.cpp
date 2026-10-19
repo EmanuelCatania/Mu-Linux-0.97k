@@ -1,3 +1,4 @@
+#include <cstdint>
 // Item_SpecialOption.cpp
 
 #include "stdafx.h"
@@ -14,5 +15,5 @@ unsigned int __cdecl Item_GetDefenseWithSpecial(DWORD ecx, short* param_1) {
     if (!param_1 || *param_1 == -1) return 0;
     unsigned short value = (unsigned short)param_1[9];
     PlusSpecial(&value, 63, (DWORD)(uintptr_t)param_1);
-    return (unsigned int)(short)value;   // IDA devuelve __int16
+    return (unsigned int)(short)value;   // IDA devuelve std::int16_t
 }

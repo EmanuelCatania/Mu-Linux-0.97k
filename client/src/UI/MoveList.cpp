@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
 #include "UI/EventTimer.h"
@@ -158,7 +159,7 @@ void CMoveList::UpdateMouse()
         const auto& map = m_Maps[m_Page * RowsPerPage + i];
         if (!CheckMove(map)) return;
         char command[64];
-        sprintf_s(command, "/move %s", map.MapName);
+        Platform::TextFormatSecure(command, "/move %s", map.MapName);
         // DESVIACION (DLL MoveList.cpp): el server valida saldo, PK, equipo y requisitos.
         SendChat(command); // C1/00 mediante gNetwork; conserva el límite de frecuencia.
         Toggle();
@@ -171,7 +172,7 @@ void CMoveList::Render()
     if (!m_Open || Blocked()) return;
     const int rows = VisibleRows();
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
-    HGDIOBJ font = SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
+    HGDIOBJ font = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwBackColor = 0;
     Rect(Layout::X, Layout::Y, Layout::Width, Layout::BaseHeight + rows * Layout::RowStep, 0, 0, 0, .8f);
     m_dwTextColor = 0xFF00FFFF;
@@ -192,9 +193,9 @@ void CMoveList::Render()
         m_dwTextColor = CheckMove(map) ? 0xFFFFFFFF : 0xFF1127A4;
         Text(Layout::MapX, y, map.MapName, Layout::MapWidth);
         char text[32];
-        if (map.MinLevel == -1) strcpy_s(text, "~"); else sprintf_s(text, "%d", map.MinLevel);
+        if (map.MinLevel == -1) Platform::TextCopySecure(text, "~"); else Platform::TextFormatSecure(text, "%d", map.MinLevel);
         Text(Layout::LevelX, y, text, Layout::LevelWidth);
-        sprintf_s(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
+        Platform::TextFormatSecure(text, "%lu", (unsigned long)map.Money); Text(Layout::ZenX, y, text, Layout::ZenWidth);
         if (map.AccountLevel > 0) Text(Layout::VipX, y, "*", Layout::VipWidth);
     }
     m_dwTextColor = 0xFFFFFFFF;
@@ -209,7 +210,7 @@ void CMoveList::Render()
         if (m_Page > 0) Text(Layout::PreviousX, footer, gClientText.Get(ClientTextId::PagePrevious), Layout::ButtonWidth);
         if ((m_Page + 1) * RowsPerPage < m_Count) Text(Layout::NextX, footer, gClientText.Get(ClientTextId::PageNext), Layout::ButtonWidth);
     }
-    SelectObject(gFont.GetTextDC(), font);
+    gFont.SelectFont(gFont.GetTextDC(), font);
     m_dwTextColor = color;
     m_dwBackColor = back;
     glColor4f(1, 1, 1, 1);

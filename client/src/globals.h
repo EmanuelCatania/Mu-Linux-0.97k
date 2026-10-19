@@ -730,7 +730,7 @@ extern DWORD   DAT_07e127f8;
 extern unsigned char DAT_07e12840[1000 * 0x204];   // GroundItem pool: 1000 × 0x204 bytes
 extern DWORD   DAT_07e12945;   // sprite render loop base (stride 0x204)
 extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
-extern DWORD   DAT_07e91388;
+extern "C" DWORD   DAT_07e91388;
 extern byte    DAT_07e9138e;   // UI grid selected column (byte, Item_ReturnPickedItem)
 extern byte    DAT_07e9138f;   // UI grid selected row (byte, Item_ReturnPickedItem)
 extern short   DAT_07e91394[10];   // IDA: word_7E91394
@@ -805,8 +805,8 @@ extern char    DAT_07eaa11a;
 extern char    DAT_07eaa11b;
 extern char    DAT_07eaa11c;
 extern DWORD   DAT_07eaa124;
-extern DWORD   GoldenArcherOpenType;   // IDA: DAT_07eaa128 (0x07EAA128)
-extern DWORD   DAT_07eaa13c;
+extern "C" DWORD   GoldenArcherOpenType;   // IDA: DAT_07eaa128 (0x07EAA128)
+extern "C" DWORD   DAT_07eaa13c;
 extern DWORD   MixType;   // guild join/select current selection index  [IDA 0x07EAA16C]
 extern DWORD   DAT_07eaa144;
 extern DWORD   DAT_07eaa148;   // shop/item selection C
@@ -1045,7 +1045,7 @@ extern char    DAT_083a45d8[0x3600];   // server list buffer (stride 0x21e, 24 e
 extern char    DAT_07d52c34[24 * 300];
 
 // Login/scene init flags (byte-sized)
-extern char    DAT_083a7ac8;
+extern DWORD   DAT_083a7ac8;   // IDA: unk_83A7AC8 (0x083A7AC8), GetTickCount al empezar a conectar
 extern char    DAT_083a7acc;
 // CurrentCameraAngle[3] contiguous (see globals.cpp).
 extern float   CurrentCameraAngle[3];
@@ -1129,15 +1129,11 @@ extern char    g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38];
 #define DAT_083a7cd0  (*(char*)  &g_BitmapsRaw[0x30])
 #define DAT_083a7cd4  (*(DWORD*) &g_BitmapsRaw[0x34])
 extern DWORD   m_dwUsedTextureMemory;   // IDA: DAT_083bb9d0 (0x083BB9D0)
-extern DWORD   DAT_083bbb14;
-extern char    lpBuffer_083bbb60[0x400]; // named pipe write buffer (Pipe_WriteFile)
-extern DWORD   DAT_083bbb64;             // named pipe bytes written count
 extern DWORD   DAT_083bbb68;
 extern DWORD   DAT_083bbb6c;
 extern DWORD   DAT_083bbb74;
 
 // ── Named pipe handle (0x00563b58) ────────────────────────────────────────────
-extern HANDLE  lpTargetHandle_00563b58;  // handle to named pipe (MuHelper/plugin IPC)
 
 // ── Model data table (0x05828d58, stride 0xbc per entity_type) ────────────────
 extern DWORD   DAT_05828d58;   // model data array base; slot = DAT_05828d58 + type*0xbc
@@ -1246,7 +1242,7 @@ extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por l
 // extern char    DAT_07d34134;        // class name table B (first entry base)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d34260;        // class info list B (stride 300, limit 0x7d358a4)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d358a4;        // class name / info buffer C   // -> alias a GlobalText, ver el final del archivo
-extern int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
+extern "C" int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
 // ── Posición del item que se está arrastrando ───────────────────────────────
 // En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
 // slot 32, campo Type en offset 0) — lo usan sub_47D410 (preview de stats) y el
@@ -1264,8 +1260,19 @@ extern "C" BYTE Inventory[];
 // que los callers no computen attrBase = type*0x40 + basura.
 static __forceinline unsigned int ItemAttribute_Base(void) {
     const unsigned int p = (unsigned int)DAT_07d78068;
-    if (p < 0x100000u || p >= 0x80000000u) return 0;
+    const unsigned int allocation = (unsigned int)DAT_055c9e44;
+    // Reserva: (ITEM_MAX_EX + 0x400) filas de 64 bytes, con base
+    // desplazada hasta 0x3ff filas. No asumir un mapa virtual de Windows.
+    if (!allocation || p < allocation || p - allocation > 0x400u * 64u ||
+        (p - allocation) % 64u != 0) return 0;
     return p;
+}
+// Fila `p` de la tabla ItemAttribute (base + type*64), validada contra la
+// tabla cargada y no contra rangos de direcciones: en Linux x86 el heap puede
+// quedar por encima de 2 GB.
+static __forceinline bool ItemAttribute_IsRow(uintptr_t p) {
+    const uintptr_t base = ItemAttribute_Base();
+    return base && p >= base && (p - base) % 64u == 0 && (p - base) / 64u < (uintptr_t)ITEM_MAX_EX;
 }
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
 // (ver la declaracion de la tabla mas abajo).
@@ -2115,7 +2122,12 @@ extern DWORD   DAT_07e12858;
 extern DWORD   DAT_07ea5284;
 extern DWORD   DAT_07ea5288;
 extern DWORD   DAT_07ea9844;
-extern char    DAT_083a2f78[10 * 0x1bc];   // Ambient particle pool: 10 slots × 0x1bc bytes
+// IDA Ambient_ParticleUpdate (0x00502320): el walker arranca en 0x083A2F78, pero
+// cada slot empieza en `v1 - 58` (-0xE8) y el pool que le pasa a
+// Particle_PathUpdate es &unk_83A2E90. O sea es la MISMA tabla que los boids,
+// vista desde el ancla +0xE8. Como array propio, los campos con índice negativo
+// del slot 0 caían 0xE8 bytes antes y pisaban g_PhysicsManager.
+#define DAT_083a2f78   (DAT_083a2e90 + 0xE8)
 extern float   _DAT_00590af0;
 extern DWORD   g_PhysicsManager[4];   // IDA: g_PhysicsManager (0x083A4338)
 extern float   DAT_00590af4;   // 3D sound sin component (updated by Sound_UpdateChannel3D_Tick)
@@ -2262,7 +2274,7 @@ extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiquet
                                // vieja ("SecondPassword timeout") era falsa: IDA lo
                                // llama MixState y sus writers son ReceiveMix (0x4366C0),
                                // el envio del mix y ReceiveTalk.
-extern DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
+extern "C" DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
 extern DWORD   RepairEnable; // IDA: DAT_07eaa138 (0x07EAA138)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
@@ -2279,12 +2291,12 @@ extern int     DAT_0055a3fc;   // auth mode param B
 
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
 extern DWORD   DAT_07eaa120;   // SecondPassword_Screen5 mode (0=normal, 1=equip-select)
-extern char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
+extern "C" char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
 // Buffers del editor de creacion de GUILD (no "PIN entry"): el render los recorre
 // como arrays (64 bytes de mark). Ver la nota en globals.cpp.
 extern char    DAT_07ea51ec[8];    // GuildName
 #define DAT_07ea51f0 (*(DWORD*)&DAT_07ea51ec[4])   // 2do DWORD del nombre
-extern char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
+extern "C" char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
 extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
@@ -2433,10 +2445,10 @@ extern char    lpText_07d2aa08[];  // fatal-error message string (shown by ExitP
 // Los cuatro pools de items son grids de slots ITEM (stride 0x44). Ojo: su
 // indice de celda es `slot - 12`; los 12 wear slots NO viven aca sino en
 // `CharacterMachine + 536 + 68*slot`.
-extern BYTE  OffsetInventoryItems[];
-extern BYTE  OffsetTradeItems[];
-extern BYTE  OffsetWarehouseItems[];
-extern BYTE  OffsetMixItems[];
+extern "C" BYTE  OffsetInventoryItems[];
+extern "C" BYTE  OffsetTradeItems[];
+extern "C" BYTE  OffsetWarehouseItems[];
+extern "C" BYTE  OffsetMixItems[];
 // TerrainWall = &DAT_0838bc70 (256x256 flags de tile: bit0 safezone, bit1
 // ocupado por entidad, bit3 no-caminable).
 extern unsigned char* TerrainWall;
@@ -2511,7 +2523,6 @@ extern DWORD   DAT_0055389c;
 extern DWORD   DAT_07e11e50;       // _PartyNumber
 extern DWORD   DAT_07e11e54;       // _PartyKey
 
-extern HANDLE  lpTargetHandle_00563b5c; // GameGuard pipe handle B
 extern HANDLE  hEvent;                  // GameGuard sync event
 extern LPVOID  lpParameter;             // IDA: lpParameter (0x083BBAE8) — contexto de
                                         // GameGuard (0x34C bytes) que aloca el pre-init;

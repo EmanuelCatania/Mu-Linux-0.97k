@@ -1,5 +1,7 @@
+#include <cstdint>
 // Particle.cpp
 #include "stdafx.h"
+#include "Platform/Text.h"
 extern "C" { void DbgLogPublic(const char* msg); }
 // IDA: Alpha (0x0043E5C0)
 // Particle_PathUpdate @ 0x0043e680  — Particle_PathUpdate
@@ -117,10 +119,10 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
     if (0 < iVar8) {
       fVar1 = *(float *)(param_1 + 0x10);
       fVar2 = *(float *)(param_1 + 0x14);
-      lVar9 = (longlong)(*(float *)(param_1 + 0xd8));   // IDA sub_43E680: (__int64)*(float*)(a1+216)
+      lVar9 = (longlong)(*(float *)(param_1 + 0xd8));   // IDA sub_43E680: (std::int64_t)*(float*)(a1+216)
       iVar7 = (int)lVar9;
       iVar8 = Math_GetAngleFromPoints(fVar1,fVar2,fVar3 / (float)iVar8 + fVar1,fVar5 / (float)iVar8 + fVar2);
-      lVar9 = (longlong)(*(float *)(param_1 + 0x24));   // IDA sub_43E680: (__int64)*(float*)(a1+36)
+      lVar9 = (longlong)(*(float *)(param_1 + 0x24));   // IDA sub_43E680: (std::int64_t)*(float*)(a1+36)
       iVar7 = Angle_Clamp((int)lVar9,iVar8,iVar7);
       *(float *)(param_1 + 0x24) = (float)iVar7;
       return;
@@ -171,7 +173,7 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
     if (!s_logged) {
       s_logged = true;
       char b[256];
-      _snprintf_s(b, sizeof(b), _TRUNCATE,
+      Platform::TextFormatTruncated(b, sizeof(b), Platform::TruncateText,
         "CreateSprite NULL-arg: type=0x%x scale=%.3f param_2=%p param_4=%p param_5=%d param_7=%d",
         param_1, param_3, param_2, param_4, param_5, param_7);
       DbgLogPublic(b);

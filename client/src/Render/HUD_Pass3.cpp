@@ -14,13 +14,14 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
 #include "Entity/EntityView.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <gl/GL.h>
+#include <GL/gl.h>
 
 // sub_4E38B0 / sub_47F360 / sub_47F4C0 are now ported in HUD_Pass4.cpp.
 // sub_4E9300 is ported in HUD_Pass6.cpp.
@@ -172,8 +173,8 @@ extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y,
 SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
 {
     SIZE sz = {0,0};
-    int n = lstrlenA(pszText);
-    GetTextExtentPointA(gFont.GetTextDC(), pszText, n, &sz);
+    int n = Platform::TextLength(pszText);
+    gFont.MeasureText(gFont.GetTextDC(), pszText, n, &sz);
     int adjustedX = iPos_x - ((640 * sz.cx / (int)gWindow.GetWidth()) >> 1);
     RenderText(adjustedX, iPos_y, (char*)pszText, 0, 0, 0);
     return &TextSize;
@@ -261,7 +262,7 @@ bool __cdecl RenderNumArrow_(void)
         case 4: baseY = 10; break;
     }
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!CharacterMachine) return drewSomething;
 
@@ -274,11 +275,11 @@ bool __cdecl RenderNumArrow_(void)
         int v11 = FUN_00482850_();
         if (v10 > 0 || v11 > 0) {
             CHAR String[100];
-            wsprintfA(String, GlobalText[351], v10, v11);
+            Platform::TextFormat(String, GlobalText[351], v10, v11);
             EnableAlphaTest(true);
-            int n = lstrlenA(String);
+            int n = Platform::TextLength(String);
             SIZE sz = {0,0};
-            GetTextExtentPointA(gFont.GetTextDC(), String, n, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
             drewSomething = true;
         }
@@ -291,11 +292,11 @@ bool __cdecl RenderNumArrow_(void)
         int v14 = FUN_00482850_();
         if (v13 > 0 || v14 > 0) {
             CHAR String[100];
-            wsprintfA(String, GlobalText[352], v13, v14);
+            Platform::TextFormat(String, GlobalText[352], v13, v14);
             EnableAlphaTest(true);
-            int n = lstrlenA(String);
+            int n = Platform::TextLength(String);
             SIZE sz = {0,0};
-            GetTextExtentPointA(gFont.GetTextDC(), String, n, &sz);
+            gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
             Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
             drewSomething = true;
         }
@@ -359,7 +360,7 @@ void Render_HudPass_4BCD20_(void)
     if ((int)MouseX >= 551 && (int)MouseX < 566 &&
         (int)MouseY >= 437 && (int)MouseY < 473) {
         CHAR Buffer[100];
-        wsprintfA(Buffer, GlobalText[214], v3, v23);
+        Platform::TextFormat(Buffer, GlobalText[214], v3, v23);
         RenderTipText(546, 419, Buffer);
     }
 
@@ -466,7 +467,7 @@ void Render_HudPass_4EB070_(void)
     }
     GL_DrawTexture(252, 213.0f, (float)Width, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFC4C4u;   // -15164
 
@@ -514,14 +515,14 @@ void Render_HudPass_4EB070_(void)
     float x = 320.0f - v21;
     GL_DrawTexture(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
     glColor3f(1.0f, 1.0f, 1.0f);
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
 
     CHAR String[29];
     String[0] = (char)byte_7EAA1A4;
     memset(&String[1], 0, sizeof(String) - 1);
     m_dwTextColor = 0xFFC44400u;   // -3899264
-    SelectObject(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
     int v5 = 0;
     int len = (int)strlen(dword_7EA9814);
     if (len > 0) {
@@ -556,7 +557,7 @@ void Render_HudPass_4EB070_(void)
             int v10 = (v20 == v7 && v8) ? 278 : 277;
             GL_DrawTexture(v10, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
             CHAR pszText[32];
-            wsprintfA(pszText, "%d", word_7E91394[v7]);
+            Platform::TextFormat(pszText, "%d", word_7E91394[v7]);
             m_dwBackColor = 0;
             RenderText(40 * (v7 % 5) + 235, v22 - (v8 != 0) + 6, pszText, 0, 0, 0);
         }
@@ -593,8 +594,8 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
 
     int texW = 1;
     int texH = 1;
-    LONG cx = *(int*)(c + 576);
-    LONG cy = *(int*)(c + 580);
+    LONG cx = AsChat(c)->Width;
+    LONG cy = AsChat(c)->Height;
     TextSize.cx = cx;
     TextSize.cy = cy;
 
@@ -606,7 +607,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     //   -983146=0xFFF0FF96  -34716=0xFFFF7864  -19316=0xFFFFB48C
     //   -9016=0xFFFFDCC8  -12806401=0xFF3C96FF  -14790401=0xFF1E50FF
     //   default -16776961=0xFF0000FF
-    BYTE kind = *(BYTE*)(c + 36);
+    BYTE kind = (BYTE)AsChat(c)->Color;
     switch (kind) {
         case 0:  m_dwTextColor = 0xFFF0FF96u; break;
         case 1:  m_dwTextColor = 0xFFFF7864u; break;
@@ -639,7 +640,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     //   mode 0: back=-1773129196=0x96503214  SetTextColor_0=-14116=0xFFFFC8DC
     //   mode 1: back=-1778359236=0x9600643C  SetTextColor_0=-16711736=0xFF00FFC8
     //   otros : back=-1778384796=0x96000064  SetTextColor_0=-16776961=0xFF0000FF
-    BYTE mode = *(BYTE*)(c + 37);
+    BYTE mode = (BYTE)AsChat(c)->GuildColor;
     DWORD bg;
     switch (mode) {
         case 0:  bg = 0x96503214u; SetTextColor_0 = 0xFFFFC8DCu; break;
@@ -648,21 +649,21 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     }
     m_dwBackColor = bg;
 
-    int rectX = *(int*)(c + 568);
-    int rectY = *(int*)(c + 572);
+    int rectX = AsChat(c)->x;
+    int rectY = AsChat(c)->y;
     int rectW = 640 * (int)cx / (int)gWindow.GetWidth();
     int rectH = 480 * (int)cy / (int)gWindow.GetHeight();
     if ((int)MouseX >= rectX && (int)MouseX < rectX + rectW &&
         (int)MouseY >= rectY && (int)MouseY < rectY + rectH &&
-        InputEnable && Hero && *(BYTE*)((BYTE*)(uintptr_t)Hero + 846) &&
-        strcmp((const char*)c, (const char*)((BYTE*)(uintptr_t)Hero + 449)) &&
+        InputEnable && Hero && AsCharacter(Hero)->SafeZone &&
+        strcmp(AsChat(c)->ID, AsCharacter(Hero)->ID) &&
         (int)(dword_7E11DA8 % 6) < 3)
     {
         m_dwBackColor = m_dwTextColor;
         m_dwTextColor = bg;
     }
 
-    Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)c, texW, 0, 0, 0, 0, (LPCSTR)(c + 24));
+    Font_RenderTextToBitmap(TextSize.cx, fontHeight, AsChat(c)->ID, texW, 0, 0, 0, 0, AsChat(c)->Guild);
     Font_RenderBitmapText(drawX, drawY, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
 
     // IDA L214-224: -1778372066=0x9600321E · -1778384846=0x96000032 ·
@@ -675,29 +676,29 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
 
     // IDA: m_dwTextColor = -3613466 (0xFFC8DCE6), y -2134319898 (0x80C8DCE6)
     // cuando al mensaje le quedan menos de 10 ticks de vida (fade-out).
-    int fade2 = *(int*)(c + 560);
+    int fade2 = AsChat(c)->LifeTime[1];
     if (fade2 > 0) {
         m_dwTextColor = (fade2 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
         ClearFontRows(fontHeight);
-        Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)(c + 300), texW, 0, 0, 0, 0, 0);
+        Font_RenderTextToBitmap(TextSize.cx, fontHeight, AsChat(c)->Text[1], texW, 0, 0, 0, 0, 0);
         Font_RenderBitmapText(drawX, drawY + fontHeight, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
 
-        int fade1 = *(int*)(c + 556);
+        int fade1 = AsChat(c)->LifeTime[0];
         m_dwTextColor = (fade1 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
         ClearFontRows(fontHeight);
-        Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
+        Font_RenderTextToBitmap(TextSize.cx, fontHeight, AsChat(c)->Text[0], texW, 0, 0, 0, 0, 0);
         Font_RenderBitmapText(drawX, drawY + 2 * fontHeight, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
     } else {
-        int fade1 = *(int*)(c + 556);
+        int fade1 = AsChat(c)->LifeTime[0];
         if (fade1 > 0) {
             m_dwTextColor = (fade1 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
             ClearFontRows(fontHeight);
-            Font_RenderTextToBitmap(TextSize.cx, fontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
+            Font_RenderTextToBitmap(TextSize.cx, fontHeight, AsChat(c)->Text[0], texW, 0, 0, 0, 0, 0);
             Font_RenderBitmapText(drawX, drawY + fontHeight, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
         }
     }
 
-    const void* owner = *(const void**)(c + 564);
+    const void* owner = (const void*)AsChat(c)->Owner;
     if (owner) {
         const EntityView player(owner);
         const int markIndex = player.GuildMarkIndex();

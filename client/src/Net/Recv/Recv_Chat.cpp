@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Net/Recv/NetRecv.h"
 
 // ── CHAT ─────────────────────────────────────────────────────────
@@ -143,7 +144,7 @@ void NetRecv_0D(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         char guildText[320] = {0};
         SetGuildNoticeText(text);
         if (GlobalText[483] && GlobalText[483][0] != 0) {
-            wsprintfA(guildText, GlobalText[483], text);
+            Platform::TextFormat(guildText, GlobalText[483], text);
             UI_AddNotice(guildText, 1);
         } else {
             UI_AddNotice(text, 1);

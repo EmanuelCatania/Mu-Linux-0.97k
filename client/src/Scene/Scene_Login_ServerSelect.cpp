@@ -116,6 +116,7 @@
 //  Packet_IsValidSockType(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
 
 #include "stdafx.h"
+#include "Platform/Text.h"
 #include "Scene.h"
 
 
@@ -321,8 +322,8 @@ LAB_0051f314:
             GL_DrawTexture(0x12, (float)iStack00000004, (float)iDrawY,
                          70.0f, 16.0f, 0.0f, 0.0f, 0.5234375f, 0.9375f, '\x01', '\x01');
             ptVar19 = &text_size;
-            iVar5 = lstrlenA(lpString);
-            GetTextExtentPointA(gFont.GetTextDC(), lpString, iVar5, ptVar19);
+            iVar5 = Platform::TextLength(lpString);
+            gFont.MeasureText(gFont.GetTextDC(), lpString, iVar5, ptVar19);
             UI_RenderText((iVar10 - ((uint)(text_size.cx * 0x280) / gWindow.GetWidth() >> 1)) + 0x23,
                          iDrawY + 2, lpString, (LPSIZE)0x0, '\0', 0);
         }
@@ -454,8 +455,8 @@ LAB_0051f44c:
                     char* chanName = chan_buf + chanIdx * SRV_NAMELEN;
 
                     ptVar19 = &text_size;
-                    iVar8 = lstrlenA(chanName);
-                    GetTextExtentPointA(gFont.GetTextDC(), chanName, iVar8, ptVar19);
+                    iVar8 = Platform::TextLength(chanName);
+                    gFont.MeasureText(gFont.GetTextDC(), chanName, iVar8, ptVar19);
                     UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / gWindow.GetWidth() >> 1),
                                  iStack00000004 + 1, chanName, (LPSIZE)0x0, '\0', 0);
                 }

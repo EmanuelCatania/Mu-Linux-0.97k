@@ -7,12 +7,18 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Platform/IWindow.h"
+#include "Platform/Text.h"
+#include "Platform/ISocket.h"
+#include "Platform/IInput.h"
+#include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
 #include "UI/HealthBar.h"
 #include "UI/MoveList.h"
 #include "UI/EventTimer.h"
 #include "UI/GoldenArcher.h"
 #include "Item/ChaosMixRates.h"
+#include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -69,7 +75,7 @@ void __cdecl OpenModels(int Model, const char* FileName, int i) {
 
 // CRT file helpers
 FILE* __cdecl crt_fopen(const char* path, const void* mode) {
-    return fopen(path, (const char*)mode);
+    return Platform::GetFileSystem().Open(path, (const char*)mode);
 }
 void __cdecl crt_fclose(FILE* f) {
     if (f) fclose(f);
@@ -86,21 +92,21 @@ void __cdecl putc(int ch, int *fp) {
 // clears param_1+8, returns 1. On failure: logs error, shows MessageBox, returns 0.
 // IDA: CWsctlc::Startup (0x0043DB30)
 void __cdecl CWsctlc_Startup(int param_1) {
-    WSADATA wsaData;
-    int r = WSAStartup(0x202, &wsaData);
+    uint16_t socketVersion = 0;
+    int r = Platform::GetSocket().Startup(0x202, socketVersion);
     if (r != 0) {
         CErrorReport_Write(&DAT_055c9bf0, "Winsock DLL Initialize error");
-        MessageBoxA(NULL, "Winsock error", "IError", 0);
+        Platform::GetWindow().ShowError("Winsock error", "IError", false, false);
         return;
     }
-    if (((char)wsaData.wVersion == '\x02') && ((char)(wsaData.wVersion >> 8) == '\x02')) {
+    if (((char)socketVersion == '\x02') && ((char)(socketVersion >> 8) == '\x02')) {
         *(unsigned int*)(param_1 + 8) = 0;
-        *(unsigned int*)(param_1 + 4) = wsaData.wVersion & 0xffff;
+        *(unsigned int*)(param_1 + 4) = socketVersion & 0xffff;
         CWsctlc__LogPrintOn();
     } else {
-        WSACleanup();
+        Platform::GetSocket().Cleanup();
         CErrorReport_Write(&DAT_055c9bf0, "Winsock version low");
-        MessageBoxA(NULL, "Winsock version error", "IError", 0);
+        Platform::GetWindow().ShowError("Winsock version error", "IError", false, false);
     }
 }
 
@@ -108,46 +114,46 @@ void __cdecl CWsctlc_Startup(int param_1) {
 // Creates TCP socket, stores in *(this+8). Logs and shows MessageBox on failure.
 // IDA: CWsctlc::Create (0x0043DBF0)
 void __cdecl CWsctlc_Create(void* ctx, int param_1) {
-    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    SOCKET s = Platform::GetSocket().CreateTcp(0);
     *(SOCKET*)((char*)ctx + 8) = s;
     g_bGameServerConnected = 0;
-    if (s == INVALID_SOCKET) {
+    if (s == Platform::InvalidSocket) {
         char buf[128];
-        int err = WSAGetLastError();
-        wsprintfA(buf, "Socket error: %d", err);
+        int err = Platform::GetSocket().LastError();
+        Platform::TextFormat(buf, "Socket error: %d", err);
         CErrorReport_Write(&DAT_055c9bf0, buf);
-        MessageBoxA(NULL, buf, "IError", 0);
+        Platform::GetWindow().ShowError(buf, "IError", false, false);
         return;
     }
     *(DWORD*)ctx = (DWORD)param_1;
 }
 
 // IDA: SetCharacterScale (0x0045C050)
-// Sets entity speed (+0x0c) based on move_type_flags (+0x1bc) and swim flag (+0x1bd).
+// Sets entity scale (+0x0c) based on Class (+0x1bc) and Skin (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
 void __cdecl SetCharacterScale(int param_1) {
-    if (*(char*)(param_1 + 0x34f) == '\0') {
-        short sVar1 = *(short*)(param_1 + 0x1f8);
+    if (*(char *)&AsCharacter(param_1)->Change == '\0') {
+        short sVar1 = AsCharacter(param_1)->BodyPart[1].Type;
         if (((sVar1 == 0x270) || (sVar1 == 0x272)) || ((0x279 < sVar1 && (sVar1 < 0x27e)))) {
-            *(unsigned short*)(param_1 + 0x1e0) =
-                (*(unsigned char*)(param_1 + 0x1bc) & 7) + 0x390 +
-                (unsigned short)(*(unsigned char*)(param_1 + 0x1bc) >> 3) * 4;
+            *(unsigned short *)&AsCharacter(param_1)->BodyPart[0].Type =
+                (AsCharacter(param_1)->Class & 7) + 0x390 +
+                (unsigned short)(AsCharacter(param_1)->Class >> 3) * 4;
         } else {
-            *(unsigned short*)(param_1 + 0x1e0) = 0xffff;
+            *(unsigned short *)&AsCharacter(param_1)->BodyPart[0].Type = 0xffff;
         }
-        if (*(char*)(param_1 + 0x1bd) != '\0') {
-            switch (*(unsigned char*)(param_1 + 0x1bc) & 7) {
-            case 0: case 1: *(unsigned int*)(param_1 + 0x0c) = 0x3f6e147b; return; // 0.93f
-            case 2:         *(unsigned int*)(param_1 + 0x0c) = 0x3f5c28f6; return; // 0.86f
+        if (*(char *)&AsCharacter(param_1)->Skin != '\0') {
+            switch (AsCharacter(param_1)->Class & 7) {
+            case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6e147b; return; // 0.93f
+            case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f5c28f6; return; // 0.86f
             case 3:         goto case3;
             default:        return;
             }
         }
-        switch (*(unsigned char*)(param_1 + 0x1bc) & 7) {
-        case 0: case 1: *(unsigned int*)(param_1 + 0x0c) = 0x3f666666; return; // 0.9f
-        case 2:         *(unsigned int*)(param_1 + 0x0c) = 0x3f6147ae; return; // 0.88f
+        switch (AsCharacter(param_1)->Class & 7) {
+        case 0: case 1: *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f666666; return; // 0.9f
+        case 2:         *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f6147ae; return; // 0.88f
         case 3:
-        case3:          *(unsigned int*)(param_1 + 0x0c) = 0x3f733333; return; // 0.95f
+        case3:          *(unsigned int *)&AsCharacter(param_1)->Object.Scale = 0x3f733333; return; // 0.95f
         }
     }
 }
@@ -166,13 +172,13 @@ void __cdecl crt_fprintf(void* param_1, void* param_2) {
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
 void __cdecl BMD__Release(int param_1) {
-    short numBones   = *(short*)(param_1 + 0x22);
-    short numMeshes  = *(short*)(param_1 + 0x26);
-    short numActions = *(short*)(param_1 + 0x24);
+    short numBones   = AsModel(param_1)->NumBones;
+    short numMeshes  = AsModel(param_1)->NumActions;
+    short numActions = AsModel(param_1)->NumMeshs;
     if (numBones == 0) return;
     // free per-bone sub-mesh vertex arrays
     for (int bi = 0; bi < numBones; bi++) {
-        int bonePtr = *(int*)(param_1 + 0x2c) + bi * 0x8c;
+        int bonePtr = *(int *)&AsModel(param_1)->Bones + bi * 0x8c;
         if (*(char*)(bonePtr + 0x22) == '\0') {
             if (numMeshes > 0) {
                 int meshBase = *(int*)(bonePtr + 0x24);
@@ -188,13 +194,13 @@ void __cdecl BMD__Release(int param_1) {
     }
     // free action keyframe data
     for (int ai = 0; ai < numMeshes; ai++) {
-        int aPtr = *(int*)(param_1 + 0x30) + ai * 0x10;
+        int aPtr = *(int *)&AsModel(param_1)->Actions + ai * 0x10;
         if (*(char*)(aPtr + 10) != '\0')
             operator_delete(*(void**)(aPtr + 0xc));
     }
     // free mesh vertex/normal/UV buffers + unload textures
     for (int mi = 0; mi < numActions; mi++) {
-        int mBase = *(int*)(param_1 + 0x28) + mi * 0x28;
+        int mBase = *(int *)&AsModel(param_1)->Meshs + mi * 0x28;
         operator_delete(*(void**)(mBase + 0x10));
         operator_delete(*(void**)(mBase + 0x14));
         operator_delete(*(void**)(mBase + 0x18));
@@ -203,18 +209,18 @@ void __cdecl BMD__Release(int param_1) {
             operator_delete(*(void**)(mBase + 0x24));
             *(DWORD*)(mBase + 0x24) = 0;
         }
-        int texId = (int)*(short*)(*(int*)(param_1 + 0x38) + *(short*)(mBase + 2) * 2);
+        int texId = (int)*(short*)(*(int *)&AsModel(param_1)->IndexTexture + *(short*)(mBase + 2) * 2);
         if (texId != 0x12d)
             UnloadImage(texId);
     }
-    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD*)(param_1 + 0x28) = 0; }
-    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD*)(param_1 + 0x2c) = 0; }
-    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD*)(param_1 + 0x30) = 0; }
-    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD*)(param_1 + 0x34) = 0; }
-    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD*)(param_1 + 0x38) = 0; }
-    *(short*)(param_1 + 0x22) = 0;
-    *(short*)(param_1 + 0x26) = 0;
-    *(short*)(param_1 + 0x24) = 0;
+    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD *)&AsModel(param_1)->Meshs = 0; }
+    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD *)&AsModel(param_1)->Bones = 0; }
+    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD *)&AsModel(param_1)->Actions = 0; }
+    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD *)&AsModel(param_1)->Textures = 0; }
+    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD *)&AsModel(param_1)->IndexTexture = 0; }
+    AsModel(param_1)->NumBones = 0;
+    AsModel(param_1)->NumActions = 0;
+    AsModel(param_1)->NumMeshs = 0;
 }
 
 // DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
@@ -559,25 +565,25 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     short nearbyIds[5] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
     for (int i = 0; i < 400 && count < 5; i++, pcEnt += 0x394) {
-        if (pcEnt[0] == '\0') continue;                    // IDA: *(v16 - 747)
-        if (pcEnt[0x160] == '\0') continue;                // IDA: *(v16 - 395)
+        if (*(char *)&AsCharacter(pcEnt)->Object.Live == '\0') continue;                    // IDA: *(v16 - 747)
+        if (*(char *)&AsCharacter(pcEnt)->Object.Visible == '\0') continue;                // IDA: *(v16 - 395)
         if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
-        if (pcEnt[765] != '\0') continue;                   // IDA: v16[18] = ent + 765
+        if (*(char *)&AsCharacter(pcEnt)->Dead != '\0') continue;                   // IDA: v16[18] = ent + 765
 
         // IDA L160-163: v17 = a2[1] - ent.y ; v19 = a2[0] - ent.x ; sqrt <= a3
-        float dx = param_2[0] - *(float*)(pcEnt + 0x10);
-        float dy = param_2[1] - *(float*)(pcEnt + 0x14);
+        float dx = param_2[0] - AsCharacter(pcEnt)->Object.Position[0];
+        float dy = param_2[1] - AsCharacter(pcEnt)->Object.Position[1];
         if (SQRT(dx*dx + dy*dy) > param_3) continue;
 
         // IDA L170-171: Kind == 2 (monstruo) o Kind == 1 (jugador) con Key == a5
-        char cType = pcEnt[0x84];                          // IDA: *(v16 - 615)
-        short sKey  = *(short*)(pcEnt + 0x1dc);            // IDA: *(_WORD *)(v16 - 271)
+        char cType = *(char *)&AsCharacter(pcEnt)->Object.Kind;                          // IDA: *(v16 - 615)
+        short sKey  = *(short *)&AsCharacter(pcEnt)->Key;            // IDA: *(_WORD *)(v16 - 271)
         if (cType != '\x02' && !(cType == '\x01' && sKey == param_5))
             continue;
 
         // IDA L173-180: marca de AOE para los grupos de skill 8 y 9.
         if ((uVar19 == 8) || (uVar19 == 9)) {
-            char monsterType = pcEnt[747];                 // IDA: *v16
+            char monsterType = *(char *)&AsCharacter(pcEnt)->MonsterIndex;                 // IDA: *v16
             if (monsterType != 77 && monsterType != 75 && monsterType != 73 &&
                 monsterType != (char)-125 && monsterType != (char)-124 &&
                 monsterType != (char)-123 && monsterType != (char)-122)
@@ -653,11 +659,11 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
     #define local_8 local_18[4]
     #define local_4 local_18[5]
     // scroll: shift all existing segments one step back
-    int iVar4 = *(int*)(param_1 + 0x50) + 1;
-    int iVar1 = *(int*)(param_1 + 0x54) - 1;
-    *(int*)(param_1 + 0x50) = iVar4;
-    if (iVar1 < iVar4) *(int*)(param_1 + 0x50) = iVar1;
-    iVar1 = *(int*)(param_1 + 0x50);
+    int iVar4 = AsJoint(param_1)->NumTails + 1;
+    int iVar1 = AsJoint(param_1)->MaxTails - 1;
+    AsJoint(param_1)->NumTails = iVar4;
+    if (iVar1 < iVar4) AsJoint(param_1)->NumTails = iVar1;
+    iVar1 = AsJoint(param_1)->NumTails;
     if (0 <= iVar1 - 1) {
         // IDA lleva DOS punteros: `v6` = base de la fila (retrocede 0x30 por
         // segmento) y `v7` = cursor que camina esa fila; `v7` se RE-INICIALIZA desde
@@ -665,7 +671,7 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
         //     v6 = 48*(count-1) + a1 + 136;
         //     do { v7 = v6; <4 × copiar vec3, v7 += 3>; v6 -= 48; } while(--v5);
         // No colapsarlos en uno: el paso neto por vuelta tiene que ser -48.
-        char* rowBase = (char*)param_1 + 0x88 + (iVar1 - 1) * 0x30;
+        char* rowBase = (char*)&AsJoint(param_1)->Tails[iVar1][0][0];
         do {
             unsigned int* puVar3 = (unsigned int*)rowBase;
             for (int k = 0; k < 4; k++) {
@@ -679,32 +685,32 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
         } while (iVar1 != 0);
     }
     // compute new tip vertices
-    local_18[0] = *(float*)(param_1 + 0x0c) * _DAT_00552a14;
+    local_18[0] = AsJoint(param_1)->Scale * _DAT_00552a14;
     local_18[1] = 0.0f; local_18[2] = 0.0f;
     Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[1] = 0.0f; local_18[2] = 0.0f;
-    *(float*)(param_1 + 0x58) = local_18[3] + *(float*)(param_1 + 0x10);
-    *(float*)(param_1 + 0x5c) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x60) = local_4    + *(float*)(param_1 + 0x18);
-    local_18[0] = *(float*)(param_1 + 0x0c) * _DAT_00552504;
+    AsJoint(param_1)->Tails[0][0][0] = local_18[3] + AsJoint(param_1)->Position[0];
+    AsJoint(param_1)->Tails[0][0][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][0][2] = local_4    + AsJoint(param_1)->Position[2];
+    local_18[0] = AsJoint(param_1)->Scale * _DAT_00552504;
     Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[0] = 0.0f;
-    *(float*)(param_1 + 100) = local_18[3] + *(float*)(param_1 + 0x10);
+    AsJoint(param_1)->Tails[0][1][0] = local_18[3] + AsJoint(param_1)->Position[0];
     local_18[1] = 0.0f;
-    *(float*)(param_1 + 0x68) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x6c) = local_4    + *(float*)(param_1 + 0x18);
-    local_18[2] = *(float*)(param_1 + 0x0c) * _DAT_00552a14;
+    AsJoint(param_1)->Tails[0][1][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][1][2] = local_4    + AsJoint(param_1)->Position[2];
+    local_18[2] = AsJoint(param_1)->Scale * _DAT_00552a14;
     Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[0] = 0.0f;
-    *(float*)(param_1 + 0x70) = local_18[3] + *(float*)(param_1 + 0x10);
+    AsJoint(param_1)->Tails[0][2][0] = local_18[3] + AsJoint(param_1)->Position[0];
     local_18[1] = 0.0f;
-    *(float*)(param_1 + 0x74) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x78) = local_4    + *(float*)(param_1 + 0x18);
-    local_18[2] = *(float*)(param_1 + 0x0c) * _DAT_00552504;
+    AsJoint(param_1)->Tails[0][2][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][2][2] = local_4    + AsJoint(param_1)->Position[2];
+    local_18[2] = AsJoint(param_1)->Scale * _DAT_00552504;
     Vector_Rotate(local_18, param_2, local_18 + 3);
-    *(float*)(param_1 + 0x7c) = local_18[3] + *(float*)(param_1 + 0x10);
-    *(float*)(param_1 + 0x80) = local_8    + *(float*)(param_1 + 0x14);
-    *(float*)(param_1 + 0x84) = local_4    + *(float*)(param_1 + 0x18);
+    AsJoint(param_1)->Tails[0][3][0] = local_18[3] + AsJoint(param_1)->Position[0];
+    AsJoint(param_1)->Tails[0][3][1] = local_8    + AsJoint(param_1)->Position[1];
+    AsJoint(param_1)->Tails[0][3][2] = local_4    + AsJoint(param_1)->Position[2];
     #undef local_8
     #undef local_4
 }
@@ -753,10 +759,14 @@ float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float 
 // loop de mallas hace `if (NULL && i != HiddenMesh) goto render;`, con la
 // comparación `i != HiddenMesh` como INT (no float).
 void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
-    // DESVIACION: validar el puntero model (rango user-space 0x100000..0x80000000)
-    // y meshBase antes de usarlo; algunos callers pasaban punteros inválidos.
-    if (model == nullptr) return;
-    if ((uintptr_t)model < 0x100000 || (uintptr_t)model >= 0x80000000) return;
+    // Valida un slot completo del pool real, no una dirección virtual de Windows.
+    // Linux ELF32 puede reservar este pool por encima de 2 GB.
+    const uintptr_t base = static_cast<uintptr_t>(DAT_05828d58);
+    const uintptr_t address = reinterpret_cast<uintptr_t>(model);
+    constexpr size_t stride = 0xbc;
+    if (!base || address < base) return;
+    const uintptr_t offset = address - base;
+    if (offset % stride != 0 || offset / stride >= MODEL_MAX_TOTAL) return;
     if (*(short*)((char*)model + 0x24) == 0) return;
     int meshBase_check = *(int*)((char*)model + 0x28);
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
@@ -796,11 +806,11 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
     int base = param_1 * 0xbc + DAT_05828d58;
-    *(short*)(base + 0xaa) = (short)param_2;
-    *(short*)(base + 0xac) = (short)param_3;
-    *(short*)(base + 0xae) = (short)param_4;
-    *(short*)(base + 0xb0) = (short)param_5;
-    *(short*)(base + 0xb2) = (short)param_6;
+    AsModel(base)->Sounds[0] = (short)param_2;
+    AsModel(base)->Sounds[1] = (short)param_3;
+    AsModel(base)->Sounds[2] = (short)param_4;
+    AsModel(base)->Sounds[3] = (short)param_5;
+    AsModel(base)->Sounds[4] = (short)param_6;
 }
 
 // CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.
@@ -823,7 +833,7 @@ unsigned int __cdecl CheckAttack(void) {
     }
 
     BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * SelectedCharacter;
-    const BYTE kind = target[132];
+    const BYTE kind = AsCharacter(target)->Object.Kind;
     if (kind == 2) {
         return 1;
     }
@@ -831,11 +841,11 @@ unsigned int __cdecl CheckAttack(void) {
         return 0;
     }
 
-    const BYTE targetPkLevel = target[746];
+    const BYTE targetPkLevel = AsCharacter(target)->PK;
     if (!EnableGuildWar) {
         return targetPkLevel >= 6 ||
                ((gUserSettings.GetPvPWithoutControl() ||   // DESVIACION (DLL, 0x0048322F)
-                 ((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80) &&
+                 ((unsigned short)Platform::GetInput().KeyState(VK_CONTROL) >> 8) == 0x80) &&
                 target != (BYTE*)(uintptr_t)DAT_07abf5d8);
     }
 
@@ -843,7 +853,7 @@ unsigned int __cdecl CheckAttack(void) {
     // opponent-relation test.  The original indexes the same 80-byte guild
     // name table used by GuildMark_AssociateEntities.
     if (targetPkLevel >= 6) {
-        const short targetGuild = *(short*)(target + 474);
+        const short targetGuild = AsCharacter(target)->GuildMarkIndex;
         if (targetGuild != -1) {
             const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 474);
             if (strcmp(DAT_07e919bc + 80 * heroGuild,
@@ -853,7 +863,7 @@ unsigned int __cdecl CheckAttack(void) {
         }
     }
 
-    if (target[745] == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
+    if (AsCharacter(target)->GuildTeam == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
         return 1;
     }
 
@@ -872,23 +882,19 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     if (ctx == nullptr || ip == nullptr) return 0;
 
     // 1. Resolve IP (dotted or hostname)
-    unsigned long addr = inet_addr(ip);
-    if (addr == INADDR_NONE) {
-        HOSTENT* h = gethostbyname(ip);
-        if (h == nullptr || h->h_addr_list == nullptr || h->h_addr_list[0] == nullptr) {
-            char buf[160];
-            wsprintfA(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, WSAGetLastError());
-            CErrorReport_Write(&DAT_055c9bf0, buf);
-            return 0;
-        }
-        addr = *(unsigned long*)h->h_addr_list[0];
+    uint32_t addr;
+    if (!Platform::GetSocket().ResolveIPv4(ip, addr)) {
+        char buf[160];
+        Platform::TextFormat(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, Platform::GetSocket().LastError());
+        CErrorReport_Write(&DAT_055c9bf0, buf);
+        return 0;
     }
 
     // 2. Ensure socket exists (CWsctlc_Create already created one into ctx+8)
     SOCKET s = *(SOCKET*)((char*)ctx + 8);
-    if (s == INVALID_SOCKET || s == 0) {
-        s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (s == INVALID_SOCKET) {
+    if (s == Platform::InvalidSocket || s == 0) {
+        s = Platform::GetSocket().CreateTcp(Platform::TcpProtocol);
+        if (s == Platform::InvalidSocket) {
             CErrorReport_Write(&DAT_055c9bf0, "socket() failed");
             return 0;
         }
@@ -898,23 +904,17 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     // 3. Put socket in non-blocking mode so connect() returns WSAEWOULDBLOCK
     //    instead of blocking the game thread. WSAAsyncSelect implicitly switches
     //    to non-blocking; we keep the ordering the binary uses (connect first, then async).
-    sockaddr_in sa = {};
-    sa.sin_family = AF_INET;
-    sa.sin_port   = htons(port);
-    sa.sin_addr.S_un.S_addr = addr;
-
-    // Arm async notifications BEFORE connect so FD_CONNECT is delivered.
     HWND hWnd = *(HWND*)ctx;
     if (hWnd != nullptr) {
-        WSAAsyncSelect(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CLOSE);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
+        Platform::GetSocket().NotifyWindow(s, hWnd, wMsg, Platform::SocketReadEvent | Platform::SocketWriteEvent | Platform::SocketCloseEvent);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
     }
 
-    int r = connect(s, (sockaddr*)&sa, sizeof(sa));
-    if (r == SOCKET_ERROR) {
-        int err = WSAGetLastError();
-        if (err != WSAEWOULDBLOCK) {
+    int r = Platform::GetSocket().ConnectIPv4(s, addr, port);
+    if (r == Platform::SocketError) {
+        int err = Platform::GetSocket().LastError();
+        if (err != Platform::SocketWouldBlock) {
             char buf[160];
-            wsprintfA(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
+            Platform::TextFormat(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
             CErrorReport_Write(&DAT_055c9bf0, buf);
             return 0;
         }

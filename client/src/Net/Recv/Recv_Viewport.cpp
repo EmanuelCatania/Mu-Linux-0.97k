@@ -110,7 +110,7 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
     const int   slot   = Msg[6] >> 4;
     // Modelo por defecto de la clase cuando la pieza se saca:
     //   912/919/926/933/940 + (skin & 7) + 4 * (skin >> 3)
-    const BYTE  skin   = c[444];
+    const BYTE  skin   = AsCharacter(c)->Class;
     const int   klass  = (skin & 7) + 4 * (skin >> 3);
 
     NetLog("NET:  -> 0x25 ChangePlayer key=%d idx=%d slot=%d type=%d lvl=%u%s",
@@ -125,50 +125,50 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
 
     switch (slot) {
         case 0:   // mano izquierda
-            if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
-            else       { *(WORD*)(c + 624) = (WORD)ItemEntityModel(type); c[626] = (BYTE)Net_LevelConvert(level); c[627] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->Weapon[0].Type = (WORD)-1; AsCharacter(c)->Weapon[0].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->Weapon[0].Type = (WORD)ItemEntityModel(type); AsCharacter(c)->Weapon[0].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->Weapon[0].Option1 = option; }
             break;
         case 1:   // mano derecha
-            if (empty) { *(WORD*)(c + 648) = (WORD)-1; c[651] = 0; }
-            else       { *(WORD*)(c + 648) = (WORD)ItemEntityModel(type);
-                         c[650] = (BYTE)Net_LevelConvert(level); c[651] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->Weapon[1].Type = (WORD)-1; AsCharacter(c)->Weapon[1].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->Weapon[1].Type = (WORD)ItemEntityModel(type);
+                         AsCharacter(c)->Weapon[1].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->Weapon[1].Option1 = option; }
             break;
         case 2:   // casco
-            if (empty) { *(WORD*)(c + 504) = (WORD)(klass + 912); c[506] = 0; c[507] = 0; }
-            else       { *(WORD*)(c + 504) = (WORD)ItemEntityModel(type);
-                         c[506] = (BYTE)Net_LevelConvert(level); c[507] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->BodyPart[1].Type = (WORD)(klass + 912); AsCharacter(c)->BodyPart[1].Level = 0; AsCharacter(c)->BodyPart[1].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->BodyPart[1].Type = (WORD)ItemEntityModel(type);
+                         AsCharacter(c)->BodyPart[1].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->BodyPart[1].Option1 = option; }
             break;
         case 3:   // armadura
-            if (empty) { *(WORD*)(c + 528) = (WORD)(klass + 919); c[530] = 0; c[531] = 0; }
-            else       { *(WORD*)(c + 528) = (WORD)ItemEntityModel(type);
-                         c[530] = (BYTE)Net_LevelConvert(level); c[531] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->BodyPart[2].Type = (WORD)(klass + 919); AsCharacter(c)->BodyPart[2].Level = 0; AsCharacter(c)->BodyPart[2].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->BodyPart[2].Type = (WORD)ItemEntityModel(type);
+                         AsCharacter(c)->BodyPart[2].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->BodyPart[2].Option1 = option; }
             break;
         case 4:   // pantalones
-            if (empty) { *(WORD*)(c + 552) = (WORD)(klass + 926); c[554] = 0; c[555] = 0; }
-            else       { *(WORD*)(c + 552) = (WORD)ItemEntityModel(type);
-                         c[554] = (BYTE)Net_LevelConvert(level); c[555] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->BodyPart[3].Type = (WORD)(klass + 926); AsCharacter(c)->BodyPart[3].Level = 0; AsCharacter(c)->BodyPart[3].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->BodyPart[3].Type = (WORD)ItemEntityModel(type);
+                         AsCharacter(c)->BodyPart[3].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->BodyPart[3].Option1 = option; }
             break;
         case 5:   // guantes
-            if (empty) { *(WORD*)(c + 576) = (WORD)(klass + 933); c[578] = 0; c[579] = 0; }
-            else       { *(WORD*)(c + 576) = (WORD)ItemEntityModel(type);
-                         c[578] = (BYTE)Net_LevelConvert(level); c[579] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->BodyPart[4].Type = (WORD)(klass + 933); AsCharacter(c)->BodyPart[4].Level = 0; AsCharacter(c)->BodyPart[4].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->BodyPart[4].Type = (WORD)ItemEntityModel(type);
+                         AsCharacter(c)->BodyPart[4].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->BodyPart[4].Option1 = option; }
             break;
         case 6:   // botas
-            if (empty) { *(WORD*)(c + 600) = (WORD)(klass + 940); c[602] = 0; c[603] = 0; }
-            else       { *(WORD*)(c + 600) = (WORD)ItemEntityModel(type);
-                         c[602] = (BYTE)Net_LevelConvert(level); c[603] = option; }
+            if (empty) { *(WORD *)&AsCharacter(c)->BodyPart[5].Type = (WORD)(klass + 940); AsCharacter(c)->BodyPart[5].Level = 0; AsCharacter(c)->BodyPart[5].Option1 = 0; }
+            else       { *(WORD *)&AsCharacter(c)->BodyPart[5].Type = (WORD)ItemEntityModel(type);
+                         AsCharacter(c)->BodyPart[5].Level = (BYTE)Net_LevelConvert(level); AsCharacter(c)->BodyPart[5].Option1 = option; }
             break;
         case 7:   // alas
-            if (empty) { *(WORD*)(c + 672) = (WORD)-1; }
-            else       { *(WORD*)(c + 672) = (WORD)ItemEntityModel(type); c[674] = 0; }
+            if (empty) { *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)-1; }
+            else       { *(WORD *)&AsCharacter(c)->Wing.Type = (WORD)ItemEntityModel(type); AsCharacter(c)->Wing.Level = 0; }
             break;
         case 8: {  // helper / mascota
             if (empty) {
-                *(WORD*)(c + 696) = (WORD)-1;
+                *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)-1;
                 DeleteBug((DWORD)(uintptr_t)c);        // DeleteBug
             } else {
-                *(WORD*)(c + 696) = (WORD)ItemEntityModel(type);
-                c[698] = 0;
+                *(WORD *)&AsCharacter(c)->Helper.Type = (WORD)ItemEntityModel(type);
+                AsCharacter(c)->Helper.Level = 0;
                 float* pos = (float*)(c + 16);
                 // 0.97.20: un agregado crea el bug del pet que imita.
                 const int pet = ItemBehaviorType(type);
@@ -209,7 +209,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             }
         }
     }
-    if (h && h[0x2fd] == 0) {
+    if (h && AsCharacter(h)->Dead == 0) {
         // ReceiveMoveCharacter @ 00427B90: speed is always updated.
         h[0x2fc] = (BYTE)(Msg[7] >> 4);
 
@@ -217,31 +217,31 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // IDA no pisa acá la ruta local del héroe ni su posición
             // en el mundo. Sólo refresca este cache de respaldo
             // while no locally interpolated path is active.
-            if (h[748] == 0) {
-                *(int*)(h + 0x388) = gx;
-                *(int*)(h + 0x38c) = gy;
+            if (AsCharacter(h)->Movement == 0) {
+                AsCharacter(h)->PositionX = gx;
+                AsCharacter(h)->PositionY = gy;
             }
         } else {
             // ReceiveMoveCharacter 00427B90: remote entities store
             // el destino del server en +774/+775, calcula la
             // ruta desde las coordenadas de grilla cacheadas (+904/+908), y después
             // deja que el tick normal de movimiento consuma esa ruta.
-            h[774] = gx;
-            h[775] = gy;
+            AsCharacter(h)->TargetX = gx;
+            AsCharacter(h)->TargetY = gy;
             if (h[848] == 0) {
-                const int srcX = *(int*)(h + 0x388);
-                const int srcY = *(int*)(h + 0x38c);
+                const int srcX = AsCharacter(h)->PositionX;
+                const int srcY = AsCharacter(h)->PositionY;
                 if (Path_FindRoute(srcX, srcY, gx, gy, h + 852, 0.0f)) {
-                    h[748] = 1;
+                    AsCharacter(h)->Movement = 1;
                     // 00427B90 invokes SetPlayerWalk immediately
                     // para el tipo 322. Al resto de las entidades remotas las
                     // cambia MoveMonsterClient antes de MovePath.
-                    if (*(WORD*)(h + 2) == 322) {
+                    if (*(WORD *)&AsCharacter(h)->Object.Type == 322) {
                         SetPlayerWalk((int)(uintptr_t)h);
-                        h[773] = 1;
+                        AsCharacter(h)->JumpTime = 1;
                     }
                 } else {
-                    h[748] = 0;
+                    AsCharacter(h)->Movement = 0;
                     SetPlayerStop((int)(uintptr_t)h);
                 }
             }
@@ -274,11 +274,11 @@ void NetRecv_11(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // ReceiveMovePosition 00427F40 sólo refresca el estado de
         // grilla y encola la actualización de posición. Las coordenadas
         // de mundo las avanza el tick normal de la entidad.
-        *(int*)(h + 0x388) = gx;
-        *(int*)(h + 0x38c) = gy;
-        h[774] = gx;
-        h[775] = gy;
-        h[0x305] = 1;
+        AsCharacter(h)->PositionX = gx;
+        AsCharacter(h)->PositionY = gy;
+        AsCharacter(h)->TargetX = gx;
+        AsCharacter(h)->TargetY = gy;
+        AsCharacter(h)->JumpTime = 1;
     }
 }
 
@@ -364,10 +364,10 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (entityId == g_HeroKey || entityId == heroKeyReal) {
             BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
             if (hero) {
-                *(int*)(hero + 0x388) = x;
-                *(int*)(hero + 0x38c) = y;
-                hero[0x306] = tx;
-                hero[0x307] = ty;
+                AsCharacter(hero)->PositionX = x;
+                AsCharacter(hero)->PositionY = y;
+                AsCharacter(hero)->TargetX = tx;
+                AsCharacter(hero)->TargetY = ty;
 
                 // Vuelta de una transformacion (anillo).
                 // El 0x45 (GCViewportSimpleChangeSend) convierte al
@@ -381,17 +381,17 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // Nosotros salteamos la entrada propia para no
                 // clonar al heroe (nuestro scan por key excluye su
                 // slot), asi que replicamos solo la restauracion.
-                if (*(short*)(hero + 2) != 390) {
+                if (AsCharacter(hero)->Object.Type != 390) {
                     const float rot = ((float)dir - 1.0f) * 45.0f;
                     CreateCharacterPointer(hero, 390, x, y, rot);
-                    *(WORD*)(hero + 0x1DC) = g_HeroKey;
+                    AsCharacter(hero)->Key = g_HeroKey;
                     if (CharacterAttribute)
-                        hero[444] = *((const BYTE*)CharacterAttribute + 11);
-                    hero[445]   = 0;
-                    hero[0x2EA] = (BYTE)(dirpk & 0x0F);   // PKLevel
-                    hero[132]   = 1;
-                    hero[0x306] = tx;
-                    hero[0x307] = ty;
+                        AsCharacter(hero)->Class = *((const BYTE*)CharacterAttribute + 11);
+                    AsCharacter(hero)->Skin   = 0;
+                    AsCharacter(hero)->PK = (BYTE)(dirpk & 0x0F);   // PKLevel
+                    AsCharacter(hero)->Object.Kind   = 1;
+                    AsCharacter(hero)->TargetX = tx;
+                    AsCharacter(hero)->TargetY = ty;
                     SetCharacterClass((int)(uintptr_t)hero);   // SetCharacterClass
                     NetLog("NET:    0x12 heroe restaurado de transformacion");
                 }
@@ -434,46 +434,46 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         BYTE* slot = (BYTE*)(uintptr_t)CreateCharacter(entityId, 390, x, y, rot);
         int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
         if (slot) {
-            *(WORD*)(slot + 0x1dc) = entityId;
+            AsCharacter(slot)->Key = entityId;
             // Combat_PacketDispatch (00429690) applies the packed
             // la clase/estado del jugador y después ChangeCharacterExt con
             // CharSet[1..10]. Sin esto la entidad existe pero
             // has no faithful class/equipment visual setup.
             const BYTE charSet0 = e[4];
-            slot[0x1bc] = (BYTE)(((charSet0 >> 4) | (charSet0 & 0x10)) >> 1);
-            slot[445] = 0;
-            slot[0x2ea] = dirpk & 0x0F;
+            AsCharacter(slot)->Class = (BYTE)(((charSet0 >> 4) | (charSet0 & 0x10)) >> 1);
+            AsCharacter(slot)->Skin = 0;
+            AsCharacter(slot)->PK = dirpk & 0x0F;
             switch (charSet0 & 0x0F) {
             case 1:
                 CreateTeleportEnd((unsigned int)(uintptr_t)slot);
                 break;
             case 2:
                 SetAction((int)(uintptr_t)slot,
-                             (slot[0x1bc] & 7) == 2 ? 135 : 133);
+                             (AsCharacter(slot)->Class & 7) == 2 ? 135 : 133);
                 break;
             case 3:
                 SetAction((int)(uintptr_t)slot,
-                             (slot[0x1bc] & 7) == 2 ? 140 : 139);
+                             (AsCharacter(slot)->Class & 7) == 2 ? 140 : 139);
                 break;
             case 4:
                 SetAction((int)(uintptr_t)slot,
-                             (slot[0x1bc] & 7) == 2 ? 138 : 137);
+                             (AsCharacter(slot)->Class & 7) == 2 ? 138 : 137);
                 break;
             default:
                 break;
             }
             ChangeCharacterExt(spawnSlot, (BYTE*)e + 5);
             memcpy(slot + 449, name, 10);  // Character.Name (+0x1C1)
-            slot[0x84] = 1;     // type: player (1)
-            slot[0x160] = 1;    // visible flag — sin esto Entity_RenderAll_3D skip
-            slot[0xdc] = 1;     // also "is rendered" sub-flag
-            slot[0x305] = 0;
-            slot[0x306] = tx;
-            slot[0x307] = ty;
-            slot[0x356] = 0;    // path_wp_count
-            *(int*)(slot + 0x388) = x;
-            *(int*)(slot + 0x38c) = y;
-            slot[0] = 1;        // active flag
+            AsCharacter(slot)->Object.Kind = 1;     // type: player (1)
+            AsCharacter(slot)->Object.Visible = 1;    // visible flag — sin esto Entity_RenderAll_3D skip
+            AsCharacter(slot)->Object.LightEnable = 1;     // also "is rendered" sub-flag
+            AsCharacter(slot)->JumpTime = 0;
+            AsCharacter(slot)->TargetX = tx;
+            AsCharacter(slot)->TargetY = ty;
+            AsCharacter(slot)->PathNum = 0;    // path_wp_count
+            AsCharacter(slot)->PositionX = x;
+            AsCharacter(slot)->PositionY = y;
+            AsCharacter(slot)->Object.Live = 1;        // active flag
             if ((e[0] & 0x80) != 0) {
                 // CreateFlag branch in Combat_PacketDispatch:
                 // la posición llegue de forma autoritativa, y recién ahí emitir el
@@ -481,7 +481,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 CreateEffect(1265, (float*)(slot + 16), (float*)(slot + 28),
                              (float*)(slot + 232), nullptr, (float*)slot,
                              (float*)-1, nullptr, 0);
-                *(DWORD*)(slot + 360) = 0;
+                *(DWORD *)&AsCharacter(slot)->Object.Alpha = 0;
             }
             // El viewport trae efectos que ya estaban activos
             // antes de que esta entidad se hiciera visible. Le pasamos el
@@ -624,35 +624,35 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (slotChar) {
             BYTE* slot = (BYTE*)slotChar;
             // El facing va por separado — CreateMonster no lo setea.
-            *(float*)(slot + 0x24) = rot;
-            *(WORD*)(slot + 0x1dc) = entityId;
+            AsCharacter(slot)->Object.Angle[2] = rot;
+            AsCharacter(slot)->Key = entityId;
             // NO sobrescribir +0x84 (kind).  CreateMonster ya lo setea correcto por
             // Type: 2=monster, 4=NPC (type>200), 8=ground-item.  Forzarlo a 2 haría
             // que Target_Render muestre a los NPCs con el banner de monstruo
             // (RenderCenteredText arriba) en vez del chat flotante de NPC (CreateChat).
-            slot[0x160] = 1;    // visible flag
-            slot[0xdc] = 1;     // is_rendered sub-flag
-            slot[0x305] = 0;
-            slot[0x306] = tx;
-            slot[0x307] = ty;
-            slot[0x356] = 0;
-            *(int*)(slot + 0x388) = x;
-            *(int*)(slot + 0x38c) = y;
-            slot[0] = 1;
+            AsCharacter(slot)->Object.Visible = 1;    // visible flag
+            AsCharacter(slot)->Object.LightEnable = 1;     // is_rendered sub-flag
+            AsCharacter(slot)->JumpTime = 0;
+            AsCharacter(slot)->TargetX = tx;
+            AsCharacter(slot)->TargetY = ty;
+            AsCharacter(slot)->PathNum = 0;
+            AsCharacter(slot)->PositionX = x;
+            AsCharacter(slot)->PositionY = y;
+            AsCharacter(slot)->Object.Live = 1;
             // Init +0x168 (screen distance) a 1.0f para
             // que mob sea targetable INMEDIATAMENTE (antes del primer
             // frame de render). Sin esto, FUN_004afdc0 (hover detect)
             // filtra mob por `_DAT_00552580 < ent[+0x168]` (= 0
             // por default) → mob no es hovered hasta que sea
             // rendered (1+ frame later).
-            *(float*)(slot + 0x168) = 1.0f;
+            AsCharacter(slot)->Object.Alpha = 1.0f;
             // Init move speed (+0x2FA = +762 word).
             // CreateMonster solo setea esto para case 11. Resto de
             // los tipos quedan en 0 → CharacterMoveSpeed retorna 0 →
             // sin movimiento. O queda en basura → mobs acelerados.
             // 4 = "slow walk" baseline para mobs/NPCs (vs player ~12).
-            if (*(unsigned short*)(slot + 0x2FA) == 0) {
-                *(unsigned short*)(slot + 0x2FA) = 4;
+            if (AsCharacter(slot)->MoveSpeed == 0) {
+                AsCharacter(slot)->MoveSpeed = 4;
             }
             ApplyPersistentSkillEffect97k(slot, viewSkillState, 1);
             int spawnSlot = (int)((slot - basePtr) / 0x394);
@@ -728,21 +728,21 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         // Mantener esto sincronizado con el setup normal del viewport de
         // monstruos 0x13, y después aplicar la etiqueta/estado propios del invocado.
-        *(float*)(summon + 0x24) = ((float)((dirPk >> 4) & 0x0F) - 1.0f) * 45.0f;
-        *(WORD*)(summon + 0x1dc) = key;
-        summon[0x160] = 1;
-        summon[0xdc] = 1;
-        summon[0x305] = 0;
-        summon[0x306] = tx;
-        summon[0x307] = ty;
-        summon[0x356] = 0;
-        *(int*)(summon + 0x388) = x;
-        *(int*)(summon + 0x38c) = y;
-        *(float*)(summon + 0x168) = 1.0f;
-        if (*(WORD*)(summon + 0x2fa) == 0) *(WORD*)(summon + 0x2fa) = 4;
-        summon[132] = 1;
-        summon[746] = dirPk & 0x0F;
-        if ((dirPk & 0x0F) >= 6) *(WORD*)(summon + 446) = 1;
+        AsCharacter(summon)->Object.Angle[2] = ((float)((dirPk >> 4) & 0x0F) - 1.0f) * 45.0f;
+        AsCharacter(summon)->Key = key;
+        AsCharacter(summon)->Object.Visible = 1;
+        AsCharacter(summon)->Object.LightEnable = 1;
+        AsCharacter(summon)->JumpTime = 0;
+        AsCharacter(summon)->TargetX = tx;
+        AsCharacter(summon)->TargetY = ty;
+        AsCharacter(summon)->PathNum = 0;
+        AsCharacter(summon)->PositionX = x;
+        AsCharacter(summon)->PositionY = y;
+        AsCharacter(summon)->Object.Alpha = 1.0f;
+        if (AsCharacter(summon)->MoveSpeed == 0) AsCharacter(summon)->MoveSpeed = 4;
+        AsCharacter(summon)->Object.Kind = 1;
+        AsCharacter(summon)->PK = dirPk & 0x0F;
+        if ((dirPk & 0x0F) >= 6) AsCharacter(summon)->Level = 1;
 
         // El cliente original reemplaza la etiqueta de la criatura con
         // "<owner name>'s <old monster name>".  Preserve the
@@ -754,7 +754,7 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         summon[459] = 0;
         strncat((char*)(summon + 449), "'s ", 100 - strlen((char*)(summon + 449)));
         strncat((char*)(summon + 449), oldName, 100 - strlen((char*)(summon + 449)));
-        summon[0] = 1;
+        AsCharacter(summon)->Object.Live = 1;
         ApplyPersistentSkillEffect97k(summon, viewSkillState, 1);
 
         if (create) AppearMonster((DWORD)(uintptr_t)summon);
@@ -782,11 +782,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int count = Msg[3 + hdrOff];
     NetLog("NET:  → 0x20 ViewportItem count=%d size=%d", count, Size);
     int cursor = 4 + hdrOff;
-    // Escribir sobre el ITEM-BASE (DAT_07e127f8), no
-    // sobre DAT_07e12840 (= item-base+72). Los offsets de abajo son
-    // ip-relativos de CreateItem (ip+4 type, ip+72 active, ip+88 pos);
-    // con la base correcta el active queda en ip+72 = DAT_07e12840+0,
-    // que es donde Entity_Render lo lee.
+    // Cada entrada del pool es un ITEM_t (structs.h): Key, Item y Object.
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
     extern void __cdecl ItemAngle(int);   // ItemAngle
@@ -808,53 +804,45 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         if (key >= 1000) key = 0;  // safety clamp per IDA
 
-        BYTE* ip = itemPool + (size_t)key * 0x204;
+        BYTE* ip = itemPool + (size_t)key * sizeof(ITEM_t);
+        ITEM_t* gi = AsGroundItem(ip);
+        OBJECT* o = &gi->Object;
 
-        // Per IDA CreateItem layout:
-        //   ip+4   short type (raw, sin +400)
-        //   ip+8   int level/option (Item[1] o packed for type 463)
-        //   ip+30  byte exc_option (Item[2])
-        //   ip+31  byte ?           (Item[3])
-        //   ip+72  byte active_flag = 1
-        //   ip+74  short model_index = type+400 (con overrides)
-        //   ip+76  int unknown = 1
-        //   ip+88  float pos[3] (X, Y, Z)
-        //   ip+352..364 float scale (-12.5..-12.5..-12.5..25.0..25.0..25.0)
-        *(WORD*)(ip + 4) = (WORD)itemType;
+        *(WORD *)&gi->Item.Type = (WORD)itemType;   // sin el +400 del modelo
         if (itemType == 463) {
             // Zen (GET_ITEM(14,15)): la CANTIDAD viaja en 24 bits
             // repartidos en info[1] (bits 16-23), info[2] (8-15) e
             // info[4] (0-7) — ver Viewport.cpp:926 del server.
-            // Queda en ip+8, que es de donde la leen Entity_Render
+            // Queda en Item.Level, que es de donde la leen Entity_Render
             // (para el tamaño del montón de monedas) y RenderItemName
             // (para el texto "Zen <cantidad>").
             int v5 = (int)itemInfo[4] + (((int)itemInfo[2] + ((int)itemInfo[1] << 8)) << 8);
-            *(int*)(ip + 8) = v5;
-            ip[30] = 0;
-            ip[31] = 0;
+            gi->Item.Level = v5;
+            gi->Item.Durability = 0;
+            gi->Item.Option1 = 0;
             if (createFlag) PlayBuffer(31, 0, 0);   // pDropMoney.wav
         } else {
-            *(int*)(ip + 8) = (int)itemInfo[1];
-            ip[30] = itemInfo[2];
-            ip[31] = itemInfo[3];
+            gi->Item.Level = (int)itemInfo[1];
+            gi->Item.Durability = itemInfo[2];
+            gi->Item.Option1 = itemInfo[3];
             if (createFlag) {
                 // IDA CreateItem L38-46: joyas y pergaminos suenan
                 // distinto que el resto.
                 if (itemType == 461 || itemType == 462 || itemType == 464 ||
                     itemType == 399 || itemType == 470)
-                    PlayBuffer(49, (DWORD)(uintptr_t)(ip + 72), 0);
+                    PlayBuffer(49, (DWORD)(uintptr_t)o, 0);
                 else
-                    PlayBuffer(30, (DWORD)(uintptr_t)(ip + 72), 0);
+                    PlayBuffer(30, (DWORD)(uintptr_t)o, 0);
             }
         }
-        ip[72] = 1;                                    // active flag
-        *(WORD*)(ip + 74) = (WORD)ItemModel(itemType);   // model index (0.97.20: catálogo)
-        *(int*)(ip + 76) = 1;
+        o->Live = 1;
+        *(WORD *)&o->Type = (WORD)ItemModel(itemType);   // modelo (0.97.20: catálogo)
+        o->SubType = 1;
 
         // Model overrides (CreateItem switch L58-126): arrows/fruit/etc
         // cuyo modelo NO es type+400.
         {
-            int lvl = *(int*)(ip + 8) >> 3;
+            int lvl = gi->Item.Level >> 3;
             if (itemType == 459) {                     // arrows
                 switch (lvl) {
                     case 1: *(WORD*)(ip + 74) = 951; break;
@@ -877,49 +865,49 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
 
         // ItemObjectAttribute (CreateItem LABEL_33): setea atributos
-        // de render del objeto (ip+72). Sin esto el modelo puede
+        // de render del objeto. Sin esto el modelo puede
         // quedar sin scale/flags → invisible.
-        ItemObjectAttribute((int)(ip + 72));
+        ItemObjectAttribute((int)(uintptr_t)o);
 
         // BoundingBox del objeto (IDA CreateItem L129-134):
         // min = (-30,-30,-30), max = (30,30,30).
-        *(int*)(ip + 352) = (int)0xC1F00000;  // -30.0f
-        *(int*)(ip + 356) = (int)0xC1F00000;
-        *(int*)(ip + 360) = (int)0xC1F00000;
-        *(int*)(ip + 364) = (int)0x41F00000;  //  30.0f
-        *(int*)(ip + 368) = (int)0x41F00000;
-        *(int*)(ip + 372) = (int)0x41F00000;
+        o->BoundingBoxMin[0] = -30.0f;
+        o->BoundingBoxMin[1] = -30.0f;
+        o->BoundingBoxMin[2] = -30.0f;
+        o->BoundingBoxMax[0] = 30.0f;
+        o->BoundingBoxMax[1] = 30.0f;
+        o->BoundingBoxMax[2] = 30.0f;
 
         // World position: ((grid + 0.5) * 100.0)
-        *(float*)(ip + 88) = ((float)gx + 0.5f) * 100.0f;
-        *(float*)(ip + 92) = ((float)gy + 0.5f) * 100.0f;
+        o->Position[0] = ((float)gx + 0.5f) * 100.0f;
+        o->Position[1] = ((float)gy + 0.5f) * 100.0f;
         // Z: terrain height (RequestTerrainHeight 0x004F7500).
         extern float __cdecl RequestTerrainHeight(float, float);
-        float terrainH = RequestTerrainHeight(*(float*)(ip + 88), *(float*)(ip + 92));
+        float terrainH = RequestTerrainHeight(o->Position[0], o->Position[1]);
 
         // Caída del item recién dropeado (IDA CreateItem L139-172):
-        // nace por encima del suelo con velocidad Z en ip+288 y
+        // nace por encima del suelo con velocidad Z en Gravity y
         // MoveItems (0x503760) lo hace caer y rebotar.  Sin esto el
         // item aparecía clavado en el suelo, sin animación de drop.
         // Omitido: los CreateEffect(250)/CreateEffect(248) de las
         // flechas/bolts (modelos 955/956), que necesitan los args
         // vec3 de CreateEffect.
         if (createFlag) {
-            WORD model = *(WORD*)(ip + 74);
+            WORD model = *(WORD *)&o->Type;
             if (model == 955 || model == 956) {
-                *(int*)(ip + 288)   = (int)0x42480000;   // 50.0f
-                *(float*)(ip + 96)  = terrainH + 3.0f;
+                o->Gravity     = 50.0f;
+                o->Position[2] = terrainH + 3.0f;
             } else {
-                *(int*)(ip + 288)   = (int)0x41A00000;   // 20.0f
-                *(float*)(ip + 96)  = terrainH + 180.0f;
+                o->Gravity     = 20.0f;
+                o->Position[2] = terrainH + 180.0f;
             }
         } else {
-            *(float*)(ip + 96) = terrainH;
+            o->Position[2] = terrainH;
         }
 
         // ItemAngle (CreateItem final): setea rotación del item en
         // el suelo según el terreno.
-        ItemAngle((int)(ip + 72));
+        ItemAngle((int)(uintptr_t)o);
 
         NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                i, key, itemType, createFlag, gx, gy);

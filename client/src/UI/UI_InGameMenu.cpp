@@ -5,6 +5,8 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Platform/Text.h"
+#include "Platform/ISocket.h"
 #include "Net/Reconnect.h"
 #include "UI/OptionsMenu.h"
 #include "globals.h"
@@ -151,13 +153,13 @@ void __cdecl UI_InGameMenu(void)
             // (e.g. "Saldrás del juego en %d segundos."), loaded from
             // Data/Local/Text.bmd by OpenTextData() at boot.
             char buf[300];
-            wsprintfA(buf, GlobalText[380], (int)(v3 / 10));
+            Platform::TextFormat(buf, GlobalText[380], (int)(v3 / 10));
             UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, buf, 1);
         }
         DAT_083a7c20 = v3 - 1;
         if ((int)(v3 - 1) <= 0) {
             DAT_083a7c1c = 0;
-            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
+            gWindow.RequestCloseApplication();
         }
     }
 
@@ -188,7 +190,7 @@ void __cdecl UI_InGameMenu(void)
         if (okClick || enterHit) {
             DAT_083a4124 = 0;
             DAT_055ca038 = '\0';                     // consume Enter
-            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);  // cierra el cliente
+            gWindow.RequestCloseApplication();  // cierra el cliente
             DAT_083a7c24 = DAT_083a7c28;             // ErrorMessage = NextErrorMessage
             DAT_083a7c28 = 0;
         }
@@ -254,9 +256,9 @@ void __cdecl UI_InGameMenu(void)
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             gNetwork.Send(pkt, 5);
                         }
-                        if (SocketClientSocket != 0xffffffff) {
-                            closesocket((SOCKET)SocketClientSocket);
-                            SocketClientSocket = (DWORD)INVALID_SOCKET;
+                        if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
+                            Platform::GetSocket().Close((SOCKET)SocketClientSocket);
+                            SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
                         }
                         DAT_083a7c1c = 1;
                         DAT_083a7c20 = 50;   // 50 ticks = 5 s at 10 FPS refresh

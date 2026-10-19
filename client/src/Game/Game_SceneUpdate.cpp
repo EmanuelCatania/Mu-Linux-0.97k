@@ -28,6 +28,8 @@
 //   state 2,4,6,8   : Y eases to 0x93  (credentials panel)
 
 #include "stdafx.h"
+#include <algorithm>
+#include "Platform/ITimer.h"
 #include "Net/Reconnect.h"
 #include "Net/PacketFrame.h"
 
@@ -59,32 +61,32 @@ static void LoginScene_ApplySafeObjectAnim()
         // Match the original order more closely: Alpha(o) runs before the
         // animation tick and can early-out nearly invisible objects.
         MoveObject_Special((int)obj);
-        if (*(float*)(obj + 0x168) < 0.01f)
+        if (AsObject(obj)->Alpha < 0.01f)
             continue;
 
-        short type = *(short*)(obj + 2);
+        short type = AsObject(obj)->Type;
         char* model = (char*)(DAT_05828d58 + type * 0xbc);
         if (model) {
-            model[0xa0] = *(char*)(obj + 0x105);
+            model[0xa0] = *(char *)&AsObject(obj)->CurrentAction;
             BMD__PlayAnimation((void*)model,
                 (float*)(obj + 0x108),
                 (float*)(obj + 0x10c),
                 (void*)(obj + 0x106),
-                *(float*)(obj + 0xcc));
+                AsObject(obj)->Velocity);
         }
 
         if (type == 160 || type == 161) {
             float v = (float)((long long)DAT_05826e08 % 4000);
-            *(float*)(obj + 112) = -(v * 0.00025f);
+            AsObject(obj)->BlendMeshTexCoordV = -(v * 0.00025f);
             continue;
         }
 
         if (type == 162) {
             float ramp = (DAT_083a7af4 != 0) ? 1.5f : ((float)(int)DAT_005615e8 * 0.002f);
-            *(float*)(obj + 232) = ramp;
-            *(float*)(obj + 236) = ramp;
-            *(float*)(obj + 240) = ramp;
-            *(float*)(obj + 104) = ramp;
+            AsObject(obj)->Light[0] = ramp;
+            AsObject(obj)->Light[1] = ramp;
+            AsObject(obj)->Light[2] = ramp;
+            AsObject(obj)->BlendMeshLight = ramp;
         }
 
         // No spawnear efectos acá: Entity_SpawnEffects se llama una vez por entidad
@@ -116,18 +118,18 @@ static void LoginScene_ClearPreviewEquipmentMeta(unsigned char* c)
         c[bodyMetaOff[i] + 3] = 0;
     }
 
-    c[0x28a] = 0;
-    c[0x28b] = 0;
-    c[0x28c] = 0;
-    c[0x28d] = 0;
-    c[0x2a2] = 0;
-    c[0x2a3] = 0;
-    c[0x2a4] = 0;
-    c[0x2a5] = 0;
-    c[0x2ba] = 0;
-    c[0x2bb] = 0;
-    c[0x2bc] = 0;
-    c[0x2bd] = 0;
+    AsCharacter(c)->Weapon[1].Level = 0;
+    AsCharacter(c)->Weapon[1].Option1 = 0;
+    AsCharacter(c)->Weapon[1].LinkBone = 0;
+    AsCharacter(c)->Weapon[1].CurrentAction = 0;
+    AsCharacter(c)->Wing.Level = 0;
+    AsCharacter(c)->Wing.Option1 = 0;
+    AsCharacter(c)->Wing.LinkBone = 0;
+    AsCharacter(c)->Wing.CurrentAction = 0;
+    AsCharacter(c)->Helper.Level = 0;
+    AsCharacter(c)->Helper.Option1 = 0;
+    AsCharacter(c)->Helper.LinkBone = 0;
+    AsCharacter(c)->Helper.CurrentAction = 0;
 }
 
 // Encrypt bytes [start..end) in pkt using the login XOR key.
@@ -416,7 +418,7 @@ int Game_SceneUpdate(void)
 
     // ── STATE 1 / 12: CONNECTING / ERROR ─────────────────────────────────────
     if (DAT_083a7c14 == 1 || DAT_083a7c14 == 0xc) {
-        DWORD now = GetTickCount();
+        DWORD now = Platform::GetTimer().Ticks();
         DWORD elapsed = now - DAT_083a7ac8;
 
         if (elapsed < 0x3a99) {
@@ -446,7 +448,7 @@ int Game_SceneUpdate(void)
         } else {
             // state == 12: restart timestamp
             if (DAT_083a7c14 == 0xc)
-                DAT_083a7ac8 = GetTickCount();
+                DAT_083a7ac8 = Platform::GetTimer().Ticks();
         }
 
         // Click "back" button (0x11d-0x162, Y: 0x106-0x119)
@@ -546,7 +548,7 @@ int Game_SceneUpdate(void)
                               (code > 0x14 && code < 0x22));
             if (validCode) {
                 CErrorReport_Write(&DAT_055c9bf0, "> Login Request");
-                DAT_083a7ac8 = GetTickCount();
+                DAT_083a7ac8 = Platform::GetTimer().Ticks();
                 DAT_083a4320 = 0;
                 CErrorReport_Write(&DAT_055c9bf0, "> Try to Login ... %s",
                              (char*)DAT_07db8710);
@@ -559,8 +561,8 @@ int Game_SceneUpdate(void)
 
                 // Build login packet [0xC1][0xF1] + user(10) + pass(10) + tick(4) + 5 obf + 16 raw
                 BYTE user[10] = {0}, pass[10] = {0};
-                memcpy(user, DAT_07db8710, min(ulen - 1, 10));
-                memcpy(pass, DAT_07db8810, min((int)strlen((char*)DAT_07db8810), 10));
+                memcpy(user, DAT_07db8710, (std::min)(ulen - 1, 10));
+                memcpy(pass, DAT_07db8810, (std::min)((int)strlen((char*)DAT_07db8810), 10));
                 // NOTE: companion client (Mu-linux-97K/Source/Client/Main/Reconnect.cpp:222-224)
                 // does NOT pre-process account/password — they're fed RAW into
                 // PacketArgumentEncrypt (the 3-byte XOR below).  We used to call
@@ -734,14 +736,15 @@ state_fail_common:
                     pkt[3] ^= pkt[2] ^ CNetwork::XorKey[3 & 0x1f];
                     gNetwork.SendRaw((char*)pkt, 4);
                 }
-                Resource_LoadOrFatal((CHAR*)LogInID);
                 Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)
                 return 0;
 
-            // Login error codes 0x13-0x24: show error, back to CredentialInput
-            case 0x13: case 0x15: case 0x16: case 0x17: case 0x18:
+            // IDA: Game_SceneUpdate (0x0051F900), errores de login 21..38.
+            // El estado 19 espera la respuesta: no abre un mensaje de error.
+            case 0x15: case 0x16: case 0x17: case 0x18:
             case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e:
             case 0x1f: case 0x20: case 0x21: case 0x22: case 0x23: case 0x24:
+            case 0x25: case 0x26:
                 if (respCode == 0x15) {
                     DAT_07e11d78 = 1;
                 } else {
