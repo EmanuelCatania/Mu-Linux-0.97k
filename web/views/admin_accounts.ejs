@@ -1,6 +1,6 @@
 <%- include('partials/header') %>
 
-<section class="card">
+<section class="card accounts-page">
   <div class="row-between">
     <h2><%= t("Cuentas") %></h2>
     <div class="admin-links">
@@ -22,10 +22,20 @@
   <% } %>
 
   <form method="get" action="/admin/accounts">
-    <label><%= t("Buscar (usuario, nombre o email)") %></label>
+    <label><%= t("Buscar (usuario, nombre, email o IP)") %></label>
+    <input type="hidden" name="sort" value="<%= sort %>" />
+    <input type="hidden" name="dir" value="<%= dir %>" />
     <input type="text" name="q" value="<%= q %>" maxlength="50" />
+    <label><%= t("Origen") %></label>
+    <select name="src">
+      <option value=""><%= t("Todos los origenes") %></option>
+      <% sourceChannels.forEach((channel) => { %>
+        <option value="<%= channel %>" <%= src === channel ? 'selected' : '' %>><%= channel %></option>
+      <% }) %>
+    </select>
     <button type="submit"><%= t("Buscar") %></button>
   </form>
+  <p class="muted"><%= t("Sin IP: la cuenta nunca entro al juego.") %></p>
 
   <% if (accounts.length === 0) { %>
     <p class="muted"><%= t("No hay cuentas para mostrar.") %></p>
@@ -33,24 +43,58 @@
     <table class="table">
       <thead>
         <tr>
-          <th><%= t("Usuario") %></th>
-          <th><%= t("Nombre") %></th>
-          <th>Email</th>
-          <th><%= t("Nivel") %></th>
-          <th><%= t("Estado") %></th>
-          <th>Online</th>
+          <th class="account-num">#</th>
+          <% [
+            ['user', t('Usuario')],
+            ['name', t('Nombre')],
+            ['email', 'Email'],
+            ['level', t('Nivel')],
+            ['status', t('Estado')],
+            ['online', 'Online'],
+            ['ip', 'IP'],
+            ['source', t('Origen')],
+            ['created', t('Creado')],
+            ['login', t('Ultimo login')]
+          ].forEach(([key, label]) => { %>
+            <th>
+              <a class="sort-link<%= sort === key ? ' is-active' : '' %>" href="/admin/accounts?<%= new URLSearchParams({ ...(q ? { q } : {}), ...(src ? { src } : {}), sort: key, dir: sort === key && dir === 'asc' ? 'desc' : 'asc' }) %>"><%= label %><%= sort === key ? (dir === 'asc' ? ' ↑' : ' ↓') : '' %></a>
+            </th>
+          <% }) %>
+          <th><%= t("Personajes") %></th>
           <th><%= t("Acciones") %></th>
         </tr>
       </thead>
       <tbody>
-        <% accounts.forEach(item => { %>
+        <% accounts.forEach((item, index) => { %>
           <tr>
+            <td class="account-num"><%= index + 1 %></td>
             <td><%= item.memb___id %></td>
             <td><%= item.memb_name %></td>
             <td><%= item.mail_addr || '-' %></td>
             <td><%= item.AccountLevel %></td>
             <td><%= t(String(item.bloc_code) === '1' ? 'Bloqueado' : 'OK') %></td>
             <td><%= item.ConnectStat === 1 ? 'Online' : 'Offline' %></td>
+            <td class="account-ip" title="<%= item.IP ? item.countryName : t('Sin IP: la cuenta nunca entro al juego.') %>">
+              <% if (item.countryFlag) { %>
+                <img src="<%= item.countryFlag %>" alt="<%= t(item.countryName) %>" title="<%= t(item.countryName) %>" class="account-flag" width="22" height="16" loading="lazy">
+              <% } %>
+              <%= item.displayIp || '-' %>
+            </td>
+            <td class="account-source" title="<%= item.sourceTitle %>"><%= item.sourceLabel || '—' %></td>
+            <td class="account-when"><%= item.createdLabel || '—' %></td>
+            <td class="account-when"><%= item.loginLabel || '—' %></td>
+            <td class="account-characters">
+              <% if (!item.characters.length) { %>
+                <span class="muted"><%= t("Sin personajes") %></span>
+              <% } else { %>
+                <% item.characters.forEach((char) => { %>
+                  <span class="account-character">
+                    <a href="/admin/accounts/<%= encodeURIComponent(item.memb___id) %>/characters/<%= encodeURIComponent(char.Name) %>"><%= char.Name %></a>
+                    <span class="muted">Lv <%= char.cLevel %><% if (Number(char.ResetCount) > 0) { %> RR <%= char.ResetCount %><% } %> · <%= char.ClassName %></span>
+                  </span>
+                <% }) %>
+              <% } %>
+            </td>
             <td class="actions">
               <a href="/admin/accounts/<%= item.memb___id %>"><%= t("Editar") %></a>
             </td>

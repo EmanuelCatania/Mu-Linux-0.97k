@@ -32,49 +32,99 @@
         <% } %>
 
         <div class="table-responsive">
-          <table class="table table-bordered table-striped mb-0">
+          <table class="table table-bordered table-striped mb-0 align-middle">
             <thead>
               <% if (type === 'guilds') { %>
                 <tr>
-                  <th>#</th>
-                  <th>Guild</th>
-                  <th>Master</th>
-                  <th>Score</th>
-                  <th><%= t("Miembros") %></th>
+                  <th style="width: 50px;" class="text-center">#</th>
+                  <th><%= t("Guild") %></th>
+                  <th><%= t("Master") %></th>
+                  <th class="text-center"><%= t("Score") %></th>
+                  <th class="text-center"><%= t("Miembros") %></th>
                 </tr>
               <% } else { %>
                 <tr>
-                  <th>#</th>
+                  <th style="width: 50px;" class="text-center">#</th>
+                  <th style="width: 70px;" class="text-center"><%= t("Pais") %></th>
+                  <th style="width: 85px;" class="text-center"><%= t("Estado") %></th>
                   <th><%= t("Nombre") %></th>
-                  <th>GR</th>
-                  <th>Reset</th>
-                  <th><%= t("Nivel") %></th>
-                  <th><%= t("Clase") %></th>
+                  <th class="text-center">GR</th>
+                  <th class="text-center"><%= t("Reset") %></th>
+                  <th class="text-center"><%= t("Nivel") %></th>
+                  <th class="text-center"><%= t("Clase") %></th>
                 </tr>
               <% } %>
             </thead>
             <tbody>
               <% if (!rows || rows.length === 0) { %>
                 <tr>
-                  <td colspan="<%= type === 'guilds' ? 5 : 6 %>" class="text-center"><%= t("Sin datos") %></td>
+                  <td colspan="<%= type === 'guilds' ? 5 : 8 %>" class="text-center py-4 text-muted"><%= t("Sin datos") %></td>
                 </tr>
               <% } else { %>
                 <% rows.forEach(function(row, idx) { %>
                   <% if (type === 'guilds') { %>
                     <tr>
-                      <td><%= idx + 1 %></td>
-                      <td><%= row.GuildName %></td>
-                      <td><%= row.GuildMaster || '-' %></td>
-                      <td><%= row.GuildScore %></td>
-                      <td><%= row.Members %></td>
+                      <td class="text-center fw-bold text-secondary"><%= idx + 1 %></td>
+                      <td class="fw-semibold"><%= row.GuildName %></td>
+                      <td>
+                        <% if (row.GuildMaster) { %>
+                          <span class="d-inline-flex align-items-center gap-2">
+                            <% if (row.countryFlag) { %>
+                              <img src="<%= row.countryFlag %>"
+                                   alt="<%= t(row.countryName) %>"
+                                   title="<%= t(row.countryName) %>"
+                                   class="rank-country-flag"
+                                   width="22"
+                                   height="16"
+                                   loading="lazy" />
+                            <% } %>
+                            <% if (row.isOnline) { %>
+                              <span class="rank-dot-pulse" title="<%= t('En linea') %>"></span>
+                            <% } else { %>
+                              <span class="rank-dot-offline" title="<%= t('Desconectado') %>"></span>
+                            <% } %>
+                            <span><%= row.GuildMaster %></span>
+                            <%- include('partials/staff_badge', { staff: row.staff }) %>
+                          </span>
+                        <% } else { %>-<% } %>
+                      </td>
+                      <td class="text-center"><%= row.GuildScore %></td>
+                      <td class="text-center"><%= row.Members %></td>
                     </tr>
                   <% } else { %>
                     <tr>
-                      <td><%= idx + 1 %></td>
-                      <td><%= row.Name %></td>
-                      <td><%= row.GrandResetCount %></td>
-                      <td><%= row.ResetCount %></td>
-                      <td><%= row.cLevel %></td>
+                      <td class="text-center fw-bold text-secondary"><%= idx + 1 %></td>
+                      <td class="text-center">
+                        <% if (row.countryFlag) { %>
+                          <img src="<%= row.countryFlag %>"
+                               alt="<%= t(row.countryName) %>"
+                               title="<%= t(row.countryName) %>"
+                               class="rank-country-flag"
+                               width="22"
+                               height="16"
+                               loading="lazy" />
+                        <% } %>
+                      </td>
+                      <td class="text-center">
+                        <% if (row.isOnline) { %>
+                          <span class="rank-badge-status online" title="<%= t('En linea') %>">
+                            <span class="rank-dot-pulse"></span>
+                            <span class="rank-status-label d-none d-md-inline"><%= t('En linea') %></span>
+                          </span>
+                        <% } else { %>
+                          <span class="rank-badge-status offline" title="<%= t('Desconectado') %>">
+                            <span class="rank-dot-offline"></span>
+                            <span class="rank-status-label d-none d-md-inline"><%= t('Desconectado') %></span>
+                          </span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <span><%= row.Name %></span>
+                        <%- include('partials/staff_badge', { staff: row.staff }) %>
+                      </td>
+                      <td class="text-center"><%= row.GrandResetCount %></td>
+                      <td class="text-center"><%= row.ResetCount %></td>
+                      <td class="text-center"><%= row.cLevel %></td>
                       <td class="text-center">
                         <img src="<%= row.ClassIcon %>" alt="<%= row.ClassName %>" title="<%= row.ClassName %>" class="class-icon" />
                       </td>
@@ -85,6 +135,45 @@
             </tbody>
           </table>
         </div>
+
+        <% if (staffRoster && staffRoster.length) { %>
+          <h3 class="fw-bold mt-4 mb-3 text-dark"><%= t("Personal") %></h3>
+          <p class="text-muted small"><%= t("El personal no ocupa puestos del ranking.") %></p>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th><%= t("Nombre") %></th>
+                  <th class="text-center"><%= t("Rol") %></th>
+                  <th class="text-center"><%= t("Estado") %></th>
+                  <th class="text-center"><%= t("Clase") %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% staffRoster.forEach(function(row) { %>
+                  <tr>
+                    <td>
+                      <span><%= row.Name %></span>
+                    </td>
+                    <td class="text-center">
+                      <%- include('partials/staff_badge', { staff: row.staff }) %>
+                    </td>
+                    <td class="text-center">
+                      <% if (row.isOnline) { %>
+                        <span class="rank-dot-pulse" title="<%= t('En linea') %>"></span>
+                      <% } else { %>
+                        <span class="rank-dot-offline" title="<%= t('Desconectado') %>"></span>
+                      <% } %>
+                    </td>
+                    <td class="text-center">
+                      <img src="<%= row.ClassIcon %>" alt="<%= row.ClassName %>" title="<%= row.ClassName %>" class="class-icon" />
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
       </div>
     </div>
   </div>

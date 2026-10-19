@@ -11,7 +11,7 @@
           <% } %>
           <form action="/register" method="POST">
             <div class="mb-3">
-              <input type="text" class="form-control" name="account" placeholder="Usuario (4-10 caracteres)" required>
+              <input type="text" class="form-control" name="account" placeholder="<%= t("Usuario (4-10 caracteres)") %>" required>
             </div>
             <div class="mb-3">
               <input type="text" class="form-control" name="name" placeholder="<%= t("Nombre (opcional)") %>">
@@ -23,7 +23,7 @@
               <input type="password" class="form-control" name="password" placeholder="<%= t("Contrasena") %>" required>
             </div>
             <div class="mb-3">
-              <input type="password" class="form-control" name="confirm" placeholder="Repetir contrasena" required>
+              <input type="password" class="form-control" name="confirm" placeholder="<%= t("Repetir contrasena") %>" required>
             </div>
 
             <% if (turnstileSiteKey) { %>

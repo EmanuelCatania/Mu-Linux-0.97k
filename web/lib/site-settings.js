@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { translator, locales } = require('./i18n');
 
-const languages = Object.freeze({ es: 'Español', en: 'English', pt: 'Português' });
+const languages = Object.freeze({ en: 'English', uk: 'Українська', es: 'Español', pt: 'Português' });
 const themes = Object.freeze({ classic: 'Clásico', 'daedalus-elf': 'Daedalus · Elf', 'daedalus-dk': 'Daedalus · Dark Knight', 'daedalus-dw': 'Daedalus · Dark Wizard' });
 
 function validSettings(body) {

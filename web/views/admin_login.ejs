@@ -12,6 +12,10 @@
     <label><%= t("Contraseña") %></label>
     <input type="password" name="password" required />
 
+    <% if (turnstileSiteKey) { %>
+      <div class="cf-turnstile" data-sitekey="<%= turnstileSiteKey %>"></div>
+    <% } %>
+
     <button type="submit"><%= t("Entrar") %></button>
   </form>
 </section>
