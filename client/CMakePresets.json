@@ -29,11 +29,11 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "MU_PLATFORM_BACKEND": "SDL3",
-        "MU_PLATFORM_ONLY": "ON"
+        "MU_PLATFORM_ONLY": "OFF"
       },
-      "generator": "Unix Makefiles",
+      "generator": "Ninja",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-x86.cmake",
-      "description": "Biblioteca SDL3 x86; el ejecutable completo aún depende de audio, red, fuentes y otros usos Windows."
+      "description": "Cliente completo para Linux x86 con SDL3. Requiere PKG_CONFIG_LIBDIR apuntando a las bibliotecas de 32 bits (ver README)."
     },
     {
       "name": "linux-x86-release",
@@ -41,11 +41,11 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "MU_PLATFORM_BACKEND": "SDL3",
-        "MU_PLATFORM_ONLY": "ON"
+        "MU_PLATFORM_ONLY": "OFF"
       },
-      "generator": "Unix Makefiles",
+      "generator": "Ninja",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-x86.cmake",
-      "description": "Biblioteca SDL3 x86; el ejecutable completo aún depende de audio, red, fuentes y otros usos Windows."
+      "description": "Cliente completo para Linux x86 con SDL3. Requiere PKG_CONFIG_LIBDIR apuntando a las bibliotecas de 32 bits (ver README)."
     },
     {
       "name": "windows-sdl3-x86-debug",
