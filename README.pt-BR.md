@@ -7,9 +7,7 @@
 
 Port nativo para Linux e stack operacional do MuEmu 0.97k com Docker, painel web e editor opcional.
 
-## Fase 3 (em desenvolvimento) — próximo 0.97.30
-
-O que segue está na branch `fase/3` e ainda não tem Release. Para usar, compile a partir dessa branch; as imagens Docker e os eggs do Pterodactyl continuam na `0.97.20`.
+## Novidades da 0.97.30 — conclusão da Fase 3
 
 - O servidor compila com CMake no Windows x86 e x64, além de Linux x64 e ARM64. O CI cobre as quatro combinações em Debug e Release.
 - O MySQL Connector/C++ é baixado no configure com versão e hash fixos; seus binários não são mais versionados.
@@ -68,7 +66,7 @@ Somente GM de nível 1 ou superior, pelo chat do jogo:
 
 Agendam uma única execução aproximadamente dois minutos depois, sem alterar os horários do arquivo nem reiniciar eventos ativos. BC/DS também rejeitam o pedido quando a entrada já está aberta. Iniciar uma invasão não reinicia as outras. O evento deve estar habilitado. Os novos comandos registram o pedido e o resultado em `COMMAND_LOG`.
 
-Em instalações existentes, adicione as quatro novas linhas de `MuServer/Data/Command.txt` depois de `/tamastart` e antes de `end`, nesta ordem: bcstart, dsstart, bingostart, invasionstart. A ordem determina o ID; preserve as outras configurações. A validação desses novos comandos em jogo ainda está pendente.
+Em instalações existentes, adicione as quatro novas linhas de `MuServer/Data/Command.txt` depois de `/tamastart` e antes de `end`, nesta ordem: bcstart, dsstart, bingostart, invasionstart. A ordem determina o ID; preserve as outras configurações.
 
 #### Exemplo: recarregar lojas pelo Docker
 

@@ -7,9 +7,7 @@
 
 Native Linux port and operational MuEmu 0.97k stack with Docker, web panel and optional editor.
 
-## Phase 3 (in progress) — upcoming 0.97.30
-
-Everything below lives on the `fase/3` branch and has no Release yet. To use it, build from that branch; the Docker images and the Pterodactyl eggs are still on `0.97.20`.
+## What's new in 0.97.30 — Phase 3 completed
 
 - The server builds with CMake on Windows x86 and x64, as well as Linux x64 and ARM64. CI covers all four in Debug and Release.
 - MySQL Connector/C++ is downloaded at configure time with a pinned version and hash; its binaries are no longer committed.
@@ -68,7 +66,7 @@ GM level 1 or higher only, through in-game chat:
 
 These schedule a single occurrence roughly two minutes later, without editing configured schedules or resetting active events. BC/DS also reject requests while entry is open. Starting an invasion does not reset other invasions. The event must be enabled. New commands record the request and result in `COMMAND_LOG`.
 
-For existing installations, append the four new rows from `MuServer/Data/Command.txt` after `/tamastart` and before `end`, in this order: bcstart, dsstart, bingostart, invasionstart. Row order determines command IDs; preserve other configuration. In-game validation of these new commands is still pending.
+For existing installations, append the four new rows from `MuServer/Data/Command.txt` after `/tamastart` and before `end`, in this order: bcstart, dsstart, bingostart, invasionstart. Row order determines command IDs; preserve other configuration.
 
 #### Example: reload shops through Docker
 
