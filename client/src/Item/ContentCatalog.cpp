@@ -49,6 +49,7 @@ struct ItemExtraData
 {
     bool  Present = false;
     WORD  Behavior = 0;
+    BYTE  Skill = 0;
     bool  HasGlow = false;
     float Glow[3] = {};
     bool  HasPose = false;
@@ -389,6 +390,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
 
     ItemExtraData& extra = s_Items[row.Index];
     extra.Present = true;
+    extra.Skill = row.Skill;
     extra.Behavior = (row.Behavior < ITEM_MAX_EX) ? row.Behavior : row.Index;
     extra.Slot = (row.Slot < 12) ? row.Slot : -1;
     if (row.Flags & Proto::CATALOG_ITEM_HAS_GLOW) {
@@ -532,6 +534,12 @@ void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPt
             }
         }
     }
+}
+
+int CContentCatalog::GetItemSkill(int type) const
+{
+    if (type < 0 || type >= ITEM_MAX_EX || !s_Items[type].Present) return -1;
+    return s_Items[type].Skill;
 }
 
 int CContentCatalog::GetItemBehavior(int type) const

@@ -64,6 +64,8 @@ public:
     // Vanilla cuyo comportamiento hardcodeado usa el item (el propio si no
     // tiene columna Behavior).
     int GetItemBehavior(int type) const;
+    // -1: no catalog entry; 0: the catalog explicitly grants no skill.
+    int GetItemSkill(int type) const;
 
     // Slot de modelo para dibujar el item: type + 400 para los vanilla,
     // el slot dinámico o el del comportamiento para los agregados.
