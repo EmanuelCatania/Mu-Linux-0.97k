@@ -136,6 +136,7 @@
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\ObjectPose.h" />
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
@@ -407,6 +408,7 @@
     <ClCompile Include="src\Path\Path_LegacyReset.cpp" />
     <ClCompile Include="src\Render\Font_LegacyFactory.cpp" />
     <ClCompile Include="src\Render\SMD_Parser.cpp" />
+    <ClCompile Include="src\Entity\ObjectPose.cpp" />
     <ClCompile Include="src\Render\Entity_AnimationLegacy.cpp" />
     <ClCompile Include="src\Combat\Combat_LegacyAttackEffects.cpp" />
     <ClCompile Include="src\Entity\Entity_LegacyPoolCleanup.cpp" />

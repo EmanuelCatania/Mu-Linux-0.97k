@@ -224,6 +224,7 @@ set(MU_SOURCES
     src/Path/Path_LegacyReset.cpp
     src/Render/Font_LegacyFactory.cpp
     src/Render/SMD_Parser.cpp
+    src/Entity/ObjectPose.cpp
     src/Render/Entity_AnimationLegacy.cpp
     src/Combat/Combat_LegacyAttackEffects.cpp
     src/Entity/Entity_LegacyPoolCleanup.cpp
@@ -377,6 +378,7 @@ set(MU_HEADERS
     src/UI/UIState.h
     src/UI/ChatTypes.h
     src/Entity/EntityView.h
+    src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
     src/Model/ModelTypes.h
