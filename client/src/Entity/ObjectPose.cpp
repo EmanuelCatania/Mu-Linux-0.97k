@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Entity/ObjectPose.h"
+#include "Entity/ObjectBounds.h"
 #include "functions.h"
 #include "globals.h"
 
@@ -29,6 +30,37 @@ void ObjectPose_PrepareBones(int entity, void* model, float* bones, char transla
     BMD_Animation(model, (int)bones, AsObject(entity)->AnimationFrame, priorFrame,
                   AsObject(entity)->PriorAction, (unsigned int*)(entity + 0x1c),
                   (float*)(entity + 0x28), '\0', translate == '\0');
+}
+
+// La caja normal no depende de mallas ni huesos. Sólo el editor 2 necesita
+// transformar la geometría para obtener sus extremos; LOD 0 no dibuja.
+void ObjectPose_PrepareBounds(int entity, char translate)
+{
+    OBJECT &o = *AsObject(entity);
+    if (o.Alpha < _DAT_005524f8) return;
+    if (DAT_07e11d30 == 2) {
+        Calc_RenderObject(entity, translate, 0);
+        return;
+    }
+    float origin[3] = { o.Position[0], o.Position[1], o.Position[2] };
+    if (o.Type == 0x14b) origin[1] += _DAT_0055290c;
+    else if (o.Type == 0x14a) origin[1] += _DAT_00552908;
+    ObjectBounds_Build(o.BoundingBoxMin, o.BoundingBoxMax, origin, o.OBB);
+}
+
+void ObjectPose_PrepareSimulation(int entity, char translate)
+{
+    OBJECT &o = *AsObject(entity);
+    if (o.Alpha < _DAT_005524f8) return;
+    if (DAT_07e11d30 == 2) {
+        Calc_RenderObject(entity, translate, 0);
+        return;
+    }
+    void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+    *(float *)((char *)model + 0x84) = 0.0f;
+    float *bones = o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)&DAT_06970a9c;
+    ObjectPose_PrepareBones(entity, model, bones, translate);
+    ObjectPose_PrepareBounds(entity, translate);
 }
 
 // IDA: BMD_Animation (0x00440060)

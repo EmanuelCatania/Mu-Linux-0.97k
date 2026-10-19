@@ -4,6 +4,7 @@
 #include "Item/ItemDefines.h"
 #include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
+#include "Entity/ObjectPose.h"
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
@@ -26,7 +27,7 @@ extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
 // la cámara final, NO un fix de bug del port.
 static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈ -300
 
-void Terrain_Render(void)
+static void Terrain_ProcessObjects(bool simulation)
 {
     // DESVIACION (DLL Antilag, ret en 0x004FD800): sin objetos del mapa.
     if (gUserSettings.GetAntilag(ANTILAG_OBJECTS)) return;
@@ -79,17 +80,25 @@ void Terrain_Render(void)
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
-                            // Terrain_Render in the original only prepares and draws.
-                            // Per-frame object animation/update belongs to MoveObjects.
-                            if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
-                            {
-                                void *pvSlot = AntiTamper_HashNode();
-                                *(unsigned char*)((char*)pvSlot + 0x584) = 1;
-                                HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
-                            }
+                            if (simulation) {
+                                void *model = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
+                                char context[0xbc];
+                                memcpy(context, model, sizeof(context));
+                                ObjectPose_PrepareBounds((int)entity, 0);
+                                memcpy(model, context, sizeof(context));
+                            } else {
+                                // Terrain_Render in the original only prepares and draws.
+                                // Per-frame object animation/update belongs to MoveObjects.
+                                if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
+                                {
+                                    void *pvSlot = AntiTamper_HashNode();
+                                    *(unsigned char*)((char*)pvSlot + 0x584) = 1;
+                                    HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
+                                }
 
-                            Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
-                            Entity_SpawnEffects((int)entity);
+                                Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
+                                Entity_SpawnEffects((int)entity);
+                            }
                         }
 
                         entity = *(char**)(entity + 0x1b8);
@@ -124,3 +133,8 @@ void Terrain_Render(void)
         } while (iVar < 0x59740);
     }
 }
+
+// Preparación autoritativa: comparte el culling del walker, sin dibujar,
+// emitir efectos ni ejecutar el bloque de ruido de hash del render.
+void Terrain_PrepareSimulation() { Terrain_ProcessObjects(true); }
+void Terrain_Render() { Terrain_ProcessObjects(false); }

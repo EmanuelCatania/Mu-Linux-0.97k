@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Entity/CharacterCloth.h"
+#include "Entity/ObjectPose.h"
 #include "Item/ContentCatalog.h"
 
 // GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
@@ -95,8 +96,7 @@ void CharacterCloth_Tick(int entity)
         void *selectModel = (void *)(DAT_05828d58 + o.Type * 0xbc);
         char context[0xbc];
         memcpy(context, selectModel, sizeof(context));
-        // LOD 0 sólo prepara huesos/caja; no dibuja ni emite efectos.
-        Calc_RenderObject(entity, 1, 0);
+        ObjectPose_PrepareSimulation(entity, 1);
         if (bones) {
             memcpy(g_AttackEffectMatrix_04D_Alt, bones + 1104 / sizeof(float), sizeof(g_AttackEffectMatrix_04D_Alt));
             memcpy(g_AttackEffectMatrix_04D_Aux, bones + 672 / sizeof(float), sizeof(g_AttackEffectMatrix_04D_Aux));

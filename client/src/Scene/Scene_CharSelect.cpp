@@ -239,8 +239,7 @@ int Scene_CharSelect(void)
         _DAT_07abf13c = 0.9f;
         _DAT_07abf140 = 0.8f;
 
-        if (DAT_005616b0 == -1)
-            Mouse_UpdateHoverTargets();   // CharPreview_Render
+        // La selección de preview se publica al terminar el paso lógico.
 
         // Per-slot color: selected/hover → full bright; others → dimmed
         iVar4 = DAT_005616ac;
@@ -566,7 +565,7 @@ int Scene_CharSelect(void)
                 GL_BeginViewport(0x11d, iVar9 + 0x5a, 0x4a, 0x4f);
                 // _DAT_07abf0?? están tipados `float`: se asignan los valores (5.0f / 1.0f),
                 // no los bit-patterns 0x40a00000 / 0x3f800000.
-                _DAT_07abf06c = 0.0f; _DAT_07abf070 = 5.0f; _DAT_07abf05c = 1.0f;
+                // Escala y ángulos del preview preparados en el paso lógico.
                 _DAT_07abf138 = 0.8f; _DAT_07abf13c = 0.8f; _DAT_07abf140 = 0.8f;
                 RenderCharacter((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
                 GL_PopMatrixAll();

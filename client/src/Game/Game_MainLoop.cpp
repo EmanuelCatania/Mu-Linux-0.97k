@@ -145,6 +145,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             operator_delete(old_bec);
         }
 
+        Simulation_RestorePickingCamera();
         UI_InGameMenu();
 
         CHK("ML/pre_tick");
@@ -313,6 +314,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
+    Simulation_BeginRender();
     renderStart = gFrameLimiter.Start();
     renderFlag  = 0;
 
@@ -326,6 +328,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
     CPhysicsManager_Render(g_PhysicsManager);   // IDA 0x5269C3: CPhysicsManager::Render
+    Simulation_EndRender();
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')
