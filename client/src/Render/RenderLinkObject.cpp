@@ -28,7 +28,7 @@
 //   DAT_05828d58       — Models base pointer (stride 0xBC per BMD)
 //   DAT_06970a9c       — BoneTransform global scratch array (stride 0x30)
 //   DAT_06989c9c       — ParentMatrix scratch (root bone combine output)
-//   DAT_05826e08       — g_AnimTick (boss-head angle spin)
+//   WorldTime       — g_AnimTick (boss-head angle spin)
 //   DAT_07abf5c4/c8/cc — Boss-head position offset (x/y/z added to BodyOrigin)
 //   World       — World (wing particle suppression when ==10)
 //   _DAT_00552580      — 0.0f guard constant
@@ -318,7 +318,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         AsModel(iVar7)->BodyOrigin[1] += _DAT_07abf5c8;
         AsModel(iVar7)->BodyOrigin[2] += _DAT_07abf5cc;
         *(unsigned int *)&AsModel(iVar7)->BoneHead = 0;      // BoneHead = 0
-        local_1c8 = (float)DAT_05826e08;         // spinning angle = g_AnimTick
+        local_1c8 = (float)WorldTime;         // spinning angle = g_AnimTick
     }
 
     // ── 4. Hash-table ref-count block on param_4+0x302 (anti-tamper) ─────────
@@ -742,7 +742,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
         Light[0] = 0.5f;
         Light[1] = 0.5f;
-        float fVar15 = (float)sin((double)((float)DAT_05826e08 * _DAT_005528e0));
+        float fVar15 = (float)sin((double)((float)WorldTime * _DAT_005528e0));
         Light[2] = 0.5f;
         CreateSprite(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
         return;

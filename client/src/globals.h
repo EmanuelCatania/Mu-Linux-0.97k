@@ -527,7 +527,7 @@ extern DWORD   DAT_05826d78;
 extern DWORD   DAT_05826dc8;
 extern DWORD   DAT_05826df4;
 extern DWORD   FpsWindowStartTimeMs; // IDA: DAT_05826e04
-// DAT_05826e08 se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
+// WorldTime se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
 extern DWORD   FpsTimerInitialized;  // IDA: DAT_05826e0c
 extern DWORD   DAT_05826e10;
 extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos x 16B)
@@ -1173,7 +1173,7 @@ extern byte    DAT_005618c4;       // item class name format ptr D
 extern char    s____s___005618c8[];// list entry format string (" %s " etc.)
 
 // ── Entity / animation tick globals ───────────────────────────────────────────
-extern float   DAT_05826e08;   // WorldTime — absolute milliseconds, per 0.97k CalcFPS
+extern float   WorldTime; // IDA: WorldTime (0x05826E08)
 // DAT_05826d31 — declared above
 extern char    DAT_05826d33;   // SoccerObserver (IDA @0x05826D33) - lo escriben
                                // InitGame y el F3/23, y lo lee RenderCharacter.

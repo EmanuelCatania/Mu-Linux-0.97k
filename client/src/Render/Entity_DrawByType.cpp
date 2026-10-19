@@ -404,7 +404,7 @@ LAB_substate4_done:
     if (sType == 0x138 && AsObject(param_1)->SubType == 1) {
         // Wave-bobbing object (water lily etc.)
         BMD__BeginRender();
-        float wave = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
+        float wave = (float)(fsin((long double)WorldTime * (long double)_DAT_005528e0)
                      * (long double)_DAT_005524f8 + (long double)_DAT_0055256c);
         BMD__RenderMesh(model, 0.0f,        0x42,
                      AsObject(param_1)->Alpha, 0, wave,
@@ -675,7 +675,7 @@ LAB_postprocess:
     // ── Type 0x133: wave-bobbing shadow ───────────────────────────────────────
     if (AsObject(param_1)->Type == 0x133) {
         BMD__BeginRender();
-        float wave2 = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
+        float wave2 = (float)(fsin((long double)WorldTime * (long double)_DAT_005528e0)
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
         int texFrame = *(short *)(*(int *)((int)model + 0x38) + 0xc);   // IDA: (std::int16_t) de la malla 0
         BMD__RenderMesh(model, 0.0f, 2,
@@ -683,7 +683,7 @@ LAB_postprocess:
                      AsObject(param_1)->BlendMeshTexCoordU, AsObject(param_1)->BlendMeshTexCoordV,
                      texFrame);
         // Modulo-100 periodic shadow offset (based on frame counter)
-        int framemod = (int)((long long)DAT_05826e08 % 100);
+        int framemod = (int)((long long)WorldTime % 100);
         float modFrac = -(float)(framemod * _DAT_005524f8);
         BMD__RenderMesh(model, 4.2039e-45f, 0x44,
                      AsObject(param_1)->Alpha, 3, wave2,

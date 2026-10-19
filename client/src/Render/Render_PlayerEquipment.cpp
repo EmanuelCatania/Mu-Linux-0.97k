@@ -225,7 +225,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
     float TargetPosition[3];
     int   bone = *(unsigned char*)(v121 + 4);
     float* boneMat = BoneMat48(entity_o, bone);
-    // `WorldTime` es un MACRO a DAT_05826e08 (structs.h): no declarar un local
+    // `WorldTime` es un MACRO a WorldTime (structs.h): no declarar un local
     // con ese nombre (se sombrearía a sí mismo y quedaría con basura).
     short Type = *(short*)v121;
 

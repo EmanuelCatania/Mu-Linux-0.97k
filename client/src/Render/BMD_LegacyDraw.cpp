@@ -160,7 +160,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
             if (deform) {
                 // IDA: v56 = (std::int64_t)WorldTime + 931 * vtx;
                 //      pos + sin(v56 * 0.007) * normal * 28
-                const int phase = (int)(long long)DAT_05826e08 + 0x3a3 * vtx;
+                const int phase = (int)(long long)WorldTime + 0x3a3 * vtx;
                 const float sn = (float)sin((double)phase * (double)_DAT_005528c4);
                 const float *nrm = (const float *)(&DAT_06f433bc + ((int)idx[0] + meshIdx * 15000) * 12);
                 for (int k = 0; k < 3; ++k)
@@ -1187,7 +1187,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     } else if (param_1 >= MODEL_HELPER + 71 && param_1 <= MODEL_HELPER + 75) {
         outPos[1] += 0.07f;
         ObjectSelect_Angle = 270.0f;
-        _DAT_07ea9530 = (param_6 == 1) ? 180.0f : (DAT_05826e08 * 0.2f);
+        _DAT_07ea9530 = (param_6 == 1) ? 180.0f : (WorldTime * 0.2f);
         _DAT_07ea9534 = 0.0f;
         exactPose = true;
     } else if (param_1 == MODEL_ARMOR + 10 || param_1 == MODEL_ARMOR + 11) {
@@ -1238,12 +1238,12 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
 
     if (!exactPose && (param_1 >= MODEL_POTION + 32 && param_1 <= MODEL_POTION + 34)) {
         ObjectSelect_Angle = 0.0f;
-        _DAT_07ea9530 = (float)DAT_05826e08 * _DAT_00552c00;
+        _DAT_07ea9530 = (float)WorldTime * _DAT_00552c00;
         _DAT_07ea9534 = 0.0f;
         exactPose = true;
     } else if (!exactPose && (param_1 >= MODEL_EVENT + 21 && param_1 <= MODEL_EVENT + 23)) {
         ObjectSelect_Angle = 0.0f;
-        _DAT_07ea9530 = (float)DAT_05826e08 * _DAT_00552c00;
+        _DAT_07ea9530 = (float)WorldTime * _DAT_00552c00;
         _DAT_07ea9534 = 0.0f;
         exactPose = true;
     }
@@ -1322,7 +1322,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     }
 
     if (param_6 == 1)
-        _DAT_07ea9530 = (float)DAT_05826e08 * _DAT_00552c00;
+        _DAT_07ea9530 = (float)WorldTime * _DAT_00552c00;
 
     ObjectSelect_Type = modelType;
     if (modelType >= 0x270 && modelType < 0x310) {
@@ -1655,7 +1655,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
         outPos[1] = nativeBookPos[1];
         outPos[2] = nativeBookPos[2];
         ObjectSelect_Angle = 270.0f;
-        _DAT_07ea9530 = param_6 == 1 ? (float)DAT_05826e08 * 0.45f : -10.0f;
+        _DAT_07ea9530 = param_6 == 1 ? (float)WorldTime * 0.45f : -10.0f;
         _DAT_07ea9534 = 0.0f;
         local_3bc = 0x3b23d70a; // 0.0025f
     }
@@ -1872,7 +1872,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     }
 
     if (Select == 1)
-        angle[1] = (float)DAT_05826e08 * 0.45f;
+        angle[1] = (float)WorldTime * 0.45f;
 
     // IDA stores the pose in these shared angle slots before BMD_Animation;
     // later item passes also observe that state.

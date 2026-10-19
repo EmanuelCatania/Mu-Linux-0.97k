@@ -314,7 +314,7 @@ void __cdecl Entity_Render(void)
 
                 if (gMapManager.GetCurrentMap() == 10) {  // World 10 (Icarus) — bamboleo
                     // IDA: sin((v15 + WorldTime) * flt_5528E0) * flt_552488 + z
-                    *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)DAT_05826e08)
+                    *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)WorldTime)
                                                      * (double)_DAT_005528e0)
                                                  * (double)_DAT_00552488 + v22);
                 }
@@ -452,7 +452,7 @@ void __cdecl ItemDrop_Render(void)
                 v28 = (float)((double)(rem - 1) / denom);
             }
 
-            float v29 = (float)((double)((long long)DAT_05826e08 % 1000) * 0.001);
+            float v29 = (float)((double)((long long)WorldTime % 1000) * 0.001);
             if (type == 1254 || type == 1255) {
                 s   = s + s - v29;
                 v28 = v28 + v28 - v29;

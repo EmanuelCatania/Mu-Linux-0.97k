@@ -173,11 +173,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
     // WorldTime wave value (for animated texcoords)
     // IDA sub_440D50: `v42 = (std::int64_t)WorldTime % 10000 * 0.0001`. Hay que leer
-    // WorldTime = DAT_05826e08 explícitamente: `__ftol()` lee el tope de la pila
+    // WorldTime = WorldTime explícitamente: `__ftol()` lee el tope de la pila
     // x87 (ST0), que no tiene por qué ser WorldTime, y con una fase basura el
     // scroll de texcoords del glow +N (chrome, textura 1170) sale sólido y
     // desincronizado entre partes.
-    long long worldTime = (long long)DAT_05826e08;
+    long long worldTime = (long long)WorldTime;
     float fVar16 = (float)(int)(worldTime % 10000) * _DAT_00552868;
 
     // Texture lookup: local_10 = IndexTexture[Mesh.Texture]

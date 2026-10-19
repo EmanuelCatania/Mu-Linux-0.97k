@@ -102,13 +102,13 @@ switchD_00502c73_caseD_1af:
       return iVar2;
     case 0x1d4:
       *(undefined4 *)&AsObject(param_1)->BlendMesh = 1;
-      fVar4 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524bc);
+      fVar4 = (float10)fsin((float10)WorldTime * (float10)_DAT_005524bc);
       AsObject(param_1)->BlendMeshLight = (float)(fVar4 * (float10)_DAT_005526e4 + (float10)_DAT_00552530);
       return iVar2;
     case 0x1d5:
       goto switchD_00502c73_caseD_1d5;
     case 0x1f9:
-      uVar5 = (longlong)DAT_05826e08;   // IDA ItemObjectAttribute case 505: (std::int64_t)WorldTime % 2000
+      uVar5 = (longlong)WorldTime;   // IDA ItemObjectAttribute case 505: (std::int64_t)WorldTime % 2000
       uVar5 = (ulonglong)(uint)((int)uVar5 >> 0x1f) << 0x20 | uVar5 & 0xffffffff;
       AsObject(param_1)->BlendMeshTexCoordV = (float)(int)((longlong)uVar5 % 2000) * _DAT_0055291c;
       return (int)((longlong)uVar5 / 2000);
@@ -123,7 +123,7 @@ switchD_00502c73_caseD_1af:
     case 0x220:
 switchD_00502c73_caseD_220:
       *(undefined4 *)&AsObject(param_1)->BlendMesh = 0xfffffffe;
-      fVar4 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524bc);
+      fVar4 = (float10)fsin((float10)WorldTime * (float10)_DAT_005524bc);
       AsObject(param_1)->BlendMeshLight = (float)(fVar4 * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
       return iVar2;
     }
@@ -184,7 +184,7 @@ switchD_00502c73_caseD_1d5:
         return iVar2 / 10;
       case 1:
         *(undefined4 *)&AsObject(param_1)->BlendMesh = 0xfffffffe;
-        fVar4 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524bc);
+        fVar4 = (float10)fsin((float10)WorldTime * (float10)_DAT_005524bc);
         AsObject(param_1)->BlendMeshLight =
              (float)(fVar4 * (float10)_DAT_005528b8 + (float10)_DAT_00552928);
         return iVar2;
@@ -204,7 +204,7 @@ switchD_00502c73_caseD_1d5:
 switchD_00502c73_caseD_19a:
     *(undefined4 *)&AsObject(param_1)->BlendMesh = 1;
   }
-  fVar4 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524bc);
+  fVar4 = (float10)fsin((float10)WorldTime * (float10)_DAT_005524bc);
   AsObject(param_1)->BlendMeshLight = (float)(fVar4 * (float10)_DAT_005528b8 + (float10)_DAT_00552928);
   return iVar2;
 switchD_00502c73_caseD_195:

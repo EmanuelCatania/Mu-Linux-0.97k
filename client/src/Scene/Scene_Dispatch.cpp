@@ -9,7 +9,7 @@
 //
 // Globals:
 //   SceneFlag  — SceneFlag (dispatch switch)
-//   DAT_05826e08  — frame time accumulator
+//   WorldTime  — frame time accumulator
 //   DAT_083a45d4  — login background animation angle
 //   g_iNoMouseTime  — keepalive counter (> 0x1f → send re-auth)
 //   SocketClientSocket  — socket handle
@@ -36,13 +36,13 @@ extern void OpenGL_Release(void);
 void __cdecl Scene_Dispatch(HDC param_1)
 {
     // ── FRAME ANGLE ANIMATION ─────────────────────────────────────────────────
-    // Original stored DAT_05826e08 * _DAT_005524bc into local_41c (unused after);
+    // Original stored WorldTime * _DAT_005524bc into local_41c (unused after);
     // omitted here — same effect, no observable side effect.
     {
         // 0.97k @ 005274A8: the item-level glow pulse is driven directly from
         // WorldTime.  The former intermediary is an unported stub returning 0,
         // which froze DAT_083a45d4 and therefore all +3..+6 item glow colours.
-        const float phase = (float)DAT_05826e08 * 0.0040000002f;
+        const float phase = (float)WorldTime * 0.0040000002f;
         DAT_083a45d4 = sinf(phase) * 0.15000001f + 0.60000002f;
     }
 

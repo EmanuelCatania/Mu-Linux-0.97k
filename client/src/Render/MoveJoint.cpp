@@ -204,7 +204,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
                     angles[2] = (float)(rand() % 64 - 32) + tgt[2];
                     Particle_Spawn(1220, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
                 }
-                if (AsJoint(o)->SubType == 0 && ((long long)DAT_05826e08) % 1000 < 500) {
+                if (AsJoint(o)->SubType == 0 && ((long long)WorldTime) % 1000 < 500) {
                     if ((rand() % 16) == 0) {
                         angles[0] = (float)(rand() % 100 - 50) + tgt[0];
                         angles[1] = (float)(rand() % 100 - 50) + tgt[1];

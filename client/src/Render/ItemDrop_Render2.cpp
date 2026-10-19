@@ -238,7 +238,7 @@ void RenderParticles(void)
                     float fSpeed = bEven ? _DAT_00552914 : _DAT_00552acc;
                     // update current_frame = delta * entry_speed * speed + base_frame
                     // (float field: escribir bits float, no truncar a int)
-                    *(float *)(puVar8 - 1) = DAT_05826e08 * *(float *)(puVar8 + 5) * fSpeed
+                    *(float *)(puVar8 - 1) = WorldTime * *(float *)(puVar8 + 5) * fSpeed
                                         + *(float *)(puVar8 + 9);
                 }
                 fVar15 = *(float *)(puVar8 - 1);

@@ -642,7 +642,7 @@ DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
-float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)Platform::GetTimer().MultimediaTicks()
+float    WorldTime  = 0.0f; // IDA: WorldTime (0x05826E08)
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
@@ -1224,7 +1224,7 @@ DWORD    DAT_07d52c38  = 0;
 // al final de globals.h).
 
 // Model data table base + entity vtable
-// (DAT_05828d58 and DAT_05826e08 are defined above in their original sections)
+// (DAT_05828d58 and WorldTime are defined above in their original sections)
 // ── BoneVertex pool ──────────────────────────────────────────────────────────
 // Transformed-vertex buffer used by Sprite_DrawBone (Skeleton_Transform), BMD_DrawMesh
 // and related paths. Layout: [mesh * 15000 + vert] * float[3] = 12 bytes stride.

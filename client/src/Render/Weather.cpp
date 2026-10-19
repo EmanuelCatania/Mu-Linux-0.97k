@@ -520,7 +520,7 @@ LAB_00501734:
                     // Cloud life-cycle: rising(0) → hovering(1) → descending(2) → fading(3)
                     if ((&DAT_0839bdb4)[iVar2] == '\0') {
                         // Phase 0: move upward, check distance
-                        lVar24 = (long long)DAT_05826e08;   // IDA: (std::int64_t)WorldTime
+                        lVar24 = (long long)WorldTime;   // IDA: (std::int64_t)WorldTime
                         uVar8  = (uint)lVar24 & 0x80001fff;
                         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffe000) + 1;
                         if (((int)uVar8 < 0x800) &&

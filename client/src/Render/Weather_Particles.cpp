@@ -67,8 +67,8 @@ void WeatherParticles_Update(void)
     //   RainSpeed = 10 * ((std::int64_t)sin(WorldTime * 0.001) + 3);
     //   RainAngle = 20 * (std::int64_t)sin(WorldTime * 0.00050000002 + 50.0);
     // (_DAT_00559b9c = RainSpeed, DAT_07c74ae8 = RainAngle.)
-    _DAT_00559b9c = (int)(10 * ((longlong)sin((double)DAT_05826e08 * 0.001) + 3));
-    DAT_07c74ae8  = (int)(20 * (longlong)sin((double)DAT_05826e08 * 0.00050000002 + 50.0));
+    _DAT_00559b9c = (int)(10 * ((longlong)sin((double)WorldTime * 0.001) + 3));
+    DAT_07c74ae8  = (int)(20 * (longlong)sin((double)WorldTime * 0.00050000002 + 50.0));
 
     int iVar1 = DAT_07c74aec + 0x14;
     DAT_07c74aec  = iVar1 % 2000;
