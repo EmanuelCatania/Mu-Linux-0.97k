@@ -45,8 +45,9 @@ public:
             // DESVIACION: espera suspendida sin el spin final de SDL_DelayPrecise.
             const auto nanoseconds = static_cast<uint64_t>(std::ceil((minimumMilliseconds - elapsed) * 1000000.0));
 #ifdef _WIN32
-            // SDL_DelayNS usa el waitable timer de alta resolución de SDL.
-            SDL_DelayNS(nanoseconds);
+            // SDL usa waitable timer; su fallback trunca a ms. Un mínimo de
+            // 1 ms evita repetir esperas de cero si ese timer no está disponible.
+            SDL_DelayNS(nanoseconds < 1000000 ? 1000000 : nanoseconds);
 #else
             timespec remaining{static_cast<time_t>(nanoseconds / 1000000000),
                                static_cast<long>(nanoseconds % 1000000000)};
