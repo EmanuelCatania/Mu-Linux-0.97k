@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+static void Game_TickAmbientAudio();
 #include "Platform/IFileSystem.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
@@ -188,6 +189,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         }
         MoveSceneFrame++;
         Simulation_PrepareStep();
+        Game_TickAmbientAudio();
         RenderSnapshots_EndStep();
 
         // Consume 40ms of budget, count frame
@@ -408,6 +410,11 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     #endif
 
+}
+
+// DESVIACION: azar y decisiones de audio a 25 Hz, también sin dibujo.
+static void Game_TickAmbientAudio()
+{
     // DESVIACION: IDA 0x525D40 pide g_lpszMp3[1] (MuTheme) en el login, el
     // mismo tema que Lorencia. Acá el login pide su propio archivo,
     // Data\Music\MuTheme.mp3, como el DLL (Patchs.cpp parchea ese nombre en
