@@ -23,6 +23,10 @@ public:
         if (context) { SDL_GL_DestroyContext(context); context = nullptr; }
     }
     void Present() override { if (context) SDL_GL_SwapWindow(SDLWindow()); }
+    // DESVIACION: el mismo control de vsync que el backend WGL.
+    bool SetSwapInterval(int interval) override {
+        return context && (interval == 0 || interval == 1) && SDL_GL_SetSwapInterval(interval);
+    }
 };
 }
 IGLContext& GetGLContext() { static auto* instance = new SDLGLContext; return *instance; }
