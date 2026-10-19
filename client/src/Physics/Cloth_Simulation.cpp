@@ -695,6 +695,7 @@ struct Vec3 { float x, y, z; };
 
 struct Vertex {
     Vec3 force, vel, pos, oneTimeMove;
+    Vec3 anchor;             // muestra de pose propia; no apunta al scratch del render
     int  countOneTimeMove;
     unsigned char state;
 };
@@ -894,14 +895,36 @@ bool KeepLength(Vertex &v, const Vertex &other, const float *len) {
     return true;
 }
 
-// CPhysicsCloth::Move (una iteracion)
-bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float fTime) {
-    const float wind = _DAT_00590af0;
+// Captura la pose de entrada antes de resolver los cinco subpasos. El solver
+// conserva sus anclajes y esferas aunque otra malla reutilice los buffers VT.
+void CapturePose(MeshCloth &c, void *model, const float *boneBase) {
+    char *mesh = MeshPtr(model, kSkirtMesh);
+    const char *verts = (const char *)*(int *)(mesh + 0x10);
+    for (int v = 0; v < c.numVertices; ++v) {
+        if (*(short *)(verts + v * 0x10) == kFixedBone) {
+            const float *p = VT(kSkirtMesh, v);
+            c.vertices[v].anchor = { p[0], p[1], p[2] };
+            c.vertices[v].state |= PVS_FIXEDPOS;
+        }
+    }
+    for (int s = 0; s < c.numSpheres; ++s) {
+        Sphere &sp = c.spheres[s];
+        // Cambio de ejes del source: (x, y, z) -> (z, -y, x).
+        float in[3] = { sp.centerLocal.z, -sp.centerLocal.y, sp.centerLocal.x };
+        float out[3] = { 0.0f, 0.0f, 0.0f };
+        BMD_TransformPosition(model, (float *)(boneBase + sp.bone * 12), in, out, '\x01');
+        sp.center = { out[0], out[1], out[2] };
+    }
+}
+
+// CPhysicsCloth::Move (una iteracion). Entradas de tiempo/viento explícitas;
+// no consulta el modelo, huesos, buffers VT ni globals de simulación.
+bool Step(MeshCloth &c, float wind, int sceneFrame, float angleZ, float fTime) {
     const float a = (180.0f + angleZ) * 3.14159265f / 180.0f;
     const Vec3 vWind = { wind * sinf(a), -wind * cosf(a), 0.0f };
 
     // InitForces (modo malla): la misma clave para todos los vertices.
-    const int seed = (((int)MoveSceneFrame / 10) * 101) % c.numVertices;
+    const int seed = ((sceneFrame / 10) * 101) % c.numVertices;
     const unsigned key = (unsigned)abs(seed % 10);
     for (int i = 0; i < c.numVertices; ++i) UpdateForce(c.vertices[i], key, c.type, vWind);
 
@@ -923,17 +946,10 @@ bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float 
         }
     }
 
-    // SetFixedVertices (modo malla): los del hueso fijo siguen a la cadera.
-    {
-        char *mesh = MeshPtr(model, kSkirtMesh);
-        const char *verts = (const char *)*(int *)(mesh + 0x10);
-        for (int v = 0; v < c.numVertices; ++v) {
-            if (*(short *)(verts + v * 0x10) == kFixedBone) {
-                const float *p = VT(kSkirtMesh, v);
-                c.vertices[v].pos.x = p[0]; c.vertices[v].pos.y = p[1]; c.vertices[v].pos.z = p[2];
-                c.vertices[v].state |= PVS_FIXEDPOS;
-            }
-        }
+    // SetFixedVertices: los anclajes provienen de la muestra de pose capturada.
+    for (int v = 0; v < c.numVertices; ++v) {
+        if (c.vertices[v].state & PVS_FIXEDPOS)
+            c.vertices[v].pos = c.vertices[v].anchor;
     }
 
     // Integracion.
@@ -946,15 +962,7 @@ bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float 
         v.pos.x += v.vel.x * fTime; v.pos.y += v.vel.y * fTime; v.pos.z += v.vel.z * fTime;
     }
 
-    // PreventFromStretching: esferas de colision en el hueso.
-    for (int s = 0; s < c.numSpheres; ++s) {
-        Sphere &sp = c.spheres[s];
-        // Cambio de ejes del source: (x, y, z) -> (z, -y, x).
-        float in[3]  = { sp.centerLocal.z, -sp.centerLocal.y, sp.centerLocal.x };
-        float out[3] = { 0.0f, 0.0f, 0.0f };
-        BMD_TransformPosition(model, (float *)(boneBase + sp.bone * 12), in, out, '\x01');
-        sp.center.x = out[0]; sp.center.y = out[1]; sp.center.z = out[2];
-    }
+    // PreventFromStretching: esferas de colisión de la misma muestra de pose.
     if (c.numSpheres > 0) {
         for (int s = 0; s < c.numSpheres; ++s) {
             const Sphere &sp = c.spheres[s];
@@ -1045,9 +1053,10 @@ void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
     const bool bStep = (c->lastFrame != frame);
     c->lastFrame = frame;
     if (bStep) {
+        CapturePose(*c, model, boneBase);
         const float angleZ = *(float *)(entity + 0x24);
         for (int i = 0; i < 5; ++i) {                  // Move2(0.005f, 5)
-            if (!Step(*c, model, boneBase, angleZ, 0.005f)) {
+            if (!Step(*c, _DAT_00590af0, frame, angleZ, 0.005f)) {
                 Destroy(*c);                           // DeleteCloth
                 return;
             }
