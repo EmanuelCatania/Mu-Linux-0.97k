@@ -1,6 +1,11 @@
 #include "Platform/ITimer.h"
 #include "Platform/LocalTime.h"
 #include <SDL3/SDL.h>
+#include <cmath>
+#ifndef _WIN32
+#include <time.h>
+#include <errno.h>
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -37,7 +42,16 @@ public:
         for (;;) {
             const double elapsed = (SDL_GetPerformanceCounter() - static_cast<uint64_t>(start.counter)) * 1000.0 / frequency;
             if (elapsed >= minimumMilliseconds) return elapsed;
-            SDL_DelayPrecise(static_cast<uint64_t>((minimumMilliseconds - elapsed) * 1000000.0));
+            // DESVIACION: espera suspendida sin el spin final de SDL_DelayPrecise.
+            const auto nanoseconds = static_cast<uint64_t>(std::ceil((minimumMilliseconds - elapsed) * 1000000.0));
+#ifdef _WIN32
+            // SDL_DelayNS usa el waitable timer de alta resolución de SDL.
+            SDL_DelayNS(nanoseconds);
+#else
+            timespec remaining{static_cast<time_t>(nanoseconds / 1000000000),
+                               static_cast<long>(nanoseconds % 1000000000)};
+            while (clock_nanosleep(CLOCK_MONOTONIC, 0, &remaining, &remaining) == EINTR) {}
+#endif
         }
     }
     void Shutdown() override {}
