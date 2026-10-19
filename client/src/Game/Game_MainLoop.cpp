@@ -46,6 +46,7 @@
 #include "Net/Ping.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
+#include "Game/SimulationPreparation.h"
 #include "Game/Game_SceneUpdate.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Game/Game_CharSelectTick.h"
@@ -182,6 +183,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             }
         }
         MoveSceneFrame++;
+        Simulation_PrepareStep();
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;

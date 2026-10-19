@@ -136,6 +136,7 @@
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Game\SimulationPreparation.h" />
     <ClInclude Include="src\Entity\ObjectPose.h" />
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
@@ -236,6 +237,7 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Game\SimulationPreparation.cpp" />
     <ClCompile Include="src\Game\Game_MainLoop.cpp" />
     <ClCompile Include="src\Game\HeroVitals.cpp" />
     <ClCompile Include="src\Game\Player_InputTick.cpp" />

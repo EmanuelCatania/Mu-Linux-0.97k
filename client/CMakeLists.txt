@@ -52,6 +52,7 @@ set(MU_SOURCES
     src/Scene/Scene_Login.cpp
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
+    src/Game/SimulationPreparation.cpp
     src/Game/Game_MainLoop.cpp
     src/Game/HeroVitals.cpp
     src/Game/Player_InputTick.cpp
@@ -378,6 +379,7 @@ set(MU_HEADERS
     src/UI/UIState.h
     src/UI/ChatTypes.h
     src/Entity/EntityView.h
+    src/Game/SimulationPreparation.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
