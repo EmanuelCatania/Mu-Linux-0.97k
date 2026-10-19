@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MuMySQLProject>$(MSBuildThisFileDirectory)mysql</MuMySQLProject>
+    <MuMySQLBuildRoot Condition="'$(MuMySQLBuildRoot)'==''">$(MSBuildThisFileDirectory)..\out\mysql-win32\$(MSBuildProjectName)</MuMySQLBuildRoot>
+    <MuMySQLSource>$(MuMySQLBuildRoot)\_deps\mu_mysql_release-src</MuMySQLSource>
+    <MuMySQLSource Condition="'$(Configuration)'=='Debug_MySQL'">$(MuMySQLBuildRoot)\_deps\mu_mysql_debug-src</MuMySQLSource>
+    <MuMySQLDebugDir Condition="'$(Configuration)'=='Debug_MySQL'">\debug</MuMySQLDebugDir>
+  </PropertyGroup>
+  <Target Name="MuFetchMySQL" BeforeTargets="PrepareForBuild" Condition="'$(Configuration)'=='Debug_MySQL' or '$(Configuration)'=='Release_MySQL'">
+    <Exec Command="cmake -S &quot;$(MuMySQLProject)&quot; -B &quot;$(MuMySQLBuildRoot)&quot; -G &quot;Visual Studio 17 2022&quot; -A Win32" />
+  </Target>
+  <Target Name="MuCopyMySQLRuntime" AfterTargets="Build" Condition="'$(Configuration)'=='Debug_MySQL' or '$(Configuration)'=='Release_MySQL'">
+    <ItemGroup>
+      <MuMySQLRuntime Include="$(MuMySQLSource)\lib$(MuMySQLDebugDir)\mysqlcppconn-9-vs14.dll;$(MuMySQLSource)\lib\libcrypto-1_1.dll;$(MuMySQLSource)\lib\libssl-1_1.dll;$(MuMySQLBuildRoot)\_deps\mu_mysql_release-src\bin\*.dll" />
+      <MuMySQLPlugin Include="$(MuMySQLSource)\lib\plugin\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(MuMySQLRuntime)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(MuMySQLPlugin)" DestinationFiles="@(MuMySQLPlugin->'$(OutDir)plugin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MuMySQLSource)\LICENSE.txt" DestinationFiles="$(OutDir)LICENSE-MySQL.txt" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

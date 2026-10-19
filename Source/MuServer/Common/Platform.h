@@ -48,6 +48,8 @@ using BOOL = int;
 using UINT = unsigned int;
 using ATOM = WORD;
 using WPARAM = uintptr_t;
+using DWORD_PTR = uintptr_t;
+static_assert(sizeof(DWORD_PTR) == sizeof(void*), "DWORD_PTR debe conservar el puntero");
 using LPARAM = intptr_t;
 using LRESULT = intptr_t;
 

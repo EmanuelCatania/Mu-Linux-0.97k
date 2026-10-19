@@ -1,0 +1,29 @@
+name: Build de plataformas
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: platform-build-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { os: windows-2022, preset: windows-x86 }
+          - { os: windows-2022, preset: windows-x64 }
+          - { os: ubuntu-24.04, preset: linux-x64 }
+          - { os: ubuntu-24.04-arm, preset: linux-arm64 }
+        config: [debug, release]
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Instalar Connector de Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libmysqlcppconn-dev
+      - name: Configurar
+        run: cmake --preset ${{ matrix.target.preset }}-${{ matrix.config }}
+      - name: Compilar
+        run: cmake --build --preset ${{ matrix.target.preset }}-${{ matrix.config }} --parallel 2

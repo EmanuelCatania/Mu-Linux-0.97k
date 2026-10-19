@@ -211,7 +211,7 @@ public:
 
 	void GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel);
 
-	void StartDS();
+	bool StartDS();
 
 	void GCRequiredLevelsSend(int aIndex);
 

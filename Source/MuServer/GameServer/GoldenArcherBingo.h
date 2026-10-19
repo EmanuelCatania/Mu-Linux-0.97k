@@ -143,7 +143,7 @@ public:
 
 	void DGBingoClearRegisteredRecv(SDHP_BINGO_CLEAR_REGISTERED_RECV* lpMsg);
 
-	void StartGoldenArcherBingo();
+	bool StartGoldenArcherBingo();
 
 private:
 

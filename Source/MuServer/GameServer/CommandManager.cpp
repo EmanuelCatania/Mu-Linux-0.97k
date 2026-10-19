@@ -20,6 +20,11 @@
 #include "Util.h"
 #include "Monster.h"
 #include "InvasionManager.h"
+#include "BloodCastle.h"
+#include "DevilSquare.h"
+#include "GoldenArcherBingo.h"
+#include <cerrno>
+#include <cstdlib>
 
 CCommandManager gCommandManager;
 
@@ -525,6 +530,15 @@ bool CCommandManager::ManagementCore(LPOBJ lpObj, char* message)
 		{
 			this->CommandGMMakeMob(lpObj, argument);
 
+			break;
+		}
+
+		case COMMAND_GM_BCSTART:
+		case COMMAND_GM_DSSTART:
+		case COMMAND_GM_BINGOSTART:
+		case COMMAND_GM_INVASIONSTART:
+		{
+			this->CommandGMEventStart(lpObj, argument, CommandData.Index);
 			break;
 		}
 
@@ -2103,9 +2117,63 @@ void CCommandManager::CommandGMTamaStart(LPOBJ lpObj, char* arg)
 		return;
 	}
 
-	gInvasionManager.StartInvasion(tamachanIndex);
+	if (!gInvasionManager.StartInvasion(tamachanIndex))
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, "Tamachan deshabilitado o ya activo.");
+		return;
+	}
 
 	gNotice.GCNoticeSend(lpObj->Index, 1, "Tamachan programado. Inicio en aproximadamente 2 minutos.");
 
 	gLog.Output(LOG_COMMAND, "[CommandTamaStart][%s][%s] - (InvasionIndex: %d)", lpObj->Account, lpObj->Name, tamachanIndex);
+}
+
+void CCommandManager::CommandGMEventStart(LPOBJ lpObj, char* arg, int command)
+{
+	// Keep these operations privileged even if Command.txt is misconfigured.
+	if (!gGameMaster.CheckGameMasterLevel(lpObj, 1)) return;
+	bool started = false;
+	const char* name = "";
+	int invasion = -1;
+	if (command == COMMAND_GM_INVASIONSTART)
+	{
+		char* end = nullptr;
+		errno = 0;
+		long value = strtol(arg, &end, 10);
+		const bool hasNumber = end != arg;
+		while (*end == ' ') ++end;
+		if (errno || !hasNumber || *end || value < 0 || value >= MAX_INVASION)
+		{
+			gNotice.GCNoticeSend(lpObj->Index, 1, "Uso: /invasionstart <indice de InvasionManager.dat>");
+			return;
+		}
+		invasion = (int)value;
+		name = gInvasionManager.GetInvasionName(invasion);
+		if (!name || !name[0])
+		{
+			gNotice.GCNoticeSend(lpObj->Index, 1, "No existe una invasion con ese indice.");
+			return;
+		}
+		started = gInvasionManager.StartInvasion(invasion);
+	}
+	else
+	{
+		while (*arg == ' ') ++arg;
+		if (*arg)
+		{
+			gNotice.GCNoticeSend(lpObj->Index, 1, "Este comando no recibe argumentos.");
+			return;
+		}
+		switch (command)
+		{
+			case COMMAND_GM_BCSTART: name = "Blood Castle"; started = gBloodCastle.StartBC(); break;
+			case COMMAND_GM_DSSTART: name = "Devil Square"; started = gDevilSquare.StartDS(); break;
+			case COMMAND_GM_BINGOSTART: name = "Bingo"; started = gGoldenArcherBingo.StartGoldenArcherBingo(); break;
+			default: return;
+		}
+	}
+	gNotice.GCNoticeSend(lpObj->Index, 1, started
+		? "%s programado por unica vez. Inicio en aproximadamente 2 minutos."
+		: "%s deshabilitado, abierto o activo; no se modifico.", name);
+	gLog.Output(LOG_COMMAND, "[CommandEventStart][%s][%s] Command:%d Invasion:%d Accepted:%d", lpObj->Account, lpObj->Name, command, invasion, started ? 1 : 0);
 }

@@ -36,6 +36,10 @@ enum eCommandNumber
 	COMMAND_GM_SKIN = 28,
 	COMMAND_GM_MAKEMOB = 29,
 	COMMAND_GM_TAMASTART = 30,
+	COMMAND_GM_BCSTART = 31,
+	COMMAND_GM_DSSTART = 32,
+	COMMAND_GM_BINGOSTART = 33,
+	COMMAND_GM_INVASIONSTART = 34,
 };
 
 //**********************************************//
@@ -223,6 +227,7 @@ public:
 	void CommandGMMakeMob(LPOBJ lpObj, char* arg);
 
 	void CommandGMTamaStart(LPOBJ lpObj, char* arg);
+	void CommandGMEventStart(LPOBJ lpObj, char* arg, int command);
 
 private:
 
