@@ -195,7 +195,25 @@ bool CAttack::Attack(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, bool send, in
 
 		int defense = this->GetTargetDefense(lpObj, lpTarget, &effect);
 
+		bool isWizardAttack = false;
+
 		if ((lpObj->Class == CLASS_DW || lpObj->Class == CLASS_MG) && skill != SKILL_NONE && skill != SKILL_FALLING_SLASH && skill != SKILL_LUNGE && skill != SKILL_UPPERCUT && skill != SKILL_CYCLONE && skill != SKILL_SLASH && skill != SKILL_TWISTING_SLASH && skill != SKILL_IMPALE && skill != SKILL_FIRE_SLASH && skill != SKILL_POWER_SLASH)
+		{
+			isWizardAttack = true;
+		}
+		else if (lpObj->Class == CLASS_DW && skill == SKILL_NONE)
+		{
+			CItem* Right = &lpObj->Inventory[0];
+			CItem* Left = &lpObj->Inventory[1];
+
+			if ((Right->IsItem() != false && Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0)) ||
+				(Left->IsItem() != false && Left->GetKind() >= GET_ITEM(5, 0) && Left->GetKind() < GET_ITEM(6, 0)))
+			{
+				isWizardAttack = true;
+			}
+		}
+
+		if (isWizardAttack != false)
 		{
 			damage = this->GetAttackDamageWizard(lpObj, lpTarget, lpSkill, &effect, defense);
 		}
@@ -1144,6 +1162,18 @@ int CAttack::GetAttackDamage(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, WORD*
 
 	damage = ((damage < 0) ? 0 : damage);
 
+	if ((*effect) == DAMAGE_TYPE_EXCELLENT)
+	{
+		int minExcDamage = ((DamageMax * 20) / 100) + lpObj->ExcellentDamage;
+
+		minExcDamage = ((minExcDamage < 1) ? 1 : minExcDamage);
+
+		if (damage < minExcDamage)
+		{
+			damage = minExcDamage;
+		}
+	}
+
 	return damage;
 }
 
@@ -1157,9 +1187,21 @@ int CAttack::GetAttackDamageWizard(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill,
 
 	int DamageMax = lpObj->MagicDamageMax;
 
-	DamageMin += lpSkill->m_DamageMin;
+	if (lpSkill != 0)
+	{
+		DamageMin += lpSkill->m_DamageMin;
 
-	DamageMax += lpSkill->m_DamageMax;
+		DamageMax += lpSkill->m_DamageMax;
+
+		int type = gSkillManager.GetSkillType(lpSkill->m_index);
+
+		if (CHECK_RANGE(type, MAX_RESISTANCE_TYPE) != false)
+		{
+			DamageMin += lpObj->AddResistance[type];
+
+			DamageMax += lpObj->AddResistance[type];
+		}
+	}
 
 	DamageMin += lpObj->SkillDamageBonus;
 
@@ -1169,19 +1211,25 @@ int CAttack::GetAttackDamageWizard(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill,
 
 	DamageMax += lpObj->EffectOption.AddMagicDamage;
 
-	int type = gSkillManager.GetSkillType(lpSkill->m_index);
-
-	if (CHECK_RANGE(type, MAX_RESISTANCE_TYPE) != false)
-	{
-		DamageMin += lpObj->AddResistance[type];
-
-		DamageMax += lpObj->AddResistance[type];
-	}
+	int rise = 0;
 
 	if (Right->IsItem() != false && Right->m_IsValidItem != false && ((Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(1, 0)) || (Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0))))
 	{
-		int rise = (int)(((Right->m_MagicDamageRate / 2) + (Right->m_Level * 2)) * Right->m_CurrentDurabilityState);
+		rise = (int)(((Right->m_MagicDamageRate / 2) + (Right->m_Level * 2)) * Right->m_CurrentDurabilityState);
+	}
 
+	if (Left->IsItem() != false && Left->m_IsValidItem != false && ((Left->GetKind() >= GET_ITEM(0, 0) && Left->GetKind() < GET_ITEM(1, 0)) || (Left->GetKind() >= GET_ITEM(5, 0) && Left->GetKind() < GET_ITEM(6, 0))))
+	{
+		int leftRise = (int)(((Left->m_MagicDamageRate / 2) + (Left->m_Level * 2)) * Left->m_CurrentDurabilityState);
+
+		if (leftRise > rise)
+		{
+			rise = leftRise;
+		}
+	}
+
+	if (rise > 0)
+	{
 		DamageMin += (DamageMin * rise) / 100;
 
 		DamageMax += (DamageMax * rise) / 100;
@@ -1216,6 +1264,18 @@ int CAttack::GetAttackDamageWizard(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill,
 	damage -= TargetDefense;
 
 	damage = ((damage < 0) ? 0 : damage);
+
+	if ((*effect) == DAMAGE_TYPE_EXCELLENT)
+	{
+		int minExcDamage = ((DamageMax * 20) / 100) + lpObj->ExcellentDamage;
+
+		minExcDamage = ((minExcDamage < 1) ? 1 : minExcDamage);
+
+		if (damage < minExcDamage)
+		{
+			damage = minExcDamage;
+		}
+	}
 
 	return damage;
 }
@@ -1298,14 +1358,24 @@ void CAttack::GetPreviewMagicDamage(LPOBJ lpObj, DWORD* DamageMin, DWORD* Damage
 
 	(*DamageMax) += lpObj->EffectOption.AddMagicDamage;
 
+	int rise = 0;
+
 	if (Right->IsItem() != false && Right->m_IsValidItem != false && ((Right->GetKind() >= GET_ITEM(0, 0) && Right->GetKind() < GET_ITEM(1, 0)) || (Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0))))
 	{
-		(*DamageRate) = (int)(((Right->m_MagicDamageRate / 2) + (Right->m_Level * 2)) * Right->m_CurrentDurabilityState);
+		rise = (int)(((Right->m_MagicDamageRate / 2) + (Right->m_Level * 2)) * Right->m_CurrentDurabilityState);
 	}
-	else
+
+	if (Left->IsItem() != false && Left->m_IsValidItem != false && ((Left->GetKind() >= GET_ITEM(0, 0) && Left->GetKind() < GET_ITEM(1, 0)) || (Left->GetKind() >= GET_ITEM(5, 0) && Left->GetKind() < GET_ITEM(6, 0))))
 	{
-		(*DamageRate) = 0;
+		int leftRise = (int)(((Left->m_MagicDamageRate / 2) + (Left->m_Level * 2)) * Left->m_CurrentDurabilityState);
+
+		if (leftRise > rise)
+		{
+			rise = leftRise;
+		}
 	}
+
+	(*DamageRate) = rise;
 }
 
 void CAttack::CGAttackRecv(PMSG_ATTACK_RECV* lpMsg, int aIndex)

@@ -329,49 +329,71 @@ void CItemOption::InsertOption(LPOBJ lpObj, CItem* lpItem)
 			{
 				lpObj->ExcellentDamageRate += value;
 
+				lpObj->ExcellentDamage += (value * 2);
+
 				break;
 			}
 
 			case ITEM_OPTION_ADD_PHYSI_DAMAGE_BY_LEVEL:
 			{
-				lpObj->PhysiDamageMinRight += ((lpObj->Level) / value);
+				int addVal = (value > 0) ? ((lpObj->Level) / value) : 0;
 
-				lpObj->PhysiDamageMaxRight += ((lpObj->Level) / value);
+				addVal = ((addVal < 1 && lpObj->Level > 0) ? 1 : addVal);
 
-				lpObj->PhysiDamageMinLeft += ((lpObj->Level) / value);
+				lpObj->PhysiDamageMinRight += addVal;
 
-				lpObj->PhysiDamageMaxLeft += ((lpObj->Level) / value);
+				lpObj->PhysiDamageMaxRight += addVal;
+
+				lpObj->PhysiDamageMinLeft += addVal;
+
+				lpObj->PhysiDamageMaxLeft += addVal;
 
 				break;
 			}
 
 			case ITEM_OPTION_MUL_PHYSI_DAMAGE:
 			{
-				lpObj->PhysiDamageMinRight += (lpObj->PhysiDamageMinRight * value) / 100;
+				int addMinR = (lpObj->PhysiDamageMinRight * value) / 100;
 
-				lpObj->PhysiDamageMaxRight += (lpObj->PhysiDamageMaxRight * value) / 100;
+				int addMaxR = (lpObj->PhysiDamageMaxRight * value) / 100;
 
-				lpObj->PhysiDamageMinLeft += (lpObj->PhysiDamageMinLeft * value) / 100;
+				int addMinL = (lpObj->PhysiDamageMinLeft * value) / 100;
 
-				lpObj->PhysiDamageMaxLeft += (lpObj->PhysiDamageMaxLeft * value) / 100;
+				int addMaxL = (lpObj->PhysiDamageMaxLeft * value) / 100;
+
+				lpObj->PhysiDamageMinRight += ((addMinR < 1 && value > 0 && lpObj->PhysiDamageMinRight > 0) ? 1 : addMinR);
+
+				lpObj->PhysiDamageMaxRight += ((addMaxR < 1 && value > 0 && lpObj->PhysiDamageMaxRight > 0) ? 1 : addMaxR);
+
+				lpObj->PhysiDamageMinLeft += ((addMinL < 1 && value > 0 && lpObj->PhysiDamageMinLeft > 0) ? 1 : addMinL);
+
+				lpObj->PhysiDamageMaxLeft += ((addMaxL < 1 && value > 0 && lpObj->PhysiDamageMaxLeft > 0) ? 1 : addMaxL);
 
 				break;
 			}
 
 			case ITEM_OPTION_ADD_MAGIC_DAMAGE_BY_LEVEL:
 			{
-				lpObj->MagicDamageMin += ((lpObj->Level) / value);
+				int addVal = (value > 0) ? ((lpObj->Level) / value) : 0;
 
-				lpObj->MagicDamageMax += ((lpObj->Level) / value);
+				addVal = ((addVal < 1 && lpObj->Level > 0) ? 1 : addVal);
+
+				lpObj->MagicDamageMin += addVal;
+
+				lpObj->MagicDamageMax += addVal;
 
 				break;
 			}
 
 			case ITEM_OPTION_MUL_MAGIC_DAMAGE:
 			{
-				lpObj->MagicDamageMin += (lpObj->MagicDamageMin * value) / 100;
+				int addMin = (lpObj->MagicDamageMin * value) / 100;
 
-				lpObj->MagicDamageMax += (lpObj->MagicDamageMax * value) / 100;
+				int addMax = (lpObj->MagicDamageMax * value) / 100;
+
+				lpObj->MagicDamageMin += ((addMin < 1 && value > 0 && lpObj->MagicDamageMin > 0) ? 1 : addMin);
+
+				lpObj->MagicDamageMax += ((addMax < 1 && value > 0 && lpObj->MagicDamageMax > 0) ? 1 : addMax);
 
 				break;
 			}
