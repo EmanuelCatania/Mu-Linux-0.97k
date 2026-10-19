@@ -28,6 +28,8 @@ docker compose -f docker-compose.images.yml up -d --no-deps mu-server
 
 To pin the version, use the `emapupi/mu-linux-97k:0.97.30` image (amd64 and arm64). Pulling does not update a persistent volume: add the four rows of the new GM commands to your `Data/Command.txt`, as explained in [Administration](#administration-gm-events-and-reloads). MySQL, the website and the editor do not change.
 
+**Building from source (`docker-compose.yml`):** its MySQL service moves from the `mysql:5.7` image to `mysql:8.4.11`, the same version as the published image. A volume created with 5.7 does not start with 8.4: before upgrading, follow the [8.4 migration guide](docs/mysql-8.4-upgrade.md). The published-images compose file already used 8.4 and does not change.
+
 **Pterodactyl:** select `0.97.30` in `MU_RELEASE_TAG`. For existing installations, with the server stopped, extract the archive for your architecture from this Release into a temporary folder, replace the four binaries and `start.sh`, and add the `Command.txt` rows, keeping your INI and Data files.
 
 ### Build and run on Windows (without Docker)
@@ -188,7 +190,7 @@ Based on Kayito's sources.
 
 ## Client status
 
-The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
+The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
 
 ## Quick start
 
