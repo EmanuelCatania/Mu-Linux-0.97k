@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
@@ -409,6 +410,46 @@ void Render_QuickButtons(void) { Render_QuickButtons_(); }
 
 
 // =============================================================================
+namespace {
+struct MixCellSample { float green=0.4f, red=0.6f, size=5.0f, x=0, y=0; };
+struct GridSample { int state=0; MixCellSample cells[32]; };
+GridSample gridSamples[2][7];
+int gridCount[2] = {}, gridCursor[2] = {};
+}
+void HUD_BeginGridPass(int pass) { gridCursor[pass] = 0; }
+// DESVIACION: reproducir en SIM la multiplicidad de ambas pasadas de grillas.
+void HUD_TickGridPresentation() {
+    gridCount[0] = gridCount[1] = 0;
+    if (SceneFlag != 5 || !DAT_083a7c10 || DAT_07e11d1c > 30 ||
+        gUserSettings.GetAntilag(ANTILAG_INTERFACE)) return;
+    bool pools[7]; int count=0;
+    if (InventoryOpened) pools[count++]=false;
+    if (ShopOpened) pools[count++]=false;
+    if (TradeOpened) { pools[count++]=false; pools[count++]=false; }
+    if (WarehouseOpened) pools[count++]=false;
+    if (ChaosMixOpened) pools[count++]=true;
+    if (EventWindowOpened) pools[count++]=true;
+    for (int pass=0; pass<2; ++pass) {
+        if (pass==0 && GoldenArcherOpenType && GoldenArcherOpenType != 3) continue;
+        gridCount[pass]=count;
+        for (int grid=0; grid<count; ++grid) {
+            GridSample &sample=gridSamples[pass][grid];
+            sample.state=MixState;
+            if (pass==1 && pools[grid] && MixState>0 && MixState<51) {
+                for (int cell=0; cell<32; ++cell) {
+                    if (*(short *)(OffsetMixItems + cell*68)==-1) continue;
+                    MixCellSample &c=sample.cells[cell];
+                    c.green=(float)(rand()%4+4)*0.1f;
+                    c.red=(float)(rand()%6+6)*0.1f;
+                    c.size=(float)(rand()%10+5);
+                    c.x=(float)(rand()%20); c.y=(float)(rand()%20);
+                }
+            }
+            if (MixState>1) ++MixState;
+        }
+    }
+}
+
 // sub_4E38B0 — inventory grid render.  Walks an N×M grid of 68-byte ITEM
 // records and renders each occupied cell either as a 3D mesh (`a6 != 0`)
 // via RenderItem3D, or as a 2D quantity glyph (RenderNumber2D) for arrows.
@@ -431,6 +472,10 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
     DWORD x_addr;
     memcpy(&x_addr, &x_param, sizeof(x_addr));
     int v23 = 0;
+    const int pass = (BYTE)a6 ? 1 : 0;
+    const int grid = gridCursor[pass]++;
+    const GridSample *sample = grid < gridCount[pass] ? &gridSamples[pass][grid] : nullptr;
+    const int mixState = sample ? sample->state : (int)MixState;
     if ((int)sx <= 0) goto check_quest_overlay;
 
     {
@@ -476,16 +521,18 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                         }
 
                         if ((BYTE)a6 && (BYTE*)(uintptr_t)x_addr == OffsetMixItems
-                            && MixState > 0 && MixState < 51)
+                            && mixState > 0 && mixState < 51)
                         {
                             EnableAlphaBlend();
-                            float green = (float)((double)(rand() % 4 + 4) * 0.1);
-                            float red   = (float)((double)(rand() % 6 + 6) * 0.1);
+                            const int cell = (int)((v6_addr - x_addr) / 68);
+                            const MixCellSample c = sample && cell < 32 ? sample->cells[cell] : MixCellSample{};
+                            float green = c.green;
+                            float red = c.red;
                             glColor3f(red, green, 0.2f);
                             int seed = (int)((double)((std::int64_t)WorldTime % 100) * 20.0);
-                            float v20 = (float)(rand() % 10 + 5);
-                            float v28 = (float)(rand() % 20) + sxa;
-                            float sxb = (float)(rand() % 20) + sy;
+                            float v20 = c.size;
+                            float v28 = c.x + sxa;
+                            float sxb = c.y + sy;
                             sub_5126E0(1230, v28, sxb, v20, v20, 0);
                             sub_5126E0(1230, v28, sxb, v20, v20, seed);
                             sub_5126E0(1231, v28, sxb, v20 * 3.0f, v20 * 3.0f, seed);
@@ -532,8 +579,7 @@ check_quest_overlay:
         }
     }
 
-    if (MixState > 1) return ++MixState;
-    return MixState;
+    return mixState;
 }
 
 

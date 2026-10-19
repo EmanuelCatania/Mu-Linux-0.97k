@@ -30,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+void HUD_BeginGridPass(int pass);
 #include <algorithm>
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
@@ -275,6 +276,7 @@ extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
 extern "C" char __cdecl sub_4F5CE0_(void);
 char __cdecl sub_4F5CE0_(void)
 {
+    HUD_BeginGridPass(0);
     if (InventoryOpened) {
         RenderEquipment3D();
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
