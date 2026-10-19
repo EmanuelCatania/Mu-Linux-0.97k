@@ -641,7 +641,6 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 
     if (Index == InputIndex) {
         int v9 = InputFrame % 2;
-        ++InputFrame;
         if (v9 == 0) {
             const char* ime = InputTextIME[Index];
             if (strlen(ime) != 0) {
