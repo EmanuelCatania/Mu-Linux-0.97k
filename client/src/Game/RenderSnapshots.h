@@ -27,6 +27,6 @@ void RenderSnapshots_NewDamagePoint(int slot);
 // El caller decide el umbral de desplazamiento antes de activar cada dominio.
 // No se introduce una política de teletransporte implícita para el gameplay.
 bool RenderSnapshots_Character(int slot, float maxDisplacement, RenderPosePair& out);
-bool RenderSnapshots_Part(int slot, int part, RenderPosePair& out);
+bool RenderSnapshots_Part(int slot, int part, float maxDisplacement, RenderPosePair& out);
 bool RenderSnapshots_Item(int slot, float maxDisplacement, RenderPosePair& out);
 bool RenderSnapshots_DamagePoint(int slot, RenderPosePair& out);

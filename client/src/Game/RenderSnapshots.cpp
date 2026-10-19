@@ -209,8 +209,14 @@ bool RenderSnapshots_Character(int slot, float maximum, RenderPosePair& out) {
     LimitDisplacement(out, maximum);
     return true;
 }
-bool RenderSnapshots_Part(int slot, int part, RenderPosePair& out) {
-    return slot >= 0 && slot < 401 && part >= 0 && part < 11 && Read(parts[slot][part], PartSample(slot, part), out);
+bool RenderSnapshots_Part(int slot, int part, float maximum, RenderPosePair& out) {
+    if (slot < 0 || slot >= 401 || part < 0 || part >= 11 || !Read(parts[slot][part], PartSample(slot, part), out))
+        return false;
+    RenderPosePair owner;
+    if (!RenderSnapshots_Character(slot, maximum, owner)) return false;
+    // Una pieza tampoco mezcla animación si su propietario saltó de posición.
+    out.continuous = out.continuous && owner.continuous;
+    return true;
 }
 bool RenderSnapshots_Item(int slot, float maximum, RenderPosePair& out) {
     if (slot < 0 || slot >= 1000 || !Read(items[slot], ItemSample(slot), out)) return false;
