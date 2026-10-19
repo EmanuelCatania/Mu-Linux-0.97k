@@ -172,6 +172,7 @@ void Simulation_PrepareStep()
     memcpy(bonesScratch, g_BoneScratch, sizeof(bonesScratch));
     memcpy(root, &DAT_06989c9c, sizeof(root));
     const float lod = _DAT_005597c8;
+    Terrain_TickRenderWater();
     Terrain_PrepareSimulation();
     for (int slot = 0; slot < 400; ++slot) {
         CHARACTER &c = ((CHARACTER *)DAT_07abf5d0)[slot];
@@ -187,6 +188,8 @@ void Simulation_PrepareStep()
         preview.Object.Scale = 1.0f;
         PrepareCharacter(preview);
     }
+    // IDA: la pasada de picking del editor sigue a los personajes.
+    if (SceneFlag == 5 && DAT_07e11d30 != 0) RenderTerrain(1);
     memcpy(DAT_05826e18, quaternions, sizeof(quaternions));
     memcpy(g_BoneScratch, bonesScratch, sizeof(bonesScratch));
     memcpy(&DAT_06989c9c, root, sizeof(root));

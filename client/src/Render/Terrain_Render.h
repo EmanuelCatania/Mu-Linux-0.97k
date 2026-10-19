@@ -3,3 +3,5 @@
 void Terrain_Render(void);
 
 void Terrain_PrepareSimulation();
+
+void Terrain_TickRenderWater();

@@ -2554,17 +2554,34 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //     2º pass overlay (TerrainFlag=2) es inerte también en el original.
 //   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum
 //     (#2, 0x004F97E0), RenderTerrainTile RenderTerrainTile (#3, 0x004F8480).
-void __cdecl RenderTerrain(char EditFlag) {
-    // DESVIACION (DLL Antilag, ret en 0x004F9AC0): sin piso.  El DLL cortaba
-    // también la pasada de picking (EditFlag=1, Player_InputTick) y el click al
-    // suelo dejaba de mover al personaje; acá sólo se omite el dibujo.
-    if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
+static void Terrain_BeginWavePass() {
     FUN_004f98c0(
         (int)(*(float*)(Hero + 16) * 0.039999999f),   // hero X * 0.04 → tile coord
         (int)(*(float*)(Hero + 20) * 0.039999999f),   // hero Y * 0.04
         3,
         -70,
         (int)DAT_0839bc88);
+}
+static void Terrain_EndWavePass() {
+    DAT_0839bc88 ^= 1u;
+    Terrain_WaterWaveUpdate((int)DAT_0839bc88);
+}
+// DESVIACION: la pasada visual avanza el agua una vez por paso de 40 ms.
+// El picking conserva sus llamadas adicionales dentro de SIM.
+void Terrain_TickRenderWater() {
+    if (SceneFlag != 5 || DAT_07e11d1c > 30 || !DAT_07abf5d8) return;
+    if (gMapManager.GetCurrentMap() != 10 && !gUserSettings.GetAntilag(ANTILAG_FLOOR)) {
+        Terrain_BeginWavePass();
+        Terrain_EndWavePass();
+    }
+}
+
+void __cdecl RenderTerrain(char EditFlag) {
+    // DESVIACION (DLL Antilag, ret en 0x004F9AC0): sin piso.  El DLL cortaba
+    // también la pasada de picking (EditFlag=1, Player_InputTick) y el click al
+    // suelo dejaba de mover al personaje; acá sólo se omite el dibujo.
+    if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
+    if (EditFlag) Terrain_BeginWavePass();
 
     if (gMapManager.GetCurrentMap() == 8)
         DAT_07eeb214 = (float)((long long)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
@@ -2601,8 +2618,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         GL_EnableDepthTest();                   // EnableDepthTest
     }
 
-    DAT_0839bc88 ^= 1u;                   // terrain-light double-buffer toggle
-    Terrain_WaterWaveUpdate((int)DAT_0839bc88);
+    if (EditFlag) Terrain_EndWavePass();
 }
 
 #if 0

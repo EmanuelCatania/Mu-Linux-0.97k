@@ -606,9 +606,7 @@ void Render_Scene3D(void)
     Particle_RenderAll();                         // particle system draw
     RenderBoids();                              // RenderBoids (decoration animals)
     Entity_RenderAll_3D();
-    if (DAT_07e11d30 != 0) {                     // if (EditFlag) RenderTerrain(1) — IDA: aquí, no tras Trail
-        RenderTerrain('\x01');
-    }
+    // Picking de editor y avances del agua preparados en SIM.
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
         Entity_Render();                          // Entity_Render (sprites)
     }
