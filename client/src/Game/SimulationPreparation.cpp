@@ -12,6 +12,8 @@
 #include "Render/WorldEffects.h"
 #include "Render/Particle_Render.h"
 
+void Sprite_ReplayStep();
+
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
 extern "C" void HeroEquipWatchdog(int entity);
 
@@ -223,6 +225,7 @@ void Simulation_RestorePickingCamera()
 
 void Simulation_BeginRender()
 {
+    Sprite_ReplayStep();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
     // tick no debe consumirlos ni dejar la pose del preview como estado lógico.
     CapturePose(renderCamera);

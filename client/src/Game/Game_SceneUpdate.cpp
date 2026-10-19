@@ -362,7 +362,6 @@ int Game_SceneUpdate(void)
     // expira las partículas. Nuestro Particle_Update() es en realidad
     // Trail_RenderAll (0x46C3E0, mal nombrado) y no decrementa el lifetime.
     MoveParticles();
-    Character_UpdateAll();
 
     // ── Per-character animation tick (login scene) ────────────────────────────
     // En el binario original MoveCharactersClient (0x00455010) corre cada frame
@@ -380,7 +379,6 @@ int Game_SceneUpdate(void)
         }
     }
 
-    Effect_UpdateAll();
     Login_CameraUpdate();
     // MoveCamera @ 0x0051E4E0 — login scene camera fly-through. Reads
     // CameraWalk_005615ec[] and writes CameraAngle/CameraPosition each frame.
