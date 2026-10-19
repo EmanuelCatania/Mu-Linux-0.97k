@@ -28,6 +28,7 @@ CMakeLists.txt text eol=lf
 *.cmake        text eol=lf
 *.yml          text
 *.py           text
+*.sh           text eol=lf
 
 # ── Assets del juego — BINARIOS, no tocar ──
 *.bmd  binary

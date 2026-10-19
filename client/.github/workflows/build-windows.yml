@@ -128,7 +128,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: tools
+          sparse-checkout: .github/scripts
 
       - uses: actions/download-artifact@v4
         with:

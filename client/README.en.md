@@ -586,5 +586,89 @@ gitGraph
   branch off `fase/N` and come back through a PR.
 - A fix to a published version branches off the affected tag, is merged into `main`
   with its new tag, and also into the phase in progress.
-- Releases publish only the source code: each one builds the client with its own
-  server's data.
+- CI also prepares a Linux x86 package. Build with your own configuration for a different server.
+
+## Linux x86 client: package and build
+
+CI builds an **ELF32 executable with SSE2** on Ubuntu 22.04. SDL3, FreeType and miniaudio are static; OpenGL, glibc and desktop libraries come from the system and require **32-bit** packages even on x64 Linux. This is not an x64 client: entity layout assertions intentionally enforce the original 32-bit ABI.
+
+The `mu97k-linux-release` artifact contains a `.tar.gz`, its SHA256 and a library inventory. The package includes `main`, `Data`, licenses, READMEs and `launch.sh`, without the developer's `Config.ini`. Packaging rejects GLIBC symbols newer than 2.35. Runtime packages:
+
+```sh
+# Arch: [multilib] enabled
+sudo pacman -S --needed lib32-glibc lib32-gcc-libs lib32-glu lib32-libglvnd \
+  lib32-libx11 lib32-libxext lib32-libxrandr lib32-libxcursor lib32-libxi \
+  lib32-wayland lib32-libxkbcommon lib32-libdecor lib32-alsa-lib lib32-libpulse
+# Intel/AMD: lib32-mesa. NVIDIA: lib32-nvidia-utils matching the installed driver.
+
+# Debian 12 / Ubuntu 22.04+
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install libc6:i386 libstdc++6:i386 libgcc-s1:i386 \
+  libglu1-mesa:i386 libgl1:i386 libegl1:i386 libgl1-mesa-dri:i386 \
+  libx11-6:i386 libxext6:i386 libxrandr2:i386 libxcursor1:i386 libxi6:i386 \
+  libwayland-client0:i386 libwayland-cursor0:i386 libwayland-egl1:i386 \
+  libxkbcommon0:i386 libdecor-0-0:i386 libdecor-0-plugin-1-cairo:i386 libpulse0:i386
+# ALSA: libasound2:i386 (Debian 12 / Ubuntu 22.04), libasound2t64:i386 (Ubuntu 24.04+).
+
+# Fedora
+sudo dnf install glibc.i686 libstdc++.i686 libgcc.i686 mesa-libGLU.i686 \
+  libglvnd-glx.i686 libglvnd-egl.i686 mesa-dri-drivers.i686 \
+  libX11.i686 libXext.i686 libXrandr.i686 libXcursor.i686 libXi.i686 \
+  wayland.i686 libxkbcommon.i686 libdecor.i686 alsa-lib.i686 pulseaudio-libs.i686
+```
+
+Extract on the SSD and run `./launch.sh` from your desktop session, without sudo. Configuration, screenshots and `debug.log` go to `${XDG_DATA_HOME:-$HOME/.local/share}/mu97k`. First launch creates windowed 1024×768 preferences; existing preferences are preserved. Set `MU_CLIENT_ROOT` to use another writable directory.
+
+To use shared NTFS assets without copying them, point to the directory **containing Data**, including all four fonts under `Data/Font`:
+
+```sh
+MU_ASSET_ROOT='/run/media/user/HDD/path/Client' ./launch.sh
+SDL_VIDEODRIVER=wayland ./launch.sh
+SDL_VIDEODRIVER=x11 ./launch.sh
+```
+
+Without `SDL_VIDEODRIVER`, a Wayland session tries native Wayland, then X11/XWayland. The selected driver is logged to stderr. Arch provides `lib32-libdecor` for client-side decorations. Without it, compositors lacking server-side decorations may show an undecorated window. HiDPI preserves the game's logical resolution and lets the compositor scale the image, which may look softer. IME uses SDL/Wayland text input, limited to the game's Windows-1252 repertoire; there is no Windows IMM mode indicator. GPU, scaling, IME, fullscreen and camera capture need testing on the actual compositor.
+
+### Wayland and NVIDIA GPUs
+
+The client is 32-bit, and with NVIDIA that has two consequences on native Wayland, found while testing on Arch (KDE Plasma, RTX 3080 Ti, driver 615):
+
+- **Without the 32-bit EGL Wayland platform, Wayland renders in software.** NVIDIA only ships `egl-wayland` for x64. Without `libnvidia-egl-wayland.so.1` in `/usr/lib32`, the Wayland GL context falls back to Mesa `llvmpipe`: 24 fps, skill effects as white quads and transparent blacks. The client detects this at startup (`Renderer por software en wayland`) and switches to X11/XWayland on its own, where GLX does use the GPU.
+- **With that platform installed, native Wayland works but performs much worse.** NVIDIA's 32-bit EGL driver resolves thread-local variables through `__tls_get_addr` on every GL call, and the client draws in immediate mode (`glVertex`/`glTexCoord` per vertex, like 0.97k). Measured at the same spot in game: 4.7 ms of render per frame with X11/GLX versus 70-85 ms with Wayland/EGL, i.e. 25 fps versus 11-17. `__GL_SYNC_TO_VBLANK` and `__GL_MaxFramesAllowed` make no difference: it is per-call driver cost, not synchronization. This cannot be fixed in the client; it goes away with the modern renderer or the x64 move on the roadmap.
+
+In this case the client does **not** fall back to X11 on its own, because the renderer is accelerated. **On NVIDIA, run the client on X11:**
+
+```sh
+SDL_VIDEODRIVER=x11 ./launch.sh
+```
+
+Native Wayland is for testing the window backend or for Mesa GPUs (Intel/AMD), whose 32-bit EGL does not have this problem:
+
+```sh
+SDL_VIDEODRIVER=wayland ./launch.sh
+```
+
+The selected driver and GL renderer are printed to stderr at startup (`Backend de video: …` and `OpenGL: vendor | renderer | version`).
+
+32-bit `egl-wayland` is not in Arch's official repositories. The AUR `lib32-egl-wayland` package is usually behind and requires the same version as `egl-wayland`; installing it with a helper may downgrade the 64-bit one. If you want it for testing, build the PKGBUILD with `pkgver` set to your `egl-wayland` version and rebuild it whenever you update the driver.
+
+To **build**, also install Git, CMake 3.25+, Ninja, Python 3, pkg-config and GCC/G++ supporting `-m32`, plus development headers:
+
+- Arch: `base-devel gcc cmake ninja git python pkgconf glu wayland-protocols` and the runtime `lib32-*` packages above, which include development files.
+- Debian/Ubuntu: `g++-multilib libc6-dev-i386 cmake ninja-build git python3 pkg-config wayland-protocols libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 libasound2-dev:i386 libpulse-dev:i386`. Ubuntu 22.04 ships CMake 3.22; install CMake 3.25+ first, for example in a Python virtual environment.
+- Fedora: `gcc gcc-c++ cmake ninja-build git python3 pkgconf-pkg-config wayland-devel wayland-protocols-devel glibc-devel.i686 libstdc++-devel.i686 mesa-libGLU-devel.i686 libglvnd-devel.i686 libX11-devel.i686 libXext-devel.i686 libXrandr-devel.i686 libXinerama-devel.i686 libXcursor-devel.i686 libXi-devel.i686 wayland-devel.i686 libxkbcommon-devel.i686 libdecor-devel.i686 alsa-lib-devel.i686 pulseaudio-libs-devel.i686`.
+
+```sh
+# PKG_CONFIG_LIBDIR: Arch
+export PKG_CONFIG_LIBDIR=/usr/lib32/pkgconfig:/usr/share/pkgconfig
+# Debian / Ubuntu:
+# export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
+# Fedora:
+# export PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig
+cmake -S . -B build/linux-release -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake \
+  -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_BUILD_TYPE=Release
+cmake --build build/linux-release --parallel 4
+python3 .github/scripts/check_cmake_sources.py
+```
