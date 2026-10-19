@@ -7,6 +7,87 @@
 
 Proyecto para operar MuEmu 0.97k en Linux de forma nativa, con Docker, web y editor opcional.
 
+## Fase 3 (en desarrollo) — próximo 0.97.30
+
+Lo que sigue está en la rama `fase/3` y todavía no tiene Release. Para usarlo hay que compilar desde esa rama; las imágenes Docker y los eggs de Pterodactyl siguen en `0.97.20`.
+
+- El server compila con CMake en Windows x86 y x64, además de Linux x64 y ARM64. El CI cubre las cuatro combinaciones en Debug y Release.
+- MySQL Connector/C++ se descarga en el configure con versión y hash fijos; sus binarios ya no se versionan.
+- Correcciones del ancho de puntero en callbacks de sockets, IOCP y timers, necesarias para x64.
+- Cola de envío ampliada para el catálogo de items que el server manda al iniciar sesión.
+- Comandos GM para adelantar Blood Castle, Devil Square, Golden Archer Bingo e invasiones sin reiniciar el server.
+
+### Compilar y correr en Windows (sin Docker)
+
+1. Requisitos: Visual Studio 2022 o 2026 con "Desarrollo para el escritorio con C++" (toolset v143, incluye CMake) y MySQL 8.
+2. Compilar desde la raíz del repo:
+
+   ```
+   cmake -S . -B out/win-x86 -A Win32 -T v143
+   cmake --build out/win-x86 --config Release
+   ```
+
+   Los ejecutables quedan en `Source/MuServer/bin/Release/`.
+3. Copiar cada ejecutable a su carpeta de `MuServer/`, junto a su `.ini`:
+   - `ConnectServer/ConnectServer.exe` → `MuServer/ConnectServer/`
+   - `GameServer/GameServer.exe` → `MuServer/GameServer/` (lee los datos de `MuServer/Data/`)
+   - `MYSQL/JoinServer/JoinServer.exe` → `MuServer/MySQL/JoinServer/`
+   - `MYSQL/DataServer/DataServer.exe` → `MuServer/MySQL/DataServer/`
+
+   Copiar también las DLL, la carpeta `plugin` y `LICENSE-MySQL.txt` que CMake deja junto a JoinServer y DataServer. Deben corresponder a la misma arquitectura y configuración que los ejecutables.
+4. Base de datos: ejecutar `MuServer/MySQL/DB/CreateDatabase.sql` y después `PoblateDatabase.sql`. El usuario por defecto es `admin` / `asd123`; si usás otro, cambialo en `DataServer.ini` y `JoinServer.ini`.
+5. En `MuServer/ConnectServer/ServerList.dat`, poner la IP del server (`127.0.0.1` para probar en la misma PC).
+6. Arrancar en este orden: DataServer, JoinServer, ConnectServer y GameServer.
+
+El cliente `0.97.20` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
+
+#### Windows x64 y dependencias de Fase 3
+
+Para x64, desde la raíz:
+
+```powershell
+cmake --preset windows-x64-release
+cmake --build --preset windows-x64-release --parallel 4
+```
+
+También están disponibles `windows-x86-release`, `windows-x86-debug` y `windows-x64-debug`. CMake descarga MySQL Connector/C++ **8.0.33** con SHA256 fijo para x86/x64 y Debug/Release; ya no se versionan sus binarios. El primer configure requiere conexión a los archivos oficiales de MySQL. Los proyectos MSBuild históricos usan el mismo mecanismo en `Debug_MySQL` y `Release_MySQL`; necesitan CMake en PATH.
+
+Los cuatro servicios compilan en el CI para Windows x86/x64 y Linux x64/ARM64, Debug y Release. ARM64 sigue como compilado, no probado en partida. Fase 3 incluye correcciones del ancho de puntero en callbacks, IOCP y timers, y una cola de envío de 256 KiB para el catálogo de login; el límite individual sigue en 8 KiB. La prueba local de Windows x64 cubrió login, partida, reset, compra/venta y Chaos; no equivale a una prueba de carga.
+
+### Administración: eventos GM y recargas
+
+Sólo GM nivel 1 o superior, desde el chat del juego:
+
+| Comando | Evento |
+| --- | --- |
+| `/tamastart` | Tamachan |
+| `/bcstart` | Blood Castle, todos los niveles |
+| `/dsstart` | Devil Square, todos los niveles |
+| `/bingostart` | Golden Archer Bingo |
+| `/invasionstart <indice>` | Índice de `MuServer/Data/Event/InvasionManager.dat` |
+
+Programan una sola ejecución aproximadamente dos minutos después, sin modificar los horarios del archivo ni reiniciar eventos activos. BC/DS también rechazan el pedido con la entrada abierta. Iniciar una invasión no reinicia las demás. El evento debe estar habilitado. Los nuevos comandos registran el pedido y resultado en `COMMAND_LOG`.
+
+En instalaciones existentes, agregar las cuatro filas nuevas de `MuServer/Data/Command.txt` después de `/tamastart` y antes de `end`, en este orden: bcstart, dsstart, bingostart, invasionstart. El orden determina el ID; conservar el resto de la configuración. Queda pendiente la prueba en juego de estos comandos nuevos.
+
+#### Ejemplo: recargar tiendas desde Docker
+
+Escribir sólo `shop` o `/reload shops` en la consola **no funciona**: el GameServer Linux no lee órdenes desde stdin. Desde la terminal del host, en la carpeta del Compose:
+
+```sh
+docker compose exec -T mu-server sh -c 'printf "shop\n" > "${MU_DATA_PATH:-/opt/mu/Data}/EditorReload.flag"'
+```
+
+Si ya estás dentro de la shell del contenedor del servidor:
+
+```sh
+printf 'shop\n' > "${MU_DATA_PATH:-/opt/mu/Data}/EditorReload.flag"
+```
+
+El servidor consume `EditorReload.flag` en unos 10 segundos. Confirmar `Shop reloaded by editor flag` en el log. En despliegues con `docker-compose.images.yml`, agregar `-f docker-compose.images.yml` a `docker compose`. Sin Compose, usar `docker exec <contenedor>` en lugar de `docker compose exec -T mu-server`.
+
+Tokens disponibles: `all`, `common`, `shop`, `monster`, `move`/`gate`, `quest`, `util`, `item`, `skill`, `event`, `eventitembag`, `chaosmix`, `command`, `custom`, `character`, `map`, `hack`. Se pueden separar con espacios o comas. Esperar a que se consuma un pedido antes de enviar otro. `event` y `all` reinicializan eventos: no usarlos para adelantar uno ni durante un evento activo. Windows conserva las recargas del menú.
+
 ## Novedades de 0.97.20 — cierre de la Fase 2
 
 **Compatibilidad: server 0.97.20 ↔ [cliente 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20).** Actualizá ambos juntos: el formato extendido de items no es compatible con clientes anteriores ni con el Main.dll histórico.
@@ -120,79 +201,6 @@ docker compose -f docker-compose.images.yml up -d
 ```
 
 En ARM con 1 GB de RAM o menos, habilitá 2 GB de swap antes del primer build. `uname -m`: `x86_64` = amd64, `aarch64` = arm64.
-
-## Compilar y correr en Windows (sin Docker)
-
-Disponible desde la rama `fase/3` (próximo `0.97.30`).
-
-1. Requisitos: Visual Studio 2022 o 2026 con "Desarrollo para el escritorio con C++" (toolset v143, incluye CMake) y MySQL 8.
-2. Compilar desde la raíz del repo:
-
-   ```
-   cmake -S . -B out/win-x86 -A Win32 -T v143
-   cmake --build out/win-x86 --config Release
-   ```
-
-   Los ejecutables quedan en `Source/MuServer/bin/Release/`.
-3. Copiar cada ejecutable a su carpeta de `MuServer/`, junto a su `.ini`:
-   - `ConnectServer/ConnectServer.exe` → `MuServer/ConnectServer/`
-   - `GameServer/GameServer.exe` → `MuServer/GameServer/` (lee los datos de `MuServer/Data/`)
-   - `MYSQL/JoinServer/JoinServer.exe` → `MuServer/MySQL/JoinServer/`
-   - `MYSQL/DataServer/DataServer.exe` → `MuServer/MySQL/DataServer/`
-
-   Copiar también las DLL, la carpeta `plugin` y `LICENSE-MySQL.txt` que CMake deja junto a JoinServer y DataServer. Deben corresponder a la misma arquitectura y configuración que los ejecutables.
-4. Base de datos: ejecutar `MuServer/MySQL/DB/CreateDatabase.sql` y después `PoblateDatabase.sql`. El usuario por defecto es `admin` / `asd123`; si usás otro, cambialo en `DataServer.ini` y `JoinServer.ini`.
-5. En `MuServer/ConnectServer/ServerList.dat`, poner la IP del server (`127.0.0.1` para probar en la misma PC).
-6. Arrancar en este orden: DataServer, JoinServer, ConnectServer y GameServer.
-
-El cliente `0.97.20` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
-
-### Windows x64 y dependencias de Fase 3
-
-Para x64, desde la raíz:
-
-```powershell
-cmake --preset windows-x64-release
-cmake --build --preset windows-x64-release --parallel 4
-```
-
-También están disponibles `windows-x86-release`, `windows-x86-debug` y `windows-x64-debug`. CMake descarga MySQL Connector/C++ **8.0.33** con SHA256 fijo para x86/x64 y Debug/Release; ya no se versionan sus binarios. El primer configure requiere conexión a los archivos oficiales de MySQL. Los proyectos MSBuild históricos usan el mismo mecanismo en `Debug_MySQL` y `Release_MySQL`; necesitan CMake en PATH.
-
-Los cuatro servicios compilan en el CI para Windows x86/x64 y Linux x64/ARM64, Debug y Release. ARM64 sigue como compilado, no probado en partida. Fase 3 incluye correcciones del ancho de puntero en callbacks, IOCP y timers, y una cola de envío de 256 KiB para el catálogo de login; el límite individual sigue en 8 KiB. La prueba local de Windows x64 cubrió login, partida, reset, compra/venta y Chaos; no equivale a una prueba de carga.
-
-## Administración: eventos GM y recargas
-
-Sólo GM nivel 1 o superior, desde el chat del juego:
-
-| Comando | Evento |
-| --- | --- |
-| `/tamastart` | Tamachan |
-| `/bcstart` | Blood Castle, todos los niveles |
-| `/dsstart` | Devil Square, todos los niveles |
-| `/bingostart` | Golden Archer Bingo |
-| `/invasionstart <indice>` | Índice de `MuServer/Data/Event/InvasionManager.dat` |
-
-Programan una sola ejecución aproximadamente dos minutos después, sin modificar los horarios del archivo ni reiniciar eventos activos. BC/DS también rechazan el pedido con la entrada abierta. Iniciar una invasión no reinicia las demás. El evento debe estar habilitado. Los nuevos comandos registran el pedido y resultado en `COMMAND_LOG`.
-
-En instalaciones existentes, agregar las cuatro filas nuevas de `MuServer/Data/Command.txt` después de `/tamastart` y antes de `end`, en este orden: bcstart, dsstart, bingostart, invasionstart. El orden determina el ID; conservar el resto de la configuración. Queda pendiente la prueba en juego de estos comandos nuevos.
-
-### Ejemplo: recargar tiendas desde Docker
-
-Escribir sólo `shop` o `/reload shops` en la consola **no funciona**: el GameServer Linux no lee órdenes desde stdin. Desde la terminal del host, en la carpeta del Compose:
-
-```sh
-docker compose exec -T mu-server sh -c 'printf "shop\n" > "${MU_DATA_PATH:-/opt/mu/Data}/EditorReload.flag"'
-```
-
-Si ya estás dentro de la shell del contenedor del servidor:
-
-```sh
-printf 'shop\n' > "${MU_DATA_PATH:-/opt/mu/Data}/EditorReload.flag"
-```
-
-El servidor consume `EditorReload.flag` en unos 10 segundos. Confirmar `Shop reloaded by editor flag` en el log. En despliegues con `docker-compose.images.yml`, agregar `-f docker-compose.images.yml` a `docker compose`. Sin Compose, usar `docker exec <contenedor>` en lugar de `docker compose exec -T mu-server`.
-
-Tokens disponibles: `all`, `common`, `shop`, `monster`, `move`/`gate`, `quest`, `util`, `item`, `skill`, `event`, `eventitembag`, `chaosmix`, `command`, `custom`, `character`, `map`, `hack`. Se pueden separar con espacios o comas. Esperar a que se consuma un pedido antes de enviar otro. `event` y `all` reinicializan eventos: no usarlos para adelantar uno ni durante un evento activo. Windows conserva las recargas del menú.
 
 ## Variables de entorno
 
