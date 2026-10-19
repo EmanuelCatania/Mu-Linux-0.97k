@@ -61,6 +61,7 @@ void WorldEffects_Tick(int entity) {
     memset(g_BoneScratch, 0, sizeof(g_BoneScratch));
     if (*(short *)((char *)model + 0x26) > 0)
         ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 0);
+    ObjectPose_TickMeshEvents(entity, model, (float *)g_BoneScratch, 0);
     recording = &frame;
     Entity_SpawnEffects(entity);
     recording = nullptr;

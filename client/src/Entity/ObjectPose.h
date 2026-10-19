@@ -11,3 +11,5 @@ void ObjectPose_PrepareBones(int entity, void* model, float* bones, char transla
 // sus temporales; los destinos persistentes son huesos y OBB de la entidad.
 void ObjectPose_PrepareSimulation(int entity, char translate);
 void ObjectPose_PrepareBounds(int entity, char translate);
+
+void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char translate);

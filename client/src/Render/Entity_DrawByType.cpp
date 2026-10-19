@@ -556,9 +556,8 @@ LAB_substate4_done:
     if (sType == 0x14b) {
         if (AsObject(param_1)->CurrentAction == '\x06') {
             // Death animation trigger
-            *param_1 = 0;
-            PlayBuffer(0x6a, 0, 0);
-            BMD__RenderMeshEffect(model, 0, 0x106);
+            // El evento de muerte se resuelve con la pose SIM.
+
             goto LAB_postprocess;
         }
         goto LAB_standard_render;
@@ -612,12 +611,6 @@ LAB_substate4_done:
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                          0x492);
-        } else {
-            if (bDead) {
-                *param_1 = 0;          // desactiva la entidad: corre un solo frame
-            }
-            PlayBuffer(0x6a, 0, 0);  // PlayBuffer(106)
-            BMD__RenderMeshEffect(model, 0, 0x104);
         }
         goto LAB_postprocess;
     }

@@ -63,6 +63,22 @@ void ObjectPose_PrepareSimulation(int entity, char translate)
     ObjectPose_PrepareBounds(entity, translate);
 }
 
+// IDA: Draw_RenderObject (0x004FAE00), estatuas de Blood Castle.
+// DESVIACION: fragmentos, audio y desactivación se producen en SIM, aun sin draw.
+void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char translate)
+{
+    OBJECT &o = *AsObject(entity);
+    if (!o.Live || o.Alpha < _DAT_005524f8) return;
+    const bool dead = o.CurrentAction == 6;
+    const bool materializing = o.Type == 330 && (int)MoveSceneFrame - o.InitialSceneFrame < 25;
+    if (!((o.Type == 331 && dead) || (o.Type == 330 && (dead || materializing)))) return;
+    float bounds[15];
+    Skeleton_Transform(model, (int)bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
+    if (dead) o.Live = 0;
+    PlayBuffer(106, 0, 0);
+    BMD__RenderMeshEffect(model, 0, o.Type == 330 ? 260 : 262);
+}
+
 // IDA: BMD_Animation (0x00440060)
 // Computes animated bone transforms for the current frame.
 // param_1 = bone transform array (param_1[bone * 0x30] = 3x4 matrix per bone)
