@@ -18,7 +18,7 @@
     }
   },
   "variables": [
-    { "name": "Release tag", "description": "GitHub release to install. Reinstall after changing it.", "env_variable": "MU_RELEASE_TAG", "default_value": "0.97.20", "user_viewable": true, "user_editable": true, "rules": "required|string|regex:/^v?[0-9]+\\.[0-9]+\\.[0-9]+$/" },
+    { "name": "Release tag", "description": "GitHub release to install. Reinstall after changing it.", "env_variable": "MU_RELEASE_TAG", "default_value": "0.97.30", "user_viewable": true, "user_editable": true, "rules": "required|string|regex:/^v?[0-9]+\\.[0-9]+\\.[0-9]+$/" },
     { "name": "Database host", "description": "MySQL hostname or IP address.", "env_variable": "DB_HOST", "default_value": "{{server.build.default.database.host}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
     { "name": "Database port", "description": "MySQL port.", "env_variable": "DB_PORT", "default_value": "{{server.build.default.database.port}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },
     { "name": "Database user", "description": "MySQL user.", "env_variable": "DB_USER", "default_value": "{{server.build.default.database.username}}", "user_viewable": true, "user_editable": false, "rules": "required|string" },

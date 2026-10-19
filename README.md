@@ -15,6 +15,21 @@ Proyecto para operar MuEmu 0.97k en Linux de forma nativa, con Docker, web y edi
 - Cola de envío ampliada para el catálogo de items que el server manda al iniciar sesión.
 - Comandos GM para adelantar Blood Castle, Devil Square, Golden Archer Bingo e invasiones sin reiniciar el server.
 
+**Compatibilidad: server 0.97.30 ↔ [cliente 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30).**
+
+### Cómo actualizar desde 0.97.20
+
+Con Docker, actualizá únicamente el server:
+
+```bash
+docker compose -f docker-compose.images.yml pull mu-server
+docker compose -f docker-compose.images.yml up -d --no-deps mu-server
+```
+
+Para fijar la versión, usá la imagen `emapupi/mu-linux-97k:0.97.30` (amd64 y arm64). Un volumen persistente no se actualiza con el pull: agregá en tu `Data/Command.txt` las cuatro filas de los comandos GM nuevos, como se explica en [Administración](#administración-eventos-gm-y-recargas). MySQL, la web y el editor no cambian.
+
+**Pterodactyl:** seleccioná `0.97.30` en `MU_RELEASE_TAG`. En instalaciones existentes, con el servidor detenido, extraé el archivo de tu arquitectura de este Release en una carpeta temporal, reemplazá los cuatro binarios y `start.sh`, y agregá las filas de `Command.txt`, conservando tus INI y Data.
+
 ### Compilar y correr en Windows (sin Docker)
 
 1. Requisitos: Visual Studio 2022 o 2026 con "Desarrollo para el escritorio con C++" (toolset v143, incluye CMake) y MySQL 8.
@@ -37,7 +52,7 @@ Proyecto para operar MuEmu 0.97k en Linux de forma nativa, con Docker, web y edi
 5. En `MuServer/ConnectServer/ServerList.dat`, poner la IP del server (`127.0.0.1` para probar en la misma PC).
 6. Arrancar en este orden: DataServer, JoinServer, ConnectServer y GameServer.
 
-El cliente `0.97.20` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
+El cliente `0.97.30` trae compilada la dirección `mu.server-pups.space`. Para apuntarlo a un server propio sin recompilar, agregar en `C:\Windows\System32\drivers\etc\hosts` (como administrador) la línea `127.0.0.1 mu.server-pups.space`, y sacarla al terminar.
 
 #### Windows x64 y dependencias de Fase 3
 
