@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Game/SimulationPreparation.h"
 #include "Entity/CharacterCloth.h"
+#include "Entity/CharacterEffects.h"
 #include "Entity/ObjectPose.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Terrain_Render.h"
@@ -120,7 +121,16 @@ void PrepareCharacter(CHARACTER &c) {
     const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
     const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;
     const int highlighted = !hero && (slot == SelectedCharacter || slot == SelectedNpc);
+    CharacterEffectScratch effects;
+    Equipment_BeginCharacter((int)&c);
+    Equipment_SetStage(CharacterEffects_EarlyStage);
+    CharacterEffects_TickEarly((int)&c, effects);
+    Equipment_EndCharacter();
     Equipment_Tick((int)&c, highlighted);
+    Equipment_BeginCharacter((int)&c);
+    Equipment_SetStage(CharacterEffects_LateStage);
+    CharacterEffects_TickLate((int)&c, effects);
+    Equipment_EndCharacter();
     memcpy(model, context, sizeof(context));
     const bool subtypeNpc = o.Type == 390 && o.SubType >= 206 && o.SubType <= 208;
     if (!subtypeNpc && !c.Change) {

@@ -227,6 +227,7 @@ set(MU_SOURCES
     src/Path/Path_LegacyReset.cpp
     src/Render/Font_LegacyFactory.cpp
     src/Render/SMD_Parser.cpp
+    src/Entity/CharacterEffects.cpp
     src/Entity/CharacterCloth.cpp
     src/Entity/ObjectPose.cpp
     src/Render/Entity_AnimationLegacy.cpp
@@ -385,6 +386,7 @@ set(MU_HEADERS
     src/Render/EquipmentVisuals.h
     src/Game/RenderSnapshots.h
     src/Game/SimulationPreparation.h
+    src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h

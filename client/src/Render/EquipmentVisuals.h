@@ -1,5 +1,6 @@
 #pragma once
 
+// Muestra compartida de presentación: equipo y sprites del cuerpo.
 // IDA: equipo de RenderCharacter (0x00456770) y RenderLinkObject (0x00455430).
 void Equipment_BeginStep();
 void Equipment_Tick(int entity, int highlighted);
