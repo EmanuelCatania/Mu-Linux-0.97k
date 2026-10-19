@@ -4,99 +4,65 @@
 
 [🇪🇸 Español](README.md) | 🇺🇸 English | [🇧🇷 Português](README.pt-BR.md)
 
-A C++ port of the **Mu Online 0.97k** client (`main.exe`, MD5
-`eb95ac0785e40a7ad60c9ddb5d8bef34`), reverse-engineered from the original
-binary.
+C++ port of the **Mu Online 0.97k** client (`main.exe`, MD5
+`eb95ac0785e40a7ad60c9ddb5d8bef34`), reconstructed by reverse engineering the
+original binary.
 
-The goal is for the compiled client to **behave the same as the original
-binary**: same login flow, same rendering, same packets. This is not a rewrite
-nor a "client inspired by" — every function is a port of its counterpart in the
-binary, and deliberate deviations are documented in a comment next to the code.
+The compiled client **behaves like the original binary**: same login flow, same
+rendering, same packets. It is not a rewrite or a client "inspired by": every
+function is a port of its counterpart in the binary, and deliberate deviations
+are documented in a comment next to the code.
 
-**The code and its comments are in Spanish.** Symbols that could already be
-identified are named by responsibility; their canonical definition keeps an
-`IDA: FUN_xxxxxxxx` or `IDA: DAT_xxxxxxxx` comment to preserve traceability back
-to the binary.
+On top of that base, the features of the `Main.dll` injection DLL were
+integrated (Phase 2) and Linux support was added (Phase 3).
 
 ---
 
 ## Status
 
-**Works end-to-end**: it starts, connects, logs in, picks a character, enters
-the world and is playable. Terrain, characters, inventory, equipment, chat,
-party, guild, shop, vault, basic combat and effects are all operational.
+**The reconstruction is complete.** No function of the binary is left unported.
+A latent bug may still show up when a rarely used path is exercised, and it gets
+fixed by comparing against IDA, but the reverse-engineering base is finished
+(tag `0.97.00`).
 
-It is not a finished client: some subsystems still have known gaps, and port
-bugs keep surfacing as new code paths get exercised. The most partial area today
-is NPC and monster movement.
+The client starts, connects, logs in, picks a character, enters the world and is
+playable: terrain, characters, NPCs and monsters, inventory, equipment, shop,
+vault, trade, chat, party, guild, combat, skills, effects, events, sound and
+music.
 
-### By subsystem
-
-| Subsystem | Status |
-|---|---|
-| Startup, window, OpenGL | Complete |
-| Login + server select (includes the ConnectServer flow) | Complete, verified against a real server |
-| Character select | Working |
-| Network / protocol (85+ opcodes) | Complete for everything exercised; new opcodes show up as new features get used |
-| Terrain, lighting, water | Complete |
-| Character and equipment rendering | Working |
-| Effects, joints, particles, weather | Working |
-| Inventory, equipment, vault, shop, trade | Working |
-| Chat, party, guild | Working |
-| Sound (DirectSound) | Working |
-| Music (BGM) | Complete: played by miniaudio inside the client; accepts mp3, wav and flac (the original launched `MuPlayer.exe`) |
-| Text and language | UI in Spanish. The port opens a fixed `Text.bmd`, which here is the `_Spn` variant; the `_Eng`/`_Por` variants do ship in `Data/Local/`, but the language selector comes from the DLL and is not ported |
-| Combat | `Attack`, `Action` and `MoveCharacterVisual` audited 1:1 against IDA, together with their executor chains |
-| NPC / monster movement | Partial |
-
-> **While the selector is not ported**, playing in another language is just a
-> matter of replacing the base files in `bin/Client/Data/Local/` with the
-> variant you want: copy `Text_Eng.bmd` over `Text.bmd` and `Dialog_Eng.bmd`
-> over `Dialog.bmd` (or the `_Por` ones). Keep a copy of the originals first.
-> Item, skill and quest names are **already in English** and have no variants,
-> so those do not change either way.
-
-### Architecture and technical debt
-
-The ported code is laid out by domain (`Render/`, `Terrain/`, `UI/`, `Item/`,
-`Entity/`, `Combat/`, `Net/`, `Scene/`, and so on); there is no longer a general
-`stubs_*.cpp` dumping ground waiting to be split up. The current tree holds 249
-`.cpp` files and 58 headers under `src/`.
-
-The raw IDA decompiles that were never activated (formerly in
-`src/stubs_IDA_ports.cpp`) are archived in `docs/codigo-muerto/` of the `0.97.21`
-tag, outside the build, as a reference for the decompile. The aliases and ABI bridges left in
-`functions.h`/`globals.h` are not naming debt: they keep the original contract
-of the ports that use them.
-
-The `FUN_*` and `DAT_*` names that still appear in the code are not, on
-their own, renaming debt. Some describe infrastructure, the CRT, GameGuard,
-binary layouts, pools, or compatibility; others need research or a future port
-before they can safely be given a semantic name.
+| Platform | Backend | Status |
+|---|---|---|
+| Windows x86 | Win32 (the original binary's) | Complete |
+| Windows x86 | SDL3 | Complete |
+| Linux x86 | SDL3 | Complete; with NVIDIA, prefer X11 (see [Wayland and NVIDIA GPUs](#wayland-and-nvidia-gpus)) |
 
 ---
 
-## What you need besides this repo
+## What you need
 
-Almost nothing: the **game assets are already included** in `bin/Client/Data/`
-(~209 MB — `.bmd` models, `.ozj`/`.ozt` textures, maps, sounds and music).
-Clone, build, run.
-
-The only thing **not** included is the **original `main.exe`**, which you only
-need if you want to decompile it yourself to verify a port against the binary.
-It comes with any 0.97k client distribution; check the MD5
-(`eb95ac0785e40a7ad60c9ddb5d8bef34`) before comparing addresses, because there
-are many patched variants floating around and they do not match.
-
-You also need a **server**. The port is validated against
-[MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
-0.97k), which is the authoritative source for packet layouts. The Windows
-version [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito)
-(season 0.97k) also works.
+- **The assets are already included** in `bin/Client/Data/` (~209 MB: `.bmd`
+  models, `.ozj`/`.ozt` textures, maps, sounds and music). Clone, build, run.
+- **A server.** The port is validated against
+  [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
+  0.97k), which is the authoritative source for the packet format. The Windows
+  version, [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito),
+  works too. Each client Release states which server version it works with.
 
 ---
 
 ## Building
+
+There are two platform backends, selected with `MU_PLATFORM_BACKEND`:
+
+- **`Win32`** (the default): window, input, sound and network through the
+  Windows API, like the original binary. Windows only.
+- **`SDL3`**: the same on top of SDL3, FreeType and miniaudio. Windows and Linux.
+
+**It is always x86 (32-bit).** The port assumes 32-bit pointers: the original
+binary's addresses, struct layouts and memory pools. CMake stops the
+configuration if you try to build for 64 bits.
+
+### Windows (Win32 backend)
 
 Requires **Visual Studio 2022** with the C++ desktop toolset (it ships CMake).
 There are two equivalent ways, and both produce the same exe:
@@ -111,19 +77,78 @@ There are two equivalent ways, and both produce the same exe:
   The first command also generates `build/mu97k.sln`, in case you want to keep
   working in Visual Studio with the `src/` folders shown as filters.
 
-While both coexist, a new `.cpp` goes into the `.vcxproj` **and** into
-`CMakeLists.txt`; CI fails if the two lists don't match.
+Output: `bin/Client/main.exe` (plus `main.map` to resolve crash stacks). The
+project links straight into `bin/Client/`, which is where the assets and
+`Config.ini` live, so there is no intermediate copy and no risk of running a
+stale binary.
 
-**The platform must be Win32 (x86).** The whole port assumes 32-bit pointers:
-the original binary's addresses, struct layouts and memory pools. It does not
-build on x64, and it would be useless if it did.
+### Windows (SDL3 backend)
 
-Output: `bin/Client/main.exe`. The project links straight into `bin/Client/`,
-which is where the assets and `Config.ini` live, so there is no intermediate
-copy and no risk of running a stale binary.
+Same requirements, plus an internet connection the first time you configure:
+SDL3, FreeType and miniaudio are downloaded with `FetchContent` at pinned
+versions.
 
-Linked libraries (all from the Windows SDK, except libjpeg, which is bundled):
-`opengl32.lib`, `glu32.lib`, `winmm.lib`, `ws2_32.lib`.
+```
+cmake -S . -B build-sdl3 -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
+cmake --build build-sdl3 --config Release
+```
+
+The output is also `bin/Client/main.exe`, so it overwrites the Win32 one.
+
+### Linux x86 (SDL3 backend)
+
+You need Git, CMake 3.25+, Ninja, Python 3, pkg-config and GCC/G++ with `-m32`
+support, plus the **32-bit** development libraries (also on an x64 Linux):
+
+- **Arch** (with `[multilib]` enabled):
+  `base-devel gcc cmake ninja git python pkgconf glu wayland-protocols`, plus the
+  `lib32-*` libraries from [Running on Linux](#running-on-linux), which already
+  include the development files.
+- **Debian/Ubuntu:** `g++-multilib libc6-dev-i386 cmake ninja-build git python3
+  pkg-config wayland-protocols libx11-dev:i386 libxext-dev:i386
+  libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386
+  libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libwayland-dev:i386
+  libxkbcommon-dev:i386 libdecor-0-dev:i386 libasound2-dev:i386
+  libpulse-dev:i386`. Ubuntu 22.04 ships CMake 3.22: install CMake 3.25+ before
+  configuring (for example, in a Python virtual environment).
+- **Fedora:** `gcc gcc-c++ cmake ninja-build git python3 pkgconf-pkg-config
+  wayland-devel wayland-protocols-devel glibc-devel.i686 libstdc++-devel.i686
+  mesa-libGLU-devel.i686 libglvnd-devel.i686 libX11-devel.i686
+  libXext-devel.i686 libXrandr-devel.i686 libXinerama-devel.i686
+  libXcursor-devel.i686 libXi-devel.i686 wayland-devel.i686
+  libxkbcommon-devel.i686 libdecor-devel.i686 alsa-lib-devel.i686
+  pulseaudio-libs-devel.i686`.
+
+```sh
+# PKG_CONFIG_LIBDIR must point at the 32-bit libraries.
+export PKG_CONFIG_LIBDIR=/usr/lib32/pkgconfig:/usr/share/pkgconfig                      # Arch
+# export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig        # Debian / Ubuntu
+# export PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig                      # Fedora
+
+cmake -S . -B build/linux-release -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake \
+  -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_BUILD_TYPE=Release
+cmake --build build/linux-release --parallel 4
+```
+
+The executable ends up in `build/linux-release/bin/main` (not in `bin/Client/`,
+so it does not mix with the Windows one). To run it against the repo's assets,
+point `MU_ASSET_ROOT` at `bin/Client` (see [Running on Linux](#running-on-linux)).
+
+### For contributors
+
+- While the `.sln` and CMake coexist, a new `.cpp` goes into the `.vcxproj`
+  **and** into `CMakeLists.txt`. CI fails if the two lists don't match; you can
+  check locally with `python .github/scripts/check_cmake_sources.py`.
+- Dependencies bundled in the repo: `lib/stb` (decodes the `.ozj`/`.ozt`
+  textures and saves screenshots) and `lib/miniaudio` (music). SDL3 adds SDL3
+  and FreeType, downloaded at configure time.
+- CI builds the three combinations (Windows Win32, Windows SDL3 and Linux SDL3)
+  in Debug and Release, and packages the Linux Release.
+
+---
+
+## Configuring and playing
 
 ### Pointing it at your server
 
@@ -174,8 +199,8 @@ derives from both combined (`GameServer/HackCheck.cpp::InitHackCheck`).
 also compares it byte by byte at login. `ClientVersion` accepts `0.97.11` or
 `09711`.
 
-**To troubleshoot**, `bin/Client/debug.log` records the address in use and the
-derived key at startup:
+**To troubleshoot**, `debug.log` records the address in use and the derived key
+at startup:
 
 ```
 ServerConfig: ConnectServer=mu.server-pups.space:44405 GameServer=mu.server-pups.space:55901 version='09711'
@@ -185,31 +210,140 @@ MuEmu: InitKeys CustomerName='MuLinux' Serial='TbYehR2hFUPBKgZj' -> EncDecKey1=0
 If the client hangs while connecting, that line is the first thing to check:
 compare it with the server's `CustomerName`.
 
-### Running and player options
+### Player options
 
-Run `bin/Client/main.exe`.
+Preferences are read from **`Config.ini`**, with the same sections and keys the
+`Main.dll` injection DLL used, so the `Config.ini` you already have works. On
+Windows it is `bin/Client/Config.ini`; on Linux, `~/.local/share/mu97k/Config.ini`.
+Most of them can also be changed from the in-game options menu, which saves them
+to the same file.
 
-Player preferences are read from **`bin/Client/Config.ini`**, with the same
-sections and keys the `Main.dll` injection DLL used, so the `Config.ini` you
-already have works. The original 0.97k read them from the Windows registry,
-where the official launcher left them: if a key is missing from `Config.ini`,
-the registry wins, and if it is not there either, the binary's default. What was
-applied is logged to `debug.log` (`Config.ini: ...` line).
+On Windows, if a key is missing from `Config.ini` the registry wins (where the
+original 0.97k kept what the official launcher configured) and, if it is not
+there either, the binary's default. What was applied is logged to `debug.log`
+(`Config.ini: ...` line).
 
-| Key | Binary default | Notes |
+| Key | Default | Notes |
 |---|---|---|
 | `[Window] WindowMode` | — (deviation) | `1` = windowed, `0` = fullscreen. The 0.97k only runs fullscreen and looks for a 16-bit video mode that does not exist on Windows 10/11. |
 | `[Window] Borderless` | — (deviation) | `1` = no title bar or border. Windowed mode only. |
-| `[Window] Resolution` | `0` (640x480) | DLL indices: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Note: `4` is not the registry's `4` (there it is 1600x1200). The widescreen ones (`4` to `7`) are not tested in this client yet. |
-| `[Sound] EnableSound` | `1` | Sound effects (DirectSound). |
-| `[Sound] EnableMusic` | `0` (off) | The repo's `Config.ini` ships it as `1`. Each theme plays once; the login one is `Data\Music\MuTheme.mp3`, which the pack does not include. |
-| `[Sound] SoundLevel`, `MusicLevel` | — (deviation) | Effects and music volume, from `0` (muted) to `9` (original volume); like the DLL, each level is 6.25 dB. The repo's `Config.ini` ships `4`. |
+| `[Window] Resolution` | `0` (640x480) | DLL indices: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Note: `4` is not the registry's `4` (there it is 1600x1200). |
+| `[Sound] EnableSound` | `1` | Sound effects. |
+| `[Sound] EnableMusic` | `0` (off) | The repo's `Config.ini` ships it as `1`. The login theme is `Data\Music\MuTheme.mp3`, which the pack does not include (as in the original). |
+| `[Sound] SoundLevel`, `MusicLevel` | — (deviation) | Volume from `0` (muted) to `9` (original volume); like the DLL, each level is 6.25 dB. |
 | `[User] Username` | — | Prefills the login username field. |
+| `[Language] LangSelection` | — (`Text.bmd`, which here is the Spanish variant) | Interface language: `Eng`, `Spn` or `Por`. Picks among the `Text_*.bmd` and `Dialog_*.bmd` in `Data/Local/`. Item, skill and quest names are in English and have no variant. |
+| `[MiniMap] Alpha`, `ZoomLevel` | `10`, `0` | Minimap transparency (`3` to `10`) and zoom (`0` to `6`). |
+| `[Antilag] Delete…` | `0` | Turn off parts of the rendering for slow machines: `DeleteShadows`, `DeleteObjects`, `DeleteFloor`, `DeleteSkills`, `DeleteStaticEffects`, `DeleteDynamicEffects`, `DeleteWings`, `DeleteHealthBar`, `DeleteInterface`, `DeleteWeather`, `DeleteGlow`. |
 | `[Font] FontName`, `FontHeight`, `FontBold`, `FontItalic`, `FontCharset`, `FontWidth`, `FontUnderline`, `FontQuality`, `FontStrikeOut` | Arial, height by resolution | Like the DLL: fixed height (capped at 25) and the big font at twice the size. The repo's `Config.ini` ships Verdana 13. If the whole `[Font]` section is removed, the client goes back to the original font. |
 
-The `[Antilag]`, `[MiniMap]` and `[Language]` sections of the DLL's
-`Config.ini` will be read as those systems get integrated (Phase 2 of the
-roadmap).
+### Running on Windows
+
+Run `bin/Client/main.exe`.
+
+### Running on Linux
+
+CI packages the Linux client (artifact `mu97k-linux-release`: the `.tar.gz`, its
+SHA256 and the library inventory). It contains `main`, `Data`, licenses, README
+and `launch.sh`; it does not carry the developer's `Config.ini`.
+
+The executable is **ELF32 with SSE2**, built on Ubuntu 22.04 (it uses no glibc
+symbols newer than 2.35). SDL3, FreeType and miniaudio are linked statically;
+OpenGL, glibc and the desktop libraries come from the system and must be
+**32-bit**, even on an x64 Linux:
+
+```sh
+# Arch ([multilib] enabled)
+sudo pacman -S --needed lib32-glibc lib32-gcc-libs lib32-glu lib32-libglvnd \
+  lib32-libx11 lib32-libxext lib32-libxrandr lib32-libxcursor lib32-libxi \
+  lib32-wayland lib32-libxkbcommon lib32-libdecor lib32-alsa-lib lib32-libpulse
+# Intel/AMD: lib32-mesa. NVIDIA: lib32-nvidia-utils matching the installed driver.
+
+# Debian 12 / Ubuntu 22.04+
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install libc6:i386 libstdc++6:i386 libgcc-s1:i386 \
+  libglu1-mesa:i386 libgl1:i386 libegl1:i386 libgl1-mesa-dri:i386 \
+  libx11-6:i386 libxext6:i386 libxrandr2:i386 libxcursor1:i386 libxi6:i386 \
+  libwayland-client0:i386 libwayland-cursor0:i386 libwayland-egl1:i386 \
+  libxkbcommon0:i386 libdecor-0-0:i386 libdecor-0-plugin-1-cairo:i386 libpulse0:i386
+# ALSA: libasound2:i386 (Debian 12 / Ubuntu 22.04), libasound2t64:i386 (Ubuntu 24.04+).
+
+# Fedora
+sudo dnf install glibc.i686 libstdc++.i686 libgcc.i686 mesa-libGLU.i686 \
+  libglvnd-glx.i686 libglvnd-egl.i686 mesa-dri-drivers.i686 \
+  libX11.i686 libXext.i686 libXrandr.i686 libXcursor.i686 libXi.i686 \
+  wayland.i686 libxkbcommon.i686 libdecor.i686 alsa-lib.i686 pulseaudio-libs.i686
+```
+
+Extract the `.tar.gz` on a Linux partition (on NTFS the executable permissions
+are lost) and run `./launch.sh` from a terminal, without sudo. Configuration,
+screenshots and `debug.log` are saved in
+`${XDG_DATA_HOME:-$HOME/.local/share}/mu97k`; `MU_CLIENT_ROOT` lets you pick
+another directory. The first run creates a windowed 1024×768 configuration and
+never overwrites existing preferences.
+
+To read the assets from another folder without copying them (for example, an
+NTFS disk or the repo's `bin/Client`), point `MU_ASSET_ROOT` at the folder **that
+contains `Data`**:
+
+```sh
+MU_ASSET_ROOT='/run/media/user/HDD/path/Client' ./launch.sh
+```
+
+Without `SDL_VIDEODRIVER`, a Wayland session tries Wayland and then
+X11/XWayland; the chosen backend and the OpenGL renderer are printed to stderr at
+startup (`Backend de video: …` and `OpenGL: vendor | renderer | versión`). To
+force one: `SDL_VIDEODRIVER=x11 ./launch.sh` or `SDL_VIDEODRIVER=wayland
+./launch.sh`.
+
+Other Linux details:
+
+- `lib32-libdecor` provides client-side window decorations. Without it, a
+  compositor that does not decorate server-side may show the window without a
+  frame.
+- On HiDPI the game's logical resolution is kept and the compositor scales the
+  image, which may look less sharp.
+- The IME uses SDL/Wayland text input, limited to the game's Windows-1252
+  repertoire; it does not show the Windows IMM indicator.
+- Screenshots are taken with **Print Screen**. On KDE, Spectacle grabs the key
+  before it reaches the game.
+
+### Wayland and NVIDIA GPUs
+
+The client is 32-bit, and with NVIDIA that has two consequences on native
+Wayland (found on Arch, KDE Plasma, RTX 3080 Ti, driver 615):
+
+- **Without the 32-bit EGL Wayland platform, Wayland renders in software.**
+  NVIDIA only ships `egl-wayland` for x64. Without `libnvidia-egl-wayland.so.1`
+  in `/usr/lib32`, the Wayland GL context falls back to Mesa `llvmpipe`: 24 fps,
+  skill effects as white quads and transparent blacks. The client detects it at
+  startup (`Renderer por software en wayland`) and switches to X11/XWayland on
+  its own, where GLX does use the GPU.
+- **With that platform installed, native Wayland works but performs much
+  worse.** NVIDIA's 32-bit EGL driver resolves thread-local variables with
+  `__tls_get_addr` on every GL call, and the client draws in immediate mode
+  (`glVertex`/`glTexCoord` per vertex, like the 0.97k). Measured at the same spot
+  in the game: 4.7 ms per frame with X11/GLX versus 70-85 ms with Wayland/EGL,
+  i.e. 25 fps versus 11-17. `__GL_SYNC_TO_VBLANK` and `__GL_MaxFramesAllowed` do
+  not change it. It cannot be fixed from the client: it goes away with the modern
+  renderer or the move to x64 on the roadmap.
+
+In the second case the client does **not** fall back to X11 on its own, because
+the renderer is accelerated. **With NVIDIA, run the client on X11:**
+
+```sh
+SDL_VIDEODRIVER=x11 ./launch.sh
+```
+
+Native Wayland is for GPUs with Mesa (Intel/AMD), whose 32-bit EGL does not have
+this problem.
+
+32-bit `egl-wayland` is not in Arch's official repositories. The AUR
+`lib32-egl-wayland` package is usually behind and requires the same version as
+`egl-wayland`; installing it with a helper can downgrade the 64-bit one. If you
+want it for testing, build the PKGBUILD with `pkgver` set to your `egl-wayland`
+version, and rebuild it every time you update the driver.
 
 ---
 
@@ -383,159 +517,51 @@ reason goes to `GameServer/LOG`.
 
 ```
 mu97k-src/
-├── mu97k.sln            VS2022 solution
+├── mu97k.sln            VS2022 solution (Win32 backend)
 ├── mu97k.vcxproj        project (Win32)
-├── lib/libjpeg/         libjpeg 6b (decodes the .ozj textures)
+├── CMakeLists.txt       build for the three combinations (Win32, SDL3 Windows, SDL3 Linux)
+├── cmake/               CMake modules and the Linux x86 toolchain
+├── lib/stb/             decodes the .ozj/.ozt textures and saves screenshots
+├── lib/miniaudio/       plays the music
 └── src/
-    ├── WinMain.cpp      entry point + WndProc + message loop
+    ├── WinMain.cpp      entry point + message loop
+    ├── Platform/        platform interfaces and their backends (Win32/, SDL3/, Posix/)
     ├── globals.{h,cpp}  global state; identified DATs keep their IDA traceability
-    ├── functions.h      shared declarations and the IDA provenance of renamed symbols
+    ├── functions.h      shared declarations and the IDA origin of renamed symbols
     ├── structs.h        struct layouts verified against IDA
-    ├── ghidra_compat.h  macros the Ghidra decompile assumes exist
-    │                    (qmemcpy, LODWORD, SLOBYTE, ...)
+    ├── ghidra_compat.h  macros the decompiler takes for granted (qmemcpy, LODWORD, ...)
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
     └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
 ```
 
-Modules group by responsibility. The address in the binary is still an important
-clue for verifying a function or resolving a symbol, but it does not determine
+Modules are grouped by responsibility. The address in the binary is still an
+important clue to verify a function or resolve a symbol, but it does not decide
 where the ported code lives.
-
----
-
-## How to work on this
-
-### The main rule: faithful to the binary
-
-The order of authority for settling any question:
-
-1. **IDA / the original binary.** It is the truth. If the decompile says
-   something strange, odds are the decompile is right and our intuition is not.
-2. **The MuEmu server**, for anything about packet layouts.
-3. **The injection DLL**, as a secondary behavioral reference.
-4. **The Mu Online 5.2 source**, only as semantic and naming support when the
-   current context allows it. Implementation is not copied and 5.2 behavior is
-   not incorporated: its UI, definitions and features can differ from 0.97k.
-
-Anything not in one of those sources is not invented. If a deviation is needed
-(because a path in the original is unreachable, or depends on something not
-ported yet), it gets implemented **and documented in a comment right there**,
-explaining what the original does and why we departed from it.
-
-The only thing deliberately skipped is the anti-tamper noise: the interleaved
-hash-table operations, the unreachable blocks and the XOR scrambling of the
-protected build. None of that is game logic.
-
-### Known pitfalls
-
-These cost entire debugging sessions. Every one of them came back more than
-once.
-
-**1. Duplicate symbols.** The same name defined twice: an old stub and the real
-port. C++ can accept it as an overload if the signatures differ, and then each
-caller resolves to a different copy. Typical symptom: a value gets corrupted and
-no writer explains it. Before auditing any function, confirm you are reading
-**the copy that actually compiles** — not one inside `#if 0`, nor one behind an
-undefined `IDA_PORT_*` macro. Corollary: a diagnostic probe placed in dead code
-returns zero results, and that silence looks like evidence that there is no bug.
-
-**2. Locals that Ghidra split apart.** The decompile emits as separate variables
-what was a contiguous block in the original frame, and the code walks them as if
-they still were (`&local_XX` of a scalar passed as a `vec3`). The compiler does
-not guarantee that layout. Symptom: the first component comes out fine and the
-rest is garbage (values around 1e9). The fix is rebuilding the frame as one
-contiguous array and mapping the names by offset.
-
-**3. Integer fields read as float.** Ghidra types the slot as `float*` and then
-*every* access comes out as a float, including the fields that are integers or
-pointers. `(float)(uintptr_t)ptr` numerically converts what should have been
-reinterpreted bit-wise. Symptom: it is not a crash, it is functionality that
-simply never happens — comparisons that never come out true, pointers left at
-zero, counters stuck. Hint: values around 1e9 that, read as bits, give small
-sensible floats. Correct and broken accesses often coexist in the same file;
-that mix is the giveaway.
-
-**4. Struct padding in packets.** The server sends C structs with their
-alignment padding. Reading fields at the "logical" offset instead of the real one
-returns convincing garbage. It has already bitten in the stats, the guild list
-and the damage numbers.
-
-**5. Offset labels lie.** Several fields of the entity struct were mislabeled for
-months (`+0x1BC` is not movement flags: it is the character class; `+0x34E` is
-not "dead": it is SafeZone). Before trusting an offset's name, find who
-**writes** it in the binary.
-
-**6. Similarly named functions with opposite effects.** The recurring case is
-the OpenGL state family: `EnableAlphaTest` (0x511680), `EnableAlphaBlend`
-(0x511710, additive) and `DisableTexture` (0x511590, which turns texturing off).
-Mixing them up paints white squares over half the frame, because GL state is
-sticky and contaminates everything drawn afterwards.
-
-**7. Invented bounds and clears.** Guards the binary does not have which, instead
-of clamping, **discard the whole input**. It showed up on both sides: in the
-network handlers (`count > 30` threw away all 41 monsters in a viewport; the
-symptom read as a spawn bug, with a cascade of `key not found` in the log) and in
-the input tick (an `else` that, on blocking the debounce, did
-`MouseLButtonPush = 0; MouseLButton = 0;`, i.e. it lost the click: you had to
-click several times to walk). Rule of thumb: any `= 0` or `clear` the port adds
-on the *"not possible yet"* path is suspect — the binary almost always leaves the
-state pending for the next tick.
-
-### Protocol deviations
-
-They are documented in the code, but they are worth knowing if you point the
-client at a different server:
-
-- **`C3:1E` (duration skill) is sent with 11 bytes, not 9.** Vanilla 0.97k does
-  not include `index[]`, but MuEmu's `CGDurationSkillAttackRecv` always reads it
-  (`SkillManager.cpp:2047`): with 9 bytes the server takes those two bytes from
-  outside the packet and the skill hits a different entity. The injection DLL
-  does the same (`CPatchs::SendRequestMagicContinue`).
-- **Triple Shot sends the `angle` byte.** The server builds the cone from
-  `angle`, not from `dir` (`SkillManager.cpp:1185`).
-- **F3/12 on entering the world.** Without that ACK the server leaves `RegenOk`
-  at 1 and rejects every later `/move`, on top of not sending the map's
-  entities.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-The license covers **the code**: everything under `src/`.
-
-It does **not** cover the assets in `bin/Client/Data/`, which
-are copyright of WebZen Inc. and are in the repo only because it is private and
-for internal use among collaborators.
-
-`lib/libjpeg/jpeg-6b` belongs to the Independent JPEG Group, under its own
-permissive license (`lib/libjpeg/jpeg-6b/README`, "LEGAL ISSUES" section).
 
 ---
 
 ## Roadmap
 
-The `0.97.00` tag closes the faithful-reconstruction stage: the client behaves like the
-original binary. From there the work continues in phases, and each closed phase is a
-version.
+Tag `0.97.00` closes the faithful-reconstruction stage: the client behaves like
+the original binary. From there the work continues in phases, and each closed
+phase is a version.
 
 ```mermaid
 flowchart TD
     F0["0.97.00 · Faithful reconstruction (base)"] --> F1
     F1["0.97.10 · Phase 1: engineering base<br/>CMake, CI, code and comment cleanup, protocol mirror"] --> F2
-    F2["0.97.20 · Phase 2: native integration of Main.dll + modularization + optimization of the legacy code<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrated into the base logic; Webzen switches and defines → tables and enums"] --> F3
+    F2["0.97.20 · Phase 2: native integration of Main.dll + modularization + legacy code optimization<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs built into the base logic; Webzen switches and defines → tables and enums"] --> F3
     F3["0.97.30 · Phase 3: platform abstraction + Linux"] --> F4
-    F4["0.97.40 · Phase 4: real timing<br/>simulation separated from rendering, high fps without speeding up the game"] --> F5
+    F4["0.97.40 · Phase 4: real timing<br/>simulation decoupled from rendering, high fps without speeding up the game"] --> F5
     F5["0.97.50 · Phase 5: modern renderer (OpenGL 3.3) and x64"] --> F6
-    F6["0.97.60 · Phase 6: content shared between client + server"] --> F7
+    F6["0.97.60 · Phase 6: content shared by client + server"] --> F7
     F7["0.97.70 · Phase 7: server authority + security"] --> F8
     F8["0.97.80 · Phase 8+: launcher/updater, web, Android"]
 ```
 
-Each phase's number is the version planned for when it closes; the scope of each one
+Each phase's number is the version planned when it closes; the scope of each one
 may be adjusted along the way.
 
 ### Versioning
@@ -545,16 +571,17 @@ hotfix.
 
 | Tag | What it is |
 |---|---|
-| `0.97.00` | base of the faithful reconstruction |
+| `0.97.00` | faithful-reconstruction base |
 | `0.97.01`, `0.97.02`… | fixes on top of the base |
-| `0.97.10` | close of Phase 1 |
+| `0.97.10` | Phase 1 closes |
 | `0.97.11`, `0.97.12`… | fixes on top of Phase 1 |
-| `0.97.20` | close of Phase 2, and so on |
+| `0.97.20` | Phase 2 closes, and so on |
 
-The client and the [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) use the
-same numbering, but the server only gets a new tag when it changes. Each client
-Release states which server tag it works with (for example, client `0.97.10`
-works with server `0.97.00`). Each Season will have its own line (`0.99.FH`, …).
+The client and the [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) use
+the same numbering, but the server only gets a new tag when it changes. Each
+client Release states which server tag it works with (for example, client
+`0.97.10` works with server `0.97.00`). Each Season will have its own line
+(`0.99.FH`, …).
 
 ### Branches
 
@@ -572,7 +599,7 @@ gitGraph
     checkout main
     merge hotfix tag: "0.97.01"
     checkout fase/1
-    merge main id: "brings in the fix"
+    merge main id: "brings the fix"
     checkout main
     merge fase/1 tag: "0.97.10"
     branch fase/2
@@ -580,95 +607,148 @@ gitGraph
     commit id: "PR topic C"
 ```
 
-- `main` only receives phase closes and fixes; each merge gets its tag and its
+- `main` only receives phase closings and fixes; each merge gets its tag and its
   Release.
-- Each phase is worked on in `fase/N`. Topic branches (`fix/…`, `feat/…`, `chore/…`)
-  branch off `fase/N` and come back through a PR.
-- A fix to a published version branches off the affected tag, is merged into `main`
-  with its new tag, and also into the phase in progress.
-- CI also prepares a Linux x86 package. Build with your own configuration for a different server.
+- Each phase is worked on in `fase/N`. Topic branches (`fix/…`, `feat/…`,
+  `chore/…`) branch off `fase/N` and come back through a PR.
+- A fix on a published version branches off the affected tag, is merged into
+  `main` with its new tag and also into the phase in progress.
 
-## Linux x86 client: package and build
+---
 
-CI builds an **ELF32 executable with SSE2** on Ubuntu 22.04. SDL3, FreeType and miniaudio are static; OpenGL, glibc and desktop libraries come from the system and require **32-bit** packages even on x64 Linux. This is not an x64 client: entity layout assertions intentionally enforce the original 32-bit ABI.
+## License
 
-The `mu97k-linux-release` artifact contains a `.tar.gz`, its SHA256 and a library inventory. The package includes `main`, `Data`, licenses, READMEs and `launch.sh`, without the developer's `Config.ini`. Packaging rejects GLIBC symbols newer than 2.35. Runtime packages:
+MIT — see [LICENSE](LICENSE).
 
-```sh
-# Arch: [multilib] enabled
-sudo pacman -S --needed lib32-glibc lib32-gcc-libs lib32-glu lib32-libglvnd \
-  lib32-libx11 lib32-libxext lib32-libxrandr lib32-libxcursor lib32-libxi \
-  lib32-wayland lib32-libxkbcommon lib32-libdecor lib32-alsa-lib lib32-libpulse
-# Intel/AMD: lib32-mesa. NVIDIA: lib32-nvidia-utils matching the installed driver.
+The license covers **the code**: everything under `src/`.
 
-# Debian 12 / Ubuntu 22.04+
-sudo dpkg --add-architecture i386
-sudo apt-get update
-sudo apt-get install libc6:i386 libstdc++6:i386 libgcc-s1:i386 \
-  libglu1-mesa:i386 libgl1:i386 libegl1:i386 libgl1-mesa-dri:i386 \
-  libx11-6:i386 libxext6:i386 libxrandr2:i386 libxcursor1:i386 libxi6:i386 \
-  libwayland-client0:i386 libwayland-cursor0:i386 libwayland-egl1:i386 \
-  libxkbcommon0:i386 libdecor-0-0:i386 libdecor-0-plugin-1-cairo:i386 libpulse0:i386
-# ALSA: libasound2:i386 (Debian 12 / Ubuntu 22.04), libasound2t64:i386 (Ubuntu 24.04+).
+It does **not** cover the assets in `bin/Client/Data/`, which are copyright of
+WebZen Inc.
 
-# Fedora
-sudo dnf install glibc.i686 libstdc++.i686 libgcc.i686 mesa-libGLU.i686 \
-  libglvnd-glx.i686 libglvnd-egl.i686 mesa-dri-drivers.i686 \
-  libX11.i686 libXext.i686 libXrandr.i686 libXcursor.i686 libXi.i686 \
-  wayland.i686 libxkbcommon.i686 libdecor.i686 alsa-lib.i686 pulseaudio-libs.i686
-```
+Third-party libraries keep their own licenses: stb and miniaudio (public domain /
+MIT-0), and SDL3 (zlib) and FreeType (FreeType License) in the SDL3 backend. The
+Linux package includes them in `licenses/`.
 
-Extract on the SSD and run `./launch.sh` from your desktop session, without sudo. Configuration, screenshots and `debug.log` go to `${XDG_DATA_HOME:-$HOME/.local/share}/mu97k`. First launch creates windowed 1024×768 preferences; existing preferences are preserved. Set `MU_CLIENT_ROOT` to use another writable directory.
+---
 
-To use shared NTFS assets without copying them, point to the directory **containing Data**, including all four fonts under `Data/Font`:
+## Appendix: the reconstruction
 
-```sh
-MU_ASSET_ROOT='/run/media/user/HDD/path/Client' ./launch.sh
-SDL_VIDEODRIVER=wayland ./launch.sh
-SDL_VIDEODRIVER=x11 ./launch.sh
-```
+This part is for anyone who wants to verify a port against the binary or follow
+the history of the reverse engineering. You do not need it to build or play.
 
-Without `SDL_VIDEODRIVER`, a Wayland session tries native Wayland, then X11/XWayland. The selected driver is logged to stderr. Arch provides `lib32-libdecor` for client-side decorations. Without it, compositors lacking server-side decorations may show an undecorated window. HiDPI preserves the game's logical resolution and lets the compositor scale the image, which may look softer. IME uses SDL/Wayland text input, limited to the game's Windows-1252 repertoire; there is no Windows IMM mode indicator. GPU, scaling, IME, fullscreen and camera capture need testing on the actual compositor.
+### The original binary
 
-### Wayland and NVIDIA GPUs
+The original `main.exe` is not in the repo: you only need it to decompile it and
+compare a port against it. It comes with any 0.97k client distribution. Check the
+MD5 (`eb95ac0785e40a7ad60c9ddb5d8bef34`) before comparing addresses: there are
+many patched variants around and they don't match.
 
-The client is 32-bit, and with NVIDIA that has two consequences on native Wayland, found while testing on Arch (KDE Plasma, RTX 3080 Ti, driver 615):
+### The main rule: faithful to the binary
 
-- **Without the 32-bit EGL Wayland platform, Wayland renders in software.** NVIDIA only ships `egl-wayland` for x64. Without `libnvidia-egl-wayland.so.1` in `/usr/lib32`, the Wayland GL context falls back to Mesa `llvmpipe`: 24 fps, skill effects as white quads and transparent blacks. The client detects this at startup (`Renderer por software en wayland`) and switches to X11/XWayland on its own, where GLX does use the GPU.
-- **With that platform installed, native Wayland works but performs much worse.** NVIDIA's 32-bit EGL driver resolves thread-local variables through `__tls_get_addr` on every GL call, and the client draws in immediate mode (`glVertex`/`glTexCoord` per vertex, like 0.97k). Measured at the same spot in game: 4.7 ms of render per frame with X11/GLX versus 70-85 ms with Wayland/EGL, i.e. 25 fps versus 11-17. `__GL_SYNC_TO_VBLANK` and `__GL_MaxFramesAllowed` make no difference: it is per-call driver cost, not synchronization. This cannot be fixed in the client; it goes away with the modern renderer or the x64 move on the roadmap.
+The order of authority to settle any doubt:
 
-In this case the client does **not** fall back to X11 on its own, because the renderer is accelerated. **On NVIDIA, run the client on X11:**
+1. **IDA / the original binary.** It is the truth. If the decompile says
+   something odd, the decompile is probably right and our intuition is not.
+2. **The MuEmu server**, for anything related to the packet format.
+3. **The injection DLL**, as a second behavior reference.
+4. **The Mu Online 5.2 source**, only as semantic and naming support when the
+   current context allows it. No implementation is copied and no 5.2 behavior is
+   brought in: the UI, definitions and features may differ from 0.97k.
 
-```sh
-SDL_VIDEODRIVER=x11 ./launch.sh
-```
+What is not in any of those sources is not made up. If a deviation is needed
+(because a path of the original is unreachable, or depends on something not yet
+ported), it is implemented **and documented in a comment right there**,
+explaining what the original does and why we depart from it.
 
-Native Wayland is for testing the window backend or for Mesa GPUs (Intel/AMD), whose 32-bit EGL does not have this problem:
+The only thing skipped on purpose is the anti-tamper noise: the interleaved
+hash-table operations, the unreachable blocks and the XOR scrambling of the
+protected build. They are not game logic.
 
-```sh
-SDL_VIDEODRIVER=wayland ./launch.sh
-```
+### Names and comments in the code
 
-The selected driver and GL renderer are printed to stderr at startup (`Backend de video: …` and `OpenGL: vendor | renderer | version`).
+**The code and comments are in Spanish.** Symbols that could be identified are
+named by responsibility; their canonical definition keeps a
+`// IDA: <name> (<address>)` comment to preserve traceability to the binary.
 
-32-bit `egl-wayland` is not in Arch's official repositories. The AUR `lib32-egl-wayland` package is usually behind and requires the same version as `egl-wayland`; installing it with a helper may downgrade the 64-bit one. If you want it for testing, build the PKGBUILD with `pkgver` set to your `egl-wayland` version and rebuild it whenever you update the driver.
+The `FUN_*` and `DAT_*` still present in the code are not, by themselves,
+renaming debt. Some describe infrastructure, CRT, GameGuard, binary layouts,
+pools or compatibility; others need research before they can get a safe semantic
+name. Nor are the aliases and ABI bridges left in `functions.h`/`globals.h`
+debt: they keep the original contract of the ports that use them.
 
-To **build**, also install Git, CMake 3.25+, Ninja, Python 3, pkg-config and GCC/G++ supporting `-m32`, plus development headers:
+Comments describe **the current code**: the IDA reference, the layout of a
+struct or packet, the deviations from the binary that are in effect, and the
+warnings that keep something from breaking. The story of how a fix was reached
+(dates, probes, discarded attempts, what the old port did) goes in the commit
+message. The development comments that were in the code and the IDA decompiles
+that were never activated (formerly in `src/stubs_IDA_ports.cpp`) are archived in
+`docs/` of tag `0.97.21`; the full original text is still in tag `0.97.00`.
 
-- Arch: `base-devel gcc cmake ninja git python pkgconf glu wayland-protocols` and the runtime `lib32-*` packages above, which include development files.
-- Debian/Ubuntu: `g++-multilib libc6-dev-i386 cmake ninja-build git python3 pkg-config wayland-protocols libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 libasound2-dev:i386 libpulse-dev:i386`. Ubuntu 22.04 ships CMake 3.22; install CMake 3.25+ first, for example in a Python virtual environment.
-- Fedora: `gcc gcc-c++ cmake ninja-build git python3 pkgconf-pkg-config wayland-devel wayland-protocols-devel glibc-devel.i686 libstdc++-devel.i686 mesa-libGLU-devel.i686 libglvnd-devel.i686 libX11-devel.i686 libXext-devel.i686 libXrandr-devel.i686 libXinerama-devel.i686 libXcursor-devel.i686 libXi-devel.i686 wayland-devel.i686 libxkbcommon-devel.i686 libdecor-devel.i686 alsa-lib-devel.i686 pulseaudio-libs-devel.i686`.
+### Known pitfalls
 
-```sh
-# PKG_CONFIG_LIBDIR: Arch
-export PKG_CONFIG_LIBDIR=/usr/lib32/pkgconfig:/usr/share/pkgconfig
-# Debian / Ubuntu:
-# export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
-# Fedora:
-# export PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/share/pkgconfig
-cmake -S . -B build/linux-release -G Ninja \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake \
-  -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_BUILD_TYPE=Release
-cmake --build build/linux-release --parallel 4
-python3 .github/scripts/check_cmake_sources.py
-```
+These cost whole debugging sessions. All of them came back more than once.
+
+**1. Duplicate symbols.** The same name defined twice: an old stub and the real
+port. C++ may accept it as an overload if the signatures differ, and then each
+caller resolves to a different copy. Typical symptom: a value gets corrupted and
+no writer explains it. Before auditing any function, make sure you are reading
+**the copy that gets compiled** — not one inside `#if 0`. Corollary: a diagnostic
+probe placed in dead code yields zero results, and that silence looks like
+evidence that there is no bug.
+
+**2. Locals that Ghidra split.** The decompile emits as separate variables what
+was a contiguous block in the original frame, and the code walks them as if they
+were (`&local_XX` of a scalar passed as a `vec3`). The compiler does not
+guarantee that layout. Symptom: the first component comes out right and the rest
+is garbage (values around 1e9). It is fixed by rebuilding the frame as one
+contiguous array and mapping the names by offset.
+
+**3. Integer fields read as float.** Ghidra types the slot as `float*` and then
+*every* access comes out as float, including the fields that are integers or
+pointers. `(float)(uintptr_t)ptr` converts numerically what had to be
+reinterpreted bit by bit. Symptom: not a crash, but functionality that simply
+does not happen — comparisons that are never true, null pointers, stuck
+counters. Hint: values around 1e9 that, read as bits, give small and reasonable
+floats. Correct and broken accesses often coexist in the same file; that mix is
+the sign.
+
+**4. Struct padding in packets.** The server sends C structs with their
+alignment padding. Reading fields at a "logical" offset instead of the real one
+returns convincing garbage. It already bit the stats, the guild list and the
+damage numbers.
+
+**5. Offset labels lie.** Several fields of the entity struct were mislabeled
+for months (`+0x1BC` is not movement flags: it is the character class; `+0x34E`
+is not "dead": it is SafeZone). Before trusting an offset's name, look for who
+**writes** it in the binary.
+
+**6. Similar function names with opposite effects.** The recurring case is the
+OpenGL state family: `EnableAlphaTest` (0x511680), `EnableAlphaBlend`
+(0x511710, additive) and `DisableTexture` (0x511590, which turns texturing off).
+Mixing them up paints white squares over half the frame, because GL state sticks
+and contaminates everything drawn afterwards.
+
+**7. Made-up bounds and clears.** Guards the binary doesn't have that, instead of
+trimming, **discard the whole input**. It showed up on both sides: in the network
+handlers (`count > 30` threw away the 41 monsters of a viewport; the symptom
+read as a spawn bug, with a cascade of `key not found` in the log) and in the
+input tick (an `else` that, when the debounce blocked, did
+`MouseLButtonPush = 0; MouseLButton = 0;`, i.e. it lost the click: you had to
+click several times to walk). Rule: any `= 0` or `clear` the port adds on the
+*"not yet"* path is suspicious — the binary almost always leaves the state
+pending for the next tick.
+
+### Protocol deviations
+
+They are documented in the code, but worth knowing if you point it at another
+server:
+
+- **`C3:1E` (duration skill) is sent with 11 bytes, not 9.** The vanilla 0.97k
+  does not include `index[]`, but MuEmu's `CGDurationSkillAttackRecv` always
+  reads it (`SkillManager.cpp:2047`): with 9 bytes the server takes those two
+  bytes from outside the packet and the skill hits another entity. The injection
+  DLL does the same (`CPatchs::SendRequestMagicContinue`).
+- **Triple Shot sends the `angle` byte.** The server builds the cone from
+  `angle`, not from `dir` (`SkillManager.cpp:1185`).
+- **F3/12 when entering the world.** Without that ACK the server leaves `RegenOk`
+  at 1 and rejects every later `/move`, besides not sending the map's entities.
