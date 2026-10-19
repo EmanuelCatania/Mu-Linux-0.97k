@@ -305,7 +305,7 @@ void __cdecl AttackEffect(int entity)
             break;
         case 0x42: {
             if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(60, 0, 0);
-            float spin = 225.0f - (float)(((long long)DAT_05826e08 / 10 +
+            float spin = 225.0f - (float)(((long long)WorldTime / 10 +
                                            3 * AsCharacter(entity)->SkillStage) % 90);
             for (int n = 0; n < 4; ++n, spin += 270.0f) {
                 handPosition(n % 2, 0.0f);
@@ -397,7 +397,7 @@ void __cdecl AttackEffect(int entity)
         break;
     case 0x59: case 0x5F: case 0x70: case 0x76: case 0x7C: case 0x82: case 0x88: {
         if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(60, 0, 0);
-        float spin = 225.0f - (float)(((long long)DAT_05826e08 / 10 +
+        float spin = 225.0f - (float)(((long long)WorldTime / 10 +
                                        3 * AsCharacter(entity)->SkillStage) % 90);
         for (int n = 0; n < 4; ++n, spin += 270.0f) {
             handPosition(n % 2, 0.0f);

@@ -2,7 +2,7 @@
 // IDA: CalcFPS @ 0x0043fd70 — Timer_FrameUpdate
 //
 // Called once per frame to update timing globals:
-//   DAT_05826e08  — current absolute time (ms, as float)
+//   WorldTime  — current absolute time (ms, as float)
 //   FrameTimeCurrentMs  — last frame timestamp (ms)
 //   DeltaT — delta time (seconds per frame, clamped to 0.0001 min)
 //   FPS — smoothed FPS (frames per second)
@@ -56,7 +56,7 @@ void Timer_UpdateFrameTiming(void)
   // conserva precision de 1 ms durante 4.6 horas y de 2 ms hasta las 9.3.
   if (WorldTimeEpochMs == 0) WorldTimeEpochMs = DVar2;
   local_8 = (double)(ulonglong)(DWORD)(DVar2 - WorldTimeEpochMs);
-  DAT_05826e08 = (float)(longlong)local_8;
+  WorldTime = (float)(longlong)local_8;
   FrameTimeCurrentMs = Platform::GetTimer().MultimediaTicks();
   dVar1 = (double)(int)(FrameTimeCurrentMs - FpsWindowStartTimeMs) * _DAT_005528a8;
   if (dVar1 == FloatZero) {

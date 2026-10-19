@@ -382,7 +382,7 @@ int      DAT_005616a4  = 0;
 int      DAT_005616a8  = 0;
 DWORD    SelectedHero  = 0; // IDA: DAT_005616ac (0x005616AC)
 DWORD    DAT_005616b0  = 0;
-DWORD    DAT_005616b8  = 0;
+DWORD    TimeRemain  = 0; // IDA: TimeRemain (0x005616B8)
 DWORD    DAT_005617a0  = 0;
 char     DAT_00561a30[]  = "%s";  // Scene_CharSelect — name label (top, bold)
 DWORD    DAT_00561b04  = 0;
@@ -642,7 +642,7 @@ DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
-float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)Platform::GetTimer().MultimediaTicks()
+float    WorldTime  = 0.0f; // IDA: WorldTime (0x05826E08)
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
@@ -1108,7 +1108,7 @@ float&   DAT_083a7ad0 = CurrentCameraAngle[0];
 float&   DAT_083a7ad4 = CurrentCameraAngle[1];
 float&   DAT_083a7ad8 = CurrentCameraAngle[2];
 DWORD    DAT_083a7af4  = 0;
-DWORD    DAT_083a7c00  = 0;
+DWORD    MoveSceneFrame  = 0; // IDA: MoveSceneFrame (0x083A7C00)
 DWORD    DAT_083a7c10  = 0;
 // IDA: DAT_083a7c14 (0x083A7C14)
 int      LoginSubState  = 0;
@@ -1133,7 +1133,7 @@ char     CharSelectSceneInitialized = 0;
 char     DAT_083a7c4c  = 0;
 char     DAT_083a7c4d  = 0;
 DWORD    DAT_083a7c50  = 0;
-DWORD    DAT_083a7c54  = 0;
+DWORD    TestTime  = 0; // IDA: TestTime (0x083A7C54)
 DWORD    DAT_083a7c58  = 0;
 DWORD    DAT_083a7c5c  = 0;  // chat-log label for exit-countdown message (empty id)
 DWORD    DAT_083a7c6c  = 0;
@@ -1224,7 +1224,7 @@ DWORD    DAT_07d52c38  = 0;
 // al final de globals.h).
 
 // Model data table base + entity vtable
-// (DAT_05828d58 and DAT_05826e08 are defined above in their original sections)
+// (DAT_05828d58 and WorldTime are defined above in their original sections)
 // ── BoneVertex pool ──────────────────────────────────────────────────────────
 // Transformed-vertex buffer used by Sprite_DrawBone (Skeleton_Transform), BMD_DrawMesh
 // and related paths. Layout: [mesh * 15000 + vert] * float[3] = 12 bytes stride.

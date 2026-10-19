@@ -19,9 +19,9 @@
 // Globals:
 //   SceneFlag  — SceneFlag
 //   World  — World
-//   DAT_005616b8  — frame budget accumulator (adds actual frame ms each frame)
-//   DAT_083a7c54  — total frame counter
-//   DAT_083a7c00  — anti-tamper tick counter
+//   TimeRemain  — frame budget accumulator (adds actual frame ms each frame)
+//   TestTime  — total frame counter
+//   MoveSceneFrame  — anti-tamper tick counter
 //   DAT_055ca018  — socket error flag (abort if set)
 //   DAT_083a42ec  — screenshot mode toggle (F12)
 //   DAT_083a7c48  — connection check enable
@@ -99,11 +99,11 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
-    while (DAT_005616b8 > 0x27) {
+    while (TimeRemain > 0x27) {
 
         // Anti-tamper: periodically re-randomize hash table when counter hits
         // a specific residue (0x39 mod 0x139). Not game logic.
-        if (DAT_083a7c00 % 0x139 == 0x39) {
+        if (MoveSceneFrame % 0x139 == 0x39) {
             // Hash table rehash: reallocate with random offsets
             if (DAT_055c9be0 != NULL)
                 operator_delete((BYTE*)DAT_055c9be0);
@@ -173,19 +173,19 @@ void __cdecl Game_MainLoop(HDC param_1)
         // Frame index mod 32
         DAT_0839bc8c = (DAT_0839bc8c + 1) & 0x1f;
 
-        // Anti-tamper: track DAT_083a7c00 ref-count, then increment
+        // Anti-tamper: track MoveSceneFrame ref-count, then increment
         {
-            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
             if (idx == 0xffffffff) {
                 void* node = AntiTamper_HashNode(); *((BYTE*)node + 4) = 1;
-                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &MoveSceneFrame);
             }
         }
-        DAT_083a7c00++;
+        MoveSceneFrame++;
 
         // Consume 40ms of budget, count frame
-        DAT_005616b8  -= 0x28;
-        DAT_083a7c54  += 1;
+        TimeRemain  -= 0x28;
+        TestTime  += 1;
         crt_sprintf(tickBuf, (const char*)&DAT_00561b04);
     }
 
@@ -345,7 +345,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/post_swap");
 
     // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    DAT_005616b8 += gFrameLimiter.Wait(renderStart);
+    TimeRemain += gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port

@@ -334,7 +334,7 @@ extern int     DAT_005616a4;   // dialog Y (signed; ver globals.cpp)
 extern int     DAT_005616a8;   // camera X (signed; ver globals.cpp)
 extern DWORD   SelectedHero; // IDA: DAT_005616ac (0x005616AC)
 extern DWORD   DAT_005616b0;
-extern DWORD   DAT_005616b8;
+extern DWORD   TimeRemain; // IDA: TimeRemain (0x005616B8)
 extern DWORD   DAT_005617a0;
 extern char    DAT_00561a30[];   // "%s" format string used by Scene_CharSelect labels
 extern DWORD   DAT_00561b04;
@@ -527,7 +527,7 @@ extern DWORD   DAT_05826d78;
 extern DWORD   DAT_05826dc8;
 extern DWORD   DAT_05826df4;
 extern DWORD   FpsWindowStartTimeMs; // IDA: DAT_05826e04
-// DAT_05826e08 se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
+// WorldTime se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
 extern DWORD   FpsTimerInitialized;  // IDA: DAT_05826e0c
 extern DWORD   DAT_05826e10;
 extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos x 16B)
@@ -1065,7 +1065,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 #define IDA_PORT_00445230 1
 #define CameraWalkCut       DAT_083a7af4
 #define CurrentCameraCount  DAT_005615e8
-extern DWORD   DAT_083a7c00;
+extern DWORD   MoveSceneFrame; // IDA: MoveSceneFrame (0x083A7C00)
 extern DWORD   DAT_083a7c04;   // in-game UI context A
 extern DWORD   DAT_083a7c08;   // in-game UI context B
 extern char    DAT_083a7c09;   // in-game UI flag byte
@@ -1094,7 +1094,7 @@ extern char    CharSelectSceneInitialized; // IDA: DAT_083a7c4b
 extern char    DAT_083a7c4c;
 extern char    DAT_083a7c4d;
 extern DWORD   DAT_083a7c50;
-extern DWORD   DAT_083a7c54;
+extern DWORD   TestTime; // IDA: TestTime (0x083A7C54)
 extern DWORD   DAT_083a7c58;
 extern DWORD   DAT_083a7c5c;   // chat-log label for exit-countdown
 extern char    DAT_083a7c64[64];  // server IP string buffer (filled on server select)
@@ -1173,7 +1173,7 @@ extern byte    DAT_005618c4;       // item class name format ptr D
 extern char    s____s___005618c8[];// list entry format string (" %s " etc.)
 
 // ── Entity / animation tick globals ───────────────────────────────────────────
-extern float   DAT_05826e08;   // WorldTime — absolute milliseconds, per 0.97k CalcFPS
+extern float   WorldTime; // IDA: WorldTime (0x05826E08)
 // DAT_05826d31 — declared above
 extern char    DAT_05826d33;   // SoccerObserver (IDA @0x05826D33) - lo escriben
                                // InitGame y el F3/23, y lo lee RenderCharacter.

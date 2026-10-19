@@ -204,7 +204,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
                     angles[2] = (float)(rand() % 64 - 32) + tgt[2];
                     Particle_Spawn(1220, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
                 }
-                if (AsJoint(o)->SubType == 0 && ((long long)DAT_05826e08) % 1000 < 500) {
+                if (AsJoint(o)->SubType == 0 && ((long long)WorldTime) % 1000 < 500) {
                     if ((rand() % 16) == 0) {
                         angles[0] = (float)(rand() % 100 - 50) + tgt[0];
                         angles[1] = (float)(rand() % 100 - 50) + tgt[1];
@@ -692,12 +692,12 @@ LAB_0047036e:
         // Hex-Rays reusa el slot `v297` varias veces en esta funcion.
         //
         // `LODWORD` sobre un float toma sus BITS: MoveSceneFrame es un contador
-        // entero (DAT_083a7c00, DWORD) que Hex-Rays tipeo float, asi que el valor
+        // entero (MoveSceneFrame, DWORD) que Hex-Rays tipeo float, asi que el valor
         // correcto es el entero directo — no `float_as_int` de un float negado,
         // que solo invierte el bit de signo y da otra cosa.
         //
         // Ojo el sentido: IDA niega cuando el indice es PAR (`if (!(iIndex % 2))`).
-        const int frameSeed = (int)DAT_083a7c00;          // MoveSceneFrame
+        const int frameSeed = (int)MoveSceneFrame;          // MoveSceneFrame
         const int dc_signed = bVar21 ? -frameSeed : frameSeed;
         iVar13 = dc_signed + (int)(param_2 * 0xd1e3);
         local_a8[2] = 0.1113f;
@@ -1424,7 +1424,7 @@ switchD_caseD_4fd:
         // 1249/sub7 con el heroe como owner.
         if (jsub == 7 || jsub == 11) {
             const int iIndex = (int)param_2;                 // indice de slot
-            const int msf    = (int)DAT_083a7c00;            // MoveSceneFrame
+            const int msf    = (int)MoveSceneFrame;            // MoveSceneFrame
             const int v203   = (iIndex % 2) ? msf : -msf;
             float a1 = 0.061299998f, a2 = 0.1113f, v204 = 0.048f;
             if (jsub == 11) { v204 = 0.071999997f; a1 = 0.091949999f; a2 = 0.16695f; }

@@ -51,7 +51,7 @@ void* __cdecl Entity_SpawnBoneEffect(int entity, int effectType, float scale, in
     BMD_TransformPosition(modelPtr, boneMat, offset, outPos, '\x01');
 
     // Pulsing light: sin(animTick * period) * amp + base
-    float sinVal = (float)fsin((double)DAT_05826e08 * (double)_DAT_005528e0);
+    float sinVal = (float)fsin((double)WorldTime * (double)_DAT_005528e0);
     float light[3];
     light[0] = sinVal * _DAT_005528b8 + _DAT_00552928;
     light[1] = light[0] * _DAT_00552534;
@@ -67,7 +67,7 @@ void* __cdecl Entity_SpawnBoneEffect(int entity, int effectType, float scale, in
 // Spawns beam effects between two bones of the entity, and writes bone2 world pos to entity+0x40.
 void* __cdecl Entity_SpawnBoneRangeEffect(int entity, int bone1, int bone2, float scale)
 {
-    float sinVal = (float)fsin((double)DAT_05826e08 * (double)_DAT_005528e0);
+    float sinVal = (float)fsin((double)WorldTime * (double)_DAT_005528e0);
     void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
 
     float light0 = sinVal * _DAT_005528b8 + _DAT_00552530;

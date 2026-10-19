@@ -237,7 +237,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 EnableAlphaBlend();
                 float wx = *(float *)((char *)puVar13 + 0x10);
                 float wy = *(float *)((char *)puVar13 + 0x14);
-                double t  = (double)DAT_05826e08 * 0.0015;
+                double t  = (double)WorldTime * 0.0015;
                 float lum = (float)(sin(t) * 0.30000001 + 0.80000001);
                 float Light[3] = { lum * 0.5f, lum * 0.5f, lum };
                 float Rotation = -*(float *)((char *)puVar13 + 0x24);
@@ -379,7 +379,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // Phoenix of Darkness (MonsterID 77): IDA 00456770 case 'M'.
         // Its body pass pulses and then prepares three pose variants before
         // caching the attack-effect bones and ticking the cloth widget.
-        const float targetLight = (sinf(fmodf(DAT_05826e08, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
+        const float targetLight = (sinf(fmodf(WorldTime, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
         const float bodyBright = targetLight * 0.7f + 0.3f;
         RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, bodyBright, 0xffffffff);
@@ -1005,16 +1005,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
     case 0x15d:  // Entity 349 — sin-wave orb cloud + occasional lightning joint
     {
-        float fSin = (float)(double)fsin((double)(DAT_05826e08 * _DAT_005528e0));
+        float fSin = (float)(double)fsin((double)(WorldTime * _DAT_005528e0));
         local_48 = 3.5f; local_44 = -12.0f; local_40 = 10.0f;
         float fCol = fSin * _DAT_0055294c + _DAT_00552948;
         local_60 = fCol; local_5c = fCol; local_58 = fCol;
         BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
         CreateSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
-                     (float)DAT_05826e08 * _DAT_00552944, 0);
+                     (float)WorldTime * _DAT_00552944, 0);
         CreateSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
-                     -(float)DAT_05826e08 * _DAT_00552944, 0);
+                     -(float)WorldTime * _DAT_00552944, 0);
         if (rand() % 0x1e == 0) {
             // Scatter lightning from random offsets around bone position
             local_48 = (float)(rand() % 100) + local_54 - _DAT_00552598;
@@ -1136,7 +1136,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x390),
                          &local_48, &local_54, '\x01');
             CreateSprite(0x498, &local_54, 0.6f, &local_60, 0, 0, 0);
-            float fS = (float)(double)fsin((double)(DAT_05826e08 * _DAT_00552500));
+            float fS = (float)(double)fsin((double)(WorldTime * _DAT_00552500));
             CreateSprite(0x4cf, &local_54, (float)(fS * _DAT_005528b4),
                          &local_60, 0, 0, 0);
         }
@@ -1154,7 +1154,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
             CreateSprite(0x4a7, &local_54, Scalep * 0.30000001f,
                          &local_60, (int)puVar13, 0, 0);
-            float WorldTime = (float)DAT_05826e08;
+            float WorldTime = (float)WorldTime;
             CreateSprite(0x4a7, &local_54, Scalep, (float*)(puVar13 + 0x3a),
                          (int)puVar13, -WorldTime * 0.1f, 0);
             CreateSprite(0x4a7, &local_54, Scalep * 2.5f, (float*)(puVar13 + 0x3a),

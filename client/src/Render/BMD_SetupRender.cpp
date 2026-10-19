@@ -65,7 +65,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                      *(float *)(param_2 + 0x70), 0xffffffff);
         BMD__RenderMesh(param_1, 0.0f, 0x12, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                     DAT_05826e08 * _DAT_00552868, 0x492);
+                     WorldTime * _DAT_00552868, 0x492);
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
@@ -80,7 +80,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                      *(float *)(param_2 + 0x70), 0xffffffff);
         BMD__RenderMesh(param_1, 0.0f, 0x12, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                     DAT_05826e08 * _DAT_00552920, 0x492);
+                     WorldTime * _DAT_00552920, 0x492);
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, param_4, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
@@ -95,7 +95,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                      *(float *)(param_2 + 0x70), 0xffffffff);
         BMD__RenderMesh(param_1, 0.0f, 0x12, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                     DAT_05826e08 * _DAT_00552920, 0x492);
+                     WorldTime * _DAT_00552920, 0x492);
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, param_4, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
@@ -115,20 +115,20 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524f8);
+        fVar2 = (float10)fsin((float10)WorldTime * (float10)_DAT_005524f8);
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, (float)fVar2, 1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         BMD__RenderMesh(param_1, 0.0f, 6, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                     DAT_05826e08 * _DAT_00552500, 0x492);
-        fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552500);
+                     WorldTime * _DAT_00552500, 0x492);
+        fVar2 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552500);
         fVar2 = (fVar2 + (float10)_DAT_0055256c) * (float10)_DAT_00552504;
         *(float *)((int)param_1 + 0x48) = (float)fVar2;
         *(float *)((int)param_1 + 0x4c) = (float)fVar2;
         *(float *)((int)param_1 + 0x50) = (float)fVar2;
-        fVar11 = DAT_05826e08 * _DAT_0055291c;
-        fVar10 = DAT_05826e08 * _DAT_00552868;
+        fVar11 = WorldTime * _DAT_0055291c;
+        fVar10 = WorldTime * _DAT_00552868;
         fVar9 = *(float *)(param_2 + 0x68);
       }
       else {
@@ -141,7 +141,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                        *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
           BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, 1,
                        *(float *)(param_2 + 0x68),
-                       DAT_05826e08 * _DAT_00552868, DAT_05826e08 * _DAT_00552a40, 0xffffffff);
+                       WorldTime * _DAT_00552868, WorldTime * _DAT_00552a40, 0xffffffff);
           return;
         }
         if (param_3 == 0x1d7) {
@@ -151,7 +151,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
           BMD__RenderBody(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
-          fVar3 = (float10)DAT_05826e08;
+          fVar3 = (float10)WorldTime;
           fVar2 = (float10)_DAT_00552500;
           fVar4 = (float10)fsin(fVar3 * fVar2);
           fVar4 = fVar4 * (float10)_DAT_00552504 + (float10)_DAT_005528b8;
@@ -160,7 +160,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
           *(float *)((int)param_1 + 0x50) = (float)fVar4;
           BMD__RenderMesh(param_1, 2.8026e-45f, 2, 1.0f, 2,
                        *(float *)(param_2 + 0x68),
-                       (float)(fVar3 * fVar2), DAT_05826e08 * _DAT_0055291c, 0xffffffff);
+                       (float)(fVar3 * fVar2), WorldTime * _DAT_0055291c, 0xffffffff);
           return;
         }
         if (param_3 != 0x25f) {
@@ -187,7 +187,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                          *(float *)(param_2 + 0x70), 0xffffffff);
             BMD__RenderMesh(param_1, 2.8026e-45f, 2, 1.0f, 2,
                          *(float *)(param_2 + 0x68),
-                         DAT_05826e08 * _DAT_00552a40, *(float *)(param_2 + 0x70), 0xffffffff);
+                         WorldTime * _DAT_00552a40, *(float *)(param_2 + 0x70), 0xffffffff);
             uVar5 = 0xffffffff;
             iVar1 = _rand();
             fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
@@ -220,7 +220,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         glColor3f(1.0f, 1.0f, 1.0f);
         BMD__RenderMesh(param_1, 2.8026e-45f, 0x44, 1.0f, 2,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                     DAT_05826e08 * _DAT_005524f8, 0x492);
+                     WorldTime * _DAT_005524f8, 0x492);
         BMD__RenderMesh(param_1, 0.0f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
@@ -231,16 +231,16 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, 1,
                      *(float *)(param_2 + 0x68),
                      (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
-        fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552500);
+        fVar2 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552500);
         fVar2 = fVar2 * (float10)_DAT_005528b4 + (float10)_DAT_00552534;
         fVar9 = (float)fVar2;
         *(float *)((int)param_1 + 0x48) = (float)fVar2;
         *(float *)((int)param_1 + 0x4c) = (float)fVar2;
         *(float *)((int)param_1 + 0x50) = (float)fVar2;
         glColor3f(fVar9, fVar9, fVar9);
-        fVar11 = DAT_05826e08 * _DAT_00552a40;
+        fVar11 = WorldTime * _DAT_00552a40;
         fVar9  = *(float *)(param_2 + 0x68);
-        fVar10 = DAT_05826e08 * _DAT_00552868;
+        fVar10 = WorldTime * _DAT_00552868;
       }
       BMD__RenderMesh(param_1, 2.8026e-45f, 0x42, 1.0f, 2, fVar9, fVar10, fVar11, 0xffffffff);
       glPopMatrix();

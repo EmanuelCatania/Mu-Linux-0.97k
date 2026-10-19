@@ -566,7 +566,7 @@ static void HUD_HotkeyTick(void)
 //   DAT_07abf5d8          — local player entity ptr
 //   DAT_07abf5d0          — entity array base (stride 0x394)
 //   DAT_07cf1ffc          — g_CharData (XOR-encoded char-select data block)
-//   DAT_05826e08          — frame counter (float-compatible tick)
+//   WorldTime          — frame counter (float-compatible tick)
 //   _DAT_00552890         — speed scale (dt multiplier)
 //   _DAT_00552b6c         — max facing dt threshold
 //   _DAT_00552928         — min entity speed for facing packet
@@ -1086,7 +1086,7 @@ void __cdecl Player_ProcessInput(void)
                                          && (SelectedCharacter != -1);
             if (!bAutoAttackEngaged && !bHasClick) {
                 _DAT_07e11d50 = 0.0f;
-                _DAT_07e11d4c = DAT_05826e08;      // WorldTime
+                _DAT_07e11d4c = WorldTime;      // WorldTime
                 goto end_tick_inc;                 // IDA: goto LABEL_390
             }
         }
@@ -1094,7 +1094,7 @@ void __cdecl Player_ProcessInput(void)
         // (Walker movido arriba del gate — ya corrió al inicio del tick.)
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
 
-        _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
+        _DAT_07e11d50 = (WorldTime - _DAT_07e11d4c) * _DAT_00552890;
 
         // IDA 0x004ACEF0 L613-625: ANTES de procesar el click, el original lo
         // descarta mientras el heroe no puede actuar:
@@ -1236,7 +1236,7 @@ void __cdecl Player_ProcessInput(void)
                     DAT_00559ce8 = SelectedCharacter;
                     Attacking  = 1;
                     AsCharacter(ent)->MovementType = 3;
-                    // Destino = grid del MOB target (no DAT_05826e08, que es el tick counter).
+                    // Destino = grid del MOB target (no WorldTime, que es el tick counter).
                     TargetX = (DWORD)dstX;
                     TargetY = (DWORD)dstY;
 

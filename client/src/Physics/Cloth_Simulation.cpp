@@ -77,7 +77,7 @@ void __cdecl Cloth_PinTopRow(int _this, float (*Matrix)[4])
 // proyecto. Lo que queda es el cálculo de arriba, tal cual.
 void __cdecl Cloth_Wind(DWORD *_this)
 {
-  int frame = (int)DAT_083a7c00;              // MoveSceneFrame
+  int frame = (int)MoveSceneFrame;              // MoveSceneFrame
   int v17   = (int)_this[12];                 // nodeCount
   if (v17 <= 0)
     return;
@@ -901,7 +901,7 @@ bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float 
     const Vec3 vWind = { wind * sinf(a), -wind * cosf(a), 0.0f };
 
     // InitForces (modo malla): la misma clave para todos los vertices.
-    const int seed = (((int)DAT_083a7c00 / 10) * 101) % c.numVertices;
+    const int seed = (((int)MoveSceneFrame / 10) * 101) % c.numVertices;
     const unsigned key = (unsigned)abs(seed % 10);
     for (int i = 0; i < c.numVertices; ++i) UpdateForce(c.vertices[i], key, c.type, vWind);
 
@@ -1030,7 +1030,7 @@ void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
     MeshCloth *c = FindSlot(part);
     // Si la pieza no se dibujo en los ultimos frames (cambio de mapa,
     // entidad reusada), se vuelve a armar desde la pose actual.
-    const int frame = (int)DAT_083a7c00;
+    const int frame = (int)MoveSceneFrame;
     if (c->vertices && (frame - c->lastFrame > 3 || frame < c->lastFrame)) {
         Destroy(*c);
         c->part = part;

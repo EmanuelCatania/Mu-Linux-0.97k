@@ -16,7 +16,7 @@
 //
 // ── BRILLO OSCILANTE ──────────────────────────────────────────────────────────
 //
-//   fVar11 = fsin(DAT_05826e08 * _DAT_005528e0)
+//   fVar11 = fsin(WorldTime * _DAT_005528e0)
 //   local_70 = (float)(fVar11 * _DAT_005526e4 + _DAT_005526e8)  // range ~0.3..1.0
 //   if (DAT_005616b0 != -1) local_70 = 0.2;   // char hovereado → dim otros más
 //
@@ -141,7 +141,7 @@
 //   CharSelectSceneInitialized (IDA: DAT_083a7c4b) — init flag (guard)
 //   DAT_05826cb0   — timer guard (> 0x32 para renderizar)
 //   DAT_083a42ea   — frame counter reset
-//   DAT_05826e08   — frame time accumulator (usado en fsin para brillo)
+//   WorldTime   — frame time accumulator (usado en fsin para brillo)
 //   DAT_005616ac   — selected char index (-1=ninguno)
 //   DAT_005616b0   — hovered char index (-1=ninguno)
 //   SelectedCharacter   — slot local player index
@@ -220,7 +220,7 @@ int Scene_CharSelect(void)
 
         // Oscillating brightness: fsin on frame timer → range ~0.3..1.0
         iVar9  = DAT_083a021c;
-        fVar11 = (float10)sinl((long double)DAT_05826e08 * (long double)_DAT_005528e0);
+        fVar11 = (float10)sinl((long double)WorldTime * (long double)_DAT_005528e0);
         local_70 = (float)(fVar11 * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
         if (-1 < DAT_005616b0)
             local_70 = 0.2f;   // hovereado → dim los demás más
@@ -286,7 +286,7 @@ int Scene_CharSelect(void)
         // Orbital particles for selected char
         if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
             GL_SetBlendAdditive();   // Frame_UpdateTimer
-            uVar12  = (unsigned int)(*(float*)&DAT_05826e08);
+            uVar12  = (unsigned int)(*(float*)&WorldTime);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
             Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
@@ -544,7 +544,7 @@ int Scene_CharSelect(void)
             // Character preview sub-render
             if (-1 < iVar9) {
                 DAT_005597c4 = 0;
-                fVar11 = (float10)sinl((long double)DAT_05826e08 * (long double)_DAT_005528e0);
+                fVar11 = (float10)sinl((long double)WorldTime * (long double)_DAT_005528e0);
                 DAT_00561554 = 0x41200000;   // CameraFOV = 10.0
                 DAT_083a42b8 = 0; DAT_083a42bc = 0; DAT_083a42c0 = 0;   // CameraAngle = {0,0,0}
                 fVar11 = fVar11 * (float10)_DAT_005526e4 + (float10)_DAT_0055256c;

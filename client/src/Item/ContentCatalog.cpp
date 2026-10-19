@@ -517,7 +517,7 @@ void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPt
     for (const ItemEffect& effect : it->second) {
         const Proto::CATALOG_EFFECT& data = effect.Data;
         if (!(data.On & Proto::CATALOG_EFFECT_ON_EQUIPPED)) continue;
-        const float pulse = (data.PulseSpeed != 0.0f) ? fabsf(sinf(DAT_05826e08 * data.PulseSpeed)) : 0.0f;
+        const float pulse = (data.PulseSpeed != 0.0f) ? fabsf(sinf(WorldTime * data.PulseSpeed)) : 0.0f;
         const float scale = data.Scale + pulse * data.PulseScale;
         float light[3] = { data.Color[0] + pulse * data.PulseColor,
                            data.Color[1] + pulse * data.PulseColor,

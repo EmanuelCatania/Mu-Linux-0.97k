@@ -47,7 +47,7 @@ static void LoginScene_ApplySafeObjectAnim()
     if (!(SceneFlag == 2 || SceneFlag == 4))
         return;
 
-    extern float DAT_05826e08;  // WorldTime
+    extern float WorldTime;  // WorldTime
     extern void __cdecl MoveObject_Special(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
     extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
     extern float* __cdecl Entity_SpawnEffects(int param_1);  // Entity_SpawnEffects / login ship fire
@@ -76,7 +76,7 @@ static void LoginScene_ApplySafeObjectAnim()
         }
 
         if (type == 160 || type == 161) {
-            float v = (float)((long long)DAT_05826e08 % 4000);
+            float v = (float)((long long)WorldTime % 4000);
             AsObject(obj)->BlendMeshTexCoordV = -(v * 0.00025f);
             continue;
         }

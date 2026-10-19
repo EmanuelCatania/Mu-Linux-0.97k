@@ -496,7 +496,7 @@ LAB_after_render: ;
     // por encima con BMD__RenderBody flags=0x42.
     short pulseType = *(short*)(param_1 + 2);
     if (((param_6 & 0x3f) != 0) && ((pulseType < 0x310) || (0x316 < pulseType))) {
-        fVar10 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005528e0);
+        fVar10 = (float10)fsin((float10)WorldTime * (float10)_DAT_005528e0);
         fVar10 = (fVar10 + (float10)_DAT_0055256c) * (float10)_DAT_00552504;
         *(float *)((int)this_ + 0x48) = (float)fVar10;
         *(float *)((int)this_ + 0x4c) = (float)(fVar10 * (float10)_DAT_005528b8);
