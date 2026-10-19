@@ -10,6 +10,7 @@
 #include "Game/MapManager.h"
 #include "Render/EquipmentVisuals.h"
 #include "Render/WorldEffects.h"
+#include "Render/Particle_Render.h"
 
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
 extern "C" void HeroEquipWatchdog(int entity);
@@ -176,6 +177,7 @@ void Simulation_PrepareStep()
     const float lod = _DAT_005597c8;
     Terrain_TickRenderWater();
     Terrain_PrepareSimulation();
+    if (SceneFlag == 5) Particle_PrepareRender();
     for (int slot = 0; slot < 400; ++slot) {
         CHARACTER &c = ((CHARACTER *)DAT_07abf5d0)[slot];
         const OBJECT &o = c.Object;
