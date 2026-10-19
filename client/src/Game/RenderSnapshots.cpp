@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Entity_Render_3D.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/RenderSnapshots.h"
 #include "Game/MapManager.h"
@@ -201,6 +202,7 @@ void RenderSnapshots_EndStep() { Capture(false); }
 // paso, sin ampliar CHARACTER, PART_t, ITEM_t ni los pools del binario.
 void RenderSnapshots_NewCharacter(const void* entity) {
     Equipment_Invalidate(entity);
+    MoltSilhouette_Invalidate(entity);
     const int slot = CharacterSlot(entity);
     if (slot >= 0) ++characterGeneration[slot];
 }

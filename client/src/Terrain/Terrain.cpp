@@ -660,6 +660,12 @@ LABEL_12:
 }
 
 
+// Entrada legacy para la vtable; la ruta activa de Molt usa su muestra SIM.
+void MoltSilhouette_DrawEdge(void *, float *, float *, float);
+void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
+    MoltSilhouette_DrawEdge(obj, p1, p2, (float)((double)(rand() % 100) * 0.0099999998));
+}
+
 // addr: 0x0040A8F0  (sub_40A8F0 — VTable_DrawEdge)
 // ported from IDA raw/0040A8F0_sub_40A8F0.c
 // Draws one edge of a physics/collision hull as a textured glBegin(GL_QUADS) strip,
@@ -667,7 +673,7 @@ LABEL_12:
 // quad by jittering perpendicular via Vec3_Cross/Vec3_Normalize (cross+normalize).
 // Caller VTable_Release passes 3 args (obj, p1, p2); IDA disassembled with 5 where
 // a4/a5 were unreferenced stack slots — safely omitted here.
-void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
+void MoltSilhouette_DrawEdge(void *obj, float *p1, float *p2, float jitter) {
     // Forward-declares (defined later in this TU, not in functions.h).
     extern void __cdecl Vec3_Cross(float *a, float *b, float *out);
     char *this_ = (char *)obj;
@@ -706,7 +712,7 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     v30 = v30 + v27;
     v31 = v31 + v28;
     v32 = p2z + v29;
-    v36 = (float)((double)(rand() % 100) * 0.0099999998);
+    v36 = jitter;
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_BindTextureSlot(494);            // BindTexture(494)
     GL_SetBlendSrcAlpha();                // EnableAlphaBlendMinus

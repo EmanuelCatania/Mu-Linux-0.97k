@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Entity_Render_3D.h"
 #include "Render/WorldEffects.h"
 #include "Render/EquipmentVisuals.h"
 #include "Entity/ObjectPose.h"
@@ -62,6 +63,7 @@ void WorldEffects_Tick(int entity) {
     if (*(short *)((char *)model + 0x26) > 0)
         ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 0);
     ObjectPose_TickMeshEvents(entity, model, (float *)g_BoneScratch, 0);
+    MoltSilhouette_Tick(entity, model, (float *)g_BoneScratch, 0);
     recording = &frame;
     Entity_SpawnEffects(entity);
     recording = nullptr;

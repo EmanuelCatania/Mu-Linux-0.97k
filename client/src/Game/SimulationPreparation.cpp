@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Entity_Render_3D.h"
 #include "Game/SimulationPreparation.h"
 #include "Entity/CharacterCloth.h"
 #include "Entity/CharacterEffects.h"
@@ -125,6 +126,8 @@ void PrepareCharacter(CHARACTER &c) {
     ObjectPose_PrepareSimulation((int)&c, 1);
     ObjectPose_TickMeshEvents((int)&c, model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
+    MoltSilhouette_Tick((int)&c, model,
+        o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
     CharacterCloth_Tick((int)&c);
     const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
     const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;
@@ -168,6 +171,7 @@ void Simulation_PrepareStep()
 {
     Equipment_BeginStep();
     WorldEffects_BeginStep();
+    MoltSilhouette_BeginStep();
     if (!SceneReady() || !DAT_07abf5d0 || !DAT_05828d58) return;
     PrepareCamera();
     // BMD_Animation usa estos temporales compartidos; la publicación SIM sólo
