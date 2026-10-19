@@ -11,6 +11,8 @@
 #include "Platform/NativeBridge.h"
 #include "Platform/IWindow.h"
 #include "Platform/IGLContext.h"
+#include "Config/UserSettings.h"
+#include "Game/FrameLimiter.h"
 
 CWindow gWindow;
 
@@ -80,6 +82,10 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 bool CWindow::InitOpenGL()
 {
     if (!Platform::GetGLContext().Initialize()) return false;
+    // DESVIACION: preferencias de presentación por la interfaz de plataforma.
+    if (!Platform::GetGLContext().SetSwapInterval(gUserSettings.GetVSync() ? 1 : 0))
+        CErrorReport_Write(&DAT_055c9bf0, "> No se pudo aplicar Window.VSync");
+    gFrameLimiter.SetFpsLimit(gUserSettings.GetFpsLimit());
     Platform::GetWindow().ShowAndFocus();
     return true;
 }

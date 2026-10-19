@@ -46,6 +46,17 @@ void Win32GLContext::Release()
     ReleaseDC(GetWin32Window().GetHwnd(), m_hDC);
 }
 
+// DESVIACION: extensión WGL opcional; el controlador puede no ofrecerla.
+bool Win32GLContext::SetSwapInterval(int interval)
+{
+    if (!m_hRC || (interval != 0 && interval != 1)) return false;
+    const auto address = wglGetProcAddress("wglSwapIntervalEXT");
+    const auto value = reinterpret_cast<INT_PTR>(address);
+    if (!address || value == 1 || value == 2 || value == 3 || value == -1) return false;
+    using SwapInterval = BOOL (WINAPI*)(int);
+    return reinterpret_cast<SwapInterval>(address)(interval) != FALSE;
+}
+
 void Win32GLContext::Present()
 {
     SwapBuffers(m_hDC);

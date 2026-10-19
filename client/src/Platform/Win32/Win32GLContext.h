@@ -9,6 +9,7 @@ public:
     bool Initialize() override;
     void Release() override;
     void Present() override;
+    bool SetSwapInterval(int interval) override;
     // Puente nativo para fuentes GDI y consumidores todavía no extraídos.
     HDC GetHdc() const { return m_hDC; }
     HGLRC GetHandle() const { return m_hRC; }
