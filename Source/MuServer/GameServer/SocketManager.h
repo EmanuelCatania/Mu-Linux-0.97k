@@ -9,7 +9,10 @@
 #include <vector>
 
 #define MAX_MAIN_PACKET_SIZE 8192
-#define MAX_SIDE_PACKET_SIZE 16384
+// Login sends the content catalog as a burst of separate packets.
+// Keep pending bytes bounded, but allow the burst while IOCP/epoll drains it.
+// The individual packet limit remains MAX_MAIN_PACKET_SIZE (8 KiB).
+#define MAX_SIDE_PACKET_SIZE 262144
 #define MAX_SERVER_WORKER_THREAD 8
 #define MAX_IO_OPERATION 2
 #define IO_RECV 0
