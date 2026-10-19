@@ -2,6 +2,8 @@
 // Números de daño flotantes: RenderNumber (0x005120C0) y RenderPoints (0x00479330).
 
 #include "stdafx.h"
+#include "Game/RenderSnapshots.h"
+#include "Game/FrameLimiter.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -137,12 +139,18 @@ void __cdecl RenderPoints(int, int, int, int)
         char* slot = base + i * 0x70;
         if (slot[0] == 0) continue;
 
-        // IDA: alpha = lifetime(+0x48) * 0.4
-        const float alpha = *(float*)(slot + 0x48) * 0.40000001f;
-        RenderNumber((float*)(slot + 0x10),      // world pos
-                     *(int*)(slot + 0x04),       // value (-1 = MISS)
-                     (float*)(slot + 0x1c),      // color
-                     alpha,
-                     *(float*)(slot + 0x0c));    // scale
+        RenderPose pose;
+        memcpy(pose.position, slot + 0x10, sizeof(pose.position));
+        pose.alpha = *(float*)(slot + 0x48) * 0.40000001f;
+        pose.scale = *(float*)(slot + 0x0c);
+        // DESVIACION: interpolar al desacoplar el render. A 40 ms se conserva
+        // la muestra actual, sin retrasar un tick los números del cliente base.
+        if (gFrameLimiter.IsRenderDecoupled()) {
+            RenderPosePair pair;
+            if (RenderSnapshots_DamagePoint(i, pair))
+                pose = RenderSnapshots_Interpolate(pair, RenderSnapshots_Alpha((int)TimeRemain));
+        }
+        RenderNumber(pose.position, *(int*)(slot + 0x04), (float*)(slot + 0x1c),
+                     pose.alpha, pose.scale);
     }
 }
