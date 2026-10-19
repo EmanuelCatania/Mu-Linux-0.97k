@@ -1,14 +1,35 @@
+include(MuMySQLPackages)
+
 function(mu_link_mysql)
   if(WIN32)
-    set(MU_MYSQL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/mysql-connector-8.0.33" CACHE PATH "Connector/C++ con carpetas Debug y Release")
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND MU_MYSQL_ROOT STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/mysql-connector-8.0.33")
-      message(FATAL_ERROR "El Connector incluido es x86. Windows x64 requiere MU_MYSQL_ROOT con bibliotecas x64.")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      mu_fetch_mysql(winx64)
+      set(mysql_lib lib64)
+      set(ssl_suffix -x64)
+    else()
+      mu_fetch_mysql(win32)
+      set(mysql_lib lib)
+      set(ssl_suffix "")
     endif()
+    set(mysql_root "$<IF:$<CONFIG:Debug>,${MU_MYSQL_DEBUG_ROOT},${MU_MYSQL_RELEASE_ROOT}>")
+    set(mysql_debug "$<$<CONFIG:Debug>:/debug>")
+    file(GLOB mysql_runtime "${MU_MYSQL_RELEASE_ROOT}/bin/*.dll")
     foreach(target IN LISTS ARGN)
-      target_include_directories(${target} PRIVATE "${MU_MYSQL_ROOT}/$<IF:$<CONFIG:Debug>,Debug,Release>/include/jdbc")
-      target_link_directories(${target} PRIVATE "${MU_MYSQL_ROOT}/$<IF:$<CONFIG:Debug>,Debug,Release>/lib")
-      target_link_libraries(${target} PRIVATE mysqlcppconn)
+      target_include_directories(${target} PRIVATE "${mysql_root}/include/jdbc")
+      target_link_libraries(${target} PRIVATE "${mysql_root}/${mysql_lib}/vs14${mysql_debug}/mysqlcppconn.lib")
       target_compile_definitions(${target} PRIVATE MYSQL)
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${mysql_root}/${mysql_lib}${mysql_debug}/mysqlcppconn-9-vs14.dll"
+          "${mysql_root}/${mysql_lib}/libcrypto-1_1${ssl_suffix}.dll"
+          "${mysql_root}/${mysql_lib}/libssl-1_1${ssl_suffix}.dll"
+          ${mysql_runtime}
+          "$<TARGET_FILE_DIR:${target}>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${mysql_root}/LICENSE.txt" "$<TARGET_FILE_DIR:${target}>/LICENSE-MySQL.txt"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${mysql_root}/${mysql_lib}/plugin" "$<TARGET_FILE_DIR:${target}>/plugin"
+        VERBATIM)
     endforeach()
   else()
     find_path(MYSQLCPPCONN_INCLUDE_DIR mysql_connection.h PATH_SUFFIXES mysql cppconn)

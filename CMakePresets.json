@@ -62,7 +62,7 @@
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "toolset": "v143",
-      "description": "Pendiente: requiere Connector/C++ 8.0.33 x64 mediante MU_MYSQL_ROOT; fuera del CI actual."
+      "description": "Connector/C++ 8.0.33 x64 descargado por CMake con SHA256 fijo."
     },
     {
       "name": "windows-x64-release",
@@ -73,7 +73,7 @@
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "toolset": "v143",
-      "description": "Pendiente: requiere Connector/C++ 8.0.33 x64 mediante MU_MYSQL_ROOT; fuera del CI actual."
+      "description": "Connector/C++ 8.0.33 x64 descargado por CMake con SHA256 fijo."
     }
   ],
   "buildPresets": [
