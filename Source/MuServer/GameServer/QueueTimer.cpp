@@ -25,7 +25,7 @@ void CQueueTimer::CreateTimer(int TimerIndex, int TimerDelay, WAITORTIMERCALLBAC
 
 	QueueTimerInfo.TimerIndex = TimerIndex;
 
-	CreateTimerQueueTimer(&QueueTimerInfo.QueueTimerTimer, this->m_QueueTimer, CallbackFunction, (PVOID)TimerIndex, 1000, TimerDelay, WT_EXECUTEINTIMERTHREAD);
+	CreateTimerQueueTimer(&QueueTimerInfo.QueueTimerTimer, this->m_QueueTimer, CallbackFunction, reinterpret_cast<PVOID>(static_cast<intptr_t>(TimerIndex)), 1000, TimerDelay, WT_EXECUTEINTIMERTHREAD);
 
 	this->m_QueueTimerInfo.insert(std::pair<int, QUEUE_TIMER_INFO>(QueueTimerInfo.TimerIndex, QueueTimerInfo));
 }
