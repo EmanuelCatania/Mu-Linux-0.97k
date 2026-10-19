@@ -131,7 +131,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     longlong  lVar10;
     ulonglong uVar11;
     byte      bVar18;
-    float     local_30, local_2c_f, local_28;
+    float     local_30;
     // local_24/20/1c son slots CONSECUTIVOS del frame original y varios sitios
     // pasan `&local_24` como el vec3 de Light a CreateSprite / Particle_Spawn.
     // Como escalares sueltos MSVC no garantiza contiguidad y los canales G y B
@@ -142,7 +142,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     // Many paths pass &local_18 as if it were a contiguous float[3]
     // to TransformPosition / CreateSprite / Particle_Spawn. Keep the original
     // names as aliases over a real 3-float buffer so world positions are stable.
-    float     local_pos_buf[3];
+    // DESVIACION: valor inicial explícito para no heredar residuos del render.
+    float     local_pos_buf[3] = {};
     #define local_18 local_pos_buf[0]
     #define local_14 local_pos_buf[1]
     #define local_10 local_pos_buf[2]
@@ -330,10 +331,10 @@ float * __cdecl Entity_SpawnEffects(int param_1)
                 iVar2 = 8;
                 do {
                     iVar7 = _rand();
-                    float fAngPhi = (float)(iVar7 % 0x3c + 0x3c);
+                    float angle[3] = {(float)(iVar7 % 0x3c + 0x3c), 140.0f, 0.0f};
                     iVar7 = _rand();
-                    local_28 = (float)(iVar7 % 0x1e);
-                    pfVar3 = (float *)Joint_Create(0x4e9, &local_18, &local_18, &fAngPhi, 0, 0, 10.0f, -1, 0);
+                    angle[2] = (float)(iVar7 % 0x1e);
+                    pfVar3 = (float *)Joint_Create(0x4e9, &local_18, &local_18, angle, 0, 0, 10.0f, -1, 0);
                     iVar2--;
                 } while (iVar2 != 0);
                 return pfVar3;
@@ -564,20 +565,21 @@ LAB_004fc55a:
     case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
         iVar2 = (int)*(short *)(param_1 + 2);
         if (iVar2 == 0xb) {
-            // 7-bone wave particles (bone indices from embedded table at local_30)
+            // IDA 0x004FC070: Angle[0] contiene bytes {1,2,4,6}; los tres
+            // bytes siguientes son {9,10,11}. No son un float sin inicializar.
+            const unsigned char waveBones[7] = {1, 2, 4, 6, 9, 10, 11};
             iVar7 = 0;
             fVar9 = (float10)fsin(((float10)*(float *)(param_1 + 0x24) * (float10)_DAT_005524fc
                                    + (float10)WorldTime) * (float10)_DAT_00552500);
             fVar9 = (fVar9 + (float10)_DAT_0055256c) * (float10)_DAT_00552504;
             local_24 = (float)fVar9;
             local_20 = (float)(fVar9 * (float10)_DAT_00552504);
-            // local_30 area: embedded byte table {0,x,y,...} stride 1
             do {
                 local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 2.0f;
                 BMD_TransformPosition(pModel,
                     // byte-level indexing into g_BoneScratch: bone_idx * 0x30 bytes.
                     // (char*) cast is mandatory — without it DWORD* stride multiplies by 4.
-                    (float *)((char *)&DAT_06970a9c + ((char *)(&local_30))[iVar7] * 0x30),
+                    (float *)((char *)&DAT_06970a9c + waveBones[iVar7] * 0x30),
                     local_c, &local_18, '\0');
                 pfVar3 = (float *)CreateSprite(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
                 iVar7++;
