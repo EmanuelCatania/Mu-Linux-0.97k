@@ -696,6 +696,11 @@ extern "C" void ChaosBoxCloseAck(void) {
 // Anti-tamper hash table noise (PACKET_ENCRYPT etc) skipped per project policy.
 extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText);
 extern "C" int __cdecl GetScreenWidth(void);
+static int s_altNameToggle = 0;
+void ItemNames_TickInput() {
+    if (SceneFlag == 5 && DAT_083a7c10 && DAT_07e11d1c <= 30 && PressKey(VK_MENU))
+        s_altNameToggle = !s_altNameToggle;
+}
 void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
     DAT_07e11d6e = 1;
@@ -784,9 +789,6 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     // PressKey(VK_MENU) togglea byte_7EAA15C; se muestran si el toggle esta on
     // O Alt esta mantenido.  El global no lo usa nadie mas (ni InitGame), asi
     // que el static local es equivalente.
-    static int s_altNameToggle = 0;
-    if (PressKey(VK_MENU))
-        s_altNameToggle = !s_altNameToggle;
     if (s_altNameToggle || (Platform::GetInput().KeyState(VK_MENU) & 0x8000) != 0) {
         for (int i = 0; i < 1000; ++i) {
             if (i == hovered) continue;

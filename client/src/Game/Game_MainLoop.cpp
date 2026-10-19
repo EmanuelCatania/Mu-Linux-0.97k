@@ -36,6 +36,8 @@
 #include "stdafx.h"
 static void Game_TickAmbientAudio();
 void Sprite_CaptureStep();
+void Chat_TickPresentation();
+void ItemNames_TickInput();
 #include "Platform/IFileSystem.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
@@ -190,6 +192,8 @@ void __cdecl Game_MainLoop(HDC param_1)
         }
         MoveSceneFrame++;
         Simulation_PrepareStep();
+        Chat_TickPresentation();
+        ItemNames_TickInput();
         Game_TickAmbientAudio();
         Sprite_CaptureStep();
         RenderSnapshots_EndStep();
