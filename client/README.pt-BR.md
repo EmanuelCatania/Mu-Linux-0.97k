@@ -630,6 +630,29 @@ SDL_VIDEODRIVER=x11 ./launch.sh
 
 Sem `SDL_VIDEODRIVER`, uma sessão Wayland tenta Wayland nativo e depois X11/XWayland. O backend escolhido aparece em stderr. Arch oferece `lib32-libdecor` para decorações do cliente. Sem ele, um compositor sem decorações do servidor pode exibir a janela sem bordas. Em HiDPI, preserva a resolução lógica do jogo e deixa o compositor ampliar a imagem, podendo perder nitidez. O IME usa entrada de texto SDL/Wayland, limitada ao repertório Windows-1252 do jogo; não mostra o indicador IMM do Windows. GPU, escala, IME, tela cheia e captura da câmera precisam de teste no compositor real.
 
+### Wayland e GPUs NVIDIA
+
+O cliente é de 32 bits, e com NVIDIA isso tem duas consequências no Wayland nativo, encontradas em testes no Arch (KDE Plasma, RTX 3080 Ti, driver 615):
+
+- **Sem a plataforma EGL Wayland de 32 bits, o Wayland renderiza por software.** A NVIDIA só distribui `egl-wayland` para x64. Sem `libnvidia-egl-wayland.so.1` em `/usr/lib32`, o contexto GL do Wayland cai no Mesa `llvmpipe`: 24 fps, efeitos de skill em quads brancos e pretos transparentes. O cliente detecta isso ao iniciar (`Renderer por software en wayland`) e passa sozinho para X11/XWayland, onde o GLX usa a GPU.
+- **Com essa plataforma instalada, o Wayland nativo funciona, mas rende muito menos.** O driver EGL da NVIDIA em 32 bits resolve variáveis thread-local com `__tls_get_addr` em cada chamada GL, e o cliente desenha em modo imediato (`glVertex`/`glTexCoord` por vértice, como o 0.97k). Medido no mesmo ponto do jogo: render de 4,7 ms por frame com X11/GLX contra 70-85 ms com Wayland/EGL, ou seja, 25 fps contra 11-17. `__GL_SYNC_TO_VBLANK` e `__GL_MaxFramesAllowed` não mudam nada: é custo por chamada do driver, não sincronização. Isso não se corrige no cliente; some com o renderer moderno ou a passagem para x64 do roadmap.
+
+Nesse caso o cliente **não** cai sozinho para X11, porque o renderer é acelerado. **Com NVIDIA, rode o cliente em X11:**
+
+```sh
+SDL_VIDEODRIVER=x11 ./launch.sh
+```
+
+O Wayland nativo fica para testar o backend de janela ou para GPUs com Mesa (Intel/AMD), cujo EGL de 32 bits não tem esse problema:
+
+```sh
+SDL_VIDEODRIVER=wayland ./launch.sh
+```
+
+O driver escolhido e o renderer GL aparecem em stderr ao iniciar (`Backend de video: …` e `OpenGL: vendor | renderer | versão`).
+
+O `egl-wayland` de 32 bits não está nos repositórios oficiais do Arch. O pacote `lib32-egl-wayland` do AUR costuma estar desatualizado e exige a mesma versão do `egl-wayland`; instalá-lo com um helper pode fazer downgrade do de 64 bits. Se quiser para testes, compile o PKGBUILD com `pkgver` igual à versão do seu `egl-wayland` e recompile a cada atualização do driver.
+
 Para **compilar**, instale também Git, CMake 3.25+, Ninja, Python 3, pkg-config e GCC/G++ com suporte a `-m32`, além dos headers:
 
 - Arch: `base-devel gcc cmake ninja git python pkgconf glu wayland-protocols` e os pacotes `lib32-*` acima, que incluem arquivos de desenvolvimento.
