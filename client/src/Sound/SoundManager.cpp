@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "Platform/Text.h"
 #include "Platform/IAudio.h"
+#include "Platform/IFileSystem.h"
 #include "Sound/SoundManager.h"
 
 #ifndef MU_MINIAUDIO_LINKED
@@ -18,6 +19,28 @@ CSound gSound;
 
 namespace {
 constexpr int kMaxLevel = 9;
+
+// La música se decodifica desde un FILE* abierto con IFileSystem. Pasarle el
+// nombre directo a miniaudio no servía en Linux: los nombres del binario traen
+// barras invertidas y no respetan mayúsculas (Data\Music\Tarkan.mp3 vs tarkan.mp3), y
+// sólo IFileSystem::Open resuelve las dos cosas.
+struct MusicStream {
+    FILE* file = nullptr;
+    ma_decoder decoder;
+};
+ma_result ReadMusic(ma_decoder* decoder, void* out, size_t bytes, size_t* read)
+{
+    auto* stream = static_cast<MusicStream*>(decoder->pUserData);
+    const size_t count = fread(out, 1, bytes, stream->file);
+    if (read) *read = count;
+    return count == 0 && bytes > 0 ? MA_AT_END : MA_SUCCESS;
+}
+ma_result SeekMusic(ma_decoder* decoder, ma_int64 offset, ma_seek_origin origin)
+{
+    auto* stream = static_cast<MusicStream*>(decoder->pUserData);
+    const int whence = origin == ma_seek_origin_current ? SEEK_CUR : origin == ma_seek_origin_end ? SEEK_END : SEEK_SET;
+    return fseek(stream->file, long(offset), whence) == 0 ? MA_SUCCESS : MA_ERROR;
+}
 }
 
 long CSound::LevelToDirectSound(int level)
@@ -80,13 +103,24 @@ bool CSound::PlayMusic(const char* fileName)
     if (!fileName || !EnsureEngine()) return false;
 
     // Streaming: el archivo se decodifica de a poco, sin cargarlo entero.
-    ma_sound* sound = new ma_sound;
-    const ma_uint32 flags = MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_NO_SPATIALIZATION;
-    if (ma_sound_init_from_file(static_cast<ma_engine*>(m_Engine), fileName, flags,
-                                nullptr, nullptr, sound) != MA_SUCCESS) {
-        delete sound;
+    auto* stream = new MusicStream;
+    stream->file = Platform::GetFileSystem().Open(fileName, "rb");
+    const ma_decoder_config config = ma_decoder_config_init_default();
+    if (!stream->file || ma_decoder_init(ReadMusic, SeekMusic, stream, &config, &stream->decoder) != MA_SUCCESS) {
+        if (stream->file) fclose(stream->file);
+        delete stream;
         return false;
     }
+    ma_sound* sound = new ma_sound;
+    if (ma_sound_init_from_data_source(static_cast<ma_engine*>(m_Engine), &stream->decoder,
+                                       MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, sound) != MA_SUCCESS) {
+        delete sound;
+        ma_decoder_uninit(&stream->decoder);
+        fclose(stream->file);
+        delete stream;
+        return false;
+    }
+    m_MusicStream = stream;
     ma_sound_set_volume(sound, LevelToGain(m_MusicLevel));
     ma_sound_start(sound);
     m_Music = sound;
@@ -105,6 +139,12 @@ void CSound::StopMusic()
     ma_sound_uninit(sound);
     delete sound;
     m_Music = nullptr;
+    if (auto* stream = static_cast<MusicStream*>(m_MusicStream)) {
+        ma_decoder_uninit(&stream->decoder);
+        fclose(stream->file);
+        delete stream;
+        m_MusicStream = nullptr;
+    }
 }
 
 void CSound::SetMusicStoppedByUser(bool stopped)

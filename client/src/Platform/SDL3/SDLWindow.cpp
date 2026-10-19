@@ -2,6 +2,8 @@
 #include "Platform/IWindow.h"
 #include "Platform/ISocket.h"
 #include <string>
+#include <cstring>
+#include "MuIconData.h"
 #ifndef _WIN32
 #include <SDL3/SDL_opengl.h>
 #endif
@@ -47,6 +49,41 @@ bool ProbeSoftwareGL() {
     return software;
 }
 #endif
+// Decodifica src/icon.ico (un DIB paletizado de 8 bpp con máscara AND, el
+// mismo que usa el recurso Win32) a una superficie RGBA para SDL_SetWindowIcon.
+// Devuelve nullptr si el formato no es el esperado.
+SDL_Surface* LoadWindowIcon() {
+    const unsigned char* ico = kMuIconIco;
+    const size_t size = sizeof(kMuIconIco);
+    auto u16 = [&](size_t o) { return unsigned(ico[o] | ico[o + 1] << 8); };
+    auto u32 = [&](size_t o) { return u16(o) | u16(o + 2) << 16; };
+    if (size < 22 || u16(2) != 1 || u16(4) < 1) return nullptr;
+    const size_t dib = u32(18);
+    if (dib + 40 > size || u32(dib) != 40) return nullptr;
+    const int width = int(u32(dib + 4)), height = int(u32(dib + 8)) / 2;
+    const unsigned bpp = u16(dib + 14);
+    unsigned colors = u32(dib + 32);
+    if (bpp != 8 || width <= 0 || height <= 0) return nullptr;
+    if (colors == 0) colors = 256;
+    const size_t palette = dib + 40, xorStride = (size_t(width) + 3) & ~size_t(3);
+    const size_t xorBits = palette + colors * 4, andStride = ((size_t(width) + 31) / 32) * 4;
+    const size_t andBits = xorBits + xorStride * height;
+    if (andBits + andStride * height > size) return nullptr;
+    SDL_Surface* surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
+    if (!surface) return nullptr;
+    for (int y = 0; y < height; ++y) {
+        const size_t src = size_t(height - 1 - y);   // el DIB es bottom-up
+        auto* row = static_cast<unsigned char*>(surface->pixels) + size_t(y) * surface->pitch;
+        for (int x = 0; x < width; ++x) {
+            const unsigned index = ico[xorBits + src * xorStride + x];
+            const unsigned char* bgra = ico + palette + (index < colors ? index : 0) * 4;
+            const bool transparent = ico[andBits + src * andStride + x / 8] & (0x80 >> (x % 8));
+            row[x * 4 + 0] = bgra[2]; row[x * 4 + 1] = bgra[1]; row[x * 4 + 2] = bgra[0];
+            row[x * 4 + 3] = transparent ? 0 : 255;
+        }
+    }
+    return surface;
+}
 class SDLWindowBackend final : public IWindow {
 public:
     SDL_Window* window = nullptr;
@@ -94,6 +131,7 @@ public:
         window = SDL_CreateWindow("Mu Online", settings.width, settings.height,
             SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
         if (!window) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
+        if (SDL_Surface* icon = LoadWindowIcon()) { SDL_SetWindowIcon(window, icon); SDL_DestroySurface(icon); }
         InstallSDLInput();
         ChangeMode(settings);
         SDL_HideCursor();

@@ -61,6 +61,7 @@ private:
 
     void* m_Engine = nullptr;   // ma_engine*
     void* m_Music  = nullptr;   // ma_sound*
+    void* m_MusicStream = nullptr; // MusicStream* (FILE* + ma_decoder)
 };
 
 extern CSound gSound;

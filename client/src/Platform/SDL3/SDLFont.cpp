@@ -186,10 +186,26 @@ std::vector<uint8_t> ReadFont(const std::string& path)
 }
 // Se inspeccionan nombres de familia y estilo del archivo, no nombres de archivo.
 // La búsqueda se cachea y no necesita fontconfig ni paquetes FreeType del sistema.
-const std::unordered_map<std::string, std::string>& InstalledFonts()
+// Sólo se listan caras con los caracteres que usa el juego (ASCII y los
+// acentos/ñ de Windows-1252). Sin este filtro aparecían en el selector fuentes
+// de símbolos, emoji o de otros alfabetos y, al elegirlas, todo el texto salía
+// como cuadrados.
+bool CoversGameText(FT_Face face)
+{
+    if (FT_Select_Charmap(face, FT_ENCODING_UNICODE)) return false;
+    static const uint32_t required[] = { 'A', 'Z', 'a', 'z', '0', '9', 0xE1, 0xE9, 0xF1, 0xD1 };
+    for (uint32_t codepoint : required)
+        if (!FT_Get_Char_Index(face, codepoint)) return false;
+    return true;
+}
+struct InstalledFontTable {
+    std::unordered_map<std::string, std::string> paths;     // "familia/bn" -> archivo
+    std::unordered_map<std::string, std::string> families;  // "familia" -> nombre visible
+};
+const InstalledFontTable& InstalledFonts()
 {
     static const auto fonts = [] {
-        std::unordered_map<std::string, std::string> result;
+        InstalledFontTable result;
         std::vector<std::filesystem::path> roots;
 #ifdef _WIN32
         if (const char* root = std::getenv("WINDIR")) roots.emplace_back(std::filesystem::path(root) / "Fonts");
@@ -219,11 +235,13 @@ const std::unordered_map<std::string, std::string>& InstalledFonts()
             auto bytes = ReadFont(path);
             FT_Face face = nullptr;
             if (!bytes.empty() && !FT_New_Memory_Face(library, bytes.data(), FT_Long(bytes.size()), 0, &face)) {
-                if (FT_IS_SCALABLE(face) && face->family_name) {
-                    std::string key = LowerFamily(face->family_name);
+                if (FT_IS_SCALABLE(face) && face->family_name && CoversGameText(face)) {
+                    const std::string family = LowerFamily(face->family_name);
+                    std::string key = family;
                     key += (face->style_flags & FT_STYLE_FLAG_BOLD) ? "/b" : "/r";
                     key += (face->style_flags & FT_STYLE_FLAG_ITALIC) ? "i" : "n";
-                    result.emplace(key, path);
+                    result.paths.emplace(key, path);
+                    result.families.emplace(family, face->family_name);
                 }
                 FT_Done_Face(face);
             }
@@ -238,8 +256,8 @@ const std::unordered_map<std::string, std::string>& InstalledFonts()
 std::vector<std::string> SDLFont::InstalledFamilies()
 {
     std::vector<std::string> names;
-    for (const auto& font : InstalledFonts())
-        names.push_back(font.first.substr(0, font.first.rfind('/')));
+    for (const auto& family : InstalledFonts().families)
+        names.push_back(family.second);
     std::sort(names.begin(), names.end());
     names.erase(std::unique(names.begin(), names.end()), names.end());
     return names;
@@ -265,7 +283,7 @@ bool SDLFont::LoadFamily(const char* family, bool bold, bool italic, int height,
     const std::string name = LowerFamily(requested) == "system" ? "arial" : LowerFamily(requested);
     std::string path;
     if (name != "liberation sans") {
-        const auto& installed = InstalledFonts();
+        const auto& installed = InstalledFonts().paths;
         const auto found = installed.find(name + (bold ? "/b" : "/r") + (italic ? "i" : "n"));
         if (found != installed.end()) path = found->second;
     }
