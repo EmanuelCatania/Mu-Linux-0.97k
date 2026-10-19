@@ -17,10 +17,10 @@ RUN cmake -S . -B /build -DCMAKE_BUILD_TYPE=Release \
 
 FROM ubuntu:22.04
 
-LABEL org.opencontainers.image.version="0.97.20" \
+LABEL org.opencontainers.image.version="0.97.30" \
       org.opencontainers.image.source="https://github.com/EmanuelCatania/Mu-Linux-0.97k" \
-      org.opencontainers.image.description="Servidor MU Online 0.97k para Linux; catálogo de contenido y pets custom de la Fase 2" \
-      mu-linux.client-release="https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20"
+      org.opencontainers.image.description="Servidor MU Online 0.97k para Linux; catálogo de contenido y pets custom; comandos GM de eventos (Fase 3)" \
+      mu-linux.client-release="https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
