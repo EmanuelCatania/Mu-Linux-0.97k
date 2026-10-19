@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Game/SimulationPreparation.h"
 #include "Entity/ObjectPose.h"
+#include "Entity/CharacterCloth.h"
 #include "Entity/ObjectBounds.h"
 #include "Item/ContentCatalog.h"
 
@@ -38,6 +39,7 @@ void Simulation_PrepareStep()
             ObjectBounds_Build(o.BoundingBoxMin, o.BoundingBoxMax,
                                (float *)((char *)model + 0x6c), o.OBB);
         }
+        CharacterCloth_Tick((int)&c);
         memcpy(model, context, sizeof(context));
         const bool subtypeNpc = o.Type == 390 && o.SubType >= 206 && o.SubType <= 208;
         if (!subtypeNpc && !c.Change) {

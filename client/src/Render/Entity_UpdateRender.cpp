@@ -4,25 +4,6 @@
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
 
-// GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
-// RELEE como puntero (`*(int*)(thiz+4)`). Convertir el puntero a float lo
-// destruye (float tiene 24 bits de mantisa), así que hay que pasar los BITS.
-// IDA aloca los widgets de tela con el prefijo de count del `eh vector
-// constructor iterator`: `raw = operator_new(0x58); *raw = 1; obj = raw + 1;`
-// El objeto vive en **+4** y el count en +0. El dtor (`sub_45AAA0` con flags&2)
-// lee `*((int*)obj - 1)` y libera `obj - 4`, así que sin el prefijo leía el
-// header del heap y liberaba un puntero inválido → AV dentro de operator_delete.
-static inline void *ClothNew(void) {
-    int *raw = (int *)operator_new(0x58);
-    if (!raw) return nullptr;
-    raw[0] = 1;                       // count = 1 elemento
-    return Widget_CtorBase(raw + 1);     // el ctor recibe el objeto, no el bloque
-}
-
-static inline float PtrAsFloatBits(const void *p) {
-    float f; int v = (int)(uintptr_t)p; memcpy(&f, &v, 4); return f;
-}
-
 #pragma warning(disable: 4244 4305 4701 4702 4700)
 // Entity_UpdateRender.cpp  —  RenderCharacter @ 0x00456770  (2195 lines in Ghidra)
 //
@@ -143,40 +124,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     {
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
-        if (param_1[0x61] == 0) {
-            // IDA 0x456770 L308-323:
-            //     v9 = (float *)(block + 4);
-            //     *(_DWORD *)block = 1;                  // prefijo de count
-            //     eh_vector_ctor(block + 4, 0x60, 1, sub_4093A0, sub_4093C0);
-            //     sub_4093E0(v9, ...); sub_409250(v9, ...); sub_409250(v9, ...);
-            //     *(_DWORD *)(c + 388) = v9;             // guarda el OBJETO
-            //
-            // En c+388 va el objeto (`block + 4`), no `block`: el tick de la tela
-            // (`sub_408CB0`) arranca con una llamada por vtable --
-            // `(*(void(**)(_DWORD*))(*a1 + 8))(a1)` -- y leeria el prefijo de count como
-            // si fuera la vtable.
-            //
-            // Los tipos de monstruo de este case (+0x2EB: 89, 95, 112, 118, 124,
-            // 130, 136) incluyen el 130 = "Magic Skeleton", que es el que aparece
-            // al caer la puerta del evento de Blood Castle.
-            void *puVar8 = operator_new(100);
-            *(int *)puVar8 = 1;                    // count del eh vector ctor
-            void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
-            L_YGXPAXIHP6EX0_Z1_Z(clothObj, 0x60, 1, (void *)Widget_Ctor);
-            SpringMesh_Create(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
-            VerletNode_AddToSystem(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
-            VerletNode_AddToSystem(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
-            param_1[0x61] = (int)clothObj;
-            *(char *)(param_1 + 0x60) = 1;
-        }
-        int *piVar16 = (int *)param_1[0x61];
-        if (piVar16) {
-            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0)
-                DeleteCloth((int)param_1, (int)puVar13, 0);
-            else
-                FUN_00408ff0((void *)piVar16);
-        }
+        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
         if ((BYTE)uVar11 != 0)
             Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
         break;
@@ -307,27 +255,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
     }
     else if ((bVar7 == 0x47) || (bVar7 == 0x4a)) {
-        // Glow bar widget for special skill (0x1ed = Meteor / 0x1ef = another)
-        if (param_1[0x61] == 0) {
-            int iType = (bVar7 == 0x47) ? 0x1ed : 0x1ef;
-            void *puVar8 = ClothNew();
-            // IDA L493: sub_408130(v33, c, 19, 10.0, 0, 5, 15, 30.0, 300.0, tex, tex, 0x1100)
-            // (los enteros del decompile: 1106247680 = 0x41F00000 = 30.0;
-            // 1133903872 = 0x43960000 = 300.0).
-            GridSpring_Create(puVar8, PtrAsFloatBits(param_1), 0x13, 10.0f, 0.0f,
-                         5, 0xf, 30.0f, 300.0f, iType, iType, 0x1100);
-            param_1[0x61] = (int)puVar8;
-            *(char *)(param_1 + 0x60) = 1;
-        }
-        int *piVar16 = (int *)param_1[0x61];
-        if (piVar16) {
-            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0) DeleteCloth((int)param_1, (int)puVar13, 0);
-            else {
-                // vtable+0xC = sub_408FF0 (ver nota en el case 0x186).
-                FUN_00408ff0((void *)piVar16);
-            }
-        }
+        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
     }
     else if (bVar7 == 0x49) {
         // Drakan (MonsterID 73). IDA 00456770 `case 'I'` con 747 == 73.
@@ -392,40 +320,12 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Entity_PrepareRender((unsigned char *)puVar13, 1, 2, 0);
         Entity_PrepareRender((unsigned char *)puVar13, 1, 3, 0);
 
-        const DWORD actionBones = *(DWORD*)((BYTE*)puVar13 + 276);
-        if (actionBones) {
-            memcpy(g_AttackEffectMatrix_04D,     (const void*)(actionBones + 1152), sizeof(g_AttackEffectMatrix_04D));
-        }
         *(int *)((BYTE *)puVar13 + 100) = -1;
         ++*(short *)((BYTE *)puVar13 + 2);
         Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, 0);
-        if (actionBones) {
-            memcpy(g_AttackEffectMatrix_04D_Alt, (const void*)(actionBones + 1104), sizeof(g_AttackEffectMatrix_04D_Alt));
-            memcpy(g_AttackEffectMatrix_04D_Aux, (const void*)(actionBones + 672),  sizeof(g_AttackEffectMatrix_04D_Aux));
-        }
 
-        if (param_1[0x61] == 0) {
-            void *puVar8 = ClothNew();
-            // IDA L598: sub_408130(v27, o, 10, -10.0, 0, 5, 12, 15.0, 240.0, 1275, 1275, 0x1100)
-            // El ancho era 60.0; 1097859072 = 0x41700000 = 15.0.
-            GridSpring_Create(puVar8, PtrAsFloatBits(puVar13), 10, -10.0f, 0.0f,
-                         5, 0xc, 15.0f, 240.0f, 0x4fb, 0x4fb, 0x1100);
-            VerletNode_AddToSystem(puVar8, 0.0f, 0.0f, 40.0f, 30.0f, 10);
-            param_1[0x61] = (int)puVar8;
-            *(char *)(param_1 + 0x60) = 1;
-        }
-        int *piVar16 = (int *)param_1[0x61];
-        if (piVar16) {
-            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0) DeleteCloth((int)param_1, (int)puVar13, 0);
-            else {
-                // IDA invokes vtable slot 3 as `this->Render(0)`.  The port
-                // was invoking the function pointer as cdecl with literal 0,
-                // so ECX no longer contained the cloth object.  00408FF0
-                // consumes the object in ECX and ignores its second argument.
-                FUN_00408ff0((void *)piVar16);
-            }
-        }
+
+        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
         --*(short *)((BYTE *)puVar13 + 2);
     }
 
@@ -849,32 +749,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // El port lo salteaba con la etiqueta "guild-mark related",
                 // que era incorrecta: la capita de atras se movia pegada al
                 // cuerpo en vez de simularse.
-                {
-                    const bool isGrandSoulPants = (iVar9 == 706);
-                    if (*piVar16 == 0 && isGrandSoulPants) {
-                        // IDA: operator_new(0x54) + sub_407FE0, SIN el prefijo de
-                        // count del `eh vector` (a diferencia de la capa del MG):
-                        // DeleteCloth la libera con el dtor en modo 1.
-                        void *cloth = Widget_CtorBase(operator_new(0x54));
-                        // sub_408130(obj, c, 2, 10.0, 10.0, 5, 15, 45.0, 85.0,
-                        //            1276, 1276, 0x1400)
-                        GridSpring_Create(cloth, PtrAsFloatBits(param_1), 2, 10.0f, 10.0f,
-                                     5, 15, 45.0f, 85.0f, 1276, 1276, 0x1400);
-                        // sub_409250(obj, 0, -15.0, -20.0, 30.0, 2)
-                        VerletNode_AddToSystem(cloth, 0.0f, -15.0f, -20.0f, 30.0f, 2);
-                        *piVar16 = (int)cloth;
-                    }
-                    if (*piVar16) {
-                        if (!isGrandSoulPants) {
-                            DeleteCloth((int)param_1, 0, 0);          // DeleteCloth(c, 0, 0)
-                        } else if (Widget_CheckState((int *)*piVar16, 0x3ba3d70a, 5)) {
-                            if (*(float *)(puVar13 + 0x5a) > 0.01f)
-                                FUN_00408ff0((void *)*piVar16);        // vtable[3]
-                        } else {
-                            DeleteCloth((int)param_1, (int)puVar13, 0);  // DeleteCloth(c, o, 0)
-                        }
-                    }
-                }
+                if (iVar9 == 706 && *piVar16 && *(float *)(puVar13 + 0x5a) > 0.01f)
+                    FUN_00408ff0((void *)*piVar16);
+
             }
             piVar16 += 6;   // advance to next slot (+0x18 bytes)
         }
@@ -1085,43 +962,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 }
             }
 
-            if (bCape) {
-                if (param_1[0x61] == 0) {
-                    void* cloth = ClothNew();
-                    if (AsCharacter(cb)->MonsterIndex == 55) {
-                        GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
-                                     10, 10, 55.0f, 140.0f, 492, 492, 4097);
-                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 35.0f, 17);
-                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f, -10.0f, 35.0f, 17);
-                        VerletNode_AddToSystem(cloth,   0.0f, -10.0f, -20.0f, 50.0f, 19);
-                    } else {
-                        GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
-                                     10, 10, 75.0f, 120.0f, 490, 491, 1029);
-                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 25.0f, 17);
-                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f, -10.0f, 25.0f, 17);
-                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f,  20.0f, 27.0f, 17);
-                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f,  20.0f, 27.0f, 17);
-                    }
-                    param_1[0x61] = (int)cloth;
-                    *(char *)(param_1 + 0x60) = 1;
-                }
-                int *pCloth = (int *)param_1[0x61];
-                if (pCloth) {
-                    int alive = (int)(size_t)Widget_CheckState(pCloth, 0x3ba3d70a, 5);
-                    if (alive == 0) {
-                        DeleteCloth((int)param_1, (int)puVar13, 0);
-                    } else {
-                        // IDA: `(*(void (__thiscall **)(int,_DWORD))(*(_DWORD *)v49 + 12))(v49, 0);`
-                        // La vtable `off_552520` no está portada (Widget_CtorBase
-                        // tiene el vtable-set saltado), así que se llama directo al destino real.
-                        // Vtable leída del binario original (`Cliente armado/main.exe`, MD5 eb95ac…):
-                        //     off_552520 = { 0x0045AAA0, 0x00408780,
-                        //                    0x004089B0, 0x00408FF0 }
-                        // o sea **+0xC = sub_408FF0**.
-                        FUN_00408ff0((void *)pCloth);
-                    }
-                }
-            }
+            if (bCape && param_1[0x61])
+                FUN_00408ff0((void *)param_1[0x61]);
         }
         if (SceneFlag == 2) {
             return puVar13;
