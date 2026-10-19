@@ -1154,7 +1154,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
             CreateSprite(0x4a7, &local_54, Scalep * 0.30000001f,
                          &local_60, (int)puVar13, 0, 0);
-            float WorldTime = (float)WorldTime;
             CreateSprite(0x4a7, &local_54, Scalep, (float*)(puVar13 + 0x3a),
                          (int)puVar13, -WorldTime * 0.1f, 0);
             CreateSprite(0x4a7, &local_54, Scalep * 2.5f, (float*)(puVar13 + 0x3a),
