@@ -401,21 +401,7 @@ void Render_QuickButtons_(void)
     // RenderServerDivision.
     FUN_00403f30((void*)(uintptr_t)g_csQuest);
 
-    // ── In-world drop dispatcher ─────────────────────────────────────────────
-    // Mirrors what Net_PacketSession.cpp does for state=4 char-select but
-    // for in-world. Gated internally on dword_7E91388 > 0 (= player carrying
-    // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
-    // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
-    // packet via SendRequestEquipmentItem → gNetwork.Send (C3).
-    // DESVIACION: este llamado es un DUPLICADO del port — en IDA el dispatcher
-    // (sub_4DF410) solo lo llama UpdateWindowsMouse (0x4ECB00).  Se deja el
-    // llamado (quitarlo requiere probar el drop) pero con el mismo corte que el
-    // original: teclado del PIN activo, un cartel abierto (ErrorMessage) o un
-    // widget con foco.
-    if (DAT_07eaa14c == 0 && DAT_083a7c24 == 0 &&
-        DAT_055c9b7c == 0 && DAT_055c9b80 == 0)
-        Inventory_DropDispatch(0, 0);
-
+    // El drop se despacha sólo desde UpdateWindowsMouse en SIM (IDA).
     RenderServerDivision();
 }
 

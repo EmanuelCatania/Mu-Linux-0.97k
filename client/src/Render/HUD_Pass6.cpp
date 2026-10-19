@@ -376,21 +376,12 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     if (!InventoryOpened) return;
 
     int sx = (CharacterOpened || PartyOpened) ? 260 : 450;
-    InventoryStartX = sx;
-    InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
     RenderEquipmentBox();
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
     // sub_4E6550, en el tick; no aca en el render.
 
-    // ── In-world click handler hook ──────────────────────────────────────────
-    // FUN_004d23b0 = grid hit-test + pickup + right-click use dispatcher.
-    // Must run BEFORE RenderItemsBoxes so highlight bytes are set when the
-    // item bitmaps are painted. Drop dispatcher (Inventory_DropDispatch) is invoked
-    // once after all the panel-specific hit-tests in Render_QuickButtons_.
-    FUN_004d23b0((char*)(uintptr_t)(InventoryStartX + 15),
-                 (int)(InventoryStartY + 200),
-                 (short*)OffsetInventoryItems, 8, 8, 0);
+    // Input y comandos de la grilla: SecondPassword_Screen4, dentro de SIM.
 
     float fPosX = (float)((double)InventoryStartX + 15.0);
     float fPosY = (float)((double)InventoryStartY + 200.0);

@@ -639,6 +639,10 @@ void __cdecl SecondPassword_Screen3(void) {
 //     Casi toda la lógica (ruido de ref-count de HashTable + zonas de hover) está limpia, pero el origen del FPU
 //     unresolvable without call-site context. STUB: __ftol() button region.
 void __cdecl SecondPassword_Screen4(void) {
+    // DESVIACION: publicar el origen antes del hit-test, sin esperar al draw.
+    InventoryStartX = (CharacterOpened || PartyOpened) ? 260 : 450;
+    InventoryStartY = 0;
+
     // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
     // y llama a FUN_004d1fc0 o FUN_004d23b0 para renderizar la grilla.
