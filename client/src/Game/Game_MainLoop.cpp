@@ -20,7 +20,7 @@
 //   SceneFlag  — SceneFlag
 //   World  — World
 //   TimeRemain  — frame budget accumulator (adds actual frame ms each frame)
-//   DAT_083a7c54  — total frame counter
+//   TestTime  — total frame counter
 //   DAT_083a7c00  — anti-tamper tick counter
 //   DAT_055ca018  — socket error flag (abort if set)
 //   DAT_083a42ec  — screenshot mode toggle (F12)
@@ -185,7 +185,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;
-        DAT_083a7c54  += 1;
+        TestTime  += 1;
         crt_sprintf(tickBuf, (const char*)&DAT_00561b04);
     }
 

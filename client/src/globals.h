@@ -1094,7 +1094,7 @@ extern char    CharSelectSceneInitialized; // IDA: DAT_083a7c4b
 extern char    DAT_083a7c4c;
 extern char    DAT_083a7c4d;
 extern DWORD   DAT_083a7c50;
-extern DWORD   DAT_083a7c54;
+extern DWORD   TestTime; // IDA: TestTime (0x083A7C54)
 extern DWORD   DAT_083a7c58;
 extern DWORD   DAT_083a7c5c;   // chat-log label for exit-countdown
 extern char    DAT_083a7c64[64];  // server IP string buffer (filled on server select)
