@@ -1,6 +1,7 @@
 services:
   mysql:
     image: emapupi/mu-linux-97k-mysql:latest
+    restart: unless-stopped
     networks:
       - default
     environment:
@@ -19,6 +20,7 @@ services:
 
   mu-server:
     image: emapupi/mu-linux-97k:latest
+    restart: unless-stopped
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -35,7 +37,8 @@ services:
         condition: service_healthy
     ports:
       - "44405:44405/tcp"
-      - "55601:55601/udp"
+      # Host UDP 55601 sits in a Windows excluded range, so publishing it
+      # prevents the container from starting. The process still listens inside.
       - "55901:55901/tcp"
     volumes:
       - mu_data:/opt/mu/Data:rw
@@ -45,6 +48,7 @@ services:
 
   mu-web:
     image: emapupi/mu-linux-97k-web:latest
+    restart: unless-stopped
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
@@ -74,6 +78,7 @@ services:
 
   mu-editor:
     image: emapupi/mu-linux-97k-mu-editor:latest
+    restart: unless-stopped
     environment:
       EDITOR_ENABLED: ${EDITOR_ENABLED}
       EDITOR_PORT: ${EDITOR_PORT}

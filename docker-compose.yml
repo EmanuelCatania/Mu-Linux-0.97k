@@ -1,6 +1,7 @@
 services:
   mysql:
     image: mysql:5.7
+    restart: unless-stopped
     networks:
       - default
     environment:
@@ -24,6 +25,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -40,7 +42,8 @@ services:
         condition: service_healthy
     ports:
       - "44405:44405/tcp"
-      - "55601:55601/udp"
+      # Host UDP 55601 sits in a Windows excluded range, so publishing it
+      # prevents the container from starting. The process still listens inside.
       - "55901:55901/tcp"
     networks:
       - default
@@ -49,6 +52,7 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
