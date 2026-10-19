@@ -33,9 +33,6 @@ extern "C" {
     // Back-weapon render decision. Returns 1 if weapon was rendered
     // on back (LinkBone 47). When 1, Render_PlayerWeaponLoop should be skipped.
     int  RenderCharacterBackItem(int c, int o);
-    // Watchdog por frame que restaura wings/weapons/pendant del
-    // hero si fueron reseteados a -1 después de F3/03.
-    void HeroEquipWatchdog(int c);
 }
 
 // IDA: RenderGuildMarkOnShield — dibuja la textura 34 ya compuesta por CreateGuildMark
@@ -474,17 +471,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
             local_74 = (void *)0;
     }
-
-    // ── Re-aplicar el stash de equipo si está reseteado ─────────────────────
-    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
-        HeroEquipWatchdog((int)(uintptr_t)param_1_);
-
-
-        // +0x34E es SafeZone (no dead_flag): vale 1 con el héroe vivo en el pueblo.
-        // No forzarlo a 0: mataría la música de pueblo, el bind del arma a la
-        // espalda y el gate de "no atacar en zona segura".
-    }
-
 
     // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
     //

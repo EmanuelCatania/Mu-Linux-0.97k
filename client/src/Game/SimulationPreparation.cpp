@@ -9,6 +9,7 @@
 #include "Game/MapManager.h"
 
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
+extern "C" void HeroEquipWatchdog(int entity);
 
 namespace {
 struct CameraPose {
@@ -104,6 +105,12 @@ void PrepareCharacter(CHARACTER &c) {
     OBJECT &o = c.Object;
     void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
     if (*(short *)((char *)model + 0x26) == 0) return;
+    // DESVIACION: la sincronización del equipo puede cambiar piezas/acción y
+    // liberar tela. Debe preceder a su pose SIM y no ejecutarse desde el draw.
+    if (SceneFlag == 5 && (void *)&c == (void *)DAT_07abf5d8) {
+        HeroEquipWatchdog((int)&c);
+        model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+    }
     char context[0xbc];
     memcpy(context, model, sizeof(context));
     if ((void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5) o.Visible = 1;
