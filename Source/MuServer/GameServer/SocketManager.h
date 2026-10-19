@@ -94,7 +94,7 @@ public:
 
 	void OnSend(int index, DWORD IoSize, IO_SEND_CONTEXT* lpIoContext);
 
-	static int CALLBACK ServerAcceptCondition(IN LPWSABUF lpCallerId, IN LPWSABUF lpCallerData, IN OUT LPQOS lpSQOS, IN OUT LPQOS lpGQOS, IN LPWSABUF lpCalleeId, OUT LPWSABUF lpCalleeData, OUT GROUP FAR* g, CSocketManager* lpSocketManager);
+	static int CALLBACK ServerAcceptCondition(IN LPWSABUF lpCallerId, IN LPWSABUF lpCallerData, IN OUT LPQOS lpSQOS, IN OUT LPQOS lpGQOS, IN LPWSABUF lpCalleeId, OUT LPWSABUF lpCalleeData, OUT GROUP FAR* g, DWORD_PTR callbackData);
 
 	static DWORD WINAPI ServerAcceptThread(CSocketManager* lpSocketManager);
 

@@ -637,7 +637,7 @@ void CSocketManager::OnSend(int index, DWORD IoSize, IO_SEND_CONTEXT* lpIoContex
 	this->m_critical.unlock();
 }
 
-int CALLBACK CSocketManager::ServerAcceptCondition(IN LPWSABUF lpCallerId, IN LPWSABUF lpCallerData, IN OUT LPQOS lpSQOS, IN OUT LPQOS lpGQOS, IN LPWSABUF lpCalleeId, OUT LPWSABUF lpCalleeData, OUT GROUP FAR* g, CSocketManager* lpSocketManager)
+int CALLBACK CSocketManager::ServerAcceptCondition(IN LPWSABUF lpCallerId, IN LPWSABUF lpCallerData, IN OUT LPQOS lpSQOS, IN OUT LPQOS lpGQOS, IN LPWSABUF lpCalleeId, OUT LPWSABUF lpCalleeData, OUT GROUP FAR* g, DWORD_PTR callbackData)
 {
 	SOCKADDR_IN* SocketAddr = (SOCKADDR_IN*)lpCallerId->buf;
 
@@ -664,7 +664,7 @@ DWORD WINAPI CSocketManager::ServerAcceptThread(CSocketManager* lpSocketManager)
 
 	while (true)
 	{
-		SOCKET socket = WSAAccept(lpSocketManager->m_listen, (sockaddr*)&SocketAddr, &SocketAddrSize, (LPCONDITIONPROC)&lpSocketManager->ServerAcceptCondition, (DWORD)lpSocketManager);
+		SOCKET socket = WSAAccept(lpSocketManager->m_listen, (sockaddr*)&SocketAddr, &SocketAddrSize, &CSocketManager::ServerAcceptCondition, reinterpret_cast<DWORD_PTR>(lpSocketManager));
 
 		if (socket == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK)
 		{
@@ -744,13 +744,13 @@ DWORD WINAPI CSocketManager::ServerWorkerThread(CSocketManager* lpSocketManager)
 {
 	DWORD IoSize;
 
-	DWORD index;
+	ULONG_PTR completionKey;
 
 	LPOVERLAPPED lpOverlapped;
 
 	while (true)
 	{
-		if (GetQueuedCompletionStatus(lpSocketManager->m_CompletionPort, &IoSize, &index, &lpOverlapped, INFINITE) == FALSE)
+		if (GetQueuedCompletionStatus(lpSocketManager->m_CompletionPort, &IoSize, &completionKey, &lpOverlapped, INFINITE) == FALSE)
 		{
 			if (lpOverlapped == 0 || (GetLastError() != ERROR_NETNAME_DELETED && GetLastError() != ERROR_CONNECTION_ABORTED && GetLastError() != ERROR_OPERATION_ABORTED && GetLastError() != ERROR_SEM_TIMEOUT))
 			{
@@ -766,12 +766,20 @@ DWORD WINAPI CSocketManager::ServerWorkerThread(CSocketManager* lpSocketManager)
 
 		lpSocketManager->m_critical.lock();
 
-		if (IoSize == 0 && index == 0 && lpOverlapped == 0)
+		if (IoSize == 0 && completionKey == 0 && lpOverlapped == 0)
 		{
 			lpSocketManager->m_critical.unlock();
 
 			return 0;
 		}
+
+		// IOCP entrega una clave del ancho del puntero, aunque aquí representa un índice.
+		if (completionKey >= MAX_CLIENT || lpOverlapped == nullptr)
+		{
+			lpSocketManager->m_critical.unlock();
+			continue;
+		}
+		const int index = static_cast<int>(completionKey);
 
 		IO_CONTEXT* lpIoContext = (IO_CONTEXT*)lpOverlapped;
 
