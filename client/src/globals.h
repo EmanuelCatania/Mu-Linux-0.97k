@@ -334,7 +334,7 @@ extern int     DAT_005616a4;   // dialog Y (signed; ver globals.cpp)
 extern int     DAT_005616a8;   // camera X (signed; ver globals.cpp)
 extern DWORD   SelectedHero; // IDA: DAT_005616ac (0x005616AC)
 extern DWORD   DAT_005616b0;
-extern DWORD   DAT_005616b8;
+extern DWORD   TimeRemain; // IDA: TimeRemain (0x005616B8)
 extern DWORD   DAT_005617a0;
 extern char    DAT_00561a30[];   // "%s" format string used by Scene_CharSelect labels
 extern DWORD   DAT_00561b04;

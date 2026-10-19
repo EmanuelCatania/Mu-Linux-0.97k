@@ -19,7 +19,7 @@
 // Globals:
 //   SceneFlag  — SceneFlag
 //   World  — World
-//   DAT_005616b8  — frame budget accumulator (adds actual frame ms each frame)
+//   TimeRemain  — frame budget accumulator (adds actual frame ms each frame)
 //   DAT_083a7c54  — total frame counter
 //   DAT_083a7c00  — anti-tamper tick counter
 //   DAT_055ca018  — socket error flag (abort if set)
@@ -99,7 +99,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
-    while (DAT_005616b8 > 0x27) {
+    while (TimeRemain > 0x27) {
 
         // Anti-tamper: periodically re-randomize hash table when counter hits
         // a specific residue (0x39 mod 0x139). Not game logic.
@@ -184,7 +184,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         DAT_083a7c00++;
 
         // Consume 40ms of budget, count frame
-        DAT_005616b8  -= 0x28;
+        TimeRemain  -= 0x28;
         DAT_083a7c54  += 1;
         crt_sprintf(tickBuf, (const char*)&DAT_00561b04);
     }
@@ -345,7 +345,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/post_swap");
 
     // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    DAT_005616b8 += gFrameLimiter.Wait(renderStart);
+    TimeRemain += gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port
