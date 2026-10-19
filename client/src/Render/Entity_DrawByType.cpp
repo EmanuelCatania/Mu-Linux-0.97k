@@ -31,7 +31,7 @@
 //
 // ── Anti-tamper note ──────────────────────────────────────────────────────────
 // Type 0x14a contains an ~300-line HashTable encode/decode block operating on
-// DAT_083a7c00 (a local slot key). This is anti-tamper obfuscation,
+// MoveSceneFrame (a local slot key). This is anti-tamper obfuscation,
 // not game logic. The post-hash render logic IS implemented.
 
 #include "stdafx.h"
@@ -586,7 +586,7 @@ LAB_substate4_done:
         bool bNormalRender = false;
 
         if (!bDead) {
-            const int msf = (int)DAT_083a7c00;              // MoveSceneFrame
+            const int msf = (int)MoveSceneFrame;              // MoveSceneFrame
             bNormalRender = (msf - AsObject(param_1)->InitialSceneFrame >= 0x19);
         }
 

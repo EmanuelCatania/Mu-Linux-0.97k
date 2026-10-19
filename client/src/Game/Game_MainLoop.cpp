@@ -21,7 +21,7 @@
 //   World  — World
 //   TimeRemain  — frame budget accumulator (adds actual frame ms each frame)
 //   TestTime  — total frame counter
-//   DAT_083a7c00  — anti-tamper tick counter
+//   MoveSceneFrame  — anti-tamper tick counter
 //   DAT_055ca018  — socket error flag (abort if set)
 //   DAT_083a42ec  — screenshot mode toggle (F12)
 //   DAT_083a7c48  — connection check enable
@@ -103,7 +103,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // Anti-tamper: periodically re-randomize hash table when counter hits
         // a specific residue (0x39 mod 0x139). Not game logic.
-        if (DAT_083a7c00 % 0x139 == 0x39) {
+        if (MoveSceneFrame % 0x139 == 0x39) {
             // Hash table rehash: reallocate with random offsets
             if (DAT_055c9be0 != NULL)
                 operator_delete((BYTE*)DAT_055c9be0);
@@ -173,15 +173,15 @@ void __cdecl Game_MainLoop(HDC param_1)
         // Frame index mod 32
         DAT_0839bc8c = (DAT_0839bc8c + 1) & 0x1f;
 
-        // Anti-tamper: track DAT_083a7c00 ref-count, then increment
+        // Anti-tamper: track MoveSceneFrame ref-count, then increment
         {
-            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
             if (idx == 0xffffffff) {
                 void* node = AntiTamper_HashNode(); *((BYTE*)node + 4) = 1;
-                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &MoveSceneFrame);
             }
         }
-        DAT_083a7c00++;
+        MoveSceneFrame++;
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;

@@ -5,7 +5,7 @@
 // Weather_Update — per-frame weather particle system update (846 lines).
 //
 // Manages 40 weather object slots at DAT_0839bcb0 (stride 0x1bc = 444 bytes).
-// Also uses HashTable anti-tamper pattern around DAT_083a7c00.
+// Also uses HashTable anti-tamper pattern around MoveSceneFrame.
 //
 // Weather types (short @ slot+2):
 //   0xae  = falling cloud / puff (LoginScene)
@@ -74,7 +74,7 @@
 //   DAT_0838bc70   — per-tile terrain attribute array
 //   World   — World
 //   MAIN_HASH_CLASS   — HashTable context (anti-tamper)
-//   DAT_083a7c00   — anti-tamper key
+//   MoveSceneFrame   — anti-tamper key
 //   _DAT_005524f0  — world grid scale
 //   _DAT_005524f4  — PI/180
 //   _DAT_005524f8  — grid unit
@@ -154,9 +154,9 @@ uint __cdecl Weather_Update(void)
     float  &fStack_20 = __fr[6],  &fStack_1c = __fr[7],  &fStack_18 = __fr[8];
     float  &fStack_14 = __fr[9],  &fStack_10 = __fr[10], &fStack_c  = __fr[11];
 
-    // ── Anti-tamper: HashTable reference-count increment for DAT_083a7c00 ─────
-    local_40 = &DAT_083a7c00;
-    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&DAT_083a7c00);
+    // ── Anti-tamper: HashTable reference-count increment for MoveSceneFrame ─────
+    local_40 = &MoveSceneFrame;
+    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&MoveSceneFrame);
     uVar13 = 0;
     local_40 = (DWORD *)0x0;
     if (DAT_055c9bd4 != 0) {
@@ -183,13 +183,13 @@ uint __cdecl Weather_Update(void)
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
                 if (uVar8 == 0xffffffff) goto LAB_00500f16;
-                uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
+                uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
                 puVar10 = (uVar8 == 0xffffffff) ? (DWORD *)0x0
                                                  : *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
                 cVar4 = *(char *)(puVar10 + 1);
                 *(unsigned char *)(puVar10 + 1) = cVar4 + 1U;
                 if ((unsigned char)(cVar4 + 1U) < 2)
-                    Packet_DecryptDword(&DAT_083a7c00, puVar10);
+                    Packet_DecryptDword(&MoveSceneFrame, puVar10);
                 goto LAB_00500f34;
             }
             uVar8 = (uVar8 + 1) % DAT_055c9bd4;
@@ -200,12 +200,12 @@ uint __cdecl Weather_Update(void)
 LAB_00500f16:
     pvVar9 = AntiTamper_HashNode();
     *(unsigned char *)((int)pvVar9 + 4) = 1;
-    HashTable_Insert(&MAIN_HASH_CLASS, pvVar9, &DAT_083a7c00);
+    HashTable_Insert(&MAIN_HASH_CLASS, pvVar9, &MoveSceneFrame);
 LAB_00500f34:
     // Anti-tamper: HashTable reference-count decrement
-    fStack_38 = DAT_083a7c00;
-    puStack_44 = &DAT_083a7c00;
-    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&DAT_083a7c00);
+    fStack_38 = MoveSceneFrame;
+    puStack_44 = &MoveSceneFrame;
+    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&MoveSceneFrame);
     uVar13 = 0;
     puStack_44 = (DWORD *)0x0;
     if (DAT_055c9bd4 != 0) {
@@ -232,13 +232,13 @@ LAB_00500f34:
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
                 if (uVar8 != 0xffffffff) {
-                    uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
+                    uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
                     puVar10 = (uVar8 == 0xffffffff) ? (DWORD *)0x0
                                                      : *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
                     cVar4 = *(char *)(puVar10 + 1);
                     *(char *)(puVar10 + 1) = cVar4 - 1;
                     if ((char)(cVar4 - 1) == '\0')
-                        Packet_EncryptDword(puVar10, &DAT_083a7c00);
+                        Packet_EncryptDword(puVar10, &MoveSceneFrame);
                 }
                 goto LAB_00501064;
             }

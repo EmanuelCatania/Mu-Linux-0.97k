@@ -1065,7 +1065,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 #define IDA_PORT_00445230 1
 #define CameraWalkCut       DAT_083a7af4
 #define CurrentCameraCount  DAT_005615e8
-extern DWORD   DAT_083a7c00;
+extern DWORD   MoveSceneFrame; // IDA: MoveSceneFrame (0x083A7C00)
 extern DWORD   DAT_083a7c04;   // in-game UI context A
 extern DWORD   DAT_083a7c08;   // in-game UI context B
 extern char    DAT_083a7c09;   // in-game UI flag byte

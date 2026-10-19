@@ -288,13 +288,13 @@ void __cdecl Effect_SpawnProximityHit(int param_1)
 // param_3: scale / frequency multiplier
 //
 // NOTE: The HashTable block at entry (FUN_0043d3e0/HashTable_GetIndex/HashTable_GetNode)
-// reads a frame counter (DAT_083a7c00) used as a phase seed — it's anti-tamper
-// ref-count obfuscation around the real value. Here we use DAT_083a7c00 directly.
+// reads a frame counter (MoveSceneFrame) used as a phase seed — it's anti-tamper
+// ref-count obfuscation around the real value. Here we use MoveSceneFrame directly.
 void __cdecl Ring_ComputeOrbit(int param_1, float *param_2, float param_3)
 {
   // 00473D90: the hash-table operations only protect the scene-frame read.
   // The visual orbit itself is the following direct trigonometric sequence.
-  const int frame = DAT_083a7c00;
+  const int frame = MoveSceneFrame;
   const int phase = frame + param_1;
   const double a = (double)param_3 * 0.048 * (double)(phase + 55555);
   const double b = (double)phase * ((double)param_3 * 0.061299998);

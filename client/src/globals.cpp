@@ -1108,7 +1108,7 @@ float&   DAT_083a7ad0 = CurrentCameraAngle[0];
 float&   DAT_083a7ad4 = CurrentCameraAngle[1];
 float&   DAT_083a7ad8 = CurrentCameraAngle[2];
 DWORD    DAT_083a7af4  = 0;
-DWORD    DAT_083a7c00  = 0;
+DWORD    MoveSceneFrame  = 0; // IDA: MoveSceneFrame (0x083A7C00)
 DWORD    DAT_083a7c10  = 0;
 // IDA: DAT_083a7c14 (0x083A7C14)
 int      LoginSubState  = 0;
