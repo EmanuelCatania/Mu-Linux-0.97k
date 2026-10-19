@@ -44,6 +44,7 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 #include "stdafx.h"
+#include "Render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
@@ -86,18 +87,17 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     #define local_20c local_228[7]   // matrix[1][3] — translation Y
     #define local_1fc local_228[11]  // matrix[2][3] — translation Z
 
-    // IDA `v70[3]`: los callees (sub_4404E0 anim1/anim2) leen 3 floats.
-    float afStack_204[3];    // = IDA v70[3] — anim param scratch
     // OBJECT local: `ItemObjectAttribute` escribe hasta offset 0x168 (360 bytes).
     // Dimensionado al stride del effect-entity pool (0x1bc = 444 bytes) y
     // `local_1ea` redirigido al offset +2 dentro del buffer (campo Type según IDA
     // `o[1]`).
     unsigned char local_1ec[0x1c0];     // local OBJECT — ItemObjectAttribute target
     #define local_1ea (*(unsigned short*)(local_1ec + 2))
-    float afStack_1dc[3];    // position scratch (passed to BMD_Animation/Skeleton_Transform)
+    // DESVIACION: inicializar el scratch evita que SIM dependa de residuos
+    // de la pila de la pasada de dibujo anterior.
+    float afStack_1dc[3] = {};
 
     float local_1c8;         // boss-head BoneHead flag
-    float afStack_3c[15];    // BoneTransform output scratch (passed to Skeleton_Transform)
 
     int   local_22c;         // cached model pointer = DAT_05828d58 + param_6*0xbc
     int   iVar7;             // model pointer (same as local_22c for most of fn)
@@ -107,6 +107,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // los efectos por tipo); se dibuja con el modelo propio del catálogo.
     const int drawModel = gContentCatalog.EntityDrawModel((const void*)(uintptr_t)param_4, param_6);
     iVar7 = DAT_05828d58 + drawModel * 0xbc;
+    EquipmentModelContext modelContext((void *)iVar7);
     AsModel(iVar7)->ContrastEnable = AsCharacter(param_4)->Object.ContrastEnable;  // ContrastEnable
     *(unsigned int *)&AsModel(iVar7)->BodyScale = *(unsigned int *)&AsCharacter(param_4)->Object.Scale;  // Scale
     AsModel(iVar7)->CurrentAction = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
@@ -611,23 +612,16 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                  (unsigned int*)afStack_1dc,             // Angle (reinterpreted)
                  afStack_1dc, '\x01', '\x01');
 
-    // ── 9. BMD_Transform (compute world-space vertices) ──────────────────────
-    // Skeleton_Transform: (model, BoneTransformBase, anim1, anim2, bbox, Translate)
-    Skeleton_Transform(pModel, (int)&DAT_06970a9c,
-                 afStack_204, afStack_204, afStack_3c, param_10);
-
-    // ── 10. RenderPartObject ─────────────────────────────────────────────────
-    // RenderPartObjectEffect: (localObj, Type, Light*, alpha, 8*Level, Option1, 0, flags)
-    {
-        unsigned char monsterIndex = AsCharacter(param_4)->MonsterIndex;
-        unsigned int baseRenderFlags = ((monsterIndex == 67) ? 0x102u : 0x2u);
-        RenderPartObjectEffect((int)local_1ec, drawModel,
-                     (float*)(param_4 + 800),     // Light offset +0x320
-                     AsCharacter(param_4)->Object.Alpha,  // alpha
-                     8u * (unsigned int)(unsigned char)param_7,  // 8*Level
-                     (unsigned char)param_8,                     // Option1
-                     0,
-                     baseRenderFlags | param_11);
+    // Se conserva el contexto de esta pieza: los siguientes links reutilizan
+    // el BMD, el scratch de huesos y a veces el PART del ala.
+    const unsigned int flags = AsCharacter(param_4)->MonsterIndex == 67 ? 0x102u : 0x2u;
+    Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + 800),
+        AsCharacter(param_4)->Object.Alpha, 8u * (unsigned char)param_7,
+        (unsigned char)param_8, flags | param_11, param_10);
+    if (drawModel == 790) {
+        // El objeto mínimo aporta el ángulo original; el dueño persistente es
+        // el personaje, nunca la dirección de ese temporal de la pila.
+        Equipment_EmitWing790(pModel, (int)local_1ec, param_4);
     }
 
     // ── 11. Per-weapon-type particle effects ─────────────────────────────────
@@ -674,10 +668,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             if (r1 == 0)
             {
                 int r2 = rand();
-                CreateSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
+                Equipment_AddSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
                              (float)(r2 % 0x168), r1);
             }
-            CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+            Equipment_AddSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
         }
 
@@ -739,12 +733,12 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         afStack_264[5] = 0.0f;
         Light[0] = fLum;
         BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
-        CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+        Equipment_AddSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
         Light[0] = 0.5f;
         Light[1] = 0.5f;
         float fVar15 = (float)sin((double)((float)WorldTime * _DAT_005528e0));
         Light[2] = 0.5f;
-        CreateSprite(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
+        Equipment_AddSprite(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
         return;
     }
 
@@ -761,7 +755,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         Light[2] = fLum * _DAT_00552530;
         for (int nBone = 0; nBone < 8; ++nBone) {
             BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
-            CreateSprite(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
+            Equipment_AddSprite(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
         }
         return;
@@ -828,10 +822,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             if (r1 == 0)
             {
                 int r2 = rand();
-                CreateSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
+                Equipment_AddSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
                              (float)(r2 % 0x168), r1);
             }
-            CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+            Equipment_AddSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             iVar7_loc++;
         } while (iVar7_loc < 10);
         return;
@@ -846,8 +840,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         afStack_264[5] = 0.0f;
         Light[1] = Light[0];
         BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
-        CreateSprite(0x4cf, afStack_264 + 6, 1.5f, Light, param_4, 0, 0);
-        CreateSprite(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, Light, param_4, 0, 0);
+        Equipment_AddSprite(0x4cf, afStack_264 + 6, 1.5f, Light, param_4, 0, 0);
+        Equipment_AddSprite(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, Light, param_4, 0, 0);
         return;
     }
 

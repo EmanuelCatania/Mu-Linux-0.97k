@@ -136,6 +136,7 @@
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Render\EquipmentVisuals.h" />
     <ClInclude Include="src\Game\RenderSnapshots.h" />
     <ClInclude Include="src\Game\SimulationPreparation.h" />
     <ClInclude Include="src\Entity\CharacterCloth.h" />
@@ -239,6 +240,7 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Render\EquipmentVisuals.cpp" />
     <ClCompile Include="src\Game\RenderSnapshots.cpp" />
     <ClCompile Include="src\Game\SimulationPreparation.cpp" />
     <ClCompile Include="src\Game\Game_MainLoop.cpp" />

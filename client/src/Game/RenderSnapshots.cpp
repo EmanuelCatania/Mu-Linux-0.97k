@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/EquipmentVisuals.h"
 #include "Game/RenderSnapshots.h"
 #include "Game/MapManager.h"
 #include <cmath>
@@ -199,6 +200,7 @@ void RenderSnapshots_EndStep() { Capture(false); }
 // DESVIACION: generaciones externas identifican reuso incluso dentro del mismo
 // paso, sin ampliar CHARACTER, PART_t, ITEM_t ni los pools del binario.
 void RenderSnapshots_NewCharacter(const void* entity) {
+    Equipment_Invalidate(entity);
     const int slot = CharacterSlot(entity);
     if (slot >= 0) ++characterGeneration[slot];
 }

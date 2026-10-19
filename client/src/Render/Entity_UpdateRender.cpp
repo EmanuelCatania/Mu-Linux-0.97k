@@ -3,6 +3,7 @@
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
+#include "Render/EquipmentVisuals.h"
 
 #pragma warning(disable: 4244 4305 4701 4702 4700)
 // Entity_UpdateRender.cpp  —  RenderCharacter @ 0x00456770  (2195 lines in Ghidra)
@@ -73,7 +74,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
-    bool bDeferWing = false;           // 0.97.20: ala del catálogo, va después del cuerpo
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
@@ -111,7 +111,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     #define local_34 (local_3c_buf[2])
     void *pvVar23 = NULL;   // model/BMD object (resolved via HashTable — see note)
     void *local_78 = NULL;  // same as pvVar23 in outer switch
-    void *local_74 = NULL;  // dead/anim flag
 
     // ── 2. Switch por TIPO DE MONSTRUO (+0x2EB) ──────────────────────────────
     char cVar6 = *(char *)((int)param_1 + 0x2eb);  // tipo de monstruo
@@ -335,31 +334,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                      *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
     }
 
-    // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
-    if (bVar7 == 0x2a) {
-        // Dual-axe: right weapon at Z=-40, left at Y=-40 angle=45
-        short *psVar1 = (short *)(param_1 + 0xa8);
-        *psVar1 = 0xea;
-        *(char *)(param_1 + 0xa9) = 9;
-        param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
-        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
-                     0xea, '\0', 0, '\0', '\x01', 0);
-        *psVar1 = 0xeb;
-        *(char *)(param_1 + 0xa9) = 0x3d;
-        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
-                     0xeb, '\0', 0, '\0', '\x01', 0);
-    }
-    else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
-        // Special class shield / weapon glow
-        short *psVar1 = (short *)(param_1 + 0xa8);
-        *(char *)(param_1 + 0xa9) = 1;
-        param_1[0xac] = 0x3e4ccccd;
-        if (bVar7 == 0x84) *psVar1 = 0x23a;
-        if (bVar7 == 0x85) *psVar1 = 0x1a3;
-        if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
-        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
-                     (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
-    }
+    Equipment_Draw((int)param_1, 0);
 
     // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
     // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
@@ -392,7 +367,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
     // ── 6. Scale / color from zone param + entity sub-state ──────────────────
-    float fVar32 = (float)(int)param_3 * _DAT_005524f8;
 
     // IDA RenderCharacter: siempre arma c+800/804/808 desde
     // RequestTerrainLight(o.x, o.y, Light) + o.ColorOffset[232..240].
@@ -458,152 +432,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xca) = L2;
     }
 
-    // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
-    // (Local_74 = `Bind` de IDA RenderCharacter: arma a la espalda.)
-    // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
-    // renombró la variable; la lógica queda tal cual el decompile.
-    {
-        bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-        local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
-        if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
-            local_74 = (void *)1;
-        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
-            local_74 = (void *)0;
-    }
-
-    // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
-    //
-    // SEGUNDA escritura de la luz del cuerpo.  Va aca a proposito: el cuerpo y
-    // sus partes ya se dibujaron mas arriba con la luz base, asi que esto solo
-    // afecta a lo que se renderiza DESPUES -- el bloque de armas y alas que
-    // sigue (RenderLinkObject sobre c + 672).  De ahi que un PK se vea con el
-    // cuerpo normal y las ALAS rojas, y no rojo entero.
-    //
-    // El `goto` del decompile (que saltaba de la rama de zona al cuerpo del
-    // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
-    // verde y azul, solo cambia el rojo.
-    {
-        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
-        bool bTint = false;
-        if (pkLevel < 6) {
-            // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
-            // duplicado de la escritura de mas arriba: es el reset que separa
-            // lo ya dibujado de lo que viene.  En el binario borra aca el
-            // tinte de las bebidas que dejo el bloque del heroe, de modo que
-            // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
-            // Sacarlo hace que el Ale tina tambien las alas.
-            *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
-            *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
-            *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
-
-            // Override de escala por zona (World - 9 en [1..7])
-            const int iSub = (int)gMapManager.GetCurrentMap() - 9;
-            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
-            const bool bInRange =
-                (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
-                (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
-                (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
-            if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
-                *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
-                bTint = true;
-            }
-        } else {
-            *(float *)(param_1 + 200) = 1.0f;   // PKLVL_KILLER: rojo
-            bTint = true;
-        }
-        if (bTint) {
-            *(float *)(param_1 + 0xc9) = 0.1f;
-            *(float *)(param_1 + 0xca) = 0.1f;
-        }
-    }
-
-    bool bSkipWeaponLoop = false;
-    if (sVar2 == 0x186) {
-        // Equipped back items are rendered once by RenderCharacterBackItem below.
-        // IDA 0x4582BC..0x45830A: Bind = SafeZone || greeting (93..124) ||
-        // (World == 7 && swimming (21/29)), then cleared in Blood Castle.
-        // Icarus (World == 10) does NOT set Bind. The duplicate block here used
-        // World 10..16 + !SafeZone, drawing the elf's bow on bone 47 as well
-        // as the normal hand attachment while flying in Icarus.
-
-        // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
-        // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con
-        //     EtcPart 1 -> 570 (Staff)   2 -> 419 (Sword)   3 -> 546 (Bow)
-        // y LinkBone 47.  `c->EtcPart` es el byte +0x2E8 (= param_1[0xba] con
-        // param_1 como int*), que escribe el handler del 0x9B con el
-        // EventItemLevel que manda el server.
-        //
-        // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
-        // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
-        // siempre se alcanza.
-        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
-            (*(char *)(param_1 + 0xba) != 0)) {
-            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            char cType = *(char *)(param_1 + 0xba);
-            int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
-                           (cType == 2) ? 0x1a3 :   // 419 Sword
-                           (cType == 3) ? 0x222 : 0; // 546 Bow
-            if (iSecType != 0) {
-                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                             iSecType, 0, 0, 1, 1, 0);
-            }
-        }
-
-        // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
-        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
-        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
-        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
-        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
-            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
-            bDeferWing = true;
-        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
-            *(BYTE *)(param_1 + 0xa9) = 0x2f;
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                         (int)*(short *)(param_1 + 0xa8),
-                         *(char *)((int)param_1 + 0x2a2),
-                         *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
-        }
-
-        // Wings / shield bone (slot 0xae == 0x331)
-        if (*(short *)(param_1 + 0xae) == 0x331) {
-            *(BYTE *)(param_1 + 0xaf) = 0x22;
-            param_1[0xb2] = 0x3f000000; // 0.5f
-            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
-                         0x331,
-                         *(char *)((int)param_1 + 0x2ba),
-                         (UINT)(size_t)local_74, '\0', '\x01', 0);
-            // Trail spawn at transformed bone position
-            float fOff[3] = { 20.0f, 0.0f, 15.0f };
-            float fWorldPos[3];
-            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
-                         (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
-                         fOff, fWorldPos, '\x01');
-            float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
-            CreateSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
-        }
-
-        // ── Helper render (IDA 1267-1288) ──────────────────────────────────
-        // Pet helper (Type 817) attached at bone 34 of player.
-        Render_PlayerHelper((int)param_1, (int)puVar13);
-
-        // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
-        // Si bBindBack=1, renderiza armas en la espalda (LinkBone
-        // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
-        int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
-
-        bSkipWeaponLoop = bBindBack != 0;
-    }
-
-    // IDA LABEL_330 is reached by every entity. Only the back-item/wing/helper
-    // block above is player-specific; ordinary monster weapons continue through
-    // the shared two-slot renderer.
-    if (!bSkipWeaponLoop)
-        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+    Equipment_Draw((int)param_1, 1);
 
     // ── Restaurar la luz base antes de las partes del cuerpo ────────────────
     //
@@ -753,15 +582,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    if (bDeferWing) {
-        *(BYTE *)(param_1 + 0xa9) = 0x2f;
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                     (int)*(short *)(param_1 + 0xa8),
-                     *(char *)((int)param_1 + 0x2a2),
-                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
-    }
+    Equipment_Draw((int)param_1, 2);
 
     // ── 8. Death / PvP color tint ────────────────────────────────────────────
     // [hash-table obfuscation blocks skipped — anti-tamper, not game logic]
@@ -1096,4 +917,218 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     } // end switch(sVar2)
 
     return puVar13;
+}
+
+#undef local_60
+#undef local_5c
+#undef local_58
+
+// IDA: bloques de equipo de RenderCharacter (0x00456770).
+// DESVIACION: avanzan y emiten una vez por paso, con huesos de simulación.
+void Equipment_Tick(int entity, int highlighted)
+{
+    int *param_1 = (int *)entity, *puVar13 = (int *)entity;
+    short sVar2 = AsObject(entity)->Type;
+    BYTE bVar7 = AsCharacter(entity)->MonsterIndex;
+    bool bDeferWing = false;
+    void *local_74 = nullptr;
+    float fVar32 = (float)highlighted * _DAT_005524f8;
+    float savedLight[3];
+    memcpy(savedLight, (char *)param_1 + 800, sizeof(savedLight));
+    Equipment_BeginCharacter(entity);
+    _DAT_005597c8 = 1.0f;
+    Equipment_SetStage(0);
+    // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
+    if (bVar7 == 0x2a) {
+        // Dual-axe: right weapon at Z=-40, left at Y=-40 angle=45
+        short *psVar1 = (short *)(param_1 + 0xa8);
+        *psVar1 = 0xea;
+        *(char *)(param_1 + 0xa9) = 9;
+        param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
+        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
+                     0xea, '\0', 0, '\0', '\x01', 0);
+        *psVar1 = 0xeb;
+        *(char *)(param_1 + 0xa9) = 0x3d;
+        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
+                     0xeb, '\0', 0, '\0', '\x01', 0);
+    }
+    else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
+        // Special class shield / weapon glow
+        short *psVar1 = (short *)(param_1 + 0xa8);
+        *(char *)(param_1 + 0xa9) = 1;
+        param_1[0xac] = 0x3e4ccccd;
+        if (bVar7 == 0x84) *psVar1 = 0x23a;
+        if (bVar7 == 0x85) *psVar1 = 0x1a3;
+        if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
+        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
+                     (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
+    }
+
+
+    float light[3];
+    RequestTerrainLight(AsObject(entity)->Position[0], AsObject(entity)->Position[1], light);
+    float local_60 = light[0], local_5c = light[1], local_58 = light[2];
+    Equipment_SetStage(1);
+    // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
+    // (Local_74 = `Bind` de IDA RenderCharacter: arma a la espalda.)
+    // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
+    // renombró la variable; la lógica queda tal cual el decompile.
+    {
+        bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
+        if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
+            local_74 = (void *)1;
+        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
+            local_74 = (void *)0;
+    }
+
+    // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
+    //
+    // SEGUNDA escritura de la luz del cuerpo.  Va aca a proposito: el cuerpo y
+    // sus partes ya se dibujaron mas arriba con la luz base, asi que esto solo
+    // afecta a lo que se renderiza DESPUES -- el bloque de armas y alas que
+    // sigue (RenderLinkObject sobre c + 672).  De ahi que un PK se vea con el
+    // cuerpo normal y las ALAS rojas, y no rojo entero.
+    //
+    // El `goto` del decompile (que saltaba de la rama de zona al cuerpo del
+    // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
+    // verde y azul, solo cambia el rojo.
+    {
+        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
+        bool bTint = false;
+        if (pkLevel < 6) {
+            // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
+            // duplicado de la escritura de mas arriba: es el reset que separa
+            // lo ya dibujado de lo que viene.  En el binario borra aca el
+            // tinte de las bebidas que dejo el bloque del heroe, de modo que
+            // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
+            // Sacarlo hace que el Ale tina tambien las alas.
+            *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
+            *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
+            *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+
+            // Override de escala por zona (World - 9 en [1..7])
+            const int iSub = (int)gMapManager.GetCurrentMap() - 9;
+            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
+            const bool bInRange =
+                (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
+                (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
+                (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
+            if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
+                *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
+                bTint = true;
+            }
+        } else {
+            *(float *)(param_1 + 200) = 1.0f;   // PKLVL_KILLER: rojo
+            bTint = true;
+        }
+        if (bTint) {
+            *(float *)(param_1 + 0xc9) = 0.1f;
+            *(float *)(param_1 + 0xca) = 0.1f;
+        }
+    }
+
+    bool bSkipWeaponLoop = false;
+    if (sVar2 == 0x186) {
+        // Equipped back items are rendered once by RenderCharacterBackItem below.
+        // IDA 0x4582BC..0x45830A: Bind = SafeZone || greeting (93..124) ||
+        // (World == 7 && swimming (21/29)), then cleared in Blood Castle.
+        // Icarus (World == 10) does NOT set Bind. The duplicate block here used
+        // World 10..16 + !SafeZone, drawing the elf's bow on bone 47 as well
+        // as the normal hand attachment while flying in Icarus.
+
+        // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
+        // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con
+        //     EtcPart 1 -> 570 (Staff)   2 -> 419 (Sword)   3 -> 546 (Bow)
+        // y LinkBone 47.  `c->EtcPart` es el byte +0x2E8 (= param_1[0xba] con
+        // param_1 como int*), que escribe el handler del 0x9B con el
+        // EventItemLevel que manda el server.
+        //
+        // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
+        // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
+        // siempre se alcanza.
+        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
+            (*(char *)(param_1 + 0xba) != 0)) {
+            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
+            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            char cType = *(char *)(param_1 + 0xba);
+            int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
+                           (cType == 2) ? 0x1a3 :   // 419 Sword
+                           (cType == 3) ? 0x222 : 0; // 546 Bow
+            if (iSecType != 0) {
+                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                             iSecType, 0, 0, 1, 1, 0);
+            }
+        }
+
+        // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
+        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
+        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
+        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
+        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
+            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
+            bDeferWing = true;
+        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
+            *(BYTE *)(param_1 + 0xa9) = 0x2f;
+            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                         (int)*(short *)(param_1 + 0xa8),
+                         *(char *)((int)param_1 + 0x2a2),
+                         *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+        }
+
+        // Wings / shield bone (slot 0xae == 0x331)
+        if (*(short *)(param_1 + 0xae) == 0x331) {
+            *(BYTE *)(param_1 + 0xaf) = 0x22;
+            param_1[0xb2] = 0x3f000000; // 0.5f
+            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
+                         0x331,
+                         *(char *)((int)param_1 + 0x2ba),
+                         (UINT)(size_t)local_74, '\0', '\x01', 0);
+            // Trail spawn at transformed bone position
+            float fOff[3] = { 20.0f, 0.0f, 15.0f };
+            float fWorldPos[3];
+            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
+                         (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
+                         fOff, fWorldPos, '\x01');
+            float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
+            Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
+        }
+
+        // ── Helper render (IDA 1267-1288) ──────────────────────────────────
+        // Pet helper (Type 817) attached at bone 34 of player.
+        Render_PlayerHelper((int)param_1, (int)puVar13);
+
+        // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
+        // Si bBindBack=1, renderiza armas en la espalda (LinkBone
+        // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
+        int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
+
+        bSkipWeaponLoop = bBindBack != 0;
+    }
+
+    // IDA LABEL_330 is reached by every entity. Only the back-item/wing/helper
+    // block above is player-specific; ordinary monster weapons continue through
+    // the shared two-slot renderer.
+    if (!bSkipWeaponLoop)
+        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+
+
+    Equipment_SetStage(2);
+    if (bDeferWing) {
+        *(BYTE *)(param_1 + 0xa9) = 0x2f;
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                     (int)*(short *)(param_1 + 0xa8),
+                     *(char *)((int)param_1 + 0x2a2),
+                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+    }
+
+
+    memcpy((char *)param_1 + 800, savedLight, sizeof(savedLight));
+    Equipment_EndCharacter();
 }

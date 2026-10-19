@@ -7,6 +7,7 @@
 #include "Render/Camera.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
+#include "Render/EquipmentVisuals.h"
 
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
 extern "C" void HeroEquipWatchdog(int entity);
@@ -116,6 +117,10 @@ void PrepareCharacter(CHARACTER &c) {
     if ((void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5) o.Visible = 1;
     ObjectPose_PrepareSimulation((int)&c, 1);
     CharacterCloth_Tick((int)&c);
+    const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
+    const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;
+    const int highlighted = !hero && (slot == SelectedCharacter || slot == SelectedNpc);
+    Equipment_Tick((int)&c, highlighted);
     memcpy(model, context, sizeof(context));
     const bool subtypeNpc = o.Type == 390 && o.SubType >= 206 && o.SubType <= 208;
     if (!subtypeNpc && !c.Change) {
@@ -143,6 +148,7 @@ bool SceneReady() {
 
 void Simulation_PrepareStep()
 {
+    Equipment_BeginStep();
     if (!SceneReady() || !DAT_07abf5d0 || !DAT_05828d58) return;
     PrepareCamera();
     // BMD_Animation usa estos temporales compartidos; la publicación SIM sólo
