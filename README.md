@@ -28,6 +28,8 @@ docker compose -f docker-compose.images.yml up -d --no-deps mu-server
 
 Para fijar la versión, usá la imagen `emapupi/mu-linux-97k:0.97.30` (amd64 y arm64). Un volumen persistente no se actualiza con el pull: agregá en tu `Data/Command.txt` las cuatro filas de los comandos GM nuevos, como se explica en [Administración](#administración-eventos-gm-y-recargas). MySQL, la web y el editor no cambian.
 
+**Compilando desde el código (`docker-compose.yml`):** su servicio MySQL pasa de la imagen `mysql:5.7` a `mysql:8.4.11`, la misma versión que la imagen publicada. Un volumen creado con 5.7 no arranca con 8.4: antes de actualizar, seguí la [guía de migración a 8.4](docs/mysql-8.4-upgrade.md). El compose de imágenes publicadas ya usaba 8.4 y no cambia.
+
 **Pterodactyl:** seleccioná `0.97.30` en `MU_RELEASE_TAG`. En instalaciones existentes, con el servidor detenido, extraé el archivo de tu arquitectura de este Release en una carpeta temporal, reemplazá los cuatro binarios y `start.sh`, y agregá las filas de `Command.txt`, conservando tus INI y Data.
 
 ### Compilar y correr en Windows (sin Docker)
@@ -194,7 +196,7 @@ Basado en las sources de Kayito.
 
 ## Estado del cliente
 
-El cliente basado en inyección de DLL está completamente deprecado y fue retirado de este repositorio junto con sus fuentes y el Encoder ejecutable. Usá el [cliente basado en sources 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Los archivos antiguos siguen disponibles en la historia de Git. Las tablas de `MuServer/Data/Custom/Encoder/` se conservan porque las consume el catálogo del servidor.
+El cliente basado en inyección de DLL está completamente deprecado y fue retirado de este repositorio junto con sus fuentes y el Encoder ejecutable. Usá el [cliente basado en sources 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30). Los archivos antiguos siguen disponibles en la historia de Git. Las tablas de `MuServer/Data/Custom/Encoder/` se conservan porque las consume el catálogo del servidor.
 
 ## Inicio rápido
 
