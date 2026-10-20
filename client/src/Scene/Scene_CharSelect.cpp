@@ -194,7 +194,8 @@ void SceneCharSelect_PrepareLighting()
 {
     const float pulse=(float)((float10)sinl((long double)WorldTime *
         (long double)_DAT_005528e0) * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
-    const float brightness=DAT_005616b0>=0 ? 0.2f : pulse;
+    // El slot de creación usa DWORD con sentinel -1; IDA lo compara con signo.
+    const float brightness=(int)DAT_005616b0>=0 ? 0.2f : pulse;
     if (DAT_083a021c) {
         OBJECT &hover=*AsObject(DAT_083a021c);
         hover.Light[0]=hover.Light[1]=hover.Light[2]=brightness;
