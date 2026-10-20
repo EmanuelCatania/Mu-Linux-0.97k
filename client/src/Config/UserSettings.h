@@ -118,6 +118,7 @@ public:
     void SetSoundLevel(int level);
     void SetMusicLevel(int level);
     void SetWindow(bool windowMode, bool borderless, int resolution);
+    bool SetPresentation(bool decoupled, bool vsync, int fpsLimit);
     int  GetMiniMapAlpha() const { return m_MiniMapAlpha; }
     int  GetMiniMapZoom()  const { return m_MiniMapZoom; }
     void SetMiniMap(int alpha, int zoom);

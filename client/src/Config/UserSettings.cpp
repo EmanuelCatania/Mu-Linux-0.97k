@@ -4,6 +4,8 @@
 #include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Config/UserSettings.h"
+#include "Game/FrameLimiter.h"
+#include "Platform/IGLContext.h"
 #include <cerrno>
 #include <climits>
 #include <cctype>
@@ -188,6 +190,21 @@ void CUserSettings::SetAntilag(eAntilag option, bool enabled)
     if (option < 0 || option >= MAX_ANTILAG) return;
     m_Antilag[option] = enabled;
     SaveInt("Antilag", AntilagKey(option), enabled ? 1 : 0);
+}
+
+// DESVIACION: aplicar preferencias de dibujo en caliente sin reiniciar el reloj SIM.
+// Si el driver rechaza VSync se conserva la preferencia anterior y no se guarda.
+bool CUserSettings::SetPresentation(bool decoupled, bool vsync, int fpsLimit)
+{
+    if (fpsLimit<0) return false;
+    if (vsync!=m_VSync && !Platform::GetGLContext().SetSwapInterval(vsync ? 1 : 0)) return false;
+    m_RenderDecoupled=decoupled; m_VSync=vsync; m_FpsLimit=fpsLimit;
+    gFrameLimiter.SetRenderDecoupled(decoupled);
+    gFrameLimiter.SetFpsLimit(fpsLimit);
+    SaveInt("Window","RenderDecoupled",decoupled ? 1 : 0);
+    SaveInt("Window","VSync",vsync ? 1 : 0);
+    SaveInt("Window","FpsLimit",fpsLimit);
+    return true;
 }
 
 void CUserSettings::SetWindow(bool windowMode, bool borderless, int resolution)

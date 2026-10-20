@@ -10,6 +10,7 @@ enum class ClientTextId {
     AntilagWorld, AntilagEffects, AntilagInterface,
     ScreenWindowed, ScreenFullscreen, ScreenBorderless,
     FontBold, FontItalic,
+    RenderDecoupled, RenderVSync, RenderFps, RenderUnlimited, RenderVSyncUnavailable,
     MiniMapGate, MiniMapZoom, MiniMapAlpha,
     ReconnectConnecting, ReconnectLogin, ReconnectCharList, ReconnectCharInfo,
     Count

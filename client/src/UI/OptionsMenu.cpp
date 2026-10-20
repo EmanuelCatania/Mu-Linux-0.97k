@@ -489,6 +489,21 @@ int CurrentResolution()
 }
 }
 
+namespace {
+// Orden por FPS; 0 representa sin límite. Un valor personalizado del INI se
+// conserva al abrir y las flechas eligen su vecino sin normalizarlo en secreto.
+const int RenderLimits[]={25,30,60,120,144,0};
+int AdjacentRenderLimit(int current, int direction) {
+    if (direction>0) {
+        if (!current) return 0;
+        for (int value:RenderLimits) if (value>current) return value;
+        return 0;
+    }
+    if (!current) return 144;
+    for (int i=4;i>=0;--i) if (RenderLimits[i]<current) return RenderLimits[i];
+    return current;
+}
+}
 void COptionsMenu::RenderScreen()
 {
     int row = 0;
@@ -502,6 +517,14 @@ void COptionsMenu::RenderScreen()
     Platform::TextFormatSecure(text, "%lu x %lu", (unsigned long)gWindow.GetWidth(), (unsigned long)gWindow.GetHeight());
     const int resolution = CurrentResolution();
     RenderSelector((float)RowY(row++), text, resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
+    // DESVIACION: controles de presentación dentro del panel Pantalla existente.
+    RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
+    RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSync),gUserSettings.GetVSync());
+    if (m_VSyncUnavailable) RenderButton((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSyncUnavailable),true);
+    const int fps=gUserSettings.GetFpsLimit();
+    if (fps) Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFps),fps);
+    else Platform::TextCopySecure(text,gClientText.Get(ClientTextId::RenderUnlimited));
+    RenderSelector((float)RowY(row++),text,fps==0 || fps>25,fps!=0);
     RenderButton((float)RowY(row), GlobalText[925]);
 }
 
@@ -525,6 +548,21 @@ bool COptionsMenu::UpdateScreen()
     const int step = UpdateSelector(RowY(row++), resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
     if (step != INT_MIN) {
         if (step) ApplyScreen(windowMode, borderless, resolution < 0 ? 0 : resolution + step);
+        return true;
+    }
+    if (UpdateToggle(RowY(row++),clicked)) {
+        if (clicked) gUserSettings.SetPresentation(!gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),gUserSettings.GetFpsLimit());
+        return true;
+    }
+    if (UpdateToggle(RowY(row++),clicked)) {
+        if (clicked) m_VSyncUnavailable=!gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),!gUserSettings.GetVSync(),gUserSettings.GetFpsLimit());
+        return true;
+    }
+    if (m_VSyncUnavailable && UpdateToggle(RowY(row++),clicked)) return true;
+    const int fps=gUserSettings.GetFpsLimit();
+    const int fpsStep=UpdateSelector(RowY(row++),fps==0 || fps>25,fps!=0);
+    if (fpsStep!=INT_MIN) {
+        if (fpsStep) gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),gUserSettings.GetVSync(),AdjacentRenderLimit(fps,fpsStep));
         return true;
     }
     if (!UpdateToggle(RowY(row), clicked)) return false;
