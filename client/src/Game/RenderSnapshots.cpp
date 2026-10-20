@@ -231,7 +231,12 @@ RenderPose RenderSnapshots_Interpolate(const RenderPosePair& pair, float alpha) 
     if (sameAction && pose.animationFrame >= pair.previous.animationFrame &&
         pose.priorAnimationFrame >= pair.previous.priorAnimationFrame) {
         pose.animationFrame = Blend(pair.previous.animationFrame, pose.animationFrame, alpha);
-        pose.priorAnimationFrame = Blend(pair.previous.priorAnimationFrame, pose.priorAnimationFrame, alpha);
+        // IDA: BMD__PlayAnimation (0x00440AA0) cambia PriorFrame al cruzar
+        // una clave entera; BMD_Animation lo trunca para indexar esa clave.
+        // DESVIACION: elegir el índice de la pareja correspondiente al frame
+        // visual, sin interpolarlo como un contador continuo.
+        pose.priorAnimationFrame = (int)pose.animationFrame == (int)pair.previous.animationFrame ?
+            pair.previous.priorAnimationFrame : pair.current.priorAnimationFrame;
     }
     pose.scale = Blend(pair.previous.scale, pose.scale, alpha);
     pose.alpha = Blend(pair.previous.alpha, pose.alpha, alpha);

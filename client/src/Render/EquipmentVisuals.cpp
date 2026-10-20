@@ -2,6 +2,7 @@
 #include "Render/MaterialVisuals.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
+#include "Game/RenderSnapshots.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/MapManager.h"
 #include <vector>
@@ -196,8 +197,12 @@ void Equipment_Draw(int entity, int stage) {
             if (same && old->partState.CurrentAction==mesh.partState.CurrentAction && old->partState.PriorAction==mesh.partState.PriorAction &&
                 ((const BMD *)old->context)->CurrentAction==context.CurrentAction &&
                 frame>=old->partState.AnimationFrame && prior>=old->partState.PriorAnimationFrame) {
-                frame=RenderBlend(old->partState.AnimationFrame,frame,alpha);
-                prior=RenderBlend(old->partState.PriorAnimationFrame,prior,alpha);
+                RenderPosePair pair{}; pair.continuous=true;
+                pair.previous.animationFrame=old->partState.AnimationFrame;
+                pair.previous.priorAnimationFrame=old->partState.PriorAnimationFrame;
+                pair.current.animationFrame=frame; pair.current.priorAnimationFrame=prior;
+                const RenderPose pose=RenderSnapshots_Interpolate(pair,alpha);
+                frame=pose.animationFrame; prior=pose.priorAnimationFrame;
             }
             unsigned int priorBits; memcpy(&priorBits,&prior,sizeof(priorBits));
             float zero[3]{};
