@@ -35,6 +35,8 @@
 // not game logic. The post-hash render logic IS implemented.
 
 #include "stdafx.h"
+#include "Game/RenderInterpolation.h"
+#include "Game/RenderInterpolationMath.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -144,21 +146,28 @@ static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
 }
 
 namespace {
-struct MoltEdgeSample { float p1[3], p2[3], jitter; };
+struct MoltEdgeSample { float p1[3], p2[3], jitter; short first,second,mesh; };
 struct MoltSample {
     float direction[3];
     std::uint64_t generation;
     bool registered;
     std::vector<MoltEdgeSample> edges;
+    std::unordered_map<std::uint64_t,size_t> edgeIndex;
 };
-std::unordered_map<const void *, MoltSample> moltSamples;
+std::unordered_map<const void *, MoltSample> moltSamples, previousMoltSamples;
+std::uint64_t MoltEdgeKey(const MoltEdgeSample &edge) {
+    return (std::uint64_t)(unsigned short)edge.first | ((std::uint64_t)(unsigned short)edge.second<<16) |
+        ((std::uint64_t)(unsigned short)edge.mesh<<32);
+}
 int moltScene=-1, moltWorld=-1;
 }
 void MoltSilhouette_BeginStep() {
+    previousMoltSamples.swap(moltSamples);
+    if (moltScene!=SceneFlag || moltWorld!=gMapManager.GetCurrentMap()) previousMoltSamples.clear();
     moltSamples.clear();
     moltScene=SceneFlag; moltWorld=gMapManager.GetCurrentMap();
 }
-void MoltSilhouette_Invalidate(const void *entity) { moltSamples.erase(entity); }
+void MoltSilhouette_Invalidate(const void *entity) { moltSamples.erase(entity); previousMoltSamples.erase(entity); }
 // DESVIACION: geometría y una muestra de azar por arista desde la pose SIM.
 // No se consume azar ni se modifican marcas de triángulos en los draws extra.
 void MoltSilhouette_Tick(int entity, void *model, float *bones, char translate) {
@@ -174,17 +183,18 @@ void MoltSilhouette_Tick(int entity, void *model, float *bones, char translate) 
     auto *vertices=(unsigned char *)&DAT_0584621c;
     MoltSilhouette_Build(&silhouette, vertices, (unsigned char *)model, (unsigned char *)entity);
     MoltSample &sample=moltSamples[(void *)entity];
-    sample.edges.clear();
+    sample.edges.clear(); sample.edgeIndex.clear();
     sample.registered=SceneObjects::Contains((void *)entity);
     sample.generation=SceneObjects::Generation((void *)entity);
     memcpy(sample.direction, silhouette.dir, sizeof(sample.direction));
     for (int i=0; i<silhouette.count; ++i) {
         const short *edge=(const short *)(silhouette.edges+10*i);
         const int base=15000*edge[2];
-        MoltEdgeSample value;
+        MoltEdgeSample value; value.first=edge[0]; value.second=edge[1]; value.mesh=edge[2];
         memcpy(value.p1, vertices+12*(base+edge[0]), sizeof(value.p1));
         memcpy(value.p2, vertices+12*(base+edge[1]), sizeof(value.p2));
         value.jitter=(float)((double)(rand()%100)*0.0099999998);
+        sample.edgeIndex.emplace(MoltEdgeKey(value),sample.edges.size());
         sample.edges.push_back(value);
     }
     operator delete(silhouette.edges);
@@ -200,8 +210,23 @@ static void MoltSilhouette_Render(unsigned char *, unsigned char *o) {
     MoltSilhouette silhouette={};
     memcpy(silhouette.dir, sample.direction, sizeof(silhouette.dir));
     extern void MoltSilhouette_DrawEdge(void *, float *, float *, float);
-    for (MoltEdgeSample &edge:sample.edges)
-        MoltSilhouette_DrawEdge(&silhouette, edge.p1, edge.p2, edge.jitter);
+    const auto previous=previousMoltSamples.find(o);
+    const bool continuous=RenderInterpolation_OwnerContinuous(o) && previous!=previousMoltSamples.end() &&
+        previous->second.generation==sample.generation && previous->second.registered==sample.registered;
+    for (const MoltEdgeSample &edge:sample.edges) {
+        float p1[3],p2[3]; memcpy(p1,edge.p1,sizeof(p1)); memcpy(p2,edge.p2,sizeof(p2));
+        if (continuous) {
+            const auto found=previous->second.edgeIndex.find(MoltEdgeKey(edge));
+            if (found!=previous->second.edgeIndex.end()) {
+                const MoltEdgeSample &old=previous->second.edges[found->second];
+                for (int axis=0;axis<3;++axis) {
+                    p1[axis]=RenderBlend(old.p1[axis],edge.p1[axis],RenderInterpolation_Alpha());
+                    p2[axis]=RenderBlend(old.p2[axis],edge.p2[axis],RenderInterpolation_Alpha());
+                }
+            }
+        }
+        MoltSilhouette_DrawEdge(&silhouette,p1,p2,edge.jitter);
+    }
 }
 
 void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char param_4)
