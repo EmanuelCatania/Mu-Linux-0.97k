@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Game/RenderDerivedState.h"
+#include "Game/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
 #include "Item/ItemDefines.h"
 #include "Game/MapManager.h"
@@ -43,7 +44,7 @@ void SaveObject(void *address, std::size_t size, bool registered=false) {
 // DESVIACION: los cambios de presentación viven durante la pasada completa,
 // conservando su orden interno. Ninguna pose/OBB/material interpolados llegan
 // al siguiente input o tick. Las altas invalidan su copia previa; no se
-// suprimen llamadas a creadores ni se restauran joints, partículas o sprites.
+// suprimen llamadas a creadores. Los sprites conservan su Capture/ReplayStep.
 void RenderDerivedState_Begin() {
     active=false; used=0; savedObjects.clear();
     const bool ready=SceneFlag==2 ? DAT_083a7c49!=0 :
@@ -60,6 +61,7 @@ void RenderDerivedState_Begin() {
     for (int slot=0; slot<40; ++slot) SaveObject(g_WeatherSlotPool+slot*0x1bc,sizeof(OBJECT));
     for (int slot=0; slot<10; ++slot) SaveObject(DAT_083a1218+slot*0x1bc,sizeof(OBJECT));
     for (const void *object:SceneObjects::LiveNodes()) SaveObject((void *)object,sizeof(OBJECT),true);
+    RenderFxSnapshots_SaveRenderState();
     if (models) Save((void *)models,MODEL_MAX_TOTAL*0xbc);
     Save(DAT_05826e18,sizeof(DAT_05826e18));
     Save(g_BoneScratch,sizeof(g_BoneScratch));
@@ -74,6 +76,11 @@ void RenderDerivedState_Begin() {
     Save(&ObjectSelect_PriorAnimationFrame,sizeof(ObjectSelect_PriorAnimationFrame));
     Save(&ObjectSelect_PriorAction,sizeof(ObjectSelect_PriorAction));
 }
+void RenderDerivedState_SaveFx(void *slot, std::size_t size) {
+    if (active && savedObjects.insert(slot).second) Save(slot,size,slot);
+}
+// Una recarga puede conservar escena/mapa/base BMD: invalida explícitamente.
+void RenderDerivedState_Cancel() { active=false; }
 void RenderDerivedState_Forget(const void *owner) {
     if (!active) return;
     for (std::size_t i=0; i<used; ++i) if (blocks[i].owner==owner) blocks[i].valid=false;

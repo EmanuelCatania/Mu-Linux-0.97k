@@ -1,6 +1,7 @@
 // Scene_OpenWorld.cpp
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -26,6 +27,7 @@ void __cdecl OpenWorld(void) {
     ClearItems();             // ClearItems
     ClearCharacters(HeroKey); // ClearCharacters(HeroKey)
 
+    RenderFxSnapshots_Reset();
     // Limpiar TODOS los pools de char-select que sobreviven al world load (si no,
     // los tick-functions iteran slots con punteros basura).
     memset(DAT_07abf5f0, 0, sizeof(DAT_07abf5f0));   // particle pool (3000×0x70)

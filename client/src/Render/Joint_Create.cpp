@@ -4,6 +4,7 @@
 // CreateJoint - creates a lightning/beam visual joint by type.
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -85,6 +86,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
       return nullptr;
     }
   }
+  RenderFxSnapshots_New(pcVar14);
   *pcVar14 = '\x01';
   AsJoint(pcVar14)->Type = param_1;
   *(undefined4 *)&AsJoint(pcVar14)->SubType = param_5;

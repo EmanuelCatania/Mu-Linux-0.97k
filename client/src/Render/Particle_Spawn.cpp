@@ -23,6 +23,7 @@
 //   +0x64  float[3] prev_xyz     (copy of world_xyz for some types)
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #include <array>
 #include "globals.h"
 #include "functions.h"
@@ -315,6 +316,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         if (iVar6 >= 3000)
             return 0;
     }
+
+    RenderFxSnapshots_New(pcVar11);
 
     // ── base initialisation ────────────────────────────────────────────────────
     *(int *)(pcVar11 + 8)  = param_5;
