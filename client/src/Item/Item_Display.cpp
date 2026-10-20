@@ -87,7 +87,10 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     // chicos en algunos caminos, igual que en los guards del tooltip.
     const char* name = "";
     {
-        int attrIdx = (int)v7 - ITEM_MODEL_BASE;
+        // DESVIACION (0.97.32): un item con modelo propio no cumple
+        // modelo = tipo + 400; el catálogo da el tipo de ese modelo.
+        int attrIdx = gContentCatalog.GetModelItemType((int)v7);
+        if (attrIdx < 0) attrIdx = (int)v7 - ITEM_MODEL_BASE;
         unsigned int abase = ItemAttribute_Base();
         if (abase && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
