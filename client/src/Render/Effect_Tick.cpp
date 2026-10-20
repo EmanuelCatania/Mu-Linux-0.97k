@@ -231,40 +231,26 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
 }
 
 
-// MovePlanes — Effect_TickFade
-// Iterates the fade-effect pool (base DAT_07c74ec8, stride 0x6f*4=0x1bc,
-// end 0x7c7fc38). For active slots: decrements lifetime counter; if
-// counter < 10 fades colour toward black; subtracts counter from Z velocity.
-// IDA: MovePlanes
+// IDA: MovePlanes (0x00475090), mismo pool que Player_Render (100 OBJECT).
 void Effect_TickFade(void)
 {
-  // Pool real DAT_07c74ec8[40 × 0x1bc].
-  int *piVar3 = (int*)DAT_07c74ec8;
-  const uintptr_t poolEnd = (uintptr_t)DAT_07c74ec8 + sizeof(DAT_07c74ec8);
-  int iVar1;
-  float fVar2;
-
-  do {
-    if ((char)piVar3[-0x18] != '\0') {
-      iVar1 = *piVar3;
-      *piVar3 = iVar1 + -1;
-      if (iVar1 + -1 < 1) {
-        *(undefined1 *)(piVar3 + -0x18) = 0;
-      }
-      Joint_BoneOffsetApply((int)(piVar3 + -0x18),1);
-      iVar1 = *piVar3;
-      if (iVar1 < 10) {
-        fVar2 = (float)iVar1 * _DAT_005524f4;
-        piVar3[0x22] = (int)(fVar2 * _DAT_00552534);
-        piVar3[0x23] = (int)fVar2;
-        piVar3[0x24] = (int)(fVar2 * _DAT_00552530);
-      }
-      piVar3[-0xf] = (int)((float)piVar3[-0xf] - (float)iVar1);
+  for (int index=0;index<100;++index) {
+    char *slot=g_PlayerRenderPool+index*0x1bc;
+    if (!slot[0]) continue;
+    int &life=*(int *)(slot+0x60);
+    --life;
+    if (life<=0) slot[0]=0;
+    Joint_BoneOffsetApply((int)slot,1);
+    // IDA lee/escribe estos campos como float, salvo el contador de vida.
+    if (life<10) {
+      const double fade=(double)life*(double)_DAT_005524f4;
+      *(float *)(slot+0xe8)=(float)(fade*(double)_DAT_00552534);
+      *(float *)(slot+0xec)=(float)fade;
+      *(float *)(slot+0xf0)=(float)(fade*(double)_DAT_00552530);
     }
-    piVar3 = piVar3 + 0x6f;
-  } while ((uintptr_t)piVar3 < poolEnd);
+    *(float *)(slot+0x24)-=(float)life;
+  }
 }
-
 
 // MovePointers — Effect_TickFlare
 // Iterates the flare-effect pool (base DAT_07c82cdc, stride 0x1c*4=0x70,
@@ -277,9 +263,9 @@ void Effect_TickFlare(void)
   float fVar2;
   float *pfVar3;
 
-  // Pool real DAT_07c82cdc[63 × 0x70].
-  pfVar3 = (float *)DAT_07c82cdc;
-  const uintptr_t poolEnd = (uintptr_t)DAT_07c82cdc + sizeof(DAT_07c82cdc);
+  // IDA: anclaje +12 de Pointers, 100 slots de 0x70.
+  pfVar3 = (float *)(g_PointerPool+12);
+  const uintptr_t poolEnd = (uintptr_t)g_PointerPool + sizeof(g_PointerPool)+12;
   do {
     if (*(char *)(pfVar3 + -3) != '\0') {
       // IDA MovePointers (0x004794A0) L20-21 -> `v1 = v0[11] - 1; v0[11] = v1;` con

@@ -2030,8 +2030,8 @@ extern BYTE    DAT_07ea5240[0x44];
 
 // ── Effect_Tick globals ───────────────────────────────────────────────────────
 extern float   _DAT_00552aac;  // effect tick float constant
-extern char    DAT_07c74ec8[40 * 0x1bc];   // Fade-effect pool: 40 × 0x1bc
-extern char    DAT_07c82cdc[63 * 0x70];   // Flare effect pool: 63 × 0x70 bytes
+// IDA: MovePlanes usa g_PlayerRenderPool +0x60; no tiene otra asignación.
+extern char    g_PointerPool[100 * 0x70]; // IDA: Pointers (0x07C82CD0).
 extern char    DAT_07c80128[100 * 0x70];   // Spark-effect pool: 100 × 0x70
 
 // ── Terrain_Light globals ─────────────────────────────────────────────────────
@@ -2467,7 +2467,7 @@ extern _SkillAttrEntry SkillAttribute;  // base of table @ 0x07D29D20
 extern LPVOID  DAT_07abf164;   // extra BMD data heap block for character models
 
 // ── FloatingLabel pool ────────────────────────────────────────────────────────
-extern char    DAT_07c82cd0;   // floating label pool base (stride 0x70, limit 0x7c8588f)
+#define DAT_07c82cd0 (g_PointerPool[0]) // IDA: base Pointers (0x07C82CD0).
 
 // ── Water wave simulation buffers ─────────────────────────────────────────────
 extern char    DAT_0814b6e0;   // water wave buffer A (256×256 ints, 2 banks × 0x40000 bytes)
@@ -2621,8 +2621,7 @@ extern DWORD   DAT_00563e00;       // codec state A
 // DAT_00560694 already declared above (line ~1616) as DWORD
 
 // Missing globals (compilation fixes)
-extern DWORD   DAT_07c82cf4[0xAF0];       // terrain alpha bitmap pool (0x2BC0 bytes = 100 slots * 112 bytes)
-#define DAT_07c858b4 DAT_07c82cf4[0xAF0-1]   // end-marker alias
+// IDA: RenderTerrainAlphaBitmaps usa g_PointerPool +0x24 y 100 slots.
 extern DWORD   DAT_0055339c;       // JPEG natural order table
 // m_dwTextColor / m_dwBackColor SON DAT_00559c78 / SetBackgroundTextColor (mismo global en IDA:
 // 0x559c78 / 0x559c80, verificado por disasm de sub_40D610 y sub_480980). El render de

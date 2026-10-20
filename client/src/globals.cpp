@@ -2027,9 +2027,10 @@ BYTE    DAT_07ea5240[0x44] = { 0 };
 // ── Effect_Tick globals ───────────────────────────────────────────────────────
 float   _DAT_00552aac  = 0.0833333358f;
 // Fade-effect pool — Effect_TickFade itera 40 slots × 0x1bc bytes.
-char    DAT_07c74ec8[40 * 0x1bc] = {};
+// DAT_07c74ec8 es el anclaje +0x60 de g_PlayerRenderPool, no otro pool.
 // Flare effect pool — Effect_TickFlare itera 63 slots × 0x70 bytes.
-char    DAT_07c82cdc[63 * 0x70] = {};
+// IDA: Pointers (0x07C82CD0), 100 slots de 0x70 compartidos por alta/tick/draw.
+char    g_PointerPool[100 * 0x70] = {};
 // Spark-effect pool — Effect_TickSpark itera 100 slots × 0x70 bytes.
 char    DAT_07c80128[100 * 0x70] = {};
 
@@ -2540,7 +2541,7 @@ BYTE   DAT_0055a770[3]    = { 0, 0, 0 };
 // DAT_07e118e8 (HeroTile) ya está definido como DWORD más arriba.
 _SkillAttrEntry SkillAttribute = {};   // skill attribute table base @ 0x07D29D20
 LPVOID DAT_07abf164       = nullptr;   // character extra BMD heap buffer
-char   DAT_07c82cd0       = 0;        // floating label pool base
+// DAT_07c82cd0 es el inicio de g_PointerPool.
 char   DAT_0814b6e0       = 0;        // water wave buffer A
 // Grass-wind / water-wave ping-pong buffer: sub_4F98C0 (setup) y sub_4F9A30
 // (smoothing) escriben `&DAT_0814b2e0 + 0x40000*toggle` → 2 buffers de 0x40000
@@ -2643,7 +2644,7 @@ DWORD  DAT_00563e00       = 0;
 // DAT_00560694 already defined above (line ~1922)
 
 // Missing globals (compilation fixes)
-DWORD  DAT_07c82cf4[0xAF0] = {};   // terrain alpha bitmap pool
+// DAT_07c82cf4 es el anclaje +0x24 de g_PointerPool.
 DWORD  DAT_0055339c       = 0;
 // m_dwTextColor / m_dwBackColor NO son globals separados: en IDA son EXACTAMENTE
 // 0x559c78 / 0x559c80 (= DAT_00559c78 / SetBackgroundTextColor). Verificado por disasm
