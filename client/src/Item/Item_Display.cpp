@@ -65,9 +65,19 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
 
     const int v5 = ItemLevel;
     const int v6 = (ItemLevel >> 3) & 0xF;
-    char  String[52];
+    // DESVIACION: IDA usa CHAR String[52] y concatena con strcat sin límite.
+    // Un nombre largo con nivel, skill, suerte y opción pasa de 52 bytes y
+    // pisa la pila (el crash del cliente con DLL). Buffer más grande y los
+    // agregados truncan en vez de desbordar.
+    char  String[256];
     float v38[3];
     String[0] = '\0';
+    auto AppendName = [&String](const char* text) {
+        if (!text) return;
+        size_t used = strlen(String);
+        while (*text && used + 1 < sizeof(String)) String[used++] = *text++;
+        String[used] = '\0';
+    };
 
     gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));   // g_hFont
     const short v7 = *(short*)(o + 2);
@@ -195,14 +205,14 @@ LABEL_121:
             // IDA escribe " +" (word_55A6B0) sobre el NUL y luego concatena
             // GlobalText[179] para el tipo 819; el resto usa GlobalText[176].
             if (v7 == MODEL_HELPER_DINORANT) {
-                strcat(String, " +");
-                strcat(String, GlobalText[179]);
+                AppendName(" +");
+                AppendName(GlobalText[179]);
             } else {
-                strcat(String, GlobalText[176]);
+                AppendName(GlobalText[176]);
             }
         }
-        if ((v5 & 3) != 0 || (ItemOption & 0x40) != 0) strcat(String, GlobalText[177]);
-        if ((v5 & 4) != 0)                             strcat(String, GlobalText[178]);
+        if ((v5 & 3) != 0 || (ItemOption & 0x40) != 0) AppendName(GlobalText[177]);
+        if ((v5 & 4) != 0)                             AppendName(GlobalText[178]);
         goto renderLabel;
     }
 
