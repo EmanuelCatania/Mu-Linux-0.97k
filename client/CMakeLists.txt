@@ -54,9 +54,11 @@ set(MU_SOURCES
     src/Scene/Scene_CharSelect.cpp
     src/Render/WorldEffects.cpp
     src/Render/MaterialVisuals.cpp
+    src/Render/LooseWingVisuals.cpp
     src/Render/EquipmentVisuals.cpp
     src/Game/RenderDerivedState.cpp
     src/Game/RenderSnapshots.cpp
+    src/Game/RenderFxSnapshots.cpp
     src/Game/SimulationPreparation.cpp
     src/Game/Game_MainLoop.cpp
     src/Game/HeroVitals.cpp
@@ -388,9 +390,11 @@ set(MU_HEADERS
     src/Entity/EntityView.h
     src/Render/WorldEffects.h
     src/Render/MaterialVisuals.h
+    src/Render/LooseWingVisuals.h
     src/Render/EquipmentVisuals.h
     src/Game/RenderDerivedState.h
     src/Game/RenderSnapshots.h
+    src/Game/RenderFxSnapshots.h
     src/Game/SimulationPreparation.h
     src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h

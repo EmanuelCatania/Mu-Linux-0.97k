@@ -3,7 +3,10 @@
 #include "Render/Entity_Render_3D.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/RenderSnapshots.h"
+#include "Game/RenderFxSnapshots.h"
+#include "Game/SimulationPreparation.h"
 #include "Game/MapManager.h"
+#include "Scene/ObjectRegistry.h"
 #include <cmath>
 #include <cstdint>
 
@@ -35,8 +38,32 @@ struct Track {
     bool published = false, continuous = false;
 };
 Track characters[401], parts[401][11], items[1000], points[100];
+std::unordered_map<const void*,Track> objects;
 std::uint64_t characterGeneration[401] = {}, itemGeneration[1000] = {}, pointGeneration[100] = {};
 int scene = -1, world = -1;
+RenderCameraPair camera;
+bool cameraPublished=false, cameraLive=false;
+const void* cameraOwner=nullptr;
+
+bool SameCameraMode(const RenderCameraPose& a, const RenderCameraPose& b) {
+    return a.mode==b.mode && !memcmp(a.viewport,b.viewport,sizeof(a.viewport));
+}
+void CaptureCamera(bool begin, bool sameScene) {
+    RenderCameraPose pose;
+    const bool live=Simulation_ReadCameraPose(pose);
+    const void* owner=SceneFlag==5 ? DAT_07abf5d8 : nullptr;
+    if (begin) {
+        camera.continuous=sameScene && cameraPublished && cameraLive && live && cameraOwner==owner &&
+            SameCameraMode(camera.current,pose);
+        camera.previous=pose;
+    } else {
+        camera.continuous=camera.continuous && sameScene && cameraLive && live && cameraOwner==owner &&
+            SameCameraMode(camera.previous,pose);
+        camera.current=pose;
+        cameraPublished=true;
+    }
+    cameraLive=live; cameraOwner=owner;
+}
 
 bool SameIdentity(const Sample& a, const Sample& b) {
     return a.live && b.live && a.generation == b.generation && a.owner == b.owner &&
@@ -135,6 +162,18 @@ Sample PointSample(int slot) {
 }
 void Capture(bool begin) {
     const bool sameScene = scene == SceneFlag && world == gMapManager.GetCurrentMap();
+    CaptureCamera(begin,sameScene);
+    if (!sameScene) objects.clear();
+    for (auto it=objects.begin();it!=objects.end();) {
+        if (!SceneObjects::Contains(it->first)) it=objects.erase(it);
+        else ++it;
+    }
+    for (const void *node:SceneObjects::LiveNodes()) {
+        Sample sample=ObjectSample(*(const OBJECT *)node);
+        sample.owner=(std::uintptr_t)node; sample.generation=SceneObjects::Generation(node);
+        if (begin) Begin(objects[node],sample,sameScene);
+        else End(objects[node],sample,sameScene);
+    }
     for (int slot = 0; slot < 401; ++slot) {
         if (begin) Begin(characters[slot], CharacterSample(slot), sameScene);
         else End(characters[slot], CharacterSample(slot), sameScene);
@@ -197,8 +236,8 @@ RenderPose RenderSnapshots_Interpolate(const RenderPosePair& pair, float alpha) 
     pose.alpha = Blend(pair.previous.alpha, pose.alpha, alpha);
     return pose;
 }
-void RenderSnapshots_BeginStep() { Capture(true); }
-void RenderSnapshots_EndStep() { Capture(false); }
+void RenderSnapshots_BeginStep() { Capture(true); RenderFxSnapshots_BeginStep(); }
+void RenderSnapshots_EndStep() { Capture(false); RenderFxSnapshots_EndStep(); }
 // DESVIACION: generaciones externas identifican reuso incluso dentro del mismo
 // paso, sin ampliar CHARACTER, PART_t, ITEM_t ni los pools del binario.
 void RenderSnapshots_NewCharacter(const void* entity) {
@@ -235,4 +274,40 @@ bool RenderSnapshots_Item(int slot, float maximum, RenderPosePair& out) {
 }
 bool RenderSnapshots_DamagePoint(int slot, RenderPosePair& out) {
     return slot >= 0 && slot < 100 && Read(points[slot], PointSample(slot), out);
+}
+
+// DESVIACION: publicar cámara previa/actual sin aplicarla al render todavía.
+bool RenderSnapshots_Camera(float maximum, RenderCameraPair& out) {
+    RenderCameraPose live;
+    if (!Simulation_ReadCameraPose(live)) return false;
+    out.previous=out.current=live; out.continuous=false;
+    if (!cameraPublished || !cameraLive || scene!=SceneFlag ||
+        world!=gMapManager.GetCurrentMap() || !SameCameraMode(camera.current,live)) return true;
+    out=camera;
+    float square=0;
+    for (int axis=0;axis<3;++axis) {
+        const float delta=out.current.position[axis]-out.previous.position[axis];
+        square+=delta*delta;
+    }
+    out.continuous=out.continuous && maximum>=0 && square<=maximum*maximum;
+    // Un respawn/teleport del seguido corta también la pareja de cámara.
+    if (SceneFlag==5) {
+        RenderPosePair followed;
+        const int slot=CharacterSlot(DAT_07abf5d8);
+        out.continuous=out.continuous && cameraOwner==DAT_07abf5d8 &&
+            RenderSnapshots_Character(slot,maximum,followed) && followed.continuous;
+    }
+    return true;
+}
+
+// Los nodos de CreateObject pueden liberarse entre pasos: validar antes de leer.
+bool RenderSnapshots_Object(const void* node, float maximum, RenderPosePair& out) {
+    if (!SceneObjects::Contains(node)) return false;
+    Sample live=ObjectSample(*(const OBJECT *)node);
+    live.owner=(std::uintptr_t)node; live.generation=SceneObjects::Generation(node);
+    const auto found=objects.find(node);
+    const Track empty;
+    if (!Read(found!=objects.end() ? found->second : empty,live,out)) return false;
+    LimitDisplacement(out,maximum);
+    return true;
 }

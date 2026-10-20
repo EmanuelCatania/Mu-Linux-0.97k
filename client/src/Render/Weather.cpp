@@ -100,6 +100,7 @@
 //   Math_Fabs   — terrain height at angle
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 
 // Campos float del slot (OBJECT de 444 bytes).  Las macros DAT_0839bXXX
 // estan tipadas como unsigned int; WSF reinterpreta los bits.  Leerlos con
@@ -316,6 +317,7 @@ LAB_00501064:
                 uVar8  = iVar11 / 300;
                 iVar12 = gMapManager.GetCurrentMap();
                 if (iVar11 % 300 == 0) {
+                    RenderFxSnapshots_New(pcVar3);
                     *pcVar3 = '\x01';
                     OpenMonsterModel(0x1f);   // play thunder sound
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0x12d;  // type = lightning
@@ -381,6 +383,7 @@ LAB_00501064:
                     pcVar19b[2] = '\0'; pcVar19b[3] = '\0';
                     pcVar19b += 4;
                 }
+                RenderFxSnapshots_New(pcVar3);
                 *pcVar3 = '\x01';
                 (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f800000;   // scale = 1.0
                 WSLOT_DW(0x0dc) = 1;

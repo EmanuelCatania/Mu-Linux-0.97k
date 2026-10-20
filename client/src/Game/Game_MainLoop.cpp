@@ -158,6 +158,12 @@ void __cdecl Game_MainLoop(HDC param_1)
         UI_InGameMenu();
 
         CHK("ML/pre_tick");
+        // IDA: los previews emitían después del mundo. Sus joints de vida 0
+        // deben atravesar MoveJoints antes de la próxima pasada; los sprites
+        // pendientes sí llegan al próximo RenderSprites. Nunca emitir al final
+        // de SIM: haría visibles en el mundo esos joints efímeros de UI.
+        MaterialVisuals_TickWingPreviews();
+
         // Dispatch per-state game logic
         if (SceneFlag == 2) { Game_SceneUpdate();     CHK("ML/post_SceneUpdate"); }
         if (SceneFlag == 4) { Game_EnterWorldTick();  CHK("ML/post_EnterWorld"); }

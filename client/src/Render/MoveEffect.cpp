@@ -82,7 +82,7 @@ static bool IsEffectOwner(const void* owner)
     return SceneObjects::Contains(owner) ||
         SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_07c74ec8, sizeof(DAT_07c74ec8), 0x1bc) ||
+        SceneObjects::IsSlot(owner, g_PlayerRenderPool, sizeof(g_PlayerRenderPool), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc);
 }

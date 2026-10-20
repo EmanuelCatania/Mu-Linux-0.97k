@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Render/MaterialVisuals.h"
+#include "Render/LooseWingVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
@@ -16,6 +17,7 @@ struct UiSamples { std::vector<MaterialVisualSample> values; std::size_t cursor=
 std::unordered_map<const void *, ObjectSample> objects;
 std::unordered_map<int, UiSamples> ui;
 int scene=-1, world=-1;
+bool wingPlanning=false;
 bool RandomMaterial(int type) {
     return type==414 || type==565 || type==567 || type==606 || type==607 || type==608;
 }
@@ -74,13 +76,16 @@ void MaterialVisuals_TickObjectDraw(int entity) {
         rand(); // IDA: Draw_RenderObject (0x004FAE00), muestra descartada.
 }
 void MaterialVisuals_PrepareUiItem(int itemType, int level) {
-    const int model=ItemMaterials_ResolvePreviewModel(itemType,level);
-    if (!RandomMaterial(model) || !DAT_05828d58) return;
+    int drawLevel=level;
+    const int model=ItemMaterials_ResolvePreviewModel(itemType,level,&drawLevel);
+    if (wingPlanning ? model!=790 : !RandomMaterial(model)) return;
+    if (!DAT_05828d58) return;
     const char *bmd=(const char *)DAT_05828d58+model*0xbc;
     const short meshes=*(const short *)(bmd+0x24);
     const auto meshBase=*(const unsigned int *)(bmd+0x28);
     // El mismo guard de RenderItem3D, antes de crear su objeto local.
     if (meshes<=0 || meshes>1000 || meshBase<0x100000) return;
+    if (model==790) { LooseWingVisuals_ExpectPreview((unsigned int)drawLevel); return; }
     auto &samples=ui[model].values;
     samples.emplace_back();
     MaterialVisuals_Prepare(samples.back(),model,true,true);
@@ -112,6 +117,14 @@ MaterialVisualScope::~MaterialVisualScope() { current=previous; }
 
 // DESVIACION: recorrer en SIM sólo los productores de previews, sin GL ni
 // hit-tests. Las muestras se conservan por modelo y ocurrencia en cada draw.
+void MaterialVisuals_TickWingPreviews() {
+    LooseWingVisuals_BeginStep();
+    wingPlanning=true;
+    MaterialVisuals_TickUi();
+    wingPlanning=false;
+    LooseWingVisuals_TickPreviews();
+}
+
 void MaterialVisuals_TickUi() {
     const bool ready=SceneFlag==2 ? DAT_083a7c49!=0 :
         SceneFlag==4 ? CharSelectSceneInitialized && DAT_05826cb0>50 :

@@ -336,8 +336,9 @@ void RenderTerrainAlphaBitmaps()
   float Rotation; // [esp+0h] [ebp-10h]
 
   EnableAlphaBlend();
-  v0 = (float *)&DAT_07c82cf4;
-  do
+  // IDA: anclaje +0x24 dentro de cada Pointer, no una tabla independiente.
+  v0 = (float *)(g_PointerPool+0x24);
+  for (int slot=0;slot<100;++slot)
   {
     if ( *((BYTE *)v0 - 36) )
     {
@@ -354,7 +355,7 @@ void RenderTerrainAlphaBitmaps()
     }
     v0 += 28;
   }
-  while ( (int)v0 < (int)&DAT_07c858b4 );
+
 }
 
 

@@ -2,6 +2,7 @@
 // Scene_EntityLifecycle.cpp
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
 #include "Platform/IFileSystem.h"
 #include "globals.h"
@@ -264,6 +265,7 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
             pcVar5 += 0x1bc;
             if (pcVar5 >= DAT_083a1218 + 10 * 0x1bc) return;
         }
+        RenderFxSnapshots_New(pcVar5);
         *(DWORD *)&AsObject(pcVar5)->SubType   = param_4;
         pcVar5[0x58] = pcVar5[0x59] = pcVar5[0x5a] = pcVar5[0x5b] = -1;
         pcVar5[100]  = pcVar5[0x65] = pcVar5[0x66] = pcVar5[0x67] = -1;

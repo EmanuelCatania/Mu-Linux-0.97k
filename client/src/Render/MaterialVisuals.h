@@ -16,6 +16,7 @@ void MaterialVisuals_TickObjectDraw(int entity);
 int ItemMaterials_ResolvePreviewModel(int itemType, int level, int *adjustedLevel=nullptr);
 void MaterialVisuals_PrepareUiItem(int itemType, int level=0);
 void MaterialVisuals_TickUi();
+void MaterialVisuals_TickWingPreviews();
 void MaterialVisuals_BeginRender();
 const MaterialVisualSample *MaterialVisuals_UiSample(int model);
 const MaterialVisualSample *MaterialVisuals_ObjectSample(const void *owner, int model);

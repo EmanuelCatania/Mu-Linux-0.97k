@@ -138,9 +138,11 @@
     <ClInclude Include="src\Entity\EntityView.h" />
     <ClInclude Include="src\Render\WorldEffects.h" />
     <ClInclude Include="src\Render\MaterialVisuals.h" />
+    <ClInclude Include="src\Render\LooseWingVisuals.h" />
     <ClInclude Include="src\Render\EquipmentVisuals.h" />
     <ClInclude Include="src\Game\RenderDerivedState.h" />
     <ClInclude Include="src\Game\RenderSnapshots.h" />
+    <ClInclude Include="src\Game\RenderFxSnapshots.h" />
     <ClInclude Include="src\Game\SimulationPreparation.h" />
     <ClInclude Include="src\Entity\CharacterEffects.h" />
     <ClInclude Include="src\Entity\CharacterCloth.h" />
@@ -246,9 +248,11 @@
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
     <ClCompile Include="src\Render\WorldEffects.cpp" />
     <ClCompile Include="src\Render\MaterialVisuals.cpp" />
+    <ClCompile Include="src\Render\LooseWingVisuals.cpp" />
     <ClCompile Include="src\Render\EquipmentVisuals.cpp" />
     <ClCompile Include="src\Game\RenderDerivedState.cpp" />
     <ClCompile Include="src\Game\RenderSnapshots.cpp" />
+    <ClCompile Include="src\Game\RenderFxSnapshots.cpp" />
     <ClCompile Include="src\Game\SimulationPreparation.cpp" />
     <ClCompile Include="src\Game\Game_MainLoop.cpp" />
     <ClCompile Include="src\Game\HeroVitals.cpp" />

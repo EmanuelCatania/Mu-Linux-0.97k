@@ -42,6 +42,7 @@
 //          DAT_07c74ae4 = current intensity (interpolated toward ae0 each frame)
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #pragma warning(disable: 4244 4101)
 #include "globals.h"
 #include "functions.h"
@@ -87,6 +88,7 @@ void WeatherParticles_Update(void)
     do {
         if (*(char *)(pfVar10 - 0xb) == '\0')
         {
+            RenderFxSnapshots_New(pfVar10-0xb);
             // ── Spawn new particle ────────────────────────────────────────────
             pfVar10[-1] = 1.0f; pfVar10[0] = 1.0f; pfVar10[1] = 1.0f;
             *(char *)(pfVar10 - 0xb) = 1;

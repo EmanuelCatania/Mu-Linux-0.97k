@@ -137,6 +137,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #include "Entity/ObjectBounds.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -2910,6 +2911,7 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
         BYTE* slot = base + index * slotSize;
         if (!slot[0]) {
             *(DWORD*)(slot + 12) = c;
+            RenderFxSnapshots_New(slot);
             slot[0] = 1;
             *(int*)(slot + 16) = 0;
             *(int*)(slot + 8) = flag ? 15 : 30;
