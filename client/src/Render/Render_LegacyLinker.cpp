@@ -179,6 +179,7 @@ int ItemMaterials_ResolvePreviewModel(int itemType, int Level, int *adjustedLeve
     return modelId;
 }
 
+// IDA: RenderItem3D (0x004E1BE0).
 void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
                            int Type, int Level, int Option1, int ExtOption, bool PickUp)
 {
