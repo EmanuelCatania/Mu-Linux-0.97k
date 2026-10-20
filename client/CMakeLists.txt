@@ -53,6 +53,7 @@ set(MU_SOURCES
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
     src/Render/WorldEffects.cpp
+    src/Render/MaterialVisuals.cpp
     src/Render/EquipmentVisuals.cpp
     src/Game/RenderSnapshots.cpp
     src/Game/SimulationPreparation.cpp
@@ -385,6 +386,7 @@ set(MU_HEADERS
     src/UI/ChatTypes.h
     src/Entity/EntityView.h
     src/Render/WorldEffects.h
+    src/Render/MaterialVisuals.h
     src/Render/EquipmentVisuals.h
     src/Game/RenderSnapshots.h
     src/Game/SimulationPreparation.h

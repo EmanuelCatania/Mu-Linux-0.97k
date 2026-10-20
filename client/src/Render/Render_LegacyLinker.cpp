@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
 #include "functions.h"
@@ -138,6 +139,46 @@ extern void __cdecl RenderObjectScreen(int param_1, unsigned int param_2,
 //
 // Esto reemplaza el placeholder que pintaba quads coloreados por grupo.
 // IDA: RenderItem3D (0x004E1BE0)
+// IDA: resolución de modelo de RenderItem3D (0x004E1BE0).
+// Compartida con el recorrido SIM de previews: también respeta el catálogo.
+int ItemMaterials_ResolvePreviewModel(int itemType, int Level, int *adjustedLevel) {
+    const int Type=ItemBehaviorType(itemType);
+    // Per-type modelId override (jewels/wings/special).
+    int modelId = ItemModel(itemType);   // 0.97.20: el catálogo resuelve los agregados
+    int levelArg = Level;
+
+    switch (Type) {
+        case 459: {
+            int lvl3 = (Level >> 3) & 0x0F; // ITEM_POTION+11
+            if (lvl3 == 1) modelId = MODEL_EVENT + 4;
+            else if (lvl3 == 2) modelId = MODEL_EVENT + 5;
+            else if (lvl3 == 3) modelId = MODEL_EVENT + 6;
+            else if (lvl3 == 5) modelId = MODEL_EVENT + 8;
+            else if (lvl3 == 6) modelId = MODEL_EVENT + 9;
+            else if (lvl3 >= 8 && lvl3 <= 12) modelId = MODEL_EVENT + 10;
+            break;
+        }
+        case 457: { // ITEM_POTION+9
+            if (((Level >> 3) & 0x0F) == 1) modelId = MODEL_EVENT + 7;
+            break;
+        }
+        case 469: { // ITEM_POTION+21
+            if ((Level >> 3) == 1) modelId = 958;
+            break;
+        }
+        case 435: {
+            int lvl3 = Level >> 3;
+            if (lvl3 == 0)      { modelId = MODEL_STAFF + 10; levelArg = -1; }
+            else if (lvl3 == 1) { modelId = MODEL_SWORD + 19; levelArg = -1; }
+            else if (lvl3 == 2) { modelId = MODEL_BOW + 18;   levelArg = -1; }
+            break;
+        }
+        }
+
+    if (adjustedLevel) *adjustedLevel=levelArg;
+    return modelId;
+}
+
 void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
                            int Type, int Level, int Option1, int ExtOption, bool PickUp)
 {
@@ -309,37 +350,8 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     // Convert screen-space → world-space ray endpoint.
     Camera_BuildMouseRay((int)_sx, (int)_sy, Position);
 
-    // Per-type modelId override (jewels/wings/special).
-    int modelId = ItemModel(itemType);   // 0.97.20: el catálogo resuelve los agregados
-    int levelArg = Level;
-
-    switch (Type) {
-        case 459: {
-            int lvl3 = (Level >> 3) & 0x0F; // ITEM_POTION+11
-            if (lvl3 == 1) modelId = MODEL_EVENT + 4;
-            else if (lvl3 == 2) modelId = MODEL_EVENT + 5;
-            else if (lvl3 == 3) modelId = MODEL_EVENT + 6;
-            else if (lvl3 == 5) modelId = MODEL_EVENT + 8;
-            else if (lvl3 == 6) modelId = MODEL_EVENT + 9;
-            else if (lvl3 >= 8 && lvl3 <= 12) modelId = MODEL_EVENT + 10;
-            break;
-        }
-        case 457: { // ITEM_POTION+9
-            if (((Level >> 3) & 0x0F) == 1) modelId = MODEL_EVENT + 7;
-            break;
-        }
-        case 469: { // ITEM_POTION+21
-            if ((Level >> 3) == 1) modelId = 958;
-            break;
-        }
-        case 435: {
-            int lvl3 = Level >> 3;
-            if (lvl3 == 0)      { modelId = MODEL_STAFF + 10; levelArg = -1; }
-            else if (lvl3 == 1) { modelId = MODEL_SWORD + 19; levelArg = -1; }
-            else if (lvl3 == 2) { modelId = MODEL_BOW + 18;   levelArg = -1; }
-            break;
-        }
-        }
+    int levelArg=Level;
+    const int modelId=ItemMaterials_ResolvePreviewModel(itemType,Level,&levelArg);
 
     // Guard contra modelo no cargado o pointer corrupto. RenderObjectScreen
     // (RenderObjectScreen) deferenciaría el modelEntry → libjpeg crash si meshBase

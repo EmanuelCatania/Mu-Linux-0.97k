@@ -305,7 +305,6 @@ LAB_render_dispatch:
     } else if (gMapManager.GetCurrentMap() == 4) {
         // Char-select scene: specific entity types get extra render passes
         if (sType == 0x17 || sType == 0x13 || sType == 0x14 || sType == 3 || sType == 4) {
-            _rand();
             sType = AsObject(param_1)->Type;
             if (sType == 0x17) {
                 // Normal char-select render

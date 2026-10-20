@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "Render/Entity_Render_3D.h"
 #include "Game/SimulationPreparation.h"
 #include "Entity/CharacterCloth.h"
@@ -102,6 +103,7 @@ void PrepareItems() {
             else if (variant == 2) type = 948;
         }
         if (type < 0 || type >= 1200) continue;
+        MaterialVisuals_PrepareObject(&o,o.Type,false,o.Alpha>_DAT_005524f8 && !*((BYTE *)&o+140));
         float point[3] = { o.Position[0], o.Position[1], o.Position[2] + _DAT_0055284c };
         int x, y;
         Camera_ProjectWorldToScreen(point, &x, &y);
@@ -128,6 +130,7 @@ void PrepareCharacter(CHARACTER &c) {
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
     MoltSilhouette_Tick((int)&c, model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
+    MaterialVisuals_TickObjectDraw((int)&c);
     CharacterCloth_Tick((int)&c);
     const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
     const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;
@@ -169,6 +172,7 @@ bool SceneReady() {
 
 void Simulation_PrepareStep()
 {
+    MaterialVisuals_BeginStep();
     Equipment_BeginStep();
     WorldEffects_BeginStep();
     MoltSilhouette_BeginStep();
@@ -233,6 +237,7 @@ void Simulation_RestorePickingCamera()
 
 void Simulation_BeginRender()
 {
+    MaterialVisuals_BeginRender();
     Sprite_ReplayStep();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
     // tick no debe consumirlos ni dejar la pose del preview como estado lógico.

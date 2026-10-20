@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/MapManager.h"
 #include <vector>
@@ -10,6 +11,7 @@ struct Sprite {
     int owner, mode;
 };
 struct Mesh {
+    MaterialVisualSample material;
     int model;
     char context[0xbc], object[0x1c0], bones[sizeof(g_BoneScratch)];
     float light[3], alpha, lod;
@@ -92,6 +94,7 @@ void Equipment_AddMesh(int model, const void *object, const float *light,
     recording->commands.push_back({true, (unsigned int)recording->meshes.size(), currentStage});
     recording->meshes.emplace_back();
     Mesh &mesh = recording->meshes.back();
+    MaterialVisuals_Prepare(mesh.material,model,false,alpha>_DAT_005524f8 && !*((const BYTE *)object+140));
     mesh.model = model; mesh.alpha = alpha; mesh.level = level;
     mesh.option = option; mesh.flags = flags; mesh.translate = translate;
     mesh.lod = _DAT_005597c8;
@@ -134,6 +137,7 @@ void Equipment_Draw(int entity, int stage) {
         alignas(float) char object[sizeof(mesh.object)];
         memcpy(object, mesh.object, sizeof(object));
         float light[3]; memcpy(light, mesh.light, sizeof(light));
+        MaterialVisualScope material(&mesh.material);
         RenderPartObjectEffect((int)object, mesh.model, light, mesh.alpha,
             mesh.level, mesh.option, 0, mesh.flags);
     }

@@ -3,6 +3,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "Platform/ITimer.h"
 #include <array>
 #include "Item/ContentCatalog.h"
@@ -1835,6 +1836,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
 {
     // 0.97.20: un modelo dinámico del catálogo (agregado >= 512) toma la pose,
     // escala y altura del vanilla que imita; se dibuja con su propio modelo.
+    MaterialVisualScope material(MaterialVisuals_UiSample(Type));
     const int drawType = Type;
     if (Type >= MODEL_MAX_VANILLA) {
         const int itemType = gContentCatalog.GetModelItemType(Type);
@@ -1905,7 +1907,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
 
     char object[0x200] = {};
     *(short*)(object + 2) = (short)drawType;
-    ItemObjectAttribute((int)object);
+    ItemObjectAttributeForRender((int)object);
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
     *(float*)(object + 0x14) = position[1];

@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "Platform/IInput.h"
 #include "Render/Camera3D.h"
 #include "Render/EquipmentVisuals.h"
@@ -875,6 +876,9 @@ void __cdecl RenderWheelWeapon(DWORD o)
     const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
     if (model_id < 0 || model_id >= 1024) return;
 
+    const auto *sample=MaterialVisuals_ObjectSample((void *)o,model_id);
+    MaterialVisualScope material(sample);
+
     // Giro: o+200 acumula -30°/frame y se suma al angle[2]; el arma además
     // flota 100 unidades sobre su posición y fija angle[1] = 90°.
     const float spin = AsObject(o)->Direction[2];
@@ -883,18 +887,18 @@ void __cdecl RenderWheelWeapon(DWORD o)
     const float zUp    = AsObject(o)->Position[2] + 100.0f;
     AsObject(o)->Position[2]  = zUp;
 
-    const float alpha = AsObject(o)->Alpha;
+    const float alpha = sample ? sample->alpha : AsObject(o)->Alpha;
 
     // Volcar posición/acción/skin al slot del modelo compartido.
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
     *(float*)(mdl + 116) = zUp;
-    *(BYTE*) (mdl + 160) = AsObject(o)->CurrentAction;                       // CurrentAction
+    *(BYTE*) (mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;                       // CurrentAction
     *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7); // clase
     *(int*)  (mdl + 108) = *(int *)&AsObject(o)->Position[0];
     *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
 
     AsObject(o)->Type = (short)model_id;
-    ItemObjectAttribute((int)o);                          // ItemObjectAttribute
+    ItemObjectAttributeForRender((int)o);                          // ItemObjectAttribute
 
     float angles_in[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
     BMD_Animation(mdl, (int)&DAT_06970a9c,
@@ -1209,9 +1213,12 @@ void EffectPool_TickRenderState() {
         if (!o.Live) continue;
         o.Visible = (BYTE)Frustum_TestSphere(o.Position, 400.0f);
         if (!o.Visible) continue;
-        if (o.Type == 239 && o.Owner) {
+        if ((o.Type==239 || (o.Type==244 && (float)o.LifeTime>_DAT_00552488)) && o.Owner) {
             const int model = *((BYTE *)o.Owner + 136) + ITEM_MODEL_BASE;
-            if (model >= 0 && model < 1024) o.Direction[2] -= 30.0f;
+            if (model >= 0 && model < 1024 && DAT_07abf5d8) {
+                if (o.Type==239) o.Direction[2] -= 30.0f;
+                MaterialVisuals_PrepareWeaponObject((int)&o,model);
+            }
         }
         if (o.Type >= 1210 && o.Type <= 1212) {
             float x = o.Position[0], y = o.Position[1];

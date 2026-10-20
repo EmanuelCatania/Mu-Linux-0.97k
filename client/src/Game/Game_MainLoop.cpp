@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 static void Game_TickAmbientAudio();
 void Sprite_CaptureStep();
 void Chat_TickPresentation();
@@ -194,6 +195,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         MoveSceneFrame++;
         Simulation_PrepareStep();
         Chat_TickPresentation();
+        MaterialVisuals_TickUi();
         HUD_TickGridPresentation();
         ItemNames_TickInput();
         Game_TickAmbientAudio();

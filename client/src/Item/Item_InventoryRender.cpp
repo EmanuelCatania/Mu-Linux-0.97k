@@ -4,6 +4,7 @@
 // Pases de render del inventario y del equipo.
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "globals.h"
 #include "functions.h"
 // InventoryColor @ 0x004E2420 (~38 lines) — sets GL color by item Color field
@@ -427,5 +428,15 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
     // Advance MixState counter
     if (DAT_07eaa140 > 1) {
         DAT_07eaa140 = DAT_07eaa140 + 1;
+    }
+}
+
+void ItemMaterials_PrepareEquipmentUi() {
+    if (!CharacterAttribute) return;
+    const int order[]={8,7,2,3,4,0,1,5,6,9,10,11};
+    for (int index:order) {
+        if (index==2 && ((*(BYTE *)((BYTE *)CharacterAttribute+11))&7)==3) continue;
+        ITEM *item=GetPanelEquipmentSourceItem(index);
+        if (IsVisualEquipSlotOccupied(item)) MaterialVisuals_PrepareUiItem(item->Type,item->Level);
     }
 }
