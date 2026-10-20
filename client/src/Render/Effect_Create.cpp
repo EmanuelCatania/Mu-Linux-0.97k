@@ -4,6 +4,7 @@
 // CreateEffect -- spawns a visual effect by type ID.
 
 #include "stdafx.h"
+#include "Game/RenderDerivedState.h"
 #include "Render/Particle_Render.h"
 
 
@@ -153,6 +154,7 @@ LAB_00460dd8:
     }
     if (!found_slot) return (float *)0x0;
   }
+  RenderDerivedState_Forget(pfVar17);
   Particle_InvalidateRender(pfVar17);
   *(undefined1 *)pfVar17 = 1;
   AsObject(pfVar17)->Type = (short)param_1;

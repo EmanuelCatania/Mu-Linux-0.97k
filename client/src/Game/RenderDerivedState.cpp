@@ -42,7 +42,8 @@ void SaveObject(void *address, std::size_t size, bool registered=false) {
 }
 // DESVIACION: los cambios de presentación viven durante la pasada completa,
 // conservando su orden interno. Ninguna pose/OBB/material interpolados llegan
-// al siguiente input o tick; no se restaura ni descarta ningún pool de emisores.
+// al siguiente input o tick. Las altas invalidan su copia previa; no se
+// suprimen llamadas a creadores ni se restauran joints, partículas o sprites.
 void RenderDerivedState_Begin() {
     active=false; used=0; savedObjects.clear();
     const bool ready=SceneFlag==2 ? DAT_083a7c49!=0 :
