@@ -3,6 +3,7 @@
 #include "Render/MaterialVisuals.h"
 #include "Render/Entity_Render_3D.h"
 #include "Game/SimulationPreparation.h"
+#include "Scene/Scene_CharSelect.h"
 #include "Entity/CharacterCloth.h"
 #include "Entity/CharacterEffects.h"
 #include "Entity/ObjectPose.h"
@@ -178,6 +179,7 @@ void Simulation_PrepareStep()
     WorldEffects_BeginStep();
     MoltSilhouette_BeginStep();
     if (!SceneReady() || !DAT_07abf5d0 || !DAT_05828d58) return;
+    if (SceneFlag==4) SceneCharSelect_PrepareLighting();
     PrepareCamera();
     // BMD_Animation usa estos temporales compartidos; la publicación SIM sólo
     // conserva sus matrices de salida, sin filtrar contexto a otros callers.
