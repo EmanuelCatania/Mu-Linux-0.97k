@@ -305,9 +305,6 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     else if (effectType == 788) {
         *(float *)(param_1 + 104) = sinf((float)WorldTime * 0.001f) + 1.1f;
     }
-    else if (effectType == 790 && !Equipment_IsDrawing()) {
-        Equipment_EmitWing790(this_, param_1, param_1);
-    }
     // IDA RenderPartObjectEffect 0x504B50: after the type-specific effects,
     // o+140 chooses a projected shadow, not another opaque body pass.
     // RenderCharacter already drew the body through Entity_PrepareRender.

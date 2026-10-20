@@ -3,6 +3,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Render/LooseWingVisuals.h"
 #include "Render/MaterialVisuals.h"
 #include "Platform/ITimer.h"
 #include <array>
@@ -1915,6 +1916,9 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     *(BYTE*)(object + 0x3D) = ExtOption;
     *(int*)(object + 0xDC) = 0;
     *(BYTE*)(object + 0x1BC) = 2;
+
+    if (drawType==790) LooseWingVisuals_SubmitPreview(*(OBJECT *)object,renderAngle,headAngle,
+        inventoryPose.BodyHeight,ItemLevel,Select==1);
 
     float light[3] = { 1.0f, 1.0f, 1.0f };
     // Entity_DrawAt's visibility argument is 1.0 in the native UI path used

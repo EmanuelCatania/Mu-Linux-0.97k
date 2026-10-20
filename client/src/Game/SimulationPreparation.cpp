@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Game/RenderDerivedState.h"
 #include "Render/MaterialVisuals.h"
+#include "Render/LooseWingVisuals.h"
 #include "Render/Entity_Render_3D.h"
 #include "Game/SimulationPreparation.h"
 #include "Scene/Scene_CharSelect.h"
@@ -105,6 +106,7 @@ void PrepareItems() {
             else if (variant == 2) type = 948;
         }
         if (type < 0 || type >= 1200) continue;
+        LooseWingVisuals_TickGround((int)&o);
         MaterialVisuals_PrepareObject(&o,o.Type,false,o.Alpha>_DAT_005524f8 && !*((BYTE *)&o+140));
         float point[3] = { o.Position[0], o.Position[1], o.Position[2] + _DAT_0055284c };
         int x, y;
@@ -242,6 +244,7 @@ void Simulation_BeginRender()
 {
     RenderDerivedState_Begin();
     MaterialVisuals_BeginRender();
+    LooseWingVisuals_BeginRender();
     Sprite_ReplayStep();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
     // tick no debe consumirlos ni dejar la pose del preview como estado lógico.
@@ -253,6 +256,7 @@ void Simulation_BeginRender()
 
 void Simulation_EndRender()
 {
+    LooseWingVisuals_EndRender();
     RenderDerivedState_End();
     ApplyPose(renderCamera);
     Simulation_RestorePickingCamera();
