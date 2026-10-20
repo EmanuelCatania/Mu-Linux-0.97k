@@ -126,6 +126,7 @@ void Equipment_Draw(int entity, int stage) {
             continue;
         }
         const Mesh &mesh = frame.meshes[command.index];
+        if (mesh.alpha<=_DAT_005524f8) continue;
         void *model = (void *)(DAT_05828d58 + mesh.model * 0xbc);
         EquipmentModelContext savedModel(model);
         memcpy(model, mesh.context, sizeof(mesh.context));
