@@ -9,7 +9,7 @@
 namespace {
 struct Preview {
     OBJECT object{};
-    float angle[3]{}, headAngle[3]{}, bodyHeight=0;
+    float angle[3]{}, headAngle[3]{}, bodyHeight=0, time=0;
     unsigned int level=0;
     bool spin=false;
 };
@@ -53,7 +53,8 @@ void LooseWingVisuals_SubmitPreview(const OBJECT &object, const float *angle,
     const float *headAngle, float bodyHeight, unsigned int level, bool spin) {
     if (!inRender || object.Type!=790) return;
     Preview value;
-    value.object=object; value.bodyHeight=bodyHeight; value.level=level; value.spin=spin;
+    value.object=object; value.bodyHeight=bodyHeight; value.time=WorldTime;
+    value.level=level; value.spin=spin;
     memcpy(value.angle,angle,sizeof(value.angle));
     memcpy(value.headAngle,headAngle,sizeof(value.headAngle));
     recording.push_back(value);
@@ -96,11 +97,16 @@ void LooseWingVisuals_TickPreviews() {
         b.CurrentAction=0; b.BodyHeight=value.bodyHeight; b.BodyScale=owner.object.Scale;
         memcpy(b.BodyOrigin,owner.object.Position,sizeof(b.BodyOrigin));
         float angle[3]; memcpy(angle,value.angle,sizeof(angle));
-        if (value.spin) angle[1]=WorldTime*0.45f;
+        if (value.spin) angle[1]=value.time*0.45f;
         float head[3]; memcpy(head,value.headAngle,sizeof(head));
         BMD_Animation(model,(int)owner.bones.data(),0,0,0,(unsigned int *)angle,head,0,0);
         memcpy(g_BoneScratch,owner.bones.data(),sizeof(g_BoneScratch));
+        // La emisión pendiente pertenece a la pasada publicada: conservar su
+        // fase temporal, como los sprites que antes sobrevivían hasta este paso.
+        const float simulationTime=WorldTime;
+        WorldTime=value.time;
         Equipment_EmitWing790(model,(int)&owner.object,(int)&owner.object);
+        WorldTime=simulationTime;
     }
 }
 
