@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Game/RenderDerivedState.h"
+#include "Game/RenderSnapshots.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/Entity_Render_3D.h"
@@ -30,7 +31,7 @@ struct CameraPose {
 };
 struct PickingCamera : CameraPose {
     bool valid = false;
-    int scene, world;
+    int scene, world, mode;
     DWORD matrix[12], origin[3], centerX, centerY;
     DWORD width, height, x, y, projectionBits[2];
     float target[3], projection[2], centerYFlip;
@@ -56,6 +57,7 @@ void CaptureCamera() {
     memcpy(camera.origin, CameraRayOriginX_arr, sizeof(camera.origin));
     memcpy(camera.target, &DAT_083a4110, sizeof(camera.target));
     CapturePose(camera);
+    camera.mode=CameraTopViewEnabled ? 1 : 0;
     camera.centerX = ViewportCenterX; camera.centerY = ViewportCenterY;
     camera.width = OpenglWindowWidth; camera.height = OpenglWindowHeight;
     camera.x = OpenglWindowX; camera.y = OpenglWindowY;
@@ -174,12 +176,25 @@ bool SceneReady() {
 }
 }
 
+bool Simulation_ReadCameraPose(RenderCameraPose& out) {
+    if (!camera.valid || !SceneReady() || camera.scene!=SceneFlag ||
+        camera.world!=gMapManager.GetCurrentMap()) return false;
+    memcpy(out.position,camera.position,sizeof(out.position));
+    memcpy(out.angle,camera.angles,sizeof(out.angle));
+    out.fov=camera.fov; out.farPlane=camera.farPlane; out.distance=camera.distance;
+    out.viewport[0]=(int)camera.x; out.viewport[1]=(int)camera.y;
+    out.viewport[2]=(int)camera.width; out.viewport[3]=(int)camera.height;
+    out.mode=camera.mode;
+    return true;
+}
+
 void Simulation_PrepareStep()
 {
     MaterialVisuals_BeginStep();
     Equipment_BeginStep();
     WorldEffects_BeginStep();
     MoltSilhouette_BeginStep();
+    camera.valid=false;
     if (!SceneReady() || !DAT_07abf5d0 || !DAT_05828d58) return;
     if (SceneFlag==4) SceneCharSelect_PrepareLighting();
     PrepareCamera();

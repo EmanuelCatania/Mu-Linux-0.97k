@@ -13,6 +13,17 @@ struct RenderPosePair {
     bool continuous = false;
 };
 
+// Pose autoritativa de cámara; la proyección/rayo de picking permanece aparte.
+struct RenderCameraPose {
+    float position[3]{}, angle[3]{}, fov=0, farPlane=0, distance=0;
+    int viewport[4]{}, mode=0;
+};
+struct RenderCameraPair {
+    RenderCameraPose previous, current;
+    bool continuous=false;
+};
+bool RenderSnapshots_Camera(float maxDisplacement, RenderCameraPair& out);
+
 // Funciones matemáticas de presentación, sin escrituras en los pools.
 float RenderSnapshots_Alpha(int remainder);
 RenderPose RenderSnapshots_Interpolate(const RenderPosePair& pair, float alpha);
