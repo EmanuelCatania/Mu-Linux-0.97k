@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Game/RenderDerivedState.h"
 #include "Game/RenderSnapshots.h"
+#include "Game/RenderInterpolation.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/Entity_Render_3D.h"
@@ -260,18 +261,20 @@ void Simulation_BeginRender()
     RenderDerivedState_Begin();
     MaterialVisuals_BeginRender();
     LooseWingVisuals_BeginRender();
-    Sprite_ReplayStep();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
     // tick no debe consumirlos ni dejar la pose del preview como estado lógico.
     CapturePose(renderCamera);
     Simulation_RestorePickingCamera();
     if (camera.valid && camera.scene == SceneFlag && camera.world == gMapManager.GetCurrentMap())
         ApplyPose(camera);
+    RenderInterpolation_Begin(TimeRemain);
+    Sprite_ReplayStep();
 }
 
 void Simulation_EndRender()
 {
     LooseWingVisuals_EndRender();
+    RenderInterpolation_End();
     RenderDerivedState_End();
     ApplyPose(renderCamera);
     Simulation_RestorePickingCamera();

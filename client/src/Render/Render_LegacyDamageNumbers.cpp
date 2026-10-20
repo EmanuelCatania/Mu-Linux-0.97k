@@ -2,6 +2,7 @@
 // Números de daño flotantes: RenderNumber (0x005120C0) y RenderPoints (0x00479330).
 
 #include "stdafx.h"
+#include "Game/RenderInterpolation.h"
 #include "Game/RenderSnapshots.h"
 #include "Game/FrameLimiter.h"
 #include "globals.h"
@@ -143,12 +144,11 @@ void __cdecl RenderPoints(int, int, int, int)
         memcpy(pose.position, slot + 0x10, sizeof(pose.position));
         pose.alpha = *(float*)(slot + 0x48) * 0.40000001f;
         pose.scale = *(float*)(slot + 0x0c);
-        // DESVIACION: interpolar al desacoplar el render. A 40 ms se conserva
-        // la muestra actual, sin retrasar un tick los números del cliente base.
-        if (gFrameLimiter.IsRenderDecoupled()) {
+        // DESVIACION: la misma fase visual que cámara/entidades, sin tocar su tick.
+        if (RenderInterpolation_Alpha()<1) {
             RenderPosePair pair;
             if (RenderSnapshots_DamagePoint(i, pair))
-                pose = RenderSnapshots_Interpolate(pair, RenderSnapshots_Alpha((int)TimeRemain));
+                pose = RenderSnapshots_Interpolate(pair, RenderInterpolation_Alpha());
         }
         RenderNumber(pose.position, *(int*)(slot + 0x04), (float*)(slot + 0x1c),
                      pose.alpha, pose.scale);

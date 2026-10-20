@@ -143,3 +143,13 @@ void RenderFxSnapshots_SaveRenderState() {
         }
     }
 }
+
+bool RenderFxSnapshots_Owner(const void *owner, RenderFxView& out) {
+    for (int domain=0;domain<(int)RenderFxPool::Count;++domain) {
+        const Pool &pool=Pools()[domain];
+        const uintptr_t offset=(uintptr_t)owner-(uintptr_t)pool.base;
+        if (offset<pool.bytes*pool.count && offset%pool.bytes==0)
+            return RenderFxSnapshots_Read((RenderFxPool)domain,(int)(offset/pool.bytes),out);
+    }
+    return false;
+}
