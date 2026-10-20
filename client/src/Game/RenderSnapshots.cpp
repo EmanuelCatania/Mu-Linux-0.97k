@@ -6,6 +6,7 @@
 #include "Game/RenderFxSnapshots.h"
 #include "Game/SimulationPreparation.h"
 #include "Game/MapManager.h"
+#include "Scene/ObjectRegistry.h"
 #include <cmath>
 #include <cstdint>
 
@@ -37,6 +38,7 @@ struct Track {
     bool published = false, continuous = false;
 };
 Track characters[401], parts[401][11], items[1000], points[100];
+std::unordered_map<const void*,Track> objects;
 std::uint64_t characterGeneration[401] = {}, itemGeneration[1000] = {}, pointGeneration[100] = {};
 int scene = -1, world = -1;
 RenderCameraPair camera;
@@ -161,6 +163,17 @@ Sample PointSample(int slot) {
 void Capture(bool begin) {
     const bool sameScene = scene == SceneFlag && world == gMapManager.GetCurrentMap();
     CaptureCamera(begin,sameScene);
+    if (!sameScene) objects.clear();
+    for (auto it=objects.begin();it!=objects.end();) {
+        if (!SceneObjects::Contains(it->first)) it=objects.erase(it);
+        else ++it;
+    }
+    for (const void *node:SceneObjects::LiveNodes()) {
+        Sample sample=ObjectSample(*(const OBJECT *)node);
+        sample.owner=(std::uintptr_t)node; sample.generation=SceneObjects::Generation(node);
+        if (begin) Begin(objects[node],sample,sameScene);
+        else End(objects[node],sample,sameScene);
+    }
     for (int slot = 0; slot < 401; ++slot) {
         if (begin) Begin(characters[slot], CharacterSample(slot), sameScene);
         else End(characters[slot], CharacterSample(slot), sameScene);
@@ -283,5 +296,17 @@ bool RenderSnapshots_Camera(float maximum, RenderCameraPair& out) {
         const int slot=CharacterSlot(DAT_07abf5d8);
         out.continuous=out.continuous && RenderSnapshots_Character(slot,maximum,followed) && followed.continuous;
     }
+    return true;
+}
+
+// Los nodos de CreateObject pueden liberarse entre pasos: validar antes de leer.
+bool RenderSnapshots_Object(const void* node, float maximum, RenderPosePair& out) {
+    if (!SceneObjects::Contains(node)) return false;
+    Sample live=ObjectSample(*(const OBJECT *)node);
+    live.owner=(std::uintptr_t)node; live.generation=SceneObjects::Generation(node);
+    const auto found=objects.find(node);
+    const Track empty;
+    if (!Read(found!=objects.end() ? found->second : empty,live,out)) return false;
+    LimitDisplacement(out,maximum);
     return true;
 }

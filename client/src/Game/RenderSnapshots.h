@@ -41,3 +41,6 @@ bool RenderSnapshots_Character(int slot, float maxDisplacement, RenderPosePair& 
 bool RenderSnapshots_Part(int slot, int part, float maxDisplacement, RenderPosePair& out);
 bool RenderSnapshots_Item(int slot, float maxDisplacement, RenderPosePair& out);
 bool RenderSnapshots_DamagePoint(int slot, RenderPosePair& out);
+
+// Objetos del mundo registrados por CreateObject, con generación de su nodo.
+bool RenderSnapshots_Object(const void* node, float maxDisplacement, RenderPosePair& out);
