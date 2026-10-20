@@ -772,7 +772,6 @@ void NetRecv_25(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
 // ── 0x20 ViewportItem (ground items) ────────────────────────────
 // Port FIEL del IDA ReceiveCreateItemViewport @ 0x0042F240.
-// Per-entry stride 8 bytes (o 9 si Jewel of Chaos = type 0x1CF).
 // Spawnea cada item en DAT_07e12840 pool; el render lo hace
 // Entity_Render (Entity_Render) que itera el pool por slots activos.
 // 0x20
@@ -786,12 +785,9 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
     extern void __cdecl ItemAngle(int);   // ItemAngle
-    // Este server (MuEmu) manda PMSG_VIEWPORT_ITEM =
-    // index[2]+x+y+ItemInfo[MAX_ITEM_INFO+1] = 2+1+1+5 = 9 bytes por
-    // item SIEMPRE (Viewport.h), no el stride 8 del 0.97k. Bound y
-    // stride son 9.
-    // 0.97.20: el item son 7 bytes y el struct del server agrega uno más
-    // (ItemInfo[MAX_ITEM_INFO + 1]): index[2] + x + y + 8 = 12 por entrada.
+    // DESVIACION: el server manda PMSG_VIEWPORT_ITEM (Viewport.h) con
+    // stride fijo index[2] + x + y + ItemInfo[MAX_ITEM_INFO + 1] = 12,
+    // no el stride variable del 0.97k. Bound y avance usan el mismo valor.
     const int entrySize = 4 + ITEM_INFO_SIZE + 1;
     for (int i = 0; i < count && cursor + entrySize <= Size; ++i) {
         const BYTE* e = Msg + cursor;
@@ -912,8 +908,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                i, key, itemType, createFlag, gx, gy);
 
-        // Stride fijo 9 (ItemInfo[5] en este server).
-        cursor += 9;
+        cursor += entrySize;
     }
 }
 
