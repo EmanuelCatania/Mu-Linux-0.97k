@@ -615,9 +615,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // Se conserva el contexto de esta pieza: los siguientes links reutilizan
     // el BMD, el scratch de huesos y a veces el PART del ala.
     const unsigned int flags = AsCharacter(param_4)->MonsterIndex == 67 ? 0x102u : 0x2u;
+    const float attachmentOffset[3]={param_1,param_2,param_3};
     Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + 800),
         AsCharacter(param_4)->Object.Alpha, 8u * (unsigned char)param_7,
-        (unsigned char)param_8, flags | param_11, param_10);
+        (unsigned char)param_8, flags | param_11, param_10, param_5, param_9, attachmentOffset);
     if (drawModel == 790) {
         // El objeto mínimo aporta el ángulo original; el dueño persistente es
         // el personaje, nunca la dirección de ese temporal de la pila.

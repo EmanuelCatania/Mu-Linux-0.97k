@@ -19,6 +19,7 @@ void RenderFxSnapshots_New(const void *slot);
 void RenderFxSnapshots_Reset();
 bool RenderFxSnapshots_Read(RenderFxPool pool, int slot, RenderFxView& out);
 int RenderFxSnapshots_Count(RenderFxPool pool);
+bool RenderFxSnapshots_Owner(const void *owner, RenderFxView& out);
 
 // Guarda sólo slots vivos; las altas invalidan su copia antes de reutilizarlos.
 void RenderFxSnapshots_SaveRenderState();

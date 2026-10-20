@@ -3,6 +3,7 @@
 #include "Render/Entity_Render_3D.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/RenderSnapshots.h"
+#include "Entity/ClothPresentation.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Game/SimulationPreparation.h"
 #include "Game/MapManager.h"
@@ -230,13 +231,18 @@ RenderPose RenderSnapshots_Interpolate(const RenderPosePair& pair, float alpha) 
     if (sameAction && pose.animationFrame >= pair.previous.animationFrame &&
         pose.priorAnimationFrame >= pair.previous.priorAnimationFrame) {
         pose.animationFrame = Blend(pair.previous.animationFrame, pose.animationFrame, alpha);
-        pose.priorAnimationFrame = Blend(pair.previous.priorAnimationFrame, pose.priorAnimationFrame, alpha);
+        // IDA: BMD__PlayAnimation (0x00440AA0) cambia PriorFrame al cruzar
+        // una clave entera; BMD_Animation lo trunca para indexar esa clave.
+        // DESVIACION: elegir el índice de la pareja correspondiente al frame
+        // visual, sin interpolarlo como un contador continuo.
+        pose.priorAnimationFrame = (int)pose.animationFrame == (int)pair.previous.animationFrame ?
+            pair.previous.priorAnimationFrame : pair.current.priorAnimationFrame;
     }
     pose.scale = Blend(pair.previous.scale, pose.scale, alpha);
     pose.alpha = Blend(pair.previous.alpha, pose.alpha, alpha);
     return pose;
 }
-void RenderSnapshots_BeginStep() { Capture(true); RenderFxSnapshots_BeginStep(); }
+void RenderSnapshots_BeginStep() { ClothPresentation_BeginStep(); Capture(true); RenderFxSnapshots_BeginStep(); }
 void RenderSnapshots_EndStep() { Capture(false); RenderFxSnapshots_EndStep(); }
 // DESVIACION: generaciones externas identifican reuso incluso dentro del mismo
 // paso, sin ampliar CHARACTER, PART_t, ITEM_t ni los pools del binario.

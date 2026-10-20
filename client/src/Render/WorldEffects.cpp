@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "Game/RenderInterpolation.h"
+#include "Game/RenderInterpolationMath.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/Entity_Render_3D.h"
 #include "Render/WorldEffects.h"
@@ -20,13 +22,15 @@ struct Frame {
     int type;
     std::vector<Sprite> sprites;
 };
-std::unordered_map<const void *, Frame> frames;
+std::unordered_map<const void *, Frame> frames, previousFrames;
 Frame *recording = nullptr;
 int scene = -1, world = -1;
 }
 
 void WorldEffects_BeginStep() {
     recording = nullptr;
+    previousFrames.swap(frames);
+    if (scene!=SceneFlag || world!=gMapManager.GetCurrentMap()) previousFrames.clear();
     frames.clear();
     scene = SceneFlag;
     world = gMapManager.GetCurrentMap();
@@ -80,7 +84,18 @@ void WorldEffects_Draw(int entity) {
     const auto found = frames.find(object);
     if (found == frames.end() || found->second.generation != SceneObjects::Generation(object) ||
         !AsObject(entity)->Live || found->second.type != AsObject(entity)->Type) return;
-    for (Sprite &sprite : found->second.sprites)
-        CreateSprite(sprite.type, sprite.position, sprite.scale, sprite.light,
-            sprite.owner, sprite.rotation, sprite.mode);
+    const Frame &frame=found->second;
+    const auto old=previousFrames.find(object);
+    const bool continuous=RenderInterpolation_OwnerContinuous(object) && old!=previousFrames.end() &&
+        old->second.generation==frame.generation && old->second.type==frame.type && old->second.sprites.size()==frame.sprites.size();
+    for (size_t i=0;i<frame.sprites.size();++i) {
+        const Sprite &sprite=frame.sprites[i];
+        float position[3]; memcpy(position,sprite.position,sizeof(position));
+        if (continuous) {
+            const Sprite &previous=old->second.sprites[i];
+            if (previous.type==sprite.type && previous.owner==sprite.owner && previous.mode==sprite.mode)
+                for (int axis=0;axis<3;++axis) position[axis]=RenderBlend(previous.position[axis],sprite.position[axis],RenderInterpolation_Alpha());
+        }
+        CreateSprite(sprite.type,position,sprite.scale,(float *)sprite.light,sprite.owner,sprite.rotation,sprite.mode);
+    }
 }

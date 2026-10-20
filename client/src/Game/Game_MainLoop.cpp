@@ -84,7 +84,9 @@ void __cdecl Game_MainLoop(HDC param_1)
     char   nameBuf[256];
     char   tickBuf[100];
     int    renderFlag = 0;
-    CFrameLimiter::StartTime renderStart;
+    // DESVIACION: el presupuesto de 40 ms incluye SIM, preparación y draw;
+    // comenzar sólo al dibujar sumaba ese trabajo a la espera y ralentizaba SIM.
+    const CFrameLimiter::StartTime renderStart = gFrameLimiter.Start();
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -337,7 +339,6 @@ void __cdecl Game_MainLoop(HDC param_1)
     // auditemos winding en los emitters.
 
     Simulation_BeginRender();
-    renderStart = gFrameLimiter.Start();
     renderFlag  = 0;
 
     // ── SCENE RENDER ──────────────────────────────────────────────────────────

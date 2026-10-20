@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Entity/CharacterCloth.h"
 #include "Entity/ObjectPose.h"
+#include "Render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 
 // GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
@@ -22,6 +23,23 @@ static inline float PtrAsFloatBits(const void *p) {
     float f; int v = (int)(uintptr_t)p; memcpy(&f, &v, 4); return f;
 }
 
+
+// IDA: Calc_RenderObject precedía a SpringMesh_Create dentro de RenderCharacter.
+// DESVIACION: recrear su geometría SIM antes del alta, sin heredar vértices del draw.
+static void PrepareMeshClothVertices(int entity) {
+    OBJECT &owner=*AsObject(entity);
+    void *model=(void *)(DAT_05828d58+owner.Type*0xbc);
+    EquipmentModelContext context(model);
+    float *bones=owner.EnableBoneMatrix ? (float *)owner.BoneMatrices : (float *)g_BoneScratch;
+    *(float *)((char *)model+0x84)=0;
+    ObjectPose_PrepareBones(entity,model,bones,1);
+    float minimum[3],maximum[3],bounds[15];
+    memcpy(minimum,owner.BoundingBoxMin,sizeof(minimum)); memcpy(maximum,owner.BoundingBoxMax,sizeof(maximum));
+    const float lod=_DAT_005597c8;
+    _DAT_005597c8=1;
+    Skeleton_Transform(model,(int)bones,minimum,maximum,bounds,1);
+    _DAT_005597c8=lod;
+}
 
 // IDA: rutas de tela de RenderCharacter (0x00456770).
 // DESVIACION: creación, cinco subpasos y destrucción se ejecutan por tick;
@@ -53,6 +71,7 @@ void CharacterCloth_Tick(int entity)
             *(int *)puVar8 = 1;                    // count del eh vector ctor
             void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
             L_YGXPAXIHP6EX0_Z1_Z(clothObj, 0x60, 1, (void *)Widget_Ctor);
+            PrepareMeshClothVertices(entity);
             SpringMesh_Create(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
             VerletNode_AddToSystem(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
             VerletNode_AddToSystem(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);

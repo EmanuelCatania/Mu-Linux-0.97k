@@ -1,6 +1,8 @@
 // Cloth_Simulation.cpp
 
 #include "stdafx.h"
+#include "Game/RenderInterpolation.h"
+#include "Game/RenderInterpolationMath.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -695,6 +697,7 @@ struct Vec3 { float x, y, z; };
 
 struct Vertex {
     Vec3 force, vel, pos, oneTimeMove;
+    Vec3 presentationPrevious;
     Vec3 anchor;             // muestra de pose propia; no apunta al scratch del render
     int  countOneTimeMove;
     unsigned char state;
@@ -718,6 +721,7 @@ const int kMaxSpheres = 5;
 struct MeshCloth {
     int     part;            // clave: puntero a la pieza (PART_t)
     int     lastFrame;
+    bool presentationContinuous;
     int     spawnFrame;       // identidad del owner al reutilizar un slot
     int     numVertices;
     Vertex *vertices;
@@ -1053,6 +1057,8 @@ void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
     }
     c->spawnFrame = spawn;
     if (!c->vertices && !Create(*c, model, bones)) { Destroy(*c); return; }
+    c->presentationContinuous=c->lastFrame==frame-1;
+    for (int v=0;v<c->numVertices;++v) c->vertices[v].presentationPrevious=c->vertices[v].pos;
     c->lastFrame = frame;
     CapturePose(*c, model, bones);
     const float angleZ = AsObject(entity)->Angle[2];
@@ -1073,7 +1079,11 @@ void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
         if (c.part != part || !c.vertices || c.spawnFrame != AsObject(entity)->InitialSceneFrame) continue;
         for (int v = 0; v < c.numVertices; ++v) {
             float *p = VT(kSkirtMesh, v);
-            p[0] = c.vertices[v].pos.x; p[1] = c.vertices[v].pos.y; p[2] = c.vertices[v].pos.z;
+            const Vertex &vertex=c.vertices[v];
+            const float alpha=c.presentationContinuous && RenderInterpolation_OwnerContinuous((void *)entity) ? RenderInterpolation_Alpha() : 1;
+            p[0]=RenderBlend(vertex.presentationPrevious.x,vertex.pos.x,alpha);
+            p[1]=RenderBlend(vertex.presentationPrevious.y,vertex.pos.y,alpha);
+            p[2]=RenderBlend(vertex.presentationPrevious.z,vertex.pos.z,alpha);
         }
         return;
     }

@@ -7,6 +7,7 @@
 // +0 flag activo, +4 modo de blend), más los timers de avisos y de chat.
 
 #include "stdafx.h"
+#include "Game/RenderInterpolation.h"
 #include "Config/UserSettings.h"
 
 namespace {
@@ -25,7 +26,16 @@ void Sprite_ReplayStep() {
         if (!sample[0]) continue;
         while (destination < 1002 && DAT_07c85890[destination * 0x1bc]) ++destination;
         if (destination == 1002) break;
-        memcpy(DAT_07c85890 + destination++ * 0x1bc, sample, 0x1bc);
+        char *out=DAT_07c85890+destination++*0x1bc;
+        memcpy(out,sample,0x1bc);
+        // El sprite efímero conserva su alta/azar; sólo acompaña la traslación
+        // visual de su dueño conocido. No se inventa identidad entre emisiones.
+        float offset[3];
+        if (RenderInterpolation_OwnerOffset((void *)*(int *)(out+0xfc),offset))
+            for (int axis=0;axis<3;++axis) {
+                *(float *)(out+0x10+4*axis)+=offset[axis];
+                *(float *)(out+0x170+4*axis)+=offset[axis];
+            }
     }
 }
 
