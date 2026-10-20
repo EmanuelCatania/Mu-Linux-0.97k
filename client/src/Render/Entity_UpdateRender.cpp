@@ -3,25 +3,8 @@
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 #include "Game/MapManager.h"
-
-// GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
-// RELEE como puntero (`*(int*)(thiz+4)`). Convertir el puntero a float lo
-// destruye (float tiene 24 bits de mantisa), así que hay que pasar los BITS.
-// IDA aloca los widgets de tela con el prefijo de count del `eh vector
-// constructor iterator`: `raw = operator_new(0x58); *raw = 1; obj = raw + 1;`
-// El objeto vive en **+4** y el count en +0. El dtor (`sub_45AAA0` con flags&2)
-// lee `*((int*)obj - 1)` y libera `obj - 4`, así que sin el prefijo leía el
-// header del heap y liberaba un puntero inválido → AV dentro de operator_delete.
-static inline void *ClothNew(void) {
-    int *raw = (int *)operator_new(0x58);
-    if (!raw) return nullptr;
-    raw[0] = 1;                       // count = 1 elemento
-    return Widget_CtorBase(raw + 1);     // el ctor recibe el objeto, no el bloque
-}
-
-static inline float PtrAsFloatBits(const void *p) {
-    float f; int v = (int)(uintptr_t)p; memcpy(&f, &v, 4); return f;
-}
+#include "Render/EquipmentVisuals.h"
+#include "Entity/CharacterEffects.h"
 
 #pragma warning(disable: 4244 4305 4701 4702 4700)
 // Entity_UpdateRender.cpp  —  RenderCharacter @ 0x00456770  (2195 lines in Ghidra)
@@ -52,9 +35,6 @@ extern "C" {
     // Back-weapon render decision. Returns 1 if weapon was rendered
     // on back (LinkBone 47). When 1, Render_PlayerWeaponLoop should be skipped.
     int  RenderCharacterBackItem(int c, int o);
-    // Watchdog por frame que restaura wings/weapons/pendant del
-    // hero si fueron reseteados a -1 después de F3/03.
-    void HeroEquipWatchdog(int c);
 }
 
 // IDA: RenderGuildMarkOnShield — dibuja la textura 34 ya compuesta por CreateGuildMark
@@ -95,7 +75,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
-    bool bDeferWing = false;           // 0.97.20: ala del catálogo, va después del cuerpo
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
@@ -109,31 +88,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     if (*(short *)((char *)model + 0x26) == 0)
         return (void *)entity_type;
 
-    // Arrays contiguos: `&local_X` se pasa a funciones que leen/escriben 3 floats
-    // consecutivos (CreateSprite, BMD_TransformPosition, etc.).
-    float local_60_buf[3] = { 1.0f, 1.0f, 1.0f }; // RGB color tint
-    float local_48_buf[3] = { 0.0f, 0.0f, 0.0f }; // position offset
-    float local_54_buf[3] = { 0.0f, 0.0f, 0.0f }; // transformed world pos
-    float local_30_buf[3] = { 0.0f, 0.0f, 0.0f }; // prev bone pos
-    float local_3c_buf[3] = { 0.0f, 0.0f, 0.0f }; // scratch
+    float local_60_buf[3] = {1.0f, 1.0f, 1.0f};
     #define local_60 (local_60_buf[0])
     #define local_5c (local_60_buf[1])
     #define local_58 (local_60_buf[2])
-    #define local_48 (local_48_buf[0])
-    #define local_44 (local_48_buf[1])
-    #define local_40 (local_48_buf[2])
-    #define local_54 (local_54_buf[0])
-    #define local_50 (local_54_buf[1])
-    #define local_4c (local_54_buf[2])
-    #define local_30 (local_30_buf[0])
-    #define local_2c (local_30_buf[1])
-    #define local_28 (local_30_buf[2])
-    #define local_3c (local_3c_buf[0])
-    #define local_38 (local_3c_buf[1])
-    #define local_34 (local_3c_buf[2])
-    void *pvVar23 = NULL;   // model/BMD object (resolved via HashTable — see note)
-    void *local_78 = NULL;  // same as pvVar23 in outer switch
-    void *local_74 = NULL;  // dead/anim flag
 
     // ── 2. Switch por TIPO DE MONSTRUO (+0x2EB) ──────────────────────────────
     char cVar6 = *(char *)((int)param_1 + 0x2eb);  // tipo de monstruo
@@ -143,40 +101,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     {
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
-        if (param_1[0x61] == 0) {
-            // IDA 0x456770 L308-323:
-            //     v9 = (float *)(block + 4);
-            //     *(_DWORD *)block = 1;                  // prefijo de count
-            //     eh_vector_ctor(block + 4, 0x60, 1, sub_4093A0, sub_4093C0);
-            //     sub_4093E0(v9, ...); sub_409250(v9, ...); sub_409250(v9, ...);
-            //     *(_DWORD *)(c + 388) = v9;             // guarda el OBJETO
-            //
-            // En c+388 va el objeto (`block + 4`), no `block`: el tick de la tela
-            // (`sub_408CB0`) arranca con una llamada por vtable --
-            // `(*(void(**)(_DWORD*))(*a1 + 8))(a1)` -- y leeria el prefijo de count como
-            // si fuera la vtable.
-            //
-            // Los tipos de monstruo de este case (+0x2EB: 89, 95, 112, 118, 124,
-            // 130, 136) incluyen el 130 = "Magic Skeleton", que es el que aparece
-            // al caer la puerta del evento de Blood Castle.
-            void *puVar8 = operator_new(100);
-            *(int *)puVar8 = 1;                    // count del eh vector ctor
-            void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
-            L_YGXPAXIHP6EX0_Z1_Z(clothObj, 0x60, 1, (void *)Widget_Ctor);
-            SpringMesh_Create(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
-            VerletNode_AddToSystem(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
-            VerletNode_AddToSystem(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
-            param_1[0x61] = (int)clothObj;
-            *(char *)(param_1 + 0x60) = 1;
-        }
-        int *piVar16 = (int *)param_1[0x61];
-        if (piVar16) {
-            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0)
-                DeleteCloth((int)param_1, (int)puVar13, 0);
-            else
-                FUN_00408ff0((void *)piVar16);
-        }
+        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
         if ((BYTE)uVar11 != 0)
             Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
         break;
@@ -248,6 +173,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
+    Equipment_Draw((int)param_1, CharacterEffects_EarlyStage);
+
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
 
@@ -269,95 +196,13 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), secondFlags, bodyBright, 0xffffffff);
     }
-    else if (bVar7 == 0x45) {
-        // 9-bone glitter + 3 random-bone sparks
-        const float sparkle = (float)(rand() % 30 + 70) * 0.01f;
-        local_60 = sparkle * 0.8f;
-        local_5c = sparkle * 0.9f;
-        local_58 = sparkle;
-        BYTE *boneIdxTable = (BYTE *)&DAT_0055984c;
-        for (int i = 0; i < 9; i++) {
-            BMD_TransformPosition(model,
-                (float *)(puVar13[0x45] + (int)(UINT)boneIdxTable[i] * 0x30),
-                &local_48, &local_54, '\x01');
-            CreateSprite(0x47e, &local_54, 0.6f, &local_60, (int)puVar13, 0.0f, 0);
-        }
-        // IDA changes only the random-particle tint after the nine sprites.
-        local_60 = sparkle * 0.6f;
-        local_5c = sparkle * 0.7f;
-        local_58 = sparkle * 0.8f;
-        int nBones = *(short *)((char *)model + 0x22);
-        for (int i = 0; i < 3; i++) {
-            // IDA: v242[0..2] = rand() % 20 - 10 antes de cada particula.
-            // Sin esto las tres chispas nacen clavadas en el hueso.
-            local_48 = (float)(rand() % 20 - 10);
-            local_44 = (float)(rand() % 20 - 10);
-            local_40 = (float)(rand() % 20 - 10);
-            int r = rand();
-            BMD_TransformPosition(model,
-                (float *)(puVar13[0x45] + (r % nBones) * 0x30),
-                &local_48, &local_54, '\x01');
-            Particle_Spawn(0x498, &local_54, (float *)(puVar13 + 7),
-                         &local_60, 3, 1.0f, 0);
-        }
-    }
-    else if (bVar7 == 0x46) {
-        BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x3c0),
-                     &local_48, &local_54, '\x01');
-        CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+    else if (bVar7 == 0x45 || bVar7 == 0x46) {
+        // Los sprites se reproducen desde la muestra SIM de esta entidad.
     }
     else if ((bVar7 == 0x47) || (bVar7 == 0x4a)) {
-        // Glow bar widget for special skill (0x1ed = Meteor / 0x1ef = another)
-        if (param_1[0x61] == 0) {
-            int iType = (bVar7 == 0x47) ? 0x1ed : 0x1ef;
-            void *puVar8 = ClothNew();
-            // IDA L493: sub_408130(v33, c, 19, 10.0, 0, 5, 15, 30.0, 300.0, tex, tex, 0x1100)
-            // (los enteros del decompile: 1106247680 = 0x41F00000 = 30.0;
-            // 1133903872 = 0x43960000 = 300.0).
-            GridSpring_Create(puVar8, PtrAsFloatBits(param_1), 0x13, 10.0f, 0.0f,
-                         5, 0xf, 30.0f, 300.0f, iType, iType, 0x1100);
-            param_1[0x61] = (int)puVar8;
-            *(char *)(param_1 + 0x60) = 1;
-        }
-        int *piVar16 = (int *)param_1[0x61];
-        if (piVar16) {
-            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0) DeleteCloth((int)param_1, (int)puVar13, 0);
-            else {
-                // vtable+0xC = sub_408FF0 (ver nota en el case 0x186).
-                FUN_00408ff0((void *)piVar16);
-            }
-        }
+        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
     }
     else if (bVar7 == 0x49) {
-        // Drakan (MonsterID 73). IDA 00456770 `case 'I'` con 747 == 73.
-        // Sprites 1150 sobre dos tramos de huesos, mas una cadena de joints
-        // 1254 entre huesos consecutivos.
-        //
-        // IDA fija el color ANTES de la cadena: Light = (0.1, 0.1, 1.0), o sea
-        // AZUL. El port no lo hacia y heredaba el (1,1,1) que queda seteado
-        // antes del switch (raw L290-292), asi que la cadena salia blanca.
-        local_60 = 0.1f;   // Light[0]
-        local_5c = 0.1f;   // Light[1]
-        local_58 = 1.0f;   // Light[2]
-        for (int off = 0x270; off < 0x510; off += 0x30) {
-            BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
-                         &local_48, &local_54, '\x01');
-            CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
-            // IDA: `if (v29 >= 672 && v29 <= 768 || v29 == 1104)`.
-            // Al port le faltaba el `|| off == 0x450` (hueso 23), o sea un
-            // tramo de la cadena no se dibujaba.
-            if ((off >= 0x2a0 && off <= 0x300) || off == 0x450) {
-                Joint_Create(0x4e6, &local_30, &local_54,
-                             (float *)(puVar13 + 7), 7, 0, 20.0f, -1, 0);
-            }
-            local_30 = local_54; local_2c = local_50; local_28 = local_4c;
-        }
-        for (int off = 0x9c0; off < 0xb10; off += 0x30) {
-            BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
-                         &local_48, &local_54, '\x01');
-            CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
-        }
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
         // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
         RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
@@ -366,10 +211,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                      *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
-        BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x360),
-                     &local_48, &local_54, '\x01');
-        Particle_Spawn(0x4ab, &local_54, (float *)(puVar13 + 7),
-                     &local_60, 0, 0.3f, 0);
         // Giant Drakan (75): a diferencia de Drakan (73), IDA hace UN solo
         // pase con flags (0x100 | 0x44) = 0x144 y sin sub_504AC0.
         RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
@@ -392,40 +233,12 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Entity_PrepareRender((unsigned char *)puVar13, 1, 2, 0);
         Entity_PrepareRender((unsigned char *)puVar13, 1, 3, 0);
 
-        const DWORD actionBones = *(DWORD*)((BYTE*)puVar13 + 276);
-        if (actionBones) {
-            memcpy(g_AttackEffectMatrix_04D,     (const void*)(actionBones + 1152), sizeof(g_AttackEffectMatrix_04D));
-        }
         *(int *)((BYTE *)puVar13 + 100) = -1;
         ++*(short *)((BYTE *)puVar13 + 2);
         Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, 0);
-        if (actionBones) {
-            memcpy(g_AttackEffectMatrix_04D_Alt, (const void*)(actionBones + 1104), sizeof(g_AttackEffectMatrix_04D_Alt));
-            memcpy(g_AttackEffectMatrix_04D_Aux, (const void*)(actionBones + 672),  sizeof(g_AttackEffectMatrix_04D_Aux));
-        }
 
-        if (param_1[0x61] == 0) {
-            void *puVar8 = ClothNew();
-            // IDA L598: sub_408130(v27, o, 10, -10.0, 0, 5, 12, 15.0, 240.0, 1275, 1275, 0x1100)
-            // El ancho era 60.0; 1097859072 = 0x41700000 = 15.0.
-            GridSpring_Create(puVar8, PtrAsFloatBits(puVar13), 10, -10.0f, 0.0f,
-                         5, 0xc, 15.0f, 240.0f, 0x4fb, 0x4fb, 0x1100);
-            VerletNode_AddToSystem(puVar8, 0.0f, 0.0f, 40.0f, 30.0f, 10);
-            param_1[0x61] = (int)puVar8;
-            *(char *)(param_1 + 0x60) = 1;
-        }
-        int *piVar16 = (int *)param_1[0x61];
-        if (piVar16) {
-            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0) DeleteCloth((int)param_1, (int)puVar13, 0);
-            else {
-                // IDA invokes vtable slot 3 as `this->Render(0)`.  The port
-                // was invoking the function pointer as cdecl with literal 0,
-                // so ECX no longer contained the cloth object.  00408FF0
-                // consumes the object in ECX and ignores its second argument.
-                FUN_00408ff0((void *)piVar16);
-            }
-        }
+
+        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
         --*(short *)((BYTE *)puVar13 + 2);
     }
 
@@ -438,31 +251,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                      *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
     }
 
-    // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
-    if (bVar7 == 0x2a) {
-        // Dual-axe: right weapon at Z=-40, left at Y=-40 angle=45
-        short *psVar1 = (short *)(param_1 + 0xa8);
-        *psVar1 = 0xea;
-        *(char *)(param_1 + 0xa9) = 9;
-        param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
-        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
-                     0xea, '\0', 0, '\0', '\x01', 0);
-        *psVar1 = 0xeb;
-        *(char *)(param_1 + 0xa9) = 0x3d;
-        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
-                     0xeb, '\0', 0, '\0', '\x01', 0);
-    }
-    else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
-        // Special class shield / weapon glow
-        short *psVar1 = (short *)(param_1 + 0xa8);
-        *(char *)(param_1 + 0xa9) = 1;
-        param_1[0xac] = 0x3e4ccccd;
-        if (bVar7 == 0x84) *psVar1 = 0x23a;
-        if (bVar7 == 0x85) *psVar1 = 0x1a3;
-        if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
-        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
-                     (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
-    }
+    Equipment_Draw((int)param_1, 0);
 
     // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
     // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
@@ -495,7 +284,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
     // ── 6. Scale / color from zone param + entity sub-state ──────────────────
-    float fVar32 = (float)(int)param_3 * _DAT_005524f8;
 
     // IDA RenderCharacter: siempre arma c+800/804/808 desde
     // RequestTerrainLight(o.x, o.y, Light) + o.ColorOffset[232..240].
@@ -561,163 +349,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xca) = L2;
     }
 
-    // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
-    // (Local_74 = `Bind` de IDA RenderCharacter: arma a la espalda.)
-    // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
-    // renombró la variable; la lógica queda tal cual el decompile.
-    {
-        bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-        local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
-        if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
-            local_74 = (void *)1;
-        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
-            local_74 = (void *)0;
-    }
-
-    // ── Re-aplicar el stash de equipo si está reseteado ─────────────────────
-    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
-        HeroEquipWatchdog((int)(uintptr_t)param_1_);
-
-
-        // +0x34E es SafeZone (no dead_flag): vale 1 con el héroe vivo en el pueblo.
-        // No forzarlo a 0: mataría la música de pueblo, el bind del arma a la
-        // espalda y el gate de "no atacar en zona segura".
-    }
-
-
-    // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
-    //
-    // SEGUNDA escritura de la luz del cuerpo.  Va aca a proposito: el cuerpo y
-    // sus partes ya se dibujaron mas arriba con la luz base, asi que esto solo
-    // afecta a lo que se renderiza DESPUES -- el bloque de armas y alas que
-    // sigue (RenderLinkObject sobre c + 672).  De ahi que un PK se vea con el
-    // cuerpo normal y las ALAS rojas, y no rojo entero.
-    //
-    // El `goto` del decompile (que saltaba de la rama de zona al cuerpo del
-    // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
-    // verde y azul, solo cambia el rojo.
-    {
-        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
-        bool bTint = false;
-        if (pkLevel < 6) {
-            // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
-            // duplicado de la escritura de mas arriba: es el reset que separa
-            // lo ya dibujado de lo que viene.  En el binario borra aca el
-            // tinte de las bebidas que dejo el bloque del heroe, de modo que
-            // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
-            // Sacarlo hace que el Ale tina tambien las alas.
-            *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
-            *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
-            *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
-
-            // Override de escala por zona (World - 9 en [1..7])
-            const int iSub = (int)gMapManager.GetCurrentMap() - 9;
-            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
-            const bool bInRange =
-                (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
-                (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
-                (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
-            if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
-                *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
-                bTint = true;
-            }
-        } else {
-            *(float *)(param_1 + 200) = 1.0f;   // PKLVL_KILLER: rojo
-            bTint = true;
-        }
-        if (bTint) {
-            *(float *)(param_1 + 0xc9) = 0.1f;
-            *(float *)(param_1 + 0xca) = 0.1f;
-        }
-    }
-
-    bool bSkipWeaponLoop = false;
-    if (sVar2 == 0x186) {
-        // Equipped back items are rendered once by RenderCharacterBackItem below.
-        // IDA 0x4582BC..0x45830A: Bind = SafeZone || greeting (93..124) ||
-        // (World == 7 && swimming (21/29)), then cleared in Blood Castle.
-        // Icarus (World == 10) does NOT set Bind. The duplicate block here used
-        // World 10..16 + !SafeZone, drawing the elf's bow on bone 47 as well
-        // as the normal hand attachment while flying in Icarus.
-
-        // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
-        // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con
-        //     EtcPart 1 -> 570 (Staff)   2 -> 419 (Sword)   3 -> 546 (Bow)
-        // y LinkBone 47.  `c->EtcPart` es el byte +0x2E8 (= param_1[0xba] con
-        // param_1 como int*), que escribe el handler del 0x9B con el
-        // EventItemLevel que manda el server.
-        //
-        // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
-        // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
-        // siempre se alcanza.
-        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
-            (*(char *)(param_1 + 0xba) != 0)) {
-            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            char cType = *(char *)(param_1 + 0xba);
-            int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
-                           (cType == 2) ? 0x1a3 :   // 419 Sword
-                           (cType == 3) ? 0x222 : 0; // 546 Bow
-            if (iSecType != 0) {
-                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                             iSecType, 0, 0, 1, 1, 0);
-            }
-        }
-
-        // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
-        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
-        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
-        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
-        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
-            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
-            bDeferWing = true;
-        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
-            *(BYTE *)(param_1 + 0xa9) = 0x2f;
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                         (int)*(short *)(param_1 + 0xa8),
-                         *(char *)((int)param_1 + 0x2a2),
-                         *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
-        }
-
-        // Wings / shield bone (slot 0xae == 0x331)
-        if (*(short *)(param_1 + 0xae) == 0x331) {
-            *(BYTE *)(param_1 + 0xaf) = 0x22;
-            param_1[0xb2] = 0x3f000000; // 0.5f
-            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
-                         0x331,
-                         *(char *)((int)param_1 + 0x2ba),
-                         (UINT)(size_t)local_74, '\0', '\x01', 0);
-            // Trail spawn at transformed bone position
-            float fOff[3] = { 20.0f, 0.0f, 15.0f };
-            float fWorldPos[3];
-            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
-                         (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
-                         fOff, fWorldPos, '\x01');
-            float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
-            CreateSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
-        }
-
-        // ── Helper render (IDA 1267-1288) ──────────────────────────────────
-        // Pet helper (Type 817) attached at bone 34 of player.
-        Render_PlayerHelper((int)param_1, (int)puVar13);
-
-        // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
-        // Si bBindBack=1, renderiza armas en la espalda (LinkBone
-        // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
-        int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
-
-        bSkipWeaponLoop = bBindBack != 0;
-    }
-
-    // IDA LABEL_330 is reached by every entity. Only the back-item/wing/helper
-    // block above is player-specific; ordinary monster weapons continue through
-    // the shared two-slot renderer.
-    if (!bSkipWeaponLoop)
-        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+    Equipment_Draw((int)param_1, 1);
 
     // ── Restaurar la luz base antes de las partes del cuerpo ────────────────
     //
@@ -849,32 +481,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // El port lo salteaba con la etiqueta "guild-mark related",
                 // que era incorrecta: la capita de atras se movia pegada al
                 // cuerpo en vez de simularse.
-                {
-                    const bool isGrandSoulPants = (iVar9 == 706);
-                    if (*piVar16 == 0 && isGrandSoulPants) {
-                        // IDA: operator_new(0x54) + sub_407FE0, SIN el prefijo de
-                        // count del `eh vector` (a diferencia de la capa del MG):
-                        // DeleteCloth la libera con el dtor en modo 1.
-                        void *cloth = Widget_CtorBase(operator_new(0x54));
-                        // sub_408130(obj, c, 2, 10.0, 10.0, 5, 15, 45.0, 85.0,
-                        //            1276, 1276, 0x1400)
-                        GridSpring_Create(cloth, PtrAsFloatBits(param_1), 2, 10.0f, 10.0f,
-                                     5, 15, 45.0f, 85.0f, 1276, 1276, 0x1400);
-                        // sub_409250(obj, 0, -15.0, -20.0, 30.0, 2)
-                        VerletNode_AddToSystem(cloth, 0.0f, -15.0f, -20.0f, 30.0f, 2);
-                        *piVar16 = (int)cloth;
-                    }
-                    if (*piVar16) {
-                        if (!isGrandSoulPants) {
-                            DeleteCloth((int)param_1, 0, 0);          // DeleteCloth(c, 0, 0)
-                        } else if (Widget_CheckState((int *)*piVar16, 0x3ba3d70a, 5)) {
-                            if (*(float *)(puVar13 + 0x5a) > 0.01f)
-                                FUN_00408ff0((void *)*piVar16);        // vtable[3]
-                        } else {
-                            DeleteCloth((int)param_1, (int)puVar13, 0);  // DeleteCloth(c, o, 0)
-                        }
-                    }
-                }
+                if (iVar9 == 706 && *piVar16 && *(float *)(puVar13 + 0x5a) > 0.01f)
+                    FUN_00408ff0((void *)*piVar16);
+
             }
             piVar16 += 6;   // advance to next slot (+0x18 bytes)
         }
@@ -890,155 +499,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    if (bDeferWing) {
-        *(BYTE *)(param_1 + 0xa9) = 0x2f;
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                     (int)*(short *)(param_1 + 0xa8),
-                     *(char *)((int)param_1 + 0x2a2),
-                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
-    }
+    Equipment_Draw((int)param_1, 2);
 
-    // ── 8. Death / PvP color tint ────────────────────────────────────────────
-    // [hash-table obfuscation blocks skipped — anti-tamper, not game logic]
-    if ((*(BYTE *)((char *)DAT_07cf1ff4 + 0x28) & 1) != 0) {
-        local_44 = 0.9f; local_40 = 0.5f; local_3c = 0.5f;
-    }
-    if ((*(BYTE *)((char *)DAT_07cf1ff4 + 0x28) & 2) != 0) {
-        local_44 *= _DAT_00552504;
-        local_40 *= _DAT_005526e8;
-        local_3c *= _DAT_00552504;
-    }
-
-    // ── 9. Entity-type outer switch — NPC / monster special effects ──────────
-    // pvVar23 / local_78 is resolved from the model object in the hash-table
-    // section above (skipped).  In the port we use el model lookup directo
-    // (DAT_05828d58 + entity_type * 0xbc) que ya teníamos calculado al inicio.
-    pvVar23 = model;
-    local_78 = model;
-
-    switch (sVar2) {
-
-    case 0x10e:  // Boat-like entity type 270
-    case 300:
-        // If weapon anim state == 1 (armed standing) or type == 300: sail effect
-        if (((sVar2 == 0x10e) && (*(short *)((int)param_1 + 0x1be) == 1)) ||
-            (sVar2 == 300)) {
-            puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x16, 0x17, 1.0f);
-            return puVar13;
-        }
-        break;
-
-    case 0x12a:  // Entity 298 — multi-bone particle rain (two tints based on flag)
-    {
-        int iVar9  = 0;
-        int iVar18 = 0;
-        local_48 = 0.0f; local_44 = 0.0f; local_40 = 0.0f;
-        bool bAlt = (*(short *)((int)param_1 + 0x1be) != 0);
-        if (bAlt) {
-            local_60 = 0.2f; local_5c = 0.7f; local_58 = 0.1f;
-        } else {
-            local_60 = 1.0f; local_5c = 1.0f; local_58 = 1.0f;
-        }
-        int nBones = *(short *)((char *)pvVar23 + 0x22);
-        while (iVar18 < nBones) {
-            // Skip bones in exclusion ranges (model-specific blank bones)
-            if ((*(char *)(*(int *)((int)pvVar23 + 0x2c) + 0x22 + iVar9) == '\0') &&
-                ((iVar9 < 0x834 || iVar9 > 0xaf0)) &&
-                ((iVar9 < 0xec4 || iVar9 > 0x1180))) {
-                BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + iVar18 * 0x30),
-                             &local_48, &local_54, '\x01');
-                UINT uType = bAlt ? 0x4f0 : 0x4cf;
-                float fSc  = bAlt ? 1.3f : 2.5f;
-                CreateSprite((int)uType, &local_54, fSc, &local_60, (int)puVar13, 0, (int)!bAlt);
-                // Random 1/4 chance: add spark if walking
-                BYTE bAnimState = *(BYTE *)((int)puVar13 + 0x105);
-                if ((rand() & 3) == 0 && bAnimState >= 3 && bAnimState <= 4)
-                    Particle_Spawn(0x49c, &local_54, (float *)(puVar13 + 7),
-                                 &local_60, 0, 1.0f, 0);
-            }
-            iVar9  += 0x8c;
-            iVar18 += 1;
-        }
-        break;
-    }
-
-    case 0x12f:  // Entity 303 — dual smoke/fire column
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 9, 0.0f, 0, 5.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 3.0f, 9, 0.0f, 0, 5.0f);
-        return puVar13;
-
-    case 0x130:  // Entity 304 — six-point smoke/fire/magic
-        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 0.5f, 0x1e, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 0.5f, 0x27, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 0x1e, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 0x27, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 2.0f, 0x1e, 0.0f, 0, -5.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 2.0f, 0x27, 0.0f, 0, -5.0f);
-        return puVar13;
-
-    case 0x132:  // Entity 306 — claw/spider: beam + 8 effect bones
-        Entity_SpawnBoneRangeEffect((int)puVar13, 0x2a, 0x2b, 1.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x1a, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x1f, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x24, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x29, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x1a, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x1f, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x24, 0.0f, 0, 0.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x29, 0.0f, 0, 0.0f);
-        return puVar13;
-
-    case 0x133:  // Entity 307 — large fire/smoke at bone 0x3f
-        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 1.0f, 0x3f, 0.0f, 0, 20.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 4.0f, 0x3f, 0.0f, 0, 20.0f);
-        return puVar13;
-
-    case 0x142:  // Entity 322 — dual beam bones 0x1a/0x1b  scale=2
-        puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x1a, 0x1b, 2.0f);
-        return puVar13;
-
-    case 0x15c:  // Entity 348 — soft sparkle at bone 0x20
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x47e, 1.5f, 0x20, 0.0f, 0, 0.0f);
-        return puVar13;
-
-    case 0x15d:  // Entity 349 — sin-wave orb cloud + occasional lightning joint
-    {
-        float fSin = (float)(double)fsin((double)(WorldTime * _DAT_005528e0));
-        local_48 = 3.5f; local_44 = -12.0f; local_40 = 10.0f;
-        float fCol = fSin * _DAT_0055294c + _DAT_00552948;
-        local_60 = fCol; local_5c = fCol; local_58 = fCol;
-        BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
-                     &local_48, &local_54, '\x01');
-        CreateSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
-                     (float)WorldTime * _DAT_00552944, 0);
-        CreateSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
-                     -(float)WorldTime * _DAT_00552944, 0);
-        if (rand() % 0x1e == 0) {
-            // Scatter lightning from random offsets around bone position
-            local_48 = (float)(rand() % 100) + local_54 - _DAT_00552598;
-            local_44 = (float)(rand() % 100) + local_50 - _DAT_00552598;
-            local_40 = (float)(rand() % 100) + local_4c - _DAT_00552598;
-            puVar13 = (int *)Joint_Create(0x4ea, &local_48, &local_54,
-                                          (float *)(puVar13 + 7), 6, 0, 20.0f, -1, 0);
-            return puVar13;
-        }
-        break;
-    }
-
-    case 0x176:  // Entity 374 — sparkle at bone 6  scale=2
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x47e, 2.0f, 6, 0.0f, 0, 0.0f);
-        return puVar13;
-
-    case 0x186:  // Entity 390 (Player) — port completo IDA case 390 (líneas 2111-2269)
-    {
-        // CheckFullSet detecta si las 5 piezas de armadura forman un set
-        // matcheado con level >= 9 → setea `EquipmentLevelSet` global y devuelve
-        // true si el char tiene 5 piezas (aunque no matcheen, para v230=true).
-        bool v230 = CheckFullSet((int)param_1);
-        local_48 = 0.0f; local_44 = 0.0f; local_40 = 0.0f;
-
+    if (sVar2 == 390) {
         // ── Capa del Magic Gladiator (IDA RenderCharacter L667-743) ───────────
         // La capa NO es una malla del modelo: es un objeto de **tela**
         // (cloth/verlet) construido con `sub_408130`, texturizado con
@@ -1085,187 +548,224 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 }
             }
 
-            if (bCape) {
-                if (param_1[0x61] == 0) {
-                    void* cloth = ClothNew();
-                    if (AsCharacter(cb)->MonsterIndex == 55) {
-                        GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
-                                     10, 10, 55.0f, 140.0f, 492, 492, 4097);
-                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 35.0f, 17);
-                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f, -10.0f, 35.0f, 17);
-                        VerletNode_AddToSystem(cloth,   0.0f, -10.0f, -20.0f, 50.0f, 19);
-                    } else {
-                        GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
-                                     10, 10, 75.0f, 120.0f, 490, 491, 1029);
-                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 25.0f, 17);
-                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f, -10.0f, 25.0f, 17);
-                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f,  20.0f, 27.0f, 17);
-                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f,  20.0f, 27.0f, 17);
-                    }
-                    param_1[0x61] = (int)cloth;
-                    *(char *)(param_1 + 0x60) = 1;
-                }
-                int *pCloth = (int *)param_1[0x61];
-                if (pCloth) {
-                    int alive = (int)(size_t)Widget_CheckState(pCloth, 0x3ba3d70a, 5);
-                    if (alive == 0) {
-                        DeleteCloth((int)param_1, (int)puVar13, 0);
-                    } else {
-                        // IDA: `(*(void (__thiscall **)(int,_DWORD))(*(_DWORD *)v49 + 12))(v49, 0);`
-                        // La vtable `off_552520` no está portada (Widget_CtorBase
-                        // tiene el vtable-set saltado), así que se llama directo al destino real.
-                        // Vtable leída del binario original (`Cliente armado/main.exe`, MD5 eb95ac…):
-                        //     off_552520 = { 0x0045AAA0, 0x00408780,
-                        //                    0x004089B0, 0x00408FF0 }
-                        // o sea **+0xC = sub_408FF0**.
-                        FUN_00408ff0((void *)pCloth);
-                    }
-                }
-            }
+            if (bCape && param_1[0x61])
+                FUN_00408ff0((void *)param_1[0x61]);
         }
-        if (SceneFlag == 2) {
-            return puVar13;
-        }
+    }
+    Equipment_Draw((int)param_1, CharacterEffects_LateStage);
+    return puVar13;
+}
 
-        // ── 1. Glove sparkle: class byte (cls&7)==0 + (cls_skin&0xF8)==8 ───
-        // (DK 2nd-tier with specific skin range): sprite + sin halo at bone 19
-        if (((*(BYTE *)((int)param_1 + 0x1bc) & 7) == 0) &&
-            ((*(char *)((int)param_1 + 0x1bd) & (char)~7) == '\b')) {
-            local_48 = -4.0f; local_44 = 11.0f; local_40 = 0.0f;
-            local_60 = 1.0f; local_5c = 1.0f; local_58 = 1.0f;
-            BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x390),
-                         &local_48, &local_54, '\x01');
-            CreateSprite(0x498, &local_54, 0.6f, &local_60, 0, 0, 0);
-            float fS = (float)(double)fsin((double)(WorldTime * _DAT_00552500));
-            CreateSprite(0x4cf, &local_54, (float)(fS * _DAT_005528b4),
-                         &local_60, 0, 0, 0);
-        }
+#undef local_60
+#undef local_5c
+#undef local_58
 
-        // ── 2. PLAYER_SPELL anim (88 = 'X') — orbit sparkles (3 sprites) ──
-        // IDA línea 2133-2152. Bone idx en c+628 (= LinkBone Weapon[0]),
-        // tres CreateSprite(1191) con rotación basada en WorldTime.
-        if (*(char *)((int)puVar13 + 0x105) == 'X') {
-            BYTE bone = *(BYTE *)(param_1 + 0x9d);  // = (param_1+0x9d*4-1)? no: int-idx 0x9d * 4 = byte 0x274 = c+628 LinkBone[0]
-            // Wait int-arithmetic: param_1 (int*) + 0x9d ints == byte+0x274 == c+628 ✓
-            BMD_TransformPosition(pvVar23,
-                (float *)(puVar13[0x45] + (UINT)bone * 0x30),
-                &local_48, &local_54, '\x01');
-            float Scalep = *(float *)((int)puVar13 + 0x108) * 0.1f;  // anim frame * 0.1
-            local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
-            CreateSprite(0x4a7, &local_54, Scalep * 0.30000001f,
-                         &local_60, (int)puVar13, 0, 0);
-            CreateSprite(0x4a7, &local_54, Scalep, (float*)(puVar13 + 0x3a),
-                         (int)puVar13, -WorldTime * 0.1f, 0);
-            CreateSprite(0x4a7, &local_54, Scalep * 2.5f, (float*)(puVar13 + 0x3a),
-                         (int)puVar13, WorldTime * 0.1f, 0);
-        }
-
-        // ── 3. Dragon mode (entity flags bit 2) — fire spray from hand bones ──
-        if ((*(BYTE *)(puVar13 + 0x1e) & 4) == 4) {
-            BYTE *pbVar20 = (BYTE *)(param_1 + 0x9d);  // c+628 = first weapon LinkBone
-            for (int iSlot = 2; iSlot > 0; iSlot--, pbVar20 += 0x18) {
-                int iRnd = rand();
-                local_60 = (float)(iRnd % 0x1e + 0x46) * _DAT_005524f8;
-                local_5c = (float)local_60 * _DAT_005528b8;
-                local_58 = (float)local_60 * _DAT_005526e4;
-                BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + (UINT)*pbVar20 * 0x30),
-                    &local_48, &local_54, '\x01');
-                CreateSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
-                BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbVar20 - 6) * 0x30),
-                    &local_48, &local_54, '\x01');
-                CreateSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
-                BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbVar20 - 7) * 0x30),
-                    &local_48, &local_54, '\x01');
-                CreateSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
-            }
-        }
-
-        // ── 4. Sin full set (v230==false) → no glow, exit ─────────────────
-        // DESVIACION (antilag propio): sin el brillo del set completo.
-        if (!v230 || gUserSettings.GetAntilag(ANTILAG_GLOW)) {
-            return puVar13;
-        }
-
-        // ── 5. Full set body glow: PartObjectColor + 6 sparkles (3 bones × 2) ──
-        // IDA línea 2191: PartObjectColor(c->Boot.Type, alpha, 0.5, Light, 0)
-        // → escribe en Light[3] el RGB del glow basado en el tipo de bota.
-        PartObjectColor(*(short*)((int)param_1 + 600),
-                     *(float *)((int)puVar13 + 0x168),
-                     0.5f, &local_60, '\0');
-
-        // Light = local_60..local_58 (RGB output del PartObjectColor)
-        // Spawn 3 sprites por weapon slot (Weapon[0] y Weapon[1]) en bones
-        // [bone, bone-6, bone-7] — esos son los huesos cercanos a la mano:
-        //   bone (≈19/20)   = mano principal
-        //   bone-6 (≈13/14) = brazo
-        //   bone-7 (≈12/13) = hombro
-        {
-            BYTE *pbV193 = (BYTE *)(param_1 + 0x9d);  // c+628 = LinkBone[Weapon0]
-            for (int v194 = 2; v194 > 0; v194--, pbV193 += 0x18) {
-                BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + (UINT)*pbV193 * 0x30),
-                    &local_48, &local_54, '\x01');
-                CreateSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);  // CreateSprite 1150
-                BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbV193 - 6) * 0x30),
-                    &local_48, &local_54, '\x01');
-                CreateSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
-                BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbV193 - 7) * 0x30),
-                    &local_48, &local_54, '\x01');
-                CreateSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
-            }
-        }
-
-        // ── 5b. WATERFALL particles at bone 0 — REVERTIDO ───────────────────
-        // Port de 5.2 quitado: 0.97k NO tiene esto, y el spawn rate provocaba
-        // particle whiteout (todos accumulating sin morir). El +9 glow del
-        // 0.97k es solo los 6 weapon-bone sprites + lightning crackle 1/20.
-
-        // ── 6. EquipmentLevelSet >= 10 — extra lightning trail (1/20 chance) ──
-        if (EquipmentLevelSet <= 9 || (rand() % 20)) {
-            return puVar13;
-        }
-        // Save entity light, set to white temporarily for the lightning render
-        float fSaveX = *(float *)(puVar13 + 0x3a);
-        float fSaveY = *(float *)(puVar13 + 0x3b);
-        float fSaveZ = *(float *)(puVar13 + 0x3c);
-        *(float *)(puVar13 + 0x3a) = 1.0f;
-        *(float *)(puVar13 + 0x3b) = 1.0f;
-        *(float *)(puVar13 + 0x3c) = 1.0f;
-        float *pfVar14 = (float *)(puVar13 + 0x3a);
-
-        if (EquipmentLevelSet == 10) {
-            // Single lightning particle around the entity
-            Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
-                         (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (int)puVar13);
-        } else if (EquipmentLevelSet == 11) {
-            // 1/8: lightning joint, 7/8: particle
-            int v198 = rand() & 0x80000007;
-            bool v197 = (v198 == 0);
-            if (v198 < 0) {
-                v197 = (((BYTE)v198 - 1) | 0xFFFFFFF8) == 0xFFu;
-            }
-            if (v197) {
-                Joint_Create(0x4e1, (float *)(puVar13 + 4),
-                             (float *)(puVar13 + 4), (float *)(puVar13 + 7),
-                             0, (int)puVar13, 10.0f, -1, 0);
-            } else {
-                Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
-                             (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (int)puVar13);
-            }
-        }
-        // Restore entity light
-        *(float *)(puVar13 + 0x3a) = fSaveX;
-        *(float *)(puVar13 + 0x3b) = fSaveY;
-        *(float *)(puVar13 + 0x3c) = fSaveZ;
-        return puVar13;
+// IDA: bloques de equipo de RenderCharacter (0x00456770).
+// DESVIACION: avanzan y emiten una vez por paso, con huesos de simulación.
+void Equipment_Tick(int entity, int highlighted)
+{
+    int *param_1 = (int *)entity, *puVar13 = (int *)entity;
+    short sVar2 = AsObject(entity)->Type;
+    BYTE bVar7 = AsCharacter(entity)->MonsterIndex;
+    bool bDeferWing = false;
+    void *local_74 = nullptr;
+    float fVar32 = (float)highlighted * _DAT_005524f8;
+    float savedLight[3];
+    memcpy(savedLight, (char *)param_1 + 800, sizeof(savedLight));
+    Equipment_BeginCharacter(entity);
+    _DAT_005597c8 = 1.0f;
+    Equipment_SetStage(0);
+    // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
+    if (bVar7 == 0x2a) {
+        // Dual-axe: right weapon at Z=-40, left at Y=-40 angle=45
+        short *psVar1 = (short *)(param_1 + 0xa8);
+        *psVar1 = 0xea;
+        *(char *)(param_1 + 0xa9) = 9;
+        param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
+        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
+                     0xea, '\0', 0, '\0', '\x01', 0);
+        *psVar1 = 0xeb;
+        *(char *)(param_1 + 0xa9) = 0x3d;
+        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
+                     0xeb, '\0', 0, '\0', '\x01', 0);
+    }
+    else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
+        // Special class shield / weapon glow
+        short *psVar1 = (short *)(param_1 + 0xa8);
+        *(char *)(param_1 + 0xa9) = 1;
+        param_1[0xac] = 0x3e4ccccd;
+        if (bVar7 == 0x84) *psVar1 = 0x23a;
+        if (bVar7 == 0x85) *psVar1 = 0x1a3;
+        if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
+        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
+                     (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
     }
 
-    } // end switch(sVar2)
 
-    return puVar13;
+    float light[3];
+    RequestTerrainLight(AsObject(entity)->Position[0], AsObject(entity)->Position[1], light);
+    float local_60 = light[0], local_5c = light[1], local_58 = light[2];
+    Equipment_SetStage(1);
+    // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
+    // (Local_74 = `Bind` de IDA RenderCharacter: arma a la espalda.)
+    // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
+    // renombró la variable; la lógica queda tal cual el decompile.
+    {
+        bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
+        if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
+            local_74 = (void *)1;
+        if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11)
+            local_74 = (void *)0;
+    }
+
+    // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
+    //
+    // SEGUNDA escritura de la luz del cuerpo.  Va aca a proposito: el cuerpo y
+    // sus partes ya se dibujaron mas arriba con la luz base, asi que esto solo
+    // afecta a lo que se renderiza DESPUES -- el bloque de armas y alas que
+    // sigue (RenderLinkObject sobre c + 672).  De ahi que un PK se vea con el
+    // cuerpo normal y las ALAS rojas, y no rojo entero.
+    //
+    // El `goto` del decompile (que saltaba de la rama de zona al cuerpo del
+    // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
+    // verde y azul, solo cambia el rojo.
+    {
+        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
+        bool bTint = false;
+        if (pkLevel < 6) {
+            // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
+            // duplicado de la escritura de mas arriba: es el reset que separa
+            // lo ya dibujado de lo que viene.  En el binario borra aca el
+            // tinte de las bebidas que dejo el bloque del heroe, de modo que
+            // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
+            // Sacarlo hace que el Ale tina tambien las alas.
+            *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
+            *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
+            *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+
+            // Override de escala por zona (World - 9 en [1..7])
+            const int iSub = (int)gMapManager.GetCurrentMap() - 9;
+            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
+            const bool bInRange =
+                (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
+                (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
+                (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
+            if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
+                *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
+                bTint = true;
+            }
+        } else {
+            *(float *)(param_1 + 200) = 1.0f;   // PKLVL_KILLER: rojo
+            bTint = true;
+        }
+        if (bTint) {
+            *(float *)(param_1 + 0xc9) = 0.1f;
+            *(float *)(param_1 + 0xca) = 0.1f;
+        }
+    }
+
+    bool bSkipWeaponLoop = false;
+    if (sVar2 == 0x186) {
+        // Equipped back items are rendered once by RenderCharacterBackItem below.
+        // IDA 0x4582BC..0x45830A: Bind = SafeZone || greeting (93..124) ||
+        // (World == 7 && swimming (21/29)), then cleared in Blood Castle.
+        // Icarus (World == 10) does NOT set Bind. The duplicate block here used
+        // World 10..16 + !SafeZone, drawing the elf's bow on bone 47 as well
+        // as the normal hand attachment while flying in Icarus.
+
+        // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
+        // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con
+        //     EtcPart 1 -> 570 (Staff)   2 -> 419 (Sword)   3 -> 546 (Bow)
+        // y LinkBone 47.  `c->EtcPart` es el byte +0x2E8 (= param_1[0xba] con
+        // param_1 como int*), que escribe el handler del 0x9B con el
+        // EventItemLevel que manda el server.
+        //
+        // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
+        // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
+        // siempre se alcanza.
+        if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
+            (*(char *)(param_1 + 0xba) != 0)) {
+            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
+            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            char cType = *(char *)(param_1 + 0xba);
+            int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
+                           (cType == 2) ? 0x1a3 :   // 419 Sword
+                           (cType == 3) ? 0x222 : 0; // 546 Bow
+            if (iSecType != 0) {
+                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                             iSecType, 0, 0, 1, 1, 0);
+            }
+        }
+
+        // Alas (c + 0x2A0).  DESVIACION (DLL WeaponView.cpp): se pueden ocultar.
+        // DESVIACION (0.97.20): un ala con modelo del catálogo se dibuja después
+        // del cuerpo, como en el 5.2 (RenderParts y después el ala): sus mallas
+        // aditivas no escriben profundidad y el cuerpo la taparía siempre.
+        if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS) &&
+            gContentCatalog.EntityDrawModel(param_1, *(short *)(param_1 + 0xa8)) >= MODEL_MAX_VANILLA) {
+            bDeferWing = true;
+        } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
+            *(BYTE *)(param_1 + 0xa9) = 0x2f;
+            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                         (int)*(short *)(param_1 + 0xa8),
+                         *(char *)((int)param_1 + 0x2a2),
+                         *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+        }
+
+        // Wings / shield bone (slot 0xae == 0x331)
+        if (*(short *)(param_1 + 0xae) == 0x331) {
+            *(BYTE *)(param_1 + 0xaf) = 0x22;
+            param_1[0xb2] = 0x3f000000; // 0.5f
+            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
+                         0x331,
+                         *(char *)((int)param_1 + 0x2ba),
+                         (UINT)(size_t)local_74, '\0', '\x01', 0);
+            // Trail spawn at transformed bone position
+            float fOff[3] = { 20.0f, 0.0f, 15.0f };
+            float fWorldPos[3];
+            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
+                         (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
+                         fOff, fWorldPos, '\x01');
+            float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
+            Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
+        }
+
+        // ── Helper render (IDA 1267-1288) ──────────────────────────────────
+        // Pet helper (Type 817) attached at bone 34 of player.
+        Render_PlayerHelper((int)param_1, (int)puVar13);
+
+        // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
+        // Si bBindBack=1, renderiza armas en la espalda (LinkBone
+        // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
+        int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
+
+        bSkipWeaponLoop = bBindBack != 0;
+    }
+
+    // IDA LABEL_330 is reached by every entity. Only the back-item/wing/helper
+    // block above is player-specific; ordinary monster weapons continue through
+    // the shared two-slot renderer.
+    if (!bSkipWeaponLoop)
+        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+
+
+    Equipment_SetStage(2);
+    if (bDeferWing) {
+        *(BYTE *)(param_1 + 0xa9) = 0x2f;
+        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                     (int)*(short *)(param_1 + 0xa8),
+                     *(char *)((int)param_1 + 0x2a2),
+                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+    }
+
+
+    memcpy((char *)param_1 + 800, savedLight, sizeof(savedLight));
+    Equipment_EndCharacter();
 }

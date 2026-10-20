@@ -52,6 +52,12 @@ set(MU_SOURCES
     src/Scene/Scene_Login.cpp
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
+    src/Render/WorldEffects.cpp
+    src/Render/MaterialVisuals.cpp
+    src/Render/EquipmentVisuals.cpp
+    src/Game/RenderDerivedState.cpp
+    src/Game/RenderSnapshots.cpp
+    src/Game/SimulationPreparation.cpp
     src/Game/Game_MainLoop.cpp
     src/Game/HeroVitals.cpp
     src/Game/Player_InputTick.cpp
@@ -224,6 +230,9 @@ set(MU_SOURCES
     src/Path/Path_LegacyReset.cpp
     src/Render/Font_LegacyFactory.cpp
     src/Render/SMD_Parser.cpp
+    src/Entity/CharacterEffects.cpp
+    src/Entity/CharacterCloth.cpp
+    src/Entity/ObjectPose.cpp
     src/Render/Entity_AnimationLegacy.cpp
     src/Combat/Combat_LegacyAttackEffects.cpp
     src/Entity/Entity_LegacyPoolCleanup.cpp
@@ -377,6 +386,16 @@ set(MU_HEADERS
     src/UI/UIState.h
     src/UI/ChatTypes.h
     src/Entity/EntityView.h
+    src/Render/WorldEffects.h
+    src/Render/MaterialVisuals.h
+    src/Render/EquipmentVisuals.h
+    src/Game/RenderDerivedState.h
+    src/Game/RenderSnapshots.h
+    src/Game/SimulationPreparation.h
+    src/Entity/CharacterEffects.h
+    src/Entity/CharacterCloth.h
+    src/Entity/ObjectPose.h
+    src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
     src/Model/ModelTypes.h
     src/Entity/CharacterAttributeView.h

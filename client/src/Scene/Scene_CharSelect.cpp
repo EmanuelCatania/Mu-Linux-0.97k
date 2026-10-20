@@ -187,6 +187,28 @@
 // Renders the character selection screen (3D world + 2D UI).
 // Returns low byte 1 = SwapBuffers, 0 = skip.
 
+// IDA: iluminación de OpenCharacterScene (0x00523B30).
+// DESVIACION: preparar también en SIM, antes de capturar el equipo. El draw
+// vuelve a evaluar el pulso y el hover con su WorldTime y restaura su estado.
+void SceneCharSelect_PrepareLighting()
+{
+    const float pulse=(float)((float10)sinl((long double)WorldTime *
+        (long double)_DAT_005528e0) * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
+    // El slot de creación usa DWORD con sentinel -1; IDA lo compara con signo.
+    const float brightness=(int)DAT_005616b0>=0 ? 0.2f : pulse;
+    if (DAT_083a021c) {
+        OBJECT &hover=*AsObject(DAT_083a021c);
+        hover.Light[0]=hover.Light[1]=hover.Light[2]=brightness;
+        hover.BlendMeshLight=brightness;
+    }
+    for (int slot=0;slot<5;++slot) {
+        OBJECT &o=((CHARACTER *)DAT_07abf5d0)[slot].Object;
+        const float light=slot==DAT_005616ac || slot==SelectedCharacter ?
+            1.0f : brightness*_DAT_00552504;
+        o.Light[0]=o.Light[1]=o.Light[2]=light;
+    }
+}
+
 int Scene_CharSelect(void)
 {
     float     fVar1;
@@ -218,20 +240,7 @@ int Scene_CharSelect(void)
         GL_BeginViewport(0, 0, 0x280, 0x1e0);
         Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
 
-        // Oscillating brightness: fsin on frame timer → range ~0.3..1.0
-        iVar9  = DAT_083a021c;
-        fVar11 = (float10)sinl((long double)WorldTime * (long double)_DAT_005528e0);
-        local_70 = (float)(fVar11 * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
-        if (-1 < DAT_005616b0)
-            local_70 = 0.2f;   // hovereado → dim los demás más
-
-        // Set hovered entity brightness
-        if (DAT_083a021c != 0) {
-            *(float *)(DAT_083a021c + 0xe8) = local_70;
-            *(float *)(iVar9 + 0xec) = local_70;
-            *(float *)(iVar9 + 0xf0) = local_70;
-            *(float *)(iVar9 + 0x68) = local_70;
-        }
+        SceneCharSelect_PrepareLighting();
 
         Terrain_Render();   // Terrain_Render
 
@@ -239,23 +248,15 @@ int Scene_CharSelect(void)
         _DAT_07abf13c = 0.9f;
         _DAT_07abf140 = 0.8f;
 
-        if (DAT_005616b0 == -1)
-            Mouse_UpdateHoverTargets();   // CharPreview_Render
+        // La selección de preview se publica al terminar el paso lógico.
 
-        // Per-slot color: selected/hover → full bright; others → dimmed
+        // La luz ya está preparada; se conserva la corrección de altura legacy.
         iVar4 = DAT_005616ac;
         iVar9 = SelectedCharacter;
         iVar7 = 0;
         pfVar3 = (float *)(DAT_07abf5d0 + 0xec);
         _DAT_0055a7c0 = 0;
         do {
-            if ((iVar7 == iVar4) || (iVar7 == iVar9)) {
-                pfVar3[-1] = 1.0f; *pfVar3 = 1.0f; pfVar3[1] = 1.0f;
-            } else {
-                fVar1 = local_70 * _DAT_00552504;
-                pfVar3[-1] = fVar1; *pfVar3 = fVar1; pfVar3[1] = fVar1;
-            }
-            // Dark Knight class fix: y_offset = 20
             if (*(short *)(pfVar3 + 0x73) == 0x333)
                 pfVar3[-0x35] = 20.0f;
             iVar7++;
@@ -566,7 +567,7 @@ int Scene_CharSelect(void)
                 GL_BeginViewport(0x11d, iVar9 + 0x5a, 0x4a, 0x4f);
                 // _DAT_07abf0?? están tipados `float`: se asignan los valores (5.0f / 1.0f),
                 // no los bit-patterns 0x40a00000 / 0x3f800000.
-                _DAT_07abf06c = 0.0f; _DAT_07abf070 = 5.0f; _DAT_07abf05c = 1.0f;
+                // Escala y ángulos del preview preparados en el paso lógico.
                 _DAT_07abf138 = 0.8f; _DAT_07abf13c = 0.8f; _DAT_07abf140 = 0.8f;
                 RenderCharacter((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
                 GL_PopMatrixAll();

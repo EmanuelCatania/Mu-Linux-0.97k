@@ -12,6 +12,7 @@ public:
     // DESVIACION: preparar el límite libre sin adelantar el desacople del render.
     void SetFpsLimit(int fps) { m_FpsLimit = fps >= 0 ? fps : 60; }
     void SetRenderDecoupled(bool enabled) { m_RenderDecoupled = enabled; }
+    bool IsRenderDecoupled() const { return m_RenderDecoupled; }
     void Shutdown();
 private:
     double m_FractionMilliseconds = 0;

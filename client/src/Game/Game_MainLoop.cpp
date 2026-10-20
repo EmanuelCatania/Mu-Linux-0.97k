@@ -34,6 +34,12 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
+static void Game_TickAmbientAudio();
+void Sprite_CaptureStep();
+void Chat_TickPresentation();
+void HUD_TickGridPresentation();
+void ItemNames_TickInput();
 #include "Platform/IFileSystem.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
@@ -46,6 +52,8 @@
 #include "Net/Ping.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
+#include "Game/SimulationPreparation.h"
+#include "Game/RenderSnapshots.h"
 #include "Game/Game_SceneUpdate.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Game/Game_CharSelectTick.h"
@@ -100,6 +108,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
     while (TimeRemain > 0x27) {
+        // DESVIACION: capturas externas por paso, también al recuperar demoras.
+        RenderSnapshots_BeginStep();
 
         // Anti-tamper: periodically re-randomize hash table when counter hits
         // a specific residue (0x39 mod 0x139). Not game logic.
@@ -144,6 +154,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             operator_delete(old_bec);
         }
 
+        Simulation_RestorePickingCamera();
         UI_InGameMenu();
 
         CHK("ML/pre_tick");
@@ -182,6 +193,14 @@ void __cdecl Game_MainLoop(HDC param_1)
             }
         }
         MoveSceneFrame++;
+        Simulation_PrepareStep();
+        Chat_TickPresentation();
+        MaterialVisuals_TickUi();
+        HUD_TickGridPresentation();
+        ItemNames_TickInput();
+        Game_TickAmbientAudio();
+        Sprite_CaptureStep();
+        RenderSnapshots_EndStep();
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;
@@ -311,6 +330,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
+    Simulation_BeginRender();
     renderStart = gFrameLimiter.Start();
     renderFlag  = 0;
 
@@ -324,6 +344,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
     CPhysicsManager_Render(g_PhysicsManager);   // IDA 0x5269C3: CPhysicsManager::Render
+    Simulation_EndRender();
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')
@@ -399,6 +420,11 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     #endif
 
+}
+
+// DESVIACION: azar y decisiones de audio a 25 Hz, también sin dibujo.
+static void Game_TickAmbientAudio()
+{
     // DESVIACION: IDA 0x525D40 pide g_lpszMp3[1] (MuTheme) en el login, el
     // mismo tema que Lorencia. Acá el login pide su propio archivo,
     // Data\Music\MuTheme.mp3, como el DLL (Patchs.cpp parchea ese nombre en

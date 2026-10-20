@@ -544,7 +544,7 @@ void Render_Scene3D(void)
     if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
-    MoveMainCamera();
+    // Cámara autoritativa preparada al finalizar el paso de simulación.
     float camPos[3];
     if (DAT_07abf5d8) {
         BYTE* hero = (BYTE*)DAT_07abf5d8;
@@ -606,9 +606,7 @@ void Render_Scene3D(void)
     Particle_RenderAll();                         // particle system draw
     RenderBoids();                              // RenderBoids (decoration animals)
     Entity_RenderAll_3D();
-    if (DAT_07e11d30 != 0) {                     // if (EditFlag) RenderTerrain(1) — IDA: aquí, no tras Trail
-        RenderTerrain('\x01');
-    }
+    // Picking de editor y avances del agua preparados en SIM.
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
         Entity_Render();                          // Entity_Render (sprites)
     }
@@ -636,7 +634,7 @@ void Render_Scene3D(void)
     RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
-    Mouse_UpdateHoverTargets();                              // EntityInfo / CharPreview overlay
+    // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.
 
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
     GL_Begin2D();                              // BeginBitmap (Ortho2D)

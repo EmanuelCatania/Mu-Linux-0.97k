@@ -9,6 +9,26 @@
 #include "stdafx.h"
 #include "Config/UserSettings.h"
 
+namespace {
+char simulationSprites[sizeof(DAT_07c85890)] = {};
+}
+// DESVIACION: conservar sprites efímeros creados durante cada paso SIM.
+// Su consumo por el render no borra la muestra para los renders sin paso.
+void Sprite_CaptureStep() {
+    memcpy(simulationSprites, DAT_07c85890, sizeof(simulationSprites));
+    for (int i = 0; i < 1002; ++i) DAT_07c85890[i * 0x1bc] = 0;
+}
+void Sprite_ReplayStep() {
+    int destination = 0;
+    for (int i = 0; i < 1002; ++i) {
+        const char *sample = simulationSprites + i * 0x1bc;
+        if (!sample[0]) continue;
+        while (destination < 1002 && DAT_07c85890[destination * 0x1bc]) ++destination;
+        if (destination == 1002) break;
+        memcpy(DAT_07c85890 + destination++ * 0x1bc, sample, 0x1bc);
+    }
+}
+
 // Render_DrawSpritePool = RenderSprites. Recorre el effect pool
 // y por cada slot activo:
 //   - dispatch GL state según blend mode en +4 (GL_SetBlendAdditive/90/80)
@@ -66,21 +86,17 @@ void __cdecl Render_DrawSprite(int param_1)
   float fVar1;
   int iVar2;
 
-  if (*(char *)(param_1 + 0x160) == '\0') {
-    fVar1 = *(float *)(param_1 + 0x108) - _DAT_005524f4;
-    *(float *)(param_1 + 0x108) = fVar1;
-    if (fVar1 < _DAT_005526e4) {
-      *(undefined4 *)(param_1 + 0x108) = 0x3e4ccccd;
-    }
+  // El slot es efímero: CreateSprite fija el factor en 1 y el pool se
+  // consume en esta pasada. Calcular el ajuste sin alterar la muestra base.
+  fVar1 = *(float *)(param_1 + 0x108);
+  if (*(char *)(param_1 + 0x160) == 0) {
+    fVar1 -= _DAT_005524f4;
+    if (fVar1 < _DAT_005526e4) fVar1 = 0.2f;
+  } else {
+    fVar1 += _DAT_005524f4;
+    if (fVar1 > _DAT_0055256c) fVar1 = 1.0f;
   }
-  else {
-    fVar1 = *(float *)(param_1 + 0x108) + _DAT_005524f4;
-    *(float *)(param_1 + 0x108) = fVar1;
-    if (_DAT_0055256c < fVar1) {
-      *(undefined4 *)(param_1 + 0x108) = 0x3f800000;
-    }
-  }
-  fVar1 = *(float *)(param_1 + 0xc) * *(float *)(param_1 + 0x108);
+  fVar1 *= *(float *)(param_1 + 0xc);
   iVar2 = *(short *)(param_1 + 2) * 0x38;
   RenderSprite_0((int)*(short *)(param_1 + 2),(float *)(param_1 + 0x10),
                fVar1 * *(float *)((char*)&DAT_083a7cc0 + iVar2),fVar1 * *(float *)((char*)&DAT_083a7cc4 + iVar2),
@@ -145,4 +161,4 @@ void Chat_TickMessageTimer(void)
   return;
 }
 
-
+

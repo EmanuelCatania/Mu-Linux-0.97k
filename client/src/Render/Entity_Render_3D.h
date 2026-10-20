@@ -1,9 +1,9 @@
 #pragma once
-// Entity_Render_3D.h - Entity 3D geometry rendering declarations
 
-#include "stdafx.h"
+// IDA: Entity_SpawnEffects (0x004FC070).
+// Emisores SIM; las mallas se dibujan mediante Entity_PrepareRender.
+float *Entity_SpawnEffects(int entity);
 
-// Renders entity geometry via OpenGL. This is the main 3D geometry draw function
-// called during the terrain rendering pass for each entity.
-// @ 0x004fc070
-void Entity_Render_3D(void *entity);
+void MoltSilhouette_BeginStep();
+void MoltSilhouette_Invalidate(const void *entity);
+void MoltSilhouette_Tick(int entity, void *model, float *bones, char translate);

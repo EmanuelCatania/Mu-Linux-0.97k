@@ -30,6 +30,7 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
+#include "Render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 
@@ -304,54 +305,8 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     else if (effectType == 788) {
         *(float *)(param_1 + 104) = sinf((float)WorldTime * 0.001f) + 1.1f;
     }
-    else if (effectType == 790) {
-        float fxLight[3];
-        float zeroPos[3];
-        float targetPos[3];
-        float worldPos[3];
-        float targetScale;
-        float scale2;
-        float spriteScale;
-        const int fromA[5] = { 0x420, 0x3F0, 0x3C0, 0x390, 0x360 };
-        const int toA[5]   = { 0x5A0, 0x570, 0x540, 0x510, 0x4E0 };
-        const int fromB[5] = { 0x150, 0x120, 0x0F0, 0x0C0, 0x090 };
-        const int toB[5]   = { 0x210, 0x240, 0x270, 0x2A0, 0x2D0 };
-        int i;
-
-        fxLight[0] = 0.60000002f;
-        fxLight[1] = 0.30000001f;
-        fxLight[2] = 0.80000001f;
-        zeroPos[0] = 0.0f;
-        zeroPos[1] = 0.0f;
-        zeroPos[2] = 0.0f;
-
-        targetScale = (sinf((float)WorldTime * 0.0040000002f) + 1.0f) * 0.30000001f * 10.0f + 20.0f;
-        scale2 = targetScale + 5.0f;
-        spriteScale = targetScale * 0.035714287f;
-
-        for (i = 0; i < 5; ++i) {
-            BMD__TransformPosition(this_,
-                (float (*)[4])(g_BoneScratch + fromA[i]),
-                zeroPos, targetPos, true);
-            BMD__TransformPosition(this_,
-                (float (*)[4])(g_BoneScratch + toA[i]),
-                zeroPos, worldPos, true);
-            Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
-            Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
-            CreateSprite(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
-        }
-
-        for (i = 0; i < 5; ++i) {
-            BMD__TransformPosition(this_,
-                (float (*)[4])(g_BoneScratch + fromB[i]),
-                zeroPos, targetPos, true);
-            BMD__TransformPosition(this_,
-                (float (*)[4])(g_BoneScratch + toB[i]),
-                zeroPos, worldPos, true);
-            Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
-            Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
-            CreateSprite(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
-        }
+    else if (effectType == 790 && !Equipment_IsDrawing()) {
+        Equipment_EmitWing790(this_, param_1, param_1);
     }
     // IDA RenderPartObjectEffect 0x504B50: after the type-specific effects,
     // o+140 chooses a projected shadow, not another opaque body pass.
@@ -510,4 +465,56 @@ LAB_after_render: ;
                      *(float*)(param_1 + 0x70),
                      -1, 0xffffffff);
     }
+}
+
+void Equipment_EmitWing790(void *this_, int param_1, int owner) {
+
+        float fxLight[3];
+        float zeroPos[3];
+        float targetPos[3];
+        float worldPos[3];
+        float targetScale;
+        float scale2;
+        float spriteScale;
+        const int fromA[5] = { 0x420, 0x3F0, 0x3C0, 0x390, 0x360 };
+        const int toA[5]   = { 0x5A0, 0x570, 0x540, 0x510, 0x4E0 };
+        const int fromB[5] = { 0x150, 0x120, 0x0F0, 0x0C0, 0x090 };
+        const int toB[5]   = { 0x210, 0x240, 0x270, 0x2A0, 0x2D0 };
+        int i;
+
+        fxLight[0] = 0.60000002f;
+        fxLight[1] = 0.30000001f;
+        fxLight[2] = 0.80000001f;
+        zeroPos[0] = 0.0f;
+        zeroPos[1] = 0.0f;
+        zeroPos[2] = 0.0f;
+
+        targetScale = (sinf((float)WorldTime * 0.0040000002f) + 1.0f) * 0.30000001f * 10.0f + 20.0f;
+        scale2 = targetScale + 5.0f;
+        spriteScale = targetScale * 0.035714287f;
+
+        for (i = 0; i < 5; ++i) {
+            BMD__TransformPosition(this_,
+                (float (*)[4])(g_BoneScratch + fromA[i]),
+                zeroPos, targetPos, true);
+            BMD__TransformPosition(this_,
+                (float (*)[4])(g_BoneScratch + toA[i]),
+                zeroPos, worldPos, true);
+            Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, owner, targetScale, -1, 0);
+            Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, owner, scale2, -1, 0);
+            Equipment_WingSprite(1277, targetPos, spriteScale, fxLight, owner, 0.0f, 0);
+        }
+
+        for (i = 0; i < 5; ++i) {
+            BMD__TransformPosition(this_,
+                (float (*)[4])(g_BoneScratch + fromB[i]),
+                zeroPos, targetPos, true);
+            BMD__TransformPosition(this_,
+                (float (*)[4])(g_BoneScratch + toB[i]),
+                zeroPos, worldPos, true);
+            Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, owner, targetScale, -1, 0);
+            Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, owner, scale2, -1, 0);
+            Equipment_WingSprite(1277, targetPos, spriteScale, fxLight, owner, 0.0f, 0);
+        }
+
 }

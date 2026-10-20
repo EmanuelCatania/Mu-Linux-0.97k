@@ -41,6 +41,10 @@
 #include "Platform/PlatformHeaders.h"
 #include <GL/gl.h>
 #include <math.h>
+#include <unordered_map>
+#include <vector>
+#include "Render/Entity_Render_3D.h"
+#include "Scene/ObjectRegistry.h"
 
 
 // fsin is an x87 FPU intrinsic declared in math.h — no separate extern needed
@@ -139,22 +143,65 @@ static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
                                  *(unsigned char **)(meshes + 68));
 }
 
-static void MoltSilhouette_Render(unsigned char *model, unsigned char *o)
-{
-    MoltSilhouette s = {};
-    unsigned char *verts = (unsigned char *)&DAT_0584621c;   // v2 = 0x0584621C
-    MoltSilhouette_Build(&s, verts, model, o);
-    // IDA sub_40A860 (0x40A860): un quad por arista.  El 4o/5o argumento
-    // (el buffer 0x060DB65C) no lo usa sub_40A8F0.
-    for (int i = 0; i < s.count; ++i) {
-        const short *e = (const short *)(s.edges + 10 * i);
-        const int base = 15000 * e[2];
-        FUN_0040a8f0(&s, (float *)(verts + 12 * (base + e[0])),
-                         (float *)(verts + 12 * (base + e[1])));
+namespace {
+struct MoltEdgeSample { float p1[3], p2[3], jitter; };
+struct MoltSample {
+    float direction[3];
+    std::uint64_t generation;
+    bool registered;
+    std::vector<MoltEdgeSample> edges;
+};
+std::unordered_map<const void *, MoltSample> moltSamples;
+int moltScene=-1, moltWorld=-1;
+}
+void MoltSilhouette_BeginStep() {
+    moltSamples.clear();
+    moltScene=SceneFlag; moltWorld=gMapManager.GetCurrentMap();
+}
+void MoltSilhouette_Invalidate(const void *entity) { moltSamples.erase(entity); }
+// DESVIACION: geometría y una muestra de azar por arista desde la pose SIM.
+// No se consume azar ni se modifican marcas de triángulos en los draws extra.
+void MoltSilhouette_Tick(int entity, void *model, float *bones, char translate) {
+    OBJECT &o=*AsObject(entity);
+    if (!o.Live || o.Type!=319 || o.Alpha<_DAT_005524f8 || o.RenderType==0x80 ||
+        (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
+    float bounds[15];
+    const float lod=_DAT_005597c8;
+    _DAT_005597c8=1.0f;
+    Skeleton_Transform(model, (int)bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
+    _DAT_005597c8=lod;
+    MoltSilhouette silhouette={};
+    auto *vertices=(unsigned char *)&DAT_0584621c;
+    MoltSilhouette_Build(&silhouette, vertices, (unsigned char *)model, (unsigned char *)entity);
+    MoltSample &sample=moltSamples[(void *)entity];
+    sample.edges.clear();
+    sample.registered=SceneObjects::Contains((void *)entity);
+    sample.generation=SceneObjects::Generation((void *)entity);
+    memcpy(sample.direction, silhouette.dir, sizeof(sample.direction));
+    for (int i=0; i<silhouette.count; ++i) {
+        const short *edge=(const short *)(silhouette.edges+10*i);
+        const int base=15000*edge[2];
+        MoltEdgeSample value;
+        memcpy(value.p1, vertices+12*(base+edge[0]), sizeof(value.p1));
+        memcpy(value.p2, vertices+12*(base+edge[1]), sizeof(value.p2));
+        value.jitter=(float)((double)(rand()%100)*0.0099999998);
+        sample.edges.push_back(value);
     }
-    // IDA sub_40A830 (0x40A830).
-    operator delete(s.edges);
-    if (s.buf8) operator delete(s.buf8);
+    operator delete(silhouette.edges);
+    if (silhouette.buf8) operator delete(silhouette.buf8);
+}
+static void MoltSilhouette_Render(unsigned char *, unsigned char *o) {
+    if (moltScene!=SceneFlag || moltWorld!=gMapManager.GetCurrentMap()) return;
+    const auto found=moltSamples.find(o);
+    if (found==moltSamples.end()) return;
+    MoltSample &sample=found->second;
+    if (sample.registered && (!SceneObjects::Contains(o) ||
+        SceneObjects::Generation(o)!=sample.generation)) return;
+    MoltSilhouette silhouette={};
+    memcpy(silhouette.dir, sample.direction, sizeof(silhouette.dir));
+    extern void MoltSilhouette_DrawEdge(void *, float *, float *, float);
+    for (MoltEdgeSample &edge:sample.edges)
+        MoltSilhouette_DrawEdge(&silhouette, edge.p1, edge.p2, edge.jitter);
 }
 
 void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char param_4)
@@ -258,7 +305,6 @@ LAB_render_dispatch:
     } else if (gMapManager.GetCurrentMap() == 4) {
         // Char-select scene: specific entity types get extra render passes
         if (sType == 0x17 || sType == 0x13 || sType == 0x14 || sType == 3 || sType == 4) {
-            _rand();
             sType = AsObject(param_1)->Type;
             if (sType == 0x17) {
                 // Normal char-select render
@@ -556,9 +602,8 @@ LAB_substate4_done:
     if (sType == 0x14b) {
         if (AsObject(param_1)->CurrentAction == '\x06') {
             // Death animation trigger
-            *param_1 = 0;
-            PlayBuffer(0x6a, 0, 0);
-            BMD__RenderMeshEffect(model, 0, 0x106);
+            // El evento de muerte se resuelve con la pose SIM.
+
             goto LAB_postprocess;
         }
         goto LAB_standard_render;
@@ -612,12 +657,6 @@ LAB_substate4_done:
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                          0x492);
-        } else {
-            if (bDead) {
-                *param_1 = 0;          // desactiva la entidad: corre un solo frame
-            }
-            PlayBuffer(0x6a, 0, 0);  // PlayBuffer(106)
-            BMD__RenderMeshEffect(model, 0, 0x104);
         }
         goto LAB_postprocess;
     }

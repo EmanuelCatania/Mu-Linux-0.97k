@@ -421,7 +421,6 @@ void __cdecl FUN_004f6420(int a, int b, int c, int d) { sub_4F6420(a, b, c, d); 
 extern "C" void __cdecl Render_HotbarItems3D_(void);
 void Render_HotbarItems3D_(void)
 {
-    SeedQuickPotionTypesFromInventory();
 
     GL_End2D();   // EndBitmap
 

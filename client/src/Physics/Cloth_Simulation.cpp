@@ -695,6 +695,7 @@ struct Vec3 { float x, y, z; };
 
 struct Vertex {
     Vec3 force, vel, pos, oneTimeMove;
+    Vec3 anchor;             // muestra de pose propia; no apunta al scratch del render
     int  countOneTimeMove;
     unsigned char state;
 };
@@ -717,6 +718,7 @@ const int kMaxSpheres = 5;
 struct MeshCloth {
     int     part;            // clave: puntero a la pieza (PART_t)
     int     lastFrame;
+    int     spawnFrame;       // identidad del owner al reutilizar un slot
     int     numVertices;
     Vertex *vertices;
     int     numLinks;
@@ -781,8 +783,21 @@ void SetLink(MeshCloth &c, int i, int v1, int v2, float dMin, float dMax, unsign
     c.links[i].style = style;
 }
 
+// Misma transformación de Skeleton_Transform con Translate=1 y LOD=1.
+// Se evalúa desde la pose SIM, sin preparar ni modificar vértices de render.
+Vec3 PoseVertex(void *model, const float *bones, const char *vertex) {
+    float p[3];
+    Vector_Transform((float *)(vertex + 4), (float *)(bones + *(short *)vertex * 12), p);
+    const float scale = *(float *)((char *)model + 0x68);
+    p[0] *= scale; p[1] *= scale; p[2] *= scale;
+    p[0] += *(float *)((char *)model + 0x6c);
+    p[1] += *(float *)((char *)model + 0x70);
+    p[2] += *(float *)((char *)model + 0x74);
+    return { p[0], p[1], p[2] };
+}
+
 // CPhysicsClothMesh::Create(o, iMesh, iBone, dwType)
-bool Create(MeshCloth &c, void *model) {
+bool Create(MeshCloth &c, void *model, const float *bones) {
     char *mesh = MeshPtr(model, kSkirtMesh);
     const int nV   = *(short *)(mesh + 4);
     const int nTri = *(short *)(mesh + 10);
@@ -797,8 +812,7 @@ bool Create(MeshCloth &c, void *model) {
     bool anyFixed = false;
     const char *verts = (const char *)*(int *)(mesh + 0x10);
     for (int v = 0; v < nV; ++v) {
-        const float *p = VT(kSkirtMesh, v);
-        c.vertices[v].pos.x = p[0]; c.vertices[v].pos.y = p[1]; c.vertices[v].pos.z = p[2];
+        c.vertices[v].pos = PoseVertex(model, bones, verts + v * 0x10);
         if (*(short *)(verts + v * 0x10) == kFixedBone) {
             c.vertices[v].state |= PVS_FIXEDPOS;
             anyFixed = true;
@@ -894,14 +908,35 @@ bool KeepLength(Vertex &v, const Vertex &other, const float *len) {
     return true;
 }
 
-// CPhysicsCloth::Move (una iteracion)
-bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float fTime) {
-    const float wind = _DAT_00590af0;
+// Captura la pose de entrada antes de resolver los cinco subpasos. El solver
+// conserva sus anclajes y esferas aunque otra malla reutilice los buffers VT.
+void CapturePose(MeshCloth &c, void *model, const float *boneBase) {
+    char *mesh = MeshPtr(model, kSkirtMesh);
+    const char *verts = (const char *)*(int *)(mesh + 0x10);
+    for (int v = 0; v < c.numVertices; ++v) {
+        if (*(short *)(verts + v * 0x10) == kFixedBone) {
+            c.vertices[v].anchor = PoseVertex(model, boneBase, verts + v * 0x10);
+            c.vertices[v].state |= PVS_FIXEDPOS;
+        }
+    }
+    for (int s = 0; s < c.numSpheres; ++s) {
+        Sphere &sp = c.spheres[s];
+        // Cambio de ejes del source: (x, y, z) -> (z, -y, x).
+        float in[3] = { sp.centerLocal.z, -sp.centerLocal.y, sp.centerLocal.x };
+        float out[3] = { 0.0f, 0.0f, 0.0f };
+        BMD_TransformPosition(model, (float *)(boneBase + sp.bone * 12), in, out, '\x01');
+        sp.center = { out[0], out[1], out[2] };
+    }
+}
+
+// CPhysicsCloth::Move (una iteracion). Entradas de tiempo/viento explícitas;
+// no consulta el modelo, huesos, buffers VT ni globals de simulación.
+bool Step(MeshCloth &c, float wind, int sceneFrame, float angleZ, float fTime) {
     const float a = (180.0f + angleZ) * 3.14159265f / 180.0f;
     const Vec3 vWind = { wind * sinf(a), -wind * cosf(a), 0.0f };
 
     // InitForces (modo malla): la misma clave para todos los vertices.
-    const int seed = (((int)MoveSceneFrame / 10) * 101) % c.numVertices;
+    const int seed = ((sceneFrame / 10) * 101) % c.numVertices;
     const unsigned key = (unsigned)abs(seed % 10);
     for (int i = 0; i < c.numVertices; ++i) UpdateForce(c.vertices[i], key, c.type, vWind);
 
@@ -923,17 +958,10 @@ bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float 
         }
     }
 
-    // SetFixedVertices (modo malla): los del hueso fijo siguen a la cadera.
-    {
-        char *mesh = MeshPtr(model, kSkirtMesh);
-        const char *verts = (const char *)*(int *)(mesh + 0x10);
-        for (int v = 0; v < c.numVertices; ++v) {
-            if (*(short *)(verts + v * 0x10) == kFixedBone) {
-                const float *p = VT(kSkirtMesh, v);
-                c.vertices[v].pos.x = p[0]; c.vertices[v].pos.y = p[1]; c.vertices[v].pos.z = p[2];
-                c.vertices[v].state |= PVS_FIXEDPOS;
-            }
-        }
+    // SetFixedVertices: los anclajes provienen de la muestra de pose capturada.
+    for (int v = 0; v < c.numVertices; ++v) {
+        if (c.vertices[v].state & PVS_FIXEDPOS)
+            c.vertices[v].pos = c.vertices[v].anchor;
     }
 
     // Integracion.
@@ -946,15 +974,7 @@ bool Step(MeshCloth &c, void *model, const float *boneBase, float angleZ, float 
         v.pos.x += v.vel.x * fTime; v.pos.y += v.vel.y * fTime; v.pos.z += v.vel.z * fTime;
     }
 
-    // PreventFromStretching: esferas de colision en el hueso.
-    for (int s = 0; s < c.numSpheres; ++s) {
-        Sphere &sp = c.spheres[s];
-        // Cambio de ejes del source: (x, y, z) -> (z, -y, x).
-        float in[3]  = { sp.centerLocal.z, -sp.centerLocal.y, sp.centerLocal.x };
-        float out[3] = { 0.0f, 0.0f, 0.0f };
-        BMD_TransformPosition(model, (float *)(boneBase + sp.bone * 12), in, out, '\x01');
-        sp.center.x = out[0]; sp.center.y = out[1]; sp.center.z = out[2];
-    }
+    // PreventFromStretching: esferas de colisión de la misma muestra de pose.
     if (c.numSpheres > 0) {
         for (int s = 0; s < c.numSpheres; ++s) {
             const Sphere &sp = c.spheres[s];
@@ -1016,47 +1036,45 @@ MeshCloth* FindSlot(int part) {
 
 } // namespace
 
-// Llamada desde RenderPartObject entre la transformacion de
-// los vertices (Skeleton_Transform) y el dibujado (RenderPartObjectEffect).
-void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
+// DESVIACION: la tela avanza al final de cada paso de 40 ms, incluso durante
+// recuperación sin render. El dibujo sólo consume las posiciones publicadas.
+void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
 {
     if (modelType != kDivinePantsModel || !part || !model || !entity) return;
-    // El modelo viejo (0.95/0.97) tiene 3 mallas y no trae falda.
-    if (*(short *)((int)model + 0x24) <= kSkirtMesh) return;
-
-    const float *boneBase = *(const float **)(entity + 0x114);   // BoneTransform
-    if (!boneBase) return;
-
+    if (*(short *)((char *)model + 0x24) <= kSkirtMesh) return;
+    const float *bones = AsObject(entity)->BoneMatrices ? (const float *)AsObject(entity)->BoneMatrices : nullptr;
+    if (!bones) return;
     MeshCloth *c = FindSlot(part);
-    // Si la pieza no se dibujo en los ultimos frames (cambio de mapa,
-    // entidad reusada), se vuelve a armar desde la pose actual.
     const int frame = (int)MoveSceneFrame;
-    if (c->vertices && (frame - c->lastFrame > 3 || frame < c->lastFrame)) {
+    const int spawn = AsObject(entity)->InitialSceneFrame;
+    if (c->vertices && (c->spawnFrame != spawn || frame - c->lastFrame > 3 || frame < c->lastFrame)) {
         Destroy(*c);
         c->part = part;
     }
-    if (!c->vertices && !Create(*c, model)) { Destroy(*c); return; }
-
-    // RenderPartObject corre varias veces por frame para la misma pieza (el
-    // pase de sombra y el doble dibujado del brillo de +N), asi que la
-    // simulacion se ata al tick: Move2(0.005, 5) una sola vez por frame.  Con
-    // un paso por llamada la tela recibia 10-15 pasos por frame, se descolgaba
-    // y no volvia.
-    const bool bStep = (c->lastFrame != frame);
+    c->spawnFrame = spawn;
+    if (!c->vertices && !Create(*c, model, bones)) { Destroy(*c); return; }
     c->lastFrame = frame;
-    if (bStep) {
-        const float angleZ = *(float *)(entity + 0x24);
-        for (int i = 0; i < 5; ++i) {                  // Move2(0.005f, 5)
-            if (!Step(*c, model, boneBase, angleZ, 0.005f)) {
-                Destroy(*c);                           // DeleteCloth
-                return;
-            }
+    CapturePose(*c, model, bones);
+    const float angleZ = AsObject(entity)->Angle[2];
+    for (int i = 0; i < 5; ++i) {
+        if (!Step(*c, _DAT_00590af0, frame, angleZ, 0.005f)) {
+            Destroy(*c);
+            return;
         }
     }
+}
 
-    // Render(): las posiciones simuladas pasan a VertexTransform[malla 3].
-    for (int v = 0; v < c->numVertices; ++v) {
-        float *p = VT(kSkirtMesh, v);
-        p[0] = c->vertices[v].pos.x; p[1] = c->vertices[v].pos.y; p[2] = c->vertices[v].pos.z;
+// No crea ni avanza tela; el pase de brillo/sombra puede repetirse libremente.
+void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
+{
+    if (modelType != kDivinePantsModel || !part || !model || !entity) return;
+    for (int i = 0; i < kSlots; ++i) {
+        const MeshCloth &c = g_Slots[i];
+        if (c.part != part || !c.vertices || c.spawnFrame != AsObject(entity)->InitialSceneFrame) continue;
+        for (int v = 0; v < c.numVertices; ++v) {
+            float *p = VT(kSkirtMesh, v);
+            p[0] = c.vertices[v].pos.x; p[1] = c.vertices[v].pos.y; p[2] = c.vertices[v].pos.z;
+        }
+        return;
     }
 }

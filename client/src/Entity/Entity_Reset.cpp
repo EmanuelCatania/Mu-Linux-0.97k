@@ -33,11 +33,14 @@
 //   +0x168 float alpha
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 
 
 // IDA: ItemObjectAttribute (0x00502BA0)
-int __cdecl ItemObjectAttribute(int param_1)
+static int ItemObjectAttributeImpl(int param_1, const int *samples)
 {
+  int cursor=0;
+  const auto random=[&]() { return samples ? samples[cursor++] : _rand(); };
   short sVar1;
   int iVar2;
   int iVar3;
@@ -91,7 +94,7 @@ int __cdecl ItemObjectAttribute(int param_1)
       goto switchD_00502c73_caseD_19a;
     case 0x19e:
       *(undefined4 *)&AsObject(param_1)->BlendMesh = 1;
-      iVar3 = _rand();
+      iVar3 = random();
       iVar2 = iVar3 / 10;
       AsObject(param_1)->BlendMeshTexCoordU = (float)(iVar3 % 10) * _DAT_005524f4;
       break;
@@ -153,9 +156,9 @@ switchD_00502c73_caseD_196:
         switch (iVar3) {
         case 0x25e:
           *(undefined4 *)&AsObject(param_1)->BlendMesh = 1;
-          iVar2 = _rand();
+          iVar2 = random();
           AsObject(param_1)->BlendMeshTexCoordU = (float)(iVar2 % 10) * _DAT_005524f4;
-          iVar2 = _rand();
+          iVar2 = random();
           AsObject(param_1)->BlendMeshTexCoordV = (float)(iVar2 % 10) * _DAT_005524f4;
           return iVar2 / 10;
         default:
@@ -177,9 +180,9 @@ switchD_00502c73_caseD_1d5:
       switch (iVar2) {
       case 0:
         *(undefined4 *)&AsObject(param_1)->BlendMesh = 2;
-        iVar2 = _rand();
+        iVar2 = random();
         AsObject(param_1)->BlendMeshTexCoordU = (float)(iVar2 % 10) * _DAT_005524f4;
-        iVar2 = _rand();
+        iVar2 = random();
         AsObject(param_1)->BlendMeshTexCoordV = (float)(iVar2 % 10) * _DAT_005524f4;
         return iVar2 / 10;
       case 1:
@@ -190,7 +193,7 @@ switchD_00502c73_caseD_1d5:
         return iVar2;
       case 2:
         *(undefined4 *)&AsObject(param_1)->BlendMesh = 1;
-        iVar2 = _rand();
+        iVar2 = random();
         AsObject(param_1)->BlendMeshLight = (float)(iVar2 % 0xb) * _DAT_005524f4;
         return iVar2 / 0xb;
       case 3:
@@ -210,4 +213,11 @@ switchD_00502c73_caseD_19a:
 switchD_00502c73_caseD_195:
   *(undefined4 *)&AsObject(param_1)->BlendMesh = 1;
   return iVar2;
+}
+
+int __cdecl ItemObjectAttribute(int entity) { return ItemObjectAttributeImpl(entity,nullptr); }
+int ItemObjectAttributeForRender(int entity) {
+    const auto *sample=MaterialVisuals_Current();
+    const int zero[2]={};
+    return ItemObjectAttributeImpl(entity, sample && sample->model==AsObject(entity)->Type ? sample->attribute : zero);
 }

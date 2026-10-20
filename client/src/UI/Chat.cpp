@@ -118,7 +118,7 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
     ScaleGlobalTextSize();
 
     if (index == DAT_07e11d78) {
-        const DWORD frame = DAT_07e11d2c++;
+        const DWORD frame = DAT_07e11d2c;
         if ((frame & 1) == 0) {
             // IDA 0x47F25B: lea esi, InputTextIME[index*4]. Taking
             // &DAT_07e11cec would multiply by the whole 40-byte array again.
@@ -395,7 +395,6 @@ void UI_RenderNotices(void)
     lpString = lpString + 0x108;
     iVar2 = iVar2 + 0xd;
   }
-  DAT_07e11da0 = DAT_07e11da0 + 1;
   return;
 }
 
@@ -529,7 +528,6 @@ LAB_00480b8e:
     iVar7 = iVar7 + 0xd;
     local_10c = local_10c + 1;
     if (0x4d < iVar7) {
-      DAT_07e11da8 = DAT_07e11da8 + 1;
       return;
     }
   } while( true );
@@ -714,4 +712,32 @@ char Chat_ValidateInputCommand(void)
   }
 LAB_00513792:
   return CONCAT31((uVar2 >> 8),1);
+}
+
+void ChatListBox_TickPresentation();
+// DESVIACION: parpadeos y alpha avanzan con los pasos SIM, no con los draws.
+void Chat_TickPresentation() {
+    const bool ready = SceneFlag == 2 ? DAT_083a7c49 != 0 :
+        SceneFlag == 4 ? CharSelectSceneInitialized && DAT_05826cb0 > 50 :
+        SceneFlag == 5 && DAT_083a7c10 && DAT_07e11d1c <= 30;
+    if (!ready) return;
+    if (!gUserSettings.GetAntilag(ANTILAG_INTERFACE)) ++DAT_07e11da0;
+    if (g_bUseChatListBox == 1 || SceneFlag != 5) ++DAT_07e11da8;
+    // Contar sólo campos que dibujarían el caret activo. Hay dos entradas
+    // legacy del mismo renderer y pueden coincidir chat, diálogo y panel.
+    const int index=DAT_07e11d78;
+    int cursors=0;
+    if (SceneFlag==2 && DAT_083a7c14>1 && DAT_083a7c14<4 && (index==0 || index==1)) ++cursors;
+    if (SceneFlag==4 && DAT_083a7c14>26 && DAT_083a7c14<29 &&
+        (int)DAT_005616b0>=0 && index==0) ++cursors;
+    if (SceneFlag==5 && !gUserSettings.GetAntilag(ANTILAG_INTERFACE)) {
+        if ((InputEnable || DAT_07e11d71) && (index==0 || index==1)) ++cursors;
+        if (GuildCreatorOpened && DAT_07eaa144 && index==0) ++cursors;
+        if (GoldenArcherOpenType==3 && index==0) ++cursors;
+    }
+    if (index==0 && (DAT_083a7c24==0x74 || DAT_083a7c24==0x72 ||
+        DAT_083a7c24==0x7e || DAT_083a7c24==0x98)) ++cursors;
+    DAT_07e11d2c+=cursors;
+    if (SceneFlag == 5 && !gUserSettings.GetAntilag(ANTILAG_INTERFACE))
+        ChatListBox_TickPresentation();
 }

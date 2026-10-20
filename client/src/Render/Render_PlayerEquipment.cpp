@@ -30,7 +30,7 @@
 //   Actions[N].PlaySpeed @ +4 dentro del struct (16 bytes/action)
 //
 // API mapping IDA → nuestra:
-//   CreateSprite(type, pos, scale, color, owner, alpha, mode) → CreateSprite
+//   Equipment_AddSprite(type, pos, scale, color, owner, alpha, mode) → CreateSprite
 //   CreateJoint(type, p0, p1, color, flag, owner, scale, ?, mode) → Joint_Create
 //   Particle_Spawn(type, pos, size, color, flag, alpha, mode) → Particle_Spawn
 //   TransformPosition(model, mat3x4, pos_in, pos_out, translate) → BMD_TransformPosition
@@ -40,6 +40,7 @@
 // obfuscation, no afectan render.
 
 #include "stdafx.h"
+#include "Render/EquipmentVisuals.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
@@ -235,7 +236,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -110.0f;
             WorldPosition[2] = 5.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x197: case 0x19A:
@@ -243,7 +244,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -110.0f;
             WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x198: case 0x199:
@@ -251,7 +252,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -110.0f;
             WorldPosition[2] = -5.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x19B: case 0x19E:
@@ -259,7 +260,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -150.0f;
             WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x19C: {
@@ -268,7 +269,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -160.0f;
             WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1150, v242, 1.4f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, 1.4f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -295,7 +296,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             TransformPos(model, boneMat, WorldPosition, v242);
             float L2[3] = { Scalel * 0.2f, Scalel * 0.2f, Scalel };
             float v210 = Scalel + 1.0f;
-            CreateSprite(1231, v242, v210, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1231, v242, v210, L2, o, 0.0f, 0);
             // Three joint sparkles
             WorldPosition[0] = 0.0f; WorldPosition[1] = -133.0f; WorldPosition[2] = 7.0f;
             TransformPos(model, boneMat, WorldPosition, WorldPosition);
@@ -317,7 +318,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                     WorldPosition[2] = 0.0f;
                     float* mat3 = BoneMat16(entity_o, bone);
                     TransformPos(model, mat3, WorldPosition, v242);
-                    CreateSprite(1150, v242, 1.0f, L2, o, 0.0f, 0);
+                    Equipment_AddSprite(1150, v242, 1.0f, L2, o, 0.0f, 0);
                 }
                 v172 -= 20;
                 Scaleh = (float)v172;
@@ -331,14 +332,14 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             TransformPos(model, boneMat, WorldPosition, v242);
             float L2[3] = { Scalei, Scalei * 0.2f, Scalei * 0.1f };
             float v211 = Scalei + 1.5f;
-            CreateSprite(1231, v242, v211, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1231, v242, v211, L2, o, 0.0f, 0);
             int v178 = 0;
             do {
                 WorldPosition[0] = 0.0f;
                 WorldPosition[1] = (float)v178 * 20.0f - 10.0f;
                 WorldPosition[2] = 0.0f;
                 TransformPos(model, boneMat, WorldPosition, v242);
-                CreateSprite(1231, v242, 1.0f, L2, o, 0.0f, 0);
+                Equipment_AddSprite(1231, v242, 1.0f, L2, o, 0.0f, 0);
                 v178--;
             } while (v178 > -5);
             float L3[3] = { Scalei * 0.5f, Scalei * 0.1f, Scalei * 0.050000001f };
@@ -366,7 +367,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                 WorldPosition[2] = Scalej;
                 float* mat3 = BoneMat16(entity_o, bone);
                 TransformPos(model, mat3, WorldPosition, v242);
-                CreateSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
+                Equipment_AddSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
                 v184 -= 20;
                 Scalej = (float)v184;
             } while (v184 > -120);
@@ -383,7 +384,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                 WorldPosition[2] = Scaleg * 20.0f;
                 float* mat3 = BoneMat16(entity_o, bone);
                 TransformPos(model, mat3, WorldPosition, v242);
-                CreateSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
+                Equipment_AddSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
                 Scaleg = (float)(--v168);
             } while (v168 > -6);
             break;
@@ -393,7 +394,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -90.0f; WorldPosition[2] = 0.0f;
             float L2[3] = { Targetj * 0.40000001f, Targetj * 0.80000001f, Targetj * 0.60000002f };
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1231, v242, 2.0f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1231, v242, 2.0f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -402,8 +403,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 0.0f;
             float* mat3 = BoneMat16(entity_o, bone);
             TransformPos(model, mat3, WorldPosition, v242);
-            CreateSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
-            CreateSprite(1191, v242, 0.30000001f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1191, v242, 0.30000001f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -411,8 +412,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
             float L2[3] = { Targetj, Targetj * 0.60000002f, Targetj * 0.40000001f };
-            CreateSprite(1175, v242, 3.0f, L2, o, 0.0f, 0);
-            CreateSprite(1232, v242, 1.5f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1175, v242, 3.0f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1232, v242, 1.5f, L2, o, 0.0f, 0);
             int v160 = 4;
             do {
                 WorldPosition[0] = (float)(rand() % 20 - 10);
@@ -431,7 +432,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                     WorldPosition[1] = Scalef + 60.0f;
                     WorldPosition[2] = 0.0f;
                     TransformPos(model, boneMat, WorldPosition, v242);
-                    CreateSprite(1150, v242, 1.0f, L3, o, 0.0f, 0);
+                    Equipment_AddSprite(1150, v242, 1.0f, L3, o, 0.0f, 0);
                 }
                 v164 -= 20;
                 Scalef = (float)v164;
@@ -452,12 +453,12 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             float L2[3] = { Targetj * 0.60000002f, Targetj * 0.60000002f, Targetj + Targetj };
             WorldPosition[0] = 0.0f; WorldPosition[1] = -120.0f; WorldPosition[2] = 5.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
             float Scalen = Targetj + 1.0f;
-            CreateSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
             WorldPosition[0] = 0.0f; WorldPosition[1] = 100.0f; WorldPosition[2] = 10.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            CreateSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
             break;
         }
 
@@ -466,7 +467,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 20.0f; WorldPosition[1] = 0.0f; WorldPosition[2] = 0.0f;
             float* mat3 = BoneMat16(entity_o, bone);
             TransformPos(model, mat3, WorldPosition, v242);
-            CreateSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            Equipment_AddSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -716,7 +717,7 @@ extern "C" void Render_PlayerHelper(int c, int o)
     float WorldPos[3];
     TransformPos(model, boneMat, Pos, WorldPos);
     float Light[3] = { Targetj * 0.5f, 0.0f, 0.0f };
-    CreateSprite(1150, WorldPos, 1.5f, Light, o, 0.0f, 0);
+    Equipment_AddSprite(1150, WorldPos, 1.5f, Light, o, 0.0f, 0);
 }
 
 

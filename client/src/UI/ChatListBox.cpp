@@ -1194,10 +1194,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     }
 
-    // Incrementa el contador de frames — lo usa el slot 23 para hacer parpadear el cursor.
-    int r = (int)self[46] + 1;
-    self[46] = r;
-    return r;
+    return (int)self[46];
 }
 
 // slot 23 — sub_40D610 (0x0040D610) — dibuja UNA linea del chat.
@@ -1368,13 +1365,6 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 static void __fastcall ChatLB_renderFooter(DWORD* self)
 {
     float* pAlpha = (float*)&self[49];             // *(float*)(this + 196)
-
-    // ── 1) Fade in/out ──────────────────────────────────────────────────────
-    if (self[48] == 1 && *pAlpha < 1.0f) {
-        *pAlpha = *pAlpha + 0.2f;
-    } else if (self[48] == 0 && *pAlpha > 0.0f) {
-        *pAlpha = *pAlpha - 0.2f;
-    }
 
     if (!(*pAlpha > 0.0f) || DAT_00559c84 /*InputEnable*/) return;
 
@@ -2912,4 +2902,22 @@ LABEL_23:
       break;
   }
   return result;
+}
+
+void ChatListBox_TickPresentation() {
+    DWORD *self = (DWORD *)DAT_055c9ff0;
+    if (!self) return;
+    void **vt = (void **)*self;
+    // El campo 46 tiene otro significado en las listas de guild.
+    if (!vt || vt[22] != (void *)ChatLB_renderBg) return;
+    ++self[46];
+    if (vt[24] != (void *)ChatLB_renderFooter) return;
+    float *pAlpha = (float *)&self[49];
+    // ── 1) Fade in/out ──────────────────────────────────────────────────────
+    if (self[48] == 1 && *pAlpha < 1.0f) {
+        *pAlpha = *pAlpha + 0.2f;
+    } else if (self[48] == 0 && *pAlpha > 0.0f) {
+        *pAlpha = *pAlpha - 0.2f;
+    }
+
 }

@@ -1,5 +1,6 @@
 #include <cstdint>
 #include "stdafx.h"
+#include "Game/RenderSnapshots.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
 #include "functions.h"
@@ -437,6 +438,7 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
     char *pcVar1 = (char*)&DAT_07c80110[0];
     for (int i = 0; i < 100; ++i) {
         if (*pcVar1 == '\0') {
+            RenderSnapshots_NewDamagePoint(i);
             *pcVar1 = '\x01';
             *(float*)(pcVar1 + 0x04) = entity_id;
             *(float*)(pcVar1 + 0x10) = world_pos[0];

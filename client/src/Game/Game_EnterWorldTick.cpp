@@ -278,7 +278,6 @@ void Game_EnterWorldTick(void)
     Effect_TickAll();            // MoveEffects (0x0046B790)
     Joint_TickAll();             // MoveJoints  (0x004736E0)
     MoveParticles();        CLK_WATCH("after-MoveParticles");
-    Character_UpdateAll();       CLK_WATCH("after-Character_UpdateAll");
     MoveCharacterClient((float*)&DAT_07abf050); CLK_WATCH("after-MoveCharacterClient");
 
     // ── Per-character animation tick ──────────────────────────────────────────
@@ -306,7 +305,6 @@ void Game_EnterWorldTick(void)
             }
         }
     } CLK_WATCH("after-CharAnim");
-    Effect_UpdateAll();          CLK_WATCH("after-Effect_UpdateAll");
     Login_CameraUpdate();        CLK_WATCH("after-Login_CameraUpdate");
     // MoveCamera @ 0x0051E4E0 — actualiza CameraPosition/CameraAngle desde
     // CurrentCameraPosition/CurrentCameraAngle (lerp hacia wp5 = char-select).

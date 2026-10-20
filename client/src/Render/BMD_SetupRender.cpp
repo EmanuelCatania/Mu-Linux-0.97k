@@ -15,11 +15,11 @@
 //   BMD__BeginRender (0x00440D30) — glPushMatrix
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 
 
 void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, float param_4, uint param_5)
 {
-  int iVar1;
   float10 fVar2;
   float10 fVar3;
   float10 fVar4;
@@ -189,12 +189,11 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                          *(float *)(param_2 + 0x68),
                          WorldTime * _DAT_00552a40, *(float *)(param_2 + 0x70), 0xffffffff);
             uVar5 = 0xffffffff;
-            iVar1 = _rand();
-            fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
-            iVar1 = _rand();
+            const auto &sample=MaterialVisuals_DrawSample((void *)param_2,param_3);
+            fVar9 = sample.v;
             BMD__RenderMesh(param_1, 4.2039e-45f, 2, 1.0f, 3,
                          *(float *)(param_2 + 0x68),
-                         (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
+                         sample.u, fVar9, uVar5);
             glPopMatrix();
             return;
           }
@@ -225,12 +224,11 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         uVar5 = 0xffffffff;
-        iVar1 = _rand();
-        fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
-        iVar1 = _rand();
+        const auto &sample=MaterialVisuals_DrawSample((void *)param_2,param_3);
+        fVar9 = sample.v;
         BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, 1,
                      *(float *)(param_2 + 0x68),
-                     (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
+                     sample.u, fVar9, uVar5);
         fVar2 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552500);
         fVar2 = fVar2 * (float10)_DAT_005528b4 + (float10)_DAT_00552534;
         fVar9 = (float)fVar2;

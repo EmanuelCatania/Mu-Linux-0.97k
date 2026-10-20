@@ -50,7 +50,6 @@ static void LoginScene_ApplySafeObjectAnim()
     extern float WorldTime;  // WorldTime
     extern void __cdecl MoveObject_Special(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
     extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
-    extern float* __cdecl Entity_SpawnEffects(int param_1);  // Entity_SpawnEffects / login ship fire
     extern void __stdcall MoveBugs(void);  // butterfly/helper owner-follow update
 
     for (int i = 0; i < 9; ++i) {
@@ -89,9 +88,8 @@ static void LoginScene_ApplySafeObjectAnim()
             AsObject(obj)->BlendMeshLight = ramp;
         }
 
-        // No spawnear efectos acá: Entity_SpawnEffects se llama una vez por entidad
-        // desde el pase de render (tras Entity_PrepareRender, con los bones frescos),
-        // como en el original.
+        // La pose y las antorchas del barco se publican después de este tick
+        // desde Terrain_PrepareSimulation/WorldEffects_Tick.
     }
 
     // Login uses the Butterfles pool for the floating fairy/angel helper
@@ -364,7 +362,6 @@ int Game_SceneUpdate(void)
     // expira las partículas. Nuestro Particle_Update() es en realidad
     // Trail_RenderAll (0x46C3E0, mal nombrado) y no decrementa el lifetime.
     MoveParticles();
-    Character_UpdateAll();
 
     // ── Per-character animation tick (login scene) ────────────────────────────
     // En el binario original MoveCharactersClient (0x00455010) corre cada frame
@@ -382,7 +379,6 @@ int Game_SceneUpdate(void)
         }
     }
 
-    Effect_UpdateAll();
     Login_CameraUpdate();
     // MoveCamera @ 0x0051E4E0 — login scene camera fly-through. Reads
     // CameraWalk_005615ec[] and writes CameraAngle/CameraPosition each frame.
