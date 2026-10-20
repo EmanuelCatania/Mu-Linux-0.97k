@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Game/RenderDerivedState.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/Entity_Render_3D.h"
 #include "Game/SimulationPreparation.h"
@@ -237,6 +238,7 @@ void Simulation_RestorePickingCamera()
 
 void Simulation_BeginRender()
 {
+    RenderDerivedState_Begin();
     MaterialVisuals_BeginRender();
     Sprite_ReplayStep();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
@@ -249,6 +251,7 @@ void Simulation_BeginRender()
 
 void Simulation_EndRender()
 {
+    RenderDerivedState_End();
     ApplyPose(renderCamera);
     Simulation_RestorePickingCamera();
 }

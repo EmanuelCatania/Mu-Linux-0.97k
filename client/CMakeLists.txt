@@ -55,6 +55,7 @@ set(MU_SOURCES
     src/Render/WorldEffects.cpp
     src/Render/MaterialVisuals.cpp
     src/Render/EquipmentVisuals.cpp
+    src/Game/RenderDerivedState.cpp
     src/Game/RenderSnapshots.cpp
     src/Game/SimulationPreparation.cpp
     src/Game/Game_MainLoop.cpp
@@ -388,6 +389,7 @@ set(MU_HEADERS
     src/Render/WorldEffects.h
     src/Render/MaterialVisuals.h
     src/Render/EquipmentVisuals.h
+    src/Game/RenderDerivedState.h
     src/Game/RenderSnapshots.h
     src/Game/SimulationPreparation.h
     src/Entity/CharacterEffects.h

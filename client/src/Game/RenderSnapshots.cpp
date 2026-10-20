@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Game/RenderDerivedState.h"
 #include "Render/Entity_Render_3D.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/RenderSnapshots.h"
@@ -201,12 +202,17 @@ void RenderSnapshots_EndStep() { Capture(false); }
 // DESVIACION: generaciones externas identifican reuso incluso dentro del mismo
 // paso, sin ampliar CHARACTER, PART_t, ITEM_t ni los pools del binario.
 void RenderSnapshots_NewCharacter(const void* entity) {
+    RenderDerivedState_Forget(entity);
     Equipment_Invalidate(entity);
     MoltSilhouette_Invalidate(entity);
     const int slot = CharacterSlot(entity);
     if (slot >= 0) ++characterGeneration[slot];
 }
-void RenderSnapshots_NewItem(int slot) { if (slot >= 0 && slot < 1000) ++itemGeneration[slot]; }
+void RenderSnapshots_NewItem(int slot) {
+    if (slot<0 || slot>=1000) return;
+    RenderDerivedState_Forget((BYTE *)DAT_07e12840+slot*0x204+72);
+    ++itemGeneration[slot];
+}
 void RenderSnapshots_NewDamagePoint(int slot) { if (slot >= 0 && slot < 100) ++pointGeneration[slot]; }
 bool RenderSnapshots_Character(int slot, float maximum, RenderPosePair& out) {
     if (slot < 0 || slot >= 401 || !Read(characters[slot], CharacterSample(slot), out)) return false;
