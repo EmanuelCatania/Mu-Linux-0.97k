@@ -294,7 +294,8 @@ bool RenderSnapshots_Camera(float maximum, RenderCameraPair& out) {
     if (SceneFlag==5) {
         RenderPosePair followed;
         const int slot=CharacterSlot(DAT_07abf5d8);
-        out.continuous=out.continuous && RenderSnapshots_Character(slot,maximum,followed) && followed.continuous;
+        out.continuous=out.continuous && cameraOwner==DAT_07abf5d8 &&
+            RenderSnapshots_Character(slot,maximum,followed) && followed.continuous;
     }
     return true;
 }
