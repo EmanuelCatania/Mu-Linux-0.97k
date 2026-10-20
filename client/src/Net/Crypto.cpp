@@ -16,6 +16,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Entity/ClothPresentation.h"
 #include "Platform/IFileSystem.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -847,9 +848,11 @@ void __fastcall FUN_00408ff0(void* param_1) {
     if (!verts) return;
 
     for (int r = 0; r < rows; ++r)
-        for (int c = 0; c < cols; ++c)
-            SpringNode_GetPos((void *)(nodes + 60 * (c + r * cols)),   // stride 0x3C
-                         &verts[3 * (c + r * cols)]);
+        for (int c = 0; c < cols; ++c) {
+            const int index=c+r*cols;
+            SpringNode_GetPos((void *)(nodes+60*index),&verts[3*index]);
+            ClothPresentation_Vertex(param_1,index,&verts[3*index]);
+        }
 
     unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
     if (flags == 0)          GL_ResetState();                      // DisableAlphaBlend
@@ -1068,6 +1071,7 @@ void __fastcall FUN_004093c0(void *This) {
 //         +0x3c=spring_array*, +0x54=slot_index, +0x5c=model_type.
 void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags)
 {
+    ClothPresentation_Forget(widget);
     char *thiz = (char*)widget;
     *(int *)(thiz + 8)  = type;
     *(int *)(thiz + 4)  = entity;

@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Entity/ClothPresentation.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include "Platform/IFileSystem.h"
@@ -219,6 +220,7 @@ void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
 
 // FUN_00408070 @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
 void __fastcall FUN_00408070(void *param_1_raw) {
+    ClothPresentation_Forget(param_1_raw);
     int *param_1 = (int *)param_1_raw;
     *param_1 = 0x00552520; // PTR_LAB_00552520
     *(int *)(*(int *)(param_1[0x14] + 4) + 8) = 0;

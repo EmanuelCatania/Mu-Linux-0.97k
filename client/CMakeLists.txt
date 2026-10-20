@@ -236,6 +236,7 @@ set(MU_SOURCES
     src/Render/SMD_Parser.cpp
     src/Entity/CharacterEffects.cpp
     src/Entity/CharacterCloth.cpp
+    src/Entity/ClothPresentation.cpp
     src/Entity/ObjectPose.cpp
     src/Render/Entity_AnimationLegacy.cpp
     src/Combat/Combat_LegacyAttackEffects.cpp
@@ -402,6 +403,7 @@ set(MU_HEADERS
     src/Game/SimulationPreparation.h
     src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h
+    src/Entity/ClothPresentation.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h

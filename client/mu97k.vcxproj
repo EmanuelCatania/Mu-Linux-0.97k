@@ -148,6 +148,7 @@
     <ClInclude Include="src\Game\SimulationPreparation.h" />
     <ClInclude Include="src\Entity\CharacterEffects.h" />
     <ClInclude Include="src\Entity\CharacterCloth.h" />
+    <ClInclude Include="src\Entity\ClothPresentation.h" />
     <ClInclude Include="src\Entity\ObjectPose.h" />
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
@@ -432,6 +433,7 @@
     <ClCompile Include="src\Render\SMD_Parser.cpp" />
     <ClCompile Include="src\Entity\CharacterEffects.cpp" />
     <ClCompile Include="src\Entity\CharacterCloth.cpp" />
+    <ClCompile Include="src\Entity\ClothPresentation.cpp" />
     <ClCompile Include="src\Entity\ObjectPose.cpp" />
     <ClCompile Include="src\Render\Entity_AnimationLegacy.cpp" />
     <ClCompile Include="src\Combat\Combat_LegacyAttackEffects.cpp" />

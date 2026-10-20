@@ -3,6 +3,7 @@
 #include "Render/Entity_Render_3D.h"
 #include "Render/EquipmentVisuals.h"
 #include "Game/RenderSnapshots.h"
+#include "Entity/ClothPresentation.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Game/SimulationPreparation.h"
 #include "Game/MapManager.h"
@@ -236,7 +237,7 @@ RenderPose RenderSnapshots_Interpolate(const RenderPosePair& pair, float alpha) 
     pose.alpha = Blend(pair.previous.alpha, pose.alpha, alpha);
     return pose;
 }
-void RenderSnapshots_BeginStep() { Capture(true); RenderFxSnapshots_BeginStep(); }
+void RenderSnapshots_BeginStep() { ClothPresentation_BeginStep(); Capture(true); RenderFxSnapshots_BeginStep(); }
 void RenderSnapshots_EndStep() { Capture(false); RenderFxSnapshots_EndStep(); }
 // DESVIACION: generaciones externas identifican reuso incluso dentro del mismo
 // paso, sin ampliar CHARACTER, PART_t, ITEM_t ni los pools del binario.
