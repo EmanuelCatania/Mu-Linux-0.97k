@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
 #include <climits>
 #include "UI/OptionsMenu.h"
@@ -46,11 +47,11 @@ void FillTriangle(float x, float y, float width, float height)
     const float left = (float)Screen_ToGLX(x), right = (float)Screen_ToGLX(x + width);
     const float top = (float)gWindow.GetHeight() - (float)Screen_ToGLY(y);
     const float bottom = (float)gWindow.GetHeight() - (float)Screen_ToGLY(y + height);
-    glBegin(GL_TRIANGLES);
-    glVertex2f(left, top);
-    glVertex2f(left, bottom);
-    glVertex2f(right, (top + bottom) / 2.0f);
-    glEnd();
+    BufferedDraw::Begin(GL_TRIANGLES);
+    BufferedDraw::Vertex2f(left, top);
+    BufferedDraw::Vertex2f(left, bottom);
+    BufferedDraw::Vertex2f(right, (top + bottom) / 2.0f);
+    BufferedDraw::End();
 }
 
 void OpenDialogData()
@@ -85,15 +86,15 @@ void COptionsMenu::ConsumeClick() const
 void COptionsMenu::RenderBox(float x, float y, float width, float height, bool title) const
 {
     GL_ResetState();
-    if (title) glColor3f(0.8f, 0.6f, 0.4f); else glColor3f(1.0f, 1.0f, 1.0f);
+    if (title) BufferedDraw::Color3f(0.8f, 0.6f, 0.4f); else BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(240, x, y, width, height, 0.0f, 0.0f, 213.0f / 256.0f, 1.0f, 1, 1);
     if (!title && Inside((int)x, (int)y, (int)width, (int)height)) {
-        glColor3f(0.8f, 0.6f, 0.4f);
+        BufferedDraw::Color3f(0.8f, 0.6f, 0.4f);
         GL_SetBlendAdditive();
         GL_DrawTexture(240, x, y, width, height, 0.0f, 0.0f, 213.0f / 256.0f, 1.0f, 1, 1);
         GL_ResetState();
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 void COptionsMenu::RenderLabel(float x, float y, float width, const char* text) const
@@ -143,16 +144,16 @@ void COptionsMenu::RenderLevelBar(float y, const char* label, bool enabled, int 
     const float bx = (float)Layout::BarX, by = y + Layout::BarY;
     const float segment = (float)Layout::BarWidth / Layout::Levels;
     EnableAlphaTest(true);
-    glColor3f(0.2f, 0.2f, 0.2f);
+    BufferedDraw::Color3f(0.2f, 0.2f, 0.2f);
     GL_DrawRect(bx, by, Layout::BarWidth + 2.0f, (float)Layout::BarHeight);
-    glColor3f(0.0f, 0.0f, 0.0f);
+    BufferedDraw::Color3f(0.0f, 0.0f, 0.0f);
     GL_DrawRect(bx + 1.0f, by + 1.0f, (float)Layout::BarWidth, Layout::BarHeight - 2.0f);
     for (int i = 0; i < Layout::Levels; ++i) {
-        if (i < level) glColor3f(1.0f, 1.0f, 1.0f); else glColor3f(0.0f, 0.0f, 0.0f);
+        if (i < level) BufferedDraw::Color3f(1.0f, 1.0f, 1.0f); else BufferedDraw::Color3f(0.0f, 0.0f, 0.0f);
         GL_DrawRect(bx + 1.0f + i * segment, by + 1.0f, segment, Layout::BarHeight - 2.0f);
     }
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // Segmento de la barra bajo el mouse (nivel 1..9), o -1.  DESVIACION: volver a
@@ -209,14 +210,14 @@ void COptionsMenu::RenderMusicControls(float y) const
     const float ix = x + (width - icon) / 2.0f, iy = y + (Layout::Height - icon) / 2.0f;
     EnableAlphaTest(true);
     if (gSound.IsMusicStoppedByUser()) {
-        glColor3f(0.0f, 1.0f, 0.0f);
+        BufferedDraw::Color3f(0.0f, 1.0f, 0.0f);
         FillTriangle(ix, iy, icon, icon);
     } else {
-        glColor3f(1.0f, 0.0f, 0.0f);
+        BufferedDraw::Color3f(1.0f, 0.0f, 0.0f);
         GL_DrawRect(ix, iy, icon, icon);
     }
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // DLL Language::ReloadLanguage: textos, diálogos y aviso al server.

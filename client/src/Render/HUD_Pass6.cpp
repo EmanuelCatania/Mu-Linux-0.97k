@@ -30,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 void HUD_BeginGridPass(int pass);
 #include <algorithm>
 #include "Platform/Text.h"
@@ -203,14 +204,14 @@ extern "C" void __cdecl sub_5126E0(int tex, float a2, float a3,
 
     float yBase = (float)gWindow.GetHeight() - v27;
 
-    glBegin(GL_TRIANGLE_STRIP);
+    BufferedDraw::Begin(GL_TRIANGLE_STRIP);
     for (int i = 0; i < 4; ++i) {
-        glTexCoord2f(uv[i][0], uv[i][1]);
+        BufferedDraw::TexCoord2f(uv[i][0], uv[i][1]);
         float out[3];
         VectorRotate(&in1[i * 3], (float*)in2, out);
-        glVertex2f(v26 + out[0], yBase + out[1]);
+        BufferedDraw::Vertex2f(v26 + out[0], yBase + out[1]);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // =============================================================================
@@ -326,7 +327,7 @@ extern "C" void __cdecl RenderServerDivision(void)
 {
     if (ServerDivisionOpened == '\0') return;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     InventoryStartX = 450;
     InventoryStartY = 0;
@@ -362,12 +363,12 @@ extern "C" void __cdecl RenderServerDivision(void)
     RenderCenteredText((int)(xc + 60.0f), 355, GlobalText[229]);
 
     float xb = (float)((double)InventoryStartX + 35.0);
-    if (DAT_07eaa131 != 0) glColor3f(1.0f, 1.0f, 1.0f);
-    else                          glColor3f(0.5f, 0.5f, 0.5f);
+    if (DAT_07eaa131 != 0) BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+    else                          BufferedDraw::Color3f(0.5f, 0.5f, 0.5f);
     GL_DrawTexture(240, xb, 320.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
     RenderCenteredText((int)(xb + 60.0f), 325, GlobalText[228]);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // =============================================================================
@@ -389,7 +390,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     float fPosY = (float)((double)InventoryStartY + 200.0);
     RenderItemsBoxes(fPosX, fPosY, (DWORD)(uintptr_t)OffsetInventoryItems, 8, 8);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;       // -15461356
     m_dwTextColor = 0xFFFFFFFFu;
@@ -488,19 +489,19 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
                 float y = v64 - 3.0f;
                 bool hover = ((double)MouseX >= y && (double)MouseX <= v64 + 50.0 &&
                               (double)MouseY >= v60 && (double)MouseY <= v60 + 19.0);
-                if (hover) glColor4f(0.5f, 0.5f, 0.5f, 0.8f);
-                else       glColor4f(0.1f, 0.1f, 0.1f, 0.7f);
+                if (hover) BufferedDraw::Color4f(0.5f, 0.5f, 0.5f, 0.8f);
+                else       BufferedDraw::Color4f(0.1f, 0.1f, 0.1f, 0.7f);
                 GL_DrawRect(y, v60, 50.0f, 19.0f);
             } else {
                 // RenderParty LABEL_120: an unmatched Party member stays in
                 // the compact list with the red offline/out-of-viewport row.
-                glColor4f(0.3f, 0.0f, 0.0f, 0.5f);
+                BufferedDraw::Color4f(0.3f, 0.0f, 0.0f, 0.5f);
                 GL_DrawRect(v64 - 3.0f, v60, 50.0f, 19.0f);
             }
-            glColor3f(0.196f, 0.039f, 0.0f);
+            BufferedDraw::Color3f(0.196f, 0.039f, 0.0f);
             GL_DrawRect(v64 - 2.0f, v60 + 12.0f, 43.0f, 4.0f);
             int hp10 = *v38 > 10 ? 10 : *v38;
-            glColor3f(0.98f, 0.039f, 0.0f);
+            BufferedDraw::Color3f(0.98f, 0.039f, 0.0f);
             for (int seg = 0; seg < hp10; ++seg) {
                 GL_DrawRect((float)(seg * 4) + v64, v60 + 13.0f, 3.0f, 2.0f);
             }
@@ -508,7 +509,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // out-of-viewport member (-1) gets the red fallback background
             // but retains its Party name. Only the entity-bound background
             // branch above is conditional on a live CharactersClient index.
-            glColor3f(1.0f, 1.0f, 1.0f);
+            BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             EnableAlphaTest(true);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
             // Name string is at v38 - 24 (from IDA: v43 = v67 - 24).
@@ -518,11 +519,11 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
         // Top + bottom cap pieces of the party list.
         GL_DrawTexture(252, v64 - 5.0f, 2.0f,    54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
         GL_DrawTexture(252, v64 - 5.0f, v60,     54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
-        glColor4f(0.722f, 0.592f, 0.380f, 0.5f);
+        BufferedDraw::Color4f(0.722f, 0.592f, 0.380f, 0.5f);
         GL_DrawRect(v64 - 4.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
         GL_DrawRect(v64 + 47.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
         EnableAlphaTest(true);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
         return;
     }
 
@@ -532,7 +533,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     // usar como scratch.
     g_PartyPanelScratchX = a1;
     g_PartyPanelScratchY = a2;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     GL_DrawTexture(260, (float)a1, (float)a2,        190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, 1, 1);
     GL_DrawTexture(261, (float)a1, (float)(a2 + 256), 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
@@ -598,12 +599,12 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             RenderText(a1 + 90, a2 + 60 + 35 * row, Buffer, 0, 0, 0);
 
             // HP bar (red on darker red).
-            glColor3f(0.2f, 0.0f, 0.0f);
+            BufferedDraw::Color3f(0.2f, 0.0f, 0.0f);
             GL_DrawRect((float)(a1 + 39), (float)(a2 + 69 + 35 * row), 92.0f, 5.0f);
-            glColor3f(0.882f, 0.059f, 0.0f);
+            BufferedDraw::Color3f(0.882f, 0.059f, 0.0f);
             GL_DrawRect((float)(a1 + 40), (float)(a2 + 69 + 35 * row), (float)barW, 3.0f);
             EnableAlphaTest(true);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             Platform::TextFormat(Buffer, "( %d / %d )", level, maxLevel);
             RenderText(a1 + 65, a2 + 77 + 35 * row, Buffer, 0, 0, 0);
             if (!strcmp((const char*)Party, (const char*)((BYTE*)Hero + 449)) ||
@@ -627,7 +628,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     }
 
     // Close button.
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     float v59 = (float)((double)a1 + 25.0);
     float v63 = (float)((double)a2 + 395.0);
     GL_DrawTexture(280, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -760,7 +761,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     CharacterInfoStartX = iPosX;
     CharacterInfoStartY = iPosY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();   // DisableAlphaBlend
     float x = (float)iPosX;
     float y = (float)iPosY;
@@ -814,11 +815,11 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     // visibles simultáneo → "(Sou Maetee)" garbled).
     float pulse = (float)sin((double)WorldTime * 0.001) + 1.0f;
     float alpha = 2.0f - pulse;
-    glColor4f(1.0f, 1.0f, 1.0f, alpha);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, alpha);
     RenderText(iPosX + 22, iPosY + 22, String,  150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
-    glColor4f(1.0f, 1.0f, 1.0f, pulse);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, pulse);
     RenderText(iPosX + 22, iPosY + 22, pszText, 150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // 5 stat-row backdrops (sprite 245) at y = (60-4)+i*60, x = (19-6)
     {
@@ -909,7 +910,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // duplicaría el paquete.
         bool pressed = hover && (DAT_083a4124 != 0 || DAT_083a413c != 0);
         (void)statSlot;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(pressed ? 0x121 : 0x120,
                      btnX, btnY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -1117,7 +1118,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
 
     GuildListStartX = StartX;
     GuildListStartY = StartY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     float x = (float)StartX;
     float y = (float)StartY;
@@ -1194,7 +1195,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
     // pool de la tienda.
     g_GuildCreatorScratchX = iPosX;
     g_GuildCreatorScratchY = iPosY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
 
     float x = (float)iPosX;
@@ -1285,7 +1286,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
 extern "C" void __cdecl RenderTrade(void)
 {
     if (!TradeOpened) return;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     TradeInventoryStartX = 260;
     TradeInventoryStartY = 0;
@@ -1309,13 +1310,13 @@ extern "C" void __cdecl RenderTrade(void)
 
     // IDA: FUN_004F1270 — 290 es normal, 291 es confirmada/dorada; un wait
     // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
-    glColor3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
+    BufferedDraw::Color3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
               TradeYourWait > 0 ? 0.0f : 1.0f);
     GL_DrawTexture(m_bYourConfirm ? 291 : 290,
                    (float)TradeInventoryStartX + 140.0f,
                    (float)TradeInventoryStartY + 185.0f,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
-    glColor3f(1, 1, 1);
+    BufferedDraw::Color3f(1, 1, 1);
 
     // IDA: FUN_004F1270 — controles de Zen, confirmación y cancelación.
     const float zenX = (float)TradeInventoryStartX + 26.0f;
@@ -1326,11 +1327,11 @@ extern "C" void __cdecl RenderTrade(void)
                          MouseY >= buttonsY && MouseY < buttonsY + 24.0f;
     GL_DrawTexture(overZen && MouseLButton ? 273 : 272, zenX, buttonsY,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
-    glColor3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
+    BufferedDraw::Color3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
               TradeMyWait > 0 ? 0.0f : 1.0f);
     GL_DrawTexture(m_bMyConfirm ? 291 : 290, confirmX, buttonsY,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
-    glColor3f(1, 1, 1);
+    BufferedDraw::Color3f(1, 1, 1);
     GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
 
     if (overZen) { gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL)); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
@@ -1390,7 +1391,7 @@ extern "C" void __cdecl RenderTrade(void)
 extern "C" void __cdecl RenderShopInterface(void)
 {
     if (!ShopOpened) return;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     dword_7EAA0C8 = 260;
     dword_7EAA0CC = 0;
@@ -1406,7 +1407,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
                      (DWORD)(uintptr_t)ShopItems, 8, 15);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
     // El hit-test lo hace FUN_004ec330 (sub_4EC330).
@@ -1439,14 +1440,14 @@ extern "C" void __cdecl RenderShopInterface(void)
             // (IDA ademas pone MouseLButtonPush = 0 aca; no se replica porque
             // el click lo consume FUN_004ec330.)
             bx = (float)((double)dword_7EAA0C8 + 115.0);
-            glColor3f(0.5f, 0.69999999f, 1.0f);
+            BufferedDraw::Color3f(0.5f, 0.69999999f, 1.0f);
             GL_DrawTexture(286, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             if (over(bx, by)) {
                 if (DAT_083a4124)
                     GL_DrawTexture(287, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
                 tip(bx, by, 237);
             }
-            glColor3f(1.0f, 1.0f, 1.0f);
+            BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
             // Caja con el costo de reparar todo (dword_7EAA0F8, lo calcula sub_4C4080).
             bx -= 60.0f;
@@ -1510,7 +1511,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 {
     if (!ChaosMixOpened) return;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     dword_7EAA0C8 = 260;
     dword_7EAA0CC = 0;
@@ -1520,7 +1521,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     // IDA 004F27F0: RenderItemsBoxes deja puesto el color de la última celda
     // (InventoryColor), y sin este reset los textos y el botón salían teñidos
     // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
@@ -1623,7 +1624,7 @@ extern "C" void __cdecl RenderWarehouse(void)
 {
     if (!WarehouseOpened) return;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     dword_7EAA0C8 = 260;      // 0x104
     dword_7EAA0CC = 0;
@@ -1636,17 +1637,17 @@ extern "C" void __cdecl RenderWarehouse(void)
     // ── Título: "Baúl (Abierto|Cerrado)" ─────────────────────────────────────
     // IDA: Platform::TextFormat(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
     // con glColor amarillo cuando el baúl está bloqueado por password.
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     const int lock = (DAT_00559f5f != 0) ? 1 : 0;
-    if (lock) glColor3f(1.0f, 1.0f, 0.0f);
+    if (lock) BufferedDraw::Color3f(1.0f, 1.0f, 0.0f);
     CHAR Title[128];
     Platform::TextFormat(Title, "%s (%s)", GlobalText[234], GlobalText[240 + lock]);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
                Title, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // ── Barra del zen guardado (bitmap 271 = 0x10F) ──────────────────────────
     float x = (float)((double)dword_7EAA0C8 + 50.0);
@@ -1748,7 +1749,7 @@ extern "C" void __cdecl RenderWarehouse(void)
                          0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         }
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // ── RenderEventWindow (0x004F3C50) ───────────────────────────────────────────
@@ -1804,12 +1805,12 @@ extern "C" void __cdecl RenderEventWindow(void)
 
         if (bloodCastle) {
             const bool permitted = (charLevel <= (unsigned)maxLevel && charLevel >= (unsigned)minLevel);
-            if (!permitted)     glColor3f(0.4f, 0.4f, 0.5f);
-            else if (inRect)    glColor3f(1.0f, 1.0f, 1.0f);
-            else                glColor3f(0.7f, 0.7f, 0.9f);
+            if (!permitted)     BufferedDraw::Color3f(0.4f, 0.4f, 0.5f);
+            else if (inRect)    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+            else                BufferedDraw::Color3f(0.7f, 0.7f, 0.9f);
         } else {
-            if (inRect)         glColor3f(1.0f, 1.0f, 1.0f);
-            else                glColor3f(0.9f, 0.8f, 0.7f);
+            if (inRect)         BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+            else                BufferedDraw::Color3f(0.9f, 0.8f, 0.7f);
         }
         GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
 
@@ -1825,7 +1826,7 @@ extern "C" void __cdecl RenderEventWindow(void)
         y += stride;
     }
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,

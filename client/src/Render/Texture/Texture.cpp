@@ -78,6 +78,7 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
 #include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
@@ -422,13 +423,13 @@ void Texture_Draw2D(int id,
         x + w, gl_bottom,    // vertex 3 position
     };
 
-    glBegin(GL_QUAD_STRIP);  // 6 = GL_QUAD_STRIP
+    BufferedDraw::Begin(GL_QUAD_STRIP);  // 6 = GL_QUAD_STRIP
     for (int i = 0; i < 4; i++)
     {
-        glTexCoord2f(uvs[i*2], uvs[i*2+1]);
-        glVertex2f(pos[i*2], pos[i*2+1]);
+        BufferedDraw::TexCoord2f(uvs[i*2], uvs[i*2+1]);
+        BufferedDraw::Vertex2f(pos[i*2], pos[i*2+1]);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 

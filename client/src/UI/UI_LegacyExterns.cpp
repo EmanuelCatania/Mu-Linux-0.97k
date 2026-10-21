@@ -2,6 +2,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/IGLContext.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
@@ -112,12 +113,12 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     if (drawX < 0) drawX = 0;
 
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
     GL_DrawRect((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    glColor4f(0.0f, 0.0f, 0.0f, 0.82f);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.82f);
     GL_DrawRect((float)drawX, (float)drawY, (float)boxW, (float)boxH);
 
     int lineY = drawY + padY;
@@ -1009,13 +1010,13 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                 float x1 = runX + wOrtho + 1.0f;
                 float y0 = (float)rasterY - descOrtho;
                 float y1 = (float)rasterY + ascOrtho;
-                glColor4ub(bR, bG, bB, bFinal);
-                glBegin(GL_QUADS);
-                    glVertex2f(x0, y0);
-                    glVertex2f(x1, y0);
-                    glVertex2f(x1, y1);
-                    glVertex2f(x0, y1);
-                glEnd();
+                BufferedDraw::Color4ub(bR, bG, bB, bFinal);
+                BufferedDraw::Begin(GL_QUADS);
+                    BufferedDraw::Vertex2f(x0, y0);
+                    BufferedDraw::Vertex2f(x1, y0);
+                    BufferedDraw::Vertex2f(x1, y1);
+                    BufferedDraw::Vertex2f(x0, y1);
+                BufferedDraw::End();
             }
 
             GLubyte R = (GLubyte)( fg        & 0xFF);
@@ -1030,7 +1031,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             G = (GLubyte)((float)G * callerG + 0.5f);
             B = (GLubyte)((float)B * callerB + 0.5f);
 
-            glColor4ub(R, G, B, finalA);
+            BufferedDraw::Color4ub(R, G, B, finalA);
             glRasterPos2f(runX, (float)rasterY);
             glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
                         drawText + startChar);
