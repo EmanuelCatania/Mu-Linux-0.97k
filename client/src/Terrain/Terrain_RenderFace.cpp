@@ -84,12 +84,15 @@ void __cdecl RenderFace(int Texture)
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
     float (*L)[3]  = TER_LIGHT;
-    BufferedDraw::Begin(6u);                     // GL_TRIANGLE_FAN
-    BufferedDraw::TexCoord2f(tc[0][0], tc[0][1]); BufferedDraw::Color3fv(L[TER_IDX1]); BufferedDraw::Vertex3fv(v[0]);
-    BufferedDraw::TexCoord2f(tc[1][0], tc[1][1]); BufferedDraw::Color3fv(L[TER_IDX2]); BufferedDraw::Vertex3fv(v[1]);
-    BufferedDraw::TexCoord2f(tc[2][0], tc[2][1]); BufferedDraw::Color3fv(L[TER_IDX3]); BufferedDraw::Vertex3fv(v[2]);
-    BufferedDraw::TexCoord2f(tc[3][0], tc[3][1]); BufferedDraw::Color3fv(L[TER_IDX4]); BufferedDraw::Vertex3fv(v[3]);
-    BufferedDraw::End();
+    // DESVIACION: envío directo con los mismos atributos y orden de esquinas.
+    const int indices[4]{TER_IDX1,TER_IDX2,TER_IDX3,TER_IDX4};
+    BufferedDraw::Vertex corners[4];
+    for (int i=0;i<4;++i) {
+        const int index=indices[i];
+        corners[i]={{v[i][0],v[i][1],v[i][2]},
+            {L[index][0],L[index][1],L[index][2],1},{tc[i][0],tc[i][1],0,1}};
+    }
+    BufferedDraw::Quad(corners,true);
 }
 
 // ── RenderFaceAlpha (FUN_004F7B80) — overlay capa2 con alpha por vértice ──────
@@ -101,12 +104,15 @@ void __cdecl RenderFaceAlpha(int Texture)
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
     float (*L)[3]  = TER_LIGHT;
-    BufferedDraw::Begin(6u);
-    BufferedDraw::TexCoord2f(tc[0][0], tc[0][1]); BufferedDraw::Color4f(L[TER_IDX1][0], L[TER_IDX1][1], L[TER_IDX1][2], TER_ALPHA[TER_IDX1]); BufferedDraw::Vertex3fv(v[0]);
-    BufferedDraw::TexCoord2f(tc[1][0], tc[1][1]); BufferedDraw::Color4f(L[TER_IDX2][0], L[TER_IDX2][1], L[TER_IDX2][2], TER_ALPHA[TER_IDX2]); BufferedDraw::Vertex3fv(v[1]);
-    BufferedDraw::TexCoord2f(tc[2][0], tc[2][1]); BufferedDraw::Color4f(L[TER_IDX3][0], L[TER_IDX3][1], L[TER_IDX3][2], TER_ALPHA[TER_IDX3]); BufferedDraw::Vertex3fv(v[2]);
-    BufferedDraw::TexCoord2f(tc[3][0], tc[3][1]); BufferedDraw::Color4f(L[TER_IDX4][0], L[TER_IDX4][1], L[TER_IDX4][2], TER_ALPHA[TER_IDX4]); BufferedDraw::Vertex3fv(v[3]);
-    BufferedDraw::End();
+    // DESVIACION: envío directo con los mismos atributos y orden de esquinas.
+    const int indices[4]{TER_IDX1,TER_IDX2,TER_IDX3,TER_IDX4};
+    BufferedDraw::Vertex corners[4];
+    for (int i=0;i<4;++i) {
+        const int index=indices[i];
+        corners[i]={{v[i][0],v[i][1],v[i][2]},
+            {L[index][0],L[index][1],L[index][2],TER_ALPHA[index]},{tc[i][0],tc[i][1],0,1}};
+    }
+    BufferedDraw::Quad(corners,true);
 }
 
 // ── RenderFaceBlend (FUN_004F7CE0) — overlay de agua (modula por alpha gris) ──
@@ -117,12 +123,15 @@ void __cdecl RenderFaceBlend(int Texture)
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
-    BufferedDraw::Begin(6u);
-    BufferedDraw::TexCoord2f(tc[0][0], tc[0][1]); BufferedDraw::Color3f(TER_ALPHA[TER_IDX1], TER_ALPHA[TER_IDX1], TER_ALPHA[TER_IDX1]); BufferedDraw::Vertex3fv(v[0]);
-    BufferedDraw::TexCoord2f(tc[1][0], tc[1][1]); BufferedDraw::Color3f(TER_ALPHA[TER_IDX2], TER_ALPHA[TER_IDX2], TER_ALPHA[TER_IDX2]); BufferedDraw::Vertex3fv(v[1]);
-    BufferedDraw::TexCoord2f(tc[2][0], tc[2][1]); BufferedDraw::Color3f(TER_ALPHA[TER_IDX3], TER_ALPHA[TER_IDX3], TER_ALPHA[TER_IDX3]); BufferedDraw::Vertex3fv(v[2]);
-    BufferedDraw::TexCoord2f(tc[3][0], tc[3][1]); BufferedDraw::Color3f(TER_ALPHA[TER_IDX4], TER_ALPHA[TER_IDX4], TER_ALPHA[TER_IDX4]); BufferedDraw::Vertex3fv(v[3]);
-    BufferedDraw::End();
+    // DESVIACION: envío directo con los mismos atributos y orden de esquinas.
+    const int indices[4]{TER_IDX1,TER_IDX2,TER_IDX3,TER_IDX4};
+    BufferedDraw::Vertex corners[4];
+    for (int i=0;i<4;++i) {
+        const int index=indices[i];
+        const float a=TER_ALPHA[index];
+        corners[i]={{v[i][0],v[i][1],v[i][2]},{a,a,a,1},{tc[i][0],tc[i][1],0,1}};
+    }
+    BufferedDraw::Quad(corners,true);
 }
 
 // ── RenderTerrainFace (FUN_004F7FB0) — dispatcher de capas/overlays ──────────
@@ -160,12 +169,15 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
                 v[0][1] = v[0][1] + TER_WIND[TER_IDX1];
                 v[1][1] = v[2][1] + TER_WIND[TER_IDX2];
                 float (*L)[3] = TER_LIGHT;
-                BufferedDraw::Begin(7u);                              // GL_QUADS
-                BufferedDraw::TexCoord2f(tc[0][0], tc[0][1]); BufferedDraw::Color3fv(L[TER_IDX1]); BufferedDraw::Vertex3fv(v[0]);
-                BufferedDraw::TexCoord2f(tc[1][0], tc[1][1]); BufferedDraw::Color3fv(L[TER_IDX2]); BufferedDraw::Vertex3fv(v[1]);
-                BufferedDraw::TexCoord2f(tc[2][0], tc[2][1]); BufferedDraw::Color3fv(L[TER_IDX3]); BufferedDraw::Vertex3fv(v[2]);
-                BufferedDraw::TexCoord2f(tc[3][0], tc[3][1]); BufferedDraw::Color3fv(L[TER_IDX4]); BufferedDraw::Vertex3fv(v[3]);
-                BufferedDraw::End();
+                // DESVIACION: envío directo con los mismos atributos y orden de esquinas.
+                const int indices[4]{TER_IDX1,TER_IDX2,TER_IDX3,TER_IDX4};
+                BufferedDraw::Vertex corners[4];
+                for (int i=0;i<4;++i) {
+                    const int index=indices[i];
+                    corners[i]={{v[i][0],v[i][1],v[i][2]},
+                        {L[index][0],L[index][1],L[index][2],1},{tc[i][0],tc[i][1],0,1}};
+                }
+                BufferedDraw::Quad(corners,false);
             }
         }
         return;
