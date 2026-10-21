@@ -2,6 +2,7 @@
 #include "Platform/GL/glad.h"
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
+#include "Render/Skinning.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -17,6 +18,7 @@ struct Mesh {
     std::vector<Corner> corners;
     std::vector<unsigned> indices;
     Corner minimum{},maximum{};
+    std::vector<int> positions,normals;
 };
 std::unordered_map<const void*,Mesh> meshes;
 std::vector<BufferedDraw::Vertex> vertices;
@@ -45,6 +47,8 @@ bool Topology(Mesh& m,const Input& input) {
         }
     }
     if(m.corners.empty()) return false;
+    m.positions.clear();m.normals.clear();
+    for(const auto& c:m.corners) { m.positions.push_back(c.position);m.normals.push_back(c.normal); }
     m.minimum=m.maximum=m.corners.front();
     for(const auto& c:m.corners) {
         m.minimum.position=std::min(m.minimum.position,c.position);m.maximum.position=std::max(m.maximum.position,c.position);
@@ -71,7 +75,7 @@ bool Topology(Mesh& m,const Input& input) {
 void Release() {
     BufferedDraw::Suspend();
     for(auto& entry:meshes) Delete(entry.second);
-    meshes.clear();vertices.clear();
+    meshes.clear();vertices.clear();Skinning::Release();
 }
 bool Draw(const Input& input) {
     if(input.faceCount<=0 || input.positionCount<=0 || !input.faces || !input.positions) return false;
@@ -100,6 +104,12 @@ bool Draw(const Input& input) {
             if(texture && input.offset) { vertex.uv[0]+=input.u;vertex.uv[1]+=input.v; }
             vertex.uv[2]=0;vertex.uv[3]=1;
         }
+    }
+    // DESVIACION: skinning rígido BMD por hueso en el shader, con respaldo
+    // para datos CPU deformados o una pose que no corresponde al dibujo.
+    if(Skinning::Draw(input.model,input.key,mesh.elements,vertices.data(),mesh.positions.data(),mesh.normals.data(),
+        vertices.size(),mesh.indices.size(),input.positions,input.positionCount,input.colors,lit,input.bodyLight)) {
+        const auto& last=vertices[mesh.indices.back()];glColor4fv(last.color);glTexCoord4fv(last.uv);return true;
     }
     // Conservar el color y UV de la última esquina, incluso si no completa
     // un triángulo. DrawElements no define esos atributos tras el envío.

@@ -9,6 +9,8 @@
 #include "Net/Net.h"
 #include "Entity/ObjectBounds.h"
 #include "Entity/ObjectPose.h"
+#include "Render/Skinning.h"
+#include <vector>
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
@@ -114,7 +116,8 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // Vector_InverseRotate writing 3 floats at &local_54[6] overflowed past local_54's
     // 7-elem bound → /GS stack-cookie corruption. Keep them as one 9-elem array
     // and reference [7]/[8] directly where the Ghidra names appear.
-    float local_54[9];
+    Skinning::Invalidate();
+    float local_54[9]{};
     float local_30[12];
     int   local_58 = 0;
     int   local_64 = 0, local_6c = 0;
@@ -307,6 +310,22 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         local_68_base += 15000;
         local_64 += 180000;
     }
+    // DESVIACION: capturar huesos/atributos de esta pose antes de que otro
+    // objeto reutilice los scratch CPU. No retirar los consumidores lógicos.
+    std::vector<Skinning::Source> skinSources;
+    for(int i=0;i<meshCount;++i) {
+        const char* mesh=(const char*)(uintptr_t)*(DWORD*)((char*)this_+0x28)+i*0x28;
+        const int vc=*(const short*)(mesh+4),nc=*(const short*)(mesh+6);
+        const auto* vp=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x10);
+        const auto* np=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x14);
+        if((uintptr_t)vp<0x10000u || (uintptr_t)np<0x10000u || vc<=0 || vc>20000 || nc<0 || nc>20000) continue;
+        skinSources.push_back({mesh,vp,np,(const float*)((const char*)&DAT_0584621c+i*180000),
+            (const float*)&DAT_077e298c+i*15000,vc,nc});
+    }
+    const float zero[3]{},coefficients[3]{_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
+    Skinning::Capture(this_,(const float*)(uintptr_t)param_1,(std::min)(200,int(*(short*)((char*)this_+0x22))),
+        _DAT_005597c8,param_5?*(float*)((char*)this_+0x68):1.f,
+        param_5?(float*)((char*)this_+0x6c):zero,local_54+6,coefficients,skinSources.data(),skinSources.size());
     if (diagInGame && s_xform_dbg < 200) s_xform_dbg++;
     // El editor usa los extremos de la malla; la ruta normal, los bounds locales.
     const float* boundsMin = DAT_07e11d30 == 2 ? local_54 : param_2;

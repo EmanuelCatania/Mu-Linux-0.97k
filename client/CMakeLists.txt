@@ -54,6 +54,7 @@ set(MU_SOURCES
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
     src/Render/GlyphAtlas.cpp
+    src/Render/Skinning.cpp
     src/Render/MeshDraw.cpp
     src/Render/BufferedDraw.cpp
     src/Render/WorldEffects.cpp
@@ -433,6 +434,7 @@ set(MU_HEADERS
     src/Platform/SDL3/SDLFont.h
     src/Render/GLCallBarrier.h
     src/Render/GlyphAtlas.h
+    src/Render/Skinning.h
     src/Render/MeshDraw.h
     src/Render/BufferedDraw.h
     src/Platform/IGLContext.h
@@ -588,7 +590,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
