@@ -46,6 +46,7 @@ endif()
 set(MU_SOURCES
     src/stdafx.cpp
     src/Platform/ClientEntry.cpp
+    src/Platform/GLFunctions.cpp
     src/Local/Text_Data.cpp
     src/Scene/Scene_Dispatch.cpp
     src/Scene/Scene_Intro.cpp
@@ -428,6 +429,8 @@ set(MU_HEADERS
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
     src/Platform/IGLContext.h
+    src/Platform/GLFunctions.h
+    src/Platform/GL/glad.h
     src/Platform/Win32/Win32GLContext.h
     src/Core/Font.h
     src/UI/EventTimer.h
@@ -578,7 +581,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES

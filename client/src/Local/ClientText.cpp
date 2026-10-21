@@ -48,7 +48,8 @@ const char* const English[] = {
     "Reconnecting...",
     "Logging in...",
     "Waiting character list...",
-    "Waiting character info..."
+    "Waiting character info...",
+    "Could not initialize OpenGL 3.3 compatibility. Check the graphics driver."
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -87,7 +88,8 @@ const char* const Spanish[] = {
     "Reconectando...",
     "Iniciando sesi\xF3" "n...",
     "Esperando la lista de personajes...",
-    "Esperando los datos del personaje..."
+    "Esperando los datos del personaje...",
+    "No se pudo iniciar OpenGL 3.3 compatible. Revisar el controlador de video."
 };
 const char* const Portuguese[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
@@ -126,7 +128,8 @@ const char* const Portuguese[] = {
     "Reconectando...",
     "Entrando...",
     "Aguardando a lista de personagens...",
-    "Aguardando os dados do personagem..."
+    "Aguardando os dados do personagem...",
+    "N\xE3" "o foi poss\xED" "vel iniciar OpenGL 3.3 compatibility. Verifique o driver de v\xED" "deo."
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");

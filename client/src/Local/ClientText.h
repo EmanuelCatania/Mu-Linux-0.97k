@@ -14,6 +14,7 @@ enum class ClientTextId {
     RenderDecoupled, RenderVSync, RenderFps, RenderUnlimited, RenderVSyncUnavailable,
     MiniMapGate, MiniMapZoom, MiniMapAlpha,
     ReconnectConnecting, ReconnectLogin, ReconnectCharList, ReconnectCharInfo,
+    RenderGLUnavailable,
     Count
 };
 class CClientText {
