@@ -17,7 +17,20 @@ std::size_t poseMeshCount=0;
 float rotationScale=1,bodyScale=1,origin[3]{},direction[3]{},coefficients[3]{};
 unsigned long long revision=0,uploaded=0;
 GLuint program=0,array=0,buffer=0,boneBuffer=0,boneTexture=0;
-bool failed=false;
+bool failed=false,layoutReady=false,paletteBound=false,uniformsReady=false;
+GLint savedTextureBuffer=0,savedTexture=0,lastLight=-1;
+float lastScales[2]{},lastOrigin[3]{},lastDirection[3]{},lastCoefficients[3]{},lastBodyLight[3]{};
+void RestorePalette() {
+    GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+    glActiveTexture(GL_TEXTURE1);glBindTexture(GL_TEXTURE_BUFFER,savedTexture);
+    glBindBuffer(GL_TEXTURE_BUFFER,savedTextureBuffer);glActiveTexture(active);paletteBound=false;
+}
+void SetVector(GLint location,const float* value,float* previous) {
+    if(!uniformsReady || std::memcmp(value,previous,3*sizeof(float))) {
+        glUniform3fv(location,1,value);std::copy(value,value+3,previous);
+    }
+}
+GLint paletteLocation,scalesLocation,originLocation,directionLocation,coefficientsLocation,bodyLightLocation,lightLocation;
 struct Vertex { BufferedDraw::Vertex attributes;float normal[4];float bone; };
 std::vector<Vertex> vertices;
 const char* shaderSource=R"GLSL(#version 330 compatibility
@@ -69,6 +82,10 @@ bool Initialize() {
     glGetProgramiv(program,GL_LINK_STATUS,&ok);
     if(!ok) { char log[2048]{};glGetProgramInfoLog(program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(program);program=0;failed=true;return false; }
     glGenVertexArrays(1,&array);glGenBuffers(1,&buffer);glGenBuffers(1,&boneBuffer);glGenTextures(1,&boneTexture);
+    paletteLocation=glGetUniformLocation(program,"palette");scalesLocation=glGetUniformLocation(program,"scales");
+    originLocation=glGetUniformLocation(program,"origin");directionLocation=glGetUniformLocation(program,"direction");
+    coefficientsLocation=glGetUniformLocation(program,"coefficients");bodyLightLocation=glGetUniformLocation(program,"bodyLight");
+    lightLocation=glGetUniformLocation(program,"useLight");
     return true;
 }
 }
@@ -80,7 +97,8 @@ void Capture(const void* model,const float* bones,int boneCount,float rotation,f
     palette.assign(bones,bones+std::size_t(boneCount)*12);rotationScale=rotation;bodyScale=scale;
     std::copy(translation,translation+3,origin);std::copy(lightDirection,lightDirection+3,direction);
     std::copy(lightCoefficients,lightCoefficients+3,coefficients);
-    // DESVIACION: reutilizar las capacidades al cambiar de modelo.
+    // DESVIACION: conservar capacidad por orden de malla entre objetos.
+    // No liberar y recrear todos los vectores al cambiar de modelo.
     if(poseMeshes.size()<count) poseMeshes.resize(count);
     poseMeshCount=0;
     for(std::size_t i=0;i<count;++i) { const auto& s=sources[i];
@@ -119,31 +137,40 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
             for(int k=0;k<3;++k) if(colors[normals[i]*3+k]!=m.lighting[normals[i]]*bodyLight[k]) gpuLight=false;
         }
     }
-    BufferedDraw::Suspend();if(!Initialize()) return false;
-    GLint oldProgram,oldArray,oldBuffer,oldTextureBuffer,active,client,oldTexture;
-    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);glGetIntegerv(GL_TEXTURE_BUFFER,&oldTextureBuffer);
-    glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
-    glActiveTexture(GL_TEXTURE1);glGetIntegerv(GL_TEXTURE_BINDING_BUFFER,&oldTexture);
-    glBindTexture(GL_TEXTURE_BUFFER,boneTexture);glBindBuffer(GL_TEXTURE_BUFFER,boneBuffer);
+    BufferedDraw::Flush();if(!Initialize()) return false;
+    if(!paletteBound) {
+        GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+        glGetIntegerv(GL_TEXTURE_BUFFER,&savedTextureBuffer);
+        glActiveTexture(GL_TEXTURE1);glGetIntegerv(GL_TEXTURE_BINDING_BUFFER,&savedTexture);
+        glBindTexture(GL_TEXTURE_BUFFER,boneTexture);glBindBuffer(GL_TEXTURE_BUFFER,boneBuffer);
+        if(!layoutReady) glTexBuffer(GL_TEXTURE_BUFFER,GL_RGBA32F,boneBuffer);
+        glActiveTexture(active);paletteBound=true;BufferedDraw::SetExitHook(RestorePalette);
+    }
     if(uploaded!=revision) { glBufferData(GL_TEXTURE_BUFFER,palette.size()*sizeof(float),palette.data(),GL_STREAM_DRAW);uploaded=revision; }
-    glTexBuffer(GL_TEXTURE_BUFFER,GL_RGBA32F,boneBuffer);
-    glUseProgram(program);glUniform1i(glGetUniformLocation(program,"palette"),1);
-    glUniform2f(glGetUniformLocation(program,"scales"),rotationScale,bodyScale);
-    glUniform3fv(glGetUniformLocation(program,"origin"),1,origin);glUniform3fv(glGetUniformLocation(program,"direction"),1,direction);
-    glUniform3fv(glGetUniformLocation(program,"coefficients"),1,coefficients);glUniform3fv(glGetUniformLocation(program,"bodyLight"),1,bodyLight);
-    glUniform1i(glGetUniformLocation(program,"useLight"),gpuLight?1:0);
-    glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,elements);
+    BufferedDraw::Activate(program,array,buffer);
+    if(!uniformsReady) glUniform1i(paletteLocation,1);
+    const float scales[2]{rotationScale,bodyScale};
+    if(!uniformsReady || std::memcmp(lastScales,scales,sizeof(scales))) {
+        glUniform2f(scalesLocation,rotationScale,bodyScale);std::copy(scales,scales+2,lastScales);
+    }
+    SetVector(originLocation,origin,lastOrigin);SetVector(directionLocation,direction,lastDirection);
+    SetVector(coefficientsLocation,coefficients,lastCoefficients);SetVector(bodyLightLocation,bodyLight,lastBodyLight);
+    if(lastLight!=int(gpuLight)) { glUniform1i(lightLocation,gpuLight?1:0);lastLight=int(gpuLight); }
+    uniformsReady=true;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,elements);
     glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(Vertex),vertices.data(),GL_STREAM_DRAW);
+    if(!layoutReady) {
+    GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
     glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.position));
     glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.color));
     glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.uv));
     glEnableVertexAttribArray(6);glVertexAttribPointer(6,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,normal));
     glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,bone));
+        glClientActiveTexture(client);layoutReady=true;
+    }
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
-    glClientActiveTexture(client);glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);glUseProgram(oldProgram);
-    glBindBuffer(GL_TEXTURE_BUFFER,oldTextureBuffer);glBindTexture(GL_TEXTURE_BUFFER,oldTexture);glActiveTexture(active);
+
     // DrawElements deja indefinidos los atributos actuales; el caller fija
     // exactamente los de la última esquina, incluso en caras incompletas.
     return true;
@@ -153,7 +180,7 @@ void Release() {
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
     if(program) glDeleteProgram(program);
-    program=array=buffer=boneBuffer=boneTexture=0;failed=false;uploaded=0;poseMeshCount=0;
+    program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }
 }

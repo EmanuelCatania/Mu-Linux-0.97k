@@ -25,6 +25,9 @@ void Quad(const Vertex* corners,bool fan=true);
 // además restaura los bindings de entrada antes de usar otro camino GL.
 void Flush();
 void Suspend();
+void Activate(unsigned shader,unsigned array,unsigned buffer);
+// El dueño de recursos auxiliares los restaura en la misma frontera GL.
+void SetExitHook(void (*hook)());
 void DrawIndexed(unsigned array,unsigned buffer,const Vertex* vertices,std::size_t count,std::size_t indices);
 void NativeColor(float r,float g,float b,float a);
 void NativeUV(float u,float v);

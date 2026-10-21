@@ -15,16 +15,18 @@ std::size_t quadCapacity=0;
 std::vector<Vertex> pending;
 unsigned pendingMode=0;
 bool bound=false;
-GLuint boundArray=0,boundBuffer=0;
+void (*exitHook)()=nullptr;
+GLuint boundProgram=0,boundArray=0,boundBuffer=0;
 GLint savedProgram=0,savedArray=0,savedBuffer=0;
 // DESVIACION: compartir la propiedad del pipeline entre geometría general
 // y mallas indexadas. Sólo Suspend devuelve los bindings del caller.
-void BindPipeline(GLuint nextArray,GLuint nextBuffer) {
+void BindPipeline(GLuint nextProgram,GLuint nextArray,GLuint nextBuffer) {
     if (!bound) {
         glGetIntegerv(GL_CURRENT_PROGRAM,&savedProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&savedArray);
         glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&savedBuffer);
-        glUseProgram(program);bound=true;boundArray=boundBuffer=0;
+        bound=true;boundProgram=boundArray=boundBuffer=0;
     }
+    if (boundProgram!=nextProgram) { glUseProgram(nextProgram);boundProgram=nextProgram; }
     if (boundArray!=nextArray) { glBindVertexArray(nextArray);boundArray=nextArray; }
     if (boundBuffer!=nextBuffer) { glBindBuffer(GL_ARRAY_BUFFER,nextBuffer);boundBuffer=nextBuffer; }
 }
@@ -135,7 +137,7 @@ void Flush() {
     if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
     glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
     if (active!=GL_TEXTURE0) glActiveTexture(active);
-    BindPipeline(array,buffer);
+    BindPipeline(program,array,buffer);
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
     if (pendingMode==GL_TRIANGLE_FAN) {
         EnsureQuadIndices(pending.size()/4);
@@ -145,18 +147,24 @@ void Flush() {
     glColor4fv(color);glTexCoord4fv(uv);
     pending.clear();
 }
+void SetExitHook(void (*hook)()) { exitHook=hook; }
 void Suspend() {
     Flush();
+    if(exitHook) { auto hook=exitHook;exitHook=nullptr;hook(); }
     if (!bound) return;
     glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);glUseProgram(savedProgram);
-    bound=false;boundArray=boundBuffer=0;
+    bound=false;boundProgram=boundArray=boundBuffer=0;
+}
+// DESVIACION: compartir la propiedad también con el shader de skinning.
+void Activate(unsigned shader,unsigned nextArray,unsigned nextBuffer) {
+    Flush();BindPipeline(shader,nextArray,nextBuffer);
 }
 void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices) {
     Flush();
     GLint active;
     float color[4],uv[4];glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);glActiveTexture(active);
-    BindPipeline(meshArray,meshBuffer);
+    BindPipeline(program,meshArray,meshBuffer);
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
     glColor4fv(color);glTexCoord4fv(uv);
