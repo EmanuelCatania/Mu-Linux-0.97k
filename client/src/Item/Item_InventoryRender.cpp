@@ -4,6 +4,7 @@
 // Pases de render del inventario y del equipo.
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "globals.h"
 #include "functions.h"
 // InventoryColor @ 0x004E2420 (~38 lines) — sets GL color by item Color field
@@ -327,7 +328,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
     // ItemAttribute = (ITEM_ATTRIBUTE*)DAT_07d78068, stride 0x40
     // _DAT_005524fc = cell size (20.0f), _DAT_005527dc = arrow count X offset
     // OffsetMixItems = DAT_07ea9848, MixState = DAT_07eaa140
-    // Inventory = DAT_07ea5298, WorldTime = DAT_05826e08
+    // Inventory = DAT_07ea5298, WorldTime = WorldTime
     // TradeInventoryStartX = DAT_07ea5290, TradeInventoryStartY = DAT_07ea528c
 
     ITEM_ATTRIBUTE* itemAttr = (ITEM_ATTRIBUTE*)DAT_07d78068;
@@ -383,7 +384,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                             float fx = (float)(r4 % 0x14) + x;
                             int r5 = rand();
                             float fy = (float)(r5 % 0x14) + y;
-                            float mixRot = (float)((std::int64_t)DAT_05826e08 % 100) * 20.0f;
+                            float mixRot = (float)((std::int64_t)WorldTime % 100) * 20.0f;
                             glColor3f(colorR, colorG, 0.2f);
                             GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, 0);
                             GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
@@ -412,7 +413,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                 glColor3f(0.0f, 1.0f, 1.0f);
                 float glowX = (float)((unsigned int)cell->x * 0x14)
                               + (float)DAT_07ea5290 + _DAT_00552834;
-                float sinVal = (float)sin((double)((float)DAT_05826e08 * _DAT_005529cc));
+                float sinVal = (float)sin((double)((float)WorldTime * _DAT_005529cc));
                 float glowY = (float)((unsigned int)cell->y * 0x14)
                               + (float)DAT_07ea528c + _DAT_00552938 + sinVal + _DAT_00552660;
                 GL_DrawTexture(9, glowX, glowY, 24.0f, 24.0f, 0.0f, 0.4f, 1.0f, 1.0f, 1, 1);
@@ -427,5 +428,15 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
     // Advance MixState counter
     if (DAT_07eaa140 > 1) {
         DAT_07eaa140 = DAT_07eaa140 + 1;
+    }
+}
+
+void ItemMaterials_PrepareEquipmentUi() {
+    if (!CharacterAttribute) return;
+    const int order[]={8,7,2,3,4,0,1,5,6,9,10,11};
+    for (int index:order) {
+        if (index==2 && ((*(BYTE *)((BYTE *)CharacterAttribute+11))&7)==3) continue;
+        ITEM *item=GetPanelEquipmentSourceItem(index);
+        if (IsVisualEquipSlotOccupied(item)) MaterialVisuals_PrepareUiItem(item->Type,item->Level);
     }
 }

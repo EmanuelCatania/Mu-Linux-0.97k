@@ -38,7 +38,7 @@ void __cdecl Cursor_Render(void) {
     // Ojo: se multiplica el FLOAT y recien despues se convierte a std::int64_t.  Castear
     // a `int` antes satura cuando WorldTime (timeGetTime) pasa 2^31 ms (~24.8 dias
     // de uptime de la maquina) y el frame queda clavado.
-    int frame = (int)(long long)((double)DAT_05826e08 * 0.0099999998) % 6;
+    int frame = (int)(long long)((double)WorldTime * 0.0099999998) % 6;
     if (frame == 1 || frame == 3 || frame == 5) u_bits = 0x3F000000;  // 0.5f
     if (frame == 2 || frame == 3 || frame == 4) v_bits = 0x3F000000;  // 0.5f
 
@@ -111,7 +111,7 @@ void __cdecl Cursor_Render(void) {
         return;
     }
     if (DAT_07eaa134 == 2) {
-        float10 fv = fsin((float10)(long long)DAT_05826e08 * (float10)_DAT_00552914);
+        float10 fv = fsin((float10)(long long)WorldTime * (float10)_DAT_00552914);
         if (fv <= (float10)FloatZero) {
             GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552660,
                             (float)(int)DAT_083a4278 + _DAT_005529fc,

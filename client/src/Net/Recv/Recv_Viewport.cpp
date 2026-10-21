@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Game/RenderSnapshots.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"
@@ -801,6 +802,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (key >= 1000) key = 0;  // safety clamp per IDA
 
         BYTE* ip = itemPool + (size_t)key * sizeof(ITEM_t);
+        RenderSnapshots_NewItem(key);
         ITEM_t* gi = AsGroundItem(ip);
         OBJECT* o = &gi->Object;
 

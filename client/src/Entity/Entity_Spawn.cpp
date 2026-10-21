@@ -6,6 +6,7 @@
 // hash-table anti-tamper (líneas 1-480 del decompile); acá se escriben directo.
 
 #include "stdafx.h"
+#include "Game/RenderSnapshots.h"
 #include "Entity/EntityTypes.h"
 #include "Scene/ObjectRegistry.h"
 #include "Item/ContentCatalog.h"
@@ -17,6 +18,7 @@
 void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
                           int PositionX, int PositionY, float Rotation)
 {
+    RenderSnapshots_NewCharacter(param_1);
     CHARACTER* c = AsCharacter(param_1);
     OBJECT*    o = &c->Object;
 
@@ -180,7 +182,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
             break;
     }
 
-    o->InitialSceneFrame = DAT_083a7c00;
+    o->InitialSceneFrame = MoveSceneFrame;
 
     // ── BoneTransform ─────────────────────────────────────────────────────────
     // Una matriz 3x4 (0x30 bytes) por hueso; la cantidad es el short en +0x22

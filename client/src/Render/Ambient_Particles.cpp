@@ -76,6 +76,7 @@
 //   _DAT_00552d24 — despawn distance
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 
 void __cdecl AmbientParticles_Update(void)
 {
@@ -163,6 +164,7 @@ LAB_0050245e:
                     puVar9[0]    = 0x3f000000; // color R = 0.5
                     puVar9[1]    = 0x3f000000; // color G = 0.5
                     puVar9[2]    = 0x3f000000; // color B = 0.5
+                    RenderFxSnapshots_New(puVar9-0x3a);
                     *(unsigned char *)(puVar9 + -0x3a) = 1;  // active = true
                     puVar9[0x20] = 0;
                     puVar9[0x1f] = 0x3f800000; // x-scale = 1.0

@@ -137,6 +137,8 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
+#include "Entity/ObjectBounds.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
@@ -638,6 +640,10 @@ void __cdecl SecondPassword_Screen3(void) {
 //     Casi toda la lógica (ruido de ref-count de HashTable + zonas de hover) está limpia, pero el origen del FPU
 //     unresolvable without call-site context. STUB: __ftol() button region.
 void __cdecl SecondPassword_Screen4(void) {
+    // DESVIACION: publicar el origen antes del hit-test, sin esperar al draw.
+    InventoryStartX = (CharacterOpened || PartyOpened) ? 260 : 450;
+    InventoryStartY = 0;
+
     // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
     // y llama a FUN_004d1fc0 o FUN_004d23b0 para renderizar la grilla.
@@ -2553,17 +2559,34 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //     2º pass overlay (TerrainFlag=2) es inerte también en el original.
 //   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum
 //     (#2, 0x004F97E0), RenderTerrainTile RenderTerrainTile (#3, 0x004F8480).
-void __cdecl RenderTerrain(char EditFlag) {
-    // DESVIACION (DLL Antilag, ret en 0x004F9AC0): sin piso.  El DLL cortaba
-    // también la pasada de picking (EditFlag=1, Player_InputTick) y el click al
-    // suelo dejaba de mover al personaje; acá sólo se omite el dibujo.
-    if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
+static void Terrain_BeginWavePass() {
     FUN_004f98c0(
         (int)(*(float*)(Hero + 16) * 0.039999999f),   // hero X * 0.04 → tile coord
         (int)(*(float*)(Hero + 20) * 0.039999999f),   // hero Y * 0.04
         3,
         -70,
         (int)DAT_0839bc88);
+}
+static void Terrain_EndWavePass() {
+    DAT_0839bc88 ^= 1u;
+    Terrain_WaterWaveUpdate((int)DAT_0839bc88);
+}
+// DESVIACION: la pasada visual avanza el agua una vez por paso de 40 ms.
+// El picking conserva sus llamadas adicionales dentro de SIM.
+void Terrain_TickRenderWater() {
+    if (SceneFlag != 5 || DAT_07e11d1c > 30 || !DAT_07abf5d8) return;
+    if (gMapManager.GetCurrentMap() != 10 && !gUserSettings.GetAntilag(ANTILAG_FLOOR)) {
+        Terrain_BeginWavePass();
+        Terrain_EndWavePass();
+    }
+}
+
+void __cdecl RenderTerrain(char EditFlag) {
+    // DESVIACION (DLL Antilag, ret en 0x004F9AC0): sin piso.  El DLL cortaba
+    // también la pasada de picking (EditFlag=1, Player_InputTick) y el click al
+    // suelo dejaba de mover al personaje; acá sólo se omite el dibujo.
+    if (!EditFlag && gUserSettings.GetAntilag(ANTILAG_FLOOR)) return;
+    if (EditFlag) Terrain_BeginWavePass();
 
     if (gMapManager.GetCurrentMap() == 8)
         DAT_07eeb214 = (float)((long long)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
@@ -2600,8 +2623,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         GL_EnableDepthTest();                   // EnableDepthTest
     }
 
-    DAT_0839bc88 ^= 1u;                   // terrain-light double-buffer toggle
-    Terrain_WaterWaveUpdate((int)DAT_0839bc88);
+    if (EditFlag) Terrain_EndWavePass();
 }
 
 #if 0
@@ -2889,6 +2911,7 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
         BYTE* slot = base + index * slotSize;
         if (!slot[0]) {
             *(DWORD*)(slot + 12) = c;
+            RenderFxSnapshots_New(slot);
             slot[0] = 1;
             *(int*)(slot + 16) = 0;
             *(int*)(slot + 8) = flag ? 15 : 30;
@@ -3977,21 +4000,9 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
     // If model has no action data: copy cached transform params to render slots
     if (*(short *)((int)model + 0x26) == 0) {
-        *(unsigned int *)(entity_ptr + 0x140) = 0;
-        *(unsigned int *)(entity_ptr + 0x130) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.BoundingBoxMin[0];
-        *(unsigned int *)(entity_ptr + 0x134) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.BoundingBoxMin[1];
-        *(unsigned int *)(entity_ptr + 0x138) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.BoundingBoxMin[2];
-        *(unsigned int *)(entity_ptr + 0x144) = 0;
-        *(unsigned int *)(entity_ptr + 0x148) = 0;
-        *(unsigned int *)(entity_ptr + 0x150) = 0;
-        *(unsigned int *)(entity_ptr + 0x154) = 0;
-        *(unsigned int *)(entity_ptr + 0x158) = 0;
-        *(float *)(entity_ptr + 0x13c) = AsCharacter(entity_ptr)->Object.BoundingBoxMax[0] - AsCharacter(entity_ptr)->Object.BoundingBoxMin[0];
-        *(float *)(entity_ptr + 0x14c) = AsCharacter(entity_ptr)->Object.BoundingBoxMax[1] - AsCharacter(entity_ptr)->Object.BoundingBoxMin[1];
-        *(float *)(entity_ptr + 0x15c) = AsCharacter(entity_ptr)->Object.BoundingBoxMax[2] - AsCharacter(entity_ptr)->Object.BoundingBoxMin[2];
-        *(float *)(entity_ptr + 0x130) = AsCharacter(entity_ptr)->Object.Position[0] + *(float *)(entity_ptr + 0x130);
-        *(float *)(entity_ptr + 0x134) = AsCharacter(entity_ptr)->Object.Position[1] + *(float *)(entity_ptr + 0x134);
-        *(float *)(entity_ptr + 0x138) = AsCharacter(entity_ptr)->Object.Position[2] + *(float *)(entity_ptr + 0x138);
+        OBJECT& object = AsCharacter(entity_ptr)->Object;
+        ObjectBounds_Build(object.BoundingBoxMin, object.BoundingBoxMax,
+                           object.Position, object.OBB);
         return;
     }
 

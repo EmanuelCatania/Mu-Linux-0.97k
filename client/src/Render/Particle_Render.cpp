@@ -94,6 +94,29 @@
 #include "Render/Particle_Render.h"
 
 
+namespace {
+struct ParticleSample { bool valid = false; short type = 0; int variant = 0; float puff = 1.0f; };
+ParticleSample samples[200];
+}
+void Particle_InvalidateRender(const void *entity) {
+    const uintptr_t offset = (uintptr_t)entity - (uintptr_t)DAT_07b11670;
+    if (offset < 200 * 0x1bc && offset % 0x1bc == 0) samples[offset / 0x1bc].valid = false;
+}
+// DESVIACION: el pool se muestrea antes del pase de personajes, a 25 Hz.
+void Particle_PrepareRender() {
+    for (int i = 0; i < 200; ++i) {
+        char *slot = (char *)DAT_07b11670 + i * 0x1bc;
+        ParticleSample &sample = samples[i];
+        sample.valid = slot[0] && slot[352];
+        if (!sample.valid) continue;
+        sample.type = *(short *)(slot + 2);
+        sample.variant = *(int *)(slot + 4);
+        _rand(); // IDA consume esta muestra incluso para tipos sin draw propio.
+        if (sample.type == 1191) *(float *)(slot + 12) += 0.2f;
+        if (sample.type == 1200) sample.puff = (float)(_rand() % 4 + 8) * 0.1f;
+    }
+}
+
 // =============================================================================
 // IDA: FUN_0046be40 @ 0x0046BE40 — Particle_RenderAll
 // Itera el effect pool DAT_07b11670 (200 slots × 0x1BC bytes). Para cada slot
@@ -132,7 +155,8 @@ void __cdecl Particle_RenderAll(void)
         float rot     = *(float*)(slot + 36);
         float scaleF  = *(float*)(slot + 12);
 
-        _rand();                              // IDA calls rand() once unconditionally
+        const ParticleSample &sample = samples[i];
+        if (!sample.valid || sample.type != typeCode || sample.variant != variant) continue;
         // IDA 0046BE40: EnableAlphaBlend().  00511790 is the separate
         // "minus" blend mode; using it here makes the normal particle pass
         // differ from the original blend equation.
@@ -140,8 +164,7 @@ void __cdecl Particle_RenderAll(void)
 
         switch (typeCode) {
         case 1191: {
-            float newScale = scaleF + 0.2f;
-            *(float*)(slot + 12) = newScale;
+            float newScale = scaleF;
             GLfloat color[3];
             color[0] = color[1] = color[2] = (float)counter * 0.1f;
             RenderTerrainAlphaBitmap(1191, posX, posY, newScale, newScale,
@@ -149,9 +172,8 @@ void __cdecl Particle_RenderAll(void)
             break;
         }
         case 1200: {
-            int r = _rand() % 4;
             GLfloat color[3];
-            color[0] = color[1] = color[2] = (float)(r + 8) * 0.1f;
+            color[0] = color[1] = color[2] = sample.puff;
             RenderTerrainAlphaBitmap(1200, posX, posY, 2.0f, 2.0f,
                                      color, -rot, 1.0f);
             break;

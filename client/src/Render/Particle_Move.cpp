@@ -28,7 +28,7 @@
 //
 // Bitmaps access: DAT_083a7ca0 + type * 0x38 + 0x24 = height field per bitmap slot.
 // Models access: DAT_05828d58 + entity_type * 0xBC = BMD struct base.
-// WorldTime = DAT_05826e08 (global animation tick).
+// WorldTime = WorldTime (global animation tick).
 
 // Helper macros for particle field access
 // DAT_07abf5f0 es un array `char[N]`: usarlo directo (decae a char*). Con
@@ -405,18 +405,18 @@ void __stdcall MoveParticles(void)
                         *(int*)(P_ENT(iVar9) + 0x58) = 0;
                         P_ACTIVE(iVar9) = '\0';
                     }
-                    fVar11 = (float10)fsin(((float10)DAT_05826e08 + (float10)P_GRAV(iVar9)) * (float10)_DAT_00552b0c);
+                    fVar11 = (float10)fsin(((float10)WorldTime + (float10)P_GRAV(iVar9)) * (float10)_DAT_00552b0c);
                     P_POSZ(iVar9) = (float)(fVar11 * (float10)_DAT_005524fc + (float10)P_TGZ(iVar9));
                 }
                 // Sub-type rotation
                 switch (P_SUB(iVar9)) {
                 case 1:
                 case 4:
-                    P_ROT(iVar9) = (float)DAT_05826e08 * P_EX0(iVar9) * _DAT_00552914 + P_TGY(iVar9);
+                    P_ROT(iVar9) = (float)WorldTime * P_EX0(iVar9) * _DAT_00552914 + P_TGY(iVar9);
                     break;
                 case 2:
                 case 5:
-                    P_ROT(iVar9) = (float)DAT_05826e08 * P_EX0(iVar9) * _DAT_00552acc + P_TGY(iVar9);
+                    P_ROT(iVar9) = (float)WorldTime * P_EX0(iVar9) * _DAT_00552acc + P_TGY(iVar9);
                     break;
                 }
                 break;
@@ -587,12 +587,12 @@ void __stdcall MoveParticles(void)
                 break;
             }
             case 6: {
-                fVar11 = (float10)DAT_05826e08;
+                fVar11 = (float10)WorldTime;
                 P_LIFE(iVar9) = 10;
                 fVar11 = (float10)fsin((double)((fVar11 + (float10)P_GRAV(iVar9)) * (float10)_DAT_00552b0c));
                 P_POSZ(iVar9) = (float)(fVar11 * (float10)_DAT_005524fc + (float10)P_ROT(iVar9));
                 {
-                    unsigned long long uv = (unsigned long long)(long long)(double)((float10)DAT_05826e08 * (float10)_DAT_00552500);
+                    unsigned long long uv = (unsigned long long)(long long)(double)((float10)WorldTime * (float10)_DAT_00552500);
                     int modVal = (int)((long long)uv % 0x708);
                     P_LR(iVar9) = 0.36f;  // 0x3eb851ec
                     P_LG(iVar9) = 0.3f;   // 0x3e99999a
@@ -949,7 +949,7 @@ void __stdcall MoveParticles(void)
 
         case 0x4a7: {
             // Terrain light + positioning
-            unsigned long long uv = (unsigned long long)(long long)(double)((float10)DAT_05826e08 * (float10)_DAT_00552500);
+            unsigned long long uv = (unsigned long long)(long long)(double)((float10)WorldTime * (float10)_DAT_00552500);
             P_ROT(iVar9) = (float)(int)((long long)(uv) % 1000) * _DAT_00552500;
             float lightA = (float)P_LIFE(iVar9) * _DAT_00552a00;
             float ltA0 = lightA * _DAT_00552504;

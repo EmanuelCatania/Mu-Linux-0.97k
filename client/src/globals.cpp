@@ -382,7 +382,7 @@ int      DAT_005616a4  = 0;
 int      DAT_005616a8  = 0;
 DWORD    SelectedHero  = 0; // IDA: DAT_005616ac (0x005616AC)
 DWORD    DAT_005616b0  = 0;
-DWORD    DAT_005616b8  = 0;
+DWORD    TimeRemain  = 0; // IDA: TimeRemain (0x005616B8)
 DWORD    DAT_005617a0  = 0;
 char     DAT_00561a30[]  = "%s";  // Scene_CharSelect — name label (top, bold)
 DWORD    DAT_00561b04  = 0;
@@ -642,7 +642,7 @@ DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
-float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)Platform::GetTimer().MultimediaTicks()
+float    WorldTime  = 0.0f; // IDA: WorldTime (0x05826E08)
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
@@ -1108,7 +1108,7 @@ float&   DAT_083a7ad0 = CurrentCameraAngle[0];
 float&   DAT_083a7ad4 = CurrentCameraAngle[1];
 float&   DAT_083a7ad8 = CurrentCameraAngle[2];
 DWORD    DAT_083a7af4  = 0;
-DWORD    DAT_083a7c00  = 0;
+DWORD    MoveSceneFrame  = 0; // IDA: MoveSceneFrame (0x083A7C00)
 DWORD    DAT_083a7c10  = 0;
 // IDA: DAT_083a7c14 (0x083A7C14)
 int      LoginSubState  = 0;
@@ -1133,7 +1133,7 @@ char     CharSelectSceneInitialized = 0;
 char     DAT_083a7c4c  = 0;
 char     DAT_083a7c4d  = 0;
 DWORD    DAT_083a7c50  = 0;
-DWORD    DAT_083a7c54  = 0;
+DWORD    TestTime  = 0; // IDA: TestTime (0x083A7C54)
 DWORD    DAT_083a7c58  = 0;
 DWORD    DAT_083a7c5c  = 0;  // chat-log label for exit-countdown message (empty id)
 DWORD    DAT_083a7c6c  = 0;
@@ -1224,7 +1224,7 @@ DWORD    DAT_07d52c38  = 0;
 // al final de globals.h).
 
 // Model data table base + entity vtable
-// (DAT_05828d58 and DAT_05826e08 are defined above in their original sections)
+// (DAT_05828d58 and WorldTime are defined above in their original sections)
 // ── BoneVertex pool ──────────────────────────────────────────────────────────
 // Transformed-vertex buffer used by Sprite_DrawBone (Skeleton_Transform), BMD_DrawMesh
 // and related paths. Layout: [mesh * 15000 + vert] * float[3] = 12 bytes stride.
@@ -2027,9 +2027,10 @@ BYTE    DAT_07ea5240[0x44] = { 0 };
 // ── Effect_Tick globals ───────────────────────────────────────────────────────
 float   _DAT_00552aac  = 0.0833333358f;
 // Fade-effect pool — Effect_TickFade itera 40 slots × 0x1bc bytes.
-char    DAT_07c74ec8[40 * 0x1bc] = {};
+// DAT_07c74ec8 es el anclaje +0x60 de g_PlayerRenderPool, no otro pool.
 // Flare effect pool — Effect_TickFlare itera 63 slots × 0x70 bytes.
-char    DAT_07c82cdc[63 * 0x70] = {};
+// IDA: Pointers (0x07C82CD0), 100 slots de 0x70 compartidos por alta/tick/draw.
+char    g_PointerPool[100 * 0x70] = {};
 // Spark-effect pool — Effect_TickSpark itera 100 slots × 0x70 bytes.
 char    DAT_07c80128[100 * 0x70] = {};
 
@@ -2540,7 +2541,7 @@ BYTE   DAT_0055a770[3]    = { 0, 0, 0 };
 // DAT_07e118e8 (HeroTile) ya está definido como DWORD más arriba.
 _SkillAttrEntry SkillAttribute = {};   // skill attribute table base @ 0x07D29D20
 LPVOID DAT_07abf164       = nullptr;   // character extra BMD heap buffer
-char   DAT_07c82cd0       = 0;        // floating label pool base
+// DAT_07c82cd0 es el inicio de g_PointerPool.
 char   DAT_0814b6e0       = 0;        // water wave buffer A
 // Grass-wind / water-wave ping-pong buffer: sub_4F98C0 (setup) y sub_4F9A30
 // (smoothing) escriben `&DAT_0814b2e0 + 0x40000*toggle` → 2 buffers de 0x40000
@@ -2643,7 +2644,7 @@ DWORD  DAT_00563e00       = 0;
 // DAT_00560694 already defined above (line ~1922)
 
 // Missing globals (compilation fixes)
-DWORD  DAT_07c82cf4[0xAF0] = {};   // terrain alpha bitmap pool
+// DAT_07c82cf4 es el anclaje +0x24 de g_PointerPool.
 DWORD  DAT_0055339c       = 0;
 // m_dwTextColor / m_dwBackColor NO son globals separados: en IDA son EXACTAMENTE
 // 0x559c78 / 0x559c80 (= DAT_00559c78 / SetBackgroundTextColor). Verificado por disasm

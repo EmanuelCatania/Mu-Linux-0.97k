@@ -1,6 +1,7 @@
 // Quest_Legacy.cpp
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
@@ -267,4 +268,16 @@ void __fastcall FUN_00403a40(void* param_1) {
     // Texto del dialogo + respuestas.
     FUN_00402ff0((int)(uintptr_t)param_1);
     glColor3f(1.0f, 1.0f, 1.0f);
+}
+
+void ItemMaterials_PrepareQuestUi() {
+    if (!g_csQuest) return;
+    const BYTE *self=(const BYTE *)g_csQuest;
+    if (!self[0x1c87f] || self[0x1c882]!=1) return;
+    const BYTE *quest=self+584*self[0x1c87a]+8;
+    for (int i=0; i<*(const short *)quest; ++i) {
+        const BYTE *entry=quest+40+18*i;
+        if (entry[4+self[4]]==1 && entry[-1]==1)
+            MaterialVisuals_PrepareUiItem(entry[1]+32*entry[0]);
+    }
 }

@@ -82,7 +82,7 @@
 //       RETORNAR 0
 //
 //   Uso en game: por cada tecla de shortcut se llama una vez por frame.
-//   Ejemplo: Key_IsJustPressed(0x2C) = F12 → toggle screenshot mode.
+//   Ejemplo: Key_IsJustPressed(0x2C) = Print Screen → toggle screenshot mode.
 //
 //   IMPORTANTE: No usar para movimiento continuo — usar GetAsyncKeyState directo.
 uint Key_IsJustPressed(int vk);
@@ -211,7 +211,7 @@ int NumPad_HitTest(void);
 // Ejemplos documentados:
 //   Game_MainLoop / Game_SceneUpdate:
 //     GetAsyncKeyState(VK_SHIFT) → if high bit: toggle screenshot debug mode
-//     Key_IsJustPressed(VK_F12)  → toggle screenshot mode (DAT_083a42ec ^= 1)
+//     Key_IsJustPressed(VK_SNAPSHOT) → toggle screenshot mode (DAT_083a42ec ^= 1)
 //
 //   Login Scene (Game_SceneUpdate):
 //     Clicks de mouse en áreas de botón como hit-test manual
@@ -275,15 +275,13 @@ int __cdecl PressKey(int param_1)
   // (disasm @ 0x0047ec35 = MOV EAX,[ESI*0x4 + 0x7e118ec]). Necesario castear
   // la base a char* porque KeyState es DWORD[256].
   DWORD* slot = (DWORD*)((char*)&KeyState + param_1 * 4);
-  if (((unsigned short)SVar1 >> 8) == 0x80) {
-    if (*slot == 0) {
-      *slot = 1;
-      return 1;
-    }
-  } else {
-    *slot = 0;
-  }
-  return 0;
+  const bool held=(SVar1 & 0x8000)!=0;
+  // DESVIACION: el bit de pulsación conserva un toque down/up entre pasos SIM.
+  // El flanco nuevo también permite dos pulsaciones aunque no se haya observado
+  // el estado suelto; mantener la tecla sigue produciendo una sola acción.
+  const bool pressed=(SVar1 & 1)!=0 || (held && *slot==0);
+  *slot=held ? 1 : 0;
+  return pressed ? 1 : 0;
 }
 
 

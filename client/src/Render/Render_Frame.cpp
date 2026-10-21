@@ -337,8 +337,8 @@ void Render_GameFrame(void)
         GL_SetBlendAdditive();                        // EnableAlphaBlend (aditivo)
         glColor3f(0.3f, 0.3f, 0.25f);
 
-        const float scrollA = (float)((long long)DAT_05826e08 % 100000) * _DAT_00552b88; // 0.0002
-        const float scrollB = (float)((long long)DAT_05826e08 % 100000) * _DAT_00552500; // 0.001
+        const float scrollA = (float)((long long)WorldTime % 100000) * _DAT_00552b88; // 0.0002
+        const float scrollB = (float)((long long)WorldTime % 100000) * _DAT_00552500; // 0.001
 
         // El original usa `RenderBitmapUV` (0x5128C0), que mapea un cuadrilatero
         // SESGADO en V (el arrastre de la arena), no `RenderBitmap` (0x5125A0).
@@ -544,7 +544,7 @@ void Render_Scene3D(void)
     if (gContentCatalog.HasMapFog()) DAT_083a42ea = 1;
 
     // ── 2. Camera position ────────────────────────────────────────────────────
-    MoveMainCamera();
+    // Cámara autoritativa preparada al finalizar el paso de simulación.
     float camPos[3];
     if (DAT_07abf5d8) {
         BYTE* hero = (BYTE*)DAT_07abf5d8;
@@ -606,9 +606,7 @@ void Render_Scene3D(void)
     Particle_RenderAll();                         // particle system draw
     RenderBoids();                              // RenderBoids (decoration animals)
     Entity_RenderAll_3D();
-    if (DAT_07e11d30 != 0) {                     // if (EditFlag) RenderTerrain(1) — IDA: aquí, no tras Trail
-        RenderTerrain('\x01');
-    }
+    // Picking de editor y avances del agua preparados en SIM.
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
         Entity_Render();                          // Entity_Render (sprites)
     }
@@ -636,7 +634,7 @@ void Render_Scene3D(void)
     RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
-    Mouse_UpdateHoverTargets();                              // EntityInfo / CharPreview overlay
+    // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.
 
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
     GL_Begin2D();                              // BeginBitmap (Ortho2D)

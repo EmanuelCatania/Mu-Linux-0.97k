@@ -12,6 +12,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/IFileSystem.h"
@@ -742,7 +743,8 @@ int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 
   v5 = (BYTE *)a1;
   v6 = 9999;
-  v7 = (DWORD *)&DAT_07c82cd0;
+  v7 = (DWORD *)g_PointerPool;
+  int index=0;
   while ( *(BYTE *)v7 )
   {
     result = v7[14];
@@ -752,12 +754,13 @@ int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
       v5 = (BYTE *)v7;
     }
     v7 += 28;
-    if ( (int)v7 >= (int)&DAT_07c85890 )
+    if ( ++index>=100 )
     {
       *v5 = 0;
       return result;
     }
   }
+  RenderFxSnapshots_New(v7);
   *(BYTE *)v7 = 1;
   v7[1] = a1;
   v7[4] = *a2;

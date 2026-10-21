@@ -92,6 +92,9 @@ public:
     int GetWindowMode()  const { return m_WindowMode; }
     int GetBorderless()  const { return m_Borderless; }
     int GetResolution()  const { return m_Resolution; }
+    int GetFpsLimit() const { return m_FpsLimit; }
+    bool GetRenderDecoupled() const { return m_RenderDecoupled; }
+    bool GetVSync() const { return m_VSync; }
     int GetEnableSound() const { return m_EnableSound; }
     int GetEnableMusic() const { return m_EnableMusic; }
     int GetSoundLevel()  const { return m_SoundLevel; }
@@ -115,6 +118,7 @@ public:
     void SetSoundLevel(int level);
     void SetMusicLevel(int level);
     void SetWindow(bool windowMode, bool borderless, int resolution);
+    bool SetPresentation(bool decoupled, bool vsync, int fpsLimit);
     int  GetMiniMapAlpha() const { return m_MiniMapAlpha; }
     int  GetMiniMapZoom()  const { return m_MiniMapZoom; }
     void SetMiniMap(int alpha, int zoom);
@@ -133,6 +137,10 @@ private:
     int  m_WindowMode  = -1;
     int  m_Borderless  = -1;
     int  m_Resolution  = -1;
+    // DESVIACION: preferencias de presentación; simulación siempre a 25 Hz.
+    bool m_RenderDecoupled = true;
+    int  m_FpsLimit = 60;
+    bool m_VSync = false;
     int  m_EnableSound = -1;
     int  m_EnableMusic = -1;
     int  m_SoundLevel  = -1;

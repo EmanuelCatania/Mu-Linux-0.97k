@@ -23,6 +23,7 @@
 //   +0x64  float[3] prev_xyz     (copy of world_xyz for some types)
 
 #include "stdafx.h"
+#include "Game/RenderFxSnapshots.h"
 #include <array>
 #include "globals.h"
 #include "functions.h"
@@ -315,6 +316,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
         if (iVar6 >= 3000)
             return 0;
     }
+
+    RenderFxSnapshots_New(pcVar11);
 
     // ── base initialisation ────────────────────────────────────────────────────
     *(int *)(pcVar11 + 8)  = param_5;
@@ -646,7 +649,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             fVar4 = (fVar4 - fVar5) * _DAT_00552a48;
             *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
             *(float *)(pcVar11 + 0x50) = fVar4;
-            fVar13 = (long double)fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0);
+            fVar13 = (long double)fsin((long double)WorldTime * (long double)_DAT_005528e0);
             fVar13 = fVar13 * (long double)_DAT_005528b8 + (long double)_DAT_00552928;
             *(float *)(pcVar11 + 0x28) = (float)fVar13;
             fVar13 = fVar13 * (long double)_DAT_00552504;
@@ -661,7 +664,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             fVar4 = (float)(int)(uVar8 + 0x20) * _DAT_005524f8;
             *(float*)(pcVar11 + ParticleDriftOffset + 8) = 0.0f;
             *(float *)(pcVar11 + 0x0c) = fVar4 + *(float *)(pcVar11 + 0x0c);
-            fVar13 = (long double)fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0);
+            fVar13 = (long double)fsin((long double)WorldTime * (long double)_DAT_005528e0);
             fVar13 = fVar13 * (long double)_DAT_005528b8 + (long double)_DAT_00552928;
             *(float *)(pcVar11 + 0x28) = (float)fVar13;
             fVar13 = fVar13 * (long double)_DAT_00552504;
@@ -675,7 +678,7 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             iVar7 = *(int *)(pcVar11 + 0x3c);
             *(float *)(pcVar11 + 0x0c) =
                 (float)(int)(uVar8 + 0x20) * _DAT_005524f8 + *(float *)(pcVar11 + 0x0c);
-            fVar12 = (long double)DAT_05826e08;
+            fVar12 = (long double)WorldTime;
             fVar13 = (long double)_DAT_005528e0;
             *(unsigned int *)(pcVar11 + 100) = *(unsigned int *)(iVar7 + 0x10);
             fVar13 = (long double)fsin(fVar12 * fVar13);

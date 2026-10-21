@@ -334,7 +334,7 @@ extern int     DAT_005616a4;   // dialog Y (signed; ver globals.cpp)
 extern int     DAT_005616a8;   // camera X (signed; ver globals.cpp)
 extern DWORD   SelectedHero; // IDA: DAT_005616ac (0x005616AC)
 extern DWORD   DAT_005616b0;
-extern DWORD   DAT_005616b8;
+extern DWORD   TimeRemain; // IDA: TimeRemain (0x005616B8)
 extern DWORD   DAT_005617a0;
 extern char    DAT_00561a30[];   // "%s" format string used by Scene_CharSelect labels
 extern DWORD   DAT_00561b04;
@@ -527,7 +527,7 @@ extern DWORD   DAT_05826d78;
 extern DWORD   DAT_05826dc8;
 extern DWORD   DAT_05826df4;
 extern DWORD   FpsWindowStartTimeMs; // IDA: DAT_05826e04
-// DAT_05826e08 se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
+// WorldTime se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
 extern DWORD   FpsTimerInitialized;  // IDA: DAT_05826e0c
 extern DWORD   DAT_05826e10;
 extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos x 16B)
@@ -1065,7 +1065,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 #define IDA_PORT_00445230 1
 #define CameraWalkCut       DAT_083a7af4
 #define CurrentCameraCount  DAT_005615e8
-extern DWORD   DAT_083a7c00;
+extern DWORD   MoveSceneFrame; // IDA: MoveSceneFrame (0x083A7C00)
 extern DWORD   DAT_083a7c04;   // in-game UI context A
 extern DWORD   DAT_083a7c08;   // in-game UI context B
 extern char    DAT_083a7c09;   // in-game UI flag byte
@@ -1094,7 +1094,7 @@ extern char    CharSelectSceneInitialized; // IDA: DAT_083a7c4b
 extern char    DAT_083a7c4c;
 extern char    DAT_083a7c4d;
 extern DWORD   DAT_083a7c50;
-extern DWORD   DAT_083a7c54;
+extern DWORD   TestTime; // IDA: TestTime (0x083A7C54)
 extern DWORD   DAT_083a7c58;
 extern DWORD   DAT_083a7c5c;   // chat-log label for exit-countdown
 extern char    DAT_083a7c64[64];  // server IP string buffer (filled on server select)
@@ -1173,7 +1173,7 @@ extern byte    DAT_005618c4;       // item class name format ptr D
 extern char    s____s___005618c8[];// list entry format string (" %s " etc.)
 
 // ── Entity / animation tick globals ───────────────────────────────────────────
-extern float   DAT_05826e08;   // WorldTime — absolute milliseconds, per 0.97k CalcFPS
+extern float   WorldTime; // IDA: WorldTime (0x05826E08)
 // DAT_05826d31 — declared above
 extern char    DAT_05826d33;   // SoccerObserver (IDA @0x05826D33) - lo escriben
                                // InitGame y el F3/23, y lo lee RenderCharacter.
@@ -2030,8 +2030,8 @@ extern BYTE    DAT_07ea5240[0x44];
 
 // ── Effect_Tick globals ───────────────────────────────────────────────────────
 extern float   _DAT_00552aac;  // effect tick float constant
-extern char    DAT_07c74ec8[40 * 0x1bc];   // Fade-effect pool: 40 × 0x1bc
-extern char    DAT_07c82cdc[63 * 0x70];   // Flare effect pool: 63 × 0x70 bytes
+// IDA: MovePlanes usa g_PlayerRenderPool +0x60; no tiene otra asignación.
+extern char    g_PointerPool[100 * 0x70]; // IDA: Pointers (0x07C82CD0).
 extern char    DAT_07c80128[100 * 0x70];   // Spark-effect pool: 100 × 0x70
 
 // ── Terrain_Light globals ─────────────────────────────────────────────────────
@@ -2467,7 +2467,7 @@ extern _SkillAttrEntry SkillAttribute;  // base of table @ 0x07D29D20
 extern LPVOID  DAT_07abf164;   // extra BMD data heap block for character models
 
 // ── FloatingLabel pool ────────────────────────────────────────────────────────
-extern char    DAT_07c82cd0;   // floating label pool base (stride 0x70, limit 0x7c8588f)
+#define DAT_07c82cd0 (g_PointerPool[0]) // IDA: base Pointers (0x07C82CD0).
 
 // ── Water wave simulation buffers ─────────────────────────────────────────────
 extern char    DAT_0814b6e0;   // water wave buffer A (256×256 ints, 2 banks × 0x40000 bytes)
@@ -2621,8 +2621,7 @@ extern DWORD   DAT_00563e00;       // codec state A
 // DAT_00560694 already declared above (line ~1616) as DWORD
 
 // Missing globals (compilation fixes)
-extern DWORD   DAT_07c82cf4[0xAF0];       // terrain alpha bitmap pool (0x2BC0 bytes = 100 slots * 112 bytes)
-#define DAT_07c858b4 DAT_07c82cf4[0xAF0-1]   // end-marker alias
+// IDA: RenderTerrainAlphaBitmaps usa g_PointerPool +0x24 y 100 slots.
 extern DWORD   DAT_0055339c;       // JPEG natural order table
 // m_dwTextColor / m_dwBackColor SON DAT_00559c78 / SetBackgroundTextColor (mismo global en IDA:
 // 0x559c78 / 0x559c80, verificado por disasm de sub_40D610 y sub_480980). El render de

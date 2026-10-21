@@ -10,6 +10,8 @@ public:
     virtual bool Initialize() = 0;
     virtual void Release() = 0;
     virtual void Present() = 0;
+    // DESVIACION: intervalo de presentación configurable (0 libre, 1 sincronizado).
+    virtual bool SetSwapInterval(int interval) = 0;
 };
 IGLContext& GetGLContext();
 } // namespace Platform

@@ -82,7 +82,7 @@ static bool IsEffectOwner(const void* owner)
     return SceneObjects::Contains(owner) ||
         SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_07c74ec8, sizeof(DAT_07c74ec8), 0x1bc) ||
+        SceneObjects::IsSlot(owner, g_PlayerRenderPool, sizeof(g_PlayerRenderPool), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), 0x1bc) ||
         SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc);
 }
@@ -806,7 +806,7 @@ void MoveEffect(float *param_1, int param_2)
               }
               if (!validOwner(owner)) return;
               __owner_fVar4 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
-              fVar18 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552998 +
+              fVar18 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552998 +
                                      (float10)(int)local_35c * (float10)_DAT_0055299c);
               local_35c = (float *)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
               fVar18 = (float10)fsin(fVar17);
@@ -977,7 +977,7 @@ LAB_00469366:
         local_318 = 0;
         AsObject(param_1)->HeadAngle[2] = AsObject(param_1)->HeadAngle[2] + _DAT_005524fc;
         local_314 = 0;
-        fVar17 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524f8);
+        fVar17 = (float10)fsin((float10)WorldTime * (float10)_DAT_005524f8);
         AsObject(param_1)->Gravity = (float)(fVar17 * (float10)_DAT_005524fc + (float10)_DAT_0055284c);
         Matrix_BuildFromEuler(AsObject(param_1)->HeadAngle,local_1a4 + 6);
         Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
@@ -1510,10 +1510,10 @@ switchD_00466b93_caseD_c7:
         pfVar15 = param_1 + 0x3a;
         pfVar10 = param_1 + 4;
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime * 0.1
+        lVar19 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: -(std::int64_t)WorldTime * 0.1
+        lVar19 = (longlong)WorldTime;   // IDA: -(std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
@@ -1541,10 +1541,10 @@ switchD_00466b93_caseD_c7:
         pfVar15 = param_1 + 0x3a;
         pfVar10 = param_1 + 4;
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime * 0.1
+        lVar19 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: -(std::int64_t)WorldTime * 0.1
+        lVar19 = (longlong)WorldTime;   // IDA: -(std::int64_t)WorldTime * 0.1
         CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         local_35c = (float *)0x4;
         do {
@@ -1567,10 +1567,10 @@ switchD_00466b93_caseD_c7:
         local_360 = 0.4;
         pfVar10 = param_1 + 4;
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: (std::int64_t)WorldTime * 0.1
+        lVar19 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime * 0.1
         CreateSprite(0x47e,pfVar10,1.0f,&local_368,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
-        lVar19 = (longlong)DAT_05826e08;   // IDA: -(std::int64_t)WorldTime * 0.1
+        lVar19 = (longlong)WorldTime;   // IDA: -(std::int64_t)WorldTime * 0.1
         CreateSprite(0x47e,pfVar10,2.0f,&local_368,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {

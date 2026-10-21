@@ -441,6 +441,22 @@ static void HUD_PickUpNearestItem(void)
 static void HUD_HotkeyTick(void)
 {
     ClampChatModeIME("HKT_enter");
+    // DESVIACION: consumir también los atajos bloqueados por texto o paneles;
+    // una letra escrita no debe quedar pendiente hasta cerrar ese contexto.
+    // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
+    // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
+    int kC = PressKey(0x43); // 'C'  Character info
+    int kV = PressKey(0x56); // 'V'  Inventory (alt)
+    int kI = PressKey(0x49); // 'I'  Inventory
+    int kG = PressKey(0x47); // 'G'  Guild
+    int kP = PressKey(0x50); // 'P'  Party
+    int kH = PressKey('H');
+    int kM = PressKey('M');
+    int kTab = PressKey(VK_TAB);
+    int kSpace = PressKey(VK_SPACE);
+    int kF10 = PressKey(VK_F10);
+    int kF11 = PressKey(VK_F11);
+
     if (GuildInputEnable != '\0') return;  // g_ChatMode
     if (DAT_00559c84 != '\0') return;  // g_TextMode (login / dialog text)
     if (DAT_07e11d71 != '\0') return;  // g_IME_Mode
@@ -467,23 +483,17 @@ static void HUD_HotkeyTick(void)
         HUD_IsQuestPanelOpenRuntime())
         return;
 
-    // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
-    // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
-    int kC = PressKey(0x43); // 'C'  Character info
-    int kV = PressKey(0x56); // 'V'  Inventory (alt)
-    int kI = PressKey(0x49); // 'I'  Inventory
-    int kG = PressKey(0x47); // 'G'  Guild
-    int kP = PressKey(0x50); // 'P'  Party
     // DESVIACION (DLL Controller.cpp): H abre los horarios recibidos del server.
-    if (PressKey('H')) gEventTimer.Toggle();
+    if (kH) gEventTimer.Toggle();
     // DESVIACION (DLL Controller.cpp): menú M con destinos recibidos del server.
-    if (PressKey('M')) gMoveList.Toggle();
+    if (kM) gMoveList.Toggle();
     // DESVIACION (DLL Controller.cpp): Tab abre el mapa.
-    if (PressKey(VK_TAB)) gMiniMap.Toggle();
-    if (PressKey(VK_SPACE)) HUD_PickUpNearestItem();
+    if (kTab) gMiniMap.Toggle();
+    // DESVIACION (MU 5.2): Espacio levanta el primer ítem cercano.
+    if (kSpace) HUD_PickUpNearestItem();
     // DESVIACION (DLL Controller.cpp): F10 activa la cámara 3D, F11 la restaura.
-    if (PressKey(VK_F10)) gCamera3D.Toggle();
-    if (PressKey(VK_F11)) gCamera3D.Restore();
+    if (kF10) gCamera3D.Toggle();
+    if (kF11) gCamera3D.Restore();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
@@ -566,7 +576,7 @@ static void HUD_HotkeyTick(void)
 //   DAT_07abf5d8          — local player entity ptr
 //   DAT_07abf5d0          — entity array base (stride 0x394)
 //   DAT_07cf1ffc          — g_CharData (XOR-encoded char-select data block)
-//   DAT_05826e08          — frame counter (float-compatible tick)
+//   WorldTime          — frame counter (float-compatible tick)
 //   _DAT_00552890         — speed scale (dt multiplier)
 //   _DAT_00552b6c         — max facing dt threshold
 //   _DAT_00552928         — min entity speed for facing packet
@@ -1086,7 +1096,7 @@ void __cdecl Player_ProcessInput(void)
                                          && (SelectedCharacter != -1);
             if (!bAutoAttackEngaged && !bHasClick) {
                 _DAT_07e11d50 = 0.0f;
-                _DAT_07e11d4c = DAT_05826e08;      // WorldTime
+                _DAT_07e11d4c = WorldTime;      // WorldTime
                 goto end_tick_inc;                 // IDA: goto LABEL_390
             }
         }
@@ -1094,7 +1104,7 @@ void __cdecl Player_ProcessInput(void)
         // (Walker movido arriba del gate — ya corrió al inicio del tick.)
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
 
-        _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
+        _DAT_07e11d50 = (WorldTime - _DAT_07e11d4c) * _DAT_00552890;
 
         // IDA 0x004ACEF0 L613-625: ANTES de procesar el click, el original lo
         // descarta mientras el heroe no puede actuar:
@@ -1236,7 +1246,7 @@ void __cdecl Player_ProcessInput(void)
                     DAT_00559ce8 = SelectedCharacter;
                     Attacking  = 1;
                     AsCharacter(ent)->MovementType = 3;
-                    // Destino = grid del MOB target (no DAT_05826e08, que es el tick counter).
+                    // Destino = grid del MOB target (no WorldTime, que es el tick counter).
                     TargetX = (DWORD)dstX;
                     TargetY = (DWORD)dstY;
 

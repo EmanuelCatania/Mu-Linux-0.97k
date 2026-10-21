@@ -1,6 +1,7 @@
 // UI_LegacyWidgetSystem.cpp
 
 #include "stdafx.h"
+#include "Entity/ClothPresentation.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -60,6 +61,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Zeros all node fields and sets the four scale floats to 1.0f.
 void __cdecl Widget_NodeInit(int param_1)
 {
+    ClothPresentation_Forget((void *)param_1);
     *(int *)(param_1 + 0x04) = 0; *(int *)(param_1 + 0x08) = 0;
     *(int *)(param_1 + 0x0c) = 0; *(int *)(param_1 + 0x10) = 0;
     *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
@@ -190,10 +192,12 @@ int __cdecl Sound_UpdateChannel3D_Tick(int *param_1, float dt);
 int __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags) {
     if (!widget || flags <= 0) return 1;
     float dt; memcpy(&dt, &hash, 4);
+    ClothPresentation_Before(widget);
     int it = 0;
     while (Sound_UpdateChannel3D_Tick(widget, dt)) {
-        if (++it >= flags) return 1;
+        if (++it >= flags) { ClothPresentation_After(widget); return 1; }
     }
+    ClothPresentation_Forget(widget);
     return 0;
 }
 // GridSpring_Create @ 0x00408130 — GridSpring_Create: builds cols×rows cloth spring system.
@@ -206,6 +210,7 @@ int __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags) {
 void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, float p5,
                           int p6, int p7, float p8, float p9, int ta, int tb, int flags)
 {
+    ClothPresentation_Forget(widget);
     char *thiz = (char*)widget;
     *(float *)(thiz + 0x04) = entity;
     *(int   *)(thiz + 0x10) = tb;

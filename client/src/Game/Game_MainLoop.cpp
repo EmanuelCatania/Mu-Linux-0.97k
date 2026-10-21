@@ -19,11 +19,11 @@
 // Globals:
 //   SceneFlag  — SceneFlag
 //   World  — World
-//   DAT_005616b8  — frame budget accumulator (adds actual frame ms each frame)
-//   DAT_083a7c54  — total frame counter
-//   DAT_083a7c00  — anti-tamper tick counter
+//   TimeRemain  — frame budget accumulator (adds actual frame ms each frame)
+//   TestTime  — total frame counter
+//   MoveSceneFrame  — anti-tamper tick counter
 //   DAT_055ca018  — socket error flag (abort if set)
-//   DAT_083a42ec  — screenshot mode toggle (F12)
+//   DAT_083a42ec  — screenshot mode toggle (Print Screen)
 //   DAT_083a7c48  — connection check enable
 //   DAT_083a7c58  — disconnect dialog shown flag
 //   DAT_07e118e8  — world/map type
@@ -34,6 +34,12 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
+static void Game_TickAmbientAudio();
+void Sprite_CaptureStep();
+void Chat_TickPresentation();
+void HUD_TickGridPresentation();
+void ItemNames_TickInput();
 #include "Platform/IFileSystem.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
@@ -43,9 +49,12 @@
 #include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/FrameLimiter.h"
+#include "Input/Input.h"
 #include "Net/Ping.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
+#include "Game/SimulationPreparation.h"
+#include "Game/RenderSnapshots.h"
 #include "Game/Game_SceneUpdate.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Game/Game_CharSelectTick.h"
@@ -76,7 +85,10 @@ void __cdecl Game_MainLoop(HDC param_1)
     char   nameBuf[256];
     char   tickBuf[100];
     int    renderFlag = 0;
-    CFrameLimiter::StartTime renderStart;
+    // DESVIACION: el presupuesto de 40 ms incluye SIM, preparación y draw;
+    // comenzar sólo al dibujar sumaba ese trabajo a la espera y ralentizaba SIM.
+    const CFrameLimiter::StartTime renderStart = gFrameLimiter.Start();
+    TimeRemain += gFrameLimiter.Advance(renderStart);
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -99,11 +111,17 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
-    while (DAT_005616b8 > 0x27) {
+    // DESVIACION: hasta cinco pasos por draw sin descartar deuda lógica;
+    // incluso bajo recuperación se dibuja y se vuelve al despacho de eventos.
+    int simulationSteps=0;
+    while (TimeRemain > 0x27 && simulationSteps<5) {
+        ++simulationSteps;
+        // DESVIACION: capturas externas por paso, también al recuperar demoras.
+        RenderSnapshots_BeginStep();
 
         // Anti-tamper: periodically re-randomize hash table when counter hits
         // a specific residue (0x39 mod 0x139). Not game logic.
-        if (DAT_083a7c00 % 0x139 == 0x39) {
+        if (MoveSceneFrame % 0x139 == 0x39) {
             // Hash table rehash: reallocate with random offsets
             if (DAT_055c9be0 != NULL)
                 operator_delete((BYTE*)DAT_055c9be0);
@@ -144,9 +162,16 @@ void __cdecl Game_MainLoop(HDC param_1)
             operator_delete(old_bec);
         }
 
+        Simulation_RestorePickingCamera();
         UI_InGameMenu();
 
         CHK("ML/pre_tick");
+        // IDA: los previews emitían después del mundo. Sus joints de vida 0
+        // deben atravesar MoveJoints antes de la próxima pasada; los sprites
+        // pendientes sí llegan al próximo RenderSprites. Nunca emitir al final
+        // de SIM: haría visibles en el mundo esos joints efímeros de UI.
+        MaterialVisuals_TickWingPreviews();
+
         // Dispatch per-state game logic
         if (SceneFlag == 2) { Game_SceneUpdate();     CHK("ML/post_SceneUpdate"); }
         if (SceneFlag == 4) { Game_EnterWorldTick();  CHK("ML/post_EnterWorld"); }
@@ -162,7 +187,10 @@ void __cdecl Game_MainLoop(HDC param_1)
         Chat_TickNoticeTimer();   CHK("ML/post_0047fcb0");
         Chat_TickMessageTimer();   CHK("ML/post_00480950");
 
-        // F12 → toggle screenshot mode
+        // DESVIACION: F12 alterna el contador FPS una vez por pulsación.
+        if (PressKey(VK_F12)) ToggleFpsCounter();
+
+        // Print Screen conserva su captura independiente.
         if (PressKey(0x2c) & 0xff)
             DAT_083a42ec ^= 1;
 
@@ -173,19 +201,30 @@ void __cdecl Game_MainLoop(HDC param_1)
         // Frame index mod 32
         DAT_0839bc8c = (DAT_0839bc8c + 1) & 0x1f;
 
-        // Anti-tamper: track DAT_083a7c00 ref-count, then increment
+        // Anti-tamper: track MoveSceneFrame ref-count, then increment
         {
-            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &MoveSceneFrame);
             if (idx == 0xffffffff) {
                 void* node = AntiTamper_HashNode(); *((BYTE*)node + 4) = 1;
-                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &MoveSceneFrame);
             }
         }
-        DAT_083a7c00++;
+        MoveSceneFrame++;
+        Simulation_PrepareStep();
+        Chat_TickPresentation();
+        MaterialVisuals_TickUi();
+        HUD_TickGridPresentation();
+        ItemNames_TickInput();
+        Game_TickAmbientAudio();
+        Sprite_CaptureStep();
+        RenderSnapshots_EndStep();
+        // IDA: Scene_Dispatch limpiaba Enter después del frame ligado a SIM.
+        // DESVIACION: consumirlo una sola vez por paso, no por draw desacoplado.
+        DAT_055ca038=0;
 
         // Consume 40ms of budget, count frame
-        DAT_005616b8  -= 0x28;
-        DAT_083a7c54  += 1;
+        TimeRemain  -= 0x28;
+        TestTime  += 1;
         crt_sprintf(tickBuf, (const char*)&DAT_00561b04);
     }
 
@@ -311,7 +350,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
-    renderStart = gFrameLimiter.Start();
+    Simulation_BeginRender();
     renderFlag  = 0;
 
     // ── SCENE RENDER ──────────────────────────────────────────────────────────
@@ -324,6 +363,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
     CPhysicsManager_Render(g_PhysicsManager);   // IDA 0x5269C3: CPhysicsManager::Render
+    Simulation_EndRender();
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')
@@ -344,8 +384,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     CHK("ML/post_swap");
 
-    // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    DAT_005616b8 += gFrameLimiter.Wait(renderStart);
+    // ── LÍMITE DE PRESENTACIÓN DESPUÉS DEL RENDER ──────────────────────────────────────
+    gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port
@@ -399,6 +439,11 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     #endif
 
+}
+
+// DESVIACION: azar y decisiones de audio a 25 Hz, también sin dibujo.
+static void Game_TickAmbientAudio()
+{
     // DESVIACION: IDA 0x525D40 pide g_lpszMp3[1] (MuTheme) en el login, el
     // mismo tema que Lorencia. Acá el login pide su propio archivo,
     // Data\Music\MuTheme.mp3, como el DLL (Patchs.cpp parchea ese nombre en

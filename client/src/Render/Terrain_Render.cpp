@@ -4,6 +4,8 @@
 #include "Item/ItemDefines.h"
 #include "Config/UserSettings.h"
 #include "Render/Terrain_Render.h"
+#include "Entity/ObjectPose.h"
+#include "Render/WorldEffects.h"
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
@@ -26,7 +28,7 @@ extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
 // la cámara final, NO un fix de bug del port.
 static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈ -300
 
-void Terrain_Render(void)
+static void Terrain_ProcessObjects(bool simulation)
 {
     // DESVIACION (DLL Antilag, ret en 0x004FD800): sin objetos del mapa.
     if (gUserSettings.GetAntilag(ANTILAG_OBJECTS)) return;
@@ -45,7 +47,7 @@ void Terrain_Render(void)
         do
         {
             unsigned short vis = TestFrustrum2D(chunk_yf, (float)chunk_x, -180.0f);
-            *((char*)chunk_ptr + 8) = (char)vis;
+            if (simulation) *((char*)chunk_ptr + 8) = (char)vis;
 
             if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
             {
@@ -75,21 +77,23 @@ void Terrain_Render(void)
                         // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
                         float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
                         vis = TestFrustrum2D(ex, ey, ez);
-                        entity[0x160] = (char)vis;
+                        if (simulation) entity[0x160] = (char)vis;
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
-                            // Terrain_Render in the original only prepares and draws.
-                            // Per-frame object animation/update belongs to MoveObjects.
-                            if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
-                            {
-                                void *pvSlot = AntiTamper_HashNode();
-                                *(unsigned char*)((char*)pvSlot + 0x584) = 1;
-                                HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
-                            }
+                            if (simulation) {
+                                if (gMapManager.GetCurrentMap() == 2 && *(short*)(entity + 2) == 100)
+                                {
+                                    void *pvSlot = AntiTamper_HashNode();
+                                    *(unsigned char*)((char*)pvSlot + 0x584) = 1;
+                                    HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
+                                }
 
-                            Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
-                            Entity_SpawnEffects((int)entity);
+                                WorldEffects_Tick((int)entity);
+                            } else {
+                                Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
+                                WorldEffects_Draw((int)entity);
+                            }
                         }
 
                         entity = *(char**)(entity + 0x1b8);
@@ -124,3 +128,8 @@ void Terrain_Render(void)
         } while (iVar < 0x59740);
     }
 }
+
+// DESVIACION: culling, pose, estado y emisores avanzan por paso SIM.
+// El draw vuelve a probar el frustum sin publicar flags del mundo ni emitir.
+void Terrain_PrepareSimulation() { Terrain_ProcessObjects(true); }
+void Terrain_Render() { Terrain_ProcessObjects(false); }

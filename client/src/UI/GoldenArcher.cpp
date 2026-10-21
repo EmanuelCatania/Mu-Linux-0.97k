@@ -262,7 +262,7 @@ static void GA_Ida_Render(void)
             glColor3f(0.0f, 0.0f, 0.0f);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderCenteredText(tx + 1, y + 261, GA_GiftName);
-            if (sin((double)DAT_05826e08 * 0.0099999998) < 0.0) glColor3f(1.0f, 1.0f, 1.0f);
+            if (sin((double)WorldTime * 0.0099999998) < 0.0) glColor3f(1.0f, 1.0f, 1.0f);
             else glColor3f(0.6f, 0.6f, 0.6f);
             m_dwTextColor = 0xFF67D2FFu;
             RenderCenteredText(tx, y + 260, GA_GiftName);
@@ -801,7 +801,7 @@ static void RenderLucky(void)
             glColor3f(0.0f, 0.0f, 0.0f);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             TextC(x + 1, y + 1, lines + i * 38, 190);
-            if (sin((double)DAT_05826e08 * 0.01) < 0) glColor3f(1.0f, 1.0f, 1.0f);
+            if (sin((double)WorldTime * 0.01) < 0) glColor3f(1.0f, 1.0f, 1.0f);
             else glColor3f(0.6f, 0.6f, 0.6f);
             m_dwTextColor = Color4b(255, 210, 103, 255);
             TextC(x, y, lines + i * 38, 190);

@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Entity/ClothPresentation.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include "Platform/IFileSystem.h"
@@ -219,6 +220,7 @@ void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
 
 // FUN_00408070 @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
 void __fastcall FUN_00408070(void *param_1_raw) {
+    ClothPresentation_Forget(param_1_raw);
     int *param_1 = (int *)param_1_raw;
     *param_1 = 0x00552520; // PTR_LAB_00552520
     *(int *)(*(int *)(param_1[0x14] + 4) + 8) = 0;
@@ -336,8 +338,9 @@ void RenderTerrainAlphaBitmaps()
   float Rotation; // [esp+0h] [ebp-10h]
 
   EnableAlphaBlend();
-  v0 = (float *)&DAT_07c82cf4;
-  do
+  // IDA: anclaje +0x24 dentro de cada Pointer, no una tabla independiente.
+  v0 = (float *)(g_PointerPool+0x24);
+  for (int slot=0;slot<100;++slot)
   {
     if ( *((BYTE *)v0 - 36) )
     {
@@ -354,7 +357,7 @@ void RenderTerrainAlphaBitmaps()
     }
     v0 += 28;
   }
-  while ( (int)v0 < (int)&DAT_07c858b4 );
+
 }
 
 

@@ -102,7 +102,7 @@ void __cdecl Entity_GetLightScale(int param_1,int param_2)
   }
   if ((*(short *)(param_1 + 2) == 0xe1) &&
      ((*(uint *)(*(int *)(param_1 + 0xfc) + 0x78) & 0x200) == 0x200)) {
-    fVar1 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552a08);
+    fVar1 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552a08);
     fVar1 = (fVar1 + (float10)_DAT_0055256c) * (float10)_DAT_00552504;
     *(float *)(param_2 + 0x48) = (float)fVar1;
     *(float *)(param_2 + 0x4c) = (float)fVar1;
@@ -200,13 +200,13 @@ int FUN_004f95e0_DISABLED(void)
     } while ((int)uVar7 <= iVar10);
   }
   if (DAT_083a3ff0 == 0) {
-    uVar14 = (longlong)DAT_05826e08;   // IDA Terrain_Water: (std::int64_t)WorldTime
+    uVar14 = (longlong)WorldTime;   // IDA Terrain_Water: (std::int64_t)WorldTime
     uVar14 = (ulonglong)(uint)((int)uVar14 >> 0x1f) << 0x20 | uVar14 & 0xffffffff;
     iVar4 = (int)((longlong)uVar14 / 720000);
     fVar11 = (float10)(int)((longlong)uVar14 % 720000) * (float10)_DAT_005528e0;
   }
   else {
-    uVar14 = (longlong)DAT_05826e08;   // IDA Terrain_Water: (std::int64_t)WorldTime
+    uVar14 = (longlong)WorldTime;   // IDA Terrain_Water: (std::int64_t)WorldTime
     uVar14 = (ulonglong)(uint)((int)uVar14 >> 0x1f) << 0x20 | uVar14 & 0xffffffff;
     iVar4 = (int)((longlong)uVar14 / 36000);
     fVar11 = (float10)(int)((longlong)uVar14 % 36000) * (float10)_DAT_005524f8;

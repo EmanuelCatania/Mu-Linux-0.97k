@@ -247,7 +247,6 @@ void __cdecl Render_HudPass_4BD650_(void)
     if (!CharacterAttribute) return;
 
     // Keep the quick potion categories aligned with the real inventory state.
-    SeedQuickPotionTypesFromInventory();
 
     BYTE* CA = (BYTE*)CharacterAttribute;
 

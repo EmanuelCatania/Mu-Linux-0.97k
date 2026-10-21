@@ -1469,14 +1469,14 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
             && SelectedCharacter != -1;                            // IDA: SelectedCharacter (0x00559C50)
         if (!autoAttackOK && !bSuccess) {
             g_RightButtonPressSeconds_Attack = 0.0f;
-            g_RightButtonReleaseTime_Attack = DAT_05826e08;
+            g_RightButtonReleaseTime_Attack = WorldTime;
             return;
         }
         // IDA: (WorldTime - RButtonPopTime) * 0.001; release both latches
         // once the hold reaches 3600 seconds.
         // IDA L1272-1273: v7 = (WorldTime - RButtonPopTime) * 0.001; RButtonPressTime = v7;
         g_RightButtonPressSeconds_Attack =
-            (DAT_05826e08 - g_RightButtonReleaseTime_Attack) * 0.001f;
+            (WorldTime - g_RightButtonReleaseTime_Attack) * 0.001f;
         if (g_RightButtonPressSeconds_Attack >= 3600.0f) {
             MouseRButtonPush = 0;
             DAT_083a42ac = 0;

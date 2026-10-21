@@ -228,6 +228,9 @@ there either, the binary's default. What was applied is logged to `debug.log`
 | `[Window] WindowMode` | — (deviation) | `1` = windowed, `0` = fullscreen. The 0.97k only runs fullscreen and looks for a 16-bit video mode that does not exist on Windows 10/11. |
 | `[Window] Borderless` | — (deviation) | `1` = no title bar or border. Windowed mode only. |
 | `[Window] Resolution` | `0` (640x480) | DLL indices: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Note: `4` is not the registry's `4` (there it is 1600x1200). |
+| `[Window] RenderDecoupled` | `1` | Decouples rendering; `0` restores the 40 ms cap. Simulation stays at 25 Hz. |
+| `[Window] FpsLimit` | `60` | FPS cap while rendering is decoupled; `0` = unlimited. Options → Screen offers 25/30/60/120/144/unlimited. |
+| `[Window] VSync` | `0` | Vertical synchronization. Decoupling, VSync and FPS changes apply immediately and are saved from Options → Screen. VSync also caps unlimited rendering at the display refresh rate. F12 toggles the FPS counter on the left inside the game, including fullscreen; it starts hidden. |
 | `[Sound] EnableSound` | `1` | Sound effects. |
 | `[Sound] EnableMusic` | `0` (off) | The repo's `Config.ini` ships it as `1`. The login theme is `Data\Music\MuTheme.mp3`, which the pack does not include (as in the original). |
 | `[Sound] SoundLevel`, `MusicLevel` | — (deviation) | Volume from `0` (muted) to `9` (original volume); like the DLL, each level is 6.25 dB. |
@@ -544,44 +547,61 @@ where the ported code lives.
 
 ## Roadmap
 
-Tag `0.97.00` closes the faithful-reconstruction stage: the client behaves like
-the original binary. From there the work continues in phases, and each closed
-phase is a version.
+Each `XX.XX.00` version matches a Webzen version: `0.97.00` is 0.97k, `0.99.00`
+will be 0.99, and so on with each Season. The tags in between are the path to
+the next version.
+
+### The 0.97 line
+
+Tag `0.97.00` closes the faithful reconstruction: the client behaves like the
+original binary. On top of that base, the 0.97 line is worked in engineering
+phases; each closed phase is a version.
 
 ```mermaid
 flowchart TD
     F0["0.97.00 · Faithful reconstruction (base)"] --> F1
     F1["0.97.10 · Phase 1: engineering base<br/>CMake, CI, code and comment cleanup, protocol mirror"] --> F2
-    F2["0.97.20 · Phase 2: native integration of Main.dll + modularization + legacy code optimization<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs built into the base logic; Webzen switches and defines → tables and enums"] --> F3
+    F2["0.97.20 · Phase 2: native integration of Main.dll + modularization<br/>customs built into the base logic; Webzen switches and defines → tables and enums"] --> F3
     F3["0.97.30 · Phase 3: platform abstraction + Linux"] --> F4
-    F4["0.97.40 · Phase 4: real timing<br/>simulation decoupled from rendering, high fps without speeding up the game"] --> F5
-    F5["0.97.50 · Phase 5: modern renderer (OpenGL 3.3) and x64"] --> F6
-    F6["0.97.60 · Phase 6: content shared by client + server"] --> F7
-    F7["0.97.70 · Phase 7: server authority + security"] --> F8
-    F8["0.97.80 · Phase 8+: launcher/updater, web, Android"]
+    F4["0.97.40 · Phase 4: real timing + modern renderer<br/>simulation decoupled from rendering, high fps without speeding up the game, OpenGL 3.3 and x64"] --> F5
+    F5["0.97.50 · Phase 5: content shared by client + server, server authority and security<br/>0.97.5x: launcher, updater and other improvements"] --> F6
+    F6["0.97.60 → 0.97.8x · new content and features"] --> F9
+    F9["0.97.9x · 97+99: 0.99 items and maps on top of 0.97"] --> V99
+    V99["0.99.00 · full 0.99 version, with the Dark Lord"]
 ```
 
 Each phase's number is the version planned when it closes; the scope of each one
 may be adjusted along the way.
 
+### After 0.97
+
+Engineering phases belong to the 0.97 line. From `0.99.00` on, the tags in
+between add what each Webzen version brings, following its patches, until the
+next one is complete: Season 1, then Season 2 (which arrives with the Summoner),
+and so on.
+
 ### Versioning
 
-Versions are `0.97.FH`, always two digits: **F** is the phase and **H** the
-hotfix.
+Versions are `XX.XX.YZ`, always two digits at the end.
 
 | Tag | What it is |
 |---|---|
-| `0.97.00` | faithful-reconstruction base |
+| `0.97.00` | faithful-reconstruction base (equivalent to 0.97k) |
 | `0.97.01`, `0.97.02`… | fixes on top of the base |
 | `0.97.10` | Phase 1 closes |
-| `0.97.11`, `0.97.12`… | fixes on top of Phase 1 |
-| `0.97.20` | Phase 2 closes, and so on |
+| `0.97.11`, `0.97.12`… | fixes and improvements on top of Phase 1 |
+| `0.97.20` … `0.97.50` | the following phases close, and so on |
+| `0.97.9x` | 97+99: 0.99 content on top of 0.97 |
+| `0.99.00` | full 0.99 version |
+
+In the 0.97 line, **Y** is the phase and **Z** the fix or improvement. In the
+following lines, the tags in between mark the progress toward the next Webzen
+version.
 
 The client and the [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) use
 the same numbering, but the server only gets a new tag when it changes. Each
 client Release states which server tag it works with (for example, client
-`0.97.10` works with server `0.97.00`). Each Season will have its own line
-(`0.99.FH`, …).
+`0.97.32` works with server `0.97.30`).
 
 ### Branches
 

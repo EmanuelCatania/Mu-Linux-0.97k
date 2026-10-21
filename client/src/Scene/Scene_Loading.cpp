@@ -101,4 +101,8 @@ void __cdecl Scene_Loading(HDC param_1)
     } while (iVar1 < 3);
 
     ClearInput(1);   // CharList_Init(1)
+    // DESVIACION: las pulsaciones del login/selección no son atajos del mundo.
+    // Consumir el bit pendiente y recordar las teclas aún mantenidas evita
+    // abrir paneles al entrar, sin repetirlas hasta una pulsación nueva.
+    for (int key=8;key<256;++key) (void)PressKey(key);
 }

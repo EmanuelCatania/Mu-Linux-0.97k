@@ -2,6 +2,7 @@
 // Efectos de combate: anillo de bombas, arma del Rageful Blow, sangre.
 
 #include "stdafx.h"
+#include "Render/MaterialVisuals.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -69,7 +70,9 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
     if (model_id < 0 || model_id >= 1024) return;
 
-    const float alpha = AsObject(o)->Alpha;
+    const auto *sample=MaterialVisuals_ObjectSample((void *)o,model_id);
+    MaterialVisualScope material(sample);
+    const float alpha = sample ? sample->alpha : AsObject(o)->Alpha;
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
 
     // Volcar posicion / accion / clase al slot del modelo compartido.
@@ -77,13 +80,13 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     *(int*) (mdl + 112) = *(int *)&AsObject(o)->Position[1];
     *(int*) (mdl + 116) = *(int *)&AsObject(o)->Position[2];
     *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7);
-    *(BYTE*)(mdl + 160) = AsObject(o)->CurrentAction;
+    *(BYTE*)(mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;
 
     const short savedType = AsObject(o)->Type;
     AsObject(o)->Type = (short)model_id;
 
     const DWORD saved216 = *(DWORD *)&AsObject(o)->Gravity;
-    ItemObjectAttribute(o);
+    ItemObjectAttributeForRender(o);
     *(DWORD *)&AsObject(o)->Gravity = saved216;   // ItemObjectAttribute lo pisa
 
     float Light[3];

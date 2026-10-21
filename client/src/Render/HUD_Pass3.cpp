@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+void HUD_BeginGridPass(int pass);
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Game/HeroVitals.h"
@@ -388,6 +389,7 @@ void AntiTamper_HashMaintain_D(void) { Render_HudPass_4BCD20_(); }
 extern "C" void __cdecl Render_HudPass_4F6050_(void);
 void Render_HudPass_4F6050_(void)
 {
+    HUD_BeginGridPass(1);
     bool draw = false;
     if (!InventoryOpened) {
         // Decide based on Shop / Warehouse / ChaosMix / Trade / Event flags.

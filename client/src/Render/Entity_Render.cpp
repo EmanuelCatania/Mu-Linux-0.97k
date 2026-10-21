@@ -35,7 +35,7 @@
 //   DAT_05828d58  — sprite model table base (model entries at base + class * 0xbc)
 //   DAT_07abf5d8  — local player entity (stride 0x394); byte+0x1bc & 7 = equipped weapon slot
 //   World  — World (== 10 → apply Z oscillation)
-//   DAT_05826e08  — frame oscillation counter (for Z bob)
+//   WorldTime  — frame oscillation counter (for Z bob)
 //   local_9c      — running counter incremented each active entity
 //   local_98      — angle accumulator for Z bob (+=0x4d5 per entity)
 //
@@ -104,7 +104,7 @@
 //
 //     // Z oscillation (when World == 10)
 //     if World == 10:
-//       puVar9[-0xed] += sin(local_98 + DAT_05826e08) * _DAT_00552488
+//       puVar9[-0xed] += sin(local_98 + WorldTime) * _DAT_00552488
 //
 //     // World-to-screen projection for UI (HP bars, name tags)
 //     Camera_ProjectWorldToScreen(&pos, (int*)local_68, (int*)local_64)
@@ -146,7 +146,7 @@
 //   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   Vector_Rotate  → Matrix_TransformPoint(pt, mat, out)
 //   DAT_055c9e58  → RandomTable (100 ints; reparte en círculo las monedas del Zen)
-//   DAT_05826e08  → frame oscillation counter (for Z bob in sub-state 10)
+//   WorldTime  → frame oscillation counter (for Z bob in sub-state 10)
 //   DAT_0055284c  → Z bob amplitude constant
 //   DAT_00552488  → Z oscillation scale factor
 
@@ -292,7 +292,6 @@ uint RenderBugs(void)
         float posX = *(float*)(slot + 16);
         float posY = *(float*)(slot + 20);
         unsigned short vis = TestFrustrum2D(posX * 0.01f, posY * 0.01f, -20.0f);
-        slot[0x160] = (char)(vis != 0);
         if (!vis) continue;
 
         DWORD ownerPtr = *(DWORD*)(slot + 0xFC);
@@ -312,16 +311,7 @@ uint RenderBugs(void)
             *(short*)(slot + 2) = (short)drawModel;
             Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
             *(short*)(slot + 2) = typeCode;
-            if (typeCode == 0x330) {   // IDA: type==816 → sparkle 1150 (pool de efectos, no causa whiteout)
-                // Fairy helper sparkle effect
-                float intensity = (float)(_rand() % 30 + 70) * 0.01f;
-                float light[3];
-                light[0] = intensity * 0.5f;
-                light[1] = intensity * 0.8f;
-                light[2] = intensity * 0.6f;
-                CreateSprite(1150, (float*)(slot + 16), 1.0f, light,
-                             (int)slot, 0.0f, 0);
-            }
+
         }
     }
     return 0;

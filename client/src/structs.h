@@ -490,7 +490,6 @@ extern char g_BitmapsRaw[];
 
 // ── Companion-project aliases (IDA decompile compatibility) ──────────────────
 // Globals:
-#define WorldTime            DAT_05826e08          // float — absolute animation time
 #define DAT_00559c84         InputEnable          // IDA: DAT_00559c84 (0x00559C84)
 #define DAT_005616ac         SelectedHero         // IDA: DAT_005616ac (0x005616AC)
 #define DAT_083a7c14         LoginSubState        // IDA: DAT_083a7c14 (0x083A7C14)
