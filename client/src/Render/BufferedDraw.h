@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <cstddef>
 
 // DESVIACION: captura de atributos y envío por VBO sin cambiar el orden de
 // las primitivas ni el estado de materiales que establecen los callers.
@@ -11,7 +12,7 @@ struct Stream {
     float color[4]{1,1,1,1},uv[4]{0,0,0,1};
     std::vector<Vertex> vertices;
     std::vector<Vertex>* destination=nullptr;
-    size_t first=0;
+    std::size_t first=0;
 };
 extern Stream stream;
 bool Initialize();
