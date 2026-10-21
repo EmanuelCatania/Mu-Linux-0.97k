@@ -441,6 +441,22 @@ static void HUD_PickUpNearestItem(void)
 static void HUD_HotkeyTick(void)
 {
     ClampChatModeIME("HKT_enter");
+    // DESVIACION: consumir también los atajos bloqueados por texto o paneles;
+    // una letra escrita no debe quedar pendiente hasta cerrar ese contexto.
+    // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
+    // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
+    int kC = PressKey(0x43); // 'C'  Character info
+    int kV = PressKey(0x56); // 'V'  Inventory (alt)
+    int kI = PressKey(0x49); // 'I'  Inventory
+    int kG = PressKey(0x47); // 'G'  Guild
+    int kP = PressKey(0x50); // 'P'  Party
+    int kH = PressKey('H');
+    int kM = PressKey('M');
+    int kTab = PressKey(VK_TAB);
+    int kSpace = PressKey(VK_SPACE);
+    int kF10 = PressKey(VK_F10);
+    int kF11 = PressKey(VK_F11);
+
     if (GuildInputEnable != '\0') return;  // g_ChatMode
     if (DAT_00559c84 != '\0') return;  // g_TextMode (login / dialog text)
     if (DAT_07e11d71 != '\0') return;  // g_IME_Mode
@@ -467,23 +483,17 @@ static void HUD_HotkeyTick(void)
         HUD_IsQuestPanelOpenRuntime())
         return;
 
-    // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
-    // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
-    int kC = PressKey(0x43); // 'C'  Character info
-    int kV = PressKey(0x56); // 'V'  Inventory (alt)
-    int kI = PressKey(0x49); // 'I'  Inventory
-    int kG = PressKey(0x47); // 'G'  Guild
-    int kP = PressKey(0x50); // 'P'  Party
     // DESVIACION (DLL Controller.cpp): H abre los horarios recibidos del server.
-    if (PressKey('H')) gEventTimer.Toggle();
+    if (kH) gEventTimer.Toggle();
     // DESVIACION (DLL Controller.cpp): menú M con destinos recibidos del server.
-    if (PressKey('M')) gMoveList.Toggle();
+    if (kM) gMoveList.Toggle();
     // DESVIACION (DLL Controller.cpp): Tab abre el mapa.
-    if (PressKey(VK_TAB)) gMiniMap.Toggle();
-    if (PressKey(VK_SPACE)) HUD_PickUpNearestItem();
+    if (kTab) gMiniMap.Toggle();
+    // DESVIACION (MU 5.2): Espacio levanta el primer ítem cercano.
+    if (kSpace) HUD_PickUpNearestItem();
     // DESVIACION (DLL Controller.cpp): F10 activa la cámara 3D, F11 la restaura.
-    if (PressKey(VK_F10)) gCamera3D.Toggle();
-    if (PressKey(VK_F11)) gCamera3D.Restore();
+    if (kF10) gCamera3D.Toggle();
+    if (kF11) gCamera3D.Restore();
 
     // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
     // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
