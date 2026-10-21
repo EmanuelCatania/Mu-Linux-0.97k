@@ -861,6 +861,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         GLint prevAlign = 4;
         glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        BufferedDraw::Suspend();
         const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
         glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
         if (!fontOk) {

@@ -51,7 +51,7 @@ bool Topology(Mesh& m,const Input& input) {
         m.minimum.normal=std::min(m.minimum.normal,c.normal);m.maximum.normal=std::max(m.maximum.normal,c.normal);
         m.minimum.uv=std::min(m.minimum.uv,c.uv);m.maximum.uv=std::max(m.maximum.uv,c.uv);
     }
-    BufferedDraw::Flush();
+    BufferedDraw::Suspend();
     GLint array,buffer,client;glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&array);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&buffer);glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
     glGenVertexArrays(1,&m.array);glGenBuffers(1,&m.buffer);glGenBuffers(1,&m.elements);
@@ -69,7 +69,7 @@ bool Topology(Mesh& m,const Input& input) {
 }
 }
 void Release() {
-    BufferedDraw::Flush();
+    BufferedDraw::Suspend();
     for(auto& entry:meshes) Delete(entry.second);
     meshes.clear();vertices.clear();
 }
@@ -104,7 +104,7 @@ bool Draw(const Input& input) {
     // Conservar el color y UV de la última esquina, incluso si no completa
     // un triángulo. DrawElements no define esos atributos tras el envío.
     const auto& last=vertices[mesh.indices.back()];
-    BufferedDraw::Flush();glColor4fv(last.color);glTexCoord4fv(last.uv);
+    BufferedDraw::Suspend();glColor4fv(last.color);glTexCoord4fv(last.uv);
     BufferedDraw::DrawIndexed(mesh.array,mesh.buffer,vertices.data(),vertices.size(),mesh.indices.size());
     return true;
 }

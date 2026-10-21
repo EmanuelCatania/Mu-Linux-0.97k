@@ -12,6 +12,8 @@ namespace {
 GLuint program=0,buffer=0,array=0;
 std::vector<Vertex> pending;
 unsigned pendingMode=0;
+bool bound=false;
+GLint savedProgram=0,savedArray=0,savedBuffer=0;
 // ftransform conserva la transformación del pipeline compatible. La etapa
 // fragmentaria sigue siendo la compatible: textura, alpha test y niebla no
 // se sustituyen por aproximaciones ni cambian sus setters/cache heredados.
@@ -57,7 +59,7 @@ bool Initialize() {
     return true;
 }
 void Release() {
-    Flush();
+    Suspend();
     stream.active=false;stream.vertices.clear();pending.clear();
     if (array) glDeleteVertexArrays(1,&array);
     if (buffer) glDeleteBuffers(1,&buffer);
@@ -84,24 +86,33 @@ void Begin(unsigned mode) {
 }
 void Flush() {
     if (pending.empty()) return;
-    GLint oldProgram=0,oldArray=0,oldBuffer=0,active=0;
+    GLint active=0;
     float color[4],uv[4];
     glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
     glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
     if (active!=GL_TEXTURE0) glActiveTexture(active);
-    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
-    glUseProgram(program);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    // DESVIACION: mantener el pipeline durante envíos consecutivos. Cambiar
+    // texturas/matrices no exige volver al programa fijo entre cada primitiva.
+    if (!bound) {
+        glGetIntegerv(GL_CURRENT_PROGRAM,&savedProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&savedArray);
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&savedBuffer);
+        glUseProgram(program);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);bound=true;
+    }
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
     glDrawArrays(pendingMode,0,(GLsizei)pending.size());
-    glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);glUseProgram(oldProgram);
     // Los atributos actuales pueden quedar indefinidos tras DrawArrays.
     glColor4fv(color);glTexCoord4fv(uv);
     pending.clear();
 }
-void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices) {
+void Suspend() {
     Flush();
+    if (!bound) return;
+    glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);glUseProgram(savedProgram);
+    bound=false;
+}
+void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices) {
+    Suspend();
     GLint oldProgram,oldArray,oldBuffer,active;
     float color[4],uv[4];glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);glActiveTexture(active);

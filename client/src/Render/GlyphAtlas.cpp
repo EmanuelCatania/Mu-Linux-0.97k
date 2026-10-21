@@ -19,7 +19,7 @@ std::unordered_map<unsigned,Atlas> atlases;
 struct State {
     GLint program,draw,read,active,mode,pack,unpack;
     State() {
-        BufferedDraw::Flush();
+        BufferedDraw::Suspend();
         glGetIntegerv(GL_CURRENT_PROGRAM,&program);
         glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,&draw);glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING,&read);
         glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
@@ -36,7 +36,7 @@ struct State {
         glPixelStorei(GL_PACK_SKIP_PIXELS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
     }
     ~State() {
-        BufferedDraw::Flush();
+        BufferedDraw::Suspend();
         glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
         glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER,draw);glBindFramebuffer(GL_READ_FRAMEBUFFER,read);
@@ -49,7 +49,7 @@ struct State {
 struct DrawState {
     GLint active,mode,texture,environment;
     DrawState(int width,int height) {
-        BufferedDraw::Flush();
+        BufferedDraw::Suspend();
         glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
         glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_VIEWPORT_BIT|GL_POLYGON_BIT);
         glActiveTexture(GL_TEXTURE0);
@@ -59,7 +59,7 @@ struct DrawState {
         glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();glViewport(0,0,width,height);
     }
     ~DrawState() {
-        BufferedDraw::Flush();
+        BufferedDraw::Suspend();
         glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
         glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
         glBindTexture(GL_TEXTURE_2D,texture);glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,environment);
@@ -69,7 +69,7 @@ struct DrawState {
 }
 void Forget(unsigned base) {
     auto it=atlases.find(base);if (it==atlases.end()) return;
-    BufferedDraw::Flush();glDeleteTextures(1,&it->second.texture);atlases.erase(it);
+    BufferedDraw::Suspend();glDeleteTextures(1,&it->second.texture);atlases.erase(it);
 }
 void Release() { while (!atlases.empty()) Forget(atlases.begin()->first); }
 
