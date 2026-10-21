@@ -230,7 +230,7 @@ estiver lá, o padrão do binário. O que foi aplicado fica no `debug.log` (linh
 | `[Window] Resolution` | `0` (640x480) | Índices do DLL: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Atenção: o `4` não é o mesmo do registro (lá é 1600x1200). |
 | `[Window] RenderDecoupled` | `1` | Desacopla a renderização; `0` volta ao limite de 40 ms. A simulação permanece em 25 Hz. |
 | `[Window] FpsLimit` | `60` | Limite de FPS com renderização desacoplada; `0` = sem limite. Opções → Tela oferece 25/30/60/120/144/sem limite. |
-| `[Window] VSync` | `0` | Sincronização vertical. Desacoplamento, VSync e FPS são aplicados na hora e salvos em Opções → Tela. |
+| `[Window] VSync` | `0` | Sincronização vertical. Desacoplamento, VSync e FPS são aplicados na hora e salvos em Opções → Tela. VSync também limita a opção sem limite à frequência da tela. O contador de FPS aparece dentro do jogo, inclusive em tela cheia. |
 | `[Sound] EnableSound` | `1` | Efeitos sonoros. |
 | `[Sound] EnableMusic` | `0` (desligada) | O `Config.ini` do repo a traz em `1`. O tema do login é `Data\Music\MuTheme.mp3`, que o pack não traz (como no original). |
 | `[Sound] SoundLevel`, `MusicLevel` | — (desvio) | Volume de `0` (mudo) a `9` (volume original); como no DLL, cada nível são 6,25 dB. |
