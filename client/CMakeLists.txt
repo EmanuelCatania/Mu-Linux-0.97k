@@ -429,6 +429,7 @@ set(MU_HEADERS
     src/Platform/IFileSystem.h
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
+    src/Render/GLCallBarrier.h
     src/Render/BufferedDraw.h
     src/Platform/IGLContext.h
     src/Platform/GLFunctions.h

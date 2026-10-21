@@ -106,6 +106,6 @@ void CWindow::ReleaseOpenGL()
     RestoreDisplay();
 }
 
-void CWindow::Present() { Platform::GetGLContext().Present(); }
+void CWindow::Present() { BufferedDraw::Flush(); Platform::GetGLContext().Present(); }
 HDC CWindow::GetHdc() const { return Platform::NativeDC(); }
 HGLRC CWindow::GetGLContext() const { return Platform::NativeGLContext(); }

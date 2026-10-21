@@ -1,0 +1,67 @@
+#pragma once
+#include "Render/BufferedDraw.h"
+
+// DESVIACION: antes de cambiar el pipeline o leer/escribir su salida, enviar
+// la geometría pendiente. Se conservan los setters y caches del original.
+namespace BufferedDraw {
+template<class F,class... A> inline auto StateChange(F function,A... args) -> decltype(function(args...)) {
+    Flush();return function(args...);
+}
+}
+#define glAlphaFunc(...) ::BufferedDraw::StateChange(::glAlphaFunc,__VA_ARGS__)
+#define glBindTexture(...) ::BufferedDraw::StateChange(::glBindTexture,__VA_ARGS__)
+#define glBitmap(...) ::BufferedDraw::StateChange(::glBitmap,__VA_ARGS__)
+#define glBlendFunc(...) ::BufferedDraw::StateChange(::glBlendFunc,__VA_ARGS__)
+#define glCallLists(...) ::BufferedDraw::StateChange(::glCallLists,__VA_ARGS__)
+#define glClear(...) ::BufferedDraw::StateChange(::glClear,__VA_ARGS__)
+#define glClearColor(...) ::BufferedDraw::StateChange(::glClearColor,__VA_ARGS__)
+#define glDeleteLists(...) ::BufferedDraw::StateChange(::glDeleteLists,__VA_ARGS__)
+#define glDeleteTextures(...) ::BufferedDraw::StateChange(::glDeleteTextures,__VA_ARGS__)
+#define glDepthFunc(...) ::BufferedDraw::StateChange(::glDepthFunc,__VA_ARGS__)
+#define glDepthMask(...) ::BufferedDraw::StateChange(::glDepthMask,__VA_ARGS__)
+#define glDisable(...) ::BufferedDraw::StateChange(::glDisable,__VA_ARGS__)
+#define glEnable(...) ::BufferedDraw::StateChange(::glEnable,__VA_ARGS__)
+#define glEndList() ::BufferedDraw::StateChange(::glEndList)
+#define glFlush() ::BufferedDraw::StateChange(::glFlush)
+#define glFogf(...) ::BufferedDraw::StateChange(::glFogf,__VA_ARGS__)
+#define glFogfv(...) ::BufferedDraw::StateChange(::glFogfv,__VA_ARGS__)
+#define glFogi(...) ::BufferedDraw::StateChange(::glFogi,__VA_ARGS__)
+#define glNewList(...) ::BufferedDraw::StateChange(::glNewList,__VA_ARGS__)
+#define glPixelStorei(...) ::BufferedDraw::StateChange(::glPixelStorei,__VA_ARGS__)
+#define glPopAttrib() ::BufferedDraw::StateChange(::glPopAttrib)
+#define glPopClientAttrib() ::BufferedDraw::StateChange(::glPopClientAttrib)
+#define glPopMatrix() ::BufferedDraw::StateChange(::glPopMatrix)
+#define glPushAttrib(...) ::BufferedDraw::StateChange(::glPushAttrib,__VA_ARGS__)
+#define glPushClientAttrib(...) ::BufferedDraw::StateChange(::glPushClientAttrib,__VA_ARGS__)
+#define glPushMatrix() ::BufferedDraw::StateChange(::glPushMatrix)
+#define glRasterPos2f(...) ::BufferedDraw::StateChange(::glRasterPos2f,__VA_ARGS__)
+#define glReadPixels(...) ::BufferedDraw::StateChange(::glReadPixels,__VA_ARGS__)
+#define glRotatef(...) ::BufferedDraw::StateChange(::glRotatef,__VA_ARGS__)
+#define glTexEnvf(...) ::BufferedDraw::StateChange(::glTexEnvf,__VA_ARGS__)
+#define glTexImage2D(...) ::BufferedDraw::StateChange(::glTexImage2D,__VA_ARGS__)
+#define glTexSubImage2D(...) ::BufferedDraw::StateChange(::glTexSubImage2D,__VA_ARGS__)
+#define glTexParameterfv(...) ::BufferedDraw::StateChange(::glTexParameterfv,__VA_ARGS__)
+#define glTexParameteri(...) ::BufferedDraw::StateChange(::glTexParameteri,__VA_ARGS__)
+#define glTranslatef(...) ::BufferedDraw::StateChange(::glTranslatef,__VA_ARGS__)
+#define glViewport(...) ::BufferedDraw::StateChange(::glViewport,__VA_ARGS__)
+#define glOrtho(...) ::BufferedDraw::StateChange(::glOrtho,__VA_ARGS__)
+#define glFrustum(...) ::BufferedDraw::StateChange(::glFrustum,__VA_ARGS__)
+#define glLoadIdentity() ::BufferedDraw::StateChange(::glLoadIdentity)
+#define glLoadMatrixf(...) ::BufferedDraw::StateChange(::glLoadMatrixf,__VA_ARGS__)
+#define glMultMatrixf(...) ::BufferedDraw::StateChange(::glMultMatrixf,__VA_ARGS__)
+#define glMatrixMode(...) ::BufferedDraw::StateChange(::glMatrixMode,__VA_ARGS__)
+#define glScalef(...) ::BufferedDraw::StateChange(::glScalef,__VA_ARGS__)
+#define glScissor(...) ::BufferedDraw::StateChange(::glScissor,__VA_ARGS__)
+#define glFinish() ::BufferedDraw::StateChange(::glFinish)
+#define glDrawPixels(...) ::BufferedDraw::StateChange(::glDrawPixels,__VA_ARGS__)
+#define glCopyTexImage2D(...) ::BufferedDraw::StateChange(::glCopyTexImage2D,__VA_ARGS__)
+#define glCopyTexSubImage2D(...) ::BufferedDraw::StateChange(::glCopyTexSubImage2D,__VA_ARGS__)
+#define glGetError() ::BufferedDraw::StateChange(::glGetError)
+#define glCallList(...) ::BufferedDraw::StateChange(::glCallList,__VA_ARGS__)
+#define glListBase(...) ::BufferedDraw::StateChange(::glListBase,__VA_ARGS__)
+
+// GLU cambia matrices dentro de la biblioteca; también necesita la barrera.
+#define gluOrtho2D(...) ::BufferedDraw::StateChange(::gluOrtho2D,__VA_ARGS__)
+#define gluPerspective(...) ::BufferedDraw::StateChange(::gluPerspective,__VA_ARGS__)
+#define gluLookAt(...) ::BufferedDraw::StateChange(::gluLookAt,__VA_ARGS__)
+#define gluPickMatrix(...) ::BufferedDraw::StateChange(::gluPickMatrix,__VA_ARGS__)

@@ -10,6 +10,8 @@ namespace BufferedDraw {
 Stream stream;
 namespace {
 GLuint program=0,buffer=0,array=0;
+std::vector<Vertex> pending;
+unsigned pendingMode=0;
 // ftransform conserva la transformación del pipeline compatible. La etapa
 // fragmentaria sigue siendo la compatible: textura, alpha test y niebla no
 // se sustituyen por aproximaciones ni cambian sus setters/cache heredados.
@@ -55,7 +57,8 @@ bool Initialize() {
     return true;
 }
 void Release() {
-    stream.active=false;stream.vertices.clear();
+    Flush();
+    stream.active=false;stream.vertices.clear();pending.clear();
     if (array) glDeleteVertexArrays(1,&array);
     if (buffer) glDeleteBuffers(1,&buffer);
     if (program) glDeleteProgram(program);
@@ -74,21 +77,48 @@ void Begin(unsigned mode) {
     if (active!=GL_TEXTURE0) glActiveTexture(active);
     stream.active=true;
 }
+void Flush() {
+    if (pending.empty()) return;
+    GLint oldProgram=0,oldArray=0,oldBuffer=0,active=0;
+    float color[4],uv[4];
+    glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+    if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
+    glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
+    if (active!=GL_TEXTURE0) glActiveTexture(active);
+    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
+    glUseProgram(program);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
+    glDrawArrays(pendingMode,0,(GLsizei)pending.size());
+    glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);glUseProgram(oldProgram);
+    // Los atributos actuales pueden quedar indefinidos tras DrawArrays.
+    glColor4fv(color);glTexCoord4fv(uv);
+    pending.clear();
+}
 void End() {
     if (!stream.active) { glEnd();return; }
     stream.active=false;
-    if (!stream.vertices.empty()) {
-        GLint oldProgram=0,oldArray=0,oldBuffer=0;
-        glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
-        glUseProgram(program);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
-        glBufferData(GL_ARRAY_BUFFER,stream.vertices.size()*sizeof(Vertex),stream.vertices.data(),GL_STREAM_DRAW);
-        glDrawArrays(stream.mode,0,(GLsizei)stream.vertices.size());
-        glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);glUseProgram(oldProgram);
+    const auto count=stream.vertices.size();
+    const bool fan=stream.mode==GL_TRIANGLE_FAN;
+    const unsigned mode=fan ? GL_TRIANGLES : stream.mode;
+    const unsigned group=mode==GL_TRIANGLES?3:mode==GL_QUADS?4:mode==GL_LINES?2:1;
+    const bool independent=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
+    if (!pending.empty() && (pendingMode!=mode || !independent)) Flush();
+    pendingMode=mode;
+    if (fan) {
+        // Cada abanico conserva sus triángulos y su orden. No se conectan
+        // abanicos de tiles distintos al reunirlos en un mismo envío.
+        for (size_t i=1;i+1<count;++i) {
+            pending.push_back(stream.vertices[0]);pending.push_back(stream.vertices[i]);pending.push_back(stream.vertices[i+1]);
+        }
+    } else {
+        // OpenGL descarta los vértices incompletos al cerrar una primitiva.
+        // Su color/UV actual sí se conserva aunque no formen una cara.
+        const auto complete=independent ? count-count%group : count;
+        pending.insert(pending.end(),stream.vertices.begin(),stream.vertices.begin()+complete);
     }
-    // DrawArrays deja atributos actuales indefinidos si sus arrays están
-    // activos. Reponer los últimos emitidos conserva los draws y textos que
-    // heredan color/UV sin volver a establecerlos.
     glColor4fv(stream.color);glTexCoord4fv(stream.uv);
+    // Strips/polígonos no se concatenan: conservar sus conexiones originales.
+    if (!independent) Flush();
 }
 }

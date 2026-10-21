@@ -16,6 +16,7 @@ bool Initialize();
 void Release();
 void Begin(unsigned mode);
 void End();
+void Flush();
 void NativeColor(float r,float g,float b,float a);
 void NativeUV(float u,float v);
 void NativeVertex(float x,float y,float z);

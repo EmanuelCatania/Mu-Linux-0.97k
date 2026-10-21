@@ -172,6 +172,7 @@
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
+    <ClInclude Include="src\Render\GLCallBarrier.h" />
     <ClInclude Include="src\Render\BufferedDraw.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\GLFunctions.h" />
