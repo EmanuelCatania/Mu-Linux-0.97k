@@ -72,6 +72,7 @@
 //   MODE_METAL   = bits of 0x00000080 as float = 8.96831e-44
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Item/ItemDefines.h"
 #include "Item/ContentCatalog.h"
 #include "../globals.h"
@@ -241,7 +242,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // (evita saturación a blanco); los oscuros (ships, chars) se iluminan.
     if (meshIndex == streamMeshIndex) {
         // StreamMesh: flat body color, no per-vertex lighting
-        glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+        BufferedDraw::Color3fv((const GLfloat *)((int)bmd_obj + 0x48));
         param_2_b0 = '\0';
     } else if ((param_2_b0 != '\0') && (iVar12 = 0, 0 < *(short *)(pcVar1 + 6))) {
         // Per-vertex lighting: LightTransform[mesh * 15000 + normal] * BodyLight * boost
@@ -280,11 +281,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
         if (alpha < _DAT_00552544) {
             EnableAlphaTest('\x01');
-            glColor4f(*(float *)((int)bmd_obj + 0x48),
+            BufferedDraw::Color4f(*(float *)((int)bmd_obj + 0x48),
                       *(float *)((int)bmd_obj + 0x4c),
                       *(float *)((int)bmd_obj + 0x50), alpha);
         } else {
-            glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+            BufferedDraw::Color3fv((const GLfloat *)((int)bmd_obj + 0x48));
         }
     } else {
         uVar7 = uVar6 & 4;
@@ -393,7 +394,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 EnableAlphaBlend();
             const float meshLight = (brightMesh && blendMesh > -2 && (int)*(short *)(pcVar1 + 2) != blendMesh)
                                   ? 1.0f : blendLight;
-            glColor3f(meshLight * *(float *)((int)bmd_obj + 0x48),
+            BufferedDraw::Color3f(meshLight * *(float *)((int)bmd_obj + 0x48),
                       meshLight * *(float *)((int)bmd_obj + 0x4c),
                       meshLight * *(float *)((int)bmd_obj + 0x50));
             param_2_b0 = '\0';
@@ -458,7 +459,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // DESVIACION: chrome usa un color constante durante toda la pasada.
     // Enviarlo al primer vértice conserva también el estado si no hay caras.
     bool chromeColorSent = false;
-    glBegin(GL_TRIANGLES);
+    BufferedDraw::Begin(GL_TRIANGLES);
     texOverride = 0;
 
     if (0 < *(short *)(pcVar1 + 0x0a)) {
@@ -476,29 +477,29 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                         pfVar8 = (float *)(*(int *)(pcVar1 + 0x18) + psVar14[4] * 8);
                         if (bVar5) {
                             // Blend wave offset
-                            glTexCoord2f(*pfVar8 + uvU, pfVar8[1] + uvV);
+                            BufferedDraw::TexCoord2f(*pfVar8 + uvU, pfVar8[1] + uvV);
                         } else {
-                            glTexCoord2f(*pfVar8, pfVar8[1]);
+                            BufferedDraw::TexCoord2f(*pfVar8, pfVar8[1]);
                         }
                         if (param_2_b0 != '\0') {
                             iVar2 = meshIndex * 15000 + (int)*psVar14;
                             if (alpha < _DAT_00552544) {
-                                glColor4f(*(float *)(&DAT_060db65c + iVar2 * 12),
+                                BufferedDraw::Color4f(*(float *)(&DAT_060db65c + iVar2 * 12),
                                           *(float *)(&DAT_060db65c + iVar2 * 12 + 4),
                                           *(float *)(&DAT_060db65c + iVar2 * 12 + 8), alpha);
                             } else {
-                                glColor3fv((const GLfloat *)(&DAT_060db65c + iVar2 * 12));
+                                BufferedDraw::Color3fv((const GLfloat *)(&DAT_060db65c + iVar2 * 12));
                             }
                         }
                     } else if (renderMode == MODE_CHROME) {
                         // Chrome UV from precomputed chrome table
                         if (!chromeColorSent) {
                             if (alpha < _DAT_00552544) {
-                                glColor4f(*(float *)((int)bmd_obj + 0x48),
+                                BufferedDraw::Color4f(*(float *)((int)bmd_obj + 0x48),
                                           *(float *)((int)bmd_obj + 0x4c),
                                           *(float *)((int)bmd_obj + 0x50), alpha);
                             } else {
-                                glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+                                BufferedDraw::Color3fv((const GLfloat *)((int)bmd_obj + 0x48));
                             }
                             chromeColorSent = true;
                         }
@@ -508,14 +509,14 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                         //   MOV ECX,[EAX*0x8 + 0x5828d60]   ; V
                         //   MOV EDX,[EAX*0x8 + 0x5828d5c]   ; U
                         // El array es {U,V,U,V,...} contiguo desde d5c → V está en idx*2+1.
-                        glTexCoord2f((&DAT_05828d5c)[*psVar14 * 2 + 0],
+                        BufferedDraw::TexCoord2f((&DAT_05828d5c)[*psVar14 * 2 + 0],
                                      (&DAT_05828d5c)[*psVar14 * 2 + 1]);
                     }
 
                     // Emit vertex from BoneVertex buffer
                     {
                         const float *_v = (const float*)(&DAT_0584621c + ((int)sVar3 + meshIndex * 15000) * 3);
-                        glVertex3fv((const GLfloat *)_v);
+                        BufferedDraw::Vertex3fv((const GLfloat *)_v);
                     }
 
                     iVar12++;
@@ -526,7 +527,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             param_5_f = (float)((int)param_5_f + 0x24);  // face stride = 36 bytes
         } while ((int)texOverride < (int)*(short *)(pcVar1 + 0x0a));
     }
-    glEnd();
+    BufferedDraw::End();
     // Restaurar el depth-mask al salir: el path chrome (flag&0x40) llama
     // DisableDepthMask() arriba y, si no se restaura, los meshes siguientes del
     // mismo frame se dibujan sin depth-write (efecto "ghost"). El binario lo hace
