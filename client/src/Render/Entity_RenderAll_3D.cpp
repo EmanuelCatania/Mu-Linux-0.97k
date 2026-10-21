@@ -79,6 +79,7 @@
 
 #include "stdafx.h"
 #include "Render/Entity_RenderAll_3D.h"
+#include "Entity/ObjectPose.h"
 
 
 // IDA: Entity_RenderAll_3D (0x0045AB00)
@@ -93,6 +94,7 @@ void Entity_RenderAll_3D(void)
     undefined4 *puVar4;
 
 
+    ObjectPose_BeginBatch();
     iVar3 = 0;
     DAT_07abf5d4 = 0;
     _DAT_07abf5e8 = 0;
@@ -132,4 +134,5 @@ void Entity_RenderAll_3D(void)
         iVar3 += 0x394;
         iVar2++;
     } while (iVar3 < 0x59740);   // 0x59740 = 400 entities × 0x394
+    ObjectPose_EndBatch();
 }

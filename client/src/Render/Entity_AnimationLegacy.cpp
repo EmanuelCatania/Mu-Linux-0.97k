@@ -195,8 +195,11 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         transformCount+=vc+nc;
     }
     // No despertar trabajadores para las numerosas mallas pequeñas del juego.
-    bool transformed = false;
-    if (parallelSafe && transformCount >= 4096) {
+    const float transformCoefficients[3]={_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
+    bool transformed = parallelSafe && ObjectPose_RestoreGeometry(this_,(const float*)(uintptr_t)param_1,
+        _DAT_005597c8,param_5,local_54+6,transformCoefficients,(float*)&DAT_0584621c,
+        (float*)&DAT_06f433bc,(float*)&DAT_077e298c);
+    if (!transformed && parallelSafe && transformCount >= 4096) {
         static std::vector<TransformMath::Mesh> transformMeshes;
         transformMeshes.clear();
         for(int i=0;i<meshCount;++i) {
