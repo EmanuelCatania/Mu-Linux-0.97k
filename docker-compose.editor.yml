@@ -1,8 +1,9 @@
-﻿services:
+services:
   mu-editor:
     build:
       context: ./editor
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
       EDITOR_ENABLED: ${EDITOR_ENABLED}
       EDITOR_PORT: ${EDITOR_PORT}

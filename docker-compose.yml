@@ -1,6 +1,7 @@
 services:
   mysql:
     image: mysql:8.4.11
+    restart: unless-stopped
     networks:
       - default
     environment:
@@ -24,6 +25,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -40,7 +42,9 @@ services:
         condition: service_healthy
     ports:
       - "44405:44405/tcp"
-      - "55601:55601/udp"
+      # 55601/udp is only used by GameServer and JoinServer to report to the
+      # ConnectServer inside the container. On Windows it often falls in an
+      # excluded port range, and publishing it keeps the container from starting.
       - "55901:55901/tcp"
     networks:
       - default
@@ -49,6 +53,7 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}

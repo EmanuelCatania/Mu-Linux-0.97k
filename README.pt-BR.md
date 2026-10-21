@@ -201,7 +201,7 @@ O cliente baseado em injeção de DLL está totalmente descontinuado e foi remov
    docker compose up -d --build
    ```
 
-3. Abra `44405/tcp`, `55601/udp` e `55901/tcp`.
+3. Abra `44405/tcp` e `55901/tcp`.
 
 Para imagens publicadas sem build:
 

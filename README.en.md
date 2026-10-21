@@ -201,7 +201,7 @@ The DLL injection-based client is fully deprecated and has been removed from thi
    docker compose up -d --build
    ```
 
-3. Open `44405/tcp`, `55601/udp` and `55901/tcp`.
+3. Open `44405/tcp` and `55901/tcp`.
 
 For published images without a build:
 
