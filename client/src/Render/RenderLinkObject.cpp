@@ -646,10 +646,14 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     float Light[3] = { 0.0f, 0.0f, 0.0f };
 
 
-    // The switch is on param_6 (Type), Ghidra mis-typed as float; actual int cases:
-    // 0x1a3=419, 0x1af=431, 0x1d7=471, 0x1fa=506,
-    // 0x214=532, 0x215=533, 0x216=534, 0x221=545, 0x23a=570, 0x25f=607
-    switch (param_6)
+    // Casos por modelo: 0x1a3=419, 0x1af=431, 0x1d7=471, 0x1fa=506,
+    // 0x214=532, 0x215=533, 0x216=534, 0x221=545, 0x23a=570, 0x25f=607.
+    // DESVIACION (0.97.32): IDA elige por Type, que en vanilla es el modelo
+    // dibujado. Un item con modelo propio guarda en param_6 el modelo de su
+    // comportamiento, y estos efectos usan huesos y offsets de ese modelo:
+    // sobre otra geometría quedan corridos. Se elige por el modelo dibujado;
+    // los efectos de un modelo propio van en su JSON del catálogo.
+    switch (drawModel)
     {
     case 0x1a3:  // MODEL_STAFF+10 equivalent — fire particles on bones 0..9
     {
@@ -772,7 +776,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     case 0x216:  // BOW+6
     case 0x221:  // BOW+17
     {
-        if (param_6 == 0x216)
+        if (drawModel == 0x216)
         {
             Light[0] = fLum * _DAT_00552534;
             int iVar8 = 0x0d;
@@ -784,7 +788,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             } while (iVar8 < 0x13);
             return;
         }
-        if (param_6 == 0x221)
+        if (drawModel == 0x221)
         {
             Light[0] = fLum * _DAT_00552504;
             int iVar8 = 0x0d;
