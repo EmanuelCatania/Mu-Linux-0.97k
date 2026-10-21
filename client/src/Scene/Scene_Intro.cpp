@@ -169,12 +169,14 @@ void __cdecl Scene_Intro(HDC param_1)
     GL_Begin2D();                       // GL_SetupOrtho2D
     glColor3f(1.0f, 1.0f, 1.0f);
 
+    // DESVIACION: IDA 0x005137A0 deduce la altura desde el ancho (4:3).
+    // Centrar con la altura real conserva 4:3 y corrige pantallas wide.
     // Webzen logo — centered
     uStack_4 = 0;
     local_8 = (undefined1 *)gWindow.GetWidth();
     GL_DrawTexture(0xc,
         (float)gWindow.GetWidth() * _DAT_00552504 - _DAT_005529bc,
-        (float)gWindow.GetWidth() * _DAT_00552d3c - _DAT_00552d38,
+        (float)gWindow.GetHeight() * _DAT_00552504 - _DAT_00552d38,
         256.0f, 195.0f, 0.0f, 0.0f, 1.0f, 0.76171875f, '\0', '\0');
 
     // ESRB "Everyone" badge — top right
