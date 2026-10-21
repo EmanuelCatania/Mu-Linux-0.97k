@@ -42,6 +42,7 @@ trade, chat, party, guild, combate, skills, efectos, eventos, sonido y música.
 - **Los assets ya están incluidos** en `bin/Client/Data/` (~209 MB: modelos
   `.bmd`, texturas `.ozj`/`.ozt`, mapas, sonidos y música). Clonás, compilás y
   arranca.
+- **OpenGL 3.3 compatibility o superior**, con el controlador de video instalado, en la rama de desarrollo de Fase 4. La base conserva el dibujo heredado; el envío por buffers se migra por subsistemas.
 - **Un servidor.** El port está validado contra
   [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
   0.97k), que es la fuente autoritativa para el formato de los paquetes. También

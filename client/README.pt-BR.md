@@ -41,6 +41,7 @@ baú, trade, chat, party, guild, combate, skills, efeitos, eventos, som e músic
 
 - **Os assets já estão incluídos** em `bin/Client/Data/` (~209 MB: modelos
   `.bmd`, texturas `.ozj`/`.ozt`, mapas, sons e música). Clone, compile e rode.
+- **OpenGL 3.3 compatibility ou superior**, com o driver de vídeo instalado, na branch de desenvolvimento da Fase 4. A base mantém o desenho legado; o envio por buffers será migrado por subsistema.
 - **Um servidor.** O port está validado contra
   [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
   0.97k), que é a fonte autoritativa para o formato dos pacotes. A versão para

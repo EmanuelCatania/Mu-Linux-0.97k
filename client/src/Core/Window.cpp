@@ -81,7 +81,11 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 // IDA: OpenGL_Init (0x0041DE30): mostrar la ventana después de activar el contexto.
 bool CWindow::InitOpenGL()
 {
-    if (!Platform::GetGLContext().Initialize()) return false;
+    if (!Platform::GetGLContext().Initialize()) {
+        RestoreDisplay();
+        Platform::GetWindow().ShowError(gClientText.Get(ClientTextId::RenderGLUnavailable),"Mu Online",false,true);
+        return false;
+    }
     // DESVIACION: preferencias de presentación por la interfaz de plataforma.
     if (!Platform::GetGLContext().SetSwapInterval(gUserSettings.GetVSync() ? 1 : 0))
         CErrorReport_Write(&DAT_055c9bf0, "> No se pudo aplicar Window.VSync");

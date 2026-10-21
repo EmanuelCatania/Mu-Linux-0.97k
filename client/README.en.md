@@ -42,6 +42,7 @@ music.
 
 - **The assets are already included** in `bin/Client/Data/` (~209 MB: `.bmd`
   models, `.ozj`/`.ozt` textures, maps, sounds and music). Clone, build, run.
+- **OpenGL 3.3 compatibility or newer**, with a graphics driver installed, on the Phase 4 development branch. The foundation preserves legacy drawing; buffer submission is migrated by subsystem.
 - **A server.** The port is validated against
   [MuEmu - Linux](https://github.com/EmanuelCatania/Mu-Linux-0.97k) (season
   0.97k), which is the authoritative source for the packet format. The Windows

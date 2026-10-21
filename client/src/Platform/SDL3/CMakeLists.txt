@@ -21,3 +21,8 @@ endif()
 if(MSVC)
     target_compile_options(mu_platform_sdl PRIVATE /EHsc /W3)
 endif()
+
+# El cliente completo ya compila el cargador en MU_SOURCES.
+if(MU_PLATFORM_ONLY)
+    target_sources(mu_platform_sdl PRIVATE ../GLFunctions.cpp)
+endif()

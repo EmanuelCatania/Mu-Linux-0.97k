@@ -36,8 +36,8 @@ std::string TitleUTF8(const char* text) {
 // sí usa el driver propietario.
 bool ProbeSoftwareGL() {
     SDL_Window* probe = SDL_CreateWindow("probe", 16, 16, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-    if (!probe) return false;
-    bool software = false;
+    if (!probe) return true;
+    bool software = true;
     if (SDL_GLContext ctx = SDL_GL_CreateContext(probe)) {
         const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
         software = renderer && (SDL_strcasestr(renderer, "llvmpipe") || SDL_strcasestr(renderer, "softpipe") ||
@@ -112,7 +112,7 @@ public:
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_DEFAULT);
 #endif
         if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
-        SetGLAttributes();
+        if (!SetGLAttributes()) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
 #ifndef _WIN32
         // Si Wayland sólo ofrece GL por software y el usuario no forzó el
         // driver, se reintenta con X11 (XWayland), que llega al driver de la GPU.
@@ -124,7 +124,7 @@ public:
                 SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland", SDL_HINT_OVERRIDE);
                 if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
             }
-            SetGLAttributes();
+            if (!SetGLAttributes()) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
         }
 #endif
         SDL_Log("Backend de video: %s", SDL_GetCurrentVideoDriver());
@@ -138,17 +138,21 @@ public:
         SDL_StartTextInput(window);
         return true;
     }
-    static void SetGLAttributes() {
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    static bool SetGLAttributes() {
+        // DESVIACION: perfil compatible para conservar glBegin, listas y matrices
+        // durante la migración por subsistemas; no solicitar core ni forward.
+        const bool context=SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_COMPATIBILITY) &&
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,0);
         // IDA: OpenGL_Init (0x0041DE30), mínimos de color/profundidad de 16 bits.
-        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
-        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 6);
-        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
-        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
-        SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 16);
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+        return context && SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5) &&
+            SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 6) &&
+            SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5) &&
+            SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0) &&
+            SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 16) &&
+            SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) &&
+            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
     }
     void ServiceLoadingEvents(unsigned) override { ServiceEvents(); }
     void ServiceEvents() override {
