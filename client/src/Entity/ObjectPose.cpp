@@ -339,12 +339,28 @@ void PrepareRange(void*,std::size_t begin,std::size_t end) {
 void ObjectPose_BeginBatch() {
     batchActive=false; geometryPose=nullptr; batchCount=0; jobs.clear();
     if(SceneFlag!=5 || DAT_07e11d30==2 || !DAT_07abf5d0) return;
+    // Medición de lotes pequeños: con 4 poses la coordinación era más cara.
+    // Contar trabajo antes de copiar fuentes y reservar el equipo para lotes útiles.
     int visible=0;
-    for(int slot=0;slot<400 && visible<4;++slot) {
+    std::size_t vertexWork=0,boneWork=0;
+    for(int slot=0;slot<400;++slot) {
         const auto* o=AsObject(DAT_07abf5d0+slot*0x394);
-        if(o->Live && (o->Visible || (const void*)o==(const void*)DAT_07abf5d8) && o->Alpha>=_DAT_005524f8) ++visible;
+        if(!o->Live || (!o->Visible && (const void*)o!=(const void*)DAT_07abf5d8) ||
+           o->Alpha<_DAT_005524f8 || o->Type<0 || (std::size_t)o->Type>=ResourceTables::ModelCount()) continue;
+        const auto* model=(const unsigned char*)(uintptr_t)(DAT_05828d58+o->Type*0xbc);
+        if(*(const short*)(model+0x26)<=0) continue;
+        ++visible;
+        const int bones=*(const short*)(model+0x22),count=*(const short*)(model+0x24);
+        if(bones>0 && bones<=200) boneWork+=bones;
+        const auto base=(uintptr_t)*(const DWORD*)(model+0x28);
+        if(base>=0x10000 && count>0 && count<=200) for(int m=0;m<count;++m) {
+            const auto* mesh=(const unsigned char*)base+m*0x28;
+            const int vc=*(const short*)(mesh+4),nc=*(const short*)(mesh+6);
+            if(vc>=0 && vc<=15000 && nc>=0 && nc<=15000) vertexWork+=vc+nc;
+        }
     }
-    if(visible<4) return;
+    if(visible<4 || (vertexWork<16384 && boneWork<1024)) return;
+    std::size_t actualVertices=0,actualBones=0;
     if(prepared.empty()) prepared.resize(400);
     ++batchEpoch;
     for(std::size_t slot=0;slot<prepared.size();++slot) {
@@ -420,9 +436,11 @@ void ObjectPose_BeginBatch() {
         if(o->Type!=0x145 && o->Type!=0xe1) p.model[0x44]=o->LightEnable;
         p.coefficients={_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
         jobs.push_back(&p);
+        actualBones+=p.boneCount;
+        if(p.geometry) for(const auto& mesh:p.transforms) actualVertices+=mesh.vertexCount+mesh.normalCount;
         ++batchCount;
     }
-    if(batchCount<4) return;
+    if(batchCount<4 || (actualVertices<16384 && actualBones<1024)) return;
     auto& team=TransformWorkers::SharedTeam();
     if(!team.Workers()) return;
     team.Run(jobs.size(),nullptr,PrepareRange);
