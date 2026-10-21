@@ -520,7 +520,6 @@ void COptionsMenu::RenderScreen()
     // DESVIACION: controles de presentación dentro del panel Pantalla existente.
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderDecoupled),gUserSettings.GetRenderDecoupled());
     RenderToggle((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSync),gUserSettings.GetVSync());
-    if (gUserSettings.GetVSync()) RenderButton((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSyncHint),true);
     if (m_VSyncUnavailable) RenderButton((float)RowY(row++),gClientText.Get(ClientTextId::RenderVSyncUnavailable),true);
     const int fps=gUserSettings.GetFpsLimit();
     if (fps) Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFps),fps);
@@ -559,7 +558,6 @@ bool COptionsMenu::UpdateScreen()
         if (clicked) m_VSyncUnavailable=!gUserSettings.SetPresentation(gUserSettings.GetRenderDecoupled(),!gUserSettings.GetVSync(),gUserSettings.GetFpsLimit());
         return true;
     }
-    if (gUserSettings.GetVSync() && UpdateToggle(RowY(row++),clicked)) return true;
     if (m_VSyncUnavailable && UpdateToggle(RowY(row++),clicked)) return true;
     const int fps=gUserSettings.GetFpsLimit();
     const int fpsStep=UpdateSelector(RowY(row++),fps==0 || fps>25,fps!=0);

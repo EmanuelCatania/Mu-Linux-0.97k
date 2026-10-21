@@ -82,7 +82,7 @@
 //       RETORNAR 0
 //
 //   Uso en game: por cada tecla de shortcut se llama una vez por frame.
-//   Ejemplo: Key_IsJustPressed(0x2C) = F12 → toggle screenshot mode.
+//   Ejemplo: Key_IsJustPressed(0x2C) = Print Screen → toggle screenshot mode.
 //
 //   IMPORTANTE: No usar para movimiento continuo — usar GetAsyncKeyState directo.
 uint Key_IsJustPressed(int vk);
@@ -211,7 +211,7 @@ int NumPad_HitTest(void);
 // Ejemplos documentados:
 //   Game_MainLoop / Game_SceneUpdate:
 //     GetAsyncKeyState(VK_SHIFT) → if high bit: toggle screenshot debug mode
-//     Key_IsJustPressed(VK_F12)  → toggle screenshot mode (DAT_083a42ec ^= 1)
+//     Key_IsJustPressed(VK_SNAPSHOT) → toggle screenshot mode (DAT_083a42ec ^= 1)
 //
 //   Login Scene (Game_SceneUpdate):
 //     Clicks de mouse en áreas de botón como hit-test manual
