@@ -179,6 +179,8 @@
     <ClInclude Include="src\Render\Skinning.h" />
     <ClInclude Include="src\Render\MeshDraw.h" />
     <ClInclude Include="src\Render\BufferedDraw.h" />
+    <ClInclude Include="src\Render\TransformMath.h" />
+    <ClInclude Include="src\Render\TransformWorkers.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\GLFunctions.h" />
     <ClInclude Include="src\Platform\GL\glad.h" />

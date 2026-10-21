@@ -41,7 +41,7 @@ jobs:
         run: cmake --build build --config ${{ matrix.config }} --parallel 4
       - name: Verificar crecimiento de recursos
         run: |
-          cmake --build build --config ${{ matrix.config }} --target mu_resource_tables_test mu_frame_pointer_set_test --parallel 4
+          cmake --build build --config ${{ matrix.config }} --target mu_resource_tables_test mu_frame_pointer_set_test mu_transform_workers_test --parallel 4
           ctest --test-dir build -C ${{ matrix.config }} --output-on-failure
       - name: Verificar ABI y empaquetar Release Linux
         if: runner.os == 'Linux' && matrix.config == 'Release'
