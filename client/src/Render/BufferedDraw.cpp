@@ -100,6 +100,21 @@ void Begin(unsigned mode) {
     if (active!=GL_TEXTURE0) glActiveTexture(active);
     stream.active=true;
 }
+// DESVIACION: el terreno ya entrega todos los atributos; evitar consultas
+// de color/UV heredados y la captura individual de cada esquina.
+void Quad(const Vertex* corners,bool fan) {
+    const unsigned mode=fan ? GL_TRIANGLE_FAN : GL_QUADS;
+    if (!program) {
+        glBegin(mode);
+        for (int i=0;i<4;++i) {
+            glColor4fv(corners[i].color);glTexCoord4fv(corners[i].uv);glVertex3fv(corners[i].position);
+        }
+        glEnd();return;
+    }
+    if (!pending.empty() && pendingMode!=mode) Flush();
+    pendingMode=mode;pending.insert(pending.end(),corners,corners+4);
+    glColor4fv(corners[3].color);glTexCoord4fv(corners[3].uv);
+}
 void Flush() {
     if (pending.empty()) return;
     GLint active=0;

@@ -19,6 +19,8 @@ bool Initialize();
 void Release();
 void Begin(unsigned mode);
 void End();
+// Cuatro esquinas completas; fan conserva la diagonal 0-2 del terreno.
+void Quad(const Vertex* corners,bool fan=true);
 // Flush conserva el pipeline del emisor para el siguiente envío. Suspend
 // además restaura los bindings de entrada antes de usar otro camino GL.
 void Flush();
