@@ -47,12 +47,13 @@ struct State {
 // El dibujo no toca FBO, pixel store ni buffers de transferencia. Evitar el
 // guardado completo de la preparación por cada tramo de texto del HUD.
 struct DrawState {
-    GLint active,mode;
+    GLint active,mode,texture,environment;
     DrawState(int width,int height) {
         BufferedDraw::Flush();
         glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
-        glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_TEXTURE_BIT|GL_VIEWPORT_BIT|GL_POLYGON_BIT);
+        glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_VIEWPORT_BIT|GL_POLYGON_BIT);
         glActiveTexture(GL_TEXTURE0);
+        glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
         glMatrixMode(GL_TEXTURE);glPushMatrix();glLoadIdentity();
         glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();glOrtho(0,width,0,height,-1,1);
         glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();glViewport(0,0,width,height);
@@ -61,6 +62,7 @@ struct DrawState {
         BufferedDraw::Flush();
         glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
         glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
+        glBindTexture(GL_TEXTURE_2D,texture);glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,environment);
         glPopAttrib();glActiveTexture(active);
     }
 };
