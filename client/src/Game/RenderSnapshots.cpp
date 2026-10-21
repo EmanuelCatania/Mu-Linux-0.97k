@@ -20,6 +20,10 @@ float Blend(float a, float b, float alpha) {
 float BlendAngle(float a, float b, float alpha) {
     if (alpha <= 0.0f) return a;
     if (alpha >= 1.0f) return b;
+    // Los objetos quietos no requieren dos fmod por ángulo en cada draw.
+    // Sólo el intervalo ya normalizado conserva exactamente el resultado;
+    // los demás valores siguen el camino general (incluidos 360 y negativos).
+    if (a==b && a>=0 && a<360 && std::isfinite(alpha)) return a+0.0f;
     float delta = std::fmod(b - a, 360.0f);
     if (delta > 180.0f) delta -= 360.0f;
     if (delta < -180.0f) delta += 360.0f;
