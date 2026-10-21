@@ -4,16 +4,30 @@
 #include "Render/BufferedDraw.h"
 #include <cstddef>
 #include <cstdio>
+#include <algorithm>
 
 extern "C" void DbgLogPublic(const char*);
 namespace BufferedDraw {
 Stream stream;
 namespace {
-GLuint program=0,buffer=0,array=0;
+GLuint program=0,buffer=0,array=0,quadBuffer=0;
+std::size_t quadCapacity=0;
 std::vector<Vertex> pending;
 unsigned pendingMode=0;
 bool bound=false;
 GLint savedProgram=0,savedArray=0,savedBuffer=0;
+// DESVIACION: cada abanico de cuatro esquinas conserva los triángulos
+// 0-1-2 y 0-2-3 sin duplicar sus vértices en el buffer de envío.
+void EnsureQuadIndices(std::size_t count) {
+    if (quadCapacity>=count) return;
+    quadCapacity=std::max(count,std::max(std::size_t(256),quadCapacity*2));
+    std::vector<unsigned> indices;indices.reserve(quadCapacity*6);
+    for (std::size_t q=0;q<quadCapacity;++q) {
+        const unsigned v=static_cast<unsigned>(q*4);
+        indices.insert(indices.end(),{v,v+1,v+2,v,v+2,v+3});
+    }
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,indices.size()*sizeof(unsigned),indices.data(),GL_STATIC_DRAW);
+}
 // ftransform conserva la transformación del pipeline compatible. La etapa
 // fragmentaria sigue siendo la compatible: textura, alpha test y niebla no
 // se sustituyen por aproximaciones ni cambian sus setters/cache heredados.
@@ -48,14 +62,15 @@ bool Initialize() {
     GLint oldArray=0,oldBuffer=0,oldClient=0;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
     glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&oldClient);
-    glGenBuffers(1,&buffer);glGenVertexArrays(1,&array);
+    glGenBuffers(1,&buffer);glGenBuffers(1,&quadBuffer);glGenVertexArrays(1,&array);
     glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadBuffer);
     glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,position));
     glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,color));
     glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,uv));
     glClientActiveTexture(oldClient);glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);
-    if (!buffer || !array || glGetError()!=GL_NO_ERROR) { Release();return false; }
+    if (!buffer || !quadBuffer || !array || glGetError()!=GL_NO_ERROR) { Release();return false; }
     return true;
 }
 void Release() {
@@ -63,8 +78,9 @@ void Release() {
     stream.active=false;stream.vertices.clear();pending.clear();
     if (array) glDeleteVertexArrays(1,&array);
     if (buffer) glDeleteBuffers(1,&buffer);
+    if (quadBuffer) glDeleteBuffers(1,&quadBuffer);
     if (program) glDeleteProgram(program);
-    array=buffer=program=0;
+    array=buffer=program=quadBuffer=0;quadCapacity=0;
 }
 void NativeColor(float r,float g,float b,float a) { glColor4f(r,g,b,a); }
 void NativeUV(float u,float v) { glTexCoord2f(u,v); }
@@ -100,7 +116,10 @@ void Flush() {
         glUseProgram(program);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);bound=true;
     }
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
-    glDrawArrays(pendingMode,0,(GLsizei)pending.size());
+    if (pendingMode==GL_TRIANGLE_FAN) {
+        EnsureQuadIndices(pending.size()/4);
+        glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(pending.size()/4*6),GL_UNSIGNED_INT,nullptr);
+    } else glDrawArrays(pendingMode,0,(GLsizei)pending.size());
     // Los atributos actuales pueden quedar indefinidos tras DrawArrays.
     glColor4fv(color);glTexCoord4fv(uv);
     pending.clear();
@@ -130,12 +149,15 @@ void End() {
     const bool direct=stream.destination==&pending;
     const auto count=stream.destination->size()-stream.first;
     const bool fan=stream.mode==GL_TRIANGLE_FAN;
-    const unsigned mode=fan ? GL_TRIANGLES : stream.mode;
+    const bool quad=fan && count==4;
+    const unsigned mode=quad ? GL_TRIANGLE_FAN : fan ? GL_TRIANGLES : stream.mode;
     const unsigned group=mode==GL_TRIANGLES?3:mode==GL_QUADS?4:mode==GL_LINES?2:1;
-    const bool independent=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
+    const bool independent=quad || mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
     if (!direct && !pending.empty() && (pendingMode!=mode || !independent)) Flush();
     pendingMode=mode;
-    if (fan) {
+    if (quad) {
+        pending.insert(pending.end(),stream.vertices.begin(),stream.vertices.end());
+    } else if (fan) {
         // Cada abanico conserva sus triángulos y su orden. No se conectan
         // abanicos de tiles distintos al reunirlos en un mismo envío.
         for (size_t i=1;i+1<count;++i) {
