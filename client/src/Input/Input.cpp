@@ -275,15 +275,13 @@ int __cdecl PressKey(int param_1)
   // (disasm @ 0x0047ec35 = MOV EAX,[ESI*0x4 + 0x7e118ec]). Necesario castear
   // la base a char* porque KeyState es DWORD[256].
   DWORD* slot = (DWORD*)((char*)&KeyState + param_1 * 4);
-  if (((unsigned short)SVar1 >> 8) == 0x80) {
-    if (*slot == 0) {
-      *slot = 1;
-      return 1;
-    }
-  } else {
-    *slot = 0;
-  }
-  return 0;
+  const bool held=(SVar1 & 0x8000)!=0;
+  // DESVIACION: el bit de pulsación conserva un toque down/up entre pasos SIM.
+  // El flanco nuevo también permite dos pulsaciones aunque no se haya observado
+  // el estado suelto; mantener la tecla sigue produciendo una sola acción.
+  const bool pressed=(SVar1 & 1)!=0 || (held && *slot==0);
+  *slot=held ? 1 : 0;
+  return pressed ? 1 : 0;
 }
 
 
