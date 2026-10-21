@@ -53,6 +53,7 @@ set(MU_SOURCES
     src/Scene/Scene_Login.cpp
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
+    src/Render/BufferedDraw.cpp
     src/Render/WorldEffects.cpp
     src/Render/MaterialVisuals.cpp
     src/Render/LooseWingVisuals.cpp
@@ -428,6 +429,7 @@ set(MU_HEADERS
     src/Platform/IFileSystem.h
     src/Platform/ISocket.h
     src/Platform/SDL3/SDLFont.h
+    src/Render/BufferedDraw.h
     src/Platform/IGLContext.h
     src/Platform/GLFunctions.h
     src/Platform/GL/glad.h
@@ -581,7 +583,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES

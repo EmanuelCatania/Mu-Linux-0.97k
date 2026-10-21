@@ -13,6 +13,7 @@
 #include "Platform/IGLContext.h"
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
+#include "Render/BufferedDraw.h"
 
 CWindow gWindow;
 
@@ -81,7 +82,9 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 // IDA: OpenGL_Init (0x0041DE30): mostrar la ventana después de activar el contexto.
 bool CWindow::InitOpenGL()
 {
-    if (!Platform::GetGLContext().Initialize()) {
+    if (!Platform::GetGLContext().Initialize() || !BufferedDraw::Initialize()) {
+        BufferedDraw::Release();
+        Platform::GetGLContext().Release();
         RestoreDisplay();
         Platform::GetWindow().ShowError(gClientText.Get(ClientTextId::RenderGLUnavailable),"Mu Online",false,true);
         return false;
@@ -98,6 +101,7 @@ bool CWindow::InitOpenGL()
 // IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
+    BufferedDraw::Release();
     Platform::GetGLContext().Release();
     RestoreDisplay();
 }

@@ -172,6 +172,7 @@
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
+    <ClInclude Include="src\Render\BufferedDraw.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\GLFunctions.h" />
     <ClInclude Include="src\Platform\GL\glad.h" />
@@ -254,6 +255,9 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Render\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\WorldEffects.cpp" />
     <ClCompile Include="src\Render\MaterialVisuals.cpp" />
     <ClCompile Include="src\Render\LooseWingVisuals.cpp" />
