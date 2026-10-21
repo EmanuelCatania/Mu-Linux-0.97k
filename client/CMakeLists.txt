@@ -440,6 +440,8 @@ set(MU_HEADERS
     src/Render/Skinning.h
     src/Render/MeshDraw.h
     src/Render/BufferedDraw.h
+    src/Render/TransformMath.h
+    src/Render/TransformWorkers.h
     src/Platform/IGLContext.h
     src/Platform/GLFunctions.h
     src/Platform/GL/glad.h
@@ -653,6 +655,8 @@ endif()
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT mu97k)
 
 # DESVIACION: prueba de crecimiento real sin contexto GL, en ambos sistemas.
+find_package(Threads REQUIRED)
+target_link_libraries(mu97k PRIVATE Threads::Threads)
 enable_testing()
 add_executable(mu_resource_tables_test EXCLUDE_FROM_ALL
     tests/ResourceTables.cpp src/Render/ResourceTables.cpp)
@@ -667,3 +671,12 @@ add_executable(mu_frame_pointer_set_test EXCLUDE_FROM_ALL tests/FramePointerSet.
 target_include_directories(mu_frame_pointer_set_test PRIVATE src)
 target_compile_features(mu_frame_pointer_set_test PRIVATE cxx_std_17)
 add_test(NAME frame_pointer_set COMMAND mu_frame_pointer_set_test)
+
+add_executable(mu_transform_workers_test EXCLUDE_FROM_ALL tests/TransformWorkers.cpp)
+target_include_directories(mu_transform_workers_test PRIVATE src)
+target_compile_features(mu_transform_workers_test PRIVATE cxx_std_17)
+target_link_libraries(mu_transform_workers_test PRIVATE Threads::Threads)
+if(MSVC)
+    target_compile_options(mu_transform_workers_test PRIVATE /EHsc /fp:precise)
+endif()
+add_test(NAME transform_workers COMMAND mu_transform_workers_test)
