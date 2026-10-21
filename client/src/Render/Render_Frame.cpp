@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
@@ -318,12 +319,12 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 
     GL_BindTextureSlot(Texture);          // BindTexture
 
-    glBegin(GL_TRIANGLE_FAN);
-      glTexCoord2f(u,          v + q);            glVertex2f(x0,     y0);
-      glTexCoord2f(u,          v + vHeight - q);  glVertex2f(x0,     y0 - h);
-      glTexCoord2f(u + uWidth, v + vHeight);      glVertex2f(x0 + w, y0 - h);
-      glTexCoord2f(u + uWidth, v);                glVertex2f(x0 + w, y0);
-    glEnd();
+    BufferedDraw::Begin(GL_TRIANGLE_FAN);
+      BufferedDraw::TexCoord2f(u,          v + q);            BufferedDraw::Vertex2f(x0,     y0);
+      BufferedDraw::TexCoord2f(u,          v + vHeight - q);  BufferedDraw::Vertex2f(x0,     y0 - h);
+      BufferedDraw::TexCoord2f(u + uWidth, v + vHeight);      BufferedDraw::Vertex2f(x0 + w, y0 - h);
+      BufferedDraw::TexCoord2f(u + uWidth, v);                BufferedDraw::Vertex2f(x0 + w, y0);
+    BufferedDraw::End();
 }
 
 void Render_GameFrame(void)
@@ -333,9 +334,9 @@ void Render_GameFrame(void)
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
         // IDA Render_GameFrame L14-21.
         GL_SetBlendSrcOver('');                  // EnableAlphaTest(1)
-        glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+        BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 0.5f);
         GL_SetBlendAdditive();                        // EnableAlphaBlend (aditivo)
-        glColor3f(0.3f, 0.3f, 0.25f);
+        BufferedDraw::Color3f(0.3f, 0.3f, 0.25f);
 
         const float scrollA = (float)((long long)WorldTime % 100000) * _DAT_00552b88; // 0.0002
         const float scrollB = (float)((long long)WorldTime % 100000) * _DAT_00552500; // 0.001
@@ -346,7 +347,7 @@ void Render_GameFrame(void)
         RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, 435.0f, scrollB, 0.0f, 3.0f, 2.0f);
     }
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     Render_CharInfoPanel();         // sub_4BC220 (guild-war/soccer banner)
     Render_HPBars();                // RenderPartyHP @ 0x4BCA20
@@ -423,24 +424,24 @@ void Render_HPBars_OLD(void)
         // Draw black shadow + red bar (HP placeholder = 50%)
         // For now: fixed 30×4 bar
         GL_SetBlendSrcOver('\0');     // disable alpha blend (solid)
-        glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
+        BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.7f);
         // Black BG quad
-        glBegin(GL_QUADS);
-        glVertex2f((float)(sx - 16), (float)(sy - 8));
-        glVertex2f((float)(sx + 16), (float)(sy - 8));
-        glVertex2f((float)(sx + 16), (float)(sy - 4));
-        glVertex2f((float)(sx - 16), (float)(sy - 4));
-        glEnd();
+        BufferedDraw::Begin(GL_QUADS);
+        BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 8));
+        BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 8));
+        BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 4));
+        BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 4));
+        BufferedDraw::End();
         // Red foreground (50% wide as placeholder)
-        glColor3f(0.9f, 0.1f, 0.1f);
-        glBegin(GL_QUADS);
-        glVertex2f((float)(sx - 15), (float)(sy - 7));
-        glVertex2f((float)(sx),      (float)(sy - 7));
-        glVertex2f((float)(sx),      (float)(sy - 5));
-        glVertex2f((float)(sx - 15), (float)(sy - 5));
-        glEnd();
+        BufferedDraw::Color3f(0.9f, 0.1f, 0.1f);
+        BufferedDraw::Begin(GL_QUADS);
+        BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 7));
+        BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 7));
+        BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 5));
+        BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 5));
+        BufferedDraw::End();
     }
-    glColor3f(1.0f, 1.0f, 1.0f);  // restore color
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);  // restore color
 }
 #endif
 
