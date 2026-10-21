@@ -75,6 +75,9 @@ public:
 
     // Item que se dibuja con ese slot de modelo, o -1.
     int GetModelItemType(int model) const;
+    // Mallas de un modelo propio que traen caras invertidas (hechas para
+    // dibujarse de los dos lados).
+    bool IsTwoSidedMesh(int model, int mesh) const;
 
     bool GetItemGlow(int type, float rgb[3]) const;
     const CatalogItemPose* GetItemPose(int type) const;
