@@ -30,6 +30,8 @@
 //   DAT_0828b608/0c/10 — shadow/pre-computed lighting buffers
 
 #include "stdafx.h"
+#include <vector>
+#include <cstring>
 
 int __cdecl Terrain_Water(void)
 {
@@ -92,32 +94,27 @@ int __cdecl Terrain_Water(void)
         int iVar9 = (int)uVar8 << 8;   // row * 256
         int colMax2 = FrustrumBoundMaxX_1 + 3;
         int rowCount = (rowMax - (int)uVar8) + 1;
-        do {
-            fVar12 = (float10)(int)FrustrumBoundMinX_1;
-            if ((int)FrustrumBoundMinX_1 <= colMax2) {
-                iVar4 = (colMax2 - FrustrumBoundMinX_1) + 1;
-                // DAT_07eab200 es DWORD → &DAT_07eab200 + N*4 hace
-                // aritmética DWORD* (=+N*16 bytes). Disasm @ 0x004f96d1 muestra
-                // LEA EDX,[EAX*0x4 + 0x7eab200] = byte offset N*4. Castear a char*.
-                pfVar6 = (float *)((char*)&DAT_07eab200 + (iVar9 + FrustrumBoundMinX_1) * 4);
-                do {
-                    // Select wave frequency by game sub-state
-                    fVar1 = _DAT_00552660;
-                    if (iVar2b == 8)
-                        fVar1 = _DAT_00552598;
-
-                    iVar4--;
-                    // height = sin(col * freq + timePhase) * amplitude
-                    fVar13 = (float10)fsin(fVar12 * (float10)fVar1 + fVar11);
-                    *pfVar6 = (float)(fVar13 * (float10)_DAT_00552488);
-
-                    fVar12 += (float10)_DAT_0055256c;  // next column
-                    pfVar6++;
-                } while (iVar4 != 0);
+        if ((int)FrustrumBoundMinX_1 <= colMax2) {
+            // DESVIACION: la onda depende de columna y tiempo, no de fila.
+            // Calcular una vez con la misma aritmética y copiar el resultado
+            // preserva también el orden de escritura si las filas se solapan.
+            const int columns=(colMax2-FrustrumBoundMinX_1)+1;
+            static std::vector<float> waveColumns;
+            waveColumns.resize(columns);
+            fVar12=(float10)(int)FrustrumBoundMinX_1;
+            for(int column=0;column<columns;++column) {
+                fVar1=iVar2b==8 ? _DAT_00552598 : _DAT_00552660;
+                fVar13=(float10)fsin(fVar12*(float10)fVar1+fVar11);
+                waveColumns[column]=(float)(fVar13*(float10)_DAT_00552488);
+                fVar12+=(float10)_DAT_0055256c;
             }
-            iVar9 += 0x100;  // next row
-            rowCount--;
-        } while (rowCount != 0);
+            do {
+                pfVar6=(float*)((char*)&DAT_07eab200+(iVar9+FrustrumBoundMinX_1)*4);
+                std::memcpy(pfVar6,waveColumns.data(),waveColumns.size()*sizeof(float));
+                iVar9+=0x100;
+            } while(--rowCount!=0);
+            iVar4=0; // el contador de columnas original termina en cero.
+        }
     }
 
     return iVar4;

@@ -140,6 +140,7 @@
     <ClInclude Include="src\Render\MaterialVisuals.h" />
     <ClInclude Include="src\Render\LooseWingVisuals.h" />
     <ClInclude Include="src\Render\EquipmentVisuals.h" />
+    <ClInclude Include="src\Game\FramePointerSet.h" />
     <ClInclude Include="src\Game\RenderDerivedState.h" />
     <ClInclude Include="src\Game\RenderSnapshots.h" />
     <ClInclude Include="src\Game\RenderInterpolation.h" />

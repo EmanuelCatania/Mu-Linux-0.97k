@@ -401,6 +401,7 @@ set(MU_HEADERS
     src/Render/MaterialVisuals.h
     src/Render/LooseWingVisuals.h
     src/Render/EquipmentVisuals.h
+    src/Game/FramePointerSet.h
     src/Game/RenderDerivedState.h
     src/Game/RenderSnapshots.h
     src/Game/RenderInterpolation.h
@@ -661,3 +662,8 @@ if(MSVC)
     target_compile_options(mu_resource_tables_test PRIVATE /EHsc)
 endif()
 add_test(NAME resource_tables COMMAND mu_resource_tables_test)
+
+add_executable(mu_frame_pointer_set_test EXCLUDE_FROM_ALL tests/FramePointerSet.cpp)
+target_include_directories(mu_frame_pointer_set_test PRIVATE src)
+target_compile_features(mu_frame_pointer_set_test PRIVATE cxx_std_17)
+add_test(NAME frame_pointer_set COMMAND mu_frame_pointer_set_test)
