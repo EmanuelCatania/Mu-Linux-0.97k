@@ -50,6 +50,7 @@ private:
     int  LevelBarHit(int y) const;
     void ChangeLanguage(int language);
 
+    bool m_VSyncUnavailable = false;
     Page m_Page = PAGE_MAIN;
 };
 

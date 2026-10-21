@@ -455,6 +455,9 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         EnableAlphaBlend();
     }
 
+    // DESVIACION: chrome usa un color constante durante toda la pasada.
+    // Enviarlo al primer vértice conserva también el estado si no hay caras.
+    bool chromeColorSent = false;
     glBegin(GL_TRIANGLES);
     texOverride = 0;
 
@@ -489,12 +492,15 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                         }
                     } else if (renderMode == MODE_CHROME) {
                         // Chrome UV from precomputed chrome table
-                        if (alpha < _DAT_00552544) {
-                            glColor4f(*(float *)((int)bmd_obj + 0x48),
-                                      *(float *)((int)bmd_obj + 0x4c),
-                                      *(float *)((int)bmd_obj + 0x50), alpha);
-                        } else {
-                            glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+                        if (!chromeColorSent) {
+                            if (alpha < _DAT_00552544) {
+                                glColor4f(*(float *)((int)bmd_obj + 0x48),
+                                          *(float *)((int)bmd_obj + 0x4c),
+                                          *(float *)((int)bmd_obj + 0x50), alpha);
+                            } else {
+                                glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+                            }
+                            chromeColorSent = true;
                         }
                         // Ghidra emitió `(&DAT_05828d5c + 4)[idx*2]`, que es aritmética float*
                         // (+4 = +16 bytes) y leería V de d6c+idx*8 en vez de d60+idx*8.

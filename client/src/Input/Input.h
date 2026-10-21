@@ -8,3 +8,6 @@ int  NumPad_HitTest(void);
 
 #include "Platform/IInput.h"
 void Input_OnEvent(const Platform::InputEvent& event);
+
+// DESVIACION: contador visual opcional; F12 se procesa una vez por paso SIM.
+void ToggleFpsCounter();

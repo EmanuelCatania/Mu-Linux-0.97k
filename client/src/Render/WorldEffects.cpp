@@ -85,6 +85,8 @@ void WorldEffects_Draw(int entity) {
     if (found == frames.end() || found->second.generation != SceneObjects::Generation(object) ||
         !AsObject(entity)->Live || found->second.type != AsObject(entity)->Type) return;
     const Frame &frame=found->second;
+    // Sin comandos no hay posiciones que mezclar ni sprites que reproducir.
+    if (frame.sprites.empty()) return;
     const auto old=previousFrames.find(object);
     const bool continuous=RenderInterpolation_OwnerContinuous(object) && old!=previousFrames.end() &&
         old->second.generation==frame.generation && old->second.type==frame.type && old->second.sprites.size()==frame.sprites.size();

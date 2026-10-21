@@ -189,5 +189,7 @@ send_done:
     }
     #endif  // re-auth packet block disabled for MuEmu
 
-    DAT_055ca038 = 0;
+    // DESVIACION: en escenas jugables Enter vive hasta el próximo paso SIM;
+    // un render sin paso no debe consumir la confirmación de login/selección.
+    if (SceneFlag!=2 && SceneFlag!=4 && SceneFlag!=5) DAT_055ca038 = 0;
 }

@@ -9,10 +9,18 @@ float RenderBlend(float a, float b, float t) {
 float RenderBlendAngle(float a, float b, float t) {
     if (t<=0) return a;
     if (t>=1) return b;
-    float delta=std::fmod(b-a,360.0f);
+    // Los objetos quietos no requieren dos fmod por ángulo en cada draw.
+    // Sólo el intervalo ya normalizado conserva exactamente el resultado;
+    // los demás valores siguen el camino general (incluidos 360 y negativos).
+    if (a==b && a>=0 && a<360 && std::isfinite(t)) return a+0.0f;
+    // DESVIACION: fmod es identidad dentro de (-360, 360); conservar
+    // el camino general en los bordes y para valores no finitos.
+    float delta=b-a;
+    if (!(delta> -360 && delta<360)) delta=std::fmod(delta,360.0f);
     if (delta>180) delta-=360;
     if (delta< -180) delta+=360;
-    float angle=std::fmod(a+delta*t,360.0f);
+    float angle=a+delta*t;
+    if (!(angle> -360 && angle<360)) angle=std::fmod(angle,360.0f);
     return angle<0 ? angle+360 : angle;
 }
 namespace {

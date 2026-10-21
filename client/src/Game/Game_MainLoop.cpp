@@ -23,7 +23,7 @@
 //   TestTime  — total frame counter
 //   MoveSceneFrame  — anti-tamper tick counter
 //   DAT_055ca018  — socket error flag (abort if set)
-//   DAT_083a42ec  — screenshot mode toggle (F12)
+//   DAT_083a42ec  — screenshot mode toggle (Print Screen)
 //   DAT_083a7c48  — connection check enable
 //   DAT_083a7c58  — disconnect dialog shown flag
 //   DAT_07e118e8  — world/map type
@@ -49,6 +49,7 @@ void ItemNames_TickInput();
 #include "Entity/CharacterAttributeView.h"
 #include "Net/ServerCharacterStats.h"
 #include "Game/FrameLimiter.h"
+#include "Input/Input.h"
 #include "Net/Ping.h"
 #include "Game/MapManager.h"
 #include "Game/Game_MainLoop.h"
@@ -186,7 +187,10 @@ void __cdecl Game_MainLoop(HDC param_1)
         Chat_TickNoticeTimer();   CHK("ML/post_0047fcb0");
         Chat_TickMessageTimer();   CHK("ML/post_00480950");
 
-        // F12 → toggle screenshot mode
+        // DESVIACION: F12 alterna el contador FPS una vez por pulsación.
+        if (PressKey(VK_F12)) ToggleFpsCounter();
+
+        // Print Screen conserva su captura independiente.
         if (PressKey(0x2c) & 0xff)
             DAT_083a42ec ^= 1;
 
@@ -214,6 +218,9 @@ void __cdecl Game_MainLoop(HDC param_1)
         Game_TickAmbientAudio();
         Sprite_CaptureStep();
         RenderSnapshots_EndStep();
+        // IDA: Scene_Dispatch limpiaba Enter después del frame ligado a SIM.
+        // DESVIACION: consumirlo una sola vez por paso, no por draw desacoplado.
+        DAT_055ca038=0;
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;
