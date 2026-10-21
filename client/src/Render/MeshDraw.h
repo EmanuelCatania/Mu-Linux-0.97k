@@ -13,6 +13,7 @@ struct Input {
     bool light,offset;
     float alpha,u,v;
     const float* bodyLight;
+    const void* model=nullptr;
 };
 void Release();
 // DESVIACION: vértices únicos e índices persistentes; no expandir cada
