@@ -214,6 +214,9 @@ void __cdecl Game_MainLoop(HDC param_1)
         Game_TickAmbientAudio();
         Sprite_CaptureStep();
         RenderSnapshots_EndStep();
+        // IDA: Scene_Dispatch limpiaba Enter después del frame ligado a SIM.
+        // DESVIACION: consumirlo una sola vez por paso, no por draw desacoplado.
+        DAT_055ca038=0;
 
         // Consume 40ms of budget, count frame
         TimeRemain  -= 0x28;
