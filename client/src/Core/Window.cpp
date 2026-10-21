@@ -14,6 +14,7 @@
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
 #include "Render/BufferedDraw.h"
+#include "Render/GlyphAtlas.h"
 
 CWindow gWindow;
 
@@ -101,6 +102,7 @@ bool CWindow::InitOpenGL()
 // IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
+    GlyphAtlas::Release();
     BufferedDraw::Release();
     Platform::GetGLContext().Release();
     RestoreDisplay();

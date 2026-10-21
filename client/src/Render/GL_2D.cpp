@@ -14,6 +14,7 @@
 //   DAT_0056154c / DAT_00561550 — near / far clip planes
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 
 
 // FUN_005123C0 @ 0x005123C0 — GL_Begin2D
@@ -106,11 +107,11 @@ void __cdecl GL_DrawRect(float param_1,float param_2,float param_3,float param_4
   verts[4] = x + w;   verts[5] = y_bottom;  // BR
   verts[6] = x + w;   verts[7] = y_top;     // TR
 
-  glBegin(GL_TRIANGLE_FAN);
+  BufferedDraw::Begin(GL_TRIANGLE_FAN);
   for (int i = 0; i < 4; ++i) {
-      glVertex2f(verts[i*2 + 0], verts[i*2 + 1]);
+      BufferedDraw::Vertex2f(verts[i*2 + 0], verts[i*2 + 1]);
   }
-  glEnd();
+  BufferedDraw::End();
 }
 
 
@@ -170,16 +171,16 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
   // Leer como float via puntero float*: el decompile usa *(undefined4*) =
   // *(unsigned int*), que al pasar a glTexCoord2f/glVertex2f haría conversión
   // int→float (0x3f800000 → 1065353216.0f en vez de 1.0f).
-  glBegin(6);   // GL_TRIANGLE_FAN
+  BufferedDraw::Begin(6);   // GL_TRIANGLE_FAN
   iVar1 = 0;
   do {
     float *uv  = (float *)((char *)local_40 + iVar1);
     float *pos = (float *)((char *)local_40 + iVar1 + 0x20);
-    glTexCoord2f(uv[0], uv[1]);
-    glVertex2f(pos[0], pos[1]);
+    BufferedDraw::TexCoord2f(uv[0], uv[1]);
+    BufferedDraw::Vertex2f(pos[0], pos[1]);
     iVar1 = iVar1 + 8;
   } while (iVar1 < 0x20);
-  glEnd();
+  BufferedDraw::End();
   return;
 }
 
@@ -216,10 +217,10 @@ void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
     Vector_Transform(&in1[i], param_3, &out[i]);
   }
 
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0f, 1.0f);  glVertex3fv(&out[0]);
-  glTexCoord2f(1.0f, 1.0f);  glVertex3fv(&out[3]);
-  glTexCoord2f(1.0f, 0.0f);  glVertex3fv(&out[6]);
-  glTexCoord2f(0.0f, 0.0f);  glVertex3fv(&out[9]);
-  glEnd();
+  BufferedDraw::Begin(GL_QUADS);
+  BufferedDraw::TexCoord2f(0.0f, 1.0f);  BufferedDraw::Vertex3fv(&out[0]);
+  BufferedDraw::TexCoord2f(1.0f, 1.0f);  BufferedDraw::Vertex3fv(&out[3]);
+  BufferedDraw::TexCoord2f(1.0f, 0.0f);  BufferedDraw::Vertex3fv(&out[6]);
+  BufferedDraw::TexCoord2f(0.0f, 0.0f);  BufferedDraw::Vertex3fv(&out[9]);
+  BufferedDraw::End();
 }
