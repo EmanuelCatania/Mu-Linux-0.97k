@@ -334,13 +334,15 @@ void CItemOption::InsertOption(LPOBJ lpObj, CItem* lpItem)
 
 			case ITEM_OPTION_ADD_PHYSI_DAMAGE_BY_LEVEL:
 			{
-				lpObj->PhysiDamageMinRight += ((lpObj->Level) / value);
+				int addVal = ((value > 0) ? ((lpObj->Level) / value) : 0);
 
-				lpObj->PhysiDamageMaxRight += ((lpObj->Level) / value);
+				lpObj->PhysiDamageMinRight += addVal;
 
-				lpObj->PhysiDamageMinLeft += ((lpObj->Level) / value);
+				lpObj->PhysiDamageMaxRight += addVal;
 
-				lpObj->PhysiDamageMaxLeft += ((lpObj->Level) / value);
+				lpObj->PhysiDamageMinLeft += addVal;
+
+				lpObj->PhysiDamageMaxLeft += addVal;
 
 				break;
 			}
@@ -360,9 +362,11 @@ void CItemOption::InsertOption(LPOBJ lpObj, CItem* lpItem)
 
 			case ITEM_OPTION_ADD_MAGIC_DAMAGE_BY_LEVEL:
 			{
-				lpObj->MagicDamageMin += ((lpObj->Level) / value);
+				int addVal = ((value > 0) ? ((lpObj->Level) / value) : 0);
 
-				lpObj->MagicDamageMax += ((lpObj->Level) / value);
+				lpObj->MagicDamageMin += addVal;
+
+				lpObj->MagicDamageMax += addVal;
 
 				break;
 			}
