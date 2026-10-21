@@ -232,7 +232,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
                 {local_54[6],local_54[7],local_54[8]},
                 {_DAT_00552530,_DAT_005528b4,_DAT_005526e4},
                 _DAT_005597c8==_DAT_0055256c,param_5!='\0',*(char*)((char*)this_+0x44)!='\0'};
-            static TransformWorkers::Team workers;
+            auto& workers=TransformWorkers::SharedTeam();
             workers.Run(transformCount,&batch,TransformMath::Run);
             transformed=true;
         }

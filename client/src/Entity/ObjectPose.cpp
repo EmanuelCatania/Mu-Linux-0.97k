@@ -423,7 +423,7 @@ void ObjectPose_BeginBatch() {
         ++batchCount;
     }
     if(batchCount<4) return;
-    static TransformWorkers::Team team;
+    auto& team=TransformWorkers::SharedTeam();
     if(!team.Workers()) return;
     team.Run(jobs.size(),nullptr,PrepareRange);
     batchActive=true;
