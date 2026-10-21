@@ -3,16 +3,17 @@
 #include "Render/Skinning.h"
 #include <algorithm>
 #include <cstring>
-#include <unordered_map>
+
 #include <vector>
 extern "C" void DbgLogPublic(const char*);
 namespace Skinning {
 namespace {
 struct BoneVertex { float xyz[3];int bone; };
-struct PoseMesh { std::vector<BoneVertex> vertices,normals;std::vector<float> world,lighting; };
+struct PoseMesh { const void* key=nullptr;std::vector<BoneVertex> vertices,normals;std::vector<float> world,lighting; };
 const void* poseModel=nullptr;
 std::vector<float> palette;
-std::unordered_map<const void*,PoseMesh> poseMeshes;
+std::vector<PoseMesh> poseMeshes;
+std::size_t poseMeshCount=0;
 float rotationScale=1,bodyScale=1,origin[3]{},direction[3]{},coefficients[3]{};
 unsigned long long revision=0,uploaded=0;
 GLuint program=0,array=0,buffer=0,boneBuffer=0,boneTexture=0;
@@ -79,14 +80,12 @@ void Capture(const void* model,const float* bones,int boneCount,float rotation,f
     palette.assign(bones,bones+std::size_t(boneCount)*12);rotationScale=rotation;bodyScale=scale;
     std::copy(translation,translation+3,origin);std::copy(lightDirection,lightDirection+3,direction);
     std::copy(lightCoefficients,lightCoefficients+3,coefficients);
-    // Se conserva la capacidad por malla, sin acumular poses de entidades.
-    for(auto it=poseMeshes.begin();it!=poseMeshes.end();) {
-        bool present=false;for(std::size_t i=0;i<count;++i) if(sources[i].key==it->first) { present=true;break; }
-        if(!present) it=poseMeshes.erase(it);else ++it;
-    }
+    // DESVIACION: reutilizar las capacidades al cambiar de modelo.
+    if(poseMeshes.size()<count) poseMeshes.resize(count);
+    poseMeshCount=0;
     for(std::size_t i=0;i<count;++i) { const auto& s=sources[i];
         if(s.vertexCount<=0 || !s.vertices || !s.world || s.normalCount<0 || (s.normalCount && (!s.normals || !s.lighting))) continue;
-        auto& m=poseMeshes[s.key];CopyVertices(m.vertices,s.vertices,s.vertexCount,16);
+        auto& m=poseMeshes[poseMeshCount++];m.key=s.key;CopyVertices(m.vertices,s.vertices,s.vertexCount,16);
         CopyVertices(m.normals,s.normals,s.normalCount,20);
         m.world.assign(s.world,s.world+s.vertexCount*3);
         m.lighting.assign(s.lighting,s.lighting+s.normalCount);
@@ -97,8 +96,10 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     const int* positions,const int* normals,std::size_t count,std::size_t indices,
     const float* world,int positionCount,const float* colors,bool lit,const float* bodyLight) {
     if(!model || model!=poseModel) return false;
-    auto found=poseMeshes.find(key);if(found==poseMeshes.end()) return false;
-    const auto& m=found->second;
+    const PoseMesh* found=nullptr;
+    for(std::size_t i=0;i<poseMeshCount;++i) if(poseMeshes[i].key==key) { found=&poseMeshes[i];break; }
+    if(!found) return false;
+    const auto& m=*found;
     // Las pasadas deformadas modifican BoneVertex después de la pose. Deben
     // usar esos datos CPU, nunca una pose previa aunque coincida el modelo.
     if(positionCount!=int(m.vertices.size()) || std::memcmp(world,m.world.data(),m.world.size()*sizeof(float))) return false;
@@ -152,7 +153,7 @@ void Release() {
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
     if(program) glDeleteProgram(program);
-    program=array=buffer=boneBuffer=boneTexture=0;failed=false;uploaded=0;
+    program=array=buffer=boneBuffer=boneTexture=0;failed=false;uploaded=0;poseMeshCount=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }
 }

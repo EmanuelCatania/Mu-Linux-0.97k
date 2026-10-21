@@ -314,7 +314,8 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     }
     // DESVIACION: capturar huesos/atributos de esta pose antes de que otro
     // objeto reutilice los scratch CPU. No retirar los consumidores lógicos.
-    std::vector<Skinning::Source> skinSources;
+    static std::vector<Skinning::Source> skinSources;
+    skinSources.clear();
     for(int i=0;i<meshCount;++i) {
         const char* mesh=(const char*)(uintptr_t)*(DWORD*)((char*)this_+0x28)+i*0x28;
         const int vc=*(const short*)(mesh+4),nc=*(const short*)(mesh+6);
