@@ -63,6 +63,8 @@ def main():
             (source("mu_freetype") / "docs/GPLv2.TXT", "FreeType-GPLv2.txt"),
             (repo / "lib/stb/stb_image.h", "stb_image.h"),
             (repo / "lib/stb/stb_image_write.h", "stb_image_write.h"),
+            (repo / "src/Platform/GL/LICENSE.glad", "glad.txt"),
+            (repo / "src/Platform/GL/glad.h", "glad.h"),
         ]:
             shutil.copy2(origin, licenses / destination)
         (package / "runtime-libraries.txt").write_text(dependencies, encoding="utf-8")
