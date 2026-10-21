@@ -545,44 +545,60 @@ determina onde fica o código portado.
 
 ## Roteiro
 
-A tag `0.97.00` fecha a etapa de reconstrução fiel: o cliente se comporta como o
-binário original. A partir daí o trabalho segue por fases, e cada fase fechada é
-uma versão.
+Cada versão `XX.XX.00` equivale a uma versão da Webzen: `0.97.00` é o 0.97k,
+`0.99.00` será o 0.99, e assim com cada Season. As tags intermediárias são o
+caminho até a versão seguinte.
+
+### Linha 0.97
+
+A tag `0.97.00` encerra a reconstrução fiel: o cliente se comporta como o binário
+original. Sobre essa base, a linha 0.97 é trabalhada em fases de engenharia; cada
+fase encerrada é uma versão.
 
 ```mermaid
 flowchart TD
     F0["0.97.00 · Reconstrução fiel (base)"] --> F1
     F1["0.97.10 · Fase 1: base de engenharia<br/>CMake, CI, limpeza de código e comentários, espelho de protocolo"] --> F2
-    F2["0.97.20 · Fase 2: integração nativa do Main.dll + modularização + otimização do código herdado<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados à lógica base; switches e defines da Webzen → tabelas e enums"] --> F3
+    F2["0.97.20 · Fase 2: integração nativa do Main.dll + modularização<br/>customs integrados à lógica base; switches e defines da Webzen → tabelas e enums"] --> F3
     F3["0.97.30 · Fase 3: abstração de plataforma + Linux"] --> F4
-    F4["0.97.40 · Fase 4: timing real<br/>simulação separada do render, fps altos sem acelerar o jogo"] --> F5
-    F5["0.97.50 · Fase 5: renderer moderno (OpenGL 3.3) e x64"] --> F6
-    F6["0.97.60 · Fase 6: conteúdo compartilhado cliente + servidor"] --> F7
-    F7["0.97.70 · Fase 7: autoridade do servidor + segurança"] --> F8
-    F8["0.97.80 · Fase 8+: launcher/updater, web, Android"]
+    F4["0.97.40 · Fase 4: timing real + renderer moderno<br/>simulação separada do render, fps altos sem acelerar o jogo, OpenGL 3.3 e x64"] --> F5
+    F5["0.97.50 · Fase 5: conteúdo compartilhado cliente + servidor, autoridade do servidor e segurança<br/>0.97.5x: launcher, updater e outras melhorias"] --> F6
+    F6["0.97.60 → 0.97.8x · conteúdo e funções novas"] --> F9
+    F9["0.97.9x · 97+99: itens e mapas do 0.99 sobre o 0.97"] --> V99
+    V99["0.99.00 · versão 0.99 completa, com o Dark Lord"]
 ```
 
-Os números de cada fase são a versão prevista ao fechá-la; o escopo de cada uma
-pode ser ajustado no caminho.
+Os números de cada fase são a versão prevista ao encerrá-la; o escopo de cada
+uma pode ser ajustado no caminho.
+
+### Depois da 0.97
+
+As fases de engenharia são próprias da linha 0.97. A partir da `0.99.00`, as tags
+intermediárias somam o que cada versão da Webzen traz, seguindo seus patches, até
+completar a seguinte: a Season 1, depois a Season 2 (que chega com a Summoner), e
+assim por diante.
 
 ### Versionamento
 
-As versões são `0.97.FH`, sempre com dois dígitos: **F** é a fase e **H** o
-hotfix.
+As versões são `XX.XX.YZ`, sempre com dois dígitos no final.
 
 | Tag | O que é |
 |---|---|
-| `0.97.00` | base da reconstrução fiel |
+| `0.97.00` | base da reconstrução fiel (equivale ao 0.97k) |
 | `0.97.01`, `0.97.02`… | correções sobre a base |
-| `0.97.10` | fechamento da Fase 1 |
-| `0.97.11`, `0.97.12`… | correções sobre a Fase 1 |
-| `0.97.20` | fechamento da Fase 2, e assim por diante |
+| `0.97.10` | encerramento da Fase 1 |
+| `0.97.11`, `0.97.12`… | correções e melhorias sobre a Fase 1 |
+| `0.97.20` … `0.97.50` | encerramento das fases seguintes, e assim por diante |
+| `0.97.9x` | 97+99: conteúdo do 0.99 sobre o 0.97 |
+| `0.99.00` | versão 0.99 completa |
 
-O cliente e o [servidor](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usam
-a mesma numeração, mas o servidor só recebe uma tag nova quando muda. Cada
-Release do cliente indica com qual tag do servidor funciona (por exemplo, o
-cliente `0.97.10` funciona com o servidor `0.97.00`). Cada Season terá sua
-própria linha (`0.99.FH`, …).
+Na linha 0.97, **Y** é a fase e **Z** a correção ou melhoria. Nas linhas
+seguintes, as tags intermediárias marcam o avanço até a próxima versão da Webzen.
+
+O cliente e o [servidor](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usam a
+mesma numeração, mas o servidor só recebe uma tag nova quando muda. Cada Release
+do cliente indica com qual tag do servidor funciona (por exemplo, o cliente
+`0.97.32` funciona com o servidor `0.97.30`).
 
 ### Branches
 

@@ -549,44 +549,61 @@ pero no determina la ubicación del código portado.
 
 ## Hoja de ruta
 
-El tag `0.97.00` cierra la etapa de reconstrucción fiel: el cliente se comporta
-como el binario original. A partir de ahí el trabajo sigue por fases, y cada fase
-cerrada es una versión.
+Cada versión `XX.XX.00` equivale a una versión de Webzen: `0.97.00` es el 0.97k,
+`0.99.00` será el 0.99 y así con cada Season. Los tags intermedios son el camino
+hacia la versión siguiente.
+
+### Línea 0.97
+
+El tag `0.97.00` cierra la reconstrucción fiel: el cliente se comporta como el
+binario original. Sobre esa base, la línea 0.97 se trabaja por fases de
+ingeniería; cada fase cerrada es una versión.
 
 ```mermaid
 flowchart TD
     F0["0.97.00 · Reconstrucción fiel (base)"] --> F1
     F1["0.97.10 · Fase 1: base de ingeniería<br/>CMake, CI, limpieza de código y comentarios, espejo de protocolo"] --> F2
-    F2["0.97.20 · Fase 2: integración nativa del Main.dll + modularización + optimización del código heredado<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados a la lógica base; switches y defines de Webzen → tablas y enums"] --> F3
+    F2["0.97.20 · Fase 2: integración nativa del Main.dll + modularización<br/>customs integrados a la lógica base; switches y defines de Webzen → tablas y enums"] --> F3
     F3["0.97.30 · Fase 3: abstracción de plataforma + Linux"] --> F4
-    F4["0.97.40 · Fase 4: timing real<br/>simulación separada del render, fps altos sin acelerar el juego"] --> F5
-    F5["0.97.50 · Fase 5: renderer moderno (OpenGL 3.3) y x64"] --> F6
-    F6["0.97.60 · Fase 6: contenido compartido cliente + server"] --> F7
-    F7["0.97.70 · Fase 7: autoridad del server + seguridad"] --> F8
-    F8["0.97.80 · Fase 8+: launcher/updater, web, Android"]
+    F4["0.97.40 · Fase 4: timing real + renderer moderno<br/>simulación separada del render, fps altos sin acelerar el juego, OpenGL 3.3 y x64"] --> F5
+    F5["0.97.50 · Fase 5: contenido compartido cliente + server, autoridad del server y seguridad<br/>0.97.5x: launcher, updater y otras mejoras"] --> F6
+    F6["0.97.60 → 0.97.8x · contenido y funciones nuevas"] --> F9
+    F9["0.97.9x · 97+99: items y mapas del 0.99 sobre el 0.97"] --> V99
+    V99["0.99.00 · versión 0.99 completa, con el Dark Lord"]
 ```
 
 Los números de cada fase son la versión prevista al cerrarla; el alcance de cada
 una puede ajustarse en el camino.
 
+### Después de la 0.97
+
+Las fases de ingeniería son propias de la línea 0.97. Desde `0.99.00`, los tags
+intermedios suman lo que trae cada versión de Webzen, siguiendo sus parches,
+hasta completar la siguiente: la Season 1, después la Season 2 (que llega con la
+Summoner), y así.
+
 ### Versionado
 
-Las versiones son `0.97.FH`, siempre de dos dígitos: **F** es la fase y **H** el
-hotfix.
+Las versiones son `XX.XX.YZ`, siempre de dos dígitos al final.
 
 | Tag | Qué es |
 |---|---|
-| `0.97.00` | base de la reconstrucción fiel |
+| `0.97.00` | base de la reconstrucción fiel (equivale al 0.97k) |
 | `0.97.01`, `0.97.02`… | correcciones sobre la base |
 | `0.97.10` | cierre de la Fase 1 |
-| `0.97.11`, `0.97.12`… | correcciones sobre la Fase 1 |
-| `0.97.20` | cierre de la Fase 2, y así sucesivamente |
+| `0.97.11`, `0.97.12`… | correcciones y mejoras sobre la Fase 1 |
+| `0.97.20` … `0.97.50` | cierre de las fases siguientes, y así |
+| `0.97.9x` | 97+99: contenido del 0.99 sobre el 0.97 |
+| `0.99.00` | versión 0.99 completa |
+
+En la línea 0.97, **Y** es la fase y **Z** el arreglo o la mejora. En las líneas
+siguientes, los tags intermedios marcan el avance hacia la próxima versión de
+Webzen.
 
 El cliente y el [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usan la
 misma numeración, pero el server sólo recibe un tag nuevo cuando cambia. Cada
 Release del cliente indica con qué tag del server funciona (por ejemplo, el
-cliente `0.97.10` funciona con el server `0.97.00`). Cada Season tendrá su propia
-línea (`0.99.FH`, …).
+cliente `0.97.32` funciona con el server `0.97.30`).
 
 ### Ramas
 
