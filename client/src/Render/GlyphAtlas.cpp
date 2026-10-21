@@ -44,6 +44,26 @@ struct State {
         glBindBuffer(GL_PIXEL_PACK_BUFFER,pack);glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);
     }
 };
+// El dibujo no toca FBO, pixel store ni buffers de transferencia. Evitar el
+// guardado completo de la preparación por cada tramo de texto del HUD.
+struct DrawState {
+    GLint active,mode;
+    DrawState(int width,int height) {
+        BufferedDraw::Flush();
+        glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
+        glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_TEXTURE_BIT|GL_VIEWPORT_BIT|GL_POLYGON_BIT);
+        glActiveTexture(GL_TEXTURE0);
+        glMatrixMode(GL_TEXTURE);glPushMatrix();glLoadIdentity();
+        glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();glOrtho(0,width,0,height,-1,1);
+        glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();glViewport(0,0,width,height);
+    }
+    ~DrawState() {
+        BufferedDraw::Flush();
+        glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
+        glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
+        glPopAttrib();glActiveTexture(active);
+    }
+};
 }
 void Forget(unsigned base) {
     auto it=atlases.find(base);if (it==atlases.end()) return;
@@ -134,10 +154,9 @@ bool Draw(unsigned base,const char* text,int count,int width,int height) {
     float raster[4],color[4];glGetFloatv(GL_CURRENT_RASTER_POSITION,raster);glGetFloatv(GL_CURRENT_RASTER_COLOR,color);
     float advanceX=0,advanceY=0;
     {
-        State state;
+        DrawState state(width,height);
         const auto& atlas=it->second;
-        glViewport(0,0,width,height);glMatrixMode(GL_PROJECTION);glOrtho(0,width,0,height,-1,1);
-        glMatrixMode(GL_MODELVIEW);glEnable(GL_TEXTURE_2D);glBindTexture(GL_TEXTURE_2D,atlas.texture);
+        glEnable(GL_TEXTURE_2D);glBindTexture(GL_TEXTURE_2D,atlas.texture);
         // glBitmap no depende del culling ni del modo de relleno de polígonos.
         glDisable(GL_CULL_FACE);glDisable(GL_POLYGON_SMOOTH);glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
         glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
