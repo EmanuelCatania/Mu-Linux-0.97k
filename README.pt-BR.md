@@ -28,6 +28,8 @@ docker compose -f docker-compose.images.yml up -d --no-deps mu-server
 
 Para fixar a versão, use a imagem `emapupi/mu-linux-97k:0.97.30` (amd64 e arm64). O pull não atualiza um volume persistente: adicione ao seu `Data/Command.txt` as quatro linhas dos novos comandos GM, como explicado em [Administração](#administração-eventos-gm-e-recargas). MySQL, o site e o editor não mudam.
 
+**Compilando a partir do código (`docker-compose.yml`):** o serviço MySQL passa da imagem `mysql:5.7` para `mysql:8.4.11`, a mesma versão da imagem publicada. Um volume criado com 5.7 não inicia com 8.4: antes de atualizar, siga o [guia de migração para 8.4](docs/mysql-8.4-upgrade.md). O compose de imagens publicadas já usava 8.4 e não muda.
+
 **Pterodactyl:** selecione `0.97.30` em `MU_RELEASE_TAG`. Em instalações existentes, com o servidor parado, extraia o arquivo da sua arquitetura deste Release em uma pasta temporária, substitua os quatro binários e o `start.sh`, e adicione as linhas do `Command.txt`, mantendo seus INI e Data.
 
 ### Compilar e executar no Windows (sem Docker)
@@ -188,7 +190,7 @@ Baseado nas sources do Kayito.
 
 ## Estado do cliente
 
-O cliente baseado em injeção de DLL está totalmente descontinuado e foi removido deste repositório junto com suas fontes e o executável do Encoder. Use o [cliente baseado em sources 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Os arquivos antigos continuam disponíveis no histórico do Git. As tabelas de `MuServer/Data/Custom/Encoder/` são mantidas porque o catálogo do servidor as utiliza.
+O cliente baseado em injeção de DLL está totalmente descontinuado e foi removido deste repositório junto com suas fontes e o executável do Encoder. Use o [cliente baseado em sources 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30). Os arquivos antigos continuam disponíveis no histórico do Git. As tabelas de `MuServer/Data/Custom/Encoder/` são mantidas porque o catálogo do servidor as utiliza.
 
 ## Início rápido
 
@@ -199,7 +201,7 @@ O cliente baseado em injeção de DLL está totalmente descontinuado e foi remov
    docker compose up -d --build
    ```
 
-3. Abra `44405/tcp`, `55601/udp` e `55901/tcp`.
+3. Abra `44405/tcp` e `55901/tcp`.
 
 Para imagens publicadas sem build:
 
