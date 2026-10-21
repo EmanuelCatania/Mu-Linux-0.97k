@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Platform/IWindow.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -766,7 +767,7 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
     constexpr size_t stride = 0xbc;
     if (!base || address < base) return;
     const uintptr_t offset = address - base;
-    if (offset % stride != 0 || offset / stride >= MODEL_MAX_TOTAL) return;
+    if (offset % stride != 0 || offset / stride >= ResourceTables::ModelCount()) return;
     if (*(short*)((char*)model + 0x24) == 0) return;
     int meshBase_check = *(int*)((char*)model + 0x28);
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;

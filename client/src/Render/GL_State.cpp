@@ -32,6 +32,7 @@
 //   0x301 = GL_SRC_ALPHA
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Platform/ITimer.h"
 
 void GL_SetBlendAdditive(void)
@@ -93,6 +94,7 @@ void __cdecl GL_BindTextureSlot(int param_1)
   if (DAT_00561574 != param_1) {
     DAT_00561574 = param_1;
     if (-1 < param_1) {
+      ResourceTables::EnsureTextures(std::size_t(param_1)+1);
       DWORD texture = (&DAT_083a7ccc)[param_1 * 0xe];
 
       // Diagnóstico sin efectos laterales: la instancia puede existir y aun

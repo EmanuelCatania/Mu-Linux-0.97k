@@ -78,6 +78,7 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
 #include "Platform/IWindow.h"
@@ -109,7 +110,7 @@ struct TexSlot
     void*    pixels;         // +0x34
 };
 
-static TexSlot* TexTable = (TexSlot*)g_BitmapsRaw;
+#define TexTable ((TexSlot*)ResourceTables::TextureBase())
 
 extern int  g_bound_texture_id;   // DAT_00561574
 extern int  g_screen_height;      // DAT_00561570
@@ -162,6 +163,7 @@ void Texture_BindLocalCached(int id)
 // ============================================================
 void Texture_Unload(int id)
 {
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     TexSlot* slot = &TexTable[id];
     if (slot->pixels == nullptr)
         return;
@@ -246,6 +248,7 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
 
     // DIAG: log actual dimensions and decode success
 
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);   // free any previous slot pixels + GL handle
 
@@ -286,6 +289,7 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
     int w = ImageCodec::PaddedExtent(image.width, tex_max_size());
     int h = ImageCodec::PaddedExtent(image.height, tex_max_size());
 
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);
 
@@ -515,6 +519,7 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     // --- Setup texture slot (Bitmaps macro from structs.h) ---
     UnloadImage(id);  // Unload any existing texture in this slot
 
+    ResourceTables::EnsureTextures(std::size_t(id)+1);
     BITMAP_t* slot = &Bitmaps[id];
     slot->Components = 3;          // RGB
     slot->Width  = (float)pow2_w;
@@ -663,6 +668,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     const int ph = ImageCodec::PaddedExtent(height, tex_max_size());
     {
         // ── Unload existing slot ──────────────────────────────────────────────
+        ResourceTables::EnsureTextures(std::size_t(uiTextureIndex)+1);
         UnloadImage(uiTextureIndex);
 
         // ── Write slot metadata (stride 0x38 bytes = 0xe floats) ─────────────
@@ -729,6 +735,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
 // IDA: UnloadImage (0x0052A050)
 void __cdecl UnloadImage(int param_1)
 {
+    ResourceTables::EnsureTextures(std::size_t(param_1)+1);
     int iVar1 = param_1 * 0x38;
     DWORD *texArr_cd4 = (DWORD*)&DAT_083a7cd4;
     char  *texArr_cc8 = (char*) &DAT_083a7cc8;

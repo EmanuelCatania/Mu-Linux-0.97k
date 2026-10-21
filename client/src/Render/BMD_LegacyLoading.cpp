@@ -3,6 +3,7 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Platform/Text.h"
 #include "Platform/IWindow.h"
 #include "globals.h"
@@ -316,6 +317,7 @@ uint __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp) {
 // "Data/Logo/01.bmd" en vez de "Logo01.bmd", los modelos de login/select nunca
 // cargaban y el fondo 3D del server select quedaba vacío.
 void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, int param_4) {
+    ResourceTables::EnsureModels(std::size_t(param_1)+1);
     // DESVIACION: se bombea la message queue cada N llamadas para que OpenWorld
     // (que llama esta función cientos de veces) no bloquee el message pump por
     // 2+ segundos: el server MuEmu kickea por backpressure si no se consumen los
@@ -468,6 +470,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             // Dispatch by extension character (tolower'd)
             int extChar = (dotPos + 1 < nameLen) ? tolower((unsigned char)Name[dotPos + 1]) : 'j';
             int slot = (int)TextureCurrent;  // TextureCurrent
+            ResourceTables::EnsureTextures(std::size_t(slot)+1);
             if (extChar == 't')
                 OpenTGA(local_40, slot, 0x2600, 0x2901, 0, Check);   // OpenTGA
             else
@@ -536,6 +539,7 @@ extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 //     }
 //   }
 void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) {
+    ResourceTables::EnsureModels(std::size_t(ID)+1);
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);  // stride 188 = 0xbc
     if (*(short*)(slot + 36) > 0) return;  // already loaded
     if (!OpenSMDFile(FileName, 0, Flip)) return;
@@ -553,6 +557,7 @@ void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) 
 //     SMD2BMDAnimation(ID, LockPosition);
 //   }
 void __cdecl OpenSMDAnimation(int ID, const char* FileName, char LockPosition) {
+    ResourceTables::EnsureModels(std::size_t(ID)+1);
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);
     if (*(short*)(slot + 34) <= 0) return;  // mesh slot not initialized
     OpenSMDFile(FileName, 1, 0);

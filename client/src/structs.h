@@ -485,7 +485,7 @@ struct SERVER_LIST_t
 #define BoneTransform       ((float(*)[3][4])&DAT_06970a9c)
 // g_BitmapsRaw es el array real (stride 0x38). DAT_083a7ca0 es sólo el PRIMER DWORD
 // del slot[0], no el puntero — por eso indexamos sobre la dirección de g_BitmapsRaw.
-extern char g_BitmapsRaw[];
+extern char* g_BitmapsRaw;
 #define Bitmaps             ((BITMAP_t*)&g_BitmapsRaw[0])
 
 // ── Companion-project aliases (IDA decompile compatibility) ──────────────────
