@@ -657,4 +657,7 @@ add_executable(mu_resource_tables_test EXCLUDE_FROM_ALL
     tests/ResourceTables.cpp src/Render/ResourceTables.cpp)
 target_include_directories(mu_resource_tables_test PRIVATE src)
 target_compile_features(mu_resource_tables_test PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(mu_resource_tables_test PRIVATE /EHsc)
+endif()
 add_test(NAME resource_tables COMMAND mu_resource_tables_test)
