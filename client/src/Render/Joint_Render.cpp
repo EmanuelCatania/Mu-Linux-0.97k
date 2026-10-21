@@ -36,6 +36,7 @@
 //   _DAT_0055256c — float 1.0
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 
 
 
@@ -72,33 +73,33 @@ void Trail_RenderAll(void)
         if (piVar2[1] != 1 && -1 < piVar2[1] + -1) {
           piVar4 = piVar2 + 0x5f;
           do {
-            glBegin(6);
+            BufferedDraw::Begin(6);
             fVar1 = _DAT_0055256c;
             if (*(short *)(*piVar2 + 0x1be) == 0) {
               fVar1 = (float)(piVar2[1] - local_8) / (float)piVar2[1];
             }
             // IDA Trail_RenderAll lee el color como FLOAT (`*((float*)v0+2)`):
             // reinterpretar los bits, no convertir int→float.
-            glColor3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
+            BufferedDraw::Color3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
             iVar3 = piVar2[1];
-            glTexCoord2f((float)local_8 / (float)iVar3,1.0f);
-            glVertex3fv((const GLfloat*)(piVar4 + -0x5a));
-            glTexCoord2f((float)local_8 / (float)iVar3,0);
-            glVertex3fv((const GLfloat*)piVar4);
+            BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,1.0f);
+            BufferedDraw::Vertex3fv((const GLfloat*)(piVar4 + -0x5a));
+            BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,0);
+            BufferedDraw::Vertex3fv((const GLfloat*)piVar4);
             fVar1 = _DAT_0055256c;
             if (*(short *)(*piVar2 + 0x1be) == 0) {
               fVar1 = (float)((piVar2[1] - local_8) + -1) / (float)piVar2[1];
             }
             // IDA Trail_RenderAll lee el color como FLOAT (`*((float*)v0+2)`):
             // reinterpretar los bits, no convertir int→float.
-            glColor3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
+            BufferedDraw::Color3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
             local_8 = local_8 + 1;
             iVar3 = piVar2[1];
-            glTexCoord2f((float)local_8 / (float)iVar3,0);
-            glVertex3fv((const GLfloat*)(piVar4 + 3));
-            glTexCoord2f((float)local_8 / (float)iVar3,1.0f);
-            glVertex3fv((const GLfloat*)(piVar4 + -0x57));
-            glEnd();
+            BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,0);
+            BufferedDraw::Vertex3fv((const GLfloat*)(piVar4 + 3));
+            BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,1.0f);
+            BufferedDraw::Vertex3fv((const GLfloat*)(piVar4 + -0x57));
+            BufferedDraw::End();
             piVar4 = piVar4 + 3;
           } while (local_8 < piVar2[1] + -1);
         }
