@@ -13,6 +13,7 @@
 // Joint pool:   DAT_07b27150, stride 0x9d8 bytes
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/GuardedOperation.h"
 #include "Platform/Text.h"
 extern "C" void DbgLogPublic(const char* msg);
@@ -164,13 +165,13 @@ Effect_DrawRing(int param_1,float *param_2,undefined4 param_3,undefined4 param_4
     verts[3][1] += param_2[1];
     verts[3][2] += param_2[2];
 
-    glBegin(7);  // GL_QUADS
+    BufferedDraw::Begin(7);  // GL_QUADS
     for (int i = 0; i < 4; i++) {
-      glTexCoord2f(uv[i][0], param_8 + uv[i][1]);
-      glColor3fv((const GLfloat*)&colors[i][0]);
-      glVertex3fv(&verts[i][0]);
+      BufferedDraw::TexCoord2f(uv[i][0], param_8 + uv[i][1]);
+      BufferedDraw::Color3fv((const GLfloat*)&colors[i][0]);
+      BufferedDraw::Vertex3fv(&verts[i][0]);
     }
-    glEnd();
+    BufferedDraw::End();
     t = fVar2;
   } while (fVar2 < _DAT_00552664);
   return;
@@ -215,16 +216,16 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
   local_2c = local_30;
   local_20 = local_30;
   local_18 = local_30;
-  glBegin(7);   // GL_QUADS
-  glTexCoord2f(0.0f, 1.0f);
-  glVertex3fv(&local_30);
-  glTexCoord2f(1.0f, 1.0f);
-  glVertex3fv(&local_18);
-  glTexCoord2f(1.0f, 0.0f);
-  glVertex3fv(&local_c);
-  glTexCoord2f(0.0f, 0.0f);
-  glVertex3fv(&local_24);
-  glEnd();
+  BufferedDraw::Begin(7);   // GL_QUADS
+  BufferedDraw::TexCoord2f(0.0f, 1.0f);
+  BufferedDraw::Vertex3fv(&local_30);
+  BufferedDraw::TexCoord2f(1.0f, 1.0f);
+  BufferedDraw::Vertex3fv(&local_18);
+  BufferedDraw::TexCoord2f(1.0f, 0.0f);
+  BufferedDraw::Vertex3fv(&local_c);
+  BufferedDraw::TexCoord2f(0.0f, 0.0f);
+  BufferedDraw::Vertex3fv(&local_24);
+  BufferedDraw::End();
   glPopMatrix();
   GL_ResetState();
   return;

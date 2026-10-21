@@ -1,6 +1,7 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Item/ContentCatalog.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -83,12 +84,12 @@ void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
         { sc,  sc, 0.0f},
         { sc, -sc, 0.0f}
     };
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f); glVertex3fv(q[0]);
-    glTexCoord2f(0.0f, 0.0f); glVertex3fv(q[1]);
-    glTexCoord2f(1.0f, 0.0f); glVertex3fv(q[2]);
-    glTexCoord2f(1.0f, 1.0f); glVertex3fv(q[3]);
-    glEnd();
+    BufferedDraw::Begin(GL_QUADS);
+    BufferedDraw::TexCoord2f(0.0f, 1.0f); BufferedDraw::Vertex3fv(q[0]);
+    BufferedDraw::TexCoord2f(0.0f, 0.0f); BufferedDraw::Vertex3fv(q[1]);
+    BufferedDraw::TexCoord2f(1.0f, 0.0f); BufferedDraw::Vertex3fv(q[2]);
+    BufferedDraw::TexCoord2f(1.0f, 1.0f); BufferedDraw::Vertex3fv(q[3]);
+    BufferedDraw::End();
     glPopMatrix();
     GL_ResetState();
 }
@@ -319,9 +320,9 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
 void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
 {
     if (alpha == _DAT_0055256c)
-        glColor3fv(col);
+        BufferedDraw::Color3fv(col);
     else
-        glColor4f(col[0], col[1], col[2], alpha);
+        BufferedDraw::Color4f(col[0], col[1], col[2], alpha);
 
     float rot_data[3] = { 0.0f, 0.0f, angle };
     float rot_mat[12];
