@@ -11,9 +11,23 @@ template<class F,class... A> inline auto StateChange(F function,A... args) -> de
 template<class F,class... A> inline auto LegacyCall(F function,A... args) -> decltype(function(args...)) {
     Suspend();return function(args...);
 }
+// No vaciar un lote cuando el comando mantiene exactamente el estado actual.
+// Ejecutarlo igualmente conserva su registro dentro de display lists.
+template<class F> inline void SetEnabled(F function,unsigned cap,bool enabled) {
+    if ((::glIsEnabled(cap)!=0)!=enabled) Flush();
+    function(cap);
+}
+template<class F> inline void BindTextureState(F function,unsigned target,unsigned name) {
+    if (target==GL_TEXTURE_2D) {
+        GLint current=0;::glGetIntegerv(GL_TEXTURE_BINDING_2D,&current);
+        if (static_cast<unsigned>(current)!=name) Flush();
+    } else Flush();
+    function(target,name);
+}
+
 }
 #define glAlphaFunc(...) ::BufferedDraw::StateChange(::glAlphaFunc,__VA_ARGS__)
-#define glBindTexture(...) ::BufferedDraw::StateChange(::glBindTexture,__VA_ARGS__)
+#define glBindTexture(target,name) ::BufferedDraw::BindTextureState(::glBindTexture,target,name)
 #define glBitmap(...) ::BufferedDraw::LegacyCall(::glBitmap,__VA_ARGS__)
 #define glBlendFunc(...) ::BufferedDraw::StateChange(::glBlendFunc,__VA_ARGS__)
 #define glCallLists(...) ::BufferedDraw::LegacyCall(::glCallLists,__VA_ARGS__)
@@ -23,8 +37,8 @@ template<class F,class... A> inline auto LegacyCall(F function,A... args) -> dec
 #define glDeleteTextures(...) ::BufferedDraw::StateChange(::glDeleteTextures,__VA_ARGS__)
 #define glDepthFunc(...) ::BufferedDraw::StateChange(::glDepthFunc,__VA_ARGS__)
 #define glDepthMask(...) ::BufferedDraw::StateChange(::glDepthMask,__VA_ARGS__)
-#define glDisable(...) ::BufferedDraw::StateChange(::glDisable,__VA_ARGS__)
-#define glEnable(...) ::BufferedDraw::StateChange(::glEnable,__VA_ARGS__)
+#define glDisable(cap) ::BufferedDraw::SetEnabled(::glDisable,cap,false)
+#define glEnable(cap) ::BufferedDraw::SetEnabled(::glEnable,cap,true)
 #define glEndList() ::BufferedDraw::LegacyCall(::glEndList)
 #define glFlush() ::BufferedDraw::LegacyCall(::glFlush)
 #define glFogf(...) ::BufferedDraw::StateChange(::glFogf,__VA_ARGS__)
