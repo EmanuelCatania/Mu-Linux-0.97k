@@ -20,6 +20,7 @@ void Release();
 void Begin(unsigned mode);
 void End();
 void Flush();
+void DrawIndexed(unsigned array,unsigned buffer,const Vertex* vertices,std::size_t count,std::size_t indices);
 void NativeColor(float r,float g,float b,float a);
 void NativeUV(float u,float v);
 void NativeVertex(float x,float y,float z);

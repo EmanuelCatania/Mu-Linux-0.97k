@@ -14,6 +14,7 @@
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
 #include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
 #include "Render/GlyphAtlas.h"
 
 CWindow gWindow;
@@ -84,6 +85,7 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 bool CWindow::InitOpenGL()
 {
     if (!Platform::GetGLContext().Initialize() || !BufferedDraw::Initialize()) {
+        MeshDraw::Release();
         BufferedDraw::Release();
         Platform::GetGLContext().Release();
         RestoreDisplay();
@@ -102,6 +104,7 @@ bool CWindow::InitOpenGL()
 // IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
+    MeshDraw::Release();
     GlyphAtlas::Release();
     BufferedDraw::Release();
     Platform::GetGLContext().Release();
