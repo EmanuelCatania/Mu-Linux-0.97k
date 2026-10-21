@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Game/RenderDerivedState.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
@@ -62,7 +63,7 @@ void RenderDerivedState_Begin() {
     for (int slot=0; slot<10; ++slot) SaveObject(DAT_083a1218+slot*0x1bc,sizeof(OBJECT));
     for (const void *object:SceneObjects::LiveNodes()) SaveObject((void *)object,sizeof(OBJECT),true);
     RenderFxSnapshots_SaveRenderState();
-    if (models) Save((void *)models,MODEL_MAX_TOTAL*0xbc);
+    if (models) Save((void *)models,ResourceTables::ModelCount()*0xbc);
     Save(DAT_05826e18,sizeof(DAT_05826e18));
     Save(g_BoneScratch,sizeof(g_BoneScratch));
     Save(&DAT_06989c9c,12*sizeof(float));

@@ -54,6 +54,7 @@ set(MU_SOURCES
     src/Scene/Scene_Loading.cpp
     src/Scene/Scene_CharSelect.cpp
     src/Render/GlyphAtlas.cpp
+    src/Render/ResourceTables.cpp
     src/Render/Skinning.cpp
     src/Render/MeshDraw.cpp
     src/Render/BufferedDraw.cpp
@@ -434,6 +435,7 @@ set(MU_HEADERS
     src/Platform/SDL3/SDLFont.h
     src/Render/GLCallBarrier.h
     src/Render/GlyphAtlas.h
+    src/Render/ResourceTables.h
     src/Render/Skinning.h
     src/Render/MeshDraw.h
     src/Render/BufferedDraw.h
@@ -590,7 +592,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
@@ -648,3 +650,11 @@ else()
 endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT mu97k)
+
+# DESVIACION: prueba de crecimiento real sin contexto GL, en ambos sistemas.
+enable_testing()
+add_executable(mu_resource_tables_test EXCLUDE_FROM_ALL
+    tests/ResourceTables.cpp src/Render/ResourceTables.cpp)
+target_include_directories(mu_resource_tables_test PRIVATE src)
+target_compile_features(mu_resource_tables_test PRIVATE cxx_std_17)
+add_test(NAME resource_tables COMMAND mu_resource_tables_test)

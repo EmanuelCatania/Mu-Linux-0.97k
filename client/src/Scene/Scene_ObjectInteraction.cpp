@@ -3,6 +3,7 @@
 // Updates de objetos especiales de la escena y mouse picking.
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
 #include "Platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
@@ -50,7 +51,7 @@ char* __stdcall PickObject_Mouse(void) {
                 {
                     // Get model from entity type
                     short modelType = AsObject(obj)->Type;
-                    if (modelType < 0 || modelType >= MODEL_MAX_TOTAL || !DAT_05828d58) {
+                    if (modelType < 0 || modelType >= ResourceTables::ModelCount() || !DAT_05828d58) {
                         obj = *(char**)(obj + 0x1B8);
                         continue;
                     }

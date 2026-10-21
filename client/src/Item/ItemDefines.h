@@ -97,14 +97,10 @@ static_assert(MODEL_WING_ELF == 784 && MODEL_WING_DARKNESS == 790, "Modelos de a
 // para los modelos que define el catálogo del server (items >= 512 y
 // monstruos agregados).
 constexpr int MODEL_MAX_VANILLA = 963;
-constexpr int MODEL_MAX_DYNAMIC = 512;
-constexpr int MODEL_MAX_TOTAL = MODEL_MAX_VANILLA + MODEL_MAX_DYNAMIC;
 
 // Tabla de texturas: 1450 del binario más una región propia del catálogo,
 // que no se recicla al cambiar de mapa.
 constexpr int BITMAP_MAX_VANILLA = 1450;
-constexpr int BITMAP_MAX_CATALOG = 1024;
-constexpr int BITMAP_MAX_TOTAL = BITMAP_MAX_VANILLA + BITMAP_MAX_CATALOG;
 
 constexpr int GetItemSection(int index)
 {

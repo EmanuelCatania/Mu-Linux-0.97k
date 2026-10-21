@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
 #include "Platform/GuardedOperation.h"
 #include "Item/ItemDefines.h"
@@ -59,7 +60,7 @@ static void Terrain_ProcessObjects(bool simulation)
                            SceneObjects::Contains(entity))
                     {
                         if (*entity == '\0' || !DAT_05828d58 ||
-                            *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= MODEL_MAX_TOTAL)
+                            *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= ResourceTables::ModelCount())
                         {
                             entity = *(char**)(entity + 0x1b8);
                             continue;

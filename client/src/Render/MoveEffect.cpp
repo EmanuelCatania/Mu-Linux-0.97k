@@ -63,6 +63,7 @@
 //   TERRAIN_INDEX (terrain helper)
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Scene/ObjectRegistry.h"
 #include "Platform/Text.h"
 extern "C" void DbgLogPublic(const char*);
@@ -675,7 +676,7 @@ void MoveEffect(float *param_1, int param_2)
               *(char*)param_1 = 0; return;
             }
             const int ownerModel = *(const short*)((const char*)owner + 2);
-            if (!DAT_05828d58 || ownerModel < 0 || ownerModel >= MODEL_MAX_TOTAL) {
+            if (!DAT_05828d58 || ownerModel < 0 || ownerModel >= ResourceTables::ModelCount()) {
               *(char*)param_1 = 0; return;
             }
             pvVar1 = (void *)(DAT_05828d58 + ownerModel * 0xbc);

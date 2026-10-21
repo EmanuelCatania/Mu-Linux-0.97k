@@ -1112,12 +1112,12 @@ extern DWORD   DAT_083a7c90;
 extern DWORD   DAT_083a7c94;
 extern DWORD   DAT_083a7c98;
 // ── Bitmaps table (contiguous, 1450 entries × 0x38 stride = 0x13D30 bytes) ───
-// DESVIACION (0.97.20): más BITMAP_MAX_CATALOG entradas para las texturas de
-// los modelos del catálogo del server, que no se reciclan al cambiar de mapa.
+// DESVIACION: tabla de capacidad dinámica y base estable; el catálogo no
+// recicla sus slots al cambiar de mapa.
 // Original address range: 0x083A7CA0 .. 0x083BB9D0
 // Slot layout: +0x00 active, +0x20 width(f), +0x24 height(f), +0x28 bpp(b),
 //              +0x2C gl_handle(u), +0x30 ref_count(b), +0x34 pixels(ptr)
-extern char    g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38];
+extern char*   g_BitmapsRaw;
 
 // Accesores retrocompatibles al slot[0] — el código usa (&DAT_xxx)[offset]
 // para indexar la tabla contigua con aritmética de punteros.
