@@ -195,25 +195,7 @@ bool CAttack::Attack(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, bool send, in
 
 		int defense = this->GetTargetDefense(lpObj, lpTarget, &effect);
 
-		bool isWizardAttack = false;
-
 		if ((lpObj->Class == CLASS_DW || lpObj->Class == CLASS_MG) && skill != SKILL_NONE && skill != SKILL_FALLING_SLASH && skill != SKILL_LUNGE && skill != SKILL_UPPERCUT && skill != SKILL_CYCLONE && skill != SKILL_SLASH && skill != SKILL_TWISTING_SLASH && skill != SKILL_IMPALE && skill != SKILL_FIRE_SLASH && skill != SKILL_POWER_SLASH)
-		{
-			isWizardAttack = true;
-		}
-		else if (lpObj->Class == CLASS_DW && skill == SKILL_NONE)
-		{
-			CItem* Right = &lpObj->Inventory[0];
-			CItem* Left = &lpObj->Inventory[1];
-
-			if ((Right->IsItem() != false && Right->GetKind() >= GET_ITEM(5, 0) && Right->GetKind() < GET_ITEM(6, 0)) ||
-				(Left->IsItem() != false && Left->GetKind() >= GET_ITEM(5, 0) && Left->GetKind() < GET_ITEM(6, 0)))
-			{
-				isWizardAttack = true;
-			}
-		}
-
-		if (isWizardAttack != false)
 		{
 			damage = this->GetAttackDamageWizard(lpObj, lpTarget, lpSkill, &effect, defense);
 		}
@@ -1162,18 +1144,6 @@ int CAttack::GetAttackDamage(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, WORD*
 
 	damage = ((damage < 0) ? 0 : damage);
 
-	if ((*effect) == DAMAGE_TYPE_EXCELLENT)
-	{
-		int minExcDamage = ((DamageMax * 20) / 100) + lpObj->ExcellentDamage;
-
-		minExcDamage = ((minExcDamage < 1) ? 1 : minExcDamage);
-
-		if (damage < minExcDamage)
-		{
-			damage = minExcDamage;
-		}
-	}
-
 	return damage;
 }
 
@@ -1264,18 +1234,6 @@ int CAttack::GetAttackDamageWizard(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill,
 	damage -= TargetDefense;
 
 	damage = ((damage < 0) ? 0 : damage);
-
-	if ((*effect) == DAMAGE_TYPE_EXCELLENT)
-	{
-		int minExcDamage = ((DamageMax * 20) / 100) + lpObj->ExcellentDamage;
-
-		minExcDamage = ((minExcDamage < 1) ? 1 : minExcDamage);
-
-		if (damage < minExcDamage)
-		{
-			damage = minExcDamage;
-		}
-	}
 
 	return damage;
 }
