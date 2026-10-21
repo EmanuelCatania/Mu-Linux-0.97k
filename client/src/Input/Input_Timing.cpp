@@ -2,6 +2,8 @@
 
 #include "stdafx.h"
 #include "Platform/ITimer.h"
+#include "Platform/Text.h"
+#include "Local/ClientText.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -14,6 +16,10 @@ void __cdecl UI_UpdateFpsCounter(void) {
     gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
     DAT_00559c78 = 0xffffffff;
     SetBackgroundTextColor = 0xff000000;
+    // DESVIACION: indicador 2D visible también sin barra de título; no avanza SIM.
+    char text[32];
+    Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFpsOverlay),FPS);
+    RenderText(536,3,text,(int)(100*gWindow.GetWidth()/640),1,nullptr);
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {
         _DAT_07e016f0 = Platform::GetTimer().MultimediaTicks();
