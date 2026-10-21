@@ -6,6 +6,8 @@
 // SetAttackSpeed (Entity_LockAnim) and setting scale tables in the model block.
 #include "stdafx.h"
 #include "Render/ResourceTables.h"
+#include "Render/Skinning.h"
+#include "Game/RenderDerivedState.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
@@ -18,6 +20,8 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     // DESVIACION: base estable y páginas bajo demanda. Conservar la muestra
     // RNG del offset original para no alterar la secuencia de simulación.
     (void)rand();
+    // La base ya no cambia: invalidar explícitamente snapshots de la carga anterior.
+    RenderDerivedState_Cancel();Skinning::Invalidate();
     ResourceTables::ResetModels();
     DAT_06f42a58=ResourceTables::ModelBase();
     DAT_05828d58=(DWORD)(uintptr_t)DAT_06f42a58;
