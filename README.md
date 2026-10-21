@@ -221,7 +221,7 @@ En ARM con 1 GB de RAM o menos, habilitá 2 GB de swap antes del primer build. `
 
 - MySQL: `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`.
 - Servidor: `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `PUBLIC_IP`.
-- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`.
+- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`. `GEOIP_ENABLED` y `ACQUISITION_TRACKING` quedan en `0`: las banderas de país y el origen del registro no se activan hasta configurarlos. `GEOIP_ENABLED` necesita el paquete opcional `geoip-lite` (`INSTALL_GEOIP=1` al construir la imagen). `GEOIP_HIDDEN_COUNTRIES` es una lista vacía de códigos ISO. `RANKINGS_RESETS_FIRST=1` ordena las listas de nivel y clase por resets antes que por nivel.
 - Datos de prueba: `SEED_TEST_DATA` (`1` carga cuentas, `0` deja DB limpia).
 - Editor: `EDITOR_ENABLED`, `EDITOR_PORT`, `EDITOR_API_URL`, `EDITOR_MAX_BACKUPS`, `EDITOR_MAX_SNAPSHOTS`.
 
@@ -254,6 +254,6 @@ Estructura: `Source/` (fuentes), `MuServer/` (data), `docker/` (imágenes y scri
 
 ## Web y editor 0.97.20
 
-Primer inicio en /admin: cambio obligatorio de contraseña y asistente de idioma predeterminado (ES/EN/PT), diseño clásico, Elf, Dark Knight o Dark Wizard y estado de conexión del editor. Después se modifica desde /admin/settings. Cada visitante puede elegir su idioma con las banderas; no cambia el idioma del admin/editor ni traduce noticias o datos del juego.
+Primer inicio en /admin: cambio obligatorio de contraseña y asistente de idioma predeterminado (ES/EN/PT/UK, el valor inicial sigue siendo ES), diseño clásico, Elf, Dark Knight o Dark Wizard y estado de conexión del editor. Después se modifica desde /admin/settings. Cada visitante puede elegir su idioma con las banderas; no cambia el idioma del admin/editor ni traduce noticias o datos del juego.
 
 La configuración se guarda automáticamente en MySQL (web_site_settings); conserve su volumen. Actualice únicamente las imágenes emapupi/mu-linux-97k-web:0.97.20 y emapupi/mu-linux-97k-mu-editor:0.97.20 y recree esos servicios. No hace falta reconstruir el servidor ni MySQL. Las pantallas del editor se sirven desde la web; su API conserva el comportamiento anterior.

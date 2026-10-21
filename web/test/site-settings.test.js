@@ -10,6 +10,7 @@ const { translator, resolveLanguage } = require('../lib/i18n');
 
 test('sólo admite idiomas y temas de la lista, como strings', () => {
   assert(validSettings({ language: 'en', theme: 'daedalus-dw' }));
+  assert(validSettings({ language: 'uk', theme: 'classic' }));
   for (const body of [{language:'fr',theme:'classic'}, {language:'es',theme:'../../x'}, {language:['en'],theme:'classic'}, {}]) assert(!validSettings(body));
 });
 

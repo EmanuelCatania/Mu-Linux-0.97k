@@ -1,7 +1,7 @@
 const catalogs = { es: require('../locales/es.json'), en: require('../locales/en.json'), pt: require('../locales/pt.json'), uk: require('../locales/uk.json') };
 const locales = { es: 'es-ES', en: 'en-US', pt: 'pt-BR', uk: 'uk-UA' };
 function translator(language) {
-  const catalog = catalogs[language] || catalogs.en;
+  const catalog = catalogs[language] || catalogs.es;
   return (value) => {
     if (value == null) return '';
     const text = String(value);

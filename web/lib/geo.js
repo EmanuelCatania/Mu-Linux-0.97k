@@ -1,11 +1,38 @@
-const geoipLite = (() => {
-  try {
-    return require('geoip-lite');
-  } catch (err) {
-    console.warn('geoip-lite module not available, fallback to unknown:', err.message);
-    return null;
+function envOn(value) {
+  return /^(1|true|yes|on)$/i.test(String(value || '').trim());
+}
+
+function isGeoEnabled() {
+  return envOn(process.env.GEOIP_ENABLED);
+}
+
+// Empty unless the operator lists ISO codes. Nothing is hidden by default.
+function hiddenCountryCodes() {
+  const hidden = new Set();
+  for (const part of String(process.env.GEOIP_HIDDEN_COUNTRIES || '').split(/[,;\s]+/)) {
+    const code = part.trim().toUpperCase();
+    if (code) hidden.add(code);
   }
-})();
+  return hidden;
+}
+
+let geoipLite;
+let geoipWarned = false;
+
+function loadGeoip() {
+  if (!isGeoEnabled()) return null;
+  if (geoipLite !== undefined) return geoipLite;
+  try {
+    geoipLite = require('geoip-lite');
+  } catch (err) {
+    geoipLite = null;
+    if (!geoipWarned) {
+      geoipWarned = true;
+      console.warn('GEOIP_ENABLED is set but geoip-lite is not installed:', err.message);
+    }
+  }
+  return geoipLite;
+}
 
 let countryNames = {};
 try {
@@ -44,8 +71,7 @@ function isPrivateIp(ip) {
   return false;
 }
 
-// The game records the gateway container address. When that value is private
-// and the website saw a public address for the same account, show the public one.
+// Prefer a public website address when the game server only stored a private one.
 function displayGameIp(gameIp, siteIp) {
   const game = String(gameIp || '').replace(/^::ffff:/i, '').trim();
   if (!game) return '';
@@ -56,21 +82,20 @@ function displayGameIp(gameIp, siteIp) {
 }
 
 function getCountryInfo(ip) {
-  if (!ip || isPrivateIp(ip) || !geoipLite) {
+  const geoip = loadGeoip();
+  if (!ip || isPrivateIp(ip) || !geoip) {
     return { ...UNKNOWN_INFO };
   }
 
   try {
     const clean = ip.replace(/^.*:/, '').trim();
-    const geo = geoipLite.lookup(clean);
+    const geo = geoip.lookup(clean);
     if (!geo || !geo.country) {
       return { ...UNKNOWN_INFO };
     }
 
     const code = String(geo.country).trim().toUpperCase();
-
-    // RULE: Russia must be treated as unknown
-    if (code === 'RU' || code === 'RUS') {
+    if (hiddenCountryCodes().has(code)) {
       return { ...UNKNOWN_INFO };
     }
 
@@ -92,5 +117,6 @@ module.exports = {
   getCountryInfo,
   isPrivateIp,
   displayGameIp,
+  isGeoEnabled,
   UNKNOWN_INFO
 };

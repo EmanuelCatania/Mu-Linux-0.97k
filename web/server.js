@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const { ensureSettings, readSettings, registerSettings } = require('./lib/site-settings');
 const { translator, locales, registerCatalogs, resolveLanguage } = require('./lib/i18n');
-const { getCountryInfo, isPrivateIp, displayGameIp } = require('./lib/geo');
+const { getCountryInfo, isPrivateIp, displayGameIp, isGeoEnabled } = require('./lib/geo');
 const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-master');
 const {
   SOURCE_COOKIE,
@@ -58,7 +58,13 @@ if (resolvedTimeZone) {
   process.env.TZ = resolvedTimeZone;
 }
 const resolvedAssetVersion = ASSET_VERSION || String(Date.now());
+function envOn(value) {
+  return /^(1|true|yes|on)$/i.test(String(value || '').trim());
+}
 const editorEnabled = String(EDITOR_ENABLED).toLowerCase() === '1' || String(EDITOR_ENABLED).toLowerCase() === 'true';
+const geoEnabled = isGeoEnabled();
+const acquisitionEnabled = envOn(process.env.ACQUISITION_TRACKING);
+const rankingsResetsFirst = envOn(process.env.RANKINGS_RESETS_FIRST);
 const editorMaxBackups = Number.parseInt(EDITOR_MAX_BACKUPS, 10) || 5;
 const editorMaxSnapshots = Number.parseInt(EDITOR_MAX_SNAPSHOTS, 10) || 5;
 const downloadsConfigPath = DOWNLOADS_CONFIG_PATH
@@ -109,19 +115,26 @@ app.use(session({
   }
 }));
 
-// The browser client reaches the game through the gateway container, so
-// MEMB_STAT.IP becomes a Docker address and the country lookup goes unknown.
-// Remember the public address seen on the website and use it for that case.
+// A private address stored by the game server cannot be mapped to a country.
+// When GeoIP is enabled, remember the public address seen on the website.
 function clientPublicIp(req) {
   const header = String(req.headers['cf-connecting-ip'] || '').split(',')[0].trim();
   const raw = (header || String(req.ip || '')).replace(/^::ffff:/i, '');
   return isPrivateIp(raw) ? '' : raw;
 }
 
+const NO_GEO = Object.freeze({ countryCode: '', countryName: '', flagUrl: '', isUnknown: true });
+
 function countryFor(gameIp, siteIp) {
+  if (!geoEnabled) return NO_GEO;
   if (gameIp && !isPrivateIp(gameIp)) return getCountryInfo(gameIp);
   if (siteIp && !isPrivateIp(siteIp)) return getCountryInfo(siteIp);
   return getCountryInfo('');
+}
+
+function visibleGameIp(gameIp, siteIp) {
+  if (!geoEnabled) return String(gameIp || '').replace(/^::ffff:/i, '').trim();
+  return displayGameIp(gameIp, siteIp);
 }
 
 function rememberPublicIp(accountId, ip) {
@@ -135,10 +148,14 @@ function rememberPublicIp(accountId, ip) {
 }
 
 app.use((req, res, next) => {
+  if (!geoEnabled) return next();
   const accountId = req.session && req.session.user && req.session.user.id;
   const ip = accountId ? clientPublicIp(req) : '';
-  if (!accountId || !ip) return next();
-  rememberPublicIp(accountId, ip).then(() => next()).catch(() => next());
+  if (!accountId || !ip || req.session.publicIp === ip) return next();
+  rememberPublicIp(accountId, ip).then(() => {
+    req.session.publicIp = ip;
+    next();
+  }).catch(() => next());
 });
 
 // The session dies on logout and is never created for an anonymous visit.
@@ -148,6 +165,7 @@ function sourceFromRequest(req) {
 }
 
 function captureSource(req, res, next) {
+  if (!acquisitionEnabled) return next();
   if (!shouldCaptureSource(req) || sourceFromRequest(req)) return next();
   const attr = classifyVisit({
     referer: req.get('referer') || '',
@@ -169,6 +187,7 @@ function captureSource(req, res, next) {
 app.use(captureSource);
 
 function rememberAccountSource(executor, accountId, attr, allowDirect) {
+  if (!acquisitionEnabled) return Promise.resolve();
   const id = String(accountId || '').slice(0, 10);
   if (!id || !attr || !SOURCE_CHANNELS.includes(attr.channel) || !attr.source) return Promise.resolve();
   if (!allowDirect && attr.channel === 'direct') return Promise.resolve();
@@ -832,6 +851,7 @@ async function ensureSchema() {
     );
     if (createdCols[0]?.total === 0) {
       await conn.query('ALTER TABLE MEMB_INFO ADD COLUMN created_at DATETIME NULL');
+      await conn.query('ALTER TABLE MEMB_INFO MODIFY created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP');
     }
 
     await conn.query(`
@@ -857,22 +877,6 @@ async function ensureSchema() {
         KEY idx_channel_source (channel, source)
       )
     `);
-
-    await conn.query(`
-      UPDATE MEMB_INFO I
-      LEFT JOIN web_account_source src ON src.account_id = I.memb___id
-      SET I.created_at = CASE
-        WHEN src.captured_at IS NOT NULL AND I.AccountLevel = 0 AND I.AccountExpireDate > '2000-01-01 00:00:00'
-          THEN LEAST(src.captured_at, I.AccountExpireDate)
-        WHEN src.captured_at IS NOT NULL THEN src.captured_at
-        WHEN I.AccountLevel = 0 AND I.AccountExpireDate > '2000-01-01 00:00:00' THEN I.AccountExpireDate
-        ELSE NULL
-      END
-      WHERE I.created_at IS NULL
-    `);
-    if (createdCols[0]?.total === 0) {
-      await conn.query('ALTER TABLE MEMB_INFO MODIFY created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP');
-    }
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS web_character_actions (
@@ -1395,13 +1399,15 @@ app.get('/rankings', async (req, res) => {
       classOptions,
       rows: viewRows,
       staffRoster,
+      geoEnabled,
       page: 'rankings',
       pageTitle: `${res.locals.appName} - ${res.locals.t('Rankings')}`
     });
   }
 
-  // Level (default) and class lists: more resets outrank a higher current level.
-  let orderBy = 'c.GrandResetCount DESC, c.ResetCount DESC, c.cLevel DESC, c.Experience DESC';
+  let orderBy = rankingsResetsFirst
+    ? 'c.GrandResetCount DESC, c.ResetCount DESC, c.cLevel DESC, c.Experience DESC'
+    : 'c.cLevel DESC, c.ResetCount DESC, c.GrandResetCount DESC, c.Experience DESC';
   if (selectedType === 'resets') {
     orderBy = 'c.ResetCount DESC, c.GrandResetCount DESC, c.cLevel DESC, c.Experience DESC';
   } else if (selectedType === 'gr') {
@@ -1457,6 +1463,7 @@ app.get('/rankings', async (req, res) => {
     classOptions,
     rows: viewRows,
     staffRoster,
+    geoEnabled,
     page: 'rankings',
     pageTitle: `${res.locals.appName} - ${res.locals.t('Rankings')}`
   });
@@ -1592,7 +1599,7 @@ function accountOrderSql(sort, dir) {
 
 app.get('/admin/accounts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
   const q = String(req.query.q || '').trim();
-  const src = SOURCE_CHANNELS.includes(req.query.src) ? req.query.src : '';
+  const src = acquisitionEnabled && SOURCE_CHANNELS.includes(req.query.src) ? req.query.src : '';
   const sort = Object.hasOwn(ACCOUNT_SORTS, req.query.sort) ? req.query.sort : 'user';
   const dir = String(req.query.dir || '').toLowerCase() === 'desc' ? 'desc' : 'asc';
   const notice = req.query.ok ? { type: 'success', text: decodeURIComponent(String(req.query.ok)) } : null;
@@ -1628,7 +1635,7 @@ app.get('/admin/accounts', requireAdmin, requireAdminPasswordChange, async (req,
     return {
       ...row,
       characters: [],
-      displayIp: displayGameIp(row.IP, row.SiteIP),
+      displayIp: visibleGameIp(row.IP, row.SiteIP),
       countryName: country ? country.countryName : '',
       countryFlag: country ? country.flagUrl : '',
       sourceLabel: source.label,
@@ -1652,7 +1659,18 @@ app.get('/admin/accounts', requireAdmin, requireAdminPasswordChange, async (req,
       account.characters = byAccount.get(account.memb___id) || [];
     }
   }
-  res.render('admin_accounts', { accounts, q, src, sort, dir, notice, error, sourceChannels: SOURCE_CHANNELS });
+  res.render('admin_accounts', {
+    accounts,
+    q,
+    src,
+    sort,
+    dir,
+    notice,
+    error,
+    sourceChannels: SOURCE_CHANNELS,
+    acquisitionEnabled,
+    geoEnabled
+  });
 });
 
 app.get('/admin/server-editor', requireAdmin, requireAdminPasswordChange, (req, res) => {
@@ -2672,7 +2690,7 @@ app.get('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async (
   const stat = statRows[0]
     ? {
         ...statRows[0],
-        displayIp: displayGameIp(statRows[0].IP, statRows[0].SiteIP),
+        displayIp: visibleGameIp(statRows[0].IP, statRows[0].SiteIP),
         ConnectLocal: formatDateTimeLocal(statRows[0].ConnectTM),
         DisconnectLocal: formatDateTimeLocal(statRows[0].DisConnectTM)
       }
@@ -2684,7 +2702,7 @@ app.get('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async (
   );
   const source = presentSource(sourceRows[0], res.locals.locale);
 
-  res.render('admin_account_edit', { account, stat, characters, warehouse, notice, error, source });
+  res.render('admin_account_edit', { account, stat, characters, warehouse, notice, error, source, acquisitionEnabled });
 });
 
 app.post('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async (req, res) => {

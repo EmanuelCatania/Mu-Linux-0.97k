@@ -34,9 +34,11 @@
     <% } else { %>
       <p class="muted"><%= t("Sin datos de conexion.") %></p>
     <% } %>
-    <ul class="list">
-      <li><span><%= t("Origen") %></span><span title="<%= source.title %>"><%= source.label || '—' %></span></li>
-    </ul>
+    <% if (acquisitionEnabled) { %>
+      <ul class="list">
+        <li><span><%= t("Origen") %></span><span title="<%= source.title %>"><%= source.label || '—' %></span></li>
+      </ul>
+    <% } %>
   </div>
 
   <form method="post" action="/admin/accounts/<%= account.memb___id %>">

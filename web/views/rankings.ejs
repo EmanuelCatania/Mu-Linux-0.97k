@@ -45,7 +45,9 @@
               <% } else { %>
                 <tr>
                   <th style="width: 50px;" class="text-center">#</th>
-                  <th style="width: 70px;" class="text-center"><%= t("Pais") %></th>
+                  <% if (geoEnabled) { %>
+                    <th style="width: 70px;" class="text-center"><%= t("Pais") %></th>
+                  <% } %>
                   <th style="width: 85px;" class="text-center"><%= t("Estado") %></th>
                   <th><%= t("Nombre") %></th>
                   <th class="text-center">GR</th>
@@ -58,7 +60,7 @@
             <tbody>
               <% if (!rows || rows.length === 0) { %>
                 <tr>
-                  <td colspan="<%= type === 'guilds' ? 5 : 8 %>" class="text-center py-4 text-muted"><%= t("Sin datos") %></td>
+                  <td colspan="<%= type === 'guilds' ? 5 : (geoEnabled ? 8 : 7) %>" class="text-center py-4 text-muted"><%= t("Sin datos") %></td>
                 </tr>
               <% } else { %>
                 <% rows.forEach(function(row, idx) { %>
@@ -69,7 +71,7 @@
                       <td>
                         <% if (row.GuildMaster) { %>
                           <span class="d-inline-flex align-items-center gap-2">
-                            <% if (row.countryFlag) { %>
+                            <% if (geoEnabled && row.countryFlag) { %>
                               <img src="<%= row.countryFlag %>"
                                    alt="<%= t(row.countryName) %>"
                                    title="<%= t(row.countryName) %>"
@@ -94,6 +96,7 @@
                   <% } else { %>
                     <tr>
                       <td class="text-center fw-bold text-secondary"><%= idx + 1 %></td>
+                      <% if (geoEnabled) { %>
                       <td class="text-center">
                         <% if (row.countryFlag) { %>
                           <img src="<%= row.countryFlag %>"
@@ -105,6 +108,7 @@
                                loading="lazy" />
                         <% } %>
                       </td>
+                      <% } %>
                       <td class="text-center">
                         <% if (row.isOnline) { %>
                           <span class="rank-badge-status online" title="<%= t('En linea') %>">

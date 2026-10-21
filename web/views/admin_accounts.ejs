@@ -26,13 +26,15 @@
     <input type="hidden" name="sort" value="<%= sort %>" />
     <input type="hidden" name="dir" value="<%= dir %>" />
     <input type="text" name="q" value="<%= q %>" maxlength="50" />
-    <label><%= t("Origen") %></label>
-    <select name="src">
-      <option value=""><%= t("Todos los origenes") %></option>
-      <% sourceChannels.forEach((channel) => { %>
-        <option value="<%= channel %>" <%= src === channel ? 'selected' : '' %>><%= channel %></option>
-      <% }) %>
-    </select>
+    <% if (acquisitionEnabled) { %>
+      <label><%= t("Origen") %></label>
+      <select name="src">
+        <option value=""><%= t("Todos los origenes") %></option>
+        <% sourceChannels.forEach((channel) => { %>
+          <option value="<%= channel %>" <%= src === channel ? 'selected' : '' %>><%= channel %></option>
+        <% }) %>
+      </select>
+    <% } %>
     <button type="submit"><%= t("Buscar") %></button>
   </form>
   <p class="muted"><%= t("Sin IP: la cuenta nunca entro al juego.") %></p>
@@ -52,7 +54,7 @@
             ['status', t('Estado')],
             ['online', 'Online'],
             ['ip', 'IP'],
-            ['source', t('Origen')],
+            ...(acquisitionEnabled ? [['source', t('Origen')]] : []),
             ['created', t('Creado')],
             ['login', t('Ultimo login')]
           ].forEach(([key, label]) => { %>
@@ -75,12 +77,14 @@
             <td><%= t(String(item.bloc_code) === '1' ? 'Bloqueado' : 'OK') %></td>
             <td><%= item.ConnectStat === 1 ? 'Online' : 'Offline' %></td>
             <td class="account-ip" title="<%= item.IP ? item.countryName : t('Sin IP: la cuenta nunca entro al juego.') %>">
-              <% if (item.countryFlag) { %>
+              <% if (geoEnabled && item.countryFlag) { %>
                 <img src="<%= item.countryFlag %>" alt="<%= t(item.countryName) %>" title="<%= t(item.countryName) %>" class="account-flag" width="22" height="16" loading="lazy">
               <% } %>
               <%= item.displayIp || '-' %>
             </td>
-            <td class="account-source" title="<%= item.sourceTitle %>"><%= item.sourceLabel || '—' %></td>
+            <% if (acquisitionEnabled) { %>
+              <td class="account-source" title="<%= item.sourceTitle %>"><%= item.sourceLabel || '—' %></td>
+            <% } %>
             <td class="account-when"><%= item.createdLabel || '—' %></td>
             <td class="account-when"><%= item.loginLabel || '—' %></td>
             <td class="account-characters">
