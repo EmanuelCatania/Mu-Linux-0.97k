@@ -37,8 +37,9 @@ services:
         condition: service_healthy
     ports:
       - "44405:44405/tcp"
-      # Host UDP 55601 sits in a Windows excluded range, so publishing it
-      # prevents the container from starting. The process still listens inside.
+      # 55601/udp is only used by GameServer and JoinServer to report to the
+      # ConnectServer inside the container. On Windows it often falls in an
+      # excluded port range, and publishing it keeps the container from starting.
       - "55901:55901/tcp"
     volumes:
       - mu_data:/opt/mu/Data:rw

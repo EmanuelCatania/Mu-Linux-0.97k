@@ -15,6 +15,23 @@ Native Linux port and operational MuEmu 0.97k stack with Docker, web panel and o
 - Larger send queue for the item catalog the server sends at login.
 - GM commands to bring forward Blood Castle, Devil Square, Golden Archer Bingo and invasions without restarting the server.
 
+**Compatibility: server 0.97.30 ↔ [client 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30).**
+
+### Upgrading from 0.97.20
+
+With Docker, update only the server:
+
+```bash
+docker compose -f docker-compose.images.yml pull mu-server
+docker compose -f docker-compose.images.yml up -d --no-deps mu-server
+```
+
+To pin the version, use the `emapupi/mu-linux-97k:0.97.30` image (amd64 and arm64). Pulling does not update a persistent volume: add the four rows of the new GM commands to your `Data/Command.txt`, as explained in [Administration](#administration-gm-events-and-reloads). MySQL, the website and the editor do not change.
+
+**Building from source (`docker-compose.yml`):** its MySQL service moves from the `mysql:5.7` image to `mysql:8.4.11`, the same version as the published image. A volume created with 5.7 does not start with 8.4: before upgrading, follow the [8.4 migration guide](docs/mysql-8.4-upgrade.md). The published-images compose file already used 8.4 and does not change.
+
+**Pterodactyl:** select `0.97.30` in `MU_RELEASE_TAG`. For existing installations, with the server stopped, extract the archive for your architecture from this Release into a temporary folder, replace the four binaries and `start.sh`, and add the `Command.txt` rows, keeping your INI and Data files.
+
 ### Build and run on Windows (without Docker)
 
 1. Requirements: Visual Studio 2022 or 2026 with "Desktop development with C++" (v143 toolset, includes CMake) and MySQL 8.
@@ -37,7 +54,7 @@ Native Linux port and operational MuEmu 0.97k stack with Docker, web panel and o
 5. In `MuServer/ConnectServer/ServerList.dat`, set the server IP (`127.0.0.1` to test on the same PC).
 6. Start them in this order: DataServer, JoinServer, ConnectServer and GameServer.
 
-The `0.97.20` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
+The `0.97.30` client has the address `mu.server-pups.space` compiled in. To point it at your own server without rebuilding, add the line `127.0.0.1 mu.server-pups.space` to `C:\Windows\System32\drivers\etc\hosts` (as administrator), and remove it when you are done.
 
 #### Windows x64 and Phase 3 dependencies
 
@@ -173,7 +190,7 @@ Based on Kayito's sources.
 
 ## Client status
 
-The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.20](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.20). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
+The DLL injection-based client is fully deprecated and has been removed from this repository along with its sources and Encoder executable. Use the [source-based client 0.97.30](https://github.com/EmanuelCatania/Mu-97k-Client-Source/releases/tag/0.97.30). Old files remain available in Git history. The tables in `MuServer/Data/Custom/Encoder/` are retained because the server catalog uses them.
 
 ## Quick start
 

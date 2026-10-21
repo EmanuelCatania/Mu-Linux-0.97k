@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Run from the repository root after publishing the server image for both architectures.
 RELEASE_DIR=${RELEASE_DIR:-dist/pterodactyl-release}
-SERVER_IMAGE=${SERVER_IMAGE:-emapupi/mu-linux-97k:0.97.20}
+SERVER_IMAGE=${SERVER_IMAGE:-emapupi/mu-linux-97k:0.97.30}
 
 if [ "$RELEASE_DIR" != "dist/pterodactyl-release" ]; then
   echo "For safety, RELEASE_DIR must be dist/pterodactyl-release" >&2
