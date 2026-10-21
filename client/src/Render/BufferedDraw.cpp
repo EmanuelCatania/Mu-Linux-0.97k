@@ -100,6 +100,19 @@ void Flush() {
     glColor4fv(color);glTexCoord4fv(uv);
     pending.clear();
 }
+void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices) {
+    Flush();
+    GLint oldProgram,oldArray,oldBuffer,active;
+    float color[4],uv[4];glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+    glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);glActiveTexture(active);
+    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
+    glUseProgram(program);glBindVertexArray(meshArray);glBindBuffer(GL_ARRAY_BUFFER,meshBuffer);
+    glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
+    glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
+    glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);glUseProgram(oldProgram);
+    glColor4fv(color);glTexCoord4fv(uv);
+}
 void End() {
     if (!stream.active) { glEnd();return; }
     stream.active=false;

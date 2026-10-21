@@ -73,6 +73,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
 #include "Item/ItemDefines.h"
 #include "Item/ContentCatalog.h"
 #include "../globals.h"
@@ -456,6 +457,18 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         EnableAlphaBlend();
     }
 
+    // DESVIACION: reutilizar índices y preparar cada vértice único una vez.
+    // Conservar el emisor anterior para mallas que no admitan este camino.
+    const MeshDraw::Input meshInput{
+        pcVar1,reinterpret_cast<const unsigned char*>(*(int*)(pcVar1+0x1c)),
+        *(short*)(pcVar1+0x0a),*(short*)(pcVar1+4),*(short*)(pcVar1+6),*(short*)(pcVar1+8),
+        reinterpret_cast<const float*>(&DAT_0584621c)+meshIndex*15000*3,
+        reinterpret_cast<const float*>(&DAT_060db65c)+meshIndex*15000*3,
+        reinterpret_cast<const float*>(*(int*)(pcVar1+0x18)),&DAT_05828d5c,
+        renderMode,param_2_b0!='\0',bVar5!=0,alpha,uvU,uvV,
+        reinterpret_cast<const float*>(static_cast<char*>(bmd_obj)+0x48)
+    };
+    if (MeshDraw::Draw(meshInput)) { GL_EnableDepthWrites();return; }
     // DESVIACION: chrome usa un color constante durante toda la pasada.
     // Enviarlo al primer vértice conserva también el estado si no hay caras.
     bool chromeColorSent = false;
