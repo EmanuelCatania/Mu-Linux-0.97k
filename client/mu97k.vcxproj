@@ -173,6 +173,8 @@
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
+    <ClInclude Include="src\Platform\GLFunctions.h" />
+    <ClInclude Include="src\Platform\GL\glad.h" />
     <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
@@ -243,6 +245,9 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Platform\ClientEntry.cpp" />
+    <ClCompile Include="src\Platform\GLFunctions.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Local\Text_Data.cpp" />
     <ClCompile Include="src\Scene\Scene_Dispatch.cpp" />
     <ClCompile Include="src\Scene\Scene_Intro.cpp" />
