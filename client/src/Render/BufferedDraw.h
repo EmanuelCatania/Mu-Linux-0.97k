@@ -19,7 +19,10 @@ bool Initialize();
 void Release();
 void Begin(unsigned mode);
 void End();
+// Flush conserva el pipeline del emisor para el siguiente envío. Suspend
+// además restaura los bindings de entrada antes de usar otro camino GL.
 void Flush();
+void Suspend();
 void DrawIndexed(unsigned array,unsigned buffer,const Vertex* vertices,std::size_t count,std::size_t indices);
 void NativeColor(float r,float g,float b,float a);
 void NativeUV(float u,float v);
