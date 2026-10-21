@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Render/MaterialVisuals.h"
 #include "Platform/IInput.h"
 #include "Render/Camera3D.h"
@@ -149,7 +150,7 @@ void __cdecl RenderBoids(void)
                     // contra cache=0).
                     glEnable(GL_BLEND);
                     DAT_083a412c = 1;   // mantener el cache en sync
-                    glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
+                    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.2f);
                     float wx = v0[-86];
                     float wy = v0[-85];
                     float wz = RequestTerrainHeight(wx, wy);
@@ -158,7 +159,7 @@ void __cdecl RenderBoids(void)
                     *(float*)(model + 116) = wz;
                     BMD__RenderBodyShadow(model, -1, -1);
                     // El color negro tambien se filtraba al resto del frame.
-                    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
                 }
             }
         }
@@ -376,16 +377,16 @@ void __cdecl ItemDrop_Render(void)
                 int life = j->LifeTime;
                 if (life >= 20) life = 20;
                 float scale = (float)((double)life * 0.050000001);
-                glColor3f(scale * j->Light[0],
+                BufferedDraw::Color3f(scale * j->Light[0],
                           scale * j->Light[1],
                           scale * j->Light[2]);
             } else if (sub == 3) {
-                glColor3f(j->Light[0], j->Light[1], j->Light[2]);
+                BufferedDraw::Color3f(j->Light[0], j->Light[1], j->Light[2]);
             }
         } else {
             int texId = (type == 1255) ? 1254 : type;
             GL_BindTextureSlot(texId);
-            glColor3fv(j->Light);
+            BufferedDraw::Color3fv(j->Light);
         }
 
         // Iterate segments.
@@ -434,7 +435,7 @@ void __cdecl ItemDrop_Render(void)
                 int maxSeg = segMax;
                 float g = (float)(((double)(maxSeg - segIdx) / (double)maxSeg
                                  + (double)(maxSeg - segIdx) / (double)maxSeg) * light[0]);
-                glColor3f(g, g, g);
+                BufferedDraw::Color3f(g, g, g);
             } else {
                 if (type == 266 && (sub == 0 || sub == 4)) {
                     // Fade por altura: lo que sube por encima de ownerZ+50 se
@@ -449,9 +450,9 @@ void __cdecl ItemDrop_Render(void)
                             c[1] = (float)(light[1] - d);
                             c[2] = (float)(light[2] - d);
                         }
-                        glColor3fv(c);
+                        BufferedDraw::Color3fv(c);
                     } else {
-                        glColor3f(1.0f, 1.0f, 1.0f);
+                        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
                     }
                     if (segIdx == segCount / 2) {
                         // Sprite 1277 en el centro de la fila del medio.
@@ -470,15 +471,15 @@ void __cdecl ItemDrop_Render(void)
                     if (ilz == segIdx)      rgb = (float)(lz - (double)segIdx);
                     else if (ilz >= segIdx) rgb = 0.7f;
                     else                    rgb = 0.0f;
-                    glColor3f(rgb, rgb, rgb);
+                    BufferedDraw::Color3f(rgb, rgb, rgb);
                 }
                 if (type != 1253 || sub != 2) {
-                    glBegin(GL_QUADS);
-                    glTexCoord2f(s,   1.0f); glVertex3fv((const GLfloat*)(v6 + 5));
-                    glTexCoord2f(s,   0.0f); glVertex3fv((const GLfloat*)(v6 + 8));
-                    glTexCoord2f(v28, 0.0f); glVertex3fv((const GLfloat*)(v6 + 20));
-                    glTexCoord2f(v28, 1.0f); glVertex3fv((const GLfloat*)(v6 + 17));
-                    glEnd();
+                    BufferedDraw::Begin(GL_QUADS);
+                    BufferedDraw::TexCoord2f(s,   1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 5));
+                    BufferedDraw::TexCoord2f(s,   0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 8));
+                    BufferedDraw::TexCoord2f(v28, 0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 20));
+                    BufferedDraw::TexCoord2f(v28, 1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 17));
+                    BufferedDraw::End();
                 }
                 if (type == 1254 || type == 1255) {
                     float t = v29 + v29;
@@ -487,12 +488,12 @@ void __cdecl ItemDrop_Render(void)
                 }
             }
 
-            glBegin(GL_QUADS);
-            glTexCoord2f(s,   0.0f); glVertex3fv((const GLfloat*)(v6 - 1));
-            glTexCoord2f(s,   1.0f); glVertex3fv((const GLfloat*)(v6 + 2));
-            glTexCoord2f(v28, 1.0f); glVertex3fv((const GLfloat*)(v6 + 14));
-            glTexCoord2f(v28, 0.0f); glVertex3fv((const GLfloat*)(v6 + 11));
-            glEnd();
+            BufferedDraw::Begin(GL_QUADS);
+            BufferedDraw::TexCoord2f(s,   0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 - 1));
+            BufferedDraw::TexCoord2f(s,   1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 2));
+            BufferedDraw::TexCoord2f(v28, 1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 14));
+            BufferedDraw::TexCoord2f(v28, 0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 11));
+            BufferedDraw::End();
 
             v6 += 12;
         }
@@ -671,7 +672,7 @@ void ItemNames_TickInput() {
 void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
     DAT_07e11d6e = 1;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();  // DisableAlphaBlend
 
     // Solo activo in-world. CharSelect tiene su propio path con
@@ -810,7 +811,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
                                                         // auto-inicializacion con basura.
                 if (typeCode != 188 && typeCode != 189 && __world != 10) {
                     GL_SetBlendSrcOver('\x01');                  // EnableAlphaTest(1)
-                    glColor4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
+                    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
                     float* modelData = (float*)(DAT_05828d58 + 188 * (int)typeCode);
                     if (modelData) {
                         modelData[29] = RequestTerrainHeight(posX, posY);  // height
