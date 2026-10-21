@@ -74,4 +74,8 @@ private:
     std::condition_variable ready_, done_;
     bool stop_ = false;
 };
+// Los lotes y la ruta de una malla grande se ejecutan en fases sucesivas.
+// Compartir equipo evita conservar dos grupos de hilos inactivos.
+inline Team& SharedTeam() { static Team team; return team; }
+
 }
