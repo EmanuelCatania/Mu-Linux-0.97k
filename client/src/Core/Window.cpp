@@ -86,6 +86,7 @@ bool CWindow::InitOpenGL()
     if (!Platform::GetGLContext().SetSwapInterval(gUserSettings.GetVSync() ? 1 : 0))
         CErrorReport_Write(&DAT_055c9bf0, "> No se pudo aplicar Window.VSync");
     gFrameLimiter.SetFpsLimit(gUserSettings.GetFpsLimit());
+    gFrameLimiter.SetRenderDecoupled(gUserSettings.GetRenderDecoupled());
     Platform::GetWindow().ShowAndFocus();
     return true;
 }

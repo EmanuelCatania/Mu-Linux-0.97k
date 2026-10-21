@@ -93,6 +93,7 @@ public:
     int GetBorderless()  const { return m_Borderless; }
     int GetResolution()  const { return m_Resolution; }
     int GetFpsLimit() const { return m_FpsLimit; }
+    bool GetRenderDecoupled() const { return m_RenderDecoupled; }
     bool GetVSync() const { return m_VSync; }
     int GetEnableSound() const { return m_EnableSound; }
     int GetEnableMusic() const { return m_EnableMusic; }
@@ -136,6 +137,7 @@ private:
     int  m_Borderless  = -1;
     int  m_Resolution  = -1;
     // DESVIACION: preferencias de presentación; simulación siempre a 25 Hz.
+    bool m_RenderDecoupled = true;
     int  m_FpsLimit = 60;
     bool m_VSync = false;
     int  m_EnableSound = -1;

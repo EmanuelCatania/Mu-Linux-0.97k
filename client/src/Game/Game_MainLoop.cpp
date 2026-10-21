@@ -87,6 +87,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // DESVIACION: el presupuesto de 40 ms incluye SIM, preparación y draw;
     // comenzar sólo al dibujar sumaba ese trabajo a la espera y ralentizaba SIM.
     const CFrameLimiter::StartTime renderStart = gFrameLimiter.Start();
+    TimeRemain += gFrameLimiter.Advance(renderStart);
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -109,7 +110,11 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
-    while (TimeRemain > 0x27) {
+    // DESVIACION: hasta cinco pasos por draw sin descartar deuda lógica;
+    // incluso bajo recuperación se dibuja y se vuelve al despacho de eventos.
+    int simulationSteps=0;
+    while (TimeRemain > 0x27 && simulationSteps<5) {
+        ++simulationSteps;
         // DESVIACION: capturas externas por paso, también al recuperar demoras.
         RenderSnapshots_BeginStep();
 
@@ -372,8 +377,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     CHK("ML/post_swap");
 
-    // ── POST-RENDER 25fps FRAME LIMITER ──────────────────────────────────────
-    TimeRemain += gFrameLimiter.Wait(renderStart);
+    // ── LÍMITE DE PRESENTACIÓN DESPUÉS DEL RENDER ──────────────────────────────────────
+    gFrameLimiter.Wait(renderStart);
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port

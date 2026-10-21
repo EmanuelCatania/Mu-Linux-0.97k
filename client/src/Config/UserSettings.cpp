@@ -87,6 +87,7 @@ void CUserSettings::Load(const char* iniPath)
     m_Resolution  = ReadInt ("Window", "Resolution", iniPath);
     // DESVIACION: 0 desactiva el límite; entradas inválidas conservan 60 fps.
     m_FpsLimit = ReadRange("Window", "FpsLimit", iniPath, 0, INT_MAX, 60);
+    m_RenderDecoupled = ReadRange("Window", "RenderDecoupled", iniPath, 0, 1, 1) != 0;
     m_VSync = ReadRange("Window", "VSync", iniPath, 0, 1, 0) != 0;
     if (m_Resolution < -1 || m_Resolution >= MAX_USER_RESOLUTION) {
         char line[96];
