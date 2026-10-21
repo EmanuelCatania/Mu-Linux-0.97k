@@ -73,6 +73,7 @@
 
 #include "stdafx.h"
 #include "Item/ItemDefines.h"
+#include "Item/ContentCatalog.h"
 #include "../globals.h"
 #include "../functions.h"
 
@@ -153,6 +154,22 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
     // Get mesh slot pointer: Meshs[meshIdx] (stride 0x28)
     pcVar1 = (char *)(*(int *)((int)bmd_obj + 0x28) + meshIndex * 0x28);
+
+    // DESVIACION: un modelo propio del catálogo con caras invertidas (hecho
+    // para dos caras) se dibuja sin descarte de caras; el 0.97k no tiene
+    // modelos así.  Los modelos vanilla no pasan por acá.
+    struct TwoSidedGuard {
+        bool active = false;
+        ~TwoSidedGuard() { if (active) glEnable(GL_CULL_FACE); }
+    } twoSided;
+    {
+        const int model = (int)(((uintptr_t)bmd_obj - (uintptr_t)DAT_05828d58) / 0xbc);
+        if (model >= MODEL_MAX_VANILLA && gContentCatalog.IsTwoSidedMesh(model, meshIndex) &&
+            glIsEnabled(GL_CULL_FACE)) {
+            glDisable(GL_CULL_FACE);
+            twoSided.active = true;
+        }
+    }
 
     // Early-out: NumTriangles == 0
     if (*(short *)(*(int *)((int)bmd_obj + 0x28) + 10 + meshIndex * 0x28) == 0) {

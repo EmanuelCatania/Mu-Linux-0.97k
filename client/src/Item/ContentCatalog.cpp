@@ -94,6 +94,50 @@ struct FogEntry { bool Present; float Day[3]; float Night[3]; };
 FogEntry s_Fog[MAX_CATALOG_MAP] = {};
 std::map<std::string, int> s_LoadedModels;   // ruta -> slot
 std::map<int, int> s_DynamicModelItem;        // slot dinámico -> primer item que lo usa
+std::map<int, unsigned int> s_TwoSidedMeshes;  // slot -> bits de las mallas de dos caras
+
+// Cuenta los triángulos cuya orientación contradice sus normales.  Un modelo
+// hecho para dibujarse de los dos lados los tiene; con el descarte de caras
+// del 0.97k esas caras desaparecen y la malla se ve a través.
+unsigned int FindTwoSidedMeshes(const BYTE* model)
+{
+    unsigned int bits = 0;
+    const short meshCount = *(const short*)(model + 0x24);
+    const BYTE* meshes = (const BYTE*)(uintptr_t)*(const int*)(model + 0x28);
+    if (!meshes) return 0;
+    for (int m = 0; m < meshCount && m < 32; ++m) {
+        const BYTE* mesh = meshes + m * 0x28;
+        const short vCount = *(const short*)(mesh + 4), nCount = *(const short*)(mesh + 6);
+        const short fCount = *(const short*)(mesh + 10);
+        const BYTE* verts = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x10);
+        const BYTE* norms = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x14);
+        const BYTE* faces = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x1c);
+        if (!verts || !norms || !faces) continue;
+        int inverted = 0;
+        for (int f = 0; f < fCount; ++f) {
+            const short* vi = (const short*)(faces + f * 0x24 + 2);
+            const short* ni = (const short*)(faces + f * 0x24 + 10);
+            bool valid = true;
+            for (int k = 0; k < 3; ++k)
+                if (vi[k] < 0 || vi[k] >= vCount || ni[k] < 0 || ni[k] >= nCount) valid = false;
+            if (!valid) continue;
+            const float* a = (const float*)(verts + vi[0] * 0x10 + 4);
+            const float* b = (const float*)(verts + vi[1] * 0x10 + 4);
+            const float* c = (const float*)(verts + vi[2] * 0x10 + 4);
+            const float u[3] = { b[0] - a[0], b[1] - a[1], b[2] - a[2] };
+            const float v[3] = { c[0] - a[0], c[1] - a[1], c[2] - a[2] };
+            const float face[3] = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
+            float dot = 0.0f;
+            for (int k = 0; k < 3; ++k) {
+                const float* n = (const float*)(norms + ni[k] * 0x14 + 4);
+                dot += face[0] * n[0] + face[1] * n[1] + face[2] * n[2];
+            }
+            if (dot < 0.0f) ++inverted;
+        }
+        if (inverted > 0) bits |= 1u << m;
+    }
+    return bits;
+}
 
 ITEM_ATTRIBUTE* Attributes()
 {
@@ -266,6 +310,7 @@ void CContentCatalog::Publish()
     }
     for (ItemExtraData& item : s_Items) item = ItemExtraData();
     s_DynamicModelItem.clear();
+    s_TwoSidedMeshes.clear();
 
     const int itemSize = s_PendingItems.recordSize;
     for (size_t off = 0; off + itemSize <= s_PendingItems.records.size(); off += itemSize)
@@ -475,6 +520,10 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     TextureBegin = savedBegin;
     TextureCurrent = savedCurrent;
 
+    if (const unsigned int twoSided = FindTwoSidedMeshes(model)) {
+        s_TwoSidedMeshes[slot] = twoSided;
+        Log("ContentCatalog: %s%s.bmd tiene caras invertidas, se dibuja de los dos lados (mallas 0x%x)", dir, name, twoSided);
+    }
     s_LoadedModels[key] = slot;
     return slot;
 }
@@ -560,6 +609,13 @@ int CContentCatalog::GetItemModel(int type) const
     const int behavior = extra.Present ? extra.Behavior : type;
     if (behavior != type && behavior >= 0 && behavior < ITEM_MAX_EX) return GetItemModel(behavior);
     return GetItemSection(type) * ITEM_MAX_TYPE_VANILLA + ITEM_MODEL_BASE;
+}
+
+bool CContentCatalog::IsTwoSidedMesh(int model, int mesh) const
+{
+    if (mesh < 0 || mesh >= 32) return false;
+    std::map<int, unsigned int>::const_iterator it = s_TwoSidedMeshes.find(model);
+    return it != s_TwoSidedMeshes.end() && (it->second & (1u << mesh)) != 0;
 }
 
 int CContentCatalog::GetModelItemType(int model) const
