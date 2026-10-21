@@ -173,6 +173,7 @@
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Render\GLCallBarrier.h" />
+    <ClInclude Include="src\Render\GlyphAtlas.h" />
     <ClInclude Include="src\Render\BufferedDraw.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\GLFunctions.h" />
@@ -256,6 +257,9 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Render\GlyphAtlas.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\BufferedDraw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/GlyphAtlas.h"
 #include "Platform/IGLContext.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
@@ -824,6 +825,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         slot = s_next;
         s_next = (s_next + 1) & 3;
         if (s_cache[slot].base != 0) {
+            GlyphAtlas::Forget(s_cache[slot].base);
             glDeleteLists(s_cache[slot].base, 256);
             s_cache[slot].base = 0;
         }
@@ -867,7 +869,10 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         }
         TEXTMETRICA tm;
         int ascent = 11;
-        if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
+        if (gFont.TextMetrics(hFontDC, &tm)) {
+            ascent = tm.tmAscent;
+            GlyphAtlas::Build(base, tm.tmHeight, tm.tmMaxCharWidth);
+        }
         s_cache[slot].rc     = hRC;
         s_cache[slot].font   = hFont;
         s_cache[slot].base   = base;
@@ -1033,8 +1038,9 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
 
             BufferedDraw::Color4ub(R, G, B, finalA);
             glRasterPos2f(runX, (float)rasterY);
-            glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
-                        drawText + startChar);
+            if (!GlyphAtlas::Draw(s_fontListBase, drawText + startChar, endChar - startChar, vw, vh))
+                glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
+                            drawText + startChar);
         }
     }
     glPopAttrib();
