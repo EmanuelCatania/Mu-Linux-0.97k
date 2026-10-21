@@ -117,7 +117,9 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // 7-elem bound → /GS stack-cookie corruption. Keep them as one 9-elem array
     // and reference [7]/[8] directly where the Ghidra names appear.
     Skinning::Invalidate();
-    float local_54[9]{};
+    float local_54[9];
+    // Inicializar sólo la dirección capturada cuando la iluminación está desactivada.
+    local_54[6]=local_54[7]=local_54[8]=0.f;
     float local_30[12];
     int   local_58 = 0;
     int   local_64 = 0, local_6c = 0;
