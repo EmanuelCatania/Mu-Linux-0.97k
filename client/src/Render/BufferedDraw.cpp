@@ -15,7 +15,19 @@ std::size_t quadCapacity=0;
 std::vector<Vertex> pending;
 unsigned pendingMode=0;
 bool bound=false;
+GLuint boundArray=0,boundBuffer=0;
 GLint savedProgram=0,savedArray=0,savedBuffer=0;
+// DESVIACION: compartir la propiedad del pipeline entre geometría general
+// y mallas indexadas. Sólo Suspend devuelve los bindings del caller.
+void BindPipeline(GLuint nextArray,GLuint nextBuffer) {
+    if (!bound) {
+        glGetIntegerv(GL_CURRENT_PROGRAM,&savedProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&savedArray);
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&savedBuffer);
+        glUseProgram(program);bound=true;boundArray=boundBuffer=0;
+    }
+    if (boundArray!=nextArray) { glBindVertexArray(nextArray);boundArray=nextArray; }
+    if (boundBuffer!=nextBuffer) { glBindBuffer(GL_ARRAY_BUFFER,nextBuffer);boundBuffer=nextBuffer; }
+}
 // DESVIACION: cada abanico de cuatro esquinas conserva los triángulos
 // 0-1-2 y 0-2-3 sin duplicar sus vértices en el buffer de envío.
 void EnsureQuadIndices(std::size_t count) {
@@ -123,13 +135,7 @@ void Flush() {
     if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
     glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
     if (active!=GL_TEXTURE0) glActiveTexture(active);
-    // DESVIACION: mantener el pipeline durante envíos consecutivos. Cambiar
-    // texturas/matrices no exige volver al programa fijo entre cada primitiva.
-    if (!bound) {
-        glGetIntegerv(GL_CURRENT_PROGRAM,&savedProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&savedArray);
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&savedBuffer);
-        glUseProgram(program);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);bound=true;
-    }
+    BindPipeline(array,buffer);
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
     if (pendingMode==GL_TRIANGLE_FAN) {
         EnsureQuadIndices(pending.size()/4);
@@ -143,21 +149,19 @@ void Suspend() {
     Flush();
     if (!bound) return;
     glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);glUseProgram(savedProgram);
-    bound=false;
+    bound=false;boundArray=boundBuffer=0;
 }
 void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices) {
-    Suspend();
-    GLint oldProgram,oldArray,oldBuffer,active;
+    Flush();
+    GLint active;
     float color[4],uv[4];glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);glActiveTexture(active);
-    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
-    glUseProgram(program);glBindVertexArray(meshArray);glBindBuffer(GL_ARRAY_BUFFER,meshBuffer);
+    BindPipeline(meshArray,meshBuffer);
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
-    glBindVertexArray(oldArray);glBindBuffer(GL_ARRAY_BUFFER,oldBuffer);glUseProgram(oldProgram);
     glColor4fv(color);glTexCoord4fv(uv);
 }
+
 void End() {
     if (!stream.active) { glEnd();return; }
     stream.active=false;

@@ -104,7 +104,9 @@ bool Draw(const Input& input) {
     // Conservar el color y UV de la última esquina, incluso si no completa
     // un triángulo. DrawElements no define esos atributos tras el envío.
     const auto& last=vertices[mesh.indices.back()];
-    BufferedDraw::Suspend();glColor4fv(last.color);glTexCoord4fv(last.uv);
+    // DESVIACION: DrawIndexed envía lo pendiente antes de cambiar de VAO.
+    // Mantener el programa activo hasta la siguiente frontera de compatibilidad.
+    glColor4fv(last.color);glTexCoord4fv(last.uv);
     BufferedDraw::DrawIndexed(mesh.array,mesh.buffer,vertices.data(),vertices.size(),mesh.indices.size());
     return true;
 }
