@@ -4,6 +4,7 @@
 // (BMD__RenderBodyShadow).
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
@@ -107,7 +108,7 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
         if (polyCount <= 0) continue;
         if ((int)*(short*)(mesh + 2) == param_1) continue;   // *(WORD*)(v6+2) != a2
 
-        glBegin(GL_TRIANGLES);
+        BufferedDraw::Begin(GL_TRIANGLES);
         for (int polyIdx = 0; polyIdx < polyCount; polyIdx++) {
             char *poly = (char*)(*(int*)(mesh + 0x1c) + polyIdx * 0x24);
             const int numVerts = (int)*(signed char*)poly;   // char en +0
@@ -124,10 +125,10 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
                 v[0] = lx + (lx + 2000.0f) * lz / (lz - 4000.0f) + ox;
                 v[1] = ly + oy;
                 v[2] = oz + 5.0f;
-                glVertex3fv(v);
+                BufferedDraw::Vertex3fv(v);
             }
         }
-        glEnd();
+        BufferedDraw::End();
     }
 
     glPopMatrix();
