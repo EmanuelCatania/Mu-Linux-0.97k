@@ -10,6 +10,8 @@ struct Stream {
     unsigned mode=0;
     float color[4]{1,1,1,1},uv[4]{0,0,0,1};
     std::vector<Vertex> vertices;
+    std::vector<Vertex>* destination=nullptr;
+    size_t first=0;
 };
 extern Stream stream;
 bool Initialize();
@@ -35,7 +37,7 @@ inline void TexCoord2f(float u,float v) {
 inline void Vertex3f(float x,float y,float z) {
     if (!stream.active) { NativeVertex(x,y,z); return; }
     const auto* c=stream.color;const auto* t=stream.uv;
-    stream.vertices.push_back({{x,y,z},{c[0],c[1],c[2],c[3]},{t[0],t[1],t[2],t[3]}});
+    stream.destination->push_back({{x,y,z},{c[0],c[1],c[2],c[3]},{t[0],t[1],t[2],t[3]}});
 }
 inline void Vertex3fv(const float* p) { Vertex3f(p[0],p[1],p[2]); }
 inline void Vertex2f(float x,float y) { Vertex3f(x,y,0); }

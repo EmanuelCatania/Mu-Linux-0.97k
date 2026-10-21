@@ -70,6 +70,11 @@ void NativeVertex(float x,float y,float z) { glVertex3f(x,y,z); }
 void Begin(unsigned mode) {
     if (!program) { glBegin(mode);return; }
     stream.mode=mode;stream.vertices.clear();
+    const bool direct=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
+    if (direct && !pending.empty() && pendingMode!=mode) Flush();
+    if (direct) pendingMode=mode;
+    stream.destination=direct ? &pending : &stream.vertices;
+    stream.first=stream.destination->size();
     glGetFloatv(GL_CURRENT_COLOR,stream.color);
     GLint active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
@@ -98,12 +103,13 @@ void Flush() {
 void End() {
     if (!stream.active) { glEnd();return; }
     stream.active=false;
-    const auto count=stream.vertices.size();
+    const bool direct=stream.destination==&pending;
+    const auto count=stream.destination->size()-stream.first;
     const bool fan=stream.mode==GL_TRIANGLE_FAN;
     const unsigned mode=fan ? GL_TRIANGLES : stream.mode;
     const unsigned group=mode==GL_TRIANGLES?3:mode==GL_QUADS?4:mode==GL_LINES?2:1;
     const bool independent=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
-    if (!pending.empty() && (pendingMode!=mode || !independent)) Flush();
+    if (!direct && !pending.empty() && (pendingMode!=mode || !independent)) Flush();
     pendingMode=mode;
     if (fan) {
         // Cada abanico conserva sus triángulos y su orden. No se conectan
@@ -111,6 +117,8 @@ void End() {
         for (size_t i=1;i+1<count;++i) {
             pending.push_back(stream.vertices[0]);pending.push_back(stream.vertices[i]);pending.push_back(stream.vertices[i+1]);
         }
+    } else if (direct) {
+        pending.resize(pending.size()-count%group);
     } else {
         // OpenGL descarta los vértices incompletos al cerrar una primitiva.
         // Su color/UV actual sí se conserva aunque no formen una cara.
