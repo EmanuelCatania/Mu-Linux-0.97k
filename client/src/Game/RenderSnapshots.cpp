@@ -24,10 +24,14 @@ float BlendAngle(float a, float b, float alpha) {
     // Sólo el intervalo ya normalizado conserva exactamente el resultado;
     // los demás valores siguen el camino general (incluidos 360 y negativos).
     if (a==b && a>=0 && a<360 && std::isfinite(alpha)) return a+0.0f;
-    float delta = std::fmod(b - a, 360.0f);
+    // DESVIACION: fmod es identidad dentro de (-360, 360); evitar la
+    // llamada sin alterar bordes, ceros con signo ni valores no finitos.
+    float delta = b - a;
+    if (!(delta > -360.0f && delta < 360.0f)) delta = std::fmod(delta, 360.0f);
     if (delta > 180.0f) delta -= 360.0f;
     if (delta < -180.0f) delta += 360.0f;
-    float result = std::fmod(a + delta * alpha, 360.0f);
+    float result = a + delta * alpha;
+    if (!(result > -360.0f && result < 360.0f)) result = std::fmod(result, 360.0f);
     if (result < 0.0f) result += 360.0f;
     return result;
 }
