@@ -16,6 +16,8 @@ std::vector<PoseMesh> poseMeshes;
 std::size_t poseMeshCount=0;
 float rotationScale=1,bodyScale=1,origin[3]{},direction[3]{},coefficients[3]{};
 unsigned long long revision=0,uploaded=0;
+std::size_t paletteCapacity=0,paletteUsed=0;
+GLint paletteBase=0,paletteBaseLocation=0;
 GLuint program=0,array=0,buffer=0,boneBuffer=0,boneTexture=0;
 bool failed=false,layoutReady=false,paletteBound=false,uniformsReady=false;
 GLint savedTextureBuffer=0,savedTexture=0,lastLight=-1;
@@ -37,6 +39,7 @@ const char* shaderSource=R"GLSL(#version 330 compatibility
 layout(location=6) in vec4 rawNormal;
 layout(location=7) in float vertexBone;
 uniform samplerBuffer palette;
+uniform int paletteBase;
 uniform vec2 scales;
 uniform vec3 origin;
 uniform vec3 direction;
@@ -44,11 +47,11 @@ uniform vec3 coefficients;
 uniform vec3 bodyLight;
 uniform bool useLight;
 vec3 rotateBone(vec3 p,int b) {
-    int r=b*3;
+    int r=paletteBase+b*3;
     return vec3(dot(texelFetch(palette,r).xyz,p),dot(texelFetch(palette,r+1).xyz,p),dot(texelFetch(palette,r+2).xyz,p));
 }
 void main() {
-    int b=int(vertexBone)*3;
+    int b=paletteBase+int(vertexBone)*3;
     vec3 p=rotateBone(gl_Vertex.xyz,int(vertexBone))*scales.x;
     p+=vec3(texelFetch(palette,b).w,texelFetch(palette,b+1).w,texelFetch(palette,b+2).w);
     p=p*scales.y+origin;
@@ -82,6 +85,7 @@ bool Initialize() {
     glGetProgramiv(program,GL_LINK_STATUS,&ok);
     if(!ok) { char log[2048]{};glGetProgramInfoLog(program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(program);program=0;failed=true;return false; }
     glGenVertexArrays(1,&array);glGenBuffers(1,&buffer);glGenBuffers(1,&boneBuffer);glGenTextures(1,&boneTexture);
+    paletteBaseLocation=glGetUniformLocation(program,"paletteBase");
     paletteLocation=glGetUniformLocation(program,"palette");scalesLocation=glGetUniformLocation(program,"scales");
     originLocation=glGetUniformLocation(program,"origin");directionLocation=glGetUniformLocation(program,"direction");
     coefficientsLocation=glGetUniformLocation(program,"coefficients");bodyLightLocation=glGetUniformLocation(program,"bodyLight");
@@ -146,9 +150,25 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
         if(!layoutReady) glTexBuffer(GL_TEXTURE_BUFFER,GL_RGBA32F,boneBuffer);
         glActiveTexture(active);paletteBound=true;BufferedDraw::SetExitHook(RestorePalette);
     }
-    if(uploaded!=revision) { glBufferData(GL_TEXTURE_BUFFER,palette.size()*sizeof(float),palette.data(),GL_STREAM_DRAW);uploaded=revision; }
+    if(uploaded!=revision) {
+        const auto bytes=palette.size()*sizeof(float);
+        // DESVIACION: regiones nuevas sin sobrescribir matrices que la GPU
+        // aún usa; huérfanar el almacenamiento al agotar el bloque.
+        if(bytes>paletteCapacity || paletteUsed+bytes>paletteCapacity) {
+            paletteCapacity=std::max(bytes,std::size_t(65536));paletteUsed=0;
+            glBufferData(GL_TEXTURE_BUFFER,paletteCapacity,nullptr,GL_STREAM_DRAW);
+        }
+        void* destination=glMapBufferRange(GL_TEXTURE_BUFFER,paletteUsed,bytes,
+            GL_MAP_WRITE_BIT|GL_MAP_UNSYNCHRONIZED_BIT|GL_MAP_INVALIDATE_RANGE_BIT);
+        if(!destination) return false;
+        std::memcpy(destination,palette.data(),bytes);
+        if(!glUnmapBuffer(GL_TEXTURE_BUFFER)) return false;
+        paletteBase=static_cast<GLint>(paletteUsed/(4*sizeof(float)));
+        paletteUsed+=bytes;uploaded=revision;
+    }
     BufferedDraw::Activate(program,array,buffer);
     if(!uniformsReady) glUniform1i(paletteLocation,1);
+    glUniform1i(paletteBaseLocation,paletteBase);
     const float scales[2]{rotationScale,bodyScale};
     if(!uniformsReady || std::memcmp(lastScales,scales,sizeof(scales))) {
         glUniform2f(scalesLocation,rotationScale,bodyScale);std::copy(scales,scales+2,lastScales);
@@ -180,7 +200,7 @@ void Release() {
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
     if(program) glDeleteProgram(program);
-    program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;
+    program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }
 }
