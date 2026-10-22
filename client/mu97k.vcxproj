@@ -277,10 +277,10 @@
     <ClCompile Include="src\Render\ResourceTables.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Render\Skinning.cpp">
+    <ClCompile Include="src\Render\Backend\GL\Skinning.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Render\MeshDraw.cpp">
+    <ClCompile Include="src\Render\Backend\GL\MeshDraw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
@@ -293,7 +293,7 @@
     <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Render\BufferedDraw.cpp">
+    <ClCompile Include="src\Render\Backend\GL\BufferedDraw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\WorldEffects.cpp" />
