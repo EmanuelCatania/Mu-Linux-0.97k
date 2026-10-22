@@ -53,7 +53,13 @@ bool Apply(const Material& material);
 // El slot es un recurso del cliente; el identificador nativo se resuelve en GL.
 // Los índices negativos heredados conservan el camino de referencia.
 struct TextureSlot { int index=0; };
-struct TexturedMaterial { TextureSlot texture;Material material; };
+// La secuencia forma parte de la transición: terreno aplica material antes
+// de resolver textura; RenderPlane conserva el orden inverso.
+enum class BindingOrder { TextureFirst, MaterialFirst };
+struct TexturedMaterial {
+    TextureSlot texture;Material material;
+    BindingOrder order=BindingOrder::TextureFirst;
+};
 bool BindTexture(TextureSlot texture);
 bool ApplyTextured(const TexturedMaterial& material);
 }
