@@ -13,6 +13,8 @@ bool active=false;
 namespace {
 bool requested=false,resetPending=false,configurationPending=true;
 void (*backendReport)(bool)=nullptr;
+void (*passAudit)(Pass,unsigned)=nullptr;
+unsigned entryCounts[PassCount]{};
 int lastWidth=0,lastHeight=0,lastLimit=0;bool lastVsync=false,lastDecoupled=false,lastTerrain=false,lastComposition=true,lastMaterials=false,lastFragments=false;
 int world=-1;
 Pass current=Pass::Other;
@@ -72,7 +74,7 @@ Frame::Frame(bool inWorld,int map):measured(requested && inWorld && map>=0) {
     if(!measured) { if(world!=-1)resetPending=true;world=-1;return; }
     if(world!=map) { RenderProfileGL::Release();world=map;configurationPending=true;ResetWindow();std::snprintf(summary,sizeof(summary),"R1: recopilando CPU/GPU..."); }
     frameStart=phaseStart=Platform::GetTimer().Start();current=Pass::Other;
-    for(auto& value:frameTimes)value=0;
+    for(auto& value:frameTimes)value=0;for(auto& value:entryCounts)value=0;
     RenderProfileGL::BeginFrame(map);
 }
 Frame::~Frame() {
@@ -87,13 +89,14 @@ Frame::~Frame() {
     window.frames.push_back(frame);active=false;
     if(Platform::GetTimer().Wait(windowStart,0)>=2000)Report();
 }
-Scope::Scope(Pass pass):previous(current),measured(active) { if(measured)Switch(pass); }
+Scope::Scope(Pass pass):previous(current),measured(active) { if(measured){Switch(pass);if(passAudit)passAudit(pass,entryCounts[static_cast<std::size_t>(pass)]++);} }
 Scope::~Scope() { if(measured && active)Switch(previous); }
 void CountDraw(std::uint64_t vertices,std::uint64_t instances) {
     auto& c=window.counters[static_cast<std::size_t>(current)];++c.draws;c.vertices+=vertices;c.instances+=instances;
 }
 void FragmentDraw(bool modern,bool alphaFallback){auto& c=window.counters[static_cast<std::size_t>(current)];if(modern)++c.fragmentModern;else ++c.fragmentReference;if(alphaFallback)++c.fragmentAlpha;}
 void SetBackendReport(void (*report)(bool)){backendReport=report;}
+void SetPassAudit(void (*audit)(Pass,unsigned)){passAudit=audit;}
 void CountLegacy() { ++window.counters[static_cast<std::size_t>(current)].legacy; }
 void Configuration(int width,int height,int limit,bool vsync,bool decoupled,bool terrain,bool composition,bool materials,bool fragments) {
     if(!configurationPending && width==lastWidth && height==lastHeight && limit==lastLimit && vsync==lastVsync && decoupled==lastDecoupled && terrain==lastTerrain && composition==lastComposition && materials==lastMaterials && fragments==lastFragments)return;

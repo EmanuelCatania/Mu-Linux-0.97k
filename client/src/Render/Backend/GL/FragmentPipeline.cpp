@@ -5,6 +5,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <cstdio>
@@ -24,7 +25,7 @@ const char* layoutReason="";
 struct MaterialState {
     unsigned dirty=7;
     bool textured=false,opaque=true,alpha=false;
-    int combine=0,function=GL_ALWAYS,fog=0;
+    int combine=0,function=GL_ALWAYS,fog=0,binding=0,sampler=0,environment=GL_MODULATE;
     float reference=0,values[3]{},color[4]{};
     const char* reason="",*textureReason="",*fogReason="";
 } material;
@@ -51,6 +52,64 @@ const char* ReadLayout(){
     if(glIsEnabled(GL_COLOR_SUM)||glIsEnabled(GL_POLYGON_STIPPLE))layoutReason="Fragmentos: referencia (estado especial)";
     return layoutReason;
 }
+// Una muestra por entrada y ventana R1; efectos conserva sus dos entradas.
+// Sólo lectura: no normalizar estados antes de conocer las entradas reales.
+enum EntryKey { BlendOn,SrcRGB,DstRGB,SrcAlpha,DstAlpha,EqRGB,EqAlpha,DepthOn,DepthWrite,DepthFunc,CullOn,CullFace,FrontFace,AlphaOn,AlphaFunc,TextureOn,TextureBinding,ActiveUnit,Sampler,FogOn,FogMode,Program,VAO,Scissor,Stencil,EntryCount };
+constexpr unsigned entryProperties[EntryCount]={GL_BLEND,GL_BLEND_SRC_RGB,GL_BLEND_DST_RGB,GL_BLEND_SRC_ALPHA,GL_BLEND_DST_ALPHA,GL_BLEND_EQUATION_RGB,GL_BLEND_EQUATION_ALPHA,GL_DEPTH_TEST,GL_DEPTH_WRITEMASK,GL_DEPTH_FUNC,GL_CULL_FACE,GL_CULL_FACE_MODE,GL_FRONT_FACE,GL_ALPHA_TEST,GL_ALPHA_TEST_FUNC,GL_TEXTURE_2D,GL_TEXTURE_BINDING_2D,GL_ACTIVE_TEXTURE,GL_SAMPLER_BINDING,GL_FOG,GL_FOG_MODE,GL_CURRENT_PROGRAM,GL_VERTEX_ARRAY_BINDING,GL_SCISSOR_TEST,GL_STENCIL_TEST};
+struct EntryState {
+    bool captured=false;int values[EntryCount]{},environment=0;
+    float alphaRef=0,start=0,end=0,density=0,color[4]{};
+    FragmentPipelineGL::LegacyState legacy;
+    unsigned legacyMismatch=0,materialMismatch=0,validParts=0;
+};
+std::array<std::array<EntryState,2>,RenderProfile::PassCount> entries{};
+const char* passNames[RenderProfile::PassCount]={"sim","preparar","restaurar","terreno","objetos","personajes","efectos","ui","otros_dibujo","otros","swap","espera"};
+void AuditEntry(RenderProfile::Pass pass,unsigned occurrence){
+    using P=RenderProfile::Pass;
+    if(!RenderProfile::active||occurrence>=2||(pass!=P::Terrain&&pass!=P::Objects&&pass!=P::Characters&&pass!=P::Effects&&pass!=P::UI))return;
+    auto& e=entries[static_cast<std::size_t>(pass)][occurrence];if(e.captured)return;e.captured=true;
+    for(int i=0;i<EntryCount;++i)glGetIntegerv(entryProperties[i],e.values+i);
+    glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&e.environment);
+    glGetFloatv(GL_ALPHA_TEST_REF,&e.alphaRef);glGetFloatv(GL_FOG_START,&e.start);glGetFloatv(GL_FOG_END,&e.end);glGetFloatv(GL_FOG_DENSITY,&e.density);glGetFloatv(GL_FOG_COLOR,e.color);
+    e.legacy=FragmentPipelineGL::ReadLegacyState();const auto& c=e.legacy;const auto* v=e.values;
+    // Bits legacy: blend1, cull2, depth4, escritura8, alpha16, textura32.
+    if(c.blend<0||c.blend>5)e.legacyMismatch|=1;
+    else if((v[BlendOn]!=0)!=(c.blend!=0))e.legacyMismatch|=1;
+    else if(c.blend){
+        constexpr int factors[6][2]={{0,0},{GL_ZERO,GL_SRC_COLOR},{GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA},{GL_ONE,GL_ONE},{GL_ZERO,GL_ONE_MINUS_SRC_COLOR},{GL_ONE_MINUS_DST_COLOR,GL_ONE}};
+        if(v[SrcRGB]!=factors[c.blend][0]||v[DstRGB]!=factors[c.blend][1]||v[SrcAlpha]!=factors[c.blend][0]||v[DstAlpha]!=factors[c.blend][1])e.legacyMismatch|=1;
+    }
+    if((v[CullOn]!=0)!=c.cull)e.legacyMismatch|=2;
+    if((v[DepthOn]!=0)!=c.depth)e.legacyMismatch|=4;
+    if((v[DepthWrite]!=0)!=c.write)e.legacyMismatch|=8;
+    if((v[AlphaOn]!=0)!=c.alpha)e.legacyMismatch|=16;
+    // La caché legacy de textura sólo describe la unidad0.
+    if(v[ActiveUnit]==GL_TEXTURE0&&(v[TextureOn]!=0)!=c.texture)e.legacyMismatch|=32;
+    e.validParts=(~material.dirty)&7u;
+    if(*material.textureReason)e.validParts&=~1u;
+    if((e.validParts&1)&&v[ActiveUnit]==GL_TEXTURE0){
+        if((v[TextureOn]!=0)!=material.textured||(material.textured&&(v[TextureBinding]!=material.binding||v[Sampler]!=material.sampler||e.environment!=material.environment)))e.materialMismatch|=1;
+    }else e.validParts&=~1u;
+    if((e.validParts&2)&&((v[AlphaOn]!=0)!=material.alpha||(material.alpha&&(v[AlphaFunc]!=material.function||e.alphaRef!=material.reference))))e.materialMismatch|=2;
+    if(e.validParts&4){
+        const int mode=v[FogMode]==GL_LINEAR?1:v[FogMode]==GL_EXP?2:3;
+        if((v[FogOn]!=0)!=(material.fog!=0)||(v[FogOn]&&(mode!=material.fog||e.start!=material.values[0]||e.end!=material.values[1]||e.density!=material.values[2]||std::memcmp(e.color,material.color,sizeof(e.color)))))e.materialMismatch|=4;
+    }
+}
+void ReportEntries(bool reset){
+    if(!reset)for(std::size_t p=0;p<entries.size();++p)for(unsigned occurrence=0;occurrence<2;++occurrence){
+        const auto& e=entries[p][occurrence];if(!e.captured)continue;const auto* v=e.values;char line[480];
+        // DbgLog limita cada mensaje a 509 bytes. Mantener las máscaras en la
+        // cabecera y repartir el detalle, sin aumentar el límite global.
+        std::snprintf(line,sizeof(line),"PerfilR4 entrada: pasada=%s entrada=%u cache_blend=%d cache_cull=%d cache_depth=%d cache_escritura=%d cache_alpha=%d cache_textura=%d discrepancia_legacy=%u material_valido=%u discrepancia_material=%u programa=%d vao=%d scissor=%d stencil=%d",
+            passNames[p],occurrence,e.legacy.blend,e.legacy.cull,e.legacy.depth,e.legacy.write,e.legacy.alpha,e.legacy.texture,e.legacyMismatch,e.validParts,e.materialMismatch,v[Program],v[VAO],v[Scissor],v[Stencil]);DbgLogPublic(line);
+        std::snprintf(line,sizeof(line),"PerfilR4 pipeline: pasada=%s entrada=%u blend=%d src_rgb=%d dst_rgb=%d src_alpha=%d dst_alpha=%d ecuacion_rgb=%d ecuacion_alpha=%d depth=%d escritura=%d depth_func=%d cull=%d cara=%d frente=%d alpha=%d alpha_func=%d alpha_ref=%.9g",
+            passNames[p],occurrence,v[BlendOn],v[SrcRGB],v[DstRGB],v[SrcAlpha],v[DstAlpha],v[EqRGB],v[EqAlpha],v[DepthOn],v[DepthWrite],v[DepthFunc],v[CullOn],v[CullFace],v[FrontFace],v[AlphaOn],v[AlphaFunc],e.alphaRef);DbgLogPublic(line);
+        std::snprintf(line,sizeof(line),"PerfilR4 material: pasada=%s entrada=%u textura=%d binding=%d unidad=%d sampler=%d entorno=%d niebla=%d modo_niebla=%d inicio=%.9g fin=%.9g densidad=%.9g color=%.9g,%.9g,%.9g,%.9g",
+            passNames[p],occurrence,v[TextureOn],v[TextureBinding],v[ActiveUnit],v[Sampler],e.environment,v[FogOn],v[FogMode],e.start,e.end,e.density,e.color[0],e.color[1],e.color[2],e.color[3]);DbgLogPublic(line);
+    }
+    entries={};
+}
 const char* fragment=R"GLSL(#version 330 compatibility
 uniform sampler2D materialTexture;
 uniform bool materialTextured,materialReject;
@@ -75,6 +134,7 @@ void main(){
 }
 )GLSL";
 void Report(bool reset){
+    ReportEntries(reset);
     if(!reset&&requested){char line[768];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu capturas_textura=%llu reusos_textura=%llu capturas_alpha=%llu reusos_alpha=%llu capturas_niebla=%llu reusos_niebla=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,componentReads[0],componentReuses[0],componentReads[1],componentReuses[1],componentReads[2],componentReuses[2],lastReason);DbgLogPublic(line);}
     selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=materialReads=materialReuses=0;lastReason="";
     std::fill(componentReads,componentReads+3,0ull);std::fill(componentReuses,componentReuses+3,0ull);
@@ -117,12 +177,13 @@ const MaterialState& ReadMaterial(){
     if(!material.dirty)return material;
     if(material.dirty&1){
         material.textured=glIsEnabled(GL_TEXTURE_2D)!=0;
-        material.opaque=true;material.combine=0;material.textureReason="";
+        material.opaque=true;material.combine=0;material.textureReason="";material.binding=material.sampler=0;material.environment=GL_MODULATE;
         if(material.textured){
-            int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
+            int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);material.environment=environment;
             if(environment!=GL_MODULATE)material.textureReason="Fragmentos: referencia (texture env)";
             else {
                 int texture=0,sampler=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(GL_SAMPLER_BINDING,&sampler);
+                material.binding=texture;material.sampler=sampler;
                 const auto info=texture?InspectTexture(texture):TextureInfo{};
                 if(!info.supported||sampler)material.textureReason="Fragmentos: referencia (textura o sampler)";
                 else {material.opaque=info.opaque;material.combine=info.combine;}
@@ -176,7 +237,7 @@ void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_2D)MaterialChanged(Mater
 void InvalidateBindings(){MaterialChanged();layoutChecked=false;targetChecked=false;}
 void InvalidateTextures(){MaterialChanged(MaterialPart::Texture);textureInfo.clear();layoutChecked=false;}
 void Create(unsigned reference,const char* source){
-    RenderProfile::SetBackendReport(Report);
+    RenderProfile::SetBackendReport(Report);RenderProfile::SetPassAudit(AuditEntry);
     if(pipelines.count(reference))return;
     Pipeline p;std::string vertex(source);const auto end=vertex.find('\n');if(end==std::string::npos)return;
     vertex.insert(end+1,"#define EXPLICIT_FRAGMENT\n");

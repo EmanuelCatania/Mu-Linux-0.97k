@@ -30,6 +30,7 @@ void CountState(State state);
 void CountLegacy();
 void FragmentDraw(bool modern,bool alphaFallback);
 void SetBackendReport(void (*report)(bool reset));
+void SetPassAudit(void (*audit)(Pass pass,unsigned occurrence));
 void Configuration(int width,int height,int limit,bool vsync,bool decoupled,bool terrain=false,bool composition=true,bool materials=false,bool fragments=false);
 inline void Legacy() { if(active)CountLegacy(); }
 inline void Draw(std::uint64_t vertices,std::uint64_t instances=1) { if(active)CountDraw(vertices,instances); }
