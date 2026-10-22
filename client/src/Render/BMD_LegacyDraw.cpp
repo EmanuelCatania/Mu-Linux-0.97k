@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/MaterialVisuals.h"
 #include "Platform/ITimer.h"
@@ -108,20 +109,26 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
         BufferedDraw::Color3fv(bodyLight);
     } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
         mode = 2;
-        GL_BindTextureSlot(tex);
-        if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();       // EnableAlphaBlendMinus
-        else                     GL_SetBlendAdditive();       // EnableAlphaBlend
+        const Materials::TexturedMaterial blend{{tex},MeshDraw::BlendMaterial(fl)};
+        if(!Materials::ApplyTextured(blend)){
+            GL_BindTextureSlot(tex);
+            if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+            else GL_SetBlendAdditive();
+        }
         BufferedDraw::Color3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
         lightEnable = 0;
     } else if ((fl & 2) == 2) {
         mode = 2;
         GL_BindTextureSlot(tex);
-        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else if (f3 < _DAT_00552544 || (&DAT_083a7cc8)[tex * 0x38] == '\x04')
-            GL_SetBlendSrcOver('\x01');                       // EnableAlphaTest(1)
-        else
-            GL_ResetState();                                  // DisableAlphaBlend
+        // La consulta de Components conserva la posición posterior al binding.
+        const bool surfaceAlpha=(fl & 0xc0)==0 && (f3 < _DAT_00552544 ||
+            (&DAT_083a7cc8)[tex * 0x38] == '\x04');
+        if(!Materials::Apply(MeshDraw::SurfaceMaterial(fl,surfaceAlpha))){
+            if ((fl & 0x40) == 0x40) GL_SetBlendAdditive();
+            else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+            else if (surfaceAlpha) GL_SetBlendSrcOver('\x01');
+            else GL_ResetState();
+        }
     } else if ((fl & 0x40) == 0x40) {
         if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
