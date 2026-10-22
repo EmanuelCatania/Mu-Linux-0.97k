@@ -31,6 +31,23 @@ struct OverlayState {
 bool BeginOverlay(const OverlayState& state);
 bool EndOverlay();
 
+// Texto nativo: guardar/restaurar también factores de mezcla.
+bool BeginText();
+void EndText();
+// Sombra de fauna: habilitar mezcla heredando factores, sin inventar un preset.
+// Uso restringido a BMD__RenderBodyShadow, que no cambia factores de mezcla.
+// Al salir recupera sólo activación y caché; no restaura otros estados BMD.
+class InheritedBlendScope {
+    bool active=false,wasEnabled=false;
+    int previousBlend=0;
+public:
+    InheritedBlendScope();
+    ~InheritedBlendScope();
+    InheritedBlendScope(const InheritedBlendScope&)=delete;
+    InheritedBlendScope& operator=(const InheritedBlendScope&)=delete;
+    explicit operator bool() const { return active; }
+};
+
 enum class Preset { Opaque, LightMap, Alpha, Add, Attenuate, InverseAdd, Untextured };
 constexpr Material Describe(Preset preset,bool depthWrite=true) {
     using S=Switch;using B=Blend;
