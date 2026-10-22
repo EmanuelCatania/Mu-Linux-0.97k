@@ -116,8 +116,12 @@ bool BindTexture(TextureSlot texture){
     return true;
 }
 bool ApplyTextured(const TexturedMaterial& m){
-    // RenderPlane establece primero textura y luego el material aditivo.
-    // Si la fuente no está admitida, no modificar parcialmente el estado.
+    // Rechazar antes de aplicar estado, también con material primero.
+    if(!enabled||m.texture.index<0)return false;
+    if(m.order==BindingOrder::MaterialFirst){
+        if(!Apply(m.material))return false;
+        return BindTexture(m.texture);
+    }
     if(!BindTexture(m.texture))return false;
     return Apply(m.material);
 }
