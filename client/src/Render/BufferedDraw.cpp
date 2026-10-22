@@ -2,6 +2,7 @@
 #include "Platform/GL/glad.h"
 #include "Platform/GLFunctions.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/RenderProfile.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include <cstddef>
@@ -44,14 +45,17 @@ void EnsureQuadIndices(std::size_t count) {
     }
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,indices.size()*sizeof(unsigned),indices.data(),GL_STATIC_DRAW);
 }
-// ftransform conserva la transformación del pipeline compatible. La etapa
-// fragmentaria sigue siendo la compatible: textura, alpha test y niebla no
-// se sustituyen por aproximaciones ni cambian sus setters/cache heredados.
+// DESVIACION R4b: la referencia conserva sus fragmentos compatibles. La
+// variante EXPLICIT_FRAGMENT limita color primario en el vértice y compone
+// textura/niebla/alpha en el backend, con respaldo para estados no admitidos.
 const char* vertexSource=R"GLSL(#version 330 compatibility
 void main() {
     gl_Position=ftransform();
-    gl_FrontColor=gl_Color;
-    gl_BackColor=gl_Color;
+#ifdef EXPLICIT_FRAGMENT
+    gl_FrontColor=clamp(gl_Color,0,1);gl_BackColor=clamp(gl_Color,0,1);
+#else
+    gl_FrontColor=gl_Color;gl_BackColor=gl_Color;
+#endif
     gl_TexCoord[0]=gl_TextureMatrix[0]*gl_MultiTexCoord0;
     vec4 eye=gl_ModelViewMatrix*gl_Vertex;
     gl_FogFragCoord=abs(eye.z);
@@ -75,6 +79,7 @@ bool Initialize() {
     program=glCreateProgram();glAttachShader(program,shader);glLinkProgram(program);
     glDeleteShader(shader);glGetProgramiv(program,GL_LINK_STATUS,&ok);
     if (!ok) { ShaderLog(program,true);Release();return false; }
+    FragmentPipelineGL::Create(program,vertexSource);
     GLint oldArray=0,oldBuffer=0,oldClient=0;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&oldBuffer);
     glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&oldClient);
@@ -95,6 +100,7 @@ void Release() {
     if (array) glDeleteVertexArrays(1,&array);
     if (buffer) glDeleteBuffers(1,&buffer);
     if (quadBuffer) glDeleteBuffers(1,&quadBuffer);
+    FragmentPipelineGL::Release(program);
     if (program) glDeleteProgram(program);
     array=buffer=program=quadBuffer=0;quadCapacity=0;
 }
@@ -147,7 +153,8 @@ void Flush(const Vertex* current) {
         glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
         if (active!=GL_TEXTURE0) glActiveTexture(active);
     }
-    BindPipeline(program,array,buffer);
+    FragmentPipelineGL::Draw material(program,&pending.front().color[3],pending.size(),sizeof(Vertex));
+    BindPipeline(material.Program(),array,buffer);material.Apply();
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
     RenderProfile::Draw(pendingMode==GL_TRIANGLE_FAN ? pending.size()/4*6 : pending.size());
     if (pendingMode==GL_TRIANGLE_FAN) {
@@ -160,7 +167,7 @@ void Flush(const Vertex* current) {
 }
 void SetExitHook(void (*hook)()) { exitHook=hook; }
 void Suspend() {
-    Flush();
+    Flush();FragmentPipelineGL::InvalidateBindings();
     if(exitHook) { auto hook=exitHook;exitHook=nullptr;hook(); }
     if (!bound) return;
     glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);RenderProfileGL::ObserveProgram(savedProgram);glUseProgram(savedProgram);
@@ -184,7 +191,8 @@ void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,s
         glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
         if(active!=GL_TEXTURE0) glActiveTexture(active);
     }
-    BindPipeline(program,meshArray,meshBuffer);
+    FragmentPipelineGL::Draw material(program,&vertices[0].color[3],count,sizeof(Vertex));
+    BindPipeline(material.Program(),meshArray,meshBuffer);material.Apply();
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
     RenderProfile::Draw(indices);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);

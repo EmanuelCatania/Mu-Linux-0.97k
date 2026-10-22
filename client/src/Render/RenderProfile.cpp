@@ -12,11 +12,12 @@ namespace RenderProfile {
 bool active=false;
 namespace {
 bool requested=false,resetPending=false,configurationPending=true;
-int lastWidth=0,lastHeight=0,lastLimit=0;bool lastVsync=false,lastDecoupled=false,lastTerrain=false,lastComposition=true,lastMaterials=false;
+void (*backendReport)(bool)=nullptr;
+int lastWidth=0,lastHeight=0,lastLimit=0;bool lastVsync=false,lastDecoupled=false,lastTerrain=false,lastComposition=true,lastMaterials=false,lastFragments=false;
 int world=-1;
 Pass current=Pass::Other;
 Platform::TimerStart frameStart{},phaseStart{},windowStart{};
-struct Counters { std::uint64_t draws=0,vertices=0,instances=0,legacy=0,states[StateCount]{}; };
+struct Counters { std::uint64_t draws=0,vertices=0,instances=0,legacy=0,fragmentModern=0,fragmentReference=0,fragmentAlpha=0,states[StateCount]{}; };
 struct Window {
     std::array<std::vector<double>,PassCount> cpu,gpu;
     std::array<Counters,PassCount> counters{};
@@ -27,6 +28,7 @@ double frameTimes[PassCount]{};
 char summary[160]="R1: recopilando CPU/GPU...";
 const char* names[PassCount]={"sim","preparar","restaurar","terreno","objetos","personajes","efectos","ui","otros_dibujo","otros","swap","espera"};
 void ResetWindow() {
+    if(backendReport)backendReport(true);
     for(auto& values:window.cpu)values.clear();for(auto& values:window.gpu)values.clear();
     window.frames.clear();window.gpuFrames.clear();window.counters={};
     windowStart=Platform::GetTimer().Start();
@@ -50,11 +52,12 @@ void Report() {
     for(std::size_t p=0;p<PassCount;++p) {
         const auto cpu=Summarize(window.cpu[p]),g=Summarize(window.gpu[p]);const auto& c=window.counters[p];
         const double n=static_cast<double>(frame.count);
-        std::snprintf(line,sizeof(line),"PerfilR1 pasada: mapa=%d pasada=%s cuadros=%zu cpu_prom=%.3f cpu_p95=%.3f cpu_max=%.3f gpu_muestras=%zu gpu_prom=%.3f gpu_p95=%.3f gpu_max=%.3f envios=%.3f vertices=%.3f instancias=%.3f blend=%.3f depth=%.3f textura=%.3f programa=%.3f legado=%.3f",
+        std::snprintf(line,sizeof(line),"PerfilR1 pasada: mapa=%d pasada=%s cuadros=%zu cpu_prom=%.3f cpu_p95=%.3f cpu_max=%.3f gpu_muestras=%zu gpu_prom=%.3f gpu_p95=%.3f gpu_max=%.3f envios=%.3f vertices=%.3f instancias=%.3f blend=%.3f depth=%.3f textura=%.3f programa=%.3f legado=%.3f fragmentos_nuevos=%.3f fragmentos_referencia=%.3f fragmentos_alpha=%.3f",
             world,names[p],frame.count,cpu.average,cpu.p95,cpu.maximum,g.count,g.average,g.p95,g.maximum,
-            c.draws/n,c.vertices/n,c.instances/n,c.states[0]/n,c.states[1]/n,c.states[2]/n,c.states[3]/n,c.legacy/n);
+            c.draws/n,c.vertices/n,c.instances/n,c.states[0]/n,c.states[1]/n,c.states[2]/n,c.states[3]/n,c.legacy/n,c.fragmentModern/n,c.fragmentReference/n,c.fragmentAlpha/n);
         DbgLogPublic(line);
     }
+    if(backendReport)backendReport(false);
     if(gpu.count)std::snprintf(summary,sizeof(summary),"R1 prom/p95/max CPU %.1f/%.1f/%.1f | GPU %.1f/%.1f/%.1f ms",frame.average,frame.p95,frame.maximum,gpu.average,gpu.p95,gpu.maximum);
     else std::snprintf(summary,sizeof(summary),"R1 CPU %.1f p95 %.1f | GPU pendiente/no disponible",frame.average,frame.p95);
     ResetWindow();
@@ -89,11 +92,13 @@ Scope::~Scope() { if(measured && active)Switch(previous); }
 void CountDraw(std::uint64_t vertices,std::uint64_t instances) {
     auto& c=window.counters[static_cast<std::size_t>(current)];++c.draws;c.vertices+=vertices;c.instances+=instances;
 }
+void FragmentDraw(bool modern,bool alphaFallback){auto& c=window.counters[static_cast<std::size_t>(current)];if(modern)++c.fragmentModern;else ++c.fragmentReference;if(alphaFallback)++c.fragmentAlpha;}
+void SetBackendReport(void (*report)(bool)){backendReport=report;}
 void CountLegacy() { ++window.counters[static_cast<std::size_t>(current)].legacy; }
-void Configuration(int width,int height,int limit,bool vsync,bool decoupled,bool terrain,bool composition,bool materials) {
-    if(!configurationPending && width==lastWidth && height==lastHeight && limit==lastLimit && vsync==lastVsync && decoupled==lastDecoupled && terrain==lastTerrain && composition==lastComposition && materials==lastMaterials)return;
-    configurationPending=false;lastWidth=width;lastHeight=height;lastLimit=limit;lastVsync=vsync;lastDecoupled=decoupled;lastTerrain=terrain;lastComposition=composition;lastMaterials=materials;
-    char line[240];std::snprintf(line,sizeof(line),"PerfilR1 configuracion: mapa=%d ancho=%d alto=%d limite=%d vsync_solicitado=%d desacople=%d terreno_experimental=%d composicion=%d materiales=%d intervalo_ms=2000",world,width,height,limit,vsync?1:0,decoupled?1:0,terrain?1:0,composition?1:0,materials?1:0);DbgLogPublic(line);
+void Configuration(int width,int height,int limit,bool vsync,bool decoupled,bool terrain,bool composition,bool materials,bool fragments) {
+    if(!configurationPending && width==lastWidth && height==lastHeight && limit==lastLimit && vsync==lastVsync && decoupled==lastDecoupled && terrain==lastTerrain && composition==lastComposition && materials==lastMaterials && fragments==lastFragments)return;
+    configurationPending=false;lastWidth=width;lastHeight=height;lastLimit=limit;lastVsync=vsync;lastDecoupled=decoupled;lastTerrain=terrain;lastComposition=composition;lastMaterials=materials;lastFragments=fragments;
+    char line[320];std::snprintf(line,sizeof(line),"PerfilR1 configuracion: mapa=%d ancho=%d alto=%d limite=%d vsync_solicitado=%d desacople=%d terreno_experimental=%d composicion=%d materiales=%d fragmentos=%d intervalo_ms=2000",world,width,height,limit,vsync?1:0,decoupled?1:0,terrain?1:0,composition?1:0,materials?1:0,fragments?1:0);DbgLogPublic(line);
 }
 void CountState(State state) { ++window.counters[static_cast<std::size_t>(current)].states[static_cast<std::size_t>(state)]; }
 void GpuResult(int map,const double* times,const bool* present) {

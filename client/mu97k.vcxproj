@@ -180,6 +180,8 @@
     <ClInclude Include="src\Render\MeshDraw.h" />
     <ClInclude Include="src\Render\TerrainDraw.h" />
     <ClInclude Include="src\Render\Materials.h" />
+    <ClInclude Include="src\Render\FragmentStage.h" />
+    <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
     <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
     <ClInclude Include="src\Render\RenderProfile.h" />
     <ClInclude Include="src\Render\ProfileStats.h" />
@@ -284,6 +286,7 @@
     <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Backend\GL\TerrainRenderer.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\Backend\GL\Materials.cpp" />
+    <ClCompile Include="src\Render\Backend\GL\FragmentPipeline.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
     <ClCompile Include="src\Render\RenderProfile.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

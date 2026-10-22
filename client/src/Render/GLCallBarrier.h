@@ -2,6 +2,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
 #include "Render/TerrainDraw.h"
+#include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 
 // DESVIACION: antes de cambiar el pipeline o leer/escribir su salida, enviar
@@ -12,10 +13,10 @@ template<class F,class... A> inline auto StateChange(F function,A... args) -> de
     Flush();return function(args...);
 }
 template<class F,class... A> inline auto TextureChange(F function,A... args) -> decltype(function(args...)) {
-    Flush();TerrainDraw::InvalidateBoundTexture();return function(args...);
+    Flush();FragmentPipelineGL::InvalidateTextures();TerrainDraw::InvalidateBoundTexture();return function(args...);
 }
 template<class F> inline void DeleteTexturesState(F function,int count,const unsigned* names) {
-    Flush();for(int i=0;i<count;++i)TerrainDraw::InvalidateTexture(names[i]);function(count,names);
+    Flush();FragmentPipelineGL::InvalidateTextures();for(int i=0;i<count;++i)TerrainDraw::InvalidateTexture(names[i]);function(count,names);
 }
 template<class F,class... A> inline auto LegacyDraw(F function,A... args) -> decltype(function(args...)) {
     Suspend();RenderProfile::Legacy();return function(args...);
@@ -29,6 +30,7 @@ template<class F,class... A> inline auto LegacyCall(F function,A... args) -> dec
 template<class F> inline void SetEnabled(F function,unsigned cap,bool enabled) {
     if ((::glIsEnabled(cap)!=0)!=enabled) {
         Flush();
+        FragmentPipelineGL::CapabilityChanged(cap);
         if(cap==GL_BLEND)RenderProfile::Change(RenderProfile::State::Blend);
         if(cap==GL_DEPTH_TEST)RenderProfile::Change(RenderProfile::State::Depth);
         if(cap==GL_TEXTURE_2D)RenderProfile::Change(RenderProfile::State::Texture);
