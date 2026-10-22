@@ -26,7 +26,11 @@ struct Location { int page=0,layer=0; };
 std::map<GLuint,Location> locations;
 struct Operation { const TerrainDraw::Tile* tile;Location texture;int mode; };
 const char* vertex=R"GLSL(#version 330 compatibility
-uniform sampler2D geometryData,lightData,drawData;
+layout(location=0) in vec4 position0;
+layout(location=1) in vec4 position1;
+layout(location=2) in vec4 position2;
+layout(location=3) in vec4 position3;
+uniform sampler2D lightData,drawData;
 uniform int firstInstance;
 out vec4 shade;
 out vec2 uv;
@@ -38,7 +42,7 @@ void main() {
     int record=(firstInstance+gl_InstanceID)*5;
     vec4 info=fetchDraw(record);
     int tile=int(info.x), mode=int(info.z);
-    vec4 p=texelFetch(geometryData,ivec2((tile%256)*4+corner,tile/256),0);
+    vec4 p=corner==0?position0:corner==1?position1:corner==2?position2:position3;
     int grid=int(p.w);
     vec4 light=texelFetch(lightData,ivec2(grid%256,grid/256),0);
     shade=mode==2?vec4(light.aaa,1):vec4(light.rgb,mode==1?light.a:1);
@@ -110,9 +114,11 @@ bool Init() {
     for(auto s:shaders)glDeleteShader(s);if(!success)return false;
     glGenVertexArrays(1,&vao);glBindVertexArray(vao);glGenBuffers(1,&ebo);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ebo);
     const unsigned indices[]{0,1,2,0,2,3};glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indices),indices,GL_STATIC_DRAW);
-    glGenTextures(1,&geometry);glGenTextures(1,&lighting);glGenTextures(1,&metadata);
+    glGenBuffers(1,&geometry);glBindBuffer(GL_ARRAY_BUFFER,geometry);
+    for(GLuint c=0;c<4;++c){glEnableVertexAttribArray(c);glVertexAttribDivisor(c,1);}
+    glGenTextures(1,&lighting);glGenTextures(1,&metadata);
     Program(program);
-    glUniform1i(glGetUniformLocation(program,"tiles"),0);glUniform1i(glGetUniformLocation(program,"geometryData"),1);
+    glUniform1i(glGetUniformLocation(program,"tiles"),0);
     glUniform1i(glGetUniformLocation(program,"lightData"),2);glUniform1i(glGetUniformLocation(program,"drawData"),3);
     return true;
 }
@@ -150,6 +156,9 @@ bool ReadSource(const TerrainDraw::Texture& source,Page& p) {
     auto wrap=[](int v){return v==GL_REPEAT||v==GL_CLAMP_TO_EDGE||v==GL_MIRRORED_REPEAT;};
     return wrap(p.wrapS)&&wrap(p.wrapT);
 }
+// Orden residente idéntico al recorrido de bloques 4x4 del 0.97k. Los huecos
+// de culling cortan el lote: no se compactan/reenvían posiciones por cuadro.
+std::size_t ResidentIndex(int x,int y) { return ((y/4)*64+x/4)*16+(y%4)*4+x%4; }
 bool Same(const Page&a,const Page&b) { return std::tie(a.width,a.height,a.channels,a.filterMin,a.filterMag,a.wrapS,a.wrapT)==std::tie(b.width,b.height,b.channels,b.filterMin,b.filterMag,b.wrapS,b.wrapT); }
 bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
     GLint limit=0;glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS,&limit);
@@ -221,16 +230,18 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
         for(int y=0;y<255;++y)for(int x=0;x<255;++x) {
             const int ids[]{y*256+x,y*256+x+1,(y+1)*256+x+1,(y+1)*256+x};
             const float xx=x*f.scale,yy=y*f.scale;const float xy[4][2]{{xx,yy},{xx+f.scale,yy},{xx+f.scale,yy+f.scale},{xx,yy+f.scale}};
-            for(int c=0;c<4;++c){float* p=&positions[(y*256+x)*16+c*4];p[0]=xy[c][0];p[1]=xy[c][1];p[2]=heights[ids[c]];p[3]=(float)ids[c];}
+            for(int c=0;c<4;++c){float* p=&positions[ResidentIndex(x,y)*16+c*4];p[0]=xy[c][0];p[1]=xy[c][1];p[2]=heights[ids[c]];p[3]=(float)ids[c];}
         }
-        if(!TextureData(1,geometry,1024,256,positions.data(),true)){heights.clear();result.reason="Terreno: referencia (memoria geometria)";return result;}result.geometryBytes=positions.size()*sizeof(float);
+        glBindBuffer(GL_ARRAY_BUFFER,geometry);glBufferData(GL_ARRAY_BUFFER,positions.size()*sizeof(float),positions.data(),GL_STATIC_DRAW);
+        GLint size=0;glGetBufferParameteriv(GL_ARRAY_BUFFER,GL_BUFFER_SIZE,&size);
+        if(size!=(GLint)(positions.size()*sizeof(float))){heights.clear();result.reason="Terreno: referencia (memoria geometria)";return result;}
+        result.geometryBytes=positions.size()*sizeof(float);
     }
     // Luz/alpha son datos de la SIM ya congelada: no se modifican sus pools.
     int firstRow=255,lastRow=0;
     for(const auto& tile:tiles){firstRow=std::min(firstRow,tile.y);lastRow=std::max(lastRow,tile.y+1);}
     std::vector<float> lights((lastRow-firstRow+1)*256*4);
     for(int i=firstRow*256;i<(lastRow+1)*256;++i){std::copy_n(f.light+i*3,3,lights.data()+(i-firstRow*256)*4);lights[(i-firstRow*256)*4+3]=f.alpha[i];}
-    glActiveTexture(GL_TEXTURE1);Bind(GL_TEXTURE_2D,geometry);
     glActiveTexture(GL_TEXTURE2);Bind(GL_TEXTURE_2D,lighting);
     if(!lightWidth){if(!TextureData(2,lighting,256,256,nullptr,true)){result.reason="Terreno: referencia (memoria luz)";return result;}lightWidth=256;}
     glTexSubImage2D(GL_TEXTURE_2D,0,0,firstRow,256,lastRow-firstRow+1,GL_RGBA,GL_FLOAT,lights.data());result.lightBytes=lights.size()*sizeof(float);
@@ -244,11 +255,15 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     const int fogMode=!originalFog?0:mode==GL_LINEAR?1:mode==GL_EXP?2:3;
     const GLint first=glGetUniformLocation(program,"firstInstance"),fog=glGetUniformLocation(program,"fogMode");
     for(std::size_t begin=0;begin<ops.size();) {
-        std::size_t end=begin+1;const auto& op=ops[begin];while(end<ops.size()&&ops[end].mode==op.mode&&ops[end].texture.page==op.texture.page)++end;
+        std::size_t end=begin+1;const auto& op=ops[begin];while(end<ops.size()&&ops[end].mode==op.mode&&ops[end].texture.page==op.texture.page
+            &&ResidentIndex(ops[end].tile->x,ops[end].tile->y)==ResidentIndex(op.tile->x,op.tile->y)+(end-begin))++end;
         RenderProfileGL::SetEnabled(GL_BLEND,op.mode!=0);RenderProfileGL::SetEnabled(GL_ALPHA_TEST,op.mode==1);RenderProfileGL::SetEnabled(GL_CULL_FACE,op.mode==0);
         if(RenderProfile::active)RenderProfileGL::DepthWrite(op.mode!=2);glDepthMask(op.mode!=2);
         if(op.mode) {const GLenum src=op.mode==1?GL_SRC_ALPHA:GL_ONE,dst=op.mode==1?GL_ONE_MINUS_SRC_ALPHA:GL_ONE;RenderProfileGL::BlendFunction(src,dst);glBlendFunc(src,dst);}
         glUniform1i(fog,op.mode==2&&f.fogPolicy?0:fogMode);Bind(GL_TEXTURE_2D_ARRAY,pages[op.texture.page].name);
+        glBindBuffer(GL_ARRAY_BUFFER,geometry);
+        for(GLuint c=0;c<4;++c)glVertexAttribPointer(c,4,GL_FLOAT,GL_FALSE,16*sizeof(float),
+            reinterpret_cast<const void*>((ResidentIndex(op.tile->x,op.tile->y)*16+c*4)*sizeof(float)));
         glUniform1i(first,(int)begin);glDrawElementsInstanced(GL_TRIANGLES,6,GL_UNSIGNED_INT,nullptr,(GLsizei)(end-begin));RenderProfile::Draw(6*(end-begin),end-begin);
         ++result.draws;begin=end;
     }
@@ -257,7 +272,7 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
 void Release() {
     if(!program)return;
     BufferedDraw::Suspend();ClearPages();glDeleteProgram(program);glDeleteVertexArrays(1,&vao);glDeleteBuffers(1,&ebo);
-    const GLuint textures[]{geometry,lighting,metadata};glDeleteTextures(3,textures);program=vao=ebo=geometry=lighting=metadata=0;
+    glDeleteBuffers(1,&geometry);const GLuint textures[]{lighting,metadata};glDeleteTextures(2,textures);program=vao=ebo=geometry=lighting=metadata=0;
     heights.clear();positions.clear();cachedMap=-1;epoch=0;lightWidth=metadataRows=0;
 }
 }
