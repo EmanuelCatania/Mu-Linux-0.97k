@@ -57,6 +57,30 @@ bool Apply(const Material& m) {
     }
     return true;
 }
+bool BeginText(){
+    if(!enabled)return false;
+    // COLOR_BUFFER conserva factores RGB/alpha y ecuaciones, además del enable.
+    glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_LIST_BIT|GL_COLOR_BUFFER_BIT);
+    glDisable(GL_TEXTURE_2D);glDisable(GL_DEPTH_TEST);glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    return true;
+}
+void EndText(){glPopAttrib();}
+InheritedBlendScope::InheritedBlendScope(){
+    if(!enabled)return;
+    active=true;wasEnabled=glIsEnabled(GL_BLEND)!=0;previousBlend=DAT_083a412c;
+    glEnable(GL_BLEND);
+    // No representa ningún preset: BMD__RenderBodyShadow no selecciona mezcla.
+    // Invalidar temporalmente evita anunciar factores que no se establecieron.
+    DAT_083a412c=-1;
+}
+InheritedBlendScope::~InheritedBlendScope(){
+    if(!active)return;
+    // La sombra no cambia factores. La barrera envía sus triángulos antes
+    // de recuperar activación; los demás estados quedan como en referencia.
+    if(wasEnabled)glEnable(GL_BLEND);else glDisable(GL_BLEND);
+    DAT_083a412c=previousBlend;
+}
 bool BeginOverlay(const OverlayState& s){
     if(!enabled)return false;
     glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();

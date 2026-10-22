@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
 #include "Render/GlyphAtlas.h"
 #include "Platform/IGLContext.h"
 #include "Platform/Text.h"
@@ -945,11 +946,16 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // dorado y los items +N sin su color por nivel.
     GLfloat callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
 
-    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // DESVIACION R4k: texto conserva su dibujo, pero no filtra factores de
+    // mezcla al siguiente productor. Materiales Off mantiene la referencia.
+    const bool scopedText=Materials::BeginText();
+    if(!scopedText){
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
 
     // ── FONDO + GLIFOS, POR TRAMOS DE COLOR ──────────────────────────────────
     // Sin marcadores hay un único tramo con (m_dwTextColor, m_dwBackColor), o
@@ -1044,5 +1050,5 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                             drawText + startChar);
         }
     }
-    glPopAttrib();
+    if(scopedText)Materials::EndText();else glPopAttrib();
 }
