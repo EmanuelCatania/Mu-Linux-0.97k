@@ -10,6 +10,44 @@ struct Material {
     Switch cull=Switch::Keep,depthWrite=Switch::Keep,alphaTest=Switch::Keep,texture=Switch::Keep,depthTest=Switch::Keep;
     Fog fog=Fog::Keep;
 };
+// Entrada de la vista 3D: sólo el estado que establece GL_BeginViewport.
+// Blend, bindings y orientación de caras se conservan como en la referencia.
+enum class Compare { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
+enum class ViewFog { Off, Linear, ExpSquared };
+struct ViewState {
+    bool alphaTest=false,texture=true,depthTest=true,cull=true,depthWrite=true;
+    Compare depthFunction=Compare::LessEqual,alphaFunction=Compare::Greater;
+    float alphaReference=.25f;
+    ViewFog fog=ViewFog::Off;
+    float fogStart=0,fogEnd=1,fogDensity=1,fogColor[4]{};
+};
+bool BeginView(const ViewState& state);
+// Entrada 2D en píxeles. Sólo declara proyección/viewport y depth test Off;
+// las ventanas con modelos pueden abrir después su propia vista 3D.
+struct OverlayState {
+    unsigned width=640,height=480;
+    float fov=45,nearClip=10,farClip=10000;
+};
+bool BeginOverlay(const OverlayState& state);
+bool EndOverlay();
+
+// Texto nativo: guardar/restaurar también factores de mezcla.
+bool BeginText();
+void EndText();
+// Sombra de fauna: habilitar mezcla heredando factores, sin inventar un preset.
+// Uso restringido a BMD__RenderBodyShadow, que no cambia factores de mezcla.
+// Al salir recupera sólo activación y caché; no restaura otros estados BMD.
+class InheritedBlendScope {
+    bool active=false,wasEnabled=false;
+    int previousBlend=0;
+public:
+    InheritedBlendScope();
+    ~InheritedBlendScope();
+    InheritedBlendScope(const InheritedBlendScope&)=delete;
+    InheritedBlendScope& operator=(const InheritedBlendScope&)=delete;
+    explicit operator bool() const { return active; }
+};
+
 enum class Preset { Opaque, LightMap, Alpha, Add, Attenuate, InverseAdd, Untextured };
 constexpr Material Describe(Preset preset,bool depthWrite=true) {
     using S=Switch;using B=Blend;
@@ -29,4 +67,20 @@ bool Enabled();
 void Toggle();
 bool Select(Preset preset,bool depthWrite=true);
 bool Apply(const Material& material);
+// Secuencia transitoria de hasta tres materiales, sin colapsar estados:
+// BMD cambia textura/escritura varias veces antes de emitir geometría.
+struct MaterialSequence { Material steps[3]{};unsigned count=0; };
+bool ApplySequence(const MaterialSequence& sequence);
+// El slot es un recurso del cliente; el identificador nativo se resuelve en GL.
+// Los índices negativos heredados conservan el camino de referencia.
+struct TextureSlot { int index=0; };
+// La secuencia forma parte de la transición: terreno aplica material antes
+// de resolver textura; RenderPlane conserva el orden inverso.
+enum class BindingOrder { TextureFirst, MaterialFirst };
+struct TexturedMaterial {
+    TextureSlot texture;Material material;
+    BindingOrder order=BindingOrder::TextureFirst;
+};
+bool BindTexture(TextureSlot texture);
+bool ApplyTextured(const TexturedMaterial& material);
 }

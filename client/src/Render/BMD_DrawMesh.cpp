@@ -272,16 +272,17 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     if ((bVar4 & 1) == 1) {
         // RENDER_COLOR: flat color, disable texture
         renderMode = MODE_COLOR;
-        if ((bVar4 & 0x40) == 0x40)
-            EnableAlphaBlend();
-        else if ((bVar4 & 0x80) == 0x80)
-            EnableAlphaBlendMinus();
-        else
-            DisableAlphaBlend();
-        DisableTexture('\0');
+        const bool colorAlpha=alpha < _DAT_00552544;
+        const bool declaredColor=Materials::ApplySequence(MeshDraw::ColorMaterials(uVar6,colorAlpha));
+        if(!declaredColor){
+            if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+            else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+            else DisableAlphaBlend();
+            DisableTexture('\0');
+        }
 
-        if (alpha < _DAT_00552544) {
-            EnableAlphaTest('\x01');
+        if (colorAlpha) {
+            if(!declaredColor)EnableAlphaTest('\x01');
             BufferedDraw::Color4f(*(float *)((int)bmd_obj + 0x48),
                       *(float *)((int)bmd_obj + 0x4c),
                       *(float *)((int)bmd_obj + 0x50), alpha);
@@ -345,15 +346,6 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                     *(float *)((int)bmd_obj + 0x4c) = alpha * *(float *)((int)bmd_obj + 0x4c);
                     *(float *)((int)bmd_obj + 0x50) = alpha * *(float *)((int)bmd_obj + 0x50);
                 }
-                EnableAlphaBlend();
-            } else if ((bVar4 & 0x80) == 0x80) {
-                EnableAlphaBlendMinus();
-            } else if ((bVar4 & 0x10) == 0x10) {
-                EnableLightMap();
-            } else if (alpha < _DAT_00552544) {
-                EnableAlphaTest('\x01');
-            } else {
-                DisableAlphaBlend();
             }
 
             // Select chrome texture
@@ -363,7 +355,16 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 local_10 = 0x492;
             else if (((bVar4 & 8) == 8) && (texOverride == 0xffffffff))
                 local_10 = 0x4ce;
-            BindTexture(local_10);
+            const Materials::TexturedMaterial chrome{{static_cast<int>(local_10)},
+                MeshDraw::ChromeMaterial(uVar6,alpha < _DAT_00552544),Materials::BindingOrder::MaterialFirst};
+            if(!Materials::ApplyTextured(chrome)){
+                if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+                else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+                else if ((bVar4 & 0x10) == 0x10) EnableLightMap();
+                else if (alpha < _DAT_00552544) EnableAlphaTest('\x01');
+                else DisableAlphaBlend();
+                BindTexture(local_10);
+            }
 
         } else if (
             // El binario original compara como INT, no float. IDA sub_440D50:
@@ -388,11 +389,12 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         ) {
             // Blend mesh / animated UV variant.
             renderMode = MODE_TEXTURE;
-            BindTexture(local_10);
-            if ((bVar4 & 0x80) == 0x80)
-                EnableAlphaBlendMinus();
-            else
-                EnableAlphaBlend();
+            const Materials::TexturedMaterial blend{{static_cast<int>(local_10)},MeshDraw::BlendMaterial(uVar6)};
+            if(!Materials::ApplyTextured(blend)){
+                BindTexture(local_10);
+                if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+                else EnableAlphaBlend();
+            }
             const float meshLight = (brightMesh && blendMesh > -2 && (int)*(short *)(pcVar1 + 2) != blendMesh)
                                   ? 1.0f : blendLight;
             BufferedDraw::Color3f(meshLight * *(float *)((int)bmd_obj + 0x48),
@@ -404,14 +406,15 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             // RENDER_TEXTURE: explicit bind with blend
             renderMode = MODE_TEXTURE;
             BindTexture(local_10);
-            if ((bVar4 & 0x40) == 0x40)
-                EnableAlphaBlend();
-            else if ((bVar4 & 0x80) == 0x80)
-                EnableAlphaBlendMinus();
-            else if ((alpha < _DAT_00552544) || ((&DAT_083a7cc8)[local_10 * 0x38] == '\x04'))
-                EnableAlphaTest('\x01');
-            else
-                DisableAlphaBlend();
+            // Mantener binding antes de consultar Components: puede crecer la tabla.
+            const bool surfaceAlpha=(bVar4 & 0xc0)==0 && ((alpha < _DAT_00552544) ||
+                (&DAT_083a7cc8)[local_10 * 0x38] == '\x04');
+            if(!Materials::Apply(MeshDraw::SurfaceMaterial(uVar6,surfaceAlpha))){
+                if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+                else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+                else if (surfaceAlpha) EnableAlphaTest('\x01');
+                else DisableAlphaBlend();
+            }
 
         } else if ((bVar4 & 0x40) == 0x40) {
             // Bright-only chrome: skip if texture type is 4
@@ -419,9 +422,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 return;
             }
             renderMode = MODE_METAL;
-            EnableAlphaBlend();
-            DisableTexture('\0');
-            DisableDepthMask();
+            if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){
+                EnableAlphaBlend();
+                DisableTexture('\0');
+                DisableDepthMask();
+            }
 
         } else {
             renderMode = MODE_TEXTURE;

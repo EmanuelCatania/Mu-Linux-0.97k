@@ -1,9 +1,12 @@
 // Sin PCH: resolver GL moderno mediante glad.
 #include "Platform/GL/glad.h"
 #include "Render/Skinning.h"
+#include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/RenderProfile.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 #include <algorithm>
+#include <array>
+#include <map>
 #include <cstring>
 
 #include <vector>
@@ -65,6 +68,9 @@ void main() {
         float light=max((direction.y*normal.y+direction.x*normal.x+direction.z*normal.z)*coefficients.x+coefficients.y,coefficients.z);
         color.rgb=light*bodyLight;
     }
+#ifdef EXPLICIT_FRAGMENT
+    color=clamp(color,0,1);
+#endif
     gl_FrontColor=color;gl_BackColor=color;
     gl_TexCoord[0]=gl_TextureMatrix[0]*gl_MultiTexCoord0;
     vec4 eye=gl_ModelViewMatrix*position;
@@ -75,6 +81,18 @@ void CopyVertices(std::vector<BoneVertex>& out,const unsigned char* source,int c
     out.resize(count);
     for(int i=0;i<count;++i) { short bone;std::memcpy(&bone,source+i*stride,2);
         out[i].bone=bone;std::memcpy(out[i].xyz,source+i*stride+4,12); }
+}
+GLuint uniformProgram=0;
+std::map<GLuint,std::array<GLint,8>> uniformLocations;
+void SelectUniforms(GLuint next){
+    if(uniformProgram==next)return;uniformProgram=next;uniformsReady=false;lastLight=-1;
+    auto found=uniformLocations.find(next);
+    if(found==uniformLocations.end()){
+        const char* names[]{"paletteBase","palette","scales","origin","direction","coefficients","bodyLight","useLight"};
+        std::array<GLint,8> locations{};for(int i=0;i<8;++i)locations[i]=glGetUniformLocation(next,names[i]);
+        found=uniformLocations.emplace(next,locations).first;
+    }
+    const auto& p=found->second;paletteBaseLocation=p[0];paletteLocation=p[1];scalesLocation=p[2];originLocation=p[3];directionLocation=p[4];coefficientsLocation=p[5];bodyLightLocation=p[6];lightLocation=p[7];
 }
 bool Initialize() {
     if(program) return true;
@@ -87,11 +105,8 @@ bool Initialize() {
     glGetProgramiv(program,GL_LINK_STATUS,&ok);
     if(!ok) { char log[2048]{};glGetProgramInfoLog(program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(program);program=0;failed=true;return false; }
     glGenVertexArrays(1,&array);glGenBuffers(1,&buffer);glGenBuffers(1,&boneBuffer);glGenTextures(1,&boneTexture);
-    paletteBaseLocation=glGetUniformLocation(program,"paletteBase");
-    paletteLocation=glGetUniformLocation(program,"palette");scalesLocation=glGetUniformLocation(program,"scales");
-    originLocation=glGetUniformLocation(program,"origin");directionLocation=glGetUniformLocation(program,"direction");
-    coefficientsLocation=glGetUniformLocation(program,"coefficients");bodyLightLocation=glGetUniformLocation(program,"bodyLight");
-    lightLocation=glGetUniformLocation(program,"useLight");
+    FragmentPipelineGL::Create(program,shaderSource);
+    SelectUniforms(program);
     return true;
 }
 }
@@ -168,7 +183,9 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
         paletteBase=static_cast<GLint>(paletteUsed/(4*sizeof(float)));
         paletteUsed+=bytes;uploaded=revision;
     }
-    BufferedDraw::Activate(program,array,buffer);
+    FragmentPipelineGL::Draw material(program,&vertices[0].attributes.color[3],vertices.size(),sizeof(Vertex));
+    BufferedDraw::Activate(material.Program(),array,buffer);material.Apply();
+    SelectUniforms(material.Program());
     if(!uniformsReady) glUniform1i(paletteLocation,1);
     glUniform1i(paletteBaseLocation,paletteBase);
     const float scales[2]{rotationScale,bodyScale};
@@ -202,8 +219,9 @@ void Release() {
     BufferedDraw::Suspend();
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
+    FragmentPipelineGL::Release(program);
     if(program) glDeleteProgram(program);
-    program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
+    uniformLocations.clear();uniformProgram=0;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }
 }

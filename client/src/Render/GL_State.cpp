@@ -94,6 +94,7 @@ void GL_SetBlendSrcAlpha(void)
 // Caches last-bound slot in DAT_00561574 to avoid redundant rebinds.
 void __cdecl GL_BindTextureSlot(int param_1)
 {
+  if(Materials::BindTexture({param_1}))return;
   if (DAT_00561574 != param_1) {
     DAT_00561574 = param_1;
     if (-1 < param_1) {

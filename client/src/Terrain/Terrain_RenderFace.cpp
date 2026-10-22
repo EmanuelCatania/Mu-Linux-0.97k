@@ -26,6 +26,7 @@
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/TerrainDraw.h"
+#include "Render/Materials.h"
 #include <optional>
 
 
@@ -53,10 +54,20 @@ static TerrainDraw::Texture CaptureTexture(int texture) {
 static void CaptureUV(TerrainDraw::Tile& tile,bool upper) {
     for(int c=0;c<4;++c)for(int j=0;j<2;++j)tile.uv[c][(upper?2:0)+j]=TER_TEX[c][j];
 }
+// DESVIACION R4j: declarar el par material/slot preservando la secuencia
+// material primero de las caras y del replay (incluido draw=false).
+static void SelectTerrainMaterial(Materials::Preset preset,int slot) {
+    const Materials::TexturedMaterial material{{slot},Materials::Describe(preset),Materials::BindingOrder::MaterialFirst};
+    if(Materials::ApplyTextured(material))return;
+    if(preset==Materials::Preset::Opaque)GL_ResetState();
+    else if(preset==Materials::Preset::Alpha)GL_SetBlendSrcOver('\x01');
+    else GL_SetBlendAdditive();
+    GL_BindTextureSlot(slot);
+}
 static void ReplayTerrain(const TerrainDraw::Tile& tile,const TerrainDraw::FrameData& f,bool draw) {
     const auto pass=[&](int mode) {
-        if(mode==0)GL_ResetState();else if(mode==1)GL_SetBlendSrcOver('\x01');else GL_SetBlendAdditive();
-        GL_BindTextureSlot(mode==0?tile.base.slot:tile.upper.slot);
+        SelectTerrainMaterial(mode==0?Materials::Preset::Opaque:mode==1?Materials::Preset::Alpha:Materials::Preset::Add,
+            mode==0?tile.base.slot:tile.upper.slot);
         BufferedDraw::Vertex corners[4];
         for(int c=0;c<4;++c) {
             const int i=tile.indices[c];const float a=f.alpha[i];const float* l=f.light+i*3;
@@ -114,8 +125,7 @@ void __cdecl FaceTexture(int Texture, float xf, float yf, char Water, char Scale
 // ── RenderFace (FUN_004F7A90) — quad opaco (base) ────────────────────────────
 void __cdecl RenderFace(int Texture)
 {
-    GL_ResetState();                  // DisableAlphaBlend
-    GL_BindTextureSlot(Texture + 35);      // BindTexture
+    SelectTerrainMaterial(Materials::Preset::Opaque,Texture + 35);
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -134,8 +144,7 @@ void __cdecl RenderFace(int Texture)
 // ── RenderFaceAlpha (FUN_004F7B80) — overlay capa2 con alpha por vértice ──────
 void __cdecl RenderFaceAlpha(int Texture)
 {
-    GL_SetBlendSrcOver('\x01');            // EnableAlphaTest(1)
-    GL_BindTextureSlot(Texture + 35);      // BindTexture
+    SelectTerrainMaterial(Materials::Preset::Alpha,Texture + 35);
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -154,8 +163,7 @@ void __cdecl RenderFaceAlpha(int Texture)
 // ── RenderFaceBlend (FUN_004F7CE0) — overlay de agua (modula por alpha gris) ──
 void __cdecl RenderFaceBlend(int Texture)
 {
-    GL_SetBlendAdditive();                  // EnableAlphaBlend
-    GL_BindTextureSlot(Texture + 35);      // BindTexture
+    SelectTerrainMaterial(Materials::Preset::Add,Texture + 35);
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
