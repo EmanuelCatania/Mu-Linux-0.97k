@@ -87,9 +87,16 @@ bool Draw(const Input& input) {
     if(mesh.minimum.position<0 || mesh.maximum.position>=input.positionCount ||
        ((lit || chrome) && (mesh.minimum.normal<0 || mesh.maximum.normal>=input.normalCount)) ||
        (texture && (mesh.minimum.uv<0 || mesh.maximum.uv>=input.uvCount))) return false;
-    float color[4],uv[4];glGetFloatv(GL_CURRENT_COLOR,color);
-    GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glActiveTexture(GL_TEXTURE0);
-    glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);glActiveTexture(active);
+    // DESVIACION: BMD 0x00440D50 proporciona todos los atributos en las
+    // pasadas iluminadas/texturadas y chrome. Consultar sólo lo heredado.
+    float color[4]{},uv[4]{};
+    if(!lit && !chrome) glGetFloatv(GL_CURRENT_COLOR,color);
+    if(!texture && !chrome) {
+        GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+        if(active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
+        glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
+        if(active!=GL_TEXTURE0) glActiveTexture(active);
+    }
     if(chrome) { std::copy(input.bodyLight,input.bodyLight+3,color);color[3]=input.alpha<1.f?input.alpha:1.f; }
     else if(lit) color[3]=input.alpha<1.f?input.alpha:1.f;
     vertices.resize(mesh.corners.size());
@@ -117,7 +124,7 @@ bool Draw(const Input& input) {
     // DESVIACION: DrawIndexed envía lo pendiente antes de cambiar de VAO.
     // Mantener el programa activo hasta la siguiente frontera de compatibilidad.
     glColor4fv(last.color);glTexCoord4fv(last.uv);
-    BufferedDraw::DrawIndexed(mesh.array,mesh.buffer,vertices.data(),vertices.size(),mesh.indices.size());
+    BufferedDraw::DrawIndexed(mesh.array,mesh.buffer,vertices.data(),vertices.size(),mesh.indices.size(),&last);
     return true;
 }
 }

@@ -23,12 +23,13 @@ void End();
 void Quad(const Vertex* corners,bool fan=true);
 // Flush conserva el pipeline del emisor para el siguiente envío. Suspend
 // además restaura los bindings de entrada antes de usar otro camino GL.
-void Flush();
+// El caller puede proporcionar los atributos que acaba de fijar en GL.
+void Flush(const Vertex* current=nullptr);
 void Suspend();
 void Activate(unsigned shader,unsigned array,unsigned buffer);
 // El dueño de recursos auxiliares los restaura en la misma frontera GL.
 void SetExitHook(void (*hook)());
-void DrawIndexed(unsigned array,unsigned buffer,const Vertex* vertices,std::size_t count,std::size_t indices);
+void DrawIndexed(unsigned array,unsigned buffer,const Vertex* vertices,std::size_t count,std::size_t indices,const Vertex* current=nullptr);
 void NativeColor(float r,float g,float b,float a);
 void NativeUV(float u,float v);
 void NativeVertex(float x,float y,float z);
