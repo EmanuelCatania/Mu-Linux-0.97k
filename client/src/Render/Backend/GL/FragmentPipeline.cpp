@@ -20,6 +20,28 @@ struct TextureInfo{bool supported=false,opaque=false;int combine=0;};
 std::map<unsigned,TextureInfo> textureInfo;
 unsigned long long selected=0,fallback=0,alphaFallback=0,nativeAlpha=0;
 const char* lastReason="";
+const char* layoutReason="";
+unsigned long long layoutReads=0,layoutReuses=0;
+// El estado ajeno al material no cambia entre envíos propios. Toda entrada
+// nativa pasa por Suspend; los cambios de capacidades invalidan esta captura.
+const char* ReadLayout(){
+    if(layoutChecked){if(RenderProfile::active)++layoutReuses;return layoutReason;}
+    if(RenderProfile::active)++layoutReads;
+    layoutChecked=true;layoutReason="";
+    int active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+    if(active!=GL_TEXTURE0)return layoutReason="Fragmentos: referencia (unidad activa)";
+    int shade=0,clampVertex=0;glGetIntegerv(GL_SHADE_MODEL,&shade);glGetIntegerv(GL_CLAMP_VERTEX_COLOR,&clampVertex);
+    if(shade!=GL_SMOOTH||clampVertex==GL_FALSE||glIsEnabled(GL_POINT_SPRITE))return layoutReason="Fragmentos: referencia (interpolacion)";
+    int units=0;glGetIntegerv(GL_MAX_TEXTURE_UNITS,&units);
+    for(int i=0;i<units;++i){
+        glActiveTexture(GL_TEXTURE0+i);
+        const bool other=glIsEnabled(GL_TEXTURE_1D)||glIsEnabled(GL_TEXTURE_3D)||glIsEnabled(GL_TEXTURE_CUBE_MAP)||glIsEnabled(GL_TEXTURE_RECTANGLE)||(i&&glIsEnabled(GL_TEXTURE_2D));
+        if(other){glActiveTexture(GL_TEXTURE0);return layoutReason="Fragmentos: referencia (multitextura)";}
+    }
+    glActiveTexture(GL_TEXTURE0);
+    if(glIsEnabled(GL_COLOR_SUM)||glIsEnabled(GL_POLYGON_STIPPLE))layoutReason="Fragmentos: referencia (estado especial)";
+    return layoutReason;
+}
 const char* fragment=R"GLSL(#version 330 compatibility
 uniform sampler2D materialTexture;
 uniform bool materialTextured,materialReject;
@@ -44,8 +66,8 @@ void main(){
 }
 )GLSL";
 void Report(bool reset){
-    if(!reset&&requested){char line[320];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,lastReason);DbgLogPublic(line);}
-    selected=fallback=alphaFallback=nativeAlpha=0;lastReason="";
+    if(!reset&&requested){char line[320];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,lastReason);DbgLogPublic(line);}
+    selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=0;lastReason="";
 }
 void Count(bool modern,const char* reason="",bool alpha=false){
     status=modern?"Fragmentos: shader activo":reason;
@@ -100,7 +122,7 @@ const char* Status(){return status;}
 void Toggle(){BufferedDraw::Suspend();requested=!requested;Report(true);RenderProfile::RestartCapture();status=requested?"Fragmentos: esperando dibujo":"Fragmentos: referencia";DbgLogPublic(requested?"Fragmentos R4b: activo":"Fragmentos R4b: referencia");}
 }
 namespace FragmentPipelineGL {
-void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE)layoutChecked=false;}
+void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
 void InvalidateBindings(){layoutChecked=false;targetChecked=false;}
 void InvalidateTextures(){textureInfo.clear();layoutChecked=false;}
 void Create(unsigned reference,const char* source){
@@ -120,13 +142,7 @@ Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t s
     const auto found=pipelines.find(reference);if(found==pipelines.end()||!found->second.program){Count(false,"Fragmentos: referencia (programa)");return;}
     if(!targetChecked){int r=0,g=0,b=0,a=0;glGetIntegerv(GL_RED_BITS,&r);glGetIntegerv(GL_GREEN_BITS,&g);glGetIntegerv(GL_BLUE_BITS,&b);glGetIntegerv(GL_ALPHA_BITS,&a);targetSupported=r==8&&g==8&&b==8&&(a==0||a==8);targetChecked=true;}
     if(!targetSupported){Count(false,"Fragmentos: referencia (framebuffer)");return;}
-    int active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);if(active!=GL_TEXTURE0){Count(false,"Fragmentos: referencia (unidad activa)");return;}
-    int shade=0,clampVertex=0;glGetIntegerv(GL_SHADE_MODEL,&shade);glGetIntegerv(GL_CLAMP_VERTEX_COLOR,&clampVertex);
-    if(shade!=GL_SMOOTH||clampVertex==GL_FALSE||glIsEnabled(GL_POINT_SPRITE)){Count(false,"Fragmentos: referencia (interpolacion)");return;}
-    if(!layoutChecked){int units=0;glGetIntegerv(GL_MAX_TEXTURE_UNITS,&units);
-    for(int i=0;i<units;++i){glActiveTexture(GL_TEXTURE0+i);const bool other=glIsEnabled(GL_TEXTURE_1D)||glIsEnabled(GL_TEXTURE_3D)||glIsEnabled(GL_TEXTURE_CUBE_MAP)||glIsEnabled(GL_TEXTURE_RECTANGLE)||(i&&glIsEnabled(GL_TEXTURE_2D));if(other){glActiveTexture(GL_TEXTURE0);Count(false,"Fragmentos: referencia (multitextura)");return;}}
-    glActiveTexture(GL_TEXTURE0);layoutChecked=true;}
-    if(glIsEnabled(GL_COLOR_SUM)||glIsEnabled(GL_POLYGON_STIPPLE)){Count(false,"Fragmentos: referencia (estado especial)");return;}
+    const char* reason=ReadLayout();if(*reason){Count(false,reason);return;}
     textured=glIsEnabled(GL_TEXTURE_2D)!=0;
     int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
     if(textured&&environment!=GL_MODULATE){Count(false,"Fragmentos: referencia (texture env)");return;}
