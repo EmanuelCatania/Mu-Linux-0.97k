@@ -12,7 +12,7 @@ namespace RenderProfile {
 bool active=false;
 namespace {
 bool requested=false,resetPending=false,configurationPending=true;
-int lastWidth=0,lastHeight=0,lastLimit=0;bool lastVsync=false,lastDecoupled=false;
+int lastWidth=0,lastHeight=0,lastLimit=0;bool lastVsync=false,lastDecoupled=false,lastTerrain=false;
 int world=-1;
 Pass current=Pass::Other;
 Platform::TimerStart frameStart{},phaseStart{},windowStart{};
@@ -60,6 +60,7 @@ void Report() {
     ResetWindow();
 }
 }
+void RestartCapture() { resetPending=true; }
 void Toggle() { requested=!requested;resetPending=true; }
 bool Requested() { return requested; }
 Frame::Frame(bool inWorld,int map):measured(requested && inWorld && map>=0) {
@@ -89,10 +90,10 @@ void CountDraw(std::uint64_t vertices,std::uint64_t instances) {
     auto& c=window.counters[static_cast<std::size_t>(current)];++c.draws;c.vertices+=vertices;c.instances+=instances;
 }
 void CountLegacy() { ++window.counters[static_cast<std::size_t>(current)].legacy; }
-void Configuration(int width,int height,int limit,bool vsync,bool decoupled) {
-    if(!configurationPending && width==lastWidth && height==lastHeight && limit==lastLimit && vsync==lastVsync && decoupled==lastDecoupled)return;
-    configurationPending=false;lastWidth=width;lastHeight=height;lastLimit=limit;lastVsync=vsync;lastDecoupled=decoupled;
-    char line[240];std::snprintf(line,sizeof(line),"PerfilR1 configuracion: mapa=%d ancho=%d alto=%d limite=%d vsync_solicitado=%d desacople=%d intervalo_ms=2000",world,width,height,limit,vsync?1:0,decoupled?1:0);DbgLogPublic(line);
+void Configuration(int width,int height,int limit,bool vsync,bool decoupled,bool terrain) {
+    if(!configurationPending && width==lastWidth && height==lastHeight && limit==lastLimit && vsync==lastVsync && decoupled==lastDecoupled && terrain==lastTerrain)return;
+    configurationPending=false;lastWidth=width;lastHeight=height;lastLimit=limit;lastVsync=vsync;lastDecoupled=decoupled;lastTerrain=terrain;
+    char line[240];std::snprintf(line,sizeof(line),"PerfilR1 configuracion: mapa=%d ancho=%d alto=%d limite=%d vsync_solicitado=%d desacople=%d terreno_experimental=%d intervalo_ms=2000",world,width,height,limit,vsync?1:0,decoupled?1:0,terrain?1:0);DbgLogPublic(line);
 }
 void CountState(State state) { ++window.counters[static_cast<std::size_t>(current)].states[static_cast<std::size_t>(state)]; }
 void GpuResult(int map,const double* times,const bool* present) {

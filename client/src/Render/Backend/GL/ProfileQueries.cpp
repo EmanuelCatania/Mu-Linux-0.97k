@@ -119,6 +119,7 @@ void ObserveTexture(unsigned target,unsigned texture) {
     if(!RenderProfile::active)return;
     GLint current=0;
     if(target==GL_TEXTURE_2D)glGetIntegerv(GL_TEXTURE_BINDING_2D,&current);
+    else if(target==GL_TEXTURE_2D_ARRAY)glGetIntegerv(GL_TEXTURE_BINDING_2D_ARRAY,&current);
     else if(target==GL_TEXTURE_BUFFER)glGetIntegerv(GL_TEXTURE_BINDING_BUFFER,&current);
     else return;
     if(static_cast<unsigned>(current)!=texture)RenderProfile::Change(RenderProfile::State::Texture);
