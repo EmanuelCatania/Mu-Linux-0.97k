@@ -102,16 +102,20 @@ void NativeVertex(float x,float y,float z) { glVertex3f(x,y,z); }
 void Begin(unsigned mode) {
     if (!program) { glBegin(mode);return; }
     stream.mode=mode;stream.vertices.clear();
-    const bool direct=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
-    if (direct && !pending.empty() && pendingMode!=mode) Flush();
-    if (direct) pendingMode=mode;
-    stream.destination=direct ? &pending : &stream.vertices;
-    stream.first=stream.destination->size();
+    // Capturar una vez antes del posible envío: Flush restituye estos mismos
+    // atributos, por lo que no necesita volver a leerlos del driver.
     glGetFloatv(GL_CURRENT_COLOR,stream.color);
     GLint active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
     glGetFloatv(GL_CURRENT_TEXTURE_COORDS,stream.uv);
     if (active!=GL_TEXTURE0) glActiveTexture(active);
+    const Vertex current{{},{stream.color[0],stream.color[1],stream.color[2],stream.color[3]},
+        {stream.uv[0],stream.uv[1],stream.uv[2],stream.uv[3]}};
+    const bool direct=mode==GL_TRIANGLES || mode==GL_QUADS || mode==GL_LINES || mode==GL_POINTS;
+    if (direct && !pending.empty() && pendingMode!=mode) Flush(&current);
+    if (direct) pendingMode=mode;
+    stream.destination=direct ? &pending : &stream.vertices;
+    stream.first=stream.destination->size();
     stream.active=true;
 }
 // DESVIACION: el terreno ya entrega todos los atributos; evitar consultas
@@ -129,14 +133,18 @@ void Quad(const Vertex* corners,bool fan) {
     pendingMode=mode;pending.insert(pending.end(),corners,corners+4);
     glColor4fv(corners[3].color);glTexCoord4fv(corners[3].uv);
 }
-void Flush() {
+void Flush(const Vertex* current) {
     if (pending.empty()) return;
-    GLint active=0;
     float color[4],uv[4];
-    glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-    if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
-    glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
-    if (active!=GL_TEXTURE0) glActiveTexture(active);
+    if(current) {
+        std::copy(current->color,current->color+4,color);std::copy(current->uv,current->uv+4,uv);
+    } else {
+        GLint active=0;
+        glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+        if (active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
+        glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
+        if (active!=GL_TEXTURE0) glActiveTexture(active);
+    }
     BindPipeline(program,array,buffer);
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
     if (pendingMode==GL_TRIANGLE_FAN) {
@@ -159,11 +167,20 @@ void Suspend() {
 void Activate(unsigned shader,unsigned nextArray,unsigned nextBuffer) {
     Flush();BindPipeline(shader,nextArray,nextBuffer);
 }
-void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices) {
-    Flush();
-    GLint active;
-    float color[4],uv[4];glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-    glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);glActiveTexture(active);
+void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,std::size_t count,std::size_t indices,const Vertex* current) {
+    // DESVIACION: MeshDraw ya fijó estos atributos; repetir sus stores conserva
+    // incluso las conversiones nativas sin volver a consultar el driver.
+    Flush(current);
+    float color[4],uv[4];
+    if(current) {
+        std::copy(current->color,current->color+4,color);std::copy(current->uv,current->uv+4,uv);
+    } else {
+        GLint active;
+        glGetFloatv(GL_CURRENT_COLOR,color);glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
+        if(active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
+        glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
+        if(active!=GL_TEXTURE0) glActiveTexture(active);
+    }
     BindPipeline(program,meshArray,meshBuffer);
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
@@ -200,6 +217,10 @@ void End() {
     }
     glColor4fv(stream.color);glTexCoord4fv(stream.uv);
     // Strips/polígonos no se concatenan: conservar sus conexiones originales.
-    if (!independent) Flush();
+    if (!independent) {
+        const Vertex current{{},{stream.color[0],stream.color[1],stream.color[2],stream.color[3]},
+            {stream.uv[0],stream.uv[1],stream.uv[2],stream.uv[3]}};
+        Flush(&current);
+    }
 }
 }
