@@ -16,6 +16,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/IFileSystem.h"
 #include "Platform/Text.h"
@@ -858,7 +859,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
     if (flags == 0)          GL_ResetState();                      // DisableAlphaBlend
     else if (flags == 0x1000) GL_SetBlendSrcOver('');               // EnableAlphaTest
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     float texFront, texBack;
     memcpy(&texFront, &thiz[3], 4);   // +0x0C
     memcpy(&texBack,  &thiz[4], 4);   // +0x10
@@ -883,7 +884,7 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
     int texId; memcpy(&texId, &param_2, 4);
 
     GL_BindTextureSlot(texId);
-    glBegin(GL_QUADS);
+    BufferedDraw::Begin(GL_QUADS);
     if (param_1) {
         // cara delantera: (c,r) (c+1,r) (c+1,r+1) (c,r+1)
         for (int r = 0; r < rows - 1; ++r)
@@ -903,7 +904,7 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
                 FUN_004091d0(ecx, 0, param_3, c + 1, (float)r);
             }
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // FUN_004091d0 @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
@@ -924,8 +925,8 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     float u = (float)param_2 / (float)(cols - 1);
 
     const float *vert = (const float *)(param_1 + 12 * (param_2 + row * cols));
-    glTexCoord2f(u, v);
-    glVertex3f(vert[0], vert[1], vert[2]);
+    BufferedDraw::TexCoord2f(u, v);
+    BufferedDraw::Vertex3f(vert[0], vert[1], vert[2]);
 }
 
 // VerletNode_AddToSystem @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.

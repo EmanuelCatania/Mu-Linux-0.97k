@@ -13,3 +13,11 @@ void ObjectPose_PrepareSimulation(int entity, char translate);
 void ObjectPose_PrepareBounds(int entity, char translate);
 
 void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char translate);
+
+// Lote efímero de poses principales de personajes visibles; sólo presentación.
+void ObjectPose_BeginBatch();
+void ObjectPose_EndBatch();
+
+// Restituye sólo resultados cuyos parámetros, fuentes y huesos siguen iguales.
+bool ObjectPose_RestoreGeometry(void* model,const float* bones,float rotationScale,char translate,
+    const float* direction,const float* coefficients,float* positions,float* normals,float* light);

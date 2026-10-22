@@ -2,6 +2,7 @@
 #include "Item/ContentCatalog.h"
 #pragma warning(disable: 4554 4244 4700)
 #include "Render/Camera.h"
+#include "Render/Materials.h"
 
 // External math helpers are declared in functions.h (included via stdafx.h)
 
@@ -400,6 +401,20 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   }
   glRotatef(Ff(DAT_083a42c0), 0.0f, 0.0f, 1.0f);
   glTranslatef(-_DAT_083a42d4,-_DAT_083a42d8,-_DAT_083a42dc);
+  // DESVIACION R4g: el productor declara su entrada; el backend aplica los
+  // mismos campos que la referencia, sin normalizar blend ni bindings.
+  // El color de la niebla legacy sin catálogo aún no tiene un recurso RGBA
+  // propio: conservar esa rama de referencia hasta resolver su almacenamiento.
+  if(Materials::Enabled() && (DAT_083a42ea=='\0'||gContentCatalog.HasMapFog())){
+    Materials::ViewState state;
+    if(DAT_083a42ea!='\0'){
+      state.fog=Materials::ViewFog::Linear;state.fogStart=2000.f;state.fogEnd=2700.f;
+      gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(),state.fogColor);
+    }
+    Materials::BeginView(state);
+    GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
+    return;
+  }
   glDisable(0xbc0);   // GL_ALPHA_TEST
   glEnable(0xde1);    // GL_TEXTURE_2D
   glEnable(0xb71);    // GL_DEPTH_TEST

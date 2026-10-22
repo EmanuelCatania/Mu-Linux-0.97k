@@ -9,6 +9,10 @@
 #include "Net/Net.h"
 #include "Entity/ObjectBounds.h"
 #include "Entity/ObjectPose.h"
+#include "Render/Skinning.h"
+#include "Render/TransformMath.h"
+#include "Render/TransformWorkers.h"
+#include <vector>
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
@@ -114,7 +118,10 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // Vector_InverseRotate writing 3 floats at &local_54[6] overflowed past local_54's
     // 7-elem bound → /GS stack-cookie corruption. Keep them as one 9-elem array
     // and reference [7]/[8] directly where the Ghidra names appear.
+    Skinning::Invalidate();
     float local_54[9];
+    // Inicializar sólo la dirección capturada cuando la iluminación está desactivada.
+    local_54[6]=local_54[7]=local_54[8]=0.f;
     float local_30[12];
     int   local_58 = 0;
     int   local_64 = 0, local_6c = 0;
@@ -177,6 +184,60 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
             return;
         }
     }
+    // DESVIACION: agrupar sólo matemática independiente (IDA 0x004404E0).
+    // Editor y datos inválidos conservan el recorrido original y sus diagnósticos.
+    std::size_t transformCount = 0;
+    bool parallelSafe = DAT_07e11d30 != 2;
+    for (int i=0; parallelSafe && i<meshCount; ++i) {
+        const char* mesh=(const char*)(uintptr_t)*(DWORD*)((char*)this_+0x28)+i*0x28;
+        const int vc=*(const short*)(mesh+4), nc=*(const short*)(mesh+6);
+        if(vc<0 || nc<0) { parallelSafe=false; break; }
+        transformCount+=vc+nc;
+    }
+    // No despertar trabajadores para las numerosas mallas pequeñas del juego.
+    const float transformCoefficients[3]={_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
+    bool transformed = parallelSafe && ObjectPose_RestoreGeometry(this_,(const float*)(uintptr_t)param_1,
+        _DAT_005597c8,param_5,local_54+6,transformCoefficients,(float*)&DAT_0584621c,
+        (float*)&DAT_06f433bc,(float*)&DAT_077e298c);
+    if (!transformed && parallelSafe && transformCount >= 4096) {
+        static std::vector<TransformMath::Mesh> transformMeshes;
+        transformMeshes.clear();
+        for(int i=0;i<meshCount;++i) {
+            const char* mesh=(const char*)(uintptr_t)*(DWORD*)((char*)this_+0x28)+i*0x28;
+            const int vc=*(const short*)(mesh+4), nc=*(const short*)(mesh+6);
+            const auto* vp=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x10);
+            const auto* np=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x14);
+            // Si se superponen slots de salida, conservar el orden secuencial.
+            if((uintptr_t)vp<0x10000u || (uintptr_t)np<0x10000u ||
+               vc>15000 || nc>15000) { parallelSafe=false; break; }
+            transformMeshes.push_back({vp,np,(float*)((char*)&DAT_0584621c+i*180000),
+                (float*)((char*)&DAT_06f433bc+i*180000),(float*)&DAT_077e298c+i*15000,
+                (std::size_t)vc,(std::size_t)nc});
+        }
+        const int nBones=*(const short*)((char*)this_+0x22);
+        for (const auto& mesh : transformMeshes) {
+            for(std::size_t i=0;i<mesh.vertexCount;++i) {
+                const int bone=*(const short*)(mesh.vertices+i*16);
+                if(bone<0 || bone>=200 || (nBones>0 && bone>=nBones)) parallelSafe=false;
+            }
+            for(std::size_t i=0;i<mesh.normalCount;++i) {
+                const int bone=*(const short*)(mesh.normals+i*20);
+                if(bone<0 || bone>=200 || (nBones>0 && bone>=nBones)) parallelSafe=false;
+            }
+        }
+        if(parallelSafe) {
+            TransformMath::Batch batch{transformMeshes.data(),transformMeshes.size(),
+                (const float*)(uintptr_t)param_1,_DAT_005597c8,*(float*)((char*)this_+0x68),
+                {*(float*)((char*)this_+0x6c),*(float*)((char*)this_+0x70),*(float*)((char*)this_+0x74)},
+                {local_54[6],local_54[7],local_54[8]},
+                {_DAT_00552530,_DAT_005528b4,_DAT_005526e4},
+                _DAT_005597c8==_DAT_0055256c,param_5!='\0',*(char*)((char*)this_+0x44)!='\0'};
+            auto& workers=TransformWorkers::SharedTeam();
+            workers.Run(transformCount,&batch,TransformMath::Run);
+            transformed=true;
+        }
+    }
+    if (!transformed)
     for (local_58 = 0; local_58 < meshCount; local_58++) {
         int meshPtr = *(int*)((char*)this_ + 0x28) + local_6c;
         int vertCount = (int)(short)*(short*)(meshPtr + 4);
@@ -307,6 +368,23 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         local_68_base += 15000;
         local_64 += 180000;
     }
+    // DESVIACION: capturar huesos/atributos de esta pose antes de que otro
+    // objeto reutilice los scratch CPU. No retirar los consumidores lógicos.
+    static std::vector<Skinning::Source> skinSources;
+    skinSources.clear();
+    for(int i=0;i<meshCount;++i) {
+        const char* mesh=(const char*)(uintptr_t)*(DWORD*)((char*)this_+0x28)+i*0x28;
+        const int vc=*(const short*)(mesh+4),nc=*(const short*)(mesh+6);
+        const auto* vp=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x10);
+        const auto* np=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x14);
+        if((uintptr_t)vp<0x10000u || (uintptr_t)np<0x10000u || vc<=0 || vc>20000 || nc<0 || nc>20000) continue;
+        skinSources.push_back({mesh,vp,np,(const float*)((const char*)&DAT_0584621c+i*180000),
+            (const float*)&DAT_077e298c+i*15000,vc,nc});
+    }
+    const float zero[3]{},coefficients[3]{_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
+    Skinning::Capture(this_,(const float*)(uintptr_t)param_1,(std::min)(200,int(*(short*)((char*)this_+0x22))),
+        _DAT_005597c8,param_5?*(float*)((char*)this_+0x68):1.f,
+        param_5?(float*)((char*)this_+0x6c):zero,local_54+6,coefficients,skinSources.data(),skinSources.size());
     if (diagInGame && s_xform_dbg < 200) s_xform_dbg++;
     // El editor usa los extremos de la malla; la ruta normal, los bounds locales.
     const float* boundsMin = DAT_07e11d30 == 2 ? local_54 : param_2;

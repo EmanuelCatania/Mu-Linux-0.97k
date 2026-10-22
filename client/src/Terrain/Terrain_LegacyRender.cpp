@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
@@ -76,23 +77,23 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
         }
     }
 
-    glBegin(6); // GL_TRIANGLE_FAN
+    BufferedDraw::Begin(6); // GL_TRIANGLE_FAN
     for (int i = 0; i < 4; i++) {
         if (p6 != '\0') {
             if (p7 == 1.0f) {
-                glColor3fv((GLfloat *)&light[i]);
+                BufferedDraw::Color3fv((GLfloat *)&light[i]);
             } else {
-                glColor4f(light[i][0], light[i][1], light[i][2], p7);
+                BufferedDraw::Color4f(light[i][0], light[i][1], light[i][2], p7);
             }
         }
         // IDA 0x004F8740 walks `a5` as 4 records of 3 floats each (stride 12),
         // consuming the first two components as UVs. Callers such as
         // RenderTerrainBitmap/RenderTerrainAlphaBitmap pass rotated quad data in that layout.
         const float *tc = (const float *)(p5 + i * 12);
-        glTexCoord2f(tc[0], tc[1]);
-        glVertex3fv((GLfloat *)&verts[i]);
+        BufferedDraw::TexCoord2f(tc[0], tc[1]);
+        BufferedDraw::Vertex3fv((GLfloat *)&verts[i]);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // RenderTerrainBitmap @ 0x004F8980 (116 lines) — Terrain_RenderTexturedObject
@@ -104,7 +105,7 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
 // _DAT_00552b9c = 1/64 (UV step), _DAT_0055256c = 1.0 (tile step).
 void __cdecl RenderTerrainBitmap(int p1, int p2, int p3, float p4)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     float angles[3] = { 0.0f, 0.0f, p4 };
     float matrix[3][4];

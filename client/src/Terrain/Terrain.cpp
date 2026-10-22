@@ -390,6 +390,7 @@
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Render/Texture/ImageCodec.h"
 #include "Platform/IWindow.h"
 #include "Platform/IFileSystem.h"
@@ -684,7 +685,7 @@ void MoltSilhouette_DrawEdge(void *obj, float *p1, float *p2, float jitter) {
     float x, y, z;
     double v6, v10;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     v27 = p2[0] - p1[0];
     v28 = p2[1] - p1[1];
     v29 = p2[2] - p1[2];
@@ -713,7 +714,7 @@ void MoltSilhouette_DrawEdge(void *obj, float *p1, float *p2, float jitter) {
     v31 = v31 + v28;
     v32 = p2z + v29;
     v36 = jitter;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     GL_BindTextureSlot(494);            // BindTexture(494)
     GL_SetBlendSrcAlpha();                // EnableAlphaBlendMinus
     {
@@ -730,20 +731,20 @@ void MoltSilhouette_DrawEdge(void *obj, float *p1, float *p2, float jitter) {
     v24 = v24 * 10.0f;
     v25 = v25 * 10.0f;
     v26 = v26 * 10.0f;
-    glBegin(GL_QUADS);
+    BufferedDraw::Begin(GL_QUADS);
     t = v36 + v37;
-    glTexCoord2f(0.0f, t);
+    BufferedDraw::TexCoord2f(0.0f, t);
     z = v35 - v26;
     y = v34 - v25;
     x = v33 - v24;
-    glVertex3f(x, y, z);
+    BufferedDraw::Vertex3f(x, y, z);
     v38 = 1.0f - v37 + v36;
-    glTexCoord2f(0.0f, v38);
-    glVertex3f(v30 - v24, v31 - v25, v32 - v26);
-    glTexCoord2f(1.0f, v38);
-    glVertex3f(v24 + v30, v25 + v31, v26 + v32);
-    glTexCoord2f(1.0f, t);
-    glVertex3f(v24 + v33, v25 + v34, v26 + v35);
-    glEnd();
+    BufferedDraw::TexCoord2f(0.0f, v38);
+    BufferedDraw::Vertex3f(v30 - v24, v31 - v25, v32 - v26);
+    BufferedDraw::TexCoord2f(1.0f, v38);
+    BufferedDraw::Vertex3f(v24 + v30, v25 + v31, v26 + v32);
+    BufferedDraw::TexCoord2f(1.0f, t);
+    BufferedDraw::Vertex3f(v24 + v33, v25 + v34, v26 + v35);
+    BufferedDraw::End();
 }
 

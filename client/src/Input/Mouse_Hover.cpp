@@ -36,6 +36,7 @@
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
 #include "globals.h"
@@ -268,13 +269,13 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     }
     if (DAT_07e11d30 != 5) {
         GL_SetAlphaTest('\0');
-        glColor3f(0.0f, 0.0f, 0.0f);
-        glBegin(3);
+        BufferedDraw::Color3f(0.0f, 0.0f, 0.0f);
+        BufferedDraw::Begin(3);
         // g_TilePickBuf[12] = 4 vec3 corners: iterar 4 (no el bound absoluto del binario).
         for (int i = 0; i < 4; ++i) {
-            glVertex3fv(&g_TilePickBuf[i * 3]);
+            BufferedDraw::Vertex3fv(&g_TilePickBuf[i * 3]);
         }
-        glEnd();
+        BufferedDraw::End();
         GL_ResetState();
     }
     float local_c[3];
@@ -306,14 +307,14 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
             GL_DisableDepthTest();
             GL_SetBlendSrcOver('\x01');
             GL_SetAlphaTest('\0');
-            glBegin(6);
-            glColor4f(1.0f, 0.0f, 0.0f, 0.3f);
+            BufferedDraw::Begin(6);
+            BufferedDraw::Color4f(1.0f, 0.0f, 0.0f, 0.3f);
             // g_TilePickBuf[12] holds exactly 4 vec3 corners (no el bound absoluto
             // 0x7feb288 del binario).
             for (int i = 0; i < 4; ++i) {
-                glVertex3fv(&g_TilePickBuf[i * 3]);
+                BufferedDraw::Vertex3fv(&g_TilePickBuf[i * 3]);
             }
-            glEnd();
+            BufferedDraw::End();
             GL_ResetState();
         }
     }

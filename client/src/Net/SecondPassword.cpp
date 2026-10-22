@@ -137,6 +137,9 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Render/TerrainDraw.h"
+void Terrain_BeginBufferedPass();
+#include "Render/BufferedDraw.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Entity/ObjectBounds.h"
 #include "Platform/Text.h"
@@ -2601,7 +2604,10 @@ void __cdecl RenderTerrain(char EditFlag) {
     }
 
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
+    const bool modern=!EditFlag && TerrainDraw::Requested() && !DAT_0839bc86;
+    if(modern)Terrain_BeginBufferedPass();
     RenderTerrainFrustrum(EditFlag != 0);
+    if(modern && !TerrainDraw::End())RenderTerrainFrustrum(false);
 
     if (EditFlag) {
         if (DAT_07eab1fc) {               // SelectFlag → render del tile pickeado
@@ -2746,20 +2752,20 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
             sanitize(DAT_0828b608[idx2*3+0], DAT_0828b608[idx2*3+1], DAT_0828b608[idx2*3+2], c2);
             sanitize(DAT_0828b608[idx3*3+0], DAT_0828b608[idx3*3+1], DAT_0828b608[idx3*3+2], c3);
 
-            glBegin(GL_QUADS);
-            glColor3fv(c0);
-            glTexCoord2f(0.0f, 0.0f);
-            glVertex3f(wx0, wy0, h0);
-            glColor3fv(c1);
-            glTexCoord2f(1.0f, 0.0f);
-            glVertex3f(wx1, wy0, h1);
-            glColor3fv(c2);
-            glTexCoord2f(1.0f, 1.0f);
-            glVertex3f(wx1, wy1, h2);
-            glColor3fv(c3);
-            glTexCoord2f(0.0f, 1.0f);
-            glVertex3f(wx0, wy1, h3);
-            glEnd();
+            BufferedDraw::Begin(GL_QUADS);
+            BufferedDraw::Color3fv(c0);
+            BufferedDraw::TexCoord2f(0.0f, 0.0f);
+            BufferedDraw::Vertex3f(wx0, wy0, h0);
+            BufferedDraw::Color3fv(c1);
+            BufferedDraw::TexCoord2f(1.0f, 0.0f);
+            BufferedDraw::Vertex3f(wx1, wy0, h1);
+            BufferedDraw::Color3fv(c2);
+            BufferedDraw::TexCoord2f(1.0f, 1.0f);
+            BufferedDraw::Vertex3f(wx1, wy1, h2);
+            BufferedDraw::Color3fv(c3);
+            BufferedDraw::TexCoord2f(0.0f, 1.0f);
+            BufferedDraw::Vertex3f(wx0, wy1, h3);
+            BufferedDraw::End();
         }
     }
 

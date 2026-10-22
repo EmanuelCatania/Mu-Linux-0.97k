@@ -2,6 +2,9 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
+#include "Render/GlyphAtlas.h"
 #include "Platform/IGLContext.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
@@ -112,12 +115,12 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     if (drawX < 0) drawX = 0;
 
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
     GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
     GL_DrawRect((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    glColor4f(0.0f, 0.0f, 0.0f, 0.82f);
+    BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.82f);
     GL_DrawRect((float)drawX, (float)drawY, (float)boxW, (float)boxH);
 
     int lineY = drawY + padY;
@@ -823,6 +826,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         slot = s_next;
         s_next = (s_next + 1) & 3;
         if (s_cache[slot].base != 0) {
+            GlyphAtlas::Forget(s_cache[slot].base);
             glDeleteLists(s_cache[slot].base, 256);
             s_cache[slot].base = 0;
         }
@@ -858,6 +862,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         GLint prevAlign = 4;
         glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        BufferedDraw::Suspend();
         const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
         glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
         if (!fontOk) {
@@ -866,7 +871,10 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         }
         TEXTMETRICA tm;
         int ascent = 11;
-        if (gFont.TextMetrics(hFontDC, &tm)) ascent = tm.tmAscent;
+        if (gFont.TextMetrics(hFontDC, &tm)) {
+            ascent = tm.tmAscent;
+            GlyphAtlas::Build(base, tm.tmHeight, tm.tmMaxCharWidth);
+        }
         s_cache[slot].rc     = hRC;
         s_cache[slot].font   = hFont;
         s_cache[slot].base   = base;
@@ -938,11 +946,16 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // dorado y los items +N sin su color por nivel.
     GLfloat callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
 
-    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // DESVIACION R4k: texto conserva su dibujo, pero no filtra factores de
+    // mezcla al siguiente productor. Materiales Off mantiene la referencia.
+    const bool scopedText=Materials::BeginText();
+    if(!scopedText){
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
 
     // ── FONDO + GLIFOS, POR TRAMOS DE COLOR ──────────────────────────────────
     // Sin marcadores hay un único tramo con (m_dwTextColor, m_dwBackColor), o
@@ -1009,13 +1022,13 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                 float x1 = runX + wOrtho + 1.0f;
                 float y0 = (float)rasterY - descOrtho;
                 float y1 = (float)rasterY + ascOrtho;
-                glColor4ub(bR, bG, bB, bFinal);
-                glBegin(GL_QUADS);
-                    glVertex2f(x0, y0);
-                    glVertex2f(x1, y0);
-                    glVertex2f(x1, y1);
-                    glVertex2f(x0, y1);
-                glEnd();
+                BufferedDraw::Color4ub(bR, bG, bB, bFinal);
+                BufferedDraw::Begin(GL_QUADS);
+                    BufferedDraw::Vertex2f(x0, y0);
+                    BufferedDraw::Vertex2f(x1, y0);
+                    BufferedDraw::Vertex2f(x1, y1);
+                    BufferedDraw::Vertex2f(x0, y1);
+                BufferedDraw::End();
             }
 
             GLubyte R = (GLubyte)( fg        & 0xFF);
@@ -1030,11 +1043,12 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             G = (GLubyte)((float)G * callerG + 0.5f);
             B = (GLubyte)((float)B * callerB + 0.5f);
 
-            glColor4ub(R, G, B, finalA);
+            BufferedDraw::Color4ub(R, G, B, finalA);
             glRasterPos2f(runX, (float)rasterY);
-            glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
-                        drawText + startChar);
+            if (!GlyphAtlas::Draw(s_fontListBase, drawText + startChar, endChar - startChar, vw, vh))
+                glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
+                            drawText + startChar);
         }
     }
-    glPopAttrib();
+    if(scopedText)Materials::EndText();else glPopAttrib();
 }

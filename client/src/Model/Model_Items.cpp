@@ -5,6 +5,9 @@
 // for every class/tier), item slots, and shadow model.  Ends by calling
 // SetAttackSpeed (Entity_LockAnim) and setting scale tables in the model block.
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
+#include "Render/Skinning.h"
+#include "Game/RenderDerivedState.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
 #include "functions.h"
@@ -14,19 +17,14 @@
 // IDA: OpenPlayers
 void __cdecl Model_LoadPlayerAndItemMeshes(void)
 {
-    // Allocate raw model pool and align the base pointer with a random offset
-    // to frustrate memory-address fingerprinting.
-    // DESVIACION (0.97.20): el binario reserva 0x5b334 (963 modelos + el
-    // offset).  Se suman MODEL_MAX_DYNAMIC slots para los modelos del catálogo.
-    DAT_06f42a58 = operator new((size_t)(MODEL_MAX_TOTAL + 0x400) * 0xbc);
-    unsigned int rnd = (unsigned int)rand() & 0x800003ff;
-    if ((int)rnd < 0) rnd = (rnd - 1 | 0xfffffc00) + 1;
-    DAT_05828d58 = (DWORD)((char*)DAT_06f42a58 + rnd * 0xbc);
-
-    // Zero-fill the model table region (0xb0cd DWORDs en el binario = 963
-    // modelos; acá también los dinámicos).
-    DWORD* p = (DWORD*)DAT_05828d58;
-    for (int i = MODEL_MAX_TOTAL * 0xbc / 4; i != 0; i--) *p++ = 0;
+    // DESVIACION: base estable y páginas bajo demanda. Conservar la muestra
+    // RNG del offset original para no alterar la secuencia de simulación.
+    (void)rand();
+    // La base ya no cambia: invalidar explícitamente snapshots de la carga anterior.
+    RenderDerivedState_Cancel();Skinning::Invalidate();
+    ResourceTables::ResetModels();
+    DAT_06f42a58=ResourceTables::ModelBase();
+    DAT_05828d58=(DWORD)(uintptr_t)DAT_06f42a58;
 
     // ── Korean-locale SMD animations (skipped in compressed-asset mode) ──────
     if (DAT_0055a7c4 == '\0') {

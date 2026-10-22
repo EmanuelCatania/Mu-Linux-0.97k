@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/EventTimer.h"
@@ -63,12 +64,12 @@ void EmitQuad(const float p[4][2], float u, float v, float uw, float vh)
 {
     const float tc[4][2] = { { u, v }, { u, v + vh }, { u + uw, v + vh }, { u + uw, v } };
     const float cx = gWindow.GetWidth() / 2.0f, cy = gWindow.GetHeight() / 2.0f;
-    glBegin(GL_TRIANGLE_FAN);
+    BufferedDraw::Begin(GL_TRIANGLE_FAN);
     for (int i = 0; i < 4; ++i) {
-        glTexCoord2f(tc[i][0], tc[i][1]);
-        glVertex2f(p[i][0] + cx, p[i][1] + cy);
+        BufferedDraw::TexCoord2f(tc[i][0], tc[i][1]);
+        BufferedDraw::Vertex2f(p[i][0] + cx, p[i][1] + cy);
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // DLL OpenglUtil.cpp MyRenderBitRotate.
@@ -115,7 +116,7 @@ void PointRotate(float ix, float iy, float iw, float ih, float rotateLocal,
     gFont.MeasureText(gFont.GetTextDC(), tooltip, Platform::TextLength(tooltip), &size);
     const int textWidth = (int)(size.cx * 640 / gWindow.GetWidth());
     const DWORD text = m_dwTextColor, back = m_dwBackColor;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     m_dwBackColor = 0xFF000000u;
     m_dwTextColor = 0xFFFFFF00u;   // cian (ABGR)
     RenderTipText((int)(dx + iw / 2.0f) - textWidth / 2, (int)(480.0f - dy - 5.0f), tooltip);
@@ -238,7 +239,7 @@ void CMiniMap::RenderBackground() const
     EnableAlphaTest(true);
     glBindTexture(GL_TEXTURE_2D, m_Texture);
     DAT_00561574 = 0xFFFFFFFF;
-    glColor4f(1.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
     BitRotate(CenterX, CenterY, MaxSize, MaxSize, Rotation,
               v.offsetX, v.offsetY, v.size / 512.0f, v.size / 512.0f);
 }
@@ -269,7 +270,7 @@ void CMiniMap::RenderMarkers() const
         }
         EnableAlphaTest(true);
         GL_BindTextureSlot(PointTexture);
-        glColor4f(r, g, b, m_Alpha * 0.1f);
+        BufferedDraw::Color4f(r, g, b, m_Alpha * 0.1f);
         PointRotate(tx, ty, v.scale * size, v.scale * size, *(const float*)(c + 0x24) - 45.0f,
                     2.0f / 32.0f, 14.0f / 32.0f, 30.0f / 32.0f, 18.0f / 32.0f, tooltip);
     }
@@ -294,7 +295,7 @@ void CMiniMap::RenderGates() const
                   gMapManager.GetName(gates[gate.Target].Map));
         EnableAlphaTest(true);
         GL_BindTextureSlot(PointTexture);
-        glColor4f(0.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
+        BufferedDraw::Color4f(0.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
         PointRotate(tx, ty, v.scale * 10.0f, v.scale * 10.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, text);
     }
 }
@@ -308,14 +309,14 @@ void CMiniMap::RenderButton(bool left) const
     const int panelX = left ? 0 : 640 - ButtonPanelWidth;
     const float alpha = Inside(panelX, ButtonY, ButtonPanelWidth, ButtonSize) ? 1.0f : 0.3f;
     EnableAlphaTest(true);
-    glColor4f(1.0f, 1.0f, 1.0f, alpha);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, alpha);
     GL_DrawTexture(0xF5, plateX, (float)ButtonY, 75.0f, 21.0f, left ? 0.0f : 75.0f / 128.0f, 0.0f,
                    (left ? 75.0f : -75.0f) / 128.0f, 21.0f / 32.0f, 1, 1);
     const bool pressed = Inside((int)buttonX, ButtonY, ButtonSize, ButtonSize) && MouseLButton;
     GL_DrawTexture(pressed ? 0x121 : 0x120, buttonX, (float)ButtonY, 21.0f, 21.0f,
                    0.0f, 0.0f, 24.0f / 32.0f, 24.0f / 32.0f, 1, 1);
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     char text[64];
     if (left) Platform::TextFormatSecure(text, gClientText.Get(ClientTextId::MiniMapZoom), m_Zoom);
@@ -346,7 +347,7 @@ void CMiniMap::Render()
     RenderMarkers();
     RenderGates();
     GL_ResetState();
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     RenderButton(true);
     RenderButton(false);
 }

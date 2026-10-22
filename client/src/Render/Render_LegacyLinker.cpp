@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Render/MaterialVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "globals.h"
@@ -358,7 +359,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     // (RenderObjectScreen) deferenciaría el modelEntry → libjpeg crash si meshBase
     // o numMesh están en garbage. Retornar silencioso si modelo no listo.
     {
-        if (modelId < 0 || modelId >= MODEL_MAX_TOTAL) return;
+        if (modelId < 0 || modelId >= ResourceTables::ModelCount()) return;
         char* modelEntry = (char*)DAT_05828d58 + modelId * 0xbc;
         short numMesh = *(short*)(modelEntry + 0x24);
         int meshBase = *(int*)(modelEntry + 0x28);

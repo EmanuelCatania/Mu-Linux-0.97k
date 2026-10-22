@@ -34,6 +34,11 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Render/RenderProfile.h"
+#include "Render/TerrainDraw.h"
+#include "Render/Materials.h"
+#include "Render/FragmentStage.h"
+#include "Config/UserSettings.h"
 #include "Render/MaterialVisuals.h"
 static void Game_TickAmbientAudio();
 void Sprite_CaptureStep();
@@ -89,6 +94,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     // comenzar sólo al dibujar sumaba ese trabajo a la espera y ralentizaba SIM.
     const CFrameLimiter::StartTime renderStart = gFrameLimiter.Start();
     TimeRemain += gFrameLimiter.Advance(renderStart);
+    RenderProfile::Frame profile(SceneFlag==5,gMapManager.GetCurrentMap());
+    if(RenderProfile::active)RenderProfile::Configuration(gWindow.GetWidth(),gWindow.GetHeight(),gUserSettings.GetFpsLimit(),gUserSettings.GetVSync(),gUserSettings.GetRenderDecoupled(),TerrainDraw::Requested(),TerrainDraw::Composition(),Materials::Enabled(),FragmentStage::Requested());
     int    shiftHeld;
 
     CHK("ML/enter");
@@ -113,6 +120,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // Runs once per accumulated 40ms budget. Processes game logic each tick.
     // DESVIACION: hasta cinco pasos por draw sin descartar deuda lógica;
     // incluso bajo recuperación se dibuja y se vuelve al despacho de eventos.
+    { RenderProfile::Scope measured(RenderProfile::Pass::Simulation);
     int simulationSteps=0;
     while (TimeRemain > 0x27 && simulationSteps<5) {
         ++simulationSteps;
@@ -228,6 +236,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         crt_sprintf(tickBuf, (const char*)&DAT_00561b04);
     }
 
+    }
     // ── ABORT IF SOCKET ERROR ─────────────────────────────────────────────────
     if (DAT_055ca018 != '\0') return;
 
@@ -315,7 +324,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // BeginOpengl(0,0,640,480) → push PROJECTION+MODELVIEW
     CHK("ML/post_viewport");
-    glClear(0x4100);  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+    { RenderProfile::Scope measured(RenderProfile::Pass::Scene);glClear(0x4100); }  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
     // IDA Game_MainLoop (0x525D40): BeginOpengl(0,0,640,480); glClear; EndOpengl();
     // EndOpengl balancea el BeginOpengl (pop MODELVIEW + PROJECTION).
     GL_EndOpenGL();   // EndOpengl → pop MODELVIEW + PROJECTION (balancea el BeginOpengl)
@@ -350,9 +359,10 @@ void __cdecl Game_MainLoop(HDC param_1)
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
 
-    Simulation_BeginRender();
+    { RenderProfile::Scope measured(RenderProfile::Pass::Prepare);Simulation_BeginRender(); }
     renderFlag  = 0;
 
+    { RenderProfile::Scope sceneMeasured(RenderProfile::Pass::Scene);
     // ── SCENE RENDER ──────────────────────────────────────────────────────────
     if (SceneFlag == 2) { renderFlag = (char)Scene_Login();      CHK("ML/post_Scene_Login"); }
     if (SceneFlag == 4) { renderFlag = (char)Scene_CharSelect(); CHK("ML/post_Scene_CharSelect"); }
@@ -363,7 +373,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
     CPhysicsManager_Render(g_PhysicsManager);   // IDA 0x5269C3: CPhysicsManager::Render
-    Simulation_EndRender();
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Restore);Simulation_EndRender(); }
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')
@@ -379,13 +390,14 @@ void __cdecl Game_MainLoop(HDC param_1)
     CHK("ML/pre_swap");
     // ── SWAP BUFFERS ──────────────────────────────────────────────────────────
     if (renderFlag & 0xff) {
+        RenderProfile::Scope measured(RenderProfile::Pass::Swap);
         glFlush();
         gWindow.Present();
     }
     CHK("ML/post_swap");
 
     // ── LÍMITE DE PRESENTACIÓN DESPUÉS DEL RENDER ──────────────────────────────────────
-    gFrameLimiter.Wait(renderStart);
+    { RenderProfile::Scope measured(RenderProfile::Pass::Wait);gFrameLimiter.Wait(renderStart); }
 
     // ── CONNECTION CHECK (desactivado) ────────────────────────────────────────
     // En el original SocketClient es un Object* con un Type en +8; en nuestro port

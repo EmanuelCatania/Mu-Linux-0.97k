@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Platform/Diagnostics.h"
 #include "Platform/Text.h"
 #include "Platform/NativeBridge.h"
@@ -672,10 +673,8 @@ int main(int, char**)
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
     if (DAT_05828d58 == 0) {
-        size_t modelPoolSz = (size_t)(MODEL_MAX_TOTAL + 0x400) * 0xbc;
-        DAT_06f42a58 = malloc(modelPoolSz);
-        memset(DAT_06f42a58, 0, modelPoolSz);
-        DAT_05828d58 = (DWORD)DAT_06f42a58;
+        DAT_06f42a58=ResourceTables::ModelBase();
+        DAT_05828d58=(DWORD)(uintptr_t)DAT_06f42a58;
     }
 
     // Class name table (DAT_07d2b494, stride 300, indexed por cidx = (klass&7) +

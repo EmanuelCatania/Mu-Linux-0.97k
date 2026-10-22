@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Render/EquipmentVisuals.h"
 #include <algorithm>
 #include "Platform/Text.h"
@@ -489,13 +490,10 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
 
     int slot = fixedSlot;
     if (slot < 0) {
-        if (m_NextDynamicModel >= MODEL_MAX_DYNAMIC) {
-            Log("ContentCatalog: sin slots de modelo para '%s%s'", sub, name);
-            return -1;
-        }
         slot = MODEL_MAX_VANILLA + m_NextDynamicModel++;
     }
 
+    ResourceTables::EnsureModels(std::size_t(slot)+1);
     char dir[128];
     Platform::TextFormatTruncated(dir, sizeof(dir), Platform::TruncateText, "Data\\%s", sub);
     AccessModel(slot, dir, name, -1);
@@ -509,14 +507,10 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     if (m_NextTexture == 0) m_NextTexture = BITMAP_MAX_VANILLA;
     const DWORD savedBegin = TextureBegin;
     const DWORD savedCurrent = TextureCurrent;
-    if (m_NextTexture + 32 <= BITMAP_MAX_TOTAL) {
-        TextureBegin = BITMAP_MAX_VANILLA;
-        TextureCurrent = m_NextTexture;
-        OpenTexture(slot, sub, 0x2600, '\x01');
-        m_NextTexture = (int)TextureCurrent;
-    } else {
-        Log("ContentCatalog: sin espacio de texturas para %s%s", sub, name);
-    }
+    TextureBegin = BITMAP_MAX_VANILLA;
+    TextureCurrent = m_NextTexture;
+    OpenTexture(slot, sub, 0x2600, '\x01');
+    m_NextTexture = (int)TextureCurrent;
     TextureBegin = savedBegin;
     TextureCurrent = savedCurrent;
 
@@ -543,11 +537,8 @@ int CContentCatalog::LoadTexture(const char* path)
     if (it != s_LoadedTextures.end()) return it->second;
 
     if (m_NextTexture == 0) m_NextTexture = BITMAP_MAX_VANILLA;
-    if (m_NextTexture >= BITMAP_MAX_TOTAL) {
-        Log("ContentCatalog: sin espacio de texturas para %s", sub);
-        return -1;
-    }
     const int slot = m_NextTexture++;
+    ResourceTables::EnsureTextures(std::size_t(slot)+1);
     const char* ext = strrchr(sub, '.');
     const bool tga = ext && (Platform::TextCompareIgnoreCase(ext, ".tga") == 0);
     if (tga) OpenTGA(sub, slot, 0x2601, 0x2900, 0, '\x01');
