@@ -1,6 +1,9 @@
 #pragma once
 #include <cstddef>
 namespace FragmentPipelineGL {
+// Estado lógico legacy para contrastar en el diagnóstico, sin tipos GL.
+struct LegacyState { int blend=0;bool cull=false,depth=false,write=false,alpha=false,texture=false; };
+LegacyState ReadLegacyState();
 void Create(unsigned reference,const char* vertexSource);
 void Release(unsigned reference);
 void InvalidateTextures();

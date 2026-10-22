@@ -58,3 +58,9 @@ bool Apply(const Material& m) {
 }
 bool Select(Preset preset,bool depthWrite){return Apply(Describe(preset,depthWrite));}
 }
+
+namespace FragmentPipelineGL {
+LegacyState ReadLegacyState(){
+    return {DAT_083a412c,DAT_083a411c!=0,DAT_083a411e!=0,DAT_083a42e8!=0,DAT_083a411d!=0,DAT_083a4125!=0};
+}
+}

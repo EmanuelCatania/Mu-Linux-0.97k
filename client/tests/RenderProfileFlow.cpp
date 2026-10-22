@@ -9,6 +9,9 @@
 namespace {
 long long now=0;unsigned clockCalls=0,flushes=0,gpuBegins=0,gpuChanges=0,releases=0;
 std::vector<std::string> logs;
+struct AuditCall {RenderProfile::Pass pass;unsigned occurrence;};
+std::vector<AuditCall> audits;
+void Audit(RenderProfile::Pass pass,unsigned occurrence){CHECK(flushes>0);audits.push_back({pass,occurrence});}
 class Clock final:public Platform::ITimer {
 public:
  std::int64_t CounterFrequency()override{return 1000;}
@@ -36,8 +39,9 @@ bool Supported(){return true;}
 }
 int main(){
  using namespace RenderProfile;
+ SetPassAudit(Audit);
  for(int i=0;i<20;++i){Frame f(true,7);Scope s(Pass::Terrain);Draw(6);Change(State::Blend);}
- CHECK(clockCalls==0 && flushes==0 && gpuBegins==0 && gpuChanges==0 && logs.empty());
+ CHECK(clockCalls==0 && flushes==0 && gpuBegins==0 && gpuChanges==0 && logs.empty() && audits.empty());
  Toggle();
  {Frame invalid(true,-1);Scope s(Pass::Terrain);}
  CHECK(clockCalls==0 && flushes==0 && gpuBegins==0 && logs.empty());
@@ -60,11 +64,19 @@ int main(){
   if(line.find("PerfilR1 frame:")!=std::string::npos){frame=true;CHECK(line.find("cpu_prom=2009.000")!=std::string::npos);}
  }
  CHECK(terrain && effects && frame);
+ CHECK(audits.size()==4);
+ CHECK(audits[0].pass==Pass::Terrain && audits[0].occurrence==0);
+ CHECK(audits[1].pass==Pass::Effects && audits[1].occurrence==0);
+ CHECK(audits[2].pass==Pass::Effects && audits[2].occurrence==1);
+ // Reanudar la pasada anterior no simula una entrada nueva; el ordinal se
+ // reinicia en el cuadro siguiente, aunque la ventana de perfil siga abierta.
+ {Frame f(true,7);Scope s(Pass::Terrain);}
+ CHECK(audits.size()==5 && audits.back().pass==Pass::Terrain && audits.back().occurrence==0);
  Toggle();{Frame f(true,7);} // Limpieza única al apagar.
  const auto calls=clockCalls,drawFlushes=flushes,begins=gpuBegins,changes=gpuChanges,deleted=releases;
- const auto count=logs.size();
+ const auto count=logs.size(),auditCount=audits.size();
  for(int i=0;i<20;++i){Frame f(true,7);Scope s(Pass::Terrain);Draw(6);Change(State::Blend);}
- CHECK(clockCalls==calls && flushes==drawFlushes && gpuBegins==begins && gpuChanges==changes && releases==deleted && logs.size()==count);
+ CHECK(clockCalls==calls && flushes==drawFlushes && gpuBegins==begins && gpuChanges==changes && releases==deleted && logs.size()==count && audits.size()==auditCount);
  Toggle();
  {Frame f(true,7);{Scope s(Pass::Scene);ResetContext();}CHECK(!active);}
  CHECK(Requested());Toggle();{Frame f(false,7);}
