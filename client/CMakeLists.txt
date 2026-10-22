@@ -57,6 +57,8 @@ set(MU_SOURCES
     src/Render/ResourceTables.cpp
     src/Render/Skinning.cpp
     src/Render/MeshDraw.cpp
+    src/Render/TerrainDraw.cpp
+    src/Render/Backend/GL/TerrainRenderer.cpp
     src/Render/RenderProfile.cpp
     src/Render/Backend/GL/ProfileQueries.cpp
     src/Render/BufferedDraw.cpp
@@ -441,6 +443,8 @@ set(MU_HEADERS
     src/Render/ResourceTables.h
     src/Render/Skinning.h
     src/Render/MeshDraw.h
+    src/Render/TerrainDraw.h
+    src/Render/Backend/GL/TerrainRenderer.h
     src/Render/RenderProfile.h
     src/Render/ProfileStats.h
     src/Render/Backend/GL/ProfileQueries.h
@@ -600,7 +604,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
@@ -698,3 +702,9 @@ add_executable(mu_render_profile_flow_test EXCLUDE_FROM_ALL
 target_include_directories(mu_render_profile_flow_test PRIVATE src)
 target_compile_features(mu_render_profile_flow_test PRIVATE cxx_std_17)
 add_test(NAME render_profile_flow COMMAND mu_render_profile_flow_test)
+
+# DESVIACION R3a: contrato de captura/fallback sin necesitar un driver GL.
+add_executable(mu_terrain_draw_flow_test EXCLUDE_FROM_ALL tests/TerrainDrawFlow.cpp src/Render/TerrainDraw.cpp)
+target_include_directories(mu_terrain_draw_flow_test PRIVATE src)
+target_compile_features(mu_terrain_draw_flow_test PRIVATE cxx_std_17)
+add_test(NAME terrain_draw_flow COMMAND mu_terrain_draw_flow_test)

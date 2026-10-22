@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Render/RenderProfile.h"
+#include "Render/TerrainDraw.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Core/Font.h"
@@ -86,6 +87,7 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 bool CWindow::InitOpenGL()
 {
     if (!Platform::GetGLContext().Initialize() || !BufferedDraw::Initialize()) {
+        TerrainDraw::Release();
         MeshDraw::Release();
         BufferedDraw::Release();
         Platform::GetGLContext().Release();
@@ -106,6 +108,7 @@ bool CWindow::InitOpenGL()
 void CWindow::ReleaseOpenGL()
 {
     RenderProfile::ResetContext();
+    TerrainDraw::Release();
     MeshDraw::Release();
     GlyphAtlas::Release();
     BufferedDraw::Release();

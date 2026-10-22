@@ -137,6 +137,8 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Render/TerrainDraw.h"
+void Terrain_BeginBufferedPass();
 #include "Render/BufferedDraw.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Entity/ObjectBounds.h"
@@ -2602,7 +2604,10 @@ void __cdecl RenderTerrain(char EditFlag) {
     }
 
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
+    const bool modern=!EditFlag && TerrainDraw::Requested() && !DAT_0839bc86;
+    if(modern)Terrain_BeginBufferedPass();
     RenderTerrainFrustrum(EditFlag != 0);
+    if(modern && !TerrainDraw::End())RenderTerrainFrustrum(false);
 
     if (EditFlag) {
         if (DAT_07eab1fc) {               // SelectFlag → render del tile pickeado

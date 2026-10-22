@@ -1,6 +1,7 @@
 #pragma once
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
+#include "Render/TerrainDraw.h"
 #include "Render/Backend/GL/ProfileQueries.h"
 
 // DESVIACION: antes de cambiar el pipeline o leer/escribir su salida, enviar
@@ -9,6 +10,9 @@
 namespace BufferedDraw {
 template<class F,class... A> inline auto StateChange(F function,A... args) -> decltype(function(args...)) {
     Flush();return function(args...);
+}
+template<class F,class... A> inline auto TextureChange(F function,A... args) -> decltype(function(args...)) {
+    Flush();TerrainDraw::InvalidateTextures();return function(args...);
 }
 template<class F,class... A> inline auto LegacyDraw(F function,A... args) -> decltype(function(args...)) {
     Suspend();RenderProfile::Legacy();return function(args...);
@@ -59,7 +63,7 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glClear(...) ::BufferedDraw::StateChange(::glClear,__VA_ARGS__)
 #define glClearColor(...) ::BufferedDraw::StateChange(::glClearColor,__VA_ARGS__)
 #define glDeleteLists(...) ::BufferedDraw::LegacyCall(::glDeleteLists,__VA_ARGS__)
-#define glDeleteTextures(...) ::BufferedDraw::StateChange(::glDeleteTextures,__VA_ARGS__)
+#define glDeleteTextures(...) ::BufferedDraw::TextureChange(::glDeleteTextures,__VA_ARGS__)
 #define glDepthFunc(value) ::BufferedDraw::ProfileDepthFunction(value)
 #define glDepthMask(mask) ::BufferedDraw::ProfileDepthMask(mask)
 #define glDisable(cap) ::BufferedDraw::SetEnabled(::glDisable,cap,false)
@@ -81,10 +85,10 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glReadPixels(...) ::BufferedDraw::LegacyCall(::glReadPixels,__VA_ARGS__)
 #define glRotatef(...) ::BufferedDraw::StateChange(::glRotatef,__VA_ARGS__)
 #define glTexEnvf(...) ::BufferedDraw::StateChange(::glTexEnvf,__VA_ARGS__)
-#define glTexImage2D(...) ::BufferedDraw::StateChange(::glTexImage2D,__VA_ARGS__)
-#define glTexSubImage2D(...) ::BufferedDraw::StateChange(::glTexSubImage2D,__VA_ARGS__)
-#define glTexParameterfv(...) ::BufferedDraw::StateChange(::glTexParameterfv,__VA_ARGS__)
-#define glTexParameteri(...) ::BufferedDraw::StateChange(::glTexParameteri,__VA_ARGS__)
+#define glTexImage2D(...) ::BufferedDraw::TextureChange(::glTexImage2D,__VA_ARGS__)
+#define glTexSubImage2D(...) ::BufferedDraw::TextureChange(::glTexSubImage2D,__VA_ARGS__)
+#define glTexParameterfv(...) ::BufferedDraw::TextureChange(::glTexParameterfv,__VA_ARGS__)
+#define glTexParameteri(...) ::BufferedDraw::TextureChange(::glTexParameteri,__VA_ARGS__)
 #define glTranslatef(...) ::BufferedDraw::StateChange(::glTranslatef,__VA_ARGS__)
 #define glViewport(...) ::BufferedDraw::StateChange(::glViewport,__VA_ARGS__)
 #define glOrtho(...) ::BufferedDraw::StateChange(::glOrtho,__VA_ARGS__)
@@ -97,8 +101,8 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glScissor(...) ::BufferedDraw::StateChange(::glScissor,__VA_ARGS__)
 #define glFinish() ::BufferedDraw::LegacyCall(::glFinish)
 #define glDrawPixels(...) ::BufferedDraw::LegacyDraw(::glDrawPixels,__VA_ARGS__)
-#define glCopyTexImage2D(...) ::BufferedDraw::StateChange(::glCopyTexImage2D,__VA_ARGS__)
-#define glCopyTexSubImage2D(...) ::BufferedDraw::StateChange(::glCopyTexSubImage2D,__VA_ARGS__)
+#define glCopyTexImage2D(...) ::BufferedDraw::TextureChange(::glCopyTexImage2D,__VA_ARGS__)
+#define glCopyTexSubImage2D(...) ::BufferedDraw::TextureChange(::glCopyTexSubImage2D,__VA_ARGS__)
 #define glGetError() ::BufferedDraw::LegacyCall(::glGetError)
 #define glCallList(...) ::BufferedDraw::LegacyDraw(::glCallList,__VA_ARGS__)
 #define glListBase(...) ::BufferedDraw::StateChange(::glListBase,__VA_ARGS__)

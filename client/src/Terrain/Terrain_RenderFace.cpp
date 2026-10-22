@@ -25,6 +25,8 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/TerrainDraw.h"
+#include <optional>
 
 
 // ── Aliases locales que mapean los nombres IDA a nuestros globals ────────────
@@ -41,6 +43,40 @@
 #define TER_TEX     ((float(*)[2])&g_TerrainTexCoord[0])   // TerrainTextureCoord[4][2]
 #define TER_LIGHT   ((float(*)[3])&DAT_081cb608[0])        // PrimaryTerrainLight[N][3]
 #define TER_NODRAW  DAT_0839bc86                           // unk_839BC86 (skip-draw flag)
+
+// DESVIACION R3a: replay de atributos/material final, sin tocar picking, RNG
+// ni buffers de SIM. La captura sólo se habilita en RenderTerrain(EditFlag=0).
+static TerrainDraw::Texture CaptureTexture(int texture) {
+    const auto& bmp=Bitmaps[texture+35];
+    return {bmp.TextureNumber,texture+35,(int)bmp.Width,(int)bmp.Height,(int)bmp.Components,bmp.Buffer};
+}
+static void CaptureUV(TerrainDraw::Tile& tile,bool upper) {
+    for(int c=0;c<4;++c)for(int j=0;j<2;++j)tile.uv[c][(upper?2:0)+j]=TER_TEX[c][j];
+}
+static void ReplayTerrain(const TerrainDraw::Tile& tile,const TerrainDraw::FrameData& f,bool draw) {
+    const auto pass=[&](int mode) {
+        if(mode==0)GL_ResetState();else if(mode==1)GL_SetBlendSrcOver('\x01');else GL_SetBlendAdditive();
+        GL_BindTextureSlot(mode==0?tile.base.slot:tile.upper.slot);
+        BufferedDraw::Vertex corners[4];
+        for(int c=0;c<4;++c) {
+            const int i=tile.indices[c];const float a=f.alpha[i];const float* l=f.light+i*3;
+            corners[c]={{tile.positions[c][0],tile.positions[c][1],tile.positions[c][2]},
+                {mode==2?a:l[0],mode==2?a:l[1],mode==2?a:l[2],mode==1?a:1},
+                {tile.uv[c][mode?2:0],tile.uv[c][mode?3:1],0,1}};
+        }
+        if(draw)BufferedDraw::Quad(corners,true);
+        else { const auto& v=corners[3];BufferedDraw::NativeColor(v.color[0],v.color[1],v.color[2],v.color[3]);BufferedDraw::NativeUV(v.uv[0],v.uv[1]); }
+    };
+    if(draw||tile.layer==TerrainDraw::Layer::None)pass(0);
+    if(tile.layer!=TerrainDraw::Layer::None)pass(tile.layer==TerrainDraw::Layer::Water?2:1);
+}
+void Terrain_BeginBufferedPass() {
+    TerrainDraw::FrameData f;
+    f.map=gMapManager.GetCurrentMap();f.scale=_DAT_005524f0;
+    f.heights=(const float*)&DAT_080cb2cc[0];f.light=(const float*)&DAT_081cb608[0];
+    f.alpha=TerrainMappingAlpha;f.fogPolicy=DAT_083a42ea!=0;
+    TerrainDraw::Begin(f,ReplayTerrain);
+}
 
 // ── FaceTexture (FUN_004F7DF0) — computa UVs del tile en TerrainTextureCoord ──
 void __cdecl FaceTexture(int Texture, float xf, float yf, char Water, char Scale)
@@ -199,7 +235,15 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         tex = (unsigned char)TER_L2[TER_IDX1];
     }
     FaceTexture(tex, xf, yf, water, 0);     // FaceTexture
-    RenderFace(tex);                       // RenderFace
+    const bool capture=TerrainDraw::Collecting() && !TER_NODRAW;
+    std::optional<TerrainDraw::Tile> captured;
+    if(capture) {
+        auto& tile=captured.emplace();
+        tile.x=xi;tile.y=yi;tile.base=CaptureTexture(tex);
+        const int ids[]{TER_IDX1,TER_IDX2,TER_IDX3,TER_IDX4};
+        for(int c=0;c<4;++c){tile.indices[c]=ids[c];for(int j=0;j<3;++j)tile.positions[c][j]=TER_VERT[c][j];}
+        CaptureUV(tile,false);
+    } else RenderFace(tex);                // RenderFace
 
     if (gMapManager.GetCurrentMap() == 7 && (unsigned char)TER_L2[TER_IDX1] == 5 &&
         (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
@@ -207,7 +251,8 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
     {
         int t = (int)DAT_0839bc8c + 30;      // WaterTextureNumber + 30
         FaceTexture(t, xf, yf, 0, 1);       // FaceTexture
-        RenderFaceBlend(t);                     // RenderFaceBlend
+        if(capture){captured->upper=CaptureTexture(t);captured->layer=TerrainDraw::Layer::Water;CaptureUV(*captured,true);}
+        else RenderFaceBlend(t);                // RenderFaceBlend
     }
     else if (hasL2 &&
              (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
@@ -216,6 +261,8 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
         int t2 = (unsigned char)TER_L2[TER_IDX1];
         if (t2 != 5) water = 0;
         FaceTexture(t2, xf, yf, water, 0);  // FaceTexture
-        RenderFaceAlpha(t2);                    // RenderFaceAlpha
+        if(capture){captured->upper=CaptureTexture(t2);captured->layer=TerrainDraw::Layer::Alpha;CaptureUV(*captured,true);}
+        else RenderFaceAlpha(t2);               // RenderFaceAlpha
     }
+    if(capture)TerrainDraw::Submit(*captured);
 }
