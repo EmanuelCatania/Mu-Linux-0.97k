@@ -98,9 +98,15 @@ void AuditEntry(RenderProfile::Pass pass,unsigned occurrence){
 }
 void ReportEntries(bool reset){
     if(!reset)for(std::size_t p=0;p<entries.size();++p)for(unsigned occurrence=0;occurrence<2;++occurrence){
-        const auto& e=entries[p][occurrence];if(!e.captured)continue;const auto* v=e.values;char line[1600];
-        std::snprintf(line,sizeof(line),"PerfilR4 entrada: pasada=%s entrada=%u blend=%d src_rgb=%d dst_rgb=%d src_alpha=%d dst_alpha=%d ecuacion_rgb=%d ecuacion_alpha=%d depth=%d escritura=%d depth_func=%d cull=%d cara=%d frente=%d alpha=%d alpha_func=%d alpha_ref=%.9g textura=%d binding=%d unidad=%d sampler=%d entorno=%d niebla=%d modo_niebla=%d inicio=%.9g fin=%.9g densidad=%.9g color=%.9g,%.9g,%.9g,%.9g programa=%d vao=%d scissor=%d stencil=%d cache_blend=%d cache_cull=%d cache_depth=%d cache_escritura=%d cache_alpha=%d cache_textura=%d discrepancia_legacy=%u material_valido=%u discrepancia_material=%u",
-            passNames[p],occurrence,v[BlendOn],v[SrcRGB],v[DstRGB],v[SrcAlpha],v[DstAlpha],v[EqRGB],v[EqAlpha],v[DepthOn],v[DepthWrite],v[DepthFunc],v[CullOn],v[CullFace],v[FrontFace],v[AlphaOn],v[AlphaFunc],e.alphaRef,v[TextureOn],v[TextureBinding],v[ActiveUnit],v[Sampler],e.environment,v[FogOn],v[FogMode],e.start,e.end,e.density,e.color[0],e.color[1],e.color[2],e.color[3],v[Program],v[VAO],v[Scissor],v[Stencil],e.legacy.blend,e.legacy.cull,e.legacy.depth,e.legacy.write,e.legacy.alpha,e.legacy.texture,e.legacyMismatch,e.validParts,e.materialMismatch);DbgLogPublic(line);
+        const auto& e=entries[p][occurrence];if(!e.captured)continue;const auto* v=e.values;char line[480];
+        // DbgLog limita cada mensaje a 509 bytes. Mantener las máscaras en la
+        // cabecera y repartir el detalle, sin aumentar el límite global.
+        std::snprintf(line,sizeof(line),"PerfilR4 entrada: pasada=%s entrada=%u cache_blend=%d cache_cull=%d cache_depth=%d cache_escritura=%d cache_alpha=%d cache_textura=%d discrepancia_legacy=%u material_valido=%u discrepancia_material=%u programa=%d vao=%d scissor=%d stencil=%d",
+            passNames[p],occurrence,e.legacy.blend,e.legacy.cull,e.legacy.depth,e.legacy.write,e.legacy.alpha,e.legacy.texture,e.legacyMismatch,e.validParts,e.materialMismatch,v[Program],v[VAO],v[Scissor],v[Stencil]);DbgLogPublic(line);
+        std::snprintf(line,sizeof(line),"PerfilR4 pipeline: pasada=%s entrada=%u blend=%d src_rgb=%d dst_rgb=%d src_alpha=%d dst_alpha=%d ecuacion_rgb=%d ecuacion_alpha=%d depth=%d escritura=%d depth_func=%d cull=%d cara=%d frente=%d alpha=%d alpha_func=%d alpha_ref=%.9g",
+            passNames[p],occurrence,v[BlendOn],v[SrcRGB],v[DstRGB],v[SrcAlpha],v[DstAlpha],v[EqRGB],v[EqAlpha],v[DepthOn],v[DepthWrite],v[DepthFunc],v[CullOn],v[CullFace],v[FrontFace],v[AlphaOn],v[AlphaFunc],e.alphaRef);DbgLogPublic(line);
+        std::snprintf(line,sizeof(line),"PerfilR4 material: pasada=%s entrada=%u textura=%d binding=%d unidad=%d sampler=%d entorno=%d niebla=%d modo_niebla=%d inicio=%.9g fin=%.9g densidad=%.9g color=%.9g,%.9g,%.9g,%.9g",
+            passNames[p],occurrence,v[TextureOn],v[TextureBinding],v[ActiveUnit],v[Sampler],e.environment,v[FogOn],v[FogMode],e.start,e.end,e.density,e.color[0],e.color[1],e.color[2],e.color[3]);DbgLogPublic(line);
     }
     entries={};
 }
