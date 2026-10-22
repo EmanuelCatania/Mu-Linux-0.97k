@@ -41,7 +41,7 @@ void main() {
     int corner=gl_VertexID;
     int record=(firstInstance+gl_InstanceID)*5;
     vec4 info=fetchDraw(record);
-    int tile=int(info.x), mode=int(info.z);
+    int mode=int(info.z);
     vec4 p=corner==0?position0:corner==1?position1:corner==2?position2:position3;
     int grid=int(p.w);
     vec4 light=texelFetch(lightData,ivec2(grid%256,grid/256),0);
@@ -254,13 +254,19 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     const bool originalFog=glIsEnabled(GL_FOG)!=0;glGetIntegerv(GL_FOG_MODE,&mode);
     const int fogMode=!originalFog?0:mode==GL_LINEAR?1:mode==GL_EXP?2:3;
     const GLint first=glGetUniformLocation(program,"firstInstance"),fog=glGetUniformLocation(program,"fogMode");
+    int lastMode=-1,lastPage=-1;
     for(std::size_t begin=0;begin<ops.size();) {
         std::size_t end=begin+1;const auto& op=ops[begin];while(end<ops.size()&&ops[end].mode==op.mode&&ops[end].texture.page==op.texture.page
             &&ResidentIndex(ops[end].tile->x,ops[end].tile->y)==ResidentIndex(op.tile->x,op.tile->y)+(end-begin))++end;
-        RenderProfileGL::SetEnabled(GL_BLEND,op.mode!=0);RenderProfileGL::SetEnabled(GL_ALPHA_TEST,op.mode==1);RenderProfileGL::SetEnabled(GL_CULL_FACE,op.mode==0);
-        if(RenderProfile::active)RenderProfileGL::DepthWrite(op.mode!=2);glDepthMask(op.mode!=2);
-        if(op.mode) {const GLenum src=op.mode==1?GL_SRC_ALPHA:GL_ONE,dst=op.mode==1?GL_ONE_MINUS_SRC_ALPHA:GL_ONE;RenderProfileGL::BlendFunction(src,dst);glBlendFunc(src,dst);}
-        glUniform1i(fog,op.mode==2&&f.fogPolicy?0:fogMode);Bind(GL_TEXTURE_2D_ARRAY,pages[op.texture.page].name);
+        // Este estado sólo vive dentro de la pasada; no toca el caché legacy.
+        if(lastMode!=op.mode) {
+            RenderProfileGL::SetEnabled(GL_BLEND,op.mode!=0);RenderProfileGL::SetEnabled(GL_ALPHA_TEST,op.mode==1);RenderProfileGL::SetEnabled(GL_CULL_FACE,op.mode==0);
+            if(RenderProfile::active)RenderProfileGL::DepthWrite(op.mode!=2);glDepthMask(op.mode!=2);
+            if(op.mode) {const GLenum src=op.mode==1?GL_SRC_ALPHA:GL_ONE,dst=op.mode==1?GL_ONE_MINUS_SRC_ALPHA:GL_ONE;
+                if(RenderProfile::active)RenderProfileGL::BlendFunction(src,dst);glBlendFunc(src,dst);}
+            glUniform1i(fog,op.mode==2&&f.fogPolicy?0:fogMode);lastMode=op.mode;
+        }
+        if(lastPage!=op.texture.page){Bind(GL_TEXTURE_2D_ARRAY,pages[op.texture.page].name);lastPage=op.texture.page;}
         glBindBuffer(GL_ARRAY_BUFFER,geometry);
         for(GLuint c=0;c<4;++c)glVertexAttribPointer(c,4,GL_FLOAT,GL_FALSE,16*sizeof(float),
             reinterpret_cast<const void*>((ResidentIndex(op.tile->x,op.tile->y)*16+c*4)*sizeof(float)));
