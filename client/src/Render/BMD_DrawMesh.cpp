@@ -160,17 +160,18 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // DESVIACION: un modelo propio del catálogo con caras invertidas (hecho
     // para dos caras) se dibuja sin descarte de caras; el 0.97k no tiene
     // modelos así.  Los modelos vanilla no pasan por acá.
+    const int model = (int)(((uintptr_t)bmd_obj - (uintptr_t)DAT_05828d58) / 0xbc);
+    const bool twoSidedMesh=model >= MODEL_MAX_VANILLA && gContentCatalog.IsTwoSidedMesh(model,meshIndex);
+    // DESVIACION R4n: el ámbito mantiene dos caras durante todos los materiales
+    // y recupera culling/caché coherentes al salir, también en retornos tempranos.
+    const Materials::TwoSidedScope meshCull(twoSidedMesh);
     struct TwoSidedGuard {
         bool active = false;
         ~TwoSidedGuard() { if (active) glEnable(GL_CULL_FACE); }
     } twoSided;
-    {
-        const int model = (int)(((uintptr_t)bmd_obj - (uintptr_t)DAT_05828d58) / 0xbc);
-        if (model >= MODEL_MAX_VANILLA && gContentCatalog.IsTwoSidedMesh(model, meshIndex) &&
-            glIsEnabled(GL_CULL_FACE)) {
-            glDisable(GL_CULL_FACE);
-            twoSided.active = true;
-        }
+    if(!meshCull && twoSidedMesh && glIsEnabled(GL_CULL_FACE)) {
+        glDisable(GL_CULL_FACE);
+        twoSided.active=true;
     }
 
     // Early-out: NumTriangles == 0
@@ -473,7 +474,10 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         renderMode,param_2_b0!='\0',bVar5!=0,alpha,uvU,uvV,
         reinterpret_cast<const float*>(static_cast<char*>(bmd_obj)+0x48),bmd_obj
     };
-    if (MeshDraw::Draw(meshInput)) { GL_EnableDepthWrites();return; }
+    if (MeshDraw::Draw(meshInput)) {
+        if(!Materials::Apply(MeshDraw::ExitMaterial()))GL_EnableDepthWrites();
+        return;
+    }
     // DESVIACION: chrome usa un color constante durante toda la pasada.
     // Enviarlo al primer vértice conserva también el estado si no hay caras.
     bool chromeColorSent = false;
@@ -551,5 +555,5 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // mismo frame se dibujan sin depth-write (efecto "ghost"). El binario lo hace
     // en los setters de estado entre meshes, pero acá el cache DAT_083a42e8 puede
     // quedar desincronizado.
-    GL_EnableDepthWrites();  // EnableDepthMask
+    if(!Materials::Apply(MeshDraw::ExitMaterial()))GL_EnableDepthWrites();  // EnableDepthMask
 }

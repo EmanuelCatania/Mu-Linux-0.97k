@@ -31,6 +31,13 @@ constexpr Materials::MaterialSequence MetalMaterials() {
         Materials::Describe(Materials::Preset::Untextured,false),noWrite},3};
 }
 
+// La ruta normal termina con escritura On sólo tras emitir geometría;
+// no aplicar esta salida a los retornos tempranos ni a la variante animada.
+constexpr Materials::Material ExitMaterial() {
+    Materials::Material material;material.depthWrite=Materials::Switch::On;
+    return material;
+}
+
 struct Input {
     const void* key;
     const unsigned char* faces;

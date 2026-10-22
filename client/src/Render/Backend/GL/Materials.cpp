@@ -7,6 +7,7 @@ extern "C" void DbgLogPublic(const char*);
 namespace Materials {
 namespace {
 bool enabled=false;
+unsigned twoSidedDepth=0;
 template<class T> void Cached(Switch value,T& cache,unsigned cap) {
     if(value==Switch::Keep)return;
     const bool next=value==Switch::On;
@@ -44,7 +45,7 @@ bool Apply(const Material& m) {
             }
         }
     }
-    Cached(m.cull,DAT_083a411c,GL_CULL_FACE);DepthWrite(m.depthWrite);
+    Cached(twoSidedDepth?Switch::Off:m.cull,DAT_083a411c,GL_CULL_FACE);DepthWrite(m.depthWrite);
     Cached(m.alphaTest,DAT_083a411d,GL_ALPHA_TEST);Cached(m.texture,DAT_083a4125,GL_TEXTURE_2D);
     if(m.depthTest==Switch::Off) {
         // Conservar las dos lecturas/barreras del helper de referencia.
@@ -61,6 +62,19 @@ bool ApplySequence(const MaterialSequence& sequence){
     if(!enabled||sequence.count==0||sequence.count>3)return false;
     for(unsigned i=0;i<sequence.count;++i)Apply(sequence.steps[i]);
     return true;
+}
+TwoSidedScope::TwoSidedScope(bool twoSided){
+    managed=enabled;if(!managed||!twoSided)return;
+    overrideCull=true;previousCull=glIsEnabled(GL_CULL_FACE)!=0;++twoSidedDepth;
+    // Corregir también una entrada con caché incoherente; la propiedad de
+    // dos caras es explícita y se mantiene en los materiales interiores.
+    glDisable(GL_CULL_FACE);DAT_083a411c=0;
+}
+TwoSidedScope::~TwoSidedScope(){
+    if(!overrideCull)return;
+    --twoSidedDepth;const bool restore=twoSidedDepth?false:previousCull;
+    if(restore)glEnable(GL_CULL_FACE);else glDisable(GL_CULL_FACE);
+    DAT_083a411c=restore?1:0;
 }
 bool BeginText(){
     if(!enabled)return false;

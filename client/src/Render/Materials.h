@@ -48,6 +48,18 @@ public:
     explicit operator bool() const { return active; }
 };
 
+// Ámbito de malla de dos caras: prevalece sobre los materiales interiores.
+// Sólo restaura culling; escritura y demás salidas siguen siendo explícitas.
+class TwoSidedScope {
+    bool managed=false,overrideCull=false,previousCull=false;
+public:
+    explicit TwoSidedScope(bool twoSided);
+    ~TwoSidedScope();
+    TwoSidedScope(const TwoSidedScope&)=delete;
+    TwoSidedScope& operator=(const TwoSidedScope&)=delete;
+    explicit operator bool() const { return managed; }
+};
+
 enum class Preset { Opaque, LightMap, Alpha, Add, Attenuate, InverseAdd, Untextured };
 constexpr Material Describe(Preset preset,bool depthWrite=true) {
     using S=Switch;using B=Blend;
