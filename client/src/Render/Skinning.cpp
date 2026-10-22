@@ -1,6 +1,8 @@
 // Sin PCH: resolver GL moderno mediante glad.
 #include "Platform/GL/glad.h"
 #include "Render/Skinning.h"
+#include "Render/RenderProfile.h"
+#include "Render/Backend/GL/ProfileQueries.h"
 #include <algorithm>
 #include <cstring>
 
@@ -24,7 +26,7 @@ GLint savedTextureBuffer=0,savedTexture=0,lastLight=-1;
 float lastScales[2]{},lastOrigin[3]{},lastDirection[3]{},lastCoefficients[3]{},lastBodyLight[3]{};
 void RestorePalette() {
     GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-    glActiveTexture(GL_TEXTURE1);glBindTexture(GL_TEXTURE_BUFFER,savedTexture);
+    glActiveTexture(GL_TEXTURE1);RenderProfileGL::ObserveTexture(GL_TEXTURE_BUFFER,savedTexture);glBindTexture(GL_TEXTURE_BUFFER,savedTexture);
     glBindBuffer(GL_TEXTURE_BUFFER,savedTextureBuffer);glActiveTexture(active);paletteBound=false;
 }
 void SetVector(GLint location,const float* value,float* previous) {
@@ -146,7 +148,7 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
         GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
         glGetIntegerv(GL_TEXTURE_BUFFER,&savedTextureBuffer);
         glActiveTexture(GL_TEXTURE1);glGetIntegerv(GL_TEXTURE_BINDING_BUFFER,&savedTexture);
-        glBindTexture(GL_TEXTURE_BUFFER,boneTexture);glBindBuffer(GL_TEXTURE_BUFFER,boneBuffer);
+        RenderProfileGL::ObserveTexture(GL_TEXTURE_BUFFER,boneTexture);glBindTexture(GL_TEXTURE_BUFFER,boneTexture);glBindBuffer(GL_TEXTURE_BUFFER,boneBuffer);
         if(!layoutReady) glTexBuffer(GL_TEXTURE_BUFFER,GL_RGBA32F,boneBuffer);
         glActiveTexture(active);paletteBound=true;BufferedDraw::SetExitHook(RestorePalette);
     }
@@ -189,6 +191,7 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,bone));
         glClientActiveTexture(client);layoutReady=true;
     }
+    RenderProfile::Draw(indices);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
 
     // DrawElements deja indefinidos los atributos actuales; el caller fija

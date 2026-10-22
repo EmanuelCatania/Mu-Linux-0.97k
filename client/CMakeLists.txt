@@ -57,6 +57,8 @@ set(MU_SOURCES
     src/Render/ResourceTables.cpp
     src/Render/Skinning.cpp
     src/Render/MeshDraw.cpp
+    src/Render/RenderProfile.cpp
+    src/Render/Backend/GL/ProfileQueries.cpp
     src/Render/BufferedDraw.cpp
     src/Render/WorldEffects.cpp
     src/Render/MaterialVisuals.cpp
@@ -439,6 +441,9 @@ set(MU_HEADERS
     src/Render/ResourceTables.h
     src/Render/Skinning.h
     src/Render/MeshDraw.h
+    src/Render/RenderProfile.h
+    src/Render/ProfileStats.h
+    src/Render/Backend/GL/ProfileQueries.h
     src/Render/BufferedDraw.h
     src/Render/TransformMath.h
     src/Render/TransformWorkers.h
@@ -595,7 +600,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/MeshDraw.cpp src/Render/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
@@ -680,3 +685,16 @@ if(MSVC)
     target_compile_options(mu_transform_workers_test PRIVATE /EHsc /fp:precise)
 endif()
 add_test(NAME transform_workers COMMAND mu_transform_workers_test)
+
+# DESVIACION: R1 valida percentiles y queries asincronas sin driver/contexto.
+add_executable(mu_render_profile_test EXCLUDE_FROM_ALL
+    tests/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp)
+target_include_directories(mu_render_profile_test PRIVATE src)
+target_compile_features(mu_render_profile_test PRIVATE cxx_std_17)
+add_test(NAME render_profile COMMAND mu_render_profile_test)
+
+add_executable(mu_render_profile_flow_test EXCLUDE_FROM_ALL
+    tests/RenderProfileFlow.cpp src/Render/RenderProfile.cpp)
+target_include_directories(mu_render_profile_flow_test PRIVATE src)
+target_compile_features(mu_render_profile_flow_test PRIVATE cxx_std_17)
+add_test(NAME render_profile_flow COMMAND mu_render_profile_flow_test)

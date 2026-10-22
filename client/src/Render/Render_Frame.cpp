@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Render/RenderProfile.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
@@ -598,15 +599,24 @@ void Render_Scene3D(void)
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
     // RenderTerrain dibuja la malla de tiles del terreno.
+    { RenderProfile::Scope measured(RenderProfile::Pass::Terrain);
     if (worldId != 10) {
         RenderTerrain('\0');                      // RenderTerrain(EditFlag=0) — tile mesh
     }
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Objects);
     Terrain_Render();                              // Terrain_Render — UNCONDICIONAL en IDA (object walker)
     // Particle_Render (FUN_0046BE40) — IDA Game_RenderTick:113. Itera el effect
     // pool y renderiza partículas (gate sparks, magic glow, etc).
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Effects);
     Particle_RenderAll();                         // particle system draw
     RenderBoids();                              // RenderBoids (decoration animals)
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Characters);
     Entity_RenderAll_3D();
+    }
+    { RenderProfile::Scope measured(RenderProfile::Pass::Effects);
     // Picking de editor y avances del agua preparados en SIM.
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
         Entity_Render();                          // Entity_Render (sprites)
@@ -635,9 +645,11 @@ void Render_Scene3D(void)
     RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
+    }
     // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.
 
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
+    { RenderProfile::Scope measured(RenderProfile::Pass::UI);
     GL_Begin2D();                              // BeginBitmap (Ortho2D)
 
     // sub_4CB6F0 (Target_Render) — IDA Game_RenderTick:143. Renderiza el nombre
@@ -661,4 +673,5 @@ void Render_Scene3D(void)
 
     GL_End2D();                              // EndBitmap
     GL_EndOpenGL();                              // EndOpengl
+    }
 }

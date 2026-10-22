@@ -1,6 +1,8 @@
 // Input_Timing.cpp
 
 #include "stdafx.h"
+#include "Render/RenderProfile.h"
+#include "Platform/IInput.h"
 #include "Platform/ITimer.h"
 #include "Platform/Text.h"
 #include "Local/ClientText.h"
@@ -8,7 +10,11 @@
 #include "functions.h"
 
 namespace { bool showFps=false; }
-void ToggleFpsCounter() { showFps=!showFps; }
+void ToggleFpsCounter() {
+    // DESVIACION: Shift+F12 alterna R1; F12 solo conserva el contador liviano.
+    if(Platform::GetInput().KeyState(VK_SHIFT)&0x8000) { RenderProfile::Toggle();showFps=true; }
+    else showFps=!showFps;
+}
 
 // IDA: RenderDebugWindow @ 0x004C14E0 — FPS_TickReset.
 // Selects the UI font into the DC, resets text color to white (0xFFFFFFFF)
@@ -25,6 +31,10 @@ void __cdecl UI_UpdateFpsCounter(void) {
         char text[32];
         Platform::TextFormatSecure(text,gClientText.Get(ClientTextId::RenderFpsOverlay),FPS);
         RenderText(4,28,text,(int)(100*gWindow.GetWidth()/640),1,nullptr);
+    }
+    if(showFps && RenderProfile::Requested()) {
+        char profile[160];Platform::TextFormatSecure(profile,"%s",RenderProfile::Summary());
+        RenderText(4,40,profile,(int)(620*gWindow.GetWidth()/640),1,nullptr);
     }
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {

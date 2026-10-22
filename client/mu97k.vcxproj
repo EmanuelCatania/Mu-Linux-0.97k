@@ -178,6 +178,9 @@
     <ClInclude Include="src\Render\ResourceTables.h" />
     <ClInclude Include="src\Render\Skinning.h" />
     <ClInclude Include="src\Render\MeshDraw.h" />
+    <ClInclude Include="src\Render\RenderProfile.h" />
+    <ClInclude Include="src\Render\ProfileStats.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
     <ClInclude Include="src\Render\BufferedDraw.h" />
     <ClInclude Include="src\Render\TransformMath.h" />
     <ClInclude Include="src\Render\TransformWorkers.h" />
@@ -273,6 +276,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\MeshDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\RenderProfile.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\BufferedDraw.cpp">

@@ -1,6 +1,7 @@
 // Sin PCH: las funciones modernas se resuelven con glad.
 #include "Platform/GL/glad.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Backend/GL/ProfileQueries.h"
 #include "Render/GlyphAtlas.h"
 #include <algorithm>
 #include <array>
@@ -25,7 +26,7 @@ struct State {
         glGetIntegerv(GL_ACTIVE_TEXTURE,&active);glGetIntegerv(GL_MATRIX_MODE,&mode);
         glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING,&pack);glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING,&unpack);
         glPushAttrib(GL_ALL_ATTRIB_BITS);glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
-        glActiveTexture(GL_TEXTURE0);glUseProgram(0);
+        glActiveTexture(GL_TEXTURE0);RenderProfileGL::ObserveProgram(0);glUseProgram(0);
         glMatrixMode(GL_TEXTURE);glPushMatrix();glLoadIdentity();
         glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();
@@ -40,7 +41,7 @@ struct State {
         glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
         glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER,draw);glBindFramebuffer(GL_READ_FRAMEBUFFER,read);
-        glPopClientAttrib();glPopAttrib();glUseProgram(program);glActiveTexture(active);
+        glPopClientAttrib();RenderProfileGL::PopAttributes();RenderProfileGL::ObserveProgram(program);glUseProgram(program);glActiveTexture(active);
         glBindBuffer(GL_PIXEL_PACK_BUFFER,pack);glBindBuffer(GL_PIXEL_UNPACK_BUFFER,unpack);
     }
 };
@@ -62,8 +63,8 @@ struct DrawState {
         BufferedDraw::Suspend();
         glMatrixMode(GL_MODELVIEW);glPopMatrix();glMatrixMode(GL_PROJECTION);glPopMatrix();
         glMatrixMode(GL_TEXTURE);glPopMatrix();glMatrixMode(mode);
-        glBindTexture(GL_TEXTURE_2D,texture);glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,environment);
-        glPopAttrib();glActiveTexture(active);
+        RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,texture);glBindTexture(GL_TEXTURE_2D,texture);glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,environment);
+        RenderProfileGL::PopAttributes();glActiveTexture(active);
     }
 };
 }
@@ -83,7 +84,7 @@ bool Build(unsigned base,int height,int maxWidth) {
     const int side=std::max(height,maxWidth)*4+32;
     if (side>limit) return false;
     GLuint target=0,framebuffer=0;
-    glGenTextures(1,&target);glBindTexture(GL_TEXTURE_2D,target);
+    glGenTextures(1,&target);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,target);glBindTexture(GL_TEXTURE_2D,target);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,side,side,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
     glGenFramebuffers(1,&framebuffer);glBindFramebuffer(GL_FRAMEBUFFER,framebuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,target,0);
@@ -94,7 +95,7 @@ bool Build(unsigned base,int height,int maxWidth) {
         glViewport(0,0,side,side);glMatrixMode(GL_PROJECTION);glOrtho(0,side,0,side,-1,1);
         glMatrixMode(GL_MODELVIEW);
         for (GLenum cap : {GL_BLEND,GL_ALPHA_TEST,GL_DEPTH_TEST,GL_STENCIL_TEST,GL_SCISSOR_TEST,
-                          GL_FOG,GL_LIGHTING,GL_TEXTURE_2D,GL_DITHER,GL_COLOR_LOGIC_OP}) glDisable(cap);
+                          GL_FOG,GL_LIGHTING,GL_TEXTURE_2D,GL_DITHER,GL_COLOR_LOGIC_OP}) RenderProfileGL::SetEnabled(cap,false);
         glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);glClearColor(0,0,0,0);glColor4f(1,1,1,1);
         const int origin=side/2;
         std::vector<unsigned char> pixels(size_t(side)*side*4);
@@ -128,7 +129,7 @@ bool Build(unsigned base,int height,int maxWidth) {
                 for (int y=0;y<g.h;++y) for (int x=0;x<g.w;++x)
                     pixelsAtlas[(size_t(g.y+y)*atlas.width+g.x+x)*4+3]=masks[i][size_t(y)*g.w+x];
             }
-            glGenTextures(1,&atlas.texture);glBindTexture(GL_TEXTURE_2D,atlas.texture);
+            glGenTextures(1,&atlas.texture);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,atlas.texture);glBindTexture(GL_TEXTURE_2D,atlas.texture);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
@@ -158,9 +159,9 @@ bool Draw(unsigned base,const char* text,int count,int width,int height) {
     {
         DrawState state(width,height);
         const auto& atlas=it->second;
-        glEnable(GL_TEXTURE_2D);glBindTexture(GL_TEXTURE_2D,atlas.texture);
+        RenderProfileGL::SetEnabled(GL_TEXTURE_2D,true);RenderProfileGL::ObserveTexture(GL_TEXTURE_2D,atlas.texture);glBindTexture(GL_TEXTURE_2D,atlas.texture);
         // glBitmap no depende del culling ni del modo de relleno de polígonos.
-        glDisable(GL_CULL_FACE);glDisable(GL_POLYGON_SMOOTH);glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+        RenderProfileGL::SetEnabled(GL_CULL_FACE,false);RenderProfileGL::SetEnabled(GL_POLYGON_SMOOTH,false);glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
         glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
         BufferedDraw::Color4fv(color);BufferedDraw::Begin(GL_QUADS);
         for (int i=0;i<count;++i) {

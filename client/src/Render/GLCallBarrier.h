@@ -1,5 +1,7 @@
 #pragma once
 #include "Render/BufferedDraw.h"
+#include "Render/RenderProfile.h"
+#include "Render/Backend/GL/ProfileQueries.h"
 
 // DESVIACION: antes de cambiar el pipeline o leer/escribir su salida, enviar
 // la geometría pendiente. Texto/listas/lecturas y stacks de atributos devuelven
@@ -8,35 +10,58 @@ namespace BufferedDraw {
 template<class F,class... A> inline auto StateChange(F function,A... args) -> decltype(function(args...)) {
     Flush();return function(args...);
 }
+template<class F,class... A> inline auto LegacyDraw(F function,A... args) -> decltype(function(args...)) {
+    Suspend();RenderProfile::Legacy();return function(args...);
+}
+
 template<class F,class... A> inline auto LegacyCall(F function,A... args) -> decltype(function(args...)) {
     Suspend();return function(args...);
 }
 // No vaciar un lote cuando el comando mantiene exactamente el estado actual.
 // Ejecutarlo igualmente conserva su registro dentro de display lists.
 template<class F> inline void SetEnabled(F function,unsigned cap,bool enabled) {
-    if ((::glIsEnabled(cap)!=0)!=enabled) Flush();
+    if ((::glIsEnabled(cap)!=0)!=enabled) {
+        Flush();
+        if(cap==GL_BLEND)RenderProfile::Change(RenderProfile::State::Blend);
+        if(cap==GL_DEPTH_TEST)RenderProfile::Change(RenderProfile::State::Depth);
+        if(cap==GL_TEXTURE_2D)RenderProfile::Change(RenderProfile::State::Texture);
+    }
     function(cap);
 }
 template<class F> inline void BindTextureState(F function,unsigned target,unsigned name) {
     if (target==GL_TEXTURE_2D) {
         GLint current=0;::glGetIntegerv(GL_TEXTURE_BINDING_2D,&current);
-        if (static_cast<unsigned>(current)!=name) Flush();
+        if (static_cast<unsigned>(current)!=name) { Flush();RenderProfile::Change(RenderProfile::State::Texture); }
     } else Flush();
     function(target,name);
 }
 
+inline void ProfilePopAttrib() { Suspend();RenderProfileGL::PopAttributes(); }
+inline void ProfileBlend(unsigned source,unsigned destination) {
+    Flush();
+    if(RenderProfile::active)RenderProfileGL::BlendFunction(source,destination);
+    ::glBlendFunc(source,destination);
+}
+inline void ProfileDepthFunction(unsigned value) {
+    Flush();if(RenderProfile::active)RenderProfileGL::DepthFunction(value);::glDepthFunc(value);
+}
+inline void ProfileDepthMask(unsigned char enabled) {
+    Flush();
+    if(RenderProfile::active)RenderProfileGL::DepthWrite(enabled!=0);
+    ::glDepthMask(enabled);
+}
 }
 #define glAlphaFunc(...) ::BufferedDraw::StateChange(::glAlphaFunc,__VA_ARGS__)
 #define glBindTexture(target,name) ::BufferedDraw::BindTextureState(::glBindTexture,target,name)
-#define glBitmap(...) ::BufferedDraw::LegacyCall(::glBitmap,__VA_ARGS__)
-#define glBlendFunc(...) ::BufferedDraw::StateChange(::glBlendFunc,__VA_ARGS__)
-#define glCallLists(...) ::BufferedDraw::LegacyCall(::glCallLists,__VA_ARGS__)
+#define glBitmap(...) ::BufferedDraw::LegacyDraw(::glBitmap,__VA_ARGS__)
+#define glBlendFunc(source,destination) ::BufferedDraw::ProfileBlend(source,destination)
+#define glCallLists(...) ::BufferedDraw::LegacyDraw(::glCallLists,__VA_ARGS__)
 #define glClear(...) ::BufferedDraw::StateChange(::glClear,__VA_ARGS__)
 #define glClearColor(...) ::BufferedDraw::StateChange(::glClearColor,__VA_ARGS__)
 #define glDeleteLists(...) ::BufferedDraw::LegacyCall(::glDeleteLists,__VA_ARGS__)
 #define glDeleteTextures(...) ::BufferedDraw::StateChange(::glDeleteTextures,__VA_ARGS__)
-#define glDepthFunc(...) ::BufferedDraw::StateChange(::glDepthFunc,__VA_ARGS__)
-#define glDepthMask(...) ::BufferedDraw::StateChange(::glDepthMask,__VA_ARGS__)
+#define glDepthFunc(value) ::BufferedDraw::ProfileDepthFunction(value)
+#define glDepthMask(mask) ::BufferedDraw::ProfileDepthMask(mask)
 #define glDisable(cap) ::BufferedDraw::SetEnabled(::glDisable,cap,false)
 #define glEnable(cap) ::BufferedDraw::SetEnabled(::glEnable,cap,true)
 #define glEndList() ::BufferedDraw::LegacyCall(::glEndList)
@@ -46,7 +71,7 @@ template<class F> inline void BindTextureState(F function,unsigned target,unsign
 #define glFogi(...) ::BufferedDraw::StateChange(::glFogi,__VA_ARGS__)
 #define glNewList(...) ::BufferedDraw::LegacyCall(::glNewList,__VA_ARGS__)
 #define glPixelStorei(...) ::BufferedDraw::StateChange(::glPixelStorei,__VA_ARGS__)
-#define glPopAttrib() ::BufferedDraw::LegacyCall(::glPopAttrib)
+#define glPopAttrib() ::BufferedDraw::ProfilePopAttrib()
 #define glPopClientAttrib() ::BufferedDraw::LegacyCall(::glPopClientAttrib)
 #define glPopMatrix() ::BufferedDraw::StateChange(::glPopMatrix)
 #define glPushAttrib(...) ::BufferedDraw::LegacyCall(::glPushAttrib,__VA_ARGS__)
@@ -71,11 +96,11 @@ template<class F> inline void BindTextureState(F function,unsigned target,unsign
 #define glScalef(...) ::BufferedDraw::StateChange(::glScalef,__VA_ARGS__)
 #define glScissor(...) ::BufferedDraw::StateChange(::glScissor,__VA_ARGS__)
 #define glFinish() ::BufferedDraw::LegacyCall(::glFinish)
-#define glDrawPixels(...) ::BufferedDraw::LegacyCall(::glDrawPixels,__VA_ARGS__)
+#define glDrawPixels(...) ::BufferedDraw::LegacyDraw(::glDrawPixels,__VA_ARGS__)
 #define glCopyTexImage2D(...) ::BufferedDraw::StateChange(::glCopyTexImage2D,__VA_ARGS__)
 #define glCopyTexSubImage2D(...) ::BufferedDraw::StateChange(::glCopyTexSubImage2D,__VA_ARGS__)
 #define glGetError() ::BufferedDraw::LegacyCall(::glGetError)
-#define glCallList(...) ::BufferedDraw::LegacyCall(::glCallList,__VA_ARGS__)
+#define glCallList(...) ::BufferedDraw::LegacyDraw(::glCallList,__VA_ARGS__)
 #define glListBase(...) ::BufferedDraw::StateChange(::glListBase,__VA_ARGS__)
 
 // GLU cambia matrices dentro de la biblioteca; también necesita la barrera.

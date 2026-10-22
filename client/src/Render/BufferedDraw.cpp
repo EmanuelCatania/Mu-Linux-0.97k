@@ -2,6 +2,8 @@
 #include "Platform/GL/glad.h"
 #include "Platform/GLFunctions.h"
 #include "Render/BufferedDraw.h"
+#include "Render/RenderProfile.h"
+#include "Render/Backend/GL/ProfileQueries.h"
 #include <cstddef>
 #include <cstdio>
 #include <algorithm>
@@ -26,7 +28,7 @@ void BindPipeline(GLuint nextProgram,GLuint nextArray,GLuint nextBuffer) {
         glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&savedBuffer);
         bound=true;boundProgram=boundArray=boundBuffer=0;
     }
-    if (boundProgram!=nextProgram) { glUseProgram(nextProgram);boundProgram=nextProgram; }
+    if (boundProgram!=nextProgram) { RenderProfileGL::ObserveProgram(nextProgram);glUseProgram(nextProgram);boundProgram=nextProgram; }
     if (boundArray!=nextArray) { glBindVertexArray(nextArray);boundArray=nextArray; }
     if (boundBuffer!=nextBuffer) { glBindBuffer(GL_ARRAY_BUFFER,nextBuffer);boundBuffer=nextBuffer; }
 }
@@ -147,6 +149,7 @@ void Flush(const Vertex* current) {
     }
     BindPipeline(program,array,buffer);
     glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
+    RenderProfile::Draw(pendingMode==GL_TRIANGLE_FAN ? pending.size()/4*6 : pending.size());
     if (pendingMode==GL_TRIANGLE_FAN) {
         EnsureQuadIndices(pending.size()/4);
         glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(pending.size()/4*6),GL_UNSIGNED_INT,nullptr);
@@ -160,7 +163,7 @@ void Suspend() {
     Flush();
     if(exitHook) { auto hook=exitHook;exitHook=nullptr;hook(); }
     if (!bound) return;
-    glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);glUseProgram(savedProgram);
+    glBindVertexArray(savedArray);glBindBuffer(GL_ARRAY_BUFFER,savedBuffer);RenderProfileGL::ObserveProgram(savedProgram);glUseProgram(savedProgram);
     bound=false;boundProgram=boundArray=boundBuffer=0;
 }
 // DESVIACION: compartir la propiedad también con el shader de skinning.
@@ -183,6 +186,7 @@ void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,s
     }
     BindPipeline(program,meshArray,meshBuffer);
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
+    RenderProfile::Draw(indices);
     glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(indices),GL_UNSIGNED_INT,nullptr);
     glColor4fv(color);glTexCoord4fv(uv);
 }
