@@ -21,6 +21,13 @@ std::map<unsigned,TextureInfo> textureInfo;
 unsigned long long selected=0,fallback=0,alphaFallback=0,nativeAlpha=0;
 const char* lastReason="";
 const char* layoutReason="";
+struct MaterialState {
+    bool valid=false,textured=false,opaque=true,alpha=false;
+    int combine=0,function=GL_ALWAYS,fog=0;
+    float reference=0,values[3]{},color[4]{};
+    const char* reason="";
+} material;
+unsigned long long materialReads=0,materialReuses=0;
 unsigned long long layoutReads=0,layoutReuses=0;
 // El estado ajeno al material no cambia entre envíos propios. Toda entrada
 // nativa pasa por Suspend; los cambios de capacidades invalidan esta captura.
@@ -66,8 +73,8 @@ void main(){
 }
 )GLSL";
 void Report(bool reset){
-    if(!reset&&requested){char line[320];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,lastReason);DbgLogPublic(line);}
-    selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=0;lastReason="";
+    if(!reset&&requested){char line[512];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,lastReason);DbgLogPublic(line);}
+    selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=materialReads=materialReuses=0;lastReason="";
 }
 void Count(bool modern,const char* reason="",bool alpha=false){
     status=modern?"Fragmentos: shader activo":reason;
@@ -97,6 +104,30 @@ TextureInfo InspectTexture(unsigned texture){
     info.supported=info.supported&&(swizzle==GL_ALPHA||swizzle==GL_ONE)&&width>0&&height>0&&(filter==GL_NEAREST||filter==GL_LINEAR);
     textureInfo[texture]=info;return info;
 }
+// Captura coherente del material. Los setters pasan por la barrera; las
+// operaciones nativas invalidan tanto esta captura como el estado de entrada.
+const MaterialState& ReadMaterial(){
+    if(material.valid){if(RenderProfile::active)++materialReuses;return material;}
+    if(RenderProfile::active)++materialReads;
+    material=MaterialState{};material.valid=true;
+    material.textured=glIsEnabled(GL_TEXTURE_2D)!=0;
+    if(material.textured){
+        int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
+        if(environment!=GL_MODULATE){material.reason="Fragmentos: referencia (texture env)";return material;}
+        int texture=0,sampler=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(GL_SAMPLER_BINDING,&sampler);
+        const auto info=texture?InspectTexture(texture):TextureInfo{};
+        if(!info.supported||sampler){material.reason="Fragmentos: referencia (textura o sampler)";return material;}
+        material.opaque=info.opaque;material.combine=info.combine;
+    }
+    material.alpha=glIsEnabled(GL_ALPHA_TEST)!=0;
+    if(material.alpha){glGetIntegerv(GL_ALPHA_TEST_FUNC,&material.function);glGetFloatv(GL_ALPHA_TEST_REF,&material.reference);}
+    if(glIsEnabled(GL_FOG)){
+        int mode=0;glGetIntegerv(GL_FOG_MODE,&mode);material.fog=mode==GL_LINEAR?1:mode==GL_EXP?2:3;
+        glGetFloatv(GL_FOG_START,material.values);glGetFloatv(GL_FOG_END,material.values+1);glGetFloatv(GL_FOG_DENSITY,material.values+2);glGetFloatv(GL_FOG_COLOR,material.color);
+        if(material.fog==1&&material.values[0]==material.values[1])material.reason="Fragmentos: referencia (niebla degenerada)";
+    }
+    return material;
+}
 // No aproximar el comparador nativo cerca del umbral. Una cobertura variable
 // conserva el test nativo; las coberturas constantes se resuelven sin test fijo.
 int Coverage(int function,float reference,const float* alpha,std::size_t count,std::size_t stride,bool opaque){
@@ -122,9 +153,10 @@ const char* Status(){return status;}
 void Toggle(){BufferedDraw::Suspend();requested=!requested;Report(true);RenderProfile::RestartCapture();status=requested?"Fragmentos: esperando dibujo":"Fragmentos: referencia";DbgLogPublic(requested?"Fragmentos R4b: activo":"Fragmentos R4b: referencia");}
 }
 namespace FragmentPipelineGL {
-void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
-void InvalidateBindings(){layoutChecked=false;targetChecked=false;}
-void InvalidateTextures(){textureInfo.clear();layoutChecked=false;}
+void MaterialChanged(){material.valid=false;}
+void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_2D||cap==GL_ALPHA_TEST||cap==GL_FOG)MaterialChanged();if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
+void InvalidateBindings(){MaterialChanged();layoutChecked=false;targetChecked=false;}
+void InvalidateTextures(){MaterialChanged();textureInfo.clear();layoutChecked=false;}
 void Create(unsigned reference,const char* source){
     RenderProfile::SetBackendReport(Report);
     if(pipelines.count(reference))return;
@@ -136,30 +168,22 @@ void Create(unsigned reference,const char* source){
     if(p.program){p.texture=glGetUniformLocation(p.program,"materialTexture");p.textured=glGetUniformLocation(p.program,"materialTextured");p.fog=glGetUniformLocation(p.program,"materialFog");p.values=glGetUniformLocation(p.program,"materialFogValues");p.color=glGetUniformLocation(p.program,"materialFogColor");p.reject=glGetUniformLocation(p.program,"materialReject");p.combine=glGetUniformLocation(p.program,"materialCombine");}
     pipelines[reference]=p;
 }
-void Release(unsigned reference){const auto p=pipelines.find(reference);if(p!=pipelines.end()){if(p->second.program)glDeleteProgram(p->second.program);pipelines.erase(p);}textureInfo.clear();}
+void Release(unsigned reference){const auto p=pipelines.find(reference);if(p!=pipelines.end()){if(p->second.program)glDeleteProgram(p->second.program);pipelines.erase(p);}textureInfo.clear();MaterialChanged();}
 Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride):program(reference),reference(reference){
     if(!requested)return;
     const auto found=pipelines.find(reference);if(found==pipelines.end()||!found->second.program){Count(false,"Fragmentos: referencia (programa)");return;}
     if(!targetChecked){int r=0,g=0,b=0,a=0;glGetIntegerv(GL_RED_BITS,&r);glGetIntegerv(GL_GREEN_BITS,&g);glGetIntegerv(GL_BLUE_BITS,&b);glGetIntegerv(GL_ALPHA_BITS,&a);targetSupported=r==8&&g==8&&b==8&&(a==0||a==8);targetChecked=true;}
     if(!targetSupported){Count(false,"Fragmentos: referencia (framebuffer)");return;}
     const char* reason=ReadLayout();if(*reason){Count(false,reason);return;}
-    textured=glIsEnabled(GL_TEXTURE_2D)!=0;
-    int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
-    if(textured&&environment!=GL_MODULATE){Count(false,"Fragmentos: referencia (texture env)");return;}
-    bool opaque=!textured;
-    if(textured){int texture=0,sampler=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(GL_SAMPLER_BINDING,&sampler);
-        const auto info=texture?InspectTexture(texture):TextureInfo{};
-        if(!info.supported||sampler){Count(false,"Fragmentos: referencia (textura o sampler)");return;}opaque=info.opaque;combine=info.combine;}
-    alphaEnabled=glIsEnabled(GL_ALPHA_TEST)!=0;
+    const auto& state=ReadMaterial();if(*state.reason){Count(false,state.reason);return;}
+    textured=state.textured;combine=state.combine;alphaEnabled=state.alpha;fog=state.fog;
+    std::copy(state.values,state.values+3,fogValues);std::copy(state.color,state.color+4,fogColor);
     int coverage=1;bool keepNativeAlpha=false;
-    if(alphaEnabled){int function=0;float referenceValue=0;glGetIntegerv(GL_ALPHA_TEST_FUNC,&function);glGetFloatv(GL_ALPHA_TEST_REF,&referenceValue);
-        coverage=Coverage(function,referenceValue,alpha,count,stride,opaque);
-        // Cobertura variable: conservar el comparador nativo después del shader.
-        // Así no alternamos de programa ni aproximamos el umbral alpha.
+    if(alphaEnabled){
+        coverage=Coverage(state.function,state.reference,alpha,count,stride,state.opaque);
+        // El resultado depende de los vértices: nunca reutilizar la cobertura.
         if(coverage==0){alphaEnabled=false;coverage=1;keepNativeAlpha=true;}
     }
-    if(glIsEnabled(GL_FOG)){int mode=0;glGetIntegerv(GL_FOG_MODE,&mode);fog=mode==GL_LINEAR?1:mode==GL_EXP?2:3;glGetFloatv(GL_FOG_START,fogValues);glGetFloatv(GL_FOG_END,fogValues+1);glGetFloatv(GL_FOG_DENSITY,fogValues+2);glGetFloatv(GL_FOG_COLOR,fogColor);
-        if(fog==1&&fogValues[0]==fogValues[1]){alphaEnabled=false;Count(false,"Fragmentos: referencia (niebla degenerada)");return;}}
     program=found->second.program;modern=true;Count(true);if(keepNativeAlpha&&RenderProfile::active)++nativeAlpha;reject=coverage<0;
 }
 Draw::~Draw(){if(modern&&alphaEnabled)glEnable(GL_ALPHA_TEST);}
