@@ -272,16 +272,17 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     if ((bVar4 & 1) == 1) {
         // RENDER_COLOR: flat color, disable texture
         renderMode = MODE_COLOR;
-        if ((bVar4 & 0x40) == 0x40)
-            EnableAlphaBlend();
-        else if ((bVar4 & 0x80) == 0x80)
-            EnableAlphaBlendMinus();
-        else
-            DisableAlphaBlend();
-        DisableTexture('\0');
+        const bool colorAlpha=alpha < _DAT_00552544;
+        const bool declaredColor=Materials::ApplySequence(MeshDraw::ColorMaterials(uVar6,colorAlpha));
+        if(!declaredColor){
+            if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+            else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+            else DisableAlphaBlend();
+            DisableTexture('\0');
+        }
 
-        if (alpha < _DAT_00552544) {
-            EnableAlphaTest('\x01');
+        if (colorAlpha) {
+            if(!declaredColor)EnableAlphaTest('\x01');
             BufferedDraw::Color4f(*(float *)((int)bmd_obj + 0x48),
                       *(float *)((int)bmd_obj + 0x4c),
                       *(float *)((int)bmd_obj + 0x50), alpha);
@@ -421,9 +422,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 return;
             }
             renderMode = MODE_METAL;
-            EnableAlphaBlend();
-            DisableTexture('\0');
-            DisableDepthMask();
+            if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){
+                EnableAlphaBlend();
+                DisableTexture('\0');
+                DisableDepthMask();
+            }
 
         } else {
             renderMode = MODE_TEXTURE;

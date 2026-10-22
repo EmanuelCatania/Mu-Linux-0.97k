@@ -57,6 +57,11 @@ bool Apply(const Material& m) {
     }
     return true;
 }
+bool ApplySequence(const MaterialSequence& sequence){
+    if(!enabled||sequence.count==0||sequence.count>3)return false;
+    for(unsigned i=0;i<sequence.count;++i)Apply(sequence.steps[i]);
+    return true;
+}
 bool BeginText(){
     if(!enabled)return false;
     // COLOR_BUFFER conserva factores RGB/alpha y ecuaciones, además del enable.

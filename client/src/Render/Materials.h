@@ -67,6 +67,10 @@ bool Enabled();
 void Toggle();
 bool Select(Preset preset,bool depthWrite=true);
 bool Apply(const Material& material);
+// Secuencia transitoria de hasta tres materiales, sin colapsar estados:
+// BMD cambia textura/escritura varias veces antes de emitir geometría.
+struct MaterialSequence { Material steps[3]{};unsigned count=0; };
+bool ApplySequence(const MaterialSequence& sequence);
 // El slot es un recurso del cliente; el identificador nativo se resuelve en GL.
 // Los índices negativos heredados conservan el camino de referencia.
 struct TextureSlot { int index=0; };
