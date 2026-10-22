@@ -67,3 +67,5 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 // must still happen.  See src/Net/MuEmu.cpp for the wrapper body.
 #include "Net/MuEmu.h"
 #define send(s, buf, len, flags)  MuEmu_send_hook((s), (buf), (len), (flags))
+
+#include "Render/GLCallBarrier.h"

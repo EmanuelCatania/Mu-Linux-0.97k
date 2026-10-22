@@ -140,6 +140,7 @@
     <ClInclude Include="src\Render\MaterialVisuals.h" />
     <ClInclude Include="src\Render\LooseWingVisuals.h" />
     <ClInclude Include="src\Render\EquipmentVisuals.h" />
+    <ClInclude Include="src\Game\FramePointerSet.h" />
     <ClInclude Include="src\Game\RenderDerivedState.h" />
     <ClInclude Include="src\Game\RenderSnapshots.h" />
     <ClInclude Include="src\Game\RenderInterpolation.h" />
@@ -172,6 +173,22 @@
     <ClInclude Include="src\Platform\IFileSystem.h" />
     <ClInclude Include="src\Platform\ISocket.h" />
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
+    <ClInclude Include="src\Render\GLCallBarrier.h" />
+    <ClInclude Include="src\Render\GlyphAtlas.h" />
+    <ClInclude Include="src\Render\ResourceTables.h" />
+    <ClInclude Include="src\Render\Skinning.h" />
+    <ClInclude Include="src\Render\MeshDraw.h" />
+    <ClInclude Include="src\Render\TerrainDraw.h" />
+    <ClInclude Include="src\Render\Materials.h" />
+    <ClInclude Include="src\Render\FragmentStage.h" />
+    <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />
+    <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
+    <ClInclude Include="src\Render\RenderProfile.h" />
+    <ClInclude Include="src\Render\ProfileStats.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
+    <ClInclude Include="src\Render\BufferedDraw.h" />
+    <ClInclude Include="src\Render\TransformMath.h" />
+    <ClInclude Include="src\Render\TransformWorkers.h" />
     <ClInclude Include="src\Platform\IGLContext.h" />
     <ClInclude Include="src\Platform\GLFunctions.h" />
     <ClInclude Include="src\Platform\GL\glad.h" />
@@ -254,6 +271,31 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
+    <ClCompile Include="src\Render\GlyphAtlas.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\ResourceTables.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Skinning.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\MeshDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\TerrainDraw.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\TerrainRenderer.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\Materials.cpp" />
+    <ClCompile Include="src\Render\Backend\GL\FragmentPipeline.cpp"><PrecompiledHeader>NotUsing</PrecompiledHeader></ClCompile>
+    <ClCompile Include="src\Render\RenderProfile.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\ProfileQueries.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Render\BufferedDraw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Render\WorldEffects.cpp" />
     <ClCompile Include="src\Render\MaterialVisuals.cpp" />
     <ClCompile Include="src\Render\LooseWingVisuals.cpp" />

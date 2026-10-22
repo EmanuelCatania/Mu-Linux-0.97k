@@ -72,6 +72,8 @@
 //   MODE_METAL   = bits of 0x00000080 as float = 8.96831e-44
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
 #include "Item/ItemDefines.h"
 #include "Item/ContentCatalog.h"
 #include "../globals.h"
@@ -158,17 +160,18 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // DESVIACION: un modelo propio del catálogo con caras invertidas (hecho
     // para dos caras) se dibuja sin descarte de caras; el 0.97k no tiene
     // modelos así.  Los modelos vanilla no pasan por acá.
+    const int model = (int)(((uintptr_t)bmd_obj - (uintptr_t)DAT_05828d58) / 0xbc);
+    const bool twoSidedMesh=model >= MODEL_MAX_VANILLA && gContentCatalog.IsTwoSidedMesh(model,meshIndex);
+    // DESVIACION R4n: el ámbito mantiene dos caras durante todos los materiales
+    // y recupera culling/caché coherentes al salir, también en retornos tempranos.
+    const Materials::TwoSidedScope meshCull(twoSidedMesh);
     struct TwoSidedGuard {
         bool active = false;
         ~TwoSidedGuard() { if (active) glEnable(GL_CULL_FACE); }
     } twoSided;
-    {
-        const int model = (int)(((uintptr_t)bmd_obj - (uintptr_t)DAT_05828d58) / 0xbc);
-        if (model >= MODEL_MAX_VANILLA && gContentCatalog.IsTwoSidedMesh(model, meshIndex) &&
-            glIsEnabled(GL_CULL_FACE)) {
-            glDisable(GL_CULL_FACE);
-            twoSided.active = true;
-        }
+    if(!meshCull && twoSidedMesh && glIsEnabled(GL_CULL_FACE)) {
+        glDisable(GL_CULL_FACE);
+        twoSided.active=true;
     }
 
     // Early-out: NumTriangles == 0
@@ -241,7 +244,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // (evita saturación a blanco); los oscuros (ships, chars) se iluminan.
     if (meshIndex == streamMeshIndex) {
         // StreamMesh: flat body color, no per-vertex lighting
-        glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+        BufferedDraw::Color3fv((const GLfloat *)((int)bmd_obj + 0x48));
         param_2_b0 = '\0';
     } else if ((param_2_b0 != '\0') && (iVar12 = 0, 0 < *(short *)(pcVar1 + 6))) {
         // Per-vertex lighting: LightTransform[mesh * 15000 + normal] * BodyLight * boost
@@ -270,21 +273,22 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     if ((bVar4 & 1) == 1) {
         // RENDER_COLOR: flat color, disable texture
         renderMode = MODE_COLOR;
-        if ((bVar4 & 0x40) == 0x40)
-            EnableAlphaBlend();
-        else if ((bVar4 & 0x80) == 0x80)
-            EnableAlphaBlendMinus();
-        else
-            DisableAlphaBlend();
-        DisableTexture('\0');
+        const bool colorAlpha=alpha < _DAT_00552544;
+        const bool declaredColor=Materials::ApplySequence(MeshDraw::ColorMaterials(uVar6,colorAlpha));
+        if(!declaredColor){
+            if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+            else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+            else DisableAlphaBlend();
+            DisableTexture('\0');
+        }
 
-        if (alpha < _DAT_00552544) {
-            EnableAlphaTest('\x01');
-            glColor4f(*(float *)((int)bmd_obj + 0x48),
+        if (colorAlpha) {
+            if(!declaredColor)EnableAlphaTest('\x01');
+            BufferedDraw::Color4f(*(float *)((int)bmd_obj + 0x48),
                       *(float *)((int)bmd_obj + 0x4c),
                       *(float *)((int)bmd_obj + 0x50), alpha);
         } else {
-            glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+            BufferedDraw::Color3fv((const GLfloat *)((int)bmd_obj + 0x48));
         }
     } else {
         uVar7 = uVar6 & 4;
@@ -343,15 +347,6 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                     *(float *)((int)bmd_obj + 0x4c) = alpha * *(float *)((int)bmd_obj + 0x4c);
                     *(float *)((int)bmd_obj + 0x50) = alpha * *(float *)((int)bmd_obj + 0x50);
                 }
-                EnableAlphaBlend();
-            } else if ((bVar4 & 0x80) == 0x80) {
-                EnableAlphaBlendMinus();
-            } else if ((bVar4 & 0x10) == 0x10) {
-                EnableLightMap();
-            } else if (alpha < _DAT_00552544) {
-                EnableAlphaTest('\x01');
-            } else {
-                DisableAlphaBlend();
             }
 
             // Select chrome texture
@@ -361,7 +356,16 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 local_10 = 0x492;
             else if (((bVar4 & 8) == 8) && (texOverride == 0xffffffff))
                 local_10 = 0x4ce;
-            BindTexture(local_10);
+            const Materials::TexturedMaterial chrome{{static_cast<int>(local_10)},
+                MeshDraw::ChromeMaterial(uVar6,alpha < _DAT_00552544),Materials::BindingOrder::MaterialFirst};
+            if(!Materials::ApplyTextured(chrome)){
+                if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+                else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+                else if ((bVar4 & 0x10) == 0x10) EnableLightMap();
+                else if (alpha < _DAT_00552544) EnableAlphaTest('\x01');
+                else DisableAlphaBlend();
+                BindTexture(local_10);
+            }
 
         } else if (
             // El binario original compara como INT, no float. IDA sub_440D50:
@@ -386,14 +390,15 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         ) {
             // Blend mesh / animated UV variant.
             renderMode = MODE_TEXTURE;
-            BindTexture(local_10);
-            if ((bVar4 & 0x80) == 0x80)
-                EnableAlphaBlendMinus();
-            else
-                EnableAlphaBlend();
+            const Materials::TexturedMaterial blend{{static_cast<int>(local_10)},MeshDraw::BlendMaterial(uVar6)};
+            if(!Materials::ApplyTextured(blend)){
+                BindTexture(local_10);
+                if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+                else EnableAlphaBlend();
+            }
             const float meshLight = (brightMesh && blendMesh > -2 && (int)*(short *)(pcVar1 + 2) != blendMesh)
                                   ? 1.0f : blendLight;
-            glColor3f(meshLight * *(float *)((int)bmd_obj + 0x48),
+            BufferedDraw::Color3f(meshLight * *(float *)((int)bmd_obj + 0x48),
                       meshLight * *(float *)((int)bmd_obj + 0x4c),
                       meshLight * *(float *)((int)bmd_obj + 0x50));
             param_2_b0 = '\0';
@@ -402,14 +407,15 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             // RENDER_TEXTURE: explicit bind with blend
             renderMode = MODE_TEXTURE;
             BindTexture(local_10);
-            if ((bVar4 & 0x40) == 0x40)
-                EnableAlphaBlend();
-            else if ((bVar4 & 0x80) == 0x80)
-                EnableAlphaBlendMinus();
-            else if ((alpha < _DAT_00552544) || ((&DAT_083a7cc8)[local_10 * 0x38] == '\x04'))
-                EnableAlphaTest('\x01');
-            else
-                DisableAlphaBlend();
+            // Mantener binding antes de consultar Components: puede crecer la tabla.
+            const bool surfaceAlpha=(bVar4 & 0xc0)==0 && ((alpha < _DAT_00552544) ||
+                (&DAT_083a7cc8)[local_10 * 0x38] == '\x04');
+            if(!Materials::Apply(MeshDraw::SurfaceMaterial(uVar6,surfaceAlpha))){
+                if ((bVar4 & 0x40) == 0x40) EnableAlphaBlend();
+                else if ((bVar4 & 0x80) == 0x80) EnableAlphaBlendMinus();
+                else if (surfaceAlpha) EnableAlphaTest('\x01');
+                else DisableAlphaBlend();
+            }
 
         } else if ((bVar4 & 0x40) == 0x40) {
             // Bright-only chrome: skip if texture type is 4
@@ -417,9 +423,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                 return;
             }
             renderMode = MODE_METAL;
-            EnableAlphaBlend();
-            DisableTexture('\0');
-            DisableDepthMask();
+            if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){
+                EnableAlphaBlend();
+                DisableTexture('\0');
+                DisableDepthMask();
+            }
 
         } else {
             renderMode = MODE_TEXTURE;
@@ -455,10 +463,25 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         EnableAlphaBlend();
     }
 
+    // DESVIACION: reutilizar índices y preparar cada vértice único una vez.
+    // Conservar el emisor anterior para mallas que no admitan este camino.
+    const MeshDraw::Input meshInput{
+        pcVar1,reinterpret_cast<const unsigned char*>(*(int*)(pcVar1+0x1c)),
+        *(short*)(pcVar1+0x0a),*(short*)(pcVar1+4),*(short*)(pcVar1+6),*(short*)(pcVar1+8),
+        reinterpret_cast<const float*>(&DAT_0584621c)+meshIndex*15000*3,
+        reinterpret_cast<const float*>(&DAT_060db65c)+meshIndex*15000*3,
+        reinterpret_cast<const float*>(*(int*)(pcVar1+0x18)),&DAT_05828d5c,
+        renderMode,param_2_b0!='\0',bVar5!=0,alpha,uvU,uvV,
+        reinterpret_cast<const float*>(static_cast<char*>(bmd_obj)+0x48),bmd_obj
+    };
+    if (MeshDraw::Draw(meshInput)) {
+        if(!Materials::Apply(MeshDraw::ExitMaterial()))GL_EnableDepthWrites();
+        return;
+    }
     // DESVIACION: chrome usa un color constante durante toda la pasada.
     // Enviarlo al primer vértice conserva también el estado si no hay caras.
     bool chromeColorSent = false;
-    glBegin(GL_TRIANGLES);
+    BufferedDraw::Begin(GL_TRIANGLES);
     texOverride = 0;
 
     if (0 < *(short *)(pcVar1 + 0x0a)) {
@@ -476,29 +499,29 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                         pfVar8 = (float *)(*(int *)(pcVar1 + 0x18) + psVar14[4] * 8);
                         if (bVar5) {
                             // Blend wave offset
-                            glTexCoord2f(*pfVar8 + uvU, pfVar8[1] + uvV);
+                            BufferedDraw::TexCoord2f(*pfVar8 + uvU, pfVar8[1] + uvV);
                         } else {
-                            glTexCoord2f(*pfVar8, pfVar8[1]);
+                            BufferedDraw::TexCoord2f(*pfVar8, pfVar8[1]);
                         }
                         if (param_2_b0 != '\0') {
                             iVar2 = meshIndex * 15000 + (int)*psVar14;
                             if (alpha < _DAT_00552544) {
-                                glColor4f(*(float *)(&DAT_060db65c + iVar2 * 12),
+                                BufferedDraw::Color4f(*(float *)(&DAT_060db65c + iVar2 * 12),
                                           *(float *)(&DAT_060db65c + iVar2 * 12 + 4),
                                           *(float *)(&DAT_060db65c + iVar2 * 12 + 8), alpha);
                             } else {
-                                glColor3fv((const GLfloat *)(&DAT_060db65c + iVar2 * 12));
+                                BufferedDraw::Color3fv((const GLfloat *)(&DAT_060db65c + iVar2 * 12));
                             }
                         }
                     } else if (renderMode == MODE_CHROME) {
                         // Chrome UV from precomputed chrome table
                         if (!chromeColorSent) {
                             if (alpha < _DAT_00552544) {
-                                glColor4f(*(float *)((int)bmd_obj + 0x48),
+                                BufferedDraw::Color4f(*(float *)((int)bmd_obj + 0x48),
                                           *(float *)((int)bmd_obj + 0x4c),
                                           *(float *)((int)bmd_obj + 0x50), alpha);
                             } else {
-                                glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
+                                BufferedDraw::Color3fv((const GLfloat *)((int)bmd_obj + 0x48));
                             }
                             chromeColorSent = true;
                         }
@@ -508,14 +531,14 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                         //   MOV ECX,[EAX*0x8 + 0x5828d60]   ; V
                         //   MOV EDX,[EAX*0x8 + 0x5828d5c]   ; U
                         // El array es {U,V,U,V,...} contiguo desde d5c → V está en idx*2+1.
-                        glTexCoord2f((&DAT_05828d5c)[*psVar14 * 2 + 0],
+                        BufferedDraw::TexCoord2f((&DAT_05828d5c)[*psVar14 * 2 + 0],
                                      (&DAT_05828d5c)[*psVar14 * 2 + 1]);
                     }
 
                     // Emit vertex from BoneVertex buffer
                     {
                         const float *_v = (const float*)(&DAT_0584621c + ((int)sVar3 + meshIndex * 15000) * 3);
-                        glVertex3fv((const GLfloat *)_v);
+                        BufferedDraw::Vertex3fv((const GLfloat *)_v);
                     }
 
                     iVar12++;
@@ -526,11 +549,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             param_5_f = (float)((int)param_5_f + 0x24);  // face stride = 36 bytes
         } while ((int)texOverride < (int)*(short *)(pcVar1 + 0x0a));
     }
-    glEnd();
+    BufferedDraw::End();
     // Restaurar el depth-mask al salir: el path chrome (flag&0x40) llama
     // DisableDepthMask() arriba y, si no se restaura, los meshes siguientes del
     // mismo frame se dibujan sin depth-write (efecto "ghost"). El binario lo hace
     // en los setters de estado entre meshes, pero acá el cache DAT_083a42e8 puede
     // quedar desincronizado.
-    GL_EnableDepthWrites();  // EnableDepthMask
+    if(!Materials::Apply(MeshDraw::ExitMaterial()))GL_EnableDepthWrites();  // EnableDepthMask
 }

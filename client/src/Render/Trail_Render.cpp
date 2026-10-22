@@ -31,6 +31,7 @@
 //   GL_BindTextureSlot — SetTrailTexture(type)
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 
 // FUN_0046c3e0 definition MOVED to Joint_Render.cpp — this duplicate removed to avoid LNK2005
 #if 0
@@ -67,7 +68,7 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
                     piVar4 = piVar2 + 0x5f;   // head of trail point array
                     int nSlotTR = 0;
     do {
-                        glBegin(6);  // GL_QUAD_STRIP
+                        BufferedDraw::Begin(6);  // GL_QUAD_STRIP
 
                         // Compute per-segment fade alpha
                         fVar1 = _DAT_0055256c;  // default: 1.0
@@ -75,35 +76,35 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
                             // Fade from full to zero along trail length
                             fVar1 = (float)(piVar2[1] - local_8) / (float)piVar2[1];
                         }
-                        glColor3f(fVar1 * (float)piVar2[2],
+                        BufferedDraw::Color3f(fVar1 * (float)piVar2[2],
                                   fVar1 * (float)piVar2[3],
                                   fVar1 * (float)piVar2[4]);
 
                         iVar3 = piVar2[1];
                         // Vertex pair A (tail side)
-                        glTexCoord2f((float)local_8 / (float)iVar3, 1.0f);  // v=1
-                        glVertex3fv((float *)(piVar4 - 0x5a));
-                        glTexCoord2f((float)local_8 / (float)iVar3, 0.0f);
-                        glVertex3fv((float *)piVar4);
+                        BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3, 1.0f);  // v=1
+                        BufferedDraw::Vertex3fv((float *)(piVar4 - 0x5a));
+                        BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3, 0.0f);
+                        BufferedDraw::Vertex3fv((float *)piVar4);
 
                         // Fade for next vertex pair
                         fVar1 = _DAT_0055256c;
                         if (*(short *)(*piVar2 + 0x1be) == 0) {
                             fVar1 = (float)((piVar2[1] - local_8) - 1) / (float)piVar2[1];
                         }
-                        glColor3f(fVar1 * (float)piVar2[2],
+                        BufferedDraw::Color3f(fVar1 * (float)piVar2[2],
                                   fVar1 * (float)piVar2[3],
                                   fVar1 * (float)piVar2[4]);
 
                         local_8++;
                         iVar3 = piVar2[1];
                         // Vertex pair B (head side)
-                        glTexCoord2f((float)local_8 / (float)iVar3, 0.0f);
-                        glVertex3fv((float *)(piVar4 + 3));
-                        glTexCoord2f((float)local_8 / (float)iVar3, 1.0f);
-                        glVertex3fv((float *)(piVar4 - 0x57));
+                        BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3, 0.0f);
+                        BufferedDraw::Vertex3fv((float *)(piVar4 + 3));
+                        BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3, 1.0f);
+                        BufferedDraw::Vertex3fv((float *)(piVar4 - 0x57));
 
-                        glEnd();
+                        BufferedDraw::End();
                         piVar4 += 3;   // advance to next trail point (3 floats)
                     } while (local_8 < piVar2[1] - 1);
                 }

@@ -3,6 +3,8 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/MaterialVisuals.h"
 #include "Platform/ITimer.h"
@@ -81,7 +83,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // escribe el mismo buffer que sub_440D50 antes de delegar).
     int lightEnable = *(unsigned char *)((int)model + 0x44);
     if (meshIdx == streamMesh) {
-        glColor3fv(bodyLight);
+        BufferedDraw::Color3fv(bodyLight);
         lightEnable = 0;
     } else if (lightEnable) {
         const int nNormals = *(short *)(meshEntry + 6);
@@ -100,33 +102,43 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     int mode;
     if ((fl & 1) == 1) {
         mode = 1;
-        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else                          GL_ResetState();
-        GL_SetAlphaTest('\0');                                // DisableTexture(0)
-        glColor3fv(bodyLight);
+        if(!Materials::ApplySequence(MeshDraw::ColorMaterials(fl,false))){
+            if ((fl & 0x40) == 0x40) GL_SetBlendAdditive();
+            else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+            else GL_ResetState();
+            GL_SetAlphaTest('\0');
+        }
+        BufferedDraw::Color3fv(bodyLight);
     } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
         mode = 2;
-        GL_BindTextureSlot(tex);
-        if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();       // EnableAlphaBlendMinus
-        else                     GL_SetBlendAdditive();       // EnableAlphaBlend
-        glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
+        const Materials::TexturedMaterial blend{{tex},MeshDraw::BlendMaterial(fl)};
+        if(!Materials::ApplyTextured(blend)){
+            GL_BindTextureSlot(tex);
+            if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+            else GL_SetBlendAdditive();
+        }
+        BufferedDraw::Color3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
         lightEnable = 0;
     } else if ((fl & 2) == 2) {
         mode = 2;
         GL_BindTextureSlot(tex);
-        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else if (f3 < _DAT_00552544 || (&DAT_083a7cc8)[tex * 0x38] == '\x04')
-            GL_SetBlendSrcOver('\x01');                       // EnableAlphaTest(1)
-        else
-            GL_ResetState();                                  // DisableAlphaBlend
+        // La consulta de Components conserva la posición posterior al binding.
+        const bool surfaceAlpha=(fl & 0xc0)==0 && (f3 < _DAT_00552544 ||
+            (&DAT_083a7cc8)[tex * 0x38] == '\x04');
+        if(!Materials::Apply(MeshDraw::SurfaceMaterial(fl,surfaceAlpha))){
+            if ((fl & 0x40) == 0x40) GL_SetBlendAdditive();
+            else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+            else if (surfaceAlpha) GL_SetBlendSrcOver('\x01');
+            else GL_ResetState();
+        }
     } else if ((fl & 0x40) == 0x40) {
         if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
-        GL_SetBlendAdditive();
-        GL_SetAlphaTest('\0');
-        GL_DisableDepthWrites();
+        if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){
+            GL_SetBlendAdditive();
+            GL_SetAlphaTest('\0');
+            GL_DisableDepthWrites();
+        }
     } else {
         mode = 2;
     }
@@ -138,7 +150,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // asi que la onda nunca se aplicaba.
     const bool deform = (a & 1) != 0;
 
-    glBegin(GL_TRIANGLES);
+    BufferedDraw::Begin(GL_TRIANGLES);
     const int polyCount = *(short *)(meshEntry + 10);
     for (int poly = 0; poly < polyCount; ++poly) {
         const char *tri = (const char *)(*(int *)(meshEntry + 0x1c) + poly * 0x24);
@@ -148,12 +160,12 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
             const int vtx = idx[-4];                          // indice de vertice
             if (mode == 2) {
                 const float *uv = (const float *)(*(int *)(meshEntry + 0x18) + idx[4] * 8);
-                if (uvAnim) glTexCoord2f(f5 + uv[0], f6 + uv[1]);
-                else        glTexCoord2f(uv[0], uv[1]);
+                if (uvAnim) BufferedDraw::TexCoord2f(f5 + uv[0], f6 + uv[1]);
+                else        BufferedDraw::TexCoord2f(uv[0], uv[1]);
                 if (lightEnable) {
                     const float *c = (const float *)(&DAT_060db65c + ((int)idx[0] + meshIdx * 15000) * 12);
-                    if (f3 < _DAT_00552544) glColor4f(c[0], c[1], c[2], f3);
-                    else                    glColor3fv(c);
+                    if (f3 < _DAT_00552544) BufferedDraw::Color4f(c[0], c[1], c[2], f3);
+                    else                    BufferedDraw::Color3fv(c);
                 }
             }
 
@@ -169,10 +181,10 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
                     moved[k] = sn * nrm[k] * _DAT_00552644 + pos[k];
                 pos = moved;
             }
-            glVertex3fv(pos);
+            BufferedDraw::Vertex3fv(pos);
         }
     }
-    glEnd();
+    BufferedDraw::End();
 }
 
 // RenderObjectScreen @ 0x004E13A0 — RenderObjectScreen

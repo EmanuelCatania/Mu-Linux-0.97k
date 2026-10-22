@@ -1,6 +1,7 @@
 // Render_LegacyTrails.cpp
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -88,24 +89,24 @@ void __cdecl Particle_Update(void)
                 GL_BindTextureSlot(mode + 0x48d);
                 int *vp = slot + 0x5f;
                 for (int i = 0; i < seg - 1; i++, vp += 3) {
-                    glBegin(6);
+                    BufferedDraw::Begin(6);
                     float alpha = _DAT_0055256c;
                     if (*(short *)(*slot + 0x1be) == 0)
                         alpha = (float)(seg - i) / (float)seg;
-                    glColor3f(alpha*(float)slot[2], alpha*(float)slot[3], alpha*(float)slot[4]);
-                    glTexCoord2f((float)i / (float)seg, 1.0f);
-                    glVertex3fv((float *)(vp - 0x5a));
-                    glTexCoord2f((float)i / (float)seg, 0.0f);
-                    glVertex3fv((float *)vp);
+                    BufferedDraw::Color3f(alpha*(float)slot[2], alpha*(float)slot[3], alpha*(float)slot[4]);
+                    BufferedDraw::TexCoord2f((float)i / (float)seg, 1.0f);
+                    BufferedDraw::Vertex3fv((float *)(vp - 0x5a));
+                    BufferedDraw::TexCoord2f((float)i / (float)seg, 0.0f);
+                    BufferedDraw::Vertex3fv((float *)vp);
                     float alpha2 = _DAT_0055256c;
                     if (*(short *)(*slot + 0x1be) == 0)
                         alpha2 = (float)(seg - i - 1) / (float)seg;
-                    glColor3f(alpha2*(float)slot[2], alpha2*(float)slot[3], alpha2*(float)slot[4]);
-                    glTexCoord2f((float)(i+1) / (float)seg, 0.0f);
-                    glVertex3fv((float *)(vp + 3));
-                    glTexCoord2f((float)(i+1) / (float)seg, 1.0f);
-                    glVertex3fv((float *)(vp - 0x57));
-                    glEnd();
+                    BufferedDraw::Color3f(alpha2*(float)slot[2], alpha2*(float)slot[3], alpha2*(float)slot[4]);
+                    BufferedDraw::TexCoord2f((float)(i+1) / (float)seg, 0.0f);
+                    BufferedDraw::Vertex3fv((float *)(vp + 3));
+                    BufferedDraw::TexCoord2f((float)(i+1) / (float)seg, 1.0f);
+                    BufferedDraw::Vertex3fv((float *)(vp - 0x57));
+                    BufferedDraw::End();
                 }
             }
         }

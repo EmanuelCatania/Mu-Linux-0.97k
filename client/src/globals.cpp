@@ -6,6 +6,7 @@
 // replaced by pointer aliases to the original binary's addresses.
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
 
@@ -1148,7 +1149,7 @@ DWORD    DAT_083a7c8c  = 0;
 DWORD    DAT_083a7c90  = 0;
 DWORD    DAT_083a7c94  = 0;
 DWORD    DAT_083a7c98  = 0;
-char     g_BitmapsRaw[BITMAP_MAX_TOTAL * 0x38]  = {};  // Bitmaps table (1450 slots × 0x38 stride)
+char*    g_BitmapsRaw = ResourceTables::TextureBase(); // IDA: Bitmaps, base estable; páginas bajo demanda.
 DWORD    m_dwUsedTextureMemory  = 0;
 DWORD    DAT_083bbb68  = 0;
 DWORD    DAT_083bbb6c  = 0;

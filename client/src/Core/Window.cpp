@@ -1,6 +1,8 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Render/RenderProfile.h"
+#include "Render/TerrainDraw.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Core/Font.h"
@@ -13,6 +15,9 @@
 #include "Platform/IGLContext.h"
 #include "Config/UserSettings.h"
 #include "Game/FrameLimiter.h"
+#include "Render/BufferedDraw.h"
+#include "Render/MeshDraw.h"
+#include "Render/GlyphAtlas.h"
 
 CWindow gWindow;
 
@@ -81,7 +86,11 @@ bool CWindow::Create(HINSTANCE hInst, WNDPROC wndProc)
 // IDA: OpenGL_Init (0x0041DE30): mostrar la ventana después de activar el contexto.
 bool CWindow::InitOpenGL()
 {
-    if (!Platform::GetGLContext().Initialize()) {
+    if (!Platform::GetGLContext().Initialize() || !BufferedDraw::Initialize()) {
+        TerrainDraw::Release();
+        MeshDraw::Release();
+        BufferedDraw::Release();
+        Platform::GetGLContext().Release();
         RestoreDisplay();
         Platform::GetWindow().ShowError(gClientText.Get(ClientTextId::RenderGLUnavailable),"Mu Online",false,true);
         return false;
@@ -98,10 +107,15 @@ bool CWindow::InitOpenGL()
 // IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
+    RenderProfile::ResetContext();
+    TerrainDraw::Release();
+    MeshDraw::Release();
+    GlyphAtlas::Release();
+    BufferedDraw::Release();
     Platform::GetGLContext().Release();
     RestoreDisplay();
 }
 
-void CWindow::Present() { Platform::GetGLContext().Present(); }
+void CWindow::Present() { BufferedDraw::Suspend(); Platform::GetGLContext().Present(); }
 HDC CWindow::GetHdc() const { return Platform::NativeDC(); }
 HGLRC CWindow::GetGLContext() const { return Platform::NativeGLContext(); }

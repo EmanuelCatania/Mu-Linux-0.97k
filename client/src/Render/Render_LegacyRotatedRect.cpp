@@ -1,6 +1,7 @@
 // Render_LegacyRotatedRect.cpp
 
 #include "stdafx.h"
+#include "Render/BufferedDraw.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -74,12 +75,12 @@ void __cdecl GL_DrawRotatedRect(int id, float x, float y, float w, float h, unsi
         {  hw,  hh, 0.0f }
     };
 
-    glBegin(GL_TRIANGLE_FAN);
+    BufferedDraw::Begin(GL_TRIANGLE_FAN);
     for (int i = 0; i < 4; i++) {
         float out[3];
         Vector_Rotate(corners[i], mat, out);
-        glTexCoord2f(uvs[i*2], uvs[i*2+1]);
-        glVertex2f(fSinX + out[0], (sz - fCosX) + out[1]);
+        BufferedDraw::TexCoord2f(uvs[i*2], uvs[i*2+1]);
+        BufferedDraw::Vertex2f(fSinX + out[0], (sz - fCosX) + out[1]);
     }
-    glEnd();
+    BufferedDraw::End();
 }
