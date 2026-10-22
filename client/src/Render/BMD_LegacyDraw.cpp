@@ -102,10 +102,12 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     int mode;
     if ((fl & 1) == 1) {
         mode = 1;
-        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else                          GL_ResetState();
-        GL_SetAlphaTest('\0');                                // DisableTexture(0)
+        if(!Materials::ApplySequence(MeshDraw::ColorMaterials(fl,false))){
+            if ((fl & 0x40) == 0x40) GL_SetBlendAdditive();
+            else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+            else GL_ResetState();
+            GL_SetAlphaTest('\0');
+        }
         BufferedDraw::Color3fv(bodyLight);
     } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
         mode = 2;
@@ -132,9 +134,11 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     } else if ((fl & 0x40) == 0x40) {
         if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
-        GL_SetBlendAdditive();
-        GL_SetAlphaTest('\0');
-        GL_DisableDepthWrites();
+        if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){
+            GL_SetBlendAdditive();
+            GL_SetAlphaTest('\0');
+            GL_DisableDepthWrites();
+        }
     } else {
         mode = 2;
     }

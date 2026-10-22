@@ -19,6 +19,18 @@ constexpr Materials::Material BlendMaterial(unsigned flags) {
     return Materials::Describe((flags&0x80)?Materials::Preset::Attenuate:Materials::Preset::Add);
 }
 
+// DESVIACION R4m: no fusionar los pasos. Color normal con alpha vuelve
+// a habilitar textura mediante Alpha; la variante animada no hace ese paso.
+constexpr Materials::MaterialSequence ColorMaterials(unsigned flags,bool alpha) {
+    return {{SurfaceMaterial(flags,false),Materials::Describe(Materials::Preset::Untextured,false),
+        Materials::Describe(Materials::Preset::Alpha)},alpha?3u:2u};
+}
+constexpr Materials::MaterialSequence MetalMaterials() {
+    Materials::Material noWrite;noWrite.depthWrite=Materials::Switch::Off;
+    return {{Materials::Describe(Materials::Preset::Add),
+        Materials::Describe(Materials::Preset::Untextured,false),noWrite},3};
+}
+
 struct Input {
     const void* key;
     const unsigned char* faces;
