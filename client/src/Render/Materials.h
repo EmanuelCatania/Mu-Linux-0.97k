@@ -10,6 +10,19 @@ struct Material {
     Switch cull=Switch::Keep,depthWrite=Switch::Keep,alphaTest=Switch::Keep,texture=Switch::Keep,depthTest=Switch::Keep;
     Fog fog=Fog::Keep;
 };
+// Entrada de la vista 3D: sólo el estado que establece GL_BeginViewport.
+// Blend, bindings y orientación de caras se conservan como en la referencia.
+enum class Compare { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
+enum class ViewFog { Off, Linear, ExpSquared };
+struct ViewState {
+    bool alphaTest=false,texture=true,depthTest=true,cull=true,depthWrite=true;
+    Compare depthFunction=Compare::LessEqual,alphaFunction=Compare::Greater;
+    float alphaReference=.25f;
+    ViewFog fog=ViewFog::Off;
+    float fogStart=0,fogEnd=1,fogDensity=1,fogColor[4]{};
+};
+bool BeginView(const ViewState& state);
+
 enum class Preset { Opaque, LightMap, Alpha, Add, Attenuate, InverseAdd, Untextured };
 constexpr Material Describe(Preset preset,bool depthWrite=true) {
     using S=Switch;using B=Blend;
