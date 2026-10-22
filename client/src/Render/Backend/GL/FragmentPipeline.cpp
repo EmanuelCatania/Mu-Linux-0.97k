@@ -18,7 +18,7 @@ struct Pipeline { unsigned program=0;int texture=-1,textured=-1,fog=-1,values=-1
 std::map<unsigned,Pipeline> pipelines;
 struct TextureInfo{bool supported=false,opaque=false;int combine=0;};
 std::map<unsigned,TextureInfo> textureInfo;
-unsigned long long selected=0,fallback=0,alphaFallback=0;
+unsigned long long selected=0,fallback=0,alphaFallback=0,nativeAlpha=0;
 const char* lastReason="";
 const char* fragment=R"GLSL(#version 330 compatibility
 uniform sampler2D materialTexture;
@@ -44,8 +44,8 @@ void main(){
 }
 )GLSL";
 void Report(bool reset){
-    if(!reset&&requested){char line[320];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,lastReason);DbgLogPublic(line);}
-    selected=fallback=alphaFallback=0;lastReason="";
+    if(!reset&&requested){char line[320];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,lastReason);DbgLogPublic(line);}
+    selected=fallback=alphaFallback=nativeAlpha=0;lastReason="";
 }
 void Count(bool modern,const char* reason="",bool alpha=false){
     status=modern?"Fragmentos: shader activo":reason;
@@ -76,7 +76,7 @@ TextureInfo InspectTexture(unsigned texture){
     textureInfo[texture]=info;return info;
 }
 // No aproximar el comparador nativo cerca del umbral. Una cobertura variable
-// conserva la referencia; las coberturas constantes se resuelven sin test fijo.
+// conserva el test nativo; las coberturas constantes se resuelven sin test fijo.
 int Coverage(int function,float reference,const float* alpha,std::size_t count,std::size_t stride,bool opaque){
     if(function==GL_ALWAYS)return 1;if(function==GL_NEVER)return -1;
     float lo=1,hi=0;
@@ -135,14 +135,16 @@ Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t s
         const auto info=texture?InspectTexture(texture):TextureInfo{};
         if(!info.supported||sampler){Count(false,"Fragmentos: referencia (textura o sampler)");return;}opaque=info.opaque;combine=info.combine;}
     alphaEnabled=glIsEnabled(GL_ALPHA_TEST)!=0;
-    int coverage=1;
+    int coverage=1;bool keepNativeAlpha=false;
     if(alphaEnabled){int function=0;float referenceValue=0;glGetIntegerv(GL_ALPHA_TEST_FUNC,&function);glGetFloatv(GL_ALPHA_TEST_REF,&referenceValue);
         coverage=Coverage(function,referenceValue,alpha,count,stride,opaque);
-        if(coverage==0){alphaEnabled=false;Count(false,"Fragmentos: referencia (umbral alpha)",true);return;}
+        // Cobertura variable: conservar el comparador nativo después del shader.
+        // Así no alternamos de programa ni aproximamos el umbral alpha.
+        if(coverage==0){alphaEnabled=false;coverage=1;keepNativeAlpha=true;}
     }
     if(glIsEnabled(GL_FOG)){int mode=0;glGetIntegerv(GL_FOG_MODE,&mode);fog=mode==GL_LINEAR?1:mode==GL_EXP?2:3;glGetFloatv(GL_FOG_START,fogValues);glGetFloatv(GL_FOG_END,fogValues+1);glGetFloatv(GL_FOG_DENSITY,fogValues+2);glGetFloatv(GL_FOG_COLOR,fogColor);
         if(fog==1&&fogValues[0]==fogValues[1]){alphaEnabled=false;Count(false,"Fragmentos: referencia (niebla degenerada)");return;}}
-    program=found->second.program;modern=true;Count(true);reject=coverage<0;
+    program=found->second.program;modern=true;Count(true);if(keepNativeAlpha&&RenderProfile::active)++nativeAlpha;reject=coverage<0;
 }
 Draw::~Draw(){if(modern&&alphaEnabled)glEnable(GL_ALPHA_TEST);}
 void Draw::Apply(){
