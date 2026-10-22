@@ -56,6 +56,35 @@ bool Apply(const Material& m) {
     }
     return true;
 }
+bool BeginView(const ViewState& s){
+    if(!enabled)return false;
+    // La entrada de referencia escribe el estado físico incluso cuando el
+    // caché legacy difiere. No usar Cached para omitir esta reparación.
+    if(s.alphaTest)glEnable(GL_ALPHA_TEST);else glDisable(GL_ALPHA_TEST);
+    if(s.texture)glEnable(GL_TEXTURE_2D);else glDisable(GL_TEXTURE_2D);
+    if(s.depthTest)glEnable(GL_DEPTH_TEST);else glDisable(GL_DEPTH_TEST);
+    if(s.cull)glEnable(GL_CULL_FACE);else glDisable(GL_CULL_FACE);
+    glDepthMask(s.depthWrite?1:0);
+    DAT_083a411d=s.alphaTest?1:0;DAT_083a4125=s.texture?1:0;
+    DAT_083a411e=s.depthTest?1:0;DAT_083a411c=s.cull?1:0;DAT_083a42e8=s.depthWrite?1:0;
+    const auto compare=[](Compare c)->unsigned {
+        switch(c){
+        case Compare::Never:return GL_NEVER;case Compare::Less:return GL_LESS;
+        case Compare::Equal:return GL_EQUAL;case Compare::LessEqual:return GL_LEQUAL;
+        case Compare::Greater:return GL_GREATER;case Compare::NotEqual:return GL_NOTEQUAL;
+        case Compare::GreaterEqual:return GL_GEQUAL;case Compare::Always:return GL_ALWAYS;
+        }return GL_ALWAYS;
+    };
+    glDepthFunc(compare(s.depthFunction));glAlphaFunc(compare(s.alphaFunction),s.alphaReference);
+    if(s.fog==ViewFog::Off)glDisable(GL_FOG);
+    else {
+        glEnable(GL_FOG);
+        if(s.fog==ViewFog::Linear){glFogi(GL_FOG_MODE,GL_LINEAR);glFogf(GL_FOG_START,s.fogStart);glFogf(GL_FOG_END,s.fogEnd);}
+        else {glFogi(GL_FOG_MODE,GL_EXP2);glFogf(GL_FOG_DENSITY,s.fogDensity);}
+        glFogfv(GL_FOG_COLOR,s.fogColor);
+    }
+    return true;
+}
 bool Select(Preset preset,bool depthWrite){return Apply(Describe(preset,depthWrite));}
 }
 
