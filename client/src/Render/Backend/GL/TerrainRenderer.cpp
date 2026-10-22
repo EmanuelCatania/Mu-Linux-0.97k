@@ -15,8 +15,8 @@
 extern "C" void DbgLogPublic(const char*);
 namespace TerrainRendererGL {
 namespace {
-// DESVIACION R3a: conservar las dos pasadas antes de fusionarlas permite
-// verificar geometría, arrays, agua y estado sin mezclar errores de redondeo.
+// DESVIACION R3b: componer sólo cuando base y overlay cubren los mismos
+// fragmentos. Las caras ocultas y estados especiales conservan dos pasadas.
 GLuint program=0,vao=0,ebo=0,geometry=0,lighting=0,metadata=0;
 int lightWidth=0,metadataRows=0;
 int cachedMap=-1;float cachedScale=0;std::uint64_t epoch=0;
@@ -26,7 +26,7 @@ std::vector<Page> pages;
 char textureFailure[160]="Terreno: referencia (textura no admitida)";
 struct Location { int page=0,layer=0; };
 std::map<GLuint,Location> locations;
-struct Operation { const TerrainDraw::Tile* tile;Location texture;int mode; };
+struct Operation { const TerrainDraw::Tile* tile;Location texture;int mode;Location upper{}; };
 const char* vertex=R"GLSL(#version 330 compatibility
 layout(location=0) in vec4 position0;
 layout(location=1) in vec4 position1;
@@ -34,25 +34,27 @@ layout(location=2) in vec4 position2;
 layout(location=3) in vec4 position3;
 uniform sampler2D lightData,drawData;
 uniform int firstInstance;
-out vec4 shade;
-out vec2 uv;
+out vec4 shade,upperShade;
+out vec2 uv,upperUV;
 out float fogDistance;
-flat out float layer;
+flat out vec2 layers;
+flat out int operation;
 vec4 fetchDraw(int i) { return texelFetch(drawData,ivec2(i%1024,i/1024),0); }
 void main() {
     int corner=gl_VertexID;
     int record=(firstInstance+gl_InstanceID)*5;
     vec4 info=fetchDraw(record);
-    int mode=int(info.z);
+    operation=int(info.z);layers=info.xy;
     vec4 p=corner==0?position0:corner==1?position1:corner==2?position2:position3;
     int grid=int(p.w);
     vec4 light=texelFetch(lightData,ivec2(grid%256,grid/256),0);
-    shade=mode==2?vec4(light.aaa,1):vec4(light.rgb,mode==1?light.a:1);
-    // El pipeline compatible limita el color primario antes de interpolarlo.
-    shade=clamp(shade,0,1);
+    shade=operation==2?vec4(light.aaa,1):vec4(light.rgb,operation==1?light.a:1);
+    upperShade=operation==4?vec4(light.aaa,1):light;
+    // Limitar color primario antes de interpolar, igual que R3a.
+    shade=clamp(shade,0,1);upperShade=clamp(upperShade,0,1);
     vec4 tex=fetchDraw(record+1+corner);
     uv=(gl_TextureMatrix[0]*vec4(tex.xy,0,1)).xy;
-    layer=info.y;
+    upperUV=(gl_TextureMatrix[0]*vec4(tex.zw,0,1)).xy;
     vec4 pos=vec4(p.xyz,1);
     gl_Position=gl_ModelViewProjectionMatrix*pos;
     vec4 eye=gl_ModelViewMatrix*pos;
@@ -60,20 +62,41 @@ void main() {
 }
 )GLSL";
 const char* fragment=R"GLSL(#version 330 compatibility
-uniform sampler2DArray tiles;
+uniform sampler2DArray tiles,upperTiles;
 uniform int fogMode;
-in vec4 shade;
-in vec2 uv;
+uniform bool waterNoFog;
+uniform vec4 framebufferLevels;
+in vec4 shade,upperShade;
+in vec2 uv,upperUV;
 in float fogDistance;
-flat in float layer;
+flat in vec2 layers;
+flat in int operation;
 out vec4 color;
-void main() {
-    color=texture(tiles,vec3(uv,layer))*shade;
+vec4 fogged(vec4 c) {
     float f=1;
     if(fogMode==1) f=(gl_Fog.end-fogDistance)*gl_Fog.scale;
     if(fogMode==2) f=exp(-gl_Fog.density*fogDistance);
     if(fogMode==3) { float d=gl_Fog.density*fogDistance;f=exp(-d*d); }
-    if(fogMode!=0) color.rgb=mix(gl_Fog.color.rgb,color.rgb,clamp(f,0,1));
+    if(fogMode!=0)c.rgb=mix(gl_Fog.color.rgb,c.rgb,clamp(f,0,1));
+    return c;
+}
+
+void main() {
+    color=fogged(texture(tiles,vec3(uv,layers.x))*shade);
+    if(operation<3)return;
+    // La base ya habría pasado por UNORM antes del blend de la segunda capa.
+    vec4 base=floor(clamp(color,0,1)*framebufferLevels+0.5)/max(framebufferLevels,vec4(1));
+    if(framebufferLevels.a==0)base.a=1;
+    vec4 upper=texture(upperTiles,vec3(upperUV,layers.y))*upperShade;
+    if(operation==4) {
+        if(!waterNoFog)upper=fogged(upper);
+        color=base+upper;
+    } else {
+        upper=fogged(upper);
+        // El CPU sólo admite esta variante cuando toda la capa pasa el test.
+        // Si el umbral cruza el tile, se conserva el alpha test nativo R3a.
+        color=upper*upper.a+base*(1-upper.a);
+    }
 }
 )GLSL";
 void Bind(unsigned target,GLuint name) { RenderProfileGL::ObserveTexture(target,name);glBindTexture(target,name); }
@@ -120,7 +143,7 @@ bool Init() {
     for(GLuint c=0;c<4;++c){glEnableVertexAttribArray(c);glVertexAttribDivisor(c,1);}
     glGenTextures(1,&lighting);glGenTextures(1,&metadata);
     Program(program);
-    glUniform1i(glGetUniformLocation(program,"tiles"),0);
+    glUniform1i(glGetUniformLocation(program,"tiles"),0);glUniform1i(glGetUniformLocation(program,"upperTiles"),1);
     glUniform1i(glGetUniformLocation(program,"lightData"),2);glUniform1i(glGetUniformLocation(program,"drawData"),3);
     return true;
 }
@@ -202,6 +225,48 @@ bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
     }
     return true;
 }
+// Las proyecciones dudosas no se aproximan: conservan el dibujo de dos capas.
+bool FrontTile(const TerrainDraw::Tile& t,const float* view,const float* projection,int front,int cull) {
+    if(cull==GL_FRONT_AND_BACK)return false;
+    double clip[4][2]{};
+    for(int c=0;c<4;++c) {
+        double eye[4]{};for(int row=0;row<4;++row) {
+            eye[row]=view[12+row];for(int k=0;k<3;++k)eye[row]+=view[k*4+row]*double(t.positions[c][k]);
+        }
+        double p[4]{};for(int row=0;row<4;++row)for(int k=0;k<4;++k)p[row]+=projection[k*4+row]*eye[k];
+        if(!std::isfinite(p[3])||p[3]<=1e-6)return false;
+        clip[c][0]=p[0]/p[3];clip[c][1]=p[1]/p[3];
+    }
+    const int triangles[2][3]{{0,1,2},{0,2,3}};
+    for(const auto& tri:triangles) {
+        const auto* a=clip[tri[0]];const auto* b=clip[tri[1]];const auto* c=clip[tri[2]];
+        double area=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+        if(!std::isfinite(area)||std::abs(area)<1e-6)return false;
+        const bool facing=(area>0)==(front==GL_CCW);
+        if((cull==GL_BACK&&!facing)||(cull==GL_FRONT&&facing))return false;
+    }
+    return true;
+}
+// Resultado constante del alpha test en todo el tile. El margen conserva
+// el camino nativo alrededor del umbral, incluso con redondeo de 8 bits.
+// Las texturas RGBA usan el intervalo conservador [0,1], sin leer la GPU.
+int AlphaCoverage(const TerrainDraw::Tile& t,const TerrainDraw::FrameData& frame,int function,float reference) {
+    if(function==GL_ALWAYS)return 1;if(function==GL_NEVER)return -1;
+    float lo=1,hi=0;
+    for(unsigned i:t.indices){const float a=std::max(0.f,std::min(1.f,frame.alpha[i]));lo=std::min(lo,a);hi=std::max(hi,a);}
+    if(t.upper.channels!=3)lo=0;
+    constexpr float margin=2.f/255.f;
+    const bool below=hi<reference-margin,above=lo>reference+margin;
+    switch(function) {
+    case GL_LESS:case GL_LEQUAL:return below?1:above?-1:0;
+    case GL_GREATER:case GL_GEQUAL:return above?1:below?-1:0;
+    case GL_EQUAL:return below||above?-1:0;
+    case GL_NOTEQUAL:return below||above?1:0;
+    default:return 0;
+    }
+}
+int Pipeline(int mode) { return mode>=3?3:mode; }
+
 }
 TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<TerrainDraw::Tile>& tiles) {
     TerrainDraw::Result result;result.reason="Terreno: referencia (estado no admitido)";
@@ -236,7 +301,32 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     if(cachedMap!=f.map){heights.clear();cachedMap=f.map;ClearPages();}
     if(epoch!=f.textureEpoch){ClearPages();epoch=f.textureEpoch;}
     if(!EnsureSources(ops,result.dataBytes)){ClearPages();result.reason=textureFailure;return result;}
-    for(auto& op:ops)op.texture=locations.at(op.mode==0?op.tile->base.handle:op.tile->upper.handle);
+    GLint bits[4]{},equationRGB=0,equationAlpha=0,polygon[2]{},front=0,cull=0,alphaFunction=0;
+    const GLenum bitNames[]{GL_RED_BITS,GL_GREEN_BITS,GL_BLUE_BITS,GL_ALPHA_BITS};
+    for(int i=0;i<4;++i)glGetIntegerv(bitNames[i],bits+i);
+    glGetIntegerv(GL_BLEND_EQUATION_RGB,&equationRGB);glGetIntegerv(GL_BLEND_EQUATION_ALPHA,&equationAlpha);
+    glGetIntegerv(GL_POLYGON_MODE,polygon);glGetIntegerv(GL_FRONT_FACE,&front);glGetIntegerv(GL_CULL_FACE_MODE,&cull);
+    glGetIntegerv(GL_ALPHA_TEST_FUNC,&alphaFunction);GLfloat alphaReference=0;glGetFloatv(GL_ALPHA_TEST_REF,&alphaReference);
+    float view[16]{},projection[16]{};glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
+    const bool fusion=f.compose&&bits[0]==8&&bits[1]==8&&bits[2]==8&&(bits[3]==0||bits[3]==8)
+        &&equationRGB==GL_FUNC_ADD&&equationAlpha==GL_FUNC_ADD&&polygon[0]==GL_FILL&&polygon[1]==GL_FILL
+        &&!glIsEnabled(GL_STENCIL_TEST)&&!glIsEnabled(GL_POLYGON_SMOOTH)&&!glIsEnabled(GL_COLOR_LOGIC_OP)
+        &&!glIsEnabled(GL_SAMPLE_ALPHA_TO_COVERAGE)&&!glIsEnabled(GL_SAMPLE_ALPHA_TO_ONE);
+    ops.clear();
+    for(const auto& t:tiles) {
+        const auto base=locations.at(t.base.handle);
+        if(t.layer==TerrainDraw::Layer::None){ops.push_back({&t,base,0});continue;}
+        const auto upper=locations.at(t.upper.handle);
+        const int coverage=t.layer==TerrainDraw::Layer::Water?1:AlphaCoverage(t,f,alphaFunction,alphaReference);
+        if(fusion&&coverage<0) {
+            ops.push_back({&t,base,0});++result.rejectedTiles;
+        } else if(fusion&&coverage>0&&FrontTile(t,view,projection,front,cull)) {
+            ops.push_back({&t,base,t.layer==TerrainDraw::Layer::Water?4:3,upper});++result.composedTiles;
+        } else {
+            ops.push_back({&t,base,0});ops.push_back({&t,upper,t.layer==TerrainDraw::Layer::Water?2:1});++result.splitTiles;
+            if(!fusion)++result.splitState;else if(coverage==0)++result.splitAlpha;else ++result.splitFace;
+        }
+    }
     if(heights.size()!=65536||cachedScale!=f.scale||std::memcmp(heights.data(),f.heights,65536*sizeof(float))) {
         heights.assign(f.heights,f.heights+65536);cachedScale=f.scale;positions.assign(65536*16,0);
         for(int y=0;y<255;++y)for(int x=0;x<255;++x) {
@@ -258,27 +348,37 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     if(!lightWidth){if(!TextureData(2,lighting,256,256,nullptr,true)){result.reason="Terreno: referencia (memoria luz)";return result;}lightWidth=256;}
     glTexSubImage2D(GL_TEXTURE_2D,0,0,firstRow,256,lastRow-firstRow+1,GL_RGBA,GL_FLOAT,lights.data());result.lightBytes=lights.size()*sizeof(float);
     const int rows=(int)((ops.size()*5+1023)/1024);std::vector<float> records(rows*1024*4);
-    for(std::size_t i=0;i<ops.size();++i) {const auto& op=ops[i];float* p=records.data()+i*20;p[0]=(float)(op.tile->y*256+op.tile->x);p[1]=(float)op.texture.layer;p[2]=(float)op.mode;
-        for(int c=0;c<4;++c){p[4+c*4]=op.tile->uv[c][op.mode?2:0];p[5+c*4]=op.tile->uv[c][op.mode?3:1];}
+    for(std::size_t i=0;i<ops.size();++i) {const auto& op=ops[i];float* p=records.data()+i*20;p[0]=(float)op.texture.layer;p[1]=(float)op.upper.layer;p[2]=(float)op.mode;
+        for(int c=0;c<4;++c){
+            const int offset=op.mode>0&&op.mode<3?2:0;
+            p[4+c*4]=op.tile->uv[c][offset];p[5+c*4]=op.tile->uv[c][offset+1];
+            if(op.mode>=3){p[6+c*4]=op.tile->uv[c][2];p[7+c*4]=op.tile->uv[c][3];}
+        }
     }
     if(!TextureData(3,metadata,1024,rows,records.data(),metadataRows!=rows)){metadataRows=0;result.reason="Terreno: referencia (memoria instancias)";return result;}metadataRows=rows;result.dataBytes+=records.size()*sizeof(float);
     glActiveTexture(GL_TEXTURE0);Program(program);glBindVertexArray(vao);
     const bool originalFog=glIsEnabled(GL_FOG)!=0;glGetIntegerv(GL_FOG_MODE,&mode);
     const int fogMode=!originalFog?0:mode==GL_LINEAR?1:mode==GL_EXP?2:3;
     const GLint first=glGetUniformLocation(program,"firstInstance"),fog=glGetUniformLocation(program,"fogMode");
-    int lastMode=-1,lastPage=-1;
+    glUniform1i(glGetUniformLocation(program,"waterNoFog"),f.fogPolicy?1:0);
+    glUniform4f(glGetUniformLocation(program,"framebufferLevels"),255,255,255,bits[3]?255.f:0.f);
+    int lastMode=-1,lastPage=-1,lastUpper=-1;
     for(std::size_t begin=0;begin<ops.size();) {
-        std::size_t end=begin+1;const auto& op=ops[begin];while(end<ops.size()&&ops[end].mode==op.mode&&ops[end].texture.page==op.texture.page
+        std::size_t end=begin+1;const auto& op=ops[begin];while(end<ops.size()&&Pipeline(ops[end].mode)==Pipeline(op.mode)&&ops[end].texture.page==op.texture.page
+            &&(op.mode<3||ops[end].upper.page==op.upper.page)
             &&ResidentIndex(ops[end].tile->x,ops[end].tile->y)==ResidentIndex(op.tile->x,op.tile->y)+(end-begin))++end;
         // Este estado sólo vive dentro de la pasada; no toca el caché legacy.
-        if(lastMode!=op.mode) {
-            RenderProfileGL::SetEnabled(GL_BLEND,op.mode!=0);RenderProfileGL::SetEnabled(GL_ALPHA_TEST,op.mode==1);RenderProfileGL::SetEnabled(GL_CULL_FACE,op.mode==0);
+        if(lastMode!=Pipeline(op.mode)) {
+            RenderProfileGL::SetEnabled(GL_BLEND,op.mode==1||op.mode==2);RenderProfileGL::SetEnabled(GL_ALPHA_TEST,op.mode==1);RenderProfileGL::SetEnabled(GL_CULL_FACE,op.mode==0||op.mode>=3);
             if(RenderProfile::active)RenderProfileGL::DepthWrite(op.mode!=2);glDepthMask(op.mode!=2);
-            if(op.mode) {const GLenum src=op.mode==1?GL_SRC_ALPHA:GL_ONE,dst=op.mode==1?GL_ONE_MINUS_SRC_ALPHA:GL_ONE;
+            if(op.mode==1||op.mode==2) {const GLenum src=op.mode==1?GL_SRC_ALPHA:GL_ONE,dst=op.mode==1?GL_ONE_MINUS_SRC_ALPHA:GL_ONE;
                 if(RenderProfile::active)RenderProfileGL::BlendFunction(src,dst);glBlendFunc(src,dst);}
-            glUniform1i(fog,op.mode==2&&f.fogPolicy?0:fogMode);lastMode=op.mode;
+            glUniform1i(fog,op.mode==2&&f.fogPolicy?0:fogMode);lastMode=Pipeline(op.mode);
         }
         if(lastPage!=op.texture.page){Bind(GL_TEXTURE_2D_ARRAY,pages[op.texture.page].name);lastPage=op.texture.page;}
+        if(op.mode>=3&&lastUpper!=op.upper.page){
+            glActiveTexture(GL_TEXTURE1);Bind(GL_TEXTURE_2D_ARRAY,pages[op.upper.page].name);glActiveTexture(GL_TEXTURE0);lastUpper=op.upper.page;
+        }
         glBindBuffer(GL_ARRAY_BUFFER,geometry);
         for(GLuint c=0;c<4;++c)glVertexAttribPointer(c,4,GL_FLOAT,GL_FALSE,16*sizeof(float),
             reinterpret_cast<const void*>((ResidentIndex(op.tile->x,op.tile->y)*16+c*4)*sizeof(float)));

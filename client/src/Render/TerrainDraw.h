@@ -14,11 +14,11 @@ struct Tile {
 struct FrameData {
     int map=-1;float scale=100;
     const float* heights=nullptr;const float* light=nullptr;const float* alpha=nullptr;
-    bool fogPolicy=false;std::uint64_t textureEpoch=0;
+    bool fogPolicy=false;std::uint64_t textureEpoch=0;bool compose=true;
 };
 using Reference=void(*)(const Tile&,const FrameData&,bool draw);
-struct Result { bool drawn=false;std::uint64_t draws=0,referenceTiles=0,geometryBytes=0,lightBytes=0,dataBytes=0;const char* reason=""; };
-void Toggle();bool Requested();bool Collecting();const char* Status();
+struct Result { bool drawn=false;std::uint64_t draws=0,referenceTiles=0,composedTiles=0,splitTiles=0,splitAlpha=0,splitFace=0,splitState=0,rejectedTiles=0,geometryBytes=0,lightBytes=0,dataBytes=0;const char* reason=""; };
+void Toggle();void ToggleComposition();bool Composition();bool Requested();bool Collecting();const char* Status();
 void InvalidateTextures();void InvalidateBoundTexture();void InvalidateTexture(std::uint32_t handle);void Release();
 void Begin(FrameData frame,Reference reference);
 void Submit(const Tile& tile);

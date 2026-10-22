@@ -36,6 +36,7 @@
 #include "stdafx.h"
 #include "Render/RenderProfile.h"
 #include "Render/TerrainDraw.h"
+#include "Render/Materials.h"
 #include "Config/UserSettings.h"
 #include "Render/MaterialVisuals.h"
 static void Game_TickAmbientAudio();
@@ -93,7 +94,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     const CFrameLimiter::StartTime renderStart = gFrameLimiter.Start();
     TimeRemain += gFrameLimiter.Advance(renderStart);
     RenderProfile::Frame profile(SceneFlag==5,gMapManager.GetCurrentMap());
-    if(RenderProfile::active)RenderProfile::Configuration(gWindow.GetWidth(),gWindow.GetHeight(),gUserSettings.GetFpsLimit(),gUserSettings.GetVSync(),gUserSettings.GetRenderDecoupled(),TerrainDraw::Requested());
+    if(RenderProfile::active)RenderProfile::Configuration(gWindow.GetWidth(),gWindow.GetHeight(),gUserSettings.GetFpsLimit(),gUserSettings.GetVSync(),gUserSettings.GetRenderDecoupled(),TerrainDraw::Requested(),TerrainDraw::Composition(),Materials::Enabled());
     int    shiftHeld;
 
     CHK("ML/enter");

@@ -3,6 +3,7 @@
 // WriteJpeg.
 
 #include "stdafx.h"
+#include "Render/Materials.h"
 #include "Render/Texture/ImageCodec.h"
 #include "Platform/IFileSystem.h"
 #include "globals.h"
@@ -40,6 +41,7 @@ extern void __cdecl operator_delete(void* ptr);
 // CORRECCION: 0xb71 es GL_DEPTH_TEST, NO GL_SCISSOR_TEST (que es 0x0c11).
 // EnableDepthTest @ 0x005114D0 — GL_EnableDepthTest
 void __cdecl GL_EnableDepthTest(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthTest=Materials::Switch::On;Materials::Apply(m);return;}
     if (DAT_083a411e == '\0') { DAT_083a411e = '\x01'; glEnable(0x0b71); }
 }
 // DisableDepthTest @ 0x005114F0 — GL_DisableDepthTest
@@ -47,6 +49,7 @@ void __cdecl GL_EnableDepthTest(void) {
 // del contexto GL que aflora al primer comando subsiguiente (driver bufferea cmds).
 // Loggeamos antes/después con glGetError() para localizar el comando ofensivo.
 void __cdecl GL_DisableDepthTest(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthTest=Materials::Switch::Off;Materials::Apply(m);return;}
     static int s_call = 0;
     s_call++;
     GLenum err_before = glGetError();
@@ -59,24 +62,29 @@ void __cdecl GL_DisableDepthTest(void) {
 }
 // EnableDepthMask @ 0x00511510 — GL_EnableDepthWrites
 void __cdecl GL_EnableDepthWrites(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthWrite=Materials::Switch::On;Materials::Apply(m);return;}
     if (DAT_083a42e8 == '\0') { DAT_083a42e8 = '\x01'; glDepthMask(1); }
 }
 // FUN_00511530 @ 0x00511530 — GL_DisableDepthWrites
 void __cdecl GL_DisableDepthWrites(void) {
+    if(Materials::Enabled()){Materials::Material m;m.depthWrite=Materials::Switch::Off;Materials::Apply(m);return;}
     if (DAT_083a42e8 != '\0') { DAT_083a42e8 = '\0'; glDepthMask(0); }
 }
 // EnableCullFace @ 0x00511550 — GL_EnableCullFace
 // (Called by 3D blend setters GL_ResetState / GL_EnableLightMap per 5.2 source pattern.)
 void __cdecl GL_EnableCullFace(void) {
+    if(Materials::Enabled()){Materials::Material m;m.cull=Materials::Switch::On;Materials::Apply(m);return;}
     if (DAT_083a411c == '\0') { DAT_083a411c = '\x01'; glEnable(0xb44); }
 }
 // DisableCullFace @ 0x00511570 — GL_DisableCullFace
 // (Called by 2D blend setters GL_SetBlendSrcOver / GL_SetBlendAdditive / GL_SetBlendSrcAlpha.)
 void __cdecl GL_DisableCullFace(void) {
+    if(Materials::Enabled()){Materials::Material m;m.cull=Materials::Switch::Off;Materials::Apply(m);return;}
     if (DAT_083a411c != '\0') { DAT_083a411c = '\0'; glDisable(0xb44); }
 }
 // FUN_00511590 @ 0x00511590 — GL_SetAlphaTest
 void __cdecl GL_SetAlphaTest(char param_1) {
+    if(Materials::Select(Materials::Preset::Untextured,param_1 == 1))return;
     GL_EnableDepthWrites();
     if (param_1 == '\x01') {
         if (DAT_083a411d == '\0') { DAT_083a411d = '\x01'; glEnable(0xbc0); }

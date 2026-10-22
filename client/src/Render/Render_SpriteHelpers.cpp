@@ -4,12 +4,14 @@
 // comentarios de cada función conservan la procedencia IDA.
 
 #include "stdafx.h"
+#include "Render/Materials.h"
 #include "Render/BufferedDraw.h"
 #include "globals.h"
 #include "functions.h"
 // EnableAlphaBlend2 @ 0x00511810 (~28 lines) — OpenGL additive blending
 void __stdcall GL_SetBlendInvSrcColor(void) {
-    // 0x00511810 — OpenGL additive blending (ONE_MINUS_DST_COLOR, ONE)
+    if(Materials::Select(Materials::Preset::InverseAdd))return;
+    // 0x00511810 — factores reales: ONE_MINUS_SRC_COLOR, ONE.
     // Cache de estado real (IDA): DAT_083a412c (AlphaBlendType), DAT_083a411d
     // (AlphaTestEnable), DAT_083a4125 (TextureEnable). Ojo: DAT_07eaa160/164/168
     // son CheckInventory + punteros ITEM vecinos, NO estado GL.
