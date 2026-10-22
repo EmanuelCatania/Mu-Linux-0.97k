@@ -56,6 +56,23 @@ bool Apply(const Material& m) {
     }
     return true;
 }
+bool BeginOverlay(const OverlayState& s){
+    if(!enabled)return false;
+    glMatrixMode(GL_PROJECTION);glPushMatrix();glLoadIdentity();
+    glViewport(0,0,s.width,s.height);
+    // Conservar la secuencia de referencia, incluida la perspectiva temporal.
+    gluPerspective(s.fov,double(s.width)/double(s.height),s.nearClip,s.farClip);
+    glLoadIdentity();gluOrtho2D(0,double(s.width),0,double(s.height));
+    glMatrixMode(GL_MODELVIEW);glPushMatrix();glLoadIdentity();
+    Material entry;entry.depthTest=Switch::Off;Apply(entry);
+    return true;
+}
+bool EndOverlay(){
+    if(!enabled)return false;
+    glMatrixMode(GL_PROJECTION);glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);glPopMatrix();
+    return true;
+}
 bool BeginView(const ViewState& s){
     if(!enabled)return false;
     // La entrada de referencia escribe el estado físico incluso cuando el

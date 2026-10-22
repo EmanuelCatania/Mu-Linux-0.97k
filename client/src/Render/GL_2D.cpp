@@ -15,6 +15,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
 
 
 // FUN_005123C0 @ 0x005123C0 — GL_Begin2D
@@ -35,6 +36,10 @@ void GL_Begin2D(void)
   if (!(far_ > near_))                  far_  = 10000.0f;
   DWORD vw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
   DWORD vh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
+
+  // DESVIACION R4h: el productor entrega dimensiones y perspectiva; el
+  // backend aplica la entrada 2D sin imponer blend, niebla ni escritura.
+  if(Materials::BeginOverlay({vw,vh,fov,near_,far_}))return;
 
   // Desviación (como el 5.2, ZzzOpenglUtil.cpp:1117): el 0.97k empuja la 1ª
   // matriz sobre el modo de ENTRADA (no explícito) y la 2ª sobre PROJECTION,
@@ -61,6 +66,7 @@ void GL_Begin2D(void)
 // Pops both matrix stacks pushed by GL_Begin2D.
 void GL_End2D(void)
 {
+  if(Materials::EndOverlay())return;
   // Desviación (5.2 source ZzzOpenglUtil.cpp:1136): el 0.97k original hace
   // `glPopMatrix(); glPopMatrix();` SIN cambiar de modo → ambos pops caen sobre
   // MODELVIEW y PROJECTION (que BeginBitmap empujó) nunca se popea → acumula

@@ -22,6 +22,14 @@ struct ViewState {
     float fogStart=0,fogEnd=1,fogDensity=1,fogColor[4]{};
 };
 bool BeginView(const ViewState& state);
+// Entrada 2D en píxeles. Sólo declara proyección/viewport y depth test Off;
+// las ventanas con modelos pueden abrir después su propia vista 3D.
+struct OverlayState {
+    unsigned width=640,height=480;
+    float fov=45,nearClip=10,farClip=10000;
+};
+bool BeginOverlay(const OverlayState& state);
+bool EndOverlay();
 
 enum class Preset { Opaque, LightMap, Alpha, Add, Attenuate, InverseAdd, Untextured };
 constexpr Material Describe(Preset preset,bool depthWrite=true) {
