@@ -7,7 +7,8 @@ void InvalidateTextures();
 void InvalidateBindings();
 void CapabilityChanged(unsigned capability);
 // Invalidar después de vaciar el lote y antes de modificar el material nativo.
-void MaterialChanged();
+enum class MaterialPart : unsigned { Texture=1, Alpha=2, Fog=4, All=7 };
+void MaterialChanged(MaterialPart part=MaterialPart::All);
 // Selección por envío: el objeto restaura el alpha test físico al terminar.
 // Los atributos pueden proceder del stream general o de vértices BMD.
 class Draw {
