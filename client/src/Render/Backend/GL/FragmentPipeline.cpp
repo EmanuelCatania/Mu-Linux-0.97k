@@ -22,12 +22,14 @@ unsigned long long selected=0,fallback=0,alphaFallback=0,nativeAlpha=0;
 const char* lastReason="";
 const char* layoutReason="";
 struct MaterialState {
-    bool valid=false,textured=false,opaque=true,alpha=false;
+    unsigned dirty=7;
+    bool textured=false,opaque=true,alpha=false;
     int combine=0,function=GL_ALWAYS,fog=0;
     float reference=0,values[3]{},color[4]{};
-    const char* reason="";
+    const char* reason="",*textureReason="",*fogReason="";
 } material;
 unsigned long long materialReads=0,materialReuses=0;
+unsigned long long componentReads[3]{},componentReuses[3]{};
 unsigned long long layoutReads=0,layoutReuses=0;
 // El estado ajeno al material no cambia entre envíos propios. Toda entrada
 // nativa pasa por Suspend; los cambios de capacidades invalidan esta captura.
@@ -73,8 +75,9 @@ void main(){
 }
 )GLSL";
 void Report(bool reset){
-    if(!reset&&requested){char line[512];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,lastReason);DbgLogPublic(line);}
+    if(!reset&&requested){char line[768];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu capturas_textura=%llu reusos_textura=%llu capturas_alpha=%llu reusos_alpha=%llu capturas_niebla=%llu reusos_niebla=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,componentReads[0],componentReuses[0],componentReads[1],componentReuses[1],componentReads[2],componentReuses[2],lastReason);DbgLogPublic(line);}
     selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=materialReads=materialReuses=0;lastReason="";
+    std::fill(componentReads,componentReads+3,0ull);std::fill(componentReuses,componentReuses+3,0ull);
 }
 void Count(bool modern,const char* reason="",bool alpha=false){
     status=modern?"Fragmentos: shader activo":reason;
@@ -107,26 +110,41 @@ TextureInfo InspectTexture(unsigned texture){
 // Captura coherente del material. Los setters pasan por la barrera; las
 // operaciones nativas invalidan tanto esta captura como el estado de entrada.
 const MaterialState& ReadMaterial(){
-    if(material.valid){if(RenderProfile::active)++materialReuses;return material;}
-    if(RenderProfile::active)++materialReads;
-    material=MaterialState{};material.valid=true;
-    material.textured=glIsEnabled(GL_TEXTURE_2D)!=0;
-    if(material.textured){
-        int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
-        if(environment!=GL_MODULATE){material.reason="Fragmentos: referencia (texture env)";return material;}
-        int texture=0,sampler=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(GL_SAMPLER_BINDING,&sampler);
-        const auto info=texture?InspectTexture(texture):TextureInfo{};
-        if(!info.supported||sampler){material.reason="Fragmentos: referencia (textura o sampler)";return material;}
-        material.opaque=info.opaque;material.combine=info.combine;
+    if(RenderProfile::active){
+        if(material.dirty)++materialReads;else ++materialReuses;
+        for(unsigned i=0;i<3;++i){if(material.dirty&(1u<<i))++componentReads[i];else ++componentReuses[i];}
     }
-    material.alpha=glIsEnabled(GL_ALPHA_TEST)!=0;
-    if(material.alpha){glGetIntegerv(GL_ALPHA_TEST_FUNC,&material.function);glGetFloatv(GL_ALPHA_TEST_REF,&material.reference);}
-    if(glIsEnabled(GL_FOG)){
-        int mode=0;glGetIntegerv(GL_FOG_MODE,&mode);material.fog=mode==GL_LINEAR?1:mode==GL_EXP?2:3;
-        glGetFloatv(GL_FOG_START,material.values);glGetFloatv(GL_FOG_END,material.values+1);glGetFloatv(GL_FOG_DENSITY,material.values+2);glGetFloatv(GL_FOG_COLOR,material.color);
-        if(material.fog==1&&material.values[0]==material.values[1])material.reason="Fragmentos: referencia (niebla degenerada)";
+    if(!material.dirty)return material;
+    if(material.dirty&1){
+        material.textured=glIsEnabled(GL_TEXTURE_2D)!=0;
+        material.opaque=true;material.combine=0;material.textureReason="";
+        if(material.textured){
+            int environment=0;glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&environment);
+            if(environment!=GL_MODULATE)material.textureReason="Fragmentos: referencia (texture env)";
+            else {
+                int texture=0,sampler=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(GL_SAMPLER_BINDING,&sampler);
+                const auto info=texture?InspectTexture(texture):TextureInfo{};
+                if(!info.supported||sampler)material.textureReason="Fragmentos: referencia (textura o sampler)";
+                else {material.opaque=info.opaque;material.combine=info.combine;}
+            }
+        }
     }
-    return material;
+    if(material.dirty&2){
+        material.alpha=glIsEnabled(GL_ALPHA_TEST)!=0;
+        material.function=GL_ALWAYS;material.reference=0;
+        if(material.alpha){glGetIntegerv(GL_ALPHA_TEST_FUNC,&material.function);glGetFloatv(GL_ALPHA_TEST_REF,&material.reference);}
+    }
+    if(material.dirty&4){
+        material.fog=0;material.fogReason="";
+        std::fill(material.values,material.values+3,0.f);std::fill(material.color,material.color+4,0.f);
+        if(glIsEnabled(GL_FOG)){
+            int mode=0;glGetIntegerv(GL_FOG_MODE,&mode);material.fog=mode==GL_LINEAR?1:mode==GL_EXP?2:3;
+            glGetFloatv(GL_FOG_START,material.values);glGetFloatv(GL_FOG_END,material.values+1);glGetFloatv(GL_FOG_DENSITY,material.values+2);glGetFloatv(GL_FOG_COLOR,material.color);
+            if(material.fog==1&&material.values[0]==material.values[1])material.fogReason="Fragmentos: referencia (niebla degenerada)";
+        }
+    }
+    material.reason=*material.textureReason?material.textureReason:material.fogReason;
+    material.dirty=0;return material;
 }
 // No aproximar el comparador nativo cerca del umbral. Una cobertura variable
 // conserva el test nativo; las coberturas constantes se resuelven sin test fijo.
@@ -153,10 +171,10 @@ const char* Status(){return status;}
 void Toggle(){BufferedDraw::Suspend();requested=!requested;Report(true);RenderProfile::RestartCapture();status=requested?"Fragmentos: esperando dibujo":"Fragmentos: referencia";DbgLogPublic(requested?"Fragmentos R4b: activo":"Fragmentos R4b: referencia");}
 }
 namespace FragmentPipelineGL {
-void MaterialChanged(){material.valid=false;}
-void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_2D||cap==GL_ALPHA_TEST||cap==GL_FOG)MaterialChanged();if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
+void MaterialChanged(MaterialPart part){material.dirty|=static_cast<unsigned>(part);}
+void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_2D)MaterialChanged(MaterialPart::Texture);if(cap==GL_ALPHA_TEST)MaterialChanged(MaterialPart::Alpha);if(cap==GL_FOG)MaterialChanged(MaterialPart::Fog);if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
 void InvalidateBindings(){MaterialChanged();layoutChecked=false;targetChecked=false;}
-void InvalidateTextures(){MaterialChanged();textureInfo.clear();layoutChecked=false;}
+void InvalidateTextures(){MaterialChanged(MaterialPart::Texture);textureInfo.clear();layoutChecked=false;}
 void Create(unsigned reference,const char* source){
     RenderProfile::SetBackendReport(Report);
     if(pipelines.count(reference))return;

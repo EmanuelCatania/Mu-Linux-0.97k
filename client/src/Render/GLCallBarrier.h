@@ -12,8 +12,8 @@ namespace BufferedDraw {
 template<class F,class... A> inline auto StateChange(F function,A... args) -> decltype(function(args...)) {
     Flush();return function(args...);
 }
-template<class F,class... A> inline auto MaterialChange(F function,A... args) -> decltype(function(args...)) {
-    Flush();FragmentPipelineGL::MaterialChanged();return function(args...);
+template<class F,class... A> inline auto MaterialChange(FragmentPipelineGL::MaterialPart part,F function,A... args) -> decltype(function(args...)) {
+    Flush();FragmentPipelineGL::MaterialChanged(part);return function(args...);
 }
 
 template<class F,class... A> inline auto TextureChange(F function,A... args) -> decltype(function(args...)) {
@@ -44,7 +44,7 @@ template<class F> inline void SetEnabled(F function,unsigned cap,bool enabled) {
 template<class F> inline void BindTextureState(F function,unsigned target,unsigned name) {
     if (target==GL_TEXTURE_2D) {
         GLint current=0;::glGetIntegerv(GL_TEXTURE_BINDING_2D,&current);
-        if (static_cast<unsigned>(current)!=name) { Flush();FragmentPipelineGL::MaterialChanged();RenderProfile::Change(RenderProfile::State::Texture); }
+        if (static_cast<unsigned>(current)!=name) { Flush();FragmentPipelineGL::MaterialChanged(FragmentPipelineGL::MaterialPart::Texture);RenderProfile::Change(RenderProfile::State::Texture); }
     } else Flush();
     function(target,name);
 }
@@ -64,7 +64,7 @@ inline void ProfileDepthMask(unsigned char enabled) {
     ::glDepthMask(enabled);
 }
 }
-#define glAlphaFunc(...) ::BufferedDraw::MaterialChange(::glAlphaFunc,__VA_ARGS__)
+#define glAlphaFunc(...) ::BufferedDraw::MaterialChange(::FragmentPipelineGL::MaterialPart::Alpha,::glAlphaFunc,__VA_ARGS__)
 #define glBindTexture(target,name) ::BufferedDraw::BindTextureState(::glBindTexture,target,name)
 #define glBitmap(...) ::BufferedDraw::LegacyDraw(::glBitmap,__VA_ARGS__)
 #define glBlendFunc(source,destination) ::BufferedDraw::ProfileBlend(source,destination)
@@ -79,9 +79,9 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glEnable(cap) ::BufferedDraw::SetEnabled(::glEnable,cap,true)
 #define glEndList() ::BufferedDraw::LegacyCall(::glEndList)
 #define glFlush() ::BufferedDraw::LegacyCall(::glFlush)
-#define glFogf(...) ::BufferedDraw::MaterialChange(::glFogf,__VA_ARGS__)
-#define glFogfv(...) ::BufferedDraw::MaterialChange(::glFogfv,__VA_ARGS__)
-#define glFogi(...) ::BufferedDraw::MaterialChange(::glFogi,__VA_ARGS__)
+#define glFogf(...) ::BufferedDraw::MaterialChange(::FragmentPipelineGL::MaterialPart::Fog,::glFogf,__VA_ARGS__)
+#define glFogfv(...) ::BufferedDraw::MaterialChange(::FragmentPipelineGL::MaterialPart::Fog,::glFogfv,__VA_ARGS__)
+#define glFogi(...) ::BufferedDraw::MaterialChange(::FragmentPipelineGL::MaterialPart::Fog,::glFogi,__VA_ARGS__)
 #define glNewList(...) ::BufferedDraw::LegacyCall(::glNewList,__VA_ARGS__)
 #define glPixelStorei(...) ::BufferedDraw::StateChange(::glPixelStorei,__VA_ARGS__)
 #define glPopAttrib() ::BufferedDraw::ProfilePopAttrib()
@@ -93,7 +93,7 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glRasterPos2f(...) ::BufferedDraw::LegacyCall(::glRasterPos2f,__VA_ARGS__)
 #define glReadPixels(...) ::BufferedDraw::LegacyCall(::glReadPixels,__VA_ARGS__)
 #define glRotatef(...) ::BufferedDraw::StateChange(::glRotatef,__VA_ARGS__)
-#define glTexEnvf(...) ::BufferedDraw::MaterialChange(::glTexEnvf,__VA_ARGS__)
+#define glTexEnvf(...) ::BufferedDraw::MaterialChange(::FragmentPipelineGL::MaterialPart::Texture,::glTexEnvf,__VA_ARGS__)
 #define glTexImage2D(...) ::BufferedDraw::TextureChange(::glTexImage2D,__VA_ARGS__)
 #define glTexSubImage2D(...) ::BufferedDraw::TextureChange(::glTexSubImage2D,__VA_ARGS__)
 #define glTexParameterfv(...) ::BufferedDraw::TextureChange(::glTexParameterfv,__VA_ARGS__)
