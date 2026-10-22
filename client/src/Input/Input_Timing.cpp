@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "Render/RenderProfile.h"
 #include "Render/TerrainDraw.h"
+#include "Render/Materials.h"
 #include "Platform/IInput.h"
 #include "Platform/ITimer.h"
 #include "Platform/Text.h"
@@ -18,6 +19,7 @@ void ToggleFpsCounter() {
         if(Platform::GetInput().KeyState(VK_CONTROL)&0x8000)TerrainDraw::ToggleComposition();
         else TerrainDraw::Toggle();showFps=true;
     }
+    else if((Platform::GetInput().KeyState(VK_CONTROL)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)) { Materials::Toggle();showFps=true; }
     else if(Platform::GetInput().KeyState(VK_SHIFT)&0x8000) { RenderProfile::Toggle();showFps=true; }
     else showFps=!showFps;
 }
@@ -46,6 +48,7 @@ void __cdecl UI_UpdateFpsCounter(void) {
         char terrain[160];Platform::TextFormatSecure(terrain,"%s",TerrainDraw::Status());
         RenderText(4,52,terrain,(int)(620*gWindow.GetWidth()/640),1,nullptr);
     }
+    if(showFps && Materials::Enabled())RenderText(4,64,"Materiales: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {
         _DAT_07e016f0 = Platform::GetTimer().MultimediaTicks();
