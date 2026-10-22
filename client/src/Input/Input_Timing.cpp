@@ -13,7 +13,11 @@
 namespace { bool showFps=false; }
 void ToggleFpsCounter() {
     // DESVIACION: Shift+F12 alterna R1; F12 solo conserva el contador liviano.
-    if(Platform::GetInput().KeyState(VK_MENU)&0x8000) { TerrainDraw::Toggle();showFps=true; }
+    if(Platform::GetInput().KeyState(VK_MENU)&0x8000) {
+        // DESVIACION R3b: Ctrl+Alt+F12 compara dos pasadas frente a composición.
+        if(Platform::GetInput().KeyState(VK_CONTROL)&0x8000)TerrainDraw::ToggleComposition();
+        else TerrainDraw::Toggle();showFps=true;
+    }
     else if(Platform::GetInput().KeyState(VK_SHIFT)&0x8000) { RenderProfile::Toggle();showFps=true; }
     else showFps=!showFps;
 }
