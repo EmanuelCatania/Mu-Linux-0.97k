@@ -403,17 +403,13 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   glTranslatef(-_DAT_083a42d4,-_DAT_083a42d8,-_DAT_083a42dc);
   // DESVIACION R4g: el productor declara su entrada; el backend aplica los
   // mismos campos que la referencia, sin normalizar blend ni bindings.
-  if(Materials::Enabled()){
+  // El color de la niebla legacy sin catálogo aún no tiene un recurso RGBA
+  // propio: conservar esa rama de referencia hasta resolver su almacenamiento.
+  if(Materials::Enabled() && (DAT_083a42ea=='\0'||gContentCatalog.HasMapFog())){
     Materials::ViewState state;
     if(DAT_083a42ea!='\0'){
-      if(gContentCatalog.HasMapFog()){
-        state.fog=Materials::ViewFog::Linear;state.fogStart=2000.f;state.fogEnd=2700.f;
-        gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(),state.fogColor);
-      }else{
-        state.fog=Materials::ViewFog::ExpSquared;state.fogDensity=DAT_00561558;
-        const float* color=reinterpret_cast<const float*>(&FogColor);
-        for(int i=0;i<4;++i)state.fogColor[i]=color[i];
-      }
+      state.fog=Materials::ViewFog::Linear;state.fogStart=2000.f;state.fogEnd=2700.f;
+      gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(),state.fogColor);
     }
     Materials::BeginView(state);
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
