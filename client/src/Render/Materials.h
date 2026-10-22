@@ -50,4 +50,10 @@ bool Enabled();
 void Toggle();
 bool Select(Preset preset,bool depthWrite=true);
 bool Apply(const Material& material);
+// El slot es un recurso del cliente; el identificador nativo se resuelve en GL.
+// Los índices negativos heredados conservan el camino de referencia.
+struct TextureSlot { int index=0; };
+struct TexturedMaterial { TextureSlot texture;Material material; };
+bool BindTexture(TextureSlot texture);
+bool ApplyTextured(const TexturedMaterial& material);
 }

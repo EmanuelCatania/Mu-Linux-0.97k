@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Render/Materials.h"
+#include "Render/ResourceTables.h"
 
 extern "C" void DbgLogPublic(const char*);
 
@@ -101,6 +102,24 @@ bool BeginView(const ViewState& s){
         glFogfv(GL_FOG_COLOR,s.fogColor);
     }
     return true;
+}
+bool BindTexture(TextureSlot texture){
+    if(!enabled||texture.index<0)return false;
+    const unsigned slot=static_cast<unsigned>(texture.index);
+    // Conservar el caché por slot y el orden de referencia: publicar el índice
+    // antes de asegurar la tabla, y resolver el handle sólo si cambia el slot.
+    if(DAT_00561574!=slot){
+        DAT_00561574=slot;ResourceTables::EnsureTextures(std::size_t(slot)+1);
+        const unsigned native=(&DAT_083a7ccc)[std::size_t(slot)*0xe];
+        glBindTexture(GL_TEXTURE_2D,native);
+    }
+    return true;
+}
+bool ApplyTextured(const TexturedMaterial& m){
+    // RenderPlane establece primero textura y luego el material aditivo.
+    // Si la fuente no está admitida, no modificar parcialmente el estado.
+    if(!BindTexture(m.texture))return false;
+    return Apply(m.material);
 }
 bool Select(Preset preset,bool depthWrite){return Apply(Describe(preset,depthWrite));}
 }

@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/Materials.h"
 #include "Item/ContentCatalog.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -71,8 +72,11 @@ void __cdecl ItemDrop_SetupRenderRef(int param_1) {
 // Renders a billboard quad at pos[], scaled by sc, rotated around Z by rot[0] angle,
 // using texture slot param_1.
 void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
-    GL_BindTextureSlot(cls);
-    GL_SetBlendAdditive();
+    const Materials::TexturedMaterial material{{cls},Materials::Describe(Materials::Preset::Add)};
+    if(!Materials::ApplyTextured(material)){
+        GL_BindTextureSlot(cls);
+        GL_SetBlendAdditive();
+    }
     glPushMatrix();
     glTranslatef(pos[0], pos[1], pos[2]);
     float angle = rot ? rot[0] : 0.0f;
