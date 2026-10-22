@@ -19,7 +19,7 @@ struct FrameData {
 using Reference=void(*)(const Tile&,const FrameData&,bool draw);
 struct Result { bool drawn=false;std::uint64_t draws=0,referenceTiles=0,geometryBytes=0,lightBytes=0,dataBytes=0;const char* reason=""; };
 void Toggle();bool Requested();bool Collecting();const char* Status();
-void InvalidateTextures();void Release();
+void InvalidateTextures();void InvalidateBoundTexture();void InvalidateTexture(std::uint32_t handle);void Release();
 void Begin(FrameData frame,Reference reference);
 void Submit(const Tile& tile);
 bool End();

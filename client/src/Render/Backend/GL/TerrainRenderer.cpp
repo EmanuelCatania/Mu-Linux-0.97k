@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <tuple>
@@ -22,6 +23,7 @@ int cachedMap=-1;float cachedScale=0;std::uint64_t epoch=0;
 std::vector<float> heights,positions;
 struct Page { GLuint name=0;int width=0,height=0,channels=0,filterMin=0,filterMag=0,wrapS=0,wrapT=0;std::vector<TerrainDraw::Texture> sources; };
 std::vector<Page> pages;
+char textureFailure[160]="Terreno: referencia (textura no admitida)";
 struct Location { int page=0,layer=0; };
 std::map<GLuint,Location> locations;
 struct Operation { const TerrainDraw::Tile* tile;Location texture;int mode; };
@@ -171,7 +173,9 @@ bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
             if(old.pixels!=t.pixels||old.width!=t.width||old.height!=t.height||old.channels!=t.channels)return false;
             continue;
         }
-        Page description;if(!ReadSource(t,description))return false;
+        Page description;if(!ReadSource(t,description)) {
+            std::snprintf(textureFailure,sizeof(textureFailure),"Terreno: referencia (slot %d %dx%d C%d min=%d wrap=%d/%d)",t.slot,t.width,t.height,t.channels,description.filterMin,description.wrapS,description.wrapT);return false;
+        }
         int index=-1;for(int i=0;i<(int)pages.size();++i)if(Same(pages[i],description)&&(int)pages[i].sources.size()<limit){index=i;break;}
         if(index<0) {index=(int)pages.size();pages.push_back(description);}
         auto& page=pages[index];locations[t.handle]={index,(int)page.sources.size()};page.sources.push_back(t);dirty.push_back(index);
@@ -207,23 +211,29 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
     GLint depth=0,env=0,mode=0,sampleBuffers=0;GLfloat matrix[16]{};
     glGetIntegerv(GL_DEPTH_FUNC,&depth);glGetIntegerv(GL_SAMPLE_BUFFERS,&sampleBuffers);
     glActiveTexture(GL_TEXTURE0);glGetTexEnviv(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,&env);glGetFloatv(GL_TEXTURE_MATRIX,matrix);
-    if(guard.units[0].sampler || guard.active!=GL_TEXTURE0)return result;
-    if(depth!=GL_LEQUAL||env!=GL_MODULATE||glIsEnabled(GL_LIGHTING)||glIsEnabled(GL_FRAMEBUFFER_SRGB)||sampleBuffers||matrix[3]!=0||matrix[7]!=0||matrix[15]!=1)return result;
+    if(guard.units[0].sampler){result.reason="Terreno: referencia (sampler ajeno)";return result;}
+    if(guard.active!=GL_TEXTURE0){result.reason="Terreno: referencia (unidad activa)";return result;}
+    if(depth!=GL_LEQUAL){result.reason="Terreno: referencia (depth distinto)";return result;}
+    if(env!=GL_MODULATE){result.reason="Terreno: referencia (texture env)";return result;}
+    if(glIsEnabled(GL_LIGHTING)){result.reason="Terreno: referencia (lighting)";return result;}
+    if(glIsEnabled(GL_FRAMEBUFFER_SRGB)){result.reason="Terreno: referencia (sRGB)";return result;}
+    if(sampleBuffers){result.reason="Terreno: referencia (multisampling)";return result;}
+    if(matrix[3]!=0||matrix[7]!=0||matrix[15]!=1){result.reason="Terreno: referencia (UV proyectiva)";return result;}
     GLint textureUnits=0;glGetIntegerv(GL_MAX_TEXTURE_UNITS,&textureUnits);
-    for(int i=1;i<textureUnits;++i) { glActiveTexture(GL_TEXTURE0+i);if(glIsEnabled(GL_TEXTURE_2D)||glIsEnabled(GL_TEXTURE_1D)||glIsEnabled(GL_TEXTURE_3D)||glIsEnabled(GL_TEXTURE_CUBE_MAP))return result; }
+    for(int i=1;i<textureUnits;++i) { glActiveTexture(GL_TEXTURE0+i);if(glIsEnabled(GL_TEXTURE_2D)||glIsEnabled(GL_TEXTURE_1D)||glIsEnabled(GL_TEXTURE_3D)||glIsEnabled(GL_TEXTURE_CUBE_MAP)){result.reason="Terreno: referencia (multitextura)";return result;} }
     if(!Init()){result.reason="Terreno: referencia (shader no disponible)";return result;}
     std::vector<Operation> ops;ops.reserve(tiles.size()*2);
     for(const auto& t:tiles) {
-        if(t.x<0||t.y<0||t.x>=255||t.y>=255)return result;
+        if(t.x<0||t.y<0||t.x>=255||t.y>=255){result.reason="Terreno: referencia (borde de grilla)";return result;}
         const unsigned ids[]{(unsigned)(t.y*256+t.x),(unsigned)(t.y*256+t.x+1),(unsigned)((t.y+1)*256+t.x+1),(unsigned)((t.y+1)*256+t.x)};
         const float x=t.x*f.scale,y=t.y*f.scale;
         const float xy[4][2]{{x,y},{x+f.scale,y},{x+f.scale,y+f.scale},{x,y+f.scale}};
-        for(int c=0;c<4;++c)if(t.indices[c]!=ids[c]||t.positions[c][0]!=xy[c][0]||t.positions[c][1]!=xy[c][1]||t.positions[c][2]!=f.heights[ids[c]])return result;
+        for(int c=0;c<4;++c)if(t.indices[c]!=ids[c]||t.positions[c][0]!=xy[c][0]||t.positions[c][1]!=xy[c][1]||t.positions[c][2]!=f.heights[ids[c]]){result.reason="Terreno: referencia (geometria distinta)";return result;}
         ops.push_back({&t,{},0});if(t.layer!=TerrainDraw::Layer::None)ops.push_back({&t,{},t.layer==TerrainDraw::Layer::Water?2:1});
     }
     if(cachedMap!=f.map){heights.clear();cachedMap=f.map;ClearPages();}
     if(epoch!=f.textureEpoch){ClearPages();epoch=f.textureEpoch;}
-    if(!EnsureSources(ops,result.dataBytes)){ClearPages();result.reason="Terreno: referencia (textura no admitida)";return result;}
+    if(!EnsureSources(ops,result.dataBytes)){ClearPages();result.reason=textureFailure;return result;}
     for(auto& op:ops)op.texture=locations.at(op.mode==0?op.tile->base.handle:op.tile->upper.handle);
     if(heights.size()!=65536||cachedScale!=f.scale||std::memcmp(heights.data(),f.heights,65536*sizeof(float))) {
         heights.assign(f.heights,f.heights+65536);cachedScale=f.scale;positions.assign(65536*16,0);
@@ -274,6 +284,13 @@ TerrainDraw::Result Draw(const TerrainDraw::FrameData& f,const std::vector<Terra
         ++result.draws;begin=end;
     }
     result.drawn=true;return result;
+}
+// DESVIACION: los uploads de texto/UI no invalidan las páginas del terreno.
+// El caché vacío no consulta GL: la ruta actual apagada no paga este costo.
+bool SourceTexture(std::uint32_t handle) { return locations.find(handle)!=locations.end(); }
+bool BoundSourceTexture() {
+    if(locations.empty())return false;
+    GLint handle=0;glGetIntegerv(GL_TEXTURE_BINDING_2D,&handle);return SourceTexture(handle);
 }
 void Release() {
     if(!program)return;

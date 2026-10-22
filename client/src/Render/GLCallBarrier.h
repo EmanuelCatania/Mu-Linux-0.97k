@@ -12,7 +12,10 @@ template<class F,class... A> inline auto StateChange(F function,A... args) -> de
     Flush();return function(args...);
 }
 template<class F,class... A> inline auto TextureChange(F function,A... args) -> decltype(function(args...)) {
-    Flush();TerrainDraw::InvalidateTextures();return function(args...);
+    Flush();TerrainDraw::InvalidateBoundTexture();return function(args...);
+}
+template<class F> inline void DeleteTexturesState(F function,int count,const unsigned* names) {
+    Flush();for(int i=0;i<count;++i)TerrainDraw::InvalidateTexture(names[i]);function(count,names);
 }
 template<class F,class... A> inline auto LegacyDraw(F function,A... args) -> decltype(function(args...)) {
     Suspend();RenderProfile::Legacy();return function(args...);
@@ -63,7 +66,7 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glClear(...) ::BufferedDraw::StateChange(::glClear,__VA_ARGS__)
 #define glClearColor(...) ::BufferedDraw::StateChange(::glClearColor,__VA_ARGS__)
 #define glDeleteLists(...) ::BufferedDraw::LegacyCall(::glDeleteLists,__VA_ARGS__)
-#define glDeleteTextures(...) ::BufferedDraw::TextureChange(::glDeleteTextures,__VA_ARGS__)
+#define glDeleteTextures(...) ::BufferedDraw::DeleteTexturesState(::glDeleteTextures,__VA_ARGS__)
 #define glDepthFunc(value) ::BufferedDraw::ProfileDepthFunction(value)
 #define glDepthMask(mask) ::BufferedDraw::ProfileDepthMask(mask)
 #define glDisable(cap) ::BufferedDraw::SetEnabled(::glDisable,cap,false)
