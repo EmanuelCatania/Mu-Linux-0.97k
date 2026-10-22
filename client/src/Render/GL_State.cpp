@@ -29,15 +29,17 @@
 //   0xbc0 = GL_ALPHA_TEST
 //   0xde1 = GL_TEXTURE_2D
 //   0xb60 = GL_FOG
-//   0x301 = GL_SRC_ALPHA
+//   0x301 = GL_ONE_MINUS_SRC_COLOR
 
 #include "stdafx.h"
+#include "Render/Materials.h"
 #include "Render/ResourceTables.h"
 #include "Platform/ITimer.h"
 
 void GL_SetBlendAdditive(void)
 
 {
+    if(Materials::Select(Materials::Preset::Add))return;
   if (DAT_083a412c != 3) {
     DAT_083a412c = 3;
     glEnable(0xbe2);
@@ -63,6 +65,7 @@ void GL_SetBlendAdditive(void)
 void GL_SetBlendSrcAlpha(void)
 
 {
+    if(Materials::Select(Materials::Preset::Attenuate))return;
   if (DAT_083a412c != 4) {
     DAT_083a412c = 4;
     glEnable(0xbe2);
@@ -125,6 +128,7 @@ void __cdecl GL_BindTextureSlot(int param_1)
 // and restores fog when the scene says it is on.
 void __cdecl GL_SetBlendSrcOver(char param_1)
 {
+    if(Materials::Select(Materials::Preset::Alpha,param_1 != 0))return;
   if (DAT_083a412c != 2) {
     DAT_083a412c = 2;
     glEnable(0xbe2);
@@ -235,6 +239,7 @@ void __cdecl SetErrorMessage(int param_1)
 // enables depth test, and re-enables alpha test if flag is set.
 void GL_ResetState(void)
 {
+    if(Materials::Select(Materials::Preset::Opaque))return;
   if (DAT_083a412c != 0) {
     DAT_083a412c = 0;
     glDisable(0xbe2);
@@ -259,6 +264,7 @@ void GL_ResetState(void)
 // FUN_00511890 @ 0x00511890 — GL_EnableLightMap
 // Sets blend mode GL_ZERO/GL_SRC_COLOR for lightmap overlay rendering.
 void GL_EnableLightMap(void) {
+    if(Materials::Select(Materials::Preset::LightMap))return;
     if (DAT_083a412c != 1) {
         DAT_083a412c = 1;
         glEnable(GL_BLEND);

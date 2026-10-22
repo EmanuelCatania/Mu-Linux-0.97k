@@ -59,6 +59,7 @@ set(MU_SOURCES
     src/Render/MeshDraw.cpp
     src/Render/TerrainDraw.cpp
     src/Render/Backend/GL/TerrainRenderer.cpp
+    src/Render/Backend/GL/Materials.cpp
     src/Render/RenderProfile.cpp
     src/Render/Backend/GL/ProfileQueries.cpp
     src/Render/BufferedDraw.cpp
@@ -444,6 +445,7 @@ set(MU_HEADERS
     src/Render/Skinning.h
     src/Render/MeshDraw.h
     src/Render/TerrainDraw.h
+    src/Render/Materials.h
     src/Render/Backend/GL/TerrainRenderer.h
     src/Render/RenderProfile.h
     src/Render/ProfileStats.h
