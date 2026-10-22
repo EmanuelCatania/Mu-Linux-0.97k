@@ -21,7 +21,7 @@ GLuint program=0,vao=0,ebo=0,geometry=0,lighting=0,metadata=0;
 int lightWidth=0,metadataRows=0;
 int cachedMap=-1;float cachedScale=0;std::uint64_t epoch=0;
 std::vector<float> heights,positions;
-struct Page { GLuint name=0;int width=0,height=0,channels=0,filterMin=0,filterMag=0,wrapS=0,wrapT=0;std::vector<TerrainDraw::Texture> sources; };
+struct Page { GLuint name=0;int width=0,height=0,channels=0,filterMin=0,filterMag=0,wrapS=0,wrapT=0;std::array<float,4> border{};std::vector<TerrainDraw::Texture> sources; };
 std::vector<Page> pages;
 char textureFailure[160]="Terreno: referencia (textura no admitida)";
 struct Location { int page=0,layer=0; };
@@ -155,13 +155,14 @@ bool ReadSource(const TerrainDraw::Texture& source,Page& p) {
     const int identity[]{GL_RED,GL_GREEN,GL_BLUE,GL_ALPHA};
     if(compare!=GL_NONE||std::memcmp(identity,swizzle,sizeof(identity)))return false;
     if(p.filterMin!=GL_NEAREST&&p.filterMin!=GL_LINEAR)return false;
-    auto wrap=[](int v){return v==GL_REPEAT||v==GL_CLAMP_TO_EDGE||v==GL_MIRRORED_REPEAT;};
+    glGetTexParameterfv(GL_TEXTURE_2D,GL_TEXTURE_BORDER_COLOR,p.border.data());
+    auto wrap=[](int v){return v==GL_CLAMP||v==GL_REPEAT||v==GL_CLAMP_TO_EDGE||v==GL_MIRRORED_REPEAT;};
     return wrap(p.wrapS)&&wrap(p.wrapT);
 }
 // Orden residente idéntico al recorrido de bloques 4x4 del 0.97k. Los huecos
 // de culling cortan el lote: no se compactan/reenvían posiciones por cuadro.
 std::size_t ResidentIndex(int x,int y) { return ((y/4)*64+x/4)*16+(y%4)*4+x%4; }
-bool Same(const Page&a,const Page&b) { return std::tie(a.width,a.height,a.channels,a.filterMin,a.filterMag,a.wrapS,a.wrapT)==std::tie(b.width,b.height,b.channels,b.filterMin,b.filterMag,b.wrapS,b.wrapT); }
+bool Same(const Page&a,const Page&b) { return std::tie(a.width,a.height,a.channels,a.filterMin,a.filterMag,a.wrapS,a.wrapT,a.border)==std::tie(b.width,b.height,b.channels,b.filterMin,b.filterMag,b.wrapS,b.wrapT,b.border); }
 bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
     GLint limit=0;glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS,&limit);
     std::vector<int> dirty;
@@ -185,6 +186,7 @@ bool EnsureSources(const std::vector<Operation>& ops,std::uint64_t& bytes) {
     for(int i:dirty) { auto& p=pages[i];if(!p.name)glGenTextures(1,&p.name);Bind(GL_TEXTURE_2D_ARRAY,p.name);
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,p.filterMin);glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,p.filterMag);
         glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,p.wrapS);glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_T,p.wrapT);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_BORDER_COLOR,p.border.data());
         glTexImage3D(GL_TEXTURE_2D_ARRAY,0,p.channels==4?GL_RGBA8:GL_RGB8,p.width,p.height,(int)p.sources.size(),0,p.channels==4?GL_RGBA:GL_RGB,GL_UNSIGNED_BYTE,nullptr);
         GLint layers=0;glGetTexLevelParameteriv(GL_TEXTURE_2D_ARRAY,0,GL_TEXTURE_DEPTH,&layers);if(layers!=(int)p.sources.size())return false;
         bytes+=(std::uint64_t)p.width*p.height*p.channels*p.sources.size();
