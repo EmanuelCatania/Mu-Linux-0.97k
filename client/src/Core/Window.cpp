@@ -1,6 +1,7 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Render/RenderProfile.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Core/Font.h"
@@ -104,6 +105,7 @@ bool CWindow::InitOpenGL()
 // IDA: OpenGL_Release (0x0041AF20): restaurar pantalla después de liberar GL.
 void CWindow::ReleaseOpenGL()
 {
+    RenderProfile::ResetContext();
     MeshDraw::Release();
     GlyphAtlas::Release();
     BufferedDraw::Release();
