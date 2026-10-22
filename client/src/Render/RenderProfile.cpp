@@ -43,7 +43,7 @@ void Switch(Pass next) {
 void Report() {
     const auto frame=Summarize(window.frames),gpu=Summarize(window.gpuFrames);
     char line[600];
-    std::snprintf(line,sizeof(line),"PerfilR1 frame: mapa=%d cuadros=%zu cpu_prom=%.3f cpu_p95=%.3f cpu_max=%.3f gpu_cuadros=%zu gpu_pasadas_prom=%.3f gpu_pasadas_p95=%.3f gpu_pasadas_max=%.3f gpu_soportada=%d gpu_omitidos=%llu segmentos_omitidos=%llu",
+    std::snprintf(line,sizeof(line),"PerfilR1 frame: revision=2 mapa=%d cuadros=%zu cpu_prom=%.3f cpu_p95=%.3f cpu_max=%.3f gpu_cuadros=%zu gpu_pasadas_prom=%.3f gpu_pasadas_p95=%.3f gpu_pasadas_max=%.3f gpu_soportada=%d gpu_omitidos=%llu segmentos_omitidos=%llu",
         world,frame.count,frame.average,frame.p95,frame.maximum,gpu.count,gpu.average,gpu.p95,gpu.maximum,RenderProfileGL::Supported()?1:0,
         static_cast<unsigned long long>(RenderProfileGL::SkippedFrames()-window.gpuSkippedStart),static_cast<unsigned long long>(RenderProfileGL::SkippedSegments()-window.segmentsSkippedStart));
     DbgLogPublic(line);
@@ -62,7 +62,7 @@ void Report() {
 }
 void Toggle() { requested=!requested;resetPending=true; }
 bool Requested() { return requested; }
-Frame::Frame(bool inWorld,int map):measured(requested && inWorld) {
+Frame::Frame(bool inWorld,int map):measured(requested && inWorld && map>=0) {
     if(resetPending) { ResetContext();resetPending=false; }
     active=measured;
     if(!measured) { if(world!=-1)resetPending=true;world=-1;return; }

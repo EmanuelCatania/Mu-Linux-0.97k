@@ -15,9 +15,11 @@ std::array<Slot,RingSize> slots{};
 int current=-1;bool running=false,initialized=false,available=true;
 std::uint64_t skippedFrames=0,skippedSegments=0;
 void Stop() { if(running) { glEndQuery(GL_TIME_ELAPSED);running=false; } }
-bool Graphics(RenderProfile::Pass pass) {
+bool MeasuredOnGPU(RenderProfile::Pass pass) {
     using P=RenderProfile::Pass;
-    return pass==P::Terrain || pass==P::Objects || pass==P::Characters || pass==P::Effects || pass==P::UI || pass==P::Scene;
+    // La corrida R1 detectó draws durante SIM: medirlos sin moverlos.
+    // El tiempo elapsed incluye huecos de CPU, no representa GPU busy.
+    return pass==P::Simulation || pass==P::Terrain || pass==P::Objects || pass==P::Characters || pass==P::Effects || pass==P::UI || pass==P::Scene;
 }
 }
 bool Supported() { return available && Platform::GL33Ready() && glGetQueryiv && glGenQueries && glDeleteQueries && glBeginQuery && glEndQuery && glGetQueryObjectiv && glGetQueryObjectui64v; }
@@ -55,7 +57,7 @@ void BeginFrame(int map) {
 }
 void SetPass(RenderProfile::Pass pass) {
     Stop();
-    if(current<0 || !Graphics(pass))return;
+    if(current<0 || !MeasuredOnGPU(pass))return;
     auto& slot=slots[current];
     if(slot.used==MaxSegments) { ++skippedSegments;slot.overflow=true;return; }
     auto& segment=slot.segments[slot.used++];segment.pass=pass;

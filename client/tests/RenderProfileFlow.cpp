@@ -39,6 +39,8 @@ int main(){
  for(int i=0;i<20;++i){Frame f(true,7);Scope s(Pass::Terrain);Draw(6);Change(State::Blend);}
  CHECK(clockCalls==0 && flushes==0 && gpuBegins==0 && gpuChanges==0 && logs.empty());
  Toggle();
+ {Frame invalid(true,-1);Scope s(Pass::Terrain);}
+ CHECK(clockCalls==0 && flushes==0 && gpuBegins==0 && logs.empty());
  {
  Frame f(true,7);
  {Scope s(Pass::Terrain);now+=3;Draw(6);Change(State::Blend);}

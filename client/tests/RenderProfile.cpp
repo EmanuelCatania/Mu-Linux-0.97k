@@ -31,7 +31,7 @@ extern "C" void DbgLogPublic(const char*){}
 namespace Platform {bool GL33Ready(){return true;}}
 namespace RenderProfile {
 bool active=true;void CountState(State s){++stateChanges[static_cast<unsigned>(s)];}
-void GpuResult(int map,const double* time,const bool* present){CHECK(map==7);CHECK(present[static_cast<unsigned>(Pass::Terrain)]);CHECK(time[static_cast<unsigned>(Pass::Terrain)]==2);++results;}
+void GpuResult(int map,const double* time,const bool* present){CHECK(map==7);CHECK(present[static_cast<unsigned>(Pass::Terrain)]);CHECK(time[static_cast<unsigned>(Pass::Terrain)]==2);CHECK(present[static_cast<unsigned>(Pass::Simulation)] && time[static_cast<unsigned>(Pass::Simulation)]==1);++results;}
 }
 int main(){
  using namespace RenderProfile;
@@ -47,7 +47,7 @@ int main(){
  for(int i=0;i<8;++i){RenderProfileGL::BeginFrame(7);RenderProfileGL::SetPass(Pass::Terrain);RenderProfileGL::SetPass(Pass::Simulation);RenderProfileGL::SetPass(Pass::Terrain);RenderProfileGL::EndFrame();}
  CHECK(reads==0 && results==0);
  RenderProfileGL::BeginFrame(7);RenderProfileGL::SetPass(Pass::Terrain);RenderProfileGL::EndFrame();CHECK(RenderProfileGL::SkippedFrames()==1 && reads==0);
- ready=true;RenderProfileGL::BeginFrame(7);CHECK(results==8 && reads==16);
+ ready=true;RenderProfileGL::BeginFrame(7);CHECK(results==8 && reads==24);
  // Sin anidar queries, incluso en la misma pasada. Exceso explícito, sin bloqueo.
  for(int i=0;i<65;++i)RenderProfileGL::SetPass(Pass::Terrain);
  CHECK(RenderProfileGL::SkippedSegments()==1);RenderProfileGL::EndFrame();
