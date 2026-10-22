@@ -59,7 +59,8 @@ int main(){
  }
  CHECK(terrain && effects && frame);
  Toggle();{Frame f(true,7);} // Limpieza única al apagar.
- const auto calls=clockCalls,drawFlushes=flushes,begins=gpuBegins,changes=gpuChanges,deleted=releases,count=logs.size();
+ const auto calls=clockCalls,drawFlushes=flushes,begins=gpuBegins,changes=gpuChanges,deleted=releases;
+ const auto count=logs.size();
  for(int i=0;i<20;++i){Frame f(true,7);Scope s(Pass::Terrain);Draw(6);Change(State::Blend);}
  CHECK(clockCalls==calls && flushes==drawFlushes && gpuBegins==begins && gpuChanges==changes && releases==deleted && logs.size()==count);
  Toggle();

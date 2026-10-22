@@ -72,8 +72,11 @@ void Release() {
 std::uint64_t SkippedFrames() { return skippedFrames; }
 std::uint64_t SkippedSegments() { return skippedSegments; }
 void BlendFunction(unsigned source,unsigned destination) {
-    GLint src=0,dst=0;glGetIntegerv(GL_BLEND_SRC,&src);glGetIntegerv(GL_BLEND_DST,&dst);
-    if(static_cast<unsigned>(src)!=source || static_cast<unsigned>(dst)!=destination)RenderProfile::Change(RenderProfile::State::Blend);
+    GLint src=0,dst=0,srcAlpha=0,dstAlpha=0;
+    glGetIntegerv(GL_BLEND_SRC_RGB,&src);glGetIntegerv(GL_BLEND_DST_RGB,&dst);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA,&srcAlpha);glGetIntegerv(GL_BLEND_DST_ALPHA,&dstAlpha);
+    if(static_cast<unsigned>(src)!=source || static_cast<unsigned>(dst)!=destination ||
+       static_cast<unsigned>(srcAlpha)!=source || static_cast<unsigned>(dstAlpha)!=destination)RenderProfile::Change(RenderProfile::State::Blend);
 }
 void SetEnabled(unsigned cap,bool enabled) {
     if(RenderProfile::active && (glIsEnabled(cap)!=0)!=enabled) {
