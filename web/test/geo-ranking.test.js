@@ -3,6 +3,16 @@ const assert = require('node:assert/strict');
 const { getCountryInfo, isPrivateIp, displayGameIp, UNKNOWN_INFO } = require('../lib/geo');
 const { translator } = require('../lib/i18n');
 
+// geoip-lite es opcional (INSTALL_GEOIP=1); sin el paquete no hay datos que resolver.
+const hasGeoip = (() => {
+  try {
+    require.resolve('geoip-lite');
+    return true;
+  } catch (_) {
+    return false;
+  }
+})();
+
 test('geo: correctly detects private and local IPs', () => {
   assert.equal(isPrivateIp('127.0.0.1'), true);
   assert.equal(isPrivateIp('10.0.1.5'), true);
@@ -23,7 +33,7 @@ test('geo: shows the website IP when the game only recorded a private address', 
   assert.equal(displayGameIp(null, null), '');
 });
 
-test('geo: resolves public IPs only when enabled, and hides countries only from the configured list', () => {
+test('geo: resolves public IPs only when enabled, and hides countries only from the configured list', { skip: !hasGeoip && 'geoip-lite no instalado' }, () => {
   const prevEnabled = process.env.GEOIP_ENABLED;
   const prevHidden = process.env.GEOIP_HIDDEN_COUNTRIES;
   const restore = (name, value) => {
