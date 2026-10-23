@@ -149,9 +149,14 @@ button {
   font-weight: 600;
 }
 
-.button-link {
+a.button-link,
+a.button-link:visited {
   color: var(--accent);
   text-decoration: none;
+}
+
+a.button-link:hover {
+  text-decoration: underline;
 }
 
 .list {
@@ -182,6 +187,94 @@ button {
   padding: 8px;
   border-bottom: 1px solid #2a313b;
   text-align: left;
+}
+
+a.sort-link,
+a.sort-link:visited {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a.sort-link:hover,
+a.sort-link.is-active,
+a.sort-link.is-active:visited {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+body.admin-page:has(.accounts-page) .container {
+  max-width: none;
+}
+
+.accounts-page form {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.accounts-page form input[type="text"],
+.accounts-page form select {
+  width: 240px;
+  flex: 0 1 240px;
+}
+
+.account-characters {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.account-character {
+  display: inline-block;
+  margin: 0 16px 4px 0;
+  white-space: nowrap;
+}
+
+.account-characters a,
+.account-characters a:visited,
+.table .actions a,
+.table .actions a:visited {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.account-characters a:hover,
+.table .actions a:hover {
+  text-decoration: underline;
+}
+
+.account-num {
+  width: 1%;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-ip,
+.account-source,
+.account-when {
+  white-space: nowrap;
+}
+
+.account-when {
+  font-variant-numeric: tabular-nums;
+}
+
+.account-source {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-flag {
+  display: inline-block;
+  width: 22px;
+  height: 16px;
+  margin-right: 6px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  vertical-align: -3px;
 }
 
 .row-between {

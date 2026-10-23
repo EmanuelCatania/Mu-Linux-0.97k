@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480">
+  <rect width="640" height="480" fill="#334155" rx="8"/>
+  <rect x="16" y="16" width="608" height="448" fill="none" stroke="#475569" stroke-width="8" rx="4"/>
+  <!-- Stylized globe grid -->
+  <circle cx="320" cy="240" r="140" fill="#1e293b" stroke="#94a3b8" stroke-width="12"/>
+  <ellipse cx="320" cy="240" rx="65" ry="140" fill="none" stroke="#94a3b8" stroke-width="10"/>
+  <line x1="180" y1="240" x2="460" y2="240" stroke="#94a3b8" stroke-width="10"/>
+  <line x1="202" y1="170" x2="438" y2="170" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="202" y1="310" x2="438" y2="310" stroke="#94a3b8" stroke-width="8"/>
+  <!-- Subtle question mark badge in bottom-right corner -->
+  <circle cx="430" cy="330" r="56" fill="#0f172a" stroke="#cbd5e1" stroke-width="8"/>
+  <text x="430" y="352" font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="#f8fafc" text-anchor="middle">?</text>
+</svg>

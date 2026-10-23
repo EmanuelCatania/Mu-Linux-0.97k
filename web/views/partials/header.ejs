@@ -20,7 +20,7 @@
           <% if (session.admin && !session.admin.mustChange && siteSettings.setup_complete) { %><a href="/admin/settings"><%= t('Configuración') %></a><% } %>
           <a href="/"><%= t("Inicio") %></a>
           <a href="/news"><%= t("Noticias") %></a>
-          <a href="/rankings">Rankings</a>
+          <a href="/rankings"><%= t("Rankings") %></a>
           <% if (session.user) { %>
             <a href="/account"><%= t("Cuenta") %></a>
             <a href="/logout"><%= t("Salir") %></a>

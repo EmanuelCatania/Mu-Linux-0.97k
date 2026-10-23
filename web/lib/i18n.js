@@ -1,6 +1,5 @@
-// Se comparte el catálogo entre las vistas del servidor y los controles del editor.
-const catalogs = { es: require('../locales/es.json'), en: require('../locales/en.json'), pt: require('../locales/pt.json') };
-const locales = { es: 'es-ES', en: 'en-US', pt: 'pt-BR' };
+const catalogs = { es: require('../locales/es.json'), en: require('../locales/en.json'), pt: require('../locales/pt.json'), uk: require('../locales/uk.json') };
+const locales = { es: 'es-ES', en: 'en-US', pt: 'pt-BR', uk: 'uk-UA' };
 function translator(language) {
   const catalog = catalogs[language] || catalogs.es;
   return (value) => {

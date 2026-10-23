@@ -10,6 +10,23 @@ const fs = require('fs');
 const path = require('path');
 const { ensureSettings, readSettings, registerSettings } = require('./lib/site-settings');
 const { translator, locales, registerCatalogs, resolveLanguage } = require('./lib/i18n');
+const { getCountryInfo, isPrivateIp, displayGameIp, isGeoEnabled } = require('./lib/geo');
+const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-master');
+const {
+  SOURCE_COOKIE,
+  SOURCE_MAX_AGE_MS,
+  SOURCE_CHANNELS,
+  classifyVisit,
+  encodeSource,
+  decodeSource,
+  sourceCapturedAt,
+  sourceLabel,
+  sourceTitle,
+  ownHostList,
+  readRequestCookie,
+  shouldCaptureSource,
+  cleanPath
+} = require('./lib/acquisition');
 
 const app = express();
 
@@ -41,7 +58,13 @@ if (resolvedTimeZone) {
   process.env.TZ = resolvedTimeZone;
 }
 const resolvedAssetVersion = ASSET_VERSION || String(Date.now());
+function envOn(value) {
+  return /^(1|true|yes|on)$/i.test(String(value || '').trim());
+}
 const editorEnabled = String(EDITOR_ENABLED).toLowerCase() === '1' || String(EDITOR_ENABLED).toLowerCase() === 'true';
+const geoEnabled = isGeoEnabled();
+const acquisitionEnabled = envOn(process.env.ACQUISITION_TRACKING);
+const rankingsResetsFirst = envOn(process.env.RANKINGS_RESETS_FIRST);
 const editorMaxBackups = Number.parseInt(EDITOR_MAX_BACKUPS, 10) || 5;
 const editorMaxSnapshots = Number.parseInt(EDITOR_MAX_SNAPSHOTS, 10) || 5;
 const downloadsConfigPath = DOWNLOADS_CONFIG_PATH
@@ -91,6 +114,122 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 6
   }
 }));
+
+// A private address stored by the game server cannot be mapped to a country.
+// When GeoIP is enabled, remember the public address seen on the website.
+function clientPublicIp(req) {
+  const header = String(req.headers['cf-connecting-ip'] || '').split(',')[0].trim();
+  const raw = (header || String(req.ip || '')).replace(/^::ffff:/i, '');
+  return isPrivateIp(raw) ? '' : raw;
+}
+
+const NO_GEO = Object.freeze({ countryCode: '', countryName: '', flagUrl: '', isUnknown: true });
+
+function countryFor(gameIp, siteIp) {
+  if (!geoEnabled) return NO_GEO;
+  if (gameIp && !isPrivateIp(gameIp)) return getCountryInfo(gameIp);
+  if (siteIp && !isPrivateIp(siteIp)) return getCountryInfo(siteIp);
+  return getCountryInfo('');
+}
+
+function visibleGameIp(gameIp, siteIp) {
+  if (!geoEnabled) return String(gameIp || '').replace(/^::ffff:/i, '').trim();
+  return displayGameIp(gameIp, siteIp);
+}
+
+function rememberPublicIp(accountId, ip) {
+  const id = String(accountId || '').slice(0, 10);
+  if (!id || !ip) return Promise.resolve();
+  return pool.query(
+    `INSERT INTO web_public_ip (account_id, ip, seen_at) VALUES (?, ?, NOW())
+     ON DUPLICATE KEY UPDATE ip = VALUES(ip), seen_at = NOW()`,
+    [id, String(ip).slice(0, 45)]
+  );
+}
+
+app.use((req, res, next) => {
+  if (!geoEnabled) return next();
+  const accountId = req.session && req.session.user && req.session.user.id;
+  const ip = accountId ? clientPublicIp(req) : '';
+  if (!accountId || !ip || req.session.publicIp === ip) return next();
+  rememberPublicIp(accountId, ip).then(() => {
+    req.session.publicIp = ip;
+    next();
+  }).catch(() => next());
+});
+
+// The session dies on logout and is never created for an anonymous visit.
+// Keep the first external landing in its own cookie until registration.
+function sourceFromRequest(req) {
+  return decodeSource(readRequestCookie(req.headers.cookie, SOURCE_COOKIE));
+}
+
+function captureSource(req, res, next) {
+  if (!acquisitionEnabled) return next();
+  if (!shouldCaptureSource(req) || sourceFromRequest(req)) return next();
+  const attr = classifyVisit({
+    referer: req.get('referer') || '',
+    query: req.query,
+    landingPath: cleanPath(req.path),
+    ownHosts: ownHostList(req.headers.host, req.headers['x-forwarded-host'])
+  });
+  if (!attr) return next();
+  res.cookie(SOURCE_COOKIE, encodeSource(attr), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: req.secure === true,
+    maxAge: SOURCE_MAX_AGE_MS,
+    path: '/'
+  });
+  next();
+}
+
+app.use(captureSource);
+
+function rememberAccountSource(executor, accountId, attr, allowDirect) {
+  if (!acquisitionEnabled) return Promise.resolve();
+  const id = String(accountId || '').slice(0, 10);
+  if (!id || !attr || !SOURCE_CHANNELS.includes(attr.channel) || !attr.source) return Promise.resolve();
+  if (!allowDirect && attr.channel === 'direct') return Promise.resolve();
+  return executor.query(
+    `INSERT IGNORE INTO web_account_source
+      (account_id, channel, source, medium, campaign, landing_path, referrer_host, captured_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      attr.channel,
+      String(attr.source).slice(0, 64),
+      String(attr.medium || '').slice(0, 32),
+      String(attr.campaign || '').slice(0, 64),
+      String(attr.landing_path || '/').slice(0, 255),
+      String(attr.referrer_host || '').slice(0, 255),
+      sourceCapturedAt(attr.ts)
+    ]
+  );
+}
+
+function presentSource(row, locale) {
+  if (!row || !row.channel) return { label: '', title: '' };
+  const attr = {
+    channel: row.channel,
+    source: row.source,
+    medium: row.medium,
+    campaign: row.campaign,
+    landing_path: row.landing_path,
+    referrer_host: row.referrer_host
+  };
+  const when = formatSourceWhen(row.captured_at, locale);
+  return { label: sourceLabel(attr), title: sourceTitle(attr, when) };
+}
+
+function formatSourceWhen(value, locale) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+  if (resolvedTimeZone) options.timeZone = resolvedTimeZone;
+  return date.toLocaleString(locale || 'en-US', options);
+}
 
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -702,6 +841,43 @@ async function ensureSchema() {
       await conn.query('ALTER TABLE web_news ADD COLUMN hide_title TINYINT(1) NOT NULL DEFAULT 0');
     }
 
+    const [createdCols] = await conn.query(
+      `SELECT COUNT(*) AS total
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = ?
+         AND TABLE_NAME = 'MEMB_INFO'
+         AND COLUMN_NAME = 'created_at'`,
+      [DB_NAME]
+    );
+    if (createdCols[0]?.total === 0) {
+      await conn.query('ALTER TABLE MEMB_INFO ADD COLUMN created_at DATETIME NULL');
+      await conn.query('ALTER TABLE MEMB_INFO MODIFY created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP');
+    }
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS web_public_ip (
+        account_id VARCHAR(10) NOT NULL,
+        ip VARCHAR(45) NOT NULL,
+        seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (account_id)
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS web_account_source (
+        account_id VARCHAR(10) NOT NULL,
+        channel VARCHAR(16) NOT NULL,
+        source VARCHAR(64) NOT NULL,
+        medium VARCHAR(32) NOT NULL DEFAULT '',
+        campaign VARCHAR(64) NOT NULL DEFAULT '',
+        landing_path VARCHAR(255) NOT NULL DEFAULT '',
+        referrer_host VARCHAR(255) NOT NULL DEFAULT '',
+        captured_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (account_id),
+        KEY idx_channel_source (channel, source)
+      )
+    `);
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS web_character_actions (
         account_id VARCHAR(10) NOT NULL,
@@ -773,6 +949,96 @@ app.use(async (req, res, next) => {
 });
 registerCatalogs(app);
 registerSettings(app, { pool, requireAdmin, requirePassword: requireAdminPasswordChange, editorEnabled, editorRequest });
+
+const STAFF_CACHE_MS = 15000;
+let staffCache = { at: 0, byName: new Map(), names: [] };
+
+function gameMasterFileCandidates() {
+  return [
+    process.env.GAMEMASTER_PATH,
+    '/opt/mu/Data/Util/GameMaster.txt',
+    path.join(__dirname, '../opt_mu/Data/Util/GameMaster.txt')
+  ].filter(Boolean);
+}
+
+async function readGameMasterText() {
+  if (editorEnabled) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    try {
+      const response = await fetch(
+        `${EDITOR_API_URL}/api/file?path=${encodeURIComponent('Data/Util/GameMaster.txt')}`,
+        { signal: controller.signal }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Editor API error');
+      return data.content || '';
+    } catch (err) {
+      console.error('GameMaster.txt editor:', err.message);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  for (const candidate of gameMasterFileCandidates()) {
+    try {
+      if (fs.existsSync(candidate)) return fs.readFileSync(candidate, 'utf8');
+    } catch (_) {
+      // Try the next location.
+    }
+  }
+  return '';
+}
+
+async function getStaffIndex() {
+  const now = Date.now();
+  if (now - staffCache.at < STAFF_CACHE_MS) return staffCache;
+  try {
+    const index = buildStaffIndex(parseGameMaster(await readGameMasterText()));
+    staffCache = { at: now, ...index };
+  } catch (err) {
+    console.error('GameMaster.txt:', err.message);
+    staffCache = staffCache.at
+      ? { ...staffCache, at: now }
+      : { at: now, byName: new Map(), names: [] };
+  }
+  return staffCache;
+}
+
+function invalidateStaffCache() {
+  staffCache.at = 0;
+}
+
+function isCharacterPlaying(connectStat, activeName, name) {
+  return Number(connectStat) === 1
+    && String(activeName || '').toLowerCase() === String(name || '').toLowerCase();
+}
+
+async function fetchStaffRoster(staff) {
+  const names = (staff?.names || []).map((name) => String(name).toLowerCase());
+  if (names.length === 0) return [];
+  const [rows] = await pool.query(
+    `SELECT c.Name, c.cLevel, c.ResetCount, c.GrandResetCount, c.Class,
+            COALESCE(ms.ConnectStat, 0) AS ConnectStat,
+            ac.GameIDC
+     FROM \`Character\` c
+     LEFT JOIN MEMB_STAT ms ON ms.memb___id = c.AccountID
+     LEFT JOIN AccountCharacter ac ON ac.Id = c.AccountID
+     WHERE LOWER(c.Name) IN (${names.map(() => '?').join(',')})
+     ORDER BY c.Name ASC`,
+    names
+  );
+  return rows.map((row) => ({
+    ...row,
+    ClassName: getClassName(row.Class),
+    ClassIcon: getClassIcon(row.Class),
+    isOnline: isCharacterPlaying(row.ConnectStat, row.GameIDC, row.Name),
+    staff: lookupStaff(staff, row.Name)
+  })).sort((a, b) => {
+    const rank = (entry) => (entry.staff?.role === 'admin' ? 0 : 1);
+    return rank(a) - rank(b) || String(a.Name).localeCompare(String(b.Name));
+  });
+}
 
 app.get('/', async (req, res) => {
   const [newsRows] = await pool.query('SELECT id, title, body, body_is_html, hide_title, created_at FROM web_news WHERE published = 1 ORDER BY created_at DESC LIMIT 5');
@@ -860,8 +1126,8 @@ app.post('/register', authLimiter, async (req, res) => {
 
     await conn.query(
       `INSERT INTO MEMB_INFO
-       (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire)
-       VALUES (?, UNHEX(MD5(?)), ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00')`,
+       (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, AccountExpireDate, bloc_code, Bloc_Expire, created_at)
+       VALUES (?, UNHEX(MD5(?)), ?, ?, ?, 0, NOW(), '0', '1900-01-01 00:00:00', NOW())`,
       [account, password, membName, email, sno]
     );
 
@@ -875,24 +1141,26 @@ app.post('/register', authLimiter, async (req, res) => {
       [account]
     );
 
+    await rememberAccountSource(conn, account, sourceFromRequest(req), true);
+
     await conn.commit();
     return res.redirect('/login');
   } catch (err) {
     await conn.rollback();
-    return res.render('register', { error: 'Error al crear la cuenta.', page: 'register', pageTitle: 'MuLinux - Registro' });
+    return res.render('register', { error: 'Error al crear la cuenta.', page: 'register', pageTitle: `${res.locals.appName} - ${res.locals.t('Registro')}` });
   } finally {
     conn.release();
   }
 });
 
 app.get('/login', (req, res) => {
-  res.render('login', { error: null, page: 'login', pageTitle: 'MuLinux - Login' });
+  res.render('login', { error: null, page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
 });
 
 app.post('/login', authLimiter, async (req, res) => {
   const { account, password } = req.body;
   if (!account || !password) {
-    return res.render('login', { error: 'Completa usuario y contrasena.', page: 'login', pageTitle: 'MuLinux - Login' });
+    return res.render('login', { error: 'Completa usuario y contrasena.', page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
   }
 
   const [rows] = await pool.query(
@@ -901,7 +1169,13 @@ app.post('/login', authLimiter, async (req, res) => {
   );
 
   if (rows.length === 0) {
-    return res.render('login', { error: 'Credenciales invalidas.', page: 'login', pageTitle: 'MuLinux - Login' });
+    return res.render('login', { error: 'Credenciales invalidas.', page: 'login', pageTitle: `${res.locals.appName} - ${res.locals.t('Ingresar')}` });
+  }
+
+  try {
+    await rememberAccountSource(pool, rows[0].memb___id, sourceFromRequest(req), false);
+  } catch {
+    // A missing source must not block the login.
   }
 
   req.session.user = { id: account };
@@ -918,12 +1192,14 @@ app.get('/account', requireUser, async (req, res) => {
     'SELECT Name, cLevel, Class, MapNumber FROM `Character` WHERE AccountID = ? ORDER BY Name',
     [req.session.user.id]
   );
-    const characters = chars.map((row) => ({
-      ...row,
-      ClassName: getClassName(row.Class),
-      ClassIcon: getClassIcon(row.Class),
-      MapName: getMapName(row.MapNumber)
-    }));
+  const staff = await getStaffIndex();
+  const characters = chars.map((row) => ({
+    ...row,
+    ClassName: getClassName(row.Class),
+    ClassIcon: getClassIcon(row.Class),
+    MapName: getMapName(row.MapNumber),
+    staff: lookupStaff(staff, row.Name)
+  }));
   const notice = req.query.ok ? { type: 'success', text: decodeURIComponent(String(req.query.ok)) } : null;
   const error = req.query.err ? { type: 'danger', text: decodeURIComponent(String(req.query.err)) } : null;
   res.render('account', {
@@ -932,8 +1208,39 @@ app.get('/account', requireUser, async (req, res) => {
     notice,
     error,
     page: 'account',
-    pageTitle: 'MuLinux - Cuenta'
+    pageTitle: `${res.locals.appName} - ${res.locals.t('Cuenta')}`
   });
+});
+
+app.post('/account/password', requireUser, authLimiter, async (req, res) => {
+  const current = String(req.body.current || '');
+  const password = String(req.body.password || '');
+  const confirm = String(req.body.confirm || '');
+  const fail = (message) => res.redirect(`/account?err=${encodeURIComponent(message)}`);
+
+  if (!current || !password || !confirm) return fail('Completa todos los campos.');
+  if (password.length < 6 || password.length > 10 || password !== confirm) {
+    return fail('La contrasena debe tener entre 6 y 10 caracteres y coincidir.');
+  }
+  if (password === current) return fail('La nueva contrasena debe ser distinta de la actual.');
+
+  const turnstileToken = req.body['cf-turnstile-response'];
+  const turnstileOk = await verifyTurnstile(turnstileToken, req.ip);
+  if (!turnstileOk) return fail('Captcha invalido. Intenta nuevamente.');
+
+  const accountId = req.session.user.id;
+  const [rows] = await pool.query(
+    'SELECT memb___id FROM MEMB_INFO WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?)) LIMIT 1',
+    [accountId, current]
+  );
+  if (rows.length === 0) return fail('La contrasena actual es incorrecta.');
+
+  const [result] = await pool.query(
+    'UPDATE MEMB_INFO SET memb__pwd = UNHEX(MD5(?)) WHERE memb___id = ? AND memb__pwd = UNHEX(MD5(?))',
+    [password, accountId, current]
+  );
+  if (!result || result.affectedRows === 0) return fail('No se pudo cambiar la contrasena.');
+  return res.redirect(`/account?ok=${encodeURIComponent('Contrasena actualizada.')}`);
 });
 
 async function ensureAccountOffline(accountId) {
@@ -1051,68 +1358,114 @@ app.get('/rankings', async (req, res) => {
     }))
   ];
 
+  const staff = await getStaffIndex();
+  const staffRoster = await fetchStaffRoster(staff);
+
   if (selectedType === 'guilds') {
     const [rows] = await pool.query(
       `SELECT G.G_Name AS GuildName,
               G.G_Score AS GuildScore,
               G.G_Master AS GuildMaster,
-              COUNT(M.Name) AS Members
+              COUNT(M.Name) AS Members,
+              COALESCE(ms.ConnectStat, 0) AS ConnectStat,
+              ac.GameIDC,
+              ms.IP,
+              wp.ip AS SiteIP
        FROM Guild G
        LEFT JOIN GuildMember M ON M.G_Name = G.G_Name
-       GROUP BY G.G_Name, G.G_Score, G.G_Master
+       LEFT JOIN \`Character\` c ON c.Name = G.G_Master
+       LEFT JOIN MEMB_STAT ms ON ms.memb___id = c.AccountID
+       LEFT JOIN web_public_ip wp ON wp.account_id = c.AccountID
+       LEFT JOIN AccountCharacter ac ON ac.Id = c.AccountID
+       GROUP BY G.G_Name, G.G_Score, G.G_Master, ms.ConnectStat, ms.IP, wp.ip, ac.GameIDC
        ORDER BY G.G_Score DESC, Members DESC, G.G_Name ASC
        LIMIT 100`
     );
+    const viewRows = rows.map((row) => {
+      const country = countryFor(row.IP, row.SiteIP);
+      return {
+        ...row,
+        isOnline: isCharacterPlaying(row.ConnectStat, row.GameIDC, row.GuildMaster),
+        countryCode: country.countryCode,
+        countryName: country.countryName,
+        countryFlag: country.flagUrl,
+        isCountryUnknown: country.isUnknown,
+        staff: lookupStaff(staff, row.GuildMaster)
+      };
+    });
     return res.render('rankings', {
       type: selectedType,
       classFilter,
       classOptions,
-      rows,
+      rows: viewRows,
+      staffRoster,
+      geoEnabled,
       page: 'rankings',
-      pageTitle: 'MuLinux - Rankings'
+      pageTitle: `${res.locals.appName} - ${res.locals.t('Rankings')}`
     });
   }
 
-  let orderBy = 'cLevel DESC, ResetCount DESC, GrandResetCount DESC, Experience DESC';
+  let orderBy = rankingsResetsFirst
+    ? 'c.GrandResetCount DESC, c.ResetCount DESC, c.cLevel DESC, c.Experience DESC'
+    : 'c.cLevel DESC, c.ResetCount DESC, c.GrandResetCount DESC, c.Experience DESC';
   if (selectedType === 'resets') {
-    orderBy = 'ResetCount DESC, GrandResetCount DESC, cLevel DESC, Experience DESC';
+    orderBy = 'c.ResetCount DESC, c.GrandResetCount DESC, c.cLevel DESC, c.Experience DESC';
   } else if (selectedType === 'gr') {
-    orderBy = 'GrandResetCount DESC, ResetCount DESC, cLevel DESC, Experience DESC';
+    orderBy = 'c.GrandResetCount DESC, c.ResetCount DESC, c.cLevel DESC, c.Experience DESC';
   }
 
   const params = [];
-  let where = `WHERE Class IN (${ACTIVE_CLASSES.map(() => '?').join(',')})`;
+  let where = `WHERE c.Class IN (${ACTIVE_CLASSES.map(() => '?').join(',')})`;
   params.push(...ACTIVE_CLASSES);
   if (selectedType === 'class' && classFilter !== '') {
     const classId = Number(classFilter);
     if (!Number.isNaN(classId) && ACTIVE_CLASSES.includes(classId)) {
-      where += ' AND Class = ?';
+      where += ' AND c.Class = ?';
       params.push(classId);
     } else {
       classFilter = '';
     }
   }
 
+  const fetchLimit = Math.min(200, 100 + staff.names.length);
   const [rows] = await pool.query(
-    `SELECT Name, cLevel, ResetCount, GrandResetCount, Class
-     FROM \`Character\`
+    `SELECT c.Name, c.cLevel, c.ResetCount, c.GrandResetCount, c.Class,
+            COALESCE(ms.ConnectStat, 0) AS ConnectStat,
+            ac.GameIDC,
+            ms.IP,
+            wp.ip AS SiteIP
+     FROM \`Character\` c
+     LEFT JOIN MEMB_STAT ms ON ms.memb___id = c.AccountID
+     LEFT JOIN web_public_ip wp ON wp.account_id = c.AccountID
+     LEFT JOIN AccountCharacter ac ON ac.Id = c.AccountID
      ${where}
      ORDER BY ${orderBy}
-     LIMIT 100`,
+     LIMIT ${fetchLimit}`,
     params
   );
-  const viewRows = rows.map((row) => ({
-    ...row,
-    ClassName: getClassName(row.Class),
-    ClassIcon: getClassIcon(row.Class)
-  }));
+  const viewRows = rows.map((row) => {
+    const country = countryFor(row.IP, row.SiteIP);
+    return {
+      ...row,
+      ClassName: getClassName(row.Class),
+      ClassIcon: getClassIcon(row.Class),
+      isOnline: isCharacterPlaying(row.ConnectStat, row.GameIDC, row.Name),
+      countryCode: country.countryCode,
+      countryName: country.countryName,
+      countryFlag: country.flagUrl,
+      isCountryUnknown: country.isUnknown,
+      staff: lookupStaff(staff, row.Name)
+    };
+  }).filter((row) => !row.staff).slice(0, 100);
   res.render('rankings', {
     type: selectedType,
     classFilter,
     classOptions,
     rows: viewRows,
+    staffRoster,
+    geoEnabled,
     page: 'rankings',
-    pageTitle: 'MuLinux - Rankings'
+    pageTitle: `${res.locals.appName} - ${res.locals.t('Rankings')}`
   });
 });
 
@@ -1146,6 +1499,10 @@ app.get('/admin', requireAdmin, requireAdminPasswordChange, (req, res) => {
 
 app.post('/admin/login', authLimiter, async (req, res, next) => {
   const { username, password } = req.body;
+  const turnstileToken = req.body['cf-turnstile-response'];
+  const turnstileOk = await verifyTurnstile(turnstileToken, req.ip);
+  if (!turnstileOk) return res.render('admin_login', { error: 'Captcha invalido. Intenta nuevamente.' });
+
   const [rows] = await pool.query('SELECT id, username, password_hash, must_change_password FROM web_admin WHERE username = ? LIMIT 1', [username]);
   if (rows.length === 0) return res.render('admin_login', { error: 'Credenciales invalidas.' });
 
@@ -1215,27 +1572,105 @@ app.post('/admin/downloads', requireAdmin, requireAdminPasswordChange, (req, res
   return res.redirect(`/admin/downloads?ok=${encodeURIComponent('Links de descargas actualizados.')}`);
 });
 
+const ACCOUNT_SORTS = {
+  user: 'I.memb___id',
+  name: 'I.memb_name',
+  email: 'I.mail_addr',
+  level: 'I.AccountLevel',
+  status: 'I.bloc_code',
+  online: 'S.ConnectStat',
+  ip: 'S.IP',
+  source: `CASE
+    WHEN src.channel = 'direct' THEN 'direct'
+    WHEN src.channel = 'organic' THEN CONCAT(src.source, ' · organic')
+    WHEN src.channel = 'campaign' AND src.campaign <> '' THEN CONCAT(src.source, ' · ', src.campaign)
+    ELSE src.source
+  END`,
+  created: 'I.created_at',
+  login: 'S.ConnectTM'
+};
+
+function accountOrderSql(sort, dir) {
+  const column = ACCOUNT_SORTS[sort];
+  const direction = dir === 'desc' ? 'DESC' : 'ASC';
+  const nullsLast = sort === 'created' || sort === 'login' ? `${column} IS NULL ASC, ` : '';
+  return `${nullsLast}${column} ${direction}, I.memb___id ASC`;
+}
+
 app.get('/admin/accounts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
   const q = String(req.query.q || '').trim();
+  const src = acquisitionEnabled && SOURCE_CHANNELS.includes(req.query.src) ? req.query.src : '';
+  const sort = Object.hasOwn(ACCOUNT_SORTS, req.query.sort) ? req.query.sort : 'user';
+  const dir = String(req.query.dir || '').toLowerCase() === 'desc' ? 'desc' : 'asc';
   const notice = req.query.ok ? { type: 'success', text: decodeURIComponent(String(req.query.ok)) } : null;
   const error = req.query.err ? { type: 'danger', text: decodeURIComponent(String(req.query.err)) } : null;
   const params = [];
-  let where = '';
+  const clauses = [];
   if (q) {
     const like = `%${q}%`;
-    where = 'WHERE I.memb___id LIKE ? OR I.memb_name LIKE ? OR I.mail_addr LIKE ?';
-    params.push(like, like, like);
+    clauses.push('(I.memb___id LIKE ? OR I.memb_name LIKE ? OR I.mail_addr LIKE ? OR S.IP LIKE ? OR wp.ip LIKE ?)');
+    params.push(like, like, like, like, like);
   }
+  if (src) {
+    clauses.push('src.channel = ?');
+    params.push(src);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const [rows] = await pool.query(
-    `SELECT I.memb___id, I.memb_name, I.mail_addr, I.AccountLevel, I.bloc_code, I.AccountExpireDate, S.ConnectStat
+    `SELECT I.memb___id, I.memb_name, I.mail_addr, I.AccountLevel, I.bloc_code, I.AccountExpireDate, I.created_at,
+            S.ConnectStat, S.ConnectTM, S.IP, wp.ip AS SiteIP,
+            src.channel, src.source, src.medium, src.campaign, src.landing_path, src.referrer_host, src.captured_at
      FROM MEMB_INFO I
      LEFT JOIN MEMB_STAT S ON S.memb___id = I.memb___id
+     LEFT JOIN web_public_ip wp ON wp.account_id = I.memb___id
+     LEFT JOIN web_account_source src ON src.account_id = I.memb___id
      ${where}
-     ORDER BY I.memb___id ASC
+     ORDER BY ${accountOrderSql(sort, dir)}
      LIMIT 100`,
     params
   );
-  res.render('admin_accounts', { accounts: rows, q, notice, error });
+  const accounts = rows.map((row) => {
+    const country = (row.IP || row.SiteIP) ? countryFor(row.IP, row.SiteIP) : null;
+    const source = presentSource(row, res.locals.locale);
+    return {
+      ...row,
+      characters: [],
+      displayIp: visibleGameIp(row.IP, row.SiteIP),
+      countryName: country ? country.countryName : '',
+      countryFlag: country ? country.flagUrl : '',
+      sourceLabel: source.label,
+      sourceTitle: source.title,
+      createdLabel: formatSourceWhen(row.created_at, res.locals.locale),
+      loginLabel: formatSourceWhen(row.ConnectTM, res.locals.locale)
+    };
+  });
+  if (accounts.length > 0) {
+    const [chars] = await pool.query(
+      'SELECT AccountID, Name, cLevel, ResetCount, Class FROM `Character` WHERE AccountID IN (?) ORDER BY Name',
+      [accounts.map((account) => account.memb___id)]
+    );
+    const byAccount = new Map();
+    for (const char of chars) {
+      const list = byAccount.get(char.AccountID) || [];
+      list.push({ ...char, ClassName: getClassName(char.Class) });
+      byAccount.set(char.AccountID, list);
+    }
+    for (const account of accounts) {
+      account.characters = byAccount.get(account.memb___id) || [];
+    }
+  }
+  res.render('admin_accounts', {
+    accounts,
+    q,
+    src,
+    sort,
+    dir,
+    notice,
+    error,
+    sourceChannels: SOURCE_CHANNELS,
+    acquisitionEnabled,
+    geoEnabled
+  });
 });
 
 app.get('/admin/server-editor', requireAdmin, requireAdminPasswordChange, (req, res) => {
@@ -1693,6 +2128,7 @@ app.post('/admin/server-editor/api/gamemaster', requireAdmin, requireAdminPasswo
       path: 'Data/Util/GameMaster.txt',
       content
     });
+    invalidateStaffCache();
     return res.json({ ok: true, backups: data.backups || [] });
   } catch (err) {
     return res.status(err.status || 502).json({ error: err.message });
@@ -2245,18 +2681,28 @@ app.get('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async (
   };
 
   const [statRows] = await pool.query(
-    'SELECT ConnectStat, ServerName, IP, ConnectTM, DisConnectTM FROM MEMB_STAT WHERE memb___id = ? LIMIT 1',
+    `SELECT S.ConnectStat, S.ServerName, S.IP, S.ConnectTM, S.DisConnectTM, wp.ip AS SiteIP
+     FROM MEMB_STAT S
+     LEFT JOIN web_public_ip wp ON wp.account_id = S.memb___id
+     WHERE S.memb___id = ? LIMIT 1`,
     [accountId]
   );
   const stat = statRows[0]
     ? {
         ...statRows[0],
+        displayIp: visibleGameIp(statRows[0].IP, statRows[0].SiteIP),
         ConnectLocal: formatDateTimeLocal(statRows[0].ConnectTM),
         DisconnectLocal: formatDateTimeLocal(statRows[0].DisConnectTM)
       }
     : null;
 
-  res.render('admin_account_edit', { account, stat, characters, warehouse, notice, error });
+  const [sourceRows] = await pool.query(
+    'SELECT channel, source, medium, campaign, landing_path, referrer_host, captured_at FROM web_account_source WHERE account_id = ? LIMIT 1',
+    [accountId]
+  );
+  const source = presentSource(sourceRows[0], res.locals.locale);
+
+  res.render('admin_account_edit', { account, stat, characters, warehouse, notice, error, source, acquisitionEnabled });
 });
 
 app.post('/admin/accounts/:id', requireAdmin, requireAdminPasswordChange, async (req, res) => {

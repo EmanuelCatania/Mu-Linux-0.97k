@@ -217,7 +217,7 @@ Em ARM com 1 GB de RAM ou menos, ative 2 GB de swap antes do primeiro build. `un
 
 - MySQL: `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`.
 - Servidor: `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `PUBLIC_IP`.
-- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`.
+- Web: `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `ADMIN_USER`, `ADMIN_PASS`, `TRUST_PROXY`. `GEOIP_ENABLED` e `ACQUISITION_TRACKING` ficam em `0`: bandeiras de país e origem do cadastro só ligam quando configurados. `GEOIP_ENABLED` precisa do pacote opcional `geoip-lite` (`INSTALL_GEOIP=1` ao construir a imagem). `GEOIP_HIDDEN_COUNTRIES` é uma lista vazia de códigos ISO. `RANKINGS_RESETS_FIRST=1` ordena as listas de nível e classe por resets antes do nível.
 - Dados de teste: `SEED_TEST_DATA`; editor: `EDITOR_ENABLED`, `EDITOR_PORT`, `EDITOR_API_URL`, `EDITOR_MAX_BACKUPS`, `EDITOR_MAX_SNAPSHOTS`.
 
 Depois de mudar credenciais MySQL, recrie o volume:
@@ -243,6 +243,6 @@ Ele mantém backups por arquivo e snapshots de `MuServer/Data` e `MuServer/GameS
 
 ## Site e editor 0.97.20
 
-Primeiro acesso a /admin: troca obrigatória de senha e configuração do idioma padrão (ES/EN/PT), tema clássico, Elf, Dark Knight ou Dark Wizard e estado da conexão do editor. Alterações posteriores ficam em /admin/settings. Visitantes podem escolher seu idioma pelas bandeiras; isso não altera o idioma do admin/editor nem traduz notícias ou dados do jogo.
+Primeiro acesso a /admin: troca obrigatória de senha e configuração do idioma padrão (ES/EN/PT/UK; o valor inicial continua ES), tema clássico, Elf, Dark Knight ou Dark Wizard e estado da conexão do editor. Alterações posteriores ficam em /admin/settings. Visitantes podem escolher seu idioma pelas bandeiras; isso não altera o idioma do admin/editor nem traduz notícias ou dados do jogo.
 
 As configurações são salvas automaticamente no MySQL (web_site_settings); preserve seu volume. Atualize apenas emapupi/mu-linux-97k-web:0.97.20 e emapupi/mu-linux-97k-mu-editor:0.97.20 e recrie esses serviços. Não é necessário reconstruir o servidor ou MySQL. As telas do editor são servidas pela web; a API do editor mantém o comportamento anterior.

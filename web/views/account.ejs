@@ -7,10 +7,10 @@
         <div class="bg-white border p-4 shadow-sm rounded-3">
           <h3 class="fw-bold mb-3 text-center"><%= t("Mi cuenta") %></h3>
           <% if (notice) { %>
-            <div class="alert alert-success"><%= notice.text %></div>
+            <div class="alert alert-success"><%= t(notice.text) %></div>
           <% } %>
           <% if (error) { %>
-            <div class="alert alert-danger"><%= error.text %></div>
+            <div class="alert alert-danger"><%= t(error.text) %></div>
           <% } %>
           <table class="table table-bordered mb-0">
             <tbody>
@@ -35,6 +35,31 @@
           <div class="d-grid mt-3">
             <a class="btn btn-outline-secondary" href="/logout"><%= t("Salir") %></a>
           </div>
+        </div>
+
+        <div class="bg-white border p-4 shadow-sm rounded-3 mt-4">
+          <h4 class="fw-bold mb-2 text-center"><%= t("Cambiar contraseña") %></h4>
+          <p class="text-muted small text-center"><%= t("Entre 6 y 10 caracteres. El cliente admite hasta 10.") %></p>
+          <form method="post" action="/account/password">
+            <div class="mb-3">
+              <label class="form-label" for="current-password"><%= t("Contrasena actual") %></label>
+              <input id="current-password" class="form-control" type="password" name="current" required maxlength="32" autocomplete="current-password">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="new-password"><%= t("Nueva contraseña") %></label>
+              <input id="new-password" class="form-control" type="password" name="password" required minlength="6" maxlength="10" autocomplete="new-password">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="confirm-password"><%= t("Confirmar nueva contraseña") %></label>
+              <input id="confirm-password" class="form-control" type="password" name="confirm" required minlength="6" maxlength="10" autocomplete="new-password">
+            </div>
+            <% if (turnstileSiteKey) { %>
+              <div class="mb-3">
+                <div class="cf-turnstile" data-sitekey="<%= turnstileSiteKey %>"></div>
+              </div>
+            <% } %>
+            <button class="btn btn-primary w-100" type="submit"><%= t("Cambiar contraseña") %></button>
+          </form>
         </div>
 
         <div class="bg-white border p-4 shadow-sm rounded-3 mt-4">
@@ -86,5 +111,9 @@
     </div>
   </div>
 </main>
+
+<% if (turnstileSiteKey) { %>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<% } %>
 
 <%- include('partials/site_footer') %>

@@ -27,12 +27,17 @@
       <ul class="list">
         <li><span>Online</span><span><%= stat.ConnectStat === 1 ? 'Si' : 'No' %></span></li>
         <li><span>Server</span><span><%= stat.ServerName || '-' %></span></li>
-        <li><span>IP</span><span><%= stat.IP || '-' %></span></li>
+        <li><span>IP</span><span><%= stat.displayIp || stat.IP || '-' %></span></li>
         <li><span><%= t("Conecto") %></span><span><%= stat.ConnectLocal || '-' %></span></li>
         <li><span><%= t("Desconecto") %></span><span><%= stat.DisconnectLocal || '-' %></span></li>
       </ul>
     <% } else { %>
       <p class="muted"><%= t("Sin datos de conexion.") %></p>
+    <% } %>
+    <% if (acquisitionEnabled) { %>
+      <ul class="list">
+        <li><span><%= t("Origen") %></span><span title="<%= source.title %>"><%= source.label || '—' %></span></li>
+      </ul>
     <% } %>
   </div>
 

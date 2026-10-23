@@ -4,8 +4,9 @@ LABEL org.opencontainers.image.version="0.97.20" org.opencontainers.image.source
 
 WORKDIR /app
 
+ARG INSTALL_GEOIP=0
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
+RUN if [ "$INSTALL_GEOIP" = "1" ]; then npm install --omit=dev; else npm install --omit=dev --omit=optional; fi
 
 COPY . .
 
