@@ -28,6 +28,8 @@ jobs:
       - name: Dependencias de sistema Linux x86
         if: runner.os == 'Linux'
         run: |
+          # Evitar el espejo Azure cuando limita la descarga de paquetes i386.
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri:i386
