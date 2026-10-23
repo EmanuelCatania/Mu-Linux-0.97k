@@ -34,6 +34,9 @@ struct Mesh {
     const unsigned char* residentVertices=nullptr;
     int maxBone=-1;bool residentTried=false;
     std::vector<unsigned char> faces;
+    // Origen y muestra de las caras ya verificadas: si coinciden, el modelo
+    // no cambió y se evita comparar todas las caras en cada envío.
+    const unsigned char* facesSource=nullptr;std::uint32_t facesSample=0;
     std::vector<Corner> corners;
     std::vector<unsigned> indices;
     Corner minimum{},maximum{};
@@ -89,9 +92,21 @@ bool Resident(Mesh& m,const Input& input) {
     if(!m.residentArray || !m.residentBuffer) return false;
     return true;
 }
+std::uint32_t FacesSample(const unsigned char* faces,std::size_t size) {
+    // FNV-1a de la primera y la última cara: barato y suficiente para
+    // reconocer un modelo recargado en la misma dirección.
+    std::uint32_t hash=2166136261u;
+    auto mix=[&](const unsigned char* p,std::size_t n){ for(std::size_t i=0;i<n;++i){hash^=p[i];hash*=16777619u;} };
+    mix(faces,std::min<std::size_t>(size,36));if(size>36) mix(faces+size-36,36);
+    return hash;
+}
 bool Topology(Mesh& m,const Input& input) {
     const std::size_t size=std::size_t(input.faceCount)*36;
-    if(m.faces.size()==size && !std::memcmp(m.faces.data(),input.faces,size)) return true;
+    const std::uint32_t sample=FacesSample(input.faces,size);
+    if(m.facesSource==input.faces && m.faces.size()==size && m.facesSample==sample) return true;
+    if(m.faces.size()==size && !std::memcmp(m.faces.data(),input.faces,size)) {
+        m.facesSource=input.faces;m.facesSample=sample;return true;
+    }
     Delete(m);m.corners.clear();m.indices.clear();m.faces.clear();
     std::unordered_map<std::uint64_t,unsigned> unique;
     for(int f=0;f<input.faceCount;++f) {
@@ -132,7 +147,7 @@ bool Topology(Mesh& m,const Input& input) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,m.indices.size()*sizeof(unsigned),m.indices.data(),GL_STATIC_DRAW);
     glClientActiveTexture(client);glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
     if(!m.array || !m.buffer || !m.elements) { Delete(m);return false; }
-    m.faces.assign(input.faces,input.faces+size);return true;
+    m.faces.assign(input.faces,input.faces+size);m.facesSource=input.faces;m.facesSample=sample;return true;
 }
 }
 void ToggleResident() {
