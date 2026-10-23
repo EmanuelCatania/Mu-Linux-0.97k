@@ -24,15 +24,64 @@ unsigned long long modelDraws=0,modelReference=0,modelErrors=0,modelChecks=0,mod
 unsigned modelErrorMask=0;unsigned long long auditRevision=1;
 unsigned long long matrixRevision=0;
 float modelMVP[16]{},modelView[16]{},modelTexture[16]{};
-void ReadMatrices(){
-    if(!matricesDirty)return;
-    float view[16],projection[16];glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
+// La frontera compatible puede componer MVP con acumulación float o extendida
+// (por ejemplo Mesa x86 anterior a 24). Detectar una sola vez la aritmética
+// cuando los candidatos difieren; no elegir por fabricante/versiones del driver.
+enum class MatrixPrecision { Unknown=-1, Float=0, Extended=1, Unsupported=2 };
+MatrixPrecision matrixPrecision=MatrixPrecision::Unknown;
+unsigned Compile(unsigned type,const char* source);
+bool NativeProduct(float* product){
+    const char* source="#version 330 compatibility\nout vec4 captured;void main(){captured=gl_ModelViewProjectionMatrix[gl_VertexID];gl_Position=vec4(0,0,0,1);}";
+    unsigned shader=Compile(GL_VERTEX_SHADER,source);if(!shader)return false;
+    unsigned program=glCreateProgram();glAttachShader(program,shader);const char* varying="captured";
+    glTransformFeedbackVaryings(program,1,&varying,GL_INTERLEAVED_ATTRIBS);glLinkProgram(program);
+    int linked=0;glGetProgramiv(program,GL_LINK_STATUS,&linked);glDeleteShader(shader);
+    if(!linked){glDeleteProgram(program);return false;}
+    int oldProgram=0,oldArray=0,oldBuffer=0,oldIndexed=0;
+    GLint64 oldStart=0,oldSize=0;
+    glGetIntegerv(GL_CURRENT_PROGRAM,&oldProgram);glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&oldArray);
+    glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING,&oldBuffer);
+    glGetIntegeri_v(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING,0,&oldIndexed);
+    glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_START,0,&oldStart);glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_SIZE,0,&oldSize);
+    const bool discard=glIsEnabled(GL_RASTERIZER_DISCARD)!=0;
+    unsigned buffer=0,array=0;glGenBuffers(1,&buffer);glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,buffer);
+    glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,16*sizeof(float),nullptr,GL_STREAM_READ);
+    glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,buffer);glGenVertexArrays(1,&array);glBindVertexArray(array);
+    glUseProgram(program);glEnable(GL_RASTERIZER_DISCARD);glBeginTransformFeedback(GL_POINTS);
+    glDrawArrays(GL_POINTS,0,4);glEndTransformFeedback();
+    glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,0,16*sizeof(float),product);
+    if(!discard)glDisable(GL_RASTERIZER_DISCARD);
+    glUseProgram(oldProgram);glBindVertexArray(oldArray);
+    if(oldIndexed&&oldSize)glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed,oldStart,oldSize);
+    else glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed);
+    glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,oldBuffer);
+    glDeleteVertexArrays(1,&array);glDeleteBuffers(1,&buffer);glDeleteProgram(program);
+    return true;
+}
+bool ReadMatrices(){
+    if(matrixPrecision==MatrixPrecision::Unsupported)return false;
+    if(!matricesDirty)return true;
+    float view[16],projection[16],narrow[16],wide[16];glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
     for(int column=0;column<4;++column)for(int row=0;row<4;++row){
-        float value=0;for(int k=0;k<4;++k)value+=projection[k*4+row]*view[column*4+k];
-        modelMVP[column*4+row]=static_cast<float>(value);
+        float value=0;long double extended=0;
+        for(int k=0;k<4;++k){
+            value+=projection[k*4+row]*view[column*4+k];
+            if(matrixPrecision!=MatrixPrecision::Float)extended+=static_cast<long double>(projection[k*4+row])*view[column*4+k];
+        }
+        narrow[column*4+row]=value;wide[column*4+row]=static_cast<float>(extended);
     }
-    std::copy(view,view+16,modelView);glGetFloatv(GL_TEXTURE_MATRIX,modelTexture);
-    matricesDirty=false;++matrixRevision;
+    if(matrixPrecision==MatrixPrecision::Unknown&&std::memcmp(narrow,wide,sizeof(narrow))){
+        float native[16]{};
+        if(!NativeProduct(native))matrixPrecision=MatrixPrecision::Unsupported;
+        else if(!std::memcmp(native,narrow,sizeof(narrow)))matrixPrecision=MatrixPrecision::Float;
+        else if(!std::memcmp(native,wide,sizeof(wide)))matrixPrecision=MatrixPrecision::Extended;
+        else matrixPrecision=MatrixPrecision::Unsupported;
+        if(matrixPrecision!=MatrixPrecision::Unsupported)DbgLogPublic(matrixPrecision==MatrixPrecision::Extended?"PerfilR4 BMD: matrices_precision=extendida":"PerfilR4 BMD: matrices_precision=float");
+        if(matrixPrecision==MatrixPrecision::Unsupported){DbgLogPublic("PerfilR4 BMD: matrices_precision_no_equivalente, conservar referencia");return false;}
+    }
+    const auto* product=matrixPrecision==MatrixPrecision::Extended?wide:narrow;
+    std::copy(product,product+16,modelMVP);std::copy(view,view+16,modelView);glGetFloatv(GL_TEXTURE_MATRIX,modelTexture);
+    matricesDirty=false;++matrixRevision;return true;
 }
 
 struct TextureInfo{bool supported=false,opaque=false;int combine=0;};
@@ -310,6 +359,7 @@ void Create(unsigned reference,const char* source){
 }
 void Release(unsigned reference){
     for(auto* map:{&pipelines,&modelPipelines}){auto p=map->find(reference);if(p!=map->end()){if(p->second.program)glDeleteProgram(p->second.program);map->erase(p);}}
+    if(modelPipelines.empty())matrixPrecision=MatrixPrecision::Unknown;
     textureInfo.clear();MaterialChanged();MatricesChanged();
 }
 Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride,bool model):program(reference),reference(reference){
@@ -321,6 +371,7 @@ Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t s
     if(!targetChecked){int r=0,g=0,b=0,a=0;glGetIntegerv(GL_RED_BITS,&r);glGetIntegerv(GL_GREEN_BITS,&g);glGetIntegerv(GL_BLUE_BITS,&b);glGetIntegerv(GL_ALPHA_BITS,&a);targetSupported=r==8&&g==8&&b==8&&(a==0||a==8);targetChecked=true;}
     if(!targetSupported){Count(false,"Fragmentos: referencia (framebuffer)");return;}
     const char* reason=ReadLayout();if(*reason){Count(false,reason);return;}
+    if(modelVariant&&!ReadMatrices()){Count(false,"BMD: referencia (precision de matrices)");return;}
     const auto& state=ReadMaterial();if(*state.reason){Count(false,state.reason);return;}
     textured=state.textured;combine=state.combine;alphaEnabled=state.alpha;fog=state.fog;
     std::copy(state.values,state.values+3,fogValues);std::copy(state.color,state.color+4,fogColor);

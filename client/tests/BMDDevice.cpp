@@ -110,6 +110,8 @@ Image DrawCase(bool modern,int view,bool alpha,int path){
     int model=0;float bones[12]{1,0,0,0,0,1,0,0,0,0,1,0},direction[3]{0,0,1},coefficients[3]{.5f,.5f,.25f},origin[3]{};
     if(path){Skinning::Source source{face,raw,normal,world,lighting,3,3};Skinning::Capture(&model,bones,1,1,1,origin,direction,coefficients,&source,1);if(path==2)world[0]+=.125f;}
     else Skinning::Invalidate();
+    unsigned foreignTF=0;
+    if(view==3){glGenBuffers(1,&foreignTF);glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,foreignTF);glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,256,nullptr,GL_STATIC_DRAW);glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER,0,foreignTF,16,64);glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,0);}
     Image image;
     {
         RenderProfile::Frame frame(modern,7);
@@ -126,6 +128,7 @@ Image DrawCase(bool modern,int view,bool alpha,int path){
         // Sólo fuerza el volcado del diagnóstico; estos tiempos no son un benchmark.
         if(modern)Platform::timer.offset+=2101;
     }
+    if(foreignTF){int binding=0;GLint64 start=0,size=0;glGetIntegeri_v(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING,0,&binding);assert(unsigned(binding)==foreignTF);glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_START,0,&start);glGetInteger64i_v(GL_TRANSFORM_FEEDBACK_BUFFER_SIZE,0,&size);assert(start==16&&size==64);glGetIntegerv(GL_TRANSFORM_FEEDBACK_BUFFER_BINDING,&binding);assert(binding==0);glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,0);glDeleteBuffers(1,&foreignTF);}
     BufferedDraw::Suspend();glDeleteTextures(1,&texture);FragmentPipelineGL::InvalidateTextures();DAT_00561574=0xffffffffu;assert(glGetError()==GL_NO_ERROR);return image;
 }
 // Diagnóstico sólo ante fallo: recuperar la matriz de la referencia mediante
