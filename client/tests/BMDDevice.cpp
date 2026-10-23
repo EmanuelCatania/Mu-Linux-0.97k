@@ -133,7 +133,7 @@ void Images(){
     for(int view=0;view<4;++view)for(int alpha=0;alpha<2;++alpha)for(int path=0;path<3;++path){
         auto reference=DrawCase(false,view,alpha,path);Materials::Toggle();auto modern=DrawCase(true,view,alpha,path);Materials::Toggle();unsigned coverage=0,color=0;
         for(std::size_t i=0;i<reference.depth.size();++i){bool a=reference.depth[i]<1,b=modern.depth[i]<1;if(a!=b){++coverage;continue;}assert(reference.depth[i]==modern.depth[i]);for(int c=0;c<4;++c){unsigned delta=unsigned(std::abs(int(reference.color[i*4+c])-int(modern.color[i*4+c])));if(delta)++color;maxColor=std::max(maxColor,delta);}}
-        if(!alpha)assert(coverage==0);assert(color==0);maxCoverage=std::max(maxCoverage,coverage);++cases;
+        if(!alpha)assert(coverage==0);else assert(coverage<=64);assert(color==0);maxCoverage=std::max(maxCoverage,coverage);++cases;
     }
     RenderProfile::Toggle();FragmentStage::Toggle();assert(!diagnostics.empty());bool checked=false;
     for(const auto& line:diagnostics){assert(line.find("error_ambito_matriz")==std::string::npos);if(line.find("errores_estado=")!=std::string::npos){assert(line.find("errores_estado=0 ")!=std::string::npos);assert(line.find("ambitos_abiertos=0")!=std::string::npos);checked=true;}}
