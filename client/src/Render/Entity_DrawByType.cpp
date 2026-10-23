@@ -408,8 +408,8 @@ LAB_substate4_done:
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                          0xffffffff);
             BMDDevice::EndModel();
-            GL_SetBlendSrcOver('\x01');
-            glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+            BMDDevice::Select({BMDDevice::Pass::ShadowBlend});
+            BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
             float wx = AsObject(param_1)->Position[0];
             float wy = AsObject(param_1)->Position[1];
             *(float *)((int)model + 0x74) = RequestTerrainHeight(wx, wy);

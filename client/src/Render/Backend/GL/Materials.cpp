@@ -229,6 +229,8 @@ void Select(const PassState& s){
         if(!Materials::Select(Materials::Preset::Add))GL_SetBlendAdditive();break;
     case P::Exit:case P::ShadowExit:
         if(!Materials::Apply(MeshDraw::ExitMaterial()))GL_EnableDepthWrites();break;
+    case P::ShadowBlend:
+        if(!Materials::Select(Materials::Preset::Alpha))GL_SetBlendSrcOver('\x01');break;
     case P::Shadow:{
         Materials::Material noWrite;noWrite.depthWrite=Materials::Switch::Off;
         const Materials::MaterialSequence sequence{{Materials::Describe(Materials::Preset::Untextured,false),noWrite},2};

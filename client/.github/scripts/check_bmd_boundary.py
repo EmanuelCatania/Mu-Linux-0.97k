@@ -6,7 +6,8 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[2]
 files = sorted((root / "src/Render").glob("BMD*.cpp"))
 files += [root / "src/Render" / name for name in
-          ("BMDDevice.h", "BufferedDraw.h", "MeshDraw.h", "Skinning.h")]
+          ("BMDDevice.h", "BufferedDraw.h", "MeshDraw.h", "Skinning.h",
+           "Entity_DrawByType.cpp", "SMD_Parser.cpp")]
 # Quitar comentarios y literales antes de buscar símbolos: las referencias
 # históricas a IDA y los nombres dentro de mensajes no son dependencias GL.
 ignored = re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', re.S)

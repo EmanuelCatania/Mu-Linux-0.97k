@@ -2,7 +2,7 @@
 #include "Render/Materials.h"
 // Contrato de estado por pasada BMD; no contiene enums ni handles de GL.
 namespace BMDDevice {
-enum class Pass { Color, ColorAnimated, Surface, Chrome, Blend, Metal, Glow, Exit, Shadow, ShadowExit };
+enum class Pass { Color, ColorAnimated, Surface, Chrome, Blend, Metal, Glow, Exit, ShadowBlend, Shadow, ShadowExit };
 struct PassState { Pass pass;unsigned flags=0;int textureSlot=0;bool alpha=false; };
 // El switch sólo alterna esta etapa; los materiales anteriores se conservan.
 bool Enabled();
