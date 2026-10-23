@@ -52,7 +52,7 @@ bool NativeProduct(float* product){
     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,0,16*sizeof(float),product);
     if(!discard)glDisable(GL_RASTERIZER_DISCARD);
     glUseProgram(oldProgram);glBindVertexArray(oldArray);
-    if(oldIndexed&&oldSize)glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed,oldStart,oldSize);
+    if(oldIndexed&&oldSize)glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed,static_cast<GLintptr>(oldStart),static_cast<GLsizeiptr>(oldSize));
     else glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,oldIndexed);
     glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,oldBuffer);
     glDeleteVertexArrays(1,&array);glDeleteBuffers(1,&buffer);glDeleteProgram(program);
@@ -204,7 +204,7 @@ void Report(bool reset){
     ReportEntries(reset);
     if(!reset&&requested){char line[768];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu capturas_textura=%llu reusos_textura=%llu capturas_alpha=%llu reusos_alpha=%llu capturas_niebla=%llu reusos_niebla=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,componentReads[0],componentReuses[0],componentReads[1],componentReuses[1],componentReads[2],componentReuses[2],lastReason);DbgLogPublic(line);}
     if(!reset&&(modelDraws||modelReference||modelErrors)){
-        char line[320];std::snprintf(line,sizeof(line),"PerfilR4 BMD: shader=%llu referencia=%llu verificaciones=%llu errores_estado=%llu mascara_error=%u matrices_subidas=%llu ambitos_abiertos=%u",modelDraws,modelReference,modelChecks,modelErrors,modelErrorMask,modelUploads,modelDepth);DbgLogPublic(line);
+        char line[320];std::snprintf(line,sizeof(line),"PerfilR4 BMD: shader=%llu referencia=%llu verificaciones=%llu errores_estado=%llu mascara_error=%u matrices_subidas=%llu ambitos_abiertos=%u ruta_nueva=%d matrices_precision=%d",modelDraws,modelReference,modelChecks,modelErrors,modelErrorMask,modelUploads,modelDepth,BMDDevice::Enabled()?1:0,static_cast<int>(matrixPrecision));DbgLogPublic(line);
     }
     modelDraws=modelReference=modelErrors=modelChecks=modelUploads=0;modelErrorMask=0;++auditRevision;
     selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=materialReads=materialReuses=0;lastReason="";
