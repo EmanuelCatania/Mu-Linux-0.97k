@@ -21,6 +21,9 @@ struct ResidentDraw {
     const float* color;   // color constante del envío (RGBA)
     const float* uv;      // UV constante cuando la malla no se texturiza
     float uOffset,vOffset;
+    // Sombra proyectada de BMD__RenderBodyShadow: misma fórmula sobre la pose
+    // de la GPU, con el origen del modelo (+0x6c).
+    bool shadow=false;const float* shadowOrigin=nullptr;
 };
 void Invalidate();
 void Capture(const void* model,const float* bones,int boneCount,float rotationScale,float bodyScale,

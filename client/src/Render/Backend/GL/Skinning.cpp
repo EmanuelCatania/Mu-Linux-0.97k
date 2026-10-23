@@ -57,7 +57,8 @@ void SetVector(GLint location,const float* value,float* previous) {
         glUniform3fv(location,1,value);std::copy(value,value+3,previous);
     }
 }
-GLint paletteLocation,scalesLocation,originLocation,directionLocation,coefficientsLocation,bodyLightLocation,lightLocation,offsetLocation;
+GLint paletteLocation,scalesLocation,originLocation,directionLocation,coefficientsLocation,bodyLightLocation,lightLocation,offsetLocation,shadowLocation,shadowOriginLocation;
+int lastShadow=-1;float lastShadowOrigin[3]{};
 struct Vertex { BufferedDraw::Vertex attributes;float normal[4];float bone; };
 std::vector<Vertex> vertices;
 // DESVIACION: uvOffset suma el desplazamiento de textura de la malla en el
@@ -74,6 +75,8 @@ uniform vec3 coefficients;
 uniform vec3 bodyLight;
 uniform bool useLight;
 uniform vec2 uvOffset;
+uniform bool shadowMode;
+uniform vec3 shadowOrigin;
 vec3 rotateBone(vec3 p,int b) {
     int r=paletteBase+b*3;
     return vec3(dot(texelFetch(palette,r).xyz,p),dot(texelFetch(palette,r+1).xyz,p),dot(texelFetch(palette,r+2).xyz,p));
@@ -83,6 +86,10 @@ void main() {
     vec3 p=rotateBone(gl_Vertex.xyz,int(vertexBone))*scales.x;
     p+=vec3(texelFetch(palette,b).w,texelFetch(palette,b+1).w,texelFetch(palette,b+2).w);
     p=p*scales.y+origin;
+    if(shadowMode) {
+        vec3 l=p-shadowOrigin;
+        p=vec3(l.x+(l.x+2000.0)*l.z/(l.z-4000.0)+shadowOrigin.x,l.y+shadowOrigin.y,shadowOrigin.z+5.0);
+    }
     vec4 position=vec4(p,1);
     gl_Position=gl_ModelViewProjectionMatrix*position;
     vec4 color=gl_Color;
@@ -101,16 +108,16 @@ void main() {
 }
 )GLSL";
 GLuint uniformProgram=0;
-std::map<GLuint,std::array<GLint,9>> uniformLocations;
+std::map<GLuint,std::array<GLint,11>> uniformLocations;
 void SelectUniforms(GLuint next){
-    if(uniformProgram==next)return;uniformProgram=next;uniformsReady=false;lastLight=-1;
+    if(uniformProgram==next)return;uniformProgram=next;uniformsReady=false;lastLight=-1;lastShadow=-1;
     auto found=uniformLocations.find(next);
     if(found==uniformLocations.end()){
-        const char* names[]{"paletteBase","palette","scales","origin","direction","coefficients","bodyLight","useLight","uvOffset"};
-        std::array<GLint,9> locations{};for(int i=0;i<9;++i)locations[i]=glGetUniformLocation(next,names[i]);
+        const char* names[]{"paletteBase","palette","scales","origin","direction","coefficients","bodyLight","useLight","uvOffset","shadowMode","shadowOrigin"};
+        std::array<GLint,11> locations{};for(int i=0;i<11;++i)locations[i]=glGetUniformLocation(next,names[i]);
         found=uniformLocations.emplace(next,locations).first;
     }
-    const auto& p=found->second;paletteBaseLocation=p[0];paletteLocation=p[1];scalesLocation=p[2];originLocation=p[3];directionLocation=p[4];coefficientsLocation=p[5];bodyLightLocation=p[6];lightLocation=p[7];offsetLocation=p[8];
+    const auto& p=found->second;paletteBaseLocation=p[0];paletteLocation=p[1];scalesLocation=p[2];originLocation=p[3];directionLocation=p[4];coefficientsLocation=p[5];bodyLightLocation=p[6];lightLocation=p[7];offsetLocation=p[8];shadowLocation=p[9];shadowOriginLocation=p[10];
 }
 bool Initialize() {
     if(program) return true;
@@ -167,7 +174,12 @@ bool UploadPalette() {
     }
     return true;
 }
-void SetUniforms(bool gpuLight,const float* bodyLight,const float* offset) {
+void SetUniforms(bool gpuLight,const float* bodyLight,const float* offset,const float* shadowOrigin=nullptr) {
+    const bool shadow=shadowOrigin!=nullptr;
+    if(lastShadow!=int(shadow)) { glUniform1i(shadowLocation,shadow?1:0);lastShadow=int(shadow); }
+    if(shadow && (!uniformsReady || std::memcmp(lastShadowOrigin,shadowOrigin,sizeof(lastShadowOrigin)))) {
+        glUniform3fv(shadowOriginLocation,1,shadowOrigin);std::copy(shadowOrigin,shadowOrigin+3,lastShadowOrigin);
+    }
     if(!uniformsReady) glUniform1i(paletteLocation,1);
     glUniform1i(paletteBaseLocation,paletteBase);
     const float scales[2]{rotationScale,bodyScale};
@@ -291,7 +303,7 @@ bool DrawResident(const ResidentDraw& d) {
     BufferedDraw::Activate(material.Program(),d.array,0);material.Apply();
     SelectUniforms(material.Program());
     const float offset[2]{d.uOffset,d.vOffset};
-    SetUniforms(d.lit,d.bodyLight,offset);
+    SetUniforms(d.lit,d.bodyLight,offset,d.shadow?d.shadowOrigin:nullptr);
     // UV por vértice sólo si la malla se texturiza; si no, el valor actual
     // capturado, como la ruta CPU. El estado de los arrays queda en el VAO.
     GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
@@ -313,7 +325,7 @@ void Release() {
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
     FragmentPipelineGL::Release(program);
     if(program) glDeleteProgram(program);
-    uniformLocations.clear();uniformProgram=0;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
+    uniformLocations.clear();uniformProgram=0;lastShadow=-1;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }
 }

@@ -150,6 +150,31 @@ bool Topology(Mesh& m,const Input& input) {
     m.faces.assign(input.faces,input.faces+size);m.facesSource=input.faces;m.facesSample=sample;return true;
 }
 }
+bool DrawShadow(const void* model,const char* meshRecord,const float* world,const float* origin) {
+    if(!residentEnabled || !model || !meshRecord) return false;
+    Input input{};
+    input.key=meshRecord;
+    input.faces=reinterpret_cast<const unsigned char*>(*(const int*)(meshRecord+0x1c));
+    input.faceCount=*(const short*)(meshRecord+0x0a);input.positionCount=*(const short*)(meshRecord+4);
+    input.normalCount=*(const short*)(meshRecord+6);input.uvCount=*(const short*)(meshRecord+8);
+    input.positions=world;input.uv=reinterpret_cast<const float*>(*(const int*)(meshRecord+0x18));
+    input.model=model;
+    input.rawVertices=reinterpret_cast<const unsigned char*>(*(const int*)(meshRecord+0x10));
+    input.rawNormals=reinterpret_cast<const unsigned char*>(*(const int*)(meshRecord+0x14));
+    if(input.faceCount<=0 || input.positionCount<=0 || !input.faces || !world) return false;
+    auto& mesh=meshes[input.key];if(!Topology(mesh,input)) return false;
+    if(mesh.minimum.position<0 || mesh.maximum.position>=input.positionCount) return false;
+    if(!Resident(mesh,input)) return false;
+    // La ruta CPU emite cada vértice con el color y la UV actuales.
+    const auto current=BufferedDraw::CaptureAttributes(true,true);
+    static const float noLight[3]{};
+    Skinning::ResidentDraw draw{model,input.key,mesh.residentArray,mesh.indices.size(),mesh.maxBone,
+        world,input.positionCount,nullptr,input.normalCount,false,false,noLight,current.color,current.uv,0.f,0.f};
+    draw.shadow=true;draw.shadowOrigin=origin;
+    if(!Skinning::DrawResident(draw)) return false;
+    glColor4fv(current.color);glTexCoord4fv(current.uv);
+    return true;
+}
 void ToggleResident() {
     BufferedDraw::Suspend();residentEnabled=!residentEnabled;
     DbgLogPublic(residentEnabled?"BMD: mallas residentes":"BMD: mallas armadas en CPU");
