@@ -7,6 +7,8 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Render/BMDDevice.h"
+#include "Render/BufferedDraw.h"
 #include "Render/ResourceTables.h"
 #include "Platform/IWindow.h"
 #include "Platform/Text.h"
@@ -774,8 +776,8 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
     BMD__BeginRender();
     if (*(char*)((char*)model + 0x44) == '\0') {
         // IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
-        if (f1 < _DAT_00552544) glColor4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
-        else glColor3fv((GLfloat*)((char*)model + 0x48));
+        if (f1 < _DAT_00552544) BufferedDraw::Color4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
+        else BufferedDraw::Color3fv((const float*)((char*)model + 0x48));
     }
     // HiddenMesh: entero (indice de malla a ocultar, o -1), como el a8 de IDA.
     int HiddenMesh = f6;
@@ -800,7 +802,7 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
             BMD__RenderMesh(model, (float)i, flags, f1, fVar3, f3, f4, f5, (unsigned int)rgba);
         }
     }
-    glPopMatrix();
+    BMDDevice::EndModel();
 }
 
 // SetMonsterSound @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)

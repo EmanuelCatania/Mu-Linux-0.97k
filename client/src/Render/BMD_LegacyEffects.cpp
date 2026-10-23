@@ -5,12 +5,13 @@
 
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
+#include "Render/BMDDevice.h"
 #include "Config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
 
 // BMD__BeginRender @ 0x00440D30 — BMD_PushMatrix: calls glPushMatrix().
-void __cdecl BMD__BeginRender(void) { glPushMatrix(); }
+void __cdecl BMD__BeginRender(void) { BMDDevice::BeginModel(); }
 // BMD__RenderMesh @ 0x00440D50 — BMD_DrawMesh: implemented in Render/BMD_DrawMesh.cpp
 // BMD__RenderMeshEffect @ 0x00441BE0 — Model_KillAnim
 // Iterates bone meshes; for each vertex in bone 'b', spawns kill/death particle effects.
@@ -90,8 +91,7 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
     // IDA: DisableTexture(0). Ese es 0x511590, que en el arbol se llama
     // GL_SetAlphaTest (nombre enganoso: termina en glDisable(GL_TEXTURE_2D)).
     // NO confundir con 0x511680 EnableAlphaTest.
-    GL_SetAlphaTest('\0');
-    GL_DisableDepthWrites();       // 0x511530
+    BMDDevice::Select({BMDDevice::Pass::Shadow});
     BMD__BeginRender();                // thunk -> glPushMatrix()
 
     const float ox = *(float*)(this_ + 0x6c);
@@ -108,7 +108,7 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
         if (polyCount <= 0) continue;
         if ((int)*(short*)(mesh + 2) == param_1) continue;   // *(WORD*)(v6+2) != a2
 
-        BufferedDraw::Begin(GL_TRIANGLES);
+        BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
         for (int polyIdx = 0; polyIdx < polyCount; polyIdx++) {
             char *poly = (char*)(*(int*)(mesh + 0x1c) + polyIdx * 0x24);
             const int numVerts = (int)*(signed char*)poly;   // char en +0
@@ -131,6 +131,6 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
         BufferedDraw::End();
     }
 
-    glPopMatrix();
-    GL_EnableDepthWrites();        // 0x511510
+    BMDDevice::EndModel();
+    BMDDevice::Select({BMDDevice::Pass::ShadowExit});
 }

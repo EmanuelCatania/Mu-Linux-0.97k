@@ -1,6 +1,7 @@
 // Sin PCH: GL y traducción del estado permanecen en el backend.
 #include "Platform/GL/glad.h"
 #include "Render/FragmentStage.h"
+#include "Render/Materials.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
@@ -15,8 +16,24 @@ extern "C" void DbgLogPublic(const char*);
 namespace {
 bool requested=false,layoutChecked=false,targetChecked=false,targetSupported=false;
 const char* status="Fragmentos: referencia";
-struct Pipeline { unsigned program=0;int texture=-1,textured=-1,fog=-1,values=-1,color=-1,reject=-1,combine=-1;bool valid=false,lastTextured=false,lastReject=false;int lastFog=0,lastCombine=0;float lastValues[3]{},lastColor[4]{}; };
-std::map<unsigned,Pipeline> pipelines;
+struct Pipeline { unsigned program=0;int texture=-1,textured=-1,fog=-1,values=-1,color=-1,reject=-1,combine=-1;int mvp=-1,view=-1,uv=-1,alphaFunction=-1,alphaReference=-1;unsigned long long matrices=0,audit=0;bool valid=false,lastTextured=false,lastReject=false;int lastFog=0,lastCombine=0,lastAlphaFunction=-1;float lastAlphaReference=-1;float lastValues[3]{},lastColor[4]{}; };
+std::map<unsigned,Pipeline> pipelines,modelPipelines;
+unsigned modelDepth=0;bool matricesDirty=true;
+unsigned long long modelDraws=0,modelReference=0,modelErrors=0,modelChecks=0,modelUploads=0;
+unsigned modelErrorMask=0;unsigned long long auditRevision=1;
+unsigned long long matrixRevision=0;
+float modelMVP[16]{},modelView[16]{},modelTexture[16]{};
+void ReadMatrices(){
+    if(!matricesDirty)return;
+    float view[16],projection[16];glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
+    for(int column=0;column<4;++column)for(int row=0;row<4;++row){
+        float value=0;for(int k=0;k<4;++k)value+=projection[k*4+row]*view[column*4+k];
+        modelMVP[column*4+row]=static_cast<float>(value);
+    }
+    std::copy(view,view+16,modelView);glGetFloatv(GL_TEXTURE_MATRIX,modelTexture);
+    matricesDirty=false;++matrixRevision;
+}
+
 struct TextureInfo{bool supported=false,opaque=false;int combine=0;};
 std::map<unsigned,TextureInfo> textureInfo;
 unsigned long long selected=0,fallback=0,alphaFallback=0,nativeAlpha=0;
@@ -136,8 +153,38 @@ void main(){
 void Report(bool reset){
     ReportEntries(reset);
     if(!reset&&requested){char line[768];std::snprintf(line,sizeof(line),"PerfilR4b fragmentos: nuevos=%llu referencia=%llu referencia_alpha=%llu alpha_nativo=%llu capturas_estado=%llu reusos_estado=%llu capturas_material=%llu reusos_material=%llu capturas_textura=%llu reusos_textura=%llu capturas_alpha=%llu reusos_alpha=%llu capturas_niebla=%llu reusos_niebla=%llu ultimo_motivo=\"%s\"",selected,fallback,alphaFallback,nativeAlpha,layoutReads,layoutReuses,materialReads,materialReuses,componentReads[0],componentReuses[0],componentReads[1],componentReuses[1],componentReads[2],componentReuses[2],lastReason);DbgLogPublic(line);}
+    if(!reset&&(modelDraws||modelReference||modelErrors)){
+        char line[320];std::snprintf(line,sizeof(line),"PerfilR4 BMD: shader=%llu referencia=%llu verificaciones=%llu errores_estado=%llu mascara_error=%u matrices_subidas=%llu ambitos_abiertos=%u",modelDraws,modelReference,modelChecks,modelErrors,modelErrorMask,modelUploads,modelDepth);DbgLogPublic(line);
+    }
+    modelDraws=modelReference=modelErrors=modelChecks=modelUploads=0;modelErrorMask=0;++auditRevision;
     selected=fallback=alphaFallback=nativeAlpha=layoutReads=layoutReuses=materialReads=materialReuses=0;lastReason="";
     std::fill(componentReads,componentReads+3,0ull);std::fill(componentReuses,componentReuses+3,0ull);
+}
+void ReplaceAll(std::string& text,const std::string& from,const std::string& to){
+    std::size_t pos=0;while((pos=text.find(from,pos))!=std::string::npos){text.replace(pos,from.size(),to);pos+=to.size();}
+}
+std::string ModelVertex(const char* source){
+    std::string text(source);ReplaceAll(text,"#version 330 compatibility","#version 330 core");
+    const auto end=text.find('\n');text.insert(end+1,
+        "#define EXPLICIT_FRAGMENT\nlayout(location=0) in vec3 bmdPosition;\nlayout(location=1) in vec4 bmdPrimary;\nlayout(location=2) in vec4 bmdCoord;\nuniform mat4 bmdMVP,bmdView,bmdTexture;\nout vec4 bmdColor,bmdUV;\nout float bmdFog;\ninvariant gl_Position;\n");
+    ReplaceAll(text,"ftransform()","bmdMVP*vec4(bmdPosition,1)");
+    ReplaceAll(text,"gl_ModelViewProjectionMatrix","bmdMVP");ReplaceAll(text,"gl_ModelViewMatrix","bmdView");ReplaceAll(text,"gl_TextureMatrix[0]","bmdTexture");
+    ReplaceAll(text,"gl_Vertex","vec4(bmdPosition,1)");ReplaceAll(text,"gl_Color","bmdPrimary");ReplaceAll(text,"gl_MultiTexCoord0","bmdCoord");
+    ReplaceAll(text,"gl_FrontColor","bmdColor");ReplaceAll(text,"gl_BackColor","bmdColor");ReplaceAll(text,"gl_TexCoord[0]","bmdUV");ReplaceAll(text,"gl_FogFragCoord","bmdFog");ReplaceAll(text,"gl_ClipVertex=eye;","");
+    return text;
+}
+std::string ModelFragment(){
+    std::string text(fragment);ReplaceAll(text,"#version 330 compatibility","#version 330 core");
+    const auto end=text.find('\n');text.insert(end+1,"in vec4 bmdColor,bmdUV;\nin float bmdFog;\nuniform int bmdAlphaFunction;\nuniform float bmdAlphaReference;\n");
+    ReplaceAll(text,"gl_Color","bmdColor");ReplaceAll(text,"gl_TexCoord[0]","bmdUV");ReplaceAll(text,"gl_FogFragCoord","bmdFog");
+    // DESVIACION autorizada: textura × color, mismo comparador/umbral; sin
+    // cuantizar porque empeora la equivalencia de GREATER0.25 en la sonda.
+    ReplaceAll(text,"    if(materialFog!=0){",R"GLSL(    if(bmdAlphaFunction!=0){
+        float a=c.a,r=bmdAlphaReference;int f=bmdAlphaFunction;
+        bool pass=f==512?false:f==513?a<r:f==514?a==r:f==515?a<=r:f==516?a>r:f==517?a!=r:f==518?a>=r:true;
+        if(!pass)discard;
+    }
+    if(materialFog!=0){)GLSL");return text;
 }
 void Count(bool modern,const char* reason="",bool alpha=false){
     status=modern?"Fragmentos: shader activo":reason;
@@ -234,23 +281,39 @@ void Toggle(){BufferedDraw::Suspend();requested=!requested;Report(true);RenderPr
 namespace FragmentPipelineGL {
 void MaterialChanged(MaterialPart part){material.dirty|=static_cast<unsigned>(part);}
 void CapabilityChanged(unsigned cap){if(cap==GL_TEXTURE_2D)MaterialChanged(MaterialPart::Texture);if(cap==GL_ALPHA_TEST)MaterialChanged(MaterialPart::Alpha);if(cap==GL_FOG)MaterialChanged(MaterialPart::Fog);if(cap==GL_TEXTURE_1D||cap==GL_TEXTURE_2D||cap==GL_TEXTURE_3D||cap==GL_TEXTURE_CUBE_MAP||cap==GL_TEXTURE_RECTANGLE||cap==GL_POINT_SPRITE||cap==GL_COLOR_SUM||cap==GL_POLYGON_STIPPLE)layoutChecked=false;}
-void InvalidateBindings(){MaterialChanged();layoutChecked=false;targetChecked=false;}
+void MatricesChanged(){matricesDirty=true;}
+void EnterModel(){BufferedDraw::Flush();++modelDepth;}
+void LeaveModel(){BufferedDraw::Flush();if(modelDepth)--modelDepth;}
+void InvalidateBindings(){MaterialChanged();layoutChecked=false;targetChecked=false;MatricesChanged();}
 void InvalidateTextures(){MaterialChanged(MaterialPart::Texture);textureInfo.clear();layoutChecked=false;}
 void Create(unsigned reference,const char* source){
     RenderProfile::SetBackendReport(Report);RenderProfile::SetPassAudit(AuditEntry);
     if(pipelines.count(reference))return;
-    Pipeline p;std::string vertex(source);const auto end=vertex.find('\n');if(end==std::string::npos)return;
-    vertex.insert(end+1,"#define EXPLICIT_FRAGMENT\n");
-    unsigned vs=Compile(GL_VERTEX_SHADER,vertex.c_str()),fs=Compile(GL_FRAGMENT_SHADER,fragment);
-    if(vs&&fs){p.program=glCreateProgram();glAttachShader(p.program,vs);glAttachShader(p.program,fs);glLinkProgram(p.program);int ok=0;glGetProgramiv(p.program,GL_LINK_STATUS,&ok);if(!ok){char log[2048]{};glGetProgramInfoLog(p.program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(p.program);p.program=0;}}
-    if(vs)glDeleteShader(vs);if(fs)glDeleteShader(fs);
-    if(p.program){p.texture=glGetUniformLocation(p.program,"materialTexture");p.textured=glGetUniformLocation(p.program,"materialTextured");p.fog=glGetUniformLocation(p.program,"materialFog");p.values=glGetUniformLocation(p.program,"materialFogValues");p.color=glGetUniformLocation(p.program,"materialFogColor");p.reject=glGetUniformLocation(p.program,"materialReject");p.combine=glGetUniformLocation(p.program,"materialCombine");}
-    pipelines[reference]=p;
+    for(int model=0;model<2;++model){
+        Pipeline p;std::string vertex=model?ModelVertex(source):std::string(source);
+        const auto end=vertex.find('\n');if(end==std::string::npos)return;
+        if(!model)vertex.insert(end+1,"#define EXPLICIT_FRAGMENT\n");
+        const std::string fsSource=model?ModelFragment():std::string(fragment);
+        unsigned vs=Compile(GL_VERTEX_SHADER,vertex.c_str()),fs=Compile(GL_FRAGMENT_SHADER,fsSource.c_str());
+        if(vs&&fs){p.program=glCreateProgram();glAttachShader(p.program,vs);glAttachShader(p.program,fs);glLinkProgram(p.program);int ok=0;glGetProgramiv(p.program,GL_LINK_STATUS,&ok);if(!ok){char log[2048]{};glGetProgramInfoLog(p.program,sizeof(log),nullptr,log);DbgLogPublic(log);glDeleteProgram(p.program);p.program=0;}}
+        if(vs)glDeleteShader(vs);if(fs)glDeleteShader(fs);
+        if(p.program){
+            p.texture=glGetUniformLocation(p.program,"materialTexture");p.textured=glGetUniformLocation(p.program,"materialTextured");p.fog=glGetUniformLocation(p.program,"materialFog");p.values=glGetUniformLocation(p.program,"materialFogValues");p.color=glGetUniformLocation(p.program,"materialFogColor");p.reject=glGetUniformLocation(p.program,"materialReject");p.combine=glGetUniformLocation(p.program,"materialCombine");
+            if(model){p.mvp=glGetUniformLocation(p.program,"bmdMVP");p.view=glGetUniformLocation(p.program,"bmdView");p.uv=glGetUniformLocation(p.program,"bmdTexture");p.alphaFunction=glGetUniformLocation(p.program,"bmdAlphaFunction");p.alphaReference=glGetUniformLocation(p.program,"bmdAlphaReference");}
+        }
+        (model?modelPipelines:pipelines)[reference]=p;
+    }
 }
-void Release(unsigned reference){const auto p=pipelines.find(reference);if(p!=pipelines.end()){if(p->second.program)glDeleteProgram(p->second.program);pipelines.erase(p);}textureInfo.clear();MaterialChanged();}
-Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride):program(reference),reference(reference){
-    if(!requested)return;
-    const auto found=pipelines.find(reference);if(found==pipelines.end()||!found->second.program){Count(false,"Fragmentos: referencia (programa)");return;}
+void Release(unsigned reference){
+    for(auto* map:{&pipelines,&modelPipelines}){auto p=map->find(reference);if(p!=map->end()){if(p->second.program)glDeleteProgram(p->second.program);map->erase(p);}}
+    textureInfo.clear();MaterialChanged();MatricesChanged();
+}
+Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride,bool model):program(reference),reference(reference){
+    modelRequest=model||modelDepth!=0;
+    modelVariant=modelRequest&&Materials::Enabled();
+    if(!requested&&!modelVariant)return;
+    auto& candidates=modelVariant?modelPipelines:pipelines;
+    const auto found=candidates.find(reference);if(found==candidates.end()||!found->second.program){Count(false,"Fragmentos: referencia (programa)");return;}
     if(!targetChecked){int r=0,g=0,b=0,a=0;glGetIntegerv(GL_RED_BITS,&r);glGetIntegerv(GL_GREEN_BITS,&g);glGetIntegerv(GL_BLUE_BITS,&b);glGetIntegerv(GL_ALPHA_BITS,&a);targetSupported=r==8&&g==8&&b==8&&(a==0||a==8);targetChecked=true;}
     if(!targetSupported){Count(false,"Fragmentos: referencia (framebuffer)");return;}
     const char* reason=ReadLayout();if(*reason){Count(false,reason);return;}
@@ -258,16 +321,28 @@ Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t s
     textured=state.textured;combine=state.combine;alphaEnabled=state.alpha;fog=state.fog;
     std::copy(state.values,state.values+3,fogValues);std::copy(state.color,state.color+4,fogColor);
     int coverage=1;bool keepNativeAlpha=false;
-    if(alphaEnabled){
+    alphaFunction=modelVariant&&alphaEnabled?state.function:0;alphaReference=state.reference;
+    if(alphaEnabled&&!modelVariant){
         coverage=Coverage(state.function,state.reference,alpha,count,stride,state.opaque);
         // El resultado depende de los vértices: nunca reutilizar la cobertura.
         if(coverage==0){alphaEnabled=false;coverage=1;keepNativeAlpha=true;}
     }
     program=found->second.program;modern=true;Count(true);if(keepNativeAlpha&&RenderProfile::active)++nativeAlpha;reject=coverage<0;
 }
-Draw::~Draw(){if(modern&&alphaEnabled)glEnable(GL_ALPHA_TEST);}
+Draw::~Draw(){
+    if(RenderProfile::active&&modelRequest){
+        if(modern&&modelVariant)++modelDraws;else ++modelReference;
+    }
+    if(modern&&alphaEnabled)glEnable(GL_ALPHA_TEST);
+}
 void Draw::Apply(){
-    if(!modern)return;auto& p=pipelines.find(reference)->second;
+    if(!modern)return;auto& p=(modelVariant?modelPipelines:pipelines).find(reference)->second;
+    if(modelVariant){
+        ReadMatrices();
+        if(p.matrices!=matrixRevision){glUniformMatrix4fv(p.mvp,1,GL_FALSE,modelMVP);glUniformMatrix4fv(p.view,1,GL_FALSE,modelView);glUniformMatrix4fv(p.uv,1,GL_FALSE,modelTexture);p.matrices=matrixRevision;if(RenderProfile::active)++modelUploads;}
+        if(p.lastAlphaFunction!=alphaFunction){glUniform1i(p.alphaFunction,alphaFunction);p.lastAlphaFunction=alphaFunction;}
+        if(p.lastAlphaReference!=alphaReference){glUniform1f(p.alphaReference,alphaReference);p.lastAlphaReference=alphaReference;}
+    }
     if(!p.valid)glUniform1i(p.texture,0);
     if(!p.valid||p.lastTextured!=textured)glUniform1i(p.textured,textured);
     if(!p.valid||p.lastReject!=reject)glUniform1i(p.reject,reject);
@@ -278,5 +353,18 @@ void Draw::Apply(){
     p.valid=true;p.lastTextured=textured;p.lastReject=reject;p.lastFog=fog;p.lastCombine=combine;
     std::copy(fogValues,fogValues+3,p.lastValues);std::copy(fogColor,fogColor+4,p.lastColor);
     if(alphaEnabled)glDisable(GL_ALPHA_TEST);
+    if(modelVariant&&RenderProfile::active&&p.audit!=auditRevision){
+        p.audit=auditRevision;++modelChecks;unsigned errors=0;int value=0;float scalar=0,matrix[16];
+        glGetIntegerv(GL_CURRENT_PROGRAM,&value);if(static_cast<unsigned>(value)!=p.program)errors|=1;
+        glGetUniformiv(p.program,p.alphaFunction,&value);if(value!=alphaFunction)errors|=2;
+        glGetUniformfv(p.program,p.alphaReference,&scalar);if(scalar!=alphaReference)errors|=2;
+        glGetUniformfv(p.program,p.mvp,matrix);if(std::memcmp(matrix,modelMVP,sizeof(matrix)))errors|=4;
+        if(glIsEnabled(GL_ALPHA_TEST))errors|=8;
+        const auto legacy=ReadLegacyState();
+        if((glIsEnabled(GL_CULL_FACE)!=0)!=legacy.cull)errors|=16;
+        glGetIntegerv(GL_DEPTH_WRITEMASK,&value);if((value!=0)!=legacy.write)errors|=32;
+        for(unsigned attribute=0;attribute<3;++attribute){glGetVertexAttribiv(attribute,GL_VERTEX_ATTRIB_ARRAY_ENABLED,&value);if(!value)errors|=64;}
+        if(errors){++modelErrors;modelErrorMask|=errors;}
+    }
 }
 }

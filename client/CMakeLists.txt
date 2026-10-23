@@ -446,6 +446,7 @@ set(MU_HEADERS
     src/Render/Skinning.h
     src/Render/MeshDraw.h
     src/Render/TerrainDraw.h
+    src/Render/BMDDevice.h
     src/Render/Materials.h
     src/Render/FragmentStage.h
     src/Render/Backend/GL/FragmentPipeline.h
@@ -612,6 +613,9 @@ set(MU_PCH_USERS ${MU_SOURCES})
 list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
+# La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
+set_source_files_properties(src/Render/Backend/GL/Materials.cpp PROPERTIES
+    COMPILE_OPTIONS "$<$<STREQUAL:$<TARGET_PROPERTY:NAME>,mu97k>:/Yustdafx.h>")
 set_source_files_properties(src/stdafx.cpp PROPERTIES
     COMPILE_OPTIONS "/Ycstdafx.h")
 
@@ -713,3 +717,30 @@ add_executable(mu_terrain_draw_flow_test EXCLUDE_FROM_ALL tests/TerrainDrawFlow.
 target_include_directories(mu_terrain_draw_flow_test PRIVATE src)
 target_compile_features(mu_terrain_draw_flow_test PRIVATE cxx_std_17)
 add_test(NAME terrain_draw_flow COMMAND mu_terrain_draw_flow_test)
+
+# Verificación gráfica SDL3: obligatoria con Mesa en Linux, omisible si el
+# runner Windows no dispone de un contexto 3.3 (salida77, no un falso pase).
+if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
+    add_executable(mu_bmd_device_test EXCLUDE_FROM_ALL
+        tests/BMDDevice.cpp
+        src/Platform/GLFunctions.cpp src/Render/ResourceTables.cpp
+        src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp
+        src/Render/Backend/GL/Materials.cpp src/Render/Backend/GL/FragmentPipeline.cpp
+        src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/MeshDraw.cpp
+        src/Render/Backend/GL/Skinning.cpp)
+    target_include_directories(mu_bmd_device_test PRIVATE src ${MU_MINIAUDIO_INCLUDE_DIR})
+    target_compile_features(mu_bmd_device_test PRIVATE cxx_std_17)
+    target_link_libraries(mu_bmd_device_test PRIVATE SDL3::SDL3-static)
+    if(WIN32)
+        target_link_libraries(mu_bmd_device_test PRIVATE opengl32 glu32)
+    else()
+        target_link_libraries(mu_bmd_device_test PRIVATE GL GLU)
+    endif()
+    if(MSVC)
+        target_compile_options(mu_bmd_device_test PRIVATE /EHsc /fp:precise /UNDEBUG)
+    else()
+        target_compile_options(mu_bmd_device_test PRIVATE -UNDEBUG)
+    endif()
+    add_test(NAME bmd_device COMMAND mu_bmd_device_test)
+    set_tests_properties(bmd_device PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+endif()

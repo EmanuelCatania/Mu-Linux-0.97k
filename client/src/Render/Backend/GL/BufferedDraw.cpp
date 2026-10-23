@@ -87,6 +87,9 @@ bool Initialize() {
     glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,quadBuffer);
     glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,position));
+    glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,position));
+    glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,color));
+    glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,uv));
     glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,color));
     glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,uv));
@@ -107,6 +110,16 @@ void Release() {
 void NativeColor(float r,float g,float b,float a) { glColor4f(r,g,b,a); }
 void NativeUV(float u,float v) { glTexCoord2f(u,v); }
 void NativeVertex(float x,float y,float z) { glVertex3f(x,y,z); }
+Vertex CaptureAttributes(bool color,bool uv){
+    Vertex attributes{{},{1,1,1,1},{0,0,0,1}};
+    if(color)glGetFloatv(GL_CURRENT_COLOR,attributes.color);
+    if(uv){int active=0;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);if(active!=GL_TEXTURE0)glActiveTexture(GL_TEXTURE0);glGetFloatv(GL_CURRENT_TEXTURE_COORDS,attributes.uv);if(active!=GL_TEXTURE0)glActiveTexture(active);}
+    return attributes;
+}
+void Begin(Primitive primitive){
+    const unsigned modes[]{GL_POINTS,GL_LINES,GL_TRIANGLES,GL_QUADS,GL_TRIANGLE_FAN};
+    Begin(modes[static_cast<unsigned>(primitive)]);
+}
 void Begin(unsigned mode) {
     if (!program) { glBegin(mode);return; }
     stream.mode=mode;stream.vertices.clear();
@@ -191,7 +204,7 @@ void DrawIndexed(unsigned meshArray,unsigned meshBuffer,const Vertex* vertices,s
         glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
         if(active!=GL_TEXTURE0) glActiveTexture(active);
     }
-    FragmentPipelineGL::Draw material(program,&vertices[0].color[3],count,sizeof(Vertex));
+    FragmentPipelineGL::Draw material(program,&vertices[0].color[3],count,sizeof(Vertex),true);
     BindPipeline(material.Program(),meshArray,meshBuffer);material.Apply();
     glBufferData(GL_ARRAY_BUFFER,count*sizeof(Vertex),vertices,GL_STREAM_DRAW);
     RenderProfile::Draw(indices);

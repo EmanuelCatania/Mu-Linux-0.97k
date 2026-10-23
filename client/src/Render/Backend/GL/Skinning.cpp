@@ -183,7 +183,7 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
         paletteBase=static_cast<GLint>(paletteUsed/(4*sizeof(float)));
         paletteUsed+=bytes;uploaded=revision;
     }
-    FragmentPipelineGL::Draw material(program,&vertices[0].attributes.color[3],vertices.size(),sizeof(Vertex));
+    FragmentPipelineGL::Draw material(program,&vertices[0].attributes.color[3],vertices.size(),sizeof(Vertex),true);
     BufferedDraw::Activate(material.Program(),array,buffer);material.Apply();
     SelectUniforms(material.Program());
     if(!uniformsReady) glUniform1i(paletteLocation,1);
@@ -200,6 +200,9 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(Vertex),vertices.data(),GL_STREAM_DRAW);
     if(!layoutReady) {
     GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
+    glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.position));
+    glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.color));
+    glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,attributes.uv));
     glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.position));
     glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,attributes.color));
     glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);

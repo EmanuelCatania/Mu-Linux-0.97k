@@ -6,6 +6,10 @@
 // las primitivas ni el estado de materiales que establecen los callers.
 namespace BufferedDraw {
 struct Vertex { float position[3],color[4],uv[4]; };
+enum class Primitive { Points, Lines, Triangles, Quads, TriangleFan };
+// Datos de entrada de un productor aún compatible, nunca atributos implícitos
+// del shader BMD. Sólo se consulta lo que la malla realmente necesita.
+Vertex CaptureAttributes(bool color=true,bool uv=true);
 struct Stream {
     bool active=false;
     unsigned mode=0;
@@ -18,6 +22,7 @@ extern Stream stream;
 bool Initialize();
 void Release();
 void Begin(unsigned mode);
+void Begin(Primitive primitive);
 void End();
 // Cuatro esquinas completas; fan conserva la diagonal 0-2 del terreno.
 void Quad(const Vertex* corners,bool fan=true);

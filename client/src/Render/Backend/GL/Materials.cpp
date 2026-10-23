@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "Render/Materials.h"
+#include "Render/BMDDevice.h"
+#include "Render/MeshDraw.h"
 #include "Render/ResourceTables.h"
+#include <array>
+#include <vector>
 
 extern "C" void DbgLogPublic(const char*);
 
@@ -175,4 +179,96 @@ namespace FragmentPipelineGL {
 LegacyState ReadLegacyState(){
     return {DAT_083a412c,DAT_083a411c!=0,DAT_083a411e!=0,DAT_083a42e8!=0,DAT_083a411d!=0,DAT_083a4125!=0};
 }
+}
+
+namespace BMDDevice {
+namespace {
+void ReferenceSurface(unsigned flags,bool alpha,bool chrome=false){
+    if(flags&0x40)GL_SetBlendAdditive();
+    else if(flags&0x80)GL_SetBlendSrcAlpha();
+    else if(chrome&&(flags&0x10))GL_EnableLightMap();
+    else if(alpha)GL_SetBlendSrcOver('\x01');
+    else GL_ResetState();
+}
+}
+void Select(const PassState& s){
+    using P=Pass;
+    switch(s.pass){
+    case P::Color:case P::ColorAnimated:{
+        const bool alpha=s.pass==P::Color&&s.alpha;
+        if(!Materials::ApplySequence(MeshDraw::ColorMaterials(s.flags,alpha))){
+            ReferenceSurface(s.flags,false);GL_SetAlphaTest('\0');
+            if(alpha)GL_SetBlendSrcOver('\x01');
+        }break;
+    }
+    case P::Surface:{
+        GL_BindTextureSlot(s.textureSlot);
+        const bool alpha=(s.flags&0xc0)==0&&(s.alpha||(&DAT_083a7cc8)[std::size_t(s.textureSlot)*0x38]=='\x04');
+        if(!Materials::Apply(MeshDraw::SurfaceMaterial(s.flags,alpha)))ReferenceSurface(s.flags,alpha);
+        break;
+    }
+    case P::Chrome:{
+        const Materials::TexturedMaterial material{{s.textureSlot},MeshDraw::ChromeMaterial(s.flags,s.alpha),Materials::BindingOrder::MaterialFirst};
+        if(!Materials::ApplyTextured(material)){ReferenceSurface(s.flags,s.alpha,true);GL_BindTextureSlot(s.textureSlot);}break;
+    }
+    case P::Blend:{
+        const Materials::TexturedMaterial material{{s.textureSlot},MeshDraw::BlendMaterial(s.flags)};
+        if(!Materials::ApplyTextured(material)){
+            GL_BindTextureSlot(s.textureSlot);
+            if(s.flags&0x80)GL_SetBlendSrcAlpha();else GL_SetBlendAdditive();
+        }break;
+    }
+    case P::Metal:
+        if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){GL_SetBlendAdditive();GL_SetAlphaTest('\0');GL_DisableDepthWrites();}break;
+    case P::Glow:
+        if(!Materials::Select(Materials::Preset::Add))GL_SetBlendAdditive();break;
+    case P::Exit:case P::ShadowExit:
+        if(!Materials::Apply(MeshDraw::ExitMaterial()))GL_EnableDepthWrites();break;
+    case P::Shadow:{
+        Materials::Material noWrite;noWrite.depthWrite=Materials::Switch::Off;
+        const Materials::MaterialSequence sequence{{Materials::Describe(Materials::Preset::Untextured,false),noWrite},2};
+        if(!Materials::ApplySequence(sequence)){GL_SetAlphaTest('\0');GL_DisableDepthWrites();}break;
+    }
+    }
+}
+MeshScope::MeshScope(bool twoSided):cull(twoSided){
+    FragmentPipelineGL::EnterModel();
+    if(!cull&&twoSided&&glIsEnabled(GL_CULL_FACE)){glDisable(GL_CULL_FACE);legacyCull=true;}
+}
+MeshScope::~MeshScope(){FragmentPipelineGL::LeaveModel();if(legacyCull)glEnable(GL_CULL_FACE);}
+namespace {
+struct ModelFrame { int mode=0;std::array<double,16> matrix{};bool reference=false,captured=false; };
+std::vector<ModelFrame> modelFrames;
+unsigned MatrixKey(int mode){return mode==GL_PROJECTION?GL_PROJECTION_MATRIX:mode==GL_TEXTURE?GL_TEXTURE_MATRIX:GL_MODELVIEW_MATRIX;}
+}
+void BeforeMatrixChange(){
+    // Copia al escribir: las pasadas BMD habituales no modifican matrices y
+    // no necesitan consultas ni copias al cerrar cada modelo.
+    for(auto& frame:modelFrames)if(!frame.reference&&!frame.captured){
+        glGetDoublev(MatrixKey(frame.mode),frame.matrix.data());frame.captured=true;
+    }
+}
+void BeginModel(){
+    BufferedDraw::Flush();ModelFrame frame;frame.reference=!Materials::Enabled();
+    if(frame.reference)glPushMatrix();
+    else glGetIntegerv(GL_MATRIX_MODE,&frame.mode);
+    modelFrames.push_back(frame);FragmentPipelineGL::EnterModel();
+}
+void EndModel(){
+    BufferedDraw::Flush();
+    if(modelFrames.empty()){DbgLogPublic("PerfilR4 BMD: error_ambito_matriz=sin_entrada");return;}
+    const auto frame=modelFrames.back();modelFrames.pop_back();
+    if(frame.reference)glPopMatrix();
+    else if(frame.captured){
+        // Pila propia por valor. La frontera con productores aún compatibles
+        // sólo restaura la matriz si un callee la modificó; no usa glPush/Pop.
+        int current=0;glGetIntegerv(GL_MATRIX_MODE,&current);
+        if(current!=frame.mode)glMatrixMode(frame.mode);
+        double matrix[16];glGetDoublev(MatrixKey(frame.mode),matrix);
+        if(std::memcmp(matrix,frame.matrix.data(),sizeof(matrix)))glLoadMatrixd(frame.matrix.data());
+        if(current!=frame.mode){glMatrixMode(current);DbgLogPublic("PerfilR4 BMD: error_ambito_matriz=modo_no_balanceado");}
+    }
+    FragmentPipelineGL::LeaveModel();
+}
+
 }

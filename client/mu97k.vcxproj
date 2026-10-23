@@ -179,6 +179,7 @@
     <ClInclude Include="src\Render\Skinning.h" />
     <ClInclude Include="src\Render\MeshDraw.h" />
     <ClInclude Include="src\Render\TerrainDraw.h" />
+    <ClInclude Include="src\Render\BMDDevice.h" />
     <ClInclude Include="src\Render\Materials.h" />
     <ClInclude Include="src\Render\FragmentStage.h" />
     <ClInclude Include="src\Render\Backend\GL\FragmentPipeline.h" />

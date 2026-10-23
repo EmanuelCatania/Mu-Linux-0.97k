@@ -8,6 +8,9 @@ void Create(unsigned reference,const char* vertexSource);
 void Release(unsigned reference);
 void InvalidateTextures();
 void InvalidateBindings();
+void MatricesChanged();
+void EnterModel();
+void LeaveModel();
 void CapabilityChanged(unsigned capability);
 // Invalidar después de vaciar el lote y antes de modificar el material nativo.
 enum class MaterialPart : unsigned { Texture=1, Alpha=2, Fog=4, All=7 };
@@ -16,7 +19,7 @@ void MaterialChanged(MaterialPart part=MaterialPart::All);
 // Los atributos pueden proceder del stream general o de vértices BMD.
 class Draw {
 public:
-    Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride);
+    Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride,bool model=false);
     ~Draw();
     Draw(const Draw&)=delete;
     Draw& operator=(const Draw&)=delete;
@@ -24,7 +27,8 @@ public:
     void Apply();
 private:
     unsigned program=0,reference=0;
-    bool modern=false,alphaEnabled=false,textured=false,reject=false;
+    bool modern=false,alphaEnabled=false,textured=false,reject=false,modelVariant=false,modelRequest=false;
+    int alphaFunction=0;float alphaReference=0;
     int fog=0,combine=0;
     float fogValues[3]{},fogColor[4]{};
 };

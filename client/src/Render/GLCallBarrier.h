@@ -8,9 +8,10 @@
 // DESVIACION: antes de cambiar el pipeline o leer/escribir su salida, enviar
 // la geometría pendiente. Texto/listas/lecturas y stacks de atributos devuelven
 // además el control al pipeline de entrada. Los setters/cache no cambian.
+namespace BMDDevice { void BeforeMatrixChange(); }
 namespace BufferedDraw {
 template<class F,class... A> inline auto StateChange(F function,A... args) -> decltype(function(args...)) {
-    Flush();return function(args...);
+    Flush();BMDDevice::BeforeMatrixChange();FragmentPipelineGL::MatricesChanged();return function(args...);
 }
 template<class F,class... A> inline auto MaterialChange(FragmentPipelineGL::MaterialPart part,F function,A... args) -> decltype(function(args...)) {
     Flush();FragmentPipelineGL::MaterialChanged(part);return function(args...);
@@ -121,3 +122,17 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define gluPerspective(...) ::BufferedDraw::StateChange(::gluPerspective,__VA_ARGS__)
 #define gluLookAt(...) ::BufferedDraw::StateChange(::gluLookAt,__VA_ARGS__)
 #define gluPickMatrix(...) ::BufferedDraw::StateChange(::gluPickMatrix,__VA_ARGS__)
+
+// Las matrices heredadas de otros productores sólo se traducen en la frontera
+// de la escena; BMD consume datos uniformes, no matrices implícitas del shader.
+#define glLoadIdentity() ::BufferedDraw::StateChange(::glLoadIdentity)
+#define glLoadMatrixf(...) ::BufferedDraw::StateChange(::glLoadMatrixf,__VA_ARGS__)
+#define glLoadMatrixd(...) ::BufferedDraw::StateChange(::glLoadMatrixd,__VA_ARGS__)
+#define glMultMatrixd(...) ::BufferedDraw::StateChange(::glMultMatrixd,__VA_ARGS__)
+#define glTranslatef(...) ::BufferedDraw::StateChange(::glTranslatef,__VA_ARGS__)
+#define glTranslated(...) ::BufferedDraw::StateChange(::glTranslated,__VA_ARGS__)
+#define glScalef(...) ::BufferedDraw::StateChange(::glScalef,__VA_ARGS__)
+#define glScaled(...) ::BufferedDraw::StateChange(::glScaled,__VA_ARGS__)
+#define glRotated(...) ::BufferedDraw::StateChange(::glRotated,__VA_ARGS__)
+#define glFrustum(...) ::BufferedDraw::StateChange(::glFrustum,__VA_ARGS__)
+#define glOrtho(...) ::BufferedDraw::StateChange(::glOrtho,__VA_ARGS__)

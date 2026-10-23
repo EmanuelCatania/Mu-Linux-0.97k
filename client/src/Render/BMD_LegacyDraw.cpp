@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
+#include "Render/BMDDevice.h"
 #include "Render/LooseWingVisuals.h"
 #include "Render/MaterialVisuals.h"
 #include "Platform/ITimer.h"
@@ -102,43 +103,20 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     int mode;
     if ((fl & 1) == 1) {
         mode = 1;
-        if(!Materials::ApplySequence(MeshDraw::ColorMaterials(fl,false))){
-            if ((fl & 0x40) == 0x40) GL_SetBlendAdditive();
-            else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-            else GL_ResetState();
-            GL_SetAlphaTest('\0');
-        }
+        BMDDevice::Select({BMDDevice::Pass::ColorAnimated,static_cast<unsigned>(fl)});
         BufferedDraw::Color3fv(bodyLight);
     } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
         mode = 2;
-        const Materials::TexturedMaterial blend{{tex},MeshDraw::BlendMaterial(fl)};
-        if(!Materials::ApplyTextured(blend)){
-            GL_BindTextureSlot(tex);
-            if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-            else GL_SetBlendAdditive();
-        }
+        BMDDevice::Select({BMDDevice::Pass::Blend,static_cast<unsigned>(fl),tex});
         BufferedDraw::Color3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
         lightEnable = 0;
     } else if ((fl & 2) == 2) {
         mode = 2;
-        GL_BindTextureSlot(tex);
-        // La consulta de Components conserva la posición posterior al binding.
-        const bool surfaceAlpha=(fl & 0xc0)==0 && (f3 < _DAT_00552544 ||
-            (&DAT_083a7cc8)[tex * 0x38] == '\x04');
-        if(!Materials::Apply(MeshDraw::SurfaceMaterial(fl,surfaceAlpha))){
-            if ((fl & 0x40) == 0x40) GL_SetBlendAdditive();
-            else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-            else if (surfaceAlpha) GL_SetBlendSrcOver('\x01');
-            else GL_ResetState();
-        }
+        BMDDevice::Select({BMDDevice::Pass::Surface,static_cast<unsigned>(fl),tex,f3 < _DAT_00552544});
     } else if ((fl & 0x40) == 0x40) {
         if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
-        if(!Materials::ApplySequence(MeshDraw::MetalMaterials())){
-            GL_SetBlendAdditive();
-            GL_SetAlphaTest('\0');
-            GL_DisableDepthWrites();
-        }
+        BMDDevice::Select({BMDDevice::Pass::Metal});
     } else {
         mode = 2;
     }
@@ -150,7 +128,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // asi que la onda nunca se aplicaba.
     const bool deform = (a & 1) != 0;
 
-    BufferedDraw::Begin(GL_TRIANGLES);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
     const int polyCount = *(short *)(meshEntry + 10);
     for (int poly = 0; poly < polyCount; ++poly) {
         const char *tri = (const char *)(*(int *)(meshEntry + 0x1c) + poly * 0x24);
