@@ -23,11 +23,16 @@
 #include <unordered_map>
 #include <vector>
 
+extern "C" void DbgLogPublic(const char*);
 namespace MeshDraw {
 namespace {
 struct Corner { int position,normal,uv; };
 struct Mesh {
     GLuint array=0,buffer=0,elements=0;
+    // Malla residente: vértices fijos del BMD subidos una vez (Skinning::StaticVertex).
+    GLuint residentArray=0,residentBuffer=0;
+    const unsigned char* residentVertices=nullptr;
+    int maxBone=-1;bool residentTried=false;
     std::vector<unsigned char> faces;
     std::vector<Corner> corners;
     std::vector<unsigned> indices;
@@ -35,13 +40,54 @@ struct Mesh {
     std::vector<int> positions,normals;
 };
 std::unordered_map<const void*,Mesh> meshes;
+bool residentEnabled=true;
 std::vector<BufferedDraw::Vertex> vertices;
 short ReadShort(const unsigned char* p) { short value;std::memcpy(&value,p,sizeof(value));return value; }
 void Delete(Mesh& m) {
     if(m.array) glDeleteVertexArrays(1,&m.array);
     if(m.buffer) glDeleteBuffers(1,&m.buffer);
     if(m.elements) glDeleteBuffers(1,&m.elements);
-    m.array=m.buffer=m.elements=0;
+    if(m.residentArray) glDeleteVertexArrays(1,&m.residentArray);
+    if(m.residentBuffer) glDeleteBuffers(1,&m.residentBuffer);
+    m.array=m.buffer=m.elements=m.residentArray=m.residentBuffer=0;
+    m.residentVertices=nullptr;m.maxBone=-1;m.residentTried=false;
+}
+// DESVIACION: los datos fijos de cada esquina (posición y normal en el
+// espacio del hueso, hueso y UV) se suben una vez por malla. Por cuadro sólo
+// viaja la paleta de huesos; el color y el desplazamiento de UV son uniformes.
+bool Resident(Mesh& m,const Input& input) {
+    if(m.residentArray && m.residentVertices==input.rawVertices) return true;
+    if(m.residentTried && m.residentVertices==input.rawVertices) return false;
+    if(m.residentArray) { glDeleteVertexArrays(1,&m.residentArray);glDeleteBuffers(1,&m.residentBuffer);m.residentArray=m.residentBuffer=0; }
+    m.residentTried=true;m.residentVertices=input.rawVertices;m.maxBone=-1;
+    if(!input.rawVertices) return false;
+    std::vector<Skinning::StaticVertex> data(m.corners.size());
+    for(std::size_t i=0;i<m.corners.size();++i) {
+        const auto& c=m.corners[i];auto& v=data[i];
+        short bone;std::memcpy(&bone,input.rawVertices+c.position*16,2);
+        if(bone<0) return false;
+        std::memcpy(v.position,input.rawVertices+c.position*16+4,sizeof(v.position));v.bone=float(bone);
+        m.maxBone=std::max(m.maxBone,int(bone));
+        v.normal[0]=v.normal[1]=v.normal[2]=v.normal[3]=0;
+        if(input.rawNormals && c.normal>=0 && c.normal<input.normalCount) {
+            short normalBone;std::memcpy(&normalBone,input.rawNormals+c.normal*20,2);
+            if(normalBone<0) return false;
+            std::memcpy(v.normal,input.rawNormals+c.normal*20+4,3*sizeof(float));v.normal[3]=float(normalBone);
+            m.maxBone=std::max(m.maxBone,int(normalBone));
+        }
+        v.uv[0]=v.uv[1]=0;
+        if(input.uv && c.uv>=0 && c.uv<input.uvCount) { v.uv[0]=input.uv[c.uv*2];v.uv[1]=input.uv[c.uv*2+1]; }
+    }
+    BufferedDraw::Suspend();
+    GLint array,buffer;glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&array);glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&buffer);
+    glGenVertexArrays(1,&m.residentArray);glGenBuffers(1,&m.residentBuffer);
+    glBindVertexArray(m.residentArray);glBindBuffer(GL_ARRAY_BUFFER,m.residentBuffer);
+    glBufferData(GL_ARRAY_BUFFER,data.size()*sizeof(Skinning::StaticVertex),data.data(),GL_STATIC_DRAW);
+    Skinning::ResidentLayout(m.residentBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,m.elements);
+    glBindVertexArray(array);glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    if(!m.residentArray || !m.residentBuffer) return false;
+    return true;
 }
 bool Topology(Mesh& m,const Input& input) {
     const std::size_t size=std::size_t(input.faceCount)*36;
@@ -89,6 +135,10 @@ bool Topology(Mesh& m,const Input& input) {
     m.faces.assign(input.faces,input.faces+size);return true;
 }
 }
+void ToggleResident() {
+    BufferedDraw::Suspend();residentEnabled=!residentEnabled;
+    DbgLogPublic(residentEnabled?"BMD: mallas residentes":"BMD: mallas armadas en CPU");
+}
 void Release() {
     BufferedDraw::Suspend();
     for(auto& entry:meshes) Delete(entry.second);
@@ -110,6 +160,24 @@ bool Draw(const Input& input) {
     float color[4],uv[4];std::copy(captured.color,captured.color+4,color);std::copy(captured.uv,captured.uv+4,uv);
     if(chrome) { std::copy(input.bodyLight,input.bodyLight+3,color);color[3]=input.alpha<1.f?input.alpha:1.f; }
     else if(lit) color[3]=input.alpha<1.f?input.alpha:1.f;
+    if(residentEnabled && !chrome && Resident(mesh,input)) {
+        const bool offset=texture && input.offset;
+        const Skinning::ResidentDraw draw{input.model,input.key,mesh.residentArray,mesh.indices.size(),mesh.maxBone,
+            input.positions,input.positionCount,input.colors,input.normalCount,lit,texture,input.bodyLight,color,uv,
+            offset?input.u:0.f,offset?input.v:0.f};
+        if(Skinning::DrawResident(draw)) {
+            // Mismo contrato que la ruta CPU: el color y la UV actuales quedan
+            // en los de la última esquina emitida.
+            const auto& c=mesh.corners[mesh.indices.back()];
+            float lastColor[4],lastUV[4];std::copy(color,color+4,lastColor);std::copy(uv,uv+4,lastUV);
+            if(lit) std::memcpy(lastColor,input.colors+c.normal*3,sizeof(float)*3);
+            if(texture) {
+                lastUV[0]=input.uv[c.uv*2]+(offset?input.u:0.f);lastUV[1]=input.uv[c.uv*2+1]+(offset?input.v:0.f);
+                lastUV[2]=0;lastUV[3]=1;
+            }
+            glColor4fv(lastColor);glTexCoord4fv(lastUV);return true;
+        }
+    }
     vertices.resize(mesh.corners.size());
     for(std::size_t i=0;i<mesh.corners.size();++i) {
         const auto& c=mesh.corners[i];auto& vertex=vertices[i];

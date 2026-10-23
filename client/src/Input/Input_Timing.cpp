@@ -5,6 +5,7 @@
 #include "Render/TerrainDraw.h"
 #include "Render/Materials.h"
 #include "Render/BMDDevice.h"
+#include "Render/MeshDraw.h"
 #include "Render/FragmentStage.h"
 #include "Platform/IInput.h"
 #include "Platform/ITimer.h"
@@ -16,7 +17,9 @@
 namespace { bool showFps=false; }
 void ToggleFpsCounter() {
     // DESVIACION: Shift+F12 alterna R1; F12 solo conserva el contador liviano.
-    if((Platform::GetInput().KeyState(VK_MENU)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)) { FragmentStage::Toggle();showFps=true; }
+    // Ctrl+Alt+Shift+F12 alterna las mallas BMD residentes frente a la ruta CPU.
+    if((Platform::GetInput().KeyState(VK_MENU)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)&&(Platform::GetInput().KeyState(VK_CONTROL)&0x8000)) { MeshDraw::ToggleResident();showFps=true; }
+    else if((Platform::GetInput().KeyState(VK_MENU)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)) { FragmentStage::Toggle();showFps=true; }
     else if(Platform::GetInput().KeyState(VK_MENU)&0x8000) {
         // DESVIACION R3b: Ctrl+Alt+F12 compara dos pasadas frente a composición.
         if(Platform::GetInput().KeyState(VK_CONTROL)&0x8000)TerrainDraw::ToggleComposition();

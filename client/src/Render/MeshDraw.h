@@ -53,8 +53,14 @@ struct Input {
     const float* bodyLight;
     const void* model=nullptr;
     const BufferedDraw::Vertex* attributes=nullptr;
+    // Arrays del BMD (hueso + posición / normal locales): habilitan la malla
+    // residente en la GPU. Sin ellos se usa la ruta que arma vértices en CPU.
+    const unsigned char* rawVertices=nullptr;
+    const unsigned char* rawNormals=nullptr;
 };
 void Release();
+// Diagnóstico: alterna la malla residente frente a la ruta que arma vértices en CPU.
+void ToggleResident();
 // DESVIACION: vértices únicos e índices persistentes; no expandir cada
 // esquina a posición/color/UV en CPU. El skinning y los datos lógicos siguen allí.
 bool Draw(const Input& input);

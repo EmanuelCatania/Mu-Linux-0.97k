@@ -420,7 +420,8 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         reinterpret_cast<const float*>(&DAT_060db65c)+meshIndex*15000*3,
         reinterpret_cast<const float*>(*(int*)(pcVar1+0x18)),&DAT_05828d5c,
         renderMode,param_2_b0!='\0',bVar5!=0,alpha,uvU,uvV,
-        reinterpret_cast<const float*>(static_cast<char*>(bmd_obj)+0x48),bmd_obj,&attributes
+        reinterpret_cast<const float*>(static_cast<char*>(bmd_obj)+0x48),bmd_obj,&attributes,
+        reinterpret_cast<const unsigned char*>(*(int*)(pcVar1+0x10)),reinterpret_cast<const unsigned char*>(*(int*)(pcVar1+0x14))
     };
     if (MeshDraw::Draw(meshInput)) {
         BMDDevice::Select({BMDDevice::Pass::Exit});
