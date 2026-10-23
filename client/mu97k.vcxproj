@@ -185,6 +185,7 @@
     <ClInclude Include="src\Render\Backend\GL\TerrainRenderer.h" />
     <ClInclude Include="src\Render\RenderProfile.h" />
     <ClInclude Include="src\Render\ProfileStats.h" />
+    <ClInclude Include="src\Render\Backend\GL\ProfileUploads.h" />
     <ClInclude Include="src\Render\Backend\GL\ProfileQueries.h" />
     <ClInclude Include="src\Render\BufferedDraw.h" />
     <ClInclude Include="src\Render\TransformMath.h" />

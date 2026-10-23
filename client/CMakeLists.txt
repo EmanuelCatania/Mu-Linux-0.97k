@@ -452,6 +452,7 @@ set(MU_HEADERS
     src/Render/Backend/GL/TerrainRenderer.h
     src/Render/RenderProfile.h
     src/Render/ProfileStats.h
+    src/Render/Backend/GL/ProfileUploads.h
     src/Render/Backend/GL/ProfileQueries.h
     src/Render/BufferedDraw.h
     src/Render/TransformMath.h
