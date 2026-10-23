@@ -61,6 +61,9 @@ bool Topology(Mesh& m,const Input& input) {
     glGenVertexArrays(1,&m.array);glGenBuffers(1,&m.buffer);glGenBuffers(1,&m.elements);
     glBindVertexArray(m.array);glBindBuffer(GL_ARRAY_BUFFER,m.buffer);
     using Vertex=BufferedDraw::Vertex;
+    glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,position));
+    glEnableVertexAttribArray(1);glVertexAttribPointer(1,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,color));
+    glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,uv));
     glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,position));
     glEnableClientState(GL_COLOR_ARRAY);glColorPointer(4,GL_FLOAT,sizeof(Vertex),(void*)offsetof(Vertex,color));
     glClientActiveTexture(GL_TEXTURE0);glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -89,14 +92,8 @@ bool Draw(const Input& input) {
        (texture && (mesh.minimum.uv<0 || mesh.maximum.uv>=input.uvCount))) return false;
     // DESVIACION: BMD 0x00440D50 proporciona todos los atributos en las
     // pasadas iluminadas/texturadas y chrome. Consultar sólo lo heredado.
-    float color[4]{},uv[4]{};
-    if(!lit && !chrome) glGetFloatv(GL_CURRENT_COLOR,color);
-    if(!texture && !chrome) {
-        GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
-        if(active!=GL_TEXTURE0) glActiveTexture(GL_TEXTURE0);
-        glGetFloatv(GL_CURRENT_TEXTURE_COORDS,uv);
-        if(active!=GL_TEXTURE0) glActiveTexture(active);
-    }
+    const auto captured=input.attributes?*input.attributes:BufferedDraw::CaptureAttributes(!lit&&!chrome,!texture&&!chrome);
+    float color[4],uv[4];std::copy(captured.color,captured.color+4,color);std::copy(captured.uv,captured.uv+4,uv);
     if(chrome) { std::copy(input.bodyLight,input.bodyLight+3,color);color[3]=input.alpha<1.f?input.alpha:1.f; }
     else if(lit) color[3]=input.alpha<1.f?input.alpha:1.f;
     vertices.resize(mesh.corners.size());

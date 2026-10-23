@@ -35,6 +35,8 @@
 // not game logic. The post-hash render logic IS implemented.
 
 #include "stdafx.h"
+#include "Render/BMDDevice.h"
+#include "Render/BufferedDraw.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
 #include "globals.h"
@@ -324,7 +326,7 @@ LAB_render_dispatch:
                          AsObject(param_1)->Alpha, 3,
                          AsObject(param_1)->BlendMeshLight, AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  0xffffffff);
-            glPopMatrix();
+            BMDDevice::EndModel();
             return;
         }
     } else if (gMapManager.GetCurrentMap() == 4) {
@@ -393,7 +395,7 @@ LAB_substate4_done:
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  0x492);
-            glPopMatrix();
+            BMDDevice::EndModel();
             return;
         }
     } else if (gMapManager.GetCurrentMap() > 10 && gMapManager.GetCurrentMap() < 0x11) {
@@ -405,9 +407,9 @@ LAB_substate4_done:
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                          0xffffffff);
-            glPopMatrix();
-            GL_SetBlendSrcOver('\x01');
-            glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+            BMDDevice::EndModel();
+            BMDDevice::Select({BMDDevice::Pass::ShadowBlend});
+            BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
             float wx = AsObject(param_1)->Position[0];
             float wy = AsObject(param_1)->Position[1];
             *(float *)((int)model + 0x74) = RequestTerrainHeight(wx, wy);
@@ -489,7 +491,7 @@ LAB_substate4_done:
         BMD__RenderMesh(model, 2.8026e-45f, 0x42,
                      AsObject(param_1)->Alpha, 1, wave,
                      AsObject(param_1)->BlendMeshTexCoordU,  AsObject(param_1)->BlendMeshTexCoordV, 0xffffffff);
-        glPopMatrix();
+        BMDDevice::EndModel();
         goto LAB_postprocess;
     }
 
@@ -515,7 +517,7 @@ LAB_substate4_done:
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  0xffffffff);
-        glPopMatrix();
+        BMDDevice::EndModel();
         MoltSilhouette_Render((unsigned char *)model, param_1);
         goto LAB_postprocess;
     }
@@ -752,7 +754,7 @@ LAB_postprocess:
         BMD__RenderMesh(model, 4.2039e-45f, 0x44,
                      AsObject(param_1)->Alpha, 3, wave2,
                      AsObject(param_1)->BlendMeshTexCoordU, modFrac, 0xffffffff);
-        glPopMatrix();
+        BMDDevice::EndModel();
     }
 
     // ── Types 0x178/0x177: extra zero-position render ─────────────────────────

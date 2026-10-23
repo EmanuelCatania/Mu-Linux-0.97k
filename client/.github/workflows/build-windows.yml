@@ -34,7 +34,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fuentes de CMake == .vcxproj
-        run: python .github/scripts/check_cmake_sources.py
+        run: |
+          python .github/scripts/check_cmake_sources.py
+          python .github/scripts/check_bmd_boundary.py
 
       - name: Configurar
         run: cmake -S . -B build -A ${{ matrix.target.architecture }} -T v143

@@ -1,5 +1,6 @@
 #pragma once
 #include "Render/Materials.h"
+#include "Render/BufferedDraw.h"
 
 namespace MeshDraw {
 // DESVIACION R4l: misma prioridad de selección que BMD__RenderMesh y su
@@ -51,6 +52,7 @@ struct Input {
     float alpha,u,v;
     const float* bodyLight;
     const void* model=nullptr;
+    const BufferedDraw::Vertex* attributes=nullptr;
 };
 void Release();
 // DESVIACION: vértices únicos e índices persistentes; no expandir cada

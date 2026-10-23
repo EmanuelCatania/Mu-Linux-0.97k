@@ -15,6 +15,8 @@
 //   BMD__BeginRender (0x00440D30) — glPushMatrix
 
 #include "stdafx.h"
+#include "Render/BMDDevice.h"
+#include "Render/BufferedDraw.h"
 #include "Render/MaterialVisuals.h"
 
 
@@ -107,7 +109,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
         BMD__BeginRender();
         // glColor3f espera float: leer como float, no como undefined4 (int → float = basura).
-        glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
+        BufferedDraw::Color3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                   *(float *)((int)param_1 + 0x50));
         BMD__RenderMesh(param_1, 4.2039e-45f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
@@ -170,17 +172,17 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
             *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
             BMD__BeginRender();
             // Leer como float, no como undefined4 (int). Alpha 0x3f4ccccd=0.8f, 0x3f000000=0.5f.
-            glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
+            BufferedDraw::Color4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.8f);
             BMD__RenderMesh(param_1, 1.4013e-45f, 2, 0.8f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
-            glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
+            BufferedDraw::Color4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.5f);
             BMD__RenderMesh(param_1, 4.2039e-45f, 2, 0.5f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
-            glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
+            BufferedDraw::Color3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50));
             BMD__RenderMesh(param_1, 0.0f, 2, 1.0f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
@@ -194,7 +196,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
             BMD__RenderMesh(param_1, 4.2039e-45f, 2, 1.0f, 3,
                          *(float *)(param_2 + 0x68),
                          sample.u, fVar9, uVar5);
-            glPopMatrix();
+            BMDDevice::EndModel();
             return;
           }
           BMD__RenderBody(param_1, param_5, param_4, *(int *)(param_2 + 100),
@@ -208,7 +210,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3e99999a;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3e99999a;
         // 0x3e99999a = bits de 0.3f (≈ gris oscuro)
-        glColor3f(0.3f, 0.3f, 0.3f);
+        BufferedDraw::Color3f(0.3f, 0.3f, 0.3f);
         BMD__RenderMesh(param_1, 2.8026e-45f, 1, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
@@ -216,7 +218,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
         // 0x3f800000 = bits de 1.0f (blanco)
-        glColor3f(1.0f, 1.0f, 1.0f);
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
         BMD__RenderMesh(param_1, 2.8026e-45f, 0x44, 1.0f, 2,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      WorldTime * _DAT_005524f8, 0x492);
@@ -235,13 +237,13 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(float *)((int)param_1 + 0x48) = (float)fVar2;
         *(float *)((int)param_1 + 0x4c) = (float)fVar2;
         *(float *)((int)param_1 + 0x50) = (float)fVar2;
-        glColor3f(fVar9, fVar9, fVar9);
+        BufferedDraw::Color3f(fVar9, fVar9, fVar9);
         fVar11 = WorldTime * _DAT_00552a40;
         fVar9  = *(float *)(param_2 + 0x68);
         fVar10 = WorldTime * _DAT_00552868;
       }
       BMD__RenderMesh(param_1, 2.8026e-45f, 0x42, 1.0f, 2, fVar9, fVar10, fVar11, 0xffffffff);
-      glPopMatrix();
+      BMDDevice::EndModel();
       return;
     }
     // param_3 == 0x316

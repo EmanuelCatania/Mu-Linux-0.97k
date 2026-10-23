@@ -22,13 +22,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verificar fuentes
-        run: python .github/scripts/check_cmake_sources.py
+        run: |
+          python .github/scripts/check_cmake_sources.py
+          python .github/scripts/check_bmd_boundary.py
       - name: Dependencias de sistema Linux x86
         if: runner.os == 'Linux'
         run: |
+          # El runner usa mirror+file: cambiar también su lista de prioridades.
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
+          sudo sed -i 's|http://azure\.archive\.ubuntu\.com/ubuntu/|https://archive.ubuntu.com/ubuntu/|g' /etc/apt/sources.list
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config
+          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri:i386
       - name: Configurar Windows
         if: runner.os == 'Windows'
         run: cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
@@ -37,12 +42,29 @@ jobs:
         env:
           PKG_CONFIG_LIBDIR: /usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig
         run: cmake -S . -B build -G Ninja -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }}
-      - name: Compilar
-        run: cmake --build build --config ${{ matrix.config }} --parallel 4
       - name: Verificar crecimiento de recursos
         run: |
-          cmake --build build --config ${{ matrix.config }} --target mu_resource_tables_test mu_frame_pointer_set_test mu_transform_workers_test mu_render_profile_test mu_render_profile_flow_test mu_terrain_draw_flow_test --parallel 4
-          ctest --test-dir build -C ${{ matrix.config }} --output-on-failure
+          cmake --build build --config ${{ matrix.config }} --target mu_resource_tables_test mu_frame_pointer_set_test mu_transform_workers_test mu_render_profile_test mu_render_profile_flow_test mu_terrain_draw_flow_test mu_bmd_device_test --parallel 4
+          ctest --test-dir build -C ${{ matrix.config }} -E bmd_device --output-on-failure
+      - name: Verificar BMD con Mesa (sin pantalla física)
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          MU_REQUIRE_GL_TEST: "1"
+          SDL_VIDEODRIVER: x11
+        run: xvfb-run -a -s "-screen 0 1280x1024x24" ctest --test-dir build -C ${{ matrix.config }} -R "^bmd_device$" --output-on-failure
+      - name: Diagnóstico gráfico si falla Linux
+        if: failure() && runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          MU_REQUIRE_GL_TEST: "1"
+          SDL_VIDEODRIVER: x11
+        run: xvfb-run -a -s "-screen 0 1280x1024x24" gdb -batch -ex run -ex "thread apply all bt" --args build/mu_bmd_device_test
+      - name: Verificar BMD en el driver disponible de Windows
+        if: runner.os == 'Windows'
+        run: ctest --test-dir build -C ${{ matrix.config }} -R "^bmd_device$" --output-on-failure
+      - name: Compilar
+        run: cmake --build build --config ${{ matrix.config }} --parallel 4
       - name: Verificar ABI y empaquetar Release Linux
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -64,4 +86,5 @@ jobs:
           path: |
             bin/Client/main.exe
             build/bin/main
+            build/Testing/Temporary/LastTest.log
           if-no-files-found: error
