@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 struct RenderPose {
     float position[3] = {};
@@ -44,3 +45,6 @@ bool RenderSnapshots_DamagePoint(int slot, RenderPosePair& out);
 
 // Objetos del mundo registrados por CreateObject, con generación de su nodo.
 bool RenderSnapshots_Object(const void* node, float maxDisplacement, RenderPosePair& out);
+// Objetos del mapa cuya pose cambió en el último paso (o sin continuidad).
+// Los quietos ya tienen en memoria la pose que daría la interpolación.
+const std::vector<const void*>& RenderSnapshots_MovingObjects();
