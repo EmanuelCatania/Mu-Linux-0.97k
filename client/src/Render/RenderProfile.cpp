@@ -31,6 +31,7 @@ struct Window {
 constexpr std::size_t TextCount=static_cast<std::size_t>(TextWork::Count);
 double frameTimes[PassCount]{},textTimes[TextCount]{},interpolationTimes[3]{};
 std::array<std::vector<double>,3> interpolationSamples;
+unsigned interpolationDepth[3]{};
 struct Uploads { std::uint64_t textureBytes=0,bufferBytes=0,allocated=0,textures=0,buffers=0,repeated=0,bitmapStrings=0,atlasStrings=0; } uploads;
 std::unordered_map<unsigned,unsigned> textureUploads;
 struct TextureInfo { std::uint64_t bytes=0,calls=0;unsigned maxPerFrame=0; };
@@ -151,8 +152,8 @@ Scope::Scope(Pass pass):previous(current),measured(active) { if(measured){Switch
 Scope::~Scope() { if(measured && active)Switch(previous); }
 TextScope::TextScope(TextWork value):work(value),measured(active) {if(measured && textDepth[static_cast<std::size_t>(work)]++==0)start=Platform::GetTimer().Start();}
 TextScope::~TextScope(){if(measured && --textDepth[static_cast<std::size_t>(work)]==0 && active)textTimes[static_cast<std::size_t>(work)]+=Platform::GetTimer().Wait(start,0);}
-InterpolationScope::InterpolationScope(InterpolationWork value):work(value),measured(active){if(measured)start=Platform::GetTimer().Start();}
-InterpolationScope::~InterpolationScope(){if(measured && active)interpolationTimes[static_cast<std::size_t>(work)]+=Platform::GetTimer().Wait(start,0);}
+InterpolationScope::InterpolationScope(InterpolationWork value):work(value),measured(active){if(measured && interpolationDepth[static_cast<std::size_t>(work)]++==0)start=Platform::GetTimer().Start();}
+InterpolationScope::~InterpolationScope(){if(measured && --interpolationDepth[static_cast<std::size_t>(work)]==0 && active)interpolationTimes[static_cast<std::size_t>(work)]+=Platform::GetTimer().Wait(start,0);}
 void TextString(bool bitmap){if(!active)return;if(bitmap)++uploads.bitmapStrings;else ++uploads.atlasStrings;}
 void TextureUpload(unsigned texture,std::uint64_t bytes,std::uint64_t allocated){
     if(!active)return;uploads.textureBytes+=bytes;uploads.allocated+=allocated;++uploads.textures;

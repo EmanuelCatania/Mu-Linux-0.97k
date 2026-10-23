@@ -58,9 +58,9 @@ int main(){
  CHECK(clockCalls==0 && flushes==0 && gpuBegins==0 && logs.empty());
  {
  Frame f(true,7);
- {TextScope text(TextWork::Measure);now+=1;}
+ {TextScope text(TextWork::Measure);{TextScope nested(TextWork::Measure);now+=1;}}
  {TextScope text(TextWork::Raster);now+=2;}
- {InterpolationScope interpolation(InterpolationWork::Capture);now+=1;}
+ {InterpolationScope interpolation(InterpolationWork::Capture);{InterpolationScope nested(InterpolationWork::Capture);now+=1;}}
  TextString(true);TextString(false);
  ProfileUploadGL::Image2D(image,0xDE1,0,4,2,3,0,0x1908,0x1401,(void*)1);
  ProfileUploadGL::Image2D(image,0xDE1,0,4,2,3,0,0x1908,0x1401,(void*)1);
