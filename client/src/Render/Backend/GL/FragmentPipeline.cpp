@@ -165,9 +165,12 @@ void ReplaceAll(std::string& text,const std::string& from,const std::string& to)
     std::size_t pos=0;while((pos=text.find(from,pos))!=std::string::npos){text.replace(pos,from.size(),to);pos+=to.size();}
 }
 std::string ModelVertex(const char* source){
-    std::string text(source);ReplaceAll(text,"#version 330 compatibility","#version 330 core");
+    std::string text(source);const bool invariant=text.find("ftransform()")!=std::string::npos;ReplaceAll(text,"#version 330 compatibility","#version 330 core");
     const auto end=text.find('\n');text.insert(end+1,
-        "#define EXPLICIT_FRAGMENT\nlayout(location=0) in vec3 bmdPosition;\nlayout(location=1) in vec4 bmdPrimary;\nlayout(location=2) in vec4 bmdCoord;\nuniform mat4 bmdMVP,bmdView,bmdTexture;\nout vec4 bmdColor,bmdUV;\nout float bmdFog;\ninvariant gl_Position;\n");
+        "#define EXPLICIT_FRAGMENT\nlayout(location=0) in vec3 bmdPosition;\nlayout(location=1) in vec4 bmdPrimary;\nlayout(location=2) in vec4 bmdCoord;\nuniform mat4 bmdMVP,bmdView,bmdTexture;\nout vec4 bmdColor,bmdUV;\nout float bmdFog;\n");
+    // Igualar la invariancia del productor: ftransform la exige; el skinning
+    // original no la declara. Añadirla altera la aritmética en algunos drivers.
+    if(invariant)text.insert(end+1,"invariant gl_Position;\n");
     ReplaceAll(text,"ftransform()","bmdMVP*vec4(bmdPosition,1)");
     ReplaceAll(text,"gl_ModelViewProjectionMatrix","bmdMVP");ReplaceAll(text,"gl_ModelViewMatrix","bmdView");ReplaceAll(text,"gl_TextureMatrix[0]","bmdTexture");
     ReplaceAll(text,"gl_Vertex","vec4(bmdPosition,1)");ReplaceAll(text,"gl_Color","bmdPrimary");ReplaceAll(text,"gl_MultiTexCoord0","bmdCoord");

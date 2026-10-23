@@ -128,12 +128,22 @@ Image DrawCase(bool modern,int view,bool alpha,int path){
     }
     BufferedDraw::Suspend();glDeleteTextures(1,&texture);FragmentPipelineGL::InvalidateTextures();DAT_00561574=0xffffffffu;assert(glGetError()==GL_NO_ERROR);return image;
 }
+// Diagnóstico sólo ante fallo: recuperar la matriz de la referencia mediante
+// transform feedback permite distinguir composición de matrices y rasterizado.
+void DumpNativeMatrix(){
+    float view[16],projection[16],native[16]{};glGetFloatv(GL_MODELVIEW_MATRIX,view);glGetFloatv(GL_PROJECTION_MATRIX,projection);
+    const char* source="#version 330 compatibility\nout vec4 captured;void main(){captured=gl_ModelViewProjectionMatrix[gl_VertexID];gl_Position=vec4(0,0,0,1);}";
+    unsigned shader=glCreateShader(GL_VERTEX_SHADER);glShaderSource(shader,1,&source,nullptr);glCompileShader(shader);unsigned program=glCreateProgram();glAttachShader(program,shader);const char* name="captured";glTransformFeedbackVaryings(program,1,&name,GL_INTERLEAVED_ATTRIBS);glLinkProgram(program);glUseProgram(program);
+    unsigned buffer=0,array=0;glGenBuffers(1,&buffer);glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER,buffer);glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,sizeof(native),nullptr,GL_STREAM_READ);glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,buffer);glGenVertexArrays(1,&array);glBindVertexArray(array);glEnable(GL_RASTERIZER_DISCARD);glBeginTransformFeedback(GL_POINTS);glDrawArrays(GL_POINTS,0,4);glEndTransformFeedback();glDisable(GL_RASTERIZER_DISCARD);glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,0,sizeof(native),native);
+    for(int column=0;column<4;++column)for(int row=0;row<4;++row){float value=0;double wide=0;for(int k=0;k<4;++k){value+=projection[k*4+row]*view[column*4+k];wide+=double(projection[k*4+row])*double(view[column*4+k]);}std::fprintf(stderr,"MVP[%d]: native=%.9g float=%.9g double=%.9g\n",column*4+row,native[column*4+row],value,float(wide));}
+    glUseProgram(0);glBindVertexArray(0);glDeleteVertexArrays(1,&array);glDeleteBuffers(1,&buffer);glDeleteProgram(program);glDeleteShader(shader);
+}
 void Images(){
     assert(!Materials::Enabled());FragmentStage::Toggle();RenderProfile::Toggle();unsigned cases=0,maxCoverage=0,maxColor=0;
     for(int view=0;view<4;++view)for(int alpha=0;alpha<2;++alpha)for(int path=0;path<3;++path){
         auto reference=DrawCase(false,view,alpha,path);Materials::Toggle();auto modern=DrawCase(true,view,alpha,path);
         BMDDevice::Toggle();auto previousStage=DrawCase(true,view,alpha,path);assert(reference.color==previousStage.color&&reference.depth==previousStage.depth);BMDDevice::Toggle();Materials::Toggle();unsigned coverage=0,color=0;
-        for(std::size_t i=0;i<reference.depth.size();++i){bool a=reference.depth[i]<1,b=modern.depth[i]<1;if(a!=b){++coverage;continue;}if(reference.depth[i]!=modern.depth[i]){std::fprintf(stderr,"Profundidad: vista=%d alpha=%d ruta=%d pixel=%zu referencia=%.9g nueva=%.9g\n",view,alpha,path,i,reference.depth[i],modern.depth[i]);assert(false);}for(int c=0;c<4;++c){unsigned delta=unsigned(std::abs(int(reference.color[i*4+c])-int(modern.color[i*4+c])));if(delta)++color;maxColor=std::max(maxColor,delta);}}
+        for(std::size_t i=0;i<reference.depth.size();++i){bool a=reference.depth[i]<1,b=modern.depth[i]<1;if(a!=b){++coverage;continue;}if(reference.depth[i]!=modern.depth[i]){std::fprintf(stderr,"Profundidad: vista=%d alpha=%d ruta=%d pixel=%zu referencia=%.9g nueva=%.9g\n",view,alpha,path,i,reference.depth[i],modern.depth[i]);DumpNativeMatrix();assert(false);}for(int c=0;c<4;++c){unsigned delta=unsigned(std::abs(int(reference.color[i*4+c])-int(modern.color[i*4+c])));if(delta)++color;maxColor=std::max(maxColor,delta);}}
         if(!alpha)assert(coverage==0);else assert(coverage<=64);assert(color==0);maxCoverage=std::max(maxCoverage,coverage);++cases;
     }
     RenderProfile::Toggle();FragmentStage::Toggle();assert(!diagnostics.empty());bool checked=false;
