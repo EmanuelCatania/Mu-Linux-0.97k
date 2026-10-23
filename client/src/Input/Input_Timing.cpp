@@ -54,7 +54,10 @@ void __cdecl UI_UpdateFpsCounter(void) {
     }
     if(showFps && Materials::Enabled())RenderText(4,64,"Materiales: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
     if(showFps && FragmentStage::Requested())RenderText(4,76,"Fragmentos: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
-    if(showFps && Materials::Enabled())RenderText(4,88,BMDDevice::Status(),(int)(620*gWindow.GetWidth()/640),1,nullptr);
+    if(showFps && Materials::Enabled()) {
+        char bmd[64];Platform::TextFormatSecure(bmd,"%s",BMDDevice::Status());
+        RenderText(4,88,bmd,(int)(620*gWindow.GetWidth()/640),1,nullptr);
+    }
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {
         _DAT_07e016f0 = Platform::GetTimer().MultimediaTicks();
