@@ -782,6 +782,7 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     SIZE sz = {a1, a2};
     if (!a3 || *a3 == 10) return (int)Bitmaps[0].Height;
 
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
     gFont.BeginTextMask();
     if (lpString) {
         int n = Platform::TextLength(lpString);
@@ -793,6 +794,7 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     gFont.SetMaskColor(0xffffff);
     gFont.DrawTextMask(gFont.GetTextDC(), x + sz.cx, 0, a3, (int)strlen(a3));
 
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Compose);
     if (!a8) a8 = v10;
     int Height = (int)Bitmaps[0].Height;
     if (v9 > Height) v9 = Height;
@@ -852,7 +854,10 @@ extern "C" void __cdecl sub_47F4C0(int a1, int a2, float Width, float Height,
                                    int a5, int a6, float a7, int a8)
 {
     (void)a5; (void)a6;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
     if (Bitmaps[0].Buffer) {
+        RenderProfile::TextString(true);
+        RenderProfile::TextScope profileText(RenderProfile::TextWork::Upload);
         glBindTexture(GL_TEXTURE_2D, Bitmaps[0].TextureNumber);
         glTexImage2D(GL_TEXTURE_2D, 0, Bitmaps[0].Components,
                      (int)Bitmaps[0].Width, (int)Bitmaps[0].Height, 0,

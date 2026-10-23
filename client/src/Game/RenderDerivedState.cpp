@@ -25,6 +25,8 @@ DWORD models=0;
 void Save(void *address, std::size_t size, const void *owner=nullptr,
     bool registered=false, bool bones=false) {
     if (!address || !size) return;
+    // Incluir capturas diferidas durante el dibujo, sin duplicar el ámbito inicial.
+    RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Capture);
     if (used==blocks.size()) blocks.emplace_back();
     Block &block=blocks[used++];
     block.address=address; block.owner=owner;

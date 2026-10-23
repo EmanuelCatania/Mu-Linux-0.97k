@@ -16,6 +16,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     // p8 = color split X (0 = use p1), p9 = prefix string (optional)
     (void)p4; (void)p5; (void)p7;
 
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
     gFont.BeginTextMask();
     int bmpWidth = p1;
     // IDA inicializa `sz.cx = a1` ANTES del check de '\n' (sub_47F360 L21-23).
@@ -46,6 +47,8 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         int mainLen = Platform::TextLength(p3);
         gFont.DrawTextMask(gFont.GetTextDC(), prefixWidth + p6, 0, p3, mainLen);
     }
+
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Compose);
 
     // If p8 == 0, use p1 (bitmap width) as the color-split boundary
     if (p8 == 0) {
@@ -142,6 +145,9 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
   float Widtha; // [esp+40h] [ebp+Ch]
   float Heighta; // [esp+44h] [ebp+10h]
 
+  RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
+  RenderProfile::TextString(true);
+  { RenderProfile::TextScope profileText(RenderProfile::TextWork::Upload);
   glBindTexture(0xDE1u, Bitmaps[0].TextureNumber);
   glTexImage2D(
     0xDE1u,
@@ -153,6 +159,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     0x1908u,
     0x1401u,
     Bitmaps[0].Buffer);
+  }
   v8 = a1;
   if ( a1 < 0 )
   {

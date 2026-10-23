@@ -1,5 +1,19 @@
 // Sin PCH: resolver GL moderno mediante glad.
 #include "Platform/GL/glad.h"
+#include "Render/Backend/GL/ProfileUploads.h"
+#undef glTexImage2D
+#define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)
+#undef glTexSubImage2D
+#define glTexSubImage2D(...) ::ProfileUploadGL::Sub2D(glad_glTexSubImage2D,__VA_ARGS__)
+#undef glTexImage3D
+#define glTexImage3D(...) ::ProfileUploadGL::Image3D(glad_glTexImage3D,__VA_ARGS__)
+#undef glTexSubImage3D
+#define glTexSubImage3D(...) ::ProfileUploadGL::Sub3D(glad_glTexSubImage3D,__VA_ARGS__)
+#undef glBufferData
+#define glBufferData(...) ::ProfileUploadGL::BufferData(glad_glBufferData,__VA_ARGS__)
+#undef glBufferSubData
+#define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
+
 #include "Render/Skinning.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/RenderProfile.h"
@@ -179,6 +193,7 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
             GL_MAP_WRITE_BIT|GL_MAP_UNSYNCHRONIZED_BIT|GL_MAP_INVALIDATE_RANGE_BIT);
         if(!destination) return false;
         std::memcpy(destination,palette.data(),bytes);
+        RenderProfile::BufferUpload(bytes); // También contar el tramo escrito por mapeo.
         if(!glUnmapBuffer(GL_TEXTURE_BUFFER)) return false;
         paletteBase=static_cast<GLint>(paletteUsed/(4*sizeof(float)));
         paletteUsed+=bytes;uploaded=revision;

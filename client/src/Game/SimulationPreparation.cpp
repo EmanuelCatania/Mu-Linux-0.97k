@@ -258,7 +258,8 @@ void Simulation_RestorePickingCamera()
 
 void Simulation_BeginRender()
 {
-    RenderDerivedState_Begin();
+    { RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Capture);
+      RenderDerivedState_Begin(); }
     MaterialVisuals_BeginRender();
     LooseWingVisuals_BeginRender();
     // Conservar también cambios de Camera3D recibidos entre pasos: un draw sin
@@ -267,15 +268,17 @@ void Simulation_BeginRender()
     Simulation_RestorePickingCamera();
     if (camera.valid && camera.scene == SceneFlag && camera.world == gMapManager.GetCurrentMap())
         ApplyPose(camera);
-    RenderInterpolation_Begin(TimeRemain);
+    { RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Apply);
+      RenderInterpolation_Begin(TimeRemain); }
     Sprite_ReplayStep();
 }
 
 void Simulation_EndRender()
 {
     LooseWingVisuals_EndRender();
-    RenderInterpolation_End();
-    RenderDerivedState_End();
+    { RenderProfile::InterpolationScope measured(RenderProfile::InterpolationWork::Restore);
+      RenderInterpolation_End();
+      RenderDerivedState_End(); }
     ApplyPose(renderCamera);
     Simulation_RestorePickingCamera();
 }
