@@ -1,6 +1,7 @@
 #pragma once
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
+#include "Render/Backend/GL/ProfileUploads.h"
 #include "Render/TerrainDraw.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/Backend/GL/ProfileQueries.h"
@@ -20,7 +21,7 @@ template<class F,class... A> inline auto TextureChange(F function,A... args) -> 
     Flush();FragmentPipelineGL::InvalidateTextures();TerrainDraw::InvalidateBoundTexture();return function(args...);
 }
 template<class F> inline void DeleteTexturesState(F function,int count,const unsigned* names) {
-    Flush();FragmentPipelineGL::InvalidateTextures();for(int i=0;i<count;++i)TerrainDraw::InvalidateTexture(names[i]);function(count,names);
+    Flush();FragmentPipelineGL::InvalidateTextures();for(int i=0;i<count;++i){TerrainDraw::InvalidateTexture(names[i]);RenderProfile::ForgetTexture(names[i]);}function(count,names);
 }
 template<class F,class... A> inline auto LegacyDraw(F function,A... args) -> decltype(function(args...)) {
     Suspend();RenderProfile::Legacy();return function(args...);
@@ -94,8 +95,8 @@ inline void ProfileDepthMask(unsigned char enabled) {
 #define glReadPixels(...) ::BufferedDraw::LegacyCall(::glReadPixels,__VA_ARGS__)
 #define glRotatef(...) ::BufferedDraw::StateChange(::glRotatef,__VA_ARGS__)
 #define glTexEnvf(...) ::BufferedDraw::MaterialChange(::FragmentPipelineGL::MaterialPart::Texture,::glTexEnvf,__VA_ARGS__)
-#define glTexImage2D(...) ::BufferedDraw::TextureChange(::glTexImage2D,__VA_ARGS__)
-#define glTexSubImage2D(...) ::BufferedDraw::TextureChange(::glTexSubImage2D,__VA_ARGS__)
+#define glTexImage2D(...) ::BufferedDraw::TextureChange(::ProfileUploadGL::Image2D<decltype(&::glTexImage2D)>, &::glTexImage2D,__VA_ARGS__)
+#define glTexSubImage2D(...) ::BufferedDraw::TextureChange(::ProfileUploadGL::Sub2D<decltype(&::glTexSubImage2D)>, &::glTexSubImage2D,__VA_ARGS__)
 #define glTexParameterfv(...) ::BufferedDraw::TextureChange(::glTexParameterfv,__VA_ARGS__)
 #define glTexParameteri(...) ::BufferedDraw::TextureChange(::glTexParameteri,__VA_ARGS__)
 #define glTranslatef(...) ::BufferedDraw::StateChange(::glTranslatef,__VA_ARGS__)

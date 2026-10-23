@@ -237,6 +237,7 @@ int CFont::SelectedFont(HDC dc) const
 
 BOOL CFont::MeasureText(HDC dc, LPCSTR text, int count, SIZE* size)
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Measure);
 #ifdef MU_SDL_FONTS
     if (!size || count < 0 || (!text && count)) return FALSE;
     *size = {};
@@ -257,6 +258,7 @@ BOOL CFont::MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size)
 #ifdef MU_SDL_FONTS
     return MeasureText(dc, text, count, size);
 #else
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Measure);
     return GetTextExtentPoint32A(dc, text, count, size);
 #endif
 }
@@ -283,12 +285,14 @@ void CFont::SetMaskColor(DWORD color)
 }
 void CFont::BeginTextMask()
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
     std::fill(m_Mask.begin(), m_Mask.end(), 0);
 #endif
 }
 BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
     if (!m_pTextBits || !text || count < 0) return FALSE;
     auto& font = portableFonts[SelectedFont(dc)];
@@ -317,6 +321,7 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
 }
 BOOL CFont::BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base)
 {
+    RenderProfile::TextScope profileText(RenderProfile::TextWork::Raster);
 #ifdef MU_SDL_FONTS
     auto& font = portableFonts[SelectedFont(dc)];
     glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);

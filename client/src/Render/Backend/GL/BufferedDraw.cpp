@@ -1,5 +1,19 @@
 // Sin PCH: las funciones modernas se resuelven con glad, no GL/gl.h.
 #include "Platform/GL/glad.h"
+#include "Render/Backend/GL/ProfileUploads.h"
+#undef glTexImage2D
+#define glTexImage2D(...) ::ProfileUploadGL::Image2D(glad_glTexImage2D,__VA_ARGS__)
+#undef glTexSubImage2D
+#define glTexSubImage2D(...) ::ProfileUploadGL::Sub2D(glad_glTexSubImage2D,__VA_ARGS__)
+#undef glTexImage3D
+#define glTexImage3D(...) ::ProfileUploadGL::Image3D(glad_glTexImage3D,__VA_ARGS__)
+#undef glTexSubImage3D
+#define glTexSubImage3D(...) ::ProfileUploadGL::Sub3D(glad_glTexSubImage3D,__VA_ARGS__)
+#undef glBufferData
+#define glBufferData(...) ::ProfileUploadGL::BufferData(glad_glBufferData,__VA_ARGS__)
+#undef glBufferSubData
+#define glBufferSubData(...) ::ProfileUploadGL::BufferSubData(glad_glBufferSubData,__VA_ARGS__)
+
 #include "Platform/GLFunctions.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Backend/GL/FragmentPipeline.h"

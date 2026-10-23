@@ -457,6 +457,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 // IDA: FUN_0047F7A0
 void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6, size_t textCapacity) {
     (void)param_6;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
     if (!param_3 || textCapacity == 0) return;
     // El caller entrega la capacidad de su array/slot, o la longitud ya
     // medida por su API de cadena. No inferir validez de direcciones virtuales.
@@ -738,6 +739,8 @@ static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
 void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const char *text, DWORD /*color_unused*/)
 {
     if (text == NULL || *text == '\0') return;
+    RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
+    bool profiledString=false;
 
     // ── Espacio de coordenadas: logico 640x480 -> pixel fisico ──────────────
     //
@@ -1045,9 +1048,13 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
 
             BufferedDraw::Color4ub(R, G, B, finalA);
             glRasterPos2f(runX, (float)rasterY);
-            if (!GlyphAtlas::Draw(s_fontListBase, drawText + startChar, endChar - startChar, vw, vh))
-                glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
-                            drawText + startChar);
+            {
+                if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
+                RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+                if (!GlyphAtlas::Draw(s_fontListBase, drawText + startChar, endChar - startChar, vw, vh))
+                    glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
+                                drawText + startChar);
+            }
         }
     }
     if(scopedText)Materials::EndText();else glPopAttrib();
