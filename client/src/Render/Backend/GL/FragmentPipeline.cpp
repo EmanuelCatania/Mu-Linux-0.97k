@@ -2,6 +2,7 @@
 #include "Platform/GL/glad.h"
 #include "Render/FragmentStage.h"
 #include "Render/Materials.h"
+#include "Render/BMDDevice.h"
 #include "Render/Backend/GL/FragmentPipeline.h"
 #include "Render/BufferedDraw.h"
 #include "Render/RenderProfile.h"
@@ -310,7 +311,7 @@ void Release(unsigned reference){
 }
 Draw::Draw(unsigned reference,const float* alpha,std::size_t count,std::size_t stride,bool model):program(reference),reference(reference){
     modelRequest=model||modelDepth!=0;
-    modelVariant=modelRequest&&Materials::Enabled();
+    modelVariant=modelRequest&&BMDDevice::Enabled();
     if(!requested&&!modelVariant)return;
     auto& candidates=modelVariant?modelPipelines:pipelines;
     const auto found=candidates.find(reference);if(found==candidates.end()||!found->second.program){Count(false,"Fragmentos: referencia (programa)");return;}

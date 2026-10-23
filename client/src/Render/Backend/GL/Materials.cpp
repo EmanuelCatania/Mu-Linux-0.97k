@@ -184,6 +184,7 @@ LegacyState ReadLegacyState(){
 
 namespace BMDDevice {
 namespace {
+bool requested=true;
 void ReferenceSurface(unsigned flags,bool alpha,bool chrome=false){
     if(flags&0x40)GL_SetBlendAdditive();
     else if(flags&0x80)GL_SetBlendSrcAlpha();
@@ -192,6 +193,9 @@ void ReferenceSurface(unsigned flags,bool alpha,bool chrome=false){
     else GL_ResetState();
 }
 }
+bool Enabled(){return requested&&Materials::Enabled();}
+const char* Status(){return Enabled()?"BMD: shader 3.3":"BMD: referencia";}
+void Toggle(){BufferedDraw::Suspend();requested=!requested;RenderProfile::RestartCapture();DbgLogPublic(requested?"BMD: ruta nueva solicitada":"BMD: referencia compatible");}
 void Select(const PassState& s){
     using P=Pass;
     switch(s.pass){
@@ -250,7 +254,7 @@ void BeforeMatrixChange(){
     }
 }
 void BeginModel(){
-    BufferedDraw::Flush();ModelFrame frame;frame.reference=!Materials::Enabled();
+    BufferedDraw::Flush();ModelFrame frame;frame.reference=!Enabled();
     if(frame.reference)glPushMatrix();
     else glGetIntegerv(GL_MATRIX_MODE,&frame.mode);
     modelFrames.push_back(frame);FragmentPipelineGL::EnterModel();

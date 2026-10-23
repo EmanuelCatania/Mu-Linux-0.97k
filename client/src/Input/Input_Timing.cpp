@@ -4,6 +4,7 @@
 #include "Render/RenderProfile.h"
 #include "Render/TerrainDraw.h"
 #include "Render/Materials.h"
+#include "Render/BMDDevice.h"
 #include "Render/FragmentStage.h"
 #include "Platform/IInput.h"
 #include "Platform/ITimer.h"
@@ -23,6 +24,7 @@ void ToggleFpsCounter() {
     }
     else if((Platform::GetInput().KeyState(VK_CONTROL)&0x8000)&&(Platform::GetInput().KeyState(VK_SHIFT)&0x8000)) { Materials::Toggle();showFps=true; }
     else if(Platform::GetInput().KeyState(VK_SHIFT)&0x8000) { RenderProfile::Toggle();showFps=true; }
+    else if(Platform::GetInput().KeyState(VK_CONTROL)&0x8000) { BMDDevice::Toggle();showFps=true; }
     else showFps=!showFps;
 }
 
@@ -52,6 +54,7 @@ void __cdecl UI_UpdateFpsCounter(void) {
     }
     if(showFps && Materials::Enabled())RenderText(4,64,"Materiales: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
     if(showFps && FragmentStage::Requested())RenderText(4,76,"Fragmentos: experimental",(int)(620*gWindow.GetWidth()/640),1,nullptr);
+    if(showFps && Materials::Enabled())RenderText(4,88,BMDDevice::Status(),(int)(620*gWindow.GetWidth()/640),1,nullptr);
     DWORD DVar1 = Platform::GetTimer().MultimediaTicks();
     if (999 < DVar1 - (DWORD)_DAT_07e016f0) {
         _DAT_07e016f0 = Platform::GetTimer().MultimediaTicks();
