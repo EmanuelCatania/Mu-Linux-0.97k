@@ -4,6 +4,7 @@
 #include "Render/MeshDraw.h"
 #include "Render/ResourceTables.h"
 #include <array>
+#include <cstring>
 #include <vector>
 
 extern "C" void DbgLogPublic(const char*);
@@ -27,7 +28,7 @@ void DepthWrite(Switch value) {
 }
 bool Enabled(){return enabled;}
 void Toggle() {
-    // Vaciar antes del cambio: no se difiere ni reordena geometría transparente.
+    // Vaciar antes del cambio: no se difiere ni reordena geometrÃ­a transparente.
     BufferedDraw::Flush();enabled=!enabled;RenderProfile::RestartCapture();
     DbgLogPublic(enabled?"Materiales R4a: activo":"Materiales R4a: referencia");
 }
@@ -42,7 +43,7 @@ bool Apply(const Material& m) {
             case Blend::LightMap:glBlendFunc(GL_ZERO,GL_SRC_COLOR);break;
             case Blend::Alpha:glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);break;
             case Blend::Add:glBlendFunc(GL_ONE,GL_ONE);break;
-            // Los nombres históricos no describen sus factores reales.
+            // Los nombres histÃ³ricos no describen sus factores reales.
             case Blend::Attenuate:glBlendFunc(GL_ZERO,GL_ONE_MINUS_SRC_COLOR);break;
             case Blend::InverseAdd:glBlendFunc(GL_ONE_MINUS_SRC_COLOR,GL_ONE);break;
             default:break;
@@ -55,8 +56,8 @@ bool Apply(const Material& m) {
         // Conservar las dos lecturas/barreras del helper de referencia.
         glGetError();Cached(m.depthTest,DAT_083a411e,GL_DEPTH_TEST);glGetError();
     } else Cached(m.depthTest,DAT_083a411e,GL_DEPTH_TEST);
-    // FogEnable expresa política de escena, no un caché del estado real.
-    // Si vale cero, los helpers históricos NO cambian GL_FOG.
+    // FogEnable expresa polÃ­tica de escena, no un cachÃ© del estado real.
+    // Si vale cero, los helpers histÃ³ricos NO cambian GL_FOG.
     if(DAT_083a42ea&&m.fog!=Fog::Keep) {
         if(m.fog==Fog::Scene)glEnable(GL_FOG);else glDisable(GL_FOG);
     }
@@ -70,8 +71,8 @@ bool ApplySequence(const MaterialSequence& sequence){
 TwoSidedScope::TwoSidedScope(bool twoSided){
     managed=enabled;if(!managed||!twoSided)return;
     overrideCull=true;previousCull=glIsEnabled(GL_CULL_FACE)!=0;++twoSidedDepth;
-    // Corregir también una entrada con caché incoherente; la propiedad de
-    // dos caras es explícita y se mantiene en los materiales interiores.
+    // Corregir tambiÃ©n una entrada con cachÃ© incoherente; la propiedad de
+    // dos caras es explÃ­cita y se mantiene en los materiales interiores.
     glDisable(GL_CULL_FACE);DAT_083a411c=0;
 }
 TwoSidedScope::~TwoSidedScope(){
@@ -82,7 +83,7 @@ TwoSidedScope::~TwoSidedScope(){
 }
 bool BeginText(){
     if(!enabled)return false;
-    // COLOR_BUFFER conserva factores RGB/alpha y ecuaciones, además del enable.
+    // COLOR_BUFFER conserva factores RGB/alpha y ecuaciones, ademÃ¡s del enable.
     glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT|GL_LIST_BIT|GL_COLOR_BUFFER_BIT);
     glDisable(GL_TEXTURE_2D);glDisable(GL_DEPTH_TEST);glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -93,14 +94,14 @@ InheritedBlendScope::InheritedBlendScope(){
     if(!enabled)return;
     active=true;wasEnabled=glIsEnabled(GL_BLEND)!=0;previousBlend=DAT_083a412c;
     glEnable(GL_BLEND);
-    // No representa ningún preset: BMD__RenderBodyShadow no selecciona mezcla.
+    // No representa ningÃºn preset: BMD__RenderBodyShadow no selecciona mezcla.
     // Invalidar temporalmente evita anunciar factores que no se establecieron.
     DAT_083a412c=-1;
 }
 InheritedBlendScope::~InheritedBlendScope(){
     if(!active)return;
-    // La sombra no cambia factores. La barrera envía sus triángulos antes
-    // de recuperar activación; los demás estados quedan como en referencia.
+    // La sombra no cambia factores. La barrera envÃ­a sus triÃ¡ngulos antes
+    // de recuperar activaciÃ³n; los demÃ¡s estados quedan como en referencia.
     if(wasEnabled)glEnable(GL_BLEND);else glDisable(GL_BLEND);
     DAT_083a412c=previousBlend;
 }
@@ -123,8 +124,8 @@ bool EndOverlay(){
 }
 bool BeginView(const ViewState& s){
     if(!enabled)return false;
-    // La entrada de referencia escribe el estado físico incluso cuando el
-    // caché legacy difiere. No usar Cached para omitir esta reparación.
+    // La entrada de referencia escribe el estado fÃ­sico incluso cuando el
+    // cachÃ© legacy difiere. No usar Cached para omitir esta reparaciÃ³n.
     if(s.alphaTest)glEnable(GL_ALPHA_TEST);else glDisable(GL_ALPHA_TEST);
     if(s.texture)glEnable(GL_TEXTURE_2D);else glDisable(GL_TEXTURE_2D);
     if(s.depthTest)glEnable(GL_DEPTH_TEST);else glDisable(GL_DEPTH_TEST);
@@ -153,8 +154,8 @@ bool BeginView(const ViewState& s){
 bool BindTexture(TextureSlot texture){
     if(!enabled||texture.index<0)return false;
     const unsigned slot=static_cast<unsigned>(texture.index);
-    // Conservar el caché por slot y el orden de referencia: publicar el índice
-    // antes de asegurar la tabla, y resolver el handle sólo si cambia el slot.
+    // Conservar el cachÃ© por slot y el orden de referencia: publicar el Ã­ndice
+    // antes de asegurar la tabla, y resolver el handle sÃ³lo si cambia el slot.
     if(DAT_00561574!=slot){
         DAT_00561574=slot;ResourceTables::EnsureTextures(std::size_t(slot)+1);
         const unsigned native=(&DAT_083a7ccc)[std::size_t(slot)*0xe];
@@ -163,7 +164,7 @@ bool BindTexture(TextureSlot texture){
     return true;
 }
 bool ApplyTextured(const TexturedMaterial& m){
-    // Rechazar antes de aplicar estado, también con material primero.
+    // Rechazar antes de aplicar estado, tambiÃ©n con material primero.
     if(!enabled||m.texture.index<0)return false;
     if(m.order==BindingOrder::MaterialFirst){
         if(!Apply(m.material))return false;
@@ -260,8 +261,8 @@ void EndModel(){
     const auto frame=modelFrames.back();modelFrames.pop_back();
     if(frame.reference)glPopMatrix();
     else if(frame.captured){
-        // Pila propia por valor. La frontera con productores aún compatibles
-        // sólo restaura la matriz si un callee la modificó; no usa glPush/Pop.
+        // Pila propia por valor. La frontera con productores aÃºn compatibles
+        // sÃ³lo restaura la matriz si un callee la modificÃ³; no usa glPush/Pop.
         int current=0;glGetIntegerv(GL_MATRIX_MODE,&current);
         if(current!=frame.mode)glMatrixMode(frame.mode);
         double matrix[16];glGetDoublev(MatrixKey(frame.mode),matrix);
