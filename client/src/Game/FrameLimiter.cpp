@@ -28,6 +28,10 @@ uint32_t CFrameLimiter::Wait(const StartTime& start)
     m_FractionMilliseconds = elapsed - milliseconds;
     return milliseconds;
 }
+void CFrameLimiter::DiscardElapsed()
+{
+    m_PreviousStart=Start(); m_HasPreviousStart=true;
+}
 void CFrameLimiter::Shutdown()
 {
     Platform::GetTimer().Shutdown();

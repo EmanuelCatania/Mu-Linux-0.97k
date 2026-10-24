@@ -10,6 +10,9 @@ public:
     StartTime Start();
     uint32_t Advance(const StartTime& start);
     uint32_t Wait(const StartTime& start);
+    // DESVIACION: tras una carga bloqueante (OpenWorld) el tiempo de carga no
+    // es tiempo de juego; se descarta para no recuperarlo despues a 5 pasos por frame.
+    void DiscardElapsed();
     // DESVIACION: preferencias del dibujo; el paso SIM conserva siempre 40 ms.
     void SetFpsLimit(int fps) { m_FpsLimit = fps >= 0 ? fps : 60; }
     void SetRenderDecoupled(bool enabled) { m_RenderDecoupled = enabled; }
