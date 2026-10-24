@@ -7,6 +7,7 @@
 #include "Render/Terrain_Render.h"
 #include "Entity/ObjectPose.h"
 #include "Render/WorldEffects.h"
+#include "Game/RenderDerivedState.h"
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
@@ -92,6 +93,7 @@ static void Terrain_ProcessObjects(bool simulation)
 
                                 WorldEffects_Tick((int)entity);
                             } else {
+                                RenderDerivedState_SaveObject(entity);
                                 Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
                                 WorldEffects_Draw((int)entity);
                             }

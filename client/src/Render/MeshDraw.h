@@ -53,8 +53,19 @@ struct Input {
     const float* bodyLight;
     const void* model=nullptr;
     const BufferedDraw::Vertex* attributes=nullptr;
+    // Arrays del BMD (hueso + posición / normal locales): habilitan la malla
+    // residente en la GPU. Sin ellos se usa la ruta que arma vértices en CPU.
+    const unsigned char* rawVertices=nullptr;
+    const unsigned char* rawNormals=nullptr;
 };
+// Sombra proyectada de una malla con la pose capturada (BMD__RenderBodyShadow).
+// mesh es el registro de malla del BMD (stride 0x28); world, sus posiciones
+// transformadas en CPU (sólo para validar la pose). Devuelve false para usar
+// la ruta CPU.
+bool DrawShadow(const void* model,const char* mesh,const float* world,const float* origin);
 void Release();
+// Diagnóstico: alterna la malla residente frente a la ruta que arma vértices en CPU.
+void ToggleResident();
 // DESVIACION: vértices únicos e índices persistentes; no expandir cada
 // esquina a posición/color/UV en CPU. El skinning y los datos lógicos siguen allí.
 bool Draw(const Input& input);

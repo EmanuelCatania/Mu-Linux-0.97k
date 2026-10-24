@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <algorithm>
+#include <cstring>
 
 extern "C" void DbgLogPublic(const char*);
 namespace BufferedDraw {
@@ -29,6 +30,27 @@ Stream stream;
 namespace {
 GLuint program=0,buffer=0,array=0,quadBuffer=0;
 std::size_t quadCapacity=0;
+// DESVIACION: los envíos generales escriben en un buffer circular con mapeo
+// no sincronizado, en vez de pedir almacenamiento nuevo con glBufferData en
+// cada uno. Al llenarse se huérfana entero, como hacía cada glBufferData.
+constexpr std::size_t RingBytes=4u<<20;
+std::size_t ringCapacity=0,ringUsed=0;
+// Devuelve el primer vértice escrito, o -1 si el mapeo falló.
+GLint RingWrite(const Vertex* data,std::size_t count) {
+    const std::size_t bytes=count*sizeof(Vertex);
+    if(bytes>ringCapacity || ringUsed+bytes>ringCapacity) {
+        ringCapacity=std::max(bytes,RingBytes);ringUsed=0;
+        glBufferData(GL_ARRAY_BUFFER,ringCapacity,nullptr,GL_STREAM_DRAW);
+    }
+    void* destination=glMapBufferRange(GL_ARRAY_BUFFER,ringUsed,bytes,
+        GL_MAP_WRITE_BIT|GL_MAP_UNSYNCHRONIZED_BIT|GL_MAP_INVALIDATE_RANGE_BIT);
+    if(!destination) return -1;
+    std::memcpy(destination,data,bytes);
+    RenderProfile::BufferUpload(bytes); // También contar el tramo escrito por mapeo.
+    if(!glUnmapBuffer(GL_ARRAY_BUFFER)) { ringCapacity=ringUsed=0;return -1; }
+    const GLint first=static_cast<GLint>(ringUsed/sizeof(Vertex));
+    ringUsed+=bytes;return first;
+}
 std::vector<Vertex> pending;
 unsigned pendingMode=0;
 bool bound=false;
@@ -119,7 +141,7 @@ void Release() {
     if (quadBuffer) glDeleteBuffers(1,&quadBuffer);
     FragmentPipelineGL::Release(program);
     if (program) glDeleteProgram(program);
-    array=buffer=program=quadBuffer=0;quadCapacity=0;
+    array=buffer=program=quadBuffer=0;quadCapacity=0;ringCapacity=ringUsed=0;
 }
 void NativeColor(float r,float g,float b,float a) { glColor4f(r,g,b,a); }
 void NativeUV(float u,float v) { glTexCoord2f(u,v); }
@@ -182,12 +204,16 @@ void Flush(const Vertex* current) {
     }
     FragmentPipelineGL::Draw material(program,&pending.front().color[3],pending.size(),sizeof(Vertex));
     BindPipeline(material.Program(),array,buffer);material.Apply();
-    glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);
+    GLint first=RingWrite(pending.data(),pending.size());
+    if(first<0) {
+        // Respaldo: el envío completo como antes.
+        glBufferData(GL_ARRAY_BUFFER,pending.size()*sizeof(Vertex),pending.data(),GL_STREAM_DRAW);first=0;
+    }
     RenderProfile::Draw(pendingMode==GL_TRIANGLE_FAN ? pending.size()/4*6 : pending.size());
     if (pendingMode==GL_TRIANGLE_FAN) {
         EnsureQuadIndices(pending.size()/4);
-        glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(pending.size()/4*6),GL_UNSIGNED_INT,nullptr);
-    } else glDrawArrays(pendingMode,0,(GLsizei)pending.size());
+        glDrawElementsBaseVertex(GL_TRIANGLES,static_cast<GLsizei>(pending.size()/4*6),GL_UNSIGNED_INT,nullptr,first);
+    } else glDrawArrays(pendingMode,first,(GLsizei)pending.size());
     // Los atributos actuales pueden quedar indefinidos tras DrawArrays.
     glColor4fv(color);glTexCoord4fv(uv);
     pending.clear();

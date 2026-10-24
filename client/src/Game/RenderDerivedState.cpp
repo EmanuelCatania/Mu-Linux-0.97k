@@ -55,15 +55,22 @@ void RenderDerivedState_Begin() {
         SceneFlag==5 && DAT_083a7c10 && DAT_07e11d1c<=30;
     if (!ready) return;
     active=true; scene=SceneFlag; world=gMapManager.GetCurrentMap(); models=DAT_05828d58;
-    if (DAT_07abf5d0) for (int slot=0; slot<400; ++slot)
-        SaveObject((CHARACTER *)DAT_07abf5d0+slot,sizeof(CHARACTER));
+    // DESVIACION: los slots libres de personajes e items no se dibujan ni se
+    // interpolan; copiar sólo los vivos.
+    if (DAT_07abf5d0) for (int slot=0; slot<400; ++slot) {
+        auto *character=(CHARACTER *)DAT_07abf5d0+slot;
+        if (character->Object.Live) SaveObject(character,sizeof(CHARACTER));
+    }
     SaveObject(DAT_07abf050,sizeof(CHARACTER));
-    if (DAT_07e12840) for (int slot=0; slot<1000; ++slot)
-        SaveObject((BYTE *)DAT_07e12840+slot*0x204+72,sizeof(OBJECT));
+    if (DAT_07e12840) for (int slot=0; slot<1000; ++slot) {
+        auto *item=(BYTE *)DAT_07e12840+slot*0x204+72;
+        if (AsObject(item)->Live) SaveObject(item,sizeof(OBJECT));
+    }
     for (int slot=0; slot<200; ++slot) SaveObject(DAT_07b11670+slot*0x1bc,sizeof(OBJECT));
     for (int slot=0; slot<40; ++slot) SaveObject(g_WeatherSlotPool+slot*0x1bc,sizeof(OBJECT));
     for (int slot=0; slot<10; ++slot) SaveObject(DAT_083a1218+slot*0x1bc,sizeof(OBJECT));
-    for (const void *object:SceneObjects::LiveNodes()) SaveObject((void *)object,sizeof(OBJECT),true);
+    // Los objetos del mapa se guardan al tocarlos (RenderDerivedState_SaveObject):
+    // el dibujo sólo modifica los visibles y la interpolación los que se movieron.
     RenderFxSnapshots_SaveRenderState();
     if (models) Save((void *)models,ResourceTables::ModelCount()*0xbc);
     Save(DAT_05826e18,sizeof(DAT_05826e18));
@@ -78,6 +85,9 @@ void RenderDerivedState_Begin() {
     Save(&ObjectSelect_AnimationFrame,sizeof(ObjectSelect_AnimationFrame));
     Save(&ObjectSelect_PriorAnimationFrame,sizeof(ObjectSelect_PriorAnimationFrame));
     Save(&ObjectSelect_PriorAction,sizeof(ObjectSelect_PriorAction));
+}
+void RenderDerivedState_SaveObject(void *node) {
+    if (active && node) SaveObject(node,sizeof(OBJECT),true);
 }
 void RenderDerivedState_SaveFx(void *slot, std::size_t size) {
     if (active && savedObjects.Insert(slot)) Save(slot,size,slot);

@@ -48,6 +48,7 @@ struct Track {
 };
 Track characters[401], parts[401][11], items[1000], points[100];
 std::unordered_map<const void*,Track> objects;
+std::vector<const void*> movingObjects;
 std::uint64_t characterGeneration[401] = {}, itemGeneration[1000] = {}, pointGeneration[100] = {};
 int scene = -1, world = -1;
 RenderCameraPair camera;
@@ -74,6 +75,12 @@ void CaptureCamera(bool begin, bool sameScene) {
     cameraLive=live; cameraOwner=owner;
 }
 
+bool SamePose(const RenderPose& a, const RenderPose& b) {
+    return !memcmp(a.position,b.position,sizeof(a.position)) && !memcmp(a.angle,b.angle,sizeof(a.angle)) &&
+           !memcmp(a.headAngle,b.headAngle,sizeof(a.headAngle)) && a.animationFrame==b.animationFrame &&
+           a.priorAnimationFrame==b.priorAnimationFrame && a.action==b.action && a.priorAction==b.priorAction &&
+           a.scale==b.scale && a.alpha==b.alpha;
+}
 bool SameIdentity(const Sample& a, const Sample& b) {
     return a.live && b.live && a.generation == b.generation && a.owner == b.owner &&
            a.key == b.key && a.type == b.type && a.detail == b.detail;
@@ -177,11 +184,14 @@ void Capture(bool begin) {
         if (!SceneObjects::Contains(it->first)) it=objects.erase(it);
         else ++it;
     }
+    if (!begin) movingObjects.clear();
     for (const void *node:SceneObjects::LiveNodes()) {
         Sample sample=ObjectSample(*(const OBJECT *)node);
         sample.owner=(std::uintptr_t)node; sample.generation=SceneObjects::Generation(node);
-        if (begin) Begin(objects[node],sample,sameScene);
-        else End(objects[node],sample,sameScene);
+        Track& track=objects[node];
+        if (begin) { Begin(track,sample,sameScene); continue; }
+        End(track,sample,sameScene);
+        if (!track.continuous || !SamePose(track.previous.pose,track.current.pose)) movingObjects.push_back(node);
     }
     for (int slot = 0; slot < 401; ++slot) {
         if (begin) Begin(characters[slot], CharacterSample(slot), sameScene);
@@ -314,6 +324,7 @@ bool RenderSnapshots_Camera(float maximum, RenderCameraPair& out) {
     return true;
 }
 
+const std::vector<const void*>& RenderSnapshots_MovingObjects() { return movingObjects; }
 // Los nodos de CreateObject pueden liberarse entre pasos: validar antes de leer.
 bool RenderSnapshots_Object(const void* node, float maximum, RenderPosePair& out) {
     if (!SceneObjects::Contains(node)) return false;

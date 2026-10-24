@@ -4,6 +4,7 @@
 #include "Game/RenderSnapshots.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Scene/ObjectRegistry.h"
+#include "Game/RenderDerivedState.h"
 #include <algorithm>
 
 namespace {
@@ -155,9 +156,13 @@ void RenderInterpolation_Begin(int remainder) {
         if (RenderSnapshots_Item(slot,RenderInterpolation_MaxDisplacement,pair))
             ApplyObject(*(OBJECT *)((unsigned char *)DAT_07e12840+slot*0x204+72),pair);
     }
-    for (const void *node:SceneObjects::LiveNodes()) {
+    // DESVIACION: sólo los objetos que se movieron; en los quietos la pose
+    // interpolada es la que ya tienen. Guardarlos antes de escribir.
+    for (const void *node:RenderSnapshots_MovingObjects()) {
         RenderPosePair pair;
-        if (RenderSnapshots_Object(node,RenderInterpolation_MaxDisplacement,pair)) ApplyObject(*(OBJECT *)node,pair);
+        if (!RenderSnapshots_Object(node,RenderInterpolation_MaxDisplacement,pair)) continue;
+        RenderDerivedState_SaveObject((void *)node);
+        ApplyObject(*(OBJECT *)node,pair);
     }
     ApplyFx();
 }

@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/BMDDevice.h"
+#include "Render/MeshDraw.h"
 #include "Config/UserSettings.h"
 #include "globals.h"
 #include "functions.h"
@@ -108,6 +109,10 @@ void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
         if (polyCount <= 0) continue;
         if ((int)*(short*)(mesh + 2) == param_1) continue;   // *(WORD*)(v6+2) != a2
 
+        // DESVIACION: con la malla residente y la pose capturada, la misma
+        // proyección se hace en el shader en vez de vértice por vértice.
+        if (MeshDraw::DrawShadow(this_, mesh, (const float*)&DAT_0584621c + vertBase * 3, (const float*)(this_ + 0x6c)))
+            continue;
         BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
         for (int polyIdx = 0; polyIdx < polyCount; polyIdx++) {
             char *poly = (char*)(*(int*)(mesh + 0x1c) + polyIdx * 0x24);

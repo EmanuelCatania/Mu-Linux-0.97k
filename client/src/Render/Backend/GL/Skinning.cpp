@@ -27,8 +27,14 @@
 extern "C" void DbgLogPublic(const char*);
 namespace Skinning {
 namespace {
-struct BoneVertex { float xyz[3];int bone; };
-struct PoseMesh { const void* key=nullptr;std::vector<BoneVertex> vertices,normals;std::vector<float> world,lighting; };
+// Los arrays de vértices y normales son los del BMD: estables mientras el
+// modelo está cargado. Sólo se copian la posición y la luz calculadas por la
+// CPU, para detectar si alguien las modificó después de la pose.
+struct PoseMesh { const void* key=nullptr;const unsigned char* vertices=nullptr;const unsigned char* normals=nullptr;
+    int vertexCount=0,normalCount=0;std::vector<float> world,lighting; };
+constexpr int VertexStride=16,NormalStride=20;
+int BoneOf(const unsigned char* base,int stride,int index) { short bone;std::memcpy(&bone,base+index*stride,2);return bone; }
+const float* XyzOf(const unsigned char* base,int stride,int index) { return reinterpret_cast<const float*>(base+index*stride+4); }
 const void* poseModel=nullptr;
 std::vector<float> palette;
 std::vector<PoseMesh> poseMeshes;
@@ -40,7 +46,7 @@ GLint paletteBase=0,paletteBaseLocation=0;
 GLuint program=0,array=0,buffer=0,boneBuffer=0,boneTexture=0;
 bool failed=false,layoutReady=false,paletteBound=false,uniformsReady=false;
 GLint savedTextureBuffer=0,savedTexture=0,lastLight=-1;
-float lastScales[2]{},lastOrigin[3]{},lastDirection[3]{},lastCoefficients[3]{},lastBodyLight[3]{};
+float lastScales[2]{},lastOrigin[3]{},lastDirection[3]{},lastCoefficients[3]{},lastBodyLight[3]{},lastOffset[2]{};
 void RestorePalette() {
     GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
     glActiveTexture(GL_TEXTURE1);RenderProfileGL::ObserveTexture(GL_TEXTURE_BUFFER,savedTexture);glBindTexture(GL_TEXTURE_BUFFER,savedTexture);
@@ -51,9 +57,12 @@ void SetVector(GLint location,const float* value,float* previous) {
         glUniform3fv(location,1,value);std::copy(value,value+3,previous);
     }
 }
-GLint paletteLocation,scalesLocation,originLocation,directionLocation,coefficientsLocation,bodyLightLocation,lightLocation;
+GLint paletteLocation,scalesLocation,originLocation,directionLocation,coefficientsLocation,bodyLightLocation,lightLocation,offsetLocation,shadowLocation,shadowOriginLocation;
+int lastShadow=-1;float lastShadowOrigin[3]{};
 struct Vertex { BufferedDraw::Vertex attributes;float normal[4];float bone; };
 std::vector<Vertex> vertices;
+// DESVIACION: uvOffset suma el desplazamiento de textura de la malla en el
+// shader; la ruta que arma los vértices en CPU ya lo trae aplicado y envía 0.
 const char* shaderSource=R"GLSL(#version 330 compatibility
 layout(location=6) in vec4 rawNormal;
 layout(location=7) in float vertexBone;
@@ -65,6 +74,9 @@ uniform vec3 direction;
 uniform vec3 coefficients;
 uniform vec3 bodyLight;
 uniform bool useLight;
+uniform vec2 uvOffset;
+uniform bool shadowMode;
+uniform vec3 shadowOrigin;
 vec3 rotateBone(vec3 p,int b) {
     int r=paletteBase+b*3;
     return vec3(dot(texelFetch(palette,r).xyz,p),dot(texelFetch(palette,r+1).xyz,p),dot(texelFetch(palette,r+2).xyz,p));
@@ -74,6 +86,10 @@ void main() {
     vec3 p=rotateBone(gl_Vertex.xyz,int(vertexBone))*scales.x;
     p+=vec3(texelFetch(palette,b).w,texelFetch(palette,b+1).w,texelFetch(palette,b+2).w);
     p=p*scales.y+origin;
+    if(shadowMode) {
+        vec3 l=p-shadowOrigin;
+        p=vec3(l.x+(l.x+2000.0)*l.z/(l.z-4000.0)+shadowOrigin.x,l.y+shadowOrigin.y,shadowOrigin.z+5.0);
+    }
     vec4 position=vec4(p,1);
     gl_Position=gl_ModelViewProjectionMatrix*position;
     vec4 color=gl_Color;
@@ -86,27 +102,22 @@ void main() {
     color=clamp(color,0,1);
 #endif
     gl_FrontColor=color;gl_BackColor=color;
-    gl_TexCoord[0]=gl_TextureMatrix[0]*gl_MultiTexCoord0;
+    gl_TexCoord[0]=gl_TextureMatrix[0]*(gl_MultiTexCoord0+vec4(uvOffset,0,0));
     vec4 eye=gl_ModelViewMatrix*position;
     gl_FogFragCoord=abs(eye.z);gl_ClipVertex=eye;
 }
 )GLSL";
-void CopyVertices(std::vector<BoneVertex>& out,const unsigned char* source,int count,int stride) {
-    out.resize(count);
-    for(int i=0;i<count;++i) { short bone;std::memcpy(&bone,source+i*stride,2);
-        out[i].bone=bone;std::memcpy(out[i].xyz,source+i*stride+4,12); }
-}
 GLuint uniformProgram=0;
-std::map<GLuint,std::array<GLint,8>> uniformLocations;
+std::map<GLuint,std::array<GLint,11>> uniformLocations;
 void SelectUniforms(GLuint next){
-    if(uniformProgram==next)return;uniformProgram=next;uniformsReady=false;lastLight=-1;
+    if(uniformProgram==next)return;uniformProgram=next;uniformsReady=false;lastLight=-1;lastShadow=-1;
     auto found=uniformLocations.find(next);
     if(found==uniformLocations.end()){
-        const char* names[]{"paletteBase","palette","scales","origin","direction","coefficients","bodyLight","useLight"};
-        std::array<GLint,8> locations{};for(int i=0;i<8;++i)locations[i]=glGetUniformLocation(next,names[i]);
+        const char* names[]{"paletteBase","palette","scales","origin","direction","coefficients","bodyLight","useLight","uvOffset","shadowMode","shadowOrigin"};
+        std::array<GLint,11> locations{};for(int i=0;i<11;++i)locations[i]=glGetUniformLocation(next,names[i]);
         found=uniformLocations.emplace(next,locations).first;
     }
-    const auto& p=found->second;paletteBaseLocation=p[0];paletteLocation=p[1];scalesLocation=p[2];originLocation=p[3];directionLocation=p[4];coefficientsLocation=p[5];bodyLightLocation=p[6];lightLocation=p[7];
+    const auto& p=found->second;paletteBaseLocation=p[0];paletteLocation=p[1];scalesLocation=p[2];originLocation=p[3];directionLocation=p[4];coefficientsLocation=p[5];bodyLightLocation=p[6];lightLocation=p[7];offsetLocation=p[8];shadowLocation=p[9];shadowOriginLocation=p[10];
 }
 bool Initialize() {
     if(program) return true;
@@ -123,56 +134,19 @@ bool Initialize() {
     SelectUniforms(program);
     return true;
 }
-}
-void Invalidate() { poseModel=nullptr; }
-void Capture(const void* model,const float* bones,int boneCount,float rotation,float scale,
-    const float* translation,const float* lightDirection,const float* lightCoefficients,
-    const Source* sources,std::size_t count) {
-    Invalidate();if(!model || !bones || boneCount<=0) return;
-    palette.assign(bones,bones+std::size_t(boneCount)*12);rotationScale=rotation;bodyScale=scale;
-    std::copy(translation,translation+3,origin);std::copy(lightDirection,lightDirection+3,direction);
-    std::copy(lightCoefficients,lightCoefficients+3,coefficients);
-    // DESVIACION: conservar capacidad por orden de malla entre objetos.
-    // No liberar y recrear todos los vectores al cambiar de modelo.
-    if(poseMeshes.size()<count) poseMeshes.resize(count);
-    poseMeshCount=0;
-    for(std::size_t i=0;i<count;++i) { const auto& s=sources[i];
-        if(s.vertexCount<=0 || !s.vertices || !s.world || s.normalCount<0 || (s.normalCount && (!s.normals || !s.lighting))) continue;
-        auto& m=poseMeshes[poseMeshCount++];m.key=s.key;CopyVertices(m.vertices,s.vertices,s.vertexCount,16);
-        CopyVertices(m.normals,s.normals,s.normalCount,20);
-        m.world.assign(s.world,s.world+s.vertexCount*3);
-        m.lighting.assign(s.lighting,s.lighting+s.normalCount);
+const PoseMesh* FindPose(const void* model,const void* key,const float* world,int positionCount) {
+    if(!model || model!=poseModel) return nullptr;
+    for(std::size_t i=0;i<poseMeshCount;++i) if(poseMeshes[i].key==key) {
+        const auto& m=poseMeshes[i];
+        // Las pasadas deformadas modifican BoneVertex después de la pose. Deben
+        // usar esos datos CPU, nunca una pose previa aunque coincida el modelo.
+        if(positionCount!=m.vertexCount || std::memcmp(world,m.world.data(),m.world.size()*sizeof(float))) return nullptr;
+        return &m;
     }
-    poseModel=model;++revision;
+    return nullptr;
 }
-bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw::Vertex* attributes,
-    const int* positions,const int* normals,std::size_t count,std::size_t indices,
-    const float* world,int positionCount,const float* colors,bool lit,const float* bodyLight) {
-    if(!model || model!=poseModel) return false;
-    const PoseMesh* found=nullptr;
-    for(std::size_t i=0;i<poseMeshCount;++i) if(poseMeshes[i].key==key) { found=&poseMeshes[i];break; }
-    if(!found) return false;
-    const auto& m=*found;
-    // Las pasadas deformadas modifican BoneVertex después de la pose. Deben
-    // usar esos datos CPU, nunca una pose previa aunque coincida el modelo.
-    if(positionCount!=int(m.vertices.size()) || std::memcmp(world,m.world.data(),m.world.size()*sizeof(float))) return false;
-    bool gpuLight=lit;
-    vertices.resize(count);
-    for(std::size_t i=0;i<count;++i) {
-        if(positions[i]<0 || positions[i]>=positionCount) return false;
-        const auto& p=m.vertices[positions[i]];
-        if(p.bone<0 || std::size_t(p.bone)*12>=palette.size()) return false;
-        auto& v=vertices[i];v.attributes=attributes[i];std::copy(p.xyz,p.xyz+3,v.attributes.position);v.bone=float(p.bone);
-        std::fill(v.normal,v.normal+4,0.f);
-        if(lit) {
-            if(normals[i]<0 || std::size_t(normals[i])>=m.normals.size()) return false;
-            const auto& n=m.normals[normals[i]];
-            if(n.bone<0 || std::size_t(n.bone)*12>=palette.size()) return false;
-            std::copy(n.xyz,n.xyz+3,v.normal);v.normal[3]=float(n.bone);
-            for(int k=0;k<3;++k) if(colors[normals[i]*3+k]!=m.lighting[normals[i]]*bodyLight[k]) gpuLight=false;
-        }
-    }
-    BufferedDraw::Flush();if(!Initialize()) return false;
+// Enlaza la paleta y sube la pose actual si todavía no está en la GPU.
+bool UploadPalette() {
     if(!paletteBound) {
         GLint active;glGetIntegerv(GL_ACTIVE_TEXTURE,&active);
         glGetIntegerv(GL_TEXTURE_BUFFER,&savedTextureBuffer);
@@ -198,9 +172,14 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
         paletteBase=static_cast<GLint>(paletteUsed/(4*sizeof(float)));
         paletteUsed+=bytes;uploaded=revision;
     }
-    FragmentPipelineGL::Draw material(program,&vertices[0].attributes.color[3],vertices.size(),sizeof(Vertex),true);
-    BufferedDraw::Activate(material.Program(),array,buffer);material.Apply();
-    SelectUniforms(material.Program());
+    return true;
+}
+void SetUniforms(bool gpuLight,const float* bodyLight,const float* offset,const float* shadowOrigin=nullptr) {
+    const bool shadow=shadowOrigin!=nullptr;
+    if(lastShadow!=int(shadow)) { glUniform1i(shadowLocation,shadow?1:0);lastShadow=int(shadow); }
+    if(shadow && (!uniformsReady || std::memcmp(lastShadowOrigin,shadowOrigin,sizeof(lastShadowOrigin)))) {
+        glUniform3fv(shadowOriginLocation,1,shadowOrigin);std::copy(shadowOrigin,shadowOrigin+3,lastShadowOrigin);
+    }
     if(!uniformsReady) glUniform1i(paletteLocation,1);
     glUniform1i(paletteBaseLocation,paletteBase);
     const float scales[2]{rotationScale,bodyScale};
@@ -210,7 +189,64 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     SetVector(originLocation,origin,lastOrigin);SetVector(directionLocation,direction,lastDirection);
     SetVector(coefficientsLocation,coefficients,lastCoefficients);SetVector(bodyLightLocation,bodyLight,lastBodyLight);
     if(lastLight!=int(gpuLight)) { glUniform1i(lightLocation,gpuLight?1:0);lastLight=int(gpuLight); }
+    if(!uniformsReady || std::memcmp(lastOffset,offset,sizeof(lastOffset))) {
+        glUniform2f(offsetLocation,offset[0],offset[1]);std::copy(offset,offset+2,lastOffset);
+    }
     uniformsReady=true;
+}
+}
+void Invalidate() { poseModel=nullptr; }
+void Capture(const void* model,const float* bones,int boneCount,float rotation,float scale,
+    const float* translation,const float* lightDirection,const float* lightCoefficients,
+    const Source* sources,std::size_t count) {
+    Invalidate();if(!model || !bones || boneCount<=0) return;
+    palette.assign(bones,bones+std::size_t(boneCount)*12);rotationScale=rotation;bodyScale=scale;
+    std::copy(translation,translation+3,origin);std::copy(lightDirection,lightDirection+3,direction);
+    std::copy(lightCoefficients,lightCoefficients+3,coefficients);
+    // DESVIACION: conservar capacidad por orden de malla entre objetos.
+    // No liberar y recrear todos los vectores al cambiar de modelo.
+    if(poseMeshes.size()<count) poseMeshes.resize(count);
+    poseMeshCount=0;
+    for(std::size_t i=0;i<count;++i) { const auto& s=sources[i];
+        if(s.vertexCount<=0 || !s.vertices || !s.world || s.normalCount<0 || (s.normalCount && (!s.normals || !s.lighting))) continue;
+        auto& m=poseMeshes[poseMeshCount++];m.key=s.key;
+        m.vertices=s.vertices;m.normals=s.normals;m.vertexCount=s.vertexCount;m.normalCount=s.normalCount;
+        m.world.assign(s.world,s.world+s.vertexCount*3);
+        m.lighting.assign(s.lighting,s.lighting+s.normalCount);
+    }
+    poseModel=model;++revision;
+}
+bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw::Vertex* attributes,
+    const int* positions,const int* normals,std::size_t count,std::size_t indices,
+    const float* world,int positionCount,const float* colors,bool lit,const float* bodyLight) {
+    const PoseMesh* found=FindPose(model,key,world,positionCount);
+    if(!found) return false;
+    const auto& m=*found;
+    bool gpuLight=lit;
+    vertices.resize(count);
+    for(std::size_t i=0;i<count;++i) {
+        if(positions[i]<0 || positions[i]>=positionCount) return false;
+        const int bone=BoneOf(m.vertices,VertexStride,positions[i]);
+        if(bone<0 || std::size_t(bone)*12>=palette.size()) return false;
+        const float* xyz=XyzOf(m.vertices,VertexStride,positions[i]);
+        auto& v=vertices[i];v.attributes=attributes[i];std::copy(xyz,xyz+3,v.attributes.position);v.bone=float(bone);
+        std::fill(v.normal,v.normal+4,0.f);
+        if(lit) {
+            if(normals[i]<0 || normals[i]>=m.normalCount) return false;
+            const int normalBone=BoneOf(m.normals,NormalStride,normals[i]);
+            if(normalBone<0 || std::size_t(normalBone)*12>=palette.size()) return false;
+            const float* n=XyzOf(m.normals,NormalStride,normals[i]);
+            std::copy(n,n+3,v.normal);v.normal[3]=float(normalBone);
+            for(int k=0;k<3;++k) if(colors[normals[i]*3+k]!=m.lighting[normals[i]]*bodyLight[k]) gpuLight=false;
+        }
+    }
+    BufferedDraw::Flush();if(!Initialize()) return false;
+    if(!UploadPalette()) return false;
+    FragmentPipelineGL::Draw material(program,&vertices[0].attributes.color[3],vertices.size(),sizeof(Vertex),true);
+    BufferedDraw::Activate(material.Program(),array,buffer);material.Apply();
+    SelectUniforms(material.Program());
+    const float noOffset[2]{};
+    SetUniforms(gpuLight,bodyLight,noOffset);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,elements);
     glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(Vertex),vertices.data(),GL_STREAM_DRAW);
     if(!layoutReady) {
@@ -233,13 +269,63 @@ bool Draw(const void* model,const void* key,unsigned elements,const BufferedDraw
     // exactamente los de la última esquina, incluso en caras incompletas.
     return true;
 }
+void ResidentLayout(unsigned residentBuffer) {
+    // Los dos programas comparten el VAO: la variante moderna lee los
+    // atributos genéricos (0 posición, 1 color, 2 UV) y la de referencia los
+    // arrays de compatibilidad. El color siempre es constante por envío.
+    GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
+    glBindBuffer(GL_ARRAY_BUFFER,residentBuffer);
+    glEnableVertexAttribArray(0);glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,position));
+    glDisableVertexAttribArray(1);
+    glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,uv));
+    glEnableClientState(GL_VERTEX_ARRAY);glVertexPointer(3,GL_FLOAT,sizeof(StaticVertex),(void*)offsetof(StaticVertex,position));
+    glDisableClientState(GL_COLOR_ARRAY);
+    glClientActiveTexture(GL_TEXTURE0);glTexCoordPointer(2,GL_FLOAT,sizeof(StaticVertex),(void*)offsetof(StaticVertex,uv));
+    glEnableVertexAttribArray(6);glVertexAttribPointer(6,4,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,normal));
+    glEnableVertexAttribArray(7);glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(StaticVertex),(void*)offsetof(StaticVertex,bone));
+    glClientActiveTexture(client);
+}
+bool DrawResident(const ResidentDraw& d) {
+    const PoseMesh* found=FindPose(d.model,d.key,d.world,d.positionCount);
+    if(!found) return false;
+    const auto& m=*found;
+    if(d.maxBone<0 || std::size_t(d.maxBone)*12>=palette.size()) return false;
+    if(d.lit) {
+        // El shader calcula la luz por normal; si la CPU dejó otro color (un
+        // efecto que lo modificó), dibujar con los colores CPU.
+        if(d.normalCount!=m.normalCount || !d.colors) return false;
+        for(int n=0;n<m.normalCount;++n)
+            for(int k=0;k<3;++k) if(d.colors[n*3+k]!=m.lighting[n]*d.bodyLight[k]) return false;
+    }
+    BufferedDraw::Flush();if(!Initialize()) return false;
+    if(!UploadPalette()) return false;
+    FragmentPipelineGL::Draw material(program,&d.color[3],1,4*sizeof(float),true);
+    BufferedDraw::Activate(material.Program(),d.array,0);material.Apply();
+    SelectUniforms(material.Program());
+    const float offset[2]{d.uOffset,d.vOffset};
+    SetUniforms(d.lit,d.bodyLight,offset,d.shadow?d.shadowOrigin:nullptr);
+    // UV por vértice sólo si la malla se texturiza; si no, el valor actual
+    // capturado, como la ruta CPU. El estado de los arrays queda en el VAO.
+    GLint client;glGetIntegerv(GL_CLIENT_ACTIVE_TEXTURE,&client);
+    glClientActiveTexture(GL_TEXTURE0);
+    if(d.textured) { glEnableVertexAttribArray(2);glEnableClientState(GL_TEXTURE_COORD_ARRAY); }
+    else {
+        glDisableVertexAttribArray(2);glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glVertexAttrib4fv(2,d.uv);glMultiTexCoord4fv(GL_TEXTURE0,d.uv);
+    }
+    glClientActiveTexture(client);
+    glVertexAttrib4fv(1,d.color);glColor4fv(d.color);
+    RenderProfile::Draw(d.indices);
+    glDrawElements(GL_TRIANGLES,static_cast<GLsizei>(d.indices),GL_UNSIGNED_INT,nullptr);
+    return true;
+}
 void Release() {
     BufferedDraw::Suspend();
     if(array) glDeleteVertexArrays(1,&array);if(buffer) glDeleteBuffers(1,&buffer);
     if(boneBuffer) glDeleteBuffers(1,&boneBuffer);if(boneTexture) glDeleteTextures(1,&boneTexture);
     FragmentPipelineGL::Release(program);
     if(program) glDeleteProgram(program);
-    uniformLocations.clear();uniformProgram=0;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
+    uniformLocations.clear();uniformProgram=0;lastShadow=-1;program=array=buffer=boneBuffer=boneTexture=0;failed=false;layoutReady=false;uniformsReady=false;lastLight=-1;uploaded=0;poseMeshCount=0;paletteCapacity=paletteUsed=0;
     poseModel=nullptr;poseMeshes.clear();palette.clear();vertices.clear();
 }
 }
