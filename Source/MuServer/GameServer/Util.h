@@ -11,7 +11,6 @@ BYTE GetExceOptionCount(BYTE ExceOption);
 
 int LevelSmallConvert(int level);
 
-bool CheckSpecialText(char* Text);
 
 bool CheckSpaceCharacter(char* Text);
 

@@ -106,7 +106,7 @@ void CGuild::CGGuildCreateRecv(PMSG_GUILD_CREATE_RECV* lpMsg, int aIndex)
 	{
 		this->GCGuildCreateResultSend(aIndex, 4);
 	}
-	else if (CheckSpecialText(GuildName) == false)
+	else if (TextName::IsValid(GuildName, sizeof(GuildName), GUILD_NAME_CLUSTERS, false) == false)
 	{
 		this->GCGuildCreateResultSend(aIndex, 5);
 	}
@@ -236,9 +236,9 @@ void CGuild::CGGuildDeleteRecv(PMSG_GUILD_DELETE_RECV* lpMsg, int aIndex)
 
 	TextField::Copy(PersonalCode, lpMsg->PersonalCode);
 
-	if (strcmp(lpObj->Guild->Members[0].Name, lpObj->Name) == 0)
+	if (TextName::Equals(lpObj->Guild->Members[0].Name, lpObj->Name))
 	{
-		if (strcmp(lpObj->Name, name) != 0)
+		if (!TextName::Equals(lpObj->Name, name))
 		{
 			if (gObjCheckPersonalCode(aIndex, PersonalCode) == 0)
 			{
@@ -277,7 +277,7 @@ void CGuild::CGGuildDeleteRecv(PMSG_GUILD_DELETE_RECV* lpMsg, int aIndex)
 	}
 	else
 	{
-		if (strcmp(lpObj->Name, name) != 0)
+		if (!TextName::Equals(lpObj->Name, name))
 		{
 			this->GCGuildDeleteSend(aIndex, 2);
 
@@ -299,7 +299,7 @@ void CGuild::DGGuildDeleteRecv(SDHP_GUILD_DELETE_RECV* lpMsg)
 {
 	LPOBJ lpObj = &gObj[lpMsg->index];
 
-	if (lpObj != 0 && lpMsg->flag != 0 && strcmp(lpMsg->Name, lpObj->Name) == 0)
+	if (lpObj != 0 && lpMsg->flag != 0 && TextName::Equals(lpMsg->Name, lpObj->Name))
 	{
 		this->GCGuildDeleteSend(lpObj->Index, lpMsg->result);
 
@@ -667,7 +667,7 @@ void CGuild::DGGuildMemberDeleteRecv(SDHP_GUILD_MEMBER_DELETE_RECV* lpMsg)
 {
 	LPOBJ lpObj = &gObj[lpMsg->index];
 
-	if (lpObj != 0 && lpMsg->flag != 0 && strcmp(lpMsg->Name, lpObj->Name) == 0)
+	if (lpObj != 0 && lpMsg->flag != 0 && TextName::Equals(lpMsg->Name, lpObj->Name))
 	{
 		this->GCGuildDeleteSend(lpObj->Index, lpMsg->result);
 	}
@@ -1338,7 +1338,7 @@ bool CGuild::GuildWarCheck(LPOBJ lpObj, LPOBJ lpTargetObj)
 
 	int score = 1;
 
-	if (strcmp(lpTargetObj->Name, lpTargetObj->Guild->Members[0].Name) == 0)
+	if (TextName::Equals(lpTargetObj->Name, lpTargetObj->Guild->Members[0].Name))
 	{
 		score = 2;
 	}
@@ -1390,7 +1390,7 @@ bool CGuild::GuildWarStateCheck(LPOBJ lpObj, LPOBJ lpTargetObj)
 		return false;
 	}
 
-	if (strcmp(lpObj->Guild->TargetGuildNode->Name, lpTargetObj->Guild->Name) != 0)
+	if (!TextName::Equals(lpObj->Guild->TargetGuildNode->Name, lpTargetObj->Guild->Name))
 	{
 		return false;
 	}
@@ -1467,7 +1467,7 @@ bool CGuild::GuildMasterCloseCheck(LPOBJ lpObj)
 		return false;
 	}
 
-	if (strcmp(lpObj->Guild->Members[0].Name, lpObj->Name) != 0)
+	if (!TextName::Equals(lpObj->Guild->Members[0].Name, lpObj->Name))
 	{
 		return false;
 	}

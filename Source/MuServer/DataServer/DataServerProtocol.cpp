@@ -537,7 +537,7 @@ void GDCharacterCreateRecv(SDHP_CHARACTER_CREATE_RECV* lpMsg, int index)
 
 	TextField::Copy(pMsg.name, lpMsg->name);
 
-	if (CheckTextSyntax(lpMsg->name, sizeof(lpMsg->name)) == false || gBadSyntax.CheckSyntax(lpMsg->name) == false || CheckSpecialText(lpMsg->name) == false)
+	if (TextName::IsValid(lpMsg->name, sizeof(lpMsg->name), CHARACTER_NAME_CLUSTERS, EnableSpecialCharacters != 0) == false || gBadSyntax.CheckSyntax(lpMsg->name) == false)
 	{
 		pMsg.result = 0;
 	}
@@ -637,7 +637,7 @@ void GDCharacterDeleteRecv(SDHP_CHARACTER_DELETE_RECV* lpMsg, int index)
 
 	TextField::Copy(pMsg.account, lpMsg->account);
 
-	if (CheckTextSyntax(lpMsg->name, sizeof(lpMsg->name)) == false)
+	if (TextName::IsSafeKey(lpMsg->name, sizeof(lpMsg->name)) == false)
 	{
 		pMsg.result = 0;
 	}
@@ -758,7 +758,7 @@ void GDCharacterInfoRecv(SDHP_CHARACTER_INFO_RECV* lpMsg, int index)
 
 	TextField::Copy(pMsg.name, lpMsg->name);
 
-	pMsg.result = ((CheckTextSyntax(lpMsg->name, sizeof(lpMsg->name)) == false) ? 0 : 1);
+	pMsg.result = ((TextName::IsSafeKey(lpMsg->name, sizeof(lpMsg->name)) == false) ? 0 : 1);
 
 #ifndef MYSQL
 	if (pMsg.result == 0 || gQueryManager.ExecQuery("SELECT * FROM Character WHERE AccountID='%s' AND Name='%s'", lpMsg->account, lpMsg->name) == false || gQueryManager.Fetch() == SQL_NO_DATA)

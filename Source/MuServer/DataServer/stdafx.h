@@ -7,6 +7,7 @@
 
 #include "../Common/Platform.h"
 #include "../Common/TextField.h"
+#include "../Common/TextName.h"
 
 // System includes
 #include <iostream>

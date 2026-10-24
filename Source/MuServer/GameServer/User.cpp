@@ -977,7 +977,7 @@ LPOBJ gObjFind(char* name)
 {
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
-		if (gObjIsConnectedGP(n) != 0 && strcmp(gObj[n].Name, name) == 0)
+		if (gObjIsConnectedGP(n) != 0 && TextName::Equals(gObj[n].Name, name))
 		{
 			return &gObj[n];
 		}
@@ -1075,7 +1075,7 @@ bool gObjIsNameValid(int aIndex, char* name)
 		return 0;
 	}
 
-	if (strcmp(lpObj->Name, name) != 0)
+	if (!TextName::Equals(lpObj->Name, name))
 	{
 		return 0;
 	}

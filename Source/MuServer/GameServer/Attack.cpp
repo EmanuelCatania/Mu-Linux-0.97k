@@ -792,7 +792,7 @@ bool CAttack::CheckPlayerTarget(LPOBJ lpObj, LPOBJ lpTarget)
 			return false;
 		}
 
-		if (strcmp(lpObj->Guild->TargetGuildNode->Name, lpTarget->Guild->Name) != 0)
+		if (!TextName::Equals(lpObj->Guild->TargetGuildNode->Name, lpTarget->Guild->Name))
 		{
 			return false;
 		}
@@ -820,7 +820,7 @@ bool CAttack::CheckPlayerTarget(LPOBJ lpObj, LPOBJ lpTarget)
 			return false;
 		}
 
-		if (strcmp(lpTarget->Guild->TargetGuildNode->Name, lpObj->Guild->Name) != 0)
+		if (!TextName::Equals(lpTarget->Guild->TargetGuildNode->Name, lpObj->Guild->Name))
 		{
 			return false;
 		}

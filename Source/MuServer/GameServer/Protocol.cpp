@@ -567,7 +567,7 @@ void CGChatRecv(PMSG_CHAT_RECV* lpMsg, int aIndex)
 
 	TextField::Copy(name, lpMsg->name);
 
-	if (strcmp(name, lpObj->Name) != 0)
+	if (!TextName::Equals(name, lpObj->Name))
 	{
 		return;
 	}
@@ -629,7 +629,7 @@ void CGChatRecv(PMSG_CHAT_RECV* lpMsg, int aIndex)
 		{
 			if (lpMsg->message[1] == '>')
 			{
-				if (strcmp(lpObj->Name, lpObj->Guild->Members[0].Name) == 0)
+				if (TextName::Equals(lpObj->Name, lpObj->Guild->Members[0].Name))
 				{
 					gGuild.GDGuildGlobalNoticeSend(lpObj->Guild->Name, &lpMsg->message[2]);
 				}

@@ -612,7 +612,7 @@ void GDCharacterDeleteSend(int aIndex, char* name)
 
 	if (gObj[aIndex].Guild != 0)
 	{
-		if (strcmp(gObj[aIndex].Name, gObj[aIndex].Guild->Members[0].Name) == 0)
+		if (TextName::Equals(gObj[aIndex].Name, gObj[aIndex].Guild->Members[0].Name))
 		{
 			pMsg.guild = 1; // Guild Master
 		}
