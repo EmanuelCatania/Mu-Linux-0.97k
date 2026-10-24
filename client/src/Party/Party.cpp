@@ -123,6 +123,7 @@
 //   packet[3] == 1 → SetErrorMessage(0x91)  — guild join decline UI
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Party.h"
 #include "Net/Net.h"    // Net_Disconnect, SocketClientSocket / WSAEWOULDBLOCK queue
@@ -178,8 +179,7 @@ void ReceivePartyList97k(BYTE* pkt, int size)
         const BYTE* const wire = pkt + kHeaderSize + i * kWireStride;
         BYTE* const local = Party + i * 36;
 
-        memcpy(local, wire, 10);              // name
-        local[10] = 0;                        // original forced terminator
+        NetText::FromServer((char*)local, 11, wire, 10);   // name (1252 -> UTF-8)
         local[11] = wire[10];                 // member number
         local[12] = wire[11];                 // map
         local[13] = wire[12];                 // X

@@ -49,7 +49,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // mbclen @ 0x00541EAB — IsLeadByte(str)
 // DBCS lead-byte check using CRT _pctype table at DAT_083bc1a0.
 // Bit 2 of table[*str+1] set → double-byte (return 2), else single-byte (return 1).
-// Conserva la tabla de bytes iniciales CP949 en ambos sistemas.
+// DESVIACION (Fase 4, texto Unicode): el binario usa la tabla CP949; el
+// texto del cliente es UTF-8 y se avanza de a letra visible.
 int __cdecl mbclen(const byte *param_1) {
-    return Platform::KoreanCharacterBytes(*param_1);
+    return (int)Platform::TextCharacterBytes(param_1);
 }

@@ -1,6 +1,7 @@
 // Network.cpp — CNetwork. Ver Network.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
@@ -124,8 +125,10 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
 void CNetwork::SendLogin(const char* account, const char* password)
 {
     BYTE user[10] = {}, pass[10] = {};
-    memcpy(user, account, strnlen(account, 10));
-    memcpy(pass, password, strnlen(password, 10));
+    // DESVIACION (Fase 4, texto Unicode): lo tipeado está en UTF-8 y la cuenta
+    // del server en 1252, igual que antes.
+    NetText::ToServer(user, 10, account);
+    NetText::ToServer(pass, 10, password);
     static const BYTE kArgXor[3] = { 0xFC, 0xCF, 0xAB };
     BYTE pkt[64] = {0};
     pkt[0] = 0xC1;

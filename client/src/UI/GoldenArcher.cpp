@@ -19,6 +19,7 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/GoldenArcher.h"
@@ -139,7 +140,7 @@ static void GA_Ida_RecvScratch(BYTE* Msg, int Size)
     if (result <= 4)       CreateOkMessageBox(GlobalText[result + 886]);
     else if (result == 5)  CreateOkMessageBox(GlobalText[899]);
     const int n = Size - 4;
-    if (n > 0) memcpy(GA_GiftName, Msg + 4, n < 64 ? n : 64);
+    if (n > 0) NetText::FromServer(GA_GiftName, 64, Msg + 4, n < 64 ? n : 64);
 }
 
 // Estado visual de un boton del original: apretado, deshabilitado o normal.
@@ -1045,8 +1046,7 @@ void GoldenArcher_Recv9D(BYTE* Msg, int Size)
     char text[300];
     Platform::TextFormatSecure(text, "%s", GlobalText[r < 4 ? 911 + r : 901]);
     CreateOkMessageBox(text);
-    memcpy(GA_GiftName, text, 64);
-    GA_GiftName[63] = 0;
+    TextEngine::CopyTruncated(GA_GiftName, 64, text);
 }
 
 // Chatter del NPC en el evento propio (DLL MoveCharacter_GoldenArcherChatMessages,

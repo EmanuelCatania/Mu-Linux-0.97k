@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "functions.h"
 #include "globals.h"
 
@@ -32,6 +33,8 @@ void __cdecl NPCName_LoadTextData(const char *path)
         int n = 0;
         while (src[n] != '\0' && n < 31) { dst[n] = src[n]; n++; }
         dst[n] = '\0';
+        // DESVIACION (Fase 4, texto Unicode): el archivo puede venir en UTF-8 o en 1252.
+        TextEngine::NormalizeTextFileInPlace(dst, 32);
     }
     crt_fclose(DAT_07d7806c);
 }

@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include "Net/Recv/NetRecv.h"
@@ -14,8 +15,12 @@ BYTE* GuildMark_Record(int row)
     return (BYTE*)DAT_07e919bc + row * 80;
 }
 
-int GuildMark_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32)
+int GuildMark_UpsertRecord(int key, const BYTE* serverName8, const BYTE* mark32)
 {
+    // DESVIACION (Fase 4, texto Unicode): el nombre llega en 1252 y se guarda
+    // en UTF-8 en los 9 bytes del registro (8 + NUL).
+    BYTE name8[9] = {};
+    NetText::FromServer((char*)name8, sizeof(name8), serverName8, 8);
     int row = -1;
     for (int i = 0; i < kGuildMarkRecordCount; ++i) {
         if (GuildMark_Record(i)[0] != 0 &&
@@ -73,8 +78,7 @@ extern "C" const BYTE* Guild_GetMarkPixels(int row)
 // de guerra pertenecen a una unidad funcional posterior.
 void GuildWar_CopyOpponentName(const BYTE* packet)
 {
-    memcpy(GuildWarName, packet + 3, 8);
-    GuildWarName[8] = '\0';
+    NetText::FromServer(GuildWarName, 9, packet + 3, 8);
 }
 
 int GuildMark_FindRecordByName(const char* name)
@@ -135,8 +139,7 @@ void ReceiveDeclareWar97k(const BYTE* packet, int size)
     if (size < (int)sizeof(Proto::PMSG_GUILD_WAR_DECLARE_SEND)) return;
     Proto::PMSG_GUILD_WAR_DECLARE_SEND message;
     memcpy(&message, packet, sizeof(message));
-    memcpy(GuildWarName, message.GuildName, sizeof(message.GuildName));
-    GuildWarName[sizeof(message.GuildName)] = 0;
+    NetText::FromServer(GuildWarName, sizeof(message.GuildName) + 1, message.GuildName, sizeof(message.GuildName));
     // DESVIACION DLL: GCGuildWarDeclareRecv asigna ambos tipos, sin heredar soccer.
     EnableSoccer = (message.type == 1);
     SetErrorMessage(128);
@@ -355,8 +358,7 @@ void NetRecv_52(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // UI_InGameMenu lo re-lee para el paquete de expulsar, asi
         // que hay que dejarlo escrito, no solo en un local.
         char* rec = &byte_7E91790[i * 13];
-        memcpy(rec, src, 10);
-        rec[10] = 0;
+        NetText::FromServer(rec, 11, src, 10);
         // IDA: FUN_004348B0 lee `number` en +10 y lo entrega al
         // widget como estado visual; el byte +11 determina el
         // número de party: negativo → byte & 0x7F, no negativo → -1.

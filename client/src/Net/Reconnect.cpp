@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -162,7 +163,7 @@ bool CReconnect::OnCharacterList()
     if (m_Progress == PROGRESS_CHAR_LIST) {
         // Mismo pedido que char-select (Game_CharSelectTick): F3/03 con el nombre.
         BYTE pkt[14] = { 0xC1, 0x0E, 0xF3, 0x03 };
-        memcpy(pkt + 4, m_Name, 10);
+        NetText::ToServer(pkt + 4, 10, m_Name);
         gNetwork.SendC1(pkt, sizeof(pkt));
         SetProgress(PROGRESS_CHAR_INFO, CharacterWait);
     }

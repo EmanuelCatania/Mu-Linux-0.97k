@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -81,9 +82,16 @@ bool CEventTimer::Receive(const BYTE* packet, int size)
     // Los refrescos periódicos sólo traen tiempos nuevos: la lista del widget se
     // rearma únicamente si cambian la cantidad o los nombres.
     bool changed = count != m_Count;
-    for (int i = 0; !changed && i < count; ++i)
-        changed = strcmp(m_Events[i].name, (const char*)packet + header + i * stride) != 0;
+    // DESVIACION (Fase 4, texto Unicode): los nombres llegan en 1252 y se
+    // guardan en UTF-8; la comparación se hace sobre el nombre ya convertido.
+    for (int i = 0; !changed && i < count; ++i) {
+        char name[sizeof(m_Events[i].name)];
+        NetText::FromServer(name, sizeof(name), packet + header + i * stride, sizeof(name));
+        changed = strcmp(m_Events[i].name, name) != 0;
+    }
     if (count) memcpy(m_Events, packet + header, count * stride);
+    for (int i = 0; i < count; ++i)
+        TextEngine::ConvertWindows1252InPlace(m_Events[i].name, sizeof(m_Events[i].name));
     const bool hadList = m_Received;
     m_Count = count;
     m_Received = true;

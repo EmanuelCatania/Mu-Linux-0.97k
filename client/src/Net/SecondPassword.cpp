@@ -137,6 +137,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Render/TerrainDraw.h"
 void Terrain_BeginBufferedPass();
 #include "Render/BufferedDraw.h"
@@ -256,12 +257,12 @@ unsigned int __cdecl SecondPassword_Handler(void)
                         // Abrir: el PIN se acaba de tipear y el codigo personal
                         // sale del campo de texto.
                         pw = (unsigned short)atoi(DAT_07ea9814);
-                        memcpy(pkt + 6, (const char*)DAT_07db8710, 10);
+                        NetText::ToServer(pkt + 6, 10, (const char*)DAT_07db8710);
                     } else {
                         // Poner (2): la contrasena la dejo el modo 5.
                         // Sacar (3): el server no la mira.
                         if (mode == 2) pw = *(unsigned short*)&DAT_07eaa150;
-                        memcpy(pkt + 6, DAT_07ea9814, 10);
+                        NetText::ToServer(pkt + 6, 10, DAT_07ea9814);
                     }
                     memcpy(pkt + 4, &pw, 2);
                     gNetwork.SendC1(pkt, sizeof(pkt));
@@ -418,7 +419,7 @@ void __cdecl SecondPassword_Screen1(void) {
                         pkt[0] = 0xC1;
                         pkt[1] = 43;
                         pkt[2] = 0x55;
-                        memcpy(pkt + 3,  DAT_07ea51ec, 8);
+                        NetText::ToServer(pkt + 3, 8, DAT_07ea51ec);
                         memcpy(pkt + 11, mark, 32);
                         gNetwork.SendC1(pkt, 43);
 

@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "Platform/Text.h"
 #include "Net/Recv/NetRecv.h"
+#include "Net/NetText.h"
 
 // ── CHAT ─────────────────────────────────────────────────────────
 // Layout autoritativo del server MuEmu (Protocol.h) + confirmado 1:1 con
@@ -21,10 +22,10 @@ void NetRecv_01(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     if (Size < 6) return;
     int entIdx = Entity_FindById((Msg[3] << 8) | Msg[4]);
-    char cmsg[61] = {0};
+    char cmsg[181] = {0};   // 60 bytes 1252 -> hasta 180 en UTF-8
     int clen = Size - 5;
     if (clen > 60) clen = 60;
-    memcpy(cmsg, Msg + 5, clen);
+    NetText::FromServer(cmsg, sizeof(cmsg), Msg + 5, clen);
     NetLog("NET:  → 0x01 ChatTarget ent=%d msg='%s'", entIdx, cmsg);
     if (entIdx >= 0 && entIdx < 400 && cmsg[0]) {
         BYTE* ent = (BYTE*)(uintptr_t)DAT_07abf5d0 + (uintptr_t)entIdx * 0x394;
@@ -57,12 +58,12 @@ void NetRecv_02(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // clásico de whisper.
     if (Size >= 14 && DAT_07e11dac == 0) {   // m_bBlockWhisper (toggle F3)
         char wname[11] = {0};
-        char wmsg[61]  = {0};
-        memcpy(wname, Msg + 3, 10);
+        char wmsg[181] = {0};
+        NetText::FromServer(wname, sizeof(wname), Msg + 3, 10);
         // Copiar solo los bytes que el paquete realmente trae.
         int wlen = Size - 13;
         if (wlen > 60) wlen = 60;
-        memcpy(wmsg, Msg + 13, wlen);
+        NetText::FromServer(wmsg, sizeof(wmsg), Msg + 13, wlen);
         // IDA ProtocolCore case 2: RegistWhisperID(10, strID) — con el
         // heroe de nivel < 10 anota al remitente para que despues se le
         // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
@@ -120,8 +121,9 @@ void NetRecv_0D(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         return;
     }
     if (textLen > (int)sizeof(text) - 1) textLen = sizeof(text) - 1;
-    memcpy(text, Msg + 4, textLen);
-    text[textLen] = 0;
+    // Los avisos se guardan en slots de 256: lo que no entre en UTF-8 se corta
+    // sin partir un carácter.
+    NetText::FromServer(text, sizeof(text), Msg + 4, textLen);
     NetLog("NET:  → 0x0D Notice type=%d msg='%s'", type, text);
 
     if (type == 0) {

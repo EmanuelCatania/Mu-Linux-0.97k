@@ -9,6 +9,7 @@
 #endif
 #include "Core/Font.h"
 #include "Config/UserSettings.h"
+#include "Text/TextCore.h"
 #ifdef MU_SDL_FONTS
 #include "Platform/SDL3/SDLFont.h"
 #include "Text/TextCore.h"
@@ -249,9 +250,8 @@ const TextEngine::ShapedText* CFont::Shape(HDC dc, LPCSTR text, int count)
 {
 #ifdef MU_SDL_FONTS
     if (!text || count < 0) return nullptr;
-    // DESVIACION (Fase 4, texto Unicode): el texto del cliente sigue en 1252
-    // hasta migrar recursos y red; acá se pasa a UTF-8 y lo arma el layout.
-    return &portableStacks[SelectedFont(dc)].Shape(TextEngine::FromWindows1252(std::string_view(text, size_t(count))));
+    // El texto del cliente está en UTF-8 (Fase 4); lo arma el layout.
+    return &portableStacks[SelectedFont(dc)].Shape(std::string_view(text, size_t(count)));
 #else
     (void)dc; (void)text; (void)count;
     return nullptr;
@@ -269,7 +269,9 @@ BOOL CFont::MeasureText(HDC dc, LPCSTR text, int count, SIZE* size)
     size->cy = portableFonts[SelectedFont(dc)].Metrics().height;
     return TRUE;
 #else
-    return GetTextExtentPointA(dc, text, count, size);
+    // DESVIACION (Fase 4): el texto está en UTF-8; GDI ANSI recibe 1252.
+    const std::string legacy = TextEngine::ToWindows1252(std::string_view(text ? text : "", text ? size_t(count) : 0));
+    return GetTextExtentPointA(dc, legacy.c_str(), (int)legacy.size(), size);
 #endif
 }
 BOOL CFont::MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size)
@@ -278,7 +280,8 @@ BOOL CFont::MeasureText32(HDC dc, LPCSTR text, int count, SIZE* size)
     return MeasureText(dc, text, count, size);
 #else
     RenderProfile::TextScope profileText(RenderProfile::TextWork::Measure);
-    return GetTextExtentPoint32A(dc, text, count, size);
+    const std::string legacy = TextEngine::ToWindows1252(std::string_view(text ? text : "", text ? size_t(count) : 0));
+    return GetTextExtentPoint32A(dc, legacy.c_str(), (int)legacy.size(), size);
 #endif
 }
 BOOL CFont::TextMetrics(HDC dc, TEXTMETRICA* metrics)
@@ -336,7 +339,8 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
     }
     return TRUE;
 #else
-    return TextOutA(dc, x, y, text, count);
+    const std::string legacy = TextEngine::ToWindows1252(std::string_view(text ? text : "", text ? size_t(count) : 0));
+    return TextOutA(dc, x, y, legacy.c_str(), (int)legacy.size());
 #endif
 }
 BOOL CFont::BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base)

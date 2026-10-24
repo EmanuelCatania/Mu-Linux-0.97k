@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -96,6 +97,8 @@ void __cdecl OpenMacro(char *FileName) {
         char* slot = MacroText + i * 0x100;
         if (fgets(slot, 0x100, fp) == NULL) break;
         slot[strcspn(slot, "\r\n")] = '\0';
+        // DESVIACION (Fase 4, texto Unicode): el archivo puede venir en UTF-8 o en 1252.
+        TextEngine::NormalizeTextFileInPlace(slot, 0x100);
     }
     fclose(fp);
 }

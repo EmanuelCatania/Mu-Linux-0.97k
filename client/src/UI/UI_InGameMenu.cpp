@@ -5,6 +5,7 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Net/Reconnect.h"
@@ -390,10 +391,9 @@ void __cdecl UI_InGameMenu(void)
             pkt[3] = 0x02;
             if (hero >= 0 && DAT_07abf5d0) {
                 const char* name = (const char*)(DAT_07abf5d0 + hero * 0x394 + 0x1c1);
-                size_t n = strlen(name);
-                memcpy(pkt + 4, name, n > 10 ? 10 : n);
+                NetText::ToServer(pkt + 4, 10, name);
             }
-            memcpy(pkt + 14, (const char*)DAT_07db8710, 10);   // InputText[0]
+            NetText::ToServer(pkt + 14, 10, (const char*)DAT_07db8710);   // InputText[0]
             gNetwork.Send(pkt, sizeof(pkt));
         }
         // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
@@ -532,7 +532,7 @@ void __cdecl UI_InGameMenu(void)
         // campos de identidad desde +4; el binario original ya los guarda en
         // DAT_07EA9834 al recibir 0x36.
         BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
-        memcpy(pkt + 4, DAT_07ea9834, 10);
+        NetText::ToServer(pkt + 4, 10, DAT_07ea9834);
         gNetwork.SendC1(pkt, sizeof(pkt));
         goto tail;
     }
@@ -590,8 +590,8 @@ void __cdecl UI_InGameMenu(void)
         pkt[0] = 0xC1;
         pkt[1] = 23;
         pkt[2] = 0x53;
-        memcpy(pkt + 3,  &byte_7E91790[13 * memberIdx], 10);
-        memcpy(pkt + 13, (const char*)DAT_07db8710, 10);
+        NetText::ToServer(pkt + 3, 10, &byte_7E91790[13 * memberIdx]);
+        NetText::ToServer(pkt + 13, 10, (const char*)DAT_07db8710);
         gNetwork.SendC1(pkt, 23);
         goto tail;
     }
@@ -873,7 +873,7 @@ void __cdecl UI_InGameMenu(void)
             pkt[2] = 0x83;
             pkt[3] = 1;
             memcpy(pkt + 4, &pin, 2);
-            memcpy(pkt + 6, (const char*)DAT_07db8710, 10);    // InputText[0]
+            NetText::ToServer(pkt + 6, 10, (const char*)DAT_07db8710);    // InputText[0]
             gNetwork.SendC1(pkt, sizeof(pkt));
         }
         memset(DAT_07db8710, 0, 10);                           // InputText[0][0..9]

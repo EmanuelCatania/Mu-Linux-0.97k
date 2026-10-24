@@ -247,6 +247,7 @@
     <ClInclude Include="src\Render\Terrain_Render.h" />
     <ClInclude Include="src\Render\Texture\ImageCodec.h" />
     <ClInclude Include="src\Text\TextCore.h" />
+    <ClInclude Include="src\Net\NetText.h" />
     <ClInclude Include="src\Text\TextShaper.h" />
     <ClInclude Include="src\Text\TextAtlas.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />

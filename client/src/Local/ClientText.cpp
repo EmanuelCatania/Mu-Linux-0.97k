@@ -53,15 +53,15 @@ const char* const English[] = {
 };
 const char* const Spanish[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
-    "Tasa de \xE9" "xito: pendiente",
+    "Tasa de \xC3\xA9" "xito: pendiente",
     "Costo: pendiente",
     "Eventos",
-    "Esperando informaci\xF3" "n de eventos",
+    "Esperando informaci\xC3\xB3" "n de eventos",
     "No hay eventos programados",
     "Deshabilitado",
     "Abierto",
     "En curso",
-    "%lu d\xED" "as",
+    "%lu d\xC3\xAD" "as",
     "Teletransporte",
     "Mapa",
     "VIP",
@@ -81,12 +81,12 @@ const char* const Spanish[] = {
     "Negrita",
     "Cursiva",
     "FPS: %.0f",
-    "Desacople", "VSync", "FPS: %d", "FPS: sin l\xED" "mite", "VSync no disponible",
+    "Desacople", "VSync", "FPS: %d", "FPS: sin l\xC3\xAD" "mite", "VSync no disponible",
     "Puerta a %s",
     "Zoom: %d",
     "Opacidad: %d%%",
     "Reconectando...",
-    "Iniciando sesi\xF3" "n...",
+    "Iniciando sesi\xC3\xB3" "n...",
     "Esperando la lista de personajes...",
     "Esperando los datos del personaje...",
     "No se pudo iniciar OpenGL 3.3 compatible. Revisar el controlador de video."
@@ -96,7 +96,7 @@ const char* const Portuguese[] = {
     "Taxa de sucesso: pendente",
     "Custo: pendente",
     "Eventos",
-    "Aguardando informa\xE7\xF5" "es de eventos",
+    "Aguardando informa\xC3\xA7\xC3\xB5" "es de eventos",
     "Nenhum evento programado",
     "Desativado",
     "Aberto",
@@ -108,8 +108,8 @@ const char* const Portuguese[] = {
     "Aguardando destinos",
     "Sem destinos",
     "< Anterior",
-    "Pr\xF3" "ximo >",
-    "Padr\xE3" "o",
+    "Pr\xC3\xB3" "ximo >",
+    "Padr\xC3\xA3" "o",
     "Remover Clima",
     "Remover Brilho",
     "Mundo",
@@ -119,9 +119,9 @@ const char* const Portuguese[] = {
     "Tela cheia",
     "Sem bordas",
     "Negrito",
-    "It\xE1" "lico",
+    "It\xC3\xA1" "lico",
     "FPS: %.0f",
-    "Render livre", "VSync", "FPS: %d", "FPS: sem limite", "VSync indispon\xED" "vel",
+    "Render livre", "VSync", "FPS: %d", "FPS: sem limite", "VSync indispon\xC3\xAD" "vel",
     "Portal para %s",
     "Zoom: %d",
     "Opacidade: %d%%",
@@ -129,12 +129,12 @@ const char* const Portuguese[] = {
     "Entrando...",
     "Aguardando a lista de personagens...",
     "Aguardando os dados do personagem...",
-    "N\xE3" "o foi poss\xED" "vel iniciar OpenGL 3.3 compatibility. Verifique o driver de v\xED" "deo."
+    "N\xC3\xA3" "o foi poss\xC3\xAD" "vel iniciar OpenGL 3.3 compatibility. Verifique o driver de v\xC3\xAD" "deo."
 };
 constexpr size_t Count = (size_t)ClientTextId::Count;
-static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xE9s");
-static_assert(sizeof(Spanish) / sizeof(Spanish[0]) == Count, "Faltan textos en espa\xF1ol");
-static_assert(sizeof(Portuguese) / sizeof(Portuguese[0]) == Count, "Faltan textos en portugu\xE9s");
+static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
+static_assert(sizeof(Spanish) / sizeof(Spanish[0]) == Count, "Faltan textos en espa\xC3\xB1ol");
+static_assert(sizeof(Portuguese) / sizeof(Portuguese[0]) == Count, "Faltan textos en portugu\xC3\xA9s");
 }
 
 const char* CClientText::Get(ClientTextId id) const

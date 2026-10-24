@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Game/RenderSnapshots.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -347,7 +348,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];   // strip CREATE bit
         BYTE x = e[2], y = e[3];
         char name[11] = {0};
-        memcpy(name, e + 0x12, 10);
+        NetText::FromServer(name, sizeof(name), e + 0x12, 10);
         BYTE tx = e[0x1C], ty = e[0x1D];
         BYTE dirpk = e[0x1E];
         BYTE dir = (dirpk >> 4) & 0x0F;
@@ -548,8 +549,7 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         *(float*)(entity + 36) = ((float)(e[20] >> 4) - 1.0f) * 45.0f;
         *(int*)(entity + 0x388) = e[2];
         *(int*)(entity + 0x38c) = e[3];
-        memcpy(entity + 449, e + 8, 10);
-        entity[459] = 0;
+        NetText::FromServer((char*)entity + 449, 11, e + 8, 10);
         ApplyPersistentSkillEffect97k(entity, viewSkillState, 1);
 
         if ((e[0] & 0x80) != 0) {
@@ -751,10 +751,13 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // el storage de GlobalText mientras se portea el subsistema de texto.
         char oldName[101] = {};
         strncpy(oldName, (char*)(summon + 449), sizeof(oldName) - 1);
-        memcpy(summon + 449, e + 11, 10);
-        summon[459] = 0;
-        strncat((char*)(summon + 449), "'s ", 100 - strlen((char*)(summon + 449)));
-        strncat((char*)(summon + 449), oldName, 100 - strlen((char*)(summon + 449)));
+        char owner[11] = {};
+        NetText::FromServer(owner, sizeof(owner), e + 11, 10);
+        std::string label = std::string(owner) + "'s " + oldName;
+        // El nombre empieza en +0x1C1 y lo que sigue a partir de +0x1DA es
+        // GuildMarkIndex y Key: el compuesto se corta en esos 25 bytes (antes
+        // el strncat de 100 bytes pisaba el índice de red de la invocación).
+        TextEngine::CopyTruncated((char*)(summon + 449), 0x1DA - 0x1C1, label);
         AsCharacter(summon)->Object.Live = 1;
         ApplyPersistentSkillEffect97k(summon, viewSkillState, 1);
 

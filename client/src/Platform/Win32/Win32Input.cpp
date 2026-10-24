@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/IInput.h"
 #include "Platform/Win32/Win32Window.h"
 #include "Input/Input.h"
@@ -56,6 +57,9 @@ void Input_OnWindowMessage(UINT message, WPARAM wParam, LPARAM lParam)
     event.x = GET_X_LPARAM(lParam);
     event.y = GET_Y_LPARAM(lParam);
     event.wheel = GET_WHEEL_DELTA_WPARAM(wParam);
-    event.character = (uint32_t)wParam;
+    // La ventana es ANSI: WM_CHAR trae un byte 1252; el campo de texto
+    // recibe el code point (el texto del cliente es UTF-8, Fase 4).
+    event.character = message == WM_CHAR && wParam < 256
+        ? (uint32_t)TextEngine::DecodeWindows1252((unsigned char)wParam) : (uint32_t)wParam;
     Input_OnEvent(event);
 }

@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "Text/TextAtlas.h"
+#include "Text/TextCore.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
@@ -1072,9 +1073,12 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             {
                 if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
                 RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
-                if (!GlyphAtlas::Draw(s_fontListBase, drawText + startChar, endChar - startChar, vw, vh))
-                    Gfx::CallLists((int)(endChar - startChar),
-                                   (const unsigned char*)(drawText + startChar));
+                // DESVIACION (Fase 4): el texto está en UTF-8 y las listas de
+                // GDI son de 256 glifos 1252.
+                const std::string legacy = TextEngine::ToWindows1252(
+                    std::string_view(drawText + startChar, size_t(endChar - startChar)));
+                if (!GlyphAtlas::Draw(s_fontListBase, legacy.c_str(), (int)legacy.size(), vw, vh))
+                    Gfx::CallLists((int)legacy.size(), (const unsigned char*)legacy.c_str());
             }
 #endif
         }

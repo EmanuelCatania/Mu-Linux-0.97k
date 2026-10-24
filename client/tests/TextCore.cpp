@@ -65,6 +65,18 @@ int main()
     Check(CompareIgnoreCase(U8(u8"Straße"), "STRASSE") == 0, "ß se pliega a ss");
     Check(CaseFoldKey(U8(u8"ñ")) == CaseFoldKey(U8(u8"Ñ")), "forma descompuesta == compuesta");
 
+    // ── Conversión en el lugar (recursos y paquetes en 1252) ──
+    char field[8] = "A\xF1o";
+    Check(ConvertWindows1252InPlace(field, sizeof(field)) == 4 && std::string(field) == "A\xC3\xB1o", "campo 1252 a UTF-8");
+    char tight[4] = "\xF1\xF1\xF1";
+    Check(ConvertWindows1252InPlace(tight, sizeof(tight)) == 2 && std::string(tight) == "\xC3\xB1", "corta sin partir la letra");
+    char ascii[6] = "hola";
+    Check(ConvertWindows1252InPlace(ascii, sizeof(ascii)) == 4 && std::string(ascii) == "hola", "ASCII no cambia");
+    char utf8File[8] = "\xC3\xB1" "a";
+    Check(NormalizeTextFileInPlace(utf8File, sizeof(utf8File)) == 3 && std::string(utf8File) == "\xC3\xB1" "a", "archivo ya UTF-8 se respeta");
+    char legacyFile[8] = "\xF1" "a";
+    Check(NormalizeTextFileInPlace(legacyFile, sizeof(legacyFile)) == 3 && std::string(legacyFile) == "\xC3\xB1" "a", "archivo 1252 se convierte");
+
     if (failures) { std::printf("%d fallas\n", failures); return 1; }
     std::puts("TextCore: 1252, validación, clusters, cortes, NFC y case folding correctos");
     return 0;

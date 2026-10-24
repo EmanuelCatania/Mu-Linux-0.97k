@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
@@ -150,4 +151,9 @@ void __cdecl Item_LoadBMD(const char *path)
         p   += 0x40;
     } while (off < 0x8000);
     operator_delete(buf);
+    // DESVIACION (Fase 4, texto Unicode): nombres de 1252 a UTF-8 en las dos tablas.
+    for (off = 0; off < 0x8000; off += 0x40) {
+        TextEngine::ConvertWindows1252InPlace((char *)DAT_07d78068 + off, 30);
+        TextEngine::ConvertWindows1252InPlace((char *)DAT_07cf1ff0 + off, 30);
+    }
 }

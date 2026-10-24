@@ -32,7 +32,7 @@ void Win32Window::ApplySettings(const WindowSettings& settings)
     m_WindowMode = settings.windowMode;
     m_Borderless = settings.borderless;
 }
-void Win32Window::SetTitle(const char* title) { SetWindowTextA(m_hWnd, title); }
+void Win32Window::SetTitle(const char* title) { SetWindowTextW(m_hWnd, Wide(title).c_str()); }
 void Win32Window::ShowAndFocus()
 {
     ShowWindow(m_hWnd, SW_SHOW);

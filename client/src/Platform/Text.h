@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cerrno>
 #include <utility>
+#include <string_view>
+#include "Text/TextCore.h"
 #ifdef _WIN32
 #include <mbstring.h>
 #else
@@ -13,20 +15,16 @@
 #endif
 
 namespace Platform {
-// CP949: verificado contra IsDBCSLeadByteEx para los 256 valores.
-inline unsigned KoreanCharacterBytes(unsigned char first)
-{ return first >= 0x81 && first <= 0xfe ? 2u : 1u; }
 
-// El cliente Linux consume los mismos textos Windows-1252 que SDLFont::DecodeByte.
-// Windows conserva la página de códigos de la CRT para los cortes heredados.
+// IDA: _mbclen. DESVIACION (Fase 4, texto Unicode): el texto del cliente está
+// en UTF-8; los cortes heredados avanzan de a letra visible (grapheme cluster)
+// para no partir un acento, una sílaba hangul ni un emoji compuesto.
 inline unsigned TextCharacterBytes(const unsigned char* text)
 {
-#ifdef _WIN32
-    return _mbclen(text);
-#else
-    (void)text;
-    return 1; // Windows-1252 es una codificación de un byte, incluso para acentos.
-#endif
+    if (!text || !*text) return 1;
+    const std::string_view view(reinterpret_cast<const char*>(text));
+    const std::size_t next = TextEngine::NextCluster(view, 0);
+    return next ? unsigned(next) : 1u;
 }
 
 

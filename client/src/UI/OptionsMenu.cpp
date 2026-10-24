@@ -25,7 +25,7 @@ struct OptionsLayout {
 };
 using Layout = OptionsLayout;
 
-const char* const LanguageNames[MAX_USER_LANGUAGE] = { "English", "Espa\xF1" "ol", "Portugu\xEA" "s" };
+const char* const LanguageNames[MAX_USER_LANGUAGE] = { "English", "Espa\xC3\xB1" "ol", "Portugu\xC3\xAA" "s" };
 
 int RowY(int row) { return Layout::Y + row * Layout::Step; }
 

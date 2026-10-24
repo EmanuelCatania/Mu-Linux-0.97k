@@ -5,6 +5,7 @@
 // conserva su símbolo/dirección de IDA en el comentario que la precede.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -190,16 +191,14 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
     }
 
     // --- Chat message processing (escenas que no son el login) ---
+    // DESVIACION (Fase 4, texto Unicode): nombre y mensaje llegan en 1252 y se
+    // guardan en UTF-8 (NetText); el mensaje puede crecer hasta 3 veces.
     char sender[11];
-    char msg[61];
+    char msg[181];
     memset(sender, 0, sizeof(sender));
     memset(msg, 0, sizeof(msg));
 
-    // Copy sender name (10 bytes at offset 3)
-    memcpy(sender, ReceiveBuffer + 3, 10);
-
-    // Copy message text (up to 59 bytes)
-    memset(msg, 0, 61);
+    NetText::FromServer(sender, sizeof(sender), ReceiveBuffer + 3, 10);
 
     // IDA ReceiveChat (0x427630) usa UIChatLogWindow_AddText(strID, strText, <canal>)
     // con el canal correcto por prefijo.
@@ -209,23 +208,23 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 
     if (chatType == '~') {
         // Party (canal 4)
-        memcpy(msg, ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0E, 59);
         UIChatLogWindow_AddText(sender, msg, 4);
     }
     else if (chatType == '@') {
         // Guild (canal 5)
-        memcpy(msg, ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0E, 59);
         UIChatLogWindow_AddText(sender, msg, 5);
     }
     else if (chatType == '#') {
         // Solo burbuja sobre el personaje (sin entrada en el log)
-        memcpy(msg, ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0E, 59);
         AssignChat(sender, msg, 1);
     }
     else {
         // Chat normal: burbuja + log en canal 3 (color casi-blanco 0xFFEFDCCD;
         // renderLine lo saltea si byte_559BF1==0, que es el toggle de F2).
-        memcpy(msg, ReceiveBuffer + 0x0D, 60);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0D, 60);
         AssignChat(sender, msg, 0);
         UIChatLogWindow_AddText(sender, msg, 3);
     }

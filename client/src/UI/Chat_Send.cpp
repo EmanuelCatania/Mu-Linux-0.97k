@@ -1,6 +1,7 @@
 // Chat_Send.cpp
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -106,13 +107,15 @@ void __cdecl SendChat(char* Text) {
     pkt[pos++] = 0x00;  // opcode: chat (IDA: C1 <len> 00)
 
     // Copy Hero->ID (10 bytes) — ID at offset 0x1C1 in CHARACTER struct
-    memcpy(pkt + pos, Hero + 0x1C1, 10);
+    NetText::ToServer(pkt + pos, 10, (const char*)(Hero + 0x1C1));
     pos += 10;  // pos = 13
 
     // Copy chat text (max 60 bytes including null)
-    int textLen = (int)strlen(Text) + 1;
+    // DESVIACION (Fase 4, texto Unicode): el mensaje viaja en 1252 (NetText).
+    const std::string legacyText = NetText::ToServer(Text);
+    int textLen = (int)legacyText.size() + 1;
     if (textLen > 0x3c) textLen = 0x3c;
-    memcpy(pkt + pos, Text, textLen);
+    memcpy(pkt + pos, legacyText.c_str(), textLen);
     pos += textLen;
 
     short totalLen = (short)pos;

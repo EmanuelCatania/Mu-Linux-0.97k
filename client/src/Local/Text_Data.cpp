@@ -17,6 +17,7 @@
 #include "Platform/Text.h"
 #include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
+#include "Text/TextCore.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -52,22 +53,28 @@ int __cdecl LoadTextData_Bin(const char *FileName)
         return 0;
     }
 
+    // DESVIACION (Fase 4): el 0.97k exige el tamaño exacto. Acá un archivo
+    // más corto deja vacías las filas que faltan y uno más largo se ignora
+    // a partir de la fila 1000.
+    memset(buf, 0, poolBytes);
     size_t got = fread(buf, 1, poolBytes, fp);
     if (got != poolBytes) {
         char msg[256];
-        Platform::TextFormat(msg, "OpenTextData: short read (%u/%u)", (unsigned)got, (unsigned)poolBytes);
+        Platform::TextFormat(msg, "OpenTextData: %s trae %u bytes de %u; se completan filas vacias",
+                             FileName, (unsigned)got, (unsigned)poolBytes);
         DbgLogPublic(msg);
-        free(buf);
-        fclose(fp);
-        return 0;
     }
 
     // XOR-decrypt in place with the 3-byte rolling key (BuxConvert_0).
-    BuxConvert_0((int)buf, (int)poolBytes);
+    BuxConvert_0((int)buf, (int)got);
 
     // Copy decrypted pool into GlobalText.  Each 300-byte row is already a
     // null-terminated string in the file; we don't truncate or reformat.
     memcpy(GlobalText, buf, poolBytes);
+    // DESVIACION (Fase 4, texto Unicode): el archivo está en Windows-1252;
+    // en memoria el texto del cliente es UTF-8.
+    for (int row = 0; row < GLOBALTEXT_ROWS_FILE; ++row)
+        TextEngine::ConvertWindows1252InPlace(GlobalText[row], 300);
 
     free(buf);
     fclose(fp);

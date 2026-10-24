@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/IWindow.h"
 #include "functions.h"
 #include "globals.h"
@@ -128,4 +129,10 @@ void __cdecl Skill_LoadBMD(const char *path)
         buf += 0x28;
     } while (off <= 0x9ff);
     operator_delete(buf0);
+    // DESVIACION (Fase 4, texto Unicode): nombres (32 bytes) de 1252 a UTF-8.
+    for (off = 0; off + 0x28 <= 0xa00; off += 0x28) {
+        if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
+            TextEngine::ConvertWindows1252InPlace(SkillAttribute.Raw + off, 32);
+        TextEngine::ConvertWindows1252InPlace((char *)DAT_07cf1ff8 + off, 32);
+    }
 }

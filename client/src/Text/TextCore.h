@@ -46,6 +46,13 @@ std::size_t FitClusters(std::string_view text, std::size_t maxClusters);
 // Copia a un buffer C de `capacity` bytes (NUL incluido) sin partir un
 // cluster. Devuelve los bytes escritos sin el NUL.
 std::size_t CopyTruncated(char* out, std::size_t capacity, std::string_view text);
+// Convierte en el lugar un campo C de `capacity` bytes que trae texto
+// Windows-1252 (recursos y paquetes viejos) a UTF-8, cortando sin partir un
+// cluster si no entra. Devuelve los bytes escritos sin el NUL.
+std::size_t ConvertWindows1252InPlace(char* field, std::size_t capacity);
+// Para archivos de texto que el usuario edita (NPCName.txt, macros): si ya es
+// UTF-8 válido se deja (el ASCII también lo es); si no, se toma como 1252.
+std::size_t NormalizeTextFileInPlace(char* field, std::size_t capacity);
 
 // ── Normalización y comparación ─────────────────────────────────────────────
 std::string NormalizeNFC(std::string_view text);
