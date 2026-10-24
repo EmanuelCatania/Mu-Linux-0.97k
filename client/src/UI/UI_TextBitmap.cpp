@@ -6,6 +6,38 @@
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
+#include "Render/BufferedDraw.h"
+#ifdef MU_SDL_FONTS
+#include "Text/TextAtlas.h"
+#include <string>
+
+// DESVIACION (Fase 4, texto Unicode): en SDL3 la burbuja de chat no se
+// rasteriza a una superficie de CPU para subirla como textura cada vez.
+// Font_RenderTextToBitmap sólo anota qué hay que dibujar y con qué colores,
+// y Font_RenderBitmapText lo dibuja por el atlas en el mismo lugar que el
+// quad original: fondo m_dwBackColor hasta la columna de corte, prefijo
+// (guild) en SetTextColor_0 y el resto en m_dwTextColor, modulado por el
+// color del caller como RenderBitmap. Diferencia conocida: un texto con alfa
+// parcial (el desvanecido de 0x80) ahora se mezcla con el fondo de la burbuja
+// en vez de reemplazarlo píxel a píxel.
+namespace {
+struct PendingBubble {
+    bool valid = false;
+    bool text = false;
+    int width = 0, height = 0, x = 0, split = 0, prefixWidth = 0;
+    std::string prefix, main;
+    DWORD textColor = 0, prefixColor = 0, backColor = 0;
+} pending;
+
+void Channels(DWORD color, const float caller[4], unsigned char out[4])
+{
+    out[0] = (unsigned char)((float)( color        & 0xFF) * caller[0] + 0.5f);
+    out[1] = (unsigned char)((float)((color >>  8) & 0xFF) * caller[1] + 0.5f);
+    out[2] = (unsigned char)((float)((color >> 16) & 0xFF) * caller[2] + 0.5f);
+    out[3] = (unsigned char)((float)((color >> 24) & 0xFF) * caller[3] + 0.5f);
+}
+}
+#endif
 
 // FUN_0047f360 @ 0x0047F360 — Font_RenderTextToBitmap (~93 lines)
 // TextOutA to m_hFontDC, then pixel-copy loop: nonzero->m_dwTextColor, zero->m_dwBackColor.
@@ -18,6 +50,32 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     (void)p4; (void)p5; (void)p7;
 
     RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
+#ifdef MU_SDL_FONTS
+    {
+        int width = p1;
+        const int maxW = (int)(*(float*)(&DAT_083a7cc0));
+        if (maxW > 0 && width > maxW) width = maxW;
+        const int maxH = (int)(*(float*)(&DAT_083a7cc4));
+        pending.valid = true;
+        pending.text = *p3 != '\n';
+        pending.width = width;
+        pending.height = maxH < p2 ? maxH : p2;
+        pending.x = p6;
+        pending.split = p8 ? p8 : p1;
+        pending.prefix = (pending.text && p9) ? p9 : "";
+        pending.main = pending.text ? p3 : "";
+        pending.prefixWidth = p1;
+        if (pending.text) {
+            SIZE sz = {};
+            if (p9) gFont.MeasureText(gFont.GetTextDC(), p9, Platform::TextLength(p9), &sz);
+            pending.prefixWidth = p9 ? sz.cx : 0;
+        }
+        pending.textColor = DAT_00559c78;
+        pending.prefixColor = SetTextColor_0;
+        pending.backColor = m_dwBackColor;
+        return;
+    }
+#endif
     gFont.BeginTextMask();
     int bmpWidth = p1;
     // IDA inicializa `sz.cx = a1` ANTES del check de '\n' (sub_47F360 L21-23).
@@ -148,10 +206,12 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
 
   RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
   RenderProfile::TextString(true);
+#ifndef MU_SDL_FONTS
   { RenderProfile::TextScope profileText(RenderProfile::TextWork::Upload);
   Gfx::BindTexture(Bitmaps[0].TextureNumber);
   Gfx::TexImage2D(Bitmaps[0].Components, (std::int64_t)Bitmaps[0].Width, (std::int64_t)Bitmaps[0].Height, Gfx::Format::RGBA, Bitmaps[0].Buffer);
   }
+#endif
   v8 = a1;
   if ( a1 < 0 )
   {
@@ -201,7 +261,50 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
   uWidth = (Widtha + 0.0099999998) / Bitmaps[0].Width;
   y = (float)a2;
   x = (float)a1;
+#ifdef MU_SDL_FONTS
+  (void)uWidth; (void)vHeight;
+  if (!pending.valid) return;
+  pending.valid = false;
+  // Mismo rectángulo que RenderBitmap(..., 0, a7): con a7 las coordenadas
+  // están en el espacio 640x480 y se escalan; sin a7 ya son píxeles.
+  if ((BYTE)(a7)) { x = Screen_ToGLX(x); y = Screen_ToGLY(y); }
+  const float top = (float)gWindow.GetHeight() - y;
+  float caller[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+  Gfx::CurrentColor(caller);
+  const int rows = pending.height < (int)Heighta ? pending.height : (int)Heighta;
+  const int cols = pending.width < (int)Widtha ? pending.width : (int)Widtha;
+  const int backCols = pending.split < cols ? pending.split : cols;
+  unsigned char c[4];
+  Gfx::PushAttrib(Gfx::AttribEnable | Gfx::AttribCurrent);
+  Channels(pending.backColor, caller, c);
+  if (c[3] && backCols > 0 && rows > 0) {
+      Gfx::Disable(Gfx::Cap::Texture2D);
+      BufferedDraw::Color4ub(c[0], c[1], c[2], c[3]);
+      BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+      BufferedDraw::Vertex2f(x, top - rows);
+      BufferedDraw::Vertex2f(x + backCols, top - rows);
+      BufferedDraw::Vertex2f(x + backCols, top);
+      BufferedDraw::Vertex2f(x, top);
+      BufferedDraw::End();
+  }
+  if (pending.text) {
+      TEXTMETRICA tm = {};
+      const int ascent = gFont.TextMetrics(gFont.GetTextDC(), &tm) ? tm.tmAscent : 11;
+      const float baseline = top - (float)ascent;
+      RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+      if (!pending.prefix.empty()) {
+          Channels(pending.prefixColor, caller, c);
+          if (const auto* shaped = gFont.Shape(gFont.GetTextDC(), pending.prefix.c_str(), (int)pending.prefix.size()))
+              TextAtlas::Draw(*shaped, x + pending.x, baseline, c[0], c[1], c[2], c[3]);
+      }
+      Channels(pending.textColor, caller, c);
+      if (const auto* shaped = gFont.Shape(gFont.GetTextDC(), pending.main.c_str(), (int)pending.main.size()))
+          TextAtlas::Draw(*shaped, x + pending.x + pending.prefixWidth, baseline, c[0], c[1], c[2], c[3]);
+  }
+  Gfx::PopAttrib();
+#else
   RenderBitmap(0, x, y, Widtha, Heighta, 0.0, 0.0, uWidth, vHeight, 0, SLOBYTE(a7));
+#endif
 }
 
 
