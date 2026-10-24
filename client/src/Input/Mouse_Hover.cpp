@@ -270,7 +270,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     if (DAT_07e11d30 != 5) {
         GL_SetAlphaTest('\0');
         BufferedDraw::Color3f(0.0f, 0.0f, 0.0f);
-        BufferedDraw::Begin(3);
+        BufferedDraw::Begin(BufferedDraw::Primitive::LineStrip);
         // g_TilePickBuf[12] = 4 vec3 corners: iterar 4 (no el bound absoluto del binario).
         for (int i = 0; i < 4; ++i) {
             BufferedDraw::Vertex3fv(&g_TilePickBuf[i * 3]);
@@ -307,7 +307,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
             GL_DisableDepthTest();
             GL_SetBlendSrcOver('\x01');
             GL_SetAlphaTest('\0');
-            BufferedDraw::Begin(6);
+            BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
             BufferedDraw::Color4f(1.0f, 0.0f, 0.0f, 0.3f);
             // g_TilePickBuf[12] holds exactly 4 vec3 corners (no el bound absoluto
             // 0x7feb288 del binario).

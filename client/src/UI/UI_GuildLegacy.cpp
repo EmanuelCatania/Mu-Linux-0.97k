@@ -1,6 +1,7 @@
 // UI_GuildLegacy.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -58,14 +59,14 @@ int __cdecl RenderMatchScore(void)
     static const int kCol[5] = { 219, 235, 287, 345, 383 };
     char buf[64];
 
-    glColor3f(0.5f, 1.0f, 0.5f);
+    Gfx::Color3f(0.5f, 1.0f, 0.5f);
     UI_RenderText(229, 70, GlobalText[647], (LPSIZE)0, '\0', 0);
     Platform::TextFormat(buf, GlobalText[648], (const char *)((int)DAT_07abf5d8 + 0x1c1));
     UI_RenderText(229, 86, buf, (LPSIZE)0, '\0', 0);
 
     // Encabezados 680..684.  El original SALTEA el 681 ("Personaje") y le suma
     // 10 px al indice 2; es asi en el binario.
-    glColor3f(0.5f, 0.5f, 1.0f);
+    Gfx::Color3f(0.5f, 0.5f, 1.0f);
     for (int i = 0; i < 5; ++i) {
         if (i == 1) continue;
         UI_RenderText(kCol[i] + (i == 2 ? 10 : 0), 110, GlobalText[680 + i],
@@ -78,14 +79,14 @@ int __cdecl RenderMatchScore(void)
     if (count <= 0) return DAT_083a7c30;
 
     int y = 126;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     for (int i = 0; i < count; ++i) {
         // El registro 0 del buffer es el del propio jugador y va ULTIMO: por eso
         // el original indexa con (i+1) % count.
         const BYTE *e = &DAT_083a7af8[GUILD_MEMBER_STRIDE * ((i + 1) % count)];
 
         if (i == count - 1) {
-            glColor3f(0.9f, 0.9f, 0.0f);
+            Gfx::Color3f(0.9f, 0.9f, 0.0f);
             UI_RenderText(219, 286, GlobalText[685], (LPSIZE)0, '\0', 0);
             y = 302;
             Platform::TextFormat(buf, "%2d", DAT_083a7c34);
@@ -124,7 +125,7 @@ int __cdecl RenderMatchScore(void)
 // DAT_083a7c30=0 → "draw" strings; !=0 → "win/loss" strings.
 int __cdecl GuildOverview_Render(void)
 {
-    glColor3f(0.5f, 0.5f, 0.5f);
+    Gfx::Color3f(0.5f, 0.5f, 0.5f);
     const char *title, *subtitle;
     tagSIZE sz = {};
     HDC hdc = (HDC)(uintptr_t)gFont.GetTextDC();
@@ -145,7 +146,7 @@ int __cdecl GuildOverview_Render(void)
     cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x56, subtitle, (LPSIZE)0, '\0', 0);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffffffff;
     gFont.SelectFont(hdc, (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
 

@@ -884,7 +884,7 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
     int texId; memcpy(&texId, &param_2, 4);
 
     GL_BindTextureSlot(texId);
-    BufferedDraw::Begin(GL_QUADS);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
     if (param_1) {
         // cara delantera: (c,r) (c+1,r) (c+1,r+1) (c,r+1)
         for (int r = 0; r < rows - 1; ++r)

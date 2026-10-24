@@ -2,6 +2,7 @@
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/OptionsMenu.h"
 
@@ -43,7 +44,7 @@ int RenderErrorMessage(void)
   DAT_00559c8c = 0x100;
   gOptionsMenu.OnErrorMessageFrame();   // DESVIACION (DLL OptionsMenu, hook 0x0051AF65)
   GL_ResetState();
-  glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
   gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
@@ -64,10 +65,10 @@ int RenderErrorMessage(void)
           GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
           if ((((0x103 < DAT_083a427c) && (DAT_083a427c < 0x17c)) && ((int)local_dc <= DAT_083a4278)
               ) && (DAT_083a4278 < (int)local_dc + 0x16)) {
-            glColor3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
+            Gfx::Color3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
             GL_SetBlendAdditive();
             GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-            glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
             GL_ResetState();
           }
           local_dc = (int)local_dc + 0x1e;
@@ -185,13 +186,13 @@ switchD_0051bea9_caseD_8b:
       }
       if (DAT_083a7c24 == 0x8d) {
         GL_SetBlendSrcOver('\x01');
-        glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
         if (DAT_083a7c08 == '\0') {
           uVar16 = 0x3e4ccccd;
           uVar15 = 0x3e4ccccd;
           uVar10 = 0x3e4ccccd;
 LAB_0051c08c:
-          glColor3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
+          Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         }
         else if (((0xf8 < DAT_083a427c) && (0xc9 < DAT_083a4278)) &&
                 ((DAT_083a427c < 0x109 && (DAT_083a4278 < 0xdf)))) {
@@ -201,17 +202,17 @@ LAB_0051c08c:
             uVar10 = 0x3f333333;
             goto LAB_0051c08c;
           }
-          glColor3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
+          Gfx::Color3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
           DAT_083a4124 = '\0';
         }
         GL_DrawRotatedRect(9,253.0,210.0,25.0,16.0,0x43870000);
-        glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
         if (DAT_083a7c08 == DAT_083a7c09) {
           uVar16 = 0x3e4ccccd;
           uVar15 = 0x3e4ccccd;
           uVar10 = 0x3e4ccccd;
 LAB_0051c13d:
-          glColor3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
+          Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         }
         else if ((((0x178 < DAT_083a427c) && (0xc9 < DAT_083a4278)) && (DAT_083a427c < 0x189)) &&
                 (DAT_083a4278 < 0xdf)) {
@@ -221,15 +222,15 @@ LAB_0051c13d:
             uVar10 = 0x3f333333;
             goto LAB_0051c13d;
           }
-          glColor3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
+          Gfx::Color3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
           DAT_083a4124 = '\0';
         }
         GL_DrawRotatedRect(9,383.0,210.0,25.0,16.0,0x42b40000);
-        glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
       }
     }
     else if (DAT_083a7c24 == 0x8f) {
-      glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+      Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
       local_d8 = 0x78;
       GL_DrawTexture(0xfc,213.0,120.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x7d;
@@ -259,7 +260,7 @@ LAB_0051c13d:
         }
 			// IDA stores the hover tint as float bit patterns (0.7f/1.0f).
 			// Preserve that representation when forwarding it to OpenGL.
-			glColor3f(*(float*)&uVar10,*(float*)&uVar15,*(float*)&uVar16);
+			Gfx::Color3f(*(float*)&uVar10, *(float*)&uVar15, *(float*)&uVar16);
         GL_DrawTexture(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
         gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
         DAT_00559c78 = 0xfffff0c8;
@@ -295,7 +296,7 @@ LAB_0051c13d:
         UI_RenderText(0xf8,uVar10,pCVar6,(LPSIZE)0x0,'\0',0);
         iVar3 = iVar3 + 1;
       } while (iVar3 < 2);
-      glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+      Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
     }
     else if ((DAT_083a7c24 == 0x97) || (DAT_083a7c24 == 0x99)) {
       local_d8 = 0x64;
@@ -815,7 +816,7 @@ LAB_0051c13d:
         else {
           uVar10 = 0x3f800000;
         }
-        glColor3f(1.0f, *(float*)&uVar10, 0.0f);
+        Gfx::Color3f(1.0f, *(float*)&uVar10, 0.0f);
         local_e4.cx = 0;
         pCVar6 = (LPCSTR)(uintptr_t)local_d8;
         do {
@@ -833,7 +834,7 @@ LAB_0051c13d:
         local_d8 = local_d8 + 0x26;
       } while ((int)local_dc < DAT_083a7c0c);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
     return 0;
   case 0x8c:
     iVar3 = RenderMatchScore();
@@ -874,7 +875,7 @@ LAB_0051c13d:
     }
     local_d8 = 0x140;
     gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
-    glColor3f(1.0f, 1.0f, 0.0f);
+    Gfx::Color3f(1.0f, 1.0f, 0.0f);
     uVar5 = ((int)MixType < 0) - 1 & MixType;
     if (MixType == 0xb) {
       uVar5 = 7;
@@ -899,13 +900,13 @@ LAB_0051d371:
       return DAT_083a4324;
     }
     do {
-      glColor3f(1.0f, 0.7f, 0.0f);
+      Gfx::Color3f(1.0f, 0.7f, 0.0f);
       gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
       if (iVar3 == 0) {
         if (DAT_07eaa13c == 1) {
           uVar10 = 0;
 LAB_0051d3cf:
-          glColor3f(1.0f, *(float*)&uVar10, *(float*)&uVar10);
+          Gfx::Color3f(1.0f, *(float*)&uVar10, *(float*)&uVar10);
         }
       }
       else if ((iVar3 == 3) && (DAT_07eaa13c == 3)) {
@@ -913,7 +914,7 @@ LAB_0051d3cf:
         goto LAB_0051d3cf;
       }
       if (DAT_07eaa13c == 2) {
-        glColor3f(0.9f, 0.9f, 1.0f);
+        Gfx::Color3f(0.9f, 0.9f, 1.0f);
       }
       ptVar17 = &local_d0;
       pCVar6 = (LPCSTR)((int)&DAT_083a44c4 + iVar3 * 0x26);

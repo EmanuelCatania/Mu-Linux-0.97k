@@ -1,6 +1,7 @@
 // Render_MatrixStack.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 #include "Net/MuEmu.h"
@@ -15,17 +16,17 @@
 // invisible). Los glGetError() limpian el GL_STACK_UNDERFLOW que generan los
 // pops sobrantes (son inocuos, sólo setean el flag de error).
 unsigned int __cdecl GL_PopMatrixAll(void) {
-    glMatrixMode(GL_PROJECTION);
-    for (int i = 0; i < 8; ++i) glPopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    for (int i = 0; i < 8; ++i) Gfx::PopMatrix();
     // Drain ALL pending error flags (multiple underflows can stack).
     // Single glGetError() solo limpia uno; el resto persiste y aparece
     // como 0x504 en cada GL_DisableDepthTest next frame.
-    while (glGetError() != GL_NO_ERROR) {}
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    for (int i = 0; i < 8; ++i) glPopMatrix();
-    while (glGetError() != GL_NO_ERROR) {}
-    glLoadIdentity();
+    Gfx::ClearErrors();
+    Gfx::LoadIdentity();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
+    for (int i = 0; i < 8; ++i) Gfx::PopMatrix();
+    Gfx::ClearErrors();
+    Gfx::LoadIdentity();
     return 0;
 }
 

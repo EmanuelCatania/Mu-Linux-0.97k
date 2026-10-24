@@ -1,6 +1,7 @@
 // UI_GuildMark.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -136,9 +137,8 @@ void __cdecl RenderGuildMark(float p1, float p2, float p3, float p4, int p5) {
     }
 
     // Upload pixel buffer as GL texture
-    glBindTexture(0xDE1, Bitmaps[0x22].TextureNumber);  // GL_TEXTURE_2D
-    glTexImage2D(0xDE1, 0, (int)(BYTE)Bitmaps[0x22].Components,
-                 iVar2, iVar3, 0, 0x1908, 0x1401, (void*)Bitmaps[0x22].Buffer);  // GL_RGB, GL_UNSIGNED_BYTE
+    Gfx::BindTexture(Bitmaps[0x22].TextureNumber);  // GL_TEXTURE_2D
+    Gfx::TexImage2D((int)(BYTE)Bitmaps[0x22].Components, iVar2, iVar3, Gfx::Format::RGBA, (void*)Bitmaps[0x22].Buffer);  // GL_RGB, GL_UNSIGNED_BYTE
 
     // Draw the guild mark texture (texture slot 0x22)
     GL_DrawTexture(0x22, p1, p2, Width, Height, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');

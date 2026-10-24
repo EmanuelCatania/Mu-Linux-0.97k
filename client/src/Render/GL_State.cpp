@@ -32,6 +32,7 @@
 //   0x301 = GL_ONE_MINUS_SRC_COLOR
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/Materials.h"
 #include "Render/ResourceTables.h"
 #include "Platform/ITimer.h"
@@ -42,21 +43,21 @@ void GL_SetBlendAdditive(void)
     if(Materials::Select(Materials::Preset::Add))return;
   if (DAT_083a412c != 3) {
     DAT_083a412c = 3;
-    glEnable(0xbe2);
-    glBlendFunc(1,1);
+    Gfx::Enable(Gfx::Cap::Blend);
+    Gfx::BlendFunc(Gfx::Factor::One, Gfx::Factor::One);
   }
   GL_DisableCullFace();
   GL_DisableDepthWrites();
   if (DAT_083a411d != '\0') {
     DAT_083a411d = '\0';
-    glDisable(0xbc0);
+    Gfx::Disable(Gfx::Cap::AlphaTest);
   }
   if (DAT_083a4125 == '\0') {
     DAT_083a4125 = '\x01';
-    glEnable(0xde1);
+    Gfx::Enable(Gfx::Cap::Texture2D);
   }
   if (DAT_083a42ea != '\0') {
-    glDisable(0xb60);
+    Gfx::Disable(Gfx::Cap::Fog);
   }
   return;
 }
@@ -68,21 +69,21 @@ void GL_SetBlendSrcAlpha(void)
     if(Materials::Select(Materials::Preset::Attenuate))return;
   if (DAT_083a412c != 4) {
     DAT_083a412c = 4;
-    glEnable(0xbe2);
-    glBlendFunc(0,0x301);
+    Gfx::Enable(Gfx::Cap::Blend);
+    Gfx::BlendFunc(Gfx::Factor::Zero, Gfx::Factor::OneMinusSrcColor);
   }
   GL_DisableCullFace();
   GL_DisableDepthWrites();
   if (DAT_083a411d != '\0') {
     DAT_083a411d = '\0';
-    glDisable(0xbc0);
+    Gfx::Disable(Gfx::Cap::AlphaTest);
   }
   if (DAT_083a4125 == '\0') {
     DAT_083a4125 = '\x01';
-    glEnable(0xde1);
+    Gfx::Enable(Gfx::Cap::Texture2D);
   }
   if (DAT_083a42ea != '\0') {
-    glEnable(0xb60);
+    Gfx::Enable(Gfx::Cap::Fog);
   }
   return;
 }
@@ -114,10 +115,10 @@ void __cdecl GL_BindTextureSlot(int param_1)
         if (count++ < 80) {
         }
       }
-      glBindTexture(0xde1, texture);
+      Gfx::BindTexture(texture);
       return;
     }
-    glBindTexture(0xde1,-param_1);
+    Gfx::BindTexture(-param_1);
   }
   return;
 }
@@ -132,8 +133,8 @@ void __cdecl GL_SetBlendSrcOver(char param_1)
     if(Materials::Select(Materials::Preset::Alpha,param_1 != 0))return;
   if (DAT_083a412c != 2) {
     DAT_083a412c = 2;
-    glEnable(0xbe2);
-    glBlendFunc(0x302,0x303);
+    Gfx::Enable(Gfx::Cap::Blend);
+    Gfx::BlendFunc(Gfx::Factor::SrcAlpha, Gfx::Factor::OneMinusSrcAlpha);
   }
   GL_DisableCullFace();
   if (param_1 != '\0') {
@@ -141,14 +142,14 @@ void __cdecl GL_SetBlendSrcOver(char param_1)
   }
   if (DAT_083a411d == '\0') {
     DAT_083a411d = '\x01';
-    glEnable(0xbc0);
+    Gfx::Enable(Gfx::Cap::AlphaTest);
   }
   if (DAT_083a4125 == '\0') {
     DAT_083a4125 = '\x01';
-    glEnable(0xde1);
+    Gfx::Enable(Gfx::Cap::Texture2D);
   }
   if (DAT_083a42ea != '\0') {
-    glEnable(0xb60);
+    Gfx::Enable(Gfx::Cap::Fog);
   }
   return;
 }
@@ -166,7 +167,7 @@ void __cdecl GL_GetModelViewMatrix(unsigned int *param_1)
   int iVar5;
   unsigned int local_40 [16];
 
-  glGetFloatv(0xba6,(GLfloat*)local_40);
+  Gfx::GetMatrix(Gfx::Matrix::ModelView,(float*)local_40);
   puVar4 = local_40;
   iVar5 = 3;
   do {
@@ -190,8 +191,8 @@ void __cdecl GL_GetModelViewMatrix(unsigned int *param_1)
 // Pushes current matrix and loads identity.
 void GL_BeginSprite(void)
 {
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   return;
 }
 
@@ -202,10 +203,10 @@ void GL_BeginSprite(void)
 // then restores MODELVIEW as current mode.
 void GL_EndOpenGL(void)
 {
-  glPopMatrix();
-  glMatrixMode(0x1701u);   // GL_PROJECTION
-  glPopMatrix();
-  glMatrixMode(0x1700u);   // GL_MODELVIEW
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);   // GL_PROJECTION
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);   // GL_MODELVIEW
   return;
 }
 
@@ -243,20 +244,20 @@ void GL_ResetState(void)
     if(Materials::Select(Materials::Preset::Opaque))return;
   if (DAT_083a412c != 0) {
     DAT_083a412c = 0;
-    glDisable(0xbe2);
+    Gfx::Disable(Gfx::Cap::Blend);
   }
   GL_EnableCullFace();
   GL_EnableDepthWrites();
   if (DAT_083a411d != '\0') {
     DAT_083a411d = '\0';
-    glDisable(0xbc0);
+    Gfx::Disable(Gfx::Cap::AlphaTest);
   }
   if (DAT_083a4125 == '\0') {
     DAT_083a4125 = '\x01';
-    glEnable(0xde1);
+    Gfx::Enable(Gfx::Cap::Texture2D);
   }
   if (DAT_083a42ea != '\0') {
-    glEnable(0xb60);
+    Gfx::Enable(Gfx::Cap::Fog);
   }
   return;
 }
@@ -268,21 +269,21 @@ void GL_EnableLightMap(void) {
     if(Materials::Select(Materials::Preset::LightMap))return;
     if (DAT_083a412c != 1) {
         DAT_083a412c = 1;
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+        Gfx::Enable(Gfx::Cap::Blend);
+        Gfx::BlendFunc(Gfx::Factor::Zero, Gfx::Factor::SrcColor);
     }
     GL_EnableCullFace();
     GL_EnableDepthWrites();
     if (DAT_083a411d != '\0') {
         DAT_083a411d = '\0';
-        glDisable(GL_ALPHA_TEST);  // IDA EnableLightMap 0x511890
+        Gfx::Disable(Gfx::Cap::AlphaTest);  // IDA EnableLightMap 0x511890
     }
     if (DAT_083a4125 == '\0') {
         DAT_083a4125 = '\x01';
-        glEnable(GL_TEXTURE_2D);
+        Gfx::Enable(Gfx::Cap::Texture2D);
     }
     if (DAT_083a42ea != '\0') {
-        glEnable(GL_FOG);         // FogEnable does not enable fixed-function lighting
+        Gfx::Enable(Gfx::Cap::Fog);         // FogEnable does not enable fixed-function lighting
     }
 }
 
@@ -298,7 +299,7 @@ int GL_CaptureScreenshot(void)
 
   DAT_083a42f4 = 1;
   puVar2 = (undefined*)operator_new(gWindow.GetHeight() * gWindow.GetWidth() * 3);
-  glReadPixels(0,0,gWindow.GetWidth(),gWindow.GetHeight(),0x1907,0x1401,puVar2);
+  Gfx::ReadPixelsRGB(0, 0, gWindow.GetWidth(), gWindow.GetHeight(), puVar2);
   WriteJpeg((const char*)&GrabFileName,gWindow.GetWidth(),gWindow.GetHeight(),puVar2,100);
   operator_delete(puVar2);
   iVar1 = DAT_083a42f0 + 1;

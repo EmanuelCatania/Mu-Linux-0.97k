@@ -116,6 +116,7 @@
 //  Packet_IsValidSockType(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Scene.h"
 
@@ -263,7 +264,7 @@ int Scene_Login_ServerSelect(void)
 
     // ── PASS 3: draw two-column server group list ─────────────────────────────
     puStack00000010 = puVar9;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Compute base Y for non-PVP column
     // Los slots de Y son int32 (Ghidra los tipó float, pero el asm los usa como
@@ -318,7 +319,7 @@ LAB_0051f314:
                     uVar17 = 0.8f;         // not selected: dimmed
                 }
             }
-            glColor3f(uVar17, uVar17, uVar17);
+            Gfx::Color3f(uVar17, uVar17, uVar17);
             GL_DrawTexture(0x12, (float)iStack00000004, (float)iDrawY,
                          70.0f, 16.0f, 0.0f, 0.0f, 0.5234375f, 0.9375f, '\x01', '\x01');
             ptVar19 = &text_size;
@@ -436,7 +437,7 @@ LAB_0051f44c:
                     fStack00000008 = fVar3 * _DAT_005528b4;
                     fVar18 = fStack00000008; fVar20 = fStack00000008;
                 }
-                glColor3f(fVar3, fVar18, fVar20);
+                Gfx::Color3f(fVar3, fVar18, fVar20);
 
                 // Channel background quad
                 fVar18 = (float)iStack00000004;
@@ -476,8 +477,7 @@ LAB_0051f44c:
                         do {
                             iVar8 = (int)fStack00000008;
                             fStack0000000c = (float)iStack00000020 * fVar3 * _DAT_005524f4;
-                            glColor3f((float)(int)fStack00000008 * fVar3 * _DAT_005524f4,
-                                      fStack0000000c, fStack0000000c);
+                            Gfx::Color3f((float)(int)fStack00000008 * fVar3 * _DAT_005524f4, fStack0000000c, fStack0000000c);
                             GL_DrawTexture(0xf6, (float)iStack0000001c + _DAT_00552d48,
                                          fVar20, 3.0f, 3.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
                             fStack00000008 = (float)(iVar8 + 1);
@@ -488,7 +488,7 @@ LAB_0051f44c:
                     }
                     // Empty dots (gray)
                     fStack00000008 = fVar3 * _DAT_005524f4;
-                    glColor3f(fStack00000008, fStack00000008, fStack00000008);
+                    Gfx::Color3f(fStack00000008, fStack00000008, fStack00000008);
                     if (uVar6 < 0x14) {
                         fVar18 = fVar18 + _DAT_00552d4c;
                         fVar3  = (float)(uVar6 * 5);
@@ -512,7 +512,7 @@ LAB_0051f44c:
         DAT_00559c78 = 0xffffffff;
         SetBackgroundTextColor = 0x80000000;
         // Literales float (no bit-patterns 0x3fxxxxxx).
-        glColor3f(1.0f, 0.2f, 0.1f);   // orange-red (IP text)
+        Gfx::Color3f(1.0f, 0.2f, 0.1f);   // orange-red (IP text)
 
         fVar4   = (float)(int)puStack00000010;
         pbVar14 = (byte*)&DAT_07d52c38;

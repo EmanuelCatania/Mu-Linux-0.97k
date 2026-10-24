@@ -2752,7 +2752,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
             sanitize(DAT_0828b608[idx2*3+0], DAT_0828b608[idx2*3+1], DAT_0828b608[idx2*3+2], c2);
             sanitize(DAT_0828b608[idx3*3+0], DAT_0828b608[idx3*3+1], DAT_0828b608[idx3*3+2], c3);
 
-            BufferedDraw::Begin(GL_QUADS);
+            BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
             BufferedDraw::Color3fv(c0);
             BufferedDraw::TexCoord2f(0.0f, 0.0f);
             BufferedDraw::Vertex3f(wx0, wy0, h0);

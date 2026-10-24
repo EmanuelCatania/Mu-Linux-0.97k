@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Backend/GL/LegacyGL.h"
 #include "Platform/Win32/Win32GLContext.h"
 #include "Platform/Win32/Win32Window.h"
 #include "Platform/GLFunctions.h"

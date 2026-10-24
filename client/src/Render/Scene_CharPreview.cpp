@@ -5,6 +5,7 @@
 // FUN_005239a0 @ 0x005239a0 - UI_DrawLoginBg
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 
 // IDA: RenderInfomation3D (0x0051E0C0)
 void RenderInfomation3D(void)
@@ -23,16 +24,16 @@ void RenderInfomation3D(void)
     return;
   }
 
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   GL_SetViewport(0, 0, gWindow.GetWidth(), gWindow.GetHeight());
   aspect = (float)((double)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
   GL_SetPerspective(0x3f800000, aspect, (int)DAT_0056154c, DAT_00561550);
 
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   GL_EnableDepthTest();
   GL_EnableDepthWrites();
@@ -48,16 +49,16 @@ void RenderInfomation3D(void)
 
   RenderItem3D(245.0f, 115.0f, 40.0f, 60.0f, (int)itemType, level, option1, 0, '\x01');
 
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
 }
 
 void FUN_005239a0(void)
 {
   GL_SetBlendSrcOver('\x01');
-  glColor3f(1.0f, 1.0f, 1.0f);
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);
   GL_DrawTexture(0xc,320.0,0.0,256.0,86.0,0.0,0.0,1.0,0.671875,'\x01','\x01');
   GL_DrawTexture(0xc,64.0,0.0,256.0,86.0,1.0,0.0,-1.0,0.671875,'\x01','\x01');
   GL_DrawTexture(0xd,576.0,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'\x01','\x01');

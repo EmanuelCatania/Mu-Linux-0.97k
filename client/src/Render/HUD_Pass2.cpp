@@ -20,6 +20,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
 #include "Item/ContentCatalog.h"
@@ -28,7 +29,6 @@
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <GL/gl.h>
 
 extern "C" BYTE OffsetInventoryItems[];
 
@@ -149,17 +149,17 @@ void __cdecl RenderBar(float x, float y, float Width, float Height,
         if (y + Height + 4.0f > 433.0f) y = 433.0f - (Height + 5.0f);
     }
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.5f);
     GL_DrawRect(x + 1.0f, y + 1.0f, Width + 4.0f, Height + 4.0f);
     EnableAlphaBlend();
-    if (Disabled) glColor3f(0.2f, 0.0f, 0.0f);
-    else          glColor3f(0.0f, 0.2f, 0.2f);
+    if (Disabled) Gfx::Color3f(0.2f, 0.0f, 0.0f);
+    else          Gfx::Color3f(0.0f, 0.2f, 0.2f);
     GL_DrawRect(x, y, Width + 4.0f, Height + 4.0f);
-    if (Disabled) glColor3f(0.19607843f, 0.039215688f, 0.0f);
-    else          glColor3f(0.0f, 0.19607843f, 0.19607843f);
+    if (Disabled) Gfx::Color3f(0.19607843f, 0.039215688f, 0.0f);
+    else          Gfx::Color3f(0.0f, 0.19607843f, 0.19607843f);
     GL_DrawRect(x + 2.0f, y + 2.0f, Width, Height);
-    if (Disabled) glColor3f(0.78431374f, 0.19607843f, 0.0f);
-    else          glColor3f(0.0f, 0.78431374f, 0.19607843f);
+    if (Disabled) Gfx::Color3f(0.78431374f, 0.19607843f, 0.0f);
+    else          Gfx::Color3f(0.0f, 0.78431374f, 0.19607843f);
     GL_DrawRect(x + 2.0f, y + 2.0f, Bar, Height);
     GL_ResetState();   // DisableAlphaBlend
 }
@@ -232,7 +232,7 @@ int __cdecl GetScreenWidth(void)
 extern "C" void __cdecl Render_ChatBox_(void);
 void Render_ChatBox_(void)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
     if (!(InputEnable || DAT_07e11d71)) return;
@@ -474,7 +474,7 @@ int RenderEquipedHelperLife_(bool a2)
         Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
 
         RenderBar(x, posY + 12.0f, 50.0f, 2.0f, (float)bar, false, true);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
         retY = (int)posY + 23;
     }
@@ -499,7 +499,7 @@ int RenderEquipedHelperLife_(bool a2)
         Text_MeasureBox(textX, 4, summonText, 0, 0, 0);
 
         RenderBar(xs, 16.0f, 50.0f, 2.0f, (float)(50 * (int)SummonLife / 100), false, true);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
 
     SetBackgroundTextColor = backupBgTextColor;
@@ -536,7 +536,7 @@ void RenderBrokenItem_(int a1)
     if (!CharacterMachine) return;
 
     float v32 = (PartyNumber > 0 && !PartyOpened) ? 50.0f : 0.0f;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
 
     float screenW = 640.0f;
@@ -674,17 +674,17 @@ void RenderExperience_(void)
     if (iExp >= 9)      iExp = 9;
     else if (iExp < 0)  iExp = 0;
 
-    glColor3f(0.92f, 0.80f, 0.34f);
+    Gfx::Color3f(0.92f, 0.80f, 0.34f);
     double width = (fExpBarNum - (double)iExp) * 198.0;
     if (width >= 198.0) GL_DrawRect(221.0f, 439.0f, 198.0f, 4.0f);
     else if (width >= 0.0) GL_DrawRect(221.0f, 439.0f, (float)width, 4.0f);
     else GL_DrawRect(221.0f, 439.0f, 0.0f, 4.0f);
 
     EnableAlphaTest(true);
-    glColor3f(0.91f, 0.81f, 0.60f);
+    Gfx::Color3f(0.91f, 0.81f, 0.60f);
     RenderNumber2D(425.0f, 434.0f, iExp, 9.0f, 10.0f);
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Hover tooltip when mouse is over the bar (219..421, 439..445).
     double mx = (double)MouseX;

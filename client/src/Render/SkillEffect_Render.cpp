@@ -79,6 +79,7 @@
 //   GL_DrawBillboard  → SkillEffect_DrawBillboard(width, height, rot_mat)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/SkillEffect_Render.h"
 #include "globals.h"
 #include "functions.h"
@@ -112,7 +113,7 @@ void SkillEffect_Render(void)
         //   0x00511710 EnableAlphaBlend 0x00511790 EnableAlphaBlendMinus
         GL_SetBlendSrcOver('\x01');
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Iterate 200 slots × 0x70 bytes; pfVar1 lands at +0x0c per slot.
     for (int slot = 0; slot < 200; ++slot) {
@@ -132,8 +133,8 @@ void SkillEffect_Render(void)
         } else {
             // Other states: 3D billboard via Euler matrix
             float local_30[12];
-            glPushMatrix();
-            glTranslatef(pfVar1[1], pfVar1[2], pfVar1[3]);
+            Gfx::PushMatrix();
+            Gfx::Translate(pfVar1[1], pfVar1[2], pfVar1[3]);
             Matrix_BuildFromEuler(pfVar1 + 4, local_30);   // Matrix_FromEuler(angles, mat)
 
             float fVar2, fVar3;
@@ -143,7 +144,7 @@ void SkillEffect_Render(void)
                 fVar3 = 3.0f;  fVar2 = 3.0f;
             }
             GL_DrawBillboard(fVar2, fVar3, local_30);
-            glPopMatrix();
+            Gfx::PopMatrix();
         }
     }
 }

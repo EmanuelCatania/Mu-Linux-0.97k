@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "UI/MiniMap.h"
@@ -191,7 +192,7 @@ void CEventTimer::DrawRow(int index, int x, int y, int width) const
     // el ancho de la fila se estira sólo el centro y se conservan los bordes.
     constexpr float U = 1.0f / 128.0f, V = 0.65625f, Cap = 12.0f, Used = 75.0f;
     const float fx = (float)x - 4.0f, fy = (float)y, fw = (float)Layout::BoxWidth;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(245, fx, fy, Cap, (float)Layout::BoxHeight, 0.0f, 0.0f, Cap * U, V, 1, 1);
     GL_DrawTexture(245, fx + Cap, fy, fw - 2 * Cap, (float)Layout::BoxHeight,
                    Cap * U, 0.0f, (Used - 2 * Cap) * U, V, 1, 1);
@@ -216,7 +217,7 @@ void CEventTimer::RenderPanel()
 {
     if (!m_Open) return;
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     const float x = (float)Layout::X, y = (float)Layout::Y;
     GL_DrawTexture(260, x, y,          190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,        1, 1);
@@ -242,7 +243,7 @@ void CEventTimer::RenderPanel()
 
     // Botón de cierre como el del panel de personaje (fondo 0x118 + icono 280).
     const float cx = (float)Layout::CloseX, cy = (float)Layout::CloseY;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(0x118, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     GL_DrawTexture(280, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
@@ -255,5 +256,5 @@ void CEventTimer::RenderPanel()
     m_dwTextColor = color;
     m_dwBackColor = back;
     GL_ResetState();
-    glColor4f(1, 1, 1, 1);
+    Gfx::Color4f(1, 1, 1, 1);
 }

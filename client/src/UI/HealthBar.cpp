@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/HealthBar.h"
 #include "Config/UserSettings.h"
@@ -64,11 +65,11 @@ struct HealthBarLayout {
 void DrawBar(int x, int y, float width, float height, BYTE percent, bool selected)
 {
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, selected ? 1.0f : 0.5f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, selected ? 1.0f : 0.5f);
     GL_DrawRect((float)x, (float)y, width, height);
-    glColor4f(selected ? 0.5f : 0.8f, 0.0f, 0.0f, 1.0f);
+    Gfx::Color4f(selected ? 0.5f : 0.8f, 0.0f, 0.0f, 1.0f);
     GL_DrawRect((float)x + 2, (float)y + 2, (width - 4) * percent / 100.0f, height - 4);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     GL_ResetState();
 }
 
@@ -80,7 +81,7 @@ void DrawLabel(const BYTE* entity, BYTE percent, int center, int y, DWORD backgr
     const DWORD savedText = m_dwTextColor;
     HGDIOBJ oldFont = gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     EnableAlphaTest(true);
-    glColor4f(1, 1, 1, 1);
+    Gfx::Color4f(1, 1, 1, 1);
     m_dwBackColor = background;
     m_dwTextColor = 0xFFFFFFFFu;
     RenderCenteredText(center, y, text);

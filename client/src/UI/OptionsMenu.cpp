@@ -47,7 +47,7 @@ void FillTriangle(float x, float y, float width, float height)
     const float left = (float)Screen_ToGLX(x), right = (float)Screen_ToGLX(x + width);
     const float top = (float)gWindow.GetHeight() - (float)Screen_ToGLY(y);
     const float bottom = (float)gWindow.GetHeight() - (float)Screen_ToGLY(y + height);
-    BufferedDraw::Begin(GL_TRIANGLES);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
     BufferedDraw::Vertex2f(left, top);
     BufferedDraw::Vertex2f(left, bottom);
     BufferedDraw::Vertex2f(right, (top + bottom) / 2.0f);

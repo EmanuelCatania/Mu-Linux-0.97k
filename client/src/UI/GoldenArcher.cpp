@@ -19,6 +19,7 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/GoldenArcher.h"
 #include "UI/UIState.h"
@@ -28,7 +29,6 @@
 #include "functions.h"
 #include <string>
 #include <vector>
-#include <GL/gl.h>
 
 void __cdecl CloseInventoryRelatedWindows(void);
 extern "C" void   __cdecl RenderInventoryInterface(int StartX, int StartY, int Flag);
@@ -147,14 +147,14 @@ static void GA_Ida_ButtonState(bool pressed, bool disabled)
 {
     if (pressed) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-        glColor3f(0.4f, 0.4f, 0.4f);
+        Gfx::Color3f(0.4f, 0.4f, 0.4f);
         if (GA_MouseLButtonPop) { GA_MouseLButtonPush = 0; GA_MouseLButton = 0; }
     } else if (disabled) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-        glColor3f(0.4f, 0.4f, 0.4f);
+        Gfx::Color3f(0.4f, 0.4f, 0.4f);
     } else {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -167,7 +167,7 @@ static bool GA_In(int x, int y, int w, int h)
 static void GA_Ida_Render(void)
 {
     const int mode = GA_OpenType;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     GA_InventoryStartX = 450;
     GA_InventoryStartY = 0;
@@ -228,7 +228,7 @@ static void GA_Ida_Render(void)
         RenderCenteredText((int)(xa + 60.0f), (int)(by + 5.0f), GlobalText[895]);
     }
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     const float xb = (float)GA_InventoryStartX + 25.0f;
     const float yb2 = (float)GA_InventoryStartY + 395.0f;
     GL_DrawTexture(280, xb, yb2, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -259,14 +259,14 @@ static void GA_Ida_Render(void)
         RenderCenteredText(tx, y + 30, GlobalText[897]);
         RenderCenteredText(tx, y + 45, GlobalText[898]);
         if (GA_GiftName[0]) {
-            glColor3f(0.0f, 0.0f, 0.0f);
+            Gfx::Color3f(0.0f, 0.0f, 0.0f);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderCenteredText(tx + 1, y + 261, GA_GiftName);
-            if (sin((double)WorldTime * 0.0099999998) < 0.0) glColor3f(1.0f, 1.0f, 1.0f);
-            else glColor3f(0.6f, 0.6f, 0.6f);
+            if (sin((double)WorldTime * 0.0099999998) < 0.0) Gfx::Color3f(1.0f, 1.0f, 1.0f);
+            else Gfx::Color3f(0.6f, 0.6f, 0.6f);
             m_dwTextColor = 0xFF67D2FFu;
             RenderCenteredText(tx, y + 260, GA_GiftName);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
             m_dwTextColor = 0xFFF0FF96u;
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         }
@@ -314,7 +314,7 @@ static void GA_Ida_Render(void)
             Platform::TextFormatSecure(buffer, "%.3d - %.3d - %.3d", DAT_07e11e20, DAT_07e11e22, DAT_07e11e24);
         if (mode == 1) RenderCenteredText(545, 370, buffer);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // CheckGoldenArcherWindow (0x4E7AC0)
@@ -467,22 +467,22 @@ static void RenderBox(float x, float y, float w, float h, const char* text, bool
 {
     GL_ResetState();                                   // DisableAlphaBlend
     if (!hoverable) {
-        glColor3f(0.4f, 0.4f, 0.4f);
+        Gfx::Color3f(0.4f, 0.4f, 0.4f);
         GL_DrawTexture(240, x, y, w, h, 0.0f, 0.0f, 213.0f / 256.0f, 1.0f, 1, 1);
     } else {
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(240, x, y, w, h, 0.0f, 0.0f, 213.0f / 256.0f, 1.0f, 1, 1);
         if (IsWorkZone((int)x, (int)y, (int)w, (int)h)) {
-            glColor3f(0.8f, 0.6f, 0.4f);
+            Gfx::Color3f(0.8f, 0.6f, 0.4f);
             GL_SetBlendAdditive();                     // EnableAlphaBlend
             GL_DrawTexture(240, x, y, w, h, 0.0f, 0.0f, 213.0f / 256.0f, 1.0f, 1, 1);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
             GL_ResetState();
         }
     }
     EnableAlphaTest(true);
     RenderText((int)x, CenterTextPosY(text, (int)(y + h / 2)), (char*)text, RealWidth((int)w), 1, nullptr);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 static void DrawSeparatedLines(int x, int& y, const char* text, int step)
@@ -541,7 +541,7 @@ extern "C" void __cdecl GoldenArcher_CustomCloseProc(void)
 static void RenderTitle(void)
 {
     EnableAlphaTest(true);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwBackColor = Color4b(20, 20, 20, 255);
     m_dwTextColor = Color4b(230, 230, 230, 255);
@@ -575,11 +575,11 @@ static void RenderCollectedRegistered(int y, int textCollected, int textRegister
     RenderText(x, CenterTextPosY(GlobalText[textRegistered], y), GlobalText[textRegistered], RealWidth(75), 1, nullptr);
     y += 25;
     EnableAlphaTest(true);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     RenderNumber2D((float)kStartX + 54, (float)y - 5, collected, 8, 8);
-    glColor3f(0.8f, 0.6f, 0.0f);
+    Gfx::Color3f(0.8f, 0.6f, 0.0f);
     RenderNumber2D((float)kStartX + 142, (float)y - 5, GA_ItemCount, 8, 8);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     // (El DLL dibuja ademas el modelo 3D de la Rena/Piedra entre los dos
     //  numeros con MyRenderItem3D; no se porto.)
 }
@@ -712,7 +712,7 @@ static void RenderStone(void)
             DrawSeparatedLines(x, y, GlobalText[897], 15);
             m_dwTextColor = Color4b(255, 255, 255, 255);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
         } else {
             TextC(x, y, GlobalText[898], 190);
             y += 10;
@@ -798,17 +798,17 @@ static void RenderLucky(void)
         char lines[7 * 38 + 1] = {};
         const int n = SeparateTextIntoLines(GA_GiftName, lines, 7, 38);
         for (int i = 0; i < n; ++i, y += 15) {
-            glColor3f(0.0f, 0.0f, 0.0f);
+            Gfx::Color3f(0.0f, 0.0f, 0.0f);
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             TextC(x + 1, y + 1, lines + i * 38, 190);
-            if (sin((double)WorldTime * 0.01) < 0) glColor3f(1.0f, 1.0f, 1.0f);
-            else glColor3f(0.6f, 0.6f, 0.6f);
+            if (sin((double)WorldTime * 0.01) < 0) Gfx::Color3f(1.0f, 1.0f, 1.0f);
+            else Gfx::Color3f(0.6f, 0.6f, 0.6f);
             m_dwTextColor = Color4b(255, 210, 103, 255);
             TextC(x, y, lines + i * 38, 190);
         }
         m_dwTextColor = Color4b(255, 255, 255, 255);
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
 }
 
@@ -876,7 +876,7 @@ static void GA_Custom_Render(void)
     GA_InventoryStartX = kStartX;
     GA_InventoryStartY = kStartY;
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     RenderInventoryInterface(kStartX, kStartY, 0);
     RenderTitle();
     switch (GA_OpenType) {
@@ -886,7 +886,7 @@ static void GA_Custom_Render(void)
     case GA_IF_BINGO: RenderBingo(); break;
     }
     const int cx = kStartX + 25, cy = kStartY + 395;
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(280, (float)cx, (float)cy, 24, 24, 0, 0, 0.75f, 0.75f, 1, 1);
     if (IsWorkZone(cx, cy, 24, 24)) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));

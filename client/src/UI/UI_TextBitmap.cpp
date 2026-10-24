@@ -2,6 +2,7 @@
 // UI_TextBitmap.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -148,17 +149,8 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
   RenderProfile::TextScope profileWholeText(RenderProfile::TextWork::Total);
   RenderProfile::TextString(true);
   { RenderProfile::TextScope profileText(RenderProfile::TextWork::Upload);
-  glBindTexture(0xDE1u, Bitmaps[0].TextureNumber);
-  glTexImage2D(
-    0xDE1u,
-    0,
-    Bitmaps[0].Components,
-    (std::int64_t)Bitmaps[0].Width,
-    (std::int64_t)Bitmaps[0].Height,
-    0,
-    0x1908u,
-    0x1401u,
-    Bitmaps[0].Buffer);
+  Gfx::BindTexture(Bitmaps[0].TextureNumber);
+  Gfx::TexImage2D(Bitmaps[0].Components, (std::int64_t)Bitmaps[0].Width, (std::int64_t)Bitmaps[0].Height, Gfx::Format::RGBA, Bitmaps[0].Buffer);
   }
   v8 = a1;
   if ( a1 < 0 )

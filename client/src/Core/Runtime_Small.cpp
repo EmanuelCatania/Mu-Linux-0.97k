@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/IAudio.h"
 #include "Item/ItemDefines.h"
 #include "Game/MapManager.h"
@@ -631,10 +632,10 @@ void __cdecl AllStopSound(void) {
 
 // EndOpengl @ 0x00511BC0 (35 bytes) — pop GL matrices
 void __cdecl EndOpengl(void) {
-    glPopMatrix();
-    glMatrixMode(0x1701);  // GL_PROJECTION
-    glPopMatrix();
-    glMatrixMode(0x1700);  // GL_MODELVIEW
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);  // GL_PROJECTION
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);  // GL_MODELVIEW
 }
 
 // ── 36-byte ─────────────────────────────────────────────────────────────────

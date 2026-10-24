@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
@@ -64,7 +65,7 @@ void EmitQuad(const float p[4][2], float u, float v, float uw, float vh)
 {
     const float tc[4][2] = { { u, v }, { u, v + vh }, { u + uw, v + vh }, { u + uw, v } };
     const float cx = gWindow.GetWidth() / 2.0f, cy = gWindow.GetHeight() / 2.0f;
-    BufferedDraw::Begin(GL_TRIANGLE_FAN);
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
     for (int i = 0; i < 4; ++i) {
         BufferedDraw::TexCoord2f(tc[i][0], tc[i][1]);
         BufferedDraw::Vertex2f(p[i][0] + cx, p[i][1] + cy);
@@ -220,15 +221,15 @@ void CMiniMap::BuildTexture()
             put(sx * 2 + 1, sy * 2 + 1, 0, 0, 0, 189);
         }
     }
-    if (!m_Texture) glGenTextures(1, (GLuint*)&m_Texture);
-    glBindTexture(GL_TEXTURE_2D, m_Texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, MapSize, MapSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    const GLfloat border[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+    if (!m_Texture) m_Texture = Gfx::CreateTexture();
+    Gfx::BindTexture(m_Texture);
+    Gfx::TexImage2D(4, MapSize, MapSize, Gfx::Format::RGBA, pixels);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValue::Nearest);
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValue::Nearest);
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValue::Clamp);
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValue::Clamp);
+    const float border[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    Gfx::TexBorderColor(border);
     DAT_00561574 = 0xFFFFFFFF;   // la caché de BindTexture ya no vale
     m_TextureWorld = gMapManager.GetCurrentMap();
 }
@@ -237,7 +238,7 @@ void CMiniMap::RenderBackground() const
 {
     const View v = CurrentView(m_Zoom);
     EnableAlphaTest(true);
-    glBindTexture(GL_TEXTURE_2D, m_Texture);
+    Gfx::BindTexture(m_Texture);
     DAT_00561574 = 0xFFFFFFFF;
     BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, m_Alpha * 0.1f);
     BitRotate(CenterX, CenterY, MaxSize, MaxSize, Rotation,

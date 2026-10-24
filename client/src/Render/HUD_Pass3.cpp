@@ -14,6 +14,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 void HUD_BeginGridPass(int pass);
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
@@ -22,7 +23,6 @@ void HUD_BeginGridPass(int pass);
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <GL/gl.h>
 
 // sub_4E38B0 / sub_47F360 / sub_47F4C0 are now ported in HUD_Pass4.cpp.
 // sub_4E9300 is ported in HUD_Pass6.cpp.
@@ -459,7 +459,7 @@ void Render_HudPass_4EB070_(void)
     if (!dword_7EAA14C) return;
 
     int v20 = sub_4E9300();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(252, 213.0f, 100.0f, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
     int Width = 105;
@@ -502,7 +502,7 @@ void Render_HudPass_4EB070_(void)
         RenderCenteredText(320, 122, sub);
     }
 
-    glColor3f(0.30000001f, 0.30000001f, 0.30000001f);
+    Gfx::Color3f(0.30000001f, 0.30000001f, 0.30000001f);
     // Largo del campo: 4 para el PIN, 7 para el codigo personal.
     // DESVIACION: el binario lee LODWORD(flt_83A7ACC[0]), que es el arreglo de
     // la CAMARA (lo escribe MoveCamera como floats) — o sea toma los bits de un
@@ -516,7 +516,7 @@ void Render_HudPass_4EB070_(void)
     float v21 = Widtha * 0.5f;
     float x = 320.0f - v21;
     GL_DrawTexture(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
     m_dwBackColor = 0;
 
@@ -542,10 +542,10 @@ void Render_HudPass_4EB070_(void)
         if (v20 == v7) {
             if (byte_7EAA179) v8 = 1;
             m_dwTextColor = 0xFFFF0084u;   // -16726844
-            glColor3f(1.0f, 1.0f, 0.80000001f);
+            Gfx::Color3f(1.0f, 1.0f, 0.80000001f);
         } else {
             m_dwTextColor = 0xFFC44400u;
-            glColor3f(0.85000002f, 0.85000002f, 0.64999998f);
+            Gfx::Color3f(0.85000002f, 0.85000002f, 0.64999998f);
         }
         int v22 = 38 * (v7 / 5) + 154;
         float v24 = (float)v22;
@@ -564,7 +564,7 @@ void Render_HudPass_4EB070_(void)
             RenderText(40 * (v7 % 5) + 235, v22 - (v8 != 0) + 6, pszText, 0, 0, 0);
         }
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Two action buttons at y=239: 70×21 px, textures 241/243 with hover
     // highlight when v20 in {11, 12}.
@@ -592,7 +592,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     if (!c) return;
 
     EnableAlphaTest(true);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     int texW = 1;
     int texH = 1;
@@ -712,13 +712,13 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
             constexpr float MarkSize = 16.0f;
             constexpr float MarkOffset = 21.0f;
             const int previousTextureSlot = DAT_00561574;
-            glPushAttrib(GL_CURRENT_BIT | GL_TEXTURE_BIT);
+            Gfx::PushAttrib(Gfx::AttribCurrent | Gfx::AttribTexture);
             // Alpha/blend ya están preparados al entrar; estos helpers sólo cambian la textura.
-            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             CreateGuildMark(markIndex, true);
             RenderBitmap(0x22, (float)x - MarkOffset, (float)y, MarkSize, MarkSize,
                          0.0f, 0.0f, 1.0f, 1.0f, true, true);
-            glPopAttrib();
+            Gfx::PopAttrib();
             DAT_00561574 = previousTextureSlot;
         }
     }
