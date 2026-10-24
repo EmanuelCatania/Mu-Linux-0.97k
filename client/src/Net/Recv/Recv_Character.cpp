@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
+#include "Game/FrameLimiter.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
 #include "Net/Reconnect.h"
@@ -482,6 +483,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     ++g_WorldLoading;
     OpenWorld();              // OpenWorld(World) — BMD load (~2s)
     --g_WorldLoading;
+    gFrameLimiter.DiscardElapsed();
 
     // Pump messages POST-load para drenar lo que llegó durante el bloqueo.
     // Pump desactivado en el original de esta ruta: no despachar antes del héroe.
@@ -732,6 +734,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
     ++g_WorldLoading;
     OpenWorld();                                    // OpenWorld(World)
     --g_WorldLoading;
+    gFrameLimiter.DiscardElapsed();
 
     float z;
     if ((int)gMapManager.GetCurrentMap() == -1 ||
@@ -1539,6 +1542,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             ++g_WorldLoading;
             OpenWorld();
             --g_WorldLoading;
+            gFrameLimiter.DiscardElapsed();
 
             // OpenWorld replaces terrain data, so IDA evaluates
             // la altura de aterrizaje una segunda vez contra el mapa nuevo.
