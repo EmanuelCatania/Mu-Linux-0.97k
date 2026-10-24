@@ -153,7 +153,7 @@ Vertex CaptureAttributes(bool color,bool uv){
     return attributes;
 }
 void Begin(Primitive primitive){
-    const unsigned modes[]{GL_POINTS,GL_LINES,GL_TRIANGLES,GL_QUADS,GL_TRIANGLE_FAN};
+    const unsigned modes[]{GL_POINTS,GL_LINES,GL_TRIANGLES,GL_QUADS,GL_TRIANGLE_FAN,GL_LINE_LOOP,GL_LINE_STRIP,GL_TRIANGLE_STRIP,GL_QUAD_STRIP,GL_POLYGON};
     Begin(modes[static_cast<unsigned>(primitive)]);
 }
 void Begin(unsigned mode) {

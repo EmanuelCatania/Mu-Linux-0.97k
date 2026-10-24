@@ -175,6 +175,8 @@
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Render\GLCallBarrier.h" />
     <ClInclude Include="src\Render\GlyphAtlas.h" />
+    <ClInclude Include="src\Render\Gfx.h" />
+    <ClInclude Include="src\Render\Backend\GL\LegacyGL.h" />
     <ClInclude Include="src\Render\ResourceTables.h" />
     <ClInclude Include="src\Render\Skinning.h" />
     <ClInclude Include="src\Render\MeshDraw.h" />
@@ -273,9 +275,10 @@
     <ClCompile Include="src\Scene\Scene_Login.cpp" />
     <ClCompile Include="src\Scene\Scene_Loading.cpp" />
     <ClCompile Include="src\Scene\Scene_CharSelect.cpp" />
-    <ClCompile Include="src\Render\GlyphAtlas.cpp">
+    <ClCompile Include="src\Render\Backend\GL\GlyphAtlas.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Render\Backend\GL\Gfx.cpp" />
     <ClCompile Include="src\Render\ResourceTables.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
