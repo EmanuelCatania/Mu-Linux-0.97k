@@ -30,7 +30,7 @@ docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -N --d
 Con los servers del juego detenidos nadie escribe durante la conversión:
 
 ```bash
-docker compose stop mu-server web
+docker compose stop mu-server mu-web
 ```
 
 ## 4. Migrar
