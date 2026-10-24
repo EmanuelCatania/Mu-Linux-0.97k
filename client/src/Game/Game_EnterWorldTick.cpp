@@ -38,6 +38,7 @@
 //   DAT_055ca038   — "select" button confirm flag
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Net/Net.h"
@@ -94,10 +95,7 @@ static void Send_CharSelectPacket(void)
     pkt[3] = 0x03;
 
     // Username (from DAT_07db8710, max 10 bytes) — payload at pkt[4..13]
-    char* uname   = (char*)DAT_07db8710;
-    int   unamLen = (int)strlen(uname);
-    if (unamLen > 10) unamLen = 10;
-    memcpy(pkt + 4, uname, unamLen);
+    NetText::ToServer(pkt + 4, 10, (const char*)DAT_07db8710);
     // Padding bytes 14 - 4 - unamLen remain 0 (memset above).
 
     // Char slot byte: DAT_07abf20c low nibble * 0x10 + high nibble
@@ -126,10 +124,7 @@ static void Send_CharCreatePacket(void)
     pkt[2] = 0xF3;
     pkt[3] = 0x01;      // sub 0x01 = CREATE
 
-    char* name   = (char*)DAT_07db8710;   // typed char name (InputText[0])
-    int   namLen = (int)strlen(name);
-    if (namLen > 10) namLen = 10;
-    memcpy(pkt + 4, name, namLen);
+    NetText::ToServer(pkt + 4, 10, (const char*)DAT_07db8710);   // typed char name (InputText[0])
 
     // Class byte: page*0x10 + byte1 → 0/16/32/48 = DW/DK/FE/MG.
     pkt[14] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);

@@ -519,6 +519,7 @@ set(MU_HEADERS
     src/Render/Terrain_Render.h
     src/Render/Texture/ImageCodec.h
     src/Text/TextCore.h
+    src/Net/NetText.h
     src/Text/TextShaper.h
     src/Text/TextAtlas.h
     src/Render/Texture/Texture.h

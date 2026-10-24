@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Render/ResourceTables.h"
 #include "Render/EquipmentVisuals.h"
 #include <algorithm>
@@ -329,7 +330,7 @@ void CContentCatalog::Publish()
         monster.Golden = row.Golden != 0;
         monster.Scale = row.Scale;
         monster.Model = -1;
-        memcpy(monster.Name, row.Name, sizeof(monster.Name) - 1);
+        NetText::FromServer(monster.Name, sizeof(monster.Name), row.Name, sizeof(row.Name));
         if (row.Flags & Proto::CATALOG_MONSTER_HAS_MODEL) {
             row.ModelFolder[sizeof(row.ModelFolder) - 1] = 0;
             row.ModelName[sizeof(row.ModelName) - 1] = 0;
@@ -362,6 +363,7 @@ void CContentCatalog::Publish()
             Proto::CATALOG_TOOLTIP line = {};
             memcpy(&line, &s_PendingTooltips.records[off], (std::min)((int)sizeof(line), tooltipSize));
             line.Text[sizeof(line.Text) - 1] = 0;
+            TextEngine::ConvertWindows1252InPlace(line.Text, sizeof(line.Text));
             if (line.Item < ITEM_MAX_EX && line.Color <= 8) s_Tooltips[line.Item].push_back(line);
         }
     }
@@ -410,7 +412,7 @@ void CContentCatalog::ApplyItem(const BYTE* record, int recordSize)
     // del server se usa sólo para los items que el .bmd no tiene.
     if (row.Index >= ITEM_MAX_VANILLA || attr->Name[0] == 0) {
         memset(attr->Name, 0, sizeof(attr->Name));
-        memcpy(attr->Name, row.Name, sizeof(attr->Name) - 1);
+        NetText::FromServer(attr->Name, sizeof(attr->Name), row.Name, sizeof(row.Name));
     }
     attr->TwoHand = row.TwoHand != 0;
     attr->Level = ClampByte(row.Level);

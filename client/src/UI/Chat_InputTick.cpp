@@ -24,6 +24,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
@@ -221,7 +222,9 @@ extern "C" void Chat_SendChatLine(const char* text)
     // CommandManager parses slash commands from CGChatRecv, which keeps this
     // client compatible with every command enabled in Command.txt (including
     // future server-side additions) without another client patch.
-    size_t tlen = strlen(text);
+    // DESVIACION (Fase 4, texto Unicode): el mensaje viaja en 1252 (NetText).
+    const std::string legacyText = NetText::ToServer(text);
+    size_t tlen = legacyText.size();
     if (tlen > 0x3c) tlen = 0x3c;
 
     // ── PMSG_CHAT_RECV (server MuEmu Protocol.h, header C1:00) ───────────────
@@ -271,7 +274,7 @@ extern "C" void Chat_SendChatLine(const char* text)
         if (FUN_0047fed0(6, whisperTarget) != 1)
             return;
         pkt[2] = 0x02;                        // headcode = whisper
-        memcpy(pkt + 3, whisperTarget, 10);   // name[10] = DESTINATARIO
+        NetText::ToServer(pkt + 3, 10, whisperTarget);   // name[10] = DESTINATARIO
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
         // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
         // ("no esta conectado") como remitente.
@@ -282,11 +285,11 @@ extern "C" void Chat_SendChatLine(const char* text)
         // name[10] = nombre del héroe: con el campo en CEROS el server descarta el
         // mensaje en silencio.
         if (DAT_07abf5d8) {
-            memcpy(pkt + 3, (const char*)DAT_07abf5d8 + 0x1C1, 10);
+            NetText::ToServer(pkt + 3, 10, (const char*)DAT_07abf5d8 + 0x1C1);
         }
     }
 
-    memcpy(pkt + 13, text, msgBytes);
+    memcpy(pkt + 13, legacyText.c_str(), msgBytes);
     const bool isWhisper = (pkt[2] == 0x02);
 
     // C1 con chain-XOR (lo aplica CNetwork; el server lo revierte en XorData).
@@ -717,13 +720,15 @@ void __cdecl Chat_InputTick(void)
 
                                 // Build and send whisper packet (same XOR+encode pattern)
                                 {
+                                    const std::string legacyMacro = NetText::ToServer(&DAT_07e108c8);
+                                    tlen = legacyMacro.size() > 0x3c ? 0x3c : legacyMacro.size();
                                     int pktLen = (int)(tlen + 0x0d);
                                     if ((DWORD)pktLen < 0x401) {
                                         BYTE pkt[0x410];
                                         memset(pkt, 0, sizeof(pkt));
                                         pkt[0] = 0xC1;
                                         pkt[1] = (BYTE)pktLen;
-                                        memcpy(pkt + 0x0d, &DAT_07e108c8, tlen);
+                                        memcpy(pkt + 0x0d, legacyMacro.data(), tlen);
                                         for (int xi = 3; xi < pktLen; ++xi)
                                             pkt[xi] ^= CNetwork::XorKey[xi & 0x1f];
                                         CSimpleModulus_Encode(0, pkt, pktLen);

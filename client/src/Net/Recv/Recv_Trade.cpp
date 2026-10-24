@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Item/ItemDefines.h"
 #include "Net/Recv/NetRecv.h"
 
@@ -76,8 +77,7 @@ void NetRecv_36(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // bytes en DAT_07EA9834 y abre ErrorMessage 121. MuEmu conserva
     // ese nombre, aunque use C3 en la notificación al destinatario.
     if (Size < 13) return;
-    memcpy(DAT_07ea9834, Msg + 3, 10);
-    DAT_07ea9834[10] = '\0';
+    NetText::FromServer(DAT_07ea9834, 11, Msg + 3, 10);
     SetErrorMessage(121);
     NetLog("NET: -> 0x36 TradeRequest name=%s", DAT_07ea9834);
 }
@@ -111,8 +111,7 @@ void NetRecv_37(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         ItemMove_ClearPickedState();
         InventoryOpened = 1;
         if (Size >= 20) {
-            memcpy(DAT_07ea9834, Msg + 4, 10);
-            DAT_07ea9834[10] = '\0';
+            NetText::FromServer(DAT_07ea9834, 11, Msg + 4, 10);
             TradeRemoteGuildKey = *(DWORD*)(Msg + 16);
             TradeRemoteLevel = *(WORD*)(Msg + 14);
         }

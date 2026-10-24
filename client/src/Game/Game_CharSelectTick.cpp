@@ -22,6 +22,7 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Config/UserSettings.h"
 #include "Game/Game_CharSelectTick.h"
 #include "Net/Net.h"
@@ -48,9 +49,7 @@ void Game_CharSelectTick(void)
             DAT_05826cb0 = 0x3c;   // CurrentProtocolState = 60
             BYTE pkt[14] = { 0xC1, 0x0E, 0xF3, 0x03 };
             const char* charName = (const char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
-            int nameLen = (int)strlen(charName);
-            if (nameLen > 10) nameLen = 10;
-            memcpy(pkt + 4, charName, nameLen);
+            NetText::ToServer(pkt + 4, 10, charName);
             gNetwork.SendC1(pkt, sizeof(pkt));
         }
 

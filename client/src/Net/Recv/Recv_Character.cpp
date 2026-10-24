@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Game/FrameLimiter.h"
@@ -200,8 +201,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // entity+0x1C0 = CtlCode (BYTE)
         c[0x1C0] = ctlCode;
         // entity+0x1C1..0x1CA = Name (10 bytes), entity+0x1CB = NUL
-        for (int k = 0; k < 10; ++k) c[0x1C1 + k] = rec[1 + k];
-        c[0x1CB] = 0;
+        NetText::FromServer((char*)c + 0x1C1, 11, rec + 1, 10);
         // entity+444 (0x1BC) = clase (BYTE) — lo necesita Recv_JoinMapServer para
         // propagarlo a la entidad del héroe al entrar al mundo.
         AsCharacter(c)->Class = (BYTE)klass;
@@ -263,8 +263,7 @@ void Recv_CreateChar(const BYTE* Msg)
         const BYTE* src = Msg + 5;
         *(WORD*)(c + 446) = 1;
         // 10 bytes name + NUL at +459
-        for (int k = 0; k < 10; ++k) c[449 + k] = src[k];
-        c[459] = 0;
+        NetText::FromServer((char*)c + 449, 11, src, 10);
         NetLog("NET:    F3/01 slot=%d class=%d created", slot, klass);
     } else if (result == 2) {
         DAT_05826cb0 = 55;  // blocked / name-taken
@@ -1100,9 +1099,9 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             //   +13..+20 nombre equipo 1   .  +21 score equipo 1
             // (0xFF en el score = no hay partido en curso)
             if (Size < 23) break;
-            memcpy(&SoccerTeamName[0][0], Msg + 4, 8);
+            NetText::FromServer(&SoccerTeamName[0][0], 9, Msg + 4, 8);
             *(WORD*)&SoccerTeamName[0][8] = *(const WORD*)(Msg + 12);
-            memcpy(&SoccerTeamName[1][0], Msg + 13, 8);
+            NetText::FromServer(&SoccerTeamName[1][0], 9, Msg + 13, 8);
             *(WORD*)&SoccerTeamName[1][8] = *(const WORD*)(Msg + 21);
             SoccerTeamName[0][8] = 0;    // el WORD de arriba escribe
             SoccerTeamName[1][8] = 0;    // 2 bytes; aca se corta en NUL

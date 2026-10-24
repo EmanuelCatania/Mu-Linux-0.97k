@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "Net/NetText.h"
 #include "Platform/ISocket.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -235,7 +236,7 @@ void Recv_CustomServerList(const BYTE* Msg)
         const char* name = (const char*)(p + 2);
         int group = serverCode / 20;
         if (group >= 0 && group < 24)
-            Platform::TextCopy(DAT_07d52c34 + 300 * group, name, 32);  // deja hueco null-term
+            NetText::FromServer(DAT_07d52c34 + 300 * group, 32, name, 32);  // deja hueco null-term
         p += 34;
     }
     NetLog("NET:  → F4/04 CustomServerList count=%d (names populated)", count);
