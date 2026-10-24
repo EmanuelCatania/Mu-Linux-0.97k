@@ -244,6 +244,7 @@
     <ClInclude Include="src\Render\Sprite_Draw.h" />
     <ClInclude Include="src\Render\Terrain_Render.h" />
     <ClInclude Include="src\Render\Texture\ImageCodec.h" />
+    <ClInclude Include="src\Text\TextCore.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Scene\Scene_CharSelect.h" />
@@ -576,6 +577,12 @@
     <ClCompile Include="src\Render\Terrain_Render.cpp" />
     <ClCompile Include="src\Render\Terrain_Water.cpp" />
     <ClCompile Include="src\Render\Texture\ImageCodec.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\TextCore.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Text\Utf8Proc.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Render\Texture\Texture.cpp" />
