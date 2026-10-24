@@ -2,6 +2,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Text/TextAtlas.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
@@ -813,6 +814,15 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
     if (hFont == NULL) return;
 
+#ifdef MU_SDL_FONTS
+    // DESVIACION (Fase 4, texto Unicode): SDL3 arma el texto con el layout
+    // nuevo y lo dibuja por el atlas (TextAtlas); no hay listas de glifos.
+    int s_ascent = 11;
+    {
+        TEXTMETRICA tm;
+        if (gFont.TextMetrics(hFontDC, &tm)) s_ascent = tm.tmAscent;
+    }
+#else
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
     // reconstruir las 256 display lists al alternar fuentes entre llamadas.
     struct FontLists { void* rc; HFONT font; unsigned int base; int ascent; unsigned generation; };
@@ -886,6 +896,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     }
     const unsigned int s_fontListBase = s_cache[slot].base;
     const int    s_ascent       = s_cache[slot].ascent;
+#endif
 
     // ── CLAMP A LA PANTALLA (port de sub_47F4C0 L18-46) ─────────────────────
     // El binario NO deja que la caja de texto se salga: antes de dibujarla
@@ -982,7 +993,9 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         const int drawLen = (int)strlen(drawText);
         const int nRuns   = nMarkers + 1;
 
+#ifndef MU_SDL_FONTS
         Gfx::ListBase(s_fontListBase);
+#endif
 
         for (int run = 0; run < nRuns; ++run) {
             int startChar = (run == 0)        ? 0        : markers[run - 1].charIndex;
@@ -1046,6 +1059,14 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             G = (unsigned char)((float)G * callerG + 0.5f);
             B = (unsigned char)((float)B * callerB + 0.5f);
 
+#ifdef MU_SDL_FONTS
+            {
+                if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
+                RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
+                if (const auto* shaped = gFont.Shape(hFontDC, drawText + startChar, endChar - startChar))
+                    TextAtlas::Draw(*shaped, runX, (float)rasterY, R, G, B, finalA);
+            }
+#else
             BufferedDraw::Color4ub(R, G, B, finalA);
             Gfx::RasterPos2f(runX, (float)rasterY);
             {
@@ -1055,6 +1076,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                     Gfx::CallLists((int)(endChar - startChar),
                                    (const unsigned char*)(drawText + startChar));
             }
+#endif
         }
     }
     if(scopedText)Materials::EndText();else Gfx::PopAttrib();
