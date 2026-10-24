@@ -167,6 +167,9 @@ void BindTexture(Texture texture) { glBindTexture(GL_TEXTURE_2D, texture); }
 void TexImage2D(int components, int width, int height, Format format, const void* pixels) {
     glTexImage2D(GL_TEXTURE_2D, 0, components, width, height, 0, ToGL(format), GL_UNSIGNED_BYTE, pixels);
 }
+void TexSubImage2D(int x, int y, int width, int height, Format format, const void* pixels) {
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, ToGL(format), GL_UNSIGNED_BYTE, pixels);
+}
 void TexParameter(TexParam parameter, TexValue value) { glTexParameteri(GL_TEXTURE_2D, ToGL(parameter), ToGL(value)); }
 TexValue TexValueFromLegacy(int value) {
     switch (value) {

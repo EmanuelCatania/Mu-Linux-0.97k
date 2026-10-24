@@ -73,6 +73,8 @@ void DeleteTexture(Texture texture);
 void BindTexture(Texture texture);
 // components: cantidad de canales almacenados (3 o 4), como el original.
 void TexImage2D(int components, int width, int height, Format format, const void* pixels);
+// Actualiza un rectángulo de la textura ligada (filas contiguas, sin relleno).
+void TexSubImage2D(int x, int y, int width, int height, Format format, const void* pixels);
 void TexParameter(TexParam parameter, TexValue value);
 // Los cargadores del 0.97k reciben filtro y wrap con los valores numéricos
 // del binario (p. ej. OpenJPG(..., 0x2601, 0x2901)); esto los traduce.

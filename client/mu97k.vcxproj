@@ -247,6 +247,8 @@
     <ClInclude Include="src\Render\Terrain_Render.h" />
     <ClInclude Include="src\Render\Texture\ImageCodec.h" />
     <ClInclude Include="src\Text\TextCore.h" />
+    <ClInclude Include="src\Text\TextShaper.h" />
+    <ClInclude Include="src\Text\TextAtlas.h" />
     <ClInclude Include="src\Render\Texture\Texture.h" />
     <ClInclude Include="src\Scene\Scene.h" />
     <ClInclude Include="src\Scene\Scene_CharSelect.h" />
@@ -331,6 +333,7 @@
     <ClCompile Include="src\Platform\SDL3\SDLAudio.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLSocket.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\SDL3\SDLFont.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
+    <ClCompile Include="src\Text\TextShaper.cpp"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>
     <ClCompile Include="src\Platform\Win32\Win32Audio.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Timer.cpp" />
     <ClCompile Include="src\Platform\Win32\Win32Input.cpp" />
@@ -585,6 +588,7 @@
     <ClCompile Include="src\Text\TextCore.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Text\TextAtlas.cpp" />
     <ClCompile Include="src\Text\Utf8Proc.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

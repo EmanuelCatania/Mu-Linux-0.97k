@@ -94,6 +94,7 @@ set(MU_SOURCES
     src/Platform/SDL3/SDLAudio.cpp
     src/Platform/SDL3/SDLSocket.cpp
     src/Platform/SDL3/SDLFont.cpp
+    src/Text/TextShaper.cpp
     src/Platform/Win32/Win32Audio.cpp
     src/Platform/Win32/Win32Timer.cpp
     src/Platform/Win32/Win32Input.cpp
@@ -344,6 +345,7 @@ set(MU_SOURCES
     src/Render/Terrain_Water.cpp
     src/Render/Texture/ImageCodec.cpp
     src/Text/TextCore.cpp
+    src/Text/TextAtlas.cpp
     src/Text/Utf8Proc.c
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
@@ -517,6 +519,8 @@ set(MU_HEADERS
     src/Render/Terrain_Render.h
     src/Render/Texture/ImageCodec.h
     src/Text/TextCore.h
+    src/Text/TextShaper.h
+    src/Text/TextAtlas.h
     src/Render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
@@ -553,6 +557,8 @@ endif()
 
 # Las listas anteriores son el inventario común. Cada build enlaza un solo backend.
 list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/SDL3/")
+# El shaping (HarfBuzz/SheenBidi) vive en la biblioteca de plataforma SDL3.
+list(REMOVE_ITEM MU_SOURCES src/Text/TextShaper.cpp)
 if(NOT WIN32)
     list(FILTER MU_SOURCES EXCLUDE REGEX "src/Platform/Win32/")
 endif()
@@ -758,5 +764,18 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
         target_compile_options(mu_bmd_device_test PRIVATE -UNDEBUG $<$<CONFIG:Release>:-g>)
     endif()
     add_test(NAME bmd_device COMMAND mu_bmd_device_test)
+
+    # Texto Unicode: el layout nuevo tiene que dar el mismo 1252 que antes.
+    add_executable(mu_text_shaper_test EXCLUDE_FROM_ALL
+        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c)
+    target_include_directories(mu_text_shaper_test PRIVATE src)
+    target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)
+    target_compile_definitions(mu_text_shaper_test PRIVATE
+        MU_TEST_FONT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/bin/Client/Data/Font")
+    target_link_libraries(mu_text_shaper_test PRIVATE mu_platform_sdl)
+    if(MSVC)
+        target_compile_options(mu_text_shaper_test PRIVATE /utf-8 /EHsc)
+    endif()
+    add_test(NAME text_shaper COMMAND mu_text_shaper_test)
     set_tests_properties(bmd_device PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
 endif()

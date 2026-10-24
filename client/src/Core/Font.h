@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+namespace TextEngine { struct ShapedText; }
+
 enum eFontTypes {
     FONT_NORMAL = 0,   // texto común
     FONT_BOLD,         // títulos y texto destacado
@@ -66,6 +68,9 @@ public:
     BOOL BuildGlyphLists(HDC dc, unsigned first, unsigned count, unsigned base);
     void BeginTextMask();
     void SetMaskColor(DWORD color);
+    // SDL3: el texto 1252 ya armado por el layout Unicode (orden visual,
+    // respaldo y shaping). Nulo en el build GDI, que sigue con sus listas.
+    const TextEngine::ShapedText* Shape(HDC dc, LPCSTR text, int count);
     unsigned Generation() const { return m_Generation; }
 
 private:

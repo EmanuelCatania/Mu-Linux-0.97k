@@ -11,8 +11,14 @@
 #include "Config/UserSettings.h"
 #ifdef MU_SDL_FONTS
 #include "Platform/SDL3/SDLFont.h"
+#include "Text/TextCore.h"
+#include "Text/TextShaper.h"
+#include "Text/TextAtlas.h"
 #include <stdexcept>
-namespace { Platform::SDLFont portableFonts[MAX_FONT_TYPES]; }
+namespace {
+Platform::SDLFont portableFonts[MAX_FONT_TYPES];
+TextEngine::FontStack portableStacks[MAX_FONT_TYPES];
+}
 #endif
 
 CFont gFont;
@@ -224,7 +230,10 @@ void CFont::CreatePortableFonts(DWORD windowWidth)
             i != FONT_NORMAL || (cfg.present && cfg.bold), cfg.present && cfg.italic, height,
             cfg.present ? cfg.width : 0, cfg.present && cfg.underline, cfg.present && cfg.strikeOut, error))
             throw std::runtime_error(error);
+        portableStacks[i].Reset(&portableFonts[i], height, i != FONT_NORMAL || (cfg.present && cfg.bold));
     }
+    // Las entradas del atlas apuntan a las caras anteriores.
+    TextAtlas::Release();
 #endif
     (void)windowWidth;
 }
@@ -236,6 +245,19 @@ int CFont::SelectedFont(HDC dc) const
     return FONT_NORMAL;
 }
 
+const TextEngine::ShapedText* CFont::Shape(HDC dc, LPCSTR text, int count)
+{
+#ifdef MU_SDL_FONTS
+    if (!text || count < 0) return nullptr;
+    // DESVIACION (Fase 4, texto Unicode): el texto del cliente sigue en 1252
+    // hasta migrar recursos y red; acá se pasa a UTF-8 y lo arma el layout.
+    return &portableStacks[SelectedFont(dc)].Shape(TextEngine::FromWindows1252(std::string_view(text, size_t(count))));
+#else
+    (void)dc; (void)text; (void)count;
+    return nullptr;
+#endif
+}
+
 BOOL CFont::MeasureText(HDC dc, LPCSTR text, int count, SIZE* size)
 {
     RenderProfile::TextScope profileText(RenderProfile::TextWork::Measure);
@@ -243,12 +265,8 @@ BOOL CFont::MeasureText(HDC dc, LPCSTR text, int count, SIZE* size)
     if (!size || count < 0 || (!text && count)) return FALSE;
     *size = {};
     if (!count) return TRUE;
-    auto& font = portableFonts[SelectedFont(dc)];
-    std::vector<uint32_t> unicode;
-    unicode.reserve(count);
-    for (int i = 0; i < count; ++i) unicode.push_back(Platform::SDLFont::DecodeByte(static_cast<unsigned char>(text[i])));
-    size->cx = font.Measure(unicode.data(), unicode.size());
-    size->cy = font.Metrics().height;
+    size->cx = Shape(dc, text, count)->width;
+    size->cy = portableFonts[SelectedFont(dc)].Metrics().height;
     return TRUE;
 #else
     return GetTextExtentPointA(dc, text, count, size);
@@ -299,13 +317,15 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
     auto& font = portableFonts[SelectedFont(dc)];
     const int baseline = y + font.Metrics().ascent;
     const int stride = (m_SurfaceWidth * 3 + 3) & ~3;
-    for (int i = 0; i < count; ++i) {
-        const auto& glyph = font.Glyph(Platform::SDLFont::DecodeByte(static_cast<unsigned char>(text[i])));
+    const TextEngine::ShapedText* shaped = count ? Shape(dc, text, count) : nullptr;
+    for (size_t i = 0; shaped && i < shaped->glyphs.size(); ++i) {
+        const auto& placed = shaped->glyphs[i];
+        const auto& glyph = placed.font->GlyphIndex(placed.glyph);
         for (int row = 0; row < glyph.height; ++row) {
-            const int dy = baseline - glyph.top + row;
+            const int dy = baseline - placed.y - glyph.top + row;
             if (dy < 0 || dy >= m_SurfaceHeight) continue;
             for (int col = 0; col < glyph.width; ++col) {
-                const int dx = x + glyph.left + col;
+                const int dx = x + placed.x + glyph.left + col;
                 if (dx < 0 || dx >= m_SurfaceWidth || !glyph.coverage[size_t(row) * glyph.width + col]) continue;
                 auto* pixel = static_cast<unsigned char*>(m_pTextBits) + dy * stride + dx * 3;
                 pixel[0] = (m_MaskColor >> 16) & 255;
@@ -313,7 +333,6 @@ BOOL CFont::DrawTextMask(HDC dc, int x, int y, LPCSTR text, int count)
                 pixel[2] = m_MaskColor & 255;
             }
         }
-        x += glyph.advance;
     }
     return TRUE;
 #else

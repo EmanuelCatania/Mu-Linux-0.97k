@@ -3,6 +3,7 @@
 #include FT_FREETYPE_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_MODULE_H
+#include <hb-ft.h>
 #include <algorithm>
 #include <limits>
 #include <unordered_map>
@@ -69,7 +70,10 @@ struct SDLFont::Impl {
     bool underline = false;
     bool strikeOut = false;
     std::unordered_map<uint32_t, FontGlyph> glyphs;
+    std::unordered_map<uint32_t, FontGlyph> glyphIds;
+    hb_font_t* shaping = nullptr;
     ~Impl() {
+        if (shaping) hb_font_destroy(shaping);
         if (face) FT_Done_Face(face);
         if (library) FT_Done_FreeType(library);
     }
@@ -110,13 +114,15 @@ bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error)
     return true;
 }
 
-const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
+namespace {
+// Rasterizado de 1 bit con el intérprete v35: el mismo aspecto que GDI.
+// Lo comparten la búsqueda por carácter (texto 1252) y por id de glifo
+// (texto ya pasado por HarfBuzz), así un mismo glifo sale idéntico.
+FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut)
 {
-    const auto existing = impl->glyphs.find(codepoint);
-    if (existing != impl->glyphs.end()) return existing->second;
     FontGlyph glyph;
-    if (impl->face && !FT_Load_Char(impl->face, codepoint, FT_LOAD_RENDER | FT_LOAD_TARGET_MONO)) {
-        const auto slot = impl->face->glyph;
+    if (face && !FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | FT_LOAD_TARGET_MONO)) {
+        const auto slot = face->glyph;
         const auto& bitmap = slot->bitmap;
         glyph.advance = int((slot->advance.x + 32) / 64);
         glyph.left = slot->bitmap_left;
@@ -130,25 +136,55 @@ const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
                 glyph.coverage[size_t(y) * glyph.width + x] = (row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0;
         }
     }
-    if (impl->face && (impl->underline || impl->strikeOut) && glyph.advance > 0) {
+    if (face && (underline || strikeOut) && glyph.advance > 0) {
         const int underlineY = 1;
-        const int strikeY = -impl->metrics.ascent / 3;
+        const int strikeY = -metrics.ascent / 3;
         const int left = std::min(0, glyph.left);
         const int right = std::max(glyph.advance, glyph.left + glyph.width);
-        const int top = std::min(-glyph.top, impl->strikeOut ? strikeY : underlineY);
-        const int bottom = std::max(glyph.height - glyph.top, impl->underline ? underlineY + 1 : strikeY + 1);
+        const int top = std::min(-glyph.top, strikeOut ? strikeY : underlineY);
+        const int bottom = std::max(glyph.height - glyph.top, underline ? underlineY + 1 : strikeY + 1);
         std::vector<uint8_t> decorated(size_t(right - left) * (bottom - top), 0);
         for (int y = 0; y < glyph.height; ++y)
             for (int x = 0; x < glyph.width; ++x)
                 decorated[size_t(y - glyph.top - top) * (right - left) + x + glyph.left - left] = glyph.coverage[size_t(y) * glyph.width + x];
         for (int x = 0; x < glyph.advance; ++x) {
-            if (impl->underline) decorated[size_t(underlineY - top) * (right - left) + x - left] = 255;
-            if (impl->strikeOut) decorated[size_t(strikeY - top) * (right - left) + x - left] = 255;
+            if (underline) decorated[size_t(underlineY - top) * (right - left) + x - left] = 255;
+            if (strikeOut) decorated[size_t(strikeY - top) * (right - left) + x - left] = 255;
         }
         glyph.left = left; glyph.top = -top; glyph.width = right - left; glyph.height = bottom - top;
         glyph.coverage.swap(decorated);
     }
-    return impl->glyphs.emplace(codepoint, std::move(glyph)).first->second;
+    return glyph;
+}
+}
+
+const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
+{
+    const auto existing = impl->glyphs.find(codepoint);
+    if (existing != impl->glyphs.end()) return existing->second;
+    const FT_UInt index = impl->face ? FT_Get_Char_Index(impl->face, codepoint) : 0;
+    return impl->glyphs.emplace(codepoint,
+        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut)).first->second;
+}
+const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
+{
+    const auto existing = impl->glyphIds.find(glyph);
+    if (existing != impl->glyphIds.end()) return existing->second;
+    return impl->glyphIds.emplace(glyph,
+        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut)).first->second;
+}
+bool SDLFont::HasCodepoint(uint32_t codepoint) const
+{
+    return impl->face && FT_Get_Char_Index(impl->face, codepoint) != 0;
+}
+void* SDLFont::ShapingFont()
+{
+    if (!impl->shaping && impl->face) {
+        impl->shaping = hb_ft_font_create(impl->face, nullptr);
+        // Avances con el mismo hinting que el rasterizado de 1 bit.
+        hb_ft_font_set_load_flags(impl->shaping, FT_LOAD_DEFAULT | FT_LOAD_TARGET_MONO);
+    }
+    return impl->shaping;
 }
 FontMetrics SDLFont::Metrics() const { return impl->metrics; }
 int SDLFont::Measure(const uint32_t* text, size_t count)

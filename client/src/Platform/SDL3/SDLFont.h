@@ -34,6 +34,11 @@ public:
     static std::vector<std::string> InstalledFamilies();
     static uint32_t DecodeByte(uint8_t byte); // recursos del cliente: Windows-1252
     const FontGlyph& Glyph(uint32_t codepoint);
+    // Por id de glifo de la fuente (lo que devuelve el shaping).
+    const FontGlyph& GlyphIndex(uint32_t glyph);
+    bool HasCodepoint(uint32_t codepoint) const;
+    // hb_font_t* de HarfBuzz sobre esta cara; vive mientras viva la fuente.
+    void* ShapingFont();
     FontMetrics Metrics() const;
     int Measure(const uint32_t* text, size_t count);
 private:
