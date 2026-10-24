@@ -241,6 +241,31 @@ std::size_t CopyTruncated(char* out, std::size_t capacity, std::string_view text
     return length;
 }
 
+std::size_t ConvertWindows1252InPlace(char* field, std::size_t capacity)
+{
+    if (!field || !capacity) return 0;
+    std::size_t length = 0;
+    while (length < capacity && field[length]) ++length;
+    bool ascii = true;
+    for (std::size_t i = 0; i < length; ++i)
+        if (static_cast<unsigned char>(field[i]) >= 0x80) { ascii = false; break; }
+    if (ascii) {
+        if (length == capacity) { field[capacity - 1] = 0; return capacity - 1; }
+        return length;
+    }
+    const std::string converted = FromWindows1252(std::string_view(field, length));
+    return CopyTruncated(field, capacity, converted);
+}
+
+std::size_t NormalizeTextFileInPlace(char* field, std::size_t capacity)
+{
+    if (!field || !capacity) return 0;
+    std::size_t length = 0;
+    while (length < capacity && field[length]) ++length;
+    if (length < capacity && IsValid(std::string_view(field, length))) return length;
+    return ConvertWindows1252InPlace(field, capacity);
+}
+
 std::string NormalizeNFC(std::string_view text)
 {
     return Map(text, UTF8PROC_STABLE | UTF8PROC_COMPOSE);
