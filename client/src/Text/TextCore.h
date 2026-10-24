@@ -10,7 +10,7 @@
 // es un code point y "cluster" es un grapheme cluster extendido (UAX #29):
 // lo que el jugador ve como una sola letra, por ejemplo "é" con marca
 // combinada, una sílaba hangul o un emoji compuesto con ZWJ.
-namespace Text {
+namespace TextEngine {
 
 constexpr char32_t ReplacementCharacter = 0xFFFD;
 
@@ -54,4 +54,4 @@ std::string NormalizeNFC(std::string_view text);
 std::string CaseFoldKey(std::string_view text);
 int CompareIgnoreCase(std::string_view left, std::string_view right);
 
-} // namespace Text
+} // namespace TextEngine

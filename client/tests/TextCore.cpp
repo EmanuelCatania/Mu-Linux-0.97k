@@ -15,7 +15,7 @@ std::string U8(const char* text) { return text; }
 
 int main()
 {
-    using namespace Text;
+    using namespace TextEngine;
     // ── Windows-1252 ida y vuelta ──
     std::string all1252;
     for (int b = 1; b < 256; ++b) all1252.push_back(static_cast<char>(b));
