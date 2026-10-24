@@ -4,36 +4,36 @@
 //----------------------------------------------------------------------------------------------------
 // Event Devil Square
 //----------------------------------------------------------------------------------------------------
-0	"Devil Square cerrar· en %d minuto(s)"
-1	"Devil Square cerrÛ"
-2	"Devil Square %d comenzar· en %d minuto(s)"
-3	"Devil Square comenzÛ"
-4	"Devil Square finalizÛ"
+0	"Devil Square cerrar√° en %d minuto(s)"
+1	"Devil Square cerr√≥"
+2	"Devil Square %d comenzar√° en %d minuto(s)"
+3	"Devil Square comenz√≥"
+4	"Devil Square finaliz√≥"
 5	"No eres lo suficientemente fuerte para ingresar a este Devil Square"
 
 //----------------------------------------------------------------------------------------------------
 // Event Blood Castle
 //----------------------------------------------------------------------------------------------------
-6	"Blood Castle cerrar· en %d minuto(s)"
-7	"Blood Castle cerrÛ"
-8	"Blood Castle %d comenzar· en %d minuto(s)"
-9	"Blood Castle comenzÛ"
+6	"Blood Castle cerrar√° en %d minuto(s)"
+7	"Blood Castle cerr√≥"
+8	"Blood Castle %d comenzar√° en %d minuto(s)"
+9	"Blood Castle comenz√≥"
 10	"Todos los monstruos fueron derrotados"
 11	"Todos los jefes fueron derrotados"
-12	"Blood Castle finalizÛ"
+12	"Blood Castle finaliz√≥"
 13	"No eres lo suficientemente fuerte para ingresar a este Blood Castle"
-14	"'%s' dejÛ caer el arma del angel"
+14	"'%s' dej√≥ caer el arma del angel"
 15	"'%s' obtuvo el arma del angel"
-16	"'%s' destruyÛ la puerta del castillo"
-17	"'%s' destroyÛ la estatua"
+16	"'%s' destruy√≥ la puerta del castillo"
+17	"'%s' destroy√≥ la estatua"
 
 //----------------------------------------------------------------------------------------------------
 // INVASIONS AND BONUS
 //----------------------------------------------------------------------------------------------------
-18	"'%s' comenzar· en %d minuto(s)"
-19	"'%s' comenzÛ"
-20	"'%s' derrotÛ a '%s'"
-21	"'%s' finalizÛ"
+18	"'%s' comenzar√° en %d minuto(s)"
+19	"'%s' comenz√≥"
+20	"'%s' derrot√≥ a '%s'"
+21	"'%s' finaliz√≥"
 
 //----------------------------------------------------------------------------------------------------
 // TRADE
@@ -43,18 +43,18 @@
 //----------------------------------------------------------------------------------------------------
 // GUILD
 //----------------------------------------------------------------------------------------------------
-23	"El juego comenzar· autom·ticamente en 10 segundos(s)"
+23	"El juego comenzar√° autom√°ticamente en 10 segundos(s)"
 
 //----------------------------------------------------------------------------------------------------
 // PARTY
 //----------------------------------------------------------------------------------------------------
-24	"M·xima diferencia de nivel %d"
+24	"M√°xima diferencia de nivel %d"
 
 //----------------------------------------------------------------------------------------------------
 // NPCS
 //----------------------------------------------------------------------------------------------------
 25	"Los guardias no hablan con asesinos."
-26	"Este shop est· vacÌo"
+26	"Este shop est√° vac√≠o"
 // Guard NPC
 27	"Cuidate."
 // Golden archer
@@ -63,7 +63,7 @@
 30	"Ya posees un Lucky Number"
 // Golden archer Bingo
 31	"[%s] No hubo ganadores."
-32	"[%s] Archer estar· en %s (%d,%d) por %d minutos"
+32	"[%s] Archer estar√° en %s (%d,%d) por %d minutos"
 // Guild
 33	"Ya te encuentras en un guild"
 34	"Necesitas Nivel %d para crear un guild"
@@ -79,41 +79,41 @@
 39	"Nivel de Cuenta: Vip Oro (%s)"
 40	"Tienes: %d Resets | %d Grand Resets"
 41	"Bienvenido '%s'!"
-42	"AtenciÛn! Alguien est· intentando entrar en esta cuenta"
+42	"Atenci√≥n! Alguien est√° intentando entrar en esta cuenta"
 
 // Leaving game conditions
 43	"No puedes salir del juego con un Trade abierto"
-44	"No puedes salir del juego con el Ba˙l abierto"
+44	"No puedes salir del juego con el Ba√∫l abierto"
 45	"No puedes salir del juego con la Chaos Machine abierta"
 46	"No puedes salir del juego con Defensa Personal"
 
 // Max level
-47	"Est·s al nivel m·ximo"
+47	"Est√°s al nivel m√°ximo"
 
 // Server status
-48	"El servidor cerrÛ"
-49	"El servidor cerrar· autom·ticamente en %d segundos(s)"
-50	"El servidor cerrar· autom·ticamente en 1 minuto(s)"
-51	"El servidor cerrar· autom·ticamente en 3 minuto(s)"
-52	"El servidor cerrar· autom·ticamente en 5 minuto(s)"
-53	"Saldr·s del juego en %d segundos(s)"
+48	"El servidor cerr√≥"
+49	"El servidor cerrar√° autom√°ticamente en %d segundos(s)"
+50	"El servidor cerrar√° autom√°ticamente en 1 minuto(s)"
+51	"El servidor cerrar√° autom√°ticamente en 3 minuto(s)"
+52	"El servidor cerrar√° autom√°ticamente en 5 minuto(s)"
+53	"Saldr√°s del juego en %d segundos(s)"
 
 // Dupe
 54	"Este es un item duplicado, por favor contacte con un Administrador"
 
 // Self defense
-55	"Defensa Personal contra '%s' comenzÛ"
-56	"Defensa Personal contra '%s' finalizÛ"
+55	"Defensa Personal contra '%s' comenz√≥"
+56	"Defensa Personal contra '%s' finaliz√≥"
 
 //----------------------------------------------------------------------------------------------------
 // Commands - General
 //----------------------------------------------------------------------------------------------------
 57	"No tienes permitido usarlo"
 58	"Necesitas %d Zen para usarlo"
-59	"SÛlo personajes encima de Nivel %d pueden usarlo"
-60	"SÛlo personajes debajo de Nivel %d pueden usarlo"
-61	"SÛlo personajes encima de %d Resets pueden usarlo"
-62	"SÛlo personajes debajo de %d Resets pueden usarlo"
+59	"S√≥lo personajes encima de Nivel %d pueden usarlo"
+60	"S√≥lo personajes debajo de Nivel %d pueden usarlo"
+61	"S√≥lo personajes encima de %d Resets pueden usarlo"
+62	"S√≥lo personajes debajo de %d Resets pueden usarlo"
 63	"Tienes que esperar %d segundos para volver a usarlo"
 64	"No puedes utilizar comandos con interfaces abiertas"
 
@@ -128,45 +128,45 @@
 // POST
 69	"[POST][%s] %s"
 // ADD
-70	"No tienes suficientes puntos para aÒadir"
-71	"M·ximos stats son %d"
-72	"AÒadiste %d puntos, restantes %d puntos para aÒadir"
-73	"AÒadir puntos autom·tico: (%d)"
-74	"AÒadir puntos autom·tico: Off"
+70	"No tienes suficientes puntos para a√±adir"
+71	"M√°ximos stats son %d"
+72	"A√±adiste %d puntos, restantes %d puntos para a√±adir"
+73	"A√±adir puntos autom√°tico: (%d)"
+74	"A√±adir puntos autom√°tico: Off"
 // RESET
 75	"No puedes resetear en este momento"
-76	"Alcanzaste el m·ximo de resets: %d"
+76	"Alcanzaste el m√°ximo de resets: %d"
 77	"No puedes resetear con items equipados"
-78	"SÛlo puedes resetear %d veces por dÌa"
-79	"SÛlo puedes resetear %d veces por semana"
-80	"SÛlo puedes resetear %d veces por mes"
+78	"S√≥lo puedes resetear %d veces por d√≠a"
+79	"S√≥lo puedes resetear %d veces por semana"
+80	"S√≥lo puedes resetear %d veces por mes"
 81	"Reseteaste correctamente. Ahora tienes %d resets"
-82	"Reset autom·tico: On"
-83	"Reset autom·tico: Off"
+82	"Reset autom√°tico: On"
+83	"Reset autom√°tico: Off"
 // GRANDRESET
 84	"No puedes grandresetear en este momento"
-85	"Alcanzaste el m·ximo de grand resets: %d"
+85	"Alcanzaste el m√°ximo de grand resets: %d"
 86	"No puedes grandresetear con items equipados"
-87	"SÛlo puedes grandresetear %d veces por dÌa"
-88	"SÛlo puedes grandresetear %d veces por semana"
-89	"SÛlo puedes grandresetear %d veces por mes"
+87	"S√≥lo puedes grandresetear %d veces por d√≠a"
+88	"S√≥lo puedes grandresetear %d veces por semana"
+89	"S√≥lo puedes grandresetear %d veces por mes"
 90	"Grandreseteaste correctamente. Ahora tienes %d grand resets"
 // PKCLEAR
 91	"No eres PK"
 92	"Limpiaste tu PK"
 // ADDMONEY, SUBMONEY, CHASE, BRING, GMOVE
-93	"Ingresaste un valor inv·lido"
-94	"Ingresaste un objetivo inv·lido"
+93	"Ingresaste un valor inv√°lido"
+94	"Ingresaste un objetivo inv√°lido"
 // EVO
-95	"No puedes evolucionar m·s"
+95	"No puedes evolucionar m√°s"
 96	"Evolucionaste correctamente"
 // WARE
-97	"No puedes cambiar de ba˙l en este momento"
-98	"Ingresaste un valor de ba˙l inv·lido"
-99	"Cambiaste al ba˙l %d correctamente"
+97	"No puedes cambiar de ba√∫l en este momento"
+98	"Ingresaste un valor de ba√∫l inv√°lido"
+99	"Cambiaste al ba√∫l %d correctamente"
 // MAKE, DROP, MAKESET, CLEARINV
 100	"Item creado"
-101	"Tu inventario ahora est· limpio"
+101	"Tu inventario ahora est√° limpio"
 // MAKEMOB
 102	"Monstruo creado"
 // REQUEST
@@ -180,10 +180,10 @@
 // Items
 //----------------------------------------------------------------------------------------------------
 107	"Este item no te pertenece."
-108	"Este es un item de Quest y no est·s haciendo esa quest."
-109	"No puedes tener m·s de este item de Quest."
-110	"Tu inventario est· lleno."
-111	"Has alcanzado el m·ximo zen."
+108	"Este es un item de Quest y no est√°s haciendo esa quest."
+109	"No puedes tener m√°s de este item de Quest."
+110	"Tu inventario est√° lleno."
+111	"Has alcanzado el m√°ximo zen."
 112	"No tienes suficiente zen."
 end
 

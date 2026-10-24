@@ -151,7 +151,7 @@ struct CATALOG_TOOLTIP
 	WORD Item;
 	BYTE Color;         // 0 blanco 1 azul 2 rojo 3 amarillo 4 verde 5 rojo oscuro 6 violeta 7 azul oscuro 8 amarillo oscuro
 	BYTE Reserved;
-	char Text[60];      // Latin-1, como el resto del texto del cliente
+	char Text[60];      // UTF-8
 };
 
 struct CATALOG_PET

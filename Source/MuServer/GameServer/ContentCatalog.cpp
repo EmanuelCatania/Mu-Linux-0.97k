@@ -913,46 +913,17 @@ namespace
 
 namespace
 {
-	// UTF-8 (el JSON) a Latin-1 (lo que dibuja el cliente).  Lo que no entra
-	// en Latin-1 queda como '?'.
-	bool Utf8ToLatin1(const std::string& in, char* out, size_t size)
+	// El JSON y el cliente están en UTF-8 (0.97.40): se copia si entra entero.
+	bool CopyTooltipText(const std::string& in, char* out, size_t size)
 	{
-		size_t n = 0;
-
-		for (size_t i = 0; i < in.size(); )
+		if (in.size() >= size)
 		{
-			unsigned char c = (unsigned char)in[i];
-
-			unsigned int code;
-
-			if (c < 0x80)
-			{
-				code = c;
-
-				i += 1;
-			}
-			else if ((c & 0xE0) == 0xC0 && i + 1 < in.size())
-			{
-				code = ((c & 0x1F) << 6) | ((unsigned char)in[i + 1] & 0x3F);
-
-				i += 2;
-			}
-			else
-			{
-				code = '?';
-
-				i += ((c & 0xF0) == 0xE0) ? 3 : (((c & 0xF8) == 0xF0) ? 4 : 1);
-			}
-
-			if (n + 1 >= size)
-			{
-				return false;
-			}
-
-			out[n++] = (char)((code < 256) ? code : '?');
+			return false;
 		}
 
-		out[n] = 0;
+		memcpy(out, in.data(), in.size());
+
+		out[in.size()] = 0;
 
 		return true;
 	}
@@ -980,9 +951,9 @@ namespace
 
 			std::string color = line.IsString() ? "white" : line.GetString("color", "white");
 
-			if (text.empty() || !Utf8ToLatin1(text, entry.Text, sizeof(entry.Text)))
+			if (text.empty() || !CopyTooltipText(text, entry.Text, sizeof(entry.Text)))
 			{
-				error = "cada línea necesita un texto de hasta " + std::to_string(sizeof(entry.Text) - 1) + " caracteres";
+				error = "cada línea necesita un texto de hasta " + std::to_string(sizeof(entry.Text) - 1) + " bytes";
 
 				return false;
 			}

@@ -327,7 +327,6 @@ void CQueryManager::ConvertBinaryToString(BYTE* InBuff, int InSize, char* OutBuf
 #else
 
 #include "Log.h"
-#include "../Common/Text1252.h"
 
 #pragma comment(lib,"mysqlcppconn.lib")
 
@@ -369,8 +368,7 @@ bool CQueryManager::Init(std::string HostName, WORD HostPort, std::string Userna
 
 	this->connection_properties["schema"] = SchemaName;
 
-	// La base es utf8mb4 (Fase 4). El texto del server sigue en 1252 y se
-	// convierte en este borde (Text1252).
+	// La base y el texto del server son UTF-8 (0.97.40).
 	this->connection_properties["OPT_CHARSET_NAME"] = "utf8mb4";
 
 	return this->Connect();
@@ -422,7 +420,7 @@ void CQueryManager::PrepareQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = Text1252::ToUtf8(buff);
+	const std::string sql = buff;
 
 	this->pstmt = this->con->prepareStatement(sql);
 
@@ -498,7 +496,7 @@ bool CQueryManager::ExecUpdateQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = Text1252::ToUtf8(buff);
+	const std::string sql = buff;
 
 	try
 	{
@@ -536,7 +534,7 @@ bool CQueryManager::ExecResultQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = Text1252::ToUtf8(buff);
+	const std::string sql = buff;
 
 	try
 	{
@@ -583,7 +581,7 @@ bool CQueryManager::ExecQuery(std::string query, ...)
 
 	va_end(arg);
 
-	const std::string sql = Text1252::ToUtf8(buff);
+	const std::string sql = buff;
 
 	try
 	{
@@ -696,14 +694,7 @@ void CQueryManager::SetAsInteger64(int position, __int64 value)
 
 void CQueryManager::SetAsString(int position, char* InBuffer, int InBufferSize)
 {
-	std::string legacy = InBuffer;
-
-	if (legacy.length() > (unsigned int)InBufferSize)
-	{
-		legacy.resize(InBufferSize);
-	}
-
-	this->m_StringBuffs[position] = Text1252::ToUtf8(legacy.c_str());
+	this->m_StringBuffs[position].assign(InBuffer, TextField::Length(InBuffer, InBufferSize));
 
 	this->pstmt->setString(position, this->m_StringBuffs[position]);
 }
@@ -736,9 +727,24 @@ __int64 CQueryManager::GetAsInteger64(std::string ColName)
 
 void CQueryManager::GetAsString(std::string ColName, char* OutBuffer, int OutBufferSize)
 {
-	const std::string legacy = Text1252::FromUtf8(this->res->getString(ColName));
+	const std::string text = this->res->getString(ColName);
 
-	strncpy_s(OutBuffer, OutBufferSize, legacy.c_str(), (OutBufferSize - 1));
+	// Si no entra, se corta en un borde de codepoint para no dejar UTF-8 roto.
+	std::size_t length = text.length();
+
+	if (length > (std::size_t)(OutBufferSize - 1))
+	{
+		length = OutBufferSize - 1;
+
+		while (length > 0 && ((unsigned char)text[length] & 0xC0) == 0x80)
+		{
+			length--;
+		}
+	}
+
+	memcpy(OutBuffer, text.data(), length);
+
+	OutBuffer[length] = 0;
 }
 
 void CQueryManager::GetAsBinary(std::string ColName, unsigned char* OutBuffer, int OutBufferSize)
