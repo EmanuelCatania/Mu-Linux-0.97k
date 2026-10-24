@@ -11,12 +11,12 @@ USE `MuOnline97`;
 -- ----------------------------------------------------------------------------
 CREATE TABLE `AccountCharacter` (
 	`Id` VARCHAR(10) NOT NULL,
-	`GameID1` VARCHAR(10) NULL,
-	`GameID2` VARCHAR(10) NULL,
-	`GameID3` VARCHAR(10) NULL,
-	`GameID4` VARCHAR(10) NULL,
-	`GameID5` VARCHAR(10) NULL,
-	`GameIDC` VARCHAR(10) NULL,
+	`GameID1` VARCHAR(40) NULL,
+	`GameID2` VARCHAR(40) NULL,
+	`GameID3` VARCHAR(40) NULL,
+	`GameID4` VARCHAR(40) NULL,
+	`GameID5` VARCHAR(40) NULL,
+	`GameIDC` VARCHAR(40) NULL,
 	CONSTRAINT PK_AccountCharacter PRIMARY KEY (`Id`)
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE `AccountCharacter` (
 -- ----------------------------------------------------------------------------
 CREATE TABLE `Character` (
 	`AccountID` VARCHAR(10) NOT NULL,
-	`Name` VARCHAR(10) NOT NULL,
+	`Name` VARCHAR(40) NOT NULL,
 	`ResetCount` INT UNSIGNED NOT NULL DEFAULT 0,
 	`GrandResetCount` INT UNSIGNED NOT NULL DEFAULT 0,
 	`cLevel` INT UNSIGNED NOT NULL DEFAULT 1,
@@ -134,11 +134,11 @@ CREATE INDEX IX_GoldenArcherLuckyNumbers_AccountID ON GoldenArcherLuckyNumbers (
 -- ----------------------------------------------------------------------------
 CREATE TABLE `Guild` (
 	`Number` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-	`G_Name` VARCHAR(8) NOT NULL,
+	`G_Name` VARCHAR(32) NOT NULL,
 	`G_Mark` VARBINARY(32) NULL,
 	`G_Score` INT UNSIGNED NULL DEFAULT 0,
-	`G_Master` VARCHAR(10) NULL,
-	`G_Notice` VARCHAR(60) NULL,
+	`G_Master` VARCHAR(40) NULL,
+	`G_Notice` VARCHAR(200) NULL,
 	CONSTRAINT PK_Guild PRIMARY KEY (`Number`)
 );
 
@@ -146,8 +146,8 @@ CREATE TABLE `Guild` (
 -- Table GuildMember
 -- ----------------------------------------------------------------------------
 CREATE TABLE `GuildMember` (
-	`Name` VARCHAR(10) NOT NULL,
-	`G_Name` VARCHAR(8) NOT NULL,
+	`Name` VARCHAR(40) NOT NULL,
+	`G_Name` VARCHAR(32) NOT NULL,
 	`G_Status` TINYINT UNSIGNED NOT NULL DEFAULT 0,
 	CONSTRAINT PK_GuildMember PRIMARY KEY (`Name`)
 );
@@ -186,7 +186,7 @@ CREATE TABLE `MEMB_STAT` (
 -- Table OptionData
 -- ----------------------------------------------------------------------------
 CREATE TABLE `OptionData` (
-	`Name` VARCHAR(10) NOT NULL,
+	`Name` VARCHAR(40) NOT NULL,
 	`SkillKey` BINARY(10) NULL,
 	`GameOption` TINYINT UNSIGNED NULL,
 	`Qkey` TINYINT UNSIGNED NULL,
@@ -200,7 +200,7 @@ CREATE TABLE `OptionData` (
 -- Table RankingBloodCastle
 -- ----------------------------------------------------------------------------
 CREATE TABLE `RankingBloodCastle` (
-	`Name` VARCHAR(10) NOT NULL,
+	`Name` VARCHAR(40) NOT NULL,
 	`Score` INT UNSIGNED NULL,
 	CONSTRAINT PK_RankingBloodCastle PRIMARY KEY (`Name`)
 );
@@ -209,7 +209,7 @@ CREATE TABLE `RankingBloodCastle` (
 -- Table RankingDevilSquare
 -- ----------------------------------------------------------------------------
 CREATE TABLE `RankingDevilSquare` (
-	`Name` VARCHAR(10) NOT NULL,
+	`Name` VARCHAR(40) NOT NULL,
 	`Score` INT UNSIGNED NULL,
 	CONSTRAINT PK_RankingDevilSquare PRIMARY KEY (`Name`)
 );
@@ -218,7 +218,7 @@ CREATE TABLE `RankingDevilSquare` (
 -- Table ResetInfo
 -- ----------------------------------------------------------------------------
 CREATE TABLE `ResetInfo` (
-	`Name` VARCHAR(10) NOT NULL,
+	`Name` VARCHAR(40) NOT NULL,
 	`ResetDay` INT UNSIGNED NOT NULL DEFAULT 0,
 	`ResetDayDate` DATETIME NULL,
 	`ResetWek` INT UNSIGNED NOT NULL DEFAULT 0,

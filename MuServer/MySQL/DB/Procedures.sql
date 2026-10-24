@@ -152,7 +152,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS `WZ_CreateCharacter` $$
 CREATE PROCEDURE `WZ_CreateCharacter`(
 	IN inAccountID VARCHAR(10),
-	IN inCharName VARCHAR(10),
+	IN inCharName VARCHAR(40),
 	IN inCharClass TINYINT
 )
 BEGIN
@@ -210,7 +210,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS `WZ_DeleteCharacter` $$
 CREATE PROCEDURE `WZ_DeleteCharacter`(
 	IN inAccountID VARCHAR(10),
-	IN inCharName VARCHAR(10)
+	IN inCharName VARCHAR(40)
 )
 BEGIN
 	DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SELECT 1 AS Result;
@@ -259,8 +259,8 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `WZ_GuildCreate` $$
 CREATE PROCEDURE `WZ_GuildCreate`(
-	IN inGuildName VARCHAR(8),
-	IN inCharName VARCHAR(10)
+	IN inGuildName VARCHAR(32),
+	IN inCharName VARCHAR(40)
 )
 BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -313,7 +313,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `WZ_SetGuildDelete` $$
 CREATE PROCEDURE `WZ_SetGuildDelete`(
-	IN inGuildName VARCHAR(10)
+	IN inGuildName VARCHAR(32)
 )
 BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -365,7 +365,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS `WZ_GetGrandResetInfo` $$
 CREATE PROCEDURE `WZ_GetGrandResetInfo` (
 	IN inAccountID VARCHAR(10),
-	IN inCharName VARCHAR(10)
+	IN inCharName VARCHAR(40)
 )
 BEGIN
 	IF NOT EXISTS (SELECT * FROM `ResetInfo` WHERE Name = `inCharName`) THEN
@@ -409,7 +409,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS `WZ_SetGrandResetInfo` $$
 CREATE PROCEDURE `WZ_SetGrandResetInfo`(
 	IN inAccountID VARCHAR(10),
-	IN inCharName VARCHAR(10),
+	IN inCharName VARCHAR(40),
 	IN inReset INT,
 	IN inGrandReset INT,
 	IN inGrandResetDay INT,
@@ -447,7 +447,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS `WZ_GetResetInfo` $$
 CREATE PROCEDURE `WZ_GetResetInfo`(
 	IN inAccountID VARCHAR(10),
-	IN inCharName VARCHAR(10)
+	IN inCharName VARCHAR(40)
 )
 BEGIN
 	IF NOT EXISTS (SELECT * FROM `ResetInfo` WHERE Name = `inCharName`) THEN
@@ -491,7 +491,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS `WZ_SetResetInfo` $$
 CREATE PROCEDURE `WZ_SetResetInfo`(
 	IN inAccountID VARCHAR(10),
-	IN inCharName VARCHAR(10),
+	IN inCharName VARCHAR(40),
 	IN inReset INT,
 	IN inResetDay INT,
 	IN inResetWek INT,

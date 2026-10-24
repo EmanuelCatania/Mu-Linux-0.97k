@@ -7,7 +7,7 @@ Desde 0.97.40 la base `MuOnline97` usa `utf8mb4` con la collation `utf8mb4_0900_
 
 Una instalación nueva ya nace así (`CreateDatabase.sql` + `Procedures.sql`). Una base existente hay que migrarla una vez. Si se creó con MySQL 5.7 (o se restauró desde un dump de 5.7), sus tablas están en `latin1`. En MySQL `latin1` es Windows-1252, así que la conversión conserva los acentos.
 
-Mientras el protocolo con el cliente siga en 1252, el server convierte en el borde con la base (`QueryManager`): lo que no existe en 1252 se guarda y se manda como `?`.
+Desde 0.97.40 el server y el cliente manejan UTF-8 de punta a punta: lo que se guarda es lo que se escribió.
 
 ## 1. Backup
 
@@ -37,12 +37,15 @@ docker compose stop mu-server mu-web
 
 ```bash
 docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < MuServer/MySQL/DB/Migrate-utf8mb4.sql
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < MuServer/MySQL/DB/Migrate-0.97.40.sql
 docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < MuServer/MySQL/DB/Procedures.sql
 ```
 
 El script verifica primero que ningún nombre de personaje, cuenta o guild se vuelva igual a otro con la collation nueva. Si encuentra alguno, se detiene sin convertir nada y lista los nombres; hay que renombrarlos y volver a ejecutarlo. Al terminar muestra la collation de cada tabla: todas tienen que decir `utf8mb4_0900_as_ci`.
 
-`Procedures.sql` recrea los procedimientos para que sus parámetros también sean `utf8mb4`.
+`Migrate-0.97.40.sql` agranda las columnas de nombres: personaje 40, guild 32 y aviso del guild 200 caracteres. Si la base ya estaba en utf8mb4, basta con este script y `Procedures.sql`.
+
+`Procedures.sql` recrea los procedimientos para que sus parámetros también sean `utf8mb4` y acepten los nombres nuevos.
 
 ## 5. Verificar
 
