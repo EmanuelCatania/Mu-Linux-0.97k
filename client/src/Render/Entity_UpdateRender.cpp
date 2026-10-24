@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
@@ -46,9 +47,9 @@ void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
 
     EnableAlphaTest(true);
     GL_EnableCullFace();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_BindTextureSlot(34);
-    glPushMatrix();
+    Gfx::PushMatrix();
 
     float angles[3] = {
         *(float*)(object + 28) + 80.0f,
@@ -65,9 +66,9 @@ void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
     float* bone26 = (float*)((BYTE*)(uintptr_t)*(DWORD*)(object + 276) + 1248);
     R_ConcatTransforms(bone26, localMatrix, &DAT_06989c9c);
 
-    glTranslatef(*(float*)(object + 16), *(float*)(object + 20), *(float*)(object + 24));
+    Gfx::Translate(*(float*)(object + 16), *(float*)(object + 20), *(float*)(object + 24));
     GL_DrawBillboard(5.0f, 7.0f, &DAT_06989c9c);
-    glPopMatrix();
+    Gfx::PopMatrix();
     GL_DisableCullFace();
 }
 

@@ -2,6 +2,7 @@
 // UI_LegacyExterns.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 #include "Render/GlyphAtlas.h"
@@ -814,7 +815,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
 
     // Cache de hasta 4 fuentes (regular / bold / big / repuesto), para no
     // reconstruir las 256 display lists al alternar fuentes entre llamadas.
-    struct FontLists { void* rc; HFONT font; GLuint base; int ascent; unsigned generation; };
+    struct FontLists { void* rc; HFONT font; unsigned int base; int ascent; unsigned generation; };
     static FontLists s_cache[4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0} };
     static int       s_next = 0;
 
@@ -830,10 +831,10 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         s_next = (s_next + 1) & 3;
         if (s_cache[slot].base != 0) {
             GlyphAtlas::Forget(s_cache[slot].base);
-            glDeleteLists(s_cache[slot].base, 256);
+            Gfx::DeleteLists(s_cache[slot].base, 256);
             s_cache[slot].base = 0;
         }
-        GLuint base = glGenLists(256);
+        unsigned int base = Gfx::GenLists(256);
         if (base == 0) return;
         // hFont ya está seleccionada en el DC (de ahí la sacamos), así que no
         // hace falta SelectObject — el que había acá encima pisaba la elección
@@ -862,14 +863,13 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         //
         // Se restaura el valor previo para no alterar el estado global que
         // espera el resto del render.
-        GLint prevAlign = 4;
-        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        int prevAlign = Gfx::UnpackAlignment();
+        Gfx::SetUnpackAlignment(1);
         BufferedDraw::Suspend();
         const BOOL fontOk = gFont.BuildGlyphLists(hFontDC, 0, 256, base);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
+        Gfx::SetUnpackAlignment(prevAlign);
         if (!fontOk) {
-            glDeleteLists(base, 256);
+            Gfx::DeleteLists(base, 256);
             return;
         }
         TEXTMETRICA tm;
@@ -884,7 +884,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         s_cache[slot].ascent = ascent;
         s_cache[slot].generation = gFont.Generation();
     }
-    const GLuint s_fontListBase = s_cache[slot].base;
+    const unsigned int s_fontListBase = s_cache[slot].base;
     const int    s_ascent       = s_cache[slot].ascent;
 
     // ── CLAMP A LA PANTALLA (port de sub_47F4C0 L18-46) ─────────────────────
@@ -932,9 +932,9 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // Se respeta el alpha que el CALLER setea via glColor4f(...,α) antes de
     // RenderText (lo usa p.ej. el cross-fade del banner clase/zona): se
     // multiplican el alpha del texto-color (DAT_00559c78 byte 3) y el del caller.
-    GLfloat curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glGetFloatv(GL_CURRENT_COLOR, curColor);
-    GLubyte callerA = (GLubyte)(curColor[3] * 255.0f + 0.5f);
+    float curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    Gfx::CurrentColor(curColor);
+    unsigned char callerA = (unsigned char)(curColor[3] * 255.0f + 0.5f);
 
     // El color del caller (glColor3f) también MODULA el RGB, no
     // sólo el alpha.  En el binario el subclass por defecto de CUIRenderText
@@ -947,17 +947,17 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // Sin esto, los `glColor3f` de RenderItemName (0x4C9E70) no hacían nada y
     // los nombres del suelo salían todos con m_dwTextColor: el Zen sin su
     // dorado y los items +N sin su color por nivel.
-    GLfloat callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
+    float callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
 
     // DESVIACION R4k: texto conserva su dibujo, pero no filtra factores de
     // mezcla al siguiente productor. Materiales Off mantiene la referencia.
     const bool scopedText=Materials::BeginText();
     if(!scopedText){
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        Gfx::PushAttrib(Gfx::AttribEnable | Gfx::AttribCurrent | Gfx::AttribList);
+        Gfx::Disable(Gfx::Cap::Texture2D);
+        Gfx::Disable(Gfx::Cap::DepthTest);
+        Gfx::Enable(Gfx::Cap::Blend);
+        Gfx::BlendFunc(Gfx::Factor::SrcAlpha, Gfx::Factor::OneMinusSrcAlpha);
     }
 
     // ── FONDO + GLIFOS, POR TRAMOS DE COLOR ──────────────────────────────────
@@ -982,7 +982,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         const int drawLen = (int)strlen(drawText);
         const int nRuns   = nMarkers + 1;
 
-        glListBase(s_fontListBase);
+        Gfx::ListBase(s_fontListBase);
 
         for (int run = 0; run < nRuns; ++run) {
             int startChar = (run == 0)        ? 0        : markers[run - 1].charIndex;
@@ -1001,15 +1001,15 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             BOOL haveExtent = gFont.MeasureText(hFontDC, drawText + startChar,
                                                   endChar - startChar, &bsz);
 
-            GLubyte bA = (GLubyte)((bc >> 24) & 0xFF);
+            unsigned char bA = (unsigned char)((bc >> 24) & 0xFF);
             if (bA != 0 && haveExtent && bsz.cx > 0) {
-                GLubyte bR = (GLubyte)( bc        & 0xFF);
-                GLubyte bG = (GLubyte)((bc >>  8) & 0xFF);
-                GLubyte bB = (GLubyte)((bc >> 16) & 0xFF);
-                GLubyte bFinal = (GLubyte)((unsigned)bA * (unsigned)callerA / 255u);
-                bR = (GLubyte)((float)bR * callerR + 0.5f);
-                bG = (GLubyte)((float)bG * callerG + 0.5f);
-                bB = (GLubyte)((float)bB * callerB + 0.5f);
+                unsigned char bR = (unsigned char)( bc        & 0xFF);
+                unsigned char bG = (unsigned char)((bc >>  8) & 0xFF);
+                unsigned char bB = (unsigned char)((bc >> 16) & 0xFF);
+                unsigned char bFinal = (unsigned char)((unsigned)bA * (unsigned)callerA / 255u);
+                bR = (unsigned char)((float)bR * callerR + 0.5f);
+                bG = (unsigned char)((float)bG * callerG + 0.5f);
+                bB = (unsigned char)((float)bB * callerB + 0.5f);
                 // glRasterPos deja el ORIGEN DEL GLIFO en la baseline, así que el
                 // texto ocupa [rasterY - descent, rasterY + ascent]. descent = cy - ascent.
                 int descent = (int)bsz.cy - s_ascent;
@@ -1026,7 +1026,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                 float y0 = (float)rasterY - descOrtho;
                 float y1 = (float)rasterY + ascOrtho;
                 BufferedDraw::Color4ub(bR, bG, bB, bFinal);
-                BufferedDraw::Begin(GL_QUADS);
+                BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
                     BufferedDraw::Vertex2f(x0, y0);
                     BufferedDraw::Vertex2f(x1, y0);
                     BufferedDraw::Vertex2f(x1, y1);
@@ -1034,28 +1034,28 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
                 BufferedDraw::End();
             }
 
-            GLubyte R = (GLubyte)( fg        & 0xFF);
-            GLubyte G = (GLubyte)((fg >>  8) & 0xFF);
-            GLubyte B = (GLubyte)((fg >> 16) & 0xFF);
-            GLubyte A = (GLubyte)((fg >> 24) & 0xFF);
+            unsigned char R = (unsigned char)( fg        & 0xFF);
+            unsigned char G = (unsigned char)((fg >>  8) & 0xFF);
+            unsigned char B = (unsigned char)((fg >> 16) & 0xFF);
+            unsigned char A = (unsigned char)((fg >> 24) & 0xFF);
             if (A == 0) A = 0xFF;
-            GLubyte finalA = (GLubyte)((unsigned)A * (unsigned)callerA / 255u);
+            unsigned char finalA = (unsigned char)((unsigned)A * (unsigned)callerA / 255u);
 
             // Modulación por el color del caller (ver la nota de arriba).
-            R = (GLubyte)((float)R * callerR + 0.5f);
-            G = (GLubyte)((float)G * callerG + 0.5f);
-            B = (GLubyte)((float)B * callerB + 0.5f);
+            R = (unsigned char)((float)R * callerR + 0.5f);
+            G = (unsigned char)((float)G * callerG + 0.5f);
+            B = (unsigned char)((float)B * callerB + 0.5f);
 
             BufferedDraw::Color4ub(R, G, B, finalA);
-            glRasterPos2f(runX, (float)rasterY);
+            Gfx::RasterPos2f(runX, (float)rasterY);
             {
                 if(!profiledString){RenderProfile::TextString(false);profiledString=true;}
                 RenderProfile::TextScope profileText(RenderProfile::TextWork::Draw);
                 if (!GlyphAtlas::Draw(s_fontListBase, drawText + startChar, endChar - startChar, vw, vh))
-                    glCallLists((GLsizei)(endChar - startChar), GL_UNSIGNED_BYTE,
-                                drawText + startChar);
+                    Gfx::CallLists((int)(endChar - startChar),
+                                   (const unsigned char*)(drawText + startChar));
             }
         }
     }
-    if(scopedText)Materials::EndText();else glPopAttrib();
+    if(scopedText)Materials::EndText();else Gfx::PopAttrib();
 }

@@ -77,11 +77,11 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
         }
     }
 
-    BufferedDraw::Begin(6); // GL_TRIANGLE_FAN
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan); // GL_TRIANGLE_FAN
     for (int i = 0; i < 4; i++) {
         if (p6 != '\0') {
             if (p7 == 1.0f) {
-                BufferedDraw::Color3fv((GLfloat *)&light[i]);
+                BufferedDraw::Color3fv((float *)&light[i]);
             } else {
                 BufferedDraw::Color4f(light[i][0], light[i][1], light[i][2], p7);
             }
@@ -91,7 +91,7 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
         // RenderTerrainBitmap/RenderTerrainAlphaBitmap pass rotated quad data in that layout.
         const float *tc = (const float *)(p5 + i * 12);
         BufferedDraw::TexCoord2f(tc[0], tc[1]);
-        BufferedDraw::Vertex3fv((GLfloat *)&verts[i]);
+        BufferedDraw::Vertex3fv((float *)&verts[i]);
     }
     BufferedDraw::End();
 }

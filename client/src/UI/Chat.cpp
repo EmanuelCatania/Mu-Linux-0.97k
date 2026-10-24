@@ -16,6 +16,7 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Config/UserSettings.h"
 
@@ -368,7 +369,7 @@ void UI_RenderNotices(void)
 
   GL_SetBlendSrcOver('\x01');
   gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
-  glColor3f(1.0f, 1.0f, 1.0f);
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
   for (int slot = 0; slot < 6; ++slot) {
@@ -424,7 +425,7 @@ void UI_RenderChatLogOverlay(void)
   CHAR local_100 [256];
 
   // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
-  glColor3f(1.0f, 1.0f, 1.0f);
+  Gfx::Color3f(1.0f, 1.0f, 1.0f);
   gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
   iVar7 = 0;
   local_10c = 0;

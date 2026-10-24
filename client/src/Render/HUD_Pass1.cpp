@@ -19,13 +19,12 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "globals.h"
 #include "structs.h"
 #include "functions.h"
-#include <GL/gl.h>
-#include <GL/glu.h>
 
 extern "C" BYTE OffsetInventoryItems[];     // src/Render/HUD_Pass3.cpp
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
@@ -187,20 +186,20 @@ void RenderPartyHP_(void)
             }
 
             EnableAlphaTest(true);
-            glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+            Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.5f);
             GL_DrawRect((float)(sx + 1), (float)(sy + 1), 42.0f, 5.0f);  // shadow
 
             EnableAlphaBlend();
-            glColor3f(0.2f, 0.0f, 0.0f);
+            Gfx::Color3f(0.2f, 0.0f, 0.0f);
             GL_DrawRect((float)sx, (float)sy, 42.0f, 5.0f);              // dark frame
 
-            glColor3f(0.19607843f, 0.039215688f, 0.0f);
+            Gfx::Color3f(0.19607843f, 0.039215688f, 0.0f);
             GL_DrawRect((float)(sx + 2), (float)(sy + 2), 38.0f, 1.0f);  // mid row
 
             int v7 = (int)*(unsigned char*)v1;
             if (v7 > 10) v7 = 10;
 
-            glColor3f(0.98039216f, 0.039215688f, 0.0f);
+            Gfx::Color3f(0.98039216f, 0.039215688f, 0.0f);
             for (int i = 0; i < v7; ++i) {
                 GL_DrawRect((float)(sx + 4 * i + 2), (float)(sy + 2), 3.0f, 2.0f);
             }
@@ -211,7 +210,7 @@ void RenderPartyHP_(void)
     } while (v19 < PartyNumber);
 
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // Entrada pública (la llama Render_Frame.cpp).
@@ -316,7 +315,7 @@ void Render_FloatingText(void) { RenderBooleans_(); }
 extern "C" void __cdecl RenderMainFrameWindow_(void);
 void RenderMainFrameWindow_(void)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     DAT_07e11d6e = 0;
     m_dwTextColor = 0xFFFFFFFF;
@@ -363,11 +362,11 @@ void RenderMainFrameWindow_(void)
     }
 
     // Bottom tile #2 (mid) and #3 (right half).
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(231, 256.0f, 432.0f, 128.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
     GL_DrawTexture(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
     GL_ResetState();
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
@@ -424,9 +423,9 @@ void Render_HotbarItems3D_(void)
 
     GL_End2D();   // EndBitmap
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    Gfx::PushMatrix();
+    Gfx::LoadIdentity();
     GL_SetViewport(0, 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
     float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
@@ -434,9 +433,9 @@ void Render_HotbarItems3D_(void)
     int   nearBits = *(int*)&CameraViewNear;
     GL_SetPerspective(fovBits, aspectF, nearBits, CameraViewFar);
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
+    Gfx::PushMatrix();
+    Gfx::LoadIdentity();
     GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
     GL_EnableDepthTest();
     GL_EnableDepthWrites();
@@ -479,17 +478,17 @@ void Render_HotbarItems3D_(void)
         // sub_4F54B0 — event-chip dialog renderer.  Not yet ported.
     }
 
-    glLoadIdentity();
-    glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
+    Gfx::LoadIdentity();
+    Gfx::Translate(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
     GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
 
     float Target[3] = {0, 0, 0};
     Camera_BuildMouseRay(100, 100, Target);
 
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::Projection);
+    Gfx::PopMatrix();
+    Gfx::MatrixMode(Gfx::Matrix::ModelView);
 
     GL_Begin2D();   // BeginBitmap
 }

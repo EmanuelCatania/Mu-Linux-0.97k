@@ -74,6 +74,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -438,7 +439,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     ((FnVoid)vt[22])(self);  // *this+88 — render BG
     ((FnVoid)vt[20])(self);  // *this+80 — render header
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     if (gFont.GetTextDC()) gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));  // we don't have plain g_hFont; bold is closest
 
     int i = 0;
@@ -1056,9 +1057,9 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         // Fondo negro semitransparente.  alpha = 1.0 - self[47]; self[47] es el
         // mismo campo que cicla el botón 3 del popup (0.2 … 0.9), así que a más
         // transparencia elegida, más se ve el mundo detrás.
-        glColor4f(0.0f, 0.0f, 0.0f, 1.0f - *(float*)&self[47]);
+        Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f - *(float*)&self[47]);
         GL_DrawRect(fx, (float)((int)self[12] - height), fw, (float)height + 12.0f);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GL_ResetState();                          // DisableAlphaBlend
 
         // Tapa superior (5 px).
@@ -1096,7 +1097,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         }
 
         EnableAlphaTest(true);
-        glColor4f(1.0f, 1.0f, 1.0f, 0.6f);
+        Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.6f);
 
         const float arrowX = fx + fw - 21.0f;
         // Flecha arriba.  El sprite se apaga mientras se arrastra el thumb
@@ -1133,11 +1134,11 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
             GL_DrawTexture(1282, barX, trackY, thumbW - 2.0f, trackH,
                          0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
             if (hov == 3) {
-                if (MouseLButton) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
-                else              glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
+                if (MouseLButton) Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.1f);
+                else              Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.1f);
                 GL_DrawRect(barX, trackY, thumbW - 2.0f, trackH);
-                glEnable(GL_TEXTURE_2D);
-                glColor4f(1.0f, 1.0f, 1.0f, 0.6f);
+                Gfx::Enable(Gfx::Cap::Texture2D);
+                Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.6f);
             }
         } else {
             const float thumbY = *(float*)&self[38];
@@ -1145,19 +1146,19 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
             GL_DrawTexture(1282, barX, thumbY, thumbW - 2.0f, thumbH,
                          0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
             if (hov == 3) {
-                if (ChatListBox_GetFocusState(self) == 2) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
-                else                         glColor4f(1.0f, 1.0f, 1.0f, 0.2f);
+                if (ChatListBox_GetFocusState(self) == 2) Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.1f);
+                else                         Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.2f);
                 GL_DrawRect(barX, thumbY, thumbW - 2.0f, thumbH);
-                glEnable(GL_TEXTURE_2D);
-                glColor4f(1.0f, 1.0f, 1.0f, 0.6f);
+                Gfx::Enable(Gfx::Cap::Texture2D);
+                Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.6f);
             }
         }
 
         // Botón de redimensionar (22×12) arriba a la derecha.  Se agrisa
         // mientras se está arrastrando (focus state 1); el arrastre en sí lo
         // maneja el slot 7.
-        if (ChatListBox_GetFocusState(self) == 1) glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
-        else                         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        if (ChatListBox_GetFocusState(self) == 1) Gfx::Color4f(0.7f, 0.7f, 0.7f, 1.0f);
+        else                         Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
         GL_DrawTexture(1280, fx + fw - 28.0f,
                      (float)((int)self[12] - (int)self[14]) - 8.0f + 4.0f,
                      22.0f, 12.0f, 0.0f, 0.0f, 0.6875f, 0.75f, 1, 1);
@@ -1320,7 +1321,7 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
     if (hover == 1) {
         if (MouseLButton) {                        // DAT_083a42c4 — botón izq. mantenido
             // Apretado: sprite gris corrido 1px, UV 1px más chico.
-            glColor4f(0.8f, 0.8f, 0.8f, alpha);
+            Gfx::Color4f(0.8f, 0.8f, 0.8f, alpha);
             float vOff   = 0.0f;
             float hDrawn = Height;
             if (flipBits != 0) {
@@ -1330,16 +1331,16 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
             RenderBitmap(Texture, x + 1.0f, y + 1.0f, Width, hDrawn,
                          0.0f, vOff,
                          (Width - 1.0f) * 0.0625f, (Height - 1.0f) * 0.0625f, 1, 1);
-            glColor4f(1.0f, 1.0f, 1.0f, alpha);
+            Gfx::Color4f(1.0f, 1.0f, 1.0f, alpha);
         } else {
             // Hover: sprite normal + wash blanco al 10% encima.
             float hDrawn = (float)(flipBits != 0 ? -1 : 1) * Height;
             RenderBitmap(Texture, x, y, Width, hDrawn, 0.0f, 0.0f,
                          Width * 0.0625f, Height * 0.0625f, 1, 1);
-            glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
+            Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.1f);
             GL_DrawRect(x, y, Width, hDrawn);     // RenderColor (FillRect)
-            glEnable(GL_TEXTURE_2D);               // 0xDE1
-            glColor4f(1.0f, 1.0f, 1.0f, alpha);
+            Gfx::Enable(Gfx::Cap::Texture2D);               // 0xDE1
+            Gfx::Color4f(1.0f, 1.0f, 1.0f, alpha);
         }
     } else {
         // Estado normal.
@@ -1370,7 +1371,7 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
 
     // ── 2) Setup + hover ────────────────────────────────────────────────────
     EnableAlphaTest(true);
-    glColor4f(1.0f, 1.0f, 1.0f, *pAlpha);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, *pAlpha);
     m_dwTextColor = 0xFFFFFFFFu;
     m_dwBackColor = 0xFF000000u;                   // -16777216
 
@@ -1387,10 +1388,10 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
     if (DAT_00559bf1) {
         ChatLB_DrawButton(1285, hovered == 1, bx, by, 16.0f, 16.0f, *pAlpha, 0);
     } else {
-        glColor4f(0.7f, 0.7f, 0.7f, *pAlpha);
+        Gfx::Color4f(0.7f, 0.7f, 0.7f, *pAlpha);
         RenderBitmap(1285, bx + 1.0f, by + 1.0f, 16.0f, 16.0f,
                      0.0f, 0.0f, 0.9375f, 0.9375f, 1, 1);
-        glColor4f(1.0f, 1.0f, 1.0f, *pAlpha);
+        Gfx::Color4f(1.0f, 1.0f, 1.0f, *pAlpha);
     }
 
     // Botón 2 — tamaño del historial (1286 = nis_btnsize).
@@ -1406,7 +1407,7 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
         RenderTipText((int)(tipX - 16.0f), tipY, tip);
     }
 
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     GL_ResetState();                                // DisableAlphaBlend
 }
 

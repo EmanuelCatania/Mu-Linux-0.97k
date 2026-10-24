@@ -1,6 +1,7 @@
 // Font.cpp — CFont. Ver Font.h.
 
 #include "stdafx.h"
+#include "Render/Backend/GL/LegacyGL.h"
 #include <algorithm>
 #ifndef _WIN32
 #include <strings.h>

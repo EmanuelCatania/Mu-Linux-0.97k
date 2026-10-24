@@ -372,7 +372,7 @@ struct BITMAP_t
     float  Width;
     float  Height;
     char   Components;
-    GLuint TextureNumber;
+    unsigned int TextureNumber;
     BYTE   Ref;
     BYTE  *Buffer;
 };

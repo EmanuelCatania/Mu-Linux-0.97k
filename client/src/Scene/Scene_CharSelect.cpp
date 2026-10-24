@@ -178,6 +178,7 @@
 //   GL_SetBlendAdditive   → Frame_UpdateTimer()
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_CharSelect.h"
@@ -236,7 +237,7 @@ int Scene_CharSelect(void)
         DAT_083a42ea = 0;
         DAT_07e11d6e = 0;
         // 0x3f800000 son los bits de 1.0f, no la magnitud.
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL_BeginViewport(0, 0, 0x280, 0x1e0);
         Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
 
@@ -305,13 +306,13 @@ int Scene_CharSelect(void)
         Trail_RenderAll();
         GL_SetBlendSrcOver('\x01');              // GL_SetMode(1)
         GL_BindTextureSlot(0x15);
-        glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
+        Gfx::Color4f(1.0f, 1.0f, 1.0f, 0.8f);
         GL_BeginSprite();                    // SkillEffect_Render_2
         Render_DrawSpritePool();                    // Portal_Render
         RenderParticles();                    // ItemDrop_Render_2
-        glPopMatrix();
+        Gfx::PopMatrix();
         GL_Begin2D();                    // GL_SetupOrtho2D
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_SetBlendSrcOver('\x01');
         GL_ResetState();
 
@@ -325,7 +326,7 @@ int Scene_CharSelect(void)
         }
         if (DAT_005616b0 == -1) {
             GL_SetBlendSrcOver('\x01');
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
             iVar9 = 0;
             pcVar5 = (char*)DAT_07abf5d0;
             do {
@@ -455,7 +456,7 @@ int Scene_CharSelect(void)
             GL_BeginViewport(0, 0, 0x280, 0x1e0);
             GL_Begin2D();
             GL_SetBlendSrcOver('\x01');
-            glColor3f(1.0f, 1.0f, 1.0f);
+            Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
             iVar9 = DAT_005616a4;
             uVar8 = 2;
@@ -482,9 +483,9 @@ int Scene_CharSelect(void)
             }
             if ((char)DAT_07abf20c == '\0') {
                 // 0x3f4ccccd son los bits de 0.8f (pasado como int sería 1062836429.0f).
-                glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+                Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
                 GL_DrawRect(364.0f, (float)(int)local_70, 20.0f, 19.0f);
-                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
             local_70 = fVar1;
             if (((0x17f < DAT_083a427c) && (DAT_083a427c < 0x194)) &&
@@ -495,9 +496,9 @@ int Scene_CharSelect(void)
             if (uVar8 <= (DAT_07abf20c & 0xff)) {
                 // IDA RenderColor(384, dialogY+196, ...): el overlay de "flecha derecha
                 // bloqueada" usa la misma Y que la izquierda.
-                glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+                Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
                 GL_DrawRect(384.0f, (float)(int)local_70, 20.0f, 19.0f);
-                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
             GL_SetBlendSrcOver('\x01');
@@ -601,7 +602,7 @@ int Scene_CharSelect(void)
             float fR, fG, fB;
             if (bVar10) { fR = fG = fB = 1.0f; }
             else         { fR = fG = fB = 0.5f; }
-            glColor3f(fR, fG, fB);
+            Gfx::Color3f(fR, fG, fB);
 
             iVar9 = DAT_005616a4;
             local_6c = DAT_005616a4;
@@ -619,7 +620,7 @@ int Scene_CharSelect(void)
             // Delete char button brightness (literales float, igual que arriba)
             if (bVar10) { fR = fG = fB = 0.5f; }
             else         { fR = fG = fB = 1.0f; }
-            glColor3f(fR, fG, fB);
+            Gfx::Color3f(fR, fG, fB);
 
             // Left/right navigation arrows
             fVar1 = DAT_005616a8;

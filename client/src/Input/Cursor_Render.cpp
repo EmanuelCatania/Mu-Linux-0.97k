@@ -2,6 +2,7 @@
 // Cursor_Render.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -31,7 +32,7 @@
 // IDA: RenderCursor
 void __cdecl Cursor_Render(void) {
     GL_SetBlendSrcOver('\x01');  // EnableAlphaTest(1)
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     int u_bits = 0, v_bits = 0;
     // Frame = (int64)(WorldTime * 0.01) % 6  — IDA lo emite con std::int64_t cast explícito.

@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Config/UserSettings.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -28,7 +29,6 @@
 #include "structs.h"
 #include "functions.h"
 #include "UI/EventTimer.h"
-#include <GL/gl.h>
 
 extern "C" {
     void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY);
@@ -190,7 +190,7 @@ int Render_MacroTimer_(void)
         float Bar = (float)v8;
         RenderBar(x, 404.0f, 50.0f, 2.0f, Bar, false, true);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     int v1 = m_iMatchCountDownType;
     if (v1 > 0) {
@@ -240,7 +240,7 @@ void Render_MapLoadText_(void)
 
     GL_ResetState();
     EnableAlphaTest(false);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     float v1 = 345.0f;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFF7700u;   // -16738561
@@ -294,7 +294,7 @@ void Render_MapLoadText(void) { Render_MapLoadText_(); }
 extern "C" void __cdecl Render_QuickButtons_(void);
 void Render_QuickButtons_(void)
 {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
     m_dwTextColor = 0xFFFF8080u;
     // Los 3 paneles del lado derecho van en x CONSTANTE 0x1C2 (=450), no en
@@ -322,7 +322,7 @@ void Render_QuickButtons_(void)
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
         float btnX = (float)g_GuildCreatorScratchX + _DAT_005524fc;
         float btnY = (float)g_GuildCreatorScratchY + _DAT_00552ca4;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         int tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
                    (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF2 : 0xF1;
@@ -343,7 +343,7 @@ void Render_QuickButtons_(void)
     if (HUD_IsGuildListRuntime()) {
         float iconX = (float)DAT_07e91788 + _DAT_00552464;
         float iconY = (float)DAT_07e91784 + _DAT_0055246c;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         GL_DrawTexture(RepairEnable_0 ? 287 : 286,
                      iconX, iconY, 24.0f, 24.0f,
@@ -360,7 +360,7 @@ void Render_QuickButtons_(void)
     if (HUD_IsCharacterInfoRuntime()) {
         float iconX = (float)DAT_07ea982c + 25.0f;
         float iconY = (float)DAT_07ea9830 + 395.0f;
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
         GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         GL_DrawTexture(280, iconX, iconY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
@@ -503,7 +503,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                                 const bool stack = (kind >= 448 && kind <= 456) ||
                                     ItemStack_GetMaxStack(v7, (AsItem(v6_addr)->Level >> 3) & 0xF) != 0;
                                 if (stack && AsItem(v6_addr)->Durability > 1) {
-                                    glColor3f(1.0f, 0.9f, 0.7f);
+                                    Gfx::Color3f(1.0f, 0.9f, 0.7f);
                                     float h = sxa + 13.0f;
                                     RenderNumber2D(h, sy,
                                                    AsItem(v6_addr)->Durability,
@@ -528,7 +528,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             const MixCellSample c = sample && cell < 32 ? sample->cells[cell] : MixCellSample{};
                             float green = c.green;
                             float red = c.red;
-                            glColor3f(red, green, 0.2f);
+                            Gfx::Color3f(red, green, 0.2f);
                             int seed = (int)((double)((std::int64_t)WorldTime % 100) * 20.0);
                             float v20 = c.size;
                             float v28 = c.x + sxa;
@@ -560,7 +560,7 @@ check_quest_overlay:
         ITEM* end = (ITEM*)(Inventory + 32 * sizeof(ITEM));
         while (v11 < end) {
             if (v11->Type != (WORD)-1 && v11->Key && v11->Color == 99) {
-                glColor3f(0.0f, 1.0f, 1.0f);
+                Gfx::Color3f(0.0f, 1.0f, 1.0f);
                 float sxe = (float)((double)ItemAttribute[v11->Type].Width * 20.0);
                 float xa  = (float)((double)(20 * v11->x) + (double)TradeInventoryStartX + 15.0);
                 float v36 = (float)(sin((double)WorldTime * 0.015) +
@@ -568,7 +568,7 @@ check_quest_overlay:
                                     (double)TradeInventoryStartY + 70.0);
                 float y_pos = v36 + 5.0f;
                 GL_DrawTexture(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
-                glColor3f(1.0f, 1.0f, 1.0f);
+                Gfx::Color3f(1.0f, 1.0f, 1.0f);
                 gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000052u;
@@ -679,7 +679,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     int prevBlend = AlphaBlendType;
 
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
 
     float fy   = (float)sy;
     float fx   = (float)sx;
@@ -694,16 +694,16 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     GL_DrawRect(boxX + W - 1.0f, boxY, 1.0f, H);
     GL_DrawRect(boxX, boxY + H - 1.0f, W, 1.0f);
 
-    glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
     // Filled black panel inside the border.
     GL_DrawRect(boxX + 1.0f, boxY + 1.0f, W - 2.0f, H - 2.0f);
 
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     // CACHE (2026-10-03): este glEnable no tocaba DAT_083a4125, asi que el GL
     // quedaba texturado con el cache diciendo lo contrario y el proximo
     // DisableTexture salteaba su glDisable.  Mismo patron que la fuga de blend
     // que volvia traslucidos a los monstruos de Atlans.
-    glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
+    Gfx::Enable(Gfx::Cap::Texture2D);   DAT_083a4125 = 1;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     UI_DrawText(sx, sy, (char*)Text, 0, 1, 0, (size_t)n + 1);
@@ -751,10 +751,8 @@ extern "C" void __cdecl CreateGuildMark(int nMarkIndex, bool blend)
         }
     }
 
-    glBindTexture(GL_TEXTURE_2D, Bitmaps[34].TextureNumber);
-    glTexImage2D(GL_TEXTURE_2D, 0, Bitmaps[34].Components,
-                 Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 Bitmaps[34].Buffer);
+    Gfx::BindTexture(Bitmaps[34].TextureNumber);
+    Gfx::TexImage2D(Bitmaps[34].Components, Width, Height, Gfx::Format::RGBA, Bitmaps[34].Buffer);
 }
 
 
@@ -858,10 +856,8 @@ extern "C" void __cdecl sub_47F4C0(int a1, int a2, float Width, float Height,
     if (Bitmaps[0].Buffer) {
         RenderProfile::TextString(true);
         RenderProfile::TextScope profileText(RenderProfile::TextWork::Upload);
-        glBindTexture(GL_TEXTURE_2D, Bitmaps[0].TextureNumber);
-        glTexImage2D(GL_TEXTURE_2D, 0, Bitmaps[0].Components,
-                     (int)Bitmaps[0].Width, (int)Bitmaps[0].Height, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, Bitmaps[0].Buffer);
+        Gfx::BindTexture(Bitmaps[0].TextureNumber);
+        Gfx::TexImage2D(Bitmaps[0].Components, (int)Bitmaps[0].Width, (int)Bitmaps[0].Height, Gfx::Format::RGBA, Bitmaps[0].Buffer);
     }
 
     int x_pos = (a1 < 0) ? 0 : a1;

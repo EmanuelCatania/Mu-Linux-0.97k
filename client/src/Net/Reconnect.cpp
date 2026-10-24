@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
 #include "Platform/ITimer.h"
@@ -193,11 +194,11 @@ void CReconnect::Render()
     float progress = (Platform::GetTimer().Ticks() - m_StartTime) * Width / (float)ReconnectTimeout;
     if (progress > Width) progress = Width;
     EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
     GL_DrawRect(x, y, Width + 10.0f, Height);
-    glColor3f(1.0f, 0.0f, 0.0f);
+    Gfx::Color3f(1.0f, 0.0f, 0.0f);
     GL_DrawRect(x + 5.0f, y + 5.0f, progress, Height - 10.0f);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     GL_ResetState();
 
     static const ClientTextId Steps[] = {

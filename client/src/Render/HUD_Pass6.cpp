@@ -43,7 +43,6 @@ void HUD_BeginGridPass(int pass);
 #include "structs.h"
 #include "functions.h"
 #include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
-#include <GL/gl.h>
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
 
@@ -204,7 +203,7 @@ extern "C" void __cdecl sub_5126E0(int tex, float a2, float a3,
 
     float yBase = (float)gWindow.GetHeight() - v27;
 
-    BufferedDraw::Begin(GL_TRIANGLE_STRIP);
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleStrip);
     for (int i = 0; i < 4; ++i) {
         BufferedDraw::TexCoord2f(uv[i][0], uv[i][1]);
         float out[3];

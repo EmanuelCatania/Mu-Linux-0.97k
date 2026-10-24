@@ -73,7 +73,7 @@ void Trail_RenderAll(void)
         if (piVar2[1] != 1 && -1 < piVar2[1] + -1) {
           piVar4 = piVar2 + 0x5f;
           do {
-            BufferedDraw::Begin(6);
+            BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
             fVar1 = _DAT_0055256c;
             if (*(short *)(*piVar2 + 0x1be) == 0) {
               fVar1 = (float)(piVar2[1] - local_8) / (float)piVar2[1];
@@ -83,9 +83,9 @@ void Trail_RenderAll(void)
             BufferedDraw::Color3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
             iVar3 = piVar2[1];
             BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,1.0f);
-            BufferedDraw::Vertex3fv((const GLfloat*)(piVar4 + -0x5a));
+            BufferedDraw::Vertex3fv((const float*)(piVar4 + -0x5a));
             BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,0);
-            BufferedDraw::Vertex3fv((const GLfloat*)piVar4);
+            BufferedDraw::Vertex3fv((const float*)piVar4);
             fVar1 = _DAT_0055256c;
             if (*(short *)(*piVar2 + 0x1be) == 0) {
               fVar1 = (float)((piVar2[1] - local_8) + -1) / (float)piVar2[1];
@@ -96,9 +96,9 @@ void Trail_RenderAll(void)
             local_8 = local_8 + 1;
             iVar3 = piVar2[1];
             BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,0);
-            BufferedDraw::Vertex3fv((const GLfloat*)(piVar4 + 3));
+            BufferedDraw::Vertex3fv((const float*)(piVar4 + 3));
             BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,1.0f);
-            BufferedDraw::Vertex3fv((const GLfloat*)(piVar4 + -0x57));
+            BufferedDraw::Vertex3fv((const float*)(piVar4 + -0x57));
             BufferedDraw::End();
             piVar4 = piVar4 + 3;
           } while (local_8 < piVar2[1] + -1);

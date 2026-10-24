@@ -68,7 +68,7 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
                     piVar4 = piVar2 + 0x5f;   // head of trail point array
                     int nSlotTR = 0;
     do {
-                        BufferedDraw::Begin(6);  // GL_QUAD_STRIP
+                        BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);  // GL_QUAD_STRIP
 
                         // Compute per-segment fade alpha
                         fVar1 = _DAT_0055256c;  // default: 1.0
