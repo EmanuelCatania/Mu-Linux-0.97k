@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
@@ -252,7 +253,7 @@ unsigned int Game_RenderTick(void)
 
     // Drena errores GL residuales antes del frame (pops sin push del frame previo
     // durante la transición login→in-game).
-    while (glGetError() != GL_NO_ERROR) {}
+    Gfx::ClearErrors();
 
     // Render_Scene3D ES la RenderMainScene de IDA (@ 0x00525A00) y hace todo el
     // flujo: BeginOpengl, 3D passes, BeginBitmap, HUD via Render_GameFrame,
@@ -320,7 +321,7 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 
     GL_BindTextureSlot(Texture);          // BindTexture
 
-    BufferedDraw::Begin(GL_TRIANGLE_FAN);
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
       BufferedDraw::TexCoord2f(u,          v + q);            BufferedDraw::Vertex2f(x0,     y0);
       BufferedDraw::TexCoord2f(u,          v + vHeight - q);  BufferedDraw::Vertex2f(x0,     y0 - h);
       BufferedDraw::TexCoord2f(u + uWidth, v + vHeight);      BufferedDraw::Vertex2f(x0 + w, y0 - h);
@@ -427,7 +428,7 @@ void Render_HPBars_OLD(void)
         GL_SetBlendSrcOver('\0');     // disable alpha blend (solid)
         BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.7f);
         // Black BG quad
-        BufferedDraw::Begin(GL_QUADS);
+        BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
         BufferedDraw::Vertex2f((float)(sx - 16), (float)(sy - 8));
         BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 8));
         BufferedDraw::Vertex2f((float)(sx + 16), (float)(sy - 4));
@@ -435,7 +436,7 @@ void Render_HPBars_OLD(void)
         BufferedDraw::End();
         // Red foreground (50% wide as placeholder)
         BufferedDraw::Color3f(0.9f, 0.1f, 0.1f);
-        BufferedDraw::Begin(GL_QUADS);
+        BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
         BufferedDraw::Vertex2f((float)(sx - 15), (float)(sy - 7));
         BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 7));
         BufferedDraw::Vertex2f((float)(sx),      (float)(sy - 5));
@@ -584,7 +585,7 @@ void Render_Scene3D(void)
         gContentCatalog.GetFogColor(worldId, fog);
         cr = fog[0]; cg = fog[1]; cb = fog[2];
     }
-    glClearColor(cr, cg, cb, 1.0f);
+    Gfx::ClearColor(cr, cg, cb, 1.0f);
 
     // ── 5. Main 3D viewport ──────────────────────────────────────────────────
     bool topView = (CameraTopViewEnabled != 0);
@@ -643,7 +644,7 @@ void Render_Scene3D(void)
     // CreatePoint (0x004792C0, Entity/Entity_LegacyTeleport.cpp) los crea desde
     // Net_Process case 0x15 (ReceiveAttackDamage).
     RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
-    glPopMatrix();
+    Gfx::PopMatrix();
 
     }
     // Los targets se publican en Simulation_PrepareStep, fuera del dibujo.

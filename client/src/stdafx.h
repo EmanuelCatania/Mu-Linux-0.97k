@@ -3,9 +3,7 @@
 
 #include "Platform/PlatformHeaders.h"
 
-// OpenGL: capitalización válida también en filesystem Linux.
-#include <GL/gl.h>
-#include <GL/glu.h>
+// OpenGL no se incluye acá: sólo el backend (Render/Backend/GL/LegacyGL.h).
 
 // CRT
 #include <stdio.h>
@@ -68,4 +66,5 @@ extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 #include "Net/MuEmu.h"
 #define send(s, buf, len, flags)  MuEmu_send_hook((s), (buf), (len), (flags))
 
-#include "Render/GLCallBarrier.h"
+#include "Render/Gfx.h"
+#include "Render/RenderProfile.h"

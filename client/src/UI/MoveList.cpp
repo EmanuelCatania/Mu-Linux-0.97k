@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
 #include "UI/MoveList.h"
@@ -38,11 +39,11 @@ void Text(int x, int y, const char* text, int width)
 void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
 {
     EnableAlphaTest(true);
-    glColor4f(r, g, b, a);
+    Gfx::Color4f(r, g, b, a);
     GL_DrawRect((float)x, (float)y, (float)w, (float)h);
     GL_ResetState();
     // DLL MoveList.cpp: el texto no debe heredar el color del fondo o del hover.
-    glColor4f(1, 1, 1, 1);
+    Gfx::Color4f(1, 1, 1, 1);
 }
 }
 
@@ -213,5 +214,5 @@ void CMoveList::Render()
     gFont.SelectFont(gFont.GetTextDC(), font);
     m_dwTextColor = color;
     m_dwBackColor = back;
-    glColor4f(1, 1, 1, 1);
+    Gfx::Color4f(1, 1, 1, 1);
 }

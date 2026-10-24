@@ -58,6 +58,7 @@
 //   ClearInput  → CharList_Init(mode)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Scene/Scene_Loading.h"
 
 // Scene_Loading @ 0x00524B20 (34 lines)
@@ -76,9 +77,9 @@ void __cdecl Scene_Loading(HDC param_1)
 
     DAT_083a42ea = 0;
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
-    glClear(0x4100);
+    Gfx::Clear(Gfx::ClearColorBuffer | Gfx::ClearDepthBuffer);
     GL_Begin2D();                       // GL_SetupOrtho2D
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // Draw 3 loading tiles: 256×256 + 128×256 + 256×256 at y=100
     GL_DrawTexture(0x1e,   0.0f, 100.0f, 256.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
@@ -87,7 +88,7 @@ void __cdecl Scene_Loading(HDC param_1)
 
     GL_End2D();    // GL_End2D
     GL_PopMatrixAll();
-    glFlush();
+    Gfx::Flush();
     gWindow.Present();
 
     // Transition to InGame

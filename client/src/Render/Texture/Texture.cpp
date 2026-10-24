@@ -78,6 +78,7 @@
 //   0x2803 = GL_TEXTURE_WRAP_T        (param_4)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/ResourceTables.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
@@ -150,9 +151,9 @@ void Texture_BindLocalCached(int id)
     g_bound_texture_id = id;
 
     if (id >= 0)
-        glBindTexture(GL_TEXTURE_2D, TexTable[id].gl_handle);
+        Gfx::BindTexture(TexTable[id].gl_handle);
     else
-        glBindTexture(GL_TEXTURE_2D, (UINT)(-id));
+        Gfx::BindTexture((UINT)(-id));
 }
 
 
@@ -176,7 +177,7 @@ void Texture_Unload(int id)
         slot->ref_count--;
         if (slot->ref_count == 0)
         {
-            glDeleteTextures(1, &slot->gl_handle);
+            Gfx::DeleteTexture(slot->gl_handle);
             slot->active = 0;
             operator_delete(slot->pixels);
             slot->pixels = nullptr;
@@ -225,8 +226,7 @@ static int tex_max_size(void)
 {
     static int s_max = 0;
     if (s_max <= 0) {
-        GLint v = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &v);
+        int v = Gfx::MaxTextureSize();
         s_max = (v >= 256) ? (int)v : 0;
         if (s_max == 0) return 4096;
     }
@@ -265,13 +265,13 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
             image.width * 3);
 
     slot->ref_count++;
-    glGenTextures(1, &slot->gl_handle);
-    glBindTexture(GL_TEXTURE_2D, slot->gl_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, slot->pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     wrap);
+    slot->gl_handle = Gfx::CreateTexture();
+    Gfx::BindTexture(slot->gl_handle);
+    Gfx::TexImage2D(3, w, h, Gfx::Format::RGB, slot->pixels);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(wrap));
 
     return 1;
 }
@@ -307,14 +307,14 @@ static int tex_load_ozt(const char* fullPath, int id, int min_filt, int wrap)
             image.width * 4);
 
     slot->ref_count++;
-    glGenTextures(1, &slot->gl_handle);
-    glBindTexture(GL_TEXTURE_2D, slot->gl_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, slot->pixels);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filt);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     wrap);
+    slot->gl_handle = Gfx::CreateTexture();
+    Gfx::BindTexture(slot->gl_handle);
+    Gfx::TexImage2D(4, w, h, Gfx::Format::RGBA, slot->pixels);
+    Gfx::TexEnvMode(Gfx::TexEnv::Modulate);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(min_filt));
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(wrap));
     return 1;
 }
 
@@ -427,7 +427,7 @@ void Texture_Draw2D(int id,
         x + w, gl_bottom,    // vertex 3 position
     };
 
-    BufferedDraw::Begin(GL_QUAD_STRIP);  // 6 = GL_QUAD_STRIP
+    BufferedDraw::Begin(BufferedDraw::Primitive::QuadStrip);  // 6 = GL_QUAD_STRIP
     for (int i = 0; i < 4; i++)
     {
         BufferedDraw::TexCoord2f(uvs[i*2], uvs[i*2+1]);
@@ -563,14 +563,13 @@ int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, c
     slot->Ref++;
 
     // --- GL upload ---
-    glGenTextures(1, &slot->TextureNumber);
-    glBindTexture(GL_TEXTURE_2D, slot->TextureNumber);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, pow2_w, pow2_h, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+    slot->TextureNumber = Gfx::CreateTexture();
+    Gfx::BindTexture(slot->TextureNumber);
+    Gfx::TexImage2D(3, pow2_w, pow2_h, Gfx::Format::RGB, pixels);
+    Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(filter));
+    Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(filter));
+    Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(wrap));
+    Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(wrap));
 
     return 1;
 }
@@ -700,29 +699,18 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         texRef[byteStride]++;
 
         // ── Upload to OpenGL ──────────────────────────────────────────────────
-        UINT glHandle = 0;
-        glGenTextures(1, &glHandle);
+        UINT glHandle = Gfx::CreateTexture();
         texGL[uiTextureIndex * 0xe] = glHandle;
-        glBindTexture(GL_TEXTURE_2D, glHandle);
-        glTexImage2D(GL_TEXTURE_2D, 0, 4, pw, ph, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, pixBuf);
+        Gfx::BindTexture(glHandle);
+        Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
         // GL_MODULATE = 0x2100 = 8448.0f. No usar 8192 (0x2000 = GL_NICEST): no es
         // válido para GL_TEXTURE_ENV_MODE → GL_INVALID_ENUM, que el driver NVIDIA
         // acumula y puede convertir en AV en una llamada GL siguiente.
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, (float)GL_MODULATE); // 0x2100 = 8448.0f
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, uiFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, uiFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, uiWrapMode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, uiWrapMode);
-        // [DIAG TEMP #4] ungate: ver qué OZT suben realmente (chair2=0x348 etc.). REMOVER al cerrar #4.
-        {
-            static int s_tgaup = 0;
-            if (s_tgaup < 250) { s_tgaup++;
-                char m[256];
-                GLenum e = glGetError();
-                BYTE* cp = pixBuf + (4 * (ph/2) * pw) + 4*(pw/2);
-            }
-        }
+        Gfx::TexEnvMode(Gfx::TexEnv::Modulate); // 0x2100 = 8448.0f
+        Gfx::TexParameter(Gfx::TexParam::MinFilter, Gfx::TexValueFromLegacy(uiFilter));
+        Gfx::TexParameter(Gfx::TexParam::MagFilter, Gfx::TexValueFromLegacy(uiFilter));
+        Gfx::TexParameter(Gfx::TexParam::WrapS, Gfx::TexValueFromLegacy(uiWrapMode));
+        Gfx::TexParameter(Gfx::TexParam::WrapT, Gfx::TexValueFromLegacy(uiWrapMode));
         return 1;
     }
 
@@ -750,8 +738,8 @@ void __cdecl UnloadImage(int param_1)
         char cVar4 = *ref - 1;
         *ref = cVar4;
         if (cVar4 == '\0') {
-            GLuint glHandle = texArr_ccc[param_1 * 0xe];
-            glDeleteTextures(1, &glHandle);
+            unsigned int glHandle = texArr_ccc[param_1 * 0xe];
+            Gfx::DeleteTexture(glHandle);
             void *pixels = (void*)(uintptr_t)texArr_cd4[param_1 * 0xe];
             texArr_ca0[param_1 * 0xe] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
             operator_delete((unsigned char*)pixels);

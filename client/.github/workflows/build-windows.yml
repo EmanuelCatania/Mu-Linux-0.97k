@@ -37,6 +37,7 @@ jobs:
         run: |
           python .github/scripts/check_cmake_sources.py
           python .github/scripts/check_bmd_boundary.py
+          python .github/scripts/check_render_layer.py
 
       - name: Configurar
         run: cmake -S . -B build -A ${{ matrix.target.architecture }} -T v143

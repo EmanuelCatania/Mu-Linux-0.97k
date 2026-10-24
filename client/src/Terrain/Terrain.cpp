@@ -731,7 +731,7 @@ void MoltSilhouette_DrawEdge(void *obj, float *p1, float *p2, float jitter) {
     v24 = v24 * 10.0f;
     v25 = v25 * 10.0f;
     v26 = v26 * 10.0f;
-    BufferedDraw::Begin(GL_QUADS);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
     t = v36 + v37;
     BufferedDraw::TexCoord2f(0.0f, t);
     z = v35 - v26;

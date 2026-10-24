@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Item/ContentCatalog.h"
 #pragma warning(disable: 4554 4244 4700)
 #include "Render/Camera.h"
@@ -373,9 +374,9 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   uVar2 = gWindow.GetHeight() * param_2;
   uVar3 = (uint)(gWindow.GetWidth() * param_3) / 0x280;
   uVar4 = (uint)(gWindow.GetHeight() * param_4) / 0x1e0;
-  glMatrixMode(0x1701);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   GL_SetViewport(uVar1 / 0x280,uVar2 / 0x1e0,uVar3,uVar4);
   // DAT_00561550 es DWORD (bit-pattern float): reinterpretar con Ff() antes de
   // multiplicar. `DAT_00561550 * float` haría int→float (0x461c4000=10000.0f
@@ -388,19 +389,19 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   // Solo el far necesita Ff() en el caller porque lo multiplicamos por _DAT_00552d34
   // (1.4f) ANTES de pasarlo — la multiplicación es en float-space aquí.
   GL_SetPerspective(DAT_00561554,(float)uVar3 / (float)uVar4,DAT_0056154c,Ff(DAT_00561550) * _DAT_00552d34);
-  glMatrixMode(0x1700);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   // Los ángulos DAT_083a42b8/bc/c0 son DWORD (bit-pattern de float): en el asm
   // original FLD los lee como float. Pasarlos directo a glRotatef haría int→float
   // (pitch=-40.0f, 0xc2200000, saldría 3.26e9°): se reinterpretan con Ff(). El
   // eje va como 1.0f literal, no como el bit pattern 0x3f800000.
-  glRotatef(Ff(DAT_083a42bc), 0.0f, 1.0f, 0.0f);
+  Gfx::Rotate(Ff(DAT_083a42bc), 0.0f, 1.0f, 0.0f);
   if (CameraTopViewEnabled == '\0') {
-    glRotatef(Ff(DAT_083a42b8), 1.0f, 0.0f, 0.0f);
+    Gfx::Rotate(Ff(DAT_083a42b8), 1.0f, 0.0f, 0.0f);
   }
-  glRotatef(Ff(DAT_083a42c0), 0.0f, 0.0f, 1.0f);
-  glTranslatef(-_DAT_083a42d4,-_DAT_083a42d8,-_DAT_083a42dc);
+  Gfx::Rotate(Ff(DAT_083a42c0), 0.0f, 0.0f, 1.0f);
+  Gfx::Translate(-_DAT_083a42d4, -_DAT_083a42d8, -_DAT_083a42dc);
   // DESVIACION R4g: el productor declara su entrada; el backend aplica los
   // mismos campos que la referencia, sin normalizar blend ni bindings.
   // El color de la niebla legacy sin catálogo aún no tiene un recurso RGBA
@@ -415,43 +416,43 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
-  glDisable(0xbc0);   // GL_ALPHA_TEST
-  glEnable(0xde1);    // GL_TEXTURE_2D
-  glEnable(0xb71);    // GL_DEPTH_TEST
-  glEnable(0xb44);    // GL_CULL_FACE (matches original binary)
-  glDepthMask(1);
+  Gfx::Disable(Gfx::Cap::AlphaTest);   // GL_ALPHA_TEST
+  Gfx::Enable(Gfx::Cap::Texture2D);    // GL_TEXTURE_2D
+  Gfx::Enable(Gfx::Cap::DepthTest);    // GL_DEPTH_TEST
+  Gfx::Enable(Gfx::Cap::CullFace);    // GL_CULL_FACE (matches original binary)
+  Gfx::DepthMask(true);
   DAT_083a411d = 0;
   DAT_083a4125 = 1;
   DAT_083a411e = 1;
   DAT_083a411c = 1;
   DAT_083a42e8 = 1;
-  glDepthFunc(0x203);
+  Gfx::DepthFunc(Gfx::Compare::LessEqual);
   // 0.25f literal: 0x3e800000 es el bit pattern de 0.25f y glAlphaFunc espera
   // GLclampf. Como int se convertiría a 1048576000.0f → clamp a 1.0 → el test
   // "alpha > 1.0" siempre falla y todo el UI con alpha-test queda invisible.
-  glAlphaFunc(GL_GREATER, 0.25f);
+  Gfx::AlphaFunc(Gfx::Compare::Greater, 0.25f);
   if (DAT_083a42ea != '\0' && gContentCatalog.HasMapFog()) {
     // DESVIACION (DLL MapFog glEnableFog, ahora catálogo 0.97.20): niebla
     // lineal 2000..2700 con el color del mapa.
     float fog[4];
     gContentCatalog.GetFogColor((int)gMapManager.GetCurrentMap(), fog);
-    glEnable(GL_FOG);
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    glFogf(GL_FOG_START, 2000.0f);
-    glFogf(GL_FOG_END, 2700.0f);
-    glFogfv(GL_FOG_COLOR, fog);
+    Gfx::Enable(Gfx::Cap::Fog);
+    Gfx::SetFogMode(Gfx::FogMode::Linear);
+    Gfx::FogStart(2000.0f);
+    Gfx::FogEnd(2700.0f);
+    Gfx::FogColor(fog);
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
   if (DAT_083a42ea != '\0') {
-    glEnable(0xb60);
-    glFogi(0xb65,0x801);
-    glFogf(0xb62,DAT_00561558);
-    glFogfv(0xb66,(const GLfloat*)&FogColor);
+    Gfx::Enable(Gfx::Cap::Fog);
+    Gfx::SetFogMode(Gfx::FogMode::Exp2);
+    Gfx::FogDensity(DAT_00561558);
+    Gfx::FogColor((const float*)&FogColor);
     GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
-  glDisable(0xb60);
+  Gfx::Disable(Gfx::Cap::Fog);
   GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   return;
 }

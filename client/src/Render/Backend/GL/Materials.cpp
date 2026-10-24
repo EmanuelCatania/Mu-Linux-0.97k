@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Render/Backend/GL/LegacyGL.h"
 #include "Render/Materials.h"
 #include "Render/BMDDevice.h"
 #include "Render/MeshDraw.h"

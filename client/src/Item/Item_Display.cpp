@@ -1,6 +1,7 @@
 // Item_Display.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -98,27 +99,27 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
 
     switch (v7) {
     case 863:                                   // Zen / dinero
-        glColor3f(1.0f, 0.8f, 0.1f);
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
         sprintf(String, "%s %d", name, v5);
         goto renderLabel;
 
     case 861: case 862: case 864:               // joyas
     case 799: case 870: case 830:
         gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
-        glColor3f(1.0f, 0.8f, 0.1f);
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
         sprintf(String, "%s", name);
         goto renderLabel;
 
     case 865: case 866: case 867:               // Devil (Chaos) items
         gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_BOLD));
-        glColor3f(1.0f, 0.8f, 0.1f);
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
         if ((v5 & 0x78) != 0) sprintf(String, "%s +%d", name, v6);
         else                  sprintf(String, "%s", name);
         goto renderLabel;
     }
 
     if (v7 == 859 && v6 == 7) {
-        glColor3f(1.0f, 0.8f, 0.1f);
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
         sprintf(String, "%s", GlobalText[111]);
         goto renderLabel;
     }
@@ -131,7 +132,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
         goto renderLabel;
 
     case 831:                                   // alas: prefijo por sub-tipo
-        glColor3f(1.0f, 0.8f, 0.1f);
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
         switch (v6) {
         case 0: sprintf(String, "%s %s", GlobalText[168], name); break;
         case 1: sprintf(String, "%s %s", GlobalText[169], name); break;
@@ -149,7 +150,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
     case 956: sprintf(String, "%s", GlobalText[110]); goto renderLabel;
     case 957: sprintf(String, "%s +%d", GlobalText[115], v6 - 7); goto renderLabel;
     case 958:
-        glColor3f(1.0f, 0.8f, 0.1f);
+        Gfx::Color3f(1.0f, 0.8f, 0.1f);
         sprintf(String, "%s", GlobalText[810]);
         goto renderLabel;
 
@@ -177,7 +178,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
             if (v6 < 7) {
                 if ((v5 & 0x87) != 0) goto LABEL_115;
                 if (v6 == 0) {
-                    glColor3f(0.7f, 0.7f, 0.7f);
+                    Gfx::Color3f(0.7f, 0.7f, 0.7f);
                     goto LABEL_119;
                 }
                 if (v6 < 3) {
@@ -196,7 +197,7 @@ LABEL_115:
         }
         v38[0] = 1.0f;
 LABEL_118:
-        glColor3f(v38[0], v38[1], v38[2]);
+        Gfx::Color3f(v38[0], v38[1], v38[2]);
         if (v6 != 0) {
             sprintf(String, "%s +%d", name, v6);
             goto LABEL_121;

@@ -89,7 +89,7 @@ void __cdecl Particle_Update(void)
                 GL_BindTextureSlot(mode + 0x48d);
                 int *vp = slot + 0x5f;
                 for (int i = 0; i < seg - 1; i++, vp += 3) {
-                    BufferedDraw::Begin(6);
+                    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
                     float alpha = _DAT_0055256c;
                     if (*(short *)(*slot + 0x1be) == 0)
                         alpha = (float)(seg - i) / (float)seg;

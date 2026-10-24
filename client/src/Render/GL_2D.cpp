@@ -14,6 +14,7 @@
 //   DAT_0056154c / DAT_00561550 — near / far clip planes
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 
@@ -46,17 +47,16 @@ void GL_Begin2D(void)
   // dejando el balance dependiente del modo actual.  Acá se empuja explícitamente
   // PROJECTION luego MODELVIEW; junto con GL_End2D balancea exacto
   // (1 PROJECTION + 1 MODELVIEW).
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glViewport(0,0,vw,vh);
-  gluPerspective((double)fov, (double)vw / (double)vh,
-                 (double)near_, (double)far_);
-  glLoadIdentity();
-  gluOrtho2D(0,(double)vw,0,(double)vh);
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
+  Gfx::Viewport(0, 0, vw, vh);
+  Gfx::Perspective((double)fov, (double)vw / (double)vh, (double)near_, (double)far_);
+  Gfx::LoadIdentity();
+  Gfx::Ortho2D(0, (double)vw, 0, (double)vh);
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PushMatrix();
+  Gfx::LoadIdentity();
   GL_DisableDepthTest();
   return;
 }
@@ -77,10 +77,10 @@ void GL_End2D(void)
   // Acá popeamos PROJECTION→MODELVIEW para DEJAR el modo en MODELVIEW, porque
   // nuestro EndOpengl (0.97k IDA) asume MODELVIEW como modo activo de entrada
   // (su 1er glPopMatrix es sobre el modo actual).  Balance idéntico (1+1).
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::Projection);
+  Gfx::PopMatrix();
+  Gfx::MatrixMode(Gfx::Matrix::ModelView);
+  Gfx::PopMatrix();
   return;
 }
 
@@ -113,7 +113,7 @@ void __cdecl GL_DrawRect(float param_1,float param_2,float param_3,float param_4
   verts[4] = x + w;   verts[5] = y_bottom;  // BR
   verts[6] = x + w;   verts[7] = y_top;     // TR
 
-  BufferedDraw::Begin(GL_TRIANGLE_FAN);
+  BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
   for (int i = 0; i < 4; ++i) {
       BufferedDraw::Vertex2f(verts[i*2 + 0], verts[i*2 + 1]);
   }
@@ -177,7 +177,7 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
   // Leer como float via puntero float*: el decompile usa *(undefined4*) =
   // *(unsigned int*), que al pasar a glTexCoord2f/glVertex2f haría conversión
   // int→float (0x3f800000 → 1065353216.0f en vez de 1.0f).
-  BufferedDraw::Begin(6);   // GL_TRIANGLE_FAN
+  BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);   // GL_TRIANGLE_FAN
   iVar1 = 0;
   do {
     float *uv  = (float *)((char *)local_40 + iVar1);
@@ -223,7 +223,7 @@ void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
     Vector_Transform(&in1[i], param_3, &out[i]);
   }
 
-  BufferedDraw::Begin(GL_QUADS);
+  BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
   BufferedDraw::TexCoord2f(0.0f, 1.0f);  BufferedDraw::Vertex3fv(&out[0]);
   BufferedDraw::TexCoord2f(1.0f, 1.0f);  BufferedDraw::Vertex3fv(&out[3]);
   BufferedDraw::TexCoord2f(1.0f, 0.0f);  BufferedDraw::Vertex3fv(&out[6]);

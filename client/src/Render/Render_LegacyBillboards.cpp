@@ -1,6 +1,7 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 #include "Item/ContentCatalog.h"
@@ -77,10 +78,10 @@ void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
         GL_BindTextureSlot(cls);
         GL_SetBlendAdditive();
     }
-    glPushMatrix();
-    glTranslatef(pos[0], pos[1], pos[2]);
+    Gfx::PushMatrix();
+    Gfx::Translate(pos[0], pos[1], pos[2]);
     float angle = rot ? rot[0] : 0.0f;
-    glRotatef(angle, 0.0f, 0.0f, 1.0f);
+    Gfx::Rotate(angle, 0.0f, 0.0f, 1.0f);
     // Quad: half-size sc, CCW, full UV
     float q[4][3] = {
         {-sc, -sc, 0.0f},
@@ -88,13 +89,13 @@ void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
         { sc,  sc, 0.0f},
         { sc, -sc, 0.0f}
     };
-    BufferedDraw::Begin(GL_QUADS);
+    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
     BufferedDraw::TexCoord2f(0.0f, 1.0f); BufferedDraw::Vertex3fv(q[0]);
     BufferedDraw::TexCoord2f(0.0f, 0.0f); BufferedDraw::Vertex3fv(q[1]);
     BufferedDraw::TexCoord2f(1.0f, 0.0f); BufferedDraw::Vertex3fv(q[2]);
     BufferedDraw::TexCoord2f(1.0f, 1.0f); BufferedDraw::Vertex3fv(q[3]);
     BufferedDraw::End();
-    glPopMatrix();
+    Gfx::PopMatrix();
     GL_ResetState();
 }
 // BMD__PlayAnimation (BMD::PlayAnimation / BMD_AnimTick) — en src/Render/BMD_Anim.cpp

@@ -1,6 +1,7 @@
 // Quest_Legacy.cpp
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/MaterialVisuals.h"
 #include "Item/ItemDefines.h"
 #include "globals.h"
@@ -39,7 +40,7 @@ void __fastcall FUN_00402ff0(int param_1) {
         }
         iPos_y += 18;
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text);
@@ -141,7 +142,7 @@ void __fastcall FUN_00403320(void* param_1) {
     char Buffer[100];
     int  This = (int)(uintptr_t)param_1;
 
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     RenderInventoryInterface(450, 0, 1);
     m_dwTextColor = 0xFFD2E6FFu;
@@ -154,12 +155,12 @@ void __fastcall FUN_00403320(void* param_1) {
         if (FUN_00403150(param_1, 0, state, 1)) {
             m_dwTextColor = 0xFFD2E6FFu;
         } else {
-            glColor3f(0.3f, 0.3f, 0.3f);
+            Gfx::Color3f(0.3f, 0.3f, 0.3f);
         }
 
         if ((double)MouseX >= 485.0 && (double)MouseX < 605.0 &&
             (double)MouseY >= 355.0 && (double)MouseY < 379.0 && MouseLButtonPush) {
-            glColor3f(0.4f, 0.4f, 0.4f);
+            Gfx::Color3f(0.4f, 0.4f, 0.4f);
             if (MouseLButtonPop) {
                 MouseLButtonPush = 0;
                 MouseLButton = 0;
@@ -169,7 +170,7 @@ void __fastcall FUN_00403320(void* param_1) {
         GL_DrawTexture(240, 485.0f, 355.0f, 120.0f, 24.0f,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(545, 360, GlobalText[699]);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
     else if (state == 3) {
         GL_DrawTexture(271, 500.0f, 367.7f, 113.0f, 18.0f,
@@ -211,7 +212,7 @@ void __fastcall FUN_00403320(void* param_1) {
                150 * (int)gWindow.GetWidth() / 0x280, 1, nullptr);
 
     FUN_00402ff0(This);      // texto del diálogo + respuestas
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 // FUN_00403f30 @ 0x00403F30 (30 bytes) — dispatcher del render de quest.
@@ -246,7 +247,7 @@ UINT __fastcall FUN_00403700(void* ecx, void* /*edx*/, UINT param_1) {
 // Calls FUN_00403700 for tab 0/1 content, CWsctlc__LogPrintOn for tab 2.
 // Renders NPC name, close button with tooltip, dialog answers via FUN_00402ff0.
 void __fastcall FUN_00403a40(void* param_1) {
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     RenderInventoryInterface(0x1c2, 0, 1);
     m_dwTextColor = 0xffd2e6ff;
@@ -267,7 +268,7 @@ void __fastcall FUN_00403a40(void* param_1) {
     }
     // Texto del dialogo + respuestas.
     FUN_00402ff0((int)(uintptr_t)param_1);
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 
 void ItemMaterials_PrepareQuestUi() {

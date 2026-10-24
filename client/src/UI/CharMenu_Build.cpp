@@ -4,6 +4,7 @@
 // GlobalText[120..159]; 3 es la tabla de valores del item DAT_07e11d24.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -292,8 +293,8 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     // correcto y le sacamos el fondo al render de glifos para no pintarlo dos
     // veces.
     if (((m_dwBackColor >> 24) != 0) && (0 < iBoxWidth)) {
-        GLfloat prevColor[4];
-        glGetFloatv(GL_CURRENT_COLOR, prevColor);
+        float prevColor[4];
+        Gfx::CurrentColor(prevColor);
 
         // OJO — el glEnable(0xde1) CRUDO que DrawItemInfoBox hace despues del
         // recuadro (fiel al binario, 0x004C2698) deja DESINCRONIZADO el cache
@@ -307,14 +308,14 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
         // coherentes.
         DAT_083a4125 = '\x01';
 
-        glColor4ub((GLubyte)( m_dwBackColor        & 0xff),   // R (formato ABGR)
-                   (GLubyte)((m_dwBackColor >>  8) & 0xff),   // G
-                   (GLubyte)((m_dwBackColor >> 16) & 0xff),   // B
-                   (GLubyte)((m_dwBackColor >> 24) & 0xff));  // A
+        Gfx::Color4ub((unsigned char)( m_dwBackColor        & 0xff), // R (formato ABGR)
+                   (unsigned char)((m_dwBackColor >>  8) & 0xff), // G
+                   (unsigned char)((m_dwBackColor >> 16) & 0xff), // B
+                   (unsigned char)((m_dwBackColor >> 24) & 0xff));  // A
         GL_DrawRect((float)iPos_x, (float)iPos_y,
                      (float)iBoxWidth / fTexScaleX,
                      (float)local_8.cy / gWindow.GetScreenRateY());
-        glColor4fv(prevColor);
+        Gfx::Color4fv(prevColor);
         // No volvemos a encender la textura: CUIRenderText_RenderText la apaga por su
         // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
         // acuerdo.  El proximo tooltip la reenciende via GL_SetBlendSrcOver.
@@ -401,16 +402,16 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         param_4 = (int)((float)gWindow.GetWidth() / fTexScaleX - local_18 - 1.0f);
     }
     if (param_6 == 1) {
-        glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+        Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
         y = (float)param_2 - 1.0f;
         x = (float)param_4 - 1.0f;
         GL_DrawRect(x, y, local_18 + 1.0f, 1.0f);                  // borde superior
         GL_DrawRect(x, y, 1.0f, Height + 1.0f);                    // borde izquierdo
         GL_DrawRect(x + local_18 + 1.0f, y, 1.0f, Height + 1.0f);  // borde derecho
         GL_DrawRect(x, y + Height + 1.0f, local_18 + 2.0f, 1.0f);  // borde inferior
-        glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+        Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.8f);
         GL_DrawRect((float)param_4, (float)param_2, local_18, Height);
-        glEnable(0xde1);
+        Gfx::Enable(Gfx::Cap::Texture2D);
     }
     param_4 = param_4 + 1;
     x = (float)param_4;
@@ -437,9 +438,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             else {
                 iVar4 = DAT_07e91708[iVar1];
                 if ((unsigned int)iVar4 <= 6) {
-                    glColor3f(DrawItemInfoBox_glColor[iVar4][0],
-                              DrawItemInfoBox_glColor[iVar4][1],
-                              DrawItemInfoBox_glColor[iVar4][2]);
+                    Gfx::Color3f(DrawItemInfoBox_glColor[iVar4][0], DrawItemInfoBox_glColor[iVar4][1], DrawItemInfoBox_glColor[iVar4][2]);
                     m_dwTextColor = DrawItemInfoBox_TextColor[iVar4];
                 }
                 m_dwBackColor = (DAT_07e91708[iVar1] != 5) ? 0 : 0xff0000a0;
@@ -452,7 +451,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             pCVar3 = pCVar3 + 100;
         } while (iVar1 < param_3);
     }
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     GL_ResetState();                              // DisableAlphaBlend
     return;
 }

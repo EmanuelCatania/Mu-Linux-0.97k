@@ -30,6 +30,7 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
@@ -311,10 +312,10 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     if (*(BYTE *)(param_1 + 140) != 0) {
         if (gMapManager.GetCurrentMap() == 7) {
             EnableAlphaTest(true);
-            glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
+            Gfx::Color4f(0.0f, 0.0f, 0.0f, 0.2f);
         } else {
             GL_ResetState();
-            glColor3f(0.0f, 0.0f, 0.0f);
+            Gfx::Color3f(0.0f, 0.0f, 0.0f);
         }
         if (gMapManager.GetCurrentMap() != 10)
             BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 88));

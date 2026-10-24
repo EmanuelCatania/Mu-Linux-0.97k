@@ -34,6 +34,7 @@
 //   DAT_0839bc8c  — frame index mod 32
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
 #include "Render/TerrainDraw.h"
 #include "Render/Materials.h"
@@ -314,17 +315,17 @@ void __cdecl Game_MainLoop(HDC param_1)
     // ── GL CLEAR ──────────────────────────────────────────────────────────────
     if (gMapManager.GetCurrentMap() == 10) {
         // Sub-state 10: teal clear color
-        glClearColor(*(float*)"\x00\x00\x40\x3c",  // 0.047f
-                     *(float*)"\x00\x00\xc8\x3d",  // 0.098f
-                     *(float*)"\x00\x00\x30\x3e",  // 0.172f
+        Gfx::ClearColor(*(float*)"\x00\x00\x40\x3c", // 0.047f
+                     *(float*)"\x00\x00\xc8\x3d", // 0.098f
+                     *(float*)"\x00\x00\x30\x3e", // 0.172f
                      1.0f);
     } else {
         // Original: clear color negro (la captura del binario real lo confirma).
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     }
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // BeginOpengl(0,0,640,480) → push PROJECTION+MODELVIEW
     CHK("ML/post_viewport");
-    { RenderProfile::Scope measured(RenderProfile::Pass::Scene);glClear(0x4100); }  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+    { RenderProfile::Scope measured(RenderProfile::Pass::Scene);Gfx::Clear(Gfx::ClearColorBuffer | Gfx::ClearDepthBuffer); }  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
     // IDA Game_MainLoop (0x525D40): BeginOpengl(0,0,640,480); glClear; EndOpengl();
     // EndOpengl balancea el BeginOpengl (pop MODELVIEW + PROJECTION).
     GL_EndOpenGL();   // EndOpengl → pop MODELVIEW + PROJECTION (balancea el BeginOpengl)
@@ -339,14 +340,14 @@ void __cdecl Game_MainLoop(HDC param_1)
     //
     // Defaults elegidos para coincidir con lo que GL_BeginViewport deja tras su
     // primer push (Scene_Login llama GL_BeginViewport como primera acción).
-    glDisable(GL_BLEND);       DAT_083a412c = 0;    // blend OFF (setters lo activarán)
-    glEnable(GL_CULL_FACE);    DAT_083a411c = 1;
-    glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
-    glDisable(GL_ALPHA_TEST);  DAT_083a411d = 0;
-    glEnable(GL_DEPTH_TEST);   DAT_083a411e = 1;
-    glDepthMask(GL_TRUE);      DAT_083a42e8 = 1;
-    glDisable(GL_FOG);         /* DAT_083a42ea es "fog-is-on" flag global del scene */
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    Gfx::Disable(Gfx::Cap::Blend);       DAT_083a412c = 0;    // blend OFF (setters lo activarán)
+    Gfx::Enable(Gfx::Cap::CullFace);    DAT_083a411c = 1;
+    Gfx::Enable(Gfx::Cap::Texture2D);   DAT_083a4125 = 1;
+    Gfx::Disable(Gfx::Cap::AlphaTest);  DAT_083a411d = 0;
+    Gfx::Enable(Gfx::Cap::DepthTest);   DAT_083a411e = 1;
+    Gfx::DepthMask(true);      DAT_083a42e8 = 1;
+    Gfx::Disable(Gfx::Cap::Fog);         /* DAT_083a42ea es "fog-is-on" flag global del scene */
+    Gfx::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     // Invalidar cache de última textura ligada para forzar rebind
     DAT_00561574 = 0xFFFFFFFFu;
 
@@ -391,7 +392,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // ── SWAP BUFFERS ──────────────────────────────────────────────────────────
     if (renderFlag & 0xff) {
         RenderProfile::Scope measured(RenderProfile::Pass::Swap);
-        glFlush();
+        Gfx::Flush();
         gWindow.Present();
     }
     CHK("ML/post_swap");

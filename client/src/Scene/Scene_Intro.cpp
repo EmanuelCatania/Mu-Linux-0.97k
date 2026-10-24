@@ -116,6 +116,7 @@
 //   CErrorReport_Write  → Log(hashtable, msg)
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Scene/Scene_Intro.h"
 
 // Debug trace (defined in WinMain.cpp)
@@ -165,9 +166,9 @@ void __cdecl Scene_Intro(HDC param_1)
     // en Game_SceneUpdate al entrar a Login — ruteado via PlayBuffer +
     // kUISounds mapping en Sound_DS3D.cpp. NO tocar aquí (sonaría 2x).
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Gfx::Clear(Gfx::ClearColorBuffer | Gfx::ClearDepthBuffer);
     GL_Begin2D();                       // GL_SetupOrtho2D
-    glColor3f(1.0f, 1.0f, 1.0f);
+    Gfx::Color3f(1.0f, 1.0f, 1.0f);
 
     // DESVIACION: IDA 0x005137A0 deduce la altura desde el ancho (4:3).
     // Centrar con la altura real conserva 4:3 y corrige pantallas wide.
@@ -194,7 +195,7 @@ void __cdecl Scene_Intro(HDC param_1)
 
     GL_End2D();           // GL_End2D
     GL_PopMatrixAll();
-    glFlush();
+    Gfx::Flush();
     gWindow.Present();
 
     // Unload splash textures immediately after display

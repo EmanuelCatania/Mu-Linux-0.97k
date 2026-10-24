@@ -75,7 +75,7 @@ void __cdecl GL_DrawRotatedRect(int id, float x, float y, float w, float h, unsi
         {  hw,  hh, 0.0f }
     };
 
-    BufferedDraw::Begin(GL_TRIANGLE_FAN);
+    BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
     for (int i = 0; i < 4; i++) {
         float out[3];
         Vector_Rotate(corners[i], mat, out);

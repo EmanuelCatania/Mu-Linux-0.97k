@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
 #include "Render/MaterialVisuals.h"
@@ -144,7 +145,7 @@ void __cdecl RenderBoids(void)
                     // y recuperar activación/caché al salir de esta sombra.
                     const Materials::InheritedBlendScope shadowBlend;
                     if(!shadowBlend){
-                        glEnable(GL_BLEND);
+                        Gfx::Enable(Gfx::Cap::Blend);
                         DAT_083a412c = 1;   // referencia: no describe los factores reales
                     }
                     BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.2f);
@@ -471,11 +472,11 @@ void __cdecl ItemDrop_Render(void)
                     BufferedDraw::Color3f(rgb, rgb, rgb);
                 }
                 if (type != 1253 || sub != 2) {
-                    BufferedDraw::Begin(GL_QUADS);
-                    BufferedDraw::TexCoord2f(s,   1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 5));
-                    BufferedDraw::TexCoord2f(s,   0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 8));
-                    BufferedDraw::TexCoord2f(v28, 0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 20));
-                    BufferedDraw::TexCoord2f(v28, 1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 17));
+                    BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+                    BufferedDraw::TexCoord2f(s,   1.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 5));
+                    BufferedDraw::TexCoord2f(s,   0.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 8));
+                    BufferedDraw::TexCoord2f(v28, 0.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 20));
+                    BufferedDraw::TexCoord2f(v28, 1.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 17));
                     BufferedDraw::End();
                 }
                 if (type == 1254 || type == 1255) {
@@ -485,11 +486,11 @@ void __cdecl ItemDrop_Render(void)
                 }
             }
 
-            BufferedDraw::Begin(GL_QUADS);
-            BufferedDraw::TexCoord2f(s,   0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 - 1));
-            BufferedDraw::TexCoord2f(s,   1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 2));
-            BufferedDraw::TexCoord2f(v28, 1.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 14));
-            BufferedDraw::TexCoord2f(v28, 0.0f); BufferedDraw::Vertex3fv((const GLfloat*)(v6 + 11));
+            BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
+            BufferedDraw::TexCoord2f(s,   0.0f); BufferedDraw::Vertex3fv((const float*)(v6 - 1));
+            BufferedDraw::TexCoord2f(s,   1.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 2));
+            BufferedDraw::TexCoord2f(v28, 1.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 14));
+            BufferedDraw::TexCoord2f(v28, 0.0f); BufferedDraw::Vertex3fv((const float*)(v6 + 11));
             BufferedDraw::End();
 
             v6 += 12;

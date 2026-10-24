@@ -165,14 +165,14 @@ void __cdecl Particle_RenderAll(void)
         switch (typeCode) {
         case 1191: {
             float newScale = scaleF;
-            GLfloat color[3];
+            float color[3];
             color[0] = color[1] = color[2] = (float)counter * 0.1f;
             RenderTerrainAlphaBitmap(1191, posX, posY, newScale, newScale,
                                      color, -rot, 1.0f);
             break;
         }
         case 1200: {
-            GLfloat color[3];
+            float color[3];
             color[0] = color[1] = color[2] = sample.puff;
             RenderTerrainAlphaBitmap(1200, posX, posY, 2.0f, 2.0f,
                                      color, -rot, 1.0f);
@@ -190,7 +190,7 @@ void __cdecl Particle_RenderAll(void)
             } else {
                 v21 = (float)(20 - counter) * 0.15f;
             }
-            GLfloat color[3];
+            float color[3];
             switch (variant) {
             case 0: case 1:
                 color[0] = v3 * 0.4f;
@@ -249,7 +249,7 @@ void __cdecl Particle_RenderAll(void)
                 else v5 = 1.0f - (float)(5 - counter) * 0.2f;
                 v0val = (float)(20 - counter) * 0.15f;
             }
-            GLfloat color[3];
+            float color[3];
             color[0] = v5;
             color[1] = v5 * 0.4f;
             color[2] = v5 * 0.2f;

@@ -43,7 +43,6 @@
 #include "functions.h"
 #include "structs.h"
 #include "Platform/PlatformHeaders.h"
-#include <GL/gl.h>
 #include <math.h>
 #include <unordered_map>
 #include <vector>

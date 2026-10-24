@@ -8,6 +8,7 @@
 // State lives in globals.cpp. See src/Sound/Sound.cpp for the loader side.
 
 #include "stdafx.h"
+#include "Render/Gfx.h"
 #include "Platform/ITimer.h"
 #include "Platform/IAudio.h"
 
@@ -166,19 +167,19 @@ void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* 
 // Logs GL vendor/renderer/version + max texture size + max viewport.
 void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
     DWORD This = (DWORD)(uintptr_t)This_v;
-    GLint maxTex = 0;
-    GLint maxView[2] = {0, 0};
+    int maxTex = 0;
+    int maxView[2] = {0, 0};
     CErrorReport__Write(This, (char*)"<OpenGL information>\r\n");
     const char* s;
-    s = (const char*)glGetString(0x1F00);  // GL_VENDOR
+    s = Gfx::GetDeviceInfo(Gfx::DeviceInfo::Vendor);
     CErrorReport__Write(This, (char*)"Vendor \t\t\t: %s\r\n", s ? s : "(null)");
-    s = (const char*)glGetString(0x1F01);  // GL_RENDERER
+    s = Gfx::GetDeviceInfo(Gfx::DeviceInfo::Renderer);
     CErrorReport__Write(This, (char*)"Render \t\t\t: %s\r\n", s ? s : "(null)");
-    s = (const char*)glGetString(0x1F02);  // GL_VERSION
+    s = Gfx::GetDeviceInfo(Gfx::DeviceInfo::Version);
     CErrorReport__Write(This, (char*)"Version \t\t: %s\r\n", s ? s : "(null)");
-    glGetIntegerv(0x0D33, &maxTex);          // GL_MAX_TEXTURE_SIZE
+    maxTex = Gfx::MaxTextureSize();
     CErrorReport__Write(This, (char*)"Max texture size \t: %d\r\n", maxTex);
-    glGetIntegerv(0x0D3A, maxView);          // GL_MAX_VIEWPORT_DIMS
+    Gfx::MaxViewportDims(maxView);
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 
