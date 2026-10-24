@@ -12,3 +12,7 @@ void Guild_CharSelectResult(BYTE* pkt);
 void Guild_UpdatePos(BYTE* pkt);
 void Guild_SetTargetPos(BYTE* pkt);
 void Guild_JoinToggle(BYTE* pkt);
+
+// Nombre completo del miembro (0.97.40); el registro de 36 bytes sólo guarda 10.
+extern "C" const char* Party_GetName(int index);
+extern "C" const char* Party_NameOf(const void* slot);

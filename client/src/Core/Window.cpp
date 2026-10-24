@@ -1,6 +1,7 @@
 // Window.cpp — CWindow. Ver Window.h.
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Render/RenderProfile.h"
 #include "Render/TerrainDraw.h"
 #include "Platform/Text.h"
@@ -37,7 +38,7 @@ void CWindow::UpdateTitle()
         if (gPing.GetMilliseconds(milliseconds))
             Platform::TextFormatSecure(ping, "%lu ms", milliseconds);
         Platform::TextFormatSecure(title, gClientText.Get(ClientTextId::WindowTitle),
-                  attributes.Name(), GlobalText[161], (unsigned int)attributes.Level(), ping, FPS);
+                  (Hero ? EntityName::Get(Hero) : attributes.Name()), GlobalText[161], (unsigned int)attributes.Level(), ping, FPS);
     }
     Platform::GetWindow().SetTitle(title);
 }

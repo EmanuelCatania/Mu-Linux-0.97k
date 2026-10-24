@@ -1,5 +1,6 @@
 #include <cstdint>
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Platform/ISocket.h"
 #include "Platform/IInput.h"
 #include "Item/ContentCatalog.h"
@@ -640,7 +641,7 @@ void __cdecl Player_ProcessInput(void)
         && MouseRButtonPush != '\0')
     {
         unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * 0x394);
-        unsigned char *nameSrc     = hoverEntity + 0x1c1;
+        const unsigned char *nameSrc = (const unsigned char*)EntityName::Get(hoverEntity);
 
         // Copy name into password buffer
         memcpy(DAT_07db8810, nameSrc, 0x40);

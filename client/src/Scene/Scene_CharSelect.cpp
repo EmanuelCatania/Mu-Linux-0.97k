@@ -178,6 +178,7 @@
 //   GL_SetBlendAdditive   → Frame_UpdateTimer()
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -348,7 +349,7 @@ int Scene_CharSelect(void)
                         if (slotIdx >= 0 && slotIdx < 5 && now2 - s_lastNI[slotIdx] > 1000) {
                             s_lastNI[slotIdx] = now2;
                             char b[400];
-                            const char* nm = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
+                            const char* nm = EntityName::Get((BYTE*)DAT_07abf5d0 + iVar9);
                             float* M = (float*)&CameraMatrix;
                         }
                     }
@@ -374,7 +375,7 @@ int Scene_CharSelect(void)
                     // Name (top, bold font) — IDA L194-198: sprintf(String, "%s", entity+449)
                     gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
                     {
-                        const char* charName = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
+                        const char* charName = EntityName::Get((BYTE*)DAT_07abf5d0 + iVar9);
                         crt_sprintf(aCStack_50, DAT_00561a30, charName);
                     }
                     iVar4 = Platform::TextLength(aCStack_50);

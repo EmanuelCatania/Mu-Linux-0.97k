@@ -308,6 +308,7 @@ void __cdecl ClearInput(int param_1)
       }
       DAT_07d780a8[iVar2] = 0;
       DAT_07e113d8[iVar2] = 0;
+      InputTextMaxClusters[iVar2] = 0;
     }
     iVar2 = iVar2 + 1;
   } while (iVar2 < 10);

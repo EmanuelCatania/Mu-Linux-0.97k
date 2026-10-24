@@ -30,6 +30,9 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Net/NetText.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 void HUD_BeginGridPass(int pass);
 #include <algorithm>
@@ -586,7 +589,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // Member name renders from v4-24 in IDA — that's the 24-byte
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
-            Platform::TextFormat(Buffer, "%s", (char*)v4);   // name[10] en +0
+            Platform::TextFormat(Buffer, "%s", Party_NameOf((const void*)(uintptr_t)v4));
             gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;
@@ -606,8 +609,8 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             Platform::TextFormat(Buffer, "( %d / %d )", level, maxLevel);
             RenderText(a1 + 65, a2 + 77 + 35 * row, Buffer, 0, 0, 0);
-            if (!strcmp((const char*)Party, (const char*)((BYTE*)Hero + 449)) ||
-                !strcmp((const char*)v4, (const char*)((BYTE*)Hero + 449)))
+            if (!strcmp(Party_GetName(0), EntityName::Get(Hero)) ||
+                !strcmp(Party_NameOf((const void*)(uintptr_t)v4), EntityName::Get(Hero)))
             {
                 float kickX = (float)((double)a1 + 140.0);
                 float kickY = (float)((double)(35 * row) + (double)a2 + 55.0);
@@ -667,7 +670,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
     GuildInputEnable = 1;
     DAT_00559c84 = 0;
     ClearInput(0);
-    _InputTextMaxArr[0] = 8;
+    Input_SetLimit(0, (int)NetText::GuildNameSize, (int)NetText::GuildNameClusters);
     InputNumber = 0;
     GuildMark_InitializePalette(true);
     if (Hero)
@@ -1370,7 +1373,7 @@ extern "C" void __cdecl RenderTrade(void)
     m_dwTextColor = 0xFFFFFFD2u;
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
     RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
-               const_cast<char*>(Hero ? (const char*)((BYTE*)Hero + 449) : ""), 0, 0, 0);
+               const_cast<char*>(Hero ? EntityName::Get(Hero) : ""), 0, 0, 0);
     const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
                           TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
     char levelText[64];

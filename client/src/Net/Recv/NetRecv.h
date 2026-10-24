@@ -70,7 +70,11 @@ extern "C" void ChaosBoxCloseAck(void);
 
 extern "C" int  g_nGuildMemberCount;
 extern "C" int  GuildTotalScore;
-extern "C" char byte_7E91790[];   // tabla de miembros, stride 13
+// Tabla de miembros del guild (IDA: byte_7E91790, stride 13). 0.97.40: el
+// nombre mide 40 bytes, así que cada registro es name[41], connected, party.
+constexpr int kGuildMemberRecordSize = 43;
+constexpr int kGuildMemberRecordCount = 42;
+extern "C" char byte_7E91790[];
 extern "C" void GuildList_Clear(void);
 extern "C" void GuildList_AddMember(const char* name, char connected, char partyNumber);
 #define byte_7E919BC  DAT_07e919bc   // tabla global stride 80 (ver globals.h)

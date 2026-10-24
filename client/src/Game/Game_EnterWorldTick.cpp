@@ -39,6 +39,8 @@
 
 #include "stdafx.h"
 #include "Net/NetText.h"
+#include "Entity/EntityName.h"
+#include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "Game/Game_EnterWorldTick.h"
 #include "Net/Net.h"
@@ -87,52 +89,54 @@ static void Pkt_Send(const BYTE* pkt_in, int len)
 // recorriendo hacia atrás). Mismo patrón que gNetwork.Send.
 static void Send_CharSelectPacket(void)
 {
-    BYTE pkt[32];
+    // C1 LL F3 03 + name[40] + slot (0.97.40).
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int LEN  = 4 + NAME + 1;
+    BYTE pkt[64];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0xC1;
-    pkt[1] = 15;        // total length (C1 LL F3 03 + name 10 + slot = 15)
+    pkt[1] = (BYTE)LEN;
     pkt[2] = 0xF3;
     pkt[3] = 0x03;
 
-    // Username (from DAT_07db8710, max 10 bytes) — payload at pkt[4..13]
-    NetText::ToServer(pkt + 4, 10, (const char*)DAT_07db8710);
-    // Padding bytes 14 - 4 - unamLen remain 0 (memset above).
+    NetText::ToServer(pkt + 4, NAME, (const char*)DAT_07db8710);
 
     // Char slot byte: DAT_07abf20c low nibble * 0x10 + high nibble
-    pkt[14] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
+    pkt[4 + NAME] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
 
     // Forward chain XOR using PREVIOUS byte (matches server's reverse XorData).
-    // Iterate i = 3..14 (entire body after pkt[2]). Server reverses n=14..3.
-    for (int i = 3; i < 15; i++) {
+    for (int i = 3; i < LEN; i++) {
         pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
 
     // Pkt_Send aplica MuEmu byte-XOR + send (C1 path, no SerialModulus).
-    Pkt_Send(pkt, 15);
+    Pkt_Send(pkt, LEN);
 }
 
 // Send the character-CREATE packet:
-//   [0xC1][15][0xF3][0x01][name(10)][Class] — server PMSG_CHARACTER_CREATE_RECV.
+//   [0xC1][45][0xF3][0x01][name(40)][Class] — server PMSG_CHARACTER_CREATE_RECV.
 // Class = page*16 (DB_CLASS_DW=0, DK=16, FE=32, MG=48) — la fórmula
 // `page*0x10 + byte1` del IDA da ese valor.
 static void Send_CharCreatePacket(void)
 {
-    BYTE pkt[32];
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int LEN  = 4 + NAME + 1;
+    BYTE pkt[64];
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0xC1;
-    pkt[1] = 15;        // total length (C1 LL F3 01 + name 10 + class = 15)
+    pkt[1] = (BYTE)LEN;
     pkt[2] = 0xF3;
     pkt[3] = 0x01;      // sub 0x01 = CREATE
 
-    NetText::ToServer(pkt + 4, 10, (const char*)DAT_07db8710);   // typed char name (InputText[0])
+    NetText::ToServer(pkt + 4, NAME, (const char*)DAT_07db8710);   // typed char name (InputText[0])
 
     // Class byte: page*0x10 + byte1 → 0/16/32/48 = DW/DK/FE/MG.
-    pkt[14] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
+    pkt[4 + NAME] = (BYTE)((char)DAT_07abf20c * 0x10 + ((BYTE*)&DAT_07abf20c)[1]);
 
-    for (int i = 3; i < 15; i++) {
+    for (int i = 3; i < LEN; i++) {
         pkt[i] ^= pkt[i - 1] ^ CNetwork::XorKey[i & 0x1f];
     }
-    Pkt_Send(pkt, 15);
+    Pkt_Send(pkt, LEN);
 }
 
 void Game_EnterWorldTick(void)
@@ -348,7 +352,7 @@ void Game_EnterWorldTick(void)
             ClearInput(1);
             DAT_00559c84 = 1;
             InputNumber = 1;
-            InputTextMax = 10;
+            Input_SetLimit(0, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
         }
 
         // Update free slot flag after possible change
@@ -636,10 +640,11 @@ void Game_EnterWorldTick(void)
                 // Build and send world-enter packet with username + anti-tamper data
                 {
                     // Copy char name from selected slot
-                    char* charName = (char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
-                    int   clen = (int)strlen(charName);
-                    // Copy to char data buffer
-                    memcpy((char*)DAT_07cf1ff4, charName, clen + 1);
+                    // 0.97.40: CharacterMachine guarda 10 bytes; el nombre completo
+                    // queda en EntityName::Selected().
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * 0x394));
+                    EntityName::SetSelected(charName);
+                    TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
                     *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
                     ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
                     ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
@@ -659,10 +664,10 @@ void Game_EnterWorldTick(void)
                 // Va DENTRO de case 25, tras el Pkt_Send y el check de validCode (IDA
                 // 0x00521D80:1150); fuera del switch correría cada frame.
                 {
-                    char* charName = (char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * 0x394));
                     char* charData = (char*)DAT_07cf1ff4;
-                    int   len      = (int)strlen(charName);
-                    memcpy(charData, charName, len + 1);
+                    EntityName::SetSelected(charName);
+                    TextEngine::CopyTruncated(charData, 11, charName);
                     *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
                     charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
                     charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];

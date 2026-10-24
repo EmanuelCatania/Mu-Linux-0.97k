@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/Text.h"
@@ -265,7 +266,7 @@ void CMiniMap::RenderMarkers() const
             r = 0.5f; g = 0.0f; b = 0.0f; size = 6.0f;
         } else if (kind == 4) {     // NPC, con su nombre
             r = 1.0f; g = 0.0f; b = 1.0f;
-            tooltip = (const char*)(c + 0x1C1);
+            tooltip = EntityName::Get(c);
         } else {
             continue;
         }

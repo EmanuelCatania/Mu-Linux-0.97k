@@ -415,6 +415,8 @@
 //   CharData_RecalcStats @ 0x0047e3c0
 
 #include "stdafx.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
 #include "Item/Item_Equip.h"
@@ -1168,12 +1170,12 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         }
         if (PartyNumber <= 0)                                 // IDA L7115
             return;
-        const char* const targetName = (const char*)(target + 449);   // IDA: v542
+        const char* const targetName = EntityName::Get(target);   // IDA: v542
         size_t nameLen = strlen(targetName);
         if (nameLen == 0) nameLen = 1;
         bool inParty = false;
         for (int partyIndex = 0; partyIndex < PartyNumber; ++partyIndex) {   // IDA L7120-7131
-            if (strncmp((const char*)Party + partyIndex * 36, targetName, nameLen) == 0) {
+            if (strncmp(Party_GetName(partyIndex), targetName, nameLen) == 0) {
                 inParty = true;
                 break;
             }
@@ -1325,12 +1327,12 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         if (PartyNumber <= 0 || DAT_07e91388 > 0) {   // IDA L9740
             return;
             }
-        const char* const targetName = target + 449;
+        const char* const targetName = EntityName::Get(target);
         size_t nameLen = strlen(targetName);
         if (nameLen == 0) nameLen = 1;
         bool inParty = false;
         for (int partyIndex = 0; partyIndex < PartyNumber; ++partyIndex) {
-            if (strncmp((const char*)Party + partyIndex * 36, targetName, nameLen) == 0) {
+            if (strncmp(Party_GetName(partyIndex), targetName, nameLen) == 0) {
                 inParty = true;
                 break;
             }

@@ -1,6 +1,8 @@
 // Chat_Send.cpp
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "globals.h"
 #include "functions.h"
@@ -46,7 +48,7 @@ void __cdecl SendChat(char* Text) {
     // GM name check: if Hero->ID contains "webzen" substring, block
     // Hero is char* (DAT_07abf5d8), ID at offset 0x1C1
     {
-        const char* heroId = Hero + 0x1C1;
+        const char* heroId = EntityName::Get(Hero);
         const char* webzenStr = &DAT_005592dc;  // "webzen" string in binary
         int webzenLen = (int)strlen(webzenStr);
         if (webzenLen > 0) {
@@ -106,17 +108,15 @@ void __cdecl SendChat(char* Text) {
     // byte auxiliar de la pila de IDA, no al paquete transmitido.
     pkt[pos++] = 0x00;  // opcode: chat (IDA: C1 <len> 00)
 
-    // Copy Hero->ID (10 bytes) — ID at offset 0x1C1 in CHARACTER struct
-    NetText::ToServer(pkt + pos, 10, (const char*)(Hero + 0x1C1));
-    pos += 10;  // pos = 13
+    // name[40] con el nombre del héroe (0.97.40).
+    NetText::ToServer(pkt + pos, NetText::CharacterNameSize, EntityName::Get(Hero));
+    pos += (int)NetText::CharacterNameSize;
 
-    // Copy chat text (max 60 bytes including null)
-    // DESVIACION (Fase 4, texto Unicode): el mensaje viaja en 1252 (NetText).
-    const std::string legacyText = NetText::ToServer(Text);
-    int textLen = (int)legacyText.size() + 1;
-    if (textLen > 0x3c) textLen = 0x3c;
-    memcpy(pkt + pos, legacyText.c_str(), textLen);
-    pos += textLen;
+    // Mensaje con su NUL, hasta 200 bytes sin partir un cluster.
+    const int textLen = (int)TextEngine::FitBytes(Text, NetText::ChatMessageSize - 1);
+    memcpy(pkt + pos, Text, textLen);
+    pkt[pos + textLen] = 0;
+    pos += textLen + 1;
 
     short totalLen = (short)pos;
 

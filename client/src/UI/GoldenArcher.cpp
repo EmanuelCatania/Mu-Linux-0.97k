@@ -19,6 +19,8 @@
 // g_bScratchTicket (0x07E11D73).
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Text/TextCore.h"
 #include "Net/NetText.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
@@ -1068,7 +1070,7 @@ extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
             static const int k[] = { 818, 819, 820, 821, 822, 823 };
             text = k[rand() % 6];
         }
-        if (text) CreateChat((char*)(c + 0x1C1), GlobalText[text], (DWORD)c, 0, -1);
+        if (text) CreateChat((char*)EntityName::Get(c), GlobalText[text], (DWORD)c, 0, -1);
     }
     return true;
 }

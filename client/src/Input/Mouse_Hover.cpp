@@ -36,6 +36,8 @@
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
 #include "Render/BufferedDraw.h"
 #include "Platform/ITimer.h"
 #include "Platform/IInput.h"
@@ -390,13 +392,14 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             char *slot = (char *)&DAT_07e11e80;
             for (int pi = 0; pi < (int)DAT_07eaa0e0; pi++, slot += 0x24) {
                 if (*(int *)(slot + 0x1c) == -2) {
-                    const char *eName = ent + 0x1c1;
+                    const char *eName = EntityName::Get(ent);
                     size_t sVar7 = strlen(eName);
-                    size_t m     = strlen(slot);
+                    const char *slotName = Party_NameOf(slot);
+                    size_t m     = strlen(slotName);
                     if (m > sVar7) sVar7 = m;
                     if (sVar7 == 0) sVar7 = 1;
                     *(int *)(slot + 0x20) = 0;
-                    if (strncmp(slot, eName, sVar7) == 0) {
+                    if (strncmp(slotName, eName, sVar7) == 0) {
                         *(int  *)(slot + 0x1c) = ent_idx;
                         *(DWORD *)(slot + 0x20) = *(DWORD *)(ent + 0x78);
                         break;
@@ -450,8 +453,8 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         int *piVar12 = (int *)((char *)&DAT_07e11e80 + 0x1c);
         for (int pi = 0; pi < (int)DAT_07eaa0e0; pi++, piVar12 += 9) {
             if (*piVar12 < 0) {
-                const char *playerName = (char *)DAT_07abf5d8 + 0x1c1;
-                const char *partyName  = (char *)(piVar12 - 7);
+                const char *playerName = EntityName::Get(DAT_07abf5d8);
+                const char *partyName  = Party_NameOf(piVar12 - 7);
                 size_t n = strlen(playerName);
                 size_t m = strlen(partyName);
                 size_t sVar7 = (n < m) ? m : n;

@@ -7,6 +7,7 @@
 #include "Render/EquipmentVisuals.h"
 #include "Entity/CharacterEffects.h"
 
+extern "C" const char* Guild_GetMarkName(int row);
 #pragma warning(disable: 4244 4305 4701 4702 4700)
 // Entity_UpdateRender.cpp  —  RenderCharacter @ 0x00456770  (2195 lines in Ghidra)
 //
@@ -533,11 +534,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // the current MuEmu build does not emit F3/23 observer state.
             const short guildIndex = AsCharacter(cb)->GuildMarkIndex;
             if (guildIndex != -1) {
-                const char* guildName = DAT_07e919bc + 80 * guildIndex;
+                const char* guildName = Guild_GetMarkName(guildIndex);
                 if (EnableSoccer && DAT_07abf5d8) {
                     const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
                     if (heroGuild != -1 &&
-                        (strcmp(DAT_07e919bc + 80 * heroGuild, guildName) == 0 ||
+                        (strcmp(Guild_GetMarkName(heroGuild), guildName) == 0 ||
                          strcmp(GuildWarName, guildName) == 0)) {
                         bCape = true;
                     }

@@ -12,6 +12,8 @@
 //   - Checks if hero entity name matches → writes -3 (matched hero) or -1 (no match)
 
 #include "stdafx.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
 
 // IDA: FUN_004afb00
 void __cdecl Party_MatchEntityNames(void)
@@ -35,11 +37,12 @@ void __cdecl Party_MatchEntityNames(void)
             if (*(int*)(slot + 28) != -2)
                 continue;
 
-            const size_t nameLength = strlen(entity + 449) ? strlen(entity + 449) : 1;
-            const size_t compareLength = strlen(slot) <= nameLength
-                ? nameLength : strlen(slot);
+            const char* slotName = Party_NameOf(slot);
+            const size_t nameLength = strlen(EntityName::Get(entity)) ? strlen(EntityName::Get(entity)) : 1;
+            const size_t compareLength = strlen(slotName) <= nameLength
+                ? nameLength : strlen(slotName);
             *(int*)(slot + 32) = 0;
-            if (strncmp(slot, entity + 449, compareLength) == 0) {
+            if (strncmp(slotName, EntityName::Get(entity), compareLength) == 0) {
                 *(int*)(slot + 28) = entityIndex;
                 *(int*)(slot + 32) = *(int*)(entity + 120);
                 break;
@@ -55,10 +58,11 @@ void __cdecl Party_MatchEntityNames(void)
         if (*(int*)(slot + 28) >= 0)
             continue;
 
-        const char* heroName = Hero ? Hero + 449 : "";
+        const char* heroName = Hero ? EntityName::Get(Hero) : "";
         const size_t heroLength = strlen(heroName) ? strlen(heroName) : 1;
-        const size_t compareLength = strlen(slot) <= heroLength
-            ? heroLength : strlen(slot);
+        const char* slotName = Party_NameOf(slot);
+        const size_t compareLength = strlen(slotName) <= heroLength
+            ? heroLength : strlen(slotName);
         *(int*)(slot + 32) = 0;
         *(int*)(slot + 28) = (Hero && strncmp(slot, heroName, compareLength) == 0)
             ? -3 : -1;

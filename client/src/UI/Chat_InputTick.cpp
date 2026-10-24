@@ -24,6 +24,9 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/IInput.h"
@@ -66,7 +69,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
         for (int i = 0; i < 400; ++i, candidate += 916) {
             if (candidate[0] && *(short*)(candidate + 2) == 390 &&
                 candidate[132] == 1 &&
-                Platform::TextCompareIgnoreCase(candidate + 449, requestedName) == 0) {
+                Platform::TextCompareIgnoreCase(EntityName::Get(candidate), requestedName) == 0) {
                 entity = candidate;
                 break;
             }
@@ -125,7 +128,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
 
     // IDA: PartyNumber > 0 && strcmp(Party[0].name, Hero->name).
     // Only the first listed member may initiate another invitation.
-    if (PartyNumber > 0 && strcmp((const char*)Party, hero + 449) != 0) {
+    if (PartyNumber > 0 && strcmp(Party_GetName(0), EntityName::Get(hero)) != 0) {
         UIChatLogWindow_AddText(nullptr, GlobalText[257], 1);
         return true;
     }
@@ -172,7 +175,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
         char message[300] = {};
-        sprintf(message, GlobalText[476], entities + targetIndex * 916 + 449);
+        sprintf(message, GlobalText[476], EntityName::Get(entities + targetIndex * 916));
         UIChatLogWindow_AddText(nullptr, message, 1);
     }
     return true;
@@ -222,22 +225,19 @@ extern "C" void Chat_SendChatLine(const char* text)
     // CommandManager parses slash commands from CGChatRecv, which keeps this
     // client compatible with every command enabled in Command.txt (including
     // future server-side additions) without another client patch.
-    // DESVIACION (Fase 4, texto Unicode): el mensaje viaja en 1252 (NetText).
-    const std::string legacyText = NetText::ToServer(text);
-    size_t tlen = legacyText.size();
-    if (tlen > 0x3c) tlen = 0x3c;
-
-    // ── PMSG_CHAT_RECV (server MuEmu Protocol.h, header C1:00) ───────────────
+    // ── PMSG_CHAT_RECV (server MuEmu Protocol.h, header C1:00; 0.97.40) ──────
     //   +0..2   PBMSG_HEAD  { C1, size, headcode=0x00 }
-    //   +3..12  char name[10]
-    //   +13..72 char message[60]
+    //   +3..42  char name[40]
+    //   +43..   char message[200]
     // IDA, SendChat @ 0x004C1B90: el C1 se construye con tamaño variable.
-    // Primero agrega los diez bytes del nombre y después `strlen(texto)+1`;
-    // para una entrada de 59+ caracteres limita ese último bloque a 60.
+    // Primero agrega el nombre y después `strlen(texto)+1`, con el mensaje
+    // cortado (sin partir un cluster) para que entre con su NUL.
     // No se debe rellenar a sizeof(PMSG_CHAT_RECV): el ejecutable original
     // cifra y envía únicamente los bytes que realmente construyó.
-    const size_t msgBytes = (tlen + 1 >= 0x3c) ? 0x3c : (tlen + 1);
-    const int pktLen = 3 + 10 + (int)msgBytes;
+    const int NAME = (int)NetText::CharacterNameSize;
+    const size_t tlen = TextEngine::FitBytes(text, NetText::ChatMessageSize - 1);
+    const size_t msgBytes = tlen + 1;
+    const int pktLen = 3 + NAME + (int)msgBytes;
 
     BYTE pkt[0x410];
     memset(pkt, 0, sizeof(pkt));
@@ -253,7 +253,7 @@ extern "C" void Chat_SendChatLine(const char* text)
     //     PlayBuffer(25, 0, 0);
     //
     // Formato del wire (server MuEmu Protocol.h) — las dos structs son
-    // idénticas salvo el headcode y QUIÉN va en name[10]:
+    // idénticas salvo el headcode y QUIÉN va en name[40]:
     //   C1:00 PMSG_CHAT_RECV          name = el PROPIO personaje
     //         CGChatRecv: `if (strcmp(name, lpObj->Name) != 0) return;`
     //   C1:02 PMSG_CHAT_WHISPER_RECV  name = el DESTINATARIO
@@ -274,22 +274,21 @@ extern "C" void Chat_SendChatLine(const char* text)
         if (FUN_0047fed0(6, whisperTarget) != 1)
             return;
         pkt[2] = 0x02;                        // headcode = whisper
-        NetText::ToServer(pkt + 3, 10, whisperTarget);   // name[10] = DESTINATARIO
+        NetText::ToServer(pkt + 3, NAME, whisperTarget);   // name[40] = DESTINATARIO
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
-        // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
-        // ("no esta conectado") como remitente.
-        memcpy(ChatWhisperID, whisperTarget, 10);
-        ChatWhisperID[10] = '\0';
+        // InputText[1][0..9], con '\0' en [10] (0.97.40: el nombre entero).
+        // Lo usa el aviso del 0x0C ("no esta conectado") como remitente.
+        TextEngine::CopyTruncated(ChatWhisperID, sizeof(ChatWhisperID), whisperTarget);
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
-        // name[10] = nombre del héroe: con el campo en CEROS el server descarta el
+        // name[40] = nombre del héroe: con el campo en CEROS el server descarta el
         // mensaje en silencio.
         if (DAT_07abf5d8) {
-            NetText::ToServer(pkt + 3, 10, (const char*)DAT_07abf5d8 + 0x1C1);
+            NetText::ToServer(pkt + 3, NAME, EntityName::Get(DAT_07abf5d8));
         }
     }
 
-    memcpy(pkt + 13, legacyText.c_str(), msgBytes);
+    memcpy(pkt + 3 + NAME, text, tlen);   // el NUL ya está en el buffer
     const bool isWhisper = (pkt[2] == 0x02);
 
     // C1 con chain-XOR (lo aplica CNetwork; el server lo revierte en XorData).
@@ -299,10 +298,11 @@ extern "C" void Chat_SendChatLine(const char* text)
     // manda, asi que el cliente agrega la linea con el nombre propio y el
     // tipo 0 (colores del chat normal).
     if (isWhisper && DAT_07abf5d8)
-        UIChatLogWindow_AddText((const char*)DAT_07abf5d8 + 0x1C1, text, 0);
+        UIChatLogWindow_AddText(EntityName::Get(DAT_07abf5d8), text, 0);
 
     // Update last-sent-cmp buffer + reset rate-limit (matches IDA).
-    memcpy(&DAT_05826adc[0], text, tlen + 1);
+    memcpy(&DAT_05826adc[0], text, tlen);
+    DAT_05826adc[tlen] = '\0';
     ChatTime = 0x46;
 }
 
@@ -356,7 +356,7 @@ void __cdecl Chat_InputTick(void)
                 (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
             {
                 // Compare entity name at +0x1c1 against table name
-                const char *entityName = DAT_07abf5d8 + 0x1c1;
+                const char *entityName = EntityName::Get(DAT_07abf5d8);
                 if (strcmp(tableName, entityName) != 0 && MouseRButtonPush != '\0')
                 {
                     MouseRButtonPush = '\0';
@@ -639,7 +639,7 @@ void __cdecl Chat_InputTick(void)
                         // Player name length for name-match check
                         {
                             int pnLen = (int)strlen(&DAT_005592dc);
-                            int enLen = (int)strlen(DAT_07abf5d8 + 0x1c1);
+                            int enLen = (int)strlen(EntityName::Get(DAT_07abf5d8));
                             // Try to find player name in entity name substring
                             // (tab-complete name match — sets up struct at DAT_005592d4/d8)
                             // Simplified: set name match refs
@@ -713,22 +713,21 @@ void __cdecl Chat_InputTick(void)
                                 bool bDupWhisper = (ChatTime > 0) &&
                                                    (strcmp(&DAT_07e108c8, &DAT_05826adc[0]) == 0);
                                 if (!bDupWhisper) {
-                                size_t tlen = strlen(&DAT_07e108c8);
-                                if (tlen > 0x3c) tlen = 0x3c;
-                                memcpy(&DAT_05826adc[0], &DAT_07e108c8, tlen + 1);
+                                size_t tlen = TextEngine::FitBytes(&DAT_07e108c8, NetText::ChatMessageSize - 1);
+                                memcpy(&DAT_05826adc[0], &DAT_07e108c8, tlen);
+                                DAT_05826adc[tlen] = '\0';
                                 ChatTime = 0x46;
 
                                 // Build and send whisper packet (same XOR+encode pattern)
                                 {
-                                    const std::string legacyMacro = NetText::ToServer(&DAT_07e108c8);
-                                    tlen = legacyMacro.size() > 0x3c ? 0x3c : legacyMacro.size();
-                                    int pktLen = (int)(tlen + 0x0d);
+                                    const int msgOff = 3 + (int)NetText::CharacterNameSize;
+                                    int pktLen = (int)tlen + msgOff;
                                     if ((DWORD)pktLen < 0x401) {
                                         BYTE pkt[0x410];
                                         memset(pkt, 0, sizeof(pkt));
                                         pkt[0] = 0xC1;
                                         pkt[1] = (BYTE)pktLen;
-                                        memcpy(pkt + 0x0d, legacyMacro.data(), tlen);
+                                        memcpy(pkt + msgOff, &DAT_07e108c8, tlen);
                                         for (int xi = 3; xi < pktLen; ++xi)
                                             pkt[xi] ^= CNetwork::XorKey[xi & 0x1f];
                                         CSimpleModulus_Encode(0, pkt, pktLen);

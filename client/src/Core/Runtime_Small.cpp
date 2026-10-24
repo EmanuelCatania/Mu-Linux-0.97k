@@ -452,7 +452,7 @@ skip_wings: ;
 
 
 // ClearWhisperID @ 0x004804D0 (19 bytes) — rep stosd 0x1B + stosw = 0x6E bytes del anillo
-void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, 0x6e); }
+void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, sizeof(WhisperRegistID)); }
 
 // CUIRenderText_SetFont @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
 void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {

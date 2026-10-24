@@ -20,6 +20,8 @@
 // =============================================================================
 
 #include "stdafx.h"
+extern "C" const char* Guild_GetMarkName(int row);
+int GuildMark_FindRecordByName(const char* name);
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/GuardedOperation.h"
@@ -329,23 +331,15 @@ char Render_CharInfoPanel_(void)
         int n = Platform::TextLength(String);
         gFont.MeasureText(gFont.GetTextDC(), String, n, &TextSize);
 
-        const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
+        const char* v1 = Guild_GetMarkName(v20);
         int v2 = (int)x + 30;
         UI_DrawText(v2, 4, (char*)v1, 0, 1, 0, 80);
 
-        // Walk the name table to find the GuildWarName slot index.
-        int v23 = 0;
-        const char* v22 = (char*)&DAT_07e919bc;
+        // IDA recorre la tabla de 80 bytes buscando GuildWarName; desde 0.97.40
+        // los nombres completos están en la tabla de Recv_Guild.
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFF008000u : 0xFFFF9560;
-        int v5 = 0;
-        while (strcmp(v22, GuildWarName) != 0) {
-            bool keep = (int)(v22 + 80) < (int)DWORD_7EA51EC_LIMIT;
-            ++v23;
-            v22 += 80;
-            if (!keep) { v5 = 0; goto LABEL_7; }
-        }
-        v5 = v23;
-LABEL_7:
+        int v5 = GuildMark_FindRecordByName(GuildWarName);
+        if (v5 < 0) v5 = 0;
         CreateGuildMark(v5, 1);
         GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         Platform::TextFormat(String, "%d", GuildWarScore[1]);

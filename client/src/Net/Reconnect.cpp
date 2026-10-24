@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
@@ -64,7 +66,7 @@ bool CReconnect::OnConnectionLost()
     m_LoginSent = false;
     SetProgress(PROGRESS_CONNECT, 0);
     memset(m_Name, 0, sizeof(m_Name));
-    memcpy(m_Name, (const char*)(uintptr_t)Hero + 0x1C1, 10);
+    TextEngine::CopyTruncated(m_Name, sizeof(m_Name), EntityName::Get(Hero));
 
     // DLL ReconnectViewportDestroy: las entidades vuelven con el viewport nuevo.
     // El héroe se conserva hasta que el F3/03 lo recree (el render lo usa).
@@ -162,8 +164,9 @@ bool CReconnect::OnCharacterList()
     if (m_Status != STATUS_RECONNECT) return false;
     if (m_Progress == PROGRESS_CHAR_LIST) {
         // Mismo pedido que char-select (Game_CharSelectTick): F3/03 con el nombre.
-        BYTE pkt[14] = { 0xC1, 0x0E, 0xF3, 0x03 };
-        NetText::ToServer(pkt + 4, 10, m_Name);
+        BYTE pkt[4 + NetText::CharacterNameSize] = { 0xC1, (BYTE)(4 + NetText::CharacterNameSize), 0xF3, 0x03 };
+        NetText::ToServer(pkt + 4, NetText::CharacterNameSize, m_Name);
+        EntityName::SetSelected(m_Name);
         gNetwork.SendC1(pkt, sizeof(pkt));
         SetProgress(PROGRESS_CHAR_INFO, CharacterWait);
     }

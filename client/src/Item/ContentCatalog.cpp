@@ -362,8 +362,10 @@ void CContentCatalog::Publish()
         for (size_t off = 0; off + tooltipSize <= s_PendingTooltips.records.size(); off += tooltipSize) {
             Proto::CATALOG_TOOLTIP line = {};
             memcpy(&line, &s_PendingTooltips.records[off], (std::min)((int)sizeof(line), tooltipSize));
-            line.Text[sizeof(line.Text) - 1] = 0;
-            TextEngine::ConvertWindows1252InPlace(line.Text, sizeof(line.Text));
+            // 0.97.40: el server manda el tooltip en UTF-8; sólo se sanea.
+            char text[sizeof(line.Text)];
+            NetText::FromServer(text, sizeof(text), line.Text, sizeof(line.Text));
+            memcpy(line.Text, text, sizeof(line.Text));
             if (line.Item < ITEM_MAX_EX && line.Color <= 8) s_Tooltips[line.Item].push_back(line);
         }
     }

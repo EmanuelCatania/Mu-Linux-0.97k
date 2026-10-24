@@ -16,6 +16,9 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "Net/NetText.h"
+#include "UI/ChatTypes.h"
 #include "Text/TextCore.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
@@ -499,7 +502,7 @@ void UI_RenderChatLogOverlay(void)
       if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
          (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
-        pbVar4 = (byte *)(DAT_07abf5d8 + 0x1c1);
+        pbVar4 = (byte *)EntityName::Get(DAT_07abf5d8);
         do {
           bVar1 = *pbVar6;
           bVar8 = bVar1 < *pbVar4;
@@ -574,9 +577,9 @@ void UI_TickHoverBubbles(void)
         (c->y <= DAT_083a4278) &&
         (DAT_083a4278 < (int)((uint)(c->Height * 0x1e0) / gWindow.GetHeight() + c->y)) &&
         (DAT_00559c84 != '\0') && (AsCharacter(DAT_07abf5d8)->SafeZone != '\0') &&
-        strcmp(c->ID, AsCharacter(DAT_07abf5d8)->ID) != 0 &&
+        strcmp(ChatDisplayName(c), EntityName::Get(DAT_07abf5d8)) != 0 &&
         (MouseRButtonPush != '\0')) {
-      strcpy((char *)DAT_07db8810, c->ID);
+      TextEngine::CopyTruncated((char *)DAT_07db8810, NetText::CharacterNameSize + 1, ChatDisplayName(c));
       DAT_07d780ac = (DWORD)strlen((char *)DAT_07db8810);
       MouseRButtonPush = '\0';
       PlayBuffer(0x19,0,0);

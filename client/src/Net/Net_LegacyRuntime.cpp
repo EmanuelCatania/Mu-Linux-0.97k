@@ -161,20 +161,20 @@ void __stdcall InitGame(void)
 // ─────────────────────────────────────────────────────────────────────────────
 // ReceiveChat @ 0x00427630 (692 bytes, ~156 lines)
 // Packet handler for opcode 0x00 (chat message from server).
-// Packet layout: [C1][len][00][sender:10][prefijo:1][msg...]
+// Packet layout: [C1][len][00][sender:40][prefijo:1][msg...] (0.97.40)
 //
 // Si SceneFlag == 2 (escena de login):
 //   Sends a 4-byte ACK packet {0xC1, 0x04, 0x0E, ...} back to server
 //   (keep-alive/chat ACK). Handles WSAEWOULDBLOCK by queuing to send buffer.
 //
 // En el resto de las escenas:
-//   Extracts sender name (10 bytes @ offset 3) y rutea por el byte de prefijo
-//   en 0x0D (el mensaje empieza en 0x0E):
+//   Extracts sender name (40 bytes @ offset 3) y rutea por el byte de prefijo
+//   en +43 (el mensaje empieza en +44):
 //     '~' (0x7E) → AddText(sender, msg, 4)        — party
 //     '@' (0x40) → AddText(sender, msg, 5)        — guild
 //     '#' (0x23) → AssignChat(sender, msg, 1)     — sólo burbuja
 //     default    → AssignChat(sender, msg, 0) + AddText(sender, msg, 3) — chat
-//                  normal (el mensaje se toma desde 0x0D)
+//                  normal (el mensaje se toma desde +43)
 // ─────────────────────────────────────────────────────────────────────────────
 void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 {
@@ -191,40 +191,40 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
     }
 
     // --- Chat message processing (escenas que no son el login) ---
-    // DESVIACION (Fase 4, texto Unicode): nombre y mensaje llegan en 1252 y se
-    // guardan en UTF-8 (NetText); el mensaje puede crecer hasta 3 veces.
-    char sender[11];
-    char msg[181];
+    // 0.97.40: name[40]@+3 y message[200]@+43 (PMSG_CHAT_SEND), en UTF-8.
+    const int MSG = 3 + (int)NetText::CharacterNameSize;
+    char sender[NetText::CharacterNameSize + 1];
+    char msg[NetText::ChatMessageSize + 1];
     memset(sender, 0, sizeof(sender));
     memset(msg, 0, sizeof(msg));
 
-    NetText::FromServer(sender, sizeof(sender), ReceiveBuffer + 3, 10);
+    NetText::FromServer(sender, sizeof(sender), ReceiveBuffer + 3, NetText::CharacterNameSize);
 
     // IDA ReceiveChat (0x427630) usa UIChatLogWindow_AddText(strID, strText, <canal>)
     // con el canal correcto por prefijo.
     extern void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mode);
 
-    BYTE chatType = ReceiveBuffer[0x0D];
+    BYTE chatType = ReceiveBuffer[MSG];
 
     if (chatType == '~') {
         // Party (canal 4)
-        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
         UIChatLogWindow_AddText(sender, msg, 4);
     }
     else if (chatType == '@') {
         // Guild (canal 5)
-        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
         UIChatLogWindow_AddText(sender, msg, 5);
     }
     else if (chatType == '#') {
         // Solo burbuja sobre el personaje (sin entrada en el log)
-        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0E, 59);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG + 1, NetText::ChatMessageSize - 1);
         AssignChat(sender, msg, 1);
     }
     else {
         // Chat normal: burbuja + log en canal 3 (color casi-blanco 0xFFEFDCCD;
         // renderLine lo saltea si byte_559BF1==0, que es el toggle de F2).
-        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + 0x0D, 60);
+        NetText::FromServer(msg, sizeof(msg), ReceiveBuffer + MSG, NetText::ChatMessageSize);
         AssignChat(sender, msg, 0);
         UIChatLogWindow_AddText(sender, msg, 3);
     }

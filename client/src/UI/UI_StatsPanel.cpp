@@ -2,6 +2,7 @@
 // UI_StatsPanel.cpp
 // RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/OptionsMenu.h"
@@ -562,7 +563,7 @@ LAB_0051c13d:
     // personaje seleccionado.  Sin ese argumento printf tomaba un slot cualquiera
     // de la pila como char* -> AV de lectura dentro de ucrtbase.
     crt_sprintf(local_c8,&DAT_07d46e60,
-                (const char *)(CharactersClient + 916 * SelectedHero + 0x1C1));
+                EntityName::Get(CharactersClient + 916 * SelectedHero));
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
     gFont.MeasureText(gFont.GetTextDC(),(LPCSTR)local_c8,iVar3,ptVar17);
@@ -626,7 +627,7 @@ LAB_0051c13d:
     {
     int nameIdx = FindCharacterIndex(DAT_07eaa0d8);
     crt_sprintf(local_c8,(const char *)DAT_07d486fc,
-                (const char *)(CharactersClient + 916 * nameIdx + 0x1C1));
+                EntityName::Get(CharactersClient + 916 * nameIdx));
     }
     ptVar17 = &local_e4;
     iVar3 = Platform::TextLength((LPCSTR)local_c8);
@@ -647,7 +648,7 @@ LAB_0051c13d:
     // that return value, so the party prompt had no inviter name.
     const int characterIndex = FindCharacterIndex((int)DAT_07eaa0e4);
     const char* inviterName = (characterIndex < 400 && DAT_07abf5d0)
-        ? (const char*)(uintptr_t)(DAT_07abf5d0 + characterIndex * 916 + 449)
+        ? EntityName::Get(DAT_07abf5d0 + characterIndex * 916)
         : "";
     Platform::TextFormatTruncated(local_c8, sizeof(local_c8), Platform::TruncateText,
                 (const char*)&DAT_07d486fc, inviterName);

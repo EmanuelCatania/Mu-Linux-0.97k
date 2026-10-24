@@ -137,6 +137,10 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+extern "C" const char* Guild_GetMarkName(int row);
+#include "Text/TextCore.h"
+#include "Party/Party.h"
+#include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Render/TerrainDraw.h"
 void Terrain_BeginBufferedPass();
@@ -408,20 +412,21 @@ void __cdecl SecondPassword_Screen1(void) {
                     } else {
                         // IDA: strcpy(&dword_7EA51EC, InputText[0])
                         memset(DAT_07ea51ec, 0, sizeof(DAT_07ea51ec));
-                        for (int c = 0; c < 8 && DAT_07db8710[0][c]; ++c)
-                            DAT_07ea51ec[c] = DAT_07db8710[0][c];
+                        TextEngine::CopyTruncated(DAT_07ea51ec, sizeof(DAT_07ea51ec), (const char*)DAT_07db8710[0]);
             
                         // El rango de guild entero es Encrypt=0 -> C1 plano, y
                         // `gNetwork.SendC1` aplica el mismo chain-XOR sobre 3..len-1
                         // que hace el original.
-                        BYTE pkt[43];
+                        // PMSG_GUILD_CREATE_RECV (0.97.40): GuildName[32], Mark[32].
+                        const int NAME = (int)NetText::GuildNameSize;
+                        BYTE pkt[3 + NetText::GuildNameSize + 32];
                         memset(pkt, 0, sizeof(pkt));
                         pkt[0] = 0xC1;
-                        pkt[1] = 43;
+                        pkt[1] = (BYTE)sizeof(pkt);
                         pkt[2] = 0x55;
-                        NetText::ToServer(pkt + 3, 8, DAT_07ea51ec);
-                        memcpy(pkt + 11, mark, 32);
-                        gNetwork.SendC1(pkt, 43);
+                        NetText::ToServer(pkt + 3, NAME, DAT_07ea51ec);
+                        memcpy(pkt + 3 + NAME, mark, 32);
+                        gNetwork.SendC1(pkt, (int)sizeof(pkt));
 
                         // IDA: SecondPassword_Screen1 cae al cierre común inmediatamente
                         // después de encolar 0x55: limpia el input, cierra el
@@ -523,11 +528,11 @@ void __cdecl Party_MemberClickHandler(void) {
         DAT_07d78094 = 1;
     }
 
-    const char* const heroName = DAT_07abf5d8 ? DAT_07abf5d8 + 449 : "";
-    const bool heroLeads = PartyNumber > 0 && strcmp((const char*)Party, heroName) == 0;
+    const char* const heroName = DAT_07abf5d8 ? EntityName::Get(DAT_07abf5d8) : "";
+    const bool heroLeads = PartyNumber > 0 && strcmp(Party_GetName(0), heroName) == 0;
     for (int row = 0; row < PartyNumber; ++row) {
         BYTE* const member = Party + row * 36;
-        const bool mayRemove = heroLeads || strcmp((const char*)member, heroName) == 0;
+        const bool mayRemove = heroLeads || strcmp(Party_GetName(row), heroName) == 0;
         const int rowY = (int)DAT_07ea5b28 + 55 + row * 35;
         if (mayRemove && (int)DAT_083a427c >= (int)DAT_07ea5b24 + 140 &&
             (int)DAT_083a427c < (int)DAT_07ea5b24 + 164 &&
@@ -3283,25 +3288,25 @@ void __cdecl MoveCharacter(int p1)
                                     if (action < 100) {
                                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
-                                            CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
                                         SetAction((int)c, 105);
                                     }
                                 } else {
                                     TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
-                                        CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                        CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
                                     SetAction((int)c, 111);
                                 }
                             } else {
                                 TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
-                                    CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                    CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
                                 SetAction((int)c, 99);
                             }
                         } else {
                             TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
-                                CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
                             SetAction((int)c, 97);
                         }
                         skipIdleSelect = true;
@@ -3309,7 +3314,7 @@ void __cdecl MoveCharacter(int p1)
                     if (!skipIdleSelect) {
                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
-                            CreateChat((char*)(c + 0x1C1), GlobalText[TextIndex], c, 0, -1);
+                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
                     }
                 }
                 if (!skipIdleSelect) SetAction((int)c, 1);
@@ -3404,8 +3409,8 @@ void __cdecl MoveCharacter(int p1)
                 && AsCharacter(selSlot)->PK >= 6u
                 && AsCharacter(selSlot)->GuildMarkIndex != -1
                 && Hero
-                && !strcmp((char*)((char*)&DAT_07e919bc + 80 * (*(short*)((int)Hero + 474))),
-                           (char*)((char*)&DAT_07e919bc + 80 * (AsCharacter(selSlot)->GuildMarkIndex))))
+                && !strcmp(Guild_GetMarkName(*(short*)((int)Hero + 474)),
+                           Guild_GetMarkName(AsCharacter(selSlot)->GuildMarkIndex)))
             {
                 AsObject(o)->PKKey = -1;
             }

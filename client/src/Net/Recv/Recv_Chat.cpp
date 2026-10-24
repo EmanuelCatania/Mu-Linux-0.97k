@@ -6,25 +6,27 @@
 #include "Platform/Text.h"
 #include "Net/Recv/NetRecv.h"
 #include "Net/NetText.h"
+#include "Entity/EntityName.h"
 
 // ── CHAT ─────────────────────────────────────────────────────────
-// Layout autoritativo del server MuEmu (Protocol.h) + confirmado 1:1 con
-// IDA ReceiveChat (0x427630), que lee name en +3 y el mensaje en +13.
-//   C1:00  PMSG_CHAT_SEND         name[10]@+3  message[60]@+13
-//   C1:01  PMSG_CHAT_TARGET_SEND  index[2]@+3  message[60]@+5
-//   C1:02  PMSG_CHAT_WHISPER_SEND name[10]@+3  message[60]@+13
+// Layout del server MuEmu (Protocol.h). IDA ReceiveChat (0x427630) lee el
+// nombre en +3 y el mensaje en +13; desde 0.97.40 el nombre mide 40 bytes y el
+// mensaje 200:
+//   C1:00  PMSG_CHAT_SEND         name[40]@+3  message[200]@+43
+//   C1:01  PMSG_CHAT_TARGET_SEND  index[2]@+3  message[200]@+5
+//   C1:02  PMSG_CHAT_WHISPER_SEND name[40]@+3  message[200]@+43
 // PMSG_CHAT_TARGET_SEND: el server manda por acá el mensaje de un NPC
 // "hablado" (GCChatTargetSend — NpcTalk::NpcGuard lo usa para el guardia).
-// Layout: index[2]@+3 (BE), message[60]@+5. Se muestra como burbuja de chat
+// Layout: index[2]@+3 (BE), message[200]@+5. Se muestra como burbuja de chat
 // sobre la entidad.
 // 0x01
 void NetRecv_01(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     if (Size < 6) return;
     int entIdx = Entity_FindById((Msg[3] << 8) | Msg[4]);
-    char cmsg[181] = {0};   // 60 bytes 1252 -> hasta 180 en UTF-8
+    char cmsg[NetText::ChatMessageSize + 1] = {0};
     int clen = Size - 5;
-    if (clen > 60) clen = 60;
+    if (clen > (int)NetText::ChatMessageSize) clen = (int)NetText::ChatMessageSize;
     NetText::FromServer(cmsg, sizeof(cmsg), Msg + 5, clen);
     NetLog("NET:  → 0x01 ChatTarget ent=%d msg='%s'", entIdx, cmsg);
     if (entIdx >= 0 && entIdx < 400 && cmsg[0]) {
@@ -32,7 +34,7 @@ void NetRecv_01(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (ent[0] != 0) {
             // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
             // path de NPC hover (RenderMonsterName).
-            CreateChat((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
+            CreateChat((char*)EntityName::Get(ent), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
         }
     }
 }
@@ -43,27 +45,28 @@ void NetRecv_02(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // Whisper — mismo layout que chat normal; canal 3 (whisper) en el log.
     NetLog("NET:  → 0x02 ChatWhisper size=%d", Size);
     // PMSG_CHAT_WHISPER_SEND es de longitud VARIABLE (`14 + strlen`): no exigir
-    // el tamaño MÁXIMO (73) — los `/post` dorados de
+    // el tamaño MÁXIMO (243) — los `/post` dorados de
     // CommandManager::GCPostMessageGold llegan por este opcode con Size ~30.
     // PORT FIEL de IDA `ReceiveWhisper` @ 0x4278F0 (identificada por
     // disasm: la función sin nombre entre ReceiveChat y ReceiveNotice):
     //     a0 ac 1d e1 07  mov al, byte_7E11DAC   ; m_bBlockWhisper
     //     84 c0 / 0f 85   test+jnz → descarta el mensaje
     //     8d 4a 03        lea ecx, [edx+3]       ; name  = buf+3
-    //     8d 72 0d        lea esi, [edx+0Dh]     ; msg   = buf+13
+    //     8d 72 0d        lea esi, [edx+0Dh]     ; msg   = buf+13 (0.97.40: +43)
     //     6a 26 ...       PlayBuffer(0x26, 0, 0) ; sonido de whisper
     //     6a 00 ...       UIChatLogWindow_AddText(name, msg, 0)
     //
     // Canal **0** (como IDA) → negro sobre fondo celeste (0x9632C8FF), el look
     // clásico de whisper.
-    if (Size >= 14 && DAT_07e11dac == 0) {   // m_bBlockWhisper (toggle F3)
-        char wname[11] = {0};
-        char wmsg[181] = {0};
-        NetText::FromServer(wname, sizeof(wname), Msg + 3, 10);
+    const int MSG = 3 + (int)NetText::CharacterNameSize;
+    if (Size >= MSG + 1 && DAT_07e11dac == 0) {   // m_bBlockWhisper (toggle F3)
+        char wname[NetText::CharacterNameSize + 1] = {0};
+        char wmsg[NetText::ChatMessageSize + 1] = {0};
+        NetText::FromServer(wname, sizeof(wname), Msg + 3, NetText::CharacterNameSize);
         // Copiar solo los bytes que el paquete realmente trae.
-        int wlen = Size - 13;
-        if (wlen > 60) wlen = 60;
-        NetText::FromServer(wmsg, sizeof(wmsg), Msg + 13, wlen);
+        int wlen = Size - MSG;
+        if (wlen > (int)NetText::ChatMessageSize) wlen = (int)NetText::ChatMessageSize;
+        NetText::FromServer(wmsg, sizeof(wmsg), Msg + MSG, wlen);
         // IDA ProtocolCore case 2: RegistWhisperID(10, strID) — con el
         // heroe de nivel < 10 anota al remitente para que despues se le
         // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
