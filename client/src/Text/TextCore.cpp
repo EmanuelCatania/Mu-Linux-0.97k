@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace Text {
+namespace TextEngine {
 namespace {
 // 0x80..0x9F de Windows-1252. Los cinco huecos quedan como control C1.
 const char16_t kWindows1252High[32] = {
@@ -256,4 +256,4 @@ int CompareIgnoreCase(std::string_view left, std::string_view right)
     return CaseFoldKey(left).compare(CaseFoldKey(right));
 }
 
-} // namespace Text
+} // namespace TextEngine
