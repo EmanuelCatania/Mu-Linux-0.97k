@@ -1,8 +1,8 @@
 # Biblioteca portable usada también por el cliente Windows SDL3.
 add_library(mu_platform_sdl STATIC
-    SDLNativeBridge.cpp SDLWindow.cpp SDLInput.cpp SDLGLContext.cpp SDLTimer.cpp SDLFileSystem.cpp SDLAudio.cpp SDLSocket.cpp SDLFont.cpp)
+    SDLNativeBridge.cpp SDLWindow.cpp SDLInput.cpp SDLGLContext.cpp SDLTimer.cpp SDLFileSystem.cpp SDLAudio.cpp SDLSocket.cpp SDLFont.cpp ../../Text/TextShaper.cpp)
 target_include_directories(mu_platform_sdl PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../..")
-target_link_libraries(mu_platform_sdl PUBLIC SDL3::SDL3-static miniaudio freetype)
+target_link_libraries(mu_platform_sdl PUBLIC SDL3::SDL3-static miniaudio freetype mu_harfbuzz mu_sheenbidi)
 target_compile_features(mu_platform_sdl PUBLIC cxx_std_17)
 # Icono de la ventana: SDL no lee el recurso .rc, así que los bytes de
 # src/icon.ico se embeben en un header generado (la única fuente sigue siendo
@@ -24,5 +24,5 @@ endif()
 
 # El cliente completo ya compila el cargador en MU_SOURCES.
 if(MU_PLATFORM_ONLY)
-    target_sources(mu_platform_sdl PRIVATE ../GLFunctions.cpp)
+    target_sources(mu_platform_sdl PRIVATE ../GLFunctions.cpp ../../Text/TextCore.cpp ../../Text/Utf8Proc.c)
 endif()
