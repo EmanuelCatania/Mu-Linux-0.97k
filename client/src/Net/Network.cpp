@@ -125,8 +125,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
 void CNetwork::SendLogin(const char* account, const char* password)
 {
     BYTE user[10] = {}, pass[10] = {};
-    // DESVIACION (Fase 4, texto Unicode): lo tipeado está en UTF-8 y la cuenta
-    // del server en 1252, igual que antes.
+    // Cuenta y contraseña son ASCII de 10 bytes (no cambian en 0.97.40).
     NetText::ToServer(user, 10, account);
     NetText::ToServer(pass, 10, password);
     static const BYTE kArgXor[3] = { 0xFC, 0xCF, 0xAB };

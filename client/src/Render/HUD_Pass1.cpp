@@ -19,6 +19,8 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "UI/MiniMap.h"
@@ -84,14 +86,14 @@ void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
 
     int n;
-    n = Platform::TextLength(c->ID);
-    gFont.MeasureText32(gFont.GetTextDC(), c->ID, n, &psizl);
+    n = Platform::TextLength(ChatDisplayName(c));
+    gFont.MeasureText32(gFont.GetTextDC(), ChatDisplayName(c), n, &psizl);
     n = Platform::TextLength(c->Text[0]);
     gFont.MeasureText32(gFont.GetTextDC(), c->Text[0], n, &v12);
     n = Platform::TextLength(c->Text[1]);
     gFont.MeasureText32(gFont.GetTextDC(), c->Text[1], n, &v13);
-    n = Platform::TextLength(c->Guild);
-    gFont.MeasureText32(gFont.GetTextDC(), c->Guild, n, &v14);
+    n = Platform::TextLength(ChatDisplayGuild(c));
+    gFont.MeasureText32(gFont.GetTextDC(), ChatDisplayGuild(c), n, &v14);
 
     int result = psizl.cx + 3;
     if (c->LifeTime[1] <= 0) {

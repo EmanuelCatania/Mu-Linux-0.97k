@@ -248,6 +248,14 @@ extern DWORD   InputNumber;   // IDA: DAT_00559c88 (0x00559C88)
 extern DWORD   DAT_00559c8c;
 extern DWORD   DAT_00559c90;
 extern int     _InputTextMaxArr[8];
+// 0.97.40: tope en grapheme clusters por slot (0 = sólo el tope en bytes de
+// _InputTextMaxArr). ClearInput lo vuelve a 0 en los slots que limpia.
+extern int     InputTextMaxClusters[8];
+inline void Input_SetLimit(int slot, int bytes, int clusters)
+{
+    _InputTextMaxArr[slot] = bytes;
+    InputTextMaxClusters[slot] = clusters;
+}
 extern int&    InputTextMax;
 extern int&    _DAT_00559c98;
 extern DWORD&  DAT_00559c98;
@@ -480,7 +488,7 @@ extern DWORD   DAT_05826ca4;
 extern DWORD   DAT_05826ca8;
 extern DWORD   HeroKey; // IDA: HeroKey (0x05826CAC)
 extern DWORD   CurrentProtocolState; // IDA: DAT_05826cb0 (0x05826CB0)
-extern char    ChatWhisperID[12]; // IDA: ChatWhisperID (0x05826CB4)
+extern char    ChatWhisperID[41]; // IDA: ChatWhisperID (0x05826CB4); 0.97.40: 40 bytes + NUL
 extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
@@ -495,7 +503,7 @@ extern DWORD   ChatTime; // IDA: ChatTime (0x05826D08)
 // DAT_05826d04 es un alias para que Attack escriba el mismo global que leen los
 // demás (si no, el gate del Town Portal no se entera del teleport en curso).
 #define DAT_05826d04 Teleport
-extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
+extern char    DAT_05826adc[0x100]; // last-sent chat message buffer (rate-limit compare); 0.97.40: hasta 200 bytes
 extern char    Teleport; // IDA: Teleport (0x05826D14)
                                // 1=gate/teleport en curso.  La etiqueta vieja
                                // ("NPC script keepalive") era falsa.
@@ -778,7 +786,7 @@ extern char    DAT_07ea9817;
 
 extern DWORD   DAT_07ea982c;   // Screen3 panel origin X
 extern DWORD   DAT_07ea9830;   // Screen3 panel origin Y
-extern char    DAT_07ea9834[11];    // IDA: nombre remoto de Trade (8+2 bytes del paquete, NUL)
+extern char    DAT_07ea9834[41];    // IDA: nombre remoto de Trade (0.97.40: 40 bytes del paquete + NUL)
 extern char    DAT_07ea983e;
 extern DWORD   DAT_07eaa0d0;
 extern DWORD   DAT_07eaa0d8;
@@ -1493,17 +1501,15 @@ extern int     g_WorldLoading;            // >0 mientras corre OpenWorld (ver Wi
 extern int     m_iDevilSquareLimitLevel[4][2];
 extern int     m_iBloodCastleLimitLevel[12][2];
 
-// Tabla de miembros de guild: 11 registros de 0x18 bytes (0x083A7AF8..0x083A7C00).
-// `GuildMemberList_Set` copia `count * 0x18` bytes y el render lee
-// `base + iMod*0x18`.
-#define GUILD_MEMBER_TABLE_BYTES  0x108
-#define GUILD_MEMBER_STRIDE       0x18
+// Ranking de Devil Square / Blood Castle (opcode 0x93): 11 registros
+// (0x083A7AF8..0x083A7C00 en el binario, de 0x18 bytes). Desde 0.97.40 cada
+// registro es name[40], score, RewardExperience, RewardMoney = 52 bytes.
+#define GUILD_MEMBER_STRIDE       52
+#define GUILD_MEMBER_TABLE_BYTES  (11 * GUILD_MEMBER_STRIDE)
 extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
-#define DAT_083a7afc  (*(DWORD*)&DAT_083a7af8[0x04])
-#define DAT_083a7b00  (*(WORD *)&DAT_083a7af8[0x08])
-#define DAT_083a7b04  (*(DWORD*)&DAT_083a7af8[0x0C])
-#define DAT_083a7b08  (*(DWORD*)&DAT_083a7af8[0x10])
-#define DAT_083a7b0c  (*(DWORD*)&DAT_083a7af8[0x14])
+#define DAT_083a7b04  (*(DWORD*)&DAT_083a7af8[40])   // score del registro 0
+#define DAT_083a7b08  (*(DWORD*)&DAT_083a7af8[44])   // experiencia
+#define DAT_083a7b0c  (*(DWORD*)&DAT_083a7af8[48])   // zen
 // Columnas de datos de miembro de guild (parte del mismo array de stride 0x18 que arranca en DAT_083a7af8):
 
 // Guild leaderboard UI strings (RenderMatchScore / GuildOverview_Render):
@@ -2294,7 +2300,7 @@ extern DWORD   DAT_07eaa120;   // SecondPassword_Screen5 mode (0=normal, 1=equip
 extern "C" char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
 // Buffers del editor de creacion de GUILD (no "PIN entry"): el render los recorre
 // como arrays (64 bytes de mark). Ver la nota en globals.cpp.
-extern char    DAT_07ea51ec[8];    // GuildName
+extern char    DAT_07ea51ec[33];   // GuildName (0.97.40: 32 bytes + NUL)
 #define DAT_07ea51f0 (*(DWORD*)&DAT_07ea51ec[4])   // 2do DWORD del nombre
 extern "C" char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
 extern float  _DAT_00552c20;   // Screen5 button X upper bound
@@ -2564,7 +2570,7 @@ extern DWORD   Object3DSound[420][4];                 // payload (entity id boun
 
 // Entity data
 extern BYTE    MonsterScript[512 * 0x36];  // NPC/mob name table (stride 0x36; Type[0], Name[1..32])
-extern char    WhisperRegistID[11][10]; // IDA: WhisperRegistID (0x07DB9310) — anillo de 10 nombres de 10 bytes (0x6E con el sobrante)
+extern char    WhisperRegistID[10][41]; // IDA: WhisperRegistID (0x07DB9310) — anillo de 10 nombres (0.97.40: 40 bytes + NUL)
 extern int     WhisperID_Num;           // IDA: WhisperID_Num (0x07E11DB0) — proxima fila del anillo
 
 // Blur/trail system

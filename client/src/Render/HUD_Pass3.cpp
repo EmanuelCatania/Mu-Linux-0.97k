@@ -14,6 +14,8 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
+#include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
 void HUD_BeginGridPass(int pass);
 #include "Platform/Text.h"
@@ -658,14 +660,14 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     if ((int)MouseX >= rectX && (int)MouseX < rectX + rectW &&
         (int)MouseY >= rectY && (int)MouseY < rectY + rectH &&
         InputEnable && Hero && AsCharacter(Hero)->SafeZone &&
-        strcmp(AsChat(c)->ID, AsCharacter(Hero)->ID) &&
+        strcmp(ChatDisplayName(AsChat(c)), EntityName::Get(Hero)) &&
         (int)(dword_7E11DA8 % 6) < 3)
     {
         m_dwBackColor = m_dwTextColor;
         m_dwTextColor = bg;
     }
 
-    Font_RenderTextToBitmap(TextSize.cx, fontHeight, AsChat(c)->ID, texW, 0, 0, 0, 0, AsChat(c)->Guild);
+    Font_RenderTextToBitmap(TextSize.cx, fontHeight, (char*)ChatDisplayName(AsChat(c)), texW, 0, 0, 0, 0, (char*)ChatDisplayGuild(AsChat(c)));
     Font_RenderBitmapText(drawX, drawY, *(float*)&TextSize.cx, *(float*)&fontHeight, texW, texH, 0.0f, 640);
 
     // IDA L214-224: -1778372066=0x9600321E · -1778384846=0x96000032 ·

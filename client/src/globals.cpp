@@ -275,6 +275,7 @@ DWORD    DAT_00559c90  = 0;
 // los alias apuntan dentro de este array y son `int&` (IDA: `int InputTextMax[8]`),
 // nunca float ni globals sueltos.
 int      _InputTextMaxArr[8] = {0,0,0,0,0,0,0,0};
+int      InputTextMaxClusters[8] = {0,0,0,0,0,0,0,0};
 int&     InputTextMax = _InputTextMaxArr[0];
 int&     _DAT_00559c98 = _InputTextMaxArr[1];
 DWORD&   DAT_00559c98  = reinterpret_cast<DWORD&>(_InputTextMaxArr[1]);
@@ -611,7 +612,7 @@ DWORD    HeroKey  = 0;
 // IDA: DAT_05826cb0 (0x05826CB0)
 DWORD    CurrentProtocolState  = 0;
 // IDA: ChatWhisperID (0x05826CB4)
-char     ChatWhisperID[12] = {0};
+char     ChatWhisperID[41] = {0};   // 0.97.40: nombre de 40 bytes
 DWORD    DAT_05826cc0  = 0;
 DWORD    DAT_05826cc8  = 0;
 char     DAT_05826cc9  = 0;
@@ -849,7 +850,7 @@ char     DAT_07ea9814[16] = {0};
 // DAT_07ea9818 / 981c / 981e / 981f: alias dentro de DAT_07ea9814 (globals.h)
 DWORD    DAT_07ea982c  = 0;   // Screen3 panel origin X
 DWORD    DAT_07ea9830  = 0;   // Screen3 panel origin Y
-char     DAT_07ea9834[11] = {};
+char     DAT_07ea9834[41] = {};   // 0.97.40: nombre de 40 bytes + NUL
 char     DAT_07ea983e  = 0;
 DWORD    DAT_07eaa0d0  = 0;
 DWORD    DAT_07eaa0d8  = 0;
@@ -1417,7 +1418,7 @@ DWORD    DAT_07eaa148  = 0;
 //   - ChatLB_renderLine: `if (!DAT_00559bf1 && msgType==3) return 0;` → no se dibujaba
 DWORD    DAT_00559bf1  = 1;
 DWORD    DAT_00559ce0  = 0;
-char     DAT_05826adc[0x50] = {};
+char     DAT_05826adc[0x100] = {};
 
 // Chat ring buffer (UI_RenderChatLogOverlay renderer, UIChatLogWindow_AddText writer).
 // DAT_07df938b, DAT_07df948c y DAT_07df9494 son ALIASES a offsets 0x0B / 0x10C /
@@ -2365,7 +2366,7 @@ char    DAT_07eaa0dc  = 0;   // SecondPassword selected grid index
 // deja 75 bytes de espacio):
 //   0x7EA51EC  GuildName[8]   (IDA lo lee como 2 DWORDs: +0 y +4)
 //   0x7EA51F5  GuildMark[64]  (1 byte por celda de la grilla 8x8)
-char    DAT_07ea51ec[8]  = {0};   // GuildName
+char    DAT_07ea51ec[33] = {0};   // GuildName (0.97.40: 32 bytes + NUL)
 char    DAT_07ea51f5[64] = {0};   // GuildMark (grilla 8x8)
 float  _DAT_00552c20  = 425.0f; // Screen5 button X upper bound
 float  _DAT_00552c1c  = 33.0f; // Screen5 button height
@@ -2624,7 +2625,7 @@ DWORD                  Object3DSound[420][4]  = {};
 
 // Tabla de nombres NPC/mob: 512 entradas × 0x36 bytes (ver nota en 0x07CF2000).
 BYTE   MonsterScript[512 * 0x36] = {};
-char   WhisperRegistID[11][10] = {};   // IDA: WhisperRegistID (0x07DB9310)
+char   WhisperRegistID[10][41] = {};   // IDA: WhisperRegistID (0x07DB9310); 0.97.40: nombres de 40 bytes
 int    WhisperID_Num = 0;              // IDA: WhisperID_Num (0x07E11DB0)
 
 // DAT_07c608b8 — see globals.h. Defined as macro into g_RenderPool_07c608a8.

@@ -3,6 +3,7 @@
 // Helpers de despacho de skills de wizard/elf.
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
@@ -109,7 +110,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         // Hero->ID at entity offset +0x1C1
         // In original: strlen-based strstr scan. If hero name contains "webzen", skip.
         // This is an anti-impersonation check — GM accounts get special treatment.
-        char* heroName = Hero ? (char*)(Hero + 449) : (char*)((DWORD)c + 449);
+        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)(DWORD)c));
         {
             // Simple strstr check for "webzen" in hero name
             const char* gmStr = DAT_00559d94;
@@ -166,7 +167,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     case 0xd:
     {
         // GM name check: compare Hero->ID with "webzen" (DAT_00559d9c)
-        char* heroName = Hero ? (char*)(Hero + 449) : (char*)((DWORD)c + 449);
+        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)(DWORD)c));
         {
             const char* gmStr = DAT_00559d9c;
             int gmLen = (int)strlen(gmStr);

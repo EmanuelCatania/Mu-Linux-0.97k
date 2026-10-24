@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Render/BMDDevice.h"
 #include "Render/BufferedDraw.h"
 #include "Render/ResourceTables.h"
@@ -601,7 +602,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
 
     // IDA L197-218: si el nombre del heroe contiene "webzen" (aWebzen_2,
     // 0x559B80) sale sin mandar el 0x1D.  Exencion de las cuentas de Webzen.
-    if (DAT_07abf5d8 && strstr((const char*)DAT_07abf5d8 + 449, "webzen"))
+    if (DAT_07abf5d8 && strstr(EntityName::Get(DAT_07abf5d8), "webzen"))
         return (float*)(uintptr_t)1;
 
     // 3. Paquete C1:1D — PMSG_MULTI_SKILL_ATTACK_RECV.

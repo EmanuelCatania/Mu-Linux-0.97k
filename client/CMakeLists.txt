@@ -189,6 +189,7 @@ set(MU_SOURCES
     src/UI/UI_StatsPanel.cpp
     src/Util/Misc.cpp
     src/Core/Legacy_Runtime.cpp
+    src/Entity/EntityName.cpp
     src/Entity/Entity_Lookup.cpp
     src/Net/Net_Disconnect.cpp
     src/Render/Render_MatrixStack.cpp
@@ -408,6 +409,7 @@ set(MU_HEADERS
     src/UI/UIState.h
     src/UI/ChatTypes.h
     src/Entity/EntityView.h
+    src/Entity/EntityName.h
     src/Render/WorldEffects.h
     src/Render/MaterialVisuals.h
     src/Render/LooseWingVisuals.h

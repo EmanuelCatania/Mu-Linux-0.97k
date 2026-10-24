@@ -154,12 +154,24 @@ void Recv_StartMatchCountDown(BYTE* Msg, int Size)
 // "GuildMemberList_*". Es otra etiqueta heredada del mismo error: su unico
 // caller en el binario es esta funcion, o sea son el render del ranking.
 // ─────────────────────────────────────────────────────────────────────────────
+// 0.97.40: el ranking de Devil Square llega como C2 (rank, count y los
+// registros desde +6); el de Blood Castle sigue en C1 con flag 0xFF en +4.
 void Recv_DevilSquareRank(BYTE* Msg, int Size)
 {
     if (Size < 5) return;
 
-    if (Msg[4] == 0xFF) GuildMemberList_Add((int)Msg[3], Msg + 5);
-    else                GuildMemberList_Update((int)Msg[4], (int)Msg[3], Msg + 5);
+    if (Msg[0] == 0xC2) {
+        if (Size < 6 + (int)Msg[5] * GUILD_MEMBER_STRIDE) return;
+        GuildMemberList_Update((int)Msg[5], (int)Msg[4], Msg + 6);
+        return;
+    }
+    if (Msg[4] == 0xFF) {
+        if (Size < 5 + GUILD_MEMBER_STRIDE) return;
+        GuildMemberList_Add((int)Msg[3], Msg + 5);
+    } else {
+        if (Size < 5 + (int)Msg[4] * GUILD_MEMBER_STRIDE) return;
+        GuildMemberList_Update((int)Msg[4], (int)Msg[3], Msg + 5);
+    }
 }
 
 

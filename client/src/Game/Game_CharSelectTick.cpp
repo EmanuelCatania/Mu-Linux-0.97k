@@ -23,6 +23,7 @@
 
 #include "stdafx.h"
 #include "Net/NetText.h"
+#include "Entity/EntityName.h"
 #include "Config/UserSettings.h"
 #include "Game/Game_CharSelectTick.h"
 #include "Net/Net.h"
@@ -42,14 +43,13 @@ void Game_CharSelectTick(void)
         // ACA, antes del flush del chat y del clear del listbox. Asi la
         // respuesta (JoinMapServer + avisos de bienvenida) llega DESPUES del
         // clear y queda visible in-game.
-        // Desviacion: IDA copia strlen(nombre) bytes sin padding; mandamos los
-        // 10 bytes de name[] completos con relleno en cero (el server hace
-        // memcpy de 10 bytes y sin padding leeria basura del buffer).
+        // Desviacion: IDA copia strlen(nombre) bytes sin padding; mandamos el
+        // name[40] completo con relleno en cero (el server copia el campo
+        // entero y sin padding leeria basura del buffer).
         if (DAT_083a410c == 0) {
             DAT_05826cb0 = 0x3c;   // CurrentProtocolState = 60
-            BYTE pkt[14] = { 0xC1, 0x0E, 0xF3, 0x03 };
-            const char* charName = (const char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
-            NetText::ToServer(pkt + 4, 10, charName);
+            BYTE pkt[4 + NetText::CharacterNameSize] = { 0xC1, (BYTE)(4 + NetText::CharacterNameSize), 0xF3, 0x03 };
+            NetText::ToServer(pkt + 4, NetText::CharacterNameSize, EntityName::Selected());
             gNetwork.SendC1(pkt, sizeof(pkt));
         }
 
@@ -61,8 +61,10 @@ void Game_CharSelectTick(void)
         DAT_00559c84 = 0;
         DAT_07e11d71 = 0;
         DAT_00559c8c = 0x100;
-        InputTextMax = 0x2a;
-        _DAT_00559c98 = 10;
+        // IDA: InputTextMax[0] = 42, [1] = 10. Desde 0.97.40 son caracteres:
+        // el mensaje entra en 199 bytes y el nombre del susurro en 40.
+        Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 0x2a);
+        Input_SetLimit(1, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
         InputNumber = 2;
 
         // 120× widget draw

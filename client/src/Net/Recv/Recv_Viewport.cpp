@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "Net/NetText.h"
+#include "Entity/EntityName.h"
 #include "Game/RenderSnapshots.h"
 #include "Item/ContentCatalog.h"
 #include "Item/ItemDefines.h"
@@ -318,39 +319,31 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         NetLog("NET:    0x12 SKIP - count=%d out of range", count);
         return;
     }
+    // PMSG_VIEWPORT_PLAYER (0.97.40): index[2], x, y, CharSet[11], padding,
+    // ViewSkillState, name[40], tx, ty, DirAndPkLevel, padding = 62 bytes.
+    const int NAME = (int)NetText::CharacterNameSize;
     int entryStart = 4 + hdrOff;
-    int entryStride = 32;
+    const int entryStride = 22 + NAME;
     if ((entryStart + count * entryStride) > Size) {
-        // Probamos strides más chicos que usan algunos emuladores de server
-        int payloadLen = Size - entryStart;
-        int autoStride = payloadLen / count;
-        if (autoStride >= 18 && autoStride <= 36) {
-            entryStride = autoStride;
-            NetLog("NET:    0x12 auto-stride=%d (payload=%d, count=%d)",
-                   autoStride, payloadLen, count);
-        } else {
-            NetLog("NET:    0x12 SKIP - bad stride (count=%d, payload=%d)",
-                   count, payloadLen);
-            return;
-        }
+        NetLog("NET:    0x12 SKIP - payload corto (count=%d, size=%d)", count, Size);
+        return;
     }
     BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
-    for (int i = 0; i < count && (entryStart + i*entryStride + 30) <= Size; ++i) {
+    for (int i = 0; i < count && (entryStart + (i + 1) * entryStride) <= Size; ++i) {
         const BYTE* e = Msg + entryStart + i*entryStride;
         // Layout decompilado del binario MuEmu
         // server (CViewport::GCViewportPlayerSend, asm a1590).
-        // Stride 32 bytes:
+        // Stride 62 bytes (0.97.40):
         //   e[0..1]=Key BE, e[2]=PosX, e[3]=PosY,
-        //   e[4..b]=Equipment(8B), e[c..d]=PkLevel,
-        //   e[e]=CtlCode, e[f]=padding,
-        //   e[10..11]=ViewSkillState (LE), e[12..1b]=Name(10B),
-        //   e[1c]=TargetX, e[1d]=TargetY, e[1e]=Path|Dir.
+        //   e[4..14]=CharSet(11B), e[15]=padding,
+        //   e[16..17]=ViewSkillState (LE), e[18..57]=Name(40B),
+        //   e[58]=TargetX, e[59]=TargetY, e[60]=Path|Dir.
         WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];   // strip CREATE bit
         BYTE x = e[2], y = e[3];
-        char name[11] = {0};
-        NetText::FromServer(name, sizeof(name), e + 0x12, 10);
-        BYTE tx = e[0x1C], ty = e[0x1D];
-        BYTE dirpk = e[0x1E];
+        char name[NetText::CharacterNameSize + 1] = {0};
+        NetText::FromServer(name, sizeof(name), e + 0x12, NAME);
+        BYTE tx = e[0x12 + NAME], ty = e[0x13 + NAME];
+        BYTE dirpk = e[0x14 + NAME];
         BYTE dir = (dirpk >> 4) & 0x0F;
         const WORD viewSkillState = (WORD)(e[0x10] | (e[0x11] << 8));
         // Un refresco de viewport por gate de mapa de MuEmu puede devolver
@@ -465,7 +458,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 break;
             }
             ChangeCharacterExt(spawnSlot, (BYTE*)e + 5);
-            memcpy(slot + 449, name, 10);  // Character.Name (+0x1C1)
+            EntityName::Set(slot, name);
             AsCharacter(slot)->Object.Kind = 1;     // type: player (1)
             AsCharacter(slot)->Object.Visible = 1;    // visible flag — sin esto Entity_RenderAll_3D skip
             AsCharacter(slot)->Object.LightEnable = 1;     // also "is rendered" sub-flag
@@ -506,9 +499,8 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // ViewportChange lo emite MuEmu cuando una entidad ya visible
     // player changes skin.  Unlike the old client packet, MuEmu's
-    // el PMSG_VIEWPORT_CHANGE nativo son los 32 bytes con alineación por defecto
-    // record from Viewport.h:
-    //   id(2), x, y, skin, pad, ViewSkillState(LE), name(10),
+    // el PMSG_VIEWPORT_CHANGE nativo (Viewport.h, 0.97.40) son 62 bytes:
+    //   id(2), x, y, skin, pad, ViewSkillState(LE), name(40),
     //   tx, ty, dir|pk, charset(11).
     // ReceiveCreateTransformViewport (00429C50) creates the
     // la forma de monstruo transformada para esta clave; no es apenas
@@ -518,7 +510,8 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     const int count = Msg[3 + hdrOff];
     const int entryStart = 4 + hdrOff;
-    constexpr int entryStride = 32;
+    constexpr int NAME = (int)NetText::CharacterNameSize;
+    constexpr int entryStride = 22 + NAME;
     if (count <= 0 || count > 255 || entryStart + count * entryStride > Size) {
         NetLog("NET:    0x45 SKIP count=%d size=%d", count, Size);
         return;
@@ -538,18 +531,22 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // MuEmu record offsets above.
         if (entity[747] == 7) *(float*)(entity + 12) = 0.8f;
         if (DAT_07abf5d8) entity[444] = ((BYTE*)DAT_07abf5d8)[444];
-        entity[746] = e[20] & 0x0F;
+        entity[746] = e[10 + NAME] & 0x0F;
         entity[132] = 1;
         entity[847] = 1;
         entity[0x160] = 1; // required by this renderer's active pass
         entity[0xdc] = 1;
         entity[0x305] = 0;
-        entity[0x306] = e[18];
-        entity[0x307] = e[19];
-        *(float*)(entity + 36) = ((float)(e[20] >> 4) - 1.0f) * 45.0f;
+        entity[0x306] = e[8 + NAME];
+        entity[0x307] = e[9 + NAME];
+        *(float*)(entity + 36) = ((float)(e[10 + NAME] >> 4) - 1.0f) * 45.0f;
         *(int*)(entity + 0x388) = e[2];
         *(int*)(entity + 0x38c) = e[3];
-        NetText::FromServer((char*)entity + 449, 11, e + 8, 10);
+        {
+            char name[NetText::CharacterNameSize + 1];
+            NetText::FromServer(name, sizeof(name), e + 8, NAME);
+            EntityName::Set(entity, name);
+        }
         ApplyPersistentSkillEffect97k(entity, viewSkillState, 1);
 
         if ((e[0] & 0x80) != 0) {
@@ -690,15 +687,17 @@ void NetRecv_14(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
     // ReceiveCreateSummonViewport @ 0042A530.  MuEmu emits this
-    // como C2:1F, seguido de un contador y registros alineados de 22 bytes:
+    // como C2:1F, seguido de un contador y registros alineados de 52 bytes
+    // (0.97.40):
     //   KeyH|CREATE, KeyL, Type, pad, ViewSkillState(WORD),
-    //   X, Y, TargetX, TargetY, Dir|PK, OwnerName[10], pad.
-    // Padding en los offsets 3 y 21; OwnerName arranca en +11.
+    //   X, Y, TargetX, TargetY, Dir|PK, OwnerName[40], pad.
+    // Padding en los offsets 3 y 51; OwnerName arranca en +11.
     // IDA 0x42A530 copia desde ReceiveBuffer+16 (la entrada arranca en +5).
     const int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
     const int countOff = 3 + hdrOff;
     const int entryStart = 4 + hdrOff;
-    const int entryStride = 22;
+    const int NAME = (int)NetText::CharacterNameSize;
+    const int entryStride = 12 + NAME;
     // Idem 0x12/0x13: no exigir el heroe (`DAT_07abf5d8`) para procesar el
     // paquete al entrar al mapa. Este handler tampoco usa el heroe.
     if (Size <= countOff || !DAT_07abf5d0) return;
@@ -749,21 +748,19 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // "<owner name>'s <old monster name>".  Preserve the
         // important owner identity without relying on localized
         // el storage de GlobalText mientras se portea el subsistema de texto.
-        char oldName[101] = {};
-        strncpy(oldName, (char*)(summon + 449), sizeof(oldName) - 1);
-        char owner[11] = {};
-        NetText::FromServer(owner, sizeof(owner), e + 11, 10);
-        std::string label = std::string(owner) + "'s " + oldName;
-        // El nombre empieza en +0x1C1 y lo que sigue a partir de +0x1DA es
-        // GuildMarkIndex y Key: el compuesto se corta en esos 25 bytes (antes
-        // el strncat de 100 bytes pisaba el índice de red de la invocación).
-        TextEngine::CopyTruncated((char*)(summon + 449), 0x1DA - 0x1C1, label);
+        // El nombre compuesto entra entero en EntityName (antes se cortaba en
+        // los 25 bytes de CHARACTER::ID).
+        const std::string oldName = EntityName::Get(summon);
+        char owner[NetText::CharacterNameSize + 1] = {};
+        NetText::FromServer(owner, sizeof(owner), e + 11, NAME);
+        const std::string label = std::string(owner) + "'s " + oldName;
+        EntityName::Set(summon, label.c_str());
         AsCharacter(summon)->Object.Live = 1;
         ApplyPersistentSkillEffect97k(summon, viewSkillState, 1);
 
         if (create) AppearMonster((DWORD)(uintptr_t)summon);
-        NetLog("NET:    0x1F summon id=%d type=%d owner=%.10s pos=(%d,%d)",
-               key, type, (const char*)(e + 11), x, y);
+        NetLog("NET:    0x1F summon id=%d type=%d owner=%s pos=(%d,%d)",
+               key, type, owner, x, y);
     }
 }
 

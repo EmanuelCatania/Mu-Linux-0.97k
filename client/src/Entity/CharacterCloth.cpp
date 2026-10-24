@@ -4,6 +4,7 @@
 #include "Render/EquipmentVisuals.h"
 #include "Item/ContentCatalog.h"
 
+extern "C" const char* Guild_GetMarkName(int row);
 // GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
 // RELEE como puntero (`*(int*)(thiz+4)`). Convertir el puntero a float lo
 // destruye (float tiene 24 bits de mantisa), así que hay que pasar los BITS.
@@ -185,11 +186,11 @@ void CharacterCloth_Tick(int entity)
         // the current MuEmu build does not emit F3/23 observer state.
         const short guildIndex = AsCharacter(cb)->GuildMarkIndex;
         if (guildIndex != -1) {
-            const char* guildName = DAT_07e919bc + 80 * guildIndex;
+            const char* guildName = Guild_GetMarkName(guildIndex);
             if (EnableSoccer && DAT_07abf5d8) {
                 const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
                 if (heroGuild != -1 &&
-                    (strcmp(DAT_07e919bc + 80 * heroGuild, guildName) == 0 ||
+                    (strcmp(Guild_GetMarkName(heroGuild), guildName) == 0 ||
                      strcmp(GuildWarName, guildName) == 0)) {
                     bCape = true;
                 }

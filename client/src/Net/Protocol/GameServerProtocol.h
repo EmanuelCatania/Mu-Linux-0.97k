@@ -46,7 +46,7 @@ static_assert(offsetof(PMSG_ITEM_CHANGE_SEND, index) == 3, "C1:25 index");
 static_assert(offsetof(PMSG_ITEM_CHANGE_SEND, ItemInfo) == 5, "C1:25 ItemInfo");
 
 // ── C2:52 ─ lista de guild ── Guild.h:247 / Guild.h:256 ───────────────────────
-// Net_Process.cpp case 0x52 (kHeaderSize = 16, entradas de 12 bytes).
+// Net_Process.cpp case 0x52 (kHeaderSize = 16, entradas de 42 bytes).
 struct PMSG_GUILD_LIST_SEND
 {
     PWMSG_HEAD header;      // C2:52
@@ -63,11 +63,11 @@ static_assert(offsetof(PMSG_GUILD_LIST_SEND, score) == 12, "C2:52 score");
 
 struct PMSG_GUILD_LIST
 {
-    char name[10];
+    char name[kCharacterNameSize];
     std::uint8_t number;
     std::uint8_t connected;
 };
-static_assert(sizeof(PMSG_GUILD_LIST) == 12, "C2:52 entrada");
+static_assert(sizeof(PMSG_GUILD_LIST) == 42, "C2:52 entrada");
 
 // ── C1:88 ─ porcentaje de Chaos Mix ── ChaosBox.h:31 ──────────────────────────
 // Consulta: ChaosBox.h::PMSG_CHAOS_MIX_RATE_RECV, C1:88, padding en +3.
@@ -536,12 +536,12 @@ static_assert(offsetof(LUCKY_NUMBER_INFO, LuckyNumber) == 0, "C2:97:01 LuckyNumb
 struct PMSG_GUILD_WAR_DECLARE_SEND
 {
     PBMSG_HEAD header;
-    char GuildName[8];
+    char GuildName[kGuildNameSize];
     std::uint8_t type;
 };
-static_assert(sizeof(PMSG_GUILD_WAR_DECLARE_SEND) == 12, "C1:61");
+static_assert(sizeof(PMSG_GUILD_WAR_DECLARE_SEND) == 36, "C1:61");
 static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, GuildName) == 3, "C1:61 GuildName");
-static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, type) == 11, "C1:61 type");
+static_assert(offsetof(PMSG_GUILD_WAR_DECLARE_SEND, type) == 35, "C1:61 type");
 
 // Protocol.h del server: PMSG_LIVE_CLIENT_RECV (C3:0E).
 struct PMSG_LIVE_CLIENT_RECV
@@ -716,7 +716,7 @@ struct CATALOG_TOOLTIP
     std::uint16_t Item;
     std::uint8_t Color;
     std::uint8_t Reserved;
-    char Text[60];      // Latin-1
+    char Text[60];      // UTF-8 (0.97.40)
 };
 static_assert(sizeof(CATALOG_TOOLTIP) == 64, "F3:EF entrada");
 

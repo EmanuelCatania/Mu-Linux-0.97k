@@ -481,6 +481,7 @@
 //   Particle_StopLoop       @ 0x00460d20
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
@@ -1065,7 +1066,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         AsCharacter(c)->Object.Scale = (custom->Scale > 0.0f) ? custom->Scale : 1.0f;
         const char* name = getMonsterName(Type);
         if (!name || !name[0]) name = custom->Name;
-        Platform::TextCopySecure((char*)(uintptr_t)(c + 0x1c1), 32, name, Platform::TruncateText);
+        EntityName::Set((void*)(uintptr_t)c, name);
         AsCharacter(c)->MonsterIndex = (unsigned char)Type;
         *(unsigned short*)(c + 8) = 0;
         *(unsigned short *)&AsCharacter(c)->TargetCharacter = (unsigned short)HeroIndex;
@@ -1092,18 +1093,13 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
 
     if (c) {
         // Copia el nombre desde la tabla MonsterScript/NPCName (getMonsterName por
-        // Type) a c+0x1c1 (449), que lee Target_Render al hacer hover sobre el NPC/mob.
+        // Type), que lee Target_Render al hacer hover sobre el NPC/mob.
         // Usa el Type ORIGINAL del packet (el blacksmith es 251), no el model type resuelto.
+        // Antes se copiaban hasta 31 bytes sobre CHARACTER::ID, que mide 25 hasta
+        // GuildMarkIndex; EntityName guarda el nombre entero.
         {
-            char* mname = getMonsterName(Type);
-            char* dst = (char*)(uintptr_t)(c + 0x1c1);
-            if (mname && mname[0]) {
-                int n = 0;
-                while (mname[n] != '\0' && n < 31) { dst[n] = mname[n]; n++; }
-                dst[n] = '\0';
-            } else {
-                dst[0] = '\0';
-            }
+            const char* mname = getMonsterName(Type);
+            EntityName::Set((void*)(uintptr_t)c, mname ? mname : "");
         }
         v8 = 0;  // suppress unused-warning
 

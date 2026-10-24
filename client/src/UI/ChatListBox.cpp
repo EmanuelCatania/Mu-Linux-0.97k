@@ -74,6 +74,10 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Net/Recv/NetRecv.h"
+#include "Text/TextCore.h"
+#include "Net/NetText.h"
+#include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
@@ -1442,7 +1446,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
         if (gFont.GetTextDC()) gFont.MeasureText(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
             int v10 = (int)self[25];
-            if (Hero && strcmp((const char*)(v10 + 8), (const char*)(Hero + 449))) {
+            if (Hero && strcmp((const char*)(v10 + 8), EntityName::Get(Hero))) {
                 self[28] = (DWORD)v10;
             }
         }
@@ -1695,11 +1699,12 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 // layout de nodo).  Aca esta la vtable propia, con los slots de la ruta de
 // render y de datos portados 1:1.
 //
-// Nodo de la lista (0x18 bytes), tal como lo arma sub_40EC20:
+// Nodo de la lista, tal como lo arma sub_40EC20 (0x18 bytes en el binario;
+// 0.97.40: el nombre mide 40 bytes y el nodo 0x34):
 //   +0x00 next . +0x04 prev
-//   +0x08 name[11]  (strncpy 0xB desde el staging dword_55C9B60)
-//   +0x13 flag de conexion (a3)
-//   +0x14 numero de party, o 0xFF si no esta en party (a4)
+//   +0x08 name[41]  (copia desde el staging dword_55C9B60)
+//   +0x31 flag de conexion (a3)
+//   +0x32 numero de party, o 0xFF si no esta en party (a4)
 // ===========================================================================
 
 extern "C" void  __cdecl CreateGuildMark(int markIndex, bool blend);
@@ -1712,14 +1717,15 @@ extern "C" BYTE  InputTextHide[10];
 
 // Globales que en el binario solo tocan sub_40EF10 / sub_40F320 y el estado 126
 // de UI_InGameMenu (el dialogo de expulsar miembro).
-// 0x07E91790 — tabla de miembros del guild, **stride 13 bytes**:
-//   +0..9 name . +10 NUL . +11 connected . +12 party (o -1)
+// 0x07E91790 — tabla de miembros del guild, stride 13 en el binario y
+// kGuildMemberRecordSize (43) desde 0.97.40:
+//   +0..39 name . +40 NUL . +41 connected . +42 party (o -1)
 // La llena `ReceiveGuildList` (0x4348B0: `v3 = &unk_7E9179B`, `v3 += 13`) y la
 // indexa `UI_InGameMenu` case 126 como `&byte_7E91790[13 * dword_5615E4]` para
 // armar el paquete de expulsar.  `sub_40EF10` lee `byte_7E91790` a secas, que es
-// el nombre del registro 0.  Tamano = espacio real entre 0x07E91790 y
-// 0x07E919BC en el binario (0x22C = 556 bytes = 42 registros).
-extern "C" char  byte_7E91790[0x22C] = {0};
+// el nombre del registro 0.  En el binario son 0x22C bytes entre 0x07E91790 y
+// 0x07E919BC = 42 registros.
+extern "C" char  byte_7E91790[kGuildMemberRecordCount * kGuildMemberRecordSize] = {0};
 extern "C" int   dword_5615E4     = 0;     // 0x005615E4 — indice del miembro elegido
 
 // ── slot 19 — sub_410D50 — cantidad de filas del listado activo ─────────────
@@ -1838,7 +1844,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     self[25] = *(DWORD*)(v8 + 4);
     if (!self[25]) return 0;
 
-    BYTE party = *(BYTE*)(self[25] + 20);
+    BYTE party = *(BYTE*)(self[25] + 0x32);
     if (v8 == v7) {
         m_dwBackColor = 0xFF962828u;                        // -6936536
         m_dwTextColor = (party != 0xFF) ? 0xFFFFFFFFu : 0xC4C4C4FFu;
@@ -1865,7 +1871,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
 
     // Boton de expulsar: solo lo ve el master (self[46]==1) o la propia fila.
     if (self[46] == 1 ||
-        !strcmp(name, (const char*)((BYTE*)(uintptr_t)Hero + 449)))
+        !strcmp(name, EntityName::Get(Hero)))
     {
         // flt_55265C = 22.0 . flt_5527DC = 13.0 . flt_55256C = 1.0 . flt_5527D8 = 11.0
         float bx = (float)((int)self[13] + (int)self[11]) - 22.0f - 13.0f;
@@ -1880,8 +1886,8 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             const char* tip;
-            if (!strcmp(name, (const char*)((BYTE*)(uintptr_t)Hero + 449)) &&
-                !strcmp(byte_7E91790, (const char*)((BYTE*)(uintptr_t)Hero + 449)))
+            if (!strcmp(name, EntityName::Get(Hero)) &&
+                !strcmp(byte_7E91790, EntityName::Get(Hero)))
                 tip = GlobalText[188];
             else
                 tip = GlobalText[189];
@@ -1918,7 +1924,7 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
             DWORD v4 = self[25];
             if (v4 == self[23]) break;
             if (self[46] == 1 ||
-                !strcmp((const char*)(v4 + 8), (const char*)((BYTE*)(uintptr_t)Hero + 449)))
+                !strcmp((const char*)(v4 + 8), EntityName::Get(Hero)))
             {
                 int v5;
                 if (((FnInt)vt[19])(self) <= (int)self[35])
@@ -1968,31 +1974,31 @@ static void __fastcall GuildLB_AddMember(DWORD* self, int /*edx*/,
     if (!Source || !*Source) return;
 
     if (!((FnInt)vt[19])(self))
-        self[46] = (DWORD)(strcmp(Source, (const char*)((BYTE*)(uintptr_t)Hero + 449)) == 0);
+        self[46] = (DWORD)(strcmp(Source, EntityName::Get(Hero)) == 0);
 
     // Staging dword_55C9B60[11] + byte_55C9B6B + byte_55C9B6C, tal cual el
     // original (que despues copia 12 bytes de golpe al nodo).
-    char staging[13];
+    char staging[kGuildMemberRecordSize];
     memset(staging, 0, sizeof(staging));
-    strncpy(staging, Source, 0xB);
-    staging[11] = a3;
-    staging[12] = a4;
+    TextEngine::CopyTruncated(staging, NetText::CharacterNameSize + 1, Source);
+    staging[NetText::CharacterNameSize + 1] = a3;
+    staging[NetText::CharacterNameSize + 2] = a4;
 
     DWORD* head = (DWORD*)self[23];
     if (!head || !head[0]) return;
     DWORD* v6 = (DWORD*)head[0];              // head->next
     DWORD* v7 = (DWORD*)v6[1];                // head->next->prev
-    DWORD* v8 = (DWORD*)malloc(0x18);
+    DWORD* v8 = (DWORD*)malloc(0x34);
     if (!v8) return;
-    memset(v8, 0, 0x18);
+    memset(v8, 0, 0x34);
     v8[0] = (DWORD)(uintptr_t)(v6 ? v6 : v8);
     v8[1] = (DWORD)(uintptr_t)(v7 ? v7 : v8);
     v6[1] = (DWORD)(uintptr_t)v8;
     *(DWORD*)v8[1] = (DWORD)(uintptr_t)v8;
 
-    // Payload: 12 bytes desde el staging a nodo+8, y a4 a nodo+20.
-    memcpy((BYTE*)v8 + 8, staging, 12);
-    *((BYTE*)v8 + 20) = (BYTE)a4;
+    // Payload: nombre + conexión desde el staging a nodo+8, y a4 a nodo+0x32.
+    memcpy((BYTE*)v8 + 8, staging, NetText::CharacterNameSize + 2);
+    *((BYTE*)v8 + 0x32) = (BYTE)a4;
 
     ++self[24];
     ((FnVoid)vt[17])(self);                   // trimOldest

@@ -19,6 +19,12 @@ static_assert(sizeof(float) == 4 && std::numeric_limits<float>::is_iec559,
 
 namespace Proto {
 
+// Common/TextLimits.h del server (0.97.40): largos de los campos de texto, en
+// bytes de UTF-8.
+constexpr std::size_t kCharacterNameSize = 40;   // 10 grapheme clusters
+constexpr std::size_t kGuildNameSize     = 32;   // 8 grapheme clusters
+constexpr std::size_t kChatMessageSize   = 200;
+
 // ProtocolDefines.h:18 — C1/C3 con head.
 struct PBMSG_HEAD
 {

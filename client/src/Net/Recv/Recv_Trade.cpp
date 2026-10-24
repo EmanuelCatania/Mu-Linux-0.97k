@@ -73,11 +73,11 @@ void ReceiveTradeExit97k(const BYTE* Msg, int Size)
 // 0x36
 void NetRecv_36(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 {
-    // IDA: ProtocolCore 0x43B32D — C1:36 copia el nombre de diez
-    // bytes en DAT_07EA9834 y abre ErrorMessage 121. MuEmu conserva
-    // ese nombre, aunque use C3 en la notificación al destinatario.
-    if (Size < 13) return;
-    NetText::FromServer(DAT_07ea9834, 11, Msg + 3, 10);
+    // IDA: ProtocolCore 0x43B32D — C1:36 copia el nombre (diez bytes en
+    // el binario, 40 desde 0.97.40) en DAT_07EA9834 y abre ErrorMessage 121.
+    // MuEmu conserva ese nombre, aunque use C3 en la notificación al destinatario.
+    if (Size < 3 + (int)NetText::CharacterNameSize) return;
+    NetText::FromServer(DAT_07ea9834, sizeof(DAT_07ea9834), Msg + 3, NetText::CharacterNameSize);
     SetErrorMessage(121);
     NetLog("NET: -> 0x36 TradeRequest name=%s", DAT_07ea9834);
 }
@@ -110,10 +110,13 @@ void NetRecv_37(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         DAT_00559684 = 0xFFFFFFFF;
         ItemMove_ClearPickedState();
         InventoryOpened = 1;
-        if (Size >= 20) {
-            NetText::FromServer(DAT_07ea9834, 11, Msg + 4, 10);
-            TradeRemoteGuildKey = *(DWORD*)(Msg + 16);
-            TradeRemoteLevel = *(WORD*)(Msg + 14);
+        // PMSG_TRADE_RESPONSE_SEND (0.97.40): name[40]@+4, level@+44,
+        // GuildNumber@+48 (alineado a 4).
+        const int NAME = (int)NetText::CharacterNameSize;
+        if (Size >= 12 + NAME) {
+            NetText::FromServer(DAT_07ea9834, sizeof(DAT_07ea9834), Msg + 4, NAME);
+            TradeRemoteGuildKey = *(DWORD*)(Msg + 8 + NAME);
+            TradeRemoteLevel = *(WORD*)(Msg + 4 + NAME);
         }
     }
 }

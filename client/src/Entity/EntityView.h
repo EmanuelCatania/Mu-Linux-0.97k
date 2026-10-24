@@ -1,4 +1,5 @@
 #pragma once
+#include "Entity/EntityName.h"
 #include "Platform/PlatformHeaders.h"
 #include <cstring>
 
@@ -19,7 +20,7 @@ public:
     // IDA: CreateChat (0x00481BA0), índice firmado; -1 indica sin guild.
     short GuildMarkIndex() const { return Read<short>(0x1DA); }
     WORD NetworkKey() const { return Read<WORD>(0x1DC); }
-    const char* Name() const { return (const char*)(m_Data + 0x1C1); }
+    const char* Name() const { return EntityName::Get(m_Data); }
     float X() const { return Read<float>(0x10); }
     float Y() const { return Read<float>(0x14); }
     float Z() const { return Read<float>(0x18); }

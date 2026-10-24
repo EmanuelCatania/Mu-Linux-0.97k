@@ -136,6 +136,7 @@
     <ClInclude Include="src\UI\UIState.h" />
     <ClInclude Include="src\UI\ChatTypes.h" />
     <ClInclude Include="src\Entity\EntityView.h" />
+    <ClInclude Include="src\Entity\EntityName.h" />
     <ClInclude Include="src\Render\WorldEffects.h" />
     <ClInclude Include="src\Render\MaterialVisuals.h" />
     <ClInclude Include="src\Render\LooseWingVisuals.h" />
@@ -429,6 +430,7 @@
     <ClCompile Include="src\UI\UI_StatsPanel.cpp" />
     <ClCompile Include="src\Util\Misc.cpp" />
     <ClCompile Include="src\Core\Legacy_Runtime.cpp" />
+    <ClCompile Include="src\Entity\EntityName.cpp" />
     <ClCompile Include="src\Entity\Entity_Lookup.cpp" />
     <ClCompile Include="src\Net\Net_Disconnect.cpp" />
     <ClCompile Include="src\Render\Render_MatrixStack.cpp" />

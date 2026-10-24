@@ -123,6 +123,7 @@
 //   packet[3] == 1 → SetErrorMessage(0x91)  — guild join decline UI
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Party.h"
@@ -132,6 +133,23 @@
 extern BYTE* g_PartyHPTable;           // DAT_07e11e98  stride 0x24
 
 #define PARTY_HP_STRIDE  0x24
+
+// DESVIACION (0.97.40): el registro de 36 bytes de la party guarda el nombre en
+// +0..10; el completo (hasta 40 bytes) vive en esta tabla, una entrada por fila.
+static char s_PartyName[2048 / 36][NetText::CharacterNameSize + 1] = {};
+
+extern "C" const char* Party_GetName(int index)
+{
+    return (index >= 0 && index < (int)(sizeof(s_PartyName) / sizeof(s_PartyName[0])))
+        ? s_PartyName[index] : "";
+}
+
+extern "C" const char* Party_NameOf(const void* slot)
+{
+    const BYTE* p = (const BYTE*)slot;
+    if (p < Party || p >= Party + sizeof(Party)) return "";
+    return Party_GetName((int)((p - Party) / 36));
+}
 
 // sub_4AFDC0/sub_4E5980 re-arm these runtime fields with -2 whenever the
 // viewport may have changed. sub_4AFB00 resolves them strictly by name against
@@ -149,10 +167,10 @@ void Party_RefreshViewportLinks(void)
 // ============================================================
 // ReceivePartyList97k  (ReceivePartyList @ 00434660, opcode 0x42)
 //
-// MuEmu PMSG_PARTY_LIST_SEND:
-//   [C1][size][42][result][count][members...]
-// Native-aligned PMSG_PARTY_LIST members have a 24-byte stride:
-//   name[10], number, map, x, y, pad[2], CurLife(DWORD), MaxLife(DWORD).
+// MuEmu PMSG_PARTY_LIST_SEND (0.97.40, C2):
+//   [C2][size:2][42][result][count][members...]
+// Native-aligned PMSG_PARTY_LIST members have a 52-byte stride:
+//   name[40], number, map, x, y, CurLife(DWORD), MaxLife(DWORD).
 //
 // The client party table is the original 36-byte slot layout.  Its first
 // 24 bytes are populated exactly as 00434660; the remaining UI-only fields
@@ -160,12 +178,14 @@ void Party_RefreshViewportLinks(void)
 // ============================================================
 void ReceivePartyList97k(BYTE* pkt, int size)
 {
-    if (!pkt || size < 5) return;
+    if (!pkt || size < 6) return;
 
-    const int count = pkt[4];
+    const int hdrOff = (pkt[0] == 0xC1) ? 0 : 1;
+    const int count = pkt[4 + hdrOff];
     constexpr int kMaxPartyMembers = 5; // MuEmu MAX_PARTY_USER
-    constexpr int kHeaderSize = 5;
-    constexpr int kWireStride = 24;
+    constexpr int NAME = (int)NetText::CharacterNameSize;
+    const int kHeaderSize = 5 + hdrOff;
+    constexpr int kWireStride = NAME + 12;
     if (count < 0 || count > kMaxPartyMembers ||
         kHeaderSize + count * kWireStride > size) {
         return;
@@ -179,13 +199,14 @@ void ReceivePartyList97k(BYTE* pkt, int size)
         const BYTE* const wire = pkt + kHeaderSize + i * kWireStride;
         BYTE* const local = Party + i * 36;
 
-        NetText::FromServer((char*)local, 11, wire, 10);   // name (1252 -> UTF-8)
-        local[11] = wire[10];                 // member number
-        local[12] = wire[11];                 // map
-        local[13] = wire[12];                 // X
-        local[14] = wire[13];                 // Y
-        memcpy(local + 16, wire + 16, 4);     // CurLife
-        memcpy(local + 20, wire + 20, 4);     // MaxLife
+        NetText::FromServer(s_PartyName[i], sizeof(s_PartyName[i]), wire, NAME);
+        TextEngine::CopyTruncated((char*)local, 11, s_PartyName[i]);
+        local[11] = wire[NAME];               // member number
+        local[12] = wire[NAME + 1];           // map
+        local[13] = wire[NAME + 2];           // X
+        local[14] = wire[NAME + 3];           // Y
+        memcpy(local + 16, wire + NAME + 4, 4);   // CurLife
+        memcpy(local + 20, wire + NAME + 8, 4);   // MaxLife
         *(int*)(local + 28) = -2;             // CharactersClient index sentinel
         *(int*)(local + 32) = 0;              // cached entity status
     }

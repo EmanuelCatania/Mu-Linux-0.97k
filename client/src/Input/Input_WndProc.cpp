@@ -320,8 +320,9 @@ void Input_OnEvent(const Platform::InputEvent& event)
             // render.  Los aceptamos como carácter simple.
             // 0x7F es DEL: se sigue descartando.
             // DESVIACION (Fase 4, texto Unicode): el carácter llega como code
-            // point y se guarda en UTF-8. InputTextMax sigue contando bytes,
-            // así que una letra que no entra entera no se agrega.
+            // point y se guarda en UTF-8. InputTextMax cuenta bytes, así que una
+            // letra que no entra entera no se agrega; InputTextMaxClusters
+            // limita además los grapheme clusters (nombres: 10, guild: 8).
             if (c >= 0x20 && c != 0x7F && !(c >= 0x80 && c < 0xA0)) {
                 // InputTextMax[8] @ 0x00559c94 — leído como int desde el array
                 // tipado (NO vía la referencia aliasada a float, que castea el valor).
@@ -330,7 +331,13 @@ void Input_OnEvent(const Platform::InputEvent& event)
                 if (maxLen > 0xFF) maxLen = 0xFF;
                 std::string encoded;
                 TextEngine::Append(encoded, (char32_t)c);
-                if (len + (int)encoded.size() <= maxLen) {
+                bool fits = len + (int)encoded.size() <= maxLen;
+                if (fits && InputTextMaxClusters[slot] > 0) {
+                    std::string candidate(buf, (size_t)len);
+                    candidate += encoded;
+                    fits = (int)TextEngine::ClusterCount(candidate) <= InputTextMaxClusters[slot];
+                }
+                if (fits) {
                     memcpy(buf + len, encoded.data(), encoded.size());
                     lens[slot] = (DWORD)(len + (int)encoded.size());
                 }

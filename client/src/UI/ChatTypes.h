@@ -43,5 +43,10 @@ MU_ASSERT_FIELD(CHAT, Position, 0x248);
 #undef MU_ASSERT_FIELD
 
 inline CHAT* AsChat(uintptr_t p) { return reinterpret_cast<CHAT*>(p); }
+
+// Nombre y prefijo de guild para mostrar (0.97.40). CHAT::ID y Guild conservan
+// el tamaño del binario (24 y 12 bytes); el texto completo sale del Owner.
+const char* ChatDisplayName(const CHAT* c);
+const char* ChatDisplayGuild(const CHAT* c);
 inline CHAT* AsChat(void* p) { return static_cast<CHAT*>(p); }
 inline const CHAT* AsChat(const void* p) { return static_cast<const CHAT*>(p); }

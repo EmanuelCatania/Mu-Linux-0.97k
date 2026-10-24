@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "Net/NetText.h"
+#include "Entity/EntityName.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Game/FrameLimiter.h"
@@ -175,12 +176,15 @@ void Recv_CharList(const BYTE* Msg, int Size)
 
     if (count > MAX_PREVIEW) count = MAX_PREVIEW;
 
+    // PMSG_CHARACTER_LIST (0.97.40): slot, Name[40], padding, Level, CtlCode,
+    // CharSet[11]; 56 bytes por registro.
+    const int NAME = (int)NetText::CharacterNameSize;
     const BYTE* rec = Msg + 5;
-    for (int i = 0; i < (int)count; ++i, rec += 26) {
+    for (int i = 0; i < (int)count; ++i, rec += NAME + 16) {
         BYTE  slot     = rec[0];
-        WORD  level    = (WORD)(rec[12] | (rec[13] << 8));
-        BYTE  ctlCode  = rec[14];
-        BYTE  csByte0  = rec[15];
+        WORD  level    = (WORD)(rec[NAME + 2] | (rec[NAME + 3] << 8));
+        BYTE  ctlCode  = rec[NAME + 4];
+        BYTE  csByte0  = rec[NAME + 5];
 
         // class = ((CharSet[0] >> 4) | (CharSet[0] & 0x10)) >> 1
         int   klass    = ((csByte0 >> 4) | (csByte0 & 0x10)) >> 1;
@@ -200,19 +204,19 @@ void Recv_CharList(const BYTE* Msg, int Size)
         AsCharacter(c)->Level = level;
         // entity+0x1C0 = CtlCode (BYTE)
         c[0x1C0] = ctlCode;
-        // entity+0x1C1..0x1CA = Name (10 bytes), entity+0x1CB = NUL
-        NetText::FromServer((char*)c + 0x1C1, 11, rec + 1, 10);
+        char name[EntityName::Capacity];
+        NetText::FromServer(name, sizeof(name), rec + 1, NAME);
+        EntityName::Set(c, name);
         // entity+444 (0x1BC) = clase (BYTE) — lo necesita Recv_JoinMapServer para
         // propagarlo a la entidad del héroe al entrar al mundo.
         AsCharacter(c)->Class = (BYTE)klass;
 
-        char name[11]; for (int k = 0; k < 10; ++k) name[k] = (char)rec[1+k]; name[10] = 0;
         NetLog("NET:    F3/00 slot=%d class=%d level=%d name='%s'",
                slot, klass, level, name);
 
-        // Equipment visuals: CharSet[1..10] = rec[16..25] (10 bytes packed).
+        // Equipment visuals: CharSet[1..10] (10 bytes packed).
         // Pipeline ya completo (LevelConvert + DeleteBug + CreateBug + ChangeCharacterExt).
-        ChangeCharacterExt((int)slot, (BYTE*)&rec[16]);
+        ChangeCharacterExt((int)slot, (BYTE*)&rec[NAME + 6]);
 
         // CreateHero llamó SetPlayerStop con las alas todavía en -1, así que
         // dejó action=1 (idle pegado al piso). Re-llamamos ahora que las alas
@@ -230,11 +234,10 @@ void Recv_CharList(const BYTE* Msg, int Size)
 // Server response al "create character" lanzado desde Scene_CharSelect.
 // Layout (C1):
 //   [0]=C1 [1]=len [2]=F3 [3]=01 [4]=result
-//     result==1 → success. payload at [5..]:
-//       [5..14]  Name (10B)
-//       [15]     SlotIndex
-//       [16-17]  PositionX/Y
-//       [18]     Class/skin byte
+//     result==1 → success. payload at [5..] (PMSG_CHARACTER_CREATE_SEND, 0.97.40):
+//       [5..44]  Name (40B)
+//       [45]     SlotIndex
+//       [46..]   equipment
 //     result==2 → blocked (CurrentProtocolState=55)
 //     other     → failed  (CurrentProtocolState=54)
 // Si tiene éxito: CreateHero en el slot, setea los flags de la entidad, copia el nombre, CurrentProtocolState=53.
@@ -244,7 +247,7 @@ void Recv_CreateChar(const BYTE* Msg)
 {
     BYTE result = Msg[4];
     if (result == 1) {
-        BYTE slot = Msg[15];
+        BYTE slot = Msg[5 + NetText::CharacterNameSize];
         // Posición preview: y = slot*50 - 50, x = slot*100
         float x = (float)slot * 100.0f;
         float y = (float)slot * 50.0f - 50.0f;
@@ -257,13 +260,11 @@ void Recv_CreateChar(const BYTE* Msg)
             NetLog("NET:    F3/01 slot=%d CreateHero FAILED", slot);
             return;
         }
-        // Entity field writes (mirrors IDA layout):
-        //   +446 (WORD) = 1               — selected/visible flag
-        //   +449..+458  = Name(10B) + 0   — copy from Msg+5
-        const BYTE* src = Msg + 5;
+        // +446 (WORD) = 1 — selected/visible flag; el nombre va desde Msg+5.
         *(WORD*)(c + 446) = 1;
-        // 10 bytes name + NUL at +459
-        NetText::FromServer((char*)c + 449, 11, src, 10);
+        char name[EntityName::Capacity];
+        NetText::FromServer(name, sizeof(name), Msg + 5, NetText::CharacterNameSize);
+        EntityName::Set(c, name);
         NetLog("NET:    F3/01 slot=%d class=%d created", slot, klass);
     } else if (result == 2) {
         DAT_05826cb0 = 55;  // blocked / name-taken
@@ -539,9 +540,10 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     }
     s_IsRebuildingHero = false;
     HeroEquipWatchdog((int)(uintptr_t)heroPtr);
-    *(DWORD*)(heroPtr + 449) = *(DWORD*)(charAttr + 0);
-    *(DWORD*)(heroPtr + 453) = *(DWORD*)(charAttr + 4);
-    *(WORD*)(heroPtr + 457)  = *(WORD*)(charAttr + 8);
+    // IDA copia los 10 bytes de nombre de CharacterAttribute; desde 0.97.40 el
+    // nombre completo viene de EntityName::Selected().
+    if (EntityName::Selected()[0]) EntityName::Set(heroPtr, EntityName::Selected());
+    else                           EntityName::Set(heroPtr, (const char*)charAttr, 10);
     NetLog("NET:    F3/03 hero spawn: heroSlot=%d heroClass=%d",
            (int)heroIndex, (int)AsCharacter(heroPtr)->Class);
 
@@ -1034,7 +1036,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 default: break;
             }
             if (pkText >= 0 && GlobalText[pkText] && GlobalText[pkText][0]) {
-                UIChatLogWindow_AddText((char*)(pkEnt + 449),
+                UIChatLogWindow_AddText((char*)EntityName::Get(pkEnt),
                                         GlobalText[pkText], pkColor);
             }
             break;

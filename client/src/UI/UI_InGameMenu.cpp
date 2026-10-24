@@ -5,6 +5,8 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "Net/Recv/NetRecv.h"
+#include "Entity/EntityName.h"
 #include "Net/NetText.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -377,23 +379,24 @@ void __cdecl UI_InGameMenu(void)
 
         if (yes) {
             // IDA: sub_513C10 (0x00513C10).  PMSG_CHARACTER_DELETE_RECV =
-            // [C1][24][F3][02][name:10][PersonalCode:10]; el nombre sale del
-            // personaje elegido, rellenado con ceros a 10.
+            // [C1][54][F3][02][name:40][PersonalCode:10] (0.97.40); el nombre
+            // sale del personaje elegido, rellenado con ceros.
             const int hero = (int)DAT_005616ac;          // SelectedHero
             DAT_005616ac = (DWORD)-1;
             DAT_005615e0 = (DWORD)hero;                  // dword_5615E0
             DAT_05826cb0 = 56;                           // CurrentProtocolState
-            BYTE pkt[24];
+            const int NAME = (int)NetText::CharacterNameSize;
+            BYTE pkt[4 + NetText::CharacterNameSize + 10];
             memset(pkt, 0, sizeof(pkt));
             pkt[0] = 0xC1;
-            pkt[1] = 24;
+            pkt[1] = (BYTE)sizeof(pkt);
             pkt[2] = 0xF3;
             pkt[3] = 0x02;
             if (hero >= 0 && DAT_07abf5d0) {
-                const char* name = (const char*)(DAT_07abf5d0 + hero * 0x394 + 0x1c1);
-                NetText::ToServer(pkt + 4, 10, name);
+                const char* name = EntityName::Get(DAT_07abf5d0 + hero * 0x394);
+                NetText::ToServer(pkt + 4, NAME, name);
             }
-            NetText::ToServer(pkt + 14, 10, (const char*)DAT_07db8710);   // InputText[0]
+            NetText::ToServer(pkt + 4 + NAME, 10, (const char*)DAT_07db8710);   // InputText[0]
             gNetwork.Send(pkt, sizeof(pkt));
         }
         // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
@@ -434,7 +437,7 @@ void __cdecl UI_InGameMenu(void)
             DAT_083a7c24 = invalidGold ? 118 : 117;
             DAT_083a7c28 = 0;
             ClearInput(0);
-            InputTextMax = (DWORD)42;   // InputTextMax[0]
+            Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);   // InputTextMax[0]
             InputNumber = 2;           // InputNumber
             GoldInputEnable = 0;           // GoldInputEnable
             DAT_00559c84 = 0;           // InputEnable
@@ -473,7 +476,7 @@ void __cdecl UI_InGameMenu(void)
         }
 
         ClearInput(0);
-        InputTextMax = (DWORD)42;
+        Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);
         InputNumber = 2;
         GoldInputEnable = 0;               // GoldInputEnable = 0
         DAT_00559c84 = 0;               // InputEnable = 0
@@ -531,8 +534,9 @@ void __cdecl UI_InGameMenu(void)
         // PMSG_TRADE_RESPONSE_RECV de MuEmu usa C1 plano y conserva los
         // campos de identidad desde +4; el binario original ya los guarda en
         // DAT_07EA9834 al recibir 0x36.
-        BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
-        NetText::ToServer(pkt + 4, 10, DAT_07ea9834);
+        // PMSG_TRADE_RESPONSE_RECV (0.97.40): response, name[40], level, GuildNumber.
+        BYTE pkt[12 + NetText::CharacterNameSize] = { 0xC1, (BYTE)(12 + NetText::CharacterNameSize), 0x37, (BYTE)(yes ? 1 : 0) };
+        NetText::ToServer(pkt + 4, NetText::CharacterNameSize, DAT_07ea9834);
         gNetwork.SendC1(pkt, sizeof(pkt));
         goto tail;
     }
@@ -543,17 +547,17 @@ void __cdecl UI_InGameMenu(void)
     // (`case 126: case 152:` del segundo switch, L2706), que está más abajo.
     //
     // PMSG_GUILD_DELETE_RECV (MuEmu Guild.h:205):
-    //     [C1][0x17][0x53][name:10][PersonalCode:10]      sizeof = 23
-    // `name` sale de la tabla de 13 bytes por miembro `byte_7E91790`, indexada
+    //     [C1][0x35][0x53][name:40][PersonalCode:10]      sizeof = 53 (0.97.40)
+    // `name` sale de la tabla de miembros `byte_7E91790`, indexada
     // por `dword_5615E4` (lo fija el click de `sub_40F320`). Para un miembro
     // normal esa fila sólo puede ser la propia; para el Master puede ser la de
     // otro miembro o la propia. El servidor decide si corresponde expulsar,
     // abandonar o disolver. `PersonalCode` es el valor de InputText[0].
     //
     // HackPacketCheck índice 83 → Encrypt = 0 ⇒ frame C1 + chain-XOR, SIN serial.
-    // El original hace el XOR en dos pasadas (3..12 y 13..22) porque appendea el
-    // PersonalCode después; como la cadena es secuencial y los rangos son
-    // disjuntos y contiguos, una sola pasada 3..22 da el mismo resultado.
+    // El original hace el XOR en dos pasadas porque appendea el PersonalCode
+    // después; como la cadena es secuencial y los rangos son disjuntos y
+    // contiguos, una sola pasada da el mismo resultado.
     case 0x7e:
     {
         // Gate de botones.  IDA L2142-2168: para ErrorMessage 126 y 152 los dos
@@ -583,16 +587,17 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a413c = 0;
 
         int memberIdx = dword_5615E4;
-        if (memberIdx < 0 || memberIdx >= 0x22C / 13) goto tail;
+        if (memberIdx < 0 || memberIdx >= kGuildMemberRecordCount) goto tail;
 
-        BYTE pkt[23];
+        const int NAME = (int)NetText::CharacterNameSize;
+        BYTE pkt[3 + NetText::CharacterNameSize + 10];
         memset(pkt, 0, sizeof(pkt));
         pkt[0] = 0xC1;
-        pkt[1] = 23;
+        pkt[1] = (BYTE)sizeof(pkt);
         pkt[2] = 0x53;
-        NetText::ToServer(pkt + 3, 10, &byte_7E91790[13 * memberIdx]);
-        NetText::ToServer(pkt + 13, 10, (const char*)DAT_07db8710);
-        gNetwork.SendC1(pkt, 23);
+        NetText::ToServer(pkt + 3, NAME, &byte_7E91790[kGuildMemberRecordSize * memberIdx]);
+        NetText::ToServer(pkt + 3 + NAME, 10, (const char*)DAT_07db8710);
+        gNetwork.SendC1(pkt, (int)sizeof(pkt));
         goto tail;
     }
 

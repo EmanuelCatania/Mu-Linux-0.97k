@@ -10,6 +10,7 @@
 #include "Entity/EntityTypes.h"
 #include "Scene/ObjectRegistry.h"
 #include "Item/ContentCatalog.h"
+#include "Entity/EntityName.h"
 #include "globals.h"
 #include "functions.h"
 #include "Platform/PlatformHeaders.h"
@@ -24,6 +25,8 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
 
     // 0.97.20: la entidad nueva no hereda los modelos propios del slot.
     gContentCatalog.ClearEntityParts(param_1);
+    // 0.97.40: el nombre completo del slot anterior no se hereda.
+    EntityName::Clear(param_1);
 
     unsigned int grid_x      = (unsigned int)PositionX;
     unsigned int grid_y      = (unsigned int)PositionY;

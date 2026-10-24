@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
@@ -709,7 +710,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         // IDA LABEL_6: charla del NPC (gana aunque haya un item debajo).
         char* ent = base + npc * 0x394;
         if (ent[0] != 0) {
-            const char* name = (const char*)(ent + 0x1C1);
+            const char* name = EntityName::Get(ent);
             if (name[0]) CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
         }
     } else if (chr == -1) {
@@ -718,7 +719,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         drawHoveredItem();                             //   -> LABEL_37
     } else {
         char* ent = base + chr * 0x394;
-        const char* name = (const char*)(ent + 0x1C1);
+        const char* name = EntityName::Get(ent);
         if (ent[0] != 0 && name[0]) {
             const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
             if (kind == 2 && !gHealthBar.DrawSelected((const BYTE*)ent)) {
