@@ -413,7 +413,7 @@ void GDCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg, int index)
 		gQueryManager.Close();
 	}
 
-	char CharacterName[5][11];
+	char CharacterName[5][CHARACTER_NAME_BUFFER];
 
 	memset(CharacterName, 0, sizeof(CharacterName));
 
@@ -550,7 +550,7 @@ void GDCharacterCreateRecv(SDHP_CHARACTER_CREATE_RECV* lpMsg, int index)
 
 	memset(pMsg.equipment, 0xFF, sizeof(pMsg.equipment));
 
-	char CharacterName[5][11] = { 0 };
+	char CharacterName[5][CHARACTER_NAME_BUFFER] = { 0 };
 
 #ifndef MYSQL
 	if (pMsg.result == 0 || gQueryManager.ExecQuery("SELECT * FROM AccountCharacter WHERE Id='%s'", lpMsg->account) == false || gQueryManager.Fetch() == SQL_NO_DATA)
@@ -672,7 +672,7 @@ void GDCharacterDeleteRecv(SDHP_CHARACTER_DELETE_RECV* lpMsg, int index)
 
 		if (pMsg.result == 1)
 		{
-			char CharacterName[5][11] = { 0 };
+			char CharacterName[5][CHARACTER_NAME_BUFFER] = { 0 };
 
 		#ifndef MYSQL
 			if (gQueryManager.ExecQuery("SELECT * FROM AccountCharacter WHERE Id='%s'", lpMsg->account) == false || gQueryManager.Fetch() == SQL_NO_DATA)

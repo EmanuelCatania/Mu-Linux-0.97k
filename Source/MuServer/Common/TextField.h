@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstring>
 
+#include "TextLimits.h"
+
 // Copia de campos de texto de largo fijo (nombres, cuentas, guilds).
 //
 // Los structs del server y del protocolo guardan el texto en arrays de largo

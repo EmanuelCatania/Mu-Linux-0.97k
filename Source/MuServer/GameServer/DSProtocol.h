@@ -19,7 +19,7 @@ struct SDHP_CHARACTER_LIST_RECV
 struct SDHP_CHARACTER_LIST
 {
 	BYTE slot;
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	WORD level;
 	BYTE Class;
 	BYTE CtlCode;
@@ -31,7 +31,7 @@ struct SDHP_CHARACTER_CREATE_RECV
 	PSBMSG_HEAD header; // C1:01:01
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE result;
 	BYTE slot;
 	BYTE equipment[24];
@@ -50,7 +50,7 @@ struct SDHP_CHARACTER_INFO_RECV
 	PSWMSG_HEAD header; // C2:01:03
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE result;
 	BYTE Class;
 	WORD Level;
@@ -109,7 +109,7 @@ struct SDHP_OPTION_DATA_RECV
 	PSBMSG_HEAD header; // C1:03:00
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE SkillKey[10];
 	BYTE GameOption;
 	BYTE QKey;
@@ -130,9 +130,9 @@ struct SDHP_GLOBAL_WHISPER_RECV
 	PSBMSG_HEAD header; // C1:05:01
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE result;
-	char TargetName[11];
+	char TargetName[CHARACTER_NAME_BUFFER];
 	char message[60];
 };
 
@@ -141,8 +141,8 @@ struct SDHP_GLOBAL_WHISPER_ECHO_RECV
 	PSBMSG_HEAD header; // C1:05:02
 	WORD index;
 	char account[11];
-	char name[11];
-	char SourceName[11];
+	char name[CHARACTER_NAME_BUFFER];
+	char SourceName[CHARACTER_NAME_BUFFER];
 	char message[60];
 };
 
@@ -171,7 +171,7 @@ struct SDHP_CHARACTER_CREATE_SEND
 	PSBMSG_HEAD header; // C1:01:01
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE Class;
 };
 
@@ -180,9 +180,9 @@ struct SDHP_CHARACTER_DELETE_SEND
 	PSBMSG_HEAD header; // C1:01:02
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE guild;
-	char GuildName[9];
+	char GuildName[GUILD_NAME_BUFFER];
 };
 
 struct SDHP_CHARACTER_INFO_SEND
@@ -190,7 +190,7 @@ struct SDHP_CHARACTER_INFO_SEND
 	PSBMSG_HEAD header; // C1:01:03
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_CHARACTER_INFO_SAVE_SEND
@@ -198,7 +198,7 @@ struct SDHP_CHARACTER_INFO_SAVE_SEND
 	PSWMSG_HEAD header; // C2:01:04
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	WORD Level;
 	BYTE Class;
 	DWORD LevelUpPoint;
@@ -234,7 +234,7 @@ struct SDHP_CONNECT_CHARACTER_SEND
 	PSBMSG_HEAD header; // C1:01:05 | C1:01:06
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_CREATE_ITEM_SEND
@@ -260,7 +260,7 @@ struct SDHP_INVENTORY_ITEM_SAVE_SEND
 	PSWMSG_HEAD header; // C2:02:01
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE Inventory[INVENTORY_SIZE][MAX_ITEM_BYTE_SIZE];
 };
 
@@ -269,7 +269,7 @@ struct SDHP_OPTION_DATA_SEND
 	PSBMSG_HEAD header; // C1:03:00
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_OPTION_DATA_SAVE_SEND
@@ -277,7 +277,7 @@ struct SDHP_OPTION_DATA_SAVE_SEND
 	PSBMSG_HEAD header; // C1:03:01
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	BYTE SkillKey[10];
 	BYTE GameOption;
 	BYTE QKey;
@@ -291,7 +291,7 @@ struct SDHP_RESET_INFO_SAVE_SEND
 	PSBMSG_HEAD header; // C1:03:02
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	UINT Reset;
 	UINT ResetDay;
 	UINT ResetWek;
@@ -303,7 +303,7 @@ struct SDHP_GRAND_RESET_INFO_SAVE_SEND
 	PSBMSG_HEAD header; // C1:03:03
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	UINT Reset;
 	UINT GrandReset;
 	UINT GrandResetDay;
@@ -323,8 +323,8 @@ struct SDHP_GLOBAL_WHISPER_SEND
 	PSBMSG_HEAD header; // C1:05:01
 	WORD index;
 	char account[11];
-	char name[11];
-	char TargetName[11];
+	char name[CHARACTER_NAME_BUFFER];
+	char TargetName[CHARACTER_NAME_BUFFER];
 	char message[60];
 };
 
@@ -333,7 +333,7 @@ struct SDHP_RANKING_SAVE_SEND
 	PSBMSG_HEAD header; // C1:06:00 | C1:06:01
 	WORD index;
 	char account[11];
-	char name[11];
+	char name[CHARACTER_NAME_BUFFER];
 	DWORD score;
 };
 

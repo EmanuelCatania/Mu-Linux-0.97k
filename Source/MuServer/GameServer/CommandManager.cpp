@@ -1682,7 +1682,7 @@ void CCommandManager::JGCommandOnlinesRecv(SDHP_COUNT_ONLINE_USER_RECV* lpMsg)
 
 void CCommandManager::CommandGuildWar(LPOBJ lpObj, char* arg)
 {
-	char GuildName[9] = { 0 };
+	char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, GuildName, sizeof(GuildName), 0);
 
@@ -1694,7 +1694,7 @@ void CCommandManager::CommandGuildWar(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandBattleSoccer(LPOBJ lpObj, char* arg)
 {
-	char GuildName[9] = { 0 };
+	char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, GuildName, sizeof(GuildName), 0);
 
@@ -1763,7 +1763,7 @@ void CCommandManager::CommandGMGlobal(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMMove(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1811,7 +1811,7 @@ void CCommandManager::CommandGMMoveAll(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMChase(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1831,7 +1831,7 @@ void CCommandManager::CommandGMChase(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMBring(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1851,7 +1851,7 @@ void CCommandManager::CommandGMBring(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMDisconnect(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 
@@ -1991,7 +1991,7 @@ void CCommandManager::CommandGMClearInv(LPOBJ lpObj, char* arg)
 
 void CCommandManager::CommandGMSkin(LPOBJ lpObj, char* arg)
 {
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	this->GetString(arg, name, sizeof(name), 0);
 

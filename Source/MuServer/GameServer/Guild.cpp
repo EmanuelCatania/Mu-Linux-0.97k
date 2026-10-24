@@ -94,11 +94,11 @@ void CGuild::CGGuildCreateRecv(PMSG_GUILD_CREATE_RECV* lpMsg, int aIndex)
 
 	LPOBJ lpObj = &gObj[aIndex];
 
-	char GuildName[9] = { 0 };
+	char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 	TextField::Copy(GuildName, lpMsg->GuildName);
 
-	if (strlen(GuildName) < 2 || strlen(GuildName) > 8)
+	if (strlen(GuildName) < 2 || strlen(GuildName) > GUILD_NAME_SIZE)
 	{
 		this->GCGuildCreateResultSend(aIndex, 2);
 	}
@@ -228,7 +228,7 @@ void CGuild::CGGuildDeleteRecv(PMSG_GUILD_DELETE_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	char PersonalCode[14] = { 0 };
 
@@ -999,7 +999,7 @@ void CGuild::GuildWarRequestSend(int aIndex, char* GuildName, int type)
 		return;
 	}
 
-	if (!strncmp(lpObj->Guild->Name, GuildName, 8))
+	if (!strncmp(lpObj->Guild->Name, GuildName, GUILD_NAME_SIZE))
 	{
 		return;
 	}

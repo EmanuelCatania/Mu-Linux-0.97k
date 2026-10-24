@@ -55,7 +55,7 @@ struct PMSG_DEVIL_SQUARE_SCORE_SEND
 
 struct PMSG_DEVIL_SQUARE_SCORE
 {
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	DWORD score;
 	DWORD RewardExperience;
 	DWORD RewardMoney;

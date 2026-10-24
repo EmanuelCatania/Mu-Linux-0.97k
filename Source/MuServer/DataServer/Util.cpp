@@ -87,7 +87,7 @@ void ConsoleProtocolLog(int type, BYTE* lpMsg, int size)
 	gConsole.Output(type, "[%s] Header: 0x%02X, Head: 0x%02X, SubHead: 0x%02X, Size: %d", (type == CON_PROTO_TCP_RECV) ? "RECV" : "SEND", header, head, subhead, size);
 }
 
-bool GetCharacterSlot(char CharacterName[5][11], const char* name, BYTE* slot)
+bool GetCharacterSlot(char CharacterName[5][CHARACTER_NAME_BUFFER], const char* name, BYTE* slot)
 {
 	for (int n = 0; n < 5; n++)
 	{

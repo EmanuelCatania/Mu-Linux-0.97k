@@ -20,14 +20,14 @@
 struct PMSG_CHAT_RECV
 {
 	PBMSG_HEAD header; // C1:00
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	char message[60];
 };
 
 struct PMSG_CHAT_WHISPER_RECV
 {
 	PBMSG_HEAD header; // C1:00
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	char message[60];
 };
 
@@ -108,21 +108,21 @@ struct PMSG_SET_HWID_RECV
 struct PMSG_CHARACTER_CREATE_RECV
 {
 	PSBMSG_HEAD header; // C1:F3:01
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE Class;
 };
 
 struct PMSG_CHARACTER_DELETE_RECV
 {
 	PSBMSG_HEAD header; // C1:F3:02
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	char PersonalCode[10];
 };
 
 struct PMSG_CHARACTER_INFO_RECV
 {
 	PSBMSG_HEAD header; // C1:F3:03
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 };
 
 struct PMSG_LEVEL_UP_POINT_RECV
@@ -151,7 +151,7 @@ struct PMSG_OPTION_DATA_RECV
 struct PMSG_CHAT_SEND
 {
 	PBMSG_HEAD header; // C1:00
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	char message[60];
 };
 
@@ -165,7 +165,7 @@ struct PMSG_CHAT_TARGET_SEND
 struct PMSG_CHAT_WHISPER_SEND
 {
 	PBMSG_HEAD header; // C1:02
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	char message[60];
 };
 
@@ -375,7 +375,7 @@ struct PMSG_CHARACTER_LIST_SEND
 struct PMSG_CHARACTER_LIST
 {
 	BYTE slot;
-	char Name[10];
+	char Name[CHARACTER_NAME_SIZE];
 	WORD Level;
 	BYTE CtlCode;
 	BYTE CharSet[11];
@@ -385,7 +385,7 @@ struct PMSG_CHARACTER_CREATE_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:01
 	BYTE result;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE slot;
 	BYTE equipment[24];
 };

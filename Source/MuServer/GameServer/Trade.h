@@ -19,7 +19,7 @@ struct PMSG_TRADE_RESPONSE_RECV
 {
 	PBMSG_HEAD header; // C1:37
 	BYTE response;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	WORD level;
 	DWORD GuildNumber;
 };
@@ -43,14 +43,14 @@ struct PMSG_TRADE_OK_BUTTON_RECV
 struct PMSG_TRADE_REQUEST_SEND
 {
 	PBMSG_HEAD header; // C3:36
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 };
 
 struct PMSG_TRADE_RESPONSE_SEND
 {
 	PBMSG_HEAD header; // C1:37
 	BYTE response;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	WORD level;
 	DWORD GuildNumber;
 };

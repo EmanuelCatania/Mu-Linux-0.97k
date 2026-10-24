@@ -20,8 +20,8 @@ struct SDHP_GUILD_CREATE_RECV
 	BYTE flag;
 	WORD index;
 	DWORD GuildNumber;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 	BYTE Mark[32];
 };
 
@@ -31,15 +31,15 @@ struct SDHP_GUILD_DELETE_RECV
 	BYTE result;
 	BYTE flag;
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_DISCONNECT_RECV
 {
 	PSBMSG_HEAD header; // C1:07:02
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_JOIN_RECV
@@ -48,8 +48,8 @@ struct SDHP_GUILD_MEMBER_JOIN_RECV
 	BYTE result;
 	BYTE flag;
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 	WORD server;
 };
 
@@ -59,15 +59,15 @@ struct SDHP_GUILD_MEMBER_DELETE_RECV
 	BYTE result;
 	BYTE flag;
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_INFO_RECV
 {
 	PSBMSG_HEAD header; // C1:07:05
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 	BYTE status;
 	WORD server;
 };
@@ -75,22 +75,22 @@ struct SDHP_GUILD_MEMBER_INFO_RECV
 struct SDHP_GUILD_SCORE_UPDATE_RECV
 {
 	PSBMSG_HEAD header; // C1:07:06
-	char GuildName[9];
+	char GuildName[GUILD_NAME_BUFFER];
 	DWORD score;
 };
 
 struct SDHP_GUILD_GLOBAL_CHAT_RECV
 {
 	PSBMSG_HEAD header; // C1:07:07
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 	char message[60];
 };
 
 struct SDHP_GUILD_GLOBAL_NOTICE_RECV
 {
 	PSBMSG_HEAD header; // C1:07:08
-	char GuildName[9];
+	char GuildName[GUILD_NAME_BUFFER];
 	char message[60];
 };
 
@@ -98,8 +98,8 @@ struct SDHP_GUILD_INFO_RECV
 {
 	PSWMSG_HEAD header; // C2:07:09
 	DWORD GuildNumber;
-	char GuildName[9];
-	char GuildMaster[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char GuildMaster[CHARACTER_NAME_BUFFER];
 	BYTE Mark[32];
 	char Notice[60];
 	DWORD score;
@@ -108,7 +108,7 @@ struct SDHP_GUILD_INFO_RECV
 
 struct SDHP_GUILD_MEMBER_INFO
 {
-	char Name[11];
+	char Name[CHARACTER_NAME_BUFFER];
 	BYTE status;
 	WORD server;
 };
@@ -121,8 +121,8 @@ struct SDHP_GUILD_CREATE_SEND
 {
 	PSBMSG_HEAD header; // C1:07:00
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 	BYTE Mark[32];
 };
 
@@ -130,58 +130,58 @@ struct SDHP_GUILD_DELETE_SEND
 {
 	PSBMSG_HEAD header; // C1:07:01
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_DISCONNECT_SEND
 {
 	PSBMSG_HEAD header; // C1:07:02
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_JOIN_SEND
 {
 	PSBMSG_HEAD header; // C1:07:03
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_DELETE_SEND
 {
 	PSBMSG_HEAD header; // C1:07:04
 	WORD index;
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_MEMBER_GET_INFO_SEND
 {
 	PSBMSG_HEAD header; // C1:07:05
-	char Name[11];
+	char Name[CHARACTER_NAME_BUFFER];
 };
 
 struct SDHP_GUILD_SCORE_UPDATE_SEND
 {
 	PSBMSG_HEAD header; // C1:07:06
-	char GuildName[9];
+	char GuildName[GUILD_NAME_BUFFER];
 	DWORD score;
 };
 
 struct SDHP_GUILD_GLOBAL_CHAT_SEND
 {
 	PSBMSG_HEAD header; // C1:07:07
-	char GuildName[9];
-	char Name[11];
+	char GuildName[GUILD_NAME_BUFFER];
+	char Name[CHARACTER_NAME_BUFFER];
 	char message[60];
 };
 
 struct SDHP_GUILD_GLOBAL_NOTICE_SEND
 {
 	PSBMSG_HEAD header; // C1:07:08
-	char GuildName[9];
+	char GuildName[GUILD_NAME_BUFFER];
 	char message[60];
 };
 
@@ -205,7 +205,7 @@ struct PMSG_GUILD_RESULT_RECV
 struct PMSG_GUILD_DELETE_RECV
 {
 	PBMSG_HEAD header; // C1:53
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	char PersonalCode[10];
 };
 
@@ -218,7 +218,7 @@ struct PMSG_GUILD_MASTER_OPEN_RECV
 struct PMSG_GUILD_CREATE_RECV
 {
 	PBMSG_HEAD header; // C1:55
-	char GuildName[8];
+	char GuildName[GUILD_NAME_SIZE];
 	BYTE Mark[32];
 };
 
@@ -255,7 +255,7 @@ struct PMSG_GUILD_LIST_SEND
 
 struct PMSG_GUILD_LIST
 {
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE number;
 	BYTE connected;
 };
@@ -276,7 +276,7 @@ struct PMSG_GUILD_VIEWPORT_CREATE_SEND
 {
 	PBMSG_HEAD header; // C1:5C
 	BYTE index[2];
-	char GuildName[8];
+	char GuildName[GUILD_NAME_SIZE];
 	BYTE Mark[32];
 };
 
@@ -295,14 +295,14 @@ struct PMSG_GUILD_WAR_REQUEST_RESULT_SEND
 struct PMSG_GUILD_WAR_DECLARE_SEND
 {
 	PBMSG_HEAD header; // C1:61
-	char GuildName[8];
+	char GuildName[GUILD_NAME_SIZE];
 	BYTE type;
 };
 
 struct PMSG_GUILD_WAR_START_SEND
 {
 	PBMSG_HEAD header; // C1:62
-	char GuildName[8];
+	char GuildName[GUILD_NAME_SIZE];
 	BYTE type;
 	BYTE team;
 };
@@ -311,7 +311,7 @@ struct PMSG_GUILD_WAR_END_SEND
 {
 	PBMSG_HEAD header; // C1:63
 	BYTE result;
-	char GuildName[8];
+	char GuildName[GUILD_NAME_SIZE];
 };
 
 struct PMSG_GUILD_WAR_SCORE_SEND

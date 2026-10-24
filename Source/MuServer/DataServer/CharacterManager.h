@@ -4,7 +4,7 @@
 
 struct CHARACTER_INFO
 {
-	char Name[11];
+	char Name[CHARACTER_NAME_BUFFER];
 	char Account[11];
 	WORD UserIndex;
 	WORD GameServerCode;

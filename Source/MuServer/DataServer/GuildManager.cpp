@@ -76,7 +76,7 @@ void CGuildManager::Init()
 		while (gQueryManager.Fetch() != false)
 	#endif
 		{
-			char GuildName[9] = { 0 };
+			char GuildName[GUILD_NAME_BUFFER] = { 0 };
 
 			GUILD_MEMBER_INFO GuildMemberInfo;
 

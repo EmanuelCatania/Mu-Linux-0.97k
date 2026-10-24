@@ -54,7 +54,7 @@ struct PMSG_PARTY_LIST_SEND
 
 struct PMSG_PARTY_LIST
 {
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	BYTE number;
 	BYTE map;
 	BYTE x;

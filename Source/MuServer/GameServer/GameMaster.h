@@ -7,7 +7,7 @@
 struct GAME_MASTER_INFO
 {
 	char Account[11];
-	char Name[11];
+	char Name[CHARACTER_NAME_BUFFER];
 	BYTE Level;
 };
 

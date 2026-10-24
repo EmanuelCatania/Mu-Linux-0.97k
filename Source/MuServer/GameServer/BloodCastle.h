@@ -48,7 +48,7 @@ struct PMSG_BLOOD_CASTLE_SCORE_SEND
 	PBMSG_HEAD header; // C1:93
 	BYTE type;
 	BYTE flag;
-	char name[10];
+	char name[CHARACTER_NAME_SIZE];
 	WORD none;
 	DWORD Score;
 	DWORD RewardExperience;

@@ -563,7 +563,7 @@ void CGChatRecv(PMSG_CHAT_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	TextField::Copy(name, lpMsg->name);
 
@@ -660,7 +660,7 @@ void CGChatWhisperRecv(PMSG_CHAT_WHISPER_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	TextField::Copy(name, lpMsg->name);
 
@@ -1308,7 +1308,7 @@ void CGCharacterCreateRecv(PMSG_CHARACTER_CREATE_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	TextField::Copy(name, lpMsg->name);
 
@@ -1349,7 +1349,7 @@ void CGCharacterDeleteRecv(PMSG_CHARACTER_DELETE_RECV* lpMsg, int aIndex)
 		return;
 	}
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	TextField::Copy(name, lpMsg->name);
 
@@ -1367,7 +1367,7 @@ void CGCharacterInfoRecv(PMSG_CHARACTER_INFO_RECV* lpMsg, int aIndex)
 
 	lpObj->EnableDelCharacter = 0;
 
-	char name[11] = { 0 };
+	char name[CHARACTER_NAME_BUFFER] = { 0 };
 
 	TextField::Copy(name, lpMsg->name);
 

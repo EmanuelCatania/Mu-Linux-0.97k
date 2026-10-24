@@ -356,7 +356,7 @@ struct OBJECTSTRUCT
 	WORD Type;
 	BYTE Live;
 	char Account[11];
-	char Name[11];
+	char Name[CHARACTER_NAME_BUFFER];
 	char PersonalCode[14];
 	int Lang;
 	BYTE Class;
@@ -449,7 +449,7 @@ struct OBJECTSTRUCT
 	int PartyTargetUser;
 	int GuildNumber;
 	GUILD_INFO* Guild;
-	char GuildName[11];
+	char GuildName[GUILD_NAME_BUFFER];
 	int GuildStatus;
 	int IsInBattleGround;
 	int SummonIndex;

@@ -33,7 +33,7 @@ struct GUILD_MEMBER_INFO
 		this->GuildStatus = GUILD_STATUS_NONE;
 	}
 
-	char Name[11];
+	char Name[CHARACTER_NAME_BUFFER];
 	short Index;
 	bool Use;
 	char Server;
@@ -87,7 +87,7 @@ struct GUILD_INFO
 	}
 
 	int Number;
-	char Name[9];
+	char Name[GUILD_NAME_BUFFER];
 	BYTE Mark[32];
 	int GuildScore;
 	char Notice[60];

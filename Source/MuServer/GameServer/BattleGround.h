@@ -32,17 +32,17 @@ public:
 
 public:
 
-	char m_szTeamName1[9];
+	char m_szTeamName1[GUILD_NAME_BUFFER];
 
-	char m_szTeamName2[9];
+	char m_szTeamName2[GUILD_NAME_BUFFER];
 
 	int m_Score1;
 
 	int m_Score2;
 
-	char m_szID1[11];
+	char m_szID1[CHARACTER_NAME_BUFFER];
 
-	char m_szID2[11];
+	char m_szID2[CHARACTER_NAME_BUFFER];
 
 	RECT m_rect;
 
