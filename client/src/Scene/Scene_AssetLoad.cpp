@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Local/ClientText.h"
+#include "Text/TextCore.h"
 #include "globals.h"
 #include "functions.h"
 
@@ -153,6 +154,12 @@ void __cdecl Scene_LoadGameAssets(void) {
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
     NPCName_LoadTextData(local_64);
+    // DESVIACION (Fase 4, texto Unicode): las palabras de los filtros de chat y
+    // de nombres (Filter.bmd / FilterName.bmd, 1000 x 20 bytes) de 1252 a UTF-8.
+    for (int i = 0; i < 1000; ++i) {
+        TextEngine::ConvertWindows1252InPlace(DAT_07d73104 + i * 0x14, 0x14);
+        TextEngine::ConvertWindows1252InPlace(DAT_07d27610 + i * 0x14, 0x14);
+    }
     // Sound preloads (tail of OpenBasicData @ 0x00510F65-0x00510FC5).
     // IDs y filenames verificados contra IDA Hex-Rays 00510320_OpenBasicData.c
     // y los binary patches del companion project (Mu-linux-97K/Source/Client/
