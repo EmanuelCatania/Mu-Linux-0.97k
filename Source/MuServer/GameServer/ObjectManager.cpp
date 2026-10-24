@@ -2560,7 +2560,7 @@ bool CObjectManager::CharacterInfoSet(BYTE* aRecv, int aIndex)
 
 	lpObj->GrandReset = lpMsg->GrandReset;
 
-	memcpy(lpObj->Name, lpMsg->name, sizeof(lpObj->Name));
+	TextField::Copy(lpObj->Name, lpMsg->name);
 
 	lpObj->Map = lpMsg->Map;
 

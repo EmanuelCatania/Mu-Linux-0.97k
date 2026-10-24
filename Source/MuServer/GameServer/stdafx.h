@@ -12,6 +12,7 @@
 #define ENCRYPT_STATE 1
 
 #include "../Common/Platform.h"
+#include "../Common/TextField.h"
 
 // System includes
 #include <iostream>

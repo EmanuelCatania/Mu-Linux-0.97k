@@ -311,7 +311,7 @@ void GDCharacterListSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -362,7 +362,7 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 
 		info.slot = lpInfo->slot;
 
-		memcpy(info.Name, lpInfo->name, sizeof(info.Name));
+		TextField::Copy(info.Name, lpInfo->name);
 
 		info.Level = lpInfo->level;
 
@@ -556,9 +556,9 @@ void GDCharacterCreateSend(int aIndex, char* name, BYTE Class)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	pMsg.Class = Class;
 
@@ -582,7 +582,7 @@ void DGCharacterCreateRecv(SDHP_CHARACTER_CREATE_RECV* lpMsg)
 
 	pMsg.result = lpMsg->result;
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	pMsg.slot = lpMsg->slot;
 
@@ -604,9 +604,9 @@ void GDCharacterDeleteSend(int aIndex, char* name)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	pMsg.guild = 0;
 
@@ -621,7 +621,7 @@ void GDCharacterDeleteSend(int aIndex, char* name)
 			pMsg.guild = 2; // Guild Member
 		}
 
-		memcpy(pMsg.GuildName, gObj[aIndex].Guild->Name, sizeof(pMsg.GuildName));
+		TextField::Copy(pMsg.GuildName, gObj[aIndex].Guild->Name);
 	}
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
@@ -660,9 +660,9 @@ void GDCharacterInfoSend(int aIndex, char* name)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -804,9 +804,9 @@ void GDCharacterInfoSaveSend(int aIndex)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	pMsg.Level = lpObj->Level;
 
@@ -886,9 +886,9 @@ void GDConnectCharacterSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, gObj[aIndex].Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, gObj[aIndex].Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
@@ -901,9 +901,9 @@ void GDDisconnectCharacterSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, gObj[aIndex].Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, gObj[aIndex].Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
@@ -921,7 +921,7 @@ void GDCreateItemSend(int aIndex, BYTE map, BYTE x, BYTE y, int index, BYTE leve
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	pMsg.X = x;
 
@@ -1037,9 +1037,9 @@ void GDInventoryItemSaveSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	for (int n = 0; n < INVENTORY_SIZE; n++)
 	{
@@ -1062,9 +1062,9 @@ void GDOptionDataSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, gObj[aIndex].Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, gObj[aIndex].Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -1111,9 +1111,9 @@ void GDOptionDataSaveSend(int aIndex, BYTE* SkillKey, BYTE GameOption, BYTE QKey
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	memcpy(pMsg.SkillKey, SkillKey, sizeof(pMsg.SkillKey));
 
@@ -1140,9 +1140,9 @@ void GDResetInfoSaveSend(int aIndex, int ResetDay, int ResetWek, int ResetMon)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	pMsg.Reset = lpObj->Reset;
 
@@ -1165,9 +1165,9 @@ void GDGrandResetInfoSaveSend(int aIndex, int GrandResetDay, int GrandResetWek, 
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	pMsg.Reset = lpObj->Reset;
 
@@ -1208,11 +1208,11 @@ void GDGlobalWhisperSend(int aIndex, char* TargetName, char* message)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
-	memcpy(pMsg.name, gObj[aIndex].Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, gObj[aIndex].Name);
 
-	memcpy(pMsg.TargetName, TargetName, sizeof(pMsg.TargetName));
+	TextField::CopyString(pMsg.TargetName, TargetName);
 
 	memcpy(pMsg.message, message, sizeof(pMsg.message));
 
@@ -1270,9 +1270,9 @@ void GDRankingBloodCastleSaveSend(int aIndex, DWORD Score)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	pMsg.score = Score;
 
@@ -1289,9 +1289,9 @@ void GDRankingDevilSquareSaveSend(int aIndex, DWORD Score)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	pMsg.score = Score;
 

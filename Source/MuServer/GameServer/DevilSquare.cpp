@@ -1521,7 +1521,7 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 
 		PMSG_DEVIL_SQUARE_SCORE info;
 
-		memcpy(info.name, gObj[lpUser->Index].Name, sizeof(info.name));
+		TextField::Copy(info.name, gObj[lpUser->Index].Name);
 
 		info.score = lpUser->Score;
 
@@ -1551,7 +1551,7 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 					continue;
 				}
 
-				memcpy(info.name, gObj[lpLevel->User[i].Index].Name, sizeof(info.name));
+				TextField::Copy(info.name, gObj[lpLevel->User[i].Index].Name);
 
 				info.score = lpLevel->User[i].Score;
 

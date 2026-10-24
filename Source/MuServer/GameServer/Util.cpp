@@ -356,7 +356,7 @@ void PostMessageGold(char* name, char* serverName, int message, char* text)
 
 	PMSG_CHAT_WHISPER_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -385,7 +385,7 @@ void PostMessageBlue(char* name, char* serverName, int message, char* text)
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -414,7 +414,7 @@ void PostMessageGreen(char* name, char* serverName, int message, char* text)
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -443,7 +443,7 @@ void PostMessageLightGreen(char* name, char* serverName, int message, char* text
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{

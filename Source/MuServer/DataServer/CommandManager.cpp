@@ -24,11 +24,11 @@ void CCommandManager::GDGlobalPostRecv(SDHP_GLOBAL_POST_RECV* lpMsg, int index)
 
 	pMsg.type = lpMsg->type;
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
 
-	memcpy(pMsg.serverName, lpMsg->serverName, sizeof(pMsg.serverName));
+	TextField::Copy(pMsg.serverName, lpMsg->serverName);
 
 	for (int n = 0; n < MAX_SERVER; n++)
 	{
@@ -47,9 +47,9 @@ void CCommandManager::GDCommandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg, int ind
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 #ifndef MYSQL
 	gQueryManager.ExecQuery("EXEC WZ_GetResetInfo '%s','%s'", lpMsg->account, lpMsg->name);
@@ -78,9 +78,9 @@ void CCommandManager::GDCommandGrandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg, in
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 #ifndef MYSQL
 	gQueryManager.ExecQuery("EXEC WZ_GetGrandResetInfo '%s','%s'", lpMsg->account, lpMsg->name);

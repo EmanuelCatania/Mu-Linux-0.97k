@@ -6,6 +6,7 @@
 #endif
 
 #include "../Common/Platform.h"
+#include "../Common/TextField.h"
 
 // System includes
 #include <queue>

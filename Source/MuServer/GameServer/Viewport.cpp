@@ -712,7 +712,7 @@ void CViewport::GCViewportPlayerSend(int aIndex)
 
 		memcpy(info.CharSet, lpTarget->CharSet, sizeof(info.CharSet));
 
-		memcpy(info.name, lpTarget->Name, sizeof(info.name));
+		TextField::Copy(info.name, lpTarget->Name);
 
 		info.tx = (BYTE)lpTarget->TX;
 
@@ -905,7 +905,7 @@ void CViewport::GCViewportSummonSend(int aIndex)
 
 		info.DirAndPkLevel = (lpTarget->Dir * 16) | (lpTarget->PKLevel & 0x0F);
 
-		memcpy(info.name, gObj[lpTarget->SummonIndex].Name, sizeof(info.name));
+		TextField::Copy(info.name, gObj[lpTarget->SummonIndex].Name);
 
 		int InfoSize = sizeof(info);
 
@@ -1071,7 +1071,7 @@ void CViewport::GCViewportChangeSend(int aIndex)
 
 		info.skin = lpTarget->Change;
 
-		memcpy(info.name, lpTarget->Name, sizeof(info.name));
+		TextField::Copy(info.name, lpTarget->Name);
 
 		info.tx = (BYTE)lpTarget->TX;
 
@@ -1152,7 +1152,7 @@ void CViewport::GCViewportGuildInfoSend(int aIndex)
 
 		info.index[1] = SET_NUMBERLB(lpTarget->Guild->Number);
 
-		memcpy(info.GuildName, lpTarget->Guild->Name, sizeof(info.GuildName));
+		TextField::Copy(info.GuildName, lpTarget->Guild->Name);
 
 		memcpy(info.Mark, lpTarget->Guild->Mark, sizeof(info.Mark));
 
@@ -1311,7 +1311,7 @@ void CViewport::GCViewportSimplePlayerSend(LPOBJ lpObj)
 
 	memcpy(info.CharSet, lpObj->CharSet, sizeof(info.CharSet));
 
-	memcpy(info.name, lpObj->Name, sizeof(info.name));
+	TextField::Copy(info.name, lpObj->Name);
 
 	info.tx = (BYTE)lpObj->TX;
 
@@ -1451,7 +1451,7 @@ void CViewport::GCViewportSimpleSummonSend(LPOBJ lpObj)
 
 	info.DirAndPkLevel = (lpObj->Dir * 16) | (lpObj->PKLevel & 0x0F);
 
-	memcpy(info.name, gObj[lpObj->SummonIndex].Name, sizeof(info.name));
+	TextField::Copy(info.name, gObj[lpObj->SummonIndex].Name);
 
 	int InfoSize = sizeof(info);
 
@@ -1501,7 +1501,7 @@ void CViewport::GCViewportSimpleChangeSend(LPOBJ lpObj)
 
 	info.skin = lpObj->Change;
 
-	memcpy(info.name, lpObj->Name, sizeof(info.name));
+	TextField::Copy(info.name, lpObj->Name);
 
 	info.tx = (BYTE)lpObj->TX;
 
@@ -1559,7 +1559,7 @@ void CViewport::GCViewportSimpleGuildInfoSend(LPOBJ lpObj)
 
 	info.index[1] = SET_NUMBERLB(lpObj->Guild->Number);
 
-	memcpy(info.GuildName, lpObj->Guild->Name, sizeof(info.GuildName));
+	TextField::Copy(info.GuildName, lpObj->Guild->Name);
 
 	memcpy(info.Mark, lpObj->Guild->Mark, sizeof(info.Mark));
 

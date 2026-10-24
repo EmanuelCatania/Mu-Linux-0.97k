@@ -386,7 +386,7 @@ void GDCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 #ifndef MYSQL
 	if (gQueryManager.ExecQuery("SELECT Id FROM AccountCharacter WHERE Id='%s'", lpMsg->account) == false || gQueryManager.Fetch() == SQL_NO_DATA)
@@ -464,7 +464,7 @@ void GDCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg, int index)
 		{
 			info.slot = n;
 
-			memcpy(info.name, CharacterName[n], sizeof(info.name));
+			TextField::Copy(info.name, CharacterName[n]);
 
 			info.level = (WORD)gQueryManager.GetAsInteger("cLevel");
 
@@ -533,9 +533,9 @@ void GDCharacterCreateRecv(SDHP_CHARACTER_CREATE_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	if (CheckTextSyntax(lpMsg->name, sizeof(lpMsg->name)) == false || gBadSyntax.CheckSyntax(lpMsg->name) == false || CheckSpecialText(lpMsg->name) == false)
 	{
@@ -635,7 +635,7 @@ void GDCharacterDeleteRecv(SDHP_CHARACTER_DELETE_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 	if (CheckTextSyntax(lpMsg->name, sizeof(lpMsg->name)) == false)
 	{
@@ -722,9 +722,9 @@ void GDCharacterDeleteRecv(SDHP_CHARACTER_DELETE_RECV* lpMsg, int index)
 
 				pMsg.index = lpMsg->index;
 
-				memcpy(pMsg.Name, lpMsg->name, sizeof(pMsg.Name));
+				TextField::Copy(pMsg.Name, lpMsg->name);
 
-				memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+				TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
 				gGuild.GDGuildDeleteRecv(&pMsg, index);
 			}
@@ -734,9 +734,9 @@ void GDCharacterDeleteRecv(SDHP_CHARACTER_DELETE_RECV* lpMsg, int index)
 
 				pMsg.index = lpMsg->index;
 
-				memcpy(pMsg.Name, lpMsg->name, sizeof(pMsg.Name));
+				TextField::Copy(pMsg.Name, lpMsg->name);
 
-				memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+				TextField::Copy(pMsg.GuildName, lpMsg->GuildName);
 
 				gGuild.GDGuildMemberDeleteRecv(&pMsg, index);
 			}
@@ -754,9 +754,9 @@ void GDCharacterInfoRecv(SDHP_CHARACTER_INFO_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	pMsg.result = ((CheckTextSyntax(lpMsg->name, sizeof(lpMsg->name)) == false) ? 0 : 1);
 
@@ -967,7 +967,7 @@ void GDCreateItemRecv(SDHP_CREATE_ITEM_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
 	pMsg.X = lpMsg->X;
 
@@ -1048,9 +1048,9 @@ void GDOptionDataRecv(SDHP_OPTION_DATA_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 #ifndef MYSQL
 	if (gQueryManager.ExecQuery("SELECT * FROM OptionData WHERE Name='%s'", lpMsg->name) == false || gQueryManager.Fetch() == SQL_NO_DATA)
@@ -1208,9 +1208,9 @@ void GDGlobalWhisperRecv(SDHP_GLOBAL_WHISPER_RECV* lpMsg, int index)
 
 	pMsg.index = lpMsg->index;
 
-	memcpy(pMsg.account, lpMsg->account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpMsg->account);
 
-	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpMsg->name);
 
 	CHARACTER_INFO CharacterInfo;
 
@@ -1225,7 +1225,7 @@ void GDGlobalWhisperRecv(SDHP_GLOBAL_WHISPER_RECV* lpMsg, int index)
 		DGGlobalWhisperEchoSend(CharacterInfo.GameServerCode, CharacterInfo.UserIndex, CharacterInfo.Account, CharacterInfo.Name, lpMsg->name, lpMsg->message);
 	}
 
-	memcpy(pMsg.TargetName, lpMsg->TargetName, sizeof(pMsg.TargetName));
+	TextField::Copy(pMsg.TargetName, lpMsg->TargetName);
 
 	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
 
@@ -1240,11 +1240,11 @@ void DGGlobalWhisperEchoSend(WORD ServerCode, WORD index, char* account, char* n
 
 	pMsg.index = index;
 
-	memcpy(pMsg.account, account, sizeof(pMsg.account));
+	TextField::CopyString(pMsg.account, account);
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
-	memcpy(pMsg.SourceName, SourceName, sizeof(pMsg.SourceName));
+	TextField::CopyString(pMsg.SourceName, SourceName);
 
 	memcpy(pMsg.message, message, sizeof(pMsg.message));
 

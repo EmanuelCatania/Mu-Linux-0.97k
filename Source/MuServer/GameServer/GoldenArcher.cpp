@@ -73,7 +73,7 @@ void CGoldenArcher::GDGoldenArcherGetValuesSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
@@ -294,7 +294,7 @@ void CGoldenArcher::GDGoldenArcherSaveCoinSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	pMsg.count[GOLDEN_ARCHER_COIN_RENA] = gObj[aIndex].ArcherCoinCount[GOLDEN_ARCHER_COIN_RENA];
 
@@ -474,7 +474,7 @@ void CGoldenArcher::GDGoldenArcherSaveLuckyNumberSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	memcpy(pMsg.LuckyNumber, gObj[aIndex].ArcherLuckyNumber, sizeof(pMsg.LuckyNumber));
 
@@ -526,7 +526,7 @@ void CGoldenArcher::GDGoldenArcherRegisterLuckyNumberSend(int aIndex)
 
 	pMsg.index = aIndex;
 
-	memcpy(pMsg.account, gObj[aIndex].Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, gObj[aIndex].Account);
 
 	memcpy(pMsg.LuckyNumber, gObj[aIndex].ArcherLuckyNumber, sizeof(pMsg.LuckyNumber));
 

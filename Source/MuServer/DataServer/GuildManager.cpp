@@ -286,13 +286,13 @@ BYTE CGuildManager::AddGuild(int index, char* szGuildName, char* szMasterName, B
 
 			gQueryManager.Close();
 
-			memcpy(GuildInfo->szName, szGuildName, sizeof(GuildInfo->szName));
+			TextField::CopyString(GuildInfo->szName, szGuildName);
 
-			memcpy(GuildInfo->szMaster, szMasterName, sizeof(GuildInfo->szMaster));
+			TextField::CopyString(GuildInfo->szMaster, szMasterName);
 
 			memcpy(GuildInfo->arMark, lpMark, sizeof(GuildInfo->arMark));
 
-			memcpy(GuildInfo->arGuildMember[0].szGuildMember, szMasterName, sizeof(GuildInfo->arGuildMember[0].szGuildMember));
+			TextField::CopyString(GuildInfo->arGuildMember[0].szGuildMember, szMasterName);
 
 			GuildInfo->arGuildMember[0].btStatus = 0x80;
 
@@ -385,7 +385,7 @@ BYTE CGuildManager::AddGuildMember(int index, char* szGuildName, char* szGuildMe
 
 		GuildMemberInfo.Clear();
 
-		memcpy(GuildMemberInfo.szGuildMember, szGuildMember, sizeof(GuildMemberInfo.szGuildMember));
+		TextField::CopyString(GuildMemberInfo.szGuildMember, szGuildMember);
 
 		GuildMemberInfo.btStatus = btStatus;
 
@@ -491,7 +491,7 @@ BYTE CGuildManager::SetGuildNotice(char* szGuildName, char* szNotice)
 	{
 		gQueryManager.Close();
 
-		memcpy(lpGuildInfo->szNotice, szNotice, sizeof(lpGuildInfo->szNotice));
+		TextField::CopyString(lpGuildInfo->szNotice, szNotice);
 
 		return 1;
 	}

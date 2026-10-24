@@ -491,7 +491,7 @@ void CTrade::GCTradeRequestSend(int aIndex, char* name)
 
 	pMsg.header.setE(0x36, sizeof(pMsg));
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
 }
@@ -504,7 +504,7 @@ void CTrade::GCTradeResponseSend(int aIndex, BYTE response, char* name, int leve
 
 	pMsg.response = response;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	pMsg.level = level;
 

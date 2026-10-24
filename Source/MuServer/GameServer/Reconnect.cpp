@@ -41,7 +41,7 @@ void CReconnect::SetReconnectInfo(LPOBJ lpObj)
 {
 	RECONNECT_INFO info;
 
-	memcpy(info.Name, lpObj->Name, sizeof(info.Name));
+	TextField::Copy(info.Name, lpObj->Name);
 
 	info.ReconnectTime = GetTickCount();
 
@@ -57,7 +57,7 @@ void CReconnect::SetReconnectInfo(LPOBJ lpObj)
 
 	info.RequestOption = lpObj->Option;
 
-	memcpy(info.AutoPartyPassword, lpObj->AutoPartyPassword, sizeof(info.AutoPartyPassword));
+	TextField::Copy(info.AutoPartyPassword, lpObj->AutoPartyPassword);
 
 	std::map<std::string, RECONNECT_INFO>::iterator it = this->m_ReconnectInfo.find(std::string(lpObj->Name));
 
@@ -144,5 +144,5 @@ void CReconnect::ResumeCommand(LPOBJ lpObj, RECONNECT_INFO* lpInfo)
 
 	lpObj->Option = lpInfo->RequestOption;
 
-	memcpy(lpObj->AutoPartyPassword, lpInfo->AutoPartyPassword, sizeof(lpObj->AutoPartyPassword));
+	TextField::Copy(lpObj->AutoPartyPassword, lpInfo->AutoPartyPassword);
 }

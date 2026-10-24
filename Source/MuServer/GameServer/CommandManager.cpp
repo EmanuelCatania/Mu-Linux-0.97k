@@ -607,11 +607,11 @@ void CCommandManager::GDGlobalPostSend(BYTE type, char* name, char* message)
 
 	pMsg.type = type;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	memcpy(pMsg.message, message, sizeof(pMsg.message));
 
-	memcpy(pMsg.serverName, gServerInfo.m_ServerName, sizeof(pMsg.serverName));
+	TextField::Copy(pMsg.serverName, gServerInfo.m_ServerName);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
@@ -649,7 +649,7 @@ void CCommandManager::GCPostMessageGold(char* name, char* serverName, int messag
 
 	PMSG_CHAT_WHISPER_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -678,7 +678,7 @@ void CCommandManager::GCPostMessageBlue(char* name, char* serverName, int messag
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -707,7 +707,7 @@ void CCommandManager::GCPostMessageGreen(char* name, char* serverName, int messa
 
 	PMSG_CHAT_SEND pMsg;
 
-	memcpy(pMsg.name, name, sizeof(pMsg.name));
+	TextField::CopyString(pMsg.name, name);
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -974,9 +974,9 @@ void CCommandManager::CommandReset(LPOBJ lpObj, char* arg)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -1070,9 +1070,9 @@ void CCommandManager::CommandResetAutoProc(LPOBJ lpObj)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }
@@ -1351,9 +1351,9 @@ void CCommandManager::CommandGrandReset(LPOBJ lpObj, char* arg)
 
 	pMsg.index = lpObj->Index;
 
-	memcpy(pMsg.account, lpObj->Account, sizeof(pMsg.account));
+	TextField::Copy(pMsg.account, lpObj->Account);
 
-	memcpy(pMsg.name, lpObj->Name, sizeof(pMsg.name));
+	TextField::Copy(pMsg.name, lpObj->Name);
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
 }

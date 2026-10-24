@@ -321,7 +321,7 @@ void CMove::GCMoveListSend(LPOBJ lpObj)
 	{
 		info.MapNumber = gGate.GetGateMap(it->second.Gate);
 
-		memcpy(info.MapName, it->second.Name, sizeof(info.MapName));
+		TextField::Copy(info.MapName, it->second.Name);
 
 		info.MinLevel = gGate.GetMoveLevel(lpObj, info.MapNumber, it->second.MinLevel);
 

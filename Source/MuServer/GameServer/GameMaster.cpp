@@ -93,9 +93,9 @@ void CGameMaster::SetGameMasterLevel(LPOBJ lpObj, int level)
 
 	GAME_MASTER_INFO info;
 
-	memcpy(info.Account, lpObj->Account, sizeof(info.Account));
+	TextField::Copy(info.Account, lpObj->Account);
 
-	memcpy(info.Name, lpObj->Name, sizeof(info.Name));
+	TextField::Copy(info.Name, lpObj->Name);
 
 	info.Level = level;
 
