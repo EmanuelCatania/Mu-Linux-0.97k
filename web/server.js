@@ -79,7 +79,9 @@ const pool = mysql.createPool({
   database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  // Los nombres y textos son utf8mb4 (0.97.40).
+  charset: 'utf8mb4'
 });
 
 const sessionStore = new MySQLStore({}, pool);
