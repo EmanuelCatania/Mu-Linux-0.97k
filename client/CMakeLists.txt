@@ -343,6 +343,8 @@ set(MU_SOURCES
     src/Render/Terrain_Render.cpp
     src/Render/Terrain_Water.cpp
     src/Render/Texture/ImageCodec.cpp
+    src/Text/TextCore.cpp
+    src/Text/Utf8Proc.c
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
     src/Render/Weather.cpp
@@ -514,6 +516,7 @@ set(MU_HEADERS
     src/Render/Sprite_Draw.h
     src/Render/Terrain_Render.h
     src/Render/Texture/ImageCodec.h
+    src/Text/TextCore.h
     src/Render/Texture/Texture.h
     src/Scene/Scene.h
     src/Scene/Scene_CharSelect.h
@@ -614,7 +617,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -693,6 +696,15 @@ add_executable(mu_frame_pointer_set_test EXCLUDE_FROM_ALL tests/FramePointerSet.
 target_include_directories(mu_frame_pointer_set_test PRIVATE src)
 target_compile_features(mu_frame_pointer_set_test PRIVATE cxx_std_17)
 add_test(NAME frame_pointer_set COMMAND mu_frame_pointer_set_test)
+
+add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c)
+target_include_directories(mu_text_core_test PRIVATE src)
+target_compile_features(mu_text_core_test PRIVATE cxx_std_17)
+if(MSVC)
+    # Sin /utf-8 MSVC codifica dos veces los \u de los literales u8.
+    target_compile_options(mu_text_core_test PRIVATE /utf-8)
+endif()
+add_test(NAME text_core COMMAND mu_text_core_test)
 
 add_executable(mu_transform_workers_test EXCLUDE_FROM_ALL tests/TransformWorkers.cpp)
 target_include_directories(mu_transform_workers_test PRIVATE src)
