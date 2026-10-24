@@ -751,9 +751,13 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // el storage de GlobalText mientras se portea el subsistema de texto.
         char oldName[101] = {};
         strncpy(oldName, (char*)(summon + 449), sizeof(oldName) - 1);
-        NetText::FromServer((char*)(summon + 449), 11, e + 11, 10);
-        strncat((char*)(summon + 449), "'s ", 100 - strlen((char*)(summon + 449)));
-        strncat((char*)(summon + 449), oldName, 100 - strlen((char*)(summon + 449)));
+        char owner[11] = {};
+        NetText::FromServer(owner, sizeof(owner), e + 11, 10);
+        std::string label = std::string(owner) + "'s " + oldName;
+        // El nombre empieza en +0x1C1 y lo que sigue a partir de +0x1DA es
+        // GuildMarkIndex y Key: el compuesto se corta en esos 25 bytes (antes
+        // el strncat de 100 bytes pisaba el índice de red de la invocación).
+        TextEngine::CopyTruncated((char*)(summon + 449), 0x1DA - 0x1C1, label);
         AsCharacter(summon)->Object.Live = 1;
         ApplyPersistentSkillEffect97k(summon, viewSkillState, 1);
 
