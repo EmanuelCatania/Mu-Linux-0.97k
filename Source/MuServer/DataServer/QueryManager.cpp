@@ -327,6 +327,7 @@ void CQueryManager::ConvertBinaryToString(BYTE* InBuff, int InSize, char* OutBuf
 #else
 
 #include "Log.h"
+#include "../Common/Text1252.h"
 
 #pragma comment(lib,"mysqlcppconn.lib")
 
@@ -367,6 +368,10 @@ bool CQueryManager::Init(std::string HostName, WORD HostPort, std::string Userna
 	this->connection_properties["password"] = Password;
 
 	this->connection_properties["schema"] = SchemaName;
+
+	// La base es utf8mb4 (Fase 4). El texto del server sigue en 1252 y se
+	// convierte en este borde (Text1252).
+	this->connection_properties["OPT_CHARSET_NAME"] = "utf8mb4";
 
 	return this->Connect();
 }
@@ -417,7 +422,9 @@ void CQueryManager::PrepareQuery(std::string query, ...)
 
 	va_end(arg);
 
-	this->pstmt = this->con->prepareStatement(buff);
+	const std::string sql = Text1252::ToUtf8(buff);
+
+	this->pstmt = this->con->prepareStatement(sql);
 
 	gLog.Output(LOG_QUERY, "[PrepareQuery] Query prepared: %s", buff);
 }
@@ -491,11 +498,13 @@ bool CQueryManager::ExecUpdateQuery(std::string query, ...)
 
 	va_end(arg);
 
+	const std::string sql = Text1252::ToUtf8(buff);
+
 	try
 	{
 		this->stmt = this->con->createStatement();
 
-		int Quant = this->stmt->executeUpdate(buff);
+		int Quant = this->stmt->executeUpdate(sql);
 
 		gLog.Output(LOG_QUERY, "[ExecUpdateQuery] %d rows updated. Query: %s", Quant, buff);
 	}
@@ -527,11 +536,13 @@ bool CQueryManager::ExecResultQuery(std::string query, ...)
 
 	va_end(arg);
 
+	const std::string sql = Text1252::ToUtf8(buff);
+
 	try
 	{
 		this->stmt = this->con->createStatement();
 
-		if (this->stmt->execute(buff))
+		if (this->stmt->execute(sql))
 		{
 			this->res = this->stmt->getResultSet();
 
@@ -572,11 +583,13 @@ bool CQueryManager::ExecQuery(std::string query, ...)
 
 	va_end(arg);
 
+	const std::string sql = Text1252::ToUtf8(buff);
+
 	try
 	{
 		this->stmt = this->con->createStatement();
 
-		if (this->stmt->execute(buff))
+		if (this->stmt->execute(sql))
 		{
 			this->res = this->stmt->getResultSet();
 
@@ -683,12 +696,14 @@ void CQueryManager::SetAsInteger64(int position, __int64 value)
 
 void CQueryManager::SetAsString(int position, char* InBuffer, int InBufferSize)
 {
-	this->m_StringBuffs[position] = InBuffer;
+	std::string legacy = InBuffer;
 
-	if (this->m_StringBuffs[position].length() > (unsigned int)InBufferSize)
+	if (legacy.length() > (unsigned int)InBufferSize)
 	{
-		this->m_StringBuffs[position].resize(InBufferSize);
+		legacy.resize(InBufferSize);
 	}
+
+	this->m_StringBuffs[position] = Text1252::ToUtf8(legacy.c_str());
 
 	this->pstmt->setString(position, this->m_StringBuffs[position]);
 }
@@ -721,7 +736,9 @@ __int64 CQueryManager::GetAsInteger64(std::string ColName)
 
 void CQueryManager::GetAsString(std::string ColName, char* OutBuffer, int OutBufferSize)
 {
-	strncpy_s(OutBuffer, OutBufferSize, this->res->getString(ColName).c_str(), (OutBufferSize - 1));
+	const std::string legacy = Text1252::FromUtf8(this->res->getString(ColName));
+
+	strncpy_s(OutBuffer, OutBufferSize, legacy.c_str(), (OutBufferSize - 1));
 }
 
 void CQueryManager::GetAsBinary(std::string ColName, unsigned char* OutBuffer, int OutBufferSize)
