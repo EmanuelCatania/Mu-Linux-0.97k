@@ -482,7 +482,7 @@ void CParty::CGPartyListRecv(int aIndex)
 		return;
 	}
 
-	BYTE send[256];
+	BYTE send[2048];
 
 	PMSG_PARTY_LIST_SEND pMsg;
 
@@ -531,7 +531,9 @@ void CParty::CGPartyListRecv(int aIndex)
 		pMsg.result = 1;
 	}
 
-	pMsg.header.size = size;
+	pMsg.header.size[0] = SET_NUMBERHB(size);
+
+	pMsg.header.size[1] = SET_NUMBERLB(size);
 
 	memcpy(send, &pMsg, sizeof(pMsg));
 
@@ -589,7 +591,7 @@ void CParty::GCPartyListSend(int index)
 		return;
 	}
 
-	BYTE send[256];
+	BYTE send[2048];
 
 	PMSG_PARTY_LIST_SEND pMsg;
 
@@ -633,7 +635,9 @@ void CParty::GCPartyListSend(int index)
 		pMsg.count++;
 	}
 
-	pMsg.header.size = size;
+	pMsg.header.size[0] = SET_NUMBERHB(size);
+
+	pMsg.header.size[1] = SET_NUMBERLB(size);
 
 	memcpy(send, &pMsg, sizeof(pMsg));
 

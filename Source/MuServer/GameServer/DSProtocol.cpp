@@ -340,7 +340,7 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 		return;
 	}
 
-	BYTE send[256];
+	BYTE send[2048];
 
 	PMSG_CHARACTER_LIST_SEND pMsg;
 
@@ -523,7 +523,9 @@ void DGCharacterListRecv(SDHP_CHARACTER_LIST_RECV* lpMsg)
 		gObj[lpMsg->index].ClassCode = 3;
 	}
 
-	pMsg.header.size = size;
+	pMsg.header.size[0] = SET_NUMBERHB(size);
+
+	pMsg.header.size[1] = SET_NUMBERLB(size);
 
 	memcpy(send, &pMsg, sizeof(pMsg));
 

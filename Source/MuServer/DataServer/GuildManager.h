@@ -69,7 +69,7 @@ struct GUILD_INFO
 	DWORD dwScore;
 	char szName[GUILD_NAME_BUFFER];
 	char szMaster[CHARACTER_NAME_BUFFER];
-	char szNotice[60];
+	char szNotice[CHAT_MESSAGE_SIZE];
 	BYTE arMark[32];
 	GUILD_MEMBER_INFO arGuildMember[MAX_GUILD_MEMBER];
 };

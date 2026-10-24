@@ -47,7 +47,7 @@ struct PMSG_PARTY_RESULT_SEND
 
 struct PMSG_PARTY_LIST_SEND
 {
-	PBMSG_HEAD header; // C1:42
+	PWMSG_HEAD header; // C2:42
 	BYTE result;
 	BYTE count;
 };

@@ -8,10 +8,10 @@
 
 struct SDHP_GLOBAL_POST_RECV
 {
-	PSBMSG_HEAD header; // C1:05:03
+	PSWMSG_HEAD header; // C2:05:03
 	BYTE type;
 	char name[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 	char serverName[60];
 };
 
@@ -29,10 +29,10 @@ struct SDHP_COMMAND_RESET_RECV
 
 struct SDHP_GLOBAL_POST_SEND
 {
-	PSBMSG_HEAD header; // C1:05:03
+	PSWMSG_HEAD header; // C2:05:03
 	BYTE type;
 	char name[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 	char serverName[60];
 };
 

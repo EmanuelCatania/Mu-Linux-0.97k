@@ -876,7 +876,7 @@ void CGuild::GDGuildGlobalChatSend(char* GuildName, char* Name, char* message)
 
 	pMsg.message[size] = 0;
 
-	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
+	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
 
 void CGuild::DGGuildGlobalChatRecv(SDHP_GUILD_GLOBAL_CHAT_RECV* lpMsg)

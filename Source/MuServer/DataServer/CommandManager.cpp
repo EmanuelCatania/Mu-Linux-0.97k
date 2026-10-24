@@ -34,7 +34,7 @@ void CCommandManager::GDGlobalPostRecv(SDHP_GLOBAL_POST_RECV* lpMsg, int index)
 	{
 		if (gServerManager[n].CheckState() != 0)
 		{
-			gSocketManager.DataSend(n, (BYTE*)&pMsg, pMsg.header.size);
+			gSocketManager.DataSend(n, (BYTE*)&pMsg, sizeof(pMsg));
 		}
 	}
 }

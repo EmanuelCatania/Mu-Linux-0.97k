@@ -81,17 +81,17 @@ struct SDHP_GUILD_SCORE_UPDATE_RECV
 
 struct SDHP_GUILD_GLOBAL_CHAT_RECV
 {
-	PSBMSG_HEAD header; // C1:07:07
+	PSWMSG_HEAD header; // C2:07:07
 	char GuildName[GUILD_NAME_BUFFER];
 	char Name[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 struct SDHP_GUILD_GLOBAL_NOTICE_RECV
 {
 	PSBMSG_HEAD header; // C1:07:08
 	char GuildName[GUILD_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 struct SDHP_GUILD_INFO_RECV
@@ -101,7 +101,7 @@ struct SDHP_GUILD_INFO_RECV
 	char GuildName[GUILD_NAME_BUFFER];
 	char GuildMaster[CHARACTER_NAME_BUFFER];
 	BYTE Mark[32];
-	char Notice[60];
+	char Notice[CHAT_MESSAGE_SIZE];
 	DWORD score;
 	BYTE count;
 };
@@ -172,17 +172,17 @@ struct SDHP_GUILD_SCORE_UPDATE_SEND
 
 struct SDHP_GUILD_GLOBAL_CHAT_SEND
 {
-	PSBMSG_HEAD header; // C1:07:07
+	PSWMSG_HEAD header; // C2:07:07
 	char GuildName[GUILD_NAME_BUFFER];
 	char Name[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 struct SDHP_GUILD_GLOBAL_NOTICE_SEND
 {
 	PSBMSG_HEAD header; // C1:07:08
 	char GuildName[GUILD_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 //**********************************************//

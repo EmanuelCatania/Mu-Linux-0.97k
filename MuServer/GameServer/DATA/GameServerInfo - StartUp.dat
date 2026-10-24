@@ -20,7 +20,7 @@ ServerLock=0
 ServerPort=55901
 
 ; Version of the Server -> Sync with Encoder/MainInfo
-ServerVersion=0.97.11
+ServerVersion=0.97.40
 
 ; Serial of the Server -> Sync with Encoder/MainInfo
 ServerSerial=TbYehR2hFUPBKgZj

@@ -1507,7 +1507,7 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 			continue;
 		}
 
-		BYTE send[256];
+		BYTE send[2048];
 
 		PMSG_DEVIL_SQUARE_SCORE_SEND pMsg;
 
@@ -1569,7 +1569,9 @@ void CDevilSquare::GCDevilSquareScoreSend(DEVIL_SQUARE_LEVEL* lpLevel)
 			}
 		}
 
-		pMsg.header.size = size;
+		pMsg.header.size[0] = SET_NUMBERHB(size);
+
+		pMsg.header.size[1] = SET_NUMBERLB(size);
 
 		memcpy(send, &pMsg, sizeof(pMsg));
 

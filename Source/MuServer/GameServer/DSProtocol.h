@@ -127,23 +127,23 @@ struct SDHP_GLOBAL_NOTICE_RECV
 
 struct SDHP_GLOBAL_WHISPER_RECV
 {
-	PSBMSG_HEAD header; // C1:05:01
+	PSWMSG_HEAD header; // C2:05:01
 	WORD index;
 	char account[11];
 	char name[CHARACTER_NAME_BUFFER];
 	BYTE result;
 	char TargetName[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 struct SDHP_GLOBAL_WHISPER_ECHO_RECV
 {
-	PSBMSG_HEAD header; // C1:05:02
+	PSWMSG_HEAD header; // C2:05:02
 	WORD index;
 	char account[11];
 	char name[CHARACTER_NAME_BUFFER];
 	char SourceName[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 //**********************************************//
@@ -320,12 +320,12 @@ struct SDHP_GLOBAL_NOTICE_SEND
 
 struct SDHP_GLOBAL_WHISPER_SEND
 {
-	PSBMSG_HEAD header; // C1:05:01
+	PSWMSG_HEAD header; // C2:05:01
 	WORD index;
 	char account[11];
 	char name[CHARACTER_NAME_BUFFER];
 	char TargetName[CHARACTER_NAME_BUFFER];
-	char message[60];
+	char message[CHAT_MESSAGE_SIZE];
 };
 
 struct SDHP_RANKING_SAVE_SEND

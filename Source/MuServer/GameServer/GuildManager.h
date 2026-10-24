@@ -90,7 +90,7 @@ struct GUILD_INFO
 	char Name[GUILD_NAME_BUFFER];
 	BYTE Mark[32];
 	int GuildScore;
-	char Notice[60];
+	char Notice[CHAT_MESSAGE_SIZE];
 	GUILD_INFO* TargetGuildNode;
 	BYTE WarDeclareState;
 	BYTE WarState;

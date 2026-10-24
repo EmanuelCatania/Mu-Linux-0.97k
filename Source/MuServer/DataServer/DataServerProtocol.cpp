@@ -1229,7 +1229,7 @@ void GDGlobalWhisperRecv(SDHP_GLOBAL_WHISPER_RECV* lpMsg, int index)
 
 	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
 
-	gSocketManager.DataSend(index, (BYTE*)&pMsg, pMsg.header.size);
+	gSocketManager.DataSend(index, (BYTE*)&pMsg, sizeof(pMsg));
 }
 
 void DGGlobalWhisperEchoSend(WORD ServerCode, WORD index, char* account, char* name, char* SourceName, char* message)
@@ -1252,7 +1252,7 @@ void DGGlobalWhisperEchoSend(WORD ServerCode, WORD index, char* account, char* n
 
 	if (lpServerManager != 0)
 	{
-		gSocketManager.DataSend(lpServerManager->m_index, (BYTE*)&pMsg, pMsg.header.size);
+		gSocketManager.DataSend(lpServerManager->m_index, (BYTE*)&pMsg, sizeof(pMsg));
 	}
 }
 

@@ -1112,7 +1112,7 @@ void CViewport::GCViewportGuildInfoSend(int aIndex)
 {
 	LPOBJ lpObj = &gObj[aIndex];
 
-	BYTE send[4096];
+	BYTE send[8192];
 
 	PMSG_VIEWPORT_SEND pMsg;
 
