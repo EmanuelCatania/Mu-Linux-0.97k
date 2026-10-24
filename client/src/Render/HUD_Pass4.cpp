@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Render/Gfx.h"
 #include "Config/UserSettings.h"
 #include "Platform/Text.h"
@@ -609,18 +610,16 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     // de Scene_Login: MSVC reporta eso con __fastfail, que mata el proceso sin
     // pasar por el filtro de excepciones -- de ahi los cierres sin cartel ni log.
     const size_t kMaxText = sizeof(Text) - 1;
-    if (hide == 1) {
-        size_t len = strlen(InputText[Index]);
-        if (len > kMaxText) len = kMaxText;
-        for (size_t i = 0; i < len; ++i) Text[i] = '*';
-        Text[len] = 0;
-    } else if (hide == 2) {
-        const char* src = InputText[Index];
-        size_t len = strlen(src);
-        if (len > kMaxText) len = kMaxText;
-        size_t i = 0;
-        for (; i < 7 && i < len; ++i) Text[i] = src[i];
-        for (; i < len; ++i) Text[i] = '*';
+    if (hide == 1 || hide == 2) {
+        // DESVIACION (Fase 4, texto Unicode): un '*' por letra visible, no por
+        // byte; el prefijo visible del modo 2 (7 bytes) no parte una letra.
+        size_t len = strnlen(InputText[Index], kMaxText);
+        const std::string_view value(InputText[Index], len);
+        const size_t shown = hide == 2 ? TextEngine::FitBytes(value, 7) : 0;
+        memcpy(Text, value.data(), shown);
+        size_t i = shown;
+        const size_t stars = TextEngine::ClusterCount(value.substr(shown));
+        for (size_t n = 0; n < stars && i < kMaxText; ++n) Text[i++] = '*';
         Text[i] = 0;
     } else {
         strncpy(Text, InputText[Index], sizeof(Text) - 1);

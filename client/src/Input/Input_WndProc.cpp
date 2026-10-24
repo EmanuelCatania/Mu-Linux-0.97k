@@ -3,6 +3,7 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "Render/Camera3D.h"
 #include "Input/Input.h"
@@ -181,9 +182,12 @@ void Input_OnEvent(const Platform::InputEvent& event)
         }
 
         if (event.character == 8) {           // Backspace
+            // DESVIACION (Fase 4, texto Unicode): borra la última letra visible
+            // entera (un acento, una sílaba hangul o un emoji compuesto).
             if (len > 0) {
-                lens[slot] = (DWORD)(len - 1);
-                buf[len - 1] = 0;
+                const int previous = (int)TextEngine::PreviousCluster(std::string_view(buf, (size_t)len), (size_t)len);
+                memset(buf + previous, 0, (size_t)(len - previous));
+                lens[slot] = (DWORD)previous;
             }
             break;
         }
@@ -303,7 +307,7 @@ void Input_OnEvent(const Platform::InputEvent& event)
         const bool guildDeleteCodeDialog =
             DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
         if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
-            BYTE c = (BYTE)event.character;
+            const uint32_t c = event.character;
             if (GoldInputEnable && (c < '0' || c > '9')) break;
             // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de
             // CreateFontA (ver WinMain paso 15).
@@ -315,14 +319,20 @@ void Input_OnEvent(const Platform::InputEvent& event)
             // camino los destrozaría igual que HANGEUL_CHARSET destrozaba el
             // render.  Los aceptamos como carácter simple.
             // 0x7F es DEL: se sigue descartando.
-            if (c >= 0x20 && c != 0x7F) {
+            // DESVIACION (Fase 4, texto Unicode): el carácter llega como code
+            // point y se guarda en UTF-8. InputTextMax sigue contando bytes,
+            // así que una letra que no entra entera no se agrega.
+            if (c >= 0x20 && c != 0x7F && !(c >= 0x80 && c < 0xA0)) {
                 // InputTextMax[8] @ 0x00559c94 — leído como int desde el array
                 // tipado (NO vía la referencia aliasada a float, que castea el valor).
                 int maxLen = _InputTextMaxArr[slot];
                 if (maxLen <= 0) maxLen = 10;  // login-default fallback
-                if (len < maxLen) {
-                    buf[len]   = (char)c;
-                    lens[slot] = (DWORD)(len + 1);
+                if (maxLen > 0xFF) maxLen = 0xFF;
+                std::string encoded;
+                TextEngine::Append(encoded, (char32_t)c);
+                if (len + (int)encoded.size() <= maxLen) {
+                    memcpy(buf + len, encoded.data(), encoded.size());
+                    lens[slot] = (DWORD)(len + (int)encoded.size());
                 }
             }
         }

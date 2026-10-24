@@ -16,6 +16,7 @@
 // Chat scroll timer: DAT_00559cdc (reset to 300 on new message)
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Render/Gfx.h"
 #include "Platform/Text.h"
 #include "Config/UserSettings.h"
@@ -98,14 +99,15 @@ void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
     SetBackgroundTextColor = 0;
 
     if (hide == 1 || hide == 2) {
-        size_t i = 0;
-        if (hide == 2) {
-            // IDA 0x47F12A..0x47F144: copy bytes 0..6 from this slot.
-            memcpy(text, input, 7);
-            i = 7;
-        }
-        const size_t length = strlen(input);
-        for (; i < length; ++i) text[i] = '*';
+        // DESVIACION (Fase 4, texto Unicode): un '*' por letra visible, no por
+        // byte; el prefijo visible del modo 2 (IDA: 7 bytes) se corta sin
+        // partir una letra.
+        const std::string_view value(input);
+        size_t shown = hide == 2 ? TextEngine::FitBytes(value, 7) : 0;
+        memcpy(text, input, shown);
+        size_t i = shown;
+        const size_t stars = TextEngine::ClusterCount(value.substr(shown));
+        for (size_t n = 0; n < stars && i + 1 < sizeof(text); ++n) text[i++] = '*';
         text[i] = 0;
     } else {
         strcpy(text, input);

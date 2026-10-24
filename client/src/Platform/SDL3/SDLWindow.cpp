@@ -12,22 +12,8 @@
 #endif
 namespace Platform {
 namespace {
-// El título del cliente conserva Windows-1252; SDL recibe UTF-8 en ambos sistemas.
-std::string TitleUTF8(const char* text) {
-    const unsigned short extra[32] = {0x20ac,0x81,0x201a,0x192,0x201e,0x2026,0x2020,0x2021,0x2c6,0x2030,0x160,0x2039,0x152,0x8d,0x17d,0x8f,0x90,0x2018,0x2019,0x201c,0x201d,0x2022,0x2013,0x2014,0x2dc,0x2122,0x161,0x203a,0x153,0x9d,0x17e,0x178};
-    std::string result;
-    if (!text) return result;
-    for (auto p = reinterpret_cast<const unsigned char*>(text); *p; ++p) {
-        unsigned code = *p >= 128 && *p < 160 ? extra[*p - 128] : *p;
-        if (code < 128) result += char(code);
-        else {
-            if (code >= 2048) { result += char(0xe0 | (code >> 12)); result += char(0x80 | ((code >> 6) & 63)); }
-            else result += char(0xc0 | (code >> 6));
-            result += char(0x80 | (code & 63));
-        }
-    }
-    return result;
-}
+// El texto del cliente es UTF-8 (Fase 4), igual que lo que recibe SDL.
+std::string TitleUTF8(const char* text) { return text ? std::string(text) : std::string(); }
 #ifndef _WIN32
 // Crea una ventana oculta con contexto GL y devuelve si el renderer es por
 // software (llvmpipe/softpipe/swrast). Caso real: NVIDIA no publica la
@@ -92,7 +78,16 @@ public:
 #ifdef _WIN32
         auto hwnd = window ? static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window),
             SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr)) : nullptr;
-        MessageBoxA(attach ? hwnd : nullptr, text, title, MB_OK | (errorIcon ? MB_ICONERROR : 0));
+        // El texto es UTF-8: se convierte a UTF-16 para la API W.
+        auto wide = [](const char* s) {
+            std::wstring out;
+            if (!s) return out;
+            const int n = MultiByteToWideChar(CP_UTF8, 0, s, -1, nullptr, 0);
+            if (n > 0) { out.resize(size_t(n)); MultiByteToWideChar(CP_UTF8, 0, s, -1, &out[0], n); out.resize(size_t(n - 1)); }
+            return out;
+        };
+        MessageBoxW(attach ? hwnd : nullptr, wide(text).c_str(), title ? wide(title).c_str() : nullptr,
+                    MB_OK | (errorIcon ? MB_ICONERROR : 0));
 #else
         const auto caption = TitleUTF8(title ? title : "Error");
         const auto body = TitleUTF8(text);

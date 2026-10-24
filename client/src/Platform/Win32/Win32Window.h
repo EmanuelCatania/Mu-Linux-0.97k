@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/IWindow.h"
 #include <windows.h>
+#include <string>
 
 namespace Platform {
 // Puente nativo transitorio para WndProc, GDI, audio y red aún no abstraídos.
@@ -8,8 +9,17 @@ class Win32Window final : public IWindow {
 public:
     void ServiceLoadingEvents(unsigned maximum) override;
     void BindDispatch(HINSTANCE instance, WNDPROC procedure);
+    // El texto del cliente es UTF-8 (Fase 4): se muestra con la API W.
+    static std::wstring Wide(const char* text) {
+        std::wstring out;
+        if (!text) return out;
+        const int n = MultiByteToWideChar(CP_UTF8, 0, text, -1, nullptr, 0);
+        if (n > 0) { out.resize(size_t(n)); MultiByteToWideChar(CP_UTF8, 0, text, -1, &out[0], n); out.resize(size_t(n - 1)); }
+        return out;
+    }
     void ShowError(const char* text, const char* title, bool attach, bool errorIcon) override {
-        MessageBoxA(attach ? m_hWnd : nullptr, text, title, MB_OK | (errorIcon ? MB_ICONERROR : 0));
+        MessageBoxW(attach ? m_hWnd : nullptr, Wide(text).c_str(), title ? Wide(title).c_str() : nullptr,
+                    MB_OK | (errorIcon ? MB_ICONERROR : 0));
     }
     bool Create(const WindowSettings& settings) override;
     bool IsCreated() const override { return m_hWnd != nullptr; }
