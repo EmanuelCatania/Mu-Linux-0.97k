@@ -214,7 +214,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
 #endif
   // DESVIACION (Fase 4, pantalla ancha): los límites son los de la ventana, no
   // los del 4:3 de la interfaz (`off` píxeles a cada lado; 0 en 4:3).
-  const int off = gWindow.GetUiOffsetX();
+  const int off = (BYTE)(a7) ? gWindow.GetRightShift() : gWindow.GetUiOffsetX();
   v8 = a1;
   if ( a1 < -off )
   {
