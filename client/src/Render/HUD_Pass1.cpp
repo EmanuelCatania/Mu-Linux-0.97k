@@ -326,9 +326,12 @@ void RenderMainFrameWindow_(void)
     // Two corner decorations (bitmap 0xE9 mirrored at x=532).
     // DESVIACION (DLL Interface.cpp, 0x004BD300 / 0x004BD332): con el mapa
     // abierto, los botones de zoom y transparencia ocupan ese lugar.
-    if (!gMiniMap.HidesLeftDragon())
+    // DESVIACION (Fase 4, pantalla ancha; DLL CWideScreen): sin los dragones de
+    // Menu04; abajo, al final, se dibujan las cabezas de WDecorOld en las esquinas.
+    const bool wide = gWindow.IsWide();
+    if (!wide && !gMiniMap.HidesLeftDragon())
         GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
-    if (!gMiniMap.HidesRightDragon())
+    if (!wide && !gMiniMap.HidesRightDragon())
         GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
     GL_ResetState();   // DisableAlphaBlend
 
@@ -369,6 +372,15 @@ void RenderMainFrameWindow_(void)
     GL_DrawTexture(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
     GL_ResetState();
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
+    if (wide) {
+        EnableAlphaTest(true);
+        // En los márgenes que deja el 4:3, pegadas a la barra (14 px encima de
+        // ella, sin tapar los casilleros) y mirando hacia afuera.  La textura
+        // mira a la derecha.
+        GL_DrawTexture(0x5F0, -130.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, 626.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_ResetState();
+    }
 }
 
 void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
