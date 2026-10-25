@@ -31,4 +31,15 @@ inline constexpr Panel Menu { Anchor::Centro, 120 };
 inline constexpr Panel WindowLeft { Anchor::Izquierda, 0 };
 inline constexpr Panel WindowRight { Anchor::Derecha, 0 };
 constexpr int ClassicChatX(int margin) { return WindowLeft.Origin(margin) - 10; }
+
+struct HorizontalViewport { int x, width; };
+// Sólo un viewport que toca exactamente el borde del 4:3 se extiende.
+// Un ítem situado más allá de ese borde conserva su propio ancho.
+constexpr HorizontalViewport MapViewport(int x, int width, int realWidth, int uiWidth, int offset) {
+    if (realWidth == uiWidth)
+        return {int((long long)realWidth * x / 640), int((long long)realWidth * width / 640)};
+    const int left = x == 0 ? 0 : offset + int((long long)uiWidth * x / 640);
+    const int right = x + width == 640 ? realWidth : offset + int((long long)uiWidth * (x + width) / 640);
+    return {left, right - left};
+}
 }

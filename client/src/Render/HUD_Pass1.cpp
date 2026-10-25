@@ -441,8 +441,10 @@ void Render_HotbarItems3D_(void)
     Gfx::MatrixMode(Gfx::Matrix::Projection);
     Gfx::PushMatrix();
     Gfx::LoadIdentity();
-    GL_SetViewport(gWindow.GetUiOffsetX(), 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
-    float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
+    // El pase de ítems también cubre los márgenes: el viewport central
+    // recortaba los modelos de paneles anclados fuera del 4:3.
+    GL_SetViewport(0, 0, (int)gWindow.GetRealWidth(), (int)gWindow.GetHeight());
+    float aspectF = (float)((double)(int)gWindow.GetRealWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;
     int   nearBits = *(int*)&CameraViewNear;

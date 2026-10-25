@@ -69,15 +69,9 @@ void CWindow::SetResolution(DWORD width, DWORD height)
 
 void CWindow::ViewportX(int x, int w, int& pixelX, int& pixelWidth) const
 {
-    if (!IsWide()) {
-        pixelX = (int)((unsigned)m_Width * (unsigned)x / 640u);
-        pixelWidth = (int)((unsigned)m_Width * (unsigned)w / 640u);
-        return;
-    }
-    const int left = x <= 0 ? 0 : m_UiOffsetX + (int)((long long)m_UiWidth * x / 640);
-    const int right = (x + w >= 640) ? (int)m_Width : m_UiOffsetX + (int)((long long)m_UiWidth * (x + w) / 640);
-    pixelX = left;
-    pixelWidth = right - left;
+    const auto viewport = Ui::MapViewport(x, w, (int)m_Width, (int)m_UiWidth, m_UiOffsetX);
+    pixelX = viewport.x;
+    pixelWidth = viewport.width;
 }
 
 float CWindow::ViewportFraction(int width) const

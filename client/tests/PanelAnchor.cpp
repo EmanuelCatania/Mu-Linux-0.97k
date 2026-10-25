@@ -11,6 +11,16 @@ int main() {
     for (const auto& size : sizes) {
         const int uiWidth = size[1] * 640 / 480;
         const int margin = ((size[0] - uiWidth) / 2) * 640 / uiWidth;
+        const int offset = (size[0] - uiWidth) / 2;
+        const auto world = Ui::MapViewport(0, 640, size[0], uiWidth, offset);
+        Check(world.x == 0 && world.width == size[0]);
+        // Dos previews de igual tamaño a ambos lados del borde central.
+        const auto centerItem = Ui::MapViewport(500, 20, size[0], uiWidth, offset);
+        const auto rightItem = Ui::MapViewport(700, 20, size[0], uiWidth, offset);
+        Check(rightItem.width == centerItem.width);
+        Check(rightItem.x == offset + 700 * uiWidth / 640);
+        const auto leftItem = Ui::MapViewport(-80, 20, size[0], uiWidth, offset);
+        Check(leftItem.x == offset - 80 * uiWidth / 640);
         const int edge = Ui::WindowRight.Origin(margin);
         for (auto panel : singles) {
             Check(panel.Origin(margin) + panel.width == edge);
