@@ -746,6 +746,7 @@ static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
 const std::uint8_t CATALOG_TEXT_ITEM = 1;
 const std::uint8_t CATALOG_TEXT_MONSTER = 2;
 const std::uint8_t CATALOG_TEXT_SKILL = 3;
+const std::uint8_t CATALOG_TEXT_CLIENT = 4;   // textos propios del cliente (ClientTextId)
 
 struct CATALOG_TEXT
 {

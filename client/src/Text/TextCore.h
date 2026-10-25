@@ -72,6 +72,11 @@ std::vector<unsigned char> LineBreaks(std::string_view text);
 // texto corta antes aunque entre todo. 0 si no hay ningún corte posible.
 std::size_t FitLineBreak(std::string_view text, std::size_t maxBytes);
 
+// true si los dos textos de formato llevan los mismos especificadores (%d, %s,
+// %.0f...) en el mismo orden: es lo que hace falta para usar uno en lugar del
+// otro con los mismos argumentos de printf.  "%%" no cuenta.
+bool SameFormatSpecifiers(std::string_view a, std::string_view b);
+
 // Emoticonos y códigos del chat: ":D" y "<3" (palabra suelta) y ":fire:" (en
 // cualquier parte) se reemplazan por su emoji. Devuelve el texto sin cambios
 // si no hay nada que reemplazar.

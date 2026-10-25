@@ -348,6 +348,29 @@ const Emoticon kShortcodes[] = {
 };
 }
 
+namespace {
+// Especificadores de un formato printf, en orden ("%%" no cuenta).
+std::vector<std::string> FormatSpecifiers(std::string_view text)
+{
+    std::vector<std::string> specs;
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (text[i] != '%') continue;
+        if (i + 1 < text.size() && text[i + 1] == '%') { ++i; continue; }
+        std::size_t j = i + 1;
+        while (j < text.size() && std::string_view("-+ #0123456789.*hlLzjt").find(text[j]) != std::string_view::npos) ++j;
+        if (j < text.size()) ++j;   // la conversión
+        specs.emplace_back(text.substr(i, j - i));
+        i = j - 1;
+    }
+    return specs;
+}
+}
+
+bool SameFormatSpecifiers(std::string_view a, std::string_view b)
+{
+    return FormatSpecifiers(a) == FormatSpecifiers(b);
+}
+
 std::string ExpandEmoticons(std::string_view text)
 {
     std::string out;
