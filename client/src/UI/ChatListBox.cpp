@@ -445,6 +445,9 @@ static int __fastcall ChatLB_setColor2(DWORD* self, int, int a, int b, int c)
 // pie vía [+96]. La llama Render_GameFrame (vtable+0x10).
 static void __fastcall ChatLB_renderScroll(DWORD* self)
 {
+    // El chat clásico sigue el borde incluso al cambiar resolución en Opciones.
+    if (!g_bUseChatListBox && self == (DWORD*)DAT_055c9ff0)
+        self[11] = (DWORD)Ui::ClassicChatX(gWindow.GetRightShift());
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef int  (__fastcall *FnRow )(DWORD*, int /*edx*/, int row);
 
@@ -476,6 +479,10 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
 // vtable methods 24/28/32/36 and walks focus state machine.
 static int __fastcall ChatLB_tick(DWORD* self, int, int v)
 {
+    if (!g_bUseChatListBox && self == (DWORD*)DAT_055c9ff0)
+        self[11] = (DWORD)Ui::ClassicChatX(gWindow.GetRightShift());
+    if (self == (DWORD*)(uintptr_t)DAT_055c9ff4 && GuildOpened)
+        self[11] = (DWORD)(gWindow.PanelOrigin(Ui::Guild) + 10);
     typedef int  (__fastcall *FnInt)(DWORD*);
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef void (__fastcall *FnInt2)(DWORD*, int, int);
@@ -2340,6 +2347,15 @@ void* EventListBox_Construct(int x, int bottom, int width, int visibleRows)
     obj[13] = (DWORD)width;
     obj[14] = (DWORD)(EventRowStep * visibleRows + 10);
     return obj;
+}
+
+// Dibujo y foco reciben el origen vigente al cambiar el modo de video.
+void EventListBox_SetPosition(void* widget, int x, int bottom)
+{
+    if (!widget) return;
+    DWORD* obj = (DWORD*)widget;
+    obj[11] = (DWORD)x;
+    obj[12] = (DWORD)bottom;
 }
 
 void EventListBox_Rebuild(void* widget, int count, bool keepPosition)

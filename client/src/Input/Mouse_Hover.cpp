@@ -581,31 +581,9 @@ char __cdecl Party_HPBar_HoverCheck(void)
 {
     if (DAT_07eaa115 != '\0') return 0;
 
-    // Determine X band based on SecondPassword UI state
-    UINT local_20;
-    if (DAT_07eaa117 != '\0') {
-        if (DAT_07eaa116 != '\0') {
-            local_20 = gWindow.PanelX(0x104);
-        } else {
-            // Check secondary password active flags
-            if ((DAT_07eaa118 == '\0') && (DAT_07eaa119 == '\0') && (DAT_07eaa11a == '\0') &&
-                (DAT_07eaa11b == '\0') && (DAT_07eaa11c == '\0')) {
-                local_20 = gWindow.PanelX(0x1c2);
-            } else {
-                local_20 = gWindow.PanelX(0x104);
-            }
-        }
-    } else {
-        // All clear: check if all flags inactive
-        if ((DAT_07eaa116 == '\0') && (DAT_07eaa115 == '\0') &&
-            (DAT_07eaa114 == '\0') && (DAT_07eaa124 == 0) &&
-            (GoldenArcherOpenType == 0) && (*(char*)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
-            (ServerDivisionOpened == '\0')) {
-            local_20 = gWindow.PanelX(0x280);
-        } else {
-            local_20 = gWindow.PanelX(0x1c2);
-        }
-    }
+    // El HUD dibuja esta columna desde GetScreenWidth; compartir su origen
+    // evita mantener una segunda lista de combinaciones de paneles abiertos.
+    const int local_20 = GetScreenWidth();
 
     float local_14 = (float)local_20 - _DAT_00552598;   // left edge of HP bar column
     float local_24 = 5.0f;                              // top of first bar (Y)

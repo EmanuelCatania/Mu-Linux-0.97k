@@ -494,14 +494,14 @@ void UI_RenderChatLogOverlay(void)
       iVar3 = (int)DAT_083a427c;
       // DESVIACION (Fase 4, pantalla ancha): las líneas van pegadas al borde
       // izquierdo de la ventana (x = -shift), no al del 4:3.
-      bVar8 = -gWindow.GetRightShift() - 1 < iVar3;
+      bVar8 = gWindow.PanelOrigin(Ui::WindowLeft) - 1 < iVar3;
       // &DAT_07df9494 es int* (alias a offset
       // 0x114 del buffer), sumarle iVar5*0x118 como int* avanzaría 4x. Casteo
       // a char* antes de sumar el stride-en-bytes 0x118 para que el LONG
       // aterrice en el slot correcto.
       *(LONG *)((char *)&DAT_07df9494 + iVar5 * 0x118) = local_108.cx;
       uVar2 = SetBackgroundTextColor;
-      if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()) - gWindow.GetRightShift())) &&
+      if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()) + gWindow.PanelOrigin(Ui::WindowLeft))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
          (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
         pbVar4 = (byte *)EntityName::Get(DAT_07abf5d8);
@@ -527,7 +527,7 @@ LAB_00480b8e:
           DAT_00559c78 = uVar2;
         }
       }
-      UI_DrawText(-gWindow.GetRightShift(),iVar7,local_100,0,1,0, sizeof(local_100));
+      UI_DrawText(gWindow.PanelOrigin(Ui::WindowLeft),iVar7,local_100,0,1,0, sizeof(local_100));
       lpsz_00 = &lpsz_07e113d0;
       iVar5 = Platform::TextLength(local_100);
       gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);

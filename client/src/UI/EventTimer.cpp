@@ -12,6 +12,7 @@
 #include "Local/ClientText.h"
 
 void* EventListBox_Construct(int x, int bottom, int width, int visibleRows);
+void  EventListBox_SetPosition(void* widget, int x, int bottom);
 void  EventListBox_Rebuild(void* widget, int count, bool keepPosition);
 void  EventListBox_Tick(void* widget);
 void  EventListBox_Render(void* widget);
@@ -22,7 +23,7 @@ namespace {
 // Misma columna y fondo que RenderGuildList (IDA 0x004F0810): 190x433 en x=450.
 struct EventPanelLayout {
     // DESVIACION (Fase 4, pantalla ancha): pegado al borde derecho de la ventana.
-    static int X() { return 450 + gWindow.GetPanelShift(); }
+    static int X() { return gWindow.PanelOrigin(Ui::EventTimer); }
     static constexpr int Y = 0;
     static int TitleX() { return X() + 35; }
     static constexpr int TitleY = Y + 12, TitleWidth = 120;
@@ -66,6 +67,7 @@ void* CEventTimer::Widget()
     if (!m_Widget)
         m_Widget = EventListBox_Construct(Layout::ListX(), Layout::ListBottom,
                                           Layout::ListWidth, Layout::ListRows);
+    EventListBox_SetPosition(m_Widget, Layout::ListX(), Layout::ListBottom);
     return m_Widget;
 }
 

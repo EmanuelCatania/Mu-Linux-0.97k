@@ -15,6 +15,7 @@
 // La ventana nativa y su contexto OpenGL viven en Platform/Win32.
 
 #include "Platform/PlatformHeaders.h"
+#include "UI/PanelAnchor.h"
 
 class CWindow {
 public:
@@ -76,12 +77,7 @@ public:
     // Los paneles pegados al borde derecho de la ventana (inventario, personaje,
     // party...) suman esto a su x: su borde derecho cae en el de la ventana.
     int GetRightShift() const;
-    // Corrimiento de los paneles del lado derecho.  Hoy 0: los paneles quedan
-    // dentro del 4:3 de la interfaz.  Anclarlos al borde de la ventana (devolver
-    // GetRightShift()) exige que cada panel derive TODAS sus posiciones de su
-    // origen, y varios (evento, ranking, golden archer...) usan literales.
-    int GetPanelShift() const { return 0; }
-    int PanelX(int base) const { return base + GetPanelShift(); }
+    int PanelOrigin(Ui::Panel panel) const { return panel.Origin(GetRightShift()); }
     // Píxel real <-> columna de la grilla 640 (puede salir de 0..639 en los costados).
     int UiXFromPixel(int pixel) const;
     int PixelFromUiX(int ui) const;

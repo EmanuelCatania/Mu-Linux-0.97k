@@ -214,7 +214,7 @@ void __cdecl UI_InGameMenu(void)
     // case 4 Close(in).
     case 0x6e:
     {
-        if (mouseX >= 0x103 && mouseX <= 0x17b && IsClickPushed())
+        if (mouseX >= gWindow.PanelOrigin(Ui::Menu) - 1 && mouseX < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width && IsClickPushed())
         {
             DWORD gs = SceneFlag;              // g_GameState
             int btnCount = (gs == 5) ? 5 : ((gs == 4) ? 4 : 3);

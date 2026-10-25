@@ -650,7 +650,7 @@ void __cdecl SecondPassword_Screen3(void) {
 //     unresolvable without call-site context. STUB: __ftol() button region.
 void __cdecl SecondPassword_Screen4(void) {
     // DESVIACION: publicar el origen antes del hit-test, sin esperar al draw.
-    InventoryStartX = gWindow.PanelX((CharacterOpened || PartyOpened) ? 260 : 450);
+    InventoryStartX = gWindow.PanelOrigin((CharacterOpened || PartyOpened) ? Ui::InventoryPair : Ui::RightPanel);
     InventoryStartY = 0;
 
     // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
@@ -810,7 +810,7 @@ void __cdecl SecondPassword_Screen4(void) {
     // 260 / 0 como origen (DAT_07eaa0c8 / DAT_07eaa0cc).  El hover de abajo lee
     // DAT_07eaa0c8, así que se sincroniza el global con los valores del render
     // para que coincidan.
-    DAT_07eaa0c8 = gWindow.PanelX(260);
+    DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::InventoryPair);
     DAT_07eaa0cc = 0;
     char sv6 = DAT_07eaa118;
     if (sv6 != '\0') {
@@ -848,7 +848,7 @@ void __cdecl SecondPassword_Screen5(void) {
 
     // ── Blood Castle ────────────────────────────────────────────────────────
     if (EventType == 1) {
-        DAT_07eaa0c8 = gWindow.PanelX(260);
+        DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::InventoryPair);
         DAT_07eaa0cc = 0;
         if (!MouseLButtonPush) return;
 
@@ -886,7 +886,7 @@ void __cdecl SecondPassword_Screen5(void) {
     if (EventType != 0) return;
 
     // ── Devil Square ────────────────────────────────────────────────────────
-    DAT_07eaa0c8 = gWindow.PanelX(260);
+    DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::InventoryPair);
     DAT_07eaa0cc = 0;
     if (!MouseLButtonPush) return;
 
@@ -948,7 +948,7 @@ void __cdecl ServerTransfer_HitTest(void) {
 
     int mx = (int)DAT_083a427c;   // MouseX
     int my = (int)DAT_083a4278;   // MouseY
-    if (mx >= gWindow.PanelX(450) && mx < gWindow.PanelX(640) && my >= 0 && my < 433)
+    if (mx >= gWindow.PanelOrigin(Ui::RightPanel) && mx < gWindow.PanelOrigin(Ui::WindowRight) && my >= 0 && my < 433)
         DAT_07d78094 = 1;         // MouseOnWindow
 
     const int startX = (int)DAT_07ea5288;   // InventoryStartX

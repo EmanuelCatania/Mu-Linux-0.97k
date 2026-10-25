@@ -304,7 +304,7 @@ void Render_QuickButtons_(void)
     //   sub_4F5820+0x253 push 0 / push 1C2h / call RenderGuildList
     //   sub_4F5820+0x379 push 0 / push 1C2h / call RenderCharacterInfoWindow
     // (GetScreenWidth solo recorta el viewport 3D, no posiciona paneles.)
-    const int panelStartX = gWindow.PanelX(450);
+    const int panelStartX = gWindow.PanelOrigin(Ui::RightPanel);
 
     // IDA: FUN_004F5820 compone el panel antes de sus botones compartidos. La
     // textura inferior del panel alcanza y=433 y, si se dibuja después, cubre
@@ -383,11 +383,11 @@ void Render_QuickButtons_(void)
     //     else if (GuildOpened)   RenderGuildList(450, 0);
     //     RenderParty(450, 0);
     //     if (CharacterOpened)    RenderCharacterInfoWindow(450, 0);
-    if (HUD_IsGuildListRuntime())      RenderGuildList(panelStartX, 0);
+    if (HUD_IsGuildListRuntime())      RenderGuildList(gWindow.PanelOrigin(Ui::Guild), 0);
 
-    RenderParty(gWindow.PanelX(450), 0);
+    RenderParty(gWindow.PanelOrigin(Ui::Party), 0);
 
-    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
+    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(gWindow.PanelOrigin(Ui::Character), 0);
     // DESVIACION: panel H de horarios en la misma columna (se alterna con los anteriores).
     gEventTimer.RenderPanel();
     RenderInventoryWindow();

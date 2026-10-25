@@ -331,9 +331,9 @@ extern "C" void __cdecl RenderServerDivision(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    InventoryStartX = gWindow.PanelX(450);
+    InventoryStartX = gWindow.PanelOrigin(Ui::RightPanel);
     InventoryStartY = 0;
-    RenderInventoryInterface(gWindow.PanelX(450), 0, 1);
+    RenderInventoryInterface(gWindow.PanelOrigin(Ui::RightPanel), 0, 1);
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
@@ -380,7 +380,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 {
     if (!InventoryOpened) return;
 
-    int sx = gWindow.PanelX((CharacterOpened || PartyOpened) ? 260 : 450);
+    int sx = gWindow.PanelOrigin((CharacterOpened || PartyOpened) ? Ui::InventoryPair : Ui::RightPanel);
     // El origen del contenido se publica acá también: con el menú de opciones
     // abierto el tick no corre y, al cambiar de resolución, quedaba el viejo
     // (marco en un lugar y casilleros en otro).
@@ -1178,6 +1178,9 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     // `UI/ChatListBox.cpp` (bloque "WIDGET DE LISTA DE GUILD").
     if (g_nGuildMemberCount > 0 && DAT_055c9ff4) {
         DWORD* obj = (DWORD*)(uintptr_t)DAT_055c9ff4;
+        // La lista y sus botones siguen el mismo origen que el marco.
+        obj[11] = (DWORD)(StartX + 10);
+        obj[12] = (DWORD)(StartY + 387);
         void** vt  = (void**)*obj;
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
@@ -1295,7 +1298,7 @@ extern "C" void __cdecl RenderTrade(void)
     if (!TradeOpened) return;
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    TradeInventoryStartX = gWindow.PanelX(260);
+    TradeInventoryStartX = gWindow.PanelOrigin(Ui::Trade);
     TradeInventoryStartY = 0;
     RenderInventoryInterface(TradeInventoryStartX, TradeInventoryStartY, 1);
 
@@ -1400,7 +1403,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     if (!ShopOpened) return;
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Shop);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
@@ -1520,7 +1523,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Chaos);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
@@ -1633,7 +1636,7 @@ extern "C" void __cdecl RenderWarehouse(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;      // 0x104
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Warehouse);      // 0x104
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
@@ -1779,7 +1782,7 @@ extern "C" void __cdecl RenderEventWindow(void)
 
     const bool bloodCastle = (EventType == 1);
 
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Event);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 

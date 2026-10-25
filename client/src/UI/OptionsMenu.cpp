@@ -15,7 +15,7 @@ COptionsMenu gOptionsMenu;
 namespace {
 // DLL OptionsMenu.cpp: cajas de 120x22 centradas, separadas 7, desde y=60.
 struct OptionsLayout {
-    static constexpr int X = 320 - 60, Y = 60, Width = 120, Height = 22, Gap = 7;
+    static constexpr int X = Ui::Menu.Origin(0), Y = 60, Width = 120, Height = 22, Gap = 7;
     static constexpr int Step = Height + Gap;
     static constexpr int BarLabelWidth = Width / 3;           // "Sonido:"
     static constexpr int BarX = X + BarLabelWidth;
