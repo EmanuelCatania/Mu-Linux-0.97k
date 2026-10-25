@@ -276,6 +276,25 @@ std::string CaseFoldKey(std::string_view text)
     return Map(text, UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD);
 }
 
+bool IsNameText(std::string_view text, std::size_t maxClusters)
+{
+    if (text.empty() || !IsValid(text) || NormalizeNFC(text) != text) return false;
+    const std::size_t clusters = ClusterCount(text);
+    if (clusters < 1 || clusters > maxClusters) return false;
+    bool first = true;
+    for (std::size_t at = 0; at < text.size();) {
+        char32_t codepoint = 0;
+        at += Decode(text, at, codepoint);
+        const utf8proc_category_t category = utf8proc_category((utf8proc_int32_t)codepoint);
+        const bool letter = category >= UTF8PROC_CATEGORY_LU && category <= UTF8PROC_CATEGORY_LO;
+        const bool mark = category >= UTF8PROC_CATEGORY_MN && category <= UTF8PROC_CATEGORY_ME;
+        const bool digit = category >= UTF8PROC_CATEGORY_ND && category <= UTF8PROC_CATEGORY_NO;
+        if (!(letter || digit || (mark && !first))) return false;
+        first = false;
+    }
+    return true;
+}
+
 int CompareIgnoreCase(std::string_view left, std::string_view right)
 {
     return CaseFoldKey(left).compare(CaseFoldKey(right));

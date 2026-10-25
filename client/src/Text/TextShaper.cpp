@@ -62,6 +62,53 @@ bool ToWindows1252Byte(char32_t codepoint, unsigned char& byte)
 }
 } // namespace
 
+// Fuentes del sistema para lo que Data/Font no cubre, en orden de prueba.
+// Windows: las que trae el sistema para cada escritura. Linux: los nombres
+// habituales de Noto, DejaVu y WenQuanYi, buscados en las carpetas de fuentes.
+const std::vector<std::string>& SystemFallbackFonts()
+{
+    static const std::vector<std::string> fonts = [] {
+        std::vector<std::string> result;
+        std::error_code error;
+#ifdef _WIN32
+        const char* windows = std::getenv("WINDIR");
+        const std::filesystem::path dir = std::filesystem::path(windows && *windows ? windows : "C:\\Windows") / "Fonts";
+        static const char* const names[] = {
+            "segoeui.ttf", "msyh.ttc", "msjh.ttc", "YuGothR.ttc", "meiryo.ttc", "msgothic.ttc",
+            "malgun.ttf", "Nirmala.ttc", "Nirmala.ttf", "mangal.ttf", "LeelawUI.ttf", "ebrima.ttf", "seguihis.ttf",
+            "seguisym.ttf", "simsun.ttc", "arialuni.ttf",
+        };
+        for (const char* name : names)
+            if (std::filesystem::is_regular_file(dir / name, error)) result.push_back((dir / name).string());
+#else
+        static const char* const names[] = {
+            "notosans-regular.ttf", "dejavusans.ttf", "notosanscjk-regular.ttc", "notosanscjksc-regular.otf",
+            "notosanssc-regular.otf", "wqy-microhei.ttc", "wqy-zenhei.ttc", "droidsansfallbackfull.ttf",
+            "notosansarabic-regular.ttf", "notosanshebrew-regular.ttf", "notosansdevanagari-regular.ttf",
+            "notosansthai-regular.ttf", "notosanssymbols-regular.ttf", "notosanssymbols2-regular.ttf",
+        };
+        std::vector<std::filesystem::path> roots = { "/usr/share/fonts", "/usr/local/share/fonts" };
+        if (const char* home = std::getenv("HOME")) {
+            roots.emplace_back(std::filesystem::path(home) / ".local/share/fonts");
+            roots.emplace_back(std::filesystem::path(home) / ".fonts");
+        }
+        std::map<std::string, std::string> found;
+        for (const auto& root : roots) {
+            std::filesystem::recursive_directory_iterator entry(root, std::filesystem::directory_options::skip_permission_denied, error), end;
+            for (; !error && entry != end; entry.increment(error))
+                if (entry->is_regular_file(error)) found.emplace(Lower(entry->path().filename().string()), entry->path().string());
+            error.clear();
+        }
+        for (const char* name : names) {
+            const auto it = found.find(name);
+            if (it != found.end()) result.push_back(it->second);
+        }
+#endif
+        return result;
+    }();
+    return fonts;
+}
+
 void SetFallbackFontDirectory(const std::string& directory) { fallbackDirectory = directory; }
 
 struct FontStack::Cache {
@@ -79,6 +126,7 @@ void FontStack::Reset(Platform::SDLFont* primary, int height, bool bold)
     for (auto* font : m_Fallbacks) delete font;
     m_Fallbacks.clear();
     m_FallbacksLoaded = false;
+    m_SystemTried = 0;
     m_Primary = primary;
     m_Height = height;
     m_Bold = bold;
@@ -136,6 +184,15 @@ Platform::SDLFont* FontStack::FontFor(char32_t codepoint)
     LoadFallbacks();
     for (auto* font : m_Fallbacks)
         if (font->HasCodepoint(codepoint)) return font;
+    if (!fallbackDirectory.empty()) return m_Primary;
+    const auto& system = SystemFallbackFonts();
+    while (m_SystemTried < system.size()) {
+        auto* font = new Platform::SDLFont;
+        std::string message;
+        if (!font->LoadFile(system[m_SystemTried++], m_Height, message)) { delete font; continue; }
+        m_Fallbacks.push_back(font);
+        if (font->HasCodepoint(codepoint)) return font;
+    }
     return m_Primary;
 }
 

@@ -90,13 +90,30 @@ bool SDLFont::Load(std::vector<uint8_t> bytes, int height, std::string& error)
     }
     std::unique_ptr<Impl> next(new Impl);
     next->bytes = std::move(bytes);
+    return Open(std::move(next), nullptr, height, error);
+}
+
+bool SDLFont::LoadFile(const std::string& path, int height, std::string& error)
+{
+    error.clear();
+    if (height <= 0 || height > 4096 || path.empty()) {
+        error = "Tamaño o archivo de fuente inválido";
+        return false;
+    }
+    return Open(std::unique_ptr<Impl>(new Impl), path.c_str(), height, error);
+}
+
+bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error)
+{
     if (FT_Init_FreeType(&next->library)) { error = "No se pudo iniciar FreeType"; return false; }
     unsigned interpreter = 35;
     if (FT_Property_Set(next->library, "truetype", "interpreter-version", &interpreter)) {
         error = "No se pudo seleccionar el intérprete TrueType"; return false;
     }
-    if (FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), 0, &next->face) ||
-        !FT_IS_SCALABLE(next->face) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
+    const FT_Error opened = path
+        ? FT_New_Face(next->library, path, 0, &next->face)
+        : FT_New_Memory_Face(next->library, next->bytes.data(), FT_Long(next->bytes.size()), 0, &next->face);
+    if (opened || !FT_IS_SCALABLE(next->face) || FT_Select_Charmap(next->face, FT_ENCODING_UNICODE)) {
         error = "La fuente no es escalable o no tiene mapa Unicode"; return false;
     }
     auto face = next->face;

@@ -25,8 +25,10 @@ struct ShapedText {
     int width = 0;                     // avance total
 };
 
-// Cadena de fuentes de una fuente lógica: la principal (la de [Font]) y las de
-// respaldo de Data/Font, cargadas al mismo alto, en el orden en que se prueban.
+// Cadena de fuentes de una fuente lógica: la principal (la de [Font]), las de
+// respaldo de Data/Font y, para lo que ninguna cubre, fuentes del sistema
+// (CJK, coreano, índico, tailandés...). Todas al mismo alto, en el orden en
+// que se prueban; las del sistema se abren recién cuando hacen falta.
 class FontStack {
 public:
     explicit FontStack(Platform::SDLFont* primary = nullptr) : m_Primary(primary) {}
@@ -43,6 +45,7 @@ private:
     int m_Height = 0;
     bool m_Bold = false;
     bool m_FallbacksLoaded = false;
+    std::size_t m_SystemTried = 0;
     std::vector<Platform::SDLFont*> m_Fallbacks;
     struct Cache;
     Cache* m_Cache = nullptr;
@@ -53,7 +56,9 @@ public:
 };
 
 // Carpeta de las fuentes de respaldo (por defecto Data/Font, relativa al
-// cliente o a MU_ASSET_ROOT). Se puede fijar para los tests.
+// cliente o a MU_ASSET_ROOT). Se puede fijar para los tests; con una carpeta
+// fijada no se usan las fuentes del sistema, así el resultado no depende de
+// la máquina.
 void SetFallbackFontDirectory(const std::string& directory);
 
 } // namespace TextEngine

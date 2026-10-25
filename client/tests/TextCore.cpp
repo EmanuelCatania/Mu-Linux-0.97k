@@ -65,6 +65,16 @@ int main()
     Check(CompareIgnoreCase(U8(u8"Straße"), "STRASSE") == 0, "ß se pliega a ss");
     Check(CaseFoldKey(U8(u8"ñ")) == CaseFoldKey(U8(u8"Ñ")), "forma descompuesta == compuesta");
 
+    // ── Nombres (misma regla que TextName::IsValid del server) ──
+    Check(IsNameText(U8(u8"Añañe"), 10), "nombre latino");
+    Check(IsNameText(U8(u8"Владимир"), 10), "nombre cirílico");
+    Check(IsNameText(U8(u8"李小龍"), 10), "nombre chino");
+    Check(IsNameText("abcdefghij", 10) && !IsNameText("abcdefghijk", 10), "tope de 10 clusters");
+    Check(!IsNameText("Pe nas", 10) && !IsNameText("Pe_nas", 10), "sin espacios ni símbolos");
+    Check(!IsNameText(U8(u8"Peña😀"), 10), "sin emojis");
+    Check(!IsNameText(U8(u8"Peñas"), 10), "sólo NFC");
+    Check(!IsNameText(U8(u8"̃abc"), 10), "sin marca al principio");
+
     // ── Conversión en el lugar (recursos y paquetes en 1252) ──
     char field[8] = "A\xF1o";
     Check(ConvertWindows1252InPlace(field, sizeof(field)) == 4 && std::string(field) == "A\xC3\xB1o", "campo 1252 a UTF-8");
