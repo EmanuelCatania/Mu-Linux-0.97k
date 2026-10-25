@@ -1,5 +1,6 @@
 #include "UI/PanelAnchor.h"
 #include <cstdlib>
+#include <initializer_list>
 
 static void Check(bool ok) { if (!ok) std::abort(); }
 int main() {
@@ -22,6 +23,18 @@ int main() {
         const auto leftItem = Ui::MapViewport(-80, 20, size[0], uiWidth, offset);
         Check(leftItem.x == offset - 80 * uiWidth / 640);
         const int edge = Ui::WindowRight.Origin(margin);
+        for (bool blood : {false, true}) {
+            for (int row = 0; row < (blood ? 6 : 4); ++row) {
+                const auto button = Ui::EventButton(blood, row, margin);
+                Check(button.x == Ui::Event.Origin(margin) + 25);
+                Check(button.Contains(button.x, button.y));
+                Check(button.Contains(button.x + button.width - 1, button.y + button.height - 1));
+                Check(!button.Contains(button.x - 1, button.y));
+                Check(!button.Contains(button.x + button.width, button.y));
+                Check(!button.Contains(button.x, button.y + button.height));
+                Check(button.y == (blood ? 170 + row * 40 : 210 + row * 45));
+            }
+        }
         for (auto panel : singles) {
             Check(panel.Origin(margin) + panel.width == edge);
             Check(panel.Origin(margin) == Ui::RightPanel.Origin(margin));

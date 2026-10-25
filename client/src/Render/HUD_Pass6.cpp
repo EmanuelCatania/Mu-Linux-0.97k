@@ -1789,10 +1789,6 @@ extern "C" void __cdecl RenderEventWindow(void)
     m_dwTextColor = bloodCastle ? 0xDCFFDCBEu : 0xC41432FFu;
     m_dwBackColor = 0x00101000u;
 
-    const float x = (float)dword_7EAA0C8 + 25.0f;
-    float y = (float)dword_7EAA0CC + (bloodCastle ? 170.0f : 210.0f);
-    const float stride = bloodCastle ? 40.0f : 45.0f;
-    const float height = bloodCastle ? 33.0f : 35.0f;
     const int   count  = bloodCastle ? 6 : 4;
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1803,15 +1799,15 @@ extern "C" void __cdecl RenderEventWindow(void)
     const int mgOffset = (Hero && ((((const BYTE*)Hero)[444] & 7) == 3)) ? 6 : 0;
 
     for (int row = 0; row < count; ++row) {
+        const auto button = Ui::EventButton(bloodCastle, row, gWindow.GetRightShift());
+        const float x = (float)button.x, y = (float)button.y;
         const int limitRow = bloodCastle ? row + mgOffset : row;
         const int minLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][0]
                                          : m_iDevilSquareLimitLevel[row][0];
         const int maxLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][1]
                                          : m_iDevilSquareLimitLevel[row][1];
 
-        const bool inRect = ((float)MouseX >= x && (float)MouseX < x + 140.0f &&
-                             (float)MouseY >= y && (float)MouseY < y + height &&
-                             DAT_07e91388 == 0);
+        const bool inRect = button.Contains((int)MouseX, (int)MouseY) && DAT_07e91388 == 0;
 
         if (bloodCastle) {
             const bool permitted = (charLevel <= (unsigned)maxLevel && charLevel >= (unsigned)minLevel);
@@ -1822,7 +1818,7 @@ extern "C" void __cdecl RenderEventWindow(void)
             if (inRect)         BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             else                BufferedDraw::Color3f(0.9f, 0.8f, 0.7f);
         }
-        GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        GL_DrawTexture(240, x, y, (float)button.width, (float)button.height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
 
         char label[96];
         const bool withMax = (maxLevel <= 10000);
@@ -1833,7 +1829,6 @@ extern "C" void __cdecl RenderEventWindow(void)
         RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
                    (bloodCastle ? 120 : 116) * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
-        y += stride;
     }
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);

@@ -848,24 +848,22 @@ void __cdecl SecondPassword_Screen5(void) {
 
     // ── Blood Castle ────────────────────────────────────────────────────────
     if (EventType == 1) {
-        DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::InventoryPair);
+        DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::Event);
         DAT_07eaa0cc = 0;
         if (!MouseLButtonPush) return;
 
         const WORD charLevel = *(WORD*)((BYTE*)CharacterAttribute + 14);
         const int mgOffset = ((((const BYTE*)Hero)[444] & 7) == 3) ? 6 : 0;
 
-        float rowY = 170.0f;
         int row = 0;
-        for (; row < 6; ++row, rowY += 40.0f) {
+        for (; row < 6; ++row) {
             const int limitRow = row + mgOffset;
             // Fila fuera del rango de nivel: no es clickeable (y RenderEventWindow
             // la dibuja grisada).  Esto lo tiene Blood Castle y no Devil Square.
             if (charLevel > (unsigned)m_iBloodCastleLimitLevel[limitRow][1] ||
                 charLevel < (unsigned)m_iBloodCastleLimitLevel[limitRow][0])
                 continue;
-            if ((float)MouseX >= 285.0f && (float)MouseX < 425.0f &&
-                (float)MouseY >= rowY  && (float)MouseY < rowY + 33.0f)
+            if (Ui::EventButton(true, row, gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
                 break;
         }
         if (row >= 6) return;
@@ -886,15 +884,13 @@ void __cdecl SecondPassword_Screen5(void) {
     if (EventType != 0) return;
 
     // ── Devil Square ────────────────────────────────────────────────────────
-    DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::InventoryPair);
+    DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::Event);
     DAT_07eaa0cc = 0;
     if (!MouseLButtonPush) return;
 
-    float rowY = 210.0f;
     int row = 0;
-    for (; row < 4; ++row, rowY += 45.0f) {
-        if ((float)MouseX >= 285.0f && (float)MouseX < 425.0f &&
-            (float)MouseY >= rowY  && (float)MouseY < rowY + 35.0f)
+    for (; row < 4; ++row) {
+        if (Ui::EventButton(false, row, gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
             break;
     }
     if (row >= 4) return;

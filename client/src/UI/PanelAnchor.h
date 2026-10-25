@@ -24,6 +24,17 @@ inline constexpr Panel Shop { Anchor::Derecha, 190, 1 };
 inline constexpr Panel Trade { Anchor::Derecha, 190, 1 };
 inline constexpr Panel Chaos { Anchor::Derecha, 190, 1 };
 inline constexpr Panel Event { Anchor::Derecha, 190, 1 };
+struct Rect {
+    int x, y, width, height;
+    constexpr bool Contains(int mx, int my) const {
+        return mx >= x && mx < x + width && my >= y && my < y + height;
+    }
+};
+// El selector de eventos comparte rectángulos entre dibujo y entrada.
+constexpr Rect EventButton(bool blood, int row, int margin) {
+    return {Event.Origin(margin) + 25, (blood ? 170 : 210) + row * (blood ? 40 : 45),
+            140, blood ? 33 : 35};
+}
 inline constexpr Panel GoldenArcher { Anchor::Derecha, 190 };
 inline constexpr Panel Quest { Anchor::Derecha, 190 };
 inline constexpr Panel EventTimer { Anchor::Derecha, 190 };
