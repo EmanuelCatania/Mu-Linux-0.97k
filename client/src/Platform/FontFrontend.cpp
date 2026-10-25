@@ -224,6 +224,10 @@ void CFont::CreatePortableFonts(DWORD windowWidth)
     ++m_Generation;
 #ifdef MU_SDL_FONTS
     const auto& cfg = gUserSettings.GetFont();
+    // DESVIACION (Fase 4): FontQuality con suavizado (cualquiera menos
+    // NONANTIALIASED, que es el default del DLL) rasteriza en grises.
+    Platform::SDLFont::SetAntialias(cfg.present && cfg.quality != NONANTIALIASED_QUALITY);
+    TextEngine::SetColorEmoji(gUserSettings.GetColorEmoji());
     for (int i = 0; i < MAX_FONT_TYPES; ++i) {
         const int height = i == FONT_BIG ? (cfg.present ? m_Height * 2 : (m_Height - 1) * 2) : m_Height;
         std::string error;

@@ -371,3 +371,25 @@ static bool Input_AppendCharacter(DWORD slot, uint32_t c)
     lens[slot] = (DWORD)(len + (int)encoded.size());
     return true;
 }
+
+// Agrega un texto UTF-8 entero al campo (selector de emojis). Atómico: si algún
+// carácter no entra por el límite de bytes o de caracteres, el campo queda
+// como estaba.
+extern "C" bool Input_AppendText(DWORD slot, const char* utf8)
+{
+    if (!utf8 || slot >= 8) return false;
+    DWORD* lens = (DWORD*)DAT_07d780a8;
+    const DWORD previous = lens[slot];
+    std::string_view rest(utf8);
+    while (!rest.empty()) {
+        char32_t cp;
+        const size_t n = TextEngine::Decode(rest, 0, cp);
+        if (!n || !Input_AppendCharacter(slot, (uint32_t)cp)) {
+            lens[slot] = previous;
+            ((char*)DAT_07db8710)[slot * 0x100 + previous] = 0;
+            return false;
+        }
+        rest.remove_prefix(n);
+    }
+    return true;
+}

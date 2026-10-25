@@ -204,6 +204,13 @@ static bool Chat_TrySendGuildRequest(const char* text)
 extern "C" void Chat_SendChatLine(const char* text)
 {
     if (!text || !*text) return;
+    // DESVIACION (Fase 4): ":D", "<3" y ":fire:" salen como emoji. Los
+    // comandos ("/...") se mandan tal cual.
+    std::string expanded;
+    if (text[0] != '/') {
+        expanded = TextEngine::ExpandEmoticons(text);
+        text = expanded.c_str();
+    }
     if (Chat_TrySendPartyRequest(text)) return;
 
 

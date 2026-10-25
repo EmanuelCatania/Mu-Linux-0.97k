@@ -72,6 +72,11 @@ std::vector<unsigned char> LineBreaks(std::string_view text);
 // texto corta antes aunque entre todo. 0 si no hay ningún corte posible.
 std::size_t FitLineBreak(std::string_view text, std::size_t maxBytes);
 
+// Emoticonos y códigos del chat: ":D" y "<3" (palabra suelta) y ":fire:" (en
+// cualquier parte) se reemplazan por su emoji. Devuelve el texto sin cambios
+// si no hay nada que reemplazar.
+std::string ExpandEmoticons(std::string_view text);
+
 // Nombre de personaje o de guild (0.97.40), con la misma regla que
 // TextName::IsValid del server: UTF-8 válido en NFC, de 1 a `maxClusters`
 // clusters, sólo letras, marcas y dígitos de cualquier escritura y sin una

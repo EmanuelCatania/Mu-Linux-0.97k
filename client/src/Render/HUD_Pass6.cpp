@@ -30,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/MoveList.h"
 #include "Net/NetText.h"
 #include "Party/Party.h"
 #include "Entity/EntityName.h"
@@ -847,6 +848,21 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     m_dwTextColor = 0xFFE6E6E6u;
     RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
+    // ── Resets ──────────────────────────────────────────────────────────────
+    // DESVIACION (DLL PrintPlayer.cpp RenderCharInfo_Level): caja espejada a la
+    // derecha del nivel con los resets que manda el server (F3/E0 ViewReset).
+    {
+        BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
+        GL_DrawTexture(245, (float)iPosX + 190.0f - 13.0f - 75.0f, (float)iPosY + 56.0f,
+                       75.0f, 21.0f, 0.5859375f, 0.0f, -0.5859375f, 0.65625f, 1, 1);
+        EnableAlphaTest(true);
+        char resetsBuf[32];
+        Platform::TextFormat(resetsBuf, "Resets: %u", (unsigned)gMoveList.Resets());
+        m_dwBackColor = 0;
+        m_dwTextColor = 0xFFE6E6E6u;
+        RenderText(iPosX + 102, iPosY + 60, resetsBuf, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
+    }
+
     // ── Experience (cur / max) ──────────────────────────────────────────────
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     sprintf(Buffer, GlobalText[201], *(int*)(CA + 16), *(int*)(CA + 52));
@@ -862,8 +878,10 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     unsigned short levelUpPoint = *(unsigned short*)(CA + 84);
     if (levelUpPoint > 0) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-        m_dwBackColor = 0xFF1E6EC8u;     // (30, 110, 200) blue band
-        m_dwTextColor = 0xFF000000u;     // black text
+        m_dwBackColor = 0xFFC86E1Eu;     // Color4b(30, 110, 200, 255): ABGR, no ARGB
+        // DESVIACION: el DLL usa texto negro (Color4b(0, 0, 0)), que sobre el azul
+        // a este tamaño casi no se lee; va en blanco.
+        m_dwTextColor = 0xFFFFFFFFu;
         char ptsBuf[64];
         // Use GlobalText[217] if available; defensive fallback to a literal.
         const char* ptsFmt = GlobalText[217][0] ? GlobalText[217] : "Puntos: %d";

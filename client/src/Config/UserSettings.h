@@ -108,6 +108,16 @@ public:
     void SetPvPWithoutControl(bool enabled) { m_PvPWithoutControl = enabled; }
     const char* GetUsername() const { return m_Username; }
     int GetLanguage() const { return m_Language; }
+    // DESVIACION (Fase 4, Config.ini [Font] TextShadow / TextOutline): sombra
+    // de 1 px abajo y a la derecha, o contorno de 1 px, en negro.  Sólo en los
+    // renderers de texto propios (SDL); la GDI no los tiene.
+    bool GetTextShadow() const { return m_TextShadow; }
+    bool GetTextOutline() const { return m_TextOutline; }
+    // DESVIACION (Fase 4, Config.ini [Font] ColorEmoji, por defecto 1): los
+    // emoji se dibujan en color con la fuente de emoji del sistema.
+    bool GetColorEmoji() const { return m_ColorEmoji; }
+    // Desde el menú de opciones: se guardan en [Font] junto con el resto.
+    void SetTextEffects(bool shadow, bool outline, bool colorEmoji);
     // "Eng", "Spn" o "Por"; nullptr para USER_LANG_DEFAULT.
     static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }
@@ -148,6 +158,9 @@ private:
     bool m_Antilag[MAX_ANTILAG] = {};
     bool m_PvPWithoutControl = false;
     int  m_Language = USER_LANG_DEFAULT;
+    bool m_TextShadow = false;
+    bool m_TextOutline = false;
+    bool m_ColorEmoji = true;
     int  m_MiniMapAlpha = 10;   // defaults del DLL
     int  m_MiniMapZoom  = 0;
     char m_IniPath[MAX_PATH] = {};

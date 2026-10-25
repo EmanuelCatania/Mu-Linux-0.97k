@@ -114,6 +114,7 @@ static_assert(offsetof(TEXTMETRICA, tmFirstChar) == 44);
 #define VK_F12 0x7b
 #define DEFAULT_CHARSET 1
 #define NONANTIALIASED_QUALITY 3
+#define ANTIALIASED_QUALITY 4
 #define _countof(array) (sizeof(array) / sizeof((array)[0]))
 
 #define CLEARTYPE_NATURAL_QUALITY 6

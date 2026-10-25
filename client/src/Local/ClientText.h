@@ -9,7 +9,7 @@ enum class ClientTextId {
     LanguageDefault, AntilagWeather, AntilagGlow,
     AntilagWorld, AntilagEffects, AntilagInterface,
     ScreenWindowed, ScreenFullscreen, ScreenBorderless,
-    FontBold, FontItalic,
+    FontBold, FontItalic, FontSmooth, FontShadow, FontOutline, FontColorEmoji,
     RenderFpsOverlay,
     RenderDecoupled, RenderVSync, RenderFps, RenderUnlimited, RenderVSyncUnavailable,
     MiniMapGate, MiniMapZoom, MiniMapAlpha,

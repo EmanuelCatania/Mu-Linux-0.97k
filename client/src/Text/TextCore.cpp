@@ -311,6 +311,76 @@ std::size_t FitLineBreak(std::string_view text, std::size_t maxBytes)
     return 0;
 }
 
+namespace {
+struct Emoticon { const char* code; const char* emoji; };
+// Palabras sueltas: se reconocen sólo entre espacios o en los bordes, así una
+// URL ("http://") o un horario no se tocan.
+const Emoticon kEmoticons[] = {
+    { ":)", u8"\U0001F642" }, { ":-)", u8"\U0001F642" }, { "=)", u8"\U0001F642" },
+    { ":D", u8"\U0001F600" }, { ":-D", u8"\U0001F600" }, { "=D", u8"\U0001F600" },
+    { "xD", u8"\U0001F606" }, { "XD", u8"\U0001F606" },
+    { ";)", u8"\U0001F609" }, { ";-)", u8"\U0001F609" },
+    { ":(", u8"\U0001F641" }, { ":-(", u8"\U0001F641" },
+    { ":'(", u8"\U0001F622" }, { ":'-(", u8"\U0001F622" }, { "T_T", u8"\U0001F62D" },
+    { ":P", u8"\U0001F61B" }, { ":p", u8"\U0001F61B" }, { ":-P", u8"\U0001F61B" }, { ":-p", u8"\U0001F61B" },
+    { ";P", u8"\U0001F61C" }, { ";p", u8"\U0001F61C" },
+    { ":O", u8"\U0001F62E" }, { ":o", u8"\U0001F62E" }, { ":-O", u8"\U0001F62E" },
+    { ":*", u8"\U0001F618" }, { ":-*", u8"\U0001F618" },
+    { ":|", u8"\U0001F610" }, { ":-|", u8"\U0001F610" }, { "-_-", u8"\U0001F611" },
+    { ":/", u8"\U0001F615" }, { ":-/", u8"\U0001F615" }, { ":$", u8"\U0001F633" },
+    { "B)", u8"\U0001F60E" }, { "B-)", u8"\U0001F60E" }, { "8)", u8"\U0001F60E" },
+    { ">:(", u8"\U0001F620" }, { "^^", u8"\U0001F60A" }, { "^_^", u8"\U0001F60A" },
+    { "<3", u8"\u2764\uFE0F" }, { "</3", u8"\U0001F494" },
+};
+// ":nombre:" en cualquier parte del texto.
+const Emoticon kShortcodes[] = {
+    { "smile", u8"\U0001F604" }, { "grin", u8"\U0001F601" }, { "joy", u8"\U0001F602" },
+    { "wink", u8"\U0001F609" }, { "cool", u8"\U0001F60E" }, { "love", u8"\U0001F60D" },
+    { "cry", u8"\U0001F622" }, { "sob", u8"\U0001F62D" }, { "angry", u8"\U0001F620" },
+    { "think", u8"\U0001F914" }, { "sleep", u8"\U0001F634" }, { "eyes", u8"\U0001F440" },
+    { "heart", u8"\u2764\uFE0F" }, { "fire", u8"\U0001F525" }, { "star", u8"\u2B50" },
+    { "100", u8"\U0001F4AF" }, { "skull", u8"\U0001F480" }, { "party", u8"\U0001F389" },
+    { "thumbsup", u8"\U0001F44D" }, { "thumbsdown", u8"\U0001F44E" }, { "clap", u8"\U0001F44F" },
+    { "ok", u8"\U0001F44C" }, { "wave", u8"\U0001F44B" }, { "pray", u8"\U0001F64F" },
+    { "muscle", u8"\U0001F4AA" }, { "sword", u8"\u2694\uFE0F" }, { "shield", u8"\U0001F6E1\uFE0F" },
+    { "gem", u8"\U0001F48E" }, { "gift", u8"\U0001F381" }, { "trophy", u8"\U0001F3C6" },
+    { "zen", u8"\U0001F4B0" }, { "dragon", u8"\U0001F409" }, { "beer", u8"\U0001F37A" },
+};
+}
+
+std::string ExpandEmoticons(std::string_view text)
+{
+    std::string out;
+    bool changed = false;
+    std::size_t i = 0;
+    while (i < text.size()) {
+        if (text[i] == ' ' || text[i] == '\t') { out.push_back(text[i++]); continue; }
+        std::size_t end = i;
+        while (end < text.size() && text[end] != ' ' && text[end] != '\t') ++end;
+        const std::string_view word = text.substr(i, end - i);
+        bool whole = false;
+        for (const Emoticon& e : kEmoticons)
+            if (word == e.code) { out += e.emoji; whole = changed = true; break; }
+        if (!whole) {
+            // Códigos ":nombre:" dentro de la palabra.
+            for (std::size_t k = 0; k < word.size();) {
+                bool replaced = false;
+                if (word[k] == ':') {
+                    const std::size_t close = word.find(':', k + 1);
+                    if (close != std::string_view::npos) {
+                        const std::string_view name = word.substr(k + 1, close - k - 1);
+                        for (const Emoticon& e : kShortcodes)
+                            if (name == e.code) { out += e.emoji; k = close + 1; replaced = changed = true; break; }
+                    }
+                }
+                if (!replaced) out.push_back(word[k++]);
+            }
+        }
+        i = end;
+    }
+    return changed ? out : std::string(text);
+}
+
 bool IsNameText(std::string_view text, std::size_t maxClusters)
 {
     if (text.empty() || !IsValid(text) || NormalizeNFC(text) != text) return false;

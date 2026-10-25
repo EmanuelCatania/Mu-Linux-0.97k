@@ -41,6 +41,9 @@ public:
     std::size_t FallbackCount();
 private:
     void LoadFallbacks();
+    Platform::SDLFont* ColorEmojiFont();
+    Platform::SDLFont* m_ColorEmoji = nullptr;
+    bool m_ColorEmojiTried = false;
     Platform::SDLFont* m_Primary = nullptr;
     int m_Height = 0;
     bool m_Bold = false;
@@ -60,5 +63,7 @@ public:
 // fijada no se usan las fuentes del sistema, así el resultado no depende de
 // la máquina.
 void SetFallbackFontDirectory(const std::string& directory);
+// Apaga o prende la preferencia por la fuente de emoji en color.
+void SetColorEmoji(bool enabled);
 
 } // namespace TextEngine

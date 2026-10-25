@@ -14,6 +14,9 @@ struct FontGlyph {
     int width = 0;
     int height = 0;
     std::vector<uint8_t> coverage; // filas de arriba hacia abajo, 0..255
+    // Glifo de color (emoji COLR): RGBA con alfa recto, mismas filas.  Vacío
+    // en un glifo común; `coverage` lleva igual el alfa.
+    std::vector<uint8_t> rgba;
 };
 struct FontMetrics {
     int ascent = 0;
@@ -35,6 +38,9 @@ public:
                     int width, bool underline, bool strikeOut, std::string& error,
                     const char* assetRoot = nullptr);
     static std::vector<std::string> InstalledFamilies();
+    // Rasterizado con 256 niveles de gris en vez de 1 bit. Lo toma cada fuente
+    // al abrirse: se fija antes de crearlas (Config.ini [Font] FontQuality).
+    static void SetAntialias(bool enabled);
     static uint32_t DecodeByte(uint8_t byte); // recursos del cliente: Windows-1252
     const FontGlyph& Glyph(uint32_t codepoint);
     // Por id de glifo de la fuente (lo que devuelve el shaping).

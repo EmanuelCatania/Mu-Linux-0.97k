@@ -606,6 +606,13 @@ void COptionsMenu::RenderFont()
     char text[16];
     Platform::TextFormatSecure(text, "%d", font.height);
     RenderSelector((float)RowY(row++), text, font.height > 1, font.height < 25);
+#ifdef MU_SDL_FONTS
+    // DESVIACION (Fase 4): sólo existen en el renderer de texto propio.
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontSmooth), font.quality != NONANTIALIASED_QUALITY);
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontShadow), gUserSettings.GetTextShadow());
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontOutline), gUserSettings.GetTextOutline());
+    RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::FontColorEmoji), gUserSettings.GetColorEmoji());
+#endif
     RenderButton((float)RowY(row++), GlobalText[924]);
     RenderButton((float)RowY(row), GlobalText[925]);
 }
@@ -638,6 +645,30 @@ bool COptionsMenu::UpdateFont()
         if (step) { font.height += step; ApplyFont(font); }
         return true;
     }
+#ifdef MU_SDL_FONTS
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) {
+            font.quality = font.quality != NONANTIALIASED_QUALITY ? NONANTIALIASED_QUALITY : ANTIALIASED_QUALITY;
+            ApplyFont(font);
+        }
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetTextEffects(!gUserSettings.GetTextShadow(), gUserSettings.GetTextOutline(), gUserSettings.GetColorEmoji());
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) gUserSettings.SetTextEffects(gUserSettings.GetTextShadow(), !gUserSettings.GetTextOutline(), gUserSettings.GetColorEmoji());
+        return true;
+    }
+    if (UpdateToggle(RowY(row++), clicked)) {
+        if (clicked) {
+            gUserSettings.SetTextEffects(gUserSettings.GetTextShadow(), gUserSettings.GetTextOutline(), !gUserSettings.GetColorEmoji());
+            gFont.Reload(gWindow.GetWidth());   // las fuentes ya elegidas por carácter se olvidan
+        }
+        return true;
+    }
+#endif
     if (UpdateToggle(RowY(row++), clicked)) {
         if (clicked) { gUserSettings.ResetFont(); gFont.Reload(gWindow.GetWidth()); }
         return true;

@@ -3,6 +3,7 @@
 #include FT_FREETYPE_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_MODULE_H
+#include <freetype/ftcolor.h>
 #include <hb-ft.h>
 #include <algorithm>
 #include <limits>
@@ -62,7 +63,11 @@ bool SelectVDMX(FT_Face face, int height, int& ppem, FontMetrics& metrics)
 }
 }
 
+namespace { bool g_antialias = false; }
+void SDLFont::SetAntialias(bool enabled) { g_antialias = enabled; }
+
 struct SDLFont::Impl {
+    bool antialias = g_antialias;
     FT_Library library = nullptr;
     FT_Face face = nullptr;
     std::vector<uint8_t> bytes;
@@ -132,13 +137,82 @@ bool SDLFont::Open(std::unique_ptr<Impl> next, const char* path, int height, std
 }
 
 namespace {
+// Emoji COLR (v0): el glifo es una pila de capas, cada una un glifo con su
+// color de la paleta 0.  Devuelve false si el glifo no tiene capas (entonces
+// se rasteriza como siempre).  Los emoji sólo de COLR v1 (degradados) no
+// traen capas v0 y salen con la silueta común.
+bool RasterizeColor(FT_Face face, FT_UInt glyphIndex, FontGlyph& out)
+{
+    if (!face || !FT_HAS_COLOR(face)) return false;
+    FT_Color* palette = nullptr;
+    if (FT_Palette_Select(face, 0, &palette) || !palette) return false;
+    struct Layer { int left, top, width, height; std::vector<uint8_t> alpha; FT_Color color; };
+    std::vector<Layer> layers;
+    FT_LayerIterator iterator = {};
+    FT_UInt layerGlyph = 0, colorIndex = 0;
+    while (FT_Get_Color_Glyph_Layer(face, glyphIndex, &layerGlyph, &colorIndex, &iterator)) {
+        if (FT_Load_Glyph(face, layerGlyph, FT_LOAD_RENDER | FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_TARGET_NORMAL)) continue;
+        const auto& bitmap = face->glyph->bitmap;
+        if (bitmap.pixel_mode != FT_PIXEL_MODE_GRAY || !bitmap.width || !bitmap.rows) continue;
+        Layer layer{ face->glyph->bitmap_left, face->glyph->bitmap_top, int(bitmap.width), int(bitmap.rows), {}, {} };
+        layer.alpha.resize(size_t(layer.width) * layer.height);
+        for (int y = 0; y < layer.height; ++y) {
+            const auto row = bitmap.buffer + (bitmap.pitch >= 0 ? y : layer.height - 1 - y) * std::abs(bitmap.pitch);
+            std::copy(row, row + layer.width, layer.alpha.begin() + size_t(y) * layer.width);
+        }
+        // 0xFFFF pide el color del texto; sin él a mano, blanco.
+        layer.color = colorIndex == 0xFFFF ? FT_Color{ 255, 255, 255, 255 } : palette[colorIndex];
+        layers.push_back(std::move(layer));
+    }
+    if (layers.empty()) return false;
+
+    int left = layers[0].left, right = layers[0].left + layers[0].width;
+    int top = layers[0].top, bottom = layers[0].top - layers[0].height;
+    for (const Layer& l : layers) {
+        left = std::min(left, l.left); right = std::max(right, l.left + l.width);
+        top = std::max(top, l.top); bottom = std::min(bottom, l.top - l.height);
+    }
+    out.left = left; out.top = top; out.width = right - left; out.height = top - bottom;
+    // El avance es el del glifo base.
+    out.advance = 0;
+    if (!FT_Load_Glyph(face, glyphIndex, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_TARGET_NORMAL))
+        out.advance = int((face->glyph->advance.x + 32) / 64);
+    // Composición en alfa premultiplicado, de la capa de abajo hacia arriba.
+    std::vector<float> accum(size_t(out.width) * out.height * 4, 0.0f);
+    for (const Layer& l : layers) {
+        const float cr = l.color.red / 255.0f, cg = l.color.green / 255.0f, cb = l.color.blue / 255.0f, ca = l.color.alpha / 255.0f;
+        for (int y = 0; y < l.height; ++y)
+            for (int x = 0; x < l.width; ++x) {
+                const float a = l.alpha[size_t(y) * l.width + x] / 255.0f * ca;
+                if (a <= 0.0f) continue;
+                float* px = &accum[(size_t(top - l.top + y) * out.width + (l.left - left + x)) * 4];
+                px[0] = cr * a + px[0] * (1 - a);
+                px[1] = cg * a + px[1] * (1 - a);
+                px[2] = cb * a + px[2] * (1 - a);
+                px[3] = a + px[3] * (1 - a);
+            }
+    }
+    out.rgba.assign(accum.size(), 0);
+    out.coverage.assign(size_t(out.width) * out.height, 0);
+    for (size_t i = 0; i < size_t(out.width) * out.height; ++i) {
+        const float a = accum[i * 4 + 3];
+        out.coverage[i] = uint8_t(a * 255.0f + 0.5f);
+        if (a <= 0.0f) continue;
+        for (int c = 0; c < 3; ++c)
+            out.rgba[i * 4 + c] = uint8_t(std::min(1.0f, accum[i * 4 + c] / a) * 255.0f + 0.5f);
+        out.rgba[i * 4 + 3] = out.coverage[i];
+    }
+    return true;
+}
+
 // Rasterizado de 1 bit con el intérprete v35: el mismo aspecto que GDI.
 // Lo comparten la búsqueda por carácter (texto 1252) y por id de glifo
 // (texto ya pasado por HarfBuzz), así un mismo glifo sale idéntico.
-FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut)
+FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut, bool antialias)
 {
     FontGlyph glyph;
-    if (face && !FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | FT_LOAD_TARGET_MONO)) {
+    if (RasterizeColor(face, glyphIndex, glyph)) return glyph;
+    if (face && !FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | (antialias ? FT_LOAD_TARGET_NORMAL : FT_LOAD_TARGET_MONO))) {
         const auto slot = face->glyph;
         const auto& bitmap = slot->bitmap;
         glyph.advance = int((slot->advance.x + 32) / 64);
@@ -147,10 +221,11 @@ FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics
         glyph.width = int(bitmap.width);
         glyph.height = int(bitmap.rows);
         glyph.coverage.resize(size_t(glyph.width) * glyph.height);
+        const bool gray = bitmap.pixel_mode == FT_PIXEL_MODE_GRAY;
         for (int y = 0; y < glyph.height; ++y) {
             const auto row = bitmap.buffer + (bitmap.pitch >= 0 ? y : glyph.height - 1 - y) * std::abs(bitmap.pitch);
             for (int x = 0; x < glyph.width; ++x)
-                glyph.coverage[size_t(y) * glyph.width + x] = (row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0;
+                glyph.coverage[size_t(y) * glyph.width + x] = gray ? row[x] : ((row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0);
         }
     }
     if (face && (underline || strikeOut) && glyph.advance > 0) {
@@ -181,14 +256,14 @@ const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
     if (existing != impl->glyphs.end()) return existing->second;
     const FT_UInt index = impl->face ? FT_Get_Char_Index(impl->face, codepoint) : 0;
     return impl->glyphs.emplace(codepoint,
-        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut)).first->second;
+        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
 }
 const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
 {
     const auto existing = impl->glyphIds.find(glyph);
     if (existing != impl->glyphIds.end()) return existing->second;
     return impl->glyphIds.emplace(glyph,
-        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut)).first->second;
+        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
 }
 bool SDLFont::HasCodepoint(uint32_t codepoint) const
 {
@@ -198,8 +273,8 @@ void* SDLFont::ShapingFont()
 {
     if (!impl->shaping && impl->face) {
         impl->shaping = hb_ft_font_create(impl->face, nullptr);
-        // Avances con el mismo hinting que el rasterizado de 1 bit.
-        hb_ft_font_set_load_flags(impl->shaping, FT_LOAD_DEFAULT | FT_LOAD_TARGET_MONO);
+        // Avances con el mismo hinting que el rasterizado.
+        hb_ft_font_set_load_flags(impl->shaping, FT_LOAD_DEFAULT | (impl->antialias ? FT_LOAD_TARGET_NORMAL : FT_LOAD_TARGET_MONO));
     }
     return impl->shaping;
 }

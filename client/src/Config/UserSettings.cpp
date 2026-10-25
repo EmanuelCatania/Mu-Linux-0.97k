@@ -136,6 +136,11 @@ void CUserSettings::Load(const char* iniPath)
         f.strikeOut = ReadFlag("Font", "FontStrikeOut", iniPath) > 0;
     }
 
+    // Independientes de que exista la fuente propia: valen con cualquiera.
+    m_TextShadow = ReadFlag("Font", "TextShadow", iniPath) > 0;
+    m_TextOutline = ReadFlag("Font", "TextOutline", iniPath) > 0;
+    m_ColorEmoji = ReadFlag("Font", "ColorEmoji", iniPath) != 0;
+
     char line[160];
     Platform::TextFormat(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "
                     "EnableSound=%d EnableMusic=%d (-1 = no está)",
@@ -240,9 +245,21 @@ void CUserSettings::SetFont(const UserFontSettings& font)
     SaveInt("Font", "FontStrikeOut", m_Font.strikeOut);
 }
 
+void CUserSettings::SetTextEffects(bool shadow, bool outline, bool colorEmoji)
+{
+    m_TextShadow = shadow;
+    m_TextOutline = outline;
+    m_ColorEmoji = colorEmoji;
+    SaveInt("Font", "TextShadow", shadow);
+    SaveInt("Font", "TextOutline", outline);
+    SaveInt("Font", "ColorEmoji", colorEmoji);
+}
+
 void CUserSettings::ResetFont()
 {
     m_Font = UserFontSettings{};
+    m_TextShadow = m_TextOutline = false;
+    m_ColorEmoji = true;
     if (m_IniPath[0]) Platform::GetFileSystem().WriteIniString("Font", NULL, NULL, m_IniPath);
 }
 

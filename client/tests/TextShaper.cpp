@@ -5,6 +5,7 @@
 #include "Text/TextCore.h"
 #include "Text/TextShaper.h"
 #include "Platform/SDL3/SDLFont.h"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -112,6 +113,38 @@ int main()
             for (const auto& glyph : shaped.glyphs) fallback = fallback && glyph.font != &font && glyph.glyph != 0;
             Check(fallback && shaped.width > 0, std::string("respaldo para ") + text);
         }
+    }
+
+    // Emoji en color (COLR) y suavizado: sólo si el sistema trae la fuente.
+    {
+        const char* windows = std::getenv("WINDIR");
+        const std::string path = std::string(windows ? windows : "C:\\Windows") + "\\Fonts\\seguiemj.ttf";
+        Platform::SDLFont emoji;
+        std::string error;
+        if (emoji.LoadFile(path, 13, error)) {
+            const auto& glyph = emoji.Glyph(0x1F600);
+            std::vector<unsigned> colors;
+            for (size_t i = 0; i + 3 < glyph.rgba.size(); i += 4)
+                if (glyph.rgba[i + 3] == 255) {
+                    const unsigned rgb = (glyph.rgba[i] << 16) | (glyph.rgba[i + 1] << 8) | glyph.rgba[i + 2];
+                    if (std::find(colors.begin(), colors.end(), rgb) == colors.end()) colors.push_back(rgb);
+                }
+            Check(!glyph.rgba.empty() && glyph.rgba.size() == size_t(glyph.width) * glyph.height * 4, "emoji COLR trae RGBA");
+            Check(colors.size() >= 3, "emoji COLR con mas de un color (" + std::to_string(colors.size()) + ")");
+            const auto& plain = emoji.Glyph('A');
+            Check(plain.rgba.empty() && plain.width > 0, "una letra de la fuente de emoji sigue siendo mascara");
+        } else {
+            std::puts("(sin seguiemj.ttf: se omite el test de emoji en color)");
+        }
+        Platform::SDLFont::SetAntialias(true);
+        Platform::SDLFont gray;
+        if (gray.Load(Read(fontDir + "/LiberationSans-Regular.ttf"), 13, error)) {
+            const auto& g = gray.Glyph('o');
+            bool partial = false;
+            for (uint8_t c : g.coverage) partial = partial || (c != 0 && c != 255);
+            Check(partial, "con suavizado hay cobertura parcial");
+        }
+        Platform::SDLFont::SetAntialias(false);
     }
 
     if (failures) { std::printf("%d fallas\n", failures); return 1; }

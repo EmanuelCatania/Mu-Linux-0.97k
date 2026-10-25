@@ -4,6 +4,7 @@
 #include "Text/TextShaper.h"
 #include "Platform/SDL3/SDLFont.h"
 #include "Render/BufferedDraw.h"
+#include "Config/UserSettings.h"
 #include <unordered_map>
 #include <vector>
 
@@ -15,7 +16,7 @@ constexpr int kPageSize = 512;
 // sigue usando: más simple que un LRU por glifo y casi nunca ocurre.
 constexpr int kMaxPages = 8;
 
-struct Entry { int page, x, y, w, h, left, top; };
+struct Entry { int page, x, y, w, h, left, top; bool color; };
 struct Page { Gfx::Texture texture = 0; int shelfX = 0, shelfY = 0, shelfH = 0; };
 
 struct Key {
@@ -69,15 +70,17 @@ const Entry* Find(Platform::SDLFont* font, uint32_t glyph)
     const auto found = entries.find(key);
     if (found != entries.end()) return &found->second;
     const auto& raster = font->GlyphIndex(glyph);
-    Entry entry{ -1, 0, 0, raster.width, raster.height, raster.left, raster.top };
+    Entry entry{ -1, 0, 0, raster.width, raster.height, raster.left, raster.top, !raster.rgba.empty() };
     if (raster.width > 0 && raster.height > 0) {
         if (!Place(raster.width, raster.height, entry.page, entry.x, entry.y)) {
             Release();
             if (!Place(raster.width, raster.height, entry.page, entry.x, entry.y)) return nullptr;
         }
         // Blanco con la cobertura en alfa: el color lo pone el vértice (MODULATE).
+        // Un glifo de color (emoji) trae el suyo y se dibuja con vértice blanco.
         std::vector<unsigned char> rgba(size_t(raster.width) * raster.height * 4, 255);
-        for (size_t i = 0; i < raster.coverage.size(); ++i) rgba[i * 4 + 3] = raster.coverage[i];
+        if (!raster.rgba.empty()) rgba.assign(raster.rgba.begin(), raster.rgba.end());
+        else for (size_t i = 0; i < raster.coverage.size(); ++i) rgba[i * 4 + 3] = raster.coverage[i];
         Gfx::BindTexture(pages[entry.page].texture);
         Gfx::SetUnpackAlignment(1);
         Gfx::TexSubImage2D(entry.x, entry.y, entry.w, entry.h, Gfx::Format::RGBA, rgba.data());
@@ -107,6 +110,10 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
     Gfx::Enable(Gfx::Cap::Texture2D);
     Gfx::TexEnvMode(Gfx::TexEnv::Modulate);
     const float originX = std::floor(x), originY = std::floor(baseline);
+    // Contorno o sombra: el mismo texto en negro corrido de a un píxel, debajo
+    // del color. El alfa es el del texto, así no se ve más fuerte que él.
+    // (y va hacia arriba: la sombra cae a y - 1.)
+    const auto pass = [&](float dx, float dy, unsigned char pr, unsigned char pg, unsigned char pb) {
     for (int page = 0; page < (int)pages.size(); ++page) {
         bool any = false;
         for (size_t i = 0; i < text.glyphs.size(); ++i) {
@@ -114,12 +121,18 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
             if (!e || e->page != page) continue;
             if (!any) {
                 Gfx::BindTexture(pages[page].texture);
-                BufferedDraw::Color4ub(r, g, b, a);
                 BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
                 any = true;
             }
-            const float x0 = originX + text.glyphs[i].x + e->left;
-            const float y1 = originY + text.glyphs[i].y + e->top;
+            // Cada quad lleva su color: los emoji van sin teñir y sin sombra.
+            if (e->color) {
+                if (dx || dy) continue;
+                BufferedDraw::Color4ub(255, 255, 255, a);
+            } else {
+                BufferedDraw::Color4ub(pr, pg, pb, a);
+            }
+            const float x0 = originX + dx + text.glyphs[i].x + e->left;
+            const float y1 = originY + dy + text.glyphs[i].y + e->top;
             const float x1 = x0 + e->w, y0 = y1 - e->h;
             const float u0 = float(e->x) / kPageSize, u1 = float(e->x + e->w) / kPageSize;
             const float v0 = float(e->y) / kPageSize, v1 = float(e->y + e->h) / kPageSize;
@@ -130,6 +143,15 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
         }
         if (any) BufferedDraw::End();
     }
+    };
+    if (gUserSettings.GetTextOutline()) {
+        for (int oy = -1; oy <= 1; ++oy)
+            for (int ox = -1; ox <= 1; ++ox)
+                if (ox || oy) pass(float(ox), float(oy), 0, 0, 0);
+    } else if (gUserSettings.GetTextShadow()) {
+        pass(1.0f, -1.0f, 0, 0, 0);
+    }
+    pass(0.0f, 0.0f, r, g, b);
     Gfx::PopAttrib();
     Gfx::SetUnpackAlignment(previousAlignment);
 }
