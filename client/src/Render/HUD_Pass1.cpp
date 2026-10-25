@@ -375,10 +375,10 @@ void RenderMainFrameWindow_(void)
     if (wide) {
         EnableAlphaTest(true);
         // En los márgenes que deja el 4:3, pegadas a la barra (14 px encima de
-        // ella, sin tapar los casilleros) y mirando hacia afuera.  La textura
-        // mira a la derecha.
-        GL_DrawTexture(0x5F0, -130.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
-        GL_DrawTexture(0x5F0, 626.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        // ella, sin tapar los casilleros).  La textura trae la cabeza a la derecha
+        // y el cuello a la izquierda: la izquierda va tal cual, la derecha espejada.
+        GL_DrawTexture(0x5F0, -130.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, 626.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
         GL_ResetState();
     }
 }

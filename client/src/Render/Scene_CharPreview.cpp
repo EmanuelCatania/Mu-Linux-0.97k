@@ -59,12 +59,16 @@ void FUN_005239a0(void)
 {
   GL_SetBlendSrcOver('\x01');
   Gfx::Color3f(1.0f, 1.0f, 1.0f);
-  GL_DrawTexture(0xc,320.0,0.0,256.0,86.0,0.0,0.0,1.0,0.671875,'\x01','\x01');
-  GL_DrawTexture(0xc,64.0,0.0,256.0,86.0,1.0,0.0,-1.0,0.671875,'\x01','\x01');
-  GL_DrawTexture(0xd,576.0,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'\x01','\x01');
-  GL_DrawTexture(0xd,0.0,0.0,64.0,256.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
-  GL_DrawTexture(0xe,576.0,256.0,64.0,224.0,0.0,0.0,1.0,0.875,'\x01','\x01');
-  GL_DrawTexture(0xe,0.0,256.0,64.0,224.0,1.0,0.0,-1.0,0.875,'\x01','\x01');
-  GL_DrawTexture(0xf,320.0,448.0,256.0,32.0,0.0,0.0,1.0,1.0,'\x01','\x01');
-  GL_DrawTexture(0xf,64.0,448.0,256.0,32.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
+  // DESVIACION (Fase 4, pantalla ancha; DLL WRenderInterfaceEdge): el marco se
+  // pega a los bordes de la ventana (`s` unidades de más a cada lado) y las
+  // barras de arriba y de abajo se estiran para cerrar el hueco.  Con 4:3, s = 0.
+  const float s = (float)gWindow.GetRightShift();
+  GL_DrawTexture(0xc,320.0,0.0,256.0f + s,86.0,0.0,0.0,1.0,0.671875,'','');
+  GL_DrawTexture(0xc,64.0f - s,0.0,256.0f + s,86.0,1.0,0.0,-1.0,0.671875,'','');
+  GL_DrawTexture(0xd,576.0f + s,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'','');
+  GL_DrawTexture(0xd,-s,0.0,64.0,256.0,1.0,0.0,-1.0,1.0,'','');
+  GL_DrawTexture(0xe,576.0f + s,256.0,64.0,224.0,0.0,0.0,1.0,0.875,'','');
+  GL_DrawTexture(0xe,-s,256.0,64.0,224.0,1.0,0.0,-1.0,0.875,'','');
+  GL_DrawTexture(0xf,320.0,448.0,256.0f + s,32.0,0.0,0.0,1.0,1.0,'','');
+  GL_DrawTexture(0xf,64.0f - s,448.0,256.0f + s,32.0,1.0,0.0,-1.0,1.0,'','');
 }
