@@ -272,7 +272,7 @@ bool __cdecl RenderNumArrow_(void)
     // Anti-tamper inner block (CharacterMachine decrypt) — skipped.
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 536)) == 143) {
-        int screenW = 640;
+        int screenW = gWindow.PanelOrigin(Ui::WindowRight);
         int v10 = *(unsigned char*)((BYTE*)CharacterMachine + 562);
         float v25 = (float)((double)screenW - (double)v27 - 10.0);
         int v11 = FUN_00482850_();
@@ -289,7 +289,7 @@ bool __cdecl RenderNumArrow_(void)
     }
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 604)) == 135) {
-        int screenW = 640;
+        int screenW = gWindow.PanelOrigin(Ui::WindowRight);
         int v13 = *(unsigned char*)((BYTE*)CharacterMachine + 630);
         float v26 = (float)((double)screenW - (double)v27 - 10.0);
         int v14 = FUN_00482850_();

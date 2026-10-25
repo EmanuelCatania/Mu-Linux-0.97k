@@ -537,7 +537,7 @@ void RenderBrokenItem_(int a1)
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
 
-    float screenW = 640.0f;
+    float screenW = (float)gWindow.PanelOrigin(Ui::WindowRight);
     float v38 = screenW - v32 - 10.0f;
     float v37 = (float)a1;
 
