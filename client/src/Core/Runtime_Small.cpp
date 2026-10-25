@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Item/ContentCatalog.h"
 #include "Render/Gfx.h"
 #include "Platform/IAudio.h"
 #include "Item/ItemDefines.h"
@@ -786,6 +787,8 @@ void __cdecl clearMatchInfo(void) {
 // BYTE en [0]), stride 0x36, hasta GateAttribute.  Aca acotamos por el contador
 // real (EditMonsterNumber = EditMonsterNumber) en vez del literal 0x7cf5600.
 char *__cdecl getMonsterName(int type) {
+    // DESVIACION (0.97.40): el nombre traducido que mandó el server va primero.
+    if (char *text = gContentCatalog.GetMonsterText(type)) return text;
     int n = EditMonsterNumber;
     if (n > 512) n = 512;
     for (int i = 0; i < n; ++i) {

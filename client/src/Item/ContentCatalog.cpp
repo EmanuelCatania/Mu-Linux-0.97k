@@ -34,6 +34,15 @@ PendingSection s_PendingFog;
 PendingSection s_PendingEffects;
 PendingSection s_PendingPets;
 PendingSection s_PendingTooltips;
+PendingSection s_PendingTexts;
+
+// Textos traducidos del server (F3/F0).  Los nombres de items y skills se
+// escriben en sus tablas; los originales se guardan para volver a ellos.
+constexpr int MAX_SKILL_NAME = 64;            // SkillAttribute: 64 entradas x 40
+constexpr int SKILL_NAME_SIZE = 32;
+char s_VanillaSkillNames[MAX_SKILL_NAME][SKILL_NAME_SIZE];
+bool s_HasVanillaSkillNames = false;
+char s_MonsterTexts[512][64];                 // índice de monstruo -> nombre
 std::map<int, std::vector<Proto::CATALOG_TOOLTIP>> s_Tooltips;   // item -> líneas
 std::map<int, Proto::CATALOG_PET> s_Pets;           // item -> pet
 
@@ -261,6 +270,62 @@ void CContentCatalog::ReceiveTooltips(const BYTE* msg, int size)
     if (!ReadSection(s_PendingTooltips, msg, size)) Log("ContentCatalog: EF descartado (size=%d)", size);
 }
 
+void CContentCatalog::ReceiveTexts(const BYTE* msg, int size)
+{
+    if (!ReadSection(s_PendingTexts, msg, size)) Log("ContentCatalog: F0 descartado (size=%d)", size);
+}
+
+namespace {
+char* SkillName(char* table, int index) { return table + index * 0x28; }
+
+// Vuelve a los nombres de item.bmd / skill.bmd y aplica los textos recibidos.
+void ApplyTexts(ITEM_ATTRIBUTE* attr)
+{
+    if (!s_HasVanillaSkillNames) {
+        for (int i = 0; i < MAX_SKILL_NAME; ++i)
+            memcpy(s_VanillaSkillNames[i], SkillName(SkillAttribute.Raw, i), SKILL_NAME_SIZE);
+        s_HasVanillaSkillNames = true;
+    }
+    for (int i = 0; i < MAX_SKILL_NAME; ++i) {
+        memcpy(SkillName(SkillAttribute.Raw, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+        memcpy(SkillName((char*)DAT_07cf1ff8, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+    }
+    const ITEM_ATTRIBUTE* vanilla = (const ITEM_ATTRIBUTE*)s_VanillaAttributes.data();
+    for (int i = 0; i < ITEM_MAX_VANILLA && !s_VanillaAttributes.empty(); ++i)
+        memcpy(attr[i].Name, vanilla[i].Name, sizeof(attr[i].Name));
+    memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
+
+    const int textSize = s_PendingTexts.recordSize;
+    if (!SectionComplete(s_PendingTexts) || textSize <= 0) return;
+    int applied = 0;
+    for (size_t off = 0; off + textSize <= s_PendingTexts.records.size(); off += textSize) {
+        Proto::CATALOG_TEXT row = {};
+        memcpy(&row, &s_PendingTexts.records[off], (std::min)((int)sizeof(row), textSize));
+        // Los campos de las tablas del binario son más cortos que el texto:
+        // FromServer corta sin partir un grapheme cluster.
+        switch (row.Table) {
+        case Proto::CATALOG_TEXT_ITEM:
+            if (row.Index >= ITEM_MAX_EX) continue;
+            NetText::FromServer(attr[row.Index].Name, sizeof(attr[row.Index].Name), row.Text, sizeof(row.Text));
+            break;
+        case Proto::CATALOG_TEXT_MONSTER:
+            if (row.Index >= 512) continue;
+            NetText::FromServer(s_MonsterTexts[row.Index], sizeof(s_MonsterTexts[row.Index]), row.Text, sizeof(row.Text));
+            break;
+        case Proto::CATALOG_TEXT_SKILL:
+            if (row.Index >= MAX_SKILL_NAME) continue;
+            NetText::FromServer(SkillName(SkillAttribute.Raw, row.Index), SKILL_NAME_SIZE, row.Text, sizeof(row.Text));
+            NetText::FromServer(SkillName((char*)DAT_07cf1ff8, row.Index), SKILL_NAME_SIZE, row.Text, sizeof(row.Text));
+            break;
+        default:
+            continue;
+        }
+        ++applied;
+    }
+    Log("ContentCatalog: %d textos traducidos", applied);
+}
+} // namespace
+
 void CContentCatalog::ReceiveEnd(const BYTE* msg, int size)
 {
     if (size < (int)sizeof(Proto::PMSG_CATALOG_END_SEND)) return;
@@ -296,6 +361,14 @@ void CContentCatalog::Clear()
     s_Pets.clear();
     s_PendingTooltips = PendingSection();
     s_Tooltips.clear();
+    s_PendingTexts = PendingSection();
+    memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
+    if (s_HasVanillaSkillNames) {
+        for (int i = 0; i < MAX_SKILL_NAME; ++i) {
+            memcpy(SkillName(SkillAttribute.Raw, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+            memcpy(SkillName((char*)DAT_07cf1ff8, i), s_VanillaSkillNames[i], SKILL_NAME_SIZE);
+        }
+    }
     // Los modelos y texturas ya cargados se conservan: si el server vuelve a
     // mandar las mismas rutas se reusan sin volver a leer el disco.
     m_Loaded = false;
@@ -354,6 +427,10 @@ void CContentCatalog::Publish()
     }
     m_HasFog = false;
     for (const FogEntry& fog : s_Fog) m_HasFog = m_HasFog || fog.Present;
+
+    // Textos traducidos: sección opcional.
+    ApplyTexts(attr);
+    s_PendingTexts = PendingSection();
 
     // Tooltips: sección opcional.
     s_Tooltips.clear();
@@ -631,6 +708,12 @@ const CatalogItemPose* CContentCatalog::GetItemPose(int type) const
 {
     if (type < 0 || type >= ITEM_MAX_EX || !s_Items[type].HasPose) return nullptr;
     return &s_Items[type].Pose;
+}
+
+char* CContentCatalog::GetMonsterText(int index) const
+{
+    if (index < 0 || index >= 512 || s_MonsterTexts[index][0] == 0) return nullptr;
+    return s_MonsterTexts[index];
 }
 
 const CatalogMonster* CContentCatalog::GetMonster(int index) const

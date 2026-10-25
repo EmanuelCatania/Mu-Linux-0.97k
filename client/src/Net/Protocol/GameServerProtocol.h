@@ -741,6 +741,21 @@ struct CATALOG_PET
 };
 static_assert(sizeof(CATALOG_PET) == 24, "F3:EE entrada");
 
+// F3:F0 — textos traducidos (0.97.40, Data/Text/<idioma> del server).  Sólo
+// llegan los del idioma que el cliente pidió con el F1:04.
+const std::uint8_t CATALOG_TEXT_ITEM = 1;
+const std::uint8_t CATALOG_TEXT_MONSTER = 2;
+const std::uint8_t CATALOG_TEXT_SKILL = 3;
+
+struct CATALOG_TEXT
+{
+    std::uint8_t Table;     // CATALOG_TEXT_*
+    std::uint8_t Reserved;
+    std::uint16_t Index;    // item, monstruo o skill
+    char Text[64];          // UTF-8 en NFC
+};
+static_assert(sizeof(CATALOG_TEXT) == 68, "F3:F0 entrada");
+
 struct PMSG_CATALOG_END_SEND
 {
     PSBMSG_HEAD header;     // C1:F3:EA
