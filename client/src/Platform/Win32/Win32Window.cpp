@@ -7,9 +7,9 @@ extern "C" void DbgLogPublic(const char* msg);
 namespace Platform {
 void Win32Window::ServiceLoadingEvents(unsigned maximum) {
     MSG message;
-    for (unsigned i = 0; i < maximum && PeekMessageA(&message, nullptr, 0, 0, PM_REMOVE); ++i) {
+    for (unsigned i = 0; i < maximum && PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE); ++i) {
         TranslateMessage(&message);
-        DispatchMessageA(&message);
+        DispatchMessageW(&message);
     }
 }
 
@@ -138,25 +138,27 @@ bool Win32Window::Create(const WindowSettings& settings)
     const HINSTANCE hInst = m_hInst;
     const WNDPROC wndProc = m_WndProc;
 
-    WNDCLASSA wc     = {};
+    // DESVIACION (Fase 4, texto Unicode): clase y ventana Unicode para que
+    // WM_CHAR y el IME entreguen UTF-16 en vez de la página de códigos ANSI.
+    WNDCLASSW wc     = {};
     wc.style         = 0x2B;            // CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS
     wc.lpfnWndProc   = wndProc;
     wc.hInstance     = hInst;
     // Icono grande (Alt+Tab, barra de tareas) desde los recursos del exe.
-    wc.hIcon         = LoadIconA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON));
-    wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
+    wc.hIcon         = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_MAIN_ICON));
+    wc.hCursor       = LoadCursorW(NULL, MAKEINTRESOURCEW(32512));   // IDC_ARROW
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName = "Dialog";        // lo usa el FindWindowA de instancia única
-    RegisterClassA(&wc);
+    wc.lpszClassName = L"Dialog";       // lo usa el FindWindowA de instancia única
+    RegisterClassW(&wc);
 
     if (!m_WindowMode) {
         // Pantalla completa, como el original: el cambio de modo va ANTES de
         // crear la ventana (en IDA, EnumDisplaySettings precede a StartWindow).
         ApplyFullscreen();
-        m_hWnd = CreateWindowExA(
+        m_hWnd = CreateWindowExW(
             WS_EX_APPWINDOW,
-            "Dialog",
-            "Mu Online",
+            L"Dialog",
+            L"Mu Online",
             WS_POPUP | WS_VISIBLE,
             0, 0, m_Width, m_Height,
             NULL, NULL, hInst, NULL
@@ -184,10 +186,10 @@ bool Win32Window::Create(const WindowSettings& settings)
         if (x < 0) x = 0;
         if (y < 0) y = 0;
 
-        m_hWnd = CreateWindowExA(
+        m_hWnd = CreateWindowExW(
             WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
-            "Dialog",
-            "Mu Online",
+            L"Dialog",
+            L"Mu Online",
             style,
             x, y, w, h,
             NULL, NULL, hInst, NULL

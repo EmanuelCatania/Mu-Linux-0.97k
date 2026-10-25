@@ -87,6 +87,11 @@ bool SDLCALL Watch(void*, SDL_Event* event) {
         if (event->key.down && (key == 8 || key == 9 || key == 13 || key == 27)) {
             input.type = InputEventType::Text; input.character = key; DeliverSDLInput(input);
         }
+        // Ctrl+V: SDL no genera texto para la combinación; se entrega el mismo
+        // carácter de control que arma TranslateMessage en Win32.
+        if (event->key.down && key == 'V' && held[17] && !held[18]) {
+            input.type = InputEventType::Text; input.character = 0x16; DeliverSDLInput(input);
+        }
         return true;
     }
     case SDL_EVENT_TEXT_INPUT: Text(event->text.text); return true;
@@ -147,6 +152,11 @@ public:
     void PositionIme(int x, int y, int width, int height) override {
         SDL_Rect area{x, y, width > x ? width - x : 1, 1};
         SDL_SetTextInputArea(SDLWindow(), &area, 0);
+    }
+    std::string ClipboardText() override {
+        std::string result;
+        if (char* text = SDL_GetClipboardText()) { result = text; SDL_free(text); }
+        return result;
     }
 };
 }
