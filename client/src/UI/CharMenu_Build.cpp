@@ -278,8 +278,9 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
         iWidth = local_8.cx + (int)fVar4;
     }
     const float fTexScaleX = Text_GetOrthoScaleX();
-    if ((float)iMaxWidth < (float)iPos_x + (float)iWidth / fTexScaleX) {
-        iPos_x = (int)((float)iMaxWidth - (float)iWidth / fTexScaleX);
+    const int rightEdge = iMaxWidth + gWindow.GetRightShift();
+    if ((float)rightEdge < (float)iPos_x + (float)iWidth / fTexScaleX) {
+        iPos_x = (int)((float)rightEdge - (float)iWidth / fTexScaleX);
     }
     // Fondo de la linea (m_dwBackColor).  En el binario este nivel NO lo pinta:
     // CUIRenderText_BakeTextTexture (0x0040FCD0) rasteriza la linea a una
