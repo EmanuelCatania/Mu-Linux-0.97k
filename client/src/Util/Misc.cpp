@@ -11,6 +11,8 @@
 // MoveItems @ 0x00503760 — Entity_UpdateGravity
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
+#include "Net/NetText.h"
 
 
 // Packet_IsValidSockType — Packet_IsValidSockType
@@ -25,51 +27,16 @@ int __cdecl Packet_IsValidSockType(int param_1,int param_2)
 }
 
 
-// CheckSpecialText — returns true when the text contains a disallowed character.
-// Scans string param_1 for characters invalid in player names/chat.
-// Returns 1 (non-zero low byte) if an invalid character is found,
-// 0 (in the high byte return) if all characters are valid.
-// Also handles DBCS (double-byte) character sequences.
+// CheckSpecialText — devuelve true si el nombre tiene un carácter no permitido.
+//
+// IDA (0x00406B30) acepta ASCII alfanumérico y los pares DBCS del coreano.
+// DESVIACION (0.97.40, nombres UTF-8): se valida con la misma regla que el
+// server (TextEngine::IsNameText), así que pasan letras y dígitos de cualquier
+// escritura. Lo usa sólo la creación de personaje.
 bool __cdecl CheckSpecialText(const byte *param_1)
 {
-  byte bVar1;
-  byte bVar2;
-  int  cVar3;
-  int iVar4;
-
-  bVar1 = *param_1;
-  do {
-    if (bVar1 == 0) {
-      return 0; // valid: no invalid chars found
-    }
-    cVar3 = mbclen(param_1);
-    iVar4 = cVar3;
-    if (iVar4 == 1) {
-      bVar1 = *param_1;
-      iVar4 = (int)bVar1;
-      if ((((bVar1 < 0x30) || ((0x39 < bVar1 && (bVar1 < 0x41)))) ||
-          ((0x5a < bVar1 && (bVar1 < 0x61)))) || (0x7a < bVar1)) goto LAB_00406bbe;
-    }
-    else {
-      bVar1 = *param_1;
-      if ((bVar1 < 0x81) || (200 < bVar1)) {
-LAB_00406bbe:
-        return 1; // found invalid character
-      }
-      bVar2 = param_1[1];
-      iVar4 = (int)bVar2;
-      if (((((bVar2 < 0x41) || (0x5a < bVar2)) && ((bVar2 < 0x61 || (0x7a < bVar2)))) &&
-          ((bVar2 < 0x81 || (bVar2 == 0xff)))) ||
-         (((((0xa0 < bVar1 && (bVar1 < 0xb0)) && (0xa0 < bVar2)) ||
-           (((bVar1 == 0xc6 && (0x52 < bVar2)) && (bVar2 < 0xa1)))) ||
-          ((0xc6 < bVar1 && (bVar2 < 0xa1)))))) goto LAB_00406bbe;
-      param_1 = param_1 + 1;
-    }
-    bVar1 = param_1[1];
-    param_1 = param_1 + 1;
-  } while( true );
+  return !TextEngine::IsNameText((const char*)param_1, NetText::CharacterNameClusters);
 }
-
 
 // CPhysicsManager::Move — advances every registered physics object.
 // Updates the floating-point random key _DAT_00590af0 with a random delta

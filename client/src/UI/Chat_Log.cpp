@@ -1,6 +1,7 @@
 // Chat_Log.cpp
 
 #include "stdafx.h"
+#include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
@@ -75,8 +76,10 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     }
     char* slot = base + count * 0x118;
     memset(slot, 0, 0x118);
-    Platform::TextCopy(slot,        (LPCSTR)label, 0xB);    // sender name: max 11 chars
-    Platform::TextCopy(slot + 0x0B, (LPCSTR)msg,   0x101);  // message:     max 257 chars
+    // Remitente en 11 bytes y mensaje en 257 (layout del binario), cortados sin
+    // partir un carácter UTF-8.
+    TextEngine::CopyTruncated(slot,        0xB,   label);
+    TextEngine::CopyTruncated(slot + 0x0B, 0x101, msg);
     *(int*)(slot + 0x10C) = mode;                  // channel / type dword
     DAT_07e11da4 = count + 1;
 

@@ -61,4 +61,10 @@ std::string NormalizeNFC(std::string_view text);
 std::string CaseFoldKey(std::string_view text);
 int CompareIgnoreCase(std::string_view left, std::string_view right);
 
+// Nombre de personaje o de guild (0.97.40), con la misma regla que
+// TextName::IsValid del server: UTF-8 válido en NFC, de 1 a `maxClusters`
+// clusters, sólo letras, marcas y dígitos de cualquier escritura y sin una
+// marca combinante al principio.
+bool IsNameText(std::string_view text, std::size_t maxClusters);
+
 } // namespace TextEngine

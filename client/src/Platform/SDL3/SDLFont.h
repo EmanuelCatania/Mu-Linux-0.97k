@@ -27,6 +27,9 @@ public:
     SDLFont& operator=(const SDLFont&) = delete;
     // Altura positiva de celda, como CreateFont; los bytes pertenecen al objeto.
     bool Load(std::vector<uint8_t> bytes, int height, std::string& error);
+    // Igual que Load, pero FreeType lee el archivo bajo demanda en vez de
+    // cargarlo entero (fuentes del sistema de 10-20 MB usadas como respaldo).
+    bool LoadFile(const std::string& path, int height, std::string& error);
     // Respaldo en Data/Font, relativo a la carpeta del cliente o a MU_ASSET_ROOT.
     bool LoadFamily(const char* family, bool bold, bool italic, int height,
                     int width, bool underline, bool strikeOut, std::string& error,
@@ -43,6 +46,7 @@ public:
     int Measure(const uint32_t* text, size_t count);
 private:
     struct Impl;
+    bool Open(std::unique_ptr<Impl> next, const char* path, int height, std::string& error);
     std::unique_ptr<Impl> impl;
 };
 }
