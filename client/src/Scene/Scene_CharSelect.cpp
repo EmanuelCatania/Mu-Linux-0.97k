@@ -624,22 +624,25 @@ int Scene_CharSelect(void)
             Gfx::Color3f(fR, fG, fB);
 
             // Left/right navigation arrows
+            // DESVIACION (Fase 4, pantalla ancha): los brazos DELETE y OK se pegan
+            // al marco, que va en los bordes de la ventana (s unidades de más).
+            const int s = gWindow.GetRightShift();
             fVar1 = DAT_005616a8;
             local_70 = DAT_005616a8;
-            GL_DrawTexture(0x12, (float)(int)DAT_005616a8, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
-            local_70 = (float)((int)fVar1 + 0x80);
-            if ((((!bVar10) && ((int)local_70 <= DAT_083a427c)) && (DAT_083a427c < (int)fVar1 + 0xc6)) &&
+            GL_DrawTexture(0x12, (float)((int)DAT_005616a8 - s), 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
+            local_70 = (float)((int)fVar1 + 0x80 - s);
+            if ((((!bVar10) && ((int)local_70 <= (int)DAT_083a427c)) && ((int)DAT_083a427c < (int)fVar1 + 0xc6 - s)) &&
                 ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7)))
             {
                 GL_DrawTexture(0x13, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }
 
             iVar9 = -(int)DAT_005616a8;
-            local_70 = (float)(iVar9 + 0x1b2);
+            local_70 = (float)(iVar9 + 0x1b2 + s);
             GL_DrawTexture(0x14, (float)(int)local_70, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
-            local_70 = (float)(iVar9 + 0x1b9);
-            if (((!bVar10) && ((int)local_70 <= DAT_083a427c)) &&
-                ((DAT_083a427c < iVar9 + 0x1ff) && ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7))))
+            local_70 = (float)(iVar9 + 0x1b9 + s);
+            if (((!bVar10) && ((int)local_70 <= (int)DAT_083a427c)) &&
+                (((int)DAT_083a427c < iVar9 + 0x1ff + s) && ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7))))
             {
                 GL_DrawTexture(0x15, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }

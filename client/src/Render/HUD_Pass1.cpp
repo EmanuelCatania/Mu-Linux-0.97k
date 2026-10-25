@@ -373,12 +373,19 @@ void RenderMainFrameWindow_(void)
     GL_ResetState();
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     if (wide) {
+        // DESVIACION (Fase 4, pantalla ancha; como la barra del DLL): los márgenes
+        // se rellenan con una franja lisa de la barra y las cabezas de dragón van
+        // en los bordes de la ventana, mirando hacia el centro.
+        const float s = (float)gWindow.GetRightShift();
+        GL_DrawTexture(0xE6, -s, 432.0f, s + 1.0f, 48.0f, 64.0f / 256.0f, 0.0f, 24.0f / 256.0f, 0.75f, 1, 1);
+        GL_DrawTexture(0xE6, 640.0f - 1.0f, 432.0f, s + 1.0f, 48.0f, 88.0f / 256.0f, 0.0f, -24.0f / 256.0f, 0.75f, 1, 1);
         EnableAlphaTest(true);
         // En los márgenes que deja el 4:3, pegadas a la barra (14 px encima de
         // ella, sin tapar los casilleros).  La textura trae la cabeza a la derecha
         // y el cuello a la izquierda: la izquierda va tal cual, la derecha espejada.
-        GL_DrawTexture(0x5F0, -130.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        GL_DrawTexture(0x5F0, 626.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, -s, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        if (GetScreenWidth() >= 640 + gWindow.GetRightShift())   // con un panel abierto, el borde derecho es del panel
+            GL_DrawTexture(0x5F0, 640.0f + s - 144.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
         GL_ResetState();
     }
 }
