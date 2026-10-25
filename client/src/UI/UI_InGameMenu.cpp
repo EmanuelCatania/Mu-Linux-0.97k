@@ -682,7 +682,7 @@ void __cdecl UI_InGameMenu(void)
         int v351 = v350 + 18 * numLines;
         if (mouseY < v351) goto tail;
         int v352 = mouseY - v351;
-        int absDx = mouseX - 556;
+        int absDx = mouseX - Ui::QuestAnswerCenter(gWindow.GetRightShift());
         if (absDx < 0) absDx = -absDx;
         if (v352 < 18 * numAnswer && absDx <= 106) {
             int v353 = v352 / 18;

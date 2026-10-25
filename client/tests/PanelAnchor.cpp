@@ -24,6 +24,15 @@ int main() {
         Check(leftItem.x == offset - 80 * uiWidth / 640);
         const int edge = Ui::WindowRight.Origin(margin);
         Check(Ui::Move.Origin(margin) == Ui::WindowLeft.Origin(margin));
+        const auto quest = Ui::QuestBounds(margin);
+        Check(quest.x + quest.width == edge);
+        for (auto button : {Ui::QuestProceed(margin), Ui::QuestClose(margin)}) {
+            Check(quest.Contains(button.x, button.y));
+            Check(button.Contains(button.x + button.width - 1, button.y + button.height - 1));
+            Check(!button.Contains(button.x - 1, button.y));
+            Check(!button.Contains(button.x + button.width, button.y));
+        }
+        Check(Ui::QuestAnswerCenter(margin) == quest.x + 106);
         for (bool blood : {false, true}) {
             for (int row = 0; row < (blood ? 6 : 4); ++row) {
                 const auto button = Ui::EventButton(blood, row, margin);

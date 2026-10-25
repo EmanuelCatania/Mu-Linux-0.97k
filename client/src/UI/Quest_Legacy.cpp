@@ -32,7 +32,7 @@ void __fastcall FUN_00402ff0(int param_1) {
     int hovered = ((int)MouseY - iPos_y) / 18;
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     for (int i = 0; i < g_iNumAnswer; ++i) {
-        int dx = QuestX(106) - (int)MouseX;
+        int dx = Ui::QuestAnswerCenter(gWindow.GetRightShift()) - (int)MouseX;
         if (dx < 0) dx = -dx;
         if (hovered == i && dx <= 106) {
             m_dwTextColor = 0xff0000ff;
@@ -163,8 +163,8 @@ void __fastcall FUN_00403320(void* param_1) {
             Gfx::Color3f(0.3f, 0.3f, 0.3f);
         }
 
-        if ((double)MouseX >= QuestX(35) && (double)MouseX < QuestX(155) &&
-            (double)MouseY >= 355.0 && (double)MouseY < 379.0 && MouseLButtonPush) {
+        const auto proceed = Ui::QuestProceed(gWindow.GetRightShift());
+        if (proceed.Contains((int)MouseX, (int)MouseY) && MouseLButtonPush) {
             Gfx::Color3f(0.4f, 0.4f, 0.4f);
             if (MouseLButtonPop) {
                 MouseLButtonPush = 0;
@@ -172,7 +172,7 @@ void __fastcall FUN_00403320(void* param_1) {
             }
         }
         gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
-        GL_DrawTexture(240, (float)QuestX(35), 355.0f, 120.0f, 24.0f,
+        GL_DrawTexture(240, (float)proceed.x, (float)proceed.y, (float)proceed.width, (float)proceed.height,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(QuestX(95), 360, GlobalText[699]);
         Gfx::Color3f(1.0f, 1.0f, 1.0f);
@@ -190,10 +190,10 @@ void __fastcall FUN_00403320(void* param_1) {
     }
 
     // Botón de cerrar + su tooltip
-    GL_DrawTexture(280, (float)QuestX(25), 395.0f, 24.0f, 24.0f,
+    const auto close = Ui::QuestClose(gWindow.GetRightShift());
+    GL_DrawTexture(280, (float)close.x, (float)close.y, (float)close.width, (float)close.height,
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    if ((double)MouseX >= QuestX(25) && (double)MouseX < QuestX(49) &&
-        (double)MouseY >= 395.0 && (double)MouseY < 419.0) {
+    if (close.Contains((int)MouseX, (int)MouseY)) {
         gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;

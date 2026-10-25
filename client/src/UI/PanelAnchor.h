@@ -38,6 +38,10 @@ constexpr Rect EventButton(bool blood, int row, int margin) {
 }
 inline constexpr Panel GoldenArcher { Anchor::Derecha, 190 };
 inline constexpr Panel Quest { Anchor::Derecha, 190 };
+constexpr Rect QuestBounds(int margin) { return {Quest.Origin(margin), 0, Quest.width, 433}; }
+constexpr Rect QuestProceed(int margin) { return {Quest.Origin(margin) + 35, 355, 120, 24}; }
+constexpr Rect QuestClose(int margin) { return {Quest.Origin(margin) + 25, 395, 24, 24}; }
+constexpr int QuestAnswerCenter(int margin) { return Quest.Origin(margin) + 106; }
 inline constexpr Panel EventTimer { Anchor::Derecha, 190 };
 inline constexpr Panel Menu { Anchor::Centro, 120 };
 inline constexpr Panel WindowLeft { Anchor::Izquierda, 0 };
