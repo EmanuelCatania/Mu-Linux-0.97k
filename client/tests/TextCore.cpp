@@ -74,6 +74,16 @@ int main()
     Check(FitLineBreak("uno\ndos tres", 12) == 4, "salto obligatorio");
     Check(FitLineBreak("corto", 10) == 5, "entra entero");
 
+    // ── Emoticonos ──
+    Check(ExpandEmoticons("hola :D") == U8(u8"hola \U0001F600"), "emoticono suelto");
+    Check(ExpandEmoticons("<3") == U8(u8"\u2764\uFE0F"), "corazon");
+    Check(ExpandEmoticons("http://sitio.com :) ok") == U8(u8"http://sitio.com \U0001F642 ok"), "la URL no se toca");
+    Check(ExpandEmoticons("a:D") == "a:D", "dentro de una palabra no");
+    Check(ExpandEmoticons("mira :fire: eso") == U8(u8"mira \U0001F525 eso"), "codigo");
+    Check(ExpandEmoticons("10:30:15") == "10:30:15", "un horario no es un codigo");
+    Check(ExpandEmoticons(":nada:") == ":nada:", "codigo desconocido");
+    Check(ExpandEmoticons("sin cambios") == "sin cambios", "sin emoticonos");
+
     // ── Nombres (misma regla que TextName::IsValid del server) ──
     Check(IsNameText(U8(u8"Añañe"), 10), "nombre latino");
     Check(IsNameText(U8(u8"Владимир"), 10), "nombre cirílico");
