@@ -12,7 +12,9 @@ extern "C" bool Input_AppendText(DWORD slot, const char* utf8);
 
 namespace EmojiPicker {
 namespace {
-constexpr int kButtonX = 458, kButtonY = 420, kButtonSize = 16;
+// Dentro del campo de texto del chat, pegado a su borde derecho y antes del
+// campo del susurro (que arranca en x=376).
+constexpr int kButtonX = 358, kButtonY = 420, kButtonSize = 16;
 constexpr int kCell = 20, kColumns = 10, kRows = 8;
 constexpr int kPanelWidth = kColumns * kCell + 8;
 constexpr int kPanelHeight = kRows * kCell + 8 + 20;        // grilla + pie con páginas
@@ -87,7 +89,7 @@ bool Contains(int x, int y)
 
 void Render()
 {
-    const bool click = MouseLButton && MouseLButtonPush;
+    bool click = MouseLButton && MouseLButtonPush;
     // ── Botón ──
     EnableAlphaTest(true);
     BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.75f);
@@ -100,7 +102,7 @@ void Render()
     GL_DrawRect((float)(kButtonX + kButtonSize - 1), (float)kButtonY, 1.0f, (float)kButtonSize);
     BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     Label(kButtonX, kButtonY + kButtonSize / 2, kButtonSize, u8"\U0001F600");
-    if (click && overButton) { s_Open = !s_Open; Consume(); }
+    if (click && overButton) { s_Open = !s_Open; Consume(); click = false; }
     if (!s_Open) return;
 
     // ── Panel ──

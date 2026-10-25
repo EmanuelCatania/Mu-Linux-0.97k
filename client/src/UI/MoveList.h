@@ -13,6 +13,7 @@ public:
     int Count() const { return m_Count; }
     const Proto::MOVE_LIST_INFO* Get(int index) const;
     void SetResets(DWORD resets) { m_Resets = resets; }
+    DWORD Resets() const { return m_Resets; }
 
 private:
     bool Blocked() const;
