@@ -29,19 +29,20 @@ struct MoveListLayout {
 using Layout = MoveListLayout;
 bool Inside(int x, int y, int w, int h)
 {
-    return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
+    x += gWindow.PanelOrigin(Ui::Move);
+    return Ui::Rect{x, y, w, h}.Contains((int)MouseX, (int)MouseY);
 }
 void Text(int x, int y, const char* text, int width)
 {
     // DLL MoveList.cpp: centrar dentro de cada columna; ancho físico para RenderText.
-    RenderText(x, y, const_cast<char*>(text),
+    RenderText(gWindow.PanelOrigin(Ui::Move) + x, y, const_cast<char*>(text),
         (int)(width * gWindow.GetWidth() / 640), 1, nullptr);
 }
 void Rect(int x, int y, int w, int h, float r, float g, float b, float a)
 {
     EnableAlphaTest(true);
     Gfx::Color4f(r, g, b, a);
-    GL_DrawRect((float)x, (float)y, (float)w, (float)h);
+    GL_DrawRect((float)(gWindow.PanelOrigin(Ui::Move) + x), (float)y, (float)w, (float)h);
     GL_ResetState();
     // DLL MoveList.cpp: el texto no debe heredar el color del fondo o del hover.
     Gfx::Color4f(1, 1, 1, 1);

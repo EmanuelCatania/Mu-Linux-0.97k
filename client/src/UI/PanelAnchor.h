@@ -24,6 +24,7 @@ inline constexpr Panel Shop { Anchor::Derecha, 190, 1 };
 inline constexpr Panel Trade { Anchor::Derecha, 190, 1 };
 inline constexpr Panel Chaos { Anchor::Derecha, 190, 1 };
 inline constexpr Panel Event { Anchor::Derecha, 190, 1 };
+inline constexpr Panel Move { Anchor::Izquierda, 180 };
 struct Rect {
     int x, y, width, height;
     constexpr bool Contains(int mx, int my) const {

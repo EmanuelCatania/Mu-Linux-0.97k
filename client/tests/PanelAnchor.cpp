@@ -23,6 +23,7 @@ int main() {
         const auto leftItem = Ui::MapViewport(-80, 20, size[0], uiWidth, offset);
         Check(leftItem.x == offset - 80 * uiWidth / 640);
         const int edge = Ui::WindowRight.Origin(margin);
+        Check(Ui::Move.Origin(margin) == Ui::WindowLeft.Origin(margin));
         for (bool blood : {false, true}) {
             for (int row = 0; row < (blood ? 6 : 4); ++row) {
                 const auto button = Ui::EventButton(blood, row, margin);
