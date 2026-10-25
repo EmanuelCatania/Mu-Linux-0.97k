@@ -62,7 +62,11 @@ bool SelectVDMX(FT_Face face, int height, int& ppem, FontMetrics& metrics)
 }
 }
 
+namespace { bool g_antialias = false; }
+void SDLFont::SetAntialias(bool enabled) { g_antialias = enabled; }
+
 struct SDLFont::Impl {
+    bool antialias = g_antialias;
     FT_Library library = nullptr;
     FT_Face face = nullptr;
     std::vector<uint8_t> bytes;
@@ -135,10 +139,10 @@ namespace {
 // Rasterizado de 1 bit con el intérprete v35: el mismo aspecto que GDI.
 // Lo comparten la búsqueda por carácter (texto 1252) y por id de glifo
 // (texto ya pasado por HarfBuzz), así un mismo glifo sale idéntico.
-FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut)
+FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics, bool underline, bool strikeOut, bool antialias)
 {
     FontGlyph glyph;
-    if (face && !FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | FT_LOAD_TARGET_MONO)) {
+    if (face && !FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | (antialias ? FT_LOAD_TARGET_NORMAL : FT_LOAD_TARGET_MONO))) {
         const auto slot = face->glyph;
         const auto& bitmap = slot->bitmap;
         glyph.advance = int((slot->advance.x + 32) / 64);
@@ -147,10 +151,11 @@ FontGlyph Rasterize(FT_Face face, FT_UInt glyphIndex, const FontMetrics& metrics
         glyph.width = int(bitmap.width);
         glyph.height = int(bitmap.rows);
         glyph.coverage.resize(size_t(glyph.width) * glyph.height);
+        const bool gray = bitmap.pixel_mode == FT_PIXEL_MODE_GRAY;
         for (int y = 0; y < glyph.height; ++y) {
             const auto row = bitmap.buffer + (bitmap.pitch >= 0 ? y : glyph.height - 1 - y) * std::abs(bitmap.pitch);
             for (int x = 0; x < glyph.width; ++x)
-                glyph.coverage[size_t(y) * glyph.width + x] = (row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0;
+                glyph.coverage[size_t(y) * glyph.width + x] = gray ? row[x] : ((row[x / 8] & (0x80 >> (x % 8))) ? 255 : 0);
         }
     }
     if (face && (underline || strikeOut) && glyph.advance > 0) {
@@ -181,14 +186,14 @@ const FontGlyph& SDLFont::Glyph(uint32_t codepoint)
     if (existing != impl->glyphs.end()) return existing->second;
     const FT_UInt index = impl->face ? FT_Get_Char_Index(impl->face, codepoint) : 0;
     return impl->glyphs.emplace(codepoint,
-        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut)).first->second;
+        Rasterize(impl->face, index, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
 }
 const FontGlyph& SDLFont::GlyphIndex(uint32_t glyph)
 {
     const auto existing = impl->glyphIds.find(glyph);
     if (existing != impl->glyphIds.end()) return existing->second;
     return impl->glyphIds.emplace(glyph,
-        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut)).first->second;
+        Rasterize(impl->face, glyph, impl->metrics, impl->underline, impl->strikeOut, impl->antialias)).first->second;
 }
 bool SDLFont::HasCodepoint(uint32_t codepoint) const
 {
@@ -198,8 +203,8 @@ void* SDLFont::ShapingFont()
 {
     if (!impl->shaping && impl->face) {
         impl->shaping = hb_ft_font_create(impl->face, nullptr);
-        // Avances con el mismo hinting que el rasterizado de 1 bit.
-        hb_ft_font_set_load_flags(impl->shaping, FT_LOAD_DEFAULT | FT_LOAD_TARGET_MONO);
+        // Avances con el mismo hinting que el rasterizado.
+        hb_ft_font_set_load_flags(impl->shaping, FT_LOAD_DEFAULT | (impl->antialias ? FT_LOAD_TARGET_NORMAL : FT_LOAD_TARGET_MONO));
     }
     return impl->shaping;
 }
