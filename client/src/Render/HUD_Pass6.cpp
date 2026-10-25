@@ -331,9 +331,9 @@ extern "C" void __cdecl RenderServerDivision(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    InventoryStartX = 450;
+    InventoryStartX = gWindow.PanelX(450);
     InventoryStartY = 0;
-    RenderInventoryInterface(450, 0, 1);
+    RenderInventoryInterface(gWindow.PanelX(450), 0, 1);
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
@@ -380,7 +380,12 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 {
     if (!InventoryOpened) return;
 
-    int sx = (CharacterOpened || PartyOpened) ? 260 : 450;
+    int sx = gWindow.PanelX((CharacterOpened || PartyOpened) ? 260 : 450);
+    // El origen del contenido se publica acá también: con el menú de opciones
+    // abierto el tick no corre y, al cambiar de resolución, quedaba el viejo
+    // (marco en un lugar y casilleros en otro).
+    InventoryStartX = sx;
+    InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
     RenderEquipmentBox();
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
@@ -1290,7 +1295,7 @@ extern "C" void __cdecl RenderTrade(void)
     if (!TradeOpened) return;
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    TradeInventoryStartX = 260;
+    TradeInventoryStartX = gWindow.PanelX(260);
     TradeInventoryStartY = 0;
     RenderInventoryInterface(TradeInventoryStartX, TradeInventoryStartY, 1);
 

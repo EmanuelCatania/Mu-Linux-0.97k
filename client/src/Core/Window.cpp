@@ -88,6 +88,12 @@ float CWindow::ViewportFraction(int width) const
     return (float)w / (float)m_Width;
 }
 
+int CWindow::GetRightShift() const
+{
+    if (!IsWide() || m_UiWidth == 0) return 0;
+    return (int)((long long)m_UiOffsetX * 640 / (long long)m_UiWidth);
+}
+
 int CWindow::UiXFromPixel(int pixel) const
 {
     if (!IsWide()) return (int)((long long)pixel * 640 / (m_Width ? m_Width : 640));

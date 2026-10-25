@@ -172,9 +172,9 @@ static void GA_Ida_Render(void)
     const int mode = GA_OpenType;
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    GA_InventoryStartX = 450;
+    GA_InventoryStartX = gWindow.PanelX(450);
     GA_InventoryStartY = 0;
-    RenderInventoryInterface(450, 0, 0);
+    RenderInventoryInterface(gWindow.PanelX(450), 0, 0);
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFF0FF96u;
     RenderText(GA_InventoryStartX + 35, GA_InventoryStartY + 12, getMonsterName(236),
@@ -324,7 +324,7 @@ static void GA_Ida_Render(void)
 static void GA_Ida_Check(void)
 {
     const int mode = GA_OpenType;
-    if (GA_MouseX >= 450 && GA_MouseX < 640 && GA_MouseY >= 0 && GA_MouseY < 433)
+    if (GA_MouseX >= gWindow.PanelX(450) && GA_MouseX < gWindow.PanelX(640) && GA_MouseY >= 0 && GA_MouseY < 433)
         UIState::CaptureMouseForUI();
 
     if (mode != 4) {
@@ -431,7 +431,7 @@ void GoldenArcher_ResetSession()
     memset(s_StoneVipDuration, 0, sizeof(s_StoneVipDuration));
 }
 
-static const int kStartX = 450;
+#define kStartX (gWindow.PanelX(450))
 static const int kStartY = 0;
 
 // Color4b(r,g,b,a) viene de structs.h (mismo formato ABGR que el DLL).

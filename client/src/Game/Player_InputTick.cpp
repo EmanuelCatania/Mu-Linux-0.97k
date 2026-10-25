@@ -165,8 +165,9 @@ static void MouseOnWindow_Update(void)
     // en vez de mantener acá una lista paralela de rectángulos.
     if (HUD_IsAnyRightPanelOpen()) {
         int panelStartX = GetScreenWidth();
-        if (panelStartX < 640) {
-            if (mx >= panelStartX && mx < 640 && my >= 0 && my < 433) {
+        const int rightEdge = 640 + gWindow.GetRightShift();
+        if (panelStartX < rightEdge) {
+            if (mx >= panelStartX && mx < rightEdge && my >= 0 && my < 433) {
                 g_MouseOnWindow = 1; return;
             }
         }
@@ -672,7 +673,8 @@ void __cdecl Player_ProcessInput(void)
     {
         unsigned char* ent = (unsigned char*)DAT_07abf5d8;
         if (ent) {
-            fHalfScreenW = (float)(GetScreenWidth() / 2);      // GetScreenWidth() / 2
+            // En pantalla ancha el mundo ocupa toda la ventana: su centro es 320.
+            fHalfScreenW = gWindow.IsWide() ? 320.0f : (float)(GetScreenWidth() / 2);
             const float mouseX = (float)(int)DAT_083a427c;
             const float mouseY = (float)(int)DAT_083a4278;
 

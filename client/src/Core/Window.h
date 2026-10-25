@@ -72,6 +72,11 @@ public:
     void ViewportX(int x, int w, int& pixelX, int& pixelWidth) const;
     // Fracción del ancho real que ocupa un viewport de `width` unidades de 640.
     float ViewportFraction(int width) const;
+    // Unidades de la grilla 640 que sobran a cada lado del área de interfaz.
+    // Los paneles pegados al borde derecho de la ventana (inventario, personaje,
+    // party...) suman esto a su x: su borde derecho cae en el de la ventana.
+    int GetRightShift() const;
+    int PanelX(int base) const { return base + GetRightShift(); }
     // Píxel real <-> columna de la grilla 640 (puede salir de 0..639 en los costados).
     int UiXFromPixel(int pixel) const;
     int PixelFromUiX(int ui) const;

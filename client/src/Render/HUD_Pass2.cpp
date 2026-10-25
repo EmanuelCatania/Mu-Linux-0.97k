@@ -216,13 +216,16 @@ extern "C" int __cdecl GetScreenWidth(void);
 // IDA: GetScreenWidth (0x004CB520)
 int __cdecl GetScreenWidth(void)
 {
+    // DESVIACION (Fase 4, pantalla ancha): el borde derecho es el de la ventana,
+    // no el del 4:3 de la interfaz (DLL CWideScreen: numW - 190 / numW - 380).
+    const int edge = gWindow.GetRightShift();
     if (InventoryOpened) {
-        if (CharacterOpened) return 260;
-        if (HUD_IsInventorySidePairOpen()) return 260;
-        return 450;
+        if (CharacterOpened) return 260 + edge;
+        if (HUD_IsInventorySidePairOpen()) return 260 + edge;
+        return 450 + edge;
     }
-    if (HUD_IsAnyRightPanelOpen()) return 450;
-    return 640;
+    if (HUD_IsAnyRightPanelOpen()) return 450 + edge;
+    return 640 + edge;
 }
 
 // =============================================================================

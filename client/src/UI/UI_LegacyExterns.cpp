@@ -927,14 +927,17 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         gFont.MeasureText(hFontDC, drawText, (int)strlen(drawText), &tot);
         float wOrtho = (float)tot.cx;
         float hOrtho = (float)tot.cy;
-        if (x < 0) x = 0;
-        if ((float)x + wOrtho > (float)vw) x = (int)((float)vw - wOrtho);
+        // DESVIACION (Fase 4, pantalla ancha): el borde es el de la ventana
+        // (la interfaz ocupa un 4:3 centrado con `off` píxeles a cada lado).
+        const int off = gWindow.GetUiOffsetX();
+        if (x < -off) x = -off;
+        if ((float)x + wOrtho > (float)vw + (float)off) x = (int)((float)vw + (float)off - wOrtho);
         if (DAT_07e11d6e) {
             if (y < 0) y = 0;
             float bottom = (float)vh - (47.0f * (float)vh) / 640.0f;
             if ((float)y + hOrtho > bottom) y = (int)(bottom - hOrtho);
         }
-        if (x < 0) x = 0;
+        if (x < -off) x = -off;
         if (y < 0) y = 0;
     }
 

@@ -144,13 +144,13 @@ void __fastcall FUN_00403320(void* param_1) {
 
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface(450, 0, 1);
+    RenderInventoryInterface(gWindow.PanelX(450), 0, 1);
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
 
     char state = *(char*)(This + 116866);      // +0x1C882
     if (state == 1) {
-        GL_DrawTexture(279, 450.0f, 325.0f, 190.0f, 10.0f,
+        GL_DrawTexture(279, (float)gWindow.PanelX(450), 325.0f, 190.0f, 10.0f,
                      0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
         if (FUN_00403150(param_1, 0, state, 1)) {
             m_dwTextColor = 0xFFD2E6FFu;
@@ -249,7 +249,7 @@ UINT __fastcall FUN_00403700(void* ecx, void* /*edx*/, UINT param_1) {
 void __fastcall FUN_00403a40(void* param_1) {
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface(0x1c2, 0, 1);
+    RenderInventoryInterface(gWindow.PanelX(0x1c2), 0, 1);
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     // gFont.SelectFont(m_hFontDC, g_hFont); // globals not yet declared
