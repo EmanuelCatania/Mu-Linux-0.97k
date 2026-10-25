@@ -146,9 +146,14 @@ eTokenResult CReadScript::GetToken(bool wReturn)
 	{
 		p = this->m_string;
 
+		// Lo que no entra en m_string se descarta (la línea se lee igual hasta
+		// la comilla): un texto UTF-8 largo desbordaba el buffer.
 		while (((ch = getc(this->m_file)) != EOF) && (ch != '"') && (ch != '\n'))
 		{
-			*p++ = ch;
+			if (p - this->m_string < (int)sizeof(this->m_string) - 1)
+			{
+				*p++ = ch;
+			}
 		}
 
 		if (ch != '"')
