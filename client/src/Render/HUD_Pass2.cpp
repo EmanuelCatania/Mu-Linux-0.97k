@@ -20,6 +20,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/EmojiPicker.h"
 extern "C" const char* Guild_GetMarkName(int row);
 int GuildMark_FindRecordByName(const char* name);
 #include "Render/Gfx.h"
@@ -237,7 +238,7 @@ void Render_ChatBox_(void)
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
-    if (!(InputEnable || DAT_07e11d71)) return;
+    if (!(InputEnable || DAT_07e11d71)) { EmojiPicker::OnChatClosed(); return; }
 
     GL_ResetState();   // DisableAlphaBlend
     GL_DrawTexture(248, 186.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
@@ -276,6 +277,8 @@ void Render_ChatBox_(void)
     if (DAT_00559bf0 != 0) {
         GL_DrawTexture(239, 432.0f, 420.0f, 15.0f, 16.0f, 0.0f, 0.0f, 0.9375f, 1.0f, 1, 1);
     }
+    // DESVIACION (Fase 4): selector de emojis junto al campo de texto.
+    EmojiPicker::Render();
 }
 
 void Render_ChatBox(void) { Render_ChatBox_(); }

@@ -438,6 +438,7 @@
     <ClCompile Include="src\Render\Particle_Legacy.cpp" />
     <ClCompile Include="src\Render\Camera_Login.cpp" />
     <ClCompile Include="src\UI\Chat_Log.cpp" />
+    <ClCompile Include="src\UI\EmojiPicker.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
     <ClCompile Include="src\Platform\Win32\MiniDump.cpp" />
     <ClCompile Include="src\Combat\Combat_AttackEffect.cpp" />
