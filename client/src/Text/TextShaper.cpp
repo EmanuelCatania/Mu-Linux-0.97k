@@ -1,7 +1,6 @@
 #include "Text/TextShaper.h"
 #include "Text/TextCore.h"
 #include "Platform/SDL3/SDLFont.h"
-#include "Platform/IFileSystem.h"
 #include <hb.h>
 #include <SheenBidi/SheenBidi.h>
 #include <algorithm>
@@ -15,21 +14,6 @@
 namespace TextEngine {
 namespace {
 std::string fallbackDirectory;
-
-std::vector<uint8_t> ReadFile(const std::string& path)
-{
-    FILE* stream = Platform::GetFileSystem().Open(path.c_str(), "rb");
-    if (!stream) return {};
-    std::vector<uint8_t> bytes;
-    uint8_t block[65536];
-    size_t count;
-    while ((count = std::fread(block, 1, sizeof(block), stream)) != 0) {
-        if (bytes.size() + count > 64u * 1024 * 1024) { bytes.clear(); break; }
-        bytes.insert(bytes.end(), block, block + count);
-    }
-    std::fclose(stream);
-    return bytes;
-}
 
 std::string Lower(std::string value)
 {
@@ -142,6 +126,8 @@ std::size_t FontStack::FallbackCount()
 // Cada archivo de Data/Font que no sea de la familia principal es un
 // respaldo. Por familia se toma la variante Bold o Regular según la fuente
 // lógica; el orden es alfabético por archivo, así es estable y predecible.
+// Se abren con LoadFile: FreeType lee el archivo bajo demanda, así los 4 MB
+// del respaldo CJK no se cargan en memoria por cada tamaño de fuente.
 void FontStack::LoadFallbacks()
 {
     if (m_FallbacksLoaded) return;
@@ -169,11 +155,9 @@ void FontStack::LoadFallbacks()
         auto pick = styles.find(m_Bold ? "bold" : "regular");
         if (pick == styles.end()) pick = styles.find("regular");
         if (pick == styles.end()) pick = styles.begin();
-        auto bytes = ReadFile(pick->second);
-        if (bytes.empty()) continue;
         auto* font = new Platform::SDLFont;
         std::string message;
-        if (font->Load(std::move(bytes), m_Height, message)) m_Fallbacks.push_back(font);
+        if (font->LoadFile(pick->second, m_Height, message)) m_Fallbacks.push_back(font);
         else delete font;
     }
 }

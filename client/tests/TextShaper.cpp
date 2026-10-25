@@ -100,6 +100,13 @@ int main()
         // CJK sin glifo en Liberation: toma el respaldo.
         const auto& cjk = stack.Shape(u8"你好");
         Check(cjk.glyphs.size() == 2 && cjk.glyphs[0].font != &font && cjk.width > 0, "CJK con respaldo");
+        // Coreano, japonés, tailandés y emoji también salen del respaldo.
+        for (const char* text : { u8"한국어", u8"ひらがな", u8"สวัสดี", u8"😀🎮" }) {
+            const auto& shaped = stack.Shape(text);
+            bool fallback = !shaped.glyphs.empty();
+            for (const auto& glyph : shaped.glyphs) fallback = fallback && glyph.font != &font && glyph.glyph != 0;
+            Check(fallback && shaped.width > 0, std::string("respaldo para ") + text);
+        }
     }
 
     if (failures) { std::printf("%d fallas\n", failures); return 1; }
