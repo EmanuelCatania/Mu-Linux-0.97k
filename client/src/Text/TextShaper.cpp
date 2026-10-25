@@ -243,6 +243,8 @@ const ShapedText& FontStack::Shape(std::string_view input)
         Platform::SDLFont* font = nullptr;
         // Las marcas, los espacios y los signos comunes siguen a lo anterior;
         // si el tramo empieza con ellos toman lo del primer carácter con escritura.
+        // La fuente anterior se conserva sólo si tiene el glifo: el respaldo CJK
+        // no trae ':' y "李小龍: hola" sacaba un glifo vacío.
         for (std::size_t i = index; i < codepoints.size() && codepoints[i].offset < run.end; ++i) {
             const hb_script_t s = hb_unicode_script(unicode, codepoints[i].value);
             if (!InheritsScript(s)) { script = s; break; }
@@ -252,7 +254,7 @@ const ShapedText& FontStack::Shape(std::string_view input)
             hb_script_t s = hb_unicode_script(unicode, cp.value);
             const bool inherits = InheritsScript(s);
             if (inherits) s = script;
-            Platform::SDLFont* f = font && (inherits || font->HasCodepoint(cp.value)) ? font : FontFor(cp.value);
+            Platform::SDLFont* f = font && font->HasCodepoint(cp.value) ? font : FontFor(cp.value);
             unsigned char legacyByte;
             const bool legacy = ToWindows1252Byte(cp.value, legacyByte);
             if (segments.empty() || s != segments.back().script || f != segments.back().font)
