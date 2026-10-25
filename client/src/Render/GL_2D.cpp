@@ -35,12 +35,17 @@ void GL_Begin2D(void)
   if (!(fov > 0.0f && fov < 180.0f))   fov   = 45.0f;
   if (!(near_ > 0.0f))                  near_ = 10.0f;
   if (!(far_ > near_))                  far_  = 10000.0f;
-  DWORD vw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
+  // DESVIACION (Fase 4, pantalla ancha): el viewport es toda la ventana y el
+  // ortho se corre a la izquierda `off` píxeles, así la interfaz (en
+  // coordenadas lógicas desde 0) queda centrada y lo que se dibuje en los
+  // costados (x negativo o pasado el ancho lógico) también se ve.
+  DWORD vw = gWindow.GetRealWidth() ? gWindow.GetRealWidth() : 640;
   DWORD vh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
+  const int off = gWindow.GetUiOffsetX();
 
   // DESVIACION R4h: el productor entrega dimensiones y perspectiva; el
   // backend aplica la entrada 2D sin imponer blend, niebla ni escritura.
-  if(Materials::BeginOverlay({vw,vh,fov,near_,far_}))return;
+  if(Materials::BeginOverlay({vw,vh,off,fov,near_,far_}))return;
 
   // Desviación (como el 5.2, ZzzOpenglUtil.cpp:1117): el 0.97k empuja la 1ª
   // matriz sobre el modo de ENTRADA (no explícito) y la 2ª sobre PROJECTION,
@@ -53,7 +58,7 @@ void GL_Begin2D(void)
   Gfx::Viewport(0, 0, vw, vh);
   Gfx::Perspective((double)fov, (double)vw / (double)vh, (double)near_, (double)far_);
   Gfx::LoadIdentity();
-  Gfx::Ortho2D(0, (double)vw, 0, (double)vh);
+  Gfx::Ortho2D(-(double)off, (double)vw - (double)off, 0, (double)vh);
   Gfx::MatrixMode(Gfx::Matrix::ModelView);
   Gfx::PushMatrix();
   Gfx::LoadIdentity();

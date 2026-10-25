@@ -428,7 +428,7 @@ void Render_HotbarItems3D_(void)
     Gfx::MatrixMode(Gfx::Matrix::Projection);
     Gfx::PushMatrix();
     Gfx::LoadIdentity();
-    GL_SetViewport(0, 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
+    GL_SetViewport(gWindow.GetUiOffsetX(), 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
     float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;

@@ -49,12 +49,55 @@ void CWindow::SetResolution(DWORD width, DWORD height)
     m_Width  = width;
     m_Height = height;
 
+    // DESVIACION (Fase 4, pantalla ancha): con más de 7:5 la interfaz ocupa un
+    // 4:3 centrado del alto de la ventana en vez de estirarse a todo el ancho.
+    m_UiWidth = m_Width;
+    m_UiOffsetX = 0;
+    if (m_Height > 0 && (unsigned long long)m_Width * 5 > (unsigned long long)m_Height * 7) {
+        m_UiWidth = (DWORD)(((unsigned long long)m_Height * 640 + 240) / 480);
+        m_UiOffsetX = (int)(m_Width - m_UiWidth) / 2;
+    }
+
     // IDA Config_Load (0x0041E0A0 L144-145):
     //     g_fScreenRate_x = (double)WindowWidth  * 0.0015625;      // = /640
     //     g_fScreenRate_y = (double)WindowHeight * 0.0020833334;   // = /480
     // Se calculan una sola vez: la ventana no se redimensiona (sin WM_SIZE).
-    m_ScreenRateX = (float)((double)(int)m_Width  * 0.0015625);
+    // Con el ancho lógico, en pantalla ancha las dos escalas son iguales.
+    m_ScreenRateX = (float)((double)(int)m_UiWidth * 0.0015625);
     m_ScreenRateY = (float)((double)(int)m_Height * 0.0020833334);
+}
+
+void CWindow::ViewportX(int x, int w, int& pixelX, int& pixelWidth) const
+{
+    if (!IsWide()) {
+        pixelX = (int)((unsigned)m_Width * (unsigned)x / 640u);
+        pixelWidth = (int)((unsigned)m_Width * (unsigned)w / 640u);
+        return;
+    }
+    const int left = x <= 0 ? 0 : m_UiOffsetX + (int)((long long)m_UiWidth * x / 640);
+    const int right = (x + w >= 640) ? (int)m_Width : m_UiOffsetX + (int)((long long)m_UiWidth * (x + w) / 640);
+    pixelX = left;
+    pixelWidth = right - left;
+}
+
+float CWindow::ViewportFraction(int width) const
+{
+    if (!IsWide()) return (float)width * (1.0f / 640.0f);
+    int x, w;
+    ViewportX(0, width, x, w);
+    return (float)w / (float)m_Width;
+}
+
+int CWindow::UiXFromPixel(int pixel) const
+{
+    if (!IsWide()) return (int)((long long)pixel * 640 / (m_Width ? m_Width : 640));
+    return (int)((long long)(pixel - m_UiOffsetX) * 640 / (long long)m_UiWidth);
+}
+
+int CWindow::PixelFromUiX(int ui) const
+{
+    if (!IsWide()) return (int)((long long)ui * m_Width / 640);
+    return m_UiOffsetX + (int)((long long)ui * m_UiWidth / 640);
 }
 
 void CWindow::SetWindowMode(bool windowMode, bool borderless)

@@ -26,6 +26,7 @@ bool BeginView(const ViewState& state);
 // las ventanas con modelos pueden abrir después su propia vista 3D.
 struct OverlayState {
     unsigned width=640,height=480;
+    int left=0;            // columna de la ventana donde empieza la interfaz
     float fov=45,nearClip=10,farClip=10000;
 };
 bool BeginOverlay(const OverlayState& state);

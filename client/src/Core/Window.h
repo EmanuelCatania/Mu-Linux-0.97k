@@ -53,8 +53,28 @@ public:
     HINSTANCE GetInstance()    const;
     HDC       GetHdc()         const;
     HGLRC     GetGLContext()   const;
-    DWORD     GetWidth()       const { return m_Width; }
+    // Tamaño LÓGICO del área de interfaz.  En una ventana 4:3 es el de la
+    // ventana; en una más ancha (16:9...) es el 4:3 centrado de la misma alto,
+    // así toda la interfaz (640x480) se escala igual en X e Y y no se estira.
+    DWORD     GetWidth()       const { return m_UiWidth; }
     DWORD     GetHeight()      const { return m_Height; }
+    // Tamaño real de la ventana en píxeles (viewport del mundo, capturas, GL).
+    DWORD     GetRealWidth()   const { return m_Width; }
+    DWORD     GetRealHeight()  const { return m_Height; }
+    // Píxeles de la ventana a la izquierda del área de interfaz (0 en 4:3).
+    int       GetUiOffsetX()   const { return m_UiOffsetX; }
+    bool      IsWide()         const { return m_UiWidth != m_Width; }
+
+    // DESVIACION (Fase 4, pantalla ancha): rectángulo de un viewport 3D dado en
+    // la grilla 640x480, en píxeles reales.  Lo que toca el borde izquierdo
+    // (x = 0) o el derecho (x + w = 640) llega hasta el borde de la ventana; lo
+    // demás se ubica dentro del área de interfaz.  En 4:3 es el cálculo de siempre.
+    void ViewportX(int x, int w, int& pixelX, int& pixelWidth) const;
+    // Fracción del ancho real que ocupa un viewport de `width` unidades de 640.
+    float ViewportFraction(int width) const;
+    // Píxel real <-> columna de la grilla 640 (puede salir de 0..639 en los costados).
+    int UiXFromPixel(int pixel) const;
+    int PixelFromUiX(int ui) const;
     float     GetScreenRateX() const { return m_ScreenRateX; }
     float     GetScreenRateY() const { return m_ScreenRateY; }
     bool      IsWindowMode()   const { return m_WindowMode; }
@@ -66,6 +86,8 @@ private:
 
     DWORD m_Width       = 640;
     DWORD m_Height      = 480;
+    DWORD m_UiWidth     = 640;    // = m_Width salvo en pantalla ancha
+    int   m_UiOffsetX   = 0;
     float m_ScreenRateX = 1.0f;   // ancho / 640
     float m_ScreenRateY = 1.0f;   // alto / 480
 

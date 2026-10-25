@@ -479,14 +479,14 @@ bool COptionsMenu::UpdateAntilagGroup()
 namespace {
 void ApplyScreen(bool windowMode, bool borderless, int resolution)
 {
-    DWORD width = gWindow.GetWidth(), height = gWindow.GetHeight();
+    DWORD width = gWindow.GetRealWidth(), height = gWindow.GetHeight();
     CUserSettings::GetResolutionSize(resolution, &width, &height);
     gWindow.ChangeMode(windowMode, borderless, width, height);
     gUserSettings.SetWindow(windowMode, borderless, resolution);
 }
 int CurrentResolution()
 {
-    return CUserSettings::FindResolution(gWindow.GetWidth(), gWindow.GetHeight());
+    return CUserSettings::FindResolution(gWindow.GetRealWidth(), gWindow.GetHeight());
 }
 }
 
@@ -515,7 +515,7 @@ void COptionsMenu::RenderScreen()
         RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::ScreenBorderless),
                      gWindow.IsBorderless());
     char text[32];
-    Platform::TextFormatSecure(text, "%lu x %lu", (unsigned long)gWindow.GetWidth(), (unsigned long)gWindow.GetHeight());
+    Platform::TextFormatSecure(text, "%lu x %lu", (unsigned long)gWindow.GetRealWidth(), (unsigned long)gWindow.GetHeight());
     const int resolution = CurrentResolution();
     RenderSelector((float)RowY(row++), text, resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
     // DESVIACION: controles de presentación dentro del panel Pantalla existente.
