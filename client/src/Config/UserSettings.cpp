@@ -22,6 +22,7 @@ struct ResolutionSize { DWORD width; DWORD height; };
 constexpr ResolutionSize kResolutions[MAX_USER_RESOLUTION] = {
     {  640,  480 }, {  800,  600 }, { 1024,  768 }, { 1280, 1024 },
     { 1280,  720 }, { 1366,  768 }, { 1600,  900 }, { 1920, 1080 },
+    { 3440, 1440 },
 };
 
 // Ausente, truncado o inválido: no reemplazar el valor del registro/default.
