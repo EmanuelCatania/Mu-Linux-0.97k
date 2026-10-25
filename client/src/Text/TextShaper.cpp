@@ -127,7 +127,9 @@ Platform::SDLFont* FontStack::ColorEmojiFont()
     if (path.empty() || !std::filesystem::is_regular_file(path, error)) return nullptr;
     auto* font = new Platform::SDLFont;
     std::string message;
-    if (!font->LoadFile(path, m_Height, message)) { delete font; return nullptr; }
+    // Un emoji al mismo alto que la letra se ve chico: a 1,4x se lee igual de
+    // bien y sigue entrando en la línea.
+    if (!font->LoadFile(path, m_Height * 7 / 5, message)) { delete font; return nullptr; }
     m_ColorEmoji = font;
     return m_ColorEmoji;
 }
