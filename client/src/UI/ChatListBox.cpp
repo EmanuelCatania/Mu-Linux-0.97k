@@ -58,10 +58,11 @@
 // byte block laid out as:
 //   +0x00  fwd ptr (DWORD)
 //   +0x04  back ptr (DWORD)
-//   +0x08  data — sender 11 bytes + msg 257 bytes + flags (matches
-//          original byte_55C95F8 staging buffer before AddText commits).
-//   +0x10C msg-type DWORD (0..5, channel)
-//   +0x114 cached text-extent cx (LONG)
+//   +0x08  data — el payload del staging byte_55C95F8 que AddText copia.
+//          En el binario: remitente[11] en +0, mensaje[256] en +0x0B, tipo
+//          (canal 0..5) en +0x10C, extra en +0x110 y el contador de líneas /
+//          desvanecido en +0x114. DESVIACION (0.97.40): el remitente mide 41
+//          bytes (nombres de 40) y el resto se corre; ver kChatNode*.
 // `delete__` recorre la lista doblemente enlazada y libera cada nodo.
 //
 // Ownership / lifetime
@@ -124,9 +125,18 @@ DWORD g_ChatListBox_FocusID_A = 0;   // dword_55C9B7C — focused widget id (cap
 DWORD g_ChatListBox_FocusID_B = 0;   // dword_55C9B80 — alt focused widget id
 DWORD g_ChatListBox_LockID    = 0;   // dword_55C9B84 — lock guard for listbox iteration
 DWORD g_ChatListBox_ActiveID  = 0;   // dword_55C9B88 — active widget id (keyboard)
-BYTE  g_ChatStagingBuf[0x118] = {0}; // mirror of byte_55C95F8 staging buffer
-                                     // remitente en +0, mensaje en +0xB, tipo DWORD en +0x10C
 } // extern "C"
+
+// Payload del nodo de historial (offsets relativos a node + 8).
+constexpr int kChatNodeName    = 0;     // remitente, 40 bytes + NUL (0.97.40; 11 en el binario)
+constexpr int kChatNodeText    = 41;    // mensaje[256]           (0x0B en el binario)
+constexpr int kChatNodeKind    = 300;   // canal DWORD            (0x10C)
+constexpr int kChatNodeExtra   = 304;   // DWORD extra            (0x110)
+constexpr int kChatNodeLines   = 308;   // líneas / desvanecido   (0x114)
+constexpr int kChatPayloadSize = 312;   // 0x118 en el binario
+constexpr int kChatNodeSize    = 8 + kChatPayloadSize;   // 0x120 en el binario
+
+extern "C" BYTE g_ChatStagingBuf[kChatPayloadSize] = {0}; // mirror del staging byte_55C95F8
 
 // Alias para que los nombres estilo IDA sub_XXXX sigan siendo legibles en el cuerpo.
 #define dword_55C9B78  g_ChatListBox_NextID
@@ -135,10 +145,10 @@ BYTE  g_ChatStagingBuf[0x118] = {0}; // mirror of byte_55C95F8 staging buffer
 #define dword_55C9B84  g_ChatListBox_LockID
 #define dword_55C9B88  g_ChatListBox_ActiveID
 #define byte_55C95F8   g_ChatStagingBuf[0]
-#define byte_55C9603   g_ChatStagingBuf[0x0B]
-#define dword_55C9704  (*(DWORD*)&g_ChatStagingBuf[0x10C])
-#define dword_55C9708  (*(DWORD*)&g_ChatStagingBuf[0x110])
-#define dword_55C970C  (*(DWORD*)&g_ChatStagingBuf[0x114])
+#define byte_55C9603   g_ChatStagingBuf[kChatNodeText]
+#define dword_55C9704  (*(DWORD*)&g_ChatStagingBuf[kChatNodeKind])
+#define dword_55C9708  (*(DWORD*)&g_ChatStagingBuf[kChatNodeExtra])
+#define dword_55C970C  (*(DWORD*)&g_ChatStagingBuf[kChatNodeLines])
 
 // En nuestro build dword_55C9B80 ya estaba declarado en globals.cpp (DAT_055c9b80).
 // Para no redefinirlo, tratamos el g_ChatListBox_FocusID_B local como un
@@ -262,12 +272,12 @@ extern "C" void* ChatListBox_Construct(void)
     obj[21] = 1;
 
     // ── sub_40C7D0 (derived ctor) ───────────────────────────────────────────
-    // Cabeza de lista 2: en this[23] (offset 0x5C), nodo de 0x120 — historial del chat
-    DWORD* list2 = ChatLB_NewListHead(0x120);
+    // Cabeza de lista 2: en this[23] (offset 0x5C), nodo de kChatNodeSize — historial del chat
+    DWORD* list2 = ChatLB_NewListHead(kChatNodeSize);
     obj[23] = (DWORD)list2;
     obj[24] = 0;
-    // Cabeza de lista 3: en this[31] (offset 0x7C), nodo de 0x120
-    DWORD* list3 = ChatLB_NewListHead(0x120);
+    // Cabeza de lista 3: en this[31] (offset 0x7C), nodo de kChatNodeSize
+    DWORD* list3 = ChatLB_NewListHead(kChatNodeSize);
     obj[31] = (DWORD)list3;
     obj[32] = 0;
 
@@ -811,8 +821,9 @@ static int __fastcall ChatLB_scrollByN(DWORD* self, int, int a2)
         int v9 = 1;
         if (v7 != v4) {
             for (;;) {
-                v5 += (int)(v7[71] - v6 + 1);
-                if (v6 < v7[71]) v6 = v7[71];
+                const DWORD lines = v7[(8 + kChatNodeLines) / 4];
+                v5 += (int)(lines - v6 + 1);
+                if (v6 < lines) v6 = lines;
                 if (v5 == 6) break;
                 if (v5 > 6) { --v9; break; }
                 v7 = (DWORD*)*v7;
@@ -1228,12 +1239,12 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         v5 = row + 1;
         if (row + 1 >= (int)self[35]) return (int)g_bUseChatListBox;
     }
-    if (!DAT_00559bf1 && *(DWORD*)(self[25] + 276) == 3) return 0;
+    if (!DAT_00559bf1 && *(DWORD*)(self[25] + 8 + kChatNodeKind) == 3) return 0;
     if (g_bUseChatListBox) {
-        DWORD t = *(DWORD*)(self[25] + 276);
+        DWORD t = *(DWORD*)(self[25] + 8 + kChatNodeKind);
         if (t == 1 || t == 2) return 0;
     } else {
-        int extra = *(int*)(self[25] + 284);
+        int extra = *(int*)(self[25] + 8 + kChatNodeLines);
         if (extra && !self[34]) {
             if ((int)self[35] - extra - v5 - 1 < 0) return v5 - (int)self[35];
             v5 += extra;
@@ -1250,7 +1261,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
     // Remitente: "nombre: " con su paleta.
     if (*(const char*)(self[25] + 8)) {
         DWORD back = 0x96000000u;
-        switch (*(DWORD*)(self[25] + 276)) {
+        switch (*(DWORD*)(self[25] + 8 + kChatNodeKind)) {
             case 0: back = 0x9632C8FFu; m_dwTextColor = 0xFF000000u; m_dwBackColor = back; break;
             case 1: m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break;
             case 2: m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break;
@@ -1279,7 +1290,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
     }
 
     // Texto: segunda paleta (solo cambia el susurro).
-    switch (*(DWORD*)(self[25] + 276)) {
+    switch (*(DWORD*)(self[25] + 8 + kChatNodeKind)) {
         case 0: m_dwTextColor = 0xFF000000u; m_dwBackColor = 0x9632C8FFu; break;
         case 1: m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break;
         case 2: m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break;
@@ -1289,7 +1300,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         default: break;
     }
     if (g_bUseChatListBox && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
-    Platform::TextCopy(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
+    Platform::TextCopy(Buffer, (const char*)(self[25] + 8 + kChatNodeText), sizeof(Buffer));
     UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0, sizeof(Buffer));
 
     GL_ResetState();   // DisableAlphaBlend
@@ -1426,12 +1437,12 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
         v4 = row + 1;
         if (row + 1 >= (int)self[35]) return g_bUseChatListBox;
     }
-    if (!DAT_00559bf1 && *(DWORD*)(self[25] + 276) == 3) return 0;
+    if (!DAT_00559bf1 && *(DWORD*)(self[25] + 8 + kChatNodeKind) == 3) return 0;
     if (g_bUseChatListBox) {
-        int v5 = *(int*)(self[25] + 276);
+        int v5 = *(int*)(self[25] + 8 + kChatNodeKind);
         if (v5 == 1 || v5 == 2) return 0;
     } else {
-        int v6 = *(int*)(self[25] + 284);
+        int v6 = *(int*)(self[25] + 8 + kChatNodeLines);
         if (v6) {
             if (!self[34]) {
                 if ((int)self[35] - v6 - v4 - 1 < 0) return v4 - (int)self[35];
@@ -1564,7 +1575,9 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
         return;
     }
 
-    strncpy((char*)&byte_55C95F8, src, 0xB);
+    // IDA copia 0xB bytes; con nombres de 40 bytes el campo mide 41 (siempre
+    // termina en NUL, así el nombre no se lee de corrido con el mensaje).
+    TextEngine::CopyTruncated((char*)&byte_55C95F8 + kChatNodeName, kChatNodeText - kChatNodeName, src);
     dword_55C9708 = extra;
     dword_55C9704 = kind;
     dword_55C970C = 0;
@@ -1580,15 +1593,15 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
         DWORD* fwd = (DWORD*)*head;             // current fwd
         DWORD* back = (DWORD*)*((DWORD*)*head + 1); // current back
 
-        DWORD* node = (DWORD*)malloc(0x120);
+        DWORD* node = (DWORD*)malloc(kChatNodeSize);
         if (!node) return;
-        memset(node, 0, 0x120);
+        memset(node, 0, kChatNodeSize);
         node[0] = (DWORD)(fwd ? fwd : node);
         node[1] = (DWORD)(back ? back : node);
         if (fwd) fwd[1] = (DWORD)node;
         *(DWORD*)node[1] = (DWORD)node;
 
-        memcpy(node + 2, &byte_55C95F8, 0x118);
+        memcpy(node + 2, &byte_55C95F8, kChatPayloadSize);
         ++self[24];
     } else {
         // IDA sub_40C940 L96-150: mensaje largo.  sub_40C2A0 lo parte en hasta
@@ -1612,14 +1625,14 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
             DWORD* fwd  = (DWORD*)*head;
             DWORD* back = (DWORD*)*((DWORD*)*head + 1);
 
-            DWORD* node = (DWORD*)malloc(0x120);
+            DWORD* node = (DWORD*)malloc(kChatNodeSize);
             if (!node) return;
-            memset(node, 0, 0x120);
+            memset(node, 0, kChatNodeSize);
             node[0] = (DWORD)(fwd ? fwd : node);
             node[1] = (DWORD)(back ? back : node);
             if (fwd) fwd[1] = (DWORD)node;
             *(DWORD*)node[1] = (DWORD)node;
-            memcpy(node + 2, &byte_55C95F8, 0x118);
+            memcpy(node + 2, &byte_55C95F8, kChatPayloadSize);
             ++self[24];
         }
     }
@@ -1643,9 +1656,9 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
 //   - chat-list-box mode hides msg-type 1 and 2 (system/error).
 static int __stdcall ChatLB_isRowVisible(int rowData)
 {
-    if (!DAT_00559bf1 && *(DWORD*)(rowData + 268) == 3) return 1;
+    if (!DAT_00559bf1 && *(DWORD*)(rowData + kChatNodeKind) == 3) return 1;
     if (g_bUseChatListBox) {
-        int v2 = *(DWORD*)(rowData + 268);
+        int v2 = *(DWORD*)(rowData + kChatNodeKind);
         if (v2 == 1 || v2 == 2) return 1;
     }
     return 0;
@@ -2546,7 +2559,7 @@ int __cdecl FUN_0040c930(int a1)
   int result; // eax
 
   result = a1;
-  ++*(DWORD *)(a1 + 276);
+  ++*(DWORD *)(a1 + kChatNodeLines);   // 0x114 en el binario
   return result;
 }
 
