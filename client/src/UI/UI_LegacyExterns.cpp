@@ -113,9 +113,11 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     int drawX = sx - boxW / 2;
     int drawY = sy - boxH - 8;
     if (drawY < 0) drawY = sy + 8;
-    if (drawX < 0) drawX = 0;
-    if (drawX + boxW > (int)gWindow.GetWidth()) drawX = (int)gWindow.GetWidth() - boxW;
-    if (drawX < 0) drawX = 0;
+    // Pantalla ancha: los bordes son los de la ventana (off = 0 en 4:3).
+    const int edge = gWindow.GetUiOffsetX();
+    if (drawX < -edge) drawX = -edge;
+    if (drawX + boxW > (int)gWindow.GetWidth() + edge) drawX = (int)gWindow.GetWidth() + edge - boxW;
+    if (drawX < -edge) drawX = -edge;
 
     EnableAlphaTest(true);
     BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);

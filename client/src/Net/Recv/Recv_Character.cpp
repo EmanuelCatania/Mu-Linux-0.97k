@@ -1374,7 +1374,8 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             if (DAT_055c9ff0) {
                 DWORD* cobj = (DWORD*)DAT_055c9ff0;
                 if (g_bUseChatListBox) { cobj[11] = 186;          cobj[12] = 420; }
-                else              { cobj[11] = (DWORD)(-10); cobj[12] = 81;  }
+                // Pantalla ancha: pegada al borde izquierdo de la ventana.
+                else              { cobj[11] = (DWORD)(-10 - gWindow.GetRightShift()); cobj[12] = 81;  }
             }
 
             NetLog("NET:    F3/30 opt=%02X Q=%d W=%d E=%d chatWin=%02X lines=%d transp=%d listbox=%d",

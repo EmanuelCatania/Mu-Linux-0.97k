@@ -145,9 +145,11 @@ void __cdecl RenderBar(float x, float y, float Width, float Height,
                         float Bar, bool Disabled, bool clipping)
 {
     if (clipping) {
-        if (x < 0.0f) x = 0.0f;
+        // Pantalla ancha: los límites son los de la ventana (shift = 0 en 4:3).
+        const float edge = (float)gWindow.GetRightShift();
+        if (x < -edge) x = -edge;
         if (y < 0.0f) y = 0.0f;
-        if (x + Width  + 4.0f > 640.0f) x = 640.0f - (Width + 5.0f);
+        if (x + Width  + 4.0f > 640.0f + edge) x = 640.0f + edge - (Width + 5.0f);
         if (y + Height + 4.0f > 433.0f) y = 433.0f - (Height + 5.0f);
     }
     EnableAlphaTest(true);

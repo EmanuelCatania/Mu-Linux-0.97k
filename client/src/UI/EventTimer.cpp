@@ -21,11 +21,17 @@ CEventTimer gEventTimer;
 namespace {
 // Misma columna y fondo que RenderGuildList (IDA 0x004F0810): 190x433 en x=450.
 struct EventPanelLayout {
-    static constexpr int X = 450, Y = 0;
-    static constexpr int TitleX = X + 35, TitleY = Y + 12, TitleWidth = 120;
-    static constexpr int MessageX = X + 20, MessageY = Y + 50;
-    static constexpr int ListX = X + 10, ListBottom = Y + 385, ListWidth = 170, ListRows = 9;
-    static constexpr int CloseX = X + 25, CloseY = Y + 395, CloseSize = 24;
+    // DESVIACION (Fase 4, pantalla ancha): pegado al borde derecho de la ventana.
+    static int X() { return 450 + gWindow.GetRightShift(); }
+    static constexpr int Y = 0;
+    static int TitleX() { return X() + 35; }
+    static constexpr int TitleY = Y + 12, TitleWidth = 120;
+    static int MessageX() { return X() + 20; }
+    static constexpr int MessageY = Y + 50;
+    static int ListX() { return X() + 10; }
+    static constexpr int ListBottom = Y + 385, ListWidth = 170, ListRows = 9;
+    static int CloseX() { return X() + 25; }
+    static constexpr int CloseY = Y + 395, CloseSize = 24;
     // Fila: recuadro de etiqueta a la izquierda como las stats del panel de
     // personaje y el tiempo centrado debajo.
     static constexpr int BoxWidth = 110, BoxHeight = 21, NameY = 4, TimeY = 22;
@@ -58,7 +64,7 @@ void EventTimer_DrawRow(int index, int x, int y, int width)
 void* CEventTimer::Widget()
 {
     if (!m_Widget)
-        m_Widget = EventListBox_Construct(Layout::ListX, Layout::ListBottom,
+        m_Widget = EventListBox_Construct(Layout::ListX(), Layout::ListBottom,
                                           Layout::ListWidth, Layout::ListRows);
     return m_Widget;
 }
@@ -183,7 +189,7 @@ void CEventTimer::UpdateMouse()
     if (SceneFlag != 5 || UIState::HasRightPanel()) { Close(); return; }
     EventListBox_Tick(Widget());
     if (UIState::HasModalDialog() || !MouseLButtonPush) return;
-    if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
+    if (Inside(Layout::CloseX(), Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
         MouseLButtonPush = 0;
         Close();
         PlayBuffer(25, 0, 0);
@@ -227,7 +233,7 @@ void CEventTimer::RenderPanel()
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
-    const float x = (float)Layout::X, y = (float)Layout::Y;
+    const float x = (float)Layout::X(), y = (float)Layout::Y;
     GL_DrawTexture(260, x, y,          190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,        1, 1);
     GL_DrawTexture(261, x, y + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
     EnableAlphaTest(true);
@@ -235,7 +241,7 @@ void CEventTimer::RenderPanel()
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-    RenderText(Layout::TitleX, Layout::TitleY,
+    RenderText(Layout::TitleX(), Layout::TitleY,
                const_cast<char*>(gClientText.Get(ClientTextId::EventTitle)),
                PhysicalWidth(Layout::TitleWidth), 1, (SIZE*)3);
 
@@ -245,20 +251,20 @@ void CEventTimer::RenderPanel()
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
-        RenderText(Layout::MessageX, Layout::MessageY, const_cast<char*>(gClientText.Get(
+        RenderText(Layout::MessageX(), Layout::MessageY, const_cast<char*>(gClientText.Get(
             m_Received ? ClientTextId::EventEmpty : ClientTextId::EventWaiting)), 0, 0, nullptr);
     }
 
     // Botón de cierre como el del panel de personaje (fondo 0x118 + icono 280).
-    const float cx = (float)Layout::CloseX, cy = (float)Layout::CloseY;
+    const float cx = (float)Layout::CloseX(), cy = (float)Layout::CloseY;
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     GL_DrawTexture(0x118, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     GL_DrawTexture(280, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    if (Inside(Layout::CloseX, Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
+    if (Inside(Layout::CloseX(), Layout::CloseY, Layout::CloseSize, Layout::CloseSize)) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
-        RenderTipText(Layout::CloseX, Layout::CloseY - 13, GlobalText[247]);
+        RenderTipText(Layout::CloseX(), Layout::CloseY - 13, GlobalText[247]);
     }
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = color;
