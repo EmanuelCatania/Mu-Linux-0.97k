@@ -592,6 +592,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Text\TextAtlas.cpp" />
+    <ClCompile Include="src\Text\UniBreak.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Text\Utf8Proc.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

@@ -347,6 +347,7 @@ set(MU_SOURCES
     src/Render/Texture/ImageCodec.cpp
     src/Text/TextCore.cpp
     src/Text/TextAtlas.cpp
+    src/Text/UniBreak.c
     src/Text/Utf8Proc.c
     src/Render/Texture/Texture.cpp
     src/Render/Trail_Render.cpp
@@ -626,7 +627,7 @@ target_compile_options(mu97k PRIVATE
 # target_precompile_headers porque ése fuerza un /FI propio; el .vcxproj
 # depende de que cada .cpp haga #include "stdafx.h".
 set(MU_PCH_USERS ${MU_SOURCES})
-list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
+list(REMOVE_ITEM MU_PCH_USERS src/Render/Backend/GL/FragmentPipeline.cpp src/Render/TerrainDraw.cpp src/Render/Backend/GL/TerrainRenderer.cpp src/Render/RenderProfile.cpp src/Render/Backend/GL/ProfileQueries.cpp src/stdafx.cpp src/Render/Texture/ImageCodec.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c src/Platform/GLFunctions.cpp src/Render/Backend/GL/BufferedDraw.cpp src/Render/Backend/GL/GlyphAtlas.cpp src/Render/Backend/GL/MeshDraw.cpp src/Render/Backend/GL/Skinning.cpp src/Render/ResourceTables.cpp)
 set_source_files_properties(${MU_PCH_USERS} PROPERTIES
     COMPILE_OPTIONS "/Yustdafx.h")
 # La sonda gráfica compila el backend real sin depender del PCH del ejecutable.
@@ -706,7 +707,7 @@ target_include_directories(mu_frame_pointer_set_test PRIVATE src)
 target_compile_features(mu_frame_pointer_set_test PRIVATE cxx_std_17)
 add_test(NAME frame_pointer_set COMMAND mu_frame_pointer_set_test)
 
-add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c)
+add_executable(mu_text_core_test EXCLUDE_FROM_ALL tests/TextCore.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c)
 target_include_directories(mu_text_core_test PRIVATE src)
 target_compile_features(mu_text_core_test PRIVATE cxx_std_17)
 if(MSVC)
@@ -770,7 +771,7 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
 
     # Texto Unicode: el layout nuevo tiene que dar el mismo 1252 que antes.
     add_executable(mu_text_shaper_test EXCLUDE_FROM_ALL
-        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c)
+        tests/TextShaper.cpp src/Text/TextCore.cpp src/Text/Utf8Proc.c src/Text/UniBreak.c)
     target_include_directories(mu_text_shaper_test PRIVATE src)
     target_compile_features(mu_text_shaper_test PRIVATE cxx_std_17)
     target_compile_definitions(mu_text_shaper_test PRIVATE
