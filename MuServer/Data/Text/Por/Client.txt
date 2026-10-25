@@ -1,0 +1,95 @@
+//Textos propios del cliente en portugués (ClientTextId).  Se mandan a los clientes con
+//ese idioma; lo que falte sale del inglés que trae el cliente.
+//Índice	Texto (UTF-8, hasta 63 bytes; los %d / %s / %u / %.0f tienen que ser los
+//mismos que los del inglés, en el mismo orden, o el cliente descarta la línea).
+//WindowTitle
+0	"%.10s || %s: %u || PING: %s || FPS: %.0f"
+//ChaosRatePending
+1	"Taxa de sucesso: pendente"
+//ChaosCostPending
+2	"Custo: pendente"
+//EventTitle
+3	"Eventos"
+//EventWaiting
+4	"Aguardando informações de eventos"
+//EventEmpty
+5	"Nenhum evento programado"
+//EventDisabled
+6	"Desativado"
+//EventOpen
+7	"Aberto"
+//EventStarted
+8	"Em andamento"
+//EventDays
+9	"%lu dias"
+//MoveTitle
+10	"Teletransporte"
+//MoveMap
+11	"Mapa"
+//MoveVip
+12	"VIP"
+//MoveWaiting
+13	"Aguardando destinos"
+//MoveEmpty
+14	"Sem destinos"
+//PagePrevious
+15	"< Anterior"
+//PageNext
+16	"Próximo >"
+//LanguageDefault
+17	"Padrão"
+//AntilagWeather
+18	"Remover Clima"
+//AntilagGlow
+19	"Remover Brilho"
+//AntilagWorld
+20	"Mundo"
+//AntilagEffects
+21	"Efeitos"
+//AntilagInterface
+22	"Interface"
+//ScreenWindowed
+23	"Janela"
+//ScreenFullscreen
+24	"Tela cheia"
+//ScreenBorderless
+25	"Sem bordas"
+//FontBold
+26	"Negrito"
+//FontItalic
+27	"Itálico"
+//FontSmooth
+28	"Texto suave"
+//FontShadow
+29	"Sombra do texto"
+//FontOutline
+30	"Contorno do texto"
+//FontColorEmoji
+31	"Emoji colorido"
+//RenderFpsOverlay
+32	"FPS: %.0f"
+//RenderDecoupled
+33	"Render livre"
+//RenderVSync
+34	"VSync"
+//RenderFps
+35	"FPS: %d"
+//RenderUnlimited
+36	"FPS: sem limite"
+//RenderVSyncUnavailable
+37	"VSync indisponível"
+//MiniMapGate
+38	"Portal para %s"
+//MiniMapZoom
+39	"Zoom: %d"
+//MiniMapAlpha
+40	"Opacidade: %d%%"
+//ReconnectConnecting
+41	"Reconectando..."
+//ReconnectLogin
+42	"Entrando..."
+//ReconnectCharList
+43	"Aguardando a lista de personagens..."
+//ReconnectCharInfo
+44	"Aguardando os dados do personagem..."
+end

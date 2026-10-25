@@ -829,6 +829,7 @@ void CContentCatalog::LoadTexts(const char* folder)
 		{ "Item.txt", CATALOG_TEXT_ITEM },
 		{ "Monster.txt", CATALOG_TEXT_MONSTER },
 		{ "Skill.txt", CATALOG_TEXT_SKILL },
+		{ "Client.txt", CATALOG_TEXT_CLIENT },
 	};
 
 	for (int lang = 0; lang < MAX_LANGUAGE; lang++)

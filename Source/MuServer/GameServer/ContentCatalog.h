@@ -176,12 +176,13 @@ struct CATALOG_PET
 #define CATALOG_TEXT_ITEM    1
 #define CATALOG_TEXT_MONSTER 2
 #define CATALOG_TEXT_SKILL   3
+#define CATALOG_TEXT_CLIENT  4   // textos propios del cliente (ClientTextId)
 
 struct CATALOG_TEXT
 {
 	BYTE Table;         // CATALOG_TEXT_*
 	BYTE Reserved;
-	WORD Index;         // item (sección * 512 + índice), monstruo o skill
+	WORD Index;         // item (sección * 512 + índice), monstruo, skill o ClientTextId
 	char Text[64];      // UTF-8 en NFC
 };
 
