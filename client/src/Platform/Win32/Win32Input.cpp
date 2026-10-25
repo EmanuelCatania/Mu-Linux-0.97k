@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "Text/TextCore.h"
 #include "Platform/IInput.h"
 #include "Platform/Win32/Win32Window.h"
 #include "Input/Input.h"
@@ -29,7 +28,23 @@ public:
         form.dwStyle = CFS_POINT;
         form.ptCurrentPos = {x, y};
         SetRect(&form.rcArea, 0, 0, width, height);
-        SendMessageA(ImmGetDefaultIMEWnd(GetWin32Window().GetHwnd()), WM_IME_CONTROL, IMC_SETCOMPOSITIONWINDOW, (LPARAM)&form);
+        SendMessageW(ImmGetDefaultIMEWnd(GetWin32Window().GetHwnd()), WM_IME_CONTROL, IMC_SETCOMPOSITIONWINDOW, (LPARAM)&form);
+    }
+    std::string ClipboardText() override {
+        std::string result;
+        if (!OpenClipboard(GetWin32Window().GetHwnd())) return result;
+        if (HANDLE data = GetClipboardData(CF_UNICODETEXT)) {
+            if (const wchar_t* text = static_cast<const wchar_t*>(GlobalLock(data))) {
+                const int size = WideCharToMultiByte(CP_UTF8, 0, text, -1, nullptr, 0, nullptr, nullptr);
+                if (size > 1) {
+                    result.resize((size_t)size - 1);
+                    WideCharToMultiByte(CP_UTF8, 0, text, -1, &result[0], size, nullptr, nullptr);
+                }
+                GlobalUnlock(data);
+            }
+        }
+        CloseClipboard();
+        return result;
     }
 };
 IInput& GetInput() { static Win32Input input; return input; }
@@ -57,9 +72,23 @@ void Input_OnWindowMessage(UINT message, WPARAM wParam, LPARAM lParam)
     event.x = GET_X_LPARAM(lParam);
     event.y = GET_Y_LPARAM(lParam);
     event.wheel = GET_WHEEL_DELTA_WPARAM(wParam);
-    // La ventana es ANSI: WM_CHAR trae un byte 1252; el campo de texto
-    // recibe el code point (el texto del cliente es UTF-8, Fase 4).
-    event.character = message == WM_CHAR && wParam < 256
-        ? (uint32_t)TextEngine::DecodeWindows1252((unsigned char)wParam) : (uint32_t)wParam;
+    // DESVIACION (Fase 4, texto Unicode): la ventana es Unicode, así que
+    // WM_CHAR trae UTF-16 y los caracteres fuera del BMP llegan como dos
+    // mensajes (par surrogate). Al campo de texto le llega el code point.
+    if (message == WM_CHAR) {
+        static wchar_t high = 0;
+        const wchar_t unit = (wchar_t)wParam;
+        if (unit >= 0xD800 && unit <= 0xDBFF) { high = unit; return; }
+        if (unit >= 0xDC00 && unit <= 0xDFFF) {
+            if (!high) return;
+            event.character = 0x10000u + (((uint32_t)high - 0xD800u) << 10) + ((uint32_t)unit - 0xDC00u);
+            high = 0;
+        } else {
+            high = 0;
+            event.character = unit;
+        }
+    } else {
+        event.character = (uint32_t)wParam;
+    }
     Input_OnEvent(event);
 }

@@ -3,6 +3,8 @@
 // IDA: WndProc (0x004149D0), segunda pasada del dispatch (mouse/IME) y WM_CHAR.
 
 #include "stdafx.h"
+#include "Platform/IInput.h"
+#include "Net/NetText.h"
 #include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "Render/Camera3D.h"
@@ -60,6 +62,8 @@ static bool Chat_TryAssignMacro(const char* text)
     PlayBuffer(0x19, 0, 0);   // SOUND_CLICK01
     return true;
 }
+
+static bool Input_AppendCharacter(DWORD slot, uint32_t c);
 
 void Input_OnEvent(const Platform::InputEvent& event)
 {
@@ -249,8 +253,10 @@ void Input_OnEvent(const Platform::InputEvent& event)
                     } else {
                         // Abre el input de chat — inicializa los campos de texto.
                         // Per IDA Game.cpp:4326-4327: InputTextMax[0]=42, [1]=10.
-                        _InputTextMaxArr[0] = 42;               // chat msg max
-                        _InputTextMaxArr[1] = 10;               // whisper target name max
+                        // Desde 0.97.40 son caracteres: el mensaje entra en
+                        // 199 bytes y el nombre del susurro en 40.
+                        Input_SetLimit(0, (int)NetText::ChatMessageSize - 1, 42);
+                        Input_SetLimit(1, (int)NetText::CharacterNameSize, (int)NetText::CharacterNameClusters);
                         // IDA: WndProc restablece el modo visible al abrir
                         // chat. El diálogo 126 deja este slot enmascarado
                         // para el Personal Code.
@@ -307,41 +313,20 @@ void Input_OnEvent(const Platform::InputEvent& event)
         const bool guildDeleteCodeDialog =
             DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
         if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
-            const uint32_t c = event.character;
-            if (GoldInputEnable && (c < '0' || c > '9')) break;
-            // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de
-            // CreateFontA (ver WinMain paso 15).
-            // Acá había `c < 0x7F`, o sea ASCII puro: por eso no se podía
-            // escribir 'ñ' (0xF1 en Windows-1252) ni vocales acentuadas.
-            // El original acepta 0x20..0x7E y manda los bytes >= 0x81 por el
-            // camino DBCS (lead byte + trail byte), porque su entrada es
-            // coreana.  Nuestro texto es Latin-1 de un solo byte, así que ese
-            // camino los destrozaría igual que HANGEUL_CHARSET destrozaba el
-            // render.  Los aceptamos como carácter simple.
-            // 0x7F es DEL: se sigue descartando.
-            // DESVIACION (Fase 4, texto Unicode): el carácter llega como code
-            // point y se guarda en UTF-8. InputTextMax cuenta bytes, así que una
-            // letra que no entra entera no se agrega; InputTextMaxClusters
-            // limita además los grapheme clusters (nombres: 10, guild: 8).
-            if (c >= 0x20 && c != 0x7F && !(c >= 0x80 && c < 0xA0)) {
-                // InputTextMax[8] @ 0x00559c94 — leído como int desde el array
-                // tipado (NO vía la referencia aliasada a float, que castea el valor).
-                int maxLen = _InputTextMaxArr[slot];
-                if (maxLen <= 0) maxLen = 10;  // login-default fallback
-                if (maxLen > 0xFF) maxLen = 0xFF;
-                std::string encoded;
-                TextEngine::Append(encoded, (char32_t)c);
-                bool fits = len + (int)encoded.size() <= maxLen;
-                if (fits && InputTextMaxClusters[slot] > 0) {
-                    std::string candidate(buf, (size_t)len);
-                    candidate += encoded;
-                    fits = (int)TextEngine::ClusterCount(candidate) <= InputTextMaxClusters[slot];
+            // DESVIACION (Fase 4): Ctrl+V pega el portapapeles carácter por
+            // carácter, con los mismos filtros y topes que el tipeo.
+            if (event.character == 0x16) {
+                const std::string clip = Platform::GetInput().ClipboardText();
+                for (size_t at = 0; at < clip.size();) {
+                    char32_t code = 0;
+                    const size_t used = TextEngine::Decode(clip, at, code);
+                    at += used ? used : 1;
+                    if (code == '\r' || code == '\n' || code == '\t') break;
+                    if (!Input_AppendCharacter(slot, (uint32_t)code)) break;
                 }
-                if (fits) {
-                    memcpy(buf + len, encoded.data(), encoded.size());
-                    lens[slot] = (DWORD)(len + (int)encoded.size());
-                }
+                break;
             }
+            Input_AppendCharacter(slot, event.character);
         }
         break;
     }
@@ -349,4 +334,40 @@ void Input_OnEvent(const Platform::InputEvent& event)
     default:
         break;
     }
+}
+
+// Agrega un carácter al slot de texto activo. Devuelve false si no entra.
+//
+// IDA WndProc L1953-1963 acepta 0x20..0x7E y manda los bytes >= 0x81 por el
+// camino DBCS coreano. DESVIACION (Fase 4, texto Unicode): el carácter llega
+// como code point y se guarda en UTF-8, sin los controles C0/C1 ni surrogates.
+// InputTextMax cuenta bytes, así que una letra que no entra entera no se
+// agrega; InputTextMaxClusters limita además los grapheme clusters
+// (nombres: 10, guild: 8, chat: 42). Con GoldInputEnable sólo pasan dígitos.
+static bool Input_AppendCharacter(DWORD slot, uint32_t c)
+{
+    if (GoldInputEnable && (c < '0' || c > '9')) return false;
+    if (c < 0x20 || c == 0x7F || (c >= 0x80 && c < 0xA0) ||
+        (c >= 0xD800 && c <= 0xDFFF) || c > 0x10FFFF)
+        return true;   // se ignora sin cortar un pegado
+
+    DWORD* lens = (DWORD*)DAT_07d780a8;
+    const int len = (int)lens[slot];
+    char* buf = (char*)DAT_07db8710 + slot * 0x100;
+
+    // InputTextMax[8] @ 0x00559c94 — leído como int desde el array tipado.
+    int maxLen = _InputTextMaxArr[slot];
+    if (maxLen <= 0) maxLen = 10;  // login-default fallback
+    if (maxLen > 0xFF) maxLen = 0xFF;
+    std::string encoded;
+    TextEngine::Append(encoded, (char32_t)c);
+    if (len + (int)encoded.size() > maxLen) return false;
+    if (InputTextMaxClusters[slot] > 0) {
+        std::string candidate(buf, (size_t)len);
+        candidate += encoded;
+        if ((int)TextEngine::ClusterCount(candidate) > InputTextMaxClusters[slot]) return false;
+    }
+    memcpy(buf + len, encoded.data(), encoded.size());
+    lens[slot] = (DWORD)(len + (int)encoded.size());
+    return true;
 }

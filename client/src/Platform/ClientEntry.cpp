@@ -704,9 +704,9 @@ int main(int, char**)
         Platform::GetWindow().ServiceEvents();
         if (Platform::GetWindow().CloseRequested()) break;
 #ifdef _WIN32
-        if (!Platform::GetWindow().UsesPlatformPump() && PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE))
+        if (!Platform::GetWindow().UsesPlatformPump() && PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE))
         {
-            if (!GetMessageA(&msg, NULL, 0, 0))
+            if (!GetMessageW(&msg, NULL, 0, 0))
                 break; // WM_QUIT
 
             // IDA WinMain (0x0041E8A0): TranslateMessage va para TODOS los

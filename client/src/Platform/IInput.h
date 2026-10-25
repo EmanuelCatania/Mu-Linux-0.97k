@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 namespace Platform {
 enum class InputEventType { MouseMove, LeftDown, LeftUp, LeftDoubleClick, RightDown, RightUp, Wheel, MiddleDown, MiddleUp, ImeStart, ImeEnd, Text };
 struct InputEvent { InputEventType type; int x = 0; int y = 0; int wheel = 0; uint32_t character = 0; };
@@ -13,6 +14,8 @@ public:
     virtual void CaptureMouse(bool capture) = 0;
     virtual ImeState ReadImeState(bool clearActive = false) = 0;
     virtual void PositionIme(int x, int y, int width, int height) = 0;
+    // Texto del portapapeles en UTF-8 (vacío si no hay texto). Lo usa Ctrl+V.
+    virtual std::string ClipboardText() = 0;
 };
 IInput& GetInput();
 } // namespace Platform
