@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
+#include <vector>
 
 // Núcleo de texto Unicode del cliente. Todo es UTF-8; Windows-1252 sólo
 // aparece al convertir desde o hacia los formatos y paquetes viejos.
@@ -60,6 +61,16 @@ std::string NormalizeNFC(std::string_view text);
 // Distingue acentos ("añañe" != "anane") y no mayúsculas ("Añañe" == "añañe").
 std::string CaseFoldKey(std::string_view text);
 int CompareIgnoreCase(std::string_view left, std::string_view right);
+
+// ── Cortes de línea (UAX #14, libunibreak) ─────────────────────────────────
+// `result[i]` dice si una línea puede terminar justo antes del byte `i`
+// (0 < i <= size): 0 = no, 1 = se puede, 2 = salto obligatorio. El vector
+// mide size + 1; los bytes del medio de un carácter siempre dan 0.
+std::vector<unsigned char> LineBreaks(std::string_view text);
+// Largo del mayor prefijo de a lo sumo `maxBytes` bytes que termina en un
+// punto de corte (incluye los espacios del final); un salto de línea del
+// texto corta antes aunque entre todo. 0 si no hay ningún corte posible.
+std::size_t FitLineBreak(std::string_view text, std::size_t maxBytes);
 
 // Nombre de personaje o de guild (0.97.40), con la misma regla que
 // TextName::IsValid del server: UTF-8 válido en NFC, de 1 a `maxClusters`

@@ -65,6 +65,15 @@ int main()
     Check(CompareIgnoreCase(U8(u8"Straße"), "STRASSE") == 0, "ß se pliega a ss");
     Check(CaseFoldKey(U8(u8"ñ")) == CaseFoldKey(U8(u8"Ñ")), "forma descompuesta == compuesta");
 
+    // ── Cortes de línea (UAX #14) ──
+    Check(FitLineBreak("hola mundo", 7) == 5, "corta despues del espacio");
+    Check(FitLineBreak("holamundo", 5) == 0, "palabra sin corte posible");
+    Check(FitLineBreak(U8(u8"你好世界"), 7) == 6, "CJK corta entre ideogramas sin partir");
+    Check(FitLineBreak(U8(u8"你好。世界"), 9) == 9, "el punto CJK queda con lo anterior");
+    Check(FitLineBreak(U8(u8"你好。世界"), 8) == 3, "no empieza linea con 。");
+    Check(FitLineBreak("uno\ndos tres", 12) == 4, "salto obligatorio");
+    Check(FitLineBreak("corto", 10) == 5, "entra entero");
+
     // ── Nombres (misma regla que TextName::IsValid del server) ──
     Check(IsNameText(U8(u8"Añañe"), 10), "nombre latino");
     Check(IsNameText(U8(u8"Владимир"), 10), "nombre cirílico");

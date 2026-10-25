@@ -525,15 +525,19 @@ bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
 // CutText @ 0x0047FE30 — Text_SplitAtMiddle(src, dstB_ptr, dstA, len)
 // Splits src at middle: first half → dstA (param_3), second half → *(char*)param_2.
 // Split point: first space near len/2, or forced at len/2+2.
+// DESVIACION (Fase 4, cortes UAX #14): ademas del espacio vale cualquier punto
+// de corte de libunibreak (entre ideogramas, despues de un guion...).
 // IDA: CutText (0x0047FE30)
 void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4) {
     char *param_1 = (char*)param_1_v;
     char *param_3 = (char*)param_3_v;
     unsigned int uVar4 = 0, uVar3 = 0;
+    const std::vector<unsigned char> breaks =
+        TextEngine::LineBreaks(std::string_view(param_1, param_4 > 0 ? (std::size_t)param_4 : 0));
     if (param_4 > 0) {
         do {
             uVar3 = uVar4;
-            if ((param_4/2 - 2 <= (int)uVar4 && param_1[uVar4] == ' ') ||
+            if ((param_4/2 - 2 <= (int)uVar4 && (param_1[uVar4] == ' ' || breaks[uVar4])) ||
                 (param_4/2 + 2 <= (int)uVar4)) break;
             char c = mbclen((byte*)(param_1 + uVar4));
             uVar4 += (unsigned int)(unsigned char)c;
