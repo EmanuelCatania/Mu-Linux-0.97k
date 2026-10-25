@@ -47,7 +47,7 @@ void Scene_MapTick(void)
     }
     goto LAB_004f6824;
   }
-  if (((DAT_083a427c < DAT_07ea5288) || (0x27f < DAT_083a427c)) ||
+  if ((((int)MouseX < (int)InventoryStartX) || ((int)MouseX >= gWindow.PanelOrigin(Ui::WindowRight))) ||
      ((DAT_083a4278 < DAT_07ea5284 || ((0x1df < DAT_083a4278 || (DAT_07eaa134 == 0)))))) {
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
