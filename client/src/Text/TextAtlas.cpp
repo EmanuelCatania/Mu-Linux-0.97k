@@ -4,6 +4,7 @@
 #include "Text/TextShaper.h"
 #include "Platform/SDL3/SDLFont.h"
 #include "Render/BufferedDraw.h"
+#include "Config/UserSettings.h"
 #include <unordered_map>
 #include <vector>
 
@@ -107,6 +108,10 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
     Gfx::Enable(Gfx::Cap::Texture2D);
     Gfx::TexEnvMode(Gfx::TexEnv::Modulate);
     const float originX = std::floor(x), originY = std::floor(baseline);
+    // Contorno o sombra: el mismo texto en negro corrido de a un píxel, debajo
+    // del color. El alfa es el del texto, así no se ve más fuerte que él.
+    // (y va hacia arriba: la sombra cae a y - 1.)
+    const auto pass = [&](float dx, float dy, unsigned char pr, unsigned char pg, unsigned char pb) {
     for (int page = 0; page < (int)pages.size(); ++page) {
         bool any = false;
         for (size_t i = 0; i < text.glyphs.size(); ++i) {
@@ -114,12 +119,12 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
             if (!e || e->page != page) continue;
             if (!any) {
                 Gfx::BindTexture(pages[page].texture);
-                BufferedDraw::Color4ub(r, g, b, a);
+                BufferedDraw::Color4ub(pr, pg, pb, a);
                 BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
                 any = true;
             }
-            const float x0 = originX + text.glyphs[i].x + e->left;
-            const float y1 = originY + text.glyphs[i].y + e->top;
+            const float x0 = originX + dx + text.glyphs[i].x + e->left;
+            const float y1 = originY + dy + text.glyphs[i].y + e->top;
             const float x1 = x0 + e->w, y0 = y1 - e->h;
             const float u0 = float(e->x) / kPageSize, u1 = float(e->x + e->w) / kPageSize;
             const float v0 = float(e->y) / kPageSize, v1 = float(e->y + e->h) / kPageSize;
@@ -130,6 +135,15 @@ void Draw(const TextEngine::ShapedText& text, float x, float baseline,
         }
         if (any) BufferedDraw::End();
     }
+    };
+    if (gUserSettings.GetTextOutline()) {
+        for (int oy = -1; oy <= 1; ++oy)
+            for (int ox = -1; ox <= 1; ++ox)
+                if (ox || oy) pass(float(ox), float(oy), 0, 0, 0);
+    } else if (gUserSettings.GetTextShadow()) {
+        pass(1.0f, -1.0f, 0, 0, 0);
+    }
+    pass(0.0f, 0.0f, r, g, b);
     Gfx::PopAttrib();
     Gfx::SetUnpackAlignment(previousAlignment);
 }
