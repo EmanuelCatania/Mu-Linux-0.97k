@@ -214,7 +214,7 @@ int Render_MacroTimer_(void)
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
             Platform::TextFormat(String, fmt, 30 - (int)secs);
-            UI_DrawText(10, 372, String, 0, 1, 0, sizeof(String));
+            UI_DrawText(gWindow.PanelOrigin(Ui::WindowLeft) + 10, 372, String, 0, 1, 0, sizeof(String));
         } else {
             m_iMatchCountDownType = 0;
         }

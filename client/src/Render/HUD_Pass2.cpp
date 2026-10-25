@@ -468,7 +468,7 @@ int RenderEquipedHelperLife_(bool a2)
         gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
-        if (textX < 0) textX = 0;
+        if (textX < gWindow.PanelOrigin(Ui::WindowLeft)) textX = gWindow.PanelOrigin(Ui::WindowLeft);
         Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
 
         RenderBar(x, posY + 12.0f, 50.0f, 2.0f, (float)bar, false, true);
@@ -493,7 +493,7 @@ int RenderEquipedHelperLife_(bool a2)
         gFont.MeasureText(gFont.GetTextDC(), summonText, Platform::TextLength(summonText), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
-        if (textX < 0) textX = 0;
+        if (textX < gWindow.PanelOrigin(Ui::WindowLeft)) textX = gWindow.PanelOrigin(Ui::WindowLeft);
         Text_MeasureBox(textX, 4, summonText, 0, 0, 0);
 
         RenderBar(xs, 16.0f, 50.0f, 2.0f, (float)(50 * (int)SummonLife / 100), false, true);

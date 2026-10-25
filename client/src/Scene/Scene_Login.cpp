@@ -227,7 +227,7 @@ uint Scene_Login(void)
     iVar3   = Platform::TextLength(acStack_64);
     gFont.MeasureText(gFont.GetTextDC(), acStack_64, iVar3, ptVar10);
     // IDA 0x521630 L96: esta va en x=0.
-    UI_RenderText(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / gWindow.GetWidth(),
+    UI_RenderText(gWindow.PanelOrigin(Ui::WindowLeft), 0x1df - (uint)(tStack_6c.cy * 0x280) / gWindow.GetWidth(),
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
     // ── Sub-state dispatch ────────────────────────────────────────────────────
