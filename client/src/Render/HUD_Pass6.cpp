@@ -879,7 +879,9 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     if (levelUpPoint > 0) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
         m_dwBackColor = 0xFFC86E1Eu;     // Color4b(30, 110, 200, 255): ABGR, no ARGB
-        m_dwTextColor = 0xFF000000u;     // black text
+        // DESVIACION: el DLL usa texto negro (Color4b(0, 0, 0)), que sobre el azul
+        // a este tamaño casi no se lee; va en blanco.
+        m_dwTextColor = 0xFFFFFFFFu;
         char ptsBuf[64];
         // Use GlobalText[217] if available; defensive fallback to a literal.
         const char* ptsFmt = GlobalText[217][0] ? GlobalText[217] : "Puntos: %d";

@@ -15,7 +15,7 @@ namespace {
 // Dentro del campo de texto del chat, pegado a su borde derecho y antes del
 // campo del susurro (que arranca en x=376).
 constexpr int kButtonX = 358, kButtonY = 420, kButtonSize = 16;
-constexpr int kCell = 20, kColumns = 10, kRows = 8;
+constexpr int kCell = 28, kColumns = 10, kRows = 8;
 constexpr int kPanelWidth = kColumns * kCell + 8;
 constexpr int kPanelHeight = kRows * kCell + 8 + 20;        // grilla + pie con páginas
 constexpr int kPanelX = kButtonX + kButtonSize - kPanelWidth, kPanelY = kButtonY - 4 - kPanelHeight;
@@ -62,8 +62,9 @@ bool Inside(int x, int y, int w, int h)
 }
 
 // El texto del selector va con el estilo del chat: sin tintes de otro panel.
-void Label(int x, int y, int width, const char* text)
+void Label(int x, int y, int width, const char* text, eFontTypes type = FONT_NORMAL)
 {
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(type));
     SIZE size = {};
     gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &size);
     const int cy = y - ((480 * size.cy / (int)gWindow.GetHeight()) >> 1);
@@ -102,6 +103,7 @@ void Render()
     GL_DrawRect((float)(kButtonX + kButtonSize - 1), (float)kButtonY, 1.0f, (float)kButtonSize);
     BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
     Label(kButtonX, kButtonY + kButtonSize / 2, kButtonSize, u8"\U0001F600");
+    gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL));
     if (click && overButton) { s_Open = !s_Open; Consume(); click = false; }
     if (!s_Open) return;
 
@@ -126,7 +128,7 @@ void Render()
             picked = i;
         }
         BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
-        Label(x, y + kCell / 2, kCell, list[i].c_str());
+        Label(x, y + kCell / 2, kCell, list[i].c_str(), FONT_BIG);   // al doble de alto: se ven
     }
 
     // Pie: página anterior, "n / total" y página siguiente.
