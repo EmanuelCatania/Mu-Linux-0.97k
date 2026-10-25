@@ -20,6 +20,11 @@ bool IsValid(const char* text, std::size_t size, int maxClusters, bool allowSpec
 // que rompen el SQL armado con sprintf.
 bool IsSafeKey(const char* text, std::size_t size);
 
+// Texto de contenido para mostrar (nombres traducidos de items, monstruos y
+// skills): UTF-8 válido, sin controles ni separadores de línea. Devuelve el
+// texto en NFC, o vacío si no cumple.
+std::string ToDisplay(const char* text, std::size_t size);
+
 // Clave de comparación: NFC con case fold. Vacía si el texto no es UTF-8.
 std::string Key(const char* text, std::size_t size);
 

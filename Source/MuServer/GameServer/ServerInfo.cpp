@@ -263,6 +263,8 @@ void CServerInfo::ReadItemInfo()
 
 	gContentCatalog.LoadItemJson(gPath.GetFullPath("Custom\\Items\\"));
 
+	gContentCatalog.LoadTexts(gPath.GetFullPath("Text\\"));
+
 	gCustomPet.Load(gPath.GetFullPath("Custom\\Pets\\"));
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)

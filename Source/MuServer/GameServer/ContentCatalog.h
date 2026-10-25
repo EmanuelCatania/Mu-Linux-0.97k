@@ -169,6 +169,22 @@ struct CATALOG_PET
 	BYTE Reserved;
 };
 
+// Textos traducidos (0.97.40): Data/Text/<Eng|Spn|Por>/*.txt.  El server
+// manda sólo los del idioma que pidió el cliente con el F1:04; lo que no esté
+// traducido sigue saliendo de los .bmd del cliente (o del Name de E7/E8 para
+// los items y monstruos agregados).
+#define CATALOG_TEXT_ITEM    1
+#define CATALOG_TEXT_MONSTER 2
+#define CATALOG_TEXT_SKILL   3
+
+struct CATALOG_TEXT
+{
+	BYTE Table;         // CATALOG_TEXT_*
+	BYTE Reserved;
+	WORD Index;         // item (sección * 512 + índice), monstruo o skill
+	char Text[64];      // UTF-8 en NFC
+};
+
 struct PMSG_CATALOG_END_SEND
 {
 	PSBMSG_HEAD header; // C1:F3:EA
@@ -208,6 +224,9 @@ public:
 	// Efectos y demás datos por item en JSON (Data/Custom/Items/*.json).
 	void LoadItemJson(const char* folder);
 
+	// Textos traducidos: folder\<Eng|Spn|Por>\{Item,Monster,Skill}.txt.
+	void LoadTexts(const char* folder);
+
 	void Invalidate() { this->m_Built = false; }
 
 	void Send(int aIndex);
@@ -231,6 +250,10 @@ private:
 	std::vector<CATALOG_TOOLTIP> m_Tooltips;
 
 	std::vector<std::vector<BYTE>> m_Packets;
+
+	std::vector<CATALOG_TEXT> m_Texts[MAX_LANGUAGE];
+
+	std::vector<std::vector<BYTE>> m_TextPackets[MAX_LANGUAGE];
 };
 
 extern CContentCatalog gContentCatalog;

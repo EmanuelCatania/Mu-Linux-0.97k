@@ -5,6 +5,7 @@
 #include "ItemManager.h"
 #include "MonsterManager.h"
 #include "ReadScript.h"
+#include "TextName.h"
 #include "Util.h"
 #include "JsonLite.h"
 #include <algorithm>
@@ -24,6 +25,7 @@ static_assert(sizeof(CATALOG_MAP_FOG) == 8, "catalog map fog");
 static_assert(sizeof(PMSG_CATALOG_END_SEND) == 12, "catalog end");
 static_assert(sizeof(CATALOG_EFFECT) == 132, "catalog effect");
 static_assert(sizeof(CATALOG_TOOLTIP) == 64, "catalog tooltip");
+static_assert(sizeof(CATALOG_TEXT) == 68, "catalog text");
 
 bool IsSafeModelPath(const char* path);
 
@@ -663,6 +665,20 @@ void CContentCatalog::Build()
 
 	this->BuildSection(0xEE, pets.empty() ? 0 : (const BYTE*)&pets[0], sizeof(CATALOG_PET), (int)pets.size(), this->m_Packets);
 
+	// Los textos dependen del idioma de cada cliente: van aparte y no entran
+	// en el hash, que identifica el contenido compartido.
+	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
+	{
+		this->m_TextPackets[lang].clear();
+
+		const std::vector<CATALOG_TEXT>& texts = this->m_Texts[lang];
+
+		if (!texts.empty())
+		{
+			this->BuildSection(0xF0, (const BYTE*)&texts[0], sizeof(CATALOG_TEXT), (int)texts.size(), this->m_TextPackets[lang]);
+		}
+	}
+
 	DWORD hash = 2166136261u;
 
 	for (size_t n = 0; n < this->m_Packets.size(); n++)
@@ -698,10 +714,134 @@ void CContentCatalog::Send(int aIndex)
 		this->Build();
 	}
 
-	for (size_t n = 0; n < this->m_Packets.size(); n++)
+	// El fin (F3:EA) va último: el cliente publica todo lo recibido al verlo.
+	const size_t last = this->m_Packets.size() - 1;
+
+	for (size_t n = 0; n < last; n++)
 	{
 		DataSend(aIndex, &this->m_Packets[n][0], (DWORD)this->m_Packets[n].size());
 	}
+
+	const int lang = gObj[aIndex].Lang;
+
+	if (lang >= 0 && lang < MAX_LANGUAGE)
+	{
+		for (const std::vector<BYTE>& packet : this->m_TextPackets[lang])
+		{
+			DataSend(aIndex, (BYTE*)&packet[0], (DWORD)packet.size());
+		}
+	}
+
+	DataSend(aIndex, &this->m_Packets[last][0], (DWORD)this->m_Packets[last].size());
+}
+
+namespace
+{
+	// Un archivo de textos: "índice "texto"" (o "sección índice "texto"" para
+	// los items) por línea, hasta "end".  No existir no es un error.
+	void LoadTextFile(const std::string& path, BYTE table, std::vector<CATALOG_TEXT>& out)
+	{
+		if (!std::filesystem::exists(path))
+		{
+			return;
+		}
+
+		CReadScript* lpReadScript = new CReadScript;
+
+		if (!lpReadScript->Load(path.c_str()))
+		{
+			ErrorMessageBox(READ_SCRIPT_FILE_ERROR, path.c_str());
+
+			delete lpReadScript;
+
+			return;
+		}
+
+		int loaded = 0, rejected = 0;
+
+		try
+		{
+			while (true)
+			{
+				eTokenResult token = lpReadScript->GetToken();
+
+				if (token == TOKEN_END || token == TOKEN_END_SECTION)
+				{
+					break;
+				}
+
+				int index = lpReadScript->GetNumber();
+
+				if (table == CATALOG_TEXT_ITEM)
+				{
+					const int section = index;
+
+					const int sub = lpReadScript->GetAsNumber();
+
+					index = (section >= 0 && section < MAX_ITEM_SECTION && sub >= 0 && sub < MAX_ITEM_TYPE + MAX_ITEM_EX_PER_SECTION) ? GET_ITEM(section, sub) : -1;
+				}
+
+				const char* raw = lpReadScript->GetAsString();
+
+				const std::string text = TextName::ToDisplay(raw, strlen(raw));
+
+				CATALOG_TEXT entry;
+
+				memset(&entry, 0, sizeof(entry));
+
+				if (index < 0 || index > 0xFFFF || text.empty() || text.size() >= sizeof(entry.Text))
+				{
+					LogAdd(LOG_RED, "[ContentCatalog] %s: texto descartado (índice %d, %d bytes; máximo %d)", path.c_str(), index, (int)strlen(raw), (int)sizeof(entry.Text) - 1);
+
+					rejected++;
+
+					continue;
+				}
+
+				entry.Table = table;
+
+				entry.Index = (WORD)index;
+
+				memcpy(entry.Text, text.data(), text.size());
+
+				out.push_back(entry);
+
+				loaded++;
+			}
+		}
+		catch (...)
+		{
+			ErrorMessageBox(lpReadScript->GetError());
+		}
+
+		delete lpReadScript;
+
+		LogAdd(LOG_BLUE, "[ContentCatalog] %s: %d textos (%d descartados)", path.c_str(), loaded, rejected);
+	}
+}
+
+void CContentCatalog::LoadTexts(const char* folder)
+{
+	static const char* languages[MAX_LANGUAGE] = { "Eng", "Spn", "Por" };
+
+	static const struct { const char* file; BYTE table; } files[] =
+	{
+		{ "Item.txt", CATALOG_TEXT_ITEM },
+		{ "Monster.txt", CATALOG_TEXT_MONSTER },
+		{ "Skill.txt", CATALOG_TEXT_SKILL },
+	};
+
+	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
+	{
+		this->m_Texts[lang].clear();
+
+		for (const auto& file : files)
+		{
+			LoadTextFile(std::string(folder) + languages[lang] + "/" + file.file, file.table, this->m_Texts[lang]);
+		}
+	}
+
+	this->m_Built = false;
 }
 
 namespace

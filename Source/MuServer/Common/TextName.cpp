@@ -116,6 +116,26 @@ bool IsSafeKey(const char* text, std::size_t size)
 	});
 }
 
+std::string ToDisplay(const char* text, std::size_t size)
+{
+	const std::size_t length = BoundedLength(text, size);
+	const bool ok = length > 0 && ForEachCodepoint(text, length, [](utf8proc_int32_t c) {
+		switch (utf8proc_category(c))
+		{
+		case UTF8PROC_CATEGORY_CC:
+		case UTF8PROC_CATEGORY_CS:
+		case UTF8PROC_CATEGORY_CO:
+		case UTF8PROC_CATEGORY_CN:
+		case UTF8PROC_CATEGORY_ZL:
+		case UTF8PROC_CATEGORY_ZP:
+			return false;
+		default:
+			return true;
+		}
+	});
+	return ok ? Map(text, length, (utf8proc_option_t)(UTF8PROC_STABLE | UTF8PROC_COMPOSE)) : std::string();
+}
+
 std::string Key(const char* text, std::size_t size)
 {
 	return Map(text, BoundedLength(text, size), (utf8proc_option_t)(UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD));
