@@ -22,7 +22,7 @@ namespace {
 // Misma columna y fondo que RenderGuildList (IDA 0x004F0810): 190x433 en x=450.
 struct EventPanelLayout {
     // DESVIACION (Fase 4, pantalla ancha): pegado al borde derecho de la ventana.
-    static int X() { return 450 + gWindow.GetRightShift(); }
+    static int X() { return 450 + gWindow.GetPanelShift(); }
     static constexpr int Y = 0;
     static int TitleX() { return X() + 35; }
     static constexpr int TitleY = Y + 12, TitleWidth = 120;

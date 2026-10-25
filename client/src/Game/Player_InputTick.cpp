@@ -165,7 +165,7 @@ static void MouseOnWindow_Update(void)
     // en vez de mantener acá una lista paralela de rectángulos.
     if (HUD_IsAnyRightPanelOpen()) {
         int panelStartX = GetScreenWidth();
-        const int rightEdge = 640 + gWindow.GetRightShift();
+        const int rightEdge = 640 + gWindow.GetPanelShift();
         if (panelStartX < rightEdge) {
             if (mx >= panelStartX && mx < rightEdge && my >= 0 && my < 433) {
                 g_MouseOnWindow = 1; return;

@@ -220,7 +220,7 @@ int __cdecl GetScreenWidth(void)
 {
     // DESVIACION (Fase 4, pantalla ancha): el borde derecho es el de la ventana,
     // no el del 4:3 de la interfaz (DLL CWideScreen: numW - 190 / numW - 380).
-    const int edge = gWindow.GetRightShift();
+    const int edge = gWindow.GetPanelShift();
     if (InventoryOpened) {
         if (CharacterOpened) return 260 + edge;
         if (HUD_IsInventorySidePairOpen()) return 260 + edge;
