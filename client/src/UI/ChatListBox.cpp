@@ -2412,6 +2412,10 @@ char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DW
 // ancho solo a la primera.  Busca el corte por biseccion sobre la cantidad de
 // caracteres y lo alinea a caracter multibyte con _mbclen.  Devuelve la
 // cantidad de lineas escritas.
+//
+// DESVIACION (Fase 4, cortes UAX #14): el binario corta en cualquier punto de
+// la palabra. Ahora, si hay un punto de corte en la segunda mitad de lo que
+// entra, la linea termina ahi (despues de un espacio, entre ideogramas...).
 int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
                          size_t lineSize, UINT firstIndent, int reverse) {
     const char* cur = text;                        // IDA: v7
@@ -2457,6 +2461,8 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         int j;
         for (j = 0; j < cut; j += (int)Platform::TextCharacterBytes((const unsigned char*)&cur[j]))
             ;
+        const int fit = (int)TextEngine::FitLineBreak(std::string_view(cur), (std::size_t)j);
+        if (fit > 0 && fit * 2 >= j) j = fit;
         strncpy(line, cur, j);
         fwdOff += lineSize;
         cur += j;
