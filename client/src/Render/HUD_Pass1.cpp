@@ -373,13 +373,15 @@ void RenderMainFrameWindow_(void)
     GL_ResetState();
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     if (wide) {
-        // DESVIACION (Fase 4, pantalla ancha; solución de kapocha): la barra queda en
-        // el 4:3 central y las cabezas de dragón de WDecorOld van pegadas a sus
-        // extremos, mirando hacia el centro, sobre el mundo.  La textura trae la
-        // cabeza a la derecha: la izquierda va tal cual, la derecha espejada.
+        // DESVIACION (Fase 4, pantalla ancha): posiciones del CWideScreen de kapocha
+        // (Center_RenderBitmap, textura Menu03_new): la barra queda en el 4:3 central
+        // y las cabezas de WDecorOld van relativas al tile derecho (x = 384):
+        //     izquierda x - 445 = -61,  derecha x + 172 = 556,  y = 432 - 21 = 411
+        // con 144x69, la derecha espejada.  Las cabezas de Menu04 (0xE9) no se dibujan.
+        const float tileX = 384.0f, barY = 432.0f;
         EnableAlphaTest(true);
-        GL_DrawTexture(0x5F0, -140.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        GL_DrawTexture(0x5F0, 636.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, tileX - 445.0f, barY - 21.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, tileX + 172.0f, barY - 21.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
         GL_ResetState();
     }
 }
