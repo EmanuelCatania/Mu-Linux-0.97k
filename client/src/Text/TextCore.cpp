@@ -2,6 +2,9 @@
 #include "Text/TextCore.h"
 #define UTF8PROC_STATIC
 #include "../../lib/utf8proc/utf8proc.h"
+extern "C" {
+#include "../../lib/libunibreak/linebreak.h"
+}
 #include <cstdlib>
 #include <cstring>
 
@@ -274,6 +277,38 @@ std::string NormalizeNFC(std::string_view text)
 std::string CaseFoldKey(std::string_view text)
 {
     return Map(text, UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD);
+}
+
+std::vector<unsigned char> LineBreaks(std::string_view text)
+{
+    std::vector<unsigned char> result(text.size() + 1, 0);
+    if (text.empty()) return result;
+    static const bool initialized = [] { init_linebreak(); return true; }();
+    (void)initialized;
+    // libunibreak marca el estado DESPUÉS de cada byte; acá se guarda como
+    // "antes del byte siguiente". Una secuencia inválida se corta como un byte.
+    std::vector<char> after(text.size());
+    set_linebreaks_utf8(reinterpret_cast<const utf8_t*>(text.data()), text.size(), nullptr, after.data());
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (after[i] == LINEBREAK_MUSTBREAK) result[i + 1] = 2;
+        else if (after[i] == LINEBREAK_ALLOWBREAK) result[i + 1] = 1;
+    }
+    // El final del texto no es un corte: es simplemente el final.
+    result[text.size()] = 0;
+    return result;
+}
+
+std::size_t FitLineBreak(std::string_view text, std::size_t maxBytes)
+{
+    const auto breaks = LineBreaks(text);
+    const std::size_t limit = maxBytes < text.size() ? maxBytes : text.size();
+    // Un salto obligatorio antes del tope manda.
+    for (std::size_t i = 1; i <= limit; ++i)
+        if (breaks[i] == 2) return i;
+    if (maxBytes >= text.size()) return text.size();
+    for (std::size_t i = maxBytes; i > 0; --i)
+        if (breaks[i]) return i;
+    return 0;
 }
 
 bool IsNameText(std::string_view text, std::size_t maxClusters)
