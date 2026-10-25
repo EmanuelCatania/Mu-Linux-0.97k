@@ -116,6 +116,8 @@ public:
     // DESVIACION (Fase 4, Config.ini [Font] ColorEmoji, por defecto 1): los
     // emoji se dibujan en color con la fuente de emoji del sistema.
     bool GetColorEmoji() const { return m_ColorEmoji; }
+    // Desde el menú de opciones: se guardan en [Font] junto con el resto.
+    void SetTextEffects(bool shadow, bool outline, bool colorEmoji);
     // "Eng", "Spn" o "Por"; nullptr para USER_LANG_DEFAULT.
     static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }

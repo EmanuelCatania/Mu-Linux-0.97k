@@ -245,9 +245,21 @@ void CUserSettings::SetFont(const UserFontSettings& font)
     SaveInt("Font", "FontStrikeOut", m_Font.strikeOut);
 }
 
+void CUserSettings::SetTextEffects(bool shadow, bool outline, bool colorEmoji)
+{
+    m_TextShadow = shadow;
+    m_TextOutline = outline;
+    m_ColorEmoji = colorEmoji;
+    SaveInt("Font", "TextShadow", shadow);
+    SaveInt("Font", "TextOutline", outline);
+    SaveInt("Font", "ColorEmoji", colorEmoji);
+}
+
 void CUserSettings::ResetFont()
 {
     m_Font = UserFontSettings{};
+    m_TextShadow = m_TextOutline = false;
+    m_ColorEmoji = true;
     if (m_IniPath[0]) Platform::GetFileSystem().WriteIniString("Font", NULL, NULL, m_IniPath);
 }
 
