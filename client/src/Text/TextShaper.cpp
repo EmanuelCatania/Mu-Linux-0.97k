@@ -95,12 +95,50 @@ const std::vector<std::string>& SystemFallbackFonts()
 
 void SetFallbackFontDirectory(const std::string& directory) { fallbackDirectory = directory; }
 
+namespace { bool colorEmojiEnabled = false; }
+void SetColorEmoji(bool enabled) { colorEmojiEnabled = enabled; }
+
+namespace {
+// Pictogramas: el bloque de emoji y los símbolos sueltos que lo son.
+bool IsEmoji(char32_t cp)
+{
+    return (cp >= 0x1F000 && cp <= 0x1FAFF) || (cp >= 0x2600 && cp <= 0x27BF) ||
+           cp == 0x2B50 || cp == 0x2B55 || cp == 0x231A || cp == 0x231B;
+}
+// Fuente de emoji en color del sistema (COLR); en Linux la habitual es
+// Noto Color Emoji, que es un mapa de bits y todavía no se usa.
+std::string ColorEmojiPath()
+{
+#ifdef _WIN32
+    const char* windows = std::getenv("WINDIR");
+    return (std::filesystem::path(windows && *windows ? windows : "C:\\Windows") / "Fonts" / "seguiemj.ttf").string();
+#else
+    return std::string();
+#endif
+}
+}
+
+Platform::SDLFont* FontStack::ColorEmojiFont()
+{
+    if (m_ColorEmojiTried) return m_ColorEmoji;
+    m_ColorEmojiTried = true;
+    const std::string path = ColorEmojiPath();
+    std::error_code error;
+    if (path.empty() || !std::filesystem::is_regular_file(path, error)) return nullptr;
+    auto* font = new Platform::SDLFont;
+    std::string message;
+    if (!font->LoadFile(path, m_Height, message)) { delete font; return nullptr; }
+    m_ColorEmoji = font;
+    return m_ColorEmoji;
+}
+
 struct FontStack::Cache {
     std::unordered_map<std::string, ShapedText> entries;
 };
 
 FontStack::~FontStack()
 {
+    delete m_ColorEmoji;
     for (auto* font : m_Fallbacks) delete font;
     delete m_Cache;
 }
@@ -109,6 +147,9 @@ void FontStack::Reset(Platform::SDLFont* primary, int height, bool bold)
 {
     for (auto* font : m_Fallbacks) delete font;
     m_Fallbacks.clear();
+    delete m_ColorEmoji;
+    m_ColorEmoji = nullptr;
+    m_ColorEmojiTried = false;
     m_FallbacksLoaded = false;
     m_SystemTried = 0;
     m_Primary = primary;
@@ -164,7 +205,11 @@ void FontStack::LoadFallbacks()
 
 Platform::SDLFont* FontStack::FontFor(char32_t codepoint)
 {
-    if (!m_Primary || m_Primary->HasCodepoint(codepoint)) return m_Primary;
+    if (!m_Primary) return m_Primary;
+    // Antes que las de Data/Font: el respaldo de emoji de ahí es monocromo.
+    if (colorEmojiEnabled && fallbackDirectory.empty() && IsEmoji(codepoint))
+        if (auto* font = ColorEmojiFont(); font && font->HasCodepoint(codepoint)) return font;
+    if (m_Primary->HasCodepoint(codepoint)) return m_Primary;
     LoadFallbacks();
     for (auto* font : m_Fallbacks)
         if (font->HasCodepoint(codepoint)) return font;

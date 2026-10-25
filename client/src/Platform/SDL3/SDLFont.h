@@ -14,6 +14,9 @@ struct FontGlyph {
     int width = 0;
     int height = 0;
     std::vector<uint8_t> coverage; // filas de arriba hacia abajo, 0..255
+    // Glifo de color (emoji COLR): RGBA con alfa recto, mismas filas.  Vacío
+    // en un glifo común; `coverage` lleva igual el alfa.
+    std::vector<uint8_t> rgba;
 };
 struct FontMetrics {
     int ascent = 0;

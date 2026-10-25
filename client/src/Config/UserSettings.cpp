@@ -139,6 +139,7 @@ void CUserSettings::Load(const char* iniPath)
     // Independientes de que exista la fuente propia: valen con cualquiera.
     m_TextShadow = ReadFlag("Font", "TextShadow", iniPath) > 0;
     m_TextOutline = ReadFlag("Font", "TextOutline", iniPath) > 0;
+    m_ColorEmoji = ReadFlag("Font", "ColorEmoji", iniPath) != 0;
 
     char line[160];
     Platform::TextFormat(line, "Config.ini: WindowMode=%d Borderless=%d Resolution=%d "

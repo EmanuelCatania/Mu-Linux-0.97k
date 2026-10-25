@@ -113,6 +113,9 @@ public:
     // renderers de texto propios (SDL); la GDI no los tiene.
     bool GetTextShadow() const { return m_TextShadow; }
     bool GetTextOutline() const { return m_TextOutline; }
+    // DESVIACION (Fase 4, Config.ini [Font] ColorEmoji, por defecto 1): los
+    // emoji se dibujan en color con la fuente de emoji del sistema.
+    bool GetColorEmoji() const { return m_ColorEmoji; }
     // "Eng", "Spn" o "Por"; nullptr para USER_LANG_DEFAULT.
     static const char* GetLanguageSuffix(int language);
     const UserFontSettings& GetFont() const { return m_Font; }
@@ -155,6 +158,7 @@ private:
     int  m_Language = USER_LANG_DEFAULT;
     bool m_TextShadow = false;
     bool m_TextOutline = false;
+    bool m_ColorEmoji = true;
     int  m_MiniMapAlpha = 10;   // defaults del DLL
     int  m_MiniMapZoom  = 0;
     char m_IniPath[MAX_PATH] = {};
