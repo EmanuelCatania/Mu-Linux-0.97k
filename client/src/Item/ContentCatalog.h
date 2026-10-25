@@ -54,6 +54,7 @@ public:
     void ReceiveEffects(const BYTE* msg, int size);    // F3/EC
     void ReceivePets(const BYTE* msg, int size);       // F3/EE
     void ReceiveTooltips(const BYTE* msg, int size);   // F3/EF
+    void ReceiveTexts(const BYTE* msg, int size);      // F3/F0
     void ReceiveEnd(const BYTE* msg, int size);        // F3/EA: valida y publica
 
     // Al desconectar: la tabla vuelve a la de item.bmd.
@@ -119,6 +120,8 @@ public:
     const Proto::CATALOG_PET* GetPetByModel(int model) const;
 
     const CatalogMonster* GetMonster(int index) const;
+    // Nombre traducido de un monstruo o NPC, o nullptr si el server no lo mandó.
+    char* GetMonsterText(int index) const;
 
     // Niebla del mapa: colores de día y de noche (0..1).  false = sin fila.
     bool GetMapFog(int map, float day[3], float night[3]) const;
