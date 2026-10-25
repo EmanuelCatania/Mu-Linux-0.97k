@@ -374,12 +374,11 @@ void RenderMainFrameWindow_(void)
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     if (wide) {
         // DLL CWideScreen: WDecorOld, izquierda -61 y derecha 556 espejada.
-        // Cada decoración conserva su offset respecto del borde de la ventana.
-        const float left = (float)gWindow.PanelOrigin(Ui::WindowLeft);
-        const float right = (float)gWindow.PanelOrigin(Ui::WindowRight);
+        // El DLL las ubica respecto de la barra central, no de la ventana.
+        const float barX = (float)gWindow.PanelOrigin({Ui::Anchor::Centro, 640});
         EnableAlphaTest(true);
-        GL_DrawTexture(0x5F0, left - 61.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
-        GL_DrawTexture(0x5F0, right + (556.0f - 640.0f), 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, barX - 61.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, barX + 556.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
         GL_ResetState();
     }
 }
