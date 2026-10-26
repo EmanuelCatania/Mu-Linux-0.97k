@@ -170,45 +170,47 @@ void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1)
 // CSQuest::CheckRequestCondition @ 0x00401230 (IDA: FUN_00401230).
 uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char param_2)
 {
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    BYTE* record = reinterpret_cast<BYTE*>(param_1);
     int iVar8 = 0;
     int local_8 = 0;
     if (0 < *param_1) {
         int local_10 = 0;
-        char *local_c = (char *)((int)param_1 + 0x2b);
+        char *local_c = reinterpret_cast<char*>(record + 0x2b);
         do {
-            if ((uint)*(BYTE *)((uint)*(BYTE *)((int)pThis + 4) + local_10 + 0x2c + (int)param_1) ==
-                *(BYTE *)((int)pThis + 5) + 1) {
+            if ((uint)*(record + *(quest + 4) + local_10 + 0x2c) ==
+                *(quest + 5) + 1) {
                 iVar8 = 0;
                 char cVar1 = *local_c;
                 if (0 < param_1[1]) {
                     short *puVar12 = (short *)(param_1 + 0xa6);
                     do {
-                        if ((*(char *)((int)puVar12 + -3) == cVar1) ||
-                            (*(char *)((int)puVar12 + -3) == -1)) {
+                        if ((*(reinterpret_cast<char*>(puVar12) - 3) == cVar1) ||
+                            (*(reinterpret_cast<char*>(puVar12) - 3) == -1)) {
                             ushort uVar3 = *(ushort *)((BYTE *)DAT_07cf1ff4 + 0xe);
                             if (*puVar12 != 0 && uVar3 < *puVar12) {
-                                *(short *)((int)pThis + 0x1c880) = param_1[iVar8 * 8 + 0xaa];
-                                *(BYTE *)((int)pThis + 0x1c882) = 5;
-                                return (uint)(ULONG_PTR)pThis & 0xffffff00;
+                                *(short *)(quest + 0x1c880) = param_1[iVar8 * 8 + 0xaa];
+                                *(quest + 0x1c882) = 5;
+                                return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                             }
                             if (puVar12[1] != 0 && puVar12[1] < uVar3) {
                                 short sVar4 = param_1[iVar8 * 8 + 0xaa];
-                                *(BYTE *)((int)pThis + 0x1c882) = 5;
-                                *(short *)((int)pThis + 0x1c880) = sVar4;
-                                return (uint)(ULONG_PTR)pThis & 0xffffff00;
+                                *(quest + 0x1c882) = 5;
+                                *(short *)(quest + 0x1c880) = sVar4;
+                                return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                             }
                             if (*(int *)(puVar12 + 2) != 0) {
                                 if (param_2 == '\0') {
-                                    *(int *)((int)pThis + 0x1c884) = *(int *)(puVar12 + 2);
+                                    *(int *)(quest + 0x1c884) = *(int *)(puVar12 + 2);
                                 } else {
                                     int iVar5 = ((int *)DAT_07cf1ffc)[0x152];
                                     int iVar6 = *(int *)(puVar12 + 2);
-                                    *(int *)((int)pThis + 0x1c884) = iVar6;
+                                    *(int *)(quest + 0x1c884) = iVar6;
                                     if (iVar5 < iVar6) {
                                         short sVar4 = param_1[iVar8 * 8 + 0xaa];
-                                        *(BYTE *)((int)pThis + 0x1c882) = 5;
-                                        *(short *)((int)pThis + 0x1c880) = sVar4;
-                                        return (uint)(ULONG_PTR)pThis & 0xffffff00;
+                                        *(quest + 0x1c882) = 5;
+                                        *(short *)(quest + 0x1c880) = sVar4;
+                                        return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                                     }
                                 }
                             }
@@ -223,7 +225,7 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
             local_8++;
         } while (local_8 < *param_1);
     }
-    return ((uint)(ULONG_PTR)iVar8 >> 8) << 8 | 1;
+    return (static_cast<uint>(iVar8) & 0xffffff00u) | 1u;
 }
 
 
