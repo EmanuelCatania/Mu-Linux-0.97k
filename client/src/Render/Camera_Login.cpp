@@ -15,6 +15,9 @@
 // DAT_07EEB228/DAT_07EEB218 (login camera world positions).
 // Se mantiene void(): los callers (Game_SceneUpdate / Game_EnterWorldTick) no pasan la posición.
 void __cdecl Login_CameraUpdate(void) {
+    // En selección ancha la preparación de la vista calcula el recorte con
+    // sus matrices actuales; acá todavía podrían quedar las del preview 3D.
+    if (SceneFlag == 4 && gWindow.IsWide()) return;
     // Wrapper: calls CreateFrustrum2D with login-scene entity[0] world position (+0x10).
     CreateFrustrum2D((float *)(DAT_07abf5d0 + 0x10));
 }
