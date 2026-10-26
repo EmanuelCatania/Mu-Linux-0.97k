@@ -701,7 +701,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     // (7) Reconstruye el cuerpo desde CharacterMachine y corta la animación
     //     de muerte; después el efecto visual de aparición.
-    SetCharacterClass((int)(uintptr_t)heroPtr);             // SetCharacterClass
+    SetCharacterClass(AsCharacter(heroPtr));             // SetCharacterClass
     SetPlayerStop(AsCharacter(heroPtr));             // SetPlayerStop
     CreateEffect(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
                  (float*)(heroPtr + 232), nullptr, (float*)heroPtr,

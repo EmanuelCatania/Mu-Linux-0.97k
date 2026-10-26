@@ -1659,7 +1659,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         *(int*)(slot + 4) = 0;
         slot[27] = 0;
         DAT_07ea5b18 = (DWORD)a5;                           // Inventory[32].Type
-        SetCharacterClass((int)(uintptr_t)DAT_07abf5d8);         // SetCharacterClass(Hero)
+        SetCharacterClass(AsCharacter(DAT_07abf5d8));         // SetCharacterClass(Hero)
         DAT_07eaa160 = 0;                                   // CheckInventory
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
@@ -2242,11 +2242,12 @@ void Hero_ApplyCatalogEquipment(int c)
 // Hashtable obfuscation y comparación con `Hero` global: omitidos (anti-tamper
 // noise / no requeridos para gameplay observable).
 // IDA: SetCharacterClass (0x0045C130)
-void __cdecl SetCharacterClass(int c) {
+void __cdecl SetCharacterClass(CHARACTER* character) {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if (AsCharacter(c)->Object.Type != 390) return;   // 390 = 0x186 = local player
 
     char* cd = (char*)DAT_07cf1ffc;
-    int v7 = (int)cd + 536;   // matches IDA: CharacterMachine + 536
+    BYTE* v7 = reinterpret_cast<BYTE*>(cd) + 536;   // matches IDA: CharacterMachine + 536
 
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
@@ -2271,7 +2272,7 @@ void __cdecl SetCharacterClass(int c) {
     {
         static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
         for (int part = 0; part < 9; ++part)
-            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+            gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
     }
 
     // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
@@ -2297,6 +2298,7 @@ void __cdecl SetCharacterClass(int c) {
     {
         const short newHelper = AsCharacter(c)->Helper.Type;
         if (newHelper != prevHelper) {
+            // El owner del pool aún ocupa 32 bits; su layout queda para B2.
             DeleteBug((DWORD)(uintptr_t)c);          // DeleteBug
             int bugType = 0;
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
@@ -2369,11 +2371,7 @@ void __cdecl SetCharacterClass(int c) {
     AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)(v7 + 435);
 
     SetCharacterScale(AsCharacter(c));
-    // sub_47E3C0(CharacterMachine) — full stat recalculation (CharData_RecalcStats).
-    // La implementación real son ~293 bytes de tiradas de base/máximo/random sobre los slots
-    // 1374..1407 de CharacterMachine (HP/MP/ATK/DEF/AS/crítico/acierto). No hace falta para el char-select; el gate
-    // que la rodea (entity[+847] != 0) sólo dispara después de entrar al mundo. El stub de abajo mantiene
-    // el link verde; portar la implementación completa cuando se retome el trabajo in-game.
+    // Recalcula los ocho grupos de atributos y sus campos derivados.
     CalculateAll(reinterpret_cast<BYTE*>(cd), 0, 0);
 }
 

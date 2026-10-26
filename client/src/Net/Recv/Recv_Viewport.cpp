@@ -387,7 +387,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     AsCharacter(hero)->Object.Kind   = 1;
                     AsCharacter(hero)->TargetX = tx;
                     AsCharacter(hero)->TargetY = ty;
-                    SetCharacterClass((int)(uintptr_t)hero);   // SetCharacterClass
+                    SetCharacterClass(AsCharacter(hero));   // SetCharacterClass
                     NetLog("NET:    0x12 heroe restaurado de transformacion");
                 }
 

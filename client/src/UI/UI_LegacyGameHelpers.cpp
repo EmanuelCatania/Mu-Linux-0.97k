@@ -95,7 +95,7 @@ void __cdecl Item_ReturnPickedItem(void)
     }
 
     DAT_07e91388 = 0;
-    if (DAT_07abf5d8) SetCharacterClass((int)DAT_07abf5d8);      // SetCharacterClass(Hero)
+    if (DAT_07abf5d8) SetCharacterClass(AsCharacter(DAT_07abf5d8));      // SetCharacterClass(Hero)
     PlayBuffer(29, 0, 0);                                  // PlayBuffer(29)
     // (bloques de hash-table anti-tamper omitidos)
 }
