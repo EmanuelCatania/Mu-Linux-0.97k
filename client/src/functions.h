@@ -269,7 +269,7 @@ void  __cdecl SetPlayerWalk(CHARACTER* entity); // IDA: SetPlayerWalk (0x0044393
 unsigned int __cdecl Entity_AdvancePath(void *entity, char flag); // IDA: MovePath
 void  __cdecl MoveCharacterPosition(CHARACTER* entity); // IDA: MoveCharacterPosition (0x00454BA0)
 void  __cdecl SetCharacterClass(CHARACTER* entity); // IDA: SetCharacterClass (0x0045C130)
-void  Hero_ApplyCatalogEquipment(int c);       // 0.97.20: piezas del catálogo y pet custom del héroe
+void  Hero_ApplyCatalogEquipment(CHARACTER* character);       // 0.97.20: piezas del catálogo y pet custom del héroe
 void  __cdecl Character_UpdateEquipSlotAnimations(int entity);        // Character_UpdateEquipSlotAnimations
 void  __cdecl SetAttackSpeed(void);              // IDA: SetAttackSpeed (0x00443E70)
 void  __cdecl SetPlayerAttack(CHARACTER*, int, int, int); // IDA: SetPlayerAttack (0x00444410)

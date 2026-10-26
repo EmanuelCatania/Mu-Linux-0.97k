@@ -2212,16 +2212,18 @@ void __cdecl MoveCharacterPosition(CHARACTER* character) {
 // fila propia del 0x12: `ChangeCharacterExt` limpia las piezas, borra el bug
 // del pet y deja el helper en "ninguno", y como el equipo no cambió,
 // SetCharacterClass no vuelve a correr.
-void Hero_ApplyCatalogEquipment(int c)
+void Hero_ApplyCatalogEquipment(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if (!DAT_07cf1ffc || *(short*)(c + 2) != 390) return;
-    const int v7 = (int)(uintptr_t)DAT_07cf1ffc + 536;
+    const BYTE* v7 = static_cast<const BYTE*>(DAT_07cf1ffc) + 536;
     static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
     for (int part = 0; part < 9; ++part)
-        gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+        gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
     const short pet = *(short*)(v7 + 544);
     if (pet != -1 && gContentCatalog.GetPet(pet)) {
         *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+        // El owner del pool aún ocupa 32 bits; su layout queda para B2.
         DeleteBug((DWORD)(uintptr_t)c);
         CreateBug(*(short*)(c + 696), (void*)(c + 16), (void*)(uintptr_t)c, 0);
     }
