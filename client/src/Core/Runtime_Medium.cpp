@@ -295,16 +295,17 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
 
 // CSQuest::ShowQuestNpcWindow @ 0x00401910 (75 bytes) — open quest NPC dialog
 void __fastcall CSQuest__ShowQuestNpcWindow(void *This, int /*edx*/, int index) {
+    BYTE* quest = static_cast<BYTE*>(This);
     if (index != -1) {
-        *(char *)((int)This + 0x1c87a) = (char)index;
+        *(char *)(quest + 0x1c87a) = (char)index;
     }
     CloseInventoryRelatedWindows();
     _g_bEventChipDialogEnable = 0;
     InventoryOpened = 0;
     CharacterOpened = 0;
-    *(BYTE *)((int)This + 0x1c87f) = 1;
+    *(quest + 0x1c87f) = 1;
     CSQuest__CheckQuestState(This, 0xff);
-    CSQuest__ShowDialogText((int)*(short *)((int)This + 0x1c880), 0);
+    CSQuest__ShowDialogText((int)*(short *)(quest + 0x1c880), 0);
 }
 
 
