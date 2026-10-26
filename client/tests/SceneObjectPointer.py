@@ -159,7 +159,7 @@ int main() {
     auto* models = static_cast<char*>(Reserve(0x10000000u, 0x10000));
     auto* low = static_cast<char*>(Reserve(0x20000000u, 0x10000));
     if(!models || !low) { std::fputs("No se pudo reservar memoria baja\n", stderr); return 1; }
-    DAT_05828d58 = static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(models));
+    InitializeModels(models);
     const auto lowDigest = Run(low, models);
     std::printf("casos=18090 digest=%016llx\n", static_cast<unsigned long long>(lowDigest));
     if(sizeof(void*) > 4) {
@@ -172,12 +172,33 @@ int main() {
             std::fputs("Diferencia entre objeto bajo y alto\n", stderr); return 1;
         }
         std::puts("objeto sobre 4 GiB: mismos bytes y eventos que el objeto bajo");
+        auto* highModels = static_cast<char*>(Reserve(std::uint64_t(0x110000000ull), 0x10000));
+        if(!highModels) { std::fputs("No se pudo reservar Models sobre 4 GiB\n", stderr); return 1; }
+        InitializeModels(highModels);
+        if(Run(low, highModels) != lowDigest || Run(high, highModels) != lowDigest) {
+            std::fputs("Diferencia con Models sobre 4 GiB\n", stderr); return 1;
+        }
+        std::puts("modelos sobre 4 GiB: dos inicializaciones y ambos objetos equivalentes");
     }
 }
 '''
 
 
 def harness(revision=None):
+    header = read_source("src/globals.h", revision)
+    globals_source = read_source("src/globals.cpp", revision)
+    declaration = re.search(r"extern [^;\n]*\bDAT_05828d58\s*;", header).group()
+    definition = re.search(r"^[^/\n]*\bDAT_05828d58\s*=\s*[^;]+;", globals_source, re.M).group()
+    initializers = []
+    for path in ("src/Platform/ClientEntry.cpp", "src/Model/Model_Items.cpp"):
+        initializers.append(re.search(r"^[ \t]*DAT_05828d58\s*=\s*[^;]+;",
+                                      read_source(path, revision), re.M).group())
+    validate = ('if(DAT_05828d58 != reinterpret_cast<std::uintptr_t>(models)) '
+                '{ std::fputs("Base Models truncada\\n", stderr); std::exit(1); }')
+    initialize = ('\nvoid* DAT_06f42a58;\nvoid InitializeModels(void* models) {'
+                  'DAT_06f42a58 = models;' + initializers[0] + validate
+                  + 'DAT_05828d58 = 0;' + initializers[1] + validate + '}\n')
+    preamble = PREAMBLE.replace("DWORD DAT_05828d58;", declaration + definition)
     scene = read_source("src/Scene/Scene_ObjectUpdate.cpp", revision)
     tick = function(scene, "FUN_004fdc00")
     alpha = function(read_source("src/Render/Particle.cpp", revision), "Alpha")
@@ -195,7 +216,7 @@ def harness(revision=None):
         call = ("float bits; const auto address = static_cast<DWORD>("
                 "reinterpret_cast<std::uintptr_t>(object)); "
                 "std::memcpy(&bits, &address, 4); FUN_004fdc00(bits);")
-    return PREAMBLE + alpha + physics + angles + rotate + ambient + flames + tick + MAIN.replace("CALL_TICK", call)
+    return preamble + initialize + alpha + physics + angles + rotate + ambient + flames + tick + MAIN.replace("CALL_TICK", call)
 
 
 def build_and_run(directory, source, args):

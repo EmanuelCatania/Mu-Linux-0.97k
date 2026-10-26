@@ -674,7 +674,7 @@ int main(int, char**)
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
     if (DAT_05828d58 == 0) {
         DAT_06f42a58=ResourceTables::ModelBase();
-        DAT_05828d58=(DWORD)(uintptr_t)DAT_06f42a58;
+        DAT_05828d58 = reinterpret_cast<std::uintptr_t>(DAT_06f42a58);
     }
 
     // Class name table (DAT_07d2b494, stride 300, indexed por cidx = (klass&7) +

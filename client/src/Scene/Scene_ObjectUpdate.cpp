@@ -1011,7 +1011,7 @@ void __cdecl FUN_004fdc00(OBJECT* object)
   double v1; // st7
   short v3; // ax
   short v4; // ax
-  int v5; // ecx
+  std::uintptr_t v5; // Dirección del modelo, IDA 0x004FDC00.
   float *v6; // ebp
   float *v7; // edi
   double v8; // st7

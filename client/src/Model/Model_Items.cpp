@@ -24,7 +24,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     RenderDerivedState_Cancel();Skinning::Invalidate();
     ResourceTables::ResetModels();
     DAT_06f42a58=ResourceTables::ModelBase();
-    DAT_05828d58=(DWORD)(uintptr_t)DAT_06f42a58;
+    DAT_05828d58 = reinterpret_cast<std::uintptr_t>(DAT_06f42a58);
 
     // ── Korean-locale SMD animations (skipped in compressed-asset mode) ──────
     if (DAT_0055a7c4 == '\0') {

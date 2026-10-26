@@ -653,7 +653,7 @@ DWORD    DAT_05826e10  = 0;
 // BMD_Animation (0x440060 L157-166: `(char *)&unk_5826E18 + 16 * boneIdx`).
 // MAX_BONES = 200, igual que g_BoneScratch → 200 x 16 bytes (paso de 16 por hueso).
 char     DAT_05826e18[200 * 0x10] = {0};
-DWORD    DAT_05828d58  = 0;  // Models
+std::uintptr_t DAT_05828d58 = 0; // Base de Models, sin truncar la dirección.
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
 // BMD bounding-box scratch arrays (BMD_CreateBoundingBox)

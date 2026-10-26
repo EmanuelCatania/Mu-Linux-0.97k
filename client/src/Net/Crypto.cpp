@@ -1080,7 +1080,7 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
     *(int *)(thiz + 0x5c) = model_type;
 
     // model data: DAT_05828d58 + model_type * 0xbc; face list at +0x28
-    int model_base = *(int *)(&DAT_05828d58) + model_type * 0xbc;
+    const std::uintptr_t model_base = DAT_05828d58 + model_type * 0xbc;
     int face_list  = *(int *)(model_base + 0x28);
     int face_entry = face_list + (int)slot * 0x28;
 

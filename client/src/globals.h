@@ -1146,7 +1146,7 @@ extern DWORD   DAT_083bbb74;
 // ── Named pipe handle (0x00563b58) ────────────────────────────────────────────
 
 // ── Model data table (0x05828d58, stride 0xbc per entity_type) ────────────────
-extern DWORD   DAT_05828d58;   // model data array base; slot = DAT_05828d58 + type*0xbc
+extern std::uintptr_t DAT_05828d58; // Base de Models; los desplazamientos siguen expresados en bytes.
 extern void*   DAT_06f42a58;   // model memory pool base (allocated once in Model_LoadItems)
 // BoneVertex pool (see globals.cpp). Backed by g_BoneVertexBuf.
 // DAT_0584621c = base del slot 0; &DAT_0584621c es DWORD*, así que el código existente
