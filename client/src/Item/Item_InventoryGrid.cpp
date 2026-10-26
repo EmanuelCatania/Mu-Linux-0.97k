@@ -339,7 +339,7 @@ unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short* p
 
 // FindEmptySlot @ 0x004D5F20 (~62 lines) — search for empty rectangular area from bottom-right
 // Scans grid from (maxH-itemH, maxW-itemW) upward/leftward for a W*H block of -1 cells.
-int __cdecl FindEmptySlot(int param_1, int param_2, int param_3, int param_4) {
+int __cdecl FindEmptySlot(int param_1, const BYTE* param_2, int param_3, int param_4) {
     // 0x004D5F20 — Search for empty rectangular area from bottom-right
     // param_1 = item type index (for Width/Height from ItemAttribute)
     // param_2 = inventory base pointer (short*, stride 0x44 bytes)
@@ -362,24 +362,24 @@ int __cdecl FindEmptySlot(int param_1, int param_2, int param_3, int param_4) {
     do {
         int gx = param_3 - (int)itemW;
         if (gx >= 0) {
-            BYTE* pCell = (BYTE*)(uintptr_t)(param_2 + (rowBase + gx) * 0x44);
+            const BYTE* pCell = param_2 + (rowBase + gx) * 0x44;
             do {
-                if (*(short*)pCell == -1) {
+                if (*(const short*)pCell == -1) {
                     // Check if full W*H block is empty
                     int ry = 0;
-                    BYTE* pRow = pCell;
+                    const BYTE* pRow = pCell;
                     bool fits = true;
                     if (itemH != 0) {
                         do {
                             int rx = 0;
-                            BYTE* pCol = pRow;
+                            const BYTE* pCol = pRow;
                             if (itemW != 0) {
                                 do {
                             // IDA 0x004D5F20 only tests the item sentinel.  The
                             // former +0x38 condition belongs to a different UI
                             // occupancy convention and made Action's pickup gate
                             // accept partially occupied inventory rectangles.
-                            if (*(short*)pCol != -1) {
+                            if (*(const short*)pCol != -1) {
                                         fits = false;
                                         goto next_cell;
                                     }

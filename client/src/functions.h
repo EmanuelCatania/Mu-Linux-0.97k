@@ -1183,7 +1183,7 @@ void  __cdecl SetItemGridFlag(int param_1, int param_2, unsigned char param_3); 
 int   __cdecl CompareItems(short param_1, int param_2, int param_3); // 0x004CC270
 void  __cdecl SortInventory(short *param_1);                        // 0x004CC3C0
 unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short *p3, int p4, int p5); // 0x004D5D70
-int   __cdecl FindEmptySlot(int p1, int p2, int p3, int p4);       // 0x004D5F20
+int   __cdecl FindEmptySlot(int p1, const BYTE* inventory, int p3, int p4); // IDA: 0x004D5F20
 unsigned int __stdcall Inventory_DropItem(void);                    // 0x004D6470
 long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short *p3, int p4, short *p5); // 0x004DF330
 void  __cdecl InventoryColor(ITEM *p);                              // 0x004E2420
