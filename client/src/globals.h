@@ -470,7 +470,8 @@ extern char    SocketClient[0x260000]; // IDA: SocketClient (0x055CA160)
 #define SocketClientIsGame  (*(DWORD*)(SocketClient + 4))    // IDA: SocketClient.m_bGame (0x055CA164)
 #define SocketClientSocket  (*(SOCKET*)(SocketClient + 8))   // IDA: SocketClient.m_socket (0x055CA168)
 #define SocketClientSendBuffer  ((char*)(SocketClient + 0xC))    // IDA: SocketClient.m_SendBuf (0x055CA16C)
-extern DWORD   SocketClientSendBufferLength; // IDA: SocketClient.m_nSendBufLen (0x055CC16C)
+// El envío y FD_WRITE deben consultar el mismo contador dentro de CWsctlc.
+#define SocketClientSendBufferLength (*(DWORD*)(SocketClient + 0x200C)) // IDA: 0x055CC16C
 extern DWORD   SocketClientLogPrint;         // IDA: SocketClient.m_LogPrint (0x055CE174)
 
 // ── Network / login state (0x05826xxx) ────────────────────────────────────────
