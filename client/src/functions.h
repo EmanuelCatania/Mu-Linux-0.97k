@@ -722,7 +722,7 @@ void  __cdecl Monster_ParseSetBase2(LPCSTR param_1); // FUN_0047d020 — parses 
 void  __cdecl SetMaxTextures(int count); // IDA: SetMaxTextures (0x00505BD0)
 void  __cdecl OpenMonsterModel(int monster_idx);                    // Monster_SetupSoundAnim
 int   __cdecl TextParser_GetToken(void);                         // FUN_0047A1F0 — text-data tokenizer (returns record type)
-void  __cdecl BuxConvert_0(int buf, int len);   // IDA: BuxConvert_0 (0x00479910) -- clave FC CF AB en DAT_00559bb4
+void  __cdecl BuxConvert_0(void* buffer, int len); // IDA: 0x00479910, clave FC CF AB en DAT_00559bb4
 void  __cdecl BuxConvert_1(void* buffer, int size);               // IDA: BuxConvert_1 (0x00401120)
 uint  __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
@@ -834,7 +834,7 @@ int   __cdecl mbclen(const unsigned char *str);         // IsLeadByte — defini
 // ── Terrain helpers ───────────────────────────────────────────────────────────
 void  __cdecl Terrain_Clear(void);  // InitTerrainMappingLayer (IDA) — resets terrain tile buffers
 void  __cdecl ExitProgram(void);   // Terrain_ReadFallback
-void  __cdecl BuxConvert(int data, int size);   // IDA: BuxConvert (0x004F6EB0) -- clave en CERO a proposito, ver globals.cpp
+void  __cdecl BuxConvert(void* data, int size); // IDA: 0x004F6EB0, clave en CERO a propósito, ver globals.cpp
 void  __cdecl CreateTerrainNormal(void); // FUN_004f70b0 (IDA)
 void  __cdecl CreateTerrainLight(void); // IDA: CreateTerrainLight (0x004F71C0)
 uint  __cdecl OpenTerrainHeight(char *path); // FUN_004f7290 (IDA)

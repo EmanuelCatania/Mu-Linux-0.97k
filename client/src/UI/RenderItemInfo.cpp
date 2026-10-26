@@ -111,7 +111,7 @@ static bool GetInventoryItemAddOption(short type, INVENTORY_ITEM_ADD_OPTION& out
             fclose(fp);
 
             if (got == want) {
-                BuxConvert_0((int)s_table, (int)want);
+                BuxConvert_0(s_table, (int)want);
                 s_loaded = true;
                 break;
             }

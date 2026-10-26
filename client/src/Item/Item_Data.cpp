@@ -75,7 +75,7 @@ void __cdecl Item_SaveBMD(const char *path)
         // copy 0x40 bytes from item table slot
         void *src = (void *)(DAT_07d78068 + off);
         memcpy(p, src, 0x40);
-        BuxConvert_0((int)p, 0x40);  // XOR-encrypt
+        BuxConvert_0(p, 0x40);  // XOR-encrypt
         off += 0x40;
         p   += 0x40;
     } while (off < 0x8000);
@@ -140,7 +140,7 @@ void __cdecl Item_LoadBMD(const char *path)
     int  off = 0;
     char *p  = buf;
     do {
-        BuxConvert_0((int)p, 0x40);  // XOR-decrypt
+        BuxConvert_0(p, 0x40);  // XOR-decrypt
         // copy to raw table
         memcpy((char *)DAT_07d78068 + off, p, 0x40);
         // copy to shadow table

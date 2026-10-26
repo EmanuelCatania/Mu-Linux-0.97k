@@ -8,9 +8,9 @@
 // BuxConvert @ 0x004F6EB0 — BuxConvert_1(BYTE* Buffer, int Size)
 // XOR-obfuscates Buffer in place using a 3-byte rotating key at DAT_0055a770.
 // Used for terrain block (.bux) encryption/decryption.
-void __cdecl BuxConvert(int data, int size)
+void __cdecl BuxConvert(void* data, int size)
 {
-    BYTE* Buffer = (BYTE*)data;
+    BYTE* Buffer = static_cast<BYTE*>(data);
     BYTE* key = DAT_0055a770;    // en CERO a proposito: ver globals.cpp
     for (int i = 0; i < size; i++)
         Buffer[i] ^= key[i % 3];

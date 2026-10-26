@@ -26,7 +26,7 @@ void __cdecl Filter_SaveBMD(const char* path)
     char* srcEnd = DAT_07d73104 + sizeof(DAT_07d73104);
     while (src < srcEnd) {
         memcpy(dst, src, 0x14);
-        BuxConvert_0((int)dst, 0x14);
+        BuxConvert_0(dst, 0x14);
         src += 0x14;
         dst += 0x14;
     }
@@ -89,7 +89,7 @@ void __cdecl OpenFilterFile(const char* path)
     char* dst = DAT_07d73104;
     char* end = DAT_07d73104 + sizeof(DAT_07d73104);
     while (dst < end) {
-        BuxConvert_0((int)src, 0x14);
+        BuxConvert_0(src, 0x14);
         memcpy(dst, src, 0x14);
         if (*dst == '\0') break;
         src   += 0x14;
@@ -132,7 +132,7 @@ void __cdecl FilterName_SaveBMD(const char* path)
     char* srcEnd = DAT_07d27610 + sizeof(DAT_07d27610);
     while (src < srcEnd) {
         memcpy(dst, src, 0x14);
-        BuxConvert_0((int)dst, 0x14);
+        BuxConvert_0(dst, 0x14);
         src += 0x14;
         dst += 0x14;
     }
@@ -191,7 +191,7 @@ void __cdecl OpenNameFilterFile(const char* path)
     char* dst = DAT_07d27610;
     char* end = DAT_07d27610 + sizeof(DAT_07d27610);
     while (dst < end) {
-        BuxConvert_0((int)src, 0x14);
+        BuxConvert_0(src, 0x14);
         memcpy(dst, src, 0x14);
         if (*dst == '\0') break;
         src   += 0x14;

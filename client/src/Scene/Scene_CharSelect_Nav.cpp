@@ -839,7 +839,7 @@ void __cdecl SkillAttribute_SaveBin(const char *param_1)
         char *pcVar4 = pcVar3;
         for (int i = 0x4b; i != 0; i--, pcVar4 += 4, pBuf += 4)
             *(DWORD *)pBuf = *(DWORD *)pcVar4;
-        BuxConvert_0((int)Buffer, 300);
+        BuxConvert_0(Buffer, 300);
         crt_fwrite((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
         // IDA usa la dirección absoluta 0x7d73104 como bound. La base es
@@ -1146,7 +1146,8 @@ void FUN_00401020(void) {}
 // BuxConvert_1 @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
 // 3-byte repeating XOR key at bBuxCode.
 void __cdecl BuxConvert_1(void* buffer, int size) {
-    const int buf = (int)(uintptr_t)buffer;
+    // IDA 0x00401120 recorre el buffer con un puntero a byte.
+    byte* buf = static_cast<byte*>(buffer);
     for (int i = 0; i < size; i++)
         *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
 }
@@ -2103,7 +2104,8 @@ void CheckSprites(void)
 }
 
 // BuxConvert_0 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
-void __cdecl BuxConvert_0(int buf, int len) {
+void __cdecl BuxConvert_0(void* buffer, int len) {
+    BYTE* buf = static_cast<BYTE*>(buffer);
     for (int i = 0; i < len; i++)
         *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
 }

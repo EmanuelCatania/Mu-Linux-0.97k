@@ -120,7 +120,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
 
     static unsigned char attBuf[65539];
     fread(attBuf, 65539, 1, fp);
-    BuxConvert((int)attBuf, 65539);   // BuxConvert_1 (3-byte XOR key)
+    BuxConvert(attBuf, 65539);   // BuxConvert_1 (3-byte XOR key)
 
     memcpy(TerrainWall, attBuf + 3, 65536);
 

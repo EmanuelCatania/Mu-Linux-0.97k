@@ -28,7 +28,7 @@ void __cdecl Dialog_LoadBMD(const char *path)
     DWORD *end = DAT_07cf5608 + (0x32000 / 4);   // 200KB array end (era literal 0x7d27608 en binario original)
     do {
         crt_fread(buf, 0x400, 1, (int *)fp);
-        BuxConvert_0((int)buf, 0x400);
+        BuxConvert_0(buf, 0x400);
         DWORD *next = dst + 0x100;
         const char *src = buf;
         for (int i = 0x100; i != 0; i--) {

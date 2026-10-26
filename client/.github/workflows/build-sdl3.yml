@@ -38,12 +38,16 @@ jobs:
       - name: Configurar Windows
         if: runner.os == 'Windows'
         run: cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
-      - name: Verificar transporte del puntero de objeto (Windows x64 aislado)
+      - name: Verificar punteros de objetos y assets (Windows x64 aislado)
         if: runner.os == 'Windows' && matrix.config == 'Release'
-        run: python tests/SceneObjectPointer.py --architecture x64
-      - name: Verificar transporte del puntero de objeto (Linux x64 aislado)
+        run: |
+          python -B tests/SceneObjectPointer.py --architecture x64
+          python -B tests/BuxPointer.py --architecture x64
+      - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
-        run: python3 tests/SceneObjectPointer.py --generator Ninja
+        run: |
+          python3 -B tests/SceneObjectPointer.py --generator Ninja
+          python3 -B tests/BuxPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
