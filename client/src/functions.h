@@ -492,7 +492,7 @@ void  __cdecl Matrix_BuildFromEuler(float *angles, float *out_mat12);       // M
 float* __cdecl Vector_Rotate(float *pt, float *mat12, float *out);    // Matrix_TransformPoint
 void  __cdecl Vector_Transform(float *pt, float *mat12, float *out);    // Matrix_TransformPoint (alt)
 void  __cdecl Vector_InverseRotate(float *vec, float *mat12, float *out);   // Vec3_Transform
-void  __cdecl EulerToQuat(int, int, int, int);
+void  __cdecl EulerToQuat(const float*, float*, int, int);
 void  __cdecl QuatToMatrix(const float*, float*, int, int);
 void  __cdecl QuatSlerp(int, int, int, int);
 void  __cdecl Triangle_ComputeNormal(float *origin, float *A, float *B, float *out_normal); // Vec3_ComputePlaneNormal

@@ -86,10 +86,8 @@ void __cdecl R_ConcatTransforms(float *p, float *r, float *o) {
 
 // EulerToQuat @ 0x004FA1D0 — EulerToQuat(angles[3], out_quat[4])
 // Converts Euler XYZ (game angle units) to quaternion (x,y,z,w).
-// Declared as (int,int,int,int) in functions.h; callers pass float* cast to int.
-void __cdecl EulerToQuat(int ia, int ib, int ic, int id) {
-    float *param_1 = (float*)ia;
-    float *param_2 = (float*)ib;
+// Los buffers conservan sus direcciones completas; los extras se ignoran.
+void __cdecl EulerToQuat(const float* param_1, float* param_2, int ic, int id) {
     (void)ic; (void)id;
     float k   = _DAT_00552ce0;
     float sz  = sinf(param_1[2] * k), cz = cosf(param_1[2] * k);

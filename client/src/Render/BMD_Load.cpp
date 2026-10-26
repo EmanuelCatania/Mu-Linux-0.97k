@@ -360,8 +360,9 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
                 memcpy((void *)*(int *)(entry + 4), Buffer + cursor, rotSz); cursor += rotSz;
 
                 for (int k = 0; k < mV; k++) {
-                    EulerToQuat(*(int *)(entry + 4) + k * 0xc,
-                                 *(int *)(entry + 8) + k * 0x10, 0, 0);
+                    // El layout del registro conserva direcciones de 32 bits; queda para B2.
+                    EulerToQuat(reinterpret_cast<const float*>(static_cast<uintptr_t>(*(unsigned int*)(entry + 4))) + k * 3,
+                                reinterpret_cast<float*>(static_cast<uintptr_t>(*(unsigned int*)(entry + 8))) + k * 4, 0, 0);
                 }
             }
         }

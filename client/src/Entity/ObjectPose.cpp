@@ -161,8 +161,8 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                     posB[0] = *(float*)(animPtrB[1] + curFrameB * 0xc)     - param_6[0] * _DAT_005528b0;
                     posB[1] = *(float*)(animPtrB[1] + curFrameB * 0xc + 4);
                     posB[2] = *(float*)(animPtrB[1] + curFrameB * 0xc + 8) - param_6[1] * _DAT_005528b0;
-                    EulerToQuat((int)&posA[0], (int)&quatA[0], 0, 0);
-                    EulerToQuat((int)&posB[0], (int)&quatB[0], 0, 0);
+                    EulerToQuat(posA, quatA, 0, 0);
+                    EulerToQuat(posB, quatB, 0, 0);
                 } else {
                     // regular bone: read quaternion from anim table
                     int frameOff = v39 * 0x10;
