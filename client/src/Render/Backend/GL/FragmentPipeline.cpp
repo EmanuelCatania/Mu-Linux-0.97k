@@ -223,7 +223,7 @@ std::string ModelVertex(const char* source){
     ReplaceAll(text,"ftransform()","bmdMVP*vec4(bmdPosition,1)");
     ReplaceAll(text,"gl_ModelViewProjectionMatrix","bmdMVP");ReplaceAll(text,"gl_ModelViewMatrix","bmdView");ReplaceAll(text,"gl_TextureMatrix[0]","bmdTexture");
     ReplaceAll(text,"gl_Vertex","vec4(bmdPosition,1)");ReplaceAll(text,"gl_Color","bmdPrimary");ReplaceAll(text,"gl_MultiTexCoord0","bmdCoord");
-    ReplaceAll(text,"gl_FrontColor","bmdColor");ReplaceAll(text,"gl_BackColor","bmdColor");ReplaceAll(text,"gl_TexCoord[0]","bmdUV");ReplaceAll(text,"gl_FogFragCoord","bmdFog");ReplaceAll(text,"gl_ClipVertex=eye;","");
+    ReplaceAll(text,"gl_FrontColor","bmdColor");ReplaceAll(text,"gl_BackColor","bmdColor");ReplaceAll(text,"gl_TexCoord[0]","bmdUV");ReplaceAll(text,"gl_FogFragCoord","bmdFog");
     return text;
 }
 std::string ModelFragment(){

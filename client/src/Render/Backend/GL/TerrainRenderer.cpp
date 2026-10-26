@@ -72,7 +72,8 @@ void main() {
     vec4 pos=vec4(p.xyz,1);
     gl_Position=gl_ModelViewProjectionMatrix*pos;
     vec4 eye=gl_ModelViewMatrix*pos;
-    fogDistance=abs(eye.z);gl_ClipVertex=eye;
+    // El cliente no activa planos de recorte de usuario (issue #240).
+    fogDistance=abs(eye.z);
 }
 )GLSL";
 const char* fragment=R"GLSL(#version 330 compatibility
