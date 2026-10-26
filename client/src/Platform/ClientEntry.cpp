@@ -612,7 +612,7 @@ int main(int, char**)
     memset(DAT_07cf1ff0, 0, 0x2000 * 4);
 
     // Array de entidades — CRÍTICO, todo lo accede
-    DAT_055c9e48 = (DWORD)malloc(0x764d4);
+    DAT_055c9e48 = reinterpret_cast<std::uintptr_t>(malloc(0x764d4));
     DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * 0x394;
     memset((void*)DAT_07abf5d0, 0, 0x166b5 * 4);
 

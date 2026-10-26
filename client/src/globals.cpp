@@ -533,7 +533,7 @@ DWORD    DAT_055c9bf0  = 0;
 DWORD    DAT_055c9d00  = 0;
 DWORD    DAT_055c9e04  = 0;
 std::uintptr_t DAT_055c9e44 = 0; // Reserva de atributos primarios de items.
-DWORD    DAT_055c9e48  = 0;
+std::uintptr_t DAT_055c9e48 = 0;
 int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
 DWORD    DAT_055c9ff4  = 0;
@@ -707,7 +707,7 @@ char     g_BoneScratch[200 * 0x30] = {0};   // = 0x2580 (BoneTransform[200][3][4
 // acceden por macros (ver globals.h).
 char     DAT_07abf050[0x580] = {0};
 char     DAT_07d2b494[9000] = {};  // class name table (stride 300, 30 slots) — símbolo aparte
-DWORD    CharactersClient  = 0; // IDA: DAT_07abf5d0 (0x07ABF5D0)
+std::uintptr_t CharactersClient = 0; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 int      DAT_07abf5d4  = 0;
 char    *Hero  = NULL; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 DWORD    DAT_07abf5dc  = 0;

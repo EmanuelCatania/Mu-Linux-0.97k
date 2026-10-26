@@ -440,7 +440,7 @@ extern DWORD   DAT_055c9bf0;
 extern DWORD   DAT_055c9d00;
 extern DWORD   DAT_055c9e04;
 extern std::uintptr_t DAT_055c9e44; // Reserva de la tabla primaria de atributos de items.
-extern DWORD   DAT_055c9e48;
+extern std::uintptr_t DAT_055c9e48;
 // RandomTable @ 0x055C9E58 — 100 enteros (`rand() % 360`) que siembra WinMain
 // (0x41E8A0 L522-525).  Sólo lo usa Entity_Render (0x5038E0) para repartir en
 // círculo las monedas del montón de Zen del suelo.
@@ -603,7 +603,7 @@ extern char    DAT_07d2b494[];  // class name table (stride 300, 30 slots)
 #define _DAT_07abf5c4 (*(float*)(DAT_07abf050 + 0x574))  // preview entity field (BodyOrigin x)
 #define _DAT_07abf5c8 (*(float*)(DAT_07abf050 + 0x578))  // preview entity field (BodyOrigin y)
 #define _DAT_07abf5cc (*(float*)(DAT_07abf050 + 0x57c))  // preview entity field (BodyOrigin z)
-extern DWORD   CharactersClient; // IDA: DAT_07abf5d0 (0x07ABF5D0)
+extern std::uintptr_t CharactersClient; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 extern int     DAT_07abf5d4;   // visible entity counter (reset each frame)
 extern char   *Hero; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 extern DWORD   DAT_07abf5dc;
