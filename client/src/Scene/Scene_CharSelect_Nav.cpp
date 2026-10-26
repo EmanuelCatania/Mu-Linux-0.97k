@@ -1747,10 +1747,9 @@ LABEL_85:
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
 // Si el tipo de entidad != 0x186: alterna la acción 3/4 según el contador de combo % 3
 // If entity type == 0x186 (special): SetAttackSpeed, class-specific action (0x52/0x53 random, 0x56 swim, 0x5b certain classes)
-// Declarada en functions.h como SetPlayerMagic(int param_1)
+// Declarada en functions.h como SetPlayerMagic(CHARACTER* c)
 // IDA: SetPlayerMagic (0x00444A80)
-void __cdecl SetPlayerMagic(int param_1) {
-    DWORD c = (DWORD)param_1;
+void __cdecl SetPlayerMagic(CHARACTER* c) {
     if (c == 0) return;
     short entityType = AsCharacter(c)->Object.Type;
     if (entityType != 0x186) {

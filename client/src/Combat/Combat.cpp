@@ -965,7 +965,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
         return AF_LABEL_322;                                  // IDA L1886
     // IDA L1917-2158: Heal / Greater Defense / Greater Damage sobre el heroe.
     Attack_SendSkill19_97k(iType, (WORD)HeroKey);
-    SetPlayerMagic((int)(uintptr_t)entity);                     // IDA LABEL_1430: SetPlayerMagic
+    SetPlayerMagic(AsCharacter(entity));                     // IDA LABEL_1430: SetPlayerMagic
     return AF_RETURN;
 }
 
@@ -992,7 +992,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
         if ((int)gMapManager.GetCurrentMap() == 10)                        // IDA L2617: World == 10
             return AF_RETURN;
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
-        SetPlayerMagic((int)(uintptr_t)entity);                 // IDA LABEL_1430
+        SetPlayerMagic(AsCharacter(entity));                 // IDA LABEL_1430
         return AF_RETURN;
     }
 
@@ -1204,7 +1204,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         // IDA L7508-7754: sin objetivo el skill se lanza sobre uno mismo.
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
     }
-    SetPlayerMagic((int)(uintptr_t)entity);                     // IDA LABEL_1157: SetPlayerMagic
+    SetPlayerMagic(AsCharacter(entity));                     // IDA LABEL_1157: SetPlayerMagic
     Attack_Label1158_97k(entity, iType, hasTarget);           // IDA: cae en LABEL_1158
 }
 
@@ -1246,13 +1246,13 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0,
                                       (int)(AsCharacter(entity)->TargetPosition[0] * 0.01f),
                                       (int)(AsCharacter(entity)->TargetPosition[1] * 0.01f));
-            SetPlayerMagic((int)(uintptr_t)entity);             // IDA LABEL_1430
+            SetPlayerMagic(AsCharacter(entity));             // IDA LABEL_1430
             return;
         case 8:                                               // IDA L8369
         case 9:
             CurrentSkill = (DWORD)iType;
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0);
-            SetPlayerMagic((int)(uintptr_t)entity);             // IDA LABEL_1430
+            SetPlayerMagic(AsCharacter(entity));             // IDA LABEL_1430
             return;
         case 12:                                              // IDA L8800 — Aqua Beam
             if (*(WORD *)&AsCharacter(entity)->Object.Type != 390)
@@ -1874,14 +1874,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         if (elapsed > 0x80000000u)
             elapsed = (DWORD)(-(int)elapsed);
         if (elapsed <= 300) {
-            SetPlayerMagic(c);
+            SetPlayerMagic(AsCharacter(c));
             return;
         }
         g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, skillId,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
         gNetwork.Send(packet, sizeof(packet));
-        SetPlayerMagic(c);
+        SetPlayerMagic(AsCharacter(c));
         return;
     }
 

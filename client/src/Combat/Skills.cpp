@@ -91,7 +91,7 @@ static void AnimateRemoteSkillCaster97k(BYTE* caster)
     if (!caster || caster == (BYTE*)DAT_07abf5d8)
         return;
     if (*(WORD*)(caster + 2) == 390)
-        SetPlayerMagic((int)(intptr_t)caster);
+        SetPlayerMagic(AsCharacter(caster));
     else
         SetPlayerAttack((int)(intptr_t)caster, 0, 0, 0);
     *(DWORD*)(caster + 264) = 0;

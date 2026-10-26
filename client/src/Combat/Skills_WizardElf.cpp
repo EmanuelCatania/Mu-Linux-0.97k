@@ -213,7 +213,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     // Ghidra: SetPlayerMagic @ 0x00444a80
     // If entity type != 0x186: alternate between action 3 and 4 based on combo counter % 3
     // If entity type == 0x186: SetAttackSpeed, then class-specific action
-    SetPlayerMagic((int)c);
+    SetPlayerMagic(AsCharacter(c));
 }
 
 // ── SkillElf support ──────────────────────────────────────────────────────────

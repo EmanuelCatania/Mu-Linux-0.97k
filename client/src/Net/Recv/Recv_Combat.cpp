@@ -554,7 +554,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 43: SetAction(AsObject(caster), 67); break;
         case 47: SetAction(AsObject(caster), 66); break;
         case 56: SetAction(AsObject(caster), 81); break;
-        default: SetPlayerMagic((int)caster); break;
+        default: SetPlayerMagic(AsCharacter(caster)); break;
         }
     } else {
         SetPlayerAttack((int)caster, 0, 0, 0);
