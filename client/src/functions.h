@@ -1221,7 +1221,7 @@ bool  __cdecl AttackStage(DWORD c, DWORD o);                       // 0x00448930
 // IDA: FUN_00451f30
 void  __cdecl Combat_SpawnDeathDustParticles(int entity);
 // IDA: FUN_00452030
-void  __cdecl Combat_SpawnIdleAmbientParticle(int entity);
+void  __cdecl Combat_SpawnIdleAmbientParticle(OBJECT* entity);
 void  __stdcall MoveCharactersClient(void);                         // 0x00455010
 unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char *param_1);   // hash read 1-byte (0x0045FAE0)
 void  __cdecl Effect_SpawnBombRing(float *param_1); // IDA: FUN_00466300

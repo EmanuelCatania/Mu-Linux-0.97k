@@ -399,7 +399,8 @@ void __cdecl Combat_SpawnDeathDustParticles(int a1)
 // IDA: FUN_00452030 @ 0x00452030 (~30 lines) — idle ambient particle (single spark)
 // When entity anim state == 2 (combat/active), spawn one particle (type 0x4c5)
 // at random offset (0..199) minus grid scale from entity X/Y position.
-void __cdecl Combat_SpawnIdleAmbientParticle(int param_1) {
+void __cdecl Combat_SpawnIdleAmbientParticle(OBJECT* object) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     if (*(char*)(param_1 + 0x105) != '\x02') return;
 
     int r1 = rand();
