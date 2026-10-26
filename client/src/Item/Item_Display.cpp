@@ -92,7 +92,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
         // modelo = tipo + 400; el catálogo da el tipo de ese modelo.
         int attrIdx = gContentCatalog.GetModelItemType((int)v7);
         if (attrIdx < 0) attrIdx = (int)v7 - ITEM_MODEL_BASE;
-        unsigned int abase = ItemAttribute_Base();
+        std::uintptr_t abase = ItemAttribute_Base();
         if (abase && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }

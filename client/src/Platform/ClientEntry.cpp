@@ -605,7 +605,7 @@ int main(int, char**)
     // ItemAttribute — base aleatorizada (anti-tamper, pero igual necesitamos el alloc)
     // DESVIACION (0.97.20): la tabla tiene ITEM_MAX_EX filas (agregados del
     // catálogo del server por encima de 512); el binario reservaba 0x18000.
-    DAT_055c9e44 = (DWORD)malloc((ITEM_MAX_EX + 0x400) * 0x40);
+    DAT_055c9e44 = reinterpret_cast<std::uintptr_t>(malloc((ITEM_MAX_EX + 0x400) * 0x40));
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
     memset((void*)DAT_07d78068, 0, ITEM_MAX_EX * 0x40);
     DAT_07cf1ff0 = static_cast<BYTE*>(malloc(0x8000));

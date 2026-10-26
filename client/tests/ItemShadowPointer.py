@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Verifica la tabla sombra de items con item.bmd y el lector/escritor reales.
 
-La base primaria todavía queda bajo 4 GiB: su migración no es parte de este
-cambio. La conversión de nombres se sustituye por un validador de direcciones.
+Las bases primaria y sombra se prueban por separado sobre 4 GiB.
+La conversión de nombres se sustituye por un validador de direcciones.
 """
 import argparse
 import json
@@ -63,15 +63,17 @@ void Run(std::uintptr_t address, const std::vector<BYTE>& file) {
 }
 int main() {
     const auto file = Read(SAMPLE_PATH); Require(file.size() == 0x8004);
-    primary = static_cast<BYTE*>(Reserve(0x60000000u)); Require(primary != nullptr);
-    primary += 16;
-    // Contrato primario heredado, expresamente fuera del alcance de esta prueba.
-    DAT_07d78068 = static_cast<int>(reinterpret_cast<std::uintptr_t>(primary));
-    Run(0x61000000u, file);
-    if(sizeof(void*) > 4) {
-        Run(std::uint64_t(0x161000000ull), file);
-        std::puts("sombra de items sobre 4 GiB: reserva, lector/escritor y canarios correctos");
+    const int combinations = sizeof(void*) > 4 ? 2 : 1;
+    for(int high = 0; high < combinations; ++high) {
+        const std::uintptr_t address = high ? std::uint64_t(0x160000000ull) : 0x60000000u;
+        auto* allocation = static_cast<BYTE*>(Reserve(address)); Require(allocation != nullptr);
+        primary = allocation + 64;
+        SetPrimary(address, reinterpret_cast<std::uintptr_t>(primary));
+        ValidatePrimary();
+        Run(0x61000000u + high * 0x10000u, file);
+        if(sizeof(void*) > 4) Run(std::uint64_t(0x161000000ull) + high * 0x10000u, file);
     }
+    if(sizeof(void*) > 4) std::puts("bases primaria y sombra sobre 4 GiB: lectores, accesores y canarios correctos");
     std::puts("item.bmd: 512 registros de 64 bytes, sombra y checksum sin cambios");
 }
 '''
@@ -81,9 +83,36 @@ def harness(revision=None):
     header = read_source("src/globals.h", revision)
     globals_source = read_source("src/globals.cpp", revision)
     declarations = ""
-    for name in ("DAT_07d78068", "DAT_07cf1ff0"):
+    for name in ("DAT_055c9e44", "DAT_07d78068", "DAT_07cf1ff0"):
         declarations += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         declarations += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", globals_source, re.M).group()
+    accessors = ""
+    for name in ("ItemAttribute_Base", "ItemAttribute_IsRow"):
+        accessors += re.search(rf"static __forceinline [^\n]*\b{name}\([^{{]*\{{.*?^\}}", header, re.M | re.S).group()
+    setup = r"""
+void SetPrimary(std::uintptr_t allocation, std::uintptr_t base) {
+    DAT_055c9e44 = static_cast<decltype(DAT_055c9e44)>(allocation);
+    DAT_07d78068 = static_cast<decltype(DAT_07d78068)>(base);
+}
+void ValidatePrimary() {
+    const auto allocation = static_cast<std::uintptr_t>(DAT_055c9e44);
+    const auto base = reinterpret_cast<std::uintptr_t>(primary);
+    Require(ItemAttribute_Base() == base);
+    Require(ItemAttribute_IsRow(base) && ItemAttribute_IsRow(base + (ITEM_MAX_EX - 1) * 64));
+    Require(!ItemAttribute_IsRow(base - 64) && !ItemAttribute_IsRow(base + 1));
+    Require(!ItemAttribute_IsRow(base + ITEM_MAX_EX * 64));
+    for(auto offset : {0u, 64u, 0x3ffu * 64u, 0x400u * 64u}) {
+        SetPrimary(allocation, allocation + offset); Require(ItemAttribute_Base() == allocation + offset);
+    }
+    for(auto invalid : {allocation - 64, allocation + 1, allocation + 0x401u * 64u}) {
+        SetPrimary(allocation, invalid); Require(ItemAttribute_Base() == 0);
+    }
+    SetPrimary(0, base); Require(ItemAttribute_Base() == 0);
+    SetPrimary(allocation, base);
+}
+"""
+    constants = read_source("src/Item/ItemDefines.h", revision)
+    item_max = "\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;", constants, re.M))
     allocation = re.search(r"^[ \t]*DAT_07cf1ff0\s*=\s*[^;]+;",
                            read_source("src/Platform/ClientEntry.cpp", revision), re.M).group()
     allocation = allocation.replace("malloc(0x8000)", "AllocateShadow(0x8000)")
@@ -92,7 +121,7 @@ def harness(revision=None):
     sample = ROOT / "bin/Client/Data/Local/item.bmd"
     if not sample.is_file():
         raise FileNotFoundError(sample)
-    return (IO_PREAMBLE.split("BYTE* reservation;")[0] + EXTRA + declarations + TEXT
+    return (IO_PREAMBLE.split("BYTE* reservation;")[0] + "\n#ifndef _MSC_VER\n#define __forceinline inline\n#endif\n" + item_max + EXTRA + declarations + accessors + setup + TEXT
             + "void InitializeShadow() {" + allocation + "}\n"
             + function(scene, "BuxConvert_0") + function(data, "Item_LoadBMD")
             + function(data, "Item_SaveBMD") + MAIN.replace("SAMPLE_PATH", json.dumps(str(sample))))

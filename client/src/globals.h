@@ -439,7 +439,7 @@ extern DWORD   DAT_055c9bec;
 extern DWORD   DAT_055c9bf0;
 extern DWORD   DAT_055c9d00;
 extern DWORD   DAT_055c9e04;
-extern DWORD   DAT_055c9e44;
+extern std::uintptr_t DAT_055c9e44; // Reserva de la tabla primaria de atributos de items.
 extern DWORD   DAT_055c9e48;
 // RandomTable @ 0x055C9E58 — 100 enteros (`rand() % 360`) que siembra WinMain
 // (0x41E8A0 L522-525).  Sólo lo usa Entity_Render (0x5038E0) para repartir en
@@ -1252,7 +1252,7 @@ extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por l
 // extern char    DAT_07d34134;        // class name table B (first entry base)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d34260;        // class info list B (stride 300, limit 0x7d358a4)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d358a4;        // class name / info buffer C   // -> alias a GlobalText, ver el final del archivo
-extern "C" int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
+extern "C" std::uintptr_t DAT_07d78068; // Base desplazada de atributos de items, filas de 64 bytes.
 // ── Posición del item que se está arrastrando ───────────────────────────────
 // En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
 // slot 32, campo Type en offset 0) — lo usan sub_47D410 (preview de stats) y el
@@ -1268,9 +1268,9 @@ extern "C" BYTE Inventory[];
 
 // Base de la tabla ItemAttribute.  Devuelve 0 si todavia no se cargo, para
 // que los callers no computen attrBase = type*0x40 + basura.
-static __forceinline unsigned int ItemAttribute_Base(void) {
-    const unsigned int p = (unsigned int)DAT_07d78068;
-    const unsigned int allocation = (unsigned int)DAT_055c9e44;
+static __forceinline std::uintptr_t ItemAttribute_Base(void) {
+    const std::uintptr_t p = DAT_07d78068;
+    const std::uintptr_t allocation = DAT_055c9e44;
     // Reserva: (ITEM_MAX_EX + 0x400) filas de 64 bytes, con base
     // desplazada hasta 0x3ff filas. No asumir un mapa virtual de Windows.
     if (!allocation || p < allocation || p - allocation > 0x400u * 64u ||

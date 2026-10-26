@@ -40,11 +40,11 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
 // La tabla la carga `Item_LoadFromBmd` desde Data\Local\Item.bmd al startup.
 // Si no está cargada (ItemAttribute=0 o type fuera de rango), defaulteamos
 // a 1×1 (worst case visualmente, pero al menos el item aparece).
-extern "C" int DAT_07d78068;
+extern "C" std::uintptr_t DAT_07d78068;
 
 static inline ITEM_ATTRIBUTE* Item_GetAttribute(int type)
 {
-    const unsigned int p = ItemAttribute_Base();
+    const std::uintptr_t p = ItemAttribute_Base();
     if (!p) return nullptr;  // tabla sin cargar → no crash
     if (type < 0 || type >= ITEM_MAX_EX) return nullptr;   // 0.97.20: índice de 13 bits
     return &((ITEM_ATTRIBUTE*)(uintptr_t)p)[type];

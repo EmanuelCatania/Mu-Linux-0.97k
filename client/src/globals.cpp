@@ -532,7 +532,7 @@ DWORD    DAT_055c9bec  = 0;
 DWORD    DAT_055c9bf0  = 0;
 DWORD    DAT_055c9d00  = 0;
 DWORD    DAT_055c9e04  = 0;
-DWORD    DAT_055c9e44  = 0;
+std::uintptr_t DAT_055c9e44 = 0; // Reserva de atributos primarios de items.
 DWORD    DAT_055c9e48  = 0;
 int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
@@ -1281,7 +1281,7 @@ int      DAT_07ea7b10[30] = {};  // TextBold      - 30 slots, igual que lpString
 // DAT_07d329c4 / DAT_07d32af0 / DAT_07d34134 / DAT_07d34260 / DAT_07d358a4 son
 // GlobalText[120] / [121] / [140] / [141] / [160] (ver el bloque de alias al final
 // de globals.h).
-int      DAT_07d78068 = 0;
+std::uintptr_t DAT_07d78068 = 0; // Base de atributos primarios de items.
 // El backup de DAT_07d78068 está en Render/Render_Frame.cpp y no acá: junto a
 // DAT_07d78068 lo pisaba el mismo escritor (dos ints consecutivos).
 // IDA: FontHeight (0x07D78080) vive en CFont.

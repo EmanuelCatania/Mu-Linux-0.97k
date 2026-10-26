@@ -1780,7 +1780,7 @@ void __cdecl FUN_004d1fc0(void) {
 //   c+0x2BE word   (= c+846) class-change indicator
 //
 // Hash-table refcounting (líneas 181-433 IDA) es anti-tamper, omitido.
-extern int DAT_07d78068;   // ItemAttribute base (declared in globals.h)
+extern std::uintptr_t DAT_07d78068;   // ItemAttribute base (declared in globals.h)
 
 // IDA: SetPlayerStop (0x004430C0)
 void __cdecl SetPlayerStop(int c) {
@@ -1806,7 +1806,7 @@ void __cdecl SetPlayerStop(int c) {
     // como 0xFFFF con la mano vacía), igual que el resto de los accesos a
     // ItemAttribute.
     auto ItemTwoHand = [](int type) -> unsigned char {
-        unsigned int base = ItemAttribute_Base();
+        std::uintptr_t base = ItemAttribute_Base();
         if (!base) return 0;
         int idx = type - 399;
         if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34

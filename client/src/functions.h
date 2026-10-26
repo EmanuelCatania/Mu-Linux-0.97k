@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 struct OBJECT;
+struct ITEM_ATTRIBUTE;
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
 // functions.h — Prototypes for all FUN_ (unresolved) functions.
@@ -438,7 +439,7 @@ void  __cdecl Cursor_Render(void);                                              
 void  __cdecl Input_ProcessFunctionKeys(void);      // IDA: CheckFunctionButtons
 void  __cdecl UI_UpdateFpsCounter(void);                                         // IDA: RenderDebugWindow
 void  __cdecl RenderHelpWindow(void);
-unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int level); // IDA: FUN_004C45C0
+unsigned int __cdecl Item_CalculateMaxDurability(void* item, ITEM_ATTRIBUTE* attr, int level); // IDA: 0x004C45C0
 int          __cdecl Item_CalculateValue(void* item, int sellMode);                    // IDA: FUN_0047C690
 unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxDurability, short Type, char* Text); // IDA: FUN_004C3EF0
 // GetScreenWidth — declared above as int(void) GetLoginAnimTime

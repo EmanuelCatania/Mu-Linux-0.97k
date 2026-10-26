@@ -250,7 +250,7 @@ unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short* p
 
     // Get picked item dimensions from ItemAttribute table
     short pickedType = *(short*)DAT_07e91350;
-    int attrBase = (int)pickedType * 0x40 + DAT_07d78068;
+    std::uintptr_t attrBase = (int)pickedType * 0x40 + DAT_07d78068;
     unsigned int itemW = (unsigned int)*(unsigned char*)(attrBase + 0x20);  // Width
     unsigned int itemH = (unsigned int)*(unsigned char*)(attrBase + 0x21);  // Height
 
@@ -347,7 +347,7 @@ int __cdecl FindEmptySlot(int param_1, int param_2, int param_3, int param_4) {
     // Returns low byte=1 if found, 0 otherwise.
 
 
-    int attrBase = param_1 * 0x40 + DAT_07d78068;
+    std::uintptr_t attrBase = param_1 * 0x40 + DAT_07d78068;
     unsigned int itemH = (unsigned int)*(unsigned char*)(attrBase + 0x21);  // Height
     unsigned int itemW = (unsigned int)*(unsigned char*)(attrBase + 0x20);  // Width
     if (itemW == 0 || itemW > 8 || itemH == 0 || itemH > 8) {

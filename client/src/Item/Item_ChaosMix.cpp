@@ -78,7 +78,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                         totalItems++;
 
                         // Update max dimensions
-                        int attrBase = iVar5 * 0x40 + DAT_07d78068;
+                        std::uintptr_t attrBase = iVar5 * 0x40 + DAT_07d78068;
                         if (DAT_0055a3f8 <= (int)(unsigned int)*(unsigned char*)(attrBase + 0x20)) {
                             DAT_0055a3f8 = (int)(unsigned int)*(unsigned char*)(attrBase + 0x20);
                         }
@@ -360,7 +360,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
                 if (itemType != (short)0xFFFF && *(int *)&AsItem(itemPtr)->Key > 0) {
                     ++*(int*)(counts + 1);
 
-                    int attrBase = DAT_07d78068 + itemType * 0x40;
+                    std::uintptr_t attrBase = DAT_07d78068 + itemType * 0x40;
                     const int kind = ItemBehaviorType(itemType);   // 0.97.20: rangos y recetas por comportamiento
                     int attrW = *(unsigned char*)(attrBase + 0x20);
                     int attrH = *(unsigned char*)(attrBase + 0x21);

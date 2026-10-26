@@ -156,7 +156,7 @@ int __cdecl ItemValue_MuEmu(void* item, int goldType)
 {
     const ITEM* ip = (const ITEM*)item;
     if (!ip || ip->Type == -1 || ip->SpecialNum > MAX_SPECIAL_OPTION) return 0;
-    const unsigned int attrBase = ItemAttribute_Base();
+    const std::uintptr_t attrBase = ItemAttribute_Base();
     if (!attrBase || ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return 0;
     const ITEM_ATTRIBUTE* info = (const ITEM_ATTRIBUTE*)(uintptr_t)(attrBase + ip->Type * sizeof(ITEM_ATTRIBUTE));
     // 0.97.20: igual que CItem::Value del server, los rangos van por el

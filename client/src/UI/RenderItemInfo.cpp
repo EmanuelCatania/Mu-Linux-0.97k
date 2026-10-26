@@ -739,7 +739,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
 
 }
 
-static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned int level, int attrBase)
+static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned int level, std::uintptr_t attrBase)
 {
     if (!ip || !p || DAT_07eaa154 >= 28)
         return;
@@ -834,7 +834,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
             addFmt(GlobalText[69], (int)ip->Durability, C_WHITE);
             success = true;
         } else if (bDurExist) {
-            unsigned int maxDurability = Item_CalculateMaxDurability(ip, attrBase, (int)level) & 0xFFFF;
+            unsigned int maxDurability = Item_CalculateMaxDurability(ip, (ITEM_ATTRIBUTE*)attrBase, (int)level) & 0xFFFF;
             addFmt2(GlobalText[71], (int)ip->Durability, (int)maxDurability, C_WHITE);
             success = true;
         }
@@ -1411,7 +1411,7 @@ static void RII_FormatName(const ITEM* ip, const ITEM_ATTRIBUTE* p, short type, 
 void Item_FormatName(const ITEM* ip, char* name)
 {
     name[0] = 0;
-    const unsigned int attrBase = ItemAttribute_Base();
+    const std::uintptr_t attrBase = ItemAttribute_Base();
     if (!attrBase || !ip || ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
     const ITEM_ATTRIBUTE* p = &((const ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
     int color = 0;
@@ -1422,7 +1422,7 @@ void Item_FormatName(const ITEM* ip, char* name)
 // IDA: RenderItemInfo (0x004C4650)
 static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 {
-    const unsigned int attrBase = ItemAttribute_Base();
+    const std::uintptr_t attrBase = ItemAttribute_Base();
     if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
     if (ip->Type < 0 || ip->Type >= ITEM_MAX_EX) return;
     ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[ip->Type];
@@ -1655,7 +1655,7 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
             RII_ADD(0, 0, GlobalText[95], ip->Durability);
         } else if (hasDur) {
             const unsigned int maxDur =
-                Item_CalculateMaxDurability((void*)ip, (int)(uintptr_t)p, Level) & 0xFFFF;
+                Item_CalculateMaxDurability((void*)ip, p, Level) & 0xFFFF;
             RII_ADD(0, 0, GlobalText[71], ip->Durability, (int)maxDur);
         }
     }
@@ -1752,7 +1752,7 @@ static bool IsTooltipItem(const void* candidate)
          inSlots((const BYTE*)CharacterMachine + 536, 12));
     if (!known) return false;
     const ITEM* item = static_cast<const ITEM*>(candidate);
-    const unsigned int base = ItemAttribute_Base();
+    const std::uintptr_t base = ItemAttribute_Base();
     if (!base || item->Type < 0 || item->Type >= ITEM_MAX_EX ||
         item->SpecialNum > MAX_SPECIAL_OPTION) return false;
     const ITEM_ATTRIBUTE& attr = ((const ITEM_ATTRIBUTE*)(uintptr_t)base)[item->Type];
@@ -1798,13 +1798,13 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
     // Defensivo: si nos llaman antes de que WinMain inicialice la tabla
     // ItemAttribute (DAT_07d78068), o si quedó pisada, ItemAttribute_Base() la
     // recupera del backup. Si tampoco es válida, saltamos.
-    unsigned int attrBaseOK = ItemAttribute_Base();
+    std::uintptr_t attrBaseOK = ItemAttribute_Base();
     if (attrBaseOK == 0) return;
     if (param_3_v == nullptr || (uintptr_t)param_3_v < 0x100000) return;
     unsigned short* param_3 = (unsigned short*)param_3_v;
 
     // attrBase = itemType * 0x40 + ItemAttribute_Base()
-    int attrBase = (short)*param_3 * 0x40 + (int)attrBaseOK;
+    const std::uintptr_t attrBase = (short)*param_3 * 0x40 + attrBaseOK;
 
     // Reset counters and string buffer
     DAT_07eaa154 = 0;
@@ -2100,7 +2100,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
 {
     // Same defensive guards as RenderItemInfo_impl (sibling function).
     // Use the backup-aware accessor to recover DAT_07d78068 if clobbered.
-    unsigned int attrBaseOK_ = ItemAttribute_Base();
+    std::uintptr_t attrBaseOK_ = ItemAttribute_Base();
     if (attrBaseOK_ == 0) return;
     if (param_3_v == nullptr || (uintptr_t)param_3_v < 0x100000) return;
     unsigned short* param_3 = (unsigned short*)param_3_v;
@@ -2118,7 +2118,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     if (itemType == 0x1d5) return;
     if (IsRenderRepairInfoBlocked(itemType)) return;
 
-    int attrBase = itemType * 0x40 + (int)attrBaseOK_;
+    const std::uintptr_t attrBase = itemType * 0x40 + attrBaseOK_;
 
     DAT_07eaa154 = 0;
     DAT_07eaa158 = 0;
@@ -2154,7 +2154,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     DAT_07eaa158++;
 
     // Slot 1: Costo de reparacion
-    unsigned int maxDur = Item_CalculateMaxDurability(param_3, attrBase, (int)level) & 0xffff;
+    unsigned int maxDur = Item_CalculateMaxDurability(param_3, (ITEM_ATTRIBUTE*)attrBase, (int)level) & 0xffff;
     unsigned int curDur = (unsigned int)*(unsigned char*)((char*)param_3 + 0x1a);
     // IDA RenderRepairInfo: RepairEnable_0 = 1 con el item sano y = 2 con el
     // item dañado; el 2 es el martillo animado de RenderCursor, y Scene_MapTick

@@ -94,7 +94,7 @@ void RenderHelpWindow(void)
     // IDA: v30 = v12 / v10 (sin guarda; con otra resolucion divide por 0).
     int scale = (maxVal && colW) ? maxVal / colW : 0;
     int blankRows = isKind5 ? 0 : 11;
-    int attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
+    std::uintptr_t attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
 
     CharMenu_BuildStatRequirements(id);
     TextNum = 0;

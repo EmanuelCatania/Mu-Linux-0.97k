@@ -112,7 +112,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
                 ret = 0;
             }
             const char *name = "";
-            unsigned int abase = ItemAttribute_Base();
+            std::uintptr_t abase = ItemAttribute_Base();
             if (abase && nType >= 0 && nType < ITEM_MAX_EX)
                 name = (const char *)(uintptr_t)(abase + (unsigned int)nType * 64u);
             crt_sprintf(buf, "%s x %d", name, nCount);
