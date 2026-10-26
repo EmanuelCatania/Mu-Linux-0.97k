@@ -1799,7 +1799,7 @@ void __cdecl SetPlayerMagic(CHARACTER* c) {
 // header rather than re-declaring locally).
 
 // IDA: SetPlayerShock (0x00444B60)
-void __cdecl SetPlayerShock(int c, int Hit)
+void __cdecl SetPlayerShock(CHARACTER* c, int Hit)
 {
     if (!c) return;
     if (AsCharacter(c)->Dead) return;            // already dead
@@ -1841,8 +1841,8 @@ void __cdecl SetPlayerShock(int c, int Hit)
         }
         if (etype != 284) {
             // Monster-table sound lookup: Models[etype].Sound[rand()%2]
-            DWORD modelsBase = (DWORD)DAT_05828d58;
-            short* sndTbl = (short*)(modelsBase + 188 * etype + 174);
+            const BYTE* modelsBase = reinterpret_cast<const BYTE*>(DAT_05828d58);
+            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + 188 * etype + 174);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
                 PlayBuffer(v6, AsObject(c), 0);
@@ -1862,7 +1862,7 @@ label_26:
                 pos[0] = (float)(v12 - 64) + AsCharacter(c)->Object.Position[0];
                 pos[1] = AsCharacter(c)->Object.Position[1];
                 pos[2] = (float)(rand() % 50) + AsCharacter(c)->Object.Position[2] + 200.0f;
-                Particle_Spawn(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
+                Particle_Spawn(1221, pos, c->Object.Angle, c->Object.Light, 0, 1.0f, 0);
             }
         }
         PlayBuffer(105, 0, 0);

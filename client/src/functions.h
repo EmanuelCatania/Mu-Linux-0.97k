@@ -274,7 +274,7 @@ void  __cdecl SetAttackSpeed(void);              // IDA: SetAttackSpeed (0x00443
 void  __cdecl SetPlayerAttack(int, int, int, int); // IDA: SetPlayerAttack (0x00444410)
 void  __cdecl SetPlayerMagic(CHARACTER* entity); // IDA: SetPlayerMagic (0x00444A80)
 void  __cdecl SetPlayerTeleport(OBJECT* param_1);   // SetPlayerTeleport - anim de casteo de teleport (accion 87 / 5)
-void  __cdecl SetPlayerShock(int c, int Hit); // IDA: SetPlayerShock (0x00444B60)
+void  __cdecl SetPlayerShock(CHARACTER* c, int Hit); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl SetPlayerDie(CHARACTER* entity); // IDA: SetPlayerDie (0x00444D90)
 // ── Character/Effect update pool (0x004796xx) ────────────────────────────────
 void  __cdecl Render_DrawSprite(int slot);               // IDA: RenderSprite
@@ -906,7 +906,7 @@ void  __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, 
 
 // ── Character animation/attack helpers (nombres de Kayito) ──
 // SetPlayerAttack — ya declarado más arriba con 4 args: (int, int, int, int)
-void  __cdecl SetPlayerShock(int entity, int type); // IDA: SetPlayerShock (0x00444B60)
+void  __cdecl SetPlayerShock(CHARACTER* entity, int type); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl AttackEffect(int entity); // IDA: AttackEffect (0x00445230)
 // IDA: UseSkillWarrior
 void  __cdecl Combat_UseWarriorSkill(int entity, int skillType);

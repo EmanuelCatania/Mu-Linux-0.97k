@@ -199,8 +199,8 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // tirada 50/50 de mas abajo.  O sea aca el heroe SI se aturde, y
     // por eso en el cliente de referencia el Lightning te frena.
     if (stunFlag) {
-        extern void __cdecl SetPlayerShock(int c, int Hit);
-        SetPlayerShock((int)tgtSlot, (int)damage);
+        extern void __cdecl SetPlayerShock(CHARACTER* c, int Hit);
+        SetPlayerShock(AsCharacter(tgtSlot), (int)damage);
         float pos[3] = { *(float*)(tgtSlot + 0x10),
                          *(float*)(tgtSlot + 0x14),
                          *(float*)(tgtSlot + 0x18) };
@@ -276,8 +276,8 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     (((int)r < 0) &&
                      ((((char)r - 1) | (int)0xFFFFFFFE) == -1));
         if (fire) {
-            extern void __cdecl SetPlayerShock(int c, int Hit);
-            SetPlayerShock((int)tgtSlot, (int)damage);
+            extern void __cdecl SetPlayerShock(CHARACTER* c, int Hit);
+            SetPlayerShock(AsCharacter(tgtSlot), (int)damage);
         }
     }
 
@@ -883,7 +883,7 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             const bool shock = (r == 0) ||
                                ((int)r < 0 &&
                                 ((((char)r - 1) | (int)0xFFFFFFFE) == -1));
-            if (shock) SetPlayerShock((int)(uintptr_t)tgt, dmg);
+            if (shock) SetPlayerShock(AsCharacter(tgt), dmg);
             if (dmg) {
                 float pos[3];
                 pos[0] = *(float*)(tgt + 0x10);
