@@ -85,21 +85,22 @@ short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param
 // CSQuest::getQuestState @ 0x004016E0 (IDA: FUN_004016E0).
 void __fastcall CSQuest_GetQuestState(void *pThis, int param_1)
 {
+    BYTE* quest = static_cast<BYTE*>(pThis);
     uint uVar2;
     if (param_1 == -1) {
         uVar2 = 0;
     } else {
-        uVar2 = (uint)(*(BYTE *)((int)pThis + 0x1c87a) >> 2);
+        uVar2 = (uint)(*(quest + 0x1c87a) >> 2);
     }
-    int iVar3 = *(BYTE *)((int)pThis + 0x1c87a) - (int)uVar2;
+    int iVar3 = *(quest + 0x1c87a) - (int)uVar2;
     BYTE bVar1;
     if (iVar3 == 0) {
-        bVar1 = *(BYTE *)(uVar2 + 0x1c848 + (int)pThis);
+        bVar1 = *(quest + uVar2 + 0x1c848);
     } else {
-        bVar1 = *(BYTE *)(uVar2 + 0x1c848 + (int)pThis) >> (((BYTE)iVar3 & 0xf) << 1);
+        bVar1 = *(quest + uVar2 + 0x1c848) >> (((BYTE)iVar3 & 0xf) << 1);
     }
     if (param_1 == -1) {
-        *(BYTE *)((int)pThis + 0x1c882) = bVar1 & 3;
+        *(quest + 0x1c882) = bVar1 & 3;
     }
 }
 
