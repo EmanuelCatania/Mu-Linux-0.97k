@@ -180,7 +180,6 @@
 #include "stdafx.h"
 #include "Entity/EntityName.h"
 #include "Render/Gfx.h"
-#include "Render/Camera.h"
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Scene/Scene_CharSelect.h"
@@ -241,9 +240,6 @@ int Scene_CharSelect(void)
         // 0x3f800000 son los bits de 1.0f, no la magnitud.
         Gfx::ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL_BeginViewport(0, 0, 0x280, 0x1e0);
-        // Rehacer el recorte con las matrices de esta vista, antes del terreno.
-        if (gWindow.IsWide())
-            Camera_SetupFrustum(gWindow.ViewportFraction(640), AsObject((int)DAT_07abf5d0)->Position);
         Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
 
         SceneCharSelect_PrepareLighting();

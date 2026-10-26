@@ -4696,8 +4696,7 @@ static bool CreateFrustrum2D_FromFrustum(const float *ground)
 
 void __cdecl CreateFrustrum2D(float *param_1)
 {
-    if ((SceneFlag == 5 || (SceneFlag == 4 && gWindow.IsWide())) &&
-        CreateFrustrum2D_FromFrustum(param_1)) return;
+    if (SceneFlag == 5 && CreateFrustrum2D_FromFrustum(param_1)) return;
 
     float pts[15];   // euler[0..2], then 4×vec3 input offsets [3..14]
     float rot[12];   // 3×4 rotation matrix

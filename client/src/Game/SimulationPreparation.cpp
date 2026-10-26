@@ -81,9 +81,6 @@ void PrepareCamera() {
         GL_BeginViewport(0, 0, width, full ? 480 : 432);
     } else if (SceneFlag == 4) {
         GL_BeginViewport(0, 0, 640, 480);
-        // El suelo y los objetos usan el mismo encuadre que la cámara ancha.
-        if (gWindow.IsWide())
-            Camera_SetupFrustum(gWindow.ViewportFraction(640), AsObject((int)DAT_07abf5d0)->Position);
     } else {
         GL_BeginViewport(0, 80, 640, 320);
     }
