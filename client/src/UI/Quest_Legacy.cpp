@@ -226,7 +226,7 @@ void __fastcall FUN_00403320(void* param_1) {
 void __fastcall FUN_00403a40(void* param_1);
 char __fastcall FUN_00403f30(void* param_1) {
     if (param_1 == nullptr) return 1;
-    unsigned char mode = *(unsigned char*)((int)(uintptr_t)param_1 + 116863);  // +0x1C87F
+    unsigned char mode = *(static_cast<const BYTE*>(param_1) + 116863);  // +0x1C87F
     if (mode == 1)      FUN_00403320(param_1);
     else if (mode == 2) FUN_00403a40(param_1);
     return 1;
