@@ -1949,7 +1949,7 @@ LABEL_129:
 //   2         = non-player default (NPC/monster)
 //   0x20/0x21 = DarkLord stand/walk (legacy)
 // IDA: SetPlayerWalk (0x00443930)
-void __cdecl SetPlayerWalk(int param_1) {
+void __cdecl SetPlayerWalk(CHARACTER* param_1) {
     // +0x34E (=846) es **SafeZone**, NO dead (el dead real es +0x2FD).
     char bSafeZone0 = *(char *)&AsCharacter(param_1)->SafeZone;
 
@@ -2149,7 +2149,7 @@ label_119:
         return;
     }
     // Sonido de movimiento aleatorizado (1/64 para el jugador, 1/16 para el resto)
-    if (param_1 == (int)DAT_07abf5d8) {
+    if (param_1 == AsCharacter(DAT_07abf5d8)) {
         if ((rand() & 0x3f) != 0) return;
     } else {
         if ((rand() & 0xf) != 0) return;
@@ -4590,7 +4590,7 @@ void __cdecl MoveMonsterClient(int param_1_i, int param_2)
 
     if (*(char *)&AsCharacter(entity)->Movement != '\0') {
         // Entity is currently moving — advance one step
-        SetPlayerWalk(entity);
+        SetPlayerWalk(AsCharacter(entity));
         unsigned int arrived = Entity_AdvancePath((void*)entity, '\x01');
         if ((char)arrived != '\0') {
             // Arrived at waypoint — stop

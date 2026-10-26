@@ -240,7 +240,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     // para el tipo 322. Al resto de las entidades remotas las
                     // cambia MoveMonsterClient antes de MovePath.
                     if (*(WORD *)&AsCharacter(h)->Object.Type == 322) {
-                        SetPlayerWalk((int)(uintptr_t)h);
+                        SetPlayerWalk(AsCharacter(h));
                         AsCharacter(h)->JumpTime = 1;
                     }
                 } else {

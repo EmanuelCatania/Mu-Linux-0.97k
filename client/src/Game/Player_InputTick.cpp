@@ -729,7 +729,7 @@ void __cdecl Player_ProcessInput(void)
             // de mundo mientras el runner de camino está inactivo.
             bool isIdle = (AsCharacter(ent)->Movement == 0);
             if (!isIdle) {
-                SetPlayerWalk((int)ent);
+                SetPlayerWalk(AsCharacter(ent));
             }
             if (!isIdle) {
                 unsigned int moveOk = Entity_AdvancePath(ent, '\x01');
