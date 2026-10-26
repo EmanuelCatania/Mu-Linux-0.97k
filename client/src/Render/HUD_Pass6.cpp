@@ -48,7 +48,7 @@ void HUD_BeginGridPass(int pass);
 #include "functions.h"
 #include "Net/Net.h"      // gNetwork.Send (C3 + serial + chain-XOR)
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
-void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage);
+void __cdecl GetMagicSkillDamage(const BYTE* This, int iType, int* piMinDamage, int* piMaxDamage);
 
 
 extern "C" void Net_SendNpcTalkClose(void);
@@ -1099,7 +1099,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // de IDA es CharacterMachine+536, o sea el pWeaponLeft de este archivo.
         int piMin = 0, piMax = 0;
         BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + 913));
-        GetMagicSkillDamage((DWORD)(uintptr_t)CharacterMachine, skillType, &piMin, &piMax);
+        GetMagicSkillDamage(static_cast<const BYTE*>(CharacterMachine), skillType, &piMin, &piMax);
         int staffMul = (pWeaponLeft->Level >> 3) & 0xF;
 
         // PVP +10 bonus

@@ -2184,7 +2184,7 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
 // anti-tamper (que descifra el registro de SkillAttribute; el nuestro ya esta en
 // claro): el dano del skill es el BYTE +0x21 del registro de 40 bytes, y se suma
 // al rango magico de CHARACTER_MACHINE (+70 / +72); el maximo lleva +50%.
-void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage)
+void __cdecl GetMagicSkillDamage(const BYTE* This, int iType, int* piMinDamage, int* piMaxDamage)
 {
     const BYTE damage = (BYTE)SkillAttribute.Raw[40 * (iType & 0xFF) + 0x21];
     *piMinDamage = damage + *(unsigned short*)(This + 70);
