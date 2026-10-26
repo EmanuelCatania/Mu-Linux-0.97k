@@ -1177,7 +1177,7 @@ void  __cdecl SendChat(char *Text);                                      // 0x00
 int   __cdecl ConvertGold64(int Zen, char *Buffer);                 // 0x004C3E10
 struct ITEM;
 void  Item_FormatName(const ITEM* ip, char* name);   // 0.97.20: nombre como en el tooltip (RenderItemInfo.cpp)
-void  __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
+void  __cdecl RenderItemName(int i, const OBJECT* object, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
 void  __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char *param_2); // 0x004CC0E0
 void  __cdecl SetItemGridFlag(int param_1, BYTE* inventory, unsigned char param_3); // IDA: 0x004CC1E0
 int   __cdecl CompareItems(short param_1, int param_2, int param_3); // 0x004CC270

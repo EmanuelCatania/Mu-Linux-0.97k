@@ -684,7 +684,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     // los items de Alt.  RenderItemName deja el glColor del último item (IDA
     // tampoco lo restaura) y el texto sale como m_dwTextColor x glColor, así que
     // dibujar antes los items teñiría el nombre del monstruo.
-    extern void __cdecl RenderItemName(int, DWORD, int, int, bool);
+    extern void __cdecl RenderItemName(int, const OBJECT*, int, int, bool);
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     const int hovered = (int)SelectedItem;
 
@@ -695,7 +695,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         if (hovered < 0 || hovered >= 1000) return;
         BYTE* o = itemPool + hovered * 0x204 + 72;
         if (o[0] && o[352])
-            RenderItemName(hovered, (DWORD)(uintptr_t)o,
+            RenderItemName(hovered, AsObject(o),
                                 *(int*)(o - 64), (int)*(char*)(o - 41), 0);
     };
 
@@ -761,7 +761,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
             if (i == hovered) continue;
             BYTE* o = itemPool + i * 0x204 + 72;
             if (o[0] && o[352]) {
-                RenderItemName(i, (DWORD)(uintptr_t)o,
+                RenderItemName(i, AsObject(o),
                                     *(int*)(o - 64), (int)*(char*)(o - 41), 1);
             }
         }
