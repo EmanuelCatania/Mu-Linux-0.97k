@@ -303,12 +303,12 @@ void ClearActionObject(void)
 // Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
 // skills 6 (teleport propio) y 15 (recall de party).
 // El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
-void __cdecl SetPlayerTeleport(int param_1)
+void __cdecl SetPlayerTeleport(OBJECT* param_1)
 {
-    if (*(short *)(param_1 + 2) == 0x186) {
-        SetAction(AsObject(param_1), 0x57);
+    if (param_1->Type == 0x186) {
+        SetAction(param_1, 0x57);
     } else {
-        SetAction(AsObject(param_1), 5);
+        SetAction(param_1, 5);
     }
 }
 

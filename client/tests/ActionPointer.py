@@ -45,6 +45,32 @@ void Hash(const void* data, std::size_t size) {
 
 MAIN = r'''
 void* Call(OBJECT* object, int action) { return CALL_ACTION; }
+void Cast(OBJECT* object) { CALL_CAST; }
+std::uint64_t RunCasting(BYTE* models, OBJECT* object) {
+    DAT_05828d58 = reinterpret_cast<std::uintptr_t>(models);
+    digest = 14695981039346656037ull;
+    for(short type : {0, 1, 302, 390})
+    for(short limit : {0, 5, 6, 87, 88})
+    for(BYTE current : {0, 5, 87, 255})
+    for(DWORD frame : {0u, 0x80000000u, 0x3fa00000u, 0x7fc00001u}) {
+        std::memset(models, 0xa5, 391 * 188);
+        std::memcpy(models + type * 188 + 38, &limit, 2);
+        std::memset(object, 0x5a, sizeof(*object));
+        object->Type = type; object->CurrentAction = current;
+        std::memcpy(&object->AnimationFrame, &frame, 4);
+        OBJECT expected; std::memcpy(&expected, object, sizeof(expected));
+        const BYTE action = type == 390 ? 87 : 5;
+        if(action < limit && current != action) {
+            expected.PriorAction = current;
+            std::memcpy(&expected.PriorAnimationFrame, &frame, 4);
+            expected.CurrentAction = action; expected.AnimationFrame = 0.0f;
+        }
+        Cast(object);
+        Require(std::memcmp(object, &expected, sizeof(expected)) == 0);
+        Hash(object, sizeof(*object));
+    }
+    return digest;
+}
 void RunAll(BYTE* models, BYTE* pool) {
     DAT_05828d58 = reinterpret_cast<std::uintptr_t>(models);
     CharactersClient = reinterpret_cast<std::uintptr_t>(pool);
@@ -116,6 +142,7 @@ int main() {
     auto* pool = static_cast<BYTE*>(Reserve(0x72000000u)); Require(pool != nullptr);
     RunAll(models, pool);
     const auto expected = Run(models, object);
+    const auto casting = RunCasting(models, object);
     if(sizeof(void*) > 4) {
         auto* highModels = static_cast<BYTE*>(Reserve(std::uint64_t(0x170000000ull)));
         auto* highObject = static_cast<OBJECT*>(Reserve(std::uint64_t(0x171000000ull)));
@@ -127,10 +154,14 @@ int main() {
         Require(Run(highModels, object) == expected);
         Require(Run(models, highObject) == expected);
         Require(Run(highModels, highObject) == expected);
+        Require(RunCasting(highModels, object) == casting);
+        Require(RunCasting(models, highObject) == casting);
+        Require(RunCasting(highModels, highObject) == casting);
         std::puts("objeto/modelos sobre 4 GiB: cuatro combinaciones equivalentes");
     }
     std::printf("SetAction: 13440 casos, bytes/retorno %016llx\n", static_cast<unsigned long long>(expected));
     std::puts("Characters_SetActionAll: 400 slots, activos/tipos y acciones válidas/inválidas correctos");
+    std::printf("SetPlayerTeleport: 320 casos; bytes %016llx\n", static_cast<unsigned long long>(casting));
 }
 '''
 
@@ -152,9 +183,12 @@ def harness(revision=None):
                               ("PRIOR_FRAME_FIELD", "PriorAnimationFrame", "float")):
         support = re.sub(rf"\b{token}\b", re.search(rf"\b{kind}\s+{name}\s*;", types).group(), support)
     action = function(read_source("src/Entity/Entity_ActionLegacy.cpp", revision), "SetAction")
+    casting = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "SetPlayerTeleport")
     call = "SetAction(object, action)" if "OBJECT* entity_ptr" in action else "SetAction(static_cast<int>(reinterpret_cast<std::uintptr_t>(object)), action)"
+    cast_arg = "object" if "OBJECT* param_1" in casting else "static_cast<int>(reinterpret_cast<std::uintptr_t>(object))"
     return (PREAMBLE.split("BYTE* reservation;")[0].replace("0x10000", "0x100000") + declaration + definition
-            + support + action + all_actions + MAIN.replace("CALL_ACTION", call))
+            + support + action + all_actions + casting
+            + MAIN.replace("CALL_ACTION", call).replace("CALL_CAST", f"SetPlayerTeleport({cast_arg})"))
 
 
 def main():

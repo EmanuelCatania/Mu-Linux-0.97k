@@ -1318,7 +1318,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // IDA L9682 LABEL_1762 -> LABEL_1763: sub_444B30(c) = SetPlayerTeleport,
         // o sea la animacion de casteo (accion 87) sobre el propio heroe.
         // MU 5.2 ZzzInterface.cpp:6130 hace lo mismo tras SendRequestMagicTeleport.
-        SetPlayerTeleport((int)(uintptr_t)entity);
+        SetPlayerTeleport(AsObject(entity));
         return;
     }
 
@@ -1378,7 +1378,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             // o+2: un iType chico seria un puntero salvaje. MU 5.2 desambigua el
             // argumento (ZzzInterface.cpp:6065): en el recall de party la animacion
             // va sobre el ALIADO (`SetPlayerTeleport(tc)`), no sobre el heroe.
-            SetPlayerTeleport((int)(uintptr_t)target);
+            SetPlayerTeleport(AsObject(target));
             return;
         }
     }

@@ -273,7 +273,7 @@ void  __cdecl Character_UpdateEquipSlotAnimations(int entity);        // Charact
 void  __cdecl SetAttackSpeed(void);              // IDA: SetAttackSpeed (0x00443E70)
 void  __cdecl SetPlayerAttack(int, int, int, int); // IDA: SetPlayerAttack (0x00444410)
 void  __cdecl SetPlayerMagic(int param_1); // IDA: SetPlayerMagic (0x00444A80)
-void  __cdecl SetPlayerTeleport(int param_1);       // SetPlayerTeleport - anim de casteo de teleport (accion 87 / 5)
+void  __cdecl SetPlayerTeleport(OBJECT* param_1);   // SetPlayerTeleport - anim de casteo de teleport (accion 87 / 5)
 void  __cdecl SetPlayerShock(int c, int Hit); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl SetPlayerDie(int entity_idx); // IDA: SetPlayerDie (0x00444D90)
 // ── Character/Effect update pool (0x004796xx) ────────────────────────────────
