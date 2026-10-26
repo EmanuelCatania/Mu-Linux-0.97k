@@ -1219,7 +1219,7 @@ void  __cdecl MoveHead(CHARACTER* character);                                // 
 bool  __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
 bool  __cdecl AttackStage(DWORD c, DWORD o);                       // 0x00448930
 // IDA: FUN_00451f30
-void  __cdecl Combat_SpawnDeathDustParticles(int entity);
+void  __cdecl Combat_SpawnDeathDustParticles(OBJECT* entity);
 // IDA: FUN_00452030
 void  __cdecl Combat_SpawnIdleAmbientParticle(OBJECT* entity);
 void  __stdcall MoveCharactersClient(void);                         // 0x00455010

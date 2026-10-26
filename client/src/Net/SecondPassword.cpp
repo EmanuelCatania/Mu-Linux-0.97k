@@ -4174,7 +4174,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
         // 0x113 — IDA raw L848-850.
         case 0x113:
-            Combat_SpawnDeathDustParticles(entity_ptr);
+            Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             break;
 
         // 0x119 — IDA raw L851-873. Usa el `Light` (1,1,1) del frame compartido.
@@ -4287,7 +4287,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             float zero[3] = {0.0f, 0.0f, 0.0f};
             BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
             BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
-            Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(entity_ptr);
+            Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             break;
         }
         // 0x138 — IDA raw L1016-1034.
@@ -4304,7 +4304,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
-            } else { Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(entity_ptr); }
+            } else { Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr)); }
             break;
         }
         // 0x139 / 0x13B — IDA raw L1035-1038 / L1114-1117.
@@ -4403,7 +4403,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
                 Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
-                Combat_SpawnDeathDustParticles(entity_ptr);
+                Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             }
             break;
         }

@@ -372,8 +372,9 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     return true;
 }
 
-void __cdecl Combat_SpawnDeathDustParticles(int a1)
+void __cdecl Combat_SpawnDeathDustParticles(OBJECT* object)
 {
+  BYTE* a1 = reinterpret_cast<BYTE*>(object);
   int v1; // ebx
   float Position[3]; // [esp+4h] [ebp-Ch] BYREF
 
