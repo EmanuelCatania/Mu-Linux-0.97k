@@ -74,6 +74,15 @@ int main()
     Check(FitLineBreak("uno\ndos tres", 12) == 4, "salto obligatorio");
     Check(FitLineBreak("corto", 10) == 5, "entra entero");
 
+    // ── Formatos de los textos del cliente ──
+    Check(SameFormatSpecifiers("Zoom: %d", "Zoom: %d"), "mismo formato");
+    Check(SameFormatSpecifiers("Opacidad: %d%%", "Alpha: %d%%"), "el %% no cuenta");
+    Check(SameFormatSpecifiers("%.10s || %s: %u", "%.10s - %s: %u"), "varios especificadores");
+    Check(!SameFormatSpecifiers("Zoom: %d", "Zoom: %s"), "distinto tipo");
+    Check(!SameFormatSpecifiers("Zoom: %d", "Zoom"), "falta uno");
+    Check(!SameFormatSpecifiers("%s %d", "%d %s"), "distinto orden");
+    Check(SameFormatSpecifiers("sin formato", "sin nada"), "sin especificadores");
+
     // ── Emoticonos ──
     Check(ExpandEmoticons("hola :D") == U8(u8"hola \U0001F600"), "emoticono suelto");
     Check(ExpandEmoticons("<3") == U8(u8"\u2764\uFE0F"), "corazon");

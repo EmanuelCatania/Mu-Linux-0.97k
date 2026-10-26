@@ -3,6 +3,8 @@
 #include "Platform/IFileSystem.h"
 #include "Local/ClientText.h"
 #include "Config/UserSettings.h"
+#include "Text/TextCore.h"
+#include <string>
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -52,103 +54,37 @@ const char* const English[] = {
     "Waiting character info...",
     "Could not initialize OpenGL 3.3 compatibility. Check the graphics driver."
 };
-const char* const Spanish[] = {
-    "%.10s || %s: %u || PING: %s || FPS: %.0f",
-    "Tasa de \xC3\xA9" "xito: pendiente",
-    "Costo: pendiente",
-    "Eventos",
-    "Esperando informaci\xC3\xB3" "n de eventos",
-    "No hay eventos programados",
-    "Deshabilitado",
-    "Abierto",
-    "En curso",
-    "%lu d\xC3\xAD" "as",
-    "Teletransporte",
-    "Mapa",
-    "VIP",
-    "Esperando destinos",
-    "Sin destinos",
-    "< Anterior",
-    "Siguiente >",
-    "Predeterminado",
-    "Eliminar Clima",
-    "Eliminar Brillo",
-    "Mundo",
-    "Efectos",
-    "Interfaz",
-    "Ventana",
-    "Pantalla completa",
-    "Sin bordes",
-    "Negrita",
-    "Cursiva",
-    "Texto suave", "Sombra del texto", "Contorno del texto", "Emoji a color",
-    "FPS: %.0f",
-    "Desacople", "VSync", "FPS: %d", "FPS: sin l\xC3\xAD" "mite", "VSync no disponible",
-    "Puerta a %s",
-    "Zoom: %d",
-    "Opacidad: %d%%",
-    "Reconectando...",
-    "Iniciando sesi\xC3\xB3" "n...",
-    "Esperando la lista de personajes...",
-    "Esperando los datos del personaje...",
-    "No se pudo iniciar OpenGL 3.3 compatible. Revisar el controlador de video."
-};
-const char* const Portuguese[] = {
-    "%.10s || %s: %u || PING: %s || FPS: %.0f",
-    "Taxa de sucesso: pendente",
-    "Custo: pendente",
-    "Eventos",
-    "Aguardando informa\xC3\xA7\xC3\xB5" "es de eventos",
-    "Nenhum evento programado",
-    "Desativado",
-    "Aberto",
-    "Em andamento",
-    "%lu dias",
-    "Teletransporte",
-    "Mapa",
-    "VIP",
-    "Aguardando destinos",
-    "Sem destinos",
-    "< Anterior",
-    "Pr\xC3\xB3" "ximo >",
-    "Padr\xC3\xA3" "o",
-    "Remover Clima",
-    "Remover Brilho",
-    "Mundo",
-    "Efeitos",
-    "Interface",
-    "Janela",
-    "Tela cheia",
-    "Sem bordas",
-    "Negrito",
-    "It\xC3\xA1" "lico",
-    "Texto suave", "Sombra do texto", "Contorno do texto", "Emoji colorido",
-    "FPS: %.0f",
-    "Render livre", "VSync", "FPS: %d", "FPS: sem limite", "VSync indispon\xC3\xAD" "vel",
-    "Portal para %s",
-    "Zoom: %d",
-    "Opacidade: %d%%",
-    "Reconectando...",
-    "Entrando...",
-    "Aguardando a lista de personagens...",
-    "Aguardando os dados do personagem...",
-    "N\xC3\xA3" "o foi poss\xC3\xAD" "vel iniciar OpenGL 3.3 compatibility. Verifique o driver de v\xC3\xAD" "deo."
-};
 constexpr size_t Count = (size_t)ClientTextId::Count;
 static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en ingl\xC3\xA9s");
-static_assert(sizeof(Spanish) / sizeof(Spanish[0]) == Count, "Faltan textos en espa\xC3\xB1ol");
-static_assert(sizeof(Portuguese) / sizeof(Portuguese[0]) == Count, "Faltan textos en portugu\xC3\xA9s");
+
+// Textos del server, por id.  Vacío = no hay: se usa el inglés.
+std::string s_ServerText[Count];
 }
 
 const char* CClientText::Get(ClientTextId id) const
 {
     const size_t index = (size_t)id;
     if (index >= Count) return "";
-    switch (gUserSettings.GetLanguage()) {
-    case USER_LANG_SPANISH:    return Spanish[index];
-    case USER_LANG_PORTUGUESE: return Portuguese[index];
-    default:              return English[index];
+    return s_ServerText[index].empty() ? English[index] : s_ServerText[index].c_str();
+}
+
+bool CClientText::SetServerText(size_t id, const char* utf8)
+{
+    if (id >= Count || !utf8 || !*utf8) return false;
+    // Un formato distinto del inglés rompería el printf del que lo usa.
+    if (!TextEngine::SameFormatSpecifiers(utf8, English[id])) {
+        char line[160];
+        Platform::TextFormat(line, "ClientText: el texto %u del server no tiene los mismos especificadores que el ingl\xC3\xA9s, se descarta", (unsigned)id);
+        DbgLogPublic(line);
+        return false;
     }
+    s_ServerText[id] = utf8;
+    return true;
+}
+
+void CClientText::ClearServerTexts()
+{
+    for (std::string& text : s_ServerText) text.clear();
 }
 
 // DESVIACION (DLL Language.cpp): con [Language] LangSelection el archivo pasa a

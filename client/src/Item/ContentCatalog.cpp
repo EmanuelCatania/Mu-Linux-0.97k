@@ -6,6 +6,7 @@
 #include "Platform/Text.h"
 #include "Platform/ITimer.h"
 #include "Item/ContentCatalog.h"
+#include "Local/ClientText.h"
 #include "Item/ItemDefines.h"
 #include "Net/Protocol/GameServerProtocol.h"
 #include <map>
@@ -317,6 +318,9 @@ void ApplyTexts(ITEM_ATTRIBUTE* attr)
             NetText::FromServer(SkillName(SkillAttribute.Raw, row.Index), SKILL_NAME_SIZE, row.Text, sizeof(row.Text));
             NetText::FromServer(SkillName((char*)DAT_07cf1ff8, row.Index), SKILL_NAME_SIZE, row.Text, sizeof(row.Text));
             break;
+        case Proto::CATALOG_TEXT_CLIENT:
+            if (!gClientText.SetServerText(row.Index, row.Text)) continue;
+            break;
         default:
             continue;
         }
@@ -362,6 +366,7 @@ void CContentCatalog::Clear()
     s_PendingTooltips = PendingSection();
     s_Tooltips.clear();
     s_PendingTexts = PendingSection();
+    gClientText.ClearServerTexts();
     memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
     if (s_HasVanillaSkillNames) {
         for (int i = 0; i < MAX_SKILL_NAME; ++i) {
