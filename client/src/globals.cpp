@@ -2597,7 +2597,7 @@ DWORD  DAT_0055389c = 0;
 HANDLE hEvent             = NULL;
 LPVOID lpParameter        = NULL;
 char   g_GameGuardGameName[64] = "Mu";  // IDA: aMu (0x0055910C)
-DWORD  g_csQuest          = 0;
+uintptr_t g_csQuest       = 0;
 
 BYTE   m_byMatchType      = 0;
 int    m_iMatchTimeMax    = 0;

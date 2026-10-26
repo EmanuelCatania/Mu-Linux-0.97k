@@ -701,7 +701,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 void __fastcall Quest_FullInit(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     *param_1 = (int)&PTR_LAB_005524b8;
-    if (g_csQuest == 0) g_csQuest = (DWORD)param_1;
+    if (g_csQuest == 0) g_csQuest = reinterpret_cast<uintptr_t>(param_1);
     *(BYTE *)(param_1 + 1) = 0xff;
     *(BYTE *)((int)param_1 + 0x1c87a) = 0;
     *(BYTE *)((int)param_1 + 0x1c87b) = 0;

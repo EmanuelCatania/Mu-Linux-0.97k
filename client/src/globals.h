@@ -2541,7 +2541,7 @@ extern char    g_GameGuardGameName[];   // IDA: aMu (0x0055910C) — el nombre d
                                         // ventana: el cliente no crea ninguna ventana de
                                         // GameGuard.
 
-extern DWORD   g_csQuest;         // Quest system state (0=inactive)
+extern uintptr_t g_csQuest;      // Dirección del objeto CSQuest (0 = inactivo).
 
 // Match/DevilSquare info
 extern BYTE    m_byMatchType;

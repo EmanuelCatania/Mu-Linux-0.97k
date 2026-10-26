@@ -88,6 +88,7 @@ jobs:
             python -B tests/CombatAmbientPointer.py --architecture x64
             python -B tests/DeathDustPointer.py --architecture x64
             python -B tests/QuestClearPointer.py --architecture x64
+            python -B tests/QuestBasePointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -138,6 +139,7 @@ jobs:
             python3 -B tests/CombatAmbientPointer.py --generator Ninja
             python3 -B tests/DeathDustPointer.py --generator Ninja
             python3 -B tests/QuestClearPointer.py --generator Ninja
+            python3 -B tests/QuestBasePointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
