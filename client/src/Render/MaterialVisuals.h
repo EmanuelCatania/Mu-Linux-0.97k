@@ -1,4 +1,5 @@
 #pragma once
+struct OBJECT;
 
 // Muestras de las dos rutas aleatorias de materiales, externas a OBJECT/BMD.
 struct MaterialVisualSample {
@@ -11,8 +12,8 @@ struct MaterialVisualSample {
 void MaterialVisuals_BeginStep();
 void MaterialVisuals_Prepare(MaterialVisualSample &sample, int model, bool attributes, bool draw);
 void MaterialVisuals_PrepareObject(const void *owner, int model, bool attributes, bool draw);
-void MaterialVisuals_PrepareWeaponObject(int entity, int model);
-void MaterialVisuals_TickObjectDraw(int entity);
+void MaterialVisuals_PrepareWeaponObject(OBJECT* entity, int model);
+void MaterialVisuals_TickObjectDraw(const OBJECT* entity);
 int ItemMaterials_ResolvePreviewModel(int itemType, int level, int *adjustedLevel=nullptr);
 void MaterialVisuals_PrepareUiItem(int itemType, int level=0);
 void MaterialVisuals_TickUi();
@@ -29,7 +30,6 @@ public:
     ~MaterialVisualScope();
 };
 // El creador original conserva su RNG; esta entrada sólo consume la muestra.
-struct OBJECT;
 int ItemObjectAttributeForRender(OBJECT* entity);
 void ItemMaterials_PrepareEquipmentUi();
 void ItemMaterials_PrepareQuestUi();

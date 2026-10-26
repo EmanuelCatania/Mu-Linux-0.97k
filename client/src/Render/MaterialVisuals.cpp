@@ -51,9 +51,9 @@ void MaterialVisuals_PrepareObject(const void *owner, int model, bool attributes
     if (!RandomMaterial(model)) return;
     MaterialVisuals_Prepare(objects[owner].sample, model, attributes, draw);
 }
-void MaterialVisuals_PrepareWeaponObject(int entity, int model) {
-    OBJECT &o=*AsObject(entity);
-    auto &sample=objects[(void *)entity].sample;
+void MaterialVisuals_PrepareWeaponObject(OBJECT* entity, int model) {
+    OBJECT &o=*entity;
+    auto &sample=objects[entity].sample;
     const float alpha=o.Alpha;
     const BYTE action=o.CurrentAction;
     MaterialVisuals_Prepare(sample,model,true,alpha>_DAT_005524f8);
@@ -64,12 +64,12 @@ void MaterialVisuals_PrepareWeaponObject(int entity, int model) {
     const DWORD gravity=*(DWORD *)&o.Gravity;
     o.Type=(short)model;
     MaterialVisualScope scope(&sample);
-    ItemObjectAttributeForRender(AsObject(entity));
+    ItemObjectAttributeForRender(entity);
     o.Type=type;
     if (type==244) *(DWORD *)&o.Gravity=gravity;
 }
-void MaterialVisuals_TickObjectDraw(int entity) {
-    const OBJECT &o=*AsObject(entity);
+void MaterialVisuals_TickObjectDraw(const OBJECT* entity) {
+    const OBJECT &o=*entity;
     if (gMapManager.GetCurrentMap()!=4 || o.Alpha<_DAT_005524f8 ||
         o.RenderType==0x80 || (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
     if (o.Type==23 || o.Type==19 || o.Type==20 || o.Type==3 || o.Type==4)

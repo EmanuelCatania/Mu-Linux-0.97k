@@ -137,7 +137,7 @@ void PrepareCharacter(CHARACTER &c) {
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
     MoltSilhouette_Tick((int)&c, model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
-    MaterialVisuals_TickObjectDraw((int)&c);
+    MaterialVisuals_TickObjectDraw(&o);
     CharacterCloth_Tick((int)&c);
     const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
     const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;

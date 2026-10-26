@@ -69,7 +69,7 @@ void WorldEffects_Tick(int entity) {
         ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 0);
     ObjectPose_TickMeshEvents(entity, model, (float *)g_BoneScratch, 0);
     MoltSilhouette_Tick(entity, model, (float *)g_BoneScratch, 0);
-    MaterialVisuals_TickObjectDraw(entity);
+    MaterialVisuals_TickObjectDraw(AsObject(entity));
     recording = &frame;
     Entity_SpawnEffects(entity);
     recording = nullptr;

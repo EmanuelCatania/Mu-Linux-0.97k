@@ -1217,7 +1217,7 @@ void EffectPool_TickRenderState() {
             const int model = *((BYTE *)o.Owner + 136) + ITEM_MODEL_BASE;
             if (model >= 0 && model < 1024 && DAT_07abf5d8) {
                 if (o.Type==239) o.Direction[2] -= 30.0f;
-                MaterialVisuals_PrepareWeaponObject((int)&o,model);
+                MaterialVisuals_PrepareWeaponObject(&o,model);
             }
         }
         if (o.Type >= 1210 && o.Type <= 1212) {
