@@ -1004,8 +1004,8 @@ bool  __cdecl getEqualMonster(int addV);                             // 0x0047eb
 void  __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster); // 0x0047eba0
 void  __cdecl Quest_InitializeStaticState(void); // IDA: FUN_00401010
 char  __fastcall FUN_00403f30(void *pCSQuest);   // dispatcher del render de quest (0x403F30)
-void  __fastcall CSQuest__setQuestList(int ecx, int edx, int index, int result); // 0x004011b0
-void  __fastcall CSQuest__setQuestLists(int ecx, int edx, BYTE *byList, int num, int Class); // 0x00401160
+void  __fastcall CSQuest__setQuestList(BYTE* quest, int edx, int index, int result); // IDA: 0x004011b0
+void  __fastcall CSQuest__setQuestLists(BYTE* quest, int edx, BYTE *byList, int num, int Class); // IDA: 0x00401160
 
 // Blur / trail
 void  __cdecl MoveBlurs(void);                                       // 0x0046c3b0

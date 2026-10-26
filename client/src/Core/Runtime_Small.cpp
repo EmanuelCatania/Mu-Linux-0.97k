@@ -594,7 +594,7 @@ void __fastcall FUN_00405240_init(void *This) {
 // ── 32-byte ─────────────────────────────────────────────────────────────────
 
 // CSQuest::setQuestList @ 0x004011B0 (32 bytes)
-void __fastcall CSQuest__setQuestList(int ecx, int /*edx*/, int index, int result) {
+void __fastcall CSQuest__setQuestList(BYTE* ecx, int /*edx*/, int index, int result) {
     *(char *)(ecx + 0x1c87a) = (char)index;
     *(BYTE *)(((index & 0xff) >> 2) + 0x1c848 + ecx) = (BYTE)result;
 }

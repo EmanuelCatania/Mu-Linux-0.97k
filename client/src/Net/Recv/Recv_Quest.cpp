@@ -40,7 +40,7 @@ void NetRecv_A0(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (num > 0x32) num = 0x32;
     if (Size < 4 + num) num = Size - 4;
     if (num > 0)
-        CSQuest__setQuestLists((int)g_csQuest, 0, (BYTE*)Msg + 4, num, heroClass);
+        CSQuest__setQuestLists(reinterpret_cast<BYTE*>(g_csQuest), 0, (BYTE*)Msg + 4, num, heroClass);
 }
 
 // 0xA1
@@ -49,7 +49,7 @@ void NetRecv_A1(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // ReceiveQuestState @ 0x00437480
     if (Size < 5 || g_csQuest == 0) return;
     NetLog("NET:  → 0xA1 QuestState index=%d result=%d", Msg[3], Msg[4]);
-    CSQuest__setQuestList((int)g_csQuest, 0, Msg[3], Msg[4]);
+    CSQuest__setQuestList(reinterpret_cast<BYTE*>(g_csQuest), 0, Msg[3], Msg[4]);
     CSQuest__ShowQuestNpcWindow((void*)(uintptr_t)g_csQuest, 0, -1);
 }
 
@@ -61,7 +61,7 @@ void NetRecv_A2(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     NetLog("NET:  → 0xA2 QuestResult index=%d err=%d state=%d",
            Msg[3], Msg[4], Msg[5]);
     if (Msg[4] == 0) {          // IDA: sólo si el byte 4 es 0
-        CSQuest__setQuestList((int)g_csQuest, 0, Msg[3], Msg[5]);
+        CSQuest__setQuestList(reinterpret_cast<BYTE*>(g_csQuest), 0, Msg[3], Msg[5]);
         CSQuest__ShowQuestNpcWindow((void*)(uintptr_t)g_csQuest, 0, -1);
     }
 }

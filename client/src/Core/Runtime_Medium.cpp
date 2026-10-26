@@ -104,7 +104,7 @@ void __cdecl OpenMacro(char *FileName) {
 }
 
 // CSQuest::setQuestLists @ 0x00401160 (73 bytes) — set quest list from packet
-void __fastcall CSQuest__setQuestLists(int ecx, int /*edx*/, BYTE *byList, int num, int Class) {
+void __fastcall CSQuest__setQuestLists(BYTE* ecx, int /*edx*/, BYTE *byList, int num, int Class) {
     if (Class != -1) {
         *(BYTE *)(ecx + 4) = (BYTE)Class & 7;
         *(char *)(ecx + 5) = (char)(Class >> 3);
