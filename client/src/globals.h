@@ -1,5 +1,6 @@
 #pragma once
 #include "Item/ItemDefines.h"
+struct GATE_ATTRIBUTE;
 // globals.h — extern declarations for all Ghidra DAT_ globals.
 // Los tipos se infieren del contexto; el prefijo _DAT_ = alias float de la misma dirección.
 // NO incluir este header directo — entra vía stdafx.h.
@@ -2221,7 +2222,7 @@ extern char    s__s_d_bmd_0055a7e0[];  // "%s%d.bmd"
 extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT_07d78068)
 extern int     DAT_07cf1ff8;       // skill record shadow array base
 extern int     DAT_07d29d20;       // skill/gate data array base
-extern DWORD   GateAttribute;       // gate data array base (stride 9 bytes, 100 entries) — malloc'd in WinMain  [IDA 0x07CF5600]
+extern GATE_ATTRIBUTE* GateAttribute; // IDA 0x07CF5600: base de 100 registros de nueve bytes
 // ── g_DialogScript @ 0x07CF5608 — 200 entradas x 0x400 bytes ────────────────
 // Layout verificado contra el disassembly de CSQuest::ShowDialogText (0x4017E0):
 //   0x4017F1  shl eax, 0Ah            → stride de entrada = 0x400

@@ -2449,7 +2449,7 @@ void __cdecl CheckGate(void)
     if (!GateAttribute || !Hero || !CharacterAttribute)
         return;
 
-    const BYTE* const gates = (const BYTE*)(uintptr_t)GateAttribute;
+    const BYTE* const gates = reinterpret_cast<const BYTE*>(GateAttribute);
     BYTE* const hero = (BYTE*)Hero;
     const WORD& level = *(WORD*)((BYTE*)CharacterAttribute + 14);
 

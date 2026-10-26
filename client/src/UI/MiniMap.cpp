@@ -284,7 +284,7 @@ void CMiniMap::RenderMarkers() const
 void CMiniMap::RenderGates() const
 {
     const View v = CurrentView(m_Zoom);
-    const GATE_ATTRIBUTE* gates = (const GATE_ATTRIBUTE*)(uintptr_t)GateAttribute;
+    const GATE_ATTRIBUTE* gates = GateAttribute;
     if (!gates) return;
     char text[96];
     for (int i = 0; i < MaxGates; ++i) {

@@ -220,7 +220,7 @@ def build_and_run(directory, source, args):
     binary = directory / "build" / "pointer_test"
     if os.name == "nt":
         binary = directory / "build" / "Release" / "pointer_test.exe"
-    return subprocess.check_output([str(binary)], text=True)
+    return subprocess.check_output([str(binary)], text=True, cwd=directory)
 
 
 def main():

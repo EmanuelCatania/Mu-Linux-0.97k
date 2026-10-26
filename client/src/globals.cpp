@@ -2305,7 +2305,7 @@ char    s__s_d_bmd_0055a7e0[]  = "%s%d.bmd";
 int     DAT_07cf1ff0    = 0;       // item record shadow array base
 int     DAT_07cf1ff8    = 0;       // skill record shadow array base
 int     DAT_07d29d20    = 0;       // skill/gate data array base
-DWORD   GateAttribute    = 0;       // gate data array base — malloc'd in WinMain
+GATE_ATTRIBUTE* GateAttribute = nullptr; // Base de la tabla de gates reservada al inicio.
 // dialog data array — original ocupaba 0x07cf5608..0x07d27608 (0x32000 bytes).
 // Declaramos un buffer real de ese tamaño en DWORDs para que &DAT_07cf5608 apunte a memoria válida.
 DWORD   DAT_07cf5608[(DIALOG_SCRIPT_COUNT * 0x400) / 4] = {};   // g_DialogScript (200 x 0x400 = 200 KB)

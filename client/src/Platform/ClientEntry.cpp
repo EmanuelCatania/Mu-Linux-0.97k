@@ -598,7 +598,7 @@ int main(int, char**)
         RandomTable[j] = rand() % 360;
 
     // 19: alocación de buffers (tamaños sacados del decompile)
-    GateAttribute = (DWORD)malloc(900);     memset((void*)GateAttribute, 0, 0xe1 * 4);
+    GateAttribute = static_cast<GATE_ATTRIBUTE*>(malloc(900)); memset(GateAttribute, 0, 0xe1 * 4);
     DAT_07d29d20 = (int)malloc(0xa00);     memset((void*)DAT_07d29d20, 0, 0x280 * 4);
     DAT_07cf1ff8 = (int)malloc(0xa00);     memset((void*)DAT_07cf1ff8, 0, 0x280 * 4);
 
