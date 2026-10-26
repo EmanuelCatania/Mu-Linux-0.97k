@@ -2453,7 +2453,7 @@ int __cdecl Stats_ExtraOptionEquip6(short *param_1) {
 //   Guantes (Option1 en +970, ITEM en +944): this+82 = FUN_0047d000(guantes)
 //   Alas    (Option1 en +1038, ITEM en +1012): this+82 += FUN_0047d000(alas)
 // Orden: primero los guantes (reemplaza), después las alas (suma).
-int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
+int __cdecl Stats_ExtraOptionGlovesWings(BYTE* param_1) {
     short v = 0;
     if (*(unsigned char*)(param_1 + 970)) {
         *(short*)(param_1 + 82) = FUN_0047d000((short*)(param_1 + 944));

@@ -69,6 +69,7 @@ jobs:
             python -B tests/EulerQuatPointer.py --architecture x64
             python -B tests/QuatSlerpPointer.py --architecture x64
             python -B tests/ItemSpecialPointer.py --architecture x64
+            python -B tests/GlovesWingsPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -100,6 +101,7 @@ jobs:
             python3 -B tests/EulerQuatPointer.py --generator Ninja
             python3 -B tests/QuatSlerpPointer.py --generator Ninja
             python3 -B tests/ItemSpecialPointer.py --generator Ninja
+            python3 -B tests/GlovesWingsPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

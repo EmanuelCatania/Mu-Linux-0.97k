@@ -2401,7 +2401,7 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
     Stats_CalcDefense(this_);            // Stats_CalcDefense
     Stats_CalcDefenseRate(this_);            // Stats_CalcCritBase / DefRate
     Stats_ExtraOptionEquip6((short*)this_);    // Stats_CalcExtraOption1
-    Stats_ExtraOptionGlovesWings(this_);            // Stats_CalcExtraOption2
+    Stats_ExtraOptionGlovesWings(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcExtraOption2
 
     // Derived stats: max-min ranges
     unsigned short v2 = *(unsigned short*)(this_ + 1390);
