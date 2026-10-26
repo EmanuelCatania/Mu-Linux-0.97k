@@ -186,6 +186,6 @@ void MoveItems(void)
       *pZ = (float)fVar3;
       ItemAngle(AsObject(ip + 72));
     }
-    Entity_UpdateSparkleEffect((int)(ip + 72));
+    Entity_UpdateSparkleEffect(AsObject(ip + 72));
   }
 }

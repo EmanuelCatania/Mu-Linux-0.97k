@@ -113,8 +113,9 @@ lbl_z45:
 // FUN_00503650 @ 0x00503650 — Entity_UpdateSparkleEffect(entity_ptr)
 // Every 0x30 ticks spawns two Shiny01 particles (type 0x4ce) at random direction offset
 // from entity's facing matrix. Stack layout: {local_48[3], 0, local_34} = random XZ offsets.
-void __cdecl Entity_UpdateSparkleEffect(int param_1)
+void __cdecl Entity_UpdateSparkleEffect(OBJECT* object)
 {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     int iVar2 = *(int *)(param_1 + 4);
     *(int *)(param_1 + 4) = iVar2 + 1;
     if (iVar2 % 0x30 == 0) {
