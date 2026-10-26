@@ -68,11 +68,11 @@ void __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char* param_2) {
 // Reads item type at (param_2 + param_1*0x44), gets Width/Height from ItemAttribute.
 // Reads grid origin from offsets 0x3e (x) and 0x3f (y).
 // Writes param_3 to each cell at (param_2 + 0x40 + (gx + gy*8)*0x44).
-void __cdecl SetItemGridFlag(int param_1, int param_2, unsigned char param_3) {
+void __cdecl SetItemGridFlag(int param_1, BYTE* param_2, unsigned char param_3) {
     // 0x004CC1E0 — marks cells occupied/free in inventory grid
     // param_1 = item slot index, param_2 = inventory base ptr, param_3 = flag value to write
     short itemType = *(short*)(param_2 + param_1 * 0x44);
-    int itemBase = param_2 + param_1 * 0x44;
+    BYTE* itemBase = param_2 + param_1 * 0x44;
     ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)DAT_07d78068;
     BYTE width  = attr[itemType].Width;
     BYTE height = attr[itemType].Height;
@@ -211,12 +211,12 @@ void __cdecl SortInventory(short* param_1) {
             const int r = Item_CompareForTradeHistory(entry, item);
             if (r == 1) {                               // peor que el historial
                 DAT_07eaa0e8 = 1;
-                SetItemGridFlag(slot, (int)(uintptr_t)pool, 99);
+                SetItemGridFlag(slot, pool, 99);
                 continue;
             }
             if (r == 0 && tiedCount < 10)               // el original no acota
                 tied[tiedCount++] = *(const short*)entry;
-            SetItemGridFlag(slot, (int)(uintptr_t)pool, 1);
+            SetItemGridFlag(slot, pool, 1);
             break;
         }
     }
@@ -228,7 +228,7 @@ void __cdecl SortInventory(short* param_1) {
                 const BYTE* item = pool + i * 68;
                 if (*(const short*)item != -1 && *(const short*)item == tied[t] &&
                     *(const DWORD*)(item + 56) != 0)
-                    SetItemGridFlag(i, (int)(uintptr_t)pool, 1);
+                    SetItemGridFlag(i, pool, 1);
             }
     }
 }
