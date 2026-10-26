@@ -22,7 +22,8 @@ void RestorePickedItemToSource(void);
 
 // 0x00474310. Queda acá porque el paquete 0x1C es el fin autoritativo de un
 // Teleport local, después de que el paquete de skill 0x19 arrancó su animación.
-extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);
+struct OBJECT;
+extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);
 
 extern "C" void __cdecl CreatePoint(float Position[3], int Value,
                                     float Color[3], float scale);

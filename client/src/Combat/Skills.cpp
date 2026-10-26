@@ -55,8 +55,8 @@
 
 
 // Forward declarations for functions identified in decompilation
-extern "C" void __cdecl CreateTeleportBegin(unsigned int entity); // 0x004742b0
-extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);   // 0x00474310
+extern "C" void __cdecl CreateTeleportBegin(OBJECT* entity); // 0x004742b0
+extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);   // 0x00474310
 extern void Entity_ResetToWalk(int entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
 extern void Entity_TeleportEnd(int entity_idx);             // Legacy helper; no verified FUN mapping.
 extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legacy helper; no verified FUN mapping.
@@ -220,15 +220,15 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // Unlike the other cases, IDA returns immediately after the
         // teleport-begin animation rather than marking the common skill tail.
-        CreateTeleportBegin((unsigned int)(uintptr_t)caster);
+        CreateTeleportBegin(AsObject(caster));
         return;
     }
 
     case 0x0F:  // 15 Teleport Party
     {
         if (target != nullptr)
-            CreateTeleportBegin((unsigned int)(uintptr_t)target);
-        CreateTeleportEnd((unsigned int)(uintptr_t)caster);
+            CreateTeleportBegin(AsObject(target));
+        CreateTeleportEnd(AsObject(caster));
         // IDA 0x42BCA0 L198-201: `if (sc == Hero) Teleport = 0;`
         // (Teleport = 0x05826D14 = Teleport).  Faltaba: el flag quedaba
         // armado despues de terminar el teleport propio.

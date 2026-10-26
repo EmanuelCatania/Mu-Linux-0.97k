@@ -440,7 +440,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             AsCharacter(slot)->PK = dirpk & 0x0F;
             switch (charSet0 & 0x0F) {
             case 1:
-                CreateTeleportEnd((unsigned int)(uintptr_t)slot);
+                CreateTeleportEnd(AsObject(slot));
                 break;
             case 2:
                 SetAction(AsObject(slot),

@@ -1632,7 +1632,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         // El server usa gate=0 para el teleport de skill. IDA
         // completa ese efecto visual y limpia Teleport acá.
-        CreateTeleportEnd((unsigned int)(uintptr_t)hero);
+        CreateTeleportEnd(AsObject(hero));
         Teleport = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
     }
 

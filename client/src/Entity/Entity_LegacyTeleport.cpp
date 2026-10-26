@@ -74,15 +74,15 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 // Per IDA decompile. Begins teleport animation: anim 87, alpha=0 (fade out),
 // state byte 1, sparkle effect 1176. Sound 88 (whoosh).
 // SetAttackSpeed / SetAction / CreateEffect / PlayBuffer decls in functions.h.
-extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
+extern "C" void __cdecl CreateTeleportBegin(OBJECT* o)
 {
     if (!o) return;
     SetAttackSpeed();                                  // SetAttackSpeed
-    (void)SetAction(AsObject(o), 87);                  // SetAction(o, 87)
-    *(unsigned int*)(o + 356) = 0;                   // alpha = 0 (fade-out)
-    *(BYTE*)(o + 124) = 1;                           // state byte = 1 (begin)
-    (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
-                       (float*)(o + 232), nullptr, nullptr,
+    (void)SetAction(o, 87);
+    o->AlphaTarget = 0.0f;
+    o->Teleport = 1;
+    (void)CreateEffect(1176, o->Position, o->Angle,
+                       o->Light, nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
     PlayBuffer(88, 0, 0);                          // PlayBuffer(88) whoosh
 }
@@ -91,16 +91,16 @@ extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
 // Per IDA decompile. Completes teleport:
 // anim 87, anim_speed +0x108=5.0f (0x40A00000), state byte 3, alpha=1.0f
 // (fade-in), sparkle effect 1176, sound 88.
-extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
+extern "C" void __cdecl CreateTeleportEnd(OBJECT* o)
 {
     if (!o) return;
     SetAttackSpeed();
-    (void)SetAction(AsObject(o), 87);
-    *(unsigned int *)&AsObject(o)->AnimationFrame = 0x40A00000u;        // anim_speed = 5.0f
-    AsObject(o)->Teleport = 3;                           // state byte = 3 (end)
-    *(unsigned int *)&AsObject(o)->AlphaTarget = 0x3F800000u;        // alpha = 1.0f (fade-in)
-    (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
-                       (float*)(o + 232), nullptr, nullptr,
+    (void)SetAction(o, 87);
+    o->AnimationFrame = 5.0f;
+    o->Teleport = 3;
+    o->AlphaTarget = 1.0f;
+    (void)CreateEffect(1176, o->Position, o->Angle,
+                       o->Light, nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
     PlayBuffer(88, 0, 0);
 }
