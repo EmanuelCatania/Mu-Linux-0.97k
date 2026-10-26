@@ -381,7 +381,7 @@ int   __cdecl    Stats_CalcMagicDmgRange(int characterMachine);                /
 int   __cdecl    Stats_CalcAddStrength(short* characterMachine_words);       // Stats_CalcAddStrength
 int   __cdecl    CalculateAttackSpeed(int characterMachine); // IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
 int   __cdecl    Stats_CalcDefense(int characterMachine);                // Stats_CalcDefense
-int   __cdecl    Stats_CalcDefenseRate(int characterMachine);                // Stats_CalcCritBase
+int   __cdecl    Stats_CalcDefenseRate(BYTE* characterMachine);                // Stats_CalcCritBase
 int   __cdecl    Stats_ExtraOptionEquip6(short* characterMachine_words);       // Stats_CalcExtraOption1
 int   __cdecl    Stats_ExtraOptionGlovesWings(BYTE* characterMachine);                // Stats_CalcExtraOption2
 int   __cdecl    CalculateAll(int characterMachine, int, int); // IDA: FUN_0047E3C0 (0x0047E3C0)

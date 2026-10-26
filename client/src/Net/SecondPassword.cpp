@@ -2399,7 +2399,7 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
     Stats_CalcAddStrength((short*)this_);    // Stats_CalcAddStrength
     CalculateAttackSpeed(this_);            // CalculateAttackSpeed
     Stats_CalcDefense(this_);            // Stats_CalcDefense
-    Stats_CalcDefenseRate(this_);            // Stats_CalcCritBase / DefRate
+    Stats_CalcDefenseRate(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcCritBase / DefRate
     Stats_ExtraOptionEquip6((short*)this_);    // Stats_CalcExtraOption1
     Stats_ExtraOptionGlovesWings(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcExtraOption2
 

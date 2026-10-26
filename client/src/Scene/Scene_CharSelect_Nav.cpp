@@ -2363,12 +2363,11 @@ int __cdecl Stats_CalcDefense(int param_1) {
 //   class 3+ (DL?):   Vit/5
 // Then iterates 7 equipment slots checking durability-scaled rate bonus.
 // Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
-int __cdecl Stats_CalcDefenseRate(int param_1) {
+int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
     unsigned short vit = *(unsigned short*)(param_1 + 22);
 
@@ -2381,9 +2380,9 @@ int __cdecl Stats_CalcDefenseRate(int param_1) {
 
     int totalReduction = 0;
     for (int i = 1; i <= 7; ++i) {
-        int slotPtr = param_1 + 68 * i;
+        BYTE* slotPtr = param_1 + 68 * i;
         if (*(unsigned char*)(slotPtr + 562)) {  // slot's [+26] = 0x22A; 8*68+0x22 hmm let me recalc
-            unsigned int v7 = Item_GetDefenseWithSpecial((DWORD)slotPtr, (short*)(slotPtr + 536));
+            unsigned int v7 = Item_GetDefenseWithSpecial(0, (short*)(slotPtr + 536));
             ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)(slotPtr + 536)];
             float durP;
             if (i == 7) {
