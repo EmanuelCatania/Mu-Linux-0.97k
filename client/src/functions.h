@@ -381,7 +381,7 @@ int   __fastcall Stats_CalcBase(int characterMachine);                // Stats_C
 const ITEM* __cdecl Stats_CalcMagicDmgRange(BYTE* characterMachine);                // Stats_CalcMagicDmgRange
 int   __cdecl    Stats_CalcAddStrength(short* characterMachine_words);       // Stats_CalcAddStrength
 int   __cdecl    CalculateAttackSpeed(BYTE* characterMachine); // IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
-const ITEM* __cdecl Stats_CalcDefense(int characterMachine);                // Stats_CalcDefense
+const ITEM* __cdecl Stats_CalcDefense(BYTE* characterMachine);                // Stats_CalcDefense
 int   __cdecl    Stats_CalcDefenseRate(BYTE* characterMachine);                // Stats_CalcCritBase
 int   __cdecl    Stats_ExtraOptionEquip6(short* characterMachine_words);       // Stats_CalcExtraOption1
 int   __cdecl    Stats_ExtraOptionGlovesWings(BYTE* characterMachine);                // Stats_CalcExtraOption2

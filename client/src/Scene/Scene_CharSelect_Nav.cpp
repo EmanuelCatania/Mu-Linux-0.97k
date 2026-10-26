@@ -2309,12 +2309,11 @@ int __cdecl CalculateAttackSpeed(BYTE* param_1) {
 //   else: defense = Vit/3
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
-const ITEM* __cdecl Stats_CalcDefense(int param_1) {
+const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
 
     unsigned short *defPtr = (unsigned short*)(param_1 + 76);
