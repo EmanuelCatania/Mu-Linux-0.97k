@@ -45,7 +45,7 @@ jobs:
         run: cmake -S . -B build -G Ninja -DMU_PLATFORM_BACKEND=SDL3 -DMU_PLATFORM_ONLY=OFF -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/linux-x86.cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }}
       - name: Verificar crecimiento de recursos
         run: |
-          cmake --build build --config ${{ matrix.config }} --target mu_resource_tables_test mu_frame_pointer_set_test mu_text_core_test mu_text_shaper_test mu_transform_workers_test mu_render_profile_test mu_render_profile_flow_test mu_terrain_draw_flow_test mu_bmd_device_test --parallel 4
+          cmake --build build --config ${{ matrix.config }} --target mu_resource_tables_test mu_frame_pointer_set_test mu_text_core_test mu_text_shaper_test mu_transform_workers_test mu_render_profile_test mu_render_profile_flow_test mu_terrain_draw_flow_test mu_bmd_device_test mu_panel_anchor_test --parallel 4
           ctest --test-dir build -C ${{ matrix.config }} -E bmd_device --output-on-failure
       - name: Verificar BMD con Mesa (sin pantalla física)
         if: runner.os == 'Linux'
