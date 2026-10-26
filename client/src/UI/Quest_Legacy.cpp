@@ -15,7 +15,7 @@ int QuestX(int offset) { return gWindow.PanelOrigin(Ui::Quest) + offset; }
 // FUN_00402ff0 @ 0x00402FF0 (~59 lines) — Quest dialog: render message box text + answer choices
 // __fastcall(ecx=questObj). Renders g_lpszMessageBoxCustom lines centered, then answer list
 // with mouse hover highlight (red if hovered). Uses g_iNumAnswer, g_iNumLineMessageBoxCustom.
-void __fastcall FUN_00402ff0(int param_1) {
+void __fastcall FUN_00402ff0(const BYTE* param_1) {
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     EnableAlphaTest(true);
@@ -74,7 +74,7 @@ int __cdecl FUN_004c3dd0(int param_1);
 //   -1  (= pQuest + 39 + 18*i) 1 = la entrada pide un item
 char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
 {
-    const int This = (int)(uintptr_t)pThis;
+    const BYTE* This = static_cast<const BYTE*>(pThis);
 
     if (*(BYTE *)(This + 0x1c87f) == 0) return 0;      // el panel no esta abierto
     if (*(char *)(This + 0x1c882) != a2) return 0;     // el estado no es el pedido
@@ -145,7 +145,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
 // decide el color del boton).
 void __fastcall FUN_00403320(void* param_1) {
     char Buffer[100];
-    int  This = (int)(uintptr_t)param_1;
+    const BYTE* This = static_cast<const BYTE*>(param_1);
 
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
@@ -205,7 +205,7 @@ void __fastcall FUN_00403320(void* param_1) {
     m_dwTextColor = 0xFFF0FF96u;
 
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A
-    int questBase = This + 584 * questIdx;
+    const BYTE* questBase = This + 584 * questIdx;
     int nameW = 120 * (int)gWindow.GetWidth() / 0x280;
     // getMonsterName devuelve NULL mientras MonsterScript no esté parseada; el
     // original no lo contempla.
@@ -263,7 +263,8 @@ void __fastcall FUN_00403a40(void* param_1) {
     // Render separator lines (bitmap 0x117) and border lines (bitmap 0x104)
     // Dispatch to FUN_00403700(1 or 2) or CWsctlc__LogPrintOn() based on selected tab
     // Close button, NPC name, dialog answers
-    char cVar1 = *(char*)((int)param_1 + 0x1c87d);
+    const BYTE* quest = static_cast<const BYTE*>(param_1);
+    char cVar1 = *(const char*)(quest + 0x1c87d);
     if (cVar1 == '\0') {
         FUN_00403700(param_1, NULL, 1);
     } else if (cVar1 == '\x01') {
@@ -272,7 +273,7 @@ void __fastcall FUN_00403a40(void* param_1) {
         CWsctlc__LogPrintOn();
     }
     // Texto del dialogo + respuestas.
-    FUN_00402ff0((int)(uintptr_t)param_1);
+    FUN_00402ff0(quest);
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 

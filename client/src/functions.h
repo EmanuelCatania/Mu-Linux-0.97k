@@ -1080,7 +1080,7 @@ void  __cdecl FUN_00406d40(int param_1);                             // free has
 // Sub-functions called by batch 8 init functions
 
 // Batch 10 — Sound/BST/Misc range: Quest UI, ErrorReport, SystemInfo, HashTable, GameGuard
-void  __fastcall FUN_00402ff0(int param_1);                          // quest dialog answers render
+void  __fastcall FUN_00402ff0(const BYTE* param_1);                  // quest dialog answers render
 void  __fastcall FUN_00403320(void* param_1);                        // quest NPC dialog render
 UINT  __fastcall FUN_00403700(void* ecx, void* edx, UINT param_1);  // quest list by state
 void  __fastcall FUN_00403a40(void* param_1);                        // quest UI main panel
