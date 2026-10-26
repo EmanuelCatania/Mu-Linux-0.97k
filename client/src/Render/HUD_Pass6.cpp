@@ -88,6 +88,7 @@ extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
 extern "C" void GuildMark_InitializePalette(bool blend);
 extern "C" int    InputTextWidth;
+extern "C" BYTE   InputTextHide[10];
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
 extern "C" char   DAT_07ea51f5[64];
@@ -675,6 +676,8 @@ extern "C" void GuildCreator_OpenFromServer(void)
     GuildInputEnable = 1;
     DAT_00559c84 = 0;
     ClearInput(0);
+    // El Personal Code deja este slot enmascarado; el nombre del guild es visible.
+    InputTextHide[0] = 0;
     Input_SetLimit(0, (int)NetText::GuildNameSize, (int)NetText::GuildNameClusters);
     InputNumber = 0;
     GuildMark_InitializePalette(true);
