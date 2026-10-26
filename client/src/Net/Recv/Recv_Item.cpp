@@ -990,7 +990,7 @@ void NetRecv_29(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     *(WORD*)(ca + 42 + 2 * number) = (WORD)(24 * *(const WORD*)(Msg + 4));
     if (number == 0) {
         ca[40] |= 1;
-        CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
+        CalculateAttackSpeed(static_cast<BYTE*>(CharacterMachine));   // CalculateAttackSpeed
     } else if (number == 1) {
         ca[40] |= 2;
         Stats_CalcBase((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase

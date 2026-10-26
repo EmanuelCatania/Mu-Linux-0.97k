@@ -2397,7 +2397,7 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
     Stats_CalcBase(this_);            // Stats_CalcBase (attack damage)
     Stats_CalcMagicDmgRange(this_);            // Stats_CalcMagicDmgRange
     Stats_CalcAddStrength((short*)this_);    // Stats_CalcAddStrength
-    CalculateAttackSpeed(this_);            // CalculateAttackSpeed
+    CalculateAttackSpeed(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // CalculateAttackSpeed
     Stats_CalcDefense(this_);            // Stats_CalcDefense
     Stats_CalcDefenseRate(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcCritBase / DefRate
     Stats_ExtraOptionEquip6((short*)this_);    // Stats_CalcExtraOption1
@@ -3109,7 +3109,7 @@ void __cdecl MoveCharacter(int p1)
             if (*t1) (*t1)--;
             if (!*t1) {
                 *((BYTE*)CharacterAttribute + 40) &= ~1u;
-                CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);  // CalculateAttackSpeed
+                CalculateAttackSpeed(static_cast<BYTE*>(CharacterMachine));  // CalculateAttackSpeed
             }
             // L458-467: magic-speed buff (CA+44 timer, CA+40 bit 1)
             unsigned short* t2 = (unsigned short*)((char*)CharacterAttribute + 44);

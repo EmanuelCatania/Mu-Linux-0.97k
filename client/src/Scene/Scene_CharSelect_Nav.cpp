@@ -2217,12 +2217,11 @@ int __cdecl Stats_CalcAddStrength(short *param_1) {
 //   Pants (slot 5 = this+876) speed bonus.
 //   Flag de estado (this+40 bit 0): +20 a los dos.
 //   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
-int __cdecl CalculateAttackSpeed(int param_1) {
+int __cdecl CalculateAttackSpeed(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
 
     unsigned short *atkPtr;
@@ -2247,9 +2246,9 @@ int __cdecl CalculateAttackSpeed(int param_1) {
         *magPtr = v / 10;
     }
 
-    DWORD weaponR = (DWORD)(uintptr_t)(param_1 + 604);  // WeaponR
-    DWORD weaponL = (DWORD)(uintptr_t)(param_1 + 536);  // WeaponL
-    DWORD pants   = (DWORD)(uintptr_t)(param_1 + 876);  // Pants
+    BYTE* weaponR = param_1 + 604;  // WeaponR
+    BYTE* weaponL = param_1 + 536;  // WeaponL
+    BYTE* pants   = param_1 + 876;  // Pants
 
     // Skip dword_7E91388/pPickedItem hover preview for non-runtime simplicity.
 
@@ -2298,7 +2297,7 @@ int __cdecl CalculateAttackSpeed(int param_1) {
     PlusSpecial(magPtr, 77, AsItem((param_1 + 604)));
     PlusSpecial(atkPtr, 77, AsItem((param_1 + 1148)));
     PlusSpecial(magPtr, 77, AsItem((param_1 + 1148)));
-    DWORD helm = (DWORD)(uintptr_t)(param_1 + 1080);
+    BYTE* helm = param_1 + 1080;
     PlusSpecial(atkPtr, 77, AsItem(helm));
     PlusSpecial(magPtr, 77, AsItem(helm));
     return 0;
