@@ -209,7 +209,7 @@ void PacketHandler_0x19(BYTE* pkt)
             const BYTE targetAction = AsObject(target)->CurrentAction;
             if (targetAction == 0x8B || targetAction == 0x8C ||
                 targetAction == 0x85 || targetAction == 0x87) {
-                SetPlayerStop((int)(intptr_t)target);
+                SetPlayerStop(AsCharacter(target));
             }
         }
         AnimateRemoteSkillCaster97k(caster);
@@ -378,7 +378,7 @@ void PacketHandler_0x19(BYTE* pkt)
                          (float*)2, (float*)target, (float*)-1, nullptr, 0);
             // Clear freeze offset (0x2BC byte at local +0xBB from struct base = 0xBB)
             target[748] = 0;
-            SetPlayerStop((int)(intptr_t)target);
+            SetPlayerStop(AsCharacter(target));
             // Set ice status bit
             *(DWORD*)(target + 120) |= 0x20;
         }

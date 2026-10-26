@@ -263,7 +263,7 @@ void  __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in,
 int   __cdecl ItemObjectAttribute(int param_1); // IDA: ItemObjectAttribute (0x00502BA0)
 void  __cdecl BMD__Open(int, int, int, int);   // IDA: BMD__Open (0x004423E0)
 undefined4 __cdecl BMD__Save(int thisModel, char *pathDir, char *pathFile);  // BMD_SaveToFile
-void  __cdecl SetPlayerStop(int entity); // IDA: SetPlayerStop (0x004430C0)
+void  __cdecl SetPlayerStop(CHARACTER* entity); // IDA: SetPlayerStop (0x004430C0)
 void  __cdecl SetPlayerWalk(int entity); // IDA: SetPlayerWalk (0x00443930)
 unsigned int __cdecl Entity_AdvancePath(void *entity, char flag); // IDA: MovePath
 void  __cdecl MoveCharacterPosition(int entity); // IDA: MoveCharacterPosition (0x00454BA0)

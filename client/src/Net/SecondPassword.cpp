@@ -1783,7 +1783,7 @@ void __cdecl FUN_004d1fc0(void) {
 extern std::uintptr_t DAT_07d78068;   // ItemAttribute base (declared in globals.h)
 
 // IDA: SetPlayerStop (0x004430C0)
-void __cdecl SetPlayerStop(int c) {
+void __cdecl SetPlayerStop(CHARACTER* c) {
     AsCharacter(c)->Run = 0;   // c+768 = stamina counter
 
     auto SetAction_local = [c](unsigned char act) {
@@ -2319,7 +2319,7 @@ void __cdecl SetCharacterClass(int c) {
 
     bool skipCancel = (v11 >= 0x85u && v11 <= 0x8Cu);
     if (!skipCancel && (v11 < 0x22u || v11 > 0x5Bu)) {
-        SetPlayerStop(c);   // SetPlayerStop
+        SetPlayerStop(AsCharacter(c));   // SetPlayerStop
     }
 
     // entity[+847] == 0 → secondary cluster needs filling
@@ -3159,7 +3159,7 @@ void __cdecl MoveCharacter(int p1)
         unsigned char step = (unsigned char)(AsCharacter(c)->JumpTime);
         (AsCharacter(c)->JumpTime)++;
         if (step > 15) {
-            if (AsObject(o)->Type == 322) SetPlayerStop((int)c);
+            if (AsObject(o)->Type == 322) SetPlayerStop(AsCharacter(c));
             AsCharacter(c)->JumpTime = 0;
         }
     }
@@ -3262,7 +3262,7 @@ void __cdecl MoveCharacter(int p1)
                 BYTE act = AsObject(o)->CurrentAction;
                 if (act < 0x0Du
                     || (act >= 0x22u && act <= 0x82u && act != 79 && act != 80)) {
-                    SetPlayerStop((int)c);  // SetPlayerStop
+                    SetPlayerStop(AsCharacter(c));  // SetPlayerStop
                 }
                 skipIdleSelect = true;  // jump to L195
             }
@@ -4595,7 +4595,7 @@ void __cdecl MoveMonsterClient(int param_1_i, int param_2)
         if ((char)arrived != '\0') {
             // Arrived at waypoint — stop
             AsCharacter(entity)->Movement = 0;
-            SetPlayerStop(entity);
+            SetPlayerStop(AsCharacter(entity));
             // Actualiza el facing según el byte de dirección del camino en +0x2fc
             AsCharacter(entity)->Object.Angle[2] =
                 ((float)*(unsigned char*)(entity + 0x2fc) - _DAT_0055256c) * _DAT_00552844;

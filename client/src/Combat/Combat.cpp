@@ -2000,7 +2000,7 @@ void __cdecl Action(DWORD c, DWORD o)
         //   if (g_csQuest[4] == 0xFF) send [C1][03][A0];     // CGQuestInfoRecv
         //   send [C1][05][30][KeyHi][KeyLo];                 // PMSG_NPC_TALK_RECV
         DAT_00559bec = 12;                       // IDA L814: MouseUpdateTimeMax
-        SetPlayerStop((int)c);                    // IDA L815: SetPlayerStop
+        SetPlayerStop(AsCharacter(c));                    // IDA L815: SetPlayerStop
         AsCharacter(c)->Movement = 0;          // IDA L816
 
         const int npcSlotIdx = (int)DAT_00559c70;            // IDA: SelectedNpc

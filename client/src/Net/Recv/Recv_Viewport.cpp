@@ -245,7 +245,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     }
                 } else {
                     AsCharacter(h)->Movement = 0;
-                    SetPlayerStop((int)(uintptr_t)h);
+                    SetPlayerStop(AsCharacter(h));
                 }
             }
         }

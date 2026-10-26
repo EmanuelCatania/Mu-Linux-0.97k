@@ -719,7 +719,7 @@ void __cdecl Player_ProcessInput(void)
     {
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
         if (*(unsigned char*)(ent + 0x78) & 0x20) {
-            SetPlayerStop((int)ent);
+            SetPlayerStop(AsCharacter(ent));
         } else {
             // El chequeo isIdle va ANTES de SetPlayerWalk: si está idle (sin path activo)
             // no hay que setear la acción de caminar cada frame (resetearía el frame
@@ -749,7 +749,7 @@ void __cdecl Player_ProcessInput(void)
                     // Es la UNICA escritura a +748 que tiene esa funcion en el
                     // binario: sin ella el walker nunca se apaga.
                     AsCharacter(ent)->Movement = 0;
-                    SetPlayerStop((int)ent);
+                    SetPlayerStop(AsCharacter(ent));
                     // IDA L401: `dword_7E11DBC = (std::int64_t)*(float *)(v0 + 36);`
                     // — es el FACING del héroe, no un timestamp.
                     DAT_07e11dbc = (int)AsCharacter(ent)->Object.Angle[2];

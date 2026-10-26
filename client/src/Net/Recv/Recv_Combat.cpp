@@ -419,8 +419,8 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         break;
     }
     case 102: case 103: {
-        extern void __cdecl SetPlayerStop(int);  // SetPlayerStop
-        SetPlayerStop((int)slot);
+        extern void __cdecl SetPlayerStop(CHARACTER*);  // SetPlayerStop
+        SetPlayerStop(AsCharacter(slot));
         break;
     }
     case 108: SetAnim(slot, walking ? 135 : 133); break;

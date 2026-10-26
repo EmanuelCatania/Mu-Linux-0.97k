@@ -222,7 +222,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // dejó action=1 (idle pegado al piso). Re-llamamos ahora que las alas
         // están equipadas para que action pase a 9 (float-idle) y los chars
         // con alas aparezcan flotando como en el cliente original.
-        SetPlayerStop((int)(uintptr_t)c);
+        SetPlayerStop(AsCharacter(c));
     }
 
     // CurrentProtocolState = 51 → Scene_CharSelect lo usa como gate de render
@@ -702,7 +702,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
     // (7) Reconstruye el cuerpo desde CharacterMachine y corta la animación
     //     de muerte; después el efecto visual de aparición.
     SetCharacterClass((int)(uintptr_t)heroPtr);             // SetCharacterClass
-    SetPlayerStop((int)(uintptr_t)heroPtr);             // SetPlayerStop
+    SetPlayerStop(AsCharacter(heroPtr));             // SetPlayerStop
     CreateEffect(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
                  (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
                  (float*)-1, nullptr, 0);              // CreateEffect(1265)
@@ -1638,7 +1638,7 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     // Este store es común a las dos ramas en el original.
     AsCharacter(hero)->Movement = 0;
-    SetPlayerStop((int)(uintptr_t)hero);
+    SetPlayerStop(AsCharacter(hero));
 }
 
 // 0x26

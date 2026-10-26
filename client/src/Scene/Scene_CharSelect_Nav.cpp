@@ -445,7 +445,7 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
         v2 = false;
     }
     if ((v1 < 0x22u || v1 > 0x5Bu) && v2) {
-        SetPlayerStop((int)(uintptr_t)param_1);
+        SetPlayerStop(AsCharacter(param_1));
     }
 
     int v3 = AsCharacter(param_1)->Class & 7;
