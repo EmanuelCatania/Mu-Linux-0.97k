@@ -73,6 +73,7 @@ jobs:
             python -B tests/DefenseRatePointer.py --architecture x64
             python -B tests/AttackSpeedPointer.py --architecture x64
             python -B tests/MagicSkillDamagePointer.py --architecture x64
+            python -B tests/ItemPercentPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -108,6 +109,7 @@ jobs:
             python3 -B tests/DefenseRatePointer.py --generator Ninja
             python3 -B tests/AttackSpeedPointer.py --generator Ninja
             python3 -B tests/MagicSkillDamagePointer.py --generator Ninja
+            python3 -B tests/ItemPercentPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

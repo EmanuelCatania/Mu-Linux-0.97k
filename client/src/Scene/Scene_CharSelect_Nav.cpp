@@ -2118,7 +2118,7 @@ void __cdecl BuxConvert_0(void* buffer, int len) {
 //   + special 75 (flat add) on WeaponL
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
-int __cdecl Stats_CalcMagicDmgRange(int param_1) {
+const ITEM* __cdecl Stats_CalcMagicDmgRange(int param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     unsigned short energy = *(unsigned short*)(param_1 + 26);
@@ -2163,8 +2163,8 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
             *maxPtr += (unsigned short)(maxBonus - (unsigned short)((double)maxBonus * (double)durP));
             PlusSpecial(minPtr, 75, AsItem(weaponL));
             PlusSpecial(maxPtr, 75, AsItem(weaponL));
-            PlusSpecialPercent((short*)minPtr, 76, (int)weaponL, 2);
-            PlusSpecialPercent((short*)maxPtr, 76, (int)weaponL, 2);
+            PlusSpecialPercent((short*)minPtr, 76, AsItem(weaponL), 2);
+            PlusSpecialPercent((short*)maxPtr, 76, AsItem(weaponL), 2);
         }
     }
 
@@ -2173,11 +2173,11 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
         if (*(unsigned char*)(itemRing1 + 26) != 0) {
             PlusSpecial(minPtr, 75, AsItem(itemRing1));
             PlusSpecial(maxPtr, 75, AsItem(itemRing1));
-            PlusSpecialPercent((short*)minPtr, 76, (int)itemRing1, 2);
-            return PlusSpecialPercent((short*)maxPtr, 76, (int)itemRing1, 2);
+            PlusSpecialPercent((short*)minPtr, 76, AsItem(itemRing1), 2);
+            return PlusSpecialPercent((short*)maxPtr, 76, AsItem(itemRing1), 2);
         }
     }
-    return (int)itemRing1;
+    return AsItem(itemRing1);
 }
 
 // IDA: CHARACTER_MACHINE::GetMagicSkillDamage (0x0047E4F0).  Fuera del ruido
@@ -2309,7 +2309,7 @@ int __cdecl CalculateAttackSpeed(BYTE* param_1) {
 //   else: defense = Vit/3
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
-int __cdecl Stats_CalcDefense(int param_1) {
+const ITEM* __cdecl Stats_CalcDefense(int param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     DWORD ca = (DWORD)DAT_07cf1ff4;
@@ -2341,17 +2341,17 @@ int __cdecl Stats_CalcDefense(int param_1) {
             PlusSpecial(&Value, 62, AsItem((param_1 + 604)));
             *defPtr += (unsigned short)(Value - (unsigned short)((double)Value * (double)durP));
 
-            PlusSpecialPercent((short*)defPtr, 70, param_1 + 604, 10);
+            PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 604), 10);
         }
     }
     // Apply percent defense bonuses from all equipment slots
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 672,  10);  // Pendant
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 740,  10);  // Armor
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 808,  10);  // Pants
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 876,  10);  // Gloves
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 944,  10);  // Boots
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 1284, 10);  // Necklace
-    return PlusSpecialPercent((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 672), 10);  // Pendant
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 740), 10);  // Armor
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 808), 10);  // Pants
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 876), 10);  // Gloves
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 944), 10);  // Boots
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 1284), 10);  // Necklace
+    return PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 1216), 10);  // Ring2
 }
 
 // sub_47E160 @ 0x0047E160 (383 bytes) — Stats_CalcCritBase / DefRate.

@@ -234,12 +234,13 @@ extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level,
 // sub_47CF40 @ 0x0047CF40 (104 bytes) — Stats_ApplyBonus2 (percentage).
 // Like PlusSpecial but multiplies: *a1 += a4 * (*a1) / 100 if any special
 // matches `a2`. Used for percentage-based stat bonuses (defense %, etc).
-int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
-    int result = a3;
-    if (*(unsigned short*)a3 == 0xFFFF) return result;
-    int count = *(unsigned char*)(a3 + 36);
+const ITEM* __cdecl PlusSpecialPercent(short *a1, int a2, const ITEM* a3, unsigned short a4) {
+    const ITEM* result = a3;
+    const BYTE* data = reinterpret_cast<const BYTE*>(a3);
+    if (a3->Type == -1) return result;
+    int count = a3->SpecialNum;
     for (int i = 0; i < count; ++i) {
-        if (*(unsigned char*)(a3 + i + 37) == (unsigned int)a2) {
+        if (data[i + 37] == (unsigned int)a2) {
             *(unsigned short*)a1 += (unsigned short)(a4 * (unsigned short)*a1 / 100);
         }
     }
@@ -379,8 +380,8 @@ skip_wings: ;
             }
             PlusSpecial(atkMinL, 73, AsItem(wp_L));
             PlusSpecial(atkMaxL, 73, AsItem(wp_L));
-            PlusSpecialPercent((short*)atkMinL, 74, (int)wp_L, 2);
-            PlusSpecialPercent((short*)atkMaxL, 74, (int)wp_L, 2);
+            PlusSpecialPercent((short*)atkMinL, 74, AsItem(wp_L), 2);
+            PlusSpecialPercent((short*)atkMaxL, 74, AsItem(wp_L), 2);
         }
     }
 
@@ -410,8 +411,8 @@ skip_wings: ;
             }
             PlusSpecial(atkMinR, 73, AsItem(wp_R));
             PlusSpecial(atkMaxR, 73, AsItem(wp_R));
-            PlusSpecialPercent((short*)atkMinR, 74, (int)wp_R, 2);
-            PlusSpecialPercent((short*)atkMaxR, 74, (int)wp_R, 2);
+            PlusSpecialPercent((short*)atkMinR, 74, AsItem(wp_R), 2);
+            PlusSpecialPercent((short*)atkMaxR, 74, AsItem(wp_R), 2);
         }
     }
 
@@ -419,12 +420,12 @@ skip_wings: ;
     if (*(unsigned short*)ring1 != 0xFFFF && *(unsigned char*)(ring1 + 26)) {
         PlusSpecial(atkMinL, 73, AsItem(ring1));
         PlusSpecial(atkMaxL, 73, AsItem(ring1));
-        PlusSpecialPercent((short*)atkMinL, 74, (int)ring1, 2);
-        PlusSpecialPercent((short*)atkMaxL, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMinL, 74, AsItem(ring1), 2);
+        PlusSpecialPercent((short*)atkMaxL, 74, AsItem(ring1), 2);
         PlusSpecial(atkMinR, 73, AsItem(ring1));
         PlusSpecial(atkMaxR, 73, AsItem(ring1));
-        PlusSpecialPercent((short*)atkMinR, 74, (int)ring1, 2);
-        PlusSpecialPercent((short*)atkMaxR, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMinR, 74, AsItem(ring1), 2);
+        PlusSpecialPercent((short*)atkMaxR, 74, AsItem(ring1), 2);
     }
 
     // Bow + arrows synergy (Type 135 with arrows option) / Crossbow + bolts (Type 143)

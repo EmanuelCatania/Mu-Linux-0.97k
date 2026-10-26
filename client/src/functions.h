@@ -9,6 +9,7 @@
 struct OBJECT;
 struct CHARACTER;
 struct ITEM_ATTRIBUTE;
+struct ITEM;
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
 // functions.h — Prototypes for all FUN_ (unresolved) functions.
@@ -373,14 +374,14 @@ int   __cdecl CreateSprite(unsigned short, float *, float, float *, int, float, 
 // Render_DrawSprite / Render_DrawSpritePool: implementadas en Sound/Sound_Queue.cpp;
 // CheckSprites (declarada más arriba): en Scene/Scene_CharSelect_Nav.cpp.
 void  __cdecl ItemConvert(int, int, int);
-int   __cdecl PlusSpecialPercent(short* a1, int a2, int a3, unsigned short a4);  // Stats_ApplyBonus2
+const ITEM* __cdecl PlusSpecialPercent(short* a1, int a2, const ITEM* a3, unsigned short a4);  // Stats_ApplyBonus2
 void  __cdecl CHARACTER_MACHINE_Init(int, int, int);   // IDA: CHARACTER_MACHINE_Init (0x0047D3D0)
 // Stat helpers — las firmas coinciden con el decompile de IDA.
 int   __fastcall Stats_CalcBase(int characterMachine);                // Stats_CalcBase (attack damage)
-int   __cdecl    Stats_CalcMagicDmgRange(int characterMachine);                // Stats_CalcMagicDmgRange
+const ITEM* __cdecl Stats_CalcMagicDmgRange(int characterMachine);                // Stats_CalcMagicDmgRange
 int   __cdecl    Stats_CalcAddStrength(short* characterMachine_words);       // Stats_CalcAddStrength
 int   __cdecl    CalculateAttackSpeed(BYTE* characterMachine); // IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
-int   __cdecl    Stats_CalcDefense(int characterMachine);                // Stats_CalcDefense
+const ITEM* __cdecl Stats_CalcDefense(int characterMachine);                // Stats_CalcDefense
 int   __cdecl    Stats_CalcDefenseRate(BYTE* characterMachine);                // Stats_CalcCritBase
 int   __cdecl    Stats_ExtraOptionEquip6(short* characterMachine_words);       // Stats_CalcExtraOption1
 int   __cdecl    Stats_ExtraOptionGlovesWings(BYTE* characterMachine);                // Stats_CalcExtraOption2
