@@ -397,7 +397,7 @@ skip_decrement:
                 }
             }
 
-            Alpha((int)(puVar9 + -0x3a));  // commit particle state
+            Alpha(AsObject(puVar9 + -0x3a)); // Actualiza el alpha del objeto del pool.
             iVar8 = gMapManager.GetCurrentMap();
         }
 

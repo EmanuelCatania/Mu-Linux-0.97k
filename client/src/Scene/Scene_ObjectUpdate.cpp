@@ -73,7 +73,7 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
     }
 
     // Alpha fade — Alpha(entity_ptr)
-    Alpha(objPtr);
+    Alpha(AsObject(objPtr));
 
     // Check alpha > 0
     float alpha = AsObject(objPtr)->Alpha;
@@ -779,7 +779,7 @@ void __stdcall MoveBugs(void) {
                 goto next_bug;
             }
         }
-        Alpha((int)e);                  // Alpha() — fade
+        Alpha(AsObject(e));              // Actualiza el alpha sin truncar la dirección.
 
         {
         int   v2 = (int)owner;
@@ -1087,7 +1087,7 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     }
   }
 LABEL_22:
-  Alpha(o);
+  Alpha(AsObject(o));
   if ( *(float *)(o + 360) < 0.0099999998 )
   {
     return;

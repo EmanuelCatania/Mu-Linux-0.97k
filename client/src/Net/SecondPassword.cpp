@@ -3230,7 +3230,7 @@ void __cdecl MoveCharacter(int p1)
     }
 
     // ─── IDA L607: Alpha(o)
-    Alpha((int)o);
+    Alpha(AsObject(o));
 
     // ─── IDA L608-611: shaky timer decay
     if (*(float*)(c + 836) > 0.0f) *(float*)(c + 836) -= 0.029999999f;

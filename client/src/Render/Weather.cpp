@@ -791,7 +791,7 @@ LAB_00501cb5:
             }
         }
 
-        Alpha((int)pcVar3);
+        Alpha(AsObject(pcVar3));
         uVar8 = 0;  // return value unused; Alpha returns void
         iVar12 = gMapManager.GetCurrentMap();
 
