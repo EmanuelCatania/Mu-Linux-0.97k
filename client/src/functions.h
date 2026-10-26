@@ -4,7 +4,9 @@
 // función declarada con el nombre de IDA: un segundo símbolo C++ para la misma
 // dirección del binario termina en puentes muertos.
 #include "Platform/CompilerCompat.h"
+#include <cstdint>
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
+struct OBJECT;
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
 // functions.h — Prototypes for all FUN_ (unresolved) functions.
@@ -211,7 +213,7 @@ void  __cdecl RenderInformation(void);
 float __cdecl TurnAngle2(float curAngle, float tgtAngle, float t); // IDA: TurnAngle2 (0x0043E1B0)
 void  __cdecl Vector_AddRotated(float *pos, float *dir, float *vel); // Vector3_Normalize (cross/normalize vel from pos+dir)
 void* __cdecl SetAction(int entity_ptr, int anim_id); // IDA: SetAction (0x0043E820)
-void  __cdecl Alpha(int entity_ptr); // IDA: Alpha (0x0043E5C0)
+void  __cdecl Alpha(std::uintptr_t entity_ptr); // IDA: Alpha (0x0043E5C0)
 void  __cdecl Particle_PathUpdate(int entity_ptr, int slot_idx, int table_base, int stride); // Particle_PathUpdate
 // Pathfind(src_cached_x, src_cached_y, tgt_x, tgt_y, path_buf, reserved) → 1=ok 0=fail
 unsigned int __cdecl Path_FindRoute(int src_x, int src_y, int tgt_x, int tgt_y, unsigned char *path, float reserved); // IDA: PathFinding2
@@ -1195,7 +1197,7 @@ void  __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFl
 void  __cdecl RenderTerrainFrustrum(bool EditFlag);                 // 0x004F97E0
 void  __cdecl MoveObject_Special(int param_1); // legacy alias of MoveObject_Special (0x004FA5F0)
 char* __stdcall PickObject_Mouse(void);                             // 0x004FA7C0
-float* __cdecl MoveObject_PerWorld(float param_1);                       // 0x004FDC00
+float* __cdecl MoveObject_PerWorld(OBJECT* object);                      // 0x004FDC00, resumen sin llamadas activas
 int   __stdcall MoveHeavenThunder(void);                            // 0x004FED90
 void  __stdcall MoveObjects(void);                                  // 0x004FF260
 void  __stdcall MoveBugs(void);                                     // 0x005001F0
@@ -1294,7 +1296,7 @@ void  __fastcall FUN_00410a90(int* param_1);                               // Si
 
 // Batch 21 — forward declarations for MoveObjects, CollisionDetectLineToMesh, CheckMixRecipe
 void  __cdecl MoveObject_Special(int pObj);                                      // Object_AnimUpdate (per-frame anim tick)
-void  __cdecl FUN_004fdc00(float pObj);                                    // Object_RenderUpdate (terrain render per object)
+void  __cdecl FUN_004fdc00(OBJECT* object);                                // IDA: 0x004FDC00, tick por objeto
 void  __cdecl FaceNormalize(float v[3], float out[3], float v2[3], float normal[3]); // 0x00440A60 approx
 // CollisionDetectLineToFace se declara mas arriba (0x00512D40).  Aca habia una
 // SEGUNDA declaracion, la del stub, que decia ser "0x00440C90 approx" -- esa

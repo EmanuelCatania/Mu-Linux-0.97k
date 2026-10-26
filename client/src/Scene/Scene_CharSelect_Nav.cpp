@@ -673,7 +673,8 @@ int __fastcall CWsctlc_GetReadMsg(int param_1)
 // Si el héroe está atacando y el efecto está en rango, lo atrae hacia
 // el héroe con una velocidad proporcional al delta y un factor de fricción que decae.
 // Effect_PhysicsTick (IDA-activated)
-void __cdecl Effect_PhysicsTick(DWORD Object)
+// IDA 0x0046CA00: Object se desreferencia como dirección durante todo el tick.
+void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
 {
   unsigned char v2; // al
   double v3; // st7

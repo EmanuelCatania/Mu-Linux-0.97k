@@ -43,8 +43,8 @@ extern void ClearActionObject(void);
 // en el orden del binario:
 //   World 9 → World 0/2 toggles → Alpha → early-return → PlayAnimation →
 //   bloque de login (160/161/162) → switch por World.
-void __cdecl FUN_004fdc00(float pObj) {
-    if (LODWORD(pObj) == 0) return;
-    MoveObject_PerWorld(pObj);
+void __cdecl FUN_004fdc00(OBJECT* object) {
+    if (object == nullptr) return;
+    MoveObject_PerWorld(object);
 }
 #endif  // IDA_PORT_004FDC00 (minimal disabled)

@@ -42,7 +42,8 @@ extern "C" { void DbgLogPublic(const char* msg); }
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl Alpha(int param_1)
+// IDA 0x0043E5C0: el argumento es la base de OBJECT, no un entero de 32 bits.
+void __cdecl Alpha(std::uintptr_t param_1)
 
 {
   float fVar1;
