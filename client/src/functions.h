@@ -814,7 +814,7 @@ void  __cdecl RenderSkillTooltip(float a1, int a2, int a3);   // Skill_RenderToo
 void  __cdecl Window_FatalError(HWND hwnd, char shutdown);  // 0x004129F0
 
 // ── Misc/Util helpers ─────────────────────────────────────────────────────────
-void  __cdecl ItemAngle(int); // IDA: ItemAngle (0x005030C0)
+void  __cdecl ItemAngle(OBJECT*); // IDA: ItemAngle (0x005030C0)
 void  __cdecl Entity_UpdateSparkleEffect(int); // FUN_00503650 — updates periodic entity sparkle particles
 int   __cdecl CSQuest_ProceedButton(void *);  // Packet_ParseType1
 undefined4 __cdecl Packet_ParseType2(void *);  // Packet_ParseType2

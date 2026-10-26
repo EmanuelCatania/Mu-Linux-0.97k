@@ -45,7 +45,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Sets initial gravity velocity components at +0x1c/+0x20/+0x24 and scale +0x0c
 // based on entity type (short at +2). Each entity type has hardcoded float offsets.
 // IDA: ItemAngle (0x005030C0)
-void __cdecl ItemAngle(int param_1) {
+void __cdecl ItemAngle(OBJECT* object) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     short sVar1 = *(short*)(param_1 + 2);
     *(unsigned int*)(param_1 + 0x1c) = 0;
     *(unsigned int*)(param_1 + 0x20) = 0;

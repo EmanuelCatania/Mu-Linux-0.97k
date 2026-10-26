@@ -785,7 +785,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // Cada entrada del pool es un ITEM_t (structs.h): Key, Item y Object.
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
-    extern void __cdecl ItemAngle(int);   // ItemAngle
+    extern void __cdecl ItemAngle(OBJECT*);   // ItemAngle
     // DESVIACION: el server manda PMSG_VIEWPORT_ITEM (Viewport.h) con
     // stride fijo index[2] + x + y + ItemInfo[MAX_ITEM_INFO + 1] = 12,
     // no el stride variable del 0.97k. Bound y avance usan el mismo valor.
@@ -905,7 +905,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         // ItemAngle (CreateItem final): setea rotación del item en
         // el suelo según el terreno.
-        ItemAngle((int)(uintptr_t)o);
+        ItemAngle(AsObject(o));
 
         NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                i, key, itemType, createFlag, gx, gy);

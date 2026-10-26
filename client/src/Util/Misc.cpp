@@ -184,7 +184,7 @@ void MoveItems(void)
     else {
       // Tocó el suelo: se apoya sobre el terreno.
       *pZ = (float)fVar3;
-      ItemAngle((int)(ip + 72));
+      ItemAngle(AsObject(ip + 72));
     }
     Entity_UpdateSparkleEffect((int)(ip + 72));
   }
