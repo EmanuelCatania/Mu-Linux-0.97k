@@ -160,7 +160,8 @@ void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,flo
   if (param_4 != '\0') {
     float local_buf[3];   // contiguo
     Vector_Transform(param_2,param_1, local_buf);
-    float scale = *(float *)((int)this_ + 0x68);
+    const BYTE* modelBytes = static_cast<const BYTE*>(this_);
+    float scale = *reinterpret_cast<const float*>(modelBytes + 0x68);
     // ── DIAG: log first call per second per slot to see this_ + 0x6c..74
     {
       static DWORD s_lastTP = 0;
@@ -169,9 +170,9 @@ void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,flo
         s_lastTP = now;
       }
     }
-    param_3[0] = scale * local_buf[0] + *(float *)((int)this_ + 0x6c);
-    param_3[1] = scale * local_buf[1] + *(float *)((int)this_ + 0x70);
-    param_3[2] = scale * local_buf[2] + *(float *)((int)this_ + 0x74);
+    param_3[0] = scale * local_buf[0] + *reinterpret_cast<const float*>(modelBytes + 0x6c);
+    param_3[1] = scale * local_buf[1] + *reinterpret_cast<const float*>(modelBytes + 0x70);
+    param_3[2] = scale * local_buf[2] + *reinterpret_cast<const float*>(modelBytes + 0x74);
     return;
   }
   Vector_Transform(param_2,param_1,param_3);
