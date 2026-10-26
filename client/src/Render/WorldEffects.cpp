@@ -75,15 +75,15 @@ void WorldEffects_Tick(int entity) {
     recording = nullptr;
 }
 
-void WorldEffects_Draw(int entity) {
-    const void *object = (void *)entity;
+void WorldEffects_Draw(const OBJECT* entity) {
+    const void *object = entity;
     // Validar registro/generación antes de leer la dirección: puede haberse
     // liberado o reutilizado entre la publicación SIM y esta pasada.
     if (scene != SceneFlag || world != gMapManager.GetCurrentMap() ||
         !SceneObjects::Contains(object)) return;
     const auto found = frames.find(object);
     if (found == frames.end() || found->second.generation != SceneObjects::Generation(object) ||
-        !AsObject(entity)->Live || found->second.type != AsObject(entity)->Type) return;
+        !entity->Live || found->second.type != entity->Type) return;
     const Frame &frame=found->second;
     // Sin comandos no hay posiciones que mezclar ni sprites que reproducir.
     if (frame.sprites.empty()) return;
