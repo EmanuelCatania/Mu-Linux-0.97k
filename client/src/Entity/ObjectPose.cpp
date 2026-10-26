@@ -182,7 +182,7 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                 int quatBone = boneIdx;
                 if (quatBone < 0 || quatBone >= 200) quatBone = 0;   // guard: la tabla es de 200 huesos
                 float* outQuat = (float*)(quaternionScratch + quatBone * 0x10);
-                int same = Terrain_QuadEqual((int)&quatA, (int)&quatB, 0, 0);
+                int same = Terrain_QuadEqual(quatA, quatB, 0, 0);
                 if (!same)
                     QuatSlerp((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // pass float bits, not truncated int
                 else { outQuat[0]=quatA[0]; outQuat[1]=quatA[1]; outQuat[2]=quatA[2]; outQuat[3]=quatA[3]; }

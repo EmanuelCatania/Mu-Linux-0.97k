@@ -2465,16 +2465,12 @@ int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
     return (int)(unsigned char)v;
 }
 
-// Terrain_QuadEqual @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
-// Firma de Ghidra: (int param_1, float *param_2) pero en functions.h está declarada como (int,int,int,int).
-// Callers pass two int args (the float ptr pair). Match declared signature.
-int __cdecl Terrain_QuadEqual(int param_1, int param_2, int param_3, int param_4) {
-    // Sólo se usan los dos primeros parámetros: ptr1 = param_1, ptr2 = param_2
-    float *p2 = (float*)param_2;
+// IDA: Terrain_QuadEqual (0x004F9C70), compara cuatro componentes por dirección.
+int __cdecl Terrain_QuadEqual(const float* param_1, const float* param_2, int param_3, int param_4) {
+    const float* p2 = param_2;
     int iVar1 = 0;
-    int iVar2 = param_1 - param_2;
     do {
-        float diff = *(float*)(iVar2 + (int)p2) - *p2;
+        float diff = param_1[iVar1] - *p2;
         if (diff < 0.0f) diff = -diff;
         if (_DAT_005528a8 < diff)
             return 0;

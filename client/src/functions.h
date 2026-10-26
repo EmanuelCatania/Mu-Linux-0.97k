@@ -484,7 +484,7 @@ unsigned short __cdecl TestFrustrum2D(float x, float y, float z);    // Frustum_
 int   __cdecl Frustum_TestSphere(float *pos, float cull_dist);     // LOD/visibility cull
 int   __cdecl Terrain_Water(void);  // IDA: Terrain_Water (0x004F95E0)
 void  __cdecl RenderTerrain(char flag); // IDA: RenderTerrain (0x004F9AC0)
-int   __cdecl Terrain_QuadEqual(int, int, int, int);
+int   __cdecl Terrain_QuadEqual(const float*, const float*, int, int);
 float __cdecl Vec3_Length(float *vec);  // Vec3_Length (physics variant — returns length, does NOT normalize)
 void  __cdecl VectorMA(float *cam_pos, float factor, float *in_rel, float *out_pos); // Camera_ProjectRelative
 void  __cdecl R_ConcatTransforms(float *parent, float *rot, float *out);  // Bone_CombineMatrices
