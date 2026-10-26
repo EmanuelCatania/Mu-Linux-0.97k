@@ -1271,17 +1271,18 @@ static void Quest_SendState(void *pThis)
     pkt[0] = 0xC1;
     pkt[1] = 0x05;
     pkt[2] = 0xA2;
-    pkt[3] = *(BYTE *)((int)pThis + 0x1c87a);   // indice de quest actual
+    pkt[3] = *(static_cast<BYTE*>(pThis) + 0x1c87a);   // índice de quest actual
     pkt[4] = 0x01;
     gNetwork.Send(pkt, 5);
 }
 
 void __fastcall FUN_00401af0(void *param_1)
 {
+    BYTE* quest = static_cast<BYTE*>(param_1);
     // Compute Y-base of char list
     int yBase;
-    if (*(char *)((int)param_1 + 0x1c882) != '\x01' &&
-        *(char *)((int)param_1 + 0x1c87f) == '\x01') {
+    if (*(char *)(quest + 0x1c882) != '\x01' &&
+        *(char *)(quest + 0x1c87f) == '\x01') {
         yBase = 0xfa;
     } else {
         yBase = ((7 - ((int)DAT_083a7c0c + (int)DAT_083a4324)) * 0x12) / 2
@@ -1321,8 +1322,8 @@ void __fastcall FUN_00401af0(void *param_1)
 
 
     if (slotType == 1) {
-        short *slotData = (short *)((int)param_1
-                          + (uint)*(BYTE *)((int)param_1 + 0x1c87a) * 0x248 + 8);
+        short *slotData = reinterpret_cast<short*>(quest
+                          + (uint)*(quest + 0x1c87a) * 0x248 + 8);
         uint ok = CSQuest_CheckRequestCondition(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
@@ -1330,7 +1331,7 @@ void __fastcall FUN_00401af0(void *param_1)
             // Leerlo como int se lleva ademas el byte de estado (0x1c882),
             // que CheckRequestCondition acaba de poner en 5, asi que el
             // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
-            CSQuest_ShowDialogText(*(short *)((int)param_1 + 0x1c880));
+            CSQuest_ShowDialogText(*(short *)(quest + 0x1c880));
             goto done;
         }
         Quest_SendState(param_1);

@@ -780,6 +780,7 @@ int  __cdecl    Cloth_Solve(DWORD *a1);
 //   }
 //   result = MouseLButtonPop;  if (MouseLButtonPop) MouseLButtonPop = 0;
 int __cdecl CSQuest_ProceedButton(void *param_1) {
+    BYTE* quest = static_cast<BYTE*>(param_1);
     if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
         DAT_07d78094 = 1;                       // MouseOnWindow
 
@@ -790,7 +791,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         (DAT_083a4124 != 0)) {
         // IDA: sub_402850 (0x00402850).
         // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
-        if (*(BYTE*)((BYTE*)param_1 + 0x1c882) == 3) {
+        if (*(quest + 0x1c882) == 3) {
             DAT_083a4124 = 0;
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
@@ -803,7 +804,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         pkt[0] = 0xC1;
         pkt[1] = 0x05;
         pkt[2] = 0xA2;
-        pkt[3] = *(BYTE *)((int)param_1 + 0x1c87a);   // índice de quest actual
+        pkt[3] = *(quest + 0x1c87a);   // índice de quest actual
         pkt[4] = 0x01;
         gNetwork.Send(pkt, 5);
 
