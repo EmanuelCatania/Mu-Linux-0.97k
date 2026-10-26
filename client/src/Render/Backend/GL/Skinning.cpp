@@ -104,7 +104,8 @@ void main() {
     gl_FrontColor=color;gl_BackColor=color;
     gl_TexCoord[0]=gl_TextureMatrix[0]*(gl_MultiTexCoord0+vec4(uvOffset,0,0));
     vec4 eye=gl_ModelViewMatrix*position;
-    gl_FogFragCoord=abs(eye.z);gl_ClipVertex=eye;
+    // El cliente no activa planos de recorte de usuario (issue #240).
+    gl_FogFragCoord=abs(eye.z);
 }
 )GLSL";
 GLuint uniformProgram=0;

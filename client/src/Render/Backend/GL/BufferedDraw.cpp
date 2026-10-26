@@ -95,7 +95,8 @@ void main() {
     gl_TexCoord[0]=gl_TextureMatrix[0]*gl_MultiTexCoord0;
     vec4 eye=gl_ModelViewMatrix*gl_Vertex;
     gl_FogFragCoord=abs(eye.z);
-    gl_ClipVertex=eye;
+    // No hay planos de recorte de usuario. Escribir gl_ClipVertex impide
+    // enlazar este programa sin fragment shader en algunos drivers Intel.
 }
 )GLSL";
 void ShaderLog(GLuint object,bool link) {
