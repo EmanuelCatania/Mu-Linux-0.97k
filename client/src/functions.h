@@ -572,7 +572,7 @@ void  __cdecl FilterName_LoadData(const char *path);                      // Fil
 void  __cdecl FilterName_SaveBMD(const char *path);                      // FilterName_LoadBMD
 void  __cdecl OpenNameFilterFile(const char *path);                      // FilterName_LoadBMD_Alt
 void  __cdecl Dialog_LoadBMD(const char *path);                    // IDA: FUN_0047B020
-uint  __cdecl CSQuest_OpenQuestScript(int handle, const char *path);          // Quest_LoadBMD
+uint  __cdecl CSQuest_OpenQuestScript(BYTE* quest, const char *path); // IDA: 0x00401040
 void  __cdecl NPCName_LoadTextData(const char *path);              // IDA: FUN_0047D120
 // LoadWaveFile — declared above as Sound_LoadAndPlay(int type, int flags)
 void  __cdecl OpenWorld(void); // IDA: OpenWorld (0x0050E5A0)

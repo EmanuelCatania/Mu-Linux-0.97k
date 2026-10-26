@@ -31,7 +31,7 @@ def function(source, name):
     # Los comentarios no deben aportar llaves ni falsas definiciones.
     source = re.sub(r"//[^\n]*|/\*.*?\*/", "", source, flags=re.S)
     found = list(re.finditer(
-        rf"(?:void\*|void|int|short|bool|HRESULT|float10|float\*|float|BYTE\*|(?:const\s+)?ITEM\*)\s+(?:__(?:cdecl|fastcall)\s+)?{name}\([^{{;]*\)\s*\{{", source))
+        rf"(?:void\*|void|uint|int|short|bool|HRESULT|float10|float\*|float|BYTE\*|(?:const\s+)?ITEM\*)\s+(?:__(?:cdecl|fastcall)\s+)?{name}\([^{{;]*\)\s*\{{", source))
     if len(found) != 1:
         raise ValueError(f"Se esperaba una definición de {name}, hay {len(found)}")
     start = found[0].start()
