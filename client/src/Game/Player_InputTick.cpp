@@ -852,7 +852,7 @@ void __cdecl Player_ProcessInput(void)
                         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                             ::send(SocketClientSocket, (const char*)pkt, 7, 0);
                         }
-                        SetPlayerAttack((int)ent, 0, 0, 0);
+                        SetPlayerAttack(AsCharacter(ent), 0, 0, 0);
                     }
                 }
             }

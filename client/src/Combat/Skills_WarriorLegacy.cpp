@@ -183,7 +183,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             SetAction(AsObject(o), selectedSlot + 37);
         }
     } else {
-        SetPlayerAttack(c, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(c), 0, 0, 0);
     }
 
     // IDA L597-601:

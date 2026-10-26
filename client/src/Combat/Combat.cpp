@@ -1015,7 +1015,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
                     const BYTE dir = (BYTE)(int)(AsCharacter(entity)->Object.Angle[2] * 0.71111113f);
                     // IDA L2240-2290: [52][heroGX][heroGY][dir][0][0]
                     Combat_SendDuration1E_97k(entity, 52, dir, 0, 0);
-                    SetPlayerAttack((int)(uintptr_t)entity, 0, 0, 0);   // IDA L2579: SetPlayerAttack
+                    SetPlayerAttack(AsCharacter(entity), 0, 0, 0);   // IDA L2579: SetPlayerAttack
                     if (*(WORD *)&AsCharacter(entity)->Object.Type != 390) {        // IDA L2582
                         // IDA L2586-2601.  Hex-Rays muestra la clave del scan como
                         // `HIBYTE(v1025)` y el 6o argumento como `LOWORD(x1)` — dos
@@ -1890,14 +1890,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         if (elapsed > 0x80000000u)
             elapsed = (DWORD)(-(int)elapsed);
         if (elapsed <= 300) {
-            SetPlayerAttack(c, 0, 0, 0);
+            SetPlayerAttack(AsCharacter(c), 0, 0, 0);
             return;
         }
         g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, 51,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
         gNetwork.Send(packet, sizeof(packet));
-        SetPlayerAttack(c, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(c), 0, 0, 0);
     }
 }
 
@@ -2128,7 +2128,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 // siguiente, que es lo que permite encadenar ataques; sin esto
                 // habia que esperar a que el contador volviera a subir.
                 DAT_07e11d28 = DAT_00559bec;
-                SetPlayerAttack((int)c, 0, 0, 0);
+                SetPlayerAttack(AsCharacter(c), 0, 0, 0);
 
                 AsCharacter(c)->SkillStage = 1;  // attack pending
                 // Cache target position for hit confirmation

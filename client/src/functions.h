@@ -271,7 +271,7 @@ void  __cdecl SetCharacterClass(int entity); // IDA: SetCharacterClass (0x0045C1
 void  Hero_ApplyCatalogEquipment(int c);       // 0.97.20: piezas del catálogo y pet custom del héroe
 void  __cdecl Character_UpdateEquipSlotAnimations(int entity);        // Character_UpdateEquipSlotAnimations
 void  __cdecl SetAttackSpeed(void);              // IDA: SetAttackSpeed (0x00443E70)
-void  __cdecl SetPlayerAttack(int, int, int, int); // IDA: SetPlayerAttack (0x00444410)
+void  __cdecl SetPlayerAttack(CHARACTER*, int, int, int); // IDA: SetPlayerAttack (0x00444410)
 void  __cdecl SetPlayerMagic(CHARACTER* entity); // IDA: SetPlayerMagic (0x00444A80)
 void  __cdecl SetPlayerTeleport(OBJECT* param_1);   // SetPlayerTeleport - anim de casteo de teleport (accion 87 / 5)
 void  __cdecl SetPlayerShock(CHARACTER* c, int Hit); // IDA: SetPlayerShock (0x00444B60)
@@ -905,7 +905,7 @@ void  __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, 
                             // BMD_DrawBoneSlot_Anim (animated variant, 11 args)
 
 // ── Character animation/attack helpers (nombres de Kayito) ──
-// SetPlayerAttack — ya declarado más arriba con 4 args: (int, int, int, int)
+// SetPlayerAttack — declarado arriba; el primer argumento es CHARACTER*.
 void  __cdecl SetPlayerShock(CHARACTER* entity, int type); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl AttackEffect(int entity); // IDA: AttackEffect (0x00445230)
 // IDA: UseSkillWarrior
@@ -1308,5 +1308,5 @@ int   __cdecl ItemValue(ITEM* ip, unsigned int goldType);                  // 0x
 // ── SkillElf dependencies ────────────────────────────────────────────────────
 void  __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piMana, int* piDistance, int* piSkillMana); // IDA: GetSkillInformation (0x0047E7A0)
 // CheckArrow = Combat_CheckArrowRequirement (already declared as char __cdecl Combat_CheckArrowRequirement(void))
-// SetPlayerAttack (already declared; Ghidra shows 1-arg DWORD — cast in caller)
+// SetPlayerAttack — declarado arriba; IDA recibe el puntero al personaje.
 // CreateAngle (already declared; Ghidra shows 4 floats → float — cast in caller)

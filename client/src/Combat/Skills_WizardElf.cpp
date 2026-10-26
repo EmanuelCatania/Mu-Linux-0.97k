@@ -539,7 +539,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
 
             // Set player attack animation
             // SetPlayerAttack(hero) — Ghidra shows 1-arg; use 4-arg decl with dummies
-            SetPlayerAttack((int)(DWORD)heroEntity, 0, 0, 0);
+            SetPlayerAttack(AsCharacter(heroEntity), 0, 0, 0);
 
             // If object type is not 0x186 (special entity), create arrow projectiles
             WORD objType = *(WORD *)&AsCharacter(heroEntity)->Object.Type;  // Object.Type at offset +0x02

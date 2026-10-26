@@ -410,8 +410,8 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     case 100: case 101: {
         // Ataque despachado — llama a SetPlayerAttack para animar por
         // weapon equipped. SetPlayerAttack is SetPlayerAttack.
-        extern void __cdecl SetPlayerAttack(int, int, int, int);
-        SetPlayerAttack((int)slot, 0, 0, 0);
+        extern void __cdecl SetPlayerAttack(CHARACTER*, int, int, int);
+        SetPlayerAttack(AsCharacter(slot), 0, 0, 0);
         AttackPlayer = slotIdx;      // IDA: AttackPlayer = Index
         AsCharacter(slot)->SkillStage = 1;             // c+757=1 attack pending
         *(int *)&AsCharacter(slot)->Object.AnimationFrame = 0;   // reset frame
@@ -547,7 +547,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         case 12: SetAction(AsObject(caster), 88); break;
         case 14: SetAction(AsObject(caster), 89); break;
         case 24:
-        case 52: SetPlayerAttack((int)caster, 0, 0, 0); break;
+        case 52: SetPlayerAttack(AsCharacter(caster), 0, 0, 0); break;
         case 41:
         case 55: SetAction(AsObject(caster), 61); break;
         case 42: SetAction(AsObject(caster), 62); break;
@@ -557,7 +557,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         default: SetPlayerMagic(AsCharacter(caster)); break;
         }
     } else {
-        SetPlayerAttack((int)caster, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(caster), 0, 0, 0);
     }
     *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
     AsCharacter(caster)->SkillStage = 1;

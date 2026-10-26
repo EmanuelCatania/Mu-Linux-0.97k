@@ -1555,8 +1555,8 @@ float __cdecl TurnAngle2(float a1, float a2, float a3)
 //
 // functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
 // IDA: SetPlayerAttack (0x00444410)
-void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
-    DWORD c = (DWORD)c_entity;
+void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, int /*extra*/) {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if (c == 0) return;
     short v1 = AsCharacter(c)->Object.Type;
 
@@ -1722,8 +1722,8 @@ LABEL_85:
                     PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                 }
                 short modelType = AsCharacter(c)->Object.Type;
-                int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
-                if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
+                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
+                if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
                     int idx = rand() % 2 + 94 * modelType;
                     PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
                 }
@@ -1734,8 +1734,8 @@ LABEL_85:
                 PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
             }
             short modelType = AsCharacter(c)->Object.Type;
-            int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
-            if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
+            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
+            if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
                 int idx = rand() % 2 + 94 * modelType;
                 PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
             }
