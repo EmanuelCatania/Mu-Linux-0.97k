@@ -774,7 +774,7 @@ void  __cdecl CWsctlc_Create(void*, int); // IDA: CWsctlc::Create (0x0043DBF0)
 void  __cdecl CWsctlc_Close(int);         // IDA: CWsctlc::Close (0x0043DC90)
 
 // ── Entity_Init helpers ───────────────────────────────────────────────────────
-void  __cdecl SetCharacterScale(int); // IDA: SetCharacterScale (0x0045C050)
+void  __cdecl SetCharacterScale(CHARACTER*); // IDA: SetCharacterScale (0x0045C050)
 void  __cdecl crt_fprintf(void*, void*);  // fprintf-like helper
 
 // ── Sound helpers ─────────────────────────────────────────────────────────────

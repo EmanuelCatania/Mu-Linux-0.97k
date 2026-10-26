@@ -617,7 +617,7 @@ void InitializeMonster34(unsigned int c)
     AsCharacter(c)->BodyPart[4].Level = 9;
     AsCharacter(c)->BodyPart[5].Level = 9;
     AsCharacter(c)->PK = 6;
-    SetCharacterScale((int)c);
+    SetCharacterScale(AsCharacter(c));
     if (gMapManager.GetCurrentMap() == 9) {
         *(unsigned int *)&AsCharacter(c)->Object.Scale = 1067869798;
     }
@@ -707,7 +707,7 @@ void InitializeMonster247(unsigned int c)
     *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = MODEL_PANTS + 9;
     *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = MODEL_GLOVES + 9;
     *(unsigned short *)&AsCharacter(c)->BodyPart[5].Type = MODEL_BOOTS + 9;
-    SetCharacterScale((int)c);
+    SetCharacterScale(AsCharacter(c));
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 248.

@@ -475,7 +475,7 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
         *(WORD *)&AsCharacter(param_1)->BodyPart[5].Type = (WORD)(v3 + 4 * v4 + 940);
         AsCharacter(param_1)->BodyPart[5].Option1 = 0;
     }
-    SetCharacterScale((int)param_1);
+    SetCharacterScale(AsCharacter(param_1));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2038,7 +2038,7 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     AsCharacter(c)->BodyPart[5].Option1 = (Equipment[9] & 8) != 0;
     AsCharacter(c)->Weapon[0].Option1 = (Equipment[9] & 4) != 0;
     AsCharacter(c)->Weapon[1].Option1 = (Equipment[9] & 2) != 0;
-    SetCharacterScale((int)c);
+    SetCharacterScale(AsCharacter(c));
 }
 
 // FUN_0046c7f0 @ 0x0046C7F0 — Object_SpawnAmbientFX(kind, o, dx, dy, dz)

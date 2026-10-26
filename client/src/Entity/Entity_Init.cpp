@@ -55,7 +55,7 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
   *(unsigned short *)&AsCharacter(puVar1)->Wing.Type = 0xffff;         // Wing.Type
   *(unsigned short *)&AsCharacter(puVar1)->Helper.Type = 0xffff;         // Helper.Type
 
-  SetCharacterScale((int)puVar1);    // SetCharacterScale
+  SetCharacterScale(AsCharacter(puVar1));    // SetCharacterScale
   SetPlayerStop((int)puVar1);    // SetPlayerStop
   return puVar1;
 }

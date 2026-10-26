@@ -187,7 +187,7 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
             break;
     }
 
-    SetCharacterScale((int)(uintptr_t)c);   // SetCharacterScale
+    SetCharacterScale(AsCharacter(c));   // SetCharacterScale
 }
 
 // 0x10

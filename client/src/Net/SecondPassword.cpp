@@ -2368,7 +2368,7 @@ void __cdecl SetCharacterClass(int c) {
     AsCharacter(c)->BodyPart[4].Option1 = *(unsigned char*)(v7 + 367);
     AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)(v7 + 435);
 
-    SetCharacterScale((int)c);
+    SetCharacterScale(AsCharacter(c));
     // sub_47E3C0(CharacterMachine) — full stat recalculation (CharData_RecalcStats).
     // La implementación real son ~293 bytes de tiradas de base/máximo/random sobre los slots
     // 1374..1407 de CharacterMachine (HP/MP/ATK/DEF/AS/crítico/acierto). No hace falta para el char-select; el gate
