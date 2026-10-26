@@ -460,7 +460,7 @@ void __cdecl Item_RecalculateRepairCost(void)
 
     // Iterate 12 equipped item slots (base + 0x218, stride 0x44, total 0x330 bytes)
     for (int iVar7 = 0; iVar7 < 0x330; iVar7 += 0x44) {
-        short *psVar12 = (short *)((int)DAT_07cf1ffc + 0x218 + iVar7);
+        short *psVar12 = reinterpret_cast<short *>(static_cast<BYTE *>(DAT_07cf1ffc) + 0x218 + iVar7);
         short itemType = *psVar12;
         if (itemType != -1 && *(int *)((char *)psVar12 + 0x38) != 0) {
             unsigned int maxDur = Item_CalculateMaxDurability(psVar12, (ITEM_ATTRIBUTE*)(DAT_07d78068 + (int)itemType * 0x40),
