@@ -847,7 +847,7 @@ int   __cdecl FUN_004f98c0(int, int, int, int, int); // RayCast_Setup / terrain 
 void  __cdecl Terrain_SpawnAmbientObjects(void);   // Terrain_SpawnAmbientObjects (sub_4F7060)
 void  __cdecl RenderTerrainAlphaBitmaps(void);   // RenderTerrainAlphaBitmaps (sub_479540)
 int   __cdecl Terrain_WaterWaveUpdate(int a1); // Terrain light double-buffer commit (sub_4F9A30)
-float10 __cdecl CharacterMoveSpeed(int entity_ptr); // IDA: CharacterMoveSpeed (0x00454B00)
+float10 __cdecl CharacterMoveSpeed(CHARACTER* entity); // IDA: CharacterMoveSpeed (0x00454B00)
 
 // ── Scene_MapTick helpers ─────────────────────────────────────────────────────
 

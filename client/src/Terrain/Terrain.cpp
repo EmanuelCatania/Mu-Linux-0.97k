@@ -622,7 +622,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
 // CharacterMoveSpeed @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
 // Returns movement speed rate based on entity state (+0x300 stamina, +0x2b8 class, +0x84 flag).
 // IDA: CharacterMoveSpeed (0x00454B00)
-float10 __cdecl CharacterMoveSpeed(int c)
+float10 __cdecl CharacterMoveSpeed(CHARACTER* c)
 {
   double result; // st7
   short v2; // dx
@@ -653,7 +653,7 @@ float10 __cdecl CharacterMoveSpeed(int c)
   }
   result = 15.0;
 LABEL_12:
-  if ( (*(BYTE *)(c + 120) & 2) == 2 )
+  if ( (*(const BYTE *)(reinterpret_cast<const BYTE*>(c) + 120) & 2) == 2 )
   {
     return result * 0.5;
   }

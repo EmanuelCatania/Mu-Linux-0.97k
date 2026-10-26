@@ -2178,7 +2178,7 @@ label_119:
 // IDA: MoveCharacterPosition (0x00454BA0)
 void __cdecl MoveCharacterPosition(int param_1) {
     float local_30[12];
-    float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(param_1), 0.0f };
+    float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(AsCharacter(param_1)), 0.0f };
     // El mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
     // local_3c/local_38/local_34 eran el buffer de salida contiguo de 3 floats que
     // esperaba Vector_Rotate, pero MSVC no garantiza el layout de los locales.
