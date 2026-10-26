@@ -90,7 +90,11 @@ void Scene_LoadCharSelectResources(void)
     OpenModel(0xac,s_Data2_Logo__005606dc,s_fairy_smd_0055c438);
     OpenModel(0xad,s_Data2_Logo__005606dc,(const char*)&DAT_005607c8);
   }
-  AccessModel(0xa4,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,5);
+  // El diorama clásico termina en los bordes del encuadre 4:3. La variante
+  // amplia agrega suelo y bosque lateral para el viewport real del mundo.
+  const char* selectModelPath = gWindow.IsWide()
+      ? "Data\\Logo\\Wide\\" : s_Data_Logo__005606a0;
+  AccessModel(0xa4,selectModelPath,(const char*)&DAT_005606ac,5);
   iVar2 = 0xaa;
   do {
     AccessModel(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005607c0,iVar2 + -0xa9);
