@@ -953,7 +953,7 @@ void NetRecv_22(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         int type = ItemBehaviorType(ItemWire_GetType(Item));
         bool jewel = (type == 461 || type == 462 || type == 464 ||
                       type == 399 || type == 470);
-        PlayBuffer(jewel ? 49 : 29, (DWORD)(uintptr_t)Hero, 0);
+        PlayBuffer(jewel ? 49 : 29, AsObject(Hero), 0);
     }
     DAT_07e11998 = -1;  // SendGetItem
 }

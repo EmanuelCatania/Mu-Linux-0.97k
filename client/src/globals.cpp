@@ -2619,7 +2619,7 @@ int                    SoundLoadCount         = 0;
 char                   BufferName[420][0x40] = {};
 LPDIRECTSOUNDBUFFER    g_lpDSBuffer[420][4]   = {};
 LPDIRECTSOUND3DBUFFER  g_lpDS3DBuffer[420][4] = {};
-DWORD                  Object3DSound[420][4]  = {};
+const OBJECT*          Object3DSound[420][4]  = {};
 
 // Tabla de nombres NPC/mob: 512 entradas × 0x36 bytes (ver nota en 0x07CF2000).
 BYTE   MonsterScript[512 * 0x36] = {};

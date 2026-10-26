@@ -1,6 +1,7 @@
 #pragma once
 #include "Item/ItemDefines.h"
 struct GATE_ATTRIBUTE;
+struct OBJECT;
 // globals.h — extern declarations for all Ghidra DAT_ globals.
 // Los tipos se infieren del contexto; el prefijo _DAT_ = alias float de la misma dirección.
 // NO incluir este header directo — entra vía stdafx.h.
@@ -2566,7 +2567,7 @@ extern char    BufferName[420][0x40];                 // per-slot filename (64 b
 
 extern LPDIRECTSOUNDBUFFER   g_lpDSBuffer  [420][4];  // 0x0058C780 — secondary buffers (up to 4 instances per slot)
 extern LPDIRECTSOUND3DBUFFER g_lpDS3DBuffer[420][4];  // 0x0058EEE4 — parallel 3D-buffer array
-extern DWORD   Object3DSound[420][4];                 // payload (entity id bound to each channel)
+extern const OBJECT* Object3DSound[420][4];          // Entidad ligada a cada canal de audio 3D.
 
 // Music
 

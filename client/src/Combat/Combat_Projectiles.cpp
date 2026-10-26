@@ -44,14 +44,14 @@ void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill
     DWORD effectFlags = 0;
     if ((char)SKKey == '4') {
         effectFlags = 2;
-        PlayBuffer(0x41, (DWORD)o, 0);
+        PlayBuffer(0x41, AsObject(o), 0);
     }
 
     // Set CurrentSkill
     CurrentSkill = (DWORD)(SKKey & 0xFF);
 
     if ((char)SKKey == '3') {
-        PlayBuffer(0x65, (DWORD)o, 0);
+        PlayBuffer(0x65, AsObject(o), 0);
     }
 
     // Pointers for CreateEffect calls

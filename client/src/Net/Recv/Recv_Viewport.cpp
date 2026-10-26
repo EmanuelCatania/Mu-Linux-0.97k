@@ -828,9 +828,9 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // distinto que el resto.
                 if (itemType == 461 || itemType == 462 || itemType == 464 ||
                     itemType == 399 || itemType == 470)
-                    PlayBuffer(49, (DWORD)(uintptr_t)o, 0);
+                    PlayBuffer(49, AsObject(o), 0);
                 else
-                    PlayBuffer(30, (DWORD)(uintptr_t)o, 0);
+                    PlayBuffer(30, AsObject(o), 0);
             }
         }
         o->Live = 1;

@@ -31,7 +31,7 @@ def function(source, name):
     # Los comentarios no deben aportar llaves ni falsas definiciones.
     source = re.sub(r"//[^\n]*|/\*.*?\*/", "", source, flags=re.S)
     found = list(re.finditer(
-        rf"(?:void\*|void|int|bool|float\*|BYTE\*)\s+(?:__cdecl\s+)?{name}\([^{{;]*\)\s*\{{", source))
+        rf"(?:void\*|void|int|bool|HRESULT|float\*|BYTE\*)\s+(?:__cdecl\s+)?{name}\([^{{;]*\)\s*\{{", source))
     if len(found) != 1:
         raise ValueError(f"Se esperaba una definición de {name}, hay {len(found)}")
     start = found[0].start()
@@ -81,7 +81,7 @@ void Hash(const void* memory, std::size_t size) {
     while(size--) { digest ^= *p++; digest *= 1099511628211ull; }
 }
 void Event(unsigned kind) { ++events; Hash(&kind, sizeof(kind)); }
-void PlayBuffer(int id, std::uintptr_t, int) { Event(1000 + id); }
+template<class Owner> void PlayBuffer(int id, Owner, int) { Event(1000 + id); }
 void AddTerrainLight(float x, float y, float* light, int range, float*) {
     Event(1); Hash(&x, 4); Hash(&y, 4); Hash(light, 12); Hash(&range, 4);
 }

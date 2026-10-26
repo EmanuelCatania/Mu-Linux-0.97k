@@ -915,7 +915,7 @@ void  __cdecl Combat_UseElfSkill(int entity, int object);
 int   __cdecl CHARACTER_MACHINE_GetMagicSkillDamage(int machinePtr, int skillType, int level); // CHARACTER_MACHINE::GetMagicSkillDamage
 
 // ── Sound: PlayBuffer ─────────────────────────────────────────────────────────
-HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped); // IDA: PlayBuffer (0x00404BC0)
+HRESULT __cdecl PlayBuffer(int Buffer, const OBJECT* Object, BOOL bLooped); // IDA: PlayBuffer (0x00404BC0)
 
 // ── Cipher / XOR aliases ──────────────────────────────────────────────────────
 

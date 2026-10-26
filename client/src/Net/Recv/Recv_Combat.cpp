@@ -33,7 +33,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, nullptr, (float*)entity, (float*)-1, nullptr, 0);
-            PlayBuffer(104, (DWORD)(uintptr_t)entity, 0);
+            PlayBuffer(104, AsObject(entity), 0);
         }
         if ((effect & 0x80) != 0 && (physicalEffects & 0x80) == 0) {
             DeleteEffect(1274, (DWORD)(uintptr_t)entity, 3);

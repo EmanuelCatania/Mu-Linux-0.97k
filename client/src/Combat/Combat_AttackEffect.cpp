@@ -89,7 +89,6 @@ static inline void AE_TransformPosition(DWORD model, const void* mat,
 #define FUN_00466300(pos)             FUN_00466300((float*)(uintptr_t)(pos))
 #define CreateJoint                   AE_CreateJoint
 #define TransformPosition(a,b,c,d,e)  AE_TransformPosition((DWORD)(uintptr_t)(a), (const void*)(b), (c), (d), (e))
-#define PlayBuffer(a,b,c)             PlayBuffer((a), (DWORD)(b), (BOOL)(c))
 #undef  CreateEffect
 #define CreateEffect                  AE_CreateEffect
 

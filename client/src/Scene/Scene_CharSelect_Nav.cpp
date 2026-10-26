@@ -700,7 +700,7 @@ void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
       *(float *)(Object + 196) = Objecta * -0.40000001;
       *(float *)(Object + 44) = v3 * -4.0;
       *(float *)(Object + 40) = Objecta * -4.0;
-      PlayBuffer(94, Object, 0);
+      PlayBuffer(94, AsObject(Object), 0);
     }
   }
   v5 = *(float *)(Object + 192) * 0.60000002;
@@ -1566,11 +1566,11 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         case 39:
             CreateEffect(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
-            PlayBuffer(16, c, 0);
+            PlayBuffer(16, AsObject(c), 0);
             break;
         case 40:
             SetAction(AsObject(c), 1);
-            PlayBuffer(16, c, 0);
+            PlayBuffer(16, AsObject(c), 0);
             break;
         case 51:
             CreateEffect(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
@@ -1705,39 +1705,39 @@ LABEL_85:
             if (v13 < 206 || v13 > 208) {
                 short v14 = AsCharacter(c)->Weapon[1].Type;
                 if ((v14 >= 528 && v14 < 535) || v14 == 545) {
-                    PlayBuffer(65, c, 0);
+                    PlayBuffer(65, AsObject(c), 0);
                 } else {
                     short v15 = AsCharacter(c)->Weapon[0].Type;
                     if ((v15 >= 536 && v15 < 543) || (v15 >= 544 && v15 < 545) || v15 == 546) {
-                        PlayBuffer(66, c, 0);
+                        PlayBuffer(66, AsObject(c), 0);
                     } else if (v15 == 410 || v15 == 496) {
-                        PlayBuffer(42, c, 0);
+                        PlayBuffer(42, AsObject(c), 0);
                     } else if (v15 != -1 || v14 != -1) {
-                        PlayBuffer(rand() % 2 + 40, c, 0);
+                        PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                     }
                 }
             } else {
                 int v17 = AsCharacter(c)->Object.SubType;
                 if (v17 >= 206 && v17 <= 208) {
-                    PlayBuffer(rand() % 2 + 40, c, 0);
+                    PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                 }
                 short modelType = AsCharacter(c)->Object.Type;
                 int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
                 if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
                     int idx = rand() % 2 + 94 * modelType;
-                    PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, c, 0);
+                    PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
                 }
             }
         } else {
             int v17 = AsCharacter(c)->Object.SubType;
             if (v17 >= 206 && v17 <= 208) {
-                PlayBuffer(rand() % 2 + 40, c, 0);
+                PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
             }
             short modelType = AsCharacter(c)->Object.Type;
             int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
             if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
                 int idx = rand() % 2 + 94 * modelType;
-                PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, c, 0);
+                PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
             }
         }
     }
@@ -1827,17 +1827,17 @@ void __cdecl SetPlayerShock(int c, int Hit)
                 if ((AsCharacter(c)->Class & 7) == 2) {
                     // Swimming: alternate splash sound 79 or 80
                     int v7 = rand() % 2;
-                    PlayBuffer(v7 + 79, c, 0);
+                    PlayBuffer(v7 + 79, AsObject(c), 0);
                     goto label_26;
                 }
                 int v6 = rand() % 3 + 75;     // generic player hit grunt
-                PlayBuffer(v6, c, 0);
+                PlayBuffer(v6, AsObject(c), 0);
                 goto label_26;
             }
         }
         int v8 = AsCharacter(c)->Object.SubType;
         if (v8 >= 206 && v8 <= 208) {
-            PlayBuffer(93, c, 0);           // Lorencia skeleton-NPC hit sound
+            PlayBuffer(93, AsObject(c), 0);           // Lorencia skeleton-NPC hit sound
             goto label_26;
         }
         if (etype != 284) {
@@ -1846,7 +1846,7 @@ void __cdecl SetPlayerShock(int c, int Hit)
             short* sndTbl = (short*)(modelsBase + 188 * etype + 174);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
-                PlayBuffer(v6, c, 0);
+                PlayBuffer(v6, AsObject(c), 0);
             }
         }
     }

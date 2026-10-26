@@ -51,6 +51,7 @@ jobs:
           python -B tests/ActionPointer.py --architecture x64
           python -B tests/CharacterScalePointer.py --architecture x64
           python -B tests/TeleportPointer.py --architecture x64
+          python -B tests/SoundPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -64,6 +65,7 @@ jobs:
           python3 -B tests/ActionPointer.py --generator Ninja
           python3 -B tests/CharacterScalePointer.py --generator Ninja
           python3 -B tests/TeleportPointer.py --generator Ninja
+          python3 -B tests/SoundPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

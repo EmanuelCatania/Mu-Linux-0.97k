@@ -376,7 +376,7 @@ skip_decrement:
                     if ((int)uVar6 < 0)
                         bVar10 = ((uVar6 - 1 | 0xffffff00) == 0xffffffff);
                     if (bVar10)
-                        PlayBuffer(0xf, (int)(puVar9 + -0x3a), 0);
+                        PlayBuffer(0xf, AsObject((puVar9 + -0x3a)), 0);
                 }
             }
 

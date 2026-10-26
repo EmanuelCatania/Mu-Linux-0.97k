@@ -227,7 +227,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         if (AsCharacter(c)->SkillStage == 0x03) {
             CreateEffect(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
                          (float*)(o + 0xE8), NULL, (float*)o, NULL, NULL, 0);
-            PlayBuffer(100, (DWORD)o, 0);
+            PlayBuffer(100, AsObject(o), 0);
         }
 
         g_iLimitAttackTime = 5; // g_iLimitAttackTime = 5
@@ -359,7 +359,7 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
         if(stage>=13 && stage<=14) { const float r=AsObject(o)->Angle[2]*0.017453292f; for(int i=0;i<3;++i) { float p[3]={AsObject(o)->Position[0]+sinf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[1]-cosf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[2]+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
     } else if(skill==48) { if(stage>9 && type==390 && AsObject(o)->CurrentAction==63) AsCharacter(c)->SkillStage=15; }
     else if(skill==49) { if(AsObject(o)->AnimationFrame>=5.0f && type==390 && (AsObject(o)->CurrentAction==64 || AsObject(o)->CurrentAction==65)) AsCharacter(c)->SkillStage=15; }
-    else if(skill==52) { if(type==390 && AsObject(o)->CurrentAction>=34 && AsObject(o)->CurrentAction<=91 && AsObject(o)->AnimationFrame>=5.0f){AsObject(o)->PriorAnimationFrame=4.0f;AsObject(o)->AnimationFrame=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} g_iLimitAttackTime=5; }
+    else if(skill==52) { if(type==390 && AsObject(o)->CurrentAction>=34 && AsObject(o)->CurrentAction<=91 && AsObject(o)->AnimationFrame>=5.0f){AsObject(o)->PriorAnimationFrame=4.0f;AsObject(o)->AnimationFrame=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100, AsObject(o),0);} g_iLimitAttackTime=5; }
     else if(skill==55) { if(type==390 && AsObject(o)->CurrentAction==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(AsObject(o)->AnimationFrame>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)AsObject(o)->PKKey,(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
     else if(skill==56) { if(type==390 && AsObject(o)->CurrentAction==81){float a[3]={AsObject(o)->Angle[0],AsObject(o)->Angle[1],AsObject(o)->Angle[2]-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);AsCharacter(c)->SkillStage=15;} }
     // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.

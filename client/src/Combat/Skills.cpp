@@ -234,7 +234,7 @@ void PacketHandler_0x19(BYTE* pkt)
         // armado despues de terminar el teleport propio.
         if (caster == (BYTE*)DAT_07abf5d8)
             Teleport = 0;
-        PlayBuffer(102, (DWORD)(uintptr_t)caster, 0);
+        PlayBuffer(102, AsObject(caster), 0);
         return;
     }
 
@@ -394,7 +394,7 @@ void PacketHandler_0x19(BYTE* pkt)
             CreateEffect(1274, (float*)(target + 16), (float*)(target + 28), light,
                          nullptr, (float*)target, (float*)-1, nullptr, 0);
             // Set lightning status bit
-            PlayBuffer(104, (DWORD)(uintptr_t)target, 0);
+            PlayBuffer(104, AsObject(target), 0);
             *(DWORD*)(target + 120) |= 0x40;
         }
         return;

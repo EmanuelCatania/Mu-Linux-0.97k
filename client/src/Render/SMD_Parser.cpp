@@ -406,7 +406,7 @@ void __cdecl Effect_CollisionCheck(int Target) {
                 // v36 != 51 and v36 != 52 — generic hit
                 *T = 0;
                 int rs = rand();
-                PlayBuffer(rs % 7 + 50, (DWORD)Target, 0);
+                PlayBuffer(rs % 7 + 50, AsObject(Target), 0);
                 if (type != 223 && type != 243) return;
             }
             Effect_SpawnSmokeBurst(posPtr, (char)1);

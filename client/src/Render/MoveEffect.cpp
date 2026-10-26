@@ -645,7 +645,7 @@ void MoveEffect(float *param_1, int param_2)
               Particle_Spawn(0x4df,AsObject(param_1)->Position,AsObject(param_1)->Angle,&local_368,iVar9 % 0x1e,1.0,0);
               iVar12 = iVar12 + -1;
             } while (iVar12 != 0);
-            PlayBuffer(0x45,(unsigned int)(uintptr_t)param_1,0);
+            PlayBuffer(0x45, AsObject(param_1),0);
           }
           Particle_Spawn(0x4df,AsObject(param_1)->Position,AsObject(param_1)->Angle,AsObject(param_1)->Light,-1,1.0,0);
           local_368 = local_36c * _DAT_005528b4;
@@ -2111,7 +2111,7 @@ LAB_00466e5e:
             CreateEffect(0xfe,&local_2c4,&local_340,AsObject(param_1)->Light,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
             local_35c = (float *)((int)pfVar10 + 0x1e);
           } while ((int)local_35c < 0x78);
-          PlayBuffer(0x59,(unsigned int)(uintptr_t)param_1,0);
+          PlayBuffer(0x59, AsObject(param_1),0);
         }
         fVar13 = AsObject(param_1)->Angle[0] + _DAT_00552878;
         AsObject(param_1)->Position[0] = AsObject(param_1)->StartPosition[0];

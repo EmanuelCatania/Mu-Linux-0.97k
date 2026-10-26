@@ -1927,7 +1927,7 @@ LABEL_129:
                 short s = *(short*)((char*)(uintptr_t)DAT_05828d58
                                     + 2 * (v55 + 94 * v53) + 170);
                 // PlayBuffer(s + 170, c, 0) — sound playback (PlayBuffer en nuestra port)
-                PlayBuffer(s + 170, (DWORD)c, 0);
+                PlayBuffer(s + 170, AsObject(c), 0);
             }
         }
     }
@@ -2145,7 +2145,7 @@ label_119:
 
     // Entity type 0x129 — special case with a fixed sound
     if (etype == 0x129) {
-        PlayBuffer(0x5e, param_1, 0);
+        PlayBuffer(0x5e, AsObject(param_1), 0);
         return;
     }
     // Sonido de movimiento aleatorizado (1/64 para el jugador, 1/16 para el resto)
@@ -2157,7 +2157,7 @@ label_119:
     // Reproduce el sonido de paso de la tabla de sonidos del modelo si no es DarkLord (o si está en el rango de altura de paso)
     if (etype != 0x186 || (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)) {
         if (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)
-            PlayBuffer(0x5d, param_1, 0);
+            PlayBuffer(0x5d, AsObject(param_1), 0);
         if (*(short *)(DAT_05828d58 + 0xaa + etype * 0xbc) != -1) {
             // IDA 0x443930 L288-289:
             //     v19 = rand() % 2;
@@ -2167,8 +2167,7 @@ label_119:
             // leería campos ajenos del struct de modelo.
             int v19 = rand() % 2;
             int iVar9 = 0;
-            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa,
-                         param_1, iVar9);
+            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa, AsObject(param_1), iVar9);
         }
     }
 }
@@ -3011,7 +3010,7 @@ void __cdecl SetPlayerDie(int c_in)
             goto LABEL_41;
         }
     }
-    if (playFxBuf) PlayBuffer(94, c, 0);
+    if (playFxBuf) PlayBuffer(94, AsObject(c), 0);
 
 LABEL_41:
     // Death sound
@@ -3021,9 +3020,9 @@ LABEL_41:
             int v15 = *(int*)(c + 4);
             if (v15 < 206 || v15 > 208) {
                 if ((*(BYTE*)(c + 444) & 7) == 2) {
-                    PlayBuffer(80, c, 0);
+                    PlayBuffer(80, AsObject(c), 0);
                 } else {
-                    PlayBuffer(78, c, 0);
+                    PlayBuffer(78, AsObject(c), 0);
                 }
                 return;
             }
@@ -3031,7 +3030,7 @@ LABEL_41:
         // Non-player or player[206-208]: model action sound at +178
         short modSnd = *(short*)((char*)(uintptr_t)DAT_05828d58 + 188 * v14 + 178);
         if (modSnd != -1) {
-            PlayBuffer(modSnd + 170, c, 0);
+            PlayBuffer(modSnd + 170, AsObject(c), 0);
         }
     }
 }
@@ -3798,7 +3797,7 @@ void __cdecl MoveCharacter(int p1)
                 break;
             default:
                 if (AsCharacter(c)->MonsterIndex < 0x44u || AsCharacter(c)->MonsterIndex > 0x4Bu) {
-                    PlayBuffer(rand() % 7 + 50, (DWORD)o, 0);
+                    PlayBuffer(rand() % 7 + 50, AsObject(o), 0);
                 }
                 break;
             }

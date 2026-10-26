@@ -2371,7 +2371,7 @@ void __cdecl Action(DWORD c, DWORD o)
         }
 
         // PlayBuffer 30 (sonido de paso) al final, per IDA L2065
-        PlayBuffer(30, (int)(uintptr_t)DAT_07abf5d8, 0);
+        PlayBuffer(30, AsObject(DAT_07abf5d8), 0);
         return;
     }
 

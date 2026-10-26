@@ -740,21 +740,21 @@ LAB_00501cb5:
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xfffffe00)==0xffffffff);
-                        if (bVar20) PlayBuffer(0xc, (int)pcVar3, 0);
+                        if (bVar20) PlayBuffer(0xc, AsObject(pcVar3), 0);
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xfffffe00)==0xffffffff);
-                        if (bVar20) PlayBuffer(0xd, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0xd, AsObject(pcVar19), 0);
                     } else if (sVar5 == 0xb0) {
                         uVar8 = _rand(); uVar8 &= 0x800000ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff00)==0xffffffff);
-                        if (bVar20) PlayBuffer(0xe, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0xe, AsObject(pcVar19), 0);
                     } else if ((sVar5 == 0xb8) && ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
                         uVar8 = _rand(); uVar8 &= 0x8000007f;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff80)==0xffffffff);
-                        if (bVar20) PlayBuffer(0x6d, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0x6d, AsObject(pcVar19), 0);
                     }
                 }
             } else {

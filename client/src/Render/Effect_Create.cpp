@@ -366,7 +366,7 @@ LAB_004649e0:
         AsObject(pfVar17)->Direction[1] = (float)(int)param_8;
         AsObject(pfVar17)->Direction[2] = 26.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 12;
-        pfVar12 = (float *)PlayBuffer(0x44,(int)pfVar17,0);
+        pfVar12 = (float *)PlayBuffer(0x44, AsObject(pfVar17),0);
         return pfVar12;
       case 0x4e0:
         AsObject(pfVar17)->Angle[0] = 0.0;

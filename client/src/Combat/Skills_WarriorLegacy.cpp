@@ -406,7 +406,7 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
         SetAction(AsObject(entity_idx), 6);
         goto LAB_00445110;
     }
-    PlayBuffer(0x5e, (int)entity_idx, 0);
+    PlayBuffer(0x5e, AsObject(entity_idx), 0);
 
 LAB_00445110:
     // Post-teleport footstep sound: only if anim speed == _DAT_00552580 (ground landed)
@@ -414,15 +414,15 @@ LAB_00445110:
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
             if ((puVar3[0x1bc] & 7) == 2)
-                PlayBuffer(0x50, (int)entity_idx, 0);
+                PlayBuffer(0x50, AsObject(entity_idx), 0);
             else
-                PlayBuffer(0x4e, (int)entity_idx, 0);
+                PlayBuffer(0x4e, AsObject(entity_idx), 0);
             return;
         }
         // General: look up footstep sound from entity-class table at DAT_05828d58+0xb2
         short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * 0xbc);
         if (sfx != -1)
-            PlayBuffer(sfx + 0xaa, (int)entity_idx, 0);
+            PlayBuffer(sfx + 0xaa, AsObject(entity_idx), 0);
     }
 }
 
