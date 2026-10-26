@@ -2302,7 +2302,7 @@ char    s__s0_d_bmd_0055a7ec[] = "%s0%d.bmd";
 char    s__s_d_bmd_0055a7e0[]  = "%s%d.bmd";
 
 // ── Item/Skill/Gate data loader globals ──────────────────────────────────────
-int     DAT_07cf1ff0    = 0;       // item record shadow array base
+BYTE*   DAT_07cf1ff0 = nullptr;    // Base de la tabla sombra de atributos de items.
 BYTE*   DAT_07cf1ff8 = nullptr;    // Base de la tabla sombra de skills.
 BYTE*   DAT_07d29d20 = nullptr;    // Base de la tabla de skills reservada al inicio.
 GATE_ATTRIBUTE* GateAttribute = nullptr; // Base de la tabla de gates reservada al inicio.

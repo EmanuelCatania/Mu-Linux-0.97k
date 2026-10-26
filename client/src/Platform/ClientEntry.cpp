@@ -608,8 +608,8 @@ int main(int, char**)
     DAT_055c9e44 = (DWORD)malloc((ITEM_MAX_EX + 0x400) * 0x40);
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
     memset((void*)DAT_07d78068, 0, ITEM_MAX_EX * 0x40);
-    DAT_07cf1ff0 = (int)malloc(0x8000);
-    memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
+    DAT_07cf1ff0 = static_cast<BYTE*>(malloc(0x8000));
+    memset(DAT_07cf1ff0, 0, 0x2000 * 4);
 
     // Array de entidades — CRÍTICO, todo lo accede
     DAT_055c9e48 = (DWORD)malloc(0x764d4);

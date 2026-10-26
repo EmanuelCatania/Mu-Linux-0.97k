@@ -2219,7 +2219,7 @@ extern char    s__s0_d_bmd_0055a7ec[]; // "%s0%d.bmd"
 extern char    s__s_d_bmd_0055a7e0[];  // "%s%d.bmd"
 
 // ── Item/Skill/Gate data loader globals ──────────────────────────────────────
-extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT_07d78068)
+extern BYTE*   DAT_07cf1ff0;       // Base de la tabla sombra de atributos de items.
 extern BYTE*   DAT_07cf1ff8;       // Base de los registros sombra de skills.
 extern BYTE*   DAT_07d29d20;       // Base reservada para registros de skills de 0x28 bytes.
 extern GATE_ATTRIBUTE* GateAttribute; // IDA 0x07CF5600: base de 100 registros de nueve bytes

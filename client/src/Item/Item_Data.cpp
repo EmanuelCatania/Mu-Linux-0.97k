@@ -144,9 +144,9 @@ void __cdecl Item_LoadBMD(const char *path)
         // copy to raw table
         memcpy((char *)DAT_07d78068 + off, p, 0x40);
         // copy to shadow table
-        memcpy((char *)DAT_07cf1ff0 + off, p, 0x40);
+        memcpy(DAT_07cf1ff0 + off, p, 0x40);
         // shift [+0x27] field in shadow
-        *((BYTE *)DAT_07cf1ff0 + off + 0x27) <<= 1;
+        DAT_07cf1ff0[off + 0x27] <<= 1;
         off += 0x40;
         p   += 0x40;
     } while (off < 0x8000);
@@ -154,6 +154,6 @@ void __cdecl Item_LoadBMD(const char *path)
     // DESVIACION (Fase 4, texto Unicode): nombres de 1252 a UTF-8 en las dos tablas.
     for (off = 0; off < 0x8000; off += 0x40) {
         TextEngine::ConvertWindows1252InPlace((char *)DAT_07d78068 + off, 30);
-        TextEngine::ConvertWindows1252InPlace((char *)DAT_07cf1ff0 + off, 30);
+        TextEngine::ConvertWindows1252InPlace(reinterpret_cast<char*>(DAT_07cf1ff0 + off), 30);
     }
 }
