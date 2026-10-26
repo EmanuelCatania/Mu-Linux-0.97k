@@ -263,24 +263,22 @@ const ITEM* __cdecl PlusSpecialPercent(short *a1, int a2, const ITEM* a3, unsign
 // Then per-slot bonuses (Wings/WeaponL/WeaponR/Ring1) with durability scaling.
 // Bow+arrows + crossbow+bolts synergy: special level boost based on arrow type.
 // dword_7E91388/pPickedItem preview path skipped (hover-time UI).
-int __fastcall Stats_CalcBase(int a1) {
+int __fastcall Stats_CalcBase(BYTE* a1) {
     // Guarda de a1: abajo se lee `*(short*)(a1 + 536)` /
     // `(a1 + 604)` (slots de arma) sin chequear.
     if (a1 == 0 || (uintptr_t)a1 < 0x100000) return 0;
 
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    if ((uintptr_t)ca < 0x100000) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr || reinterpret_cast<uintptr_t>(charAttr) < 0x100000) return 0;
 
     // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese
     // puntero se pisa a 0x1 en runtime.
     ITEM_ATTRIBUTE* ITEM_ATTR = (ITEM_ATTRIBUTE*)(uintptr_t)ItemAttribute_Base();
     if (ITEM_ATTR == nullptr) return 0;
 
-    DWORD wp_L = (DWORD)(uintptr_t)(a1 + 536);
-    DWORD wp_R = (DWORD)(uintptr_t)(a1 + 604);
-    DWORD ring1 = (DWORD)(uintptr_t)(a1 + 1148);
+    BYTE* wp_L = a1 + 536;
+    BYTE* wp_R = a1 + 604;
+    BYTE* ring1 = a1 + 1148;
 
     // Skip hover-preview override (dword_7E91388 path)
 
@@ -328,7 +326,7 @@ int __fastcall Stats_CalcBase(int a1) {
     }
 
     // Wings (this+1012) attack bonus, special 60, durability scaled
-    DWORD wings = (DWORD)(uintptr_t)(a1 + 1012);
+    BYTE* wings = a1 + 1012;
     {
         // OJO: el binario original NO chequea 0xFFFF en el slot de alas (si lo
         // hace en los 3 slots de abajo).  Alla es inofensivo porque
