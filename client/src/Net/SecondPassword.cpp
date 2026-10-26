@@ -2960,9 +2960,9 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
 //   - Other NPCs: SetAction(c, 6)  ← death anim
 // El ruido de hash table (camino sólo-Hero, L32-119) se saltea per la política del proyecto.
 // IDA: SetPlayerDie (0x00444D90)
-void __cdecl SetPlayerDie(int c_in)
+void __cdecl SetPlayerDie(CHARACTER* c_in)
 {
-    DWORD c = (DWORD)c_in;
+    BYTE* c = reinterpret_cast<BYTE*>(c_in);
     if (!c) return;
 
     short v11 = *(short*)(c + 2);
@@ -3038,10 +3038,10 @@ LABEL_41:
 // mc_SetPlayerDie — wrapper que usa la lógica de envejecimiento del ragdoll de MoveCharacter.
 // El SetPlayerDie de IDA NO toca dead_flag (lo hace el llamador, ReceiveDie), y
 // este wrapper tampoco: sólo llama a SetPlayerDie.
-static inline void mc_SetPlayerDie(DWORD c)
+static inline void mc_SetPlayerDie(CHARACTER* c)
 {
     if (!c) return;
-    SetPlayerDie((int)c);
+    SetPlayerDie(c);
     // NO escribir acá +0x2FD (+765), ni dead_flag (0x34e), ni alive_flag (0x2EC):
     // SetPlayerDie (0x00444D90) no los toca; la transición de estado de vida es
     // sólo de ReceiveDie.
@@ -3355,8 +3355,8 @@ void __cdecl MoveCharacter(int p1)
     // L796-806: ragdoll-counter aging (force die after 0xF frames)
     if (AsCharacter(c)->Dead) {
         unsigned char inc = (unsigned char)(++AsCharacter(c)->Dead);
-        if (inc >= 0xFu) mc_SetPlayerDie(c);
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(c);
+        if (inc >= 0xFu) mc_SetPlayerDie(AsCharacter(c));
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(AsCharacter(c));
     }
 
     // L807-811: setup defaults

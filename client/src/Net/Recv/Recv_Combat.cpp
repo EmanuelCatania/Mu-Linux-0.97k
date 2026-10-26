@@ -644,8 +644,8 @@ void NetRecv_16(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (index >= 0 && index < 400 && DAT_07abf5d0) {
             BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
             if (key & 0xFFFF8000) {
-                extern void __cdecl SetPlayerDie(int c_in);   // SetPlayerDie
-                SetPlayerDie((int)(intptr_t)c);
+                extern void __cdecl SetPlayerDie(CHARACTER* c_in);   // SetPlayerDie
+                SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
                 *(BYTE*) (hero + 756) = 2;        // gate de las esferas de EXP
@@ -800,8 +800,8 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
             if (key & 0xFFFF8000) {
                 // Murio un PLAYER (PvP): anim de muerte, sin EXP.
-                extern void __cdecl SetPlayerDie(int c_in);
-                SetPlayerDie((int)(intptr_t)c);
+                extern void __cdecl SetPlayerDie(CHARACTER* c_in);
+                SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
                 *(BYTE*) (hero + 756) = 2;        // gate de las esferas
