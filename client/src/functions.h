@@ -575,6 +575,7 @@ void  __cdecl OpenFont(void);              // IDA: OpenFont (0x0050F690)
 void  __cdecl Scene_LoadAccountResources(void); // OpenLogoSceneData (IDA)
 void  __cdecl Scene_UnloadAccountResources(void); // ReleaseLogoSceneData (IDA)
 void  __cdecl Scene_LoadCharSelectResources(void); // OpenCharacterSceneData (IDA)
+void Scene_RefreshCharSelectBackdrop();
 
 // ── GL helper layer ───────────────────────────────────────────────────────────
 void  __cdecl ReleaseCharacterSceneData(void); // IDA: ReleaseCharacterSceneData (0x005102C0)

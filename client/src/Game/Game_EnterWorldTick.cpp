@@ -261,6 +261,8 @@ void Game_EnterWorldTick(void)
     }
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
+    // Recargar sólo el fondo cuando cambia el aspecto, antes de simularlo.
+    Scene_RefreshCharSelectBackdrop();
     CLK_WATCH("frame-start");
     // Este es el tick de char-select (Game_MainLoop state 4 → esta fn, pese al
     // nombre "EnterWorldTick"). IDA 0x521D80 L401 llama MoveBugs() acá, primero:

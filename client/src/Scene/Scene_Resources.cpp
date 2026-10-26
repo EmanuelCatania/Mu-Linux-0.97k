@@ -7,6 +7,43 @@
 // IDA: ReleaseCharacterSceneData (0x005102C0)
 
 #include "stdafx.h"
+#include "Render/MeshDraw.h"
+#include <vector>
+#include <algorithm>
+
+namespace {
+bool selectBackdropWide = false;
+std::vector<int> selectBackdropTextures;
+
+const char* SelectBackdropPath()
+{
+  return gWindow.IsWide() ? "Data\\Logo\\Wide\\" : s_Data_Logo__005606a0;
+}
+}
+
+void Scene_RefreshCharSelectBackdrop()
+{
+  if (selectBackdropWide == gWindow.IsWide()) return;
+  const int model = DAT_05828d58 + 0xa4 * 0xbc;
+  // Mantener las texturas de ambas variantes durante esta escena. El modelo
+  // comparte texturas con otras mallas y puede alternar repetidas veces.
+  const int count = *(short*)(model + 0x24);
+  const short* textures = *(short**)(model + 0x38);
+  for (int i = 0; i < count; ++i) {
+    const int id = textures[i];
+    if (std::find(selectBackdropTextures.begin(), selectBackdropTextures.end(), id)
+        == selectBackdropTextures.end()) {
+      ++g_BitmapsRaw[id * 0x38 + 0x30];
+      selectBackdropTextures.push_back(id);
+    }
+  }
+  // Las mallas residentes guardan punteros a la topología que se libera.
+  MeshDraw::Release();
+  BMD__Release(model);
+  AccessModel(0xa4,SelectBackdropPath(),(const char*)&DAT_005606ac,5);
+  OpenTexture(0xa4,s_Logo__00560698,0x2601,'\x01');
+  selectBackdropWide = gWindow.IsWide();
+}
 
 
 // OpenLogoSceneData — Scene_LoadAccountResources
@@ -92,9 +129,8 @@ void Scene_LoadCharSelectResources(void)
   }
   // El diorama clásico termina en los bordes del encuadre 4:3. La variante
   // amplia agrega suelo y bosque lateral para el viewport real del mundo.
-  const char* selectModelPath = gWindow.IsWide()
-      ? "Data\\Logo\\Wide\\" : s_Data_Logo__005606a0;
-  AccessModel(0xa4,selectModelPath,(const char*)&DAT_005606ac,5);
+  AccessModel(0xa4,SelectBackdropPath(),(const char*)&DAT_005606ac,5);
+  selectBackdropWide = gWindow.IsWide();
   iVar2 = 0xaa;
   do {
     AccessModel(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005607c0,iVar2 + -0xa9);
@@ -151,6 +187,9 @@ void Scene_UnloadAccountResources(void)
 void ReleaseCharacterSceneData(void)
 {
   int iVar1;
+
+  for (int texture : selectBackdropTextures) UnloadImage(texture);
+  selectBackdropTextures.clear();
 
   iVar1 = 0;
   do {
