@@ -66,8 +66,9 @@ extern void __cdecl operator_delete(void* ptr);
 // CSQuest::FindQuestContext @ 0x004011D0 (IDA: FUN_004011D0).
 short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param_2)
 {
+    BYTE* quest = static_cast<BYTE*>(pThis);
     int iVar1 = 0;
-    char *pcVar2 = (char *)(*(BYTE *)((int)pThis + 4) + 0x2c + (int)param_1);
+    char *pcVar2 = reinterpret_cast<char*>(param_1) + *(quest + 4) + 0x2c;
     if (0 < *param_1) {
         do {
             if (*pcVar2 != '\0') {
@@ -77,9 +78,9 @@ short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param
             pcVar2 += 0x12;
         } while (iVar1 < *param_1);
     }
-    *(char *)((int)pThis + 0x1c87a) = *(char *)((int)pThis + 0x1c87a) - 1;
+    *(char *)(quest + 0x1c87a) = *(char *)(quest + 0x1c87a) - 1;
     CSQuest_CheckQuestState(pThis, -1);
-    return *(short *)((int)pThis + 0x1c880);
+    return *(short *)(quest + 0x1c880);
 }
 
 // CSQuest::getQuestState @ 0x004016E0 (IDA: FUN_004016E0).
