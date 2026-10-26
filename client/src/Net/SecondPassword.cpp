@@ -4568,15 +4568,15 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 // Tick de camino por frame: si +0x2fd (teleport) está seteado → saltea. Si +0x2ec (flag de movimiento) está seteado →
 //   avanza el waypoint (Entity_AdvancePath), y al llegar limpia +0x2ec y cancela la acción.
 // Si no se está moviendo y la grilla objetivo difiere de PositionX/Y → llama a PathFinding2.
-// param_1 es el puntero a la entidad (Ghidra lo tipó float — castear a int).
+// Los dos argumentos conservan las direcciones del personaje y su objeto.
 // IDA: MoveMonsterClient (0x00454CD0)
-void __cdecl MoveMonsterClient(int param_1_i, int param_2)
+void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
 {
-    // Ghidra tipó param_1 como float pero es un puntero a entidad (dirección int)
-    int entity = param_1_i;
+    BYTE* entity = reinterpret_cast<BYTE*>(character);
+    BYTE* param_2 = reinterpret_cast<BYTE*>(object);
 
     // Sale si esto es el centinela de la entidad del jugador
-    if (entity == (int)(void*)DAT_07abf5d8) return;
+    if (character == AsCharacter(DAT_07abf5d8)) return;
 
     // 00454CD0: el flag de teleport/altura tiene una única rama de actualización visual
     // antes de suprimir el walker normal de camino. El tipo 272 se mantiene sobre

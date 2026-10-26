@@ -225,7 +225,7 @@ void Game_CharSelectTick(void)
             int e = base + s * 0x394;
             if (*(char*)e == '\0') continue;   // inactive
             if (e != heroEnt) {
-                MoveMonsterClient(e, e);            // path tick (skip hero)
+                MoveMonsterClient(AsCharacter(e), AsObject(e));            // path tick (skip hero)
             }
             MoveCharacterVisual(e);                   // action → model (incl hero)
             CharacterAnimation(e, e);          // advance anim frame (incl hero)

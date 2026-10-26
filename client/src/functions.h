@@ -755,7 +755,7 @@ void  __cdecl GL_SetAlphaTest(char mode);      // GL_SetBlendMode (1 arg)
 void  __cdecl GL_EnableLightMap(void);           // GL_EnableLightMap (lightmap blend state)
 
 // ── Entity_Render helpers ─────────────────────────────────────────────────────
-void  __cdecl MoveMonsterClient(int entity_ptr, int param2); // IDA: MoveMonsterClient (0x00454CD0)
+void  __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object); // IDA: MoveMonsterClient (0x00454CD0)
 void  __cdecl MoveCharacter(int entity_ptr); // IDA: MoveCharacter (0x00449900)
 void  __cdecl MoveCharacterVisual(int entity_ptr); // IDA: MoveCharacterVisual (0x004520C0)
 
