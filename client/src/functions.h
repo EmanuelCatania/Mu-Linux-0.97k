@@ -494,7 +494,7 @@ void  __cdecl Vector_Transform(float *pt, float *mat12, float *out);    // Matri
 void  __cdecl Vector_InverseRotate(float *vec, float *mat12, float *out);   // Vec3_Transform
 void  __cdecl EulerToQuat(const float*, float*, int, int);
 void  __cdecl QuatToMatrix(const float*, float*, int, int);
-void  __cdecl QuatSlerp(int, int, int, int);
+void  __cdecl QuatSlerp(const float*, float*, float, float*);
 void  __cdecl Triangle_ComputeNormal(float *origin, float *A, float *B, float *out_normal); // Vec3_ComputePlaneNormal
 void  __cdecl SetActionObject(int, int, int, int); // IDA: SetActionObject (0x004FA5C0)
 void  __cdecl Entity_GetLightScale(int entity, int model);  // Entity_ProjectToScreen

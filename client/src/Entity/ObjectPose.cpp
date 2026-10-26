@@ -184,7 +184,7 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                 float* outQuat = (float*)(quaternionScratch + quatBone * 0x10);
                 int same = Terrain_QuadEqual(quatA, quatB, 0, 0);
                 if (!same)
-                    QuatSlerp((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // pass float bits, not truncated int
+                    QuatSlerp(quatA, quatB, fFrac, outQuat);
                 else { outQuat[0]=quatA[0]; outQuat[1]=quatA[1]; outQuat[2]=quatA[2]; outQuat[3]=quatA[3]; }
                 // quaternion to 3x3 rotation matrix, embedded in a 3x4.
                 // QuatToMatrix solo escribe posiciones [0,1,2,4,5,6,8,9,10] (9 floats de

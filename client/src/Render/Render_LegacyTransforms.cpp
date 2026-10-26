@@ -121,11 +121,7 @@ void __cdecl QuatToMatrix(const float* q, float* m, int ic, int id) {
 
 // QuatSlerp @ 0x004FA350 — QuatSlerp(q1[4], q2[4], t, out[4])
 // Spherical linear interpolation between two quaternions.
-void __cdecl QuatSlerp(int ia, int ib, int ic, int id) {
-    float *q1  = (float*)ia;
-    float *q2  = (float*)ib;
-    float  t   = *(float*)&ic;
-    float *out = (float*)id;
+void __cdecl QuatSlerp(const float* q1, float* q2, float t, float* out) {
     // ensure shortest path
     float dot = q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3];
     if (dot < 0.0f) { for(int i=0;i<4;i++) q2[i]=-q2[i]; dot=-dot; }
