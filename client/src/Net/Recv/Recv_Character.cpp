@@ -975,7 +975,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // IDA ReceiveAddPoint (0x431480) termina con sub_47E3C0
             // (CharData_RecalcStats).  Sin esto dano, defensa y
             // velocidad quedaban viejos hasta cambiar el equipo.
-            CalculateAll((int)(uintptr_t)CharacterMachine, 0, 0);
+            CalculateAll(static_cast<BYTE*>(CharacterMachine), 0, 0);
             break;
         }
 
@@ -1467,7 +1467,7 @@ void NetRecv_2C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
 
         // Recalcula damage/defense/velocidades con los stats nuevos.
-        CalculateAll((int)(uintptr_t)CA, 0, 0);
+        CalculateAll(reinterpret_cast<BYTE*>(CA), 0, 0);
 
         char buf[300];
         // GlobalText[377] = texto de suma, [379] = texto de resta.

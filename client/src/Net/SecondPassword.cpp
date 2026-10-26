@@ -2374,7 +2374,7 @@ void __cdecl SetCharacterClass(int c) {
     // 1374..1407 de CharacterMachine (HP/MP/ATK/DEF/AS/crítico/acierto). No hace falta para el char-select; el gate
     // que la rodea (entity[+847] != 0) sólo dispara después de entrar al mundo. El stub de abajo mantiene
     // el link verde; portar la implementación completa cuando se retome el trabajo in-game.
-    CalculateAll((int)cd, 0, 0);
+    CalculateAll(reinterpret_cast<BYTE*>(cd), 0, 0);
 }
 
 // sub_47E3C0 @ 0x0047E3C0 (293 bytes) — CharData_RecalcStats wrapper.
@@ -2388,20 +2388,20 @@ void __cdecl SetCharacterClass(int c) {
 //   - this[+1406] = (rand()%100 < this[+1402]) ? 1 : 0  (tirada de crítico)
 //   - this[+1407] = (rand()%100 < this[+1404]) ? 1 : 0  (tirada de esquive)
 // IDA: FUN_0047E3C0 (0x0047E3C0)
-int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
-    int this_ = characterMachine;
+int __cdecl CalculateAll(BYTE* characterMachine, int /*p2*/, int /*p3*/) {
+    BYTE* this_ = characterMachine;
     if (!this_) return 0;
 
     // Anti-tamper hash table — skipped per project policy
 
-    Stats_CalcBase(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcBase (attack damage)
-    Stats_CalcMagicDmgRange(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcMagicDmgRange
+    Stats_CalcBase(this_);            // Stats_CalcBase (attack damage)
+    Stats_CalcMagicDmgRange(this_);            // Stats_CalcMagicDmgRange
     Stats_CalcAddStrength((short*)this_);    // Stats_CalcAddStrength
-    CalculateAttackSpeed(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // CalculateAttackSpeed
-    Stats_CalcDefense(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcDefense
-    Stats_CalcDefenseRate(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcCritBase / DefRate
+    CalculateAttackSpeed(this_);            // CalculateAttackSpeed
+    Stats_CalcDefense(this_);            // Stats_CalcDefense
+    Stats_CalcDefenseRate(this_);            // Stats_CalcCritBase / DefRate
     Stats_ExtraOptionEquip6((short*)this_);    // Stats_CalcExtraOption1
-    Stats_ExtraOptionGlovesWings(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcExtraOption2
+    Stats_ExtraOptionGlovesWings(this_);            // Stats_CalcExtraOption2
 
     // Derived stats: max-min ranges
     unsigned short v2 = *(unsigned short*)(this_ + 1390);

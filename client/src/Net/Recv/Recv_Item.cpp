@@ -697,7 +697,7 @@ void NetRecv_34(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         DWORD gold = *(DWORD*)(Msg + 4);
         if (gold != 0) {
             *(DWORD*)((BYTE*)DAT_07cf1ffc + 1352) = gold;
-            CalculateAll((int)(uintptr_t)DAT_07cf1ffc, 0, 0);   // sub_47E3C0
+            CalculateAll(static_cast<BYTE*>(DAT_07cf1ffc), 0, 0);   // sub_47E3C0
             PlayBuffer(37, 0, 0);
         }
     }
