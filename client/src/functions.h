@@ -266,7 +266,7 @@ undefined4 __cdecl BMD__Save(int thisModel, char *pathDir, char *pathFile);  // 
 void  __cdecl SetPlayerStop(CHARACTER* entity); // IDA: SetPlayerStop (0x004430C0)
 void  __cdecl SetPlayerWalk(CHARACTER* entity); // IDA: SetPlayerWalk (0x00443930)
 unsigned int __cdecl Entity_AdvancePath(void *entity, char flag); // IDA: MovePath
-void  __cdecl MoveCharacterPosition(int entity); // IDA: MoveCharacterPosition (0x00454BA0)
+void  __cdecl MoveCharacterPosition(CHARACTER* entity); // IDA: MoveCharacterPosition (0x00454BA0)
 void  __cdecl SetCharacterClass(int entity); // IDA: SetCharacterClass (0x0045C130)
 void  Hero_ApplyCatalogEquipment(int c);       // 0.97.20: piezas del catálogo y pet custom del héroe
 void  __cdecl Character_UpdateEquipSlotAnimations(int entity);        // Character_UpdateEquipSlotAnimations

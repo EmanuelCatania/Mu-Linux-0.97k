@@ -2176,7 +2176,8 @@ label_119:
 // Applies backward velocity step (CharacterMoveSpeed) rotated by entity facing matrix,
 // y después fija la altura de la entidad a la del terreno (RequestTerrainHeight).
 // IDA: MoveCharacterPosition (0x00454BA0)
-void __cdecl MoveCharacterPosition(int param_1) {
+void __cdecl MoveCharacterPosition(CHARACTER* character) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(character);
     float local_30[12];
     float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(AsCharacter(param_1)), 0.0f };
     // El mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
@@ -4600,7 +4601,7 @@ void __cdecl MoveMonsterClient(int param_1_i, int param_2)
             AsCharacter(entity)->Object.Angle[2] =
                 ((float)*(unsigned char*)(entity + 0x2fc) - _DAT_0055256c) * _DAT_00552844;
         }
-        MoveCharacterPosition(entity);
+        MoveCharacterPosition(AsCharacter(entity));
         return;
     }
 

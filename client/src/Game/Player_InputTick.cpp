@@ -734,7 +734,7 @@ void __cdecl Player_ProcessInput(void)
             if (!isIdle) {
                 unsigned int moveOk = Entity_AdvancePath(ent, '\x01');
                 if ((char)moveOk == '\0') {
-                    MoveCharacterPosition((int)ent);
+                    MoveCharacterPosition(AsCharacter(ent));
                 } else {
                     // Al llegar al destino se resetean wp_count + cur_wp para que isIdle sea true
                     // en el frame siguiente.
