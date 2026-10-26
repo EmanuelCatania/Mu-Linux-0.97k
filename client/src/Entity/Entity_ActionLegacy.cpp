@@ -55,7 +55,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // el action_id contra ese campo igualmente — replicamos sin reinterpretar.
 //
 // IDA: SetAction (0x0043E820)
-void* __cdecl SetAction(int entity_ptr, int anim_id)
+void* __cdecl SetAction(OBJECT* entity_ptr, int anim_id)
 {
     if (entity_ptr == 0) return NULL;
     if (DAT_05828d58 == 0) return NULL;           // tabla aún no inicializada

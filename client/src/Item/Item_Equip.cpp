@@ -138,7 +138,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             // El objetivo es la key del propio heroe, no SelectedCharacter.
             *(BYTE*)(uintptr_t)(character + 748) = 0;
             if (*(WORD*)(uintptr_t)(character + 2) == 390)
-                SetAction((int)character, 92);     // IDA: SetAction(v4, 92)
+                SetAction(AsObject(character), 92);     // IDA: SetAction(v4, 92)
             else
                 SetPlayerAttack((int)character, 0, 0, 0); // IDA: SetPlayerAttack(v4)
 

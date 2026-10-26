@@ -214,7 +214,7 @@ float __cdecl FarAngle(float curAngle, float tgtAngle, char mode); // IDA: FUN_0
 void  __cdecl RenderInformation(void);
 float __cdecl TurnAngle2(float curAngle, float tgtAngle, float t); // IDA: TurnAngle2 (0x0043E1B0)
 void  __cdecl Vector_AddRotated(float *pos, float *dir, float *vel); // Vector3_Normalize (cross/normalize vel from pos+dir)
-void* __cdecl SetAction(int entity_ptr, int anim_id); // IDA: SetAction (0x0043E820)
+void* __cdecl SetAction(OBJECT* entity_ptr, int anim_id); // IDA: SetAction (0x0043E820)
 void  __cdecl Alpha(OBJECT* object); // IDA: Alpha (0x0043E5C0)
 void  __cdecl Particle_PathUpdate(int entity_ptr, int slot_idx, int table_base, int stride); // Particle_PathUpdate
 // Pathfind(src_cached_x, src_cached_y, tgt_x, tgt_y, path_buf, reserved) → 1=ok 0=fail

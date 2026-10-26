@@ -72,13 +72,13 @@ static void SetPlayerBow97k(BYTE* entity)
     if (!entity) return;
     const short leftType = AsCharacter(entity)->Weapon[1].Type;
     if ((leftType >= 528 && leftType < 535) || leftType == 545) {
-        SetAction((int)(intptr_t)entity,
+        SetAction(AsObject(entity),
                      ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 46 : 48);
         return;
     }
     const short rightType = AsCharacter(entity)->Weapon[0].Type;
     if ((rightType >= 536 && rightType < 543) || rightType == 544) {
-        SetAction((int)(intptr_t)entity,
+        SetAction(AsObject(entity),
                      ((AsCharacter(entity)->Class & 7) != 2 || *(unsigned short *)&AsCharacter(entity)->Wing.Type == 0xFFFF) ? 47 : 49);
     }
 }
@@ -273,21 +273,21 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x13:  // 19 Falling Slash
     {
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(82, 0, 0);
         goto common_tail;
     }
 
     case 0x14:  // 20 Lunge
     {
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(83, 0, 0);
         goto common_tail;
     }
 
     case 0x15:  // 21 Uppercut
     {
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(84, 0, 0);
         goto common_tail;
     }
@@ -295,7 +295,7 @@ void PacketHandler_0x19(BYTE* pkt)
     case 0x16:  // 22 Cyclone
     {
         // ReceiveMagic case 0x16: SetAction(sc, 0x16 + 37), then sound 85.
-        SetAction((int)(intptr_t)caster, skill_type + 37);
+        SetAction(AsObject(caster), skill_type + 37);
         PlayBuffer(85, 0, 0);
         goto common_tail;
     }
@@ -304,7 +304,7 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // The alternating action is controlled by the caster-local counter
         // at +771, not by the current map/state.
-        SetAction((int)(intptr_t)caster,
+        SetAction(AsObject(caster),
                      (caster[771] & 1) ? 41 : skill_type + 37);
         caster[771] += 1;
         PlayBuffer(85, 0, 0);
@@ -320,7 +320,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x2B:  // 43 Death Stab
     {
-        SetAction((int)(intptr_t)caster, 67);
+        SetAction(AsObject(caster), 67);
         if (caster != (BYTE*)DAT_07abf5d8 && *(WORD *)&AsCharacter(caster)->Object.Type == 390)
             *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
         goto common_tail;
@@ -328,7 +328,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x2F:  // 47 Impale
     {
-        SetAction((int)(intptr_t)caster, 66);
+        SetAction(AsObject(caster), 66);
         goto common_tail;
     }
 
@@ -348,13 +348,13 @@ void PacketHandler_0x19(BYTE* pkt)
             }
             *(DWORD*)(target + 120) |= 0x10;
         }
-        SetAction((int)(intptr_t)caster, 63);
+        SetAction(AsObject(caster), 63);
         goto common_tail;
     }
 
     case 0x31:  // 49 Fire Breath
     {
-        SetAction((int)(intptr_t)caster,
+        SetAction(AsObject(caster),
                      (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) ? 65 : 64);
         goto common_tail;
     }
@@ -402,7 +402,7 @@ void PacketHandler_0x19(BYTE* pkt)
 
     case 0x38:  // 56 Power Slash
     {
-        SetAction((int)(intptr_t)caster, 81);
+        SetAction(AsObject(caster), 81);
         PlayBuffer(85, 0, 0);
         goto common_tail;
     }

@@ -143,7 +143,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                      (float*)(c + 232), nullptr, (float*)c,
                      (float*)-1, nullptr, 0);
         Character_UpdateEquipSlotAnimations((int)(uintptr_t)c);   // rebuild de body-parts
-        SetAction((int)(uintptr_t)c, 124);
+        SetAction(AsObject(c), 124);
         PlayBuffer(72, 0, 0);
     }
 }

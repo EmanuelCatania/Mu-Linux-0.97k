@@ -282,9 +282,9 @@ switchD_caseD_2:
 
             // Despawn if out-of-type or expired
             if (((sVar5 < 0xb5) || (0xbf < sVar5)) && ((int)puVar9[-0x22] < 1)) {
-                SetAction((int)(puVar9 + -0x3a), 0);
+                SetAction(AsObject((puVar9 + -0x3a)), 0);
             } else {
-                SetAction((int)(puVar9 + -0x3a), (unsigned int)(sVar5 == 0xb2));
+                SetAction(AsObject((puVar9 + -0x3a)), (unsigned int)(sVar5 == 0xb2));
                 Particle_PathUpdate((int)(puVar9 + -0x3a), local_20, (int)(uintptr_t)DAT_083a2e90, 10);
                 Matrix_BuildFromEuler((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
 

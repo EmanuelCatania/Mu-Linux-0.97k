@@ -144,7 +144,7 @@ static void Tamachan_Move(char *o, int life)
             *(int *)(o + 216) = 0;
             int state = rand() % 2 + 1;
             o[260] = (char)state;
-            SetAction((int)o, state);
+            SetAction(AsObject(o), state);
             if (o[260] == 2) goto walk;       // LABEL_312
             goto newLife;                     // LABEL_313
         }
@@ -158,7 +158,7 @@ static void Tamachan_Move(char *o, int life)
         if (life < 10) {
             *(float *)(o + 216) = 40.0f;
             o[260] = 0;
-            SetAction((int)o, 0);
+            SetAction(AsObject(o), 0);
             if (o[260] == 2) goto walk;
             goto newLife;
         }
@@ -195,7 +195,7 @@ static void Tamachan_Move(char *o, int life)
             *(int *)(o + 96) = rand() % 100 + 50;
             int state = rand() % 3;
             o[260] = (char)state;
-            SetAction((int)o, state);
+            SetAction(AsObject(o), state);
             if (o[260] != 2) {
                 *(float *)(o + 192) = 0.0f;
                 *(float *)(o + 196) = 0.0f;
@@ -1074,7 +1074,7 @@ LAB_00469772:
                 else {
                   uVar8 = 5;
                 }
-                SetAction((int)pcVar11,uVar8);
+                SetAction(AsObject(pcVar11),uVar8);
               }
               iVar9 = iVar9 + 0x394;
             } while (iVar9 < 0x59740);

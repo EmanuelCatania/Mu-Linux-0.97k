@@ -443,15 +443,15 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 CreateTeleportEnd((unsigned int)(uintptr_t)slot);
                 break;
             case 2:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 135 : 133);
                 break;
             case 3:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 140 : 139);
                 break;
             case 4:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 138 : 137);
                 break;
             default:

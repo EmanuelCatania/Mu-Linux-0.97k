@@ -1099,7 +1099,7 @@ static void Attack_WarriorBranch97k(char* entity)
         CurrentSkill = (DWORD)iType;                          // IDA L3197
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);    // IDA: [41][gx][gy][0][0][0]
         SetAttackSpeed();                                       // IDA LABEL_497: SetAttackSpeed
-        SetAction((int)(uintptr_t)entity, 61);
+        SetAction(AsObject(entity), 61);
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1119,7 +1119,7 @@ static void Attack_WarriorBranch97k(char* entity)
         }
         CurrentSkill = (DWORD)iType;                          // IDA L3809
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);
-        SetAction((int)(uintptr_t)entity, 62);             // IDA LABEL_930 (sin SetAttackSpeed)
+        SetAction(AsObject(entity), 62);             // IDA LABEL_930 (sin SetAttackSpeed)
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1127,7 +1127,7 @@ static void Attack_WarriorBranch97k(char* entity)
         if (lowMana) { Attack_UseManaScroll97k(); return; }
         if (!hasAg) return;                                   // IDA L4397
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
-        SetAction((int)(uintptr_t)entity, 63);             // IDA LABEL_811
+        SetAction(AsObject(entity), 63);             // IDA LABEL_811
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1149,7 +1149,7 @@ static void Attack_WarriorBranch97k(char* entity)
         // IDA: [skill][heroGX][heroGY][0][packedOffset][field8].
         Combat_SendDuration1E_97k(entity, iType, 0, packedOffset, field8);
         SetAttackSpeed();                                       // IDA LABEL_497 / LABEL_715
-        SetAction((int)(uintptr_t)entity, (iType == 55) ? 61 : 81);
+        SetAction(AsObject(entity), (iType == 55) ? 61 : 81);
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1260,7 +1260,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
             CurrentSkill = (DWORD)iType;                      // IDA LABEL_1441
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0);
             SetAttackSpeed();                                   // IDA LABEL_1512
-            SetAction((int)(uintptr_t)entity, 88);
+            SetAction(AsObject(entity), 88);
             *(char *)&AsCharacter(entity)->Movement = 0;
             DAT_07e11db8 = 0;                                 // IDA L9208
             return;
@@ -1416,7 +1416,7 @@ static void Attack_WizardBranch97k(char* entity)
         // [iType][heroGX][heroGY][0][0][0] — sin direccion ni delta.
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);
         SetAttackSpeed();                                       // IDA LABEL_1235 / LABEL_1310
-        SetAction((int)(uintptr_t)entity, (iType == 10) ? 90 : 89);
+        SetAction(AsObject(entity), (iType == 10) ? 90 : 89);
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     case 16:                                                  // IDA L7105
@@ -2310,7 +2310,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 // Orbe de Noria: flotar (PLAYER_HEALING1 / _FEMALE1).
                 *(float*)(o + 36) = *(float*)&_DAT_07e118e4;
                 int act = ((AsCharacter(c)->Class & 7) == 2) ? 138 : 137;
-                SetAction((int)o, act);
+                SetAction(AsObject(o), act);
                 float fac = *(float*)(o + 36);
                 BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
                 BYTE pkt[8];
@@ -2349,7 +2349,7 @@ void __cdecl Action(DWORD c, DWORD o)
         // ── 5. v309 secondary packet (anim 139/140 + action 109) ───────────────────────────────────────
         if (v309) {
             int act = ((AsCharacter(c)->Class & 7) == 2) ? 140 : 139;
-            SetAction((int)o, act);
+            SetAction(AsObject(o), act);
             float fac = *(float*)((char*)(uintptr_t)DAT_07abf5d8 + 36);
             BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
             BYTE pkt[8];
@@ -2361,7 +2361,7 @@ void __cdecl Action(DWORD c, DWORD o)
         // ── 5b. v307 tertiary packet (anim 133/135 + action 108) ───────────────────────────────────────
         if (v307) {
             int act = ((AsCharacter(c)->Class & 7) == 2) ? 135 : 133;
-            SetAction((int)o, act);
+            SetAction(AsObject(o), act);
             float fac = *(float*)((char*)(uintptr_t)DAT_07abf5d8 + 36);
             BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
             BYTE pkt[8];

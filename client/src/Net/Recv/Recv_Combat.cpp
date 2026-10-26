@@ -543,17 +543,17 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     if (*(WORD *)&AsCharacter(caster)->Object.Type == 390) {
         switch (skill) {
-        case 10: SetAction((int)caster, 90); break;
-        case 12: SetAction((int)caster, 88); break;
-        case 14: SetAction((int)caster, 89); break;
+        case 10: SetAction(AsObject(caster), 90); break;
+        case 12: SetAction(AsObject(caster), 88); break;
+        case 14: SetAction(AsObject(caster), 89); break;
         case 24:
         case 52: SetPlayerAttack((int)caster, 0, 0, 0); break;
         case 41:
-        case 55: SetAction((int)caster, 61); break;
-        case 42: SetAction((int)caster, 62); break;
-        case 43: SetAction((int)caster, 67); break;
-        case 47: SetAction((int)caster, 66); break;
-        case 56: SetAction((int)caster, 81); break;
+        case 55: SetAction(AsObject(caster), 61); break;
+        case 42: SetAction(AsObject(caster), 62); break;
+        case 43: SetAction(AsObject(caster), 67); break;
+        case 47: SetAction(AsObject(caster), 66); break;
+        case 56: SetAction(AsObject(caster), 81); break;
         default: SetPlayerMagic((int)caster); break;
         }
     } else {

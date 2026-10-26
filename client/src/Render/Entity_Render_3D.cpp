@@ -249,8 +249,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             uVar4 = _rand() & 0x8000001f;
             bVar8 = (uVar4 == 0);
             if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xffffffe0) == 0xffffffff);
-            if (bVar8) { pfVar3 = (float *)SetAction(param_1, 1); return pfVar3; }
-            pfVar3 = (float *)SetAction(param_1, 0);
+            if (bVar8) { pfVar3 = (float *)SetAction(AsObject(param_1), 1); return pfVar3; }
+            pfVar3 = (float *)SetAction(AsObject(param_1), 0);
             return pfVar3;
         }
         break;

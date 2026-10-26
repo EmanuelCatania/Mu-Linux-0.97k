@@ -50,7 +50,7 @@ static void Tamachan_Create(char *o)
     *(int *)(o + 96) = rand() % 50 + 50;           // lifetime
     o[260] = 1;                                    // estado: flotando
     *(float *)(o + 216) = -30.0f;                  // 0xC1F00000
-    SetAction((int)o, (unsigned char)o[260]);   // SetAction
+    SetAction(AsObject(o), (unsigned char)o[260]);   // SetAction
     *(float *)(o + 192) = 0.0f;                    // velocidad
     *(float *)(o + 196) = 0.0f;
     *(float *)(o + 200) = 0.0f;

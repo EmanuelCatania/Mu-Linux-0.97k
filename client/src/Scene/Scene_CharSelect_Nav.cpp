@@ -306,9 +306,9 @@ void ClearActionObject(void)
 void __cdecl SetPlayerTeleport(int param_1)
 {
     if (*(short *)(param_1 + 2) == 0x186) {
-        SetAction(param_1, 0x57);
+        SetAction(AsObject(param_1), 0x57);
     } else {
-        SetAction(param_1, 5);
+        SetAction(AsObject(param_1), 5);
     }
 }
 
@@ -384,8 +384,8 @@ int __cdecl Character_FindByKey_WithClear(int a1)
 void __cdecl Characters_SetActionAll(int Action)
 {
   int i; // esi
-  DWORD v2; // eax
-  DWORD v3; // [esp-8h] [ebp-14h]
+  std::uintptr_t v2; // eax
+  std::uintptr_t v3; // [esp-8h] [ebp-14h]
 
   for ( i = 0; i < 366400; i += 916 )
   {
@@ -398,7 +398,7 @@ void __cdecl Characters_SetActionAll(int Action)
         *(DWORD *)(v2 + 28) = 0;
         *(DWORD *)(v2 + 32) = 0;
         *(DWORD *)(v2 + 36) = 1127481344;
-        SetAction(v3, Action);
+        SetAction(AsObject(v3), Action);
       }
     }
   }
@@ -1569,7 +1569,7 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             PlayBuffer(16, c, 0);
             break;
         case 40:
-            SetAction((int)c, 1);
+            SetAction(AsObject(c), 1);
             PlayBuffer(16, c, 0);
             break;
         case 51:
@@ -1580,17 +1580,17 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         case 302: {
             int r = rand() % 8;
             if (r <= 2) {
-                SetAction((int)c, (r <= 0) ? 9 : 8);
+                SetAction(AsObject(c), (r <= 0) ? 9 : 8);
             } else {
-                SetAction((int)c, rand() % 2 + 3);
+                SetAction(AsObject(c), rand() % 2 + 3);
             }
             break;
         }
         default:
             if (*(unsigned char*)(c + 771) % 3) {
-                SetAction((int)c, 4);
+                SetAction(AsObject(c), 4);
             } else {
-                SetAction((int)c, 3);
+                SetAction(AsObject(c), 3);
             }
             ++*(unsigned char*)(c + 771);
             break;
@@ -1612,20 +1612,20 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             if (v5 >= 400 && v5 < 496) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
                     if (v5 == 431) {
-                        SetAction((int)c, 81);
+                        SetAction(AsObject(c), 81);
                     } else {
-                        SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 39);
+                        SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 39);
                     }
                 } else {
                     short v6 = AsCharacter(c)->Weapon[1].Type;
                     if (v6 < 400 || v6 >= 496) {
-                        SetAction((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
+                        SetAction(AsObject(c), (*(unsigned char*)(c + 771) & 1) + 35);
                     } else {
                         switch (*(unsigned char*)(c + 771) & 3) {
-                        case 0: SetAction((int)c, 35); break;
-                        case 1: SetAction((int)c, 37); break;
-                        case 2: SetAction((int)c, 36); break;
-                        case 3: SetAction((int)c, 38); break;
+                        case 0: SetAction(AsObject(c), 35); break;
+                        case 1: SetAction(AsObject(c), 37); break;
+                        case 2: SetAction(AsObject(c), 36); break;
+                        case 3: SetAction(AsObject(c), 38); break;
                         }
                     }
                 }
@@ -1633,39 +1633,39 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             }
             short v7 = AsCharacter(c)->Weapon[1].Type;
             if (v7 >= 400 && v7 < 496) {
-                SetAction((int)c, rand() % 2 + 37);
+                SetAction(AsObject(c), rand() % 2 + 37);
                 goto LABEL_85;
             }
             // Spear (560-591)
             if (v5 >= 560 && v5 < 592) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
-                    SetAction((int)c, rand() % 2 + 84);
+                    SetAction(AsObject(c), rand() % 2 + 84);
                 } else {
-                    SetAction((int)c, rand() % 2 + 35);
+                    SetAction(AsObject(c), rand() % 2 + 35);
                 }
                 goto LABEL_85;
             }
             // Mace 497/498
             if (v5 == 497 || v5 == 498) {
-                SetAction((int)c, 42);
+                SetAction(AsObject(c), 42);
                 goto LABEL_85;
             }
             // Mace/staff (496-527)
             if (v5 >= 496 && v5 < 528) {
-                SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 43);
+                SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 43);
                 goto LABEL_85;
             }
             // Bow/crossbow type detection on right hand
             if ((v7 >= 528 && v7 < 535) || v7 == 545) {
-                SetAction((int)c, (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 46 : 48);
+                SetAction(AsObject(c), (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 46 : 48);
                 goto LABEL_85;
             }
             if ((v5 >= 536 && v5 < 543) || (v5 >= 544 && v5 < 545) || v5 == 546) {
-                SetAction((int)c, (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 47 : 49);
+                SetAction(AsObject(c), (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 47 : 49);
                 goto LABEL_85;
             }
         }
-        SetAction((int)c, 34);
+        SetAction(AsObject(c), 34);
         goto LABEL_85;
     }
 
@@ -1675,25 +1675,25 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         if (v3 < 496) {
             // fall through to LABEL_11 (right-hand weapon check)
         } else if (v3 < 501) {
-            SetAction((int)c, 52);
+            SetAction(AsObject(c), 52);
             goto LABEL_85;
         } else if (v3 >= 528) {
             // continue to LABEL_11
         } else {
-            SetAction((int)c, 53);
+            SetAction(AsObject(c), 53);
             goto LABEL_85;
         }
         // LABEL_11: weapon checks
         short v4 = AsCharacter(c)->Weapon[1].Type;
         if ((v4 >= 528 && v4 < 535) || v4 == 545) {
-            SetAction((int)c, 54);
+            SetAction(AsObject(c), 54);
         } else if ((v3 >= 536 && v3 < 543) || (v3 >= 544 && v3 < 545) || v3 == 546) {
-            SetAction((int)c, 55);
+            SetAction(AsObject(c), 55);
         } else if (v3 != -1 &&
                    *((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3 - 399] - 34)) {
-            SetAction((int)c, 51);
+            SetAction(AsObject(c), 51);
         } else {
-            SetAction((int)c, 50);
+            SetAction(AsObject(c), 50);
         }
     }
 
@@ -1761,7 +1761,7 @@ void __cdecl SetPlayerMagic(int param_1) {
             action = 4;
         }
         // SetAction(entity, action) — SetAction
-        SetAction((int)c, action);
+        SetAction(AsObject(c), action);
         *(char *)&AsCharacter(c)->SwordCount = *(char *)&AsCharacter(c)->SwordCount + 1;
         return;
     }
@@ -1769,11 +1769,11 @@ void __cdecl SetPlayerMagic(int param_1) {
     SetAttackSpeed();  // SetAttackSpeed
     short charClass = AsCharacter(c)->Helper.Type;
     if ((charClass == 0x332 || charClass == 0x333) && *(char *)&AsCharacter(c)->SafeZone == '\0') {
-        SetAction((int)c, 0x5b);
+        SetAction(AsObject(c), 0x5b);
         return;
     }
     if ((AsCharacter(c)->Class & 7) == 2) {
-        SetAction((int)c, 0x56);
+        SetAction(AsObject(c), 0x56);
         return;
     }
     int r = rand();
@@ -1781,7 +1781,7 @@ void __cdecl SetPlayerMagic(int param_1) {
     if ((int)v < 0) {
         v = (v - 1 | 0xFFFFFFFE) + 1;
     }
-    SetAction((int)c, (int)(v + 0x52));
+    SetAction(AsObject(c), (int)(v + 0x52));
 }
 
 // SetPlayerShock @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
@@ -1812,11 +1812,11 @@ void __cdecl SetPlayerShock(int c, int Hit)
     short etype = AsCharacter(c)->Object.Type;
     if (etype == 390) {
         // Player: shock anim, clear alive flag
-        (void)SetAction(c, 130);
+        (void)SetAction(AsObject(c), 130);
         AsCharacter(c)->Movement = 0;
     } else if (v3 < 3 || v3 > 4) {
         // Monstruos/NPCs (que no estén en las anims de caminar/correr 3-4): anim de shock genérica
-        (void)SetAction(c, 5);
+        (void)SetAction(AsObject(c), 5);
     }
 
     // Sonido: sólo cuando no está a mitad de una animación (frame == 0)

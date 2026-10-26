@@ -78,7 +78,7 @@ extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
 {
     if (!o) return;
     SetAttackSpeed();                                  // SetAttackSpeed
-    (void)SetAction((int)o, 87);                  // SetAction(o, 87)
+    (void)SetAction(AsObject(o), 87);                  // SetAction(o, 87)
     *(unsigned int*)(o + 356) = 0;                   // alpha = 0 (fade-out)
     *(BYTE*)(o + 124) = 1;                           // state byte = 1 (begin)
     (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
@@ -95,7 +95,7 @@ extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
 {
     if (!o) return;
     SetAttackSpeed();
-    (void)SetAction((int)o, 87);
+    (void)SetAction(AsObject(o), 87);
     *(unsigned int *)&AsObject(o)->AnimationFrame = 0x40A00000u;        // anim_speed = 5.0f
     AsObject(o)->Teleport = 3;                           // state byte = 3 (end)
     *(unsigned int *)&AsObject(o)->AlphaTarget = 0x3F800000u;        // alpha = 1.0f (fade-in)

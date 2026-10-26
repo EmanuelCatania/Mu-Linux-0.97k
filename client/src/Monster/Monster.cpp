@@ -688,7 +688,7 @@ void InitializeMonster232(unsigned int c)
 void InitializeMonster234(unsigned int c)
 {
     AsCharacter(c)->Object.Kind = 4;
-    SetAction((int)c, 0);
+    SetAction(AsObject(c), 0);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 242.

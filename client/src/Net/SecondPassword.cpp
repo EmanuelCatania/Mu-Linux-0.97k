@@ -1980,7 +1980,7 @@ void __cdecl SetPlayerWalk(int param_1) {
 
     // Non-player (NPC/monster): always action 2.
     if (etype != 390) {
-        SetAction(param_1, 2);
+        SetAction(AsObject(param_1), 2);
         goto label_119;
     }
 
@@ -1997,10 +1997,10 @@ void __cdecl SetPlayerWalk(int param_1) {
     // Pendant 818 + alive: stand-with-fairy (32) or holding-something (33).
     if (pendant == 818 && !bSafeZone) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
-            SetAction(param_1, 32);
+            SetAction(AsObject(param_1), 32);
             goto label_119;
         }
-        SetAction(param_1, 33);
+        SetAction(AsObject(param_1), 33);
         goto label_119;
     }
 
@@ -2009,9 +2009,9 @@ void __cdecl SetPlayerWalk(int param_1) {
         // Las alas están activas cuando c+672 != -1 (sólo si está vivo).
         if (!bSafeZone && wings != -1) {
             // Wings flying: action 30 (no spear) or 31 (spear 536-543, 544, 546).
-            if (LH >= 536 && LH < 543) { SetAction(param_1, 31); goto label_119; }
-            if (LH == 544 || LH == 546)    { SetAction(param_1, 31); goto label_119; }
-            SetAction(param_1, 30);
+            if (LH >= 536 && LH < 543) { SetAction(AsObject(param_1), 31); goto label_119; }
+            if (LH == 544 || LH == 546)    { SetAction(AsObject(param_1), 31); goto label_119; }
+            SetAction(AsObject(param_1), 30);
             goto label_119;
         }
         // World 7 (Atlans): swim animations. Stamina < 0x28 → 21, else 29.
@@ -2021,7 +2021,7 @@ void __cdecl SetPlayerWalk(int param_1) {
         //   if (!v6) { si hay alas → SetAction 30/31 y sale; si no, v7 = 1; }
         // O sea en zona segura NO se nada (ni se vuela): se camina.
         if (!bSafeZone && gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
-            SetAction(param_1, (stamina < 0x28) ? 21 : 29);
+            SetAction(AsObject(param_1), (stamina < 0x28) ? 21 : 29);
             goto label_119;
         }
         // No weapons equipped (or dead in non-event-map world):
@@ -2030,12 +2030,12 @@ void __cdecl SetPlayerWalk(int param_1) {
         if (noWeapons || bSafeZoneNonEvent) {
             if (stamina >= 0x28) {
                 // Exhausted: action 22.
-                SetAction(param_1, 22);
+                SetAction(AsObject(param_1), 22);
                 goto label_119;
             }
             // Non-exhausted no-weapon walk/run: 13 (walk) or 14 (run).
             unsigned int act = ((AsCharacter(param_1)->Class & 7) == 2) ? 14u : 13u;
-            SetAction(param_1, act);
+            SetAction(AsObject(param_1), act);
             goto label_119;
         }
         // Tiene armas, está vivo, no es Atlans, no está exhausto:
@@ -2051,93 +2051,93 @@ void __cdecl SetPlayerWalk(int param_1) {
             // Sword class (LH 400..495):
             if (LH >= 400 && LH < 496) {
                 if (ItemTwoHand(LH)) {
-                    SetAction(param_1, (LH == 431) ? 79 : 16);
+                    SetAction(AsObject(param_1), (LH == 431) ? 79 : 16);
                     goto label_119;
                 }
-                SetAction(param_1, 15);   // 1H sword walk
+                SetAction(AsObject(param_1), 15);   // 1H sword walk
                 goto label_119;
             }
             // Lanza (560..591): IDA chequea TwoHand → 18, si no cae a LABEL_64 (15)
             if (LH >= 560 && LH < 592) {
                 if (!ItemTwoHand(LH)) {
-                    SetAction(param_1, 15);  // LABEL_64
+                    SetAction(AsObject(param_1), 15);  // LABEL_64
                     goto label_119;
                 }
-                SetAction(param_1, 18);
+                SetAction(AsObject(param_1), 18);
                 goto label_119;
             }
             // Mace (497) / War-axe (530):
-            if (LH == 497 || LH == 530) { SetAction(param_1, 17); goto label_119; }
+            if (LH == 497 || LH == 530) { SetAction(AsObject(param_1), 17); goto label_119; }
             // IDA L155-176: NOT magic-book range (LH < 496 || LH >= 528):
             //   Bow RH → 19, Staff LH → 20, fallthrough → LABEL_87 (13/14).
             // SI NO (mano izquierda en [496, 528)): SetAction 18 (terminal).
             if (LH < 496 || LH >= 528) {
                 if ((RH >= 528 && RH < 535) || RH == 545) {
-                    SetAction(param_1, 19);
+                    SetAction(AsObject(param_1), 19);
                     goto label_119;
                 }
                 if ((LH >= 536 && LH < 543) || LH == 544 || LH == 546) {
-                    SetAction(param_1, 20);
+                    SetAction(AsObject(param_1), 20);
                     goto label_119;
                 }
                 // LABEL_87: no-weapon walk class-conditional
                 unsigned int act = ((AsCharacter(param_1)->Class & 7) == 2) ? 14u : 13u;
-                SetAction(param_1, act);
+                SetAction(AsObject(param_1), act);
                 goto label_119;
             }
             // LH in [496, 528): magic books — terminal action 18
-            SetAction(param_1, 18);
+            SetAction(AsObject(param_1), 18);
             goto label_119;
         }
         // Stamina >= 0x28 (exhausted) with weapons:
         if (LH >= 400 && LH < 496) {
             if (RH >= 400 && RH < 496) {
-                SetAction(param_1, 24);     // dual-sword exhausted
+                SetAction(AsObject(param_1), 24);     // dual-sword exhausted
                 goto label_119;
             }
             if (ItemTwoHand(LH)) {
-                SetAction(param_1, (LH == 431) ? 80 : 25);
+                SetAction(AsObject(param_1), (LH == 431) ? 80 : 25);
                 goto label_119;
             }
-            SetAction(param_1, 23);
+            SetAction(AsObject(param_1), 23);
             goto label_119;
         }
         // Spear exhausted: TwoHand → 26, else 23 (LABEL_97)
         if (LH >= 560 && LH < 592) {
             if (!ItemTwoHand(LH)) {
-                SetAction(param_1, 23);  // LABEL_97
+                SetAction(AsObject(param_1), 23);  // LABEL_97
                 goto label_119;
             }
-            SetAction(param_1, 26);
+            SetAction(AsObject(param_1), 26);
             goto label_119;
         }
         if (LH >= 496 && LH < 528) {
-            SetAction(param_1, 26);
+            SetAction(AsObject(param_1), 26);
             goto label_119;
         }
         if ((RH >= 528 && RH < 535) || RH == 545) {
-            SetAction(param_1, 27);
+            SetAction(AsObject(param_1), 27);
             goto label_119;
         }
         if ((LH >= 536 && LH < 543) || LH == 544 || LH == 546) {
-            SetAction(param_1, 28);
+            SetAction(AsObject(param_1), 28);
             goto label_119;
         }
-        SetAction(param_1, 22);  // exhausted no-weapon walk (LABEL_59)
+        SetAction(AsObject(param_1), 22);  // exhausted no-weapon walk (LABEL_59)
         goto label_119;
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
     if (gMapManager.GetCurrentMap() != 8 && gMapManager.GetCurrentMap() != 10) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
-            SetAction(param_1, 32);
+            SetAction(AsObject(param_1), 32);
             goto label_119;
         }
-        SetAction(param_1, 33);
+        SetAction(AsObject(param_1), 33);
         goto label_119;
     }
     // Wings + Atlans/Aida: swim wings.
-    SetAction(param_1,
+    SetAction(AsObject(param_1),
                  ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) ? 76 : 77);
 
     }
@@ -2972,7 +2972,7 @@ void __cdecl SetPlayerDie(int c_in)
     if (v11 == 390) {
         int v12 = *(int*)(c + 4);
         if (v12 < 206 || v12 > 208) {
-            SetAction((int)c, 131);
+            SetAction(AsObject(c), 131);
             goto LABEL_41;
         }
         // Player special class 206-208: explosion
@@ -3007,7 +3007,7 @@ void __cdecl SetPlayerDie(int c_in)
             }
             playFxBuf = true;
         } else {
-            SetAction((int)c, 6);
+            SetAction(AsObject(c), 6);
             goto LABEL_41;
         }
     }
@@ -3285,25 +3285,25 @@ void __cdecl MoveCharacter(int p1)
                                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
                                             CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                                        SetAction((int)c, 105);
+                                        SetAction(AsObject(c), 105);
                                     }
                                 } else {
                                     TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
                                         CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                                    SetAction((int)c, 111);
+                                    SetAction(AsObject(c), 111);
                                 }
                             } else {
                                 TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
                                     CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                                SetAction((int)c, 99);
+                                SetAction(AsObject(c), 99);
                             }
                         } else {
                             TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
                                 CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                            SetAction((int)c, 97);
+                            SetAction(AsObject(c), 97);
                         }
                         skipIdleSelect = true;
                     }
@@ -3313,22 +3313,22 @@ void __cdecl MoveCharacter(int p1)
                             CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
                     }
                 }
-                if (!skipIdleSelect) SetAction((int)c, 1);
+                if (!skipIdleSelect) SetAction(AsObject(c), 1);
                 skipIdleSelect = true;  // fall to L195 either way (event NPCs done)
             }
         }
         else if (gMapManager.GetCurrentMap() == 1 && AsObject(o)->Type == 40) {
-            SetAction((int)o, 0);
+            SetAction(AsObject(o), 0);
         }
         else if (AsObject(o)->Type < 270 || AsObject(o)->Type >= 335) {
             // Non-player non-monster (NPCs, props)
             v48 = AsObject(o)->Type;
             if (v48 == 170 || v48 <= 337 || v48 > 339) {
-                SetAction((int)o, rand() % 2);
+                SetAction(AsObject(o), rand() % 2);
             } else if (rand() % 16 >= 12) {
-                SetAction((int)o, rand() % 2 + 1);
+                SetAction(AsObject(o), rand() % 2 + 1);
             } else {
-                SetAction((int)o, 0);
+                SetAction(AsObject(o), 0);
             }
         }
         else {
@@ -3339,7 +3339,7 @@ void __cdecl MoveCharacter(int p1)
             }
             BYTE act = AsObject(o)->CurrentAction;
             if (act == 1 || act == 5 || act == 3 || act == 4 || act == 8 || act == 9) {
-                SetAction((int)o, 0);
+                SetAction(AsObject(o), 0);
             }
         }
     }
@@ -3350,7 +3350,7 @@ void __cdecl MoveCharacter(int p1)
         && AsModel(v422)->CurrentAnimationFrame
             == *(short*)(*(int *)&AsModel(v422)->Actions + 16 * (AsObject(o)->CurrentAction) + 8) - 1)
     {
-        SetAction((int)o, (rand() % 32) ? 0 : 1);
+        SetAction(AsObject(o), (rand() % 32) ? 0 : 1);
     }
 
     // L796-806: ragdoll-counter aging (force die after 0xF frames)

@@ -40,7 +40,7 @@ void __cdecl SetActionClass(int c, int o, int action, int actionType)
     int act = action;
     if ((*(BYTE*)(c + 444) & 7) == 2 && (action < 123 || action > 128))
         act = action + 1;
-    SetAction(o, act);
+    SetAction(AsObject(o), act);
     SendRequestAction((BYTE)actionType);
 }
 

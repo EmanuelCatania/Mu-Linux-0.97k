@@ -755,7 +755,7 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
         *(int*)(e + 100) = pet.BlendMesh;           // BlendMesh
         *(float*)(e + 104) = 1.0f;                  // BlendMeshLight
     }
-    SetAction((int)(uintptr_t)e, pet.Action);
+    SetAction(AsObject(e), pet.Action);
     if (*(float*)(e + 0xCC) <= 0.0f) *(float*)(e + 0xCC) = 0.25f;
 }
 
@@ -842,8 +842,8 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Angle[2] = *(DWORD*)(v8 + 36);   // angleZ
                 BYTE v14 = *(BYTE*)(v8 + 261);              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
-                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 3);
-                    else                                       SetAction((int)e, 2);
+                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 3);
+                    else                                       SetAction(AsObject(e), 2);
                     if ((rand() & 1) == 0 && gMapManager.GetCurrentMap() != 10) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
@@ -856,22 +856,22 @@ void __stdcall MoveBugs(void) {
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;        // animSpeed = 0.34f
                     *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
-                    if (v12 == 8 || v12 == 10) SetAction((int)e, 7);
-                    else                       SetAction((int)e, 6);
+                    if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 7);
+                    else                       SetAction(AsObject(e), 6);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v14 < 0x22 || v14 > 0x37) {
-                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 1);
-                    else                                       SetAction((int)e, 0);
+                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 1);
+                    else                                       SetAction(AsObject(e), 0);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v11 == 267) {
-                    if (v12 == 8 || v12 == 10) SetAction((int)e, 5);
-                    else                       SetAction((int)e, 4);
+                    if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 5);
+                    else                       SetAction(AsObject(e), 4);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else {
-                    SetAction((int)e, 3);
+                    SetAction(AsObject(e), 3);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 }

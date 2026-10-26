@@ -1059,11 +1059,11 @@ void GoldenArcher_Recv9D(BYTE* Msg, int Size)
 extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
 {
     if (!g_GoldenArcherCustom) return false;
-    if (action < 80)       SetAction(c, 1);
-    else if (action < 85)  SetAction(c, 97);
-    else if (action < 90)  SetAction(c, 99);
-    else if (action < 95)  SetAction(c, 111);
-    else if (action < 100) SetAction(c, 105);
+    if (action < 80)       SetAction(AsObject(c), 1);
+    else if (action < 85)  SetAction(AsObject(c), 97);
+    else if (action < 90)  SetAction(AsObject(c), 99);
+    else if (action < 95)  SetAction(AsObject(c), 111);
+    else if (action < 100) SetAction(AsObject(c), 105);
     if (AsObject(c)->CurrentAction != AsObject(c)->PriorAction) {
         int text = 0;
         if (gMapManager.GetCurrentMap() == 0 || gMapManager.GetCurrentMap() == 3) {

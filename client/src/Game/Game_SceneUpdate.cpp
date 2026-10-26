@@ -390,17 +390,17 @@ int Game_SceneUpdate(void)
     // the login scene nudges the three background characters into alternate
     // idle/gesture actions with a 1/128 chance each frame.
     {
-        int e3 = DAT_07abf5d0 + 0xabc;  // entity 3
-        if ((_rand() & 0x7f) == 0) SetAction(e3, 113);
-        if ((_rand() & 0x7f) == 0) SetAction(e3, 99);
+        std::uintptr_t e3 = DAT_07abf5d0 + 0xabc;  // entity 3
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e3), 113);
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e3), 99);
 
-        int e2 = DAT_07abf5d0 + 0x728;  // entity 2
-        if ((_rand() & 0x7f) == 0) SetAction(e2, 115);
-        if ((_rand() & 0x7f) == 0) SetAction(e2, 111);
+        std::uintptr_t e2 = DAT_07abf5d0 + 0x728;  // entity 2
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 115);
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 111);
 
-        int e1 = DAT_07abf5d0 + 0x394;  // entity 1
-        if ((_rand() & 0x7f) == 0) SetAction(e1, 101);
-        if ((_rand() & 0x7f) == 0) SetAction(e1, 111);
+        std::uintptr_t e1 = DAT_07abf5d0 + 0x394;  // entity 1
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 101);
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 111);
     }
 
     // Optional UI scene load if DAT_083a7af4 == 1 && no server selected
