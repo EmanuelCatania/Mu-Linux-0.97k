@@ -23,7 +23,7 @@
 #include "functions.h"
 
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
-extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item);
+extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const ITEM* Item);
 // -- Declaraciones de funciones que viven en otros modulos --------------
 // Migrar a functions.h mas adelante.
 int __cdecl LevelConvert(BYTE Level);
@@ -2138,8 +2138,8 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
                                            attr->Durability,
                                            *(int*)(param_1 + 1016), 0);
         unsigned short minBonus = 0, maxBonus = 0;
-        PlusSpecial(&minBonus, 61, (DWORD)(uintptr_t)(param_1 + 1012));
-        PlusSpecial(&maxBonus, 61, (DWORD)(uintptr_t)(param_1 + 1012));
+        PlusSpecial(&minBonus, 61, AsItem((param_1 + 1012)));
+        PlusSpecial(&maxBonus, 61, AsItem((param_1 + 1012)));
         unsigned short minRed = (unsigned short)((double)minBonus * (double)durP);
         unsigned short maxRed = (unsigned short)((double)maxBonus * (double)durP);
         *minPtr += minBonus - minRed;
@@ -2157,12 +2157,12 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
                                                AsItem(weaponL)->Option1);
             int specId = (type == 31) ? 60 : 61;  // Wand uses special 60
             unsigned short minBonus = 0, maxBonus = 0;
-            PlusSpecial(&minBonus, specId, weaponL);
-            PlusSpecial(&maxBonus, specId, weaponL);
+            PlusSpecial(&minBonus, specId, AsItem(weaponL));
+            PlusSpecial(&maxBonus, specId, AsItem(weaponL));
             *minPtr += (unsigned short)(minBonus - (unsigned short)((double)minBonus * (double)durP));
             *maxPtr += (unsigned short)(maxBonus - (unsigned short)((double)maxBonus * (double)durP));
-            PlusSpecial(minPtr, 75, weaponL);
-            PlusSpecial(maxPtr, 75, weaponL);
+            PlusSpecial(minPtr, 75, AsItem(weaponL));
+            PlusSpecial(maxPtr, 75, AsItem(weaponL));
             PlusSpecialPercent((short*)minPtr, 76, (int)weaponL, 2);
             PlusSpecialPercent((short*)maxPtr, 76, (int)weaponL, 2);
         }
@@ -2171,8 +2171,8 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
     // Ring1 (this+1148) magic damage bonus
     if (*(unsigned short*)itemRing1 != 0xFFFF) {
         if (*(unsigned char*)(itemRing1 + 26) != 0) {
-            PlusSpecial(minPtr, 75, itemRing1);
-            PlusSpecial(maxPtr, 75, itemRing1);
+            PlusSpecial(minPtr, 75, AsItem(itemRing1));
+            PlusSpecial(maxPtr, 75, AsItem(itemRing1));
             PlusSpecialPercent((short*)minPtr, 76, (int)itemRing1, 2);
             return PlusSpecialPercent((short*)maxPtr, 76, (int)itemRing1, 2);
         }
@@ -2292,15 +2292,15 @@ int __cdecl CalculateAttackSpeed(int param_1) {
         *magPtr += 20;
     }
 
-    PlusSpecial(atkPtr, 77, (DWORD)(uintptr_t)(param_1 + 536));
-    PlusSpecial(magPtr, 77, (DWORD)(uintptr_t)(param_1 + 536));
-    PlusSpecial(atkPtr, 77, (DWORD)(uintptr_t)(param_1 + 604));
-    PlusSpecial(magPtr, 77, (DWORD)(uintptr_t)(param_1 + 604));
-    PlusSpecial(atkPtr, 77, (DWORD)(uintptr_t)(param_1 + 1148));
-    PlusSpecial(magPtr, 77, (DWORD)(uintptr_t)(param_1 + 1148));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 536)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 536)));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 604)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 604)));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 1148)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 1148)));
     DWORD helm = (DWORD)(uintptr_t)(param_1 + 1080);
-    PlusSpecial(atkPtr, 77, helm);
-    PlusSpecial(magPtr, 77, helm);
+    PlusSpecial(atkPtr, 77, AsItem(helm));
+    PlusSpecial(magPtr, 77, AsItem(helm));
     return 0;
 }
 
@@ -2339,7 +2339,7 @@ int __cdecl Stats_CalcDefense(int param_1) {
 
             // Shield "Plus Defense" special (62)
             unsigned short Value = 0;
-            PlusSpecial(&Value, 62, (DWORD)(uintptr_t)(param_1 + 604));
+            PlusSpecial(&Value, 62, AsItem((param_1 + 604)));
             *defPtr += (unsigned short)(Value - (unsigned short)((double)Value * (double)durP));
 
             PlusSpecialPercent((short*)defPtr, 70, param_1 + 604, 10);

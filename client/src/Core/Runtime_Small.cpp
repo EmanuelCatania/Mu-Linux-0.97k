@@ -191,14 +191,15 @@ short __cdecl FUN_0047d000(short *param_1) {
 //   Item[+36] BYTE  numSpecials (count of properties)
 //   Item[+37+i] BYTE specialID[i]
 //   Item[+45+i] BYTE specialValue[i]
-extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item)
+extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const ITEM* Item)
 {
-    if (*(unsigned short*)Item == 0xFFFF) return;
-    int count = AsItem(Item)->SpecialNum;
+    if (Item->Type == -1) return;
+    const BYTE* data = reinterpret_cast<const BYTE*>(Item);
+    int count = Item->SpecialNum;
     for (int i = 0; i < count; ++i) {
-        if (*(unsigned char*)(Item + i + 37) == (unsigned int)Special) {
-            if (AsItem(Item)->Durability) {
-                *Value += *(unsigned char*)(i + Item + 45);
+        if (data[i + 37] == (unsigned int)Special) {
+            if (Item->Durability) {
+                *Value += data[i + 45];
             }
         }
     }
@@ -339,8 +340,8 @@ int __fastcall Stats_CalcBase(int a1) {
                                            attr->Durability,
                                            *(int*)(a1 + 1016), 0);
         unsigned short minB = 0, maxB = 0;
-        PlusSpecial(&minB, 60, wings);
-        PlusSpecial(&maxB, 60, wings);
+        PlusSpecial(&minB, 60, AsItem(wings));
+        PlusSpecial(&maxB, 60, AsItem(wings));
         unsigned short minDed = (unsigned short)((double)minB * (double)durP);
         unsigned short maxDed = (unsigned short)((double)maxB * (double)durP);
         unsigned short minNet = minB - minDed;
@@ -363,8 +364,8 @@ skip_wings: ;
                                                AsItem(wp_L)->Option1);
             unsigned short minB = AsItem(wp_L)->DamageMin;
             unsigned short maxB = AsItem(wp_L)->DamageMax;
-            PlusSpecial(&minB, 60, wp_L);
-            PlusSpecial(&maxB, 60, wp_L);
+            PlusSpecial(&minB, 60, AsItem(wp_L));
+            PlusSpecial(&maxB, 60, AsItem(wp_L));
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
             unsigned short maxNet = maxB - (unsigned short)((double)maxB * (double)durP);
             short t = *(short*)wp_L;
@@ -376,8 +377,8 @@ skip_wings: ;
                 *atkMinL += minNet;
                 *atkMaxL += maxNet;
             }
-            PlusSpecial(atkMinL, 73, wp_L);
-            PlusSpecial(atkMaxL, 73, wp_L);
+            PlusSpecial(atkMinL, 73, AsItem(wp_L));
+            PlusSpecial(atkMaxL, 73, AsItem(wp_L));
             PlusSpecialPercent((short*)atkMinL, 74, (int)wp_L, 2);
             PlusSpecialPercent((short*)atkMaxL, 74, (int)wp_L, 2);
         }
@@ -395,8 +396,8 @@ skip_wings: ;
                                                AsItem(wp_R)->Option1);
             unsigned short minB = AsItem(wp_R)->DamageMin;
             unsigned short maxB = AsItem(wp_R)->DamageMax;
-            PlusSpecial(&minB, 60, wp_R);
-            PlusSpecial(&maxB, 60, wp_R);
+            PlusSpecial(&minB, 60, AsItem(wp_R));
+            PlusSpecial(&maxB, 60, AsItem(wp_R));
             unsigned short minNet = minB - (unsigned short)((double)minB * (double)durP);
             unsigned short maxNet = maxB - (unsigned short)((double)maxB * (double)durP);
             short t = *(short*)wp_R;
@@ -407,8 +408,8 @@ skip_wings: ;
                 *atkMinR += minNet;
                 *atkMaxR += maxNet;
             }
-            PlusSpecial(atkMinR, 73, wp_R);
-            PlusSpecial(atkMaxR, 73, wp_R);
+            PlusSpecial(atkMinR, 73, AsItem(wp_R));
+            PlusSpecial(atkMaxR, 73, AsItem(wp_R));
             PlusSpecialPercent((short*)atkMinR, 74, (int)wp_R, 2);
             PlusSpecialPercent((short*)atkMaxR, 74, (int)wp_R, 2);
         }
@@ -416,12 +417,12 @@ skip_wings: ;
 
     // Ring1 (this+1148) — applies to both hands
     if (*(unsigned short*)ring1 != 0xFFFF && *(unsigned char*)(ring1 + 26)) {
-        PlusSpecial(atkMinL, 73, ring1);
-        PlusSpecial(atkMaxL, 73, ring1);
+        PlusSpecial(atkMinL, 73, AsItem(ring1));
+        PlusSpecial(atkMaxL, 73, AsItem(ring1));
         PlusSpecialPercent((short*)atkMinL, 74, (int)ring1, 2);
         PlusSpecialPercent((short*)atkMaxL, 74, (int)ring1, 2);
-        PlusSpecial(atkMinR, 73, ring1);
-        PlusSpecial(atkMaxR, 73, ring1);
+        PlusSpecial(atkMinR, 73, AsItem(ring1));
+        PlusSpecial(atkMaxR, 73, AsItem(ring1));
         PlusSpecialPercent((short*)atkMinR, 74, (int)ring1, 2);
         PlusSpecialPercent((short*)atkMaxR, 74, (int)ring1, 2);
     }
