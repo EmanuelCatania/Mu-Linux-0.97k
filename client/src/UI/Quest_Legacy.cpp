@@ -171,7 +171,7 @@ void __fastcall FUN_00403320(void* param_1) {
                 MouseLButton = 0;
             }
         }
-        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         GL_DrawTexture(240, (float)proceed.x, (float)proceed.y, (float)proceed.width, (float)proceed.height,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(QuestX(95), 360, GlobalText[699]);
@@ -194,14 +194,14 @@ void __fastcall FUN_00403320(void* param_1) {
     GL_DrawTexture(280, (float)close.x, (float)close.y, (float)close.width, (float)close.height,
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (close.Contains((int)MouseX, (int)MouseY)) {
-        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText(QuestX(25), 382, GlobalText[225]);
     }
 
     m_dwBackColor = 0;
-    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = 0xFFF0FF96u;
 
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A

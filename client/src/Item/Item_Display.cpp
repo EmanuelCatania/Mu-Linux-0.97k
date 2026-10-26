@@ -81,7 +81,7 @@ void __cdecl RenderItemName(int i, const OBJECT* object, int ItemLevel, int Item
         String[used] = '\0';
     };
 
-    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));   // g_hFont
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));   // g_hFont
     const short v7 = *(short*)(o + 2);
 
     // &ItemAttribute[v7 - 400] — ITEM_ATTRIBUTE stride 0x40, Name en offset 0.

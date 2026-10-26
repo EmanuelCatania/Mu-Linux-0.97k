@@ -28,13 +28,14 @@ std::vector<float> colors;
 std::string label;
 int labelX,labelY,labelCalls,measureCalls,textCalls;
 int MouseX,MouseY;
+std::uintptr_t fontHandles[2]={0x1230,0x1231};
 struct Font {
     HDC GetTextDC() { return reinterpret_cast<HDC>(std::uintptr_t(0x456)); }
-    HFONT GetFont(int type) { return reinterpret_cast<HFONT>(std::uintptr_t(0x1230+type)); }
+    HFONT GetFont(int type) { return reinterpret_cast<HFONT>(fontHandles[type]); }
     void SelectFont(HDC dc,HGDIOBJ font) {
         Require(dc==GetTextDC());
         const auto value=reinterpret_cast<std::uintptr_t>(font);
-        Require(value==0x1230 || value==0x1231); fontEvents.push_back(static_cast<int>(value-0x1230));
+        Require(value==fontHandles[0] || value==fontHandles[1]); fontEvents.push_back(value==fontHandles[0]?0:1);
     }
     void MeasureText(HDC dc,const char* text,int length,SIZE* size) {
         Require(dc==GetTextDC() && length==static_cast<int>(std::strlen(text)) && size); ++measureCalls;
@@ -116,13 +117,21 @@ int main() {
             if(mask&2) for(int i=0;i<8192*64+80;++i) Require(table[i]==0);
         }
         std::puts("cuatro combinaciones objeto/atributos altas y bajas, aliases intactos");
+        if(HIGH_FONTS) {
+            for(int mask=1;mask<4;++mask) {
+                fontHandles[0]=std::uintptr_t(0x1230)+(mask&1?std::uint64_t(0x100000000ull):0);
+                fontHandles[1]=std::uintptr_t(0x1231)+(mask&2?std::uint64_t(0x100000000ull):0);
+                Require(RunName(high,highTable)==expected);
+            }
+            std::puts("fuentes normal/bold altas y bajas conservan el flujo completo");
+        }
     }
     std::printf("RenderItemName: 65536 estados, texto/color/coordenadas/fuentes/bytes %016llx\n",static_cast<unsigned long long>(expected));
 }
 '''
 
 
-def harness(revision=None):
+def harness(revision=None, high_fonts=False):
     prefix=convert_harness(revision).split("void __cdecl ItemConvert(",1)[0].replace(SERVICES,BACKEND)
     structs=read_source("src/structs.h",revision)
     for name in ("MONSTER_ATTRIBUTE","MONSTER_SCRIPT"):
@@ -136,7 +145,7 @@ def harness(revision=None):
     prefix+=re.search(r"static __forceinline [^\n]*\bItemAttribute_Base\([^\{]*\{.*?^\}",header,re.M|re.S).group()
     render=function(read_source("src/Item/Item_Display.cpp",revision),"RenderItemName")
     arg="object" if "const OBJECT*" in render.split("{",1)[0] else "static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(object))"
-    return prefix+render+MAIN.replace("ARG",arg)
+    return prefix+render+MAIN.replace("ARG",arg).replace("HIGH_FONTS","true" if high_fonts else "false")
 
 
 def main():

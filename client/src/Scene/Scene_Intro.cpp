@@ -189,7 +189,7 @@ void __cdecl Scene_Intro(HDC param_1)
 
     // Debug overlay (only in bypass mode)
     if (DAT_083a410c != '\0') {
-        gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         UI_RenderText(gWindow.PanelOrigin(Ui::WindowLeft), 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
     }
 

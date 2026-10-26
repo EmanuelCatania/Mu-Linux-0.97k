@@ -102,7 +102,7 @@ uint Scene_Login(void)
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffd2e6ff;            // m_dwTextColor
     SetBackgroundTextColor = 0;                     // m_dwBackColor
-    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
 
     // ── Credential input panel (sub-states 2..3) ─────────────────────────────
     iVar3 = DAT_005616a4;

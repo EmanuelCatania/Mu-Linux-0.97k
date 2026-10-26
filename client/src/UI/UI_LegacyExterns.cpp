@@ -818,7 +818,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
     HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
-    if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+    if (hFont == NULL) hFont = gFont.GetFont(FONT_NORMAL);
     if (hFont == NULL) return;
 
 #ifdef MU_SDL_FONTS
