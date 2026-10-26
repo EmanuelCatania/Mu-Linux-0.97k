@@ -108,29 +108,33 @@ void __fastcall CSQuest_GetQuestState(void *pThis, int param_1)
 // CSQuest::CheckActCondition @ 0x00401650 (IDA: FUN_00401650).
 uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
 {
-    BYTE *in_EAX = 0;
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    BYTE* record = reinterpret_cast<BYTE*>(param_1);
+    uint legacyResult = 0;
     int iVar3 = 0;
     if (0 < *param_1) {
-        BYTE *pbVar4 = (BYTE *)(param_1 + 0x14);
+        BYTE *pbVar4 = record + 0x28;
         do {
-            in_EAX = pbVar4 + (uint)*(BYTE *)((int)pThis + 4) + (-0x28 - (int)param_1);
-            if (((in_EAX + 0x2c)[(int)param_1] == 1) &&
-                ((in_EAX = (BYTE *)(pbVar4[-1] - 1), in_EAX == (BYTE *)0x0))) {
+            // IDA 0x401669/0x401678: se cancela la base; EAX contiene un índice.
+            legacyResult = static_cast<uint>(pbVar4 - record - 0x28) + *(quest + 4);
+            if ((*(pbVar4 + 4 + *(quest + 4)) == 1) &&
+                ((legacyResult = static_cast<uint>(pbVar4[-1] - 1)), legacyResult == 0)) {
                 int iVar2 = CSQuest_FindQuestItemsInInven(
                     (uint)pbVar4[1] + (uint)*pbVar4 * 0x20,
                     (uint)pbVar4[2], 0xffffffff);
                 if (iVar2 != 0) {
                     short sVar1 = CSQuest_FindQuestContext(pThis, param_1, 1);
-                    *(short *)((int)pThis + 0x1c880) = sVar1;
-                    return (uint)((unsigned int)(ULONG_PTR)pThis & 0xffffff00);
+                    *(short *)(quest + 0x1c880) = sVar1;
+                    // Se conservan los bits del retorno legado; el llamador sólo lee AL.
+                    return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                 }
-                in_EAX = (BYTE *)0x0;
+                legacyResult = 0;
             }
             iVar3++;
             pbVar4 += 0x12;
         } while (iVar3 < *param_1);
     }
-    return ((uint)(ULONG_PTR)in_EAX >> 8) << 8 | 1;
+    return (legacyResult & 0xffffff00u) | 1u;
 }
 
 // CSQuest::CheckQuestState @ 0x00401730 (IDA: FUN_00401730).

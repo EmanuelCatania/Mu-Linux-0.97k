@@ -95,6 +95,7 @@ jobs:
             python -B tests/QuestStatePointer.py --architecture x64
             python -B tests/QuestContextPointer.py --architecture x64
             python -B tests/QuestCheckPointer.py --architecture x64
+            python -B tests/QuestActPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -152,6 +153,7 @@ jobs:
             python3 -B tests/QuestStatePointer.py --generator Ninja
             python3 -B tests/QuestContextPointer.py --generator Ninja
             python3 -B tests/QuestCheckPointer.py --generator Ninja
+            python3 -B tests/QuestActPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
