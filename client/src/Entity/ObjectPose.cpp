@@ -191,7 +191,7 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                 // 3x3). Las posiciones 3,7,11 (columna de translación) las lee
                 // R_ConcatTransforms: zero-init + inyectar tX/tY/tZ abajo.
                 float rot33[12] = {0};
-                QuatToMatrix((int)outQuat, (int)rot33, 0, 0);
+                QuatToMatrix(outQuat, rot33, 0, 0);
                 // get translation from frame keys (3 floats × priorFrameInt)
                 float* ptransA = (float*)(*animPtrA + v39 * 0xc);
                 float* ptransB = (float*)(*animPtrB + *(short*)((char*)this_ + 0xa8) * 0xc);

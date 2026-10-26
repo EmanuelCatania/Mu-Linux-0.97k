@@ -105,9 +105,7 @@ void __cdecl EulerToQuat(int ia, int ib, int ic, int id) {
 
 // QuatToMatrix @ 0x004FA270 — QuatToMatrix(quat[4], out_mat[12])
 // Converts unit quaternion to 3×3 rotation matrix (stored in [0,1,2,4,5,6,8,9,10]).
-void __cdecl QuatToMatrix(int ia, int ib, int ic, int id) {
-    float *q = (float*)ia;
-    float *m = (float*)ib;
+void __cdecl QuatToMatrix(const float* q, float* m, int ic, int id) {
     (void)ic; (void)id;
     float x2 = q[1]*q[1], z2 = q[2]*q[2];
     m[0]  = _DAT_00552cf0 - (x2+x2) - (z2+z2);
