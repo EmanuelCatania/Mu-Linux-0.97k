@@ -153,19 +153,19 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
     switch (gMapManager.GetCurrentMap()) {
     case 0:
         switch (objType) {
-        case 0x32: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 200.0f); return (float*)0;       // 0x43480000
-        case 0x33: FUN_0046c7f0(0, objPtr, 0.0f, -30.0f, 60.0f); return (float*)0;      // 0xc1f00000, 0x42700000
+        case 0x32: FUN_0046c7f0(0, AsObject(objPtr), 0.0f, 0.0f, 200.0f); return (float*)0;       // 0x43480000
+        case 0x33: FUN_0046c7f0(0, AsObject(objPtr), 0.0f, -30.0f, 60.0f); return (float*)0;      // 0xc1f00000, 0x42700000
         case 0x34:
-            FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 60.0f);
+            FUN_0046c7f0(0, AsObject(objPtr), 0.0f, 0.0f, 60.0f);
             AsObject(objPtr)->BlendMeshLight = (float)(rand() % 6 + 4) * _DAT_005524f4;
             return (float*)0;
         case 0x37:
-            FUN_0046c7f0(0, objPtr, -150.0f, -150.0f, 140.0f);   // 0xc3160000, 0x430c0000
-            FUN_0046c7f0(0, objPtr, 150.0f, -150.0f, 140.0f);
+            FUN_0046c7f0(0, AsObject(objPtr), -150.0f, -150.0f, 140.0f);   // 0xc3160000, 0x430c0000
+            FUN_0046c7f0(0, AsObject(objPtr), 150.0f, -150.0f, 140.0f);
             return (float*)0;
         case 0x50:
-            FUN_0046c7f0(0, objPtr, 90.0f, -200.0f, 30.0f);     // 0xc3480000, 0x41f00000
-            FUN_0046c7f0(0, objPtr, 90.0f, 200.0f, 30.0f);       // 0x43480000, 0x41f00000
+            FUN_0046c7f0(0, AsObject(objPtr), 90.0f, -200.0f, 30.0f);     // 0xc3480000, 0x41f00000
+            FUN_0046c7f0(0, AsObject(objPtr), 90.0f, 200.0f, 30.0f);       // 0x43480000, 0x41f00000
             return (float*)0;
         case 0x5A: {
             float light = (float)(rand() % 2 + 6) * 0.1f;
@@ -191,7 +191,7 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
             // (8 vértices, textura dummy `ston03` 2x2 negra) y sub_46C7F0 emite
             // el fuego/humo. IDA sub_4FDC00, World 0.
             int kind = objType - 0x82;
-            FUN_0046c7f0(kind, objPtr, 0.0f, 0.0f, 0.0f);
+            FUN_0046c7f0(kind, AsObject(objPtr), 0.0f, 0.0f, 0.0f);
             AsObject(objPtr)->HiddenMesh = -2;
             return (float*)0;
         }
@@ -221,8 +221,8 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
         case 0x33:
             AsObject(objPtr)->HiddenMesh = -2;
             break;
-        case 0x29: FUN_0046c7f0(0, objPtr, 0.0f, -30.0f, 240.0f); return (float*)0;     // 0xc1f00000, 0x43700000
-        case 0x2a: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 190.0f); return (float*)0;       // 0x433e0000
+        case 0x29: FUN_0046c7f0(0, AsObject(objPtr), 0.0f, -30.0f, 240.0f); return (float*)0;     // 0xc1f00000, 0x43700000
+        case 0x2a: FUN_0046c7f0(0, AsObject(objPtr), 0.0f, 0.0f, 190.0f); return (float*)0;       // 0x433e0000
         case 0x34:
             if (!(rand() % 3)) {
                 CreateEffect(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
@@ -269,7 +269,7 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
             }
             break;
         case 0x1e:
-        case 0x42: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 50.0f); return (float*)0;        // 0x42480000
+        case 0x42: FUN_0046c7f0(0, AsObject(objPtr), 0.0f, 0.0f, 50.0f); return (float*)0;        // 0x42480000
         }
         break;
 
@@ -984,7 +984,7 @@ void EmitSceneFlames(char* object, const SceneFlamePreset& preset)
 {
     for (int i = 0; i < preset.Count; ++i) {
         const auto& offset = preset.Offset[i];
-        FUN_0046c7f0(preset.Variant, (int)object, offset[0], offset[1], offset[2]);
+        FUN_0046c7f0(preset.Variant, AsObject(object), offset[0], offset[1], offset[2]);
     }
     if (preset.RandomAlpha)
         *(float*)(object + 104) = (double)(rand() % 6 + 4) * 0.1;

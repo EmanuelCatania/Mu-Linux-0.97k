@@ -31,7 +31,7 @@ def function(source, name):
     # Los comentarios no deben aportar llaves ni falsas definiciones.
     source = re.sub(r"//[^\n]*|/\*.*?\*/", "", source, flags=re.S)
     found = list(re.finditer(
-        rf"(?:void|float\*)\s+(?:__cdecl\s+)?{name}\([^)]*\)\s*\{{", source))
+        rf"(?:void|float\*)\s+(?:__cdecl\s+)?{name}\([^{{;]*\)\s*\{{", source))
     if len(found) != 1:
         raise ValueError(f"Se esperaba una definición de {name}, hay {len(found)}")
     start = found[0].start()
@@ -63,6 +63,8 @@ using BYTE = std::uint8_t;
 #endif
 using undefined4 = std::uint32_t;
 struct OBJECT;
+OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }
+OBJECT* AsObject(std::uintptr_t p) { return reinterpret_cast<OBJECT*>(p); }
 struct Map { int world; int GetCurrentMap() const { return world; } } gMapManager;
 float WorldTime;
 int HeroTile, SceneFlag, CameraWalkCut, CurrentCameraCount, DAT_07e11d30;
@@ -96,11 +98,6 @@ template<class... Args> void Particle_Spawn(int type, float* pos, float* angle,
 }
 float TurnAngle2(float from, float to, float step) {
     Event(5); Hash(&to, 4); Hash(&step, 4); return from;
-}
-// El emisor heredado aún recibe int. Se observa su variante y sus offsets,
-// sin afirmar que su contrato de dirección haya sido migrado en este PR.
-void FUN_0046c7f0(int variant, int, float x, float y, float z) {
-    Event(6); Hash(&variant, 4); Hash(&x, 4); Hash(&y, 4); Hash(&z, 4);
 }
 void* Reserve(std::uintptr_t address, std::size_t size) {
 #ifdef _WIN32
@@ -186,6 +183,10 @@ def harness(revision=None):
     alpha = function(read_source("src/Render/Particle.cpp", revision), "Alpha")
     physics = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision),
                        "Effect_PhysicsTick")
+    ambient = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision),
+                       "FUN_0046c7f0")
+    angles = function(read_source("src/Math/Math_LegacyTransforms.cpp", revision), "AngleMatrix")
+    rotate = function(read_source("src/Math/Math_3D.cpp", revision), "Vector_Rotate")
     start = scene.index("struct SceneFlamePreset {")
     end = scene.index("} // namespace", start)
     flames = scene[start:end]
@@ -194,7 +195,7 @@ def harness(revision=None):
         call = ("float bits; const auto address = static_cast<DWORD>("
                 "reinterpret_cast<std::uintptr_t>(object)); "
                 "std::memcpy(&bits, &address, 4); FUN_004fdc00(bits);")
-    return PREAMBLE + alpha + physics + flames + tick + MAIN.replace("CALL_TICK", call)
+    return PREAMBLE + alpha + physics + angles + rotate + ambient + flames + tick + MAIN.replace("CALL_TICK", call)
 
 
 def build_and_run(directory, source, args):
@@ -206,8 +207,7 @@ def build_and_run(directory, source, args):
         "add_executable(pointer_test main.cpp)\n"
         "target_compile_features(pointer_test PRIVATE cxx_std_17)\n"
         "if(MSVC)\n target_compile_options(pointer_test PRIVATE /fp:precise /utf-8)\n"
-        # Los casts heredados de emisores quedan fuera de esta migración.
-        "else()\n target_compile_options(pointer_test PRIVATE -fno-strict-aliasing -fpermissive)\n"
+        "else()\n target_compile_options(pointer_test PRIVATE -fno-strict-aliasing)\n"
         "endif()\n", encoding="utf-8")
     command = ["cmake", "-S", str(directory), "-B", str(directory / "build")]
     if args.generator:

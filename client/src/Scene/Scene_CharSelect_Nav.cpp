@@ -2054,8 +2054,9 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
 // (`o+28`) — así el efecto sale del punto correcto del modelo (la boca de la
 // chimenea, la punta del farol). Luego se le suma la posición del objeto
 // (`o+16`) y un jitter de ±8 por eje.
-void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4, float param_5) {
-    float *a2 = (float *)param_2;
+void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float param_4, float param_5) {
+    // IDA 0x0046C7F0: a2 es la base del objeto; sus ángulos empiezan en a2+7.
+    float *a2 = reinterpret_cast<float*>(object);
     if (!a2) return;
 
     float *v5 = a2 + 7;          // o+28  = Angle[3]

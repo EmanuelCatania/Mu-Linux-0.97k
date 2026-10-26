@@ -1232,7 +1232,7 @@ void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980
 void  __cdecl RenderWheelWeapon(DWORD o); // IDA: RenderWheelWeapon (0x0046B7C0)
 void  __cdecl FUN_0046c5a0(int p1, int p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
 void  __cdecl CreateBlood(DWORD o);                                 // 0x0046C680
-void  __cdecl FUN_0046c7f0(int p1, int p2, float p3, float p4, float p5); // directional blood (0x0046C7F0)
+void  __cdecl FUN_0046c7f0(int kind, OBJECT* object, float dx, float dy, float dz); // IDA: 0x0046C7F0, emisor ambiental
 void  __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
 void  __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
 void  __stdcall MoveParticles(void);                                // 0x00477090

@@ -3991,7 +3991,7 @@ void __cdecl MoveCharacter(int p1)
 
     // L2769-2772: pickup-bag splash
     if (AsObject(o)->Type == 236) {
-        FUN_0046c7f0(0, (int)o, 0.0f, 0.0f, 0.0f);
+        FUN_0046c7f0(0, AsObject(o), 0.0f, 0.0f, 0.0f);
     }
 }
 
