@@ -125,15 +125,16 @@ void __cdecl Object_ClearMembers(int param_1)
 // Returns 1 (non-zero) on both paths.
 undefined4 __cdecl Packet_ParseReceived(void *param_1)
 {
+  const byte* quest = static_cast<const byte*>(param_1);
   int iVar1;
   undefined4 uVar2;
 
-  if (*(byte *)((int)param_1 + 0x1c87f) == 1) {
+  if (*(quest + 0x1c87f) == 1) {
     iVar1 = CSQuest_ProceedButton(param_1);
     (void)iVar1;
   }
   else {
-    iVar1 = *(byte *)((int)param_1 + 0x1c87f) - 2;
+    iVar1 = *(quest + 0x1c87f) - 2;
     if (iVar1 == 0) {
       uVar2 = Packet_ParseType2(param_1);
       (void)uVar2;
