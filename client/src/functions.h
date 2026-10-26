@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 struct OBJECT;
+struct CHARACTER;
 struct ITEM_ATTRIBUTE;
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
@@ -1255,7 +1256,7 @@ int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA:
 int   __cdecl Item_CountWeaponGroupItems(int param_1);                   // IDA: FUN_00482e40
 void  __cdecl Item_AutoEquipAmmo(int weaponType);                              // elf weapon validation/swap (0x0048B680)
 unsigned int __cdecl Chat_ValidateCommandName(int param_1);                          // chat command parser (0x004942E0)
-bool  __cdecl CheckTarget(DWORD c);                                 // 0x0049CAE0
+bool  __cdecl CheckTarget(CHARACTER* c);                            // 0x0049CAE0
 
 // Missing forward declarations (compilation fixes)
 int   __cdecl Xor_ConvertBuffer(void *lpBuffer, DWORD nBytes, int key); // XOR encode buffer

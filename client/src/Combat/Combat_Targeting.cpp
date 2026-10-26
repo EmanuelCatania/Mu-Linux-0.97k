@@ -6,18 +6,18 @@
 
 // IDA: FUN_0049CAE0 @ 0x0049CAE0 — CheckTarget (~51 lines), validates attack target.
 // If SelectedCharacter!=-1: use character position. Otherwise: terrain pick.
-bool __cdecl CheckTarget(DWORD c) {
+bool __cdecl CheckTarget(CHARACTER* c) {
     // 0x0049CAE0 — Validates attack target
     // If SelectedCharacter != -1: use selected character's position as target.
     // Otherwise: do terrain ray pick to find target position.
     // c = entity base pointer (character struct)
 
-    DWORD base = DAT_07abf5d0;  // CharactersClient
+    const std::uintptr_t base = DAT_07abf5d0;
     int selIdx = SelectedCharacter;  // SelectedCharacter
 
     if (selIdx != -1) {
         // Use selected character's position
-        DWORD selEntity = base + selIdx * 0x394;
+        const std::uintptr_t selEntity = base + selIdx * 0x394;
         // Position at Object.Position: +0x10 (x), +0x14 (y), +0x18 (z)
         // 0049CAE0 stores target *grid* coordinates, not world coordinates.
         // The native calculation is `(int)(world * 0.01f)`.
