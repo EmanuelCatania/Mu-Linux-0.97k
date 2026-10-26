@@ -302,8 +302,8 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
     if (skillType == 0 || skillType >= 64) return;
 
-    unsigned char* skillBaseTbl = DAT_07d29d20 ? (unsigned char*)(uintptr_t)DAT_07d29d20 : nullptr;
-    unsigned char* skillStatTbl = DAT_07cf1ff8 ? (unsigned char*)(uintptr_t)DAT_07cf1ff8 : skillBaseTbl;
+    unsigned char* skillBaseTbl = DAT_07d29d20;
+    unsigned char* skillStatTbl = DAT_07cf1ff8 ? DAT_07cf1ff8 : skillBaseTbl;
     if (!skillBaseTbl && !skillStatTbl) return;
 
     char szName[256] = {};

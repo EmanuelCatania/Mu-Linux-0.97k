@@ -37,9 +37,9 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
     if (skillType < 0 || skillType >= 64)
         return nullptr;
     if (DAT_07cf1ff8 != 0)
-        return (BYTE*)(uintptr_t)DAT_07cf1ff8 + skillType * 0x28;
+        return DAT_07cf1ff8 + skillType * 0x28;
     if (DAT_07d29d20 != 0)
-        return (BYTE*)(uintptr_t)DAT_07d29d20 + skillType * 0x28;
+        return DAT_07d29d20 + skillType * 0x28;
     return nullptr;
 }
 

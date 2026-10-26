@@ -2220,8 +2220,8 @@ extern char    s__s_d_bmd_0055a7e0[];  // "%s%d.bmd"
 
 // ── Item/Skill/Gate data loader globals ──────────────────────────────────────
 extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT_07d78068)
-extern int     DAT_07cf1ff8;       // skill record shadow array base
-extern int     DAT_07d29d20;       // skill/gate data array base
+extern BYTE*   DAT_07cf1ff8;       // Base de los registros sombra de skills.
+extern BYTE*   DAT_07d29d20;       // Base reservada para registros de skills de 0x28 bytes.
 extern GATE_ATTRIBUTE* GateAttribute; // IDA 0x07CF5600: base de 100 registros de nueve bytes
 // ── g_DialogScript @ 0x07CF5608 — 200 entradas x 0x400 bytes ────────────────
 // Layout verificado contra el disassembly de CSQuest::ShowDialogText (0x4017E0):
