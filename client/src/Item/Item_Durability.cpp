@@ -108,7 +108,7 @@ int __cdecl ItemValue_Vanilla(void* item_v, int a2)
     if (!ItemAttribute_Base())
         return 0;
 
-    int a1 = (int)item_v;
+    BYTE* a1 = static_cast<BYTE*>(item_v);
     int v5 = 0;
     int v34 = 0;
 
