@@ -2395,7 +2395,7 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
     // Anti-tamper hash table — skipped per project policy
 
     Stats_CalcBase(this_);            // Stats_CalcBase (attack damage)
-    Stats_CalcMagicDmgRange(this_);            // Stats_CalcMagicDmgRange
+    Stats_CalcMagicDmgRange(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // Stats_CalcMagicDmgRange
     Stats_CalcAddStrength((short*)this_);    // Stats_CalcAddStrength
     CalculateAttackSpeed(reinterpret_cast<BYTE*>(static_cast<uintptr_t>(this_)));            // CalculateAttackSpeed
     Stats_CalcDefense(this_);            // Stats_CalcDefense
@@ -3117,7 +3117,7 @@ void __cdecl MoveCharacter(int p1)
             if (!*t2) {
                 *((BYTE*)CharacterAttribute + 40) &= ~2u;
                 Stats_CalcBase((int)(uintptr_t)CharacterMachine);  // Stats_CalcBase
-                Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);  // Stats_CalcMagicDmgRange
+                Stats_CalcMagicDmgRange(static_cast<BYTE*>(CharacterMachine));  // Stats_CalcMagicDmgRange
             }
         }
     }

@@ -994,7 +994,7 @@ void NetRecv_29(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else if (number == 1) {
         ca[40] |= 2;
         Stats_CalcBase((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
-        Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
+        Stats_CalcMagicDmgRange(static_cast<BYTE*>(CharacterMachine));   // Stats_CalcMagicDmgRange
     }
     EnableUse = 0;
 }

@@ -2118,7 +2118,7 @@ void __cdecl BuxConvert_0(void* buffer, int len) {
 //   + special 75 (flat add) on WeaponL
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
-const ITEM* __cdecl Stats_CalcMagicDmgRange(int param_1) {
+const ITEM* __cdecl Stats_CalcMagicDmgRange(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     unsigned short energy = *(unsigned short*)(param_1 + 26);
@@ -2127,8 +2127,8 @@ const ITEM* __cdecl Stats_CalcMagicDmgRange(int param_1) {
     *minPtr = energy / 9;
     *maxPtr = energy >> 2;
 
-    DWORD itemRing1 = (DWORD)(uintptr_t)(param_1 + 1148);
-    DWORD weaponL  = (DWORD)(uintptr_t)(param_1 + 536);
+    BYTE* itemRing1 = param_1 + 1148;
+    BYTE* weaponL = param_1 + 536;
 
     // Wings (this+1012) magic damage bonus, durability scaled
     short wingsType = *(short*)(param_1 + 1012);

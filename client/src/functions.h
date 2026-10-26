@@ -378,7 +378,7 @@ const ITEM* __cdecl PlusSpecialPercent(short* a1, int a2, const ITEM* a3, unsign
 void  __cdecl CHARACTER_MACHINE_Init(int, int, int);   // IDA: CHARACTER_MACHINE_Init (0x0047D3D0)
 // Stat helpers — las firmas coinciden con el decompile de IDA.
 int   __fastcall Stats_CalcBase(int characterMachine);                // Stats_CalcBase (attack damage)
-const ITEM* __cdecl Stats_CalcMagicDmgRange(int characterMachine);                // Stats_CalcMagicDmgRange
+const ITEM* __cdecl Stats_CalcMagicDmgRange(BYTE* characterMachine);                // Stats_CalcMagicDmgRange
 int   __cdecl    Stats_CalcAddStrength(short* characterMachine_words);       // Stats_CalcAddStrength
 int   __cdecl    CalculateAttackSpeed(BYTE* characterMachine); // IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
 const ITEM* __cdecl Stats_CalcDefense(int characterMachine);                // Stats_CalcDefense
