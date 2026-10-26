@@ -699,16 +699,17 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
 // Quest_FullInit @ 0x00403EA0 (73 bytes) — Quest class full init
 void __fastcall Quest_FullInit(void *param_1_raw) {
-    int *param_1 = (int *)param_1_raw;
-    *param_1 = (int)&PTR_LAB_005524b8;
+    BYTE* param_1 = static_cast<BYTE*>(param_1_raw);
+    // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
+    *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
     if (g_csQuest == 0) g_csQuest = reinterpret_cast<uintptr_t>(param_1);
-    *(BYTE *)(param_1 + 1) = 0xff;
-    *(BYTE *)((int)param_1 + 0x1c87a) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87b) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87d) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87e) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87f) = 0;
-    *(short *)(param_1 + 0x7220) = 0;
+    *(param_1 + 4) = 0xff;
+    *(param_1 + 0x1c87a) = 0;
+    *(param_1 + 0x1c87b) = 0;
+    *(param_1 + 0x1c87d) = 0;
+    *(param_1 + 0x1c87e) = 0;
+    *(param_1 + 0x1c87f) = 0;
+    *reinterpret_cast<short*>(param_1 + 0x1c880) = 0;
     // IDA cierra con `unk_567500 = off_5524B4`, el segundo tramo del swap de
     // vtable del ctor (0x5524B4 = {0x403F10 ~dtor, 0x403F50, ...}; el primer
     // store usa &0x5524B8, o sea la entrada siguiente).  Queda SIN portar a
