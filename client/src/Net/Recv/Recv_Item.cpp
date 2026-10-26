@@ -49,7 +49,7 @@ void ShopInsertItem(int slot, const BYTE* Item)
             // normalizaría al slot 0 y el tooltip mostraría siempre el primer item.
             AsItem(cell)->x               = (BYTE)(slot % 8);             // x
             AsItem(cell)->y               = (BYTE)(slot / 8);             // y
-            ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
+            ItemConvert(AsItem(cell), (int)Item[1], (int)Item[3]);
         }
     }
 }

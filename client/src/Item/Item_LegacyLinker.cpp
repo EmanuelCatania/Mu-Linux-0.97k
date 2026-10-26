@@ -201,8 +201,7 @@ int __cdecl Item_FindQuickSlotByCategory(int a1) {
 // ItemConvert @ 0x0047B910 — inventory/equipment item stat + option expansion.
 // Ported directly from IDA structure/logic instead of the old minimal stub.
 // IDA: ItemConvert (0x0047B910)
-void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
-    ITEM* ip = (ITEM*)pItem;
+void __cdecl ItemConvert(ITEM* ip, int Attribute1, int Attribute2) {
     if (!ip) return;
 
     short wType = ip->Type;

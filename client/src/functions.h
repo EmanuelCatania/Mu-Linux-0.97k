@@ -373,7 +373,7 @@ void  __cdecl Effect_TickFlare(void); // IDA: MovePointers
 int   __cdecl CreateSprite(unsigned short, float *, float, float *, int, float, int); // IDA: CreateSprite (0x004795C0)
 // Render_DrawSprite / Render_DrawSpritePool: implementadas en Sound/Sound_Queue.cpp;
 // CheckSprites (declarada más arriba): en Scene/Scene_CharSelect_Nav.cpp.
-void  __cdecl ItemConvert(int, int, int);
+void  __cdecl ItemConvert(ITEM*, int, int); // IDA: 0x0047B910
 const ITEM* __cdecl PlusSpecialPercent(short* a1, int a2, const ITEM* a3, unsigned short a4);  // Stats_ApplyBonus2
 void  __cdecl CHARACTER_MACHINE_Init(int, int, int);   // IDA: CHARACTER_MACHINE_Init (0x0047D3D0)
 // Stat helpers — las firmas coinciden con el decompile de IDA.

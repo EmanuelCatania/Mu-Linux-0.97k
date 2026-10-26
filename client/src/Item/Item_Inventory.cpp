@@ -228,7 +228,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     AsItem(slot)->byColorState  = extByte;
     ItemData_FillStats((ITEM*)slot, level);
     ((ITEM*)slot)->Level = (int)optByte;
-    ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
+    ItemConvert(AsItem(slot), (int)optByte, (int)byteHi);
     // Slot ocupado real del equipo. En la base más nueva esto vive en Number;
     // en nuestra estructura 97k lo espejamos en Key.
     ITEM* equip = (ITEM*)slot;
@@ -292,7 +292,7 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
 
             ItemData_FillStats(slot, level);
             slot->Level      = (int)optByte;
-            ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
+            ItemConvert(slot, (int)optByte, (int)byteHi);
 
             // sub_4E38B0 pasa `*(int*)(slot+4)` (= slot->Level int) como param_6
             // a RenderItem3D → RenderObjectScreen, que extrae el level con
