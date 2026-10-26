@@ -136,28 +136,29 @@ uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
 // CSQuest::CheckQuestState @ 0x00401730 (IDA: FUN_00401730).
 void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1)
 {
-    short *psVar1 = (short *)((int)pThis + (uint)*(BYTE *)((int)pThis + 0x1c87a) * 0x248 + 8);
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    short *psVar1 = reinterpret_cast<short*>(quest + (uint)*(quest + 0x1c87a) * 0x248 + 8);
     if (param_1 == -1) {
         CSQuest_GetQuestState(pThis, -1);
     } else {
-        *(char *)((int)pThis + 0x1c882) = param_1;
+        *(char *)(quest + 0x1c882) = param_1;
     }
-    char cVar2 = *(char *)((int)pThis + 0x1c882);
+    char cVar2 = *(char *)(quest + 0x1c882);
     if (cVar2 == '\x01') {
         uint uVar5 = CSQuest_CheckActCondition(pThis, psVar1);
         if ((char)uVar5 != '\0') {
             short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 2);
-            *(short *)((int)pThis + 0x1c880) = sVar3;
-            *(BYTE *)((int)pThis + 0x1c882) = 1;
+            *(short *)(quest + 0x1c880) = sVar3;
+            *(quest + 0x1c882) = 1;
         }
     } else if (cVar2 == '\x02') {
         short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 3);
-        *(short *)((int)pThis + 0x1c880) = sVar3;
+        *(short *)(quest + 0x1c880) = sVar3;
     } else if (cVar2 == '\x03') {
         uint uVar4 = CSQuest_CheckRequestCondition(pThis, psVar1, '\0');
         if ((char)uVar4 != '\0') {
             short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 0);
-            *(short *)((int)pThis + 0x1c880) = sVar3;
+            *(short *)(quest + 0x1c880) = sVar3;
         }
     }
 }
