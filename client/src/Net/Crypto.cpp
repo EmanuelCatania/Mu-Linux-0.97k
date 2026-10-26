@@ -721,15 +721,16 @@ void __fastcall Quest_FullInit(void *param_1_raw) {
 }
 
 // FUN_00403ef0 @ 0x00403EF0 (17 bytes) — quest vtable init
-void __fastcall FUN_00403ef0(int *param_1) {
-    *param_1 = (int)&PTR_LAB_005524b8;
+void __fastcall FUN_00403ef0(void* param_1) {
+    // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
+    *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
     g_csQuest = 0;
 }
 
 // FUN_00403f10 @ 0x00403F10 — Quest ~dtor
-void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00403ef0((int *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+void __fastcall FUN_00403f10(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00403ef0(ecx);
+    if (param_1 & 1) operator_delete(ecx);
 }
 
 // Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
