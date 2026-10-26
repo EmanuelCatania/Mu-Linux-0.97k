@@ -1213,7 +1213,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
 }
 
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
-void __fastcall CSQuest_clearQuest(int);
+void __fastcall CSQuest_clearQuest(void*);
 void __fastcall FUN_00401af0(void*);
 void __fastcall Cloth_Integrate(int*, float);
 
@@ -1230,7 +1230,7 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
         DAT_083a4124 = '\0';
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     }
     return 1;
 }
@@ -1329,7 +1329,7 @@ void __fastcall FUN_00401af0(void *param_1)
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     } else if (slotType == 3) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;

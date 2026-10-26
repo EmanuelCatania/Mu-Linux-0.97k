@@ -35,7 +35,7 @@ extern void __cdecl operator_delete(void* ptr);
 #define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 // -- Declaraciones de funciones que viven en otros modulos --------------
-void __fastcall CSQuest_clearQuest(int param_1);
+void __fastcall CSQuest_clearQuest(void* param_1);
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void __fastcall SpringNode_GetPos(void *node, float *out);
 float __fastcall SpringNode_Delta(void *a, int b, float *c);
@@ -817,7 +817,7 @@ closeButton:
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     }
     if (DAT_083a413c != 0) DAT_083a413c = 0;
     return 1;

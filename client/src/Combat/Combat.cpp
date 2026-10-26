@@ -457,7 +457,7 @@ extern "C" BYTE OffsetInventoryItems[];
 // CloseInventoryRelatedWindows (FixShopNpcClose, hook en 0x4CBB15).
 extern "C" int g_bServerDivisionEnable;
 extern "C" int g_bServerDivisionAccept;
-void __fastcall CSQuest_clearQuest(int param_1);
+void __fastcall CSQuest_clearQuest(void* param_1);
 extern "C" void Net_SendNpcTalkClose(void);
 extern "C" int g_GoldenArcherCustom;
 static void SendMove_CloseWindows97k(void)
@@ -512,7 +512,7 @@ static void SendMove_CloseWindows97k(void)
         InventoryOpened = 0;
     } else if (!ShopOpened && !EventWindowOpened) {
         if (questPanel)
-            CSQuest_clearQuest((int)(uintptr_t)g_csQuest);
+            CSQuest_clearQuest(reinterpret_cast<void*>(uintptr_t(g_csQuest)));
         else if (g_bServerDivisionEnable) {
             // DESVIACION (compatibilidad MuEmu): IDA solo cierra del lado del
             // cliente, pero NpcServerTransfer deja Interface.use = 1 y solo el

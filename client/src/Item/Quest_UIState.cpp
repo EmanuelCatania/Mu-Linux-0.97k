@@ -13,9 +13,9 @@
 //     send([C1][03][31]);
 // El 0x31 (49) va como C1 plano — HackPacketCheck le da Encrypt = 0.
 // IDA: CSQuest::clearQuest (0x00401960)
-void __fastcall CSQuest_clearQuest(int param_1) {
+void __fastcall CSQuest_clearQuest(void* param_1) {
     if (param_1 == 0) return;
-    *(BYTE *)(param_1 + 0x1c87f) = 0;
+    *(static_cast<BYTE*>(param_1) + 0x1c87f) = 0;
     CloseInventoryRelatedWindows();
     BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
     gNetwork.SendC1(pkt, 3);
