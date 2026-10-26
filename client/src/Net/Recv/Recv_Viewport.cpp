@@ -784,7 +784,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int cursor = 4 + hdrOff;
     // Cada entrada del pool es un ITEM_t (structs.h): Key, Item y Object.
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-    extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
+    extern int  __cdecl ItemObjectAttribute(OBJECT*);   // ItemObjectAttribute
     extern void __cdecl ItemAngle(OBJECT*);   // ItemAngle
     // DESVIACION: el server manda PMSG_VIEWPORT_ITEM (Viewport.h) con
     // stride fijo index[2] + x + y + ItemInfo[MAX_ITEM_INFO + 1] = 12,
@@ -865,7 +865,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // ItemObjectAttribute (CreateItem LABEL_33): setea atributos
         // de render del objeto. Sin esto el modelo puede
         // quedar sin scale/flags → invisible.
-        ItemObjectAttribute((int)(uintptr_t)o);
+        ItemObjectAttribute(AsObject(o));
 
         // BoundingBox del objeto (IDA CreateItem L129-134):
         // min = (-30,-30,-30), max = (30,30,30).

@@ -898,7 +898,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
     *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
 
     AsObject(o)->Type = (short)model_id;
-    ItemObjectAttributeForRender((int)o);                          // ItemObjectAttribute
+    ItemObjectAttributeForRender(AsObject(o));                          // ItemObjectAttribute
 
     float angles_in[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
     BMD_Animation(mdl, (int)&DAT_06970a9c,

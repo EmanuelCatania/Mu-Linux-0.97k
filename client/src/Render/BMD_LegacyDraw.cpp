@@ -1670,7 +1670,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     *(DWORD *)(ent + 0x0c) = local_3bc;  // write raw float bits into entity+0x0c
     *(unsigned char *)(ent + 0x3d) = param_4; // preserve raw ExtOption for later render passes
 
-    ItemObjectAttribute((int)ent);
+    ItemObjectAttribute(AsObject(ent));
 
     // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute sobreescribe
     // ent[+0xC] con un valor default (0x3F4CCCCD = 0.8f para items en mundo).
@@ -1898,7 +1898,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
 
     char object[0x200] = {};
     *(short*)(object + 2) = (short)drawType;
-    ItemObjectAttributeForRender((int)object);
+    ItemObjectAttributeForRender(AsObject(object));
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
     *(float*)(object + 0x14) = position[1];

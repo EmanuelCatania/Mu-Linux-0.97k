@@ -64,7 +64,7 @@ void MaterialVisuals_PrepareWeaponObject(int entity, int model) {
     const DWORD gravity=*(DWORD *)&o.Gravity;
     o.Type=(short)model;
     MaterialVisualScope scope(&sample);
-    ItemObjectAttributeForRender(entity);
+    ItemObjectAttributeForRender(AsObject(entity));
     o.Type=type;
     if (type==244) *(DWORD *)&o.Gravity=gravity;
 }

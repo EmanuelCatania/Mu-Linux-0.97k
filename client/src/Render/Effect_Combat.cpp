@@ -86,7 +86,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     AsObject(o)->Type = (short)model_id;
 
     const DWORD saved216 = *(DWORD *)&AsObject(o)->Gravity;
-    ItemObjectAttributeForRender(o);
+    ItemObjectAttributeForRender(AsObject(o));
     *(DWORD *)&AsObject(o)->Gravity = saved216;   // ItemObjectAttribute lo pisa
 
     float Light[3];

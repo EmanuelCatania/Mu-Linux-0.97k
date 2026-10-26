@@ -122,7 +122,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     // ItemObjectAttribute: initialise local_1ec as a minimal OBJECT for the item.
     // It sets LightEnable, reads item attributes.
-    ItemObjectAttribute((int)local_1ec);
+    ItemObjectAttribute(AsObject(local_1ec));
 
     AsModel(iVar7)->LightEnable = 0;  // LightEnable = false
 

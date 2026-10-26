@@ -29,6 +29,7 @@ public:
     ~MaterialVisualScope();
 };
 // El creador original conserva su RNG; esta entrada sólo consume la muestra.
-int ItemObjectAttributeForRender(int entity);
+struct OBJECT;
+int ItemObjectAttributeForRender(OBJECT* entity);
 void ItemMaterials_PrepareEquipmentUi();
 void ItemMaterials_PrepareQuestUi();
