@@ -80,6 +80,7 @@ jobs:
             python -B tests/CalculateAllPointer.py --architecture x64
             python -B tests/CharacterClassPointer.py --architecture x64
             python -B tests/HeroCatalogPointer.py --architecture x64
+            python -B tests/CharacterCreationPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -122,6 +123,7 @@ jobs:
             python3 -B tests/CalculateAllPointer.py --generator Ninja
             python3 -B tests/CharacterClassPointer.py --generator Ninja
             python3 -B tests/HeroCatalogPointer.py --generator Ninja
+            python3 -B tests/CharacterCreationPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

@@ -426,7 +426,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // y el offset random inicial se come a lo sumo 127, o sea
         // quedan 402 utiles.
         float rot = ((float)dir - 1.0f) * 45.0f;
-        BYTE* slot = (BYTE*)(uintptr_t)CreateCharacter(entityId, 390, x, y, rot);
+        BYTE* slot = reinterpret_cast<BYTE*>(CreateCharacter(entityId, 390, x, y, rot));
         int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
         if (slot) {
             AsCharacter(slot)->Key = entityId;

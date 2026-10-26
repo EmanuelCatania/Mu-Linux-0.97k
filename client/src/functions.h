@@ -322,7 +322,7 @@ void  __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, fl
 extern "C" void __cdecl DeleteCharacter(int Key); // IDA: DeleteCharacter (0x0045AC20)
 int   __cdecl FindCharacterIndex(int); // IDA: FindCharacterIndex (0x0045AC80)
 void  __cdecl CreateCharacterPointer(unsigned char *c, int Type, int PositionX, int PositionY, float Rotation); // CreateCharacterPointer
-unsigned int __cdecl CreateCharacter(int Key, int Type, unsigned char PosX, unsigned char PosY, float Rotation); // IDA: CreateCharacter (0x0045BFA0)
+CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX, unsigned char PosY, float Rotation); // IDA: CreateCharacter (0x0045BFA0)
 void  __cdecl ChangeCharacterExt(int Key, BYTE *Equipment); // ChangeCharacterExt
 char* __cdecl CreateMonster(uint, int, int, int, int); // IDA: CreateMonster (0x0045CCF0)
 unsigned char* __cdecl CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate); // CreateHero

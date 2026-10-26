@@ -500,37 +500,37 @@ extern void __cdecl OpenNpc(int Type);
 // CreateCharacter — finds/allocates an entity slot for Key, returns pointer.
 // 1) scan first 400 slots for matching key at +476 → reuse slot
 // 2) else find first inactive slot (active flag at +0 == 0) → init it
-// Returns pointer (DWORD) into CharactersClient (DAT_07abf5d0).
-unsigned int __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
+// Devuelve la dirección completa dentro de CharactersClient (DAT_07abf5d0).
+CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
                                    unsigned char PosY, float Rotation)
 {
-    unsigned int c = DAT_07abf5d0;
+    BYTE* c = reinterpret_cast<BYTE*>(DAT_07abf5d0);
     for (int i = 0; i < 400; ++i) {
         if (*(unsigned char*)c != 0 && *(short*)(c + 476) == (short)Key) {
             CreateCharacterPointer((unsigned char*)c, Type, PosX, PosY, Rotation);
-            return c;
+            return AsCharacter(c);
         }
         c += 916;
     }
     // search again for an inactive slot
     int v7 = 0;
-    unsigned int i = DAT_07abf5d0;
+    BYTE* i = reinterpret_cast<BYTE*>(DAT_07abf5d0);
     while (*(unsigned char*)i != 0) {
         if (++v7 >= 400) {
             // all slots occupied — return sentinel slot at end (matches IDA)
-            return DAT_07abf5d0 + 366400;
+            return AsCharacter(DAT_07abf5d0 + 366400);
         }
         i += 916;
     }
-    DeleteCloth((int)i, (int)i, 0);  // DeleteCloth
+    // La limpieza conserva su contrato de 32 bits; layout pendiente de B2.
+    DeleteCloth((int)(uintptr_t)i, (int)(uintptr_t)i, 0);  // DeleteCloth
     CreateCharacterPointer((unsigned char*)i, Type, PosX, PosY, Rotation);
     *(short*)(i + 476) = (short)Key;
-    return i;
+    return AsCharacter(i);
 }
 
-// Wrapper kept for callers that imported the older 3-arg stub signature
-// (unused — left here as an inline-compat shim for future ports).
-static inline unsigned int CreateChar5(int Key, int Type, int PosX, int PosY)
+// Adaptador usado por las definiciones de monstruos; conserva la dirección.
+static inline CHARACTER* CreateChar5(int Key, int Type, int PosX, int PosY)
 {
     return CreateCharacter(Key, Type, (unsigned char)PosX, (unsigned char)PosY, 0.0f);
 }
@@ -539,7 +539,7 @@ static inline unsigned int CreateChar5(int Key, int Type, int PosX, int PosY)
 namespace {
 // IDA: CreateMonster (0x0045CCF0). Los campos ausentes conservan lo que dejó CreateCharacter.
 constexpr int KeepSpawnValue = -32768;
-using SpawnInitializer = void (*)(unsigned int);
+using SpawnInitializer = void (*)(CHARACTER*);
 enum class SpawnLoader { None, Monster, Npc };
 
 struct MonsterDefinition {
@@ -578,34 +578,40 @@ struct MonsterDefinition {
 };
 
 // IDA: CreateMonster (0x0045CCF0), monstruos que crean el par de joints 1258.
-void InitializeMonsterJoints(unsigned int c)
+void InitializeMonsterJoints(CHARACTER* character)
 {
-    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+    BYTE* c = reinterpret_cast<BYTE*>(character);
+    // El owner del joint aún es de 32 bits; su layout queda para B2.
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)(uintptr_t)c, 30.0f, -1, 0);
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)(uintptr_t)c, 30.0f, -1, 0);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 8.
-void InitializeMonster8(unsigned int c)
+void InitializeMonster8(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned int*)(c + 120) = 1;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 11.
-void InitializeMonster11(unsigned int c)
+void InitializeMonster11(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned int *)&AsCharacter(c)->Object.AlphaTarget = 1053609165;
     AsCharacter(c)->MoveSpeed = 15;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 25.
-void InitializeMonster25(unsigned int c)
+void InitializeMonster25(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     AsCharacter(c)->Object.LightEnable = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 34.
-void InitializeMonster34(unsigned int c)
+void InitializeMonster34(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = MODEL_HELM + 3;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = MODEL_ARMOR + 3;
     *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = MODEL_PANTS + 3;
@@ -624,16 +630,18 @@ void InitializeMonster34(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 42.
-void InitializeMonster42(unsigned int c)
+void InitializeMonster42(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[0] = 1128792064;
     *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[1] = 1125515264;
     *(unsigned int *)&AsCharacter(c)->Object.BoundingBoxMax[2] = 1133248512;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 73.
-void InitializeMonster73(unsigned int c)
+void InitializeMonster73(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     {
         unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)AsCharacter(c)->Object.Type + 40u);
         unsigned char* dataPtr = *(unsigned char**)modelEntry;
@@ -648,14 +656,16 @@ void InitializeMonster73(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 77.
-void InitializeMonster77(unsigned int c)
+void InitializeMonster77(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned char*)(uintptr_t)(DAT_05828d58 + 61236u) = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 88.
-void InitializeMonster88(unsigned int c)
+void InitializeMonster88(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if ((gMapManager.GetCurrentMap() - 9) / 3) {
         AsCharacter(c)->Weapon[0].Level = 0;
     } else {
@@ -664,14 +674,16 @@ void InitializeMonster88(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 131.
-void InitializeMonster131(unsigned int c)
+void InitializeMonster131(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     AsCharacter(c)->Object.EnableShadow = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 230.
-void InitializeMonster230(unsigned int c)
+void InitializeMonster230(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 360;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 363;
     *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = 365;
@@ -679,29 +691,33 @@ void InitializeMonster230(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 232.
-void InitializeMonster232(unsigned int c)
+void InitializeMonster232(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     AsCharacter(c)->Object.Kind = 4;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 234.
-void InitializeMonster234(unsigned int c)
+void InitializeMonster234(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     AsCharacter(c)->Object.Kind = 4;
     SetAction(AsObject(c), 0);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 242.
-void InitializeMonster242(unsigned int c)
+void InitializeMonster242(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     float v13 = AsCharacter(c)->Object.Position[0];
     float v14 = AsCharacter(c)->Object.Position[1];
     AsCharacter(c)->Object.Position[2] = RequestTerrainHeight(v13, v14) + 140.0f;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 247.
-void InitializeMonster247(unsigned int c)
+void InitializeMonster247(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = MODEL_HELM + 9;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = MODEL_ARMOR + 9;
     *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = MODEL_PANTS + 9;
@@ -711,8 +727,9 @@ void InitializeMonster247(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 248.
-void InitializeMonster248(unsigned int c)
+void InitializeMonster248(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 361;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 363;
     *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = 365;
@@ -720,8 +737,9 @@ void InitializeMonster248(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 250.
-void InitializeMonster250(unsigned int c)
+void InitializeMonster250(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 360;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 362;
     *(unsigned short *)&AsCharacter(c)->BodyPart[4].Type = 364;
@@ -729,16 +747,18 @@ void InitializeMonster250(unsigned int c)
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 253.
-void InitializeMonster253(unsigned int c)
+void InitializeMonster253(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 368;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 370;
     *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = 372;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 255.
-void InitializeMonster255(unsigned int c)
+void InitializeMonster255(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     *(unsigned short *)&AsCharacter(c)->BodyPart[1].Type = 351;
     *(unsigned short *)&AsCharacter(c)->BodyPart[2].Type = 353;
     *(unsigned short *)&AsCharacter(c)->BodyPart[3].Type = 355;
@@ -1023,12 +1043,12 @@ constexpr auto MonsterDefinitions = MakeMonsterDefinitions();
 constexpr MonsterDefinition DefaultMonsterDefinition{};
 
 // IDA: CreateMonster (0x0045CCF0), escrituras comunes después de CreateCharacter.
-unsigned int CreateMonsterFromDefinition(const MonsterDefinition& def, int key, int x, int y)
+CHARACTER* CreateMonsterFromDefinition(const MonsterDefinition& def, int key, int x, int y)
 {
     if (def.Loader == SpawnLoader::Monster) OpenMonsterModel(def.Resource);
     else if (def.Loader == SpawnLoader::Npc) OpenNpc(def.Resource);
     if (def.ExtraResource >= 0) OpenMonsterModel(def.ExtraResource);
-    const unsigned int c = CreateChar5(key, def.Model, x, y);
+    CHARACTER* const c = CreateChar5(key, def.Model, x, y);
     if (def.Scale > 0.0f) AsCharacter(c)->Object.Scale = def.Scale;
     if (def.Right >= 0) *(unsigned short *)&AsCharacter(c)->Weapon[0].Type = (unsigned short)def.Right;
     if (def.Left >= 0) *(unsigned short *)&AsCharacter(c)->Weapon[1].Type = (unsigned short)def.Left;
@@ -1053,7 +1073,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
                             int Key, int /*phantom_unused*/)
 {
     int Type = (int)Type_;
-    unsigned int c = 0;
+    BYTE* c = nullptr;
     int v8 = 0;
     int v9, v10;
 
@@ -1061,22 +1081,22 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     // modelo propio en el server se crea con ese modelo en vez de la definición vanilla.
     const CatalogMonster* custom = gContentCatalog.GetMonster(Type);
     if (custom && custom->Model >= 0) {
-        c = CreateCharacter(Key, custom->Model, (unsigned char)PositionX, (unsigned char)PositionY, 0.0f);
+        c = reinterpret_cast<BYTE*>(CreateCharacter(Key, custom->Model, (unsigned char)PositionX, (unsigned char)PositionY, 0.0f));
         if (!c) return nullptr;
         AsCharacter(c)->Object.Scale = (custom->Scale > 0.0f) ? custom->Scale : 1.0f;
         const char* name = getMonsterName(Type);
         if (!name || !name[0]) name = custom->Name;
-        EntityName::Set((void*)(uintptr_t)c, name);
+        EntityName::Set(c, name);
         AsCharacter(c)->MonsterIndex = (unsigned char)Type;
         *(unsigned short*)(c + 8) = 0;
         *(unsigned short *)&AsCharacter(c)->TargetCharacter = (unsigned short)HeroIndex;
         AsCharacter(c)->Object.Kind = (custom->Kind == 0) ? 4 : 2;   // 4 NPC, 2 monstruo
-        return (char*)(uintptr_t)c;
+        return reinterpret_cast<char*>(c);
     }
 
     const MonsterDefinition& definition = (Type_ < MonsterDefinitions.size())
         ? MonsterDefinitions[Type_] : DefaultMonsterDefinition;
-    c = CreateMonsterFromDefinition(definition, Key, PositionX, PositionY);
+    c = reinterpret_cast<BYTE*>(CreateMonsterFromDefinition(definition, Key, PositionX, PositionY));
 
     // Ajuste de escala por mundo para los tipos 84..136; se conserva el límite original.
     v9 = gMapManager.GetCurrentMap() - 9;
@@ -1099,7 +1119,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         // GuildMarkIndex; EntityName guarda el nombre entero.
         {
             const char* mname = getMonsterName(Type);
-            EntityName::Set((void*)(uintptr_t)c, mname ? mname : "");
+            EntityName::Set(c, mname ? mname : "");
         }
         v8 = 0;  // suppress unused-warning
 
@@ -1111,13 +1131,13 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
             AsCharacter(c)->Object.Kind = 2;
         } else if (v10 > 200) {
             AsCharacter(c)->Object.Kind = 4;
-            return (char*)(uintptr_t)c;
+            return reinterpret_cast<char*>(c);
         } else if (v10 < 150 && v10 <= 110 && v10 >= 100) {
             AsCharacter(c)->Object.Kind = 8;
-            return (char*)(uintptr_t)c;
+            return reinterpret_cast<char*>(c);
         } else {
             AsCharacter(c)->Object.Kind = 2;
         }
     }
-    return (char*)(uintptr_t)c;
+    return reinterpret_cast<char*>(c);
 }
