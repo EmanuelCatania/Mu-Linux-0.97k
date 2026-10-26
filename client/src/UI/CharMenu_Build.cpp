@@ -278,8 +278,9 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
         iWidth = local_8.cx + (int)fVar4;
     }
     const float fTexScaleX = Text_GetOrthoScaleX();
-    if ((float)iMaxWidth < (float)iPos_x + (float)iWidth / fTexScaleX) {
-        iPos_x = (int)((float)iMaxWidth - (float)iWidth / fTexScaleX);
+    const int rightEdge = iMaxWidth + gWindow.GetRightShift();
+    if ((float)rightEdge < (float)iPos_x + (float)iWidth / fTexScaleX) {
+        iPos_x = (int)((float)rightEdge - (float)iWidth / fTexScaleX);
     }
     // Fondo de la linea (m_dwBackColor).  En el binario este nivel NO lo pinta:
     // CUIRenderText_BakeTextTexture (0x0040FCD0) rasteriza la linea a una
@@ -395,11 +396,13 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
     }
     local_18 = local_18 + 4.0f;
     param_4 = (int)((float)param_1 - local_18 * 0.5f);   // el recuadro se CENTRA en param_1
-    if (param_4 < 0) {
-        param_4 = 0;
+    // Pantalla ancha: los bordes son los de la ventana (edge = 0 en 4:3).
+    const float edge = (float)gWindow.GetRightShift();
+    if ((float)param_4 < -edge) {
+        param_4 = (int)-edge;
     }
-    if ((float)gWindow.GetWidth() / fTexScaleX < (float)param_4 + local_18) {
-        param_4 = (int)((float)gWindow.GetWidth() / fTexScaleX - local_18 - 1.0f);
+    if ((float)gWindow.GetWidth() / fTexScaleX + edge < (float)param_4 + local_18) {
+        param_4 = (int)((float)gWindow.GetWidth() / fTexScaleX + edge - local_18 - 1.0f);
     }
     if (param_6 == 1) {
         Gfx::Color4f(0.0f, 0.0f, 0.0f, 1.0f);

@@ -89,6 +89,7 @@ extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
 extern "C" void GuildMark_InitializePalette(bool blend);
 extern "C" int    InputTextWidth;
+extern "C" BYTE   InputTextHide[10];
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
 extern "C" char   DAT_07ea51f5[64];
@@ -332,9 +333,9 @@ extern "C" void __cdecl RenderServerDivision(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    InventoryStartX = 450;
+    InventoryStartX = gWindow.PanelOrigin(Ui::RightPanel);
     InventoryStartY = 0;
-    RenderInventoryInterface(450, 0, 1);
+    RenderInventoryInterface(gWindow.PanelOrigin(Ui::RightPanel), 0, 1);
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
@@ -381,7 +382,12 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 {
     if (!InventoryOpened) return;
 
-    int sx = (CharacterOpened || PartyOpened) ? 260 : 450;
+    int sx = gWindow.PanelOrigin((CharacterOpened || PartyOpened) ? Ui::InventoryPair : Ui::RightPanel);
+    // El origen del contenido se publica acá también: con el menú de opciones
+    // abierto el tick no corre y, al cambiar de resolución, quedaba el viejo
+    // (marco en un lugar y casilleros en otro).
+    InventoryStartX = sx;
+    InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
     RenderEquipmentBox();
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
@@ -671,6 +677,8 @@ extern "C" void GuildCreator_OpenFromServer(void)
     GuildInputEnable = 1;
     DAT_00559c84 = 0;
     ClearInput(0);
+    // El Personal Code deja este slot enmascarado; el nombre del guild es visible.
+    InputTextHide[0] = 0;
     Input_SetLimit(0, (int)NetText::GuildNameSize, (int)NetText::GuildNameClusters);
     InputNumber = 0;
     GuildMark_InitializePalette(true);
@@ -1191,6 +1199,9 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     // `UI/ChatListBox.cpp` (bloque "WIDGET DE LISTA DE GUILD").
     if (g_nGuildMemberCount > 0 && DAT_055c9ff4) {
         DWORD* obj = (DWORD*)(uintptr_t)DAT_055c9ff4;
+        // La lista y sus botones siguen el mismo origen que el marco.
+        obj[11] = (DWORD)(StartX + 10);
+        obj[12] = (DWORD)(StartY + 387);
         void** vt  = (void**)*obj;
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
@@ -1308,7 +1319,7 @@ extern "C" void __cdecl RenderTrade(void)
     if (!TradeOpened) return;
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    TradeInventoryStartX = 260;
+    TradeInventoryStartX = gWindow.PanelOrigin(Ui::Trade);
     TradeInventoryStartY = 0;
     RenderInventoryInterface(TradeInventoryStartX, TradeInventoryStartY, 1);
 
@@ -1413,7 +1424,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     if (!ShopOpened) return;
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Shop);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
@@ -1533,7 +1544,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Chaos);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
@@ -1646,7 +1657,7 @@ extern "C" void __cdecl RenderWarehouse(void)
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    dword_7EAA0C8 = 260;      // 0x104
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Warehouse);      // 0x104
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
@@ -1792,17 +1803,13 @@ extern "C" void __cdecl RenderEventWindow(void)
 
     const bool bloodCastle = (EventType == 1);
 
-    dword_7EAA0C8 = 260;
+    dword_7EAA0C8 = gWindow.PanelOrigin(Ui::Event);
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
     m_dwTextColor = bloodCastle ? 0xDCFFDCBEu : 0xC41432FFu;
     m_dwBackColor = 0x00101000u;
 
-    const float x = (float)dword_7EAA0C8 + 25.0f;
-    float y = (float)dword_7EAA0CC + (bloodCastle ? 170.0f : 210.0f);
-    const float stride = bloodCastle ? 40.0f : 45.0f;
-    const float height = bloodCastle ? 33.0f : 35.0f;
     const int   count  = bloodCastle ? 6 : 4;
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1813,15 +1820,15 @@ extern "C" void __cdecl RenderEventWindow(void)
     const int mgOffset = (Hero && ((((const BYTE*)Hero)[444] & 7) == 3)) ? 6 : 0;
 
     for (int row = 0; row < count; ++row) {
+        const auto button = Ui::EventButton(bloodCastle, row, gWindow.GetRightShift());
+        const float x = (float)button.x, y = (float)button.y;
         const int limitRow = bloodCastle ? row + mgOffset : row;
         const int minLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][0]
                                          : m_iDevilSquareLimitLevel[row][0];
         const int maxLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][1]
                                          : m_iDevilSquareLimitLevel[row][1];
 
-        const bool inRect = ((float)MouseX >= x && (float)MouseX < x + 140.0f &&
-                             (float)MouseY >= y && (float)MouseY < y + height &&
-                             DAT_07e91388 == 0);
+        const bool inRect = button.Contains((int)MouseX, (int)MouseY) && DAT_07e91388 == 0;
 
         if (bloodCastle) {
             const bool permitted = (charLevel <= (unsigned)maxLevel && charLevel >= (unsigned)minLevel);
@@ -1832,7 +1839,7 @@ extern "C" void __cdecl RenderEventWindow(void)
             if (inRect)         BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
             else                BufferedDraw::Color3f(0.9f, 0.8f, 0.7f);
         }
-        GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        GL_DrawTexture(240, x, y, (float)button.width, (float)button.height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
 
         char label[96];
         const bool withMax = (maxLevel <= 10000);
@@ -1843,7 +1850,6 @@ extern "C" void __cdecl RenderEventWindow(void)
         RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
                    (bloodCastle ? 120 : 116) * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
-        y += stride;
     }
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);

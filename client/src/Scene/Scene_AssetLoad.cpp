@@ -26,6 +26,9 @@ void __cdecl Scene_LoadGameAssets(void) {
     OpenJPG("Interface/Menu02.jpg",      0xe7, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/Menu03_new.jpg",  0xe8, 0x2600, 0x2900, 0, '\x01');
     OpenTGA("Interface/Menu04.tga",      0xe9, 0x2600, 0x2900, 0, '\x01');
+    // DESVIACION (Fase 4, pantalla ancha; DLL CWideScreen WDecorOld): cabezas de
+    // dragon que reemplazan a las de Menu04 en las esquinas de la barra.
+    OpenTGA("Interface/WDecorOld.tga",   0x5f0, 0x2600, 0x2900, 0, '');
     OpenJPG("Interface/Menu_Red.jpg",    0xea, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/Menu_Blue.jpg",   0xeb, 0x2600, 0x2900, 0, '\x01');
     OpenJPG("Interface/Menu_Party.jpg",  0xec, 0x2600, 0x2900, 0, '\x01');

@@ -15,7 +15,7 @@ COptionsMenu gOptionsMenu;
 namespace {
 // DLL OptionsMenu.cpp: cajas de 120x22 centradas, separadas 7, desde y=60.
 struct OptionsLayout {
-    static constexpr int X = 320 - 60, Y = 60, Width = 120, Height = 22, Gap = 7;
+    static constexpr int X = Ui::Menu.Origin(0), Y = 60, Width = 120, Height = 22, Gap = 7;
     static constexpr int Step = Height + Gap;
     static constexpr int BarLabelWidth = Width / 3;           // "Sonido:"
     static constexpr int BarX = X + BarLabelWidth;
@@ -479,14 +479,14 @@ bool COptionsMenu::UpdateAntilagGroup()
 namespace {
 void ApplyScreen(bool windowMode, bool borderless, int resolution)
 {
-    DWORD width = gWindow.GetWidth(), height = gWindow.GetHeight();
+    DWORD width = gWindow.GetRealWidth(), height = gWindow.GetHeight();
     CUserSettings::GetResolutionSize(resolution, &width, &height);
     gWindow.ChangeMode(windowMode, borderless, width, height);
     gUserSettings.SetWindow(windowMode, borderless, resolution);
 }
 int CurrentResolution()
 {
-    return CUserSettings::FindResolution(gWindow.GetWidth(), gWindow.GetHeight());
+    return CUserSettings::FindResolution(gWindow.GetRealWidth(), gWindow.GetHeight());
 }
 }
 
@@ -515,7 +515,7 @@ void COptionsMenu::RenderScreen()
         RenderToggle((float)RowY(row++), gClientText.Get(ClientTextId::ScreenBorderless),
                      gWindow.IsBorderless());
     char text[32];
-    Platform::TextFormatSecure(text, "%lu x %lu", (unsigned long)gWindow.GetWidth(), (unsigned long)gWindow.GetHeight());
+    Platform::TextFormatSecure(text, "%lu x %lu", (unsigned long)gWindow.GetRealWidth(), (unsigned long)gWindow.GetHeight());
     const int resolution = CurrentResolution();
     RenderSelector((float)RowY(row++), text, resolution != 0, resolution < MAX_USER_RESOLUTION - 1);
     // DESVIACION: controles de presentación dentro del panel Pantalla existente.

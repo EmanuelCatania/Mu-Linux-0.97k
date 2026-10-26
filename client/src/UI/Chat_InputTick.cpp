@@ -352,11 +352,12 @@ void __cdecl Chat_InputTick(void)
             const char *activePtr = (const char *)&DAT_07df938b + slot * 0x118;
             const char *typePtr   = (const char *)&DAT_07df948c + slot * 0x118;
             const int  *posXPtr   = (const int *)((const char *)&DAT_07df9494 + slot * 0x118);
-            int         posX_scaled = (int)((unsigned int)(*posXPtr * 0x280) / gWindow.GetWidth());
+            const int leftEdge = gWindow.PanelOrigin(Ui::WindowLeft);
+            int posX_scaled = leftEdge + (int)((unsigned int)(*posXPtr * 0x280) / gWindow.GetWidth());
 
             if (*activePtr != '\0' &&
                 (DAT_00559bf1 != '\0' || *typePtr != 3) &&
-                (-1 < mouseX) &&
+                (leftEdge <= mouseX) &&
                 (mouseX < posX_scaled) &&
                 ((int)rowY <= mouseY) && (mouseY < (int)(rowY + 0xd)) &&
                 (DAT_00559c84 != '\0') &&

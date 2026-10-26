@@ -36,6 +36,7 @@ enum eUserResolution {
     RES_1366x768,
     RES_1600x900,
     RES_1920x1080,
+    RES_3440x1440,              // Pantalla ultrawide; conserva los índices anteriores.
     MAX_USER_RESOLUTION
 };
 

@@ -214,7 +214,7 @@ void __cdecl UI_InGameMenu(void)
     // case 4 Close(in).
     case 0x6e:
     {
-        if (mouseX >= 0x103 && mouseX <= 0x17b && IsClickPushed())
+        if (mouseX >= gWindow.PanelOrigin(Ui::Menu) - 1 && mouseX < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width && IsClickPushed())
         {
             DWORD gs = SceneFlag;              // g_GameState
             int btnCount = (gs == 5) ? 5 : ((gs == 4) ? 4 : 3);
@@ -682,7 +682,7 @@ void __cdecl UI_InGameMenu(void)
         int v351 = v350 + 18 * numLines;
         if (mouseY < v351) goto tail;
         int v352 = mouseY - v351;
-        int absDx = mouseX - 556;
+        int absDx = mouseX - Ui::QuestAnswerCenter(gWindow.GetRightShift());
         if (absDx < 0) absDx = -absDx;
         if (v352 < 18 * numAnswer && absDx <= 106) {
             int v353 = v352 / 18;

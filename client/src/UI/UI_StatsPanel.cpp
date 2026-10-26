@@ -63,12 +63,12 @@ int RenderErrorMessage(void)
         do {
           fVar1 = (float)(int)local_dc;
           local_e4.cx = (LONG)fVar1;
-          GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
-          if ((((0x103 < DAT_083a427c) && (DAT_083a427c < 0x17c)) && ((int)local_dc <= DAT_083a4278)
+          GL_DrawTexture(0xf0,(float)gWindow.PanelOrigin(Ui::Menu),fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+          if ((((gWindow.PanelOrigin(Ui::Menu) - 1 < DAT_083a427c) && (DAT_083a427c < gWindow.PanelOrigin(Ui::Menu) + Ui::Menu.width)) && ((int)local_dc <= DAT_083a4278)
               ) && (DAT_083a4278 < (int)local_dc + 0x16)) {
             Gfx::Color3f(0.8f, 0.6f, 0.4f);  // bits de IDA → float
             GL_SetBlendAdditive();
-            GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+            GL_DrawTexture(0xf0,(float)gWindow.PanelOrigin(Ui::Menu),fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
             Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
             GL_ResetState();
           }

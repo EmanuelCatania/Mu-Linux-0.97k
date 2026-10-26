@@ -199,6 +199,7 @@
     <ClInclude Include="src\Platform\GL\glad.h" />
     <ClInclude Include="src\Platform\Win32\Win32GLContext.h" />
     <ClInclude Include="src\Core\Font.h" />
+    <ClInclude Include="src\UI\PanelAnchor.h" />
     <ClInclude Include="src\UI\EventTimer.h" />
     <ClInclude Include="src\UI\MiniMap.h" />
     <ClInclude Include="src\Render\Camera3D.h" />

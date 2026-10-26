@@ -326,9 +326,12 @@ void RenderMainFrameWindow_(void)
     // Two corner decorations (bitmap 0xE9 mirrored at x=532).
     // DESVIACION (DLL Interface.cpp, 0x004BD300 / 0x004BD332): con el mapa
     // abierto, los botones de zoom y transparencia ocupan ese lugar.
-    if (!gMiniMap.HidesLeftDragon())
+    // DESVIACION (Fase 4, pantalla ancha; DLL CWideScreen): sin los dragones de
+    // Menu04; abajo, al final, se dibujan las cabezas de WDecorOld en las esquinas.
+    const bool wide = gWindow.IsWide();
+    if (!wide && !gMiniMap.HidesLeftDragon())
         GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
-    if (!gMiniMap.HidesRightDragon())
+    if (!wide && !gMiniMap.HidesRightDragon())
         GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
     GL_ResetState();   // DisableAlphaBlend
 
@@ -369,6 +372,15 @@ void RenderMainFrameWindow_(void)
     GL_DrawTexture(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
     GL_ResetState();
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
+    if (wide) {
+        // DLL CWideScreen: WDecorOld, izquierda -61 y derecha 556 espejada.
+        // El DLL las ubica respecto de la barra central, no de la ventana.
+        const float barX = (float)gWindow.PanelOrigin({Ui::Anchor::Centro, 640});
+        EnableAlphaTest(true);
+        GL_DrawTexture(0x5F0, barX - 61.0f, 411.0f, 144.0f, 69.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(0x5F0, barX + 556.0f, 411.0f, 144.0f, 69.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1, 1);
+        GL_ResetState();
+    }
 }
 
 void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
@@ -428,8 +440,10 @@ void Render_HotbarItems3D_(void)
     Gfx::MatrixMode(Gfx::Matrix::Projection);
     Gfx::PushMatrix();
     Gfx::LoadIdentity();
-    GL_SetViewport(0, 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
-    float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
+    // El pase de ítems también cubre los márgenes: el viewport central
+    // recortaba los modelos de paneles anclados fuera del 4:3.
+    GL_SetViewport(0, 0, (int)gWindow.GetRealWidth(), (int)gWindow.GetHeight());
+    float aspectF = (float)((double)(int)gWindow.GetRealWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;
     int   nearBits = *(int*)&CameraViewNear;

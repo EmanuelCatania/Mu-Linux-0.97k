@@ -650,7 +650,7 @@ void __cdecl SecondPassword_Screen3(void) {
 //     unresolvable without call-site context. STUB: __ftol() button region.
 void __cdecl SecondPassword_Screen4(void) {
     // DESVIACION: publicar el origen antes del hit-test, sin esperar al draw.
-    InventoryStartX = (CharacterOpened || PartyOpened) ? 260 : 450;
+    InventoryStartX = gWindow.PanelOrigin((CharacterOpened || PartyOpened) ? Ui::InventoryPair : Ui::RightPanel);
     InventoryStartY = 0;
 
     // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
@@ -810,7 +810,7 @@ void __cdecl SecondPassword_Screen4(void) {
     // 260 / 0 como origen (DAT_07eaa0c8 / DAT_07eaa0cc).  El hover de abajo lee
     // DAT_07eaa0c8, así que se sincroniza el global con los valores del render
     // para que coincidan.
-    DAT_07eaa0c8 = 260;
+    DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::InventoryPair);
     DAT_07eaa0cc = 0;
     char sv6 = DAT_07eaa118;
     if (sv6 != '\0') {
@@ -848,24 +848,22 @@ void __cdecl SecondPassword_Screen5(void) {
 
     // ── Blood Castle ────────────────────────────────────────────────────────
     if (EventType == 1) {
-        DAT_07eaa0c8 = 260;
+        DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::Event);
         DAT_07eaa0cc = 0;
         if (!MouseLButtonPush) return;
 
         const WORD charLevel = *(WORD*)((BYTE*)CharacterAttribute + 14);
         const int mgOffset = ((((const BYTE*)Hero)[444] & 7) == 3) ? 6 : 0;
 
-        float rowY = 170.0f;
         int row = 0;
-        for (; row < 6; ++row, rowY += 40.0f) {
+        for (; row < 6; ++row) {
             const int limitRow = row + mgOffset;
             // Fila fuera del rango de nivel: no es clickeable (y RenderEventWindow
             // la dibuja grisada).  Esto lo tiene Blood Castle y no Devil Square.
             if (charLevel > (unsigned)m_iBloodCastleLimitLevel[limitRow][1] ||
                 charLevel < (unsigned)m_iBloodCastleLimitLevel[limitRow][0])
                 continue;
-            if ((float)MouseX >= 285.0f && (float)MouseX < 425.0f &&
-                (float)MouseY >= rowY  && (float)MouseY < rowY + 33.0f)
+            if (Ui::EventButton(true, row, gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
                 break;
         }
         if (row >= 6) return;
@@ -886,15 +884,13 @@ void __cdecl SecondPassword_Screen5(void) {
     if (EventType != 0) return;
 
     // ── Devil Square ────────────────────────────────────────────────────────
-    DAT_07eaa0c8 = 260;
+    DAT_07eaa0c8 = gWindow.PanelOrigin(Ui::Event);
     DAT_07eaa0cc = 0;
     if (!MouseLButtonPush) return;
 
-    float rowY = 210.0f;
     int row = 0;
-    for (; row < 4; ++row, rowY += 45.0f) {
-        if ((float)MouseX >= 285.0f && (float)MouseX < 425.0f &&
-            (float)MouseY >= rowY  && (float)MouseY < rowY + 35.0f)
+    for (; row < 4; ++row) {
+        if (Ui::EventButton(false, row, gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
             break;
     }
     if (row >= 4) return;
@@ -948,7 +944,7 @@ void __cdecl ServerTransfer_HitTest(void) {
 
     int mx = (int)DAT_083a427c;   // MouseX
     int my = (int)DAT_083a4278;   // MouseY
-    if (mx >= 450 && mx < 640 && my >= 0 && my < 433)
+    if (mx >= gWindow.PanelOrigin(Ui::RightPanel) && mx < gWindow.PanelOrigin(Ui::WindowRight) && my >= 0 && my < 433)
         DAT_07d78094 = 1;         // MouseOnWindow
 
     const int startX = (int)DAT_07ea5288;   // InventoryStartX
@@ -4707,8 +4703,13 @@ void __cdecl CreateFrustrum2D(float *param_1)
     float out[12];   // 4 transformed output positions
 
     int iVar2 = GetScreenWidth();   // GetScreenWidth (= 640 normalmente)
-    float angle_cbc = (float)iVar2 * _DAT_0055283c * _DAT_00552cbc;  // sw/640 * 1190 = far half-width
-    float angle_cb8 = (float)iVar2 * _DAT_0055283c * _DAT_00552cb8;  // sw/640 * 540  = near half-width
+    // En pantalla ancha el mundo es de ancho completo: la fracción sale del
+    // viewport y el semiancho crece con el aspecto (el frustum de 4:3 lo recortaría).
+    float widthScale = (float)iVar2 * _DAT_0055283c;
+    if (gWindow.IsWide() && gWindow.GetHeight() > 0)
+        widthScale = ((float)gWindow.GetRealWidth() / (float)gWindow.GetHeight()) / (4.0f / 3.0f);
+    float angle_cbc = widthScale * _DAT_00552cbc;  // sw/640 * 1190 = far half-width
+    float angle_cb8 = widthScale * _DAT_00552cb8;  // sw/640 * 540  = near half-width
 
     // Euler angles for AngleMatrix (X=0, Y=0, Z=45°) — top-down orientation
     pts[0] = 0.0f; pts[1] = 0.0f; pts[2] = 45.0f;

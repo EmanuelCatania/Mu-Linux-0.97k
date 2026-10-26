@@ -572,8 +572,6 @@ DWORD    DAT_055ca050  = 0;
 char     SocketClient[0x260000] = {};
 // Static init: socket field must start as INVALID_SOCKET (0xFFFFFFFF)
 struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(SocketClient + 8) = Platform::InvalidSocket; } } g_NetCtxInitObj;
-// IDA: SocketClient.m_nSendBufLen (0x055CC16C)
-DWORD    SocketClientSendBufferLength  = 0;
 // IDA: SocketClient.m_LogPrint (0x055CE174)
 DWORD    SocketClientLogPrint  = 0;
 

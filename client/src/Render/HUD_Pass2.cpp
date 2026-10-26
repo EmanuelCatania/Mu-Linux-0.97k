@@ -146,9 +146,11 @@ void __cdecl RenderBar(float x, float y, float Width, float Height,
                         float Bar, bool Disabled, bool clipping)
 {
     if (clipping) {
-        if (x < 0.0f) x = 0.0f;
+        // Pantalla ancha: los límites son los de la ventana (shift = 0 en 4:3).
+        const float edge = (float)gWindow.GetRightShift();
+        if (x < -edge) x = -edge;
         if (y < 0.0f) y = 0.0f;
-        if (x + Width  + 4.0f > 640.0f) x = 640.0f - (Width + 5.0f);
+        if (x + Width  + 4.0f > 640.0f + edge) x = 640.0f + edge - (Width + 5.0f);
         if (y + Height + 4.0f > 433.0f) y = 433.0f - (Height + 5.0f);
     }
     EnableAlphaTest(true);
@@ -217,13 +219,15 @@ extern "C" int __cdecl GetScreenWidth(void);
 // IDA: GetScreenWidth (0x004CB520)
 int __cdecl GetScreenWidth(void)
 {
+    // DESVIACION (Fase 4, pantalla ancha): el borde derecho es el de la ventana,
+    // no el del 4:3 de la interfaz (DLL CWideScreen: numW - 190 / numW - 380).
     if (InventoryOpened) {
-        if (CharacterOpened) return 260;
-        if (HUD_IsInventorySidePairOpen()) return 260;
-        return 450;
+        if (CharacterOpened || PartyOpened) return gWindow.PanelOrigin(Ui::InventoryPair);
+        if (HUD_IsInventorySidePairOpen()) return gWindow.PanelOrigin(Ui::InventoryPair);
+        return gWindow.PanelOrigin(Ui::RightPanel);
     }
-    if (HUD_IsAnyRightPanelOpen()) return 450;
-    return 640;
+    if (HUD_IsAnyRightPanelOpen()) return gWindow.PanelOrigin(Ui::RightPanel);
+    return gWindow.PanelOrigin(Ui::WindowRight);
 }
 
 // =============================================================================
@@ -468,7 +472,7 @@ int RenderEquipedHelperLife_(bool a2)
         gFont.MeasureText(gFont.GetTextDC(), text, Platform::TextLength(text), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
-        if (textX < 0) textX = 0;
+        if (textX < gWindow.PanelOrigin(Ui::WindowLeft)) textX = gWindow.PanelOrigin(Ui::WindowLeft);
         Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
 
         RenderBar(x, posY + 12.0f, 50.0f, 2.0f, (float)bar, false, true);
@@ -493,7 +497,7 @@ int RenderEquipedHelperLife_(bool a2)
         gFont.MeasureText(gFont.GetTextDC(), summonText, Platform::TextLength(summonText), &ts);
         ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
-        if (textX < 0) textX = 0;
+        if (textX < gWindow.PanelOrigin(Ui::WindowLeft)) textX = gWindow.PanelOrigin(Ui::WindowLeft);
         Text_MeasureBox(textX, 4, summonText, 0, 0, 0);
 
         RenderBar(xs, 16.0f, 50.0f, 2.0f, (float)(50 * (int)SummonLife / 100), false, true);
@@ -537,7 +541,7 @@ void RenderBrokenItem_(int a1)
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
 
-    float screenW = 640.0f;
+    float screenW = (float)gWindow.PanelOrigin(Ui::WindowRight);
     float v38 = screenW - v32 - 10.0f;
     float v37 = (float)a1;
 

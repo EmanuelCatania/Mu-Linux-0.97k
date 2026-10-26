@@ -73,11 +73,11 @@ void PrepareCamera() {
         MoveMainCamera();
         float origin[3] = {};
         if (DAT_07abf5d8) memcpy(origin, AsObject((int)DAT_07abf5d8)->Position, sizeof(origin));
-        const int width = GetScreenWidth();
+        const int width = gWindow.IsWide() ? 640 : GetScreenWidth();
         GL_BeginViewport(0, 0, width, 48);
-        Camera_SetupFrustum((float)width * _DAT_0055283c, origin);
+        Camera_SetupFrustum(gWindow.ViewportFraction((int)width), origin);
         GL_EndOpenGL();
-        const bool full = CameraTopViewEnabled || gUserSettings.GetAntilag(ANTILAG_INTERFACE);
+        const bool full = CameraTopViewEnabled || gUserSettings.GetAntilag(ANTILAG_INTERFACE) || gWindow.IsWide();
         GL_BeginViewport(0, 0, width, full ? 480 : 432);
     } else if (SceneFlag == 4) {
         GL_BeginViewport(0, 0, 640, 480);

@@ -1220,12 +1220,10 @@ void __fastcall Cloth_Integrate(int*, float);
 // y después chequea un hotspot secundario para el envío de keepalive / reintento.
 // El tipo de retorno es undefined4, según la declaración de functions.h.
 unsigned int __cdecl Packet_ParseType2(void *param_1) {
-    if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
-        (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
+    if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
         DAT_07d78094 = 1;
     FUN_00401af0(param_1);
-    if ((0x1da < DAT_083a427c) && (DAT_083a427c < 499) &&
-        (0x18a < DAT_083a4278) && (DAT_083a4278 < 0x1a3) &&
+    if (Ui::QuestClose(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY) &&
         (IsClickPushed())) {
         DAT_083a4124 = '\0';
         DAT_07e11d28 = 0;
@@ -1282,8 +1280,8 @@ void __fastcall FUN_00401af0(void *param_1)
     if ((int)DAT_083a4278 < 0)  return;
     if ((int)DAT_083a7c0c * 0x12 <= (int)DAT_083a4278 - yBase)  return;
 
-    uint distU = 0x236U - DAT_083a427c;
-    int  distS = (int)distU < 0 ? -(int)distU : (int)distU;
+    int distS = Ui::QuestAnswerCenter(gWindow.GetRightShift()) - (int)MouseX;
+    if (distS < 0) distS = -distS;
     if (0x6a < distS)  return;
 
     if (!IsClickPushed())  return;

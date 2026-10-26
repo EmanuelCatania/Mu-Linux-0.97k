@@ -261,6 +261,8 @@ void Game_EnterWorldTick(void)
     }
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
+    // Recargar sólo el fondo cuando cambia el aspecto, antes de simularlo.
+    Scene_RefreshCharSelectBackdrop();
     CLK_WATCH("frame-start");
     // Este es el tick de char-select (Game_MainLoop state 4 → esta fn, pese al
     // nombre "EnterWorldTick"). IDA 0x521D80 L401 llama MoveBugs() acá, primero:
@@ -360,7 +362,8 @@ void Game_EnterWorldTick(void)
 
         // Click equip/select button (DAT_005616a8+0x80..0xc6, Y 0x93-0xa7)
         if (hasFreeSlot &&
-            mouseX >= DAT_005616a8 + 0x80 && mouseX < DAT_005616a8 + 0xc6 &&
+            mouseX >= (int)DAT_005616a8 + 0x80 - gWindow.GetRightShift() &&
+            mouseX < (int)DAT_005616a8 + 0xc6 - gWindow.GetRightShift() &&
             DAT_083a4278 > 0x93 && DAT_083a4278 < 0xa7 &&
             IsClickPushed())
         {
@@ -450,8 +453,8 @@ void Game_EnterWorldTick(void)
                 // Boton OK / entrar al juego (IDA 0x521D80 L556):
                 //   MouseX >= 441 - dword_5616A8 && MouseX < 441 - dword_5616A8 + 70
                 //   && MouseY >= 148 && MouseY < 167
-                if (mouseX >= 441 - (int)DAT_005616a8 &&
-                    mouseX < 441 - (int)DAT_005616a8 + 70 &&
+                if (mouseX >= 441 - (int)DAT_005616a8 + gWindow.GetRightShift() &&
+                    mouseX < 441 - (int)DAT_005616a8 + gWindow.GetRightShift() + 70 &&
                     DAT_083a4278 >= 148 && DAT_083a4278 < 167 &&
                     IsClickPushed())
                 {

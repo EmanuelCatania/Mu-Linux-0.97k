@@ -95,6 +95,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             RequestServerList();
     }
     if (evt & 0x20) { // FD_CLOSE
+        DbgLogPublic("NET: socket cerrado por el servidor");
         // DESVIACION (DLL Reconnect.cpp): en el juego, un cierre que no pidió
         // el jugador arranca la reconexión en vez de sólo avisar.
         const bool reconnecting = !m_ConnectServerMode && gReconnect.OnConnectionLost();
@@ -115,6 +116,24 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
         if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
             Platform::GetSocket().Close((SOCKET)SocketClientSocket);
             SocketClientSocket = static_cast<DWORD>(Platform::InvalidSocket);
+        }
+        // Antes del login el servidor puede vencer la sesión por inactividad.
+        // La lista visible no significa que el socket siga vivo: liberar la
+        // espera y permitir una nueva selección sin reiniciar el cliente.
+        if (SceneFlag == 2 && !reconnecting) {
+            g_bGameServerConnected = 0;
+            CurrentProtocolState = 0;
+            DAT_083a7c14 = 0;
+            DAT_083a7c44 = 0;
+            DAT_083a7c24 = 0;
+            DAT_083a7c28 = 0;
+            ServerSelectHi = -1;
+            ServerSelectLo = -1;
+            if (m_HasConnectServer) {
+                m_ConnectServerMode = true;
+                m_ServerListRequested = false;
+                MuEmu::SetActive(false);
+            }
         }
     }
 }
@@ -211,8 +230,23 @@ void CNetwork::RequestServerList()
 // binario.
 void CNetwork::SendToConnectServer(const BYTE* data, int len)
 {
-    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) return;
     if (len <= 0) return;
+    // Sólo metadatos del selector; nunca registrar credenciales ni paquetes de login.
+    if (len >= 4) {
+        char trace[96];
+        Platform::TextFormat(trace, "NET: ConnectServer F4/%02X code=%u", data[3],
+            len >= 6 ? (unsigned)(data[4] | (data[5] << 8)) : 0);
+        DbgLogPublic(trace);
+    }
+    if (!Platform::GetSocket().IsOpen(SocketClientSocket)) {
+        // El ConnectServer limita la sesión a cinco minutos. Reconectar sólo
+        // al pedir una lista o elegir canal; no mantener conexiones de fondo.
+        if (SceneFlag != 2 || !m_HasConnectServer || !m_ConnectServerMode) return;
+        BeginConnectServerSession();
+        MuEmu::SetActive(false);
+        extern bool CreateSocketNoExit(const char*, unsigned int);
+        if (!CreateSocketNoExit(PTR_s_connect_muonline_co_kr_005615b8, (unsigned int)g_ServerPort)) return;
+    }
     if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len <= 0x2000 - SocketClientSendBufferLength) {
             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);

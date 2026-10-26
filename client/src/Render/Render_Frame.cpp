@@ -564,9 +564,11 @@ void Render_Scene3D(void)
     }
 
     // ── 3. Top strip viewport for frustum ─────────────────────────────────────
-    int w = GetScreenWidth();
+    // DESVIACION (Fase 4, pantalla ancha): el mundo ocupa toda la ventana (los
+    // paneles se dibujan encima, dentro del área de interfaz) y a toda su altura.
+    int w = gWindow.IsWide() ? 640 : GetScreenWidth();
     GL_BeginViewport(0, 0, w, 0x30);
-    Camera_SetupFrustum((float)w * _DAT_0055283c, camPos);
+    Camera_SetupFrustum(gWindow.ViewportFraction((int)w), camPos);
     GL_EndOpenGL();
 
     // ── 4. Clear color por World ──────────────────────────────────────────────
@@ -594,7 +596,7 @@ void Render_Scene3D(void)
     const bool noInterface = gUserSettings.GetAntilag(ANTILAG_INTERFACE);
     // IDA Game_RenderTick: v10 = CameraTopViewEnable ? 480 : 432  (0x1e0 : 0x1b0).
     // El topview usa el viewport ALTO (480 = pantalla completa). Antes 0x180 (384).
-    int vpHeight = (topView || noInterface) ? 0x1e0 : 0x1b0;
+    int vpHeight = (topView || noInterface || gWindow.IsWide()) ? 0x1e0 : 0x1b0;
     GL_BeginViewport(0, 0, w, vpHeight);
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
 

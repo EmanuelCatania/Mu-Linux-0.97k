@@ -212,23 +212,27 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
   Gfx::TexImage2D(Bitmaps[0].Components, (std::int64_t)Bitmaps[0].Width, (std::int64_t)Bitmaps[0].Height, Gfx::Format::RGBA, Bitmaps[0].Buffer);
   }
 #endif
+  // DESVIACION (Fase 4, pantalla ancha): los límites son los de la ventana, no
+  // los del 4:3 de la interfaz (`off` píxeles a cada lado; 0 en 4:3).
+  const int off = (BYTE)(a7) ? gWindow.GetRightShift() : gWindow.GetUiOffsetX();
   v8 = a1;
-  if ( a1 < 0 )
+  if ( a1 < -off )
   {
-    v8 = 0;
-    a1 = 0;
+    v8 = -off;
+    a1 = -off;
   }
   if ( (BYTE)(a7) )
   {
     v9 = 640 * LODWORD(Width) / gWindow.GetWidth();
-    if ( (int)(v9 + v8) > a8 )
+    const int limit = a8 + gWindow.GetRightShift();
+    if ( (int)(v9 + v8) > limit )
     {
-      a1 = a8 - v9;
+      a1 = limit - v9;
     }
   }
-  else if ( LODWORD(Width) + v8 > (int)gWindow.GetWidth() )
+  else if ( (int)LODWORD(Width) + v8 > (int)gWindow.GetWidth() + off )
   {
-    a1 = gWindow.GetWidth() - LODWORD(Width);
+    a1 = (int)gWindow.GetWidth() + off - (int)LODWORD(Width);
   }
   if ( DAT_07e11d6e )
   {

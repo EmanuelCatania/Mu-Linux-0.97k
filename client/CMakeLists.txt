@@ -474,6 +474,7 @@ set(MU_HEADERS
     src/Platform/GL/glad.h
     src/Platform/Win32/Win32GLContext.h
     src/Core/Font.h
+    src/UI/PanelAnchor.h
     src/UI/EventTimer.h
     src/UI/MiniMap.h
     src/Render/Camera3D.h
@@ -784,3 +785,8 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     add_test(NAME text_shaper COMMAND mu_text_shaper_test)
     set_tests_properties(bmd_device PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
 endif()
+
+add_executable(mu_panel_anchor_test EXCLUDE_FROM_ALL tests/PanelAnchor.cpp)
+target_include_directories(mu_panel_anchor_test PRIVATE src)
+target_compile_features(mu_panel_anchor_test PRIVATE cxx_std_17)
+add_test(NAME panel_anchor COMMAND mu_panel_anchor_test)

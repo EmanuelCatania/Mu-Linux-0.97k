@@ -7,6 +7,11 @@
 #include "globals.h"
 #include "functions.h"
 
+namespace {
+int QuestX(int offset) { return gWindow.PanelOrigin(Ui::Quest) + offset; }
+}
+
+
 // FUN_00402ff0 @ 0x00402FF0 (~59 lines) — Quest dialog: render message box text + answer choices
 // __fastcall(ecx=questObj). Renders g_lpszMessageBoxCustom lines centered, then answer list
 // with mouse hover highlight (red if hovered). Uses g_iNumAnswer, g_iNumLineMessageBoxCustom.
@@ -17,7 +22,7 @@ void __fastcall FUN_00402ff0(int param_1) {
     int iPos_y = (((7 - g_iNumAnswer) - g_iNumLineMessageBoxCustom) * 0x12) / 2 + 0x42;
     if (0 < g_iNumLineMessageBoxCustom) {
         for (int i = 0; i < g_iNumLineMessageBoxCustom; i++) {
-            RenderCenterText(0x226, iPos_y, g_lpszMessageBoxCustom[i]);
+            RenderCenterText(QuestX(100), iPos_y, g_lpszMessageBoxCustom[i]);
             iPos_y += 0x12;
         }
     }
@@ -27,7 +32,7 @@ void __fastcall FUN_00402ff0(int param_1) {
     int hovered = ((int)MouseY - iPos_y) / 18;
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     for (int i = 0; i < g_iNumAnswer; ++i) {
-        int dx = 556 - (int)MouseX;
+        int dx = Ui::QuestAnswerCenter(gWindow.GetRightShift()) - (int)MouseX;
         if (dx < 0) dx = -dx;
         if (hovered == i && dx <= 106) {
             m_dwTextColor = 0xff0000ff;
@@ -36,7 +41,7 @@ void __fastcall FUN_00402ff0(int param_1) {
         }
         char* line = &g_lpszDialogAnswer[i][0][0];
         if (*line) {
-            RenderCenterText(550, iPos_y, line);
+            RenderCenterText(QuestX(100), iPos_y, line);
         }
         iPos_y += 18;
     }
@@ -111,7 +116,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
             if (abase && nType >= 0 && nType < ITEM_MAX_EX)
                 name = (const char *)(uintptr_t)(abase + (unsigned int)nType * 64u);
             crt_sprintf(buf, "%s x %d", name, nCount);
-            RenderText(510, (int)sy, buf, 0, 0, nullptr);
+            RenderText(QuestX(60), (int)sy, buf, 0, 0, nullptr);
         } else {
             // DESVIACION DELIBERADA.
             //
@@ -126,7 +131,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
             // con el mismo valor.  Poner QUEST_ITEM_PREVIEW_DLL_FIX en 0
             // devuelve el comportamiento de IDA.
             #define QUEST_ITEM_PREVIEW_DLL_FIX 1
-            RenderItem3D(480.0f, sy, 20.0f, 20.0f, nType,
+            RenderItem3D((float)QuestX(30), sy, 20.0f, 20.0f, nType,
                          QUEST_ITEM_PREVIEW_DLL_FIX ? 0 : -1, 0, 0, false);
         }
         sy += _DAT_00552464;
@@ -144,13 +149,13 @@ void __fastcall FUN_00403320(void* param_1) {
 
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface(450, 0, 1);
+    RenderInventoryInterface(gWindow.PanelOrigin(Ui::Quest), 0, 1);
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
 
     char state = *(char*)(This + 116866);      // +0x1C882
     if (state == 1) {
-        GL_DrawTexture(279, 450.0f, 325.0f, 190.0f, 10.0f,
+        GL_DrawTexture(279, (float)gWindow.PanelOrigin(Ui::Quest), 325.0f, 190.0f, 10.0f,
                      0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
         if (FUN_00403150(param_1, 0, state, 1)) {
             m_dwTextColor = 0xFFD2E6FFu;
@@ -158,8 +163,8 @@ void __fastcall FUN_00403320(void* param_1) {
             Gfx::Color3f(0.3f, 0.3f, 0.3f);
         }
 
-        if ((double)MouseX >= 485.0 && (double)MouseX < 605.0 &&
-            (double)MouseY >= 355.0 && (double)MouseY < 379.0 && MouseLButtonPush) {
+        const auto proceed = Ui::QuestProceed(gWindow.GetRightShift());
+        if (proceed.Contains((int)MouseX, (int)MouseY) && MouseLButtonPush) {
             Gfx::Color3f(0.4f, 0.4f, 0.4f);
             if (MouseLButtonPop) {
                 MouseLButtonPush = 0;
@@ -167,32 +172,32 @@ void __fastcall FUN_00403320(void* param_1) {
             }
         }
         gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
-        GL_DrawTexture(240, 485.0f, 355.0f, 120.0f, 24.0f,
+        GL_DrawTexture(240, (float)proceed.x, (float)proceed.y, (float)proceed.width, (float)proceed.height,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
-        RenderCenterText(545, 360, GlobalText[699]);
+        RenderCenterText(QuestX(95), 360, GlobalText[699]);
         Gfx::Color3f(1.0f, 1.0f, 1.0f);
     }
     else if (state == 3) {
-        GL_DrawTexture(271, 500.0f, 367.7f, 113.0f, 18.0f,
+        GL_DrawTexture(271, (float)QuestX(50), 367.7f, 113.0f, 18.0f,
                      0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         m_dwBackColor = 0xFF282828u;
         m_dwTextColor = 0xFF96DCFFu;
-        RenderText(470, 370, GlobalText[198], 0, 0, nullptr);
+        RenderText(QuestX(20), 370, GlobalText[198], 0, 0, nullptr);
         int zen = *(int*)(This + 116868);       // +0x1C884
         m_dwTextColor = (DWORD)FUN_004c3dd0(zen);
         ConvertGold64(zen, Buffer);
-        RenderText(510, 370, Buffer, 0, 0, nullptr);
+        RenderText(QuestX(60), 370, Buffer, 0, 0, nullptr);
     }
 
     // Botón de cerrar + su tooltip
-    GL_DrawTexture(280, 475.0f, 395.0f, 24.0f, 24.0f,
+    const auto close = Ui::QuestClose(gWindow.GetRightShift());
+    GL_DrawTexture(280, (float)close.x, (float)close.y, (float)close.width, (float)close.height,
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    if ((double)MouseX >= 475.0 && (double)MouseX < 499.0 &&
-        (double)MouseY >= 395.0 && (double)MouseY < 419.0) {
+    if (close.Contains((int)MouseX, (int)MouseY)) {
         gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
-        RenderTipText(475, 382, GlobalText[225]);
+        RenderTipText(QuestX(25), 382, GlobalText[225]);
     }
 
     m_dwBackColor = 0;
@@ -205,10 +210,10 @@ void __fastcall FUN_00403320(void* param_1) {
     // getMonsterName devuelve NULL mientras MonsterScript no esté parseada; el
     // original no lo contempla.
     char* npcName = getMonsterName(*(unsigned char*)(questBase + 12));
-    if (npcName) RenderText(485, 12, npcName, nameW, 1, (void*)3);
+    if (npcName) RenderText(QuestX(35), 12, npcName, nameW, 1, (void*)3);
 
     m_dwTextColor = 0xFFFFDCC8u;
-    RenderText(472, 22, (char*)(questBase + 13),
+    RenderText(QuestX(22), 22, (char*)(questBase + 13),
                150 * (int)gWindow.GetWidth() / 0x280, 1, nullptr);
 
     FUN_00402ff0(This);      // texto del diálogo + respuestas
@@ -249,7 +254,7 @@ UINT __fastcall FUN_00403700(void* ecx, void* /*edx*/, UINT param_1) {
 void __fastcall FUN_00403a40(void* param_1) {
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface(0x1c2, 0, 1);
+    RenderInventoryInterface(gWindow.PanelOrigin(Ui::Quest), 0, 1);
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     // gFont.SelectFont(m_hFontDC, g_hFont); // globals not yet declared

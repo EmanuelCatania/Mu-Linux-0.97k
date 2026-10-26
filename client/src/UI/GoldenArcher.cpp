@@ -166,15 +166,18 @@ static bool GA_In(int x, int y, int w, int h)
     return GA_MouseX >= x && GA_MouseX < x + w && GA_MouseY >= y && GA_MouseY < y + h;
 }
 
+// Origen compartido por dibujo y entrada del diálogo original.
+static int GA_X(int offset) { return gWindow.PanelOrigin(Ui::GoldenArcher) + offset; }
+
 // RenderGoldenArcherWindow (0x4F46A0)
 static void GA_Ida_Render(void)
 {
     const int mode = GA_OpenType;
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    GA_InventoryStartX = 450;
+    GA_InventoryStartX = gWindow.PanelOrigin(Ui::GoldenArcher);
     GA_InventoryStartY = 0;
-    RenderInventoryInterface(450, 0, 0);
+    RenderInventoryInterface(gWindow.PanelOrigin(Ui::GoldenArcher), 0, 0);
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFF0FF96u;
     RenderText(GA_InventoryStartX + 35, GA_InventoryStartY + 12, getMonsterName(236),
@@ -187,27 +190,27 @@ static void GA_Ida_Render(void)
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
     if (mode == 4) {
-        if (GA_In(485, 220, 120, 24) && GA_MouseLButtonPush) GA_Ida_ButtonState(true, false);
-        GL_DrawTexture(240, 485.0f, 220.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
-        RenderCenteredText(545, 225, GlobalText[903]);
+        if (GA_In(GA_X(35), 220, 120, 24) && GA_MouseLButtonPush) GA_Ida_ButtonState(true, false);
+        GL_DrawTexture(240, (float)GA_X(35), 220.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        RenderCenteredText(GA_X(95), 225, GlobalText[903]);
     }
     if (mode != 3) {
-        GA_Ida_ButtonState(GA_In(485, 231, 120, 22) && GA_MouseLButtonPush, chips <= 0);
-        GL_DrawTexture(240, 485.0f, 231.0f, 120.0f, 22.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
-        if (mode == 1)      RenderCenteredText(545, 236, GlobalText[243]);
-        else if (mode == 2) RenderCenteredText(545, 236, GlobalText[818]);
+        GA_Ida_ButtonState(GA_In(GA_X(35), 231, 120, 22) && GA_MouseLButtonPush, chips <= 0);
+        GL_DrawTexture(240, (float)GA_X(35), 231.0f, 120.0f, 22.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        if (mode == 1)      RenderCenteredText(GA_X(95), 236, GlobalText[243]);
+        else if (mode == 2) RenderCenteredText(GA_X(95), 236, GlobalText[818]);
     }
     if (mode == 1) {
-        GA_Ida_ButtonState(GA_In(485, 255, 120, 22) && GA_MouseLButtonPush, chips < 10);
-        GL_DrawTexture(240, 485.0f, 255.0f, 120.0f, 22.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
-        RenderCenteredText(545, 260, GlobalText[244]);
+        GA_Ida_ButtonState(GA_In(GA_X(35), 255, 120, 22) && GA_MouseLButtonPush, chips < 10);
+        GL_DrawTexture(240, (float)GA_X(35), 255.0f, 120.0f, 22.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        RenderCenteredText(GA_X(95), 260, GlobalText[244]);
         if (DAT_07e11e20 != -1 && DAT_07e11e22 != -1 && DAT_07e11e24 != -1) {
-            GA_Ida_ButtonState(GA_In(485, 202, 120, 22) && GA_MouseLButtonPush, false);
-            GL_DrawTexture(240, 485.0f, 202.0f, 120.0f, 22.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
-            RenderCenteredText(545, 207, GlobalText[218]);
+            GA_Ida_ButtonState(GA_In(GA_X(35), 202, 120, 22) && GA_MouseLButtonPush, false);
+            GL_DrawTexture(240, (float)GA_X(35), 202.0f, 120.0f, 22.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+            RenderCenteredText(GA_X(95), 207, GlobalText[218]);
         }
     } else if (mode == 3) {
-        const float xa = 485.0f;
+        const float xa = (float)GA_X(35);
         const float yb = (float)GA_InventoryStartY + 250.0f;
         const int cx = (int)(xa + 56.5f), cy = (int)yb;
         RenderCenteredText(cx, cy - 40, GlobalText[893]);
@@ -287,8 +290,8 @@ static void GA_Ida_Render(void)
 
     char buffer[100];
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-    if (mode == 1)      RenderText(485, 290, GlobalText[245], 0, 0, 0);
-    else if (mode == 2) RenderText(485, 290, GlobalText[819], 0, 0, 0);
+    if (mode == 1)      RenderText(GA_X(35), 290, GlobalText[245], 0, 0, 0);
+    else if (mode == 2) RenderText(GA_X(35), 290, GlobalText[819], 0, 0, 0);
     if (mode != 3) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
@@ -297,8 +300,8 @@ static void GA_Ida_Render(void)
     }
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFD2E6FFu;
-    if (mode == 1)      RenderText(485, 325, GlobalText[246], 0, 0, 0);
-    else if (mode == 2) RenderText(485, 325, GlobalText[820], 0, 0, 0);
+    if (mode == 1)      RenderText(GA_X(35), 325, GlobalText[246], 0, 0, 0);
+    else if (mode == 2) RenderText(GA_X(35), 325, GlobalText[820], 0, 0, 0);
     if (mode != 3) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
@@ -307,7 +310,7 @@ static void GA_Ida_Render(void)
     }
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
     m_dwTextColor = 0xFFD2E6FFu;
-    if (mode == 1) RenderText(485, 360, GlobalText[247], 0, 0, 0);
+    if (mode == 1) RenderText(GA_X(35), 360, GlobalText[247], 0, 0, 0);
     if (mode != 3 && mode != 4) {
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BIG));
         m_dwTextColor = 0xFF0096D4u;
@@ -315,7 +318,7 @@ static void GA_Ida_Render(void)
             Platform::TextFormatSecure(buffer, "xxx - xxx - xxx");
         else
             Platform::TextFormatSecure(buffer, "%.3d - %.3d - %.3d", DAT_07e11e20, DAT_07e11e22, DAT_07e11e24);
-        if (mode == 1) RenderCenteredText(545, 370, buffer);
+        if (mode == 1) RenderCenteredText(GA_X(95), 370, buffer);
     }
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
@@ -324,13 +327,13 @@ static void GA_Ida_Render(void)
 static void GA_Ida_Check(void)
 {
     const int mode = GA_OpenType;
-    if (GA_MouseX >= 450 && GA_MouseX < 640 && GA_MouseY >= 0 && GA_MouseY < 433)
+    if (GA_MouseX >= gWindow.PanelOrigin(Ui::GoldenArcher) && GA_MouseX < gWindow.PanelOrigin(Ui::WindowRight) && GA_MouseY >= 0 && GA_MouseY < 433)
         UIState::CaptureMouseForUI();
 
     if (mode != 4) {
         if (mode != 3) {
             // Registrar un chip.
-            if (GA_In(485, 231, 120, 22) && GA_MouseLButtonPop) {
+            if (GA_In(GA_X(35), 231, 120, 22) && GA_MouseLButtonPop) {
                 GA_MouseLButtonPop = 0;
                 const int slot = GetItemSlot(kItemRena, mode - 1);
                 if (slot != -1) {
@@ -340,7 +343,7 @@ static void GA_Ida_Check(void)
             }
             if (mode == 1) {
                 bool send = false;
-                if (GA_In(485, 255, 120, 22) && GA_MouseLButtonPop) {
+                if (GA_In(GA_X(35), 255, 120, 22) && GA_MouseLButtonPop) {
                     GA_MouseLButtonPop = 0;
                     if (GetItemCount(kItemRena, -1) >= 10 ||
                         (DAT_07e11e20 != -1 && DAT_07e11e22 != -1 && DAT_07e11e24 != -1))
@@ -350,14 +353,14 @@ static void GA_Ida_Check(void)
                     const BYTE pkt[3] = { 0xC1, 0x03, 0x96 };
                     gNetwork.SendC1(pkt, sizeof(pkt));
                 } else if (DAT_07e11e20 != -1 && DAT_07e11e22 != -1 && DAT_07e11e24 != -1 &&
-                           GA_In(485, 202, 120, 22) && GA_MouseLButtonPop) {
+                           GA_In(GA_X(35), 202, 120, 22) && GA_MouseLButtonPop) {
                     GA_MouseLButtonPop = 0;
                     CreateDialogInterface(713, 5);
                 }
             }
         } else {
             // Ticket raspable: tres bloques de 4 caracteres con su NUL.
-            const int bx = 485;
+            const int bx = GA_X(35);
             const int by = GA_InventoryStartY + 290;
             if (GA_In(bx, by, 120, 22) && GA_MouseLButtonPop) {
                 if (GetItemCount(-1, -1)) {
@@ -373,7 +376,7 @@ static void GA_Ida_Check(void)
                 GA_MouseLButton = 0;
             }
         }
-    } else if (GA_In(485, 220, 120, 24) && GA_MouseLButtonPop) {
+    } else if (GA_In(GA_X(35), 220, 120, 24) && GA_MouseLButtonPop) {
         const BYTE pkt[4] = { 0xC1, 0x04, 0x98, 0x01 };
         gNetwork.SendC1(pkt, sizeof(pkt));
         GA_MouseLButtonPop = 0;
@@ -431,7 +434,7 @@ void GoldenArcher_ResetSession()
     memset(s_StoneVipDuration, 0, sizeof(s_StoneVipDuration));
 }
 
-static const int kStartX = 450;
+#define kStartX (gWindow.PanelOrigin(Ui::GoldenArcher))
 static const int kStartY = 0;
 
 // Color4b(r,g,b,a) viene de structs.h (mismo formato ABGR que el DLL).

@@ -48,13 +48,15 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // terreno en los bordes.  Acá se arma con la proyección de verdad
     // (gluPerspective: semialto tan(FOV/2), semiancho * W/H de la ventana,
     // que en pantallas anchas no es 4:3).
-    if (SceneFlag == 5) {
+    if (SceneFlag == 5 || gWindow.IsWide()) {
         const long double depth = (long double)(Ff(DAT_00561550) * _DAT_005526e8);
         near_h = fov_tan * depth + (long double)_DAT_005524f0;
         const long double aspect = (gWindow.GetHeight() > 0)
-            ? (long double)gWindow.GetWidth() / (long double)gWindow.GetHeight() : (4.0L / 3.0L);
+            ? (long double)gWindow.GetRealWidth() / (long double)gWindow.GetHeight() : (4.0L / 3.0L);
         near_w = fov_tan * depth * (long double)param_1 * aspect + (long double)_DAT_005524f0;
     }
+    // En selección y login anchos se usa también el semialto de la proyección:
+    // ensanchar sólo near_w conserva un frustum demasiado bajo y recorta terreno.
     float near_dist     = -(Ff(DAT_00561550) * _DAT_005526e8);  // negative near depth
 
     // Step 2 — 5 view-space corners ───────────────────────────────────────────
@@ -198,7 +200,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 // out_ray[0..2] = world-space ray direction vector
 void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 {
-    float view_x = ((float)gWindow.GetWidth() * (float)mouseX / 0x280 - Ff(ViewportCenterX)) *
+    float view_x = ((float)gWindow.PixelFromUiX(mouseX) - Ff(ViewportCenterX)) *
                    Ff(DAT_083a42a4) * Ff(DAT_00561550);
     float view_y = -((float)gWindow.GetHeight() * (float)mouseY / 0x1e0 - Ff(ViewportCenterY)) *
                    Ff(DAT_083a42a8) * Ff(DAT_00561550);
@@ -344,11 +346,9 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
   // Scale from real-window pixels to logical 640×480
   // IDA: `*sx = 640 * *sx / (int)WindowWidth;` — aritmetica CON SIGNO (el cast
   // a (int) del divisor esta justamente para eso).
-  int ww = (int)gWindow.GetWidth();
   int wh = (int)gWindow.GetHeight();
-  if (ww == 0) ww = 640;
   if (wh == 0) wh = 480;
-  int outX = 640 * sx / ww;
+  int outX = gWindow.UiXFromPixel(sx);
   int outY = 480 * sy / wh;
 
 
@@ -370,14 +370,15 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   uint uVar3;
   uint uVar4;
 
-  uVar1 = gWindow.GetWidth() * param_1;
+  int viewportX, viewportWidth;
+  gWindow.ViewportX(param_1, param_3, viewportX, viewportWidth);
   uVar2 = gWindow.GetHeight() * param_2;
-  uVar3 = (uint)(gWindow.GetWidth() * param_3) / 0x280;
+  uVar3 = (uint)viewportWidth;
   uVar4 = (uint)(gWindow.GetHeight() * param_4) / 0x1e0;
   Gfx::MatrixMode(Gfx::Matrix::Projection);
   Gfx::PushMatrix();
   Gfx::LoadIdentity();
-  GL_SetViewport(uVar1 / 0x280,uVar2 / 0x1e0,uVar3,uVar4);
+  GL_SetViewport(viewportX,uVar2 / 0x1e0,uVar3,uVar4);
   // DAT_00561550 es DWORD (bit-pattern float): reinterpretar con Ff() antes de
   // multiplicar. `DAT_00561550 * float` haría int→float (0x461c4000=10000.0f
   // pasaría a 1.17e9) y daría un far plane astronómico.

@@ -73,9 +73,10 @@ void Input_OnEvent(const Platform::InputEvent& event)
         // g_MouseX = LOWORD(lParam) * 640 / g_ScreenW  → DAT_083a427c
         // g_MouseY = HIWORD(lParam) * 480 / g_ScreenH  → DAT_083a4278
         {
-            DWORD sw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
+            // En pantalla ancha, sobre los costados la columna sale de 0..639
+            // (negativa o mayor): se guarda con signo.
             DWORD sh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
-            DAT_083a427c = ((DWORD)event.x * 640) / sw;
+            DAT_083a427c = (DWORD)gWindow.UiXFromPixel(event.x);
             DAT_083a4278 = ((DWORD)event.y * 480) / sh;
         }
         gCamera3D.Drag(event.x, event.y);

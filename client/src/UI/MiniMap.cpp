@@ -25,6 +25,9 @@ constexpr float CenterY = 192.0f - 240.0f + MaxSize * 0.5f;
 constexpr float Rotation = -45.0f;
 constexpr int PointTexture = 9;               // flecha (Interface), como el DLL
 constexpr int ButtonY = 411, ButtonPanelWidth = 96, ButtonSize = 21;
+constexpr Ui::Panel LeftButtons{Ui::Anchor::Izquierda, ButtonPanelWidth};
+constexpr Ui::Panel RightButtons{Ui::Anchor::Derecha, ButtonPanelWidth};
+int ButtonOrigin(bool left) { return gWindow.PanelOrigin(left ? LeftButtons : RightButtons); }
 
 // Estado de cada frame (DLL RenderFullMap).
 struct View {
@@ -48,7 +51,7 @@ View CurrentView(int zoom)
 
 bool Inside(int x, int y, int w, int h)
 {
-    return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
+    return (int)MouseX >= x && (int)MouseX < x + w && (int)MouseY >= y && (int)MouseY < y + h;
 }
 
 float ToX(float x) { return x * gWindow.GetWidth() / 640.0f; }
@@ -180,8 +183,8 @@ void CMiniMap::UpdateMouse()
         }
         return true;
     };
-    if (button(0, 75, &CMiniMap::ChangeZoom)) return;
-    button(640 - ButtonPanelWidth, 640 - ButtonPanelWidth, &CMiniMap::ChangeAlpha);
+    if (button(ButtonOrigin(true), ButtonOrigin(true) + 75, &CMiniMap::ChangeZoom)) return;
+    button(ButtonOrigin(false), ButtonOrigin(false), &CMiniMap::ChangeAlpha);
 }
 
 // DLL LoadMiniMapImage + PaintBorder: cada tile caminable es un bloque de 2x2
@@ -306,9 +309,9 @@ void CMiniMap::RenderGates() const
 // derecha), botón 0x120/0x121 y el valor en rojo.  Opacos con el mouse encima.
 void CMiniMap::RenderButton(bool left) const
 {
-    const float plateX = left ? 0.0f : 640.0f - 75.0f;
-    const float buttonX = left ? 75.0f : 640.0f - 75.0f - ButtonSize;
-    const int panelX = left ? 0 : 640 - ButtonPanelWidth;
+    const int panelX = ButtonOrigin(left);
+    const float plateX = (float)(panelX + (left ? 0 : ButtonSize));
+    const float buttonX = (float)(panelX + (left ? 75 : 0));
     const float alpha = Inside(panelX, ButtonY, ButtonPanelWidth, ButtonSize) ? 1.0f : 0.3f;
     EnableAlphaTest(true);
     BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, alpha);
@@ -328,7 +331,7 @@ void CMiniMap::RenderButton(bool left) const
     const DWORD color = m_dwTextColor, back = m_dwBackColor;
     m_dwBackColor = 0;
     m_dwTextColor = ((DWORD)(alpha * 255) << 24) | 0x000000FFu;   // rojo (ABGR)
-    RenderText(left ? 5 : (int)buttonX + 31, CenterTextY(text, 421), text,
+    RenderText(left ? panelX + 5 : (int)buttonX + 31, CenterTextY(text, 421), text,
                (int)(60 * gWindow.GetWidth() / 640), 0, nullptr);
     m_dwTextColor = color;
     m_dwBackColor = back;
