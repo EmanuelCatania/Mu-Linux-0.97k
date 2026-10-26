@@ -4069,7 +4069,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         // Maneja el seguimiento con la cabeza, su giro suave y el pico temporal en
         // c+848; nada de esto es lógica de combate.
         if (*(unsigned short *)&AsCharacter(entity_ptr)->Object.Type != 390) {
-            MoveHead(entity_ptr);
+            MoveHead(AsCharacter(entity_ptr));
         }
         if (entity_ptr != (int)(uintptr_t)DAT_07abf5d8 &&
             !AsCharacter(entity_ptr)->Dead && !(rand() % 32)) {
