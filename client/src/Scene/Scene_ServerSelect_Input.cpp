@@ -141,10 +141,9 @@ void CServerSelWin_UpdateWhileActive(void)
         }
         local_830 += 0x21e;
         local_834++;
-    // IDA compara contra la dirección absoluta del binario: `while ((int)v6 <
-    // 138050267)` = 0x83a7adb (0x083a45ed + 0x34ee). Acá el bound es relativo a
-    // la base del array.
-    } while ((int)local_830 < (int)((const char*)&DAT_083a45ed + 0x34ee));
+    // IDA recorre 25 entradas de 0x21e bytes. La cota por contador conserva
+    // ese recorrido sin depender de los bits de la dirección base.
+    } while (local_834 < 0x34ee / 0x21e);
 
     // ── Pass 3: hit-test individual server entries in selected group ──────────
     if ((int)ServerSelectHi == -1) goto done;
