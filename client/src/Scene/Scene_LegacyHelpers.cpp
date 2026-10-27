@@ -22,7 +22,7 @@ void* __fastcall WidgetB_CtorFull(void *param_1)
 
 // VTable_Release @ 0x0040A860 — VTable_Release
 // Iterates object->edge_list and calls FUN_0040a8f0 on each edge.
-void __cdecl VTable_Release(void *obj, int param_1)
+void __cdecl VTable_Release(void *obj, float* vertices)
 {
     char *this_ = (char*)obj;
     int count = *(int*)(this_ + 0x18);
@@ -30,8 +30,8 @@ void __cdecl VTable_Release(void *obj, int param_1)
     for (int i = 0; i < count; i++) {
         short *psVar1 = (short*)(*(int*)(this_ + 0x1c) + i * 10);
         int iVar2 = (int)psVar1[2] * 15000;
-        float *p1 = (float*)(param_1 + (*psVar1 + iVar2) * 12);
-        float *p2 = (float*)(param_1 + (psVar1[1] + iVar2) * 12);
+        float *p1 = vertices + (*psVar1 + iVar2) * 3;
+        float *p2 = vertices + (psVar1[1] + iVar2) * 3;
         FUN_0040a8f0(obj, p1, p2);
     }
 }
