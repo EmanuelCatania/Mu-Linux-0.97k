@@ -136,7 +136,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
             int  total = crc + 2;
             sbuf[0] = (char)0xC3;
             sbuf[1] = (char)total;
-            CSimpleModulus_Encode((int)(sbuf + 2), pkt + payStart, payLen);
+            CSimpleModulus_Encode(reinterpret_cast<BYTE*>(sbuf + 2), pkt + payStart, payLen);
             int sent = 0, rem = total;
             if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                 do {
@@ -163,7 +163,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
             lbuf[0] = (char)0xC4;
             lbuf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
             lbuf[2] = (char)total;
-            CSimpleModulus_Encode((int)(lbuf + 3), pkt + payStart, payLen);
+            CSimpleModulus_Encode(reinterpret_cast<BYTE*>(lbuf + 3), pkt + payStart, payLen);
             int sent = 0, rem = total;
             if (Platform::GetSocket().IsOpen(SocketClientSocket)) {
                 do {

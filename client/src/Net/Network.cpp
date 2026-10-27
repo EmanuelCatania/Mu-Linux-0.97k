@@ -405,7 +405,7 @@ void CNetwork::SendFrameC3(const BYTE* pkt, int totalLen)
     int  total   = encLen + 2;
     buf[0] = (char)0xC3;
     buf[1] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 2), plain + 1, bodyLen);
+    CSimpleModulus_Encode(reinterpret_cast<BYTE*>(buf + 2), plain + 1, bodyLen);
     SendRaw(buf, total);
 }
 
@@ -483,6 +483,6 @@ void CNetwork::SendLarge(const BYTE* pkt, int totalLen)
     buf[0] = (char)0xC4;
     buf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
     buf[2] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
+    CSimpleModulus_Encode(reinterpret_cast<BYTE*>(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
     SendRaw(buf, total);
 }

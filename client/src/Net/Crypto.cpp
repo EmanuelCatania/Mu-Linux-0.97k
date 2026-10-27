@@ -451,12 +451,12 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // a2 = src plaintext buffer
 // a3 = src length in bytes
 // returns 11 * ceil(len / 8) (expanded encrypted size)
-int __cdecl CSimpleModulus_Encode(int a1, unsigned char *a2, int a3)
+int __cdecl CSimpleModulus_Encode(BYTE* a1, unsigned char *a2, int a3)
 {
     int result = 11 * ((a3 + 7) / 8);
     if (!a1 || a3 <= 0) return result;
 
-    BYTE *dst = (BYTE *)a1;
+    BYTE *dst = a1;
     BYTE *src = a2;
     int   remaining = a3;
     while (remaining > 0) {
@@ -552,12 +552,12 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // ─────────────────────────────────────────────────────────────────────────────
 static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src);
 
-int __cdecl CSimpleModulus_Decode(int a1, int a2, int a3, int a4)
+int __cdecl CSimpleModulus_Decode(BYTE* a1, BYTE* a2, int a3, int a4)
 {
-    BYTE *dst = (BYTE *)a1;
-    BYTE *src = (BYTE *)a2;
+    BYTE *dst = a1;
+    BYTE *src = a2;
     int   srcLen = a3;
-    // (a4 unused — IDA shows 4-arg signature; functions.h still declares 4 ints)
+    // El port conserva el cuarto argumento ignorado; IDA53CCA0 recibe tres.
     (void)a4;
 
     if (!dst) return 8 * ((srcLen + 10) / 11);

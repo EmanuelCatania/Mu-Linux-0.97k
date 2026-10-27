@@ -654,8 +654,8 @@ int   __cdecl OpenJPG(const char *path, int id,               // Texture_Load (O
 int   __cdecl OpenTGA(const char *path, int id,               // Texture_LoadTGA (TGA/OZT)
                             int w, int h, int flags, char mipmap);
 void  __cdecl UnloadImage(int id); // IDA: UnloadImage (0x0052A050)
-int   __cdecl CSimpleModulus_Encode(int mode, BYTE* src, int len); // IDA: FUN_0053CC30 (0x0053CC30)
-int   __cdecl CSimpleModulus_Decode(int, int, int, int); // IDA: FUN_0053CCA0 (0x0053CCA0)
+int   __cdecl CSimpleModulus_Encode(BYTE* dst, BYTE* src, int len); // IDA: FUN_0053CC30 (0x0053CC30)
+int   __cdecl CSimpleModulus_Decode(BYTE* dst, BYTE* src, int len, int unused); // IDA: FUN_0053CCA0 (0x0053CCA0)
 float10 __cdecl CIsin(void);  // GetTickCount-based time accumulator → float10
 
 // ── MSVC CRT stubs (obfuscation / anti-tamper wrappers) ───────────────────────
