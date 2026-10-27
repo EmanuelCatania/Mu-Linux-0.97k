@@ -72,7 +72,7 @@ void PrepareCamera() {
         // DESVIACION: cámara y suavizado avanzan una vez por paso de 40 ms.
         MoveMainCamera();
         float origin[3] = {};
-        if (DAT_07abf5d8) memcpy(origin, AsObject((int)DAT_07abf5d8)->Position, sizeof(origin));
+        if (DAT_07abf5d8) memcpy(origin, AsObject(DAT_07abf5d8)->Position, sizeof(origin));
         const int width = gWindow.IsWide() ? 640 : GetScreenWidth();
         GL_BeginViewport(0, 0, width, 48);
         Camera_SetupFrustum(gWindow.ViewportFraction((int)width), origin);
