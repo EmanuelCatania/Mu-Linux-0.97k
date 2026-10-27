@@ -39,7 +39,7 @@ void ObjectPose_PrepareBones(int entity, void* model, float* bones, char transla
     if (ReuseBones(entity,model,bones,translate)) return;
     DWORD priorFrame;
     memcpy(&priorFrame, &AsObject(entity)->PriorAnimationFrame, sizeof(priorFrame));
-    BMD_Animation(model, (int)bones, AsObject(entity)->AnimationFrame, priorFrame,
+    BMD_Animation(model, bones, AsObject(entity)->AnimationFrame, priorFrame,
                   AsObject(entity)->PriorAction, (unsigned int*)(entity + 0x1c),
                   (float*)(entity + 0x28), '\0', translate == '\0');
 }
@@ -101,7 +101,7 @@ void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char trans
 //         Final bone matrices written to param_1 (3x4 per bone).
 // DESVIACION: scratch explícito para calcular poses independientes en un lote.
 // La entrada histórica de BMD conserva sus temporales y escrituras originales.
-static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned int param_3,
+static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsigned int param_3,
                            unsigned char param_4, unsigned int* param_5,
                            float* param_6, char param_7, char param_8,
                            char* quaternionScratch, float* parentScratch) {
@@ -243,20 +243,20 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                     }
                     parentMat = parentScratch;
                 } else {
-                    parentMat = (float*)(parentIdx * 0x30 + param_1);
+                    parentMat = param_1 + parentIdx * 12;
                 }
                 // Inject bone translation into rot33's 3x4 translation column.
                 rot33[3]  = tX;
                 rot33[7]  = tY;
                 rot33[11] = tZ;
-                R_ConcatTransforms(parentMat, rot33, (float*)(boneIdx * 0x30 + param_1));
+                R_ConcatTransforms(parentMat, rot33, param_1 + boneIdx * 12);
             }
         }
     }
 }
 
 
-void __cdecl BMD_Animation(void* model, int bones, float frame, unsigned int priorFrame,
+void __cdecl BMD_Animation(void* model, float* bones, float frame, unsigned int priorFrame,
     unsigned char priorAction, unsigned int* angles, float* head, char special, char translate)
 {
     AnimateWithScratch(model,bones,frame,priorFrame,priorAction,angles,head,special,translate,
@@ -309,7 +309,7 @@ void PrepareRange(void*,std::size_t begin,std::size_t end) {
         auto& p=*jobs[slot];
         auto* o=AsObject(p.object.data());
         DWORD priorFrame; memcpy(&priorFrame,&o->PriorAnimationFrame,4);
-        AnimateWithScratch(p.model.data(),(int)p.bones.data(),o->AnimationFrame,priorFrame,
+        AnimateWithScratch(p.model.data(),p.bones.data(),o->AnimationFrame,priorFrame,
             o->PriorAction,(unsigned int*)o->Angle,o->HeadAngle,0,0,
             p.quaternions.data(),p.parent.data());
         if(p.geometry) {

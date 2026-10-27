@@ -255,7 +255,7 @@ void  __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2);      // VTable_Draw
 
 // ── Sprite / Animation ────────────────────────────────────────────────────────
 // IDA: BMD_Animation (0x00440060)
-void  __cdecl BMD_Animation(void *model, int flags, float rot, unsigned int pos_param,
+void  __cdecl BMD_Animation(void *model, float* bones, float rot, unsigned int pos_param,
                             unsigned char scale, unsigned int *anim_ptr, float *dir_ptr,
                             char a, char b);
 void  __cdecl Skeleton_Transform(void *model, int bone, float *anim1, float *anim2, float *anim3, char blend); // Sprite_DrawBone

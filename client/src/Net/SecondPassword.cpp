@@ -3963,7 +3963,7 @@ void __cdecl MoveCharacter(int p1)
                     // El 6to argumento de BMD_Animation es el Angle de la entidad, no un
                     // buffer de salida: con ceros los huesos se posarían con facing (0,0,0) y
                     // los dos extremos de la hoja saldrían en una orientacion fija.
-                    BMD_Animation((void*)v422, (int)BoneMatrix, AnimationFrame,
+                    BMD_Animation((void*)v422, reinterpret_cast<float*>(BoneMatrix), AnimationFrame,
                                  *(unsigned int*)&PriorFrame,
                                  AsObject(o)->PriorAction, (unsigned int*)(o + 28),
                                  (float*)(o + 40), 0, 1);

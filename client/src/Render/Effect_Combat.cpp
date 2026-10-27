@@ -96,7 +96,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     Light[2] += AsObject(o)->Light[2];
 
     float Angle[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
-    BMD_Animation(mdl, (int)&DAT_06970a9c,
+    BMD_Animation(mdl, reinterpret_cast<float*>(&DAT_06970a9c),
                   AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
                   AsObject(o)->PriorAction,
                   (unsigned int*)Angle, (float*)(o + 40), 0, 0);

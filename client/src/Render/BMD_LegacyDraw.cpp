@@ -1660,7 +1660,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // Pose model with BMD_Animation
     float angleArr[3] = { ObjectSelect_Angle, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { ObjectSelect_HeadAngle, 0.0f, 0.0f };
-    BMD_Animation(modelThis, (int)&DAT_06970a9c, 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
+    BMD_Animation(modelThis, reinterpret_cast<float*>(&DAT_06970a9c), 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
 
     // Build stack entity and draw
     // entity_type at [+2], scale at [+0x0c], world_pos at [+0x10..+0x18]
@@ -1893,7 +1893,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     ObjectSelect_PriorAction = 0;
     float renderAngle[3] = { ObjectSelect_Angle, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { ObjectSelect_HeadAngle, 0.0f, 0.0f };
-    BMD_Animation(model, (int)&DAT_06970a9c, 0.0f, 0, 0,
+    BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c), 0.0f, 0, 0,
                  (unsigned int*)renderAngle, headAngle, '\0', '\0');
 
     char object[0x200] = {};

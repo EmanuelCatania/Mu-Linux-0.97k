@@ -228,7 +228,7 @@ void __cdecl Entity_Render(void)
                 // AnimationFrame / PriorFrame: IDA los toma en v0+3 y v0+7 —
                 // offsets de BYTE (disasm 0x5039E9/0x5039ED: `mov ecx,[esi+7]`,
                 // `mov edx,[esi+3]`), no de float.
-                BMD_Animation(model, (int)&DAT_06970a9c,
+                BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
                              *(float*)(v0 + 3), *(unsigned int*)(v0 + 7),
                              v0[1], (unsigned int*)angles_in, headA, 0, 0);
 
@@ -901,7 +901,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
     ItemObjectAttributeForRender(AsObject(o));                          // ItemObjectAttribute
 
     float angles_in[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
-    BMD_Animation(mdl, (int)&DAT_06970a9c,
+    BMD_Animation(mdl, reinterpret_cast<float*>(&DAT_06970a9c),
                  AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
                  AsObject(o)->PriorAction,
                  (unsigned int*)angles_in, (float*)(o + 40), 0, 0);
@@ -1013,7 +1013,7 @@ void __cdecl EffectPool_RenderAll(void)
             BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 50008);
             float angles_in[3]  = { v0[-3], v0[-2], v0[-1] };
             float headA[3]      = { v0[0],  v0[1],  v0[2]  };
-            BMD_Animation(model, (int)&DAT_06970a9c,
+            BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
                          v0[56], *(unsigned int*)&v0[57],
                          *((BYTE*)v0 + 222),
                          (unsigned int*)angles_in, headA, 0, 0);
