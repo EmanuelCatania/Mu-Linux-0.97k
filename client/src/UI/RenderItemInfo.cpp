@@ -1259,7 +1259,7 @@ static void AppendInventoryRequireClassLines(ITEM_ATTRIBUTE* pItem)
 // ═════════════════════════════════════════════════════════════════════════════
 #define RENDERITEMINFO_FIEL 1
 
-void __cdecl ItemHelp_RequireClass(int param_1);   // RequireClass (0x4C2880), CharMenu_Build.cpp
+void __cdecl ItemHelp_RequireClass(const BYTE* pItem);   // RequireClass (0x4C2880), CharMenu_Build.cpp
 
 static char* RII_Line(int i)
 {
@@ -1682,7 +1682,7 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         RII_RequireLine(77, ip->RequireEnergy, *(const WORD*)(CA + 26));
 
     if (type != 435)
-        ItemHelp_RequireClass((int)(uintptr_t)p);
+        ItemHelp_RequireClass(reinterpret_cast<const BYTE*>(p));
 
     // ── Lineas de botas / guantes / bastones ────────────────────────────────
     if (type >= 352 && type < 384 && Level >= 5) {

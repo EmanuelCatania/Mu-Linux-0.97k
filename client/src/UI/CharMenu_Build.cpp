@@ -123,7 +123,7 @@ void RenderHelpWindow(void)
     }
     TextNum = row;
 
-    ItemHelp_RequireClass(attr);
+    ItemHelp_RequireClass(reinterpret_cast<const BYTE*>(attr));
     crt_sprintf(TextList + TextNum * 100, "\n");
     ++TextNum;
     CharMenu_RenderTextList(1, 1, TextNum, colW2, 2, 1);
@@ -473,9 +473,8 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
 // pItem es la fila de ItemAttribute; +56..+59 = RequireClass[DW, DK, Elf, MG]
 // (0 = no la usa, 1 = clase base, 2 = segunda clase).  El nombre de clase es
 // GlobalText[4*r + 16 + c]: 20..23 = clases base, 24..26 = segundas clases.
-void __cdecl ItemHelp_RequireClass(int param_1)
+void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
 {
-    const BYTE* pItem = (const BYTE*)(uintptr_t)param_1;
     const BYTE* hero  = (const BYTE*)(uintptr_t)DAT_07abf5d8;
     if (!pItem || !hero) return;
     if (DAT_07eaa154 > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas

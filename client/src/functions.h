@@ -703,7 +703,7 @@ char  __cdecl Party_HPBar_HoverCheck(void);        // SecondPassword_IsActive
 
 // ── Char menu builder helpers (RenderHelpWindow) ──────────────────────────────────
 void  __cdecl CharMenu_RenderTextList(int, int, int, int, int, int);  // DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
-void  __cdecl ItemHelp_RequireClass(int class_data_ptr);            // build class info block
+void  __cdecl ItemHelp_RequireClass(const BYTE* class_data);            // build class info block
 void  __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *value, const char *widthRef, int y, int kind); // IDA: sub_4C2C10 columna de valores de la ayuda F1
 void  __cdecl CharMenu_AppendSkillDesc(int row, int value, int col_width); // draw value column
 void  __cdecl CharMenu_BuildStatRequirements(int class_id);                  // prepare class data
