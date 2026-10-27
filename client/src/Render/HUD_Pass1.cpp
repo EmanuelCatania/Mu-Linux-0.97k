@@ -78,9 +78,8 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // y guarda el tamaño en Width/Height, con una, dos o tres líneas según cuántos
 // textos estén vivos (LifeTime).
 // IDA devuelve int, pero el único llamador (RenderBooleans) descarta el valor.
-void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
+void __cdecl FloatingLabel_MeasureText(CHAT* c, int p2, int p3)
 {
-    CHAT* c = AsChat((uintptr_t)p1);
     (void)p2; (void)p3;
 
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
@@ -254,7 +253,7 @@ void RenderBooleans_(void)
             } else {
                 Projection(c->Position, &sx, &sy);
             }
-            FloatingLabel_MeasureText((int)(uintptr_t)c, 0, 0);
+            FloatingLabel_MeasureText(c, 0, 0);
             c->x = sx - 640 * c->Width / (int)gWindow.GetWidth() / 2;
             c->y = sy - 36;
         }

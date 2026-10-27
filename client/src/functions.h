@@ -407,7 +407,8 @@ void  __cdecl UIChatLogWindow_AddText(const char* strID, const char* strText, in
 void  __cdecl Chat_TickMessageTimer(void);               // IDA: FUN_00480950
 // FUN_00480980 @ 0x00480980
 void  __cdecl UI_RenderChatLogOverlay(void);
-void  __cdecl FloatingLabel_MeasureText(int, int, int);
+struct CHAT;
+void  __cdecl FloatingLabel_MeasureText(CHAT*, int, int);
 void  __cdecl RenderBoolean(int x, int y, DWORD c);   // IDA: RenderBoolean (0x00480E00)
 void  __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
 // FUN_004821A0 @ 0x004821A0
