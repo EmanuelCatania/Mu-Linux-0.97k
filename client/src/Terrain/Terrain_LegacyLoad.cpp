@@ -203,7 +203,7 @@ void __cdecl OpenObjectsEnc(const char *path) {
 // Loads TerrainLight.jpg into DAT_07eeb238 (RGB float buffer, 256x256x3),
 // then processes via FUN_004f70b0 / FUN_004f71c0.
 void __cdecl OpenTerrainLight(const char *path) {
-    OpenJpegBuffer((char*)path, (int)(uintptr_t)DAT_07eeb238);
+    OpenJpegBuffer((char*)path, DAT_07eeb238);
     CreateTerrainNormal(); // FUN_004f70b0 (IDA)
     CreateTerrainLight(); // IDA: CreateTerrainLight (0x004F71C0)
 }

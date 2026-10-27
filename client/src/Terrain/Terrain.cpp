@@ -569,7 +569,7 @@ void __cdecl Terrain_SetupCulling(void) {
 // Loads OZJ/JPEG file, decompresses, converts each pixel component to float
 // using _DAT_00552b70 (1/255 normalization), stores into float* buffer at dst.
 // Output: 3 floats per pixel (R, G, B), rows stored bottom-up (flipped).
-void __cdecl OpenJpegBuffer(char *path, int dst)
+void __cdecl OpenJpegBuffer(char *path, float* dst)
 {
     // --- Path construction (same logic as OpenJPG) ---
     char full_path[256];
@@ -610,7 +610,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
         CErrorReport__Write(0x55c9bf0, (char*)"Invalid TerrainLight JPEG\n");
         return;
     }
-    float* outFloat = (float*)(uintptr_t)(unsigned int)dst;
+    float* outFloat = dst;
     for (int y = image.height - 1; y >= 0; --y) {
         const unsigned char* row = image.pixels + y * image.width * 3;
         for (int x = 0; x < image.width * 3; ++x)

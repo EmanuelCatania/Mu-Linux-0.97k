@@ -842,7 +842,7 @@ void  __cdecl CreateTerrainNormal(void); // FUN_004f70b0 (IDA)
 void  __cdecl CreateTerrainLight(void); // IDA: CreateTerrainLight (0x004F71C0)
 uint  __cdecl OpenTerrainHeight(char *path); // FUN_004f7290 (IDA)
 void  __cdecl Terrain_SetupCulling(void);   // TerrainHeight_Flush
-void  __cdecl OpenJpegBuffer(char *path, int dst); // Texture_LoadToBuf
+void  __cdecl OpenJpegBuffer(char *path, float* dst); // Texture_LoadToBuf
 void  __cdecl Map_InitRayCast(void);   // Map_InitRayCast
 int   __cdecl FUN_004f98c0(int, int, int, int, int); // RayCast_Setup / terrain light setup (sub_4F98C0)
 void  __cdecl Terrain_SpawnAmbientObjects(void);   // Terrain_SpawnAmbientObjects (sub_4F7060)
