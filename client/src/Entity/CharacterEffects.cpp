@@ -248,7 +248,7 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
         // CheckFullSet detecta si las 5 piezas de armadura forman un set
         // matcheado con level >= 9 → setea `EquipmentLevelSet` global y devuelve
         // true si el char tiene 5 piezas (aunque no matcheen, para v230=true).
-        bool v230 = CheckFullSet((int)param_1);
+        bool v230 = CheckFullSet(reinterpret_cast<uintptr_t>(param_1));
         local_48 = 0.0f; local_44 = 0.0f; local_40 = 0.0f;
 
         if (SceneFlag == 2) {

@@ -122,7 +122,7 @@ int g_bAddDefense = 0;
 // que no afecta resultado. Porteado el cómputo y omitida la obfuscación.
 // Cola común de CheckFullSet (IDA LABEL_15). Todos los `return` de la función
 // pasan por acá; ver el comentario de g_bAddDefense arriba.
-static bool CheckFullSet_Tail(int c, bool v26) {
+static bool CheckFullSet_Tail(uintptr_t c, bool v26) {
     g_bAddDefense = 1;
     if (((*(unsigned char*)(c + 444) & 7) == 3) && v26) {   // Magic Gladiator
         // IDA: v20 = *(_WORD *)(CharacterMachine + 740)  → wear slot 3 (Armor),
@@ -139,7 +139,7 @@ static bool CheckFullSet_Tail(int c, bool v26) {
     return v26;
 }
 
-bool __cdecl CheckFullSet(int c) {
+bool __cdecl CheckFullSet(uintptr_t c) {
     int v1 = ((AsCharacter(c)->Class & 7) == 3) ? 2 : 1;  // MG=2, otros=1
     int v2 = 5;
     EquipmentLevelSet = 0;

@@ -124,6 +124,7 @@ jobs:
             python -B tests/BodyColorPointer.py --architecture x64
             python -B tests/ClothHelperPointer.py --architecture x64
             python -B tests/LightScalePointer.py --architecture x64
+            python -B tests/FullSetPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -210,6 +211,7 @@ jobs:
             python3 -B tests/BodyColorPointer.py --generator Ninja
             python3 -B tests/ClothHelperPointer.py --generator Ninja
             python3 -B tests/LightScalePointer.py --generator Ninja
+            python3 -B tests/FullSetPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
