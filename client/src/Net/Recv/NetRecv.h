@@ -48,7 +48,7 @@ extern BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t poolBase); // Dirección de
 extern "C" void __cdecl Recv_Inventory     (const BYTE* Msg);   // F3/10
 extern "C" void __cdecl Recv_InventoryOpen (const BYTE* Msg);   // 0x55
 extern "C" void __cdecl Recv_InventoryClose(const BYTE* Msg);   // 0x54
-extern "C" void HeroEquipWatchdog(int c);
+extern "C" void HeroEquipWatchdog(CHARACTER* c);
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
 extern "C" void SetGuildNoticeText(const char* text);
 

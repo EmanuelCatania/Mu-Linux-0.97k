@@ -69,7 +69,7 @@ extern "C" void EquipWipe_Tick(int op, int sub)
     static int s_prevOccupied = -1;
     static int s_prevOp = -1, s_prevSub = -1;
 
-    const int cm = (int)(uintptr_t)DAT_07cf1ffc;
+    const BYTE* cm = static_cast<const BYTE*>(DAT_07cf1ffc);
     if (cm) {
         int occupied = 0;
         for (int i = 0; i < 12; ++i) {
@@ -484,10 +484,10 @@ extern "C" BYTE OffsetInventoryItems[];
 // Llamada por Entity_UpdateRender al inicio del render del hero in-game.
 // Ya no restaura slots: reconstruye el hero (SetCharacterClass) sólo cuando
 // cambia el equipo.
-extern "C" void HeroEquipWatchdog(int c)
+extern "C" void HeroEquipWatchdog(CHARACTER* c)
 {
     if (SceneFlag != 5) return;
-    if (!DAT_07abf5d8 || c != (int)(uintptr_t)DAT_07abf5d8) return;
+    if (!DAT_07abf5d8 || c != AsCharacter(DAT_07abf5d8)) return;
     unsigned char* be = (unsigned char*)c;
     static const int kBodyOff[6] = { 0x1e0, 0x1f8, 0x210, 0x228, 0x240, 0x258 };
     BYTE* cm = (BYTE*)(uintptr_t)DAT_07cf1ffc;
@@ -535,7 +535,7 @@ extern "C" void HeroEquipWatchdog(int c)
                 sig = sig * 131u + *(const unsigned int*)(s + 4);   // Level/options
             }
             static unsigned int s_prevSig = 0u;
-            static int          s_prevHero = 0;
+            static CHARACTER*   s_prevHero = nullptr;
             static bool         s_have = false;
             if (!s_have || sig != s_prevSig || c != s_prevHero) {
                 s_prevSig  = sig;

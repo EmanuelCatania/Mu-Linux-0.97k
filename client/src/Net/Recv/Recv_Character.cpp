@@ -539,7 +539,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(heroPtr), 0, 0, 0);
     }
     s_IsRebuildingHero = false;
-    HeroEquipWatchdog((int)(uintptr_t)heroPtr);
+    HeroEquipWatchdog(AsCharacter(heroPtr));
     // IDA copia los 10 bytes de nombre de CharacterAttribute; desde 0.97.40 el
     // nombre completo viene de EntityName::Selected().
     if (EntityName::Selected()[0]) EntityName::Set(heroPtr, EntityName::Selected());

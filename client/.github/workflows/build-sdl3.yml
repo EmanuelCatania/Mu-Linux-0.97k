@@ -138,6 +138,7 @@ jobs:
             python -B tests/FloatingLabelPointer.py --architecture x64
             python -B tests/ClassActionPointer.py --architecture x64
             python -B tests/EquipAnimationPointer.py --architecture x64
+            python -B tests/HeroEquipPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -238,6 +239,7 @@ jobs:
             python3 -B tests/FloatingLabelPointer.py --generator Ninja
             python3 -B tests/ClassActionPointer.py --generator Ninja
             python3 -B tests/EquipAnimationPointer.py --generator Ninja
+            python3 -B tests/HeroEquipPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

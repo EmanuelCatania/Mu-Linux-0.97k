@@ -29,7 +29,7 @@ extern "C" int __cdecl ConvertItemType(BYTE* Item);
 // OffsetInventoryItems[64 * 68] está en HUD_Pass3.cpp como `BYTE` array sized
 // para el grid 8×8.  Cada slot es un ITEM (struct, 68 B).
 extern "C" BYTE OffsetInventoryItems[];
-extern "C" void HeroEquipWatchdog(int c);
+extern "C" void HeroEquipWatchdog(CHARACTER* c);
 extern int DAT_00559c60;
 extern int DAT_00559c64;
 extern int DAT_00559c68;
@@ -206,7 +206,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
         AsItem(slot)->Type  = -1;
         AsItem(slot)->Key = 0;
         if (SceneFlag == 5 && DAT_07abf5d8) {
-            HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
+            HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
         }
         return;
     }
@@ -237,7 +237,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     equip->y = 0;
     equip->Color = 0;
     if (SceneFlag == 5 && DAT_07abf5d8) {
-        HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
+        HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
     }
 }
 
@@ -392,7 +392,7 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
     SeedQuickPotionTypesFromInventory();
 
     if (SceneFlag == 5 && DAT_07abf5d8) {
-        HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
+        HeroEquipWatchdog(AsCharacter(DAT_07abf5d8));
     }
 
 }

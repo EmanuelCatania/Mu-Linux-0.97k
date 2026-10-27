@@ -24,7 +24,7 @@ void Fauna_TickSprites();
 void EffectPool_TickRenderState();
 
 void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
-extern "C" void HeroEquipWatchdog(int entity);
+extern "C" void HeroEquipWatchdog(CHARACTER* entity);
 
 namespace {
 struct CameraPose {
@@ -126,7 +126,7 @@ void PrepareCharacter(CHARACTER &c) {
     // DESVIACION: la sincronización del equipo puede cambiar piezas/acción y
     // liberar tela. Debe preceder a su pose SIM y no ejecutarse desde el draw.
     if (SceneFlag == 5 && (void *)&c == (void *)DAT_07abf5d8) {
-        HeroEquipWatchdog((int)&c);
+        HeroEquipWatchdog(&c);
         model = (void *)(DAT_05828d58 + o.Type * 0xbc);
     }
     char context[0xbc];
