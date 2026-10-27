@@ -536,7 +536,7 @@ char Sound_PlayFootstep()
 // NetContext_ClearSendBuffer @ 0x0043DAF0 — NetContext_ClearSendBuffer
 // Pone en cero la cola grande de paquetes de envío (0x96258 DWORDs = ~600 KB) y resetea
 // los dos contadores de longitud en los offsets +0x4014 y +0x4018.
-int __fastcall NetContext_ClearSendBuffer(int param_1)
+uintptr_t __fastcall NetContext_ClearSendBuffer(uintptr_t param_1)
 {
     DWORD *puVar2 = (DWORD *)(param_1 + 0x401c);
     for (int i = 0x96258; i != 0; i--) *puVar2++ = 0;
@@ -630,7 +630,7 @@ int __fastcall CWsctlc_nRecv(void *param_1)
         if (uLen == 0) return 0;
         if (*(int *)((int)param_1 + 0x4010) < (int)uLen) break;
 
-        CPacketQueue_PushPacket((int)param_1, (int)pPkt, uLen);
+        CPacketQueue_PushPacket(reinterpret_cast<uintptr_t>(param_1), pPkt, uLen);
         if (*(int *)((int)param_1 + 0x4014) != 0) FUN_0043de60();
         iOff += uLen;
         int rem = *(int *)((int)param_1 + 0x4010) - uLen;
@@ -657,18 +657,18 @@ int __fastcall CWsctlc_nRecv(void *param_1)
 // Si tiene éxito lo marca como usado (flag=0) y devuelve el puntero a su región de datos (+0x4024).
 // Returns NULL if no free slot is available.
 // IDA: CWsctlc::GetReadMsg (0x0043E010)
-int __fastcall CWsctlc_GetReadMsg(int param_1)
+BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t param_1)
 {
     int iVar1 = 0;
     int *piVar2 = (int *)(param_1 + 0x401c);
     do {
         if (*piVar2 == 1) {
-            int slotBase = param_1 + iVar1 * 0x2008;
+            uintptr_t slotBase = param_1 + iVar1 * 0x2008;
             *(DWORD *)(slotBase + 0x401c) = 0;
-            return slotBase + 0x4024;
+            return reinterpret_cast<BYTE*>(slotBase + 0x4024);
         }
         iVar1++;
-        piVar2 = (int *)((int)piVar2 + 0x2008);
+        piVar2 = reinterpret_cast<int*>(reinterpret_cast<BYTE*>(piVar2) + 0x2008);
     } while (iVar1 < 300);
     return 0;
 }
@@ -1423,7 +1423,7 @@ void FUN_0043de60(void) {}
 // Cola en this+0x401c, cada slot = 0x2008 bytes (flag de 4 bytes, largo de 4 bytes, 0x2000 de datos).
 // Returns: 0=success, 1=queue full, 2=packet too large.
 // IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
-void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
+void __cdecl CPacketQueue_PushPacket(uintptr_t param_1, const void* param_2, int param_3) {
     // param_1 = net context ptr, param_2 = packet data ptr, param_3 = packet length
     if ((int)param_3 > 0x2000) return; // packet too large
 
@@ -1436,11 +1436,11 @@ void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
             *(int *)(param_1 + i * 0x2008 + 0x4020) = param_3;
             // Copy packet data (DWORD-aligned copy + trailing bytes)
             DWORD *pDst = (DWORD *)(param_1 + i * 0x2008 + 0x4024);
-            DWORD *pSrc = (DWORD *)param_2;
+            const DWORD *pSrc = static_cast<const DWORD*>(param_2);
             unsigned int dwords = (unsigned int)param_3 >> 2;
             for (unsigned int d = 0; d < dwords; d++) { *pDst++ = *pSrc++; }
             unsigned int trail = (unsigned int)param_3 & 3;
-            BYTE *bDst = (BYTE *)pDst; BYTE *bSrc = (BYTE *)pSrc;
+            BYTE *bDst = (BYTE *)pDst; const BYTE *bSrc = reinterpret_cast<const BYTE*>(pSrc);
             for (unsigned int b = 0; b < trail; b++) { *bDst++ = *bSrc++; }
             return;
         }

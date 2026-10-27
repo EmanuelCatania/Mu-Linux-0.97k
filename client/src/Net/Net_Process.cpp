@@ -661,7 +661,7 @@ void NetLog(const char* fmt, ...)
 void Net_ProcessPacket(void)
 {
     while (true) {
-        BYTE* Msg = (BYTE*)CWsctlc_GetReadMsg((int)(uintptr_t)SocketClient);
+        BYTE* Msg = CWsctlc_GetReadMsg(reinterpret_cast<uintptr_t>(SocketClient));
         if (!Msg) return;
 
         int HeadCode, Size;

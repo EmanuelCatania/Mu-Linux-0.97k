@@ -42,7 +42,7 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 //   }
 // ============================================================================
 
-extern int __fastcall CWsctlc_GetReadMsg(int poolBase);   // GetReadMsg (Scene/Scene_CharSelect_Nav.cpp) — returns ptr as int
+extern BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t poolBase); // Dirección del paquete dentro del contexto.
 
 // Forward decls for inventory packet handlers (Item/Item_Inventory.cpp).
 extern "C" void __cdecl Recv_Inventory     (const BYTE* Msg);   // F3/10

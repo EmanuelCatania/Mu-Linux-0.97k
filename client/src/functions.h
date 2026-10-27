@@ -207,9 +207,9 @@ void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata); // IDA: STRUCT_ENCRYPT 
 int   __fastcall CWsctlc_GetSocket(int);   // IDA: CWsctlc::GetSocket (0x0043DCC0)
 int   __fastcall CWsctlc_FDWriteSend(int); // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
 void  __cdecl FUN_0043de60(void);  // Net_FlushQueue (no args)
-void  __cdecl CPacketQueue_PushPacket(int, int, int); // IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
+void  __cdecl CPacketQueue_PushPacket(uintptr_t, const void*, int); // IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
 int   __fastcall CWsctlc_nRecv(void*);                // IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
-int   __fastcall CWsctlc_GetReadMsg(int);             // IDA: CWsctlc::GetReadMsg (0x0043E010)
+BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t);             // IDA: CWsctlc::GetReadMsg (0x0043E010)
 float __cdecl CreateAngle(float x1, float y1, float x2, float y2); // IDA: Movement_Tick (0x0043E050)
 float __cdecl FarAngle(float curAngle, float tgtAngle, char mode); // IDA: FUN_0043e370 (0x0043E370)
 void  __cdecl RenderInformation(void);
