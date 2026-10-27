@@ -20,7 +20,7 @@ void __cdecl Character_UpdateAll(void) {
             if      (blend == 0) GL_SetBlendAdditive();
             else if (blend == 1) GL_SetBlendSrcAlpha();
             else if (blend == 2) GL_SetBlendSrcOver('\x01');
-            Render_DrawSprite((int)pcVar2);
+            Render_DrawSprite(AsObject(pcVar2));
             *pcVar2 = 0;
         }
     }

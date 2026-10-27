@@ -278,7 +278,7 @@ void  __cdecl SetPlayerTeleport(OBJECT* param_1);   // SetPlayerTeleport - anim 
 void  __cdecl SetPlayerShock(CHARACTER* c, int Hit); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl SetPlayerDie(CHARACTER* entity); // IDA: SetPlayerDie (0x00444D90)
 // ── Character/Effect update pool (0x004796xx) ────────────────────────────────
-void  __cdecl Render_DrawSprite(int slot);               // IDA: RenderSprite
+void  __cdecl Render_DrawSprite(const OBJECT* object);   // IDA: RenderSprite
 void  __cdecl Render_DrawSpritePool(void);               // IDA: RenderSprites
 void  __cdecl CheckSprites(void);              // Effect_UpdateAll (mark all active)
 // GL_SetBlendSrcOver / GL_SetBlendAdditive / GL_SetBlendSrcAlpha — declared below (GL state / sound)
