@@ -814,7 +814,7 @@ void __cdecl SkillAttribute_LoadNames(const char *param_1)
             // Copia TokenString a la entrada de SkillAttribute en el índice lVar7
             size_t uLen = strlen(TokenString) + 1;
             char  *pSrc = TokenString;
-            char  *pDst = (char *)((int)&SkillAttribute + (int)lVar7 * 300 + 4);
+            char  *pDst = reinterpret_cast<char *>(&SkillAttribute) + (int)lVar7 * 300 + 4;
             for (size_t i = uLen >> 2; i; i--, pDst += 4, pSrc += 4)
                 *(DWORD *)pDst = *(DWORD *)pSrc;
             for (size_t i = uLen & 3; i; i--)
@@ -843,7 +843,7 @@ void __cdecl SkillAttribute_SaveBin(const char *param_1)
     FILE *pFile = Platform::GetFileSystem().Open(param_1, (const char *)&DAT_005597d4);
     BYTE *Buffer = (BYTE *)operator_new(300);
 
-    char *pcVar3 = (char *)((int)&SkillAttribute + 4);
+    char *pcVar3 = reinterpret_cast<char *>(&SkillAttribute) + 4;
     int nRowGT = 0;
     do {
         BYTE *pBuf = Buffer;
