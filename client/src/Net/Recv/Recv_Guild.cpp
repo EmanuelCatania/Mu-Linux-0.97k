@@ -183,7 +183,7 @@ void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
 
     // IDA: SetActionClass(Hero, Hero, 128, 128) y además manda el 0x18 por su
     // cuenta (doble envío, igual que el binario).
-    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, 128, 128);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), 128, 128);
     SendRequestAction(128);
 }
 
@@ -206,7 +206,7 @@ void ReceiveGuildEndWar97k(const BYTE* packet, int size)
     // SetActionClass y ademas manda el 0x18 por su cuenta (doble envio fiel).
     if (result == 6) return;
     const bool victoryAction = result == 1 || result == 2 || result == 4;
-    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), victoryAction ? 113 : 107, victoryAction ? 121 : 117);
     SendRequestAction(victoryAction ? 121 : 117);
 }
 

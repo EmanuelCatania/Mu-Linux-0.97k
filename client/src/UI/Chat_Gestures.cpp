@@ -33,14 +33,16 @@ void __cdecl SendRequestAction(BYTE actionType)
 
 // IDA: SetActionClass (0x00497870). La elfa usa la animacion siguiente salvo
 // en las acciones 123..128, que son comunes a todas las clases.
-void __cdecl SetActionClass(int c, int o, int action, int actionType)
+void __cdecl SetActionClass(CHARACTER* character, OBJECT* object, int action, int actionType)
 {
+    const BYTE* c = reinterpret_cast<const BYTE*>(character);
+    const BYTE* o = reinterpret_cast<const BYTE*>(object);
     BYTE cur = *(BYTE*)(o + 261);
     if (cur == 0 || cur > 12) return;
     int act = action;
     if ((*(BYTE*)(c + 444) & 7) == 2 && (action < 123 || action > 128))
         act = action + 1;
-    SetAction(AsObject(o), act);
+    SetAction(object, act);
     SendRequestAction((BYTE)actionType);
 }
 
@@ -77,7 +79,7 @@ static bool AnyOf(char* text, std::initializer_list<char*> words)
 
 static void Gesture(int action, BYTE actionType)
 {
-    SetActionClass((int)Hero, (int)Hero, action, actionType);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), action, actionType);
     SendRequestAction(actionType);
 }
 
