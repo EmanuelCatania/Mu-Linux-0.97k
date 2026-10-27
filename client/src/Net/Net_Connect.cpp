@@ -98,7 +98,7 @@ void CNetwork::InitializePacketSerials()
   byte *pbVar5;
   uint uVar6;
   int iVar7;
-  char **ppcVar8;
+  const byte *ppcVar8;
   byte *pbVar9;
   byte *pbVar10;
   bool bVar11;
@@ -123,14 +123,14 @@ void CNetwork::InitializePacketSerials()
       bVar12 = true;
       pbVar5 = (byte *)(DAT_055c9bd0 + uVar3 * 4);
       iVar2 = 4;
-      ppcVar8 = (char**)&param_1;
+      ppcVar8 = reinterpret_cast<const byte*>(&param_1);
       pbVar9 = pbVar5;
       do {
         if (iVar2 == 0) break;
         iVar2 = iVar2 + -1;
-        bVar11 = *(byte *)ppcVar8 < *pbVar9;
-        bVar12 = *(byte *)ppcVar8 == *pbVar9;
-        ppcVar8 = (char **)((int)ppcVar8 + 1);
+        bVar11 = *ppcVar8 < *pbVar9;
+        bVar12 = *ppcVar8 == *pbVar9;
+        ++ppcVar8;
         pbVar9 = pbVar9 + 1;
       } while (bVar12);
       if (!bVar12) {
