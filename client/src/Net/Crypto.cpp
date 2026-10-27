@@ -127,7 +127,7 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
       *pbVar5 = pbVar2[uVar6 + 1] ^ bVar1;
     }
     iVar3 = _rand();
-    pbVar5[(int)param_2 - (int)pbVar2] = (byte)iVar3;
+    reinterpret_cast<byte*>(param_2)[uVar6] = (byte)iVar3;
     uVar6 = uVar6 + 1;
     pbVar5 = pbVar5 + 1;
   } while (uVar6 < 4);
@@ -194,7 +194,7 @@ void __cdecl Packet_EncryptBuffer(void *param_1_v,void *param_2_v)
       *pbVar6 = pbVar2[uVar7 + 1] ^ bVar1;
     }
     iVar4 = _rand();
-    pbVar6[(int)param_2 - (int)pbVar2] = (byte)iVar4;
+    reinterpret_cast<byte*>(param_2)[uVar7] = (byte)iVar4;
     uVar7 = uVar7 + 1;
     pbVar6 = pbVar6 + 1;
   } while (uVar7 < 0x584);
