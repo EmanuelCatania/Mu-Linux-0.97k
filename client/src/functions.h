@@ -249,7 +249,7 @@ void  __cdecl BMD_CreateBoundingBox(int param_1);                           // B
 void* __fastcall WidgetB_CtorFull(void *param_1);                      // WidgetB_CtorFull
 void* __fastcall WidgetB_Ctor(void *param_1);                      // WidgetB_Ctor
 void  __fastcall WidgetB_SetVtable(void *param_1);                      // WidgetB_SetVtable
-void  __fastcall WidgetB_ZeroFields(int param_1);                        // WidgetB_ZeroFields
+void  __fastcall WidgetB_ZeroFields(void* widget);                        // WidgetB_ZeroFields
 void  __cdecl VTable_Release(void *obj, float* vertices);              // VTable_Release
 void  __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2);      // VTable_DrawEdge
 

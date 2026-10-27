@@ -1225,7 +1225,7 @@ void FUN_00409eb0(void) {}
 // WidgetB_Ctor @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
 void* __fastcall WidgetB_Ctor(void *param_1)
 {
-    WidgetB_ZeroFields((int)param_1);
+    WidgetB_ZeroFields(param_1);
     // vtable set skipped
     return param_1;
 }
@@ -1246,8 +1246,9 @@ void __fastcall WidgetB_SetVtable(void *param_1)
 // ── WidgetB_ZeroFields/ed0/f10/0040a660 — second widget type ctor chain ────────────
 
 // WidgetB_ZeroFields @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
-void __fastcall WidgetB_ZeroFields(int param_1)
+void __fastcall WidgetB_ZeroFields(void* widget)
 {
+    BYTE* param_1 = static_cast<BYTE*>(widget);
     *(short *)(param_1 + 4) = 0;
     *(int *)(param_1 + 8)   = 0;
     *(int *)(param_1 + 0x18) = 0;
