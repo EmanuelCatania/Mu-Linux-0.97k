@@ -1182,7 +1182,7 @@ void Fauna_TickSprites() {
             EquipmentModelContext context(model);
             const float angle = o.Angle[2];
             o.Angle[2] += 90.0f;
-            ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 1);
+            ObjectPose_PrepareBones(AsObject(entity), model, (float *)g_BoneScratch, 1);
             o.Angle[2] = angle;
             color[0] = brightness; color[1] = brightness * 0.2f; color[2] = 0;
             for (int side = 0; side < 2; ++side) {

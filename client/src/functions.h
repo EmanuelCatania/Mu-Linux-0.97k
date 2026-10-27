@@ -500,7 +500,7 @@ void  __cdecl QuatSlerp(const float*, float*, float, float*);
 void  __cdecl Triangle_ComputeNormal(float *origin, float *A, float *B, float *out_normal); // Vec3_ComputePlaneNormal
 void  __cdecl SetActionObject(int, int, int, int); // IDA: SetActionObject (0x004FA5C0)
 void  __cdecl Entity_GetLightScale(uintptr_t entity, uintptr_t model);  // Entity_ProjectToScreen
-int   __cdecl Calc_RenderObject(int entity, char param2, int param3);   // IDA: Calc_RenderObject (0x004FAA70)
+int   __cdecl Calc_RenderObject(OBJECT* entity, char param2, int param3);   // IDA: Calc_RenderObject (0x004FAA70)
 void  __cdecl Draw_RenderObject(void *, int, int, char); // Entity_SetupGL
 
 // ── Entity render pipeline ────────────────────────────────────────────────────

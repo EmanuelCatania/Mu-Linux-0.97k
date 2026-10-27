@@ -33,7 +33,7 @@ static void PrepareMeshClothVertices(int entity) {
     EquipmentModelContext context(model);
     float *bones=owner.EnableBoneMatrix ? (float *)owner.BoneMatrices : (float *)g_BoneScratch;
     *(float *)((char *)model+0x84)=0;
-    ObjectPose_PrepareBones(entity,model,bones,1);
+    ObjectPose_PrepareBones(AsObject(entity),model,bones,1);
     float minimum[3],maximum[3],bounds[15];
     memcpy(minimum,owner.BoundingBoxMin,sizeof(minimum)); memcpy(maximum,owner.BoundingBoxMax,sizeof(maximum));
     const float lod=_DAT_005597c8;
@@ -116,7 +116,7 @@ void CharacterCloth_Tick(int entity)
         void *selectModel = (void *)(DAT_05828d58 + o.Type * 0xbc);
         char context[0xbc];
         memcpy(context, selectModel, sizeof(context));
-        ObjectPose_PrepareSimulation(entity, 1);
+        ObjectPose_PrepareSimulation(AsObject(entity), 1);
         if (bones) {
             memcpy(g_AttackEffectMatrix_04D_Alt, bones + 1104 / sizeof(float), sizeof(g_AttackEffectMatrix_04D_Alt));
             memcpy(g_AttackEffectMatrix_04D_Aux, bones + 672 / sizeof(float), sizeof(g_AttackEffectMatrix_04D_Aux));

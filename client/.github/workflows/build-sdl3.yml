@@ -149,6 +149,7 @@ jobs:
             python -B tests/PolygonPointer.py --architecture x64
             python -B tests/AnimationBonesPointer.py --architecture x64
             python -B tests/SkeletonBonesPointer.py --architecture x64
+            python -B tests/PoseEntityPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -260,6 +261,7 @@ jobs:
             python3 -B tests/PolygonPointer.py --generator Ninja
             python3 -B tests/AnimationBonesPointer.py --generator Ninja
             python3 -B tests/SkeletonBonesPointer.py --generator Ninja
+            python3 -B tests/PoseEntityPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

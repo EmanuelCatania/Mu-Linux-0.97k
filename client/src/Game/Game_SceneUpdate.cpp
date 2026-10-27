@@ -49,7 +49,7 @@ static void LoginScene_ApplySafeObjectAnim()
 
     extern float WorldTime;  // WorldTime
     extern void __cdecl MoveObject_Special(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
-    extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
+    extern int __cdecl Calc_RenderObject(OBJECT* param_1, char param_2, int param_3);  // Calc_RenderObject
     extern void __stdcall MoveBugs(void);  // butterfly/helper owner-follow update
 
     for (int i = 0; i < 9; ++i) {

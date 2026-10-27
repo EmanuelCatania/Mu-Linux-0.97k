@@ -13,40 +13,41 @@
 // IDA: preparación de pose de Calc_RenderObject (0x004FAA70).
 // El destino explícito permite preparar huesos SIM sin utilizar el buffer
 // de la entidad que el render puede sobrescribir con una pose interpolada.
-static void PrepareContext(int entity, void* model)
+static void PrepareContext(OBJECT* entity, void* model)
 {
-    *(DWORD*)((int)model + 0x68) = *(DWORD *)&AsObject(entity)->Scale;
-    *(BYTE *)((int)model + 0xa0) = AsObject(entity)->CurrentAction;
-    *(DWORD*)((int)model + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-    *(DWORD*)((int)model + 0x70) = *(DWORD *)&AsObject(entity)->Position[1];
-    *(DWORD*)((int)model + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+    BYTE* modelBase = static_cast<BYTE*>(model);
+    *(DWORD*)(modelBase + 0x68) = *(DWORD *)&AsObject(entity)->Scale;
+    *(BYTE *)(modelBase + 0xa0) = AsObject(entity)->CurrentAction;
+    *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
+    *(DWORD*)(modelBase + 0x70) = *(DWORD *)&AsObject(entity)->Position[1];
+    *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
     // Desplazamiento Y especial para la elfa (0x14B) y su variante (0x14A).
     short cls = AsObject(entity)->Type;
     if (cls == 0x14b) {
-        *(DWORD*)((int)model + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-        *(float *)((int)model + 0x70) = AsObject(entity)->Position[1] + _DAT_0055290c;
-        *(DWORD*)((int)model + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+        *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
+        *(float *)(modelBase + 0x70) = AsObject(entity)->Position[1] + _DAT_0055290c;
+        *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
     } else if (cls == 0x14a) {
-        *(DWORD*)((int)model + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-        *(float *)((int)model + 0x70) = AsObject(entity)->Position[1] + _DAT_00552908;
-        *(DWORD*)((int)model + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+        *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
+        *(float *)(modelBase + 0x70) = AsObject(entity)->Position[1] + _DAT_00552908;
+        *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
     }
 }
-static bool ReuseBones(int entity, void* model, float* bones, char translate);
-void ObjectPose_PrepareBones(int entity, void* model, float* bones, char translate)
+static bool ReuseBones(OBJECT* entity, void* model, float* bones, char translate);
+void ObjectPose_PrepareBones(OBJECT* entity, void* model, float* bones, char translate)
 {
     PrepareContext(entity,model);
     if (ReuseBones(entity,model,bones,translate)) return;
     DWORD priorFrame;
     memcpy(&priorFrame, &AsObject(entity)->PriorAnimationFrame, sizeof(priorFrame));
     BMD_Animation(model, bones, AsObject(entity)->AnimationFrame, priorFrame,
-                  AsObject(entity)->PriorAction, (unsigned int*)(entity + 0x1c),
-                  (float*)(entity + 0x28), '\0', translate == '\0');
+                  AsObject(entity)->PriorAction, reinterpret_cast<unsigned int*>(entity->Angle),
+                  entity->HeadAngle, '\0', translate == '\0');
 }
 
 // La caja normal no depende de mallas ni huesos. Sólo el editor 2 necesita
 // transformar la geometría para obtener sus extremos; LOD 0 no dibuja.
-void ObjectPose_PrepareBounds(int entity, char translate)
+void ObjectPose_PrepareBounds(OBJECT* entity, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (o.Alpha < _DAT_005524f8) return;
@@ -60,7 +61,7 @@ void ObjectPose_PrepareBounds(int entity, char translate)
     ObjectBounds_Build(o.BoundingBoxMin, o.BoundingBoxMax, origin, o.OBB);
 }
 
-void ObjectPose_PrepareSimulation(int entity, char translate)
+void ObjectPose_PrepareSimulation(OBJECT* entity, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (o.Alpha < _DAT_005524f8) return;
@@ -77,7 +78,7 @@ void ObjectPose_PrepareSimulation(int entity, char translate)
 
 // IDA: Draw_RenderObject (0x004FAE00), estatuas de Blood Castle.
 // DESVIACION: fragmentos, audio y desactivación se producen en SIM, aun sin draw.
-void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char translate)
+void ObjectPose_TickMeshEvents(OBJECT* entity, void *model, float *bones, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (!o.Live || o.Alpha < _DAT_005524f8) return;
@@ -393,7 +394,7 @@ void ObjectPose_BeginBatch() {
         memcpy(p.model.data(),model,p.model.size());
         memcpy(p.object.data(),o,p.object.size());
         *(float*)(p.model.data()+0x84)=0.f; // Calc_RenderObject, antes de animar.
-        PrepareContext((int)p.object.data(),p.model.data());
+        PrepareContext(AsObject(p.object.data()),p.model.data());
         p.inputModel=p.model;
         p.originalModel=model; p.boneCount=count; p.valid=true;
         // Congelar fuentes: tela u otra pasada puede modificarlas antes del draw.
@@ -448,7 +449,7 @@ void ObjectPose_BeginBatch() {
 }
 void ObjectPose_EndBatch() { batchActive=false; geometryPose=nullptr; }
 
-static bool ReuseBones(int entity,void* model,float* bones,char translate) {
+static bool ReuseBones(OBJECT* entity,void* model,float* bones,char translate) {
     geometryPose=nullptr;
     if(!batchActive || translate!=1) return false;
     const auto base=(uintptr_t)DAT_07abf5d0, address=(uintptr_t)entity;

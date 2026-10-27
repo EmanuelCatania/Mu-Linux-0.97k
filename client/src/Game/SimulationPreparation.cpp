@@ -132,8 +132,8 @@ void PrepareCharacter(CHARACTER &c) {
     char context[0xbc];
     memcpy(context, model, sizeof(context));
     if ((void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5) o.Visible = 1;
-    ObjectPose_PrepareSimulation((int)&c, 1);
-    ObjectPose_TickMeshEvents((int)&c, model,
+    ObjectPose_PrepareSimulation(AsObject(&c), 1);
+    ObjectPose_TickMeshEvents(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
     MoltSilhouette_Tick((int)&c, model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);

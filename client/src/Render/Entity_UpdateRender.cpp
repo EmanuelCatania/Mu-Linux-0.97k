@@ -102,7 +102,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     case (char)-0x7e: case (char)-0x78:
     {
         // Skill channel active — beam/barrier widget path
-        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
+        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (int)param_3);
         if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
         if ((BYTE)uVar11 != 0)
             Draw_RenderObject(puVar13, 1, (int)param_3, '\0');

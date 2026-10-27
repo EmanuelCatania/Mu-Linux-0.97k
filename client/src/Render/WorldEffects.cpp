@@ -58,7 +58,7 @@ void WorldEffects_Tick(int entity) {
     frame.type = AsObject(entity)->Type;
     void *model = (void *)(DAT_05828d58 + frame.type * 0xbc);
     EquipmentModelContext savedModel(model);
-    ObjectPose_PrepareBounds(entity, 0);
+    ObjectPose_PrepareBounds(AsObject(entity), 0);
     *(float *)((char *)model + 0x84) = 0.0f;
     *(BYTE *)((char *)model + 0x45) = AsObject(entity)->ContrastEnable;
     Entity_GetLightScale(entity, reinterpret_cast<uintptr_t>(model));
@@ -66,8 +66,8 @@ void WorldEffects_Tick(int entity) {
     // oculta la malla; nunca heredan huesos del último objeto dibujado.
     memset(g_BoneScratch, 0, sizeof(g_BoneScratch));
     if (*(short *)((char *)model + 0x26) > 0)
-        ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 0);
-    ObjectPose_TickMeshEvents(entity, model, (float *)g_BoneScratch, 0);
+        ObjectPose_PrepareBones(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    ObjectPose_TickMeshEvents(AsObject(entity), model, (float *)g_BoneScratch, 0);
     MoltSilhouette_Tick(entity, model, (float *)g_BoneScratch, 0);
     MaterialVisuals_TickObjectDraw(AsObject(entity));
     recording = &frame;
