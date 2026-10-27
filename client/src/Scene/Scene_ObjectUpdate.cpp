@@ -764,9 +764,7 @@ void __stdcall MoveBugs(void) {
 
     char*  base = (char*)DAT_083a1218;
     DWORD* v0   = (DWORD*)(base + 0xFC);      // = &unk_83A1314 (owner field de entry 0)
-    char*  endp = base + 0x1254;              // = &unk_83A246C (10 entries × 0x1BC)
-
-    do {
+    for (int slot = 0; slot < 10; ++slot) {
         char* e = (char*)v0 - 0xFC;           // v1 — entry base
         if (*(BYTE*)e == 0)                    // !Live
             goto next_bug;
@@ -945,7 +943,7 @@ void __stdcall MoveBugs(void) {
     }
 next_bug:
         v0 += 111;                              // +0x1BC bytes
-    } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
+    }
 }
 
 namespace {
