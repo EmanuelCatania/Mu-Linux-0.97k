@@ -412,11 +412,11 @@ next_cell:
 // CalculateInventoryValue @ 0x004DF330 (~65 lines) — sum item values in inventory grid
 // Iterates grid rows*cols, calls ItemValue for each non-empty slot.
 // Special items: 0x1cd=100k, 0x1ce=70k, 399=40k, 0x1d0/0x1d6=450k zen.
-long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3, int p4, short* p5) {
+long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3, int p4, int p5) {
     // 0x004DF330 — Sum item values in inventory grid
     // p1 = unused (fastcall ECX), p2 = unused (fastcall EDX, but reused as temp)
     // p3 = inventory base (short*, stride 0x22 words = 0x44 bytes)
-    // p4 = grid width (columns), p5 = grid height (rows, cast as int)
+    // p4 = columnas de la grilla; p5 = cantidad de filas, no una dirección.
     //
     // Special currency items: 0x1cd=100k, 0x1ce=70k, 0x18f(399)=40k, 0x1d0/0x1d6=450k zen.
     // For regular items, calls Item_CalculateValue(item_ptr, 0) to get sell value.
@@ -428,7 +428,7 @@ long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3,
     short* pRow = p3;
     int totalValue = 0;
     bool hasItem399 = false;
-    int rows = (int)p5;
+    int rows = p5;
 
     if (rows <= 0) {
         return 0;  // no rows

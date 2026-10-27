@@ -152,6 +152,7 @@ jobs:
             python -B tests/PoseEntityPointer.py --architecture x64
             python -B tests/MoltTickPointer.py --architecture x64
             python -B tests/TerrainQuadPointer.py --architecture x64
+            python -B tests/InventoryValuePointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -266,6 +267,7 @@ jobs:
             python3 -B tests/PoseEntityPointer.py --generator Ninja
             python3 -B tests/MoltTickPointer.py --generator Ninja
             python3 -B tests/TerrainQuadPointer.py --generator Ninja
+            python3 -B tests/InventoryValuePointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
