@@ -447,7 +447,7 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
       *(undefined4 *)((int)this_ + 0x50) = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
     }
-    Entity_GetLightScale(param_1,(int)this_);
+    Entity_GetLightScale(param_1,reinterpret_cast<uintptr_t>(this_));
     if (param_8 == '\0') {
       puVar2 = *(undefined **)(param_1 + 0x114);
     }

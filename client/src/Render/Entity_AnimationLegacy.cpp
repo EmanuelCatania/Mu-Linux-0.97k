@@ -55,7 +55,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
     void* this_ = (void*)(DAT_05828d58 + AsObject(param_1)->Type * 0xbc);
     *(DWORD*)((int)this_ + 0x84) = 0;
     *(BYTE *)((int)this_ + 0x45) = AsObject(param_1)->ContrastEnable;
-    Entity_GetLightScale(param_1, (int)this_);
+    Entity_GetLightScale(param_1, reinterpret_cast<uintptr_t>(this_));
     void* puVar3 = AsObject(param_1)->EnableBoneMatrix == 0 ? (void*)&DAT_06970a9c
                                                                   : AsObject(param_1)->BoneMatrices;
     ObjectPose_PrepareBones(param_1, this_, (float*)puVar3, param_2);
@@ -94,7 +94,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh, 0xffffffff);
         }
-        Entity_GetLightScale(param_1, (int)this_);
+        Entity_GetLightScale(param_1, reinterpret_cast<uintptr_t>(this_));
         _DAT_005597c8 = 1.0f;
     }
     puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? (void*)&DAT_06970a9c : *(void**)(param_1+0x114);

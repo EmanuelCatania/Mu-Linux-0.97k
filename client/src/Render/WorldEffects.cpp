@@ -61,7 +61,7 @@ void WorldEffects_Tick(int entity) {
     ObjectPose_PrepareBounds(entity, 0);
     *(float *)((char *)model + 0x84) = 0.0f;
     *(BYTE *)((char *)model + 0x45) = AsObject(entity)->ContrastEnable;
-    Entity_GetLightScale(entity, (int)model);
+    Entity_GetLightScale(entity, reinterpret_cast<uintptr_t>(model));
     // DESVIACION: los efectos necesitan una pose SIM propia, incluso si alpha
     // oculta la malla; nunca heredan huesos del último objeto dibujado.
     memset(g_BoneScratch, 0, sizeof(g_BoneScratch));
