@@ -121,9 +121,9 @@ void __cdecl RenderBoids(void)
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
                     void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + 188 * 301);
                     void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + 188 * entType);
-                    RenderPartObjectBodyColor(mdl301, (int)(uintptr_t)(v0 - 90),
+                    RenderPartObjectBodyColor(mdl301, reinterpret_cast<uintptr_t>(v0 - 90),
                                               301, *v0, 0x48, 1.0f, -1);
-                    RenderPartObjectBodyColor(mdlEnt, (int)(uintptr_t)(v0 - 90),
+                    RenderPartObjectBodyColor(mdlEnt, reinterpret_cast<uintptr_t>(v0 - 90),
                                               entType, *v0, 0x44, 1.0f, -1);
                 }
 

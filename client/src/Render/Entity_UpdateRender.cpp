@@ -191,11 +191,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
         if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
-            RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+            RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                          *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
         }
         const int secondFlags = (bVar7 == 67) ? 0x144 : 0x44;
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), secondFlags, bodyBright, 0xffffffff);
     }
     else if (bVar7 == 0x45 || bVar7 == 0x46) {
@@ -207,15 +207,15 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     else if (bVar7 == 0x49) {
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
         // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-        Entity_SetModelColorAlt(model, (int)puVar13, entity_type,
+        Entity_SetModelColorAlt(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
         // Giant Drakan (75): a diferencia de Drakan (73), IDA hace UN solo
         // pase con flags (0x100 | 0x44) = 0x144 y sin sub_504AC0.
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x144, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4d) {
@@ -224,7 +224,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // caching the attack-effect bones and ticking the cloth widget.
         const float targetLight = (sinf(fmodf(WorldTime, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
         const float bodyBright = targetLight * 0.7f + 0.3f;
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, bodyBright, 0xffffffff);
 
         // IDA temporarily changes the render pose components, prepares slots
@@ -249,7 +249,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // diferencia del resto — una textura FIJA (1231) en vez de -1.
     // Faltaba entero en el port.
     if (bVar7 == 53 || bVar7 == 54) {
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
     }
 

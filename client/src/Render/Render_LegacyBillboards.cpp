@@ -212,7 +212,7 @@ void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float
 // Sets model color at +0x48..+0x50. Special cases for type 0x144 (two-tone), 0x1d7
 // (sets entity +0x58=2 then resets to -1 afterward), 0x235 (BMD__RenderBody with extra arg).
 // Falls through to BMD__RenderBody for bone rendering.
-void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, float scale,
+void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
@@ -257,7 +257,7 @@ void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, floa
 
 // Entity_SetModelColorAlt @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
 // No special type 0x144 path; uses Weapon_SetColorAlt instead of PartObjectColor.
-void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float scale,
+void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);

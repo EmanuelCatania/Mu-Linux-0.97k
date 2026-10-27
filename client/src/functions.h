@@ -293,8 +293,8 @@ void  __cdecl Entity_RenderAll_3D(void); // IDA: Entity_RenderAll_3D (0x0045AB00
 
 // ── Entity render helpers (used by RenderCharacter / Entity_UpdateRender) ───────
 void  __cdecl BMD_SetupRenderByType(void *model, uintptr_t entity, int type, float alpha, uint draw_flags); // Entity_DrawSetupBase — implemented in Render/BMD_SetupRender.cpp
-void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int entity_type, float scale, int flags, float alpha, int rgba); // IDA: RenderPartObjectBodyColor (0x00504960)
-void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int entity_type, float scale, int flags, float alpha, int rgba); // Model_RenderSkeleton2
+void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // IDA: RenderPartObjectBodyColor (0x00504960)
+void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // Model_RenderSkeleton2
 void  __cdecl RenderLinkObject(float ox, float oy, float oz, int entity, int weapon_slot_ptr, int anim_id, char level, unsigned int option1, char link, char translate, unsigned int render_type); // IDA: RenderLinkObject (0x00455430)
 void  __cdecl DeleteCloth(int entity_a, int entity_b, int flags); // IDA: DeleteCloth (0x00449840)
 bool  __cdecl CheckFullSet(int entity); // IDA: CheckFullSet (0x00451B20)
