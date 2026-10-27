@@ -849,7 +849,7 @@ void Recv_LevelUp(const BYTE* Msg, int Size)
         gHeroVitals.SetCurrent(VITAL_LIFE, *(const DWORD*)(Msg + 28));
         gHeroVitals.SetCurrent(VITAL_MANA, *(const DWORD*)(Msg + 32));
     } else {
-        CalculateNextExperince((int)(uintptr_t)CharacterMachine);
+        CalculateNextExperince(CharacterMachine);
     }
 
     NetLog("NET:  -> F3/05 LevelUp lvl=%u pts=%u HP=%u MP=%u BP=%u next=%u",

@@ -386,7 +386,7 @@ int   __cdecl    Stats_CalcDefenseRate(BYTE* characterMachine);                /
 int   __cdecl    Stats_ExtraOptionEquip6(short* characterMachine_words);       // Stats_CalcExtraOption1
 int   __cdecl    Stats_ExtraOptionGlovesWings(BYTE* characterMachine);                // Stats_CalcExtraOption2
 int   __cdecl    CalculateAll(BYTE* characterMachine, int, int); // IDA: FUN_0047E3C0 (0x0047E3C0)
-void  __fastcall CalculateNextExperince(int characterMachine); // IDA: FUN_0047E350 (0x0047E350)
+void  __fastcall CalculateNextExperince(void* characterMachine); // IDA: FUN_0047E350 (0x0047E350)
 void  __cdecl StartMatchCountDown(int, int, int); // IDA: StartMatchCountDown (0x0047EC00)
 int   __cdecl PressKey(int); // IDA: PressKey (0x0047EC20)
 void  __cdecl ClearInput(int mode); // IDA: ClearInput (0x0047EC60)

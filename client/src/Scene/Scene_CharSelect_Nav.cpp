@@ -325,8 +325,9 @@ void __cdecl SetPlayerTeleport(OBJECT* param_1)
 // Calcula la experiencia que falta para el nivel siguiente y la guarda en
 // el struct de datos del personaje, en el offset +0x34.
 // Formula: (lvl+9)*lvl²*10, plus cubic correction term if lvl > 255.
-void __fastcall CalculateNextExperince(int param_1)
+void __fastcall CalculateNextExperince(void* machine)
 {
+    BYTE* param_1 = static_cast<BYTE*>(machine);
     uint uVar1 = (uint)*(ushort *)(param_1 + 0xe);
     int  iVar2 = (uVar1 + 9) * uVar1 * uVar1 * 10;
     *(int *)(param_1 + 0x34) = iVar2;
