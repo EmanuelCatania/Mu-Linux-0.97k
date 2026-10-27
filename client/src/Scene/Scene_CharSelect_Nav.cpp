@@ -445,7 +445,7 @@ void Characters_FreeAllBMDBuffers()
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
 // equipment-slot model indices, selecting the correct animated variant based
 // on Class (bits 0-2 = clase, bits 3+ = segunda clase).
-void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
+void __cdecl Character_UpdateEquipSlotAnimations(CHARACTER* param_1)
 {
     if (AsCharacter(param_1)->Object.Type != 0x186) return;
 

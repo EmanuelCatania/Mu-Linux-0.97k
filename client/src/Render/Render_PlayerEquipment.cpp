@@ -542,7 +542,7 @@ extern "C" void HeroEquipWatchdog(int c)
                 s_prevHero = c;
                 s_have     = true;
                 SetCharacterClass(AsCharacter(c));
-                Character_UpdateEquipSlotAnimations(c);
+                Character_UpdateEquipSlotAnimations(AsCharacter(c));
             }
         }
         return;
