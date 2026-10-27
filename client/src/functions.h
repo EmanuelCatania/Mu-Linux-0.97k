@@ -87,7 +87,7 @@ int   __cdecl Packet_IsValidSockType(int server_idx, int channel);      // PVP f
 bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: CheckSpecialText
 
 // ── Network ───────────────────────────────────────────────────────────────────
-void  __cdecl Widget_NodeInit(int);           // Widget_BaseRelease — releases core widget struct
+void  __cdecl Widget_NodeInit(void* widget);           // Widget_BaseRelease — releases core widget struct
 void  __cdecl Widget_Release(int, int, int); // Widget_Release — releases linked list + widget base
 void  __cdecl CPhysicsManager_Move(void* physics_manager, float fTime);   // IDA: CPhysicsManager::Move (0x00409C40)
 void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF0

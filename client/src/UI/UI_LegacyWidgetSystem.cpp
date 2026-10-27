@@ -59,9 +59,10 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   8. Widget_NodeInit(param1)  (base widget destructor — not declared)
 // Widget_NodeInit @ 0x004080F0 — Widget_NodeInit
 // Zeros all node fields and sets the four scale floats to 1.0f.
-void __cdecl Widget_NodeInit(int param_1)
+void __cdecl Widget_NodeInit(void* widget)
 {
-    ClothPresentation_Forget((void *)param_1);
+    BYTE* param_1 = static_cast<BYTE*>(widget);
+    ClothPresentation_Forget(widget);
     *(int *)(param_1 + 0x04) = 0; *(int *)(param_1 + 0x08) = 0;
     *(int *)(param_1 + 0x0c) = 0; *(int *)(param_1 + 0x10) = 0;
     *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
@@ -110,7 +111,7 @@ void __cdecl Widget_Release(int param_1, int, int) {
         // array de nodos: dtor de array (flags 3 = vector + free)
         FUN_00408680((void *)*(int *)(param_1 + 0x34), 3);
     }
-    Widget_NodeInit(param_1);
+    Widget_NodeInit(reinterpret_cast<void*>(static_cast<uintptr_t>(static_cast<uint32_t>(param_1))));
 }
 
 // IDA: Widget_CtorBase (0x00407FE0)
@@ -155,7 +156,7 @@ void* __fastcall Widget_CtorBase(void *param_1)
     // ejecuta basura.  El contenido está en g_ClothVTable, más arriba.
     *(const void **)param_1 = (const void *)g_ClothVTable;
 
-    Widget_NodeInit((int)param_1);
+    Widget_NodeInit(param_1);
     return param_1;
 }
 
