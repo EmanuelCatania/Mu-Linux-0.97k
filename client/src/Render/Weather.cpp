@@ -653,7 +653,7 @@ LAB_00501cb5:
                     if ((&DAT_0839bcb2)[iVar14*0xde] != 0xaf) {
                         // Pasar la dirección real de DAT_0839bcb0, no el literal `0x839bcb0` del
                         // binario fuente (en este build el símbolo vive en otra dirección).
-                        Particle_PathUpdate((int)pcVar3, iVar14, (int)(uintptr_t)&DAT_0839bcb0, 0x28);
+                        Particle_PathUpdate(AsObject(pcVar3), iVar14, &DAT_0839bcb0, 0x28);
                     }
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
 

@@ -77,15 +77,17 @@ void __cdecl Alpha(OBJECT* object)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4)
+void __cdecl Particle_PathUpdate(OBJECT* object, int param_2, const void* table, int param_4)
 
 {
+  BYTE* param_1 = reinterpret_cast<BYTE*>(object);
+  const BYTE* param_3 = static_cast<const BYTE*>(table);
   float fVar1;
   float fVar2;
   float fVar3;
   float fVar4;
   float fVar5;
-  float *pfVar6;
+  const float *pfVar6;
   int iVar7;
   int iVar8;
   longlong lVar9;
@@ -93,11 +95,11 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
   iVar8 = 0;
   iVar7 = 0;
   if (0 < param_4) {
-    pfVar6 = (float *)(param_3 + 0x14);
+    pfVar6 = reinterpret_cast<const float*>(param_3 + 0x14);
     fVar3 = _DAT_00552580;
     fVar5 = _DAT_00552580;
     do {
-      if (((*(char *)(pfVar6 + -5) != '\0') && (iVar7 != param_2)) &&
+      if (((*reinterpret_cast<const char*>(pfVar6 + -5) != '\0') && (iVar7 != param_2)) &&
          (fVar1 = *(float *)(param_1 + 0x10) - pfVar6[-1],
          fVar2 = *(float *)(param_1 + 0x14) - *pfVar6, fVar1 = SQRT(fVar1 * fVar1 + fVar2 * fVar2),
          fVar1 < _DAT_00552850)) {

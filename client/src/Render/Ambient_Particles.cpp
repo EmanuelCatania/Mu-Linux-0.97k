@@ -285,7 +285,7 @@ switchD_caseD_2:
                 SetAction(AsObject((puVar9 + -0x3a)), 0);
             } else {
                 SetAction(AsObject((puVar9 + -0x3a)), (unsigned int)(sVar5 == 0xb2));
-                Particle_PathUpdate((int)(puVar9 + -0x3a), local_20, (int)(uintptr_t)DAT_083a2e90, 10);
+                Particle_PathUpdate(AsObject(puVar9 + -0x3a), local_20, DAT_083a2e90, 10);
                 Matrix_BuildFromEuler((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
 
                 uVar6 = _rand();
