@@ -1272,16 +1272,17 @@ int __fastcall FUN_00409f30(void* ecx, void* /*edx*/, int param_1, int param_2, 
     return 0;
 }
 
-// FUN_0040a0a0 @ 0x0040A0A0 (100 bytes) — sound object init + open file
+// FUN_0040a0a0 @ 0x0040A0A0 — prepara la dirección del volumen de sombra.
 void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, int param_3, char param_4) {
-    *(DWORD *)((int)This + 0x10) = 0x3cf5c28f;
-    *(DWORD *)((int)This + 0x14) = 0xbf800000;
-    *(float *)((int)This + 0xc) = -1.0f;
-    Vec3_Normalize((float *)((int)This + 0xc));
+    BYTE* context = static_cast<BYTE*>(This);
+    *(DWORD *)(context + 0x10) = 0x3cf5c28f;
+    *(DWORD *)(context + 0x14) = 0xbf800000;
+    *(float *)(context + 0xc) = -1.0f;
+    Vec3_Normalize((float *)(context + 0xc));
     int iVar1 = FUN_00409f30(This, NULL, param_1, param_2, param_3, param_4);
     if (iVar1 != 0) {
         FUN_0040a300(This, NULL, param_1);
-        operator_delete(*(void **)((int)This + 0x1c));
+        operator_delete(*(void **)(context + 0x1c));
     }
 }
 
