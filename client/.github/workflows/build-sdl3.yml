@@ -143,6 +143,7 @@ jobs:
             python -B tests/ChatLinesPointer.py --architecture x64
             python -B tests/ItemClassPointer.py --architecture x64
             python -B tests/ParticleRenderRefPointer.py --architecture x64
+            python -B tests/SpriteQuadPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -248,6 +249,7 @@ jobs:
             python3 -B tests/ChatLinesPointer.py --generator Ninja
             python3 -B tests/ItemClassPointer.py --generator Ninja
             python3 -B tests/ParticleRenderRefPointer.py --generator Ninja
+            python3 -B tests/SpriteQuadPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
