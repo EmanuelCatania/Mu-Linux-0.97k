@@ -267,7 +267,7 @@ void __cdecl Scene_Intro(HDC param_1)
 
 LAB_00513a36:
     pvVar5 = AntiTamper_HashNode();
-    *(undefined1 *)((int)pvVar5 + 4) = 1;
+    static_cast<BYTE*>(pvVar5)[4] = 1;
     HashTable_Insert(&MAIN_HASH_CLASS, pvVar5, puVar1);
 
 LAB_00513a50:
@@ -316,7 +316,7 @@ LAB_00513b4e:
     uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
     if (uVar4 == 0xffffffff) {
         pvVar5 = AntiTamper_HashNode();
-        *(undefined1 *)((int)pvVar5 + 4) = 1;
+        static_cast<BYTE*>(pvVar5)[4] = 1;
         HashTable_Insert(&MAIN_HASH_CLASS, pvVar5, puVar1);
     }
     *puVar1 = 0xd9;
