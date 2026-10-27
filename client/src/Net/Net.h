@@ -60,7 +60,7 @@ int Net_Send(int ctx);
 // Close socket and mark as disconnected.
 // Sets g_bGameServerConnected = 0, closesocket(), socket = 0xFFFFFFFF.
 // @ 0x0043DC90
-int Net_Disconnect(int ctx);
+int Net_Disconnect(void* ctx);
 
 // Find a free buffer slot in the recv pool.
 // Pool: 300 entries at fixed base, stride 0x2008, status at +0x401C.

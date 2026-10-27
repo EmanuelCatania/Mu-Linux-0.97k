@@ -95,7 +95,7 @@ void __cdecl putc(int ch, int *fp) {
 // Initialises WinSock 2.2. On success: stores wVersion low-word at param_1+4,
 // clears param_1+8, returns 1. On failure: logs error, shows MessageBox, returns 0.
 // IDA: CWsctlc::Startup (0x0043DB30)
-void __cdecl CWsctlc_Startup(int param_1) {
+void __cdecl CWsctlc_Startup(uintptr_t param_1) {
     uint16_t socketVersion = 0;
     int r = Platform::GetSocket().Startup(0x202, socketVersion);
     if (r != 0) {

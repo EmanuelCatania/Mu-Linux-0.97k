@@ -463,7 +463,7 @@ int Game_SceneUpdate(void)
                 }
                 DAT_083a7c14 = 0;
                 DAT_083a7c44 = 0;
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
+                Net_Disconnect(SocketClient);
                 DAT_05826cb0 = 0;
                 CreateSocket(PTR_s_connect_muonline_co_kr_005615b8,
                              (unsigned)g_ServerPort);
@@ -637,7 +637,7 @@ int Game_SceneUpdate(void)
             DAT_083a7c18 = 0x1d;
             DAT_083a7c1c = 1;
             DAT_083a7c20 = 0x32;
-            Net_Disconnect(((int)(uintptr_t)SocketClient));
+            Net_Disconnect(SocketClient);
             PlayBuffer(0x1b, 0, 0);
         }
     }

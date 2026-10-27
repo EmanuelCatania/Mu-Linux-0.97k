@@ -203,7 +203,7 @@ void Recv_LogOut(const BYTE* Msg)
             Item_ReturnPickedItem();
             ReleaseMainData();
         }
-        CWsctlc_Close((int)(uintptr_t)SocketClient);  // Net_Disconnect (close socket)
+        CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));  // Net_Disconnect (close socket)
         ReleaseCharacterSceneData(); // IDA: ReleaseCharacterSceneData (0x005102C0)
         SceneFlag = 2;                // SceneFlag = Login
         DAT_083a7c14 = 0;                // sub-state = ServerSelect
@@ -306,7 +306,7 @@ void Recv_Redirect(const BYTE* Msg)
     // Reactivamos la capa MuEmu (byte-XOR) que el GameServer sí usa.
     gNetwork.EndConnectServerSession();
     MuEmu::SetActive(true);
-    CWsctlc_Close((int)(uintptr_t)SocketClient);   // Net_Disconnect
+    CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));   // Net_Disconnect
     CreateSocket(IpAddr, port);                   // Net_Connect
     g_bGameServerConnected = 1;                              // g_bGameServerConnected
 }

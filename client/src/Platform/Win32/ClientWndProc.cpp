@@ -75,7 +75,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // esto, al cerrar en pantalla completa el escritorio quedaba en la
         // resolución del juego.
         DAT_055ca018 = 1;                                   // Destroy
-        CWsctlc_Close((int)(uintptr_t)SocketClient);
+        CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));
         for (int buffer = 0; buffer < 420; ++buffer)
             Sound_ReleaseBuffer(buffer);
         OpenGL_Release();

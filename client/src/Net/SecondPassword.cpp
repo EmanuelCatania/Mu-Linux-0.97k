@@ -1445,8 +1445,8 @@ undefined4 __cdecl SecondPassword_CancelReturn(void)
             int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar3 == -1) {
                 iVar6 = Platform::GetSocket().LastError();
-                if (iVar6 != 0x2733) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
-                if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
+                if (iVar6 != 0x2733) { Net_Disconnect(SocketClient); break; }
+                if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(SocketClient); break; }
                 memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar8);
                 SocketClientSendBufferLength += uVar8;
                 break;

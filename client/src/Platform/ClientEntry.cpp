@@ -406,7 +406,7 @@ void Client_SocketEvent(uint16_t event, uint16_t error) { gNetwork.OnSocketEvent
 void Client_ClosePortable() {
     gPing.Reset(); gFrameLimiter.Shutdown();
     DAT_055ca018 = 1;
-    CWsctlc_Close((int)(uintptr_t)SocketClient);
+    CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));
     for (int buffer = 0; buffer < 420; ++buffer) Sound_ReleaseBuffer(buffer);
     OpenGL_Release();
 }

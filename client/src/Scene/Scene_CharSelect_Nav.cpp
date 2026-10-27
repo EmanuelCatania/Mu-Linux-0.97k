@@ -27,7 +27,7 @@ extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const IT
 // -- Declaraciones de funciones que viven en otros modulos --------------
 // Migrar a functions.h mas adelante.
 int __cdecl LevelConvert(BYTE Level);
-int __cdecl Net_Disconnect(int ctx);
+int __cdecl Net_Disconnect(void* ctx);
 
 
 
@@ -550,7 +550,7 @@ uintptr_t __fastcall NetContext_ClearSendBuffer(uintptr_t param_1)
 // con elegancia (devuelve 1). Llama a CWsctlc_Close ante errores fatales de socket (devuelve 0).
 // Devuelve 1 si tuvo éxito o si el bloqueo no es fatal.
 // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
-int __fastcall CWsctlc_FDWriteSend(int param_1)
+int __fastcall CWsctlc_FDWriteSend(uintptr_t param_1)
 {
     char* buffer = (char*)(param_1 + 0xc);
     int& pending = *(int*)(param_1 + 0x200c);
@@ -572,11 +572,12 @@ int __fastcall CWsctlc_FDWriteSend(int param_1)
 // los bytes restantes al frente del buffer.
 // Returns 0 on clean dispatch, 1 on no data / WSAEWOULDBLOCK, 3 on incomplete header.
 // IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
-int __fastcall CWsctlc_nRecv(void *param_1)
+int __fastcall CWsctlc_nRecv(void *context)
 {
-    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)((int)param_1 + 8),
-                     (char *)(*(int *)((int)param_1 + 0x4010) + 0x2010 + (int)param_1),
-                     0x2000 - *(int *)((int)param_1 + 0x4010), 0);
+    BYTE* param_1 = static_cast<BYTE*>(context);
+    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)(param_1 + 8),
+                     (char *)(*(int *)(param_1 + 0x4010) + 0x2010 + param_1),
+                     0x2000 - *(int *)(param_1 + 0x4010), 0);
     if (iVar2 == 0) { DbgLogPublic("NET: Net_Recv recv=0 (peer closed)"); return 1; }
     if (iVar2 == -1) {
         int err = Platform::GetSocket().LastError();
@@ -589,12 +590,12 @@ int __fastcall CWsctlc_nRecv(void *param_1)
     // Esto tiene que pasar ANTES de que el parser de headers C1/C2/C3/C4 vea nada,
     // porque cada byte del cable — headers incluidos — viene encriptado.
     {
-        BYTE *pNew = (BYTE*)((int)param_1 + 0x2010) + *(int *)((int)param_1 + 0x4010);
+        BYTE *pNew = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
         MuEmu::DecryptRecv(pNew, iVar2);
     }
     {
         char dbg[256];
-        BYTE *p = (BYTE*)((int)param_1 + 0x2010) + *(int *)((int)param_1 + 0x4010);
+        BYTE *p = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
         int nShow = iVar2 > 24 ? 24 : iVar2;
         char hexbuf[128]; hexbuf[0] = 0;
         for (int hi = 0; hi < nShow; ++hi) {
@@ -603,13 +604,13 @@ int __fastcall CWsctlc_nRecv(void *param_1)
         }
     }
 
-    iVar2 = *(int *)((int)param_1 + 0x4010) + iVar2;
-    *(int *)((int)param_1 + 0x4010) = iVar2;
+    iVar2 = *(int *)(param_1 + 0x4010) + iVar2;
+    *(int *)(param_1 + 0x4010) = iVar2;
     if (iVar2 < 3) return 3;
 
     int iOff = 0;
     while (true) {
-        BYTE *pBase = (BYTE *)((int)param_1 + 0x2010);
+        BYTE *pBase = (BYTE *)(param_1 + 0x2010);
         BYTE  hdr   = pBase[iOff];
         BYTE *pPkt  = pBase + iOff;
         uint  uLen;
@@ -624,26 +625,26 @@ int __fastcall CWsctlc_nRecv(void *param_1)
             char dbg[96];
             Platform::TextFormat(dbg, "NET: Net_Recv UNKNOWN hdr=%02X at off=%d → discard buffer", hdr, iOff);
             DbgLogPublic(dbg);
-            *(int *)((int)param_1 + 0x4010) = 0;
+            *(int *)(param_1 + 0x4010) = 0;
             return 0;
         }
         if (uLen == 0) return 0;
-        if (*(int *)((int)param_1 + 0x4010) < (int)uLen) break;
+        if (*(int *)(param_1 + 0x4010) < (int)uLen) break;
 
         CPacketQueue_PushPacket(reinterpret_cast<uintptr_t>(param_1), pPkt, uLen);
-        if (*(int *)((int)param_1 + 0x4014) != 0) FUN_0043de60();
+        if (*(int *)(param_1 + 0x4014) != 0) FUN_0043de60();
         iOff += uLen;
-        int rem = *(int *)((int)param_1 + 0x4010) - uLen;
-        *(int *)((int)param_1 + 0x4010) = rem;
+        int rem = *(int *)(param_1 + 0x4010) - uLen;
+        *(int *)(param_1 + 0x4010) = rem;
         if (rem < 1) return 0;
     }
 
     if (iOff < 1) return 0;
-    uint uRem = (uint)*(int *)((int)param_1 + 0x4010);
+    uint uRem = (uint)*(int *)(param_1 + 0x4010);
     if ((int)uRem < 1) return 0;
 
     // Corre los bytes restantes al frente del buffer
-    BYTE *pDst = (BYTE *)((int)param_1 + 0x2010);
+    BYTE *pDst = (BYTE *)(param_1 + 0x2010);
     BYTE *pSrc = pDst + iOff;
     for (uint i = uRem >> 2; i != 0; i--, pDst += 4, pSrc += 4)
         *(DWORD *)pDst = *(DWORD *)pSrc;

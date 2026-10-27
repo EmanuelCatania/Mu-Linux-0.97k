@@ -205,7 +205,7 @@ void  __cdecl InsertBuffPhysicalEffect(int, int, int); // IDA: InsertBuffPhysica
 void  __cdecl ClearBuffPhysicalEffect(int, int, int); // IDA: ClearBuffPhysicalEffect (0x0043C070)
 void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata); // IDA: STRUCT_ENCRYPT (0x0043D1D0)
 int   __fastcall CWsctlc_GetSocket(int);   // IDA: CWsctlc::GetSocket (0x0043DCC0)
-int   __fastcall CWsctlc_FDWriteSend(int); // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
+int   __fastcall CWsctlc_FDWriteSend(uintptr_t); // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
 void  __cdecl FUN_0043de60(void);  // Net_FlushQueue (no args)
 void  __cdecl CPacketQueue_PushPacket(uintptr_t, const void*, int); // IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
 int   __fastcall CWsctlc_nRecv(void*);                // IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
@@ -770,9 +770,9 @@ void  __cdecl Joint_BoneOffsetApply(int, int);
 // ── Net_Connect helpers ───────────────────────────────────────────────────────
 extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
                                         unsigned short port, DWORD WinMsgNum); // IDA: CWsctlc::Connect (0x0043DCD0)
-void  __cdecl CWsctlc_Startup(int);       // IDA: CWsctlc::Startup (0x0043DB30)
+void  __cdecl CWsctlc_Startup(uintptr_t);       // IDA: CWsctlc::Startup (0x0043DB30)
 void  __cdecl CWsctlc_Create(void*, int); // IDA: CWsctlc::Create (0x0043DBF0)
-void  __cdecl CWsctlc_Close(int);         // IDA: CWsctlc::Close (0x0043DC90)
+void  __cdecl CWsctlc_Close(uintptr_t);         // IDA: CWsctlc::Close (0x0043DC90)
 
 // ── Entity_Init helpers ───────────────────────────────────────────────────────
 void  __cdecl SetCharacterScale(CHARACTER*); // IDA: SetCharacterScale (0x0045C050)

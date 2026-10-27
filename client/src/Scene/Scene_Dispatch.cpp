@@ -147,7 +147,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
                             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, sbuf, total);
                             SocketClientSendBufferLength += total;
                         } else {
-                            Net_Disconnect(((int)(uintptr_t)SocketClient));
+                            Net_Disconnect(SocketClient);
                         }
                         goto send_done;
                     }
@@ -174,7 +174,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
                             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, lbuf, total);
                             SocketClientSendBufferLength += total;
                         } else {
-                            Net_Disconnect(((int)(uintptr_t)SocketClient));
+                            Net_Disconnect(SocketClient);
                         }
                         goto send_done;
                     }

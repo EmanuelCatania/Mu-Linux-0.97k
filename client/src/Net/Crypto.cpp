@@ -1352,7 +1352,7 @@ void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
 }
 
 // FUN_00423c30 @ 0x00423C30 (10 bytes) — disconnect socket context
-void FUN_00423c30(void) { CWsctlc_Close(((int)(uintptr_t)SocketClient)); }
+void FUN_00423c30(void) { CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient)); }
 
 // InitGuildWar @ 0x00423DB0 — Net_ResetTrade: clears trade/shop globals, re-enables party markers.
 // IDA: FUN_00423DB0 (0x00423DB0)
@@ -1379,7 +1379,7 @@ void __cdecl InitGuildWar(void) {
 // CWsctlc_Close @ 0x0043DC90 (11 lines) — NetContext_Disconnect
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
-void __cdecl CWsctlc_Close(int ctx) {
+void __cdecl CWsctlc_Close(uintptr_t ctx) {
     gNetwork.ResetSessionData();
     SocketClientIsGame = 0; // g_bGameServerConnected
     Platform::GetSocket().Close(*(SOCKET *)(ctx + 8));
