@@ -1337,15 +1337,16 @@ void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
 
 // FUN_004236c0 @ 0x004236C0 (90 bytes) — BST node remove (unlink + delete)
 void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
+    BYTE* context = static_cast<BYTE*>(This);
     int iVar1 = *(int *)(*param_1 + 0x10);
     if (iVar1 == 0) {
-        *(int *)((int)This + 8) = 0;
+        *(int *)(context + 8) = 0;
     } else if (*(int *)(iVar1 + 8) == *param_1) {
         *(int *)(iVar1 + 8) = 0;
     } else {
         *(int *)(iVar1 + 0xc) = 0;
     }
-    *(int *)((int)This + 4) = *(int *)((int)This + 4) - 1;
+    *(int *)(context + 4) = *(int *)(context + 4) - 1;
     if ((void *)*param_1 != NULL) {
         operator_delete((void *)*param_1);
     }
