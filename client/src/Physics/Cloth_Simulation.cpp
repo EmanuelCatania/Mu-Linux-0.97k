@@ -21,8 +21,9 @@ void  __cdecl    ClothNode_ApplyForces(uintptr_t _this, int a2, short a3);
 // `BoneTransform + 48 * boneIdx` en cada tick.
 // Port FIEL de IDA `sub_408780`. Layout: +0x14 flags, +0x18/+0x1C origen Y/Z,
 // +0x20 ancho, +0x28 W, +0x34 nodes, +0x40 paso horizontal.
-void __cdecl Cloth_PinTopRow(int _this, float (*Matrix)[4])
+void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4])
 {
+  BYTE* _this = static_cast<BYTE*>(widget);
   float Position[3];
   float WorldPosition[3];
 
@@ -148,7 +149,8 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
     }
   }
 
-  (*(void (__cdecl **)(DWORD *, int))(*a1 + 4))(a1, 48 * a1[2] + *(int *)(a1[1] + 276));
+  (*(void (__cdecl **)(void*, float (*)[4]))(*a1 + 4))(
+      a1, reinterpret_cast<float (*)[4]>(static_cast<uintptr_t>(48 * a1[2] + *(int *)(a1[1] + 276))));
 
   for (int v15 = 0, v16 = 0; v15 < (int)a1[12]; ++v15, v16 += 60)
     ClothNode_Integrate((float *)(v16 + a1[13]), a3);

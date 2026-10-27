@@ -124,7 +124,7 @@ void __cdecl Widget_Release(int param_1, int, int) {
 // El slot 0 (dtor) se llama directo en este build. Los slots 1 y 2 los invoca
 // `sub_408CB0` en cada tick de simulación: 1 = re-fijar la fila superior al
 // hueso (Cloth_PinTopRow), 2 = repartir viento/gravedad (Cloth_Wind).
-void __cdecl Cloth_PinTopRow(int _this, float (*Matrix)[4]);
+void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4]);
 void __cdecl Cloth_Wind(DWORD *_this);
 static void __cdecl Cloth_VSlot0(int a)  { (void)a; }  // dtor: se llama directo
 static void *g_ClothVTable[4] = {
@@ -385,7 +385,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
     *(int *)(thiz + 0x38) = sp;
     // IDA invokes vtable slot 1 here to pin the top row immediately to the
     // source bone.  The same callback is used by the simulation on later ticks.
-    Cloth_PinTopRow((int)(uintptr_t)widget, (float (*)[4])local_3c);
+    Cloth_PinTopRow(widget, (float (*)[4])local_3c);
 }
 
 // Skills / teleport

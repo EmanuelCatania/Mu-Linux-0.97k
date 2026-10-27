@@ -161,6 +161,7 @@ jobs:
             python -B tests/GridCellPointer.py --architecture x64
             python -B tests/LegacyEdgesPointer.py --architecture x64
             python -B tests/WaveMeshPointer.py --architecture x64
+            python -B tests/ClothPinPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -284,6 +285,7 @@ jobs:
             python3 -B tests/GridCellPointer.py --generator Ninja
             python3 -B tests/LegacyEdgesPointer.py --generator Ninja
             python3 -B tests/WaveMeshPointer.py --generator Ninja
+            python3 -B tests/ClothPinPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
