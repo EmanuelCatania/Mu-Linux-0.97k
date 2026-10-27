@@ -181,7 +181,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     char *dst;
     char text1[256], text2[256];
     if (sz.cx >= 256) {
-        CutText(param_1, (int)(uintptr_t)text1, text2, (int)strlen(param_1));
+        CutText(param_1, text1, text2, (int)strlen(param_1));
         int next = DAT_07e11d9c + 1;
         strcpy(notice + 264 * DAT_07e11d9c, text2);
         if (next > 5) {
@@ -262,7 +262,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
       cVar1 = *pcVar6;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    CutText((undefined4 *)param_1,(int)local_100,(undefined4 *)local_200,~uVar4 - 1);
+    CutText((undefined4 *)param_1,local_100,(undefined4 *)local_200,~uVar4 - 1);
     uVar4 = 0xffffffff;
     iVar2 = DAT_07e11d9c + 1;
     pcVar6 = local_200;

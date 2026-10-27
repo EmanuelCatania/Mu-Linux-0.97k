@@ -119,6 +119,7 @@ jobs:
             python -B tests/MusicNamePointer.py --architecture x64
             python -B tests/SpriteDrawPointer.py --architecture x64
             python -B tests/VerletInitPointer.py --architecture x64
+            python -B tests/CutTextPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -200,6 +201,7 @@ jobs:
             python3 -B tests/MusicNamePointer.py --generator Ninja
             python3 -B tests/SpriteDrawPointer.py --generator Ninja
             python3 -B tests/VerletInitPointer.py --generator Ninja
+            python3 -B tests/CutTextPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

@@ -530,7 +530,7 @@ bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
 // DESVIACION (Fase 4, cortes UAX #14): ademas del espacio vale cualquier punto
 // de corte de libunibreak (entre ideogramas, despues de un guion...).
 // IDA: CutText (0x0047FE30)
-void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4) {
+void __cdecl CutText(void *param_1_v, char* param_2, void *param_3_v, int param_4) {
     char *param_1 = (char*)param_1_v;
     char *param_3 = (char*)param_3_v;
     unsigned int uVar4 = 0, uVar3 = 0;

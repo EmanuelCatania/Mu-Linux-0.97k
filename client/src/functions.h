@@ -417,7 +417,7 @@ char  __cdecl Item_Equip(DWORD character, DWORD object);            // 0x00483B3
 
 // ── UI / HUD ──────────────────────────────────────────────────────────────────
 bool  __cdecl FindTextA(char* src, char* pattern, bool caseSensitive); // IDA: FindText (0x004977F0)
-void  __cdecl CutText(void*, int, void*, int);            // Chat_SplitLine
+void  __cdecl CutText(void*, char*, void*, int);            // Chat_SplitLine
 void  __cdecl SetActionClass(int, int, int, int);
 void  __cdecl CheckGate(void); // IDA: CheckGate (0x004AC140)
 char  __cdecl Path_IsLineClear(int src_x, int src_y, int tgt_x, int tgt_y); // IDA: CheckWall

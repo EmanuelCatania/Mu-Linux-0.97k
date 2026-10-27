@@ -91,7 +91,7 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 
     if (Length > 0x13) {
         // Long text (>19 chars): split into 2 lines
-        CutText(param_2, (int)(uintptr_t)AsChat(param_1)->Text[0], AsChat(param_1)->Text[1], Length);
+        CutText(param_2, AsChat(param_1)->Text[0], AsChat(param_1)->Text[1], Length);
         AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
         AsChat(param_1)->LifeTime[1] = (int)(uintptr_t)displayEnd;
         return;
