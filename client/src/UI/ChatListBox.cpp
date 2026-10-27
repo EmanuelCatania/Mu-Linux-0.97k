@@ -1614,10 +1614,10 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
         // IDA sub_40C940 L96-150: mensaje largo.  sub_40C2A0 lo parte en hasta
         // dos lineas de 180 px (buffers de 0x100); la primera va con el
         // remitente y la segunda con el nombre vacio.
-        extern int __cdecl FUN_0040c2a0(LPCSTR, int, int, int, size_t, UINT, int);
+        extern int __cdecl FUN_0040c2a0(LPCSTR, char*, int, int, size_t, UINT, int);
         char lines[2][0x100];
         memset(lines, 0, sizeof(lines));
-        FUN_0040c2a0(msg, (int)(uintptr_t)lines, 180, 2, 0x100, 0, 0);
+        FUN_0040c2a0(msg, &lines[0][0], 180, 2, 0x100, 0, 0);
         for (int ln = 0; ln < 2; ln++) {
             if (!lines[ln][0]) {
                 if (ln == 0) continue;     // IDA: `if (v24[0])` salta solo el alta
@@ -2432,7 +2432,7 @@ char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DW
 // DESVIACION (Fase 4, cortes UAX #14): el binario corta en cualquier punto de
 // la palabra. Ahora, si hay un punto de corte en la segunda mitad de lo que
 // entra, la linea termina ahi (despues de un espacio, entre ideogramas...).
-int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
+int __cdecl FUN_0040c2a0(LPCSTR text, char* dst, int width, int maxLines,
                          size_t lineSize, UINT firstIndent, int reverse) {
     const char* cur = text;                        // IDA: v7
     int lines = 0;                                 // IDA: v8
@@ -2444,7 +2444,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         int next = lines + 1;                      // IDA: v21
         if (next > maxLines) break;
         if (reverse != 1) off = fwdOff;
-        char* line = (char*)(dst + off);
+        char* line = dst + off;
         SIZE sz;
         gFont.MeasureText(gFont.GetTextDC(), cur, Platform::TextLength(cur), &sz);
         int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
