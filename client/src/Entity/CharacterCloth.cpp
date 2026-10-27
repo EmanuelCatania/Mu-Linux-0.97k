@@ -38,7 +38,7 @@ static void PrepareMeshClothVertices(int entity) {
     memcpy(minimum,owner.BoundingBoxMin,sizeof(minimum)); memcpy(maximum,owner.BoundingBoxMax,sizeof(maximum));
     const float lod=_DAT_005597c8;
     _DAT_005597c8=1;
-    Skeleton_Transform(model,(int)bones,minimum,maximum,bounds,1);
+    Skeleton_Transform(model,bones,minimum,maximum,bounds,1);
     _DAT_005597c8=lod;
 }
 

@@ -85,7 +85,7 @@ void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char trans
     const bool materializing = o.Type == 330 && (int)MoveSceneFrame - o.InitialSceneFrame < 25;
     if (!((o.Type == 331 && dead) || (o.Type == 330 && (dead || materializing)))) return;
     float bounds[15];
-    Skeleton_Transform(model, (int)bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
+    Skeleton_Transform(model, bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
     if (dead) o.Live = 0;
     PlayBuffer(106, 0, 0);
     BMD__RenderMeshEffect(model, 0, o.Type == 330 ? 260 : 262);

@@ -178,7 +178,7 @@ void MoltSilhouette_Tick(int entity, void *model, float *bones, char translate) 
     float bounds[15];
     const float lod=_DAT_005597c8;
     _DAT_005597c8=1.0f;
-    Skeleton_Transform(model, (int)bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
+    Skeleton_Transform(model, bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
     _DAT_005597c8=lod;
     MoltSilhouette silhouette={};
     auto *vertices=(unsigned char *)&DAT_0584621c;

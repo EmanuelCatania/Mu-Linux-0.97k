@@ -162,7 +162,7 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
     else
         puVar2 = (undefined*)&DAT_06970a9c;
 
-    Skeleton_Transform(pModel, (int)puVar2,
+    Skeleton_Transform(pModel, reinterpret_cast<float*>(puVar2),
                  (float *)(param_1 + 0x118),
                  (float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),

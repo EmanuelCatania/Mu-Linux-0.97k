@@ -87,7 +87,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
             *(float*)((int)this_+0x50) = 0.0f;
             puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
             // IDA pasa `Translate` tal cual a sub_4404E0 (BMD_Animation recibe !Translate).
-            Skeleton_Transform(this_, (int)puVar3, (float*)(param_1+0x118),
+            Skeleton_Transform(this_, reinterpret_cast<float*>(puVar3), (float*)(param_1+0x118),
                          (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
             BMD__RenderBody(this_, 0x40,
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
@@ -98,7 +98,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
         _DAT_005597c8 = 1.0f;
     }
     puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? (void*)&DAT_06970a9c : *(void**)(param_1+0x114);
-    Skeleton_Transform(this_, (int)puVar3, (float*)(param_1+0x118),
+    Skeleton_Transform(this_, reinterpret_cast<float*>(puVar3), (float*)(param_1+0x118),
                  (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
     return 1;
 }
@@ -110,7 +110,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
 // param_4  = AABB output ptr [12 floats: min.xyz, size.xyz, 3 zeros, size.w]
 // param_5  = if non-zero: also applies entity scale+offset (this+0x68/6c/70/74)
 // Uses _DAT_005597c8 scale flag: if != 1.0 → calls Vector_Rotate (scaled transform).
-void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float* param_3,
+void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2, float* param_3,
                            float* param_4, char param_5) {
     // [0-2]=AABB min, [3-5]=AABB max / work dir, [6..8]=transformed dir.
     // In the Ghidra decompile local_54[7]/[8] appear as adjacent stack slots
@@ -118,6 +118,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // Vector_InverseRotate writing 3 floats at &local_54[6] overflowed past local_54's
     // 7-elem bound → /GS stack-cookie corruption. Keep them as one 9-elem array
     // and reference [7]/[8] directly where the Ghidra names appear.
+    BYTE* param_1 = reinterpret_cast<BYTE*>(boneMatrices);
     Skinning::Invalidate();
     float local_54[9];
     // Inicializar sólo la dirección capturada cuando la iluminación está desactivada.
@@ -133,7 +134,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     // DAT_077e298c + meshIdx*15000.
     float* local_68_base = (float*)&DAT_077e298c;  // base del mesh actual
     float* local_68      = local_68_base;          // puntero de trabajo
-    int   local_74;
+    intptr_t local_74;
 
     // ── DIAG: log Translate flag + scale + world offset for first N calls ────
     // Restrict to in-game and Lorencia-area entities to avoid log flood.
@@ -270,7 +271,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
                 continue;
             }
         }
-        local_74 = -((int)(char*)&DAT_0584621c + local_64);
+        local_74 = -(reinterpret_cast<intptr_t>(&DAT_0584621c) + local_64);
         float* pfOut = (float*)((char*)&DAT_05846224 + local_64);
         // GUARD (desviación): el indice de hueso del vertice (`*vs`) indexa
         // `BoneTransform` con stride 0x30, y ese bloque lo aloca

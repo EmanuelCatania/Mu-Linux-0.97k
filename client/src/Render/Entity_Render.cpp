@@ -377,7 +377,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
     param_4 = '\0';
     puVar1 = (undefined*)&DAT_06970a9c;
   }
-  Skeleton_Transform(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
+  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
                (float *)(param_2 + 0x130),param_4);
   BMD__RenderBody(param_1,(uint)param_3,AsObject(param_2)->Alpha,AsObject(param_2)->BlendMesh,
                AsObject(param_2)->BlendMeshLight,AsObject(param_2)->BlendMeshTexCoordU,AsObject(param_2)->BlendMeshTexCoordV,
@@ -455,7 +455,7 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
     else {
       puVar2 = (undefined*)&DAT_06970a9c;
     }
-    Skeleton_Transform(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
+    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.

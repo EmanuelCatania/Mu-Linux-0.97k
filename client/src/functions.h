@@ -258,7 +258,7 @@ void  __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2);      // VTable_Draw
 void  __cdecl BMD_Animation(void *model, float* bones, float rot, unsigned int pos_param,
                             unsigned char scale, unsigned int *anim_ptr, float *dir_ptr,
                             char a, char b);
-void  __cdecl Skeleton_Transform(void *model, int bone, float *anim1, float *anim2, float *anim3, char blend); // Sprite_DrawBone
+void  __cdecl Skeleton_Transform(void *model, float* boneMatrices, float *anim1, float *anim2, float *anim3, char blend); // Sprite_DrawBone
 void  __cdecl BMD_TransformPosition(void *model, float *bone_data, float *out_pos, float *out_col, char flag); // IDA: TransformPosition (0x004409A0)
 void  __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out); // BoneTransformOffset — implemented in Render/BMD_SetupRender.cpp
 int   __cdecl ItemObjectAttribute(OBJECT* object); // IDA: ItemObjectAttribute (0x00502BA0)
