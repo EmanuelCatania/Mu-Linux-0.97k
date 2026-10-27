@@ -119,7 +119,7 @@ void LooseWingVisuals_TickGround(int entity) {
     Scratch scratch;
     BMD &b=*AsModel(model);
     b.CurrentAction=o.CurrentAction;
-    Entity_SetGravity(o.Type,(int)model);
+    Entity_SetGravity(o.Type,model);
     b.BodyScale=o.Scale;
     memcpy(b.BodyOrigin,o.Position,sizeof(b.BodyOrigin));
     memset(g_BoneScratch,0,sizeof(g_BoneScratch));

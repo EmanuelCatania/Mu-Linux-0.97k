@@ -321,8 +321,9 @@ uint RenderBugs(void)
 // Entity_SetGravity — Entity_SetGravity
 // Sets the gravity value at param_2+0x84 based on entity type param_1.
 // Maps specific type ranges to negative float constants (gravity strengths).
-void __cdecl Entity_SetGravity(int param_1,int param_2)
+void __cdecl Entity_SetGravity(int param_1, void* model)
 {
+  BYTE* param_2 = static_cast<BYTE*>(model);
   if (param_1 < 0x270) {
     if (param_1 < 0x290) goto LAB_0050386e;
   }

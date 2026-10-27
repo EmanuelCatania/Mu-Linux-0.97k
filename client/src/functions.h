@@ -518,7 +518,7 @@ void  __cdecl RenderFishs(int, int, int, int); // IDA: RenderFishs (0x00502200)
 void  __cdecl AmbientParticles_Update(void); // IDA: Ambient_ParticleUpdate
 void  __cdecl CreateItem(int, int, int, int);   // IDA: CreateItem (0x005032F0)
 void  __cdecl MoveItems(void); // IDA: MoveItems (0x00503760)
-void  __cdecl Entity_SetGravity(int entity_class, int model_ptr);        // Sprite_SetupAnimation
+void  __cdecl Entity_SetGravity(int entity_class, void* model);        // Sprite_SetupAnimation
 void  __cdecl Entity_Render(void);                                   // Entity_Render (sprite loop)
 void  __cdecl RenderPartObjectEffect(int, int, float *, float, unsigned int, unsigned char, unsigned int, unsigned int); // IDA: RenderPartObjectEffect (0x00504B50)
 void  __cdecl Entity_RenderSlotWith(void *, void *, int, char, int);

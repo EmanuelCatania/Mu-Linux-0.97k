@@ -220,7 +220,7 @@ void __cdecl Entity_Render(void)
                 *(DWORD*)(model + 112) = *(DWORD*)(v0 - 241);
                 *(DWORD*)(model + 116) = *(DWORD*)(v0 - 237);
 
-                Entity_SetGravity(type, (int)model);
+                Entity_SetGravity(type, model);
 
                 // BMD_Animation
                 float angles_in[3]  = { *(float*)(v0 - 233), *(float*)(v0 - 229), *(float*)(v0 - 225) };
