@@ -633,7 +633,7 @@ void  __cdecl GL_DrawTexture(int id, float x, float y, float w,     // Texture_D
 float10 __cdecl Math_Fabs(float angle);  // |a| (abs)
 double  __cdecl Math_Fmin(float a, float b); // min(a,b)
 double  __cdecl Math_Fmax(float a, float b); // max(a,b)
-int     __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10); // PointInPolygon
+int     __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, const float* a5, const float* a6, const float* a7, const float* a8, int a9, float a10); // PointInPolygon
 // FUN_00513570 @ 0x00513570
 char  __cdecl Chat_ValidateInputCommand(void);
 void  __cdecl SetErrorMessage(int message); // IDA: SetErrorMessage (0x005142D0)

@@ -943,7 +943,7 @@ int __cdecl Terrain_WaterWaveUpdate(int a1)
 // Umbral param_10: si es > _DAT_00552580 (0.0f), param_9 se corre 3 bits a la izquierda.
 // Devuelve 1 si está adentro, 0 si está afuera.
 // Collision_PointInPolygon (IDA-activated)
-int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
+int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, const float* a5, const float* a6, const float* a7, const float* a8, int a9, float a10)
 {
   int v10; // esi
   int v11; // edx
@@ -953,7 +953,7 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
   int v16; // edi
   int v17; // esi
   int v18; // edi
-  float *v19; // eax
+  const float *v19; // eax
   int v20; // esi
   int v21; // edx
   int v22; // edi
@@ -962,8 +962,8 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
   int v25; // edi
   int v26; // esi
   int v27; // edi
-  float *v28; // eax
-  int v29[4]; // [esp+0h] [ebp-10h]
+  const float *v28; // eax
+  const float* v29[4]; // [esp+0h] [ebp-10h]
 
   if ( a10 > 0.0 )
   {
@@ -981,12 +981,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v11 = 4 * a4 - 4;
+      v11 = a4 - 1;
       do
       {
-        v12 = 4 * v10;
-        if ( (*(float *)(*(int *)((char *)v29 + v11) + 8) - a3) * (*(float *)(v29[v10] + 4) - a2)
-           - (*(float *)(*(int *)((char *)v29 + v11) + 4) - a2) * (*(float *)(v29[v10] + 8) - a3) <= 0.0 )
+        v12 = v10;
+        if ( (v29[v11][2] - a3) * (v29[v10][1] - a2)
+           - (v29[v11][1] - a2) * (v29[v10][2] - a3) <= 0.0 )
         {
           return 0;
         }
@@ -1001,12 +1001,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v15 = 4 * a4 - 4;
+      v15 = a4 - 1;
       while ( 1 )
       {
-        v16 = 4 * v14;
-        if ( (*(float *)(v29[v14] + 8) - a3) * (**(float **)((char *)v29 + v15) - a1)
-           - (*(float *)(*(int *)((char *)v29 + v15) + 8) - a3) * (*(float *)v29[v14] - a1) <= 0.0 )
+        v16 = v14;
+        if ( (v29[v14][2] - a3) * (*v29[v15] - a1)
+           - (v29[v15][2] - a3) * (v29[v14][0] - a1) <= 0.0 )
         {
           break;
         }
@@ -1024,12 +1024,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v18 = 4 * a4 - 4;
+      v18 = a4 - 1;
       while ( 1 )
       {
-        v19 = *(float **)((char *)v29 + v18);
-        v18 = 4 * v17;
-        if ( (v19[1] - a2) * (*(float *)v29[v17] - a1) - (*(float *)(v29[v17] + 4) - a2) * (*v19 - a1) <= 0.0 )
+        v19 = v29[v18];
+        v18 = v17;
+        if ( (v19[1] - a2) * (v29[v17][0] - a1) - (v29[v17][1] - a2) * (*v19 - a1) <= 0.0 )
         {
           break;
         }
@@ -1045,12 +1045,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v21 = 4 * a4 - 4;
+      v21 = a4 - 1;
       while ( 1 )
       {
-        v22 = 4 * v20;
-        if ( (*(float *)(*(int *)((char *)v29 + v21) + 8) - a3) * (*(float *)(v29[v20] + 4) - a2)
-           - (*(float *)(*(int *)((char *)v29 + v21) + 4) - a2) * (*(float *)(v29[v20] + 8) - a3) >= 0.0 )
+        v22 = v20;
+        if ( (v29[v21][2] - a3) * (v29[v20][1] - a2)
+           - (v29[v21][1] - a2) * (v29[v20][2] - a3) >= 0.0 )
         {
           break;
         }
@@ -1068,12 +1068,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v24 = 4 * a4 - 4;
+      v24 = a4 - 1;
       while ( 1 )
       {
-        v25 = 4 * v23;
-        if ( (*(float *)(v29[v23] + 8) - a3) * (**(float **)((char *)v29 + v24) - a1)
-           - (*(float *)(*(int *)((char *)v29 + v24) + 8) - a3) * (*(float *)v29[v23] - a1) >= 0.0 )
+        v25 = v23;
+        if ( (v29[v23][2] - a3) * (*v29[v24] - a1)
+           - (v29[v24][2] - a3) * (v29[v23][0] - a1) >= 0.0 )
         {
           break;
         }
@@ -1091,16 +1091,16 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v27 = 4 * a4 - 4;
+      v27 = a4 - 1;
       break;
     default:
       return 1;
   }
   while ( 1 )
   {
-    v28 = *(float **)((char *)v29 + v27);
-    v27 = 4 * v26;
-    if ( (v28[1] - a2) * (*(float *)v29[v26] - a1) - (*(float *)(v29[v26] + 4) - a2) * (*v28 - a1) >= 0.0 )
+    v28 = v29[v27];
+    v27 = v26;
+    if ( (v28[1] - a2) * (v29[v26][0] - a1) - (v29[v26][1] - a2) * (*v28 - a1) >= 0.0 )
     {
       break;
     }
