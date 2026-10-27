@@ -475,7 +475,7 @@ int   __cdecl Terrain_GetTileIndex(unsigned int, unsigned int);            // ID
 void  __cdecl Terrain_SetTileAttributeBits(int, int, int); // IDA: FUN_004f6ef0
 void  __cdecl Terrain_ClearTileAttributeBits(int, int, int); // IDA: SubTerrainAttribute
 void  __cdecl Terrain_UpdateTileAttributeRect(int, int, int, int, int, int); // IDA: FUN_004f6f30
-void  __cdecl Terrain_RenderQuad(float x, float y, float scale, int flags, int corners_ptr, char blend, float alpha); // Particle_DrawTile
+void  __cdecl Terrain_RenderQuad(float x, float y, float scale, int flags, const float (*corners)[3], char blend, float alpha); // Particle_DrawTile
 void  __cdecl RenderTerrainBitmap(int, int, int, float);  // Terrain_SpawnObject(type, x, y, height)
 // RenderTerrainAlphaBitmap (0x004F8BB0) se declara mas arriba.
 void  __cdecl CreateFrustrum2D(float *cam_pos); // IDA: CreateFrustrum2D (0x004F8EB0)

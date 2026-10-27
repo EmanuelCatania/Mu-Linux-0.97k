@@ -41,7 +41,7 @@ extern void ClearActionObject(void);
 // Renders a single terrain quad as GL_TRIANGLE_FAN with per-vertex lighting.
 // p1/p2 = grid X/Y, p3 = tile size, p4 = index step, p5 = texcoord array ptr,
 // p6 = enable lighting, p7 = alpha value.
-void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
+void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, const float (*p5)[3], char p6, float p7) {
     int iX = (int)p1;
     int iY = (int)p2;
     if (iX < 0 || iY < 0 || iX >= 0xff || iY >= 0xff) return;
@@ -89,7 +89,7 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
         // IDA 0x004F8740 walks `a5` as 4 records of 3 floats each (stride 12),
         // consuming the first two components as UVs. Callers such as
         // RenderTerrainBitmap/RenderTerrainAlphaBitmap pass rotated quad data in that layout.
-        const float *tc = (const float *)(p5 + i * 12);
+        const float *tc = p5[i];
         BufferedDraw::TexCoord2f(tc[0], tc[1]);
         BufferedDraw::Vertex3fv((float *)&verts[i]);
     }
@@ -152,7 +152,7 @@ void __cdecl RenderTerrainBitmap(int p1, int p2, int p3, float p4)
                 uvRot[i][2] = out[2];
             }
 
-            Terrain_RenderQuad((float)p2 + fx, (float)p3 + fy, 1.0f, 1, (int)uvRot, '\x01', 1.0f);
+            Terrain_RenderQuad((float)p2 + fx, (float)p3 + fy, 1.0f, 1, uvRot, '\x01', 1.0f);
             fx += _DAT_0055256c;
         }
         fy += _DAT_0055256c;

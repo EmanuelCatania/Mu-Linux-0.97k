@@ -369,7 +369,7 @@ void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, floa
                 corners[k][2] = out[2];
             }
             Terrain_RenderQuad((float)icx + ti, (float)icy + tj, 1.0f, 1,
-                         (int)corners, '\0', alpha);
+                         corners, '\0', alpha);
         }
     }
     return;
