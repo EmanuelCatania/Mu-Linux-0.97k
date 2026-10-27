@@ -1231,9 +1231,9 @@ void* __fastcall WidgetB_Ctor(void *param_1)
 }
 
 // FUN_00409ef0 @ 0x00409EF0 — WidgetC ~dtor
-void __fastcall FUN_00409ef0(int ecx, int /*edx*/, BYTE param_1) {
-    WidgetB_SetVtable((void *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+void __fastcall FUN_00409ef0(void* widget, int /*edx*/, BYTE param_1) {
+    WidgetB_SetVtable(widget);
+    if (param_1 & 1) operator_delete(widget);
 }
 
 // WidgetB_SetVtable @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
