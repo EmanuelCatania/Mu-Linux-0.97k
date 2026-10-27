@@ -2447,7 +2447,7 @@ LAB_0046b3bf:
           if (sVar3 == 0x10a) goto LAB_0046b3bf;
           iVar9 = 1;
         }
-        Joint_BoneOffsetApply((int)param_1,iVar9);
+        Joint_BoneOffsetApply(reinterpret_cast<BYTE*>(param_1),iVar9);
       }
     }
 LAB_0046b3ca:

@@ -766,7 +766,7 @@ void  __cdecl MoveEffect(float *, int); // IDA: MoveEffect (0x00466AD0)
 char * __cdecl MoveJoint(undefined1 *param_1, uint param_2); // MoveJoint — implemented in Render/MoveJoint.cpp
 void  __cdecl TEXCOORD(float*, float, int);  // sincos helper (dest, angle, scale)
 void  __cdecl EulerToMatrix(float*, float*);      // EulerToMatrix(angles, out_mat)
-void  __cdecl Joint_BoneOffsetApply(int, int);
+void  __cdecl Joint_BoneOffsetApply(BYTE*, int);
 
 // ── Net_Connect helpers ───────────────────────────────────────────────────────
 extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,

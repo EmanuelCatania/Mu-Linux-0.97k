@@ -479,7 +479,7 @@ void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
 // If flag != 0: builds rotation matrix from euler (+0x1c..0x24), transforms +0xc0 offset,
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
-void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
+void __cdecl Joint_BoneOffsetApply(BYTE* param_1, int param_2) {
     // Ghidra separó un float[3] de salida en tres locales (local_3c/38/34) y
     // Vector_Rotate escribe 3 floats contiguos: se usa un array real.
     float out[3] = {0.0f, 0.0f, 0.0f};

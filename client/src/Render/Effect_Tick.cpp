@@ -242,7 +242,7 @@ void Effect_TickFade(void)
     int &life=*(int *)(slot+0x60);
     --life;
     if (life<=0) slot[0]=0;
-    Joint_BoneOffsetApply((int)slot,1);
+    Joint_BoneOffsetApply(reinterpret_cast<BYTE*>(slot),1);
     // IDA lee/escribe estos campos como float, salvo el contador de vida.
     if (life<10) {
       const double fade=(double)life*(double)_DAT_005524f4;
