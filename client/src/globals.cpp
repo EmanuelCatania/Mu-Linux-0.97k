@@ -837,9 +837,9 @@ DWORD    DAT_07ea8414  = 0;
 //     v7 - 52     = slot + 4   -> Level
 int   *p_DAT_07ea9504_ = (int*)&OffsetInventoryItems[63 * 0x44 + 56];
 int   *p_DAT_07ea9328_ = (int*)&OffsetInventoryItems[56 * 0x44 + 56];
-DWORD    DAT_07ea9800  = 0;
-DWORD    g_ItemMoveSourcePool = 0;
-DWORD    g_ItemMoveTargetPool = 0;
+BYTE*    DAT_07ea9800  = nullptr;
+BYTE*    g_ItemMoveSourcePool = nullptr;
+BYTE*    g_ItemMoveTargetPool = nullptr;
 DWORD    DAT_07ea9810  = 0;
 // Buffer de texto del teclado del PIN (0x07EA9814): hasta 10 digitos + NUL, y
 // atras la copia del PIN de la primera pasada (dword_7EA981F).  Estaba partido

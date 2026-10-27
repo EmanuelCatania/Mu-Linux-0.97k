@@ -770,9 +770,9 @@ extern int    *p_DAT_07ea9504_;   // &OffsetInventoryItems[63*0x44+56] (slot 63,
 extern int    *p_DAT_07ea9328_;   // &OffsetInventoryItems[56*0x44+56] (slot 56, Key)
 #define DAT_07ea9504  (*p_DAT_07ea9504_)
 #define DAT_07ea9328  (*p_DAT_07ea9328_)
-extern DWORD   DAT_07ea9800;
-extern DWORD   g_ItemMoveSourcePool;
-extern DWORD   g_ItemMoveTargetPool;
+extern BYTE*   DAT_07ea9800;
+extern BYTE*   g_ItemMoveSourcePool;
+extern BYTE*   g_ItemMoveTargetPool;
 extern DWORD   DAT_07ea9804;   // NPC shop context A
 extern DWORD   DAT_07ea9808;   // NPC shop context B
 extern DWORD   DAT_07ea980c;   // NPC shop context C

@@ -24,10 +24,10 @@ static BYTE InventoryPoolToMoveFlag(const BYTE* poolBase) {
     return 0;
 }
 
-static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
-                                          const BYTE* targetPoolBase) {
-    g_ItemMoveSourcePool = (DWORD)(uintptr_t)sourcePoolBase;
-    g_ItemMoveTargetPool = (DWORD)(uintptr_t)targetPoolBase;
+static void InventoryMove_SetPendingPools(BYTE* sourcePoolBase,
+                                          BYTE* targetPoolBase) {
+    g_ItemMoveSourcePool = sourcePoolBase;
+    g_ItemMoveTargetPool = targetPoolBase;
 }
 
 // ConvertGold64 @ 0x004C3E10 (~23 lines) — formats gold with thousand separators
@@ -258,7 +258,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                                             int gridH, int slotType);
 
 unsigned int __stdcall Inventory_DropItem(void) {
-    BYTE* invBase = (BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE* invBase = DAT_07ea9800;
     int gridW = 8;
     int gridH = (invBase == &OffsetMixItems[0]) ? 4 : 8;
     int originX = 0;
@@ -353,7 +353,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     if (itemWidth <= 0 || itemHeight <= 0) return 0;
 
     // Use the args directly.
-    BYTE* sourceInvBase = (BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE* sourceInvBase = DAT_07ea9800;
     BYTE  sourceMoveFlag = InventoryPoolToMoveFlag(sourceInvBase);
     BYTE  targetMoveFlag = InventoryPoolToMoveFlag(invBase);
     int   gridWidth  = gridW;

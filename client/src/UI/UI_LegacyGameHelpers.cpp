@@ -69,7 +69,7 @@ void __cdecl Item_ReturnPickedItem(void)
     const int selCol = (int)(BYTE)DAT_07e9138e;
     const int selRow = (int)(BYTE)DAT_07e9138f;
     const int pos    = (int)DAT_07ea5b18;
-    BYTE* const src  = (BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE* const src  = DAT_07ea9800;
 
     auto fill = [&](BYTE* pool, int cell0) {
         const int col0 = cell0 % 8, row0 = cell0 / 8;

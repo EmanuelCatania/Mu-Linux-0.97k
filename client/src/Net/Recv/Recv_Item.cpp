@@ -54,9 +54,9 @@ void ShopInsertItem(int slot, const BYTE* Item)
     }
 }
 
-BYTE* ItemMove_GetPool(DWORD pool)
+BYTE* ItemMove_GetPool(BYTE* pool)
 {
-    return (BYTE*)(uintptr_t)pool;
+    return pool;
 }
 
 int ItemMove_GetGridH(BYTE* pool)
@@ -756,8 +756,8 @@ void NetRecv_83(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     Send_ActionRequest((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
                 } else {
                     DAT_07eaa165 = 1;   // EquipmentItem
-                    g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];
-                    g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                    g_ItemMoveSourcePool = &OffsetWarehouseItems[0];
+                    g_ItemMoveTargetPool = &OffsetInventoryItems[0];
                     SendRequestEquipmentItem((int)DAT_07ea9804, (int)DAT_07ea9808,
                         (ITEM*)DAT_07e91350, (int)DAT_07ea980c, (int)DAT_07ea9810);
                 }

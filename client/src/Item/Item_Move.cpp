@@ -55,10 +55,10 @@ static BYTE InventoryPoolToMoveFlag(const BYTE* poolBase) {
     return 0;
 }
 
-static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
-                                          const BYTE* targetPoolBase) {
-    g_ItemMoveSourcePool = (DWORD)(uintptr_t)sourcePoolBase;
-    g_ItemMoveTargetPool = (DWORD)(uintptr_t)targetPoolBase;
+static void InventoryMove_SetPendingPools(BYTE* sourcePoolBase,
+                                          BYTE* targetPoolBase) {
+    g_ItemMoveSourcePool = sourcePoolBase;
+    g_ItemMoveTargetPool = targetPoolBase;
 }
 
 int g_ItemMoveTargetDurBefore = -1;

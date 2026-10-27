@@ -1649,11 +1649,11 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             if (flying <= 1 && ((kind >= 384 && kind <= 390) || kind == 419))
                 return;
         }
-        DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+        DAT_07ea9800 = &OffsetInventoryItems[0];
         memcpy(DAT_07e91350, slot, 0x44);                   // pPickedItem = *slot
         DAT_07e91388 = 1;                                   // pPickedItem.Key (copia del port)
         SyncPickedItemVisualState();
-        g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+        g_ItemMoveSourcePool = &OffsetInventoryItems[0];
         g_ItemMoveTargetPool = 0;
         *(short*)slot = -1;
         *(int*)(slot + 4) = 0;
@@ -1667,7 +1667,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         if (rightClick) {
             DAT_07e11e78 = (DWORD)(unequipTarget + 12);
             DAT_07eaa165 = 1;                               // EquipmentItem
-            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+            g_ItemMoveTargetPool = &OffsetInventoryItems[0];
             SendRequestEquipmentItem(0, a5, picked, 0, unequipTarget + 12);
         }
         return;
@@ -1695,7 +1695,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (a5 == 1 && pt >= 0 && pt < 96 && left == -1)
         DAT_07e11e78 = 0;
 
-    const BYTE* src = (const BYTE*)(uintptr_t)DAT_07ea9800;
+    const BYTE* src = DAT_07ea9800;
     BYTE srcFlag;
     if (src == &OffsetInventoryItems[0])      srcFlag = 0;
     else if (src == &OffsetWarehouseItems[0]) srcFlag = 2;
@@ -1726,8 +1726,8 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (DAT_07eaa165) return;                               // EquipmentItem
     DAT_07eaa165 = 1;
     g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800
-                                        : (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-    g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                                        : &OffsetInventoryItems[0];
+    g_ItemMoveTargetPool = &OffsetInventoryItems[0];
     SendRequestEquipmentItem(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
 }
 

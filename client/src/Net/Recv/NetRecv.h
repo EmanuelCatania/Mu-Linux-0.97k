@@ -126,7 +126,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state);
 void CreateMagicShiny97k(BYTE* entity, int hand);
 // Recv_Item.cpp
 void ShopInsertItem(int slot, const BYTE* Item);
-BYTE* ItemMove_GetPool(DWORD pool);
+BYTE* ItemMove_GetPool(BYTE* pool);
 int ItemMove_GetGridH(BYTE* pool);
 int ItemMove_ToGridSlot(BYTE* pool, int slot);
 BYTE* ItemMove_GetEquipSlotPtr(int slot);
