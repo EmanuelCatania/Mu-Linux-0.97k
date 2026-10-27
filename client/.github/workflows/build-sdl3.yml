@@ -122,6 +122,7 @@ jobs:
             python -B tests/CutTextPointer.py --architecture x64
             python -B tests/BmdSetupPointer.py --architecture x64
             python -B tests/BodyColorPointer.py --architecture x64
+            python -B tests/ClothHelperPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -206,6 +207,7 @@ jobs:
             python3 -B tests/CutTextPointer.py --generator Ninja
             python3 -B tests/BmdSetupPointer.py --generator Ninja
             python3 -B tests/BodyColorPointer.py --generator Ninja
+            python3 -B tests/ClothHelperPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

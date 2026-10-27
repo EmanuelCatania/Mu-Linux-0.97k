@@ -25,9 +25,9 @@
 
 void __fastcall FUN_00401af0(void*);
 void  __fastcall SpringNode_Ctor(void *node);
-int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);
-void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);
-char  __fastcall VerletSystem_Flush(int a1);
+int   __cdecl    Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range);
+void  __cdecl    Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest);
+char  __fastcall VerletSystem_Flush(uintptr_t a1);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node);
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 extern void __cdecl operator_delete(void* ptr);
@@ -38,7 +38,7 @@ extern void __cdecl operator_delete(void* ptr);
 void __fastcall CSQuest_clearQuest(void* param_1);
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void __fastcall SpringNode_GetPos(void *node, float *out);
-float __fastcall SpringNode_Delta(void *a, int b, float *c);
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
 static void __cdecl FUN_0053cc00_impl(int param_1);
@@ -1134,8 +1134,8 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
         for (int ei = 0; ei < 3; ei++) {
             short na = tri[ei + 1];
             short nb = tri[(ei + 1) % 3 + 1];
-            int pA = (int)nodes + na * 0x3c;
-            int pB = (int)nodes + nb * 0x3c;
+            uintptr_t pA = reinterpret_cast<uintptr_t>(nodes) + na * 0x3c;
+            uintptr_t pB = reinterpret_cast<uintptr_t>(nodes) + nb * 0x3c;
             float delta[3];
             float dist = SpringNode_Delta((void*)pA, pB, delta);
             float posA[3], posB[3];

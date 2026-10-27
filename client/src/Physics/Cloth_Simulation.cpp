@@ -8,11 +8,11 @@
 
 // ── Bone / 3D sound helpers ───────────────────────────────────────────────────
 // BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformPos)
-float __fastcall SpringNode_Delta(void *a, int b, float *c);
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void  __fastcall VerletNode_AddAccel(void *a, float x, float y, float z);
 void  __fastcall ClothNode_Integrate(void *a, float v);
 void  __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
-void  __cdecl    ClothNode_ApplyForces(int _this, int a2, short a3);
+void  __cdecl    ClothNode_ApplyForces(uintptr_t _this, int a2, short a3);
 
 // Cloth_PinTopRow @ 0x00408780 — Cloth_PinTopRow (slot 1 de off_552520).
 // Reposiciona los W nodos de la FILA SUPERIOR sobre la matriz del hueso al que
@@ -127,7 +127,7 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
     char  *v7 = (char  *)(v6 + 60 * *(short *)v5);
     float *v8 = (float *)(v6 + 60 * *((short *)v5 + 1));
 
-    double d = SpringNode_Delta(v7, (int)v8, v25);
+    double d = SpringNode_Delta(v7, reinterpret_cast<uintptr_t>(v8), v25);
     if (d < 0.001)
       d = 0.001;
 
@@ -177,10 +177,10 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
 // parámetro de entrada. Los ports reconstruyen la distancia real.
 // ═══════════════════════════════════════════════════════════════════════════
 
-float __fastcall SpringNode_Delta(void *a, int b, float *c);          // delta + |delta|
-char  __fastcall VerletSystem_Flush(int a1);                            // aplica corrección
-void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);        // spring de igualdad
-int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);// spring de rango
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);          // delta + |delta|
+char  __fastcall VerletSystem_Flush(uintptr_t a1);                            // aplica corrección
+void  __cdecl    Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest);        // spring de igualdad
+int   __cdecl    Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range);// spring de rango
 
 // Vec3_Length @ 0x004f9c40 — Vec3_Length: returns sqrt(dot(v,v)), does NOT modify v.
 // (Ghidra shows return as float10 left in x87 ST0; callers use the return value as distance.)
@@ -235,7 +235,7 @@ void __fastcall ClothNode_Integrate(void *a, float v) {
 // Port FIEL de IDA `sub_4079E0`. El bucle sobre `&flt_590AF4 .. &unk_590B00`
 // son los 3 componentes del viento; en nuestro build esos globals no son
 // contiguos, así que se despliega explícitamente.
-void __cdecl ClothNode_ApplyForces(int _this, int a2, short a3)
+void __cdecl ClothNode_ApplyForces(uintptr_t _this, int a2, short a3)
 {
   if ((*(BYTE *)(_this + 40) & 1) != 0)
   {
@@ -271,9 +271,9 @@ void __cdecl ClothNode_ApplyForces(int _this, int a2, short a3)
 }
 
 // SpringNode_Delta @ 0x00407b50 — SpringNode_Delta: out = posA - posB; returns distance (length of delta).
-// param_1=nodeA_ptr (this), param_2=nodeB_ptr (as int), param_3=float[3] output.
+// param_1=nodeA_ptr (this), param_2=nodeB_ptr (dirección nativa), param_3=float[3] output.
 // Does NOT normalize; caller uses return value as rest-length distance.
-float __fastcall SpringNode_Delta(void *a, int b, float *c) {
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c) {
     float *posA = (float*)((char*)a + 0x1c);
     float *posB = (float*)(b + 0x1c);
     c[0] = posA[0] - posB[0];
@@ -287,7 +287,7 @@ float __fastcall SpringNode_Delta(void *a, int b, float *c) {
 // de 20x el máximo) — eso corta la iteración del solver en `sub_408E30`.
 // Port FIEL de IDA `sub_407B90` (el `a2@<st0>` es el retorno de sub_407B50).
 // Corrige SÓLO la posición de a1 (+0x1C..+0x24), no la del partner.
-int __cdecl Cloth_SpringRange(int a1, int a3, const float *range)
+int __cdecl Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range)
 {
   float v9[3];
   double diff;
@@ -323,7 +323,7 @@ int __cdecl Cloth_SpringRange(int a1, int a3, const float *range)
 // longitud de reposo. NO toca la posición: acumula en el buffer de corrección
 // (+0x30..+0x38) e incrementa el contador (+0x2C); `sub_407D10` promedia y
 // aplica. Port FIEL de IDA `sub_407C60` (verificado contra el disasm).
-void __cdecl Cloth_SpringEqual(int a1, int a3, float rest)
+void __cdecl Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest)
 {
   float v8[3];
 
@@ -348,16 +348,16 @@ void __cdecl Cloth_SpringEqual(int a1, int a3, float rest)
 
 // VerletSystem_Flush @ 0x00407d10 — VerletSystem_Flush: apply accumulated position corrections, zero buffer
 // VerletSystem_Flush (IDA-activated)
-char __fastcall VerletSystem_Flush(int a1)
+char __fastcall VerletSystem_Flush(uintptr_t a1)
 {
-  int v1; // eax
+  intptr_t v1;
   float *v2; // esi
   int v3; // edx
   double v4; // st7
   double v5; // st7
   double v6; // st7
 
-  *((BYTE*)&v1) = *(BYTE *)(a1 + 40);
+  v1 = *(BYTE *)(a1 + 40);
   if ( (v1 & 1) != 0 )
   {
     *(DWORD *)(a1 + 56) = 0;
@@ -366,7 +366,7 @@ char __fastcall VerletSystem_Flush(int a1)
   }
   else
   {
-    v1 = *(DWORD *)(a1 + 44);
+    v1 = *(int *)(a1 + 44);
     if ( v1 > 0 )
     {
       v2 = (float *)(a1 + 48);
@@ -414,7 +414,8 @@ void __fastcall VerletNode_GetPos(void *a, float *b) {
 // ── SpringNode helpers (SpringNode_Ctor family) ──────────────────────────────
 
 // SpringNode_ZeroFields @ 0x00407980 — SpringNode_ZeroFields: zeroes accel/vel/pos/pinned in 0x3c stride node.
-void __fastcall SpringNode_ZeroFields(int param_1) {
+void __fastcall SpringNode_ZeroFields(void* node) {
+    BYTE* param_1 = static_cast<BYTE*>(node);
     *(int *)(param_1 + 0x2c) = 0;
     for (int i = 0; i < 3; i++) {
         *(int *)(param_1 + 0x1c + i*4) = 0;   // pos[i]
@@ -431,7 +432,7 @@ void __fastcall SpringNode_Ctor(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
   *(DWORD *)_this = (DWORD)g_ClothNodeVTable;
-  SpringNode_ZeroFields((int)_this);
+  SpringNode_ZeroFields(_this);
 }
 
 
@@ -538,7 +539,7 @@ DWORD *__cdecl ClothAnchor_Ctor(DWORD *_this)
 // ClothNode_AddCorrection @ 0x00407D70 — ClothNode_AddCorrection: acumula una corrección
 // de posición en el buffer (+0x30..+0x38) e incrementa el contador (+0x2C).
 // Port FIEL de IDA `sub_407D70`.
-void __cdecl ClothNode_AddCorrection(int _this, const float *a2)
+void __cdecl ClothNode_AddCorrection(uintptr_t _this, const float *a2)
 {
   *(float *)(_this + 48) = a2[0] + *(float *)(_this + 48);
   *(float *)(_this + 52) = a2[1] + *(float *)(_this + 52);
@@ -575,7 +576,7 @@ void __cdecl ClothAnchor_Collide(float *_this, int *node)
     v[0] = (float)(v4 * v[0]);
     v[1] = (float)(v4 * v[1]);
     v[2] = (float)(v4 * v[2]);
-    ClothNode_AddCorrection((int)node, v);
+    ClothNode_AddCorrection(reinterpret_cast<uintptr_t>(node), v);
   }
 }
 

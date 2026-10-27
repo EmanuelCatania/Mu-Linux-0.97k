@@ -171,7 +171,7 @@ void __cdecl L_YGXPAXIHP6EX0_Z1_Z(void *arr, int elem_size, int count, void *cto
 void  __fastcall SpringNode_Ctor(void *node);   // ctor (thiscall en el original: arg en ECX)  // IDA-port: void return
 void  __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void  __fastcall SpringNode_GetPos(void *node, float *out);
-float __fastcall SpringNode_Delta(void *nodeA, int nodeB_ptr, float *out_delta);
+float __fastcall SpringNode_Delta(void *nodeA, uintptr_t nodeB_ptr, float *out_delta);
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node); // IDA-port: returns this
 void  __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
@@ -348,7 +348,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
             // vertical spring (row → row+1, same col)
             if (row < H - 1) {
                 dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                   (int)nodes + (W + ni) * 0x3c, delta);
+                                   reinterpret_cast<uintptr_t>(nodes) + (W + ni) * 0x3c, delta);
                 Spring_StoreEdge(widget, sp, sni, sni + (short)W,
                              dist * _DAT_00552530, dist, (BYTE)(vert_flag | 2));
                 sp++;
@@ -357,7 +357,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
             // horizontal spring (col → col+1, same row)
             if (col < W - 1) {
                 dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                   (int)nodes + (ni + 1) * 0x3c, delta);
+                                   reinterpret_cast<uintptr_t>(nodes) + (ni + 1) * 0x3c, delta);
                 Spring_StoreEdge(widget, sp, sni, sni + 1,
                              dist * _DAT_00552530, dist, 3);
                 sp++;
@@ -365,7 +365,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
                 // diagonal shear spring down-right (to row+1, col+1)
                 if (row < H - 1) {
                     dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                       (int)nodes + (ni + 1 + W) * 0x3c, delta);
+                                       reinterpret_cast<uintptr_t>(nodes) + (ni + 1 + W) * 0x3c, delta);
                     Spring_StoreEdge(widget, sp, sni, sni + 1 + (short)W,
                                  dist * _DAT_00552530, dist, diag_flag);
                     sp++;
@@ -374,7 +374,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
                 // diagonal shear spring up-right (to row-1, col+1)
                 if (row > 1) {
                     dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                       (int)nodes + (ni - W + 1) * 0x3c, delta);
+                                       reinterpret_cast<uintptr_t>(nodes) + (ni - W + 1) * 0x3c, delta);
                     Spring_StoreEdge(widget, sp, sni, (short)(sni - (short)W + 1),
                                  dist * _DAT_00552530, dist, diag_flag);
                     sp++;
