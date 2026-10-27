@@ -469,7 +469,8 @@ void __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb,
 // ── VerletNode helpers (VerletNode_CtorBase family) ─────────────────────────────
 
 // VerletNode_ZeroFields @ 0x00407DF0 — VerletNode_ZeroFields: zero +4..+1c (7 dwords).
-void __fastcall VerletNode_ZeroFields(int param_1) {
+void __fastcall VerletNode_ZeroFields(void* node) {
+    BYTE* param_1 = static_cast<BYTE*>(node);
     *(int *)(param_1 + 0x04) = 0;
     *(int *)(param_1 + 0x08) = 0;
     *(int *)(param_1 + 0x0c) = 0;
@@ -481,18 +482,19 @@ void __fastcall VerletNode_ZeroFields(int param_1) {
 
 // VerletNode_CtorBase @ 0x00407DA0 — VerletNode_CtorBase: set vtable (skipped) + zero fields.
 void* __fastcall VerletNode_CtorBase(void *param_1) {
-    VerletNode_ZeroFields((int)param_1);
+    VerletNode_ZeroFields(param_1);
     return param_1;
 }
 
 // VerletNode_CtorExt @ 0x00407ED0 — VerletNode_CtorExt: zero fields + clear +0x20.
 // VerletNode_CtorExt (IDA-activated)
-int __cdecl VerletNode_CtorExt(DWORD *_this)
+intptr_t __cdecl VerletNode_CtorExt(DWORD *_this)
 {
-  int result; // eax
+  // Se conserva el retorno del port actual; sus consumidores no lo utilizan.
+  intptr_t result;
 
-  VerletNode_ZeroFields((int)_this);
-  result = (int)_this;
+  VerletNode_ZeroFields(_this);
+  result = reinterpret_cast<intptr_t>(_this);
   _this[8] = 0;
   return result;
 }
