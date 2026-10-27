@@ -156,6 +156,7 @@ jobs:
             python -B tests/MessageRowsPointer.py --architecture x64
             python -B tests/LegacyTextPointer.py --architecture x64
             python -B tests/TrailPoolPointer.py --architecture x64
+            python -B tests/ModulusBitsPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -274,6 +275,7 @@ jobs:
             python3 -B tests/MessageRowsPointer.py --generator Ninja
             python3 -B tests/LegacyTextPointer.py --generator Ninja
             python3 -B tests/TrailPoolPointer.py --generator Ninja
+            python3 -B tests/ModulusBitsPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

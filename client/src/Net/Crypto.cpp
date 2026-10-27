@@ -525,8 +525,8 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     //   bitOff avanza de a 18 por palabra (CF90 devuelve a2+a5).
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 0,  16);
-        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 22, 2);
+        bitOff = CSimpleModulus_AddBits(dst, bitOff, &packed[i], 0,  16);
+        bitOff = CSimpleModulus_AddBits(dst, bitOff, &packed[i], 22, 2);
     }
 
     // ── Pass 4: checksum byte ────────────────────────────────────────────────
@@ -538,7 +538,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     WORD  tail;
     ((BYTE *)&tail)[0] = (BYTE)(chk ^ xorSeed ^ 0x3D);
     ((BYTE *)&tail)[1] = chk;
-    CSimpleModulus_AddBits((int)dst, bitOff, (int)&tail, 0, 16);
+    CSimpleModulus_AddBits(dst, bitOff, &tail, 0, 16);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -622,9 +622,9 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     // ── Pass 1: bit-unpack 4×{16+2}-bit packed[i] from src ────────────────
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        CSimpleModulus_AddBits((int)&packed[i], 0,  (int)src, bitOff,      16);
+        CSimpleModulus_AddBits(&packed[i], 0,  src, bitOff,      16);
         bitOff += 16;
-        CSimpleModulus_AddBits((int)&packed[i], 22, (int)src, bitOff,      2);
+        CSimpleModulus_AddBits(&packed[i], 22, src, bitOff,      2);
         bitOff += 2;
     }
     int tailBitOff = bitOff;  // 4*18 = 72
@@ -678,7 +678,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
     // ── Pass 4: read+verify checksum tail ────────────────────────────────
     DWORD tail = 0;
-    CSimpleModulus_AddBits((int)&tail, 0, (int)src, tailBitOff, 16);
+    CSimpleModulus_AddBits(&tail, 0, src, tailBitOff, 16);
     BYTE  byteSeed = (BYTE)(tail & 0xFF);
     BYTE  byteChk  = (BYTE)((tail >> 8) & 0xFF);
     // Recupera el byteSeed original = (chk_lo ^ chk_hi ^ 0x3D) → deshacer para obtener xorSeed
@@ -1416,7 +1416,7 @@ unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param
 // Copia el rango de bits [a4..a4+a5) del buffer de origen (a3) al destino (a1)
 // en el offset de bit a2. Usa un buffer temporal + CSimpleModulus_Shift para el corrimiento entre bytes.
 // Ported from IDA sub_53CF90.
-int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned int a4, int a5)
+int __stdcall CSimpleModulus_AddBits(void* a1, unsigned int a2, const void* a3, unsigned int a4, int a5)
 {
     int  lastByteIdx = CSimpleModulus_GetByteOfBit((int)a4 + a5 - 1);
     int  firstByteIdx= CSimpleModulus_GetByteOfBit((int)a4);
@@ -1426,7 +1426,7 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
     // desborde cuando se corren v6 + 1 bytes.
     char *lpMem = (char *)operator_new(v6 + 1);
     memset(lpMem, 0, v6 + 1);
-    memcpy(lpMem, (const void *)(a3 + firstByteIdx), v6);
+    memcpy(lpMem, static_cast<const BYTE*>(a3) + firstByteIdx, v6);
 
     int tail = (a4 + a5) % 8;
     if (tail) {
@@ -1439,11 +1439,11 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
     CSimpleModulus_Shift((BYTE *)lpMem, v6 + 1,  (a2 % 8));
 
     int    nBytes = (int)v6 + ((a2 % 8) > (a4 % 8) ? 1 : 0);
-    BYTE  *v9     = (BYTE *)(a1 + CSimpleModulus_GetByteOfBit(a2));
+    BYTE  *v9     = static_cast<BYTE*>(a1) + CSimpleModulus_GetByteOfBit(a2);
     if (nBytes > 0) {
-        int off = (int)((BYTE *)lpMem - v9);
+        const BYTE* source = reinterpret_cast<const BYTE*>(lpMem);
         do {
-            *v9 = (BYTE)(*v9 | v9[off]);
+            *v9 = (BYTE)(*v9 | *source++);
             ++v9;
             --nBytes;
         } while (nBytes);

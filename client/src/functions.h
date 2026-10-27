@@ -1125,7 +1125,7 @@ void  __stdcall FixupSMD_stub(void);                                 // SMD fixu
 // Batch 13 — GameGuard / Crypto / IAT thunks (0x0053CB86–0x005406F0)
 // IAT thunks (0x0053CB86..0x0053CBA4) resolved by linker — no declarations needed.
 unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param_2); // Crypto decrypt block
-int   __stdcall CSimpleModulus_AddBits(int param_1, unsigned int param_2, int param_3, unsigned int param_4, int param_5); // IDA: FUN_0053CF90 (0x0053CF90)
+int   __stdcall CSimpleModulus_AddBits(void* param_1, unsigned int param_2, const void* param_3, unsigned int param_4, int param_5); // IDA: FUN_0053CF90 (0x0053CF90)
 void  __stdcall CSimpleModulus_Shift(unsigned char *param_1, int param_2, int param_3); // IDA: FUN_0053D0D0 (0x0053D0D0)
 int   __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic, int k0, int k1, int k2, int k3); // IDA: FUN_0053D1C0 (0x0053D1C0)
 // FUN_0053d430 — declarada arriba (PreInitNPGameMon)
