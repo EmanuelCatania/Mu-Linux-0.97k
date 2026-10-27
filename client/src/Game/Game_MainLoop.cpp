@@ -466,7 +466,7 @@ static void Game_TickAmbientAudio()
     // default (apagada). Para tener música en el login alcanza con dejar un mp3
     // con ese nombre. MuTheme es el Lorencia.mp3 del pack (mismo MD5).
     if (SceneFlag == 2)
-        Music_PlayTrack((DWORD)(uintptr_t)"Data\\Music\\MuTheme.mp3", 0);
+        Music_PlayTrack("Data\\Music\\MuTheme.mp3", 0);
 
     if (SceneFlag != 5) return;
 

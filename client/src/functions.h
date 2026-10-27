@@ -100,8 +100,8 @@ void  __cdecl exception_ctor(void); // IDA: FUN_0040F500 (0x0040F500), ??0except
 void  __cdecl CUIRenderText_RenderText(HDC hdc, int x, int y, const char *text, DWORD color); // Text_DrawColored
 
 // ── Input ─────────────────────────────────────────────────────────────────────
-void  __cdecl Music_StopTrack(DWORD, int); // IDA: FUN_004127F0
-void  __cdecl Music_PlayTrack(DWORD, int); // IDA: PlayMp3
+void  __cdecl Music_StopTrack(const char*, int); // IDA: FUN_004127F0
+void  __cdecl Music_PlayTrack(const char*, int); // IDA: PlayMp3 (0x00412890)
 void  __cdecl CheckHack(int, int, int); // IDA: CheckHack (0x00412A70)
 void  __cdecl GetCheckSum(int, int, int, int); // IDA: GetCheckSum (0x00412DE0)
 

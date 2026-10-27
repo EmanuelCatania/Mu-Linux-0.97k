@@ -73,7 +73,7 @@ void __cdecl FUN_00543c98(void *ptr) {
 // StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/Sound/Music.cpp).
 // No reimplementarlo acá: es el mismo símbolo del binario.
 void __cdecl StopMp3(char *cmd, int param) {
-    Music_StopTrack((DWORD)(uintptr_t)cmd, param);
+    Music_StopTrack(cmd, param);
 }
 
 
