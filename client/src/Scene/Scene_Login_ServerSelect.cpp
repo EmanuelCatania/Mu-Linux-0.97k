@@ -232,7 +232,7 @@ int Scene_Login_ServerSelect(void)
             iStack00000004++;
             puVar9 = puStack00000010 + 2000;
             iVar8  = iVar8 + 0x14;
-        } while ((int)puVar12 < (int)(uintptr_t)(DAT_083a45d8 + 0x34ee));
+        } while (reinterpret_cast<char*>(puVar12) < DAT_083a45d8 + 0x34ee);
     }
 
     // ── PASS 2: tag PVP/non-PVP groups, count each ───────────────────────────
@@ -251,7 +251,7 @@ int Scene_Login_ServerSelect(void)
                 pcVar13++;
             } while (cVar1 != '\0');
             // If last relevant char in name == '2' → PVP server
-            if (pcVar7[~uVar6 - 0x16] == '2') {
+            if (pcVar7[static_cast<ptrdiff_t>(~uVar6) - 0x16] == '2') {
                 pcVar7[1] = '\x01';   // pvp_flag = 1
                 iVar8++;
             } else {
@@ -260,7 +260,7 @@ int Scene_Login_ServerSelect(void)
             }
         }
         pcVar7 = pcVar7 + 0x21e;
-    } while ((int)pcVar7 < (int)(uintptr_t)(DAT_083a45d8 + 0x3502));
+    } while (pcVar7 < DAT_083a45d8 + 0x3502);
 
     // ── PASS 3: draw two-column server group list ─────────────────────────────
     puStack00000010 = puVar9;
@@ -330,7 +330,7 @@ LAB_0051f314:
         }
         lpString = lpString + 0x21e;
         iVar8++;
-    } while ((int)lpString < (int)(uintptr_t)(DAT_083a45d8 + 0x34ee));
+    } while (lpString < DAT_083a45d8 + 0x34ee);
 
     // ── PASS 4: draw channel sub-list for selected server ─────────────────────
     iVar8 = ServerSelectHi;
@@ -359,7 +359,7 @@ LAB_0051f4b0:
                 if ((*pcVar7 != '\0') && (pcVar7[1] == '\0'))
                     iStack00000004++;
                 pcVar7 = pcVar7 + 0x21e;
-            } while ((int)pcVar7 < (int)(uintptr_t)(DAT_083a45d8 + 0x3502));
+            } while (pcVar7 < DAT_083a45d8 + 0x3502);
             iVar5 = 0;
 LAB_0051f4d9:
             // DAT_083a45ec es `*(DWORD*)(...)` lvalue → &DAT es DWORD*, así que
@@ -390,7 +390,7 @@ LAB_0051f428:
                 if ((*pcVar7 != '\0') && (pcVar7[1] == '\x01'))
                     iStack00000004++;
                 pcVar7 = pcVar7 + 0x21e;
-            } while ((int)pcVar7 < (int)(uintptr_t)(DAT_083a45d8 + 0x3502));
+            } while (pcVar7 < DAT_083a45d8 + 0x3502);
             iVar5 = 0;
 LAB_0051f44c:
             uVar6  = (uint)*((unsigned char*)&DAT_083a45ec + iVar8);  // byte arith (ver arriba)
