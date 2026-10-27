@@ -1523,7 +1523,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
 
         // Botón 2 — cicla el tamaño del historial (mismo que la tecla F4).
         if (FUN_0040c490(bx + gap, by, bw, bh, 1)) {
-            ChatListBox_ScrollByN((int)(uintptr_t)self);
+            ChatListBox_ScrollByN(self);
             PlayBuffer(25, 0, 0);
             DAT_083a4124 = 0;
         }

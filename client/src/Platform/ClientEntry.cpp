@@ -653,13 +653,13 @@ int main(int, char**)
     // queda nula y todos los sitios de dispatch (Render_GameFrame +0x10,
     // UIChatLogWindow_AddText +0x70, CreateChat +0x70) crashean.
     // ChatListBox_Construct portea sub_40C5D0+sub_40C7D0 1:1.
-    DAT_055c9ff0 = (DWORD)ChatListBox_Construct();
+    DAT_055c9ff0 = static_cast<BYTE*>(ChatListBox_Construct());
     // DAT_055c9ff4 es el segundo widget de chat (susurro / panel de notificaciones,
     // esquina superior derecha). El WinMain de IDA llama operator_new(0xBC) +
     // sub_40E990 (hermana de sub_40C7D0, con nodo de lista más chico, 0x18, y 24
     // filas visibles). Sin construirlo la vtable queda nula y el dispatch
     // vtable[+0x14] desde SecondPassword_Screen1 crashea.
-    DAT_055c9ff4 = (DWORD)ChatListBox_ConstructWhisper();
+    DAT_055c9ff4 = static_cast<BYTE*>(ChatListBox_ConstructWhisper());
 
     // Los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0: los
     // scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/

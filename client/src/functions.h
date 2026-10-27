@@ -94,7 +94,7 @@ void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF
 // Packet_DecryptDword signature — canonical (void*,void*) above
 void  __cdecl Object_SetRectFields(void*, undefined4, undefined4);  // Object_SetRectFields
 void  __cdecl FUN_0040c7d0(int, int);
-void  __cdecl Object_ClearMembers(int);
+void  __cdecl Object_ClearMembers(void*);
 void  __cdecl FUN_0040e990(int, int, int);
 void  __cdecl exception_ctor(void); // IDA: FUN_0040F500 (0x0040F500), ??0exception@@QAE@XZ
 void  __cdecl CUIRenderText_RenderText(HDC hdc, int x, int y, const char *text, DWORD color); // Text_DrawColored
@@ -819,7 +819,7 @@ void  __cdecl ItemAngle(OBJECT*); // IDA: ItemAngle (0x005030C0)
 void  __cdecl Entity_UpdateSparkleEffect(OBJECT*); // FUN_00503650 — updates periodic entity sparkle particles
 int   __cdecl CSQuest_ProceedButton(void *);  // Packet_ParseType1
 undefined4 __cdecl Packet_ParseType2(void *);  // Packet_ParseType2
-void  __cdecl ChatListBox_ScrollByN(DWORD);   // (undocumented)
+void  __cdecl ChatListBox_ScrollByN(void*);   // IDA: 0x0040E330
 int   __cdecl Sound_UpdateChannel3D_Tick(int *, float);   // cloth: paso de simulación (0x408940)
 
 // ── Scene-entity grid helpers ─────────────────────────────────────────────────

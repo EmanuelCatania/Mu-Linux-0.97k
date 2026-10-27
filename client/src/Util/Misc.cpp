@@ -97,20 +97,21 @@ void __cdecl CPhysicsManager_Render(void* physics_manager)
 // Sets two consecutive fields at this+0x2c and this+0x30.
 void __cdecl Object_SetRectFields(void *this_,undefined4 param_1,undefined4 param_2)
 {
-  *(undefined4 *)((int)this_ + 0x2c) = param_1;
-  *(undefined4 *)((int)this_ + 0x30) = param_2;
+  BYTE* object = static_cast<BYTE*>(this_);
+  *(undefined4 *)(object + 0x2c) = param_1;
+  *(undefined4 *)(object + 0x30) = param_2;
   return;
 }
 
 
 // Object_ClearMembers — Object_ClearMembers
 // Zeroes 0x140 dwords (1280 bytes) starting at param_1 + 200 (0xc8).
-void __cdecl Object_ClearMembers(int param_1)
+void __cdecl Object_ClearMembers(void* param_1)
 {
   int iVar1;
   undefined4 *puVar2;
 
-  puVar2 = (undefined4 *)(param_1 + 200);
+  puVar2 = reinterpret_cast<undefined4*>(static_cast<BYTE*>(param_1) + 200);
   for (iVar1 = 0x140; iVar1 != 0; iVar1 = iVar1 + -1) {
     *puVar2 = 0;
     puVar2 = puVar2 + 1;

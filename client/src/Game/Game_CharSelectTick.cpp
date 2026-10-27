@@ -85,7 +85,7 @@ void Game_CharSelectTick(void)
             void** vt  = (void**)*obj;
             typedef void (__fastcall *FnClear)(DWORD*);
             ((FnClear)vt[10])(obj);
-            Object_ClearMembers((int)DAT_055c9ff0);
+            Object_ClearMembers(DAT_055c9ff0);
         }
         CErrorReport_Write(&DAT_055c9bf0, "> Main Scene init success");
         CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
