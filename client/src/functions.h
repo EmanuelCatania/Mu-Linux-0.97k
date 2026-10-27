@@ -795,7 +795,7 @@ void  __cdecl FUN_004eb7f0(void);
 void  __cdecl FUN_004ec330(void);
 // SecondPassword UI helper calls
 void  __cdecl ShowCheckBox(int num, int index, int message);  // IDA: ShowCheckBox (0x0051E240)
-uint  __cdecl SecondPassword_GridSlotAvail(int ctx, int p1, int p2, int p3, int p4);   // SecondPassword_AuthSend — returns non-zero on success
+uint  __cdecl SecondPassword_GridSlotAvail(uintptr_t ctx, int p1, int p2, int p3, int p4);   // SecondPassword_AuthSend — returns non-zero on success
 undefined4 __cdecl SecondPassword_CancelReturn(void);        // SecondPassword_CancelReturn (nav back, clear state)
 uint  __cdecl Net_Disconnect_Clean(void);             // Net_Disconnect_Clean (sends disconnect + returns)
 void  __cdecl FUN_004d1fc0(void);             // SecondPassword_RenderGrid_Empty

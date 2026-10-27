@@ -128,6 +128,7 @@ jobs:
             python -B tests/ModelGravityPointer.py --architecture x64
             python -B tests/PacketQueuePointer.py --architecture x64
             python -B tests/SocketContextPointer.py --architecture x64
+            python -B tests/GridAvailablePointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -218,6 +219,7 @@ jobs:
             python3 -B tests/ModelGravityPointer.py --generator Ninja
             python3 -B tests/PacketQueuePointer.py --generator Ninja
             python3 -B tests/SocketContextPointer.py --generator Ninja
+            python3 -B tests/GridAvailablePointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

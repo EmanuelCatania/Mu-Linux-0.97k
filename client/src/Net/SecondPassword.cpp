@@ -1044,7 +1044,7 @@ void __cdecl SecondPassword_Screen8(void) {
             // 004E3DB0 comprueba que exista espacio en el inventario normal
             // para el resultado; en el binario el primer argumento era la
             // dirección absoluta de ese pool, no un literal portable.
-            uint uVar2 = SecondPassword_GridSlotAvail((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
+            uint uVar2 = SecondPassword_GridSlotAvail(reinterpret_cast<uintptr_t>(OffsetInventoryItems), 8, 8, iVar1, iVar3);
             if ((char)uVar2 == '\0') {
                 UIChatLogWindow_AddText(&DAT_07eaa198, &DAT_07d54600, 2);
             } else {
@@ -1326,13 +1326,13 @@ void __cdecl FUN_004ec330(void) {
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,
 // con stride 0x44 por celda; devuelve 1 si alguna celda de la ventana está libre (slot==-1), si no 0.
 // SecondPassword_GridSlotAvail (IDA-activated)
-uint __cdecl SecondPassword_GridSlotAvail(int a1, int a2, int a3, int a4, int a5)
+uint __cdecl SecondPassword_GridSlotAvail(uintptr_t a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebp
   int v6; // eax
   int v8; // esi
   char v10; // bl
-  int v11; // edi
+  uintptr_t v11;
   WORD *v12; // ecx
   bool v13; // cc
   int v15; // [esp+10h] [ebp-Ch]
