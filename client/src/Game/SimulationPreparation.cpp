@@ -135,7 +135,7 @@ void PrepareCharacter(CHARACTER &c) {
     ObjectPose_PrepareSimulation(AsObject(&c), 1);
     ObjectPose_TickMeshEvents(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
-    MoltSilhouette_Tick((int)&c, model,
+    MoltSilhouette_Tick(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
     MaterialVisuals_TickObjectDraw(&o);
     CharacterCloth_Tick((int)&c);

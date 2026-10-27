@@ -171,7 +171,7 @@ void MoltSilhouette_BeginStep() {
 void MoltSilhouette_Invalidate(const void *entity) { moltSamples.erase(entity); previousMoltSamples.erase(entity); }
 // DESVIACION: geometría y una muestra de azar por arista desde la pose SIM.
 // No se consume azar ni se modifican marcas de triángulos en los draws extra.
-void MoltSilhouette_Tick(int entity, void *model, float *bones, char translate) {
+void MoltSilhouette_Tick(OBJECT* entity, void *model, float *bones, char translate) {
     OBJECT &o=*AsObject(entity);
     if (!o.Live || o.Type!=319 || o.Alpha<_DAT_005524f8 || o.RenderType==0x80 ||
         (DAT_07e11d30==0 && o.HiddenMesh==-2)) return;
