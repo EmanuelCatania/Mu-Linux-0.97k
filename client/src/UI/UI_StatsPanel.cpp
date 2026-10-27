@@ -918,7 +918,7 @@ LAB_0051d3cf:
         Gfx::Color3f(0.9f, 0.9f, 1.0f);
       }
       ptVar17 = &local_d0;
-      pCVar6 = (LPCSTR)((int)&DAT_083a44c4 + iVar3 * 0x26);
+      pCVar6 = DAT_083a44c4 + iVar3 * 0x26;
       iVar4 = Platform::TextLength(pCVar6);
       gFont.MeasureText(gFont.GetTextDC(),pCVar6,iVar4,ptVar17);
       pCVar2 = (LPCSTR)(uintptr_t)local_dc;
