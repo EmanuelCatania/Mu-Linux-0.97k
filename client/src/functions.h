@@ -204,7 +204,7 @@ void  __cdecl ReceiveUseStateItem(int, int, int); // IDA: ReceiveUseStateItem (0
 void  __cdecl InsertBuffPhysicalEffect(int, int, int); // IDA: InsertBuffPhysicalEffect (0x0043BDE0)
 void  __cdecl ClearBuffPhysicalEffect(int, int, int); // IDA: ClearBuffPhysicalEffect (0x0043C070)
 void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata); // IDA: STRUCT_ENCRYPT (0x0043D1D0)
-int   __fastcall CWsctlc_GetSocket(int);   // IDA: CWsctlc::GetSocket (0x0043DCC0)
+int   __fastcall CWsctlc_GetSocket(uintptr_t);   // IDA: CWsctlc::GetSocket (0x0043DCC0)
 int   __fastcall CWsctlc_FDWriteSend(uintptr_t); // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
 void  __cdecl FUN_0043de60(void);  // Net_FlushQueue (no args)
 void  __cdecl CPacketQueue_PushPacket(uintptr_t, const void*, int); // IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)

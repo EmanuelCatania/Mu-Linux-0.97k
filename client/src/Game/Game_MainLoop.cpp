@@ -408,7 +408,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // DAT_055ca018 y ya bloquea Game_MainLoop al inicio.
     #if 0
     if (DAT_083a7c48 != '\0' && SceneFlag == 5) {
-        if (CWsctlc_GetSocket(((int)(uintptr_t)SocketClient)) == -1) {
+        if (CWsctlc_GetSocket(reinterpret_cast<uintptr_t>(SocketClient)) == -1) {
             if (DAT_083a7c58 == 0) {
                 DAT_083a7c58 = 1;
                 CErrorReport_Write(&DAT_055c9bf0, "> Connection closed...");

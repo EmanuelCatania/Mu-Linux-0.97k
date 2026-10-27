@@ -93,6 +93,8 @@ void Hash(std::uint64_t& digest,const void* bytes,std::size_t size){const BYTE* 
 std::uint64_t Run(BYTE* memory){
     std::uint64_t digest=14695981039346656037ull;
     for(unsigned trial=0;trial<1024;++trial){currentTrial=trial;
+        Reset(memory);const DWORD handles[]={0,1,0x80000000u,0xffffffffu};Put(activeContext+8,handles[trial%4]);
+        const int handle=CWsctlc_GetSocket(reinterpret_cast<uintptr_t>(activeContext));Require(handle==Get<int>(activeContext+8));Hash(digest,&handle,4);
         Reset(memory);BYTE expected[0x5040];std::memcpy(expected,memory,sizeof(expected));
         startupResult=trial%4==0?1:0;startupVersion=trial%4==1?0x101:0x202;
         Startup(activeContext);
@@ -152,13 +154,14 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     close=function(read_source('src/Net/Crypto.cpp',revision),'CWsctlc_Close')
+    getter=function(read_source('src/Net/Crypto.cpp',revision),'CWsctlc_GetSocket')
     startup=function(read_source('src/Render/SMD_Parser.cpp',revision),'CWsctlc_Startup')
     scene=read_source('src/Scene/Scene_CharSelect_Nav.cpp',revision)
     send=function(scene,'CWsctlc_FDWriteSend');recv=function(scene,'CWsctlc_nRecv')
     disconnect=function(read_source('src/Net/Net_Disconnect.cpp',revision),'Net_Disconnect')
     arg='reinterpret_cast<uintptr_t>(context)' if 'uintptr_t ctx' in close else 'static_cast<int>(reinterpret_cast<uintptr_t>(context))'
     disconnect_arg='context' if 'void* ctx' in disconnect else 'static_cast<int>(reinterpret_cast<uintptr_t>(context))'
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+close+startup+send+recv+disconnect+MAIN.replace('DISCONNECT_ARG',disconnect_arg).replace('ARG',arg)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+getter+close+startup+send+recv+disconnect+MAIN.replace('DISCONNECT_ARG',disconnect_arg).replace('ARG',arg)
 
 
 def main():

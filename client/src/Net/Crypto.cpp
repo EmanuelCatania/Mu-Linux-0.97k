@@ -410,7 +410,7 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
 
 
 // IDA: CWsctlc::GetSocket (0x0043DCC0)
-int __fastcall CWsctlc_GetSocket(int param_1)
+int __fastcall CWsctlc_GetSocket(uintptr_t param_1)
 {
   return *(int *)(param_1 + 8);
 }
