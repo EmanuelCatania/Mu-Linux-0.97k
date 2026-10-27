@@ -225,11 +225,11 @@ void __stdcall MoveParticles(void)
                     fVar11 = (float10)_DAT_00552660;
                     P_SCALE(iVar9) = (float)(fVar12 * fVar11);
                     if (P_SUB(iVar9) < 2) {
-                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                     } else {
                         P_SCALE(iVar9) = (float)(fVar12 * fVar11 * (float10)_DAT_00552adc);
                         P_ROT(iVar9) -= _DAT_00552664;
-                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                     }
                 }
                 break;
@@ -238,7 +238,7 @@ void __stdcall MoveParticles(void)
             case 0x4d0: {
                 fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                 P_SCALE(iVar9) = (float)(fVar11 * (float10)_DAT_00552540);
-                ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
+                ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                 break;
             }
 

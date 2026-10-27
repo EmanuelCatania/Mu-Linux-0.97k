@@ -362,7 +362,7 @@ void  __cdecl CreateMagicShiny(int, int, int, int);   // IDA: CreateMagicShiny (
 // ── Player render ─────────────────────────────────────────────────────────────
 void  __cdecl RenderPlane(int char_class, float *pos, float *rot, float scale); // Player_DrawInstance
 void  __cdecl Effect_TickFade(void); // IDA: MovePlanes
-void  __cdecl ItemDrop_SetupRenderRef(int particle_slot);                      // Particle_InitDir — sets dir vector from entity pos delta
+void  __cdecl ItemDrop_SetupRenderRef(BYTE* particle_slot);                      // Particle_InitDir — sets dir vector from entity pos delta
 int   __cdecl Particle_Spawn(int type, float *bone_mat, float *pos, float *size, int flag, float alpha, int mode); // IDA: FUN_00475220
 
 // ── Char list / spawn ─────────────────────────────────────────────────────────
