@@ -76,7 +76,7 @@ void __cdecl Entity_TeleportAnim(float *pos, float a, float b, float c)
 void __cdecl Particle_Update(void)
 {
     int *slot = (int *)&DAT_07c608b4;
-    for (int slotIdx = 0; slotIdx < 100; ++slotIdx, slot = (int*)((int)slot + 0x2f0)) {
+    for (int slotIdx = 0; slotIdx < 100; ++slotIdx, slot = reinterpret_cast<int*>(reinterpret_cast<char*>(slot) + 0x2f0)) {
         if ((char)slot[-3] != '\0') {
             int mode = slot[-2];
             if (*(short *)(*slot + 0x1be) == 0 && mode < 3)
