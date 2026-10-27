@@ -134,6 +134,7 @@ jobs:
             python -B tests/EffectModelPointer.py --architecture x64
             python -B tests/ExperiencePointer.py --architecture x64
             python -B tests/JpegBufferPointer.py --architecture x64
+            python -B tests/GuildRelationPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -230,6 +231,7 @@ jobs:
             python3 -B tests/EffectModelPointer.py --generator Ninja
             python3 -B tests/ExperiencePointer.py --generator Ninja
             python3 -B tests/JpegBufferPointer.py --generator Ninja
+            python3 -B tests/GuildRelationPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

@@ -95,7 +95,7 @@ int GuildMark_FindRecordByName(const char* name)
 
 // IDA: FUN_00423CE0 — recalcula la relación local, aliada o enemiga de una entidad.
 // IDA: FUN_00423CE0 (0x00423CE0)
-void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int)
+void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, int)
 {
     BYTE* entity = (BYTE*)(uintptr_t)entityAddress;
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
@@ -122,7 +122,7 @@ void GuildWar_RefreshEntityRelations()
 
     for (int i = 0; i < 400; ++i) {
         BYTE* entity = entities + i * 916;
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
     }
 }
 
@@ -427,7 +427,7 @@ void NetRecv_5C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         BYTE* entity = base + entitySlot * 916;
         *(short*)(entity + 474) = (short)row;
         // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
         GuildWar_RefreshEntityRelations();
     }
     NetLog("NET: GuildMark entity=%u row=%d", (unsigned)entityKey, row);

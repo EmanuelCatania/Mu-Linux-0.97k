@@ -536,7 +536,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         AsCharacter(heroPtr)->GuildMarkIndex = s_PendingHeroGuildMarkRow;
         s_HasPendingHeroGuildMark = false;
         s_PendingHeroGuildMarkRow = -1;
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)heroPtr, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(heroPtr), 0, 0, 0);
     }
     s_IsRebuildingHero = false;
     HeroEquipWatchdog((int)(uintptr_t)heroPtr);

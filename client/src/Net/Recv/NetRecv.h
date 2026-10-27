@@ -151,7 +151,7 @@ extern "C" const char* Guild_GetMarkName(int row);
 extern "C" const BYTE* Guild_GetMarkPixels(int row);
 void GuildWar_CopyOpponentName(const BYTE* packet);
 int GuildMark_FindRecordByName(const char* name);
-void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int);
+void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, int);
 void GuildWar_RefreshEntityRelations();
 extern "C" void GuildWar_ResetClientState();
 void ReceiveDeclareWar97k(const BYTE* packet, int size);

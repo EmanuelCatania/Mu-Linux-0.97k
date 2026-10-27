@@ -111,7 +111,7 @@ void  __cdecl Packet_EncryptDword(void* node, void* key); // IDA: Packet_Encrypt
 void  __cdecl CreateSocket(const char* ip, unsigned int port); // IDA: CreateSocket (0x00423920)
 void  __cdecl Buffer_XorKey3(int, int);
 int   __cdecl FindGuildName(char *Name); // IDA: FUN_00423c80 (0x00423C80)
-void  __cdecl GuildWar_UpdateEntityRelation(int, int, int, int); // IDA: FUN_00423CE0 (0x00423CE0)
+void  __cdecl GuildWar_UpdateEntityRelation(uintptr_t, int, int, int); // IDA: FUN_00423CE0 (0x00423CE0)
 void  __cdecl ReceiveServerList(int, int, int); // IDA: ReceiveServerList (0x00423E10)
 void  __cdecl ReceiveJoinServer(int, int); // IDA: ReceiveJoinServer (0x00424010)
 void  __cdecl ReceiveCharacterList(int, int, int); // IDA: ReceiveCharacterList (0x00424240)
