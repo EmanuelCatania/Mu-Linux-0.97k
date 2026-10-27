@@ -93,7 +93,7 @@ void __cdecl Cloth_Wind(DWORD *_this)
   for (int v18 = 0; v18 < (int)_this[12]; ++v18)
   {
     int dist = abs(v20 / W - v18 / W) + abs(v20 % W - v18 % W);
-    ClothNode_ApplyForces((int)(_this[13] + 60 * v18), dist, (short)_this[5]);
+    ClothNode_ApplyForces(static_cast<uintptr_t>(_this[13]) + 60 * v18, dist, (short)_this[5]);
   }
 }
 
