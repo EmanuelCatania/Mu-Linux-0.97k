@@ -246,7 +246,7 @@ void __cdecl DeleteObjects(void) {
             char* head = (char*)*(DWORD*)(puVar5 + 8);
             while (head != nullptr) {
                 char* next = (char*)*(DWORD*)(head + 0x1b4);
-                Entity_GridUnlink((void*)head, (int)puVar5);
+                Entity_GridUnlink(head, puVar5);
                 head = next;
             }
             *(DWORD*)(puVar5 + 4) = 0;

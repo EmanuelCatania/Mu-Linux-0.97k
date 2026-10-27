@@ -824,7 +824,7 @@ void  __cdecl ChatListBox_ScrollByN(void*);   // IDA: 0x0040E330
 int   __cdecl Sound_UpdateChannel3D_Tick(int *, float);   // cloth: paso de simulación (0x408940)
 
 // ── Scene-entity grid helpers ─────────────────────────────────────────────────
-void  __cdecl Entity_GridUnlink(void *node, int cell_ptr);  // Entity_GridUnlink — unlinks node from its doubly-linked list
+void  __cdecl Entity_GridUnlink(void *node, void* cell);  // Entity_GridUnlink — unlinks node from its doubly-linked list
 
 // ── Sound slot helpers ────────────────────────────────────────────────────────
 HRESULT __cdecl Sound_ReleaseBuffer(int buffer); // IDA: FUN_00404AD0; 5.2: ReleaseBuffer

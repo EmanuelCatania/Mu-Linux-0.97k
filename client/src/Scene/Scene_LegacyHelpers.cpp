@@ -39,8 +39,9 @@ void __cdecl VTable_Release(void *obj, int param_1)
 // ── Scene entity grid helpers ─────────────────────────────────────────────────
 // Entity_GridUnlink @ 0x004FFCC0 — Entity_GridUnlink(node, cell_ptr)
 // Unlinks node from its doubly-linked list in the 16x16 scene grid.
-void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
+void __cdecl Entity_GridUnlink(void *param_1_v, void* cell) {
     char *param_1 = (char*)param_1_v;
+    char *param_2 = static_cast<char*>(cell);
     if (!param_1) return;
     SceneObjects::Unregister(param_1);
     int iVar1 = *(int*)(param_1 + 0x1b8); // next
