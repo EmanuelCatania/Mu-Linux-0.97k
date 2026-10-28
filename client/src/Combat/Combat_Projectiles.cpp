@@ -23,7 +23,7 @@ void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill
     if (isHero) {
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt/lookup)
         // Read weapon types from CharacterMachine instead
-        DWORD cm = (DWORD)DAT_07cf1ffc;
+        const BYTE* cm = static_cast<const BYTE*>(DAT_07cf1ffc);
         // The projectile switch uses CharacterMachine+536; its companion
         // trail switch uses +604.
         weaponType0 = (int)*(short*)(cm + 0x218);
@@ -193,7 +193,7 @@ void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skil
         // anti-tamper hash table — skipped (encrypt CharacterMachine)
         // Increment the native projectile serial at CharacterMachine +1408.
         // CharacterMachine = DAT_07cf1ffc
-        char* cm = (char*)(DWORD)DAT_07cf1ffc;
+        char* cm = static_cast<char*>(DAT_07cf1ffc);
         cm[1408] = cm[1408] + 1;
         // anti-tamper hash table — skipped (decrypt CharacterMachine)
     }
@@ -210,7 +210,7 @@ void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skil
             *pAngleZ += _DAT_00552834;  // restore to original angle
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
-            char* cm = (char*)(DWORD)DAT_07cf1ffc;
+            char* cm = static_cast<char*>(DAT_07cf1ffc);
             cm[1408] = cm[1408] + 1;
             // anti-tamper hash table — skipped (decrypt CharacterMachine)
         }
@@ -227,7 +227,7 @@ void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skil
             *pAngleZ += _DAT_00552834;   // restore to original angle
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
-            char* cm = (char*)(DWORD)DAT_07cf1ffc;
+            char* cm = static_cast<char*>(DAT_07cf1ffc);
             cm[1408] = cm[1408] + 1;
             // anti-tamper hash table — skipped (decrypt CharacterMachine)
         }

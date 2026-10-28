@@ -182,6 +182,7 @@ jobs:
             python -B tests/ClothVerticesPointer.py --architecture x64
             python -B tests/ChatValidationPointer.py --architecture x64
             python -B tests/ChatAssignPointer.py --architecture x64
+            python -B tests/ArrowMachinePointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -326,6 +327,7 @@ jobs:
             python3 -B tests/ClothVerticesPointer.py --generator Ninja
             python3 -B tests/ChatValidationPointer.py --generator Ninja
             python3 -B tests/ChatAssignPointer.py --generator Ninja
+            python3 -B tests/ArrowMachinePointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
