@@ -229,16 +229,16 @@ void __cdecl Packet_DecryptDword(void *param_1_v,void *param_2_v)
   uVar3 = 3;
   do {
     if (uVar3 < 3) {
-      *(byte *)(uVar3 + (int)puVar2) =
-           *(byte *)(uVar3 + (int)puVar2) ^ *(byte *)(uVar3 + 1 + (int)puVar2);
+      reinterpret_cast<byte*>(puVar2)[uVar3] =
+           reinterpret_cast<byte*>(puVar2)[uVar3] ^ reinterpret_cast<byte*>(puVar2)[uVar3 + 1];
     }
-    bVar1 = *(char *)(uVar3 + (int)puVar2) - 0x23;
+    bVar1 = reinterpret_cast<char*>(puVar2)[uVar3] - 0x23;
     uVar4 = uVar3 & 0x8000000f;
-    *(byte *)(uVar3 + (int)puVar2) = bVar1;
+    reinterpret_cast<byte*>(puVar2)[uVar3] = bVar1;
     if ((int)uVar4 < 0) {
       uVar4 = (uVar4 - 1 | 0xfffffff0) + 1;
     }
-    *(byte *)(uVar3 + (int)puVar2) = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
+    reinterpret_cast<byte*>(puVar2)[uVar3] = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
     uVar3 = uVar3 - 1;
     iVar5 = iVar5 + -1;
   } while (iVar5 != 0);
