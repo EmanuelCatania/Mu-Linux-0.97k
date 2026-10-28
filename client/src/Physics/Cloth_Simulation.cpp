@@ -513,10 +513,10 @@ intptr_t __cdecl VerletNode_CtorExt(DWORD *_this)
 // 0x410D80 no están portadas y ningún call site de este build las usa: van
 // como no-ops para que el objeto sea válido.
 void __cdecl ClothAnchor_Collide(float *_this, int *node);
-void __fastcall FUN_00407ea0(int ecx, int edx, BYTE param_1);
+void __fastcall FUN_00407ea0(void* ecx, int edx, BYTE param_1);
 // Adaptador: el dtor está portado como __fastcall (this en ECX, `edx` dummy) y
 // los call sites de este build invocan la vtable como `__cdecl (this, flags)`.
-static void __cdecl ClothAnchor_VSlot0(void *a, char flags) { FUN_00407ea0((int)a, 0, (BYTE)flags); }
+static void __cdecl ClothAnchor_VSlot0(void *a, char flags) { FUN_00407ea0(a, 0, (BYTE)flags); }
 static void __cdecl ClothAnchor_VSlot1(void *a) { (void)a; }   // 0x410D80 — sin portar, sin call sites
 void *g_ClothAnchorVTable[3] = {
     (void *)ClothAnchor_VSlot0,

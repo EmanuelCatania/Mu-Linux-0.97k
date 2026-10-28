@@ -528,16 +528,16 @@ void __fastcall FUN_00406cb0(int ecx, int /*edx*/, BYTE param_1) {
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// FUN_00407dc0 @ 0x00407DC0 — CWaveFile base ~dtor
-void __fastcall FUN_00407dc0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00407de0((DWORD *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+// FUN_00407dc0 @ 0x00407DC0 — destructor base con liberación opcional.
+void __fastcall FUN_00407dc0(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00407de0(static_cast<DWORD*>(ecx));
+    if (param_1 & 1) operator_delete(ecx);
 }
 
-// FUN_00407ea0 @ 0x00407EA0 — CWaveFile derived ~dtor
-void __fastcall FUN_00407ea0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00407ec0((DWORD *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+// FUN_00407ea0 @ 0x00407EA0 — destructor usado por el slot 0 del ancla de tela.
+void __fastcall FUN_00407ea0(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00407ec0(static_cast<DWORD*>(ecx));
+    if (param_1 & 1) operator_delete(ecx);
 }
 
 
