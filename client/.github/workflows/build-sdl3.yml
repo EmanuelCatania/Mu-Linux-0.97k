@@ -196,6 +196,7 @@ jobs:
               python -B tests/CollisionAttributesPointer.py --architecture x64
               python -B tests/InputHeroGuardsPointer.py --architecture x64
               python -B tests/AttackErrorContextPointer.py --architecture x64
+              python -B tests/CharacterVisualModelPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -354,6 +355,7 @@ jobs:
               python3 -B tests/CollisionAttributesPointer.py --generator Ninja
               python3 -B tests/InputHeroGuardsPointer.py --generator Ninja
               python3 -B tests/AttackErrorContextPointer.py --generator Ninja
+              python3 -B tests/CharacterVisualModelPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:

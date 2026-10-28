@@ -4007,7 +4007,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     void *model = (void *)(DAT_05828d58 + (int)AsCharacter(entity_ptr)->Object.Type * 0xbc);
 
     // If model has no action data: copy cached transform params to render slots
-    if (*(short *)((int)model + 0x26) == 0) {
+    if (*(short *)(static_cast<BYTE*>(model) + 0x26) == 0) {
         OBJECT& object = AsCharacter(entity_ptr)->Object;
         ObjectBounds_Build(object.BoundingBoxMin, object.BoundingBoxMax,
                            object.Position, object.OBB);
@@ -4015,11 +4015,11 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     }
 
     // Con acciones: copia la posición de mundo de la entidad a los slots de transform del modelo
-    *(unsigned int *)((int)model + 0x6c) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
-    *(unsigned int *)((int)model + 0x70) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
-    *(unsigned int *)((int)model + 0x74) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
-    *(unsigned int *)((int)model + 0x68) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
-    *(unsigned char *)((int)model + 0xa0) = AsCharacter(entity_ptr)->Object.CurrentAction;
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x6c) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x70) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x74) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x68) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
+    *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0) = AsCharacter(entity_ptr)->Object.CurrentAction;
 
     // SafeZone update por frame (IDA MoveCharacterVisual L614):
     //     *(BYTE*)(c + 846) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
@@ -4247,7 +4247,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             if (action == 6 && AsCharacter(entity_ptr)->Object.AnimationFrame < 12.0f) {
                 float green[3] = { 0.1f, 0.80000001f, 0.60000002f };
                 for (int i = 0; i < 20; ++i) {
-                    const int randomBone = rand() % *(short *)((int)model + 34);
+                    const int randomBone = rand() % *(short *)(static_cast<BYTE*>(model) + 34);
                     BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
                     Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
                 }
@@ -4519,7 +4519,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             float p[3];
             if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)((int)model + 84)), local, p, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
@@ -4528,7 +4528,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 90) {
-                const short n = *(short *)((int)model + 34);
+                const short n = *(short *)(static_cast<BYTE*>(model) + 34);
                 if (n > 0) for (int i = 0; i < 10; ++i) {
                     BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
                     Particle_Spawn(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
