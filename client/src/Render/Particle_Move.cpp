@@ -1,6 +1,7 @@
 // Particle_Move.cpp
 
 #include "stdafx.h"
+#include <cstdint>
 #include "globals.h"
 #include "functions.h"
 
@@ -725,10 +726,9 @@ void __stdcall MoveParticles(void)
                         break;
                     case 2:
                         if (P_LIFE(iVar9) < 1) P_ACTIVE(iVar9) = '\0';
-                        if (P_LIFE(iVar9) > 5 && P_ACTIVE(P_ENT(iVar9) - (int)P_BASE) == '\0') {
-                            // Entity died — clamp life to 5
-                            // Note: P_ENT points to an entity; checking its active flag
-                            // Ghidra: **(char **)(P_ENT) == '\0'
+                        if (P_LIFE(iVar9) > 5 &&
+                            *reinterpret_cast<const char*>(static_cast<std::uintptr_t>(static_cast<std::uint32_t>(P_ENT(iVar9)))) == '\0') {
+                            // El owner conserva su campo de 32 bits; no depende de la base del pool.
                             P_LIFE(iVar9) = 5;
                         }
                         {
