@@ -620,7 +620,7 @@ void __cdecl Player_ProcessInput(void)
     // (0x4B14F0), que es donde los tiene el binario.
 
     // ── Guard: entity visibility / renderable flag ─────────────────────────────
-    if (*(char*)((int)DAT_07abf5d8 + 0x2fd) != '\0')
+    if (*(static_cast<const char*>(DAT_07abf5d8) + 0x2fd) != '\0')
         return;
 
     // ── LoadingWorld cooldown ────────────────────────────────────────────────
@@ -641,7 +641,7 @@ void __cdecl Player_ProcessInput(void)
     //   copy entity name (entity+0x1c1) to password buffer DAT_07db8810,
     //   después poner en cero y volver a copiar vía el buffer intermedio DAT_07e113e4.
     if (DAT_00559c84 != '\0'
-        && *(char*)((int)DAT_07abf5d8 + 0x34e) != '\0'
+        && *(static_cast<const char*>(DAT_07abf5d8) + 0x34e) != '\0'
         && SelectedCharacter != -1
         && MouseRButtonPush != '\0')
     {
