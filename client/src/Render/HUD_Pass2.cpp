@@ -553,7 +553,7 @@ void RenderBrokenItem_(int a1)
         // Anti-tamper inner block — skipped (CharacterMachine path).
 
         WORD v12 = *(WORD*)((BYTE*)CharacterMachine + v33 + 536);
-        DWORD v13 = (DWORD)((BYTE*)CharacterMachine + v33 + 536);
+        BYTE* v13 = (BYTE*)CharacterMachine + v33 + 536;
 
         if (v12 != 0xFFFF) {
             // Usar ItemAttribute_Base() para recuperar de corrupción de DAT_07d78068 a 0x1.
