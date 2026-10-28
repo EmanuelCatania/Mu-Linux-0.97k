@@ -1253,7 +1253,7 @@ void __cdecl FUN_004ec330(void) {
     uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = AntiTamper_HashNode();
-        *(unsigned char*)((int)pv + 1) = 1;
+        static_cast<unsigned char*>(pv)[1] = 1;
         HashTable_Insert(&MAIN_HASH_CLASS, pv, &DAT_07eaa118);
     }
     char cGuard = DAT_07eaa118;
