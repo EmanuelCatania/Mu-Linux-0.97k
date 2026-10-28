@@ -618,8 +618,8 @@ char Chat_ValidateInputCommand(void)
   } while (cVar1 != '\0');
   if (0 < (int)(~uVar2 - 1)) {
     do {
-      if (*(char *)((int)DAT_07db8710 + iVar3) != ' ') {
-        local_100[iVar4] = *(char *)((int)DAT_07db8710 + iVar3);
+      if (((char*)DAT_07db8710)[iVar3] != ' ') {
+        local_100[iVar4] = ((char*)DAT_07db8710)[iVar3];
         iVar4 = iVar4 + 1;
       }
       uVar2 = 0xffffffff;
@@ -657,8 +657,8 @@ char Chat_ValidateInputCommand(void)
     } while (cVar1 != '\0');
     if (0 < (int)(~uVar2 - 1)) {
       do {
-        if (*(char *)((int)DAT_07db8710 + iVar3) != ' ') {
-          local_100[iVar4] = *(char *)((int)DAT_07db8710 + iVar3);
+        if (((char*)DAT_07db8710)[iVar3] != ' ') {
+          local_100[iVar4] = ((char*)DAT_07db8710)[iVar3];
           iVar4 = iVar4 + 1;
         }
         uVar2 = 0xffffffff;
