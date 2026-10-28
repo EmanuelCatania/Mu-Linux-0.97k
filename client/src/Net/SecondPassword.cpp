@@ -710,14 +710,14 @@ void __cdecl SecondPassword_Screen4(void) {
         uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, (void*)DAT_07cf1ffc);
         if (uVar4 == 0xffffffff) {
             void* pvVar10 = AntiTamper_HashNode();
-            *(unsigned char*)((int)pvVar10 + 0x584) = 1;
+            *(static_cast<BYTE*>(pvVar10) + 0x584) = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, pvVar10, puVar8);
         }
         // Update slot visibility based on item type == -1
-        if (*(short*)((int)DAT_07cf1ffc + 0x218 + i) == -1)
-            *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 0;
+        if (*(short*)(static_cast<BYTE*>(DAT_07cf1ffc) + 0x218 + i) == -1)
+            *(static_cast<BYTE*>(DAT_07cf1ffc) + 0x258 + i) = 0;
         else
-            *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 1;
+            *(static_cast<BYTE*>(DAT_07cf1ffc) + 0x258 + i) = 1;
     }
 
     // IDA sub_4E6550 L160-231: reset por frame del byte ITEM.Color (+0x40) de
@@ -765,7 +765,7 @@ void __cdecl SecondPassword_Screen4(void) {
     if (sv3 == '\0') {
         char sv4 = DAT_07eaa118;
         if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && GoldenArcherOpenType == 0) {
-            ushort uVar3 = *(ushort*)((int)DAT_07cf1ff4 + 0xe);
+            ushort uVar3 = *(ushort*)(static_cast<BYTE*>(DAT_07cf1ff4) + 0xe);
             if (0x31 < uVar3) {
                 DAT_07eaa138 = 1;
                 if ((int)(DAT_07ea5288 + 0x3c) <= (int)DAT_083a427c &&
