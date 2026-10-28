@@ -338,11 +338,11 @@ void RenderMainFrameWindow_(void)
     GL_DrawTexture(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
 
     // ── Anti-tamper #1: andamiaje de la hash-table intercalado de IDA ──
-    // HashTable_GetIndex (IDA: FUN_004041e0, Core/System_Legacy.cpp) devuelve
+    // La sobrecarga de dos argumentos de HashTable_GetIndex (functions.h) devuelve
     // siempre -1 en este build: sólo corre la rama "no encontrado".
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, v0);
         if (!(v6 != 0xFFFFFFFFu && DAT_055c9bd4)) {
             // No encontrado / tabla vacía — inserta una entrada nueva marcada con
             // ref-count = 1 (así el decremento siguiente dispara el encriptado XOR
