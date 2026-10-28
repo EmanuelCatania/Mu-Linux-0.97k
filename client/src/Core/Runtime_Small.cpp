@@ -738,7 +738,7 @@ void __fastcall FUN_00406db0(int ecx, int /*edx*/, int param_1, int param_2) {
 // `< 0x7c72e78` = base + 100*0x2f0).
 void __cdecl MoveBlurs(void) {
     int *piVar2 = &DAT_07c608b8;
-    for (int slotIdx = 0; slotIdx < 100; ++slotIdx, piVar2 = (int*)((int)piVar2 + 0x2f0)) {
+    for (int slotIdx = 0; slotIdx < 100; ++slotIdx, piVar2 = (int*)((char*)piVar2 + 0x2f0)) {
         if (*(char *)(piVar2 - 4) != '\0') {
             int iVar1 = piVar2[-2];
             piVar2[-2] = iVar1 - 1;
