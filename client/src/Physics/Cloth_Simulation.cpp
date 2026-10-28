@@ -761,7 +761,10 @@ void Destroy(MeshCloth &c) {
 // +0x10 Vertices (stride 0x10, Node en +0), +0x1c Triangles (stride 0x24,
 // VertexIndex[4] en +2).
 inline char* MeshPtr(void *model, int mesh) {
-    return (char *)(*(int *)((int)model + 0x28) + mesh * 0x28);
+    // El layout legado conserva el puntero de tabla en 32 bits hasta B2.
+    const auto table = static_cast<std::uintptr_t>(
+        *reinterpret_cast<const DWORD*>(static_cast<BYTE*>(model) + 0x28));
+    return reinterpret_cast<char*>(table + static_cast<std::intptr_t>(mesh) * 0x28);
 }
 inline short TriVertex(char *mesh, int tri, int i) {
     return *(short *)(*(int *)(mesh + 0x1c) + tri * 0x24 + 2 + i * 2);
