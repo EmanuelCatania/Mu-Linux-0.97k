@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""CreateArrow/CreateArrows reales: base CharacterMachine nativa; efectos controlados."""
+"""Flechas reales: CharacterMachine nativo e identidad completa de Hero.
+
+Entidades/owners bajos; efectos controlados. No certifica entidades nativas
+ni Hero alto como emisor: prueba que su alias32 es un objeto distinto.
+"""
 import argparse
 import os
 from pathlib import Path
@@ -39,7 +43,8 @@ int Primary(int type){
 int Secondary(int type){
  switch(type){case 128:case 129:case 131:case 132:case 133:return 0xd8;case 130:return 0xdc;case 134:return 0xde;case 145:return 0xf3;default:return 0;}
 }
-std::uint64_t Run(BYTE* memory,BYTE* object,BYTE* identity){
+std::uint64_t Run(BYTE* memory,BYTE* object,BYTE* identity,unsigned heroMode=0){
+ Require(heroMode<=2);
  DAT_07cf1ffc=memory+16;objectAddress=static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(object+16));characterAddress=static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(identity+16));
  const short types[]={-1,128,129,130,131,132,133,134,136,137,138,139,140,141,142,144,145,146,888,999};
  const BYTE serials[]={0,1,126,127,128,253,254,255};
@@ -50,7 +55,8 @@ std::uint64_t Run(BYTE* memory,BYTE* object,BYTE* identity){
   std::memset(memory,0xa5,1444);std::memset(object,0x6b,512);std::memset(identity,0x7c,128);
   BYTE* cm=static_cast<BYTE*>(DAT_07cf1ffc);const short a=types[t],b=types[(t*3+p)%20];std::memcpy(cm+536,&a,2);std::memcpy(cm+604,&b,2);serialBefore=serials[p];cm[1408]=serialBefore;
   character.Weapon[0].Type=types[(t+3)%20];character.Weapon[1].Type=types[(t*7+2)%20];const auto beforeCharacter=character;
-  DAT_07abf5d8=reinterpret_cast<BYTE*>(static_cast<std::uintptr_t>(characterAddress+(hero?0:1)));
+  const auto heroAddress=heroMode==2?std::uint64_t(characterAddress)+0x100000000ull:std::uint64_t(characterAddress+(heroMode==1||!hero?1:0));
+  DAT_07abf5d8=reinterpret_cast<BYTE*>(static_cast<std::uintptr_t>(heroAddress));
   aliases=(p&1)!=0;wantedIndex=WORD((t*32767+p*8191)&65535);wantedKey=key;wantedSkill=skill;wantedPK=WORD(0x8000+t*31+p);
   std::memcpy(object+16+134,&wantedPK,2);
   const float original=float(int(t)-int(p))* .125f;std::memcpy(object+16+36,&original,4);
@@ -61,7 +67,8 @@ std::uint64_t Run(BYTE* memory,BYTE* object,BYTE* identity){
   if(!single && skillLow==1)directions={original,original+15,original-15};
   if(!single && skillLow==2)directions={original,original+7.5f,original+15,original-7.5f,original-15};
   if(single || skillLow==1 || skillLow==2)expectedMemory[16+1408]=BYTE(serialBefore+1);
-  const int first=hero?a:character.Weapon[0].Type,second=hero?b:character.Weapon[1].Type;
+  const bool sameHero=heroMode==0 && hero;
+  const int first=sameHero?a:character.Weapon[0].Type,second=sameHero?b:character.Weapon[1].Type;
   std::vector<std::uint32_t> expected;
   for(float angle:directions){
    if(first!=-1)expected.insert(expected.end(),{0,static_cast<std::uint32_t>(first)});
@@ -83,6 +90,15 @@ int main(){
  if(sizeof(void*)>4){
   auto* high=static_cast<BYTE*>(Reserve(std::uint64_t(0x126000000ull)));Require(high);std::memset(low,0x7b,1444);
   Require(Run(high,low+4096,low+8192)==expected);for(unsigned i=0;i<1444;++i)Require(low[i]==0x7b);
+  // Hero alto y el personaje bajo comparten 32 bits, pero son objetos distintos.
+  const auto nonHero=Run(low,low+4096,low+8192,1);
+  std::memset(high+8192,0x6d,128);
+  Require(Run(low,low+4096,low+8192,2)==nonHero);
+  Require(Run(high,low+4096,low+8192,2)==nonHero);
+  for(unsigned i=0;i<128;++i)Require(high[8192+i]==0x6d);
+  auto* bit31=static_cast<BYTE*>(Reserve(0x8e000000u));Require(bit31);
+  Require(Run(low,low+4096,bit31)==expected);
+  std::puts("Hero alto no coincide con su alias32;armas de la entidad y Hero readonly");
   std::puts("CharacterMachine alto; entidades bajas, armas, abanicos, serial y alias intactos");
  }
  std::printf("Arrow machine: 15680 consultas por ruta %016llx\n",static_cast<unsigned long long>(expected));
@@ -90,11 +106,14 @@ int main(){
 '''
 def harness(revision=None):
     source=read_source('src/Combat/Combat_Projectiles.cpp',revision)
-    # El cast heredado de Hero sigue diagnosticado en producción; aquí conserva
-    # los mismos bits con sintaxis aceptada por GCC para aislar CharacterMachine.
+    # Sólo la referencia histórica conserva el cast32,con sintaxis aceptada
+    # por GCC. El cuerpo actual se compila sin esta adaptación.
     legacy='(DWORD)DAT_07abf5d8'
-    assert source.count(legacy)==1
-    source=source.replace(legacy,'static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(DAT_07abf5d8))')
+    if legacy in source:
+        assert source.count(legacy)==1
+        source=source.replace(legacy,'static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(DAT_07abf5d8))')
+    else:
+        assert 'reinterpret_cast<const void*>(static_cast<std::uintptr_t>(c)) == DAT_07abf5d8' in source
     globals_source=read_source('src/globals.cpp',revision)
     constants='\n'.join(re.search(r'^float\s+'+name+r'\s*=\s*[^;]+;',globals_source,re.M).group(0) for name in ('_DAT_00552834','_DAT_0055284c','_DAT_00552ab0','_DAT_00552584'))
     constants+='\n'+re.search(r'^constexpr int ITEM_MODEL_BASE[^;]+;',read_source('src/Item/ItemDefines.h',revision),re.M).group(0)
