@@ -229,7 +229,7 @@ void __fastcall FUN_00408070(void *param_1_raw) {
     *(int *)(*(int *)(param_1[0x14] + 4) + 8) = 0;
     void *pvVar1 = *(void **)(param_1[0x13] + 8);
     while (pvVar1 != NULL) {
-        void *next = *(void **)((int)pvVar1 + 8);
+        void *next = *(void **)(static_cast<BYTE*>(pvVar1) + 8);
         operator_delete(pvVar1);
         pvVar1 = next;
     }
