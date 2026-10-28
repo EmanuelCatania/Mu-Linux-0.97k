@@ -1251,7 +1251,7 @@ void  __cdecl Font_RenderBitmapText(int p1, int p2, float p3, float p4, int p5, 
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char *Text);   // IDA: RenderTipText (0x0047F7F0)
 int   __cdecl FUN_0047fed0(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
 void  __cdecl RegistWhisperID(int lvl, const char* text);              // IDA: RegistWhisperID (0x004801C0)
-void  __cdecl FUN_00481a40(int param_1, char *param_2, int param_3);    // assign chat text (0x00481A40)
+void  __cdecl FUN_00481a40(CHAT* param_1, char *param_2, int param_3); // Texto de burbuja; inline en IDA CreateChat (0x00481BA0).
 void  __cdecl AssignChat(char *ID, char *Text, int Flag);          // 0x00482090
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0
 int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA: FUN_00482850

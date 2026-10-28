@@ -56,15 +56,13 @@ void __cdecl RegistWhisperID(int lvl, const char* text) {
         WhisperID_Num = 0;
 }
 
-// FUN_00481a40 @ 0x00481A40 (~64 lines) — assign chat text to chat entry struct
+// Asigna texto a una entrada; lógica inline de CreateChat (IDA 0x00481BA0).
 // Texto largo (>19 caracteres): CutText lo parte en Text[0] y Text[1].
 // Texto corto: va entero a Text[0].
 // param_3==1: system message via vtable call on DAT_055c9ff0.
-void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
-    // 0x00481A40 — Assign chat text to chat entry struct
-    // param_1 = chat entry base pointer
-    // param_2 = text string
-    // param_3 = 0: normal chat, 1: system message via vtable
+void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
+    // param_1: entrada de chat; param_2: texto.
+    // param_3: 0 para texto normal, 1 para mensaje mediante vtable.
 
     int Length = (int)strlen(param_2);
 
@@ -91,15 +89,15 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 
     if (Length > 0x13) {
         // Long text (>19 chars): split into 2 lines
-        CutText(param_2, AsChat(param_1)->Text[0], AsChat(param_1)->Text[1], Length);
-        AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
-        AsChat(param_1)->LifeTime[1] = (int)(uintptr_t)displayEnd;
+        CutText(param_2, param_1->Text[0], param_1->Text[1], Length);
+        param_1->LifeTime[0] = (int)(uintptr_t)displayEnd;
+        param_1->LifeTime[1] = (int)(uintptr_t)displayEnd;
         return;
     }
 
     // Short text: direct memcpy to offset 0x2c
-    memcpy(AsChat(param_1)->Text[0], param_2, Length + 1);
-    AsChat(param_1)->LifeTime[0] = (int)(uintptr_t)displayEnd;
+    memcpy(param_1->Text[0], param_2, Length + 1);
+    param_1->LifeTime[0] = (int)(uintptr_t)displayEnd;
 }
 
 // CreateChat @ 0x00481BA0 (~396 lines) — creates chat bubble above entity
@@ -200,7 +198,7 @@ found_new:
     }
 
     // Assign text using FUN_00481a40 logic
-    FUN_00481a40((int)slot, Text, Flag);
+    FUN_00481a40(AsChat(slot), Text, Flag);
     return;
 
 found_existing:
@@ -235,7 +233,7 @@ found_existing:
             AsChat(slot)->LifeTime[1] = AsChat(slot)->LifeTime[0];  // disp1 → disp2
         }
         *(DWORD *)&AsChat(slot)->Owner = entity;
-        FUN_00481a40((int)slot, Text, Flag);
+        FUN_00481a40(AsChat(slot), Text, Flag);
     } else {
         // Texto vacío (hover de nombre NPC/target): SOLO refrescar el timer.
         AsChat(slot)->IDLifeTime = 10;
