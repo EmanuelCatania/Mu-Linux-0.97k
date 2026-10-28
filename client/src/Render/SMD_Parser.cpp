@@ -345,7 +345,7 @@ void __cdecl ClearCharacters(int param_1) {
 void __cdecl Effect_CollisionCheck(int Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
-    DWORD ca = (DWORD)DAT_07cf1ff4;  // CharacterAttribute
+    const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);  // CharacterAttribute
     if (ca == 0) return;
 
     if (*(unsigned char*)(T + 132) != 0) {
