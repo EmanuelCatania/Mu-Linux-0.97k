@@ -462,7 +462,7 @@ void __cdecl CreateTerrainLight(void) {
         do {
             // DAT_07feb288 is float[3*n]: [0]=x,[4]=y(+4),[8]=z(+8) per vertex
             // Ghidra offsets: +0=x, +4=y (DAT_07feb28c), +8=z (DAT_07feb290)
-            float fVar1 = ((*(float*)((int)&DAT_07feb288 + iVar4) + *(float*)((char*)&DAT_07feb288 + iVar4 + 8)) *
+            float fVar1 = ((*(float*)((char*)&DAT_07feb288 + iVar4) + *(float*)((char*)&DAT_07feb288 + iVar4 + 8)) *
                            _DAT_00552504 - *(float*)((char*)&DAT_07feb288 + iVar4 + 4) * _DAT_00552504) + _DAT_00552504;
             float fVar2 = _DAT_00552580;
             if (_DAT_00552580 <= fVar1) {
@@ -474,7 +474,7 @@ void __cdecl CreateTerrainLight(void) {
             do {
                 iVar4 = iVar3 + 4;
                 iVar5--;
-                *(float*)((int)&DAT_0828b608 + iVar3) = fVar2 * *(float*)((int)&DAT_07eeb238 + iVar3);
+                *(float*)((char*)&DAT_0828b608 + iVar3) = fVar2 * *(float*)((char*)&DAT_07eeb238 + iVar3);
                 iVar3 = iVar4;
             } while (iVar5 != 0);
             iVar6--;

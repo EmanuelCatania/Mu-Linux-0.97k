@@ -174,6 +174,7 @@ jobs:
             python -B tests/SerialCursorPointer.py --architecture x64
             python -B tests/TreeLeafPointer.py --architecture x64
             python -B tests/ShadowContextPointer.py --architecture x64
+            python -B tests/TerrainLightPointer.py --architecture x64
       - name: Verificar punteros de objetos y assets (Linux x64 aislado)
         if: runner.os == 'Linux' && matrix.config == 'Release'
         run: |
@@ -310,6 +311,7 @@ jobs:
             python3 -B tests/SerialCursorPointer.py --generator Ninja
             python3 -B tests/TreeLeafPointer.py --generator Ninja
             python3 -B tests/ShadowContextPointer.py --generator Ninja
+            python3 -B tests/TerrainLightPointer.py --generator Ninja
       - name: Configurar ejecutable Linux
         if: runner.os == 'Linux'
         env:
