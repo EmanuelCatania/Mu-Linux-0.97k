@@ -41,7 +41,7 @@ void __fastcall SpringNode_GetPos(void *node, float *out);
 float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
-static void __cdecl FUN_0053cc00_impl(int param_1);
+static void __cdecl FUN_0053cc00_impl(void* param_1);
 
 
 
@@ -1392,7 +1392,7 @@ void __cdecl CWsctlc_Close(uintptr_t ctx) {
 // FUN_0053cbb0 @ 0x0053CBB0 (18 bytes) — GameGuard class init
 void __fastcall FUN_0053cbb0(int *param_1) {
     *param_1 = (int)&PTR_FUN_0055389c;
-    FUN_0053cc00_impl((int)param_1);
+    FUN_0053cc00_impl(param_1);
 }
 
 // FUN_0053cbd0 @ 0x0053CBD0 — GameGuard ~dtor
@@ -1554,11 +1554,12 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
 }
 
 // -- FUN_0053cc00_impl: helper local --
-static void __cdecl FUN_0053cc00_impl(int param_1) {
-    *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
-    *(int *)(param_1 + 0x1c) = 0; *(int *)(param_1 + 0x20) = 0;
-    *(int *)(param_1 + 4) = 0;    *(int *)(param_1 + 8) = 0;
-    *(int *)(param_1 + 0xc) = 0;  *(int *)(param_1 + 0x10) = 0;
-    *(int *)(param_1 + 0x24) = 0; *(int *)(param_1 + 0x28) = 0;
-    *(int *)(param_1 + 0x2c) = 0; *(int *)(param_1 + 0x30) = 0;
+static void __cdecl FUN_0053cc00_impl(void* param_1) {
+    BYTE* fields = static_cast<BYTE*>(param_1);
+    *(int *)(fields + 0x14) = 0; *(int *)(fields + 0x18) = 0;
+    *(int *)(fields + 0x1c) = 0; *(int *)(fields + 0x20) = 0;
+    *(int *)(fields + 4) = 0;    *(int *)(fields + 8) = 0;
+    *(int *)(fields + 0xc) = 0;  *(int *)(fields + 0x10) = 0;
+    *(int *)(fields + 0x24) = 0; *(int *)(fields + 0x28) = 0;
+    *(int *)(fields + 0x2c) = 0; *(int *)(fields + 0x30) = 0;
 }
