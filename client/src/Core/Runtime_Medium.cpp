@@ -311,8 +311,8 @@ void __fastcall CSQuest__ShowQuestNpcWindow(void *This, int /*edx*/, int index) 
 
 // FUN_0040e730 @ 0x0040E730 (105 bytes) — text filter: check word against blocklist
 int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
-    char *Token = (char *)((int)This + 200);
-    if (*(char *)((int)This + 200) == '\0') return 1;
+    char *Token = static_cast<char*>(This) + 200;
+    if (*Token == '\0') return 1;
     int i = 0;
     while (true) {
         if (*Token == '\0') return 0;
