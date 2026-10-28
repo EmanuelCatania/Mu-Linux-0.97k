@@ -162,10 +162,11 @@ int __stdcall FUN_0053d580(void) {
 // ── 19-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00405290 @ 0x00405290 (19 bytes) — CErrorReport field init
-static void __cdecl FUN_00405290_impl(int param_1) {
-    *(int *)(param_1 + 4) = -1;  // 0xffffffff
-    *(BYTE *)(param_1 + 8) = 0;
-    *(int *)(param_1 + 0x10c) = 0;
+static void __cdecl FUN_00405290_impl(void* param_1) {
+    BYTE* fields = static_cast<BYTE*>(param_1);
+    *(int *)(fields + 4) = -1;  // 0xffffffff
+    *(BYTE *)(fields + 8) = 0;
+    *(int *)(fields + 0x10c) = 0;
 }
 
 // FUN_0047cfe0 @ 0x0047CFE0 (19 bytes) — item field accessor (word at +0x14)
@@ -587,7 +588,7 @@ void __fastcall FUN_0040f840(int ecx, int /*edx*/, BYTE param_1) {
 // NOTE: FUN_004052b0 opens the log file — stub it as nop for now
 void __fastcall FUN_00405240_init(void *This) {
     *(int *)This = (int)&PTR_FUN_005524c4;
-    FUN_00405290_impl((int)This);
+    FUN_00405290_impl(This);
     // FUN_004052b0(This, "MuError.log"); — opens MuError.log for writing
 }
 
@@ -840,15 +841,10 @@ int __cdecl FUN_00405240(void *lpBuffer, int iSize, int iKey)
 }
 
 // ── FUN_00405290 (IDA-activated, absent in Ghidra) ──
-int __cdecl FUN_00405290(int _this)
+int __cdecl FUN_00405290(void* _this)
 {
-  int result; // eax
-
-  result = 0;
-  *(DWORD *)(_this + 4) = -1;
-  *(BYTE *)(_this + 8) = 0;
-  *(DWORD *)(_this + 268) = 0;
-  return result;
+  FUN_00405290_impl(_this);
+  return 0;
 }
 
 // ── FUN_0053ad80 (IDA-activated, absent in Ghidra) ──
