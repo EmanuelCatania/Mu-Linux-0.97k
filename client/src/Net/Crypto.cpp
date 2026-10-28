@@ -863,8 +863,8 @@ void __fastcall FUN_00408ff0(void* param_1) {
     float texFront, texBack;
     memcpy(&texFront, &thiz[3], 4);   // +0x0C
     memcpy(&texBack,  &thiz[4], 4);   // +0x10
-    FUN_004090b0(param_1, 0, 1, texFront, (int)verts);
-    FUN_004090b0(param_1, 0, 0, texBack,  (int)verts);
+    FUN_004090b0(param_1, 0, 1, texFront, verts);
+    FUN_004090b0(param_1, 0, 0, texBack,  verts);
 
     operator_delete((unsigned char *)verts);
 }
@@ -873,7 +873,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
 // __thiscall(this=meshObj, param_1=windingOrder, param_2=textureId, param_3=vertexBuf).
 // Binds texture, glBegin(GL_QUADS=7), nested loop over rows/cols emitting 4 vertices per quad
 // vía FUN_004091d0. El orden de winding se invierte según param_1 (0=atrás, 1=adelante).
-void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, int param_3) {
+void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, const float* param_3) {
     // Port FIEL de IDA `sub_4090B0`. `param_2` es un GLfloat que en realidad
     // lleva el ID de textura en sus BITS (IDA: `BindTexture(SLODWORD(t))`),
     // igual que el `t` de sub_4091D0 lleva el índice de fila.
@@ -910,7 +910,7 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
 // FUN_004091d0 @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
 // __thiscall. Calcula la UV desde la posición en la grilla: u = col/(cols-1), v = row/(rows-1), clampeado a 0.99.
 // Emite glTexCoord2f + glVertex3f desde el buffer de vértices en param_1 + (row*cols+col)*0xC.
-void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2, float param_3) {
+void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, const float* param_1, int param_2, float param_3) {
     // Port FIEL de IDA `sub_4091D0`. param_1 = buffer de vértices (stride 12),
     // param_2 = columna, param_3 = fila (llega como float con valor entero).
     int *thiz = (int *)ecx;
@@ -924,7 +924,7 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     if (v > 0.99f) v = 0.99f;               // IDA clampea a 0.99
     float u = (float)param_2 / (float)(cols - 1);
 
-    const float *vert = (const float *)(param_1 + 12 * (param_2 + row * cols));
+    const float *vert = param_1 + 3 * (param_2 + row * cols);
     BufferedDraw::TexCoord2f(u, v);
     BufferedDraw::Vertex3f(vert[0], vert[1], vert[2]);
 }

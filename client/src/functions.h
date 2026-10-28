@@ -1104,8 +1104,8 @@ int   __stdcall FUN_004070d0(int param_1, int param_2);              // GameGuar
 
 // Batch 11 — BMD/SMD model loading, mesh rendering, shadow volumes, quest list
 void  __fastcall FUN_00408ff0(void* param_1);                        // BMD mesh render prepare+draw
-void  __fastcall FUN_004090b0(void* ecx, void* edx, int p1, float p2, int p3); // BMD emit quads
-void  __fastcall FUN_004091d0(void* ecx, void* edx, int p1, int p2, float p3); // BMD emit vertex
+void  __fastcall FUN_004090b0(void* ecx, void* edx, int p1, float p2, const float* p3); // Emite quads de la tela.
+void  __fastcall FUN_004091d0(void* ecx, void* edx, const float* p1, int p2, float p3); // Emite un vértice de la tela.
 void* __fastcall FUN_00409ad0(void* param_1);                        // IDA: sub_409AD0 (0x00409AD0), ctor de CPhysicsManager
 void  __fastcall Locimp_dtor(void* param_1);                        // CSQuest destructor
 void  __fastcall FUN_00409d20(int param_1);                          // CSQuest clear all nodes
