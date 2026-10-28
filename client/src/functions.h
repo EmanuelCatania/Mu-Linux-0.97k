@@ -1199,7 +1199,7 @@ void  __cdecl RenderGuildMark(float p1, float p2, float p3, float p4, int p5); /
 void  __cdecl AddTerrainLightClip(float xf, float yf, float Light[3], int Range, float Buffer[3]); // 0x004F7800
 void  __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFlag); // 0x004F9720
 void  __cdecl RenderTerrainFrustrum(bool EditFlag);                 // 0x004F97E0
-void  __cdecl MoveObject_Special(int param_1); // legacy alias of MoveObject_Special (0x004FA5F0)
+void  __cdecl MoveObject_Special(OBJECT* object); // Actualización especial del objeto (0x004FA5F0).
 char* __stdcall PickObject_Mouse(void);                             // 0x004FA7C0
 float* __cdecl MoveObject_PerWorld(OBJECT* object);                      // 0x004FDC00, resumen sin llamadas activas
 int   __stdcall MoveHeavenThunder(void);                            // 0x004FED90
@@ -1299,7 +1299,7 @@ void* __fastcall FUN_0040f730(void* param_1);                              // UI
 void  __fastcall FUN_00410a90(int* param_1);                               // Simple widget constructor (4 bytes)
 
 // Batch 21 — forward declarations for MoveObjects, CollisionDetectLineToMesh, CheckMixRecipe
-void  __cdecl MoveObject_Special(int pObj);                                      // Object_AnimUpdate (per-frame anim tick)
+void  __cdecl MoveObject_Special(OBJECT* object);                                // Actualización especial por frame.
 void  __cdecl FUN_004fdc00(OBJECT* object);                                // IDA: 0x004FDC00, tick por objeto
 void  __cdecl FaceNormalize(float v[3], float out[3], float v2[3], float normal[3]); // 0x00440A60 approx
 // CollisionDetectLineToFace se declara mas arriba (0x00512D40).  Aca habia una

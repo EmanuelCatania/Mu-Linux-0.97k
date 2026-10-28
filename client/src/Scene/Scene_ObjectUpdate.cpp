@@ -605,7 +605,7 @@ void __stdcall MoveObjects(void) {
                 while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0') {
-                        MoveObject_Special((int)pcVar6);
+                        MoveObject_Special(AsObject(pcVar6));
                     }
                     pcVar6[0x160] = '\0';
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
@@ -663,7 +663,7 @@ void __stdcall MoveObjects(void) {
                                 DAT_083a3fec--;
                             }
                         }
-                        MoveObject_Special((int)pcVar6);
+                        MoveObject_Special(AsObject(pcVar6));
                     }
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
                 } // end while linked list
