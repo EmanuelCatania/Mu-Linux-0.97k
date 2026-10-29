@@ -26,6 +26,9 @@ jobs:
           python .github/scripts/check_cmake_sources.py
           python .github/scripts/check_bmd_boundary.py
           python .github/scripts/check_render_layer.py
+      - name: Verificar destinos de mass teleport
+        if: matrix.config == 'Release'
+        run: python tests/MassTeleportTarget.py
       - name: Dependencias de sistema Linux x86
         if: runner.os == 'Linux'
         run: |

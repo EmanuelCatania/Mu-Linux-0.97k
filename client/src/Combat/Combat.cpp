@@ -1362,6 +1362,8 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             TargetY = (DWORD)y;                            // IDA L9787: TargetY
             BYTE terrainAttr = TerrainWall[((y & 0xFF) << 8) | (x & 0xFF)];   // IDA: TERRAIN_INDEX
             if ((terrainAttr & 0x20) == 0x20) terrainAttr -= 0x20;
+            // IDA 49CBF0: el recall sólo usa una casilla sin atributos bloqueantes.
+            if (terrainAttr != 0) continue;
             *(float*)(target + 36) = CreateAngle(              // IDA L9798
                 *(float*)(target + 16), *(float*)(target + 20),
                 *(float*)(target + 788), *(float*)(target + 792));
