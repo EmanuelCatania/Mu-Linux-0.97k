@@ -56,21 +56,22 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     (void)b;
     if (!model) return;
 
+    BYTE* modelBytes = static_cast<BYTE*>(model);
     const int meshIdx  = (int)frame;
-    const int meshEntry = *(int *)((int)model + 0x28) + meshIdx * 0x28;
+    const int meshEntry = *(int *)(modelBytes + 0x28) + meshIdx * 0x28;
     if (*(short *)(meshEntry + 10) == 0) return;             // sin triangulos
 
-    int tex = *(short *)(*(int *)((int)model + 0x38) + *(short *)(meshEntry + 2) * 2);
+    int tex = *(short *)(*(int *)(modelBytes + 0x38) + *(short *)(meshEntry + 2) * 2);
     if (tex == 300) return;                                   // BITMAP_HIDE
     if (rgba != 0xffffffff) tex = (int)rgba;
 
     const int blendMesh = f4;
-    const float *bodyLight = (const float *)((int)model + 0x48);
+    const float *bodyLight = (const float *)(modelBytes + 0x48);
 
     // UV animadas (LOBYTE(a11) de IDA): la malla es la de BlendMesh o la de
     // StreamMesh (model+0x88, o la propia si el script de la malla lo pide),
     // y hay algun desplazamiento de UV.
-    const int streamMesh = *(signed char *)((int)model + 0x88);
+    const int streamMesh = *(signed char *)(modelBytes + 0x88);
     int waveMesh = streamMesh;
     {
         const int script = *(int *)(meshEntry + 0x24);
@@ -82,7 +83,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // v58: LightEnable del modelo.  Con StreamMesh el color es plano; si no,
     // se arma la luz por vertice = IntensityTransform * BodyLight (IDA
     // escribe el mismo buffer que sub_440D50 antes de delegar).
-    int lightEnable = *(unsigned char *)((int)model + 0x44);
+    int lightEnable = *(unsigned char *)(modelBytes + 0x44);
     if (meshIdx == streamMesh) {
         BufferedDraw::Color3fv(bodyLight);
         lightEnable = 0;
@@ -1660,7 +1661,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // Pose model with BMD_Animation
     float angleArr[3] = { ObjectSelect_Angle, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { ObjectSelect_HeadAngle, 0.0f, 0.0f };
-    BMD_Animation(modelThis, (int)&DAT_06970a9c, 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
+    BMD_Animation(modelThis, reinterpret_cast<float*>(&DAT_06970a9c), 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
 
     // Build stack entity and draw
     // entity_type at [+2], scale at [+0x0c], world_pos at [+0x10..+0x18]
@@ -1670,7 +1671,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     *(DWORD *)(ent + 0x0c) = local_3bc;  // write raw float bits into entity+0x0c
     *(unsigned char *)(ent + 0x3d) = param_4; // preserve raw ExtOption for later render passes
 
-    ItemObjectAttribute((int)ent);
+    ItemObjectAttribute(AsObject(ent));
 
     // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute sobreescribe
     // ent[+0xC] con un valor default (0x3F4CCCCD = 0.8f para items en mundo).
@@ -1893,12 +1894,12 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     ObjectSelect_PriorAction = 0;
     float renderAngle[3] = { ObjectSelect_Angle, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { ObjectSelect_HeadAngle, 0.0f, 0.0f };
-    BMD_Animation(model, (int)&DAT_06970a9c, 0.0f, 0, 0,
+    BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c), 0.0f, 0, 0,
                  (unsigned int*)renderAngle, headAngle, '\0', '\0');
 
     char object[0x200] = {};
     *(short*)(object + 2) = (short)drawType;
-    ItemObjectAttributeForRender((int)object);
+    ItemObjectAttributeForRender(AsObject(object));
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
     *(float*)(object + 0x14) = position[1];

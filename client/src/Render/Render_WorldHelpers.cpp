@@ -121,9 +121,9 @@ void __cdecl RenderBoids(void)
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
                     void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + 188 * 301);
                     void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + 188 * entType);
-                    RenderPartObjectBodyColor(mdl301, (int)(uintptr_t)(v0 - 90),
+                    RenderPartObjectBodyColor(mdl301, reinterpret_cast<uintptr_t>(v0 - 90),
                                               301, *v0, 0x48, 1.0f, -1);
-                    RenderPartObjectBodyColor(mdlEnt, (int)(uintptr_t)(v0 - 90),
+                    RenderPartObjectBodyColor(mdlEnt, reinterpret_cast<uintptr_t>(v0 - 90),
                                               entType, *v0, 0x44, 1.0f, -1);
                 }
 
@@ -220,7 +220,7 @@ void __cdecl Entity_Render(void)
                 *(DWORD*)(model + 112) = *(DWORD*)(v0 - 241);
                 *(DWORD*)(model + 116) = *(DWORD*)(v0 - 237);
 
-                Entity_SetGravity(type, (int)model);
+                Entity_SetGravity(type, model);
 
                 // BMD_Animation
                 float angles_in[3]  = { *(float*)(v0 - 233), *(float*)(v0 - 229), *(float*)(v0 - 225) };
@@ -228,7 +228,7 @@ void __cdecl Entity_Render(void)
                 // AnimationFrame / PriorFrame: IDA los toma en v0+3 y v0+7 —
                 // offsets de BYTE (disasm 0x5039E9/0x5039ED: `mov ecx,[esi+7]`,
                 // `mov edx,[esi+3]`), no de float.
-                BMD_Animation(model, (int)&DAT_06970a9c,
+                BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
                              *(float*)(v0 + 3), *(unsigned int*)(v0 + 7),
                              v0[1], (unsigned int*)angles_in, headA, 0, 0);
 
@@ -684,7 +684,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     // los items de Alt.  RenderItemName deja el glColor del último item (IDA
     // tampoco lo restaura) y el texto sale como m_dwTextColor x glColor, así que
     // dibujar antes los items teñiría el nombre del monstruo.
-    extern void __cdecl RenderItemName(int, DWORD, int, int, bool);
+    extern void __cdecl RenderItemName(int, const OBJECT*, int, int, bool);
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     const int hovered = (int)SelectedItem;
 
@@ -695,7 +695,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         if (hovered < 0 || hovered >= 1000) return;
         BYTE* o = itemPool + hovered * 0x204 + 72;
         if (o[0] && o[352])
-            RenderItemName(hovered, (DWORD)(uintptr_t)o,
+            RenderItemName(hovered, AsObject(o),
                                 *(int*)(o - 64), (int)*(char*)(o - 41), 0);
     };
 
@@ -711,7 +711,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         char* ent = base + npc * 0x394;
         if (ent[0] != 0) {
             const char* name = EntityName::Get(ent);
-            if (name[0]) CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+            if (name[0]) CreateChat((char*)name, (char*)"", AsCharacter(ent), 0, -1);
         }
     } else if (chr == -1) {
         if (hovered != -1) drawHoveredItem();          // IDA LABEL_37
@@ -747,7 +747,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
             } else if (kind != 2) {
                 // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
                 // limitaba a kind == 1).
-                CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+                CreateChat((char*)name, (char*)"", AsCharacter(ent), 0, -1);
             }
         }
     }
@@ -761,7 +761,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
             if (i == hovered) continue;
             BYTE* o = itemPool + i * 0x204 + 72;
             if (o[0] && o[352]) {
-                RenderItemName(i, (DWORD)(uintptr_t)o,
+                RenderItemName(i, AsObject(o),
                                     *(int*)(o - 64), (int)*(char*)(o - 41), 1);
             }
         }
@@ -898,10 +898,10 @@ void __cdecl RenderWheelWeapon(DWORD o)
     *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
 
     AsObject(o)->Type = (short)model_id;
-    ItemObjectAttributeForRender((int)o);                          // ItemObjectAttribute
+    ItemObjectAttributeForRender(AsObject(o));                          // ItemObjectAttribute
 
     float angles_in[3] = { AsObject(o)->Angle[0], AsObject(o)->Angle[1], AsObject(o)->Angle[2] };
-    BMD_Animation(mdl, (int)&DAT_06970a9c,
+    BMD_Animation(mdl, reinterpret_cast<float*>(&DAT_06970a9c),
                  AsObject(o)->AnimationFrame, *(unsigned int *)&AsObject(o)->PriorAnimationFrame,
                  AsObject(o)->PriorAction,
                  (unsigned int*)angles_in, (float*)(o + 40), 0, 0);
@@ -1013,7 +1013,7 @@ void __cdecl EffectPool_RenderAll(void)
             BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 50008);
             float angles_in[3]  = { v0[-3], v0[-2], v0[-1] };
             float headA[3]      = { v0[0],  v0[1],  v0[2]  };
-            BMD_Animation(model, (int)&DAT_06970a9c,
+            BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
                          v0[56], *(unsigned int*)&v0[57],
                          *((BYTE*)v0 + 222),
                          (unsigned int*)angles_in, headA, 0, 0);
@@ -1182,7 +1182,7 @@ void Fauna_TickSprites() {
             EquipmentModelContext context(model);
             const float angle = o.Angle[2];
             o.Angle[2] += 90.0f;
-            ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 1);
+            ObjectPose_PrepareBones(AsObject(entity), model, (float *)g_BoneScratch, 1);
             o.Angle[2] = angle;
             color[0] = brightness; color[1] = brightness * 0.2f; color[2] = 0;
             for (int side = 0; side < 2; ++side) {
@@ -1217,7 +1217,7 @@ void EffectPool_TickRenderState() {
             const int model = *((BYTE *)o.Owner + 136) + ITEM_MODEL_BASE;
             if (model >= 0 && model < 1024 && DAT_07abf5d8) {
                 if (o.Type==239) o.Direction[2] -= 30.0f;
-                MaterialVisuals_PrepareWeaponObject((int)&o,model);
+                MaterialVisuals_PrepareWeaponObject(&o,model);
             }
         }
         if (o.Type >= 1210 && o.Type <= 1212) {

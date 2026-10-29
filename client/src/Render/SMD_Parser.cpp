@@ -96,7 +96,7 @@ void __cdecl putc(int ch, int *fp) {
 // Initialises WinSock 2.2. On success: stores wVersion low-word at param_1+4,
 // clears param_1+8, returns 1. On failure: logs error, shows MessageBox, returns 0.
 // IDA: CWsctlc::Startup (0x0043DB30)
-void __cdecl CWsctlc_Startup(int param_1) {
+void __cdecl CWsctlc_Startup(uintptr_t param_1) {
     uint16_t socketVersion = 0;
     int r = Platform::GetSocket().Startup(0x202, socketVersion);
     if (r != 0) {
@@ -136,7 +136,7 @@ void __cdecl CWsctlc_Create(void* ctx, int param_1) {
 // IDA: SetCharacterScale (0x0045C050)
 // Sets entity scale (+0x0c) based on Class (+0x1bc) and Skin (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
-void __cdecl SetCharacterScale(int param_1) {
+void __cdecl SetCharacterScale(CHARACTER* param_1) {
     if (*(char *)&AsCharacter(param_1)->Change == '\0') {
         short sVar1 = AsCharacter(param_1)->BodyPart[1].Type;
         if (((sVar1 == 0x270) || (sVar1 == 0x272)) || ((0x279 < sVar1 && (sVar1 < 0x27e)))) {
@@ -247,7 +247,7 @@ void __cdecl DeleteObjects(void) {
             char* head = (char*)*(DWORD*)(puVar5 + 8);
             while (head != nullptr) {
                 char* next = (char*)*(DWORD*)(head + 0x1b4);
-                Entity_GridUnlink((void*)head, (int)puVar5);
+                Entity_GridUnlink(head, puVar5);
                 head = next;
             }
             *(DWORD*)(puVar5 + 4) = 0;
@@ -357,7 +357,7 @@ void __cdecl ClearCharacters(int param_1) {
 void __cdecl Effect_CollisionCheck(int Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
-    DWORD ca = (DWORD)DAT_07cf1ff4;  // CharacterAttribute
+    const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);  // CharacterAttribute
     if (ca == 0) return;
 
     if (*(unsigned char*)(T + 132) != 0) {
@@ -418,7 +418,7 @@ void __cdecl Effect_CollisionCheck(int Target) {
                 // v36 != 51 and v36 != 52 — generic hit
                 *T = 0;
                 int rs = rand();
-                PlayBuffer(rs % 7 + 50, (DWORD)Target, 0);
+                PlayBuffer(rs % 7 + 50, AsObject(Target), 0);
                 if (type != 223 && type != 243) return;
             }
             Effect_SpawnSmokeBurst(posPtr, (char)1);
@@ -491,7 +491,7 @@ void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
 // If flag != 0: builds rotation matrix from euler (+0x1c..0x24), transforms +0xc0 offset,
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
-void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
+void __cdecl Joint_BoneOffsetApply(BYTE* param_1, int param_2) {
     // Ghidra separó un float[3] de salida en tres locales (local_3c/38/34) y
     // Vector_Rotate escribe 3 floats contiguos: se usa un array real.
     float out[3] = {0.0f, 0.0f, 0.0f};

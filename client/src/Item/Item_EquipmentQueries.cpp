@@ -197,6 +197,7 @@ LABEL_20:
   do
   {
     v5 = (int *)&DAT_07ea9504;
+    int columns = 8;
     do
     {
       v6 = v5;
@@ -220,7 +221,7 @@ LABEL_20:
       while ( v7 );
       v5 -= 17;
     }
-    while ( (int)v5 >= (int)&DAT_07ea9328 );
+    while ( --columns );
     --v9;
   }
   while ( v9 >= v3 );

@@ -406,7 +406,7 @@ void Client_SocketEvent(uint16_t event, uint16_t error) { gNetwork.OnSocketEvent
 void Client_ClosePortable() {
     gPing.Reset(); gFrameLimiter.Shutdown();
     DAT_055ca018 = 1;
-    CWsctlc_Close((int)(uintptr_t)SocketClient);
+    CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient));
     for (int buffer = 0; buffer < 420; ++buffer) Sound_ReleaseBuffer(buffer);
     OpenGL_Release();
 }
@@ -598,21 +598,21 @@ int main(int, char**)
         RandomTable[j] = rand() % 360;
 
     // 19: alocación de buffers (tamaños sacados del decompile)
-    GateAttribute = (DWORD)malloc(900);     memset((void*)GateAttribute, 0, 0xe1 * 4);
-    DAT_07d29d20 = (int)malloc(0xa00);     memset((void*)DAT_07d29d20, 0, 0x280 * 4);
-    DAT_07cf1ff8 = (int)malloc(0xa00);     memset((void*)DAT_07cf1ff8, 0, 0x280 * 4);
+    GateAttribute = static_cast<GATE_ATTRIBUTE*>(malloc(900)); memset(GateAttribute, 0, 0xe1 * 4);
+    DAT_07d29d20 = static_cast<BYTE*>(malloc(0xa00)); memset(DAT_07d29d20, 0, 0x280 * 4);
+    DAT_07cf1ff8 = static_cast<BYTE*>(malloc(0xa00)); memset(DAT_07cf1ff8, 0, 0x280 * 4);
 
     // ItemAttribute — base aleatorizada (anti-tamper, pero igual necesitamos el alloc)
     // DESVIACION (0.97.20): la tabla tiene ITEM_MAX_EX filas (agregados del
     // catálogo del server por encima de 512); el binario reservaba 0x18000.
-    DAT_055c9e44 = (DWORD)malloc((ITEM_MAX_EX + 0x400) * 0x40);
+    DAT_055c9e44 = reinterpret_cast<std::uintptr_t>(malloc((ITEM_MAX_EX + 0x400) * 0x40));
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
     memset((void*)DAT_07d78068, 0, ITEM_MAX_EX * 0x40);
-    DAT_07cf1ff0 = (int)malloc(0x8000);
-    memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
+    DAT_07cf1ff0 = static_cast<BYTE*>(malloc(0x8000));
+    memset(DAT_07cf1ff0, 0, 0x2000 * 4);
 
     // Array de entidades — CRÍTICO, todo lo accede
-    DAT_055c9e48 = (DWORD)malloc(0x764d4);
+    DAT_055c9e48 = reinterpret_cast<std::uintptr_t>(malloc(0x764d4));
     DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * 0x394;
     memset((void*)DAT_07abf5d0, 0, 0x166b5 * 4);
 
@@ -653,13 +653,13 @@ int main(int, char**)
     // queda nula y todos los sitios de dispatch (Render_GameFrame +0x10,
     // UIChatLogWindow_AddText +0x70, CreateChat +0x70) crashean.
     // ChatListBox_Construct portea sub_40C5D0+sub_40C7D0 1:1.
-    DAT_055c9ff0 = (DWORD)ChatListBox_Construct();
+    DAT_055c9ff0 = static_cast<BYTE*>(ChatListBox_Construct());
     // DAT_055c9ff4 es el segundo widget de chat (susurro / panel de notificaciones,
     // esquina superior derecha). El WinMain de IDA llama operator_new(0xBC) +
     // sub_40E990 (hermana de sub_40C7D0, con nodo de lista más chico, 0x18, y 24
     // filas visibles). Sin construirlo la vtable queda nula y el dispatch
     // vtable[+0x14] desde SecondPassword_Screen1 crashea.
-    DAT_055c9ff4 = (DWORD)ChatListBox_ConstructWhisper();
+    DAT_055c9ff4 = static_cast<BYTE*>(ChatListBox_ConstructWhisper());
 
     // Los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0: los
     // scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/
@@ -674,7 +674,7 @@ int main(int, char**)
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
     if (DAT_05828d58 == 0) {
         DAT_06f42a58=ResourceTables::ModelBase();
-        DAT_05828d58=(DWORD)(uintptr_t)DAT_06f42a58;
+        DAT_05828d58 = reinterpret_cast<std::uintptr_t>(DAT_06f42a58);
     }
 
     // Class name table (DAT_07d2b494, stride 300, indexed por cidx = (klass&7) +

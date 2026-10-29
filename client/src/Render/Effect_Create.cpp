@@ -50,7 +50,7 @@ static void Tamachan_Create(char *o)
     *(int *)(o + 96) = rand() % 50 + 50;           // lifetime
     o[260] = 1;                                    // estado: flotando
     *(float *)(o + 216) = -30.0f;                  // 0xC1F00000
-    SetAction((int)o, (unsigned char)o[260]);   // SetAction
+    SetAction(AsObject(o), (unsigned char)o[260]);   // SetAction
     *(float *)(o + 192) = 0.0f;                    // velocidad
     *(float *)(o + 196) = 0.0f;
     *(float *)(o + 200) = 0.0f;
@@ -366,7 +366,7 @@ LAB_004649e0:
         AsObject(pfVar17)->Direction[1] = (float)(int)param_8;
         AsObject(pfVar17)->Direction[2] = 26.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 12;
-        pfVar12 = (float *)PlayBuffer(0x44,(int)pfVar17,0);
+        pfVar12 = (float *)PlayBuffer(0x44, AsObject(pfVar17),0);
         return pfVar12;
       case 0x4e0:
         AsObject(pfVar17)->Angle[0] = 0.0;

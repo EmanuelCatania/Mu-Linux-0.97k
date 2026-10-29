@@ -133,7 +133,7 @@ uint __cdecl Weather_Update(void)
     int     iVar11, iVar12;
     uint    uVar13;
     int     iVar14;
-    DWORD  *puVar16;
+    const unsigned char* puVar16;
     unsigned char *pbVar17, *pbVar18;
     char   *pcVar19;
     bool    bVar20, bVar21;
@@ -164,22 +164,22 @@ uint __cdecl Weather_Update(void)
         do {
             bVar20 = false; iVar14 = 0; bVar21 = true;
             pbVar18 = (unsigned char *)(DAT_055c9bd0 + uVar8 * 4);
-            iVar12 = 4; DWORD **ppuVar15 = &local_40; pbVar17 = pbVar18;
+            iVar12 = 4; const unsigned char* ppuVar15 = reinterpret_cast<const unsigned char*>(&local_40); pbVar17 = pbVar18;
             do {
                 if (iVar12 == 0) break;
-                iVar12--; bVar20 = *(unsigned char *)ppuVar15 < *pbVar17;
-                bVar21 = *(unsigned char *)ppuVar15 == *pbVar17;
-                ppuVar15 = (DWORD **)((int)ppuVar15 + 1); pbVar17++;
+                iVar12--; bVar20 = *ppuVar15 < *pbVar17;
+                bVar21 = *ppuVar15 == *pbVar17;
+                ++ppuVar15; pbVar17++;
             } while (bVar21);
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) goto LAB_00500f16;
             iVar12 = 4; bVar20 = false; iVar14 = 0; bVar21 = true;
-            puVar16 = (DWORD*)&uStack_48;
+            puVar16 = reinterpret_cast<const unsigned char*>(&uStack_48);
             do {
                 if (iVar12 == 0) break;
                 iVar12--; bVar20 = (unsigned char)*puVar16 < *pbVar18;
                 bVar21 = (unsigned char)*puVar16 == *pbVar18;
-                puVar16 = (DWORD*)((int)puVar16 + 1); pbVar18++;
+                ++puVar16; pbVar18++;
             } while (bVar21);
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
@@ -200,7 +200,7 @@ uint __cdecl Weather_Update(void)
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 LAB_00500f16:
     pvVar9 = AntiTamper_HashNode();
-    *(unsigned char *)((int)pvVar9 + 4) = 1;
+    *(static_cast<unsigned char*>(pvVar9) + 4) = 1;
     HashTable_Insert(&MAIN_HASH_CLASS, pvVar9, &MoveSceneFrame);
 LAB_00500f34:
     // Anti-tamper: HashTable reference-count decrement
@@ -213,22 +213,22 @@ LAB_00500f34:
         do {
             iVar12 = 4; bVar20 = false; iVar14 = 0; bVar21 = true;
             pbVar18 = (unsigned char *)(DAT_055c9bd0 + uVar8 * 4);
-            DWORD **ppuVar15b = &puStack_44; pbVar17 = pbVar18;
+            const unsigned char* ppuVar15b = reinterpret_cast<const unsigned char*>(&puStack_44); pbVar17 = pbVar18;
             do {
                 if (iVar12 == 0) break;
-                iVar12--; bVar20 = *(unsigned char *)ppuVar15b < *pbVar17;
-                bVar21 = *(unsigned char *)ppuVar15b == *pbVar17;
-                ppuVar15b = (DWORD **)((int)ppuVar15b + 1); pbVar17++;
+                iVar12--; bVar20 = *ppuVar15b < *pbVar17;
+                bVar21 = *ppuVar15b == *pbVar17;
+                ++ppuVar15b; pbVar17++;
             } while (bVar21);
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) goto LAB_00501064;
             iVar12 = 4; bVar20 = false; iVar14 = 0; bVar21 = true;
-            puVar16 = (DWORD*)&uStack_48;
+            puVar16 = reinterpret_cast<const unsigned char*>(&uStack_48);
             do {
                 if (iVar12 == 0) break;
                 iVar12--; bVar20 = (unsigned char)*puVar16 < *pbVar18;
                 bVar21 = (unsigned char)*puVar16 == *pbVar18;
-                puVar16 = (DWORD *)((int)puVar16 + 1); pbVar18++;
+                ++puVar16; pbVar18++;
             } while (bVar21);
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
@@ -251,17 +251,17 @@ LAB_00500f34:
 LAB_00501064:
 
     // ── Weather-mode: random rain effects (DAT_083a3ff0 != 0) ─────────────────
-    uVar8 = (uint)(uintptr_t)DAT_07abf5d8;
+    const char* const rainHero = DAT_07abf5d8;
     if (DAT_083a3ff0 != 0) {
         // Spawn occasional rain splash particle (1/40 chance)
         iVar12 = _rand();
         if (iVar12 % 0x28 == 0) {
             iVar12 = _rand();
-            puStack_44 = (DWORD *)(iVar12 % 600 + -200);
-            fStack_20 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x10);
+            const int splashOffsetX = iVar12 % 600 - 200;
+            fStack_20 = (float)splashOffsetX + *(float *)(DAT_07abf5d8 + 0x10);
             iVar12 = _rand();
-            puStack_44 = (DWORD *)(iVar12 % 400 + 200);
-            fStack_1c = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x14);
+            const int splashOffsetY = iVar12 % 400 + 200;
+            fStack_1c = (float)splashOffsetY + *(float *)(DAT_07abf5d8 + 0x14);
             fStack_18 = *(float *)(DAT_07abf5d8 + 0x18) + _DAT_00552900;
             fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
             fStack_38 = 1.0f; fStack_34 = 1.0f; fStack_30 = 1.0f;
@@ -271,17 +271,17 @@ LAB_00501064:
         }
         // Ground ripple effect
         fStack_38 = -0.3f; fStack_34 = -0.3f; fStack_30 = -0.2f;
-        AddTerrainLight(*(float *)(uVar8 + 0x10), *(float *)(uVar8 + 0x14), (float*)&fStack_38, 0x10, (float*)&DAT_081cb608[0]);
+        AddTerrainLight(*(const float *)(rainHero + 0x10), *(const float *)(rainHero + 0x14), (float*)&fStack_38, 0x10, (float*)&DAT_081cb608[0]);
     }
 
     // ── World == 10: spawn distant lightning clouds ─────────────────
     if ((gMapManager.GetCurrentMap() == 10) && (_rand() % 10 == 0)) {
         iVar12 = _rand();
-        puStack_44 = (DWORD *)(iVar12 % 5000 + -0x9c4);
-        fStack_38 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x10);
+        const int cloudOffsetX = iVar12 % 5000 - 2500;
+        fStack_38 = (float)cloudOffsetX + *(float *)(DAT_07abf5d8 + 0x10);
         iVar12 = _rand();
-        puStack_44 = (DWORD *)(iVar12 % 5000 + -0x9c4);
-        fStack_34 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x14);
+        const int cloudOffsetY = iVar12 % 5000 - 2500;
+        fStack_34 = (float)cloudOffsetY + *(float *)(DAT_07abf5d8 + 0x14);
         fStack_30 = *(float *)(DAT_07abf5d8 + 0x18) - _DAT_00552ab8;
         fStack_20 = 1.0f; fStack_1c = 1.0f; fStack_18 = 1.0f;
         fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
@@ -510,7 +510,7 @@ LAB_00501734:
 
             if ((DAT_083a3ff0 == 0) || (sVar5 != 0x12d)) {
                 pfVar1 = (float *)(&DAT_0839bcc0 + iVar14 * 0x6f);
-                *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
+                *(static_cast<unsigned char*>(pvVar9) + 0xa0) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
@@ -653,7 +653,7 @@ LAB_00501cb5:
                     if ((&DAT_0839bcb2)[iVar14*0xde] != 0xaf) {
                         // Pasar la dirección real de DAT_0839bcb0, no el literal `0x839bcb0` del
                         // binario fuente (en este build el símbolo vive en otra dirección).
-                        Particle_PathUpdate((int)pcVar3, iVar14, (int)(uintptr_t)&DAT_0839bcb0, 0x28);
+                        Particle_PathUpdate(AsObject(pcVar3), iVar14, &DAT_0839bcb0, 0x28);
                     }
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
 
@@ -740,27 +740,27 @@ LAB_00501cb5:
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xfffffe00)==0xffffffff);
-                        if (bVar20) PlayBuffer(0xc, (int)pcVar3, 0);
+                        if (bVar20) PlayBuffer(0xc, AsObject(pcVar3), 0);
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xfffffe00)==0xffffffff);
-                        if (bVar20) PlayBuffer(0xd, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0xd, AsObject(pcVar19), 0);
                     } else if (sVar5 == 0xb0) {
                         uVar8 = _rand(); uVar8 &= 0x800000ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff00)==0xffffffff);
-                        if (bVar20) PlayBuffer(0xe, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0xe, AsObject(pcVar19), 0);
                     } else if ((sVar5 == 0xb8) && ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
                         uVar8 = _rand(); uVar8 &= 0x8000007f;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff80)==0xffffffff);
-                        if (bVar20) PlayBuffer(0x6d, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0x6d, AsObject(pcVar19), 0);
                     }
                 }
             } else {
                 // DAT_083a3ff0 != 0 && type == 0x12d: thunder cloud — full animation
-                SetAction((int)pcVar3, 7);
-                *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
+                SetAction(AsObject(pcVar3), 7);
+                *(static_cast<unsigned char*>(pvVar9) + 0xa0) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
@@ -791,7 +791,7 @@ LAB_00501cb5:
             }
         }
 
-        Alpha((int)pcVar3);
+        Alpha(AsObject(pcVar3));
         uVar8 = 0;  // return value unused; Alpha returns void
         iVar12 = gMapManager.GetCurrentMap();
 

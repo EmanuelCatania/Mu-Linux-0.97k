@@ -97,20 +97,21 @@ void __cdecl CPhysicsManager_Render(void* physics_manager)
 // Sets two consecutive fields at this+0x2c and this+0x30.
 void __cdecl Object_SetRectFields(void *this_,undefined4 param_1,undefined4 param_2)
 {
-  *(undefined4 *)((int)this_ + 0x2c) = param_1;
-  *(undefined4 *)((int)this_ + 0x30) = param_2;
+  BYTE* object = static_cast<BYTE*>(this_);
+  *(undefined4 *)(object + 0x2c) = param_1;
+  *(undefined4 *)(object + 0x30) = param_2;
   return;
 }
 
 
 // Object_ClearMembers — Object_ClearMembers
 // Zeroes 0x140 dwords (1280 bytes) starting at param_1 + 200 (0xc8).
-void __cdecl Object_ClearMembers(int param_1)
+void __cdecl Object_ClearMembers(void* param_1)
 {
   int iVar1;
   undefined4 *puVar2;
 
-  puVar2 = (undefined4 *)(param_1 + 200);
+  puVar2 = reinterpret_cast<undefined4*>(static_cast<BYTE*>(param_1) + 200);
   for (iVar1 = 0x140; iVar1 != 0; iVar1 = iVar1 + -1) {
     *puVar2 = 0;
     puVar2 = puVar2 + 1;
@@ -125,15 +126,16 @@ void __cdecl Object_ClearMembers(int param_1)
 // Returns 1 (non-zero) on both paths.
 undefined4 __cdecl Packet_ParseReceived(void *param_1)
 {
+  const byte* quest = static_cast<const byte*>(param_1);
   int iVar1;
   undefined4 uVar2;
 
-  if (*(byte *)((int)param_1 + 0x1c87f) == 1) {
+  if (*(quest + 0x1c87f) == 1) {
     iVar1 = CSQuest_ProceedButton(param_1);
     (void)iVar1;
   }
   else {
-    iVar1 = *(byte *)((int)param_1 + 0x1c87f) - 2;
+    iVar1 = *(quest + 0x1c87f) - 2;
     if (iVar1 == 0) {
       uVar2 = Packet_ParseType2(param_1);
       (void)uVar2;
@@ -184,8 +186,8 @@ void MoveItems(void)
     else {
       // Tocó el suelo: se apoya sobre el terreno.
       *pZ = (float)fVar3;
-      ItemAngle((int)(ip + 72));
+      ItemAngle(AsObject(ip + 72));
     }
-    Entity_UpdateSparkleEffect((int)(ip + 72));
+    Entity_UpdateSparkleEffect(AsObject(ip + 72));
   }
 }

@@ -142,11 +142,11 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
     Matrix_BuildFromEuler(local_6c,local_30);
     iVar1 = 0;
     do {
-      pfVar4 = (float *)((int)local_60 + iVar1);
-      Vector_Rotate((float *)((int)rotOffsets + iVar1),local_30,pfVar4);
+      pfVar4 = local_60 + iVar1 / sizeof(float);
+      Vector_Rotate(rotOffsets + iVar1 / sizeof(float),local_30,pfVar4);
       iVar2 = iVar1 + 0xc;
       *pfVar4 = local_ac + *pfVar4;                        // + centerX
-      *(float *)((int)local_60 + iVar1 + 4) = local_a0 + *(float *)((int)local_60 + iVar1 + 4);  // + centerY
+      pfVar4[1] = local_a0 + pfVar4[1];  // + centerY
       iVar1 = iVar2;
     } while (iVar2 < 0x30);
   }

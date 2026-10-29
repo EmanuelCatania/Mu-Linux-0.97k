@@ -58,32 +58,32 @@ void WorldEffects_Tick(int entity) {
     frame.type = AsObject(entity)->Type;
     void *model = (void *)(DAT_05828d58 + frame.type * 0xbc);
     EquipmentModelContext savedModel(model);
-    ObjectPose_PrepareBounds(entity, 0);
+    ObjectPose_PrepareBounds(AsObject(entity), 0);
     *(float *)((char *)model + 0x84) = 0.0f;
     *(BYTE *)((char *)model + 0x45) = AsObject(entity)->ContrastEnable;
-    Entity_GetLightScale(entity, (int)model);
+    Entity_GetLightScale(entity, reinterpret_cast<uintptr_t>(model));
     // DESVIACION: los efectos necesitan una pose SIM propia, incluso si alpha
     // oculta la malla; nunca heredan huesos del último objeto dibujado.
     memset(g_BoneScratch, 0, sizeof(g_BoneScratch));
     if (*(short *)((char *)model + 0x26) > 0)
-        ObjectPose_PrepareBones(entity, model, (float *)g_BoneScratch, 0);
-    ObjectPose_TickMeshEvents(entity, model, (float *)g_BoneScratch, 0);
-    MoltSilhouette_Tick(entity, model, (float *)g_BoneScratch, 0);
-    MaterialVisuals_TickObjectDraw(entity);
+        ObjectPose_PrepareBones(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    ObjectPose_TickMeshEvents(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    MoltSilhouette_Tick(AsObject(entity), model, (float *)g_BoneScratch, 0);
+    MaterialVisuals_TickObjectDraw(AsObject(entity));
     recording = &frame;
     Entity_SpawnEffects(entity);
     recording = nullptr;
 }
 
-void WorldEffects_Draw(int entity) {
-    const void *object = (void *)entity;
+void WorldEffects_Draw(const OBJECT* entity) {
+    const void *object = entity;
     // Validar registro/generación antes de leer la dirección: puede haberse
     // liberado o reutilizado entre la publicación SIM y esta pasada.
     if (scene != SceneFlag || world != gMapManager.GetCurrentMap() ||
         !SceneObjects::Contains(object)) return;
     const auto found = frames.find(object);
     if (found == frames.end() || found->second.generation != SceneObjects::Generation(object) ||
-        !AsObject(entity)->Live || found->second.type != AsObject(entity)->Type) return;
+        !entity->Live || found->second.type != entity->Type) return;
     const Frame &frame=found->second;
     // Sin comandos no hay posiciones que mezclar ni sprites que reproducir.
     if (frame.sprites.empty()) return;

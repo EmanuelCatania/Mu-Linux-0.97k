@@ -8,11 +8,11 @@
 
 // ── Bone / 3D sound helpers ───────────────────────────────────────────────────
 // BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformPos)
-float __fastcall SpringNode_Delta(void *a, int b, float *c);
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void  __fastcall VerletNode_AddAccel(void *a, float x, float y, float z);
 void  __fastcall ClothNode_Integrate(void *a, float v);
 void  __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
-void  __cdecl    ClothNode_ApplyForces(int _this, int a2, short a3);
+void  __cdecl    ClothNode_ApplyForces(uintptr_t _this, int a2, short a3);
 
 // Cloth_PinTopRow @ 0x00408780 — Cloth_PinTopRow (slot 1 de off_552520).
 // Reposiciona los W nodos de la FILA SUPERIOR sobre la matriz del hueso al que
@@ -21,8 +21,9 @@ void  __cdecl    ClothNode_ApplyForces(int _this, int a2, short a3);
 // `BoneTransform + 48 * boneIdx` en cada tick.
 // Port FIEL de IDA `sub_408780`. Layout: +0x14 flags, +0x18/+0x1C origen Y/Z,
 // +0x20 ancho, +0x28 W, +0x34 nodes, +0x40 paso horizontal.
-void __cdecl Cloth_PinTopRow(int _this, float (*Matrix)[4])
+void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4])
 {
+  BYTE* _this = static_cast<BYTE*>(widget);
   float Position[3];
   float WorldPosition[3];
 
@@ -92,7 +93,7 @@ void __cdecl Cloth_Wind(DWORD *_this)
   for (int v18 = 0; v18 < (int)_this[12]; ++v18)
   {
     int dist = abs(v20 / W - v18 / W) + abs(v20 % W - v18 % W);
-    ClothNode_ApplyForces((int)(_this[13] + 60 * v18), dist, (short)_this[5]);
+    ClothNode_ApplyForces(static_cast<uintptr_t>(_this[13]) + 60 * v18, dist, (short)_this[5]);
   }
 }
 
@@ -127,7 +128,7 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
     char  *v7 = (char  *)(v6 + 60 * *(short *)v5);
     float *v8 = (float *)(v6 + 60 * *((short *)v5 + 1));
 
-    double d = SpringNode_Delta(v7, (int)v8, v25);
+    double d = SpringNode_Delta(v7, reinterpret_cast<uintptr_t>(v8), v25);
     if (d < 0.001)
       d = 0.001;
 
@@ -148,7 +149,8 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
     }
   }
 
-  (*(void (__cdecl **)(DWORD *, int))(*a1 + 4))(a1, 48 * a1[2] + *(int *)(a1[1] + 276));
+  (*(void (__cdecl **)(void*, float (*)[4]))(*a1 + 4))(
+      a1, reinterpret_cast<float (*)[4]>(static_cast<uintptr_t>(48 * a1[2] + *(int *)(a1[1] + 276))));
 
   for (int v15 = 0, v16 = 0; v15 < (int)a1[12]; ++v15, v16 += 60)
     ClothNode_Integrate((float *)(v16 + a1[13]), a3);
@@ -177,10 +179,10 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
 // parámetro de entrada. Los ports reconstruyen la distancia real.
 // ═══════════════════════════════════════════════════════════════════════════
 
-float __fastcall SpringNode_Delta(void *a, int b, float *c);          // delta + |delta|
-char  __fastcall VerletSystem_Flush(int a1);                            // aplica corrección
-void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);        // spring de igualdad
-int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);// spring de rango
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);          // delta + |delta|
+char  __fastcall VerletSystem_Flush(uintptr_t a1);                            // aplica corrección
+void  __cdecl    Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest);        // spring de igualdad
+int   __cdecl    Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range);// spring de rango
 
 // Vec3_Length @ 0x004f9c40 — Vec3_Length: returns sqrt(dot(v,v)), does NOT modify v.
 // (Ghidra shows return as float10 left in x87 ST0; callers use the return value as distance.)
@@ -235,7 +237,7 @@ void __fastcall ClothNode_Integrate(void *a, float v) {
 // Port FIEL de IDA `sub_4079E0`. El bucle sobre `&flt_590AF4 .. &unk_590B00`
 // son los 3 componentes del viento; en nuestro build esos globals no son
 // contiguos, así que se despliega explícitamente.
-void __cdecl ClothNode_ApplyForces(int _this, int a2, short a3)
+void __cdecl ClothNode_ApplyForces(uintptr_t _this, int a2, short a3)
 {
   if ((*(BYTE *)(_this + 40) & 1) != 0)
   {
@@ -271,9 +273,9 @@ void __cdecl ClothNode_ApplyForces(int _this, int a2, short a3)
 }
 
 // SpringNode_Delta @ 0x00407b50 — SpringNode_Delta: out = posA - posB; returns distance (length of delta).
-// param_1=nodeA_ptr (this), param_2=nodeB_ptr (as int), param_3=float[3] output.
+// param_1=nodeA_ptr (this), param_2=nodeB_ptr (dirección nativa), param_3=float[3] output.
 // Does NOT normalize; caller uses return value as rest-length distance.
-float __fastcall SpringNode_Delta(void *a, int b, float *c) {
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c) {
     float *posA = (float*)((char*)a + 0x1c);
     float *posB = (float*)(b + 0x1c);
     c[0] = posA[0] - posB[0];
@@ -287,7 +289,7 @@ float __fastcall SpringNode_Delta(void *a, int b, float *c) {
 // de 20x el máximo) — eso corta la iteración del solver en `sub_408E30`.
 // Port FIEL de IDA `sub_407B90` (el `a2@<st0>` es el retorno de sub_407B50).
 // Corrige SÓLO la posición de a1 (+0x1C..+0x24), no la del partner.
-int __cdecl Cloth_SpringRange(int a1, int a3, const float *range)
+int __cdecl Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range)
 {
   float v9[3];
   double diff;
@@ -323,7 +325,7 @@ int __cdecl Cloth_SpringRange(int a1, int a3, const float *range)
 // longitud de reposo. NO toca la posición: acumula en el buffer de corrección
 // (+0x30..+0x38) e incrementa el contador (+0x2C); `sub_407D10` promedia y
 // aplica. Port FIEL de IDA `sub_407C60` (verificado contra el disasm).
-void __cdecl Cloth_SpringEqual(int a1, int a3, float rest)
+void __cdecl Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest)
 {
   float v8[3];
 
@@ -348,16 +350,16 @@ void __cdecl Cloth_SpringEqual(int a1, int a3, float rest)
 
 // VerletSystem_Flush @ 0x00407d10 — VerletSystem_Flush: apply accumulated position corrections, zero buffer
 // VerletSystem_Flush (IDA-activated)
-char __fastcall VerletSystem_Flush(int a1)
+char __fastcall VerletSystem_Flush(uintptr_t a1)
 {
-  int v1; // eax
+  intptr_t v1;
   float *v2; // esi
   int v3; // edx
   double v4; // st7
   double v5; // st7
   double v6; // st7
 
-  *((BYTE*)&v1) = *(BYTE *)(a1 + 40);
+  v1 = *(BYTE *)(a1 + 40);
   if ( (v1 & 1) != 0 )
   {
     *(DWORD *)(a1 + 56) = 0;
@@ -366,7 +368,7 @@ char __fastcall VerletSystem_Flush(int a1)
   }
   else
   {
-    v1 = *(DWORD *)(a1 + 44);
+    v1 = *(int *)(a1 + 44);
     if ( v1 > 0 )
     {
       v2 = (float *)(a1 + 48);
@@ -414,7 +416,8 @@ void __fastcall VerletNode_GetPos(void *a, float *b) {
 // ── SpringNode helpers (SpringNode_Ctor family) ──────────────────────────────
 
 // SpringNode_ZeroFields @ 0x00407980 — SpringNode_ZeroFields: zeroes accel/vel/pos/pinned in 0x3c stride node.
-void __fastcall SpringNode_ZeroFields(int param_1) {
+void __fastcall SpringNode_ZeroFields(void* node) {
+    BYTE* param_1 = static_cast<BYTE*>(node);
     *(int *)(param_1 + 0x2c) = 0;
     for (int i = 0; i < 3; i++) {
         *(int *)(param_1 + 0x1c + i*4) = 0;   // pos[i]
@@ -431,7 +434,7 @@ void __fastcall SpringNode_Ctor(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
   *(DWORD *)_this = (DWORD)g_ClothNodeVTable;
-  SpringNode_ZeroFields((int)_this);
+  SpringNode_ZeroFields(_this);
 }
 
 
@@ -469,7 +472,8 @@ void __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb,
 // ── VerletNode helpers (VerletNode_CtorBase family) ─────────────────────────────
 
 // VerletNode_ZeroFields @ 0x00407DF0 — VerletNode_ZeroFields: zero +4..+1c (7 dwords).
-void __fastcall VerletNode_ZeroFields(int param_1) {
+void __fastcall VerletNode_ZeroFields(void* node) {
+    BYTE* param_1 = static_cast<BYTE*>(node);
     *(int *)(param_1 + 0x04) = 0;
     *(int *)(param_1 + 0x08) = 0;
     *(int *)(param_1 + 0x0c) = 0;
@@ -481,18 +485,19 @@ void __fastcall VerletNode_ZeroFields(int param_1) {
 
 // VerletNode_CtorBase @ 0x00407DA0 — VerletNode_CtorBase: set vtable (skipped) + zero fields.
 void* __fastcall VerletNode_CtorBase(void *param_1) {
-    VerletNode_ZeroFields((int)param_1);
+    VerletNode_ZeroFields(param_1);
     return param_1;
 }
 
 // VerletNode_CtorExt @ 0x00407ED0 — VerletNode_CtorExt: zero fields + clear +0x20.
 // VerletNode_CtorExt (IDA-activated)
-int __cdecl VerletNode_CtorExt(DWORD *_this)
+intptr_t __cdecl VerletNode_CtorExt(DWORD *_this)
 {
-  int result; // eax
+  // Se conserva el retorno del port actual; sus consumidores no lo utilizan.
+  intptr_t result;
 
-  VerletNode_ZeroFields((int)_this);
-  result = (int)_this;
+  VerletNode_ZeroFields(_this);
+  result = reinterpret_cast<intptr_t>(_this);
   _this[8] = 0;
   return result;
 }
@@ -508,10 +513,10 @@ int __cdecl VerletNode_CtorExt(DWORD *_this)
 // 0x410D80 no están portadas y ningún call site de este build las usa: van
 // como no-ops para que el objeto sea válido.
 void __cdecl ClothAnchor_Collide(float *_this, int *node);
-void __fastcall FUN_00407ea0(int ecx, int edx, BYTE param_1);
+void __fastcall FUN_00407ea0(void* ecx, int edx, BYTE param_1);
 // Adaptador: el dtor está portado como __fastcall (this en ECX, `edx` dummy) y
 // los call sites de este build invocan la vtable como `__cdecl (this, flags)`.
-static void __cdecl ClothAnchor_VSlot0(void *a, char flags) { FUN_00407ea0((int)a, 0, (BYTE)flags); }
+static void __cdecl ClothAnchor_VSlot0(void *a, char flags) { FUN_00407ea0(a, 0, (BYTE)flags); }
 static void __cdecl ClothAnchor_VSlot1(void *a) { (void)a; }   // 0x410D80 — sin portar, sin call sites
 void *g_ClothAnchorVTable[3] = {
     (void *)ClothAnchor_VSlot0,
@@ -536,7 +541,7 @@ DWORD *__cdecl ClothAnchor_Ctor(DWORD *_this)
 // ClothNode_AddCorrection @ 0x00407D70 — ClothNode_AddCorrection: acumula una corrección
 // de posición en el buffer (+0x30..+0x38) e incrementa el contador (+0x2C).
 // Port FIEL de IDA `sub_407D70`.
-void __cdecl ClothNode_AddCorrection(int _this, const float *a2)
+void __cdecl ClothNode_AddCorrection(uintptr_t _this, const float *a2)
 {
   *(float *)(_this + 48) = a2[0] + *(float *)(_this + 48);
   *(float *)(_this + 52) = a2[1] + *(float *)(_this + 52);
@@ -573,7 +578,7 @@ void __cdecl ClothAnchor_Collide(float *_this, int *node)
     v[0] = (float)(v4 * v[0]);
     v[1] = (float)(v4 * v[1]);
     v[2] = (float)(v4 * v[2]);
-    ClothNode_AddCorrection((int)node, v);
+    ClothNode_AddCorrection(reinterpret_cast<uintptr_t>(node), v);
   }
 }
 
@@ -719,7 +724,7 @@ struct Sphere {
 const int kMaxSpheres = 5;
 
 struct MeshCloth {
-    int     part;            // clave: puntero a la pieza (PART_t)
+    const PART_t* part;      // Clave nativa de la pieza en la caché propia.
     int     lastFrame;
     bool presentationContinuous;
     int     spawnFrame;       // identidad del owner al reutilizar un slot
@@ -756,7 +761,10 @@ void Destroy(MeshCloth &c) {
 // +0x10 Vertices (stride 0x10, Node en +0), +0x1c Triangles (stride 0x24,
 // VertexIndex[4] en +2).
 inline char* MeshPtr(void *model, int mesh) {
-    return (char *)(*(int *)((int)model + 0x28) + mesh * 0x28);
+    // El layout legado conserva el puntero de tabla en 32 bits hasta B2.
+    const auto table = static_cast<std::uintptr_t>(
+        *reinterpret_cast<const DWORD*>(static_cast<BYTE*>(model) + 0x28));
+    return reinterpret_cast<char*>(table + static_cast<std::intptr_t>(mesh) * 0x28);
 }
 inline short TriVertex(char *mesh, int tri, int i) {
     return *(short *)(*(int *)(mesh + 0x1c) + tri * 0x24 + 2 + i * 2);
@@ -1025,7 +1033,7 @@ bool Step(MeshCloth &c, float wind, int sceneFrame, float angleZ, float fTime) {
     return true;
 }
 
-MeshCloth* FindSlot(int part) {
+MeshCloth* FindSlot(const PART_t* part) {
     MeshCloth *freeSlot = nullptr, *oldest = &g_Slots[0];
     for (int i = 0; i < kSlots; ++i) {
         if (g_Slots[i].part == part) return &g_Slots[i];
@@ -1042,15 +1050,15 @@ MeshCloth* FindSlot(int part) {
 
 // DESVIACION: la tela avanza al final de cada paso de 40 ms, incluso durante
 // recuperación sin render. El dibujo sólo consume las posiciones publicadas.
-void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
+void DivineSkirt_Tick(const OBJECT* entity, int modelType, const PART_t* part, void *model)
 {
     if (modelType != kDivinePantsModel || !part || !model || !entity) return;
     if (*(short *)((char *)model + 0x24) <= kSkirtMesh) return;
-    const float *bones = AsObject(entity)->BoneMatrices ? (const float *)AsObject(entity)->BoneMatrices : nullptr;
+    const float *bones = entity->BoneMatrices ? (const float *)entity->BoneMatrices : nullptr;
     if (!bones) return;
     MeshCloth *c = FindSlot(part);
     const int frame = (int)MoveSceneFrame;
-    const int spawn = AsObject(entity)->InitialSceneFrame;
+    const int spawn = entity->InitialSceneFrame;
     if (c->vertices && (c->spawnFrame != spawn || frame - c->lastFrame > 3 || frame < c->lastFrame)) {
         Destroy(*c);
         c->part = part;
@@ -1061,7 +1069,7 @@ void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
     for (int v=0;v<c->numVertices;++v) c->vertices[v].presentationPrevious=c->vertices[v].pos;
     c->lastFrame = frame;
     CapturePose(*c, model, bones);
-    const float angleZ = AsObject(entity)->Angle[2];
+    const float angleZ = entity->Angle[2];
     for (int i = 0; i < 5; ++i) {
         if (!Step(*c, _DAT_00590af0, frame, angleZ, 0.005f)) {
             Destroy(*c);
@@ -1071,16 +1079,16 @@ void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
 }
 
 // No crea ni avanza tela; el pase de brillo/sombra puede repetirse libremente.
-void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
+void __cdecl DivineSkirt_Apply(const OBJECT* entity, int modelType, const PART_t* part, void *model)
 {
     if (modelType != kDivinePantsModel || !part || !model || !entity) return;
     for (int i = 0; i < kSlots; ++i) {
         const MeshCloth &c = g_Slots[i];
-        if (c.part != part || !c.vertices || c.spawnFrame != AsObject(entity)->InitialSceneFrame) continue;
+        if (c.part != part || !c.vertices || c.spawnFrame != entity->InitialSceneFrame) continue;
         for (int v = 0; v < c.numVertices; ++v) {
             float *p = VT(kSkirtMesh, v);
             const Vertex &vertex=c.vertices[v];
-            const float alpha=c.presentationContinuous && RenderInterpolation_OwnerContinuous((void *)entity) ? RenderInterpolation_Alpha() : 1;
+            const float alpha=c.presentationContinuous && RenderInterpolation_OwnerContinuous(entity) ? RenderInterpolation_Alpha() : 1;
             p[0]=RenderBlend(vertex.presentationPrevious.x,vertex.pos.x,alpha);
             p[1]=RenderBlend(vertex.presentationPrevious.y,vertex.pos.y,alpha);
             p[2]=RenderBlend(vertex.presentationPrevious.z,vertex.pos.z,alpha);

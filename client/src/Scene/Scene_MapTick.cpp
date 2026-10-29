@@ -39,7 +39,7 @@ void Scene_MapTick(void)
       uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
       if (uVar2 == 0xffffffff) {
         pvVar3 = AntiTamper_HashNode();
-        *(undefined1 *)((int)pvVar3 + 0x584) = 1;
+        static_cast<BYTE*>(pvVar3)[0x584] = 1;
         HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
       }
       RenderItemInfo((void*)0x109,(void*)0x78,DAT_07e91350,'\0');
@@ -52,7 +52,7 @@ void Scene_MapTick(void)
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
       pvVar3 = AntiTamper_HashNode();
-      *(undefined1 *)((int)pvVar3 + 0x584) = 1;
+      static_cast<BYTE*>(pvVar3)[0x584] = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
     RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
@@ -62,7 +62,7 @@ void Scene_MapTick(void)
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
       pvVar3 = AntiTamper_HashNode();
-      *(undefined1 *)((int)pvVar3 + 0x584) = 1;
+      static_cast<BYTE*>(pvVar3)[0x584] = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
     RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);

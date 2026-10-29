@@ -1,6 +1,6 @@
 // Music.cpp — elección del tema de fondo.
 //
-// IDA: PlayMp3 y StopMp3 (0x004127F0). Las dos comparan el nombre recibido con
+// IDA: PlayMp3 (0x00412890) y StopMp3 (0x004127F0). Comparan el nombre recibido con
 // el tema en curso (m_CurrentTrack) y respetan m_MusicEnabled (Config.ini
 // [Sound] EnableMusic, o el registro) y Destroy (DAT_055ca018, el cliente se
 // está cerrando).
@@ -61,15 +61,15 @@ void CSound::PlayTrack(const char* Name, int bEnforce)
 }
 
 
-// IDA: PlayMp3 / StopMp3 (0x004127F0). Puentes para los callers heredados.
-void __cdecl Music_PlayTrack(DWORD name, int enforce)
+// IDA: PlayMp3 (0x00412890) / StopMp3 (0x004127F0). Puentes para callers heredados.
+void __cdecl Music_PlayTrack(const char* name, int enforce)
 {
-    gSound.PlayTrack((const char*)(uintptr_t)name, enforce);
+    gSound.PlayTrack(name, enforce);
 }
 
-void __cdecl Music_StopTrack(DWORD name, int enforce)
+void __cdecl Music_StopTrack(const char* name, int enforce)
 {
-    gSound.StopTrack((const char*)(uintptr_t)name, enforce);
+    gSound.StopTrack(name, enforce);
 }
 
 // FUN_00412180 @ 0x00412180 (~66 lines) — ListBox_HandleInput2: identical structure to

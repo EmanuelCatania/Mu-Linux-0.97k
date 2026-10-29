@@ -144,7 +144,7 @@ static void Tamachan_Move(char *o, int life)
             *(int *)(o + 216) = 0;
             int state = rand() % 2 + 1;
             o[260] = (char)state;
-            SetAction((int)o, state);
+            SetAction(AsObject(o), state);
             if (o[260] == 2) goto walk;       // LABEL_312
             goto newLife;                     // LABEL_313
         }
@@ -158,7 +158,7 @@ static void Tamachan_Move(char *o, int life)
         if (life < 10) {
             *(float *)(o + 216) = 40.0f;
             o[260] = 0;
-            SetAction((int)o, 0);
+            SetAction(AsObject(o), 0);
             if (o[260] == 2) goto walk;
             goto newLife;
         }
@@ -195,7 +195,7 @@ static void Tamachan_Move(char *o, int life)
             *(int *)(o + 96) = rand() % 100 + 50;
             int state = rand() % 3;
             o[260] = (char)state;
-            SetAction((int)o, state);
+            SetAction(AsObject(o), state);
             if (o[260] != 2) {
                 *(float *)(o + 192) = 0.0f;
                 *(float *)(o + 196) = 0.0f;
@@ -645,7 +645,7 @@ void MoveEffect(float *param_1, int param_2)
               Particle_Spawn(0x4df,AsObject(param_1)->Position,AsObject(param_1)->Angle,&local_368,iVar9 % 0x1e,1.0,0);
               iVar12 = iVar12 + -1;
             } while (iVar12 != 0);
-            PlayBuffer(0x45,(unsigned int)(uintptr_t)param_1,0);
+            PlayBuffer(0x45, AsObject(param_1),0);
           }
           Particle_Spawn(0x4df,AsObject(param_1)->Position,AsObject(param_1)->Angle,AsObject(param_1)->Light,-1,1.0,0);
           local_368 = local_36c * _DAT_005528b4;
@@ -1074,7 +1074,7 @@ LAB_00469772:
                 else {
                   uVar8 = 5;
                 }
-                SetAction((int)pcVar11,uVar8);
+                SetAction(AsObject(pcVar11),uVar8);
               }
               iVar9 = iVar9 + 0x394;
             } while (iVar9 < 0x59740);
@@ -2111,7 +2111,7 @@ LAB_00466e5e:
             CreateEffect(0xfe,&local_2c4,&local_340,AsObject(param_1)->Light,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
             local_35c = (float *)((int)pfVar10 + 0x1e);
           } while ((int)local_35c < 0x78);
-          PlayBuffer(0x59,(unsigned int)(uintptr_t)param_1,0);
+          PlayBuffer(0x59, AsObject(param_1),0);
         }
         fVar13 = AsObject(param_1)->Angle[0] + _DAT_00552878;
         AsObject(param_1)->Position[0] = AsObject(param_1)->StartPosition[0];
@@ -2447,7 +2447,7 @@ LAB_0046b3bf:
           if (sVar3 == 0x10a) goto LAB_0046b3bf;
           iVar9 = 1;
         }
-        Joint_BoneOffsetApply((int)param_1,iVar9);
+        Joint_BoneOffsetApply(reinterpret_cast<BYTE*>(param_1),iVar9);
       }
     }
 LAB_0046b3ca:

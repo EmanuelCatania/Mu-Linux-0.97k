@@ -37,9 +37,9 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
     if (skillType < 0 || skillType >= 64)
         return nullptr;
     if (DAT_07cf1ff8 != 0)
-        return (BYTE*)(uintptr_t)DAT_07cf1ff8 + skillType * 0x28;
+        return DAT_07cf1ff8 + skillType * 0x28;
     if (DAT_07d29d20 != 0)
-        return (BYTE*)(uintptr_t)DAT_07d29d20 + skillType * 0x28;
+        return DAT_07d29d20 + skillType * 0x28;
     return nullptr;
 }
 
@@ -169,21 +169,21 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     if (*(short*)(o + 2) == 390) {
         SetAttackSpeed(); // SetAttackSpeed
         if (skillType == 43) {
-            SetAction(o, 67);
+            SetAction(AsObject(o), 67);
         } else if (skillType == 47) {
-            SetAction(o, 66);
+            SetAction(AsObject(o), 66);
         } else if (skillType == 49) {
             if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
-                SetAction(o, 65);
+                SetAction(AsObject(o), 65);
             } else {
-                SetAction(o, 64);
+                SetAction(AsObject(o), 64);
             }
         } else {
             // IDA intentionally uses the selected slot here, not v317.
-            SetAction(o, selectedSlot + 37);
+            SetAction(AsObject(o), selectedSlot + 37);
         }
     } else {
-        SetPlayerAttack(c, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(c), 0, 0, 0);
     }
 
     // IDA L597-601:
@@ -302,7 +302,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 // spawn effect 0x498 at entity pos, play sound 0x58.
 void __cdecl Entity_WeaponHit(int param_1) {
     SetAttackSpeed();
-    SetAction(param_1, 0x57);
+    SetAction(AsObject(param_1), 0x57);
     *(DWORD *)(param_1 + 0x164) = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
     CreateEffect(0x498,
@@ -323,11 +323,11 @@ void __cdecl Entity_ResetToWalk(int param_1) {
     if (((sVar1 < 0x210) || (0x216 < sVar1)) && (sVar1 != 0x221)) {
         sVar1 = AsCharacter(param_1)->Weapon[0].Type;
         if (((0x217 < sVar1) && (sVar1 < 0x21f)) || (sVar1 == 0x220)) {
-            SetAction(param_1, (swimming && has_water) ? 0x31 : 0x2f);
+            SetAction(AsObject(param_1), (swimming && has_water) ? 0x31 : 0x2f);
         }
         return;
     }
-    SetAction(param_1, (swimming && has_water) ? 0x30 : 0x2e);
+    SetAction(AsObject(param_1), (swimming && has_water) ? 0x30 : 0x2e);
 }
 
 // IDA: SetPlayerMagic @ 0x00444A80 (el nombre real del binario; el alias
@@ -337,23 +337,23 @@ void __cdecl Entity_ResetToWalk(int param_1) {
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
     if (AsCharacter(param_1)->Object.Type != 0x186) {
         UINT uVar1 = (AsCharacter(param_1)->SwordCount % 3 == 0) ? 3 : 4;
-        SetAction(param_1, uVar1);
+        SetAction(AsObject(param_1), uVar1);
         *(char *)&AsCharacter(param_1)->SwordCount = *(char *)&AsCharacter(param_1)->SwordCount + 1;
         return;
     }
     SetAttackSpeed();
     if (((AsCharacter(param_1)->Helper.Type == 0x332) || (AsCharacter(param_1)->Helper.Type == 0x333)) &&
          (*(char *)&AsCharacter(param_1)->SafeZone == '\0')) {
-        SetAction(param_1, 0x5b); // death anim for special class
+        SetAction(AsObject(param_1), 0x5b); // death anim for special class
         return;
     }
     if ((AsCharacter(param_1)->Class & 7) == 2) {
-        SetAction(param_1, 0x56); // swim idle
+        SetAction(AsObject(param_1), 0x56); // swim idle
         return;
     }
     UINT uVar1 = rand() & 0x80000001;
     if ((int)uVar1 < 0) uVar1 = (uVar1 - 1 | 0xfffffffe) + 1; // parity correction
-    SetAction(param_1, uVar1 + 0x52); // 0x52 or 0x53 random idle
+    SetAction(AsObject(param_1), uVar1 + 0x52); // 0x52 or 0x53 random idle
 }
 
 // Legacy helper only; no canonical FUN mapping retained here. `FUN_00444D90` is
@@ -378,7 +378,7 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
     if (sVar2 == 0x186) {
         int sub_id = *(int*)(puVar3 + 4);
         if (sub_id < 0xce || sub_id > 0xd0) {
-            SetAction(entity_idx, 0x83);
+            SetAction(AsObject(entity_idx), 0x83);
             goto LAB_00445110;
         }
         *puVar3 = 0;
@@ -403,10 +403,10 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
             CreateEffect(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
     } else {
-        SetAction(entity_idx, 6);
+        SetAction(AsObject(entity_idx), 6);
         goto LAB_00445110;
     }
-    PlayBuffer(0x5e, (int)entity_idx, 0);
+    PlayBuffer(0x5e, AsObject(entity_idx), 0);
 
 LAB_00445110:
     // Post-teleport footstep sound: only if anim speed == _DAT_00552580 (ground landed)
@@ -414,15 +414,15 @@ LAB_00445110:
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
             if ((puVar3[0x1bc] & 7) == 2)
-                PlayBuffer(0x50, (int)entity_idx, 0);
+                PlayBuffer(0x50, AsObject(entity_idx), 0);
             else
-                PlayBuffer(0x4e, (int)entity_idx, 0);
+                PlayBuffer(0x4e, AsObject(entity_idx), 0);
             return;
         }
         // General: look up footstep sound from entity-class table at DAT_05828d58+0xb2
         short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * 0xbc);
         if (sfx != -1)
-            PlayBuffer(sfx + 0xaa, (int)entity_idx, 0);
+            PlayBuffer(sfx + 0xaa, AsObject(entity_idx), 0);
     }
 }
 
@@ -463,7 +463,7 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 // scale=1.0f (+0x164), spawn effect 0x498, play sound 0x58.
 void __cdecl Entity_MeleeAttackStart(int param_1) {
     SetAttackSpeed();
-    SetAction(param_1, 0x57);
+    SetAction(AsObject(param_1), 0x57);
     AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000
     AsObject(param_1)->Teleport  = 3;      // melee attack mode
     AsObject(param_1)->AlphaTarget = 1.0f;   // 0x3F800000

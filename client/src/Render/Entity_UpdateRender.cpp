@@ -102,7 +102,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     case (char)-0x7e: case (char)-0x78:
     {
         // Skill channel active — beam/barrier widget path
-        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
+        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (int)param_3);
         if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
         if ((BYTE)uVar11 != 0)
             Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
@@ -175,7 +175,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    Equipment_Draw((int)param_1, CharacterEffects_EarlyStage);
+    Equipment_Draw(AsCharacter(param_1), CharacterEffects_EarlyStage);
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
@@ -191,11 +191,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
         if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83) || catalogGolden) {
-            RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+            RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                          *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
         }
         const int secondFlags = (bVar7 == 67) ? 0x144 : 0x44;
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), secondFlags, bodyBright, 0xffffffff);
     }
     else if (bVar7 == 0x45 || bVar7 == 0x46) {
@@ -207,15 +207,15 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     else if (bVar7 == 0x49) {
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
         // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-        Entity_SetModelColorAlt(model, (int)puVar13, entity_type,
+        Entity_SetModelColorAlt(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
         // Giant Drakan (75): a diferencia de Drakan (73), IDA hace UN solo
         // pase con flags (0x100 | 0x44) = 0x144 y sin sub_504AC0.
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x144, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4d) {
@@ -224,7 +224,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // caching the attack-effect bones and ticking the cloth widget.
         const float targetLight = (sinf(fmodf(WorldTime, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
         const float bodyBright = targetLight * 0.7f + 0.3f;
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, bodyBright, 0xffffffff);
 
         // IDA temporarily changes the render pose components, prepares slots
@@ -249,11 +249,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // diferencia del resto — una textura FIJA (1231) en vez de -1.
     // Faltaba entero en el port.
     if (bVar7 == 53 || bVar7 == 54) {
-        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, reinterpret_cast<uintptr_t>(puVar13), entity_type,
                      *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
     }
 
-    Equipment_Draw((int)param_1, 0);
+    Equipment_Draw(AsCharacter(param_1), 0);
 
     // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
     // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
@@ -351,7 +351,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xca) = L2;
     }
 
-    Equipment_Draw((int)param_1, 1);
+    Equipment_Draw(AsCharacter(param_1), 1);
 
     // ── Restaurar la luz base antes de las partes del cuerpo ────────────────
     //
@@ -469,7 +469,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     UINT shiftedLvl = (UINT)rawLvl << 3;
                     RenderPartObject((int)param_1,
                                  iVar9,
-                                 (int)(piVar16 - 5),
+                                 reinterpret_cast<const PART_t*>(piVar16 - 5),
                                  (float *)(param_1 + 200),
                                  *(float *)(puVar13 + 0x5a),
                                  shiftedLvl,
@@ -501,7 +501,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    Equipment_Draw((int)param_1, 2);
+    Equipment_Draw(AsCharacter(param_1), 2);
 
     if (sVar2 == 390) {
         // ── Capa del Magic Gladiator (IDA RenderCharacter L667-743) ───────────
@@ -554,7 +554,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 FUN_00408ff0((void *)param_1[0x61]);
         }
     }
-    Equipment_Draw((int)param_1, CharacterEffects_LateStage);
+    Equipment_Draw(AsCharacter(param_1), CharacterEffects_LateStage);
     return puVar13;
 }
 
@@ -574,7 +574,7 @@ void Equipment_Tick(int entity, int highlighted)
     float fVar32 = (float)highlighted * _DAT_005524f8;
     float savedLight[3];
     memcpy(savedLight, (char *)param_1 + 800, sizeof(savedLight));
-    Equipment_BeginCharacter(entity);
+    Equipment_BeginCharacter(AsCharacter(static_cast<DWORD>(entity)));
     _DAT_005597c8 = 1.0f;
     Equipment_SetStage(0);
     // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────

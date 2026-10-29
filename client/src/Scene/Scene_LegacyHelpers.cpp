@@ -22,7 +22,7 @@ void* __fastcall WidgetB_CtorFull(void *param_1)
 
 // VTable_Release @ 0x0040A860 — VTable_Release
 // Iterates object->edge_list and calls FUN_0040a8f0 on each edge.
-void __cdecl VTable_Release(void *obj, int param_1)
+void __cdecl VTable_Release(void *obj, float* vertices)
 {
     char *this_ = (char*)obj;
     int count = *(int*)(this_ + 0x18);
@@ -30,8 +30,8 @@ void __cdecl VTable_Release(void *obj, int param_1)
     for (int i = 0; i < count; i++) {
         short *psVar1 = (short*)(*(int*)(this_ + 0x1c) + i * 10);
         int iVar2 = (int)psVar1[2] * 15000;
-        float *p1 = (float*)(param_1 + (*psVar1 + iVar2) * 12);
-        float *p2 = (float*)(param_1 + (psVar1[1] + iVar2) * 12);
+        float *p1 = vertices + (*psVar1 + iVar2) * 3;
+        float *p2 = vertices + (psVar1[1] + iVar2) * 3;
         FUN_0040a8f0(obj, p1, p2);
     }
 }
@@ -39,8 +39,9 @@ void __cdecl VTable_Release(void *obj, int param_1)
 // ── Scene entity grid helpers ─────────────────────────────────────────────────
 // Entity_GridUnlink @ 0x004FFCC0 — Entity_GridUnlink(node, cell_ptr)
 // Unlinks node from its doubly-linked list in the 16x16 scene grid.
-void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
+void __cdecl Entity_GridUnlink(void *param_1_v, void* cell) {
     char *param_1 = (char*)param_1_v;
+    char *param_2 = static_cast<char*>(cell);
     if (!param_1) return;
     SceneObjects::Unregister(param_1);
     int iVar1 = *(int*)(param_1 + 0x1b8); // next

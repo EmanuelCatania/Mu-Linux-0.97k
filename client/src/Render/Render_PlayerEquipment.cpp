@@ -69,7 +69,7 @@ extern "C" void EquipWipe_Tick(int op, int sub)
     static int s_prevOccupied = -1;
     static int s_prevOp = -1, s_prevSub = -1;
 
-    const int cm = (int)(uintptr_t)DAT_07cf1ffc;
+    const BYTE* cm = static_cast<const BYTE*>(DAT_07cf1ffc);
     if (cm) {
         int occupied = 0;
         for (int i = 0; i < 12; ++i) {
@@ -122,7 +122,7 @@ int g_bAddDefense = 0;
 // que no afecta resultado. Porteado el cómputo y omitida la obfuscación.
 // Cola común de CheckFullSet (IDA LABEL_15). Todos los `return` de la función
 // pasan por acá; ver el comentario de g_bAddDefense arriba.
-static bool CheckFullSet_Tail(int c, bool v26) {
+static bool CheckFullSet_Tail(uintptr_t c, bool v26) {
     g_bAddDefense = 1;
     if (((*(unsigned char*)(c + 444) & 7) == 3) && v26) {   // Magic Gladiator
         // IDA: v20 = *(_WORD *)(CharacterMachine + 740)  → wear slot 3 (Armor),
@@ -139,7 +139,7 @@ static bool CheckFullSet_Tail(int c, bool v26) {
     return v26;
 }
 
-bool __cdecl CheckFullSet(int c) {
+bool __cdecl CheckFullSet(uintptr_t c) {
     int v1 = ((AsCharacter(c)->Class & 7) == 3) ? 2 : 1;  // MG=2, otros=1
     int v2 = 5;
     EquipmentLevelSet = 0;
@@ -484,10 +484,10 @@ extern "C" BYTE OffsetInventoryItems[];
 // Llamada por Entity_UpdateRender al inicio del render del hero in-game.
 // Ya no restaura slots: reconstruye el hero (SetCharacterClass) sólo cuando
 // cambia el equipo.
-extern "C" void HeroEquipWatchdog(int c)
+extern "C" void HeroEquipWatchdog(CHARACTER* c)
 {
     if (SceneFlag != 5) return;
-    if (!DAT_07abf5d8 || c != (int)(uintptr_t)DAT_07abf5d8) return;
+    if (!DAT_07abf5d8 || c != AsCharacter(DAT_07abf5d8)) return;
     unsigned char* be = (unsigned char*)c;
     static const int kBodyOff[6] = { 0x1e0, 0x1f8, 0x210, 0x228, 0x240, 0x258 };
     BYTE* cm = (BYTE*)(uintptr_t)DAT_07cf1ffc;
@@ -535,14 +535,14 @@ extern "C" void HeroEquipWatchdog(int c)
                 sig = sig * 131u + *(const unsigned int*)(s + 4);   // Level/options
             }
             static unsigned int s_prevSig = 0u;
-            static int          s_prevHero = 0;
+            static CHARACTER*   s_prevHero = nullptr;
             static bool         s_have = false;
             if (!s_have || sig != s_prevSig || c != s_prevHero) {
                 s_prevSig  = sig;
                 s_prevHero = c;
                 s_have     = true;
-                SetCharacterClass(c);
-                Character_UpdateEquipSlotAnimations(c);
+                SetCharacterClass(AsCharacter(c));
+                Character_UpdateEquipSlotAnimations(AsCharacter(c));
             }
         }
         return;

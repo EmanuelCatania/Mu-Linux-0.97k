@@ -25,9 +25,9 @@
 
 void __fastcall FUN_00401af0(void*);
 void  __fastcall SpringNode_Ctor(void *node);
-int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);
-void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);
-char  __fastcall VerletSystem_Flush(int a1);
+int   __cdecl    Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range);
+void  __cdecl    Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest);
+char  __fastcall VerletSystem_Flush(uintptr_t a1);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node);
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 extern void __cdecl operator_delete(void* ptr);
@@ -35,13 +35,13 @@ extern void __cdecl operator_delete(void* ptr);
 #define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 // -- Declaraciones de funciones que viven en otros modulos --------------
-void __fastcall CSQuest_clearQuest(int param_1);
+void __fastcall CSQuest_clearQuest(void* param_1);
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void __fastcall SpringNode_GetPos(void *node, float *out);
-float __fastcall SpringNode_Delta(void *a, int b, float *c);
+float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c);
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
-static void __cdecl FUN_0053cc00_impl(int param_1);
+static void __cdecl FUN_0053cc00_impl(void* param_1);
 
 
 
@@ -127,7 +127,7 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
       *pbVar5 = pbVar2[uVar6 + 1] ^ bVar1;
     }
     iVar3 = _rand();
-    pbVar5[(int)param_2 - (int)pbVar2] = (byte)iVar3;
+    reinterpret_cast<byte*>(param_2)[uVar6] = (byte)iVar3;
     uVar6 = uVar6 + 1;
     pbVar5 = pbVar5 + 1;
   } while (uVar6 < 4);
@@ -194,7 +194,7 @@ void __cdecl Packet_EncryptBuffer(void *param_1_v,void *param_2_v)
       *pbVar6 = pbVar2[uVar7 + 1] ^ bVar1;
     }
     iVar4 = _rand();
-    pbVar6[(int)param_2 - (int)pbVar2] = (byte)iVar4;
+    reinterpret_cast<byte*>(param_2)[uVar7] = (byte)iVar4;
     uVar7 = uVar7 + 1;
     pbVar6 = pbVar6 + 1;
   } while (uVar7 < 0x584);
@@ -229,16 +229,16 @@ void __cdecl Packet_DecryptDword(void *param_1_v,void *param_2_v)
   uVar3 = 3;
   do {
     if (uVar3 < 3) {
-      *(byte *)(uVar3 + (int)puVar2) =
-           *(byte *)(uVar3 + (int)puVar2) ^ *(byte *)(uVar3 + 1 + (int)puVar2);
+      reinterpret_cast<byte*>(puVar2)[uVar3] =
+           reinterpret_cast<byte*>(puVar2)[uVar3] ^ reinterpret_cast<byte*>(puVar2)[uVar3 + 1];
     }
-    bVar1 = *(char *)(uVar3 + (int)puVar2) - 0x23;
+    bVar1 = reinterpret_cast<char*>(puVar2)[uVar3] - 0x23;
     uVar4 = uVar3 & 0x8000000f;
-    *(byte *)(uVar3 + (int)puVar2) = bVar1;
+    reinterpret_cast<byte*>(puVar2)[uVar3] = bVar1;
     if ((int)uVar4 < 0) {
       uVar4 = (uVar4 - 1 | 0xfffffff0) + 1;
     }
-    *(byte *)(uVar3 + (int)puVar2) = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
+    reinterpret_cast<byte*>(puVar2)[uVar3] = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
     uVar3 = uVar3 - 1;
     iVar5 = iVar5 + -1;
   } while (iVar5 != 0);
@@ -410,7 +410,7 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
 
 
 // IDA: CWsctlc::GetSocket (0x0043DCC0)
-int __fastcall CWsctlc_GetSocket(int param_1)
+int __fastcall CWsctlc_GetSocket(uintptr_t param_1)
 {
   return *(int *)(param_1 + 8);
 }
@@ -451,12 +451,12 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // a2 = src plaintext buffer
 // a3 = src length in bytes
 // returns 11 * ceil(len / 8) (expanded encrypted size)
-int __cdecl CSimpleModulus_Encode(int a1, unsigned char *a2, int a3)
+int __cdecl CSimpleModulus_Encode(BYTE* a1, unsigned char *a2, int a3)
 {
     int result = 11 * ((a3 + 7) / 8);
     if (!a1 || a3 <= 0) return result;
 
-    BYTE *dst = (BYTE *)a1;
+    BYTE *dst = a1;
     BYTE *src = a2;
     int   remaining = a3;
     while (remaining > 0) {
@@ -525,8 +525,8 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     //   bitOff avanza de a 18 por palabra (CF90 devuelve a2+a5).
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 0,  16);
-        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 22, 2);
+        bitOff = CSimpleModulus_AddBits(dst, bitOff, &packed[i], 0,  16);
+        bitOff = CSimpleModulus_AddBits(dst, bitOff, &packed[i], 22, 2);
     }
 
     // ── Pass 4: checksum byte ────────────────────────────────────────────────
@@ -538,7 +538,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     WORD  tail;
     ((BYTE *)&tail)[0] = (BYTE)(chk ^ xorSeed ^ 0x3D);
     ((BYTE *)&tail)[1] = chk;
-    CSimpleModulus_AddBits((int)dst, bitOff, (int)&tail, 0, 16);
+    CSimpleModulus_AddBits(dst, bitOff, &tail, 0, 16);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -552,12 +552,12 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // ─────────────────────────────────────────────────────────────────────────────
 static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src);
 
-int __cdecl CSimpleModulus_Decode(int a1, int a2, int a3, int a4)
+int __cdecl CSimpleModulus_Decode(BYTE* a1, BYTE* a2, int a3, int a4)
 {
-    BYTE *dst = (BYTE *)a1;
-    BYTE *src = (BYTE *)a2;
+    BYTE *dst = a1;
+    BYTE *src = a2;
     int   srcLen = a3;
-    // (a4 unused — IDA shows 4-arg signature; functions.h still declares 4 ints)
+    // El port conserva el cuarto argumento ignorado; IDA53CCA0 recibe tres.
     (void)a4;
 
     if (!dst) return 8 * ((srcLen + 10) / 11);
@@ -622,9 +622,9 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     // ── Pass 1: bit-unpack 4×{16+2}-bit packed[i] from src ────────────────
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        CSimpleModulus_AddBits((int)&packed[i], 0,  (int)src, bitOff,      16);
+        CSimpleModulus_AddBits(&packed[i], 0,  src, bitOff,      16);
         bitOff += 16;
-        CSimpleModulus_AddBits((int)&packed[i], 22, (int)src, bitOff,      2);
+        CSimpleModulus_AddBits(&packed[i], 22, src, bitOff,      2);
         bitOff += 2;
     }
     int tailBitOff = bitOff;  // 4*18 = 72
@@ -678,7 +678,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
     // ── Pass 4: read+verify checksum tail ────────────────────────────────
     DWORD tail = 0;
-    CSimpleModulus_AddBits((int)&tail, 0, (int)src, tailBitOff, 16);
+    CSimpleModulus_AddBits(&tail, 0, src, tailBitOff, 16);
     BYTE  byteSeed = (BYTE)(tail & 0xFF);
     BYTE  byteChk  = (BYTE)((tail >> 8) & 0xFF);
     // Recupera el byteSeed original = (chk_lo ^ chk_hi ^ 0x3D) → deshacer para obtener xorSeed
@@ -699,16 +699,17 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
 // Quest_FullInit @ 0x00403EA0 (73 bytes) — Quest class full init
 void __fastcall Quest_FullInit(void *param_1_raw) {
-    int *param_1 = (int *)param_1_raw;
-    *param_1 = (int)&PTR_LAB_005524b8;
-    if (g_csQuest == 0) g_csQuest = (DWORD)param_1;
-    *(BYTE *)(param_1 + 1) = 0xff;
-    *(BYTE *)((int)param_1 + 0x1c87a) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87b) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87d) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87e) = 0;
-    *(BYTE *)((int)param_1 + 0x1c87f) = 0;
-    *(short *)(param_1 + 0x7220) = 0;
+    BYTE* param_1 = static_cast<BYTE*>(param_1_raw);
+    // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
+    *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
+    if (g_csQuest == 0) g_csQuest = reinterpret_cast<uintptr_t>(param_1);
+    *(param_1 + 4) = 0xff;
+    *(param_1 + 0x1c87a) = 0;
+    *(param_1 + 0x1c87b) = 0;
+    *(param_1 + 0x1c87d) = 0;
+    *(param_1 + 0x1c87e) = 0;
+    *(param_1 + 0x1c87f) = 0;
+    *reinterpret_cast<short*>(param_1 + 0x1c880) = 0;
     // IDA cierra con `unk_567500 = off_5524B4`, el segundo tramo del swap de
     // vtable del ctor (0x5524B4 = {0x403F10 ~dtor, 0x403F50, ...}; el primer
     // store usa &0x5524B8, o sea la entrada siguiente).  Queda SIN portar a
@@ -720,15 +721,16 @@ void __fastcall Quest_FullInit(void *param_1_raw) {
 }
 
 // FUN_00403ef0 @ 0x00403EF0 (17 bytes) — quest vtable init
-void __fastcall FUN_00403ef0(int *param_1) {
-    *param_1 = (int)&PTR_LAB_005524b8;
+void __fastcall FUN_00403ef0(void* param_1) {
+    // El slot de vtable conserva cuatro bytes hasta migrar el layout en B2.
+    *reinterpret_cast<std::uint32_t*>(param_1) = static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(&PTR_LAB_005524b8));
     g_csQuest = 0;
 }
 
 // FUN_00403f10 @ 0x00403F10 — Quest ~dtor
-void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00403ef0((int *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+void __fastcall FUN_00403f10(void* ecx, int /*edx*/, BYTE param_1) {
+    FUN_00403ef0(ecx);
+    if (param_1 & 1) operator_delete(ecx);
 }
 
 // Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
@@ -778,6 +780,7 @@ int  __cdecl    Cloth_Solve(DWORD *a1);
 //   }
 //   result = MouseLButtonPop;  if (MouseLButtonPop) MouseLButtonPop = 0;
 int __cdecl CSQuest_ProceedButton(void *param_1) {
+    BYTE* quest = static_cast<BYTE*>(param_1);
     if (Ui::QuestBounds(gWindow.GetRightShift()).Contains((int)MouseX, (int)MouseY))
         DAT_07d78094 = 1;                       // MouseOnWindow
 
@@ -788,7 +791,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         (DAT_083a4124 != 0)) {
         // IDA: sub_402850 (0x00402850).
         // DESVIACION (fix del DLL, Patchs.cpp 0x004028EA): consumir el clic en QUEST_CANCEL sin enviar A2.
-        if (*(BYTE*)((BYTE*)param_1 + 0x1c882) == 3) {
+        if (*(quest + 0x1c882) == 3) {
             DAT_083a4124 = 0;
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
@@ -801,7 +804,7 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
         pkt[0] = 0xC1;
         pkt[1] = 0x05;
         pkt[2] = 0xA2;
-        pkt[3] = *(BYTE *)((int)param_1 + 0x1c87a);   // índice de quest actual
+        pkt[3] = *(quest + 0x1c87a);   // índice de quest actual
         pkt[4] = 0x01;
         gNetwork.Send(pkt, 5);
 
@@ -817,7 +820,7 @@ closeButton:
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     }
     if (DAT_083a413c != 0) DAT_083a413c = 0;
     return 1;
@@ -860,8 +863,8 @@ void __fastcall FUN_00408ff0(void* param_1) {
     float texFront, texBack;
     memcpy(&texFront, &thiz[3], 4);   // +0x0C
     memcpy(&texBack,  &thiz[4], 4);   // +0x10
-    FUN_004090b0(param_1, 0, 1, texFront, (int)verts);
-    FUN_004090b0(param_1, 0, 0, texBack,  (int)verts);
+    FUN_004090b0(param_1, 0, 1, texFront, verts);
+    FUN_004090b0(param_1, 0, 0, texBack,  verts);
 
     operator_delete((unsigned char *)verts);
 }
@@ -870,7 +873,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
 // __thiscall(this=meshObj, param_1=windingOrder, param_2=textureId, param_3=vertexBuf).
 // Binds texture, glBegin(GL_QUADS=7), nested loop over rows/cols emitting 4 vertices per quad
 // vía FUN_004091d0. El orden de winding se invierte según param_1 (0=atrás, 1=adelante).
-void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, int param_3) {
+void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_2, const float* param_3) {
     // Port FIEL de IDA `sub_4090B0`. `param_2` es un GLfloat que en realidad
     // lleva el ID de textura en sus BITS (IDA: `BindTexture(SLODWORD(t))`),
     // igual que el `t` de sub_4091D0 lleva el índice de fila.
@@ -907,7 +910,7 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
 // FUN_004091d0 @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
 // __thiscall. Calcula la UV desde la posición en la grilla: u = col/(cols-1), v = row/(rows-1), clampeado a 0.99.
 // Emite glTexCoord2f + glVertex3f desde el buffer de vértices en param_1 + (row*cols+col)*0xC.
-void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2, float param_3) {
+void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, const float* param_1, int param_2, float param_3) {
     // Port FIEL de IDA `sub_4091D0`. param_1 = buffer de vértices (stride 12),
     // param_2 = columna, param_3 = fila (llega como float con valor entero).
     int *thiz = (int *)ecx;
@@ -921,7 +924,7 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     if (v > 0.99f) v = 0.99f;               // IDA clampea a 0.99
     float u = (float)param_2 / (float)(cols - 1);
 
-    const float *vert = (const float *)(param_1 + 12 * (param_2 + row * cols));
+    const float *vert = param_1 + 3 * (param_2 + row * cols);
     BufferedDraw::TexCoord2f(u, v);
     BufferedDraw::Vertex3f(vert[0], vert[1], vert[2]);
 }
@@ -1080,7 +1083,7 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
     *(int *)(thiz + 0x5c) = model_type;
 
     // model data: DAT_05828d58 + model_type * 0xbc; face list at +0x28
-    int model_base = *(int *)(&DAT_05828d58) + model_type * 0xbc;
+    const std::uintptr_t model_base = DAT_05828d58 + model_type * 0xbc;
     int face_list  = *(int *)(model_base + 0x28);
     int face_entry = face_list + (int)slot * 0x28;
 
@@ -1131,8 +1134,8 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
         for (int ei = 0; ei < 3; ei++) {
             short na = tri[ei + 1];
             short nb = tri[(ei + 1) % 3 + 1];
-            int pA = (int)nodes + na * 0x3c;
-            int pB = (int)nodes + nb * 0x3c;
+            uintptr_t pA = reinterpret_cast<uintptr_t>(nodes) + na * 0x3c;
+            uintptr_t pB = reinterpret_cast<uintptr_t>(nodes) + nb * 0x3c;
             float delta[3];
             float dist = SpringNode_Delta((void*)pA, pB, delta);
             float posA[3], posB[3];
@@ -1202,7 +1205,7 @@ void __fastcall LinkedList_DestroyAll(int *param_1) {
     *(int *)(*(int *)(param_1[2] + 4) + 8) = 0;
     void *pvVar1 = *(void **)(param_1[1] + 8);
     while (pvVar1 != NULL) {
-        void *next = *(void **)((int)pvVar1 + 8);
+        void *next = *(void **)(static_cast<BYTE*>(pvVar1) + 8);
         operator_delete(pvVar1);
         pvVar1 = next;
     }
@@ -1222,15 +1225,15 @@ void FUN_00409eb0(void) {}
 // WidgetB_Ctor @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
 void* __fastcall WidgetB_Ctor(void *param_1)
 {
-    WidgetB_ZeroFields((int)param_1);
+    WidgetB_ZeroFields(param_1);
     // vtable set skipped
     return param_1;
 }
 
 // FUN_00409ef0 @ 0x00409EF0 — WidgetC ~dtor
-void __fastcall FUN_00409ef0(int ecx, int /*edx*/, BYTE param_1) {
-    WidgetB_SetVtable((void *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+void __fastcall FUN_00409ef0(void* widget, int /*edx*/, BYTE param_1) {
+    WidgetB_SetVtable(widget);
+    if (param_1 & 1) operator_delete(widget);
 }
 
 // WidgetB_SetVtable @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
@@ -1243,8 +1246,9 @@ void __fastcall WidgetB_SetVtable(void *param_1)
 // ── WidgetB_ZeroFields/ed0/f10/0040a660 — second widget type ctor chain ────────────
 
 // WidgetB_ZeroFields @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
-void __fastcall WidgetB_ZeroFields(int param_1)
+void __fastcall WidgetB_ZeroFields(void* widget)
 {
+    BYTE* param_1 = static_cast<BYTE*>(widget);
     *(short *)(param_1 + 4) = 0;
     *(int *)(param_1 + 8)   = 0;
     *(int *)(param_1 + 0x18) = 0;
@@ -1268,16 +1272,17 @@ int __fastcall FUN_00409f30(void* ecx, void* /*edx*/, int param_1, int param_2, 
     return 0;
 }
 
-// FUN_0040a0a0 @ 0x0040A0A0 (100 bytes) — sound object init + open file
+// FUN_0040a0a0 @ 0x0040A0A0 — prepara la dirección del volumen de sombra.
 void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, int param_3, char param_4) {
-    *(DWORD *)((int)This + 0x10) = 0x3cf5c28f;
-    *(DWORD *)((int)This + 0x14) = 0xbf800000;
-    *(float *)((int)This + 0xc) = -1.0f;
-    Vec3_Normalize((float *)((int)This + 0xc));
+    BYTE* context = static_cast<BYTE*>(This);
+    *(DWORD *)(context + 0x10) = 0x3cf5c28f;
+    *(DWORD *)(context + 0x14) = 0xbf800000;
+    *(float *)(context + 0xc) = -1.0f;
+    Vec3_Normalize((float *)(context + 0xc));
     int iVar1 = FUN_00409f30(This, NULL, param_1, param_2, param_3, param_4);
     if (iVar1 != 0) {
         FUN_0040a300(This, NULL, param_1);
-        operator_delete(*(void **)((int)This + 0x1c));
+        operator_delete(*(void **)(context + 0x1c));
     }
 }
 
@@ -1333,15 +1338,16 @@ void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
 
 // FUN_004236c0 @ 0x004236C0 (90 bytes) — BST node remove (unlink + delete)
 void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
+    BYTE* context = static_cast<BYTE*>(This);
     int iVar1 = *(int *)(*param_1 + 0x10);
     if (iVar1 == 0) {
-        *(int *)((int)This + 8) = 0;
+        *(int *)(context + 8) = 0;
     } else if (*(int *)(iVar1 + 8) == *param_1) {
         *(int *)(iVar1 + 8) = 0;
     } else {
         *(int *)(iVar1 + 0xc) = 0;
     }
-    *(int *)((int)This + 4) = *(int *)((int)This + 4) - 1;
+    *(int *)(context + 4) = *(int *)(context + 4) - 1;
     if ((void *)*param_1 != NULL) {
         operator_delete((void *)*param_1);
     }
@@ -1349,7 +1355,7 @@ void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
 }
 
 // FUN_00423c30 @ 0x00423C30 (10 bytes) — disconnect socket context
-void FUN_00423c30(void) { CWsctlc_Close(((int)(uintptr_t)SocketClient)); }
+void FUN_00423c30(void) { CWsctlc_Close(reinterpret_cast<uintptr_t>(SocketClient)); }
 
 // InitGuildWar @ 0x00423DB0 — Net_ResetTrade: clears trade/shop globals, re-enables party markers.
 // IDA: FUN_00423DB0 (0x00423DB0)
@@ -1376,7 +1382,7 @@ void __cdecl InitGuildWar(void) {
 // CWsctlc_Close @ 0x0043DC90 (11 lines) — NetContext_Disconnect
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
-void __cdecl CWsctlc_Close(int ctx) {
+void __cdecl CWsctlc_Close(uintptr_t ctx) {
     gNetwork.ResetSessionData();
     SocketClientIsGame = 0; // g_bGameServerConnected
     Platform::GetSocket().Close(*(SOCKET *)(ctx + 8));
@@ -1386,7 +1392,7 @@ void __cdecl CWsctlc_Close(int ctx) {
 // FUN_0053cbb0 @ 0x0053CBB0 (18 bytes) — GameGuard class init
 void __fastcall FUN_0053cbb0(int *param_1) {
     *param_1 = (int)&PTR_FUN_0055389c;
-    FUN_0053cc00_impl((int)param_1);
+    FUN_0053cc00_impl(param_1);
 }
 
 // FUN_0053cbd0 @ 0x0053CBD0 — GameGuard ~dtor
@@ -1413,7 +1419,7 @@ unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param
 // Copia el rango de bits [a4..a4+a5) del buffer de origen (a3) al destino (a1)
 // en el offset de bit a2. Usa un buffer temporal + CSimpleModulus_Shift para el corrimiento entre bytes.
 // Ported from IDA sub_53CF90.
-int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned int a4, int a5)
+int __stdcall CSimpleModulus_AddBits(void* a1, unsigned int a2, const void* a3, unsigned int a4, int a5)
 {
     int  lastByteIdx = CSimpleModulus_GetByteOfBit((int)a4 + a5 - 1);
     int  firstByteIdx= CSimpleModulus_GetByteOfBit((int)a4);
@@ -1423,7 +1429,7 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
     // desborde cuando se corren v6 + 1 bytes.
     char *lpMem = (char *)operator_new(v6 + 1);
     memset(lpMem, 0, v6 + 1);
-    memcpy(lpMem, (const void *)(a3 + firstByteIdx), v6);
+    memcpy(lpMem, static_cast<const BYTE*>(a3) + firstByteIdx, v6);
 
     int tail = (a4 + a5) % 8;
     if (tail) {
@@ -1436,11 +1442,11 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
     CSimpleModulus_Shift((BYTE *)lpMem, v6 + 1,  (a2 % 8));
 
     int    nBytes = (int)v6 + ((a2 % 8) > (a4 % 8) ? 1 : 0);
-    BYTE  *v9     = (BYTE *)(a1 + CSimpleModulus_GetByteOfBit(a2));
+    BYTE  *v9     = static_cast<BYTE*>(a1) + CSimpleModulus_GetByteOfBit(a2);
     if (nBytes > 0) {
-        int off = (int)((BYTE *)lpMem - v9);
+        const BYTE* source = reinterpret_cast<const BYTE*>(lpMem);
         do {
-            *v9 = (BYTE)(*v9 | v9[off]);
+            *v9 = (BYTE)(*v9 | *source++);
             ++v9;
             --nBytes;
         } while (nBytes);
@@ -1548,11 +1554,12 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
 }
 
 // -- FUN_0053cc00_impl: helper local --
-static void __cdecl FUN_0053cc00_impl(int param_1) {
-    *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
-    *(int *)(param_1 + 0x1c) = 0; *(int *)(param_1 + 0x20) = 0;
-    *(int *)(param_1 + 4) = 0;    *(int *)(param_1 + 8) = 0;
-    *(int *)(param_1 + 0xc) = 0;  *(int *)(param_1 + 0x10) = 0;
-    *(int *)(param_1 + 0x24) = 0; *(int *)(param_1 + 0x28) = 0;
-    *(int *)(param_1 + 0x2c) = 0; *(int *)(param_1 + 0x30) = 0;
+static void __cdecl FUN_0053cc00_impl(void* param_1) {
+    BYTE* fields = static_cast<BYTE*>(param_1);
+    *(int *)(fields + 0x14) = 0; *(int *)(fields + 0x18) = 0;
+    *(int *)(fields + 0x1c) = 0; *(int *)(fields + 0x20) = 0;
+    *(int *)(fields + 4) = 0;    *(int *)(fields + 8) = 0;
+    *(int *)(fields + 0xc) = 0;  *(int *)(fields + 0x10) = 0;
+    *(int *)(fields + 0x24) = 0; *(int *)(fields + 0x28) = 0;
+    *(int *)(fields + 0x2c) = 0; *(int *)(fields + 0x30) = 0;
 }

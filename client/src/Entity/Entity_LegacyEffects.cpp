@@ -45,7 +45,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Sets initial gravity velocity components at +0x1c/+0x20/+0x24 and scale +0x0c
 // based on entity type (short at +2). Each entity type has hardcoded float offsets.
 // IDA: ItemAngle (0x005030C0)
-void __cdecl ItemAngle(int param_1) {
+void __cdecl ItemAngle(OBJECT* object) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     short sVar1 = *(short*)(param_1 + 2);
     *(unsigned int*)(param_1 + 0x1c) = 0;
     *(unsigned int*)(param_1 + 0x20) = 0;
@@ -112,8 +113,9 @@ lbl_z45:
 // FUN_00503650 @ 0x00503650 — Entity_UpdateSparkleEffect(entity_ptr)
 // Every 0x30 ticks spawns two Shiny01 particles (type 0x4ce) at random direction offset
 // from entity's facing matrix. Stack layout: {local_48[3], 0, local_34} = random XZ offsets.
-void __cdecl Entity_UpdateSparkleEffect(int param_1)
+void __cdecl Entity_UpdateSparkleEffect(OBJECT* object)
 {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(object);
     int iVar2 = *(int *)(param_1 + 4);
     *(int *)(param_1 + 4) = iVar2 + 1;
     if (iVar2 % 0x30 == 0) {

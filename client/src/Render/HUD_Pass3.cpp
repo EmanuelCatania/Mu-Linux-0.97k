@@ -156,7 +156,7 @@ extern "C" void   __cdecl RenderTipText(int, int, const char*);
 
 // Aliases.  ItemAttribute already defined in HUD_Pass2 via a #define on
 // DAT_07d78068 — but #defines don't propagate across TUs.  Re-establish here.
-extern "C" int DAT_07d78068;
+extern "C" std::uintptr_t DAT_07d78068;
 #define ItemAttribute            ((ITEM_ATTRIBUTE*)DAT_07d78068)
 
 #define byte_7E11D6E             DAT_07e11d6e

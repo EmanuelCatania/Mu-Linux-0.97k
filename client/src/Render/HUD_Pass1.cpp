@@ -78,9 +78,8 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // y guarda el tamaño en Width/Height, con una, dos o tres líneas según cuántos
 // textos estén vivos (LifeTime).
 // IDA devuelve int, pero el único llamador (RenderBooleans) descarta el valor.
-void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
+void __cdecl FloatingLabel_MeasureText(CHAT* c, int p2, int p3)
 {
-    CHAT* c = AsChat((uintptr_t)p1);
     (void)p2; (void)p3;
 
     SIZE psizl = {0,0}, v12 = {0,0}, v13 = {0,0}, v14 = {0,0};
@@ -254,7 +253,7 @@ void RenderBooleans_(void)
             } else {
                 Projection(c->Position, &sx, &sy);
             }
-            FloatingLabel_MeasureText((int)(uintptr_t)c, 0, 0);
+            FloatingLabel_MeasureText(c, 0, 0);
             c->x = sx - 640 * c->Width / (int)gWindow.GetWidth() / 2;
             c->y = sy - 36;
         }
@@ -339,11 +338,11 @@ void RenderMainFrameWindow_(void)
     GL_DrawTexture(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
 
     // ── Anti-tamper #1: andamiaje de la hash-table intercalado de IDA ──
-    // HashTable_GetIndex (IDA: FUN_004041e0, Core/System_Legacy.cpp) devuelve
+    // La sobrecarga de dos argumentos de HashTable_GetIndex (functions.h) devuelve
     // siempre -1 en este build: sólo corre la rama "no encontrado".
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, v0);
         if (!(v6 != 0xFFFFFFFFu && DAT_055c9bd4)) {
             // No encontrado / tabla vacía — inserta una entrada nueva marcada con
             // ref-count = 1 (así el decremento siguiente dispara el encriptado XOR

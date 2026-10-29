@@ -154,7 +154,7 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2
     }
 
-    Entity_GetLightScale(param_1, (int)pModel);   // Sprite_SetupAnim
+    Entity_GetLightScale(param_1, reinterpret_cast<uintptr_t>(pModel));   // Sprite_SetupAnim
 
     // Bone selection: param_8 = use entity's bone ptr or fallback to root
     if (param_8 == '\0')
@@ -162,7 +162,7 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
     else
         puVar2 = (undefined*)&DAT_06970a9c;
 
-    Skeleton_Transform(pModel, (int)puVar2,
+    Skeleton_Transform(pModel, reinterpret_cast<float*>(puVar2),
                  (float *)(param_1 + 0x118),
                  (float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),

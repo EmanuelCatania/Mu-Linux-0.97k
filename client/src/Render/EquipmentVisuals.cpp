@@ -30,7 +30,8 @@ struct EquipmentFrame {
     std::vector<Mesh> meshes;
     std::vector<Sprite> sprites;
     std::vector<Command> commands;
-    int entity = 0, spawn = 0, type = 0, key = 0;
+    const CHARACTER* entity = nullptr;
+    int spawn = 0, type = 0, key = 0;
     bool valid = false;
 };
 EquipmentFrame frames[401], previousFrames[401];
@@ -68,8 +69,8 @@ void Equipment_Invalidate(const void *entity) {
     const int slot = Slot(entity);
     if (slot >= 0) frames[slot].valid = previousFrames[slot].valid = false;
 }
-void Equipment_BeginCharacter(int entity) {
-    const int slot = Slot((void *)entity);
+void Equipment_BeginCharacter(const CHARACTER* entity) {
+    const int slot = Slot(entity);
     recording = slot >= 0 ? &frames[slot] : nullptr;
     if (!recording) return;
     recording->entity = entity;
@@ -129,8 +130,8 @@ void Equipment_AddMesh(int model, const void *object, const float *light,
     memcpy(mesh.light, light, sizeof(mesh.light));
 }
 
-void Equipment_Draw(int entity, int stage) {
-    const int slot = Slot((void *)entity);
+void Equipment_Draw(const CHARACTER* entity, int stage) {
+    const int slot = Slot(entity);
     if (slot < 0 || scene != SceneFlag || world != gMapManager.GetCurrentMap()) return;
     EquipmentFrame &frame = frames[slot];
     if (!frame.valid || frame.entity != entity || !AsObject(entity)->Live ||
@@ -144,7 +145,7 @@ void Equipment_Draw(int entity, int stage) {
     char savedQuaternions[sizeof(DAT_05826e18)]; float savedRoot[12];
     memcpy(savedQuaternions,DAT_05826e18,sizeof(savedQuaternions)); memcpy(savedRoot,&DAT_06989c9c,sizeof(savedRoot));
     const EquipmentFrame &previous=previousFrames[slot];
-    const bool continuous=RenderInterpolation_OwnerContinuous((void *)entity) && previous.valid &&
+    const bool continuous=RenderInterpolation_OwnerContinuous(entity) && previous.valid &&
         previous.entity==entity && previous.spawn==frame.spawn && previous.type==frame.type && previous.key==frame.key;
     const float alpha=RenderInterpolation_Alpha();
     drawing = true;
@@ -207,13 +208,13 @@ void Equipment_Draw(int entity, int stage) {
             }
             unsigned int priorBits; memcpy(&priorBits,&prior,sizeof(priorBits));
             float zero[3]{};
-            BMD_Animation(model,(int)g_BoneScratch,frame,priorBits,mesh.partState.PriorAction,(unsigned int *)zero,zero,1,1);
+            BMD_Animation(model,reinterpret_cast<float*>(g_BoneScratch),frame,priorBits,mesh.partState.PriorAction,(unsigned int *)zero,zero,1,1);
             drawAlpha=owner.Alpha;
         }
         if (drawAlpha<=_DAT_005524f8) continue;
         _DAT_005597c8 = mesh.lod;
         float zero[3] = {}, bounds[15];
-        Skeleton_Transform(model, (int)g_BoneScratch, zero, zero, bounds, mesh.translate);
+        Skeleton_Transform(model, reinterpret_cast<float*>(g_BoneScratch), zero, zero, bounds, mesh.translate);
         // El objeto mínimo es local: los materiales pueden escribir UV/escala.
         alignas(float) char object[sizeof(mesh.object)];
         memcpy(object, mesh.object, sizeof(object));

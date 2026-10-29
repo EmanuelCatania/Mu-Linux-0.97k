@@ -35,7 +35,7 @@
 // IDA 00404BC0_PlayBuffer.c semantics (including the channel-wrap reset).
 // ============================================================================
 // IDA: PlayBuffer (0x00404BC0)
-HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
+HRESULT __cdecl PlayBuffer(int Buffer, const OBJECT* Object, BOOL bLooped)
 {
     if (!g_EnableSound || Buffer < 0 || Buffer >= 420) return S_OK;
     if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) BufferChannel[Buffer] = 0;
@@ -83,14 +83,14 @@ void Sound_Update3DPositions(void)
         if (MaxBufferChannel[slot] <= 0)   continue;
 
         for (int ch = 0; ch < MaxBufferChannel[slot]; ++ch) {
-            DWORD entityPtr = Object3DSound[slot][ch];
+            const OBJECT* entityPtr = Object3DSound[slot][ch];
             if (entityPtr == 0) continue;
 
             // Player world pos (DAT_07abf5d8) minus entity world pos.
             float offset[3];
-            offset[0] = *(float*)(DAT_07abf5d8 + 0x10) - *(float*)(entityPtr + 0x10);
-            offset[1] = *(float*)(DAT_07abf5d8 + 0x14) - *(float*)(entityPtr + 0x14);
-            offset[2] = *(float*)(DAT_07abf5d8 + 0x18) - *(float*)(entityPtr + 0x18);
+            offset[0] = *(float*)(DAT_07abf5d8 + 0x10) - entityPtr->Position[0];
+            offset[1] = *(float*)(DAT_07abf5d8 + 0x14) - entityPtr->Position[1];
+            offset[2] = *(float*)(DAT_07abf5d8 + 0x18) - entityPtr->Position[2];
 
             // Rotate into listener space.
             Vector_Rotate(offset, rotMatrix, offset);

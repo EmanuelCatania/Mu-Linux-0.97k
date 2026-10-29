@@ -396,7 +396,7 @@ extern "C" void __cdecl SyncPickedItemVisualState(void);
 void RestorePickedItemToSource(void)
 {
     if (dword_7E91388 == 0) return;
-    BYTE* srcPool = (BYTE*)(uintptr_t)dword_7EA9800;
+    BYTE* srcPool = dword_7EA9800;
     int   srcSlot = (int)DAT_07ea5b18;
     if (srcPool && srcSlot >= 0) {
         // Reconstruir los bytes "wire" desde el ITEM struct guardado y
@@ -796,7 +796,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 int abs = grid_w * sy + sx;
                 DAT_083a4124 = 0;
 
-                dword_7EA9800 = (DWORD)(uintptr_t)inv_base;
+                dword_7EA9800 = reinterpret_cast<BYTE*>(inv_base);
                 memcpy(pPickedItem, (BYTE*)(inv_base + 34 * abs), 0x44);
                 SyncPickedItemVisualState();
 
@@ -981,7 +981,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // ── Default right-click: pickup-with-warehouse-auto-drop ──
                 // (per líneas 1401-1438 de IDA). Igual que el pickup con click izquierdo pero
                 // con lógica extra de auto-drop cuando el baúl está abierto.
-                dword_7EA9800 = (DWORD)(uintptr_t)inv_base;
+                dword_7EA9800 = reinterpret_cast<BYTE*>(inv_base);
                 memcpy(pPickedItem, (BYTE*)(inv_base + 34 * gridSlotIdx), 68);
                 g_PickupLatchX = (DWORD)DAT_083a427c;
                 g_PickupLatchY = (DWORD)DAT_083a4278;
@@ -1020,8 +1020,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                             CheckInventory = 0;
                             DAT_07e11e78 = (DWORD)target;
                             DAT_07eaa165 = 1;                        // EquipmentItem
-                            g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-                            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                            g_ItemMoveSourcePool = &OffsetInventoryItems[0];
+                            g_ItemMoveTargetPool = &OffsetInventoryItems[0];
                             SendRequestEquipmentItem(0, abs, (ITEM*)pPickedItem, 0, target);
                             PlayBuffer(29, 0, 0);
                             return;

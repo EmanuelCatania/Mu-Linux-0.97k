@@ -99,7 +99,7 @@ void LooseWingVisuals_TickPreviews() {
         float angle[3]; memcpy(angle,value.angle,sizeof(angle));
         if (value.spin) angle[1]=value.time*0.45f;
         float head[3]; memcpy(head,value.headAngle,sizeof(head));
-        BMD_Animation(model,(int)owner.bones.data(),0,0,0,(unsigned int *)angle,head,0,0);
+        BMD_Animation(model,owner.bones.data(),0,0,0,(unsigned int *)angle,head,0,0);
         memcpy(g_BoneScratch,owner.bones.data(),sizeof(g_BoneScratch));
         // La emisión pendiente pertenece a la pasada publicada: conservar su
         // fase temporal, como los sprites que antes sobrevivían hasta este paso.
@@ -119,12 +119,12 @@ void LooseWingVisuals_TickGround(int entity) {
     Scratch scratch;
     BMD &b=*AsModel(model);
     b.CurrentAction=o.CurrentAction;
-    Entity_SetGravity(o.Type,(int)model);
+    Entity_SetGravity(o.Type,model);
     b.BodyScale=o.Scale;
     memcpy(b.BodyOrigin,o.Position,sizeof(b.BodyOrigin));
     memset(g_BoneScratch,0,sizeof(g_BoneScratch));
     unsigned int prior; memcpy(&prior,&o.PriorAnimationFrame,sizeof(prior));
-    BMD_Animation(model,(int)g_BoneScratch,o.AnimationFrame,prior,o.PriorAction,
+    BMD_Animation(model,reinterpret_cast<float*>(g_BoneScratch),o.AnimationFrame,prior,o.PriorAction,
         (unsigned int *)o.Angle,o.HeadAngle,0,0);
     Equipment_EmitWing790(model,entity,entity);
 }

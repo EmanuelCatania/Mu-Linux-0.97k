@@ -43,7 +43,7 @@
 // Cull + GL setup: si la entidad es visible, llama a Entity_SetupGL.
 void __cdecl Entity_PrepareRender(void *param_1, int param_2, int param_3, char param_4)
 {
-    int uVar1 = Calc_RenderObject((int)param_1, (char)param_2, param_3);  // Entity_IsRenderable
+    int uVar1 = Calc_RenderObject(AsObject(param_1), (char)param_2, param_3);  // Entity_IsRenderable
     if ((char)uVar1 != '\0')
         Draw_RenderObject(param_1, param_2, param_3, param_4);                   // Entity_SetupGL
 }

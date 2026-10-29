@@ -524,19 +524,19 @@ struct HashCtxInit_t {
         g_HashTableCtx[3] = 1;                               // capacity = 1
     }
 } g_HashCtxInitObj;
-DWORD    DAT_055c9be0  = 0;
+BYTE*    DAT_055c9be0  = nullptr;
 DWORD    DAT_055c9be4  = 0;
 float    _DAT_055c9be4 = 0.0f;
-DWORD    DAT_055c9be8  = 0;
-DWORD    DAT_055c9bec  = 0;
+BYTE*    DAT_055c9be8  = nullptr;
+BYTE*    DAT_055c9bec  = nullptr;
 DWORD    DAT_055c9bf0  = 0;
 DWORD    DAT_055c9d00  = 0;
 DWORD    DAT_055c9e04  = 0;
-DWORD    DAT_055c9e44  = 0;
-DWORD    DAT_055c9e48  = 0;
+std::uintptr_t DAT_055c9e44 = 0; // Reserva de atributos primarios de items.
+std::uintptr_t DAT_055c9e48 = 0;
 int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
-DWORD    DAT_055c9ff0  = 0;  // HGLRC
-DWORD    DAT_055c9ff4  = 0;
+BYTE*    DAT_055c9ff0  = nullptr;  // objeto del historial de chat
+BYTE*    DAT_055c9ff4  = nullptr;  // objeto de susurros
 DWORD    DAT_055c9ff8  = 0;
 // DAT_055c9ffc = g_hWnd (gWindow.GetHwnd())
 // Font memory DC (GDI-only, DIB-backed). Set by Font_BuildLayout.
@@ -653,7 +653,7 @@ DWORD    DAT_05826e10  = 0;
 // BMD_Animation (0x440060 L157-166: `(char *)&unk_5826E18 + 16 * boneIdx`).
 // MAX_BONES = 200, igual que g_BoneScratch → 200 x 16 bytes (paso de 16 por hueso).
 char     DAT_05826e18[200 * 0x10] = {0};
-DWORD    DAT_05828d58  = 0;  // Models
+std::uintptr_t DAT_05828d58 = 0; // Base de Models, sin truncar la dirección.
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
 // BMD bounding-box scratch arrays (BMD_CreateBoundingBox)
@@ -707,7 +707,7 @@ char     g_BoneScratch[200 * 0x30] = {0};   // = 0x2580 (BoneTransform[200][3][4
 // acceden por macros (ver globals.h).
 char     DAT_07abf050[0x580] = {0};
 char     DAT_07d2b494[9000] = {};  // class name table (stride 300, 30 slots) — símbolo aparte
-DWORD    CharactersClient  = 0; // IDA: DAT_07abf5d0 (0x07ABF5D0)
+std::uintptr_t CharactersClient = 0; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 int      DAT_07abf5d4  = 0;
 char    *Hero  = NULL; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 DWORD    DAT_07abf5dc  = 0;
@@ -837,9 +837,9 @@ DWORD    DAT_07ea8414  = 0;
 //     v7 - 52     = slot + 4   -> Level
 int   *p_DAT_07ea9504_ = (int*)&OffsetInventoryItems[63 * 0x44 + 56];
 int   *p_DAT_07ea9328_ = (int*)&OffsetInventoryItems[56 * 0x44 + 56];
-DWORD    DAT_07ea9800  = 0;
-DWORD    g_ItemMoveSourcePool = 0;
-DWORD    g_ItemMoveTargetPool = 0;
+BYTE*    DAT_07ea9800  = nullptr;
+BYTE*    g_ItemMoveSourcePool = nullptr;
+BYTE*    g_ItemMoveTargetPool = nullptr;
 DWORD    DAT_07ea9810  = 0;
 // Buffer de texto del teclado del PIN (0x07EA9814): hasta 10 digitos + NUL, y
 // atras la copia del PIN de la primera pasada (dword_7EA981F).  Estaba partido
@@ -1281,7 +1281,7 @@ int      DAT_07ea7b10[30] = {};  // TextBold      - 30 slots, igual que lpString
 // DAT_07d329c4 / DAT_07d32af0 / DAT_07d34134 / DAT_07d34260 / DAT_07d358a4 son
 // GlobalText[120] / [121] / [140] / [141] / [160] (ver el bloque de alias al final
 // de globals.h).
-int      DAT_07d78068 = 0;
+std::uintptr_t DAT_07d78068 = 0; // Base de atributos primarios de items.
 // El backup de DAT_07d78068 está en Render/Render_Frame.cpp y no acá: junto a
 // DAT_07d78068 lo pisaba el mismo escritor (dos ints consecutivos).
 // IDA: FontHeight (0x07D78080) vive en CFont.
@@ -2153,7 +2153,7 @@ float   DAT_00590af8   = 0.0f;
 float   DAT_00590afc   = 0.0f;  // cloth wind Z (flt_590AFC; el binario nunca lo escribe)
 float   _DAT_00559068  = 9.8f;      // gravedad   (flt_559068, leído del binario)
 float   _DAT_0055906c  = 0.0025f;   // dt fijo    (flt_55906C, leído del binario)
-LPBYTE  lpData_055ca044 = NULL;
+DWORD   lpData_055ca044 = 0;
 char   *lpText_07d63aec = NULL;
 // Strings reservados de sub_513570 (name-filter). En el binario original son
 // patrones bloqueados (espacio, DBCS coreano, punto). No dejarlos en 0: con string
@@ -2302,10 +2302,10 @@ char    s__s0_d_bmd_0055a7ec[] = "%s0%d.bmd";
 char    s__s_d_bmd_0055a7e0[]  = "%s%d.bmd";
 
 // ── Item/Skill/Gate data loader globals ──────────────────────────────────────
-int     DAT_07cf1ff0    = 0;       // item record shadow array base
-int     DAT_07cf1ff8    = 0;       // skill record shadow array base
-int     DAT_07d29d20    = 0;       // skill/gate data array base
-DWORD   GateAttribute    = 0;       // gate data array base — malloc'd in WinMain
+BYTE*   DAT_07cf1ff0 = nullptr;    // Base de la tabla sombra de atributos de items.
+BYTE*   DAT_07cf1ff8 = nullptr;    // Base de la tabla sombra de skills.
+BYTE*   DAT_07d29d20 = nullptr;    // Base de la tabla de skills reservada al inicio.
+GATE_ATTRIBUTE* GateAttribute = nullptr; // Base de la tabla de gates reservada al inicio.
 // dialog data array — original ocupaba 0x07cf5608..0x07d27608 (0x32000 bytes).
 // Declaramos un buffer real de ese tamaño en DWORDs para que &DAT_07cf5608 apunte a memoria válida.
 DWORD   DAT_07cf5608[(DIALOG_SCRIPT_COUNT * 0x400) / 4] = {};   // g_DialogScript (200 x 0x400 = 200 KB)
@@ -2597,7 +2597,7 @@ DWORD  DAT_0055389c = 0;
 HANDLE hEvent             = NULL;
 LPVOID lpParameter        = NULL;
 char   g_GameGuardGameName[64] = "Mu";  // IDA: aMu (0x0055910C)
-DWORD  g_csQuest          = 0;
+uintptr_t g_csQuest       = 0;
 
 BYTE   m_byMatchType      = 0;
 int    m_iMatchTimeMax    = 0;
@@ -2619,7 +2619,7 @@ int                    SoundLoadCount         = 0;
 char                   BufferName[420][0x40] = {};
 LPDIRECTSOUNDBUFFER    g_lpDSBuffer[420][4]   = {};
 LPDIRECTSOUND3DBUFFER  g_lpDS3DBuffer[420][4] = {};
-DWORD                  Object3DSound[420][4]  = {};
+const OBJECT*          Object3DSound[420][4]  = {};
 
 // Tabla de nombres NPC/mob: 512 entradas × 0x36 bytes (ver nota en 0x07CF2000).
 BYTE   MonsterScript[512 * 0x36] = {};

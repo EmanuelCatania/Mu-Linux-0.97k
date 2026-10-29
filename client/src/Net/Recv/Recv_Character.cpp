@@ -222,7 +222,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // dejó action=1 (idle pegado al piso). Re-llamamos ahora que las alas
         // están equipadas para que action pase a 9 (float-idle) y los chars
         // con alas aparezcan flotando como en el cliente original.
-        SetPlayerStop((int)(uintptr_t)c);
+        SetPlayerStop(AsCharacter(c));
     }
 
     // CurrentProtocolState = 51 → Scene_CharSelect lo usa como gate de render
@@ -536,10 +536,10 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         AsCharacter(heroPtr)->GuildMarkIndex = s_PendingHeroGuildMarkRow;
         s_HasPendingHeroGuildMark = false;
         s_PendingHeroGuildMarkRow = -1;
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)heroPtr, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(heroPtr), 0, 0, 0);
     }
     s_IsRebuildingHero = false;
-    HeroEquipWatchdog((int)(uintptr_t)heroPtr);
+    HeroEquipWatchdog(AsCharacter(heroPtr));
     // IDA copia los 10 bytes de nombre de CharacterAttribute; desde 0.97.40 el
     // nombre completo viene de EntityName::Selected().
     if (EntityName::Selected()[0]) EntityName::Set(heroPtr, EntityName::Selected());
@@ -701,8 +701,8 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     // (7) Reconstruye el cuerpo desde CharacterMachine y corta la animación
     //     de muerte; después el efecto visual de aparición.
-    SetCharacterClass((int)(uintptr_t)heroPtr);             // SetCharacterClass
-    SetPlayerStop((int)(uintptr_t)heroPtr);             // SetPlayerStop
+    SetCharacterClass(AsCharacter(heroPtr));             // SetCharacterClass
+    SetPlayerStop(AsCharacter(heroPtr));             // SetPlayerStop
     CreateEffect(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
                  (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
                  (float*)-1, nullptr, 0);              // CreateEffect(1265)
@@ -849,7 +849,7 @@ void Recv_LevelUp(const BYTE* Msg, int Size)
         gHeroVitals.SetCurrent(VITAL_LIFE, *(const DWORD*)(Msg + 28));
         gHeroVitals.SetCurrent(VITAL_MANA, *(const DWORD*)(Msg + 32));
     } else {
-        CalculateNextExperince((int)(uintptr_t)CharacterMachine);
+        CalculateNextExperince(CharacterMachine);
     }
 
     NetLog("NET:  -> F3/05 LevelUp lvl=%u pts=%u HP=%u MP=%u BP=%u next=%u",
@@ -975,7 +975,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // IDA ReceiveAddPoint (0x431480) termina con sub_47E3C0
             // (CharData_RecalcStats).  Sin esto dano, defensa y
             // velocidad quedaban viejos hasta cambiar el equipo.
-            CalculateAll((int)(uintptr_t)CharacterMachine, 0, 0);
+            CalculateAll(static_cast<BYTE*>(CharacterMachine), 0, 0);
             break;
         }
 
@@ -1467,7 +1467,7 @@ void NetRecv_2C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
 
         // Recalcula damage/defense/velocidades con los stats nuevos.
-        CalculateAll((int)(uintptr_t)CA, 0, 0);
+        CalculateAll(reinterpret_cast<BYTE*>(CA), 0, 0);
 
         char buf[300];
         // GlobalText[377] = texto de suma, [379] = texto de resta.
@@ -1632,13 +1632,13 @@ void NetRecv_1C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         // El server usa gate=0 para el teleport de skill. IDA
         // completa ese efecto visual y limpia Teleport acá.
-        CreateTeleportEnd((unsigned int)(uintptr_t)hero);
+        CreateTeleportEnd(AsObject(hero));
         Teleport = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
     }
 
     // Este store es común a las dos ramas en el original.
     AsCharacter(hero)->Movement = 0;
-    SetPlayerStop((int)(uintptr_t)hero);
+    SetPlayerStop(AsCharacter(hero));
 }
 
 // 0x26

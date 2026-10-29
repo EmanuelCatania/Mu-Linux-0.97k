@@ -70,7 +70,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
     // viejo. Si procesamos ese evento tardío como si fuera del socket
     // actual, cerramos la sesión nueva inmediatamente.
     extern int  __fastcall CWsctlc_nRecv(void* ctx);
-    extern int  __fastcall CWsctlc_FDWriteSend(int  ctx);
+    extern int  __fastcall CWsctlc_FDWriteSend(uintptr_t ctx);
     extern void Net_ProcessPacket(void);
     if (evt & 0x01) { // FD_READ
         CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
@@ -84,7 +84,7 @@ void CNetwork::OnSocketEvent(WORD evt, WORD err)
             Net_ProcessPacket();
     }
     if (evt & 0x02) { // FD_WRITE
-        CWsctlc_FDWriteSend((int)(uintptr_t)SocketClient);
+        CWsctlc_FDWriteSend(reinterpret_cast<uintptr_t>(SocketClient));
         // La conexión no-bloqueante completa suele señalizarse con el primer
         // FD_WRITE (el mask WSAAsyncSelect es 0x23, sin FD_CONNECT), así que el
         // pedido de lista al ConnectServer también sale de acá.
@@ -251,7 +251,7 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
         if (len <= 0x2000 - SocketClientSendBufferLength) {
             memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, data, len);
             SocketClientSendBufferLength += len;
-        } else Net_Disconnect((int)(uintptr_t)SocketClient);
+        } else Net_Disconnect(SocketClient);
         return;
     }
     unsigned int remain = (unsigned int)len;
@@ -264,10 +264,10 @@ void CNetwork::SendToConnectServer(const BYTE* data, int len)
                     memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
                     SocketClientSendBufferLength += (int)remain;
                 } else {
-                    Net_Disconnect((int)(uintptr_t)SocketClient);
+                    Net_Disconnect(SocketClient);
                 }
             } else {
-                Net_Disconnect((int)(uintptr_t)SocketClient);
+                Net_Disconnect(SocketClient);
             }
             return;
         }
@@ -301,7 +301,7 @@ int CNetwork::SendRaw(const char* buf, int len)
 
     if (SocketClientSendBufferLength > 0 || !Platform::GetSocket().IsConnected(SocketClientSocket)) {
         if (len > 0x2000 - SocketClientSendBufferLength) {
-            Net_Disconnect((int)(uintptr_t)SocketClient);
+            Net_Disconnect(SocketClient);
             return -1;
         }
         memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, s_scratch, len);
@@ -322,10 +322,10 @@ int CNetwork::SendRaw(const char* buf, int len)
                            s_scratch + sent, (len - sent));
                     SocketClientSendBufferLength += (len - sent);
                 } else {
-                    Net_Disconnect(((int)(uintptr_t)SocketClient));
+                    Net_Disconnect(SocketClient);
                 }
             } else {
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
+                Net_Disconnect(SocketClient);
             }
             return -1;
         }
@@ -405,7 +405,7 @@ void CNetwork::SendFrameC3(const BYTE* pkt, int totalLen)
     int  total   = encLen + 2;
     buf[0] = (char)0xC3;
     buf[1] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 2), plain + 1, bodyLen);
+    CSimpleModulus_Encode(reinterpret_cast<BYTE*>(buf + 2), plain + 1, bodyLen);
     SendRaw(buf, total);
 }
 
@@ -483,6 +483,6 @@ void CNetwork::SendLarge(const BYTE* pkt, int totalLen)
     buf[0] = (char)0xC4;
     buf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
     buf[2] = (char)total;
-    CSimpleModulus_Encode((int)(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
+    CSimpleModulus_Encode(reinterpret_cast<BYTE*>(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
     SendRaw(buf, total);
 }

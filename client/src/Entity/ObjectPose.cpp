@@ -13,40 +13,41 @@
 // IDA: preparación de pose de Calc_RenderObject (0x004FAA70).
 // El destino explícito permite preparar huesos SIM sin utilizar el buffer
 // de la entidad que el render puede sobrescribir con una pose interpolada.
-static void PrepareContext(int entity, void* model)
+static void PrepareContext(OBJECT* entity, void* model)
 {
-    *(DWORD*)((int)model + 0x68) = *(DWORD *)&AsObject(entity)->Scale;
-    *(BYTE *)((int)model + 0xa0) = AsObject(entity)->CurrentAction;
-    *(DWORD*)((int)model + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-    *(DWORD*)((int)model + 0x70) = *(DWORD *)&AsObject(entity)->Position[1];
-    *(DWORD*)((int)model + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+    BYTE* modelBase = static_cast<BYTE*>(model);
+    *(DWORD*)(modelBase + 0x68) = *(DWORD *)&AsObject(entity)->Scale;
+    *(BYTE *)(modelBase + 0xa0) = AsObject(entity)->CurrentAction;
+    *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
+    *(DWORD*)(modelBase + 0x70) = *(DWORD *)&AsObject(entity)->Position[1];
+    *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
     // Desplazamiento Y especial para la elfa (0x14B) y su variante (0x14A).
     short cls = AsObject(entity)->Type;
     if (cls == 0x14b) {
-        *(DWORD*)((int)model + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-        *(float *)((int)model + 0x70) = AsObject(entity)->Position[1] + _DAT_0055290c;
-        *(DWORD*)((int)model + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+        *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
+        *(float *)(modelBase + 0x70) = AsObject(entity)->Position[1] + _DAT_0055290c;
+        *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
     } else if (cls == 0x14a) {
-        *(DWORD*)((int)model + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-        *(float *)((int)model + 0x70) = AsObject(entity)->Position[1] + _DAT_00552908;
-        *(DWORD*)((int)model + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+        *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
+        *(float *)(modelBase + 0x70) = AsObject(entity)->Position[1] + _DAT_00552908;
+        *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
     }
 }
-static bool ReuseBones(int entity, void* model, float* bones, char translate);
-void ObjectPose_PrepareBones(int entity, void* model, float* bones, char translate)
+static bool ReuseBones(OBJECT* entity, void* model, float* bones, char translate);
+void ObjectPose_PrepareBones(OBJECT* entity, void* model, float* bones, char translate)
 {
     PrepareContext(entity,model);
     if (ReuseBones(entity,model,bones,translate)) return;
     DWORD priorFrame;
     memcpy(&priorFrame, &AsObject(entity)->PriorAnimationFrame, sizeof(priorFrame));
-    BMD_Animation(model, (int)bones, AsObject(entity)->AnimationFrame, priorFrame,
-                  AsObject(entity)->PriorAction, (unsigned int*)(entity + 0x1c),
-                  (float*)(entity + 0x28), '\0', translate == '\0');
+    BMD_Animation(model, bones, AsObject(entity)->AnimationFrame, priorFrame,
+                  AsObject(entity)->PriorAction, reinterpret_cast<unsigned int*>(entity->Angle),
+                  entity->HeadAngle, '\0', translate == '\0');
 }
 
 // La caja normal no depende de mallas ni huesos. Sólo el editor 2 necesita
 // transformar la geometría para obtener sus extremos; LOD 0 no dibuja.
-void ObjectPose_PrepareBounds(int entity, char translate)
+void ObjectPose_PrepareBounds(OBJECT* entity, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (o.Alpha < _DAT_005524f8) return;
@@ -60,7 +61,7 @@ void ObjectPose_PrepareBounds(int entity, char translate)
     ObjectBounds_Build(o.BoundingBoxMin, o.BoundingBoxMax, origin, o.OBB);
 }
 
-void ObjectPose_PrepareSimulation(int entity, char translate)
+void ObjectPose_PrepareSimulation(OBJECT* entity, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (o.Alpha < _DAT_005524f8) return;
@@ -77,7 +78,7 @@ void ObjectPose_PrepareSimulation(int entity, char translate)
 
 // IDA: Draw_RenderObject (0x004FAE00), estatuas de Blood Castle.
 // DESVIACION: fragmentos, audio y desactivación se producen en SIM, aun sin draw.
-void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char translate)
+void ObjectPose_TickMeshEvents(OBJECT* entity, void *model, float *bones, char translate)
 {
     OBJECT &o = *AsObject(entity);
     if (!o.Live || o.Alpha < _DAT_005524f8) return;
@@ -85,7 +86,7 @@ void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char trans
     const bool materializing = o.Type == 330 && (int)MoveSceneFrame - o.InitialSceneFrame < 25;
     if (!((o.Type == 331 && dead) || (o.Type == 330 && (dead || materializing)))) return;
     float bounds[15];
-    Skeleton_Transform(model, (int)bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
+    Skeleton_Transform(model, bones, o.BoundingBoxMin, o.BoundingBoxMax, bounds, translate);
     if (dead) o.Live = 0;
     PlayBuffer(106, 0, 0);
     BMD__RenderMeshEffect(model, 0, o.Type == 330 ? 260 : 262);
@@ -101,7 +102,7 @@ void ObjectPose_TickMeshEvents(int entity, void *model, float *bones, char trans
 //         Final bone matrices written to param_1 (3x4 per bone).
 // DESVIACION: scratch explícito para calcular poses independientes en un lote.
 // La entrada histórica de BMD conserva sus temporales y escrituras originales.
-static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned int param_3,
+static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsigned int param_3,
                            unsigned char param_4, unsigned int* param_5,
                            float* param_6, char param_7, char param_8,
                            char* quaternionScratch, float* parentScratch) {
@@ -161,8 +162,8 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                     posB[0] = *(float*)(animPtrB[1] + curFrameB * 0xc)     - param_6[0] * _DAT_005528b0;
                     posB[1] = *(float*)(animPtrB[1] + curFrameB * 0xc + 4);
                     posB[2] = *(float*)(animPtrB[1] + curFrameB * 0xc + 8) - param_6[1] * _DAT_005528b0;
-                    EulerToQuat((int)&posA[0], (int)&quatA[0], 0, 0);
-                    EulerToQuat((int)&posB[0], (int)&quatB[0], 0, 0);
+                    EulerToQuat(posA, quatA, 0, 0);
+                    EulerToQuat(posB, quatB, 0, 0);
                 } else {
                     // regular bone: read quaternion from anim table
                     int frameOff = v39 * 0x10;
@@ -182,16 +183,16 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                 int quatBone = boneIdx;
                 if (quatBone < 0 || quatBone >= 200) quatBone = 0;   // guard: la tabla es de 200 huesos
                 float* outQuat = (float*)(quaternionScratch + quatBone * 0x10);
-                int same = Terrain_QuadEqual((int)&quatA, (int)&quatB, 0, 0);
+                int same = Terrain_QuadEqual(quatA, quatB, 0, 0);
                 if (!same)
-                    QuatSlerp((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // pass float bits, not truncated int
+                    QuatSlerp(quatA, quatB, fFrac, outQuat);
                 else { outQuat[0]=quatA[0]; outQuat[1]=quatA[1]; outQuat[2]=quatA[2]; outQuat[3]=quatA[3]; }
                 // quaternion to 3x3 rotation matrix, embedded in a 3x4.
                 // QuatToMatrix solo escribe posiciones [0,1,2,4,5,6,8,9,10] (9 floats de
                 // 3x3). Las posiciones 3,7,11 (columna de translación) las lee
                 // R_ConcatTransforms: zero-init + inyectar tX/tY/tZ abajo.
                 float rot33[12] = {0};
-                QuatToMatrix((int)outQuat, (int)rot33, 0, 0);
+                QuatToMatrix(outQuat, rot33, 0, 0);
                 // get translation from frame keys (3 floats × priorFrameInt)
                 float* ptransA = (float*)(*animPtrA + v39 * 0xc);
                 float* ptransB = (float*)(*animPtrB + *(short*)((char*)this_ + 0xa8) * 0xc);
@@ -243,20 +244,20 @@ static void AnimateWithScratch(void* this_, int param_1, float param_2, unsigned
                     }
                     parentMat = parentScratch;
                 } else {
-                    parentMat = (float*)(parentIdx * 0x30 + param_1);
+                    parentMat = param_1 + parentIdx * 12;
                 }
                 // Inject bone translation into rot33's 3x4 translation column.
                 rot33[3]  = tX;
                 rot33[7]  = tY;
                 rot33[11] = tZ;
-                R_ConcatTransforms(parentMat, rot33, (float*)(boneIdx * 0x30 + param_1));
+                R_ConcatTransforms(parentMat, rot33, param_1 + boneIdx * 12);
             }
         }
     }
 }
 
 
-void __cdecl BMD_Animation(void* model, int bones, float frame, unsigned int priorFrame,
+void __cdecl BMD_Animation(void* model, float* bones, float frame, unsigned int priorFrame,
     unsigned char priorAction, unsigned int* angles, float* head, char special, char translate)
 {
     AnimateWithScratch(model,bones,frame,priorFrame,priorAction,angles,head,special,translate,
@@ -309,7 +310,7 @@ void PrepareRange(void*,std::size_t begin,std::size_t end) {
         auto& p=*jobs[slot];
         auto* o=AsObject(p.object.data());
         DWORD priorFrame; memcpy(&priorFrame,&o->PriorAnimationFrame,4);
-        AnimateWithScratch(p.model.data(),(int)p.bones.data(),o->AnimationFrame,priorFrame,
+        AnimateWithScratch(p.model.data(),p.bones.data(),o->AnimationFrame,priorFrame,
             o->PriorAction,(unsigned int*)o->Angle,o->HeadAngle,0,0,
             p.quaternions.data(),p.parent.data());
         if(p.geometry) {
@@ -393,7 +394,7 @@ void ObjectPose_BeginBatch() {
         memcpy(p.model.data(),model,p.model.size());
         memcpy(p.object.data(),o,p.object.size());
         *(float*)(p.model.data()+0x84)=0.f; // Calc_RenderObject, antes de animar.
-        PrepareContext((int)p.object.data(),p.model.data());
+        PrepareContext(AsObject(p.object.data()),p.model.data());
         p.inputModel=p.model;
         p.originalModel=model; p.boneCount=count; p.valid=true;
         // Congelar fuentes: tela u otra pasada puede modificarlas antes del draw.
@@ -448,7 +449,7 @@ void ObjectPose_BeginBatch() {
 }
 void ObjectPose_EndBatch() { batchActive=false; geometryPose=nullptr; }
 
-static bool ReuseBones(int entity,void* model,float* bones,char translate) {
+static bool ReuseBones(OBJECT* entity,void* model,float* bones,char translate) {
     geometryPose=nullptr;
     if(!batchActive || translate!=1) return false;
     const auto base=(uintptr_t)DAT_07abf5d0, address=(uintptr_t)entity;

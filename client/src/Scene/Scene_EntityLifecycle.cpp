@@ -235,15 +235,14 @@ lbl_skip_init:
 // Ported verbatim from IDA reference 0045C8C0_ChangeCharacterExt's helper.
 void __cdecl DeleteBug(DWORD Owner) {
     DWORD* Butterflies = (DWORD*)DAT_083a1218;
-    DWORD* End         = (DWORD*)(DAT_083a1218 + 0x1158);
-    do {
+    for (int slot = 0; slot < 10; ++slot) {
         if (*(BYTE*)Butterflies) {
             if (Butterflies[63] == Owner) {
                 *(BYTE*)Butterflies = 0;
             }
         }
         Butterflies += 111;
-    } while ((int)(uintptr_t)Butterflies < (int)(uintptr_t)End);
+    }
 }
 
 // IDA: CreateBug (0x004FFFD0)

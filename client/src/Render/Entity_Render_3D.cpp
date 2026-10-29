@@ -124,8 +124,10 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     void     *pModel;
     float     fVar14;
     int       iVar2, iVar7;
+    int       entityType;
     float    *pfVar3;
     uint      uVar4;
+    uint      randomRemainder;
     unsigned short uVar5;
     float    *pfVar6, *pfVar12, *pfVar13, *pfVar15, *pfVar16, *pfVar17;
     bool      bVar8;
@@ -196,10 +198,11 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             lVar10 = (longlong)WorldTime;   // IDA: (-(std::int64_t)WorldTime % 1000) * 0.001
             *(float *)(param_1 + 0x70) = (float)(-(int)lVar10 % 1000) * _DAT_00552500;
             uVar4 = _rand();
-            pfVar3 = (float *)(uVar4 & 0x80000001);
-            if ((int)pfVar3 < 0)
-                pfVar3 = (float *)(((int)pfVar3 - 1U | 0xfffffffe) + 1);
-            if (pfVar3 == (float *)0x0) {
+            randomRemainder = uVar4 & 0x80000001;
+            if ((int)randomRemainder < 0)
+                randomRemainder = ((randomRemainder - 1U | 0xfffffffe) + 1);
+            pfVar3 = (float *)randomRemainder;
+            if (randomRemainder == 0) {
                 // Low puff: y=-20
                 uVar4 = _rand() & 0x8000001f;
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
@@ -243,14 +246,14 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         // Type 103 — weapon spark trigger (once per anim cycle, 1/32 chance)
         if ((pfVar3 == (float *)0x67) &&
             (pfVar3 = (float *)(*(short *)((uint)*(byte *)(param_1 + 0x105) * 0x10 + 8
-                                           + *(int *)((int)pModel + 0x30)) + -1),
-             (float *)(int)*(short *)((int)pModel + 0xa8) == pfVar3))
+                                           + *(int *)(static_cast<unsigned char*>(pModel) + 0x30)) + -1),
+             (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8) == pfVar3))
         {
             uVar4 = _rand() & 0x8000001f;
             bVar8 = (uVar4 == 0);
             if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xffffffe0) == 0xffffffff);
-            if (bVar8) { pfVar3 = (float *)SetAction(param_1, 1); return pfVar3; }
-            pfVar3 = (float *)SetAction(param_1, 0);
+            if (bVar8) { pfVar3 = (float *)SetAction(AsObject(param_1), 1); return pfVar3; }
+            pfVar3 = (float *)SetAction(AsObject(param_1), 0);
             return pfVar3;
         }
         break;
@@ -327,9 +330,10 @@ float * __cdecl Entity_SpawnEffects(int param_1)
             }
             BMD_TransformPosition(pModel, (float *)&DAT_0697157c, local_c, &local_18, '\0');
             uVar4 = _rand() & 0x80000007;
-            pfVar3 = (float *)(uVar4);
-            if ((int)pfVar3 < 0) pfVar3 = (float *)(((int)pfVar3 - 1U | 0xfffffff8) + 1);
-            if (pfVar3 == (float *)0x0) {
+            randomRemainder = uVar4;
+            if ((int)randomRemainder < 0) randomRemainder = ((randomRemainder - 1U | 0xfffffff8) + 1);
+            pfVar3 = (float *)randomRemainder;
+            if (randomRemainder == 0) {
                 iVar2 = 8;
                 do {
                     iVar7 = _rand();
@@ -351,7 +355,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     // ── case 4: in-world variant ──────────────────────────────────────────────
     case 4:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
-        if ((int)pfVar3 > 0x12 && (int)pfVar3 < 0x15) {
+        entityType = *(short *)(param_1 + 2);
+        if (entityType > 0x12 && entityType < 0x15) {
             if (*(short *)(param_1 + 2) == 0x13) {
                 uVar5 = 0x4f0; local_1c = 0.0f;
                 local_24 = fVar14; local_20 = _DAT_005526e4;
@@ -409,7 +414,8 @@ LAB_004fc55a:
     // ── case 8: various special types ─────────────────────────────────────────
     case 8:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
-        switch ((int)pfVar3) {
+        entityType = *(short *)(param_1 + 2);
+        switch (entityType) {
         case 0:
             fVar9 = (float10)fsin((float10)WorldTime * (float10)_DAT_005528e0);
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
@@ -527,7 +533,8 @@ LAB_004fc55a:
     // ── case 0xa: skill particle emitters (types 0–5, 0xa) ───────────────────
     case 0xa:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
-        switch ((int)pfVar3) {
+        entityType = *(short *)(param_1 + 2);
+        switch (entityType) {
         case 0: case 1: case 2: {
             if (*(int *)(param_1 + 0x58) != -2) {
                 // IDA pasa `Angle` (reusado como Light) = (0.1, 0.1, 0.1) a
@@ -612,16 +619,18 @@ LAB_004fc55a:
                 }
             }
             uVar4 = _rand() & 0x80000001;
-            pfVar3 = (float *)(uVar4);
-            if ((int)pfVar3 < 0) pfVar3 = (float *)(((int)pfVar3 - 1U | 0xfffffffe) + 1);
-            if (pfVar3 == (float *)0x0) {
+            randomRemainder = uVar4;
+            if ((int)randomRemainder < 0) randomRemainder = ((randomRemainder - 1U | 0xfffffffe) + 1);
+            pfVar3 = (float *)randomRemainder;
+            if (randomRemainder == 0) {
                 uVar11 = (longlong)(*(float *)(param_1 + 0x80));   // IDA: (std::int64_t)*(float*)(o+128) % 4
-                pfVar3 = (float *)((uint)uVar11 & 0x80000003);
+                randomRemainder = (uint)uVar11 & 0x80000003;
                 bVar8 = ((uVar11 & 0x80000003) == 0);
-                if ((int)pfVar3 < 0) {
-                    pfVar3 = (float *)(((int)pfVar3 - 1U | 0xfffffffc) + 1);
-                    bVar8 = (pfVar3 == (float *)0x0);
+                if ((int)randomRemainder < 0) {
+                    randomRemainder = ((randomRemainder - 1U | 0xfffffffc) + 1);
+                    bVar8 = (randomRemainder == 0);
                 }
+                pfVar3 = (float *)randomRemainder;
                 *(float *)(param_1 + 0x80) = *(float *)(param_1 + 0x80) + _DAT_0055256c;
                 if (bVar8) {
                     pfVar3 = (float *)(param_1 + 0x1c);

@@ -24,10 +24,10 @@ static BYTE InventoryPoolToMoveFlag(const BYTE* poolBase) {
     return 0;
 }
 
-static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
-                                          const BYTE* targetPoolBase) {
-    g_ItemMoveSourcePool = (DWORD)(uintptr_t)sourcePoolBase;
-    g_ItemMoveTargetPool = (DWORD)(uintptr_t)targetPoolBase;
+static void InventoryMove_SetPendingPools(BYTE* sourcePoolBase,
+                                          BYTE* targetPoolBase) {
+    g_ItemMoveSourcePool = sourcePoolBase;
+    g_ItemMoveTargetPool = targetPoolBase;
 }
 
 // ConvertGold64 @ 0x004C3E10 (~23 lines) — formats gold with thousand separators
@@ -61,8 +61,9 @@ int __cdecl ConvertGold64(int Zen, char* Buffer) {
 //
 // Desviación: donde IDA hace `sprintf(String, GlobalText[N])` (una cadena de
 // datos usada como formato) nosotros usamos `sprintf(String, "%s", GlobalText[N])`.
-void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort) {
+void __cdecl RenderItemName(int i, const OBJECT* object, int ItemLevel, int ItemOption, bool Sort) {
     (void)i;
+    const BYTE* o = reinterpret_cast<const BYTE*>(object);
 
     const int v5 = ItemLevel;
     const int v6 = (ItemLevel >> 3) & 0xF;
@@ -80,7 +81,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
         String[used] = '\0';
     };
 
-    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));   // g_hFont
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));   // g_hFont
     const short v7 = *(short*)(o + 2);
 
     // &ItemAttribute[v7 - 400] — ITEM_ATTRIBUTE stride 0x40, Name en offset 0.
@@ -92,7 +93,7 @@ void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool 
         // modelo = tipo + 400; el catálogo da el tipo de ese modelo.
         int attrIdx = gContentCatalog.GetModelItemType((int)v7);
         if (attrIdx < 0) attrIdx = (int)v7 - ITEM_MODEL_BASE;
-        unsigned int abase = ItemAttribute_Base();
+        std::uintptr_t abase = ItemAttribute_Base();
         if (abase && attrIdx >= 0 && attrIdx < ITEM_MAX_EX)
             name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }
@@ -257,7 +258,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                                             int gridH, int slotType);
 
 unsigned int __stdcall Inventory_DropItem(void) {
-    BYTE* invBase = (BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE* invBase = DAT_07ea9800;
     int gridW = 8;
     int gridH = (invBase == &OffsetMixItems[0]) ? 4 : 8;
     int originX = 0;
@@ -352,7 +353,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     if (itemWidth <= 0 || itemHeight <= 0) return 0;
 
     // Use the args directly.
-    BYTE* sourceInvBase = (BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE* sourceInvBase = DAT_07ea9800;
     BYTE  sourceMoveFlag = InventoryPoolToMoveFlag(sourceInvBase);
     BYTE  targetMoveFlag = InventoryPoolToMoveFlag(invBase);
     int   gridWidth  = gridW;

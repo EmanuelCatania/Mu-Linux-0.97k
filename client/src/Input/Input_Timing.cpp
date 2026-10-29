@@ -37,7 +37,7 @@ void ToggleFpsCounter() {
 // the FPS counter (DAT_07E11DCC = 0) and updates the timestamp.
 // IDA: RenderDebugWindow
 void __cdecl UI_UpdateFpsCounter(void) {
-    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
     DAT_00559c78 = 0xffffffff;
     SetBackgroundTextColor = 0xff000000;
     // DESVIACION: F12 muestra/oculta el contador bajo los avisos superiores

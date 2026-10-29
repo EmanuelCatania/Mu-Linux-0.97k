@@ -122,7 +122,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     // ItemObjectAttribute: initialise local_1ec as a minimal OBJECT for the item.
     // It sets LightEnable, reads item attributes.
-    ItemObjectAttribute((int)local_1ec);
+    ItemObjectAttribute(AsObject(local_1ec));
 
     AsModel(iVar7)->LightEnable = 0;  // LightEnable = false
 
@@ -605,7 +605,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // BMD_Animation: __thiscall (model, BoneTransformArray, AnimFrame, PriorAnimFrame,
     //               PriorAction, Angle, HeadAngle, Parent=1, Translate=1)
     void* pModel = (void*)iVar7;
-    BMD_Animation(pModel, (int)&DAT_06970a9c,
+    BMD_Animation(pModel, reinterpret_cast<float*>(&DAT_06970a9c),
                  *(float*)((int)param_5 + 0x08),        // AnimationFrame
                  *(unsigned int*)((int)param_5 + 0x0c), // PriorAnimationFrame (as uint)
                  *(unsigned char*)((int)param_5 + 0x06), // PriorAction

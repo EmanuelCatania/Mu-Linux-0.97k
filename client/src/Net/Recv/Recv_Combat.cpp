@@ -33,7 +33,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, nullptr, (float*)entity, (float*)-1, nullptr, 0);
-            PlayBuffer(104, (DWORD)(uintptr_t)entity, 0);
+            PlayBuffer(104, AsObject(entity), 0);
         }
         if ((effect & 0x80) != 0 && (physicalEffects & 0x80) == 0) {
             DeleteEffect(1274, (DWORD)(uintptr_t)entity, 3);
@@ -199,8 +199,8 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // tirada 50/50 de mas abajo.  O sea aca el heroe SI se aturde, y
     // por eso en el cliente de referencia el Lightning te frena.
     if (stunFlag) {
-        extern void __cdecl SetPlayerShock(int c, int Hit);
-        SetPlayerShock((int)tgtSlot, (int)damage);
+        extern void __cdecl SetPlayerShock(CHARACTER* c, int Hit);
+        SetPlayerShock(AsCharacter(tgtSlot), (int)damage);
         float pos[3] = { *(float*)(tgtSlot + 0x10),
                          *(float*)(tgtSlot + 0x14),
                          *(float*)(tgtSlot + 0x18) };
@@ -276,8 +276,8 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     (((int)r < 0) &&
                      ((((char)r - 1) | (int)0xFFFFFFFE) == -1));
         if (fire) {
-            extern void __cdecl SetPlayerShock(int c, int Hit);
-            SetPlayerShock((int)tgtSlot, (int)damage);
+            extern void __cdecl SetPlayerShock(CHARACTER* c, int Hit);
+            SetPlayerShock(AsCharacter(tgtSlot), (int)damage);
         }
     }
 
@@ -410,8 +410,8 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     case 100: case 101: {
         // Ataque despachado — llama a SetPlayerAttack para animar por
         // weapon equipped. SetPlayerAttack is SetPlayerAttack.
-        extern void __cdecl SetPlayerAttack(int, int, int, int);
-        SetPlayerAttack((int)slot, 0, 0, 0);
+        extern void __cdecl SetPlayerAttack(CHARACTER*, int, int, int);
+        SetPlayerAttack(AsCharacter(slot), 0, 0, 0);
         AttackPlayer = slotIdx;      // IDA: AttackPlayer = Index
         AsCharacter(slot)->SkillStage = 1;             // c+757=1 attack pending
         *(int *)&AsCharacter(slot)->Object.AnimationFrame = 0;   // reset frame
@@ -419,8 +419,8 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         break;
     }
     case 102: case 103: {
-        extern void __cdecl SetPlayerStop(int);  // SetPlayerStop
-        SetPlayerStop((int)slot);
+        extern void __cdecl SetPlayerStop(CHARACTER*);  // SetPlayerStop
+        SetPlayerStop(AsCharacter(slot));
         break;
     }
     case 108: SetAnim(slot, walking ? 135 : 133); break;
@@ -543,21 +543,21 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     if (*(WORD *)&AsCharacter(caster)->Object.Type == 390) {
         switch (skill) {
-        case 10: SetAction((int)caster, 90); break;
-        case 12: SetAction((int)caster, 88); break;
-        case 14: SetAction((int)caster, 89); break;
+        case 10: SetAction(AsObject(caster), 90); break;
+        case 12: SetAction(AsObject(caster), 88); break;
+        case 14: SetAction(AsObject(caster), 89); break;
         case 24:
-        case 52: SetPlayerAttack((int)caster, 0, 0, 0); break;
+        case 52: SetPlayerAttack(AsCharacter(caster), 0, 0, 0); break;
         case 41:
-        case 55: SetAction((int)caster, 61); break;
-        case 42: SetAction((int)caster, 62); break;
-        case 43: SetAction((int)caster, 67); break;
-        case 47: SetAction((int)caster, 66); break;
-        case 56: SetAction((int)caster, 81); break;
-        default: SetPlayerMagic((int)caster); break;
+        case 55: SetAction(AsObject(caster), 61); break;
+        case 42: SetAction(AsObject(caster), 62); break;
+        case 43: SetAction(AsObject(caster), 67); break;
+        case 47: SetAction(AsObject(caster), 66); break;
+        case 56: SetAction(AsObject(caster), 81); break;
+        default: SetPlayerMagic(AsCharacter(caster)); break;
         }
     } else {
-        SetPlayerAttack((int)caster, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(caster), 0, 0, 0);
     }
     *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
     AsCharacter(caster)->SkillStage = 1;
@@ -644,8 +644,8 @@ void NetRecv_16(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (index >= 0 && index < 400 && DAT_07abf5d0) {
             BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
             if (key & 0xFFFF8000) {
-                extern void __cdecl SetPlayerDie(int c_in);   // SetPlayerDie
-                SetPlayerDie((int)(intptr_t)c);
+                extern void __cdecl SetPlayerDie(CHARACTER* c_in);   // SetPlayerDie
+                SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
                 *(BYTE*) (hero + 756) = 2;        // gate de las esferas de EXP
@@ -800,8 +800,8 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
             if (key & 0xFFFF8000) {
                 // Murio un PLAYER (PvP): anim de muerte, sin EXP.
-                extern void __cdecl SetPlayerDie(int c_in);
-                SetPlayerDie((int)(intptr_t)c);
+                extern void __cdecl SetPlayerDie(CHARACTER* c_in);
+                SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
                 *(BYTE*) (hero + 756) = 2;        // gate de las esferas
@@ -883,7 +883,7 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             const bool shock = (r == 0) ||
                                ((int)r < 0 &&
                                 ((((char)r - 1) | (int)0xFFFFFFFE) == -1));
-            if (shock) SetPlayerShock((int)(uintptr_t)tgt, dmg);
+            if (shock) SetPlayerShock(AsCharacter(tgt), dmg);
             if (dmg) {
                 float pos[3];
                 pos[0] = *(float*)(tgt + 0x10);

@@ -51,19 +51,19 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Resolves the entity reference at slot+0x3c, copies its world position to the
 // model render slot, selects the target bone via equip-flags, then calls
 // BMD_TransformPosition to animate/position it.
-void __cdecl ItemDrop_SetupRenderRef(int param_1) {
+void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
     int iVar1 = *(int*)(param_1 + 0x3c);
     float local_c[3] = {0.0f, 0.0f, 0.0f};
-    void *this_ = (void*)(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
+    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
     if (*(int*)(param_1 + 4) == 0x4d0)
         local_c[1] = -120.0f;
-    *(unsigned int*)((int)this_ + 0x6c) = *(unsigned int*)(iVar1 + 0x10);
-    *(unsigned int*)((int)this_ + 0x70) = *(unsigned int*)(iVar1 + 0x14);
-    *(unsigned int*)((int)this_ + 0x74) = *(unsigned int*)(iVar1 + 0x18);
+    *(unsigned int*)(this_ + 0x6c) = *(unsigned int*)(iVar1 + 0x10);
+    *(unsigned int*)(this_ + 0x70) = *(unsigned int*)(iVar1 + 0x14);
+    *(unsigned int*)(this_ + 0x74) = *(unsigned int*)(iVar1 + 0x18);
     uint uVar2 = *(uint*)(param_1 + 8) & 0x80000001;
     if ((int)uVar2 < 0) uVar2 = (uVar2 - 1 | 0xfffffffe) + 1;
     BMD_TransformPosition(this_,
-        (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + 0x274 + uVar2 * 0x18)) * 0x30
+        (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + 0x274 + static_cast<intptr_t>(static_cast<int32_t>(uVar2)) * 0x18)) * 0x30
                  + *(int*)(iVar1 + 0x114)),
         local_c,
         (float*)(param_1 + 0x10),
@@ -212,7 +212,7 @@ void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float
 // Sets model color at +0x48..+0x50. Special cases for type 0x144 (two-tone), 0x1d7
 // (sets entity +0x58=2 then resets to -1 afterward), 0x235 (BMD__RenderBody with extra arg).
 // Falls through to BMD__RenderBody for bone rendering.
-void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, float scale,
+void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
@@ -257,7 +257,7 @@ void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, floa
 
 // Entity_SetModelColorAlt @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
 // No special type 0x144 path; uses Weapon_SetColorAlt instead of PartObjectColor.
-void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float scale,
+void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
@@ -369,7 +369,7 @@ void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, floa
                 corners[k][2] = out[2];
             }
             Terrain_RenderQuad((float)icx + ti, (float)icy + tj, 1.0f, 1,
-                         (int)corners, '\0', alpha);
+                         corners, '\0', alpha);
         }
     }
     return;

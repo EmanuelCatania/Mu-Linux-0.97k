@@ -95,7 +95,7 @@ static void Terrain_ProcessObjects(bool simulation)
                             } else {
                                 RenderDerivedState_SaveObject(entity);
                                 Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
-                                WorldEffects_Draw((int)entity);
+                                WorldEffects_Draw(AsObject(entity));
                             }
                         }
 

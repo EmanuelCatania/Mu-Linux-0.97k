@@ -48,8 +48,8 @@ static void LoginScene_ApplySafeObjectAnim()
         return;
 
     extern float WorldTime;  // WorldTime
-    extern void __cdecl MoveObject_Special(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
-    extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
+    extern void __cdecl MoveObject_Special(OBJECT* object); // Actualización especial de objetos del login.
+    extern int __cdecl Calc_RenderObject(OBJECT* param_1, char param_2, int param_3);  // Calc_RenderObject
     extern void __stdcall MoveBugs(void);  // butterfly/helper owner-follow update
 
     for (int i = 0; i < 9; ++i) {
@@ -59,7 +59,7 @@ static void LoginScene_ApplySafeObjectAnim()
 
         // Match the original order more closely: Alpha(o) runs before the
         // animation tick and can early-out nearly invisible objects.
-        MoveObject_Special((int)obj);
+        MoveObject_Special(AsObject(obj));
         if (AsObject(obj)->Alpha < 0.01f)
             continue;
 
@@ -390,17 +390,17 @@ int Game_SceneUpdate(void)
     // the login scene nudges the three background characters into alternate
     // idle/gesture actions with a 1/128 chance each frame.
     {
-        int e3 = DAT_07abf5d0 + 0xabc;  // entity 3
-        if ((_rand() & 0x7f) == 0) SetAction(e3, 113);
-        if ((_rand() & 0x7f) == 0) SetAction(e3, 99);
+        std::uintptr_t e3 = DAT_07abf5d0 + 0xabc;  // entity 3
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e3), 113);
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e3), 99);
 
-        int e2 = DAT_07abf5d0 + 0x728;  // entity 2
-        if ((_rand() & 0x7f) == 0) SetAction(e2, 115);
-        if ((_rand() & 0x7f) == 0) SetAction(e2, 111);
+        std::uintptr_t e2 = DAT_07abf5d0 + 0x728;  // entity 2
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 115);
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 111);
 
-        int e1 = DAT_07abf5d0 + 0x394;  // entity 1
-        if ((_rand() & 0x7f) == 0) SetAction(e1, 101);
-        if ((_rand() & 0x7f) == 0) SetAction(e1, 111);
+        std::uintptr_t e1 = DAT_07abf5d0 + 0x394;  // entity 1
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 101);
+        if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 111);
     }
 
     // Optional UI scene load if DAT_083a7af4 == 1 && no server selected
@@ -463,7 +463,7 @@ int Game_SceneUpdate(void)
                 }
                 DAT_083a7c14 = 0;
                 DAT_083a7c44 = 0;
-                Net_Disconnect(((int)(uintptr_t)SocketClient));
+                Net_Disconnect(SocketClient);
                 DAT_05826cb0 = 0;
                 CreateSocket(PTR_s_connect_muonline_co_kr_005615b8,
                              (unsigned)g_ServerPort);
@@ -637,7 +637,7 @@ int Game_SceneUpdate(void)
             DAT_083a7c18 = 0x1d;
             DAT_083a7c1c = 1;
             DAT_083a7c20 = 0x32;
-            Net_Disconnect(((int)(uintptr_t)SocketClient));
+            Net_Disconnect(SocketClient);
             PlayBuffer(0x1b, 0, 0);
         }
     }

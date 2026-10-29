@@ -82,9 +82,9 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   P+1460  RIDE_SKILL               v34 + 0.3
 extern DWORD CharacterAttribute_var;     // alias - already in our globals
 void __cdecl SetAttackSpeed(void) {
-    DWORD ca = (DWORD)DAT_07cf1ff4;       // CharacterAttribute base
+    const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);
     if (ca == 0) return;
-    DWORD models = DAT_05828d58;          // Models base
+    const BYTE* models = reinterpret_cast<const BYTE*>(DAT_05828d58);
     if (models == 0) return;
 
     // Read stats (16-bit unsigned)
@@ -110,7 +110,8 @@ void __cdecl SetAttackSpeed(void) {
 
     // Models[Player(390)] base animation table pointer at offset 0x11E18
     // (= 188*390 + 48 = entry +0x30 = animation array ptr).
-    int* tablePtrPtr = (int*)((char*)(uintptr_t)models + 73368);  // 0x11E18
+    // El campo BMD conserva 32 bits hasta la migración de su layout en B2.
+    const std::uint32_t* tablePtrPtr = reinterpret_cast<const std::uint32_t*>(models + 73368);
     if (*tablePtrPtr == 0) return;
     char* P = (char*)(uintptr_t)*tablePtrPtr;
 

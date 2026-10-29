@@ -15,7 +15,7 @@ int QuestX(int offset) { return gWindow.PanelOrigin(Ui::Quest) + offset; }
 // FUN_00402ff0 @ 0x00402FF0 (~59 lines) — Quest dialog: render message box text + answer choices
 // __fastcall(ecx=questObj). Renders g_lpszMessageBoxCustom lines centered, then answer list
 // with mouse hover highlight (red if hovered). Uses g_iNumAnswer, g_iNumLineMessageBoxCustom.
-void __fastcall FUN_00402ff0(int param_1) {
+void __fastcall FUN_00402ff0(const BYTE* param_1) {
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     EnableAlphaTest(true);
@@ -74,7 +74,7 @@ int __cdecl FUN_004c3dd0(int param_1);
 //   -1  (= pQuest + 39 + 18*i) 1 = la entrada pide un item
 char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
 {
-    const int This = (int)(uintptr_t)pThis;
+    const BYTE* This = static_cast<const BYTE*>(pThis);
 
     if (*(BYTE *)(This + 0x1c87f) == 0) return 0;      // el panel no esta abierto
     if (*(char *)(This + 0x1c882) != a2) return 0;     // el estado no es el pedido
@@ -112,7 +112,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
                 ret = 0;
             }
             const char *name = "";
-            unsigned int abase = ItemAttribute_Base();
+            std::uintptr_t abase = ItemAttribute_Base();
             if (abase && nType >= 0 && nType < ITEM_MAX_EX)
                 name = (const char *)(uintptr_t)(abase + (unsigned int)nType * 64u);
             crt_sprintf(buf, "%s x %d", name, nCount);
@@ -145,7 +145,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
 // decide el color del boton).
 void __fastcall FUN_00403320(void* param_1) {
     char Buffer[100];
-    int  This = (int)(uintptr_t)param_1;
+    const BYTE* This = static_cast<const BYTE*>(param_1);
 
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
@@ -171,7 +171,7 @@ void __fastcall FUN_00403320(void* param_1) {
                 MouseLButton = 0;
             }
         }
-        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         GL_DrawTexture(240, (float)proceed.x, (float)proceed.y, (float)proceed.width, (float)proceed.height,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(QuestX(95), 360, GlobalText[699]);
@@ -194,18 +194,18 @@ void __fastcall FUN_00403320(void* param_1) {
     GL_DrawTexture(280, (float)close.x, (float)close.y, (float)close.width, (float)close.height,
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if (close.Contains((int)MouseX, (int)MouseY)) {
-        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+        gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
         m_dwTextColor = 0xFFFFFFFFu;
         m_dwBackColor = 0xFF000000u;
         RenderTipText(QuestX(25), 382, GlobalText[225]);
     }
 
     m_dwBackColor = 0;
-    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)(DWORD)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+    gFont.SelectFont(gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
     m_dwTextColor = 0xFFF0FF96u;
 
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A
-    int questBase = This + 584 * questIdx;
+    const BYTE* questBase = This + 584 * questIdx;
     int nameW = 120 * (int)gWindow.GetWidth() / 0x280;
     // getMonsterName devuelve NULL mientras MonsterScript no esté parseada; el
     // original no lo contempla.
@@ -226,7 +226,7 @@ void __fastcall FUN_00403320(void* param_1) {
 void __fastcall FUN_00403a40(void* param_1);
 char __fastcall FUN_00403f30(void* param_1) {
     if (param_1 == nullptr) return 1;
-    unsigned char mode = *(unsigned char*)((int)(uintptr_t)param_1 + 116863);  // +0x1C87F
+    unsigned char mode = *(static_cast<const BYTE*>(param_1) + 116863);  // +0x1C87F
     if (mode == 1)      FUN_00403320(param_1);
     else if (mode == 2) FUN_00403a40(param_1);
     return 1;
@@ -263,7 +263,8 @@ void __fastcall FUN_00403a40(void* param_1) {
     // Render separator lines (bitmap 0x117) and border lines (bitmap 0x104)
     // Dispatch to FUN_00403700(1 or 2) or CWsctlc__LogPrintOn() based on selected tab
     // Close button, NPC name, dialog answers
-    char cVar1 = *(char*)((int)param_1 + 0x1c87d);
+    const BYTE* quest = static_cast<const BYTE*>(param_1);
+    char cVar1 = *(const char*)(quest + 0x1c87d);
     if (cVar1 == '\0') {
         FUN_00403700(param_1, NULL, 1);
     } else if (cVar1 == '\x01') {
@@ -272,7 +273,7 @@ void __fastcall FUN_00403a40(void* param_1) {
         CWsctlc__LogPrintOn();
     }
     // Texto del dialogo + respuestas.
-    FUN_00402ff0((int)(uintptr_t)param_1);
+    FUN_00402ff0(quest);
     Gfx::Color3f(1.0f, 1.0f, 1.0f);
 }
 

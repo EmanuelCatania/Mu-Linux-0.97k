@@ -83,7 +83,7 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
 //   type 0xe1 with flag 0x200 → animated sine wave brightness
 //   dark-map flag at param_1+0xdc → full light from map
 //   otherwise → map light * 0.2 scale
-void __cdecl Entity_GetLightScale(int param_1,int param_2)
+void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
 {
   float10 fVar1;
   // float[3] contiguo: RequestTerrainLight escribe 3 floats seguidos desde el

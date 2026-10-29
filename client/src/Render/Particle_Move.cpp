@@ -1,6 +1,7 @@
 // Particle_Move.cpp
 
 #include "stdafx.h"
+#include <cstdint>
 #include "globals.h"
 #include "functions.h"
 
@@ -225,11 +226,11 @@ void __stdcall MoveParticles(void)
                     fVar11 = (float10)_DAT_00552660;
                     P_SCALE(iVar9) = (float)(fVar12 * fVar11);
                     if (P_SUB(iVar9) < 2) {
-                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                     } else {
                         P_SCALE(iVar9) = (float)(fVar12 * fVar11 * (float10)_DAT_00552adc);
                         P_ROT(iVar9) -= _DAT_00552664;
-                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                     }
                 }
                 break;
@@ -238,7 +239,7 @@ void __stdcall MoveParticles(void)
             case 0x4d0: {
                 fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                 P_SCALE(iVar9) = (float)(fVar11 * (float10)_DAT_00552540);
-                ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
+                ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(P_BASE + iVar9));
                 break;
             }
 
@@ -725,10 +726,9 @@ void __stdcall MoveParticles(void)
                         break;
                     case 2:
                         if (P_LIFE(iVar9) < 1) P_ACTIVE(iVar9) = '\0';
-                        if (P_LIFE(iVar9) > 5 && P_ACTIVE(P_ENT(iVar9) - (int)P_BASE) == '\0') {
-                            // Entity died — clamp life to 5
-                            // Note: P_ENT points to an entity; checking its active flag
-                            // Ghidra: **(char **)(P_ENT) == '\0'
+                        if (P_LIFE(iVar9) > 5 &&
+                            *reinterpret_cast<const char*>(static_cast<std::uintptr_t>(static_cast<std::uint32_t>(P_ENT(iVar9)))) == '\0') {
+                            // El owner conserva su campo de 32 bits; no depende de la base del pool.
                             P_LIFE(iVar9) = 5;
                         }
                         {

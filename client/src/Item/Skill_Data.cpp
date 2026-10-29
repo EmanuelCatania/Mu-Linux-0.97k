@@ -54,7 +54,7 @@ void __cdecl Skill_SaveBMD(const char *path)
     char *p = buf;
     for (const char *end = src + 0xa00; src < end; src += 0x28, p += 0x28) {
         memcpy(p, src, 0x28);
-        BuxConvert_0((int)p, 0x28);
+        BuxConvert_0(p, 0x28);
     }
     crt_fwrite(buf, 0xa00, 1, (int *)fp);
     DWORD cs = DAT_00b43000;
@@ -120,7 +120,7 @@ void __cdecl Skill_LoadBMD(const char *path)
     //     SkillAttribute2[j - 2] *= 2;        // el byte +0x26 de la sombra
     int off = 0;
     do {
-        BuxConvert_0((int)buf, 0x28);
+        BuxConvert_0(buf, 0x28);
         if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
             memcpy(SkillAttribute.Raw + off, buf, 0x28);
         memcpy((char *)DAT_07cf1ff8 + off, buf, 0x28);

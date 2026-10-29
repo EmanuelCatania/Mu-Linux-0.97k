@@ -37,8 +37,9 @@
 
 
 // IDA: ItemObjectAttribute (0x00502BA0)
-static int ItemObjectAttributeImpl(int param_1, const int *samples)
+static int ItemObjectAttributeImpl(OBJECT* object, const int *samples)
 {
+  BYTE* param_1 = reinterpret_cast<BYTE*>(object);
   int cursor=0;
   const auto random=[&]() { return samples ? samples[cursor++] : _rand(); };
   short sVar1;
@@ -215,8 +216,8 @@ switchD_00502c73_caseD_195:
   return iVar2;
 }
 
-int __cdecl ItemObjectAttribute(int entity) { return ItemObjectAttributeImpl(entity,nullptr); }
-int ItemObjectAttributeForRender(int entity) {
+int __cdecl ItemObjectAttribute(OBJECT* entity) { return ItemObjectAttributeImpl(entity,nullptr); }
+int ItemObjectAttributeForRender(OBJECT* entity) {
     const auto *sample=MaterialVisuals_Current();
     const int zero[2]={};
     return ItemObjectAttributeImpl(entity, sample && sample->model==AsObject(entity)->Type ? sample->attribute : zero);

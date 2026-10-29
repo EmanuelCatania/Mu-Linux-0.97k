@@ -41,6 +41,7 @@ extern void __cdecl operator_delete(void* ptr);
 // iType == -1: match any; iLevel == -1: match any.
 int __cdecl GetItemCount(int siType, int iLevel) {
     int result = 0;
+    int columns = 8;
     int *v3 = (int *)&DAT_07ea9504;
     do {
         int *v4 = v3;
@@ -56,7 +57,7 @@ int __cdecl GetItemCount(int siType, int iLevel) {
             --v5;
         } while ( v5 );
         v3 -= 17;
-    } while ( (int)v3 >= (int)&DAT_07ea9328 );
+    } while ( --columns > 0 );
     return result;
 }
 
@@ -80,7 +81,7 @@ LABEL_2: {
             {
                 v3 -= 17;
                 --v2;
-                if ( (int)v3 >= (int)&DAT_07ea9328 )
+                if ( v2 >= 0 )
                     goto LABEL_2;
                 return -1;
             }

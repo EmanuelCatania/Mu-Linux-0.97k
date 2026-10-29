@@ -23,8 +23,8 @@ void Sprite_ReplayStep();
 void Fauna_TickSprites();
 void EffectPool_TickRenderState();
 
-void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
-extern "C" void HeroEquipWatchdog(int entity);
+void DivineSkirt_Tick(const OBJECT* entity, int modelType, const PART_t* part, void *model);
+extern "C" void HeroEquipWatchdog(CHARACTER* entity);
 
 namespace {
 struct CameraPose {
@@ -72,7 +72,7 @@ void PrepareCamera() {
         // DESVIACION: cámara y suavizado avanzan una vez por paso de 40 ms.
         MoveMainCamera();
         float origin[3] = {};
-        if (DAT_07abf5d8) memcpy(origin, AsObject((int)DAT_07abf5d8)->Position, sizeof(origin));
+        if (DAT_07abf5d8) memcpy(origin, AsObject(DAT_07abf5d8)->Position, sizeof(origin));
         const int width = gWindow.IsWide() ? 640 : GetScreenWidth();
         GL_BeginViewport(0, 0, width, 48);
         Camera_SetupFrustum(gWindow.ViewportFraction((int)width), origin);
@@ -126,29 +126,29 @@ void PrepareCharacter(CHARACTER &c) {
     // DESVIACION: la sincronización del equipo puede cambiar piezas/acción y
     // liberar tela. Debe preceder a su pose SIM y no ejecutarse desde el draw.
     if (SceneFlag == 5 && (void *)&c == (void *)DAT_07abf5d8) {
-        HeroEquipWatchdog((int)&c);
+        HeroEquipWatchdog(&c);
         model = (void *)(DAT_05828d58 + o.Type * 0xbc);
     }
     char context[0xbc];
     memcpy(context, model, sizeof(context));
     if ((void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5) o.Visible = 1;
-    ObjectPose_PrepareSimulation((int)&c, 1);
-    ObjectPose_TickMeshEvents((int)&c, model,
+    ObjectPose_PrepareSimulation(AsObject(&c), 1);
+    ObjectPose_TickMeshEvents(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
-    MoltSilhouette_Tick((int)&c, model,
+    MoltSilhouette_Tick(AsObject(&c), model,
         o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)g_BoneScratch, 1);
-    MaterialVisuals_TickObjectDraw((int)&c);
+    MaterialVisuals_TickObjectDraw(&o);
     CharacterCloth_Tick((int)&c);
     const int slot = (int)(((uintptr_t)&c - (uintptr_t)DAT_07abf5d0) / sizeof(CHARACTER));
     const bool hero = (void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5;
     const int highlighted = !hero && (slot == SelectedCharacter || slot == SelectedNpc);
     CharacterEffectScratch effects;
-    Equipment_BeginCharacter((int)&c);
+    Equipment_BeginCharacter(&c);
     Equipment_SetStage(CharacterEffects_EarlyStage);
     CharacterEffects_TickEarly((int)&c, effects);
     Equipment_EndCharacter();
     Equipment_Tick((int)&c, highlighted);
-    Equipment_BeginCharacter((int)&c);
+    Equipment_BeginCharacter(&c);
     Equipment_SetStage(CharacterEffects_LateStage);
     CharacterEffects_TickLate((int)&c, effects);
     Equipment_EndCharacter();
@@ -164,7 +164,7 @@ void PrepareCharacter(CHARACTER &c) {
             memcpy(context, pants, sizeof(context));
             *(float *)((char *)pants + 0x68) = o.Scale;
             memcpy((char *)pants + 0x6c, o.Position, sizeof(o.Position));
-            DivineSkirt_Tick((int)&c, type, (int)&piece, pants);
+            DivineSkirt_Tick(&c.Object, type, &piece, pants);
             memcpy(pants, context, sizeof(context));
         }
     }

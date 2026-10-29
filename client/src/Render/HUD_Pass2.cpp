@@ -66,7 +66,7 @@ extern "C" {
 #define dword_55C9CC4        DAT_00559cc4                      // chat scroll cursor
 #define byte_7E11D6E         DAT_07e11d6e
 #define ItemAttribute        ((ITEM_ATTRIBUTE*)DAT_07d78068)
-extern "C" int DAT_07d78068;     // ItemAttribute base (ITEM_ATTRIBUTE*, stride 64)
+extern "C" std::uintptr_t DAT_07d78068;     // ItemAttribute base (ITEM_ATTRIBUTE*, stride 64)
 
 // aTime_0 — string constant.  In IDA it lives in .rdata; replicate.
 static const char aTime_0[] = "Time";
@@ -553,7 +553,7 @@ void RenderBrokenItem_(int a1)
         // Anti-tamper inner block — skipped (CharacterMachine path).
 
         WORD v12 = *(WORD*)((BYTE*)CharacterMachine + v33 + 536);
-        DWORD v13 = (DWORD)((BYTE*)CharacterMachine + v33 + 536);
+        BYTE* v13 = (BYTE*)CharacterMachine + v33 + 536;
 
         if (v12 != 0xFFFF) {
             // Usar ItemAttribute_Base() para recuperar de corrupción de DAT_07d78068 a 0x1.
@@ -573,7 +573,7 @@ void RenderBrokenItem_(int a1)
             const int kind = ItemBehaviorType((short)v12);   // 0.97.20
             if (kind != 135 && kind != 143 && (kind < 416 || kind > 419)) {
                 int level = (*(int*)(v13 + 4) >> 3) & 0xF;
-                int v30 = (int)Item_CalculateMaxDurability((void*)v13, (int)v19, level);
+                int v30 = (int)Item_CalculateMaxDurability((void*)v13, v19, level);
                 if (*(WORD*)v13 == 426) v30 = 200;
                 BYTE v21 = *(BYTE*)(v13 + 26);
 

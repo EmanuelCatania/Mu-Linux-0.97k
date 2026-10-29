@@ -187,7 +187,7 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
             break;
     }
 
-    SetCharacterScale((int)(uintptr_t)c);   // SetCharacterScale
+    SetCharacterScale(AsCharacter(c));   // SetCharacterScale
 }
 
 // 0x10
@@ -240,12 +240,12 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     // para el tipo 322. Al resto de las entidades remotas las
                     // cambia MoveMonsterClient antes de MovePath.
                     if (*(WORD *)&AsCharacter(h)->Object.Type == 322) {
-                        SetPlayerWalk((int)(uintptr_t)h);
+                        SetPlayerWalk(AsCharacter(h));
                         AsCharacter(h)->JumpTime = 1;
                     }
                 } else {
                     AsCharacter(h)->Movement = 0;
-                    SetPlayerStop((int)(uintptr_t)h);
+                    SetPlayerStop(AsCharacter(h));
                 }
             }
         }
@@ -387,7 +387,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                     AsCharacter(hero)->Object.Kind   = 1;
                     AsCharacter(hero)->TargetX = tx;
                     AsCharacter(hero)->TargetY = ty;
-                    SetCharacterClass((int)(uintptr_t)hero);   // SetCharacterClass
+                    SetCharacterClass(AsCharacter(hero));   // SetCharacterClass
                     NetLog("NET:    0x12 heroe restaurado de transformacion");
                 }
 
@@ -408,7 +408,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // esta fila del protocolo.
                 *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
                 ChangeCharacterExt((int)HeroIndex, (BYTE*)e + 5);
-                Hero_ApplyCatalogEquipment((int)(uintptr_t)hero);
+                Hero_ApplyCatalogEquipment(AsCharacter(hero));
                 ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
             }
             NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
@@ -426,7 +426,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // y el offset random inicial se come a lo sumo 127, o sea
         // quedan 402 utiles.
         float rot = ((float)dir - 1.0f) * 45.0f;
-        BYTE* slot = (BYTE*)(uintptr_t)CreateCharacter(entityId, 390, x, y, rot);
+        BYTE* slot = reinterpret_cast<BYTE*>(CreateCharacter(entityId, 390, x, y, rot));
         int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
         if (slot) {
             AsCharacter(slot)->Key = entityId;
@@ -440,18 +440,18 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             AsCharacter(slot)->PK = dirpk & 0x0F;
             switch (charSet0 & 0x0F) {
             case 1:
-                CreateTeleportEnd((unsigned int)(uintptr_t)slot);
+                CreateTeleportEnd(AsObject(slot));
                 break;
             case 2:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 135 : 133);
                 break;
             case 3:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 140 : 139);
                 break;
             case 4:
-                SetAction((int)(uintptr_t)slot,
+                SetAction(AsObject(slot),
                              (AsCharacter(slot)->Class & 7) == 2 ? 138 : 137);
                 break;
             default:
@@ -784,8 +784,8 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int cursor = 4 + hdrOff;
     // Cada entrada del pool es un ITEM_t (structs.h): Key, Item y Object.
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-    extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
-    extern void __cdecl ItemAngle(int);   // ItemAngle
+    extern int  __cdecl ItemObjectAttribute(OBJECT*);   // ItemObjectAttribute
+    extern void __cdecl ItemAngle(OBJECT*);   // ItemAngle
     // DESVIACION: el server manda PMSG_VIEWPORT_ITEM (Viewport.h) con
     // stride fijo index[2] + x + y + ItemInfo[MAX_ITEM_INFO + 1] = 12,
     // no el stride variable del 0.97k. Bound y avance usan el mismo valor.
@@ -828,9 +828,9 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // distinto que el resto.
                 if (itemType == 461 || itemType == 462 || itemType == 464 ||
                     itemType == 399 || itemType == 470)
-                    PlayBuffer(49, (DWORD)(uintptr_t)o, 0);
+                    PlayBuffer(49, AsObject(o), 0);
                 else
-                    PlayBuffer(30, (DWORD)(uintptr_t)o, 0);
+                    PlayBuffer(30, AsObject(o), 0);
             }
         }
         o->Live = 1;
@@ -865,7 +865,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // ItemObjectAttribute (CreateItem LABEL_33): setea atributos
         // de render del objeto. Sin esto el modelo puede
         // quedar sin scale/flags → invisible.
-        ItemObjectAttribute((int)(uintptr_t)o);
+        ItemObjectAttribute(AsObject(o));
 
         // BoundingBox del objeto (IDA CreateItem L129-134):
         // min = (-30,-30,-30), max = (30,30,30).
@@ -905,7 +905,7 @@ void NetRecv_20(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         // ItemAngle (CreateItem final): setea rotación del item en
         // el suelo según el terreno.
-        ItemAngle((int)(uintptr_t)o);
+        ItemAngle(AsObject(o));
 
         NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                i, key, itemType, createFlag, gx, gy);

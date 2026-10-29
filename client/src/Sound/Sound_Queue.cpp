@@ -56,7 +56,7 @@ void __cdecl Render_DrawSpritePool(void)
             if      (blend == 0) GL_SetBlendAdditive();
             else if (blend == 1) GL_SetBlendSrcAlpha();
             else if (blend == 2) GL_SetBlendSrcOver('\x01');
-            Render_DrawSprite((int)pcVar2);
+            Render_DrawSprite(AsObject(pcVar2));
             *pcVar2 = 0;
         }
     }
@@ -88,9 +88,10 @@ void __cdecl Render_DrawSpritePool(void)
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 // IDA: RenderSprite
-void __cdecl Render_DrawSprite(int param_1)
+void __cdecl Render_DrawSprite(const OBJECT* object)
 
 {
+  const BYTE* param_1 = reinterpret_cast<const BYTE*>(object);
     // DESVIACION (DLL Antilag, ret en 0x00479670): sin efectos estáticos.
     if (gUserSettings.GetAntilag(ANTILAG_STATIC_EFFECTS)) return;
   float fVar1;

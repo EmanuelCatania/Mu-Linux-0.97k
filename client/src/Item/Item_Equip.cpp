@@ -95,7 +95,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
         caster[749] = 5;                              // IDA L151
         // IDA: sub_483780 (0x00483780).
         // DESVIACION (fix del DLL, Patchs.cpp 0x00483AC5): avisar al server del camino al perseguir para atacar.
-        Combat_SendMovePathPacket((int)character, (int)character);
+        Combat_SendMovePathPacket(AsCharacter(character), AsObject(character));
         return 1;
     }
 
@@ -138,9 +138,9 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             // El objetivo es la key del propio heroe, no SelectedCharacter.
             *(BYTE*)(uintptr_t)(character + 748) = 0;
             if (*(WORD*)(uintptr_t)(character + 2) == 390)
-                SetAction((int)character, 92);     // IDA: SetAction(v4, 92)
+                SetAction(AsObject(character), 92);     // IDA: SetAction(v4, 92)
             else
-                SetPlayerAttack((int)character, 0, 0, 0); // IDA: SetPlayerAttack(v4)
+                SetPlayerAttack(AsCharacter(character), 0, 0, 0); // IDA: SetPlayerAttack(v4)
 
             const DWORD now = Platform::GetTimer().Ticks();          // IDA L599-603
             if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }

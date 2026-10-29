@@ -104,7 +104,7 @@ void __cdecl OpenMacro(char *FileName) {
 }
 
 // CSQuest::setQuestLists @ 0x00401160 (73 bytes) — set quest list from packet
-void __fastcall CSQuest__setQuestLists(int ecx, int /*edx*/, BYTE *byList, int num, int Class) {
+void __fastcall CSQuest__setQuestLists(BYTE* ecx, int /*edx*/, BYTE *byList, int num, int Class) {
     if (Class != -1) {
         *(BYTE *)(ecx + 4) = (BYTE)Class & 7;
         *(char *)(ecx + 5) = (char)(Class >> 3);
@@ -229,7 +229,7 @@ void __fastcall FUN_00408070(void *param_1_raw) {
     *(int *)(*(int *)(param_1[0x14] + 4) + 8) = 0;
     void *pvVar1 = *(void **)(param_1[0x13] + 8);
     while (pvVar1 != NULL) {
-        void *next = *(void **)((int)pvVar1 + 8);
+        void *next = *(void **)(static_cast<BYTE*>(pvVar1) + 8);
         operator_delete(pvVar1);
         pvVar1 = next;
     }
@@ -295,23 +295,24 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
 
 // CSQuest::ShowQuestNpcWindow @ 0x00401910 (75 bytes) — open quest NPC dialog
 void __fastcall CSQuest__ShowQuestNpcWindow(void *This, int /*edx*/, int index) {
+    BYTE* quest = static_cast<BYTE*>(This);
     if (index != -1) {
-        *(char *)((int)This + 0x1c87a) = (char)index;
+        *(char *)(quest + 0x1c87a) = (char)index;
     }
     CloseInventoryRelatedWindows();
     _g_bEventChipDialogEnable = 0;
     InventoryOpened = 0;
     CharacterOpened = 0;
-    *(BYTE *)((int)This + 0x1c87f) = 1;
+    *(quest + 0x1c87f) = 1;
     CSQuest__CheckQuestState(This, 0xff);
-    CSQuest__ShowDialogText((int)*(short *)((int)This + 0x1c880), 0);
+    CSQuest__ShowDialogText((int)*(short *)(quest + 0x1c880), 0);
 }
 
 
 // FUN_0040e730 @ 0x0040E730 (105 bytes) — text filter: check word against blocklist
 int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
-    char *Token = (char *)((int)This + 200);
-    if (*(char *)((int)This + 200) == '\0') return 1;
+    char *Token = static_cast<char*>(This) + 200;
+    if (*Token == '\0') return 1;
     int i = 0;
     while (true) {
         if (*Token == '\0') return 0;

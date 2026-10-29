@@ -128,12 +128,12 @@ void __cdecl AmbientParticles_Update(void)
                 *pfVar1 = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x10);
 
                 uVar6 = _rand();
-                iVar8  = (int)DAT_07abf5d8;
+                const char* const spawnHero = DAT_07abf5d8;
                 uVar6 &= 0x800003ff;
                 if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffc00) + 1;
                 // IDA: Ambient_ParticleUpdate (0x00502320): posición Y almacenada como float.
                 *(float*)&puVar9[-0x35] = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x14);
-                puVar9[-0x34] = *(unsigned int *)(iVar8 + 0x18);    // pos_z = player_z
+                puVar9[-0x34] = *(const unsigned int *)(spawnHero + 0x18);    // pos_z = player_z
 
                 // Get terrain type at spawn position
                 // IDA: Ambient_ParticleUpdate (0x00502320): truncar la posición / 100.
@@ -146,7 +146,7 @@ void __cdecl AmbientParticles_Update(void)
                 // ── Spawn logic per game state ────────────────────────────────
                 if (gMapManager.GetCurrentMap() == 0) {
                     // Connecting state: water bubble on water tiles
-                    if (*(char *)((int)&TerrainMappingLayer1 + iVar7) == '\x05') goto LAB_0050245e;
+                    if (TerrainMappingLayer1[iVar7] == '\x05') goto LAB_0050245e;
                     goto switchD_caseD_2;
                 }
                 if (gMapManager.GetCurrentMap() == 1) {
@@ -173,7 +173,7 @@ LAB_0050245e:
                     puVar9[-0x32] = 0;  // vel_y = 0
                     puVar9[-0x31] = 0;  // vel_z = 0
                     *(unsigned char *)(puVar9 + -3) = 1;
-                    *(unsigned char *)((int)puVar9 + 0x79) = 1;
+                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x79) = 1;
                     puVar9[-0x39] = 0;
                     puVar9[-0x24] = 0xffffffff;
 
@@ -187,7 +187,7 @@ LAB_0050245e:
                     uVar6 &= 0x80000003;
                     if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
                     puVar9[-4]    = 0x41500000; // size = 13.0f
-                    *(unsigned char *)((int)puVar9 + -0x5e) = 1;
+                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + -0x5e) = 1;
 
                     fVar3 = (float)(int)(uVar6 + 4) * _DAT_005524f4;
                     puVar9[-0x37] = (unsigned int)(*(int *)&fVar3);  // angular speed
@@ -195,7 +195,7 @@ LAB_0050245e:
                     // Assign type by game sub-state
                     switch (iVar8) {
                     case 0:
-                        *(short *)((int)puVar9 + -0xe6) = 0xb5;  // bubble
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb5;  // bubble
                         uVar6 = _rand();
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
@@ -205,18 +205,19 @@ LAB_0050245e:
                         break;
                     case 1:
                         fVar3 = _DAT_00552534 / fVar3;
-                        *(short *)((int)puVar9 + -0xe6) = 0xb1;  // leaf
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb1;  // leaf
                         puVar9[-7] = (unsigned int)(*(int *)&fVar3);
                         break;
                     case 6:
                         fVar3 = _DAT_00552534 / fVar3;
-                        *(short *)((int)puVar9 + -0xe6) = 0xb2;  // petal
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb2;  // petal
                         puVar9[-7] = (unsigned int)(*(int *)&fVar3);
                         break;
                     case 7:
                         // Snow: y-position check for altitude
                         uVar6 = _rand();
-                        iVar8 = (int)DAT_07abf5d8;
+                        // La captura de Hero de IDA alimenta la lógica de nieve aún omitida.
+                        // En este port se sobrescribía iVar8 sin leer esa dirección.
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[-0x37] = (unsigned int)((float)(int)(uVar6 + 8) * _DAT_005524f4);
@@ -225,7 +226,7 @@ LAB_0050245e:
                         break;
                     case 8:
                         // Type 0xb3 — lightning bolt
-                        *(short *)((int)puVar9 + -0xe6) = 0xb3;
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb3;
                         uVar6 = _rand();
                         uVar6 &= 0x80000003;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
@@ -256,21 +257,21 @@ switchD_caseD_2:
         // ── Active slot update ────────────────────────────────────────────────
         if (*(char *)(puVar9 + -0x3a) != '\0') {
             pfVar1    = (float *)(puVar9 + -0x36);
-            short modelIdx = *(short *)((int)puVar9 + -0xe6);
+            short modelIdx = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
             // Guarda propia: el modelIdx puede venir basura (ej. de un slot reciclado de
             // char-select). Models[] válido en 0..~0x4A8.
             if (modelIdx < 0 || modelIdx > 0x4A8) goto LAB_00502b38;
             this_model = (void *)(DAT_05828d58 + modelIdx * 0xbc);
 
             // Animate model
-            *(unsigned char *)((int)this_model + 0xa0) = *(unsigned char *)((int)puVar9 + 0x1d);
+            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
             BMD__PlayAnimation(this_model,
                          (float *)(puVar9 + 8),
                          (float *)(puVar9 + 9),
-                         (unsigned char *)((int)puVar9 + 0x1e),
+                         (unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1e),
                          *(float*)&puVar9[-7] * _DAT_00552504);
 
-            sVar5 = *(short *)((int)puVar9 + -0xe6);
+            sVar5 = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
 
             // Wave ring: animate scale with sine
             if ((sVar5 == 0xbc) || (sVar5 == 0xbd)) {
@@ -282,10 +283,10 @@ switchD_caseD_2:
 
             // Despawn if out-of-type or expired
             if (((sVar5 < 0xb5) || (0xbf < sVar5)) && ((int)puVar9[-0x22] < 1)) {
-                SetAction((int)(puVar9 + -0x3a), 0);
+                SetAction(AsObject((puVar9 + -0x3a)), 0);
             } else {
-                SetAction((int)(puVar9 + -0x3a), (unsigned int)(sVar5 == 0xb2));
-                Particle_PathUpdate((int)(puVar9 + -0x3a), local_20, (int)(uintptr_t)DAT_083a2e90, 10);
+                SetAction(AsObject((puVar9 + -0x3a)), (unsigned int)(sVar5 == 0xb2));
+                Particle_PathUpdate(AsObject(puVar9 + -0x3a), local_20, DAT_083a2e90, 10);
                 Matrix_BuildFromEuler((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
 
                 uVar6 = _rand();
@@ -318,11 +319,11 @@ switchD_caseD_2:
                 uVar6  = (unsigned int)lVar12;
                 lVar12 = (long long)(*pfVar1 * 0.0099999998);
                 iVar8  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
-                sVar5  = *(short *)((int)puVar9 + -0xe6);
+                sVar5  = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
 
                 // Transition to water or bounce on land
                 if (((sVar5 == 0xb5) &&
-                     (*(char *)((int)&TerrainMappingLayer1 + iVar8) != '\x05')) ||
+                     (TerrainMappingLayer1[iVar8] != '\x05')) ||
                     ((sVar5 == 0xb1) && (7 < (unsigned char)(unsigned char)DAT_0838bc70[iVar8])))
                 {
                     // Rolling angle
@@ -376,14 +377,14 @@ skip_decrement:
                     if ((int)uVar6 < 0)
                         bVar10 = ((uVar6 - 1 | 0xffffff00) == 0xffffffff);
                     if (bVar10)
-                        PlayBuffer(0xf, (int)(puVar9 + -0x3a), 0);
+                        PlayBuffer(0xf, AsObject((puVar9 + -0x3a)), 0);
                 }
             }
 
             // Decrement lifetime, possibly kill
             iVar8 = (int)puVar9[-0x22];
             puVar9[-0x22] = (unsigned int)(iVar8 - 1);
-            if ((iVar8 - 1 < 1) && (*(short *)((int)puVar9 + -0xe6) != 0xb2)) {
+            if ((iVar8 - 1 < 1) && (*(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) != 0xb2)) {
                 uVar6 = _rand();
                 uVar6 &= 0x8000003f;
                 bVar10 = (uVar6 == 0);
@@ -397,7 +398,7 @@ skip_decrement:
                 }
             }
 
-            Alpha((int)(puVar9 + -0x3a));  // commit particle state
+            Alpha(AsObject(puVar9 + -0x3a)); // Actualiza el alpha del objeto del pool.
             iVar8 = gMapManager.GetCurrentMap();
         }
 

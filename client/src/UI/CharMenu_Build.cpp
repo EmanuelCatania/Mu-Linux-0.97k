@@ -94,7 +94,7 @@ void RenderHelpWindow(void)
     // IDA: v30 = v12 / v10 (sin guarda; con otra resolucion divide por 0).
     int scale = (maxVal && colW) ? maxVal / colW : 0;
     int blankRows = isKind5 ? 0 : 11;
-    int attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
+    std::uintptr_t attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
 
     CharMenu_BuildStatRequirements(id);
     TextNum = 0;
@@ -123,7 +123,7 @@ void RenderHelpWindow(void)
     }
     TextNum = row;
 
-    ItemHelp_RequireClass(attr);
+    ItemHelp_RequireClass(reinterpret_cast<const BYTE*>(attr));
     crt_sprintf(TextList + TextNum * 100, "\n");
     ++TextNum;
     CharMenu_RenderTextList(1, 1, TextNum, colW2, 2, 1);
@@ -364,9 +364,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         do {
             iVar1 = iVar4;
             if (*pCVar3 == '\0') break;          // corta el conteo en la 1ª vacía
-            pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+            pHVar9 = gFont.GetFont(FONT_NORMAL);
             if (*piVar2 != 0) {
-                pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
+                pHVar9 = gFont.GetFont(FONT_BOLD);
             }
             gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             gFont.MeasureText(gFont.GetTextDC(), pCVar3, Platform::TextLength(pCVar3), &local_8);
@@ -424,9 +424,9 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
         pCVar3 = lpString_07e90798;
         do {
             float fAdvance;
-            pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+            pHVar9 = gFont.GetFont(FONT_NORMAL);
             if (DAT_07ea7b10[iVar1] != 0) {
-                pHVar9 = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD));
+                pHVar9 = gFont.GetFont(FONT_BOLD);
             }
             gFont.SelectFont(gFont.GetTextDC(), pHVar9);
             if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {
@@ -473,9 +473,8 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
 // pItem es la fila de ItemAttribute; +56..+59 = RequireClass[DW, DK, Elf, MG]
 // (0 = no la usa, 1 = clase base, 2 = segunda clase).  El nombre de clase es
 // GlobalText[4*r + 16 + c]: 20..23 = clases base, 24..26 = segundas clases.
-void __cdecl ItemHelp_RequireClass(int param_1)
+void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
 {
-    const BYTE* pItem = (const BYTE*)(uintptr_t)param_1;
     const BYTE* hero  = (const BYTE*)(uintptr_t)DAT_07abf5d8;
     if (!pItem || !hero) return;
     if (DAT_07eaa154 > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas

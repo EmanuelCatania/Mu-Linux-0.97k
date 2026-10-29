@@ -50,7 +50,7 @@ void __cdecl Gate_SaveBMD(const char *path)
         *(DWORD *)buf          = *(DWORD *)((char *)GateAttribute + off);
         *(DWORD *)(buf + 4)    = *(DWORD *)((char *)GateAttribute + off + 4);
         buf[8]                 = *((char *)GateAttribute + off + 8);
-        BuxConvert_0((int)buf, 9);
+        BuxConvert_0(buf, 9);
         crt_fwrite(buf, 9, 1, (int *)fp);
         off += 9;
     } while (off < 900);
@@ -77,7 +77,7 @@ void __cdecl Gate_LoadBMD(const char *path)
     int off   = 0;
     do {
         crt_fread(buf, 9, 1, (int *)fp);
-        BuxConvert_0((int)buf, 9);
+        BuxConvert_0(buf, 9);
         DWORD *dst = (DWORD *)((char *)GateAttribute + off);
         off += 9;
         dst[0] = *(DWORD *)buf;

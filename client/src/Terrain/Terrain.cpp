@@ -462,7 +462,7 @@ void __cdecl CreateTerrainLight(void) {
         do {
             // DAT_07feb288 is float[3*n]: [0]=x,[4]=y(+4),[8]=z(+8) per vertex
             // Ghidra offsets: +0=x, +4=y (DAT_07feb28c), +8=z (DAT_07feb290)
-            float fVar1 = ((*(float*)((int)&DAT_07feb288 + iVar4) + *(float*)((char*)&DAT_07feb288 + iVar4 + 8)) *
+            float fVar1 = ((*(float*)((char*)&DAT_07feb288 + iVar4) + *(float*)((char*)&DAT_07feb288 + iVar4 + 8)) *
                            _DAT_00552504 - *(float*)((char*)&DAT_07feb288 + iVar4 + 4) * _DAT_00552504) + _DAT_00552504;
             float fVar2 = _DAT_00552580;
             if (_DAT_00552580 <= fVar1) {
@@ -474,7 +474,7 @@ void __cdecl CreateTerrainLight(void) {
             do {
                 iVar4 = iVar3 + 4;
                 iVar5--;
-                *(float*)((int)&DAT_0828b608 + iVar3) = fVar2 * *(float*)((int)&DAT_07eeb238 + iVar3);
+                *(float*)((char*)&DAT_0828b608 + iVar3) = fVar2 * *(float*)((char*)&DAT_07eeb238 + iVar3);
                 iVar3 = iVar4;
             } while (iVar5 != 0);
             iVar6--;
@@ -569,7 +569,7 @@ void __cdecl Terrain_SetupCulling(void) {
 // Loads OZJ/JPEG file, decompresses, converts each pixel component to float
 // using _DAT_00552b70 (1/255 normalization), stores into float* buffer at dst.
 // Output: 3 floats per pixel (R, G, B), rows stored bottom-up (flipped).
-void __cdecl OpenJpegBuffer(char *path, int dst)
+void __cdecl OpenJpegBuffer(char *path, float* dst)
 {
     // --- Path construction (same logic as OpenJPG) ---
     char full_path[256];
@@ -610,7 +610,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
         CErrorReport__Write(0x55c9bf0, (char*)"Invalid TerrainLight JPEG\n");
         return;
     }
-    float* outFloat = (float*)(uintptr_t)(unsigned int)dst;
+    float* outFloat = dst;
     for (int y = image.height - 1; y >= 0; --y) {
         const unsigned char* row = image.pixels + y * image.width * 3;
         for (int x = 0; x < image.width * 3; ++x)
@@ -622,7 +622,7 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
 // CharacterMoveSpeed @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
 // Returns movement speed rate based on entity state (+0x300 stamina, +0x2b8 class, +0x84 flag).
 // IDA: CharacterMoveSpeed (0x00454B00)
-float10 __cdecl CharacterMoveSpeed(int c)
+float10 __cdecl CharacterMoveSpeed(CHARACTER* c)
 {
   double result; // st7
   short v2; // dx
@@ -653,7 +653,7 @@ float10 __cdecl CharacterMoveSpeed(int c)
   }
   result = 15.0;
 LABEL_12:
-  if ( (*(BYTE *)(c + 120) & 2) == 2 )
+  if ( (*(const BYTE *)(reinterpret_cast<const BYTE*>(c) + 120) & 2) == 2 )
   {
     return result * 0.5;
   }

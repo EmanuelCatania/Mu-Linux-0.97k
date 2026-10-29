@@ -66,7 +66,7 @@ int __cdecl LoadTextData_Bin(const char *FileName)
     }
 
     // XOR-decrypt in place with the 3-byte rolling key (BuxConvert_0).
-    BuxConvert_0((int)buf, (int)got);
+    BuxConvert_0(buf, (int)got);
 
     // Copy decrypted pool into GlobalText.  Each 300-byte row is already a
     // null-terminated string in the file; we don't truncate or reformat.

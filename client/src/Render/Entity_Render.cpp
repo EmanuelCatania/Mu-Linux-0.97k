@@ -186,7 +186,7 @@ void __cdecl MoveCharacterClient(float *param_1)
   if (*(char *)param_1 != '\0') {
     uVar1 = TestFrustrum2D(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
     *(char *)(param_1 + 0x58) = (char)uVar1;
-    MoveMonsterClient((int)param_1,(int)param_1);
+    MoveMonsterClient(AsCharacter(param_1), AsObject(param_1));
     MoveCharacter((int)param_1);
     MoveCharacterVisual((int)param_1);
   }
@@ -321,8 +321,9 @@ uint RenderBugs(void)
 // Entity_SetGravity — Entity_SetGravity
 // Sets the gravity value at param_2+0x84 based on entity type param_1.
 // Maps specific type ranges to negative float constants (gravity strengths).
-void __cdecl Entity_SetGravity(int param_1,int param_2)
+void __cdecl Entity_SetGravity(int param_1, void* model)
 {
+  BYTE* param_2 = static_cast<BYTE*>(model);
   if (param_1 < 0x270) {
     if (param_1 < 0x290) goto LAB_0050386e;
   }
@@ -376,7 +377,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
     param_4 = '\0';
     puVar1 = (undefined*)&DAT_06970a9c;
   }
-  Skeleton_Transform(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
+  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
                (float *)(param_2 + 0x130),param_4);
   BMD__RenderBody(param_1,(uint)param_3,AsObject(param_2)->Alpha,AsObject(param_2)->BlendMesh,
                AsObject(param_2)->BlendMeshLight,AsObject(param_2)->BlendMeshTexCoordU,AsObject(param_2)->BlendMeshTexCoordV,
@@ -393,7 +394,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
 // class 0x35c by sub-class bits. Copies position/flag fields from entity
 // to render object, then calls RenderPartObjectEffect for final draw.
 void __cdecl
-RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float param_5,uint param_6,
+RenderPartObject(int param_1,int param_2,const PART_t* param_3,float *param_4,float param_5,uint param_6,
             byte param_7,char param_8,undefined1 param_9,char param_10,int param_11,uint param_12)
 {
   void *this_;
@@ -447,18 +448,18 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
       *(undefined4 *)((int)this_ + 0x50) = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
     }
-    Entity_GetLightScale(param_1,(int)this_);
+    Entity_GetLightScale(param_1,reinterpret_cast<uintptr_t>(this_));
     if (param_8 == '\0') {
       puVar2 = *(undefined **)(param_1 + 0x114);
     }
     else {
       puVar2 = (undefined*)&DAT_06970a9c;
     }
-    Skeleton_Transform(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
+    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
-    DivineSkirt_Apply(param_1, param_2, (int)param_3, this_);
+    DivineSkirt_Apply(AsObject(static_cast<DWORD>(param_1)), param_2, param_3, this_);
     RenderPartObjectEffect(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
   }
   return;

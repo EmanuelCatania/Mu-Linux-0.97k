@@ -40,7 +40,7 @@ extern "C" void DbgLogPublic(const char* msg);   // probe AEDBG (temporal)
 // bloques a mano (menos riesgo de romper la logica de gameplay al reescribir).
 // Se hace #undef de todo justo despues del #endif de esta funcion.
 // ─────────────────────────────────────────────────────────────────────────────
-namespace CErrorReport { inline void Write(DWORD, const char*) {} }
+namespace CErrorReport { inline void Write(void*, const char*) {} }
 static const char aHashTableFullG[] = "hash table full";
 static DWORD      g_ErrorReport = 0;
 
@@ -89,7 +89,6 @@ static inline void AE_TransformPosition(DWORD model, const void* mat,
 #define FUN_00466300(pos)             FUN_00466300((float*)(uintptr_t)(pos))
 #define CreateJoint                   AE_CreateJoint
 #define TransformPosition(a,b,c,d,e)  AE_TransformPosition((DWORD)(uintptr_t)(a), (const void*)(b), (c), (d), (e))
-#define PlayBuffer(a,b,c)             PlayBuffer((a), (DWORD)(b), (BOOL)(c))
 #undef  CreateEffect
 #define CreateEffect                  AE_CreateEffect
 
@@ -443,7 +442,7 @@ void __cdecl AttackEffect(int Owner)
       else
       {
 LABEL_263:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
@@ -490,7 +489,7 @@ LABEL_265:
       else
       {
 LABEL_269:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownert == 50 && AsCharacter(Owner)->SkillStage == 1 )
       {
@@ -561,7 +560,7 @@ LABEL_269:
       else
       {
 LABEL_291:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
@@ -643,7 +642,7 @@ LABEL_293:
       else
       {
 LABEL_236:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
@@ -690,7 +689,7 @@ LABEL_238:
       else
       {
 LABEL_242:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownerr == 50 )
       {
@@ -798,7 +797,7 @@ LABEL_242:
       else
       {
 LABEL_208:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
@@ -845,7 +844,7 @@ LABEL_210:
       else
       {
 LABEL_214:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownerp == 50 && AsCharacter(Owner)->SkillStage == 1 )
       {
@@ -933,7 +932,7 @@ LABEL_214:
         else
         {
 LABEL_179:
-          CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+          CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
@@ -974,7 +973,7 @@ LABEL_181:
         else
         {
 LABEL_185:
-          CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+          CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
         }
         if ( Ownerm == 50 )
         {
@@ -1086,7 +1085,7 @@ LABEL_185:
         else
         {
 LABEL_114:
-          CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+          CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
@@ -1133,7 +1132,7 @@ LABEL_116:
         else
         {
 LABEL_120:
-          CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+          CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
         }
         if ( Ownerh == 50 )
         {
@@ -1225,7 +1224,7 @@ LABEL_120:
       else
       {
 LABEL_146:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
@@ -1272,7 +1271,7 @@ LABEL_148:
       else
       {
 LABEL_152:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownerk == 50 && AsCharacter(Owner)->SkillStage == 1 )
       {
@@ -1360,7 +1359,7 @@ LABEL_152:
       else
       {
 LABEL_44:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
@@ -1407,7 +1406,7 @@ LABEL_46:
       else
       {
 LABEL_50:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownerd == 50 && AsCharacter(Owner)->SkillStage == 14 )
       {
@@ -1566,7 +1565,7 @@ LABEL_50:
       else
       {
 LABEL_82:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
@@ -1613,7 +1612,7 @@ LABEL_84:
       else
       {
 LABEL_88:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownerf == 50 )
       {
@@ -1696,7 +1695,7 @@ LABEL_88:
       else
       {
 LABEL_6:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
@@ -1743,7 +1742,7 @@ LABEL_8:
       else
       {
 LABEL_12:
-        CErrorReport::Write((DWORD)&g_ErrorReport, aHashTableFullG);
+        CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       if ( Ownerb == 50 )
       {

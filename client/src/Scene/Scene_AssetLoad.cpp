@@ -153,7 +153,7 @@ void __cdecl Scene_LoadGameAssets(void) {
         // DESVIACION (DLL Language.cpp): Dialog_<idioma>.bmd si hay selección.
         char dialogPath[MAX_PATH];
         Dialog_LoadBMD(LocalizedDataPath("Data/Local/Dialog", ".bmd", dialogPath, sizeof(dialogPath)));
-        CSQuest_OpenQuestScript((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
+        CSQuest_OpenQuestScript(reinterpret_cast<BYTE*>(DAT_00583d8c), "Data/Local/Quest.bmd");
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
     NPCName_LoadTextData(local_64);

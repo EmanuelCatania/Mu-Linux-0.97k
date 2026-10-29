@@ -95,7 +95,7 @@ int GuildMark_FindRecordByName(const char* name)
 
 // IDA: FUN_00423CE0 — recalcula la relación local, aliada o enemiga de una entidad.
 // IDA: FUN_00423CE0 (0x00423CE0)
-void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int)
+void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, int)
 {
     BYTE* entity = (BYTE*)(uintptr_t)entityAddress;
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
@@ -122,7 +122,7 @@ void GuildWar_RefreshEntityRelations()
 
     for (int i = 0; i < 400; ++i) {
         BYTE* entity = entities + i * 916;
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
     }
 }
 
@@ -183,7 +183,7 @@ void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
 
     // IDA: SetActionClass(Hero, Hero, 128, 128) y además manda el 0x18 por su
     // cuenta (doble envío, igual que el binario).
-    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, 128, 128);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), 128, 128);
     SendRequestAction(128);
 }
 
@@ -206,7 +206,7 @@ void ReceiveGuildEndWar97k(const BYTE* packet, int size)
     // SetActionClass y ademas manda el 0x18 por su cuenta (doble envio fiel).
     if (result == 6) return;
     const bool victoryAction = result == 1 || result == 2 || result == 4;
-    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SetActionClass(AsCharacter(Hero), AsObject(Hero), victoryAction ? 113 : 107, victoryAction ? 121 : 117);
     SendRequestAction(victoryAction ? 121 : 117);
 }
 
@@ -427,7 +427,7 @@ void NetRecv_5C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         BYTE* entity = base + entitySlot * 916;
         *(short*)(entity + 474) = (short)row;
         // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
-        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
+        GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
         GuildWar_RefreshEntityRelations();
     }
     NetLog("NET: GuildMark entity=%u row=%d", (unsigned)entityKey, row);

@@ -661,7 +661,7 @@ void NetLog(const char* fmt, ...)
 void Net_ProcessPacket(void)
 {
     while (true) {
-        BYTE* Msg = (BYTE*)CWsctlc_GetReadMsg((int)(uintptr_t)SocketClient);
+        BYTE* Msg = CWsctlc_GetReadMsg(reinterpret_cast<uintptr_t>(SocketClient));
         if (!Msg) return;
 
         int HeadCode, Size;
@@ -718,13 +718,13 @@ void Net_ProcessPacket(void)
                        (hdr == 0xC3) ? '3' : '4', encLen);
                 continue;
             }
-            int needLen = CSimpleModulus_Decode(0, (int)(Msg + hdrSz), encLen, 0);
+            int needLen = CSimpleModulus_Decode(0, Msg + hdrSz, encLen, 0);
             if (needLen <= 0 || needLen > (int)sizeof(scratch)) {
                 NetLog("NET: C%c decode no entra: encLen=%d needLen=%d > scratch=%d — descarto",
                        (hdr == 0xC3) ? '3' : '4', encLen, needLen, (int)sizeof(scratch));
                 continue;
             }
-            int outLen  = CSimpleModulus_Decode((int)scratch, (int)(Msg + hdrSz), encLen, 0);
+            int outLen  = CSimpleModulus_Decode(scratch, Msg + hdrSz, encLen, 0);
             if (outLen <= 0) {
                 NetLog("NET: C%c decode FAILED encLen=%d outLen=%d",
                        (hdr == 0xC3) ? '3' : '4', encLen, outLen);

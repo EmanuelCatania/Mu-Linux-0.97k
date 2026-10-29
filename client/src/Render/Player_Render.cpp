@@ -90,7 +90,7 @@ void Player_Render(void)
             float g = *(float*)puVar1;
             float b = *(float*)(puVar1 + 1);
             Gfx::Color3f(r, g, b);
-            short classCode = *(short*)((int)puVar1 - 0xEA);
+            short classCode = *reinterpret_cast<short*>(reinterpret_cast<BYTE*>(puVar1) - 0xEA);
             float* posXYZ   = (float*)(puVar1 - 0x37);
             float* rotation = (float*)(puVar1 - 0x38);
             float  scale    = *(float*)(puVar1 - 0x32);

@@ -135,15 +135,15 @@ void __cdecl Game_MainLoop(HDC param_1)
             // Hash table rehash: reallocate with random offsets
             if (DAT_055c9be0 != NULL)
                 operator_delete((BYTE*)DAT_055c9be0);
-            DAT_055c9be0 = (DWORD)(BYTE*)operator_new(_rand() % 0xcc7 + 0x159);
+            DAT_055c9be0 = (BYTE*)operator_new(_rand() % 0xcc7 + 0x159);
 
             BYTE* old_bcc = (BYTE*)DAT_055c9bcc;
             BYTE* old_bd0 = (BYTE*)DAT_055c9bd0;
             BYTE* old_be8 = (BYTE*)DAT_055c9be8;
             BYTE* old_bec = (BYTE*)DAT_055c9bec;
 
-            DAT_055c9be8 = (DWORD)(BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
-            DAT_055c9bec = (DWORD)(BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
+            DAT_055c9be8 = (BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
+            DAT_055c9bec = (BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
 
             unsigned rnd1 = (unsigned)(_rand() & 0x3f);
             unsigned rnd2 = (unsigned)(_rand() & 0x3f);
@@ -408,7 +408,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // DAT_055ca018 y ya bloquea Game_MainLoop al inicio.
     #if 0
     if (DAT_083a7c48 != '\0' && SceneFlag == 5) {
-        if (CWsctlc_GetSocket(((int)(uintptr_t)SocketClient)) == -1) {
+        if (CWsctlc_GetSocket(reinterpret_cast<uintptr_t>(SocketClient)) == -1) {
             if (DAT_083a7c58 == 0) {
                 DAT_083a7c58 = 1;
                 CErrorReport_Write(&DAT_055c9bf0, "> Connection closed...");
@@ -466,7 +466,7 @@ static void Game_TickAmbientAudio()
     // default (apagada). Para tener música en el login alcanza con dejar un mp3
     // con ese nombre. MuTheme es el Lorencia.mp3 del pack (mismo MD5).
     if (SceneFlag == 2)
-        Music_PlayTrack((DWORD)(uintptr_t)"Data\\Music\\MuTheme.mp3", 0);
+        Music_PlayTrack("Data\\Music\\MuTheme.mp3", 0);
 
     if (SceneFlag != 5) return;
 

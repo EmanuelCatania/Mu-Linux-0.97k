@@ -23,11 +23,11 @@
 #include "functions.h"
 
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
-extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item);
+extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, const ITEM* Item);
 // -- Declaraciones de funciones que viven en otros modulos --------------
 // Migrar a functions.h mas adelante.
 int __cdecl LevelConvert(BYTE Level);
-int __cdecl Net_Disconnect(int ctx);
+int __cdecl Net_Disconnect(void* ctx);
 
 
 
@@ -66,8 +66,9 @@ extern void __cdecl operator_delete(void* ptr);
 // CSQuest::FindQuestContext @ 0x004011D0 (IDA: FUN_004011D0).
 short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param_2)
 {
+    BYTE* quest = static_cast<BYTE*>(pThis);
     int iVar1 = 0;
-    char *pcVar2 = (char *)(*(BYTE *)((int)pThis + 4) + 0x2c + (int)param_1);
+    char *pcVar2 = reinterpret_cast<char*>(param_1) + *(quest + 4) + 0x2c;
     if (0 < *param_1) {
         do {
             if (*pcVar2 != '\0') {
@@ -77,85 +78,91 @@ short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param
             pcVar2 += 0x12;
         } while (iVar1 < *param_1);
     }
-    *(char *)((int)pThis + 0x1c87a) = *(char *)((int)pThis + 0x1c87a) - 1;
+    *(char *)(quest + 0x1c87a) = *(char *)(quest + 0x1c87a) - 1;
     CSQuest_CheckQuestState(pThis, -1);
-    return *(short *)((int)pThis + 0x1c880);
+    return *(short *)(quest + 0x1c880);
 }
 
 // CSQuest::getQuestState @ 0x004016E0 (IDA: FUN_004016E0).
 void __fastcall CSQuest_GetQuestState(void *pThis, int param_1)
 {
+    BYTE* quest = static_cast<BYTE*>(pThis);
     uint uVar2;
     if (param_1 == -1) {
         uVar2 = 0;
     } else {
-        uVar2 = (uint)(*(BYTE *)((int)pThis + 0x1c87a) >> 2);
+        uVar2 = (uint)(*(quest + 0x1c87a) >> 2);
     }
-    int iVar3 = *(BYTE *)((int)pThis + 0x1c87a) - (int)uVar2;
+    int iVar3 = *(quest + 0x1c87a) - (int)uVar2;
     BYTE bVar1;
     if (iVar3 == 0) {
-        bVar1 = *(BYTE *)(uVar2 + 0x1c848 + (int)pThis);
+        bVar1 = *(quest + uVar2 + 0x1c848);
     } else {
-        bVar1 = *(BYTE *)(uVar2 + 0x1c848 + (int)pThis) >> (((BYTE)iVar3 & 0xf) << 1);
+        bVar1 = *(quest + uVar2 + 0x1c848) >> (((BYTE)iVar3 & 0xf) << 1);
     }
     if (param_1 == -1) {
-        *(BYTE *)((int)pThis + 0x1c882) = bVar1 & 3;
+        *(quest + 0x1c882) = bVar1 & 3;
     }
 }
 
 // CSQuest::CheckActCondition @ 0x00401650 (IDA: FUN_00401650).
 uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
 {
-    BYTE *in_EAX = 0;
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    BYTE* record = reinterpret_cast<BYTE*>(param_1);
+    uint legacyResult = 0;
     int iVar3 = 0;
     if (0 < *param_1) {
-        BYTE *pbVar4 = (BYTE *)(param_1 + 0x14);
+        BYTE *pbVar4 = record + 0x28;
         do {
-            in_EAX = pbVar4 + (uint)*(BYTE *)((int)pThis + 4) + (-0x28 - (int)param_1);
-            if (((in_EAX + 0x2c)[(int)param_1] == 1) &&
-                ((in_EAX = (BYTE *)(pbVar4[-1] - 1), in_EAX == (BYTE *)0x0))) {
+            // IDA 0x401669/0x401678: se cancela la base; EAX contiene un índice.
+            legacyResult = static_cast<uint>(pbVar4 - record - 0x28) + *(quest + 4);
+            if ((*(pbVar4 + 4 + *(quest + 4)) == 1) &&
+                ((legacyResult = static_cast<uint>(pbVar4[-1] - 1)), legacyResult == 0)) {
                 int iVar2 = CSQuest_FindQuestItemsInInven(
                     (uint)pbVar4[1] + (uint)*pbVar4 * 0x20,
                     (uint)pbVar4[2], 0xffffffff);
                 if (iVar2 != 0) {
                     short sVar1 = CSQuest_FindQuestContext(pThis, param_1, 1);
-                    *(short *)((int)pThis + 0x1c880) = sVar1;
-                    return (uint)((unsigned int)(ULONG_PTR)pThis & 0xffffff00);
+                    *(short *)(quest + 0x1c880) = sVar1;
+                    // Se conservan los bits del retorno legado; el llamador sólo lee AL.
+                    return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                 }
-                in_EAX = (BYTE *)0x0;
+                legacyResult = 0;
             }
             iVar3++;
             pbVar4 += 0x12;
         } while (iVar3 < *param_1);
     }
-    return ((uint)(ULONG_PTR)in_EAX >> 8) << 8 | 1;
+    return (legacyResult & 0xffffff00u) | 1u;
 }
 
 // CSQuest::CheckQuestState @ 0x00401730 (IDA: FUN_00401730).
 void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1)
 {
-    short *psVar1 = (short *)((int)pThis + (uint)*(BYTE *)((int)pThis + 0x1c87a) * 0x248 + 8);
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    short *psVar1 = reinterpret_cast<short*>(quest + (uint)*(quest + 0x1c87a) * 0x248 + 8);
     if (param_1 == -1) {
         CSQuest_GetQuestState(pThis, -1);
     } else {
-        *(char *)((int)pThis + 0x1c882) = param_1;
+        *(char *)(quest + 0x1c882) = param_1;
     }
-    char cVar2 = *(char *)((int)pThis + 0x1c882);
+    char cVar2 = *(char *)(quest + 0x1c882);
     if (cVar2 == '\x01') {
         uint uVar5 = CSQuest_CheckActCondition(pThis, psVar1);
         if ((char)uVar5 != '\0') {
             short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 2);
-            *(short *)((int)pThis + 0x1c880) = sVar3;
-            *(BYTE *)((int)pThis + 0x1c882) = 1;
+            *(short *)(quest + 0x1c880) = sVar3;
+            *(quest + 0x1c882) = 1;
         }
     } else if (cVar2 == '\x02') {
         short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 3);
-        *(short *)((int)pThis + 0x1c880) = sVar3;
+        *(short *)(quest + 0x1c880) = sVar3;
     } else if (cVar2 == '\x03') {
         uint uVar4 = CSQuest_CheckRequestCondition(pThis, psVar1, '\0');
         if ((char)uVar4 != '\0') {
             short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 0);
-            *(short *)((int)pThis + 0x1c880) = sVar3;
+            *(short *)(quest + 0x1c880) = sVar3;
         }
     }
 }
@@ -163,45 +170,47 @@ void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1)
 // CSQuest::CheckRequestCondition @ 0x00401230 (IDA: FUN_00401230).
 uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char param_2)
 {
+    BYTE* quest = static_cast<BYTE*>(pThis);
+    BYTE* record = reinterpret_cast<BYTE*>(param_1);
     int iVar8 = 0;
     int local_8 = 0;
     if (0 < *param_1) {
         int local_10 = 0;
-        char *local_c = (char *)((int)param_1 + 0x2b);
+        char *local_c = reinterpret_cast<char*>(record + 0x2b);
         do {
-            if ((uint)*(BYTE *)((uint)*(BYTE *)((int)pThis + 4) + local_10 + 0x2c + (int)param_1) ==
-                *(BYTE *)((int)pThis + 5) + 1) {
+            if ((uint)*(record + *(quest + 4) + local_10 + 0x2c) ==
+                *(quest + 5) + 1) {
                 iVar8 = 0;
                 char cVar1 = *local_c;
                 if (0 < param_1[1]) {
                     short *puVar12 = (short *)(param_1 + 0xa6);
                     do {
-                        if ((*(char *)((int)puVar12 + -3) == cVar1) ||
-                            (*(char *)((int)puVar12 + -3) == -1)) {
+                        if ((*(reinterpret_cast<char*>(puVar12) - 3) == cVar1) ||
+                            (*(reinterpret_cast<char*>(puVar12) - 3) == -1)) {
                             ushort uVar3 = *(ushort *)((BYTE *)DAT_07cf1ff4 + 0xe);
                             if (*puVar12 != 0 && uVar3 < *puVar12) {
-                                *(short *)((int)pThis + 0x1c880) = param_1[iVar8 * 8 + 0xaa];
-                                *(BYTE *)((int)pThis + 0x1c882) = 5;
-                                return (uint)(ULONG_PTR)pThis & 0xffffff00;
+                                *(short *)(quest + 0x1c880) = param_1[iVar8 * 8 + 0xaa];
+                                *(quest + 0x1c882) = 5;
+                                return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                             }
                             if (puVar12[1] != 0 && puVar12[1] < uVar3) {
                                 short sVar4 = param_1[iVar8 * 8 + 0xaa];
-                                *(BYTE *)((int)pThis + 0x1c882) = 5;
-                                *(short *)((int)pThis + 0x1c880) = sVar4;
-                                return (uint)(ULONG_PTR)pThis & 0xffffff00;
+                                *(quest + 0x1c882) = 5;
+                                *(short *)(quest + 0x1c880) = sVar4;
+                                return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                             }
                             if (*(int *)(puVar12 + 2) != 0) {
                                 if (param_2 == '\0') {
-                                    *(int *)((int)pThis + 0x1c884) = *(int *)(puVar12 + 2);
+                                    *(int *)(quest + 0x1c884) = *(int *)(puVar12 + 2);
                                 } else {
                                     int iVar5 = ((int *)DAT_07cf1ffc)[0x152];
                                     int iVar6 = *(int *)(puVar12 + 2);
-                                    *(int *)((int)pThis + 0x1c884) = iVar6;
+                                    *(int *)(quest + 0x1c884) = iVar6;
                                     if (iVar5 < iVar6) {
                                         short sVar4 = param_1[iVar8 * 8 + 0xaa];
-                                        *(BYTE *)((int)pThis + 0x1c882) = 5;
-                                        *(short *)((int)pThis + 0x1c880) = sVar4;
-                                        return (uint)(ULONG_PTR)pThis & 0xffffff00;
+                                        *(quest + 0x1c882) = 5;
+                                        *(short *)(quest + 0x1c880) = sVar4;
+                                        return static_cast<uint>(reinterpret_cast<uintptr_t>(pThis)) & 0xffffff00u;
                                     }
                                 }
                             }
@@ -216,7 +225,7 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
             local_8++;
         } while (local_8 < *param_1);
     }
-    return ((uint)(ULONG_PTR)iVar8 >> 8) << 8 | 1;
+    return (static_cast<uint>(iVar8) & 0xffffff00u) | 1u;
 }
 
 
@@ -303,9 +312,9 @@ void ClearActionObject(void)
 // Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
 // skills 6 (teleport propio) y 15 (recall de party).
 // El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
-void __cdecl SetPlayerTeleport(int param_1)
+void __cdecl SetPlayerTeleport(OBJECT* param_1)
 {
-    if (*(short *)(param_1 + 2) == 0x186) {
+    if (param_1->Type == 0x186) {
         SetAction(param_1, 0x57);
     } else {
         SetAction(param_1, 5);
@@ -316,8 +325,9 @@ void __cdecl SetPlayerTeleport(int param_1)
 // Calcula la experiencia que falta para el nivel siguiente y la guarda en
 // el struct de datos del personaje, en el offset +0x34.
 // Formula: (lvl+9)*lvl²*10, plus cubic correction term if lvl > 255.
-void __fastcall CalculateNextExperince(int param_1)
+void __fastcall CalculateNextExperince(void* machine)
 {
+    BYTE* param_1 = static_cast<BYTE*>(machine);
     uint uVar1 = (uint)*(ushort *)(param_1 + 0xe);
     int  iVar2 = (uVar1 + 9) * uVar1 * uVar1 * 10;
     *(int *)(param_1 + 0x34) = iVar2;
@@ -384,8 +394,8 @@ int __cdecl Character_FindByKey_WithClear(int a1)
 void __cdecl Characters_SetActionAll(int Action)
 {
   int i; // esi
-  DWORD v2; // eax
-  DWORD v3; // [esp-8h] [ebp-14h]
+  std::uintptr_t v2; // eax
+  std::uintptr_t v3; // [esp-8h] [ebp-14h]
 
   for ( i = 0; i < 366400; i += 916 )
   {
@@ -398,7 +408,7 @@ void __cdecl Characters_SetActionAll(int Action)
         *(DWORD *)(v2 + 28) = 0;
         *(DWORD *)(v2 + 32) = 0;
         *(DWORD *)(v2 + 36) = 1127481344;
-        SetAction(v3, Action);
+        SetAction(AsObject(v3), Action);
       }
     }
   }
@@ -435,7 +445,7 @@ void Characters_FreeAllBMDBuffers()
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
 // equipment-slot model indices, selecting the correct animated variant based
 // on Class (bits 0-2 = clase, bits 3+ = segunda clase).
-void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
+void __cdecl Character_UpdateEquipSlotAnimations(CHARACTER* param_1)
 {
     if (AsCharacter(param_1)->Object.Type != 0x186) return;
 
@@ -445,7 +455,7 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
         v2 = false;
     }
     if ((v1 < 0x22u || v1 > 0x5Bu) && v2) {
-        SetPlayerStop((int)(uintptr_t)param_1);
+        SetPlayerStop(AsCharacter(param_1));
     }
 
     int v3 = AsCharacter(param_1)->Class & 7;
@@ -475,7 +485,7 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
         *(WORD *)&AsCharacter(param_1)->BodyPart[5].Type = (WORD)(v3 + 4 * v4 + 940);
         AsCharacter(param_1)->BodyPart[5].Option1 = 0;
     }
-    SetCharacterScale((int)param_1);
+    SetCharacterScale(AsCharacter(param_1));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -527,7 +537,7 @@ char Sound_PlayFootstep()
 // NetContext_ClearSendBuffer @ 0x0043DAF0 — NetContext_ClearSendBuffer
 // Pone en cero la cola grande de paquetes de envío (0x96258 DWORDs = ~600 KB) y resetea
 // los dos contadores de longitud en los offsets +0x4014 y +0x4018.
-int __fastcall NetContext_ClearSendBuffer(int param_1)
+uintptr_t __fastcall NetContext_ClearSendBuffer(uintptr_t param_1)
 {
     DWORD *puVar2 = (DWORD *)(param_1 + 0x401c);
     for (int i = 0x96258; i != 0; i--) *puVar2++ = 0;
@@ -541,7 +551,7 @@ int __fastcall NetContext_ClearSendBuffer(int param_1)
 // con elegancia (devuelve 1). Llama a CWsctlc_Close ante errores fatales de socket (devuelve 0).
 // Devuelve 1 si tuvo éxito o si el bloqueo no es fatal.
 // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
-int __fastcall CWsctlc_FDWriteSend(int param_1)
+int __fastcall CWsctlc_FDWriteSend(uintptr_t param_1)
 {
     char* buffer = (char*)(param_1 + 0xc);
     int& pending = *(int*)(param_1 + 0x200c);
@@ -563,11 +573,12 @@ int __fastcall CWsctlc_FDWriteSend(int param_1)
 // los bytes restantes al frente del buffer.
 // Returns 0 on clean dispatch, 1 on no data / WSAEWOULDBLOCK, 3 on incomplete header.
 // IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
-int __fastcall CWsctlc_nRecv(void *param_1)
+int __fastcall CWsctlc_nRecv(void *context)
 {
-    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)((int)param_1 + 8),
-                     (char *)(*(int *)((int)param_1 + 0x4010) + 0x2010 + (int)param_1),
-                     0x2000 - *(int *)((int)param_1 + 0x4010), 0);
+    BYTE* param_1 = static_cast<BYTE*>(context);
+    int iVar2 = Platform::GetSocket().Receive(*(SOCKET *)(param_1 + 8),
+                     (char *)(*(int *)(param_1 + 0x4010) + 0x2010 + param_1),
+                     0x2000 - *(int *)(param_1 + 0x4010), 0);
     if (iVar2 == 0) { DbgLogPublic("NET: Net_Recv recv=0 (peer closed)"); return 1; }
     if (iVar2 == -1) {
         int err = Platform::GetSocket().LastError();
@@ -580,12 +591,12 @@ int __fastcall CWsctlc_nRecv(void *param_1)
     // Esto tiene que pasar ANTES de que el parser de headers C1/C2/C3/C4 vea nada,
     // porque cada byte del cable — headers incluidos — viene encriptado.
     {
-        BYTE *pNew = (BYTE*)((int)param_1 + 0x2010) + *(int *)((int)param_1 + 0x4010);
+        BYTE *pNew = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
         MuEmu::DecryptRecv(pNew, iVar2);
     }
     {
         char dbg[256];
-        BYTE *p = (BYTE*)((int)param_1 + 0x2010) + *(int *)((int)param_1 + 0x4010);
+        BYTE *p = (BYTE*)(param_1 + 0x2010) + *(int *)(param_1 + 0x4010);
         int nShow = iVar2 > 24 ? 24 : iVar2;
         char hexbuf[128]; hexbuf[0] = 0;
         for (int hi = 0; hi < nShow; ++hi) {
@@ -594,13 +605,13 @@ int __fastcall CWsctlc_nRecv(void *param_1)
         }
     }
 
-    iVar2 = *(int *)((int)param_1 + 0x4010) + iVar2;
-    *(int *)((int)param_1 + 0x4010) = iVar2;
+    iVar2 = *(int *)(param_1 + 0x4010) + iVar2;
+    *(int *)(param_1 + 0x4010) = iVar2;
     if (iVar2 < 3) return 3;
 
     int iOff = 0;
     while (true) {
-        BYTE *pBase = (BYTE *)((int)param_1 + 0x2010);
+        BYTE *pBase = (BYTE *)(param_1 + 0x2010);
         BYTE  hdr   = pBase[iOff];
         BYTE *pPkt  = pBase + iOff;
         uint  uLen;
@@ -615,26 +626,26 @@ int __fastcall CWsctlc_nRecv(void *param_1)
             char dbg[96];
             Platform::TextFormat(dbg, "NET: Net_Recv UNKNOWN hdr=%02X at off=%d → discard buffer", hdr, iOff);
             DbgLogPublic(dbg);
-            *(int *)((int)param_1 + 0x4010) = 0;
+            *(int *)(param_1 + 0x4010) = 0;
             return 0;
         }
         if (uLen == 0) return 0;
-        if (*(int *)((int)param_1 + 0x4010) < (int)uLen) break;
+        if (*(int *)(param_1 + 0x4010) < (int)uLen) break;
 
-        CPacketQueue_PushPacket((int)param_1, (int)pPkt, uLen);
-        if (*(int *)((int)param_1 + 0x4014) != 0) FUN_0043de60();
+        CPacketQueue_PushPacket(reinterpret_cast<uintptr_t>(param_1), pPkt, uLen);
+        if (*(int *)(param_1 + 0x4014) != 0) FUN_0043de60();
         iOff += uLen;
-        int rem = *(int *)((int)param_1 + 0x4010) - uLen;
-        *(int *)((int)param_1 + 0x4010) = rem;
+        int rem = *(int *)(param_1 + 0x4010) - uLen;
+        *(int *)(param_1 + 0x4010) = rem;
         if (rem < 1) return 0;
     }
 
     if (iOff < 1) return 0;
-    uint uRem = (uint)*(int *)((int)param_1 + 0x4010);
+    uint uRem = (uint)*(int *)(param_1 + 0x4010);
     if ((int)uRem < 1) return 0;
 
     // Corre los bytes restantes al frente del buffer
-    BYTE *pDst = (BYTE *)((int)param_1 + 0x2010);
+    BYTE *pDst = (BYTE *)(param_1 + 0x2010);
     BYTE *pSrc = pDst + iOff;
     for (uint i = uRem >> 2; i != 0; i--, pDst += 4, pSrc += 4)
         *(DWORD *)pDst = *(DWORD *)pSrc;
@@ -648,18 +659,18 @@ int __fastcall CWsctlc_nRecv(void *param_1)
 // Si tiene éxito lo marca como usado (flag=0) y devuelve el puntero a su región de datos (+0x4024).
 // Returns NULL if no free slot is available.
 // IDA: CWsctlc::GetReadMsg (0x0043E010)
-int __fastcall CWsctlc_GetReadMsg(int param_1)
+BYTE* __fastcall CWsctlc_GetReadMsg(uintptr_t param_1)
 {
     int iVar1 = 0;
     int *piVar2 = (int *)(param_1 + 0x401c);
     do {
         if (*piVar2 == 1) {
-            int slotBase = param_1 + iVar1 * 0x2008;
+            uintptr_t slotBase = param_1 + iVar1 * 0x2008;
             *(DWORD *)(slotBase + 0x401c) = 0;
-            return slotBase + 0x4024;
+            return reinterpret_cast<BYTE*>(slotBase + 0x4024);
         }
         iVar1++;
-        piVar2 = (int *)((int)piVar2 + 0x2008);
+        piVar2 = reinterpret_cast<int*>(reinterpret_cast<BYTE*>(piVar2) + 0x2008);
     } while (iVar1 < 300);
     return 0;
 }
@@ -673,7 +684,8 @@ int __fastcall CWsctlc_GetReadMsg(int param_1)
 // Si el héroe está atacando y el efecto está en rango, lo atrae hacia
 // el héroe con una velocidad proporcional al delta y un factor de fricción que decae.
 // Effect_PhysicsTick (IDA-activated)
-void __cdecl Effect_PhysicsTick(DWORD Object)
+// IDA 0x0046CA00: Object se desreferencia como dirección durante todo el tick.
+void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
 {
   unsigned char v2; // al
   double v3; // st7
@@ -699,7 +711,7 @@ void __cdecl Effect_PhysicsTick(DWORD Object)
       *(float *)(Object + 196) = Objecta * -0.40000001;
       *(float *)(Object + 44) = v3 * -4.0;
       *(float *)(Object + 40) = Objecta * -4.0;
-      PlayBuffer(94, Object, 0);
+      PlayBuffer(94, AsObject(Object), 0);
     }
   }
   v5 = *(float *)(Object + 192) * 0.60000002;
@@ -802,7 +814,7 @@ void __cdecl SkillAttribute_LoadNames(const char *param_1)
             // Copia TokenString a la entrada de SkillAttribute en el índice lVar7
             size_t uLen = strlen(TokenString) + 1;
             char  *pSrc = TokenString;
-            char  *pDst = (char *)((int)&SkillAttribute + (int)lVar7 * 300 + 4);
+            char  *pDst = reinterpret_cast<char *>(&SkillAttribute) + (int)lVar7 * 300 + 4;
             for (size_t i = uLen >> 2; i; i--, pDst += 4, pSrc += 4)
                 *(DWORD *)pDst = *(DWORD *)pSrc;
             for (size_t i = uLen & 3; i; i--)
@@ -831,14 +843,14 @@ void __cdecl SkillAttribute_SaveBin(const char *param_1)
     FILE *pFile = Platform::GetFileSystem().Open(param_1, (const char *)&DAT_005597d4);
     BYTE *Buffer = (BYTE *)operator_new(300);
 
-    char *pcVar3 = (char *)((int)&SkillAttribute + 4);
+    char *pcVar3 = reinterpret_cast<char *>(&SkillAttribute) + 4;
     int nRowGT = 0;
     do {
         BYTE *pBuf = Buffer;
         char *pcVar4 = pcVar3;
         for (int i = 0x4b; i != 0; i--, pcVar4 += 4, pBuf += 4)
             *(DWORD *)pBuf = *(DWORD *)pcVar4;
-        BuxConvert_0((int)Buffer, 300);
+        BuxConvert_0(Buffer, 300);
         crt_fwrite((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
         // IDA usa la dirección absoluta 0x7d73104 como bound. La base es
@@ -931,7 +943,7 @@ int __cdecl Terrain_WaterWaveUpdate(int a1)
 // Umbral param_10: si es > _DAT_00552580 (0.0f), param_9 se corre 3 bits a la izquierda.
 // Devuelve 1 si está adentro, 0 si está afuera.
 // Collision_PointInPolygon (IDA-activated)
-int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
+int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, const float* a5, const float* a6, const float* a7, const float* a8, int a9, float a10)
 {
   int v10; // esi
   int v11; // edx
@@ -941,7 +953,7 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
   int v16; // edi
   int v17; // esi
   int v18; // edi
-  float *v19; // eax
+  const float *v19; // eax
   int v20; // esi
   int v21; // edx
   int v22; // edi
@@ -950,8 +962,8 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
   int v25; // edi
   int v26; // esi
   int v27; // edi
-  float *v28; // eax
-  int v29[4]; // [esp+0h] [ebp-10h]
+  const float *v28; // eax
+  const float* v29[4]; // [esp+0h] [ebp-10h]
 
   if ( a10 > 0.0 )
   {
@@ -969,12 +981,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v11 = 4 * a4 - 4;
+      v11 = a4 - 1;
       do
       {
-        v12 = 4 * v10;
-        if ( (*(float *)(*(int *)((char *)v29 + v11) + 8) - a3) * (*(float *)(v29[v10] + 4) - a2)
-           - (*(float *)(*(int *)((char *)v29 + v11) + 4) - a2) * (*(float *)(v29[v10] + 8) - a3) <= 0.0 )
+        v12 = v10;
+        if ( (v29[v11][2] - a3) * (v29[v10][1] - a2)
+           - (v29[v11][1] - a2) * (v29[v10][2] - a3) <= 0.0 )
         {
           return 0;
         }
@@ -989,12 +1001,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v15 = 4 * a4 - 4;
+      v15 = a4 - 1;
       while ( 1 )
       {
-        v16 = 4 * v14;
-        if ( (*(float *)(v29[v14] + 8) - a3) * (**(float **)((char *)v29 + v15) - a1)
-           - (*(float *)(*(int *)((char *)v29 + v15) + 8) - a3) * (*(float *)v29[v14] - a1) <= 0.0 )
+        v16 = v14;
+        if ( (v29[v14][2] - a3) * (*v29[v15] - a1)
+           - (v29[v15][2] - a3) * (v29[v14][0] - a1) <= 0.0 )
         {
           break;
         }
@@ -1012,12 +1024,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v18 = 4 * a4 - 4;
+      v18 = a4 - 1;
       while ( 1 )
       {
-        v19 = *(float **)((char *)v29 + v18);
-        v18 = 4 * v17;
-        if ( (v19[1] - a2) * (*(float *)v29[v17] - a1) - (*(float *)(v29[v17] + 4) - a2) * (*v19 - a1) <= 0.0 )
+        v19 = v29[v18];
+        v18 = v17;
+        if ( (v19[1] - a2) * (v29[v17][0] - a1) - (v29[v17][1] - a2) * (*v19 - a1) <= 0.0 )
         {
           break;
         }
@@ -1033,12 +1045,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v21 = 4 * a4 - 4;
+      v21 = a4 - 1;
       while ( 1 )
       {
-        v22 = 4 * v20;
-        if ( (*(float *)(*(int *)((char *)v29 + v21) + 8) - a3) * (*(float *)(v29[v20] + 4) - a2)
-           - (*(float *)(*(int *)((char *)v29 + v21) + 4) - a2) * (*(float *)(v29[v20] + 8) - a3) >= 0.0 )
+        v22 = v20;
+        if ( (v29[v21][2] - a3) * (v29[v20][1] - a2)
+           - (v29[v21][1] - a2) * (v29[v20][2] - a3) >= 0.0 )
         {
           break;
         }
@@ -1056,12 +1068,12 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v24 = 4 * a4 - 4;
+      v24 = a4 - 1;
       while ( 1 )
       {
-        v25 = 4 * v23;
-        if ( (*(float *)(v29[v23] + 8) - a3) * (**(float **)((char *)v29 + v24) - a1)
-           - (*(float *)(*(int *)((char *)v29 + v24) + 8) - a3) * (*(float *)v29[v23] - a1) >= 0.0 )
+        v25 = v23;
+        if ( (v29[v23][2] - a3) * (*v29[v24] - a1)
+           - (v29[v24][2] - a3) * (v29[v23][0] - a1) >= 0.0 )
         {
           break;
         }
@@ -1079,16 +1091,16 @@ int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a
       {
         return 1;
       }
-      v27 = 4 * a4 - 4;
+      v27 = a4 - 1;
       break;
     default:
       return 1;
   }
   while ( 1 )
   {
-    v28 = *(float **)((char *)v29 + v27);
-    v27 = 4 * v26;
-    if ( (v28[1] - a2) * (*(float *)v29[v26] - a1) - (*(float *)(v29[v26] + 4) - a2) * (*v28 - a1) >= 0.0 )
+    v28 = v29[v27];
+    v27 = v26;
+    if ( (v28[1] - a2) * (v29[v26][0] - a1) - (v29[v26][1] - a2) * (*v28 - a1) >= 0.0 )
     {
       break;
     }
@@ -1145,7 +1157,8 @@ void FUN_00401020(void) {}
 // BuxConvert_1 @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
 // 3-byte repeating XOR key at bBuxCode.
 void __cdecl BuxConvert_1(void* buffer, int size) {
-    const int buf = (int)(uintptr_t)buffer;
+    // IDA 0x00401120 recorre el buffer con un puntero a byte.
+    byte* buf = static_cast<byte*>(buffer);
     for (int i = 0; i < size; i++)
         *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
 }
@@ -1211,7 +1224,7 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
 }
 
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
-void __fastcall CSQuest_clearQuest(int);
+void __fastcall CSQuest_clearQuest(void*);
 void __fastcall FUN_00401af0(void*);
 void __fastcall Cloth_Integrate(int*, float);
 
@@ -1228,7 +1241,7 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
         DAT_083a4124 = '\0';
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     }
     return 1;
 }
@@ -1260,17 +1273,18 @@ static void Quest_SendState(void *pThis)
     pkt[0] = 0xC1;
     pkt[1] = 0x05;
     pkt[2] = 0xA2;
-    pkt[3] = *(BYTE *)((int)pThis + 0x1c87a);   // indice de quest actual
+    pkt[3] = *(static_cast<BYTE*>(pThis) + 0x1c87a);   // índice de quest actual
     pkt[4] = 0x01;
     gNetwork.Send(pkt, 5);
 }
 
 void __fastcall FUN_00401af0(void *param_1)
 {
+    BYTE* quest = static_cast<BYTE*>(param_1);
     // Compute Y-base of char list
     int yBase;
-    if (*(char *)((int)param_1 + 0x1c882) != '\x01' &&
-        *(char *)((int)param_1 + 0x1c87f) == '\x01') {
+    if (*(char *)(quest + 0x1c882) != '\x01' &&
+        *(char *)(quest + 0x1c87f) == '\x01') {
         yBase = 0xfa;
     } else {
         yBase = ((7 - ((int)DAT_083a7c0c + (int)DAT_083a4324)) * 0x12) / 2
@@ -1310,8 +1324,8 @@ void __fastcall FUN_00401af0(void *param_1)
 
 
     if (slotType == 1) {
-        short *slotData = (short *)((int)param_1
-                          + (uint)*(BYTE *)((int)param_1 + 0x1c87a) * 0x248 + 8);
+        short *slotData = reinterpret_cast<short*>(quest
+                          + (uint)*(quest + 0x1c87a) * 0x248 + 8);
         uint ok = CSQuest_CheckRequestCondition(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
@@ -1319,7 +1333,7 @@ void __fastcall FUN_00401af0(void *param_1)
             // Leerlo como int se lleva ademas el byte de estado (0x1c882),
             // que CheckRequestCondition acaba de poner en 5, asi que el
             // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
-            CSQuest_ShowDialogText(*(short *)((int)param_1 + 0x1c880));
+            CSQuest_ShowDialogText(*(short *)(quest + 0x1c880));
             goto done;
         }
         Quest_SendState(param_1);
@@ -1327,7 +1341,7 @@ void __fastcall FUN_00401af0(void *param_1)
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        CSQuest_clearQuest((int)param_1);
+        CSQuest_clearQuest(param_1);
     } else if (slotType == 3) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
@@ -1411,7 +1425,7 @@ void FUN_0043de60(void) {}
 // Cola en this+0x401c, cada slot = 0x2008 bytes (flag de 4 bytes, largo de 4 bytes, 0x2000 de datos).
 // Returns: 0=success, 1=queue full, 2=packet too large.
 // IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
-void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
+void __cdecl CPacketQueue_PushPacket(uintptr_t param_1, const void* param_2, int param_3) {
     // param_1 = net context ptr, param_2 = packet data ptr, param_3 = packet length
     if ((int)param_3 > 0x2000) return; // packet too large
 
@@ -1424,11 +1438,11 @@ void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
             *(int *)(param_1 + i * 0x2008 + 0x4020) = param_3;
             // Copy packet data (DWORD-aligned copy + trailing bytes)
             DWORD *pDst = (DWORD *)(param_1 + i * 0x2008 + 0x4024);
-            DWORD *pSrc = (DWORD *)param_2;
+            const DWORD *pSrc = static_cast<const DWORD*>(param_2);
             unsigned int dwords = (unsigned int)param_3 >> 2;
             for (unsigned int d = 0; d < dwords; d++) { *pDst++ = *pSrc++; }
             unsigned int trail = (unsigned int)param_3 & 3;
-            BYTE *bDst = (BYTE *)pDst; BYTE *bSrc = (BYTE *)pSrc;
+            BYTE *bDst = (BYTE *)pDst; const BYTE *bSrc = reinterpret_cast<const BYTE*>(pSrc);
             for (unsigned int b = 0; b < trail; b++) { *bDst++ = *bSrc++; }
             return;
         }
@@ -1553,8 +1567,8 @@ float __cdecl TurnAngle2(float a1, float a2, float a3)
 //
 // functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
 // IDA: SetPlayerAttack (0x00444410)
-void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
-    DWORD c = (DWORD)c_entity;
+void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, int /*extra*/) {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if (c == 0) return;
     short v1 = AsCharacter(c)->Object.Type;
 
@@ -1564,11 +1578,11 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         case 39:
             CreateEffect(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
-            PlayBuffer(16, c, 0);
+            PlayBuffer(16, AsObject(c), 0);
             break;
         case 40:
-            SetAction((int)c, 1);
-            PlayBuffer(16, c, 0);
+            SetAction(AsObject(c), 1);
+            PlayBuffer(16, AsObject(c), 0);
             break;
         case 51:
             CreateEffect(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
@@ -1578,17 +1592,17 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         case 302: {
             int r = rand() % 8;
             if (r <= 2) {
-                SetAction((int)c, (r <= 0) ? 9 : 8);
+                SetAction(AsObject(c), (r <= 0) ? 9 : 8);
             } else {
-                SetAction((int)c, rand() % 2 + 3);
+                SetAction(AsObject(c), rand() % 2 + 3);
             }
             break;
         }
         default:
             if (*(unsigned char*)(c + 771) % 3) {
-                SetAction((int)c, 4);
+                SetAction(AsObject(c), 4);
             } else {
-                SetAction((int)c, 3);
+                SetAction(AsObject(c), 3);
             }
             ++*(unsigned char*)(c + 771);
             break;
@@ -1610,20 +1624,20 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             if (v5 >= 400 && v5 < 496) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
                     if (v5 == 431) {
-                        SetAction((int)c, 81);
+                        SetAction(AsObject(c), 81);
                     } else {
-                        SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 39);
+                        SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 39);
                     }
                 } else {
                     short v6 = AsCharacter(c)->Weapon[1].Type;
                     if (v6 < 400 || v6 >= 496) {
-                        SetAction((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
+                        SetAction(AsObject(c), (*(unsigned char*)(c + 771) & 1) + 35);
                     } else {
                         switch (*(unsigned char*)(c + 771) & 3) {
-                        case 0: SetAction((int)c, 35); break;
-                        case 1: SetAction((int)c, 37); break;
-                        case 2: SetAction((int)c, 36); break;
-                        case 3: SetAction((int)c, 38); break;
+                        case 0: SetAction(AsObject(c), 35); break;
+                        case 1: SetAction(AsObject(c), 37); break;
+                        case 2: SetAction(AsObject(c), 36); break;
+                        case 3: SetAction(AsObject(c), 38); break;
                         }
                     }
                 }
@@ -1631,39 +1645,39 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
             }
             short v7 = AsCharacter(c)->Weapon[1].Type;
             if (v7 >= 400 && v7 < 496) {
-                SetAction((int)c, rand() % 2 + 37);
+                SetAction(AsObject(c), rand() % 2 + 37);
                 goto LABEL_85;
             }
             // Spear (560-591)
             if (v5 >= 560 && v5 < 592) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
-                    SetAction((int)c, rand() % 2 + 84);
+                    SetAction(AsObject(c), rand() % 2 + 84);
                 } else {
-                    SetAction((int)c, rand() % 2 + 35);
+                    SetAction(AsObject(c), rand() % 2 + 35);
                 }
                 goto LABEL_85;
             }
             // Mace 497/498
             if (v5 == 497 || v5 == 498) {
-                SetAction((int)c, 42);
+                SetAction(AsObject(c), 42);
                 goto LABEL_85;
             }
             // Mace/staff (496-527)
             if (v5 >= 496 && v5 < 528) {
-                SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 43);
+                SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 43);
                 goto LABEL_85;
             }
             // Bow/crossbow type detection on right hand
             if ((v7 >= 528 && v7 < 535) || v7 == 545) {
-                SetAction((int)c, (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 46 : 48);
+                SetAction(AsObject(c), (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 46 : 48);
                 goto LABEL_85;
             }
             if ((v5 >= 536 && v5 < 543) || (v5 >= 544 && v5 < 545) || v5 == 546) {
-                SetAction((int)c, (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 47 : 49);
+                SetAction(AsObject(c), (*(unsigned short *)&AsCharacter(c)->Wing.Type == 0xFFFF) ? 47 : 49);
                 goto LABEL_85;
             }
         }
-        SetAction((int)c, 34);
+        SetAction(AsObject(c), 34);
         goto LABEL_85;
     }
 
@@ -1673,25 +1687,25 @@ void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*ext
         if (v3 < 496) {
             // fall through to LABEL_11 (right-hand weapon check)
         } else if (v3 < 501) {
-            SetAction((int)c, 52);
+            SetAction(AsObject(c), 52);
             goto LABEL_85;
         } else if (v3 >= 528) {
             // continue to LABEL_11
         } else {
-            SetAction((int)c, 53);
+            SetAction(AsObject(c), 53);
             goto LABEL_85;
         }
         // LABEL_11: weapon checks
         short v4 = AsCharacter(c)->Weapon[1].Type;
         if ((v4 >= 528 && v4 < 535) || v4 == 545) {
-            SetAction((int)c, 54);
+            SetAction(AsObject(c), 54);
         } else if ((v3 >= 536 && v3 < 543) || (v3 >= 544 && v3 < 545) || v3 == 546) {
-            SetAction((int)c, 55);
+            SetAction(AsObject(c), 55);
         } else if (v3 != -1 &&
                    *((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3 - 399] - 34)) {
-            SetAction((int)c, 51);
+            SetAction(AsObject(c), 51);
         } else {
-            SetAction((int)c, 50);
+            SetAction(AsObject(c), 50);
         }
     }
 
@@ -1703,39 +1717,39 @@ LABEL_85:
             if (v13 < 206 || v13 > 208) {
                 short v14 = AsCharacter(c)->Weapon[1].Type;
                 if ((v14 >= 528 && v14 < 535) || v14 == 545) {
-                    PlayBuffer(65, c, 0);
+                    PlayBuffer(65, AsObject(c), 0);
                 } else {
                     short v15 = AsCharacter(c)->Weapon[0].Type;
                     if ((v15 >= 536 && v15 < 543) || (v15 >= 544 && v15 < 545) || v15 == 546) {
-                        PlayBuffer(66, c, 0);
+                        PlayBuffer(66, AsObject(c), 0);
                     } else if (v15 == 410 || v15 == 496) {
-                        PlayBuffer(42, c, 0);
+                        PlayBuffer(42, AsObject(c), 0);
                     } else if (v15 != -1 || v14 != -1) {
-                        PlayBuffer(rand() % 2 + 40, c, 0);
+                        PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                     }
                 }
             } else {
                 int v17 = AsCharacter(c)->Object.SubType;
                 if (v17 >= 206 && v17 <= 208) {
-                    PlayBuffer(rand() % 2 + 40, c, 0);
+                    PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                 }
                 short modelType = AsCharacter(c)->Object.Type;
-                int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
-                if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
+                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
+                if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
                     int idx = rand() % 2 + 94 * modelType;
-                    PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, c, 0);
+                    PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
                 }
             }
         } else {
             int v17 = AsCharacter(c)->Object.SubType;
             if (v17 >= 206 && v17 <= 208) {
-                PlayBuffer(rand() % 2 + 40, c, 0);
+                PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
             }
             short modelType = AsCharacter(c)->Object.Type;
-            int modelBase = (int)(uintptr_t)DAT_05828d58 + 188 * modelType;
-            if (*(unsigned short*)(modelBase + 174) != 0xFFFF) {
+            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
+            if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
                 int idx = rand() % 2 + 94 * modelType;
-                PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, c, 0);
+                PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
             }
         }
     }
@@ -1745,10 +1759,9 @@ LABEL_85:
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
 // Si el tipo de entidad != 0x186: alterna la acción 3/4 según el contador de combo % 3
 // If entity type == 0x186 (special): SetAttackSpeed, class-specific action (0x52/0x53 random, 0x56 swim, 0x5b certain classes)
-// Declarada en functions.h como SetPlayerMagic(int param_1)
+// Declarada en functions.h como SetPlayerMagic(CHARACTER* c)
 // IDA: SetPlayerMagic (0x00444A80)
-void __cdecl SetPlayerMagic(int param_1) {
-    DWORD c = (DWORD)param_1;
+void __cdecl SetPlayerMagic(CHARACTER* c) {
     if (c == 0) return;
     short entityType = AsCharacter(c)->Object.Type;
     if (entityType != 0x186) {
@@ -1759,7 +1772,7 @@ void __cdecl SetPlayerMagic(int param_1) {
             action = 4;
         }
         // SetAction(entity, action) — SetAction
-        SetAction((int)c, action);
+        SetAction(AsObject(c), action);
         *(char *)&AsCharacter(c)->SwordCount = *(char *)&AsCharacter(c)->SwordCount + 1;
         return;
     }
@@ -1767,11 +1780,11 @@ void __cdecl SetPlayerMagic(int param_1) {
     SetAttackSpeed();  // SetAttackSpeed
     short charClass = AsCharacter(c)->Helper.Type;
     if ((charClass == 0x332 || charClass == 0x333) && *(char *)&AsCharacter(c)->SafeZone == '\0') {
-        SetAction((int)c, 0x5b);
+        SetAction(AsObject(c), 0x5b);
         return;
     }
     if ((AsCharacter(c)->Class & 7) == 2) {
-        SetAction((int)c, 0x56);
+        SetAction(AsObject(c), 0x56);
         return;
     }
     int r = rand();
@@ -1779,7 +1792,7 @@ void __cdecl SetPlayerMagic(int param_1) {
     if ((int)v < 0) {
         v = (v - 1 | 0xFFFFFFFE) + 1;
     }
-    SetAction((int)c, (int)(v + 0x52));
+    SetAction(AsObject(c), (int)(v + 0x52));
 }
 
 // SetPlayerShock @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
@@ -1798,7 +1811,7 @@ void __cdecl SetPlayerMagic(int param_1) {
 // header rather than re-declaring locally).
 
 // IDA: SetPlayerShock (0x00444B60)
-void __cdecl SetPlayerShock(int c, int Hit)
+void __cdecl SetPlayerShock(CHARACTER* c, int Hit)
 {
     if (!c) return;
     if (AsCharacter(c)->Dead) return;            // already dead
@@ -1810,11 +1823,11 @@ void __cdecl SetPlayerShock(int c, int Hit)
     short etype = AsCharacter(c)->Object.Type;
     if (etype == 390) {
         // Player: shock anim, clear alive flag
-        (void)SetAction(c, 130);
+        (void)SetAction(AsObject(c), 130);
         AsCharacter(c)->Movement = 0;
     } else if (v3 < 3 || v3 > 4) {
         // Monstruos/NPCs (que no estén en las anims de caminar/correr 3-4): anim de shock genérica
-        (void)SetAction(c, 5);
+        (void)SetAction(AsObject(c), 5);
     }
 
     // Sonido: sólo cuando no está a mitad de una animación (frame == 0)
@@ -1825,26 +1838,26 @@ void __cdecl SetPlayerShock(int c, int Hit)
                 if ((AsCharacter(c)->Class & 7) == 2) {
                     // Swimming: alternate splash sound 79 or 80
                     int v7 = rand() % 2;
-                    PlayBuffer(v7 + 79, c, 0);
+                    PlayBuffer(v7 + 79, AsObject(c), 0);
                     goto label_26;
                 }
                 int v6 = rand() % 3 + 75;     // generic player hit grunt
-                PlayBuffer(v6, c, 0);
+                PlayBuffer(v6, AsObject(c), 0);
                 goto label_26;
             }
         }
         int v8 = AsCharacter(c)->Object.SubType;
         if (v8 >= 206 && v8 <= 208) {
-            PlayBuffer(93, c, 0);           // Lorencia skeleton-NPC hit sound
+            PlayBuffer(93, AsObject(c), 0);           // Lorencia skeleton-NPC hit sound
             goto label_26;
         }
         if (etype != 284) {
             // Monster-table sound lookup: Models[etype].Sound[rand()%2]
-            DWORD modelsBase = (DWORD)DAT_05828d58;
-            short* sndTbl = (short*)(modelsBase + 188 * etype + 174);
+            const BYTE* modelsBase = reinterpret_cast<const BYTE*>(DAT_05828d58);
+            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + 188 * etype + 174);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
-                PlayBuffer(v6, c, 0);
+                PlayBuffer(v6, AsObject(c), 0);
             }
         }
     }
@@ -1861,7 +1874,7 @@ label_26:
                 pos[0] = (float)(v12 - 64) + AsCharacter(c)->Object.Position[0];
                 pos[1] = AsCharacter(c)->Object.Position[1];
                 pos[2] = (float)(rand() % 50) + AsCharacter(c)->Object.Position[2] + 200.0f;
-                Particle_Spawn(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
+                Particle_Spawn(1221, pos, c->Object.Angle, c->Object.Light, 0, 1.0f, 0);
             }
         }
         PlayBuffer(105, 0, 0);
@@ -2036,7 +2049,7 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     AsCharacter(c)->BodyPart[5].Option1 = (Equipment[9] & 8) != 0;
     AsCharacter(c)->Weapon[0].Option1 = (Equipment[9] & 4) != 0;
     AsCharacter(c)->Weapon[1].Option1 = (Equipment[9] & 2) != 0;
-    SetCharacterScale((int)c);
+    SetCharacterScale(AsCharacter(c));
 }
 
 // FUN_0046c7f0 @ 0x0046C7F0 — Object_SpawnAmbientFX(kind, o, dx, dy, dz)
@@ -2053,8 +2066,9 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
 // (`o+28`) — así el efecto sale del punto correcto del modelo (la boca de la
 // chimenea, la punta del farol). Luego se le suma la posición del objeto
 // (`o+16`) y un jitter de ±8 por eje.
-void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4, float param_5) {
-    float *a2 = (float *)param_2;
+void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float param_4, float param_5) {
+    // IDA 0x0046C7F0: a2 es la base del objeto; sus ángulos empiezan en a2+7.
+    float *a2 = reinterpret_cast<float*>(object);
     if (!a2) return;
 
     float *v5 = a2 + 7;          // o+28  = Angle[3]
@@ -2101,7 +2115,8 @@ void CheckSprites(void)
 }
 
 // BuxConvert_0 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
-void __cdecl BuxConvert_0(int buf, int len) {
+void __cdecl BuxConvert_0(void* buffer, int len) {
+    BYTE* buf = static_cast<BYTE*>(buffer);
     for (int i = 0; i < len; i++)
         *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
 }
@@ -2115,7 +2130,7 @@ void __cdecl BuxConvert_0(int buf, int len) {
 //   + special 75 (flat add) on WeaponL
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
-int __cdecl Stats_CalcMagicDmgRange(int param_1) {
+const ITEM* __cdecl Stats_CalcMagicDmgRange(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
     unsigned short energy = *(unsigned short*)(param_1 + 26);
@@ -2124,8 +2139,8 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
     *minPtr = energy / 9;
     *maxPtr = energy >> 2;
 
-    DWORD itemRing1 = (DWORD)(uintptr_t)(param_1 + 1148);
-    DWORD weaponL  = (DWORD)(uintptr_t)(param_1 + 536);
+    BYTE* itemRing1 = param_1 + 1148;
+    BYTE* weaponL = param_1 + 536;
 
     // Wings (this+1012) magic damage bonus, durability scaled
     short wingsType = *(short*)(param_1 + 1012);
@@ -2135,8 +2150,8 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
                                            attr->Durability,
                                            *(int*)(param_1 + 1016), 0);
         unsigned short minBonus = 0, maxBonus = 0;
-        PlusSpecial(&minBonus, 61, (DWORD)(uintptr_t)(param_1 + 1012));
-        PlusSpecial(&maxBonus, 61, (DWORD)(uintptr_t)(param_1 + 1012));
+        PlusSpecial(&minBonus, 61, AsItem((param_1 + 1012)));
+        PlusSpecial(&maxBonus, 61, AsItem((param_1 + 1012)));
         unsigned short minRed = (unsigned short)((double)minBonus * (double)durP);
         unsigned short maxRed = (unsigned short)((double)maxBonus * (double)durP);
         *minPtr += minBonus - minRed;
@@ -2154,34 +2169,34 @@ int __cdecl Stats_CalcMagicDmgRange(int param_1) {
                                                AsItem(weaponL)->Option1);
             int specId = (type == 31) ? 60 : 61;  // Wand uses special 60
             unsigned short minBonus = 0, maxBonus = 0;
-            PlusSpecial(&minBonus, specId, weaponL);
-            PlusSpecial(&maxBonus, specId, weaponL);
+            PlusSpecial(&minBonus, specId, AsItem(weaponL));
+            PlusSpecial(&maxBonus, specId, AsItem(weaponL));
             *minPtr += (unsigned short)(minBonus - (unsigned short)((double)minBonus * (double)durP));
             *maxPtr += (unsigned short)(maxBonus - (unsigned short)((double)maxBonus * (double)durP));
-            PlusSpecial(minPtr, 75, weaponL);
-            PlusSpecial(maxPtr, 75, weaponL);
-            PlusSpecialPercent((short*)minPtr, 76, (int)weaponL, 2);
-            PlusSpecialPercent((short*)maxPtr, 76, (int)weaponL, 2);
+            PlusSpecial(minPtr, 75, AsItem(weaponL));
+            PlusSpecial(maxPtr, 75, AsItem(weaponL));
+            PlusSpecialPercent((short*)minPtr, 76, AsItem(weaponL), 2);
+            PlusSpecialPercent((short*)maxPtr, 76, AsItem(weaponL), 2);
         }
     }
 
     // Ring1 (this+1148) magic damage bonus
     if (*(unsigned short*)itemRing1 != 0xFFFF) {
         if (*(unsigned char*)(itemRing1 + 26) != 0) {
-            PlusSpecial(minPtr, 75, itemRing1);
-            PlusSpecial(maxPtr, 75, itemRing1);
-            PlusSpecialPercent((short*)minPtr, 76, (int)itemRing1, 2);
-            return PlusSpecialPercent((short*)maxPtr, 76, (int)itemRing1, 2);
+            PlusSpecial(minPtr, 75, AsItem(itemRing1));
+            PlusSpecial(maxPtr, 75, AsItem(itemRing1));
+            PlusSpecialPercent((short*)minPtr, 76, AsItem(itemRing1), 2);
+            return PlusSpecialPercent((short*)maxPtr, 76, AsItem(itemRing1), 2);
         }
     }
-    return (int)itemRing1;
+    return AsItem(itemRing1);
 }
 
 // IDA: CHARACTER_MACHINE::GetMagicSkillDamage (0x0047E4F0).  Fuera del ruido
 // anti-tamper (que descifra el registro de SkillAttribute; el nuestro ya esta en
 // claro): el dano del skill es el BYTE +0x21 del registro de 40 bytes, y se suma
 // al rango magico de CHARACTER_MACHINE (+70 / +72); el maximo lleva +50%.
-void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage)
+void __cdecl GetMagicSkillDamage(const BYTE* This, int iType, int* piMinDamage, int* piMaxDamage)
 {
     const BYTE damage = (BYTE)SkillAttribute.Raw[40 * (iType & 0xFF) + 0x21];
     *piMinDamage = damage + *(unsigned short*)(This + 70);
@@ -2214,12 +2229,11 @@ int __cdecl Stats_CalcAddStrength(short *param_1) {
 //   Pants (slot 5 = this+876) speed bonus.
 //   Flag de estado (this+40 bit 0): +20 a los dos.
 //   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
-int __cdecl CalculateAttackSpeed(int param_1) {
+int __cdecl CalculateAttackSpeed(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
 
     unsigned short *atkPtr;
@@ -2244,9 +2258,9 @@ int __cdecl CalculateAttackSpeed(int param_1) {
         *magPtr = v / 10;
     }
 
-    DWORD weaponR = (DWORD)(uintptr_t)(param_1 + 604);  // WeaponR
-    DWORD weaponL = (DWORD)(uintptr_t)(param_1 + 536);  // WeaponL
-    DWORD pants   = (DWORD)(uintptr_t)(param_1 + 876);  // Pants
+    BYTE* weaponR = param_1 + 604;  // WeaponR
+    BYTE* weaponL = param_1 + 536;  // WeaponL
+    BYTE* pants   = param_1 + 876;  // Pants
 
     // Skip dword_7E91388/pPickedItem hover preview for non-runtime simplicity.
 
@@ -2289,15 +2303,15 @@ int __cdecl CalculateAttackSpeed(int param_1) {
         *magPtr += 20;
     }
 
-    PlusSpecial(atkPtr, 77, (DWORD)(uintptr_t)(param_1 + 536));
-    PlusSpecial(magPtr, 77, (DWORD)(uintptr_t)(param_1 + 536));
-    PlusSpecial(atkPtr, 77, (DWORD)(uintptr_t)(param_1 + 604));
-    PlusSpecial(magPtr, 77, (DWORD)(uintptr_t)(param_1 + 604));
-    PlusSpecial(atkPtr, 77, (DWORD)(uintptr_t)(param_1 + 1148));
-    PlusSpecial(magPtr, 77, (DWORD)(uintptr_t)(param_1 + 1148));
-    DWORD helm = (DWORD)(uintptr_t)(param_1 + 1080);
-    PlusSpecial(atkPtr, 77, helm);
-    PlusSpecial(magPtr, 77, helm);
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 536)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 536)));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 604)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 604)));
+    PlusSpecial(atkPtr, 77, AsItem((param_1 + 1148)));
+    PlusSpecial(magPtr, 77, AsItem((param_1 + 1148)));
+    BYTE* helm = param_1 + 1080;
+    PlusSpecial(atkPtr, 77, AsItem(helm));
+    PlusSpecial(magPtr, 77, AsItem(helm));
     return 0;
 }
 
@@ -2307,12 +2321,11 @@ int __cdecl CalculateAttackSpeed(int param_1) {
 //   else: defense = Vit/3
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
-int __cdecl Stats_CalcDefense(int param_1) {
+const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
 
     unsigned short *defPtr = (unsigned short*)(param_1 + 76);
@@ -2336,20 +2349,20 @@ int __cdecl Stats_CalcDefense(int param_1) {
 
             // Shield "Plus Defense" special (62)
             unsigned short Value = 0;
-            PlusSpecial(&Value, 62, (DWORD)(uintptr_t)(param_1 + 604));
+            PlusSpecial(&Value, 62, AsItem((param_1 + 604)));
             *defPtr += (unsigned short)(Value - (unsigned short)((double)Value * (double)durP));
 
-            PlusSpecialPercent((short*)defPtr, 70, param_1 + 604, 10);
+            PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 604), 10);
         }
     }
     // Apply percent defense bonuses from all equipment slots
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 672,  10);  // Pendant
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 740,  10);  // Armor
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 808,  10);  // Pants
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 876,  10);  // Gloves
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 944,  10);  // Boots
-    PlusSpecialPercent((short*)defPtr, 70, param_1 + 1284, 10);  // Necklace
-    return PlusSpecialPercent((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 672), 10);  // Pendant
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 740), 10);  // Armor
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 808), 10);  // Pants
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 876), 10);  // Gloves
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 944), 10);  // Boots
+    PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 1284), 10);  // Necklace
+    return PlusSpecialPercent((short*)defPtr, 70, AsItem(param_1 + 1216), 10);  // Ring2
 }
 
 // sub_47E160 @ 0x0047E160 (383 bytes) — Stats_CalcCritBase / DefRate.
@@ -2360,12 +2373,11 @@ int __cdecl Stats_CalcDefense(int param_1) {
 //   class 3+ (DL?):   Vit/5
 // Then iterates 7 equipment slots checking durability-scaled rate bonus.
 // Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
-int __cdecl Stats_CalcDefenseRate(int param_1) {
+int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
     // DESVIACION MuEmu F3/E1: fórmula local sólo sin cálculo recibido.
     if (gServerCharacterStats.Apply((void*)param_1)) return 0;
-    DWORD ca = (DWORD)DAT_07cf1ff4;
-    if (ca == 0) return 0;
-    char* charAttr = (char*)(uintptr_t)ca;
+    const BYTE* charAttr = static_cast<const BYTE*>(DAT_07cf1ff4);
+    if (!charAttr) return 0;
     int charClass = *(unsigned char*)(charAttr + 11) & 7;
     unsigned short vit = *(unsigned short*)(param_1 + 22);
 
@@ -2378,9 +2390,9 @@ int __cdecl Stats_CalcDefenseRate(int param_1) {
 
     int totalReduction = 0;
     for (int i = 1; i <= 7; ++i) {
-        int slotPtr = param_1 + 68 * i;
+        BYTE* slotPtr = param_1 + 68 * i;
         if (*(unsigned char*)(slotPtr + 562)) {  // slot's [+26] = 0x22A; 8*68+0x22 hmm let me recalc
-            unsigned int v7 = Item_GetDefenseWithSpecial((DWORD)slotPtr, (short*)(slotPtr + 536));
+            unsigned int v7 = Item_GetDefenseWithSpecial(0, (short*)(slotPtr + 536));
             ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)(slotPtr + 536)];
             float durP;
             if (i == 7) {
@@ -2450,7 +2462,7 @@ int __cdecl Stats_ExtraOptionEquip6(short *param_1) {
 //   Guantes (Option1 en +970, ITEM en +944): this+82 = FUN_0047d000(guantes)
 //   Alas    (Option1 en +1038, ITEM en +1012): this+82 += FUN_0047d000(alas)
 // Orden: primero los guantes (reemplaza), después las alas (suma).
-int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
+int __cdecl Stats_ExtraOptionGlovesWings(BYTE* param_1) {
     short v = 0;
     if (*(unsigned char*)(param_1 + 970)) {
         *(short*)(param_1 + 82) = FUN_0047d000((short*)(param_1 + 944));
@@ -2462,16 +2474,12 @@ int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
     return (int)(unsigned char)v;
 }
 
-// Terrain_QuadEqual @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
-// Firma de Ghidra: (int param_1, float *param_2) pero en functions.h está declarada como (int,int,int,int).
-// Callers pass two int args (the float ptr pair). Match declared signature.
-int __cdecl Terrain_QuadEqual(int param_1, int param_2, int param_3, int param_4) {
-    // Sólo se usan los dos primeros parámetros: ptr1 = param_1, ptr2 = param_2
-    float *p2 = (float*)param_2;
+// IDA: Terrain_QuadEqual (0x004F9C70), compara cuatro componentes por dirección.
+int __cdecl Terrain_QuadEqual(const float* param_1, const float* param_2, int param_3, int param_4) {
+    const float* p2 = param_2;
     int iVar1 = 0;
-    int iVar2 = param_1 - param_2;
     do {
-        float diff = *(float*)(iVar2 + (int)p2) - *p2;
+        float diff = param_1[iVar1] - *p2;
         if (diff < 0.0f) diff = -diff;
         if (_DAT_005528a8 < diff)
             return 0;

@@ -86,10 +86,8 @@ void __cdecl R_ConcatTransforms(float *p, float *r, float *o) {
 
 // EulerToQuat @ 0x004FA1D0 — EulerToQuat(angles[3], out_quat[4])
 // Converts Euler XYZ (game angle units) to quaternion (x,y,z,w).
-// Declared as (int,int,int,int) in functions.h; callers pass float* cast to int.
-void __cdecl EulerToQuat(int ia, int ib, int ic, int id) {
-    float *param_1 = (float*)ia;
-    float *param_2 = (float*)ib;
+// Los buffers conservan sus direcciones completas; los extras se ignoran.
+void __cdecl EulerToQuat(const float* param_1, float* param_2, int ic, int id) {
     (void)ic; (void)id;
     float k   = _DAT_00552ce0;
     float sz  = sinf(param_1[2] * k), cz = cosf(param_1[2] * k);
@@ -105,9 +103,7 @@ void __cdecl EulerToQuat(int ia, int ib, int ic, int id) {
 
 // QuatToMatrix @ 0x004FA270 — QuatToMatrix(quat[4], out_mat[12])
 // Converts unit quaternion to 3×3 rotation matrix (stored in [0,1,2,4,5,6,8,9,10]).
-void __cdecl QuatToMatrix(int ia, int ib, int ic, int id) {
-    float *q = (float*)ia;
-    float *m = (float*)ib;
+void __cdecl QuatToMatrix(const float* q, float* m, int ic, int id) {
     (void)ic; (void)id;
     float x2 = q[1]*q[1], z2 = q[2]*q[2];
     m[0]  = _DAT_00552cf0 - (x2+x2) - (z2+z2);
@@ -125,11 +121,7 @@ void __cdecl QuatToMatrix(int ia, int ib, int ic, int id) {
 
 // QuatSlerp @ 0x004FA350 — QuatSlerp(q1[4], q2[4], t, out[4])
 // Spherical linear interpolation between two quaternions.
-void __cdecl QuatSlerp(int ia, int ib, int ic, int id) {
-    float *q1  = (float*)ia;
-    float *q2  = (float*)ib;
-    float  t   = *(float*)&ic;
-    float *out = (float*)id;
+void __cdecl QuatSlerp(const float* q1, float* q2, float t, float* out) {
     // ensure shortest path
     float dot = q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3];
     if (dot < 0.0f) { for(int i=0;i<4;i++) q2[i]=-q2[i]; dot=-dot; }

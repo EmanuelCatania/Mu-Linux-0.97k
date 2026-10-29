@@ -302,8 +302,8 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     unsigned char skillType = *(unsigned char*)((char*)CharacterAttribute + a3 + 87);
     if (skillType == 0 || skillType >= 64) return;
 
-    unsigned char* skillBaseTbl = DAT_07d29d20 ? (unsigned char*)(uintptr_t)DAT_07d29d20 : nullptr;
-    unsigned char* skillStatTbl = DAT_07cf1ff8 ? (unsigned char*)(uintptr_t)DAT_07cf1ff8 : skillBaseTbl;
+    unsigned char* skillBaseTbl = DAT_07d29d20;
+    unsigned char* skillStatTbl = DAT_07cf1ff8 ? DAT_07cf1ff8 : skillBaseTbl;
     if (!skillBaseTbl && !skillStatTbl) return;
 
     char szName[256] = {};
@@ -530,7 +530,7 @@ bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
 // DESVIACION (Fase 4, cortes UAX #14): ademas del espacio vale cualquier punto
 // de corte de libunibreak (entre ideogramas, despues de un guion...).
 // IDA: CutText (0x0047FE30)
-void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4) {
+void __cdecl CutText(void *param_1_v, char* param_2, void *param_3_v, int param_4) {
     char *param_1 = (char*)param_1_v;
     char *param_3 = (char*)param_3_v;
     unsigned int uVar4 = 0, uVar3 = 0;
@@ -818,7 +818,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // recuadro con GetTextExtentPointA sobre esa misma fuente.  Las display lists
     // se cachean POR fuente.
     HFONT hFont = (HFONT)gFont.CurrentFont(hFontDC);
-    if (hFont == NULL) hFont = (HFONT)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL));
+    if (hFont == NULL) hFont = gFont.GetFont(FONT_NORMAL);
     if (hFont == NULL) return;
 
 #ifdef MU_SDL_FONTS

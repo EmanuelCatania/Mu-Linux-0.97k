@@ -1,5 +1,7 @@
 #pragma once
 #include "Item/ItemDefines.h"
+struct GATE_ATTRIBUTE;
+struct OBJECT;
 // globals.h — extern declarations for all Ghidra DAT_ globals.
 // Los tipos se infieren del contexto; el prefijo _DAT_ = alias float de la misma dirección.
 // NO incluir este header directo — entra vía stdafx.h.
@@ -430,16 +432,16 @@ extern DWORD   g_HashTableCtx[4];
 #define DAT_055c9bcc  (g_HashTableCtx[1])   // values array
 #define DAT_055c9bd0  (g_HashTableCtx[2])   // keys array
 #define DAT_055c9bd4  (g_HashTableCtx[3])   // capacity
-extern DWORD   DAT_055c9be0;
+extern BYTE*   DAT_055c9be0;
 extern DWORD   DAT_055c9be4;
 extern float  _DAT_055c9be4;
-extern DWORD   DAT_055c9be8;
-extern DWORD   DAT_055c9bec;
+extern BYTE*   DAT_055c9be8;
+extern BYTE*   DAT_055c9bec;
 extern DWORD   DAT_055c9bf0;
 extern DWORD   DAT_055c9d00;
 extern DWORD   DAT_055c9e04;
-extern DWORD   DAT_055c9e44;
-extern DWORD   DAT_055c9e48;
+extern std::uintptr_t DAT_055c9e44; // Reserva de la tabla primaria de atributos de items.
+extern std::uintptr_t DAT_055c9e48;
 // RandomTable @ 0x055C9E58 — 100 enteros (`rand() % 360`) que siembra WinMain
 // (0x41E8A0 L522-525).  Sólo lo usa Entity_Render (0x5038E0) para repartir en
 // círculo las monedas del montón de Zen del suelo.
@@ -447,8 +449,8 @@ extern DWORD   DAT_055c9e48;
 // en un mismo punto.
 extern int     DAT_055c9e58[100];
 #define RandomTable  DAT_055c9e58
-extern DWORD   DAT_055c9ff0;   // HGLRC (OpenGL context)
-extern DWORD   DAT_055c9ff4;
+extern BYTE*   DAT_055c9ff0;   // objeto del historial de chat; layout pendiente de B2
+extern BYTE*   DAT_055c9ff4;   // objeto de susurros; layout pendiente de B2
 extern DWORD   DAT_055c9ff8;
 // DAT_055ca004 = g_hDC — vive en CWindow (gWindow.GetHdc()).
 extern DWORD   DAT_055ca008;
@@ -602,7 +604,7 @@ extern char    DAT_07d2b494[];  // class name table (stride 300, 30 slots)
 #define _DAT_07abf5c4 (*(float*)(DAT_07abf050 + 0x574))  // preview entity field (BodyOrigin x)
 #define _DAT_07abf5c8 (*(float*)(DAT_07abf050 + 0x578))  // preview entity field (BodyOrigin y)
 #define _DAT_07abf5cc (*(float*)(DAT_07abf050 + 0x57c))  // preview entity field (BodyOrigin z)
-extern DWORD   CharactersClient; // IDA: DAT_07abf5d0 (0x07ABF5D0)
+extern std::uintptr_t CharactersClient; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 extern int     DAT_07abf5d4;   // visible entity counter (reset each frame)
 extern char   *Hero; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 extern DWORD   DAT_07abf5dc;
@@ -768,9 +770,9 @@ extern int    *p_DAT_07ea9504_;   // &OffsetInventoryItems[63*0x44+56] (slot 63,
 extern int    *p_DAT_07ea9328_;   // &OffsetInventoryItems[56*0x44+56] (slot 56, Key)
 #define DAT_07ea9504  (*p_DAT_07ea9504_)
 #define DAT_07ea9328  (*p_DAT_07ea9328_)
-extern DWORD   DAT_07ea9800;
-extern DWORD   g_ItemMoveSourcePool;
-extern DWORD   g_ItemMoveTargetPool;
+extern BYTE*   DAT_07ea9800;
+extern BYTE*   g_ItemMoveSourcePool;
+extern BYTE*   g_ItemMoveTargetPool;
 extern DWORD   DAT_07ea9804;   // NPC shop context A
 extern DWORD   DAT_07ea9808;   // NPC shop context B
 extern DWORD   DAT_07ea980c;   // NPC shop context C
@@ -1145,7 +1147,7 @@ extern DWORD   DAT_083bbb74;
 // ── Named pipe handle (0x00563b58) ────────────────────────────────────────────
 
 // ── Model data table (0x05828d58, stride 0xbc per entity_type) ────────────────
-extern DWORD   DAT_05828d58;   // model data array base; slot = DAT_05828d58 + type*0xbc
+extern std::uintptr_t DAT_05828d58; // Base de Models; los desplazamientos siguen expresados en bytes.
 extern void*   DAT_06f42a58;   // model memory pool base (allocated once in Model_LoadItems)
 // BoneVertex pool (see globals.cpp). Backed by g_BoneVertexBuf.
 // DAT_0584621c = base del slot 0; &DAT_0584621c es DWORD*, así que el código existente
@@ -1251,7 +1253,7 @@ extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por l
 // extern char    DAT_07d34134;        // class name table B (first entry base)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d34260;        // class info list B (stride 300, limit 0x7d358a4)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d358a4;        // class name / info buffer C   // -> alias a GlobalText, ver el final del archivo
-extern "C" int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
+extern "C" std::uintptr_t DAT_07d78068; // Base desplazada de atributos de items, filas de 64 bytes.
 // ── Posición del item que se está arrastrando ───────────────────────────────
 // En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
 // slot 32, campo Type en offset 0) — lo usan sub_47D410 (preview de stats) y el
@@ -1267,9 +1269,9 @@ extern "C" BYTE Inventory[];
 
 // Base de la tabla ItemAttribute.  Devuelve 0 si todavia no se cargo, para
 // que los callers no computen attrBase = type*0x40 + basura.
-static __forceinline unsigned int ItemAttribute_Base(void) {
-    const unsigned int p = (unsigned int)DAT_07d78068;
-    const unsigned int allocation = (unsigned int)DAT_055c9e44;
+static __forceinline std::uintptr_t ItemAttribute_Base(void) {
+    const std::uintptr_t p = DAT_07d78068;
+    const std::uintptr_t allocation = DAT_055c9e44;
     // Reserva: (ITEM_MAX_EX + 0x400) filas de 64 bytes, con base
     // desplazada hasta 0x3ff filas. No asumir un mapa virtual de Windows.
     if (!allocation || p < allocation || p - allocation > 0x400u * 64u ||
@@ -2142,7 +2144,7 @@ extern float   DAT_00590af8;   // 3D sound cos component (updated by Sound_Updat
 extern float   DAT_00590afc;   // cloth wind Z
 extern float   _DAT_00559068;  // gravedad 9.8
 extern float   _DAT_0055906c;  // dt fijo 0.0025
-extern LPBYTE  lpData_055ca044;
+extern DWORD   lpData_055ca044; // IDA: modo numérico TextOut, no dirección.
 extern char   *lpText_07d63aec;
 extern DWORD   DAT_00561740;
 extern DWORD   DAT_00561744;
@@ -2218,10 +2220,10 @@ extern char    s__s0_d_bmd_0055a7ec[]; // "%s0%d.bmd"
 extern char    s__s_d_bmd_0055a7e0[];  // "%s%d.bmd"
 
 // ── Item/Skill/Gate data loader globals ──────────────────────────────────────
-extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT_07d78068)
-extern int     DAT_07cf1ff8;       // skill record shadow array base
-extern int     DAT_07d29d20;       // skill/gate data array base
-extern DWORD   GateAttribute;       // gate data array base (stride 9 bytes, 100 entries) — malloc'd in WinMain  [IDA 0x07CF5600]
+extern BYTE*   DAT_07cf1ff0;       // Base de la tabla sombra de atributos de items.
+extern BYTE*   DAT_07cf1ff8;       // Base de los registros sombra de skills.
+extern BYTE*   DAT_07d29d20;       // Base reservada para registros de skills de 0x28 bytes.
+extern GATE_ATTRIBUTE* GateAttribute; // IDA 0x07CF5600: base de 100 registros de nueve bytes
 // ── g_DialogScript @ 0x07CF5608 — 200 entradas x 0x400 bytes ────────────────
 // Layout verificado contra el disassembly de CSQuest::ShowDialogText (0x4017E0):
 //   0x4017F1  shl eax, 0Ah            → stride de entrada = 0x400
@@ -2539,7 +2541,7 @@ extern char    g_GameGuardGameName[];   // IDA: aMu (0x0055910C) — el nombre d
                                         // ventana: el cliente no crea ninguna ventana de
                                         // GameGuard.
 
-extern DWORD   g_csQuest;         // Quest system state (0=inactive)
+extern uintptr_t g_csQuest;      // Dirección del objeto CSQuest (0 = inactivo).
 
 // Match/DevilSquare info
 extern BYTE    m_byMatchType;
@@ -2565,7 +2567,7 @@ extern char    BufferName[420][0x40];                 // per-slot filename (64 b
 
 extern LPDIRECTSOUNDBUFFER   g_lpDSBuffer  [420][4];  // 0x0058C780 — secondary buffers (up to 4 instances per slot)
 extern LPDIRECTSOUND3DBUFFER g_lpDS3DBuffer[420][4];  // 0x0058EEE4 — parallel 3D-buffer array
-extern DWORD   Object3DSound[420][4];                 // payload (entity id bound to each channel)
+extern const OBJECT* Object3DSound[420][4];          // Entidad ligada a cada canal de audio 3D.
 
 // Music
 

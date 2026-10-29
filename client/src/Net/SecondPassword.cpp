@@ -710,14 +710,14 @@ void __cdecl SecondPassword_Screen4(void) {
         uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, (void*)DAT_07cf1ffc);
         if (uVar4 == 0xffffffff) {
             void* pvVar10 = AntiTamper_HashNode();
-            *(unsigned char*)((int)pvVar10 + 0x584) = 1;
+            *(static_cast<BYTE*>(pvVar10) + 0x584) = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, pvVar10, puVar8);
         }
         // Update slot visibility based on item type == -1
-        if (*(short*)((int)DAT_07cf1ffc + 0x218 + i) == -1)
-            *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 0;
+        if (*(short*)(static_cast<BYTE*>(DAT_07cf1ffc) + 0x218 + i) == -1)
+            *(static_cast<BYTE*>(DAT_07cf1ffc) + 0x258 + i) = 0;
         else
-            *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 1;
+            *(static_cast<BYTE*>(DAT_07cf1ffc) + 0x258 + i) = 1;
     }
 
     // IDA sub_4E6550 L160-231: reset por frame del byte ITEM.Color (+0x40) de
@@ -765,7 +765,7 @@ void __cdecl SecondPassword_Screen4(void) {
     if (sv3 == '\0') {
         char sv4 = DAT_07eaa118;
         if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && GoldenArcherOpenType == 0) {
-            ushort uVar3 = *(ushort*)((int)DAT_07cf1ff4 + 0xe);
+            ushort uVar3 = *(ushort*)(static_cast<BYTE*>(DAT_07cf1ff4) + 0xe);
             if (0x31 < uVar3) {
                 DAT_07eaa138 = 1;
                 if ((int)(DAT_07ea5288 + 0x3c) <= (int)DAT_083a427c &&
@@ -1044,7 +1044,7 @@ void __cdecl SecondPassword_Screen8(void) {
             // 004E3DB0 comprueba que exista espacio en el inventario normal
             // para el resultado; en el binario el primer argumento era la
             // dirección absoluta de ese pool, no un literal portable.
-            uint uVar2 = SecondPassword_GridSlotAvail((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
+            uint uVar2 = SecondPassword_GridSlotAvail(reinterpret_cast<uintptr_t>(OffsetInventoryItems), 8, 8, iVar1, iVar3);
             if ((char)uVar2 == '\0') {
                 UIChatLogWindow_AddText(&DAT_07eaa198, &DAT_07d54600, 2);
             } else {
@@ -1253,7 +1253,7 @@ void __cdecl FUN_004ec330(void) {
     uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = AntiTamper_HashNode();
-        *(unsigned char*)((int)pv + 1) = 1;
+        static_cast<unsigned char*>(pv)[1] = 1;
         HashTable_Insert(&MAIN_HASH_CLASS, pv, &DAT_07eaa118);
     }
     char cGuard = DAT_07eaa118;
@@ -1326,13 +1326,13 @@ void __cdecl FUN_004ec330(void) {
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,
 // con stride 0x44 por celda; devuelve 1 si alguna celda de la ventana está libre (slot==-1), si no 0.
 // SecondPassword_GridSlotAvail (IDA-activated)
-uint __cdecl SecondPassword_GridSlotAvail(int a1, int a2, int a3, int a4, int a5)
+uint __cdecl SecondPassword_GridSlotAvail(uintptr_t a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebp
   int v6; // eax
   int v8; // esi
   char v10; // bl
-  int v11; // edi
+  uintptr_t v11;
   WORD *v12; // ecx
   bool v13; // cc
   int v15; // [esp+10h] [ebp-Ch]
@@ -1445,8 +1445,8 @@ undefined4 __cdecl SecondPassword_CancelReturn(void)
             int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar3 == -1) {
                 iVar6 = Platform::GetSocket().LastError();
-                if (iVar6 != 0x2733) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
-                if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
+                if (iVar6 != 0x2733) { Net_Disconnect(SocketClient); break; }
+                if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(SocketClient); break; }
                 memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar8);
                 SocketClientSendBufferLength += uVar8;
                 break;
@@ -1649,17 +1649,17 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             if (flying <= 1 && ((kind >= 384 && kind <= 390) || kind == 419))
                 return;
         }
-        DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+        DAT_07ea9800 = &OffsetInventoryItems[0];
         memcpy(DAT_07e91350, slot, 0x44);                   // pPickedItem = *slot
         DAT_07e91388 = 1;                                   // pPickedItem.Key (copia del port)
         SyncPickedItemVisualState();
-        g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+        g_ItemMoveSourcePool = &OffsetInventoryItems[0];
         g_ItemMoveTargetPool = 0;
         *(short*)slot = -1;
         *(int*)(slot + 4) = 0;
         slot[27] = 0;
         DAT_07ea5b18 = (DWORD)a5;                           // Inventory[32].Type
-        SetCharacterClass((int)(uintptr_t)DAT_07abf5d8);         // SetCharacterClass(Hero)
+        SetCharacterClass(AsCharacter(DAT_07abf5d8));         // SetCharacterClass(Hero)
         DAT_07eaa160 = 0;                                   // CheckInventory
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
@@ -1667,7 +1667,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         if (rightClick) {
             DAT_07e11e78 = (DWORD)(unequipTarget + 12);
             DAT_07eaa165 = 1;                               // EquipmentItem
-            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+            g_ItemMoveTargetPool = &OffsetInventoryItems[0];
             SendRequestEquipmentItem(0, a5, picked, 0, unequipTarget + 12);
         }
         return;
@@ -1695,7 +1695,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (a5 == 1 && pt >= 0 && pt < 96 && left == -1)
         DAT_07e11e78 = 0;
 
-    const BYTE* src = (const BYTE*)(uintptr_t)DAT_07ea9800;
+    const BYTE* src = DAT_07ea9800;
     BYTE srcFlag;
     if (src == &OffsetInventoryItems[0])      srcFlag = 0;
     else if (src == &OffsetWarehouseItems[0]) srcFlag = 2;
@@ -1726,8 +1726,8 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     if (DAT_07eaa165) return;                               // EquipmentItem
     DAT_07eaa165 = 1;
     g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800
-                                        : (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-    g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                                        : &OffsetInventoryItems[0];
+    g_ItemMoveTargetPool = &OffsetInventoryItems[0];
     SendRequestEquipmentItem(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
 }
 
@@ -1780,10 +1780,10 @@ void __cdecl FUN_004d1fc0(void) {
 //   c+0x2BE word   (= c+846) class-change indicator
 //
 // Hash-table refcounting (líneas 181-433 IDA) es anti-tamper, omitido.
-extern int DAT_07d78068;   // ItemAttribute base (declared in globals.h)
+extern std::uintptr_t DAT_07d78068;   // ItemAttribute base (declared in globals.h)
 
 // IDA: SetPlayerStop (0x004430C0)
-void __cdecl SetPlayerStop(int c) {
+void __cdecl SetPlayerStop(CHARACTER* c) {
     AsCharacter(c)->Run = 0;   // c+768 = stamina counter
 
     auto SetAction_local = [c](unsigned char act) {
@@ -1806,7 +1806,7 @@ void __cdecl SetPlayerStop(int c) {
     // como 0xFFFF con la mano vacía), igual que el resto de los accesos a
     // ItemAttribute.
     auto ItemTwoHand = [](int type) -> unsigned char {
-        unsigned int base = ItemAttribute_Base();
+        std::uintptr_t base = ItemAttribute_Base();
         if (!base) return 0;
         int idx = type - 399;
         if (idx < 1 || idx >= ITEM_MAX_EX) return 0;   // idx>=1: la expresión resta 34
@@ -1927,7 +1927,7 @@ LABEL_129:
                 short s = *(short*)((char*)(uintptr_t)DAT_05828d58
                                     + 2 * (v55 + 94 * v53) + 170);
                 // PlayBuffer(s + 170, c, 0) — sound playback (PlayBuffer en nuestra port)
-                PlayBuffer(s + 170, (DWORD)c, 0);
+                PlayBuffer(s + 170, AsObject(c), 0);
             }
         }
     }
@@ -1949,7 +1949,7 @@ LABEL_129:
 //   2         = non-player default (NPC/monster)
 //   0x20/0x21 = DarkLord stand/walk (legacy)
 // IDA: SetPlayerWalk (0x00443930)
-void __cdecl SetPlayerWalk(int param_1) {
+void __cdecl SetPlayerWalk(CHARACTER* param_1) {
     // +0x34E (=846) es **SafeZone**, NO dead (el dead real es +0x2FD).
     char bSafeZone0 = *(char *)&AsCharacter(param_1)->SafeZone;
 
@@ -1980,7 +1980,7 @@ void __cdecl SetPlayerWalk(int param_1) {
 
     // Non-player (NPC/monster): always action 2.
     if (etype != 390) {
-        SetAction(param_1, 2);
+        SetAction(AsObject(param_1), 2);
         goto label_119;
     }
 
@@ -1997,10 +1997,10 @@ void __cdecl SetPlayerWalk(int param_1) {
     // Pendant 818 + alive: stand-with-fairy (32) or holding-something (33).
     if (pendant == 818 && !bSafeZone) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
-            SetAction(param_1, 32);
+            SetAction(AsObject(param_1), 32);
             goto label_119;
         }
-        SetAction(param_1, 33);
+        SetAction(AsObject(param_1), 33);
         goto label_119;
     }
 
@@ -2009,9 +2009,9 @@ void __cdecl SetPlayerWalk(int param_1) {
         // Las alas están activas cuando c+672 != -1 (sólo si está vivo).
         if (!bSafeZone && wings != -1) {
             // Wings flying: action 30 (no spear) or 31 (spear 536-543, 544, 546).
-            if (LH >= 536 && LH < 543) { SetAction(param_1, 31); goto label_119; }
-            if (LH == 544 || LH == 546)    { SetAction(param_1, 31); goto label_119; }
-            SetAction(param_1, 30);
+            if (LH >= 536 && LH < 543) { SetAction(AsObject(param_1), 31); goto label_119; }
+            if (LH == 544 || LH == 546)    { SetAction(AsObject(param_1), 31); goto label_119; }
+            SetAction(AsObject(param_1), 30);
             goto label_119;
         }
         // World 7 (Atlans): swim animations. Stamina < 0x28 → 21, else 29.
@@ -2021,7 +2021,7 @@ void __cdecl SetPlayerWalk(int param_1) {
         //   if (!v6) { si hay alas → SetAction 30/31 y sale; si no, v7 = 1; }
         // O sea en zona segura NO se nada (ni se vuela): se camina.
         if (!bSafeZone && gMapManager.IsSwimmable(gMapManager.GetCurrentMap())) {   // IDA: World == 7
-            SetAction(param_1, (stamina < 0x28) ? 21 : 29);
+            SetAction(AsObject(param_1), (stamina < 0x28) ? 21 : 29);
             goto label_119;
         }
         // No weapons equipped (or dead in non-event-map world):
@@ -2030,12 +2030,12 @@ void __cdecl SetPlayerWalk(int param_1) {
         if (noWeapons || bSafeZoneNonEvent) {
             if (stamina >= 0x28) {
                 // Exhausted: action 22.
-                SetAction(param_1, 22);
+                SetAction(AsObject(param_1), 22);
                 goto label_119;
             }
             // Non-exhausted no-weapon walk/run: 13 (walk) or 14 (run).
             unsigned int act = ((AsCharacter(param_1)->Class & 7) == 2) ? 14u : 13u;
-            SetAction(param_1, act);
+            SetAction(AsObject(param_1), act);
             goto label_119;
         }
         // Tiene armas, está vivo, no es Atlans, no está exhausto:
@@ -2051,93 +2051,93 @@ void __cdecl SetPlayerWalk(int param_1) {
             // Sword class (LH 400..495):
             if (LH >= 400 && LH < 496) {
                 if (ItemTwoHand(LH)) {
-                    SetAction(param_1, (LH == 431) ? 79 : 16);
+                    SetAction(AsObject(param_1), (LH == 431) ? 79 : 16);
                     goto label_119;
                 }
-                SetAction(param_1, 15);   // 1H sword walk
+                SetAction(AsObject(param_1), 15);   // 1H sword walk
                 goto label_119;
             }
             // Lanza (560..591): IDA chequea TwoHand → 18, si no cae a LABEL_64 (15)
             if (LH >= 560 && LH < 592) {
                 if (!ItemTwoHand(LH)) {
-                    SetAction(param_1, 15);  // LABEL_64
+                    SetAction(AsObject(param_1), 15);  // LABEL_64
                     goto label_119;
                 }
-                SetAction(param_1, 18);
+                SetAction(AsObject(param_1), 18);
                 goto label_119;
             }
             // Mace (497) / War-axe (530):
-            if (LH == 497 || LH == 530) { SetAction(param_1, 17); goto label_119; }
+            if (LH == 497 || LH == 530) { SetAction(AsObject(param_1), 17); goto label_119; }
             // IDA L155-176: NOT magic-book range (LH < 496 || LH >= 528):
             //   Bow RH → 19, Staff LH → 20, fallthrough → LABEL_87 (13/14).
             // SI NO (mano izquierda en [496, 528)): SetAction 18 (terminal).
             if (LH < 496 || LH >= 528) {
                 if ((RH >= 528 && RH < 535) || RH == 545) {
-                    SetAction(param_1, 19);
+                    SetAction(AsObject(param_1), 19);
                     goto label_119;
                 }
                 if ((LH >= 536 && LH < 543) || LH == 544 || LH == 546) {
-                    SetAction(param_1, 20);
+                    SetAction(AsObject(param_1), 20);
                     goto label_119;
                 }
                 // LABEL_87: no-weapon walk class-conditional
                 unsigned int act = ((AsCharacter(param_1)->Class & 7) == 2) ? 14u : 13u;
-                SetAction(param_1, act);
+                SetAction(AsObject(param_1), act);
                 goto label_119;
             }
             // LH in [496, 528): magic books — terminal action 18
-            SetAction(param_1, 18);
+            SetAction(AsObject(param_1), 18);
             goto label_119;
         }
         // Stamina >= 0x28 (exhausted) with weapons:
         if (LH >= 400 && LH < 496) {
             if (RH >= 400 && RH < 496) {
-                SetAction(param_1, 24);     // dual-sword exhausted
+                SetAction(AsObject(param_1), 24);     // dual-sword exhausted
                 goto label_119;
             }
             if (ItemTwoHand(LH)) {
-                SetAction(param_1, (LH == 431) ? 80 : 25);
+                SetAction(AsObject(param_1), (LH == 431) ? 80 : 25);
                 goto label_119;
             }
-            SetAction(param_1, 23);
+            SetAction(AsObject(param_1), 23);
             goto label_119;
         }
         // Spear exhausted: TwoHand → 26, else 23 (LABEL_97)
         if (LH >= 560 && LH < 592) {
             if (!ItemTwoHand(LH)) {
-                SetAction(param_1, 23);  // LABEL_97
+                SetAction(AsObject(param_1), 23);  // LABEL_97
                 goto label_119;
             }
-            SetAction(param_1, 26);
+            SetAction(AsObject(param_1), 26);
             goto label_119;
         }
         if (LH >= 496 && LH < 528) {
-            SetAction(param_1, 26);
+            SetAction(AsObject(param_1), 26);
             goto label_119;
         }
         if ((RH >= 528 && RH < 535) || RH == 545) {
-            SetAction(param_1, 27);
+            SetAction(AsObject(param_1), 27);
             goto label_119;
         }
         if ((LH >= 536 && LH < 543) || LH == 544 || LH == 546) {
-            SetAction(param_1, 28);
+            SetAction(AsObject(param_1), 28);
             goto label_119;
         }
-        SetAction(param_1, 22);  // exhausted no-weapon walk (LABEL_59)
+        SetAction(AsObject(param_1), 22);  // exhausted no-weapon walk (LABEL_59)
         goto label_119;
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
     if (gMapManager.GetCurrentMap() != 8 && gMapManager.GetCurrentMap() != 10) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
-            SetAction(param_1, 32);
+            SetAction(AsObject(param_1), 32);
             goto label_119;
         }
-        SetAction(param_1, 33);
+        SetAction(AsObject(param_1), 33);
         goto label_119;
     }
     // Wings + Atlans/Aida: swim wings.
-    SetAction(param_1,
+    SetAction(AsObject(param_1),
                  ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) ? 76 : 77);
 
     }
@@ -2145,11 +2145,11 @@ label_119:
 
     // Entity type 0x129 — special case with a fixed sound
     if (etype == 0x129) {
-        PlayBuffer(0x5e, param_1, 0);
+        PlayBuffer(0x5e, AsObject(param_1), 0);
         return;
     }
     // Sonido de movimiento aleatorizado (1/64 para el jugador, 1/16 para el resto)
-    if (param_1 == (int)DAT_07abf5d8) {
+    if (param_1 == AsCharacter(DAT_07abf5d8)) {
         if ((rand() & 0x3f) != 0) return;
     } else {
         if ((rand() & 0xf) != 0) return;
@@ -2157,7 +2157,7 @@ label_119:
     // Reproduce el sonido de paso de la tabla de sonidos del modelo si no es DarkLord (o si está en el rango de altura de paso)
     if (etype != 0x186 || (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)) {
         if (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)
-            PlayBuffer(0x5d, param_1, 0);
+            PlayBuffer(0x5d, AsObject(param_1), 0);
         if (*(short *)(DAT_05828d58 + 0xaa + etype * 0xbc) != -1) {
             // IDA 0x443930 L288-289:
             //     v19 = rand() % 2;
@@ -2167,8 +2167,7 @@ label_119:
             // leería campos ajenos del struct de modelo.
             int v19 = rand() % 2;
             int iVar9 = 0;
-            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa,
-                         param_1, iVar9);
+            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa, AsObject(param_1), iVar9);
         }
     }
 }
@@ -2177,9 +2176,10 @@ label_119:
 // Applies backward velocity step (CharacterMoveSpeed) rotated by entity facing matrix,
 // y después fija la altura de la entidad a la del terreno (RequestTerrainHeight).
 // IDA: MoveCharacterPosition (0x00454BA0)
-void __cdecl MoveCharacterPosition(int param_1) {
+void __cdecl MoveCharacterPosition(CHARACTER* character) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(character);
     float local_30[12];
-    float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(param_1), 0.0f };
+    float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(AsCharacter(param_1)), 0.0f };
     // El mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
     // local_3c/local_38/local_34 eran el buffer de salida contiguo de 3 floats que
     // esperaba Vector_Rotate, pero MSVC no garantiza el layout de los locales.
@@ -2212,16 +2212,18 @@ void __cdecl MoveCharacterPosition(int param_1) {
 // fila propia del 0x12: `ChangeCharacterExt` limpia las piezas, borra el bug
 // del pet y deja el helper en "ninguno", y como el equipo no cambió,
 // SetCharacterClass no vuelve a correr.
-void Hero_ApplyCatalogEquipment(int c)
+void Hero_ApplyCatalogEquipment(CHARACTER* character)
 {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if (!DAT_07cf1ffc || *(short*)(c + 2) != 390) return;
-    const int v7 = (int)(uintptr_t)DAT_07cf1ffc + 536;
+    const BYTE* v7 = static_cast<const BYTE*>(DAT_07cf1ffc) + 536;
     static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
     for (int part = 0; part < 9; ++part)
-        gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+        gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
     const short pet = *(short*)(v7 + 544);
     if (pet != -1 && gContentCatalog.GetPet(pet)) {
         *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+        // El owner del pool aún ocupa 32 bits; su layout queda para B2.
         DeleteBug((DWORD)(uintptr_t)c);
         CreateBug(*(short*)(c + 696), (void*)(c + 16), (void*)(uintptr_t)c, 0);
     }
@@ -2242,11 +2244,12 @@ void Hero_ApplyCatalogEquipment(int c)
 // Hashtable obfuscation y comparación con `Hero` global: omitidos (anti-tamper
 // noise / no requeridos para gameplay observable).
 // IDA: SetCharacterClass (0x0045C130)
-void __cdecl SetCharacterClass(int c) {
+void __cdecl SetCharacterClass(CHARACTER* character) {
+    BYTE* c = reinterpret_cast<BYTE*>(character);
     if (AsCharacter(c)->Object.Type != 390) return;   // 390 = 0x186 = local player
 
     char* cd = (char*)DAT_07cf1ffc;
-    int v7 = (int)cd + 536;   // matches IDA: CharacterMachine + 536
+    BYTE* v7 = reinterpret_cast<BYTE*>(cd) + 536;   // matches IDA: CharacterMachine + 536
 
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
@@ -2271,7 +2274,7 @@ void __cdecl SetCharacterClass(int c) {
     {
         static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
         for (int part = 0; part < 9; ++part)
-            gContentCatalog.SetEntityPart((const void*)(uintptr_t)c, part, *(short*)(v7 + kWearOff[part]));
+            gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
     }
 
     // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
@@ -2297,6 +2300,7 @@ void __cdecl SetCharacterClass(int c) {
     {
         const short newHelper = AsCharacter(c)->Helper.Type;
         if (newHelper != prevHelper) {
+            // El owner del pool aún ocupa 32 bits; su layout queda para B2.
             DeleteBug((DWORD)(uintptr_t)c);          // DeleteBug
             int bugType = 0;
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
@@ -2320,7 +2324,7 @@ void __cdecl SetCharacterClass(int c) {
 
     bool skipCancel = (v11 >= 0x85u && v11 <= 0x8Cu);
     if (!skipCancel && (v11 < 0x22u || v11 > 0x5Bu)) {
-        SetPlayerStop(c);   // SetPlayerStop
+        SetPlayerStop(AsCharacter(c));   // SetPlayerStop
     }
 
     // entity[+847] == 0 → secondary cluster needs filling
@@ -2368,13 +2372,9 @@ void __cdecl SetCharacterClass(int c) {
     AsCharacter(c)->BodyPart[4].Option1 = *(unsigned char*)(v7 + 367);
     AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)(v7 + 435);
 
-    SetCharacterScale((int)c);
-    // sub_47E3C0(CharacterMachine) — full stat recalculation (CharData_RecalcStats).
-    // La implementación real son ~293 bytes de tiradas de base/máximo/random sobre los slots
-    // 1374..1407 de CharacterMachine (HP/MP/ATK/DEF/AS/crítico/acierto). No hace falta para el char-select; el gate
-    // que la rodea (entity[+847] != 0) sólo dispara después de entrar al mundo. El stub de abajo mantiene
-    // el link verde; portar la implementación completa cuando se retome el trabajo in-game.
-    CalculateAll((int)cd, 0, 0);
+    SetCharacterScale(AsCharacter(c));
+    // Recalcula los ocho grupos de atributos y sus campos derivados.
+    CalculateAll(reinterpret_cast<BYTE*>(cd), 0, 0);
 }
 
 // sub_47E3C0 @ 0x0047E3C0 (293 bytes) — CharData_RecalcStats wrapper.
@@ -2388,8 +2388,8 @@ void __cdecl SetCharacterClass(int c) {
 //   - this[+1406] = (rand()%100 < this[+1402]) ? 1 : 0  (tirada de crítico)
 //   - this[+1407] = (rand()%100 < this[+1404]) ? 1 : 0  (tirada de esquive)
 // IDA: FUN_0047E3C0 (0x0047E3C0)
-int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
-    int this_ = characterMachine;
+int __cdecl CalculateAll(BYTE* characterMachine, int /*p2*/, int /*p3*/) {
+    BYTE* this_ = characterMachine;
     if (!this_) return 0;
 
     // Anti-tamper hash table — skipped per project policy
@@ -2449,7 +2449,7 @@ void __cdecl CheckGate(void)
     if (!GateAttribute || !Hero || !CharacterAttribute)
         return;
 
-    const BYTE* const gates = (const BYTE*)(uintptr_t)GateAttribute;
+    const BYTE* const gates = reinterpret_cast<const BYTE*>(GateAttribute);
     BYTE* const hero = (BYTE*)Hero;
     const WORD& level = *(WORD*)((BYTE*)CharacterAttribute + 14);
 
@@ -2961,9 +2961,9 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
 //   - Other NPCs: SetAction(c, 6)  ← death anim
 // El ruido de hash table (camino sólo-Hero, L32-119) se saltea per la política del proyecto.
 // IDA: SetPlayerDie (0x00444D90)
-void __cdecl SetPlayerDie(int c_in)
+void __cdecl SetPlayerDie(CHARACTER* c_in)
 {
-    DWORD c = (DWORD)c_in;
+    BYTE* c = reinterpret_cast<BYTE*>(c_in);
     if (!c) return;
 
     short v11 = *(short*)(c + 2);
@@ -2972,7 +2972,7 @@ void __cdecl SetPlayerDie(int c_in)
     if (v11 == 390) {
         int v12 = *(int*)(c + 4);
         if (v12 < 206 || v12 > 208) {
-            SetAction((int)c, 131);
+            SetAction(AsObject(c), 131);
             goto LABEL_41;
         }
         // Player special class 206-208: explosion
@@ -3007,11 +3007,11 @@ void __cdecl SetPlayerDie(int c_in)
             }
             playFxBuf = true;
         } else {
-            SetAction((int)c, 6);
+            SetAction(AsObject(c), 6);
             goto LABEL_41;
         }
     }
-    if (playFxBuf) PlayBuffer(94, c, 0);
+    if (playFxBuf) PlayBuffer(94, AsObject(c), 0);
 
 LABEL_41:
     // Death sound
@@ -3021,9 +3021,9 @@ LABEL_41:
             int v15 = *(int*)(c + 4);
             if (v15 < 206 || v15 > 208) {
                 if ((*(BYTE*)(c + 444) & 7) == 2) {
-                    PlayBuffer(80, c, 0);
+                    PlayBuffer(80, AsObject(c), 0);
                 } else {
-                    PlayBuffer(78, c, 0);
+                    PlayBuffer(78, AsObject(c), 0);
                 }
                 return;
             }
@@ -3031,7 +3031,7 @@ LABEL_41:
         // Non-player or player[206-208]: model action sound at +178
         short modSnd = *(short*)((char*)(uintptr_t)DAT_05828d58 + 188 * v14 + 178);
         if (modSnd != -1) {
-            PlayBuffer(modSnd + 170, c, 0);
+            PlayBuffer(modSnd + 170, AsObject(c), 0);
         }
     }
 }
@@ -3039,10 +3039,10 @@ LABEL_41:
 // mc_SetPlayerDie — wrapper que usa la lógica de envejecimiento del ragdoll de MoveCharacter.
 // El SetPlayerDie de IDA NO toca dead_flag (lo hace el llamador, ReceiveDie), y
 // este wrapper tampoco: sólo llama a SetPlayerDie.
-static inline void mc_SetPlayerDie(DWORD c)
+static inline void mc_SetPlayerDie(CHARACTER* c)
 {
     if (!c) return;
-    SetPlayerDie((int)c);
+    SetPlayerDie(c);
     // NO escribir acá +0x2FD (+765), ni dead_flag (0x34e), ni alive_flag (0x2EC):
     // SetPlayerDie (0x00444D90) no los toca; la transición de estado de vida es
     // sólo de ReceiveDie.
@@ -3100,7 +3100,7 @@ void __cdecl MoveCharacter(int p1)
     AsModel(v422)->CurrentAction = AsObject(o)->CurrentAction;  // anim_state
 
     // ─── IDA L437-477: Hero-only buff timers (anti-tamper stripped)
-    if (c == (DWORD)Hero)
+    if (AsCharacter(c) == AsCharacter(Hero))
     {
         if (CharacterAttribute)
         {
@@ -3109,15 +3109,15 @@ void __cdecl MoveCharacter(int p1)
             if (*t1) (*t1)--;
             if (!*t1) {
                 *((BYTE*)CharacterAttribute + 40) &= ~1u;
-                CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);  // CalculateAttackSpeed
+                CalculateAttackSpeed(static_cast<BYTE*>(CharacterMachine));  // CalculateAttackSpeed
             }
             // L458-467: magic-speed buff (CA+44 timer, CA+40 bit 1)
             unsigned short* t2 = (unsigned short*)((char*)CharacterAttribute + 44);
             if (*t2) (*t2)--;
             if (!*t2) {
                 *((BYTE*)CharacterAttribute + 40) &= ~2u;
-                Stats_CalcBase((int)(uintptr_t)CharacterMachine);  // Stats_CalcBase
-                Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);  // Stats_CalcMagicDmgRange
+                Stats_CalcBase(static_cast<BYTE*>(CharacterMachine));  // Stats_CalcBase
+                Stats_CalcMagicDmgRange(static_cast<BYTE*>(CharacterMachine));  // Stats_CalcMagicDmgRange
             }
         }
     }
@@ -3160,7 +3160,7 @@ void __cdecl MoveCharacter(int p1)
         unsigned char step = (unsigned char)(AsCharacter(c)->JumpTime);
         (AsCharacter(c)->JumpTime)++;
         if (step > 15) {
-            if (AsObject(o)->Type == 322) SetPlayerStop((int)c);
+            if (AsObject(o)->Type == 322) SetPlayerStop(AsCharacter(c));
             AsCharacter(c)->JumpTime = 0;
         }
     }
@@ -3193,7 +3193,7 @@ void __cdecl MoveCharacter(int p1)
         if (AsCharacter(c)->Rot >= 1.0f) {
             AsObject(o)->Alpha = 1.0f - (AsCharacter(c)->Rot - v412);
             if (AsObject(o)->Alpha < 0.0099999998f) {
-                if (c != (DWORD)Hero) *(BYTE*)o = 0;
+                if (AsCharacter(c) != AsCharacter(Hero)) *(BYTE*)o = 0;
             } else {
                 AsObject(o)->Position[2] -= 0.40000001f;
             }
@@ -3230,7 +3230,7 @@ void __cdecl MoveCharacter(int p1)
     }
 
     // ─── IDA L607: Alpha(o)
-    Alpha((int)o);
+    Alpha(AsObject(o));
 
     // ─── IDA L608-611: shaky timer decay
     if (*(float*)(c + 836) > 0.0f) *(float*)(c + 836) -= 0.029999999f;
@@ -3263,7 +3263,7 @@ void __cdecl MoveCharacter(int p1)
                 BYTE act = AsObject(o)->CurrentAction;
                 if (act < 0x0Du
                     || (act >= 0x22u && act <= 0x82u && act != 79 && act != 80)) {
-                    SetPlayerStop((int)c);  // SetPlayerStop
+                    SetPlayerStop(AsCharacter(c));  // SetPlayerStop
                 }
                 skipIdleSelect = true;  // jump to L195
             }
@@ -3284,51 +3284,51 @@ void __cdecl MoveCharacter(int p1)
                                     if (action < 100) {
                                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
-                                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                                        SetAction((int)c, 105);
+                                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
+                                        SetAction(AsObject(c), 105);
                                     }
                                 } else {
                                     TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
-                                        CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                                    SetAction((int)c, 111);
+                                        CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
+                                    SetAction(AsObject(c), 111);
                                 }
                             } else {
                                 TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
-                                    CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                                SetAction((int)c, 99);
+                                    CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
+                                SetAction(AsObject(c), 99);
                             }
                         } else {
                             TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
-                                CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
-                            SetAction((int)c, 97);
+                                CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
+                            SetAction(AsObject(c), 97);
                         }
                         skipIdleSelect = true;
                     }
                     if (!skipIdleSelect) {
                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
-                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
+                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                     }
                 }
-                if (!skipIdleSelect) SetAction((int)c, 1);
+                if (!skipIdleSelect) SetAction(AsObject(c), 1);
                 skipIdleSelect = true;  // fall to L195 either way (event NPCs done)
             }
         }
         else if (gMapManager.GetCurrentMap() == 1 && AsObject(o)->Type == 40) {
-            SetAction((int)o, 0);
+            SetAction(AsObject(o), 0);
         }
         else if (AsObject(o)->Type < 270 || AsObject(o)->Type >= 335) {
             // Non-player non-monster (NPCs, props)
             v48 = AsObject(o)->Type;
             if (v48 == 170 || v48 <= 337 || v48 > 339) {
-                SetAction((int)o, rand() % 2);
+                SetAction(AsObject(o), rand() % 2);
             } else if (rand() % 16 >= 12) {
-                SetAction((int)o, rand() % 2 + 1);
+                SetAction(AsObject(o), rand() % 2 + 1);
             } else {
-                SetAction((int)o, 0);
+                SetAction(AsObject(o), 0);
             }
         }
         else {
@@ -3339,7 +3339,7 @@ void __cdecl MoveCharacter(int p1)
             }
             BYTE act = AsObject(o)->CurrentAction;
             if (act == 1 || act == 5 || act == 3 || act == 4 || act == 8 || act == 9) {
-                SetAction((int)o, 0);
+                SetAction(AsObject(o), 0);
             }
         }
     }
@@ -3350,14 +3350,14 @@ void __cdecl MoveCharacter(int p1)
         && AsModel(v422)->CurrentAnimationFrame
             == *(short*)(*(int *)&AsModel(v422)->Actions + 16 * (AsObject(o)->CurrentAction) + 8) - 1)
     {
-        SetAction((int)o, (rand() % 32) ? 0 : 1);
+        SetAction(AsObject(o), (rand() % 32) ? 0 : 1);
     }
 
     // L796-806: ragdoll-counter aging (force die after 0xF frames)
     if (AsCharacter(c)->Dead) {
         unsigned char inc = (unsigned char)(++AsCharacter(c)->Dead);
-        if (inc >= 0xFu) mc_SetPlayerDie(c);
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(c);
+        if (inc >= 0xFu) mc_SetPlayerDie(AsCharacter(c));
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(AsCharacter(c));
     }
 
     // L807-811: setup defaults
@@ -3398,14 +3398,14 @@ void __cdecl MoveCharacter(int p1)
     {
         AsCharacter(c)->SkillStage = 0;
         AsObject(o)->PKKey = -1;
-        if (c == (DWORD)Hero && SelectedCharacter != -1) {
+        if (AsCharacter(c) == AsCharacter(Hero) && SelectedCharacter != -1) {
             DWORD selSlot = (DWORD)(916 * SelectedCharacter + (int)CharactersClient);
             // Guild-war target lock (skipped guild-mark strcmp — same guild = no target)
             if (EnableGuildWar
                 && AsCharacter(selSlot)->PK >= 6u
                 && AsCharacter(selSlot)->GuildMarkIndex != -1
                 && Hero
-                && !strcmp(Guild_GetMarkName(*(short*)((int)Hero + 474)),
+                && !strcmp(Guild_GetMarkName(*(const short*)(static_cast<const char*>(Hero) + 474)),
                            Guild_GetMarkName(AsCharacter(selSlot)->GuildMarkIndex)))
             {
                 AsObject(o)->PKKey = -1;
@@ -3779,7 +3779,7 @@ void __cdecl MoveCharacter(int p1)
             v392 = 0;
             if (AsObject(o)->CurrentAction == 37 || AsObject(o)->CurrentAction == 38) v392 = 1;
             Light[0] = 1.0f;
-            Light[1] = (v390 == (DWORD)Hero) ? 0.0f : 0.60000002f;
+            Light[1] = (AsCharacter(v390) == AsCharacter(Hero)) ? 0.0f : 0.60000002f;
             Light[2] = 0.0f;
 
             if (*(BYTE*)(c + 756) == 2) {
@@ -3798,7 +3798,7 @@ void __cdecl MoveCharacter(int p1)
                 break;
             default:
                 if (AsCharacter(c)->MonsterIndex < 0x44u || AsCharacter(c)->MonsterIndex > 0x4Bu) {
-                    PlayBuffer(rand() % 7 + 50, (DWORD)o, 0);
+                    PlayBuffer(rand() % 7 + 50, AsObject(o), 0);
                 }
                 break;
             }
@@ -3963,7 +3963,7 @@ void __cdecl MoveCharacter(int p1)
                     // El 6to argumento de BMD_Animation es el Angle de la entidad, no un
                     // buffer de salida: con ceros los huesos se posarían con facing (0,0,0) y
                     // los dos extremos de la hoja saldrían en una orientacion fija.
-                    BMD_Animation((void*)v422, (int)BoneMatrix, AnimationFrame,
+                    BMD_Animation((void*)v422, reinterpret_cast<float*>(BoneMatrix), AnimationFrame,
                                  *(unsigned int*)&PriorFrame,
                                  AsObject(o)->PriorAction, (unsigned int*)(o + 28),
                                  (float*)(o + 40), 0, 1);
@@ -3991,7 +3991,7 @@ void __cdecl MoveCharacter(int p1)
 
     // L2769-2772: pickup-bag splash
     if (AsObject(o)->Type == 236) {
-        FUN_0046c7f0(0, (int)o, 0.0f, 0.0f, 0.0f);
+        FUN_0046c7f0(0, AsObject(o), 0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -4007,7 +4007,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     void *model = (void *)(DAT_05828d58 + (int)AsCharacter(entity_ptr)->Object.Type * 0xbc);
 
     // If model has no action data: copy cached transform params to render slots
-    if (*(short *)((int)model + 0x26) == 0) {
+    if (*(short *)(static_cast<BYTE*>(model) + 0x26) == 0) {
         OBJECT& object = AsCharacter(entity_ptr)->Object;
         ObjectBounds_Build(object.BoundingBoxMin, object.BoundingBoxMax,
                            object.Position, object.OBB);
@@ -4015,11 +4015,11 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     }
 
     // Con acciones: copia la posición de mundo de la entidad a los slots de transform del modelo
-    *(unsigned int *)((int)model + 0x6c) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
-    *(unsigned int *)((int)model + 0x70) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
-    *(unsigned int *)((int)model + 0x74) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
-    *(unsigned int *)((int)model + 0x68) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
-    *(unsigned char *)((int)model + 0xa0) = AsCharacter(entity_ptr)->Object.CurrentAction;
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x6c) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x70) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x74) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x68) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
+    *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0) = AsCharacter(entity_ptr)->Object.CurrentAction;
 
     // SafeZone update por frame (IDA MoveCharacterVisual L614):
     //     *(BYTE*)(c + 846) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
@@ -4069,7 +4069,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         // Maneja el seguimiento con la cabeza, su giro suave y el pico temporal en
         // c+848; nada de esto es lógica de combate.
         if (*(unsigned short *)&AsCharacter(entity_ptr)->Object.Type != 390) {
-            MoveHead(entity_ptr);
+            MoveHead(AsCharacter(entity_ptr));
         }
         if (entity_ptr != (int)(uintptr_t)DAT_07abf5d8 &&
             !AsCharacter(entity_ptr)->Dead && !(rand() % 32)) {
@@ -4174,7 +4174,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
         // 0x113 — IDA raw L848-850.
         case 0x113:
-            Combat_SpawnDeathDustParticles(entity_ptr);
+            Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             break;
 
         // 0x119 — IDA raw L851-873. Usa el `Light` (1,1,1) del frame compartido.
@@ -4247,7 +4247,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             if (action == 6 && AsCharacter(entity_ptr)->Object.AnimationFrame < 12.0f) {
                 float green[3] = { 0.1f, 0.80000001f, 0.60000002f };
                 for (int i = 0; i < 20; ++i) {
-                    const int randomBone = rand() % *(short *)((int)model + 34);
+                    const int randomBone = rand() % *(short *)(static_cast<BYTE*>(model) + 34);
                     BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
                     Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
                 }
@@ -4287,7 +4287,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             float zero[3] = {0.0f, 0.0f, 0.0f};
             BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
             BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
-            Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr);
+            Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             break;
         }
         // 0x138 — IDA raw L1016-1034.
@@ -4304,7 +4304,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
-            } else { Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr); }
+            } else { Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr)); }
             break;
         }
         // 0x139 / 0x13B — IDA raw L1035-1038 / L1114-1117.
@@ -4315,7 +4315,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             float zero[3] = {0.0f, 0.0f, 0.0f};
             BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
             BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
-            Combat_SpawnIdleAmbientParticle(entity_ptr);
+            Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
             break;
         }
         // 0x13A — IDA raw L1039-1113.  Las tablas se leyeron de IDA en
@@ -4402,8 +4402,8 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 3696), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
-                Combat_SpawnIdleAmbientParticle(entity_ptr);
-                Combat_SpawnDeathDustParticles(entity_ptr);
+                Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
+                Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             }
             break;
         }
@@ -4519,7 +4519,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             float p[3];
             if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)((int)model + 84)), local, p, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
@@ -4528,7 +4528,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 90) {
-                const short n = *(short *)((int)model + 34);
+                const short n = *(short *)(static_cast<BYTE*>(model) + 34);
                 if (n > 0) for (int i = 0; i < 10; ++i) {
                     BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
                     Particle_Spawn(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
@@ -4568,15 +4568,15 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 // Tick de camino por frame: si +0x2fd (teleport) está seteado → saltea. Si +0x2ec (flag de movimiento) está seteado →
 //   avanza el waypoint (Entity_AdvancePath), y al llegar limpia +0x2ec y cancela la acción.
 // Si no se está moviendo y la grilla objetivo difiere de PositionX/Y → llama a PathFinding2.
-// param_1 es el puntero a la entidad (Ghidra lo tipó float — castear a int).
+// Los dos argumentos conservan las direcciones del personaje y su objeto.
 // IDA: MoveMonsterClient (0x00454CD0)
-void __cdecl MoveMonsterClient(int param_1_i, int param_2)
+void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
 {
-    // Ghidra tipó param_1 como float pero es un puntero a entidad (dirección int)
-    int entity = param_1_i;
+    BYTE* entity = reinterpret_cast<BYTE*>(character);
+    BYTE* param_2 = reinterpret_cast<BYTE*>(object);
 
     // Sale si esto es el centinela de la entidad del jugador
-    if (entity == (int)(void*)DAT_07abf5d8) return;
+    if (character == AsCharacter(DAT_07abf5d8)) return;
 
     // 00454CD0: el flag de teleport/altura tiene una única rama de actualización visual
     // antes de suprimir el walker normal de camino. El tipo 272 se mantiene sobre
@@ -4591,17 +4591,17 @@ void __cdecl MoveMonsterClient(int param_1_i, int param_2)
 
     if (*(char *)&AsCharacter(entity)->Movement != '\0') {
         // Entity is currently moving — advance one step
-        SetPlayerWalk(entity);
+        SetPlayerWalk(AsCharacter(entity));
         unsigned int arrived = Entity_AdvancePath((void*)entity, '\x01');
         if ((char)arrived != '\0') {
             // Arrived at waypoint — stop
             AsCharacter(entity)->Movement = 0;
-            SetPlayerStop(entity);
+            SetPlayerStop(AsCharacter(entity));
             // Actualiza el facing según el byte de dirección del camino en +0x2fc
             AsCharacter(entity)->Object.Angle[2] =
                 ((float)*(unsigned char*)(entity + 0x2fc) - _DAT_0055256c) * _DAT_00552844;
         }
-        MoveCharacterPosition(entity);
+        MoveCharacterPosition(AsCharacter(entity));
         return;
     }
 

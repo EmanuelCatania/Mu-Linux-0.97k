@@ -59,9 +59,10 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   8. Widget_NodeInit(param1)  (base widget destructor — not declared)
 // Widget_NodeInit @ 0x004080F0 — Widget_NodeInit
 // Zeros all node fields and sets the four scale floats to 1.0f.
-void __cdecl Widget_NodeInit(int param_1)
+void __cdecl Widget_NodeInit(void* widget)
 {
-    ClothPresentation_Forget((void *)param_1);
+    BYTE* param_1 = static_cast<BYTE*>(widget);
+    ClothPresentation_Forget(widget);
     *(int *)(param_1 + 0x04) = 0; *(int *)(param_1 + 0x08) = 0;
     *(int *)(param_1 + 0x0c) = 0; *(int *)(param_1 + 0x10) = 0;
     *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
@@ -110,7 +111,7 @@ void __cdecl Widget_Release(int param_1, int, int) {
         // array de nodos: dtor de array (flags 3 = vector + free)
         FUN_00408680((void *)*(int *)(param_1 + 0x34), 3);
     }
-    Widget_NodeInit(param_1);
+    Widget_NodeInit(reinterpret_cast<void*>(static_cast<uintptr_t>(static_cast<uint32_t>(param_1))));
 }
 
 // IDA: Widget_CtorBase (0x00407FE0)
@@ -124,7 +125,7 @@ void __cdecl Widget_Release(int param_1, int, int) {
 // El slot 0 (dtor) se llama directo en este build. Los slots 1 y 2 los invoca
 // `sub_408CB0` en cada tick de simulación: 1 = re-fijar la fila superior al
 // hueso (Cloth_PinTopRow), 2 = repartir viento/gravedad (Cloth_Wind).
-void __cdecl Cloth_PinTopRow(int _this, float (*Matrix)[4]);
+void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4]);
 void __cdecl Cloth_Wind(DWORD *_this);
 static void __cdecl Cloth_VSlot0(int a)  { (void)a; }  // dtor: se llama directo
 static void *g_ClothVTable[4] = {
@@ -155,7 +156,7 @@ void* __fastcall Widget_CtorBase(void *param_1)
     // ejecuta basura.  El contenido está en g_ClothVTable, más arriba.
     *(const void **)param_1 = (const void *)g_ClothVTable;
 
-    Widget_NodeInit((int)param_1);
+    Widget_NodeInit(param_1);
     return param_1;
 }
 
@@ -171,7 +172,7 @@ void __cdecl L_YGXPAXIHP6EX0_Z1_Z(void *arr, int elem_size, int count, void *cto
 void  __fastcall SpringNode_Ctor(void *node);   // ctor (thiscall en el original: arg en ECX)  // IDA-port: void return
 void  __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void  __fastcall SpringNode_GetPos(void *node, float *out);
-float __fastcall SpringNode_Delta(void *nodeA, int nodeB_ptr, float *out_delta);
+float __fastcall SpringNode_Delta(void *nodeA, uintptr_t nodeB_ptr, float *out_delta);
 void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node); // IDA-port: returns this
 void  __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
@@ -348,7 +349,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
             // vertical spring (row → row+1, same col)
             if (row < H - 1) {
                 dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                   (int)nodes + (W + ni) * 0x3c, delta);
+                                   reinterpret_cast<uintptr_t>(nodes) + (W + ni) * 0x3c, delta);
                 Spring_StoreEdge(widget, sp, sni, sni + (short)W,
                              dist * _DAT_00552530, dist, (BYTE)(vert_flag | 2));
                 sp++;
@@ -357,7 +358,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
             // horizontal spring (col → col+1, same row)
             if (col < W - 1) {
                 dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                   (int)nodes + (ni + 1) * 0x3c, delta);
+                                   reinterpret_cast<uintptr_t>(nodes) + (ni + 1) * 0x3c, delta);
                 Spring_StoreEdge(widget, sp, sni, sni + 1,
                              dist * _DAT_00552530, dist, 3);
                 sp++;
@@ -365,7 +366,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
                 // diagonal shear spring down-right (to row+1, col+1)
                 if (row < H - 1) {
                     dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                       (int)nodes + (ni + 1 + W) * 0x3c, delta);
+                                       reinterpret_cast<uintptr_t>(nodes) + (ni + 1 + W) * 0x3c, delta);
                     Spring_StoreEdge(widget, sp, sni, sni + 1 + (short)W,
                                  dist * _DAT_00552530, dist, diag_flag);
                     sp++;
@@ -374,7 +375,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
                 // diagonal shear spring up-right (to row-1, col+1)
                 if (row > 1) {
                     dist = SpringNode_Delta((char*)nodes + ni * 0x3c,
-                                       (int)nodes + (ni - W + 1) * 0x3c, delta);
+                                       reinterpret_cast<uintptr_t>(nodes) + (ni - W + 1) * 0x3c, delta);
                     Spring_StoreEdge(widget, sp, sni, (short)(sni - (short)W + 1),
                                  dist * _DAT_00552530, dist, diag_flag);
                     sp++;
@@ -385,7 +386,7 @@ void __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, flo
     *(int *)(thiz + 0x38) = sp;
     // IDA invokes vtable slot 1 here to pin the top row immediately to the
     // source bone.  The same callback is used by the simulation on later ticks.
-    Cloth_PinTopRow((int)(uintptr_t)widget, (float (*)[4])local_3c);
+    Cloth_PinTopRow(widget, (float (*)[4])local_3c);
 }
 
 // Skills / teleport

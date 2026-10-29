@@ -6,7 +6,7 @@
 
 // IDA: FUN_0043E890 @ 0x0043E890 — LookAtTarget (~38 lines), rotates entity head toward target character.
 // Computes angle between entity and target, sets HeadTargetAngle if within threshold.
-void __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter) {
+void __cdecl LookAtTarget(OBJECT* o, const CHARACTER* TargetCharacter) {
     // 0x0043E890 — Rotates entity head toward target character
     // o = OBJECT* (entity), TargetCharacter = CHARACTER* (target, OBJECT at offset 0)
     // OBJECT struct (from Ghidra, size 0x1BC):
@@ -18,14 +18,14 @@ void __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter) {
 
     if (!TargetCharacter) return;
 
-    float oX = *(float*)(o + 0x10);      // o->Position[0]
-    float oY = *(float*)(o + 0x14);      // o->Position[1]
-    float oZ = *(float*)(o + 0x18);      // o->Position[2]
-    float oFacing = *(float*)(o + 0x24); // o->Angle[2]  — offset 0x1C + 8 = 0x24
+    float oX = o->Position[0];      // o->Position[0]
+    float oY = o->Position[1];      // o->Position[1]
+    float oZ = o->Position[2];      // o->Position[2]
+    float oFacing = o->Angle[2]; // o->Angle[2]  — offset 0x1C + 8 = 0x24
 
-    float tX = *(float*)(TargetCharacter + 0x10);  // target->Object.Position[0]
-    float tY = *(float*)(TargetCharacter + 0x14);  // target->Object.Position[1]
-    float tZ = *(float*)(TargetCharacter + 0x18);  // target->Object.Position[2]
+    float tX = TargetCharacter->Object.Position[0];  // target->Object.Position[0]
+    float tY = TargetCharacter->Object.Position[1];  // target->Object.Position[1]
+    float tZ = TargetCharacter->Object.Position[2];  // target->Object.Position[2]
 
     // CreateAngle @ 0x0043e050: declared as CreateAngle with wrong sig; cast to correct prototype
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
@@ -34,7 +34,7 @@ void __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter) {
     // FarAngle(oFacing, angle, 1) — angular distance
     double deltaAngle = (double)FarAngle(oFacing, angle, '\x01');
 
-    float* headTarget = (float*)(o + 0x34);  // o->HeadTargetAngle[3]
+    float* headTarget = o->HeadTargetAngle;  // o->HeadTargetAngle[3]
 
     if (deltaAngle < (double)_DAT_00552848) {
         // Within threshold: compute head rotation
@@ -55,7 +55,8 @@ void __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter) {
 }
 
 // IDA: FUN_0043E940 @ 0x0043E940 — MoveHead (~56 lines), random/tracked head movement for entities.
-void __cdecl MoveHead(int param_1) {
+void __cdecl MoveHead(CHARACTER* character) {
+    BYTE* param_1 = reinterpret_cast<BYTE*>(character);
     char anim = *(char*)(param_1 + 0x105);
     if (anim == '\x06') return; // dead — no head movement
 
@@ -88,8 +89,8 @@ void __cdecl MoveHead(int param_1) {
         // IDA (0x43E940): sub_43E890(a1, COERCE_FLOAT(CharactersClient + 916 * v7)),
         // con `v7 = *(_WORD *)(a1 + 784)` = el indice de la entidad objetivo.
         // 916 = 0x394 es el stride del array de entidades.
-        LookAtTarget((DWORD)param_1,
-                          CharactersClient + 916 * (int)*(short*)(param_1 + 0x310));
+        LookAtTarget(&character->Object,
+                     AsCharacter(CharactersClient + 916 * (int)character->TargetCharacter));
         return;
     }
     else {

@@ -181,7 +181,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     char *dst;
     char text1[256], text2[256];
     if (sz.cx >= 256) {
-        CutText(param_1, (int)(uintptr_t)text1, text2, (int)strlen(param_1));
+        CutText(param_1, text1, text2, (int)strlen(param_1));
         int next = DAT_07e11d9c + 1;
         strcpy(notice + 264 * DAT_07e11d9c, text2);
         if (next > 5) {
@@ -215,7 +215,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
   char local_200 [256];
   char local_100 [256];
 
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
   lpsz = &local_208;
   iVar2 = Platform::TextLength(param_1);
   gFont.MeasureText(gFont.GetTextDC(),param_1,iVar2,lpsz);
@@ -262,7 +262,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
       cVar1 = *pcVar6;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    CutText((undefined4 *)param_1,(int)local_100,(undefined4 *)local_200,~uVar4 - 1);
+    CutText((undefined4 *)param_1,local_100,(undefined4 *)local_200,~uVar4 - 1);
     uVar4 = 0xffffffff;
     iVar2 = DAT_07e11d9c + 1;
     pcVar6 = local_200;
@@ -373,7 +373,7 @@ void UI_RenderNotices(void)
   tagSIZE local_8;
 
   GL_SetBlendSrcOver('\x01');
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_BOLD)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_BOLD));
   Gfx::Color3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
@@ -431,7 +431,7 @@ void UI_RenderChatLogOverlay(void)
 
   // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
   Gfx::Color3f(1.0f, 1.0f, 1.0f);
-  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)(uintptr_t)((DWORD)(uintptr_t)gFont.GetFont(FONT_NORMAL)));
+  gFont.SelectFont(gFont.GetTextDC(),(HGDIOBJ)gFont.GetFont(FONT_NORMAL));
   iVar7 = 0;
   local_10c = 0;
   do {
@@ -618,8 +618,8 @@ char Chat_ValidateInputCommand(void)
   } while (cVar1 != '\0');
   if (0 < (int)(~uVar2 - 1)) {
     do {
-      if (*(char *)((int)DAT_07db8710 + iVar3) != ' ') {
-        local_100[iVar4] = *(char *)((int)DAT_07db8710 + iVar3);
+      if (((char*)DAT_07db8710)[iVar3] != ' ') {
+        local_100[iVar4] = ((char*)DAT_07db8710)[iVar3];
         iVar4 = iVar4 + 1;
       }
       uVar2 = 0xffffffff;
@@ -657,8 +657,8 @@ char Chat_ValidateInputCommand(void)
     } while (cVar1 != '\0');
     if (0 < (int)(~uVar2 - 1)) {
       do {
-        if (*(char *)((int)DAT_07db8710 + iVar3) != ' ') {
-          local_100[iVar4] = *(char *)((int)DAT_07db8710 + iVar3);
+        if (((char*)DAT_07db8710)[iVar3] != ' ') {
+          local_100[iVar4] = ((char*)DAT_07db8710)[iVar3];
           iVar4 = iVar4 + 1;
         }
         uVar2 = 0xffffffff;

@@ -457,7 +457,7 @@ extern "C" BYTE OffsetInventoryItems[];
 // CloseInventoryRelatedWindows (FixShopNpcClose, hook en 0x4CBB15).
 extern "C" int g_bServerDivisionEnable;
 extern "C" int g_bServerDivisionAccept;
-void __fastcall CSQuest_clearQuest(int param_1);
+void __fastcall CSQuest_clearQuest(void* param_1);
 extern "C" void Net_SendNpcTalkClose(void);
 extern "C" int g_GoldenArcherCustom;
 static void SendMove_CloseWindows97k(void)
@@ -512,7 +512,7 @@ static void SendMove_CloseWindows97k(void)
         InventoryOpened = 0;
     } else if (!ShopOpened && !EventWindowOpened) {
         if (questPanel)
-            CSQuest_clearQuest((int)(uintptr_t)g_csQuest);
+            CSQuest_clearQuest(reinterpret_cast<void*>(uintptr_t(g_csQuest)));
         else if (g_bServerDivisionEnable) {
             // DESVIACION (compatibilidad MuEmu): IDA solo cierra del lado del
             // cliente, pero NpcServerTransfer deja Interface.use = 1 y solo el
@@ -536,8 +536,10 @@ static void SendMove_CloseWindows97k(void)
     MouseLButton = 0;
 }
 
-void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
+void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* object)
 {
+    auto* param_1 = reinterpret_cast<unsigned char*>(character);
+    const auto* param_2 = reinterpret_cast<const unsigned char*>(object);
     // Saltea si la entidad en param_2+0x78 tiene el flag 0x20 seteado (entidad ocupada/bloqueada)
     if ((*(unsigned char*)(param_2 + 0x78) & 0x20) == 0x20)
         return;
@@ -965,7 +967,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
         return AF_LABEL_322;                                  // IDA L1886
     // IDA L1917-2158: Heal / Greater Defense / Greater Damage sobre el heroe.
     Attack_SendSkill19_97k(iType, (WORD)HeroKey);
-    SetPlayerMagic((int)(uintptr_t)entity);                     // IDA LABEL_1430: SetPlayerMagic
+    SetPlayerMagic(AsCharacter(entity));                     // IDA LABEL_1430: SetPlayerMagic
     return AF_RETURN;
 }
 
@@ -985,14 +987,14 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
     if (piSkillMana > (int)*(unsigned short*)(attr + 36))     // IDA L1753
         return AF_RETURN;                                     // IDA LABEL_146
 
-    CheckTarget((DWORD)(uintptr_t)entity);               // IDA L1778 (retorno ignorado)
+    CheckTarget(AsCharacter(entity));               // IDA L1778 (retorno ignorado)
 
     if (iType >= 30 && iType <= 36) {
         // IDA L2617-2680: invocaciones del arbol Elf.
         if ((int)gMapManager.GetCurrentMap() == 10)                        // IDA L2617: World == 10
             return AF_RETURN;
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
-        SetPlayerMagic((int)(uintptr_t)entity);                 // IDA LABEL_1430
+        SetPlayerMagic(AsCharacter(entity));                 // IDA LABEL_1430
         return AF_RETURN;
     }
 
@@ -1015,7 +1017,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
                     const BYTE dir = (BYTE)(int)(AsCharacter(entity)->Object.Angle[2] * 0.71111113f);
                     // IDA L2240-2290: [52][heroGX][heroGY][dir][0][0]
                     Combat_SendDuration1E_97k(entity, 52, dir, 0, 0);
-                    SetPlayerAttack((int)(uintptr_t)entity, 0, 0, 0);   // IDA L2579: SetPlayerAttack
+                    SetPlayerAttack(AsCharacter(entity), 0, 0, 0);   // IDA L2579: SetPlayerAttack
                     if (*(WORD *)&AsCharacter(entity)->Object.Type != 390) {        // IDA L2582
                         // IDA L2586-2601.  Hex-Rays muestra la clave del scan como
                         // `HIBYTE(v1025)` y el 6o argumento como `LOWORD(x1)` — dos
@@ -1099,7 +1101,7 @@ static void Attack_WarriorBranch97k(char* entity)
         CurrentSkill = (DWORD)iType;                          // IDA L3197
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);    // IDA: [41][gx][gy][0][0][0]
         SetAttackSpeed();                                       // IDA LABEL_497: SetAttackSpeed
-        SetAction((int)(uintptr_t)entity, 61);
+        SetAction(AsObject(entity), 61);
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1119,7 +1121,7 @@ static void Attack_WarriorBranch97k(char* entity)
         }
         CurrentSkill = (DWORD)iType;                          // IDA L3809
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);
-        SetAction((int)(uintptr_t)entity, 62);             // IDA LABEL_930 (sin SetAttackSpeed)
+        SetAction(AsObject(entity), 62);             // IDA LABEL_930 (sin SetAttackSpeed)
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1127,7 +1129,7 @@ static void Attack_WarriorBranch97k(char* entity)
         if (lowMana) { Attack_UseManaScroll97k(); return; }
         if (!hasAg) return;                                   // IDA L4397
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
-        SetAction((int)(uintptr_t)entity, 63);             // IDA LABEL_811
+        SetAction(AsObject(entity), 63);             // IDA LABEL_811
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1149,7 +1151,7 @@ static void Attack_WarriorBranch97k(char* entity)
         // IDA: [skill][heroGX][heroGY][0][packedOffset][field8].
         Combat_SendDuration1E_97k(entity, iType, 0, packedOffset, field8);
         SetAttackSpeed();                                       // IDA LABEL_497 / LABEL_715
-        SetAction((int)(uintptr_t)entity, (iType == 55) ? 61 : 81);
+        SetAction(AsObject(entity), (iType == 55) ? 61 : 81);
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     }
@@ -1204,7 +1206,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         // IDA L7508-7754: sin objetivo el skill se lanza sobre uno mismo.
         Attack_SendSkill19_97k(iType, (WORD)HeroKey);
     }
-    SetPlayerMagic((int)(uintptr_t)entity);                     // IDA LABEL_1157: SetPlayerMagic
+    SetPlayerMagic(AsCharacter(entity));                     // IDA LABEL_1157: SetPlayerMagic
     Attack_Label1158_97k(entity, iType, hasTarget);           // IDA: cae en LABEL_1158
 }
 
@@ -1246,13 +1248,13 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0,
                                       (int)(AsCharacter(entity)->TargetPosition[0] * 0.01f),
                                       (int)(AsCharacter(entity)->TargetPosition[1] * 0.01f));
-            SetPlayerMagic((int)(uintptr_t)entity);             // IDA LABEL_1430
+            SetPlayerMagic(AsCharacter(entity));             // IDA LABEL_1430
             return;
         case 8:                                               // IDA L8369
         case 9:
             CurrentSkill = (DWORD)iType;
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0);
-            SetPlayerMagic((int)(uintptr_t)entity);             // IDA LABEL_1430
+            SetPlayerMagic(AsCharacter(entity));             // IDA LABEL_1430
             return;
         case 12:                                              // IDA L8800 — Aqua Beam
             if (*(WORD *)&AsCharacter(entity)->Object.Type != 390)
@@ -1260,7 +1262,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
             CurrentSkill = (DWORD)iType;                      // IDA LABEL_1441
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0);
             SetAttackSpeed();                                   // IDA LABEL_1512
-            SetAction((int)(uintptr_t)entity, 88);
+            SetAction(AsObject(entity), 88);
             *(char *)&AsCharacter(entity)->Movement = 0;
             DAT_07e11db8 = 0;                                 // IDA L9208
             return;
@@ -1318,7 +1320,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // IDA L9682 LABEL_1762 -> LABEL_1763: sub_444B30(c) = SetPlayerTeleport,
         // o sea la animacion de casteo (accion 87) sobre el propio heroe.
         // MU 5.2 ZzzInterface.cpp:6130 hace lo mismo tras SendRequestMagicTeleport.
-        SetPlayerTeleport((int)(uintptr_t)entity);
+        SetPlayerTeleport(AsObject(entity));
         return;
     }
 
@@ -1380,7 +1382,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             // o+2: un iType chico seria un puntero salvaje. MU 5.2 desambigua el
             // argumento (ZzzInterface.cpp:6065): en el recall de party la animacion
             // va sobre el ALIADO (`SetPlayerTeleport(tc)`), no sobre el heroe.
-            SetPlayerTeleport((int)(uintptr_t)target);
+            SetPlayerTeleport(AsObject(target));
             return;
         }
     }
@@ -1407,7 +1409,7 @@ static void Attack_WizardBranch97k(char* entity)
         return;
 
     // IDA L6246: `HIBYTE(v1025) = CheckTarget(c)` — CheckTarget devuelve bool.
-    const bool hasTarget = (CheckTarget((DWORD)(uintptr_t)entity) != 0);
+    const bool hasTarget = (CheckTarget(AsCharacter(entity)) != 0);
 
     switch (iType) {                                          // IDA L6247
     case 10:                                                  // IDA L6249 — Hell Fire
@@ -1418,7 +1420,7 @@ static void Attack_WizardBranch97k(char* entity)
         // [iType][heroGX][heroGY][0][0][0] — sin direccion ni delta.
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);
         SetAttackSpeed();                                       // IDA LABEL_1235 / LABEL_1310
-        SetAction((int)(uintptr_t)entity, (iType == 10) ? 90 : 89);
+        SetAction(AsObject(entity), (iType == 10) ? 90 : 89);
         *(char *)&AsCharacter(entity)->Movement = 0;
         return;
     case 16:                                                  // IDA L7105
@@ -1562,7 +1564,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // IDA L1346-1484 — bucle de manos equipadas, comun a las clases != 0.
     // ══════════════════════════════════════════════════════════════════════════
     if ((*(char *)&AsCharacter(entity)->Class & 7) != 0) {
-        CheckTarget((DWORD)(uintptr_t)entity);            // IDA L1348
+        CheckTarget(AsCharacter(entity));            // IDA L1348
         const int heroGridY = AsCharacter(entity)->PositionY;           // IDA: v18
         const int heroGridX = AsCharacter(entity)->PositionX;           // IDA: v19
         // IDA L1355: CheckWall(v19, v18, TargetX, TargetY) — 0x004830B0, que en
@@ -1876,14 +1878,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         if (elapsed > 0x80000000u)
             elapsed = (DWORD)(-(int)elapsed);
         if (elapsed <= 300) {
-            SetPlayerMagic(c);
+            SetPlayerMagic(AsCharacter(c));
             return;
         }
         g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, skillId,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
         gNetwork.Send(packet, sizeof(packet));
-        SetPlayerMagic(c);
+        SetPlayerMagic(AsCharacter(c));
         return;
     }
 
@@ -1892,14 +1894,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
         if (elapsed > 0x80000000u)
             elapsed = (DWORD)(-(int)elapsed);
         if (elapsed <= 300) {
-            SetPlayerAttack(c, 0, 0, 0);
+            SetPlayerAttack(AsCharacter(c), 0, 0, 0);
             return;
         }
         g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, 51,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
         gNetwork.Send(packet, sizeof(packet));
-        SetPlayerAttack(c, 0, 0, 0);
+        SetPlayerAttack(AsCharacter(c), 0, 0, 0);
     }
 }
 
@@ -1961,7 +1963,7 @@ void __cdecl Action(DWORD c, DWORD o)
 
         DAT_00559bec = 6;                                      // IDA: MouseUpdateTimeMax
         const WORD itemType = *(const WORD*)(groundItem + 4);  // IDA: Items[ItemKey][4]
-        if (itemType != 463 && !FindEmptySlot(itemType, (int)(uintptr_t)OffsetInventoryItems, 8, 8)) {
+        if (itemType != 463 && !FindEmptySlot(itemType, reinterpret_cast<const BYTE*>(OffsetInventoryItems), 8, 8)) {
             // 0x48F5B7-0x48F61B: report the full inventory and restart the
             // item's short fall animation.  `Items` is a 0x204-byte record;
             // these are the original +0x58/+0x5c world position, +0x60 Z and
@@ -2002,7 +2004,7 @@ void __cdecl Action(DWORD c, DWORD o)
         //   if (g_csQuest[4] == 0xFF) send [C1][03][A0];     // CGQuestInfoRecv
         //   send [C1][05][30][KeyHi][KeyLo];                 // PMSG_NPC_TALK_RECV
         DAT_00559bec = 12;                       // IDA L814: MouseUpdateTimeMax
-        SetPlayerStop((int)c);                    // IDA L815: SetPlayerStop
+        SetPlayerStop(AsCharacter(c));                    // IDA L815: SetPlayerStop
         AsCharacter(c)->Movement = 0;          // IDA L816
 
         const int npcSlotIdx = (int)DAT_00559c70;            // IDA: SelectedNpc
@@ -2130,7 +2132,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 // siguiente, que es lo que permite encadenar ataques; sin esto
                 // habia que esperar a que el contador volviera a subir.
                 DAT_07e11d28 = DAT_00559bec;
-                SetPlayerAttack((int)c, 0, 0, 0);
+                SetPlayerAttack(AsCharacter(c), 0, 0, 0);
 
                 AsCharacter(c)->SkillStage = 1;  // attack pending
                 // Cache target position for hit confirmation
@@ -2312,7 +2314,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 // Orbe de Noria: flotar (PLAYER_HEALING1 / _FEMALE1).
                 *(float*)(o + 36) = *(float*)&_DAT_07e118e4;
                 int act = ((AsCharacter(c)->Class & 7) == 2) ? 138 : 137;
-                SetAction((int)o, act);
+                SetAction(AsObject(o), act);
                 float fac = *(float*)(o + 36);
                 BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
                 BYTE pkt[8];
@@ -2345,13 +2347,13 @@ void __cdecl Action(DWORD c, DWORD o)
         }
 
         // ── 4. Send move packet (always, unless cave returned above) ───────────────────────────
-        Combat_SendMovePathPacket((int)c, (int)o);
+        Combat_SendMovePathPacket(AsCharacter(c), AsObject(o));
         AsCharacter(c)->PathNum = 0;
 
         // ── 5. v309 secondary packet (anim 139/140 + action 109) ───────────────────────────────────────
         if (v309) {
             int act = ((AsCharacter(c)->Class & 7) == 2) ? 140 : 139;
-            SetAction((int)o, act);
+            SetAction(AsObject(o), act);
             float fac = *(float*)((char*)(uintptr_t)DAT_07abf5d8 + 36);
             BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
             BYTE pkt[8];
@@ -2363,7 +2365,7 @@ void __cdecl Action(DWORD c, DWORD o)
         // ── 5b. v307 tertiary packet (anim 133/135 + action 108) ───────────────────────────────────────
         if (v307) {
             int act = ((AsCharacter(c)->Class & 7) == 2) ? 135 : 133;
-            SetAction((int)o, act);
+            SetAction(AsObject(o), act);
             float fac = *(float*)((char*)(uintptr_t)DAT_07abf5d8 + 36);
             BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
             BYTE pkt[8];
@@ -2373,7 +2375,7 @@ void __cdecl Action(DWORD c, DWORD o)
         }
 
         // PlayBuffer 30 (sonido de paso) al final, per IDA L2065
-        PlayBuffer(30, (int)(uintptr_t)DAT_07abf5d8, 0);
+        PlayBuffer(30, AsObject(DAT_07abf5d8), 0);
         return;
     }
 

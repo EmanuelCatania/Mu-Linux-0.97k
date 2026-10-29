@@ -68,7 +68,7 @@ void ApplyParticlePreset(char* particle, int type, int subtype)
     if (preset.ImpactSound) PlayBuffer(0x2c, 0, 0);
     if (preset.RenderSetup == ParticleRenderSetup::Always ||
         (preset.RenderSetup == ParticleRenderSetup::ExceptSubtype99 && subtype != 99))
-        ItemDrop_SetupRenderRef((int)particle);
+        ItemDrop_SetupRenderRef(reinterpret_cast<BYTE*>(particle));
 }
 // IDA: Particle_Spawn (0x00475220), tipos 1241..1244.
 // rand() es no negativo: los restos conservan el orden y número de llamadas.

@@ -378,8 +378,9 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
 }
 
 // MoveObject_Special (IDA-activated)
-void __cdecl MoveObject_Special(int a1)
+void __cdecl MoveObject_Special(OBJECT* object)
 {
+  BYTE* a1 = reinterpret_cast<BYTE*>(object);
   int v1; // edi
   short v2; // ax
   float *v3; // edi
