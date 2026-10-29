@@ -49,7 +49,8 @@ struct PMSG_BLOOD_CASTLE_SCORE_SEND
 	BYTE type;
 	BYTE flag;
 	char name[CHARACTER_NAME_SIZE];
-	WORD none;
+	// 0.97.40: sin el WORD de relleno, el registro mide igual que
+	// PMSG_DEVIL_SQUARE_SCORE (name[40] + 3 DWORD) y el cliente usa una sola tabla.
 	DWORD Score;
 	DWORD RewardExperience;
 	DWORD RewardMoney;
