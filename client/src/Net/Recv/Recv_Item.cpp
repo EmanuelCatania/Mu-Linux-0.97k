@@ -151,8 +151,12 @@ BYTE* ItemMove_GetActiveSecondaryPool()
 void ItemMove_ClearPoolPreview(BYTE* pool, int slots)
 {
     if (!pool) return;
+    // IDA sub_4E6550: ocupada = gris (1), vacía = blanco (0).
+    // El ack puede llegar entre pasos SIM; publicar ya el estado normal evita
+    // un draw desacoplado con todas las casillas ocupadas en blanco.
+    ITEM* items = AsItem(pool);
     for (int i = 0; i < slots; ++i) {
-        pool[i * 0x44 + 0x40] = 0;
+        items[i].Color = items[i].Type != -1 ? 1 : 0;
     }
 }
 

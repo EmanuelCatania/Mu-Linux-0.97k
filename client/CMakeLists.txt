@@ -511,6 +511,7 @@ set(MU_HEADERS
     src/Render/Entity_PrepareRender.h
     src/Render/Entity_Render.h
     src/Render/DamagePointTypes.h
+    src/Item/ItemTypes.h
     src/Render/JointTypes.h
     src/Render/Entity_Render_3D.h
     src/Render/Entity_RenderAll_3D.h

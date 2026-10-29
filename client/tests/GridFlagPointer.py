@@ -63,7 +63,10 @@ def harness(revision=None):
     structs = read_source("src/structs.h", revision)
     prefix += re.search(r"^#define MAX_SPECIAL_OPTION[^\n]+", structs, re.M).group() + "\n"
     prefix += "\n".join(re.findall(r"^#define\s+(?:MAX_CLASS|MAX_RESISTANCE)\s+[^\n]+", structs, re.M)) + "\n"
-    for name in ("ITEM", "ITEM_ATTRIBUTE"):
+    item_header = '#include "Item/ItemTypes.h"' in structs
+    if item_header:
+        prefix += read_source("src/Item/ItemTypes.h", revision)
+    for name in (("ITEM_ATTRIBUTE",) if item_header else ("ITEM", "ITEM_ATTRIBUTE")):
         prefix += re.search(rf"struct {name}\b.*?\n\}};", structs, re.S).group()
     prefix += "\nstatic_assert(sizeof(ITEM)==68 && offsetof(ITEM,x)==62 && offsetof(ITEM,y)==63 && sizeof(ITEM_ATTRIBUTE)==64);\n"
     prefix += "\n".join(re.findall(r"^inline (?:const )?ITEM\* AsItem[^\n]+", structs, re.M))

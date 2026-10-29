@@ -32,29 +32,28 @@ void __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char* param_2) {
                 }
 
                 do {
-                    int iVar1 = (param_1 + iVar5 * 8 + iVar6) * 0x44;
-                    char* warehouseBase = &DAT_07ea5b30;
+                    ITEM& item = AsItem(&DAT_07ea5b30)[param_1 + iVar5 * 8 + iVar6];
 
                     // Set item type
-                    *(short*)(warehouseBase + iVar1) = (short)iVar3;
+                    item.Type = (short)iVar3;
                     // Grid X origin
-                    *(warehouseBase + 0x3e + iVar1) = (char)uVar4;
+                    item.x = (BYTE)uVar4;
                     // Grid Y origin (param_1 / 8)
-                    *(warehouseBase + 0x3f + iVar1) = (char)((int)(param_1 + ((int)param_1 >> 0x1f & 7U)) >> 3);
+                    item.y = (BYTE)((int)(param_1 + ((int)param_1 >> 0x1f & 7U)) >> 3);
                     // Copy Attribute1 and Attribute2 from packet
-                    *(warehouseBase + 0x1a + iVar1) = param_2[2];
+                    item.Durability = param_2[2];
                     unsigned char attr2 = param_2[3];
-                    *(warehouseBase + 0x1b + iVar1) = attr2;
+                    item.Option1 = attr2;
 
                     // Mark first cell (0,0) with flag=1, others with 0
                     if ((iVar5 == 0) && (iVar6 == 0)) {
-                        *(DWORD*)(warehouseBase + 0x38 + iVar1) = 1;
+                        item.Key = 1;
                     } else {
-                        *(DWORD*)(warehouseBase + 0x38 + iVar1) = 0;
+                        item.Key = 0;
                     }
 
                     // ItemConvert — applies level/option to the ITEM slot (minimal stub body).
-                    ItemConvert(AsItem(warehouseBase + iVar1), (int)param_2[1], (int)attr2);
+                    ItemConvert(&item, (int)param_2[1], (int)attr2);
 
                     iVar6 = iVar6 + 1;
                 } while (iVar6 < (int)(unsigned int)pAttr[iVar3].Width);
@@ -71,23 +70,24 @@ void __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char* param_2) {
 void __cdecl SetItemGridFlag(int param_1, BYTE* param_2, unsigned char param_3) {
     // 0x004CC1E0 — marks cells occupied/free in inventory grid
     // param_1 = item slot index, param_2 = inventory base ptr, param_3 = flag value to write
-    short itemType = *(short*)(param_2 + param_1 * 0x44);
-    BYTE* itemBase = param_2 + param_1 * 0x44;
+    ITEM* items = AsItem(param_2);
+    const ITEM& item = items[param_1];
+    short itemType = item.Type;
     ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)DAT_07d78068;
     BYTE width  = attr[itemType].Width;
     BYTE height = attr[itemType].Height;
-    unsigned int originX = (unsigned int)AsItem(itemBase)->x;
-    unsigned int originY = (unsigned int)AsItem(itemBase)->y;
+    unsigned int originX = (unsigned int)item.x;
+    unsigned int originY = (unsigned int)item.y;
     unsigned int gy = originY;
     if (gy < originY + height) {
         do {
             unsigned int gx = originX;
             if (gx < originX + width) {
-                unsigned char* pCell = (unsigned char*)(param_2 + 0x40 + (gx + gy * 8) * 0x44);
+                ITEM* cell = items + gx + gy * 8;
                 do {
-                    *pCell = param_3;
+                    cell->Color = param_3;
                     gx++;
-                    pCell += 0x44;
+                    ++cell;
                 } while ((int)gx < (int)(originX + (unsigned int)width));
             }
             gy++;
