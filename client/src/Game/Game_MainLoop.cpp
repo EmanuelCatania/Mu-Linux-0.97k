@@ -135,15 +135,15 @@ void __cdecl Game_MainLoop(HDC param_1)
             // Hash table rehash: reallocate with random offsets
             if (DAT_055c9be0 != NULL)
                 operator_delete((BYTE*)DAT_055c9be0);
-            DAT_055c9be0 = (DWORD)(BYTE*)operator_new(_rand() % 0xcc7 + 0x159);
+            DAT_055c9be0 = (BYTE*)operator_new(_rand() % 0xcc7 + 0x159);
 
             BYTE* old_bcc = (BYTE*)DAT_055c9bcc;
             BYTE* old_bd0 = (BYTE*)DAT_055c9bd0;
             BYTE* old_be8 = (BYTE*)DAT_055c9be8;
             BYTE* old_bec = (BYTE*)DAT_055c9bec;
 
-            DAT_055c9be8 = (DWORD)(BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
-            DAT_055c9bec = (DWORD)(BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
+            DAT_055c9be8 = (BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
+            DAT_055c9bec = (BYTE*)operator_new(DAT_055c9bd4 * 4 + 0x100);
 
             unsigned rnd1 = (unsigned)(_rand() & 0x3f);
             unsigned rnd2 = (unsigned)(_rand() & 0x3f);

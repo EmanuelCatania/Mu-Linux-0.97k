@@ -524,11 +524,11 @@ struct HashCtxInit_t {
         g_HashTableCtx[3] = 1;                               // capacity = 1
     }
 } g_HashCtxInitObj;
-DWORD    DAT_055c9be0  = 0;
+BYTE*    DAT_055c9be0  = nullptr;
 DWORD    DAT_055c9be4  = 0;
 float    _DAT_055c9be4 = 0.0f;
-DWORD    DAT_055c9be8  = 0;
-DWORD    DAT_055c9bec  = 0;
+BYTE*    DAT_055c9be8  = nullptr;
+BYTE*    DAT_055c9bec  = nullptr;
 DWORD    DAT_055c9bf0  = 0;
 DWORD    DAT_055c9d00  = 0;
 DWORD    DAT_055c9e04  = 0;

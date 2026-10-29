@@ -432,11 +432,11 @@ extern DWORD   g_HashTableCtx[4];
 #define DAT_055c9bcc  (g_HashTableCtx[1])   // values array
 #define DAT_055c9bd0  (g_HashTableCtx[2])   // keys array
 #define DAT_055c9bd4  (g_HashTableCtx[3])   // capacity
-extern DWORD   DAT_055c9be0;
+extern BYTE*   DAT_055c9be0;
 extern DWORD   DAT_055c9be4;
 extern float  _DAT_055c9be4;
-extern DWORD   DAT_055c9be8;
-extern DWORD   DAT_055c9bec;
+extern BYTE*   DAT_055c9be8;
+extern BYTE*   DAT_055c9bec;
 extern DWORD   DAT_055c9bf0;
 extern DWORD   DAT_055c9d00;
 extern DWORD   DAT_055c9e04;
