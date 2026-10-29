@@ -256,21 +256,21 @@ switchD_caseD_2:
         // ── Active slot update ────────────────────────────────────────────────
         if (*(char *)(puVar9 + -0x3a) != '\0') {
             pfVar1    = (float *)(puVar9 + -0x36);
-            short modelIdx = *(short *)((int)puVar9 + -0xe6);
+            short modelIdx = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
             // Guarda propia: el modelIdx puede venir basura (ej. de un slot reciclado de
             // char-select). Models[] válido en 0..~0x4A8.
             if (modelIdx < 0 || modelIdx > 0x4A8) goto LAB_00502b38;
             this_model = (void *)(DAT_05828d58 + modelIdx * 0xbc);
 
             // Animate model
-            *(unsigned char *)((int)this_model + 0xa0) = *(unsigned char *)((int)puVar9 + 0x1d);
+            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
             BMD__PlayAnimation(this_model,
                          (float *)(puVar9 + 8),
                          (float *)(puVar9 + 9),
-                         (unsigned char *)((int)puVar9 + 0x1e),
+                         (unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1e),
                          *(float*)&puVar9[-7] * _DAT_00552504);
 
-            sVar5 = *(short *)((int)puVar9 + -0xe6);
+            sVar5 = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
 
             // Wave ring: animate scale with sine
             if ((sVar5 == 0xbc) || (sVar5 == 0xbd)) {
@@ -318,7 +318,7 @@ switchD_caseD_2:
                 uVar6  = (unsigned int)lVar12;
                 lVar12 = (long long)(*pfVar1 * 0.0099999998);
                 iVar8  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
-                sVar5  = *(short *)((int)puVar9 + -0xe6);
+                sVar5  = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
 
                 // Transition to water or bounce on land
                 if (((sVar5 == 0xb5) &&
@@ -383,7 +383,7 @@ skip_decrement:
             // Decrement lifetime, possibly kill
             iVar8 = (int)puVar9[-0x22];
             puVar9[-0x22] = (unsigned int)(iVar8 - 1);
-            if ((iVar8 - 1 < 1) && (*(short *)((int)puVar9 + -0xe6) != 0xb2)) {
+            if ((iVar8 - 1 < 1) && (*(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) != 0xb2)) {
                 uVar6 = _rand();
                 uVar6 &= 0x8000003f;
                 bVar10 = (uVar6 == 0);
