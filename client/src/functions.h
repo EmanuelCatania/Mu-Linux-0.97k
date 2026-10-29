@@ -262,7 +262,7 @@ void  __cdecl Skeleton_Transform(void *model, float* boneMatrices, float *anim1,
 void  __cdecl BMD_TransformPosition(void *model, float *bone_data, float *out_pos, float *out_col, char flag); // IDA: TransformPosition (0x004409A0)
 void  __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out); // BoneTransformOffset — implemented in Render/BMD_SetupRender.cpp
 int   __cdecl ItemObjectAttribute(OBJECT* object); // IDA: ItemObjectAttribute (0x00502BA0)
-void  __cdecl BMD__Open(int, int, int, int);   // IDA: BMD__Open (0x004423E0)
+void  __cdecl BMD__Open(int, const char*, const char*, int);   // IDA: BMD__Open (0x004423E0)
 undefined4 __cdecl BMD__Save(int thisModel, char *pathDir, char *pathFile);  // BMD_SaveToFile
 void  __cdecl SetPlayerStop(CHARACTER* entity); // IDA: SetPlayerStop (0x004430C0)
 void  __cdecl SetPlayerWalk(CHARACTER* entity); // IDA: SetPlayerWalk (0x00443930)

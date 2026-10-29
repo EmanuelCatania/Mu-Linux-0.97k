@@ -347,9 +347,9 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         if (numBonesInSlot > 0)
             BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
         else
-            BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
+            BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), param_2, local_40, 0);
     } else {
-        BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
+        BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), param_2, local_40, 0);
     }
 
     // Post-load defensive init: ensure bodyLight is (1,1,1) even if the BMD

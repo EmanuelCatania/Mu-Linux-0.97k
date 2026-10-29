@@ -43,12 +43,12 @@ extern "C" void DbgLogPublic(const char* msg);
 //           +0x34   TexNames[nM] stride 0x20 (char[32] por mesh)
 //           +0x38   TexIdx  [nM] stride 2
 // Loop order: Mesh → FindNearTriangle → Bone → Action
-void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
+void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, int param_4)
 {
     (void)param_4;
     void *thisPtr = (void *)param_1;
-    const char *path     = (const char *)param_2;
-    const char *filename = (const char *)param_3;
+    const char *path     = param_2;
+    const char *filename = param_3;
 
     // VERY-EARLY defensive BodyLight init: done BEFORE fopen so even if file
     // can't be opened the slot has sane (1,1,1) instead of the pre-existing
