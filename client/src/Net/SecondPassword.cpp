@@ -3284,25 +3284,25 @@ void __cdecl MoveCharacter(int p1)
                                     if (action < 100) {
                                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
-                                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
+                                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                                         SetAction(AsObject(c), 105);
                                     }
                                 } else {
                                     TextIndex = (gMapManager.GetCurrentMap() == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
-                                        CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
+                                        CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                                     SetAction(AsObject(c), 111);
                                 }
                             } else {
                                 TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
-                                    CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
+                                    CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                                 SetAction(AsObject(c), 99);
                             }
                         } else {
                             TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
-                                CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
+                                CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                             SetAction(AsObject(c), 97);
                         }
                         skipIdleSelect = true;
@@ -3310,7 +3310,7 @@ void __cdecl MoveCharacter(int p1)
                     if (!skipIdleSelect) {
                         TextIndex = (gMapManager.GetCurrentMap() == 2) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
-                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], c, 0, -1);
+                            CreateChat((char*)EntityName::Get(c), GlobalText[TextIndex], AsCharacter(c), 0, -1);
                     }
                 }
                 if (!skipIdleSelect) SetAction(AsObject(c), 1);

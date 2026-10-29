@@ -410,7 +410,7 @@ void  __cdecl UI_RenderChatLogOverlay(void);
 struct CHAT;
 void  __cdecl FloatingLabel_MeasureText(CHAT*, int, int);
 void  __cdecl RenderBoolean(int x, int y, DWORD c);   // IDA: RenderBoolean (0x00480E00)
-void  __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
+void  __cdecl CreateChat(char* ID, char* Text, CHARACTER* entity, int Flag, int SetColor); // CreateChat
 // FUN_004821A0 @ 0x004821A0
 void  __cdecl UI_TickHoverBubbles(void);
 int   __cdecl Item_FindQuickSlotByCategory(int category);  // GetItemSlot — returns inventory slot index or -1

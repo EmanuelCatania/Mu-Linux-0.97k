@@ -711,7 +711,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         char* ent = base + npc * 0x394;
         if (ent[0] != 0) {
             const char* name = EntityName::Get(ent);
-            if (name[0]) CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+            if (name[0]) CreateChat((char*)name, (char*)"", AsCharacter(ent), 0, -1);
         }
     } else if (chr == -1) {
         if (hovered != -1) drawHoveredItem();          // IDA LABEL_37
@@ -747,7 +747,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
             } else if (kind != 2) {
                 // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
                 // limitaba a kind == 1).
-                CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+                CreateChat((char*)name, (char*)"", AsCharacter(ent), 0, -1);
             }
         }
     }

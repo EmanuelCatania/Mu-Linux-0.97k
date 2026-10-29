@@ -1073,7 +1073,7 @@ extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
             static const int k[] = { 818, 819, 820, 821, 822, 823 };
             text = k[rand() % 6];
         }
-        if (text) CreateChat((char*)EntityName::Get(c), GlobalText[text], (DWORD)c, 0, -1);
+        if (text) CreateChat((char*)EntityName::Get(c), GlobalText[text], AsCharacter(c), 0, -1);
     }
     return true;
 }

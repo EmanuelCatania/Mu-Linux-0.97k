@@ -205,6 +205,7 @@ jobs:
             python -B tests/SendMovePointer.py --architecture x64
             python -B tests/BMDPathPointers.py --architecture x64
             python -B tests/HashBackingPointers.py --architecture x64
+            python -B tests/ChatOwnerPointer.py --architecture x64
             python -B tests/MeshAddressPointer.py --architecture x64
             python -B tests/AnchorDestructorPointer.py --architecture x64
               python -B tests/ListNextPointer.py --architecture x64
@@ -382,6 +383,7 @@ jobs:
             python3 -B tests/SendMovePointer.py --generator Ninja
             python3 -B tests/BMDPathPointers.py --generator Ninja
             python3 -B tests/HashBackingPointers.py --generator Ninja
+            python3 -B tests/ChatOwnerPointer.py --generator Ninja
             python3 -B tests/MeshAddressPointer.py --generator Ninja
             python3 -B tests/AnchorDestructorPointer.py --generator Ninja
               python3 -B tests/ListNextPointer.py --generator Ninja

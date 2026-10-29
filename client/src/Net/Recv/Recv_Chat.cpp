@@ -34,7 +34,7 @@ void NetRecv_01(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (ent[0] != 0) {
             // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
             // path de NPC hover (RenderMonsterName).
-            CreateChat((char*)EntityName::Get(ent), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
+            CreateChat((char*)EntityName::Get(ent), cmsg, AsCharacter(ent), 0, -1);
         }
     }
 }
