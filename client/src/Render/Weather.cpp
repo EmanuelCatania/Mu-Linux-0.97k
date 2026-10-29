@@ -133,7 +133,7 @@ uint __cdecl Weather_Update(void)
     int     iVar11, iVar12;
     uint    uVar13;
     int     iVar14;
-    DWORD  *puVar16;
+    const unsigned char* puVar16;
     unsigned char *pbVar17, *pbVar18;
     char   *pcVar19;
     bool    bVar20, bVar21;
@@ -174,12 +174,12 @@ uint __cdecl Weather_Update(void)
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) goto LAB_00500f16;
             iVar12 = 4; bVar20 = false; iVar14 = 0; bVar21 = true;
-            puVar16 = (DWORD*)&uStack_48;
+            puVar16 = reinterpret_cast<const unsigned char*>(&uStack_48);
             do {
                 if (iVar12 == 0) break;
                 iVar12--; bVar20 = (unsigned char)*puVar16 < *pbVar18;
                 bVar21 = (unsigned char)*puVar16 == *pbVar18;
-                puVar16 = (DWORD*)((int)puVar16 + 1); pbVar18++;
+                ++puVar16; pbVar18++;
             } while (bVar21);
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
@@ -223,12 +223,12 @@ LAB_00500f34:
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) goto LAB_00501064;
             iVar12 = 4; bVar20 = false; iVar14 = 0; bVar21 = true;
-            puVar16 = (DWORD*)&uStack_48;
+            puVar16 = reinterpret_cast<const unsigned char*>(&uStack_48);
             do {
                 if (iVar12 == 0) break;
                 iVar12--; bVar20 = (unsigned char)*puVar16 < *pbVar18;
                 bVar21 = (unsigned char)*puVar16 == *pbVar18;
-                puVar16 = (DWORD *)((int)puVar16 + 1); pbVar18++;
+                ++puVar16; pbVar18++;
             } while (bVar21);
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
