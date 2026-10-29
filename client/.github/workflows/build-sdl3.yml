@@ -49,6 +49,14 @@ jobs:
         env:
           CXXFLAGS: -m32
         run: python3 -B tests/BMDCollisionArguments.py --generator Ninja --architecture Win32
+      - name: Verificar reproduccion de destellos (Windows x86 y x64)
+        if: runner.os == 'Windows'
+        run: |
+          python -B tests/EquipmentSpriteReplay.py --architecture Win32
+          python -B tests/EquipmentSpriteReplay.py --architecture x64
+      - name: Verificar reproduccion de destellos (Linux x64)
+        if: runner.os == 'Linux'
+        run: python3 -B tests/EquipmentSpriteReplay.py --generator Ninja
       - name: Configurar Windows
         if: runner.os == 'Windows'
         run: cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
