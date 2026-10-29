@@ -536,8 +536,10 @@ static void SendMove_CloseWindows97k(void)
     MouseLButton = 0;
 }
 
-void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
+void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* object)
 {
+    auto* param_1 = reinterpret_cast<unsigned char*>(character);
+    const auto* param_2 = reinterpret_cast<const unsigned char*>(object);
     // Saltea si la entidad en param_2+0x78 tiene el flag 0x20 seteado (entidad ocupada/bloqueada)
     if ((*(unsigned char*)(param_2 + 0x78) & 0x20) == 0x20)
         return;
@@ -2345,7 +2347,7 @@ void __cdecl Action(DWORD c, DWORD o)
         }
 
         // ── 4. Send move packet (always, unless cave returned above) ───────────────────────────
-        Combat_SendMovePathPacket((int)c, (int)o);
+        Combat_SendMovePathPacket(AsCharacter(c), AsObject(o));
         AsCharacter(c)->PathNum = 0;
 
         // ── 5. v309 secondary packet (anim 139/140 + action 109) ───────────────────────────────────────

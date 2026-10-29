@@ -423,7 +423,7 @@ void  __cdecl SetActionClass(CHARACTER*, OBJECT*, int, int);
 void  __cdecl CheckGate(void); // IDA: CheckGate (0x004AC140)
 char  __cdecl Path_IsLineClear(int src_x, int src_y, int tgt_x, int tgt_y); // IDA: CheckWall
 // IDA: SendMove
-void  __cdecl Combat_SendMovePathPacket(int entity, int entity2);                 // sends the local hero's path packet
+void  __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* object);                 // sends the local hero's path packet
 // IDA: Attack
 void  __cdecl Combat_DispatchHeroSkillAttack(void *entity);                       // hero skill/attack dispatcher
 // IDA: CheckArrow

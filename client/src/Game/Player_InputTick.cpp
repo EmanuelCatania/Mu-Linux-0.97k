@@ -1327,7 +1327,7 @@ void __cdecl Player_ProcessInput(void)
                                           || (rh >= 128 && rh < 135)
                                           || (rh == 145);
                         if (!bRanged && AsCharacter(ent)->MonsterIndex != 9) {
-                            Combat_SendMovePathPacket((int)ent, (int)ent);   // IDA: SendMove
+                            Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));   // IDA: SendMove
                             goto end_tick_inc;
                         }
                     }
@@ -1417,7 +1417,7 @@ void __cdecl Player_ProcessInput(void)
                         Action((DWORD)ent, (DWORD)ent);
                     } else {
                         // LABEL_340: hay camino -> caminar hasta el objeto.
-                        Combat_SendMovePathPacket((int)ent, (int)ent);
+                        Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                     }
                     goto end_tick_inc;
                 }
@@ -1454,7 +1454,7 @@ void __cdecl Player_ProcessInput(void)
                         // IDA L1210: sin camino -> LABEL_312 (Action manda el 0x30).
                         Action((DWORD)ent, (DWORD)ent);
                     } else {
-                        Combat_SendMovePathPacket((int)ent, (int)ent);
+                        Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                     }
                     goto end_tick_inc;
                 }
@@ -1488,7 +1488,7 @@ void __cdecl Player_ProcessInput(void)
                     Action((DWORD)ent, (DWORD)ent);
                     AsCharacter(ent)->MovementType = 0;
                 } else {
-                    Combat_SendMovePathPacket((int)ent, (int)ent);
+                    Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                 }
                 goto end_tick_inc;
             }
@@ -1621,7 +1621,7 @@ void __cdecl Player_ProcessInput(void)
                                                             ent + 0x354, 0.0f);
                             if ((char)ok != '\0') {
                                 AsCharacter(ent)->MovementType = 0;
-                                Combat_SendMovePathPacket((int)ent, (int)ent);
+                                Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                                 goto end_tick_inc;
                             }
                         }
