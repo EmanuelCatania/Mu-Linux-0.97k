@@ -27,3 +27,6 @@ jobs:
         run: cmake --preset ${{ matrix.target.preset }}-${{ matrix.config }}
       - name: Compilar
         run: cmake --build --preset ${{ matrix.target.preset }}-${{ matrix.config }} --parallel 2
+      - name: Verificar paquete de mass teleport
+        if: matrix.config == 'release'
+        run: python -B tests/recall_packet_layout.py --architecture ${{ matrix.target.preset == 'windows-x64' && 'x64' || 'Win32' }}
