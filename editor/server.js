@@ -267,6 +267,8 @@ app.post('/api/file', async (req, res) => {
     const { path: relPath, content } = req.body || {};
     const { abs, rel } = normalizeRelativePath(relPath);
     await ensureBackup(abs, rel);
+    // Los archivos nuevos (por ejemplo Data/Text/<idioma>/) pueden no tener su carpeta.
+    await fsp.mkdir(path.dirname(abs), { recursive: true });
     await fsp.writeFile(abs, String(content ?? ''), 'utf8');
     const backups = await listBackups(rel);
     res.json({ ok: true, path: rel, backups });

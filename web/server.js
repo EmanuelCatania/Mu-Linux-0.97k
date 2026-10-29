@@ -2182,7 +2182,13 @@ const TEXT_REFERENCE_FILES = {
 };
 
 async function readTextBundle(lang, table) {
-  const current = await editorRequest('GET', `/api/file?path=${encodeURIComponent(translations.pathFor(lang, table))}`);
+  // Un archivo de traducciones que todavía no existe se trata como vacío: se crea al guardar.
+  let current = { content: '' };
+  try {
+    current = await editorRequest('GET', `/api/file?path=${encodeURIComponent(translations.pathFor(lang, table))}`);
+  } catch (err) {
+    if (!/ENOENT/.test(String(err.message))) throw err;
+  }
   const reference = await editorRequest('GET', `/api/file?path=${encodeURIComponent(TEXT_REFERENCE_FILES[table])}`);
   return {
     parsed: translations.parseTranslations(current.content, table),
@@ -2234,7 +2240,7 @@ app.post('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordCha
     if (result.errors) {
       return res.status(400).json({ error: 'Hay textos inválidos', errors: result.errors });
     }
-    const content = translations.serializeTranslations(parsed, result.entries);
+    const content = translations.serializeTranslations(parsed, result.entries, { table, lang });
     const data = await editorRequest('POST', '/api/file', { path: translations.pathFor(lang, table), content });
     return res.json({ ok: true, count: result.entries.length, backups: data.backups || [] });
   } catch (err) {

@@ -38,8 +38,19 @@ function pathFor(lang, table) {
   return `Data/Text/${lang}/${TABLES[table].file}`;
 }
 
+// Los archivos del server van en CRLF; uno vacío o que todavía no existe se crea igual.
 function detectEol(content) {
-  return /\r\n/.test(content) ? '\r\n' : '\n';
+  return /\n/.test(content) && !/\r\n/.test(content) ? '\n' : '\r\n';
+}
+
+// Encabezado de un archivo que se crea desde el editor.
+function defaultHeader(table, lang) {
+  const columns = TABLES[table].keyFields === 2 ? 'Sección\tÍndice\tNombre' : (table === 'client' ? 'Índice\tTexto' : 'Índice\tNombre');
+  return [
+    `//Textos traducidos (${lang}). Se mandan a los clientes con ese idioma; lo que no esté acá`,
+    '//sale de los datos del cliente. UTF-8 sin BOM, hasta 63 bytes por texto.',
+    `//${columns}`
+  ];
 }
 
 function keyString(key) {
@@ -213,9 +224,9 @@ function applyEdits(parsed, edits, table, { referenceFor } = {}) {
   return { entries };
 }
 
-function serializeTranslations(parsed, entries) {
+function serializeTranslations(parsed, entries, { table, lang } = {}) {
   const eol = parsed.eol || '\r\n';
-  const lines = [...parsed.header];
+  const lines = parsed.header.length === 0 && table ? defaultHeader(table, lang) : [...parsed.header];
   for (const entry of entries) {
     lines.push(...(entry.comments || []));
     lines.push(`${entry.key.join('\t')}\t"${entry.name}"`);
@@ -236,5 +247,6 @@ module.exports = {
   validateName,
   sameFormatSpecifiers,
   applyEdits,
-  serializeTranslations
+  serializeTranslations,
+  defaultHeader
 };

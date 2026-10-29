@@ -147,3 +147,14 @@ test('solo se arman rutas de idiomas y tablas conocidos', () => {
   assert.throws(() => pathFor('../x', 'client'));
   assert.throws(() => pathFor('Spn', 'passwd'));
 });
+
+test('un archivo que no existe se crea con encabezado y fin de línea del server', () => {
+  const parsed = parseTranslations('', 'items');
+  assert.equal(parsed.entries.length, 0);
+  assert.equal(parsed.eol, '\r\n');
+  const result = applyEdits(parsed, [{ key: [0, 5], name: 'Espada' }], 'items');
+  const out = serializeTranslations(parsed, result.entries, { table: 'items', lang: 'Spn' });
+  assert.match(out, /^\/\/Textos traducidos \(Spn\)/);
+  assert.ok(out.endsWith('0\t5\t"Espada"\r\nend\r\n'));
+  assert.deepEqual(parseTranslations(out, 'items').entries.map((e) => e.key), [[0, 5]]);
+});
