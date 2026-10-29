@@ -200,7 +200,7 @@ uint __cdecl Weather_Update(void)
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 LAB_00500f16:
     pvVar9 = AntiTamper_HashNode();
-    *(unsigned char *)((int)pvVar9 + 4) = 1;
+    *(static_cast<unsigned char*>(pvVar9) + 4) = 1;
     HashTable_Insert(&MAIN_HASH_CLASS, pvVar9, &MoveSceneFrame);
 LAB_00500f34:
     // Anti-tamper: HashTable reference-count decrement
@@ -510,7 +510,7 @@ LAB_00501734:
 
             if ((DAT_083a3ff0 == 0) || (sVar5 != 0x12d)) {
                 pfVar1 = (float *)(&DAT_0839bcc0 + iVar14 * 0x6f);
-                *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
+                *(static_cast<unsigned char*>(pvVar9) + 0xa0) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
@@ -760,7 +760,7 @@ LAB_00501cb5:
             } else {
                 // DAT_083a3ff0 != 0 && type == 0x12d: thunder cloud — full animation
                 SetAction(AsObject(pcVar3), 7);
-                *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
+                *(static_cast<unsigned char*>(pvVar9) + 0xa0) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
