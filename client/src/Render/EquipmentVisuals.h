@@ -1,14 +1,15 @@
 #pragma once
+struct CHARACTER;
 
 // Muestra compartida de presentación: equipo y sprites del cuerpo.
 // IDA: equipo de RenderCharacter (0x00456770) y RenderLinkObject (0x00455430).
 void Equipment_BeginStep();
 void Equipment_Tick(int entity, int highlighted);
-void Equipment_BeginCharacter(int entity);
+void Equipment_BeginCharacter(const CHARACTER* entity);
 void Equipment_EndCharacter();
 void Equipment_SetStage(int stage);
 void Equipment_Invalidate(const void *entity);
-void Equipment_Draw(int entity, int stage);
+void Equipment_Draw(const CHARACTER* entity, int stage);
 bool Equipment_IsDrawing();
 void Equipment_AddSprite(unsigned short type, float *position, float scale,
     float *light, int owner, float rotation, int mode);

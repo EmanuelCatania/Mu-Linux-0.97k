@@ -175,7 +175,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    Equipment_Draw((int)param_1, CharacterEffects_EarlyStage);
+    Equipment_Draw(AsCharacter(param_1), CharacterEffects_EarlyStage);
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
@@ -253,7 +253,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                      *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
     }
 
-    Equipment_Draw((int)param_1, 0);
+    Equipment_Draw(AsCharacter(param_1), 0);
 
     // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
     // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
@@ -351,7 +351,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xca) = L2;
     }
 
-    Equipment_Draw((int)param_1, 1);
+    Equipment_Draw(AsCharacter(param_1), 1);
 
     // ── Restaurar la luz base antes de las partes del cuerpo ────────────────
     //
@@ -501,7 +501,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    Equipment_Draw((int)param_1, 2);
+    Equipment_Draw(AsCharacter(param_1), 2);
 
     if (sVar2 == 390) {
         // ── Capa del Magic Gladiator (IDA RenderCharacter L667-743) ───────────
@@ -554,7 +554,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 FUN_00408ff0((void *)param_1[0x61]);
         }
     }
-    Equipment_Draw((int)param_1, CharacterEffects_LateStage);
+    Equipment_Draw(AsCharacter(param_1), CharacterEffects_LateStage);
     return puVar13;
 }
 
@@ -574,7 +574,7 @@ void Equipment_Tick(int entity, int highlighted)
     float fVar32 = (float)highlighted * _DAT_005524f8;
     float savedLight[3];
     memcpy(savedLight, (char *)param_1 + 800, sizeof(savedLight));
-    Equipment_BeginCharacter(entity);
+    Equipment_BeginCharacter(AsCharacter(static_cast<DWORD>(entity)));
     _DAT_005597c8 = 1.0f;
     Equipment_SetStage(0);
     // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
