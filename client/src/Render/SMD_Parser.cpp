@@ -7,6 +7,7 @@
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Render/JointTypes.h"
 #include "Entity/EntityName.h"
 #include "Render/BMDDevice.h"
 #include "Render/BufferedDraw.h"
@@ -296,6 +297,17 @@ void __cdecl ClearCharacters(int param_1) {
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
+        // El slot puede reutilizarse antes de que MoveJoint observe Live=0.
+        // Cancela el Mana Shield del ocupante anterior, incluso si ya fue borrado.
+        if (param_1 == -1 || *(short*)(puVar1 + 0x1dc) != (short)param_1) {
+            JOINT* joints = AsJoint(DAT_07b27150);
+            for (size_t jointIndex = 0; jointIndex < sizeof(DAT_07b27150) / sizeof(JOINT); ++jointIndex) {
+                JOINT& joint = joints[jointIndex];
+                if (joint.Live && joint.Type == 266 && joint.SubType == 0 &&
+                    joint.Target == reinterpret_cast<OBJECT*>(puVar1))
+                    joint.Live = 0;
+            }
+        }
         if (*puVar1 != '\0' && *(short*)(puVar1 + 0x1dc) != (short)param_1) {
             *puVar1 = 0;
             char* pcVar2 = DAT_083a1218;
