@@ -12,6 +12,7 @@ const { ensureSettings, readSettings, registerSettings } = require('./lib/site-s
 const { translator, locales, registerCatalogs, resolveLanguage } = require('./lib/i18n');
 const { getCountryInfo, isPrivateIp, displayGameIp, isGeoEnabled } = require('./lib/geo');
 const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-master');
+const translations = require('./lib/translations');
 const {
   SOURCE_COOKIE,
   SOURCE_MAX_AGE_MS,
@@ -1707,6 +1708,10 @@ app.get('/admin/server-editor/notices', requireAdmin, requireAdminPasswordChange
   res.render('admin_notice_editor');
 });
 
+app.get('/admin/server-editor/texts', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  res.render('admin_texts_editor');
+});
+
 app.get('/admin/server-editor/blacklist', requireAdmin, requireAdminPasswordChange, (req, res) => {
   res.render('admin_blacklist_editor');
 });
@@ -2160,6 +2165,78 @@ app.post('/admin/server-editor/api/notices', requireAdmin, requireAdminPasswordC
       content
     });
     return res.json({ ok: true, backups: data.backups || [] });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// ── Traducciones del server (Data/Text/<idioma>/*.txt) ───────────────────────
+// Los nombres de referencia salen de los datos del server; la traducción es
+// opcional y pisa al nombre que trae el cliente. Las reglas de validación están en
+// lib/translations.js.
+const TEXT_REFERENCE_FILES = {
+  items: 'Data/Item/Item.txt',
+  monsters: 'Data/Monster/Monster.txt',
+  skills: 'Data/Skill/Skill.txt',
+  client: 'Data/Text/Eng/Client.txt'
+};
+
+async function readTextBundle(lang, table) {
+  const current = await editorRequest('GET', `/api/file?path=${encodeURIComponent(translations.pathFor(lang, table))}`);
+  const reference = await editorRequest('GET', `/api/file?path=${encodeURIComponent(TEXT_REFERENCE_FILES[table])}`);
+  return {
+    parsed: translations.parseTranslations(current.content, table),
+    reference: translations.parseReference(reference.content, table)
+  };
+}
+
+app.get('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const lang = String(req.query.lang || '');
+  const table = String(req.query.table || '');
+  if (!translations.isLang(lang) || !translations.isTable(table)) {
+    return res.status(400).json({ error: 'Idioma o tabla inválidos' });
+  }
+  try {
+    const { parsed, reference } = await readTextBundle(lang, table);
+    return res.json({
+      lang,
+      table,
+      maxBytes: translations.MAX_BYTES,
+      reference,
+      translations: parsed.entries.map((entry) => ({ key: entry.key, name: entry.name })),
+      errors: parsed.errors
+    });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const lang = String(req.body?.lang || '');
+  const table = String(req.body?.table || '');
+  const edits = req.body?.edits;
+  if (!translations.isLang(lang) || !translations.isTable(table) || !Array.isArray(edits) || edits.length > 5000) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const { parsed, reference } = await readTextBundle(lang, table);
+    // En Client.txt los %d/%s tienen que ser los del inglés. El inglés mismo no
+    // tiene contra qué compararse acá: su referencia es el propio archivo.
+    const byKey = new Map(reference.map((entry) => [entry.key.join('	'), entry.name]));
+    const referenceFor = table === 'client' && lang !== 'Eng' ? (key) => byKey.get(key.join('	')) : undefined;
+    const result = translations.applyEdits(parsed, edits, table, { referenceFor });
+    if (result.errors) {
+      return res.status(400).json({ error: 'Hay textos inválidos', errors: result.errors });
+    }
+    const content = translations.serializeTranslations(parsed, result.entries);
+    const data = await editorRequest('POST', '/api/file', { path: translations.pathFor(lang, table), content });
+    return res.json({ ok: true, count: result.entries.length, backups: data.backups || [] });
   } catch (err) {
     return res.status(err.status || 502).json({ error: err.message });
   }
