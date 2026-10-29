@@ -128,12 +128,12 @@ void __cdecl AmbientParticles_Update(void)
                 *pfVar1 = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x10);
 
                 uVar6 = _rand();
-                iVar8  = (int)DAT_07abf5d8;
+                const char* const spawnHero = DAT_07abf5d8;
                 uVar6 &= 0x800003ff;
                 if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffc00) + 1;
                 // IDA: Ambient_ParticleUpdate (0x00502320): posición Y almacenada como float.
                 *(float*)&puVar9[-0x35] = (float)(int)(uVar6 - 0x200) + *(float *)(DAT_07abf5d8 + 0x14);
-                puVar9[-0x34] = *(unsigned int *)(iVar8 + 0x18);    // pos_z = player_z
+                puVar9[-0x34] = *(const unsigned int *)(spawnHero + 0x18);    // pos_z = player_z
 
                 // Get terrain type at spawn position
                 // IDA: Ambient_ParticleUpdate (0x00502320): truncar la posición / 100.
@@ -216,7 +216,8 @@ LAB_0050245e:
                     case 7:
                         // Snow: y-position check for altitude
                         uVar6 = _rand();
-                        iVar8 = (int)DAT_07abf5d8;
+                        // La captura de Hero de IDA alimenta la lógica de nieve aún omitida.
+                        // En este port se sobrescribía iVar8 sin leer esa dirección.
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[-0x37] = (unsigned int)((float)(int)(uVar6 + 8) * _DAT_005524f4);

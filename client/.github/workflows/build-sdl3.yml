@@ -197,6 +197,7 @@ jobs:
             python -B tests/AmbientPoolInitPointer.py --architecture x64
             python -B tests/AmbientPoolAnimationPointer.py --architecture x64
             python -B tests/AmbientTerrainPointer.py --architecture x64
+            python -B tests/AmbientSpawnHeroPointer.py --architecture x64
             python -B tests/MeshAddressPointer.py --architecture x64
             python -B tests/AnchorDestructorPointer.py --architecture x64
               python -B tests/ListNextPointer.py --architecture x64
@@ -366,6 +367,7 @@ jobs:
             python3 -B tests/AmbientPoolInitPointer.py --generator Ninja
             python3 -B tests/AmbientPoolAnimationPointer.py --generator Ninja
             python3 -B tests/AmbientTerrainPointer.py --generator Ninja
+            python3 -B tests/AmbientSpawnHeroPointer.py --generator Ninja
             python3 -B tests/MeshAddressPointer.py --generator Ninja
             python3 -B tests/AnchorDestructorPointer.py --generator Ninja
               python3 -B tests/ListNextPointer.py --generator Ninja

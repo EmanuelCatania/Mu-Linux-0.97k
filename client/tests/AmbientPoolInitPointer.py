@@ -73,9 +73,9 @@ def harness(revision=None):
     start=source.index('puVar9[0]    =');switch=source.index('switch (iVar8)',start);end=source.index('{',switch)+1;depth=1
     while depth:depth+=(source[end]=='{')-(source[end]=='}');end+=1
     block=source[start:end]
-    # Dos fronteras32 ajenas al cursor: se conserva su truncamiento en el banco.
+    # Fronteras32 ajenas al cursor: la captura antigua de Hero puede ya no existir.
     for expression,pointer in [('(int)DAT_07abf5d8','DAT_07abf5d8'),('(int)(puVar9 + -0x3a)','(puVar9 + -0x3a)')]:
-        assert block.count(expression)==1
+        assert block.count(expression) in ((0,1) if pointer=='DAT_07abf5d8' else (1,))
         block=block.replace(expression,'static_cast<int>(reinterpret_cast<uintptr_t>('+pointer+'))')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('BLOCK',block)+MAIN
 def main():
