@@ -277,6 +277,26 @@ app.post('/api/file', async (req, res) => {
   }
 });
 
+// Borrar un archivo: solo los JSON de los items y pets custom, y con copia de
+// respaldo antes. El resto del árbol de datos no se puede borrar desde el panel.
+const DELETABLE = /^Data\/Custom\/(Items|Pets)\/\d{2}_\d{3}\.json$/;
+
+app.post('/api/delete', async (req, res) => {
+  try {
+    const { path: relPath } = req.body || {};
+    const { abs, rel } = normalizeRelativePath(relPath);
+    if (!DELETABLE.test(rel)) {
+      throw new Error('Path not deletable');
+    }
+    await ensureBackup(abs, rel);
+    await fsp.unlink(abs);
+    const backups = await listBackups(rel);
+    res.json({ ok: true, path: rel, backups });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.get('/api/backups', async (req, res) => {
   try {
     const { rel } = normalizeRelativePath(req.query.path);
