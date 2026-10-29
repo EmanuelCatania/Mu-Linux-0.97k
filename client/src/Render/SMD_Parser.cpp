@@ -237,24 +237,23 @@ void __cdecl DeleteObjects(void) {
     for (int i = 0; i < 0x7580; i += 0xbc)
         BMD__Release(i + DAT_05828d58);
 
-    // free scene entity grid (16x16, stride 0x10)
-    // Original binary terminated when puVar5 > 0x83a1217 (grid_base 0x83a0218 + 0xFFF).
-    // In our build grid is g_ObjectBucketGrid (linker-placed); use end-pointer instead.
-    char* puVar5 = (char*)&DAT_083a0218;
-    char* gridEnd = (char*)g_ObjectBucketGrid + 0xFFF;
+    // IDA 0x004FFD50: descargar cada celda desde la cola hacia la cabeza.
+    // El límite cuenta las 256 celdas y no depende del ancho de los punteros.
+    SceneObjectCell* puVar5 = g_ObjectBucketGrid;
+    SceneObjectCell* gridEnd = g_ObjectBucketGrid + 256;
     do {
         for (int cell = 0; cell < 0x10; cell++) {
-            char* head = (char*)*(DWORD*)(puVar5 + 8);
+            char* head = static_cast<char*>(puVar5->Tail);
             while (head != nullptr) {
                 char* next = (char*)*(DWORD*)(head + 0x1b4);
                 Entity_GridUnlink(head, puVar5);
                 head = next;
             }
-            *(DWORD*)(puVar5 + 4) = 0;
-            *(DWORD*)(puVar5 + 8) = 0;
-            puVar5 += 0x10;
+            puVar5->Head = nullptr;
+            puVar5->Tail = nullptr;
+            ++puVar5;
         }
-        if (gridEnd < puVar5) {
+        if (puVar5 == gridEnd) {
             // unload tile textures
             for (int ti = 0x23; ti < 0x68; ti++) UnloadImage(ti);
             // ── Pool zero-clear loops (DESACTIVADOS, salvo Operates) ─────────────────

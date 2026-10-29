@@ -584,15 +584,13 @@ void __stdcall MoveObjects(void) {
 
     DAT_083a3fec = 0;  // reset visible object counter
 
-    // Iterate object bucket array starting at DAT_083a021c
-    // Each block has 16 bucket entries (4 DWORDs each = 16 bytes per entry)
-    // Block iteration continues until address > 0x083a121b
-    DWORD* puVar4 = (DWORD*)&DAT_083a021c;
+    // IDA 0x004FF260: recorrer las 256 celdas en bloques de 16.
+    SceneObjectCell* puVar4 = g_ObjectBucketGrid;
     do {
         int bucketsLeft = 0x10;
         do {
             char* pcVar6;
-            char bucketFlag = *(char*)(puVar4 + 2);  // +8 bytes: bucket type flag
+            char bucketFlag = static_cast<char>(puVar4->Visible);
 
             // Cada enlace debe identificar un nodo aun vivo de CreateObject.
             int bucketIter = 0;
@@ -601,7 +599,7 @@ void __stdcall MoveObjects(void) {
             Platform::RunValidatedOperation([&]() {
             if (bucketFlag == '\0') {
                 // Static objects: just animate, don't render-update
-                pcVar6 = (char*)*puVar4;
+                pcVar6 = static_cast<char*>(puVar4->Head);
                 while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0') {
@@ -613,7 +611,7 @@ void __stdcall MoveObjects(void) {
             }
             else {
                 // Dynamic objects: render-update + animate
-                pcVar6 = (char*)*puVar4;
+                pcVar6 = static_cast<char*>(puVar4->Head);
                 while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0' && pcVar6[0x160] != '\0') {
@@ -669,13 +667,12 @@ void __stdcall MoveObjects(void) {
                 } // end while linked list
             }
             }); // Windows conserva la proteccion SEH del recorrido.
-            puVar4 += 4;  // next bucket entry (16 bytes)
+            ++puVar4;
             bucketsLeft--;
         } while (bucketsLeft != 0);
 
-        // El bound es el final real de g_ObjectBucketGrid (en el binario, la dirección
-        // absoluta 0x083a121b).
-        if ((char*)puVar4 >= ((char*)&g_ObjectBucketGrid[0]) + 0x1000) {
+        // El límite es el final real de la grilla, independiente de sizeof(void*).
+        if (puVar4 >= g_ObjectBucketGrid + 256) {
             return;
         }
     } while (true);

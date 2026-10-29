@@ -62,19 +62,18 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     UINT* p = puVar3;
     for (int i = 0x6f; i != 0; i--) *p++ = 0;
 
-    // link into per-cell doubly-linked list (head=DAT_083a021c, tail=DAT_083a0220)
-    UINT** headArr = (UINT**)&DAT_083a021c;
-    UINT** tailArr = (UINT**)((char*)&DAT_083a021c + 4);
-    if (headArr[uVar2 * 4] == nullptr) {
+    // IDA 0x004FF5A0: insertar al final de la celda correspondiente.
+    SceneObjectCell& cell = g_ObjectBucketGrid[uVar2];
+    if (cell.Head == nullptr) {
         puVar3[0x6d] = 0; puVar3[0x6e] = 0;
-        headArr[uVar2 * 4] = puVar3;
+        cell.Head = puVar3;
     } else {
-        UINT* prevTail = tailArr[uVar2 * 4];
+        UINT* prevTail = static_cast<UINT*>(cell.Tail);
         *(UINT**)((char*)prevTail + 0x1b8) = puVar3;
         puVar3[0x6d] = (UINT)prevTail;
         puVar3[0x6e] = 0;
     }
-    tailArr[uVar2 * 4] = puVar3;
+    cell.Tail = puVar3;
 
     // common initialisation
     // IDA 0x004FF5A0: campos comunes. El contrato se comprueba antes de

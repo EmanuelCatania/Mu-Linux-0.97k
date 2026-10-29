@@ -21,7 +21,7 @@ extern void ClearActionObject(void);
 // BMD::Animation + Transform, then CollisionDetectLineToMesh vs MousePosition/Target.
 char* __stdcall PickObject_Mouse(void) {
     // 0x004FA7C0 — Mouse-picking scene objects.
-    // Iterates 0x10 * 0x10 object linked lists rooted at DAT_083a021c (stride 4 DWORDs per cell).
+    // Recorre las listas de las 256 celdas en el orden original.
     // Per visible object: sets up BMD model data, calls BMD::Animation + Transform,
     // copies OBB data (48 bytes), then CollisionDetectLineToMesh vs MousePosition/MouseTarget.
     // Returns pointer to picked object, or NULL.
@@ -34,11 +34,11 @@ char* __stdcall PickObject_Mouse(void) {
 
     Map_InitRayCast();  // Map_InitRayCast — sets up MousePosition/MouseTarget ray
 
-    DWORD* pCell = (DWORD*)&DAT_083a021c;
+    SceneObjectCell* pCell = g_ObjectBucketGrid;
     do {
         int cellCount = 0x10;
         do {
-            char* obj = (char*)(DWORD)*pCell;
+            char* obj = static_cast<char*>(pCell->Head);
             // SEH alrededor del recorrido de la lista de buckets (punteros next corruptos),
             // igual que el guard de MoveObjects.
             Platform::RunValidatedOperation([&]() {
@@ -99,10 +99,10 @@ char* __stdcall PickObject_Mouse(void) {
                 obj = *(char**)(obj + 0x1B8);  // next in linked list
             }
             }); // Windows conserva SEH; POSIX valida cada nodo antes de leerlo.
-            pCell += 4;  // 4 DWORDs per cell
+            ++pCell;
             cellCount--;
         } while (cellCount != 0);
-    } while (pCell < &DAT_083a021c + 0x400);  // 0x10*0x10 grid, 4 bytes each = 0x1000 bytes
+    } while (pCell < g_ObjectBucketGrid + 256);
 
     return result;
 }

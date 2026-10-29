@@ -39,7 +39,7 @@ static void Terrain_ProcessObjects(bool simulation)
         z_offset = -10.0f;
     }
 
-    DWORD *chunk_ptr = &DAT_083a021c;
+    SceneObjectCell* chunk_ptr = g_ObjectBucketGrid;
 
     int chunk_y = 8;
     do
@@ -49,11 +49,11 @@ static void Terrain_ProcessObjects(bool simulation)
         do
         {
             unsigned short vis = TestFrustrum2D(chunk_yf, (float)chunk_x, -180.0f);
-            if (simulation) *((char*)chunk_ptr + 8) = (char)vis;
+            if (simulation) chunk_ptr->Visible = static_cast<std::uint8_t>(vis);
 
             if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
             {
-                char *entity = (char*)*chunk_ptr;
+                char *entity = static_cast<char*>(chunk_ptr->Head);
                 Platform::RunValidatedOperation([&]() {
                     int chunkIter = 0;
                     while (entity != nullptr &&
@@ -104,7 +104,7 @@ static void Terrain_ProcessObjects(bool simulation)
                 }); // SEH adicional en Windows; nodos y tipos validados en ambos sistemas.
             }
 
-            chunk_ptr += 4;
+            ++chunk_ptr;
             chunk_x += 0x10;
         }
         while (chunk_x < 0x108);

@@ -396,6 +396,7 @@ set(MU_HEADERS
     src/Platform/Text.h
     src/Platform/GuardedOperation.h
     src/Scene/ObjectRegistry.h
+    src/Scene/SceneObjectCell.h
     src/Platform/PlatformHeaders.h
     src/Platform/DebugHeaders.h
     src/Platform/Posix/WinTypes.h

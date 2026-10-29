@@ -121,6 +121,7 @@
     <ClInclude Include="src\Platform\Text.h" />
     <ClInclude Include="src\Platform\GuardedOperation.h" />
     <ClInclude Include="src\Scene\ObjectRegistry.h" />
+    <ClInclude Include="src\Scene\SceneObjectCell.h" />
     <ClInclude Include="src\Platform\PlatformHeaders.h" />
     <ClInclude Include="src\Platform\DebugHeaders.h" />
     <ClInclude Include="src\Platform\Posix\WinTypes.h" />
