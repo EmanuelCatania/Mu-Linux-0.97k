@@ -30,6 +30,12 @@ void __cdecl FUN_0050f700(const char* map_name)
     fclose(fp);
 }
 
+// Preservar los patrones de bits del binario al pasar a campos float.
+static void SceneObject_StoreFloatBits(float& value, std::uint32_t bits)
+{
+    memcpy(&value, &bits, sizeof(value));
+}
+
 // IDA: CreateObject (0x004FF5A0)
 // Allocates 0x1BC-byte entity node, zeroes it, links into doubly-linked list
 // at DAT_083A021C[cell]/DAT_083A0220[cell] (16x16 grid, 4-DWORD stride).
@@ -110,28 +116,28 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     if (SceneFlag == 2 || SceneFlag == 4) {
         switch (param_1) {
         case 0x3c:
-            puVar3[3]=0x3f4ccccd; puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3e4ccccd;
-            *(BYTE*)(puVar3+0x37)=1; break;
+            SceneObject_StoreFloatBits(object.Scale, 0x3f4ccccd); for (int axis=0; axis<3; ++axis) SceneObject_StoreFloatBits(object.Light[axis], 0x3e4ccccd);
+            object.LightEnable=1; break;
         case 0xa0:
-            puVar3[3]=0x3d343958; puVar3[0x19]=1; puVar3[0x1a]=0x3f800000;
-            puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3f800000;
-            *(BYTE*)(puVar3+0x37)=0; break;
+            SceneObject_StoreFloatBits(object.Scale, 0x3d343958); object.BlendMesh=1; SceneObject_StoreFloatBits(object.BlendMeshLight, 0x3f800000);
+            for (int axis=0; axis<3; ++axis) SceneObject_StoreFloatBits(object.Light[axis], 0x3f800000);
+            object.LightEnable=0; break;
         case 0xa1:
-            puVar3[3]=0x3f4ccccd; puVar3[0x19]=0; puVar3[0x1a]=0x3f800000;
-            puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3f800000; break;
+            SceneObject_StoreFloatBits(object.Scale, 0x3f4ccccd); object.BlendMesh=0; SceneObject_StoreFloatBits(object.BlendMeshLight, 0x3f800000);
+            for (int axis=0; axis<3; ++axis) SceneObject_StoreFloatBits(object.Light[axis], 0x3f800000); break;
         case 0xa2:
             // IDA-faithful MODEL_MUGAME (case 3 en byte_4FFAA4[Type-60]):
             //   scale=0.6, [0x64]=1, [0xDC]=0. No escribe offsets 58/59/60
             //   (bodyLight). memset(0) previo deja bodyLight=0, pero lightEnable=0
             //   → nunca se lee.
-            puVar3[3]=0x3f19999a; puVar3[0x19]=1;
-            *(BYTE*)(puVar3+0x37)=0; break;
+            SceneObject_StoreFloatBits(object.Scale, 0x3f19999a); object.BlendMesh=1;
+            object.LightEnable=0; break;
         case 0xa3:
-            puVar3[3]=0x40400000; puVar3[0x19]=0;
-            puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3f000000; break;
+            SceneObject_StoreFloatBits(object.Scale, 0x40400000); object.BlendMesh=0;
+            for (int axis=0; axis<3; ++axis) SceneObject_StoreFloatBits(object.Light[axis], 0x3f000000); break;
         case 0xa4:
-            puVar3[0x19]=10;
-            puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3f800000; break;
+            object.BlendMesh=10;
+            for (int axis=0; axis<3; ++axis) SceneObject_StoreFloatBits(object.Light[axis], 0x3f800000); break;
         }
     }
 
@@ -142,33 +148,33 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         switch (param_1) {
         default: goto lbl_skip_init;
         case 6: case 0x91: case 0x92: break;
-        case 0x34: puVar3[0x19]=1; return puVar3;
-        case 0x3b: puVar3[0x33]=0; return puVar3;
-        case 0x50: puVar3[0x34]=0xc2480000; return puVar3;
-        case 0x5a: case 0x96: puVar3[0x19]=1; [[fallthrough]];
-        case 0x60: case 0x61: puVar3[0x33]=0x3e99999a; return puVar3;
-        case 0x62: case 0x77: puVar3[0x19]=2; return puVar3;
-        case 0x69: puVar3[0x19]=3; return puVar3;
-        case 0x75: case 0x7a: puVar3[0x19]=4; return puVar3;
-        case 0x76: puVar3[0x19]=8; return puVar3;
+        case 0x34: object.BlendMesh=1; return puVar3;
+        case 0x3b: SceneObject_StoreFloatBits(object.Velocity, 0); return puVar3;
+        case 0x50: SceneObject_StoreFloatBits(object.CollisionRange, 0xc2480000); return puVar3;
+        case 0x5a: case 0x96: object.BlendMesh=1; [[fallthrough]];
+        case 0x60: case 0x61: SceneObject_StoreFloatBits(object.Velocity, 0x3e99999a); return puVar3;
+        case 0x62: case 0x77: object.BlendMesh=2; return puVar3;
+        case 0x69: object.BlendMesh=3; return puVar3;
+        case 0x75: case 0x7a: object.BlendMesh=4; return puVar3;
+        case 0x76: object.BlendMesh=8; return puVar3;
         case 0x85:
             Entity_InitRenderState(puVar3);
-            puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
-            puVar3[0x16]=0xfffffffe; return puVar3;
+            SceneObject_StoreFloatBits(object.BoundingBoxMax[0], 0x42200000); SceneObject_StoreFloatBits(object.BoundingBoxMax[1], 0x42200000); SceneObject_StoreFloatBits(object.BoundingBoxMax[2], 0x43200000);
+            object.HiddenMesh=-2; return puVar3;
         }
         break;
     case 1:
         if (param_1==0x3b) break;
         if (param_1==0x3c) {
             Entity_InitRenderState(puVar3);
-            puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
-            puVar3[0x16]=0xfffffffe;
+            SceneObject_StoreFloatBits(object.BoundingBoxMax[0], 0x42200000); SceneObject_StoreFloatBits(object.BoundingBoxMax[1], 0x42200000); SceneObject_StoreFloatBits(object.BoundingBoxMax[2], 0x43200000);
+            object.HiddenMesh=-2;
         }
         return puVar3;
     case 2:
         switch (param_1) {
         default: goto lbl_skip_init;
-        case 0x13: case 0x5c: case 0x5d: puVar3[0x19]=0; return puVar3;
+        case 0x13: case 0x5c: case 0x5d: object.BlendMesh=0; return puVar3;
         case 0x14: case 0x41: case 0x56: case 0x58:
             // Puertas de Devias (20/65/86/88).  Guarda el estado de REPOSO que
             // usa la animacion de apertura de `sub_4FDC00` case World 2:
@@ -178,20 +184,21 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             // El `% 360` es sobre el VALOR truncado, no sobre los bits del float (IDA:
             // `(std::int64_t)*((float *)v6 + 9) % 360`); el tick compara HeadAngle[2] con
             // 90/270/0/180.
-            puVar3[0xb]=puVar3[8]; puVar3[0xf]=puVar3[6]; puVar3[0xd]=puVar3[4];
-            puVar3[0xa]=puVar3[7]; puVar3[0xe]=puVar3[5];
-            { float angZ = *(float*)&puVar3[9];
-              float fa = (float)(long long)(((long long)angZ) % 360);
-              puVar3[9]=*(UINT*)&fa; puVar3[0xc]=*(UINT*)&fa; }
+            memcpy(object.HeadAngle, object.Angle, sizeof(object.HeadAngle));
+            memcpy(object.HeadTargetAngle, object.Position, sizeof(object.HeadTargetAngle));
+            {
+                const float normalized = (float)(long long)(((long long)object.Angle[2]) % 360);
+                object.Angle[2] = object.HeadAngle[2] = normalized;
+            }
             return puVar3;
         case 0x16: case 0x19: case 0x28: case 0x2d: case 0x37: case 0x49: break;
-        case 0x36: case 0x38: puVar3[0x19]=1; return puVar3;
-        case 0x4e: puVar3[0x19]=3; return puVar3;
+        case 0x36: case 0x38: object.BlendMesh=1; return puVar3;
+        case 0x4e: object.BlendMesh=3; return puVar3;
         case 0x5b:
             Entity_InitRenderState(puVar3);
-            puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
-            puVar3[0x16]=0xfffffffe; return puVar3;
-        case 100: puVar3[0x16]=0xfffffffe; return puVar3;
+            SceneObject_StoreFloatBits(object.BoundingBoxMax[0], 0x42200000); SceneObject_StoreFloatBits(object.BoundingBoxMax[1], 0x42200000); SceneObject_StoreFloatBits(object.BoundingBoxMax[2], 0x43200000);
+            object.HiddenMesh=-2; return puVar3;
+        case 100: object.HiddenMesh=-2; return puVar3;
         }
         // IDA cierra el case 2 con `break` (0x4FF5A0 L292), y esa salida del switch
         // exterior es la que llega al `sub_4FF580` del final -- el LABEL_43 del
@@ -202,12 +209,12 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     case 3:
         switch (param_1) {
         default: goto lbl_skip_init;
-        case 1: puVar3[0x19]=1; return puVar3;
+        case 1: object.BlendMesh=1; return puVar3;
         case 8: break;
-        case 9: puVar3[0x19]=3; return puVar3;
-        case 0x11: case 0x13: case 0x25: puVar3[0x19]=0; return puVar3;
-        case 0x12: puVar3[0x19]=2; return puVar3;
-        case 0x26: Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
+        case 9: object.BlendMesh=3; return puVar3;
+        case 0x11: case 0x13: case 0x25: object.BlendMesh=0; return puVar3;
+        case 0x12: object.BlendMesh=2; return puVar3;
+        case 0x26: Entity_InitRenderState(puVar3); object.HiddenMesh=-2; return puVar3;
         }
         // Idem: IDA cierra el case 3 con `break` (L292), así el tipo 8 de Noria
         // (sentarse) llega al registro.
@@ -215,7 +222,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     default:
         goto lbl_skip_init;
     case 7:
-        if (param_1==0x27) { Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3; }
+        if (param_1==0x27) { Entity_InitRenderState(puVar3); object.HiddenMesh=-2; return puVar3; }
         return puVar3;
     case 8:
         if (param_1==0x4e) { Entity_InitRenderState(puVar3); goto lbl_skip_init; }

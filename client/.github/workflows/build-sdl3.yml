@@ -227,6 +227,8 @@ jobs:
             python -B tests/DamagePointLayout.py --architecture x64
             python -B tests/ObjectLayoutContract.py --architecture Win32
             python -B tests/ObjectLayoutContract.py --architecture x64
+            python -B tests/ObjectSceneVariants.py --architecture Win32
+            python -B tests/ObjectSceneVariants.py --architecture x64
             python -B tests/ItemGridLayout.py --architecture Win32
             python -B tests/ItemGridLayout.py --architecture x64
             python -B tests/ItemMovePreviewColor.py --architecture Win32
@@ -417,6 +419,7 @@ jobs:
             python3 -B tests/FontModeValue.py --generator Ninja
             python3 -B tests/DamagePointLayout.py --generator Ninja
             python3 -B tests/ObjectLayoutContract.py --generator Ninja
+            python3 -B tests/ObjectSceneVariants.py --generator Ninja
             python3 -B tests/ItemGridLayout.py --generator Ninja
             python3 -B tests/ItemMovePreviewColor.py --generator Ninja
             python3 -B tests/OptionsLocalText.py --generator Ninja
