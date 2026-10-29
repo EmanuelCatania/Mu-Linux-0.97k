@@ -21,6 +21,9 @@ jobs:
         config: [ Debug, Release ]
     steps:
       - uses: actions/checkout@v4
+      - name: Verificar que Mana Shield no se transfiera al reutilizar un slot
+        if: matrix.config == 'Release'
+        run: python -B tests/ManaShieldSlotReuse.py
       - name: Verificar fuentes
         run: |
           python .github/scripts/check_cmake_sources.py
