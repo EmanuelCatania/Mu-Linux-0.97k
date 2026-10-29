@@ -173,7 +173,7 @@ LAB_0050245e:
                     puVar9[-0x32] = 0;  // vel_y = 0
                     puVar9[-0x31] = 0;  // vel_z = 0
                     *(unsigned char *)(puVar9 + -3) = 1;
-                    *(unsigned char *)((int)puVar9 + 0x79) = 1;
+                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x79) = 1;
                     puVar9[-0x39] = 0;
                     puVar9[-0x24] = 0xffffffff;
 
@@ -187,7 +187,7 @@ LAB_0050245e:
                     uVar6 &= 0x80000003;
                     if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
                     puVar9[-4]    = 0x41500000; // size = 13.0f
-                    *(unsigned char *)((int)puVar9 + -0x5e) = 1;
+                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + -0x5e) = 1;
 
                     fVar3 = (float)(int)(uVar6 + 4) * _DAT_005524f4;
                     puVar9[-0x37] = (unsigned int)(*(int *)&fVar3);  // angular speed
@@ -195,7 +195,7 @@ LAB_0050245e:
                     // Assign type by game sub-state
                     switch (iVar8) {
                     case 0:
-                        *(short *)((int)puVar9 + -0xe6) = 0xb5;  // bubble
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb5;  // bubble
                         uVar6 = _rand();
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
@@ -205,12 +205,12 @@ LAB_0050245e:
                         break;
                     case 1:
                         fVar3 = _DAT_00552534 / fVar3;
-                        *(short *)((int)puVar9 + -0xe6) = 0xb1;  // leaf
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb1;  // leaf
                         puVar9[-7] = (unsigned int)(*(int *)&fVar3);
                         break;
                     case 6:
                         fVar3 = _DAT_00552534 / fVar3;
-                        *(short *)((int)puVar9 + -0xe6) = 0xb2;  // petal
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb2;  // petal
                         puVar9[-7] = (unsigned int)(*(int *)&fVar3);
                         break;
                     case 7:
@@ -225,7 +225,7 @@ LAB_0050245e:
                         break;
                     case 8:
                         // Type 0xb3 — lightning bolt
-                        *(short *)((int)puVar9 + -0xe6) = 0xb3;
+                        *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6) = 0xb3;
                         uVar6 = _rand();
                         uVar6 &= 0x80000003;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
