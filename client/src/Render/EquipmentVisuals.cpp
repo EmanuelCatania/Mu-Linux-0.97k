@@ -154,12 +154,13 @@ void Equipment_Draw(const CHARACTER* entity, int stage) {
         if (!command.mesh) {
             Sprite &sprite = frame.sprites[command.index];
             float position[3]; memcpy(position,sprite.position,sizeof(position));
-            // El ordinal sólo es comparable si no nació/desapareció un comando.
-            if (continuous && frame.commands.size()==previous.commands.size() && command.index<previous.sprites.size()) {
-                const Sprite &old=previous.sprites[command.index];
-                if (old.type==sprite.type && old.owner==sprite.owner && old.mode==sprite.mode && old.stage==sprite.stage)
-                    for (int axis=0;axis<3;++axis) position[axis]=RenderBlend(old.position[axis],sprite.position[axis],alpha);
-            }
+            // Las emisiones aleatorias pueden conservar cantidad y ordinal sin
+            // corresponder al mismo punto del arma (por ejemplo, modelo 0x236).
+            // Reproducir la muestra SIM y acompañar sólo a su dueño, como en
+            // Sprite_ReplayStep; no unir dos destellos sin identidad persistente.
+            float offset[3];
+            if (RenderInterpolation_OwnerOffset((const void *)entity,offset))
+                for (int axis=0;axis<3;++axis) position[axis]+=offset[axis];
             CreateSprite(sprite.type, position, sprite.scale, sprite.light,
                 sprite.owner, sprite.rotation, sprite.mode);
             continue;

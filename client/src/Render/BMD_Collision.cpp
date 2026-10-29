@@ -20,15 +20,14 @@ bool __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], floa
     //   +0x0A: short NumTriangles
     //   +0x1C: int*  TriangleArray (pointer to triangle data)
     // Each triangle (stride 0x24 = 36 bytes):
-    //   +0x00: char  textureIndex
+    //   +0x00: char  Polygon (cantidad de vértices)
     //   +0x02: short vertIndex0
     //   +0x04: short vertIndex1
     //   +0x06: short vertIndex2
-    //   +0x08: short normalIndex
+    //   +0x08: short vertIndex3
     // Vertex buffer: DAT_0584621c (float[3] per entry, stride 12 bytes)
     // Each mesh adds 15000 to the vertex base index offset.
 
-    (void)Collision; (void)Mesh; (void)Triangle;  // phantom params from Ghidra
 
     int meshIdx = 0;
     int vertBaseOffset = 0;  // accumulates +15000 per mesh
@@ -48,37 +47,28 @@ bool __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], floa
             float prevMeshCounter = meshCounter;
 
             do {
-                // Skip degenerate check: if both mesh and tri counters match Target, skip
-                if (meshCounter != Target[0] || triCounter != Target[1]) {
+                // IDA 0x00440BE0: excluye la pareja de índices solicitada.
+                if ((int)meshCounter != Mesh || (int)triCounter != Triangle) {
                     int triPtr = *(int*)(meshPtr + 0x1C) + (int)triByteOffset;
 
                     short vi0 = *(short*)(triPtr + 2);
                     short vi1 = *(short*)(triPtr + 4);
                     short vi2 = *(short*)(triPtr + 6);
-                    short ni  = *(short*)(triPtr + 8);
+                    short vi3 = *(short*)(triPtr + 8);
 
                     float* v0 = (float*)(&DAT_0584621c + (vi0 + vertBaseOffset) * 3);
                     float* v1 = (float*)(&DAT_0584621c + (vi1 + vertBaseOffset) * 3);
                     float* v2 = (float*)(&DAT_0584621c + (vi2 + vertBaseOffset) * 3);
-                    float* nv = (float*)(&DAT_0584621c + (ni  + vertBaseOffset) * 3);
+                    float* v3 = (float*)(&DAT_0584621c + (vi3 + vertBaseOffset) * 3);
 
                     // Compute face normal
                     float normal[3];
-                    float verts[3] = { *(float*)v0, *(float*)v1, *(float*)v2 };  // placeholder
                     FaceNormalize(v0, v1, v2, normal);
 
-                    // Test line-to-face collision
-                    float localC[3];
+                    // IDA: rayo, cantidad de vértices, cuatro esquinas, normal y flag.
                     bool hit = CollisionDetectLineToFace(
-                        Position,                       // line start
-                        v0,                             // face verts packed
-                        (int)nv,                        // normal vertex index
-                        localC,                         // output collision point
-                        &Position[2],                   // Z component
-                        v0, v1,                         // additional vert ptrs
-                        normal,                         // face normal
-                        (char)*(char*)triPtr             // texture index as flag
-                    );
+                        Position, Target, (char)*(char*)triPtr,
+                        v0, v1, v2, v3, normal, (char)Collision);
 
                     meshCounter = prevMeshCounter;
                     if (hit) {
