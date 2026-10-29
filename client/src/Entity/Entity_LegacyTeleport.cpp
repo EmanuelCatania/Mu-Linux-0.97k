@@ -1,6 +1,7 @@
 // Entity_LegacyTeleport.cpp — DeleteJoint, CreatePoint y CreateTeleportBegin/End.
 
 #include "stdafx.h"
+#include <cstring>
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
@@ -67,7 +68,7 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
     // bit-cast Value → float for the existing impl's "entity_id" slot
     // (matches IDA: stores Value as int at +4 / float at +4 alias).
     float val_as_float;
-    *(int*)&val_as_float = Value;
+    std::memcpy(&val_as_float, &Value, sizeof(Value));
     Entity_TeleportAnim(Position, val_as_float, Color, scale);
 }
 // FUN_004742b0 @ 0x004742B0 — CreateTeleportBegin(DWORD o)  (83 bytes)

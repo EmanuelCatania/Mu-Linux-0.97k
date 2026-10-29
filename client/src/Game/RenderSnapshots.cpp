@@ -165,15 +165,15 @@ Sample ItemSample(int slot) {
     return sample;
 }
 Sample PointSample(int slot) {
-    const char* point = DAT_07c80110 + slot * 0x70;
+    const DamagePoint& point = DAT_07c80110[slot];
     Sample sample;
-    sample.live = point[0] != 0;
+    sample.live = point.Active != 0;
     if (!sample.live) return sample;
     sample.generation = pointGeneration[slot];
-    sample.key = *(const int*)(point + 4);
-    memcpy(sample.pose.position, point + 0x10, sizeof(sample.pose.position));
-    sample.pose.scale = *(const float*)(point + 0x0c);
-    sample.pose.alpha = *(const float*)(point + 0x48) * 0.40000001f;
+    sample.key = point.Value;
+    memcpy(sample.pose.position, point.Position, sizeof(sample.pose.position));
+    sample.pose.scale = point.Scale;
+    sample.pose.alpha = point.LifeTime * 0.40000001f;
     return sample;
 }
 void Capture(bool begin) {

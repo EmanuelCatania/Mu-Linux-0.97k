@@ -1251,7 +1251,7 @@ float   _DAT_00552954  = 0.0015f;
 
 // Teleport-anim pool — 100 slots × 0x70 bytes; see globals.h note (was 1 byte
 // causing heap corruption in Entity_TeleportAnim).
-char     DAT_07c80110[100 * 0x70] = {};
+DamagePoint DAT_07c80110[kDamagePointCount] = {};
 
 // Character/effect update pool — 1002 slots × 444 bytes = 0x6c660 (matches
 // binario original 0x07c85890..0x07cf1ef0). CreateSprite (Effect_Spawn) necesita

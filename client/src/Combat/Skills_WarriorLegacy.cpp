@@ -1,5 +1,6 @@
 #include <cstdint>
 #include "stdafx.h"
+#include <cstring>
 #include "Game/RenderSnapshots.h"
 #include "Platform/ITimer.h"
 #include "globals.h"
@@ -433,27 +434,21 @@ LAB_00445110:
 // Slots: [0x00]=active, [0x04]=entity_id, [0x10..0x18]=src_pos, [0x1C..0x24]=dst_pos,
 //        [0x0C]=param_4, [0x38..0x3B]=phase_flags, [0x48..0x4B]=state_chars.
 void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_pos, float param_4) {
-    // El bound es la cantidad de iteraciones (pool de 100 slots en globals.cpp),
-    // no la dirección absoluta del binario (`pcVar1 < 0x7c82cd0`).
-    char *pcVar1 = (char*)&DAT_07c80110[0];
-    for (int i = 0; i < 100; ++i) {
-        if (*pcVar1 == '\0') {
-            RenderSnapshots_NewDamagePoint(i);
-            *pcVar1 = '\x01';
-            *(float*)(pcVar1 + 0x04) = entity_id;
-            *(float*)(pcVar1 + 0x10) = world_pos[0];
-            *(float*)(pcVar1 + 0x14) = world_pos[1];
-            *(float*)(pcVar1 + 0x18) = world_pos[2] + _DAT_00552958;
-            *(float*)(pcVar1 + 0x1c) = dst_pos[0];
-            *(float*)(pcVar1 + 0x20) = dst_pos[1];
-            *(float*)(pcVar1 + 0x24) = dst_pos[2];
-            *(float*)(pcVar1 + 0x0c) = param_4;
-            pcVar1[0x38] = pcVar1[0x39] = pcVar1[0x3a] = pcVar1[0x3b] = '\0';
-            pcVar1[0x48] = '\0'; pcVar1[0x49] = '\0';
-            pcVar1[0x4a] = ' ';  pcVar1[0x4b] = 'A';
-            return;
-        }
-        pcVar1 += 0x70;
+    for (int i = 0; i < static_cast<int>(kDamagePointCount); ++i) {
+        DamagePoint& point = DAT_07c80110[i];
+        if (point.Active) continue;
+        RenderSnapshots_NewDamagePoint(i);
+        point.Active = 1;
+        // El wrapper conserva Value como bits, no como conversión numérica.
+        std::memcpy(&point.Value, &entity_id, sizeof(point.Value));
+        point.Position[0] = world_pos[0];
+        point.Position[1] = world_pos[1];
+        point.Position[2] = world_pos[2] + _DAT_00552958;
+        std::memcpy(point.Color, dst_pos, sizeof(point.Color));
+        point.Scale = param_4;
+        point.Delay = 0;
+        point.LifeTime = 10.0f;
+        return;
     }
 }
 

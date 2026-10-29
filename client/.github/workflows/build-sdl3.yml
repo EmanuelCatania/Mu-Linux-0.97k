@@ -224,6 +224,7 @@ jobs:
             python -B tests/ChatOwnerPointer.py --architecture x64
             python -B tests/DivineIdentityPointer.py --architecture x64
             python -B tests/FontModeValue.py --architecture x64
+            python -B tests/DamagePointLayout.py --architecture x64
             python -B tests/MeshAddressPointer.py --architecture x64
             python -B tests/AnchorDestructorPointer.py --architecture x64
               python -B tests/ListNextPointer.py --architecture x64
@@ -404,6 +405,7 @@ jobs:
             python3 -B tests/ChatOwnerPointer.py --generator Ninja
             python3 -B tests/DivineIdentityPointer.py --generator Ninja
             python3 -B tests/FontModeValue.py --generator Ninja
+            python3 -B tests/DamagePointLayout.py --generator Ninja
             python3 -B tests/MeshAddressPointer.py --generator Ninja
             python3 -B tests/AnchorDestructorPointer.py --generator Ninja
               python3 -B tests/ListNextPointer.py --generator Ninja
