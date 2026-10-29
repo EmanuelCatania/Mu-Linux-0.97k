@@ -236,6 +236,7 @@
     <ClInclude Include="src\Render\Entity_PrepareRender.h" />
     <ClInclude Include="src\Render\Entity_Render.h" />
     <ClInclude Include="src\Render\DamagePointTypes.h" />
+    <ClInclude Include="src\Item\ItemTypes.h" />
     <ClInclude Include="src\Render\JointTypes.h" />
     <ClInclude Include="src\Render\Entity_Render_3D.h" />
     <ClInclude Include="src\Render\Entity_RenderAll_3D.h" />

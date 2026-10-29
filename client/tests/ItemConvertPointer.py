@@ -122,7 +122,10 @@ def harness(revision=None):
     structs=read_source("src/structs.h",revision)
     for name in ("MAX_SPECIAL_OPTION","MAX_CLASS","MAX_RESISTANCE"):
         prefix+="\n"+re.search(rf"^#define\s+{name}\s+[^\n]+",structs,re.M).group()+"\n"
-    for name in ("ITEM","ITEM_ATTRIBUTE"):
+    item_header = '#include "Item/ItemTypes.h"' in structs
+    if item_header:
+        prefix += read_source("src/Item/ItemTypes.h", revision)
+    for name in (("ITEM_ATTRIBUTE",) if item_header else ("ITEM","ITEM_ATTRIBUTE")):
         prefix+=re.search(rf"struct {name}\b.*?\n\}};",structs,re.S).group()
     prefix+="\nstatic_assert(sizeof(ITEM)==68 && sizeof(ITEM_ATTRIBUTE)==64);\n"
     prefix+="\n".join(re.findall(r"^constexpr\s+(?:int|short)\s+\w+\s*=[^;]+;",read_source("src/Item/ItemDefines.h",revision),re.M))
