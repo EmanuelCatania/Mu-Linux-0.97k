@@ -97,7 +97,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+// Versión de la hoja de estilos: cambia con el archivo, así un cambio de CSS no se
+// queda en la caché del navegador ni del proxy.
+let cssVersion = String(Date.now());
+try {
+  cssVersion = String(Math.floor(fs.statSync(path.join(__dirname, 'public', 'css', 'app.css')).mtimeMs));
+} catch (err) {
+  // Sin el archivo se usa la hora de arranque.
+}
+
 app.use((req, res, next) => {
+  res.locals.cssVersion = cssVersion;
   res.locals.editorEnabled = editorEnabled;
   res.locals.editorApiUrl = EDITOR_API_URL;
   res.locals.editorMaxBackups = editorMaxBackups;
