@@ -88,11 +88,10 @@ char* __stdcall PickObject_Mouse(void) {
                     // Check ray intersection with bounding volume
                     bool hit = Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, obb);
                     if ((char)hit != '\0') {
-                        // CollisionDetectLineToMesh — precise line-mesh test
-                        // Phantom regs in Ghidra; approximate call:
+                        // IDA 0x004FA7C0: actualiza el hit más cercano sin excluir caras.
                         if (BMD__CollisionDetectLineToMesh(
                                 (DWORD)model, (float*)&CameraRayOriginX, (float*)&DAT_083a4110,
-                                false, 0, 0)) {
+                                true, -1, -1)) {
                             result = obj;
                         }
                     }
