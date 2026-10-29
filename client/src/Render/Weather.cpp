@@ -257,11 +257,11 @@ LAB_00501064:
         iVar12 = _rand();
         if (iVar12 % 0x28 == 0) {
             iVar12 = _rand();
-            puStack_44 = (DWORD *)(iVar12 % 600 + -200);
-            fStack_20 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x10);
+            const int splashOffsetX = iVar12 % 600 - 200;
+            fStack_20 = (float)splashOffsetX + *(float *)(DAT_07abf5d8 + 0x10);
             iVar12 = _rand();
-            puStack_44 = (DWORD *)(iVar12 % 400 + 200);
-            fStack_1c = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x14);
+            const int splashOffsetY = iVar12 % 400 + 200;
+            fStack_1c = (float)splashOffsetY + *(float *)(DAT_07abf5d8 + 0x14);
             fStack_18 = *(float *)(DAT_07abf5d8 + 0x18) + _DAT_00552900;
             fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
             fStack_38 = 1.0f; fStack_34 = 1.0f; fStack_30 = 1.0f;
@@ -277,11 +277,11 @@ LAB_00501064:
     // ── World == 10: spawn distant lightning clouds ─────────────────
     if ((gMapManager.GetCurrentMap() == 10) && (_rand() % 10 == 0)) {
         iVar12 = _rand();
-        puStack_44 = (DWORD *)(iVar12 % 5000 + -0x9c4);
-        fStack_38 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x10);
+        const int cloudOffsetX = iVar12 % 5000 - 2500;
+        fStack_38 = (float)cloudOffsetX + *(float *)(DAT_07abf5d8 + 0x10);
         iVar12 = _rand();
-        puStack_44 = (DWORD *)(iVar12 % 5000 + -0x9c4);
-        fStack_34 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x14);
+        const int cloudOffsetY = iVar12 % 5000 - 2500;
+        fStack_34 = (float)cloudOffsetY + *(float *)(DAT_07abf5d8 + 0x14);
         fStack_30 = *(float *)(DAT_07abf5d8 + 0x18) - _DAT_00552ab8;
         fStack_20 = 1.0f; fStack_1c = 1.0f; fStack_18 = 1.0f;
         fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
