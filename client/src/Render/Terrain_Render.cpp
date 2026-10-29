@@ -63,13 +63,13 @@ static void Terrain_ProcessObjects(bool simulation)
                         if (*entity == '\0' || !DAT_05828d58 ||
                             *(short*)(entity + 2) < 0 || *(short*)(entity + 2) >= ResourceTables::ModelCount())
                         {
-                            entity = *(char**)(entity + 0x1b8);
+                            entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
                             continue;
                         }
 
                         if (SceneFlag != 5 && *(short*)(entity + 2) == 0)
                         {
-                            entity = *(char**)(entity + 0x1b8);
+                            entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
                             continue;
                         }
 
@@ -99,7 +99,7 @@ static void Terrain_ProcessObjects(bool simulation)
                             }
                         }
 
-                        entity = *(char**)(entity + 0x1b8);
+                        entity = reinterpret_cast<char*>(AsObject(entity)->SceneNext);
                     }
                 }); // SEH adicional en Windows; nodos y tipos validados en ambos sistemas.
             }

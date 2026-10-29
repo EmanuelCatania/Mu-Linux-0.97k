@@ -4,6 +4,7 @@ import argparse
 import tempfile
 from pathlib import Path
 from SceneObjectPointer import build_and_run, function, read_source
+from ObjectLayoutContract import record
 
 
 def production():
@@ -106,7 +107,11 @@ void Run(unsigned cell, unsigned order) {
 def harness():
     reference = read_source("tests/fixtures/scene-grid-lifecycle-x86.inc")
     header = read_source("src/Scene/SceneObjectCell.h").replace("#pragma once", "")
-    return PREAMBLE + header + "\nnamespace Reference {\n" + reference + RUN + r'''
+    types = read_source("src/Entity/EntityTypes.h")
+    types = ("using WORD=std::uint16_t; using vec3_t=float[3]; using vec34_t=float[3][4];\n"
+             "#pragma pack(push,1)\n" + record(types, "OBJECT") +
+             "\n#pragma pack(pop)\nOBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}\n")
+    return PREAMBLE + header + types + "\nnamespace Reference {\n" + reference + RUN + r'''
 }
 namespace Current {
 SceneObjectCell g_ObjectBucketGrid[256];

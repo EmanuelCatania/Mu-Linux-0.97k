@@ -34,10 +34,13 @@ def harness(args):
 using BYTE=std::uint8_t;using WORD=std::uint16_t;using DWORD=std::uint32_t;using UINT=std::uint32_t;
 using vec3_t=float[3];using vec34_t=float[3][4];
 '''+object_types()+read_source('src/Item/ItemTypes.h')+record(read_source('src/structs.h'),'ITEM_t')+r'''
-constexpr std::size_t NativeOffset(std::size_t offset){return offset+(sizeof(void*)==8?(offset>=0x118?8:offset>=0x100?4:0):0);}
-static_assert(sizeof(OBJECT)==(sizeof(void*)==4?0x1bc:0x1c4));
-static_assert(sizeof(CHARACTER)==(sizeof(void*)==4?0x394:0x39c));
-static_assert(sizeof(ITEM_t)==(sizeof(void*)==4?0x204:0x20c));
+constexpr std::size_t NativeOffset(std::size_t offset){return offset+(sizeof(void*)==8?(offset>=0x1b8?12:offset>=0x118?8:offset>=0x100?4:0):0);}
+static_assert(sizeof(OBJECT)==(sizeof(void*)==4?0x1bc:0x1cc));
+static_assert(sizeof(CHARACTER)==(sizeof(void*)==4?0x394:0x3a4));
+static_assert(sizeof(ITEM_t)==(sizeof(void*)==4?0x204:0x214));
+static_assert(offsetof(OBJECT,SceneCell)==NativeOffset(0x1b0));
+static_assert(offsetof(OBJECT,ScenePrevious)==NativeOffset(0x1b4));
+static_assert(offsetof(OBJECT,SceneNext)==NativeOffset(0x1b8));
 static_assert(offsetof(ITEM_t,Object)==0x48 && sizeof(PART_t)==24);
 static_assert(alignof(OBJECT)==1 && std::is_standard_layout<OBJECT>::value && std::is_trivially_copyable<OBJECT>::value);
 static_assert(sizeof(float)==4 && sizeof(int)==4 && sizeof(short)==2 && sizeof(vec34_t)==48);
@@ -62,6 +65,8 @@ int main(){
         auto* object=reinterpret_cast<OBJECT*>(native+16);
         object->Owner=reinterpret_cast<OBJECT*>(uintptr_t(sizeof(void*)==8?0x123456780ull:0x23456780ull));
         object->BoneMatrices=reinterpret_cast<vec34_t*>(uintptr_t(sizeof(void*)==8?0x154321080ull:0x54321080ull));
+        object->ScenePrevious=reinterpret_cast<OBJECT*>(uintptr_t(sizeof(void*)==8?0x176543210ull:0x76543210ull));
+        object->SceneNext=reinterpret_cast<OBJECT*>(uintptr_t(sizeof(void*)==8?0x187654320ull:0x87654320ull));
         BYTE expected[sizeof(native)];std::memcpy(expected,native,sizeof(native));
         float position[3],angle[3],scale;
         for(unsigned axis=0;axis<3;++axis){const auto p=values[(trial+axis)%10],a=values[(trial/7+axis)%10];std::memcpy(position+axis,&p,4);std::memcpy(angle+axis,&a,4);}

@@ -245,7 +245,7 @@ void __cdecl DeleteObjects(void) {
         for (int cell = 0; cell < 0x10; cell++) {
             char* head = static_cast<char*>(puVar5->Tail);
             while (head != nullptr) {
-                char* next = (char*)*(DWORD*)(head + 0x1b4);
+                char* next = reinterpret_cast<char*>(AsObject(head)->ScenePrevious);
                 Entity_GridUnlink(head, puVar5);
                 head = next;
             }

@@ -94,6 +94,8 @@ def harness(revision=None):
     obj = re.search(r"struct OBJECT\s*\{.*?\};", types, re.S).group()
     obj = re.sub(r"OBJECT\*\s+Owner", "std::uint32_t Owner", obj)
     obj = re.sub(r"vec34_t\*\s+BoneMatrices", "std::uint32_t BoneMatrices", obj)
+    # Este banco aísla consumidores legacy: tampoco certifica enlaces nativos.
+    obj = re.sub(r"OBJECT\*\s+(ScenePrevious|SceneNext)\b", r"std::uint32_t \1", obj)
     prefix += "\nusing vec3_t=float[3];\n#pragma pack(push,1)\n" + obj + "\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)==444);\n"
     prefix += re.search(r"struct MaterialVisualSample\s*\{.*?\n\};", read_source("src/Render/MaterialVisuals.h", revision), re.S).group()
     prefix += SERVICES

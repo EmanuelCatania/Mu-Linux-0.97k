@@ -40,27 +40,27 @@ void __cdecl VTable_Release(void *obj, float* vertices)
 // Entity_GridUnlink @ 0x004FFCC0 — Entity_GridUnlink(node, cell_ptr)
 // Unlinks node from its doubly-linked list in the 16x16 scene grid.
 void __cdecl Entity_GridUnlink(void *param_1_v, void* cell) {
-    char *param_1 = (char*)param_1_v;
+    OBJECT* param_1 = AsObject(param_1_v);
     SceneObjectCell* param_2 = static_cast<SceneObjectCell*>(cell);
     if (!param_1) return;
     SceneObjects::Unregister(param_1);
-    int iVar1 = *(int*)(param_1 + 0x1b8); // next
-    int iVar2 = *(int*)(param_1 + 0x1b4); // prev
+    OBJECT* iVar1 = param_1->SceneNext;
+    OBJECT* iVar2 = param_1->ScenePrevious;
     if (iVar1 != 0) {
         if (iVar2 != 0) {
-            *(int*)(iVar2 + 0x1b8) = iVar1;
-            *(int*)(iVar1 + 0x1b4) = *(int*)(param_1 + 0x1b4);
+            iVar2->SceneNext = iVar1;
+            iVar1->ScenePrevious = param_1->ScenePrevious;
             operator_delete(param_1);
             return;
         }
-        *(int*)(iVar1 + 0x1b4) = 0;
-        param_2->Head = reinterpret_cast<void*>(static_cast<std::intptr_t>(iVar1));
+        iVar1->ScenePrevious = nullptr;
+        param_2->Head = iVar1;
         operator_delete(param_1);
         return;
     }
     if (iVar2 != 0) {
-        *(int*)(iVar2 + 0x1b8) = 0;
-        param_2->Tail = reinterpret_cast<void*>(static_cast<std::intptr_t>(iVar2));
+        iVar2->SceneNext = nullptr;
+        param_2->Tail = iVar2;
         operator_delete(param_1);
         return;
     }

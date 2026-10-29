@@ -80,7 +80,13 @@ struct OBJECT {
     BYTE     _unk16C[4];
     vec3_t   StartPosition;         // 0x170  IDA: CreateEffect (0x00460DC0)
     int      InitialSceneFrame;     // 0x17C  MoveSceneFrame del spawn
-    BYTE     _unk180[0x3C];
+    BYTE     _unk180[0x30];
+    // IDA 0x004FF5A0/0x004FFCC0/0x004FFD50: sólo los objetos de mapa
+    // interpretan estos slots como celda/enlaces. No leerlos en otros pools.
+    BYTE     SceneCell;             // 0x1B0
+    BYTE     _unk1B1[3];
+    OBJECT*  ScenePrevious;         // 0x1B4
+    OBJECT*  SceneNext;             // 0x1B8
 };
 
 // IDA: PART_t, 24 bytes. Arma, pieza del cuerpo, ala, helper o flag.
@@ -202,6 +208,9 @@ MU_ASSERT_FIELD(OBJECT, AlphaTarget, 0x164);
 MU_ASSERT_FIELD(OBJECT, Alpha, 0x168);
 MU_ASSERT_FIELD(OBJECT, StartPosition, 0x170);
 MU_ASSERT_FIELD(OBJECT, InitialSceneFrame, 0x17C);
+MU_ASSERT_FIELD(OBJECT, SceneCell, 0x1B0);
+MU_ASSERT_FIELD(OBJECT, ScenePrevious, 0x1B4);
+MU_ASSERT_FIELD(OBJECT, SceneNext, 0x1B8);
 MU_ASSERT_FIELD(PART_t, LinkBone, 0x04);
 MU_ASSERT_FIELD(PART_t, AnimationFrame, 0x08);
 MU_ASSERT_FIELD(PART_t, PlaySpeed, 0x10);

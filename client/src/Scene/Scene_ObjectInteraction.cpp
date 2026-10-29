@@ -52,7 +52,7 @@ char* __stdcall PickObject_Mouse(void) {
                     // Get model from entity type
                     short modelType = AsObject(obj)->Type;
                     if (modelType < 0 || modelType >= ResourceTables::ModelCount() || !DAT_05828d58) {
-                        obj = *(char**)(obj + 0x1B8);
+                        obj = reinterpret_cast<char*>(AsObject(obj)->SceneNext);
                         continue;
                     }
                     char* modelBase = (char*)DAT_05828d58;
@@ -96,7 +96,7 @@ char* __stdcall PickObject_Mouse(void) {
                         }
                     }
                 }
-                obj = *(char**)(obj + 0x1B8);  // next in linked list
+                obj = reinterpret_cast<char*>(AsObject(obj)->SceneNext);
             }
             }); // Windows conserva SEH; POSIX valida cada nodo antes de leerlo.
             ++pCell;

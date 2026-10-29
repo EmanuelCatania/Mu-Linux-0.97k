@@ -56,22 +56,23 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     BYTE  bVar4 = (BYTE)((char)igx * 0x10 + (char)igy);
     UINT  uVar2 = (UINT)bVar4;
 
-    UINT* puVar3 = (UINT*)operator_new(0x1bc);
+    UINT* puVar3 = (UINT*)operator_new(sizeof(OBJECT));
     if (!puVar3) return nullptr;
     SceneObjects::Register(puVar3);
-    UINT* p = puVar3;
-    for (int i = 0x6f; i != 0; i--) *p++ = 0;
+    memset(puVar3, 0, sizeof(OBJECT));
 
     // IDA 0x004FF5A0: insertar al final de la celda correspondiente.
     SceneObjectCell& cell = g_ObjectBucketGrid[uVar2];
+    OBJECT& sceneObject = *AsObject(puVar3);
     if (cell.Head == nullptr) {
-        puVar3[0x6d] = 0; puVar3[0x6e] = 0;
+        sceneObject.ScenePrevious = nullptr;
+        sceneObject.SceneNext = nullptr;
         cell.Head = puVar3;
     } else {
-        UINT* prevTail = static_cast<UINT*>(cell.Tail);
-        *(UINT**)((char*)prevTail + 0x1b8) = puVar3;
-        puVar3[0x6d] = (UINT)prevTail;
-        puVar3[0x6e] = 0;
+        OBJECT* prevTail = AsObject(cell.Tail);
+        prevTail->SceneNext = &sceneObject;
+        sceneObject.ScenePrevious = prevTail;
+        sceneObject.SceneNext = nullptr;
     }
     cell.Tail = puVar3;
 
@@ -93,8 +94,8 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     object.HiddenMesh = -1;
     object.CurrentAction = object.PriorAction = 0;
     object.AnimationFrame = object.PriorAnimationFrame = 0.0f;
-    // Celda +0x1B0 dentro de la cola todavía opaca; no nombra otros usos.
-    object._unk180[0x30] = bVar4;
+    // La cola se interpreta como enlaces únicamente para objetos de escena.
+    object.SceneCell = bVar4;
     object.BlendMesh = -1;
     object.BlendMeshLight = 1.0f;
     object.BlendMeshTexCoordU = object.BlendMeshTexCoordV = 0.0f;

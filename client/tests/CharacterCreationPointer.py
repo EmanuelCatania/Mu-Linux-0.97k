@@ -172,6 +172,7 @@ def harness(revision=None):
     # Son campos opacos de 32 bits en este fixture; no se certifican como punteros.
     obj = re.sub(r"OBJECT\*\s+Owner", "std::uint32_t Owner", obj)
     obj = re.sub(r"vec34_t\*\s+BoneMatrices", "std::uint32_t BoneMatrices", obj)
+    obj = re.sub(r"OBJECT\*\s+(ScenePrevious|SceneNext)\b", r"std::uint32_t \1", obj)
     records = "\n#pragma pack(push, 1)\n" + obj
     for name in ("PART_t", "CHARACTER"):
         records += re.search(rf"struct {name}\s*\{{.*?\}};", types, re.S).group()

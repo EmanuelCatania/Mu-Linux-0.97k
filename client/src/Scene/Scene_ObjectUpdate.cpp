@@ -606,7 +606,7 @@ void __stdcall MoveObjects(void) {
                         MoveObject_Special(AsObject(pcVar6));
                     }
                     pcVar6[0x160] = '\0';
-                    pcVar6 = *(char**)(pcVar6 + 0x1B8);
+                    pcVar6 = reinterpret_cast<char*>(AsObject(pcVar6)->SceneNext);
                 }
             }
             else {
@@ -663,7 +663,7 @@ void __stdcall MoveObjects(void) {
                         }
                         MoveObject_Special(AsObject(pcVar6));
                     }
-                    pcVar6 = *(char**)(pcVar6 + 0x1B8);
+                    pcVar6 = reinterpret_cast<char*>(AsObject(pcVar6)->SceneNext);
                 } // end while linked list
             }
             }); // Windows conserva la proteccion SEH del recorrido.
