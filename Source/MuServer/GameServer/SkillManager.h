@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 
 #include "DefaultClassInfo.h"
 #include "ProtocolDefines.h"
@@ -105,15 +106,20 @@ struct PMSG_DURATION_SKILL_ATTACK_RECV
 	BYTE index[2];
 };
 
+// C3:B0 usa siete bytes también en GCC; el empaquetado debe rodear la declaración.
+#pragma pack(push, 1)
 struct PMSG_SKILL_TELEPORT_ALLY_RECV
 {
-#pragma pack(1)
 	PBMSG_HEAD header; // C3:B0
 	WORD index;
 	BYTE x;
 	BYTE y;
-#pragma pack()
 };
+#pragma pack(pop)
+static_assert(sizeof(PMSG_SKILL_TELEPORT_ALLY_RECV) == 7, "C3:B0: tamaño del protocolo 0.97k");
+static_assert(offsetof(PMSG_SKILL_TELEPORT_ALLY_RECV, index) == 3, "C3:B0: índice LE16");
+static_assert(offsetof(PMSG_SKILL_TELEPORT_ALLY_RECV, x) == 5, "C3:B0: coordenada X");
+static_assert(offsetof(PMSG_SKILL_TELEPORT_ALLY_RECV, y) == 6, "C3:B0: coordenada Y");
 
 //**********************************************//
 //************ GameServer -> Client ************//
