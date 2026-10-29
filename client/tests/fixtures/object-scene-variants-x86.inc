@@ -13,10 +13,10 @@
             puVar3[3]=0x3f4ccccd; puVar3[0x19]=0; puVar3[0x1a]=0x3f800000;
             puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3f800000; break;
         case 0xa2:
-            
-            
-            
-            
+
+
+
+
             puVar3[3]=0x3f19999a; puVar3[0x19]=1;
             *(BYTE*)(puVar3+0x37)=0; break;
         case 0xa3:
@@ -28,8 +28,8 @@
         }
     }
 
-    
-    
+
+
     switch (gMapManager.GetCurrentMap()) {
     case 0:
         switch (param_1) {
@@ -63,14 +63,14 @@
         default: goto lbl_skip_init;
         case 0x13: case 0x5c: case 0x5d: puVar3[0x19]=0; return puVar3;
         case 0x14: case 0x41: case 0x56: case 0x58:
-            
-            
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
+
+
             puVar3[0xb]=puVar3[8]; puVar3[0xf]=puVar3[6]; puVar3[0xd]=puVar3[4];
             puVar3[0xa]=puVar3[7]; puVar3[0xe]=puVar3[5];
             { float angZ = *(float*)&puVar3[9];
@@ -86,11 +86,11 @@
             puVar3[0x16]=0xfffffffe; return puVar3;
         case 100: puVar3[0x16]=0xfffffffe; return puVar3;
         }
-        
-        
-        
-        
-        
+
+
+
+
+
         break;
     case 3:
         switch (param_1) {
@@ -102,8 +102,8 @@
         case 0x12: puVar3[0x19]=2; return puVar3;
         case 0x26: Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
         }
-        
-        
+
+
         break;
     default:
         goto lbl_skip_init;
