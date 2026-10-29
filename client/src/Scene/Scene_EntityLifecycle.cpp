@@ -71,43 +71,40 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     tailArr[uVar2 * 4] = puVar3;
 
     // common initialisation
-    *(BYTE*)puVar3                  = 1;           // active flag
-    *(BYTE*)(puVar3 + 0x58)         = 0;           // +0x160
-    *(BYTE*)((char*)puVar3 + 0x161) = 0;
-    *(BYTE*)(puVar3 + 0x37)         = 1;           // +0x0dc
-    *(BYTE*)(puVar3 + 0x39)         = 0;           // +0x0e4
-    *(BYTE*)(puVar3 + 0x44)         = 0;           // +0x110
-    *(short*)((char*)puVar3 + 2)    = (short)param_1;
-    puVar3[3]    = *(UINT*)&param_4;               // extra (+0x0c)
-    puVar3[0x5a] = 0x3f800000;                     // scale_x = 1.0f  (+0x168)
-    puVar3[0x59] = 0x3f800000;                     // scale_y = 1.0f  (+0x164)
-    puVar3[0x33] = 0x3e23d70a;                     // speed 0.16f     (+0x0cc)
-    puVar3[0x35] = 0x42480000;                     // 50.0f           (+0x0d4)
-    puVar3[0x16] = 0xffffffff;                     // RGBA white      (+0x058)
-    *(BYTE*)((char*)puVar3 + 0x105) = 0;           // anim_state
-    *(BYTE*)((char*)puVar3 + 0x106) = 0;           // anim_state_prev
-    puVar3[0x42] = 0; puVar3[0x43] = 0;
-    *(BYTE*)(puVar3 + 0x6c) = bVar4;               // grid cell       (+0x1b0)
-    puVar3[0x19] = 0xffffffff;                     // flags           (+0x064)
-    puVar3[0x1a] = 0x3f800000;                     // entity scale 1.0f (+0x068)
-    puVar3[0x1b] = 0; puVar3[0x1c] = 0; puVar3[0x1e] = 0;
-    puVar3[0x34] = 0xc1f00000;                     // -30.0f          (+0x0d0)
-    puVar3[0x20] = 0;
-    puVar3[4] = *(UINT*)&param_2[0];               // world_x         (+0x010)
-    puVar3[5] = *(UINT*)&param_2[1];               // world_y         (+0x014)
-    puVar3[6] = *(UINT*)&param_2[2];               // world_z         (+0x018)
-    puVar3[7] = *(UINT*)&param_3[0];               // target_x        (+0x01c)
-    puVar3[8] = *(UINT*)&param_3[1];               // target_y        (+0x020)
-    puVar3[9] = *(UINT*)&param_3[2];               // target_z        (+0x024)
-    puVar3[0x46] = 0xc2200000;                     // bbox_min_x -40f (+0x118)
-    puVar3[0x47] = 0xc2200000;                     // bbox_min_y -40f (+0x11c)
-    puVar3[0x3a] = 0; puVar3[0x3b] = 0; puVar3[0x3c] = 0;
-    puVar3[0xa]  = 0; puVar3[0xb]  = 0; puVar3[0xc]  = 0;
-    puVar3[0x30] = 0; puVar3[0x31] = 0; puVar3[0x32] = 0;
-    puVar3[0x48] = 0;
-    puVar3[0x49] = 0x42200000;                     // bbox_max_x 40f  (+0x124)
-    puVar3[0x4a] = 0x42200000;                     // bbox_max_y 40f  (+0x128)
-    puVar3[0x4b] = 0x42a00000;                     // bbox_max_z 80f  (+0x12c)
+    // IDA 0x004FF5A0: campos comunes. El contrato se comprueba antes de
+    // ampliar pools; los enlaces y la cola por dominio siguen pendientes.
+    OBJECT& object = *AsObject(puVar3);
+    object.Live = 1;
+    object.Visible = 0;
+    object.AlphaEnable = 0;
+    object.LightEnable = 1;
+    object.ContrastEnable = 0;
+    object.EnableBoneMatrix = 0;
+    object.Type = (short)param_1;
+    memcpy(&object.Scale, &param_4, sizeof(object.Scale));
+    object.Alpha = object.AlphaTarget = 1.0f;
+    object.Velocity = 0.16f;
+    object.ShadowScale = 50.0f;
+    object.HiddenMesh = -1;
+    object.CurrentAction = object.PriorAction = 0;
+    object.AnimationFrame = object.PriorAnimationFrame = 0.0f;
+    // Celda +0x1B0 dentro de la cola todavía opaca; no nombra otros usos.
+    object._unk180[0x30] = bVar4;
+    object.BlendMesh = -1;
+    object.BlendMeshLight = 1.0f;
+    object.BlendMeshTexCoordU = object.BlendMeshTexCoordV = 0.0f;
+    memset(object._unk075 + 3, 0, 4); // Bits de +0x78, sin semántica nueva.
+    object.CollisionRange = -30.0f;
+    object.Timer = 0.0f;
+    // Conservar los bits de los argumentos, incluidos NaN y ceros con signo.
+    memcpy(object.Position, param_2, sizeof(object.Position));
+    memcpy(object.Angle, param_3, sizeof(object.Angle));
+    object.BoundingBoxMin[0] = object.BoundingBoxMin[1] = -40.0f;
+    object.BoundingBoxMin[2] = 0.0f;
+    for (int axis = 0; axis < 3; ++axis)
+        object.Light[axis] = object.HeadAngle[axis] = object.Direction[axis] = 0.0f;
+    object.BoundingBoxMax[0] = object.BoundingBoxMax[1] = 40.0f;
+    object.BoundingBoxMax[2] = 80.0f;
 
     // login/char-select scene type overrides (SceneFlag 2 or 4)
     if (SceneFlag == 2 || SceneFlag == 4) {

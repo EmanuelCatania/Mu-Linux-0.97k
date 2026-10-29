@@ -492,22 +492,17 @@ void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
 void __cdecl Joint_BoneOffsetApply(BYTE* param_1, int param_2) {
+    OBJECT& object = *AsObject(param_1);
     // Ghidra separó un float[3] de salida en tres locales (local_3c/38/34) y
     // Vector_Rotate escribe 3 floats contiguos: se usa un array real.
     float out[3] = {0.0f, 0.0f, 0.0f};
     float local_30[12];
     if (param_2 != 0) {
-        float local_48 = *(float*)(param_1 + 0x1c);
-        // local_44 = *(float*)(param_1 + 0x20); local_40 = *(int*)(param_1 + 0x24);
-        Matrix_BuildFromEuler((float*)(param_1 + 0x1c), local_30);
-        Vector_Rotate((float*)(param_1 + 0xc0), local_30, out);
-        *(float*)(param_1 + 0x10) += out[0];
-        *(float*)(param_1 + 0x14) += out[1];
-        *(float*)(param_1 + 0x18) += out[2];
+        Matrix_BuildFromEuler(object.Angle, local_30);
+        Vector_Rotate(object.Direction, local_30, out);
+        for (int axis = 0; axis < 3; ++axis) object.Position[axis] += out[axis];
     } else {
-        *(float*)(param_1 + 0x10) += *(float*)(param_1 + 0xc0);
-        *(float*)(param_1 + 0x14) += *(float*)(param_1 + 0xc4);
-        *(float*)(param_1 + 0x18) += *(float*)(param_1 + 200);
+        for (int axis = 0; axis < 3; ++axis) object.Position[axis] += object.Direction[axis];
     }
 }
 
