@@ -146,7 +146,7 @@ void __cdecl AmbientParticles_Update(void)
                 // ── Spawn logic per game state ────────────────────────────────
                 if (gMapManager.GetCurrentMap() == 0) {
                     // Connecting state: water bubble on water tiles
-                    if (*(char *)((int)&TerrainMappingLayer1 + iVar7) == '\x05') goto LAB_0050245e;
+                    if (TerrainMappingLayer1[iVar7] == '\x05') goto LAB_0050245e;
                     goto switchD_caseD_2;
                 }
                 if (gMapManager.GetCurrentMap() == 1) {
@@ -322,7 +322,7 @@ switchD_caseD_2:
 
                 // Transition to water or bounce on land
                 if (((sVar5 == 0xb5) &&
-                     (*(char *)((int)&TerrainMappingLayer1 + iVar8) != '\x05')) ||
+                     (TerrainMappingLayer1[iVar8] != '\x05')) ||
                     ((sVar5 == 0xb1) && (7 < (unsigned char)(unsigned char)DAT_0838bc70[iVar8])))
                 {
                     // Rolling angle
