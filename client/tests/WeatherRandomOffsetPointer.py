@@ -30,8 +30,8 @@ BLOCK
 }
 '''
 MAIN=r'''
-int main(){
- BYTE* memory=static_cast<BYTE*>(Reserve(0x26000000u));Require(memory);DAT_07abf5d8=reinterpret_cast<char*>(memory+16);
+std::uint64_t Run(BYTE* memory){
+ DAT_07abf5d8=reinterpret_cast<char*>(memory+16);
  std::uint64_t hash=14695981039346656037ull;unsigned count=0,coverage=0;
  for(int world:{-1,0,10,11})for(int rain:{0,1})for(trial=0;trial<=5000;++trial){
   for(unsigned i=0;i<128;++i)memory[i]=BYTE(i*37+trial);
@@ -52,11 +52,22 @@ int main(){
  }
  Require(count==40008&&coverage==15);
  std::printf("Weather random offsets: %u casos;RNG,orden,efectos,luz y owner readonly %016llx\n",count,static_cast<unsigned long long>(hash));
+ return hash;
+}
+int main(){
+ BYTE* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const auto expected=Run(low);
+ if(sizeof(void*)>4){
+  BYTE* signBit=static_cast<BYTE*>(Reserve(0x8e000000u));Require(signBit);Require(Run(signBit)==expected);
+  BYTE* high=static_cast<BYTE*>(Reserve(std::uintptr_t(0x126000000ull)));Require(high);
+  std::memset(low,0x7b,128);Require(Run(high)==expected);
+  for(unsigned i=0;i<128;++i)Require(low[i]==0x7b);
+  std::puts("Hero bajo,bit31 y alto;alias inferior y128bytes del owner intactos");
+ }
 }
 '''
 def harness(revision=None):
     source=read_source('src/Render/Weather.cpp',revision)
-    begin=source.index('    uVar8 = (uint)(uintptr_t)DAT_07abf5d8;',source.index('// ── Weather-mode:'))
+    begin=source.index('\n',source.index('// ── Weather-mode:'))+1
     end=source.index('    // Get terrain tile',begin)
     frame=re.search(r'    float\s+__fr\[12\][\s\S]*?&fStack_c\s*= __fr\[11\];',source).group()
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('FRAME',frame).replace('BLOCK',source[begin:end])+MAIN

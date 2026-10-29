@@ -251,7 +251,7 @@ LAB_00500f34:
 LAB_00501064:
 
     // ── Weather-mode: random rain effects (DAT_083a3ff0 != 0) ─────────────────
-    uVar8 = (uint)(uintptr_t)DAT_07abf5d8;
+    const char* const rainHero = DAT_07abf5d8;
     if (DAT_083a3ff0 != 0) {
         // Spawn occasional rain splash particle (1/40 chance)
         iVar12 = _rand();
@@ -271,7 +271,7 @@ LAB_00501064:
         }
         // Ground ripple effect
         fStack_38 = -0.3f; fStack_34 = -0.3f; fStack_30 = -0.2f;
-        AddTerrainLight(*(float *)(uVar8 + 0x10), *(float *)(uVar8 + 0x14), (float*)&fStack_38, 0x10, (float*)&DAT_081cb608[0]);
+        AddTerrainLight(*(const float *)(rainHero + 0x10), *(const float *)(rainHero + 0x14), (float*)&fStack_38, 0x10, (float*)&DAT_081cb608[0]);
     }
 
     // ── World == 10: spawn distant lightning clouds ─────────────────
