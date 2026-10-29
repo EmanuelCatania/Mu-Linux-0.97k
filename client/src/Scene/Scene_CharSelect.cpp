@@ -380,8 +380,12 @@ int Scene_CharSelect(void)
                     }
                     iVar4 = Platform::TextLength(aCStack_50);
                     gFont.MeasureText((HDC)(uintptr_t)gFont.GetTextDC(), aCStack_50, iVar4, &tStack_68);
+                    // MeasureText mide en píxeles de la ventana y nameProjY está en la grilla
+                    // de 640: el alto se pasa a la grilla igual que el ancho. Sin esto el
+                    // nombre quedaba tantos píxeles más arriba como escala la resolución.
+                    const int nameHeight = (int)(((uint)tStack_68.cy * 0x280) / gWindow.GetWidth());
                     UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
-                                 (nameProjY - tStack_68.cy) + -3,
+                                 (nameProjY - nameHeight) + -3,
                                  aCStack_50, (LPSIZE)0x0, '\0', 3);
                     // Class name + level (bottom, normal font) — IDA L202-209:
                     //   sprintf(String, "%s %d",
