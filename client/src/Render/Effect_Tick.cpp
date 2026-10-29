@@ -325,28 +325,13 @@ LAB_004794f9:
 // IDA: MovePoints
 void DamageNumbers_Tick(void)
 {
-  // Mismo pool que CreatePoint/RenderPoints, desplazado +0x18 como en IDA.
-  float *pfVar2 = (float *)((char *)&DAT_07c80110[0] + 0x18);
-  const uintptr_t poolEnd = (uintptr_t)&DAT_07c80110[0] + sizeof(DAT_07c80110);
-  float fVar1;
-
-  do {
-    // El contador de delay (+0x38) es un DWORD en IDA
-    // (`v1 = *((_DWORD *)v0 + 8) - 1;`), no un float: se decrementa como entero.
-    int *pDelay = (int *)&pfVar2[8];
-    if ((*(char *)(pfVar2 + -6) != '\0') && (--(*pDelay) < 0)) {
-      *pfVar2 = pfVar2[0xc] + *pfVar2;
-      fVar1 = pfVar2[0xc] - _DAT_005528b8;
-      pfVar2[0xc] = fVar1;
-      if (fVar1 <= _DAT_00552580) {
-        *(undefined1 *)(pfVar2 + -6) = 0;
-      }
-      fVar1 = pfVar2[-3] - _DAT_00552660;
-      pfVar2[-3] = fVar1;
-      if (fVar1 < _DAT_00552834) {
-        pfVar2[-3] = 15.0;
-      }
+    for (DamagePoint& point : DAT_07c80110) {
+        if (point.Active && --point.Delay < 0) {
+            point.Position[2] = point.LifeTime + point.Position[2];
+            point.LifeTime = point.LifeTime - _DAT_005528b8;
+            if (point.LifeTime <= _DAT_00552580) point.Active = 0;
+            point.Scale = point.Scale - _DAT_00552660;
+            if (point.Scale < _DAT_00552834) point.Scale = 15.0f;
+        }
     }
-    pfVar2 = pfVar2 + 0x1c;
-  } while ((uintptr_t)pfVar2 < poolEnd);
 }

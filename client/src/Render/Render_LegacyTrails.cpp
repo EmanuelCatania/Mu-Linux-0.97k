@@ -52,7 +52,7 @@ void __cdecl Entity_TeleportAnim(float *pos, float a, float b, float c)
 {
     return;  // AUTO-SKIP: dead duplicate (kept for reference). Active impl is the
              // 4-arg overload in Combat/Skills_WarriorLegacy.cpp (Entity_TeleportAnim with float* dst_pos).
-    char *slot = &DAT_07c80110[0];
+    char *slot = reinterpret_cast<char*>(DAT_07c80110);
     while ((int)slot < 0x7c82cd0) {
         if (*slot == '\0') {
             *slot = '\x01';

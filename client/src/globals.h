@@ -1,4 +1,5 @@
 #pragma once
+#include "Render/DamagePointTypes.h"
 #include "Item/ItemDefines.h"
 struct GATE_ATTRIBUTE;
 struct OBJECT;
@@ -1212,7 +1213,7 @@ extern float  _DAT_00552954;   // sin animation frequency constant
 // Sized via IDA bound: (0x7c82cd0 - 0x7c80110) / 0x70 = 0x2BC0 / 0x70 = 100.
 // Entity_TeleportAnim recorre los 100 slots escribiendo 0x70 bytes por paso: tiene
 // que ser el array completo.
-extern char    DAT_07c80110[100 * 0x70];   // active-flag at +0; slot stride 0x70
+extern DamagePoint DAT_07c80110[kDamagePointCount];   // active-flag at +0; slot stride 0x70
 
 // ── Character/effect update pool (0x07c85890, stride 0x1BC, 1002 slots) ──────
 extern char    DAT_07c85890[1002 * 0x1bc];  // pool array (was 1 byte → AUTO-SKIP)

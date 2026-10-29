@@ -135,22 +135,21 @@ void __cdecl RenderPoints(int, int, int, int)
     EnableAlphaTest(true);
     GL_DisableDepthTest();                    // DisableDepthTest
 
-    char* base = (char*)&DAT_07c80110[0];
-    for (int i = 0; i < 100; ++i) {
-        char* slot = base + i * 0x70;
-        if (slot[0] == 0) continue;
+    for (int i = 0; i < static_cast<int>(kDamagePointCount); ++i) {
+        DamagePoint& point = DAT_07c80110[i];
+        if (!point.Active) continue;
 
         RenderPose pose;
-        memcpy(pose.position, slot + 0x10, sizeof(pose.position));
-        pose.alpha = *(float*)(slot + 0x48) * 0.40000001f;
-        pose.scale = *(float*)(slot + 0x0c);
+        memcpy(pose.position, point.Position, sizeof(pose.position));
+        pose.alpha = point.LifeTime * 0.40000001f;
+        pose.scale = point.Scale;
         // DESVIACION: la misma fase visual que cámara/entidades, sin tocar su tick.
         if (RenderInterpolation_Alpha()<1) {
             RenderPosePair pair;
             if (RenderSnapshots_DamagePoint(i, pair))
                 pose = RenderSnapshots_Interpolate(pair, RenderInterpolation_Alpha());
         }
-        RenderNumber(pose.position, *(int*)(slot + 0x04), (float*)(slot + 0x1c),
+        RenderNumber(pose.position, point.Value, point.Color,
                      pose.alpha, pose.scale);
     }
 }
