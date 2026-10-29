@@ -338,7 +338,11 @@ int Scene_CharSelect(void)
                     float posBuf[3];
                     posBuf[0] = *(float *)(pcVar5 + iVar9 + 0x10);
                     posBuf[1] = *(float *)(pcVar5 + iVar9 + 0x14);
-                    posBuf[2] = *(float *)(pcVar5 + iVar9 + 0x18) + _DAT_00552974;
+                    // DESVIACION (Fase 4): se sube la etiqueta sobre la altura original para
+                    // que las alas, que sobresalen de la cabeza, no la tapen. Va en unidades
+                    // del mundo para que escale con la distancia de cada personaje.
+                    constexpr float kLabelLift = 70.0f;
+                    posBuf[2] = *(float *)(pcVar5 + iVar9 + 0x18) + _DAT_00552974 + kLabelLift;
                     fStack_5c = posBuf[0];
                     uStack_58 = *(undefined4 *)&posBuf[1];
                     fStack_54 = posBuf[2];
@@ -380,8 +384,12 @@ int Scene_CharSelect(void)
                     }
                     iVar4 = Platform::TextLength(aCStack_50);
                     gFont.MeasureText((HDC)(uintptr_t)gFont.GetTextDC(), aCStack_50, iVar4, &tStack_68);
+                    // MeasureText mide en píxeles de la ventana y nameProjY está en la grilla
+                    // de 640: el alto se pasa a la grilla igual que el ancho. Sin esto el
+                    // nombre quedaba tantos píxeles más arriba como escala la resolución.
+                    const int nameHeight = (int)(((uint)tStack_68.cy * 0x280) / gWindow.GetWidth());
                     UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
-                                 (nameProjY - tStack_68.cy) + -3,
+                                 (nameProjY - nameHeight) + -3,
                                  aCStack_50, (LPSIZE)0x0, '\0', 3);
                     // Class name + level (bottom, normal font) — IDA L202-209:
                     //   sprintf(String, "%s %d",
