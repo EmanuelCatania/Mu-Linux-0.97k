@@ -3100,7 +3100,7 @@ void __cdecl MoveCharacter(int p1)
     AsModel(v422)->CurrentAction = AsObject(o)->CurrentAction;  // anim_state
 
     // ─── IDA L437-477: Hero-only buff timers (anti-tamper stripped)
-    if (c == (DWORD)Hero)
+    if (AsCharacter(c) == AsCharacter(Hero))
     {
         if (CharacterAttribute)
         {
@@ -3193,7 +3193,7 @@ void __cdecl MoveCharacter(int p1)
         if (AsCharacter(c)->Rot >= 1.0f) {
             AsObject(o)->Alpha = 1.0f - (AsCharacter(c)->Rot - v412);
             if (AsObject(o)->Alpha < 0.0099999998f) {
-                if (c != (DWORD)Hero) *(BYTE*)o = 0;
+                if (AsCharacter(c) != AsCharacter(Hero)) *(BYTE*)o = 0;
             } else {
                 AsObject(o)->Position[2] -= 0.40000001f;
             }
@@ -3398,7 +3398,7 @@ void __cdecl MoveCharacter(int p1)
     {
         AsCharacter(c)->SkillStage = 0;
         AsObject(o)->PKKey = -1;
-        if (c == (DWORD)Hero && SelectedCharacter != -1) {
+        if (AsCharacter(c) == AsCharacter(Hero) && SelectedCharacter != -1) {
             DWORD selSlot = (DWORD)(916 * SelectedCharacter + (int)CharactersClient);
             // Guild-war target lock (skipped guild-mark strcmp — same guild = no target)
             if (EnableGuildWar
@@ -3779,7 +3779,7 @@ void __cdecl MoveCharacter(int p1)
             v392 = 0;
             if (AsObject(o)->CurrentAction == 37 || AsObject(o)->CurrentAction == 38) v392 = 1;
             Light[0] = 1.0f;
-            Light[1] = (v390 == (DWORD)Hero) ? 0.0f : 0.60000002f;
+            Light[1] = (AsCharacter(v390) == AsCharacter(Hero)) ? 0.0f : 0.60000002f;
             Light[2] = 0.0f;
 
             if (*(BYTE*)(c + 756) == 2) {
