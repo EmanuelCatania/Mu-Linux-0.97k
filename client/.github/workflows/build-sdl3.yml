@@ -41,6 +41,14 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri:i386
+      - name: Verificar contrato de colision BMD (Windows x86)
+        if: runner.os == 'Windows'
+        run: python -B tests/BMDCollisionArguments.py --architecture Win32
+      - name: Verificar contrato de colision BMD (Linux x86)
+        if: runner.os == 'Linux'
+        env:
+          CXXFLAGS: -m32
+        run: python3 -B tests/BMDCollisionArguments.py --generator Ninja --architecture Win32
       - name: Configurar Windows
         if: runner.os == 'Windows'
         run: cmake -S . -B build -A Win32 -T v143 -DMU_PLATFORM_BACKEND=SDL3
