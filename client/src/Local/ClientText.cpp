@@ -10,9 +10,8 @@ extern "C" void DbgLogPublic(const char* msg);
 
 CClientText gClientText;
 namespace {
-// Las cadenas van en cp1252 (el texto se dibuja con GDI ANSI y el proyecto
-// compila en MultiByte): los acentos son escapes y el literal se corta después
-// de cada uno para que la letra siguiente no se lea como dígito hexadecimal.
+// Cadenas UTF-8. Los literales se cortan después de los escapes hexadecimales
+// para que la letra siguiente no se lea como parte del mismo byte.
 const char* const English[] = {
     "%.10s || %s: %u || PING: %s || FPS: %.0f",
     "Success rate: pending",
@@ -59,13 +58,40 @@ static_assert(sizeof(English) / sizeof(English[0]) == Count, "Faltan textos en i
 
 // Textos del server, por id.  Vacío = no hay: se usa el inglés.
 std::string s_ServerText[Count];
+
+// Antes de conectar todavía no hay tabla del server. Las opciones deben
+// respetar el idioma guardado también en esa pantalla.
+const char* MenuFallback(ClientTextId id, int language)
+{
+    struct Entry { ClientTextId id; const char* spanish; const char* portuguese; };
+    static const Entry entries[] = {
+        { ClientTextId::LanguageDefault, "Predeterminado", "Padr\xC3\xA3" "o" },
+        { ClientTextId::ScreenWindowed, "Ventana", "Janela" },
+        { ClientTextId::ScreenFullscreen, "Pantalla completa", "Tela cheia" },
+        { ClientTextId::ScreenBorderless, "Sin bordes", "Sem bordas" },
+        { ClientTextId::RenderDecoupled, "Render libre", "Render livre" },
+        { ClientTextId::RenderVSync, "VSync", "VSync" },
+        { ClientTextId::RenderFps, "FPS: %d", "FPS: %d" },
+        { ClientTextId::RenderUnlimited, "FPS: sin l\xC3\xAD" "mite", "FPS: sem limite" },
+        { ClientTextId::RenderVSyncUnavailable, "VSync no disponible", "VSync indispon\xC3\xAD" "vel" },
+    };
+    for (const Entry& entry : entries) {
+        if (entry.id != id) continue;
+        if (language == USER_LANG_SPANISH) return entry.spanish;
+        if (language == USER_LANG_PORTUGUESE) return entry.portuguese;
+        break;
+    }
+    return nullptr;
+}
 }
 
 const char* CClientText::Get(ClientTextId id) const
 {
     const size_t index = (size_t)id;
     if (index >= Count) return "";
-    return s_ServerText[index].empty() ? English[index] : s_ServerText[index].c_str();
+    if (!s_ServerText[index].empty()) return s_ServerText[index].c_str();
+    const char* local = MenuFallback(id, gUserSettings.GetLanguage());
+    return local ? local : English[index];
 }
 
 bool CClientText::SetServerText(size_t id, const char* utf8)

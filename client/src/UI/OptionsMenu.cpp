@@ -104,10 +104,20 @@ void COptionsMenu::RenderLabel(float x, float y, float width, const char* text) 
                (int)(width * gWindow.GetWidth() / 640), 1, nullptr);
 }
 
+namespace {
+const char* ToggleValue(bool value)
+{
+    const int language = gUserSettings.GetLanguage();
+    if (language == USER_LANG_SPANISH) return value ? "S\xC3\xAD" : "No";
+    if (language == USER_LANG_PORTUGUESE) return value ? "Ligado" : "Desligado";
+    return value ? "On" : "Off";
+}
+}
+
 void COptionsMenu::RenderToggle(float y, const char* label, bool value) const
 {
     char text[96];
-    Platform::TextFormatSecure(text, "%s: %s", label, value ? "On" : "Off");   // "On"/"Off" como el 0.97k
+    Platform::TextFormatSecure(text, "%s: %s", label, ToggleValue(value));
     RenderButton(y, text);
 }
 
@@ -226,7 +236,10 @@ void COptionsMenu::ChangeLanguage(int language)
     gUserSettings.SetLanguage(language);
     OpenTextData();
     OpenDialogData();
-    if (language != USER_LANG_DEFAULT) Lang_Send(language);
+    // En el login puede estar conectado sólo el ConnectServer o todavía no
+    // haber llegado F1/00. Recv_JoinServer enviará la selección al entrar.
+    if (language != USER_LANG_DEFAULT && !gNetwork.IsConnectServerMode() && CurrentProtocolState != 0)
+        Lang_Send(language);
 }
 
 void COptionsMenu::Render()
@@ -302,10 +315,10 @@ bool COptionsMenu::UpdateMain()
 }
 
 // ── General ─────────────────────────────────────────────────────────────────
-// Idioma (sólo en char-select y en el juego, donde hay Text.bmd cargado y
-// conexión), ataque automático, sonido de susurros, volúmenes, música y Volver.
+// Idioma desde el login, ataque automático, sonido de susurros, volúmenes,
+// música y Volver. La selección local no requiere una conexión al GameServer.
 namespace {
-bool LanguageRowVisible() { return SceneFlag == 4 || SceneFlag == 5; }
+bool LanguageRowVisible() { return SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5; }
 }
 
 void COptionsMenu::RenderGeneral()

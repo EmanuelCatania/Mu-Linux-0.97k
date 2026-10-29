@@ -229,6 +229,10 @@ jobs:
             python -B tests/ItemGridLayout.py --architecture x64
             python -B tests/ItemMovePreviewColor.py --architecture Win32
             python -B tests/ItemMovePreviewColor.py --architecture x64
+            python -B tests/OptionsLocalText.py --architecture Win32
+            python -B tests/OptionsLocalText.py --architecture x64
+            python -B tests/OptionsLanguagePolicy.py --architecture Win32
+            python -B tests/OptionsLanguagePolicy.py --architecture x64
             python -B tests/MeshAddressPointer.py --architecture x64
             python -B tests/AnchorDestructorPointer.py --architecture x64
               python -B tests/ListNextPointer.py --architecture x64
@@ -412,6 +416,8 @@ jobs:
             python3 -B tests/DamagePointLayout.py --generator Ninja
             python3 -B tests/ItemGridLayout.py --generator Ninja
             python3 -B tests/ItemMovePreviewColor.py --generator Ninja
+            python3 -B tests/OptionsLocalText.py --generator Ninja
+            python3 -B tests/OptionsLanguagePolicy.py --generator Ninja
             python3 -B tests/MeshAddressPointer.py --generator Ninja
             python3 -B tests/AnchorDestructorPointer.py --generator Ninja
               python3 -B tests/ListNextPointer.py --generator Ninja
