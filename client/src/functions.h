@@ -8,6 +8,7 @@
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 struct OBJECT;
 struct CHARACTER;
+struct PART_t;
 struct ITEM_ATTRIBUTE;
 struct ITEM;
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
@@ -524,8 +525,8 @@ void  __cdecl Entity_Render(void);                                   // Entity_R
 void  __cdecl RenderPartObjectEffect(int, int, float *, float, unsigned int, unsigned char, unsigned int, unsigned int); // IDA: RenderPartObjectEffect (0x00504B50)
 void  __cdecl Entity_RenderSlotWith(void *, void *, int, char, int);
 // Entity_DrawAt(entity_ptr, class, slot, angle_ptr, rot, state_flags, byte, a,b,c, d, mode)
-void  __cdecl RenderPartObject(int, int, unsigned int, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int); // IDA: RenderPartObject (0x00505A10)
-void  __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
+void  __cdecl RenderPartObject(int, int, const PART_t*, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int); // IDA: RenderPartObject (0x00505A10)
+void  __cdecl DivineSkirt_Apply(const OBJECT* entity, int modelType, const PART_t* part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
 void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // SetMonsterSound — writes model animation slots
 // ── Map / terrain loaders (called from World_Load / Map_LoadResources) ─────────
 void  __cdecl DeleteObjects(void);                                  // Terrain_ResetObjects

@@ -724,7 +724,7 @@ struct Sphere {
 const int kMaxSpheres = 5;
 
 struct MeshCloth {
-    int     part;            // clave: puntero a la pieza (PART_t)
+    const PART_t* part;      // Clave nativa de la pieza en la caché propia.
     int     lastFrame;
     bool presentationContinuous;
     int     spawnFrame;       // identidad del owner al reutilizar un slot
@@ -1033,7 +1033,7 @@ bool Step(MeshCloth &c, float wind, int sceneFrame, float angleZ, float fTime) {
     return true;
 }
 
-MeshCloth* FindSlot(int part) {
+MeshCloth* FindSlot(const PART_t* part) {
     MeshCloth *freeSlot = nullptr, *oldest = &g_Slots[0];
     for (int i = 0; i < kSlots; ++i) {
         if (g_Slots[i].part == part) return &g_Slots[i];
@@ -1050,15 +1050,15 @@ MeshCloth* FindSlot(int part) {
 
 // DESVIACION: la tela avanza al final de cada paso de 40 ms, incluso durante
 // recuperación sin render. El dibujo sólo consume las posiciones publicadas.
-void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
+void DivineSkirt_Tick(const OBJECT* entity, int modelType, const PART_t* part, void *model)
 {
     if (modelType != kDivinePantsModel || !part || !model || !entity) return;
     if (*(short *)((char *)model + 0x24) <= kSkirtMesh) return;
-    const float *bones = AsObject(entity)->BoneMatrices ? (const float *)AsObject(entity)->BoneMatrices : nullptr;
+    const float *bones = entity->BoneMatrices ? (const float *)entity->BoneMatrices : nullptr;
     if (!bones) return;
     MeshCloth *c = FindSlot(part);
     const int frame = (int)MoveSceneFrame;
-    const int spawn = AsObject(entity)->InitialSceneFrame;
+    const int spawn = entity->InitialSceneFrame;
     if (c->vertices && (c->spawnFrame != spawn || frame - c->lastFrame > 3 || frame < c->lastFrame)) {
         Destroy(*c);
         c->part = part;
@@ -1069,7 +1069,7 @@ void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
     for (int v=0;v<c->numVertices;++v) c->vertices[v].presentationPrevious=c->vertices[v].pos;
     c->lastFrame = frame;
     CapturePose(*c, model, bones);
-    const float angleZ = AsObject(entity)->Angle[2];
+    const float angleZ = entity->Angle[2];
     for (int i = 0; i < 5; ++i) {
         if (!Step(*c, _DAT_00590af0, frame, angleZ, 0.005f)) {
             Destroy(*c);
@@ -1079,16 +1079,16 @@ void DivineSkirt_Tick(int entity, int modelType, int part, void *model)
 }
 
 // No crea ni avanza tela; el pase de brillo/sombra puede repetirse libremente.
-void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
+void __cdecl DivineSkirt_Apply(const OBJECT* entity, int modelType, const PART_t* part, void *model)
 {
     if (modelType != kDivinePantsModel || !part || !model || !entity) return;
     for (int i = 0; i < kSlots; ++i) {
         const MeshCloth &c = g_Slots[i];
-        if (c.part != part || !c.vertices || c.spawnFrame != AsObject(entity)->InitialSceneFrame) continue;
+        if (c.part != part || !c.vertices || c.spawnFrame != entity->InitialSceneFrame) continue;
         for (int v = 0; v < c.numVertices; ++v) {
             float *p = VT(kSkirtMesh, v);
             const Vertex &vertex=c.vertices[v];
-            const float alpha=c.presentationContinuous && RenderInterpolation_OwnerContinuous((void *)entity) ? RenderInterpolation_Alpha() : 1;
+            const float alpha=c.presentationContinuous && RenderInterpolation_OwnerContinuous(entity) ? RenderInterpolation_Alpha() : 1;
             p[0]=RenderBlend(vertex.presentationPrevious.x,vertex.pos.x,alpha);
             p[1]=RenderBlend(vertex.presentationPrevious.y,vertex.pos.y,alpha);
             p[2]=RenderBlend(vertex.presentationPrevious.z,vertex.pos.z,alpha);

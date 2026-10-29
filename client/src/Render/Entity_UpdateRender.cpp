@@ -469,7 +469,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     UINT shiftedLvl = (UINT)rawLvl << 3;
                     RenderPartObject((int)param_1,
                                  iVar9,
-                                 (int)(piVar16 - 5),
+                                 reinterpret_cast<const PART_t*>(piVar16 - 5),
                                  (float *)(param_1 + 200),
                                  *(float *)(puVar13 + 0x5a),
                                  shiftedLvl,

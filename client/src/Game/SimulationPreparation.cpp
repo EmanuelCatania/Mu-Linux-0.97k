@@ -23,7 +23,7 @@ void Sprite_ReplayStep();
 void Fauna_TickSprites();
 void EffectPool_TickRenderState();
 
-void DivineSkirt_Tick(int entity, int modelType, int part, void *model);
+void DivineSkirt_Tick(const OBJECT* entity, int modelType, const PART_t* part, void *model);
 extern "C" void HeroEquipWatchdog(CHARACTER* entity);
 
 namespace {
@@ -164,7 +164,7 @@ void PrepareCharacter(CHARACTER &c) {
             memcpy(context, pants, sizeof(context));
             *(float *)((char *)pants + 0x68) = o.Scale;
             memcpy((char *)pants + 0x6c, o.Position, sizeof(o.Position));
-            DivineSkirt_Tick((int)&c, type, (int)&piece, pants);
+            DivineSkirt_Tick(&c.Object, type, &piece, pants);
             memcpy(pants, context, sizeof(context));
         }
     }

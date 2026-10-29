@@ -394,7 +394,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
 // class 0x35c by sub-class bits. Copies position/flag fields from entity
 // to render object, then calls RenderPartObjectEffect for final draw.
 void __cdecl
-RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float param_5,uint param_6,
+RenderPartObject(int param_1,int param_2,const PART_t* param_3,float *param_4,float param_5,uint param_6,
             byte param_7,char param_8,undefined1 param_9,char param_10,int param_11,uint param_12)
 {
   void *this_;
@@ -459,7 +459,7 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
                  (float *)(param_1 + 0x130),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
-    DivineSkirt_Apply(param_1, param_2, (int)param_3, this_);
+    DivineSkirt_Apply(AsObject(static_cast<DWORD>(param_1)), param_2, param_3, this_);
     RenderPartObjectEffect(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
   }
   return;
