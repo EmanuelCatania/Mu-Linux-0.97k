@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - { name: windows-x86, os: windows-latest }
+          - { name: windows-x86, os: windows-2022 }
           - { name: linux-x86, os: ubuntu-22.04 }
         config: [ Debug, Release ]
     steps:
