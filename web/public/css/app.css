@@ -1206,3 +1206,26 @@ textarea.invalid {
 .texts-table tr.texts-dirty td:nth-child(3) input { border-color: #c9a55a; }
 .texts-table tr.texts-invalid td:nth-child(3) input { border-color: #BD382D; }
 .texts-table tr.texts-invalid .texts-bytes { color: #BD382D; }
+
+/* Índice del editor del servidor: tarjetas en tres columnas; solo la de backups ocupa todo el ancho. */
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.editor-grid .card-sub {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+}
+.editor-grid .card-sub .button-link {
+  margin-top: auto;
+  align-self: flex-start;
+}
+@media (max-width: 1000px) {
+  .editor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .editor-grid { grid-template-columns: minmax(0, 1fr); }
+}

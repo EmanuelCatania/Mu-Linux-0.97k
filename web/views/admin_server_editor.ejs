@@ -21,6 +21,7 @@
       <%= t("Editor habilitado. API:") %> <code><%= editorApiUrl %></code>
     </div>
 
+    <div class="editor-grid">
     <div class="card-sub">
       <h3><%= t("Editor de shops") %></h3>
       <p class="muted"><%= t("Edita los archivos") %> <code>MuServer/Data/Shop</code> <%= t("con grid grafico.") %></p>
@@ -145,6 +146,8 @@
       <a class="button-link" href="/admin/server-editor/event-item-bag"><%= t("Abrir Event ItemBag") %></a>
     </div>
 
+    </div>
+
     <div class="card-sub">
       <h3><%= t("Backups del servidor") %></h3>
       <p class="muted">
@@ -164,10 +167,7 @@
       </div>
 
       <div id="backupMessage" class="muted"></div>
-    </div>
 
-    <div class="card-sub">
-      <h3><%= t("Notas") %></h3>
       <ul>
         <li><%= t("Restaurar un snapshot sobrescribe") %> <code>Data</code> <%= t("y") %> <code>GameServer/Data</code> <%= t("dentro del contenedor.") %></li>
         <li><%= t("Recomendado reiniciar el contenedor del GameServer despues de restaurar.") %></li>
