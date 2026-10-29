@@ -2144,7 +2144,7 @@ extern float   DAT_00590af8;   // 3D sound cos component (updated by Sound_Updat
 extern float   DAT_00590afc;   // cloth wind Z
 extern float   _DAT_00559068;  // gravedad 9.8
 extern float   _DAT_0055906c;  // dt fijo 0.0025
-extern LPBYTE  lpData_055ca044;
+extern DWORD   lpData_055ca044; // IDA: modo numérico TextOut, no dirección.
 extern char   *lpText_07d63aec;
 extern DWORD   DAT_00561740;
 extern DWORD   DAT_00561744;

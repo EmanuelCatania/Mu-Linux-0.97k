@@ -2153,7 +2153,7 @@ float   DAT_00590af8   = 0.0f;
 float   DAT_00590afc   = 0.0f;  // cloth wind Z (flt_590AFC; el binario nunca lo escribe)
 float   _DAT_00559068  = 9.8f;      // gravedad   (flt_559068, leído del binario)
 float   _DAT_0055906c  = 0.0025f;   // dt fijo    (flt_55906C, leído del binario)
-LPBYTE  lpData_055ca044 = NULL;
+DWORD   lpData_055ca044 = 0;
 char   *lpText_07d63aec = NULL;
 // Strings reservados de sub_513570 (name-filter). En el binario original son
 // patrones bloqueados (espacio, DBCS coreano, punto). No dejarlos en 0: con string
