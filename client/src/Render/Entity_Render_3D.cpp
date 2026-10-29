@@ -124,6 +124,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     void     *pModel;
     float     fVar14;
     int       iVar2, iVar7;
+    int       entityType;
     float    *pfVar3;
     uint      uVar4;
     unsigned short uVar5;
@@ -351,7 +352,8 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     // ── case 4: in-world variant ──────────────────────────────────────────────
     case 4:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
-        if ((int)pfVar3 > 0x12 && (int)pfVar3 < 0x15) {
+        entityType = *(short *)(param_1 + 2);
+        if (entityType > 0x12 && entityType < 0x15) {
             if (*(short *)(param_1 + 2) == 0x13) {
                 uVar5 = 0x4f0; local_1c = 0.0f;
                 local_24 = fVar14; local_20 = _DAT_005526e4;
@@ -409,7 +411,8 @@ LAB_004fc55a:
     // ── case 8: various special types ─────────────────────────────────────────
     case 8:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
-        switch ((int)pfVar3) {
+        entityType = *(short *)(param_1 + 2);
+        switch (entityType) {
         case 0:
             fVar9 = (float10)fsin((float10)WorldTime * (float10)_DAT_005528e0);
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
@@ -527,7 +530,8 @@ LAB_004fc55a:
     // ── case 0xa: skill particle emitters (types 0–5, 0xa) ───────────────────
     case 0xa:
         pfVar3 = (float *)(int)*(short *)(param_1 + 2);
-        switch ((int)pfVar3) {
+        entityType = *(short *)(param_1 + 2);
+        switch (entityType) {
         case 0: case 1: case 2: {
             if (*(int *)(param_1 + 0x58) != -2) {
                 // IDA pasa `Angle` (reusado como Light) = (0.1, 0.1, 0.1) a
