@@ -61,3 +61,21 @@ void __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float
         WorldPos[2] = scale * temp[2] + origin[2];
     }
 }
+
+// Entrada de rotación congelada antes de migrar el acceso al modelo.
+void __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out)
+{
+
+  Vector_Rotate(pos_in, bone_mat, pos_out);
+
+  if (model) {
+    float sc = *(float*)((char*)model + 0x68);
+    pos_out[0] *= sc;
+    pos_out[1] *= sc;
+    pos_out[2] *= sc;
+  }
+
+
+  float* dst = (float*)&DAT_06989c9c;
+  for (int i = 0; i < 12; ++i) dst[i] = bone_mat[i];
+}

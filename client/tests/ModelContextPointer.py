@@ -50,6 +50,8 @@ OBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}BMD* AsModel(void* p){
 namespace Platform{struct Timer{DWORD Ticks(){return 1;}}timer;Timer& GetTimer(){return timer;}}
 std::uintptr_t DAT_05828d58;int DAT_07e11d30;
 float globalBones[12];
+float rotationParent[12];
+#define DAT_06989c9c rotationParent[0]
 #define DAT_06970a9c (*reinterpret_cast<DWORD*>(globalBones))
 unsigned bonesCalls,boundsCalls,editorCalls;OBJECT* wantedOwner;BMD* wantedModel;float* wantedBones;char wantedTranslate;
 void PrepareContext(OBJECT*,void*);
@@ -57,7 +59,7 @@ void ObjectPose_PrepareBones(OBJECT* o,void* m,float* b,char t){Require(o==wante
 void ObjectPose_PrepareBounds(OBJECT* o,char t){Require(o==wantedOwner&&t==wantedTranslate);++boundsCalls;}
 void Calc_RenderObject(OBJECT* o,char t,int flag){Require(o==wantedOwner&&t==wantedTranslate&&flag==0);++editorCalls;}
 '''
-    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/Math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+simulation+"\nnamespace Legacy {\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
+    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Rotate")+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/Math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+function(read_source("src/Render/BMD_SetupRender.cpp"),"BMD__RotationPosition")+simulation+"\n#undef DAT_06989c9c\n#define DAT_06989c9c referenceParent[0]\nnamespace Legacy {\nfloat referenceParent[12];\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
 
 
 MAIN=r'''
@@ -107,6 +109,21 @@ int main(){
 
   }
  }
+
+ // Rotación del equipo: conservar orden de stores, aliases y matriz padre.
+ for(unsigned trial=0;trial<32768;++trial){
+  float current[24],reference[24];for(unsigned i=0;i<24;++i)current[i]=float(int((trial+i*7)%41)-20)*.125f;std::memcpy(reference,current,sizeof(current));
+  float scale=float(int(trial%9)-4)*.25f;bank.model.BodyScale=scale;BYTE legacy[188]{};std::memcpy(legacy+104,&scale,4);
+  const unsigned overlaps[]={16,12,13,0};const unsigned out=overlaps[trial%4];
+  for(unsigned i=0;i<12;++i)rotationParent[i]=Legacy::referenceParent[i]=float(i+77);
+  const auto before=bank;
+  BMD__RotationPosition(trial%3?&bank.model:nullptr,current,current+12,current+out);
+  Legacy::BMD__RotationPosition(trial%3?legacy:nullptr,reference,reference+12,reference+out);
+  Require(std::memcmp(current,reference,sizeof(current))==0);
+  Require(std::memcmp(rotationParent,Legacy::referenceParent,sizeof(rotationParent))==0);
+  Require(std::memcmp(&bank,&before,sizeof(bank))==0);
+ }
+ std::puts("RotationPosition: 32768 casos, aliases y matriz padre equivalentes");
  for(unsigned trial=0;trial<1024;++trial){
   std::memset(&owner,0,sizeof(owner));owner.Type=short(trial%512);owner.EnableBoneMatrix=BYTE(trial%3);owner.BoneMatrices=trial%5?privateBones:nullptr;
   const float alpha[]={0,.0001f,.5f,1.f};owner.Alpha=alpha[trial%4];DAT_07e11d30=int(trial%3);wantedTranslate=char(trial%2);

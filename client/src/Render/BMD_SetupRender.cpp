@@ -300,7 +300,7 @@ void __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, 
   Vector_Rotate(pos_in, bone_mat, pos_out);
   // 2. Scale by model scale (model[+0x68])
   if (model) {
-    float sc = *(float*)((char*)model + 0x68);
+    float sc = AsModel(model)->BodyScale;
     pos_out[0] *= sc;
     pos_out[1] *= sc;
     pos_out[2] *= sc;
