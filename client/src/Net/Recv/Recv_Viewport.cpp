@@ -406,6 +406,9 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 // conserva estado que no pertenece al viewport. Sí
                 // reproducimos los dos resets visuales que necesita
                 // esta fila del protocolo.
+                // IDA 0x00429690 repone el nombre después de recrear el slot.
+                // La ruta local también lo necesita para autenticar chat y comandos.
+                EntityName::Set(hero, name);
                 *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
                 ChangeCharacterExt((int)HeroIndex, (BYTE*)e + 5);
                 Hero_ApplyCatalogEquipment(AsCharacter(hero));
