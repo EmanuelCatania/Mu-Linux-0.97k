@@ -1,0 +1,6 @@
+//Custom item tooltip lines in English (0.97.40). They replace the text of the line defined
+//in Data\Custom\Items\<section>_<index>.json; the color and the order are the JSON's.
+//Whatever is not here comes straight from the JSON.
+//UTF-8 without BOM. Up to 59 bytes per line. Lines count from 0.
+//Section	Index	Line	Text
+end

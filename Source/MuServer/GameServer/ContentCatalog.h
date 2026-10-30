@@ -177,11 +177,12 @@ struct CATALOG_PET
 #define CATALOG_TEXT_MONSTER 2
 #define CATALOG_TEXT_SKILL   3
 #define CATALOG_TEXT_CLIENT  4   // textos propios del cliente (ClientTextId)
+#define CATALOG_TEXT_TOOLTIP 5   // línea del tooltip de un item: Index = item, Reserved = línea (0 a 5)
 
 struct CATALOG_TEXT
 {
 	BYTE Table;         // CATALOG_TEXT_*
-	BYTE Reserved;
+	BYTE Reserved;      // en los tooltips, el número de línea
 	WORD Index;         // item (sección * 512 + índice), monstruo, skill o ClientTextId
 	char Text[64];      // UTF-8 en NFC
 };

@@ -772,13 +772,21 @@ namespace
 
 				int index = lpReadScript->GetNumber();
 
-				if (table == CATALOG_TEXT_ITEM)
+				// Los tooltips llevan además el número de línea: "sección índice línea "texto"".
+				int line = 0;
+
+				if (table == CATALOG_TEXT_ITEM || table == CATALOG_TEXT_TOOLTIP)
 				{
 					const int section = index;
 
 					const int sub = lpReadScript->GetAsNumber();
 
 					index = (section >= 0 && section < MAX_ITEM_SECTION && sub >= 0 && sub < MAX_ITEM_TYPE + MAX_ITEM_EX_PER_SECTION) ? GET_ITEM(section, sub) : -1;
+
+					if (table == CATALOG_TEXT_TOOLTIP)
+					{
+						line = lpReadScript->GetAsNumber();
+					}
 				}
 
 				const char* raw = lpReadScript->GetAsString();
@@ -789,9 +797,14 @@ namespace
 
 				memset(&entry, 0, sizeof(entry));
 
-				if (index < 0 || index > 0xFFFF || text.empty() || text.size() >= sizeof(entry.Text))
+				// Una línea de tooltip entra en el Text[60] de CATALOG_TOOLTIP (59 bytes y el 0).
+				const size_t maxText = (table == CATALOG_TEXT_TOOLTIP) ? sizeof(CATALOG_TOOLTIP::Text) : sizeof(entry.Text);
+
+				const bool badLine = (table == CATALOG_TEXT_TOOLTIP && (line < 0 || line >= CATALOG_TOOLTIP_MAX_LINES));
+
+				if (index < 0 || index > 0xFFFF || badLine || text.empty() || text.size() >= maxText)
 				{
-					LogAdd(LOG_RED, "[ContentCatalog] %s: texto descartado (índice %d, %d bytes; máximo %d)", path.c_str(), index, (int)strlen(raw), (int)sizeof(entry.Text) - 1);
+					LogAdd(LOG_RED, "[ContentCatalog] %s: texto descartado (índice %d, línea %d, %d bytes; máximo %d)", path.c_str(), index, line, (int)strlen(raw), (int)maxText - 1);
 
 					rejected++;
 
@@ -799,6 +812,8 @@ namespace
 				}
 
 				entry.Table = table;
+
+				entry.Reserved = (BYTE)line;
 
 				entry.Index = (WORD)index;
 
@@ -830,6 +845,7 @@ void CContentCatalog::LoadTexts(const char* folder)
 		{ "Monster.txt", CATALOG_TEXT_MONSTER },
 		{ "Skill.txt", CATALOG_TEXT_SKILL },
 		{ "Client.txt", CATALOG_TEXT_CLIENT },
+		{ "Tooltip.txt", CATALOG_TEXT_TOOLTIP },
 	};
 
 	for (int lang = 0; lang < MAX_LANGUAGE; lang++)
