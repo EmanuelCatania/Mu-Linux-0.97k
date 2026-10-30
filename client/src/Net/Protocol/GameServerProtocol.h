@@ -747,11 +747,12 @@ const std::uint8_t CATALOG_TEXT_ITEM = 1;
 const std::uint8_t CATALOG_TEXT_MONSTER = 2;
 const std::uint8_t CATALOG_TEXT_SKILL = 3;
 const std::uint8_t CATALOG_TEXT_CLIENT = 4;   // textos propios del cliente (ClientTextId)
+const std::uint8_t CATALOG_TEXT_TOOLTIP = 5;  // línea de tooltip de un item: Index = item, Reserved = línea (0 a 5)
 
 struct CATALOG_TEXT
 {
     std::uint8_t Table;     // CATALOG_TEXT_*
-    std::uint8_t Reserved;
+    std::uint8_t Reserved;  // en los tooltips, el número de línea
     std::uint16_t Index;    // item, monstruo o skill
     char Text[64];          // UTF-8 en NFC
 };

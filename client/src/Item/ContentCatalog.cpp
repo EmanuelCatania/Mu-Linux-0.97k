@@ -45,6 +45,9 @@ char s_VanillaSkillNames[MAX_SKILL_NAME][SKILL_NAME_SIZE];
 bool s_HasVanillaSkillNames = false;
 char s_MonsterTexts[512][64];                 // índice de monstruo -> nombre
 std::map<int, std::vector<Proto::CATALOG_TOOLTIP>> s_Tooltips;   // item -> líneas
+// Traducciones de las líneas del tooltip: clave = item * 8 + número de línea.
+std::map<int, std::string> s_TooltipTexts;
+constexpr int TOOLTIP_TEXT_LINES = 8;
 std::map<int, Proto::CATALOG_PET> s_Pets;           // item -> pet
 
 // Efecto ya resuelto (textura cargada) de un item.
@@ -295,6 +298,7 @@ void ApplyTexts(ITEM_ATTRIBUTE* attr)
     for (int i = 0; i < ITEM_MAX_VANILLA && !s_VanillaAttributes.empty(); ++i)
         memcpy(attr[i].Name, vanilla[i].Name, sizeof(attr[i].Name));
     memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
+    s_TooltipTexts.clear();
 
     const int textSize = s_PendingTexts.recordSize;
     if (!SectionComplete(s_PendingTexts) || textSize <= 0) return;
@@ -321,6 +325,15 @@ void ApplyTexts(ITEM_ATTRIBUTE* attr)
         case Proto::CATALOG_TEXT_CLIENT:
             if (!gClientText.SetServerText(row.Index, row.Text)) continue;
             break;
+        case Proto::CATALOG_TEXT_TOOLTIP: {
+            // Reemplaza el texto de esa línea del tooltip (el color y el orden son los del JSON).
+            if (row.Index >= ITEM_MAX_EX || row.Reserved >= TOOLTIP_TEXT_LINES) continue;
+            char line[sizeof(Proto::CATALOG_TOOLTIP::Text)];
+            NetText::FromServer(line, sizeof(line), row.Text, sizeof(row.Text));
+            if (line[0] == 0) continue;
+            s_TooltipTexts[row.Index * TOOLTIP_TEXT_LINES + row.Reserved] = line;
+            break;
+        }
         default:
             continue;
         }
@@ -367,6 +380,7 @@ void CContentCatalog::Clear()
     s_Tooltips.clear();
     s_PendingTexts = PendingSection();
     gClientText.ClearServerTexts();
+    s_TooltipTexts.clear();
     memset(s_MonsterTexts, 0, sizeof(s_MonsterTexts));
     if (s_HasVanillaSkillNames) {
         for (int i = 0; i < MAX_SKILL_NAME; ++i) {
@@ -448,7 +462,17 @@ void CContentCatalog::Publish()
             char text[sizeof(line.Text)];
             NetText::FromServer(text, sizeof(text), line.Text, sizeof(line.Text));
             memcpy(line.Text, text, sizeof(line.Text));
-            if (line.Item < ITEM_MAX_EX && line.Color <= 8) s_Tooltips[line.Item].push_back(line);
+            if (line.Item < ITEM_MAX_EX && line.Color <= 8) {
+                std::vector<Proto::CATALOG_TOOLTIP>& lines = s_Tooltips[line.Item];
+                // La traducción de esta línea (por su número dentro del item), si el server la mandó.
+                const std::map<int, std::string>::const_iterator translated =
+                    s_TooltipTexts.find(line.Item * TOOLTIP_TEXT_LINES + (int)lines.size());
+                if (translated != s_TooltipTexts.end()) {
+                    memset(line.Text, 0, sizeof(line.Text));
+                    memcpy(line.Text, translated->second.c_str(), (std::min)(translated->second.size(), sizeof(line.Text) - 1));
+                }
+                lines.push_back(line);
+            }
         }
     }
 
