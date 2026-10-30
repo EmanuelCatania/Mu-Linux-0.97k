@@ -34,7 +34,14 @@ def harness(revision=None):
     body=function(source,'Cloth_PinTopRow');args='widget,matrix' if 'void* widget' in body else '(int)widget,matrix'
     wrapper='\nvoid Pin(void* widget,float(*matrix)[4]){Cloth_PinTopRow('+args+');}\n'
     math=read_source('src/Math/Math_3D.cpp',revision)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+function(math,'Vector_Transform')+function(math,'BMD_TransformPosition')+function(source,'SpringNode_SetPos')+body+wrapper+MAIN
+    extra='';main=MAIN
+    if 'ClothSystem(' in body:
+        import ClothFixture
+        # Este proveedor de modelos conserva la frontera BMD legacy del banco;
+        # ClothRuntime ensaya además las declaraciones BMD nativas completas.
+        extra=ClothFixture.prefix()+'\nstruct OBJECT{BYTE pad[2];short Type;};struct BMD{BYTE bytes[188];};BMD* AsModel(void* p){return static_cast<BMD*>(p);}\n'
+        main=ClothFixture.pin(main)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+extra+SERVICES+function(math,'Vector_Transform')+function(math,'BMD_TransformPosition')+function(source,'SpringNode_SetPos')+body+wrapper+main
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

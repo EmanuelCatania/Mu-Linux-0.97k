@@ -1,6 +1,7 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
@@ -281,41 +282,31 @@ void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, 
 // For param3: clears one link at +0x14 via Widget_Release + vtable[0](1).
 // Widget_Release signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
 // IDA: DeleteCloth (0x00449840)
-void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
+void __cdecl DeleteCloth(CHARACTER* character, OBJECT* object, PART_t* part)
 {
-    if ((param_2 != 0) && (*(int*)(param_2 + 0x184) != 0)) {
-        int count = (int)(unsigned char)*(char*)(param_2 + 0x180);
-        int *puVar1 = (int*)*(int*)(param_2 + 0x184);
-        for (int i = 0; i < count; i++) {
-            Widget_Release((int)puVar1, 0, 0);
-            puVar1 += 0x15;
-        }
-        int *base = (int*)*(int*)(param_2 + 0x184);
-        if (base != nullptr) {
-            FUN_0045aaa0_impl(base, 3);   // vtable[0] = sub_45AAA0
-        }
-        *(int*)(param_2 + 0x184) = 0;
-        *(char*)(param_2 + 0x180) = '\0';
+    if (object && object->Cloth) {
+        const int count = object->ClothCount;
+        auto* widgets = static_cast<ClothWidget*>(object->Cloth);
+        for (int i=0;i<count;++i) Widget_Release(widgets+i,0,0);
+        auto* base = static_cast<ClothWidget*>(object->Cloth);
+        if (base) FUN_0045aaa0_impl(base,3);
+        object->Cloth = nullptr;
+        object->ClothCount = 0;
     }
-    if (param_1 != 0) {
-        int *piVar4 = (int*)(param_1 + 0x1f4);
-        for (int i = 0; i < 6; i++) {
-            int *puVar1 = (int*)*piVar4;
-            if (puVar1 != nullptr) {
-                Widget_Release((int)puVar1, 0, 0);
-                // IDA: (**v8)(v8, 1) -- dtor thiscall de la vtable (sub_45AAA0).
-                // El port lo llamaba como cdecl sin `this`.
-                FUN_0045aaa0_impl(puVar1, 1);
-                *piVar4 = 0;
+    if (character) {
+        for (int i=0;i<6;++i) {
+            PART_t& piece = character->BodyPart[i];
+            if (piece.Cloth) {
+                Widget_Release(piece.Cloth,0,0);
+                FUN_0045aaa0_impl(piece.Cloth,1);
+                piece.Cloth = nullptr;
             }
-            piVar4 += 6;
         }
     }
-    if ((param_3 != 0) && (*(int*)(param_3 + 0x14) != 0)) {
-        int *puVar1 = (int*)*(int*)(param_3 + 0x14);
-        Widget_Release((int)puVar1, 0, 0);
-        FUN_0045aaa0_impl(puVar1, 1);   // IDA: (**v9)(v9, 1)
-        *(int*)(param_3 + 0x14) = 0;
+    if (part && part->Cloth) {
+        Widget_Release(part->Cloth,0,0);
+        FUN_0045aaa0_impl(part->Cloth,1);
+        part->Cloth = nullptr;
     }
 }
 // RenderTerrainAlphaBitmap @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.

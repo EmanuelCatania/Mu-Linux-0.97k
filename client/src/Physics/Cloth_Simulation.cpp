@@ -1,6 +1,7 @@
 // Cloth_Simulation.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
 #include "globals.h"
@@ -27,23 +28,23 @@ void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4])
   float Position[3];
   float WorldPosition[3];
 
-  int v4 = *(int *)(_this + 40);
-  for (int v3 = 0, v6 = 0; v3 < v4; ++v3, v6 += 60)
+  int v4 = ClothSystem(_this).Columns;
+  for (int v3 = 0; v3 < v4; ++v3)
   {
-    int    v7 = *(int   *)(_this + 20);   // flags
-    double v8 = *(float *)(_this + 32);   // ancho total
-    double v9 = *(float *)(_this + 64);   // paso entre columnas
-    if ((*(BYTE *)(_this + 20) & 0xC) == 4)
+    int    v7 = ClothSystem(_this).Flags;   // flags
+    double v8 = ClothSystem(_this).Width;   // ancho total
+    double v9 = ClothSystem(_this).StepU;   // paso entre columnas
+    if ((ClothSystem(_this).Flags & 0xC) == 4)
     {
       v8 = v8 * 0.60000002;
       v9 = v8 / (double)(v4 - 1);
     }
     double v10 = (double)v3;
 
-    Position[1] = *(float *)(_this + 24);
+    Position[1] = ClothSystem(_this).OriginU;
     Position[0] = (float)(v10 * v9 - v8 * 0.5);
-    double v11  = *(float *)(_this + 28);
-    Position[2] = *(float *)(_this + 28);
+    double v11  = ClothSystem(_this).OriginV;
+    Position[2] = ClothSystem(_this).OriginV;
 
     if ((v7 & 3) == 1)
     {
@@ -58,16 +59,16 @@ void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4])
     Position[2] = v13;
     Position[1] = -Position[1];
 
-    int v15 = *(int *)(_this + 4);        // entity
+    OBJECT* v15 = ClothSystem(_this).Owner;        // entity
     BMD_TransformPosition(
-        (void *)(DAT_05828d58 + 0xbc * (int)*(short *)(v15 + 2)),
+        static_cast<void*>(AsModel(DAT_05828d58) + v15->Type),
         (float *)Matrix,
         Position,
         WorldPosition,
         1);
-    SpringNode_SetPos((void *)(v6 + *(int *)(_this + 52)),
+    SpringNode_SetPos(ClothSystem(_this).Nodes + v3,
                  WorldPosition[0], WorldPosition[1], WorldPosition[2], 1);
-    v4 = *(int *)(_this + 40);
+    v4 = ClothSystem(_this).Columns;
   }
 }
 
@@ -78,22 +79,22 @@ void __cdecl Cloth_PinTopRow(void* widget, float (*Matrix)[4])
 // Port de IDA `sub_4089B0`: ~85% del decompile es ruido de hash-table
 // (ref-count sobre MoveSceneFrame + scrambling XOR), omitido per política del
 // proyecto. Lo que queda es el cálculo de arriba, tal cual.
-void __cdecl Cloth_Wind(DWORD *_this)
+void __cdecl Cloth_Wind(void *_this)
 {
   int frame = (int)MoveSceneFrame;              // MoveSceneFrame
-  int v17   = (int)_this[12];                 // nodeCount
+  int v17   = (int)ClothSystem(_this).NodeCount;                 // nodeCount
   if (v17 <= 0)
     return;
 
   int v20 = 101 * (frame / 10) % v17;         // índice del epicentro
-  int W   = (int)_this[10];
+  int W   = (int)ClothSystem(_this).Columns;
   if (W <= 0)
     return;
 
-  for (int v18 = 0; v18 < (int)_this[12]; ++v18)
+  for (int v18 = 0; v18 < (int)ClothSystem(_this).NodeCount; ++v18)
   {
     int dist = abs(v20 / W - v18 / W) + abs(v20 % W - v18 % W);
-    ClothNode_ApplyForces(static_cast<uintptr_t>(_this[13]) + 60 * v18, dist, (short)_this[5]);
+    ClothNode_ApplyForces(reinterpret_cast<uintptr_t>(ClothSystem(_this).Nodes + v18), dist, (short)ClothSystem(_this).Flags);
   }
 }
 
@@ -113,29 +114,29 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
 
   // Mismo guard que en Cloth_Solve: la vtable[1] (Cloth_PinTopRow) deferencia
   // `BoneTransform + 48*boneIdx` sin validarlo.
-  if (!a1 || !a1[1] || !*(DWORD *)(a1[1] + 276))
+  if (!a1 || !ClothSystem(a1).Owner || !ClothSystem(a1).Owner->BoneMatrices)
     return;
 
-  (*(void (__cdecl **)(DWORD *))(*a1 + 8))(a1);
+  reinterpret_cast<void (__cdecl *)(void*)>(ClothSystem(a1).VTable[2])(a1);
 
-  for (int v20 = 0, v4 = 0; v20 < (int)a1[14]; ++v20, v4 += 16)
+  for (int v20 = 0; v20 < ClothSystem(a1).SpringCount; ++v20)
   {
-    float *v5 = (float *)(a1[15] + v4);
-    if ((*(BYTE *)&v5[3] & 2) == 0)
+    const ClothSpring& spring = ClothSystem(a1).Springs[v20];
+    if ((spring.Flags & 2) == 0)
       continue;
 
-    int    v6 = a1[13];
-    char  *v7 = (char  *)(v6 + 60 * *(short *)v5);
-    float *v8 = (float *)(v6 + 60 * *((short *)v5 + 1));
+    ClothNode* v6 = ClothSystem(a1).Nodes;
+    ClothNode* v7 = v6 + spring.A;
+    ClothNode* v8 = v6 + spring.B;
 
     double d = SpringNode_Delta(v7, reinterpret_cast<uintptr_t>(v8), v25);
     if (d < 0.001)
       d = 0.001;
 
-    if (d > v5[2] + 0.0099999998)
+    if (d > spring.Rest + 0.0099999998)
     {
-      double v9  = d - v5[2];
-      int    v10 = a1[5] & 0x300;
+      double v9  = d - spring.Rest;
+      int    v10 = ClothSystem(a1).Flags & 0x300;
       float  f[3];
       for (int i = 0; i < 3; ++i)
       {
@@ -144,16 +145,16 @@ void __fastcall Cloth_Integrate(int *param_1, float a3)
         if (v10 == 256)
           f[i] = (float)(v12 * 3.0);
       }
-      VerletNode_AddAccel((float *)v7, -f[0], -f[1], -f[2]);
+      VerletNode_AddAccel(v7, -f[0], -f[1], -f[2]);
       VerletNode_AddAccel(v8, f[0], f[1], f[2]);
     }
   }
 
-  (*(void (__cdecl **)(void*, float (*)[4]))(*a1 + 4))(
-      a1, reinterpret_cast<float (*)[4]>(static_cast<uintptr_t>(48 * a1[2] + *(int *)(a1[1] + 276))));
+  reinterpret_cast<void (__cdecl *)(void*,float (*)[4])>(ClothSystem(a1).VTable[1])(
+      a1, ClothSystem(a1).Owner->BoneMatrices[ClothSystem(a1).Bone]);
 
-  for (int v15 = 0, v16 = 0; v15 < (int)a1[12]; ++v15, v16 += 60)
-    ClothNode_Integrate((float *)(v16 + a1[13]), a3);
+  for (int v15 = 0; v15 < ClothSystem(a1).NodeCount; ++v15)
+    ClothNode_Integrate(ClothSystem(a1).Nodes + v15, a3);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -210,9 +211,9 @@ float __cdecl Vec3_Length(float *a1)
 // VerletNode_AddAccel @ 0x00407ac0 — VerletNode_AddAccel: accumulates acceleration at +4/+8/+C
 void __fastcall VerletNode_AddAccel(void *a, float x, float y, float z) {
     char *p = (char*)a;
-    *(float*)(p+4)  += x;
-    *(float*)(p+8)  += y;
-    *(float*)(p+0xc)+= z;
+    ClothPoint(p).Acceleration[0]  += x;
+    ClothPoint(p).Acceleration[1]  += y;
+    ClothPoint(p).Acceleration[2]+= z;
 }
 
 // ClothNode_Integrate @ 0x00407AF0 — ClothNode_Integrate: paso de Euler semi-implícito.
@@ -220,12 +221,12 @@ void __fastcall VerletNode_AddAccel(void *a, float x, float y, float z) {
 // _DAT_00559070 = 400.0 (leído del binario). Port FIEL de IDA `sub_407AF0`.
 void __fastcall ClothNode_Integrate(void *a, float v) {
     char *p = (char*)a;
-    if (*(BYTE*)(p+0x28) & 1) return;  // nodo fijado — no se integra
+    if (ClothPoint(p).Flags & 1) return;  // nodo fijado — no se integra
     for (int i = 0; i < 3; i++) {
-        double acc = _DAT_00559070 * *(float*)(p+0x04 + i*4);
-        double vel = acc * v + *(float*)(p+0x10 + i*4);
-        *(float*)(p+0x10 + i*4) = (float)vel;
-        *(float*)(p+0x1c + i*4) = (float)(vel * v + *(float*)(p+0x1c + i*4));
+        double acc = _DAT_00559070 * ClothPoint(p).Acceleration[i];
+        double vel = acc * v + ClothPoint(p).Velocity[i];
+        ClothPoint(p).Velocity[i] = (float)vel;
+        ClothPoint(p).Position[i] = (float)(vel * v + ClothPoint(p).Position[i]);
     }
 }
 
@@ -239,11 +240,11 @@ void __fastcall ClothNode_Integrate(void *a, float v) {
 // contiguos, así que se despliega explícitamente.
 void __cdecl ClothNode_ApplyForces(uintptr_t _this, int a2, short a3)
 {
-  if ((*(BYTE *)(_this + 40) & 1) != 0)
+  if ((ClothPoint(_this).Flags & 1) != 0)
   {
-    *(DWORD *)(_this + 12) = 0;
-    *(DWORD *)(_this + 8)  = 0;
-    *(DWORD *)(_this + 4)  = 0;
+    ClothPoint(_this).Acceleration[2] = 0;
+    ClothPoint(_this).Acceleration[1]  = 0;
+    ClothPoint(_this).Acceleration[0]  = 0;
     return;
   }
 
@@ -258,26 +259,26 @@ void __cdecl ClothNode_ApplyForces(uintptr_t _this, int a2, short a3)
   const float  wind[3] = { DAT_00590af4, DAT_00590af8, DAT_00590afc };
   for (int i = 0; i < 3; ++i)
   {
-    double drag = *(float *)(_this + 0x10 + i * 4) * 0.0099999998;
-    *(float *)(_this + 0x04 + i * 4) = (float)(v4 * wind[i] - drag);
+    double drag = ClothPoint(_this).Velocity[i] * 0.0099999998;
+    ClothPoint(_this).Acceleration[i] = (float)(v4 * wind[i] - drag);
   }
 
   if ((a3 & 0x300) == 256)
-    *(float *)(_this + 12) = (float)((_DAT_00590af0 + 0.1) * v4 + *(float *)(_this + 12));
+    ClothPoint(_this).Acceleration[2] = (float)((_DAT_00590af0 + 0.1) * v4 + ClothPoint(_this).Acceleration[2]);
 
   double v9 = _DAT_0055906c * _DAT_00559068;
   if ((a3 & 0xC00) == 1024)
-    *(float *)(_this + 12) = (float)(*(float *)(_this + 12) - v9 * 180.0);
+    ClothPoint(_this).Acceleration[2] = (float)(ClothPoint(_this).Acceleration[2] - v9 * 180.0);
   else
-    *(float *)(_this + 12) = (float)(*(float *)(_this + 12) - v9 * 100.0);
+    ClothPoint(_this).Acceleration[2] = (float)(ClothPoint(_this).Acceleration[2] - v9 * 100.0);
 }
 
 // SpringNode_Delta @ 0x00407b50 — SpringNode_Delta: out = posA - posB; returns distance (length of delta).
 // param_1=nodeA_ptr (this), param_2=nodeB_ptr (dirección nativa), param_3=float[3] output.
 // Does NOT normalize; caller uses return value as rest-length distance.
 float __fastcall SpringNode_Delta(void *a, uintptr_t b, float *c) {
-    float *posA = (float*)((char*)a + 0x1c);
-    float *posB = (float*)(b + 0x1c);
+    float *posA = ClothPoint(a).Position;
+    float *posB = ClothPoint(b).Position;
     c[0] = posA[0] - posB[0];
     c[1] = posA[1] - posB[1];
     c[2] = posA[2] - posB[2];
@@ -294,7 +295,7 @@ int __cdecl Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range)
   float v9[3];
   double diff;
 
-  if ((*(BYTE *)(a1 + 40) & 1) != 0)
+  if ((ClothPoint(a1).Flags & 1) != 0)
     return 1;                                   // nodo fijado
 
   double d = SpringNode_Delta((void *)a1, a3, v9);
@@ -315,9 +316,9 @@ int __cdecl Cloth_SpringRange(uintptr_t a1, uintptr_t a3, const float *range)
   v9[0] = (float)(f * v9[0]);
   v9[1] = (float)(f * v9[1]);
   v9[2] = (float)(f * v9[2]);
-  *(float *)(a1 + 28) = *(float *)(a1 + 28) - v9[0];
-  *(float *)(a1 + 32) = *(float *)(a1 + 32) - v9[1];
-  *(float *)(a1 + 36) = *(float *)(a1 + 36) - v9[2];
+  ClothPoint(a1).Position[0] = ClothPoint(a1).Position[0] - v9[0];
+  ClothPoint(a1).Position[1] = ClothPoint(a1).Position[1] - v9[1];
+  ClothPoint(a1).Position[2] = ClothPoint(a1).Position[2] - v9[2];
   return 1;
 }
 
@@ -338,79 +339,60 @@ void __cdecl Cloth_SpringEqual(uintptr_t a1, uintptr_t a3, float rest)
   v8[1] = (float)(f * v8[1]);
   v8[2] = (float)(f * v8[2]);
 
-  *(float *)(a1 + 48) = *(float *)(a1 + 48) - v8[0];
-  *(float *)(a1 + 52) = *(float *)(a1 + 52) - v8[1];
-  *(float *)(a1 + 56) = *(float *)(a1 + 56) - v8[2];
-  *(float *)(a3 + 48) = v8[0] + *(float *)(a3 + 48);
-  *(float *)(a3 + 52) = v8[1] + *(float *)(a3 + 52);
-  *(float *)(a3 + 56) = v8[2] + *(float *)(a3 + 56);
-  ++*(DWORD *)(a1 + 44);
-  ++*(DWORD *)(a3 + 44);
+  ClothPoint(a1).Correction[0] = ClothPoint(a1).Correction[0] - v8[0];
+  ClothPoint(a1).Correction[1] = ClothPoint(a1).Correction[1] - v8[1];
+  ClothPoint(a1).Correction[2] = ClothPoint(a1).Correction[2] - v8[2];
+  ClothPoint(a3).Correction[0] = v8[0] + ClothPoint(a3).Correction[0];
+  ClothPoint(a3).Correction[1] = v8[1] + ClothPoint(a3).Correction[1];
+  ClothPoint(a3).Correction[2] = v8[2] + ClothPoint(a3).Correction[2];
+  ++ClothPoint(a1).CorrectionCount;
+  ++ClothPoint(a3).CorrectionCount;
 }
 
 // VerletSystem_Flush @ 0x00407d10 — VerletSystem_Flush: apply accumulated position corrections, zero buffer
 // VerletSystem_Flush (IDA-activated)
 char __fastcall VerletSystem_Flush(uintptr_t a1)
 {
-  intptr_t v1;
-  float *v2; // esi
-  int v3; // edx
-  double v4; // st7
-  double v5; // st7
-  double v6; // st7
-
-  v1 = *(BYTE *)(a1 + 40);
-  if ( (v1 & 1) != 0 )
-  {
-    *(DWORD *)(a1 + 56) = 0;
-    *(DWORD *)(a1 + 52) = 0;
-    *(DWORD *)(a1 + 48) = 0;
-  }
-  else
-  {
-    v1 = *(int *)(a1 + 44);
-    if ( v1 > 0 )
-    {
-      v2 = (float *)(a1 + 48);
-      v1 = a1 + 48;
-      v3 = 3;
-      do
-      {
-        v1 += 4;
-        --v3;
-        *(float *)(v1 - 4) = *(float *)(v1 - 4) / (double)*(int *)(a1 + 44);
-      }
-      while ( v3 );
-      v4 = *v2 + *(float *)(a1 + 28);
-      *v2 = 0.0;
-      *(DWORD *)(a1 + 44) = 0;
-      *(float *)(a1 + 28) = v4;
-      v5 = *(float *)(a1 + 52) + *(float *)(a1 + 32);
-      *(DWORD *)(a1 + 52) = 0;
-      *(float *)(a1 + 32) = v5;
-      v6 = *(float *)(a1 + 36) + *(float *)(a1 + 56);
-      *(DWORD *)(a1 + 56) = 0;
-      *(float *)(a1 + 36) = v6;
+  ClothNode& node = ClothPoint(a1);
+  intptr_t result = node.Flags;
+  if ((result & 1) != 0) {
+    node.Correction[2] = node.Correction[1] = node.Correction[0] = 0;
+  } else {
+    result = static_cast<std::int32_t>(node.CorrectionCount);
+    if (result > 0) {
+      float* cursor = node.Correction;
+      for (int i=0;i<3;++i) cursor[i] = cursor[i] / (double)static_cast<std::int32_t>(node.CorrectionCount);
+      result = reinterpret_cast<intptr_t>(cursor + 3);
+      double v4 = cursor[0] + node.Position[0];
+      cursor[0] = 0;
+      node.CorrectionCount = 0;
+      node.Position[0] = (float)v4;
+      double v5 = cursor[1] + node.Position[1];
+      cursor[1] = 0;
+      node.Position[1] = (float)v5;
+      double v6 = node.Position[2] + cursor[2];
+      cursor[2] = 0;
+      node.Position[2] = (float)v6;
     }
   }
-  return v1;
+  return static_cast<char>(result);
 }
 
 
 // VerletNode_SetTarget @ 0x00407e10 — VerletNode_SetTarget: stores vec3 at +0x14..+0x1c
 void __fastcall VerletNode_SetTarget(void *a, float b, int c, int d) {
     char *p = (char*)a;
-    *(float*)(p + 0x14) = b;
-    *(float*)(p + 0x18) = *(float*)&c;
-    *(float*)(p + 0x1c) = *(float*)&d;
+    ClothBody(p).WorldPosition[0] = b;
+    ClothBody(p).WorldPosition[1] = *(float*)&c;
+    ClothBody(p).WorldPosition[2] = *(float*)&d;
 }
 
 // VerletNode_GetPos @ 0x00407e30 — VerletNode_GetPos: reads vec3 from +0x04..+0x0c into out[]
 void __fastcall VerletNode_GetPos(void *a, float *b) {
     char *p = (char*)a;
-    b[0] = *(float*)(p + 0x04);
-    b[1] = *(float*)(p + 0x08);
-    b[2] = *(float*)(p + 0x0c);
+    b[0] = ClothBody(p).LocalPosition[0];
+    b[1] = ClothBody(p).LocalPosition[1];
+    b[2] = ClothBody(p).LocalPosition[2];
 }
 
 // ── SpringNode helpers (SpringNode_Ctor family) ──────────────────────────────
@@ -418,14 +400,14 @@ void __fastcall VerletNode_GetPos(void *a, float *b) {
 // SpringNode_ZeroFields @ 0x00407980 — SpringNode_ZeroFields: zeroes accel/vel/pos/pinned in 0x3c stride node.
 void __fastcall SpringNode_ZeroFields(void* node) {
     BYTE* param_1 = static_cast<BYTE*>(node);
-    *(int *)(param_1 + 0x2c) = 0;
+    ClothPoint(param_1).CorrectionCount = 0;
     for (int i = 0; i < 3; i++) {
-        *(int *)(param_1 + 0x1c + i*4) = 0;   // pos[i]
-        *(int *)(param_1 + 0x10 + i*4) = 0;   // vel[i]
-        *(int *)(param_1 + 0x04 + i*4) = 0;   // accel[i]
-        *(int *)(param_1 + 0x30 + i*4) = 0;   // extra (puVar1[5..7])
+        ClothPoint(param_1).Position[i] = 0;   // pos[i]
+        ClothPoint(param_1).Velocity[i] = 0;   // vel[i]
+        ClothPoint(param_1).Acceleration[i] = 0;   // accel[i]
+        ClothPoint(param_1).Correction[i] = 0;   // extra (puVar1[5..7])
     }
-    *(BYTE *)(param_1 + 0x28) = 0;
+    ClothPoint(param_1).Flags = 0;
 }
 
 // SpringNode_Ctor @ 0x00407950 — SpringNode_Ctor: set vtable + zero fields.
@@ -433,7 +415,7 @@ void __fastcall SpringNode_ZeroFields(void* node) {
 void __fastcall SpringNode_Ctor(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
-  *(DWORD *)_this = (DWORD)g_ClothNodeVTable;
+  ClothPoint(_this).VTable = g_ClothNodeVTable;
   SpringNode_ZeroFields(_this);
 }
 
@@ -441,16 +423,16 @@ void __fastcall SpringNode_Ctor(void *_this)
 // SpringNode_SetPos @ 0x004079B0 — SpringNode_SetPos: write position and pinned flag.
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned) {
     char *p = (char*)node;
-    *(float *)(p + 0x1c) = x;
-    *(float *)(p + 0x20) = y;
-    *(float *)(p + 0x24) = z;
+    ClothPoint(p).Position[0] = x;
+    ClothPoint(p).Position[1] = y;
+    ClothPoint(p).Position[2] = z;
     if (pinned)
-        *(BYTE *)(p + 0x28) |= 1;
+        ClothPoint(p).Flags |= 1;
 }
 
 // SpringNode_GetPos @ 0x00407B30 — SpringNode_GetPos: copy position (+0x1c..+0x24) to out[3].
 void __fastcall SpringNode_GetPos(void *node, float *out) {
-    float *src = (float *)((char*)node + 0x1c);
+    float *src = ClothPoint(node).Position;
     out[0] = src[0];
     out[1] = src[1];
     out[2] = src[2];
@@ -460,13 +442,12 @@ void __fastcall SpringNode_GetPos(void *node, float *out) {
 // Entry layout: [ushort na][ushort nb][float rest_scaled][float dist][byte flags][3 bytes pad]
 void __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb,
                               float rest_scaled, float dist, BYTE edge_flags) {
-    char *arr = *(char **)((char*)sys + 0x3c);
-    int off = idx * 0x10;
-    *(short  *)(arr + off + 0x00) = na;
-    *(short  *)(arr + off + 0x02) = nb;
-    *(float  *)(arr + off + 0x04) = rest_scaled;
-    *(float  *)(arr + off + 0x08) = dist;
-    *(BYTE   *)(arr + off + 0x0c) = edge_flags;
+    ClothSpring& edge = ClothSystem(sys).Springs[idx];
+    edge.A = na;
+    edge.B = nb;
+    edge.Minimum = rest_scaled;
+    edge.Rest = dist;
+    edge.Flags = edge_flags;
 }
 
 // ── VerletNode helpers (VerletNode_CtorBase family) ─────────────────────────────
@@ -474,13 +455,13 @@ void __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb,
 // VerletNode_ZeroFields @ 0x00407DF0 — VerletNode_ZeroFields: zero +4..+1c (7 dwords).
 void __fastcall VerletNode_ZeroFields(void* node) {
     BYTE* param_1 = static_cast<BYTE*>(node);
-    *(int *)(param_1 + 0x04) = 0;
-    *(int *)(param_1 + 0x08) = 0;
-    *(int *)(param_1 + 0x0c) = 0;
-    *(int *)(param_1 + 0x10) = 0;
-    *(int *)(param_1 + 0x14) = 0;
-    *(int *)(param_1 + 0x18) = 0;
-    *(int *)(param_1 + 0x1c) = 0;
+    ClothBody(param_1).LocalPosition[0] = 0;
+    ClothBody(param_1).LocalPosition[1] = 0;
+    ClothBody(param_1).LocalPosition[2] = 0;
+    ClothBody(param_1).Bone = 0;
+    ClothBody(param_1).WorldPosition[0] = 0;
+    ClothBody(param_1).WorldPosition[1] = 0;
+    ClothBody(param_1).WorldPosition[2] = 0;
 }
 
 // VerletNode_CtorBase @ 0x00407DA0 — VerletNode_CtorBase: set vtable (skipped) + zero fields.
@@ -498,7 +479,7 @@ intptr_t __cdecl VerletNode_CtorExt(DWORD *_this)
 
   VerletNode_ZeroFields(_this);
   result = reinterpret_cast<intptr_t>(_this);
-  _this[8] = 0;
+  ClothBody(_this).Radius = 0;
   return result;
 }
 
@@ -512,7 +493,7 @@ intptr_t __cdecl VerletNode_CtorExt(DWORD *_this)
 // para resolver la colisión con la esfera del cuerpo. 0x40DB50/0x410AE0/
 // 0x410D80 no están portadas y ningún call site de este build las usa: van
 // como no-ops para que el objeto sea válido.
-void __cdecl ClothAnchor_Collide(float *_this, int *node);
+void __cdecl ClothAnchor_Collide(void *_this, void *node);
 void __fastcall FUN_00407ea0(void* ecx, int edx, BYTE param_1);
 // Adaptador: el dtor está portado como __fastcall (this en ECX, `edx` dummy) y
 // los call sites de este build invocan la vtable como `__cdecl (this, flags)`.
@@ -533,7 +514,7 @@ void *g_ClothNodeVTable[1] = { (void *)FUN_00408680 };
 DWORD *__cdecl ClothAnchor_Ctor(DWORD *_this)
 {
   VerletNode_CtorBase(_this);
-  *_this = (DWORD)g_ClothAnchorVTable;
+  ClothBody(_this).VTable = g_ClothAnchorVTable;
   VerletNode_CtorExt(_this);
   return _this;
 }
@@ -543,11 +524,11 @@ DWORD *__cdecl ClothAnchor_Ctor(DWORD *_this)
 // Port FIEL de IDA `sub_407D70`.
 void __cdecl ClothNode_AddCorrection(uintptr_t _this, const float *a2)
 {
-  *(float *)(_this + 48) = a2[0] + *(float *)(_this + 48);
-  *(float *)(_this + 52) = a2[1] + *(float *)(_this + 52);
-  double v3 = a2[2] + *(float *)(_this + 56);
-  ++*(DWORD *)(_this + 44);
-  *(float *)(_this + 56) = (float)v3;
+  ClothPoint(_this).Correction[0] = a2[0] + ClothPoint(_this).Correction[0];
+  ClothPoint(_this).Correction[1] = a2[1] + ClothPoint(_this).Correction[1];
+  double v3 = a2[2] + ClothPoint(_this).Correction[2];
+  ++ClothPoint(_this).CorrectionCount;
+  ClothPoint(_this).Correction[2] = (float)v3;
 }
 
 // ClothAnchor_Collide @ 0x00407F20 — ClothAnchor_Collide (slot 2 de off_552514).
@@ -555,14 +536,14 @@ void __cdecl ClothNode_AddCorrection(uintptr_t _this, const float *a2)
 // empuja hacia afuera. `_this[5..7]` (+0x14..+0x1C) es la posición de MUNDO
 // del ancla, que `sub_408E30` refresca cada iteración desde el hueso.
 // Port FIEL de IDA `sub_407F20`.
-void __cdecl ClothAnchor_Collide(float *_this, int *node)
+void __cdecl ClothAnchor_Collide(void *_this, void *node)
 {
   float v[3];
 
   SpringNode_GetPos(node, v);
-  v[0] = v[0] - _this[5];
-  v[1] = v[1] - _this[6];
-  v[2] = v[2] - _this[7];
+  v[0] = v[0] - ClothBody(_this).WorldPosition[0];
+  v[1] = v[1] - ClothBody(_this).WorldPosition[1];
+  v[2] = v[2] - ClothBody(_this).WorldPosition[2];
 
   double v3 = Vec3_Length(v);
   if (v3 < 0.0099999998)
@@ -572,9 +553,9 @@ void __cdecl ClothAnchor_Collide(float *_this, int *node)
     v[1] = 0.0f;
     v[2] = 0.0f;
   }
-  if (v3 < _this[8])
+  if (v3 < ClothBody(_this).Radius)
   {
-    double v4 = (_this[8] - v3) / v3;
+    double v4 = (ClothBody(_this).Radius - v3) / v3;
     v[0] = (float)(v4 * v[0]);
     v[1] = (float)(v4 * v[1]);
     v[2] = (float)(v4 * v[2]);
@@ -587,35 +568,25 @@ void __cdecl ClothAnchor_Collide(float *_this, int *node)
 // después hace flush de las correcciones acumuladas.
 // Port FIEL de IDA `sub_409310`. Ojo: todo el bloque está gateado por
 // `this[18] > 0` (cantidad de anclas), así que sin anclas es un no-op.
-int __cdecl Cloth_CollideAnchors(DWORD *_this)
+int __cdecl Cloth_CollideAnchors(DWORD* widget)
 {
-  int result = _this[18];
-  if (result <= 0)
-    return result;
-
-  DWORD *v3 = *(DWORD **)(_this[19] + 8);
-  if (v3 != (DWORD *)_this[20])
-  {
-    for (DWORD *i = *(DWORD **)(_this[19] + 8); v3; i = v3)
-    {
-      int v4 = *v3;                       // el objeto ancla
-      if ((int)_this[12] > 0)
-      {
-        for (int v5 = 0, v6 = 0; v5 < (int)_this[12]; ++v5, v6 += 60)
-          (*(void (__cdecl **)(int, int))(*(DWORD *)v4 + 8))(v4, v6 + _this[13]);
-        v3 = i;
-      }
-      v3 = (DWORD *)v3[2];
-      if ((DWORD *)_this[20] == v3)
-        break;
+  ClothWidget& w = ClothSystem(widget);
+  int result = w.AnchorCount;
+  if (result <= 0) return result;
+  ClothLink* entry = w.Head->Next;
+  if (entry != w.Tail) {
+    while (entry) {
+      ClothAnchor* anchor = entry->Value;
+      for (int i=0;i<w.NodeCount;++i)
+        reinterpret_cast<void (__cdecl *)(void*,void*)>(anchor->VTable[2])(anchor,w.Nodes+i);
+      entry = entry->Next;
+      if (entry == w.Tail) break;
     }
   }
-
-  result = _this[12];
-  for (int v7 = 0, v8 = 0; v7 < result; ++v7, v8 += 60)
-  {
-    VerletSystem_Flush(v8 + _this[13]);
-    result = _this[12];
+  result = w.NodeCount;
+  for (int i=0;i<result;++i) {
+    VerletSystem_Flush(reinterpret_cast<uintptr_t>(w.Nodes+i));
+    result = w.NodeCount;
   }
   return result;
 }
@@ -629,11 +600,11 @@ int __cdecl Cloth_CollideAnchors(DWORD *_this)
 // huesos.  Los call sites de IDA pasan enteros chicos (2, 10, 17, 18, 19).
 void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx) {
     char *p = (char*)node;
-    *(float *)(p + 0x04) = p1;
-    *(float *)(p + 0x08) = p2;
-    *(float *)(p + 0x0c) = p3;
-    *(float *)(p + 0x20) = radius;
-    *(int   *)(p + 0x10) = boneIdx;
+    ClothBody(p).LocalPosition[0] = p1;
+    ClothBody(p).LocalPosition[1] = p2;
+    ClothBody(p).LocalPosition[2] = p3;
+    ClothBody(p).Radius = radius;
+    ClothBody(p).Bone = boneIdx;
 }
 
 // Entity_DrawByType.cpp dependencies

@@ -12,6 +12,7 @@ import tempfile
 
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 
 SUPPORT = r'''
 struct OBJECT {
@@ -91,7 +92,7 @@ int main() {
 
 def harness(revision=None):
     types = read_source("src/Entity/EntityTypes.h", revision)
-    support = SUPPORT.replace("PART_RECORD", re.search(r"struct PART_t\s*\{.*?\};", types, re.S).group())
+    support = SUPPORT.replace("PART_RECORD", opaque_cloth_fields(re.search(r"struct PART_t\s*\{.*?\};", types, re.S).group()))
     for token, name, kind in (("SCALE_FIELD", "Scale", "float"),
                               ("CLASS_FIELD", "Class", "BYTE"),
                               ("SKIN_FIELD", "Skin", "BYTE"),

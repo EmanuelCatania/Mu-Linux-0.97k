@@ -34,7 +34,11 @@ def harness(revision=None):
     forget=function(presentation,'ClothPresentation_Forget').replace('ClothPresentation_Forget','ForgetActual')
     args='widget' if 'void* widget' in body else '(int)widget'
     wrapper='\nvoid Reset(void* widget){Widget_NodeInit('+args+');}\n'
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('TYPES',types).replace('FORGET',forget)+body+wrapper+MAIN
+    extra='';main=MAIN
+    if 'ClothSystem(' in body:
+        import ClothFixture
+        extra=ClothFixture.prefix();main=ClothFixture.reset(main)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+extra+SERVICES.replace('TYPES',types).replace('FORGET',forget)+body+wrapper+main
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()

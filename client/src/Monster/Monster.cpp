@@ -522,8 +522,8 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
         }
         i += 916;
     }
-    // La limpieza conserva su contrato de 32 bits; layout pendiente de B2.
-    DeleteCloth((int)(uintptr_t)i, (int)(uintptr_t)i, 0);  // DeleteCloth
+    // La limpieza recibe la identidad nativa; los pools se migran por separado.
+    DeleteCloth(AsCharacter(i), AsObject(i), nullptr);  // DeleteCloth
     CreateCharacterPointer((unsigned char*)i, Type, PosX, PosY, Rotation);
     *(short*)(i + 476) = (short)Key;
     return AsCharacter(i);

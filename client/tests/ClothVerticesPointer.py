@@ -102,7 +102,11 @@ int main(){
 def harness(revision=None):
     source=read_source('src/Net/Crypto.cpp',revision)
     getter=function(read_source('src/Physics/Cloth_Simulation.cpp',revision),'SpringNode_GetPos').replace('SpringNode_GetPos','ActualGetPos')
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('GET_POS',getter)+function(source,'FUN_004091d0')+function(source,'FUN_004090b0')+function(source,'FUN_00408ff0')+MAIN
+    extra='';services,main=SERVICES,MAIN
+    if 'ClothPoint(' in getter:
+        import ClothFixture
+        extra=ClothFixture.prefix();services,main=ClothFixture.vertices(services,main)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+extra+services.replace('GET_POS',getter)+function(source,'FUN_004091d0')+function(source,'FUN_004090b0')+function(source,'FUN_00408ff0')+main
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

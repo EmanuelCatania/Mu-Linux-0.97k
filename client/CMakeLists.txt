@@ -427,6 +427,7 @@ set(MU_HEADERS
     src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h
     src/Entity/ClothPresentation.h
+    src/Physics/ClothTypes.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h

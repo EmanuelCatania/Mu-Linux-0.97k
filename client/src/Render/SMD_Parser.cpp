@@ -316,7 +316,7 @@ void __cdecl ClearCharacters(int param_1) {
                 pcVar2 += 0x1bc;
             } while (pcVar2 < butterflesEnd);
         }
-        DeleteCloth((int)puVar1, (int)puVar1, 0);
+        DeleteCloth(AsCharacter(puVar1), AsObject(puVar1), nullptr);
     }
 
     // Gate/map transition removes the viewport but not Party membership.

@@ -11,7 +11,7 @@ from ObjectLayoutContract import record
 MAIN = r'''
 SceneObjectCell g_ObjectBucketGrid[256];
 constexpr unsigned CellBytes=8+2*sizeof(void*);
-constexpr unsigned Prev=sizeof(void*)==4?436:444, Next=sizeof(void*)==4?440:452;
+constexpr unsigned Prev=sizeof(void*)==4?436:448, Next=sizeof(void*)==4?440:456;
 static unsigned char expectedNodes[16][sizeof(OBJECT)], expectedGrid[256*CellBytes];
 static bool expectedRegistered[16],expectedFreed[16];
 static std::vector<unsigned> lists[256], expectedEvents;

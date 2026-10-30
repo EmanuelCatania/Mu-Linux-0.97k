@@ -234,6 +234,10 @@ jobs:
             python -B tests/SceneGridLifecycle.py --architecture Win32
             python -B tests/SceneGridNative.py --architecture Win32
             python -B tests/SceneGridNative.py --architecture x64
+            python -B tests/ClothLayoutContract.py --architecture Win32
+            python -B tests/ClothLayoutContract.py --architecture x64
+            python -B tests/ClothRuntime.py --architecture Win32
+            python -B tests/ClothRuntime.py --architecture x64
             python -B tests/ItemGridLayout.py --architecture Win32
             python -B tests/ItemGridLayout.py --architecture x64
             python -B tests/ItemMovePreviewColor.py --architecture Win32
@@ -427,6 +431,8 @@ jobs:
             python3 -B tests/ObjectSceneVariants.py --generator Ninja
             python3 -B tests/SceneObjectCellLayout.py --generator Ninja
             python3 -B tests/SceneGridNative.py --generator Ninja
+            python3 -B tests/ClothLayoutContract.py --generator Ninja
+            python3 -B tests/ClothRuntime.py --generator Ninja
             python3 -B tests/ItemGridLayout.py --generator Ninja
             python3 -B tests/ItemMovePreviewColor.py --generator Ninja
             python3 -B tests/OptionsLocalText.py --generator Ninja

@@ -12,6 +12,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import ROOT, build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 SERVICES=r'''
 #include <array>
 #include <algorithm>
@@ -87,6 +88,7 @@ def harness(revision=None):
  fields=re.search(r'struct OBJECT\s*\{[\s\S]*?\n\};',read_source('src/Entity/EntityTypes.h',revision)).group();fields=re.sub(r'OBJECT\*\s+Owner;',r'std::uint32_t Owner;',fields)
  fields=re.sub(r'vec34_t\*\s+BoneMatrices;[^\n]*\n\s*vec3_t\s+BoundingBoxMin;[^\n]*',r'union { vec34_t* BoneMatrices; struct { std::uint32_t BoneLow; vec3_t BoundingBoxMin; }; };',fields)
  fields=re.sub(r'OBJECT\*\s+(ScenePrevious|SceneNext)\b',r'std::uint32_t \1',fields)
+ fields=opaque_cloth_fields(fields)
  view='using vec3_t=float[3];using vec34_t=float[3][4];\n#pragma pack(push,1)\n'+fields+'\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)==444 && offsetof(OBJECT,BoneMatrices)==276 && offsetof(OBJECT,BoundingBoxMin)==280 && offsetof(OBJECT,OBB)==304);\n'
  structures=pose[pose.index('struct FrozenModel {'):pose.index('// Cada slot conserva capacidad',pose.index('struct FrozenModel {'))]
  code=''.join(bodies)+function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')

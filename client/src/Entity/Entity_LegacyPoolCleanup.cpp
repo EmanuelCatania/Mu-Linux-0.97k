@@ -38,11 +38,11 @@ extern void __cdecl operator_delete(void* ptr);
 // Linear-scans CharactersClient (400 slots × 0x394) for entity_id (+0x1DC).
 // On match, marks slot inactive (+0 = 0), kills any butterfly that owned this
 // character (Butterfles[+0xFC] == slot_ptr → +0 = 0), then calls DeleteCloth.
-extern void __cdecl DeleteCloth(int c, int o, int flag);  // DeleteCloth
+
 extern "C" void __cdecl DeleteCharacter(int Key)
 {
     gHealthBar.Remove((WORD)Key);
-    DWORD v1 = (DWORD)DAT_07abf5d0;
+    uintptr_t v1 = DAT_07abf5d0;
     int v2 = 0;
     while (!*(BYTE*)v1 || *(short*)(v1 + 0x1DC) != (short)Key) {
         ++v2;
@@ -56,13 +56,13 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     DWORD* v3 = (DWORD*)&DAT_083a1218;
     DWORD* end = (DWORD*)((char*)&DAT_083a1218 + 0x1158);
     while (v3 < end) {
-        if (*(BYTE*)v3 != 0 && v3[63] == v1) {
+        if (*(BYTE*)v3 != 0 && AsObject(v3)->Owner == AsObject(v1)) {
             *(BYTE*)v3 = 0;
         }
         v3 += 111;  // stride 444 bytes = 0x1BC
     }
 
-    DeleteCloth((int)v1, (int)v1, 0);
+    DeleteCloth(AsCharacter(static_cast<uintptr_t>(v1)), AsObject(static_cast<uintptr_t>(v1)), nullptr);
 
     // The reconstructed Party table is separate storage, so re-arm the
     // original runtime sentinels at the entity-destruction boundary instead

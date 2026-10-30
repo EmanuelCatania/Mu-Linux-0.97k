@@ -23,15 +23,15 @@ def harness(args):
 using BYTE=std::uint8_t;using WORD=std::uint16_t;using DWORD=std::uint32_t;using UINT=std::uint32_t;
 using vec3_t=float[3];using vec34_t=float[3][4];
 '''+object_types()+r'''
-constexpr unsigned Offset(unsigned i){return i+(sizeof(void*)==8?(i>=440?12:i>=280?8:i>=256?4:0):0);}
-static_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:460));
+constexpr unsigned Offset(unsigned i){return i+(sizeof(void*)==8?(i>=440?16:i>=392?12:i>=280?8:i>=256?4:0):0);}
+static_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:464));
 int SceneFlag;
 struct Map{int current;int GetCurrentMap()const{return current;}}gMapManager;
 std::vector<std::vector<BYTE>> calls;bool nativePhase;
 void Entity_InitRenderState(void* p){auto* bytes=static_cast<BYTE*>(p);calls.emplace_back(bytes,bytes+(nativePhase?sizeof(OBJECT):444));}
 void Require(bool ok){if(!ok){std::fputs("Variante OBJECT o registro incorrecto\n",stderr);std::exit(1);}}
 void Translate(const BYTE* legacy,BYTE* native){
- for(unsigned i=0;i<444;++i)if(!(i>=252&&i<256)&&!(i>=276&&i<280)&&i<436)native[Offset(i)]=legacy[i];
+ for(unsigned i=0;i<444;++i)if(!(i>=252&&i<256)&&!(i>=276&&i<280)&&!(i>=388&&i<392)&&i<436)native[Offset(i)]=legacy[i];
 }
 '''+helper
     functions='\nvoid* Current(UINT* puVar3,int param_1){OBJECT& object=*reinterpret_cast<OBJECT*>(puVar3);'+variants(source)+'}\nvoid* Reference(UINT* puVar3,int param_1){'+reference+'}\n'
@@ -53,6 +53,7 @@ int main(){
   auto* object=reinterpret_cast<OBJECT*>(native+16);Translate(legacy,native+16);
   object->Owner=reinterpret_cast<OBJECT*>(uintptr_t(sizeof(void*)==8?0x123456780ull:0x23456780ull));
   object->BoneMatrices=reinterpret_cast<vec34_t*>(uintptr_t(sizeof(void*)==8?0x154321080ull:0x54321080ull));
+  object->Cloth=reinterpret_cast<void*>(uintptr_t(sizeof(void*)==8?0x165432100ull:0x65432100ull));
   object->ScenePrevious=reinterpret_cast<OBJECT*>(uintptr_t(sizeof(void*)==8?0x176543210ull:0x76543210ull));
   object->SceneNext=reinterpret_cast<OBJECT*>(uintptr_t(sizeof(void*)==8?0x187654320ull:0x87654320ull));
   BYTE baseline[sizeof(native)],expected[sizeof(native)];std::memcpy(baseline,native,sizeof(native));std::memcpy(expected,native,sizeof(native));

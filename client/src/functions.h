@@ -5,6 +5,7 @@
 // dirección del binario termina en puentes muertos.
 #include "Platform/CompilerCompat.h"
 #include <cstdint>
+#include "Physics/ClothTypes.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 struct OBJECT;
 struct CHARACTER;
@@ -89,7 +90,7 @@ bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: Che
 
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl Widget_NodeInit(void* widget);           // Widget_BaseRelease — releases core widget struct
-void  __cdecl Widget_Release(int, int, int); // Widget_Release — releases linked list + widget base
+void  __cdecl Widget_Release(void*, int, int); // Widget_Release — libera recursos de tela
 void  __cdecl CPhysicsManager_Move(void* physics_manager, float fTime);   // IDA: CPhysicsManager::Move (0x00409C40)
 void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF0
 // Packet_DecryptDword signature — canonical (void*,void*) above
@@ -297,7 +298,7 @@ void  __cdecl BMD_SetupRenderByType(void *model, uintptr_t entity, int type, flo
 void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // IDA: RenderPartObjectBodyColor (0x00504960)
 void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // Model_RenderSkeleton2
 void  __cdecl RenderLinkObject(float ox, float oy, float oz, int entity, int weapon_slot_ptr, int anim_id, char level, unsigned int option1, char link, char translate, unsigned int render_type); // IDA: RenderLinkObject (0x00455430)
-void  __cdecl DeleteCloth(int entity_a, int entity_b, int flags); // IDA: DeleteCloth (0x00449840)
+void  __cdecl DeleteCloth(CHARACTER* character, OBJECT* object, PART_t* part); // IDA 0x00449840
 bool  __cdecl CheckFullSet(uintptr_t entity); // IDA: CheckFullSet (0x00451B20)
 extern int EquipmentLevelSet;                                         // 0=no glow, 9-11=lightning tier
 extern int g_bAddDefense;                                             // set completo → bonus de defensa en Stats_CalcDefenseRate
@@ -316,10 +317,10 @@ void  __cdecl RenderTerrainAlphaBitmap(int Texture, float xf, float yf, float Si
 void* __fastcall Widget_Ctor(void *param_1); // IDA: Widget_Ctor (0x004093A0)
 void* __fastcall Widget_CtorBase(void *param_1); // IDA: Widget_CtorBase (0x00407FE0)
 void  __cdecl L_YGXPAXIHP6EX0_Z1_Z(void *arr, int size, int elem, void *ctor); // Array_InitWithCtor
-void  __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags); // Widget_BindEntity
+void  __cdecl SpringMesh_Create(void *widget, OBJECT* entity, int slot, int type, int radius, int flags);
 void  __cdecl VerletNode_AddToSystem(void *widget, float x, float y, float z, float radius, int boneIdx); // Cloth_AddAnchor
-int   __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags); // IDA: Widget_CheckState (0x00408900)
-void  __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, float p5, int p6, int p7, float p8, float p9, int type_a, int type_b, int flags); // Widget_Init
+int   __cdecl Widget_CheckState(void *widget, unsigned int hash, int flags); // IDA 0x00408900
+void  __cdecl GridSpring_Create(void *widget, OBJECT* entity, int p3, float p4, float p5, int p6, int p7, float p8, float p9, int type_a, int type_b, int flags);
 extern "C" void __cdecl DeleteCharacter(int Key); // IDA: DeleteCharacter (0x0045AC20)
 int   __cdecl FindCharacterIndex(int); // IDA: FindCharacterIndex (0x0045AC80)
 void  __cdecl CreateCharacterPointer(unsigned char *c, int Type, int PositionX, int PositionY, float Rotation); // CreateCharacterPointer
