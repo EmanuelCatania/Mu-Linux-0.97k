@@ -96,7 +96,7 @@ def harness(revision=None):
  services=SERVICES.replace('VIEW',view).replace('TRANSFORMS','#include "'+(ROOT/'src/Render/TransformMath.h').as_posix()+'"').replace('STRUCTURES',structures).replace('FORWARDS',prototypes)
  if 'AsModel(' in bodies[0]:
   from LegacyModelLayout import VIEW
-  services=VIEW+services
+  services=VIEW+"\nstruct CHARACTER{unsigned char Bytes[916];};\n"+services
  bounds=function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')
  body=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')+constants+services+bounds+''.join(bodies)
  batch=re.search(r'^\s*PrepareContext\([^;\n]*p\.object\.data\(\)[^;\n]*;',pose,re.M).group()

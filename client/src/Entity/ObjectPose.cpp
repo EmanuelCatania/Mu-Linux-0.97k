@@ -6,6 +6,7 @@
 #include "Render/TransformWorkers.h"
 #include "Render/TransformMath.h"
 #include "Render/ResourceTables.h"
+#include "Physics/ClothTypes.h"
 #include <array>
 #include <vector>
 #include <unordered_map>
@@ -276,8 +277,8 @@ struct PreparedMesh {
     std::vector<float> positions,rotatedNormals,light;
 };
 struct PreparedBones {
-    alignas(float) std::array<unsigned char,0xbc> model, inputModel;
-    alignas(float) std::array<unsigned char,0x1bc> object;
+    alignas(float) std::array<unsigned char,sizeof(BMD)> model, inputModel;
+    alignas(float) std::array<unsigned char,sizeof(OBJECT)> object;
     std::array<float,200*12> bones;
     std::array<char,200*16> quaternions;
     std::array<float,12> parent;
@@ -310,18 +311,18 @@ void PrepareRange(void*,std::size_t begin,std::size_t end) {
             o->PriorAction,(unsigned int*)o->Angle,o->HeadAngle,0,0,
             p.quaternions.data(),p.parent.data());
         if(p.geometry) {
-            auto* model=p.model.data();
+            BMD* model=AsModel(p.model.data());
             p.direction={0,0,0};
-            if(model[0x44]) {
+            if(model->LightEnable) {
                 float input[3]={0,-1.5f,0},rotation[12];
                 if(DAT_005597c4) { input[0]=1.3f;input[1]=0;input[2]=2; }
-                Matrix_BuildFromEuler((float*)(model+0x8c),rotation);
+                Matrix_BuildFromEuler(model->ShadowAngle,rotation);
                 Vector_InverseRotate(input,rotation,p.direction.data());
             }
             TransformMath::Batch batch{p.transforms.data(),p.transforms.size(),p.bones.data(),
-                1.f,*(float*)(model+0x68),{*(float*)(model+0x6c),*(float*)(model+0x70),*(float*)(model+0x74)},
+                1.f,model->BodyScale,{model->BodyOrigin[0],model->BodyOrigin[1],model->BodyOrigin[2]},
                 {p.direction[0],p.direction[1],p.direction[2]},
-                {p.coefficients[0],p.coefficients[1],p.coefficients[2]},1.f==_DAT_0055256c,true,model[0x44]!=0};
+                {p.coefficients[0],p.coefficients[1],p.coefficients[2]},1.f==_DAT_0055256c,true,model->LightEnable!=0};
             std::size_t count=0;
             for(const auto& mesh:p.transforms)count+=mesh.vertexCount+mesh.normalCount;
             TransformMath::Run(&batch,0,count);
@@ -341,18 +342,18 @@ void ObjectPose_BeginBatch() {
     int visible=0;
     std::size_t vertexWork=0,boneWork=0;
     for(int slot=0;slot<400;++slot) {
-        const auto* o=AsObject(DAT_07abf5d0+slot*0x394);
+        const auto* o=AsObject(DAT_07abf5d0+slot*sizeof(CHARACTER));
         if(!o->Live || (!o->Visible && (const void*)o!=(const void*)DAT_07abf5d8) ||
            o->Alpha<_DAT_005524f8 || o->Type<0 || (std::size_t)o->Type>=ResourceTables::ModelCount()) continue;
-        const auto* model=(const unsigned char*)(uintptr_t)(DAT_05828d58+o->Type*0xbc);
-        if(*(const short*)(model+0x26)<=0) continue;
+        const BMD* model=AsModel(DAT_05828d58)+o->Type;
+        if(model->NumActions<=0) continue;
         ++visible;
-        const int bones=*(const short*)(model+0x22),count=*(const short*)(model+0x24);
+        const int bones=model->NumBones,count=model->NumMeshs;
         if(bones>0 && bones<=200) boneWork+=bones;
-        const auto base=(uintptr_t)*(const DWORD*)(model+0x28);
+        const auto base=(uintptr_t)model->Meshs;
         if(base>=0x10000 && count>0 && count<=200) for(int m=0;m<count;++m) {
-            const auto* mesh=(const unsigned char*)base+m*0x28;
-            const int vc=*(const short*)(mesh+4),nc=*(const short*)(mesh+6);
+            const auto* mesh=reinterpret_cast<const ClothModelMesh*>(base)+m;
+            const int vc=mesh->VertexCount,nc=mesh->NormalCount;
             if(vc>=0 && vc<=15000 && nc>=0 && nc<=15000) vertexWork+=vc+nc;
         }
     }
@@ -362,20 +363,20 @@ void ObjectPose_BeginBatch() {
     ++batchEpoch;
     for(std::size_t slot=0;slot<prepared.size();++slot) {
         auto& p=prepared[slot]; p.valid=false; p.geometry=false;
-        auto* o=AsObject(DAT_07abf5d0+slot*0x394);
+        auto* o=AsObject(DAT_07abf5d0+slot*sizeof(CHARACTER));
         if(!o->Live || (!o->Visible && (void*)o!=(void*)DAT_07abf5d8) || o->Alpha<_DAT_005524f8) continue;
         if(o->Type<0 || (std::size_t)o->Type>=ResourceTables::ModelCount()) continue;
-        const auto* model=(const unsigned char*)(uintptr_t)(DAT_05828d58+o->Type*0xbc);
-        const int count=*(const short*)(model+0x22);
-        if(count<=0 || count>200 || *(const short*)(model+0x26)<=0 ||
-           *(const DWORD*)(model+0x2c)<0x10000u || *(const DWORD*)(model+0x30)<0x10000u) continue;
-        const auto* rawBones=(const unsigned char*)(uintptr_t)*(const DWORD*)(model+0x2c);
+        const BMD* model=AsModel(DAT_05828d58)+o->Type;
+        const int count=model->NumBones;
+        if(count<=0 || count>200 || model->NumActions<=0 ||
+           (uintptr_t)model->Bones<0x10000u || (uintptr_t)model->Actions<0x10000u) continue;
+        const auto* rawBones=reinterpret_cast<const ModelAnimationBone*>(model->Bones);
         bool safe=true; p.writesParent=false;
         for(int i=0;i<count;++i) {
-            if(rawBones[i*0x8c+0x22]) continue;
-            const int parent=*(const short*)(rawBones+i*0x8c+0x20);
+            if(rawBones[i].Dummy) continue;
+            const int parent=rawBones[i].Parent;
             // Un padre no calculado depende del destino anterior: dejarlo en serie.
-            if(parent< -1 || parent>=i || (parent>=0 && rawBones[parent*0x8c+0x22])) safe=false;
+            if(parent< -1 || parent>=i || (parent>=0 && rawBones[parent].Dummy)) safe=false;
             if(parent== -1) p.writesParent=true;
         }
         if(!safe) continue;
@@ -383,20 +384,21 @@ void ObjectPose_BeginBatch() {
         const bool fresh=frozen.epoch!=batchEpoch;
         frozen.epoch=batchEpoch; p.frozen=&frozen;
         if(fresh) {
-            frozen.boneHeaders.assign(rawBones,rawBones+count*0x8c);
-            const auto* headers=(const unsigned char*)(uintptr_t)*(const DWORD*)(model+0x30);
-            frozen.actionHeaders.assign(headers,headers+*(const short*)(model+0x26)*16);
+            const auto* boneBytes=reinterpret_cast<const unsigned char*>(rawBones);
+            frozen.boneHeaders.assign(boneBytes,boneBytes+count*sizeof(ModelAnimationBone));
+            const auto* headers=reinterpret_cast<const unsigned char*>(model->Actions);
+            frozen.actionHeaders.assign(headers,headers+model->NumActions*sizeof(ModelAnimationAction));
         }
         memcpy(p.model.data(),model,p.model.size());
         memcpy(p.object.data(),o,p.object.size());
-        *(float*)(p.model.data()+0x84)=0.f; // Calc_RenderObject, antes de animar.
+        AsModel(p.model.data())->BodyHeight=0.f; // Calc_RenderObject, antes de animar.
         PrepareContext(AsObject(p.object.data()),p.model.data());
         p.inputModel=p.model;
         p.originalModel=model; p.boneCount=count; p.valid=true;
         // Congelar fuentes: tela u otra pasada puede modificarlas antes del draw.
         // La validación de consumo detecta ese caso y usa la ruta original.
-        const int meshCount=*(const short*)(model+0x24);
-        const auto meshBase=(uintptr_t)*(const DWORD*)(model+0x28);
+        const int meshCount=model->NumMeshs;
+        const auto meshBase=(uintptr_t)model->Meshs;
         p.geometry=meshCount>0 && meshCount<=200 && meshBase>=0x10000 && (fresh || frozen.geometry);
         p.transforms.clear(); p.usedBones=fresh?std::array<bool,200>{}:frozen.usedBones;
         if(p.geometry) {
@@ -404,11 +406,11 @@ void ObjectPose_BeginBatch() {
             if(fresh) { frozen.vertices.resize(meshCount);frozen.normals.resize(meshCount); }
         }
         for(int m=0;p.geometry && m<meshCount;++m) {
-            const auto* source=(const unsigned char*)meshBase+m*0x28;
-            const int vc=*(const short*)(source+4),nc=*(const short*)(source+6);
+            const auto* source=reinterpret_cast<const ClothModelMesh*>(meshBase)+m;
+            const int vc=source->VertexCount,nc=source->NormalCount;
             auto& mesh=p.meshes[m];
-            mesh.vertices=(const unsigned char*)(uintptr_t)*(const DWORD*)(source+0x10);
-            mesh.normals=(const unsigned char*)(uintptr_t)*(const DWORD*)(source+0x14);
+            mesh.vertices=source->Vertices;
+            mesh.normals=static_cast<const unsigned char*>(source->Normals);
             if(vc<0 || vc>15000 || nc<0 || nc>15000 ||
                (uintptr_t)mesh.vertices<0x10000 || (uintptr_t)mesh.normals<0x10000) { p.geometry=false;break; }
             if(fresh) {
@@ -422,7 +424,7 @@ void ObjectPose_BeginBatch() {
                 const int amount=stream?nc:vc,stride=stream?20:16;
                 for(int i=0;i<amount;++i) {
                     const int bone=*(const short*)(raw+i*stride);
-                    if(bone<0 || bone>=count || rawBones[bone*0x8c+0x22]) { p.geometry=false;break; }
+                    if(bone<0 || bone>=count || rawBones[bone].Dummy) { p.geometry=false;break; }
                     p.usedBones[bone]=true;
                 }
             }
@@ -430,7 +432,7 @@ void ObjectPose_BeginBatch() {
                 mesh.rotatedNormals.data(),mesh.light.data(),(std::size_t)vc,(std::size_t)nc});
         }
         if(fresh) { frozen.geometry=p.geometry;frozen.usedBones=p.usedBones; }
-        if(o->Type!=0x145 && o->Type!=0xe1) p.model[0x44]=o->LightEnable;
+        if(o->Type!=0x145 && o->Type!=0xe1) AsModel(p.model.data())->LightEnable=o->LightEnable;
         p.coefficients={_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
         jobs.push_back(&p);
         actualBones+=p.boneCount;
@@ -449,28 +451,32 @@ static bool ReuseBones(OBJECT* entity,void* model,float* bones,char translate) {
     geometryPose=nullptr;
     if(!batchActive || translate!=1) return false;
     const auto base=(uintptr_t)DAT_07abf5d0, address=(uintptr_t)entity;
-    if(address<base || address-base>=400*0x394 || (address-base)%0x394) return false;
-    auto& p=prepared[(address-base)/0x394];
+    if(address<base || address-base>=400*sizeof(CHARACTER) || (address-base)%sizeof(CHARACTER)) return false;
+    auto& p=prepared[(address-base)/sizeof(CHARACTER)];
     if(!p.valid || p.originalModel!=model) return false;
-    const auto* current=(const unsigned char*)model;
+    const BMD* current=AsModel(model);
     // Sólo entradas leídas por BMD_Animation; BodyLight/material no intervienen.
-    const int modelRanges[][2]={{0x22,2},{0x26,2},{0x2c,8},{0x54,4},{0x68,16},{0x84,4},{0xa0,1}};
+    const std::size_t modelRanges[][2]={{offsetof(BMD,NumBones),2},{offsetof(BMD,NumActions),2},
+        {offsetof(BMD,Bones),sizeof(current->Bones)+sizeof(current->Actions)},
+        {offsetof(BMD,BoneHead),4},{offsetof(BMD,BodyScale),16},
+        {offsetof(BMD,BodyHeight),4},{offsetof(BMD,CurrentAction),1}};
     for(const auto& range:modelRanges)
-        if(memcmp(current+range[0],p.inputModel.data()+range[0],range[1])) return false;
-    if(memcmp((const void*)(uintptr_t)*(const DWORD*)(current+0x2c),p.frozen->boneHeaders.data(),p.frozen->boneHeaders.size()) ||
-       memcmp((const void*)(uintptr_t)*(const DWORD*)(current+0x30),p.frozen->actionHeaders.data(),p.frozen->actionHeaders.size())) return false;
+        if(memcmp(reinterpret_cast<const unsigned char*>(current)+range[0],p.inputModel.data()+range[0],range[1])) return false;
+    if(memcmp(reinterpret_cast<const void*>(current->Bones),p.frozen->boneHeaders.data(),p.frozen->boneHeaders.size()) ||
+       memcmp(reinterpret_cast<const void*>(current->Actions),p.frozen->actionHeaders.data(),p.frozen->actionHeaders.size())) return false;
     const OBJECT& o=*AsObject(entity); const OBJECT& old=*AsObject(p.object.data());
     if(memcmp(&o.AnimationFrame,&old.AnimationFrame,4) ||
        memcmp(&o.PriorAnimationFrame,&old.PriorAnimationFrame,4) || o.PriorAction!=old.PriorAction ||
        memcmp(o.Angle,old.Angle,12) || memcmp(o.HeadAngle,old.HeadAngle,12)) return false;
     // Replay de los stores, no de los bytes intactos: los scratch omitidos
     // por huesos dummy deben conservar lo que dejó la entidad anterior.
-    auto* output=(unsigned char*)model;
-    memcpy(output+0x78,p.model.data()+0x78,12);
-    memcpy(output+0xa4,p.model.data()+0xa4,6);
-    output[0xa0]=p.model[0xa0];
-    const auto* rawBones=(const unsigned char*)(uintptr_t)*(const DWORD*)(current+0x2c);
-    for(int i=0;i<p.boneCount;++i) if(!rawBones[i*0x8c+0x22]) {
+    BMD* output=AsModel(model);
+    const BMD* cached=AsModel(p.model.data());
+    memcpy(output->BodyAngle,cached->BodyAngle,12);
+    memcpy(&output->CurrentAnimation,&cached->CurrentAnimation,6);
+    output->CurrentAction=cached->CurrentAction;
+    const auto* rawBones=reinterpret_cast<const ModelAnimationBone*>(current->Bones);
+    for(int i=0;i<p.boneCount;++i) if(!rawBones[i].Dummy) {
         memcpy(bones+i*12,p.bones.data()+i*12,48);
         memcpy(DAT_05826e18+i*16,p.quaternions.data()+i*16,16);
     }
@@ -484,20 +490,20 @@ bool ObjectPose_RestoreGeometry(void* model,const float* bones,float rotationSca
     if(!batchActive || !geometryPose || !geometryPose->geometry || translate!=1 || rotationScale!=1.f) return false;
     const auto& p=*geometryPose;
     if(p.originalModel!=model) return false;
-    const auto* current=(const unsigned char*)model;
-    if(memcmp(current+0x68,p.model.data()+0x68,16) || current[0x44]!=p.model[0x44] ||
+    const BMD* current=AsModel(model);
+    if(memcmp(&current->BodyScale,&AsModel(p.model.data())->BodyScale,16) || current->LightEnable!=AsModel(p.model.data())->LightEnable ||
        memcmp(direction,p.direction.data(),12) || memcmp(coefficients,p.coefficients.data(),12) ||
-       memcmp(current+0x28,p.model.data()+0x28,4) || *(const short*)(current+0x24)!=(int)p.meshes.size()) return false;
+       memcmp(&current->Meshs,&AsModel(p.model.data())->Meshs,sizeof(current->Meshs)) || current->NumMeshs!=(int)p.meshes.size()) return false;
     for(int i=0;i<p.boneCount;++i)
         if(p.usedBones[i] && memcmp(bones+i*12,p.bones.data()+i*12,48)) return false;
-    const auto* sources=(const unsigned char*)(uintptr_t)*(const DWORD*)(current+0x28);
+    const auto* sources=reinterpret_cast<const ClothModelMesh*>(current->Meshs);
     // Validar todo antes del primer store: un miss no deja resultados parciales.
     for(std::size_t m=0;m<p.meshes.size();++m) {
-        const auto& mesh=p.meshes[m];const auto* source=sources+m*0x28;
-        if(*(const short*)(source+4)!=(int)mesh.positions.size()/3 ||
-           *(const short*)(source+6)!=(int)mesh.rotatedNormals.size()/3 ||
-           *(const DWORD*)(source+0x10)!=(uintptr_t)mesh.vertices ||
-           *(const DWORD*)(source+0x14)!=(uintptr_t)mesh.normals ||
+        const auto& mesh=p.meshes[m];const auto* source=sources+m;
+        if(source->VertexCount!=(int)mesh.positions.size()/3 ||
+           source->NormalCount!=(int)mesh.rotatedNormals.size()/3 ||
+           source->Vertices!=mesh.vertices ||
+           source->Normals!=mesh.normals ||
            (!mesh.rawVertices->empty() && memcmp(mesh.vertices,mesh.rawVertices->data(),mesh.rawVertices->size())) ||
            (!mesh.rawNormals->empty() && memcmp(mesh.normals,mesh.rawNormals->data(),mesh.rawNormals->size()))) return false;
     }
@@ -505,7 +511,7 @@ bool ObjectPose_RestoreGeometry(void* model,const float* bones,float rotationSca
         const auto& mesh=p.meshes[m];
         if(!mesh.positions.empty())memcpy(positions+m*45000,mesh.positions.data(),mesh.positions.size()*sizeof(float));
         if(!mesh.rotatedNormals.empty())memcpy(normals+m*45000,mesh.rotatedNormals.data(),mesh.rotatedNormals.size()*sizeof(float));
-        if(current[0x44] && !mesh.light.empty())memcpy(light+m*15000,mesh.light.data(),mesh.light.size()*sizeof(float));
+        if(current->LightEnable && !mesh.light.empty())memcpy(light+m*15000,mesh.light.data(),mesh.light.size()*sizeof(float));
     }
     return true;
 }

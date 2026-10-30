@@ -1,14 +1,16 @@
-"""Vista BMD de los bancos históricos x86; no certifica el ABI nativo.
+"""Vistas explícitas x86 de fixtures B1; no certifican el ABI nativo.
 
-Los consumidores de contexto nativo se prueban con el BMD real en
-ModelContextPointer y ClothRuntime. Esta vista conserva los oráculos previos.
+Los bancos nuevos de modelo/animación/cache usan declaraciones reales.
 """
-VIEW=r'''
-struct BMD {
- BYTE opaque0[68];BYTE LightEnable,ContrastEnable;BYTE opaque70[2];float BodyLight[3];BYTE opaque84[20];float BodyScale;float BodyOrigin[3];BYTE opaque120[12];
- float BodyHeight;BYTE opaque136[24];BYTE CurrentAction;BYTE opaque161[27];
-};
-static_assert(sizeof(BMD)==188);
+import re
+from SceneObjectPointer import read_source
+from ObjectLayoutContract import record
+
+header=read_source('src/Model/ModelTypes.h')
+records='\n'.join(record(header,name)for name in ('ModelAnimationKeys','ModelAnimationBone','ModelAnimationAction','BMD'))
+records=re.sub(r'\b(?:float|BYTE|short|ModelAnimationKeys)\s*\*\s*(\w+)\s*;',r'std::uint32_t \1;',records)
+VIEW='\nusing vec3_t=float[3];\n#pragma pack(push,1)\n'+records+'\n#pragma pack(pop)\n'+r'''
+static_assert(sizeof(BMD)==188 && sizeof(ModelAnimationBone)==140);
 inline BMD* AsModel(void* p){return static_cast<BMD*>(p);}
 inline BMD* AsModel(std::uintptr_t p){return reinterpret_cast<BMD*>(p);}
 '''
