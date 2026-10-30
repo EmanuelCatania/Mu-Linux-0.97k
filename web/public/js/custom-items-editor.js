@@ -14,7 +14,12 @@
     onlyCustom: false,
     selected: null,       // { key, name, slot }
     // Por tipo: null = no tiene archivo; { data, header, dirty, hasInnerComments }
-    docs: { items: null, pets: null }
+    docs: { items: null, pets: null },
+    // Fila de Item.txt: { mode: 'edit' | 'add', model, dirty }
+    row: null,
+    layouts: [],          // columnas de datos de cada sección
+    prefix: [],
+    maxNameBytes: 31
   };
 
   const keyId = (key) => `${key[0]},${key[1]}`;
@@ -131,12 +136,15 @@
   }
 
   // ── Detalle ────────────────────────────────────────────────────────────────
-  async function selectItem(item) {
-    if (anyDirty() && !window.confirm(t('Hay cambios sin guardar. ¿Descartarlos?'))) return;
+  async function selectItem(item, force) {
+    if (!force && anyDirty() && !window.confirm(t('Hay cambios sin guardar. ¿Descartarlos?'))) return;
     state.selected = item;
     state.docs = { items: null, pets: null };
+    state.row = null;
     renderList();
     try {
+      const rowData = await api(`/admin/server-editor/api/custom-items/row?key=${keyId(item.key)}`);
+      state.row = { mode: 'edit', model: rowData.row, dirty: false, nextFree: rowData.nextFree };
       for (const kind of ['items', 'pets']) {
         const data = await api(`/admin/server-editor/api/custom-items/file?kind=${kind}&key=${keyId(item.key)}`);
         if (data.exists && data.error) {
@@ -151,7 +159,7 @@
     renderDetail();
   }
 
-  const anyDirty = () => Object.values(state.docs).some((d) => d && d.dirty);
+  const anyDirty = () => Object.values(state.docs).some((d) => d && d.dirty) || !!(state.row && state.row.dirty);
 
   function markDirty(kind) {
     state.docs[kind].dirty = true;
@@ -169,9 +177,170 @@
       return;
     }
     const item = state.selected;
+    if (state.row && state.row.mode === 'add') {
+      box.appendChild(renderRowSection());
+      return;
+    }
     box.appendChild(el('h3', { text: `${item.name}  (${keyId(item.key)})` }));
+    if (state.row) box.appendChild(renderRowSection());
     box.appendChild(renderItemSection(item));
     box.appendChild(renderPetSection(item));
+  }
+
+  // ── Fila de Item.txt: datos, columnas de la sección y columnas custom ──────
+  const intValue = (input) => (input.value === '' ? 0 : Math.trunc(Number(input.value)));
+
+  function rowPreview(model) {
+    const q = (s) => `"${s}"`;
+    const tail = model.tail || {};
+    const pad = (n, w) => String(n).padStart(w, '0');
+    const opt = [
+      tail.behavior ? `${pad(tail.behavior[0], 2)},${pad(tail.behavior[1], 3)}` : '*',
+      tail.folder ? q(tail.folder) : '*',
+      tail.model ? q(tail.model) : '*',
+      ...(tail.glow ? tail.glow : ['*']),
+      tail.equippedFolder ? q(tail.equippedFolder) : '*',
+      tail.equippedModel ? q(tail.equippedModel) : '*',
+      tail.gate !== null && tail.gate !== undefined ? tail.gate : '*'
+    ];
+    while (opt.length && opt[opt.length - 1] === '*') opt.pop();
+    return [model.key[1], model.slot, model.skill, model.width, model.height, model.serial, model.option, model.drop, q(model.name), ...model.stats, ...opt].join('\t');
+  }
+
+  function renderRowSection() {
+    const draft = state.row;
+    const model = draft.model;
+    const add = draft.mode === 'add';
+    model.tail = model.tail || {};
+    const tail = model.tail;
+    const preview = el('pre', { class: 'ci-preview' });
+    const refresh = () => { preview.textContent = rowPreview(model); };
+    const dirty = () => {
+      draft.dirty = true;
+      refresh();
+      const btn = root.querySelector('#ci-save-row');
+      if (btn) btn.classList.add('ci-pending');
+    };
+
+    const frame = el('div', { class: 'ci-section' },
+      el('h4', { text: add ? t('Item nuevo') : t('Datos en Item.txt') }),
+      el('p', { class: 'muted', text: add
+        ? t('Se agrega una fila a Item.txt copiando los datos del item elegido. Cambiá lo que haga falta.')
+        : t('La fila del item en Data/Item/Item.txt. Las columnas custom del final son opcionales; vacío es "la original".') }));
+
+    // Identidad
+    const name = el('input', { type: 'text', value: model.name, maxlength: 60 });
+    name.addEventListener('input', () => { model.name = name.value; dirty(); });
+    const index = el('input', { type: 'number', min: 0, max: 511, value: model.key[1] });
+    index.disabled = !add;
+    index.addEventListener('input', () => { model.key[1] = intValue(index); dirty(); });
+    const ident = el('div', { class: 'ci-grid' },
+      field(t('Nombre (hasta {max} bytes)', { max: state.maxNameBytes }), name),
+      field(t('Sección'), el('input', { type: 'number', value: model.key[0], disabled: true })),
+      field(t('Índice (0 a 511; los agregados desde 32)'), index));
+    frame.appendChild(ident);
+
+    // Datos comunes y de la sección
+    const common = el('details', { open: true }, el('summary', { text: t('Datos del item') }));
+    const grid = el('div', { class: 'ci-grid' });
+    const commonFields = [['slot', 'Slot'], ['skill', 'Skill'], ['width', t('Ancho')], ['height', t('Alto')], ['serial', 'Serial'], ['option', t('Opción')], ['drop', 'Drop']];
+    commonFields.forEach(([key, label]) => {
+      const input = el('input', { type: 'number', step: 1, value: model[key] });
+      input.addEventListener('input', () => { model[key] = intValue(input); dirty(); });
+      grid.appendChild(field(label, input));
+    });
+    (state.layouts[model.key[0]] || []).forEach((label, n) => {
+      const input = el('input', { type: 'number', step: 1, value: model.stats[n] ?? 0 });
+      input.addEventListener('input', () => { model.stats[n] = intValue(input); dirty(); });
+      grid.appendChild(field(label, input));
+    });
+    common.appendChild(grid);
+    frame.appendChild(common);
+
+    // Columnas custom
+    const custom = el('fieldset', {}, el('legend', { text: t('Columnas custom (opcionales)') }));
+    const behaviorSec = el('input', { type: 'number', min: 0, max: 15, value: tail.behavior ? tail.behavior[0] : '' });
+    const behaviorIdx = el('input', { type: 'number', min: 0, max: 511, value: tail.behavior ? tail.behavior[1] : '' });
+    const setBehavior = () => {
+      tail.behavior = behaviorSec.value === '' || behaviorIdx.value === '' ? null : [intValue(behaviorSec), intValue(behaviorIdx)];
+      dirty();
+    };
+    behaviorSec.addEventListener('input', setBehavior);
+    behaviorIdx.addEventListener('input', setBehavior);
+    const textField = (key, placeholder) => {
+      const input = el('input', { type: 'text', value: tail[key] || '', placeholder });
+      input.addEventListener('input', () => { tail[key] = input.value === '' ? null : input.value; dirty(); });
+      return input;
+    };
+    const glowBox = el('span', { class: 'ci-vector' });
+    for (let i = 0; i < 3; i += 1) {
+      const input = el('input', { type: 'number', min: 0, max: 255, value: tail.glow ? tail.glow[i] : '' });
+      input.addEventListener('input', () => {
+        const values = Array.from(glowBox.querySelectorAll('input')).map((x) => (x.value === '' ? null : intValue(x)));
+        tail.glow = values.every((v) => v === null) ? null : values.map((v) => (v === null ? 0 : v));
+        dirty();
+      });
+      glowBox.appendChild(input);
+    }
+    const gate = el('input', { type: 'number', min: 0, value: tail.gate ?? '' });
+    gate.addEventListener('input', () => { tail.gate = gate.value === '' ? null : intValue(gate); dirty(); });
+    custom.append(el('div', { class: 'ci-grid' },
+      field(t('Comportamiento: sección'), behaviorSec, t('Item original que imita en la lógica. Obligatorio en los agregados (índice 32 o más).')),
+      field(t('Comportamiento: índice'), behaviorIdx),
+      field(t('Carpeta del modelo'), textField('folder', 'Item\\Custom\\20\\')),
+      field(t('Nombre del modelo'), textField('model', 'Sword21')),
+      field(t('Brillo R, G, B (0 a 255)'), glowBox),
+      field(t('Carpeta del modelo puesto'), textField('equippedFolder', ''), t('Solo si el item se ve distinto puesto, como una montura.')),
+      field(t('Nombre del modelo puesto'), textField('equippedModel', '')),
+      field(t('Gate de destino'), gate, t('Para pergaminos de teleport a un mapa fijo.'))));
+    frame.appendChild(custom);
+
+    frame.appendChild(el('details', {}, el('summary', { text: t('Ver la fila tal como queda') }), preview));
+    refresh();
+
+    frame.appendChild(el('div', { class: 'spawn-actions' },
+      el('button', { type: 'button', id: 'ci-save-row', text: add ? t('Agregar item') : t('Guardar fila'), onclick: () => saveRow() }),
+      add
+        ? el('button', { type: 'button', class: 'link-button', text: t('Cancelar'), onclick: () => cancelAdd() })
+        : el('button', { type: 'button', class: 'link-button', text: t('Crear un item nuevo a partir de este'), onclick: () => startAdd() })));
+    return frame;
+  }
+
+  function startAdd() {
+    if (anyDirty() && !window.confirm(t('Hay cambios sin guardar. ¿Descartarlos?'))) return;
+    const source = state.row.model;
+    const copy = JSON.parse(JSON.stringify(source));
+    copy.key[1] = state.row.nextFree > 0 ? state.row.nextFree : 32;
+    copy.name = `${source.name} (copia)`.slice(0, state.maxNameBytes);
+    copy.tail = copy.tail || {};
+    // Un agregado imita a un original: el original del que parte, o el que ese ya imitaba.
+    if (!copy.tail.behavior) copy.tail.behavior = [source.key[0], source.key[1]];
+    state.row = { mode: 'add', model: copy, dirty: true, nextFree: state.row.nextFree, source: state.selected };
+    renderDetail();
+  }
+
+  function cancelAdd() {
+    const source = state.row.source;
+    state.row = null;
+    selectItem(source, true);
+  }
+
+  async function saveRow() {
+    const draft = state.row;
+    try {
+      await post('/admin/server-editor/api/custom-items/row', { mode: draft.mode, row: draft.model });
+      draft.dirty = false;
+      const key = draft.model.key.slice();
+      await loadList();
+      const saved = state.items.find((item) => keyId(item.key) === keyId(key));
+      const reloaded = await reloadServer();
+      setMessage(reloaded
+        ? t('Guardado y recargado en el servidor. Los jugadores lo ven al volver a entrar.')
+        : t('Guardado, pero no se pudo recargar en el server.'), reloaded ? 'success' : 'error');
+      if (saved) await selectItem(saved, true);
+    } catch (err) {
+      showErrors(err.message, err.errors);
+    }
   }
 
   function sectionFrame(kind, title, intro) {
@@ -438,16 +607,24 @@
     window.addEventListener('beforeunload', (e) => { if (anyDirty()) { e.preventDefault(); e.returnValue = ''; } });
   }
 
+  // Lista de items y archivos; se repite al agregar un item para que aparezca.
+  async function loadList() {
+    const data = await api('/admin/server-editor/api/custom-items');
+    state.items = data.items;
+    state.colors = data.colors;
+    state.maxTooltipLines = data.maxTooltipLines || 6;
+    state.layouts = data.layouts || [];
+    state.prefix = data.prefix || [];
+    state.maxNameBytes = data.maxNameBytes || 31;
+    state.files.items = new Set(data.files.items.map(keyId));
+    state.files.pets = new Set(data.files.pets.map(keyId));
+    renderList();
+  }
+
   async function init() {
     buildLayout();
     try {
-      const data = await api('/admin/server-editor/api/custom-items');
-      state.items = data.items;
-      state.colors = data.colors;
-      state.maxTooltipLines = data.maxTooltipLines || 6;
-      state.files.items = new Set(data.files.items.map(keyId));
-      state.files.pets = new Set(data.files.pets.map(keyId));
-      renderList();
+      await loadList();
       renderDetail();
     } catch (err) {
       setMessage(err.message, 'error');

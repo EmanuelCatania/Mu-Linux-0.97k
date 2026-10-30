@@ -14,6 +14,7 @@ const { getCountryInfo, isPrivateIp, displayGameIp, isGeoEnabled } = require('./
 const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-master');
 const translations = require('./lib/translations');
 const customItems = require('./lib/custom-items');
+const itemRows = require('./lib/item-rows');
 const {
   SOURCE_COOKIE,
   SOURCE_MAX_AGE_MS,
@@ -2302,7 +2303,10 @@ app.get('/admin/server-editor/api/custom-items', requireAdmin, requireAdminPassw
       items,
       files: { items: keys(itemFiles), pets: keys(petFiles) },
       colors: customItems.TOOLTIP_COLORS,
-      maxTooltipLines: customItems.MAX_TOOLTIP_LINES
+      maxTooltipLines: customItems.MAX_TOOLTIP_LINES,
+      layouts: Array.from({ length: 16 }, (_, section) => itemRows.statColumns(section)),
+      prefix: itemRows.PREFIX,
+      maxNameBytes: itemRows.MAX_NAME_BYTES
     });
   } catch (err) {
     return res.status(err.status || 502).json({ error: err.message });
@@ -2365,6 +2369,53 @@ app.post('/admin/server-editor/api/custom-items/file', requireAdmin, requireAdmi
       path: customItems.pathFor(kind, key),
       content: customItems.serializeJsonFile(header, body)
     });
+    return res.json({ ok: true, backups: saved.backups || [] });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// Fila de Item.txt: los datos del item y sus columnas custom (comportamiento, carpeta,
+// modelo, brillo, modelo puesto y gate).
+async function readItemFile() {
+  const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent('Data/Item/Item.txt')}`);
+  return { content: data.content, file: itemRows.parseItemFile(data.content) };
+}
+
+app.get('/admin/server-editor/api/custom-items/row', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const key = customKey(req.query.key);
+  if (!key) {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const { file } = await readItemFile();
+    const row = itemRows.findRow(file, key);
+    if (!row) return res.status(404).json({ error: 'El item no existe en Item.txt' });
+    return res.json({ row: itemRows.rowModel(key[0], row), nextFree: itemRows.nextFreeIndex(file, key[0]) });
+  } catch (err) {
+    return res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+app.post('/admin/server-editor/api/custom-items/row', requireAdmin, requireAdminPasswordChange, async (req, res) => {
+  if (!editorEnabled) {
+    return res.status(503).json({ error: 'Editor disabled' });
+  }
+  const mode = String(req.body?.mode || '');
+  const row = req.body?.row;
+  if ((mode !== 'add' && mode !== 'edit') || row === null || typeof row !== 'object') {
+    return res.status(400).json({ error: 'Pedido inválido' });
+  }
+  try {
+    const { content } = await readItemFile();
+    const result = mode === 'add' ? itemRows.addRow(content, row) : itemRows.replaceRow(content, row);
+    if (result.errors) {
+      return res.status(400).json({ error: 'La fila tiene errores', errors: result.errors });
+    }
+    const saved = await editorRequest('POST', '/api/file', { path: 'Data/Item/Item.txt', content: result.content });
     return res.json({ ok: true, backups: saved.backups || [] });
   } catch (err) {
     return res.status(err.status || 502).json({ error: err.message });
