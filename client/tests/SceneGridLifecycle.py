@@ -54,6 +54,10 @@ void Register(void* p) { unsigned s=Slot(p); Require(!registered[s]); registered
 void Unregister(void* p) { unsigned s=Slot(p); Require(registered[s]); registered[s]=false; events.push_back(0x3000+s); }
 }
 void BMD__Release(DWORD value) { events.push_back(0x100000 + value); }
+// Vista x86 sólo para los eventos de descarga; los modelos nativos tienen banco propio.
+struct BMD { BYTE legacy[188]; };
+BMD* AsModel(std::uintptr_t p){return reinterpret_cast<BMD*>(p);}
+void BMD__Release(BMD* p){BMD__Release(static_cast<DWORD>(reinterpret_cast<std::uintptr_t>(p)));}
 void UnloadImage(int value) { events.push_back(0x200000 + value); }
 using Snapshot = std::vector<unsigned char>;
 std::vector<Snapshot> snapshots;

@@ -7,6 +7,7 @@
 #include <cstdint>
 #include "Physics/ClothTypes.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
+struct BMD;
 struct OBJECT;
 struct CHARACTER;
 struct PART_t;
@@ -242,7 +243,7 @@ void  __cdecl BMD__RenderMesh(void *model, float layer, int anim_id, float scale
 void  __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba);
 void  __cdecl BMD__RenderMeshEffect(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
 void  __cdecl BMD__RenderBodyShadow(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
-void  __cdecl BMD__Release(int model_ptr);                         // Model_Unload (free BMD model data)
+void  __cdecl BMD__Release(BMD* model);                         // Model_Unload (free BMD model data)
 void  __cdecl BMD__FindNearTriangle(void *model);                           // BMD_PostActionsInit (post-load action setup)
 void  __cdecl BMD__Init(void *model, char flag);                // BMD_PostLoadInit (post-load finalize)
 void  __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3);  // BMD_BuildAdjacentFaceTable

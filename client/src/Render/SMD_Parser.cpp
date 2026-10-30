@@ -176,56 +176,48 @@ void __cdecl crt_fprintf(void* param_1, void* param_2) {
 // BMD__Release @ 0x00442090 — BMD_FreeModel(model_ptr)
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
-void __cdecl BMD__Release(int param_1) {
-    short numBones   = AsModel(param_1)->NumBones;
-    short numMeshes  = AsModel(param_1)->NumActions;
-    short numActions = AsModel(param_1)->NumMeshs;
+void __cdecl BMD__Release(BMD* model) {
+    // IDA 0x00442090: el cero de NumBones corta incluso si quedan otras tablas.
+    const short numBones = model->NumBones;
+    const short numActions = model->NumActions;
+    const short numMeshes = model->NumMeshs;
     if (numBones == 0) return;
-    // free per-bone sub-mesh vertex arrays
-    for (int bi = 0; bi < numBones; bi++) {
-        int bonePtr = *(int *)&AsModel(param_1)->Bones + bi * 0x8c;
-        if (*(char*)(bonePtr + 0x22) == '\0') {
-            if (numMeshes > 0) {
-                int meshBase = *(int*)(bonePtr + 0x24);
-                for (int mi = 0; mi < numMeshes; mi++) {
-                    int mPtr = meshBase + mi * 0xc;
-                    operator_delete(*(void**)(mPtr + 0));
-                    operator_delete(*(void**)(mPtr + 4));
-                    operator_delete(*(void**)(mPtr + 8));
-                }
+    auto* bones = reinterpret_cast<ModelAnimationBone*>(model->Bones);
+    for (int bi = 0; bi < numBones; ++bi) {
+        if (bones[bi].Dummy == 0) {
+            for (int ai = 0; ai < numActions; ++ai) {
+                operator_delete(bones[bi].Keys[ai].Positions);
+                operator_delete(bones[bi].Keys[ai].EulerAngles);
+                operator_delete(bones[bi].Keys[ai].Quaternions);
             }
-            operator_delete(*(void**)(bonePtr + 0x24));
+            operator_delete(bones[bi].Keys);
         }
     }
-    // free action keyframe data
-    for (int ai = 0; ai < numMeshes; ai++) {
-        int aPtr = *(int *)&AsModel(param_1)->Actions + ai * 0x10;
-        if (*(char*)(aPtr + 10) != '\0')
-            operator_delete(*(void**)(aPtr + 0xc));
-    }
-    // free mesh vertex/normal/UV buffers + unload textures
-    for (int mi = 0; mi < numActions; mi++) {
-        int mBase = *(int *)&AsModel(param_1)->Meshs + mi * 0x28;
-        operator_delete(*(void**)(mBase + 0x10));
-        operator_delete(*(void**)(mBase + 0x14));
-        operator_delete(*(void**)(mBase + 0x18));
-        operator_delete(*(void**)(mBase + 0x1c));
-        if (*(void**)(mBase + 0x24) != nullptr) {
-            operator_delete(*(void**)(mBase + 0x24));
-            *(DWORD*)(mBase + 0x24) = 0;
+    auto* actions = reinterpret_cast<ModelAnimationAction*>(model->Actions);
+    for (int ai = 0; ai < numActions; ++ai)
+        if (actions[ai].LockPositions != 0) operator_delete(actions[ai].Positions);
+    auto* meshes = reinterpret_cast<ClothModelMesh*>(model->Meshs);
+    for (int mi = 0; mi < numMeshes; ++mi) {
+        auto& mesh = meshes[mi];
+        operator_delete(mesh.Vertices);
+        operator_delete(mesh.Normals);
+        operator_delete(mesh.TexCoords);
+        operator_delete(mesh.Triangles);
+        if (mesh.TextureFlags != nullptr) {
+            operator_delete(mesh.TextureFlags);
+            mesh.TextureFlags = nullptr;
         }
-        int texId = (int)*(short*)(*(int *)&AsModel(param_1)->IndexTexture + *(short*)(mBase + 2) * 2);
-        if (texId != 0x12d)
-            UnloadImage(texId);
+        const int texture = model->IndexTexture[mesh.TextureIndex];
+        if (texture != 0x12d) UnloadImage(texture);
     }
-    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD *)&AsModel(param_1)->Meshs = 0; }
-    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD *)&AsModel(param_1)->Bones = 0; }
-    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD *)&AsModel(param_1)->Actions = 0; }
-    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD *)&AsModel(param_1)->Textures = 0; }
-    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD *)&AsModel(param_1)->IndexTexture = 0; }
-    AsModel(param_1)->NumBones = 0;
-    AsModel(param_1)->NumActions = 0;
-    AsModel(param_1)->NumMeshs = 0;
+    if (model->Meshs != nullptr) { operator_delete(model->Meshs); model->Meshs = nullptr; }
+    if (model->Bones != nullptr) { operator_delete(model->Bones); model->Bones = nullptr; }
+    if (model->Actions != nullptr) { operator_delete(model->Actions); model->Actions = nullptr; }
+    if (model->Textures != nullptr) { operator_delete(model->Textures); model->Textures = nullptr; }
+    if (model->IndexTexture != nullptr) { operator_delete(model->IndexTexture); model->IndexTexture = nullptr; }
+    model->NumBones = 0;
+    model->NumActions = 0;
+    model->NumMeshs = 0;
 }
 
 // DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
@@ -234,8 +226,8 @@ void __cdecl BMD__Release(int param_1) {
 // Finally unloads tile textures 0x23-0x67, clears particle/effect/entity pools.
 void __cdecl DeleteObjects(void) {
     // free all model slots
-    for (int i = 0; i < 0x7580; i += 0xbc)
-        BMD__Release(i + DAT_05828d58);
+    for (int slot = 0; slot < 0xa0; ++slot)
+        BMD__Release(AsModel(DAT_05828d58) + slot);
 
     // IDA 0x004FFD50: descargar cada celda desde la cola hacia la cabeza.
     // El límite cuenta las 256 celdas y no depende del ancho de los punteros.

@@ -69,7 +69,8 @@ struct ClothMeshWidget {
 // Vista de ejecución que consume SpringMesh_Create (IDA 0x4093E0).
 // No se usa para leer bytes de .bmd; el lector de assets tiene contrato propio.
 struct ClothModelMesh {
-    std::uint8_t Unknown0[4];
+    std::uint8_t Unknown0[2];
+    std::int16_t TextureIndex;
     std::int16_t VertexCount;
     std::int16_t NormalCount;
     std::int16_t TexCoordCount;
@@ -91,6 +92,7 @@ static_assert(sizeof(ClothSpring) == 16);
 static_assert(sizeof(ClothWidget) == 60 + 6 * sizeof(void*));
 static_assert(sizeof(ClothMeshWidget) == sizeof(ClothWidget) + 12);
 static_assert(sizeof(ClothModelMesh) == 20 + 5 * sizeof(void*));
+static_assert(offsetof(ClothModelMesh, TextureIndex) == 2);
 static_assert(offsetof(ClothModelMesh, Vertices) == 16);
 static_assert(offsetof(ClothModelMesh, Triangles) == 16 + 3 * sizeof(void*));
 static_assert(offsetof(ClothNode, Position) == sizeof(void*) + 24);
