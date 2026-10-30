@@ -24,6 +24,11 @@ jobs:
       - name: Verificar que Mana Shield no se transfiera al reutilizar un slot
         if: matrix.config == 'Release'
         run: python -B tests/ManaShieldSlotReuse.py
+
+      - name: Verificar identidad del héroe al retirar un anillo
+        if: matrix.config == 'Release' && matrix.target.os == 'windows-2022'
+        shell: pwsh
+        run: python -B tests/RingHeroIdentity.py --architecture Win32
       - name: Verificar fuentes
         run: |
           python .github/scripts/check_cmake_sources.py
