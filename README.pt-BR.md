@@ -1,6 +1,6 @@
 # Mu Linux 97K
 
-[![Sitio web](https://img.shields.io/badge/sitio%20web-mu--linux.com-0ea5e9?logo=googlechrome&logoColor=white)](https://mu-linux.com/es/) [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/EmanuelCatania/badge.svg)](https://hub.xerj.org/contributors/EmanuelCatania)
+[![Site](https://img.shields.io/badge/site-mu--linux.com-0ea5e9?logo=googlechrome&logoColor=white)](https://mu-linux.com/pt-br/) [![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/EmanuelCatania/badge.svg)](https://hub.xerj.org/contributors/EmanuelCatania)
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k?label=server&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-web?label=web&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-web) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mu-editor?label=editor&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mu-editor) [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mysql?label=mysql&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mysql) 
 
