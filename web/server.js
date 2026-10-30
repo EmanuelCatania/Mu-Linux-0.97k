@@ -15,6 +15,7 @@ const { parseGameMaster, buildStaffIndex, lookupStaff } = require('./lib/game-ma
 const translations = require('./lib/translations');
 const customItems = require('./lib/custom-items');
 const itemRows = require('./lib/item-rows');
+const noticeLimits = require('./lib/notices');
 const {
   SOURCE_COOKIE,
   SOURCE_MAX_AGE_MS,
@@ -2176,6 +2177,11 @@ app.post('/admin/server-editor/api/notices', requireAdmin, requireAdminPasswordC
   }
   try {
     const content = String(req.body?.content ?? '');
+    // Un aviso de más de 127 bytes hace fallar la carga del archivo en el server.
+    const errors = noticeLimits.validateNoticeContent(content);
+    if (errors.length > 0) {
+      return res.status(400).json({ error: errors.join('. ') });
+    }
     const data = await editorRequest('POST', '/api/file', {
       path: 'Data/Util/Notice.txt',
       content

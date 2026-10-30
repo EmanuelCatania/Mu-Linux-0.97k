@@ -767,5 +767,7 @@
   "Ver la fila tal como queda": "View the row as it will be written",
   "Guardar fila": "Save row",
   "Crear un item nuevo a partir de este": "Create a new item from this one",
-  "Tooltips de items custom": "Custom item tooltips"
+  "Tooltips de items custom": "Custom item tooltips",
+  "El mensaje mide {bytes} bytes y el máximo es {max}.": "The message is {bytes} bytes long and the maximum is {max}.",
+  "El server lee hasta {max} avisos: no se pueden agregar más.": "The server reads up to {max} notices: no more can be added."
 }

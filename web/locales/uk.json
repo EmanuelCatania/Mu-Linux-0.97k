@@ -773,5 +773,7 @@
   "Ver la fila tal como queda": "Показати рядок у тому вигляді, як він буде записаний",
   "Guardar fila": "Зберегти рядок",
   "Crear un item nuevo a partir de este": "Створити новий предмет на основі цього",
-  "Tooltips de items custom": "Підказки власних предметів"
+  "Tooltips de items custom": "Підказки власних предметів",
+  "El mensaje mide {bytes} bytes y el máximo es {max}.": "Повідомлення має {bytes} байтів, максимум {max}.",
+  "El server lee hasta {max} avisos: no se pueden agregar más.": "Сервер читає до {max} сповіщень: більше додати не можна."
 }

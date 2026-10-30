@@ -767,5 +767,7 @@
   "Ver la fila tal como queda": "Ver a linha como ficará",
   "Guardar fila": "Salvar linha",
   "Crear un item nuevo a partir de este": "Criar um item novo a partir deste",
-  "Tooltips de items custom": "Tooltips de itens custom"
+  "Tooltips de items custom": "Tooltips de itens custom",
+  "El mensaje mide {bytes} bytes y el máximo es {max}.": "A mensagem tem {bytes} bytes e o máximo é {max}.",
+  "El server lee hasta {max} avisos: no se pueden agregar más.": "O servidor lê até {max} avisos: não é possível adicionar mais."
 }
