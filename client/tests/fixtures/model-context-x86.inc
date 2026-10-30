@@ -42,3 +42,22 @@ void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,flo
   Vector_Transform(param_2,param_1,param_3);
   return;
 }
+
+void __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float *Pos, float *WorldPos, bool Translate) {
+
+    float temp[3];
+    float *dst = Translate ? temp : WorldPos;
+    dst[0] = Pos[0] * BoneMatrix[0][0] + Pos[1] * BoneMatrix[0][1] + Pos[2] * BoneMatrix[0][2] + BoneMatrix[0][3];
+    dst[1] = Pos[0] * BoneMatrix[1][0] + Pos[1] * BoneMatrix[1][1] + Pos[2] * BoneMatrix[1][2] + BoneMatrix[1][3];
+    dst[2] = Pos[0] * BoneMatrix[2][0] + Pos[1] * BoneMatrix[2][1] + Pos[2] * BoneMatrix[2][2] + BoneMatrix[2][3];
+
+    if (Translate) {
+
+        const BYTE* modelBytes = static_cast<const BYTE*>(This);
+        float scale = *reinterpret_cast<const float*>(modelBytes + 0x68);
+        const float *origin = reinterpret_cast<const float*>(modelBytes + 0x6c);
+        WorldPos[0] = scale * temp[0] + origin[0];
+        WorldPos[1] = scale * temp[1] + origin[1];
+        WorldPos[2] = scale * temp[2] + origin[2];
+    }
+}

@@ -21,6 +21,7 @@ def harness(contracts_only=False):
 #include <cstring>
 #include <type_traits>
 #ifndef _WIN32
+#define __fastcall
 #define __cdecl
 #endif
 using BYTE=std::uint8_t;using WORD=std::uint16_t;using DWORD=std::uint32_t;using UINT=std::uint32_t;
@@ -56,7 +57,7 @@ void ObjectPose_PrepareBones(OBJECT* o,void* m,float* b,char t){Require(o==wante
 void ObjectPose_PrepareBounds(OBJECT* o,char t){Require(o==wantedOwner&&t==wantedTranslate);++boundsCalls;}
 void Calc_RenderObject(OBJECT* o,char t,int flag){Require(o==wantedOwner&&t==wantedTranslate&&flag==0);++editorCalls;}
 '''
-    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+simulation+"\nnamespace Legacy {\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
+    return prefix+context+services+constants+ctor+dtor+prepare+function(math,"Vector_Transform")+function(math,"BMD_TransformPosition")+function(read_source("src/Math/Math_LegacyTransforms.cpp"),"BMD__TransformPosition")+simulation+"\nnamespace Legacy {\n"+read_source("tests/fixtures/model-context-x86.inc")+"\n}\n"+MAIN
 
 
 MAIN=r'''
@@ -98,6 +99,12 @@ int main(){
    BMD_TransformPosition(flag?&bank.model:nullptr,current,current+12,current+out,flag);
    Legacy::BMD_TransformPosition(flag?legacy:nullptr,reference,reference+12,reference+out,flag);
    Require(std::memcmp(current,reference,sizeof(current))==0);Hash(reference,sizeof(reference));++calls;
+   for(unsigned i=0;i<24;++i)current[i]=float(int((trial+i*7)%41)-20)*.125f;std::memcpy(reference,current,sizeof(current));
+   const unsigned overlap[]={16,12,13,0};out=overlap[trial%4];
+   BMD__TransformPosition(flag?&bank.model:nullptr,reinterpret_cast<float(*)[4]>(current),current+12,current+out,flag!=0);
+   Legacy::BMD__TransformPosition(flag?legacy:nullptr,reinterpret_cast<float(*)[4]>(reference),reference+12,reference+out,flag!=0);
+   Require(std::memcmp(current,reference,sizeof(current))==0);++calls;
+
   }
  }
  for(unsigned trial=0;trial<1024;++trial){
