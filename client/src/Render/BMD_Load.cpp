@@ -12,50 +12,28 @@
 #include "Platform/Text.h"
 #include "globals.h"
 #include "functions.h"
+#include "Model/BMDFileTypes.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
 // ── BMD loaders ──────────────────────────────────────────────────────────────
-// BMD__Open @ 0x004423E0 — BMD::Open (load compressed BMD file into model slot)
-// param_1 = this (model object), param_2 = path string, param_3 = filename string, param_4 = unused
-// Reescrito contra Ghidra 97k (verbatim de "Main 97K", confirmado). Layout 97k:
-//   Buffer: [ver@3][name@4..0x23 (32B)][numMeshes@0x24][numActions@0x26]
-//           [numBones@0x28][data@0x2A...]
-//
-// NOTA 97k vs Main 5.2: el orden en el archivo es Mesh/Actions/Bones (97k)
-// pero en Main 5.2 es Mesh/Bones/Actions. El 97k lee this[0x22]=numActions
-// desde Buffer[0x26] y this[0x26]=numBones desde Buffer[0x28] — los strides
-// de allocación confirman la semántica (stride 0x8c = Action struct,
-// stride 0x10 = Bone struct).
-//
-// NOTA Player.bmd: es sólo-esqueleto (nMesh=0, muchas bones + actions). El
-// render compone Player.bmd (bones + anims) con ArmorClass##/HelmClass##/
-// PantClass##/GloveClass##/BootClass##.bmd (cada uno: 1 mesh + 56 anims
-// matching skeleton). nMesh=0 para Player.bmd NO es bug — es el formato.
-//   this  : +0x00..+0x1F modelName (copiado de Buffer+4)
-//           +0x20   versionByte (Buffer[3])
-//           +0x22 s NumActions  (<- Buffer+0x26)
-//           +0x24 s NumMeshes   (<- Buffer+0x24)
-//           +0x26 s NumBones    (<- Buffer+0x28)
-//           +0x28   Meshes  [nM] stride 0x28 (geom: verts/normals/UVs/faces)
-//           +0x2c   Actions [nA] stride 0x8c (matrix + per-bone keyframe)
-//           +0x30   Bones   [nB] stride 0x10 (skin weights por hueso)
-//           +0x34   TexNames[nM] stride 0x20 (char[32] por mesh)
-//           +0x38   TexIdx  [nM] stride 2
-// Loop order: Mesh → FindNearTriangle → Bone → Action
-void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, int param_4)
+// BMD::Open @0x004423E0: archivo normalizado con mallas(+36), huesos(+38), acciones(+40).
+// Cabeceras de disco sin punteros; tablas de ejecución con tipos nativos.
+// Se conservan v10/v12 y las inicializaciones defensivas del port existente.
+void __cdecl BMD__Open(BMD* param_1, const char* param_2, const char* param_3, int param_4)
 {
     (void)param_4;
-    void *thisPtr = (void *)param_1;
+    BMD* model = param_1;
+    void* thisPtr = model;
     const char *path     = param_2;
     const char *filename = param_3;
 
     // VERY-EARLY defensive BodyLight init: done BEFORE fopen so even if file
     // can't be opened the slot has sane (1,1,1) instead of the pre-existing
     // garbage pattern (0xF5F5F5F5 from the random model pool offset).
-    *(float *)((int)thisPtr + 0x48) = 1.0f;
-    *(float *)((int)thisPtr + 0x4c) = 1.0f;
-    *(float *)((int)thisPtr + 0x50) = 1.0f;
+    model->BodyLight[0] = 1.0f;
+    model->BodyLight[1] = 1.0f;
+    model->BodyLight[2] = 1.0f;
 
     char local_4c[64];
     crt_sprintf(local_4c, "%s%s", path, filename);
@@ -119,7 +97,8 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
             operator_delete(Buffer);
             return;
         }
-        int encSize = *(int *)(Buffer + 4);
+        std::int32_t encSize;
+        memcpy(&encSize, Buffer + 4, sizeof(encSize));
         if (encSize <= 0 || encSize > fileSize - 8) {
             char line[160];
             Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
@@ -154,39 +133,41 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
         fileSize = encSize + 4;
     }
 
-    *(char *)((int)thisPtr + 0x20) = verByte;
+    BmdFile::Header fileHeader;
+    memcpy(&fileHeader, Buffer, sizeof(fileHeader));
+    model->Version = fileHeader.Version;
     // El nombre se lee de Buffer+4 (Ghidra: puVar7+1 antes del body).
-    memcpy(thisPtr, Buffer + 4, 32);
+    memcpy(model->Name, fileHeader.Name, sizeof(fileHeader.Name));
 
     // EARLY defensive BodyLight init: write (1,1,1) BEFORE any parsing path that
     // could early-return. Any subsequent type-specific caller will overwrite as
     // needed (BMD_SetupRender, Entity_DrawByType), but the slot never holds the
     // uninitialized CD/FD pattern that manifested as -1.695e+37 garbage on Logo01.
-    *(float *)((int)thisPtr + 0x48) = 1.0f;
-    *(float *)((int)thisPtr + 0x4c) = 1.0f;
-    *(float *)((int)thisPtr + 0x50) = 1.0f;
+    model->BodyLight[0] = 1.0f;
+    model->BodyLight[1] = 1.0f;
+    model->BodyLight[2] = 1.0f;
 
-    short numMeshes  = *(short *)(Buffer + 0x24);
-    short numActions = *(short *)(Buffer + 0x26);
-    short numBones   = *(short *)(Buffer + 0x28);
+    const short numMeshes = fileHeader.MeshCount;
+    const short numBones = fileHeader.BoneCount;
+    const short numActions = fileHeader.ActionCount;
 
     // Sanity check: counts razonables
     if (numMeshes < 0 || numMeshes > 512 ||
-        numActions < 0 || numActions > 512 ||
-        numBones  < 0 || numBones  > 512) {
-        *(short *)((int)thisPtr + 0x22) = 0;
-        *(short *)((int)thisPtr + 0x24) = 0;
-        *(short *)((int)thisPtr + 0x26) = 0;
-        *(int   *)((int)thisPtr + 0x28) = 0;
-        *(int   *)((int)thisPtr + 0x2c) = 0;
-        *(int   *)((int)thisPtr + 0x30) = 0;
-        *(int   *)((int)thisPtr + 0x34) = 0;
-        *(int   *)((int)thisPtr + 0x38) = 0;
+        numBones < 0 || numBones > 512 ||
+        numActions  < 0 || numActions  > 512) {
+        model->NumBones = 0;
+        model->NumMeshs = 0;
+        model->NumActions = 0;
+        model->Meshs = nullptr;
+        model->Bones = nullptr;
+        model->Actions = nullptr;
+        model->Textures = nullptr;
+        model->IndexTexture = nullptr;
         {
             char line[200];
             Platform::TextFormatTruncated(line, sizeof(line), Platform::TruncateText,
                 "BMD_SanityFail: %s nMesh=%d nAction=%d nBone=%d  thisPtr=%p",
-                local_4c, (int)numMeshes, (int)numActions, (int)numBones, thisPtr);
+                local_4c, (int)numMeshes, (int)numBones, (int)numActions, thisPtr);
             DbgLogPublic(line);
         }
         operator_delete(Buffer);
@@ -204,68 +185,48 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
         }
     }
 
-    *(short *)((int)thisPtr + 0x24) = numMeshes;
-    *(short *)((int)thisPtr + 0x22) = numActions;
-    *(short *)((int)thisPtr + 0x26) = numBones;
+    model->NumMeshs = numMeshes;
+    model->NumBones = numBones;
+    model->NumActions = numActions;
 
-    // --- allocate (clamp a 1 como el original) ---
-    int nM = numMeshes  > 0 ? numMeshes  : 1;
-    int nA = numActions > 0 ? numActions : 1;
-    int nB = numBones   > 0 ? numBones   : 1;
-    *(int *)((int)thisPtr + 0x28) = (int)operator_new(nM * 0x28);
-    *(int *)((int)thisPtr + 0x2c) = (int)operator_new(nA * 0x8c);
-    *(int *)((int)thisPtr + 0x30) = (int)operator_new(nB * 0x10);
-    *(int *)((int)thisPtr + 0x34) = (int)operator_new(nM * 0x20);
-    *(int *)((int)thisPtr + 0x38) = (int)operator_new(nM * 2);
+    // Reservas de ejecución, separadas de las cabeceras de archivo.
+    const int nM = numMeshes > 0 ? numMeshes : 1;
+    const int nB = numBones > 0 ? numBones : 1;
+    const int nA = numActions > 0 ? numActions : 1;
+    model->Meshs = static_cast<BYTE*>(operator_new(nM * sizeof(ClothModelMesh)));
+    model->Bones = static_cast<BYTE*>(operator_new(nB * sizeof(ModelAnimationBone)));
+    model->Actions = static_cast<BYTE*>(operator_new(nA * sizeof(ModelAnimationAction)));
+    model->Textures = static_cast<BYTE*>(operator_new(nM * 32));
+    model->IndexTexture = static_cast<short*>(operator_new(nM * sizeof(std::int16_t)));
+    int cursor = sizeof(BmdFile::Header);
 
-    int cursor = 0x2a;
-
-    // ============ MESH loop ============
-    // Mesh (stride 0x28):
-    //   +0  byte flag=0
-    //   +2  short aux        (Buffer[cursor+8])
-    //   +4  short numVerts   (Buffer[cursor+0])
-    //   +6  short numNormals (Buffer[cursor+2])
-    //   +8  short numUVs     (Buffer[cursor+4])
-    //   +10 short numFaces   (Buffer[cursor+6])
-    //   +0x10 vertBuf  stride 0x10
-    //   +0x14 normBuf  stride 0x14
-    //   +0x18 uvBuf    stride 0x08
-    //   +0x1c faceBuf  stride 0x24 (src stride 0x40)
-    //   +0x24 texNameString* (std::string-ish, 4-byte stub)
-    for (int m = 0; m < numMeshes; m++) {
-        char *mesh = (char *)(*(int *)((int)thisPtr + 0x28) + m * 0x28);
-        short nV   = *(short *)(Buffer + cursor + 0);
-        short nN   = *(short *)(Buffer + cursor + 2);
-        short nT   = *(short *)(Buffer + cursor + 4);
-        short nF   = *(short *)(Buffer + cursor + 6);
-        *(short *)(mesh + 4)  = nV;
-        *(short *)(mesh + 6)  = nN;
-        *(short *)(mesh + 8)  = nT;
-        *(short *)(mesh + 10) = nF;
-        *(short *)(mesh + 2)  = *(short *)(Buffer + cursor + 8);
-        *(char  *)(mesh + 0)  = 0;
-
-        *(int *)(mesh + 0x10) = (int)operator_new(nV * 0x10);
-        *(int *)(mesh + 0x14) = (int)operator_new(nN * 0x14);
-        *(int *)(mesh + 0x18) = (int)operator_new(nT * 0x08);
-        *(int *)(mesh + 0x1c) = (int)operator_new(nF * 0x24);
-
-        cursor += 10;
-        memcpy((void *)*(int *)(mesh + 0x10), Buffer + cursor, nV * 0x10); cursor += nV * 0x10;
-        memcpy((void *)*(int *)(mesh + 0x14), Buffer + cursor, nN * 0x14); cursor += nN * 0x14;
-        memcpy((void *)*(int *)(mesh + 0x18), Buffer + cursor, nT * 0x08); cursor += nT * 0x08;
-
-        for (int f = 0; f < nF; f++) {
-            memcpy((void *)(*(int *)(mesh + 0x1c) + f * 0x24), Buffer + cursor, 0x24);
-            cursor += 0x40;
+    // Caras de archivo: 64 bytes; vista de ejecución: 36 bytes.
+    for (int m = 0; m < numMeshes; ++m) {
+        auto* mesh = reinterpret_cast<ClothModelMesh*>(model->Meshs) + m;
+        BmdFile::MeshHeader header;
+        memcpy(&header, Buffer + cursor, sizeof(header)); cursor += sizeof(header);
+        mesh->VertexCount = header.VertexCount;
+        mesh->NormalCount = header.NormalCount;
+        mesh->TexCoordCount = header.TexCoordCount;
+        mesh->TriangleCount = header.TriangleCount;
+        mesh->TextureIndex = header.TextureIndex;
+        mesh->Unknown0[0] = 0;
+        const int vertexBytes = header.VertexCount * BmdFile::VertexBytes;
+        const int normalBytes = header.NormalCount * BmdFile::NormalBytes;
+        const int texCoordBytes = header.TexCoordCount * BmdFile::TexCoordBytes;
+        mesh->Vertices = static_cast<BYTE*>(operator_new(vertexBytes));
+        mesh->Normals = operator_new(normalBytes);
+        mesh->TexCoords = operator_new(texCoordBytes);
+        mesh->Triangles = static_cast<BYTE*>(operator_new(header.TriangleCount * sizeof(ModelRuntimeTriangle)));
+        memcpy(mesh->Vertices, Buffer + cursor, vertexBytes); cursor += vertexBytes;
+        memcpy(mesh->Normals, Buffer + cursor, normalBytes); cursor += normalBytes;
+        memcpy(mesh->TexCoords, Buffer + cursor, texCoordBytes); cursor += texCoordBytes;
+        for (int f = 0; f < header.TriangleCount; ++f) {
+            memcpy(mesh->Triangles + f * sizeof(ModelRuntimeTriangle), Buffer + cursor, sizeof(ModelRuntimeTriangle));
+            cursor += BmdFile::TriangleBytes;
         }
-
-        // texture name (char[32])
-        char *texSlot = (char *)(*(int *)((int)thisPtr + 0x34) + m * 0x20);
-        memcpy(texSlot, Buffer + cursor, 0x20);
-        cursor += 0x20;
-
+        char* texSlot = reinterpret_cast<char*>(model->Textures) + m * 32;
+        memcpy(texSlot, Buffer + cursor, 32); cursor += 32;
         // TextureScript parse (BMD::Open + parsingTScript @ 0x40C190, fiel a IDA).
         // El nombre de textura puede llevar un marcador `_XYZ` (tras '_') con chars
         // R/H/S/N que activan flags de render por-mesh:
@@ -296,74 +257,50 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
             if (ts4) {
                 char *strObj = (char *)operator_new(4);
                 if (strObj) { strObj[0] = ts0; strObj[1] = ts1; strObj[2] = ts2; strObj[3] = ts3; }
-                *(int *)(mesh + 0x24) = (int)strObj;
+                mesh->TextureFlags = strObj;
             } else {
-                *(int *)(mesh + 0x24) = 0;
+                mesh->TextureFlags = nullptr;
             }
         }
     }
 
     BMD__FindNearTriangle(thisPtr);
 
-    // ============ BONE loop ============
-    // Bone (stride 0x10):
-    //   +0  byte flag=0
-    //   +8  short numVerts   (Buffer[cursor+0])
-    //   +10 byte  hasData    (Buffer[cursor+2])
-    //   +0xc ptr  vertData (opcional, stride 0xc)
-    for (int b = 0; b < numBones; b++) {
-        char *bone = (char *)(*(int *)((int)thisPtr + 0x30) + b * 0x10);
-        *(char *)(bone + 0) = 0;
-        short bV   = *(short *)(Buffer + cursor + 0);
-        char  flag = *(char  *)(Buffer + cursor + 2);
-        *(short *)(bone + 8)  = bV;
-        *(char  *)(bone + 10) = flag;
-        cursor += 3;
-        if (flag) {
-            *(int *)(bone + 0xc) = (int)operator_new(bV * 0xc);
-            memcpy((void *)*(int *)(bone + 0xc), Buffer + cursor, bV * 0xc);
-            cursor += bV * 0xc;
+    // Acciones: cabeceras de archivo de tres bytes, sin punteros.
+    auto* actions = reinterpret_cast<ModelAnimationAction*>(model->Actions);
+    for (int action = 0; action < numActions; ++action) {
+        BmdFile::ActionHeader header;
+        memcpy(&header, Buffer + cursor, sizeof(header)); cursor += sizeof(header);
+        actions[action].Unknown0[0] = 0;
+        actions[action].FrameCount = header.FrameCount;
+        actions[action].LockPositions = header.LockPositions;
+        if (header.LockPositions != 0) {
+            const int bytes = header.FrameCount * BmdFile::VectorBytes;
+            actions[action].Positions = static_cast<float*>(operator_new(bytes));
+            memcpy(actions[action].Positions, Buffer + cursor, bytes); cursor += bytes;
         }
     }
-
-    // ============ ACTION loop ============
-    // Action (stride 0x8c):
-    //   +0..0x1F  bone matrix (32 bytes) si flag==0
-    //   +0x20 short numKeyframes
-    //   +0x22 byte  flag
-    //   +0x24 ptr   perBoneAnim[numBones] stride 0xc
-    //         (+0 pos, +4 rot, +8 scale) cada uno para mV frames
-    for (int a = 0; a < numActions; a++) {
-        char *action = (char *)(*(int *)((int)thisPtr + 0x2c) + a * 0x8c);
-        char aFlag = *(char *)(Buffer + cursor); cursor += 1;
-        *(char *)(action + 0x22) = aFlag;
-        if (aFlag == 0) {
-            memcpy(action, Buffer + cursor, 32);
-            cursor += 32;
-            short nKF = *(short *)(Buffer + cursor); cursor += 2;
-            *(short *)(action + 0x20) = nKF;
-
-            int perBone = (int)operator_new(numBones * 0xc);
-            *(int *)(action + 0x24) = perBone;
-
-            for (int bb = 0; bb < numBones; bb++) {
-                int entry = perBone + bb * 0xc;
-                short mV = *(short *)(*(int *)((int)thisPtr + 0x30) + bb * 0x10 + 8);
-                int posSz = mV * 0xc;
-                int rotSz = mV * 0xc;
-                int sclSz = mV * 0x10;
-                *(int *)(entry + 0) = (int)operator_new(posSz);
-                *(int *)(entry + 4) = (int)operator_new(rotSz);
-                *(int *)(entry + 8) = (int)operator_new(sclSz);
-
-                memcpy((void *)*(int *)(entry + 0), Buffer + cursor, posSz); cursor += posSz;
-                memcpy((void *)*(int *)(entry + 4), Buffer + cursor, rotSz); cursor += rotSz;
-
-                for (int k = 0; k < mV; k++) {
-                    // El layout del registro conserva direcciones de 32 bits; queda para B2.
-                    EulerToQuat(reinterpret_cast<const float*>(static_cast<uintptr_t>(*(unsigned int*)(entry + 4))) + k * 3,
-                                reinterpret_cast<float*>(static_cast<uintptr_t>(*(unsigned int*)(entry + 8))) + k * 4, 0, 0);
-                }
+    // Huesos y claves: mismo orden de lectura y de reservas que en x86.
+    auto* bones = reinterpret_cast<ModelAnimationBone*>(model->Bones);
+    for (int bone = 0; bone < numBones; ++bone) {
+        bones[bone].Dummy = Buffer[cursor++];
+        if (bones[bone].Dummy == 0) {
+            BmdFile::BoneHeader header;
+            memcpy(&header, Buffer + cursor, sizeof(header)); cursor += sizeof(header);
+            memcpy(bones[bone].Name, header.Name, sizeof(header.Name));
+            bones[bone].Parent = header.Parent;
+            bones[bone].Keys = static_cast<ModelAnimationKeys*>(operator_new(numActions * sizeof(ModelAnimationKeys)));
+            for (int action = 0; action < numActions; ++action) {
+                auto& entry = bones[bone].Keys[action];
+                const int frames = actions[action].FrameCount;
+                const int bytes = frames * BmdFile::VectorBytes;
+                entry.Positions = static_cast<float*>(operator_new(bytes));
+                entry.EulerAngles = static_cast<float*>(operator_new(bytes));
+                entry.Quaternions = static_cast<float*>(operator_new(frames * 4 * sizeof(float)));
+                memcpy(entry.Positions, Buffer + cursor, bytes); cursor += bytes;
+                memcpy(entry.EulerAngles, Buffer + cursor, bytes); cursor += bytes;
+                for (int frame = 0; frame < frames; ++frame)
+                    EulerToQuat(entry.EulerAngles + frame * 3, entry.Quaternions + frame * 4, 0, 0);
             }
         }
     }
@@ -375,9 +312,9 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
     // for models that never go through a type-specific colorization branch
     // (ships, logos, UI items, etc.). Callers that need colored models will
     // overwrite these fields before BMD__RenderBody as in BMD_SetupRender.cpp.
-    *(float *)((int)thisPtr + 0x48) = 1.0f;
-    *(float *)((int)thisPtr + 0x4c) = 1.0f;
-    *(float *)((int)thisPtr + 0x50) = 1.0f;
+    model->BodyLight[0] = 1.0f;
+    model->BodyLight[1] = 1.0f;
+    model->BodyLight[2] = 1.0f;
 
     // DIAG: log any non-Player BMD that finishes parsing + the actual values
     // persisted at +0x48..+0x50 after defensive init. This tells us if Logo01
@@ -391,9 +328,9 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
         // Always log Logo/Ship (login scene) even if 30-cap reached.
         if (isLoginScene || (!isPlayer && s_end < 30)) {
             char line[220];
-            float r = *(float *)((int)thisPtr + 0x48);
-            float g = *(float *)((int)thisPtr + 0x4c);
-            float b = *(float *)((int)thisPtr + 0x50);
+            float r = model->BodyLight[0];
+            float g = model->BodyLight[1];
+            float b = model->BodyLight[2];
             s_end++;
         }
     }
