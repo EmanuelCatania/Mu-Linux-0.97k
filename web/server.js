@@ -2205,11 +2205,40 @@ async function readTextBundle(lang, table) {
   } catch (err) {
     if (!/ENOENT/.test(String(err.message))) throw err;
   }
-  const reference = await editorRequest('GET', `/api/file?path=${encodeURIComponent(TEXT_REFERENCE_FILES[table])}`);
   return {
     parsed: translations.parseTranslations(current.content, table),
-    reference: translations.parseReference(reference.content, table)
+    reference: table === 'tooltips' ? await readTooltipReference() : await readFileReference(table)
   };
+}
+
+async function readFileReference(table) {
+  const reference = await editorRequest('GET', `/api/file?path=${encodeURIComponent(TEXT_REFERENCE_FILES[table])}`);
+  return translations.parseReference(reference.content, table);
+}
+
+// Las líneas de tooltip originales salen de los JSON de Data/Custom/Items: una entrada
+// por línea, con el nombre del item para reconocerla.
+async function readTooltipReference() {
+  const [names, items] = await Promise.all([editorFileNames(customItems.KINDS.items), readItemList()]);
+  const nameOf = new Map(items.map((item) => [item.key.join(','), item.name]));
+  const out = [];
+  for (const file of names.sort()) {
+    const key = customItems.keyFromFileName(file);
+    if (!key) continue;
+    let parsed;
+    try {
+      const data = await editorRequest('GET', `/api/file?path=${encodeURIComponent(customItems.pathFor('items', key))}`);
+      parsed = customItems.parseJsonFile(data.content);
+    } catch (err) {
+      continue;
+    }
+    const lines = Array.isArray(parsed?.data?.tooltip) ? parsed.data.tooltip : [];
+    lines.slice(0, customItems.MAX_TOOLTIP_LINES).forEach((line, n) => {
+      const text = typeof line === 'string' ? line : line?.text;
+      if (typeof text === 'string' && text !== '') out.push({ key: [key[0], key[1], n], name: text, label: nameOf.get(key.join(',')) || '' });
+    });
+  }
+  return out;
 }
 
 app.get('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordChange, async (req, res) => {
@@ -2226,7 +2255,7 @@ app.get('/admin/server-editor/api/texts', requireAdmin, requireAdminPasswordChan
     return res.json({
       lang,
       table,
-      maxBytes: translations.MAX_BYTES,
+      maxBytes: translations.maxBytesFor(table),
       reference,
       translations: parsed.entries.map((entry) => ({ key: entry.key, name: entry.name })),
       errors: parsed.errors

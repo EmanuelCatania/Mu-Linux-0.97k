@@ -17,8 +17,13 @@ const TABLES = {
   items: { file: 'Item.txt', keyFields: 2 },
   monsters: { file: 'Monster.txt', keyFields: 1 },
   skills: { file: 'Skill.txt', keyFields: 1 },
-  client: { file: 'Client.txt', keyFields: 1 }
+  client: { file: 'Client.txt', keyFields: 1 },
+  // Líneas del tooltip de los items custom: sección, índice y número de línea. Entran
+  // en el Text[60] de la línea del JSON (59 bytes).
+  tooltips: { file: 'Tooltip.txt', keyFields: 3, maxBytes: 59 }
 };
+
+const MAX_TOOLTIP_LINE = 5;
 
 const MAX_BYTES = 63;
 const MAX_ITEM_SECTION = 15;
@@ -45,10 +50,11 @@ function detectEol(content) {
 
 // Encabezado de un archivo que se crea desde el editor.
 function defaultHeader(table, lang) {
-  const columns = TABLES[table].keyFields === 2 ? 'Sección\tÍndice\tNombre' : (table === 'client' ? 'Índice\tTexto' : 'Índice\tNombre');
+  const columns = table === 'tooltips' ? 'Sección\tÍndice\tLínea\tTexto'
+    : TABLES[table].keyFields === 2 ? 'Sección\tÍndice\tNombre' : (table === 'client' ? 'Índice\tTexto' : 'Índice\tNombre');
   return [
     `//Textos traducidos (${lang}). Se mandan a los clientes con ese idioma; lo que no esté acá`,
-    '//sale de los datos del cliente. UTF-8 sin BOM, hasta 63 bytes por texto.',
+    `//sale de los datos del cliente. UTF-8 sin BOM, hasta ${maxBytesFor(table)} bytes por texto.`,
     `//${columns}`
   ];
 }
@@ -69,7 +75,13 @@ function validKey(table, key) {
   if (!Array.isArray(key) || key.length !== TABLES[table].keyFields) return false;
   if (!key.every((n) => Number.isInteger(n) && n >= 0)) return false;
   if (table === 'items') return key[0] <= MAX_ITEM_SECTION && key[1] <= MAX_ITEM_INDEX;
+  if (table === 'tooltips') return key[0] <= MAX_ITEM_SECTION && key[1] <= MAX_ITEM_INDEX && key[2] <= MAX_TOOLTIP_LINE;
   return key[0] <= MAX_ID;
+}
+
+// Máximo de bytes de un texto de esa tabla.
+function maxBytesFor(table) {
+  return TABLES[table].maxBytes ?? MAX_BYTES;
 }
 
 // Lee el contenido de un archivo de traducciones. Lo que no se entiende queda en
@@ -78,9 +90,8 @@ function parseTranslations(content, table) {
   if (!isTable(table)) throw new Error('Tabla inválida');
   const text = String(content ?? '').replace(/^﻿/, '');
   const eol = detectEol(text);
-  const pattern = TABLES[table].keyFields === 2
-    ? /^(\d+)\s+(\d+)\s+"(.*)"\s*$/
-    : /^(\d+)\s+"(.*)"\s*$/;
+  const fields = TABLES[table].keyFields;
+  const pattern = new RegExp(`^${Array(fields).fill('(\\d+)').join('\\s+')}\\s+"(.*)"\\s*$`);
 
   const header = [];
   const entries = [];
@@ -101,9 +112,7 @@ function parseTranslations(content, table) {
       errors.push({ line: i + 1, text: line.slice(0, 80) });
       continue;
     }
-    const key = TABLES[table].keyFields === 2
-      ? [Number(match[1]), Number(match[2])]
-      : [Number(match[1])];
+    const key = match.slice(1, 1 + fields).map(Number);
     const name = match[match.length - 1];
     if (entries.length === 0) {
       header.push(...pending);
@@ -179,14 +188,14 @@ function sameFormatSpecifiers(a, b) {
 }
 
 // Devuelve { name } con el texto ya normalizado, o { error } con el motivo.
-function validateName(name, { reference } = {}) {
+function validateName(name, { reference, maxBytes = MAX_BYTES } = {}) {
   if (typeof name !== 'string') return { error: 'El texto no es una cadena' };
   const normalized = name.normalize('NFC');
   if (normalized === '') return { error: 'El texto está vacío' };
   if (/["\r\n\t]/.test(normalized)) return { error: 'No puede llevar comillas, tabulaciones ni saltos de línea' };
   if (/[\p{Cc}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/u.test(normalized)) return { error: 'Lleva caracteres de control o inválidos' };
   const bytes = Buffer.byteLength(normalized, 'utf8');
-  if (bytes > MAX_BYTES) return { error: `Mide ${bytes} bytes y el máximo es ${MAX_BYTES}` };
+  if (bytes > maxBytes) return { error: `Mide ${bytes} bytes y el máximo es ${maxBytes}` };
   if (reference != null && !sameFormatSpecifiers(normalized, reference)) {
     return { error: 'Los %d/%s del texto no coinciden con los del inglés' };
   }
@@ -211,7 +220,7 @@ function applyEdits(parsed, edits, table, { referenceFor } = {}) {
       continue;
     }
     const reference = referenceFor ? referenceFor(edit.key) : undefined;
-    const checked = validateName(name, { reference });
+    const checked = validateName(name, { reference, maxBytes: maxBytesFor(table) });
     if (checked.error) {
       errors.push({ key: edit.key, error: checked.error });
       continue;
@@ -239,6 +248,7 @@ module.exports = {
   LANGS,
   TABLES,
   MAX_BYTES,
+  maxBytesFor,
   isLang,
   isTable,
   pathFor,

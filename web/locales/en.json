@@ -766,5 +766,6 @@
   "Para pergaminos de teleport a un mapa fijo.": "For teleport scrolls to a fixed map.",
   "Ver la fila tal como queda": "View the row as it will be written",
   "Guardar fila": "Save row",
-  "Crear un item nuevo a partir de este": "Create a new item from this one"
+  "Crear un item nuevo a partir de este": "Create a new item from this one",
+  "Tooltips de items custom": "Custom item tooltips"
 }

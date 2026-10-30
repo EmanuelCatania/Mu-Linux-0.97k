@@ -9,7 +9,8 @@ const {
   sameFormatSpecifiers,
   applyEdits,
   serializeTranslations,
-  pathFor
+  pathFor,
+  maxBytesFor
 } = require('../lib/translations');
 
 const CLIENT = [
@@ -157,4 +158,41 @@ test('un archivo que no existe se crea con encabezado y fin de línea del server
   assert.match(out, /^\/\/Textos traducidos \(Spn\)/);
   assert.ok(out.endsWith('0\t5\t"Espada"\r\nend\r\n'));
   assert.deepEqual(parseTranslations(out, 'items').entries.map((e) => e.key), [[0, 5]]);
+});
+
+test('tooltips: la clave son sección, índice y línea, y el máximo es de 59 bytes', () => {
+  const parsed = parseTranslations('//cabecera\n13\t400\t0\t"Recolector de zen"\n13\t400\t1\t"Segunda línea"\nend\n', 'tooltips');
+  assert.deepEqual(parsed.entries.map((e) => e.key), [[13, 400, 0], [13, 400, 1]]);
+  assert.equal(parsed.errors.length, 0);
+  assert.equal(maxBytesFor('tooltips'), 59);
+  assert.equal(maxBytesFor('items'), 63);
+  const ok = applyEdits(parsed, [{ key: [13, 400, 2], name: 'a'.repeat(59) }], 'tooltips');
+  assert.equal(ok.errors, undefined);
+  const largo = applyEdits(parsed, [{ key: [13, 400, 2], name: 'a'.repeat(60) }], 'tooltips');
+  assert.match(largo.errors[0].error, /60 bytes y el máximo es 59/);
+  // la línea va de 0 a 5; sección e índice como en los items
+  assert.ok(applyEdits(parsed, [{ key: [13, 400, 6], name: 'x' }], 'tooltips').errors);
+  assert.ok(applyEdits(parsed, [{ key: [13, 400], name: 'x' }], 'tooltips').errors);
+  assert.ok(applyEdits(parsed, [{ key: [16, 0, 0], name: 'x' }], 'tooltips').errors);
+});
+
+test('tooltips: escribir y volver a leer, y el encabezado de un archivo nuevo', () => {
+  const nuevo = parseTranslations('', 'tooltips');
+  const result = applyEdits(nuevo, [{ key: [5, 33, 1], name: 'Brilla en la oscuridad' }, { key: [5, 33, 0], name: 'Bastón del evento' }], 'tooltips');
+  const out = serializeTranslations(nuevo, result.entries, { table: 'tooltips', lang: 'Spn' });
+  assert.match(out, /Sección\tÍndice\tLínea\tTexto/);
+  assert.match(out, /hasta 59 bytes/);
+  const back = parseTranslations(out, 'tooltips');
+  assert.deepEqual(back.entries.map((e) => [e.key, e.name]), [[[5, 33, 0], 'Bastón del evento'], [[5, 33, 1], 'Brilla en la oscuridad']]);
+});
+
+test('el Tooltip.txt del repo se lee sin errores', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  for (const lang of ['Eng', 'Spn', 'Por']) {
+    const content = fs.readFileSync(path.join(__dirname, '..', '..', 'MuServer', 'Data', 'Text', lang, 'Tooltip.txt'), 'utf8');
+    const parsed = parseTranslations(content, 'tooltips');
+    assert.equal(parsed.errors.length, 0, lang);
+    for (const entry of parsed.entries) assert.equal(validateName(entry.name, { maxBytes: 59 }).error, undefined, lang);
+  }
 });
