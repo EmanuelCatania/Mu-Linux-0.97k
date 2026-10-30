@@ -172,6 +172,9 @@ jobs:
             python -B tests/InventoryScanPointer.py --architecture x64
             python -B tests/PolygonPointer.py --architecture x64
             python -B tests/AnimationBonesPointer.py --architecture x64
+            python -B tests/AnimationBonesPointer.py --architecture Win32
+            python -B tests/AnimationDifferential.py --architecture Win32
+            python -B tests/AnimationDifferential.py --architecture x64
             python -B tests/SkeletonBonesPointer.py --architecture x64
             python -B tests/PoseEntityPointer.py --architecture x64
             python -B tests/MoltTickPointer.py --architecture x64
@@ -379,6 +382,7 @@ jobs:
             python3 -B tests/InventoryScanPointer.py --generator Ninja
             python3 -B tests/PolygonPointer.py --generator Ninja
             python3 -B tests/AnimationBonesPointer.py --generator Ninja
+            python3 -B tests/AnimationDifferential.py --generator Ninja
             python3 -B tests/SkeletonBonesPointer.py --generator Ninja
             python3 -B tests/PoseEntityPointer.py --generator Ninja
             python3 -B tests/MoltTickPointer.py --generator Ninja

@@ -101,22 +101,22 @@ static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsig
                            unsigned char param_4, unsigned int* param_5,
                            float* param_6, char param_7, char param_8,
                            char* quaternionScratch, float* parentScratch) {
-    int*  piModel = (int*)this_;
+    BMD& model = *AsModel(this_);
     // clamp anim indices to bone count
-    short boneCount = *(short*)((char*)this_ + 0x26);
+    short boneCount = model.NumActions;
     if (boneCount <= (short)(unsigned short)param_4)
         param_4 = 0;
-    if (boneCount <= (short)(unsigned short)*(unsigned char*)((char*)this_ + 0xa0))
-        *(unsigned char*)((char*)this_ + 0xa0) = 0;
+    if (boneCount <= (short)(unsigned short)model.CurrentAction)
+        model.CurrentAction = 0;
     // store current color/frame in model header
-    *(unsigned int*)((char*)this_ + 0x78) = param_5[0];
-    *(unsigned int*)((char*)this_ + 0x7c) = param_5[1];
-    *(unsigned int*)((char*)this_ + 0x80) = param_5[2];
-    *(float*)((char*)this_ + 0xa4) = param_2;
+    memcpy(&model.BodyAngle[0], param_5 + 0, sizeof(float));
+    memcpy(&model.BodyAngle[1], param_5 + 1, sizeof(float));
+    memcpy(&model.BodyAngle[2], param_5 + 2, sizeof(float));
+    model.CurrentAnimation = param_2;
     // compute fractional frame and frame indices
     long long lv = (long long)(int)param_2;
     short curFrame = (short)lv;
-    *(short*)((char*)this_ + 0xa8) = curFrame;
+    model.CurrentAnimationFrame = curFrame;
     float fFrac = param_2 - (float)(int)curFrame;
     float fFrac2 = _DAT_0055256c - fFrac;
     // param_3 es realmente `float PriorFrame` (IDA firma), no un entero. La firma
@@ -128,49 +128,50 @@ static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsig
     memcpy(&priorFrame, &param_3, 4);
     int v39 = (int)priorFrame;
     if (boneCount > 0) {
-        int* animA = (int*)(*(int*)((char*)this_ + 0x30) + (unsigned int)param_4 * 0x10);
-        if (*(short*)(animA + 2) <= v39) v39 = 0;
+        const ModelAnimationAction* actions = reinterpret_cast<const ModelAnimationAction*>(model.Actions);
+        const ModelAnimationAction* animA = actions + param_4;
+        if (animA->FrameCount <= v39) v39 = 0;
         // IDA también clamp this[+0xA8] contra anim[this+0xA0]'s length:
         //   if ( v11 >= *(std::int16_t *)(16 * *(std::uint8_t*)(This+160) + v13 + 8) )
         //       *(_WORD *)(This + 168) = 0;
-        int animBIdxClamp = *(unsigned char*)((char*)this_ + 0xa0);
-        int* animBHdr = (int*)(*(int*)((char*)this_ + 0x30) + animBIdxClamp * 0x10);
-        if (*(short*)(animBHdr + 2) <= *(short*)((char*)this_ + 0xa8))
-            *(short*)((char*)this_ + 0xa8) = 0;
+        int animBIdxClamp = model.CurrentAction;
+        const ModelAnimationAction* animBHdr = actions + animBIdxClamp;
+        if (animBHdr->FrameCount <= model.CurrentAnimationFrame)
+            model.CurrentAnimationFrame = 0;
         // per-bone loop: interpolate quaternions and build transforms
-        for (int boneIdx = 0; boneIdx < (int)(short)*(short*)((char*)this_+0x22); boneIdx++) {
-            int bonePtr = *(int*)((char*)this_ + 0x2c) + boneIdx * 0x8c;
-            if (*(char*)(bonePtr + 0x22) == '\0') {
-                int* animPtrA = (int*)(*(int*)(bonePtr + 0x24) + (unsigned int)param_4 * 0xc);
-                int* animPtrB = (int*)(*(int*)(bonePtr + 0x24) + (unsigned int)*(unsigned char*)((char*)this_ + 0xa0) * 0xc);
+        for (int boneIdx = 0; boneIdx < (int)(short)model.NumBones; boneIdx++) {
+            const ModelAnimationBone* bonePtr = reinterpret_cast<const ModelAnimationBone*>(model.Bones) + boneIdx;
+            if (bonePtr->Dummy == '\0') {
+                const ModelAnimationKeys* animPtrA = bonePtr->Keys + param_4;
+                const ModelAnimationKeys* animPtrB = bonePtr->Keys + model.CurrentAction;
                 float quatA[4], quatB[4];
-                if (boneIdx == *(int*)((char*)this_ + 0x54)) {
+                if (boneIdx == model.BoneHead) {
                     // root bone: leer Euler angles (3 floats, stride 0xc) y
                     // convertir a quat via EulerToQuat (EulerToQuat), con los 3 componentes:
                     // EulerToQuat lee también Y (línea 25: v5 = a1[1]*0.5).
                     // IDA: v43[1] = *(_DWORD *)(v21 + 4); (Y sin ajuste HeadAngle)
                     float posA[4], posB[4];
-                    int   curFrameB = *(short*)((char*)this_ + 0xa8);
-                    posA[0] = *(float*)(animPtrA[1] + v39 * 0xc)     - param_6[0] * _DAT_005528b0;
-                    posA[1] = *(float*)(animPtrA[1] + v39 * 0xc + 4);
-                    posA[2] = *(float*)(animPtrA[1] + v39 * 0xc + 8) - param_6[1] * _DAT_005528b0;
-                    posB[0] = *(float*)(animPtrB[1] + curFrameB * 0xc)     - param_6[0] * _DAT_005528b0;
-                    posB[1] = *(float*)(animPtrB[1] + curFrameB * 0xc + 4);
-                    posB[2] = *(float*)(animPtrB[1] + curFrameB * 0xc + 8) - param_6[1] * _DAT_005528b0;
+                    int   curFrameB = model.CurrentAnimationFrame;
+                    posA[0] = animPtrA->EulerAngles[v39 * 3 + 0]     - param_6[0] * _DAT_005528b0;
+                    posA[1] = animPtrA->EulerAngles[v39 * 3 + 1];
+                    posA[2] = animPtrA->EulerAngles[v39 * 3 + 2] - param_6[1] * _DAT_005528b0;
+                    posB[0] = animPtrB->EulerAngles[curFrameB * 3 + 0]     - param_6[0] * _DAT_005528b0;
+                    posB[1] = animPtrB->EulerAngles[curFrameB * 3 + 1];
+                    posB[2] = animPtrB->EulerAngles[curFrameB * 3 + 2] - param_6[1] * _DAT_005528b0;
                     EulerToQuat(posA, quatA, 0, 0);
                     EulerToQuat(posB, quatB, 0, 0);
                 } else {
                     // regular bone: read quaternion from anim table
                     int frameOff = v39 * 0x10;
-                    quatA[0] = *(float*)(animPtrA[2] + frameOff);
-                    quatA[1] = *(float*)(animPtrA[2] + frameOff + 4);
-                    quatA[2] = *(float*)(animPtrA[2] + frameOff + 8);
-                    quatA[3] = *(float*)(animPtrA[2] + frameOff + 0xc);
-                    int frameOffB = *(short*)((char*)this_ + 0xa8) * 0x10;
-                    quatB[0] = *(float*)(animPtrB[2] + frameOffB);
-                    quatB[1] = *(float*)(animPtrB[2] + frameOffB + 4);
-                    quatB[2] = *(float*)(animPtrB[2] + frameOffB + 8);
-                    quatB[3] = *(float*)(animPtrB[2] + frameOffB + 0xc);
+                    quatA[0] = animPtrA->Quaternions[frameOff / 4 + 0];
+                    quatA[1] = animPtrA->Quaternions[frameOff / 4 + 1];
+                    quatA[2] = animPtrA->Quaternions[frameOff / 4 + 2];
+                    quatA[3] = animPtrA->Quaternions[frameOff / 4 + 3];
+                    int frameOffB = model.CurrentAnimationFrame * 0x10;
+                    quatB[0] = animPtrB->Quaternions[frameOffB / 4 + 0];
+                    quatB[1] = animPtrB->Quaternions[frameOffB / 4 + 1];
+                    quatB[2] = animPtrB->Quaternions[frameOffB / 4 + 2];
+                    quatB[3] = animPtrB->Quaternions[frameOffB / 4 + 3];
                 }
                 // slerp between quatA and quatB
                 // IDA: `(char *)&unk_5826E18 + 16 * boneIdx` — paso de 16 BYTES.
@@ -189,31 +190,31 @@ static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsig
                 float rot33[12] = {0};
                 QuatToMatrix(outQuat, rot33, 0, 0);
                 // get translation from frame keys (3 floats × priorFrameInt)
-                float* ptransA = (float*)(*animPtrA + v39 * 0xc);
-                float* ptransB = (float*)(*animPtrB + *(short*)((char*)this_ + 0xa8) * 0xc);
+                float* ptransA = animPtrA->Positions + v39 * 3;
+                float* ptransB = animPtrB->Positions + model.CurrentAnimationFrame * 3;
                 float tX, tY, tZ;
                 if (boneIdx == 0 &&
-                    (*(char*)((unsigned int)param_4 * 0x10 + 10 + *(int*)((char*)this_+0x30)) != '\0' ||
-                     *(char*)((unsigned int)*(unsigned char*)((char*)this_+0xa0)*0x10+10+*(int*)((char*)this_+0x30)) != '\0')) {
+                    (actions[param_4].LockPositions != '\0' ||
+                     actions[model.CurrentAction].LockPositions != '\0')) {
                     // root-bone override: IDA toma frame 0 de animB (NO animA)
                     //   v52 = **(float **)v17;              // v17 = animB
                     //   v53 = *(float *)(*(_DWORD *)v17+4);
                     // Antes usábamos *animPtrA → offset origen equivocado en anim
                     // de transición entre acciones (animA≠animB).
-                    tX = *(float*)*animPtrB;
-                    tY = *(float*)(*animPtrB + 4);
-                    tZ = fFrac * ptransB[2] + fFrac2 * ptransA[2] + *(float*)((char*)this_ + 0x84);
+                    tX = animPtrB->Positions[0];
+                    tY = animPtrB->Positions[1];
+                    tZ = fFrac * ptransB[2] + fFrac2 * ptransA[2] + model.BodyHeight;
                 } else {
                     tX = fFrac2 * ptransA[0] + fFrac * ptransB[0];
                     tY = fFrac * ptransB[1] + fFrac2 * ptransA[1];
                     tZ = fFrac * ptransB[2] + fFrac2 * ptransA[2];
                 }
                 // apply parent transform
-                short parentIdx = *(short*)(bonePtr + 0x20);
+                short parentIdx = bonePtr->Parent;
                 float* parentMat;
                 if (parentIdx == -1) {
                     if (param_7 == '\0') {
-                        Matrix_BuildFromEuler((float*)((char*)this_ + 0x78), parentScratch);
+                        Matrix_BuildFromEuler(model.BodyAngle, parentScratch);
                         if (param_8 != '\0') {
                             // Se escalan los 9 elementos rotacionales (3x3 completa), no sólo la
                             // diagonal (cross-ref con 5.2 ZzzBMD.cpp:153-159; el decompile de IDA se lee
@@ -222,7 +223,7 @@ static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsig
                             //     for (x=0; x<3; x++)
                             //       ParentMatrix[y][x] *= BodyScale;
                             // Translate flag escribe BodyOrigin en columna [3].
-                            float sc = *(float*)((char*)this_ + 0x68);
+                            float sc = model.BodyScale;
                             float* pm = parentScratch;
                             // Scale full 3x3 rotation block (rows 0..2, cols 0..2).
                             // Layout: pm[y*4 + x] for row y, col x.
@@ -232,9 +233,9 @@ static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsig
                                 }
                             }
                             // Translation column [y][3] = BodyOrigin[y].
-                            pm[3]  = *(float*)((char*)this_ + 0x6c);  // BodyOrigin[0]
-                            pm[7]  = *(float*)((char*)this_ + 0x70);  // BodyOrigin[1]
-                            pm[11] = *(float*)((char*)this_ + 0x74);  // BodyOrigin[2]
+                            pm[3]  = model.BodyOrigin[0];  // BodyOrigin[0]
+                            pm[7]  = model.BodyOrigin[1];  // BodyOrigin[1]
+                            pm[11] = model.BodyOrigin[2];  // BodyOrigin[2]
                         }
                     }
                     parentMat = parentScratch;

@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 #include <cstddef>
+#include <cstdint>
+#include <type_traits>
 
 // IDA: BMD, 0xBC bytes; array Models (DAT_05828d58), un modelo por tipo.
 //
@@ -12,6 +14,44 @@
 // anclajes siguen el orden del 5.2, que encaja exacto con ellos; la única
 // diferencia es el puntero LightMaps en 0x40, que el 5.2 ya no tiene.
 #pragma pack(push, 1)
+// Registros de ejecución consumidos por BMD_Animation (IDA 0x00440060).
+// No son cabeceras de archivo: el cargador debe decodificar sus datos por separado.
+struct ModelAnimationKeys {
+    float* Positions;
+    float* EulerAngles;
+    float* Quaternions;
+};
+struct ModelAnimationBone {
+    char Name[32];
+    std::int16_t Parent;
+    std::uint8_t Dummy;
+    std::uint8_t Padding35;
+    ModelAnimationKeys* Keys;
+    std::uint8_t Unknown40[100];
+};
+struct ModelAnimationAction {
+    std::uint8_t Unknown0[8];
+    std::int16_t FrameCount;
+    std::uint8_t LockPositions;
+    std::uint8_t Padding11;
+    float* Positions;
+};
+static_assert(sizeof(ModelAnimationKeys) == 3 * sizeof(void*));
+static_assert(alignof(ModelAnimationKeys) == 1 && alignof(ModelAnimationBone) == 1 && alignof(ModelAnimationAction) == 1);
+static_assert(std::is_standard_layout_v<ModelAnimationKeys> && std::is_trivially_copyable_v<ModelAnimationKeys>);
+static_assert(std::is_standard_layout_v<ModelAnimationBone> && std::is_trivially_copyable_v<ModelAnimationBone>);
+static_assert(std::is_standard_layout_v<ModelAnimationAction> && std::is_trivially_copyable_v<ModelAnimationAction>);
+static_assert(offsetof(ModelAnimationKeys, EulerAngles) == sizeof(void*));
+static_assert(offsetof(ModelAnimationKeys, Quaternions) == 2 * sizeof(void*));
+static_assert(sizeof(ModelAnimationBone) == 136 + sizeof(void*));
+static_assert(offsetof(ModelAnimationBone, Parent) == 32);
+static_assert(offsetof(ModelAnimationBone, Dummy) == 34);
+static_assert(offsetof(ModelAnimationBone, Keys) == 36);
+static_assert(sizeof(ModelAnimationAction) == 12 + sizeof(void*));
+static_assert(offsetof(ModelAnimationAction, FrameCount) == 8);
+static_assert(offsetof(ModelAnimationAction, LockPositions) == 10);
+static_assert(offsetof(ModelAnimationAction, Positions) == 12);
+
 struct BMD {
     char     Name[32];              // 0x00
     char     Version;               // 0x20
