@@ -85,6 +85,8 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
 //   otherwise → map light * 0.2 scale
 void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
 {
+  const OBJECT* object = AsObject(param_1);
+  BMD* model = AsModel(param_2);
   float10 fVar1;
   // float[3] contiguo: RequestTerrainLight escribe 3 floats seguidos desde el
   // puntero de salida (Ghidra lo había partido en tres locals sueltos, que MSVC
@@ -94,24 +96,28 @@ void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
   float &local_8 = rgb[1];
   float &local_4 = rgb[2];
 
-  if (*(short *)(param_1 + 2) == 0x145) {
-    *(undefined4 *)(param_2 + 0x48) = 0x3f19999a;
-    *(undefined4 *)(param_2 + 0x4c) = 0x3f19999a;
-    *(undefined4 *)(param_2 + 0x50) = 0x3f19999a;
+  if (object->Type == 0x145) {
+    model->BodyLight[0] = 0.6f;
+    model->BodyLight[1] = 0.6f;
+    model->BodyLight[2] = 0.6f;
     return;
   }
-  if ((*(short *)(param_1 + 2) == 0xe1) &&
-     ((*(uint *)(*(int *)(param_1 + 0xfc) + 0x78) & 0x200) == 0x200)) {
+  // El DWORD opaco +0x78 precede a los punteros: conservar su contrato de bytes.
+  static_assert(offsetof(OBJECT, Teleport) == 0x7c);
+  std::uint32_t ownerFlags = 0;
+  if (object->Type == 0xe1)
+    memcpy(&ownerFlags, reinterpret_cast<const BYTE*>(object->Owner) + 0x78, sizeof(ownerFlags));
+  if ((object->Type == 0xe1) && ((ownerFlags & 0x200) == 0x200)) {
     fVar1 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552a08);
     fVar1 = (fVar1 + (float10)_DAT_0055256c) * (float10)_DAT_00552504;
-    *(float *)(param_2 + 0x48) = (float)fVar1;
-    *(float *)(param_2 + 0x4c) = (float)fVar1;
-    *(float *)(param_2 + 0x50) = (float)fVar1;
+    model->BodyLight[0] = (float)fVar1;
+    model->BodyLight[1] = (float)fVar1;
+    model->BodyLight[2] = (float)fVar1;
     return;
   }
-  *(undefined1 *)(param_2 + 0x44) = *(undefined1 *)(param_1 + 0xdc);
-  if (*(char *)(param_1 + 0xdc) != '\0') {
-    RequestTerrainLight(*(float *)(param_1 + 0x10),*(float *)(param_1 + 0x14),rgb);
+  model->LightEnable = object->LightEnable;
+  if (object->LightEnable != '\0') {
+    RequestTerrainLight(object->Position[0],object->Position[1],rgb);
     // Login banner (`0xa2` / MODEL_MUGAME): the overlay path in sub_440D50
     // multiplies the animated blend light by model BodyLight. In gameplay the
     // terrain sampler feeds that base color, but our login scene has no world
@@ -121,7 +127,7 @@ void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
     // Keep this narrowly scoped to the login banner so we preserve the world
     // renderer semantics and avoid brightening unrelated objects.
     if ((SceneFlag == 2 || SceneFlag == 4) &&
-        *(short *)(param_1 + 2) == 0xA2 &&
+        object->Type == 0xA2 &&
         rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
         rgb[0] = rgb[1] = rgb[2] = 1.0f;
     }
@@ -134,14 +140,14 @@ void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
         rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
         rgb[0] = rgb[1] = rgb[2] = 1.0f;
     }
-    *(float *)(param_2 + 0x48) = local_c + *(float *)(param_1 + 0xe8);
-    *(float *)(param_2 + 0x4c) = local_8 + *(float *)(param_1 + 0xec);
-    *(float *)(param_2 + 0x50) = local_4 + *(float *)(param_1 + 0xf0);
+    model->BodyLight[0] = local_c + object->Light[0];
+    model->BodyLight[1] = local_8 + object->Light[1];
+    model->BodyLight[2] = local_4 + object->Light[2];
     return;
   }
-  RequestTerrainLight(*(float *)(param_1 + 0x10),*(float *)(param_1 + 0x14),rgb);
+  RequestTerrainLight(object->Position[0],object->Position[1],rgb);
   if ((SceneFlag == 2 || SceneFlag == 4) &&
-      *(short *)(param_1 + 2) == 0xA2 &&
+      object->Type == 0xA2 &&
       rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
     rgb[0] = rgb[1] = rgb[2] = 1.0f;
   }
@@ -151,9 +157,9 @@ void __cdecl Entity_GetLightScale(uintptr_t param_1,uintptr_t param_2)
   }
   local_8 = local_8 * _DAT_005524f4;
   local_4 = local_4 * _DAT_005524f4;
-  *(float *)(param_2 + 0x48) = local_c * _DAT_005524f4 + *(float *)(param_1 + 0xe8);
-  *(float *)(param_2 + 0x4c) = local_8 + *(float *)(param_1 + 0xec);
-  *(float *)(param_2 + 0x50) = local_4 + *(float *)(param_1 + 0xf0);
+  model->BodyLight[0] = local_c * _DAT_005524f4 + object->Light[0];
+  model->BodyLight[1] = local_8 + object->Light[1];
+  model->BodyLight[2] = local_4 + object->Light[2];
   return;
 }
 

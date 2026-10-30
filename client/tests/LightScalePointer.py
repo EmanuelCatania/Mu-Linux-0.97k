@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Entity_GetLightScale real, muestreo controlado y owner DWORD bajo (B2)."""
+"""Iluminación real con oráculo aritmético; vista legacy o BMD/owner nativos."""
 import argparse
 import os
 from pathlib import Path
@@ -64,23 +64,33 @@ int main(){
 '''
 
 
-def harness(revision=None):
+def harness(revision=None,native=False):
     code=function(read_source('src/Terrain/Terrain_Light.cpp',revision),'Entity_GetLightScale')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES
+    if 'AsObject(' in code:
+        from ObjectLayoutContract import object_types,record
+        from LegacyModelLayout import VIEW
+        prefix+="\nusing WORD=std::uint16_t;using vec3_t=float[3];using vec34_t=float[3][4];\n"+object_types()+"\nOBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\n"
+        prefix+=("\n#pragma pack(push,1)\n"+record(read_source('src/Model/ModelTypes.h'),'BMD')+"\n#pragma pack(pop)\ninline BMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}") if native else VIEW
+
     header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
     for name in sorted(set(re.findall(r'_DAT_[0-9a-f]+',code))):
         prefix+=re.search(rf'extern [^;\n]*\b{name}\s*;',header).group()
         prefix+=re.search(rf'^[^/\n]*\b{name}\s*=\s*[^;]+;',definitions,re.M).group()
     arg='reinterpret_cast<uintptr_t>(PTR)' if 'uintptr_t param_1' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(PTR))'
-    return prefix+code+MAIN.replace('ENTITY_ARG',arg.replace('PTR','entity')).replace('MODEL_ARG',arg.replace('PTR','model'))
+    main=MAIN.replace('static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(owner))','reinterpret_cast<std::uintptr_t>(owner)') if 'AsObject(' in code else MAIN
+    if native:
+        main=main.replace('224','256').replace('beforeModel[16+68]','beforeModel[16+offsetof(BMD,LightEnable)]').replace('beforeModel+16+72','beforeModel+16+offsetof(BMD,BodyLight)').replace('mask<4','mask<8').replace('low+2048)==expected','(mask&4?high:low)+2048)==expected').replace('cuatro combinaciones entidad/modelo altos y bajos; owner32 bajo','ocho combinaciones entidad/modelo/owner nativos altos y bajos')
+    return prefix+code+main.replace('ENTITY_ARG',arg.replace('PTR','entity')).replace('MODEL_ARG',arg.replace('PTR','model'))
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64')
-    parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
+    parser.add_argument('--native-layout',action='store_true');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
+    if args.reference_ref and args.native_layout:parser.error('La referencia usa la vista legacy x86')
     if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):parser.error('Referencia sólo en Windows x86')
     with tempfile.TemporaryDirectory(prefix='mu-light-scale-')as temp:
-        directory=Path(temp);current=build_and_run(directory/'current',harness(),args);print(current,end='')
+        directory=Path(temp);current=build_and_run(directory/'current',harness(native=args.native_layout),args);print(current,end='')
         if args.reference_ref:
             reference=build_and_run(directory/'reference',harness(args.reference_ref),args)
             if current!=reference:raise RuntimeError('Diferencia con referencia x86')
