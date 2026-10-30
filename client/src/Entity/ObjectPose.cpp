@@ -15,22 +15,17 @@
 // de la entidad que el render puede sobrescribir con una pose interpolada.
 static void PrepareContext(OBJECT* entity, void* model)
 {
-    BYTE* modelBase = static_cast<BYTE*>(model);
-    *(DWORD*)(modelBase + 0x68) = *(DWORD *)&AsObject(entity)->Scale;
-    *(BYTE *)(modelBase + 0xa0) = AsObject(entity)->CurrentAction;
-    *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-    *(DWORD*)(modelBase + 0x70) = *(DWORD *)&AsObject(entity)->Position[1];
-    *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+    BMD& context = *AsModel(model);
+    // Copiar los bits, incluidas cargas NaN y ceros con signo, como los DWORD originales.
+    memcpy(&context.BodyScale, &entity->Scale, sizeof(context.BodyScale));
+    context.CurrentAction = entity->CurrentAction;
+    memcpy(context.BodyOrigin, entity->Position, sizeof(context.BodyOrigin));
     // Desplazamiento Y especial para la elfa (0x14B) y su variante (0x14A).
     short cls = AsObject(entity)->Type;
     if (cls == 0x14b) {
-        *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-        *(float *)(modelBase + 0x70) = AsObject(entity)->Position[1] + _DAT_0055290c;
-        *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+        context.BodyOrigin[1] = entity->Position[1] + _DAT_0055290c;
     } else if (cls == 0x14a) {
-        *(DWORD*)(modelBase + 0x6c) = *(DWORD *)&AsObject(entity)->Position[0];
-        *(float *)(modelBase + 0x70) = AsObject(entity)->Position[1] + _DAT_00552908;
-        *(DWORD*)(modelBase + 0x74) = *(DWORD *)&AsObject(entity)->Position[2];
+        context.BodyOrigin[1] = entity->Position[1] + _DAT_00552908;
     }
 }
 static bool ReuseBones(OBJECT* entity, void* model, float* bones, char translate);
@@ -69,8 +64,8 @@ void ObjectPose_PrepareSimulation(OBJECT* entity, char translate)
         Calc_RenderObject(entity, translate, 0);
         return;
     }
-    void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
-    *(float *)((char *)model + 0x84) = 0.0f;
+    BMD* model = AsModel(DAT_05828d58) + o.Type;
+    model->BodyHeight = 0.0f;
     float *bones = o.EnableBoneMatrix ? (float *)o.BoneMatrices : (float *)&DAT_06970a9c;
     ObjectPose_PrepareBones(entity, model, bones, translate);
     ObjectPose_PrepareBounds(entity, translate);

@@ -94,6 +94,9 @@ def harness(revision=None):
  code=''.join(bodies)+function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')
  constants=''.join(re.search(r'^float\s+'+n+r'\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()for n in sorted(set(re.findall(r'\b_DAT_[0-9a-f]+\b',code))))
  services=SERVICES.replace('VIEW',view).replace('TRANSFORMS','#include "'+(ROOT/'src/Render/TransformMath.h').as_posix()+'"').replace('STRUCTURES',structures).replace('FORWARDS',prototypes)
+ if 'AsModel(' in bodies[0]:
+  from LegacyModelLayout import VIEW
+  services=VIEW+services
  bounds=function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')
  body=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')+constants+services+bounds+''.join(bodies)
  batch=re.search(r'^\s*PrepareContext\([^;\n]*p\.object\.data\(\)[^;\n]*;',pose,re.M).group()

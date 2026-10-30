@@ -17,6 +17,7 @@ SOURCES = {
     "src/Entity/Entity_LegacyEffects.cpp": "Sound_UpdateChannel3D_Tick",
     "src/Entity/CharacterCloth.cpp": "ClothNew PrepareMeshClothVertices CharacterCloth_Tick",
     "src/Render/Render_LegacyBillboards.cpp": "DeleteCloth",
+    "src/Math/Math_3D.cpp": "Vector_Transform BMD_TransformPosition",
 }
 
 def function(source,name):
@@ -54,7 +55,6 @@ CHARACTER* AsCharacter(void* p){return static_cast<CHARACTER*>(p);}CHARACTER* As
 BMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);} BMD* AsModel(void* p){return static_cast<BMD*>(p);}
 struct Map{int world=0;int GetCurrentMap()const{return world;}}gMapManager;
 struct Catalog{int EntityDrawModel(const void*,short type)const{return type;}}gContentCatalog;
-struct EquipmentModelContext{explicit EquipmentModelContext(void*){}};
 void ObjectPose_PrepareBones(OBJECT*,void*,float*,int){}
 void ObjectPose_PrepareSimulation(OBJECT*,int){}
 template<class... T>void Skeleton_Transform(T...){}
@@ -69,10 +69,7 @@ float RenderInterpolation_Alpha(){return .375f;}
 bool RenderInterpolation_OwnerContinuous(const void* p){Require(p!=nullptr);return true;}
 float RenderBlend(float a,float b,float t){return a+(b-a)*t;}
 void AngleMatrix(float*,float(*out)[4]){std::memset(out,0,48);out[0][0]=out[1][1]=out[2][2]=1;}
-void BMD_TransformPosition(void* model,float* m,float* p,float* out,int){
-    BMD* b=AsModel(model);
-    for(int i=0;i<3;++i)out[i]=p[0]*m[i*4]+p[1]*m[i*4+1]+p[2]*m[i*4+2]+m[i*4+3]+b->BodyOrigin[i];
-}
+namespace Platform{struct Timer{DWORD Ticks(){return 1;}}timer;Timer& GetTimer(){return timer;}}
 alignas(16) static BYTE arena[8*1024*1024];
 struct Allocation{BYTE* p;std::size_t size;bool live;};std::vector<Allocation> allocations;std::size_t cursor;
 std::uint64_t lifetimeDigest=14695981039346656037ull;unsigned allocated,freed;
@@ -200,17 +197,23 @@ int main(){
 
 def harness(revision=None):
     units=[function(read_source(path,revision),name) for path,names in SOURCES.items() for name in names.split()]
-    if revision:units.append(function(read_source("src/Entity/CharacterCloth.cpp",revision),"PtrAsFloatBits"))
+    legacy_abi='float entity,' in function(read_source("src/UI/UI_LegacyWidgetSystem.cpp",revision),"GridSpring_Create")
+    if legacy_abi:units.append(function(read_source("src/Entity/CharacterCloth.cpp",revision),"PtrAsFloatBits"))
     code="\n".join(units)
     header=read_source("src/Entity/EntityTypes.h",revision)
     types="\n#pragma pack(push,1)\n"+"\n".join(record(header,n) for n in ["OBJECT","PART_t","CHARACTER"])+"\n#pragma pack(pop)\n"
-    if revision:
+    if legacy_abi:
         types=types.replace("BYTE     _unk180[0x30];","BYTE ClothCount; BYTE pad181[3]; void* Cloth; BYTE pad188[40];")
         types=types.replace("BYTE     _unk14[4];","void* Cloth;")
     model=record(read_source("src/Model/ModelTypes.h",revision),"BMD")
     types+="\n#pragma pack(push,1)\n"+model+"\n#pragma pack(pop)\n"
+    types+=re.search(r'class EquipmentModelContext\s*\{.*?\n\};',read_source("src/Render/EquipmentVisuals.h",revision),re.S).group()+"\n"
+    equipment=read_source("src/Render/EquipmentVisuals.cpp",revision)
+    units.append(re.search(r'EquipmentModelContext::EquipmentModelContext\(.*?\n\}',equipment,re.S).group())
+    units.append(re.search(r'EquipmentModelContext::~EquipmentModelContext\(\)[^\n]*',equipment).group())
+    code="\n".join(units)
     cloth=read_source("src/Physics/ClothTypes.h").replace("#pragma once","")
-    declarations="\n".join(u[:u.index("{")].strip()+";" for u in units)
+    declarations="\n".join(u[:u.index("{")].strip()+";" for u in units if not u.startswith('EquipmentModelContext::'))
     globals_h=read_source("src/globals.h",revision);globals_cpp=read_source("src/globals.cpp",revision)
     constants=""
     for name in sorted(set(re.findall(r'\b_?DAT_[0-9a-f]+',code))):
@@ -232,7 +235,7 @@ def harness(revision=None):
     main=main.replace("for(int route=0;route<3;++route){","for(int route=0;route<3;++route){ const unsigned flags=0x1400;")
     main=main.replace("CREATE_MESH","SpringMesh_Create(w,&owner.Object,meshIndex,2,0x400,-1);")
     main=main.replace("DELETE_OWNER","DeleteCloth(&owner,&owner.Object,nullptr);").replace("DELETE_PARTS","DeleteCloth(&owner,nullptr,nullptr);").replace("DELETE_SINGLE","DeleteCloth(nullptr,nullptr,&owner.Weapon[0]);").replace("TICK_CHARACTER","CharacterCloth_Tick(&owner);")
-    if revision:
+    if legacy_abi:
         main="float OwnerBits(OBJECT* p){float f;auto v=static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(p));std::memcpy(&f,&v,4);return f;}\n"+main
         main=main.replace("GridSpring_Create(w,&owner.Object,","GridSpring_Create(w,OwnerBits(&owner.Object),").replace("SpringMesh_Create(w,&owner.Object,meshIndex,","SpringMesh_Create(w,int(reinterpret_cast<uintptr_t>(&owner.Object)),reinterpret_cast<short*>(uintptr_t(meshIndex)),")
         main=main.replace("DeleteCloth(&owner,&owner.Object,nullptr);","DeleteCloth(int(reinterpret_cast<uintptr_t>(&owner)),int(reinterpret_cast<uintptr_t>(&owner.Object)),0);").replace("DeleteCloth(&owner,nullptr,nullptr);","DeleteCloth(int(reinterpret_cast<uintptr_t>(&owner)),0,0);").replace("DeleteCloth(nullptr,nullptr,&owner.Weapon[0]);","DeleteCloth(0,0,int(reinterpret_cast<uintptr_t>(&owner.Weapon[0])));").replace("CharacterCloth_Tick(&owner);","CharacterCloth_Tick(int(reinterpret_cast<uintptr_t>(&owner)));")

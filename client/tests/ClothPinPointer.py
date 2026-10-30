@@ -39,7 +39,8 @@ def harness(revision=None):
         import ClothFixture
         # Este proveedor de modelos conserva la frontera BMD legacy del banco;
         # ClothRuntime ensaya además las declaraciones BMD nativas completas.
-        extra=ClothFixture.prefix()+'\nstruct OBJECT{BYTE pad[2];short Type;};struct BMD{BYTE bytes[188];};BMD* AsModel(void* p){return static_cast<BMD*>(p);}\n'
+        from LegacyModelLayout import VIEW
+        extra=ClothFixture.prefix()+'\nstruct OBJECT{BYTE pad[2];short Type;};\n'+VIEW
         main=ClothFixture.pin(main)
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+extra+SERVICES+function(math,'Vector_Transform')+function(math,'BMD_TransformPosition')+function(source,'SpringNode_SetPos')+body+wrapper+main
 
