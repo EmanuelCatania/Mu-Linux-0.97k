@@ -405,186 +405,102 @@ void __cdecl BMD__Open(int param_1, const char* param_2, const char* param_3, in
 // BMD__FindTriangleForEdge @ 0x004422F0 — BMD_BuildAdjacentFaceTable
 // For each face in bone param_1, and each edge param_3 (0-2): finds the adjacent face sharing
 // the flipped edge and stores the adjacency index in psVar1[faceIdx*0x12 + edgeIdx + 0xd].
-void __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3)
+void __cdecl BMD__FindTriangleForEdge(void *pThis, int meshIndex, int faceIndex, int edge)
 {
-    short *psVar1 = *(short **)(*(int *)((int)pThis + 0x28) + 0x1c + param_1 * 0x28);
-    if (psVar1[param_2 * 0x12 + param_3 + 0xd] == -1) {
-        int iVar3 = (int)*(short *)(*(int *)((int)pThis + 0x28) + param_1 * 0x28 + 10);
-        int param_1_iter = 0;
-        short *psVar5 = psVar1;
-        if (0 < iVar3) {
-            do {
-                if (param_2 != param_1_iter) {
-                    int iVar4 = 0;
-                    short *psVar2 = psVar5;
-                    do {
-                        if ((psVar2[0xd] == -1) &&
-                            (psVar1[param_2 * 0x12 + param_3 + 1] == psVar5[(iVar4 + 1) % 3 + 1]) &&
-                            (psVar1[param_2 * 0x12 + (param_3 + 1) % 3 + 1] == psVar2[1])) {
-                            psVar1[param_2 * 0x12 + param_3 + 0xd] = (short)param_1_iter;
-                            psVar5[iVar4 + 0xd] = (short)param_2;
-                            return;
-                        }
-                        iVar4++;
-                        psVar2++;
-                    } while (iVar4 < 3);
-                }
-                param_1_iter++;
-                psVar5 += 0x12;
-                if (iVar3 <= param_1_iter) return;
-            } while (true);
+    auto* model = AsModel(pThis);
+    auto& mesh = reinterpret_cast<ClothModelMesh*>(model->Meshs)[meshIndex];
+    auto* triangles = reinterpret_cast<ModelRuntimeTriangle*>(mesh.Triangles);
+    auto& face = triangles[faceIndex];
+    if (face.Adjacent[edge] != -1) return;
+    for (int other = 0; other < mesh.TriangleCount; ++other) {
+        if (other == faceIndex) continue;
+        auto& candidate = triangles[other];
+        for (int candidateEdge = 0; candidateEdge < 3; ++candidateEdge) {
+            if (candidate.Adjacent[candidateEdge] == -1 &&
+                face.VertexIndex[edge] == candidate.VertexIndex[(candidateEdge + 1) % 3] &&
+                face.VertexIndex[(edge + 1) % 3] == candidate.VertexIndex[candidateEdge]) {
+                face.Adjacent[edge] = static_cast<short>(other);
+                candidate.Adjacent[candidateEdge] = static_cast<short>(faceIndex);
+                return;
+            }
         }
     }
 }
 
 // BMD__FindNearTriangle @ 0x00442260 — BMD_InitAdjFaceTable
 // For each action/bone, resets adjacency table to -1, then calls BMD__FindTriangleForEdge on each face×edge.
-void __cdecl BMD__FindNearTriangle(void *param_1)
+void __cdecl BMD__FindNearTriangle(void *pThis)
 {
-    int iVar3 = 0;
-    if (0 < *(short *)((int)param_1 + 0x24)) {
-        int local_4 = 0;
-        do {
-            int iVar1 = *(int *)((int)param_1 + 0x28) + local_4;
-            int iVar4 = (int)*(short *)(iVar1 + 10);
-            if (0 < iVar4) {
-                // faces + 0x1a bytes (NO *2): 3 shorts de adyacencia al final de cada face 0x24-byte.
-                unsigned int *puVar2 = (unsigned int *)(*(int *)(iVar1 + 0x1c) + 0x1a);
-                int i = iVar4;
-                do {
-                    i--;
-                    *puVar2 = 0xffffffff;
-                    *(unsigned short *)(puVar2 + 1) = 0xffff;
-                    puVar2 += 9;
-                } while (i != 0);
-            }
-            int iVar1_ = 0;
-            if (0 < iVar4) {
-                do {
-                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 0);
-                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 1);
-                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 2);
-                    iVar1_++;
-                } while (iVar1_ < iVar4);
-            }
-            iVar3++;
-            local_4 += 0x28;
-        } while (iVar3 < *(short *)((int)param_1 + 0x24));
+    auto* model = AsModel(pThis);
+    auto* meshes = reinterpret_cast<ClothModelMesh*>(model->Meshs);
+    for (int m = 0; m < model->NumMeshs; ++m) {
+        if (meshes[m].TriangleCount <= 0) continue;
+        auto* triangles = reinterpret_cast<ModelRuntimeTriangle*>(meshes[m].Triangles);
+        for (int f = 0; f < meshes[m].TriangleCount; ++f)
+            for (int edge = 0; edge < 3; ++edge) triangles[f].Adjacent[edge] = -1;
+        for (int f = 0; f < meshes[m].TriangleCount; ++f)
+            for (int edge = 0; edge < 3; ++edge) BMD__FindTriangleForEdge(pThis, m, f, edge);
     }
 }
 
 // BMD_CreateBoundingBox @ 0x00442E60 — BMD_ComputeBounds
 // Computes per-bone bounding boxes by scanning vertex positions; stores into bbox arrays.
-void __cdecl BMD_CreateBoundingBox(int param_1)
+void __cdecl BMD_CreateBoundingBox(BMD* model)
 {
-    int iVar3 = 0;
-    if (0 < *(short *)(param_1 + 0x22)) {
-        unsigned short *puVar5 = (unsigned short *)&DAT_077d87fc;
-        int iVar2 = 0;
-        do {
-            *puVar5 = 0;
-            iVar3++;
-            *(unsigned int *)((char*)&DAT_05827a98 + iVar2) = 0xc61c3c00;
-            puVar5++;
-            *(unsigned int *)((char*)&DAT_05827a9c + iVar2) = 0xc61c3c00;
-            *(unsigned int *)((char*)&DAT_05827aa0 + iVar2) = 0xc61c3c00;
-            *(unsigned int *)((char*)&DAT_06f42a5c + iVar2) = 0x461c3c00;
-            *(unsigned int *)((char*)&DAT_06f42a60 + iVar2) = 0x461c3c00;
-            *(unsigned int *)((char*)&DAT_06f42a64 + iVar2) = 0x461c3c00;
-            iVar2 += 0xc;
-        } while (iVar3 < *(short *)(param_1 + 0x22));
+    // IDA 0x00442E60: conservar centinelas, comparaciones y contador de 16 bits.
+    auto* counts = reinterpret_cast<std::uint16_t*>(DAT_077d87fc);
+    float* maximum = DAT_05827a98;
+    float* minimum = DAT_06f42a5c;
+    constexpr std::uint32_t lowerBits = 0xc61c3c00, upperBits = 0x461c3c00;
+    for (int b = 0; b < model->NumBones; ++b) {
+        counts[b] = 0;
+        for (int axis = 0; axis < 3; ++axis) {
+            memcpy(maximum + b * 3 + axis, &lowerBits, sizeof(float));
+            memcpy(minimum + b * 3 + axis, &upperBits, sizeof(float));
+        }
     }
-    int local_8 = 0;
-    if (0 < *(short *)(param_1 + 0x24)) {
-        int local_4 = 0;
-        do {
-            int local_c = 0;
-            int iVar3_ = local_4 + *(int *)(param_1 + 0x28);
-            if (0 < *(short *)(iVar3_ + 4)) {
-                int iVar2 = 0;
-                do {
-                    float *pfVar6 = (float *)(iVar2 + *(int *)(iVar3_ + 0x10));
-                    int iVar7 = 0;
-                    float *pfVar4 = pfVar6;
-                    do {
-                        pfVar4++;
-                        int iVar1 = iVar7 + *(short *)pfVar6 * 3;
-                        if (*pfVar4 < ((float*)&DAT_06f42a5c)[iVar1])
-                            ((float*)&DAT_06f42a5c)[iVar1] = *pfVar4;
-                        iVar1 = iVar7 + *(short *)pfVar6 * 3;
-                        if (((float*)&DAT_05827a98)[iVar1] < *pfVar4)
-                            ((float*)&DAT_05827a98)[iVar1] = *pfVar4;
-                        iVar7++;
-                    } while (iVar7 < 3);
-                    iVar2 += 0x10;
-                    ((unsigned short*)&DAT_077d87fc)[*(short *)pfVar6]++;
-                    local_c++;
-                } while (local_c < *(short *)(iVar3_ + 4));
+    const ClothModelMesh* meshes = model->NumMeshs > 0 ? reinterpret_cast<const ClothModelMesh*>(model->Meshs) : nullptr;
+    for (int m = 0; m < model->NumMeshs; ++m) {
+        if (meshes[m].VertexCount <= 0) continue;
+        const auto* vertices = reinterpret_cast<const ModelRuntimeVertex*>(meshes[m].Vertices);
+        for (int v = 0; v < meshes[m].VertexCount; ++v) {
+            const auto& vertex = vertices[v];
+            for (int axis = 0; axis < 3; ++axis) {
+                const int index = vertex.Bone * 3 + axis;
+                if (vertex.Position[axis] < minimum[index]) minimum[index] = vertex.Position[axis];
+                if (maximum[index] < vertex.Position[axis]) maximum[index] = vertex.Position[axis];
             }
-            local_8++;
-            local_4 += 0x28;
-        } while (local_8 < *(short *)(param_1 + 0x24));
+            ++counts[vertex.Bone];
+        }
     }
-    iVar3 = 0;
-    if (0 < *(short *)(param_1 + 0x22)) {
-        int iVar7 = 0;
-        unsigned short *psVar8 = (unsigned short *)&DAT_077d87fc;
-        int iVar2 = 0;
-        do {
-            int iVar1 = iVar7 + *(int *)(param_1 + 0x2c);
-            *(char *)(iVar1 + 0x28) = (*psVar8 == 0) ? '\0' : '\x01';
-            iVar3++;
-            // Copy bbox max (XYZ) and min (XYZ) — 8 corners total — into bone struct at +0x2c..+0x88
-            *(unsigned int *)(iVar1 + 0x2c) = *(unsigned int *)((char*)&DAT_05827a98 + iVar2);
-            *(unsigned int *)(iVar1 + 0x30) = *(unsigned int *)((char*)&DAT_05827a9c + iVar2);
-            *(unsigned int *)(iVar1 + 0x34) = *(unsigned int *)((char*)&DAT_05827aa0 + iVar2);
-            *(unsigned int *)(iVar1 + 0x38) = *(unsigned int *)((char*)&DAT_05827a98 + iVar2);
-            *(unsigned int *)(iVar1 + 0x3c) = *(unsigned int *)((char*)&DAT_05827a9c + iVar2);
-            *(unsigned int *)(iVar1 + 0x40) = *(unsigned int *)((char*)&DAT_06f42a64 + iVar2);
-            *(unsigned int *)(iVar1 + 0x44) = *(unsigned int *)((char*)&DAT_05827a98 + iVar2);
-            *(unsigned int *)(iVar1 + 0x48) = *(unsigned int *)((char*)&DAT_06f42a60 + iVar2);
-            *(unsigned int *)(iVar1 + 0x4c) = *(unsigned int *)((char*)&DAT_05827aa0 + iVar2);
-            *(unsigned int *)(iVar1 + 0x50) = *(unsigned int *)((char*)&DAT_05827a98 + iVar2);
-            *(unsigned int *)(iVar1 + 0x54) = *(unsigned int *)((char*)&DAT_06f42a60 + iVar2);
-            *(unsigned int *)(iVar1 + 0x58) = *(unsigned int *)((char*)&DAT_06f42a64 + iVar2);
-            *(unsigned int *)(iVar1 + 0x5c) = *(unsigned int *)((char*)&DAT_06f42a5c + iVar2);
-            *(unsigned int *)(iVar1 + 0x60) = *(unsigned int *)((char*)&DAT_05827a9c + iVar2);
-            *(unsigned int *)(iVar1 + 100)  = *(unsigned int *)((char*)&DAT_05827aa0 + iVar2);
-            *(unsigned int *)(iVar1 + 0x68) = *(unsigned int *)((char*)&DAT_06f42a5c + iVar2);
-            *(unsigned int *)(iVar1 + 0x6c) = *(unsigned int *)((char*)&DAT_05827a9c + iVar2);
-            *(unsigned int *)(iVar1 + 0x70) = *(unsigned int *)((char*)&DAT_06f42a64 + iVar2);
-            *(unsigned int *)(iVar1 + 0x74) = *(unsigned int *)((char*)&DAT_06f42a5c + iVar2);
-            *(unsigned int *)(iVar1 + 0x78) = *(unsigned int *)((char*)&DAT_06f42a60 + iVar2);
-            *(unsigned int *)(iVar1 + 0x7c) = *(unsigned int *)((char*)&DAT_05827aa0 + iVar2);
-            *(unsigned int *)(iVar1 + 0x80) = *(unsigned int *)((char*)&DAT_06f42a5c + iVar2);
-            *(unsigned int *)(iVar1 + 0x84) = *(unsigned int *)((char*)&DAT_06f42a60 + iVar2);
-            *(unsigned int *)(iVar1 + 0x88) = *(unsigned int *)((char*)&DAT_06f42a64 + iVar2);
-            iVar7 += 0x8c;
-            psVar8++;
-            iVar2 += 0xc;
-        } while (iVar3 < *(short *)(param_1 + 0x22));
+    auto* bones = model->NumBones > 0 ? reinterpret_cast<ModelAnimationBone*>(model->Bones) : nullptr;
+    constexpr unsigned corners[8] = {7, 3, 5, 1, 6, 2, 4, 0};
+    for (int b = 0; b < model->NumBones; ++b) {
+        bones[b].BoundingBoxEnabled = counts[b] == 0 ? 0 : 1;
+        for (int corner = 0; corner < 8; ++corner)
+            for (int axis = 0; axis < 3; ++axis) {
+                const float* source = (corners[corner] & (1u << axis)) ? maximum : minimum;
+                // El original copia DWORD: conservar cargas NaN y ceros con signo.
+                memcpy(&bones[b].BoundingBox[corner][axis], source + b * 3 + axis, sizeof(float));
+            }
     }
 }
 
 // BMD__Init @ 0x00442E00 — BMD_ResetAnimState
 // If flag!=0: scan action array (stride 0x8c), mark entries Du/non-Du;
 // then reset frame index and call BMD_CreateBoundingBox (BMD_ComputeBounds).
-void __cdecl BMD__Init(void *pThis, char param_1)
+void __cdecl BMD__Init(void *pThis, char flag)
 {
-    char *pcVar1;
-    int iVar2, iVar3;
-    if ((param_1 != '\0') && (iVar3 = 0, 0 < *(short *)((int)pThis + 0x22))) {
-        iVar2 = 0;
-        do {
-            pcVar1 = (char *)(*(int *)((int)pThis + 0x2c) + iVar2);
-            pcVar1[0x22] = ((*pcVar1 == 'D') && (pcVar1[1] == 'u')) ? '\x01' : '\0';
-            iVar3++;
-            iVar2 += 0x8c;
-        } while (iVar3 < *(short *)((int)pThis + 0x22));
+    auto* model = AsModel(pThis);
+    if (flag != 0 && model->NumBones > 0) {
+        auto* bones = reinterpret_cast<ModelAnimationBone*>(model->Bones);
+        for (int b = 0; b < model->NumBones; ++b)
+            bones[b].Dummy = bones[b].Name[0] == 'D' && bones[b].Name[1] == 'u' ? 1 : 0;
     }
-    *(unsigned int *)((int)pThis + 0x54) = 0xffffffff;
-    *(unsigned char *)((int)pThis + 0x88) = 0xff;
-    BMD_CreateBoundingBox((int)pThis);
+    model->BoneHead = -1;
+    const BYTE unset = 0xff;
+    memcpy(&model->StreamMesh, &unset, sizeof(unset));
+    BMD_CreateBoundingBox(model);
 }
 
 // BMD__Save @ 0x00442A60 — BMD_SaveToFile

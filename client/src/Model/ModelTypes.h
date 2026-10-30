@@ -27,7 +27,9 @@ struct ModelAnimationBone {
     std::uint8_t Dummy;
     std::uint8_t Padding35;
     ModelAnimationKeys* Keys;
-    std::uint8_t Unknown40[100];
+    std::uint8_t BoundingBoxEnabled;
+    std::uint8_t BoundingBoxPadding[3];
+    float BoundingBox[8][3];
 };
 struct ModelAnimationAction {
     std::uint8_t Unknown0[8];
@@ -51,6 +53,29 @@ static_assert(sizeof(ModelAnimationAction) == 12 + sizeof(void*));
 static_assert(offsetof(ModelAnimationAction, FrameCount) == 8);
 static_assert(offsetof(ModelAnimationAction, LockPositions) == 10);
 static_assert(offsetof(ModelAnimationAction, Positions) == 12);
+
+// Vistas de ejecución sin punteros; no sustituyen la descripción del archivo .bmd.
+struct ModelRuntimeVertex {
+    std::int16_t Bone;
+    std::uint8_t Padding[2];
+    float Position[3];
+};
+struct ModelRuntimeTriangle {
+    std::uint8_t Unknown0[2];
+    std::int16_t VertexIndex[3];
+    std::uint8_t Unknown8[18];
+    std::int16_t Adjacent[3];
+    std::uint8_t Unknown32[4];
+};
+static_assert(sizeof(ModelRuntimeVertex) == 16 && offsetof(ModelRuntimeVertex, Position) == 4);
+static_assert(sizeof(ModelRuntimeTriangle) == 36);
+static_assert(alignof(ModelRuntimeVertex) == 1 && alignof(ModelRuntimeTriangle) == 1);
+static_assert(std::is_standard_layout_v<ModelRuntimeVertex> && std::is_trivially_copyable_v<ModelRuntimeVertex>);
+static_assert(std::is_standard_layout_v<ModelRuntimeTriangle> && std::is_trivially_copyable_v<ModelRuntimeTriangle>);
+static_assert(offsetof(ModelRuntimeTriangle, VertexIndex) == 2);
+static_assert(offsetof(ModelRuntimeTriangle, Adjacent) == 26);
+static_assert(offsetof(ModelAnimationBone, BoundingBoxEnabled) == 36 + sizeof(void*));
+static_assert(offsetof(ModelAnimationBone, BoundingBox) == 40 + sizeof(void*));
 
 struct BMD {
     char     Name[32];              // 0x00

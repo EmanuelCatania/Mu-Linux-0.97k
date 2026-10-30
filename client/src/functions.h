@@ -247,7 +247,7 @@ void  __cdecl BMD__Release(BMD* model);                         // Model_Unload 
 void  __cdecl BMD__FindNearTriangle(void *model);                           // BMD_PostActionsInit (post-load action setup)
 void  __cdecl BMD__Init(void *model, char flag);                // BMD_PostLoadInit (post-load finalize)
 void  __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3);  // BMD_BuildAdjacentFaceTable
-void  __cdecl BMD_CreateBoundingBox(int param_1);                           // BMD_ComputeBounds
+void  __cdecl BMD_CreateBoundingBox(BMD* model);                           // BMD_ComputeBounds
 // VTable helpers used by type 0x13f/0x14a entity dispatch
 void* __fastcall WidgetB_CtorFull(void *param_1);                      // WidgetB_CtorFull
 void* __fastcall WidgetB_Ctor(void *param_1);                      // WidgetB_Ctor

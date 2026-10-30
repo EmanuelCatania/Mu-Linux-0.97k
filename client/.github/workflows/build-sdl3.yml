@@ -186,6 +186,8 @@ jobs:
             python -B tests/ModelReleaseLifecycle.py --architecture x64
             python -B tests/ModelReleaseSlots.py --architecture Win32
             python -B tests/ModelReleaseSlots.py --architecture x64
+            python -B tests/ModelPostLoad.py --architecture Win32
+            python -B tests/ModelPostLoad.py --architecture x64
             python -B tests/SkeletonBonesPointer.py --architecture x64
             python -B tests/PoseEntityPointer.py --architecture x64
             python -B tests/MoltTickPointer.py --architecture x64
@@ -397,6 +399,7 @@ jobs:
             python3 -B tests/PoseBatchNative.py --generator Ninja
             python3 -B tests/ModelReleaseLifecycle.py --generator Ninja
             python3 -B tests/ModelReleaseSlots.py --generator Ninja
+            python3 -B tests/ModelPostLoad.py --generator Ninja
             python3 -B tests/SkeletonBonesPointer.py --generator Ninja
             python3 -B tests/PoseEntityPointer.py --generator Ninja
             python3 -B tests/MoltTickPointer.py --generator Ninja

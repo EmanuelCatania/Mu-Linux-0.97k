@@ -61,7 +61,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 '''
 def layouts():
  header=read_source('src/Model/ModelTypes.h')
- code='#include <type_traits>\nusing WORD=std::uint16_t;using vec3_t=float[3];\n#pragma pack(push,1)\n'+'\n'.join(record(header,n)for n in ('ModelAnimationKeys','ModelAnimationBone','ModelAnimationAction','BMD'))+'\n#pragma pack(pop)\n'
+ code='#include <type_traits>\nusing WORD=std::uint16_t;using vec3_t=float[3];\n#pragma pack(push,1)\n'+'\n'.join(record(header,n)for n in ('ModelAnimationKeys','ModelAnimationBone','ModelAnimationAction','ModelRuntimeVertex','ModelRuntimeTriangle','BMD'))+'\n#pragma pack(pop)\n'
  code+=r"""
 constexpr unsigned M(unsigned off){unsigned n=off;for(unsigned p:{40u,44u,48u,52u,56u,64u})if(p<off)n+=sizeof(void*)-4;return n;}
 static_assert(sizeof(ModelAnimationBone)==(sizeof(void*)==4?140:144));
