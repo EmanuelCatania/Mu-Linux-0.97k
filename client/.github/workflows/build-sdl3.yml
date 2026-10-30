@@ -240,6 +240,8 @@ jobs:
             python -B tests/ClothRuntime.py --architecture x64
             python -B tests/ModelContextPointer.py --architecture Win32
             python -B tests/ModelContextPointer.py --architecture x64
+            python -B tests/CalcRenderContext.py --architecture Win32
+            python -B tests/CalcRenderContext.py --architecture x64
             python -B tests/ItemGridLayout.py --architecture Win32
             python -B tests/ItemGridLayout.py --architecture x64
             python -B tests/ItemMovePreviewColor.py --architecture Win32
@@ -436,6 +438,7 @@ jobs:
             python3 -B tests/ClothLayoutContract.py --generator Ninja
             python3 -B tests/ClothRuntime.py --generator Ninja
             python3 -B tests/ModelContextPointer.py --generator Ninja
+            python3 -B tests/CalcRenderContext.py --generator Ninja
             python3 -B tests/ItemGridLayout.py --generator Ninja
             python3 -B tests/ItemMovePreviewColor.py --generator Ninja
             python3 -B tests/OptionsLocalText.py --generator Ninja

@@ -5,7 +5,7 @@ ModelContextPointer y ClothRuntime. Esta vista conserva los oráculos previos.
 """
 VIEW=r'''
 struct BMD {
- BYTE opaque0[104];float BodyScale;float BodyOrigin[3];BYTE opaque120[12];
+ BYTE opaque0[68];BYTE LightEnable,ContrastEnable;BYTE opaque70[2];float BodyLight[3];BYTE opaque84[20];float BodyScale;float BodyOrigin[3];BYTE opaque120[12];
  float BodyHeight;BYTE opaque136[24];BYTE CurrentAction;BYTE opaque161[27];
 };
 static_assert(sizeof(BMD)==188);
