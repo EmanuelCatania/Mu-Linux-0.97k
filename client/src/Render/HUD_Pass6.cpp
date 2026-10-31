@@ -246,7 +246,7 @@ extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
     if (iMaxHeight <= 0) return;
 
     int row = 0;
-    DWORD ptr = InventoryPtr;
+    intptr_t ptr = InventoryPtr;
     for (int r = 0; r < iMaxHeight; ++r) {
         if (iMaxWidth > 0) {
             ITEM* v7 = (ITEM*)ptr;

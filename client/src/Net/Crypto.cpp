@@ -142,7 +142,7 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
 // Aplica XOR a cada byte de param_1[0..param_2-1] con PacketXorKey3[i % 3].
 void __cdecl Buffer_XorKey3(int param_1,int param_2)
 {
-  int iVar1;
+  intptr_t iVar1;
 
   iVar1 = 0;
   if (0 < param_2) {
@@ -1148,7 +1148,7 @@ void* __fastcall FUN_00409ad0(void* param_1) {
 }
 
 // scalar_deleting_destructor_locale @ 0x00409B60 — ~dtor de CPhysicsManager (llama a Locimp_dtor)
-void __fastcall scalar_deleting_destructor_locale(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall scalar_deleting_destructor_locale(intptr_t ecx, int /*edx*/, BYTE param_1) {
     Locimp_dtor((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -1170,7 +1170,7 @@ void __fastcall Locimp_dtor(void* param_1) {
 // __fastcall(ecx=this). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
 // Sin portar: el cuerpo de abajo está vacío.
-void __fastcall FUN_00409d20(int param_1) {
+void __fastcall FUN_00409d20(intptr_t param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
     //   Widget_Release(*node) — cleanup node data
     //   (*node->vtable[0])(1) — destructor with free
@@ -1301,7 +1301,7 @@ void __fastcall FUN_0040a1c0(void* ecx, void* /*edx*/, short param_1, int param_
 // __thiscall(this=shadowCtx, param_1=vertBuf). Allocates output vertex buffer (count * 0x48).
 // Por cada arista de silueta: extruye los vértices de la arista en la dirección -luz (VectorMA),
 // y arma 6 vértices (2 triángulos) por arista = un quad extruido. La altura se clampea a un mínimo.
-void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
+void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, intptr_t param_1) {
     (void)ecx; (void)param_1;
     // this->quadCount = 0
     // this->quadBuf = new byte[this->edgeCount * 0x48]
@@ -1317,7 +1317,7 @@ void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
 // FUN_004236c0 @ 0x004236C0 (90 bytes) — BST node remove (unlink + delete)
 void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
     BYTE* context = static_cast<BYTE*>(This);
-    int iVar1 = *(int *)(*param_1 + 0x10);
+    intptr_t iVar1 = *(int *)(*param_1 + 0x10);
     if (iVar1 == 0) {
         *(int *)(context + 8) = 0;
     } else if (*(int *)(iVar1 + 8) == *param_1) {
@@ -1374,7 +1374,7 @@ void __fastcall FUN_0053cbb0(int *param_1) {
 }
 
 // FUN_0053cbd0 @ 0x0053CBD0 — GameGuard ~dtor
-void __fastcall FUN_0053cbd0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0053cbd0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0053cbf0((int *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }

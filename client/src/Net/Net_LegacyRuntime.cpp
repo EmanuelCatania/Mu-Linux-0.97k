@@ -242,7 +242,7 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 //   - Handles the "find rightmost in left subtree" replacement for BST delete
 // Finally zeroes +0x41C (root) and +0x418 (count).
 // ─────────────────────────────────────────────────────────────────────────────
-void __fastcall FUN_00422c50(int param_1)
+void __fastcall FUN_00422c50(intptr_t param_1)
 {
     // Free heap allocations
     if (*(void **)(param_1 + 0x3FC) != NULL) {
@@ -284,7 +284,7 @@ void __fastcall FUN_00422c50(int param_1)
 //   Object.Type==0x186 → action 0x81, alpha 1.0 (special NPC)
 //   default         → alpha 0.0 (invisible, fade-in handled elsewhere)
 // ─────────────────────────────────────────────────────────────────────────────
-void __cdecl AppearMonster(DWORD c)
+void __cdecl AppearMonster(intptr_t c)
 {
     BYTE monIdx = *(BYTE *)(c + 0x02);  // MonsterIndex
     switch (monIdx) {

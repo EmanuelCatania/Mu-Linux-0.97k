@@ -73,7 +73,7 @@ void __cdecl Cursor_Render(void) {
         // Guard (no esta en IDA): SelectedOperate lo deja el picker del frame
         // anterior; si el objeto se libero en el medio el puntero queda colgado.
         const int nOperates = (int)(sizeof(DAT_083a2370) / 0xc);
-        const int operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
+        const intptr_t operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
                             ? ((int*)&DAT_083a2378)[SelectedOperate * 3] : 0;
         if (operObj == 0) {
             // LABEL_43 de IDA: flecha por defecto.

@@ -2424,7 +2424,7 @@ void EventListBox_Scroll(void* widget, int pages)
 // ── 29-byte ─────────────────────────────────────────────────────────────────
 
 // TextureScript_setScript @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
-void __fastcall TextureScript_setScript(int ecx, int /*edx*/, BYTE *param_1) {
+void __fastcall TextureScript_setScript(intptr_t ecx, int /*edx*/, BYTE *param_1) {
     *(BYTE *)ecx       = param_1[0];
     *(BYTE *)(ecx + 1) = param_1[1];
     *(BYTE *)(ecx + 2) = param_1[2];
@@ -2538,7 +2538,7 @@ void* __fastcall FUN_0040c5d0(void* param_1) {
 }
 
 // FUN_0040c670 @ 0x0040C670 (10 bytes) — thiscall setter field_0x24
-void __fastcall FUN_0040c670(int ecx, int /*edx*/, int param_1) {
+void __fastcall FUN_0040c670(intptr_t ecx, int /*edx*/, int param_1) {
     *(int *)(ecx + 0x24) = param_1;
 }
 
@@ -2561,7 +2561,7 @@ int __cdecl FUN_0040c680(DWORD *_this)
 }
 
 // FUN_0040c6b0 @ 0x0040C6B0 (17 bytes) — thiscall: setea dos campos en +0x34 y +0x38
-void __fastcall FUN_0040c6b0(int ecx, int /*edx*/, int param_1, int param_2) {
+void __fastcall FUN_0040c6b0(intptr_t ecx, int /*edx*/, int param_1, int param_2) {
     *(int *)(ecx + 0x34) = param_1;
     *(int *)(ecx + 0x38) = param_2;
 }
@@ -2569,14 +2569,14 @@ void __fastcall FUN_0040c6b0(int ecx, int /*edx*/, int param_1, int param_2) {
 // ── 24-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_0040c6d0 @ 0x0040C6D0 (24 bytes) — thiscall: setea 3 campos en +0x3c, +0x44 y +0x48
-void __fastcall FUN_0040c6d0(int ecx, int /*edx*/, int p1, int p2, int p3) {
+void __fastcall FUN_0040c6d0(intptr_t ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x3c) = p1;
     *(int *)(ecx + 0x44) = p2;
     *(int *)(ecx + 0x48) = p3;
 }
 
 // FUN_0040c6f0 @ 0x0040C6F0 (24 bytes) — thiscall: setea 3 campos en +0x40, +0x4c y +0x50
-void __fastcall FUN_0040c6f0(int ecx, int /*edx*/, int p1, int p2, int p3) {
+void __fastcall FUN_0040c6f0(intptr_t ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x40) = p1;
     *(int *)(ecx + 0x4c) = p2;
     *(int *)(ecx + 0x50) = p3;

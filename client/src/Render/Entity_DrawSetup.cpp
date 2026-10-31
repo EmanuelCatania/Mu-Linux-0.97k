@@ -35,7 +35,7 @@
 #include "Item/ContentCatalog.h"
 #include "Config/UserSettings.h"
 
-void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
+void __cdecl RenderPartObjectEffect(intptr_t param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,
                            undefined4 param_7, uint param_8)
 {
@@ -465,7 +465,7 @@ LAB_after_render: ;
     }
 }
 
-void Equipment_EmitWing790(void *this_, int param_1, int owner) {
+void Equipment_EmitWing790(void *this_, intptr_t param_1, int owner) {
 
         float fxLight[3];
         float zeroPos[3];

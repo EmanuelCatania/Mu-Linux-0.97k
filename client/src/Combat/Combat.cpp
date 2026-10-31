@@ -1929,7 +1929,7 @@ bool g_bAutoGetItem = false;
 // Como en IDA (0x0048D640), Action solo LEE la cola c+749; la reescribe
 // Player_InputTick en cada click.
 // IDA: Action (0x0048D640)
-void __cdecl Action(DWORD c, DWORD o)
+void __cdecl Action(DWORD c, intptr_t o)
 {
     if (c == 0 || o == 0) return;
 

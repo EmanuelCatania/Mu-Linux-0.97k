@@ -180,8 +180,8 @@ void __cdecl OpenMonsterModel(int param_1)
 
 {
   int iVar1;
-  int iVar2;
-  int iVar3;
+  intptr_t iVar2;
+  intptr_t iVar3;
   float fVar4;
   int iVar5;
 

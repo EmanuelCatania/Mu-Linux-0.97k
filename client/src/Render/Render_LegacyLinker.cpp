@@ -87,7 +87,7 @@ void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) 
     // alloc) con stride 16 bytes. Esa tabla tiene `numBones` entries de 0x10
     // bytes c/u: sólo escribir speeds hasta el límite de bones disponibles
     // (overflow con NPCs de pocos bones).
-    int slotBase = DAT_05828d58 + id * 0xbc;
+    intptr_t slotBase = DAT_05828d58 + id * 0xbc;
     int actionsTable = *(int*)(slotBase + 48);
     short numBones = *(short*)(slotBase + 38);   // realmente numBones, but anim speed lookup uses this
     if (actionsTable && numBones > 0) {

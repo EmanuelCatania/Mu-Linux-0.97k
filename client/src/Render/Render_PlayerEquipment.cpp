@@ -212,7 +212,7 @@ static inline float* BoneMat16(void* o, int bone) {
 // puVar13 = entity o (int* alias)
 // v121 = weapon slot ptr (c + 624 + 24*hand)
 // targetJ = (rand()%30+70) * 0.01f
-static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
+static void RenderWeaponFX(int c, intptr_t o, intptr_t v121, float Targetj, float* Light)
 {
     // 'model' = global BMD entry at DAT_05828d58 + 188*entity_type. Pasado a
     // BMD_TransformPosition/TransformPos como ECX (this_) — usado para leer scale y
@@ -568,7 +568,7 @@ static bool IsBackItem(int iType)
 // tabla de poses de RenderLinkObject; equivale al `SecondWeaponFixVal` del DLL.
 extern "C" int g_BackItemHand = 0;
 
-extern "C" int RenderCharacterBackItem(int c, int o)
+extern "C" int RenderCharacterBackItem(int c, intptr_t o)
 {
     // Bind -- IDA RenderCharacter 0x456770, LABEL_265 .. LABEL_308.
     // Decide si las armas se cuelgan de la espalda (hueso 47) en vez de ir en
@@ -695,7 +695,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
 // ── Render del Helper (IDA líneas 1267-1288) ─────────────────────────────────
 // Llamado después del Wing render. Helper.Type == 817 dispara la creación de
 // un sprite-glow rojo en la mano del char (LinkBone=34).
-extern "C" void Render_PlayerHelper(int c, int o)
+extern "C" void Render_PlayerHelper(int c, intptr_t o)
 {
     if (AsCharacter(c)->Helper.Type != 817) return;
 
@@ -752,7 +752,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
 
         {
         int v119  = 3 * v234 + 78;
-        int v121  = c + 8 * v119;            // weapon slot ptr (c+624 o c+648)
+        intptr_t v121  = c + 8 * v119;            // weapon slot ptr (c+624 o c+648)
         short v120 = *(short*)v121;          // weapon Type
 
         if (v120 == -1 || v120 == 535 || v120 == 543) {

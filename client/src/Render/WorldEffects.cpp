@@ -49,7 +49,7 @@ int WorldEffects_AddSprite(unsigned short type, float *position, float scale,
     return 0;
 }
 
-void WorldEffects_Tick(int entity) {
+void WorldEffects_Tick(intptr_t entity) {
     void *object = (void *)entity;
     if (!SceneObjects::Contains(object) || !AsObject(entity)->Live) return;
     if (frames.find(object) != frames.end()) return;

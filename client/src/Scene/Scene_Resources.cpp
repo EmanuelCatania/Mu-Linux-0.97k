@@ -100,7 +100,7 @@ void Scene_LoadAccountResources(void)
 void Scene_LoadCharSelectResources(void)
 {
   int iVar1;
-  int iVar2;
+  intptr_t iVar2;
 
   OpenTGA(s_Logo_Interface01_tga_00560a4c,0xc,0x2600,0x2900,0,'\x01');
   OpenTGA(s_Logo_Interface02_tga_00560a34,0xd,0x2600,0x2900,0,'\x01');

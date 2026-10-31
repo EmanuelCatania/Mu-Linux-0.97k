@@ -731,7 +731,7 @@ void Destroy(MeshCloth &c) {
 // Mesh_t en memoria (BMD_Load): +4 NumVertices, +10 NumTriangles,
 // +0x10 Vertices (stride 0x10, Node en +0), +0x1c Triangles (stride 0x24,
 // VertexIndex[4] en +2).
-inline char* MeshPtr(void *model, int mesh) {
+inline char* MeshPtr(void *model, intptr_t mesh) {
     // El layout legado conserva el puntero de tabla en 32 bits hasta B2.
     const auto table = static_cast<std::uintptr_t>(
         *reinterpret_cast<const DWORD*>(static_cast<BYTE*>(model) + 0x28));

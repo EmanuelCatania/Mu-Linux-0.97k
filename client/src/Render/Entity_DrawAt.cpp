@@ -94,7 +94,7 @@
 // Entity_DrawAt @ 0x00505A10 (73 lines)
 // Sets up model state (pos, scale, flags) and draws entity sprite + shadow.
 // param_11: LOD level (0=normal, 1=shadow, 2=mid, 3=far)
-void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *param_4,
+void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, float *param_4,
                            float param_5, uint param_6, byte param_7, char param_8,
                            undefined1 param_9, char param_10, int param_11, uint param_12)
 {

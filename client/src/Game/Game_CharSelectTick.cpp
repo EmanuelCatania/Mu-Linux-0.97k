@@ -223,7 +223,7 @@ void Game_CharSelectTick(void)
         int base = (int)(uintptr_t)DAT_07abf5d0;
         MoveCharactersClient();
         for (int s = 0; false && s < 400; ++s) {
-            int e = base + s * CHARACTER_STRIDE;
+            intptr_t e = base + s * CHARACTER_STRIDE;
             if (*(char*)e == '\0') continue;   // inactive
             if (e != heroEnt) {
                 MoveMonsterClient(AsCharacter(e), AsObject(e));            // path tick (skip hero)

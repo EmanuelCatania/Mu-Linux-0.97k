@@ -259,7 +259,7 @@ void __cdecl DeleteBug(DWORD Owner) {
 // is functionally identical. The Ghidra decompile labelled this Entity_Spawn — that was wrong.
 void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_4) {
     DWORD *param_2 = (DWORD*)param_2_v;
-    int param_3 = (int)(uintptr_t)param_3_v;
+    intptr_t param_3 = (int)(uintptr_t)param_3_v;
     if ((*(short*)(param_3 + 2) == 0x186) || (param_1 == 0x330)) {
         // El original corta en 0x83A236F (fin del pool en el binario); acá el
         // pool es DAT_083a1218: 10 slots de 0x1BC.

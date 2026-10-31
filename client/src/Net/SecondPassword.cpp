@@ -2852,12 +2852,12 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // hash-encrypt; }` colapsan a una lectura directa de los campos de CharacterMachine.
 //
 // Declaraciones externas locales a esta unidad de traducción:
-extern "C" bool __cdecl CharacterAnimation(int c, int o);
+extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o);
 
-extern bool __cdecl AttackStage(DWORD c, DWORD o);
+extern bool __cdecl AttackStage(intptr_t c, intptr_t o);
 extern void __cdecl CreateBlood(intptr_t o);
 extern int  __stdcall FindHotKey(int Skill);
-extern void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
+extern void __cdecl CreateArrows(DWORD c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:
@@ -3058,8 +3058,8 @@ static inline void mc_SetPlayerDie(CHARACTER* c)
 void __cdecl MoveCharacter(int p1)
 {
     if (!p1) return;
-    DWORD c = (DWORD)p1;
-    DWORD o = (DWORD)p1;
+    intptr_t c = (DWORD)p1;
+    intptr_t o = (DWORD)p1;
 
     // Common locals
     float WorldPosition[3];
@@ -3083,9 +3083,9 @@ void __cdecl MoveCharacter(int p1)
     // `BoneMatrix[3 * bone]`.  No usar un buffer local: los huesos que
     // BMD_Animation no escribe quedarian con basura de stack.
     float (* const BoneMatrix)[3][4] = (float (*)[3][4])g_BoneScratch;
-    int   v422 = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;  // model slot
+    intptr_t   v422 = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;  // model slot
     bool  bEventNpc = false;
-    DWORD Owner = 0;
+    intptr_t Owner = 0;
     DWORD v390  = 0;
     int   v392 = 0;     // ground-item flag
     int   v393 = 0;     // skill-id captured (24)
@@ -3375,10 +3375,10 @@ void __cdecl MoveCharacter(int p1)
 
     // L818-839: bone-particle effect (o+404 = effect counter)
     if (*(BYTE*)&((OBJECT*)(uintptr_t)(o))->_unk188[12]) {
-        DWORD This = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;
+        intptr_t This = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;
         memset(p1f, 0, sizeof(p1f));
-        for (int kk = 0; kk < *(short*)(This + 34); ++kk) {
-            int v401 = *(short*)(*(int*)(This + 44) + 140 * kk + 32);
+        for (intptr_t kk = 0; kk < *(short*)(This + 34); ++kk) {
+            intptr_t v401 = *(short*)(*(int*)(This + 44) + 140 * kk + 32);
             if (v401 > -1 && v401 < 200) {
                 BMD_TransformPosition((void*)This, (float*)(48 * kk + *(int *)&AsObject(o)->BoneMatrices), p1f, Position, 1);
                 BMD_TransformPosition((void*)This, (float*)(48 * v401 + *(int *)&AsObject(o)->BoneMatrices), p1f, TargetPosition, 1);
@@ -4000,7 +4000,7 @@ void __cdecl MoveCharacter(int p1)
 // Updates model position/animation from entity. When model has no actions: copies cached
 // los parámetros de anim de entity+0x118..+0x12c a +0x130..+0x15c, sumando la posición de mundo de la entidad.
 // IDA: MoveCharacterVisual (0x004520C0)
-void __cdecl MoveCharacterVisual(int entity_ptr)
+void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
 {
     if (!entity_ptr) return;
 
@@ -4106,7 +4106,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         }
 
         extern void __cdecl AddTerrainLight(float x, float y, float* light, int range, float* buffer);
-        extern int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5);
+        extern int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5);
         // 004520C0 L697-725: equipped-item terrain light.  The two item
         // los registros arrancan en c+624 y c+648 (stride de 24 bytes).
         if (AsCharacter(entity_ptr)->PK < 6) {
@@ -4421,7 +4421,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x141:
         {
             float local[3] = { 0.0f, 0.0f, 0.0f }, a[3], b[3];
-            const int boneBase = *(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices;
+            const intptr_t boneBase = *(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices;
             for (int offset = 96; offset < 240; offset += 48) {
                 BMD_TransformPosition(model, (float *)(boneBase + offset), local, a, '\x01');
                 BMD_TransformPosition(model, (float *)(boneBase + offset + 48), local, b, '\x01');

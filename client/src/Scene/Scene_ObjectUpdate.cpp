@@ -767,7 +767,7 @@ void __stdcall MoveBugs(void) {
             goto next_bug;
 
     { // El salto de salida no entra en el ámbito de estas variables.
-        DWORD owner = *v0;                     // *v0 — Owner ptr
+        intptr_t owner = *v0;                     // *v0 — Owner ptr
         if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
                 *(BYTE*)e = 0;                 // kill: owner muerto / Kind != 1
@@ -777,7 +777,7 @@ void __stdcall MoveBugs(void) {
         Alpha(AsObject(e));              // Actualiza el alpha sin truncar la dirección.
 
         {
-        int   v2 = (int)owner;
+        intptr_t   v2 = (int)owner;
         float x2 = *(float*)(v2 + 16);         // owner posX
         float y2 = *(float*)(v2 + 20);         // owner posY
         int   v4 = AsObject(e)->Type;           // type
@@ -813,7 +813,7 @@ void __stdcall MoveBugs(void) {
             if ((TerrainWall[idx] & 1) == 1) {
                 *(DWORD *)&AsObject(e)->Alpha = 0;      // en muro: apaga alpha, no copia pos
             } else {
-                int  v8 = *v0;
+                intptr_t  v8 = *v0;
                 char v9 = *(BYTE*)(v8 + 124);
                 if (v9 == 1 || v9 == 2) {
                     float v10 = AsObject(e)->Alpha - 0.1f;
@@ -928,7 +928,7 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Direction[0] = 0;
                 AsObject(e)->Direction[2] = (float)(rand() % 64 - 32) * 0.1f;
             }
-            int v35 = *v0;
+            intptr_t v35 = *v0;
             if (*(float*)(*v0 + 24) + 100.0f > AsObject(e)->Position[2])
                 AsObject(e)->Direction[2] = AsObject(e)->Direction[2] + 1.5f;
             if (*(float*)(v35 + 24) + 200.0f < AsObject(e)->Position[2])

@@ -32,11 +32,11 @@ extern "C" const char* Guild_GetMarkName(int row);
 // ── RenderCharacter  Entity_UpdateRender ──────────────────────────────────────
 extern "C" {
     // From Render_PlayerEquipment.cpp
-    void Render_PlayerHelper(int c, int o);
+    void Render_PlayerHelper(int c, intptr_t o);
     void Render_PlayerWeaponLoop(int c, int o);
     // Back-weapon render decision. Returns 1 if weapon was rendered
     // on back (LinkBone 47). When 1, Render_PlayerWeaponLoop should be skipped.
-    int  RenderCharacterBackItem(int c, int o);
+    int  RenderCharacterBackItem(int c, intptr_t o);
 }
 
 // IDA: RenderGuildMarkOnShield — dibuja la textura 34 ya compuesta por CreateGuildMark
@@ -81,7 +81,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
 
-    int  entity_type = (int)sVar2;
+    intptr_t  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
 
 
@@ -564,7 +564,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
 // IDA: bloques de equipo de RenderCharacter (0x00456770).
 // DESVIACION: avanzan y emiten una vez por paso, con huesos de simulación.
-void Equipment_Tick(int entity, int highlighted)
+void Equipment_Tick(intptr_t entity, int highlighted)
 {
     int *param_1 = (int *)entity, *puVar13 = (int *)entity;
     short sVar2 = AsObject(entity)->Type;

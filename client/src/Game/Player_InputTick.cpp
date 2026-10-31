@@ -1385,7 +1385,7 @@ void __cdecl Player_ProcessInput(void)
             // Bound check (no esta en IDA): SelectedOperate viene del
             // picker del frame anterior.
             const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
-            const int tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
+            const intptr_t tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
                                    ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
 
             if (mountOk && tgtEntityPtr != 0) {

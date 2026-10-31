@@ -150,7 +150,7 @@ static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
 // 7. Sends opcode 0x19 skill packet for each specific skill type.
 // 8. Final: sends opcode 0x11 if tile is walkable.
 // Anti-tamper hash table ops and XOR encryption blocks are skipped per project policy.
-void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
+void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, intptr_t o /* IDA: o */)
 {
     if (!c || !o) return;
     BYTE* character = (BYTE*)(uintptr_t)c; // IDA: c / CHARACTER state buffer
@@ -301,7 +301,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 // label was incorrect: IDA FUN_004742B0 is documented as CreateTeleportBegin in Entity_LegacyTeleport.cpp.
 // Hit reaction: Entity_SetAnimation(0x57), clear +0x164, set +0x7C=1,
 // spawn effect 0x498 at entity pos, play sound 0x58.
-void __cdecl Entity_WeaponHit(int param_1) {
+void __cdecl Entity_WeaponHit(intptr_t param_1) {
     SetAttackSpeed();
     SetAction(AsObject(param_1), 0x57);
     *(DWORD *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget = 0;
@@ -367,7 +367,7 @@ void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
 //     300 (0x12C): same as 0x186.
 //     other: set anim 6 (land-idle), return.
 //   Post-effects: if +0x108 == _DAT_00552580 (0.0f): play footstep sound from class table.
-void __cdecl Entity_TeleportEnd(int entity_idx) {
+void __cdecl Entity_TeleportEnd(intptr_t entity_idx) {
     BYTE* puVar3 = (BYTE*)(uintptr_t)(int)entity_idx;
 
     // Local player: clear teleport in-flight state (hash-table ops are obfuscation noise)
@@ -456,7 +456,7 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 // documented as CreateTeleportEnd in Entity_LegacyTeleport.cpp, so the old address label was misleading.
 // Melee attack initiation: anim 0x57, set speed=5.0f (+0x108), mode=3 (+0x7C),
 // scale=1.0f (+0x164), spawn effect 0x498, play sound 0x58.
-void __cdecl Entity_MeleeAttackStart(int param_1) {
+void __cdecl Entity_MeleeAttackStart(intptr_t param_1) {
     SetAttackSpeed();
     SetAction(AsObject(param_1), 0x57);
     AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000

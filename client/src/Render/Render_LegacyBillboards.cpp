@@ -53,7 +53,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // model render slot, selects the target bone via equip-flags, then calls
 // BMD_TransformPosition to animate/position it.
 void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
-    int iVar1 = *(int*)(param_1 + 0x3c);
+    intptr_t iVar1 = *(int*)(param_1 + 0x3c);
     float local_c[3] = {0.0f, 0.0f, 0.0f};
     BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
     if (*(int*)(param_1 + 4) == 0x4d0)

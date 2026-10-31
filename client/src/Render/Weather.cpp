@@ -127,7 +127,7 @@ uint __cdecl Weather_Update(void)
     char    cVar4;
     short   sVar5;
     float   fVar7;
-    uint    uVar8;
+    intptr_t    uVar8;
     void   *pvVar9;
     DWORD  *puVar10;
     int     iVar11, iVar12;

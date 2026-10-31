@@ -56,7 +56,7 @@ extern "C" int g_BackItemHand;   // 0/1: mano del item colgado en la espalda
 
 // IDA: RenderLinkObject (0x00455430)
 void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
-                          int param_4, int param_5, int param_6,
+                          intptr_t param_4, intptr_t param_5, int param_6,
                           char param_7, unsigned int param_8, char param_9,
                           char param_10, unsigned int param_11)
 {
@@ -100,7 +100,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     float local_1c8;         // boss-head BoneHead flag
 
     int   local_22c;         // cached model pointer = DAT_05828d58 + param_6*0xbc
-    int   iVar7;             // model pointer (same as local_22c for most of fn)
+    intptr_t   iVar7;             // model pointer (same as local_22c for most of fn)
 
     // ── 1. look up model, copy entity fields ──────────────────────────────────
     // 0.97.20: la pieza guarda el modelo lógico (param_6, que decide la pose y

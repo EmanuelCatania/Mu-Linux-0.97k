@@ -246,7 +246,7 @@ int Game_SceneUpdate(void)
         unsigned char* loginPreview1 = CreateHero(1, 1, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview1);
         {
-            int base = DAT_07abf5d0;
+            intptr_t base = DAT_07abf5d0;
             // Entity 0 (slot 0) — scale + position
             *(float*)(base + 0x3a0) = 0.6f;
             *(int*)  (base + 0x3b0) = 0;
@@ -260,7 +260,7 @@ int Game_SceneUpdate(void)
         unsigned char* loginPreview2 = CreateHero(2, 0, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview2);
         {
-            int base = DAT_07abf5d0;
+            intptr_t base = DAT_07abf5d0;
             // Entity 2 (elf).
             // Ghidra @ 0x0051F900 línea 239: CharactersClient[2].Position[1] = -770.0
             *(float*)(base + 0x734) = 0.6f;
@@ -275,8 +275,8 @@ int Game_SceneUpdate(void)
         unsigned char* loginPreview3 = CreateHero(3, 2, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview3);
         {
-            int base  = DAT_07abf5d0;
-            int slot3 = base + 0xabc;  // entity 3 base
+            intptr_t base  = DAT_07abf5d0;
+            intptr_t slot3 = base + 0xabc;  // entity 3 base
             *(float*)(base + 0xac8) = 0.6f;
             *(int*)  (base + 0xad8) = 0;
             *(int*)  (base + 0xadc) = 0;
@@ -371,7 +371,7 @@ int Game_SceneUpdate(void)
     // setea entity[+0x105], pero no animan).
     {
         for (int s = 0; s < 8; ++s) {
-            int e = (int)(uintptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
+            intptr_t e = (int)(uintptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
             if (*(char*)e != '\0') {
                 MoveCharacterVisual(e);            // model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108]

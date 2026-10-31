@@ -746,7 +746,7 @@ void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
 // param_1 = label text or ID, param_2 = world position (float[3]),
 // param_3 = color/type, param_4 = screen offset (float[3]), param_5 = extra data.
 // FloatingLabel_Add (IDA-activated)
-int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
+int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5)
 {
   BYTE *v5; // edx
   int v6; // ecx
@@ -1909,7 +1909,7 @@ int __cdecl FindCharacterIndex(int param_1)
 void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
-    DWORD c = DAT_07abf5d0 + CHARACTER_STRIDE * Key;
+    intptr_t c = DAT_07abf5d0 + CHARACTER_STRIDE * Key;
     if (*(WORD *)&AsCharacter(c)->Object.Type != 390) return;
     // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
     // el ala custom (más abajo).

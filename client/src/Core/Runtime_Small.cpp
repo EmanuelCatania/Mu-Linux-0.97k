@@ -128,7 +128,7 @@ void __cdecl CenterMouseY(void) { MouseY = (unsigned int)gWindow.GetHeight() >> 
 // ── 15-byte ─────────────────────────────────────────────────────────────────
 
 // CErrorReport::AddSeparator @ 0x00405580 (15 bytes)
-void __fastcall CErrorReport__AddSeparator(DWORD This) {
+void __fastcall CErrorReport__AddSeparator(intptr_t This) {
     CErrorReport__Write(This, (char *)"---------------------------------------");
 }
 
@@ -458,7 +458,7 @@ skip_wings: ;
 void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, sizeof(WhisperRegistID)); }
 
 // CUIRenderText_SetFont @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
-void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
+void __fastcall CUIRenderText_SetFont(intptr_t ecx, int /*edx*/, int param_1) {
     if (param_1 != 0) {
         // Call release method: (*(this+4))->vtable[2](param_1)
         typedef void (__cdecl *ReleaseFunc)(int);
@@ -473,7 +473,7 @@ void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
 
 
 // FUN_00406d20 @ 0x00406D20 (22 bytes) — initialize hash table fields
-void __fastcall FUN_00406d20(int param_1) {
+void __fastcall FUN_00406d20(intptr_t param_1) {
     *(int *)(param_1 + 0x1c) = 0x83;
     *(int *)(param_1 + 0xc) = 0;
     *(int *)(param_1 + 4) = 0;
@@ -524,7 +524,7 @@ void __cdecl ReleaseMainData(void) {
 
 
 // FUN_00406cb0 @ 0x00406CB0 — HashWidget ~dtor
-void __fastcall FUN_00406cb0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_00406cb0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_00406cd0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -544,37 +544,37 @@ void __fastcall FUN_00407ea0(void* ecx, int /*edx*/, BYTE param_1) {
 
 
 // FUN_0040a6c0 @ 0x0040A6C0 — WidgetC derived ~dtor
-void __fastcall FUN_0040a6c0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040a6c0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040a6e0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040db60 @ 0x0040DB60 — DSDevice ~dtor
-void __fastcall FUN_0040db60(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040db60(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040d550((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040db80 @ 0x0040DB80 — DSBuffer ~dtor
-void __fastcall FUN_0040db80(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040db80(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040dba0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040eac0 @ 0x0040EAC0 — DSBufferB ~dtor
-void __fastcall FUN_0040eac0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040eac0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040eae0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040f520 @ 0x0040F520 — Stream deinit ~dtor
-void __fastcall FUN_0040f520(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040f520(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040f540((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0040f840 @ 0x0040F840 — StreamB ~dtor
-void __fastcall FUN_0040f840(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0040f840(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0040f950((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -615,7 +615,7 @@ void __cdecl StopMusic(void) {
 // ── 33-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00406e60 @ 0x00406E60 (33 bytes) — free two allocations + zero count
-void __fastcall FUN_00406e60(int param_1) {
+void __fastcall FUN_00406e60(intptr_t param_1) {
     operator_delete(*(void **)(param_1 + 8));
     operator_delete(*(void **)(param_1 + 4));
     *(int *)(param_1 + 0xc) = 0;
@@ -644,7 +644,7 @@ void __cdecl EndOpengl(void) {
 // ── 36-byte ─────────────────────────────────────────────────────────────────
 
 // GetHandOfWeapon @ 0x00448900 (36 bytes) — returns 1 if entity type 390 and action 37/38
-int __cdecl GetHandOfWeapon(int obj) {
+int __cdecl GetHandOfWeapon(intptr_t obj) {
     int hand = 0;
     if (*(short *)(obj + 2) == 390) {
         BYTE act = *(BYTE *)&((OBJECT*)(uintptr_t)(obj))->CurrentAction;
@@ -656,7 +656,7 @@ int __cdecl GetHandOfWeapon(int obj) {
 // ── 37-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_0040a830 @ 0x0040A830 (37 bytes) — free two optional allocations
-void __fastcall FUN_0040a830(int param_1) {
+void __fastcall FUN_0040a830(intptr_t param_1) {
     if (*(void **)(param_1 + 0x1c) != NULL) operator_delete(*(void **)(param_1 + 0x1c));
     if (*(void **)(param_1 + 8) != NULL) operator_delete(*(void **)(param_1 + 8));
 }
@@ -697,7 +697,7 @@ void __cdecl FreeDirectSound(void) {
 // ── 43-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00406ec0 @ 0x00406EC0 (43 bytes) — hash table destructor (zero fields + set vtable + conditional delete)
-void __fastcall FUN_00406ec0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_00406ec0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     *(int *)(ecx + 0xc) = 0;
     *(int *)(ecx + 4) = 0;
     *(int *)(ecx + 8) = 0;
@@ -723,7 +723,7 @@ void __fastcall FUN_0040f540(void *This) {
 // ── 48-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00406db0 @ 0x00406DB0 (48 bytes) — thiscall: set fields + random hash prime
-void __fastcall FUN_00406db0(int ecx, int /*edx*/, int param_1, int param_2) {
+void __fastcall FUN_00406db0(intptr_t ecx, int /*edx*/, int param_1, int param_2) {
     *(int *)(ecx + 0x10) = param_1;
     *(int *)(ecx + 0x14) = param_2;
     int r = rand();

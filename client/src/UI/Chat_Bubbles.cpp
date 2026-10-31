@@ -257,7 +257,7 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
 
     // Pass 1: search players (Kind == 1) — por nombre
     for (int i = 0; i < 400; i++) {
-        DWORD c = base + i * CHARACTER_STRIDE;
+        intptr_t c = base + i * CHARACTER_STRIDE;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 1) {
             if (strcmp(EntityName::Get(c), ID) == 0) {
                 CreateChat(ID, Text, AsCharacter(c), Flag, -1);
@@ -270,7 +270,7 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // Fiel a IDA: hace `strcmp(...)` pero DESCARTA el resultado y llama igual
     // (rareza del original — el strcmp quedó sin usar).
     for (int i = 0; i < 400; i++) {
-        DWORD c = base + i * CHARACTER_STRIDE;
+        intptr_t c = base + i * CHARACTER_STRIDE;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 2) {
             CreateChat(ID, Text, AsCharacter(c), Flag, -1);
             return;

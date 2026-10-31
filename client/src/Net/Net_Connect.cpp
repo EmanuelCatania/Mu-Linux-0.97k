@@ -267,7 +267,7 @@ LAB_00423b59:
 // símbolo queda exportado.
 // =============================================================================
 // IDA: CWsctlc::Connect (0x0043DCD0)
-extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
+extern "C" int __cdecl CWsctlc_Connect(intptr_t This, const char* ip_addr,
                                        unsigned short port, DWORD WinMsgNum)
 {
     if (!This || !*(DWORD*)This) {

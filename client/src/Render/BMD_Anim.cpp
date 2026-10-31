@@ -92,7 +92,7 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
 // IDA original (sub_448600): hash-table reference-count of `c+770` on entry/exit
 // — pure anti-tamper obfuscation, omitted here. Real work is the speed calc
 // and the sub_440AA0 call.
-extern "C" bool __cdecl CharacterAnimation(int c, int o)
+extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o)
 {
     short type = AsObject(o)->Type;
     BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * type;
@@ -105,7 +105,7 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
     // OpenMonsterModel writes to (and what works for monsters). Don't change.
     short actionCount = *(short*)(model + 38);
     BYTE  modelAction = AsObject(o)->CurrentAction;  // entity[+0x105] — current action
-    int   actionsBase = (actionCount > 0) ? *(int*)(model + 48) : 0;
+    intptr_t   actionsBase = (actionCount > 0) ? *(int*)(model + 48) : 0;
     if (actionCount > 0) {
         if (actionsBase) {
             speed = *(float*)(actionsBase + 16 * modelAction + 4);

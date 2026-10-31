@@ -60,7 +60,7 @@ static void ItemEquip_UseManaScroll97k(int inventorySlot /* IDA: sub_482BE0(3) *
 // Nombres: skill = a4, target = CharactersClient[SelectedCharacter],
 // routeReach = SkillAttribute[40*a4+38]*1.2 (v12 antes del override), reach = v12.
 static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
-                                             DWORD object    /* IDA: a2 */,
+                                             intptr_t object    /* IDA: a2 */,
                                              BYTE  skill     /* IDA: a4 */)
 {
     if (SelectedCharacter == -1 || !character || !object)

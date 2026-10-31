@@ -241,7 +241,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     }
     if (!transformed)
     for (local_58 = 0; local_58 < meshCount; local_58++) {
-        int meshPtr = *(int*)((char*)this_ + 0x28) + local_6c;
+        intptr_t meshPtr = *(int*)((char*)this_ + 0x28) + local_6c;
         int vertCount = (int)(short)*(short*)(meshPtr + 4);
         // GUARD (desviación): el preview char del panel crear-personaje puede quedar
         // con una malla cuyo array de vértices/normales es NULL (modelo sin cargar).
@@ -284,7 +284,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         // el tipo de entidad, el modelo y los dos numeros, para poder atacar la
         // causa (que el modelo y el BoneTransform no correspondan) con datos.
         const int nBonesGuard = (int)(short)*(short*)((char*)this_ + 0x22);
-        for (int vi = 0; vi < vertCount; vi++) {
+        for (intptr_t vi = 0; vi < vertCount; vi++) {
             short* vs = (short*)((char*)(vi * 0x10) + *(int*)(meshPtr + 0x10));
             const int boneIdx = (int)*vs;
             if (boneIdx < 0 || (nBonesGuard > 0 && boneIdx >= nBonesGuard) || boneIdx >= 200) {
@@ -345,7 +345,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         local_68 = local_68_base;   // v35 — light buffer (1 float/vertex)
         float* pfNrmBase = (float*)((char*)&DAT_06f433bc + local_64);  // v20 — normal buffer (3 floats/normal)
         int normCount = (int)(short)*(short*)(meshPtr + 6);
-        for (int ni = 0; ni < normCount; ni++) {
+        for (intptr_t ni = 0; ni < normCount; ni++) {
             short* ns = (short*)(ni * 0x14 + *(int*)(meshPtr + 0x14));
             // VectorRotate(normal_src, boneMatrix, dst=normal buffer)
             Vector_Rotate((float*)(ns + 2), (float*)(*ns * 0x30 + param_1), pfNrmBase);

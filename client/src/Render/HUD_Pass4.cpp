@@ -480,7 +480,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
     if ((int)sx <= 0) goto check_quest_overlay;
 
     {
-        DWORD v6_addr = x_addr;
+        intptr_t v6_addr = x_addr;
         int v22 = 0;
         int v27 = (int)sx;
         DWORD v26 = x_addr;

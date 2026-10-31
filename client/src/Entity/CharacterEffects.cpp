@@ -23,7 +23,7 @@
 
 // IDA: emisores iniciales de RenderCharacter (0x00456770).
 // DESVIACION: azar y emisiones persistentes se evalúan sólo en el paso SIM.
-void CharacterEffects_TickEarly(int entity, CharacterEffectScratch &scratch) {
+void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch) {
     int *param_1 = (int *)entity, *puVar13 = (int *)entity;
     short sVar2 = AsObject(entity)->Type;
     int entity_type = sVar2;
@@ -107,7 +107,7 @@ void CharacterEffects_TickEarly(int entity, CharacterEffectScratch &scratch) {
 }
 
 // IDA: switch final por modelo de RenderCharacter (0x00456770).
-void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
+void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch) {
     int *param_1 = (int *)entity, *puVar13 = (int *)entity;
     short sVar2 = AsObject(entity)->Type;
     int entity_type = sVar2;

@@ -119,7 +119,7 @@
 // DESVIACION: sólo se llama desde WorldEffects_Tick, con huesos SIM frescos.
 // Emite partículas/joints y publica sprites; el draw reproduce esa muestra.
 // Switch principal: World × entity.type.
-float * __cdecl Entity_SpawnEffects(int param_1)
+float * __cdecl Entity_SpawnEffects(intptr_t param_1)
 {
     void     *pModel;
     float     fVar14;
@@ -127,7 +127,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     int       entityType;
     float    *pfVar3;
     uint      uVar4;
-    uint      randomRemainder;
+    intptr_t      randomRemainder;
     unsigned short uVar5;
     float    *pfVar6, *pfVar12, *pfVar13, *pfVar15, *pfVar16, *pfVar17;
     bool      bVar8;

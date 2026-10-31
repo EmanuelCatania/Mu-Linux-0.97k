@@ -12,7 +12,7 @@
 // Structure: if name matches -> return 1. If strstr fails (command NOT in text) -> return 1.
 // Only returns 0 if text contains ALL command strings AND matches no name — effectively always 1.
 // This is anti-tamper obfuscation; the real purpose is the name comparison.
-unsigned int __cdecl Chat_ValidateCommandName(int param_1) {
+unsigned int __cdecl Chat_ValidateCommandName(intptr_t param_1) {
     char local_100[256];
 
     // Copy 254 bytes from packet payload (offset +3) into local buffer

@@ -140,7 +140,7 @@ int __cdecl CheckMouseIn(int x, int y, int width, int height, int direction) {
 // CreateClassAttribute @ 0x0047D240 (97 bytes) — set class base stats
 void __cdecl CreateClassAttribute(int Class, int Str, int Dex, int Vit, int Eng,
     int Life, int Mana, int LvLife, int LvMana, int VitToLife, int EngToMana) {
-    int off = Class * 0x50;
+    intptr_t off = Class * 0x50;
     *(short *)(off + 0x7d77f28) = (short)Str;
     *(short *)(off + 0x7d77f2a) = (short)Dex;
     *(short *)(off + 0x7d77f2c) = (short)Vit;
@@ -187,7 +187,7 @@ void __fastcall FUN_00406cd0(void *param_1_raw) {
 }
 
 // FUN_00406d40 @ 0x00406D40 (102 bytes) — free all hash table buckets
-void __cdecl FUN_00406d40(int param_1) {
+void __cdecl FUN_00406d40(intptr_t param_1) {
     unsigned int uVar1 = 0;
     do {
         void *lpMem = *(void **)(*(int *)(param_1 + 4) + uVar1);
@@ -327,7 +327,7 @@ int __fastcall FUN_0040e730(void *This, int /*edx*/, char *param_1) {
 }
 
 // FUN_00451ea0 @ 0x00451EA0 (78 bytes) — transform bone position to world coords
-void __cdecl FUN_00451ea0(int param_1, void *param_2, int param_3) {
+void __cdecl FUN_00451ea0(intptr_t param_1, void *param_2, int param_3) {
     float Position[3] = {0.0f, 0.0f, 0.0f};
     float WorldPosition[3] = {0.0f, 0.0f, 0.0f};
     Position[2] = 1.4013e-45f;
@@ -414,7 +414,7 @@ bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip) {
 void __fastcall FUN_004112b0_impl(int *param_1) {
     int *puVar1 = *(int **)(*param_1 + 8);
     if ((void *)puVar1 == DAT_055c9b98) {
-        int iVar3 = *(int *)(*param_1 + 4);
+        intptr_t iVar3 = *(int *)(*param_1 + 4);
         if (*param_1 == *(int *)(iVar3 + 8)) {
             do {
                 *param_1 = iVar3;
@@ -452,11 +452,11 @@ void __cdecl FUN_00411420_impl(int *param_1) {
 // BSTIterator_PostIncrement (IDA-activated)
 DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 {
-  int v3; // edi
+  intptr_t v3; // edi
   DWORD **v4; // edx
   DWORD *j; // eax
   DWORD *result; // eax
-  int i; // eax
+  intptr_t i; // eax
 
   v3 = *_this;
   v4 = *(DWORD ***)(*_this + 8);
@@ -494,7 +494,7 @@ void __fastcall FUN_00411870_impl(int *param_1) {
         *param_1 = piVar3[2];
         return;
     }
-    int iVar1 = *piVar3;
+    intptr_t iVar1 = *piVar3;
     if ((void *)iVar1 == DAT_055c9b98) {
         piVar3 = (int *)piVar3[1];
         if (*param_1 == *piVar3) {
@@ -506,7 +506,7 @@ void __fastcall FUN_00411870_impl(int *param_1) {
         *param_1 = (int)piVar3;
         return;
     }
-    int iVar2;
+    intptr_t iVar2;
     for (iVar2 = *(int *)(iVar1 + 8); iVar2 != (int)DAT_055c9b98; iVar2 = *(int *)(iVar2 + 8)) {
         iVar1 = iVar2;
     }
@@ -514,7 +514,7 @@ void __fastcall FUN_00411870_impl(int *param_1) {
 }
 
 // FUN_004118d0 @ 0x004118D0 (82 bytes) — doubly-linked list: clear all nodes
-void __fastcall FUN_004118d0_impl(int param_1) {
+void __fastcall FUN_004118d0_impl(intptr_t param_1) {
     int *piVar1 = *(int **)(param_1 + 0x5c);
     int *lpMem = (int *)*piVar1;
     while (lpMem != piVar1) {
@@ -529,7 +529,7 @@ void __fastcall FUN_004118d0_impl(int param_1) {
 }
 
 // FUN_004122c0 @ 0x004122C0 (85 bytes) — list: trim excess entries from tail
-void __fastcall FUN_004122c0_impl(int param_1) {
+void __fastcall FUN_004122c0_impl(intptr_t param_1) {
     int iVar1 = *(int *)(param_1 + 0x60);
     int iVar2 = *(int *)(param_1 + 0x84);
     if (iVar2 <= iVar1 && iVar1 != iVar2 && iVar1 - iVar2 > 0) {
@@ -566,7 +566,7 @@ int *__fastcall FUN_00411300(void *This, int /*edx*/, int *param_1, void *param_
 
 
 // FUN_00410d90 @ 0x00410D90 (78 bytes) — list: destroy all + free sentinel
-void __fastcall FUN_00410d90_impl(int param_1) {
+void __fastcall FUN_00410d90_impl(intptr_t param_1) {
     int *piVar1 = *(int **)(param_1 + 4);
     int *lpMem = (int *)*piVar1;
     while (lpMem != piVar1) {
@@ -682,7 +682,7 @@ static char *__cdecl FUN_00543ac0_impl(BYTE *name) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── FUN_0052f4d0 (IDA-activated, absent in Ghidra) ──
-int __cdecl FUN_0052f4d0(int a1, int a2, int a3, int a4)
+int __cdecl FUN_0052f4d0(intptr_t a1, int a2, int a3, int a4)
 {
   return *(DWORD *)(*(DWORD *)(a1 + 4) + 44) - a4;
 }

@@ -154,7 +154,7 @@ void CErrorReport_WriteCurrentTime(int param_1) {
 // si points to 264-byte SystemInfo struct: si[0..127]=CPU, si[128..255]=OS, si[256..259]=RAMbytes, si[260..]=DirectX.
 void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* si_v) {
     DWORD This = (DWORD)(uintptr_t)This_v;
-    DWORD si   = (DWORD)(uintptr_t)si_v;
+    intptr_t si   = (DWORD)(uintptr_t)si_v;
     CErrorReport__Write(This, (char*)"<System information>\r\n");
     CErrorReport__Write(This, (char*)"OS \t\t\t: %s\r\n", (const char*)(si + 128));
     CErrorReport__Write(This, (char*)"CPU \t\t\t: %s\r\n", (const char*)si);

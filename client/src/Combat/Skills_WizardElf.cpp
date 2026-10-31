@@ -49,7 +49,7 @@ static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 // Correspondencia: skillId = el byte de CharacterAttribute[dword_7D7809C + 87];
 //   targetIdx = MovementSkillTarget (0x07D780A0); angle = retorno de CreateAngle
 //   (0x0043E050, que el decompile llama `Movement_Tick`); targetKey = entidad+476.
-void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
+void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
     // IDA: sub_4889D0 @ 0x004889D0.  `c` is the queued caster CHARACTER
     // (IDA: c); `o` is its OBJECT (IDA: a2).  The skill selector itself is
     // deliberately global in the original, not a member of either parameter.
@@ -80,7 +80,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
     char* heroEntity = (char*)(DWORD)c;
     int targetIdx = (int)MovementSkillTarget;  // MovementSkillTarget
-    DWORD entityBase = DAT_07abf5d0;    // CharactersClient array base
+    intptr_t entityBase = DAT_07abf5d0;    // CharactersClient array base
 
     // Target entity position: entityBase + targetIdx * 0x394 + offset
     // Ghidra: CharactersClient[_MovementSkillTarget].Object.Position[0/1/2]
@@ -343,7 +343,7 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 // ~60% of the original decompile is anti-tamper hash table operations
 // (HashTable_Insert, FUN_004041e0, HashTable_GetNode, Packet_DecryptByte, Packet_DecryptBuffer,
 //  Packet_EncryptBuffer) and XOR key init + dead forward/reverse loops — all skipped.
-bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
+bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
     // c = CHARACTER* (hero entity), pItem = CHARACTER_ATTRIBUTE* (char attributes)
     // Cast to usable pointers
     char* hero    = (char*)(DWORD)c;      // CHARACTER* — entity struct

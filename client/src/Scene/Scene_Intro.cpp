@@ -131,11 +131,11 @@ void __cdecl Scene_Intro(HDC param_1)
     uint        uVar4;
     void       *pvVar5;
     undefined4 *puVar6;
-    int         iVar7, iVar8;
+    intptr_t         iVar7, iVar8;
     byte       *pbVar9, *pbVar10, *pbVar11;
     bool        bVar12, bVar13;
     uint        uVar14;
-    int         iStack_10;
+    intptr_t         iStack_10;
     undefined4 *local_c;
     undefined1 *local_8;
     uint        uStack_4;

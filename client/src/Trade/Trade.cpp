@@ -101,7 +101,7 @@ extern DWORD g_trade_requester;        // DAT_05826c00
 extern char  g_active_shop_name[4];    // lpString_05826bfc (at 0x05826bfc)
 extern int   g_cached_shop_slot;       // DAT_00559684
 extern BYTE* g_EntityBase;             // DAT_07abf5d0 (legacy alias, may be null)
-extern DWORD g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
+extern intptr_t g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
 
 // g_EntityBase nunca apunta al array de entidades: la base real es DAT_07abf5d0
 // (la setea WinMain), y ENTITY la usa directo.

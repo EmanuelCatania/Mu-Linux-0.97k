@@ -92,7 +92,7 @@ static inline void AE_TransformPosition(DWORD model, const void* mat,
 #undef  CreateEffect
 #define CreateEffect                  AE_CreateEffect
 
-void __cdecl AttackEffect(int Owner)
+void __cdecl AttackEffect(intptr_t Owner)
 {
   // Guard de port (no esta en IDA): si la tabla de modelos todavia no esta
   // cargada, `Models + 188*type` seria un puntero basura que TransformPosition
@@ -104,7 +104,7 @@ void __cdecl AttackEffect(int Owner)
   char *v4; // ebx
   unsigned int v5; // eax
   bool v6; // cf
-  int v7; // eax
+  intptr_t v7; // eax
   unsigned int v8; // eax
   char *v9; // esi
   unsigned char v10; // al
@@ -120,14 +120,14 @@ void __cdecl AttackEffect(int Owner)
   signed int v20; // eax
   double v21; // st7
   int v22; // edi
-  DWORD v23; // eax
+  intptr_t v23; // eax
   float *v24; // ebx
   float *v25; // esi
   char v26; // al
   char *v27; // ebx
   unsigned int v28; // edx
   const char *v29; // edi
-  int v30; // eax
+  intptr_t v30; // eax
   unsigned int v31; // eax
   char *v32; // esi
   unsigned char v33; // al
@@ -161,7 +161,7 @@ void __cdecl AttackEffect(int Owner)
   char *v61; // ebx
   unsigned int v62; // edx
   const char *v63; // edi
-  int v64; // eax
+  intptr_t v64; // eax
   unsigned int v65; // eax
   char *v66; // esi
   unsigned char v67; // al
@@ -180,7 +180,7 @@ void __cdecl AttackEffect(int Owner)
   char *v80; // ebx
   unsigned int v81; // edx
   const char *v82; // edi
-  int v83; // eax
+  intptr_t v83; // eax
   unsigned int v84; // eax
   char *v85; // esi
   unsigned char v86; // al
@@ -198,7 +198,7 @@ void __cdecl AttackEffect(int Owner)
   char *v98; // ebx
   unsigned int v99; // edx
   const char *v100; // edi
-  int v101; // eax
+  intptr_t v101; // eax
   unsigned int v102; // eax
   char *v103; // esi
   unsigned char v104; // al
@@ -215,7 +215,7 @@ void __cdecl AttackEffect(int Owner)
   float v115; // eax
   float v116; // ecx
   char *v117; // ebx
-  int v118; // eax
+  intptr_t v118; // eax
   unsigned int v119; // eax
   char *v120; // esi
   unsigned char v121; // al
@@ -231,7 +231,7 @@ void __cdecl AttackEffect(int Owner)
   char *v131; // ebx
   unsigned int v132; // edx
   const char *v133; // edi
-  int v134; // eax
+  intptr_t v134; // eax
   unsigned int v135; // eax
   char *v136; // esi
   unsigned char v137; // al
@@ -252,7 +252,7 @@ void __cdecl AttackEffect(int Owner)
   char *v152; // ebx
   unsigned int v153; // edx
   const char *v154; // edi
-  int v155; // eax
+  intptr_t v155; // eax
   unsigned int v156; // eax
   char *v157; // esi
   unsigned char v158; // al
@@ -271,7 +271,7 @@ void __cdecl AttackEffect(int Owner)
   char *v171; // ebx
   unsigned int v172; // edx
   const char *v173; // edi
-  int v174; // eax
+  intptr_t v174; // eax
   unsigned int v175; // eax
   char *v176; // esi
   unsigned char v177; // al
@@ -285,7 +285,7 @@ void __cdecl AttackEffect(int Owner)
   char v185; // al
   int v186; // esi
   unsigned int v187; // ebx
-  int v188; // eax
+  intptr_t v188; // eax
   char *v189; // edi
   char v190; // bl
   double v191; // st7
@@ -300,7 +300,7 @@ void __cdecl AttackEffect(int Owner)
   int v200; // eax
   int v201; // ecx
   short v202; // ax
-  DWORD v203; // esi
+  intptr_t v203; // esi
   float v204; // ecx
   float v205; // edx
   float v206; // ecx

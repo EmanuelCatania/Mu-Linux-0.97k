@@ -21,7 +21,7 @@ FramePointerSet savedObjects;
 std::size_t used=0;
 bool active=false;
 int scene=-1, world=-1;
-DWORD models=0;
+intptr_t models=0;
 void Save(void *address, std::size_t size, const void *owner=nullptr,
     bool registered=false, bool bones=false) {
     if (!address || !size) return;

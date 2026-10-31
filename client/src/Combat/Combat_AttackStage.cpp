@@ -11,7 +11,7 @@
 // The function reads c->Skill (c+0x302), dispatches on its value to spawn
 // effects, joints, sounds per weapon/skill type. Each case creates visual FX
 // via CreateEffect or Joint_Create (CreateJoint).
-static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
+static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
     int Hand = GetHandOfWeapon((int)o);
 
     // anti-tamper hash table — skipped (encrypt/decrypt c->Skill)
@@ -20,7 +20,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     g_iLimitAttackTime = 15; // g_iLimitAttackTime = 15
 
     // Models base
-    DWORD modelsBase = DAT_05828d58;
+    intptr_t modelsBase = DAT_05828d58;
 
     switch (skillByte) {
 
@@ -30,7 +30,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         int modelIdx = (int)oType;
         // BMD* = Models + type * sizeof(BMD_entry)
         // model stride = type*0x2C (from LEA EDX,[EAX+EAX*2]; SHL EDX,4; SUB EDX,EAX => type*47 => *4 bytes)
-        DWORD pModel = modelsBase + modelIdx * 0xBC;
+        intptr_t pModel = modelsBase + modelIdx * 0xBC;
 
         BYTE attackTime = AsCharacter(c)->SkillStage;
 
@@ -122,7 +122,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     case 0x2F: {
         BYTE attackTime = AsCharacter(c)->SkillStage;
         short oType = AsObject(o)->Type;
-        DWORD pModel = modelsBase + (int)oType * 0xBC;
+        intptr_t pModel = modelsBase + (int)oType * 0xBC;
 
         if (attackTime == 0x0A) {
             PlayBuffer(0x5F, 0, 0);
@@ -271,7 +271,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt)
 
         // Final: update Models[0x186] bone data and set attackTime = 15
-        DWORD modelData = *(DWORD*)(modelsBase + 0x186 * 0xBC + 0x30);
+        intptr_t modelData = *(DWORD*)(modelsBase + 0x186 * 0xBC + 0x30);
         *(float*)(modelData + 0x3D4) = (float)(int)c + _DAT_005528f4;
         AsCharacter(c)->SkillStage = 0x0F;
         g_iLimitAttackTime = 15;
@@ -324,12 +324,12 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 // Combat_SpawnDeathDustParticles (IDA-activated)
 // 00448930 AttackStage — direct IDA switch (raw/00448930_AttackStage.c).
 // The older AttackStage_legacy_mismatched above is intentionally not called.
-bool __cdecl AttackStage(DWORD c, DWORD o)
+bool __cdecl AttackStage(intptr_t c, intptr_t o)
 {
     const int hand = GetHandOfWeapon((int)o);
     const BYTE skill = AsCharacter(c)->Skill, stage = AsCharacter(c)->SkillStage;
     const short type = AsObject(o)->Type;
-    const DWORD model = DAT_05828d58 + type * 188;
+    const intptr_t model = DAT_05828d58 + type * 188;
     g_iLimitAttackTime = 15;
     if (skill == 43) {
         if (stage == 8) PlayBuffer(83, 0, 0);
@@ -360,7 +360,7 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     } else if(skill==48) { if(stage>9 && type==390 && AsObject(o)->CurrentAction==63) AsCharacter(c)->SkillStage=15; }
     else if(skill==49) { if(AsObject(o)->AnimationFrame>=5.0f && type==390 && (AsObject(o)->CurrentAction==64 || AsObject(o)->CurrentAction==65)) AsCharacter(c)->SkillStage=15; }
     else if(skill==52) { if(type==390 && AsObject(o)->CurrentAction>=34 && AsObject(o)->CurrentAction<=91 && AsObject(o)->AnimationFrame>=5.0f){AsObject(o)->PriorAnimationFrame=4.0f;AsObject(o)->AnimationFrame=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100, AsObject(o),0);} g_iLimitAttackTime=5; }
-    else if(skill==55) { if(type==390 && AsObject(o)->CurrentAction==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(AsObject(o)->AnimationFrame>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)AsObject(o)->PKKey,(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
+    else if(skill==55) { if(type==390 && AsObject(o)->CurrentAction==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(AsObject(o)->AnimationFrame>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)AsObject(o)->PKKey,(float*)(intptr_t)FindHotKey(55),0); const intptr_t modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
     else if(skill==56) { if(type==390 && AsObject(o)->CurrentAction==81){float a[3]={AsObject(o)->Angle[0],AsObject(o)->Angle[1],AsObject(o)->Angle[2]-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);AsCharacter(c)->SkillStage=15;} }
     // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.
     // Los monstruos conservan las etapas intermedias que consume AttackEffect (Alquamos 1, Queen Rainer 5).

@@ -100,7 +100,7 @@ void Equipment_WingSprite(unsigned short type, float *position, float scale,
     else CreateSprite(type, position, scale, light, owner, rotation, mode);
 }
 void Equipment_AddMesh(int model, const void *object, const float *light,
-    float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, int part, int linked, const float *offset) {
+    float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, intptr_t part, int linked, const float *offset) {
     if (!recording) return;
     recording->commands.push_back({true, (unsigned int)recording->meshes.size(), currentStage});
     recording->meshes.emplace_back();
