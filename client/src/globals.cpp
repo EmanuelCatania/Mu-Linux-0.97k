@@ -639,7 +639,7 @@ char     DAT_05826d32  = 0;
 char     SoccerObserver  = 0; // IDA: DAT_05826d33 (0x05826D33)
 DWORD    DAT_05826d78  = 0;
 DWORD    DAT_05826dc8  = 0;
-DWORD    DAT_05826df4  = 0;
+PathContext* DAT_05826df4 = nullptr;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
 float    WorldTime  = 0.0f; // IDA: WorldTime (0x05826E08)

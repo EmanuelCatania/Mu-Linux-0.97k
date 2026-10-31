@@ -1,6 +1,7 @@
 // Path_Legacy.cpp
 
 #include "stdafx.h"
+#include "Game/PathContext.h"
 #include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -301,7 +302,7 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     // _this es el contexto del pathfinder (DAT_05826df4), como en el wrapper que
     // documenta Net_Process.cpp:
     //   PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
-    void* pfCtx = (void*)(intptr_t)DAT_05826df4;
+    PathContext* pfCtx = DAT_05826df4;
 
     // El contexto lo construye PathContext_Create() (src/Game/PathFinder.cpp,
     // llamada desde WinMain), que replica el ctor del binario: 0x0043F280..0x0043F2C7,
@@ -316,16 +317,11 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     #define PF_USE_ORIGINAL 0
     bool pfReady = false;
 #if PF_USE_ORIGINAL
-    pfReady = (pfCtx != nullptr) && (((DWORD*)pfCtx)[0x105] != 0);
+    pfReady = pfCtx != nullptr;
 #endif
     {
         static int s_dbg_pf = 0;
         if (s_dbg_pf++ < 5) {
-            char b[200];
-            DWORD vtbl = 0;
-            if (pfCtx && (uintptr_t)pfCtx >= 0x100000) {
-                vtbl = ((DWORD*)pfCtx)[0x105];
-            }
         }
     }
     if (!pfReady) {
@@ -389,17 +385,17 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
 
 success:
     {
-        int pathLen = *(int*)(DAT_05826df4 + 0x10);
+        int pathLen = pfCtx->Length;
         if (pathLen < 2) return 0;
         if (pathLen > 0xF) pathLen = 0xF;
 
         path[2] = (unsigned char)pathLen;
 
         // Copy waypoints from result buffer into path arrays
-        int base = DAT_05826df4 - *(int*)(DAT_05826df4 + 0x10);
+        const int start = 500 - pfCtx->Length;
         for (int i = 0; i < (int)(unsigned char)path[2]; i++) {
-            path[3 + i]    = *(unsigned char*)(base + 0x208 + i); // wp_x
-            path[0x12 + i] = *(unsigned char*)(base + 0x3FC + i); // wp_y
+            path[3 + i]    = pfCtx->PathX[start + i]; // wp_x
+            path[0x12 + i] = pfCtx->PathY[start + i]; // wp_y
         }
         path[0] = 0;
         path[1] = 0;

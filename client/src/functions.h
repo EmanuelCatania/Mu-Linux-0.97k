@@ -224,13 +224,14 @@ void  __cdecl Particle_PathUpdate(OBJECT* entity, int slot_idx, const void* tabl
 // Pathfind(src_cached_x, src_cached_y, tgt_x, tgt_y, path_buf, reserved) → 1=ok 0=fail
 unsigned int __cdecl Path_FindRoute(int src_x, int src_y, int tgt_x, int tgt_y, unsigned char *path, float reserved); // IDA: PathFinding2
 // PathFinder2_Solve: A* grid search — implemented in Game/PathFinder.cpp
-uint  __cdecl PATH_FindPath(void *_this, int sx, float sy, int tx, int ty, int filter, int walkmax, float radius); // IDA: PATH_FindPath (0x0043F500)
+uint  __cdecl PATH_FindPath(PathContext *ctx, int sx, float sy, int tx, int ty, int filter, int walkmax, float radius); // IDA: PATH_FindPath (0x0043F500)
 // A* BST priority queue helpers — implemented in Game/PathFinder.cpp
-undefined4 __cdecl PATH_AddClearPos(void *_this, int idx); // IDA: PATH_AddClearPos (0x0043FD30)
-void  __cdecl CBTree_Add(void *_this, undefined4 data, int cost); // IDA: CBTree_Add (0x0043FEA0)
-undefined4 __cdecl CBTree_RemoveNode(void *_this, int *pnode); // IDA: CBTree_RemoveNode (0x004232F0)
-void  __cdecl CBTree_RemoveFrom(void *_this, undefined4 *node); // IDA: CBTree_RemoveFrom (0x004235D0)
-void  __fastcall CBTree_RemoveAll(undefined4 *open_set); // IDA: CBTree_RemoveAll (0x0043FF60)
+struct PathContext; struct PathQueue; struct PathNode;
+undefined4 __cdecl PATH_AddClearPos(PathContext *ctx, int idx); // IDA: PATH_AddClearPos (0x0043FD30)
+void  __cdecl CBTree_Add(PathQueue *queue, int data, int cost); // IDA: CBTree_Add (0x0043FEA0)
+int   __cdecl CBTree_RemoveNode(PathQueue *queue, PathNode **slot); // IDA: CBTree_RemoveNode (0x004232F0)
+void  __cdecl CBTree_RemoveFrom(PathQueue *queue, PathNode *node); // IDA: CBTree_RemoveFrom (0x004235D0)
+void  __cdecl CBTree_RemoveAll(PathQueue *queue); // IDA: CBTree_RemoveAll (0x0043FF60)
 void  __cdecl Timer_UpdateFrameTiming(void); // IDA: CalcFPS
 
 // ── Model render helpers (FUN_004400xx / FUN_004410xx / FUN_004414xx) ─────────
