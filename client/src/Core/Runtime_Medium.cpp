@@ -180,10 +180,10 @@ void __cdecl CreateClassAttributes(void) {
 // FUN_00406cd0 @ 0x00406CD0 (79 bytes) — HashWidget deinit (SEH + cleanup)
 void __fastcall FUN_00406cd0(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
-    *param_1 = (int)&PTR_FUN_005524d8; // intermediate vtable
-    FUN_00406d40((int)param_1);
+    *param_1 = (intptr_t)&PTR_FUN_005524d8; // intermediate vtable
+    FUN_00406d40((intptr_t)param_1);
     param_1[3] = 0; param_1[1] = 0; param_1[2] = 0;
-    *param_1 = (int)&PTR_FUN_005524d8; // final vtable
+    *param_1 = (intptr_t)&PTR_FUN_005524d8; // final vtable
 }
 
 // FUN_00406d40 @ 0x00406D40 (102 bytes) — free all hash table buckets
@@ -210,14 +210,14 @@ void __cdecl FUN_00406d40(intptr_t param_1) {
 void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     void *n1 = operator_new(0xc);
-    if (n1 != NULL) { *(int *)((int)n1 + 8) = 0; *(int *)((int)n1 + 4) = 0; }
+    if (n1 != NULL) { *(int *)((intptr_t)n1 + 8) = 0; *(int *)((intptr_t)n1 + 4) = 0; }
     else n1 = NULL;
-    param_1[1] = (int)n1;
+    param_1[1] = (intptr_t)n1;
     void *n2 = operator_new(0xc);
-    if (n2 != NULL) { *(int *)((int)n2 + 8) = 0; *(int *)((int)n2 + 4) = 0; }
+    if (n2 != NULL) { *(int *)((intptr_t)n2 + 8) = 0; *(int *)((intptr_t)n2 + 4) = 0; }
     else n2 = NULL;
-    param_1[2] = (int)n2;
-    *(int *)(param_1[1] + 8) = (int)n2;
+    param_1[2] = (intptr_t)n2;
+    *(int *)(param_1[1] + 8) = (intptr_t)n2;
     *(int *)(param_1[2] + 4) = param_1[1];
     *param_1 = 0;
 }
@@ -430,7 +430,7 @@ void __fastcall FUN_004112b0_impl(int *param_1) {
     for (puVar2 = (int *)*puVar1; (void *)puVar2 != DAT_055c9b98; puVar2 = (int *)*puVar2) {
         puVar1 = puVar2;
     }
-    *param_1 = (int)puVar1;
+    *param_1 = (intptr_t)puVar1;
 }
 
 // FUN_00411420 @ 0x00411420 (37 bytes) — BST recursive post-order delete
@@ -480,7 +480,7 @@ DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
       v4 = (DWORD **)j;
     }
     result = a2;
-    *_this = (int)v4;
+    *_this = (intptr_t)v4;
     *a2 = v3;
   }
   return result;
@@ -490,7 +490,7 @@ DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 // FUN_00411870 @ 0x00411870 (95 bytes) — BST iterator: pre-decrement
 void __fastcall FUN_00411870_impl(int *param_1) {
     int *piVar3 = (int *)*param_1;
-    if ((piVar3[0x4d] == 0) && (*(int *)(piVar3[1] + 4) == (int)piVar3)) {
+    if ((piVar3[0x4d] == 0) && (*(int *)(piVar3[1] + 4) == (intptr_t)piVar3)) {
         *param_1 = piVar3[2];
         return;
     }
@@ -499,15 +499,15 @@ void __fastcall FUN_00411870_impl(int *param_1) {
         piVar3 = (int *)piVar3[1];
         if (*param_1 == *piVar3) {
             do {
-                *param_1 = (int)piVar3;
+                *param_1 = (intptr_t)piVar3;
                 piVar3 = (int *)piVar3[1];
             } while (*param_1 == *piVar3);
         }
-        *param_1 = (int)piVar3;
+        *param_1 = (intptr_t)piVar3;
         return;
     }
     intptr_t iVar2;
-    for (iVar2 = *(int *)(iVar1 + 8); iVar2 != (int)DAT_055c9b98; iVar2 = *(int *)(iVar2 + 8)) {
+    for (iVar2 = *(int *)(iVar1 + 8); iVar2 != (intptr_t)DAT_055c9b98; iVar2 = *(int *)(iVar2 + 8)) {
         iVar1 = iVar2;
     }
     *param_1 = iVar1;
@@ -547,20 +547,20 @@ void __fastcall FUN_004122c0_impl(intptr_t param_1) {
 
 // FUN_00411300 @ 0x00411300 (95 bytes) — doubly-linked list: insert node after position
 int *__fastcall FUN_00411300(void *This, int /*edx*/, int *param_1, void *param_2, int *param_3) {
-    int *puVar3 = *(int **)((int)param_2 + 4);
+    int *puVar3 = *(int **)((intptr_t)param_2 + 4);
     int *puVar1 = (int *)operator_new(0xc);
     int *puVar2 = (int *)param_2;
     if (param_2 == NULL) puVar2 = puVar1;
-    *puVar1 = (int)puVar2;
+    *puVar1 = (intptr_t)puVar2;
     if (puVar3 == NULL) puVar3 = puVar1;
-    puVar1[1] = (int)puVar3;
-    *(int **)((int)param_2 + 4) = puVar1;
-    *(int *)puVar1[1] = (int)puVar1;
+    puVar1[1] = (intptr_t)puVar3;
+    *(int **)((intptr_t)param_2 + 4) = puVar1;
+    *(int *)puVar1[1] = (intptr_t)puVar1;
     if (puVar1 + 2 != NULL) {
         puVar1[2] = *param_3;
     }
-    *(int *)((int)This + 8) = *(int *)((int)This + 8) + 1;
-    *param_1 = (int)puVar1;
+    *(int *)((intptr_t)This + 8) = *(int *)((intptr_t)This + 8) + 1;
+    *param_1 = (intptr_t)puVar1;
     return param_1;
 }
 

@@ -220,7 +220,7 @@ void Equipment_Draw(const CHARACTER* entity, int stage) {
         memcpy(object, mesh.object, sizeof(object));
         float light[3]; memcpy(light, mesh.light, sizeof(light));
         MaterialVisualScope material(&mesh.material);
-        RenderPartObjectEffect((int)object, mesh.model, light, drawAlpha,
+        RenderPartObjectEffect((intptr_t)object, mesh.model, light, drawAlpha,
             mesh.level, mesh.option, 0, mesh.flags);
     }
     drawing = false;

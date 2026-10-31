@@ -476,11 +476,11 @@ LAB_00501064:
                     if ((iVar12 < 0xb) || (0x10 < iVar12)) {
                         uVar8 = (uint)(uintptr_t)Joint_Create(0x10a, pfVar1, pfVar1,
                                              (float *)(&DAT_0839bccc + iVar14 * 0x6f), 1,
-                                             (int)pcVar3, 25.0f, -1, 0);
+                                             (intptr_t)pcVar3, 25.0f, -1, 0);
                     } else {
                         uVar8 = (uint)(uintptr_t)Joint_Create(0x10a, pfVar1, pfVar1,
                                              (float *)(&DAT_0839bccc + iVar14 * 0x6f), 3,
-                                             (int)pcVar3, 25.0f, -1, 0);
+                                             (intptr_t)pcVar3, 25.0f, -1, 0);
                     }
                 } else {
                     fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));

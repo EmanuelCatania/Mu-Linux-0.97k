@@ -18,7 +18,7 @@ int Random(unsigned n){const int values[]={0,1,2,3,7,127,128,255,511,512,599,102
 int ControlledRand(){Require(randomAt<3);int r=Random(randomAt++);events.insert(events.end(),{2,DWORD(r)});return r;}
 struct Map{int GetCurrentMap(){events.insert(events.end(),{3,DWORD(world)});return world;}}gMapManager;
 void RenderFxSnapshots_New(void* p){Require(p==record);events.push_back(1);}
-void Joint_Create(int type,float* p,float* q,float* a,int sub,int owner,float scale,int key,int flag){
+void Joint_Create(int type,float* p,float* q,float* a,int sub,intptr_t owner,float scale,int key,int flag){
  Require(type==1258&&reinterpret_cast<BYTE*>(p)==record+16&&p==q&&reinterpret_cast<BYTE*>(a)==record+28&&sub==4&&DWORD(owner)==DWORD(reinterpret_cast<uintptr_t>(record))&&scale==30&&key==-1&&flag==0);
  events.push_back(4);
 }
@@ -74,9 +74,9 @@ def harness(revision=None):
     while depth:depth+=(source[end]=='{')-(source[end]=='}');end+=1
     block=source[start:end]
     # Fronteras32 ajenas al cursor: la captura antigua de Hero puede ya no existir.
-    for expression,pointer in [('(int)DAT_07abf5d8','DAT_07abf5d8'),('(int)(puVar9 + -0x3a)','(puVar9 + -0x3a)')]:
+    for expression,pointer in [('(intptr_t)DAT_07abf5d8','DAT_07abf5d8'),('(intptr_t)(puVar9 + -0x3a)','(puVar9 + -0x3a)')]:
         assert block.count(expression) in ((0,1) if pointer=='DAT_07abf5d8' else (1,))
-        block=block.replace(expression,'static_cast<int>(reinterpret_cast<uintptr_t>('+pointer+'))')
+        block=block.replace(expression,'static_cast<intptr_t>(reinterpret_cast<uintptr_t>('+pointer+'))')
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('BLOCK',block)+MAIN
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

@@ -79,7 +79,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
-    short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
+    short sVar2    = *(short *)((intptr_t)puVar13 + 2);        // entity_type
 
     intptr_t  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
@@ -102,16 +102,16 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     case (char)-0x7e: case (char)-0x78:
     {
         // Skill channel active — beam/barrier widget path
-        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (int)param_3);
+        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (intptr_t)param_3);
         if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         if ((BYTE)uVar11 != 0)
-            Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
+            Draw_RenderObject(puVar13, 1, (intptr_t)param_3, '\0');
         break;
     }
     default:
         // Normal state — prepare entity render (bone / AABB)
         cVar6 = ((cVar6 == 'C') || (cVar6 == 'J') || (cVar6 == 'K')) ? '\x01' : '\0';
-        Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, cVar6);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, (intptr_t)param_3, cVar6);
         break;
     }
     // IDA RenderCharacter 0x456770: draw the projected shadow immediately
@@ -149,7 +149,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             short v15 = sVar2;
             if (v15 != 330 && v15 != 331) {
                 *(BYTE *)((char *)puVar13 + 0x8C) = 1;       // EnableShadow = 1
-                RenderPartObject((int)param_1,
+                RenderPartObject((intptr_t)param_1,
                              (int)v15,
                              0,
                              (float *)(param_1 + 200),       // c+800 Light
@@ -237,7 +237,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
         *(int *)((BYTE *)puVar13 + 100) = -1;
         ++*(short *)((BYTE *)puVar13 + 2);
-        Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, 0);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, (intptr_t)param_3, 0);
 
 
         if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
@@ -277,7 +277,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 }
                 const float shadowAlpha = *(float *)&((OBJECT*)(uintptr_t)(o))->Alpha;
                 *(BYTE *)(o + 140) = 1;              // EnableShadow
-                RenderPartObject((int)param_1, 391, 0,
+                RenderPartObject((intptr_t)param_1, 391, 0,
                              (float *)((char *)param_1 + 800), shadowAlpha,
                              0, 0, '\0', 0, '\x01', 0, 2);
                 *(BYTE *)(o + 140) = 0;
@@ -422,7 +422,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == 0) {
                 flags = 8 * (int)*(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Level;
             }
-            RenderPartObject((int)param_1, subType, 0,
+            RenderPartObject((intptr_t)param_1, subType, 0,
                          (float *)(param_1 + 200), alphaST,
                          flags, 0, '\0', 0, '\x01', 0, 2);
             bSubTypeNpcRendered = true;
@@ -467,7 +467,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     // encoda para que RenderPartObjectEffect lo decodifique con
                     // (val>>3)&0xF. FIEL a IDA (8 * *(BYTE*)(v76-18)).
                     UINT shiftedLvl = (UINT)rawLvl << 3;
-                    RenderPartObject((int)param_1,
+                    RenderPartObject((intptr_t)param_1,
                                  iVar9,
                                  piVar16,
                                  (float *)(param_1 + 200),
@@ -584,11 +584,11 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         *psVar1 = 0xea;
         *(char *)(param_1 + 0xa9) = 9;
         *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd; // 0.2f alpha
-        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, 0.0f, -40.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      0xea, '\0', 0, '\0', '\x01', 0);
         *psVar1 = 0xeb;
         *(char *)(param_1 + 0xa9) = 0x3d;
-        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, -40.0f, 45.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      0xeb, '\0', 0, '\0', '\x01', 0);
     }
     else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
@@ -599,7 +599,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         if (bVar7 == 0x84) *psVar1 = 0x23a;
         if (bVar7 == 0x85) *psVar1 = 0x1a3;
         if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
-        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, 0.0f, 0.0f, (intptr_t)param_1, (intptr_t)psVar1,
                      (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
     }
 
@@ -697,7 +697,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
                            (cType == 2) ? 0x1a3 :   // 419 Sword
                            (cType == 3) ? 0x222 : 0; // 546 Bow
             if (iSecType != 0) {
-                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                RenderLinkObject(0.0f, 0.0f, 15.0f, (intptr_t)param_1, (intptr_t)(param_1 + 0xa8),
                              iSecType, 0, 0, 1, 1, 0);
             }
         }
@@ -713,7 +713,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
             *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+            RenderLinkObject(0.0f, 0.0f, 15.0f, (intptr_t)param_1, (intptr_t)(param_1 + 0xa8),
                          (int)*(short *)(param_1 + 0xa8),
                          *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
                          *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Option1, '\0', '\x01', 0);
@@ -723,28 +723,28 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         if (*(short *)(param_1 + 0xae) == 0x331) {
             *(BYTE *)(param_1 + 0xaf) = 0x22;
             *(int*)&((CHARACTER*)(uintptr_t)param_1)->Helper.PlaySpeed = 0x3f000000; // 0.5f
-            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
+            RenderLinkObject(20.0f, 0.0f, 0.0f, (intptr_t)param_1, (intptr_t)(param_1 + 0xae),
                          0x331,
                          *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Level,
                          (UINT)(size_t)local_74, '\0', '\x01', 0);
             // Trail spawn at transformed bone position
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
             float fWorldPos[3];
-            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
+            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((intptr_t)puVar13 + 2) * 0xbc),
                          (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
                          fOff, fWorldPos, '\x01');
             float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
-            Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
+            Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (intptr_t)puVar13, 0, 0);
         }
 
         // ── Helper render (IDA 1267-1288) ──────────────────────────────────
         // Pet helper (Type 817) attached at bone 34 of player.
-        Render_PlayerHelper((int)param_1, (int)puVar13);
+        Render_PlayerHelper((intptr_t)param_1, (intptr_t)puVar13);
 
         // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
         // Si bBindBack=1, renderiza armas en la espalda (LinkBone
         // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
-        int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
+        int bBindBack = RenderCharacterBackItem((intptr_t)param_1, (intptr_t)puVar13);
 
         bSkipWeaponLoop = bBindBack != 0;
     }
@@ -753,7 +753,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
     // block above is player-specific; ordinary monster weapons continue through
     // the shared two-slot renderer.
     if (!bSkipWeaponLoop)
-        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+        Render_PlayerWeaponLoop((intptr_t)param_1, (intptr_t)puVar13);
 
 
     Equipment_SetStage(2);
@@ -761,7 +761,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
         *(BYTE *)(param_1 + 0xa9) = 0x2f;
         BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
         *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-        RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+        RenderLinkObject(0.0f, 0.0f, 15.0f, (intptr_t)param_1, (intptr_t)(param_1 + 0xa8),
                      (int)*(short *)(param_1 + 0xa8),
                      *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
                      *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Option1, '\0', '\x01', 0);

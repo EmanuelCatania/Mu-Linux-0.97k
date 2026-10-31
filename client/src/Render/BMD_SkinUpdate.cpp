@@ -100,7 +100,7 @@ void BMD_SkinUpdate(void)
         puVar6[ 1] = 0;   // normal count
         puVar6[ 2] = 0;   // face count
         puVar6 += 0x637d2;
-    } while ((int)puVar6 < 0x55c4038);
+    } while ((intptr_t)puVar6 < 0x55c4038);
 
     int local_54 = 0;
     if (0 < (int)sVar4) {

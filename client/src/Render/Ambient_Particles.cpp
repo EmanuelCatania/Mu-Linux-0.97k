@@ -241,7 +241,7 @@ LAB_0050245e:
                         puVar9[-7]    = (unsigned int)(*(int *)&fVar3);
                         Joint_Create(0x4ea, pfVar1, pfVar1,
                                      (float *)(puVar9 + -0x33), 4,
-                                     (int)(puVar9 + -0x3a),
+                                     (intptr_t)(puVar9 + -0x3a),
                                      30.0f, -1, 0);
                         iVar8 = gMapManager.GetCurrentMap();
                         break;

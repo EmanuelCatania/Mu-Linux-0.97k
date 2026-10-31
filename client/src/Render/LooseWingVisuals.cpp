@@ -105,7 +105,7 @@ void LooseWingVisuals_TickPreviews() {
         // fase temporal, como los sprites que antes sobrevivían hasta este paso.
         const float simulationTime=WorldTime;
         WorldTime=value.time;
-        Equipment_EmitWing790(model,(int)&owner.object,(int)&owner.object);
+        Equipment_EmitWing790(model,(intptr_t)&owner.object,(intptr_t)&owner.object);
         WorldTime=simulationTime;
     }
 }

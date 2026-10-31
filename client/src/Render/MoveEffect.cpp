@@ -467,7 +467,7 @@ void MoveEffect(float *param_1, int param_2)
           local_368 = local_36c;
           local_360 = 0.0;
           AddTerrainLight(*pfVar10,AsObject(param_1)->Position[1], (float*)&local_368,3, (float*)DAT_081cb608);
-          if (((char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8) && ((AsObject(param_1)->LifeTime) % 0x14 == 0)) {
+          if (((char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8) && ((AsObject(param_1)->LifeTime) % 0x14 == 0)) {
             Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar10,150.0,
                          *(byte *)(param_1 + 0x22),AsObject(param_1)->PKKey);
           }
@@ -504,7 +504,7 @@ void MoveEffect(float *param_1, int param_2)
                 if (AsObject(param_1)->Direction[2] < _DAT_005529ac) goto LAB_0046a366;
               }
               else if (AsObject(param_1)->SubType == 1) {
-                pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+                pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
                 if (((pcVar11 == (char *)0x0) || (*pcVar11 != '\x01')) ||
                    (((byte)*(undefined4 *)(pcVar11 + 0x78) & 0x10) != 0x10)) {
                   *(float *)&AsObject(param_1)->LifeTime = 0.0;
@@ -517,9 +517,9 @@ void MoveEffect(float *param_1, int param_2)
                 local_360 = 0.1;
                 iVar9 = _rand();
                 Particle_Spawn(0x47e,AsObject(param_1)->Position,&local_334,&local_368,4,
-                             (float)(byte)(DAT_00559b78)[iVar9 % 7],*(int *)&AsObject(param_1)->Owner);
+                             (float)(byte)(DAT_00559b78)[iVar9 % 7],(intptr_t)AsObject(param_1)->Owner);
                 Particle_Spawn(0x47e,AsObject(param_1)->Position,&local_334,&local_368,4,
-                             (float)(byte)(DAT_00559b7f)[-(iVar9 % 7)],*(int *)&AsObject(param_1)->Owner);
+                             (float)(byte)(DAT_00559b7f)[-(iVar9 % 7)],(intptr_t)AsObject(param_1)->Owner);
               }
             }
             else if (iVar9 == 0x1f1) {
@@ -576,7 +576,7 @@ void MoveEffect(float *param_1, int param_2)
             local_354 = AsObject(param_1)->Position[0];
             local_350 = AsObject(param_1)->Position[1];
             local_34c = AsObject(param_1)->Position[2] + _DAT_005524f0;
-            Joint_Create(0x4ee,&local_354,&local_354,AsObject(param_1)->HeadAngle,0,*(int *)&AsObject(param_1)->Owner,150.0,
+            Joint_Create(0x4ee,&local_354,&local_354,AsObject(param_1)->HeadAngle,0,(intptr_t)AsObject(param_1)->Owner,150.0,
                          AsObject(param_1)->PKKey,AsObject(param_1)->Skill);
           }
         }
@@ -615,7 +615,7 @@ void MoveEffect(float *param_1, int param_2)
             local_364 = local_360 * _DAT_00552504;
             goto LAB_004695b5;
           case 0x4ab:
-            Particle_Spawn(0x4ab,AsObject(param_1)->Position,AsObject(param_1)->Angle,&local_368,9,1.0,*(int *)&AsObject(param_1)->Owner);
+            Particle_Spawn(0x4ab,AsObject(param_1)->Position,AsObject(param_1)->Angle,&local_368,9,1.0,(intptr_t)AsObject(param_1)->Owner);
             break;
           case 0x4ac:
             local_368 = 1.0;
@@ -671,7 +671,7 @@ void MoveEffect(float *param_1, int param_2)
             local_318 = 0;
             local_314 = 0x41200000;
             if (!validOwner(owner)) return;
-            iVar9 = *(int *)(*(int *)&AsObject(param_1)->Owner + 0x114);
+            iVar9 = *(int *)((intptr_t)AsObject(param_1)->Owner + 0x114);
             if (!SceneObjects::HasBoneRange(owner, (void*)(uintptr_t)iVar9, 0x630, 12)) {
               *(char*)param_1 = 0; return;
             }
@@ -785,7 +785,7 @@ void MoveEffect(float *param_1, int param_2)
           break;
         case 0x4fa:
           if (!validOwner(owner)) return;
-          if (*(char *)*(int *)&AsObject(param_1)->Owner == '\0') {
+          if (*(char *)(intptr_t)AsObject(param_1)->Owner == '\0') {
             *(float *)&AsObject(param_1)->LifeTime = 0.0;
             goto LAB_0046a85e;
           }
@@ -829,7 +829,7 @@ void MoveEffect(float *param_1, int param_2)
               local_1a4[5] = 1.0f;
               Particle_Spawn(0x4b0,&local_260,AsObject(param_1)->Angle,local_1a4 + (uint)(fVar13 == 4.2039e-45f) * 3,
                            5,0.4f,0);
-              CreateSprite(0x4fa,&local_260,1.0f,&local_368,*(int *)&AsObject(param_1)->Owner,0,0);
+              CreateSprite(0x4fa,&local_260,1.0f,&local_368,(intptr_t)AsObject(param_1)->Owner,0,0);
               local_35c = (float *)((intptr_t)pfVar10 + 1);
             } while ((intptr_t)local_35c < 3);
             break;
@@ -837,7 +837,7 @@ void MoveEffect(float *param_1, int param_2)
             local_1f4 = (float)__cnt * _DAT_005524f4;
             local_1f0 = local_1f4;
             local_1ec = local_1f4;
-            CreateSprite(0x4fa,AsObject(param_1)->Position,1.5f,&local_1f4,*(int *)&AsObject(param_1)->Owner,0,0);
+            CreateSprite(0x4fa,AsObject(param_1)->Position,1.5f,&local_1f4,(intptr_t)AsObject(param_1)->Owner,0,0);
           }
           break;
         case 0x566:
@@ -878,7 +878,7 @@ void MoveEffect(float *param_1, int param_2)
           break;
         case 0x596:
           if (!validOwner(owner)) return;
-          pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+          pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
           if ((*pcVar11 == '\0') || (((byte)*(undefined4 *)(pcVar11 + 0x78) & 2) != 2)) {
 LAB_0046a366:
             *(float *)&AsObject(param_1)->LifeTime = 0.0;
@@ -940,7 +940,7 @@ LAB_0046a366:
         goto LAB_004695b5;
       }
       if (((*(int*)&fVar13) < 1) || (2 < (*(int*)&fVar13))) break;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
       if (pcVar11 == (char *)0x0) goto LAB_0046a85e;
       if ((*pcVar11 == '\0') || (((byte)*(undefined4 *)(pcVar11 + 0x78) & 0x20) != 0x20)) {
         AsObject(param_1)->Alpha = AsObject(param_1)->Alpha - _DAT_00552874;
@@ -1230,7 +1230,7 @@ LAB_004695b5:
     case 0xd6:
       if (AsObject(param_1)->SubType != 5) goto switchD_00466b93_caseD_c7;
       if (!validOwner(owner)) return;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
 LAB_00468772:
       AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0] + AsObject(param_1)->StartPosition[0];
       AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1] + AsObject(param_1)->StartPosition[1];
@@ -1379,7 +1379,7 @@ LAB_00468772:
       local_364 = local_36c * _DAT_005529c0;
       local_360 = local_36c * _DAT_00552570;
       AddTerrainLight(*pfVar15,AsObject(param_1)->Position[1], (float*)&local_368,5, (float*)DAT_081cb608);
-      if (((AsObject(param_1)->LifeTime) % 0xf == 0) && ((char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8)) {
+      if (((AsObject(param_1)->LifeTime) % 0xf == 0) && ((char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8)) {
         Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar15,150.0,*(byte *)(param_1 + 0x22),
                      AsObject(param_1)->PKKey);
       }
@@ -1393,7 +1393,7 @@ LAB_00468772:
     case 0xe3:
       if (AsObject(param_1)->SubType == 5) {
         if (!validOwner(owner)) return;
-        pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+        pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
         if (*pcVar11 == '\0') {
           *(undefined1 *)param_1 = 0;
         }
@@ -1595,7 +1595,7 @@ switchD_00466b93_caseD_c7:
           AsObject(param_1)->Direction[1] = AsObject(param_1)->Direction[1] * _DAT_005528b4;
         }
         if ((AsObject(param_1)->LifeTime == 1) &&
-           (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8)) {
+           (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8)) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar10,100.0,*(byte *)(param_1 + 0x22),
                        AsObject(param_1)->PKKey);
         }
@@ -1608,7 +1608,7 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xe1:
       if (!validOwner(owner)) return;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
       AsObject(param_1)->BlendMeshLight = 1.3;
       fVar13 = AsObject(pcVar11)->Position[1];
       fVar4 = AsObject(param_1)->Angle[2] + _DAT_00552488;
@@ -1681,7 +1681,7 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xee:
       CreateEffect(0xef,AsObject(param_1)->Position,AsObject(param_1)->Angle,AsObject(param_1)->Light,(float *)(4 - __cnt),
-                   (float *)*(int *)&AsObject(param_1)->Owner,(float *)(uint)*(ushort *)&AsObject(param_1)->PKKey,
+                   (float *)(intptr_t)AsObject(param_1)->Owner,(float *)(uint)*(ushort *)&AsObject(param_1)->PKKey,
                    (float *)CONCAT31((int3)(CONCAT22(extraout_var,sVar3) >> 8),
                                      AsObject(param_1)->Skill),AsObject(param_1)->Kind);
       break;
@@ -1689,8 +1689,8 @@ switchD_00466b93_caseD_c7:
       if (*(unsigned int *)&AsObject(param_1)->SubType >= 1 && *(unsigned int *)&AsObject(param_1)->SubType <= 4)
         AsObject(param_1)->Alpha = EffectTrailAlpha[*(unsigned int *)&AsObject(param_1)->SubType - 1];
       if (!validOwner(owner)) return;
-      if ((*(byte *)(*(int *)&AsObject(param_1)->Owner + 0x88) < 0x60) ||
-         (0x7f < *(byte *)(*(int *)&AsObject(param_1)->Owner + 0x88))) {
+      if ((*(byte *)((intptr_t)AsObject(param_1)->Owner + 0x88) < 0x60) ||
+         (0x7f < *(byte *)((intptr_t)AsObject(param_1)->Owner + 0x88))) {
         local_318 = 0xc3160000;
       }
       else {
@@ -1755,7 +1755,7 @@ switchD_00466b93_caseD_c7:
         if ((int)uVar8 < 0) {
           bVar16 = (uVar8 - 1 | 0xfffffff8) == 0xffffffff;
         }
-        if ((bVar16) && ((char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8)) {
+        if ((bVar16) && ((char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8)) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar15,150.0,*(byte *)(param_1 + 0x22),
                        AsObject(param_1)->PKKey);
         }
@@ -1789,7 +1789,7 @@ switchD_00466b93_caseD_c7:
           CreateEffect(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
-        bVar16 = (char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8;
+        bVar16 = (char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8;
         *(undefined1 *)param_1 = 0;
         if (bVar16) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar10,150.0,*(byte *)(param_1 + 0x22),
@@ -1898,7 +1898,7 @@ LAB_00466e5e:
         local_30c = -80.0;
         local_308 = 0;
         if (!validOwner(owner)) return;
-        Matrix_BuildFromEuler((float *)(*(int *)&AsObject(param_1)->Owner + 0x1c),local_15c);
+        Matrix_BuildFromEuler((float *)((intptr_t)AsObject(param_1)->Owner + 0x1c),local_15c);
         Vector_Rotate(&local_310,local_15c,&local_328);
         local_348 = local_328 + AsObject(param_1)->Position[0];
         pfVar10 = param_1 + 0x5c;
@@ -2059,7 +2059,7 @@ LAB_00466e5e:
           local_348 = (float)((int)local_348 + 1);
           local_35c = pfVar10;
         } while ((int)local_348 < 4);
-        bVar16 = (char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8;
+        bVar16 = (char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8;
         *(float *)&AsObject(param_1)->LifeTime = 0.0;
         if (bVar16) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,AsObject(param_1)->StartPosition,300.0,
@@ -2084,7 +2084,7 @@ LAB_00466e5e:
           local_30c = -40.0;
           local_308 = 0;
           if (!validOwner(owner)) return;
-          Matrix_BuildFromEuler((float *)(*(int *)&AsObject(param_1)->Owner + 0x1c),local_15c);
+          Matrix_BuildFromEuler((float *)((intptr_t)AsObject(param_1)->Owner + 0x1c),local_15c);
           Vector_Rotate(&local_310,local_15c,&local_328);
           local_304 = local_328 + AsObject(param_1)->Position[0];
           local_35c = (float *)0x0;
@@ -2288,7 +2288,7 @@ LAB_004695c0:
       break;
     case 0xff:
       if (!validOwner(owner)) return;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
       if (*pcVar11 == '\0') {
         AsObject(param_1)->LifeTime = -1;   // IDA: lifetime = -1
       }
@@ -2381,8 +2381,8 @@ LAB_004695c0:
     }
     case 0x109:
       if (!validOwner(owner)) return;
-      if ((((byte)*(undefined4 *)((char *)*(int *)&AsObject(param_1)->Owner + 0x78) & 0x20) == 0x20) &&
-         (*(char *)*(int *)&AsObject(param_1)->Owner != '\0')) {
+      if ((((byte)*(undefined4 *)((char *)(intptr_t)AsObject(param_1)->Owner + 0x78) & 0x20) == 0x20) &&
+         (*(char *)(intptr_t)AsObject(param_1)->Owner != '\0')) {
         if (0x32 < __cnt) {
           iVar9 = 3;
           do {

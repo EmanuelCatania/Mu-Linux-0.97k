@@ -647,15 +647,15 @@ void __stdcall MoveObjects(void) {
                                 light[1] = (float)(rand() % 10) * 0.02f;
                                 light[2] = (float)(rand() % 10) * 0.02f;
                                 CreateSprite(1269, (float*)(pcVar6 + 16), 0.5f,
-                                             light, (int)Hero, 0.0f, 0);
+                                             light, (intptr_t)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
                                              (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
-                                             6, (int)pcVar6, Scale, -1, 0);
+                                             6, (intptr_t)pcVar6, Scale, -1, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
                                              (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
-                                             6, (int)pcVar6, Scale, -1, 0);
+                                             6, (intptr_t)pcVar6, Scale, -1, 0);
                             }
                             else {
                                 DAT_083a3fec--;

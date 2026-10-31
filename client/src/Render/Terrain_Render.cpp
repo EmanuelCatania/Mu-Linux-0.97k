@@ -91,7 +91,7 @@ static void Terrain_ProcessObjects(bool simulation)
                                     HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                                 }
 
-                                WorldEffects_Tick((int)entity);
+                                WorldEffects_Tick((intptr_t)entity);
                             } else {
                                 RenderDerivedState_SaveObject(entity);
                                 Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');

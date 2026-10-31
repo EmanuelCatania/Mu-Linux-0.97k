@@ -265,7 +265,7 @@ void __cdecl Entity_Render(void)
                         // Alpha: IDA `*(float *)(v0 + 99)` — offset de BYTE
                         // (disasm 0x503B4C: `mov eax, [esi+63h]`), o sea Items+432,
                         // el mismo campo que usa el draw principal (v1 + 360).
-                        RenderPartObject((int)v1, type, 0, Light, *(float*)(v0 + 99),
+                        RenderPartObject((intptr_t)v1, type, 0, Light, *(float*)(v0 + 99),
                                      *(DWORD*)(v0 - 325), *(v0 - 302),
                                      1, 1, 1, 0, 2);
                         ++v9; ++v10;
@@ -288,7 +288,7 @@ void __cdecl Entity_Render(void)
 
                 // IDA (L161-163) pasa `*((short*)v1 + 1)` = v1+2 = el TYPE del entity
                 // (= model del item, ej 662) a RenderPartObject.
-                RenderPartObject((int)v1, *(short*)(v1 + 2), 0, Light,
+                RenderPartObject((intptr_t)v1, *(short*)(v1 + 2), 0, Light,
                              *(float*)&((OBJECT*)(uintptr_t)(v1))->Alpha,
                              *(DWORD*)(v0 - 325), *(v0 - 302),
                              1, 1, 1, 0, 2);
@@ -1025,7 +1025,7 @@ void __cdecl EffectPool_RenderAll(void)
                 v0[49] * intensity,
                 v0[50] * intensity
             };
-            RenderPartObject((int)(v0 - 10), 266, 0, Light, 1.0f, 0, 0, 1, 1, 1, 0, 66);
+            RenderPartObject((intptr_t)(v0 - 10), 266, 0, Light, 1.0f, 0, 0, 1, 1, 1, 0, 66);
             continue;
         }
 
@@ -1170,7 +1170,7 @@ void Fauna_TickSprites() {
     if (!DAT_05828d58) return;
     if (SceneFlag == 5) {
         for (int i = 0; i < 40; ++i) {
-            int entity = (int)(g_WeatherSlotPool + i * OBJECT_STRIDE);
+            int entity = (intptr_t)(g_WeatherSlotPool + i * OBJECT_STRIDE);
             OBJECT &o = *AsObject(entity);
             if (!o.Live) continue;
             o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);
@@ -1194,7 +1194,7 @@ void Fauna_TickSprites() {
     }
     if (SceneFlag != 2 && SceneFlag != 4 && SceneFlag != 5) return;
     for (int i = 0; i < 10; ++i) {
-        int entity = (int)((char *)DAT_083a1218 + i * OBJECT_STRIDE);
+        int entity = (intptr_t)((char *)DAT_083a1218 + i * OBJECT_STRIDE);
         OBJECT &o = *AsObject(entity);
         if (!o.Live) continue;
         o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);

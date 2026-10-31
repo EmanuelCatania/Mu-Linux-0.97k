@@ -42,7 +42,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
             BMD_TransformPosition(model,
                 (float *)(puVar13[0x45] + (int)(UINT)boneIdxTable[i] * 0x30),
                 &local_48, &local_54, '\x01');
-            Equipment_AddSprite(0x47e, &local_54, 0.6f, &local_60, (int)puVar13, 0.0f, 0);
+            Equipment_AddSprite(0x47e, &local_54, 0.6f, &local_60, (intptr_t)puVar13, 0.0f, 0);
         }
         // IDA changes only the random-particle tint after the nine sprites.
         local_60 = sparkle * 0.6f;
@@ -66,7 +66,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
     else if (bVar7 == 0x46) {
         BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
-        Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+        Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (intptr_t)puVar13, 0.0f, 0);
     }
     else if (bVar7 == 0x49) {
         // Drakan (MonsterID 73). IDA 00456770 `case 'I'` con 747 == 73.
@@ -82,7 +82,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
         for (int off = 0x270; off < 0x510; off += 0x30) {
             BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
-            Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+            Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (intptr_t)puVar13, 0.0f, 0);
             // IDA: `if (v29 >= 672 && v29 <= 768 || v29 == 1104)`.
             // Al port le faltaba el `|| off == 0x450` (hueso 23), o sea un
             // tramo de la cadena no se dibujaba.
@@ -95,7 +95,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
         for (int off = 0x9c0; off < 0xb10; off += 0x30) {
             BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
-            Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+            Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (intptr_t)puVar13, 0.0f, 0);
         }
     }
     else if (bVar7 == 0x4b) {
@@ -137,7 +137,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         // If weapon anim state == 1 (armed standing) or type == 300: sail effect
         if (((sVar2 == 0x10e) && (*(short *)&((CHARACTER*)(uintptr_t)(param_1))->Level == 1)) ||
             (sVar2 == 300)) {
-            puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x16, 0x17, 1.0f);
+            puVar13 = (int *)Entity_SpawnBoneRangeEffect((intptr_t)puVar13, 0x16, 0x17, 1.0f);
             return puVar13;
         }
         break;
@@ -156,14 +156,14 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         int nBones = *(short *)((char *)pvVar23 + 0x22);
         while (iVar18 < nBones) {
             // Skip bones in exclusion ranges (model-specific blank bones)
-            if ((*(char *)(*(int *)((int)pvVar23 + 0x2c) + 0x22 + iVar9) == '\0') &&
+            if ((*(char *)(*(int *)((intptr_t)pvVar23 + 0x2c) + 0x22 + iVar9) == '\0') &&
                 ((iVar9 < 0x834 || iVar9 > 0xaf0)) &&
                 ((iVar9 < 0xec4 || iVar9 > 0x1180))) {
                 BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + iVar18 * 0x30),
                              &local_48, &local_54, '\x01');
                 UINT uType = bAlt ? 0x4f0 : 0x4cf;
                 float fSc  = bAlt ? 1.3f : 2.5f;
-                Equipment_AddSprite((int)uType, &local_54, fSc, &local_60, (int)puVar13, 0, (int)!bAlt);
+                Equipment_AddSprite((int)uType, &local_54, fSc, &local_60, (intptr_t)puVar13, 0, (int)!bAlt);
                 // Random 1/4 chance: add spark if walking
                 BYTE bAnimState = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
                 if ((rand() & 3) == 0 && bAnimState >= 3 && bAnimState <= 4)
@@ -177,42 +177,42 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
     }
 
     case 0x12f:  // Entity 303 — dual smoke/fire column
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 9, 0.0f, 0, 5.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 3.0f, 9, 0.0f, 0, 5.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 4.0f, 9, 0.0f, 0, 5.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 3.0f, 9, 0.0f, 0, 5.0f);
         return puVar13;
 
     case 0x130:  // Entity 304 — six-point smoke/fire/magic
-        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 0.5f, 0x1e, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 0.5f, 0x27, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 0x1e, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 0x27, 0.0f, 0, -5.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 2.0f, 0x1e, 0.0f, 0, -5.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 2.0f, 0x27, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4a7, 0.5f, 0x1e, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4a7, 0.5f, 0x27, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 4.0f, 0x1e, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 4.0f, 0x27, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 2.0f, 0x1e, 0.0f, 0, -5.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 2.0f, 0x27, 0.0f, 0, -5.0f);
         return puVar13;
 
     case 0x132:  // Entity 306 — claw/spider: beam + 8 effect bones
-        Entity_SpawnBoneRangeEffect((int)puVar13, 0x2a, 0x2b, 1.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x1a, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x1f, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x24, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x29, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x1a, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x1f, 0.0f, 0, 0.0f);
-        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x24, 0.0f, 0, 0.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x29, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneRangeEffect((intptr_t)puVar13, 0x2a, 0x2b, 1.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 2.0f, 0x1a, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 2.0f, 0x1f, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 2.0f, 0x24, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x497, 2.0f, 0x29, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 1.0f, 0x1a, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 1.0f, 0x1f, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 1.0f, 0x24, 0.0f, 0, 0.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 1.0f, 0x29, 0.0f, 0, 0.0f);
         return puVar13;
 
     case 0x133:  // Entity 307 — large fire/smoke at bone 0x3f
-        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 1.0f, 0x3f, 0.0f, 0, 20.0f);
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 4.0f, 0x3f, 0.0f, 0, 20.0f);
+        Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4a7, 1.0f, 0x3f, 0.0f, 0, 20.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((intptr_t)puVar13, 0x4d0, 4.0f, 0x3f, 0.0f, 0, 20.0f);
         return puVar13;
 
     case 0x142:  // Entity 322 — dual beam bones 0x1a/0x1b  scale=2
-        puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x1a, 0x1b, 2.0f);
+        puVar13 = (int *)Entity_SpawnBoneRangeEffect((intptr_t)puVar13, 0x1a, 0x1b, 2.0f);
         return puVar13;
 
     case 0x15c:  // Entity 348 — soft sparkle at bone 0x20
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x47e, 1.5f, 0x20, 0.0f, 0, 0.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((intptr_t)puVar13, 0x47e, 1.5f, 0x20, 0.0f, 0, 0.0f);
         return puVar13;
 
     case 0x15d:  // Entity 349 — sin-wave orb cloud + occasional lightning joint
@@ -223,9 +223,9 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         local_60 = fCol; local_5c = fCol; local_58 = fCol;
         BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
-        Equipment_AddSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
+        Equipment_AddSprite(0x4a7, &local_54, 0.3f, &local_60, (intptr_t)puVar13,
                      (float)WorldTime * _DAT_00552944, 0);
-        Equipment_AddSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
+        Equipment_AddSprite(0x4a7, &local_54, 0.3f, &local_60, (intptr_t)puVar13,
                      -(float)WorldTime * _DAT_00552944, 0);
         if (rand() % 0x1e == 0) {
             // Scatter lightning from random offsets around bone position
@@ -240,7 +240,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
     }
 
     case 0x176:  // Entity 374 — sparkle at bone 6  scale=2
-        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x47e, 2.0f, 6, 0.0f, 0, 0.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((intptr_t)puVar13, 0x47e, 2.0f, 6, 0.0f, 0, 0.0f);
         return puVar13;
 
     case 0x186:  // Entity 390 (Player) — port completo IDA case 390 (líneas 2111-2269)
@@ -281,11 +281,11 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
             float Scalep = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->AnimationFrame * 0.1f;  // anim frame * 0.1
             local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
             Equipment_AddSprite(0x4a7, &local_54, Scalep * 0.30000001f,
-                         &local_60, (int)puVar13, 0, 0);
+                         &local_60, (intptr_t)puVar13, 0, 0);
             Equipment_AddSprite(0x4a7, &local_54, Scalep, (float*)(puVar13 + 0x3a),
-                         (int)puVar13, -WorldTime * 0.1f, 0);
+                         (intptr_t)puVar13, -WorldTime * 0.1f, 0);
             Equipment_AddSprite(0x4a7, &local_54, Scalep * 2.5f, (float*)(puVar13 + 0x3a),
-                         (int)puVar13, WorldTime * 0.1f, 0);
+                         (intptr_t)puVar13, WorldTime * 0.1f, 0);
         }
 
         // ── 3. Dragon mode (entity flags bit 2) — fire spray from hand bones ──
@@ -299,15 +299,15 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + (UINT)*pbVar20 * 0x30),
                     &local_48, &local_54, '\x01');
-                Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
+                Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (intptr_t)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbVar20 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
-                Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
+                Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (intptr_t)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbVar20 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
-                Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
+                Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (intptr_t)puVar13, 0, 0);
             }
         }
 
@@ -336,15 +336,15 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + (UINT)*pbV193 * 0x30),
                     &local_48, &local_54, '\x01');
-                Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);  // CreateSprite 1150
+                Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (intptr_t)puVar13, 0, 0);  // CreateSprite 1150
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbV193 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
-                Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
+                Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (intptr_t)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbV193 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
-                Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
+                Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (intptr_t)puVar13, 0, 0);
             }
         }
 
@@ -369,7 +369,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         if (EquipmentLevelSet == 10) {
             // Single lightning particle around the entity
             Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
-                         (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (int)puVar13);
+                         (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (intptr_t)puVar13);
         } else if (EquipmentLevelSet == 11) {
             // 1/8: lightning joint, 7/8: particle
             int v198 = rand() & 0x80000007;
@@ -380,10 +380,10 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
             if (v197) {
                 Joint_Create(0x4e1, (float *)(puVar13 + 4),
                              (float *)(puVar13 + 4), (float *)(puVar13 + 7),
-                             0, (int)puVar13, 10.0f, -1, 0);
+                             0, (intptr_t)puVar13, 10.0f, -1, 0);
             } else {
                 Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
-                             (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (int)puVar13);
+                             (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (intptr_t)puVar13);
             }
         }
         // Restore entity light

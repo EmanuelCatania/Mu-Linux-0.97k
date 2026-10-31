@@ -3380,8 +3380,8 @@ void __cdecl MoveCharacter(int p1)
         for (intptr_t kk = 0; kk < *(short*)(This + 34); ++kk) {
             intptr_t v401 = *(short*)(*(int*)(This + 44) + 140 * kk + 32);
             if (v401 > -1 && v401 < 200) {
-                BMD_TransformPosition((void*)This, (float*)(48 * kk + *(int *)&AsObject(o)->BoneMatrices), p1f, Position, 1);
-                BMD_TransformPosition((void*)This, (float*)(48 * v401 + *(int *)&AsObject(o)->BoneMatrices), p1f, TargetPosition, 1);
+                BMD_TransformPosition((void*)This, (float*)(48 * kk + (intptr_t)AsObject(o)->BoneMatrices), p1f, Position, 1);
+                BMD_TransformPosition((void*)This, (float*)(48 * v401 + (intptr_t)AsObject(o)->BoneMatrices), p1f, TargetPosition, 1);
                 Position[0] += (float)(rand() % 41 - 20);
                 Position[1] += (float)(rand() % 41 - 20);
                 Position[2] += (float)(rand() % 41 - 20);
@@ -3837,7 +3837,7 @@ void __cdecl MoveCharacter(int p1)
         if (AsCharacter(c)->LongRangeAttack == 1253) v383i = -1028390912;  // -8.0f
         // (v380/v381/v382 unused outside debug)
         memset(p1f, 0, sizeof(p1f));
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1584), p1f, WorldPosition, 1);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1584), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] - 60.0f;
@@ -3846,7 +3846,7 @@ void __cdecl MoveCharacter(int p1)
             Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
             Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
         }
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] + 60.0f;
@@ -3860,18 +3860,18 @@ void __cdecl MoveCharacter(int p1)
     // L2541-2572: Spear stab (1256) — trail at f >= 9.0
     if (AsCharacter(c)->LongRangeAttack == 1256) {
         memset(p1f, 0, sizeof(p1f));
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1968), p1f, WorldPosition, 0);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1968), p1f, WorldPosition, 0);
         memset(p1f, 0, sizeof(p1f));
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1536), p1f, WorldPosition, 0);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1536), p1f, WorldPosition, 0);
         if (AsObject(o)->AnimationFrame >= 9.0f) {
             if (AsCharacter(c)->Weapon[0].Type == 560) {
                 WorldPosition[0] = 0.0f; WorldPosition[1] = -130.0f; WorldPosition[2] = 0.0f;
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (AsCharacter(c)->Weapon[0].LinkBone) + *(int *)&AsObject(o)->BoneMatrices),
+                             (float*)(48 * (AsCharacter(c)->Weapon[0].LinkBone) + (intptr_t)AsObject(o)->BoneMatrices),
                              WorldPosition, p1f, 0);
             } else {
                 memset(WorldPosition, 0, sizeof(WorldPosition));
-                BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1968), WorldPosition, p1f, 0);
+                BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1968), WorldPosition, p1f, 0);
             }
             v379[0] = AsObject(o)->Angle[0];
             v379[1] = AsObject(o)->Angle[1];
@@ -3947,10 +3947,10 @@ void __cdecl MoveCharacter(int p1)
 
             if (AsObject(o)->Type != 390 || v378 == 403 || v378 == 406 || v378 == 409 || v378 == 411 || v378 == 500) {
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + *(int *)&AsObject(o)->BoneMatrices),
+                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + (intptr_t)AsObject(o)->BoneMatrices),
                              v372, p1f, 1);
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + *(int *)&AsObject(o)->BoneMatrices),
+                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + (intptr_t)AsObject(o)->BoneMatrices),
                              v371, p2f, 1);
                 mc_CreateBlur(c, p1f, p2f, v373, Type, 0);
             } else {
@@ -4141,7 +4141,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                                     (animFrame >= 5.0f && animFrame <= 6.0f)));
             if (sparkWindow && !(rand() & 1)) {
                 float origin[3], local[3] = { 0.0f, -4.0f, 0.0f };
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1152), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1152), local, origin, '\x01');
                 Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
@@ -4151,7 +4151,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x110:
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 3 && AsCharacter(entity_ptr)->Object.AnimationFrame <= 4.0f) {
                 float p[3], local[3] = {0.0f, (float)(rand() % 32 + 32), 0.0f};
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 336), local, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 336), local, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 1, 1.0f, 0);
             }
             // IDA fall-through to LABEL_253.
@@ -4160,7 +4160,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x122:
             if (entType == 0x122) {
                 float p[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 336), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 336), WorldPosition, p, '\x01');
                 float spriteLight[3] = {Luminosity, Luminosity * 0.40000001f, Luminosity * 0.2f};
                 CreateSprite(1150, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
             }
@@ -4195,7 +4195,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                     for (int i = 0; i < 10; ++i)
                     {
                         BMD_TransformPosition(model,
-                                     (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % numBones)),
+                                     (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % numBones)),
                                      WorldPosition, origin, '\x01');
                         Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                     }
@@ -4211,7 +4211,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x11B:
             if (!(rand() & 3)) {
                 float local[3] = { 0.0f, 0.0f, 0.0f }, origin[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1056), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1056), local, origin, '\x01');
                 Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
@@ -4227,7 +4227,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             AsCharacter(entity_ptr)->Object.BlendMeshTexCoordV = (float)((long long)WorldTime % 1000) * -0.001f;
             if (!(rand() & 1)) {
                 float p[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 96), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 96), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             break;
@@ -4240,7 +4240,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             const unsigned char action = AsCharacter(entity_ptr)->Object.CurrentAction;
             int bone = action == 3 ? 33 : action == 4 ? 20 : action == 8 ? 41 : action == 9 ? 49 : -1;
             if (bone >= 0) {
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * bone), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * bone), local, origin, '\x01');
                 Particle_Spawn(1180, origin, (float *)(entity_ptr + 28), light, 0, 1.0f, 0);
                 float whitePink[3] = { 1.0f, 0.60000002f, 1.0f };
                 Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), whitePink, 0, 1.0f, 0);
@@ -4249,7 +4249,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 float green[3] = { 0.1f, 0.80000001f, 0.60000002f };
                 for (int i = 0; i < 20; ++i) {
                     const int randomBone = rand() % *(short *)(static_cast<BYTE*>(model) + 34);
-                    BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
+                    BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
                     Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
                 }
             }
@@ -4278,16 +4278,16 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x135:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 28), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 27), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 28), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 27), zero, (float *)(entity_ptr + 64), '\x01');
             break;
         }
         // 0x137 — IDA raw L1011-1015.
         case 0x137:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
             Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             break;
         }
@@ -4295,13 +4295,13 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x138:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 24), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 25), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 24), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 25), zero, (float *)(entity_ptr + 64), '\x01');
             if (AsCharacter(entity_ptr)->Object.SubType == 1) {
                 float p[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 288), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 288), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 624), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 624), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
@@ -4314,8 +4314,8 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         {
             const int a = entType == 0x139 ? 11 : 8, b = entType == 0x139 ? 12 : 9;
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
             Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
             break;
         }
@@ -4342,9 +4342,9 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             static const unsigned char linksD[8] = {26, 25, 25, 24, 32, 31, 31, 30};
 
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero,
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero,
                           (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero,
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero,
                           (float *)(entity_ptr + 64), '\x01');
 
             if (AsCharacter(entity_ptr)->MonsterIndex == 63) {
@@ -4352,7 +4352,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 float bones[35][3] = {};
 
                 for (int bone = 0; bone < 35; ++bone) {
-                    BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * boneOrder[bone]),
+                    BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * boneOrder[bone]),
                                   zero, bones[bone], '\x01');
                 }
 
@@ -4394,13 +4394,13 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 float light[3] = {effectLight, effectLight * 0.5f, effectLight * 0.5f};
                 float source[3], destination[3];
 
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 2640), WorldPosition, source, '\x01');
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 2976), WorldPosition, destination, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 2640), WorldPosition, source, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 2976), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
 
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 3360), WorldPosition, source, '\x01');
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 3696), WorldPosition, destination, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 3360), WorldPosition, source, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 3696), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
                 Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
@@ -4421,7 +4421,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         case 0x141:
         {
             float local[3] = { 0.0f, 0.0f, 0.0f }, a[3], b[3];
-            const intptr_t boneBase = *(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices;
+            const intptr_t boneBase = (intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices;
             for (int offset = 96; offset < 240; offset += 48) {
                 BMD_TransformPosition(model, (float *)(boneBase + offset), local, a, '\x01');
                 BMD_TransformPosition(model, (float *)(boneBase + offset + 48), local, b, '\x01');
@@ -4474,7 +4474,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             {
                 float sparkOrigin[3];
                 BMD_TransformPosition(model,
-                             (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 816),
+                             (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 816),
                              WorldPosition, sparkOrigin, '\x01');
                 for (int i = 0; i < 4; ++i)
                 {
@@ -4504,7 +4504,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
                 float local[3] = { 0.0f, 5.0f, 10.0f }, origin[3];
                 float terrainLight[3] = { Luminosity * 0.5f, Luminosity * 0.30000001f, 0.0f };
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1776), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1776), local, origin, '\x01');
                 for (int i = 0; i < 4; ++i) {
                     float angle[3] = { (float)(rand() % 60 + 90), 0.0f, (float)(rand() % 30) };
                     Joint_Create(1257, origin, origin, angle, 0, 0, 10.0f, -1, 0);
@@ -4520,23 +4520,23 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             float p[3];
             if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
             if (gMapManager.GetCurrentMap() == 9) {
-                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
-                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
+                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
+                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 90) {
                 const short n = *(short *)(static_cast<BYTE*>(model) + 34);
                 if (n > 0) for (int i = 0; i < 10; ++i) {
-                    BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
+                    BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
                     Particle_Spawn(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
                 }
             }
             float tail[3] = {0.0f,-30.0f,0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * AsCharacter(entity_ptr)->Weapon[0].LinkBone), tail, p, '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * AsCharacter(entity_ptr)->Weapon[0].LinkBone), tail, p, '\x01');
             break;
         }
 

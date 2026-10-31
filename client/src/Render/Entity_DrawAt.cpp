@@ -115,13 +115,13 @@ void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, fl
     pModel = (void *)(DAT_05828d58 + param_2 * 0xbc);
 
     // Copy entity fields into model block
-    *(undefined1 *)((int)pModel + 0x99) = param_9;
-    *(undefined4 *)((int)pModel + 0x68) = *(undefined4 *)(param_1 + 0xc);    // scale
-    *(undefined1 *)((int)pModel + 0x45) = *(undefined1 *)(param_1 + 0xe4);   // flag A
-    *(undefined1 *)((int)pModel + 0x44) = *(undefined1 *)(param_1 + 0xdc);   // flag B
-    *(undefined4 *)((int)pModel + 0x6c) = *(undefined4 *)(param_1 + 0x10);   // world X
-    *(undefined4 *)((int)pModel + 0x70) = *(undefined4 *)(param_1 + 0x14);   // world Y
-    *(undefined4 *)((int)pModel + 0x74) = *(undefined4 *)(param_1 + 0x18);   // world Z
+    *(undefined1 *)((intptr_t)pModel + 0x99) = param_9;
+    *(undefined4 *)((intptr_t)pModel + 0x68) = *(undefined4 *)(param_1 + 0xc);    // scale
+    *(undefined1 *)((intptr_t)pModel + 0x45) = *(undefined1 *)(param_1 + 0xe4);   // flag A
+    *(undefined1 *)((intptr_t)pModel + 0x44) = *(undefined1 *)(param_1 + 0xdc);   // flag B
+    *(undefined4 *)((intptr_t)pModel + 0x6c) = *(undefined4 *)(param_1 + 0x10);   // world X
+    *(undefined4 *)((intptr_t)pModel + 0x70) = *(undefined4 *)(param_1 + 0x14);   // world Y
+    *(undefined4 *)((intptr_t)pModel + 0x74) = *(undefined4 *)(param_1 + 0x18);   // world Z
 
     // LOD transparency scale
     // NOTE: _DAT_005597c8 is typed `float` in globals.cpp. Writing the raw
@@ -134,23 +134,23 @@ void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, fl
     else if (param_11 == 1) {
         // Shadow draw: two-pass with different alpha
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3ca3d70a;  // 0.02
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3dcccccd;  // 0.1
+            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3ca3d70a;  // 0.02
+            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3dcccccd;  // 0.1
         } else {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3dcccccd;  // 0.1
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3cf5c28f;  // 0.03
+            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3dcccccd;  // 0.1
+            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3cf5c28f;  // 0.03
         }
-        *(undefined4 *)((int)pModel + 0x50) = 0;
+        *(undefined4 *)((intptr_t)pModel + 0x50) = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f99999a);  // Sprite_DrawShadow pass 1
 
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3e23d70a;  // 0.16
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3f333333;  // 0.7
+            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3e23d70a;  // 0.16
+            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3f333333;  // 0.7
         } else {
-            *(undefined4 *)((int)pModel + 0x48) = 0x3f333333;  // 0.7
-            *(undefined4 *)((int)pModel + 0x4c) = 0x3e4ccccd;  // 0.2
+            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3f333333;  // 0.7
+            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3e4ccccd;  // 0.2
         }
-        *(undefined4 *)((int)pModel + 0x50) = 0;
+        *(undefined4 *)((intptr_t)pModel + 0x50) = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2
     }
 

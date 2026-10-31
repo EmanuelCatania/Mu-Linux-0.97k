@@ -141,7 +141,7 @@ int Shop_RegisterItem(DWORD entity_id, DWORD* name, BYTE* item_data)
         }
         entry += SHOP_SLOT_STRIDE;
         slot++;
-        if ((int)entry > 0x7ea51eb)
+        if ((intptr_t)entry > 0x7ea51eb)
         {
             // Overflow — find first empty slot (name[0] == 0)
             slot = 0;
@@ -150,7 +150,7 @@ int Shop_RegisterItem(DWORD entity_id, DWORD* name, BYTE* item_data)
                 if (*entry == 0) goto write_slot;
                 entry += SHOP_SLOT_STRIDE;
                 slot++;
-            } while ((int)entry < 0x7ea51ec);
+            } while ((intptr_t)entry < 0x7ea51ec);
             return 0;
         }
     }
@@ -336,7 +336,7 @@ int Shop_FindSlotByName(BYTE* name)
     int slot = 0;
     BYTE* entry = (BYTE*)0x07e919bc;  // name column
 
-    while ((int)entry < 0x7ea51ec)
+    while ((intptr_t)entry < 0x7ea51ec)
     {
         if (memcmp(entry, name, 4) == 0)
             return slot;

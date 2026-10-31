@@ -109,7 +109,7 @@ void PrepareItems() {
             else if (variant == 2) type = 948;
         }
         if (type < 0 || type >= 1200) continue;
-        LooseWingVisuals_TickGround((int)&o);
+        LooseWingVisuals_TickGround((intptr_t)&o);
         MaterialVisuals_PrepareObject(&o,o.Type,false,o.Alpha>_DAT_005524f8 && !*((BYTE *)&o+140));
         float point[3] = { o.Position[0], o.Position[1], o.Position[2] + _DAT_0055284c };
         int x, y;
@@ -145,12 +145,12 @@ void PrepareCharacter(CHARACTER &c) {
     CharacterEffectScratch effects;
     Equipment_BeginCharacter(&c);
     Equipment_SetStage(CharacterEffects_EarlyStage);
-    CharacterEffects_TickEarly((int)&c, effects);
+    CharacterEffects_TickEarly((intptr_t)&c, effects);
     Equipment_EndCharacter();
-    Equipment_Tick((int)&c, highlighted);
+    Equipment_Tick((intptr_t)&c, highlighted);
     Equipment_BeginCharacter(&c);
     Equipment_SetStage(CharacterEffects_LateStage);
-    CharacterEffects_TickLate((int)&c, effects);
+    CharacterEffects_TickLate((intptr_t)&c, effects);
     Equipment_EndCharacter();
     memcpy(model, context, sizeof(context));
     const bool subtypeNpc = o.Type == 390 && o.SubType >= 206 && o.SubType <= 208;

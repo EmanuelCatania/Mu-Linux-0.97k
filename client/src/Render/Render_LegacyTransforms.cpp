@@ -151,7 +151,7 @@ void *__cdecl Entity_InitRenderState(void *a1)
   while ( *(BYTE *)result )
   {
     result += 3;
-    if ( (int)result >= (int)&DAT_083a2cd0 )
+    if ( (intptr_t)result >= (intptr_t)&DAT_083a2cd0 )
     {
       return result;
     }

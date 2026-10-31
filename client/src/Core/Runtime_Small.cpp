@@ -45,7 +45,7 @@ HRESULT __cdecl FillBuffer(int Buffer, int MaxChannel, BOOL Enable) { return 0; 
 // ── 7-byte: vtable setters ──────────────────────────────────────────────────
 
 // FUN_00403310 @ 0x00403310 (7 bytes)
-void __fastcall FUN_00403310(int *param_1) { *param_1 = (int)&PTR_LAB_00552460; }
+void __fastcall FUN_00403310(int *param_1) { *param_1 = (intptr_t)&PTR_LAB_00552460; }
 
 // FUN_00407970 @ 0x00407970 (7 bytes)
 // FUN_00407970 (IDA-activated)
@@ -65,10 +65,10 @@ void __cdecl FUN_00407de0(DWORD *_this)
 
 
 // FUN_0040f690 @ 0x0040F690 (7 bytes)
-void __fastcall FUN_0040f690(void *This) { *(int *)This = (int)&PTR_LAB_005527e4; }
+void __fastcall FUN_0040f690(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005527e4; }
 
 // FUN_0040f680 @ 0x0040F680 (9 bytes) — same vtable as 0040f690 (duplicate entry)
-void __fastcall FUN_0040f680(void *This) { *(int *)This = (int)&PTR_LAB_005527e4; }
+void __fastcall FUN_0040f680(void *This) { *(int *)This = (intptr_t)&PTR_LAB_005527e4; }
 
 
 
@@ -96,7 +96,7 @@ void __cdecl FUN_00407ec0(DWORD *_this)
 
 // FUN_0040a6e0 @ 0x0040A6E0 (11 bytes)
 void __fastcall FUN_0040a6e0(void *This) {
-    *(int *)This = (int)&PTR_LAB_005524e8;
+    *(int *)This = (intptr_t)&PTR_LAB_005524e8;
     WidgetB_SetVtable(This);
 }
 
@@ -145,7 +145,7 @@ void __cdecl ClearNotice(void) { memset(DAT_07db80d8, 0, 0x630); }
 
 // FUN_00406de0 @ 0x00406DE0 (18 bytes) — HashTable init (set vtable + zero fields)
 void __fastcall FUN_00406de0_impl(int *param_1) {
-    *param_1 = (int)&PTR_FUN_005524d8;
+    *param_1 = (intptr_t)&PTR_FUN_005524d8;
     param_1[3] = 0;
     param_1[1] = 0;
     param_1[2] = 0;
@@ -588,7 +588,7 @@ void __fastcall FUN_0040f840(intptr_t ecx, int /*edx*/, BYTE param_1) {
 // FUN_00405240 @ 0x00405240 (30 bytes) — ErrorReport init (vtable + open log)
 // NOTE: FUN_004052b0 opens the log file — stub it as nop for now
 void __fastcall FUN_00405240_init(void *This) {
-    *(int *)This = (int)&PTR_FUN_005524c4;
+    *(int *)This = (intptr_t)&PTR_FUN_005524c4;
     FUN_00405290_impl(This);
     // FUN_004052b0(This, "MuError.log"); — opens MuError.log for writing
 }
@@ -701,7 +701,7 @@ void __fastcall FUN_00406ec0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     *(int *)(ecx + 0xc) = 0;
     *(int *)(ecx + 4) = 0;
     *(int *)(ecx + 8) = 0;
-    *(int *)ecx = (int)&PTR_FUN_005524d8;
+    *(int *)ecx = (intptr_t)&PTR_FUN_005524d8;
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
@@ -710,7 +710,7 @@ void __fastcall FUN_00406ec0(intptr_t ecx, int /*edx*/, BYTE param_1) {
 // FUN_0040f540 @ 0x0040F540 (45 bytes) — Stream deinit: set vtable + release sub-object
 void __fastcall FUN_0040f540(void *This) {
     int *piVar1 = (int *)((int *)This)[1];
-    *(int *)This = (int)&PTR_FUN_005527e0;
+    *(int *)This = (intptr_t)&PTR_FUN_005527e0;
     if (piVar1 != NULL) {
         typedef void (__cdecl *RelFunc)(int);
         RelFunc fn = (RelFunc)(*(int *)(*piVar1 + 0x14));

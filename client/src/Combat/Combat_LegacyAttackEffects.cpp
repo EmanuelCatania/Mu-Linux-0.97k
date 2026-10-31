@@ -69,7 +69,7 @@ void __cdecl AttackEffect(int entity)
     // not the model type. `frame` is +757 and `action` is +261.
     const BYTE frame = AsCharacter(entity)->SkillStage;
     const BYTE action = AsCharacter(entity)->Object.CurrentAction;
-    const DWORD boneMatricesTop = *(DWORD *)&AsCharacter(entity)->Object.BoneMatrices;
+    const DWORD boneMatricesTop = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const int modelTypeTop = AsCharacter(entity)->Object.Type;
     void* modelTop = (modelTypeTop >= 0 && DAT_05828d58)
         ? (void*)(DAT_05828d58 + modelTypeTop * 188) : 0;
@@ -246,7 +246,7 @@ void __cdecl AttackEffect(int entity)
 
     BYTE* target = (BYTE*)(uintptr_t)CharactersClient + targetSlot * CHARACTER_STRIDE;
     const int modelType = AsCharacter(entity)->Object.Type;
-    if (modelType < 0 || !DAT_05828d58 || !*(DWORD *)&AsCharacter(entity)->Object.BoneMatrices) return;
+    if (modelType < 0 || !DAT_05828d58 || !(intptr_t)AsCharacter(entity)->Object.BoneMatrices) return;
 
     // The following switch is the skill-3 switch at 00445230:1898.  The
     // apparent `TargetPosition` in IDA is the transformed hand-bone position;
@@ -256,7 +256,7 @@ void __cdecl AttackEffect(int entity)
     float jointAngle[3] = { 0.0f, 0.0f, 0.0f };
     float white[3] = { 1.0f, 1.0f, 1.0f };
     void* model = (void*)(DAT_05828d58 + modelType * 188);
-    const DWORD boneMatrices = *(DWORD *)&AsCharacter(entity)->Object.BoneMatrices;
+    const DWORD boneMatrices = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const auto handPosition = [&](int handIndex, float offsetY, int secondHandAt = 2) {
         local[0] = 0.0f;
         local[1] = offsetY;

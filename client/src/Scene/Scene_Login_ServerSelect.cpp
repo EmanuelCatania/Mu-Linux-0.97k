@@ -514,7 +514,7 @@ LAB_0051f44c:
         // Literales float (no bit-patterns 0x3fxxxxxx).
         Gfx::Color3f(1.0f, 0.2f, 0.1f);   // orange-red (IP text)
 
-        fVar4   = (float)(int)puStack00000010;
+        fVar4   = (float)(int)(intptr_t)puStack00000010;
         pbVar14 = (byte*)&DAT_07d52c38;
         pbVar11 = (byte*)&DAT_083a45d8 + ServerSelectHi * 0x21e;
         do {
@@ -529,7 +529,7 @@ LAB_0051f44c:
 LAB_0051f8b4:
         if (iVar8 == 0) {
             // Currently connected to this server → show IP
-            UI_RenderText(0x96, (int)puStack00000010 - 0x2e, (char*)&DAT_07d530e8, (LPSIZE)0x0, '\0', 0);
+            UI_RenderText(0x96, (intptr_t)puStack00000010 - 0x2e, (char*)&DAT_07d530e8, (LPSIZE)0x0, '\0', 0);
             UI_RenderText(0x96, (int)fVar4 - 0x1f, (char*)&DAT_07d53214, (LPSIZE)0x0, '\0', 0);
             iVar8  = 0;
         }

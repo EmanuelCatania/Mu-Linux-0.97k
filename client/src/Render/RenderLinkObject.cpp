@@ -135,10 +135,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         local_248      = param_2;
         local_244      = param_3;
 
-        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + *(int *)&AsCharacter(param_4)->Object.BoneMatrices
+        // BoneTransform for LinkBone: (byte)(param_5+4) * 0x30 + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices
         // = BoneTransform base + LinkBone * stride
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
-                                   + *(int *)&AsCharacter(param_4)->Object.BoneMatrices);
+                                   + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices);
 
         void* ownerModel = (void*)(DAT_05828d58
                                    + (int)AsCharacter(param_4)->Object.Type * 0xbc);
@@ -300,7 +300,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
         // BoneTransform for LinkBone
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
-                                   + *(int *)&AsCharacter(param_4)->Object.BoneMatrices);
+                                   + (intptr_t)AsCharacter(param_4)->Object.BoneMatrices);
 
         // R_ConcatTransforms: combine bone matrix with local angle matrix → ParentMatrix
         R_ConcatTransforms(pBoneMat, local_228, (float*)&DAT_06989c9c);
@@ -622,7 +622,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     if (drawModel == 790) {
         // El objeto mínimo aporta el ángulo original; el dueño persistente es
         // el personaje, nunca la dirección de ese temporal de la pila.
-        Equipment_EmitWing790(pModel, (int)local_1ec, param_4);
+        Equipment_EmitWing790(pModel, (intptr_t)local_1ec, param_4);
     }
 
     // ── 11. Per-weapon-type particle effects ─────────────────────────────────

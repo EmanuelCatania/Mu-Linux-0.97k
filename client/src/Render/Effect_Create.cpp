@@ -176,7 +176,7 @@ LAB_00460dd8:
   AsObject(pfVar17)->Alpha = 1.0;
   AsObject(pfVar17)->PriorAnimationFrame = 0.0;
   AsObject(pfVar17)->Scale = 0.9;
-  *(DWORD *)&AsObject(pfVar17)->Owner = (DWORD)(uintptr_t)param_6;
+  AsObject(pfVar17)->Owner = (OBJECT*)(intptr_t)param_6;
   AsObject(pfVar17)->Velocity = 0.3;
   AsObject(pfVar17)->PKKey = (short)(uintptr_t)param_7;
   AsObject(pfVar17)->Kind = param_9;
@@ -252,9 +252,9 @@ LAB_00460dd8:
         AsObject(pfVar17)->Gravity = 0.0;
         if (param_5 == (float *)0x0) {
           AsObject(pfVar17)->Scale = 12.0;
-          AsObject(pfVar17)->StartPosition[0] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x10);
-          AsObject(pfVar17)->StartPosition[1] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x14);
-          AsObject(pfVar17)->StartPosition[2] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x18);
+          AsObject(pfVar17)->StartPosition[0] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x10);
+          AsObject(pfVar17)->StartPosition[1] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x14);
+          AsObject(pfVar17)->StartPosition[2] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x18);
         }
         else if (param_5 == (float *)0x1) {
           *(float *)&AsObject(pfVar17)->HiddenMesh = 0.0;
@@ -819,8 +819,8 @@ LAB_00463e3d:
   case 200:
     *(int*)&pfVar17[EffectLifetimeIndex] = 45;
     *(int*)&pfVar17[EffectBlendMeshIndex] = 0;
-    if ((float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner != pfVar3) {
-      return (float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner;
+    if ((float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner != pfVar3) {
+      return (float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner;
     }
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
@@ -902,10 +902,10 @@ switchD_00461001_caseD_e2:
       AsObject(pfVar17)->StartPosition[0] = AsObject(pfVar17)->Position[0];
       AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
       AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];
-      AsObject(pfVar17)->Position[0] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x10);
-      AsObject(pfVar17)->Position[1] = *(float *)(*(int *)&AsObject(pfVar17)->Owner + 0x14);
-      AsObject(pfVar17)->Position[2] = ((float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner)[6];
-      return (float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner;
+      AsObject(pfVar17)->Position[0] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x10);
+      AsObject(pfVar17)->Position[1] = *(float *)((intptr_t)AsObject(pfVar17)->Owner + 0x14);
+      AsObject(pfVar17)->Position[2] = ((float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner)[6];
+      return (float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner;
     }
 switchD_00461001_caseD_c7:
     if ((AsObject(pfVar17)->Type == 0xe2) || (AsObject(pfVar17)->Type == 0xe3)) {
@@ -3729,7 +3729,7 @@ switchD_00465549_caseD_4ba:
 LAB_00465641:
   Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
   Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
-  if ((float*)(uintptr_t)*(int *)&AsObject(pfVar17)->Owner != (float*)DAT_07abf5d8) {
+  if ((float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner != (float*)DAT_07abf5d8) {
     return (float*)DAT_07abf5d8;
   }
   fVar27 = AsObject(pfVar17)->Position[1];

@@ -68,7 +68,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
             float localPos[3] = {0.0f, 0.0f, 0.0f};
             // ExtOption index: c->Weapon[Hand].ExtOption = *(BYTE*)(c + Hand*0x18 + 0x274)
             BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
-            DWORD boneTransform2 = *(DWORD *)&AsObject(o)->BoneMatrices;
+            DWORD boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos[3];
             float* swordPos = (float*)(o + 0x188); // o->m_vPosSword
@@ -81,7 +81,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         if (attackTime > 5 && attackTime < 13) {
             float localPos2[3] = {0.0f, 0.0f, 0.0f};
             BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
-            DWORD boneTransform2 = *(DWORD *)&AsObject(o)->BoneMatrices;
+            DWORD boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos2[3];
             BMD__TransformPosition((void*)pModel, boneMat, localPos2, worldPos2, true);
@@ -133,7 +133,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
                 float light[3] = {1.0f, 1.0f, 0.5f};
                 float localPos[3] = {0.0f, 0.0f, 0.0f};
                 BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
-                DWORD bt2 = *(DWORD *)&AsObject(o)->BoneMatrices;
+                DWORD bt2 = (intptr_t)AsObject(o)->BoneMatrices;
                 float (*boneMat)[4] = (float(*)[4])(bt2 + extOpt * 0x30);
                 float worldPos[3];
                 BMD__TransformPosition((void*)pModel, boneMat, localPos, worldPos, true);
@@ -342,19 +342,19 @@ bool __cdecl AttackStage(intptr_t c, intptr_t o)
         }
         if (stage <= 8) {
             float z[3] = {};
-            BMD_TransformPosition((void*)model, (float*)(*(DWORD *)&AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+392), 1);
+            BMD_TransformPosition((void*)model, (float*)((intptr_t)AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+392), 1);
             const float r = AsObject(o)->Angle[2]*0.017453292f; *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[0]+=sinf(r)*300.0f; *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[4]-=cosf(r)*300.0f;
         }
         if (stage >= 6 && stage <= 12) {
             float z[3]={}, p[3], l[3]={1,1,1};
-            BMD_TransformPosition((void*)model, (float*)(*(DWORD *)&AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, p, 1);
+            BMD_TransformPosition((void*)model, (float*)((intptr_t)AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, p, 1);
             const float r=AsObject(o)->Angle[2]*0.017453292f, d=(float)(stage-8)*10.0f+100.0f; p[0]+=sinf(r)*d; p[1]-=cosf(r)*d;
             CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
             const short target=AsCharacter(c)->TargetCharacter; if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target* CHARACTER_STRIDE; if(*v) v[404]=35; }
         }
     } else if (skill == 47) {
         if(stage==10) PlayBuffer(95,0,0);
-        else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)(*(DWORD *)&AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)),z,p,1); CreateEffect(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
+        else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)((intptr_t)AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)),z,p,1); CreateEffect(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
         else if(stage==8) { const float r=AsObject(o)->Angle[2]*0.017453292f; float p[3]={AsObject(o)->Position[0]+sinf(r)*50.0f,AsObject(o)->Position[1]-cosf(r)*50.0f,AsObject(o)->Position[2]+110.0f},l[3]={1,1,1}; CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
         if(stage>=13 && stage<=14) { const float r=AsObject(o)->Angle[2]*0.017453292f; for(int i=0;i<3;++i) { float p[3]={AsObject(o)->Position[0]+sinf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[1]-cosf(r)*145.0f+(float)(rand()%60-30),AsObject(o)->Position[2]+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
     } else if(skill==48) { if(stage>9 && type==390 && AsObject(o)->CurrentAction==63) AsCharacter(c)->SkillStage=15; }

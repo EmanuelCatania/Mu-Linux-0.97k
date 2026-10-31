@@ -187,8 +187,8 @@ void __cdecl MoveCharacterClient(float *param_1)
     uVar1 = TestFrustrum2D(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
     *(char *)(param_1 + 0x58) = (char)uVar1;
     MoveMonsterClient(AsCharacter(param_1), AsObject(param_1));
-    MoveCharacter((int)param_1);
-    MoveCharacterVisual((int)param_1);
+    MoveCharacter((intptr_t)param_1);
+    MoveCharacterVisual((intptr_t)param_1);
   }
   return;
 }
@@ -366,7 +366,7 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
   undefined *puVar1;
   intptr_t param_2 = (int)(uintptr_t)param_2_v;
 
-  *(undefined1 *)((int)param_1 + 0x44) = 0;
+  *(undefined1 *)((intptr_t)param_1 + 0x44) = 0;
   // _DAT_005597c8 is float; param_5 is a float passed as undefined4. Reinterpret
   // the bit pattern (cast through uint) so we don't do an int→float conversion.
   *(unsigned int *)&_DAT_005597c8 = (unsigned int)param_5;
@@ -412,13 +412,13 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
       }
     }
     this_ = (void *)(DAT_05828d58 + param_2 * 0xbc);
-    *(undefined1 *)((int)this_ + 0x99) = param_9;
-    *(undefined4 *)((int)this_ + 0x68) = *(undefined4 *)(param_1 + 0xc);
-    *(undefined1 *)((int)this_ + 0x45) = *(undefined1 *)(param_1 + 0xe4);
-    *(undefined1 *)((int)this_ + 0x44) = *(undefined1 *)(param_1 + 0xdc);
-    *(undefined4 *)((int)this_ + 0x6c) = *(undefined4 *)(param_1 + 0x10);
-    *(undefined4 *)((int)this_ + 0x70) = *(undefined4 *)(param_1 + 0x14);
-    *(undefined4 *)((int)this_ + 0x74) = *(undefined4 *)(param_1 + 0x18);
+    *(undefined1 *)((intptr_t)this_ + 0x99) = param_9;
+    *(undefined4 *)((intptr_t)this_ + 0x68) = *(undefined4 *)(param_1 + 0xc);
+    *(undefined1 *)((intptr_t)this_ + 0x45) = *(undefined1 *)(param_1 + 0xe4);
+    *(undefined1 *)((intptr_t)this_ + 0x44) = *(undefined1 *)(param_1 + 0xdc);
+    *(undefined4 *)((intptr_t)this_ + 0x6c) = *(undefined4 *)(param_1 + 0x10);
+    *(undefined4 *)((intptr_t)this_ + 0x70) = *(undefined4 *)(param_1 + 0x14);
+    *(undefined4 *)((intptr_t)this_ + 0x74) = *(undefined4 *)(param_1 + 0x18);
     _DAT_005597c8 = 1.0f;
     if (param_11 == 3) {
       _DAT_005597c8 = 1.4f;
@@ -428,24 +428,24 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
     }
     else if (param_11 == 1) {
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3ca3d70a;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3dcccccd;
+        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3ca3d70a;
+        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3dcccccd;
       }
       else {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3dcccccd;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3cf5c28f;
+        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3dcccccd;
+        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3cf5c28f;
       }
-      *(undefined4 *)((int)this_ + 0x50) = 0;
+      *(undefined4 *)((intptr_t)this_ + 0x50) = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f99999a);
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3e23d70a;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3f333333;
+        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3e23d70a;
+        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3f333333;
       }
       else {
-        *(undefined4 *)((int)this_ + 0x48) = 0x3f333333;
-        *(undefined4 *)((int)this_ + 0x4c) = 0x3e4ccccd;
+        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3f333333;
+        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3e4ccccd;
       }
-      *(undefined4 *)((int)this_ + 0x50) = 0;
+      *(undefined4 *)((intptr_t)this_ + 0x50) = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
     }
     Entity_GetLightScale(param_1,reinterpret_cast<uintptr_t>(this_));
