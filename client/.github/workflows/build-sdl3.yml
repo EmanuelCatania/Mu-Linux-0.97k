@@ -150,6 +150,8 @@ jobs:
             python -B tests/VerletInitPointer.py --architecture x64
             python -B tests/CutTextPointer.py --architecture x64
             python -B tests/BmdSetupPointer.py --architecture x64
+            python -B tests/BmdSetupPointer.py --architecture Win32
+            python -B tests/BmdSetupDifferential.py --architecture x64
             python -B tests/BMDCollisionArguments.py --architecture x64
             python -B tests/BodyColorPointer.py --architecture x64
             python -B tests/ClothHelperPointer.py --architecture x64
@@ -382,6 +384,7 @@ jobs:
             python3 -B tests/VerletInitPointer.py --generator Ninja
             python3 -B tests/CutTextPointer.py --generator Ninja
             python3 -B tests/BmdSetupPointer.py --generator Ninja
+            python3 -B tests/BmdSetupDifferential.py --generator Ninja
             python3 -B tests/BMDCollisionArguments.py --generator Ninja
             python3 -B tests/BodyColorPointer.py --generator Ninja
             python3 -B tests/ClothHelperPointer.py --generator Ninja

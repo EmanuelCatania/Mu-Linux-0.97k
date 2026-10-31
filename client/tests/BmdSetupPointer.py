@@ -10,6 +10,8 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from AnimationBonesPointer import layouts
+from ObjectLayoutContract import record
 
 SERVICES = r'''
 #include <cmath>
@@ -97,14 +99,21 @@ int main() {
 def harness(revision=None):
     source=read_source('src/Render/BMD_SetupRender.cpp',revision)
     code=function(source,'BMD_SetupRenderByType')
-    prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES
+    types=layouts()+'\nusing vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/Entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\nOBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\nconstexpr unsigned ModelBytes=sizeof(BMD)+36,EntityBytes=sizeof(OBJECT)+36;\n'
+    types=types.replace('constexpr unsigned ModelBytes=sizeof(void*)==4?224:256;','')
+    services=SERVICES.replace('Hash(activeModel+72,12)','Hash(activeModel+offsetof(BMD,BodyLight),12)')
+    prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+types+services
     header,definitions=read_source('src/globals.h',revision),read_source('src/globals.cpp',revision)
     for name in sorted(set(re.findall(r'_DAT_[0-9a-f]+',code))):
         prefix+=re.search(rf'extern [^;\n]*\b{name}\s*;',header).group()
         prefix+=re.search(rf'^[^/\n]*\b{name}\s*=\s*[^;]+;',definitions,re.M).group()
     arg='reinterpret_cast<uintptr_t>(activeEntity)'
     if 'uintptr_t param_2' not in code:arg='static_cast<int>(reinterpret_cast<uintptr_t>(activeEntity))'
-    return prefix+code+MAIN.replace('ENTITY_ARG',arg)
+    main=MAIN.replace('ENTITY_ARG',arg);main=re.sub(r'\b224\b','ModelBytes',main);main=re.sub(r'\b480\b','EntityBytes',main)
+    main=main.replace('activeModel+72','activeModel+offsetof(BMD,BodyLight)')
+    for off,field in [('88','HiddenMesh'),('100','BlendMesh'),('104','BlendMeshLight'),('360','Alpha')]:main=main.replace('activeEntity+'+off,'activeEntity+offsetof(OBJECT,'+field+')')
+    main=main.replace('modelMemory,88','modelMemory,16+offsetof(BMD,BodyLight)').replace('beforeModel+100','beforeModel+16+offsetof(BMD,BodyLight)+12').replace('modelMemory+100','modelMemory+16+offsetof(BMD,BodyLight)+12').replace(',124)',',ModelBytes-16-offseTOF(BMD,BodyLight)-12)').replace('offseTOF','offsetof')
+    return prefix+code+main
 
 
 def main():
