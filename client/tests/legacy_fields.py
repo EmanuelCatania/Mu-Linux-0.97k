@@ -35,6 +35,14 @@ for o,t,p,n,a in ch:
         for i in range(int(a[1:-1])): add(o+i,f'{n}[{i}]','CHARACTER')
     else: add(o,n,'CHARACTER')
 
+
+def unk(block,st):
+    for m in re.finditer(r'BYTE\s+(_unk\w+)(?:\[(0x[0-9A-Fa-f]+|\d+)\])?;',block):
+        o=int(m[1][4:],16); c=int(m[2],0) if m[2] else 1
+        for i in range(c):
+            if o+i not in tab and o+i>=0xFC: tab[o+i]=(st,f'{m[1]}[{i}]' if m[2] else m[1])
+unk(h[h.index('struct OBJECT {'):h.index('struct PART_t')],'OBJECT')
+unk(h[h.index('struct CHARACTER {'):h.index('#pragma pack(pop)')],'CHARACTER')
 reverse={(st,e):o for o,(st,e) in tab.items()}
 pattern=re.compile(r'\*\(([^()]*\*)\)&\(\((OBJECT|CHARACTER)\*\)\(uintptr_t\)\((\w+)\)\)->(\w+(?:\[\d+\])?(?:\.\w+)?)')
 

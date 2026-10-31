@@ -289,7 +289,7 @@ void __cdecl Entity_Render(void)
                 // IDA (L161-163) pasa `*((short*)v1 + 1)` = v1+2 = el TYPE del entity
                 // (= model del item, ej 662) a RenderPartObject.
                 RenderPartObject((int)v1, *(short*)(v1 + 2), 0, Light,
-                             *(float*)(v1 + 360),
+                             *(float*)&((OBJECT*)(uintptr_t)(v1))->Alpha,
                              *(DWORD*)(v0 - 325), *(v0 - 302),
                              1, 1, 1, 0, 2);
 

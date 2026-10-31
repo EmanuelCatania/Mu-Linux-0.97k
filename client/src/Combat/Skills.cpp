@@ -94,7 +94,7 @@ static void AnimateRemoteSkillCaster97k(BYTE* caster)
         SetPlayerMagic(AsCharacter(caster));
     else
         SetPlayerAttack(AsCharacter(caster), 0, 0, 0);
-    *(DWORD*)(caster + 264) = 0;
+    *(DWORD*)&((OBJECT*)(uintptr_t)(caster))->AnimationFrame = 0;
 }
 
 // External data

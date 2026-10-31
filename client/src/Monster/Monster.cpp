@@ -525,7 +525,7 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
     // La limpieza recibe la identidad nativa; los pools se migran por separado.
     DeleteCloth(AsCharacter(i), AsObject(i), nullptr);  // DeleteCloth
     CreateCharacterPointer((unsigned char*)i, Type, PosX, PosY, Rotation);
-    *(short*)(i + 476) = (short)Key;
+    *(short*)&((CHARACTER*)(uintptr_t)(i))->Key = (short)Key;
     return AsCharacter(i);
 }
 

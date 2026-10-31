@@ -2357,7 +2357,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
         ? (short)(skinLo + 4 * skinHi + 933)
         : (short)ItemEntityModel(v26);
 
-    short v27 = *(short*)(v7 + 408);
+    short v27 = *(short*)&((OBJECT*)(uintptr_t)(v7))->_unk188[16];
     AsCharacter(c)->BodyPart[5].Type = (v27 == -1)
         ? (short)(skinLo + 4 * skinHi + 940)
         : (short)ItemEntityModel(v27);
@@ -2366,12 +2366,12 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     AsCharacter(c)->BodyPart[2].Level = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);
     AsCharacter(c)->BodyPart[3].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->BoneMatrices >> 3) & 0xF);
     AsCharacter(c)->BodyPart[4].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->OBB[10] >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[5].Level = (unsigned char)((*(int*)(v7 + 412) >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[5].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->_unk188[20] >> 3) & 0xF);
     AsCharacter(c)->BodyPart[1].Option1 = *(unsigned char*)(v7 + 163);
     AsCharacter(c)->BodyPart[2].Option1 = *(unsigned char*)(v7 + 231);
     AsCharacter(c)->BodyPart[3].Option1 = *(unsigned char*)(v7 + 299);
-    AsCharacter(c)->BodyPart[4].Option1 = *(unsigned char*)(v7 + 367);
-    AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)(v7 + 435);
+    AsCharacter(c)->BodyPart[4].Option1 = *(unsigned char*)&((OBJECT*)(uintptr_t)(v7))->_unk16C[3];
+    AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)&((OBJECT*)(uintptr_t)(v7))->_unk1B1[2];
 
     SetCharacterScale(AsCharacter(c));
     // Recalcula los ocho grupos de atributos y sus campos derivados.
@@ -3144,9 +3144,9 @@ void __cdecl MoveCharacter(int p1)
     }
 
     // ─── IDA L499-502: decaimiento del knockback (mece el modelo hacia arriba mientras c+772 > 0)
-    if (*(BYTE*)(c + 772)) {
-        unsigned char k = (unsigned char)(*(BYTE*)(c + 772));
-        (*(BYTE*)(c + 772))--;
+    if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk304) {
+        unsigned char k = (unsigned char)(*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk304);
+        (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk304)--;
         AsObject(o)->Angle[2] += (float)(10 * k);
     }
 
@@ -3201,7 +3201,7 @@ void __cdecl MoveCharacter(int p1)
             DeleteCloth(AsCharacter(c), AsObject(o), nullptr);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) {
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->_unk188[13]) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = AsObject(o)->Direction[1]; in1[2] = 0.0f;
             AngleMatrix((float*)(o + 408), in2);
@@ -3212,9 +3212,9 @@ void __cdecl MoveCharacter(int p1)
             AsObject(o)->Direction[2] -= 2.0f;
             AsObject(o)->Angle[0]  -= 5.0f;
             if (AsObject(o)->Direction[2] < 1.0f) *(DWORD *)&AsObject(o)->Direction[2] = 1065353216;  // 1.0f
-            AsObject(o)->Position[0] = out_[0] + *(float*)(o + 420);
-            AsObject(o)->Position[1] = out_[1] + *(float*)(o + 424);
-            AsObject(o)->Position[2] = *(float*)(o + 428) + AsObject(o)->Gravity;
+            AsObject(o)->Position[0] = out_[0] + *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[28];
+            AsObject(o)->Position[1] = out_[1] + *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[32];
+            AsObject(o)->Position[2] = *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[36] + AsObject(o)->Gravity;
         }
         // L593-605: Atlans bubble particles (world 7 in-game)
         if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7) {
@@ -3234,7 +3234,7 @@ void __cdecl MoveCharacter(int p1)
     Alpha(AsObject(o));
 
     // ─── IDA L608-611: shaky timer decay
-    if (*(float*)(c + 836) > 0.0f) *(float*)(c + 836) -= 0.029999999f;
+    if (*(float*)&((CHARACTER*)(uintptr_t)(c))->_unk340[4] > 0.0f) *(float*)&((CHARACTER*)(uintptr_t)(c))->_unk340[4] -= 0.029999999f;
 
     bool skipIdleSelect = false;
 
@@ -3247,8 +3247,8 @@ void __cdecl MoveCharacter(int p1)
     {
         // L616-618: clear chain-skill state
         AsCharacter(c)->LongRangeAttack  = -1;
-        *(BYTE*)(c + 844) = 0;
-        *(BYTE*)(c + 845) = 0;
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk340[12] = 0;
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk340[13] = 0;
 
         // L619-739: player (entType=390) idle animation selection
         if (AsObject(o)->Type == 390)
@@ -3358,7 +3358,7 @@ void __cdecl MoveCharacter(int p1)
     if (AsCharacter(c)->Dead) {
         unsigned char inc = (unsigned char)(++AsCharacter(c)->Dead);
         if (inc >= 0xFu) mc_SetPlayerDie(AsCharacter(c));
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(AsCharacter(c));
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->_unk188[13]) mc_SetPlayerDie(AsCharacter(c));
     }
 
     // L807-811: setup defaults
@@ -3374,7 +3374,7 @@ void __cdecl MoveCharacter(int p1)
     }
 
     // L818-839: bone-particle effect (o+404 = effect counter)
-    if (*(BYTE*)(o + 404)) {
+    if (*(BYTE*)&((OBJECT*)(uintptr_t)(o))->_unk188[12]) {
         DWORD This = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;
         memset(p1f, 0, sizeof(p1f));
         for (int kk = 0; kk < *(short*)(This + 34); ++kk) {
@@ -3391,7 +3391,7 @@ void __cdecl MoveCharacter(int p1)
                 Joint_Create(1254, Position, TargetPosition, (float*)(o + 28), 7, 0, 20.0f, (short)-1, 0);
             }
         }
-        --*(BYTE*)(o + 404);
+        --*(BYTE*)&((OBJECT*)(uintptr_t)(o))->_unk188[12];
     }
 
     // ─── L840-2486: SKILL DISPATCH (when c+757 exhaust limit, drain c+770 queue)
@@ -3429,8 +3429,8 @@ void __cdecl MoveCharacter(int p1)
         switch ((char)v328)
         {
         case 5: {  // FireBall
-            WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
-            WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
+            WorldPosition[0] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk308[0] + 0.5f) * 100.0f;
+            WorldPosition[1] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk308[1] + 0.5f) * 100.0f;
             WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(5);
             CreateEffect(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
@@ -3477,8 +3477,8 @@ void __cdecl MoveCharacter(int p1)
             break;
         }
         case 13: {  // Lunge / Crescent
-            WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
-            WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
+            WorldPosition[0] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk308[0] + 0.5f) * 100.0f;
+            WorldPosition[1] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk308[1] + 0.5f) * 100.0f;
             WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(13);
             CreateEffect(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
@@ -3599,7 +3599,7 @@ void __cdecl MoveCharacter(int p1)
                 CreateArrows(c, o, Owner, 0, 1, 0);
 
             // L2202-2229: target halo + Atlans bubble shower
-            if (*(short*)(v390 + 760)) {
+            if (*(short*)&((CHARACTER*)(uintptr_t)(v390))->_unk2F6[2]) {
                 if (*(short*)(Owner + 2) != 277) {
                     for (int kk = 0; kk < 10; ++kk) {
                         WorldPosition[0] = (float)(rand() % 64 - 32) + *(float*)(Owner + 16);
@@ -3783,7 +3783,7 @@ void __cdecl MoveCharacter(int p1)
             Light[1] = (AsCharacter(v390) == AsCharacter(Hero)) ? 0.0f : 0.60000002f;
             Light[2] = 0.0f;
 
-            if (*(BYTE*)(c + 756) == 2) {
+            if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk2EE[6] == 2) {
                 Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
                              0, (int)o, 20.0f, (short)-1, 0);
                 Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
@@ -3807,12 +3807,12 @@ void __cdecl MoveCharacter(int p1)
 
         // L2481-2485: clear queue + state — hash decrypt/encrypt skipped
         AsCharacter(c)->Skill = 0;
-        *(short*)(c + 758) = 0;
-        *(BYTE*)(c + 756) = 0;
+        *(short*)&((CHARACTER*)(uintptr_t)(c))->_unk2F6[0] = 0;
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk2EE[6] = 0;
     }
 
     // ─── L2487-2507: Skill_Throw / projectile (c+912 = throwing flag)
-    if (*(BYTE*)(c + 912)) {
+    if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk390[0]) {
         AsObject(o)->BlendMesh = -2;
         AsObject(o)->BlendMeshLight += 0.1f;
         float v384f = (AsCharacter(c)->TargetPosition[0] - AsObject(o)->Position[0]) * 0.30000001f;
@@ -3823,7 +3823,7 @@ void __cdecl MoveCharacter(int p1)
         AsObject(o)->Position[2] = v33f;
         if ((float)Math_Fabs(v384f) < 1.0f) {
             if ((float)Math_Fabs(v385f) < 1.0f) {
-                *(BYTE*)(c + 912) = 0;
+                *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk390[0] = 0;
                 AsObject(o)->BlendMesh = -1;
             }
         }
@@ -4086,8 +4086,8 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             const float delta = FarAngle(*headCurrent, headCurrent[3], 1) * 0.2f;
             *headCurrent = TurnAngle2(*headCurrent, headCurrent[3], delta);
         }
-        if (*(unsigned char *)(entity_ptr + 848)) {
-            --*(unsigned char *)(entity_ptr + 848);
+        if (*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->_unk350[0]) {
+            --*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->_unk350[0];
             float *light = (float *)(entity_ptr + 232);
             for (int i = 0; i < 20; ++i) {
                 light[0] = light[1] = light[2] = 1.0f;
@@ -4552,12 +4552,12 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         if ((action >= 13 && action <= 33) || action == 79 || action == 80) {
             const float frame = AsCharacter(entity_ptr)->Object.AnimationFrame;
             extern char Sound_PlayFootstep();
-            if (frame >= 1.5f && !*(unsigned char *)(entity_ptr + 844)) {
-                *(unsigned char *)(entity_ptr + 844) = 1;
+            if (frame >= 1.5f && !*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->_unk340[12]) {
+                *(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->_unk340[12] = 1;
                 Sound_PlayFootstep();
             }
-            if (frame >= 4.5f && !*(unsigned char *)(entity_ptr + 845)) {
-                *(unsigned char *)(entity_ptr + 845) = 1;
+            if (frame >= 4.5f && !*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->_unk340[13]) {
+                *(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->_unk340[13] = 1;
                 Sound_PlayFootstep();
             }
         }
@@ -4600,14 +4600,14 @@ void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
             SetPlayerStop(AsCharacter(entity));
             // Actualiza el facing según el byte de dirección del camino en +0x2fc
             AsCharacter(entity)->Object.Angle[2] =
-                ((float)*(unsigned char*)(entity + 0x2fc) - _DAT_0055256c) * _DAT_00552844;
+                ((float)*(unsigned char*)&((CHARACTER*)(uintptr_t)(entity))->_unk2FC - _DAT_0055256c) * _DAT_00552844;
         }
         MoveCharacterPosition(AsCharacter(entity));
         return;
     }
 
     // No se está moviendo: chequea si hay que pathfindear para llegar a target_grid
-    if (*(char*)(entity + 0x350) != '\0') return;
+    if (*(char*)&((CHARACTER*)(uintptr_t)(entity))->_unk350[0] != '\0') return;
     if (*(short*)(param_2 + 2) == 0x115) return;
 
     // Lee PositionX y PositionY (las decoraciones de HashTable son ruido anti-tamper)

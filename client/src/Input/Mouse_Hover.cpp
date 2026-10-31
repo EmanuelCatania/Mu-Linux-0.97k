@@ -188,7 +188,7 @@ void Mouse_UpdateHoverTargets(void)
             // para poder apuntarle a un jugador que tiene un monstruo detras.
             int firstKind = 0x22, secondKind = 1;
             if (DAT_07abf5d8 && CharacterAttribute) {
-                const BYTE slot  = *(BYTE*)((BYTE*)DAT_07abf5d8 + 913);
+                const BYTE slot  = *(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->_unk390[1];
                 const BYTE skill = ((BYTE*)CharacterAttribute)[87 + slot];
                 if (skill >= 26 && skill <= 28) { firstKind = 1; secondKind = 0x22; }
             }
@@ -597,7 +597,7 @@ char __cdecl Party_HPBar_HoverCheck(void)
             // [HashTable obfuscation block skipped — anti-tamper, not game logic]
 
             // Get entity stat ID for this party slot
-            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)(DAT_07abf5d8 + 0x391) + 0x57 + (char*)DAT_07cf1ff4);
+            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->_unk390[1] + 0x57 + (char*)DAT_07cf1ff4);
 
             // Check if entity type is a hoverable icon (0x1a/0x1b/0x1c/0xf/0x10)
             UINT pVal = (UINT)(uintptr_t)puVar12;

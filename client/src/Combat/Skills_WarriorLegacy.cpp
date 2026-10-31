@@ -259,7 +259,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             const BYTE serial = *(BYTE*)(character + 1408);
             *(BYTE*)(character + 1408) = serial + 1;
             *(BYTE*)(o + 136) = serial;
-            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)(character + 913) + 87] : skillType,
+            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)&((CHARACTER*)(uintptr_t)(character))->_unk390[1] + 87] : skillType,
                                    centre, *(BYTE*)(o + 136), keys, count);
     } else if (skillType == 56) {
             float angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) - 40.0f };
@@ -411,7 +411,7 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
 
 LAB_00445110:
     // Post-teleport footstep sound: only if anim speed == _DAT_00552580 (ground landed)
-    if (*(float*)(puVar3 + 0x108) == *(float*)&DAT_00552580) {
+    if (*(float*)&((OBJECT*)(uintptr_t)(puVar3))->AnimationFrame == *(float*)&DAT_00552580) {
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
             if ((puVar3[0x1bc] & 7) == 2)

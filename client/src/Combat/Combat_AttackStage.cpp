@@ -343,7 +343,7 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
         if (stage <= 8) {
             float z[3] = {};
             BMD_TransformPosition((void*)model, (float*)(*(DWORD *)&AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+392), 1);
-            const float r = AsObject(o)->Angle[2]*0.017453292f; *(float*)(o+392)+=sinf(r)*300.0f; *(float*)(o+396)-=cosf(r)*300.0f;
+            const float r = AsObject(o)->Angle[2]*0.017453292f; *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[0]+=sinf(r)*300.0f; *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[4]-=cosf(r)*300.0f;
         }
         if (stage >= 6 && stage <= 12) {
             float z[3]={}, p[3], l[3]={1,1,1};

@@ -2335,7 +2335,7 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
         *defPtr = (unsigned short)(*(unsigned short*)(param_1 + 22) / 3);
     }
 
-    short v3 = *(short*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[5].LinkBone;  // WeaponR/Shield item type
+    short v3 = *(short*)(param_1 + 0x25C);  // WeaponR/Shield item type
     if (v3 != -1) {
         unsigned char dur = AsCharacter(param_1)->Weapon[0].PriorAction;  // shield durability
         if (dur != 0) {
@@ -2343,7 +2343,7 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
             int level = *(int *)&AsCharacter(param_1)->BodyPart[5].AnimationFrame;
             unsigned char opt = *(unsigned char*)(param_1 + 631);
             float durP = CalcDurabilityPercent(dur, maxDur, level, opt);
-            unsigned char defenseBase = *(unsigned char*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[5].Cloth;
+            unsigned char defenseBase = *(unsigned char*)(param_1 + 0x26C);
             unsigned short reduction = (unsigned short)((double)defenseBase * (double)durP);
             *defPtr += defenseBase - reduction;
 

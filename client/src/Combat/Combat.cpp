@@ -851,7 +851,7 @@ static void Attack_SeedSkillTarget97k()
     DAT_07d78098 = 1;                                        // IDA: dword_7D78098
     DAT_07d7809c = 0;                                        // IDA L1785
     MovementSkillTarget = 0;                                        // IDA L1786: MovementSkillTarget
-    const BYTE slot = Hero ? *(BYTE*)(Hero + 913) : 0;       // IDA: v133 / v545 / v629
+    const BYTE slot = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0;       // IDA: v133 / v545 / v629
     MovementSkillTarget = (DWORD)SelectedCharacter;
     DAT_07d7809c = slot;
 }
@@ -1067,7 +1067,7 @@ static void Attack_WarriorBranch97k(char* entity)
     BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!attr || !Hero)
         return;
-    const int iType = attr[*(BYTE*)(Hero + 913) + 87];        // IDA L2915
+    const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];        // IDA L2915
     int piMana = 0, piSkillMana = 0;                          // IDA: v1031 / v1034
     GetSkillInformation(iType, 1, 0, &piMana, 0, &piSkillMana);   // IDA L2916
     if (*(WORD *)&AsCharacter(entity)->Object.Type != 390)
@@ -1398,7 +1398,7 @@ static void Attack_WizardBranch97k(char* entity)
     BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!attr || !Hero)
         return;
-    const int iType = attr[*(BYTE*)(Hero + 913) + 87];        // IDA L5950
+    const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];        // IDA L5950
     int piMana = 0, piSkillMana = 0;                          // IDA: v1035 / v1033
     GetSkillInformation(iType, 1, 0, &piMana, 0, &piSkillMana);   // IDA L5951
     if (piMana > (int)*(unsigned short*)(attr + 30)) {        // IDA L5952
@@ -1582,14 +1582,14 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
                         handAllowed = false;
                         BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
                         if (attr && Hero) {
-                            const BYTE sk = attr[*(BYTE*)(Hero + 913) + 87];
+                            const BYTE sk = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];
                             handAllowed = (sk == 43 || sk == 47 || sk == 49);
                         }
                     }
                     if (handAllowed) {
                         DAT_07d78098 = 1;                       // IDA L1422
                         MovementSkillTarget = (DWORD)SelectedCharacter;// IDA L1424
-                        DAT_07d7809c = Hero ? *(BYTE*)(Hero + 913) : 0; // IDA L1423/1425
+                        DAT_07d7809c = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0; // IDA L1423/1425
                         if (DAT_07cf1ffc != 0 &&
                             Item_Equip((DWORD)(uintptr_t)entity,
                                        (DWORD)((uintptr_t)DAT_07cf1ffc + 536 + i)))
@@ -1666,7 +1666,7 @@ static BYTE Combat_ResolveQueuedSkillId97k()
     // resuelven al skill 0 y retornan antes de cualquier animación o envío de paquete.
     BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
     if (!Hero || !charAttr) return 0;
-    return charAttr[*(BYTE*)(Hero + 913) + 87];
+    return charAttr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];
 }
 
 static int Combat_GetSkillRange97k(int skillType)
@@ -1682,7 +1682,7 @@ static int Combat_GetSkillRange97k(int skillType)
 static void Combat_SeedRuntimeState97k(int skillType, int targetIdx)
 {
     DAT_07d78098 = 1;
-    DAT_07d7809c = (Hero ? *(unsigned char*)(Hero + 913) : 0);
+    DAT_07d7809c = (Hero ? *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0);
     MovementSkillTarget = (DWORD)targetIdx;
     CurrentSkill = (DWORD)skillType;
 }
@@ -2014,7 +2014,7 @@ void __cdecl Action(DWORD c, DWORD o)
 
         // IDA L822-825: solo se le habla a los tipos >= 230 de Monster.txt.  Es
         // el rango de los NPC (el ultimo monstruo real queda por debajo).
-        const BYTE npcType = *(unsigned char*)(npcEnt + 747);  // IDA: v162
+        const BYTE npcType = *(unsigned char*)&((CHARACTER*)(uintptr_t)(npcEnt))->MonsterIndex;  // IDA: v162
         if (npcType < 230)
             return;                                          // IDA: goto LABEL_335
 
@@ -2042,7 +2042,7 @@ void __cdecl Action(DWORD c, DWORD o)
         // IDA LABEL_297 (L952-1189): PMSG_NPC_TALK_RECV
         // (GameServer/NpcTalk.h:10) = [C1][05][30][index[2] big-endian].
         // El binario manda la key tal cual la lee (sin filtrar 0xFFFF).
-        const unsigned short npcKey = *(unsigned short*)(npcEnt + 0x1DC);
+        const unsigned short npcKey = *(unsigned short*)&((CHARACTER*)(uintptr_t)(npcEnt))->Key;
         BYTE pkt[5] = { 0xC1, 0x05, 0x30,
                         (BYTE)((npcKey >> 8) & 0xFF), (BYTE)(npcKey & 0xFF) };
         gNetwork.Send(pkt, sizeof(pkt));
@@ -2164,7 +2164,7 @@ void __cdecl Action(DWORD c, DWORD o)
                 // se queda atacando al aire" — síntomas de packets que no
                 // llegaban válidos al server (CSM-encriptado un C1 no se
                 // descifra, server descarta silenciosamente).
-                int targetEntityId = *(short*)(pCharsClient + 476); // entity Id
+                int targetEntityId = *(short*)&((CHARACTER*)(uintptr_t)(pCharsClient))->Key; // entity Id
                 // IDA 0x48DF85-0x48DFB0: sx1 = (std::int64_t)((facing + 22.5)
                 // * 0.022222223 + 1.0) & 7.  Al port le faltaba el `+ 1.0`, o
                 // sea el server recibia la direccion corrida un octante.
@@ -2408,7 +2408,7 @@ void __cdecl Action(DWORD c, DWORD o)
             return;
         }
         char* pTgt = ACTION_CHARS_CLIENT + 916 * skillTarget;
-        if (*(unsigned char*)(pTgt + 765) != 0) {
+        if (*(unsigned char*)&((CHARACTER*)(uintptr_t)(pTgt))->Dead != 0) {
             return;
         }
 
@@ -2456,7 +2456,7 @@ void __cdecl Action(DWORD c, DWORD o)
         case 19: case 20: case 21: case 22: case 23:
         case 43: case 49: case 56:
         case 47:
-            if (skillType == 47 && *(unsigned short*)(ACTION_HERO + 696) != 818) {
+            if (skillType == 47 && *(unsigned short*)&((CHARACTER*)(uintptr_t)(ACTION_HERO))->Helper.Type != 818) {
                 return;
             }
             if ((float)skillRange * 1.2f * 100.0f < (float)sqrt((double)dist) || forceWalk) {
