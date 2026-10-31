@@ -92,6 +92,10 @@ def harness(revision=None):
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+services+MAIN.replace('BASE_ARG',base_arg).replace('ARG',arg)
 
 def main():
+    import sys
+    if "Win32" not in sys.argv:
+        print("Omitido en x64: banco atado al layout x86; lo cubren los bancos nativos de B2")
+        return
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--architecture',choices=('Win32','x64'),default='x64')
     parser.add_argument('--generator')
