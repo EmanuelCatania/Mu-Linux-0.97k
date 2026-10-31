@@ -765,25 +765,25 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
     // Linux ELF32 puede reservar este pool por encima de 2 GB.
     const uintptr_t base = static_cast<uintptr_t>(DAT_05828d58);
     const uintptr_t address = reinterpret_cast<uintptr_t>(model);
-    constexpr size_t stride = 0xbc;
+    constexpr size_t stride = sizeof(BMD);
     if (!base || address < base) return;
     const uintptr_t offset = address - base;
     if (offset % stride != 0 || offset / stride >= ResourceTables::ModelCount()) return;
-    if (*(short*)((char*)model + 0x24) == 0) return;
-    int meshBase_check = *(int*)((char*)model + 0x28);
-    if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
+    const auto* bmd = AsModel(model);
+    if (bmd->NumMeshs == 0) return;
+    const auto* meshBase = reinterpret_cast<const ClothModelMesh*>(bmd->Meshs);
+    if (!meshBase || reinterpret_cast<uintptr_t>(meshBase) < 0x100000) return;
     BMD__BeginRender();
-    if (*(char*)((char*)model + 0x44) == '\0') {
+    if (bmd->LightEnable == '\0') {
         // IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
-        if (f1 < _DAT_00552544) BufferedDraw::Color4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
-        else BufferedDraw::Color3fv((const float*)((char*)model + 0x48));
+        if (f1 < _DAT_00552544) BufferedDraw::Color4f(bmd->BodyLight[0],bmd->BodyLight[1],bmd->BodyLight[2],f1);
+        else BufferedDraw::Color3fv(bmd->BodyLight);
     }
     // HiddenMesh: entero (indice de malla a ocultar, o -1), como el a8 de IDA.
     int HiddenMesh = f6;
-    int meshBase = *(int*)((char*)model + 0x28);
-    int numMesh = (int)*(short*)((char*)model+0x24);
+    int numMesh = (int)bmd->NumMeshs;
     for (int i = 0; i < numMesh; i++) {
-        char* pcVar1 = *(char**)(meshBase + i * 0x28 + 0x24);
+        const char* pcVar1 = static_cast<const char*>(meshBase[i].TextureFlags);
         int fVar3 = f2;  // BlendMesh (entero, como el a4 de IDA)
         bool render = false;
         if (pcVar1 == nullptr) {
@@ -807,12 +807,12 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
 // SetMonsterSound @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
-    int base = param_1 * 0xbc + DAT_05828d58;
-    AsModel(base)->Sounds[0] = (short)param_2;
-    AsModel(base)->Sounds[1] = (short)param_3;
-    AsModel(base)->Sounds[2] = (short)param_4;
-    AsModel(base)->Sounds[3] = (short)param_5;
-    AsModel(base)->Sounds[4] = (short)param_6;
+    auto* model = AsModel(DAT_05828d58) + param_1;
+    model->Sounds[0] = (short)param_2;
+    model->Sounds[1] = (short)param_3;
+    model->Sounds[2] = (short)param_4;
+    model->Sounds[3] = (short)param_5;
+    model->Sounds[4] = (short)param_6;
 }
 
 // CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.
