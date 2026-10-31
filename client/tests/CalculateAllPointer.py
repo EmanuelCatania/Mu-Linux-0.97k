@@ -7,6 +7,9 @@ derivados, orden y bytes; no certifica protocolo, UI ni sesión del cliente.
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import tempfile
 
 from BaseAttackPointer import harness as base_harness

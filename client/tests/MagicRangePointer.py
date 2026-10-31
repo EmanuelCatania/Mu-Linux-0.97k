@@ -7,6 +7,9 @@ CalculateAll, protocolo, hover de inventario ni interfaz visible.
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import tempfile
 
 from DefenseRatePointer import harness as rate_harness

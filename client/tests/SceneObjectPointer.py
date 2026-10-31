@@ -13,6 +13,9 @@ Comparación x86: agregar --reference-ref <commit-base>.
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import re
 import subprocess
 import tempfile
@@ -24,7 +27,7 @@ def read_source(path, revision=None):
     if revision:
         return subprocess.check_output(
             ["git", "show", f"{revision}:{path}"], cwd=ROOT).decode("utf-8")
-    return (ROOT / path).read_text(encoding="utf-8")
+    return lower((ROOT / path).read_text(encoding="utf-8"))
 
 
 def function(source, name):
