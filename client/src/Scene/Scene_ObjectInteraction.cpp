@@ -57,31 +57,32 @@ char* __stdcall PickObject_Mouse(void) {
                     }
                     BMD* model = AsModel(DAT_05828d58) + modelType;
 
-                    // Set model data fields from object
-                    *(DWORD *)&AsModel(model)->BodyScale = *(DWORD *)&AsObject(obj)->Scale;
-                    *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(obj)->CurrentAction;
-                    *(DWORD *)&AsModel(model)->BodyOrigin[0] = *(DWORD *)&AsObject(obj)->Position[0];
-                    *(DWORD *)&AsModel(model)->BodyOrigin[1] = *(DWORD *)&AsObject(obj)->Position[1];
-                    *(DWORD *)&AsModel(model)->BodyOrigin[2] = *(DWORD *)&AsObject(obj)->Position[2];
+                    // Copiar los campos del objeto al modelo conservando los bits de float.
+                    memcpy(&model->BodyScale, &AsObject(obj)->Scale, sizeof(float));
+                    model->CurrentAction = AsObject(obj)->CurrentAction;
+                    memcpy(model->BodyOrigin, AsObject(obj)->Position, sizeof(model->BodyOrigin));
 
                     // BMD::Animation — set up bone matrices
                     // BMD_Animation(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
                     // Phantom regs make exact mapping impractical; the key effect is populating BoneTransform.
                     float angles[3] = { 0.0f, 0.0f, AsObject(obj)->HeadAngle[0] };
                     float headAngles[3] = { 0.0f, 0.0f, 0.0f };
+                    // Conservar el byte que consume el port actual, sin depender del offset x86.
+                    BYTE angleByte;
+                    memcpy(&angleByte, AsObject(obj)->Angle, sizeof(angleByte));
                     BMD_Animation(model, 0, AsObject(obj)->PriorAnimationFrame,
-                                 (unsigned int)(unsigned char)*(char *)&AsObject(obj)->PriorAction,
-                                 (unsigned char)obj[0x1C], (unsigned int*)angles, headAngles,
+                                 (unsigned int)AsObject(obj)->PriorAction,
+                                 angleByte, (unsigned int*)angles, headAngles,
                                  0, 0);
 
                     // BMD::Transform — compute world-space OBB
-                    float bbMin[3], bbMax[3];
-                    // obj+0x118 = BoundingBoxMin, obj+0x124 = mid, obj+0x130 = BoundingBoxMax
-                    BMD_TransformPosition(model, (float*)(obj + 0x118), (float*)(obj + 0x130), bbMin, 0);
+                    float bbMin[3];
+                    // Conservar los argumentos existentes; OBB no es BoundingBoxMax.
+                    BMD_TransformPosition(model, AsObject(obj)->BoundingBoxMin, AsObject(obj)->OBB, bbMin, 0);
 
-                    // Copy 48 bytes of OBB data from obj+0x130
+                    // Copiar los doce componentes del OBB desde su campo nativo.
                     float obb[12];
-                    memcpy(obb, obj + 0x130, 48);
+                    memcpy(obb, AsObject(obj)->OBB, sizeof(obb));
 
                     // Check ray intersection with bounding volume
                     bool hit = Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, obb);
