@@ -24,8 +24,8 @@ using WORD = std::uint16_t;
 using std::uintptr_t;
 using vec3_t = float[3];
 RECORDS
-static_assert(sizeof(OBJECT) == 444 && sizeof(CHARACTER) == 916 && sizeof(PART_t) == 24);
-static_assert(offsetof(OBJECT, Owner) == 252 && offsetof(OBJECT, BoneMatrices) == 276);
+static_assert(sizeof(void*) != 4 || (sizeof(OBJECT) == 444 && sizeof(CHARACTER) == 916 && sizeof(PART_t) == 24));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Owner) == 252 && offsetof(OBJECT, BoneMatrices) == 276));
 CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }
 CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }

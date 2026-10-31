@@ -19,6 +19,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include <algorithm>
 #include "Entity/EntityName.h"
 #include "UI/ChatTypes.h"
 #include "Render/Gfx.h"
@@ -292,6 +293,15 @@ void RenderBooleans_(void)
     for (int i = 0; i < kChats; ++i) {
         CHAT* c = &chats[i];
         if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
+            // Desviación del binario: sub_47F4C0 ajusta cada renglón por separado
+            // al borde, así que una burbuja fuera de pantalla quedaba pegada y con
+            // sus renglones encimados. Se oculta sin dueño visible y se ajusta entera.
+            if (c->Owner && !c->Owner->Object.Visible) continue;
+            const int boxW = 640 * c->Width / (int)gWindow.GetWidth();
+            const int boxH = 480 * c->Height / (int)gWindow.GetHeight();
+            const int maxY = 480 - 47 * 480 / 640;
+            c->x = (std::max)(0, (std::min)(c->x, 640 - boxW));
+            c->y = (std::max)(0, (std::min)(c->y, maxY - boxH));
             RenderBoolean(c->x, c->y, (DWORD)(uintptr_t)c);
         }
     }
