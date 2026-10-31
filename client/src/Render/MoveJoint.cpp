@@ -329,7 +329,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             MoveHumming(pfVar15, AsJoint(param_1)->Angle, pfVar14, 0.0f);
         float matrix_4e8[12];
         Matrix_BuildFromEuler(AsJoint(param_1)->Angle, matrix_4e8);
-        Joint_SegmentTick((int)param_1, matrix_4e8);
+        Joint_SegmentTick((intptr_t)param_1, matrix_4e8);
         if (dist_4e8 > AsJoint(param_1)->Velocity) {
             const float brightness = (float)(rand() % 4 + 4) * 0.1f;
             float light_4e8[3] = { brightness, brightness * 0.6f, brightness * 0.2f };
@@ -423,7 +423,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
                 AsJoint(param_1)->Position[1] = rotated_4e2[1] + AsJoint(param_1)->TargetPosition[1];
                 AsJoint(param_1)->Position[2] = rotated_4e2[2] + AsJoint(param_1)->TargetPosition[2];
                 if (AsJoint(param_1)->NumTails < AsJoint(param_1)->MaxTails - 1 || AsJoint(param_1)->Skill != 0)
-                    Joint_SegmentTick((int)param_1, jointMatrix_4e2);
+                    Joint_SegmentTick((intptr_t)param_1, jointMatrix_4e2);
             }
             if (AsJoint(param_1)->LifeTime < 15) {
                 AsJoint(param_1)->Light[0] *= 2.0f / 3.0f;
@@ -815,7 +815,7 @@ LAB_0047036e:
             if (*(int *)&AsJoint(param_1)->Scale == 1117782016) {
                 CreateEffect(205, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light,
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
-                if ((AsJoint(param_1)->LifeTime % 15) == 0 && *(int *)&AsJoint(param_1)->Target == (int)Hero) {
+                if ((AsJoint(param_1)->LifeTime % 15) == 0 && *(int *)&AsJoint(param_1)->Target == (intptr_t)Hero) {
                     Entity_FindNearby_SendPacket(AsJoint(param_1)->Skill, pfVar15, 150.0f,
                                   AsJoint(param_1)->Weapon, *(unsigned short *)&AsJoint(param_1)->PKKey);
                 }
@@ -905,7 +905,7 @@ LAB_0047036e:
                 };
                 float matrix_4e7[12], step_4e7[3] = { 0.0f, -speed_4e7, 0.0f }, rotated_4e7[3];
                 Matrix_BuildFromEuler(angle_4e7, matrix_4e7);
-                Joint_SegmentTick((int)param_1, matrix_4e7);
+                Joint_SegmentTick((intptr_t)param_1, matrix_4e7);
                 Vector_Rotate(step_4e7, matrix_4e7, rotated_4e7);
                 *pfVar15 += rotated_4e7[0];
                 AsJoint(param_1)->Position[1] += rotated_4e7[1];
@@ -1131,7 +1131,7 @@ LAB_0047036e:
                                AsJoint(param_1)->Angle[2] + AsJoint(param_1)->Direction[2] };
             float matrix[12], rotated[3];
             Matrix_BuildFromEuler(angle, matrix);
-            Joint_SegmentTick((int)param_1, matrix);
+            Joint_SegmentTick((intptr_t)param_1, matrix);
 
             if (AsJoint(param_1)->Velocity * 2.0f >= targetDistance) {
                 if ((rand() & 1) == 0) {
@@ -1189,7 +1189,7 @@ LAB_0047036e:
                 AsJoint(param_1)->Position[2] = rotated[2] + AsJoint(param_1)->TargetPosition[2];
 
                 Matrix_BuildFromEuler(AsJoint(param_1)->Angle, matrix);
-                Joint_SegmentTick((int)param_1, matrix);
+                Joint_SegmentTick((intptr_t)param_1, matrix);
                 AsJoint(param_1)->Direction[2] -= 11.0f;
                 if ((rand() & 1) == 0) {
                     Particle_Spawn(1195, AsJoint(param_1)->Position,
@@ -1200,7 +1200,7 @@ LAB_0047036e:
                 Joint_Create(1254, previousPosition, AsJoint(param_1)->Position,
                               AsJoint(param_1)->Angle, 3, 0, (float)(rand() % 8) + 4.0f, 5, 10);
             }
-            if (*(int *)&AsJoint(param_1)->Target == (int)Hero && AsJoint(param_1)->LifeTime > 18 && (i % 5) == 0) {
+            if (*(int *)&AsJoint(param_1)->Target == (intptr_t)Hero && AsJoint(param_1)->LifeTime > 18 && (i % 5) == 0) {
                 Entity_FindNearby_SendPacket(AsJoint(param_1)->Skill, AsJoint(param_1)->Position, 150.0f,
                               AsJoint(param_1)->Weapon, *(unsigned short *)&AsJoint(param_1)->PKKey);
             }
@@ -1396,7 +1396,7 @@ switchD_caseD_4fd:
                 *jposX                     += AsJoint(param_1)->StartPosition[0];
                 AsJoint(param_1)->Position[1] += AsJoint(param_1)->StartPosition[1];
                 AsJoint(param_1)->Position[2] += AsJoint(param_1)->StartPosition[2];
-                Joint_SegmentTick((int)param_1, jointMatrix_v304);
+                Joint_SegmentTick((intptr_t)param_1, jointMatrix_v304);
             }
             goto switchD_caseD_4ef;
         }
@@ -1606,7 +1606,7 @@ _skipLabel182:;
         ((iVar16 != 0x4ee) &&
          ((iVar16 != 0x4e7) || (10 < AsJoint(param_1)->LifeTime))))
     {
-        Joint_SegmentTick((int)param_1, local_30);
+        Joint_SegmentTick((intptr_t)param_1, local_30);
     }
 
     // Decrement lifetime counter

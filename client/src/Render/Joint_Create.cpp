@@ -11,7 +11,7 @@
 
 // IDA: CreateJoint
 void * __cdecl
-Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4 param_5,int param_6
+Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4 param_5,intptr_t param_6
             ,float param_7,short param_8,byte param_9)
 
 {
@@ -20,7 +20,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   float *pfVar3;
   char cVar4;
   byte bVar5;
-  int iVar6;
+  intptr_t iVar6;
   undefined4 *puVar7;
   byte *pbVar8;
   uint uVar9;
@@ -140,7 +140,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
       AsJoint(pcVar14)->TargetPosition[1] = param_3[1];
       AsJoint(pcVar14)->TargetPosition[2] = param_3[2];
     }
-    *(int *)&AsJoint(pcVar14)->Target = param_6;
+    AsJoint(pcVar14)->Target = (OBJECT*)param_6;
   }
   pcVar14[0x50] = '\0';
   pcVar14[0x51] = '\0';
@@ -232,7 +232,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           if (AsJoint(pcVar14)->SubType == 0) {
             iVar6 = _rand();
             local_94 = (byte *)(iVar6 % 0x14 + 0x23);
-            AsJoint(pcVar14)->Direction[2] = (float)(int)local_94;
+            AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_94;
             iVar6 = _rand();
             pcVar14[0x9b8] = '\x19';
             pcVar14[0x9b9] = '\0';
@@ -344,7 +344,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x9ce] = '\0';
           pcVar14[0x9cf] = '\0';
           local_94 = (byte *)(iVar6 % 500);
-          AsJoint(pcVar14)->Direction[1] = (float)(int)local_94;
+          AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_94;
           iVar6 = _rand();
           AsJoint(pcVar14)->Velocity = (float)(iVar6 % 5) + _DAT_00552660;
           break;
@@ -483,7 +483,7 @@ switchD_0046db06_default:
             *pfVar1 = *pfVar1 + AsJoint(pcVar14)->StartPosition[0];
             AsJoint(pcVar14)->Position[1] = AsJoint(pcVar14)->Position[1] + AsJoint(pcVar14)->StartPosition[1];
             AsJoint(pcVar14)->Position[2] = AsJoint(pcVar14)->StartPosition[2] + AsJoint(pcVar14)->Position[2];
-            Joint_SegmentTick((int)pcVar14,local_6c);
+            Joint_SegmentTick((intptr_t)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
           } while (iVar6 < AsJoint(pcVar14)->MaxTails);
         }
@@ -528,7 +528,7 @@ switchD_0046dd50_default:
               iVar6 = iVar6 + -1;
               bVar18 = *(byte *)ppbVar15 < *pbVar26;
               bVar19 = *(byte *)ppbVar15 == *pbVar26;
-              ppbVar15 = (byte **)((int)ppbVar15 + 1);
+              ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
               pbVar26 = pbVar26 + 1;
             } while (bVar19);
             if (!bVar19) {
@@ -546,7 +546,7 @@ switchD_0046dd50_default:
               iVar6 = iVar6 + -1;
               bVar18 = *(byte *)ppbVar15 < *pbVar26;
               bVar19 = *(byte *)ppbVar15 == *pbVar26;
-              ppbVar15 = (byte **)((int)ppbVar15 + 1);
+              ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
               pbVar26 = pbVar26 + 1;
             } while (bVar19);
             if (!bVar19) {
@@ -610,7 +610,7 @@ LAB_0046e742:
               iVar11 = iVar11 + -1;
               bVar18 = *(byte *)ppbVar15 < *pbVar26;
               bVar19 = *(byte *)ppbVar15 == *pbVar26;
-              ppbVar15 = (byte **)((int)ppbVar15 + 1);
+              ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
               pbVar26 = pbVar26 + 1;
             } while (bVar19);
             if (!bVar19) {
@@ -740,7 +740,7 @@ LAB_0046e742:
             *pfVar1 = local_90 + *pfVar1;
             AsJoint(pcVar14)->Position[1] = local_8cf + AsJoint(pcVar14)->Position[1];
             AsJoint(pcVar14)->Position[2] = local_88f + AsJoint(pcVar14)->Position[2];
-            Joint_SegmentTick((int)pcVar14,local_6c);
+            Joint_SegmentTick((intptr_t)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
             *pfVar1 = (*pfVar1 - local_90) + AsJoint(pcVar14)->StartPosition[0];
             AsJoint(pcVar14)->Position[1] =
@@ -785,7 +785,7 @@ LAB_0046e742:
               iVar6 = iVar6 + -1;
               bVar18 = *(byte *)ppbVar15 < *pbVar26;
               bVar19 = *(byte *)ppbVar15 == *pbVar26;
-              ppbVar15 = (byte **)((int)ppbVar15 + 1);
+              ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
               pbVar26 = pbVar26 + 1;
             } while (bVar19);
             if (!bVar19) {
@@ -847,7 +847,7 @@ LAB_0046ec45:
               iVar11 = iVar11 + -1;
               bVar18 = *(byte *)ppbVar15 < *pbVar8;
               bVar19 = *(byte *)ppbVar15 == *pbVar8;
-              ppbVar15 = (byte **)((int)ppbVar15 + 1);
+              ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
               pbVar8 = pbVar8 + 1;
             } while (bVar19);
             if (!bVar19) {
@@ -892,7 +892,7 @@ LAB_0046ec45:
     case 1:
       iVar6 = _rand();
       local_94 = (byte *)(iVar6 % 10);
-      AsJoint(pcVar14)->Velocity = (float)(int)local_94 + _DAT_005524fc;
+      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_94 + _DAT_005524fc;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000007;
       if ((int)uVar9 < 0) {
@@ -986,7 +986,7 @@ LAB_0046ec45:
       AsJoint(pcVar14)->LifeTime = iVar6 % 0x14 + 6;
       iVar6 = _rand();
       local_94 = (byte *)(iVar6 % 10);
-      AsJoint(pcVar14)->Velocity = (float)(int)local_94 + _DAT_00552834;
+      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_94 + _DAT_00552834;
       iVar6 = _rand();
       fVar24 = (float)(iVar6 % 10) * _DAT_00552a48 + _DAT_005524f4;
       *pfVar3 = fVar24;
@@ -1036,7 +1036,7 @@ LAB_0046ec45:
       pcVar14[0x9ba] = '\0';
       pcVar14[0x9bb] = '\0';
       local_94 = (byte *)(iVar6 % 0x14);
-      AsJoint(pcVar14)->Velocity = (float)(int)local_94 + _DAT_00552878;
+      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_94 + _DAT_00552878;
       iVar6 = _rand();
       fVar24 = (float)(iVar6 % 10) * _DAT_00552a48 + _DAT_005524f4;
       *pfVar3 = fVar24;
@@ -1089,35 +1089,35 @@ LAB_0046e043:
           if (*(int *)&AsJoint(pcVar14)->Target == 0) {
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x80000007);
-            if ((int)local_94 < 0) {
-              local_94 = (byte *)(((int)local_94 - 1U | 0xfffffff8) + 1);
+            if ((intptr_t)local_94 < 0) {
+              local_94 = (byte *)(((intptr_t)local_94 - 1U | 0xfffffff8) + 1);
             }
-            local_90 = ((float)(int)local_94 + AsJoint(pcVar14)->StartPosition[0]) - _DAT_00552650;
+            local_90 = ((float)(int)(intptr_t)local_94 + AsJoint(pcVar14)->StartPosition[0]) - _DAT_00552650;
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x80000007);
-            if ((int)local_94 < 0) {
-              local_94 = (byte *)(((uint)(local_94 + -1) | 0xfffffff8) + 1);
+            if ((intptr_t)local_94 < 0) {
+              local_94 = (byte *)(intptr_t)(int)(((uint)(uintptr_t)(local_94 + -1) | 0xfffffff8) + 1);
             }
             local_8cf = (local_94f + AsJoint(pcVar14)->StartPosition[1]) - _DAT_00552650;
           }
           else {
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x8000000f);
-            if ((int)local_94 < 0) {
-              local_94 = (byte *)(((int)local_94 - 1U | 0xfffffff0) + 1);
+            if ((intptr_t)local_94 < 0) {
+              local_94 = (byte *)(((intptr_t)local_94 - 1U | 0xfffffff0) + 1);
             }
-            local_90 = ((float)(int)local_94 + AsJoint(pcVar14)->StartPosition[0]) - _DAT_00552658;
+            local_90 = ((float)(int)(intptr_t)local_94 + AsJoint(pcVar14)->StartPosition[0]) - _DAT_00552658;
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x8000000f);
-            if ((int)local_94 < 0) {
-              local_94 = (byte *)(((uint)(local_94 + -1) | 0xfffffff0) + 1);
+            if ((intptr_t)local_94 < 0) {
+              local_94 = (byte *)(intptr_t)(int)(((uint)(uintptr_t)(local_94 + -1) | 0xfffffff0) + 1);
             }
             local_8cf = (local_94f + AsJoint(pcVar14)->StartPosition[1]) - _DAT_00552658;
           }
           *pfVar1 = local_90 + *pfVar1;
           AsJoint(pcVar14)->Position[1] = local_8cf + AsJoint(pcVar14)->Position[1];
           AsJoint(pcVar14)->Position[2] = local_88f + AsJoint(pcVar14)->Position[2];
-          Joint_SegmentTick((int)pcVar14,local_6c);
+          Joint_SegmentTick((intptr_t)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
           *pfVar1 = (*pfVar1 - local_90) + AsJoint(pcVar14)->StartPosition[0];
           AsJoint(pcVar14)->Position[1] =
@@ -1224,7 +1224,7 @@ LAB_0046e043:
           *pfVar1 = local_90 + *pfVar1;
           AsJoint(pcVar14)->Position[1] = local_8cf + AsJoint(pcVar14)->Position[1];
           AsJoint(pcVar14)->Position[2] = local_88f + AsJoint(pcVar14)->Position[2];
-          Joint_SegmentTick((int)pcVar14,local_6c);
+          Joint_SegmentTick((intptr_t)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
           *pfVar1 = (*pfVar1 - local_90) + AsJoint(pcVar14)->StartPosition[0];
           AsJoint(pcVar14)->Position[1] =
@@ -1250,7 +1250,7 @@ LAB_0046e37e:
       pbVar10 = (byte *)(iVar6 % 0x14 + 6);
       local_98 = pbVar10;
 LAB_0046f415:
-      AsJoint(pcVar14)->Velocity = (float)(int)pbVar10;
+      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)pbVar10;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000007;
       if ((int)uVar9 < 0) {
@@ -1301,7 +1301,7 @@ LAB_0046f415:
       pcVar14[0xf] = '@';
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 0x14 + 0x10);
-      AsJoint(pcVar14)->Velocity = (float)(int)local_98;
+      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_98;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000003;
       if ((int)uVar9 < 0) {
@@ -1509,10 +1509,10 @@ LAB_0046f415:
     if (iVar6 != 5) goto switchD_0046dee7_default;
     iVar6 = _rand();
     local_98 = (byte *)(iVar6 % 10 + -5);
-    AsJoint(pcVar14)->Scale = (float)(int)local_98 + AsJoint(pcVar14)->Scale;
+    AsJoint(pcVar14)->Scale = (float)(int)(intptr_t)local_98 + AsJoint(pcVar14)->Scale;
     iVar6 = _rand();
     local_98 = (byte *)(iVar6 % 0x14 + 6);
-    AsJoint(pcVar14)->Velocity = (float)(int)local_98;
+    AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_98;
     uVar9 = _rand();
     uVar9 = uVar9 & 0x80000007;
     if ((int)uVar9 < 0) {
@@ -1640,10 +1640,10 @@ switchD_0046f0e4_caseD_4fd:
       AsJoint(pcVar14)->Scale = param_7;
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 0x96);
-      AsJoint(pcVar14)->Direction[2] = (float)(int)local_98 * _DAT_00552594;
+      AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98 * _DAT_00552594;
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 500 + -0xfa);
-      AsJoint(pcVar14)->Direction[1] = (float)(int)local_98;
+      AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_98;
       if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
         pcVar14[0x9b8] = '2';
         pcVar14[0x9b9] = '\0';
@@ -1665,13 +1665,13 @@ LAB_0046f55a:
         AsJoint(pcVar14)->Scale = param_7;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x96);
-        AsJoint(pcVar14)->Direction[2] = (float)(int)local_98 * _DAT_00552594;
+        AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98 * _DAT_00552594;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 500 + -0xfa);
-        AsJoint(pcVar14)->Direction[1] = (float)(int)local_98;
+        AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_98;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x32);
-        AsJoint(pcVar14)->Position[2] = (float)(int)local_98 + AsJoint(pcVar14)->Position[2];
+        AsJoint(pcVar14)->Position[2] = (float)(int)(intptr_t)local_98 + AsJoint(pcVar14)->Position[2];
         if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
           pcVar14[0x9b8] = '2';
           pcVar14[0x9b9] = '\0';
@@ -1687,7 +1687,7 @@ LAB_0046f55a:
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x14 + 0x23);
         AsJoint(pcVar14)->Scale = param_7;
-        AsJoint(pcVar14)->Direction[2] = (float)(int)local_98;
+        AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98;
         iVar6 = _rand();
         *pfVar3 = 1.0;
         pcVar14[0x38] = '\0';
@@ -1734,7 +1734,7 @@ LAB_0046f55a:
         AsJoint(pcVar14)->Position[2] = *(float*)&local_88 + AsJoint(pcVar14)->Position[2];
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x168);
-        fVar24 = (float)(int)local_98;
+        fVar24 = (float)(int)(intptr_t)local_98;
         uVar23 = 0;
         pfVar22 = pfVar3;
         uVar9 = _rand();
@@ -1743,7 +1743,7 @@ LAB_0046f55a:
           uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
         }
         local_98 = (byte *)(uVar9 + 8);
-        CreateSprite(0x4cf,pfVar1,(float)(int)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
+        CreateSprite(0x4cf,pfVar1,(float)(int)(intptr_t)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
         ;
         fVar24 = *pfVar2 * _DAT_005526d8;
         *pfVar3 = 1.0;
@@ -1948,7 +1948,7 @@ LAB_0046f55a:
             *pfVar1 = *pfVar1 + AsJoint(pcVar14)->StartPosition[0];
             AsJoint(pcVar14)->Position[1] = AsJoint(pcVar14)->Position[1] + AsJoint(pcVar14)->StartPosition[1];
             AsJoint(pcVar14)->Position[2] = AsJoint(pcVar14)->StartPosition[2] + AsJoint(pcVar14)->Position[2];
-            Joint_SegmentTick((int)pcVar14,local_6c);
+            Joint_SegmentTick((intptr_t)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
           } while (iVar6 < AsJoint(pcVar14)->MaxTails);
         }
@@ -1958,10 +1958,10 @@ LAB_0046f55a:
           AsJoint(pcVar14)->Scale = param_7;
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 0x96);
-          AsJoint(pcVar14)->Direction[2] = (float)(int)local_98 * _DAT_00552594;
+          AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98 * _DAT_00552594;
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 500 + -0xfa);
-          AsJoint(pcVar14)->Direction[1] = (float)(int)local_98;
+          AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_98;
           if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
             pcVar14[0x9b8] = '2';
             pcVar14[0x9b9] = '\0';
@@ -2006,7 +2006,7 @@ LAB_0046f55a:
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 0x14 + 0x23);
           AsJoint(pcVar14)->Scale = param_7;
-          AsJoint(pcVar14)->Direction[2] = (float)(int)local_98;
+          AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98;
           iVar6 = _rand();
           *pfVar3 = 0.5;
           pcVar14[0x38] = '\0';
@@ -2101,7 +2101,7 @@ LAB_0046eb2f:
       iVar6 = iVar6 + -1;
       bVar18 = *(byte *)ppbVar15 < *pbVar26;
       bVar19 = *(byte *)ppbVar15 == *pbVar26;
-      ppbVar15 = (byte **)((int)ppbVar15 + 1);
+      ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
       pbVar26 = pbVar26 + 1;
     } while (bVar19);
     if (!bVar19) {
@@ -2132,16 +2132,16 @@ LAB_0046eb9e:
     iVar6 = 0x584;
     do {
       if (uVar9 < 0x583) {
-        *(byte *)(uVar9 + (int)puVar7) =
-             *(byte *)(uVar9 + (int)puVar7) ^ *(byte *)(uVar9 + 1 + (int)puVar7);
+        *(byte *)(uVar9 + (intptr_t)puVar7) =
+             *(byte *)(uVar9 + (intptr_t)puVar7) ^ *(byte *)(uVar9 + 1 + (intptr_t)puVar7);
       }
-      bVar5 = *(char *)(uVar9 + (int)puVar7) - 0x23;
+      bVar5 = *(char *)(uVar9 + (intptr_t)puVar7) - 0x23;
       uVar12 = uVar9 & 0x8000000f;
-      *(byte *)(uVar9 + (int)puVar7) = bVar5;
+      *(byte *)(uVar9 + (intptr_t)puVar7) = bVar5;
       if ((int)uVar12 < 0) {
         uVar12 = (uVar12 - 1 | 0xfffffff0) + 1;
       }
-      *(byte *)(uVar9 + (int)puVar7) = (PacketXorKey16[uVar12] ^ bVar5) + 0xb9;
+      *(byte *)(uVar9 + (intptr_t)puVar7) = (PacketXorKey16[uVar12] ^ bVar5) + 0xb9;
       uVar9 = uVar9 - 1;
       iVar6 = iVar6 + -1;
     } while (iVar6 != 0);
@@ -2193,7 +2193,7 @@ LAB_0046ec6d:
         iVar11 = iVar11 + -1;
         bVar18 = *(byte *)ppbVar15 < *pbVar26;
         bVar19 = *(byte *)ppbVar15 == *pbVar26;
-        ppbVar15 = (byte **)((int)ppbVar15 + 1);
+        ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
         pbVar26 = pbVar26 + 1;
       } while (bVar19);
       if (!bVar19) {
@@ -2247,7 +2247,7 @@ LAB_0046ed54:
       iVar11 = iVar11 + -1;
       bVar18 = *(byte *)ppbVar15 < *pbVar26;
       bVar19 = *(byte *)ppbVar15 == *pbVar26;
-      ppbVar15 = (byte **)((int)ppbVar15 + 1);
+      ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
       pbVar26 = pbVar26 + 1;
     } while (bVar19);
     if (!bVar19) {
@@ -2276,7 +2276,7 @@ LAB_0046edc4:
       pbVar26 = pbVar26 + 4;
     }
     uVar9 = 0;
-    iVar6 = (int)local_90 - (int)pbVar8;
+    iVar6 = (intptr_t)local_90 - (intptr_t)pbVar8;
     pbVar10 = pbVar8;
     do {
       bVar5 = *pbVar10;
@@ -2339,7 +2339,7 @@ LAB_0046e62c:
       iVar6 = iVar6 + -1;
       bVar18 = *(byte *)ppbVar15 < *pbVar26;
       bVar19 = *(byte *)ppbVar15 == *pbVar26;
-      ppbVar15 = (byte **)((int)ppbVar15 + 1);
+      ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
       pbVar26 = pbVar26 + 1;
     } while (bVar19);
     if (!bVar19) {
@@ -2356,7 +2356,7 @@ LAB_0046e62c:
       iVar6 = iVar6 + -1;
       bVar18 = *(byte *)ppbVar15 < *pbVar10;
       bVar19 = *(byte *)ppbVar15 == *pbVar10;
-      ppbVar15 = (byte **)((int)ppbVar15 + 1);
+      ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
       pbVar10 = pbVar10 + 1;
     } while (bVar19);
     if (!bVar19) {
@@ -2387,16 +2387,16 @@ LAB_0046e69b:
     iVar6 = 0x584;
     do {
       if (uVar9 < 0x583) {
-        *(byte *)(uVar9 + (int)puVar7) =
-             *(byte *)(uVar9 + (int)puVar7) ^ *(byte *)(uVar9 + 1 + (int)puVar7);
+        *(byte *)(uVar9 + (intptr_t)puVar7) =
+             *(byte *)(uVar9 + (intptr_t)puVar7) ^ *(byte *)(uVar9 + 1 + (intptr_t)puVar7);
       }
-      bVar5 = *(char *)(uVar9 + (int)puVar7) - 0x23;
+      bVar5 = *(char *)(uVar9 + (intptr_t)puVar7) - 0x23;
       uVar12 = uVar9 & 0x8000000f;
-      *(byte *)(uVar9 + (int)puVar7) = bVar5;
+      *(byte *)(uVar9 + (intptr_t)puVar7) = bVar5;
       if ((int)uVar12 < 0) {
         uVar12 = (uVar12 - 1 | 0xfffffff0) + 1;
       }
-      *(byte *)(uVar9 + (int)puVar7) = (PacketXorKey16[uVar12] ^ bVar5) + 0xb9;
+      *(byte *)(uVar9 + (intptr_t)puVar7) = (PacketXorKey16[uVar12] ^ bVar5) + 0xb9;
       uVar9 = uVar9 - 1;
       iVar6 = iVar6 + -1;
     } while (iVar6 != 0);
@@ -2458,7 +2458,7 @@ LAB_0046e76a:
         iVar11 = iVar11 + -1;
         bVar18 = *(byte *)ppbVar15 < *pbVar26;
         bVar19 = *(byte *)ppbVar15 == *pbVar26;
-        ppbVar15 = (byte **)((int)ppbVar15 + 1);
+        ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
         pbVar26 = pbVar26 + 1;
       } while (bVar19);
       if (!bVar19) {
@@ -2512,7 +2512,7 @@ LAB_0046e851:
       iVar11 = iVar11 + -1;
       bVar18 = *(byte *)ppbVar15 < *pbVar26;
       bVar19 = *(byte *)ppbVar15 == *pbVar26;
-      ppbVar15 = (byte **)((int)ppbVar15 + 1);
+      ppbVar15 = (byte **)((intptr_t)ppbVar15 + 1);
       pbVar26 = pbVar26 + 1;
     } while (bVar19);
     if (!bVar19) {
@@ -2541,7 +2541,7 @@ LAB_0046e8c1:
       pbVar26 = pbVar26 + 4;
     }
     uVar9 = 0;
-    iVar6 = (int)local_90 - (int)pbVar8;
+    iVar6 = (intptr_t)local_90 - (intptr_t)pbVar8;
     pbVar10 = pbVar8;
     do {
       bVar5 = *pbVar10;

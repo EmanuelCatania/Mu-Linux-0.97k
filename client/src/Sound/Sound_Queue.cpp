@@ -31,7 +31,7 @@ void Sprite_ReplayStep() {
         // El sprite efímero conserva su alta/azar; sólo acompaña la traslación
         // visual de su dueño conocido. No se inventa identidad entre emisiones.
         float offset[3];
-        if (RenderInterpolation_OwnerOffset((void *)*(int *)(out+0xfc),offset))
+        if (RenderInterpolation_OwnerOffset(*(void **)(out+0xfc),offset))
             for (int axis=0;axis<3;++axis) {
                 *(float *)(out+0x10+4*axis)+=offset[axis];
                 *(float *)(out+0x170+4*axis)+=offset[axis];

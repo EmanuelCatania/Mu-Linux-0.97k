@@ -164,7 +164,7 @@ void __cdecl Particle_PathUpdate(OBJECT* object, int param_2, const void* table,
 
 int __cdecl
 CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param_4,
-             int param_5, float param_6, int param_7)
+             intptr_t param_5, float param_6, int param_7)
 {
   // El pool DAT_07c85890 (1002 slots × 0x1bc) se itera por índice acotado, no
   // por la dirección absoluta del binario.
@@ -190,7 +190,7 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
     if (*pcVar2 == '\0') {
       *(unsigned short *)(pcVar2 + 2) = param_1;
       *(int *)(pcVar2 + 4) = param_7;
-      *(int *)(pcVar2 + 0xfc) = param_5;
+      *(OBJECT**)(pcVar2 + 0xfc) = (OBJECT*)param_5;
       *(float *)(pcVar2 + 0xc) = param_3;
       *(float *)(pcVar2 + 0x24) = param_6;
       *pcVar2 = '\x01';

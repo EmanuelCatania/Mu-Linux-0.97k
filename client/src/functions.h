@@ -338,9 +338,9 @@ void __cdecl Tamachan_Spawn(void);     // IDA 0.98j: sub_46C190
 void __cdecl Tamachan_Dismiss(void);   // IDA 0.98j: sub_46C250
 void  __cdecl Effect_SpawnSmokeBurst(float *, char); // IDA: FUN_004660f0
 void  __cdecl Effect_SpawnSmokeExplosion(undefined4 *, char); // IDA: FUN_004661f0
-void  __cdecl Effect_SpawnLightningBurst(int); // IDA: FUN_00460c30
-void  __cdecl Effect_SpawnProximityHit(int); // IDA: FUN_00465e60
-void  __cdecl Effect_CollisionCheck(int);                        // STUB: HashTable obfuscation — not portable
+void  __cdecl Effect_SpawnLightningBurst(intptr_t); // IDA: FUN_00460c30
+void  __cdecl Effect_SpawnProximityHit(intptr_t); // IDA: FUN_00465e60
+void  __cdecl Effect_CollisionCheck(intptr_t);                        // STUB: HashTable obfuscation — not portable
 void  __cdecl Ring_ComputeOrbit(int, float *, float);        // Ring_ComputeOrbit
 
 // ── Particle / effect system ──────────────────────────────────────────────────
@@ -352,7 +352,7 @@ void  __cdecl Particle_RenderAll(void); // IDA: FUN_0046be40
 void  __cdecl Trail_RenderAll(void); // IDA: Trail_RenderAll (0x0046C3E0)
 void  __cdecl SkillEffects_RenderAll(void); // IDA: FUN_0046cb70
 void  __cdecl WeatherParticles_Update(void); // IDA: MoveLeaves
-void* __cdecl Joint_Create(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
+void* __cdecl Joint_Create(int, float *, float *, float *, unsigned int, intptr_t, float, short, unsigned char); // IDA: CreateJoint
 // Puente de compatibilidad (nombre de IDA) sobre Joint_Create; lo usa
 // Combat/Combat_AttackEffect.cpp.
 void* __cdecl CreateJoint(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
@@ -374,7 +374,7 @@ void  __cdecl RenderParticles(void);   // IDA: RenderParticles (0x00478C00)
 void  __cdecl RenderPoints(int, int, int, int);   // IDA: RenderPoints (0x00479330)
 void  __cdecl DamageNumbers_Tick(void); // IDA: MovePoints
 void  __cdecl Effect_TickFlare(void); // IDA: MovePointers
-int   __cdecl CreateSprite(unsigned short, float *, float, float *, int, float, int); // IDA: CreateSprite (0x004795C0)
+int   __cdecl CreateSprite(unsigned short, float *, float, float *, intptr_t, float, int); // IDA: CreateSprite (0x004795C0)
 // Render_DrawSprite / Render_DrawSpritePool: implementadas en Sound/Sound_Queue.cpp;
 // CheckSprites (declarada más arriba): en Scene/Scene_CharSelect_Nav.cpp.
 void  __cdecl ItemConvert(ITEM*, int, int); // IDA: 0x0047B910
@@ -750,7 +750,7 @@ int   __cdecl Math_GetAngleFromPoints(float x1, float y1, float x2, float y2); /
 int   __cdecl Angle_Clamp(int a, int b, int c);                     // Angle_Clamp
 
 // ── Joint_Create helpers ──────────────────────────────────────────────────────
-void  __cdecl Joint_SegmentTick(int joint_ptr, float *mat);  // Joint_SegmentTick
+void  __cdecl Joint_SegmentTick(intptr_t joint_ptr, float *mat);  // Joint_SegmentTick
 // MoveHumming(Position, Angle, TargetPosition, Turn) — gira Angle hacia el
 // target y DEVUELVE la distancia (Hex-Rays la tipa `void`: el retorno va en st0).
 float __cdecl MoveHumming(float *Position, float *Angle, float *TargetPosition, float Turn);

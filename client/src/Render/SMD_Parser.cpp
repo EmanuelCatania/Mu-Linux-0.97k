@@ -341,7 +341,7 @@ void __cdecl ClearCharacters(int param_1) {
 // Effect_SpawnSmokeBurst declared in functions.h as (float*, char). Using through normal
 // linkage (no extern decl needed here).
 
-void __cdecl Effect_CollisionCheck(int Target) {
+void __cdecl Effect_CollisionCheck(intptr_t Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
     const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);  // CharacterAttribute
@@ -648,7 +648,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
 // Pushes all existing vertex segments one position forward (scroll back),
 // then computes 4 new billboard vertices (at ±half-width perpendicular offsets)
 // using Vector_Rotate and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
-void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
+void __cdecl Joint_SegmentTick(intptr_t param_1, float *param_2) {
     // Ghidra produjo `float local_18[4], local_8, local_4;` y escribía la salida
     // de Vector_Rotate en `local_18 + 3`, esperando local_18[4]==local_8 y
     // local_18[5]==local_4: se expande el array a 6 para que sea contiguo.
