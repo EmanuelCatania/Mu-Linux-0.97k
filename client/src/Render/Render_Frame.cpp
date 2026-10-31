@@ -288,7 +288,7 @@ unsigned int Game_RenderTick(void)
 //   sub_4F6050                               HUD pass (973 b, HUD_Pass3.cpp)
 //   sub_4EB070                               HUD pass (1342 b, HUD_Pass3.cpp)
 
-static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetWidth()  / 640.0); }
+static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetRealWidth() / 640.0); }
 static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.GetHeight() / 480.0); }
 
 // ── RenderBitmapUV (0x005128C0) ─────────────────────────────────────────────
@@ -313,7 +313,8 @@ static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.Ge
 static void RenderBitmapUV(int Texture, float x, float y, float Width, float Height,
                            float u, float v, float uWidth, float vHeight)
 {
-    const float x0 = ConvertX_RF(x);
+    // Las capas de pantalla cubren también los laterales del ortho desplazado.
+    const float x0 = ConvertX_RF(x) - (float)gWindow.GetUiOffsetX();
     const float y0 = (float)gWindow.GetHeight() - ConvertY_RF(y);
     const float w  = ConvertX_RF(Width);
     const float h  = ConvertY_RF(Height);
