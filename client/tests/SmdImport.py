@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Importador SMD productivo: filesystem real, conversión, bounds y animación."""
-import argparse,json,re,tempfile
+import argparse,json,re,tempfile,struct
 from pathlib import Path
 from GatePointer import PREAMBLE
 from SceneObjectPointer import ROOT,read_source,function,build_and_run
@@ -78,7 +78,7 @@ int main(){auto* table=static_cast<BYTE*>(Reserve(0x26000000u));auto* names=stat
 }
 '''
 
-def harness():
+def harness(writer=False):
     header=read_source('src/Model/ModelTypes.h')
     bmd=re.search(r'struct BMD\s*\{.*?\n\};',header,re.S).group()
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <cmath>\nusing vec3_t=float[3];\n#pragma pack(push,1)\n'+bmd+'\n#pragma pack(pop)\nBMD* AsModel(uintptr_t p){return reinterpret_cast<BMD*>(p);}\n'
@@ -89,9 +89,63 @@ def harness():
     wrapper='extern "C" bool __cdecl OpenSMDFile(const char* p,int t,char f){return OpenSMDFile(const_cast<char*>(p),t,f!=0);}\n'
     entry=read_source('src/Render/BMD_LegacyLoading.cpp')
     main=MAIN.replace('MODEL_PATH',json.dumps((ROOT/'tests/fixtures/smd/reference.smd').as_posix())).replace('ANIM_PATH',json.dumps((ROOT/'tests/fixtures/smd/walk.smd').as_posix()))
-    return prefix+SERVICES+source+runtime+wrapper+function(entry,'OpenSMDModel')+function(entry,'OpenSMDAnimation')+main
+    writer_code=''
+    if writer:
+        writer_code=r'''
+using undefined4=unsigned;
+char DAT_005597d4[]="wb";
+FILE* crt_fopen(const char* path,const void* mode){return std::fopen(path,static_cast<const char*>(mode));}
+unsigned crt_fwrite(char* data,unsigned size,unsigned count,int* file){return static_cast<unsigned>(std::fwrite(data,size,count,reinterpret_cast<FILE*>(file)));}
+void putc(int c,int* file){std::fputc(c,reinterpret_cast<FILE*>(file));}
+void crt_fclose(FILE* file){std::fclose(file);}
+'''+function(read_source('src/Render/BMD_Load.cpp'),'BMD__Save')
+        main=main.replace('Require(m.NumActions==2);\n  Require(SMDFile', 'Require(m.NumActions==2);\n  char output[32];std::sprintf(output,"roundtrip-%u.bmd",flip);char directory[]="";Require(BMD__Save(static_cast<int>(reinterpret_cast<uintptr_t>(&m)),directory,output)==1);\n  Require(SMDFile')
+    return prefix+SERVICES+source+runtime+wrapper+function(entry,'OpenSMDModel')+function(entry,'OpenSMDAnimation')+writer_code+main
+
+def check_saved(directory):
+    for flip in (0,1):
+        data=(directory/f'roundtrip-{flip}.bmd').read_bytes();cursor=0
+        def take(size):
+            nonlocal cursor
+            value=data[cursor:cursor+size];cursor+=size
+            if len(value)!=size:raise RuntimeError('BMD truncado')
+            return value
+        def unpack(fmt):return struct.unpack(fmt,take(struct.calcsize(fmt)))
+        def near(values,expected):
+            if len(values)!=len(expected) or any(abs(a-b)>1e-5 for a,b in zip(values,expected)):raise RuntimeError('Datos BMD distintos a la muestra SMD')
+        assert take(4)==b'BMD\x0a'
+        expected_name=(ROOT/'tests/fixtures/smd/reference.smd').as_posix().encode()[:31].ljust(32,b'\0')
+        assert take(32)==expected_name and unpack('<hhh')==(2,3,2)
+        for mesh in (0,1):
+            assert unpack('<hhhhh')==(3,1,3,2 if mesh==0 else 1,mesh)
+            positions=[(1,0,0),(0,1,0),(0,0,1)];bones=[0,1,1] if mesh==0 else [0,0,0]
+            order=list(reversed(range(3))) if flip else list(range(3))
+            for j in order:
+                v=unpack('<h2x3f');assert v[0]==bones[j];near(v[1:],positions[j])
+            normal=unpack('<h2x3fh2x');assert normal[0]==bones[order[0]] and normal[4]==0;near(normal[1:4],(0,0,1) if mesh==0 else (0,0,0))
+            for j in order:near(unpack('<ff'),[(0,1),(1,1),(0,0)][j])
+            for _ in range(2 if mesh==0 else 1):
+                face=take(64);assert face[0]==3 and face[36:]==bytes(28)
+                assert struct.unpack_from('<3h',face,2)==(0,1,2) and struct.unpack_from('<3h',face,10)==(0,0,0) and struct.unpack_from('<3h',face,18)==(0,1,2)
+            assert take(32).rstrip(b'\0')==[b'body_RH.tga',b'detail.tga'][mesh]
+        for lock in (1,0):
+            assert unpack('<hB')==(2,lock)
+            if lock:near(unpack('<6f'),(2,4,6,0,0,0))
+        for bone in range(3):
+            assert unpack('<B')==(1 if bone==2 else 0,)
+            if bone==2:continue
+            assert take(32).rstrip(b'\0')==[b'Root',b'Child bone'][bone]
+            assert unpack('<h')==(-1 if bone==0 else 0,)
+            for _ in range(2):
+                near(unpack('<6f'),(10,20,30,12,24,36) if bone==0 else (2,3,4,2,3,4))
+                near(unpack('<6f'),(0,0,0,0,0,1.5707963) if bone==0 else (0,0,0,0,0,0))
+        assert cursor==len(data)
+    print('SMD a BMD: dos archivos decodificados por lector independiente, caras64 y payload completos OK')
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');a=p.parse_args()
-    with tempfile.TemporaryDirectory(prefix='mu-smd-import-') as t:print(build_and_run(Path(t)/'current',harness(),a),end='')
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--writer',action='store_true');a=p.parse_args()
+    if a.writer and a.architecture!='Win32':p.error('El writer legacy sólo está habilitado en x86')
+    with tempfile.TemporaryDirectory(prefix='mu-smd-import-') as t:
+        directory=Path(t)/'current';print(build_and_run(directory,harness(a.writer),a),end='')
+        if a.writer:check_saved(directory)
 if __name__=='__main__':main()

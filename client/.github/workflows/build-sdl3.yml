@@ -151,7 +151,7 @@ jobs:
             python -B tests/CutTextPointer.py --architecture x64
             python -B tests/BmdSetupPointer.py --architecture x64
             python -B tests/BodyColorPointer.py --architecture x64
-            python -B tests/SmdImport.py --architecture Win32
+            python -B tests/SmdImport.py --architecture Win32 --writer
             python -B tests/SmdImport.py --architecture x64
             python -B tests/ClothHelperPointer.py --architecture x64
             python -B tests/LightScalePointer.py --architecture x64
