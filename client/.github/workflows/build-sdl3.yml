@@ -192,6 +192,8 @@ jobs:
             python -B tests/BMDLoaderNative.py --architecture x64
             python -B tests/MeshRenderNative.py --architecture Win32
             python -B tests/MeshRenderNative.py --architecture x64
+            python -B tests/ModelShadowEffects.py --architecture Win32
+            python -B tests/ModelShadowEffects.py --architecture x64
             python -B tests/BMDPathPointers.py --architecture x64 --native-layout
             python -B tests/SkeletonBonesPointer.py --architecture x64
             python -B tests/PoseEntityPointer.py --architecture x64
@@ -407,6 +409,7 @@ jobs:
             python3 -B tests/ModelPostLoad.py --generator Ninja
             python3 -B tests/BMDLoaderNative.py --generator Ninja
             python3 -B tests/MeshRenderNative.py --generator Ninja
+            python3 -B tests/ModelShadowEffects.py --generator Ninja
             python3 -B tests/BMDPathPointers.py --generator Ninja --native-layout
             python3 -B tests/SkeletonBonesPointer.py --generator Ninja
             python3 -B tests/PoseEntityPointer.py --generator Ninja
