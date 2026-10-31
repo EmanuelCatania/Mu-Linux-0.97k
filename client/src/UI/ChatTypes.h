@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Entity/EntityTypes.h"
 #include <cstddef>
+#include <cstdint>
 
 // IDA: CHAT, 0x254 bytes; burbujas de chat sobre los personajes, pool de 100
 // en 0x07E016F8 (DAT_07e016f8).
@@ -29,6 +30,7 @@ struct CHAT {
 };
 #pragma pack(pop)
 
+#if UINTPTR_MAX == 0xFFFFFFFFu
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
 static_assert(sizeof(CHAT) == 0x254, "CHAT");
 MU_ASSERT_FIELD(CHAT, Guild, 0x018);
@@ -41,6 +43,7 @@ MU_ASSERT_FIELD(CHAT, Owner, 0x234);
 MU_ASSERT_FIELD(CHAT, x, 0x238);
 MU_ASSERT_FIELD(CHAT, Position, 0x248);
 #undef MU_ASSERT_FIELD
+#endif
 
 inline CHAT* AsChat(uintptr_t p) { return reinterpret_cast<CHAT*>(p); }
 

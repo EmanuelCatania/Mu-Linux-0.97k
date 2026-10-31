@@ -137,6 +137,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
 #include "Party/Party.h"
@@ -495,9 +496,9 @@ LAB_FUN_004e4760_end:
         // vtable[+0x14] = slot 5 = ChatLB_tick, __fastcall (this en ECX +
         // argumento). Despacharlo como cdecl dejaría ECX con basura y ChatLB_tick
         // leería memoria random como `self[3]` (contador de list1).
-        if (DAT_055c9ff4 && *(int*)DAT_055c9ff4) {
+        if (DAT_055c9ff4 && ChatWidget_GetVTable(DAT_055c9ff4)) {
             DWORD* obj = (DWORD*)DAT_055c9ff4;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef int (__fastcall *FnTick)(DWORD*, int /*edx*/, int);
             ((FnTick)vt[5])(obj, 0, 0);
         }

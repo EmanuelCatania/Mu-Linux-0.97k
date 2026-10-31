@@ -1,6 +1,7 @@
 // Chat_Log.cpp
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
 #include "Platform/Text.h"
 #include "globals.h"
@@ -46,7 +47,7 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     // ── 1. Engine vtable dispatch (slot +0x70) ────────────────────────────────
     if (DAT_055c9ff0 && msg) {
         DWORD* obj = (DWORD*)DAT_055c9ff0;
-        void** vt = (void**)*obj;
+        void** vt = ChatWidget_GetVTable(obj);
         if (vt) {
             typedef void (__fastcall *FnAddText)(DWORD*, int /*edx*/,
                                                  const char*, const char*,

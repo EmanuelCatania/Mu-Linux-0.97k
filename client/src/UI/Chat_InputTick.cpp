@@ -24,6 +24,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
 #include "Party/Party.h"
 #include "Entity/EntityName.h"
@@ -395,7 +396,7 @@ void __cdecl Chat_InputTick(void)
                     DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
                                                       : DAT_055c9ff0);
                     if (obj && *(int*)obj) {
-                        void** vt = (void**)*obj;
+                        void** vt = ChatWidget_GetVTable(obj);
                         typedef int (__fastcall *FnScroll)(DWORD*, int, int);
                         typedef int (__fastcall *FnRows)(DWORD*, int);
                         int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
@@ -417,7 +418,7 @@ void __cdecl Chat_InputTick(void)
                     DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
                                                       : DAT_055c9ff0);
                     if (obj && *(int*)obj) {
-                        void** vt = (void**)*obj;
+                        void** vt = ChatWidget_GetVTable(obj);
                         typedef int (__fastcall *FnScroll)(DWORD*, int, int);
                         typedef int (__fastcall *FnRows)(DWORD*, int);
                         int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52

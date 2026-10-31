@@ -5,6 +5,7 @@
 // Phantom stack params (in_stack_0x28..0x91fc) are SEH/obfuscation artefacts — ignored.
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Net/Recv/NetRecv.h"
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"

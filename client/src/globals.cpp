@@ -1491,7 +1491,7 @@ int      DAT_07e11da4  = 0;
 // Pasaba en cada render del campo de login: de ahi que el cliente muriera
 // siempre en el primer frame con el panel de credenciales.
 SIZE     g_TextExtent07E113D0 = {0, 0};
-LPSIZE&  lpsz_07e113d0 = *reinterpret_cast<LPSIZE*>(&g_TextExtent07E113D0.cx);
+
 int&    _DAT_07e113d4  = *reinterpret_cast<int*>(&g_TextExtent07E113D0.cy);
 DWORD    DAT_07e11d2c  = 0;
 // Tabla de 10 punteros del buffer de composición del IME: WinMain la escribe con

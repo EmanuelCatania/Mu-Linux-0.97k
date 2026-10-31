@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
 #include "Platform/Text.h"
@@ -1352,7 +1353,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 g_bUseChatListBox = 1;
                 if (DAT_055c9ff0) {          // vtable +56 = setVisibleCnt (slot 14)
                     DWORD* cobj = (DWORD*)DAT_055c9ff0;
-                    void** cvt  = (void**)*cobj;
+                    void** cvt  = ChatWidget_GetVTable(cobj);
                     if (cvt) {
                         typedef int (__fastcall *FnSetCnt)(DWORD*, int, int);
                         ((FnSetCnt)cvt[14])(cobj, 0, chatLines);

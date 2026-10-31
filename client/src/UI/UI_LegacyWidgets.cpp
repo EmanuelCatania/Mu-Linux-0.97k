@@ -1,6 +1,7 @@
 // UI_LegacyWidgets.cpp
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Physics/ClothTypes.h"
 #include "globals.h"
 #include "functions.h"
@@ -320,13 +321,13 @@ void Game_DestroyWindow(void) {
     typedef void (__fastcall *FnDtor)(DWORD*, int /*edx*/, char);
     if (DAT_055c9ff0) {
         DWORD* obj = (DWORD*)DAT_055c9ff0;
-        void** vt  = (void**)*obj;
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt && vt[0]) ((FnDtor)vt[0])(obj, 0, 1);
         DAT_055c9ff0 = 0;
     }
     if (DAT_055c9ff4) {
         DWORD* obj = (DWORD*)DAT_055c9ff4;
-        void** vt  = (void**)*obj;
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt && vt[0]) ((FnDtor)vt[0])(obj, 0, 1);
         DAT_055c9ff4 = 0;
     }

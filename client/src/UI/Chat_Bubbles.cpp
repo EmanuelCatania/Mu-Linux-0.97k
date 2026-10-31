@@ -2,6 +2,7 @@
 // Chat_Bubbles.cpp
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"
@@ -73,9 +74,9 @@ void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
         // System message: dispatch slot 28 (vtable +0x70) = ChatLB_AddText
         // (__fastcall this + 4 args).  Previous cdecl form left ECX = junk
         // and corrupted the chat list.
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef void (__fastcall *FnAddText)(DWORD*, int /*edx*/,
                                                  const char*, const char*,
                                                  int, int);

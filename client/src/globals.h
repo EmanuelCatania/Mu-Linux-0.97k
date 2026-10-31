@@ -1433,7 +1433,7 @@ extern int     DAT_07e11da4;           // player chat entry count (max 0x77 = 11
 
 // ── Chat text-extent work variables (Chat_DrawField / Chat_DrawEntry) ─────────
 extern SIZE    g_TextExtent07E113D0;   // IDA TextSize: one contiguous cx/cy pair
-extern LPSIZE& lpsz_07e113d0;          // last GetTextExtentPointA result (cx)
+extern SIZE g_TextExtent07E113D0;     // IDA: TextSize (0x07E113D0)
 extern int&   _DAT_07e113d4;           // last GetTextExtentPointA result (cy)
 extern DWORD   DAT_07e11d2c;           // char-index/step counter (draw-field loop)
 extern char    DAT_07e11cec[10 * 4];   // 10 slots x 4 bytes; WinMain escribe con slot*4 (slot 0..9)

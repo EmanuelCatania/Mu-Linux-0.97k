@@ -30,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "UI/MoveList.h"
 #include "Net/NetText.h"
 #include "Party/Party.h"
@@ -1202,7 +1203,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
         // La lista y sus botones siguen el mismo origen que el marco.
         obj[11] = (DWORD)(StartX + 10);
         obj[12] = (DWORD)(StartY + 387);
-        void** vt  = (void**)*obj;
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
             typedef int  (__fastcall *FnInput)(DWORD*);

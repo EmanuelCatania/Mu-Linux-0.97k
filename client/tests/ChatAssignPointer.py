@@ -18,6 +18,7 @@ CHAT_TYPE
 CHAT_ACCESSORS
 static_assert(offsetof(CHAT,Text)==0x2c && offsetof(CHAT,LifeTime)==0x22c,"Campos de texto del port");
 BYTE *entry,*input,*history,*table;BYTE* DAT_055c9ff0;
+void** ChatWidget_GetVTable(void* w){DWORD v;std::memcpy(&v,w,4);return reinterpret_cast<void**>(static_cast<std::uintptr_t>(v));}
 unsigned profile,splitCalls,dispatches;
 BYTE beforeEntry[768];
 namespace TextEngine{
