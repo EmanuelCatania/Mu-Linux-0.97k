@@ -288,7 +288,7 @@ unsigned int Game_RenderTick(void)
 //   sub_4F6050                               HUD pass (973 b, HUD_Pass3.cpp)
 //   sub_4EB070                               HUD pass (1342 b, HUD_Pass3.cpp)
 
-static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetWidth()  / 640.0); }
+static inline float ConvertX_RF(float x) { return x * (float)((double)gWindow.GetRealWidth() / 640.0); }
 static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.GetHeight() / 480.0); }
 
 // ── RenderBitmapUV (0x005128C0) ─────────────────────────────────────────────
@@ -313,7 +313,8 @@ static inline float ConvertY_RF(float y) { return y * (float)((double)gWindow.Ge
 static void RenderBitmapUV(int Texture, float x, float y, float Width, float Height,
                            float u, float v, float uWidth, float vHeight)
 {
-    const float x0 = ConvertX_RF(x);
+    // Las capas de pantalla cubren también los laterales del ortho desplazado.
+    const float x0 = ConvertX_RF(x) - (float)gWindow.GetUiOffsetX();
     const float y0 = (float)gWindow.GetHeight() - ConvertY_RF(y);
     const float w  = ConvertX_RF(Width);
     const float h  = ConvertY_RF(Height);
@@ -345,8 +346,10 @@ void Render_GameFrame(void)
 
         // El original usa `RenderBitmapUV` (0x5128C0), que mapea un cuadrilatero
         // SESGADO en V (el arrastre de la arena), no `RenderBitmap` (0x5125A0).
-        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, 435.0f, scrollA, 0.0f, 0.30000001f, 0.30000001f);
-        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, 435.0f, scrollB, 0.0f, 3.0f, 2.0f);
+        // En pantalla ancha el HUD no tapa los extremos inferiores: incluirlos.
+        const float overlayHeight = gWindow.IsWide() ? 480.0f : 435.0f;
+        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, overlayHeight, scrollA, 0.0f, 0.30000001f, 0.30000001f);
+        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, overlayHeight, scrollB, 0.0f, 3.0f, 2.0f);
     }
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
