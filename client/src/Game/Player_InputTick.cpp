@@ -645,7 +645,7 @@ void __cdecl Player_ProcessInput(void)
         && SelectedCharacter != -1
         && MouseRButtonPush != '\0')
     {
-        unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * 0x394);
+        unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE);
         const unsigned char *nameSrc = (const unsigned char*)EntityName::Get(hoverEntity);
 
         // Copy name into password buffer
@@ -818,7 +818,7 @@ void __cdecl Player_ProcessInput(void)
         if (ent && AsCharacter(ent)->MovementType == 3 && AsCharacter(ent)->PathNum == 0) {
             int targetIdx = (int)DAT_00559ce8;
             if (targetIdx >= 0 && targetIdx < 400) {
-                unsigned char *tgt = (unsigned char*)(DAT_07abf5d0 + (uintptr_t)targetIdx * 0x394);
+                unsigned char *tgt = (unsigned char*)(DAT_07abf5d0 + (uintptr_t)targetIdx * CHARACTER_STRIDE);
                 if (AsCharacter(tgt)->Object.Live != 0 && AsCharacter(tgt)->SafeZone == 0) {
                     int hxg = (int)AsCharacter(ent)->PositionX;
                     int hyg = (int)AsCharacter(ent)->PositionY;
@@ -1233,7 +1233,7 @@ void __cdecl Player_ProcessInput(void)
                         goto end_tick_inc;
                     }
                     BYTE* hoverEnt = (BYTE*)(uintptr_t)DAT_07abf5d0
-                                   + (uintptr_t)SelectedCharacter * 0x394;
+                                   + (uintptr_t)SelectedCharacter * CHARACTER_STRIDE;
                     // Muerto = +0x2FD (IDA ReceiveDie:18). No usar +0x2EC (state flag que el
                     // server también pone en 0 en ReceiveAction) ni +0x34E (es SafeZone: dejaría
                     // sin targetear a todo NPC del pueblo).
@@ -1246,7 +1246,7 @@ void __cdecl Player_ProcessInput(void)
                         DAT_00559c70 = -1;
                         goto end_tick_inc;
                     }
-                    int tgtEntityBase = (int)(DAT_07abf5d0 + SelectedCharacter * 0x394);
+                    int tgtEntityBase = (int)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE);
                     int dstX = AsCharacter(tgtEntityBase)->PositionX;
                     int dstY = AsCharacter(tgtEntityBase)->PositionY;
 
@@ -1434,7 +1434,7 @@ void __cdecl Player_ProcessInput(void)
                 if (DAT_07eaa118 == '\0' && DAT_07eaa119 == '\0') {
                     AsCharacter(ent)->MovementType = 2;
                     DAT_00559ce8 = SelectedNpc;
-                    int tgtBase = (int)(DAT_07abf5d0 + SelectedNpc * 0x394);
+                    int tgtBase = (int)(DAT_07abf5d0 + SelectedNpc * CHARACTER_STRIDE);
                     DAT_07db8708  = (int)AsCharacter(tgtBase)->Object.Type;
                     _DAT_07e118e4 = *(DWORD *)&AsCharacter(tgtBase)->Object.Angle[2];
                     DAT_00559c70  = SelectedNpc;

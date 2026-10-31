@@ -3400,7 +3400,7 @@ void __cdecl MoveCharacter(int p1)
         AsCharacter(c)->SkillStage = 0;
         AsObject(o)->PKKey = -1;
         if (AsCharacter(c) == AsCharacter(Hero) && SelectedCharacter != -1) {
-            DWORD selSlot = (DWORD)(916 * SelectedCharacter + (int)CharactersClient);
+            DWORD selSlot = (DWORD)(CHARACTER_STRIDE * SelectedCharacter + (int)CharactersClient);
             // Guild-war target lock (skipped guild-mark strcmp — same guild = no target)
             if (EnableGuildWar
                 && AsCharacter(selSlot)->PK >= 6u
@@ -3579,7 +3579,7 @@ void __cdecl MoveCharacter(int p1)
         else
         {
             // Targeted skill — Owner = CharactersClient[c+784]
-            v390 = (DWORD)(916 * (AsCharacter(c)->TargetCharacter) + (int)CharactersClient);
+            v390 = (DWORD)(CHARACTER_STRIDE * (AsCharacter(c)->TargetCharacter) + (int)CharactersClient);
             Owner = v390;
 
             if (v328 == 3 || v328 == 7) {

@@ -371,7 +371,7 @@ int Game_SceneUpdate(void)
     // setea entity[+0x105], pero no animan).
     {
         for (int s = 0; s < 8; ++s) {
-            int e = (int)(uintptr_t)DAT_07abf5d0 + s * 0x394;
+            int e = (int)(uintptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
             if (*(char*)e != '\0') {
                 MoveCharacterVisual(e);            // model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108]
@@ -398,7 +398,7 @@ int Game_SceneUpdate(void)
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 115);
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 111);
 
-        std::uintptr_t e1 = DAT_07abf5d0 + 0x394;  // entity 1
+        std::uintptr_t e1 = DAT_07abf5d0 + CHARACTER_STRIDE;  // entity 1
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 101);
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e1), 111);
     }

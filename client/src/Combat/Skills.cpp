@@ -103,8 +103,8 @@ extern BYTE* g_CharData;     // DAT_07cf1ffc
 
 // g_EntityBase is never wired to the actual entity array — the real
 // base lives in DAT_07abf5d0 (set by WinMain).
-#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
-#define STRIDE       0x394
+#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * CHARACTER_STRIDE)
+#define STRIDE       CHARACTER_STRIDE
 
 // ============================================================
 // PacketHandler_0x19  @ 0x0042bca0

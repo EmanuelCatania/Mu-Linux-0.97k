@@ -54,10 +54,10 @@ bool Near(const RenderFxView &view, int offset) {
 void ApplyFx() {
     struct Source { void *base; int stride; };
     const Source sources[]={
-        {DAT_07b11670,0x1bc},{DAT_07b27150,0x9d8},{DAT_07abf5f0,0x70},
-        {DAT_07c5ab3c,0x70},{g_WeatherSlotPool,0x1bc},{DAT_083a1218,0x1bc},
-        {DAT_083a2e90,0x1bc},{g_RenderPool_07c608a8,0x2f0},
-        {g_PlayerRenderPool,0x1bc},{g_PointerPool,0x70}
+        {DAT_07b11670,OBJECT_STRIDE},{DAT_07b27150,0x9d8},{DAT_07abf5f0,0x70},
+        {DAT_07c5ab3c,0x70},{g_WeatherSlotPool,OBJECT_STRIDE},{DAT_083a1218,OBJECT_STRIDE},
+        {DAT_083a2e90,OBJECT_STRIDE},{g_RenderPool_07c608a8,0x2f0},
+        {g_PlayerRenderPool,OBJECT_STRIDE},{g_PointerPool,0x70}
     };
     static_assert(sizeof(sources)/sizeof(sources[0])==(int)RenderFxPool::Count,"Pools interpolados");
     for (int domain=0;domain<(int)RenderFxPool::Count;++domain) {

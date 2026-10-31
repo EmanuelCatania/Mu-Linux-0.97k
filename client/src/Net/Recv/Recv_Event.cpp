@@ -170,7 +170,7 @@ void NetRecv_9B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             if (itemOwner != -1 && itemLevel != 0xFF && itemLevel != 0) {
                 const int idx = Character_FindByKey_WithClear(itemOwner & 0x7FFF);
                 if (DAT_07abf5d0 && idx >= 0 && idx < 400) {
-                    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * idx;
+                    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + CHARACTER_STRIDE * idx;
                     *(BYTE*)(c + 744) = itemLevel;
                 }
             } else if (itemOwner == -1 || itemLevel == 0) {
@@ -227,5 +227,5 @@ void NetRecv_0B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         else        Tamachan_Dismiss();
     }
     for (int i = 0; i < 40; ++i)
-        g_WeatherSlotPool[i * 0x1bc] = 0;
+        g_WeatherSlotPool[i * OBJECT_STRIDE] = 0;
 }

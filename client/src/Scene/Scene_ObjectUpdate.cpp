@@ -939,7 +939,7 @@ void __stdcall MoveBugs(void) {
 
     }
 next_bug:
-        v0 += 111;                              // +0x1BC bytes
+        v0 += OBJECT_STRIDE / 4;                              // +0x1BC bytes
     }
 }
 

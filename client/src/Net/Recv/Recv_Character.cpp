@@ -155,7 +155,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
     // DESVIACION (DLL Reconnect.cpp): durante la reconexión se entra directo
     // con el mismo personaje, sin pasar por char-select.
     if (gReconnect.OnCharacterList()) return;
-    const int CHAR_STRIDE  = 0x394;
+    const int CHAR_STRIDE  = CHARACTER_STRIDE;
     const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
     const int MAX_PREVIEW  = 5;            // slots renderizados en char-select
 
@@ -462,7 +462,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         // Full memset del pool para garantizar todos los bytes limpios.
         // 400 slots × 0x394 = ~366 KB. CreateCharacterPointer + viewport spawn
         // packets repopulan los campos relevantes después.
-        memset((void*)(uintptr_t)DAT_07abf5d0, 0, 400 * 0x394);
+        memset((void*)(uintptr_t)DAT_07abf5d0, 0, 400 * CHARACTER_STRIDE);
         // Reset hero pointer too — el siguiente CreateCharacterPointer setea uno nuevo.
         DAT_07abf5d8 = nullptr;
     }
@@ -492,7 +492,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // (4-5) Random hero slot + spawn at packet position.
     HeroIndex = (DWORD)(_rand() % 400);
     unsigned int heroIndex = HeroIndex;
-    unsigned char* heroPtr = (unsigned char*)(uintptr_t)DAT_07abf5d0 + (heroIndex * 0x394);
+    unsigned char* heroPtr = (unsigned char*)(uintptr_t)DAT_07abf5d0 + (heroIndex * CHARACTER_STRIDE);
     float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
@@ -670,7 +670,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     // (3) Desactiva las 400 entidades del pool (el server reenvía el viewport).
     for (int i = 0; i < 400; ++i)
-        *((BYTE*)(uintptr_t)DAT_07abf5d0 + i * 0x394) = 0;
+        *((BYTE*)(uintptr_t)DAT_07abf5d0 + i * CHARACTER_STRIDE) = 0;
 
     // (4) Se preservan dos campos del héroe viejo antes de re-crearlo:
     //     +474 (WORD) y +746 (BYTE, skill/curse slot que llega en el F3/03).
@@ -683,7 +683,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     // (5) Re-crea al héroe EN EL MISMO SLOT (HeroIndex no cambia).
     unsigned char* heroPtr =
-        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (HeroIndex * 0x394);
+        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (HeroIndex * CHARACTER_STRIDE);
     const float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
@@ -1017,7 +1017,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             const int pkKey = Msg[5] + (Msg[4] << 8);
             const int pkIdx = FindCharacterIndex(pkKey);
             if (pkIdx < 0 || pkIdx >= 400) break;
-            BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * 0x394;
+            BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * CHARACTER_STRIDE;
             const BYTE pkLevel = Msg[6];
             AsCharacter(pkEnt)->PK            = pkLevel;
             AsCharacter(pkEnt)->Level = (WORD)(pkLevel >= 6);

@@ -67,7 +67,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
 
     if (*requestedName != '\0' && DAT_07abf5d0) {
         char* candidate = (char*)(uintptr_t)DAT_07abf5d0;
-        for (int i = 0; i < 400; ++i, candidate += 916) {
+        for (int i = 0; i < 400; ++i, candidate += CHARACTER_STRIDE) {
             if (candidate[0] && *(short*)(candidate + 2) == 390 &&
                 candidate[132] == 1 &&
                 Platform::TextCompareIgnoreCase(EntityName::Get(candidate), requestedName) == 0) {
@@ -76,7 +76,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
             }
         }
     } else if (SelectedCharacter >= 0 && SelectedCharacter < 400 && DAT_07abf5d0) {
-        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * 916;
+        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE;
         if (candidate[0] && *(short*)(candidate + 2) == 390 && candidate[132] == 1)
             entity = candidate;
     }
@@ -145,14 +145,14 @@ static bool Chat_TrySendPartyRequest(const char* text)
 
     char* target = nullptr;
     if (SelectedCharacter >= 0 && SelectedCharacter < 400) {
-        char* candidate = entities + SelectedCharacter * 916;
+        char* candidate = entities + SelectedCharacter * CHARACTER_STRIDE;
         if (IsPlayerTarget(candidate) && IsAdjacent(candidate))
             target = candidate;
     } else {
         const int heroDirection = ((int)((*(float*)(hero + 36) + 22.5f) *
                                          0.022222223f + 1.0f)) & 7;
         for (int i = 0; i < 400; ++i) {
-            char* candidate = entities + i * 916;
+            char* candidate = entities + i * CHARACTER_STRIDE;
             if (!IsPlayerTarget(candidate) || !IsAdjacent(candidate))
                 continue;
 
@@ -176,7 +176,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
         char message[300] = {};
-        sprintf(message, GlobalText[476], EntityName::Get(entities + targetIndex * 916));
+        sprintf(message, GlobalText[476], EntityName::Get(entities + targetIndex * CHARACTER_STRIDE));
         UIChatLogWindow_AddText(nullptr, message, 1);
     }
     return true;

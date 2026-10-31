@@ -245,7 +245,7 @@ void __cdecl DeleteBug(DWORD Owner) {
                 *(BYTE*)Butterflies = 0;
             }
         }
-        Butterflies += 111;
+        Butterflies += OBJECT_STRIDE / 4;
     }
 }
 
@@ -265,8 +265,8 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
         // pool es DAT_083a1218: 10 slots de 0x1BC.
         char *pcVar5 = DAT_083a1218;
         while (*pcVar5 != '\0') {
-            pcVar5 += 0x1bc;
-            if (pcVar5 >= DAT_083a1218 + 10 * 0x1bc) return;
+            pcVar5 += OBJECT_STRIDE;
+            if (pcVar5 >= DAT_083a1218 + 10 * OBJECT_STRIDE) return;
         }
         RenderFxSnapshots_New(pcVar5);
         *(DWORD *)&AsObject(pcVar5)->SubType   = param_4;

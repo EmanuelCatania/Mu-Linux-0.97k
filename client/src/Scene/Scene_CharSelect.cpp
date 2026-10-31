@@ -272,7 +272,7 @@ int Scene_CharSelect(void)
             if (now - s_lastDiag > 1000) {
                 s_lastDiag = now;
                 for (int s = 0; s < 5; ++s) {
-                    BYTE* e = (BYTE*)(DAT_07abf5d0 + s * 0x394);
+                    BYTE* e = (BYTE*)(DAT_07abf5d0 + s * CHARACTER_STRIDE);
                 }
             }
         }
@@ -287,14 +287,14 @@ int Scene_CharSelect(void)
         Entity_RenderAll_3D();
 
         // Orbital particles for selected char
-        if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
+        if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE] != '\0')) {
             GL_SetBlendAdditive();   // Frame_UpdateTimer
             uVar12  = (unsigned int)(*(float*)&WorldTime);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
-            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000,  local_70, 0, 0.0f);
-            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0f);
         }
 
@@ -348,7 +348,7 @@ int Scene_CharSelect(void)
                     fStack_54 = posBuf[2];
                     {
                         static DWORD s_lastNI[5] = {0};
-                        int slotIdx = iVar9 / 0x394;
+                        int slotIdx = iVar9 / CHARACTER_STRIDE;
                         DWORD now2 = Platform::GetTimer().Ticks();
                         if (slotIdx >= 0 && slotIdx < 5 && now2 - s_lastNI[slotIdx] > 1000) {
                             s_lastNI[slotIdx] = now2;
@@ -363,7 +363,7 @@ int Scene_CharSelect(void)
                     Camera_ProjectWorldToScreen(posBuf, &local_6c, &nameProjY);
                     {
                         static DWORD s_lastNO[5] = {0};
-                        int slotIdx2 = iVar9 / 0x394;
+                        int slotIdx2 = iVar9 / CHARACTER_STRIDE;
                         DWORD now3 = Platform::GetTimer().Ticks();
                         if (slotIdx2 >= 0 && slotIdx2 < 5 && now3 - s_lastNO[slotIdx2] > 1000) {
                             s_lastNO[slotIdx2] = now3;
@@ -423,7 +423,7 @@ int Scene_CharSelect(void)
                                  nameProjY, aCStack_50, (LPSIZE)0x0, '\0', 0);
                     pcVar5 = (char*)DAT_07abf5d0;
                 }
-                iVar9 += 0x394;
+                iVar9 += CHARACTER_STRIDE;
             } while (iVar9 < 0x11e4);
         }
 
@@ -474,7 +474,7 @@ int Scene_CharSelect(void)
             do {
                 if ((*pcVar5 != '\0') && (0xdb < *(ushort *)(pcVar5 + 0x1be)))
                     uVar8 = 3;
-                pcVar5 += 0x394;
+                pcVar5 += CHARACTER_STRIDE;
             } while (--iVar4 != 0);
 
             local_6c = DAT_005616a4;
@@ -602,7 +602,7 @@ int Scene_CharSelect(void)
             pcVar5 = (char*)DAT_07abf5d0;
             do {
                 if (*pcVar5 == '\0') bVar10 = true;
-                pcVar5 += 0x394;
+                pcVar5 += CHARACTER_STRIDE;
             } while (--iVar9 != 0);
 
             // Create button brightness

@@ -67,7 +67,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
         return 0;                                     // IDA L38-41
 
     BYTE* const caster = (BYTE*)(uintptr_t)character;
-    BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + 916 * (int)SelectedCharacter;
+    BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * (int)SelectedCharacter;
     // IDA L44-49: sub_483780 es duenio del cast encolado; a diferencia del camino
     // de rango generico de Attack limpia el flag pendiente antes de anotar el slot.
     DAT_07d78098 = 0;                                 // IDA: dword_7D78098 = 0

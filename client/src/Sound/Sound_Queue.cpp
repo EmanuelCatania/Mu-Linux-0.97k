@@ -17,17 +17,17 @@ char simulationSprites[sizeof(DAT_07c85890)] = {};
 // Su consumo por el render no borra la muestra para los renders sin paso.
 void Sprite_CaptureStep() {
     memcpy(simulationSprites, DAT_07c85890, sizeof(simulationSprites));
-    for (int i = 0; i < 1002; ++i) DAT_07c85890[i * 0x1bc] = 0;
+    for (int i = 0; i < 1002; ++i) DAT_07c85890[i * OBJECT_STRIDE] = 0;
 }
 void Sprite_ReplayStep() {
     int destination = 0;
     for (int i = 0; i < 1002; ++i) {
-        const char *sample = simulationSprites + i * 0x1bc;
+        const char *sample = simulationSprites + i * OBJECT_STRIDE;
         if (!sample[0]) continue;
-        while (destination < 1002 && DAT_07c85890[destination * 0x1bc]) ++destination;
+        while (destination < 1002 && DAT_07c85890[destination * OBJECT_STRIDE]) ++destination;
         if (destination == 1002) break;
         char *out=DAT_07c85890+destination++*0x1bc;
-        memcpy(out,sample,0x1bc);
+        memcpy(out,sample,OBJECT_STRIDE);
         // El sprite efímero conserva su alta/azar; sólo acompaña la traslación
         // visual de su dueño conocido. No se inventa identidad entre emisiones.
         float offset[3];
@@ -50,7 +50,7 @@ void Sprite_ReplayStep() {
 void __cdecl Render_DrawSpritePool(void)
 {
     char *pcVar2 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar2 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar2 += OBJECT_STRIDE) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
             if      (blend == 0) GL_SetBlendAdditive();

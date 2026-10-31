@@ -110,8 +110,8 @@ void __cdecl AmbientParticles_Update(void)
     // - Active range (slots 0..2) = primeros 3 × 0x1bc = 0x534 bytes desde base
     // - Total range (slots 0..9) = 10 × 0x1bc = 0x1158 bytes desde base
     const uintptr_t arrBase   = (uintptr_t)DAT_083a2f78;
-    const uintptr_t arrActive = arrBase + 3 * 0x1bc;     // hasta slot 2 inclusive
-    const uintptr_t arrEnd    = arrBase + 10 * 0x1bc;    // hasta slot 9 inclusive
+    const uintptr_t arrActive = arrBase + 3 * OBJECT_STRIDE;     // hasta slot 2 inclusive
+    const uintptr_t arrEnd    = arrBase + 10 * OBJECT_STRIDE;    // hasta slot 9 inclusive
 
     do {
         // ── Is this slot forced active (game state 7/8) or within range? ──────

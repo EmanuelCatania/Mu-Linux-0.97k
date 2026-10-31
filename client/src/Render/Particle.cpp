@@ -186,7 +186,7 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
   }
   const int kPoolSlots = 1002;
   char *pcVar2 = DAT_07c85890;
-  for (int iVar1 = 0; iVar1 < kPoolSlots; ++iVar1, pcVar2 += 0x1bc) {
+  for (int iVar1 = 0; iVar1 < kPoolSlots; ++iVar1, pcVar2 += OBJECT_STRIDE) {
     if (*pcVar2 == '\0') {
       *(unsigned short *)(pcVar2 + 2) = param_1;
       *(int *)(pcVar2 + 4) = param_7;

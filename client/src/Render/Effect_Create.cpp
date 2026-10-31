@@ -4154,7 +4154,7 @@ LAB_00465388:
 void __cdecl Tamachan_Clear(void)
 {
   for (int i = 0; i < 200; ++i) {
-    char *o = &DAT_07b11670[i * 0x1bc];
+    char *o = &DAT_07b11670[i * OBJECT_STRIDE];
     if (*o && *(short *)(o + 2) == 0xc1) {
       *o = 0;
       *(int *)(o + 96) = -1;
@@ -4188,7 +4188,7 @@ void __cdecl Tamachan_Spawn(void)
 void __cdecl Tamachan_Dismiss(void)
 {
   for (int i = 0; i < 200; ++i) {
-    char *o = &DAT_07b11670[i * 0x1bc];
+    char *o = &DAT_07b11670[i * OBJECT_STRIDE];
     if (*o && *(short *)(o + 2) == 0xc1) {
       *(int *)(o + 96) = 10;
       o[260] = 3;

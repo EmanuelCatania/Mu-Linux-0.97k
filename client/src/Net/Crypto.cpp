@@ -1352,7 +1352,7 @@ void __cdecl InitGuildWar(void) {
             if ((sVar1 != -1) && (*(short*)((char*)puVar3 - 0x10f) == sVar1))
                 *puVar3 = 1;
         }
-        puVar3 += 0x394;
+        puVar3 += CHARACTER_STRIDE;
         iVar4--;
     } while (iVar4 != 0);
 }

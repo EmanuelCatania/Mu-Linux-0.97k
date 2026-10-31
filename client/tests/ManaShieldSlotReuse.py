@@ -15,6 +15,7 @@ def function(source,name):
     return source[match.start():end]
 code=r'''
 #include <cstdint>
+constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394;
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

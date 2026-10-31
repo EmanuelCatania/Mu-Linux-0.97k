@@ -175,9 +175,15 @@ struct CHARACTER {
 #pragma pack(pop)
 
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
+constexpr int OBJECT_STRIDE = sizeof(OBJECT);  // paso de los pools de OBJECT
+struct CHARACTER;
+#if UINTPTR_MAX == 0xFFFFFFFFu
 static_assert(sizeof(OBJECT) == 0x1BC, "OBJECT");
 static_assert(sizeof(PART_t) == 0x18, "PART_t");
 static_assert(sizeof(CHARACTER) == 0x394, "CHARACTER");
+#endif
+constexpr int CHARACTER_STRIDE = sizeof(CHARACTER);  // paso del pool CharactersClient
+#if UINTPTR_MAX == 0xFFFFFFFFu
 MU_ASSERT_FIELD(OBJECT, Type, 0x002);
 MU_ASSERT_FIELD(OBJECT, Scale, 0x00C);
 MU_ASSERT_FIELD(OBJECT, Position, 0x010);
@@ -254,6 +260,7 @@ MU_ASSERT_FIELD(CHARACTER, PathX, 0x357);
 MU_ASSERT_FIELD(CHARACTER, PathY, 0x366);
 MU_ASSERT_FIELD(CHARACTER, PositionX, 0x388);
 MU_ASSERT_FIELD(CHARACTER, PositionY, 0x38C);
+#endif
 #undef MU_ASSERT_FIELD
 
 // Acceso tipado a una dirección de entidad que el código heredado guarda

@@ -983,7 +983,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
 
     // Magic class bonus (class 1=DW, 3=MG): if both slots in [0,192)
-    int classL3 = *(BYTE*)((char*)Hero + 0x1BC) & 7;
+    int classL3 = *(BYTE*)&((CHARACTER*)Hero)->Class & 7;
     bool dualBonus = false;
     if (classL3 == 1 || classL3 == 3) {
         if (typeR >= 0 && typeR < 192 && typeL >= 0 && typeL < 192) {

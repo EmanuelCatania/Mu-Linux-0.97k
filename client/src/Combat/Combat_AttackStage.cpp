@@ -350,7 +350,7 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
             BMD_TransformPosition((void*)model, (float*)(*(DWORD *)&AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, p, 1);
             const float r=AsObject(o)->Angle[2]*0.017453292f, d=(float)(stage-8)*10.0f+100.0f; p[0]+=sinf(r)*d; p[1]-=cosf(r)*d;
             CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
-            const short target=AsCharacter(c)->TargetCharacter; if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target*916; if(*v) v[404]=35; }
+            const short target=AsCharacter(c)->TargetCharacter; if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target* CHARACTER_STRIDE; if(*v) v[404]=35; }
         }
     } else if (skill == 47) {
         if(stage==10) PlayBuffer(95,0,0);

@@ -371,7 +371,7 @@ int __cdecl Character_FindByKey_WithClear(int a1)
 
   v1 = 0;
   result = 400;
-  for ( i = 0; i < 366400; i += 916 )
+  for ( i = 0; i < 366400; i += CHARACTER_STRIDE )
   {
     if ( *(BYTE *)(i + CharactersClient) )
     {
@@ -397,7 +397,7 @@ void __cdecl Characters_SetActionAll(int Action)
   std::uintptr_t v2; // eax
   std::uintptr_t v3; // [esp-8h] [ebp-14h]
 
-  for ( i = 0; i < 366400; i += 916 )
+  for ( i = 0; i < 366400; i += CHARACTER_STRIDE )
   {
     v2 = i + CharactersClient;
     if ( *(BYTE *)(i + CharactersClient) )
@@ -424,7 +424,7 @@ void Characters_FreeAllBMDBuffers()
   int i; // edi
   LPVOID *v1; // esi
 
-  for ( i = 0; i < 366400; i += 916 )
+  for ( i = 0; i < 366400; i += CHARACTER_STRIDE )
   {
     v1 = (LPVOID *)(i + CharactersClient + 276);
     if ( *v1 )
@@ -1886,7 +1886,7 @@ label_26:
 int __cdecl FindCharacterIndex(int param_1)
 {
     char *pcVar2 = (char*)(uintptr_t)DAT_07abf5d0;
-    for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += 0x394) {
+    for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += CHARACTER_STRIDE) {
         if (*pcVar2 != '\0' && *(short*)&((CHARACTER*)(uintptr_t)(pcVar2))->Key == (short)param_1)
             return iVar1;
     }
@@ -1909,7 +1909,7 @@ int __cdecl FindCharacterIndex(int param_1)
 void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
-    DWORD c = DAT_07abf5d0 + 916 * Key;
+    DWORD c = DAT_07abf5d0 + CHARACTER_STRIDE * Key;
     if (*(WORD *)&AsCharacter(c)->Object.Type != 390) return;
     // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
     // el ala custom (más abajo).
@@ -2108,7 +2108,7 @@ void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float para
 void CheckSprites(void)
 {
     char *pcVar1 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar1 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
         if (*pcVar1 != '\0')
             pcVar1[0x160] = '\x01';
     }

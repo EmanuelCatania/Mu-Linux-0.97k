@@ -86,7 +86,7 @@ static void Warrior_CollectMultiTargets(const float* centre, float radius,
     const float radiusSquared = radius * radius;
     BYTE* characters = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int index = 0; index < 400 && *count < maximum; ++index) {
-        BYTE* candidate = characters + index * 0x394;
+        BYTE* candidate = characters + index * CHARACTER_STRIDE;
         if (!AsCharacter(candidate)->Object.Live || !AsCharacter(candidate)->Object.Visible || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || AsCharacter(candidate)->Dead)
             continue;
 
@@ -203,7 +203,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // Native code indexes CharactersClient directly at 0x4859A9.  Attack and
     // Action establish this index before entering this helper; adding a local
     // rejection here changes the original tail (state + C1:11 confirmation).
-    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * 0x394; // IDA: v285 source
+    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * CHARACTER_STRIDE; // IDA: v285 source
     AsCharacter(c)->TargetPosition[0] = *(float*)(targetEntity + 0x10); // TargetPosition.x
     AsCharacter(c)->TargetPosition[1] = *(float*)(targetEntity + 0x14); // TargetPosition.y
     AsCharacter(c)->TargetPosition[2] = *(float*)(targetEntity + 0x18); // TargetPosition.z
@@ -414,7 +414,7 @@ LAB_00445110:
     if (*(float*)&((OBJECT*)(uintptr_t)(puVar3))->AnimationFrame == *(float*)&DAT_00552580) {
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
-            if ((puVar3[0x1bc] & 7) == 2)
+            if ((((CHARACTER*)puVar3)->Class & 7) == 2)
                 PlayBuffer(0x50, AsObject(entity_idx), 0);
             else
                 PlayBuffer(0x4e, AsObject(entity_idx), 0);

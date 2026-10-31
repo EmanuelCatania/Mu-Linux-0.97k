@@ -79,7 +79,7 @@ struct ItemExtraData
 
 // Piezas puestas: por entidad, modelo lógico -> modelo propio.
 constexpr int MAX_ENTITY = 400;
-constexpr int ENTITY_STRIDE = 0x394;
+constexpr int ENTITY_STRIDE = CHARACTER_STRIDE;
 constexpr int ENTITY_PARTS = 9;
 struct EntityPart { short Logic; short Own; };
 EntityPart s_EntityParts[MAX_ENTITY][ENTITY_PARTS];

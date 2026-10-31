@@ -510,7 +510,7 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
             CreateCharacterPointer((unsigned char*)c, Type, PosX, PosY, Rotation);
             return AsCharacter(c);
         }
-        c += 916;
+        c += CHARACTER_STRIDE;
     }
     // search again for an inactive slot
     int v7 = 0;
@@ -520,7 +520,7 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
             // all slots occupied — return sentinel slot at end (matches IDA)
             return AsCharacter(DAT_07abf5d0 + 366400);
         }
-        i += 916;
+        i += CHARACTER_STRIDE;
     }
     // La limpieza recibe la identidad nativa; los pools se migran por separado.
     DeleteCloth(AsCharacter(i), AsObject(i), nullptr);  // DeleteCloth

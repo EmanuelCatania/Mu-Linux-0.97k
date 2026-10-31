@@ -26,7 +26,7 @@ void __cdecl Party_MatchEntityNames(void)
     if (!entity)
         return;
 
-    for (int entityIndex = 0; entityIndex < 400; ++entityIndex, entity += 0x394) {
+    for (int entityIndex = 0; entityIndex < 400; ++entityIndex, entity += CHARACTER_STRIDE) {
         if (AsObject(entity)->Type != 390 || *(char *)&AsObject(entity)->Kind != 1 || !*(char *)&AsObject(entity)->Live ||
             !*(char *)&AsObject(entity)->Visible || AsObject(entity)->Alpha <= 0.0f || entity[765]) {
             continue;

@@ -8,7 +8,7 @@
 class EntityView {
 public:
     static constexpr int Capacity = 400;
-    static constexpr int Stride = 0x394;
+    static constexpr int Stride = CHARACTER_STRIDE;
     static constexpr BYTE PlayerKind = 1;
     static constexpr BYTE MonsterKind = 2;
     static constexpr BYTE SoccerBall = 200;

@@ -105,7 +105,7 @@ extern DWORD g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
 
 // g_EntityBase nunca apunta al array de entidades: la base real es DAT_07abf5d0
 // (la setea WinMain), y ENTITY la usa directo.
-#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
+#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * CHARACTER_STRIDE)
 
 
 // ============================================================
@@ -392,7 +392,7 @@ static void LegacyMisclassified_TradeRequestResult(BYTE* pkt)
         g_active_shop_name[0] = 0;
 
         BYTE* ent = g_EntityBase + 0x2e9;
-        for (int i = 400; i > 0; i--, ent += 0x394)
+        for (int i = 400; i > 0; i--, ent += CHARACTER_STRIDE)
         {
             if (ent[-0x2e9] != 0)  // entity is active
             {
@@ -478,7 +478,7 @@ static void LegacyMisclassified_TradeOpen(BYTE* pkt)
 
     // Update trade flags for all active entities
     BYTE* ent = g_EntityBase + 0x2e9;
-    for (int i = 400; i > 0; i--, ent += 0x394)
+    for (int i = 400; i > 0; i--, ent += CHARACTER_STRIDE)
     {
         if (ent[-0x2e9] != 0)
         {
@@ -545,7 +545,7 @@ static void LegacyMisclassified_TradeItemUpdate(BYTE* pkt)
     // Reset trade flags for all active entities
     BYTE* ent_ptr = (BYTE*)g_EntityBase;
     BYTE* local = (BYTE*)g_LocalEntity;
-    for (int off = 0; off < 0x394 * 400; off += 0x394)
+    for (int off = 0; off < CHARACTER_STRIDE * 400; off += CHARACTER_STRIDE)
     {
         BYTE* ent = ent_ptr + off;
         if (*ent != 0)

@@ -394,7 +394,7 @@ void __cdecl UI_InGameMenu(void)
             pkt[2] = 0xF3;
             pkt[3] = 0x02;
             if (hero >= 0 && DAT_07abf5d0) {
-                const char* name = EntityName::Get(DAT_07abf5d0 + hero * 0x394);
+                const char* name = EntityName::Get(DAT_07abf5d0 + hero * CHARACTER_STRIDE);
                 NetText::ToServer(pkt + 4, NAME, name);
             }
             NetText::ToServer(pkt + 4 + NAME, 10, (const char*)DAT_07db8710);   // InputText[0]

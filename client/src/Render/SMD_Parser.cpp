@@ -282,7 +282,7 @@ void __cdecl ClearCharacters(int param_1) {
     gChaosMixRates.Reset();
     GoldenArcher_ResetCharacter();
     char* butterflesEnd = DAT_083a1218 + 0x1158;
-    for (int i = 0; i < 0x59740; i += 0x394) {
+    for (int i = 0; i < 0x59740; i += CHARACTER_STRIDE) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
         // El slot puede reutilizarse antes de que MoveJoint observe Live=0.
         // Cancela el Mana Shield del ocupante anterior, incluso si ya fue borrado.
@@ -301,7 +301,7 @@ void __cdecl ClearCharacters(int param_1) {
             do {
                 if (*pcVar2 != '\0' && *(void**)(pcVar2 + 0xfc) == puVar1)
                     *pcVar2 = '\0';
-                pcVar2 += 0x1bc;
+                pcVar2 += OBJECT_STRIDE;
             } while (pcVar2 < butterflesEnd);
         }
         DeleteCloth(AsCharacter(puVar1), AsObject(puVar1), nullptr);
@@ -415,7 +415,7 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
         // ── Path B: AOE — scan all entities within 100 units ──────────────
         int owner = *(int*)(T + 252);
         char* charBase = (char*)(uintptr_t)DAT_07abf5d0;  // CharactersClient
-        const int kEntStride = 916;
+        const int kEntStride = CHARACTER_STRIDE;
         char* found = nullptr;
         for (int idx = 0; idx < 400; ++idx) {
             char* ent = charBase + idx * kEntStride;
@@ -562,7 +562,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     int count = 0;
     short nearbyIds[5] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
-    for (int i = 0; i < 400 && count < 5; i++, pcEnt += 0x394) {
+    for (int i = 0; i < 400 && count < 5; i++, pcEnt += CHARACTER_STRIDE) {
         if (*(char *)&AsCharacter(pcEnt)->Object.Live == '\0') continue;                    // IDA: *(v16 - 747)
         if (*(char *)&AsCharacter(pcEnt)->Object.Visible == '\0') continue;                // IDA: *(v16 - 395)
         if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
@@ -830,7 +830,7 @@ unsigned int __cdecl CheckAttack(void) {
         return 0;
     }
 
-    BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * SelectedCharacter;
+    BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + CHARACTER_STRIDE * SelectedCharacter;
     const BYTE kind = AsCharacter(target)->Object.Kind;
     if (kind == 2) {
         return 1;

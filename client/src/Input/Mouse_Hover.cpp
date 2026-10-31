@@ -90,8 +90,8 @@ void Mouse_UpdateHoverTargets(void)
         SelectedCharacter = -1;
         Attacking = -1;
     } else if (SelectedCharacter >= 0 &&
-               *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * 0x394) == '\0' &&
-               *(char *)(DAT_07abf5d0 + SelectedCharacter * 0x394 + 0x84) == '\x02') {
+               *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * CHARACTER_STRIDE) == '\0' &&
+               *(char *)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE + 0x84) == '\x02') {
         // Current hover target is a valid alive monster.
         // Keep the original transient hover state.  Leaving this selected
         // after the cursor moves away turns later ground clicks into a basic
@@ -346,7 +346,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 
     // Pass 1: set highlight flags and color tints for visible entities
     byte *pbVar4 = (byte *)(DAT_07abf5d0 + 0x84);
-    for (int loop1 = 400; loop1 != 0; loop1--, pbVar4 += 0x394) {
+    for (int loop1 = 400; loop1 != 0; loop1--, pbVar4 += CHARACTER_STRIDE) {
         if (((*pbVar4 & param_1) == *pbVar4) && (pbVar4[-0x84] != 0) && (pbVar4[0xdc] != 0) &&
             (_DAT_00552580 < *(float *)(pbVar4 + 0xe4))) {
             pbVar4[0x58] = 1;
@@ -375,7 +375,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     static DWORD s_lastFilt[5] = {0,0,0,0,0};
     bool diagFilt = (SceneFlag == 4);
 
-    for (int ofs = 0; ofs < 0x59740; ofs += 0x394, ent_idx++) {
+    for (int ofs = 0; ofs < 0x59740; ofs += CHARACTER_STRIDE, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
         if (diagFilt && ent_idx < 5) {
             DWORD now = Platform::GetTimer().Ticks();

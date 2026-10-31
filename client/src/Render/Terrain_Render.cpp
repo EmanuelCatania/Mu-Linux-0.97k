@@ -127,7 +127,7 @@ static void Terrain_ProcessObjects(bool simulation)
                 unsigned short vis = TestFrustrum2D(ex, ey, ez);
                 entity[0x160] = (char)vis;
             }
-            iVar += 0x394;
+            iVar += CHARACTER_STRIDE;
         } while (iVar < 0x59740);
     }
 }

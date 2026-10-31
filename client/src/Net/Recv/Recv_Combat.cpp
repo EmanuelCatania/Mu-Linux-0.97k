@@ -174,7 +174,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         tgtSlot = (BYTE*)DAT_07abf5d8;
     } else {
         for (int s = 0; s < 400; ++s) {
-            BYTE* sp = basePtr + s * 0x394;
+            BYTE* sp = basePtr + s * CHARACTER_STRIDE;
             if (sp[0] && *(WORD*)(sp + 0x1dc) == targetId) {
                 tgtSlot = sp; break;
             }
@@ -234,7 +234,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         (*(DWORD*)(tgtSlot + 120) & 0x100) == 0x100 &&
         basePtr && AttackPlayer >= 0 && AttackPlayer < 400)
     {
-        const float* cm = (const float*)(basePtr + 916 * AttackPlayer);
+        const float* cm = (const float*)(basePtr + CHARACTER_STRIDE * AttackPlayer);
         const float fAngle = CreateAngle(cm[4], cm[5],
                                           *(float*)(tgtSlot + 16),
                                           *(float*)(tgtSlot + 20));
@@ -368,7 +368,7 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* slot = nullptr;
     int slotIdx = -1;
     for (int s = 0; s < 400; ++s) {
-        BYTE* sp = basePtr + s * 0x394;
+        BYTE* sp = basePtr + s * CHARACTER_STRIDE;
         if (sp[0] && *(WORD*)(sp + 0x1dc) == entityKey) {
             slot = sp; slotIdx = s; break;
         }
@@ -469,7 +469,7 @@ void NetRecv_07(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (!entityBase) return;
     bool foundEntity = false;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
-        BYTE* entity = entityBase + slotIndex * 0x394;
+        BYTE* entity = entityBase + slotIndex * CHARACTER_STRIDE;
         // FindCharacterIndex (0045AC80) requires an active slot.
         if (!entity[0] || *(WORD*)(entity + 476) != entityKey) continue;
 
@@ -518,7 +518,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* caster = nullptr;
     BYTE* entityBase = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
-        BYTE* candidate = entityBase + slotIndex * 0x394;
+        BYTE* candidate = entityBase + slotIndex * CHARACTER_STRIDE;
         if (*(WORD*)(candidate + 476) == casterKey) {
             caster = candidate;
             break;
@@ -589,7 +589,7 @@ void NetRecv_1B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const WORD casterKey = (WORD)((Msg[4] << 8) | Msg[5]);
     BYTE* entityBase = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
-        BYTE* caster = entityBase + slotIndex * 0x394;
+        BYTE* caster = entityBase + slotIndex * CHARACTER_STRIDE;
         if (caster[0] && *(WORD*)(caster + 476) == casterKey) {
             // La misma limpieza que ReceiveEffectState(state=0): apenas
             // clearing +120 leaves Mana Shield's joint 266 (and
@@ -642,7 +642,7 @@ void NetRecv_16(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         float color[3] = { 1.0f, 0.6f, 0.0f };   // naranja
         if (index >= 0 && index < 400 && DAT_07abf5d0) {
-            BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
+            BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + CHARACTER_STRIDE * index;
             if (key & 0xFFFF8000) {
                 extern void __cdecl SetPlayerDie(CHARACTER* c_in);   // SetPlayerDie
                 SetPlayerDie(AsCharacter(c));
@@ -686,7 +686,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         entity = (BYTE*)DAT_07abf5d8;
     } else if (basePtr) {
         for (int slot = 0; slot < 400; ++slot) {
-            BYTE* candidate = basePtr + slot * 0x394;
+            BYTE* candidate = basePtr + slot * CHARACTER_STRIDE;
             if (candidate[0] && *(WORD*)(candidate + 0x1DC) == entityId) {
                 entity = candidate;
                 break;
@@ -746,7 +746,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         }
     }
 
-    const int entitySlot = basePtr ? (int)((entity - basePtr) / 0x394) : -1;
+    const int entitySlot = basePtr ? (int)((entity - basePtr) / CHARACTER_STRIDE) : -1;
     NetLog("NET:  → 0x17 Die id=%d slot=%d fall=%d",
            entityId, entitySlot, entity[405]);
 }
@@ -797,7 +797,7 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         float color[3] = { 1.0f, 0.6f, 0.0f };   // naranja
         if (index >= 0 && index < 400 && DAT_07abf5d0) {
-            BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
+            BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + CHARACTER_STRIDE * index;
             if (key & 0xFFFF8000) {
                 // Murio un PLAYER (PvP): anim de muerte, sin EXP.
                 extern void __cdecl SetPlayerDie(CHARACTER* c_in);
@@ -844,7 +844,7 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
     BYTE* caster = nullptr;
     for (int s = 0; s < 400; ++s) {
-        BYTE* sp = basePtr + s * 0x394;
+        BYTE* sp = basePtr + s * CHARACTER_STRIDE;
         if (sp[0] && *(WORD*)(sp + 0x1dc) == casterId) {
             caster = sp; break;
         }
@@ -868,7 +868,7 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 tgt = (BYTE*)DAT_07abf5d8;
             } else {
                 for (int s = 0; s < 400; ++s) {
-                    BYTE* sp = basePtr + s * 0x394;
+                    BYTE* sp = basePtr + s * CHARACTER_STRIDE;
                     if (sp[0] && *(WORD*)(sp + 0x1dc) == tgtId) {
                         tgt = sp; break;
                     }

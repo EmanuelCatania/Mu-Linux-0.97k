@@ -920,7 +920,7 @@ static int Combat_SkillTargetIndex97k(void)
     if (!CheckAttack())                                  // CheckAttack()
         return -1;
     return (int)*(short*)((char*)(uintptr_t)CharactersClient
-                          + 916 * (int)SelectedCharacter + 0x1DC);
+                          + CHARACTER_STRIDE * (int)SelectedCharacter + 0x1DC);
 }
 
 // ── IDA L1781-2158: LABEL_240 (rama Elf de skills bajos / >36 no-52) ──────────
@@ -930,7 +930,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
     const int range = Combat_GetSkillRange97k(iType);         // IDA L1810
     if (Attack_OutOfRange97k(entity, range)) {                // IDA L1813
         if (SelectedCharacter != -1 &&
-            *((BYTE*)(uintptr_t)CharactersClient + 916 * (int)SelectedCharacter + 132) == 1) {
+            *((BYTE*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * (int)SelectedCharacter + 132) == 1) {
             if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                (int)TargetX, (int)TargetY,
                                (unsigned char*)(entity + 852), (float)range)) {
@@ -945,7 +945,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
                          (int)TargetX, (int)TargetY)
         && SelectedCharacter != -1) {
         BYTE* const target = (BYTE*)(uintptr_t)CharactersClient +
-                             916 * (int)SelectedCharacter;    // IDA: CharactersClient[SelectedCharacter]
+                             CHARACTER_STRIDE * (int)SelectedCharacter;    // IDA: CharactersClient[SelectedCharacter]
         if (target[132] == 1 && iType >= 26 && iType <= 28) { // IDA L1864
             Combat_UseElfSkill((int)(uintptr_t)entity, (int)(uintptr_t)entity);
             return AF_RETURN;                                 // IDA L1867
@@ -1165,7 +1165,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
 {
     if (SelectedCharacter != -1) {
         BYTE* const target = (BYTE*)(uintptr_t)CharactersClient +
-                             916 * (int)SelectedCharacter;    // IDA: v541
+                             CHARACTER_STRIDE * (int)SelectedCharacter;    // IDA: v541
         if (target[132] != 1) {                               // IDA L7109
             Attacking = -1;                                // IDA L7111: Attacking = -1
             return;
@@ -1200,7 +1200,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         }
         // IDA L7264-7506: C1:06:19 con la key del objetivo, y despues LABEL_1157.
         const WORD targetKey = *(WORD*)((BYTE*)(uintptr_t)CharactersClient +
-                                        916 * (int)MovementSkillTarget + 476);
+                                        CHARACTER_STRIDE * (int)MovementSkillTarget + 476);
         Attack_SendSkill19_97k(iType, targetKey);
     } else {
         // IDA L7508-7754: sin objetivo el skill se lanza sobre uno mismo.
@@ -1325,7 +1325,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
     }
 
     if (iType == 15 && SelectedCharacter != -1) {             // IDA L9737
-        char* const target = (char*)(uintptr_t)CharactersClient + 916 * (int)SelectedCharacter;
+        char* const target = (char*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * (int)SelectedCharacter;
         if (PartyNumber <= 0 || DAT_07e91388 > 0) {   // IDA L9740
             return;
             }
@@ -1691,7 +1691,7 @@ static void Combat_SendPartyRecall97k(char* entity, int targetIdx,
                                       BYTE destinationX, BYTE destinationY)
 {
     if (!entity || targetIdx < 0) return;
-    DWORD selOff = 916 * targetIdx;
+    DWORD selOff = CHARACTER_STRIDE * targetIdx;
     unsigned short tgtKey = *(unsigned short*)(CharactersClient + selOff + 476);
     unsigned char pkt[7];
     pkt[0] = 0xC1;
@@ -1859,7 +1859,7 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     gNetwork.SendC1(movement, sizeof(movement));
 
     const BYTE skillId = attributes[(BYTE)DAT_07d7809c + 87];
-    BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + 916 * targetIndex;
+    BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * targetIndex;
     *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[0] = *(float*)(target + 16);
     *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[1] = *(float*)(target + 20);
     *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[2] = *(float*)(target + 24);
@@ -2010,7 +2010,7 @@ void __cdecl Action(DWORD c, DWORD o)
         const int npcSlotIdx = (int)DAT_00559c70;            // IDA: SelectedNpc
         if (npcSlotIdx < 0 || npcSlotIdx >= 400 || !DAT_07abf5d0)
             return;                                          // IDA L818-820
-        char* const npcEnt = (char*)(uintptr_t)DAT_07abf5d0 + npcSlotIdx * 0x394;
+        char* const npcEnt = (char*)(uintptr_t)DAT_07abf5d0 + npcSlotIdx * CHARACTER_STRIDE;
 
         // IDA L822-825: solo se le habla a los tipos >= 230 de Monster.txt.  Es
         // el rango de los NPC (el ultimo monstruo real queda por debajo).
@@ -2101,7 +2101,7 @@ void __cdecl Action(DWORD c, DWORD o)
 
         // Compute distance hero — target. Target world pos cached in
         // CharactersClient[targetIdx] @ +16/+20 (floats, cm).
-        char* pCharsClient = ACTION_CHARS_CLIENT + 916 * targetIdx;
+        char* pCharsClient = ACTION_CHARS_CLIENT + CHARACTER_STRIDE * targetIdx;
         float tgtWX = *(float*)(pCharsClient + 16);
         float tgtWY = *(float*)(pCharsClient + 20);
 
@@ -2407,7 +2407,7 @@ void __cdecl Action(DWORD c, DWORD o)
         if (skillTarget < 0) {
             return;
         }
-        char* pTgt = ACTION_CHARS_CLIENT + 916 * skillTarget;
+        char* pTgt = ACTION_CHARS_CLIENT + CHARACTER_STRIDE * skillTarget;
         if (*(unsigned char*)&((CHARACTER*)(uintptr_t)(pTgt))->Dead != 0) {
             return;
         }

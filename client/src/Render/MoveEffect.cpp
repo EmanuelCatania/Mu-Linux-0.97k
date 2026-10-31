@@ -79,13 +79,13 @@ static bool IsEffectOwner(const void* owner)
     if (allocation && characters >= allocation &&
         characters - allocation < 0x80u * 0x394u &&
         (characters - allocation) % 0x394u == 0 &&
-        SceneObjects::IsSlot(owner, (void*)characters, 0x59740, 0x394)) return true;
+        SceneObjects::IsSlot(owner, (void*)characters, 400 * CHARACTER_STRIDE, CHARACTER_STRIDE)) return true;
     return SceneObjects::Contains(owner) ||
-        SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), 0x1bc) ||
-        SceneObjects::IsSlot(owner, g_PlayerRenderPool, sizeof(g_PlayerRenderPool), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc);
+        SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, g_PlayerRenderPool, sizeof(g_PlayerRenderPool), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), OBJECT_STRIDE);
 }
 
 // IDA: MoveEffect (0x00466AD0), desvanecimiento 247/248/250/251.
@@ -1076,7 +1076,7 @@ LAB_00469772:
                 }
                 SetAction(AsObject(pcVar11),uVar8);
               }
-              iVar9 = iVar9 + 0x394;
+              iVar9 = iVar9 + CHARACTER_STRIDE;
             } while (iVar9 < 0x59740);
             fVar17 = (float10)local_344;
             goto LAB_004698ca;

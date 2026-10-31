@@ -613,7 +613,7 @@ int main(int, char**)
 
     // Array de entidades — CRÍTICO, todo lo accede
     DAT_055c9e48 = reinterpret_cast<std::uintptr_t>(malloc(0x764d4));
-    DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * 0x394;
+    DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * CHARACTER_STRIDE;
     memset((void*)DAT_07abf5d0, 0, 0x166b5 * 4);
 
     // CharacterMachine / HashTable

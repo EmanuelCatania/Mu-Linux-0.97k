@@ -90,7 +90,7 @@ void __cdecl MoveHead(CHARACTER* character) {
         // con `v7 = *(_WORD *)(a1 + 784)` = el indice de la entidad objetivo.
         // 916 = 0x394 es el stride del array de entidades.
         LookAtTarget(&character->Object,
-                     AsCharacter(CharactersClient + 916 * (int)character->TargetCharacter));
+                     AsCharacter(CharactersClient + CHARACTER_STRIDE * (int)character->TargetCharacter));
         return;
     }
     else {

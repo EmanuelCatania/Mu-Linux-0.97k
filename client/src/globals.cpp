@@ -744,7 +744,7 @@ DWORD    DAT_07c74ae4  = 0;    // BGM track 1 enable flag
 // g_PlayerRenderPool cubre los 100 slots completos (cabecera de 0xEC bytes
 // incluida) y DAT_07c74f54 es un alias dentro del array en el offset 0xEC
 // (= anchor v1 del slot 0).
-char     g_PlayerRenderPool[100 * 0x1BC] = {};
+char     g_PlayerRenderPool[100 * OBJECT_STRIDE] = {};
 DWORD*   DAT_07c74f54 = (DWORD*)(g_PlayerRenderPool + 0xEC);
 
 // ── g_CharData XOR block ───────────────────────────────────────────────────────
@@ -1249,7 +1249,7 @@ DamagePoint DAT_07c80110[kDamagePointCount] = {};
 // Character/effect update pool — 1002 slots × 444 bytes = 0x6c660 (matches
 // binario original 0x07c85890..0x07cf1ef0). CreateSprite (Effect_Spawn) necesita
 // el pool real para spawnear (glow +9, wing FX, weapon glows, lightning crackles).
-char     DAT_07c85890[1002 * 0x1bc] = {0};
+char     DAT_07c85890[1002 * OBJECT_STRIDE] = {0};
 // DAT_07c85894 = mismo pool, offset +4 (Sound_Queue.cpp / Sigil_RenderAll).
 // Lo dejamos como referencia al int en pool[4..7] para compartir storage.
 int&     DAT_07c85894 = *reinterpret_cast<int*>(&DAT_07c85890[4]);
@@ -1361,7 +1361,7 @@ DWORD    MouseRButtonPush  = 0;
 char     DAT_083a2370[0x960]  = {};   // 200 x 0xc (0x083A2370..0x083A2CD0)
 // Pool de boids (fish/butterfly/bird flocking) @ 0x083a2e90.
 // Particle_PathUpdate itera 10 entries × stride 0x1bc = 0x1180 bytes.
-char     DAT_083a2e90[10 * 0x1bc] = {};
+char     DAT_083a2e90[10 * OBJECT_STRIDE] = {};
 // DAT_083a2378 es ahora un alias dentro de DAT_083a2370 (ver globals.h).
 
 // Server select + char menu new globals
@@ -1742,7 +1742,7 @@ float   _DAT_00552d00 = 0.001f;        // SLERP near-parallel epsilon
 float   _DAT_00552a1c = 1.0f;
 // ── Effect pool ───────────────────────────────────────────────────────────────
 // Effect pool — Effect_TickAll itera 200 slots × 0x1bc bytes.
-char    DAT_07b11670[200 * 0x1bc] = {};   // 200 slots: (0x07B27150-0x07B11670)/0x1bc (IDA bound unk_7B27178 = poolEnd+40)
+char    DAT_07b11670[200 * OBJECT_STRIDE] = {};   // 200 slots: (0x07B27150-0x07B11670)/0x1bc (IDA bound unk_7B27178 = poolEnd+40)
 // ── Monster_Data string literals ─────────────────────────────────────────────
 char    s_Data2_MonsterSetBase2_txt_00561530[] = "Data2/MonsterSetBase2.txt";
 char    s_Data2_Monster__0055e06c[] = "Data2/Monster/";
@@ -1906,7 +1906,7 @@ float   _DAT_0055298c = -50.0f;
 // ── Weather particle pool (40 × 0x1bc = 0x4560 bytes) ────────────────────────
 // Backing buffer único: Weather_Update recorre los slots 1..39 con stride 0x1bc.
 // Ver globals.h para los macros de field accessors.
-alignas(16) char g_WeatherSlotPool[40 * 0x1bc] = {0};
+alignas(16) char g_WeatherSlotPool[40 * OBJECT_STRIDE] = {0};
 // ── Weather float constants ───────────────────────────────────────────────────
 float   _DAT_0055285c = 200.0f;
 float   _DAT_0055286c = 360.0f;

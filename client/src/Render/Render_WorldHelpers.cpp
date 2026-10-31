@@ -168,7 +168,7 @@ void __cdecl RenderBoids(void)
             v0[-81] = v0[-81] - 90.0f;
         }
     next_iter:
-        v0 += 111;
+        v0 += OBJECT_STRIDE / 4;
     }
 }
 
@@ -708,7 +708,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
 
     if (npc != -1) {
         // IDA LABEL_6: charla del NPC (gana aunque haya un item debajo).
-        char* ent = base + npc * 0x394;
+        char* ent = base + npc * CHARACTER_STRIDE;
         if (ent[0] != 0) {
             const char* name = EntityName::Get(ent);
             if (name[0]) CreateChat((char*)name, (char*)"", AsCharacter(ent), 0, -1);
@@ -718,7 +718,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     } else if (Attacking != -1) {                  // IDA LABEL_8: Attacking != -1
         drawHoveredItem();                             //   -> LABEL_37
     } else {
-        char* ent = base + chr * 0x394;
+        char* ent = base + chr * CHARACTER_STRIDE;
         const char* name = EntityName::Get(ent);
         if (ent[0] != 0 && name[0]) {
             const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
@@ -789,7 +789,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
 {
     char* base = (char*)&DAT_083a2e90[0];
     for (int i = 0; i < 10; ++i) {
-        char* slot = base + i * 0x1BC;
+        char* slot = base + i * OBJECT_STRIDE;
         // Increment rotation +90 (per IDA, applied unconditionally).
         *(float*)(slot + 36) += 90.0f;
 
@@ -943,7 +943,7 @@ void __cdecl EffectPool_RenderAll(void)
     float* v0 = HeadAngle;
     const int kMaxEntries = 200;
 
-    for (int i = 0; i < kMaxEntries; ++i, v0 += 111) {
+    for (int i = 0; i < kMaxEntries; ++i, v0 += OBJECT_STRIDE / 4) {
         if (!*((BYTE*)v0 - 40)) continue;
 
         // Frustum cull radio 400 con pos offset (v0-6 = world pos)
@@ -1170,7 +1170,7 @@ void Fauna_TickSprites() {
     if (!DAT_05828d58) return;
     if (SceneFlag == 5) {
         for (int i = 0; i < 40; ++i) {
-            int entity = (int)(g_WeatherSlotPool + i * 0x1bc);
+            int entity = (int)(g_WeatherSlotPool + i * OBJECT_STRIDE);
             OBJECT &o = *AsObject(entity);
             if (!o.Live) continue;
             o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);
@@ -1194,7 +1194,7 @@ void Fauna_TickSprites() {
     }
     if (SceneFlag != 2 && SceneFlag != 4 && SceneFlag != 5) return;
     for (int i = 0; i < 10; ++i) {
-        int entity = (int)((char *)DAT_083a1218 + i * 0x1bc);
+        int entity = (int)((char *)DAT_083a1218 + i * OBJECT_STRIDE);
         OBJECT &o = *AsObject(entity);
         if (!o.Live) continue;
         o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);
@@ -1209,7 +1209,7 @@ void EffectPool_TickRenderState() {
     if (SceneFlag != 4 && SceneFlag != 5) return;
     if (gUserSettings.GetAntilag(ANTILAG_SKILLS) || !DAT_05828d58) return;
     for (int i = 0; i < 200; ++i) {
-        OBJECT &o = *(OBJECT *)((char *)DAT_07b11670 + i * 0x1bc);
+        OBJECT &o = *(OBJECT *)((char *)DAT_07b11670 + i * OBJECT_STRIDE);
         if (!o.Live) continue;
         o.Visible = (BYTE)Frustum_TestSphere(o.Position, 400.0f);
         if (!o.Visible) continue;

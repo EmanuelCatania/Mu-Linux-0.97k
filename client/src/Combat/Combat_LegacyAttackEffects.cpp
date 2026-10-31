@@ -183,7 +183,7 @@ void __cdecl AttackEffect(int entity)
         break;
     case 70:
         if (frame == 5 && AsCharacter(entity)->TargetCharacter >= 0 && AsCharacter(entity)->TargetCharacter < 400) {
-            BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + AsCharacter(entity)->TargetCharacter * 916;
+            BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + AsCharacter(entity)->TargetCharacter * CHARACTER_STRIDE;
             for (int n = 0; n < 20; ++n) CreateEffect(1271, (float*)(targetTop + 16), (float*)(targetTop + 28), whiteTop, 0, 0, (float*)-1, 0, 0);
         }
         break;
@@ -244,7 +244,7 @@ void __cdecl AttackEffect(int entity)
     const short targetSlot = AsCharacter(entity)->TargetCharacter;
     if (targetSlot < 0 || targetSlot >= 400 || !CharactersClient) return;
 
-    BYTE* target = (BYTE*)(uintptr_t)CharactersClient + targetSlot * 916;
+    BYTE* target = (BYTE*)(uintptr_t)CharactersClient + targetSlot * CHARACTER_STRIDE;
     const int modelType = AsCharacter(entity)->Object.Type;
     if (modelType < 0 || !DAT_05828d58 || !*(DWORD *)&AsCharacter(entity)->Object.BoneMatrices) return;
 

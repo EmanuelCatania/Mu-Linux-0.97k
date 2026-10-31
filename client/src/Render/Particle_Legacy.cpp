@@ -14,7 +14,7 @@
 // Itera por índice acotado (1002 slots).
 void __cdecl Character_UpdateAll(void) {
     char *pcVar2 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar2 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar2 += OBJECT_STRIDE) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
             if      (blend == 0) GL_SetBlendAdditive();
@@ -30,7 +30,7 @@ void __cdecl Character_UpdateAll(void) {
 // Itera por índice acotado (1002 slots).
 void __cdecl Effect_UpdateAll(void) {
     char *pcVar1 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar1 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
         if (*pcVar1 != '\0')
             pcVar1[0x160] = '\x01';
     }

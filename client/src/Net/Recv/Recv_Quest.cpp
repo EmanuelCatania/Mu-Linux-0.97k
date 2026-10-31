@@ -85,7 +85,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     if (idx < 0 || idx >= 400) return;
     if (DAT_07abf5d0 == 0) return;
 
-    BYTE *c    = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 916;
+    BYTE *c    = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE;
     BYTE *hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
     BYTE *attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     // Clase codificada igual que en la lista de personajes:

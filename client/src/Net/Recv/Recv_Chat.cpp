@@ -30,7 +30,7 @@ void NetRecv_01(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     NetText::FromServer(cmsg, sizeof(cmsg), Msg + 5, clen);
     NetLog("NET:  → 0x01 ChatTarget ent=%d msg='%s'", entIdx, cmsg);
     if (entIdx >= 0 && entIdx < 400 && cmsg[0]) {
-        BYTE* ent = (BYTE*)(uintptr_t)DAT_07abf5d0 + (uintptr_t)entIdx * 0x394;
+        BYTE* ent = (BYTE*)(uintptr_t)DAT_07abf5d0 + (uintptr_t)entIdx * CHARACTER_STRIDE;
         if (ent[0] != 0) {
             // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
             // path de NPC hover (RenderMonsterName).

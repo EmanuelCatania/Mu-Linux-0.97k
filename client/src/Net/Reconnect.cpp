@@ -72,7 +72,7 @@ bool CReconnect::OnConnectionLost()
     // El héroe se conserva hasta que el F3/03 lo recree (el render lo usa).
     const BYTE* base = (const BYTE*)(uintptr_t)CharactersClient;
     for (int i = 0; base && i < 400; ++i) {
-        const BYTE* c = base + i * 916;
+        const BYTE* c = base + i * CHARACTER_STRIDE;
         if (c[0] && (uintptr_t)c != (uintptr_t)Hero) DeleteCharacter(*(const WORD*)&((CHARACTER*)(uintptr_t)(c))->Key);
     }
     PartyNumber = 0;

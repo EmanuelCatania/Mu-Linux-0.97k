@@ -1,4 +1,5 @@
 #pragma once
+#include "Entity/EntityTypes.h"
 #include "Render/DamagePointTypes.h"
 #include "Item/ItemDefines.h"
 #include "Scene/SceneObjectCell.h"
@@ -650,7 +651,7 @@ extern DWORD   DAT_07c74aec;   // rain position counter (0..2000)
 // El walker v1 de Player_Render arranca en DAT_07c74f54 y lee offsets NEGATIVOS
 // hasta -0xEC. El pool REAL es g_PlayerRenderPool[100 × 0x1BC] cubriendo todos
 // los slots; DAT_07c74f54 es un alias a offset +0xEC (donde v1 vive en cada slot).
-extern char    g_PlayerRenderPool[100 * 0x1BC];
+extern char    g_PlayerRenderPool[100 * OBJECT_STRIDE];
 extern DWORD*  DAT_07c74f54;   // = g_PlayerRenderPool + 0xEC (v1 anchor)
 
 // ── g_CharData XOR-encoded block (0x07cfxxxx) ─────────────────────────────────
@@ -942,7 +943,7 @@ extern DWORD   DAT_0839be18;
 // ── Scene / state machine vars (0x083a0xxx – 0x083bxxxx) ─────────────────────
 extern char    DAT_083a2370[0x960];   // Entity render-state pool (stride 0xc, 128 slots, 0x960 bytes)
 #define DAT_083a2cd0 DAT_083a2370[0x960-1]  // end-marker alias
-extern char    DAT_083a2e90[10 * 0x1bc];   // Boids pool: 10 entries × 0x1bc bytes
+extern char    DAT_083a2e90[10 * OBJECT_STRIDE];   // Boids pool: 10 entries × 0x1bc bytes
 // `Operates` de IDA = 0x083A2378 = DAT_083a2370 + 8, o sea el campo [2] (puntero
 // al objeto) de la ENTRADA 0 de la lista de objetos interactuables.  Los
 // consumidores lo indexan `Operates[3 * SelectedOperate]`, que salta de entrada
@@ -1210,7 +1211,7 @@ extern float  _DAT_00552954;   // sin animation frequency constant
 extern DamagePoint DAT_07c80110[kDamagePointCount];   // active-flag at +0; slot stride 0x70
 
 // ── Character/effect update pool (0x07c85890, stride 0x1BC, 1002 slots) ──────
-extern char    DAT_07c85890[1002 * 0x1bc];  // pool array (was 1 byte → AUTO-SKIP)
+extern char    DAT_07c85890[1002 * OBJECT_STRIDE];  // pool array (was 1 byte → AUTO-SKIP)
 extern int&    DAT_07c85894;   // alias = pool[+4] (Sound_Queue / Sigil_RenderAll)
 
 // ── Math / animation constants ────────────────────────────────────────────────
@@ -1722,7 +1723,7 @@ extern float   _DAT_00552cf8;  // π/2 (used in SLERP degenerate case)
 extern float   _DAT_00552d00;  // SLERP near-parallel threshold (~1e-3)
 extern float   _DAT_00552a1c;  // animation speed multiplier
 // ── Effect pool ──────────────────────────────────────────────────────────────
-extern char    DAT_07b11670[200 * 0x1bc];   // Effect pool: 200 × 0x1bc (IDA: 0x07B11670..0x07B27150)
+extern char    DAT_07b11670[200 * OBJECT_STRIDE];   // Effect pool: 200 × 0x1bc (IDA: 0x07B11670..0x07B27150)
 // ── Monster_Data string literals ─────────────────────────────────────────────
 extern char    s_Data2_MonsterSetBase2_txt_00561530[];
 extern char    s_Data2_Monster__0055e06c[];  // "Data2/Monster/"
@@ -1884,7 +1885,7 @@ extern float   _DAT_0055298c;
 // Los 30+ globals DAT_0839bc?? son macros que indexan dentro de un único buffer
 // contiguo: Weather_Update y Particle_PathUpdate los acceden con stride 0x1bc
 // (slot stride) o 0x6f (int stride = 0x1bc/4).
-extern char    g_WeatherSlotPool[40 * 0x1bc];
+extern char    g_WeatherSlotPool[40 * OBJECT_STRIDE];
 #define DAT_0839bcb0  g_WeatherSlotPool[0x000]                              // slot[0] active flag (char)
 #define DAT_0839bcb2  (*(short        *)&g_WeatherSlotPool[0x002])          // slot[0] type (short, stride 0xde × short)
 #define DAT_0839bcb4  g_WeatherSlotPool[0x004]                              // slot[0] mode flag (char)

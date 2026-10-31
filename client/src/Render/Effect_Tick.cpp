@@ -237,7 +237,7 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
 void Effect_TickFade(void)
 {
   for (int index=0;index<100;++index) {
-    char *slot=g_PlayerRenderPool+index*0x1bc;
+    char *slot=g_PlayerRenderPool+index*OBJECT_STRIDE;
     if (!slot[0]) continue;
     int &life=*(int *)(slot+0x60);
     --life;

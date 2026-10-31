@@ -674,7 +674,7 @@ void __cdecl DeleteBug(int Owner) {
         if ((*(BYTE *)o != 0) && (*(int *)&((OBJECT*)(uintptr_t)(o))->Owner == Owner)) {
             *(BYTE *)o = 0;
         }
-        o += 0x1BC;  // Butterfles OBJECT stride
+        o += OBJECT_STRIDE;  // Butterfles OBJECT stride
     } while (o < end);
 }
 

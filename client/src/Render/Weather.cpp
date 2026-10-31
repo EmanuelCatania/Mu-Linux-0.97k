@@ -118,7 +118,7 @@
 // `(&DAT_0839bcb4)[iVar14*0x6f]` (char) deja el paso en 0x6f y pisa los slots
 // vecinos (el campo +0x04 tambien es un DWORD: es un contador, `(int)... + 1`,
 // `if (1 < (int)...)`).
-#define WSLOT_DW(off) (*(unsigned int *)&g_WeatherSlotPool[(off) + iVar14 * 0x1bc])
+#define WSLOT_DW(off) (*(unsigned int *)&g_WeatherSlotPool[(off) + iVar14 * OBJECT_STRIDE])
 uint __cdecl Weather_Update(void)
 {
     float  *pfVar1;
@@ -306,10 +306,10 @@ LAB_00501064:
             } else if (4 < iVar14) return uVar8;
         }
 
-        iVar2    = iVar14 * 0x1bc;
+        iVar2    = iVar14 * OBJECT_STRIDE;
         pcVar3   = &DAT_0839bcb0 + iVar2;
 
-        if ((&DAT_0839bcb0)[iVar14 * 0x1bc] == '\0') {
+        if ((&DAT_0839bcb0)[iVar14 * OBJECT_STRIDE] == '\0') {
             // ── Free slot: try to spawn new weather object ───────────────────
             if (DAT_083a3ff0 != 0) {
                 // Thunder/storm mode: random thunder cloud (1/300 chance)
@@ -322,7 +322,7 @@ LAB_00501064:
                     OpenMonsterModel(0x1f);   // play thunder sound
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0x12d;  // type = lightning
                     iVar12 = _rand();
-                    (*(unsigned int*)&g_WeatherSlotPool[0x168 + iVar14 * 0x1bc]) = 0x3f800000;
+                    (*(unsigned int*)&g_WeatherSlotPool[0x168 + iVar14 * OBJECT_STRIDE]) = 0x3f800000;
                     (&DAT_0839be14)[iVar14 * 0x6f] = 0x3f800000;
                     (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f000000;
                     WSLOT_DW(0x0dc) = 1;
@@ -392,7 +392,7 @@ LAB_00501064:
                 *(unsigned int *)(&DAT_0839bd98 + iVar2) = 0x3f000000;
                 *(unsigned int *)(&DAT_0839bd9c + iVar2) = 0x3f000000;
                 *(unsigned int *)(&DAT_0839bda0 + iVar2) = 0x3f000000;
-                (*(unsigned int*)&g_WeatherSlotPool[0x168 + iVar14 * 0x1bc]) = 0;
+                (*(unsigned int*)&g_WeatherSlotPool[0x168 + iVar14 * OBJECT_STRIDE]) = 0;
                 (&DAT_0839be14)[iVar14 * 0x6f] = 0x3f800000;
                 *(unsigned int *)(&DAT_0839bd88 + iVar2) = 0x41500000;
                 (&DAT_0839bdb4)[iVar2] = 0;

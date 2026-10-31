@@ -80,7 +80,7 @@ void Recv_CustomEquipment(const BYTE* Msg, int Size)
     const int key = ((Msg[4] & 0x7F) << 8) | Msg[5];
     const int idx = FindCharacterIndex(key);
     if (idx < 0 || idx >= 400) return;
-    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394, Msg + 6);
+    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE, Msg + 6);
 }
 
 // 0.97.20: C1:F3:ED — lo mismo para un personaje de la lista del
@@ -91,7 +91,7 @@ void Recv_CharacterListCustom(const BYTE* Msg, int Size)
     if (Size < 24 || !DAT_07abf5d0) return;
     const int slot = Msg[4];
     if (slot >= 400) return;
-    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)slot * 0x394, Msg + 6);
+    ApplyCustomEquipment((BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)slot * CHARACTER_STRIDE, Msg + 6);
 }
 
 void Recv_ChangePlayer(const BYTE* Msg, int Size)
@@ -104,7 +104,7 @@ void Recv_ChangePlayer(const BYTE* Msg, int Size)
         NetLog("NET:  -> 0x25 ChangePlayer key=%d (entidad ausente)", key);
         return;
     }
-    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394;
+    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * CHARACTER_STRIDE;
 
     const bool  empty  = (Msg[5] == 0xFF);
     const int   type   = ConvertItemType((BYTE*)Msg + 5);   // 0x0047B110
@@ -206,7 +206,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
         for (int s = 0; s < 400; ++s) {
-            BYTE* slot = basePtr + s * 0x394;
+            BYTE* slot = basePtr + s * CHARACTER_STRIDE;
             if (slot[0] && *(WORD*)(slot + 0x1dc) == entityId) {
                 h = slot; break;
             }
@@ -267,7 +267,7 @@ void NetRecv_11(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
         for (int s = 0; s < 400; ++s) {
-            BYTE* slot = basePtr + s * 0x394;
+            BYTE* slot = basePtr + s * CHARACTER_STRIDE;
             if (slot[0] && *(WORD*)(slot + 0x1dc) == entityId) {
                 h = slot; break;
             }
@@ -430,7 +430,7 @@ void NetRecv_12(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // quedan 402 utiles.
         float rot = ((float)dir - 1.0f) * 45.0f;
         BYTE* slot = reinterpret_cast<BYTE*>(CreateCharacter(entityId, 390, x, y, rot));
-        int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
+        int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / CHARACTER_STRIDE);
         if (slot) {
             AsCharacter(slot)->Key = entityId;
             // Combat_PacketDispatch (00429690) applies the packed
@@ -656,7 +656,7 @@ void NetRecv_13(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 AsCharacter(slot)->MoveSpeed = 4;
             }
             ApplyPersistentSkillEffect97k(slot, viewSkillState, 1);
-            int spawnSlot = (int)((slot - basePtr) / 0x394);
+            int spawnSlot = (int)((slot - basePtr) / CHARACTER_STRIDE);
             NetLog("NET:    0x13 spawn monster slot=%d id=%d type=%d pos=(%d,%d) rot=%.0f",
                    spawnSlot, entityId, type, x, y, rot);
         } else {

@@ -448,7 +448,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // ── DIAG: log per-call to RenderPartObject (Entity_DrawAt) for char-select
                 // dump scale, model addr, animCount@26, and DAT_005524f8 (cull thresh).
                 if (SceneFlag == 4) {
-                    int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
+                    int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / CHARACTER_STRIDE);
                     if (csSlot >= 0 && csSlot < 5) {
                         static DWORD s_lastDA[5] = {0,0,0,0,0};
                         DWORD now = Platform::GetTimer().Ticks();
@@ -583,7 +583,7 @@ void Equipment_Tick(int entity, int highlighted)
         short *psVar1 = (short *)(param_1 + 0xa8);
         *psVar1 = 0xea;
         *(char *)(param_1 + 0xa9) = 9;
-        param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
+        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd; // 0.2f alpha
         RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
                      0xea, '\0', 0, '\0', '\x01', 0);
         *psVar1 = 0xeb;
@@ -595,7 +595,7 @@ void Equipment_Tick(int entity, int highlighted)
         // Special class shield / weapon glow
         short *psVar1 = (short *)(param_1 + 0xa8);
         *(char *)(param_1 + 0xa9) = 1;
-        param_1[0xac] = 0x3e4ccccd;
+        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = 0x3e4ccccd;
         if (bVar7 == 0x84) *psVar1 = 0x23a;
         if (bVar7 == 0x85) *psVar1 = 0x1a3;
         if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
@@ -691,7 +691,7 @@ void Equipment_Tick(int entity, int highlighted)
             (*(char *)(param_1 + 0xba) != 0)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
             BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
             char cType = *(char *)(param_1 + 0xba);
             int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
                            (cType == 2) ? 0x1a3 :   // 419 Sword
@@ -712,7 +712,7 @@ void Equipment_Tick(int entity, int highlighted)
         } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
-            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
             RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                          (int)*(short *)(param_1 + 0xa8),
                          *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
@@ -722,7 +722,7 @@ void Equipment_Tick(int entity, int highlighted)
         // Wings / shield bone (slot 0xae == 0x331)
         if (*(short *)(param_1 + 0xae) == 0x331) {
             *(BYTE *)(param_1 + 0xaf) = 0x22;
-            param_1[0xb2] = 0x3f000000; // 0.5f
+            *(int*)&((CHARACTER*)(uintptr_t)param_1)->Helper.PlaySpeed = 0x3f000000; // 0.5f
             RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
                          0x331,
                          *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Level,
@@ -760,7 +760,7 @@ void Equipment_Tick(int entity, int highlighted)
     if (bDeferWing) {
         *(BYTE *)(param_1 + 0xa9) = 0x2f;
         BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
-        param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+        *(int*)&((CHARACTER*)(uintptr_t)param_1)->Wing.PlaySpeed = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
         RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                      (int)*(short *)(param_1 + 0xa8),
                      *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,

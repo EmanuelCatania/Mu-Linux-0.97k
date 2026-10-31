@@ -100,12 +100,12 @@ ParticleSample samples[200];
 }
 void Particle_InvalidateRender(const void *entity) {
     const uintptr_t offset = (uintptr_t)entity - (uintptr_t)DAT_07b11670;
-    if (offset < 200 * 0x1bc && offset % 0x1bc == 0) samples[offset / 0x1bc].valid = false;
+    if (offset < 200 * OBJECT_STRIDE && offset % OBJECT_STRIDE == 0) samples[offset / 0x1bc].valid = false;
 }
 // DESVIACION: el pool se muestrea antes del pase de personajes, a 25 Hz.
 void Particle_PrepareRender() {
     for (int i = 0; i < 200; ++i) {
-        char *slot = (char *)DAT_07b11670 + i * 0x1bc;
+        char *slot = (char *)DAT_07b11670 + i * OBJECT_STRIDE;
         ParticleSample &sample = samples[i];
         sample.valid = slot[0] && slot[352];
         if (!sample.valid) continue;
@@ -143,7 +143,7 @@ void __cdecl Particle_RenderAll(void)
 {
     char* base = (char*)&DAT_07b11670[0];
     for (int i = 0; i < 200; ++i) {
-        char* slot = base + i * 0x1BC;
+        char* slot = base + i * OBJECT_STRIDE;
         if (slot[0] == 0) continue;          // inactive
         if (slot[352] == 0) continue;         // not visible
 

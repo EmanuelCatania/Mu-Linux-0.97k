@@ -30,15 +30,15 @@ Pool *Pools() {
     // Los offsets se toman de los creadores/lectores activos, no de los anclajes
     // históricos DAT que pueden apuntar al interior del primer slot.
     static Pool pools[] = {
-        {DAT_07b11670,0x1bc,200,2,2,4,0xfc},
+        {DAT_07b11670,OBJECT_STRIDE,200,2,2,4,0xfc},
         {DAT_07b27150,0x9d8,500,4,4,8,0x40},
         {DAT_07abf5f0,0x70,3000,4,4,8,0x3c},
         {DAT_07c5ab3c,0x70,200,4,4,-1,-1},
-        {g_WeatherSlotPool,0x1bc,40,2,2,4,0xfc},
-        {DAT_083a1218,0x1bc,10,2,2,4,0xfc},
-        {DAT_083a2e90,0x1bc,10,2,2,4,0xfc},
+        {g_WeatherSlotPool,OBJECT_STRIDE,40,2,2,4,0xfc},
+        {DAT_083a1218,OBJECT_STRIDE,10,2,2,4,0xfc},
+        {DAT_083a2e90,OBJECT_STRIDE,10,2,2,4,0xfc},
         {g_RenderPool_07c608a8,0x2f0,100,4,4,-1,12},
-        {g_PlayerRenderPool,0x1bc,100,2,2,4,0xfc},
+        {g_PlayerRenderPool,OBJECT_STRIDE,100,2,2,4,0xfc},
         {g_PointerPool,0x70,100,4,4,-1,-1}
     };
     static_assert(sizeof(pools)/sizeof(pools[0])==(int)RenderFxPool::Count,"Pools FX");

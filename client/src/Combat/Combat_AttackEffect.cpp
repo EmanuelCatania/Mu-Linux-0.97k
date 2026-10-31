@@ -1282,7 +1282,7 @@ LABEL_152:
       if ( AsCharacter(Owner)->SkillStage == 5 && CharactersClient )  // guard de port
       {
         v22 = 20;
-        v23 = CharactersClient + 916 * AsCharacter(Owner)->TargetCharacter;
+        v23 = CharactersClient + CHARACTER_STRIDE * AsCharacter(Owner)->TargetCharacter;
         v24 = (float *)(v23 + 28);
         v25 = (float *)(v23 + 16);
         do
@@ -1790,7 +1790,7 @@ LABEL_75:
   // Render_Frame.cpp:395.
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
-    v203 = CharactersClient + 916 * v202;
+    v203 = CharactersClient + CHARACTER_STRIDE * v202;
     if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )

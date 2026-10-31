@@ -412,7 +412,7 @@ void Render_HPBars_OLD(void)
     if (DAT_07abf5d0 == 0) return;
     BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int s = 0; s < 400; ++s) {
-        BYTE* slot = basePtr + s * 0x394;
+        BYTE* slot = basePtr + s * CHARACTER_STRIDE;
         if (slot[0] == 0) continue;                 // inactive
         if (slot == (BYTE*)DAT_07abf5d8) continue;  // skip hero
         if (slot[0x84] == 0) continue;              // not visible

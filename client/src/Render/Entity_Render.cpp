@@ -238,7 +238,7 @@ void Entity_RenderAll_3D(void)
       }
       RenderCharacter((undefined4 *)pcVar1,(undefined4 *)pcVar1,puVar4);
     }
-    iVar3 = iVar3 + 0x394;
+    iVar3 = iVar3 + CHARACTER_STRIDE;
     iVar2 = iVar2 + 1;
   } while (iVar3 < 0x59740);
   return;
@@ -286,7 +286,7 @@ uint RenderBugs(void)
 
     char* base = (char*)&DAT_083a1218[0];
     for (int i = 0; i < 10; ++i) {
-        char* slot = base + i * 0x1BC;
+        char* slot = base + i * OBJECT_STRIDE;
         if (slot[0] == 0) continue;            // not active
 
         float posX = *(float*)(slot + 16);

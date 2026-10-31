@@ -46,7 +46,7 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     int v2 = 0;
     while (!*(BYTE*)v1 || *(short*)&((CHARACTER*)(uintptr_t)(v1))->Key != (short)Key) {
         ++v2;
-        v1 += 916;  // 0x394
+        v1 += CHARACTER_STRIDE;  // 0x394
         if (v2 >= 400) return;
     }
     *(BYTE*)v1 = 0;
@@ -59,7 +59,7 @@ extern "C" void __cdecl DeleteCharacter(int Key)
         if (*(BYTE*)v3 != 0 && AsObject(v3)->Owner == AsObject(v1)) {
             *(BYTE*)v3 = 0;
         }
-        v3 += 111;  // stride 444 bytes = 0x1BC
+        v3 += OBJECT_STRIDE / 4;  // stride 444 bytes = 0x1BC
     }
 
     DeleteCloth(AsCharacter(static_cast<uintptr_t>(v1)), AsObject(static_cast<uintptr_t>(v1)), nullptr);
@@ -91,6 +91,6 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
         {
             *((BYTE*)o - 4) = 0;
         }
-        o += 111;  // stride 0x1BC
+        o += OBJECT_STRIDE / 4;  // stride 0x1BC
     }
 }

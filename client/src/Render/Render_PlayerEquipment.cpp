@@ -804,7 +804,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
 
         // ── DIAG: log weapon render attempt for char-select ─────────────────
         if (SceneFlag == 4) {
-            int csSlot = (int)(((uintptr_t)c - (uintptr_t)DAT_07abf5d0) / 0x394);
+            int csSlot = (int)(((uintptr_t)c - (uintptr_t)DAT_07abf5d0) / CHARACTER_STRIDE);
             if (csSlot >= 0 && csSlot < 5) {
                 static DWORD s_lastWP[5][2] = {{0,0},{0,0},{0,0},{0,0},{0,0}};
                 DWORD now = Platform::GetTimer().Ticks();
