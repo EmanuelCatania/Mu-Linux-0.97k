@@ -85,6 +85,7 @@
             <option value="monsters">Monstruos y NPC</option>
             <option value="skills">Skills</option>
             <option value="client">Textos del cliente</option>
+            <option value="tooltips">Tooltips de items custom</option>
           </select>
         </div>
         <div class="spawn-toolbar-group">

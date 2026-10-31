@@ -2,7 +2,13 @@
   const root = document.getElementById('notice-editor');
   if (!root) return;
 
-  const HEADER = `//=============================================================================================================================================\n// Message:\n//\tMax 128 Characters (Spaces include)\n// Type:\n//\t0 -> Global Gold Center\n//\t1 -> Global Green Center\n// Repeat Time:\n//\tIn seconds\n//=============================================================================================================================================\n\n//Message\t\t\t\t\tType\tRepeatTime`;
+  const HEADER = `//=============================================================================================================================================\n// Message:\n//\tMax 127 bytes in UTF-8 (spaces included; an accent takes 2 bytes)\n// Type:\n//\t0 -> Global Gold Center\n//\t1 -> Global Green Center\n// Repeat Time:\n//\tIn seconds\n//=============================================================================================================================================\n\n//Message\t\t\t\t\tType\tRepeatTime`;
+
+  // Límites del server (GameServer/Notice.h): el mensaje entra en 128 bytes con el 0
+  // final y se leen hasta 100 avisos. Se cuentan bytes de UTF-8, no caracteres.
+  const MAX_BYTES = 127;
+  const MAX_NOTICES = 100;
+  const byteLength = (text) => new TextEncoder().encode(String(text)).length;
 
   const state = {
     notices: [],
@@ -75,7 +81,8 @@
         <div class="spawn-form">
           <h3>Detalle</h3>
           <label>Mensaje</label>
-          <input type="text" id="notice-message" maxlength="128" />
+          <input type="text" id="notice-message" />
+          <small id="notice-bytes" class="muted"></small>
           <label>Tipo</label>
           <select id="notice-type">
             <option value="0">0 - Global Gold Center</option>
@@ -110,6 +117,16 @@
     });
   }
 
+  // Contador de bytes del mensaje, en rojo si pasa el máximo.
+  function updateByteCounter() {
+    const input = root.querySelector('#notice-message');
+    const counter = root.querySelector('#notice-bytes');
+    if (!input || !counter) return;
+    const bytes = byteLength(input.value.trim());
+    counter.textContent = `${bytes}/${MAX_BYTES} bytes`;
+    counter.style.color = bytes > MAX_BYTES ? '#BD382D' : '';
+  }
+
   function selectNotice(notice, index) {
     state.selected = notice ? { ...notice, index } : null;
     if (!notice) {
@@ -117,6 +134,7 @@
       return;
     }
     root.querySelector('#notice-message').value = notice.message;
+    updateByteCounter();
     root.querySelector('#notice-type').value = notice.type;
     root.querySelector('#notice-repeat').value = notice.repeat;
     renderList();
@@ -137,6 +155,10 @@
     });
 
     root.querySelector('#add-notice').addEventListener('click', () => {
+      if (state.notices.length >= MAX_NOTICES) {
+        setMessage(window.MuText.t('El server lee hasta {max} avisos: no se pueden agregar más.', { max: MAX_NOTICES }), 'error');
+        return;
+      }
       const notice = {
         message: 'Nuevo notice',
         type: 0,
@@ -147,11 +169,19 @@
       setMessage(window.MuText.t('Notice agregado.'), 'success');
     });
 
+    root.querySelector('#notice-message').addEventListener('input', updateByteCounter);
+
     root.querySelector('#update-notice').addEventListener('click', () => {
       if (!state.selected) return;
       const index = state.selected.index;
+      const message = String(root.querySelector('#notice-message').value || '').trim();
+      const bytes = byteLength(message);
+      if (bytes > MAX_BYTES) {
+        setMessage(window.MuText.t('El mensaje mide {bytes} bytes y el máximo es {max}.', { bytes, max: MAX_BYTES }), 'error');
+        return;
+      }
       state.notices[index] = {
-        message: String(root.querySelector('#notice-message').value || '').trim(),
+        message,
         type: Number(root.querySelector('#notice-type').value),
         repeat: Number(root.querySelector('#notice-repeat').value)
       };
