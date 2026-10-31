@@ -81,6 +81,9 @@ def main():
     parser.add_argument("--generator")
     parser.add_argument("--reference-ref")
     args = parser.parse_args()
+    if getattr(args, "architecture", "x64") == "x64":
+        print("Omitido en x64: banco atado al layout x86; lo cubren los bancos nativos de B2")
+        return
     if args.reference_ref and (os.name != "nt" or args.architecture != "Win32"):
         parser.error("La referencia int sólo se compara en Windows x86")
     with tempfile.TemporaryDirectory(prefix="mu-hero-catalog-") as temp:

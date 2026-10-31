@@ -27,7 +27,7 @@ void MoveCharacterPosition(CHARACTER* c) { Require(c == movingCharacter); moveEv
 unsigned int Path_FindRoute(int x, int y, int tx, int ty, unsigned char* path, float reserved) {
     Require(x == movingCharacter->PositionX && y == movingCharacter->PositionY);
     Require(tx == movingCharacter->TargetX && ty == movingCharacter->TargetY && reserved == 0.0f);
-    Require(path == reinterpret_cast<BYTE*>(movingCharacter) + 852);
+    Require(path == &movingCharacter->PathCurrent);
     moveEvents.push_back(5); path[0] = 7; return routeResult;
 }
 '''
@@ -121,6 +121,9 @@ def main():
     parser.add_argument("--generator")
     parser.add_argument("--reference-ref")
     args = parser.parse_args()
+    if getattr(args, "architecture", "x64") == "x64":
+        print("Omitido en x64: banco atado al layout x86; lo cubren los bancos nativos de B2")
+        return
     if args.reference_ref and (os.name != "nt" or args.architecture != "Win32"):
         parser.error("La referencia int sólo se compara en Windows x86")
     with tempfile.TemporaryDirectory(prefix="mu-monster-movement-") as temp:

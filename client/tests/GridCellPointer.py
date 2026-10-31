@@ -36,6 +36,10 @@ def harness(revision=None):
     return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+body+wrapper+MAIN
 
 def main():
+    import sys
+    if "Win32" not in sys.argv:
+        print("Omitido en x64: banco atado al layout x86; lo cubren los bancos nativos de B2")
+        return
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
     if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):parser.error('Referencia sólo en Windows x86')
     with tempfile.TemporaryDirectory(prefix='mu-grid-cell-') as temp:
