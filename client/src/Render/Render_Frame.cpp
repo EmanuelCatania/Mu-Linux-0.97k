@@ -346,8 +346,10 @@ void Render_GameFrame(void)
 
         // El original usa `RenderBitmapUV` (0x5128C0), que mapea un cuadrilatero
         // SESGADO en V (el arrastre de la arena), no `RenderBitmap` (0x5125A0).
-        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, 435.0f, scrollA, 0.0f, 0.30000001f, 0.30000001f);
-        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, 435.0f, scrollB, 0.0f, 3.0f, 2.0f);
+        // En pantalla ancha el HUD no tapa los extremos inferiores: incluirlos.
+        const float overlayHeight = gWindow.IsWide() ? 480.0f : 435.0f;
+        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, overlayHeight, scrollA, 0.0f, 0.30000001f, 0.30000001f);
+        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, overlayHeight, scrollB, 0.0f, 3.0f, 2.0f);
     }
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
