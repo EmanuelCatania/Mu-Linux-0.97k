@@ -77,8 +77,25 @@ int main(){auto* model=static_cast<BYTE*>(Reserve(0x26000000));auto* meshes=stat
 def harness(revision=None):
  math=extract(read('src/Math/Math_LegacyTransforms.cpp',revision),'FaceNormalize');point=extract(read('src/Scene/Scene_CharSelect_Nav.cpp',revision),'Collision_PointInPolygon');face=extract(read('src/Terrain/Terrain_RayCollision.cpp',revision),'CollisionDetectLineToFace').replace('CollisionDetectLineToFace(','RealFace(',1)
  caller=read('src/Scene/Scene_ObjectInteraction.cpp',revision);start=caller.index('BMD__CollisionDetectLineToMesh(');end=caller.index('))',start)+1;expression=caller[start:end]
+ expression=re.sub(r'(BMD__CollisionDetectLineToMesh\(\s*)model,',r'\1AsModel(model),',expression)
  wrapper='\n#if INTPTR_MAX == INT32_MAX\nbool PickingCall(void* model){return '+expression+';}\n#endif\n'
- return PREAMBLE+math+'\n#if INTPTR_MAX == INT32_MAX\n'+point+face+'\n#endif\n'+DISPATCH+extract(read('src/Render/BMD_Collision.cpp',revision),'BMD__CollisionDetectLineToMesh')+wrapper+MAIN
+ from AnimationBonesPointer import layouts
+ from ObjectLayoutContract import record
+ body=extract(read('src/Render/BMD_Collision.cpp',revision),'BMD__CollisionDetectLineToMesh')
+ code=re.sub(r'\b188\b','sizeof(BMD)',MAIN);code=re.sub(r'\b120\b','(3*sizeof(ClothModelMesh))',code).replace('m*40','m*sizeof(ClothModelMesh)')
+ code=code.replace('Put(model,40,DWORD(reinterpret_cast<uintptr_t>(meshes)));','reinterpret_cast<BMD*>(model)->Meshs=meshes;')
+ code=code.replace('Put(meshes,m*sizeof(ClothModelMesh)+28,DWORD(reinterpret_cast<uintptr_t>(triangles+m*72)));','reinterpret_cast<ClothModelMesh*>(meshes)[m].Triangles=triangles+m*72;')
+ if 'BMD* pThis' in body:code=code.replace('DWORD(reinterpret_cast<uintptr_t>(model))','reinterpret_cast<BMD*>(model)')
+ code=code.replace('#if INTPTR_MAX == INT32_MAX','').replace('#endif','')
+ old='int main(){auto* model=static_cast<BYTE*>(Reserve(0x26000000));auto* meshes=static_cast<BYTE*>(Reserve(0x28000000));auto* triangles=static_cast<BYTE*>(Reserve(0x2a000000));'
+ assert old in code
+ code=code.replace(old,'std::uint64_t Run(BYTE* model,BYTE* meshes,BYTE* triangles,float* world){vertices=world;')
+ code=code.replace('std::printf("BMD collision:18144 contratos,%u rayos reales %016llx\\n",rays,(unsigned long long)hash);','Require(rays==17);return hash;')
+ main=r'''int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000));Require(low);auto expected=Run(low,low+1024,low+2048,reinterpret_cast<float*>(low+65536));if(sizeof(void*)==8){auto* high=static_cast<BYTE*>(Reserve(0x126000000ull));Require(high);for(unsigned mask=1;mask<16;++mask)Require(Run((mask&1?high:low),(mask&2?high:low)+1024,(mask&4?high:low)+2048,reinterpret_cast<float*>((mask&8?high:low)+65536))==expected);}std::printf("BMD collision:18144 contratos,17 rayos reales por ruta %016llx\n",(unsigned long long)expected);}'''
+ pre=PREAMBLE.replace('65536','1048576').replace('float vertices[3*15000*3];float& DAT_0584621c=vertices[0];','float* vertices;\n#define DAT_0584621c (*vertices)\n')
+ wrapper=wrapper.replace('#if INTPTR_MAX == INT32_MAX','').replace('#endif','')
+ dispatch=DISPATCH.replace('#if INTPTR_MAX == INT32_MAX','').replace('#endif','')
+ return pre+layouts()+'\n#pragma pack(push,1)\n'+record(read('src/Physics/ClothTypes.h'),'ClothModelMesh')+'\n#pragma pack(pop)\n'+math+point+face+dispatch+body+wrapper+code+main
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='Win32' if os.name=='nt' else 'x64');p.add_argument('--generator');p.add_argument('--reject-reference');args=p.parse_args()

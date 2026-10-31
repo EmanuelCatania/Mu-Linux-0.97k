@@ -1220,7 +1220,7 @@ bool  __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem);           // 0x004
 void  __cdecl Send_ActionRequest(unsigned char param_1, int param_2);          // action request packet (0x0043CE50)
 void  __cdecl LookAtTarget(OBJECT* o, const CHARACTER* TargetCharacter);         // 0x0043E890
 void  __cdecl MoveHead(CHARACTER* character);                                // 0x0043E940
-bool  __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
+bool  __cdecl BMD__CollisionDetectLineToMesh(BMD* pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
 bool  __cdecl AttackStage(DWORD c, DWORD o);                       // 0x00448930
 // IDA: FUN_00451f30
 void  __cdecl Combat_SpawnDeathDustParticles(OBJECT* entity);

@@ -55,9 +55,7 @@ char* __stdcall PickObject_Mouse(void) {
                         obj = reinterpret_cast<char*>(AsObject(obj)->SceneNext);
                         continue;
                     }
-                    char* modelBase = (char*)DAT_05828d58;
-                    // BMD stride is 0xBC; Models = DAT_05828d58
-                    char* model = modelBase + modelType * 0xBC;
+                    BMD* model = AsModel(DAT_05828d58) + modelType;
 
                     // Set model data fields from object
                     *(DWORD *)&AsModel(model)->BodyScale = *(DWORD *)&AsObject(obj)->Scale;
@@ -90,7 +88,7 @@ char* __stdcall PickObject_Mouse(void) {
                     if ((char)hit != '\0') {
                         // IDA 0x004FA7C0: actualiza el hit más cercano sin excluir caras.
                         if (BMD__CollisionDetectLineToMesh(
-                                (DWORD)model, (float*)&CameraRayOriginX, (float*)&DAT_083a4110,
+                                model, (float*)&CameraRayOriginX, (float*)&DAT_083a4110,
                                 true, -1, -1)) {
                             result = obj;
                         }
