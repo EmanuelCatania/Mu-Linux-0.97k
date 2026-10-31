@@ -1,12 +1,12 @@
 // SMD_Parser.cpp
 //
-// Pese al nombre, es un módulo heterogéneo: el puente OpenSMDFile y los stubs
-// de conversión SMD (FixupSMD, SMD2BMDModel, SMD2BMDAnimation; el 0.97k sólo
-// trae .bmd), OpenModels, y helpers sueltos de render/efectos/red
+// Módulo heterogéneo: puente OpenSMDFile, OpenModels y helpers de render/red.
+// El importador y los conversores SMD viven en SMD_Legacy.cpp.
 // (ClearCharacters, Effect_CollisionCheck, AddTerrainLight, Joint_SegmentTick,
 // MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
+#include "Model/SmdImport.h"
 #include "Render/JointTypes.h"
 #include "Entity/EntityName.h"
 #include "Render/BMDDevice.h"
@@ -52,17 +52,12 @@ extern void __cdecl operator_delete(void* ptr);
 #define HIWORD(x)            (*(((unsigned short*)&(x))+1))
 #endif
 
-// ── SMD parser stubs ─────────────────────────────────────────────────────────
-// Puente C-linkage hacia OpenSMDFile (C++), implementado en
-// Core/Runtime_Medium.cpp (devuelve false: los SMD no se distribuyen con el
-// 0.97k).  Se castea el const char* porque la firma real es `char*`.
+// Puente C hacia el importador SMD. La firma externa conserva char*.
 extern bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip);  // impl C++ en Core/Runtime_Medium.cpp
 extern "C" bool __cdecl OpenSMDFile(const char* FileName, int Type, char Flip) {
     return OpenSMDFile(const_cast<char*>(FileName), Type, (bool)Flip);
 }
-extern "C" void __cdecl FixupSMD(void) { /* SMD post-process — not ported */ }
-extern "C" void __cdecl SMD2BMDModel(int /*ID*/, int /*Actions*/) { /* convert — not ported */ }
-extern "C" void __cdecl SMD2BMDAnimation(int /*ID*/, char /*LockPosition*/) { /* convert anim — not ported */ }
+// FixupSMD y los conversores se implementan en SMD_Legacy.cpp (IDA 0x40B630..0x40C16D).
 // OpenModels @ 0x00506050 — OpenModels(Model, FileName, i)
 // Port FIEL del IDA: construye "prefix01.smd" (i<10) o "prefix11.smd" (i>=10),
 // llama OpenSMDModel + OpenSMDAnimation. Mismo no-op silencioso si SMD no
@@ -177,6 +172,7 @@ void __cdecl crt_fprintf(void* param_1, void* param_2) {
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
 void __cdecl BMD__Release(int param_1) {
+    Smd::Forget(AsModel(param_1));
     short numBones   = AsModel(param_1)->NumBones;
     short numMeshes  = AsModel(param_1)->NumActions;
     short numActions = AsModel(param_1)->NumMeshs;

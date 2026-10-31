@@ -155,6 +155,7 @@
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
+    <ClInclude Include="src\Model\SmdImport.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\RightClickMove.h" />

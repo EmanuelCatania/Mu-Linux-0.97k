@@ -1033,10 +1033,6 @@ void  __fastcall CSQuest__clearQuest(void *This);                               
 int   __cdecl CSQuest__FindQuestItemsInInven(void);                                        // 0x00482DD0
 
 // SMD parser
-int   __stdcall FUN_0040b350(void);                                   // SMD tokenizer
-void  __cdecl ParseNodes(void);                                      // SMD node parser
-void  __cdecl ParseTriangles(bool Flip);                             // SMD triangle parser
-void  __cdecl ParseSkeleton(void);                                   // SMD skeleton parser
 
 // Camera / math
 void  __cdecl AngleMatrix(float angles[3], float matrix[3][4]);      // 0x00440c80
@@ -1114,11 +1110,6 @@ int   __fastcall FUN_00409f30(void* ecx, void* edx, int p1, int p2, int p3, char
 void  __fastcall FUN_0040a110(void* ecx, void* edx, short p1, short p2, short p3, int p4, int p5, int p6); // shadow edge add
 void  __fastcall FUN_0040a1c0(void* ecx, void* edx, short p1, int p2, short p3, int p4); // shadow backface cull
 void  __fastcall FUN_0040a300(void* ecx, void* edx, int param_1);   // shadow volume build
-void  __cdecl ParseNodes(void);                                      // SMD parse nodes
-void  __cdecl ParseSkeleton(void);                                   // SMD parse skeleton
-void  __cdecl ParseTriangles(bool Flip);                             // SMD parse triangles
-// FUN_0040b350 already declared above (line ~1017) as SMD skip-line
-void  __stdcall FixupSMD_stub(void);                                 // SMD fixup post-process
 
 // ─── Batch 12: JPEG codec (declaraciones heredadas) ───────────────────
 // IAT thunks at 0x0052A0D0-0x0052A100 are linker-generated (IMM32 + dsound), no decl needed.

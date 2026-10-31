@@ -151,6 +151,8 @@ jobs:
             python -B tests/CutTextPointer.py --architecture x64
             python -B tests/BmdSetupPointer.py --architecture x64
             python -B tests/BodyColorPointer.py --architecture x64
+            python -B tests/SmdImport.py --architecture Win32
+            python -B tests/SmdImport.py --architecture x64
             python -B tests/ClothHelperPointer.py --architecture x64
             python -B tests/LightScalePointer.py --architecture x64
             python -B tests/FullSetPointer.py --architecture x64
@@ -343,6 +345,7 @@ jobs:
             python3 -B tests/CutTextPointer.py --generator Ninja
             python3 -B tests/BmdSetupPointer.py --generator Ninja
             python3 -B tests/BodyColorPointer.py --generator Ninja
+            python3 -B tests/SmdImport.py --generator Ninja
             python3 -B tests/ClothHelperPointer.py --generator Ninja
             python3 -B tests/LightScalePointer.py --generator Ninja
             python3 -B tests/FullSetPointer.py --generator Ninja

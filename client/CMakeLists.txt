@@ -430,6 +430,7 @@ set(MU_HEADERS
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
     src/Model/ModelTypes.h
+    src/Model/SmdImport.h
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h

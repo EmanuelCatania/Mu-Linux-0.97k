@@ -1,0 +1,16 @@
+version 1
+nodes
+0 "Root" -1
+1 "Child bone" 0
+2 "DuDummy" 0
+end
+skeleton
+time 0
+0 10 20 30 0 0 0
+1 2 3 4 0 0 0
+2 0 0 0 0 0 0
+time 1
+0 12 24 36 0 0 1.5707963
+1 2 3 4 0 0 0
+2 0 0 0 0 0 0
+end

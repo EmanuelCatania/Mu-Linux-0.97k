@@ -3,6 +3,7 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
+#include "Model/SmdImport.h"
 #include "Render/ResourceTables.h"
 #include "Platform/Text.h"
 #include "Platform/IWindow.h"
@@ -540,12 +541,12 @@ extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 //   }
 void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) {
     ResourceTables::EnsureModels(std::size_t(ID)+1);
-    char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);  // stride 188 = 0xbc
-    if (*(short*)(slot + 36) > 0) return;  // already loaded
+    BMD* slot = AsModel(DAT_05828d58) + ID;
+    if (slot->NumMeshs > 0) return;  // Modelo ya cargado.
     if (!OpenSMDFile(FileName, 0, Flip)) return;
-    strncpy(slot, FileName, 31);
-    slot[31] = 0;
-    *(unsigned char*)(slot + 32) = 10;
+    strncpy(slot->Name, FileName, sizeof(slot->Name)-1);
+    slot->Name[sizeof(slot->Name)-1] = 0;
+    slot->Version = 10;
     FixupSMD();
     SMD2BMDModel(ID, Actions);
 }
@@ -558,8 +559,10 @@ void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) 
 //   }
 void __cdecl OpenSMDAnimation(int ID, const char* FileName, char LockPosition) {
     ResourceTables::EnsureModels(std::size_t(ID)+1);
-    char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);
-    if (*(short*)(slot + 34) <= 0) return;  // mesh slot not initialized
+    BMD* slot = AsModel(DAT_05828d58) + ID;
+    if (slot->NumBones <= 0) return;  // Conservar el gate por huesos del port.
+    // La cantidad de huesos pertenece al modelo elegido, no al último archivo leído.
+    if (!Smd::SelectModel(AsModel(DAT_05828d58)+ID)) return;
     OpenSMDFile(FileName, 1, 0);
     SMD2BMDAnimation(ID, LockPosition);
 }
