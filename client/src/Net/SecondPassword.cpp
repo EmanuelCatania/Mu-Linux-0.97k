@@ -2852,7 +2852,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //
 // Declaraciones externas locales a esta unidad de traducción:
 extern "C" bool __cdecl CharacterAnimation(int c, int o);
-extern void __cdecl DeleteCloth(int c, int o, int flag);   // DeleteCloth
+
 extern bool __cdecl AttackStage(DWORD c, DWORD o);
 extern void __cdecl CreateBlood(DWORD o);
 extern int  __stdcall FindHotKey(int Skill);
@@ -3197,7 +3197,7 @@ void __cdecl MoveCharacter(int p1)
             } else {
                 AsObject(o)->Position[2] -= 0.40000001f;
             }
-            DeleteCloth((int)c, (int)o, 0);  // DeleteCloth
+            DeleteCloth(AsCharacter(c), AsObject(o), nullptr);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
         if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) {

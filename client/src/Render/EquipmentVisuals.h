@@ -1,4 +1,5 @@
 #pragma once
+#include "Model/ModelTypes.h"
 struct CHARACTER;
 
 // Muestra compartida de presentación: equipo y sprites del cuerpo.
@@ -22,7 +23,7 @@ void Equipment_EmitWing790(void *model, int object, int owner);
 // Los modelos son contexto compartido; el tick de un link no lo publica.
 class EquipmentModelContext {
     void *model;
-    char saved[0xbc];
+    char saved[sizeof(BMD)];
 public:
     explicit EquipmentModelContext(void *value);
     ~EquipmentModelContext();

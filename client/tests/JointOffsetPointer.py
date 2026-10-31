@@ -7,16 +7,21 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from ObjectLayoutContract import record
 SERVICES=r'''
 #include <cmath>
 #include <algorithm>
+#ifndef _WIN32
+using WORD=std::uint16_t;
+#endif
+using vec3_t=float[3];using vec34_t=float[3][4];
 '''
 MAIN=r'''
 void Invoke(BYTE* object,int flag){Joint_BoneOffsetApply(ARG,flag);}
 std::uint64_t Run(BYTE* memory){
  std::uint64_t hash=14695981039346656037ull;const float angles[]={-90,-45,-0.0f,0,45,90,180};const int flags[]={0,1,-1,(-2147483647-1)};
  for(unsigned trial=0;trial<32768;++trial){
-  std::memset(memory,0xa5,256);auto* object=memory+16;float position[3],offset[3],angle[3];
+  std::memset(memory,0xa5,512);auto* object=memory+16;float position[3],offset[3],angle[3];
   for(unsigned axis=0;axis<3;++axis){position[axis]=float(int((trial>>(axis*3))%129)-64)*0.5f;offset[axis]=float(int((trial>>(axis*2))%65)-32)*0.25f;angle[axis]=angles[(trial/(axis+1))%7];std::memcpy(object+16+4*axis,position+axis,4);std::memcpy(object+192+4*axis,offset+axis,4);std::memcpy(object+28+4*axis,angle+axis,4);}
   const int flag=flags[(trial/7)%4];double expected[3];
   if(!flag)for(unsigned a=0;a<3;++a)expected[a]=double(position[a])+offset[a];
@@ -26,13 +31,13 @@ std::uint64_t Run(BYTE* memory){
    const double m[9]={cy*cz,sx*sy*cz-cx*sz,sx*sz+cx*sy*cz,cy*sz,cx*cz+sx*sy*sz,cx*sy*sz-sx*cz,-sy,sx*cy,cx*cy};
    for(unsigned a=0;a<3;++a)expected[a]=position[a]+m[3*a]*offset[0]+m[3*a+1]*offset[1]+m[3*a+2]*offset[2];
   }
-  BYTE before[256];std::memcpy(before,memory,256);Invoke(object,flag);
+  BYTE before[512];std::memcpy(before,memory,512);Invoke(object,flag);
   for(unsigned a=0;a<3;++a){float actual;std::memcpy(&actual,object+16+4*a,4);Require(std::isfinite(actual) && std::fabs(actual-expected[a])<=0.00003*(std::max)(1.0,std::fabs(expected[a])));std::memcpy(before+16+16+4*a,&actual,4);}
-  Require(std::memcmp(before,memory,256)==0);for(BYTE value:before){hash^=value;hash*=1099511628211ull;}
+  Require(std::memcmp(before,memory,512)==0);for(BYTE value:before){hash^=value;hash*=1099511628211ull;}
  }return hash;
 }
 int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const auto expected=Run(low);
- if(sizeof(void*)>4){auto* high=static_cast<BYTE*>(Reserve(std::uint64_t(0x126000000ull)));Require(high);std::memset(low,0x7b,256);Require(Run(high)==expected);for(unsigned i=0;i<256;++i)Require(low[i]==0x7b);std::puts("joint alto con matriz/rotacion reales; alias bajo intacto");}
+ if(sizeof(void*)>4){auto* high=static_cast<BYTE*>(Reserve(std::uint64_t(0x126000000ull)));Require(high);std::memset(low,0x7b,512);Require(Run(high)==expected);for(unsigned i=0;i<512;++i)Require(low[i]==0x7b);std::puts("joint alto con matriz/rotacion reales; alias bajo intacto");}
  std::printf("Joint offset: 32768 casos, posicion/readonly %016llx\n",static_cast<unsigned long long>(expected));}
 '''
 def harness(revision=None):
@@ -42,7 +47,9 @@ def harness(revision=None):
  float_type=re.search(r'typedef\s+long double\s+float10\s*;',read_source('src/types.h',revision)).group()
  stdafx=read_source('src/stdafx.h',revision);sine=re.search(r'static inline double\s+fsin\([^\n]+',stdafx).group();cosine=re.search(r'#define fcos [^\n]+',stdafx).group()
  math=read_source('src/Math/Math_3D.cpp',revision)
- return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+float_type+constant+sine+'\n'+cosine+'\n'+function(math,'Matrix_BuildFromEuler')+function(math,'Vector_Rotate')+code+MAIN.replace('ARG',arg)
+ entity=record(read_source('src/Entity/EntityTypes.h',revision),'OBJECT')
+ types='#pragma pack(push,1)\n'+entity+'\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)+32<=512);\nOBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}\n'
+ return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+types+float_type+constant+sine+'\n'+cosine+'\n'+function(math,'Matrix_BuildFromEuler')+function(math,'Vector_Rotate')+code+MAIN.replace('ARG',arg)
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
  if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):parser.error('Referencia sólo en Windows x86')

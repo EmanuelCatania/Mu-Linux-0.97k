@@ -171,57 +171,49 @@ void __cdecl crt_fprintf(void* param_1, void* param_2) {
 // BMD__Release @ 0x00442090 — BMD_FreeModel(model_ptr)
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
-void __cdecl BMD__Release(int param_1) {
-    Smd::Forget(AsModel(param_1));
-    short numBones   = AsModel(param_1)->NumBones;
-    short numMeshes  = AsModel(param_1)->NumActions;
-    short numActions = AsModel(param_1)->NumMeshs;
+void __cdecl BMD__Release(BMD* model) {
+    Smd::Forget(model);
+    // IDA 0x00442090: el cero de NumBones corta incluso si quedan otras tablas.
+    const short numBones = model->NumBones;
+    const short numActions = model->NumActions;
+    const short numMeshes = model->NumMeshs;
     if (numBones == 0) return;
-    // free per-bone sub-mesh vertex arrays
-    for (int bi = 0; bi < numBones; bi++) {
-        int bonePtr = *(int *)&AsModel(param_1)->Bones + bi * 0x8c;
-        if (*(char*)(bonePtr + 0x22) == '\0') {
-            if (numMeshes > 0) {
-                int meshBase = *(int*)(bonePtr + 0x24);
-                for (int mi = 0; mi < numMeshes; mi++) {
-                    int mPtr = meshBase + mi * 0xc;
-                    operator_delete(*(void**)(mPtr + 0));
-                    operator_delete(*(void**)(mPtr + 4));
-                    operator_delete(*(void**)(mPtr + 8));
-                }
+    auto* bones = reinterpret_cast<ModelAnimationBone*>(model->Bones);
+    for (int bi = 0; bi < numBones; ++bi) {
+        if (bones[bi].Dummy == 0) {
+            for (int ai = 0; ai < numActions; ++ai) {
+                operator_delete(bones[bi].Keys[ai].Positions);
+                operator_delete(bones[bi].Keys[ai].EulerAngles);
+                operator_delete(bones[bi].Keys[ai].Quaternions);
             }
-            operator_delete(*(void**)(bonePtr + 0x24));
+            operator_delete(bones[bi].Keys);
         }
     }
-    // free action keyframe data
-    for (int ai = 0; ai < numMeshes; ai++) {
-        int aPtr = *(int *)&AsModel(param_1)->Actions + ai * 0x10;
-        if (*(char*)(aPtr + 10) != '\0')
-            operator_delete(*(void**)(aPtr + 0xc));
-    }
-    // free mesh vertex/normal/UV buffers + unload textures
-    for (int mi = 0; mi < numActions; mi++) {
-        int mBase = *(int *)&AsModel(param_1)->Meshs + mi * 0x28;
-        operator_delete(*(void**)(mBase + 0x10));
-        operator_delete(*(void**)(mBase + 0x14));
-        operator_delete(*(void**)(mBase + 0x18));
-        operator_delete(*(void**)(mBase + 0x1c));
-        if (*(void**)(mBase + 0x24) != nullptr) {
-            operator_delete(*(void**)(mBase + 0x24));
-            *(DWORD*)(mBase + 0x24) = 0;
+    auto* actions = reinterpret_cast<ModelAnimationAction*>(model->Actions);
+    for (int ai = 0; ai < numActions; ++ai)
+        if (actions[ai].LockPositions != 0) operator_delete(actions[ai].Positions);
+    auto* meshes = reinterpret_cast<ClothModelMesh*>(model->Meshs);
+    for (int mi = 0; mi < numMeshes; ++mi) {
+        auto& mesh = meshes[mi];
+        operator_delete(mesh.Vertices);
+        operator_delete(mesh.Normals);
+        operator_delete(mesh.TexCoords);
+        operator_delete(mesh.Triangles);
+        if (mesh.TextureFlags != nullptr) {
+            operator_delete(mesh.TextureFlags);
+            mesh.TextureFlags = nullptr;
         }
-        int texId = (int)*(short*)(*(int *)&AsModel(param_1)->IndexTexture + *(short*)(mBase + 2) * 2);
-        if (texId != 0x12d)
-            UnloadImage(texId);
+        const int texture = model->IndexTexture[mesh.TextureIndex];
+        if (texture != 0x12d) UnloadImage(texture);
     }
-    if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD *)&AsModel(param_1)->Meshs = 0; }
-    if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD *)&AsModel(param_1)->Bones = 0; }
-    if (*(void**)(param_1 + 0x30) != nullptr) { operator_delete(*(void**)(param_1 + 0x30)); *(DWORD *)&AsModel(param_1)->Actions = 0; }
-    if (*(void**)(param_1 + 0x34) != nullptr) { operator_delete(*(void**)(param_1 + 0x34)); *(DWORD *)&AsModel(param_1)->Textures = 0; }
-    if (*(void**)(param_1 + 0x38) != nullptr) { operator_delete(*(void**)(param_1 + 0x38)); *(DWORD *)&AsModel(param_1)->IndexTexture = 0; }
-    AsModel(param_1)->NumBones = 0;
-    AsModel(param_1)->NumActions = 0;
-    AsModel(param_1)->NumMeshs = 0;
+    if (model->Meshs != nullptr) { operator_delete(model->Meshs); model->Meshs = nullptr; }
+    if (model->Bones != nullptr) { operator_delete(model->Bones); model->Bones = nullptr; }
+    if (model->Actions != nullptr) { operator_delete(model->Actions); model->Actions = nullptr; }
+    if (model->Textures != nullptr) { operator_delete(model->Textures); model->Textures = nullptr; }
+    if (model->IndexTexture != nullptr) { operator_delete(model->IndexTexture); model->IndexTexture = nullptr; }
+    model->NumBones = 0;
+    model->NumActions = 0;
+    model->NumMeshs = 0;
 }
 
 // DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
@@ -230,27 +222,26 @@ void __cdecl BMD__Release(int param_1) {
 // Finally unloads tile textures 0x23-0x67, clears particle/effect/entity pools.
 void __cdecl DeleteObjects(void) {
     // free all model slots
-    for (int i = 0; i < 0x7580; i += 0xbc)
-        BMD__Release(i + DAT_05828d58);
+    for (int slot = 0; slot < 0xa0; ++slot)
+        BMD__Release(AsModel(DAT_05828d58) + slot);
 
-    // free scene entity grid (16x16, stride 0x10)
-    // Original binary terminated when puVar5 > 0x83a1217 (grid_base 0x83a0218 + 0xFFF).
-    // In our build grid is g_ObjectBucketGrid (linker-placed); use end-pointer instead.
-    char* puVar5 = (char*)&DAT_083a0218;
-    char* gridEnd = (char*)g_ObjectBucketGrid + 0xFFF;
+    // IDA 0x004FFD50: descargar cada celda desde la cola hacia la cabeza.
+    // El límite cuenta las 256 celdas y no depende del ancho de los punteros.
+    SceneObjectCell* puVar5 = g_ObjectBucketGrid;
+    SceneObjectCell* gridEnd = g_ObjectBucketGrid + 256;
     do {
         for (int cell = 0; cell < 0x10; cell++) {
-            char* head = (char*)*(DWORD*)(puVar5 + 8);
+            char* head = static_cast<char*>(puVar5->Tail);
             while (head != nullptr) {
-                char* next = (char*)*(DWORD*)(head + 0x1b4);
+                char* next = reinterpret_cast<char*>(AsObject(head)->ScenePrevious);
                 Entity_GridUnlink(head, puVar5);
                 head = next;
             }
-            *(DWORD*)(puVar5 + 4) = 0;
-            *(DWORD*)(puVar5 + 8) = 0;
-            puVar5 += 0x10;
+            puVar5->Head = nullptr;
+            puVar5->Tail = nullptr;
+            ++puVar5;
         }
-        if (gridEnd < puVar5) {
+        if (puVar5 == gridEnd) {
             // unload tile textures
             for (int ti = 0x23; ti < 0x68; ti++) UnloadImage(ti);
             // ── Pool zero-clear loops (DESACTIVADOS, salvo Operates) ─────────────────
@@ -313,7 +304,7 @@ void __cdecl ClearCharacters(int param_1) {
                 pcVar2 += 0x1bc;
             } while (pcVar2 < butterflesEnd);
         }
-        DeleteCloth((int)puVar1, (int)puVar1, 0);
+        DeleteCloth(AsCharacter(puVar1), AsObject(puVar1), nullptr);
     }
 
     // Gate/map transition removes the viewport but not Party membership.
@@ -488,22 +479,17 @@ void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
 void __cdecl Joint_BoneOffsetApply(BYTE* param_1, int param_2) {
+    OBJECT& object = *AsObject(param_1);
     // Ghidra separó un float[3] de salida en tres locales (local_3c/38/34) y
     // Vector_Rotate escribe 3 floats contiguos: se usa un array real.
     float out[3] = {0.0f, 0.0f, 0.0f};
     float local_30[12];
     if (param_2 != 0) {
-        float local_48 = *(float*)(param_1 + 0x1c);
-        // local_44 = *(float*)(param_1 + 0x20); local_40 = *(int*)(param_1 + 0x24);
-        Matrix_BuildFromEuler((float*)(param_1 + 0x1c), local_30);
-        Vector_Rotate((float*)(param_1 + 0xc0), local_30, out);
-        *(float*)(param_1 + 0x10) += out[0];
-        *(float*)(param_1 + 0x14) += out[1];
-        *(float*)(param_1 + 0x18) += out[2];
+        Matrix_BuildFromEuler(object.Angle, local_30);
+        Vector_Rotate(object.Direction, local_30, out);
+        for (int axis = 0; axis < 3; ++axis) object.Position[axis] += out[axis];
     } else {
-        *(float*)(param_1 + 0x10) += *(float*)(param_1 + 0xc0);
-        *(float*)(param_1 + 0x14) += *(float*)(param_1 + 0xc4);
-        *(float*)(param_1 + 0x18) += *(float*)(param_1 + 200);
+        for (int axis = 0; axis < 3; ++axis) object.Position[axis] += object.Direction[axis];
     }
 }
 
@@ -775,25 +761,25 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
     // Linux ELF32 puede reservar este pool por encima de 2 GB.
     const uintptr_t base = static_cast<uintptr_t>(DAT_05828d58);
     const uintptr_t address = reinterpret_cast<uintptr_t>(model);
-    constexpr size_t stride = 0xbc;
+    constexpr size_t stride = sizeof(BMD);
     if (!base || address < base) return;
     const uintptr_t offset = address - base;
     if (offset % stride != 0 || offset / stride >= ResourceTables::ModelCount()) return;
-    if (*(short*)((char*)model + 0x24) == 0) return;
-    int meshBase_check = *(int*)((char*)model + 0x28);
-    if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
+    const auto* bmd = AsModel(model);
+    if (bmd->NumMeshs == 0) return;
+    const auto* meshBase = reinterpret_cast<const ClothModelMesh*>(bmd->Meshs);
+    if (!meshBase || reinterpret_cast<uintptr_t>(meshBase) < 0x100000) return;
     BMD__BeginRender();
-    if (*(char*)((char*)model + 0x44) == '\0') {
+    if (bmd->LightEnable == '\0') {
         // IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
-        if (f1 < _DAT_00552544) BufferedDraw::Color4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
-        else BufferedDraw::Color3fv((const float*)((char*)model + 0x48));
+        if (f1 < _DAT_00552544) BufferedDraw::Color4f(bmd->BodyLight[0],bmd->BodyLight[1],bmd->BodyLight[2],f1);
+        else BufferedDraw::Color3fv(bmd->BodyLight);
     }
     // HiddenMesh: entero (indice de malla a ocultar, o -1), como el a8 de IDA.
     int HiddenMesh = f6;
-    int meshBase = *(int*)((char*)model + 0x28);
-    int numMesh = (int)*(short*)((char*)model+0x24);
+    int numMesh = (int)bmd->NumMeshs;
     for (int i = 0; i < numMesh; i++) {
-        char* pcVar1 = *(char**)(meshBase + i * 0x28 + 0x24);
+        const char* pcVar1 = static_cast<const char*>(meshBase[i].TextureFlags);
         int fVar3 = f2;  // BlendMesh (entero, como el a4 de IDA)
         bool render = false;
         if (pcVar1 == nullptr) {
@@ -817,12 +803,12 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
 // SetMonsterSound @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
-    int base = param_1 * 0xbc + DAT_05828d58;
-    AsModel(base)->Sounds[0] = (short)param_2;
-    AsModel(base)->Sounds[1] = (short)param_3;
-    AsModel(base)->Sounds[2] = (short)param_4;
-    AsModel(base)->Sounds[3] = (short)param_5;
-    AsModel(base)->Sounds[4] = (short)param_6;
+    auto* model = AsModel(DAT_05828d58) + param_1;
+    model->Sounds[0] = (short)param_2;
+    model->Sounds[1] = (short)param_3;
+    model->Sounds[2] = (short)param_4;
+    model->Sounds[3] = (short)param_5;
+    model->Sounds[4] = (short)param_6;
 }
 
 // CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.

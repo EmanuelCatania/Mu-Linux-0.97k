@@ -198,8 +198,8 @@ void SceneCharSelect_PrepareLighting()
         (long double)_DAT_005528e0) * (float10)_DAT_005526e4 + (float10)_DAT_005526e8);
     // El slot de creación usa DWORD con sentinel -1; IDA lo compara con signo.
     const float brightness=(int)DAT_005616b0>=0 ? 0.2f : pulse;
-    if (DAT_083a021c) {
-        OBJECT &hover=*AsObject(DAT_083a021c);
+    if (g_ObjectBucketGrid[0].Head) {
+        OBJECT &hover=*AsObject(g_ObjectBucketGrid[0].Head);
         hover.Light[0]=hover.Light[1]=hover.Light[2]=brightness;
         hover.BlendMeshLight=brightness;
     }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preparación de efectos y colores BMD reales; entidad/owners32 bajos (B2)."""
+"""Entrada real sobre fixtures x86; colores y Setup nativos se prueban por separado."""
 import argparse
 import os
 from pathlib import Path
@@ -63,8 +63,10 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* entity=stati
 
 
 def harness(revision=None):
-    setup=function(read_source('src/Render/BMD_SetupRender.cpp',revision),'BMD_SetupRenderByType')
-    body=read_source('src/Render/Render_LegacyBillboards.cpp',revision)
+    # Esta entrada aún usa registros188/444 y owners32. Mantener su frontera x86
+    # explícita; BmdSetupPointer/Differential ejecutan la preparación nativa real.
+    setup=function(read_source('tests/fixtures/BMDSetup-b0a02c59.cpp'),'BMD_SetupRenderByType')
+    body=read_source('tests/fixtures/BodyColor-e3731d7c.cpp')
     color=function(body,'RenderPartObjectBodyColor')+function(body,'Entity_SetModelColorAlt')
     effect=function(read_source('src/Render/Entity_DrawSetup.cpp',revision),'RenderPartObjectEffect')
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')

@@ -121,6 +121,7 @@
     <ClInclude Include="src\Platform\Text.h" />
     <ClInclude Include="src\Platform\GuardedOperation.h" />
     <ClInclude Include="src\Scene\ObjectRegistry.h" />
+    <ClInclude Include="src\Scene\SceneObjectCell.h" />
     <ClInclude Include="src\Platform\PlatformHeaders.h" />
     <ClInclude Include="src\Platform\DebugHeaders.h" />
     <ClInclude Include="src\Platform\Posix\WinTypes.h" />
@@ -151,11 +152,14 @@
     <ClInclude Include="src\Entity\CharacterEffects.h" />
     <ClInclude Include="src\Entity\CharacterCloth.h" />
     <ClInclude Include="src\Entity\ClothPresentation.h" />
+    <ClInclude Include="src\Physics\ClothTypes.h" />
     <ClInclude Include="src\Entity\ObjectPose.h" />
     <ClInclude Include="src\Entity\ObjectBounds.h" />
     <ClInclude Include="src\Entity\EntityTypes.h" />
     <ClInclude Include="src\Model\ModelTypes.h" />
     <ClInclude Include="src\Model\SmdImport.h" />
+    <ClInclude Include="src\Core\ResourceLimits.h" />
+    <ClInclude Include="src\Model\BMDFileTypes.h" />
     <ClInclude Include="src\Entity\CharacterAttributeView.h" />
     <ClInclude Include="src\Local\ClientText.h" />
     <ClInclude Include="src\Item\RightClickMove.h" />

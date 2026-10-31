@@ -13,6 +13,7 @@
 
 #include "stdafx.h"
 #include "Model/SmdImport.h"
+#include "Physics/ClothTypes.h"
 #include "Text/TextCore.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/ITimer.h"
@@ -225,20 +226,20 @@ void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
 // FUN_00408070 @ 0x00408070 (117 bytes) — SoundWidget: destroy linked list
 void __fastcall FUN_00408070(void *param_1_raw) {
     ClothPresentation_Forget(param_1_raw);
-    int *param_1 = (int *)param_1_raw;
-    *param_1 = 0x00552520; // PTR_LAB_00552520
-    *(int *)(*(int *)(param_1[0x14] + 4) + 8) = 0;
-    void *pvVar1 = *(void **)(param_1[0x13] + 8);
-    while (pvVar1 != NULL) {
-        void *next = *(void **)(static_cast<BYTE*>(pvVar1) + 8);
-        operator_delete(pvVar1);
-        pvVar1 = next;
+    ClothWidget& w = ClothSystem(param_1_raw);
+    w.VTable = reinterpret_cast<void**>(static_cast<uintptr_t>(0x00552520));
+    w.Tail->Previous->Next = nullptr;
+    ClothLink* entry = w.Head->Next;
+    while (entry) {
+        ClothLink* next = entry->Next;
+        operator_delete(entry);
+        entry = next;
     }
-    *(int *)(param_1[0x13] + 8) = param_1[0x14];
-    *(int *)(param_1[0x14] + 4) = param_1[0x13];
-    param_1[0x12] = 0;
-    if ((void *)param_1[0x14] != NULL) operator_delete((void *)param_1[0x14]);
-    if ((void *)param_1[0x13] != NULL) operator_delete((void *)param_1[0x13]);
+    w.Head->Next = w.Tail;
+    w.Tail->Previous = w.Head;
+    w.AnchorCount = 0;
+    if (w.Tail) operator_delete(w.Tail);
+    if (w.Head) operator_delete(w.Head);
 }
 
 // Xor_ConvertBlock @ 0x00405130 (131 bytes) — XOR buffer with 16-byte key

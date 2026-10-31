@@ -21,8 +21,8 @@ struct CHARACTER {
     TARGET_FIELD
     BYTE suffix[0x394 - 0x314 - 12];
 };
-static_assert(sizeof(CHARACTER) == 0x394);
-static_assert(offsetof(CHARACTER, TargetPosition) == 788);
+static_assert(sizeof(void*) != 4 || (sizeof(CHARACTER) == 0x394));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, TargetPosition) == 788));
 CHARACTER* AsCharacter(CHARACTER* p) { return p; }
 CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 int SelectedCharacter;

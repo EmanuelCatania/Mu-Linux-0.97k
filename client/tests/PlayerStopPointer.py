@@ -35,13 +35,13 @@ struct OBJECT {
 };
 PART_RECORD
 CHARACTER_RECORD
-static_assert(sizeof(CHARACTER) == 916 && sizeof(PART_t) == 24);
-static_assert(offsetof(OBJECT, Type) == 2 && offsetof(OBJECT, SubType) == 4);
-static_assert(offsetof(OBJECT, CurrentAction) == 261 && offsetof(OBJECT, PriorAction) == 262);
-static_assert(offsetof(OBJECT, AnimationFrame) == 264 && offsetof(OBJECT, PriorAnimationFrame) == 268);
-static_assert(offsetof(CHARACTER, Class) == 444 && offsetof(CHARACTER, Weapon) == 624);
-static_assert(offsetof(CHARACTER, Wing) == 672 && offsetof(CHARACTER, Helper) == 696);
-static_assert(offsetof(CHARACTER, Run) == 768 && offsetof(CHARACTER, SafeZone) == 846);
+static_assert(sizeof(void*) != 4 || (sizeof(CHARACTER) == 916 && sizeof(PART_t) == 24));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Type) == 2 && offsetof(OBJECT, SubType) == 4));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, CurrentAction) == 261 && offsetof(OBJECT, PriorAction) == 262));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, AnimationFrame) == 264 && offsetof(OBJECT, PriorAnimationFrame) == 268));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, Class) == 444 && offsetof(CHARACTER, Weapon) == 624));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, Wing) == 672 && offsetof(CHARACTER, Helper) == 696));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, Run) == 768 && offsetof(CHARACTER, SafeZone) == 846));
 CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }
 CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }
@@ -127,8 +127,8 @@ std::uint64_t Run(CHARACTER* character, BYTE* models, BYTE* items, unsigned disp
             Require(std::memcmp(&character->Object.PriorAnimationFrame, &before.Object.AnimationFrame, 4) == 0);
             DWORD bits; std::memcpy(&bits, &character->Object.AnimationFrame, 4); Require(bits == 0);
         }
-        for(int offset = 0; offset < 916; ++offset) {
-            if(offset == 768 || offset == 261 || offset == 262 || (offset >= 264 && offset < 272)) continue;
+        for(int offset = 0; offset < int(sizeof(CHARACTER)); ++offset) {
+            if(offset == int(offsetof(CHARACTER, Run)) || offset == 261 || offset == 262 || (offset >= 264 && offset < 272)) continue;
             Require(reinterpret_cast<BYTE*>(character)[offset] == reinterpret_cast<BYTE*>(&before)[offset]);
         }
         bool bound = false;

@@ -7,6 +7,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 
 SERVICES=r'''
 CHARACTER* active;
@@ -51,7 +52,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     header=read_source('src/Entity/EntityTypes.h',revision)
-    part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group();character=header[header.index('struct CHARACTER {'):header.index('    PART_t   Wing;')]
+    part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group();part=opaque_cloth_fields(part);character=header[header.index('struct CHARACTER {'):header.index('    PART_t   Wing;')]
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#ifndef _WIN32\nusing WORD=std::uint16_t;\n#endif\nstruct OBJECT{BYTE opaque0[2];short Type;BYTE opaque4[257];BYTE CurrentAction;BYTE remainder[182];};\n'
     prefix+=part+character+'BYTE remainder[244];};\nstatic_assert(sizeof(OBJECT)==444);static_assert(offsetof(OBJECT,CurrentAction)==261);static_assert(sizeof(CHARACTER)==916);static_assert(offsetof(CHARACTER,BodyPart)==480);static_assert(offsetof(CHARACTER,Weapon)==624);\n'
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter[^\n]+',header,re.M))+SERVICES

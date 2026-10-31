@@ -1,6 +1,7 @@
 // UI_LegacyWidgets.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "globals.h"
 #include "functions.h"
 #include "Sound/SoundManager.h"
@@ -369,7 +370,7 @@ void __cdecl FUN_00408680(void *_this, char flags)
     if (!lpMem) return;
     if (flags & 2) {
         int count = *((int *)lpMem - 1);
-        for (int i = count - 1; i >= 0; --i) FUN_00407970(lpMem + (size_t)0x3C * i);
+        for (int i = count - 1; i >= 0; --i) FUN_00407970(lpMem + sizeof(ClothNode) * i);
         if (flags & 1) operator_delete((unsigned char *)(lpMem - 4));
     } else {
         FUN_00407970(lpMem);
@@ -385,7 +386,7 @@ void __fastcall FUN_0045aaa0_impl(void *_this, char flags)
     if (!lpMem) return;
     if (flags & 2) {
         int count = *((int *)lpMem - 1);
-        for (int i = count - 1; i >= 0; --i) FUN_00408070(lpMem + (size_t)0x54 * i);
+        for (int i = count - 1; i >= 0; --i) FUN_00408070(lpMem + sizeof(ClothWidget) * i);
         if (flags & 1) operator_delete((unsigned char *)(lpMem - 4));
     } else {
         FUN_00408070(lpMem);

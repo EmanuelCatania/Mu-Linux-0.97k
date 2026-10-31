@@ -1,6 +1,7 @@
 #pragma once
-#include "types.h"
 #include <cstddef>
+#include <cstdint>
+#include <type_traits>
 
 // IDA: BMD, 0xBC bytes; array Models (DAT_05828d58), un modelo por tipo.
 //
@@ -12,50 +13,122 @@
 // anclajes siguen el orden del 5.2, que encaja exacto con ellos; la única
 // diferencia es el puntero LightMaps en 0x40, que el 5.2 ya no tiene.
 #pragma pack(push, 1)
+// Registros de ejecución consumidos por BMD_Animation (IDA 0x00440060).
+// No son cabeceras de archivo: el cargador debe decodificar sus datos por separado.
+struct ModelAnimationKeys {
+    float* Positions;
+    float* EulerAngles;
+    float* Quaternions;
+};
+struct ModelAnimationBone {
+    char Name[32];
+    std::int16_t Parent;
+    std::uint8_t Dummy;
+    std::uint8_t Padding35;
+    ModelAnimationKeys* Keys;
+    std::uint8_t BoundingBoxEnabled;
+    std::uint8_t BoundingBoxPadding[3];
+    float BoundingBox[8][3];
+};
+struct ModelAnimationAction {
+    std::uint8_t Unknown0[8];
+    std::int16_t FrameCount;
+    std::uint8_t LockPositions;
+    std::uint8_t Padding11;
+    float* Positions;
+};
+static_assert(sizeof(ModelAnimationKeys) == 3 * sizeof(void*));
+static_assert(alignof(ModelAnimationKeys) == 1 && alignof(ModelAnimationBone) == 1 && alignof(ModelAnimationAction) == 1);
+static_assert(std::is_standard_layout_v<ModelAnimationKeys> && std::is_trivially_copyable_v<ModelAnimationKeys>);
+static_assert(std::is_standard_layout_v<ModelAnimationBone> && std::is_trivially_copyable_v<ModelAnimationBone>);
+static_assert(std::is_standard_layout_v<ModelAnimationAction> && std::is_trivially_copyable_v<ModelAnimationAction>);
+static_assert(offsetof(ModelAnimationKeys, EulerAngles) == sizeof(void*));
+static_assert(offsetof(ModelAnimationKeys, Quaternions) == 2 * sizeof(void*));
+static_assert(sizeof(ModelAnimationBone) == 136 + sizeof(void*));
+static_assert(offsetof(ModelAnimationBone, Parent) == 32);
+static_assert(offsetof(ModelAnimationBone, Dummy) == 34);
+static_assert(offsetof(ModelAnimationBone, Keys) == 36);
+static_assert(sizeof(ModelAnimationAction) == 12 + sizeof(void*));
+static_assert(offsetof(ModelAnimationAction, FrameCount) == 8);
+static_assert(offsetof(ModelAnimationAction, LockPositions) == 10);
+static_assert(offsetof(ModelAnimationAction, Positions) == 12);
+
+// Vistas de ejecución sin punteros; no sustituyen la descripción del archivo .bmd.
+struct ModelRuntimeVertex {
+    std::int16_t Bone;
+    std::uint8_t Padding[2];
+    float Position[3];
+};
+struct ModelRuntimeTriangle {
+    std::uint8_t Unknown0[2];
+    std::int16_t VertexIndex[3];
+    std::uint8_t Unknown8[18];
+    std::int16_t Adjacent[3];
+    std::uint8_t Unknown32[4];
+};
+static_assert(sizeof(ModelRuntimeVertex) == 16 && offsetof(ModelRuntimeVertex, Position) == 4);
+static_assert(sizeof(ModelRuntimeTriangle) == 36);
+static_assert(alignof(ModelRuntimeVertex) == 1 && alignof(ModelRuntimeTriangle) == 1);
+static_assert(std::is_standard_layout_v<ModelRuntimeVertex> && std::is_trivially_copyable_v<ModelRuntimeVertex>);
+static_assert(std::is_standard_layout_v<ModelRuntimeTriangle> && std::is_trivially_copyable_v<ModelRuntimeTriangle>);
+static_assert(offsetof(ModelRuntimeTriangle, VertexIndex) == 2);
+static_assert(offsetof(ModelRuntimeTriangle, Adjacent) == 26);
+static_assert(offsetof(ModelAnimationBone, BoundingBoxEnabled) == 36 + sizeof(void*));
+static_assert(offsetof(ModelAnimationBone, BoundingBox) == 40 + sizeof(void*));
+
+// Las anotaciones siguientes son del x86 original; los asserts también verifican x64.
 struct BMD {
     char     Name[32];              // 0x00
     char     Version;               // 0x20
-    BYTE     _unk21;
+    std::uint8_t     _unk21;
     short    NumBones;              // 0x22
     short    NumMeshs;              // 0x24
     short    NumActions;            // 0x26
-    BYTE*    Meshs;                 // 0x28  Mesh_t[NumMeshs], 40 bytes cada uno
-    BYTE*    Bones;                 // 0x2C  Bone_t[NumBones], 140 bytes cada uno
-    BYTE*    Actions;               // 0x30  Action_t[NumActions], 16 bytes cada uno
-    BYTE*    Textures;              // 0x34  Texture_t[NumMeshs], 32 bytes cada uno
+    std::uint8_t*    Meshs;                 // 0x28  Mesh_t[NumMeshs], 40 bytes cada uno
+    std::uint8_t*    Bones;                 // 0x2C  Bone_t[NumBones], 140 bytes cada uno
+    std::uint8_t*    Actions;               // 0x30  Action_t[NumActions], 16 bytes cada uno
+    std::uint8_t*    Textures;              // 0x34  Texture_t[NumMeshs], 32 bytes cada uno
     short*   IndexTexture;          // 0x38  en el 0.97k son shorts (new 2 * NumMeshs)
     short    NumLightMaps;          // 0x3C
     short    IndexLightMap;         // 0x3E
-    BYTE*    LightMaps;             // 0x40
-    BYTE     LightEnable;           // 0x44
-    BYTE     ContrastEnable;        // 0x45
-    BYTE     _unk46[2];
-    vec3_t   BodyLight;             // 0x48
+    std::uint8_t*    LightMaps;             // 0x40
+    std::uint8_t     LightEnable;           // 0x44
+    std::uint8_t     ContrastEnable;        // 0x45
+    std::uint8_t     _unk46[2];
+    float    BodyLight[3];             // 0x48
     int      BoneHead;              // 0x54
     int      BoneFoot[4];           // 0x58
     float    BodyScale;             // 0x68
-    vec3_t   BodyOrigin;            // 0x6C
-    vec3_t   BodyAngle;             // 0x78
+    float    BodyOrigin[3];            // 0x6C
+    float    BodyAngle[3];             // 0x78
     float    BodyHeight;            // 0x84
     char     StreamMesh;            // 0x88
-    BYTE     _unk89[3];
-    vec3_t   ShadowAngle;           // 0x8C
+    std::uint8_t     _unk89[3];
+    float    ShadowAngle[3];           // 0x8C
     char     Skin;                  // 0x98
-    BYTE     HideSkin;              // 0x99
-    BYTE     _unk9A[2];
+    std::uint8_t     HideSkin;              // 0x99
+    std::uint8_t     _unk9A[2];
     float    Velocity;              // 0x9C
-    BYTE     CurrentAction;         // 0xA0
-    BYTE     PriorAction;           // 0xA1
-    BYTE     _unkA2[2];
+    std::uint8_t     CurrentAction;         // 0xA0
+    std::uint8_t     PriorAction;           // 0xA1
+    std::uint8_t     _unkA2[2];
     float    CurrentAnimation;      // 0xA4
     short    CurrentAnimationFrame; // 0xA8
     short    Sounds[5];             // 0xAA  paso x2, ataque x2, muerte
-    BYTE     _unkB4[8];
+    std::uint8_t     _unkB4[8];
 };
 #pragma pack(pop)
 
-#define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
-static_assert(sizeof(BMD) == 0xBC, "BMD");
+// Cada puntero anterior al campo agrega cuatro bytes sólo en x64.
+constexpr std::size_t ModelNativeOffset(std::size_t off) {
+    return off + ((off > 0x28) + (off > 0x2C) + (off > 0x30) +
+                  (off > 0x34) + (off > 0x38) + (off > 0x40)) * (sizeof(void*) - 4);
+}
+#define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == ModelNativeOffset(off), #T "::" #f)
+static_assert(sizeof(void*) == 4 || sizeof(void*) == 8);
+static_assert(sizeof(short) == 2 && sizeof(int) == 4 && sizeof(float) == 4);
+static_assert(sizeof(BMD) == 0xBC + 6 * (sizeof(void*) - 4), "BMD");
+static_assert(alignof(BMD) == 1 && std::is_standard_layout_v<BMD> && std::is_trivially_copyable_v<BMD>);
 MU_ASSERT_FIELD(BMD, Version, 0x20);
 MU_ASSERT_FIELD(BMD, NumBones, 0x22);
 MU_ASSERT_FIELD(BMD, NumMeshs, 0x24);

@@ -56,26 +56,26 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     (void)b;
     if (!model) return;
 
-    BYTE* modelBytes = static_cast<BYTE*>(model);
+    auto* bmd = AsModel(model);
     const int meshIdx  = (int)frame;
-    const int meshEntry = *(int *)(modelBytes + 0x28) + meshIdx * 0x28;
-    if (*(short *)(meshEntry + 10) == 0) return;             // sin triangulos
+    const auto* mesh = reinterpret_cast<const ClothModelMesh*>(bmd->Meshs) + meshIdx;
+    if (mesh->TriangleCount == 0) return;             // sin triangulos
 
-    int tex = *(short *)(*(int *)(modelBytes + 0x38) + *(short *)(meshEntry + 2) * 2);
+    int tex = bmd->IndexTexture[mesh->TextureIndex];
     if (tex == 300) return;                                   // BITMAP_HIDE
     if (rgba != 0xffffffff) tex = (int)rgba;
 
     const int blendMesh = f4;
-    const float *bodyLight = (const float *)(modelBytes + 0x48);
+    const float *bodyLight = bmd->BodyLight;
 
     // UV animadas (LOBYTE(a11) de IDA): la malla es la de BlendMesh o la de
     // StreamMesh (model+0x88, o la propia si el script de la malla lo pide),
     // y hay algun desplazamiento de UV.
-    const int streamMesh = *(signed char *)(modelBytes + 0x88);
+    const int streamMesh = static_cast<signed char>(bmd->StreamMesh);
     int waveMesh = streamMesh;
     {
-        const int script = *(int *)(meshEntry + 0x24);
-        if (script && *(char *)(script + 2)) waveMesh = meshIdx;
+        const auto* script = static_cast<const char*>(mesh->TextureFlags);
+        if (script && script[2]) waveMesh = meshIdx;
     }
     const bool uvAnim = (meshIdx == blendMesh || meshIdx == waveMesh) &&
                         (f5 != 0.0f || f6 != 0.0f);
@@ -83,12 +83,12 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     // v58: LightEnable del modelo.  Con StreamMesh el color es plano; si no,
     // se arma la luz por vertice = IntensityTransform * BodyLight (IDA
     // escribe el mismo buffer que sub_440D50 antes de delegar).
-    int lightEnable = *(unsigned char *)(modelBytes + 0x44);
+    int lightEnable = bmd->LightEnable;
     if (meshIdx == streamMesh) {
         BufferedDraw::Color3fv(bodyLight);
         lightEnable = 0;
     } else if (lightEnable) {
-        const int nNormals = *(short *)(meshEntry + 6);
+        const int nNormals = mesh->NormalCount;
         const float *src = (const float *)(&DAT_077e298c + meshIdx * 15000);
         float *dst = (float *)(&DAT_060db65c + meshIdx * 180000);
         for (int i = 0; i < nNormals; ++i) {
@@ -106,7 +106,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
         mode = 1;
         BMDDevice::Select({BMDDevice::Pass::ColorAnimated,static_cast<unsigned>(fl)});
         BufferedDraw::Color3fv(bodyLight);
-    } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
+    } else if (blendMesh <= -2 || mesh->TextureIndex == blendMesh) {
         mode = 2;
         BMDDevice::Select({BMDDevice::Pass::Blend,static_cast<unsigned>(fl),tex});
         BufferedDraw::Color3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
@@ -130,15 +130,15 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
     const bool deform = (a & 1) != 0;
 
     BufferedDraw::Begin(BufferedDraw::Primitive::Triangles);
-    const int polyCount = *(short *)(meshEntry + 10);
+    const int polyCount = mesh->TriangleCount;
     for (int poly = 0; poly < polyCount; ++poly) {
-        const char *tri = (const char *)(*(int *)(meshEntry + 0x1c) + poly * 0x24);
+        const char *tri = reinterpret_cast<const char*>(mesh->Triangles + poly * sizeof(ModelRuntimeTriangle));
         const int nv = *tri;
         const short *idx = (const short *)(tri + 10);
         for (int vi = 0; vi < nv; ++vi, ++idx) {
             const int vtx = idx[-4];                          // indice de vertice
             if (mode == 2) {
-                const float *uv = (const float *)(*(int *)(meshEntry + 0x18) + idx[4] * 8);
+                const float *uv = static_cast<const float*>(mesh->TexCoords) + idx[4] * 2;
                 if (uvAnim) BufferedDraw::TexCoord2f(f5 + uv[0], f6 + uv[1]);
                 else        BufferedDraw::TexCoord2f(uv[0], uv[1]);
                 if (lightEnable) {

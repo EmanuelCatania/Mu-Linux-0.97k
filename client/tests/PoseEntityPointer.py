@@ -12,6 +12,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import ROOT, build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 SERVICES=r'''
 #include <array>
 #include <algorithm>
@@ -86,11 +87,16 @@ def harness(revision=None):
  prototypes='\n'.join(b.split('{',1)[0]+';'for b in bodies)
  fields=re.search(r'struct OBJECT\s*\{[\s\S]*?\n\};',read_source('src/Entity/EntityTypes.h',revision)).group();fields=re.sub(r'OBJECT\*\s+Owner;',r'std::uint32_t Owner;',fields)
  fields=re.sub(r'vec34_t\*\s+BoneMatrices;[^\n]*\n\s*vec3_t\s+BoundingBoxMin;[^\n]*',r'union { vec34_t* BoneMatrices; struct { std::uint32_t BoneLow; vec3_t BoundingBoxMin; }; };',fields)
+ fields=re.sub(r'OBJECT\*\s+(ScenePrevious|SceneNext)\b',r'std::uint32_t \1',fields)
+ fields=opaque_cloth_fields(fields)
  view='using vec3_t=float[3];using vec34_t=float[3][4];\n#pragma pack(push,1)\n'+fields+'\n#pragma pack(pop)\nstatic_assert(sizeof(OBJECT)==444 && offsetof(OBJECT,BoneMatrices)==276 && offsetof(OBJECT,BoundingBoxMin)==280 && offsetof(OBJECT,OBB)==304);\n'
  structures=pose[pose.index('struct FrozenModel {'):pose.index('// Cada slot conserva capacidad',pose.index('struct FrozenModel {'))]
  code=''.join(bodies)+function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')
  constants=''.join(re.search(r'^float\s+'+n+r'\s*=\s*[^;]+;',read_source('src/globals.cpp',revision),re.M).group()for n in sorted(set(re.findall(r'\b_DAT_[0-9a-f]+\b',code))))
  services=SERVICES.replace('VIEW',view).replace('TRANSFORMS','#include "'+(ROOT/'src/Render/TransformMath.h').as_posix()+'"').replace('STRUCTURES',structures).replace('FORWARDS',prototypes)
+ if 'AsModel(' in bodies[0]:
+  from LegacyModelLayout import VIEW
+  services=VIEW+"\nstruct CHARACTER{unsigned char Bytes[916];};\n"+services
  bounds=function(read_source('src/Entity/ObjectBounds.h',revision),'ObjectBounds_Build')
  body=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')+constants+services+bounds+''.join(bodies)
  batch=re.search(r'^\s*PrepareContext\([^;\n]*p\.object\.data\(\)[^;\n]*;',pose,re.M).group()

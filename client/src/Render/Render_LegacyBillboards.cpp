@@ -1,6 +1,7 @@
 // Render_LegacyBillboards.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
 #include "Render/Materials.h"
@@ -215,7 +216,8 @@ void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float
 void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
-    float *color = (float *)((char*)model + 0x48);
+    float *color = AsModel(model)->BodyLight;
+    auto* owner = AsObject(entity);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else if (etype == 0x144) {
@@ -226,31 +228,31 @@ void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int etype
             color[0] = 1.0f; color[1] = 0.1f; color[2] = 0.1f;
         }
         BMD__RenderBody(model, (uint)flags, scale,
-                     *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
+                     owner->BlendMesh, owner->BlendMeshLight,
+                     owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, -1, (uint)rgba);
         return nullptr;
     } else {
         PartObjectColor(etype, scale, alpha, color, (char)((flags >> 8) & 1));
     }
     if (etype == 0x1d7) {
-        *(int *)(entity + 0x58) = 2;
+        owner->HiddenMesh = 2;
     } else if (etype == 0x235) {
         BMD__RenderBody(model, (uint)flags, scale,
-                     *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), 1, (uint)rgba);
+                     owner->BlendMesh, owner->BlendMeshLight,
+                     owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, 1, (uint)rgba);
         return nullptr;
     } else if (etype != 0x1af && etype != 0x1fa && etype != 0x260) {
         BMD__RenderBody(model, (uint)flags, scale,
-                     *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
+                     owner->BlendMesh, owner->BlendMeshLight,
+                     owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, -1, (uint)rgba);
         return nullptr;
     }
-    int fVar1 = *(int*)(entity + 0x58);
+    int fVar1 = owner->HiddenMesh;
     BMD__RenderBody(model, (uint)flags, scale,
-                 *(int *)(entity+100), *(float*)(entity+0x68),
-                 *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
+                 owner->BlendMesh, owner->BlendMeshLight,
+                 owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, fVar1, (uint)rgba);
     if (etype == 0x1d7) {
-        *(int *)(entity + 0x58) = -1;
+        owner->HiddenMesh = -1;
     }
     return nullptr;
 }
@@ -260,7 +262,8 @@ void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int etype
 void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
-    float *color = (float *)((char*)model + 0x48);
+    float *color = AsModel(model)->BodyLight;
+    auto* owner = AsObject(entity);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else {
@@ -268,8 +271,8 @@ void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, 
     }
     int fVar1 = (etype == 0x235) ? 1 : -1;   // HiddenMesh: malla 1 / ninguna
     BMD__RenderBody(model, (uint)flags, scale,
-                 *(int *)(entity+100), *(float*)(entity+0x68),
-                 *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
+                 owner->BlendMesh, owner->BlendMeshLight,
+                 owner->BlendMeshTexCoordU, owner->BlendMeshTexCoordV, fVar1, (uint)rgba);
     return nullptr;
 }
 // RenderLinkObject @ 0x00455430 — RenderLinkObject (COMPLETO)
@@ -281,41 +284,31 @@ void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int etype, 
 // For param3: clears one link at +0x14 via Widget_Release + vtable[0](1).
 // Widget_Release signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
 // IDA: DeleteCloth (0x00449840)
-void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
+void __cdecl DeleteCloth(CHARACTER* character, OBJECT* object, PART_t* part)
 {
-    if ((param_2 != 0) && (*(int*)(param_2 + 0x184) != 0)) {
-        int count = (int)(unsigned char)*(char*)(param_2 + 0x180);
-        int *puVar1 = (int*)*(int*)(param_2 + 0x184);
-        for (int i = 0; i < count; i++) {
-            Widget_Release((int)puVar1, 0, 0);
-            puVar1 += 0x15;
-        }
-        int *base = (int*)*(int*)(param_2 + 0x184);
-        if (base != nullptr) {
-            FUN_0045aaa0_impl(base, 3);   // vtable[0] = sub_45AAA0
-        }
-        *(int*)(param_2 + 0x184) = 0;
-        *(char*)(param_2 + 0x180) = '\0';
+    if (object && object->Cloth) {
+        const int count = object->ClothCount;
+        auto* widgets = static_cast<ClothWidget*>(object->Cloth);
+        for (int i=0;i<count;++i) Widget_Release(widgets+i,0,0);
+        auto* base = static_cast<ClothWidget*>(object->Cloth);
+        if (base) FUN_0045aaa0_impl(base,3);
+        object->Cloth = nullptr;
+        object->ClothCount = 0;
     }
-    if (param_1 != 0) {
-        int *piVar4 = (int*)(param_1 + 0x1f4);
-        for (int i = 0; i < 6; i++) {
-            int *puVar1 = (int*)*piVar4;
-            if (puVar1 != nullptr) {
-                Widget_Release((int)puVar1, 0, 0);
-                // IDA: (**v8)(v8, 1) -- dtor thiscall de la vtable (sub_45AAA0).
-                // El port lo llamaba como cdecl sin `this`.
-                FUN_0045aaa0_impl(puVar1, 1);
-                *piVar4 = 0;
+    if (character) {
+        for (int i=0;i<6;++i) {
+            PART_t& piece = character->BodyPart[i];
+            if (piece.Cloth) {
+                Widget_Release(piece.Cloth,0,0);
+                FUN_0045aaa0_impl(piece.Cloth,1);
+                piece.Cloth = nullptr;
             }
-            piVar4 += 6;
         }
     }
-    if ((param_3 != 0) && (*(int*)(param_3 + 0x14) != 0)) {
-        int *puVar1 = (int*)*(int*)(param_3 + 0x14);
-        Widget_Release((int)puVar1, 0, 0);
-        FUN_0045aaa0_impl(puVar1, 1);   // IDA: (**v9)(v9, 1)
-        *(int*)(param_3 + 0x14) = 0;
+    if (part && part->Cloth) {
+        Widget_Release(part->Cloth,0,0);
+        FUN_0045aaa0_impl(part->Cloth,1);
+        part->Cloth = nullptr;
     }
 }
 // RenderTerrainAlphaBitmap @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.

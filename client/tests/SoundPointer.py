@@ -32,7 +32,7 @@ struct OBJECT {
     POSITION_FIELD
     BYTE suffix[444 - 28];
 };
-static_assert(sizeof(OBJECT) == 444 && offsetof(OBJECT, Position) == 16);
+static_assert(sizeof(void*) != 4 || (sizeof(OBJECT) == 444 && offsetof(OBJECT, Position) == 16));
 char* Hero;
 #define DAT_07abf5d8 Hero
 DWORD DAT_083a42c0;

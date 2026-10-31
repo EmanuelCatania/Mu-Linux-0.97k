@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 
-// Solo nodos de 0x1bc creados por CreateObject y aun no liberados.
+// Sólo nodos creados por CreateObject y aún no liberados.
 // La escena se crea, recorre y destruye en el hilo principal.
 namespace SceneObjects {
 inline bool IsSlot(const void* pointer, const void* base, std::size_t bytes, std::size_t stride)

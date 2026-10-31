@@ -103,7 +103,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     {
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject(AsObject(puVar13), '\x01', (int)param_3);
-        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
+        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         if ((BYTE)uVar11 != 0)
             Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
         break;
@@ -202,7 +202,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // Los sprites se reproducen desde la muestra SIM de esta entidad.
     }
     else if ((bVar7 == 0x47) || (bVar7 == 0x4a)) {
-        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
+        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
     }
     else if (bVar7 == 0x49) {
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
@@ -240,7 +240,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, 0);
 
 
-        if (param_1[0x61]) FUN_00408ff0((void *)param_1[0x61]);
+        if (AsObject(param_1)->Cloth) FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         --*(short *)((BYTE *)puVar13 + 2);
     }
 
@@ -430,9 +430,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
     if (!bSubTypeNpcRendered && *(char *)((int)param_1 + 0x34f) == '\0') {
-        int *piVar16 = param_1 + 0x7d;   // int*-index: byte offset +0x1f4
+        PART_t *piVar16 = AsCharacter(param_1)->BodyPart;   // int*-index: byte offset +0x1f4
         for (int nSlot = 6; nSlot > 0; nSlot--) {
-            short sSlot = (short)piVar16[-5];   // slot model_idx at -20 bytes
+            short sSlot = piVar16->Type;   // slot model_idx at -20 bytes
             if (sSlot != (short)-1) {
                 int iVar9 = (int)sSlot;
                 // Class byte @ entity+0x1BC (IDA sub_456770: *(BYTE*)(c + 444))
@@ -461,15 +461,15 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     }
                 }
                 {
-                    BYTE rawLvl = *(BYTE *)((char *)piVar16 - 0x12);
-                    BYTE rawOpt = *(BYTE *)((char *)piVar16 - 0x11);
+                    BYTE rawLvl = piVar16->Level;
+                    BYTE rawOpt = piVar16->Option1;
                     // c+482 es el nivel RAW (0-15) del equipo; el shift <<3 lo
                     // encoda para que RenderPartObjectEffect lo decodifique con
                     // (val>>3)&0xF. FIEL a IDA (8 * *(BYTE*)(v76-18)).
                     UINT shiftedLvl = (UINT)rawLvl << 3;
                     RenderPartObject((int)param_1,
                                  iVar9,
-                                 reinterpret_cast<const PART_t*>(piVar16 - 5),
+                                 piVar16,
                                  (float *)(param_1 + 200),
                                  *(float *)(puVar13 + 0x5a),
                                  shiftedLvl,
@@ -483,11 +483,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // El port lo salteaba con la etiqueta "guild-mark related",
                 // que era incorrecta: la capita de atras se movia pegada al
                 // cuerpo en vez de simularse.
-                if (iVar9 == 706 && *piVar16 && *(float *)(puVar13 + 0x5a) > 0.01f)
-                    FUN_00408ff0((void *)*piVar16);
+                if (iVar9 == 706 && piVar16->Cloth && *(float *)(puVar13 + 0x5a) > 0.01f)
+                    FUN_00408ff0(piVar16->Cloth);
 
             }
-            piVar16 += 6;   // advance to next slot (+0x18 bytes)
+            ++piVar16;   // advance to next slot (+0x18 bytes)
         }
         // IDA: RenderCharacter llama CreateGuildMark/RenderGuildMarkOnShield después de
         // renderizar las seis piezas, sólo para modelos de jugador visibles.
@@ -550,8 +550,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 }
             }
 
-            if (bCape && param_1[0x61])
-                FUN_00408ff0((void *)param_1[0x61]);
+            if (bCape && AsObject(param_1)->Cloth)
+                FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         }
     }
     Equipment_Draw(AsCharacter(param_1), CharacterEffects_LateStage);

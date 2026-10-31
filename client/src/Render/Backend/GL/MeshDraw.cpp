@@ -17,6 +17,7 @@
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
 #include "Render/Skinning.h"
+#include "Physics/ClothTypes.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -152,15 +153,16 @@ bool Topology(Mesh& m,const Input& input) {
 }
 bool DrawShadow(const void* model,const char* meshRecord,const float* world,const float* origin) {
     if(!residentEnabled || !model || !meshRecord) return false;
+    const auto* source=reinterpret_cast<const ClothModelMesh*>(meshRecord);
     Input input{};
     input.key=meshRecord;
-    input.faces=reinterpret_cast<const unsigned char*>(*(const int*)(meshRecord+0x1c));
-    input.faceCount=*(const short*)(meshRecord+0x0a);input.positionCount=*(const short*)(meshRecord+4);
-    input.normalCount=*(const short*)(meshRecord+6);input.uvCount=*(const short*)(meshRecord+8);
-    input.positions=world;input.uv=reinterpret_cast<const float*>(*(const int*)(meshRecord+0x18));
+    input.faces=source->Triangles;
+    input.faceCount=source->TriangleCount;input.positionCount=source->VertexCount;
+    input.normalCount=source->NormalCount;input.uvCount=source->TexCoordCount;
+    input.positions=world;input.uv=static_cast<const float*>(source->TexCoords);
     input.model=model;
-    input.rawVertices=reinterpret_cast<const unsigned char*>(*(const int*)(meshRecord+0x10));
-    input.rawNormals=reinterpret_cast<const unsigned char*>(*(const int*)(meshRecord+0x14));
+    input.rawVertices=source->Vertices;
+    input.rawNormals=static_cast<const unsigned char*>(source->Normals);
     if(input.faceCount<=0 || input.positionCount<=0 || !input.faces || !world) return false;
     auto& mesh=meshes[input.key];if(!Topology(mesh,input)) return false;
     if(mesh.minimum.position<0 || mesh.maximum.position>=input.positionCount) return false;

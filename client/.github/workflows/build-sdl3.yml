@@ -150,11 +150,17 @@ jobs:
             python -B tests/VerletInitPointer.py --architecture x64
             python -B tests/CutTextPointer.py --architecture x64
             python -B tests/BmdSetupPointer.py --architecture x64
-            python -B tests/BodyColorPointer.py --architecture x64
+            python -B tests/BmdSetupPointer.py --architecture Win32
+            python -B tests/BmdSetupDifferential.py --architecture x64
+            python -B tests/BMDCollisionArguments.py --architecture x64
+            python -B tests/BodyColorPointer.py --architecture Win32 --differential
+            python -B tests/BodyColorPointer.py --architecture x64 --differential
             python -B tests/SmdImport.py --architecture Win32 --writer
             python -B tests/SmdImport.py --architecture x64
             python -B tests/ClothHelperPointer.py --architecture x64
             python -B tests/LightScalePointer.py --architecture x64
+            python -B tests/LightScalePointer.py --architecture Win32 --native-layout
+            python -B tests/LightScalePointer.py --architecture x64 --native-layout
             python -B tests/FullSetPointer.py --architecture x64
             python -B tests/ModelGravityPointer.py --architecture x64
             python -B tests/PacketQueuePointer.py --architecture x64
@@ -179,6 +185,32 @@ jobs:
             python -B tests/InventoryScanPointer.py --architecture x64
             python -B tests/PolygonPointer.py --architecture x64
             python -B tests/AnimationBonesPointer.py --architecture x64
+            python -B tests/AnimationBonesPointer.py --architecture Win32
+            python -B tests/AnimationDifferential.py --architecture Win32
+            python -B tests/AnimationDifferential.py --architecture x64
+            python -B tests/PoseBatchNative.py --architecture Win32
+            python -B tests/PoseBatchNative.py --architecture x64
+            python -B tests/ModelReleaseLifecycle.py --architecture Win32
+            python -B tests/ModelReleaseLifecycle.py --architecture x64
+            python -B tests/ModelReleaseSlots.py --architecture Win32
+            python -B tests/ModelReleaseSlots.py --architecture x64
+            python -B tests/ModelPostLoad.py --architecture Win32
+            python -B tests/ModelPostLoad.py --architecture x64
+            python -B tests/BMDLoaderNative.py --architecture Win32
+            python -B tests/BMDLoaderNative.py --architecture x64
+            python -B tests/MeshRenderNative.py --architecture Win32
+            python -B tests/MeshRenderNative.py --architecture x64
+            python -B tests/ModelShadowEffects.py --architecture Win32
+            python -B tests/ModelShadowEffects.py --architecture x64
+            python -B tests/ModelDispatchNative.py --architecture Win32
+            python -B tests/ModelDispatchNative.py --architecture x64
+            python -B tests/ModelReservationNative.py --architecture Win32
+            python -B tests/ModelReservationNative.py --architecture x64
+            python -B tests/ScenePickingNative.py --architecture Win32
+            python -B tests/ScenePickingNative.py --architecture x64
+            python -B tests/SMDEntryNative.py --architecture Win32
+            python -B tests/SMDEntryNative.py --architecture x64
+            python -B tests/BMDPathPointers.py --architecture x64 --native-layout
             python -B tests/SkeletonBonesPointer.py --architecture x64
             python -B tests/PoseEntityPointer.py --architecture x64
             python -B tests/MoltTickPointer.py --architecture x64
@@ -236,6 +268,23 @@ jobs:
             python -B tests/DivineIdentityPointer.py --architecture x64
             python -B tests/FontModeValue.py --architecture x64
             python -B tests/DamagePointLayout.py --architecture x64
+            python -B tests/ObjectLayoutContract.py --architecture Win32
+            python -B tests/ObjectLayoutContract.py --architecture x64
+            python -B tests/ObjectSceneVariants.py --architecture Win32
+            python -B tests/ObjectSceneVariants.py --architecture x64
+            python -B tests/SceneObjectCellLayout.py --architecture Win32
+            python -B tests/SceneObjectCellLayout.py --architecture x64
+            python -B tests/SceneGridLifecycle.py --architecture Win32
+            python -B tests/SceneGridNative.py --architecture Win32
+            python -B tests/SceneGridNative.py --architecture x64
+            python -B tests/ClothLayoutContract.py --architecture Win32
+            python -B tests/ClothLayoutContract.py --architecture x64
+            python -B tests/ClothRuntime.py --architecture Win32
+            python -B tests/ClothRuntime.py --architecture x64
+            python -B tests/ModelContextPointer.py --architecture Win32
+            python -B tests/ModelContextPointer.py --architecture x64
+            python -B tests/CalcRenderContext.py --architecture Win32
+            python -B tests/CalcRenderContext.py --architecture x64
             python -B tests/ItemGridLayout.py --architecture Win32
             python -B tests/ItemGridLayout.py --architecture x64
             python -B tests/ItemMovePreviewColor.py --architecture Win32
@@ -344,10 +393,13 @@ jobs:
             python3 -B tests/VerletInitPointer.py --generator Ninja
             python3 -B tests/CutTextPointer.py --generator Ninja
             python3 -B tests/BmdSetupPointer.py --generator Ninja
-            python3 -B tests/BodyColorPointer.py --generator Ninja
+            python3 -B tests/BmdSetupDifferential.py --generator Ninja
+            python3 -B tests/BMDCollisionArguments.py --generator Ninja
+            python3 -B tests/BodyColorPointer.py --generator Ninja --differential
             python3 -B tests/SmdImport.py --generator Ninja
             python3 -B tests/ClothHelperPointer.py --generator Ninja
             python3 -B tests/LightScalePointer.py --generator Ninja
+            python3 -B tests/LightScalePointer.py --generator Ninja --native-layout
             python3 -B tests/FullSetPointer.py --generator Ninja
             python3 -B tests/ModelGravityPointer.py --generator Ninja
             python3 -B tests/PacketQueuePointer.py --generator Ninja
@@ -372,6 +424,19 @@ jobs:
             python3 -B tests/InventoryScanPointer.py --generator Ninja
             python3 -B tests/PolygonPointer.py --generator Ninja
             python3 -B tests/AnimationBonesPointer.py --generator Ninja
+            python3 -B tests/AnimationDifferential.py --generator Ninja
+            python3 -B tests/PoseBatchNative.py --generator Ninja
+            python3 -B tests/ModelReleaseLifecycle.py --generator Ninja
+            python3 -B tests/ModelReleaseSlots.py --generator Ninja
+            python3 -B tests/ModelPostLoad.py --generator Ninja
+            python3 -B tests/BMDLoaderNative.py --generator Ninja
+            python3 -B tests/MeshRenderNative.py --generator Ninja
+            python3 -B tests/ModelShadowEffects.py --generator Ninja
+            python3 -B tests/ModelDispatchNative.py --generator Ninja
+            python3 -B tests/ModelReservationNative.py --generator Ninja
+            python3 -B tests/ScenePickingNative.py --generator Ninja
+            python3 -B tests/SMDEntryNative.py --generator Ninja
+            python3 -B tests/BMDPathPointers.py --generator Ninja --native-layout
             python3 -B tests/SkeletonBonesPointer.py --generator Ninja
             python3 -B tests/PoseEntityPointer.py --generator Ninja
             python3 -B tests/MoltTickPointer.py --generator Ninja
@@ -428,6 +493,14 @@ jobs:
             python3 -B tests/DivineIdentityPointer.py --generator Ninja
             python3 -B tests/FontModeValue.py --generator Ninja
             python3 -B tests/DamagePointLayout.py --generator Ninja
+            python3 -B tests/ObjectLayoutContract.py --generator Ninja
+            python3 -B tests/ObjectSceneVariants.py --generator Ninja
+            python3 -B tests/SceneObjectCellLayout.py --generator Ninja
+            python3 -B tests/SceneGridNative.py --generator Ninja
+            python3 -B tests/ClothLayoutContract.py --generator Ninja
+            python3 -B tests/ClothRuntime.py --generator Ninja
+            python3 -B tests/ModelContextPointer.py --generator Ninja
+            python3 -B tests/CalcRenderContext.py --generator Ninja
             python3 -B tests/ItemGridLayout.py --generator Ninja
             python3 -B tests/ItemMovePreviewColor.py --generator Ninja
             python3 -B tests/OptionsLocalText.py --generator Ninja

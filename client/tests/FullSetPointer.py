@@ -7,6 +7,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 
 SERVICES=r'''
 int EquipmentLevelSet;
@@ -60,7 +61,7 @@ int main(){
 def harness(revision=None):
     source=read_source('src/Render/Render_PlayerEquipment.cpp',revision)
     header=read_source('src/Entity/EntityTypes.h',revision)
-    part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group()
+    part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group();part=opaque_cloth_fields(part)
     # Sólo prefijo sin punteros; OBJECT es una reserva opaca de los bytes x86.
     character=header[header.index('struct CHARACTER {'):header.index('    PART_t   Weapon[2];')]
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include <algorithm>\n#include <initializer_list>\n#ifndef _WIN32\nusing WORD=std::uint16_t;\n#endif\nstruct OBJECT {BYTE opaque[444];};\n'
