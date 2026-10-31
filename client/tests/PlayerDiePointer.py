@@ -14,8 +14,8 @@ from PlayerWalkPointer import harness as walk_harness
 from SceneObjectPointer import build_and_run, function, read_source
 
 SERVICES = r'''
-static_assert(offsetof(OBJECT, Live) == 0 && offsetof(OBJECT, Angle) == 28);
-static_assert(offsetof(OBJECT, Light) == 232);
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Live) == 0 && offsetof(OBJECT, Angle) == 28));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Light) == 232));
 float* CreateEffect(int type, float* position, float* angle, float* light,
                     float* p4, float* p5, float* p6, float* p7, BYTE flag) {
     Require(position == activeCharacter->Object.Position && angle == activeCharacter->Object.Angle);

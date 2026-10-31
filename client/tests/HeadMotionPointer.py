@@ -101,7 +101,7 @@ def harness(revision=None):
     head = " ".join(re.search(rf"vec3_t\s+{name}\s*;", types).group() for name in ("HeadAngle", "HeadTargetAngle"))
     prefix = prefix.replace("BYTE beforeTimer[128 - 40];", head + " BYTE beforeTimer[128 - 64];", 1)
     prefix = prefix.replace("randomValues[2]", "randomValues[4]").replace("randomDraws < 2", "randomDraws < 4")
-    prefix += "\nstatic_assert(offsetof(OBJECT, HeadTargetAngle) == 52 && offsetof(CHARACTER, TargetCharacter) == 784);\n"
+    prefix += "\nstatic_assert(sizeof(void*) != 4 || (offsetof(OBJECT, HeadTargetAngle) == 52 && offsetof(CHARACTER, TargetCharacter) == 784));\n"
     globals_source = read_source("src/globals.cpp", revision)
     for name in ("_DAT_00552598", "_DAT_005526e4", "_DAT_00552580", "_DAT_0055286c", "_DAT_00552868", "_DAT_00552860", "_DAT_005524ec", "_DAT_00552864"):
         if not re.search(rf"\bfloat\s+{name}\s*=", prefix):

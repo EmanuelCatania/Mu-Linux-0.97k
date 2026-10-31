@@ -127,8 +127,8 @@ std::uint64_t Run(CHARACTER* character, BYTE* models, BYTE* items, unsigned disp
             Require(std::memcmp(&character->Object.PriorAnimationFrame, &before.Object.AnimationFrame, 4) == 0);
             DWORD bits; std::memcpy(&bits, &character->Object.AnimationFrame, 4); Require(bits == 0);
         }
-        for(int offset = 0; offset < 916; ++offset) {
-            if(offset == 768 || offset == 261 || offset == 262 || (offset >= 264 && offset < 272)) continue;
+        for(int offset = 0; offset < int(sizeof(CHARACTER)); ++offset) {
+            if(offset == int(offsetof(CHARACTER, Run)) || offset == 261 || offset == 262 || (offset >= 264 && offset < 272)) continue;
             Require(reinterpret_cast<BYTE*>(character)[offset] == reinterpret_cast<BYTE*>(&before)[offset]);
         }
         bool bound = false;
