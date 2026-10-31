@@ -11,6 +11,7 @@ def extract(source,name):
  while depth:depth+=(source[end]=='{')-(source[end]=='}');end+=1
  return source[m.start():end]+'\n'
 PREAMBLE=r'''
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
