@@ -219,6 +219,8 @@ jobs:
             python -B tests/GridCellPointer.py --architecture x64
             python -B tests/LegacyEdgesPointer.py --architecture x64
             python -B tests/WaveMeshPointer.py --architecture x64
+            python -B tests/TarkanWideOverlay.py --architecture Win32
+            python -B tests/TarkanWideOverlay.py --architecture x64
             python -B tests/ClothPinPointer.py --architecture x64
             python -B tests/ClothWindPointer.py --architecture x64
             python -B tests/PlayerPoolPointer.py --architecture x64
@@ -441,6 +443,7 @@ jobs:
             python3 -B tests/GridCellPointer.py --generator Ninja
             python3 -B tests/LegacyEdgesPointer.py --generator Ninja
             python3 -B tests/WaveMeshPointer.py --generator Ninja
+            python3 -B tests/TarkanWideOverlay.py --generator Ninja
             python3 -B tests/ClothPinPointer.py --generator Ninja
             python3 -B tests/ClothWindPointer.py --generator Ninja
             python3 -B tests/PlayerPoolPointer.py --generator Ninja
