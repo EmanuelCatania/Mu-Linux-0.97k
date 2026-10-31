@@ -92,7 +92,7 @@ CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *par
   void *pvVar7;
   float *pfVar8;
   intptr_t iVar9;
-  uint uVar10;
+  intptr_t uVar10;
   undefined4 *puVar11;
   float *pfVar12;
   byte *pbVar13;

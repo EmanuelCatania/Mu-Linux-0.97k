@@ -278,7 +278,7 @@ void InitializeFireParticle(char* particle, const ParticleFirePreset& preset)
 
 // IDA: Particle_Spawn (0x00475220)
 int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *param_4,
-                         int param_5, float param_6, int param_7)
+                         int param_5, float param_6, intptr_t param_7)
 {
     float *pfVar1;
     float *pfVar2;

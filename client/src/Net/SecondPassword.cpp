@@ -2855,7 +2855,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 extern "C" bool __cdecl CharacterAnimation(int c, int o);
 
 extern bool __cdecl AttackStage(DWORD c, DWORD o);
-extern void __cdecl CreateBlood(DWORD o);
+extern void __cdecl CreateBlood(intptr_t o);
 extern int  __stdcall FindHotKey(int Skill);
 extern void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);

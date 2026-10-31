@@ -194,7 +194,7 @@ void __stdcall MoveParticles(void)
                     float worldOff[3];
                     Vector_Rotate(localOff, (float*)mat3x4, worldOff);
                     // Add to entity position
-                    int entPtr = P_ENT(iVar9);
+                    intptr_t entPtr = P_ENT(iVar9);
                     P_POSX(iVar9) = worldOff[0] + *(float*)(entPtr + 0x10);
                     P_POSY(iVar9) = worldOff[1] + *(float*)(entPtr + 0x14);
                     P_POSZ(iVar9) = worldOff[2] + *(float*)(entPtr + 0x18);
@@ -216,7 +216,7 @@ void __stdcall MoveParticles(void)
 
             case 0x4cf: {
                 if (P_SUB(iVar9) == 99) {
-                    int entPtr = P_ENT(iVar9);
+                    intptr_t entPtr = P_ENT(iVar9);
                     P_POSX(iVar9) = *(float*)(entPtr + 0x10);
                     P_POSY(iVar9) = *(float*)(entPtr + 0x14);
                     P_POSZ(iVar9) = *(float*)(entPtr + 0x18) + _DAT_00552598;
@@ -822,7 +822,7 @@ void __stdcall MoveParticles(void)
                         P_SCALE(iVar9) *= _DAT_00552b44;
                         continue;
                     } else if (iVar5 == 3) {
-                        int entPtr = P_ENT(iVar9);
+                        intptr_t entPtr = P_ENT(iVar9);
                         P_LR(iVar9) *= _DAT_005526e8;
                         P_LG(iVar9) *= _DAT_005526e8;
                         P_LB(iVar9) *= _DAT_005526e8;
@@ -855,7 +855,7 @@ void __stdcall MoveParticles(void)
                         // caller toma de la tabla DAT_00559b78 {25,26,27,20,34,
                         // 35,36,0}.  El +0x0C del slot queda fijo en 2.0f, asi
                         // que leer el hueso de ahi daba siempre el mismo.
-                        int entPtr = P_ENT(iVar9);
+                        intptr_t entPtr = P_ENT(iVar9);
                         if (entPtr != 0) {
                             float localP[3] = { 0.0f, 0.0f, 0.0f };
                             void* mdl = (void*)((char*)DAT_05828d58 + *(short*)(entPtr + 2) * 0xBC);
@@ -960,7 +960,7 @@ void __stdcall MoveParticles(void)
                 AddTerrainLight(P_POSX(iVar9), P_POSY(iVar9), (float*)ltBuf, 3, (float*)&DAT_081cb608[0]);
             }
             if (P_SUB(iVar9) == 2) {
-                int entPtr = P_ENT(iVar9);
+                intptr_t entPtr = P_ENT(iVar9);
                 P_LR(iVar9) = ltA0;
                 P_LG(iVar9) = ltA1;
                 P_SCALE(iVar9) += _DAT_005524f4;
@@ -993,7 +993,7 @@ void __stdcall MoveParticles(void)
                 P_ROT(iVar9) += _DAT_00552660;
                 break;
             case 9: {
-                int entPtr = P_ENT(iVar9);
+                intptr_t entPtr = P_ENT(iVar9);
                 P_POSX(iVar9) = *(float*)(entPtr + 0x10) + P_TGX(iVar9);
                 P_POSY(iVar9) = *(float*)(entPtr + 0x14) + P_TGY(iVar9);
                 P_POSZ(iVar9) = *(float*)(entPtr + 0x18) + P_TGZ(iVar9);
@@ -1051,7 +1051,7 @@ void __stdcall MoveParticles(void)
                 P_ROT(iVar9) = (float)(_rand() % 0x168);
                 continue;
             case 4: {
-                int entPtr = P_ENT(iVar9);
+                intptr_t entPtr = P_ENT(iVar9);
                 P_POSX(iVar9) += *(float*)(entPtr + 0x10) - P_TGX(iVar9);
                 P_POSY(iVar9) += *(float*)(entPtr + 0x14) - P_TGY(iVar9);
                 P_POSZ(iVar9) += *(float*)(entPtr + 0x18) - P_TGZ(iVar9) + P_GRAV(iVar9);

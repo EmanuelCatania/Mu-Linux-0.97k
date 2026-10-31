@@ -23,7 +23,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   intptr_t iVar6;
   undefined4 *puVar7;
   byte *pbVar8;
-  uint uVar9;
+  intptr_t uVar9;
   byte *pbVar10;
   int iVar11;
   uint uVar12;

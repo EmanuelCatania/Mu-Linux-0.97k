@@ -255,8 +255,8 @@ void MoveEffect(float *param_1, int param_2)
   // `*(float *)&AsObject(param_1)->Owner` es el PUNTERO al owner del efecto: IDA lo lee como DWORD
   // (`*((_DWORD *)param_1 + 63)`), no como float.  Son los efectos que siguen a
   // su entidad duena.
-  int __owner_fVar13 = 0;
-  int __owner_fVar4 = 0;
+  intptr_t __owner_fVar13 = 0;
+  intptr_t __owner_fVar4 = 0;
   intptr_t __owner_fVar5 = 0;
 
 
@@ -267,11 +267,11 @@ void MoveEffect(float *param_1, int param_2)
   float fVar5;
   float fVar6;
   float fVar7;
-  uint uVar8;
-  int iVar9;
+  intptr_t uVar8;
+  intptr_t iVar9;
   float *pfVar10;
   char *pcVar11;
-  int iVar12;
+  intptr_t iVar12;
   float fVar13;
   undefined2 extraout_var;
   float *pfVar14;
@@ -418,7 +418,7 @@ void MoveEffect(float *param_1, int param_2)
     local_35c = (float *)(uVar8 + 7);
     // El counter (+96) es un DWORD. IDA: `v4 = *(int *)(o + 96)` y compara `v4`;
     // `v356 = *(float *)&v4` es solo la copia de los BITS.
-    const int __cnt = AsObject(param_1)->LifeTime;
+    const intptr_t __cnt = AsObject(param_1)->LifeTime;
     fVar13 = *(float *)&AsObject(param_1)->LifeTime;
     local_36c = (float)(int)(intptr_t)local_35c * _DAT_005524f4;
     if (__cnt < 5) {
@@ -806,7 +806,7 @@ void MoveEffect(float *param_1, int param_2)
                 fVar17 = -fVar17;
               }
               if (!validOwner(owner)) return;
-              __owner_fVar4 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+              __owner_fVar4 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
               fVar18 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552998 +
                                      (float10)(intptr_t)local_35c * (float10)_DAT_0055299c);
               local_35c = (float *)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
@@ -983,7 +983,7 @@ LAB_00469366:
         Matrix_BuildFromEuler(AsObject(param_1)->HeadAngle,local_1a4 + 6);
         Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
         if (!validOwner(owner)) return;
-        __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+        __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
         local_354 = local_354 + *(float *)(__owner_fVar13 + 0x10);
         local_350 = local_350 + *(float *)(__owner_fVar13 + 0x14);
         local_368 = 1.0;
@@ -1217,7 +1217,7 @@ LAB_004695b5:
     case 0xc2:
     case 0x103:
       if (!validOwner(owner)) return;
-      __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+      __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
       fVar4 = *(float *)(__owner_fVar13 + 0x14);
       fVar5 = *(float *)(__owner_fVar13 + 0x18);
       AsObject(param_1)->Position[0] = *(float *)(__owner_fVar13 + 0x10);
@@ -1282,7 +1282,7 @@ LAB_00468772:
       goto LAB_00468736;
     case 0xca:
       if (!validOwner(owner)) return;
-      __owner_fVar4 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+      __owner_fVar4 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
       fVar6 = *(float *)(__owner_fVar4 + 0x18) + _DAT_005524f0;
       fVar5 = *(float *)(__owner_fVar4 + 0x14);
       AsObject(param_1)->Position[0] = *(float *)(__owner_fVar4 + 0x10);
@@ -1668,7 +1668,7 @@ switchD_00466b93_caseD_c7:
       }
       else {
         if (!validOwner(owner)) return;
-        __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+        __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
         fVar4 = *(float *)(__owner_fVar13 + 0x10);
         fVar5 = *(float *)(__owner_fVar13 + 0x14);
         AsObject(param_1)->Scale = AsObject(param_1)->Scale + _DAT_005524f8;
@@ -1702,7 +1702,7 @@ switchD_00466b93_caseD_c7:
       Matrix_BuildFromEuler(pfVar10,local_1a4 + 6);
       Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
       if (!validOwner(owner)) return;
-      __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+      __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
       pfVar15 = param_1 + 4;
       *pfVar15 = local_354 + *(float *)(__owner_fVar13 + 0x10);
       AsObject(param_1)->Position[1] = local_350 + *(float *)(__owner_fVar13 + 0x14);

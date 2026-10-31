@@ -440,7 +440,7 @@ void __cdecl ItemDrop_Render(void)
                     // Fade por altura: lo que sube por encima de ownerZ+50 se
                     // oscurece (por eso el aura nunca pasa de la cabeza).
                     float c[3] = { light[0], light[1], light[2] };
-                    int owner = (int)(uintptr_t)j->Target;
+                    intptr_t owner = (int)(uintptr_t)j->Target;
                     if (owner) {
                         double d = ((double)*((const float*)v6 + 1)
                                   - ((double)*(const float*)(owner + 24) + 50.0)) * 0.0099999998;
@@ -856,7 +856,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
 // El truco del binario es que reusa el propio slot del efecto como si fuera la
 // entidad del arma: le cambia `Type` (o+2) al modelo del item y al final lo
 // devuelve. Por eso guarda/restaura pos (16/20/24), angle (28/32/36) y type.
-void __cdecl RenderWheelWeapon(DWORD o)
+void __cdecl RenderWheelWeapon(intptr_t o)
 {
     if (!o || !DAT_05828d58 || !DAT_07abf5d8) return;
 
