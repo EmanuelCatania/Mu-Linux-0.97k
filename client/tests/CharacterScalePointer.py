@@ -12,6 +12,7 @@ import tempfile
 
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 
 SUPPORT = r'''
 struct OBJECT {
@@ -30,13 +31,13 @@ struct CHARACTER {
     CHANGE_FIELD
     BYTE suffix[916 - 0x350];
 };
-static_assert(sizeof(PART_t) == 24);
-static_assert(sizeof(CHARACTER) == 916);
-static_assert(offsetof(OBJECT, Scale) == 12);
-static_assert(offsetof(CHARACTER, Class) == 444);
-static_assert(offsetof(CHARACTER, Skin) == 445);
-static_assert(offsetof(CHARACTER, BodyPart) == 480);
-static_assert(offsetof(CHARACTER, Change) == 847);
+static_assert(sizeof(void*) != 4 || (sizeof(PART_t) == 24));
+static_assert(sizeof(void*) != 4 || (sizeof(CHARACTER) == 916));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Scale) == 12));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, Class) == 444));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, Skin) == 445));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, BodyPart) == 480));
+static_assert(sizeof(void*) != 4 || (offsetof(CHARACTER, Change) == 847));
 CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }
 CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 std::uint64_t digest;
@@ -91,7 +92,7 @@ int main() {
 
 def harness(revision=None):
     types = read_source("src/Entity/EntityTypes.h", revision)
-    support = SUPPORT.replace("PART_RECORD", re.search(r"struct PART_t\s*\{.*?\};", types, re.S).group())
+    support = SUPPORT.replace("PART_RECORD", opaque_cloth_fields(re.search(r"struct PART_t\s*\{.*?\};", types, re.S).group()))
     for token, name, kind in (("SCALE_FIELD", "Scale", "float"),
                               ("CLASS_FIELD", "Class", "BYTE"),
                               ("SKIN_FIELD", "Skin", "BYTE"),

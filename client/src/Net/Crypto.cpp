@@ -16,6 +16,7 @@
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "Render/BufferedDraw.h"
 #include "Entity/ClothPresentation.h"
 #include "Platform/IFileSystem.h"
@@ -839,10 +840,10 @@ void __fastcall FUN_00408ff0(void* param_1) {
     // cada nodo y dibuja las dos caras.
     int *thiz = (int *)param_1;
     if (!thiz) return;
-    int cols  = thiz[10];   // +0x28
-    int rows  = thiz[11];   // +0x2c
-    int count = thiz[12];   // +0x30
-    int nodes = thiz[13];   // +0x34
+    int cols  = ClothSystem(thiz).Columns;   // +0x28
+    int rows  = ClothSystem(thiz).Rows;   // +0x2c
+    int count = ClothSystem(thiz).NodeCount;   // +0x30
+    ClothNode* nodes = ClothSystem(thiz).Nodes;   // +0x34
     if (cols < 2 || rows < 2 || count <= 0 || !nodes) return;
 
     float *verts = (float *)operator_new(12 * count);
@@ -851,18 +852,18 @@ void __fastcall FUN_00408ff0(void* param_1) {
     for (int r = 0; r < rows; ++r)
         for (int c = 0; c < cols; ++c) {
             const int index=c+r*cols;
-            SpringNode_GetPos((void *)(nodes+60*index),&verts[3*index]);
+            SpringNode_GetPos(nodes + index,&verts[3*index]);
             ClothPresentation_Vertex(param_1,index,&verts[3*index]);
         }
 
-    unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
+    unsigned flags = (unsigned)ClothSystem(thiz).Flags & 0x3000u;                 // +0x14
     if (flags == 0)          GL_ResetState();                      // DisableAlphaBlend
     else if (flags == 0x1000) GL_SetBlendSrcOver('');               // EnableAlphaTest
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     float texFront, texBack;
-    memcpy(&texFront, &thiz[3], 4);   // +0x0C
-    memcpy(&texBack,  &thiz[4], 4);   // +0x10
+    memcpy(&texFront, &ClothSystem(thiz).FrontTexture, 4);   // +0x0C
+    memcpy(&texBack,  &ClothSystem(thiz).BackTexture, 4);   // +0x10
     FUN_004090b0(param_1, 0, 1, texFront, verts);
     FUN_004090b0(param_1, 0, 0, texBack,  verts);
 
@@ -879,8 +880,8 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
     // igual que el `t` de sub_4091D0 lleva el índice de fila.
     int *thiz = (int *)ecx;
     if (!thiz || !param_3) return;
-    int cols = thiz[10];   // +0x28
-    int rows = thiz[11];   // +0x2c
+    int cols = ClothSystem(thiz).Columns;   // +0x28
+    int rows = ClothSystem(thiz).Rows;   // +0x2c
     int texId; memcpy(&texId, &param_2, 4);
 
     GL_BindTextureSlot(texId);
@@ -915,8 +916,8 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, const float* param_1, int
     // param_2 = columna, param_3 = fila (llega como float con valor entero).
     int *thiz = (int *)ecx;
     if (!thiz || !param_1) return;
-    int cols = thiz[10];   // +0x28
-    int rows = thiz[11];   // +0x2c
+    int cols = ClothSystem(thiz).Columns;   // +0x28
+    int rows = ClothSystem(thiz).Rows;   // +0x2c
     int row  = (int)param_3;
     if (cols < 2 || rows < 2) return;
 
@@ -934,37 +935,20 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, const float* param_1, int
 // La entrada nueva se inserta al final, justo antes del centinela de cola.
 void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
 {
-    char *thiz = (char*)widget;
-    // allocate and construct VerletNode (0x24 bytes)
-    void *node_raw = operator_new(0x24);
-    void *node = (node_raw == NULL) ? NULL : (void *)ClothAnchor_Ctor((DWORD *)node_raw);
-    ClothAnchor_SetParams(node, p1, p2, p3, radius, boneIdx);
-
-    // aloca la entrada de la lista enlazada (0xc bytes: [+0]=node_ptr, [+4]=prev, [+8]=next)
-    int *entry = (int *)operator_new(0xc);
-    if (entry != NULL) {
-        entry[0] = 0;
-        entry[1] = 0;
-        entry[2] = 0;
-        entry[0] = (int)node;
-
-        // IDA `sub_409250` L27-32:
-        //     result[1] = *(_DWORD *)(this[20] + 4);
-        //     *(_DWORD *)(*(_DWORD *)(this[20] + 4) + 8) = result;
-        //     result[2] = this[20];
-        //     *(_DWORD *)(this[20] + 4) = result;
-        //     this[18] = this[18] + 1;
-        // `this[20]` es el VALOR del puntero al centinela de cola que guardó
-        // `sub_407FE0` en +0x50 (el centinela NO está embebido ahí), y el layout es
-        // **+4 = prev, +8 = next** (coherente con el ctor: `head[8] = tail`,
-        // `tail[4] = head`). Se inserta al FINAL, antes de la cola.
-        int tail = *(int *)(thiz + 0x50);      // this[20]
-        int prev = *(int *)(tail + 4);         // tail->prev
-        entry[1] = prev;                       // entry->prev = tail->prev
-        *(int *)(prev + 8) = (int)entry;       // prev->next  = entry
-        entry[2] = tail;                       // entry->next = tail
-        *(int *)(tail + 4) = (int)entry;       // tail->prev  = entry
-        *(int *)(thiz + 0x48) += 1;            // this[18]++
+    ClothWidget& w = ClothSystem(widget);
+    void* raw = operator_new(sizeof(ClothAnchor));
+    auto* node = raw ? reinterpret_cast<ClothAnchor*>(ClothAnchor_Ctor(static_cast<DWORD*>(raw))) : nullptr;
+    ClothAnchor_SetParams(node,p1,p2,p3,radius,boneIdx);
+    auto* entry = static_cast<ClothLink*>(operator_new(sizeof(ClothLink)));
+    if (entry) {
+        entry->Value = node;
+        entry->Previous = nullptr;
+        entry->Next = nullptr;
+        entry->Previous = w.Tail->Previous;
+        w.Tail->Previous->Next = entry;
+        entry->Next = w.Tail;
+        w.Tail->Previous = entry;
+        ++w.AnchorCount;
     }
 }
 
@@ -991,57 +975,51 @@ int __cdecl Cloth_Solve(DWORD *a1)
   // El original no chequea BoneTransform: la tela sólo se crea para entidades
   // con el modelo ya cargado. Guard defensivo — sin él, `Matrix` sería
   // `48*boneIdx` (una dirección de dos dígitos) y el frame moriría en un AV.
-  if (!a1 || !a1[1] || !*(DWORD *)(a1[1] + 276))
+  if (!a1 || !ClothSystem(a1).Owner || !ClothSystem(a1).Owner->BoneMatrices)
     return 1;
 
   // ── 1. anclas → posición de mundo desde el hueso ──────────────────────
-  for (int i = *(int *)(a1[19] + 8); (int)a1[20] != i && i; i = *(int *)(i + 8))
-  {
-    DWORD *v5 = *(DWORD **)i;
-    VerletNode_GetPos(v5, Position);
-    // IDA: rota el vector local (x,y,z) → (z,-y,x) antes de transformar.
-    float v6 = Position[0];
-    Position[1] = -Position[1];
-    Position[0] = Position[2];
-    Position[2] = v6;
-    BMD_TransformPosition(
-        (void *)(DAT_05828d58 + 0xbc * (int)*(short *)(a1[1] + 2)),
-        (float *)(*(DWORD *)(a1[1] + 276) + 48 * v5[4]),
-        Position,
-        WorldPosition,
-        1);
-    VerletNode_SetTarget(v5, WorldPosition[0], *(int *)&WorldPosition[1], *(int *)&WorldPosition[2]);
+  for (ClothLink* entry=ClothSystem(a1).Head->Next;entry!=ClothSystem(a1).Tail && entry;entry=entry->Next) {
+    ClothAnchor* anchor=entry->Value;
+    VerletNode_GetPos(anchor,Position);
+    float v6=Position[0];Position[1]=-Position[1];Position[0]=Position[2];Position[2]=v6;
+    OBJECT* owner=ClothSystem(a1).Owner;
+    BMD_TransformPosition(static_cast<void*>(AsModel(DAT_05828d58)+owner->Type),
+      reinterpret_cast<float*>(owner->BoneMatrices+anchor->Bone),Position,WorldPosition,1);
+    VerletNode_SetTarget(anchor,WorldPosition[0],*(int*)&WorldPosition[1],*(int*)&WorldPosition[2]);
   }
 
   Cloth_CollideAnchors(a1);
 
   // ── 2. springs de igualdad ────────────────────────────────────────────
-  for (int v7 = 0, v8 = 0; v7 < (int)a1[14]; ++v7, v8 += 16)
+  for (int v7 = 0; v7 < ClothSystem(a1).SpringCount; ++v7)
   {
-    float *v9 = (float *)(a1[15] + v8);
-    if ((*(BYTE *)&v9[3] & 1) != 0)
-      Cloth_SpringEqual(a1[13] + 60 * *(short *)v9, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
+    const ClothSpring& spring = ClothSystem(a1).Springs[v7];
+    if ((spring.Flags & 1) != 0)
+      Cloth_SpringEqual(reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + spring.A), reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + spring.B), spring.Rest);
   }
 
   // ── 3. flush de correcciones ──────────────────────────────────────────
-  for (int j = 0; j < (int)a1[11]; ++j)
+  for (int j = 0; j < (int)ClothSystem(a1).Rows; ++j)
   {
-    int v11 = a1[10];
+    int v11 = ClothSystem(a1).Columns;
     for (int k = 0; k < v11; ++k)
     {
-      VerletSystem_Flush(a1[13] + 60 * (k + j * v11));
-      v11 = a1[10];
+      VerletSystem_Flush(reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + (k + j * v11)));
+      v11 = ClothSystem(a1).Columns;
     }
   }
 
   // ── 4. springs de rango ───────────────────────────────────────────────
-  for (int v16 = 0, v3 = 0; v16 < (int)a1[14]; ++v16, v3 += 16)
+  for (int v16 = 0; v16 < ClothSystem(a1).SpringCount; ++v16)
   {
-    float *v13 = (float *)(a1[15] + v3);
-    int v14 = *((short *)v13 + 1);
-    if (v14 >= (int)a1[10]
-        && (*(BYTE *)&v13[3] & 4) != 0
-        && !Cloth_SpringRange(a1[13] + 60 * v14, a1[13] + 60 * *(short *)v13, v13 + 1))
+    const ClothSpring& spring = ClothSystem(a1).Springs[v16];
+    float range[2];
+    memcpy(range, &spring.Minimum, sizeof(range));
+    int v14 = spring.B;
+    if (v14 >= (int)ClothSystem(a1).Columns
+        && (spring.Flags & 4) != 0
+        && !Cloth_SpringRange(reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + v14), reinterpret_cast<uintptr_t>(ClothSystem(a1).Nodes + spring.A), range))
     {
       return 0;
     }
@@ -1060,7 +1038,7 @@ void* __fastcall Widget_Ctor(void *param_1)
 
 // FUN_004093c0 @ 0x004093C0 (11 bytes)
 void __fastcall FUN_004093c0(void *This) {
-    *(int *)This = (int)&PTR_LAB_005524e8;
+    ClothSystem(This).VTable = reinterpret_cast<void**>(&PTR_LAB_005524e8);
     FUN_00408070(This);
 }
 
@@ -1070,52 +1048,52 @@ void __fastcall FUN_004093c0(void *This) {
 // y agrega el resorte vía Spring_StoreEdge a this->springs (stride 0x10; na,nb,rest_scaled,rest,flags).
 // Layout: this+4=entity, +8=type, +0x14=flags, +0x30=node_count, +0x34=node_array*, +0x38=spring_count,
 //         +0x3c=spring_array*, +0x54=slot_index, +0x5c=model_type.
-void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags)
+void __cdecl SpringMesh_Create(void *widget, OBJECT* entity, int slot, int type, int radius, int flags)
 {
     ClothPresentation_Forget(widget);
     char *thiz = (char*)widget;
-    *(int *)(thiz + 8)  = type;
-    *(int *)(thiz + 4)  = entity;
-    *(short**)(thiz + 0x54) = slot;
-    *(unsigned int *)(thiz + 0x14) |= (unsigned int)radius;   // radius repurposed as flag mask
+    ClothSystem(thiz).Bone  = type;
+    ClothSystem(thiz).Owner  = entity;
+    static_cast<ClothMeshWidget*>(widget)->MeshIndex = slot;
+    ClothSystem(thiz).Flags |= (unsigned int)radius;   // radius repurposed as flag mask
 
-    int model_type = (flags == -1) ? (int)*(short *)(entity + 2) : flags;
-    *(int *)(thiz + 0x5c) = model_type;
+    int model_type = (flags == -1) ? (int)entity->Type : flags;
+    static_cast<ClothMeshWidget*>(widget)->ModelType = model_type;
 
     // model data: DAT_05828d58 + model_type * 0xbc; face list at +0x28
-    const std::uintptr_t model_base = DAT_05828d58 + model_type * 0xbc;
-    int face_list  = *(int *)(model_base + 0x28);
-    int face_entry = face_list + (int)slot * 0x28;
+    const BMD* model_base = AsModel(DAT_05828d58) + model_type;
+    auto* face_list = reinterpret_cast<ClothModelMesh*>(model_base->Meshs);
+    ClothModelMesh* face_entry = face_list + slot;
 
     // node count from face vertex list header (+4)
-    int node_count = (int)*(short *)(face_entry + 4);
-    *(int *)(thiz + 0x30) = node_count;
+    int node_count = (int)face_entry->VertexCount;
+    ClothSystem(thiz).NodeCount = node_count;
 
     // allocate node array: [count_header][node0..nodeN], each node 0x3c bytes
-    int *raw = (int*)operator_new(node_count * 0x3c + 4);
-    int *nodes;
+    int *raw = (int*)operator_new(node_count * sizeof(ClothNode) + 4);
+    ClothNode* nodes;
     if (raw == NULL) {
         nodes = NULL;
     } else {
-        nodes = raw + 1;
+        nodes = reinterpret_cast<ClothNode*>(raw + 1);
         *raw  = node_count;
-        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)SpringNode_Ctor);
+        ClothConstruct(nodes, node_count, SpringNode_Ctor);
     }
-    *(int **)(thiz + 0x34) = nodes;
+    ClothSystem(thiz).Nodes = nodes;
 
     // spring count from face header (+0xa = short)
-    int spring_count = (int)*(short *)(face_entry + 0xa);
-    *(int *)(thiz + 0x38) = spring_count * 3;
+    int spring_count = (int)face_entry->TriangleCount;
+    ClothSystem(thiz).SpringCount = spring_count * 3;
 
     // allocate spring array: spring_count * 0x30 bytes
     void *springs = operator_new(spring_count * 0x30);
-    *(void **)(thiz + 0x3c) = springs;
+    ClothSystem(thiz).Springs = static_cast<ClothSpring*>(springs);
 
     // init node positions from bone vertex buffer
     // buffer de vértices: (float*)&DAT_0584621c, stride de 3 floats por entrada * 15000 por slot
     float *verts = (float*)&DAT_0584621c;
     int vert_base = (int)slot * 15000;
-    int *vert_indices = (int *)*(int *)(face_entry + 0x10);  // vertex index list
+    int *vert_indices = reinterpret_cast<int*>(face_entry->Vertices);  // vertex index list
 
     for (int i = 0; i < node_count; i++) {
         int vi = vert_base + i;
@@ -1123,19 +1101,19 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
         float y = verts[vi * 3 + 1];
         float z = verts[vi * 3 + 2];
         int pinned = ((int)*(short *)(vert_indices + i * 4) == type) ? 1 : 0;
-        SpringNode_SetPos((char*)nodes + i * 0x3c, x, y, z, pinned);
+        SpringNode_SetPos(nodes + i, x, y, z, pinned);
     }
 
     // build springs from face triangle edges
-    int *face_ptr  = (int *)*(int *)(face_entry + 0x1c);
+    int *face_ptr  = reinterpret_cast<int*>(face_entry->Triangles);
     unsigned int sp = 0;
     for (int fi = 0; fi < spring_count; fi++, face_ptr = (int*)((char*)face_ptr + 0x24)) {
         short *tri = (short*)face_ptr;
         for (int ei = 0; ei < 3; ei++) {
             short na = tri[ei + 1];
             short nb = tri[(ei + 1) % 3 + 1];
-            uintptr_t pA = reinterpret_cast<uintptr_t>(nodes) + na * 0x3c;
-            uintptr_t pB = reinterpret_cast<uintptr_t>(nodes) + nb * 0x3c;
+            uintptr_t pA = reinterpret_cast<uintptr_t>(nodes) + na * sizeof(ClothNode);
+            uintptr_t pB = reinterpret_cast<uintptr_t>(nodes) + nb * sizeof(ClothNode);
             float delta[3];
             float dist = SpringNode_Delta((void*)pA, pB, delta);
             float posA[3], posB[3];
@@ -1146,7 +1124,7 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
             sp++;
         }
     }
-    *(unsigned int *)(thiz + 0x38) = sp;
+    ClothSystem(thiz).SpringCount = sp;
 }
 
 // IDA: sub_409AD0 (0x00409AD0) -- constructor de CPhysicsManager.

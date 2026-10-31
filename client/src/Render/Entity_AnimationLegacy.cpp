@@ -53,9 +53,9 @@ int __cdecl Calc_RenderObject(OBJECT* object, char param_2, int param_3) {
     float fVar2 = AsObject(param_1)->Alpha;
     if (fVar2 < _DAT_005524f8)
         return 0;
-    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + AsObject(param_1)->Type * 0xbc);
-    *(DWORD*)(this_ + 0x84) = 0;
-    *(BYTE *)(this_ + 0x45) = AsObject(param_1)->ContrastEnable;
+    BMD* this_ = AsModel(DAT_05828d58) + object->Type;
+    this_->BodyHeight = 0.0f;
+    this_->ContrastEnable = AsObject(param_1)->ContrastEnable;
     Entity_GetLightScale(reinterpret_cast<uintptr_t>(param_1), reinterpret_cast<uintptr_t>(this_));
     void* puVar3 = AsObject(param_1)->EnableBoneMatrix == 0 ? (void*)&DAT_06970a9c
                                                                   : AsObject(param_1)->BoneMatrices;
@@ -70,26 +70,26 @@ int __cdecl Calc_RenderObject(OBJECT* object, char param_2, int param_3) {
         // ancho y oscuro y despues uno mas fino y claro, con un color por
         // pasada que depende de Kind (4 = NPC), y el caso Kind == 4 en el
         // factor de escala.
-        *(BYTE *)(this_+0x44) = 0;
+        this_->LightEnable = 0;
         const bool npc = (*(char *)&AsObject(param_1)->Kind == '\x04');
         for (int pass = 0; pass < 2; ++pass) {
             if (npc) {
-                *(float*)(this_+0x48) = pass ? 0.16f : 0.02f;
-                *(float*)(this_+0x4c) = pass ? 0.7f  : 0.1f;
+                this_->BodyLight[0] = pass ? 0.16f : 0.02f;
+                this_->BodyLight[1] = pass ? 0.7f  : 0.1f;
                 _DAT_005597c8 = pass ? 1.08f : 1.2f;
             } else {
-                *(float*)(this_+0x48) = pass ? 0.7f  : 0.1f;
-                *(float*)(this_+0x4c) = pass ? 0.07f : 0.01f;
+                this_->BodyLight[0] = pass ? 0.7f  : 0.1f;
+                this_->BodyLight[1] = pass ? 0.07f : 0.01f;
                 if (cls == 0x12e)
                     _DAT_005597c8 = pass ? 1.08f : 1.2f;
                 else
                     _DAT_005597c8 = (pass ? 0.039999999f : 0.1f) / AsObject(param_1)->Scale + 1.0f;
             }
-            *(float*)(this_+0x50) = 0.0f;
-            puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
+            this_->BodyLight[2] = 0.0f;
+            puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? &DAT_06970a9c : static_cast<void*>(object->BoneMatrices);
             // IDA pasa `Translate` tal cual a sub_4404E0 (BMD_Animation recibe !Translate).
-            Skeleton_Transform(this_, reinterpret_cast<float*>(puVar3), (float*)(param_1+0x118),
-                         (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
+            Skeleton_Transform(this_, reinterpret_cast<float*>(puVar3), object->BoundingBoxMin,
+                         object->BoundingBoxMax, object->OBB, param_2);
             BMD__RenderBody(this_, 0x40,
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
@@ -98,9 +98,9 @@ int __cdecl Calc_RenderObject(OBJECT* object, char param_2, int param_3) {
         Entity_GetLightScale(reinterpret_cast<uintptr_t>(param_1), reinterpret_cast<uintptr_t>(this_));
         _DAT_005597c8 = 1.0f;
     }
-    puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? (void*)&DAT_06970a9c : *(void**)(param_1+0x114);
-    Skeleton_Transform(this_, reinterpret_cast<float*>(puVar3), (float*)(param_1+0x118),
-                 (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
+    puVar3 = (*(char *)&AsObject(param_1)->EnableBoneMatrix=='\0') ? (void*)&DAT_06970a9c : static_cast<void*>(object->BoneMatrices);
+    Skeleton_Transform(this_, reinterpret_cast<float*>(puVar3), object->BoundingBoxMin,
+                 object->BoundingBoxMax, object->OBB, param_2);
     return 1;
 }
 // Skeleton_Transform @ 0x004404e0 — Skeleton_Transform (thiscall: bone→vertex pipeline)

@@ -7,6 +7,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from LegacyEntityLayout import opaque_cloth_fields
 
 SERVICES=r'''
 std::uintptr_t Hero,CharactersClient;
@@ -71,7 +72,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 
 def harness(revision=None):
     header=read_source('src/Entity/EntityTypes.h',revision);source=read_source('src/Net/Recv/Recv_Guild.cpp',revision)
-    part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group();character=header[header.index('struct CHARACTER {'):header.index('    BYTE     PK;')]
+    part=re.search(r'struct PART_t\s*\{.*?\};',header,re.S).group();part=opaque_cloth_fields(part);character=header[header.index('struct CHARACTER {'):header.index('    BYTE     PK;')]
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x100000')+'\n#ifndef _WIN32\nusing WORD=std::uint16_t;\n#endif\nstruct OBJECT{BYTE Live;BYTE opaque[443];};\n'
     prefix+=part+character+'BYTE remainder[170];};\nstatic_assert(sizeof(CHARACTER)==916);static_assert(offsetof(CHARACTER,GuildMarkIndex)==474);static_assert(offsetof(CHARACTER,GuildTeam)==745);\n'
     prefix+='\n'.join(re.findall(r'^inline (?:const )?CHARACTER\* AsCharacter[^\n]+',header,re.M))

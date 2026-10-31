@@ -23,6 +23,9 @@ using DWORD=std::uint32_t;
 #define __cdecl
 #endif
 struct OBJECT{char bytes[444];};
+struct CHARACTER;struct PART_t;
+CHARACTER* AsCharacter(void* p){return reinterpret_cast<CHARACTER*>(p);}
+OBJECT* AsObject(void* p){return static_cast<OBJECT*>(p);}
 struct JOINT{unsigned char Live;int Type,SubType;OBJECT* Target;};
 JOINT DAT_07b27150[500];
 JOINT* AsJoint(JOINT* p){return p;}
@@ -32,6 +35,7 @@ char* DAT_083a1218=butterflies;
 struct Service{void Clear(){}void Close(){}void Reset(){}}gHealthBar,gMoveList,gEventTimer,gChaosMixRates;
 void GoldenArcher_ResetCharacter(){}void Party_RefreshViewportLinks(){}
 void DeleteCloth(int,int,int){}
+void DeleteCloth(CHARACTER*,OBJECT*,PART_t*){}
 DELETE
 CLEAR
 void Require(bool ok){if(!ok)std::exit(1);}

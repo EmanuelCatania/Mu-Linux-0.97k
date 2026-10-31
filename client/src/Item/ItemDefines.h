@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/ResourceLimits.h"
 // ItemDefines.h — numeración y formato de item compartidos con el server
 // (0.97.20, ver Source/MuServer/GameServer/ItemManager.h del server).
 //
@@ -92,15 +93,6 @@ static_assert(MODEL_HELPER_ANGEL == 816 && MODEL_HELPER_DINORANT == 819, "Helper
 static_assert(ITEM_WING_ELF == 384 && ITEM_WING_DARKNESS == 390, "Alas vanilla");
 static_assert(MODEL_WING_ELF == 784 && MODEL_WING_DARKNESS == 790, "Modelos de alas vanilla");
 
-
-// Tabla de modelos: 963 fijos del binario (OpenPlayers) más slots dinámicos
-// para los modelos que define el catálogo del server (items >= 512 y
-// monstruos agregados).
-constexpr int MODEL_MAX_VANILLA = 963;
-
-// Tabla de texturas: 1450 del binario más una región propia del catálogo,
-// que no se recicla al cambiar de mapa.
-constexpr int BITMAP_MAX_VANILLA = 1450;
 
 constexpr int GetItemSection(int index)
 {

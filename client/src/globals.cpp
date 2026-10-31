@@ -991,15 +991,8 @@ DWORD    DAT_0839be18  = 0;
 // ── Scene / state machine vars ────────────────────────────────────────────────
 float    _DAT_083a0210 = 0.0f;  // EarthQuake
 DWORD    DAT_083a0210  = 0;
-// ── Object-bucket grid ────────────────────────────────────────────────────────
-// 16×16 chunk-cell grid. Each cell = {pad/scratch, head_ptr, tail_ptr, visible_flag}
-// = 4 DWORDs = 16 bytes. Total = 16×16×16 = 4096 bytes = 0x1000.
-// Maps to original 0x083a0218..0x083a1217. Macros in globals.h:
-//   DAT_083a0218 = grid+0  (cell[0]+0  scratch)
-//   DAT_083a021c = grid+4  (cell[0].head — Terrain_Render reads *chunk_ptr)
-// Insert (CreateObject) writes head at cell+4, tail at cell+8.
-// Unload (DeleteObjects) walks puVar5=&DAT_083a0218 reading puVar5+8 as tail.
-char     g_ObjectBucketGrid[0x1000] = {0};
+// Celdas de escena; el layout x86 permanece idéntico al de IDA 0x083A0218.
+SceneObjectCell g_ObjectBucketGrid[256] = {};
 DWORD    DAT_083a1378  = 0;
 DWORD    DAT_083a2e92  = 0;
 DWORD    DAT_083a3ff0  = 0;
@@ -2276,7 +2269,7 @@ float   _DAT_00552a28   = -10.0f;  // MoveItems: giro del item mientras cae
 
 
 // ── Terrain map globals (OpenTerrainMapping, OpenObjectsEnc, CreateTerrain) ────────────
-// DAT_083a0218 is now a macro alias into g_ObjectBucketGrid[0] (see line ~811).
+// La celda original 0x083A0218 pertenece a g_ObjectBucketGrid[0].
 float   _DAT_00552b70 = 0.00392156886f; // height scale
 
 // ── Terrain tile pick / normal buffer globals ─────────────────────────────────

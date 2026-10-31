@@ -81,6 +81,9 @@ int main() {
 def harness(revision=None):
     prefix=PREAMBLE.split("char DAT_00559bb4",1)[0]+SERVICES
     source=read_source("src/Math/Math_3D.cpp",revision)
+    if "AsModel(" in source:
+        from LegacyModelLayout import VIEW
+        prefix+=VIEW
     return prefix+function(source,"Vector_Transform")+function(source,"BMD_TransformPosition")+function(read_source("src/Math/Math_LegacyTransforms.cpp",revision),"BMD__TransformPosition")+MAIN
 
 

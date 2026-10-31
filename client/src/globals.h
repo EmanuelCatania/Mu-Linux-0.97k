@@ -1,6 +1,7 @@
 #pragma once
 #include "Render/DamagePointTypes.h"
 #include "Item/ItemDefines.h"
+#include "Scene/SceneObjectCell.h"
 struct GATE_ATTRIBUTE;
 struct OBJECT;
 // globals.h — extern declarations for all Ghidra DAT_ globals.
@@ -952,17 +953,9 @@ extern char    DAT_083a2e90[10 * 0x1bc];   // Boids pool: 10 entries × 0x1bc by
 #define DAT_083a2378  (*(DWORD*)&DAT_083a2370[8])
 extern float  _DAT_083a0210;
 extern DWORD   DAT_083a0210;
-// Object-bucket grid (see globals.cpp). 16×16 cells × 16 B = 0x1000.
-// Cell layout (matches original binary 0x083a0218..0x083a1217):
-//   cell+0  → alias DAT_083a0218 (base de la celda, también usada como scratch por el walker de descarga DeleteObjects)
-//   cell+4  → DAT_083a021c  puntero head (Terrain_Render lo lee vía *chunk_ptr)
-//   cell+8  → puntero tail  (el insert de CreateObject appendea acá; la descarga arranca el recorrido desde acá)
-//   cell+12 → visibility flag (Terrain_Render writes *(chunk_ptr+8))
-// IMPORTANTE: g_ObjectBucketGrid[0] representa la dirección 0x083a0218, así que DAT_083a0218 está
-// en el offset 0 y DAT_083a021c en el +4 (el walker de descarga depende de eso).
-extern char    g_ObjectBucketGrid[0x1000];
-#define DAT_083a0218  (*(DWORD*)(g_ObjectBucketGrid + 0))
-#define DAT_083a021c  (*(DWORD*)(g_ObjectBucketGrid + 4))
+// Grilla 16x16. El contrato x86 conserva los 0x1000 bytes del binario.
+// Los consumidores usan celdas y punteros nativos, nunca strides de DWORD.
+extern SceneObjectCell g_ObjectBucketGrid[256];
 extern DWORD   DAT_083a1378;
 extern DWORD   DAT_083a2e92;
 extern DWORD   DAT_083a3ff0;
@@ -2197,7 +2190,7 @@ extern char    DAT_07d27610[20000];  // name-filter table (1000 × 20 bytes, Fil
 extern float   _DAT_00552950;        // speed constant (Ambient_Particles lightning speed)
 
 // ── Terrain map globals ───────────────────────────────────────────────────────
-// DAT_083a0218 ahora se declara como alias por macro dentro de g_ObjectBucketGrid (ver arriba).
+// La celda original 0x083A0218 pertenece a g_ObjectBucketGrid (ver arriba).
 extern float   _DAT_00552b70;  // terrain height scale constant
 
 // ── Terrain tile pick / normal computation globals ────────────────────────────

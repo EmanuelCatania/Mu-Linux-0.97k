@@ -5,7 +5,9 @@
 // dirección del binario termina en puentes muertos.
 #include "Platform/CompilerCompat.h"
 #include <cstdint>
+#include "Physics/ClothTypes.h"
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
+struct BMD;
 struct OBJECT;
 struct CHARACTER;
 struct PART_t;
@@ -89,7 +91,7 @@ bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: Che
 
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl Widget_NodeInit(void* widget);           // Widget_BaseRelease — releases core widget struct
-void  __cdecl Widget_Release(int, int, int); // Widget_Release — releases linked list + widget base
+void  __cdecl Widget_Release(void*, int, int); // Widget_Release — libera recursos de tela
 void  __cdecl CPhysicsManager_Move(void* physics_manager, float fTime);   // IDA: CPhysicsManager::Move (0x00409C40)
 void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF0
 // Packet_DecryptDword signature — canonical (void*,void*) above
@@ -241,11 +243,11 @@ void  __cdecl BMD__RenderMesh(void *model, float layer, int anim_id, float scale
 void  __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba);
 void  __cdecl BMD__RenderMeshEffect(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
 void  __cdecl BMD__RenderBodyShadow(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
-void  __cdecl BMD__Release(int model_ptr);                         // Model_Unload (free BMD model data)
+void  __cdecl BMD__Release(BMD* model);                         // Model_Unload (free BMD model data)
 void  __cdecl BMD__FindNearTriangle(void *model);                           // BMD_PostActionsInit (post-load action setup)
 void  __cdecl BMD__Init(void *model, char flag);                // BMD_PostLoadInit (post-load finalize)
 void  __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3);  // BMD_BuildAdjacentFaceTable
-void  __cdecl BMD_CreateBoundingBox(int param_1);                           // BMD_ComputeBounds
+void  __cdecl BMD_CreateBoundingBox(BMD* model);                           // BMD_ComputeBounds
 // VTable helpers used by type 0x13f/0x14a entity dispatch
 void* __fastcall WidgetB_CtorFull(void *param_1);                      // WidgetB_CtorFull
 void* __fastcall WidgetB_Ctor(void *param_1);                      // WidgetB_Ctor
@@ -263,7 +265,7 @@ void  __cdecl Skeleton_Transform(void *model, float* boneMatrices, float *anim1,
 void  __cdecl BMD_TransformPosition(void *model, float *bone_data, float *out_pos, float *out_col, char flag); // IDA: TransformPosition (0x004409A0)
 void  __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out); // BoneTransformOffset — implemented in Render/BMD_SetupRender.cpp
 int   __cdecl ItemObjectAttribute(OBJECT* object); // IDA: ItemObjectAttribute (0x00502BA0)
-void  __cdecl BMD__Open(int, const char*, const char*, int);   // IDA: BMD__Open (0x004423E0)
+void  __cdecl BMD__Open(BMD*, const char*, const char*, int);   // IDA: BMD__Open (0x004423E0)
 undefined4 __cdecl BMD__Save(int thisModel, char *pathDir, char *pathFile);  // BMD_SaveToFile
 void  __cdecl SetPlayerStop(CHARACTER* entity); // IDA: SetPlayerStop (0x004430C0)
 void  __cdecl SetPlayerWalk(CHARACTER* entity); // IDA: SetPlayerWalk (0x00443930)
@@ -297,7 +299,7 @@ void  __cdecl BMD_SetupRenderByType(void *model, uintptr_t entity, int type, flo
 void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // IDA: RenderPartObjectBodyColor (0x00504960)
 void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // Model_RenderSkeleton2
 void  __cdecl RenderLinkObject(float ox, float oy, float oz, int entity, int weapon_slot_ptr, int anim_id, char level, unsigned int option1, char link, char translate, unsigned int render_type); // IDA: RenderLinkObject (0x00455430)
-void  __cdecl DeleteCloth(int entity_a, int entity_b, int flags); // IDA: DeleteCloth (0x00449840)
+void  __cdecl DeleteCloth(CHARACTER* character, OBJECT* object, PART_t* part); // IDA 0x00449840
 bool  __cdecl CheckFullSet(uintptr_t entity); // IDA: CheckFullSet (0x00451B20)
 extern int EquipmentLevelSet;                                         // 0=no glow, 9-11=lightning tier
 extern int g_bAddDefense;                                             // set completo → bonus de defensa en Stats_CalcDefenseRate
@@ -316,10 +318,10 @@ void  __cdecl RenderTerrainAlphaBitmap(int Texture, float xf, float yf, float Si
 void* __fastcall Widget_Ctor(void *param_1); // IDA: Widget_Ctor (0x004093A0)
 void* __fastcall Widget_CtorBase(void *param_1); // IDA: Widget_CtorBase (0x00407FE0)
 void  __cdecl L_YGXPAXIHP6EX0_Z1_Z(void *arr, int size, int elem, void *ctor); // Array_InitWithCtor
-void  __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags); // Widget_BindEntity
+void  __cdecl SpringMesh_Create(void *widget, OBJECT* entity, int slot, int type, int radius, int flags);
 void  __cdecl VerletNode_AddToSystem(void *widget, float x, float y, float z, float radius, int boneIdx); // Cloth_AddAnchor
-int   __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags); // IDA: Widget_CheckState (0x00408900)
-void  __cdecl GridSpring_Create(void *widget, float entity, int p3, float p4, float p5, int p6, int p7, float p8, float p9, int type_a, int type_b, int flags); // Widget_Init
+int   __cdecl Widget_CheckState(void *widget, unsigned int hash, int flags); // IDA 0x00408900
+void  __cdecl GridSpring_Create(void *widget, OBJECT* entity, int p3, float p4, float p5, int p6, int p7, float p8, float p9, int type_a, int type_b, int flags);
 extern "C" void __cdecl DeleteCharacter(int Key); // IDA: DeleteCharacter (0x0045AC20)
 int   __cdecl FindCharacterIndex(int); // IDA: FindCharacterIndex (0x0045AC80)
 void  __cdecl CreateCharacterPointer(unsigned char *c, int Type, int PositionX, int PositionY, float Rotation); // CreateCharacterPointer
@@ -1218,7 +1220,7 @@ bool  __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem);           // 0x004
 void  __cdecl Send_ActionRequest(unsigned char param_1, int param_2);          // action request packet (0x0043CE50)
 void  __cdecl LookAtTarget(OBJECT* o, const CHARACTER* TargetCharacter);         // 0x0043E890
 void  __cdecl MoveHead(CHARACTER* character);                                // 0x0043E940
-bool  __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
+bool  __cdecl BMD__CollisionDetectLineToMesh(BMD* pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
 bool  __cdecl AttackStage(DWORD c, DWORD o);                       // 0x00448930
 // IDA: FUN_00451f30
 void  __cdecl Combat_SpawnDeathDustParticles(OBJECT* entity);

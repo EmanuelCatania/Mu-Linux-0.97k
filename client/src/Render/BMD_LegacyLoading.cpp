@@ -338,7 +338,8 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         const char *pcVar1 = (param_4 < 10) ? s__s0_d_bmd_0055a7ec : s__s_d_bmd_0055a7e0;
         crt_sprintf(local_40, pcVar1, param_3, param_4);
     }
-    int numBonesInSlot = *(short*)(DAT_05828d58 + 0x22 + param_1 * 0xbc);
+    BMD* model = AsModel(DAT_05828d58) + param_1;
+    int numBonesInSlot = model->NumBones;
     if (DAT_0055a7c4 == '\0') {
         // HQ path original: si el SMD ya cargó bones, BMD__Save agrega la anim BMD.
         // DESVIACION: los .smd no existen en el cliente distribuido (ver OpenModel), así
@@ -347,9 +348,9 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         if (numBonesInSlot > 0)
             BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
         else
-            BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), param_2, local_40, 0);
+            BMD__Open(model, param_2, local_40, 0);
     } else {
-        BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), param_2, local_40, 0);
+        BMD__Open(model, param_2, local_40, 0);
     }
 
     // Post-load defensive init: ensure bodyLight is (1,1,1) even if the BMD
@@ -357,10 +358,9 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
     // login-scene slots retain the 0xF5F5F5F5 pool-fill garbage pattern at
     // +0x50, which manifests as white/yellow/corrupt triangles on Ship/Logos.
     {
-        int slotBase = (int)(DAT_05828d58 + param_1 * 0xbc);
-        *(float *)(slotBase + 0x48) = 1.0f;
-        *(float *)(slotBase + 0x4c) = 1.0f;
-        *(float *)(slotBase + 0x50) = 1.0f;
+        model->BodyLight[0] = 1.0f;
+        model->BodyLight[1] = 1.0f;
+        model->BodyLight[2] = 1.0f;
     }
 }
 // Forward-declare FindTextureByName (implementada en src/Core/Runtime_Medium.cpp).
@@ -540,12 +540,12 @@ extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 //   }
 void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) {
     ResourceTables::EnsureModels(std::size_t(ID)+1);
-    char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);  // stride 188 = 0xbc
-    if (*(short*)(slot + 36) > 0) return;  // already loaded
+    BMD* slot = AsModel(DAT_05828d58) + ID;
+    if (slot->NumMeshs > 0) return;  // Modelo ya cargado.
     if (!OpenSMDFile(FileName, 0, Flip)) return;
-    strncpy(slot, FileName, 31);
-    slot[31] = 0;
-    *(unsigned char*)(slot + 32) = 10;
+    strncpy(slot->Name, FileName, sizeof(slot->Name)-1);
+    slot->Name[sizeof(slot->Name)-1] = 0;
+    slot->Version = 10;
     FixupSMD();
     SMD2BMDModel(ID, Actions);
 }
@@ -558,8 +558,8 @@ void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) 
 //   }
 void __cdecl OpenSMDAnimation(int ID, const char* FileName, char LockPosition) {
     ResourceTables::EnsureModels(std::size_t(ID)+1);
-    char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);
-    if (*(short*)(slot + 34) <= 0) return;  // mesh slot not initialized
+    BMD* slot = AsModel(DAT_05828d58) + ID;
+    if (slot->NumBones <= 0) return;  // Conservar el gate por huesos del port.
     OpenSMDFile(FileName, 1, 0);
     SMD2BMDAnimation(ID, LockPosition);
 }

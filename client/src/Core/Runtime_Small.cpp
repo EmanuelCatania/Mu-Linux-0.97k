@@ -9,6 +9,7 @@
 //   - One-line getters/setters
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Gfx.h"
 #include "Platform/IAudio.h"
@@ -51,7 +52,7 @@ void __fastcall FUN_00403310(int *param_1) { *param_1 = (int)&PTR_LAB_00552460; 
 void __cdecl FUN_00407970(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
-  *(DWORD *)_this = (DWORD)g_ClothNodeVTable;
+  ClothPoint(_this).VTable = g_ClothNodeVTable;
 }
 
 
@@ -59,7 +60,7 @@ void __cdecl FUN_00407970(void *_this)
 // FUN_00407de0 (IDA-activated)
 void __cdecl FUN_00407de0(DWORD *_this)
 {
-  *_this = (DWORD)&DAT_00552508;
+  ClothBody(_this).VTable = reinterpret_cast<void**>(&DAT_00552508);
 }
 
 
@@ -87,7 +88,7 @@ void __fastcall FUN_0040f680(void *This) { *(int *)This = (int)&PTR_LAB_005527e4
 void __cdecl FUN_00407ec0(DWORD *_this)
 {
   extern void *g_ClothAnchorVTable[3];
-  *_this = (DWORD)g_ClothAnchorVTable;
+  ClothBody(_this).VTable = g_ClothAnchorVTable;
   FUN_00407de0(_this);
 }
 

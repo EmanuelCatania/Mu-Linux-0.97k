@@ -80,7 +80,16 @@ struct OBJECT {
     BYTE     _unk16C[4];
     vec3_t   StartPosition;         // 0x170  IDA: CreateEffect (0x00460DC0)
     int      InitialSceneFrame;     // 0x17C  MoveSceneFrame del spawn
-    BYTE     _unk180[0x3C];
+    BYTE     ClothCount;            // 0x180  IDA: DeleteCloth (0x00449840)
+    BYTE     _unk181[3];
+    void*    Cloth;                 // 0x184  array de widgets de tela
+    BYTE     _unk188[0x28];
+    // IDA 0x004FF5A0/0x004FFCC0/0x004FFD50: sólo los objetos de mapa
+    // interpretan estos slots como celda/enlaces. No leerlos en otros pools.
+    BYTE     SceneCell;             // 0x1B0
+    BYTE     _unk1B1[3];
+    OBJECT*  ScenePrevious;         // 0x1B4
+    OBJECT*  SceneNext;             // 0x1B8
 };
 
 // IDA: PART_t, 24 bytes. Arma, pieza del cuerpo, ala, helper o flag.
@@ -95,7 +104,7 @@ struct PART_t {
     float    AnimationFrame;        // 0x08
     float    PriorAnimationFrame;   // 0x0C
     float    PlaySpeed;             // 0x10  IDA: RenderCharacter (alas, 1.0 / 0.25)
-    BYTE     _unk14[4];
+    void*    Cloth;                 // 0x14  IDA: DeleteCloth (0x00449840)
 };
 
 // IDA: CHARACTER, 0x394 bytes; pool CharactersClient (400 entradas).
@@ -202,9 +211,15 @@ MU_ASSERT_FIELD(OBJECT, AlphaTarget, 0x164);
 MU_ASSERT_FIELD(OBJECT, Alpha, 0x168);
 MU_ASSERT_FIELD(OBJECT, StartPosition, 0x170);
 MU_ASSERT_FIELD(OBJECT, InitialSceneFrame, 0x17C);
+MU_ASSERT_FIELD(OBJECT, ClothCount, 0x180);
+MU_ASSERT_FIELD(OBJECT, Cloth, 0x184);
+MU_ASSERT_FIELD(OBJECT, SceneCell, 0x1B0);
+MU_ASSERT_FIELD(OBJECT, ScenePrevious, 0x1B4);
+MU_ASSERT_FIELD(OBJECT, SceneNext, 0x1B8);
 MU_ASSERT_FIELD(PART_t, LinkBone, 0x04);
 MU_ASSERT_FIELD(PART_t, AnimationFrame, 0x08);
 MU_ASSERT_FIELD(PART_t, PlaySpeed, 0x10);
+MU_ASSERT_FIELD(PART_t, Cloth, 0x14);
 MU_ASSERT_FIELD(CHARACTER, Class, 0x1BC);
 MU_ASSERT_FIELD(CHARACTER, Level, 0x1BE);
 MU_ASSERT_FIELD(CHARACTER, ID, 0x1C1);

@@ -68,7 +68,7 @@ std::uint64_t RunWalk(CHARACTER* character, BYTE* models, BYTE* items, unsigned 
         std::memcpy(models + character->Object.Type * 188 + 170, sounds, sizeof(sounds));
         const short limit = Pick(limits); std::memcpy(models + character->Object.Type * 188 + 38, &limit, 2);
         const int role = int(Input() % 3);
-        Hero = reinterpret_cast<char*>(character) + (role ? 916 : 0);
+        Hero = reinterpret_cast<char*>(character) + (role ? sizeof(CHARACTER) : 0);
         if(role == 2 && sizeof(void*) > 4) {
             // Otra entidad puede tener los mismos 32 bits bajos que el personaje.
             Hero = reinterpret_cast<char*>(reinterpret_cast<std::uintptr_t>(character) ^ std::uint64_t(0x100000000ull));
@@ -110,8 +110,8 @@ std::uint64_t RunWalk(CHARACTER* character, BYTE* models, BYTE* items, unsigned 
             Require(std::memcmp(&character->Object.PriorAnimationFrame, &before.Object.AnimationFrame, 4) == 0);
             DWORD bits; std::memcpy(&bits, &character->Object.AnimationFrame, 4); Require(bits == 0);
         }
-        for(int offset = 0; offset < 916; ++offset) {
-            if(offset == 768 || offset == 261 || offset == 262 || (offset >= 264 && offset < 272)) continue;
+        for(int offset = 0; offset < int(sizeof(CHARACTER)); ++offset) {
+            if(offset == int(offsetof(CHARACTER, Run)) || offset == 261 || offset == 262 || (offset >= 264 && offset < 272)) continue;
             Require(reinterpret_cast<BYTE*>(character)[offset] == reinterpret_cast<BYTE*>(&before)[offset]);
         }
         unsigned bound = 0; int index = 0;

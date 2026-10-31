@@ -229,16 +229,16 @@ void __cdecl ClearItems(void) {
 // DeleteNpcs @ 0x00509190 — Terrain_InitLayers
 // Frees tile model slots (0xf604..0x11710), then frees sound channels 0x78..0xa9.
 void __cdecl DeleteNpcs(void) {
-    for (int i = 0xf604; i < 0x11710; i += 0xbc)
-        BMD__Release(i + DAT_05828d58);
+    for (int slot = 0x14f; slot < 0x17c; ++slot)
+        BMD__Release(AsModel(DAT_05828d58) + slot);
     for (int i = 0x78; i < 0xaa; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 
 // DeleteMonsters @ 0x00509880 — Terrain_InitWater
 // Frees water model slots (0xc648..0xf604), then frees sound channels 0xaa..0x1a3.
 void __cdecl DeleteMonsters(void) {
-    for (int i = 0xc648; i < 0xf604; i += 0xbc)
-        BMD__Release(i + DAT_05828d58);
+    for (int slot = 0x10e; slot < 0x14f; ++slot)
+        BMD__Release(AsModel(DAT_05828d58) + slot);
     for (int i = 0xaa; i < 0x1a4; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 

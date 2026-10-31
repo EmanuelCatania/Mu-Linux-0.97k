@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import tempfile
 from GatePointer import PREAMBLE
+from AnimationBonesPointer import layouts
+from ObjectLayoutContract import record
 from SceneObjectPointer import build_and_run, function, read_source
 
 SERVICES = r'''
@@ -68,19 +70,35 @@ int main() {
 '''
 
 
-def harness(revision=None):
+def harness(revision=None, legacy=False):
     source=read_source('src/Render/Render_LegacyBillboards.cpp',revision)
+    if legacy:source=read_source('tests/fixtures/BodyColor-e3731d7c.cpp')
     body=function(source,'RenderPartObjectBodyColor');alt=function(source,'Entity_SetModelColorAlt')
     arg='reinterpret_cast<uintptr_t>(entity)' if 'uintptr_t entity' in body else 'static_cast<int>(reinterpret_cast<uintptr_t>(entity))'
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+body+alt+MAIN.replace('ARG',arg)
+    prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]
+    if legacy:
+        prefix+='constexpr unsigned ModelBytes=224,LightOffset=72;\n'
+    else:
+        prefix+=layouts()+'using vec34_t=float[3][4];\n#pragma pack(push,1)\n'+record(read_source('src/Entity/EntityTypes.h'),'OBJECT')+'\n#pragma pack(pop)\n'
+        prefix+='OBJECT* AsObject(uintptr_t p){return reinterpret_cast<OBJECT*>(p);}\nconstexpr unsigned LightOffset=offsetof(BMD,BodyLight);\nstatic_assert(sizeof(OBJECT)==(sizeof(void*)==4?444:464));\nstatic_assert(LightOffset==(sizeof(void*)==4?72:96));\n'
+    services=SERVICES.replace('activeModel+72','activeModel+LightOffset')
+    main=MAIN.replace('ARG',arg).replace('224','ModelBytes').replace('activeModel+72','activeModel+LightOffset')
+    main=main.replace('modelMemory,88','modelMemory,16+LightOffset').replace('beforeModel+100,modelMemory+100,124','beforeModel+28+LightOffset,modelMemory+28+LightOffset,ModelBytes-28-LightOffset')
+    # Comparar contenido semántico entre layouts; las guardas completas se revisan arriba.
+    main=main.replace('Hash(modelMemory,ModelBytes);','Hash(activeModel+LightOffset,12);')
+    return prefix+services+body+alt+main
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64')
-    parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
+    parser.add_argument('--generator');parser.add_argument('--reference-ref');parser.add_argument('--differential',action='store_true');args=parser.parse_args()
     if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):parser.error('Referencia sólo en Windows x86')
     with tempfile.TemporaryDirectory(prefix='mu-body-color-')as temp:
         directory=Path(temp);current=build_and_run(directory/'current',harness(),args);print(current,end='')
+        if args.differential:
+            legacy=build_and_run(directory/'legacy',harness(legacy=True),args)
+            if legacy!=current:raise RuntimeError('Diferencia semántica frente al núcleo x86 congelado')
+            print('Colores/argumentos/estado equivalentes al núcleo e3731d7c')
         if args.reference_ref:
             reference=build_and_run(directory/'reference',harness(args.reference_ref),args)
             if current!=reference:raise RuntimeError('Diferencia con referencia x86')

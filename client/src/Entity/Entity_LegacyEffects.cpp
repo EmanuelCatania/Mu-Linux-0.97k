@@ -1,6 +1,7 @@
 // Entity_LegacyEffects.cpp
 
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
@@ -152,7 +153,7 @@ void __cdecl Entity_UpdateSparkleEffect(OBJECT* object)
 // IDA `sub_408940` devuelve `sub_408E30(this) != 0` — el "¿convergió?" que usa
 // el bucle de `sub_408900`. El port lo descartaba (void).
 int __cdecl Sound_UpdateChannel3D_Tick(int *param_1, float dt) {
-    double angle = (*(float*)(param_1[1] + 0x24) + *(float*)&_DAT_005524ec) * *(float*)&_DAT_0055253c;
+    double angle = (ClothSystem(param_1).Owner->Angle[2] + *(float*)&_DAT_005524ec) * *(float*)&_DAT_0055253c;
     DAT_00590af4 = (float)(sin(angle)  * *(float*)&_DAT_00590af0);
     DAT_00590af8 = (float)(-cos(angle) * *(float*)&_DAT_00590af0);
     Cloth_Integrate(param_1, dt);

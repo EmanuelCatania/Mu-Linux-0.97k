@@ -35,11 +35,11 @@ struct OBJECT {
     ALPHA_FIELD
     BYTE suffix[444 - 360];
 };
-static_assert(offsetof(OBJECT, Position) == 16);
-static_assert(offsetof(OBJECT, Angle) == 28);
-static_assert(offsetof(OBJECT, Light) == 232);
-static_assert(offsetof(OBJECT, Teleport) == 124);
-static_assert(offsetof(OBJECT, AlphaTarget) == 356);
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Position) == 16));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Angle) == 28));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Light) == 232));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Teleport) == 124));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, AlphaTarget) == 356));
 void* __cdecl SetAction(OBJECT*, int);
 '''
 

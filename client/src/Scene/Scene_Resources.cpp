@@ -24,11 +24,11 @@ const char* SelectBackdropPath()
 void Scene_RefreshCharSelectBackdrop()
 {
   if (selectBackdropWide == gWindow.IsWide()) return;
-  const int model = DAT_05828d58 + 0xa4 * 0xbc;
+  BMD* model = AsModel(DAT_05828d58) + 0xa4;
   // Mantener las texturas de ambas variantes durante esta escena. El modelo
   // comparte texturas con otras mallas y puede alternar repetidas veces.
-  const int count = *(short*)(model + 0x24);
-  const short* textures = *(short**)(model + 0x38);
+  const int count = model->NumMeshs;
+  const short* textures = model->IndexTexture;
   for (int i = 0; i < count; ++i) {
     const int id = textures[i];
     if (std::find(selectBackdropTextures.begin(), selectBackdropTextures.end(), id)
@@ -202,11 +202,8 @@ void ReleaseCharacterSceneData(void)
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x5aa);
   DeleteObjects();
-  iVar1 = 0x7cd8;
-  do {
-    BMD__Release(DAT_05828d58 + iVar1);
-    iVar1 = iVar1 + 0xbc;
-  } while (iVar1 < 0x7fc8);
+  for (int slot = 0xaa; slot < 0xae; ++slot)
+    BMD__Release(AsModel(DAT_05828d58) + slot);
   ClearCharacters(-1);
   return;
 }

@@ -396,6 +396,7 @@ set(MU_HEADERS
     src/Platform/Text.h
     src/Platform/GuardedOperation.h
     src/Scene/ObjectRegistry.h
+    src/Scene/SceneObjectCell.h
     src/Platform/PlatformHeaders.h
     src/Platform/DebugHeaders.h
     src/Platform/Posix/WinTypes.h
@@ -426,10 +427,13 @@ set(MU_HEADERS
     src/Entity/CharacterEffects.h
     src/Entity/CharacterCloth.h
     src/Entity/ClothPresentation.h
+    src/Physics/ClothTypes.h
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
     src/Model/ModelTypes.h
+    src/Core/ResourceLimits.h
+    src/Model/BMDFileTypes.h
     src/Entity/CharacterAttributeView.h
     src/Local/ClientText.h
     src/Item/RightClickMove.h

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Physics/ClothTypes.h"
 #include "Entity/ClothPresentation.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
@@ -18,11 +19,11 @@ std::unordered_map<const void *,Sample> samples;
 unsigned long long step=0;
 int scene=-1,world=-1;
 void Capture(void *cloth, std::vector<Point>& points) {
-    const int count=((int *)cloth)[12];
-    const char *nodes=(const char *)((int *)cloth)[13];
+    const int count=ClothSystem(cloth).NodeCount;
+    const char *nodes=reinterpret_cast<const char*>(ClothSystem(cloth).Nodes);
     if (count<=0 || !nodes) { points.clear(); return; }
     points.resize(count);
-    for (int i=0;i<count;++i) memcpy(points[i].p,nodes+i*60+0x1c,sizeof(points[i].p));
+    for (int i=0;i<count;++i) memcpy(points[i].p,ClothSystem(cloth).Nodes[i].Position,sizeof(points[i].p));
 }
 }
 void ClothPresentation_BeginStep() {
@@ -34,7 +35,7 @@ void ClothPresentation_Forget(const void *cloth) { samples.erase(cloth); }
 void ClothPresentation_Before(void *cloth) {
     Sample &sample=samples[cloth];
     if (sample.step==step) return; // Varias llamadas SIM conservan el mismo previo.
-    const void *nodes=(void *)((int *)cloth)[13], *owner=(void *)((int *)cloth)[1];
+    const void *nodes=ClothSystem(cloth).Nodes, *owner=ClothSystem(cloth).Owner;
     sample.continuous=sample.step+1==step && sample.nodes==nodes && sample.owner==owner;
     sample.nodes=nodes; sample.owner=owner;
     Capture(cloth,sample.previous);

@@ -292,6 +292,17 @@ void RenderBooleans_(void)
     for (int i = 0; i < kChats; ++i) {
         CHAT* c = &chats[i];
         if (c->IDLifeTime > 0 || c->LifeTime[0] > 0) {
+            // Desviación del binario: sub_47F4C0 ajusta cada renglón por separado al
+            // borde y una burbuja saliente quedaba pegada, con renglones encimados.
+            // Ajustarla entera no alcanza: varias colapsarían en la misma fila, así
+            // que se oculta apenas deja de entrar en pantalla.
+            if (c->Owner && !c->Owner->Object.Visible) continue;
+            const int boxW = 640 * c->Width / (int)gWindow.GetWidth();
+            const int boxH = 480 * c->Height / (int)gWindow.GetHeight();
+            const int marginX = 640 * gWindow.GetUiOffsetX() / (int)gWindow.GetWidth();
+            const int maxY = 480 - 47 * 480 / 640;
+            if (c->y < 0 || c->y + boxH > maxY) continue;
+            if (c->x < -marginX || c->x + boxW > 640 + marginX) continue;
             RenderBoolean(c->x, c->y, (DWORD)(uintptr_t)c);
         }
     }

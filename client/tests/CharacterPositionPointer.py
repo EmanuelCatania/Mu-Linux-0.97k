@@ -87,7 +87,7 @@ def harness(revision=None):
     angle = re.search(r"vec3_t\s+Angle\s*;", types).group()
     timer = re.search(r"float\s+Timer\s*;", types).group()
     prefix = prefix.replace("BYTE beforeKind[132 - 28];", angle + " BYTE beforeTimer[128 - 40]; " + timer, 1)
-    prefix += "\nstatic_assert(offsetof(OBJECT, Angle) == 28 && offsetof(OBJECT, Timer) == 128);\n"
+    prefix += "\nstatic_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Angle) == 28 && offsetof(OBJECT, Timer) == 128));\n"
     globals_source = read_source("src/globals.cpp", revision)
     for name in ("_DAT_00552848", "_DAT_0055284c", "_DAT_00552934"):
         prefix += re.search(rf"^float\s+{name}\s*=[^;]+;", globals_source, re.M).group() + "\n"
@@ -102,6 +102,9 @@ def main():
     parser.add_argument("--generator")
     parser.add_argument("--reference-ref")
     args = parser.parse_args()
+    if getattr(args, "architecture", "x64") == "x64":
+        print("Omitido en x64: banco atado al layout x86; lo cubren los bancos nativos de B2")
+        return
     if args.reference_ref and (os.name != "nt" or args.architecture != "Win32"):
         parser.error("La referencia int sólo se compara en Windows x86")
     with tempfile.TemporaryDirectory(prefix="mu-position-pointer-") as temp:

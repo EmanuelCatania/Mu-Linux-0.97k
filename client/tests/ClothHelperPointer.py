@@ -118,6 +118,10 @@ def harness(revision=None):
     arg='reinterpret_cast<uintptr_t>(PTR)' if current else 'static_cast<int>(reinterpret_cast<uintptr_t>(PTR))'
     main=MAIN.replace('A_ARG',arg.replace('PTR','a')).replace('B_ARG',arg.replace('PTR','b'))
     main=main.replace('ZERO_ARG','node' if current else arg.replace('PTR','node'))
+    if 'ClothPoint(' in code:
+        import ClothFixture
+        prefix+=ClothFixture.prefix()
+        main=ClothFixture.helper(main)
     return prefix+code+main
 
 

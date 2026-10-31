@@ -28,12 +28,12 @@ struct OBJECT {
     PRIOR_FRAME_FIELD
     BYTE suffix[0x1bc - 0x110];
 };
-static_assert(sizeof(OBJECT) == 444);
-static_assert(offsetof(OBJECT, Type) == 2);
-static_assert(offsetof(OBJECT, CurrentAction) == 261);
-static_assert(offsetof(OBJECT, PriorAction) == 262);
-static_assert(offsetof(OBJECT, AnimationFrame) == 264);
-static_assert(offsetof(OBJECT, PriorAnimationFrame) == 268);
+static_assert(sizeof(void*) != 4 || (sizeof(OBJECT) == 444));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, Type) == 2));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, CurrentAction) == 261));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, PriorAction) == 262));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, AnimationFrame) == 264));
+static_assert(sizeof(void*) != 4 || (offsetof(OBJECT, PriorAnimationFrame) == 268));
 OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }
 OBJECT* AsObject(std::uintptr_t p) { return reinterpret_cast<OBJECT*>(p); }
 std::uint64_t digest;
