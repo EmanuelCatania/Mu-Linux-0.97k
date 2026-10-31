@@ -153,7 +153,8 @@ jobs:
             python -B tests/BmdSetupPointer.py --architecture Win32
             python -B tests/BmdSetupDifferential.py --architecture x64
             python -B tests/BMDCollisionArguments.py --architecture x64
-            python -B tests/BodyColorPointer.py --architecture x64
+            python -B tests/BodyColorPointer.py --architecture Win32 --differential
+            python -B tests/BodyColorPointer.py --architecture x64 --differential
             python -B tests/ClothHelperPointer.py --architecture x64
             python -B tests/LightScalePointer.py --architecture x64
             python -B tests/LightScalePointer.py --architecture Win32 --native-layout
@@ -390,7 +391,7 @@ jobs:
             python3 -B tests/BmdSetupPointer.py --generator Ninja
             python3 -B tests/BmdSetupDifferential.py --generator Ninja
             python3 -B tests/BMDCollisionArguments.py --generator Ninja
-            python3 -B tests/BodyColorPointer.py --generator Ninja
+            python3 -B tests/BodyColorPointer.py --generator Ninja --differential
             python3 -B tests/ClothHelperPointer.py --generator Ninja
             python3 -B tests/LightScalePointer.py --generator Ninja
             python3 -B tests/LightScalePointer.py --generator Ninja --native-layout
