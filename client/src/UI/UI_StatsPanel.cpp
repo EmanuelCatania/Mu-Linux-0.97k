@@ -186,6 +186,7 @@ switchD_0051bea9_caseD_8b:
         piVar7 = piVar7 + 5;
       }
       if (DAT_083a7c24 == 0x8d) {
+        // El render consulta el clic; sólo la lógica del diálogo debe consumirlo.
         GL_SetBlendSrcOver('\x01');
         Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
         if (DAT_083a7c08 == '\0') {
@@ -204,7 +205,6 @@ LAB_0051c08c:
             goto LAB_0051c08c;
           }
           Gfx::Color3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
-          DAT_083a4124 = '\0';
         }
         GL_DrawRotatedRect(9,253.0,210.0,25.0,16.0,0x43870000);
         Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f
@@ -224,7 +224,6 @@ LAB_0051c13d:
             goto LAB_0051c13d;
           }
           Gfx::Color3f(0.5f, 0.5f, 0.5f);  // bits de IDA → float
-          DAT_083a4124 = '\0';
         }
         GL_DrawRotatedRect(9,383.0,210.0,25.0,16.0,0x42b40000);
         Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f

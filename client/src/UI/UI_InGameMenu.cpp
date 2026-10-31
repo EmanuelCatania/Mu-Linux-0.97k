@@ -641,6 +641,9 @@ void __cdecl UI_InGameMenu(void)
                 if (page >= (int)(BYTE)DAT_083a7c09) page = (BYTE)DAT_083a7c09;
             }
             if (page >= 0) {
+                // Una pulsación cambia una página, aunque haya varios renders por tick.
+                DAT_083a4124 = 0;
+                DAT_083a42c4 = 0;
                 DAT_083a7c08 = (DWORD)page;
                 const char* src = (const char*)
                     ((uintptr_t)&GlobalText[0][0] + 300 * (DAT_083a7c04 + page));

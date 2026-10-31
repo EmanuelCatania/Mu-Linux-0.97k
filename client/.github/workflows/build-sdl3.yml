@@ -71,6 +71,8 @@ jobs:
           python -B tests/SceneObjectPointer.py --architecture x64
           python -B tests/BuxPointer.py --architecture x64
           python -B tests/GatePointer.py --architecture x64
+          python -B tests/DialogPaginationClick.py --architecture Win32
+          python -B tests/DialogPaginationClick.py --architecture x64
           python -B tests/SkillPointer.py --architecture x64
           python -B tests/ItemShadowPointer.py --architecture x64
           python -B tests/EntityPoolPointer.py --architecture x64
@@ -260,6 +262,7 @@ jobs:
           python3 -B tests/SceneObjectPointer.py --generator Ninja
           python3 -B tests/BuxPointer.py --generator Ninja
           python3 -B tests/GatePointer.py --generator Ninja
+          python3 -B tests/DialogPaginationClick.py --generator Ninja
           python3 -B tests/SkillPointer.py --generator Ninja
           python3 -B tests/ItemShadowPointer.py --generator Ninja
           python3 -B tests/EntityPoolPointer.py --generator Ninja
