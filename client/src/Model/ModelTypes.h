@@ -1,5 +1,4 @@
 #pragma once
-#include "types.h"
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -77,50 +76,59 @@ static_assert(offsetof(ModelRuntimeTriangle, Adjacent) == 26);
 static_assert(offsetof(ModelAnimationBone, BoundingBoxEnabled) == 36 + sizeof(void*));
 static_assert(offsetof(ModelAnimationBone, BoundingBox) == 40 + sizeof(void*));
 
+// Las anotaciones siguientes son del x86 original; los asserts también verifican x64.
 struct BMD {
     char     Name[32];              // 0x00
     char     Version;               // 0x20
-    BYTE     _unk21;
+    std::uint8_t     _unk21;
     short    NumBones;              // 0x22
     short    NumMeshs;              // 0x24
     short    NumActions;            // 0x26
-    BYTE*    Meshs;                 // 0x28  Mesh_t[NumMeshs], 40 bytes cada uno
-    BYTE*    Bones;                 // 0x2C  Bone_t[NumBones], 140 bytes cada uno
-    BYTE*    Actions;               // 0x30  Action_t[NumActions], 16 bytes cada uno
-    BYTE*    Textures;              // 0x34  Texture_t[NumMeshs], 32 bytes cada uno
+    std::uint8_t*    Meshs;                 // 0x28  Mesh_t[NumMeshs], 40 bytes cada uno
+    std::uint8_t*    Bones;                 // 0x2C  Bone_t[NumBones], 140 bytes cada uno
+    std::uint8_t*    Actions;               // 0x30  Action_t[NumActions], 16 bytes cada uno
+    std::uint8_t*    Textures;              // 0x34  Texture_t[NumMeshs], 32 bytes cada uno
     short*   IndexTexture;          // 0x38  en el 0.97k son shorts (new 2 * NumMeshs)
     short    NumLightMaps;          // 0x3C
     short    IndexLightMap;         // 0x3E
-    BYTE*    LightMaps;             // 0x40
-    BYTE     LightEnable;           // 0x44
-    BYTE     ContrastEnable;        // 0x45
-    BYTE     _unk46[2];
-    vec3_t   BodyLight;             // 0x48
+    std::uint8_t*    LightMaps;             // 0x40
+    std::uint8_t     LightEnable;           // 0x44
+    std::uint8_t     ContrastEnable;        // 0x45
+    std::uint8_t     _unk46[2];
+    float    BodyLight[3];             // 0x48
     int      BoneHead;              // 0x54
     int      BoneFoot[4];           // 0x58
     float    BodyScale;             // 0x68
-    vec3_t   BodyOrigin;            // 0x6C
-    vec3_t   BodyAngle;             // 0x78
+    float    BodyOrigin[3];            // 0x6C
+    float    BodyAngle[3];             // 0x78
     float    BodyHeight;            // 0x84
     char     StreamMesh;            // 0x88
-    BYTE     _unk89[3];
-    vec3_t   ShadowAngle;           // 0x8C
+    std::uint8_t     _unk89[3];
+    float    ShadowAngle[3];           // 0x8C
     char     Skin;                  // 0x98
-    BYTE     HideSkin;              // 0x99
-    BYTE     _unk9A[2];
+    std::uint8_t     HideSkin;              // 0x99
+    std::uint8_t     _unk9A[2];
     float    Velocity;              // 0x9C
-    BYTE     CurrentAction;         // 0xA0
-    BYTE     PriorAction;           // 0xA1
-    BYTE     _unkA2[2];
+    std::uint8_t     CurrentAction;         // 0xA0
+    std::uint8_t     PriorAction;           // 0xA1
+    std::uint8_t     _unkA2[2];
     float    CurrentAnimation;      // 0xA4
     short    CurrentAnimationFrame; // 0xA8
     short    Sounds[5];             // 0xAA  paso x2, ataque x2, muerte
-    BYTE     _unkB4[8];
+    std::uint8_t     _unkB4[8];
 };
 #pragma pack(pop)
 
-#define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
-static_assert(sizeof(BMD) == 0xBC, "BMD");
+// Cada puntero anterior al campo agrega cuatro bytes sólo en x64.
+constexpr std::size_t ModelNativeOffset(std::size_t off) {
+    return off + ((off > 0x28) + (off > 0x2C) + (off > 0x30) +
+                  (off > 0x34) + (off > 0x38) + (off > 0x40)) * (sizeof(void*) - 4);
+}
+#define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == ModelNativeOffset(off), #T "::" #f)
+static_assert(sizeof(void*) == 4 || sizeof(void*) == 8);
+static_assert(sizeof(short) == 2 && sizeof(int) == 4 && sizeof(float) == 4);
+static_assert(sizeof(BMD) == 0xBC + 6 * (sizeof(void*) - 4), "BMD");
+static_assert(alignof(BMD) == 1 && std::is_standard_layout_v<BMD> && std::is_trivially_copyable_v<BMD>);
 MU_ASSERT_FIELD(BMD, Version, 0x20);
 MU_ASSERT_FIELD(BMD, NumBones, 0x22);
 MU_ASSERT_FIELD(BMD, NumMeshs, 0x24);

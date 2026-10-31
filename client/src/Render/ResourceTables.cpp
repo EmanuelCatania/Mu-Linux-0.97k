@@ -1,6 +1,7 @@
 // Sin PCH: gestión de páginas Win32/POSIX sin dependencias del renderer.
 #include "Render/ResourceTables.h"
-#include "Item/ItemDefines.h"
+#include "Core/ResourceLimits.h"
+#include "Model/ModelTypes.h"
 #include <cstring>
 #include <limits>
 #include <new>
@@ -63,7 +64,7 @@ public:
     char* Base() { return data; }
     void Reset() { std::memset(data,0,count*stride); }
 };
-Table& Models() { static Table table(0xbc);return table; }
+Table& Models() { static Table table(sizeof(BMD));return table; }
 Table& Textures() { static Table table(0x38);return table; }
 }
 void EnsureModels(std::size_t count) { Models().Ensure(count); }
