@@ -162,7 +162,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 
     // 0x485815: this is a compact facing packet, not Send_MovePacket.
     BYTE movePacket[6] = { 0xC1, 6, 0x10,
-        *(BYTE*)(character + 904), *(BYTE*)(character + 908),
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(character))->PositionX, *(BYTE*)&((CHARACTER*)(uintptr_t)(character))->PositionY,
         (BYTE)(16 * (((int)((*(float*)(object + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
     gNetwork.SendC1(movePacket, sizeof(movePacket));
     AsCharacter(c)->Movement = 0;
@@ -211,7 +211,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     *(float*)(o + 36) = CreateAngle(
         *(float*)(o + 0x10), *(float*)(o + 0x14),
         AsCharacter(c)->TargetPosition[0], AsCharacter(c)->TargetPosition[1]);
-    const WORD targetKey = *(WORD*)(targetEntity + 476); // IDA: v285
+    const WORD targetKey = *(WORD*)&((CHARACTER*)(uintptr_t)(targetEntity))->Key; // IDA: v285
     // There is deliberately no key-validity early return here.  The native
     // CFG at 0x485A2B continues through every family and serializes v285 as
     // read, including the sentinel value when the selected slot is stale.
@@ -304,7 +304,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 void __cdecl Entity_WeaponHit(int param_1) {
     SetAttackSpeed();
     SetAction(AsObject(param_1), 0x57);
-    *(DWORD *)(param_1 + 0x164) = 0;
+    *(DWORD *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
     CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),

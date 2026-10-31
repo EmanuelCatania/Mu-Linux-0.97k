@@ -503,7 +503,7 @@ char Sound_PlayFootstep()
 {
   char result; // al
 
-  result = *(BYTE *)(Hero + 261);
+  result = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
   if ( result != 30 && result != 31 )
   {
     if ( gMapManager.GetCurrentMap() == 2 )
@@ -515,7 +515,7 @@ char Sound_PlayFootstep()
     }
     else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != 3 )
     {
-      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)(Hero + 846) )   // IDA: World == 7
+      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)&((CHARACTER*)(uintptr_t)(Hero))->SafeZone )   // IDA: World == 7
       {
         return PlayBuffer(11, 0, 0);
       }
@@ -698,7 +698,7 @@ void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
   float Objecta; // [esp+24h] [ebp+4h]
   float Objectb; // [esp+24h] [ebp+4h]
 
-  v2 = *(BYTE *)(Hero + 261);
+  v2 = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
   if ( v2 >= 0xDu && v2 <= 0x21u && *(float *)(Object + 192) < 0.1 )
   {
     v3 = *(float *)(Hero + 16) - *(float *)(Object + 16);
@@ -1599,12 +1599,12 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
             break;
         }
         default:
-            if (*(unsigned char*)(c + 771) % 3) {
+            if (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3) {
                 SetAction(AsObject(c), 4);
             } else {
                 SetAction(AsObject(c), 3);
             }
-            ++*(unsigned char*)(c + 771);
+            ++*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount;
             break;
         }
         goto LABEL_85;
@@ -1626,14 +1626,14 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
                     if (v5 == 431) {
                         SetAction(AsObject(c), 81);
                     } else {
-                        SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 39);
+                        SetAction(AsObject(c), *(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3 + 39);
                     }
                 } else {
                     short v6 = AsCharacter(c)->Weapon[1].Type;
                     if (v6 < 400 || v6 >= 496) {
-                        SetAction(AsObject(c), (*(unsigned char*)(c + 771) & 1) + 35);
+                        SetAction(AsObject(c), (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount & 1) + 35);
                     } else {
-                        switch (*(unsigned char*)(c + 771) & 3) {
+                        switch (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount & 3) {
                         case 0: SetAction(AsObject(c), 35); break;
                         case 1: SetAction(AsObject(c), 37); break;
                         case 2: SetAction(AsObject(c), 36); break;
@@ -1664,7 +1664,7 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
             }
             // Mace/staff (496-527)
             if (v5 >= 496 && v5 < 528) {
-                SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 43);
+                SetAction(AsObject(c), *(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3 + 43);
                 goto LABEL_85;
             }
             // Bow/crossbow type detection on right hand
@@ -1753,7 +1753,7 @@ LABEL_85:
             }
         }
     }
-    ++*(unsigned char*)(c + 771);
+    ++*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount;
 }
 
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
@@ -1887,7 +1887,7 @@ int __cdecl FindCharacterIndex(int param_1)
 {
     char *pcVar2 = (char*)(uintptr_t)DAT_07abf5d0;
     for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += 0x394) {
-        if (*pcVar2 != '\0' && *(short*)(pcVar2 + 0x1dc) == (short)param_1)
+        if (*pcVar2 != '\0' && *(short*)&((CHARACTER*)(uintptr_t)(pcVar2))->Key == (short)param_1)
             return iVar1;
     }
     return 400;
@@ -2335,7 +2335,7 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
         *defPtr = (unsigned short)(*(unsigned short*)(param_1 + 22) / 3);
     }
 
-    short v3 = *(short*)(param_1 + 604);  // WeaponR/Shield item type
+    short v3 = *(short*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[5].LinkBone;  // WeaponR/Shield item type
     if (v3 != -1) {
         unsigned char dur = AsCharacter(param_1)->Weapon[0].PriorAction;  // shield durability
         if (dur != 0) {
@@ -2343,7 +2343,7 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
             int level = *(int *)&AsCharacter(param_1)->BodyPart[5].AnimationFrame;
             unsigned char opt = *(unsigned char*)(param_1 + 631);
             float durP = CalcDurabilityPercent(dur, maxDur, level, opt);
-            unsigned char defenseBase = *(unsigned char*)(param_1 + 620);
+            unsigned char defenseBase = *(unsigned char*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[5].Cloth;
             unsigned short reduction = (unsigned short)((double)defenseBase * (double)durP);
             *defPtr += defenseBase - reduction;
 
@@ -2393,7 +2393,7 @@ int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
         BYTE* slotPtr = param_1 + 68 * i;
         if (*(unsigned char*)(slotPtr + 562)) {  // slot's [+26] = 0x22A; 8*68+0x22 hmm let me recalc
             unsigned int v7 = Item_GetDefenseWithSpecial(0, (short*)(slotPtr + 536));
-            ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)(slotPtr + 536)];
+            ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)&((CHARACTER*)(uintptr_t)(slotPtr))->BodyPart[2].AnimationFrame];
             float durP;
             if (i == 7) {
                 durP = CalcDurabilityPercent(*(unsigned char*)(param_1 + 1038),
@@ -2402,7 +2402,7 @@ int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
             } else {
                 durP = CalcDurabilityPercent(*(unsigned char*)(slotPtr + 562),
                                              v8->Durability,
-                                             *(int*)(slotPtr + 540),
+                                             *(int*)&((CHARACTER*)(uintptr_t)(slotPtr))->BodyPart[2].PriorAnimationFrame,
                                              *(unsigned char*)(slotPtr + 563));
             }
             int reduction = (int)((double)(unsigned short)v7 * (double)durP);

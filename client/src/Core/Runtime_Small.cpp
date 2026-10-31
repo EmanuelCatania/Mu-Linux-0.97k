@@ -647,7 +647,7 @@ void __cdecl EndOpengl(void) {
 int __cdecl GetHandOfWeapon(int obj) {
     int hand = 0;
     if (*(short *)(obj + 2) == 390) {
-        BYTE act = *(BYTE *)(obj + 0x105);
+        BYTE act = *(BYTE *)&((OBJECT*)(uintptr_t)(obj))->CurrentAction;
         if (act == 37 || act == 38) hand = 1;
     }
     return hand;
@@ -671,7 +671,7 @@ void __cdecl DeleteBug(int Owner) {
     char *o = (char *)&Butterfles;
     char *end = (char *)&Butterfles + 0x1158;  // 10 entries × 0x1BC stride
     do {
-        if ((*(BYTE *)o != 0) && (*(int *)(o + 0xFC) == Owner)) {
+        if ((*(BYTE *)o != 0) && (*(int *)&((OBJECT*)(uintptr_t)(o))->Owner == Owner)) {
             *(BYTE *)o = 0;
         }
         o += 0x1BC;  // Butterfles OBJECT stride

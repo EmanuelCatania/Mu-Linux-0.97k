@@ -95,7 +95,7 @@ void __cdecl Cursor_Render(void) {
     // NULL-guard: en login Hero=NULL y SelectedCharacter=-1, así que el branch
     // se saltea; el guard sólo protege contra misconfig.
     if (DAT_07abf5d8 != NULL &&
-        *(char*)((char*)DAT_07abf5d8 + 0x34e) == '\0' &&
+        *(char*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone == '\0' &&
         SelectedCharacter != -1)
     {
         if ((char)CheckAttack() != '\0' && DAT_07d78094 == '\0') {

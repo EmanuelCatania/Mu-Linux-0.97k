@@ -96,7 +96,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     #define local_58 (local_60_buf[2])
 
     // ── 2. Switch por TIPO DE MONSTRUO (+0x2EB) ──────────────────────────────
-    char cVar6 = *(char *)((int)param_1 + 0x2eb);  // tipo de monstruo
+    char cVar6 = *(char *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;  // tipo de monstruo
     switch (cVar6) {
     case 'Y': case '_': case 'p': case 'v': case '|':
     case (char)-0x7e: case (char)-0x78:
@@ -119,9 +119,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // o+140 selects the shadow branch in RenderPartObjectEffect (0x504B50).
     // A late opaque body pass here would cover Silver Valkyrie's glow.
     if (sVar2 != 0x186 && *(BYTE *)((char *)puVar13 + 0x84) != 8) {
-        BYTE v11 = *(BYTE *)((char *)param_1 + 747);   // *(c + 747)
+        BYTE v11 = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;   // *(c + 747)
         // Use the global World; a same-name local here was self-initialized.
-        float alpha = *(float *)((char *)puVar13 + 0x168);   // o + 360
+        float alpha = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->Alpha;   // o + 360
 
         if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
             v11 != 59 && v11 != 63 &&
@@ -131,7 +131,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // entity is dead+action-start (Blood Castle special case).
             if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
                 if (*(BYTE *)((char *)puVar13 + 0x195) != 0 &&     // o+405 m_bActionStart
-                    *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
+                    *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Dead != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
                     float wy = *(float *)((char *)puVar13 + 0x14);
                     float th = RequestTerrainHeight(wx, wy);
@@ -178,7 +178,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     Equipment_Draw(AsCharacter(param_1), CharacterEffects_EarlyStage);
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
-    BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
+    BYTE bVar7 = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;   // tipo de monstruo
 
     // IDA 00456770 groups these MonsterIDs before the individual Icarus
     // branches.  43 and 78..83 need the first 0x48 pass; 67 uses 0x144 for
@@ -262,10 +262,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // simplificacion nuestra.
     {
         char *o = (char *)puVar13;
-        if (*(float *)(o + 360) >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
+        if (*(float *)&((OBJECT*)(uintptr_t)(o))->Alpha >= 0.5f && gMapManager.GetCurrentMap() != 10 &&
             *(short *)(o + 2) == 390)
         {
-            const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
+            const unsigned short helper = *(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type;
             if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
@@ -275,7 +275,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
                     if (th < *(float *)(o + 24)) *(float *)(o + 24) = th;
                 }
-                const float shadowAlpha = *(float *)(o + 360);
+                const float shadowAlpha = *(float *)&((OBJECT*)(uintptr_t)(o))->Alpha;
                 *(BYTE *)(o + 140) = 1;              // EnableShadow
                 RenderPartObject((int)param_1, 391, 0,
                              (float *)((char *)param_1 + 800), shadowAlpha,
@@ -417,10 +417,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     if (sVar2 == 0x186) {
         int subType = *(int *)((char *)puVar13 + 4);
         if (subType >= 206 && subType <= 208) {
-            float alphaST = *(float *)((char *)puVar13 + 0x168);
+            float alphaST = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->Alpha;
             int   flags   = 0;
             if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)gMapManager.GetCurrentMap() == 0) {
-                flags = 8 * (int)*(unsigned short *)((char *)param_1 + 446);
+                flags = 8 * (int)*(unsigned short *)&((CHARACTER*)(uintptr_t)(param_1))->Level;
             }
             RenderPartObject((int)param_1, subType, 0,
                          (float *)(param_1 + 200), alphaST,
@@ -429,7 +429,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
-    if (!bSubTypeNpcRendered && *(char *)((int)param_1 + 0x34f) == '\0') {
+    if (!bSubTypeNpcRendered && *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Change == '\0') {
         PART_t *piVar16 = AsCharacter(param_1)->BodyPart;   // int*-index: byte offset +0x1f4
         for (int nSlot = 6; nSlot > 0; nSlot--) {
             short sSlot = piVar16->Type;   // slot model_idx at -20 bytes
@@ -442,7 +442,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // login demo characters render as DW (class=0). Fixed to 0x1bc.
                 // 0.97.20: modelo propio de la pieza (catálogo).
                 iVar9 = gContentCatalog.EntityDrawModel(param_1, iVar9);
-                BYTE bClassByte = *(BYTE *)((int)param_1 + 0x1bc);
+                BYTE bClassByte = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Class;
                 *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));
                 // ── DIAG: log per-call to RenderPartObject (Entity_DrawAt) for char-select
@@ -491,13 +491,13 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
         // IDA: RenderCharacter llama CreateGuildMark/RenderGuildMarkOnShield después de
         // renderizar las seis piezas, sólo para modelos de jugador visibles.
-        const short guildMarkIndex = *(short*)((BYTE*)param_1 + 474);
+        const short guildMarkIndex = *(short*)&((CHARACTER*)(uintptr_t)(param_1))->GuildMarkIndex;
         if (guildMarkIndex >= 0 &&
             *(short*)((BYTE*)puVar13 + 2) == 390 &&
-            *(float*)((BYTE*)puVar13 + 360) != 0.0f) {
+            *(float*)&((OBJECT*)(uintptr_t)(puVar13))->Alpha != 0.0f) {
             CreateGuildMark(guildMarkIndex, true);
             RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
-                          *(short*)((BYTE*)param_1 + 528));
+                          *(short*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[2].Type);
         }
     }
 
@@ -536,7 +536,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             if (guildIndex != -1) {
                 const char* guildName = Guild_GetMarkName(guildIndex);
                 if (EnableSoccer && DAT_07abf5d8) {
-                    const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
+                    const short heroGuild = *(short*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->GuildMarkIndex;
                     if (heroGuild != -1 &&
                         (strcmp(Guild_GetMarkName(heroGuild), guildName) == 0 ||
                          strcmp(GuildWarName, guildName) == 0)) {
@@ -613,8 +613,8 @@ void Equipment_Tick(int entity, int highlighted)
     // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
     // renombró la variable; la lógica queda tal cual el decompile.
     {
-        bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        bool bSafeZone = *(char *)&((CHARACTER*)(uintptr_t)(param_1))->SafeZone != '\0';
+        BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
         if (gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && (bAnim == 0x15 || bAnim == 0x1d))   // IDA: World == 7
             local_74 = (void *)1;
@@ -634,7 +634,7 @@ void Equipment_Tick(int entity, int highlighted)
     // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
     // verde y azul, solo cambia el rojo.
     {
-        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
+        const BYTE pkLevel = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->PK;
         bool bTint = false;
         if (pkLevel < 6) {
             // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
@@ -649,7 +649,7 @@ void Equipment_Tick(int entity, int highlighted)
 
             // Override de escala por zona (World - 9 en [1..7])
             const int iSub = (int)gMapManager.GetCurrentMap() - 9;
-            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
+            const BYTE bv2 = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->MonsterIndex;
             const bool bInRange =
                 (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
                 (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
@@ -690,7 +690,7 @@ void Equipment_Tick(int entity, int highlighted)
         if ((gMapManager.GetCurrentMap() >= 11) && (gMapManager.GetCurrentMap() <= 16) &&
             (*(char *)(param_1 + 0xba) != 0)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
             char cType = *(char *)(param_1 + 0xba);
             int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
@@ -711,12 +711,12 @@ void Equipment_Tick(int entity, int highlighted)
             bDeferWing = true;
         } else if (*(short *)(param_1 + 0xa8) != -1 && !gUserSettings.GetAntilag(ANTILAG_WINGS)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
-            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
             RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                          (int)*(short *)(param_1 + 0xa8),
-                         *(char *)((int)param_1 + 0x2a2),
-                         *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+                         *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
+                         *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Option1, '\0', '\x01', 0);
         }
 
         // Wings / shield bone (slot 0xae == 0x331)
@@ -725,7 +725,7 @@ void Equipment_Tick(int entity, int highlighted)
             param_1[0xb2] = 0x3f000000; // 0.5f
             RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
                          0x331,
-                         *(char *)((int)param_1 + 0x2ba),
+                         *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Level,
                          (UINT)(size_t)local_74, '\0', '\x01', 0);
             // Trail spawn at transformed bone position
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
@@ -759,12 +759,12 @@ void Equipment_Tick(int entity, int highlighted)
     Equipment_SetStage(2);
     if (bDeferWing) {
         *(BYTE *)(param_1 + 0xa9) = 0x2f;
-        BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+        BYTE bAnim = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
         param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
         RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                      (int)*(short *)(param_1 + 0xa8),
-                     *(char *)((int)param_1 + 0x2a2),
-                     *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
+                     *(char *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Level,
+                     *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Wing.Option1, '\0', '\x01', 0);
     }
 
 

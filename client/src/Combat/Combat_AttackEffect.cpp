@@ -1455,12 +1455,12 @@ LABEL_50:
             TargetPosition[2] = v50;
             TargetPosition[0] = (double)(rand() % 1001 - 500) + v48;
             v51 = rand();
-            *(float *)(Owner + 368) = TargetPosition[0];
+            *(float *)&((OBJECT*)(uintptr_t)(Owner))->StartPosition[0] = TargetPosition[0];
             TargetPosition[1] = (double)(v51 % 1001 - 500) + TargetPosition[1];
             TargetPosition[2] = TargetPosition[2] + 500.0;
             v52 = TargetPosition[2];
-            *(float *)(Owner + 372) = TargetPosition[1];
-            *(float *)(Owner + 376) = v52;
+            *(float *)&((OBJECT*)(uintptr_t)(Owner))->StartPosition[1] = TargetPosition[1];
+            *(float *)&((OBJECT*)(uintptr_t)(Owner))->StartPosition[2] = v52;
             CreateEffect(256, TargetPosition, v246, Light, 1, Owner, -1, 0, 0);
             --v45;
           }
@@ -1486,9 +1486,9 @@ LABEL_50:
           TransformPosition(v2, (float (*)[4])(v55 + 528), v248, TargetPosition, 1);
           v56 = TargetPosition[1];
           v57 = TargetPosition[2];
-          *(float *)(Owner + 368) = TargetPosition[0];
-          *(float *)(Owner + 372) = v56;
-          *(float *)(Owner + 376) = v57;
+          *(float *)&((OBJECT*)(uintptr_t)(Owner))->StartPosition[0] = TargetPosition[0];
+          *(float *)&((OBJECT*)(uintptr_t)(Owner))->StartPosition[1] = v56;
+          *(float *)&((OBJECT*)(uintptr_t)(Owner))->StartPosition[2] = v57;
           CreateEffect(256, TargetPosition, v246, Light, 1, Owner, -1, 0, 0);
           goto LABEL_75;
         }

@@ -135,7 +135,7 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
     case 0x10e:  // Boat-like entity type 270
     case 300:
         // If weapon anim state == 1 (armed standing) or type == 300: sail effect
-        if (((sVar2 == 0x10e) && (*(short *)((int)param_1 + 0x1be) == 1)) ||
+        if (((sVar2 == 0x10e) && (*(short *)&((CHARACTER*)(uintptr_t)(param_1))->Level == 1)) ||
             (sVar2 == 300)) {
             puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x16, 0x17, 1.0f);
             return puVar13;
@@ -147,7 +147,7 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
         int iVar9  = 0;
         int iVar18 = 0;
         local_48 = 0.0f; local_44 = 0.0f; local_40 = 0.0f;
-        bool bAlt = (*(short *)((int)param_1 + 0x1be) != 0);
+        bool bAlt = (*(short *)&((CHARACTER*)(uintptr_t)(param_1))->Level != 0);
         if (bAlt) {
             local_60 = 0.2f; local_5c = 0.7f; local_58 = 0.1f;
         } else {
@@ -165,7 +165,7 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
                 float fSc  = bAlt ? 1.3f : 2.5f;
                 Equipment_AddSprite((int)uType, &local_54, fSc, &local_60, (int)puVar13, 0, (int)!bAlt);
                 // Random 1/4 chance: add spark if walking
-                BYTE bAnimState = *(BYTE *)((int)puVar13 + 0x105);
+                BYTE bAnimState = *(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction;
                 if ((rand() & 3) == 0 && bAnimState >= 3 && bAnimState <= 4)
                     Particle_Spawn(0x49c, &local_54, (float *)(puVar13 + 7),
                                  &local_60, 0, 1.0f, 0);
@@ -257,8 +257,8 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
 
         // ── 1. Glove sparkle: class byte (cls&7)==0 + (cls_skin&0xF8)==8 ───
         // (DK 2nd-tier with specific skin range): sprite + sin halo at bone 19
-        if (((*(BYTE *)((int)param_1 + 0x1bc) & 7) == 0) &&
-            ((*(char *)((int)param_1 + 0x1bd) & (char)~7) == '\b')) {
+        if (((*(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Class & 7) == 0) &&
+            ((*(char *)&((CHARACTER*)(uintptr_t)(param_1))->Skin & (char)~7) == '\b')) {
             local_48 = -4.0f; local_44 = 11.0f; local_40 = 0.0f;
             local_60 = 1.0f; local_5c = 1.0f; local_58 = 1.0f;
             BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x390),
@@ -272,13 +272,13 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
         // ── 2. PLAYER_SPELL anim (88 = 'X') — orbit sparkles (3 sprites) ──
         // IDA línea 2133-2152. Bone idx en c+628 (= LinkBone Weapon[0]),
         // tres Equipment_AddSprite(1191) con rotación basada en WorldTime.
-        if (*(char *)((int)puVar13 + 0x105) == 'X') {
+        if (*(char *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction == 'X') {
             BYTE bone = *(BYTE *)(param_1 + 0x9d);  // = (param_1+0x9d*4-1)? no: int-idx 0x9d * 4 = byte 0x274 = c+628 LinkBone[0]
             // Wait int-arithmetic: param_1 (int*) + 0x9d ints == byte+0x274 == c+628 ✓
             BMD_TransformPosition(pvVar23,
                 (float *)(puVar13[0x45] + (UINT)bone * 0x30),
                 &local_48, &local_54, '\x01');
-            float Scalep = *(float *)((int)puVar13 + 0x108) * 0.1f;  // anim frame * 0.1
+            float Scalep = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->AnimationFrame * 0.1f;  // anim frame * 0.1
             local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
             Equipment_AddSprite(0x4a7, &local_54, Scalep * 0.30000001f,
                          &local_60, (int)puVar13, 0, 0);
@@ -320,8 +320,8 @@ void *CharacterEffects_TickLate(int entity, CharacterEffectScratch &scratch) {
         // ── 5. Full set body glow: PartObjectColor + 6 sparkles (3 bones × 2) ──
         // IDA línea 2191: PartObjectColor(c->Boot.Type, alpha, 0.5, Light, 0)
         // → escribe en Light[3] el RGB del glow basado en el tipo de bota.
-        PartObjectColor(*(short*)((int)param_1 + 600),
-                     *(float *)((int)puVar13 + 0x168),
+        PartObjectColor(*(short*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[5].Type,
+                     *(float *)&((OBJECT*)(uintptr_t)(puVar13))->Alpha,
                      0.5f, &local_60, '\0');
 
         // Light = local_60..local_58 (RGB output del PartObjectColor)

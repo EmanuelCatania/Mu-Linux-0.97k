@@ -569,7 +569,7 @@ LAB_00501734:
                     }
                     if ((&DAT_0839bdb4)[iVar2] == '\x02') {
                         // Phase 2: descend when player animation is idle
-                        if (*(unsigned char *)(DAT_07abf5d8 + 0x105) < 0xd) {
+                        if (*(unsigned char *)&((OBJECT*)(uintptr_t)(DAT_07abf5d8))->CurrentAction < 0xd) {
                             uVar8 = _rand(); uVar8 &= 0x800000ff;
                             bVar20 = (uVar8 == 0);
                             if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff00)==0xffffffff);

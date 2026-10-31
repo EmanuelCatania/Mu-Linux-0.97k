@@ -175,7 +175,7 @@ void __cdecl Effect_SpawnLightningBurst(intptr_t param_1)
     // Spawn lightning joint: type=0x4eb, from entity pos, width 5.0, persistent
     Joint_Create(0x4eb, position, (float *)(param_1 + 0x10), local_48,
                  *(undefined4 *)(param_1 + 4),
-                 (intptr_t)*(OBJECT**)(param_1 + 0xfc), 5.0f, -1, 0);
+                 (intptr_t)*(OBJECT**)&((OBJECT*)(uintptr_t)(param_1))->Owner, 5.0f, -1, 0);
     iVar2 = iVar2 + -1;
   } while (iVar2 != 0);
   return;
@@ -209,7 +209,7 @@ void __cdecl Effect_SpawnProximityHit(intptr_t param_1)
   byte bVar15;
   float local_c[3];
 
-  pcVar3 = *(char **)(param_1 + 0xfc);
+  pcVar3 = *(char **)&((OBJECT*)(uintptr_t)(param_1))->Owner;
   // Check: target valid, active, alive, and within distance threshold
   if ((((pcVar3 != (char *)0x0) && (*pcVar3 != '\0')) && (pcVar3[0x160] != '\0')) &&
       (fVar4 = *(float *)(param_1 + 0x10) - *(float *)(pcVar3 + 0x10),

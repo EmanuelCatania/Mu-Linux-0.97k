@@ -332,7 +332,7 @@ void __cdecl FUN_00451ea0(int param_1, void *param_2, int param_3) {
     float WorldPosition[3] = {0.0f, 0.0f, 0.0f};
     Position[2] = 1.4013e-45f;
     BMD__TransformPosition(param_2,
-        (float (*)[4])(param_3 * 0x30 + *(int *)(param_1 + 0x114)),
+        (float (*)[4])(param_3 * 0x30 + *(int *)&((OBJECT*)(uintptr_t)(param_1))->BoneMatrices),
         Position, WorldPosition, false);
 }
 

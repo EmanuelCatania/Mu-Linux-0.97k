@@ -169,8 +169,8 @@ static void Tamachan_Move(char *o, int life)
         if (!(*(int *)(o + 96) % (rand() % 20 + 10))) PlayBuffer(118, 0, 0);
         return;
     case 2: {
-        float dx = *(float *)(o + 16) - *(float *)(o + 368);
-        float dy = *(float *)(o + 20) - *(float *)(o + 372);
+        float dx = *(float *)(o + 16) - *(float *)&((OBJECT*)(uintptr_t)(o))->StartPosition[0];
+        float dy = *(float *)(o + 20) - *(float *)&((OBJECT*)(uintptr_t)(o))->StartPosition[1];
         *(int *)(o + 96) = 10;
         float dist = (float)sqrt(dy * dy + dx * dx);
         MoveHumming((float *)(o + 16), (float *)(o + 28), (float *)(o + 368), 3000.0f / dist);
@@ -240,7 +240,7 @@ void MoveEffect(float *param_1, int param_2)
     *(char*)param_1 = 0;
     return false;
   };
-  const void* owner = *(const void**)((char*)param_1 + 0xfc);
+  const void* owner = *(const void**)&((OBJECT*)(uintptr_t)(param_1))->Owner;
   // Null es legitimo en efectos sin seguimiento. Los no nulos siempre
   // deben pertenecer a un pool; validar null solo en las ramas que lo leen.
   if (owner && !validOwner(owner)) return;

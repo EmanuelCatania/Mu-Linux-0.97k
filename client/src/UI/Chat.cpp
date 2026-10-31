@@ -503,7 +503,7 @@ void UI_RenderChatLogOverlay(void)
       uVar2 = SetBackgroundTextColor;
       if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()) + gWindow.PanelOrigin(Ui::WindowLeft))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
-         (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
+         (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0')) {
         pbVar4 = (byte *)EntityName::Get(DAT_07abf5d8);
         do {
           bVar1 = *pbVar6;

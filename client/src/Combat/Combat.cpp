@@ -574,8 +574,8 @@ void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* objec
     // (= START de la path = current grid pos), NO entity[+0x306]/[+0x307]
     // (= target del último move server-confirmed). Server lee pkt[3]/[4] como
     // PathX[0] y camina PathX[1..PathCount-1] aplicando los dirs.
-    pkt[3] = *(unsigned char*)(param_1 + 0x357); // path_wp_x[0] = start grid X
-    pkt[4] = *(unsigned char*)(param_1 + 0x366); // path_wp_y[0] = start grid Y
+    pkt[3] = *(unsigned char*)&((CHARACTER*)(uintptr_t)(param_1))->PathX[0]; // path_wp_x[0] = start grid X
+    pkt[4] = *(unsigned char*)&((CHARACTER*)(uintptr_t)(param_1))->PathY[0]; // path_wp_y[0] = start grid Y
 
     // Compute directions (8-dir Mu standard: 0=W, 1=SW, 2=S, 3=SE, 4=E, 5=NE, 6=N, 7=NW).
     BYTE pathDir[16] = {};
@@ -952,8 +952,8 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
         }
         if (CheckAttack() && iType == 51) {                  // IDA L1869: CheckAttack()
             if (*(WORD *)&AsCharacter(entity)->Object.Type == 390) {
-                const WORD leftWeapon  = *(WORD*)(Hero + 624);   // IDA: v181
-                const WORD rightWeapon = *(WORD*)(Hero + 648);   // IDA: v182
+                const WORD leftWeapon  = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[0].Type;   // IDA: v181
+                const WORD rightWeapon = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[1].Type;   // IDA: v182
                 if ((leftWeapon >= 536 && leftWeapon < 543)
                     || (rightWeapon >= 528 && rightWeapon < 535)
                     || rightWeapon == 545
@@ -1001,8 +1001,8 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
     if (iType > 36) {                                         // IDA L2160
         // Solo 52 tiene rama propia; el resto cae en LABEL_240.
         if (iType == 52 && *(WORD *)&AsCharacter(entity)->Object.Type == 390) {     // IDA L2162
-            const WORD leftWeapon  = *(WORD*)(Hero + 624);    // IDA: v83
-            const WORD rightWeapon = *(WORD*)(Hero + 648);    // IDA: v84
+            const WORD leftWeapon  = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[0].Type;    // IDA: v83
+            const WORD rightWeapon = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[1].Type;    // IDA: v84
             const bool weaponOk = (leftWeapon >= 536 && leftWeapon < 543)
                                || (rightWeapon >= 528 && rightWeapon < 535)
                                || rightWeapon == 545
@@ -1079,8 +1079,8 @@ static void Attack_WarriorBranch97k(char* entity)
     // decodificando Data/Local/item.bmd: 560 Skull Staff … 570 Divine Staff of
     // Archangel).  Las LANZAS son 496..527 (tipos 96..127, seccion 3), que es
     // justo el rango que exige Impale en Item_Equip.
-    const WORD leftWeapon  = *(WORD*)(Hero + 624);            // IDA: v220
-    const WORD rightWeapon = *(WORD*)(Hero + 648);            // IDA: v221
+    const WORD leftWeapon  = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[0].Type;            // IDA: v220
+    const WORD rightWeapon = *(WORD*)&((CHARACTER*)(uintptr_t)(Hero))->Weapon[1].Type;            // IDA: v221
     if (leftWeapon == 0xFFFF
         || (leftWeapon >= 560 && leftWeapon < 592)
         || (rightWeapon >= 560 && rightWeapon < 592)) {
@@ -1343,12 +1343,12 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             return;
             }
         const bool targetIsPlayer = (*(unsigned short*)(target + 2) == 390);
-        const BYTE targetAction = *(unsigned char*)(target + 261);
+        const BYTE targetAction = *(unsigned char*)&((OBJECT*)(uintptr_t)(target))->CurrentAction;
         if ((targetIsPlayer && targetAction == 87) || (!targetIsPlayer && targetAction == 5)) {
             return;
             }
         const BYTE targetFade = *(unsigned char*)(target + 124);
-        if (targetFade == 1 || targetFade == 2 || *(float*)(target + 360) < 0.7f) {
+        if (targetFade == 1 || targetFade == 2 || *(float*)&((OBJECT*)(uintptr_t)(target))->Alpha < 0.7f) {
             return;
             }
         extern unsigned char* TerrainWall;
@@ -1368,7 +1368,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             if (terrainAttr != 0) continue;
             *(float*)(target + 36) = CreateAngle(              // IDA L9798
                 *(float*)(target + 16), *(float*)(target + 20),
-                *(float*)(target + 788), *(float*)(target + 792));
+                *(float*)&((CHARACTER*)(uintptr_t)(target))->TargetPosition[0], *(float*)&((CHARACTER*)(uintptr_t)(target))->TargetPosition[1]);
             if (Teleport) {                                 // IDA L9802: if (Teleport)
                 Teleport = 0;
                 return;
@@ -1851,8 +1851,8 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     if (targetIndex < 0 || targetIndex >= 400)
         return;
 
-    const BYTE gridX = *(BYTE*)(Hero + 904);
-    const BYTE gridY = *(BYTE*)(Hero + 908);
+    const BYTE gridX = *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->PositionX;
+    const BYTE gridY = *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->PositionY;
     const BYTE facing = (BYTE)(16 * (((int)((*(float*)(Hero + 36) + 22.5f) *
                                            0.022222223f + 1.0f)) & 7));
     BYTE movement[6] = { 0xC1, 6, 0x10, gridX, gridY, facing };
@@ -1860,14 +1860,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
 
     const BYTE skillId = attributes[(BYTE)DAT_07d7809c + 87];
     BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + 916 * targetIndex;
-    *(float*)(character + 788) = *(float*)(target + 16);
-    *(float*)(character + 792) = *(float*)(target + 20);
-    *(float*)(character + 796) = *(float*)(target + 24);
+    *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[0] = *(float*)(target + 16);
+    *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[1] = *(float*)(target + 20);
+    *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[2] = *(float*)(target + 24);
     *(float*)(object + 36) = CreateAngle(
         *(float*)(object + 16), *(float*)(object + 20),
-        *(float*)(character + 788), *(float*)(character + 792));
+        *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[0], *(float*)&((CHARACTER*)(uintptr_t)(character))->TargetPosition[1]);
 
-    const WORD targetKey = *(WORD*)(target + 476);
+    const WORD targetKey = *(WORD*)&((CHARACTER*)(uintptr_t)(target))->Key;
     // UseSkillElf (0x0048A180) no filtra `targetKey == 0xFFFF`: manda el paquete
     // con la key tal cual la lee y despues SIEMPRE anima (SetPlayerMagic o
     // SetPlayerAttack).
@@ -2088,7 +2088,7 @@ void __cdecl Action(DWORD c, DWORD o)
         if (AsCharacter(c)->MonsterIndex == 9) Range = 7.0f;                // IDA L1209-1212
 
         // Saltea si la animación de recuperación está activa
-        unsigned char animPrev = *(unsigned char*)(o + 261);
+        unsigned char animPrev = *(unsigned char*)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
         unsigned short modelType = *(unsigned short*)(o + 2);
         if (modelType == 390) {
             // Hero — skip if anim_state_prev == 81 (skill recovery)

@@ -67,7 +67,7 @@ void __cdecl SendChat(char* Text) {
 
     // If hero is dead, check for GM command prefix
     // Dead at offset 0x2FD in CHARACTER struct
-    if (*(BYTE*)(Hero + 0x2FD) != '\0') {
+    if (*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->Dead != '\0') {
         // Only allow GM command (DAT_07d3cdd4) when dead
         int cmdLen = (int)strlen(&DAT_07d3cdd4);
         if (cmdLen > 0 && strncmp(Text, &DAT_07d3cdd4, cmdLen) == 0) {

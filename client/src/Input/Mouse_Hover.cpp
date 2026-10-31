@@ -119,7 +119,7 @@ void Mouse_UpdateHoverTargets(void)
         if (Attacking == -1 ||
             DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
             DAT_083a42ac != '\0' || MouseRButtonPush != '\0' ||
-            *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
+            *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Dead != '\0')
         {
             SelectedCharacter = -1;
         }
@@ -159,7 +159,7 @@ void Mouse_UpdateHoverTargets(void)
         }
 
         // No Alt: check swim/idle move state
-        unsigned char moveFlags = *(unsigned char *)(DAT_07abf5d8 + 0x1bc) & 7;
+        unsigned char moveFlags = *(unsigned char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7;
         if (moveFlags == 2 || moveFlags == 0)
         {
             // HashTable encode/decode block — anti-tamper obfuscation.
@@ -545,7 +545,7 @@ int __cdecl SpecialObject_HoverTest(void)
         char *e   = &DAT_083a2370[i * stride];
         int   obj = *(int *)(e + 8);
         if (e[0] == 0 || obj == 0) continue;
-        if (*(char *)(obj + 0x160) == 0) continue;   // no visible este frame
+        if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;   // no visible este frame
         *(DWORD *)(obj + 0xe8) = 0x3e4ccccd;             // 0.2f
         *(DWORD *)(obj + 0xec) = 0x3e4ccccd;
         *(DWORD *)(obj + 0xf0) = 0x3e4ccccd;
@@ -556,7 +556,7 @@ int __cdecl SpecialObject_HoverTest(void)
         char *e   = &DAT_083a2370[i * stride];
         int   obj = *(int *)(e + 8);
         if (e[0] == 0 || obj == 0) continue;
-        if (*(char *)(obj + 0x160) == 0) continue;
+        if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;
 
         float box[12];
         memcpy(box, (const void *)(obj + 0x130), sizeof(box));
@@ -589,7 +589,7 @@ char __cdecl Party_HPBar_HoverCheck(void)
     float local_24 = 5.0f;                              // top of first bar (Y)
     char result = 0;
 
-    UINT  uVar7 = *(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7;  // clase del heroe (c->Class & 7)
+    UINT  uVar7 = *(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7;  // clase del heroe (c->Class & 7)
     UINT *puVar5 = (UINT*)&DAT_07e11e9c;                // party slot base (stride 9 uints = 0x24)
 
     for (int i = 0; i < (int)DAT_07eaa0e0; i++, puVar5 += 9) {

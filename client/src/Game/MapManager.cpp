@@ -41,8 +41,8 @@ bool InSafeZone()
 bool InDeviasCathedral()
 {
     if (!Hero) return false;
-    const int x = *(int*)(Hero + 904);
-    const int y = *(int*)(Hero + 908);
+    const int x = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionX;
+    const int y = *(int*)&((CHARACTER*)(uintptr_t)(Hero))->PositionY;
     return x > 204 && x < 215 && y > 12 && y < 32;
 }
 }

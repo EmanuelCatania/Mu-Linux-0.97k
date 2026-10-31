@@ -747,7 +747,7 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
         *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), CreateAngle(pos[0], pos[1], target[0], target[1]), 20.0f);
 
     *(float*)(e + 0x0C) = pet.Scale;                // Scale
-    *(float*)(e + 0x168) = 1.0f;                    // Alpha
+    *(float*)&((OBJECT*)(uintptr_t)(e))->Alpha = 1.0f;                    // Alpha
     if (pet.BlendMesh != 0xFF) {
         *(int*)(e + 100) = pet.BlendMesh;           // BlendMesh
         *(float*)(e + 104) = 1.0f;                  // BlendMeshLight
@@ -1059,11 +1059,11 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     }
     if ( HeroTile == 4 )
     {
-      *(DWORD *)(o + 356) = 0;
+      *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 0;
     }
     else
     {
-      *(DWORD *)(o + 356) = 1065353216;
+      *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1065353216;
     }
   }
   if ( gMapManager.GetCurrentMap() == 2 )
@@ -1073,22 +1073,22 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     {
       if ( HeroTile == 3 || HeroTile >= 10 )
       {
-        *(DWORD *)(o + 356) = 0;
+        *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 0;
       }
       else
       {
-        *(DWORD *)(o + 356) = 1065353216;
+        *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1065353216;
       }
     }
   }
 LABEL_22:
   Alpha(AsObject(o));
-  if ( *(float *)(o + 360) < 0.0099999998 )
+  if ( *(float *)&((OBJECT*)(uintptr_t)(o))->Alpha < 0.0099999998 )
   {
     return;
   }
   v5 = Models + 188 * *(short *)(o + 2);
-  *(BYTE *)(v5 + 160) = *(BYTE *)(o + 261);
+  *(BYTE *)(v5 + 160) = *(BYTE *)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
   oa = *(float *)(o + 204);
   if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(o + 2) == 8 )
   {

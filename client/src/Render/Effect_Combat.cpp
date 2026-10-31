@@ -64,7 +64,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(intptr_t o) {
     // IDA: if ((double)AsObject(o)->LifeTime > 10.0)  -- o+96 es la vida del efecto.
     if (_DAT_00552488 >= (float)AsObject(o)->LifeTime) return;
 
-    const DWORD owner = *(DWORD*)(o + 252);
+    const DWORD owner = *(DWORD*)&((OBJECT*)(uintptr_t)(o))->Owner;
     if (!owner || !DAT_05828d58 || !DAT_07abf5d8) return;
 
     const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;
@@ -79,7 +79,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(intptr_t o) {
     *(int*) (mdl + 108) = *(int *)&AsObject(o)->Position[0];
     *(int*) (mdl + 112) = *(int *)&AsObject(o)->Position[1];
     *(int*) (mdl + 116) = *(int *)&AsObject(o)->Position[2];
-    *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7);
+    *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7);
     *(BYTE*)(mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;
 
     const short savedType = AsObject(o)->Type;
@@ -208,7 +208,7 @@ void __cdecl CreateBlood(intptr_t o) {
 
     // BMD::TransformPosition(Models + type, o->BoneTransform2[boneIdx], localPos, worldPos, Translate)
     // BoneTransform2 is a pointer at o+0x114; each bone matrix is float[3][4] = 48 bytes
-    float* boneMatrix = (float*)(*(DWORD*)(o + 0x114) + boneIdx * 48);
+    float* boneMatrix = (float*)(*(DWORD*)&((OBJECT*)(uintptr_t)(o))->BoneMatrices + boneIdx * 48);
     void* model = (void*)(DAT_05828d58 + (short)wType * 0xbc);
     BMD__TransformPosition(model, (float(*)[4])boneMatrix, localPos, worldPos, true);
 }

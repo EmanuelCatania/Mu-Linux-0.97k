@@ -40,7 +40,7 @@ static BYTE GetHeroTooltipClassRaw()
 {
     if (!Hero || (uintptr_t)Hero < 0x100000)
         return 0;
-    return *(BYTE*)(Hero + 0x1BC);
+    return *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->Class;
 }
 
 static BYTE GetHeroTooltipBaseClass()

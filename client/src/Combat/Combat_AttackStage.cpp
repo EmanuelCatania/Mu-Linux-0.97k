@@ -402,7 +402,7 @@ void __cdecl Combat_SpawnDeathDustParticles(OBJECT* object)
 // at random offset (0..199) minus grid scale from entity X/Y position.
 void __cdecl Combat_SpawnIdleAmbientParticle(OBJECT* object) {
     BYTE* param_1 = reinterpret_cast<BYTE*>(object);
-    if (*(char*)(param_1 + 0x105) != '\x02') return;
+    if (*(char*)&((OBJECT*)(uintptr_t)(param_1))->CurrentAction != '\x02') return;
 
     int r1 = rand();
     float fX = ((float)(r1 % 200) + *(float*)(param_1 + 0x10)) - _DAT_005524f0;

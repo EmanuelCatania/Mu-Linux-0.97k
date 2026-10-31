@@ -245,7 +245,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         }
         // Type 103 — weapon spark trigger (once per anim cycle, 1/32 chance)
         if ((pfVar3 == (float *)0x67) &&
-            (pfVar3 = (float *)(*(short *)((uint)*(byte *)(param_1 + 0x105) * 0x10 + 8
+            (pfVar3 = (float *)(*(short *)((uint)*(byte *)&((OBJECT*)(uintptr_t)(param_1))->CurrentAction * 0x10 + 8
                                            + *(int *)(static_cast<unsigned char*>(pModel) + 0x30)) + -1),
              (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8) == pfVar3))
         {

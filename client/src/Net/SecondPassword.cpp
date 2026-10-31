@@ -470,7 +470,7 @@ void __cdecl SecondPassword_Screen1(void) {
                 // IDA: C1:03:57 cancela el editor y libera INTERFACE_GUILD_CREATE.
                 const BYTE pkt3[3] = { 0xC1, 0x03, 0x57 };
                 gNetwork.SendC1(pkt3, sizeof(pkt3));
-                *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
+                *(short*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->GuildMarkIndex = (short)0xffff;
             }
             PlayBuffer(0x19, 0, 0);
             // DAT_07db8710 es char[10][256] — escribimos el primer byte del slot 0
@@ -1493,9 +1493,9 @@ bool Equip_CanPlace(const ITEM* item, int a5)
     const BYTE* req   = IA[item->Type].RequireClass;
     bool ok = true;
 
-    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
+    if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7) == 3) {       // Magic Gladiator
         if (!req[3] && !req[0] && !req[1]) ok = false;
-    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
+    } else if (!req[*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7]) {
         ok = false;
     }
 
@@ -2191,7 +2191,7 @@ void __cdecl MoveCharacterPosition(CHARACTER* character) {
     *(float*)(param_1 + 0x14) = out[1] + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
-    if (*(short*)(param_1 + 0x2b8) == 0x333) {
+    if (*(short*)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type == 0x333) {
         if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10)
             terrainH += _DAT_00552848;
         else
@@ -2221,12 +2221,12 @@ void Hero_ApplyCatalogEquipment(CHARACTER* character)
     static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
     for (int part = 0; part < 9; ++part)
         gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
-    const short pet = *(short*)(v7 + 544);
+    const short pet = *(short*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].PlaySpeed;
     if (pet != -1 && gContentCatalog.GetPet(pet)) {
-        *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+        *(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type = (short)ItemModel(ItemBehaviorType(pet));
         // El owner del pool aún ocupa 32 bits; su layout queda para B2.
         DeleteBug((DWORD)(uintptr_t)c);
-        CreateBug(*(short*)(c + 696), (void*)(c + 16), (void*)(uintptr_t)c, 0);
+        CreateBug(*(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type, (void*)(c + 16), (void*)(uintptr_t)c, 0);
     }
 }
 
@@ -2267,7 +2267,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     // animaciones se deciden por ese tipo); el modelo propio se dibuja en
     // RenderBugs / Render_PlayerHelper.
     {
-        const short pet = *(short*)(v7 + 544);
+        const short pet = *(short*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].PlaySpeed;
         if (pet != -1) AsCharacter(c)->Helper.Type = (short)ItemModel(ItemBehaviorType(pet));
     }
 
@@ -2307,7 +2307,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
             else if (newHelper == 819) bugType = 267;   // Dinorant
-            else if (gContentCatalog.GetPet(*(short*)(v7 + 544))) bugType = newHelper;   // 0.97.20: CustomPet
+            else if (gContentCatalog.GetPet(*(short*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].PlaySpeed)) bugType = newHelper;   // 0.97.20: CustomPet
             // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
             // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
             if (bugType)
@@ -2320,8 +2320,8 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     AsCharacter(c)->Weapon[0].Option1 = *(unsigned char*)(v7 + 27);
     AsCharacter(c)->Weapon[1].Option1 = *(unsigned char*)(v7 + 95);
     unsigned char v11 = AsCharacter(c)->Object.CurrentAction;   // anim_state @ 0x105
-    AsCharacter(c)->Wing.Level = (unsigned char)((*(int*)(v7 + 480) >> 3) & 0xF);
-    AsCharacter(c)->Helper.Level = (unsigned char)((*(int*)(v7 + 548) >> 3) & 0xF);
+    AsCharacter(c)->Wing.Level = (unsigned char)((*(int*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[0].Type >> 3) & 0xF);
+    AsCharacter(c)->Helper.Level = (unsigned char)((*(int*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].Cloth >> 3) & 0xF);
 
     bool skipCancel = (v11 >= 0x85u && v11 <= 0x8Cu);
     if (!skipCancel && (v11 < 0x22u || v11 > 0x5Bu)) {
@@ -2347,12 +2347,12 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
         ? (short)(skinLo + 4 * skinHi + 919)
         : (short)ItemEntityModel(v21);
 
-    short v22 = *(short*)(v7 + 272);
+    short v22 = *(short*)&((OBJECT*)(uintptr_t)(v7))->EnableBoneMatrix;
     AsCharacter(c)->BodyPart[3].Type = (v22 == -1)
         ? (short)(skinLo + 4 * skinHi + 926)
         : (short)ItemEntityModel(v22);
 
-    short v26 = *(short*)(v7 + 340);
+    short v26 = *(short*)&((OBJECT*)(uintptr_t)(v7))->OBB[9];
     AsCharacter(c)->BodyPart[4].Type = (v26 == -1)
         ? (short)(skinLo + 4 * skinHi + 933)
         : (short)ItemEntityModel(v26);
@@ -2364,8 +2364,8 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
 
     AsCharacter(c)->BodyPart[1].Level = (unsigned char)((*(int*)(v7 + 140) >> 3) & 0xF);
     AsCharacter(c)->BodyPart[2].Level = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[3].Level = (unsigned char)((*(int*)(v7 + 276) >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[4].Level = (unsigned char)((*(int*)(v7 + 344) >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[3].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->BoneMatrices >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[4].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->OBB[10] >> 3) & 0xF);
     AsCharacter(c)->BodyPart[5].Level = (unsigned char)((*(int*)(v7 + 412) >> 3) & 0xF);
     AsCharacter(c)->BodyPart[1].Option1 = *(unsigned char*)(v7 + 163);
     AsCharacter(c)->BodyPart[2].Option1 = *(unsigned char*)(v7 + 231);
@@ -2458,8 +2458,8 @@ void __cdecl CheckGate(void)
         const BYTE* const gate = gates + gateIndex * 9; // IDA: GateAttribute + 9*i
         if (gate[0] != 1 || gate[1] != (BYTE)gMapManager.GetCurrentMap())
             continue;
-        const int heroX = *(const int*)(hero + 904);
-        const int heroY = *(const int*)(hero + 908);
+        const int heroX = *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionX;
+        const int heroY = *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY;
         if (heroX < gate[2] || heroY < gate[3] || heroX > gate[4] || heroY > gate[5])
             continue;
         if (DAT_07e11d1c != 0 || hero[773] != 0)          // LoadingWorld
@@ -3016,12 +3016,12 @@ void __cdecl SetPlayerDie(CHARACTER* c_in)
 
 LABEL_41:
     // Death sound
-    if (*(float*)(c + 264) == 0.0f) {
+    if (*(float*)&((OBJECT*)(uintptr_t)(c))->AnimationFrame == 0.0f) {
         short v14 = *(short*)(c + 2);
         if (v14 == 390) {
             int v15 = *(int*)(c + 4);
             if (v15 < 206 || v15 > 208) {
-                if ((*(BYTE*)(c + 444) & 7) == 2) {
+                if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 2) {
                     PlayBuffer(80, AsObject(c), 0);
                 } else {
                     PlayBuffer(78, AsObject(c), 0);

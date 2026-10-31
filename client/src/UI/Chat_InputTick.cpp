@@ -97,7 +97,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
 
     char* entity = Chat_FindPlayerInteractionTarget(text + commandLen);
     if (entity) {
-        const WORD key = *(WORD*)(entity + 476);
+        const WORD key = *(WORD*)&((CHARACTER*)(uintptr_t)(entity))->Key;
         BYTE packet[5] = { 0xC1, 0x05, head, (BYTE)(key >> 8), (BYTE)key };
         // El frame lo decide `Data\Hack\HackPacketCheck.txt` (columna Encrypt):
         //   0x40 party y 0x36 trade → Encrypt=1 → C3
@@ -139,8 +139,8 @@ static bool Chat_TrySendPartyRequest(const char* text)
                (*(short*)(entity + 2) == 390 || entity[847] != 0);
     };
     auto IsAdjacent = [hero](const char* entity) {
-        return abs(*(const int*)(entity + 904) - *(const int*)(hero + 904)) <= 1 &&
-               abs(*(const int*)(entity + 908) - *(const int*)(hero + 908)) <= 1;
+        return abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionX - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionX) <= 1 &&
+               abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionY - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY) <= 1;
     };
 
     char* target = nullptr;
@@ -168,7 +168,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     if (!target)
         return true;
 
-    const WORD key = *(WORD*)(target + 476);
+    const WORD key = *(WORD*)&((CHARACTER*)(uintptr_t)(target))->Key;
     PartyKey = key;
     const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
     gNetwork.Send(packet, sizeof(packet));
@@ -362,7 +362,7 @@ void __cdecl Chat_InputTick(void)
                 (mouseX < posX_scaled) &&
                 ((int)rowY <= mouseY) && (mouseY < (int)(rowY + 0xd)) &&
                 (DAT_00559c84 != '\0') &&
-                (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
             {
                 // Compare entity name at +0x1c1 against table name
                 const char *entityName = EntityName::Get(DAT_07abf5d8);
@@ -616,9 +616,9 @@ void __cdecl Chat_InputTick(void)
                             continue;
 
                         // Validate input
-                        if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
-                             (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
-                             (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                        if (((*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x332) &&
+                             (*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x333)) ||
+                             (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
                             CheckChatText((char *)chBuf);   // IDA: sub_497C70
 
                         if ((char)Chat_Validate((char *)chBuf) != '\0')
@@ -655,7 +655,7 @@ void __cdecl Chat_InputTick(void)
                         }
 
                         // Command parsing
-                        if (*(char *)(DAT_07abf5d8 + 0x2fd) == '\0') {
+                        if (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Dead == '\0') {
                             if (chBuf[0] == '/') {
                                 if (Chat_TrySendPartyRequest((const char*)chBuf)) {
                                     goto chat_done;
@@ -712,9 +712,9 @@ void __cdecl Chat_InputTick(void)
                         // fixed PMSG_CHAT_RECV past the received packet.
                         if (DAT_07e108c8 == '\0')
                             goto whisper_done;
-                        if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
-                             (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
-                             (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                        if (((*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x332) &&
+                             (*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x333)) ||
+                             (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
                             CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
                         if ((char)Chat_Validate(&DAT_07e108c8) == '\0') {

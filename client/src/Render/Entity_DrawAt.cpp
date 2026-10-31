@@ -158,7 +158,7 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
 
     // Bone selection: param_8 = use entity's bone ptr or fallback to root
     if (param_8 == '\0')
-        puVar2 = *(undefined **)(param_1 + 0x114);
+        puVar2 = *(undefined **)&((OBJECT*)(uintptr_t)(param_1))->BoneMatrices;
     else
         puVar2 = (undefined*)&DAT_06970a9c;
 

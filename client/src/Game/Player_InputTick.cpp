@@ -432,14 +432,14 @@ static void HUD_PickUpNearestItem(void)
         const float dx = *(const float*)(item + 88) - heroX;
         const float dy = *(const float*)(item + 92) - heroY;
         if (dx * dx + dy * dy >= 300.0f * 300.0f) continue;
-        *(unsigned char*)(Hero + 0x2ed) = 1;                     // MOVEMENT_GET
+        *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->MovementType = 1;                     // MOVEMENT_GET
         ItemKey = (DWORD)i;
         TargetX = (DWORD)(int)(*(const float*)(item + 88) / 100.0f);
         TargetY = (DWORD)(int)(*(const float*)(item + 92) / 100.0f);
         g_bAutoGetItem = true;
         Action((DWORD)Hero, (DWORD)Hero);
         g_bAutoGetItem = false;
-        *(unsigned char*)(Hero + 0x2ed) = 0;
+        *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->MovementType = 0;
         return;
     }
 }

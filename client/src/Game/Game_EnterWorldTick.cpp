@@ -510,7 +510,7 @@ void Game_EnterWorldTick(void)
         {
             char* e = (char*)DAT_07abf5d0;
             for (int i = 0; i < 5; i++, e += 0x394)
-                if (*e != '\0' && *(ushort*)(e + 0x1be) > 0xdb) { maxPage = 3; break; }
+                if (*e != '\0' && *(ushort*)&((CHARACTER*)(uintptr_t)(e))->Level > 0xdb) { maxPage = 3; break; }
         }
         if (mouseX > 0x17f && mouseX < 0x194 &&
             DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&

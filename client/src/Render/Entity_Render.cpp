@@ -450,7 +450,7 @@ RenderPartObject(int param_1,int param_2,const PART_t* param_3,float *param_4,fl
     }
     Entity_GetLightScale(param_1,reinterpret_cast<uintptr_t>(this_));
     if (param_8 == '\0') {
-      puVar2 = *(undefined **)(param_1 + 0x114);
+      puVar2 = *(undefined **)&((OBJECT*)(uintptr_t)(param_1))->BoneMatrices;
     }
     else {
       puVar2 = (undefined*)&DAT_06970a9c;

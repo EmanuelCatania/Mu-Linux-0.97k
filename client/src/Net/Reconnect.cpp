@@ -73,7 +73,7 @@ bool CReconnect::OnConnectionLost()
     const BYTE* base = (const BYTE*)(uintptr_t)CharactersClient;
     for (int i = 0; base && i < 400; ++i) {
         const BYTE* c = base + i * 916;
-        if (c[0] && (uintptr_t)c != (uintptr_t)Hero) DeleteCharacter(*(const WORD*)(c + 0x1DC));
+        if (c[0] && (uintptr_t)c != (uintptr_t)Hero) DeleteCharacter(*(const WORD*)&((CHARACTER*)(uintptr_t)(c))->Key);
     }
     PartyNumber = 0;
     DbgLogPublic("Reconnect: conexión perdida, reconectando");

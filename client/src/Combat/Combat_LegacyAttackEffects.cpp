@@ -205,7 +205,7 @@ void __cdecl AttackEffect(int entity)
             float orange[3] = { 1.0f, 0.5f, 0.0f };
             for (int n = 0; n < 5; ++n) {
                 world[0] = pos[0] + (float)(rand() % 1001 - 500); world[1] = pos[1] + (float)(rand() % 1001 - 500); world[2] = pos[2] + 500.0f;
-                *(float*)(entity + 368) = world[0]; *(float*)(entity + 372) = world[1]; *(float*)(entity + 376) = world[2];
+                *(float*)&((OBJECT*)(uintptr_t)(entity))->StartPosition[0] = world[0]; *(float*)&((OBJECT*)(uintptr_t)(entity))->StartPosition[1] = world[1]; *(float*)&((OBJECT*)(uintptr_t)(entity))->StartPosition[2] = world[2];
                 CreateEffect(256, world, effectAngle, orange, (float*)1, (float*)entity, (float*)-1, 0, 0);
             }
         }

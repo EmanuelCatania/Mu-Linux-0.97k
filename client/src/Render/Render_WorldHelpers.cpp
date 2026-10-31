@@ -214,7 +214,7 @@ void __cdecl Entity_Render(void)
 
                 BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + (uintptr_t)v5 * 0xbc);
                 model[160] = 0;
-                model[152] = (BYTE)((*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444)) & 7);
+                model[152] = (BYTE)((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class) & 7);
                 model[160] = *v0;
                 *(float*)(model + 108) = *v2;
                 *(DWORD*)(model + 112) = *(DWORD*)(v0 - 241);
@@ -869,7 +869,7 @@ void __cdecl RenderWheelWeapon(intptr_t o)
     const int savedAng2  = *(int *)&AsObject(o)->Angle[2];
     const short savedType = AsObject(o)->Type;
 
-    const DWORD owner = *(DWORD*)(o + 252);
+    const DWORD owner = *(DWORD*)&((OBJECT*)(uintptr_t)(o))->Owner;
     if (!owner) return;
 
     // Modelo del arma = itemType + 400 (owner+136 = índice del item).
@@ -893,7 +893,7 @@ void __cdecl RenderWheelWeapon(intptr_t o)
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
     *(float*)(mdl + 116) = zUp;
     *(BYTE*) (mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;                       // CurrentAction
-    *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7); // clase
+    *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7); // clase
     *(int*)  (mdl + 108) = *(int *)&AsObject(o)->Position[0];
     *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
 

@@ -128,7 +128,7 @@ static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
     s->dir[1] = *(float *)(hero + 20) - _DAT_083a42d8;
     s->dir[2] = *(float *)(hero + 24) - _DAT_083a42dc;
     Vec3_Normalize(s->dir);
-    if (!(*(float *)(o + 360) >= 0.0099999998f)) return;
+    if (!(*(float *)&((OBJECT*)(uintptr_t)(o))->Alpha >= 0.0099999998f)) return;
     const short hidden = *(short *)(o + 88);
     const short blend  = *(short *)(o + 100);
     if (hidden == -2 || blend == -2) return;

@@ -506,7 +506,7 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
 {
     BYTE* c = reinterpret_cast<BYTE*>(DAT_07abf5d0);
     for (int i = 0; i < 400; ++i) {
-        if (*(unsigned char*)c != 0 && *(short*)(c + 476) == (short)Key) {
+        if (*(unsigned char*)c != 0 && *(short*)&((CHARACTER*)(uintptr_t)(c))->Key == (short)Key) {
             CreateCharacterPointer((unsigned char*)c, Type, PosX, PosY, Rotation);
             return AsCharacter(c);
         }

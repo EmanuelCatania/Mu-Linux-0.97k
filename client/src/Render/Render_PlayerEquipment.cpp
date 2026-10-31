@@ -124,7 +124,7 @@ int g_bAddDefense = 0;
 // pasan por acá; ver el comentario de g_bAddDefense arriba.
 static bool CheckFullSet_Tail(uintptr_t c, bool v26) {
     g_bAddDefense = 1;
-    if (((*(unsigned char*)(c + 444) & 7) == 3) && v26) {   // Magic Gladiator
+    if (((*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 3) && v26) {   // Magic Gladiator
         // IDA: v20 = *(_WORD *)(CharacterMachine + 740)  → wear slot 3 (Armor),
         // 536 + 68*3 = 740. Sólo los armors 271 y 276 conservan el bonus.
         const uintptr_t cm = (uintptr_t)CharacterAttribute;
@@ -200,10 +200,10 @@ static inline void TransformPos(void* model, float* boneMat, float* posIn, float
 // IDA usa bone*48 (= 0x30) que es el stride normal. El indexado bone*16 (caso
 // 0x1D5 etc.) es matriz de 4 floats — distinto layout. Wrappers para ambos.
 static inline float* BoneMat48(void* o, int bone) {
-    return (float*)((char*)(uintptr_t)*(int*)((char*)o + 0x114) + 0x30 * bone);
+    return (float*)((char*)(uintptr_t)*(int*)&((OBJECT*)(uintptr_t)(o))->BoneMatrices + 0x30 * bone);
 }
 static inline float* BoneMat16(void* o, int bone) {
-    return (float*)((char*)(uintptr_t)*(int*)((char*)o + 0x114) + 16 * (3 * bone));
+    return (float*)((char*)(uintptr_t)*(int*)&((OBJECT*)(uintptr_t)(o))->BoneMatrices + 16 * (3 * bone));
 }
 
 
@@ -586,7 +586,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
     // `World` es macro a World (structs.h:389): usar otro nombre o el
     // local se sombrearia a si mismo.
     const int iWorld = (int)gMapManager.GetCurrentMap();
-    const unsigned char anim = *(unsigned char*)(o + 0x105);
+    const unsigned char anim = *(unsigned char*)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
 
     // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).
     if (AsCharacter(c)->SafeZone != 0)          // c->SafeZone
