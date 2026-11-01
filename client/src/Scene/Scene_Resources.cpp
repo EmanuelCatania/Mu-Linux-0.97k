@@ -147,8 +147,8 @@ void Scene_LoadCharSelectResources(void)
   iVar2 = 0;
   do {
     iVar1 = iVar2 + 0xbc;
-    *(undefined4 *)(*(int *)(iVar2 + 0x7d08 + DAT_05828d58) + 4) = 0x3e99999a;
-    *(undefined4 *)(*(int *)(iVar2 + 0x7d08 + DAT_05828d58) + 0x14) = 0x3e99999a;
+    ModelActionSpeed(AsModel(DAT_05828d58 + BMD_STRIDE * (170 + iVar2 / 0xbc))->Actions, 0) = 0.3f;
+    ModelActionSpeed(AsModel(DAT_05828d58 + BMD_STRIDE * (170 + iVar2 / 0xbc))->Actions, 1) = 0.3f;
     iVar2 = iVar1;
   } while (iVar1 < 0x2f0);
   return;

@@ -73,7 +73,7 @@ void Map_LoadObjectModels(void)
         iVar7 = 0xbc;
         do {
             iVar3 = iVar7 + 0xbc;
-            *(BYTE *)(*(int *)(iVar7 + 0x851c + DAT_05828d58) + 10) = 1;
+            *(BYTE *)((intptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * (181 + iVar7 / 0xbc))->Actions + 10) = 1;
             iVar7 = iVar3;
         } while (iVar3 < 0x69c);
         break;

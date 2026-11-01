@@ -292,7 +292,7 @@ void __cdecl OpenWorldModels(void) {
             OpenModel((int)0xbc, "Data2/Object8/", "Trap03.smd");
             OpenModel((int)0xbd, "Data2/Object8/", "FireArrow.smd");
             for (int iVar7 = 0xbc; iVar7 < 0x69c; iVar7 += 0xbc)
-                *(unsigned char *)(*(int *)(iVar7 + 0x851c + DAT_05828d58) + 10) = 1;
+                *(unsigned char *)((intptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * (181 + iVar7 / 0xbc))->Actions + 10) = 1;
             break;
         case 8:
             OpenModel((int)0xb3, "Data2/Object9/", "SandPillar.smd");
