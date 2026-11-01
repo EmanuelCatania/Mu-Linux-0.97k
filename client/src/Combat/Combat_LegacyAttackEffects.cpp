@@ -72,7 +72,7 @@ void __cdecl AttackEffect(int entity)
     const DWORD boneMatricesTop = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const int modelTypeTop = AsCharacter(entity)->Object.Type;
     void* modelTop = (modelTypeTop >= 0 && DAT_05828d58)
-        ? (void*)(DAT_05828d58 + modelTypeTop * 188) : 0;
+        ? (void*)(DAT_05828d58 + modelTypeTop * BMD_STRIDE) : 0;
     float zero[3] = { 0.0f, 0.0f, 0.0f };
     float world[3] = { 0.0f, 0.0f, 0.0f };
     float effectAngle[3] = { 0.0f, 0.0f, 0.0f };
@@ -255,7 +255,7 @@ void __cdecl AttackEffect(int entity)
     float source[3] = { 0.0f, 0.0f, 0.0f };
     float jointAngle[3] = { 0.0f, 0.0f, 0.0f };
     float white[3] = { 1.0f, 1.0f, 1.0f };
-    void* model = (void*)(DAT_05828d58 + modelType * 188);
+    void* model = (void*)(DAT_05828d58 + modelType * BMD_STRIDE);
     const DWORD boneMatrices = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const auto handPosition = [&](int handIndex, float offsetY, int secondHandAt = 2) {
         local[0] = 0.0f;

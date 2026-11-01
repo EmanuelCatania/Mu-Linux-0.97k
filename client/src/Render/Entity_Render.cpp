@@ -151,6 +151,7 @@
 //   DAT_00552488  → Z oscillation scale factor
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Item/ContentCatalog.h"
 #include "Render/Entity_Render.h"
 #include <math.h>
@@ -411,14 +412,14 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
         param_2 = 0x3b4;
       }
     }
-    this_ = (void *)(DAT_05828d58 + param_2 * 0xbc);
-    *(undefined1 *)((intptr_t)this_ + 0x99) = param_9;
-    *(undefined4 *)((intptr_t)this_ + 0x68) = *(undefined4 *)(param_1 + 0xc);
-    *(undefined1 *)((intptr_t)this_ + 0x45) = *(undefined1 *)(param_1 + 0xe4);
-    *(undefined1 *)((intptr_t)this_ + 0x44) = *(undefined1 *)(param_1 + 0xdc);
-    *(undefined4 *)((intptr_t)this_ + 0x6c) = *(undefined4 *)(param_1 + 0x10);
-    *(undefined4 *)((intptr_t)this_ + 0x70) = *(undefined4 *)(param_1 + 0x14);
-    *(undefined4 *)((intptr_t)this_ + 0x74) = *(undefined4 *)(param_1 + 0x18);
+    this_ = (void *)(DAT_05828d58 + param_2 * BMD_STRIDE);
+    *(undefined1 *)&((BMD*)(uintptr_t)(this_))->HideSkin = param_9;
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyScale = *(undefined4 *)(param_1 + 0xc);
+    *(undefined1 *)&((BMD*)(uintptr_t)(this_))->ContrastEnable = *(undefined1 *)(param_1 + 0xe4);
+    *(undefined1 *)&((BMD*)(uintptr_t)(this_))->LightEnable = *(undefined1 *)(param_1 + 0xdc);
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyOrigin[0] = *(undefined4 *)(param_1 + 0x10);
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyOrigin[1] = *(undefined4 *)(param_1 + 0x14);
+    *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyOrigin[2] = *(undefined4 *)(param_1 + 0x18);
     _DAT_005597c8 = 1.0f;
     if (param_11 == 3) {
       _DAT_005597c8 = 1.4f;
@@ -428,24 +429,24 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
     }
     else if (param_11 == 1) {
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3ca3d70a;
-        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3dcccccd;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3ca3d70a;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3dcccccd;
       }
       else {
-        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3dcccccd;
-        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3cf5c28f;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3dcccccd;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3cf5c28f;
       }
-      *(undefined4 *)((intptr_t)this_ + 0x50) = 0;
+      *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f99999a);
       if (*(char *)(param_1 + 0x84) == '\x04') {
-        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3e23d70a;
-        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3f333333;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3e23d70a;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3f333333;
       }
       else {
-        *(undefined4 *)((intptr_t)this_ + 0x48) = 0x3f333333;
-        *(undefined4 *)((intptr_t)this_ + 0x4c) = 0x3e4ccccd;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[0] = 0x3f333333;
+        *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[1] = 0x3e4ccccd;
       }
-      *(undefined4 *)((intptr_t)this_ + 0x50) = 0;
+      *(undefined4 *)&((BMD*)(uintptr_t)(this_))->BodyLight[2] = 0;
       Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
     }
     Entity_GetLightScale(param_1,reinterpret_cast<uintptr_t>(this_));

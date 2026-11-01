@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/MaterialVisuals.h"
 #include "Render/LooseWingVisuals.h"
 #include "Item/ContentCatalog.h"
@@ -80,9 +81,9 @@ void MaterialVisuals_PrepareUiItem(int itemType, int level) {
     const int model=ItemMaterials_ResolvePreviewModel(itemType,level,&drawLevel);
     if (wingPlanning ? model!=790 : !RandomMaterial(model)) return;
     if (!DAT_05828d58) return;
-    const char *bmd=(const char *)DAT_05828d58+model*0xbc;
+    const char *bmd=(const char *)DAT_05828d58+model* BMD_STRIDE;
     const short meshes=*(const short *)(bmd+0x24);
-    const auto meshBase=*(const unsigned int *)(bmd+0x28);
+    const auto meshBase=*(const unsigned int *)&((BMD*)(uintptr_t)(bmd))->Meshs;
     // El mismo guard de RenderItem3D, antes de crear su objeto local.
     if (meshes<=0 || meshes>1000 || meshBase<0x100000) return;
     if (model==790) { LooseWingVisuals_ExpectPreview((unsigned int)drawLevel); return; }

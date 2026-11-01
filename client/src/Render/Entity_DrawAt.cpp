@@ -89,6 +89,7 @@
 //   DAT_06970a9c  → root bone data (pose matrix, usado como fallback)
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/Entity_DrawAt.h"
 
 // Entity_DrawAt @ 0x00505A10 (73 lines)
@@ -112,16 +113,16 @@ void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, fl
         else if (uVar1 == 2) param_2 = 0x3b4;
     }
 
-    pModel = (void *)(DAT_05828d58 + param_2 * 0xbc);
+    pModel = (void *)(DAT_05828d58 + param_2 * BMD_STRIDE);
 
     // Copy entity fields into model block
-    *(undefined1 *)((intptr_t)pModel + 0x99) = param_9;
-    *(undefined4 *)((intptr_t)pModel + 0x68) = *(undefined4 *)(param_1 + 0xc);    // scale
-    *(undefined1 *)((intptr_t)pModel + 0x45) = *(undefined1 *)(param_1 + 0xe4);   // flag A
-    *(undefined1 *)((intptr_t)pModel + 0x44) = *(undefined1 *)(param_1 + 0xdc);   // flag B
-    *(undefined4 *)((intptr_t)pModel + 0x6c) = *(undefined4 *)(param_1 + 0x10);   // world X
-    *(undefined4 *)((intptr_t)pModel + 0x70) = *(undefined4 *)(param_1 + 0x14);   // world Y
-    *(undefined4 *)((intptr_t)pModel + 0x74) = *(undefined4 *)(param_1 + 0x18);   // world Z
+    *(undefined1 *)&((BMD*)(uintptr_t)(pModel))->HideSkin = param_9;
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyScale = *(undefined4 *)(param_1 + 0xc);    // scale
+    *(undefined1 *)&((BMD*)(uintptr_t)(pModel))->ContrastEnable = *(undefined1 *)(param_1 + 0xe4);   // flag A
+    *(undefined1 *)&((BMD*)(uintptr_t)(pModel))->LightEnable = *(undefined1 *)(param_1 + 0xdc);   // flag B
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyOrigin[0] = *(undefined4 *)(param_1 + 0x10);   // world X
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyOrigin[1] = *(undefined4 *)(param_1 + 0x14);   // world Y
+    *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyOrigin[2] = *(undefined4 *)(param_1 + 0x18);   // world Z
 
     // LOD transparency scale
     // NOTE: _DAT_005597c8 is typed `float` in globals.cpp. Writing the raw
@@ -134,23 +135,23 @@ void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, fl
     else if (param_11 == 1) {
         // Shadow draw: two-pass with different alpha
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3ca3d70a;  // 0.02
-            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3dcccccd;  // 0.1
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3ca3d70a;  // 0.02
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3dcccccd;  // 0.1
         } else {
-            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3dcccccd;  // 0.1
-            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3cf5c28f;  // 0.03
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3dcccccd;  // 0.1
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3cf5c28f;  // 0.03
         }
-        *(undefined4 *)((intptr_t)pModel + 0x50) = 0;
+        *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[2] = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f99999a);  // Sprite_DrawShadow pass 1
 
         if (*(char *)(param_1 + 0x84) == '\x04') {
-            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3e23d70a;  // 0.16
-            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3f333333;  // 0.7
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3e23d70a;  // 0.16
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3f333333;  // 0.7
         } else {
-            *(undefined4 *)((intptr_t)pModel + 0x48) = 0x3f333333;  // 0.7
-            *(undefined4 *)((intptr_t)pModel + 0x4c) = 0x3e4ccccd;  // 0.2
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[0] = 0x3f333333;  // 0.7
+            *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[1] = 0x3e4ccccd;  // 0.2
         }
-        *(undefined4 *)((intptr_t)pModel + 0x50) = 0;
+        *(undefined4 *)&((BMD*)(uintptr_t)(pModel))->BodyLight[2] = 0;
         Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2
     }
 

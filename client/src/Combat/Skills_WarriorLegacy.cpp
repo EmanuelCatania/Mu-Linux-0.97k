@@ -421,7 +421,7 @@ LAB_00445110:
             return;
         }
         // General: look up footstep sound from entity-class table at DAT_05828d58+0xb2
-        short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * 0xbc);
+        short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * BMD_STRIDE);
         if (sfx != -1)
             PlayBuffer(sfx + 0xaa, AsObject(entity_idx), 0);
     }

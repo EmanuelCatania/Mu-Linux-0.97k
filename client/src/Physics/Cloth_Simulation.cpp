@@ -1,6 +1,7 @@
 // Cloth_Simulation.cpp
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Physics/ClothTypes.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
@@ -771,11 +772,11 @@ void SetLink(MeshCloth &c, int i, int v1, int v2, float dMin, float dMax, unsign
 Vec3 PoseVertex(void *model, const float *bones, const char *vertex) {
     float p[3];
     Vector_Transform((float *)(vertex + 4), (float *)(bones + *(short *)vertex * 12), p);
-    const float scale = *(float *)((char *)model + 0x68);
+    const float scale = *(float *)&((BMD*)(uintptr_t)(model))->BodyScale;
     p[0] *= scale; p[1] *= scale; p[2] *= scale;
-    p[0] += *(float *)((char *)model + 0x6c);
-    p[1] += *(float *)((char *)model + 0x70);
-    p[2] += *(float *)((char *)model + 0x74);
+    p[0] += *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[0];
+    p[1] += *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[1];
+    p[2] += *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[2];
     return { p[0], p[1], p[2] };
 }
 

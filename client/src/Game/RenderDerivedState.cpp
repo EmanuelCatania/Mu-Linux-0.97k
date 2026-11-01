@@ -72,7 +72,7 @@ void RenderDerivedState_Begin() {
     // Los objetos del mapa se guardan al tocarlos (RenderDerivedState_SaveObject):
     // el dibujo sólo modifica los visibles y la interpolación los que se movieron.
     RenderFxSnapshots_SaveRenderState();
-    if (models) Save((void *)models,ResourceTables::ModelCount()*0xbc);
+    if (models) Save((void *)models,ResourceTables::ModelCount()* BMD_STRIDE);
     Save(DAT_05826e18,sizeof(DAT_05826e18));
     Save(g_BoneScratch,sizeof(g_BoneScratch));
     Save(&DAT_06989c9c,12*sizeof(float));

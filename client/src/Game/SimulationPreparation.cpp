@@ -121,13 +121,13 @@ void PrepareItems() {
 
 void PrepareCharacter(CHARACTER &c) {
     OBJECT &o = c.Object;
-    void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
     if (*(short *)((char *)model + 0x26) == 0) return;
     // DESVIACION: la sincronización del equipo puede cambiar piezas/acción y
     // liberar tela. Debe preceder a su pose SIM y no ejecutarse desde el draw.
     if (SceneFlag == 5 && (void *)&c == (void *)DAT_07abf5d8) {
         HeroEquipWatchdog(&c);
-        model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+        model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
     }
     char context[0xbc];
     memcpy(context, model, sizeof(context));
@@ -160,7 +160,7 @@ void PrepareCharacter(CHARACTER &c) {
             if (piece.Type == -1) continue;
             const int type = gContentCatalog.EntityDrawModel(&c, piece.Type);
             if (type != 707 || o.Alpha <= _DAT_005524f8) continue;
-            void *pants = (void *)(DAT_05828d58 + type * 0xbc);
+            void *pants = (void *)(DAT_05828d58 + type * BMD_STRIDE);
             memcpy(context, pants, sizeof(context));
             *(float *)((char *)pants + 0x68) = o.Scale;
             memcpy((char *)pants + 0x6c, o.Position, sizeof(o.Position));

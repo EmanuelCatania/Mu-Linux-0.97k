@@ -186,7 +186,7 @@ void __cdecl OpenMonsterModel(int param_1)
   int iVar5;
 
   iVar1 = param_1 + 0x10e;
-  iVar2 = DAT_05828d58 + iVar1 * 0xbc;
+  iVar2 = DAT_05828d58 + iVar1 * BMD_STRIDE;
   if (((DAT_0055a7c4 == '\0') || ((*(short *)(iVar2 + 0x26) < 1 && (*(short *)(iVar2 + 0x24) < 1))))
      && (AccessModel(iVar1,s_Data_Monster__0055ddf8,s_Monster_0055de08,param_1 + 1),
         *(short *)(iVar2 + 0x24) != 0)) {
@@ -282,7 +282,7 @@ LAB_005099d1:
       LoadWaveFile(0xad, "Data\\Sound\\mBullAttack2.wav",2,'\x01');
       LoadWaveFile(0xae, "Data\\Sound\\mBullDie.wav",2,'\x01');
       Model_SetAnimationSlots(iVar1,0,1,2,3,4);
-      *(undefined4 *)(DAT_05828d58 + 0xc69c + param_1 * 0xbc) = 0x14;
+      *(undefined4 *)(DAT_05828d58 + 0xc69c + param_1 * BMD_STRIDE) = 0x14;
       return;
     case 1:
       LoadWaveFile(0xaf, "Data\\Sound\\mHound1.wav",2,'\x01');
@@ -317,7 +317,7 @@ LAB_005099d1:
         *(undefined4 *)(DAT_05828d58 + 0xdbe8) = 0x14;
         return;
       }
-      *(undefined4 *)(DAT_05828d58 + 0xc69c + param_1 * 0xbc) = 0x13;
+      *(undefined4 *)(DAT_05828d58 + 0xc69c + param_1 * BMD_STRIDE) = 0x13;
       return;
     case 4:
       LoadWaveFile(0xbe, "Data\\Sound\\mWizard1.wav",2,'\x01');
@@ -567,7 +567,7 @@ LAB_005099d1:
         *(undefined4 *)(DAT_05828d58 + 0xe10c) = 0x13;
         return;
       }
-      *(undefined4 *)(DAT_05828d58 + 0xc69c + param_1 * 0xbc) = 6;
+      *(undefined4 *)(DAT_05828d58 + 0xc69c + param_1 * BMD_STRIDE) = 6;
       return;
     case 0x25:
       LoadWaveFile(0x137, "Data\\Sound\\mHydra1.wav",2,'\x01');

@@ -30,7 +30,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         int modelIdx = (int)oType;
         // BMD* = Models + type * sizeof(BMD_entry)
         // model stride = type*0x2C (from LEA EDX,[EAX+EAX*2]; SHL EDX,4; SUB EDX,EAX => type*47 => *4 bytes)
-        intptr_t pModel = modelsBase + modelIdx * 0xBC;
+        intptr_t pModel = modelsBase + modelIdx * BMD_STRIDE;
 
         BYTE attackTime = AsCharacter(c)->SkillStage;
 
@@ -122,7 +122,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
     case 0x2F: {
         BYTE attackTime = AsCharacter(c)->SkillStage;
         short oType = AsObject(o)->Type;
-        intptr_t pModel = modelsBase + (int)oType * 0xBC;
+        intptr_t pModel = modelsBase + (int)oType * BMD_STRIDE;
 
         if (attackTime == 0x0A) {
             PlayBuffer(0x5F, 0, 0);
@@ -271,7 +271,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt)
 
         // Final: update Models[0x186] bone data and set attackTime = 15
-        intptr_t modelData = *(DWORD*)(modelsBase + 0x186 * 0xBC + 0x30);
+        intptr_t modelData = *(DWORD*)(modelsBase + 0x186 * BMD_STRIDE + 0x30);
         *(float*)(modelData + 0x3D4) = (float)(int)c + _DAT_005528f4;
         AsCharacter(c)->SkillStage = 0x0F;
         g_iLimitAttackTime = 15;
@@ -329,7 +329,7 @@ bool __cdecl AttackStage(intptr_t c, intptr_t o)
     const int hand = GetHandOfWeapon((int)o);
     const BYTE skill = AsCharacter(c)->Skill, stage = AsCharacter(c)->SkillStage;
     const short type = AsObject(o)->Type;
-    const intptr_t model = DAT_05828d58 + type * 188;
+    const intptr_t model = DAT_05828d58 + type * BMD_STRIDE;
     g_iLimitAttackTime = 15;
     if (skill == 43) {
         if (stage == 8) PlayBuffer(83, 0, 0);

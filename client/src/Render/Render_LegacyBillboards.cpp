@@ -55,7 +55,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
     intptr_t iVar1 = *(int*)(param_1 + 0x3c);
     float local_c[3] = {0.0f, 0.0f, 0.0f};
-    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
+    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * BMD_STRIDE);
     if (*(int*)(param_1 + 4) == 0x4d0)
         local_c[1] = -120.0f;
     *(unsigned int*)(this_ + 0x6c) = *(unsigned int*)(iVar1 + 0x10);

@@ -261,7 +261,7 @@ switchD_caseD_2:
             // Guarda propia: el modelIdx puede venir basura (ej. de un slot reciclado de
             // char-select). Models[] válido en 0..~0x4A8.
             if (modelIdx < 0 || modelIdx > 0x4A8) goto LAB_00502b38;
-            this_model = (void *)(DAT_05828d58 + modelIdx * 0xbc);
+            this_model = (void *)(DAT_05828d58 + modelIdx * BMD_STRIDE);
 
             // Animate model
             *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);

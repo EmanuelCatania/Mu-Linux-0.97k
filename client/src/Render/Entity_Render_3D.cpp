@@ -154,7 +154,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
     float     local_c[3];
     float     local_light_rgb[3];
 
-    pModel = (void *)(DAT_05828d58 + *(short *)(param_1 + 2) * 0xbc);
+    pModel = (void *)(DAT_05828d58 + *(short *)(param_1 + 2) * BMD_STRIDE);
     iVar2  = _rand();
     fVar14 = (float)(iVar2 % 0x1e + 0x46) * _DAT_005524f8;
 

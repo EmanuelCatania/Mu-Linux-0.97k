@@ -150,7 +150,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             if (owner) {
                 const short mdl = *(short *)(owner + 2);
                 float out[3] = { 0.0f, -100.0f, 0.0f };
-                BMD_TransformPosition((void *)((uintptr_t)DAT_05828d58 + 188 * mdl),
+                BMD_TransformPosition((void *)((uintptr_t)DAT_05828d58 + BMD_STRIDE * mdl),
                                       (float *)&DAT_07abf474, out, pos, '\x01');
             }
             break;

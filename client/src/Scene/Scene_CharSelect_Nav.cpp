@@ -12,6 +12,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -1734,8 +1735,8 @@ LABEL_85:
                     PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                 }
                 short modelType = AsCharacter(c)->Object.Type;
-                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
-                if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
+                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
+                if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
                     int idx = rand() % 2 + 94 * modelType;
                     PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
                 }
@@ -1746,8 +1747,8 @@ LABEL_85:
                 PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
             }
             short modelType = AsCharacter(c)->Object.Type;
-            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
-            if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
+            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
+            if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
                 int idx = rand() % 2 + 94 * modelType;
                 PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
             }
@@ -1854,7 +1855,7 @@ void __cdecl SetPlayerShock(CHARACTER* c, int Hit)
         if (etype != 284) {
             // Monster-table sound lookup: Models[etype].Sound[rand()%2]
             const BYTE* modelsBase = reinterpret_cast<const BYTE*>(DAT_05828d58);
-            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + 188 * etype + 174);
+            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + BMD_STRIDE * etype + 174 + BMD_FIELD_SHIFT);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
                 PlayBuffer(v6, AsObject(c), 0);

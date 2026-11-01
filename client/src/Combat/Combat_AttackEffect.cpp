@@ -375,7 +375,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   float Ownerw; // [esp+70h] [ebp+4h]
   float Ownerx; // [esp+70h] [ebp+4h]
 
-  v2 = Models + 188 * AsCharacter(Owner)->Object.Type;
+  v2 = Models + BMD_STRIDE * AsCharacter(Owner)->Object.Type;
   This = v2;
   rand();
   v3 = AsCharacter(Owner)->MonsterIndex;

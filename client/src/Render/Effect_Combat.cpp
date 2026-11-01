@@ -73,7 +73,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(intptr_t o) {
     const auto *sample=MaterialVisuals_ObjectSample((void *)o,model_id);
     MaterialVisualScope material(sample);
     const float alpha = sample ? sample->alpha : AsObject(o)->Alpha;
-    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
+    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * model_id;
 
     // Volcar posicion / accion / clase al slot del modelo compartido.
     *(int*) (mdl + 108) = *(int *)&AsObject(o)->Position[0];
@@ -168,7 +168,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
 void __cdecl CreateBlood(intptr_t o) {
     WORD wType = *(WORD*)(o + 0x02);  // o->Type
     // Models[type].Data + 0x54 = bone index for blood attachment point
-    int boneIdx = *(int*)(DAT_05828d58 + (short)wType * 0xbc + 0x54);
+    int boneIdx = *(int*)(DAT_05828d58 + (short)wType * BMD_STRIDE + 0x54);
     if (boneIdx == -1) return;
 
     if (wType == 0x11d) {
@@ -209,6 +209,6 @@ void __cdecl CreateBlood(intptr_t o) {
     // BMD::TransformPosition(Models + type, o->BoneTransform2[boneIdx], localPos, worldPos, Translate)
     // BoneTransform2 is a pointer at o+0x114; each bone matrix is float[3][4] = 48 bytes
     float* boneMatrix = (float*)(*(DWORD*)&((OBJECT*)(uintptr_t)(o))->BoneMatrices + boneIdx * 48);
-    void* model = (void*)(DAT_05828d58 + (short)wType * 0xbc);
+    void* model = (void*)(DAT_05828d58 + (short)wType * BMD_STRIDE);
     BMD__TransformPosition(model, (float(*)[4])boneMatrix, localPos, worldPos, true);
 }

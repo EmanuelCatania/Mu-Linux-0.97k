@@ -81,7 +81,7 @@ void CreateMagicShiny97k(BYTE* entity, int hand)
     float offset[3] = { 0.0f, 0.0f, 0.0f };
     float position[3];
     float light[3] = { 1.0f, 0.5f, 0.2f };
-    void* const model = (void*)(uintptr_t)(DAT_05828d58 + type * 0xBC);
+    void* const model = (void*)(uintptr_t)(DAT_05828d58 + type * BMD_STRIDE);
 
     BMD_TransformPosition(model, (float*)(uintptr_t)(bones + bone * 0x30),
                  offset, position, 1);

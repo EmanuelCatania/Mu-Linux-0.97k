@@ -153,6 +153,6 @@ void __cdecl OpenNpc(int Type) {
     // NOTA (patch separado): el loop PlaySpeed del original (IDA offsets +0x26/+0x30)
     // NO se aplica acá. En nuestro layout real +0x26=NumBones y +0x30=Bones
     // (BMD_Load.cpp:225/233), no NumActions/Actions — se audita/aplica aparte.
-    if (*(short*)(DAT_05828d58 + Type * 0xBC + 0x24) > 0)   // NumMeshes > 0
+    if (*(short*)(DAT_05828d58 + Type * BMD_STRIDE + 0x24) > 0)   // NumMeshes > 0
         OpenTexture(Type, (void*)"Npc\\", 0x2600 /*GL_NEAREST*/, true);
 }

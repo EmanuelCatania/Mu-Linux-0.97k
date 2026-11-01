@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
 #include "Render/MaterialVisuals.h"
@@ -56,11 +57,11 @@ void WorldEffects_Tick(intptr_t entity) {
     Frame &frame = frames[object];
     frame.generation = SceneObjects::Generation(object);
     frame.type = AsObject(entity)->Type;
-    void *model = (void *)(DAT_05828d58 + frame.type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + frame.type * BMD_STRIDE);
     EquipmentModelContext savedModel(model);
     ObjectPose_PrepareBounds(AsObject(entity), 0);
-    *(float *)((char *)model + 0x84) = 0.0f;
-    *(BYTE *)((char *)model + 0x45) = AsObject(entity)->ContrastEnable;
+    *(float *)&((BMD*)(uintptr_t)(model))->BodyHeight = 0.0f;
+    *(BYTE *)&((BMD*)(uintptr_t)(model))->ContrastEnable = AsObject(entity)->ContrastEnable;
     Entity_GetLightScale(entity, reinterpret_cast<uintptr_t>(model));
     // DESVIACION: los efectos necesitan una pose SIM propia, incluso si alpha
     // oculta la malla; nunca heredan huesos del último objeto dibujado.

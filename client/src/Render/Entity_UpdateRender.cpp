@@ -82,7 +82,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     short sVar2    = *(short *)((intptr_t)puVar13 + 2);        // entity_type
 
     intptr_t  entity_type = (int)sVar2;
-    void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + entity_type * BMD_STRIDE);
 
 
 
@@ -443,7 +443,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // 0.97.20: modelo propio de la pieza (catálogo).
                 iVar9 = gContentCatalog.EntityDrawModel(param_1, iVar9);
                 BYTE bClassByte = *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Class;
-                *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
+                *(BYTE *)(DAT_05828d58 + iVar9 * BMD_STRIDE + 0x98) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));
                 // ── DIAG: log per-call to RenderPartObject (Entity_DrawAt) for char-select
                 // dump scale, model addr, animCount@26, and DAT_005524f8 (cull thresh).
@@ -455,7 +455,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                         if (now - s_lastDA[csSlot] > 1000) {
                             // log only the FIRST body-part draw of this slot per second
                             s_lastDA[csSlot] = now;
-                            void* bm = (void*)(DAT_05828d58 + iVar9 * 0xbc);
+                            void* bm = (void*)(DAT_05828d58 + iVar9 * BMD_STRIDE);
                             float fScale = *(float *)(puVar13 + 0x5a);
                         }
                     }
@@ -730,7 +730,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
             // Trail spawn at transformed bone position
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
             float fWorldPos[3];
-            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((intptr_t)puVar13 + 2) * 0xbc),
+            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((intptr_t)puVar13 + 2) * BMD_STRIDE),
                          (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
                          fOff, fWorldPos, '\x01');
             float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };

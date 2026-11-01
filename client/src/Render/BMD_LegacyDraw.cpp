@@ -3,6 +3,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
 #include "Render/BMDDevice.h"
@@ -1334,13 +1335,13 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     }
 
     // Set model height offset based on type range
-    void *modelThis = (void *)(DAT_05828d58 + (int)modelType * 0xbc);
+    void *modelThis = (void *)(DAT_05828d58 + (int)modelType * BMD_STRIDE);
 
-    // FIX 2026-05-02: faltaba `*(BYTE*)(modelThis + 0xa0) = 0`. IDA hace esto
+    // FIX 2026-05-02: faltaba `*(BYTE*)&((BMD*)(uintptr_t)(modelThis))->CurrentAction = 0`. IDA hace esto
     // al inicio para resetear el action index. Sin esto, el player pose usa el
     // action index del último frame del mundo (e.g. running) → body parts
     // posan con bones en pose de correr en lugar de idle.
-    *(unsigned char *)((char *)modelThis + 0xa0) = 0;
+    *(unsigned char *)&((BMD*)(uintptr_t)(modelThis))->CurrentAction = 0;
 
     // BodyHeight (model + 0x84) — desplazamiento vertical por rango de modelo.
     // Valores exactos de IDA `RenderObjectScreen` (0x4E13A0), decodificados de
@@ -1360,15 +1361,15 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // dos síntomas opuestos reportados. El comentario original ya listaba los
     // rangos de IDA bien y el código los contradecía.
     if (param_1 >= MODEL_HELM && param_1 < MODEL_HELM + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC31C0000;   // -156.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC31C0000;   // -156.0
     else if (param_1 >= MODEL_ARMOR && param_1 < MODEL_ARMOR + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2C00000;   //  -96.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2C00000;   //  -96.0
     else if (param_1 >= MODEL_PANTS && param_1 < MODEL_PANTS + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2400000;   //  -48.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2400000;   //  -48.0
     else if (param_1 >= MODEL_GLOVES && param_1 < MODEL_GLOVES + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2900000;   //  -72.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2900000;   //  -72.0
     else
-        *(unsigned int *)((char *)modelThis + 0x84) = 0;
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0;
 
     if (param_1 == MODEL_HELM + 65 || param_1 == MODEL_HELM + 70)
         outPos[0] += 0.04f;
@@ -1883,9 +1884,9 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     }
     ObjectSelect_Type = modelType;
 
-    void* model = (void*)(DAT_05828d58 + (int)modelType * 0xBC);
-    *(BYTE*)((BYTE*)model + 0xA0) = 0;
-    *(float*)((BYTE*)model + 0x84) = inventoryPose.BodyHeight;
+    void* model = (void*)(DAT_05828d58 + (int)modelType * BMD_STRIDE);
+    *(BYTE*)&((BMD*)(uintptr_t)(model))->CurrentAction = 0;
+    *(float*)&((BMD*)(uintptr_t)(model))->BodyHeight = inventoryPose.BodyHeight;
     float scale = (int)ItemLevel < 0 ? inventoryPose.NegativeLevelScale : inventoryPose.Scale;
     if (pose && pose->Scale > 0.0f) scale = pose->Scale;
 

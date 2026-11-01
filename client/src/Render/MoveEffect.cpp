@@ -679,7 +679,7 @@ void MoveEffect(float *param_1, int param_2)
             if (!DAT_05828d58 || ownerModel < 0 || ownerModel >= ResourceTables::ModelCount()) {
               *(char*)param_1 = 0; return;
             }
-            pvVar1 = (void *)(DAT_05828d58 + ownerModel * 0xbc);
+            pvVar1 = (void *)(DAT_05828d58 + ownerModel * BMD_STRIDE);
             *(float *)((intptr_t)pvVar1 + 0x6c) = AsObject(param_1)->StartPosition[0];
             *(float *)((intptr_t)pvVar1 + 0x70) = AsObject(param_1)->StartPosition[1];
             *(float *)((intptr_t)pvVar1 + 0x74) = AsObject(param_1)->StartPosition[2];
@@ -2421,7 +2421,7 @@ switchD_00466b93_caseD_c1:
     if ((((sVar3 != 0xee) && (sVar3 != 0xef)) && (sVar3 != 0xf4)) &&
        (((sVar3 != 0xc5 && (sVar3 != 0xc6)) || (AsObject(param_1)->SubType != 5)))) {
       if ((0xad < sVar3) && (sVar3 < 0x10d)) {
-        pvVar1 = (void *)(DAT_05828d58 + sVar3 * 0xbc);
+        pvVar1 = (void *)(DAT_05828d58 + sVar3 * BMD_STRIDE);
         fVar13 = AsObject(param_1)->Velocity;
         *(undefined1 *)((intptr_t)pvVar1 + 0xa0) = AsObject(param_1)->CurrentAction;
         BMD__PlayAnimation(pvVar1,param_1 + 0x42,param_1 + 0x43,(undefined1 *)((intptr_t)param_1 + 0x106),fVar13);

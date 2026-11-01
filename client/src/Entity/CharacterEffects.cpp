@@ -28,7 +28,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
     short sVar2 = AsObject(entity)->Type;
     int entity_type = sVar2;
     BYTE bVar7 = AsCharacter(entity)->MonsterIndex;
-    void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + entity_type * BMD_STRIDE);
     const CatalogMonster *monster = entity_type != 390 ? gContentCatalog.GetMonster(bVar7) : nullptr;
     if (monster && monster->Golden) return;
     if (bVar7 == 0x45) {
@@ -112,7 +112,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
     short sVar2 = AsObject(entity)->Type;
     int entity_type = sVar2;
     BYTE bVar7 = AsCharacter(entity)->MonsterIndex;
-    void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + entity_type * BMD_STRIDE);
     void *pvVar23 = model;
     RequestTerrainLight(AsObject(entity)->Position[0], AsObject(entity)->Position[1], scratch.light);
     // ── 8. Death / PvP color tint ────────────────────────────────────────────

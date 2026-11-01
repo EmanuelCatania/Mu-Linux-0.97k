@@ -35,6 +35,7 @@
 // not game logic. The post-hash render logic IS implemented.
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/BMDDevice.h"
 #include "Render/BufferedDraw.h"
 #include "Game/RenderInterpolation.h"
@@ -133,8 +134,8 @@ static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
     const short blend  = *(short *)(o + 100);
     if (hidden == -2 || blend == -2) return;
 
-    unsigned char *meshes = *(unsigned char **)(model + 40);
-    const short texIdx = *(short *)(*(unsigned char **)(model + 56) + 2);
+    unsigned char *meshes = *(unsigned char **)&((BMD*)(uintptr_t)(model))->Meshs;
+    const short texIdx = *(short *)(*(unsigned char **)&((BMD*)(uintptr_t)(model))->IndexTexture + 2);
     const bool  alphaTex = (Bitmaps[texIdx].Components == 4);
     int numTri = 0;
     if (hidden != 1 && blend != 1 && !alphaTex)
@@ -234,7 +235,7 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
 {
     unsigned char *param_1 = (unsigned char *)param_1_v;
     // Model context for this entity type
-    void *model = (void *)(DAT_05828d58 + AsObject(param_1)->Type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + AsObject(param_1)->Type * BMD_STRIDE);
 
 
     // Invisible guard — IDA Draw_RenderObject L82:
@@ -249,25 +250,25 @@ void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char p
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
     if (gMapManager.GetCurrentMap() == 10 && AsObject(param_1)->Type == 0x12d) {
-        *(float *)((intptr_t)model + 0x48) = 0.02f;          // 0x3ca3d70a R
-        *(float *)((intptr_t)model + 0x4c) = 0.05f;          // 0x3d4ccccd G
-        *(float *)((intptr_t)model + 0x50) = 0.15f;          // 0x3e19999a B
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.02f;          // 0x3ca3d70a R
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.05f;          // 0x3d4ccccd G
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.15f;          // 0x3e19999a B
         goto LAB_render_dispatch;
     }
 
     // Sub-state 9 (snow) + type 0x120 → icy tint
     if (gMapManager.GetCurrentMap() == 9 && AsObject(param_1)->Type == 0x120) {
-        *(float *)((intptr_t)model + 0x48) = 0.0f;
-        *(float *)((intptr_t)model + 0x4c) = 0.3f;           // 0x3e99999a G
-        *(float *)((intptr_t)model + 0x50) = 1.0f;            // 0x3f800000 B
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.3f;           // 0x3e99999a G
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;            // 0x3f800000 B
     }
 
 LAB_render_dispatch:
     // param_4 + type 0x129 → pure-blue override
     if (param_4 != '\0' && AsObject(param_1)->Type == 0x129) {
-        *(float *)((intptr_t)model + 0x48) = 0.0f;
-        *(float *)((intptr_t)model + 0x4c) = 0.0f;
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
     }
 
     // Render mode 0x80: special full render + return
@@ -286,19 +287,19 @@ LAB_render_dispatch:
 
     if (sType == 0x128) {
         // Double-pass: dim orange first, then normal
-        *(float *)((intptr_t)model + 0x48) = 0.4f;    // 0x3ecccccd R
-        *(float *)((intptr_t)model + 0x4c) = 0.6f;    // 0x3f19999a G
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
-        *(unsigned char *)((intptr_t)model + 0x88) = 0;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.4f;    // 0x3ecccccd R
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.6f;    // 0x3f19999a G
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
+        *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0;
         BMD__RenderBody(model, 2,
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                      0x492);
-        *(float *)((intptr_t)model + 0x48) = 1.0f;
-        *(float *)((intptr_t)model + 0x4c) = 1.0f;
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
-        *(unsigned char *)((intptr_t)model + 0x88) = 0xff;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
+        *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0xff;
         goto LAB_simple_render;
     }
 
@@ -338,41 +339,41 @@ LAB_render_dispatch:
             }
             if (sType == 0x13 || sType == 0x14) {
                 // Save tint, render with warm overlay, restore
-                float savedR = *(float *)((intptr_t)model + 0x48);
-                float savedG = *(float *)((intptr_t)model + 0x4c);
-                float savedB = *(float *)((intptr_t)model + 0x50);
-                *(float *)((intptr_t)model + 0x48) = 1.0f;
-                *(float *)((intptr_t)model + 0x4c) = 0.2f;   // 0x3e4ccccd
-                *(float *)((intptr_t)model + 0x50) = 0.1f;   // 0x3dcccccd
-                *(unsigned char *)((intptr_t)model + 0x88) = 2;
+                float savedR = *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0];
+                float savedG = *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1];
+                float savedB = *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2];
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.2f;   // 0x3e4ccccd
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.1f;   // 0x3dcccccd
+                *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 2;
                 BMD__RenderBody(model, 2,
                              AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                              AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                              AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                              0x492);
-                *(float *)((intptr_t)model + 0x48) = savedR;
-                *(float *)((intptr_t)model + 0x4c) = savedG;
-                *(float *)((intptr_t)model + 0x50) = savedB;
-                *(unsigned char *)((intptr_t)model + 0x88) = 0xff;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = savedR;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = savedG;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = savedB;
+                *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0xff;
             } else {
                 if (sType != 3 && sType != 4) return;
                 // Decoration objects: same warm overlay
-                float savedR = *(float *)((intptr_t)model + 0x48);
-                float savedG = *(float *)((intptr_t)model + 0x4c);
-                float savedB = *(float *)((intptr_t)model + 0x50);
-                *(float *)((intptr_t)model + 0x48) = 1.0f;
-                *(float *)((intptr_t)model + 0x4c) = 0.2f;
-                *(float *)((intptr_t)model + 0x50) = 0.1f;
-                *(unsigned char *)((intptr_t)model + 0x88) = 1;
+                float savedR = *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0];
+                float savedG = *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1];
+                float savedB = *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2];
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.2f;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.1f;
+                *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 1;
                 BMD__RenderBody(model, 2,
                              AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                              AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                              AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                              0x492);
-                *(float *)((intptr_t)model + 0x48) = savedR;
-                *(float *)((intptr_t)model + 0x4c) = savedG;
-                *(float *)((intptr_t)model + 0x50) = savedB;
-                *(unsigned char *)((intptr_t)model + 0x88) = 0xff;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = savedR;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = savedG;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = savedB;
+                *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0xff;
             }
 LAB_substate4_done:
             BMD__RenderBody(model, 2,
@@ -411,9 +412,9 @@ LAB_substate4_done:
             BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 1.0f);
             float wx = AsObject(param_1)->Position[0];
             float wy = AsObject(param_1)->Position[1];
-            *(float *)((intptr_t)model + 0x74) = RequestTerrainHeight(wx, wy);
-            *(float *)((intptr_t)model + 0x6c) = wx;
-            *(float *)((intptr_t)model + 0x70) = wy;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[2] = RequestTerrainHeight(wx, wy);
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[0] = wx;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[1] = wy;
             AsObject(param_1)->HiddenMesh = 2;
             BMD__RenderBodyShadow(model, AsObject(param_1)->BlendMesh, 2);
             AsObject(param_1)->HiddenMesh = -1;
@@ -427,20 +428,20 @@ LAB_substate4_done:
         if (flags & 1) {
             if (flags & 2) {
                 // PvP player: yellow-green
-                *(float *)((intptr_t)model + 0x4c) = 1.0f;
-                *(float *)((intptr_t)model + 0x48) = 0.3f;   // 0x3e99999a
-                *(float *)((intptr_t)model + 0x50) = 0.8f;   // 0x3f4ccccd
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.3f;   // 0x3e99999a
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.8f;   // 0x3f4ccccd
             } else {
                 // Party player: yellow
-                *(float *)((intptr_t)model + 0x4c) = 1.0f;
-                *(float *)((intptr_t)model + 0x48) = 0.3f;
-                *(float *)((intptr_t)model + 0x50) = 0.5f;   // 0x3f000000
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.3f;
+                *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.5f;   // 0x3f000000
             }
         } else if (flags & 2) {
             // PvP non-party: blue-orange
-            *(float *)((intptr_t)model + 0x48) = 0.3f;
-            *(float *)((intptr_t)model + 0x4c) = 0.5f;
-            *(float *)((intptr_t)model + 0x50) = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.3f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.5f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
         }
     }
 
@@ -449,16 +450,16 @@ LAB_substate4_done:
         unsigned char flashCtr = param_1[0x8b];
         if (flashCtr == 10) {
             // Full red flash
-            *(float *)((intptr_t)model + 0x48) = 1.0f;
-            *(float *)((intptr_t)model + 0x4c) = 0.3f;
-            *(float *)((intptr_t)model + 0x50) = 0.3f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.3f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.3f;
             param_1[0x8b] = flashCtr - 1;
         } else if (flashCtr != 0) {
             // Fading flash
-            *(float *)((intptr_t)model + 0x48) = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
             float fade = (float)(10 - (int)flashCtr) * _DAT_00552a10 + _DAT_005528b8;
-            *(float *)((intptr_t)model + 0x4c) = fade;
-            *(float *)((intptr_t)model + 0x50) = fade;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = fade;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = fade;
             param_1[0x8b] = flashCtr - 1;
         }
     }
@@ -524,16 +525,16 @@ LAB_substate4_done:
     if (sType == 0x144) {
         if (param_4 != '\0') {
             // Colored dual render
-            *(float *)((intptr_t)model + 0x48) = 0.1f;   // 0x3dcccccd
-            *(float *)((intptr_t)model + 0x4c) = 0.1f;
-            *(float *)((intptr_t)model + 0x50) = 0.1f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.1f;   // 0x3dcccccd
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.1f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.1f;
             BMD__RenderBody(model, 2,
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  1, 0xffffffff);
-            *(float *)((intptr_t)model + 0x48) = 1.0f;
-            *(float *)((intptr_t)model + 0x4c) = 0.1f;
-            *(float *)((intptr_t)model + 0x50) = 0.1f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.1f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.1f;
             BMD__RenderMesh(model, 1.4013e-45f, 2,
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
@@ -545,40 +546,40 @@ LAB_substate4_done:
 
     if (sType == 0x142) {
         // Double-pass with mid tint + optional PvP override
-        *(unsigned char *)((intptr_t)model + 0x88) = 0;
-        *(float *)((intptr_t)model + 0x48) = 0.4f;   // 0x3ecccccd
-        *(float *)((intptr_t)model + 0x4c) = 0.3f;   // 0x3e99999a
-        *(float *)((intptr_t)model + 0x50) = 0.5f;   // 0x3f000000
+        *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.4f;   // 0x3ecccccd
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.3f;   // 0x3e99999a
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.5f;   // 0x3f000000
         BMD__RenderBody(model, 2,
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                      0x4f6);
-        *(float *)((intptr_t)model + 0x48) = 0.5f;
-        *(float *)((intptr_t)model + 0x4c) = 0.5f;
-        *(float *)((intptr_t)model + 0x50) = 0.5f;
-        *(unsigned char *)((intptr_t)model + 0x88) = 0xff;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.5f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.5f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.5f;
+        *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0xff;
         if (param_4 != '\0') {
-            *(float *)((intptr_t)model + 0x48) = 0.1f;
-            *(float *)((intptr_t)model + 0x4c) = 1.0f;
-            *(float *)((intptr_t)model + 0x50) = 0.8f;  // 0x3f4ccccd
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.1f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.8f;  // 0x3f4ccccd
         }
         goto LAB_standard_render;
     }
 
     if (sType == 0x143) {
         // Purple-tint render (chest/relic)
-        *(float *)((intptr_t)model + 0x48) = 0.9f;   // 0x3f666666
-        *(float *)((intptr_t)model + 0x4c) = 0.8f;   // 0x3f4ccccd
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.9f;   // 0x3f666666
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.8f;   // 0x3f4ccccd
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
         BMD__RenderBody(model, 4,
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                      0x493);
-        *(float *)((intptr_t)model + 0x48) = 1.0f;
-        *(float *)((intptr_t)model + 0x4c) = 1.0f;
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
         goto LAB_standard_render;
     }
 
@@ -600,19 +601,19 @@ LAB_substate4_done:
 
     if (sType == 0x146) {
         // White then gray dual render
-        *(unsigned char *)((intptr_t)model + 0x88) = 0;
-        *(float *)((intptr_t)model + 0x48) = 1.0f;
-        *(float *)((intptr_t)model + 0x4c) = 1.0f;
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
+        *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
         BMD__RenderBody(model, 0x42,
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                      0x492);
-        *(unsigned char *)((intptr_t)model + 0x88) = 0xff;
-        *(float *)((intptr_t)model + 0x48) = 0.6f;    // 0x3f19999a
-        *(float *)((intptr_t)model + 0x4c) = 0.6f;
-        *(float *)((intptr_t)model + 0x50) = 0.6f;
+        *(unsigned char *)&((BMD*)(uintptr_t)(model))->StreamMesh = 0xff;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.6f;    // 0x3f19999a
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.6f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 0.6f;
         goto LAB_standard_render;
     }
 
@@ -667,17 +668,17 @@ LAB_substate4_done:
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                          0xffffffff);
-            *(float *)((intptr_t)model + 0x48) = 1.0f;
-            *(float *)((intptr_t)model + 0x4c) = 1.0f;
-            *(float *)((intptr_t)model + 0x50) = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
             BMD__RenderBody(model, 0x44,
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                          AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                          0x492);
-            *(float *)((intptr_t)model + 0x50) = 1.0f;
-            *(float *)((intptr_t)model + 0x48) = 0.3f;
-            *(float *)((intptr_t)model + 0x4c) = 0.3f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.3f;
+            *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.3f;
             BMD__RenderBody(model, 0x48,
                          AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                          AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
@@ -694,17 +695,17 @@ LAB_substate4_done:
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                      0xffffffff);
-        *(float *)((intptr_t)model + 0x48) = 1.0f;
-        *(float *)((intptr_t)model + 0x4c) = 1.0f;
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
         BMD__RenderBody(model, 0x44,
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
                      AsObject(param_1)->BlendMeshTexCoordV,  AsObject(param_1)->HiddenMesh,
                      0x492);
-        *(float *)((intptr_t)model + 0x50) = 1.0f;
-        *(float *)((intptr_t)model + 0x48) = 0.3f;
-        *(float *)((intptr_t)model + 0x4c) = 0.3f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[2] = 1.0f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[0] = 0.3f;
+        *(float *)&((BMD*)(uintptr_t)(model))->BodyLight[1] = 0.3f;
         BMD__RenderBody(model, 0x48,
                      AsObject(param_1)->Alpha, AsObject(param_1)->BlendMesh,
                      AsObject(param_1)->BlendMeshLight,  AsObject(param_1)->BlendMeshTexCoordU,
@@ -742,7 +743,7 @@ LAB_postprocess:
         BMD__BeginRender();
         float wave2 = (float)(fsin((long double)WorldTime * (long double)_DAT_005528e0)
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
-        int texFrame = *(short *)(*(int *)((intptr_t)model + 0x38) + 0xc);   // IDA: (std::int16_t) de la malla 0
+        int texFrame = *(short *)(*(int *)&((BMD*)(uintptr_t)(model))->IndexTexture + 0xc);   // IDA: (std::int16_t) de la malla 0
         BMD__RenderMesh(model, 0.0f, 2,
                      AsObject(param_1)->Alpha, 0, wave2,
                      AsObject(param_1)->BlendMeshTexCoordU, AsObject(param_1)->BlendMeshTexCoordV,

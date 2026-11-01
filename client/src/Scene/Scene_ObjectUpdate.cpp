@@ -83,7 +83,7 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
 
     // Setup BMD model: Models base = DAT_05828d58, stride = sizeof(BMD) = 188 (0xBC)
     int modelIdx = (int)AsObject(objPtr)->Type;
-    char* model = (char*)(DAT_05828d58 + modelIdx * 0xBC);
+    char* model = (char*)(DAT_05828d58 + modelIdx * BMD_STRIDE);
     *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(objPtr)->CurrentAction;  // set current action
 
     float animSpeed = AsObject(objPtr)->Velocity;
@@ -781,7 +781,7 @@ void __stdcall MoveBugs(void) {
         float x2 = *(float*)(v2 + 16);         // owner posX
         float y2 = *(float*)(v2 + 20);         // owner posY
         int   v4 = AsObject(e)->Type;           // type
-        char* v40 = (char*)(DAT_05828d58 + 188 * v4);   // Models[v4]
+        char* v40 = (char*)(DAT_05828d58 + BMD_STRIDE * v4);   // Models[v4]
         float v36 = 0.0f;                      // trackDist (solo usado por 816/817)
 
         if (v4 > 267) {
@@ -1087,7 +1087,7 @@ LABEL_22:
   {
     return;
   }
-  v5 = Models + 188 * *(short *)(o + 2);
+  v5 = Models + BMD_STRIDE * *(short *)(o + 2);
   *(BYTE *)(v5 + 160) = *(BYTE *)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
   oa = *(float *)(o + 204);
   if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(o + 2) == 8 )
@@ -1168,7 +1168,7 @@ LABEL_38:
         case 0x16:
         case 0x17:
         case 0x18:
-          *(BYTE *)(Models + 188 * *(short *)(o + 2) + 136) = 1;
+          *(BYTE *)(Models + BMD_STRIDE * *(short *)(o + 2) + 136 + BMD_FIELD_SHIFT) = 1;
           *(float *)(o + 112) = (double)((std::int64_t)WorldTime % 1000) * -0.001;
           break;
         case 0x27:
@@ -1291,11 +1291,11 @@ LABEL_59:
           *(float *)(o + 112) = (double)((std::int64_t)WorldTime % 2000) * 0.00050000002;
           break;
         case 0x2A:
-          *(BYTE *)(Models + 188 * v17 + 136) = 0;
+          *(BYTE *)(Models + BMD_STRIDE * v17 + 136 + BMD_FIELD_SHIFT) = 0;
           *(float *)(o + 108) = (double)((std::int64_t)WorldTime % 500) * -0.0020000001;
           break;
         case 0x2B:
-          *(BYTE *)(Models + 188 * v17 + 136) = 0;
+          *(BYTE *)(Models + BMD_STRIDE * v17 + 136 + BMD_FIELD_SHIFT) = 0;
           *(float *)(o + 108) = (double)((std::int64_t)WorldTime % 500) * 0.0020000001;
           break;
         default:

@@ -218,7 +218,7 @@ static void RenderWeaponFX(int c, intptr_t o, intptr_t v121, float Targetj, floa
     // BMD_TransformPosition/TransformPos como ECX (this_) — usado para leer scale y
     // calcular bbox. NO confundir con `entity_o` que tiene el bone buffer.
     void* model = (void*)(uintptr_t)((char*)(uintptr_t)DAT_05828d58
-                                     + 188 * (int)*(short*)(o + 2));
+                                     + BMD_STRIDE * (int)*(short*)(o + 2));
     void* entity_o = (void*)(uintptr_t)o;  // entity pointer with bone buffer at +0x114
     float WorldPosition[3];
     float v242[3];
@@ -674,7 +674,7 @@ extern "C" int RenderCharacterBackItem(int c, intptr_t o)
             Link = '\x01';
             // PlaySpeed = Models[MODEL_PLAYER].Actions[1].PlaySpeed
             //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
-            int actions = *(int*)(DAT_05828d58 + 390 * 0xbc + 0x30);
+            int actions = *(int*)(DAT_05828d58 + 390 * BMD_STRIDE + 0x30);
             if (actions != 0)
                 *(unsigned int *)&AsCharacter(c)->Wing.PlaySpeed = *(unsigned int*)(actions + 20);
         }
@@ -710,7 +710,7 @@ extern "C" void Render_PlayerHelper(int c, intptr_t o)
     // Sprite glow at transformed position (20, 0, 15) in bone[34]
     unsigned char v102 = AsCharacter(c)->Helper.LinkBone;   // = 34
     void* model = (void*)(uintptr_t)((char*)(uintptr_t)DAT_05828d58
-                                     + 188 * (int)*(short*)(o + 2));
+                                     + BMD_STRIDE * (int)*(short*)(o + 2));
     void* entity_o = (void*)(uintptr_t)o;
     float* boneMat = BoneMat48(entity_o, v102);
     float Pos[3]   = { 20.0f, 0.0f, 15.0f };

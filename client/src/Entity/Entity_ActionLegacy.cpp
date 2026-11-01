@@ -60,7 +60,7 @@ void* __cdecl SetAction(OBJECT* entity_ptr, int anim_id)
     if (entity_ptr == 0) return NULL;
     if (DAT_05828d58 == 0) return NULL;           // tabla aún no inicializada
     short objType = AsObject(entity_ptr)->Type; // OBJECT.Type
-    short numActions = *(short*)(DAT_05828d58 + (int)objType * 0xBC + 0x26);
+    short numActions = *(short*)(DAT_05828d58 + (int)objType * BMD_STRIDE + 0x26);
 
     // Allow action if < numActions, or if it's 77 (0x4D) or 76 (0x4C)
     if (anim_id >= numActions && anim_id != 77 && anim_id != 76)

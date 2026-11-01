@@ -90,7 +90,7 @@ void LooseWingVisuals_TickPreviews() {
         owner.object.Live=1;
         owner.object.EnableBoneMatrix=1;
         owner.object.BoneMatrices=(vec34_t *)owner.bones.data();
-        void *model=(void *)(DAT_05828d58+790*0xbc);
+        void *model=(void *)(DAT_05828d58+790* BMD_STRIDE);
         EquipmentModelContext context(model);
         Scratch scratch;
         BMD &b=*AsModel(model);
@@ -114,7 +114,7 @@ void LooseWingVisuals_TickPreviews() {
 void LooseWingVisuals_TickGround(int entity) {
     OBJECT &o=*AsObject(entity);
     if (o.Type!=790 || o.Alpha<=_DAT_005524f8) return;
-    void *model=(void *)(DAT_05828d58+790*0xbc);
+    void *model=(void *)(DAT_05828d58+790* BMD_STRIDE);
     EquipmentModelContext context(model);
     Scratch scratch;
     BMD &b=*AsModel(model);

@@ -197,7 +197,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     }
     {
         short etype     = o->Type;
-        short boneCount = *(short *)(DAT_05828d58 + etype * 0xbc + 0x22);
+        short boneCount = *(short *)(DAT_05828d58 + etype * BMD_STRIDE + 0x22);
         if (boneCount < 0) boneCount = 0;   // defense: short garbage → signed neg
         void *boneBuf = operator_new((unsigned int)boneCount * 0x30);
         // DESVIACION: IDA 0045ADC0 L710 hace `operator_new` sin inicializar y el buffer

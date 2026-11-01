@@ -3,6 +3,7 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Model/SmdImport.h"
 #include "Render/ResourceTables.h"
 #include "Platform/Text.h"
@@ -347,7 +348,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         // que si el slot no tiene bones se cae al loader completo BMD__Open para traer
         // la geometría BMD.
         if (numBonesInSlot > 0)
-            BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
+            BMD__Save((int)(DAT_05828d58 + param_1 * BMD_STRIDE), (char*)param_2, local_40);
         else
             BMD__Open(model, param_2, local_40, 0);
     } else {
@@ -398,7 +399,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     //    slot +0x38 short* indexTexture (short[n])
     // Verificado en BMD__Open (BMD::Open): this[0x24]=numMeshes,
     // this[0x34]=texName[] y this[0x38]=indexTex[] se asignan directamente.
-    char* slot = (char*)(DAT_05828d58 + Model * 0xBC);
+    char* slot = (char*)(DAT_05828d58 + Model * BMD_STRIDE);
     short numMeshes = *(short*)(slot + 0x24);
     // DIAG-canary inconditional: confirmar que llegamos a la función para Ship/Logo
     {
@@ -412,8 +413,8 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
         static int s_oc = 0;
         bool isLoginSlot = (Model == 0x3c || (Model >= 0xa0 && Model <= 0xa3));
         if (isLoginSlot && s_oc < 20) {
-            char* texNameTable0 = *(char**)(slot + 0x34);
-            short* indexTexture0 = *(short**)(slot + 0x38);
+            char* texNameTable0 = *(char**)&((BMD*)(uintptr_t)(slot))->Textures;
+            short* indexTexture0 = *(short**)&((BMD*)(uintptr_t)(slot))->IndexTexture;
             char firstName[33] = {0};
             if (texNameTable0 && numMeshes > 0) {
                 memcpy(firstName, texNameTable0, 32);
@@ -424,8 +425,8 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     }
     if (numMeshes <= 0) return;
 
-    char* texNameTable  = *(char**)(slot + 0x34);
-    short* indexTexture = *(short**)(slot + 0x38);
+    char* texNameTable  = *(char**)&((BMD*)(uintptr_t)(slot))->Textures;
+    short* indexTexture = *(short**)&((BMD*)(uintptr_t)(slot))->IndexTexture;
     if (!texNameTable || !indexTexture) return;
 
     for (int i = 0; i < numMeshes; i++) {

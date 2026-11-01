@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Entity/EntityName.h"
 #include "Render/Gfx.h"
 #include "Render/BufferedDraw.h"
@@ -119,8 +120,8 @@ void __cdecl RenderBoids(void)
                 //
                 // (56588 = 188 * 301, o sea el modelo del dragon.)
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
-                    void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + 188 * 301);
-                    void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + 188 * entType);
+                    void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * 301);
+                    void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * entType);
                     RenderPartObjectBodyColor(mdl301, reinterpret_cast<uintptr_t>(v0 - 90),
                                               301, *v0, 0x48, 1.0f, -1);
                     RenderPartObjectBodyColor(mdlEnt, reinterpret_cast<uintptr_t>(v0 - 90),
@@ -141,7 +142,7 @@ void __cdecl RenderBoids(void)
 
                 // World != 10: render shadow on terrain.
                 if (gMapManager.GetCurrentMap() != 10) {
-                    BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 188 * entType);
+                    BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * entType);
                     // DESVIACION R4k: habilitar mezcla sin cambiar sus factores,
                     // y recuperar activación/caché al salir de esta sombra.
                     const Materials::InheritedBlendScope shadowBlend;
@@ -153,9 +154,9 @@ void __cdecl RenderBoids(void)
                     float wx = v0[-86];
                     float wy = v0[-85];
                     float wz = RequestTerrainHeight(wx, wy);
-                    *(float*)(model + 108) = wx;
-                    *(float*)(model + 112) = wy;
-                    *(float*)(model + 116) = wz;
+                    *(float*)&((BMD*)(uintptr_t)(model))->BodyOrigin[0] = wx;
+                    *(float*)&((BMD*)(uintptr_t)(model))->BodyOrigin[1] = wy;
+                    *(float*)&((BMD*)(uintptr_t)(model))->BodyOrigin[2] = wz;
                     BMD__RenderBodyShadow(model, -1, -1);
                     // El color negro tambien se filtraba al resto del frame.
                     BufferedDraw::Color4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -212,13 +213,13 @@ void __cdecl Entity_Render(void)
                 }
                 if (v5 < 0 || v5 >= 1200) goto next_entry;
 
-                BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + (uintptr_t)v5 * 0xbc);
+                BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + (uintptr_t)v5 * BMD_STRIDE);
                 model[160] = 0;
                 model[152] = (BYTE)((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class) & 7);
                 model[160] = *v0;
-                *(float*)(model + 108) = *v2;
-                *(DWORD*)(model + 112) = *(DWORD*)(v0 - 241);
-                *(DWORD*)(model + 116) = *(DWORD*)(v0 - 237);
+                *(float*)&((BMD*)(uintptr_t)(model))->BodyOrigin[0] = *v2;
+                *(DWORD*)&((BMD*)(uintptr_t)(model))->BodyOrigin[1] = *(DWORD*)(v0 - 241);
+                *(DWORD*)&((BMD*)(uintptr_t)(model))->BodyOrigin[2] = *(DWORD*)(v0 - 237);
 
                 Entity_SetGravity(type, model);
 
@@ -811,7 +812,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
                 if (typeCode != 188 && typeCode != 189 && __world != 10) {
                     GL_SetBlendSrcOver('\x01');                  // EnableAlphaTest(1)
                     BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
-                    float* modelData = (float*)(DAT_05828d58 + 188 * (int)typeCode);
+                    float* modelData = (float*)(DAT_05828d58 + BMD_STRIDE * (int)typeCode);
                     if (modelData) {
                         modelData[29] = RequestTerrainHeight(posX, posY);  // height
                         modelData[27] = posX;
@@ -890,7 +891,7 @@ void __cdecl RenderWheelWeapon(intptr_t o)
     const float alpha = sample ? sample->alpha : AsObject(o)->Alpha;
 
     // Volcar posición/acción/skin al slot del modelo compartido.
-    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
+    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * model_id;
     *(float*)(mdl + 116) = zUp;
     *(BYTE*) (mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;                       // CurrentAction
     *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7); // clase
@@ -1178,7 +1179,7 @@ void Fauna_TickSprites() {
             float brightness = (float)(rand() % 32 + (o.Type == 175 ? 64 : 128)) * 0.01f;
             float color[3] = {brightness * 0.2f, brightness * 0.4f, brightness * 0.4f};
             if (o.Type == 175) { CreateSprite(1150, o.Position, 1.0f, color, entity, 0, 0); continue; }
-            void *model = (void *)(DAT_05828d58 + o.Type * 0xbc);
+            void *model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
             EquipmentModelContext context(model);
             const float angle = o.Angle[2];
             o.Angle[2] += 90.0f;

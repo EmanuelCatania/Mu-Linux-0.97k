@@ -49,7 +49,7 @@ void* __cdecl Entity_SpawnBoneEffect(intptr_t entity, int effectType, float scal
     offset[2] = yOff;
 
     float outPos[3];
-    void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
+    void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * BMD_STRIDE);
     float *boneMat = (float *)(*(int *)&((OBJECT*)(uintptr_t)(entity))->BoneMatrices + bone * 0x30);
     BMD_TransformPosition(modelPtr, boneMat, offset, outPos, '\x01');
 
@@ -71,7 +71,7 @@ void* __cdecl Entity_SpawnBoneEffect(intptr_t entity, int effectType, float scal
 void* __cdecl Entity_SpawnBoneRangeEffect(intptr_t entity, intptr_t bone1, intptr_t bone2, float scale)
 {
     float sinVal = (float)fsin((double)WorldTime * (double)_DAT_005528e0);
-    void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
+    void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * BMD_STRIDE);
 
     float light0 = sinVal * _DAT_005528b8 + _DAT_00552530;
     float light[3] = { light0, light0, light0 };

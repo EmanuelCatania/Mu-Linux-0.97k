@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Net/NetText.h"
 #include "Render/ResourceTables.h"
 #include "Render/EquipmentVisuals.h"
@@ -118,7 +119,7 @@ unsigned int FindTwoSidedMeshes(const BYTE* model)
 {
     unsigned int bits = 0;
     const short meshCount = *(const short*)(model + 0x24);
-    const BYTE* meshes = (const BYTE*)(uintptr_t)*(const int*)(model + 0x28);
+    const BYTE* meshes = (const BYTE*)(uintptr_t)*(const int*)&((BMD*)(uintptr_t)(model))->Meshs;
     if (!meshes) return 0;
     for (int m = 0; m < meshCount && m < 32; ++m) {
         const BYTE* mesh = meshes + m * 0x28;
@@ -225,8 +226,8 @@ bool ReadSection(PendingSection& section, const BYTE* msg, int size)
 void SetMonsterSpeeds(int slot, bool npc)
 {
     if (slot < 0 || !DAT_05828d58) return;
-    BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
-    BYTE* actions = *(BYTE**)(model + 0x30);
+    BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + slot * BMD_STRIDE;
+    BYTE* actions = *(BYTE**)&((BMD*)(uintptr_t)(model))->Actions;
     const short count = *(short*)(model + 0x26);
     if (!actions || count <= 0) return;
     if (npc) {
@@ -607,7 +608,7 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     char dir[128];
     Platform::TextFormatTruncated(dir, sizeof(dir), Platform::TruncateText, "Data\\%s", sub);
     AccessModel(slot, dir, name, -1);
-    const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
+    const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * BMD_STRIDE;
     if (*(const short*)(model + 0x24) <= 0) {
         Log("ContentCatalog: no se pudo cargar %s%s.bmd", dir, name);
         s_LoadedModels[key] = -1;
