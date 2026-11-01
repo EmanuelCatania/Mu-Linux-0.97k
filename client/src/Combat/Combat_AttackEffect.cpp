@@ -388,7 +388,7 @@ void __cdecl AttackEffect(intptr_t Owner)
     case 35:
       v171 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
-      v172 = AE_ht_hash(Owner + 770);
+      v172 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Owners = 0;
       if ( DAT_055c9bd4 )
@@ -449,8 +449,8 @@ LABEL_263:
       HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
-      v244 = (const char *)(Owner + 770);
-      v242 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v242 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )
@@ -509,8 +509,8 @@ LABEL_269:
       break;
     case 38:
     case 67:
-      v244 = (const char *)(Owner + 770);
-      v187 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v187 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerv = 0;
       if ( DAT_055c9bd4 )
@@ -588,7 +588,7 @@ LABEL_293:
     case 42:
       v152 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
-      v153 = AE_ht_hash(Owner + 770);
+      v153 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerq = 0;
       if ( DAT_055c9bd4 )
@@ -649,8 +649,8 @@ LABEL_236:
       HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
-      v244 = (const char *)(Owner + 770);
-      v241 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v241 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )
@@ -743,7 +743,7 @@ LABEL_242:
       }
       v131 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
-      v132 = AE_ht_hash(Owner + 770);
+      v132 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownero = 0;
       if ( DAT_055c9bd4 )
@@ -804,8 +804,8 @@ LABEL_208:
       HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
-      v244 = (const char *)(Owner + 770);
-      v240 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v240 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )
@@ -882,8 +882,8 @@ LABEL_214:
       if ( AsCharacter(Owner)->SkillStage == 14 && AsCharacter(Owner)->MonsterIndex == 59 )
       {
         v117 = (char *)(Owner + EntityOffset(770));
-        v244 = (const char *)(Owner + 770);
-        Ownerl = AE_ht_hash(Owner + 770);
+        v244 = (const char *)(Owner + EntityOffset(770));
+        Ownerl = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         v243 = 0;
         if ( DAT_055c9bd4 )
@@ -939,8 +939,8 @@ LABEL_179:
         HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
-        v244 = (const char *)(Owner + 770);
-        v239 = AE_ht_hash(Owner + 770);
+        v244 = (const char *)(Owner + EntityOffset(770));
+        v239 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         v243 = 0;
         if ( DAT_055c9bd4 )
@@ -1031,7 +1031,7 @@ LABEL_185:
         }
         v80 = (char *)(Owner + EntityOffset(770));
         v243 = Owner + 770;
-        v81 = AE_ht_hash(Owner + 770);
+        v81 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         Ownerg = 0;
         if ( DAT_055c9bd4 )
@@ -1092,8 +1092,8 @@ LABEL_114:
         HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
-        v244 = (const char *)(Owner + 770);
-        v237 = AE_ht_hash(Owner + 770);
+        v244 = (const char *)(Owner + EntityOffset(770));
+        v237 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         v243 = 0;
         if ( DAT_055c9bd4 )
@@ -1170,7 +1170,7 @@ LABEL_120:
     case 66:
       v98 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
-      v99 = AE_ht_hash(Owner + 770);
+      v99 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerj = 0;
       if ( DAT_055c9bd4 )
@@ -1231,8 +1231,8 @@ LABEL_146:
       HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
-      v244 = (const char *)(Owner + 770);
-      v238 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v238 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )
@@ -1305,7 +1305,7 @@ LABEL_152:
     case 72:
       v27 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
-      v28 = AE_ht_hash(Owner + 770);
+      v28 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerc = 0;
       if ( DAT_055c9bd4 )
@@ -1366,8 +1366,8 @@ LABEL_44:
       HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
-      v244 = (const char *)(Owner + 770);
-      v235 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v235 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )
@@ -1511,7 +1511,7 @@ LABEL_50:
     case 77:
       v61 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
-      v62 = AE_ht_hash(Owner + 770);
+      v62 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownere = 0;
       if ( DAT_055c9bd4 )
@@ -1572,8 +1572,8 @@ LABEL_82:
       HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
-      v244 = (const char *)(Owner + 770);
-      v236 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v236 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )
@@ -1645,8 +1645,8 @@ LABEL_88:
     case -126:
     case -120:
       v4 = (char *)(Owner + EntityOffset(770));
-      v244 = (const char *)(Owner + 770);
-      v5 = AE_ht_hash(Owner + 770);
+      v244 = (const char *)(Owner + EntityOffset(770));
+      v5 = AE_ht_hash(Owner + EntityOffset(770));
       v243 = 0;
       Ownera = 0;
       if ( DAT_055c9bd4 )
@@ -1703,7 +1703,7 @@ LABEL_6:
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
-      v234 = AE_ht_hash(Owner + 770);
+      v234 = AE_ht_hash(Owner + EntityOffset(770));
       v244 = 0;
       v243 = 0;
       if ( DAT_055c9bd4 )

@@ -372,14 +372,14 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
   // the bit pattern (cast through uint) so we don't do an int→float conversion.
   *(unsigned int *)&_DAT_005597c8 = (unsigned int)param_5;
   if (*(char *)&AsObject(param_2)->EnableBoneMatrix == '\x01') {
-    puVar1 = *(undefined **)(param_2 + 0x114);
+    puVar1 = *(undefined **)(param_2 + EntityOffset(0x114));
   }
   else {
     param_4 = '\0';
     puVar1 = (undefined*)&DAT_06970a9c;
   }
-  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
-               (float *)(param_2 + 0x130),param_4);
+  Skeleton_Transform(param_1,reinterpret_cast<float*>(puVar1),(float *)(param_2 + EntityOffset(0x118)),(float *)(param_2 + EntityOffset(0x124)),
+               (float *)(param_2 + EntityOffset(0x130)),param_4);
   BMD__RenderBody(param_1,(uint)param_3,AsObject(param_2)->Alpha,AsObject(param_2)->BlendMesh,
                AsObject(param_2)->BlendMeshLight,AsObject(param_2)->BlendMeshTexCoordU,AsObject(param_2)->BlendMeshTexCoordV,
                AsObject(param_2)->HiddenMesh,0xffffffff);
