@@ -190,7 +190,7 @@ static inline float* GetPlayerActions() {
 static inline float GetPlayerActionPlaySpeed(int byteOffset) {
     float* actions = GetPlayerActions();
     if (!actions) return 0.0f;
-    return *(float*)((char*)actions + byteOffset);
+    return *(float*)((char*)actions + ModelActionByte(byteOffset));
 }
 
 // ── TransformPosition wrapper (IDA TransformPosition = nuestra BMD_TransformPosition) ─
@@ -764,7 +764,7 @@ extern "C" void Render_PlayerWeaponLoop(intptr_t c, intptr_t o)
         if (v118 == 46 || v118 == 47 || v118 == 48 || v118 == 49) {
             // Greeting/wave anims: bone 0, action[46].PlaySpeed
             *(unsigned char*)(v121 + 5) = 0;
-            *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + 740);
+            *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + ModelActionByte(740));
         } else if (v120 != 466) {
             if (v120 == 469) {
                 // Special weapon 469: bone 0, 2x action[1].PlaySpeed
@@ -793,7 +793,7 @@ extern "C" void Render_PlayerWeaponLoop(intptr_t c, intptr_t o)
             if (v118 >= 0x23u && v118 <= 0x24u) {
                 // Specific anim with weapon 466: bone 2, action[35].PlaySpeed
                 *(unsigned char*)(v121 + 5) = 2;
-                *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + 564);
+                *(int*)(v121 + 16) = *(int*)((char*)GetPlayerActions() + ModelActionByte(564));
             } else {
                 // Default for 466: bone 1, action[1].PlaySpeed
                 *(unsigned char*)(v121 + 5) = 1;
