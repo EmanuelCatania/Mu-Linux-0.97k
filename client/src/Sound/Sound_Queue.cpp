@@ -47,6 +47,7 @@ void Sprite_ReplayStep() {
 // Es la función que dibuja todos los sprites/glows/sparkles del pool (glow +9
 // set, wing FX, weapon FX, particles, etc.). Itera los 1002 slots por índice.
 // IDA: RenderSprites
+extern "C" void DbgLogPublic(const char* msg);
 void __cdecl Render_DrawSpritePool(void)
 {
     char *pcVar2 = DAT_07c85890;
@@ -108,6 +109,14 @@ void __cdecl Render_DrawSprite(const OBJECT* object)
     if (fVar1 > _DAT_0055256c) fVar1 = 1.0f;
   }
   fVar1 *= *(float *)(param_1 + 0xc);
+  if (*(short *)(param_1 + 2) < 0) {
+    static int probeCount = 0;
+    if (probeCount++ < 8) {
+      const DWORD *w = reinterpret_cast<const DWORD *>(param_1);
+      char line[128]; sprintf(line, "SPRITEDBG slot=%d w=%08X %08X %08X %08X %08X %08X %08X %08X", (int)((param_1 - (const BYTE *)DAT_07c85890) / OBJECT_STRIDE), w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7]); DbgLogPublic(line);
+    }
+    return;
+  }
   iVar2 = *(short *)(param_1 + 2) * TEXTURE_STRIDE;
   RenderSprite_0((int)*(short *)(param_1 + 2),(float *)(param_1 + 0x10),
                fVar1 * *(float *)((char*)&DAT_083a7cc0 + iVar2),fVar1 * *(float *)((char*)&DAT_083a7cc4 + iVar2),

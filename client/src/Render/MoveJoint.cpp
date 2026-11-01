@@ -189,7 +189,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
         Angle[1] = AsJoint(o)->Angle[1] + AsJoint(o)->Direction[1];
         Angle[2] = AsJoint(o)->Angle[2] + AsJoint(o)->Direction[2];
         Matrix_BuildFromEuler(Angle, v305);
-        Joint_SegmentTick((int)(uintptr_t)o, v305);
+        Joint_SegmentTick((intptr_t)o, v305);
 
         const int sub3 = AsJoint(o)->SubType;
         if (sub3 == 3) {
@@ -356,7 +356,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
         // using AsJoint(param_1)->Velocity vs the 3D distance already computed above.
         local_e4_f = sqrtf(local_dc_f * local_dc_f + local_e4_f * local_e4_f);
         Matrix_BuildFromEuler(pfVar26, local_a8 + 6);
-        Joint_SegmentTick((int)param_1, local_a8 + 6);
+        Joint_SegmentTick((intptr_t)param_1, local_a8 + 6);
         if (AsJoint(param_1)->Velocity < local_e4_f) {
             uVar7 = _rand();
             uVar7 = uVar7 & 0x80000003;
@@ -471,7 +471,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             if ((AsJoint(param_1)->NumTails < AsJoint(param_1)->MaxTails + -1) ||
                 (*(char *)&AsJoint(param_1)->Skill != '\0'))
             {
-                Joint_SegmentTick((int)param_1, local_60);
+                Joint_SegmentTick((intptr_t)param_1, local_60);
             }
             iVar16--;
         } while (iVar16 != 0);
@@ -1250,7 +1250,7 @@ LAB_0047036e:
         else {
             AsJoint(param_1)->Position[1] -= _DAT_005524f0;
         }
-        Joint_SegmentTick((int)param_1, local_30);
+        Joint_SegmentTick((intptr_t)param_1, local_30);
         goto switchD_caseD_4ef;
     }
 

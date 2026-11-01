@@ -6,4 +6,4 @@ void WorldEffects_BeginStep();
 void WorldEffects_Tick(intptr_t entity);
 void WorldEffects_Draw(const OBJECT* entity);
 int WorldEffects_AddSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode);
+    float *light, intptr_t owner, float rotation, int mode);

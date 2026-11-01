@@ -2591,7 +2591,7 @@ LAB_0046e970:
 
 // Puente de compatibilidad IDA: conserva el nombre ABI CreateJoint y delega en Joint_Create.
 void* __cdecl CreateJoint(int type, float* p1, float* p2, float* p3, unsigned int subType,
-                            int owner, float scale, short link, unsigned char flag)
+                            intptr_t owner, float scale, short link, unsigned char flag)
 {
   return Joint_Create(type, p1, p2, p3, subType, owner, scale, link, flag);
 }

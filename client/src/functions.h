@@ -355,7 +355,7 @@ void  __cdecl WeatherParticles_Update(void); // IDA: MoveLeaves
 void* __cdecl Joint_Create(int, float *, float *, float *, unsigned int, intptr_t, float, short, unsigned char); // IDA: CreateJoint
 // Puente de compatibilidad (nombre de IDA) sobre Joint_Create; lo usa
 // Combat/Combat_AttackEffect.cpp.
-void* __cdecl CreateJoint(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
+void* __cdecl CreateJoint(int, float *, float *, float *, unsigned int, intptr_t, float, short, unsigned char); // IDA: CreateJoint
 
 // ── Item drop render ──────────────────────────────────────────────────────────
 void  __cdecl Joint_TickAll(void); // IDA: MoveJoints

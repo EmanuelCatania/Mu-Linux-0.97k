@@ -11,7 +11,8 @@ namespace {
 struct Sprite {
     unsigned short type;
     float position[3], scale, light[3], rotation;
-    int owner, mode, stage;
+    intptr_t owner;
+    int mode, stage;
 };
 struct Mesh {
     MaterialVisualSample material;
@@ -84,7 +85,7 @@ void Equipment_SetStage(int stage) { currentStage = stage; }
 bool Equipment_IsDrawing() { return drawing; }
 
 void Equipment_AddSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode) {
+    float *light, intptr_t owner, float rotation, int mode) {
     if (!recording) return;
     Sprite sprite;
     sprite.type = type; sprite.scale = scale; sprite.owner = owner;
@@ -95,7 +96,7 @@ void Equipment_AddSprite(unsigned short type, float *position, float scale,
     recording->sprites.push_back(sprite);
 }
 void Equipment_WingSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode) {
+    float *light, intptr_t owner, float rotation, int mode) {
     if (recording) Equipment_AddSprite(type, position, scale, light, owner, rotation, mode);
     else CreateSprite(type, position, scale, light, owner, rotation, mode);
 }

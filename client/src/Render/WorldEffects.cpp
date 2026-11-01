@@ -16,7 +16,8 @@ namespace {
 struct Sprite {
     unsigned short type;
     float position[3], scale, light[3], rotation;
-    int owner, mode;
+    intptr_t owner;
+    int mode;
 };
 struct Frame {
     std::uint64_t generation;
@@ -38,7 +39,7 @@ void WorldEffects_BeginStep() {
 }
 
 int WorldEffects_AddSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode) {
+    float *light, intptr_t owner, float rotation, int mode) {
     if (!recording) return 0;
     Sprite sprite;
     sprite.type = type; sprite.scale = scale; sprite.owner = owner;

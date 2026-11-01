@@ -70,7 +70,7 @@ static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
 { return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline void* AE_CreateJoint(int type, float* p1, float* p2, float* p3,
-                                   int sub, int owner, double scale, int a, int b)
+                                   int sub, intptr_t owner, double scale, int a, int b)
 { return CreateJoint(type, p1, p2, p3, (unsigned int)sub, owner, (float)scale,
                       (short)a, (unsigned char)b); }
 static inline void AE_TransformPosition(DWORD model, const void* mat,
