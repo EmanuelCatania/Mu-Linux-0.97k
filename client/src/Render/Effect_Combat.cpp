@@ -64,7 +64,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(intptr_t o) {
     // IDA: if ((double)AsObject(o)->LifeTime > 10.0)  -- o+96 es la vida del efecto.
     if (_DAT_00552488 >= (float)AsObject(o)->LifeTime) return;
 
-    const DWORD owner = (intptr_t)((OBJECT*)(uintptr_t)(o))->Owner;
+    const intptr_t owner = (intptr_t)((OBJECT*)(uintptr_t)(o))->Owner;
     if (!owner || !DAT_05828d58 || !DAT_07abf5d8) return;
 
     const int model_id = *(unsigned char*)(owner + 136) + ITEM_MODEL_BASE;

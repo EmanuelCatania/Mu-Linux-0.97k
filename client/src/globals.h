@@ -641,6 +641,9 @@ extern float   g_AttackEffectMatrix_04D_Aux[3][4];
 // Pool de render de joints/trails/blur — ver globals.cpp. La base es el array
 // `g_RenderPool_07c608a8`; DAT_07c608b4 es el campo ancla +12 del slot[0].
 extern char    g_RenderPool_07c608a8[100 * 0x2f0];
+// Dueños de slot: los pools conservan el layout x86, con 4 bytes para el puntero.
+extern uintptr_t g_ParticleOwner[3000];
+extern uintptr_t g_TrailOwner[100];
 #define DAT_07c608b4  (*(DWORD*)(&g_RenderPool_07c608a8[12]))
 extern DWORD   DAT_07c74ae0;
 extern DWORD   DAT_07c74ae4;   // weather intensity target (interpolated)

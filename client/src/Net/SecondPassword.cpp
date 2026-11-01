@@ -2898,7 +2898,7 @@ static inline void mc_CreateBlur(intptr_t c, float* p1, float* p2,
 
     for (int index = 0; index < slotCount; ++index) {
         BYTE* slot = base + index * slotSize;
-        if (slot[0] && *(DWORD*)(slot + 12) == c) {
+        if (slot[0] && g_TrailOwner[index] == (uintptr_t)c) {
             BYTE* b = slot;
             *(int*)(b + 4) = type;
             *(float*)(b + 20) = color[0]; *(float*)(b + 24) = color[1]; *(float*)(b + 28) = color[2];
@@ -2919,7 +2919,8 @@ static inline void mc_CreateBlur(intptr_t c, float* p1, float* p2,
     for (int index = 0; index < slotCount; ++index) {
         BYTE* slot = base + index * slotSize;
         if (!slot[0]) {
-            *(DWORD*)(slot + 12) = c;
+            *(DWORD*)(slot + 12) = (DWORD)c;
+            g_TrailOwner[index] = (uintptr_t)c;
             RenderFxSnapshots_New(slot);
             slot[0] = 1;
             *(int*)(slot + 16) = 0;

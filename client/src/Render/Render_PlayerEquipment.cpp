@@ -674,9 +674,9 @@ extern "C" int RenderCharacterBackItem(intptr_t c, intptr_t o)
             Link = '\x01';
             // PlaySpeed = Models[MODEL_PLAYER].Actions[1].PlaySpeed
             //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
-            int actions = *(int*)(DAT_05828d58 + 390 * BMD_STRIDE + 0x30);
+            float* actions = GetPlayerActions();
             if (actions != 0)
-                *(unsigned int *)&AsCharacter(c)->Wing.PlaySpeed = *(unsigned int*)(actions + 20);
+                AsCharacter(c)->Wing.PlaySpeed = ModelActionSpeed(actions, 1);
         }
 
         g_BackItemHand = i;      // lo lee la tabla de poses de RenderLinkObject

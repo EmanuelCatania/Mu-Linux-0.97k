@@ -47,8 +47,8 @@ static DWORD      g_ErrorReport = 0;
 // Scratch fijo: el "nodo" que crea el ruido anti-tamper nunca se lee (el insert
 // es no-op), asi que devolver un buffer estatico evita el leak de operator_new.
 static BYTE g_AE_HashScratch[16];
-static inline DWORD AE_new(size_t)            { return (DWORD)(uintptr_t)g_AE_HashScratch; }
-static inline void  AE_delete(DWORD)          {}
+static inline uintptr_t AE_new(size_t)        { return (uintptr_t)g_AE_HashScratch; }
+static inline void  AE_delete(uintptr_t)      {}
 // Reemplaza el dispatch inline `(*(int(**)(int*,DWORD))(MAIN_HASH_CLASS+12))(...)`.
 // En nuestro build ese slot es HashFn_Sentinel (globals.cpp) y devuelve 0; el
 // shim evita el deref de vtable sin cambiar el comportamiento.
@@ -99,7 +99,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   // deferenciaria. La version parcial de Combat_LegacyAttackEffects.cpp tenia el mismo guard.
   if (!Owner || !DAT_05828d58) return;
 
-  DWORD v2; // edi
+  intptr_t v2; // edi
   char v3; // al
   char *v4; // ebx
   unsigned int v5; // eax
@@ -152,12 +152,12 @@ void __cdecl AttackEffect(intptr_t Owner)
   float v52; // eax
   float v53; // ecx
   double v54; // st7
-  int v55; // edx
+  intptr_t v55; // edx
   float v56; // ecx
   float v57; // edx
   float v58; // eax
   double v59; // st7
-  int v60; // ecx
+  intptr_t v60; // ecx
   char *v61; // ebx
   unsigned int v62; // edx
   const char *v63; // edi
@@ -210,7 +210,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   char v110; // al
   BYTE *v111; // esi
   char v112; // al
-  int v113; // ebx
+  intptr_t v113; // ebx
   int v114; // eax
   float v115; // eax
   float v116; // ecx
@@ -298,7 +298,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   double v198; // st7
   int v199; // ebx
   int v200; // eax
-  int v201; // ecx
+  intptr_t v201; // ecx
   short v202; // ax
   intptr_t v203; // esi
   float v204; // ecx
@@ -309,7 +309,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   float v209; // eax
   float v210; // ecx
   double v211; // st7
-  int v212; // edx
+  intptr_t v212; // edx
   float *v213; // ebp
   int v214; // edi
   int k; // ebx
@@ -322,7 +322,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   int ii; // edi
   int n; // edi
   int jj; // edi
-  int v225; // edi
+  intptr_t v225; // edi
   int v226; // eax
   float v227; // eax
   float (*v228)[4]; // eax

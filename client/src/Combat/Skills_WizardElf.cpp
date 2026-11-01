@@ -78,7 +78,7 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
     }
 
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
-    char* heroEntity = (char*)(DWORD)c;
+    char* heroEntity = (char*)c;
     int targetIdx = (int)MovementSkillTarget;  // MovementSkillTarget
     intptr_t entityBase = DAT_07abf5d0;    // CharactersClient array base
 
@@ -95,11 +95,11 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
 
     // Compute facing angle toward target
     // CreateAngle(heroX, heroY, targetX, targetY)
-    float heroX = *(float*)((char*)(DWORD)o + 0x10);
-    float heroY = *(float*)((char*)(DWORD)o + 0x14);
+    float heroX = *(float*)((char*)o + 0x10);
+    float heroY = *(float*)((char*)o + 0x14);
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
     float angle = ((CreateAngleFn)&CreateAngle)(heroX, heroY, targetPosX, targetPosY);
-    *(float*)((char*)(DWORD)o + 36) = angle;
+    *(float*)((char*)o + 36) = angle;
 
     // ── Switch on skill ID ──
     switch (skillId) {
@@ -346,8 +346,8 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
     // c = CHARACTER* (hero entity), pItem = CHARACTER_ATTRIBUTE* (char attributes)
     // Cast to usable pointers
-    char* hero    = (char*)(DWORD)c;      // CHARACTER* — entity struct
-    char* charAttr = (char*)(DWORD)pItem;  // CHARACTER_ATTRIBUTE* — skill/stat struct
+    char* hero    = (char*)c;      // CHARACTER* — entity struct
+    char* charAttr = (char*)pItem;  // CHARACTER_ATTRIBUTE* — skill/stat struct
 
     if (hero == nullptr || charAttr == nullptr) return false;
 

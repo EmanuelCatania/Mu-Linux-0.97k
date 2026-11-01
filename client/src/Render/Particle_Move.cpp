@@ -48,7 +48,7 @@
 #define P_LG(o)     (*(float*)(P_BASE + (o) + 0x2C))
 #define P_LB(o)     (*(float*)(P_BASE + (o) + 0x30))
 #define P_LIFE(o)   (*(int*)(P_BASE + (o) + 0x38))
-#define P_ENT(o)    (*(int*)(P_BASE + (o) + 0x3C))
+#define P_ENT(o)    (g_ParticleOwner[(o) / 0x70])
 #define P_ROT(o)    (*(float*)(P_BASE + (o) + 0x40))
 #define P_FRAME(o)  (*(int*)(P_BASE + (o) + 0x44))
 #define P_GRAV(o)   (*(float*)(P_BASE + (o) + 0x48))
@@ -349,7 +349,7 @@ void __stdcall MoveParticles(void)
                 }
 
                 if (iVar5 == 0) {
-                    unsigned char animState = *(unsigned char*)(P_ENT(iVar9) + 0x105);
+                    unsigned char animState = *(unsigned char*)(P_ENT(iVar9) + EntityOffset(0x105));
                     if ((animState > 0xc && animState < 0x22) || (animState > 0x37 && animState < 0x3d)) {
                         P_SUB(iVar9) = 1;
                         if ((int)lifeF > 0x14) {
@@ -399,7 +399,7 @@ void __stdcall MoveParticles(void)
                     P_ROT(iVar9) += (float)(int)uVar7 + _DAT_0055256c;
                 } else {
                     // Non-sub6: check entity death flag
-                    if (*(char*)(P_ENT(iVar9) + 0x160) == '\x01') {
+                    if (*(char*)(P_ENT(iVar9) + EntityOffset(0x160)) == '\x01') {
                         P_LIFE(iVar9) = 0x32;
                     }
                     if (P_LIFE(iVar9) < 1) {
@@ -727,7 +727,7 @@ void __stdcall MoveParticles(void)
                     case 2:
                         if (P_LIFE(iVar9) < 1) P_ACTIVE(iVar9) = '\0';
                         if (P_LIFE(iVar9) > 5 &&
-                            *reinterpret_cast<const char*>(static_cast<std::uintptr_t>(static_cast<std::uint32_t>(P_ENT(iVar9)))) == '\0') {
+                            *reinterpret_cast<const char*>(P_ENT(iVar9)) == '\0') {
                             // El owner conserva su campo de 32 bits; no depende de la base del pool.
                             P_LIFE(iVar9) = 5;
                         }
@@ -859,7 +859,7 @@ void __stdcall MoveParticles(void)
                         if (entPtr != 0) {
                             float localP[3] = { 0.0f, 0.0f, 0.0f };
                             void* mdl = (void*)((char*)DAT_05828d58 + *(short*)(entPtr + 2) * BMD_STRIDE);
-                            int boneTab = *(intptr_t*)&AsObject(entPtr)->BoneMatrices;
+                            intptr_t boneTab = *(intptr_t*)&AsObject(entPtr)->BoneMatrices;
                             long long lBone = (long long)(double)P_ROT(iVar9); // __ftol analog
                             // Guard del port (IDA no lo tiene): sin tabla de huesos
                             // el deref cae fuera de todo lo mapeado, y un indice
@@ -868,7 +868,7 @@ void __stdcall MoveParticles(void)
                             if (boneTab != 0 && lBone >= 0 && (int)lBone < nBones) {
                                 // BMD__TransformPosition(this, BoneMatrix, Pos, WorldPos, Translate)
                                 BMD_TransformPosition(mdl,
-                                    (float*)((int)lBone * 0x30 + boneTab),
+                                    (float*)((intptr_t)lBone * 0x30 + boneTab),
                                     localP, &P_POSX(iVar9), 0);
                                 P_POSX(iVar9) += *(float*)(entPtr + 0x10);
                                 P_POSY(iVar9) += *(float*)(entPtr + 0x14);

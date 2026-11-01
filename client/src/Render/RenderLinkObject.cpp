@@ -99,7 +99,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
     float local_1c8;         // boss-head BoneHead flag
 
-    int   local_22c;         // cached model pointer = DAT_05828d58 + param_6* BMD_STRIDE
+    intptr_t local_22c;         // cached model pointer = DAT_05828d58 + param_6* BMD_STRIDE
     intptr_t   iVar7;             // model pointer (same as local_22c for most of fn)
 
     // ── 1. look up model, copy entity fields ──────────────────────────────────
@@ -574,8 +574,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         if (cond)
         {
             // Override PART animation frames: PriorAnimFrame = 2.0, AnimFrame = 3.2
-            *(float*)((int)param_5 + 0x0c) = 2.0f;   // PriorAnimationFrame
-            *(float*)((int)param_5 + 0x08) = 3.2f;   // AnimationFrame
+            *(float*)((intptr_t)param_5 + 0x0c) = 2.0f;   // PriorAnimationFrame
+            *(float*)((intptr_t)param_5 + 0x08) = 3.2f;   // AnimationFrame
         }
     }
 
@@ -585,7 +585,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     if (param_6 == 790 && (AsCharacter(param_4)->Wing.Type > 0x315) && (AsCharacter(param_4)->Wing.Type < 0x317)
         && (*(char *)&AsCharacter(param_4)->SafeZone != '\0'))
     {
-        *(unsigned char*)((int)iVar7 + 0xa0) = 1;
+        *(unsigned char*)((intptr_t)iVar7 + 0xa0) = 1;
     }
 
     // ── 7. Animation tick (BMD_AnimTick) ─────────────────────────────────────
@@ -595,10 +595,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // BMD__PlayAnimation = BMD_AnimTick: advance animation frame
         // Args: (model, AnimFrame*, PriorAnimFrame*, PriorAction*, PlaySpeed, Position, Angle)
         BMD__PlayAnimation((void*)iVar7,
-                     (float*)((int)param_5 + 0x08),  // AnimationFrame
-                     (float*)((int)param_5 + 0x0c),  // PriorAnimationFrame
-                     (unsigned char*)((int)param_5 + 0x06),  // PriorAction
-                     *(float*)((int)param_5 + 0x10)); // PlaySpeed
+                     (float*)((intptr_t)param_5 + 0x08),  // AnimationFrame
+                     (float*)((intptr_t)param_5 + 0x0c),  // PriorAnimationFrame
+                     (unsigned char*)((intptr_t)param_5 + 0x06),  // PriorAction
+                     *(float*)((intptr_t)param_5 + 0x10)); // PlaySpeed
     }
 
     // ── 8. BMD_Animation (bone interpolation) ────────────────────────────────
@@ -606,9 +606,9 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     //               PriorAction, Angle, HeadAngle, Parent=1, Translate=1)
     void* pModel = (void*)iVar7;
     BMD_Animation(pModel, reinterpret_cast<float*>(&DAT_06970a9c),
-                 *(float*)((int)param_5 + 0x08),        // AnimationFrame
-                 *(unsigned int*)((int)param_5 + 0x0c), // PriorAnimationFrame (as uint)
-                 *(unsigned char*)((int)param_5 + 0x06), // PriorAction
+                 *(float*)((intptr_t)param_5 + 0x08),        // AnimationFrame
+                 *(unsigned int*)((intptr_t)param_5 + 0x0c), // PriorAnimationFrame (as uint)
+                 *(unsigned char*)((intptr_t)param_5 + 0x06), // PriorAction
                  (unsigned int*)afStack_1dc,             // Angle (reinterpreted)
                  afStack_1dc, '\x01', '\x01');
 
