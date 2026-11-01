@@ -128,7 +128,7 @@ static void Terrain_ProcessObjects(bool simulation)
                 entity[0x160] = (char)vis;
             }
             iVar += CHARACTER_STRIDE;
-        } while (iVar < 0x59740);
+        } while (iVar < 400 * CHARACTER_STRIDE);
     }
 }
 

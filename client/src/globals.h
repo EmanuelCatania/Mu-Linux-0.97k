@@ -454,7 +454,7 @@ extern int     DAT_055c9e58[100];
 #define RandomTable  DAT_055c9e58
 extern BYTE*   DAT_055c9ff0;   // objeto del historial de chat; layout pendiente de B2
 extern BYTE*   DAT_055c9ff4;   // objeto de susurros; layout pendiente de B2
-extern DWORD   DAT_055c9ff8;
+extern uintptr_t DAT_055c9ff8;
 // DAT_055ca004 = g_hDC — vive en CWindow (gWindow.GetHdc()).
 extern DWORD   DAT_055ca008;
 extern DWORD   DAT_055ca018;

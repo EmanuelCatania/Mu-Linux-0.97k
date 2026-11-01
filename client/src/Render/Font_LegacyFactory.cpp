@@ -64,12 +64,12 @@ void __cdecl Font_CreateRenderer(intptr_t self, int param_1, int param_2)
             pObj = (void*)mem;
         }
     }
-    *(void**)(self + 4) = pObj;
+    *(void**)(self + 0x10) = pObj;
     *(int*)(self + 8) = param_1;
     // Call vtable method 0: (*(code**)*pObj)(param_2)
-    if (pObj) {
+    if (pObj && sizeof(void*) == 4) {
         typedef void (__cdecl *VtblFn)(int);
-        VtblFn fn = *(VtblFn*)(*(DWORD*)pObj);
+        VtblFn fn = *(VtblFn*)(uintptr_t)*(DWORD*)pObj;  // el descriptor del binario queda vacio
         if (fn) fn(param_2);
     }
 }

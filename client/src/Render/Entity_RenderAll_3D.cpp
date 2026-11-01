@@ -133,6 +133,6 @@ void Entity_RenderAll_3D(void)
 
         iVar3 += CHARACTER_STRIDE;
         iVar2++;
-    } while (iVar3 < 0x59740);   // 0x59740 = 400 entities × 0x394
+    } while (iVar3 < 400 * CHARACTER_STRIDE);   // 0x59740 = 400 entities × 0x394
     ObjectPose_EndBatch();
 }

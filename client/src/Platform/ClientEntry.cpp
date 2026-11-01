@@ -612,9 +612,9 @@ int main(int, char**)
     memset(DAT_07cf1ff0, 0, 0x2000 * 4);
 
     // Array de entidades — CRÍTICO, todo lo accede
-    DAT_055c9e48 = reinterpret_cast<std::uintptr_t>(malloc(0x764d4));
+    DAT_055c9e48 = reinterpret_cast<std::uintptr_t>(malloc(529 * CHARACTER_STRIDE));
     DAT_07abf5d0 = DAT_055c9e48 + (rand() % 0x80) * CHARACTER_STRIDE;
-    memset((void*)DAT_07abf5d0, 0, 0x166b5 * 4);
+    memset((void*)DAT_07abf5d0, 0, 401 * CHARACTER_STRIDE);
 
     // CharacterMachine / HashTable
     {
@@ -665,7 +665,7 @@ int main(int, char**)
     // scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/
     // sub_482E40) toman el 0 como un tipo de arma válido y matchean celdas vacías.
     HUD_InitInventoryPools();
-    DAT_055c9ff8 = (DWORD)malloc(0xc);   memset((void*)DAT_055c9ff8, 0, 0xc);
+    DAT_055c9ff8 = (uintptr_t)calloc(1, 0x18);
 
     // Fallback de la tabla de modelos: Model_LoadPlayerAndItemMeshes
     // (IDA: OpenPlayers) sólo corre

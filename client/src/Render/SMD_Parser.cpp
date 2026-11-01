@@ -282,7 +282,7 @@ void __cdecl ClearCharacters(int param_1) {
     gChaosMixRates.Reset();
     GoldenArcher_ResetCharacter();
     char* butterflesEnd = DAT_083a1218 + 0x1158;
-    for (int i = 0; i < 0x59740; i += CHARACTER_STRIDE) {
+    for (int i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
         // El slot puede reutilizarse antes de que MoveJoint observe Live=0.
         // Cancela el Mana Shield del ocupante anterior, incluso si ya fue borrado.

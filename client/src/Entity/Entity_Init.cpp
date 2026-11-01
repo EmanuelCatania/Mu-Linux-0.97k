@@ -69,7 +69,7 @@ void __cdecl Monster_SaveSetBase(LPCSTR path)
   // DESVIACION: si falla la apertura, no escribir mediante un FILE nulo.
   if (!file) return;
   fprintf(file, "2\n");
-  for (int offset = 0; offset < 0x59740; offset += CHARACTER_STRIDE) {
+  for (int offset = 0; offset < 400 * CHARACTER_STRIDE; offset += CHARACTER_STRIDE) {
     const unsigned char* entity = (const unsigned char*)(uintptr_t)DAT_07abf5d0 + offset;
     if (entity[0] && entity[0x84] == 32) {
       const unsigned char x = (unsigned char)(long long)(*(const float*)(entity + 0x10) * 0.0099999998);

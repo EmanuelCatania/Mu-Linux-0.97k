@@ -66,6 +66,16 @@
       },
       "architecture": "Win32",
       "toolset": "v143"
+    },
+    {
+      "name": "windows-sdl3-x64-release",
+      "binaryDir": "${sourceDir}/build/windows-sdl3-x64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MU_PLATFORM_BACKEND": "SDL3"
+      },
+      "architecture": "x64",
+      "toolset": "v143"
     }
   ],
   "buildPresets": [
@@ -97,6 +107,11 @@
     {
       "name": "windows-sdl3-x86-release",
       "configurePreset": "windows-sdl3-x86-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-sdl3-x64-release",
+      "configurePreset": "windows-sdl3-x64-release",
       "configuration": "Release"
     }
   ]

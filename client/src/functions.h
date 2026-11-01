@@ -299,7 +299,7 @@ void  __cdecl Entity_RenderAll_3D(void); // IDA: Entity_RenderAll_3D (0x0045AB00
 void  __cdecl BMD_SetupRenderByType(void *model, uintptr_t entity, int type, float alpha, uint draw_flags); // Entity_DrawSetupBase — implemented in Render/BMD_SetupRender.cpp
 void* __cdecl RenderPartObjectBodyColor(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // IDA: RenderPartObjectBodyColor (0x00504960)
 void* __cdecl Entity_SetModelColorAlt(void *model, uintptr_t entity, int entity_type, float scale, int flags, float alpha, int rgba); // Model_RenderSkeleton2
-void  __cdecl RenderLinkObject(float ox, float oy, float oz, int entity, int weapon_slot_ptr, int anim_id, char level, unsigned int option1, char link, char translate, unsigned int render_type); // IDA: RenderLinkObject (0x00455430)
+void  __cdecl RenderLinkObject(float ox, float oy, float oz, intptr_t entity, intptr_t weapon_slot_ptr, int anim_id, char level, unsigned int option1, char link, char translate, unsigned int render_type); // IDA: RenderLinkObject (0x00455430)
 void  __cdecl DeleteCloth(CHARACTER* character, OBJECT* object, PART_t* part); // IDA 0x00449840
 bool  __cdecl CheckFullSet(uintptr_t entity); // IDA: CheckFullSet (0x00451B20)
 extern int EquipmentLevelSet;                                         // 0=no glow, 9-11=lightning tier
@@ -367,7 +367,7 @@ void  __cdecl CreateMagicShiny(int, int, int, int);   // IDA: CreateMagicShiny (
 void  __cdecl RenderPlane(int char_class, float *pos, float *rot, float scale); // Player_DrawInstance
 void  __cdecl Effect_TickFade(void); // IDA: MovePlanes
 void  __cdecl ItemDrop_SetupRenderRef(BYTE* particle_slot);                      // Particle_InitDir — sets dir vector from entity pos delta
-int   __cdecl Particle_Spawn(int type, float *bone_mat, float *pos, float *size, int flag, float alpha, int mode); // IDA: FUN_00475220
+int   __cdecl Particle_Spawn(int type, float *bone_mat, float *pos, float *size, int flag, float alpha, intptr_t mode); // IDA: FUN_00475220
 
 // ── Char list / spawn ─────────────────────────────────────────────────────────
 void  __cdecl RenderParticles(void);   // IDA: RenderParticles (0x00478C00)
@@ -528,7 +528,7 @@ void  __cdecl Entity_Render(void);                                   // Entity_R
 void  __cdecl RenderPartObjectEffect(intptr_t, int, float *, float, unsigned int, unsigned char, unsigned int, unsigned int); // IDA: RenderPartObjectEffect (0x00504B50)
 void  __cdecl Entity_RenderSlotWith(void *, void *, int, char, int);
 // Entity_DrawAt(entity_ptr, class, slot, angle_ptr, rot, state_flags, byte, a,b,c, d, mode)
-void  __cdecl RenderPartObject(int, int, const PART_t*, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int); // IDA: RenderPartObject (0x00505A10)
+void  __cdecl RenderPartObject(intptr_t, int, const PART_t*, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int); // IDA: RenderPartObject (0x00505A10)
 void  __cdecl DivineSkirt_Apply(const OBJECT* entity, int modelType, const PART_t* part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
 void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // SetMonsterSound — writes model animation slots
 // ── Map / terrain loaders (called from World_Load / Map_LoadResources) ─────────
@@ -1224,7 +1224,7 @@ void  __cdecl Effect_SpawnBombRing(float *param_1); // IDA: FUN_00466300
 // Puente de compatibilidad (nombre de IDA) sobre Effect_SpawnBombRing; lo usa
 // Combat/Combat_AttackEffect.cpp.
 void  __cdecl FUN_00466300(float *param_1); // IDA: FUN_00466300
-void  __cdecl ItemDrop_RenderGroundWeapon(int param_1); // IDA: FUN_0046b980
+void  __cdecl ItemDrop_RenderGroundWeapon(intptr_t param_1); // IDA: FUN_0046b980
 // Puente de compatibilidad (nombre de IDA) sobre ItemDrop_RenderGroundWeapon;
 // sin usos en el código compilado (lo usaban ports de IDA ya retirados).
 void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980

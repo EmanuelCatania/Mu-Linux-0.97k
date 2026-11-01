@@ -240,7 +240,7 @@ void Entity_RenderAll_3D(void)
     }
     iVar3 = iVar3 + CHARACTER_STRIDE;
     iVar2 = iVar2 + 1;
-  } while (iVar3 < 0x59740);
+  } while (iVar3 < 400 * CHARACTER_STRIDE);
   return;
 }
 #endif  // duplicate Entity_RenderAll_3D disabled — use Entity_RenderAll_3D.cpp

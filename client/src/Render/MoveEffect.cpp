@@ -1077,7 +1077,7 @@ LAB_00469772:
                 SetAction(AsObject(pcVar11),uVar8);
               }
               iVar9 = iVar9 + CHARACTER_STRIDE;
-            } while (iVar9 < 0x59740);
+            } while (iVar9 < 400 * CHARACTER_STRIDE);
             fVar17 = (float10)local_344;
             goto LAB_004698ca;
           }

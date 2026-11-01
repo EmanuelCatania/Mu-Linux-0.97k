@@ -375,7 +375,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     static DWORD s_lastFilt[5] = {0,0,0,0,0};
     bool diagFilt = (SceneFlag == 4);
 
-    for (int ofs = 0; ofs < 0x59740; ofs += CHARACTER_STRIDE, ent_idx++) {
+    for (int ofs = 0; ofs < 400 * CHARACTER_STRIDE; ofs += CHARACTER_STRIDE, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
         if (diagFilt && ent_idx < 5) {
             DWORD now = Platform::GetTimer().Ticks();

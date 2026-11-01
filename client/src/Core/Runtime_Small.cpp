@@ -462,7 +462,7 @@ void __fastcall CUIRenderText_SetFont(intptr_t ecx, int /*edx*/, int param_1) {
     if (param_1 != 0) {
         // Call release method: (*(this+4))->vtable[2](param_1)
         typedef void (__cdecl *ReleaseFunc)(int);
-        int *pObj = *(int **)(ecx + 4);
+        int *pObj = *(int **)(ecx + 0x10);
         ReleaseFunc fn = (ReleaseFunc)(*(int *)(*pObj + 8));
         fn(param_1);
     }
