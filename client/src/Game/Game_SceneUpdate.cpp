@@ -110,10 +110,10 @@ static void LoginScene_ClearPreviewEquipmentMeta(unsigned char* c)
     };
 
     for (int i = 0; i < 7; ++i) {
-        c[bodyMetaOff[i] + 0] = 0;
-        c[bodyMetaOff[i] + 1] = 0;
-        c[bodyMetaOff[i] + 2] = 0;
-        c[bodyMetaOff[i] + 3] = 0;
+        c[EntityOffset(bodyMetaOff[i]) + 0] = 0;
+        c[EntityOffset(bodyMetaOff[i]) + 1] = 0;
+        c[EntityOffset(bodyMetaOff[i]) + 2] = 0;
+        c[EntityOffset(bodyMetaOff[i]) + 3] = 0;
     }
 
     AsCharacter(c)->Weapon[1].Level = 0;
@@ -185,9 +185,9 @@ int Game_SceneUpdate(void)
 
         // Clear 8 entity slots at base entity array + 0x168 (stride 0x394)
         {
-            int* p = (int*)(DAT_07abf5d0 + 0x168);
-            for (int i = 7; i >= 0; i--, p += 0xe5)
-                *p = 0;
+            char* p = (char*)&AsCharacter(DAT_07abf5d0)->Object.Alpha;
+            for (int i = 7; i >= 0; i--, p += CHARACTER_STRIDE)
+                *(int*)p = 0;
         }
 
         // Spawn background world objects.
@@ -390,11 +390,11 @@ int Game_SceneUpdate(void)
     // the login scene nudges the three background characters into alternate
     // idle/gesture actions with a 1/128 chance each frame.
     {
-        std::uintptr_t e3 = DAT_07abf5d0 + 0xabc;  // entity 3
+        std::uintptr_t e3 = DAT_07abf5d0 + CHARACTER_STRIDE * 3;  // entity 3
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e3), 113);
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e3), 99);
 
-        std::uintptr_t e2 = DAT_07abf5d0 + 0x728;  // entity 2
+        std::uintptr_t e2 = DAT_07abf5d0 + CHARACTER_STRIDE * 2;  // entity 2
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 115);
         if ((_rand() & 0x7f) == 0) SetAction(AsObject(e2), 111);
 

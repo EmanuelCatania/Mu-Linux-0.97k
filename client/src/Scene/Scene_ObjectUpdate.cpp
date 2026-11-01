@@ -889,8 +889,8 @@ void __stdcall MoveBugs(void) {
         {
         float* v28 = (float*)(e + 0x10);
         *(BYTE*)(v40 + 160) = AsObject(e)->CurrentAction;          // model.CurrentAction
-        BMD__PlayAnimation((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
-                     (void*)(e + 0x106), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
+        BMD__PlayAnimation((void*)v40, (float*)(e + EntityOffset(0x108)), (float*)(e + 0x10C),
+                     (void*)(e + EntityOffset(0x106)), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
 
         short v29 = AsObject(e)->Type;
         // 0.97.20: pet custom (Data/Custom/Pets del server).
