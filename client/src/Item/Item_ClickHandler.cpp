@@ -119,7 +119,7 @@ extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
 // ── Declaraciones adelantadas de los helpers que usamos ──────────────────────
 void __cdecl ShowCheckBox(int mode, int x, int y);   // definida más abajo
 void __cdecl CreateOkMessageBox(char* strMsg);
-void __cdecl DeleteBug(int Owner);
+void __cdecl DeleteBug(intptr_t Owner);
 
 // PressKey/sub_4D6020: los provee Input.cpp — no siempre están expuestos
 // por un header. Los declaramos acá inline. Los dos tienen que ser `__cdecl` sin
@@ -566,7 +566,7 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
                 AsCharacter(heroPtr)->Weapon[1].Option1 = 0;
                 break;
             case 8:  // Pet (Helper)
-                DeleteBug((int)(uintptr_t)heroPtr);
+                DeleteBug((intptr_t)heroPtr);
                 *(WORD *)&AsCharacter(heroPtr)->Helper.Type = 0xFFFF;
                 AsCharacter(heroPtr)->Helper.Option1 = 0;
                 break;

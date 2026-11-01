@@ -102,7 +102,7 @@ void __cdecl GuildWar_UpdateEntityRelation(uintptr_t entityAddress, int, int, in
     if (!entity || !AsCharacter(entity)->Object.Live || !hero) return;
 
     AsCharacter(entity)->GuildTeam = 0;
-    const short heroGuild = *(short*)(hero + 474);
+    const short heroGuild = *(short*)(hero + EntityOffset(474));
     if (heroGuild != -1 && AsCharacter(entity)->GuildMarkIndex == heroGuild)
         AsCharacter(entity)->GuildTeam = 1;
 
@@ -221,13 +221,13 @@ void NetRecv_53(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         UIChatLogWindow_AddText(nullptr, GlobalText[textIndex[result]], 2);
     if (result == 1 || result == 4) {
         if (result == 4 && Hero) {
-            const short row = *(short*)((BYTE*)Hero + 474);
+            const short row = *(short*)((BYTE*)Hero + EntityOffset(474));
             if (row >= 0 && row < kGuildMarkRecordCount) {
                 s_GuildRecordKey[row] = -1;
                 GuildMark_Record(row)[0] = 0;
                 s_GuildMarkName[row][0] = 0;
             }
-            *(short*)((BYTE*)Hero + 474) = -1;
+            *(short*)((BYTE*)Hero + EntityOffset(474)) = -1;
         }
         g_nGuildMemberCount = -1;
         GuildOpened = 0;
@@ -425,7 +425,7 @@ void NetRecv_5C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
     if (base && entitySlot >= 0 && entitySlot < 400) {
         BYTE* entity = base + entitySlot * CHARACTER_STRIDE;
-        *(short*)(entity + 474) = (short)row;
+        *(short*)(entity + EntityOffset(474)) = (short)row;
         // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
         GuildWar_UpdateEntityRelation(reinterpret_cast<uintptr_t>(entity), 0, 0, 0);
         GuildWar_RefreshEntityRelations();
@@ -528,7 +528,7 @@ void NetRecv_5B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // Mismo guild que el heroe.  IDA no excluye al heroe: el
             // propio personaje tambien queda marcado con 1.
             if (DAT_07abf5d8) {
-                const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
+                const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + EntityOffset(474));
                 if (heroGuild != -1 && AsCharacter(slot)->GuildMarkIndex == heroGuild)
                     AsCharacter(slot)->GuildTeam = 1;
             }

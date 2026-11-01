@@ -114,7 +114,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
 
     if (Msg[5] == 0xC9 || Msg[5] == 0xCA || Msg[5] == 0xCB) {
-        *(BYTE*)(c + 444) = klass;
+        *(BYTE*)(c + EntityOffset(444)) = klass;
         if (c == hero && attr) {
             *(BYTE*)(attr + 11) = klass;
             // Sólo el sub-tipo 0xCA suma puntos, y usa EL MISMO

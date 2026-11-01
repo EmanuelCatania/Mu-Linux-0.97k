@@ -1350,7 +1350,7 @@ void __cdecl InitGuildWar(void) {
     int iVar4 = 400;
     do {
         if (puVar3[-0x2e9] != '\0') {
-            short sVar1 = *(short*)(pPlayer + 0x1da);
+            short sVar1 = *(short*)(pPlayer + EntityOffset(0x1da));
             *puVar3 = 0;
             if ((sVar1 != -1) && (*(short*)((char*)puVar3 - 0x10f) == sVar1))
                 *puVar3 = 1;

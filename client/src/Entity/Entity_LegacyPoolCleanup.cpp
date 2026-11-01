@@ -70,14 +70,14 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     Party_RefreshViewportLinks();
 }
 
-// FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, DWORD Owner, int iSubType)
+// FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, intptr_t Owner, int iSubType)
 // (69 bytes) — walks Effects pool DAT_07b11670 (200 × 0x1BC), zeroes any slot
 // whose Type/Owner/SubType match. Active flag at slot+0; Type at slot+2 (short);
 // SubType at slot+4 (dword); Owner at slot+248 (= dword[62]).
 //
 // Slot anchor: original IDA points `o` at slot+4 (so `o[-4]` = active flag,
 // `o[-2]` (short) = Type, o[0] = SubType, o[62] = Owner). Stride is 111 dwords.
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType)
 {
     DWORD* o = (DWORD*)((char*)&DAT_07b11670[0] + 4);
     // El pool de efectos tiene 200 slots (IDA acota con `&unk_7B27154`:
@@ -87,7 +87,7 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
         if (*((BYTE*)o - 4) != 0 &&
             *((short*)o - 1) == (short)Type &&
             (iSubType == -1 || (int)*o == iSubType) &&
-            o[62] == Owner)
+            (intptr_t)AsObject((char*)o - 4)->Owner == Owner)
         {
             *((BYTE*)o - 4) = 0;
         }

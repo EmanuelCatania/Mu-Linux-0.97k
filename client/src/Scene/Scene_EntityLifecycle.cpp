@@ -237,11 +237,11 @@ lbl_skip_init:
 // clear active flag (slot[0]=0) on every slot whose owner field (slot+0xFC = DWORD index 63)
 // matches `Owner`. Each slot occupies 111 DWORDs (= 0x1BC bytes); we step in DWORD units.
 // Ported verbatim from IDA reference 0045C8C0_ChangeCharacterExt's helper.
-void __cdecl DeleteBug(DWORD Owner) {
+void __cdecl DeleteBug(intptr_t Owner) {
     DWORD* Butterflies = (DWORD*)DAT_083a1218;
     for (int slot = 0; slot < 10; ++slot) {
         if (*(BYTE*)Butterflies) {
-            if (Butterflies[63] == Owner) {
+            if ((intptr_t)AsObject(Butterflies)->Owner == Owner) {
                 *(BYTE*)Butterflies = 0;
             }
         }

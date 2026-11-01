@@ -286,7 +286,7 @@ void __cdecl ClearCharacters(int param_1) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
         // El slot puede reutilizarse antes de que MoveJoint observe Live=0.
         // Cancela el Mana Shield del ocupante anterior, incluso si ya fue borrado.
-        if (param_1 == -1 || *(short*)(puVar1 + 0x1dc) != (short)param_1) {
+        if (param_1 == -1 || *(short*)(puVar1 + EntityOffset(0x1dc)) != (short)param_1) {
             JOINT* joints = AsJoint(DAT_07b27150);
             for (size_t jointIndex = 0; jointIndex < sizeof(DAT_07b27150) / sizeof(JOINT); ++jointIndex) {
                 JOINT& joint = joints[jointIndex];
@@ -295,7 +295,7 @@ void __cdecl ClearCharacters(int param_1) {
                     joint.Live = 0;
             }
         }
-        if (*puVar1 != '\0' && *(short*)(puVar1 + 0x1dc) != (short)param_1) {
+        if (*puVar1 != '\0' && *(short*)(puVar1 + EntityOffset(0x1dc)) != (short)param_1) {
             *puVar1 = 0;
             char* pcVar2 = DAT_083a1218;
             do {

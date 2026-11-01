@@ -1711,7 +1711,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     *(float *)(ent + 0x18) = outPos[2];
 #endif
     *(int   *)(ent + 0xdc) = 0;
-    *(unsigned char *)(ent + 0x1bc) = 2;
+    *(unsigned char *)(ent + EntityOffset(0x1bc)) = 2;
 
 
     float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -1907,7 +1907,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     *(float*)(object + 0x18) = position[2];
     *(BYTE*)(object + 0x3D) = ExtOption;
     *(int*)(object + 0xDC) = 0;
-    *(BYTE*)(object + 0x1BC) = 2;
+    *(BYTE*)(object + EntityOffset(0x1BC)) = 2;
 
     if (drawType==790) LooseWingVisuals_SubmitPreview(*(OBJECT *)object,renderAngle,headAngle,
         inventoryPose.BodyHeight,ItemLevel,Select==1);

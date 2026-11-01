@@ -427,7 +427,7 @@ int RenderEquipedHelperLife_(bool a2)
     int retY = 15;                       // `mov esi, 0Fh` del prologo
 
     const BYTE* hero = (const BYTE*)DAT_07abf5d8;
-    const WORD helperType = hero ? *(const WORD*)(hero + 0x2B8) : 0;
+    const WORD helperType = hero ? *(const WORD*)(hero + EntityOffset(0x2B8)) : 0;
 
     DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;

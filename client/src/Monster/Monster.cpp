@@ -582,8 +582,8 @@ void InitializeMonsterJoints(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
     // El owner del joint aún es de 32 bits; su layout queda para B2.
-    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)(uintptr_t)c, 30.0f, -1, 0);
-    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)(uintptr_t)c, 30.0f, -1, 0);
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (intptr_t)c, 30.0f, -1, 0);
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (intptr_t)c, 30.0f, -1, 0);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 8.

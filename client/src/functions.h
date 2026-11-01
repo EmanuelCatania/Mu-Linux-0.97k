@@ -513,7 +513,7 @@ float* __cdecl Entity_SpawnEffects(intptr_t entity); // IDA: Entity_SpawnEffects
 void  __cdecl Terrain_Render(void);              // Terrain_Render
 void *__cdecl CreateObject(int type, float *world_pos, float *target_pos, float extra); // IDA: CreateObject (0x004FF5A0)
 void *__cdecl Entity_InitRenderState(void *entity);                           // Entity_InitRenderState
-void  __cdecl DeleteBug(DWORD Owner); // IDA: DeleteBug (0x004FFFA0)
+void  __cdecl DeleteBug(intptr_t Owner); // IDA: DeleteBug (0x004FFFA0)
 void  __cdecl CreateBug(int, void *, void *, int); // IDA: CreateBug (0x004FFFD0)
 uint  __cdecl RenderBugs(void);  // returns entity count
 void  __cdecl DeleteBoids(int, int, int, int); // IDA: DeleteBoids (0x00500A80)

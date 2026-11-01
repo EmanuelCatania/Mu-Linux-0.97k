@@ -684,7 +684,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
     InputNumber = 0;
     GuildMark_InitializePalette(true);
     if (Hero)
-        *(short*)((BYTE*)Hero + 474) = 999;
+        *(short*)((BYTE*)Hero + EntityOffset(474)) = 999;
 }
 
 // El dialogo previo "¿crear guild?" — modo 0 del mismo panel.
@@ -718,7 +718,7 @@ extern "C" void GuildCreator_CloseFromResult(void)
     GuildCreatorOpened = 0;
     g_iKeyPadEnable = 0;
     if (Hero)
-        *(short*)((BYTE*)Hero + 474) = -1;
+        *(short*)((BYTE*)Hero + EntityOffset(474)) = -1;
 }
 
 extern "C" void SetGuildNoticeText(const char* text)
@@ -794,7 +794,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
 
     m_dwBackColor = 0xFF141414u;
-    SetPlayerColor(*(BYTE*)((char*)Hero + 0x2EA));
+    SetPlayerColor(*(BYTE*)((char*)Hero + EntityOffset(0x2EA)));
     RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Zone label: "ServerName - Channel" via GlobalText[460]/[461].
@@ -1093,13 +1093,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── DW (class 0) / MG (class 3): magic skill damage line ────────────────
-    int classFlag = *(BYTE*)((char*)Hero + 444) & 7;
+    int classFlag = *(BYTE*)((char*)Hero + EntityOffset(444)) & 7;
     int yMagic = iPosY + 335;
     if (classFlag == 0 || classFlag == 3) {
         // IDA RenderCharacterInfoWindow (0x4ECC60) L1038-1091.  El pWeaponRight
         // de IDA es CharacterMachine+536, o sea el pWeaponLeft de este archivo.
         int piMin = 0, piMax = 0;
-        BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + 913));
+        BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + EntityOffset(913)));
         GetMagicSkillDamage(static_cast<const BYTE*>(CharacterMachine), skillType, &piMin, &piMax);
         int staffMul = (pWeaponLeft->Level >> 3) & 0xF;
 
@@ -1160,7 +1160,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Hero+474 holds the player's guild-mark index (-1 if no guild).
-    short guildIdx = *(short*)((char*)Hero + 474);
+    short guildIdx = *(short*)((char*)Hero + EntityOffset(474));
     if (guildIdx == -1) {
         sprintf(Text, "%s", GlobalText[180]);
     } else {

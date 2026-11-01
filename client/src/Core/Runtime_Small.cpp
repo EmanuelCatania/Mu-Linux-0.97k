@@ -666,17 +666,6 @@ bool __cdecl getEqualMonster(int addV) {
     return m_iKillMonster <= m_iMaxKillMonster + addV;
 }
 
-// DeleteBug @ 0x004FFFA0 (38 bytes) — disable butterfly objects owned by Owner
-void __cdecl DeleteBug(int Owner) {
-    char *o = (char *)&Butterfles;
-    char *end = (char *)&Butterfles + 0x1158;  // 10 entries × 0x1BC stride
-    do {
-        if ((*(BYTE *)o != 0) && (*(int *)&((OBJECT*)(uintptr_t)(o))->Owner == Owner)) {
-            *(BYTE *)o = 0;
-        }
-        o += OBJECT_STRIDE;  // Butterfles OBJECT stride
-    } while (o < end);
-}
 
 // ── 42-byte ─────────────────────────────────────────────────────────────────
 

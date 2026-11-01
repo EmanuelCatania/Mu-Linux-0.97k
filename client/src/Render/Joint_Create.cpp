@@ -232,7 +232,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           if (AsJoint(pcVar14)->SubType == 0) {
             iVar6 = _rand();
             local_94 = (byte *)(iVar6 % 0x14 + 0x23);
-            AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_94;
+            AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_94;
             iVar6 = _rand();
             pcVar14[0x9b8] = '\x19';
             pcVar14[0x9b9] = '\0';
@@ -344,7 +344,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x9ce] = '\0';
           pcVar14[0x9cf] = '\0';
           local_94 = (byte *)(iVar6 % 500);
-          AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_94;
+          AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_94;
           iVar6 = _rand();
           AsJoint(pcVar14)->Velocity = (float)(iVar6 % 5) + _DAT_00552660;
           break;
@@ -892,7 +892,7 @@ LAB_0046ec45:
     case 1:
       iVar6 = _rand();
       local_94 = (byte *)(iVar6 % 10);
-      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_94 + _DAT_005524fc;
+      AsJoint(pcVar14)->Velocity = (float)(intptr_t)local_94 + _DAT_005524fc;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000007;
       if ((int)uVar9 < 0) {
@@ -986,7 +986,7 @@ LAB_0046ec45:
       AsJoint(pcVar14)->LifeTime = iVar6 % 0x14 + 6;
       iVar6 = _rand();
       local_94 = (byte *)(iVar6 % 10);
-      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_94 + _DAT_00552834;
+      AsJoint(pcVar14)->Velocity = (float)(intptr_t)local_94 + _DAT_00552834;
       iVar6 = _rand();
       fVar24 = (float)(iVar6 % 10) * _DAT_00552a48 + _DAT_005524f4;
       *pfVar3 = fVar24;
@@ -1036,7 +1036,7 @@ LAB_0046ec45:
       pcVar14[0x9ba] = '\0';
       pcVar14[0x9bb] = '\0';
       local_94 = (byte *)(iVar6 % 0x14);
-      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_94 + _DAT_00552878;
+      AsJoint(pcVar14)->Velocity = (float)(intptr_t)local_94 + _DAT_00552878;
       iVar6 = _rand();
       fVar24 = (float)(iVar6 % 10) * _DAT_00552a48 + _DAT_005524f4;
       *pfVar3 = fVar24;
@@ -1250,7 +1250,7 @@ LAB_0046e37e:
       pbVar10 = (byte *)(iVar6 % 0x14 + 6);
       local_98 = pbVar10;
 LAB_0046f415:
-      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)pbVar10;
+      AsJoint(pcVar14)->Velocity = (float)(intptr_t)pbVar10;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000007;
       if ((int)uVar9 < 0) {
@@ -1301,7 +1301,7 @@ LAB_0046f415:
       pcVar14[0xf] = '@';
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 0x14 + 0x10);
-      AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_98;
+      AsJoint(pcVar14)->Velocity = (float)(intptr_t)local_98;
       uVar9 = _rand();
       uVar9 = uVar9 & 0x80000003;
       if ((int)uVar9 < 0) {
@@ -1509,10 +1509,10 @@ LAB_0046f415:
     if (iVar6 != 5) goto switchD_0046dee7_default;
     iVar6 = _rand();
     local_98 = (byte *)(iVar6 % 10 + -5);
-    AsJoint(pcVar14)->Scale = (float)(int)(intptr_t)local_98 + AsJoint(pcVar14)->Scale;
+    AsJoint(pcVar14)->Scale = (float)(intptr_t)local_98 + AsJoint(pcVar14)->Scale;
     iVar6 = _rand();
     local_98 = (byte *)(iVar6 % 0x14 + 6);
-    AsJoint(pcVar14)->Velocity = (float)(int)(intptr_t)local_98;
+    AsJoint(pcVar14)->Velocity = (float)(intptr_t)local_98;
     uVar9 = _rand();
     uVar9 = uVar9 & 0x80000007;
     if ((int)uVar9 < 0) {
@@ -1640,10 +1640,10 @@ switchD_0046f0e4_caseD_4fd:
       AsJoint(pcVar14)->Scale = param_7;
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 0x96);
-      AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98 * _DAT_00552594;
+      AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_98 * _DAT_00552594;
       iVar6 = _rand();
       local_98 = (byte *)(iVar6 % 500 + -0xfa);
-      AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_98;
+      AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_98;
       if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
         pcVar14[0x9b8] = '2';
         pcVar14[0x9b9] = '\0';
@@ -1665,13 +1665,13 @@ LAB_0046f55a:
         AsJoint(pcVar14)->Scale = param_7;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x96);
-        AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98 * _DAT_00552594;
+        AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_98 * _DAT_00552594;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 500 + -0xfa);
-        AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_98;
+        AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_98;
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x32);
-        AsJoint(pcVar14)->Position[2] = (float)(int)(intptr_t)local_98 + AsJoint(pcVar14)->Position[2];
+        AsJoint(pcVar14)->Position[2] = (float)(intptr_t)local_98 + AsJoint(pcVar14)->Position[2];
         if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
           pcVar14[0x9b8] = '2';
           pcVar14[0x9b9] = '\0';
@@ -1687,7 +1687,7 @@ LAB_0046f55a:
         iVar6 = _rand();
         local_98 = (byte *)(iVar6 % 0x14 + 0x23);
         AsJoint(pcVar14)->Scale = param_7;
-        AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98;
+        AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_98;
         iVar6 = _rand();
         *pfVar3 = 1.0;
         pcVar14[0x38] = '\0';
@@ -1743,7 +1743,7 @@ LAB_0046f55a:
           uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
         }
         local_98 = (byte *)(uVar9 + 8);
-        CreateSprite(0x4cf,pfVar1,(float)(int)(intptr_t)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
+        CreateSprite(0x4cf,pfVar1,(float)(intptr_t)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
         ;
         fVar24 = *pfVar2 * _DAT_005526d8;
         *pfVar3 = 1.0;
@@ -1958,10 +1958,10 @@ LAB_0046f55a:
           AsJoint(pcVar14)->Scale = param_7;
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 0x96);
-          AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98 * _DAT_00552594;
+          AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_98 * _DAT_00552594;
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 500 + -0xfa);
-          AsJoint(pcVar14)->Direction[1] = (float)(int)(intptr_t)local_98;
+          AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_98;
           if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
             pcVar14[0x9b8] = '2';
             pcVar14[0x9b9] = '\0';
@@ -2006,7 +2006,7 @@ LAB_0046f55a:
           iVar6 = _rand();
           local_98 = (byte *)(iVar6 % 0x14 + 0x23);
           AsJoint(pcVar14)->Scale = param_7;
-          AsJoint(pcVar14)->Direction[2] = (float)(int)(intptr_t)local_98;
+          AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_98;
           iVar6 = _rand();
           *pfVar3 = 0.5;
           pcVar14[0x38] = '\0';
@@ -2118,8 +2118,8 @@ LAB_0046eb8a:
 LAB_0046eb9c:
   puVar13 = (undefined4 *)0x0;
 LAB_0046eb9e:
-  cVar4 = *(char *)(puVar13 + 0x161);
-  *(byte *)(puVar13 + 0x161) = cVar4 + 1U;
+  cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
+  *(byte *)(puVar13 + EntityOffset(0x161)) = cVar4 + 1U;
   if ((byte)(cVar4 + 1U) < 2) {
     puVar7 = (undefined4*)operator_new(0x584);
     puVar16 = puVar7;
@@ -2264,8 +2264,8 @@ LAB_0046edb0:
 LAB_0046edc2:
   puVar13 = (undefined4 *)0x0;
 LAB_0046edc4:
-  cVar4 = *(char *)(puVar13 + 0x161);
-  *(char *)(puVar13 + 0x161) = cVar4 + -1;
+  cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
+  *(char *)(puVar13 + EntityOffset(0x161)) = cVar4 + -1;
   if ((char)(cVar4 + -1) == '\0') {
     pbVar8 = (byte*)operator_new(0x584);
     pbVar10 = (byte*)(uintptr_t)(int)local_90;
@@ -2373,8 +2373,8 @@ LAB_0046e687:
 LAB_0046e699:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e69b:
-  cVar4 = *(char *)(puVar13 + 0x161);
-  *(byte *)(puVar13 + 0x161) = cVar4 + 1U;
+  cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
+  *(byte *)(puVar13 + EntityOffset(0x161)) = cVar4 + 1U;
   if ((byte)(cVar4 + 1U) < 2) {
     puVar7 = (undefined4*)operator_new(0x584);
     puVar16 = puVar7;
@@ -2529,8 +2529,8 @@ LAB_0046e8ad:
 LAB_0046e8bf:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e8c1:
-  cVar4 = *(char *)(puVar13 + 0x161);
-  *(char *)(puVar13 + 0x161) = cVar4 + -1;
+  cVar4 = *(char *)(puVar13 + EntityOffset(0x161));
+  *(char *)(puVar13 + EntityOffset(0x161)) = cVar4 + -1;
   if ((char)(cVar4 + -1) == '\0') {
     pbVar8 = (byte*)operator_new(0x584);
     pbVar10 = (byte*)(uintptr_t)(int)local_90;

@@ -176,6 +176,16 @@ struct CHARACTER {
 
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
 constexpr int OBJECT_STRIDE = sizeof(OBJECT);  // paso de los pools de OBJECT
+// Traduce un offset x86 de OBJECT/CHARACTER al layout nativo: cada puntero
+// anterior al campo agrega bytes solo en x64.
+constexpr std::size_t EntityOffset(std::size_t x86) {
+    std::size_t pointers = (x86 > 0x0FC) + (x86 > 0x114) + (x86 > 0x184) + (x86 > 0x1B4) + (x86 > 0x1B8);
+    for (std::size_t cloth = 0x1E0 + 0x14; cloth < 0x2E8; cloth += 0x18) pointers += x86 > cloth;
+    return x86 + pointers * (sizeof(void*) - 4);
+}
+static_assert(EntityOffset(0x160) == offsetof(OBJECT, Visible));
+static_assert(EntityOffset(0x2FD) == offsetof(CHARACTER, Dead));
+static_assert(EntityOffset(0x388) == offsetof(CHARACTER, PositionX));
 constexpr int OBJECT_FIELD_SHIFT = (int)sizeof(void*) - 4;   // campos posteriores a Owner
 struct CHARACTER;
 #if UINTPTR_MAX == 0xFFFFFFFFu

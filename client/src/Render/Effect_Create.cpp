@@ -164,7 +164,7 @@ LAB_00460dd8:
   // prototype still carries them as float pointers, so numeric casts corrupt
   // every non-zero subtype/owner (notably all skill effects) instead of
   // preserving the original bit pattern.
-  *(DWORD *)&AsObject(pfVar17)->SubType = (DWORD)(uintptr_t)param_5;
+  *(DWORD *)&AsObject(pfVar17)->SubType = (intptr_t)param_5;
   AsObject(pfVar17)->LightEnable = 1;
   AsObject(pfVar17)->HiddenMesh = -1;
   *(int*)&pfVar17[EffectBlendMeshIndex] = -1;
@@ -294,27 +294,27 @@ LAB_00460dd8:
         AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
         uVar10 = _rand() % 4;
         param_8 = (float *)(uVar10 + 8);
-        AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+        AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        AsObject(pfVar17)->Angle[2] = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Angle[2] = (float)(intptr_t)param_8;
         Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
         Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 5 + 2);
-        AsObject(pfVar17)->Gravity = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Gravity = (float)(intptr_t)param_8;
         if ((AsObject(pfVar17)->Type == debris.BoostedType) && (*(float *)&AsObject(pfVar17)->SubType == 0.0)) {
           *(float *)&AsObject(pfVar17)->SubType = 1.4013e-45;
           iVar9 = _rand();
           param_8 = (float *)(iVar9 % 5);
-          AsObject(pfVar17)->Gravity = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Gravity;
+          AsObject(pfVar17)->Gravity = (float)(intptr_t)param_8 + AsObject(pfVar17)->Gravity;
         }
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        AsObject(pfVar17)->Angle[0] = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Angle[0] = (float)(intptr_t)param_8;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        AsObject(pfVar17)->Angle[1] = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Angle[1] = (float)(intptr_t)param_8;
         iVar9 = _rand();
         AsObject(pfVar17)->Angle[2] = (float)(iVar9 % 0x168);
         return (float *)(iVar9 / 0x168);
@@ -360,10 +360,10 @@ LAB_004649e0:
         AsObject(pfVar17)->Light[2] = 1.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 9 + -4);
-        AsObject(pfVar17)->Direction[0] = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Direction[0] = (float)(intptr_t)param_8;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 9 + -4);
-        AsObject(pfVar17)->Direction[1] = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Direction[1] = (float)(intptr_t)param_8;
         AsObject(pfVar17)->Direction[2] = 26.0;
         *(int*)&pfVar17[EffectLifetimeIndex] = 12;
         pfVar12 = (float *)PlayBuffer(0x44, AsObject(pfVar17),0);
@@ -418,16 +418,16 @@ LAB_004649e0:
         AsObject(pfVar17)->Gravity = -20.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
-        AsObject(pfVar17)->Velocity = (float)(int)(intptr_t)param_8;
+        AsObject(pfVar17)->Velocity = (float)(intptr_t)param_8;
         AsObject(pfVar17)->Light[0] = 0.0;
         AsObject(pfVar17)->Light[1] = 0.0;
         AsObject(pfVar17)->Light[2] = 0.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 200);
-        AsObject(pfVar17)->Position[0] = ((float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[0]) - _DAT_005524f0;
+        AsObject(pfVar17)->Position[0] = ((float)(intptr_t)param_8 + AsObject(pfVar17)->Position[0]) - _DAT_005524f0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 200);
-        AsObject(pfVar17)->Position[1] = ((float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[1]) - _DAT_005524f0;
+        AsObject(pfVar17)->Position[1] = ((float)(intptr_t)param_8 + AsObject(pfVar17)->Position[1]) - _DAT_005524f0;
         AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_005528e8;
         fVar27 = AsObject(pfVar17)->Position[0] + _DAT_005524f0;
         AsObject(pfVar17)->Position[0] = fVar27;
@@ -673,7 +673,7 @@ switchD_00464efe_caseD_4ab:
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x168);
     iVar9 = 3;
-    AsObject(pfVar17)->HeadAngle[2] = (float)(int)(intptr_t)param_8;
+    AsObject(pfVar17)->HeadAngle[2] = (float)(intptr_t)param_8;
     do {
       uVar10 = _rand() % 64;
       param_8 = (float *)(uVar10 - 0x20);
@@ -704,7 +704,7 @@ LAB_00463e3d:
       *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       uVar10 = _rand() % 8;
       param_8 = (float *)(uVar10 + 10);
-      AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+      AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
       uVar10 = _rand() % 32;
     }
     else {
@@ -729,15 +729,15 @@ LAB_00463e3d:
         *(int*)&pfVar17[EffectLifetimeIndex] = 40;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 10 + 0xf);
-        AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+        AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
         uVar10 = _rand();
         param_8 = (float*)(uVar10 % 32);
-        AsObject(pfVar17)->Position[0] = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
+        AsObject(pfVar17)->Position[0] = (float)(intptr_t)param_8 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
         AsObject(pfVar17)->Position[2] = AsObject(pfVar17)->Position[2] + _DAT_00552850;
         AsObject(pfVar17)->Direction[0] = 0.0;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x14);
-        AsObject(pfVar17)->Direction[1] = -((float)(int)(intptr_t)param_8 + _DAT_00552488);
+        AsObject(pfVar17)->Direction[1] = -((float)(intptr_t)param_8 + _DAT_00552488);
         iVar9 = _rand();
         AsObject(pfVar17)->Direction[2] = -((float)(iVar9 % 10) + _DAT_005524fc);
         AsObject(pfVar17)->Angle[0] = 0.0;
@@ -766,7 +766,7 @@ LAB_00463e3d:
       *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       uVar10 = _rand() % 8;
       param_8 = (float *)(uVar10 + 0xf);
-      AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+      AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
       uVar10 = _rand() % 32;
     }
     AsObject(pfVar17)->Position[0] = (float)(int)uVar10 + AsObject(pfVar17)->Position[0] + _DAT_00552980;
@@ -825,7 +825,7 @@ LAB_00463e3d:
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
     *(char *)(pfVar17 + 0x22) = cVar5;
-    *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
+    *(char *)(pfVar12 + EntityOffset(0x160)) = cVar5 + '\x01';
     sVar28 = AsObject(pfVar17)->PKKey;
     bVar6 = *(byte *)(pfVar17 + 0x22);
     fVar27 = 300.0;
@@ -947,10 +947,10 @@ switchD_00461001_caseD_c7:
     AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x20);   // lifetime: DWORD, no float
     uVar10 = _rand() % 4;
     param_8 = (float *)(uVar10 + 8);
-    AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x168);
-    AsObject(pfVar17)->Angle[2] = (float)(int)(intptr_t)param_8;
+    AsObject(pfVar17)->Angle[2] = (float)(intptr_t)param_8;
     Matrix_BuildFromEuler(AsObject(pfVar17)->Angle,local_3c + 3);
     Vector_Rotate(&local_6c,local_3c + 3,AsObject(pfVar17)->Direction);
     uVar10 = _rand() % 16;
@@ -974,10 +974,10 @@ switchD_00461001_caseD_c7:
     AsObject(pfVar17)->LifeTime = (int)(uVar10 + 0x18);   // lifetime: DWORD, no float
     uVar10 = _rand() % 8;
     param_8 = (float *)(uVar10 + 6);
-    AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
     uVar10 = _rand();
     param_8 = (float*)(uVar10 % 4);
-    AsObject(pfVar17)->Gravity = -(float)(int)(intptr_t)param_8;
+    AsObject(pfVar17)->Gravity = -(float)(intptr_t)param_8;
     uVar10 = _rand() % 64;
     param_8 = (float *)(uVar10 - 0x20);
     local_6c = (float)(int)(intptr_t)param_8;
@@ -1051,7 +1051,7 @@ switchD_00461001_caseD_c7:
       AsObject(pfVar17)->StartPosition[2] = fVar2;
       iVar9 = _rand();
       param_8 = (float *)(iVar9 % 0x1e);
-      AsObject(pfVar17)->Direction[1] = -((float)(int)(intptr_t)param_8 + _DAT_0055284c);
+      AsObject(pfVar17)->Direction[1] = -((float)(intptr_t)param_8 + _DAT_0055284c);
       iVar9 = _rand();
       param_8 = (float *)(iVar9 % 0x14);
       *pfVar12 = -((float)(int)(intptr_t)param_8 + _DAT_00552844);
@@ -1128,21 +1128,21 @@ switchD_00461001_caseD_c7:
     uVar10 = _rand() % 8;
     param_8 = (float *)(uVar10 + 10);
     pfVar12 = pfVar17 + 4;
-    AsObject(pfVar17)->Scale = (float)(int)(intptr_t)param_8 * _DAT_005524f4;
+    AsObject(pfVar17)->Scale = (float)(intptr_t)param_8 * _DAT_005524f4;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 100 + 200);
     *pfVar12 = (float)(int)(intptr_t)param_8 + *pfVar12;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 100 + -0x32);
-    AsObject(pfVar17)->Position[1] = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[1];
+    AsObject(pfVar17)->Position[1] = (float)(intptr_t)param_8 + AsObject(pfVar17)->Position[1];
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 500 + 300);
-    AsObject(pfVar17)->Position[2] = (float)(int)(intptr_t)param_8 + AsObject(pfVar17)->Position[2];
+    AsObject(pfVar17)->Position[2] = (float)(intptr_t)param_8 + AsObject(pfVar17)->Position[2];
     AsObject(pfVar17)->Direction[0] = 0.0;
     AsObject(pfVar17)->Direction[1] = 0.0;
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x32);
-    AsObject(pfVar17)->Direction[2] = _DAT_0055298c - (float)(int)(intptr_t)param_8;
+    AsObject(pfVar17)->Direction[2] = _DAT_0055298c - (float)(intptr_t)param_8;
     AsObject(pfVar17)->Angle[0] = 0.0;
     AsObject(pfVar17)->Angle[1] = 20.0;
     AsObject(pfVar17)->Angle[2] = 0.0;
@@ -1367,7 +1367,7 @@ LAB_004625aa:
   pfVar12 = (float*)DAT_07cf1ffc;
   cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
   *(char *)(pfVar17 + 0x22) = cVar5;
-  *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
+  *(char *)(pfVar12 + EntityOffset(0x160)) = cVar5 + '\x01';
   pfVar12 = (float *)STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
   return pfVar12;
 switchD_00460f25_caseD_100:
@@ -1446,7 +1446,7 @@ LAB_00465082:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00465094:
   param_4 = (float*)AntiTamper_HashNode();
-  *(undefined1 *)(param_4 + 0x161) = 1;
+  *(undefined1 *)(param_4 + EntityOffset(0x161)) = 1;
   param_8 = pfVar4;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
   param_5 = (float *)0x0;
@@ -1614,8 +1614,8 @@ LAB_004651f7:
 LAB_00465209:
   puVar19 = (undefined4 *)0x0;
 LAB_0046520b:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -1710,8 +1710,8 @@ LAB_00465448:
 LAB_0046545a:
     param_4 = (float *)0x0;
 LAB_0046546c:
-    cVar5 = *(char *)(param_4 + 0x161) + -1;
-    *(char *)(param_4 + 0x161) = cVar5;
+    cVar5 = *(char *)(param_4 + EntityOffset(0x161)) + -1;
+    *(char *)(param_4 + EntityOffset(0x161)) = cVar5;
     if (cVar5 != '\0') {
       return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
     }
@@ -1800,8 +1800,8 @@ LAB_00462722:
 LAB_00462734:
   puVar19 = (undefined4 *)0x0;
 LAB_00462736:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -2010,7 +2010,7 @@ LAB_00461f5f:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00461f71:
   param_4 = (float*)AntiTamper_HashNode();
-  *(undefined1 *)(param_4 + 0x161) = 1;
+  *(undefined1 *)(param_4 + EntityOffset(0x161)) = 1;
   param_8 = pfVar12;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_5 = (float *)0x0;
@@ -2178,8 +2178,8 @@ LAB_004620d4:
 LAB_004620e6:
   puVar19 = (undefined4 *)0x0;
 LAB_004620e8:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -2274,8 +2274,8 @@ LAB_00462314:
 LAB_00462326:
     param_4 = (float *)0x0;
 LAB_00462338:
-    cVar5 = *(char *)(param_4 + 0x161) + -1;
-    *(char *)(param_4 + 0x161) = cVar5;
+    cVar5 = *(char *)(param_4 + EntityOffset(0x161)) + -1;
+    *(char *)(param_4 + EntityOffset(0x161)) = cVar5;
     if (cVar5 != '\0') {
       return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
     }
@@ -2365,8 +2365,8 @@ LAB_004619b8:
 LAB_004619ca:
   puVar19 = (undefined4 *)0x0;
 LAB_004619cc:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -2462,8 +2462,8 @@ LAB_00461c11:
 LAB_00461c23:
   _param_9 = (float *)0x0;
 LAB_00461c25:
-  cVar5 = *(char *)(_param_9 + 0x161);
-  *(char *)(_param_9 + 0x161) = cVar5 + -1;
+  cVar5 = *(char *)(_param_9 + EntityOffset(0x161));
+  *(char *)(_param_9 + EntityOffset(0x161)) = cVar5 + -1;
   if ((char)(cVar5 + -1) == '\0') {
     pfVar14 = (float*)operator_new(0x584);
     pfVar12 = param_8;
@@ -2554,7 +2554,7 @@ LAB_004611cb:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_004611dd:
   param_4 = (float*)AntiTamper_HashNode();
-  *(undefined1 *)(param_4 + 0x161) = 1;
+  *(undefined1 *)(param_4 + EntityOffset(0x161)) = 1;
   param_8 = pfVar12;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_5 = (float *)0x0;
@@ -2721,8 +2721,8 @@ LAB_00461340:
 LAB_00461352:
   puVar19 = (undefined4 *)0x0;
 LAB_00461354:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -2817,8 +2817,8 @@ LAB_00461580:
 LAB_00461592:
     param_4 = (float *)0x0;
 LAB_004615a4:
-    cVar5 = *(char *)(param_4 + 0x161) + -1;
-    *(char *)(param_4 + 0x161) = cVar5;
+    cVar5 = *(char *)(param_4 + EntityOffset(0x161)) + -1;
+    *(char *)(param_4 + EntityOffset(0x161)) = cVar5;
     if (cVar5 != '\0') {
       return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
     }
@@ -2966,8 +2966,8 @@ LAB_004638a8:
 LAB_004638ba:
   puVar19 = (undefined4 *)0x0;
 LAB_004638bc:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -3116,8 +3116,8 @@ LAB_00463a0a:
 LAB_00463a1c:
     param_4 = (float *)0x0;
 LAB_00463a2e:
-    cVar5 = *(char *)(param_4 + 0x161) + -1;
-    *(char *)(param_4 + 0x161) = cVar5;
+    cVar5 = *(char *)(param_4 + EntityOffset(0x161)) + -1;
+    *(char *)(param_4 + EntityOffset(0x161)) = cVar5;
     if (cVar5 != '\0') {
       return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
     }
@@ -3210,7 +3210,7 @@ LAB_0046320b:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046321d:
   param_4 = (float*)AntiTamper_HashNode();
-  *(undefined1 *)(param_4 + 0x161) = 1;
+  *(undefined1 *)(param_4 + EntityOffset(0x161)) = 1;
   param_8 = param_7;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(param_7);
   pfVar12 = (float *)0x0;
@@ -3378,8 +3378,8 @@ LAB_00463363:
 LAB_00463375:
   pfVar12 = (float *)0x0;
 LAB_00463377:
-  cVar5 = *(char *)(pfVar12 + 0x161);
-  *(byte *)(pfVar12 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(pfVar12 + EntityOffset(0x161));
+  *(byte *)(pfVar12 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     pfVar17 = (float*)operator_new(0x584);
     pfVar8 = pfVar17;
@@ -3464,8 +3464,8 @@ LAB_0046358c:
 LAB_0046359e:
     param_5 = (float *)0x0;
 LAB_004635a0:
-    cVar5 = *(char *)(param_5 + 0x161) + -1;
-    *(char *)(param_5 + 0x161) = cVar5;
+    cVar5 = *(char *)(param_5 + EntityOffset(0x161)) + -1;
+    *(char *)(param_5 + EntityOffset(0x161)) = cVar5;
     if (cVar5 != '\0') {
       return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
     }
@@ -3555,8 +3555,8 @@ LAB_00462d70:
 LAB_00462d82:
   puVar19 = (undefined4 *)0x0;
 LAB_00462d84:
-  cVar5 = *(char *)(puVar19 + 0x161);
-  *(byte *)(puVar19 + 0x161) = cVar5 + 1U;
+  cVar5 = *(char *)(puVar19 + EntityOffset(0x161));
+  *(byte *)(puVar19 + EntityOffset(0x161)) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     puVar11 = (undefined4*)operator_new(0x584);
     puVar20 = puVar11;
@@ -3651,9 +3651,9 @@ LAB_00462fb0:
 LAB_00462fc2:
     param_4 = (float *)0x0;
 LAB_00462fd4:
-    cVar5 = *(char *)(param_4 + 0x161) + -1;
+    cVar5 = *(char *)(param_4 + EntityOffset(0x161)) + -1;
     pfVar8 = (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
-    *(char *)(param_4 + 0x161) = cVar5;
+    *(char *)(param_4 + EntityOffset(0x161)) = cVar5;
     if (cVar5 == '\0') {
       pfVar14 = (float*)operator_new(0x584);
       pfVar8 = pfVar12;
@@ -3759,8 +3759,8 @@ LAB_00462884:
 LAB_00462896:
   param_4 = (float *)0x0;
 LAB_004628a8:
-  cVar5 = *(char *)(param_4 + 0x161) + -1;
-  *(char *)(param_4 + 0x161) = cVar5;
+  cVar5 = *(char *)(param_4 + EntityOffset(0x161)) + -1;
+  *(char *)(param_4 + EntityOffset(0x161)) = cVar5;
   if (cVar5 != '\0') {
     return (float *)(uintptr_t)CONCAT31(((uint)(uintptr_t)pbVar13 >> 8),cVar5);
   }
@@ -3852,7 +3852,7 @@ LAB_00461843:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00461855:
   param_4 = (float*)AntiTamper_HashNode();
-  *(undefined1 *)(param_4 + 0x161) = 1;
+  *(undefined1 *)(param_4 + EntityOffset(0x161)) = 1;
   param_8 = pfVar8;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar8);
   param_5 = (float *)0x0;
@@ -4027,7 +4027,7 @@ LAB_00462bfb:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00462c0d:
   param_4 = (float*)AntiTamper_HashNode();
-  *(undefined1 *)(param_4 + 0x161) = 1;
+  *(undefined1 *)(param_4 + EntityOffset(0x161)) = 1;
   param_8 = pfVar12;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_5 = (float *)0x0;

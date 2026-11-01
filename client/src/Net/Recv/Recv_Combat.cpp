@@ -13,13 +13,13 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
 
     if (state == 1) {
         if ((effect & 0x10) != 0) {
-            DeleteEffect(1150, (DWORD)(uintptr_t)entity, 1);
+            DeleteEffect(1150, (intptr_t)entity, 1);
             CreateEffect(1150, (float*)(entity + 16), (float*)(entity + 28),
                          (float*)(entity + 232), (float*)1, (float*)entity,
                          (float*)-1, nullptr, 0);
         }
         if ((effect & 0x20) != 0 && (physicalEffects & 0x20) == 0) {
-            DeleteEffect(190, (DWORD)(uintptr_t)entity, 1);
+            DeleteEffect(190, (intptr_t)entity, 1);
             float angle[3] = { *(float*)(entity + 28), *(float*)(entity + 32),
                                *(float*)(entity + 36) };
             CreateEffect(190, (float*)(entity + 16), angle, (float*)(entity + 232),
@@ -29,14 +29,14 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
                          (float*)2, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x40) != 0 && (physicalEffects & 0x40) == 0) {
-            DeleteEffect(1274, (DWORD)(uintptr_t)entity, 0);
+            DeleteEffect(1274, (intptr_t)entity, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, nullptr, (float*)entity, (float*)-1, nullptr, 0);
             PlayBuffer(104, AsObject(entity), 0);
         }
         if ((effect & 0x80) != 0 && (physicalEffects & 0x80) == 0) {
-            DeleteEffect(1274, (DWORD)(uintptr_t)entity, 3);
+            DeleteEffect(1274, (intptr_t)entity, 3);
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, (float*)3, (float*)entity, (float*)-1, nullptr, 0);
@@ -44,7 +44,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
         if ((effect & 0x100) != 0 && (physicalEffects & 0x100) == 0 &&
             *(WORD*)(entity + 2) != 325) {
             PlayBuffer(103, 0, 0);
-            DeleteJoint(266, (DWORD)(uintptr_t)entity, 0);
+            DeleteJoint(266, (intptr_t)entity, 0);
             for (int i = 0; i < 5; ++i) {
                 Joint_Create(266, (float*)(entity + 16), (float*)(entity + 16),
                               (float*)(entity + 28), 0,
@@ -54,7 +54,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
         // DESVIACION: IDA crea estos joints solo al castear; se recrean para
         // que el aura siga visible al reaparecer la entidad en el viewport.
         if ((effect & 0x08) != 0 && (physicalEffects & 0x08) == 0) {
-            DeleteJoint(266, (DWORD)(uintptr_t)entity, 4);
+            DeleteJoint(266, (intptr_t)entity, 4);
             for (int i = 0; i < 5; ++i) {
                 Joint_Create(266, (float*)(entity + 16), (float*)(entity + 16),
                               (float*)(entity + 28), 4,
@@ -66,11 +66,11 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
     }
 
     switch (effect) {
-    case 0x08:  DeleteJoint(266, (DWORD)(uintptr_t)entity, 4); break;
-    case 0x10:  DeleteEffect(1150, (DWORD)(uintptr_t)entity, 1); break;
-    case 0x40:  DeleteEffect(1274, (DWORD)(uintptr_t)entity, 0); break;
-    case 0x80:  DeleteEffect(1274, (DWORD)(uintptr_t)entity, 3); break;
-    case 0x100: DeleteJoint(266, (DWORD)(uintptr_t)entity, 0); break;
+    case 0x08:  DeleteJoint(266, (intptr_t)entity, 4); break;
+    case 0x10:  DeleteEffect(1150, (intptr_t)entity, 1); break;
+    case 0x40:  DeleteEffect(1274, (intptr_t)entity, 0); break;
+    case 0x80:  DeleteEffect(1274, (intptr_t)entity, 3); break;
+    case 0x100: DeleteJoint(266, (intptr_t)entity, 0); break;
     default: break;
     }
     physicalEffects &= ~((DWORD)effect);
@@ -83,7 +83,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
 void CreateMagicShiny97k(BYTE* entity, int hand)
 {
     if (!entity || hand < 0 || hand > 1 || DAT_05828d58 == 0) return;
-    const DWORD bones = *(DWORD*)(entity + 276);
+    const DWORD bones = *(intptr_t*)&AsObject(entity)->BoneMatrices;
     if (bones == 0) return;
 
     const WORD type = *(WORD*)(entity + 2);
@@ -98,8 +98,8 @@ void CreateMagicShiny97k(BYTE* entity, int hand)
     // CreateSprite(1231, Position, 1.0, Light, Hand, 0.0, Character).
     // El quinto argumento es el owner y el último es el subtipo; esto
     // preserva el orden exacto de parámetros de 004741E0_CreateMagicShiny.c.
-    CreateSprite(1231, position, 1.0f, light, hand, 0.0f, (int)(uintptr_t)entity);
-    CreateSprite(1231, position, 1.0f, light, hand + 2, 0.0f, (int)(uintptr_t)entity);
+    CreateSprite(1231, position, 1.0f, light, hand, 0.0f, (intptr_t)entity);
+    CreateSprite(1231, position, 1.0f, light, hand + 2, 0.0f, (intptr_t)entity);
 }
 
 // 0x15
@@ -185,7 +185,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else {
         for (int s = 0; s < 400; ++s) {
             BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-            if (sp[0] && *(WORD*)(sp + 0x1dc) == targetId) {
+            if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == targetId) {
                 tgtSlot = sp; break;
             }
         }
@@ -219,7 +219,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         if (targetId == g_HeroKey && DAT_07cf1ff4) {
             WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
             if (damage < *pHP) *pHP -= damage; else *pHP = 0;
-            *(WORD*)(tgtSlot + 760) = (WORD)damage;
+            *(WORD*)(tgtSlot + EntityOffset(760)) = (WORD)damage;
             SyncHeroLife(Msg, Size, pHP);
         }
         return;
@@ -265,7 +265,7 @@ void NetRecv_15(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // action before MoveCharacter's native death sequence.
 
     // ── Cachea el último daño en la entidad (+0x2F8 = 760) per IDA ──
-    *(WORD*)(tgtSlot + 760) = damage;
+    *(WORD*)(tgtSlot + EntityOffset(760)) = damage;
 
     // ── Hit reaction (anim + grunt) — SetPlayerShock ─────────────
     // Imported from companion-DLL `IgnoreRandomStuck`
@@ -379,7 +379,7 @@ void NetRecv_18(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     int slotIdx = -1;
     for (int s = 0; s < 400; ++s) {
         BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-        if (sp[0] && *(WORD*)(sp + 0x1dc) == entityKey) {
+        if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == entityKey) {
             slot = sp; slotIdx = s; break;
         }
     }
@@ -481,7 +481,7 @@ void NetRecv_07(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
         BYTE* entity = entityBase + slotIndex * CHARACTER_STRIDE;
         // FindCharacterIndex (0045AC80) requires an active slot.
-        if (!entity[0] || *(WORD*)(entity + 476) != entityKey) continue;
+        if (!entity[0] || *(WORD*)(entity + EntityOffset(476)) != entityKey) continue;
 
         // ProtocolCore 004389A0 llama a Insert/Clear sólo cuando el
         // requested mask changes the entity's physical-effects
@@ -529,7 +529,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* entityBase = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
         BYTE* candidate = entityBase + slotIndex * CHARACTER_STRIDE;
-        if (*(WORD*)(candidate + 476) == casterKey) {
+        if (*(WORD*)(candidate + EntityOffset(476)) == casterKey) {
             caster = candidate;
             break;
         }
@@ -600,7 +600,7 @@ void NetRecv_1B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* entityBase = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int slotIndex = 0; slotIndex < 400; ++slotIndex) {
         BYTE* caster = entityBase + slotIndex * CHARACTER_STRIDE;
-        if (caster[0] && *(WORD*)(caster + 476) == casterKey) {
+        if (caster[0] && *(WORD*)(caster + EntityOffset(476)) == casterKey) {
             // La misma limpieza que ReceiveEffectState(state=0): apenas
             // clearing +120 leaves Mana Shield's joint 266 (and
             // other owner-bound visuals) alive after cancellation.
@@ -658,9 +658,9 @@ void NetRecv_16(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
-                *(BYTE*) (hero + 756) = 2;        // gate de las esferas de EXP
-                *(WORD*) (hero + 758) = (WORD)dmg;
-                *(WORD*) (hero + 784) = (WORD)index;
+                *(BYTE*) (hero + EntityOffset(756)) = 2;        // gate de las esferas de EXP
+                *(WORD*) (hero + EntityOffset(758)) = (WORD)dmg;
+                *(WORD*) (hero + EntityOffset(784)) = (WORD)index;
             }
             CreatePoint((float*)(c + 16), dmg, color, 15.0f);
             AsCharacter(c)->Dead = 1;   // dead_flag (+0x2FD)
@@ -697,7 +697,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     } else if (basePtr) {
         for (int slot = 0; slot < 400; ++slot) {
             BYTE* candidate = basePtr + slot * CHARACTER_STRIDE;
-            if (candidate[0] && *(WORD*)(candidate + 0x1DC) == entityId) {
+            if (candidate[0] && *(WORD*)(candidate + EntityOffset(0x1DC)) == entityId) {
                 entity = candidate;
                 break;
             }
@@ -734,21 +734,21 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             AsCharacter(entity)->Object.Velocity = (float)(rand() % 20) + 20.0f;
             const float angle = (float)(rand() % 10) + 85.0f;
             if ((TerrainWall[(wallIndex + 1) & 0xFFFF] & 8) == 8) {
-                *(float*)(entity + 416) = -angle;
-                *(int*)(entity + 408) = 0;
-                *(int*)(entity + 412) = 0;
+                *(float*)(entity + EntityOffset(416)) = -angle;
+                *(int*)(entity + EntityOffset(408)) = 0;
+                *(int*)(entity + EntityOffset(412)) = 0;
             } else if ((TerrainWall[(wallIndex - 1) & 0xFFFF] & 8) == 8) {
-                *(float*)(entity + 416) = angle;
-                *(int*)(entity + 408) = 0;
-                *(int*)(entity + 412) = 0;
+                *(float*)(entity + EntityOffset(416)) = angle;
+                *(int*)(entity + EntityOffset(408)) = 0;
+                *(int*)(entity + EntityOffset(412)) = 0;
             }
-            *(int *)&AsCharacter(entity)->Object.Angle[2]  = *(int*)(entity + 416);
+            *(int *)&AsCharacter(entity)->Object.Angle[2]  = *(int*)(entity + EntityOffset(416));
             *(float*)(entity + 192) = (float)(rand() % 6) + 8.0f;
             *(float*)(entity + 196) = (float)(-(rand() % 2)) + 13.0f;
             const int spin = rand();
-            *(int*)(entity + 424) = *(int *)&AsCharacter(entity)->Object.Position[1];
-            *(int*)(entity + 428) = *(int *)&AsCharacter(entity)->Object.Position[2];
-            *(int*)(entity + 420) = *(int *)&AsCharacter(entity)->Object.Position[0];
+            *(int*)(entity + EntityOffset(424)) = *(int *)&AsCharacter(entity)->Object.Position[1];
+            *(int*)(entity + EntityOffset(428)) = *(int *)&AsCharacter(entity)->Object.Position[2];
+            *(int*)(entity + EntityOffset(420)) = *(int *)&AsCharacter(entity)->Object.Position[0];
             *(float*)(entity + 200) = (float)(spin % 45);
         }
         if (DAT_07abf5d8 && entity == (BYTE*)DAT_07abf5d8) {
@@ -814,9 +814,9 @@ void NetRecv_9C(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 SetPlayerDie(AsCharacter(c));
             } else if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)DAT_07abf5d8;
-                *(BYTE*) (hero + 756) = 2;        // gate de las esferas
-                *(WORD*) (hero + 758) = (WORD)dmg;
-                *(WORD*) (hero + 784) = (WORD)index;
+                *(BYTE*) (hero + EntityOffset(756)) = 2;        // gate de las esferas
+                *(WORD*) (hero + EntityOffset(758)) = (WORD)dmg;
+                *(WORD*) (hero + EntityOffset(784)) = (WORD)index;
             }
             CreatePoint((float*)(c + 16), dmg, color, 15.0f);
             AsCharacter(c)->Dead = 1;   // dead_flag (+0x2FD)
@@ -855,7 +855,7 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     BYTE* caster = nullptr;
     for (int s = 0; s < 400; ++s) {
         BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-        if (sp[0] && *(WORD*)(sp + 0x1dc) == casterId) {
+        if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == casterId) {
             caster = sp; break;
         }
     }
@@ -879,14 +879,14 @@ void NetRecv_1A(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             } else {
                 for (int s = 0; s < 400; ++s) {
                     BYTE* sp = basePtr + s * CHARACTER_STRIDE;
-                    if (sp[0] && *(WORD*)(sp + 0x1dc) == tgtId) {
+                    if (sp[0] && *(WORD*)(sp + EntityOffset(0x1dc)) == tgtId) {
                         tgt = sp; break;
                     }
                 }
             }
             if (!tgt) continue;
             // Daño cacheado en +760 (0x2F8) por el 0x15 — se usa como visual
-            WORD dmg = *(WORD*)(tgt + 760);
+            WORD dmg = *(WORD*)(tgt + EntityOffset(760));
             // ReceiveMagicPosition tira el mismo 50/50 de reacción
             // que usaba el original antes de dibujar el daño en área.
             const unsigned r = (unsigned)rand() & 0x80000001u;

@@ -859,7 +859,7 @@ void __stdcall MoveParticles(void)
                         if (entPtr != 0) {
                             float localP[3] = { 0.0f, 0.0f, 0.0f };
                             void* mdl = (void*)((char*)DAT_05828d58 + *(short*)(entPtr + 2) * BMD_STRIDE);
-                            int boneTab = *(int*)(entPtr + 0x114);
+                            int boneTab = *(intptr_t*)&AsObject(entPtr)->BoneMatrices;
                             long long lBone = (long long)(double)P_ROT(iVar9); // __ftol analog
                             // Guard del port (IDA no lo tiene): sin tabla de huesos
                             // el deref cae fuera de todo lo mapeado, y un indice

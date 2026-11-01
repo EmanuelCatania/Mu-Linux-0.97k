@@ -1448,7 +1448,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // `v5 = *(float *)(c + 360) - 0.1; ... if (v5 < 0.1) c[124] = 2;`.
     // El titulo "stamina" de este bloque era una etiqueta inventada del port.
     if (*(char *)&AsCharacter(entity)->Object.Teleport == 1) {                      // IDA: *(_BYTE *)(c + 124)
-        float& fAnim = AsCharacter(entity)->Object.Alpha; // IDA: v5 = *(float *)(c + 360) — Alpha
+        float& fAnim = AsCharacter(entity)->Object.Alpha; // IDA: v5 = *(float *)(c + EntityOffset(360)) — Alpha
         fAnim -= 0.1f;                       // IDA: -= 0.1
         if (fAnim < 0.1f) *(char *)&AsCharacter(entity)->Object.Teleport = 2;
     }
@@ -1973,7 +1973,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
             UIChatLogWindow_AddText("ERROR", message, 1);      // IDA: byte_7E11E00, MsgType 1
             *(float*)(groundItem + 96) = RequestTerrainHeight(
                 *(const float*)(groundItem + 88), *(const float*)(groundItem + 92)) + 3.0f;
-            *(float*)(groundItem + 288) = 50.0f;
+            *(float*)(groundItem + EntityOffset(288)) = 50.0f;
             return;
         }
         if (DAT_07e11998 != -1)                                // IDA: SendGetItem

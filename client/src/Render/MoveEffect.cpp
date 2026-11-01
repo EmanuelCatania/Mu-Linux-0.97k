@@ -887,7 +887,7 @@ LAB_0046a366:
             *(float *)&AsObject(param_1)->LifeTime = 4.2039e-44;
           }
           else {
-            fVar4 = *(float *)(pcVar11 + 0x15c);
+            fVar4 = *(float *)(pcVar11 + EntityOffset(0x15c));
             fVar5 = AsObject(pcVar11)->Position[2];
             AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0];
             AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1];

@@ -397,13 +397,13 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             AsJoint(param_1)->Position[2] = AsJoint(param_1)->TargetPosition[2] + 50.0f;
         } else {
             float delta_4e2[3] = {
-                *(float *)(owner_4e2 + 0x10) - *(float *)(owner_4e2 + 0x170),
-                *(float *)(owner_4e2 + 0x14) - *(float *)(owner_4e2 + 0x174),
-                *(float *)(owner_4e2 + 0x18) - *(float *)(owner_4e2 + 0x178)
+                *(float *)(owner_4e2 + 0x10) - *(float *)(owner_4e2 + EntityOffset(0x170)),
+                *(float *)(owner_4e2 + 0x14) - *(float *)(owner_4e2 + EntityOffset(0x174)),
+                *(float *)(owner_4e2 + 0x18) - *(float *)(owner_4e2 + EntityOffset(0x178))
             };
-            AsJoint(param_1)->TargetPosition[0] = *(float *)(owner_4e2 + 0x170);
-            AsJoint(param_1)->TargetPosition[1] = *(float *)(owner_4e2 + 0x174);
-            AsJoint(param_1)->TargetPosition[2] = *(float *)(owner_4e2 + 0x178);
+            AsJoint(param_1)->TargetPosition[0] = *(float *)(owner_4e2 + EntityOffset(0x170));
+            AsJoint(param_1)->TargetPosition[1] = *(float *)(owner_4e2 + EntityOffset(0x174));
+            AsJoint(param_1)->TargetPosition[2] = *(float *)(owner_4e2 + EntityOffset(0x178));
             float entityAngle_4e2[3] = { *(float *)(owner_4e2 + 0x28), *(float *)(owner_4e2 + 0x2c), *(float *)(owner_4e2 + 0x30) };
             float jointMatrix_4e2[12];
             Matrix_BuildFromEuler(AsJoint(param_1)->Angle, jointMatrix_4e2);
@@ -443,12 +443,12 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             goto switchD_caseD_4ef;
         }
         // Compute target velocity delta (current_pos - prev_pos from entity +0x10/0x170)
-        local_d8[0] = *(float *)(pcVar11 + 0x10)  - *(float *)(pcVar11 + 0x170);
-        local_d8[1] = *(float *)(pcVar11 + 0x14)  - *(float *)(pcVar11 + 0x174);
-        local_d8[2] = *(float *)(pcVar11 + 0x18)  - *(float *)(pcVar11 + 0x178);
-        *pfVar14                         = *(float *)(pcVar11 + 0x170);
-        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(pcVar11 + 0x174);
-        *(undefined4 *)&AsJoint(param_1)->TargetPosition[2] = *(undefined4 *)(pcVar11 + 0x178);
+        local_d8[0] = *(float *)(pcVar11 + 0x10)  - *(float *)(pcVar11 + EntityOffset(0x170));
+        local_d8[1] = *(float *)(pcVar11 + 0x14)  - *(float *)(pcVar11 + EntityOffset(0x174));
+        local_d8[2] = *(float *)(pcVar11 + 0x18)  - *(float *)(pcVar11 + EntityOffset(0x178));
+        *pfVar14                         = *(float *)(pcVar11 + EntityOffset(0x170));
+        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(pcVar11 + EntityOffset(0x174));
+        *(undefined4 *)&AsJoint(param_1)->TargetPosition[2] = *(undefined4 *)(pcVar11 + EntityOffset(0x178));
         local_a8[3] = *(float *)(pcVar11 + 0x28);
         local_a8[4] = *(float *)(pcVar11 + 0x2c);
         local_a8[5] = *(float *)(pcVar11 + 0x30);
@@ -1294,8 +1294,8 @@ switchD_caseD_4fd:
             // 00470030 LABEL_301/case 14.
             intptr_t owner = *(int *)&AsJoint(param_1)->Target;
             if (owner != 0) {
-                *(DWORD *)&AsJoint(param_1)->StartPosition[0] = *(DWORD *)(owner + 392);
-                *(DWORD *)&AsJoint(param_1)->StartPosition[1] = *(DWORD *)(owner + 396);
+                *(DWORD *)&AsJoint(param_1)->StartPosition[0] = *(DWORD *)(owner + EntityOffset(392));
+                *(DWORD *)&AsJoint(param_1)->StartPosition[1] = *(DWORD *)(owner + EntityOffset(396));
             }
             const int life = AsJoint(param_1)->LifeTime;
             const short pk = AsJoint(param_1)->PKKey;
@@ -1625,7 +1625,7 @@ _skipLabel182:;
     return (char *)(intptr_t)remainingLife;
 #if 0 // Former decompiler-artifact formulation of the same epilogue.
     pcVar11 = (char *)(AsJoint(param_1)->LifeTime + -1);
-    AsJoint(param_1)->LifeTime = (int)(intptr_t)pcVar11;
+    AsJoint(param_1)->LifeTime = (intptr_t)pcVar11;
 
     if (-1 < (int)(intptr_t)pcVar11) {
         // Recursive self-call on types 0x4e1/0x4fd at sub-frame boundaries (modes 4 or 0xc)

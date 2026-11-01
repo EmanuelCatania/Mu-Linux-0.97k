@@ -65,7 +65,7 @@ void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
     if ((int)uVar2 < 0) uVar2 = (uVar2 - 1 | 0xfffffffe) + 1;
     BMD_TransformPosition(this_,
         (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + 0x274 + static_cast<intptr_t>(static_cast<int32_t>(uVar2)) * 0x18)) * 0x30
-                 + *(int*)(iVar1 + 0x114)),
+                 + *(intptr_t*)&AsObject(iVar1)->BoneMatrices),
         local_c,
         (float*)(param_1 + 0x10),
         '\x01');

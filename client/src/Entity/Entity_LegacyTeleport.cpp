@@ -34,7 +34,7 @@ extern void __cdecl operator_delete(void* ptr);
 
 
 // Apaga los joints activos con ese Type, Target y SubType (-1 = cualquiera).
-extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType)
+extern "C" void __cdecl DeleteJoint(int Type, intptr_t Target, int SubType)
 {
     JOINT* joints = AsJoint(DAT_07b27150);
     const int count = (int)(sizeof(DAT_07b27150) / sizeof(JOINT));   // 500
@@ -42,7 +42,7 @@ extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType)
         JOINT* j = &joints[i];
         if (j->Live != 0 &&
             j->Type == Type &&
-            (DWORD)(uintptr_t)j->Target == Target &&
+            (intptr_t)j->Target == Target &&
             (SubType == -1 || j->SubType == SubType))
         {
             j->Live = 0;

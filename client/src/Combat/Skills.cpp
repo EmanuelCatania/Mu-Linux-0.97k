@@ -63,7 +63,7 @@ extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legac
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
 extern void Entity_MeleeAttackStart(intptr_t entity_idx);        // Legacy helper; no verified FUN mapping.
 extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType);
 
 // SetPlayerBow @ 0042BC00. It selects the bow/crossbow animation and keeps
 // the walking variant when a path is active.
@@ -341,7 +341,7 @@ void PacketHandler_0x19(BYTE* pkt)
             // Ese efecto es el que spawnea cada tick las particulas 1150/sub4
             // que se cuelgan de los huesos del personaje (MoveParticles).
             if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
-                DeleteEffect(1150, (DWORD)(uintptr_t)target, 1);
+                DeleteEffect(1150, (intptr_t)target, 1);
                 CreateEffect(1150, (float*)(target + 16),
                              (float*)(target + 28), (float*)(target + 232),
                              (float*)1, (float*)target, (float*)-1, nullptr, 0);
@@ -367,7 +367,7 @@ void PacketHandler_0x19(BYTE* pkt)
         SetPlayerBow97k(caster);
         if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
-            DeleteEffect(190, (DWORD)(uintptr_t)target, 1);
+            DeleteEffect(190, (intptr_t)target, 1);
             float angle[3] = {
                 AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
             };
@@ -389,7 +389,7 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
-            DeleteEffect(1274, (DWORD)(uintptr_t)target, 0);
+            DeleteEffect(1274, (intptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(target + 16), (float*)(target + 28), light,
                          nullptr, (float*)target, (float*)-1, nullptr, 0);

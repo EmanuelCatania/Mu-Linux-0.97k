@@ -289,22 +289,22 @@ void __cdecl AppearMonster(intptr_t c)
     BYTE monIdx = *(BYTE *)(c + 0x02);  // MonsterIndex
     switch (monIdx) {
     case 0x15:
-        *(int *)(c + 0x105) = 1;   // SetAction(obj, 1)
-        *(int *)(c + 0x106) = 1;   // PriorAction = 1
+        *(int *)(c + EntityOffset(0x105)) = 1;   // SetAction(obj, 1)
+        *(int *)(c + EntityOffset(0x106)) = 1;   // PriorAction = 1
         *(float *)(c + 0x04) = 1.0f; // Alpha = 1.0
         PlayBuffer(0x13, 0, 0);
         return;
     case 0x2C:
-        *(int *)(c + 0x105) = 1;
-        *(int *)(c + 0x106) = 1;
+        *(int *)(c + EntityOffset(0x105)) = 1;
+        *(int *)(c + EntityOffset(0x106)) = 1;
         *(float *)(c + 0x04) = 1.0f;
         PlayBuffer(0x126, 0, 0);
         return;
     case 0x35:
     case 0x36:
-        *(int *)(c + 0x100) = 60;  // Appear = 60 frames
-        *(int *)(c + 0x105) = 1;
-        *(int *)(c + 0x106) = 1;
+        *(int *)(c + EntityOffset(0x100)) = 60;  // Appear = 60 frames
+        *(int *)(c + EntityOffset(0x105)) = 1;
+        *(int *)(c + EntityOffset(0x106)) = 1;
         *(float *)(c + 0x04) = 1.0f;
         return;
     case 0x55: case 0x5B: case 0x61:
@@ -313,8 +313,8 @@ void __cdecl AppearMonster(intptr_t c)
         return;
     }
     if (*(int *)(c + 0x00) == 0x186) {  // Object.Type == special NPC
-        *(int *)(c + 0x105) = 0x81;
-        *(int *)(c + 0x106) = 0x81;
+        *(int *)(c + EntityOffset(0x105)) = 0x81;
+        *(int *)(c + EntityOffset(0x106)) = 0x81;
         *(float *)(c + 0x04) = 1.0f;
         return;
     }

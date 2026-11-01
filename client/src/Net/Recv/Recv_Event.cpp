@@ -171,7 +171,7 @@ void NetRecv_9B(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 const int idx = Character_FindByKey_WithClear(itemOwner & 0x7FFF);
                 if (DAT_07abf5d0 && idx >= 0 && idx < 400) {
                     BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + CHARACTER_STRIDE * idx;
-                    *(BYTE*)(c + 744) = itemLevel;
+                    *(BYTE*)(c + EntityOffset(744)) = itemLevel;
                 }
             } else if (itemOwner == -1 || itemLevel == 0) {
                 // DESVIACION DEL PORT.  El gate de arriba es fiel a IDA

@@ -99,8 +99,8 @@ void __cdecl Render_DrawSprite(const OBJECT* object)
 
   // El slot es efímero: CreateSprite fija el factor en 1 y el pool se
   // consume en esta pasada. Calcular el ajuste sin alterar la muestra base.
-  fVar1 = *(float *)(param_1 + 0x108);
-  if (*(char *)(param_1 + 0x160) == 0) {
+  fVar1 = *(float *)(param_1 + EntityOffset(0x108));
+  if (*(char *)(param_1 + EntityOffset(0x160)) == 0) {
     fVar1 -= _DAT_005524f4;
     if (fVar1 < _DAT_005526e4) fVar1 = 0.2f;
   } else {

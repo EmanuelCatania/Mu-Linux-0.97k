@@ -1664,7 +1664,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         DAT_07eaa160 = 0;                                   // CheckInventory
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
-            DeleteBug((int)(uintptr_t)DAT_07abf5d8);
+            DeleteBug((intptr_t)DAT_07abf5d8);
         if (rightClick) {
             DAT_07e11e78 = (DWORD)(unequipTarget + 12);
             DAT_07eaa165 = 1;                               // EquipmentItem
@@ -2225,7 +2225,7 @@ void Hero_ApplyCatalogEquipment(CHARACTER* character)
     if (pet != -1 && gContentCatalog.GetPet(pet)) {
         *(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type = (short)ItemModel(ItemBehaviorType(pet));
         // El owner del pool aún ocupa 32 bits; su layout queda para B2.
-        DeleteBug((DWORD)(uintptr_t)c);
+        DeleteBug((intptr_t)c);
         CreateBug(*(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type, (void*)(c + 16), (void*)(uintptr_t)c, 0);
     }
 }
@@ -2302,7 +2302,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
         const short newHelper = AsCharacter(c)->Helper.Type;
         if (newHelper != prevHelper) {
             // El owner del pool aún ocupa 32 bits; su layout queda para B2.
-            DeleteBug((DWORD)(uintptr_t)c);          // DeleteBug
+            DeleteBug((intptr_t)c);          // DeleteBug
             int bugType = 0;
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
@@ -2878,8 +2878,8 @@ static inline void mc_AngleVectorOffset(float *origin7, float ax, float ay, floa
 // hubiera — p.ej. los de Scale 50 que deja `InsertBuffPhysicalEffect`
 // (0x43BDE0, el camino de viewport cuando la entidad aparece con el buff ya
 // activo).  Si esto fuera un no-op convivirían los dos grupos (arcos dobles).
-extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
-static inline void mc_DeleteJoint(int Type, DWORD Owner, int SubType)
+extern "C" void __cdecl DeleteJoint(int Type, intptr_t Target, int SubType);
+static inline void mc_DeleteJoint(int Type, intptr_t Owner, int SubType)
 {
     DeleteJoint(Type, Owner, SubType);
 }
@@ -3699,7 +3699,7 @@ void __cdecl MoveCharacter(int p1)
                     mc_DeleteJoint(266, Owner, 0);
                     for (int i = 0; i < 5; ++i) {
                         Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
-                                     (float*)(Owner + 28), 0, (int)Owner, 20.0f, (short)-1, 0);
+                                     (float*)(Owner + 28), 0, (intptr_t)Owner, 20.0f, (short)-1, 0);
                     }
                 }
                 break;
@@ -3741,7 +3741,7 @@ void __cdecl MoveCharacter(int p1)
                         if (!mc_JointFind(266, Owner, 4)) {
                             for (int i = 0; i < 5; ++i) {
                                 Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
-                                             (float*)(Owner + 28), 4, (int)Owner, 20.0f, (short)-1, 0);
+                                             (float*)(Owner + 28), 4, (intptr_t)Owner, 20.0f, (short)-1, 0);
                             }
                         }
                     } else {
@@ -3750,7 +3750,7 @@ void __cdecl MoveCharacter(int p1)
                         *(DWORD*)(Owner + 120) = v29;
                         for (int i = 0; i < 5; ++i) {
                             Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
-                                         (float*)(Owner + 28), 4, (int)Owner, 20.0f, (short)-1, 0);
+                                         (float*)(Owner + 28), 4, (intptr_t)Owner, 20.0f, (short)-1, 0);
                         }
                     }
                 }

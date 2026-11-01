@@ -835,7 +835,7 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Angle[0] = *(DWORD*)(v8 + 28);   // angleX
                 *(DWORD *)&AsObject(e)->Angle[1] = *(DWORD*)(v8 + 32);   // angleY
                 *(DWORD *)&AsObject(e)->Angle[2] = *(DWORD*)(v8 + 36);   // angleZ
-                BYTE v14 = *(BYTE*)(v8 + 261);              // owner CurrentAction
+                BYTE v14 = *(BYTE*)(v8 + EntityOffset(261));              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 3);
                     else                                       SetAction(AsObject(e), 2);
