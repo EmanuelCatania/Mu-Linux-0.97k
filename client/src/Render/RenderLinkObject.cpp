@@ -585,7 +585,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     if (param_6 == 790 && (AsCharacter(param_4)->Wing.Type > 0x315) && (AsCharacter(param_4)->Wing.Type < 0x317)
         && (*(char *)&AsCharacter(param_4)->SafeZone != '\0'))
     {
-        *(unsigned char*)((intptr_t)iVar7 + 0xa0) = 1;
+        *(unsigned char*)((intptr_t)iVar7 + 0xa0 + BMD_FIELD_SHIFT) = 1;
     }
 
     // ── 7. Animation tick (BMD_AnimTick) ─────────────────────────────────────
@@ -616,7 +616,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // el BMD, el scratch de huesos y a veces el PART del ala.
     const unsigned int flags = AsCharacter(param_4)->MonsterIndex == 67 ? 0x102u : 0x2u;
     const float attachmentOffset[3]={param_1,param_2,param_3};
-    Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + 800),
+    Equipment_AddMesh(drawModel, local_1ec, (float *)(param_4 + EntityOffset(800)),
         AsCharacter(param_4)->Object.Alpha, 8u * (unsigned char)param_7,
         (unsigned char)param_8, flags | param_11, param_10, param_5, param_9, attachmentOffset);
     if (drawModel == 790) {

@@ -368,8 +368,8 @@ void Game_EnterWorldTick(void)
             IsClickPushed())
         {
             DAT_083a4124 = '\0';
-            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x1be);
-            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + 0x1c0];
+            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
 
             if (lvl < 40) {
                 // Level too low error
@@ -470,7 +470,7 @@ void Game_EnterWorldTick(void)
             // corresponde a IDA `if (!v40) goto LABEL_124` y precondición
             // SelectedHero != -1.  Sin esto, cada frame disparaba state=0x19.
             if (DAT_005616ac != -1 && (selectClicked || confirmed)) {
-                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + 0x1c0];
+                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
                 // Precedence-fix: IDA `(flags & 1) == 0`, no `!flags & 1`.
                 if ((flags & 1) == 0) {
                     DAT_083a7c14 = 0x19;
@@ -648,9 +648,9 @@ void Game_EnterWorldTick(void)
                     const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
-                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x1be);
-                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + 0x1bc];
-                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + 0x1bd];
+                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
                 // El F3/03 NO sale de aca: IDA 0x521D80 case 25 solo copia los
                 // datos del personaje y pasa a Loading. Lo manda el init de
@@ -671,9 +671,9 @@ void Game_EnterWorldTick(void)
                     char* charData = (char*)DAT_07cf1ff4;
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated(charData, 11, charName);
-                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x1be);
-                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + 0x1bc];
-                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + 0x1bd];
+                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
 
                 SceneFlag  = 3;  // SceneFlag = Loading

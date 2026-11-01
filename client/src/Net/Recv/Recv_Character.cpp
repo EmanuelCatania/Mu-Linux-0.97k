@@ -423,7 +423,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         if (DAT_07abf5d8) {
             BYTE pk = RB[44];
             if (pk > 6) pk = 0;                   // valor fuera de rango → normal
-            *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 0x2ea) = pk;
+            *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + EntityOffset(0x2ea)) = pk;
             NetLog("NET:    F3/03 PKLevel=%u -> hero+0x2EA", (unsigned)pk);
         }
 
@@ -678,7 +678,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
     BYTE saved746  = 0;
     if (DAT_07abf5d8) {
         savedW474 = *(const WORD*)((BYTE*)DAT_07abf5d8 + EntityOffset(474));
-        saved746  = *((const BYTE*)DAT_07abf5d8 + 746);
+        saved746  = *((const BYTE*)DAT_07abf5d8 + EntityOffset(746));
     }
 
     // (5) Re-crea al héroe EN EL MISMO SLOT (HeroIndex no cambia).

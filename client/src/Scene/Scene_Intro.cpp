@@ -214,7 +214,7 @@ void __cdecl Scene_Intro(HDC param_1)
     // Spawn local entity at hardcoded position (5414.4f, 21981.5f)
     // 0x44a8c000 = 1350.0f (x), 0x46a9ec00 = 21742.0f (y)
     local_8 = (undefined1 *)CreateHero(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
-    puVar1  = (undefined4 *)(local_8 + 0x388);
+    puVar1  = (undefined4 *)(local_8 + EntityOffset(0x388));
     local_c = puVar1;
     uVar4   = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
 
@@ -306,7 +306,7 @@ LAB_00513a50:
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 
 LAB_00513b4e:
-    puVar1 = (undefined4 *)(iStack_10 + 0x38c);
+    puVar1 = (undefined4 *)(iStack_10 + EntityOffset(0x38c));
     uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
     if (uVar4 == 0xffffffff) {
         pvVar5 = AntiTamper_HashNode();

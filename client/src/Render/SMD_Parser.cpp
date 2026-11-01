@@ -360,7 +360,7 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
             randPass = (rcheck == 0);
         }
         if (!randPass) return;
-        if (*(int*)(T + 252) != (intptr_t)DAT_07abf5d8) return;  // hero only
+        if (*(intptr_t*)(T + 252) != (intptr_t)DAT_07abf5d8) return;  // hero only
 
         // Anti-tamper hash table — skipped
 
@@ -414,7 +414,7 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
     }
     else {
         // ── Path B: AOE — scan all entities within 100 units ──────────────
-        int owner = *(int*)(T + 252);
+        intptr_t owner = *(intptr_t*)(T + 252);
         char* charBase = (char*)(uintptr_t)DAT_07abf5d0;  // CharactersClient
         const int kEntStride = CHARACTER_STRIDE;
         char* found = nullptr;
@@ -586,7 +586,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
             if (monsterType != 77 && monsterType != 75 && monsterType != 73 &&
                 monsterType != (char)-125 && monsterType != (char)-124 &&
                 monsterType != (char)-123 && monsterType != (char)-122)
-                pcEnt[772] = '\n';                         // IDA: v16[25] = 10
+                pcEnt[EntityOffset(772)] = '\n';                         // IDA: v16[25] = 10
         }
 
         nearbyIds[count++] = sKey;                         // IDA L181
@@ -854,7 +854,7 @@ unsigned int __cdecl CheckAttack(void) {
     if (targetPkLevel >= 6) {
         const short targetGuild = AsCharacter(target)->GuildMarkIndex;
         if (targetGuild != -1) {
-            const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 474);
+            const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + EntityOffset(474));
             if (strcmp(DAT_07e919bc + 80 * heroGuild,
                        DAT_07e919bc + 80 * targetGuild) == 0) {
                 return 0;

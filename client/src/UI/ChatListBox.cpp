@@ -508,7 +508,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
 
     int i = 0;
     while (i < (int)self[35]) {
-        if (ChatWidget_Pointers(self).cursor == ChatWidget_Pointers(self).list2) break;
+        if (!ChatWidget_Pointers(self).cursor || ChatWidget_Pointers(self).cursor == ChatWidget_Pointers(self).list2) break;
         int v3 = ((FnRow)vt[23])(self, 0, i);
         if (v3 >= 0) {
             if (!v3) --i;

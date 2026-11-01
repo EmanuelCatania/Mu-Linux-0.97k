@@ -94,8 +94,8 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
     // Play animation — BMD__PlayAnimation(model, frame*, scale*, extra, speed)
     // Ghidra sig: BMD::PlayAnimation(this, frame*, priorFrame*, priorAction*, speed, pos*, angle*)
     // Our declaration has 5 params; pass what fits
-    BMD__PlayAnimation((void*)model, (float*)(objPtr + 0x108), (float*)(objPtr + 0x10c),
-                 (void*)(objPtr + 0x106), animSpeed);
+    BMD__PlayAnimation((void*)model, (float*)(objPtr + EntityOffset(0x108)), (float*)(objPtr + EntityOffset(0x10c)),
+                 (void*)(objPtr + EntityOffset(0x106)), animSpeed);
 
     // ── Escena de login / char-select (IDA sub_4FDC00, bloque previo al switch)
     // En el orden del binario: después de PlayAnimation, antes del switch.
@@ -888,7 +888,7 @@ void __stdcall MoveBugs(void) {
         // ── LABEL_72 — avance BMD común + follow (solo 816/817) ─────────────
         {
         float* v28 = (float*)(e + 0x10);
-        *(BYTE*)(v40 + 160) = AsObject(e)->CurrentAction;          // model.CurrentAction
+        *(BYTE*)(v40 + 160 + BMD_FIELD_SHIFT) = AsObject(e)->CurrentAction;          // model.CurrentAction
         BMD__PlayAnimation((void*)v40, (float*)(e + EntityOffset(0x108)), (float*)(e + EntityOffset(0x10C)),
                      (void*)(e + EntityOffset(0x106)), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
 
@@ -1088,7 +1088,7 @@ LABEL_22:
     return;
   }
   v5 = Models + BMD_STRIDE * *(short *)(o + 2);
-  *(BYTE *)(v5 + 160) = *(BYTE *)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
+  *(BYTE *)(v5 + 160 + BMD_FIELD_SHIFT) = *(BYTE *)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
   oa = *(float *)(o + 204);
   if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(o + 2) == 8 )
   {

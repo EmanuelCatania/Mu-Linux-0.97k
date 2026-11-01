@@ -534,8 +534,8 @@ LAB_00473578_498:
                 local_d8[0] = local_d8[0] * _DAT_00552900 + *pfVar14;
                 local_d8[1] = local_d8[1] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[1];
                 local_d8[2] = local_d8[2] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[2];
-                local_a8[0] = *(float *)(iVar16 + 0x188);
-                local_a8[1] = *(float *)(iVar16 + 0x18c);
+                local_a8[0] = *(float *)(iVar16 + EntityOffset(0x188));
+                local_a8[1] = *(float *)(iVar16 + EntityOffset(0x18c));
                 local_a8[2] = *(float *)(iVar16 + 400);
                 // Blend: out[i] = t * rand_pos[i] + inv_t * bone_pos[i]
                 pfVar15[0] = t * local_d8[0] + inv_t * local_a8[0];
@@ -577,7 +577,7 @@ LAB_004702ce:
             *pfVar15 = (float)(fVar22 * fVar24 + (double)*pfVar15);
             if (iVar16 == 0) goto switchD_caseD_4ef;
             {
-                int hp_val = *(int *)(iVar16 + 0x60);
+                int hp_val = *(int *)(iVar16 + EntityOffset(0x60));
                 float fVar28;
                 if (hp_val < 0x33) {
                     fVar28 = (float)hp_val * _DAT_00552a00;
@@ -641,9 +641,9 @@ LAB_0047036e:
 
         // Update anchor from linked entity current position
         iVar16   = (intptr_t)AsJoint(param_1)->Target;
-        *pfVar14 = *(float *)(iVar16 + 0x10);
-        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(iVar16 + 0x14);
-        AsJoint(param_1)->TargetPosition[2]      = *(float *)(iVar16 + 0x18) + _DAT_00552488;
+        *pfVar14 = *(float *)(iVar16 + EntityOffset(0x10));
+        *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(iVar16 + EntityOffset(0x14));
+        AsJoint(param_1)->TargetPosition[2]      = *(float *)(iVar16 + EntityOffset(0x18)) + _DAT_00552488;
 
         iVar16 = AsJoint(param_1)->SubType;
 

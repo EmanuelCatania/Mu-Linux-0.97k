@@ -583,12 +583,12 @@ void __cdecl Combat_SendMovePathPacket(CHARACTER* character, const OBJECT* objec
     for (int i = 0; i < wpCount && i < 16; i++) {
         BYTE px = (i == 0)
             ? AsCharacter(param_1)->TargetX
-            : *(unsigned char*)(param_1 + 0x357 + i - 1);
+            : *(unsigned char*)(param_1 + EntityOffset(0x357) + i - 1);
         BYTE py = (i == 0)
             ? AsCharacter(param_1)->TargetY
-            : *(unsigned char*)(param_1 + 0x366 + i - 1);
-        BYTE nx = *(unsigned char*)(param_1 + 0x357 + i);
-        BYTE ny = *(unsigned char*)(param_1 + 0x366 + i);
+            : *(unsigned char*)(param_1 + EntityOffset(0x366) + i - 1);
+        BYTE nx = *(unsigned char*)(param_1 + EntityOffset(0x357) + i);
+        BYTE ny = *(unsigned char*)(param_1 + EntityOffset(0x366) + i);
         int dx = (int)nx - (int)px;
         int dy = (int)ny - (int)py;
         // El dir encoding tiene que matchear el RoadPathTable del server
@@ -920,7 +920,7 @@ static int Combat_SkillTargetIndex97k(void)
     if (!CheckAttack())                                  // CheckAttack()
         return -1;
     return (int)*(short*)((char*)(uintptr_t)CharactersClient
-                          + CHARACTER_STRIDE * (int)SelectedCharacter + 0x1DC);
+                          + CHARACTER_STRIDE * (int)SelectedCharacter + EntityOffset(0x1DC));
 }
 
 // ── IDA L1781-2158: LABEL_240 (rama Elf de skills bajos / >36 no-52) ──────────
@@ -1200,7 +1200,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         }
         // IDA L7264-7506: C1:06:19 con la key del objetivo, y despues LABEL_1157.
         const WORD targetKey = *(WORD*)((BYTE*)(uintptr_t)CharactersClient +
-                                        CHARACTER_STRIDE * (int)MovementSkillTarget + 476);
+                                        CHARACTER_STRIDE * (int)MovementSkillTarget + EntityOffset(476));
         Attack_SendSkill19_97k(iType, targetKey);
     } else {
         // IDA L7508-7754: sin objetivo el skill se lanza sobre uno mismo.
@@ -1692,7 +1692,7 @@ static void Combat_SendPartyRecall97k(char* entity, int targetIdx,
 {
     if (!entity || targetIdx < 0) return;
     DWORD selOff = CHARACTER_STRIDE * targetIdx;
-    unsigned short tgtKey = *(unsigned short*)(CharactersClient + selOff + 476);
+    unsigned short tgtKey = *(unsigned short*)(CharactersClient + selOff + EntityOffset(476));
     unsigned char pkt[7];
     pkt[0] = 0xC1;
     pkt[1] = 7;

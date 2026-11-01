@@ -76,11 +76,11 @@ void __cdecl ItemDrop_RenderGroundWeapon(intptr_t o) {
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * model_id;
 
     // Volcar posicion / accion / clase al slot del modelo compartido.
-    *(int*) (mdl + 108) = *(int *)&AsObject(o)->Position[0];
-    *(int*) (mdl + 112) = *(int *)&AsObject(o)->Position[1];
-    *(int*) (mdl + 116) = *(int *)&AsObject(o)->Position[2];
-    *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7);
-    *(BYTE*)(mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;
+    *(int*) (mdl + 108 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[0];
+    *(int*) (mdl + 112 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[1];
+    *(int*) (mdl + 116 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[2];
+    *(BYTE*)(mdl + 152 + BMD_FIELD_SHIFT) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7);
+    *(BYTE*)(mdl + 160 + BMD_FIELD_SHIFT) = sample ? sample->action : AsObject(o)->CurrentAction;
 
     const short savedType = AsObject(o)->Type;
     AsObject(o)->Type = (short)model_id;

@@ -3888,7 +3888,7 @@ void __cdecl MoveCharacter(intptr_t p1)
         if (AsObject(o)->Type == 390 && (AsObject(o)->CurrentAction == 37 || AsObject(o)->CurrentAction == 38)) v377 = 1;
         v375 = 0; Type = 0;
         v378 = *(short*)(c + EntityOffset(24 * v377 + 624));
-        v376 = *(unsigned char*)(c + 24 * v377 + 626);
+        v376 = *(unsigned char*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (626 - 624));
 
         BYTE actLocal = AsObject(o)->CurrentAction;
         if (AsObject(o)->Type == 390) {
@@ -3948,10 +3948,10 @@ void __cdecl MoveCharacter(intptr_t p1)
 
             if (AsObject(o)->Type != 390 || v378 == 403 || v378 == 406 || v378 == 409 || v378 == 411 || v378 == 500) {
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + (intptr_t)AsObject(o)->BoneMatrices),
+                             (float*)(48 * (*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))) + (intptr_t)AsObject(o)->BoneMatrices),
                              v372, p1f, 1);
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + (intptr_t)AsObject(o)->BoneMatrices),
+                             (float*)(48 * (*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))) + (intptr_t)AsObject(o)->BoneMatrices),
                              v371, p2f, 1);
                 mc_CreateBlur(c, p1f, p2f, v373, Type, 0);
             } else {
@@ -3974,10 +3974,10 @@ void __cdecl MoveCharacter(intptr_t p1)
                     // elemento YA son esos 48 bytes: multiplicar por 3 otra vez daba
                     // 144*bone y leia la matriz de otro hueso.
                     BMD_TransformPosition((void*)v422,
-                                 (float*)BoneMatrix[*(BYTE*)(c + 24 * v377 + 628)],
+                                 (float*)BoneMatrix[*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))],
                                  v372, p1f, 0);
                     BMD_TransformPosition((void*)v422,
-                                 (float*)BoneMatrix[*(BYTE*)(c + 24 * v377 + 628)],
+                                 (float*)BoneMatrix[*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))],
                                  v371, p2f, 0);
                     mc_CreateBlur(c, p1f, p2f, v373, Type, 1);
                     AnimationFrame += v370f;

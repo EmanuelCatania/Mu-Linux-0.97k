@@ -82,7 +82,7 @@ void __cdecl RenderBoids(void)
 
     // El bound de IDA es `< &unk_83A0378` = 40 slots; lo expresamos como un
     // contador para no construir un puntero fuera del array.
-    float* v0 = (float*)&g_WeatherSlotPool[0x168];
+    float* v0 = (float*)&g_WeatherSlotPool[EntityOffset(0x168)];
     for (int __slot = 0; __slot < 40; ++__slot) {
         WORD entType = *((WORD*)v0 - 179);
         // Pre-tick: angle adjust (+90° rotation per frame for non-266)
@@ -894,11 +894,11 @@ void __cdecl RenderWheelWeapon(intptr_t o)
 
     // Volcar posición/acción/skin al slot del modelo compartido.
     BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * model_id;
-    *(float*)(mdl + 116) = zUp;
-    *(BYTE*) (mdl + 160) = sample ? sample->action : AsObject(o)->CurrentAction;                       // CurrentAction
-    *(BYTE*) (mdl + 152) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7); // clase
-    *(int*)  (mdl + 108) = *(int *)&AsObject(o)->Position[0];
-    *(int*)  (mdl + 112) = *(int *)&AsObject(o)->Position[1];
+    *(float*)(mdl + 116 + BMD_FIELD_SHIFT) = zUp;
+    *(BYTE*) (mdl + 160 + BMD_FIELD_SHIFT) = sample ? sample->action : AsObject(o)->CurrentAction;                       // CurrentAction
+    *(BYTE*) (mdl + 152 + BMD_FIELD_SHIFT) = (BYTE)(*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7); // clase
+    *(int*)  (mdl + 108 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[0];
+    *(int*)  (mdl + 112 + BMD_FIELD_SHIFT) = *(int *)&AsObject(o)->Position[1];
 
     AsObject(o)->Type = (short)model_id;
     ItemObjectAttributeForRender(AsObject(o));                          // ItemObjectAttribute

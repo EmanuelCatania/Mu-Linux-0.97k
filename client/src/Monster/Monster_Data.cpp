@@ -534,7 +534,7 @@ LAB_005099d1:
       *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x94)) = 0x3ecccccd;
       *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x74)) = 0x3ecccccd;
       *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0xa4)) = 0x3ecccccd;
-      *(undefined4 *)(iVar2 + 0x54) = 6;
+      AsModel(iVar2)->BoneHead = 6;
       return;
     case 0x21:
       LoadWaveFile(300, "Data\\Sound\\mBahamut1.wav",2,'\x01');
@@ -548,7 +548,7 @@ LAB_005099d1:
       Model_SetAnimationSlots(iVar1,0x84,0x85,0x68,0x68,0x85);
       *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x34)) = 0x3f000000;
       *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x44)) = 0x3f000000;
-      *(undefined4 *)(iVar2 + 0x54) = 0x14;
+      AsModel(iVar2)->BoneHead = 0x14;
       return;
     case 0x23:
       LoadWaveFile(0x131, "Data\\Sound\\mValkyrie1.wav",2,'\x01');

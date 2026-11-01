@@ -99,7 +99,7 @@ void PrepareItems() {
         if (!base[72]) continue;
         OBJECT &o = *(OBJECT *)(base + 72);
         const char visible = (char)Frustum_TestSphere(o.Position, 400.0f);
-        base[424] = visible;
+        base[72 + EntityOffset(0x160)] = visible;
         if (!visible) continue;
         int type = o.Type;
         if (type >= 624 && type < 784) type = 390;
@@ -162,8 +162,8 @@ void PrepareCharacter(CHARACTER &c) {
             if (type != 707 || o.Alpha <= _DAT_005524f8) continue;
             void *pants = (void *)(DAT_05828d58 + type * BMD_STRIDE);
             memcpy(context, pants, sizeof(context));
-            *(float *)((char *)pants + 0x68) = o.Scale;
-            memcpy((char *)pants + 0x6c, o.Position, sizeof(o.Position));
+            *(float *)((char *)pants + 0x68 + BMD_FIELD_SHIFT) = o.Scale;
+            memcpy((char *)pants + 0x6c + BMD_FIELD_SHIFT, o.Position, sizeof(o.Position));
             DivineSkirt_Tick(&c.Object, type, &piece, pants);
             memcpy(pants, context, sizeof(context));
         }

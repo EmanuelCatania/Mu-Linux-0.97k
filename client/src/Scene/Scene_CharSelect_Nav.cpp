@@ -376,7 +376,7 @@ int __cdecl Character_FindByKey_WithClear(int a1)
   {
     if ( *(BYTE *)(i + CharactersClient) )
     {
-      if ( *(short *)(i + CharactersClient + 476) == a1 )
+      if ( *(short *)(i + CharactersClient + EntityOffset(476)) == a1 )
       {
         result = v1;
       }

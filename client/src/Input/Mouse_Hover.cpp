@@ -488,7 +488,7 @@ int __cdecl ItemOnGround_HoverTest(void)
     // Pass 1: atenuar todos los items activos + visibles.
     for (int i = 0; i < 1000; ++i) {
         BYTE* base = pool + i * GROUND_ITEM_STRIDE;
-        if (base[72] && base[424]) {
+        if (base[72] && base[72 + EntityOffset(0x160)]) {
             *(DWORD*)(base + 304) = 0x3E4CCCCD;   // 0.2f
             *(DWORD*)(base + 308) = 0x3E4CCCCD;
             *(DWORD*)(base + 312) = 0x3E4CCCCD;
@@ -504,7 +504,7 @@ int __cdecl ItemOnGround_HoverTest(void)
     int best = -1, bestD = 24 * 24 + 1;
     for (int i = 0; i < 1000; ++i) {
         BYTE* base = pool + i * GROUND_ITEM_STRIDE;
-        if (base[72] && base[424]) {
+        if (base[72] && base[72 + EntityOffset(0x160)]) {
             int sx = *(short*)(base + 72 + 92);   // = v1+92
             int sy = *(short*)(base + 72 + 94);
             int dx = sx - mouseX, dy = sy - mouseY;

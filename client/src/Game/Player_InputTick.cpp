@@ -428,7 +428,7 @@ static void HUD_PickUpNearestItem(void)
     const float heroY = *(const float*)(Hero + 20);
     for (int i = 0; i < 1000; ++i) {
         const BYTE* item = &DAT_07e12840[0] + (size_t)i * GROUND_ITEM_STRIDE;
-        if (!item[72] || !item[424]) continue;                   // vivo y visible
+        if (!item[72] || !item[72 + EntityOffset(0x160)]) continue;                   // vivo y visible
         const float dx = *(const float*)(item + 88) - heroX;
         const float dy = *(const float*)(item + 92) - heroY;
         if (dx * dx + dy * dy >= 300.0f * 300.0f) continue;

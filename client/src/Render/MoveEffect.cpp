@@ -1065,7 +1065,7 @@ LAB_00469772:
               pcVar11 = (char *)(iVar9 + DAT_07abf5d0);
               local_35c = (float *)(int)(AsObject(param_1)->Position[1] - AsObject(pcVar11)->Position[1]);
               if ((((*pcVar11 != '\0') && (*(char *)&AsObject(pcVar11)->Visible != '\0')) && (pcVar11 != DAT_07abf5d8)) &&
-                 ((pcVar11[0x2fd] == '\0' &&
+                 ((pcVar11[EntityOffset(0x2fd)] == '\0' &&
                   (SQRT(local_348 * local_348 + (float)(int)(intptr_t)local_35c * (float)(int)(intptr_t)local_35c) <=
                    _DAT_0055285c)))) {
                 if (AsObject(pcVar11)->Type == 0x186) {
@@ -2424,7 +2424,7 @@ switchD_00466b93_caseD_c1:
         pvVar1 = (void *)(DAT_05828d58 + sVar3 * BMD_STRIDE);
         fVar13 = AsObject(param_1)->Velocity;
         *(undefined1 *)((intptr_t)pvVar1 + 0xa0 + BMD_FIELD_SHIFT) = AsObject(param_1)->CurrentAction;
-        BMD__PlayAnimation(pvVar1,param_1 + 0x42,param_1 + 0x43,(undefined1 *)((intptr_t)param_1 + 0x106),fVar13);
+        BMD__PlayAnimation(pvVar1,&AsObject(param_1)->AnimationFrame,&AsObject(param_1)->PriorAnimationFrame,(undefined1 *)((intptr_t)param_1 + EntityOffset(0x106)),fVar13);
       }
       sVar3 = AsObject(param_1)->Type;
       if ((sVar3 < 0x4ba) || (0x4bc < sVar3)) {

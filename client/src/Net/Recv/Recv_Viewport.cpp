@@ -234,7 +234,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             if (h[EntityOffset(848)] == 0) {
                 const int srcX = AsCharacter(h)->PositionX;
                 const int srcY = AsCharacter(h)->PositionY;
-                if (Path_FindRoute(srcX, srcY, gx, gy, h + 852, 0.0f)) {
+                if (Path_FindRoute(srcX, srcY, gx, gy, h + EntityOffset(852), 0.0f)) {
                     AsCharacter(h)->Movement = 1;
                     // 00427B90 invokes SetPlayerWalk immediately
                     // para el tipo 322. Al resto de las entidades remotas las

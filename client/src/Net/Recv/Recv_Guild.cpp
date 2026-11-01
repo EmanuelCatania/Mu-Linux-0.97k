@@ -443,7 +443,7 @@ void NetRecv_5D(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     const int entitySlot = FindCharacterIndex(entityKey);
     BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
     if (base && entitySlot >= 0 && entitySlot < 400)
-        *(short*)(base + entitySlot * CHARACTER_STRIDE + 474) = -1;
+        *(short*)(base + entitySlot * CHARACTER_STRIDE + EntityOffset(474)) = -1;
     GuildOpened = 0;
     g_nGuildMemberCount = -1;
     NetLog("NET: GuildMark clear entity=%u", (unsigned)entityKey);
