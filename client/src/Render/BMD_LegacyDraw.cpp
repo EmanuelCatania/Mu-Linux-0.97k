@@ -116,7 +116,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
         mode = 2;
         BMDDevice::Select({BMDDevice::Pass::Surface,static_cast<unsigned>(fl),tex,f3 < _DAT_00552544});
     } else if ((fl & 0x40) == 0x40) {
-        if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
+        if ((&DAT_083a7cc8)[tex * TEXTURE_STRIDE] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
         BMDDevice::Select({BMDDevice::Pass::Metal});
     } else {

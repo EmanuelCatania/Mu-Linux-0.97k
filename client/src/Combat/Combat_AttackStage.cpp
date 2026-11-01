@@ -68,7 +68,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
             float localPos[3] = {0.0f, 0.0f, 0.0f};
             // ExtOption index: c->Weapon[Hand].ExtOption = *(BYTE*)(c + Hand*0x18 + 0x274)
             BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
-            DWORD boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
+            intptr_t boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos[3];
             float* swordPos = (float*)(o + 0x188); // o->m_vPosSword
@@ -81,7 +81,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         if (attackTime > 5 && attackTime < 13) {
             float localPos2[3] = {0.0f, 0.0f, 0.0f};
             BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
-            DWORD boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
+            intptr_t boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos2[3];
             BMD__TransformPosition((void*)pModel, boneMat, localPos2, worldPos2, true);
@@ -133,7 +133,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
                 float light[3] = {1.0f, 1.0f, 0.5f};
                 float localPos[3] = {0.0f, 0.0f, 0.0f};
                 BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
-                DWORD bt2 = (intptr_t)AsObject(o)->BoneMatrices;
+                intptr_t bt2 = (intptr_t)AsObject(o)->BoneMatrices;
                 float (*boneMat)[4] = (float(*)[4])(bt2 + extOpt * 0x30);
                 float worldPos[3];
                 BMD__TransformPosition((void*)pModel, boneMat, localPos, worldPos, true);
@@ -271,8 +271,8 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt)
 
         // Final: update Models[0x186] bone data and set attackTime = 15
-        intptr_t modelData = *(DWORD*)(modelsBase + 0x186 * BMD_STRIDE + 0x30);
-        *(float*)(modelData + 0x3D4) = (float)(int)c + _DAT_005528f4;
+        intptr_t modelData = (intptr_t)AsModel(modelsBase + 0x186 * BMD_STRIDE)->Actions;
+        *(float*)(modelData + ModelActionByte(0x3D4)) = (float)(int)c + _DAT_005528f4;
         AsCharacter(c)->SkillStage = 0x0F;
         g_iLimitAttackTime = 15;
         return true;
@@ -360,7 +360,7 @@ bool __cdecl AttackStage(intptr_t c, intptr_t o)
     } else if(skill==48) { if(stage>9 && type==390 && AsObject(o)->CurrentAction==63) AsCharacter(c)->SkillStage=15; }
     else if(skill==49) { if(AsObject(o)->AnimationFrame>=5.0f && type==390 && (AsObject(o)->CurrentAction==64 || AsObject(o)->CurrentAction==65)) AsCharacter(c)->SkillStage=15; }
     else if(skill==52) { if(type==390 && AsObject(o)->CurrentAction>=34 && AsObject(o)->CurrentAction<=91 && AsObject(o)->AnimationFrame>=5.0f){AsObject(o)->PriorAnimationFrame=4.0f;AsObject(o)->AnimationFrame=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100, AsObject(o),0);} g_iLimitAttackTime=5; }
-    else if(skill==55) { if(type==390 && AsObject(o)->CurrentAction==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(AsObject(o)->AnimationFrame>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)AsObject(o)->PKKey,(float*)(intptr_t)FindHotKey(55),0); const intptr_t modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
+    else if(skill==55) { if(type==390 && AsObject(o)->CurrentAction==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(AsObject(o)->AnimationFrame>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)AsObject(o)->PKKey,(float*)(intptr_t)FindHotKey(55),0); const intptr_t modelState=DAT_05828d58?(intptr_t)AsModel(DAT_05828d58+390*BMD_STRIDE)->Actions:0; if(modelState && CharacterAttribute) *(float*)(modelState+ModelActionByte(980))=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; AsCharacter(c)->SkillStage=15;} } }
     else if(skill==56) { if(type==390 && AsObject(o)->CurrentAction==81){float a[3]={AsObject(o)->Angle[0],AsObject(o)->Angle[1],AsObject(o)->Angle[2]-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);AsCharacter(c)->SkillStage=15;} }
     // IDA: AttackStage (0x00448930). DESVIACION DLL: adelantar magia sólo en jugadores.
     // Los monstruos conservan las etapas intermedias que consume AttackEffect (Alquamos 1, Queen Rainer 5).

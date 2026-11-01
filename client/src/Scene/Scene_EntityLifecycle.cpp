@@ -259,7 +259,7 @@ void __cdecl DeleteBug(DWORD Owner) {
 // is functionally identical. The Ghidra decompile labelled this Entity_Spawn — that was wrong.
 void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_4) {
     DWORD *param_2 = (DWORD*)param_2_v;
-    intptr_t param_3 = (int)(uintptr_t)param_3_v;
+    intptr_t param_3 = (intptr_t)param_3_v;
     if ((*(short*)(param_3 + 2) == 0x186) || (param_1 == 0x330)) {
         // El original corta en 0x83A236F (fin del pool en el binario); acá el
         // pool es DAT_083a1218: 10 slots de 0x1BC.
@@ -274,23 +274,23 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
         pcVar5[100]  = pcVar5[0x65] = pcVar5[0x66] = pcVar5[0x67] = -1;
         AsObject(pcVar5)->Type   = (short)param_1;
         pcVar5[0x68] = pcVar5[0x69] = '\0'; pcVar5[0x6a] = (char)0x80; pcVar5[0x6b] = '?';
-        pcVar5[0x164]= pcVar5[0x165]= '\0'; pcVar5[0x166]= (char)0x80; pcVar5[0x167]= '?';
+        pcVar5[0x164 + OBJECT_FIELD_SHIFT]= pcVar5[0x165 + OBJECT_FIELD_SHIFT]= '\0'; pcVar5[0x166 + OBJECT_FIELD_SHIFT]= (char)0x80; pcVar5[0x167 + OBJECT_FIELD_SHIFT]= '?';
         *pcVar5 = '\x01';
         *(char *)&AsObject(pcVar5)->Visible = '\0';
         *(char *)&AsObject(pcVar5)->LightEnable  = '\x01';
         *(char *)&AsObject(pcVar5)->ContrastEnable  = '\0';
         *(char *)&AsObject(pcVar5)->AlphaEnable = '\0';
         *(char *)&AsObject(pcVar5)->EnableBoneMatrix = '\0';
-        *(int*)(pcVar5 + 0xfc)  = param_3;
+        AsObject(pcVar5)->Owner = (OBJECT*)param_3;
         pcVar5[0x0c]='3'; pcVar5[0x0d]='3'; pcVar5[0x0e]='3'; pcVar5[0x0f]='?';
         pcVar5[0x60]='\x1e'; pcVar5[0x61]=pcVar5[0x62]=pcVar5[63]='\0';
-        pcVar5[0x168]=pcVar5[0x169]=pcVar5[0x16a]=pcVar5[0x16b]='\0';
+        pcVar5[0x168 + OBJECT_FIELD_SHIFT]=pcVar5[0x169 + OBJECT_FIELD_SHIFT]=pcVar5[0x16a + OBJECT_FIELD_SHIFT]=pcVar5[0x16b + OBJECT_FIELD_SHIFT]='\0';
         *(DWORD *)&AsObject(pcVar5)->Position[0]=param_2[0]; *(DWORD *)&AsObject(pcVar5)->Position[1]=param_2[1]; *(DWORD *)&AsObject(pcVar5)->Position[2]=param_2[2];
         *(DWORD *)&AsObject(pcVar5)->Angle[0]=*(DWORD*)(param_3+0x1c);
         *(DWORD *)&AsObject(pcVar5)->Angle[1]=*(DWORD*)(param_3+0x20);
         *(DWORD *)&AsObject(pcVar5)->Angle[2]=*(DWORD*)(param_3+0x24);
-        pcVar5[0x10c]=pcVar5[0x10d]=pcVar5[0x10e]=pcVar5[0x10f]='\0';
-        pcVar5[0x108]=pcVar5[0x109]=pcVar5[0x10a]=pcVar5[0x10b]='\0';
+        pcVar5[0x10c + OBJECT_FIELD_SHIFT]=pcVar5[0x10d + OBJECT_FIELD_SHIFT]=pcVar5[0x10e + OBJECT_FIELD_SHIFT]=pcVar5[0x10f + OBJECT_FIELD_SHIFT]='\0';
+        pcVar5[0x108 + OBJECT_FIELD_SHIFT]=pcVar5[0x109 + OBJECT_FIELD_SHIFT]=pcVar5[0x10a + OBJECT_FIELD_SHIFT]=pcVar5[0x10b + OBJECT_FIELD_SHIFT]='\0';
         pcVar5[0xe8]=pcVar5[0xe9]='\0'; pcVar5[0xea]=pcVar5[0xeb]='@';
         pcVar5[0xec]=pcVar5[0xed]='\0'; pcVar5[0xee]=pcVar5[0xef]='@';
         pcVar5[0xf0]=pcVar5[0xf1]='\0'; pcVar5[0xf2]=pcVar5[0xf3]='@';

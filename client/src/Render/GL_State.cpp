@@ -100,7 +100,7 @@ void __cdecl GL_BindTextureSlot(int param_1)
     DAT_00561574 = param_1;
     if (-1 < param_1) {
       ResourceTables::EnsureTextures(std::size_t(param_1)+1);
-      DWORD texture = (&DAT_083a7ccc)[param_1 * 0xe];
+      DWORD texture = (&DAT_083a7ccc)[param_1 * TEXTURE_STRIDE_DWORDS];
 
       // Diagnóstico sin efectos laterales: la instancia puede existir y aun
       // así resultar invisible si el slot no recibió textura/dimensiones.

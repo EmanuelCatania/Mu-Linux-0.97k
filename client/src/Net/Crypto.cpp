@@ -271,6 +271,8 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
 
   // Ofuscación por HashTable: si la tabla no fue construida (vtable==NULL
   // o capacity==0) no hace nada (anti-tamper, no es lógica de juego).
+  // La tabla anti-tamper guarda punteros en 32 bits; en x64 queda inerte.
+  if (sizeof(void*) != 4) return;
   if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return;
   uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_2);
   abStack_8[0] = 0;
@@ -352,6 +354,7 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
   undefined4 local_4;
 
   local_4 = param_1;
+  if (sizeof(void*) != 4) return (void*)0;
   if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return (void*)0;
   uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_1);
   uVar9 = 0;

@@ -295,7 +295,7 @@ uint RenderBugs(void)
         unsigned short vis = TestFrustrum2D(posX * 0.01f, posY * 0.01f, -20.0f);
         if (!vis) continue;
 
-        intptr_t ownerPtr = *(DWORD*)(slot + 0xFC);
+        intptr_t ownerPtr = (intptr_t)AsObject(slot)->Owner;
         short typeCode = *(short*)(slot + 2);
 
         bool ownerIsPlayer = false;
@@ -365,7 +365,7 @@ LAB_0050386e:
 void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,char param_4,int param_5)
 {
   undefined *puVar1;
-  intptr_t param_2 = (int)(uintptr_t)param_2_v;
+  intptr_t param_2 = (intptr_t)param_2_v;
 
   *(undefined1 *)((intptr_t)param_1 + 0x44) = 0;
   // _DAT_005597c8 is float; param_5 is a float passed as undefined4. Reinterpret

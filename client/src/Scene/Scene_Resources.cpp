@@ -33,7 +33,7 @@ void Scene_RefreshCharSelectBackdrop()
     const int id = textures[i];
     if (std::find(selectBackdropTextures.begin(), selectBackdropTextures.end(), id)
         == selectBackdropTextures.end()) {
-      ++g_BitmapsRaw[id * 0x38 + 0x30];
+      ++g_BitmapsRaw[id * TEXTURE_STRIDE + 0x30];
       selectBackdropTextures.push_back(id);
     }
   }

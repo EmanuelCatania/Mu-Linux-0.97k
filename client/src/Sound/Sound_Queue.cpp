@@ -108,7 +108,7 @@ void __cdecl Render_DrawSprite(const OBJECT* object)
     if (fVar1 > _DAT_0055256c) fVar1 = 1.0f;
   }
   fVar1 *= *(float *)(param_1 + 0xc);
-  iVar2 = *(short *)(param_1 + 2) * 0x38;
+  iVar2 = *(short *)(param_1 + 2) * TEXTURE_STRIDE;
   RenderSprite_0((int)*(short *)(param_1 + 2),(float *)(param_1 + 0x10),
                fVar1 * *(float *)((char*)&DAT_083a7cc0 + iVar2),fVar1 * *(float *)((char*)&DAT_083a7cc4 + iVar2),
                (float *)(param_1 + 0xe8),*(float *)(param_1 + 0x24),0.0,0.0,1.0,1.0);

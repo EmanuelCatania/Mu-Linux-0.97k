@@ -441,7 +441,7 @@ void __cdecl ItemDrop_Render(void)
                     // Fade por altura: lo que sube por encima de ownerZ+50 se
                     // oscurece (por eso el aura nunca pasa de la cabeza).
                     float c[3] = { light[0], light[1], light[2] };
-                    intptr_t owner = (int)(uintptr_t)j->Target;
+                    intptr_t owner = (intptr_t)j->Target;
                     if (owner) {
                         double d = ((double)*((const float*)v6 + 1)
                                   - ((double)*(const float*)(owner + 24) + 50.0)) * 0.0099999998;
@@ -1011,7 +1011,7 @@ void __cdecl EffectPool_RenderAll(void)
 
         // Type 266: gate effect with BMD_Animation + RenderPartObject.
         if (type == 266) {
-            BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 50008);
+            BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * 266 + 0x0);
             float angles_in[3]  = { v0[-3], v0[-2], v0[-1] };
             float headA[3]      = { v0[0],  v0[1],  v0[2]  };
             BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
@@ -1171,7 +1171,7 @@ void Fauna_TickSprites() {
     if (!DAT_05828d58) return;
     if (SceneFlag == 5) {
         for (int i = 0; i < 40; ++i) {
-            int entity = (intptr_t)(g_WeatherSlotPool + i * OBJECT_STRIDE);
+            intptr_t entity = (intptr_t)(g_WeatherSlotPool + i * OBJECT_STRIDE);
             OBJECT &o = *AsObject(entity);
             if (!o.Live) continue;
             o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);
@@ -1195,7 +1195,7 @@ void Fauna_TickSprites() {
     }
     if (SceneFlag != 2 && SceneFlag != 4 && SceneFlag != 5) return;
     for (int i = 0; i < 10; ++i) {
-        int entity = (intptr_t)((char *)DAT_083a1218 + i * OBJECT_STRIDE);
+        intptr_t entity = (intptr_t)((char *)DAT_083a1218 + i * OBJECT_STRIDE);
         OBJECT &o = *AsObject(entity);
         if (!o.Live) continue;
         o.Visible = (BYTE)TestFrustrum2D(o.Position[0] * 0.01f, o.Position[1] * 0.01f, -20.0f);

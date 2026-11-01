@@ -371,7 +371,7 @@ int Game_SceneUpdate(void)
     // setea entity[+0x105], pero no animan).
     {
         for (int s = 0; s < 8; ++s) {
-            intptr_t e = (int)(uintptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
+            intptr_t e = (intptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
             if (*(char*)e != '\0') {
                 MoveCharacterVisual(e);            // model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108]

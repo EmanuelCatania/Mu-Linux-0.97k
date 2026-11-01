@@ -762,12 +762,12 @@ void __stdcall MoveBugs(void) {
     char*  base = (char*)DAT_083a1218;
     DWORD* v0   = (DWORD*)(base + 0xFC);      // = &unk_83A1314 (owner field de entry 0)
     for (int slot = 0; slot < 10; ++slot) {
-        char* e = (char*)v0 - 0xFC;           // v1 — entry base
+        char* e = (char*)v0 - offsetof(OBJECT, Owner);           // v1 — entry base
         if (*(BYTE*)e == 0)                    // !Live
             goto next_bug;
 
     { // El salto de salida no entra en el ámbito de estas variables.
-        intptr_t owner = *v0;                     // *v0 — Owner ptr
+        intptr_t owner = (intptr_t)AsObject(e)->Owner;                     // *v0 — Owner ptr
         if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
                 *(BYTE*)e = 0;                 // kill: owner muerto / Kind != 1
@@ -777,7 +777,7 @@ void __stdcall MoveBugs(void) {
         Alpha(AsObject(e));              // Actualiza el alpha sin truncar la dirección.
 
         {
-        intptr_t   v2 = (int)owner;
+        intptr_t   v2 = (intptr_t)owner;
         float x2 = *(float*)(v2 + 16);         // owner posX
         float y2 = *(float*)(v2 + 20);         // owner posY
         int   v4 = AsObject(e)->Type;           // type
@@ -813,7 +813,7 @@ void __stdcall MoveBugs(void) {
             if ((TerrainWall[idx] & 1) == 1) {
                 *(DWORD *)&AsObject(e)->Alpha = 0;      // en muro: apaga alpha, no copia pos
             } else {
-                intptr_t  v8 = *v0;
+                intptr_t  v8 = owner;
                 char v9 = *(BYTE*)(v8 + 124);
                 if (v9 == 1 || v9 == 2) {
                     float v10 = AsObject(e)->Alpha - 0.1f;
@@ -849,26 +849,26 @@ void __stdcall MoveBugs(void) {
                         else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;        // animSpeed = 0.34f
-                    *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
+                    *(BYTE*)e = *(BYTE*)owner;               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
                     if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 7);
                     else                       SetAction(AsObject(e), 6);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 } else if (v14 < 0x22 || v14 > 0x37) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 1);
                     else                                       SetAction(AsObject(e), 0);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 } else if (v11 == 267) {
                     if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 5);
                     else                       SetAction(AsObject(e), 4);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 } else {
                     SetAction(AsObject(e), 3);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 }
             }
         }
@@ -895,7 +895,7 @@ void __stdcall MoveBugs(void) {
         short v29 = AsObject(e)->Type;
         // 0.97.20: pet custom (Data/Custom/Pets del server).
         if (const Proto::CATALOG_PET* pet = gContentCatalog.GetPetByModel(v29)) {
-            CustomPet_Move(e, (BYTE*)(uintptr_t)*v0, *pet);
+            CustomPet_Move(e, (BYTE*)owner, *pet);
         }
         if (v29 == 816 || v29 == 817) {
             float v30 = AsObject(e)->Position[1];                // posY
@@ -928,8 +928,8 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Direction[0] = 0;
                 AsObject(e)->Direction[2] = (float)(rand() % 64 - 32) * 0.1f;
             }
-            intptr_t v35 = *v0;
-            if (*(float*)(*v0 + 24) + 100.0f > AsObject(e)->Position[2])
+            intptr_t v35 = owner;
+            if (*(float*)(owner + 24) + 100.0f > AsObject(e)->Position[2])
                 AsObject(e)->Direction[2] = AsObject(e)->Direction[2] + 1.5f;
             if (*(float*)(v35 + 24) + 200.0f < AsObject(e)->Position[2])
                 AsObject(e)->Direction[2] = AsObject(e)->Direction[2] - 1.5f;

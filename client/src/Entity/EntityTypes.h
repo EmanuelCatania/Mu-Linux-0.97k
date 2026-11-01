@@ -176,6 +176,7 @@ struct CHARACTER {
 
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
 constexpr int OBJECT_STRIDE = sizeof(OBJECT);  // paso de los pools de OBJECT
+constexpr int OBJECT_FIELD_SHIFT = (int)sizeof(void*) - 4;   // campos posteriores a Owner
 struct CHARACTER;
 #if UINTPTR_MAX == 0xFFFFFFFFu
 static_assert(sizeof(OBJECT) == 0x1BC, "OBJECT");

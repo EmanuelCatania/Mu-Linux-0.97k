@@ -161,7 +161,7 @@ void __cdecl Game_MainLoop(HDC param_1)
                     DWORD key = ((DWORD*)old_bd0)[i];
                     DWORD val = ((DWORD*)old_bcc)[i];
                     // HashTable_Insert equivalent
-                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(MAIN_HASH_CLASS + 0xc))(key);
+                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(key);
                     while (((DWORD*)DAT_055c9bd0)[h] != 0 && ((DWORD*)DAT_055c9bd0)[h] != key)
                         h = (h + 1) % DAT_055c9bd4;
                     ((DWORD*)DAT_055c9bcc)[h] = val;

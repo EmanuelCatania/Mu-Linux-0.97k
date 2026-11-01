@@ -69,7 +69,7 @@ void __cdecl AttackEffect(int entity)
     // not the model type. `frame` is +757 and `action` is +261.
     const BYTE frame = AsCharacter(entity)->SkillStage;
     const BYTE action = AsCharacter(entity)->Object.CurrentAction;
-    const DWORD boneMatricesTop = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
+    const intptr_t boneMatricesTop = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const int modelTypeTop = AsCharacter(entity)->Object.Type;
     void* modelTop = (modelTypeTop >= 0 && DAT_05828d58)
         ? (void*)(DAT_05828d58 + modelTypeTop * BMD_STRIDE) : 0;
@@ -256,7 +256,7 @@ void __cdecl AttackEffect(int entity)
     float jointAngle[3] = { 0.0f, 0.0f, 0.0f };
     float white[3] = { 1.0f, 1.0f, 1.0f };
     void* model = (void*)(DAT_05828d58 + modelType * BMD_STRIDE);
-    const DWORD boneMatrices = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
+    const intptr_t boneMatrices = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const auto handPosition = [&](int handIndex, float offsetY, int secondHandAt = 2) {
         local[0] = 0.0f;
         local[1] = offsetY;

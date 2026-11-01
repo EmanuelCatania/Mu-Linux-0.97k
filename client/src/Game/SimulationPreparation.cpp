@@ -129,7 +129,7 @@ void PrepareCharacter(CHARACTER &c) {
         HeroEquipWatchdog(&c);
         model = (void *)(DAT_05828d58 + o.Type * BMD_STRIDE);
     }
-    char context[0xbc];
+    char context[sizeof(BMD)];
     memcpy(context, model, sizeof(context));
     if ((void *)&c == (void *)DAT_07abf5d8 && SceneFlag == 5) o.Visible = 1;
     ObjectPose_PrepareSimulation(AsObject(&c), 1);

@@ -143,15 +143,9 @@ void __cdecl Scene_Intro(HDC param_1)
     DWORD       stack_e8;   // local hash-compare buffer (4 bytes at EBP-0x18)
 
     // Reset Bitmaps table (stride 0x38, ~1414 entries = 0x13D30 bytes)
-    puVar3 = (undefined1*)&DAT_083a7cd0;
-    {
-        // NOTE: loop bound must stay within g_BitmapsRaw[0x13D30]; starts at offset 0x30
-        undefined1 *endPtr = (undefined1*)&g_BitmapsRaw[0] + 0x13D30;
-        do {
-            *(undefined4 *)(puVar3 + 4) = 0;
-            *puVar3 = 0;
-            puVar3 = puVar3 + 0x38;
-        } while (puVar3 + 0x38 <= endPtr);
+    for (int i = 0; i < 0x13D30 / 0x38; ++i) {
+        Bitmaps[i].Ref = 0;
+        Bitmaps[i].Buffer = nullptr;
     }
 
     OpenFont();    // World_Init
@@ -222,7 +216,7 @@ void __cdecl Scene_Intro(HDC param_1)
     local_8 = (undefined1 *)CreateHero(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
     puVar1  = (undefined4 *)(local_8 + 0x388);
     local_c = puVar1;
-    uVar4   = (**(code **)(MAIN_HASH_CLASS + 0xc))(puVar1);
+    uVar4   = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
 
     // HashTable anti-tamper tracking (ref-count register/unregister, not game logic)
     uVar14 = 0;

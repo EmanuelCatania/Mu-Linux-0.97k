@@ -65,7 +65,7 @@ public:
     void Reset() { std::memset(data,0,count*stride); }
 };
 Table& Models() { static Table table(sizeof(BMD));return table; }
-Table& Textures() { static Table table(0x38);return table; }
+Table& Textures() { static Table table(sizeof(void*)==4?0x38:0x40);return table; }
 }
 void EnsureModels(std::size_t count) { Models().Ensure(count); }
 void EnsureTextures(std::size_t count) { Textures().Ensure(count); }

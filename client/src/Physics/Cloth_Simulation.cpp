@@ -734,12 +734,10 @@ void Destroy(MeshCloth &c) {
 // VertexIndex[4] en +2).
 inline char* MeshPtr(void *model, intptr_t mesh) {
     // El layout legado conserva el puntero de tabla en 32 bits hasta B2.
-    const auto table = static_cast<std::uintptr_t>(
-        *reinterpret_cast<const DWORD*>(static_cast<BYTE*>(model) + 0x28));
-    return reinterpret_cast<char*>(table + static_cast<std::intptr_t>(mesh) * 0x28);
+    return reinterpret_cast<char*>(reinterpret_cast<ClothModelMesh*>(AsModel(model)->Meshs) + mesh);
 }
 inline short TriVertex(char *mesh, int tri, int i) {
-    return *(short *)(*(int *)(mesh + 0x1c) + tri * 0x24 + 2 + i * 2);
+    return *(short *)(reinterpret_cast<ClothModelMesh*>(mesh)->Triangles + tri * 0x24 + 2 + i * 2);
 }
 
 int FindMatchVertex(char *mesh, int v1, int v2, int v3) {
@@ -794,7 +792,7 @@ bool Create(MeshCloth &c, void *model, const float *bones) {
     c.links       = new Link[nTri * 3 * 2];
 
     bool anyFixed = false;
-    const char *verts = (const char *)*(int *)(mesh + 0x10);
+    const char *verts = (const char *)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
     for (int v = 0; v < nV; ++v) {
         c.vertices[v].pos = PoseVertex(model, bones, verts + v * 0x10);
         if (*(short *)(verts + v * 0x10) == kFixedBone) {
@@ -896,7 +894,7 @@ bool KeepLength(Vertex &v, const Vertex &other, const float *len) {
 // conserva sus anclajes y esferas aunque otra malla reutilice los buffers VT.
 void CapturePose(MeshCloth &c, void *model, const float *boneBase) {
     char *mesh = MeshPtr(model, kSkirtMesh);
-    const char *verts = (const char *)*(int *)(mesh + 0x10);
+    const char *verts = (const char *)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
     for (int v = 0; v < c.numVertices; ++v) {
         if (*(short *)(verts + v * 0x10) == kFixedBone) {
             c.vertices[v].anchor = PoseVertex(model, boneBase, verts + v * 0x10);

@@ -45,12 +45,12 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
     BYTE* self = (BYTE*)This;
     if (AsModel(self)->NumActions == 0) return true;  // model has no animations
     BYTE action = AsModel(self)->CurrentAction;
-    int actionsBase = *(int *)&AsModel(self)->Actions;
+    intptr_t actionsBase = (intptr_t)AsModel(self)->Actions;
     // Guarda propia: actionsBase puede ser basura si el slot fue parcialmente
     // inicializado (ej. particle pool con stale data). Sólo se descartan
     // direcciones bajas: en Linux x86 el heap puede estar por encima de 2 GB.
-    if ((uintptr_t)(unsigned int)actionsBase < 0x100000u) return true;
-    short* pAction = (short*)(uintptr_t)((unsigned int)actionsBase + action * 0x10u);
+    if ((uintptr_t)actionsBase < 0x100000u) return true;
+    short* pAction = (short*)(actionsBase + action * sizeof(ModelAnimationAction));
     short frameCount = *(short*)((BYTE*)pAction + 8);
     if (frameCount <= 1) return true;
 
@@ -106,10 +106,10 @@ extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o)
     // OpenMonsterModel writes to (and what works for monsters). Don't change.
     short actionCount = *(short*)(model + 38);
     BYTE  modelAction = AsObject(o)->CurrentAction;  // entity[+0x105] — current action
-    intptr_t   actionsBase = (actionCount > 0) ? *(int*)&((BMD*)(uintptr_t)(model))->Actions : 0;
+    intptr_t   actionsBase = (actionCount > 0) ? (intptr_t)((BMD*)(uintptr_t)(model))->Actions : 0;
     if (actionCount > 0) {
         if (actionsBase) {
-            speed = *(float*)(actionsBase + 16 * modelAction + 4);
+            speed = *(float*)(actionsBase + sizeof(ModelAnimationAction) * modelAction + 4);
             if (speed < 0.0f) speed = 0.0f;
         }
         // c[847] (==entity[+0x34F]): "fast walk" flag → 1.5× for actions 3..4

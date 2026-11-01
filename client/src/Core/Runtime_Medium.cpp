@@ -273,14 +273,14 @@ int __cdecl Xor_ConvertBuffer(void *lpBuffer, DWORD nBytes, int iKey) {
 // Escanea slots [TextureBegin .. TextureCurrent) comparando el filename en
 // [+0x00..+0x1F] de cada slot de Bitmaps. En hit, escribe el puntero del slot
 // en *dwTexture y devuelve el índice; en miss, devuelve -1 y deja *dwTexture=0.
-int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
-    *dwTexture = 0;
+int __cdecl FindTextureByName(char *Name, char **dwTexture) {
+    *dwTexture = nullptr;
     int lo = (int)TextureBegin;   // TextureBegin
     int hi = (int)TextureCurrent;   // TextureCurrent
     for (int i = lo; i < hi; i++) {
-        char* slot = &g_BitmapsRaw[i * 0x38];
+        char* slot = &g_BitmapsRaw[i * TEXTURE_STRIDE];
         if (strncmp(slot, Name, 32) == 0) {
-            *dwTexture = (DWORD)(uintptr_t)slot;
+            *dwTexture = slot;
             return i;
         }
     }

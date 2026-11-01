@@ -91,7 +91,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // Dimensionado al stride del effect-entity pool (0x1bc = 444 bytes) y
     // `local_1ea` redirigido al offset +2 dentro del buffer (campo Type según IDA
     // `o[1]`).
-    unsigned char local_1ec[0x1c0];     // local OBJECT — ItemObjectAttribute target
+    unsigned char local_1ec[OBJECT_STRIDE];     // local OBJECT — ItemObjectAttribute target
     #define local_1ea (*(unsigned short*)(local_1ec + 2))
     // DESVIACION: inicializar el scratch evita que SIM dependa de residuos
     // de la pila de la pasada de dibujo anterior.

@@ -177,7 +177,7 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
   // correcta a glows sobre armas/armaduras (siguen el contorno), en vez de
   // cuadrados blanco-fluo cubriendo todo.
   BufferedDraw::Begin(BufferedDraw::Primitive::Quads);
-  if ((&DAT_083a7cc8)[param_1 * 0x38] == '\x03') {
+  if ((&DAT_083a7cc8)[param_1 * TEXTURE_STRIDE] == '\x03') {
     BufferedDraw::Color3fv(param_5);
   }
   else {

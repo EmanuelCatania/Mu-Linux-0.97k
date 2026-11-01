@@ -62,7 +62,7 @@
 #define P_TGY(o)    (*(float*)(P_BASE + (o) + 0x68))
 #define P_TGZ(o)    (*(float*)(P_BASE + (o) + 0x6C))
 // Bitmaps height: g_BitmapsRaw + type * 0x38 + 0x24 = height field per bitmap slot
-#define BMP_HEIGHT(t)  (*(float*)(g_BitmapsRaw + (t) * 0x38 + 0x24))
+#define BMP_HEIGHT(t)  (*(float*)(g_BitmapsRaw + (t) * TEXTURE_STRIDE + 0x24))
 
 void __stdcall MoveParticles(void)
 {

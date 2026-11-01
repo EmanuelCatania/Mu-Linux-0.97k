@@ -173,7 +173,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     // NULL/basura o un meshCount insano (preview char del panel crear-personaje sin
     // modelo válido), abortar antes de deferenciar.
     {
-        unsigned int meshsPtr = (unsigned int)*(int*)&((BMD*)(uintptr_t)(this_))->Meshs;
+        uintptr_t meshsPtr = (uintptr_t)((BMD*)(uintptr_t)(this_))->Meshs;
         if (meshsPtr < 0x10000u || meshCount < 0 || meshCount > 200) {
             static bool s_loggedNoMeshs = false;
             if (!s_loggedNoMeshs) {
@@ -192,7 +192,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     std::size_t transformCount = 0;
     bool parallelSafe = DAT_07e11d30 != 2;
     for (int i=0; parallelSafe && i<meshCount; ++i) {
-        const char* mesh=(const char*)(uintptr_t)*(DWORD*)&((BMD*)(uintptr_t)(this_))->Meshs+i*0x28;
+        const char* mesh=(const char*)(uintptr_t)(uintptr_t)((BMD*)(uintptr_t)(this_))->Meshs+i*sizeof(ClothModelMesh);
         const int vc=*(const short*)(mesh+4), nc=*(const short*)(mesh+6);
         if(vc<0 || nc<0) { parallelSafe=false; break; }
         transformCount+=vc+nc;
@@ -206,10 +206,10 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         static std::vector<TransformMath::Mesh> transformMeshes;
         transformMeshes.clear();
         for(int i=0;i<meshCount;++i) {
-            const char* mesh=(const char*)(uintptr_t)*(DWORD*)&((BMD*)(uintptr_t)(this_))->Meshs+i*0x28;
+            const char* mesh=(const char*)(uintptr_t)(uintptr_t)((BMD*)(uintptr_t)(this_))->Meshs+i*sizeof(ClothModelMesh);
             const int vc=*(const short*)(mesh+4), nc=*(const short*)(mesh+6);
-            const auto* vp=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x10);
-            const auto* np=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x14);
+            const auto* vp=(const unsigned char*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
+            const auto* np=(const unsigned char*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Normals;
             // Si se superponen slots de salida, conservar el orden secuencial.
             if((uintptr_t)vp<0x10000u || (uintptr_t)np<0x10000u ||
                vc>15000 || nc>15000) { parallelSafe=false; break; }
@@ -242,15 +242,15 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     }
     if (!transformed)
     for (local_58 = 0; local_58 < meshCount; local_58++) {
-        intptr_t meshPtr = *(int*)&((BMD*)(uintptr_t)(this_))->Meshs + local_6c;
+        intptr_t meshPtr = (intptr_t)((BMD*)(uintptr_t)(this_))->Meshs + local_6c;
         int vertCount = (int)(short)*(short*)(meshPtr + 4);
         // GUARD (desviación): el preview char del panel crear-personaje puede quedar
         // con una malla cuyo array de vértices/normales es NULL (modelo sin cargar).
         // Si la malla es inválida, se saltea (avanzando los offsets per-mesh) y se
         // loguea una vez el entity_type.
         {
-            unsigned int vArr = (unsigned int)*(int*)(meshPtr + 0x10);
-            unsigned int nArr = (unsigned int)*(int*)(meshPtr + 0x14);
+            intptr_t vArr = (intptr_t)((ClothModelMesh*)(uintptr_t)meshPtr)->Vertices;
+            intptr_t nArr = (intptr_t)((ClothModelMesh*)(uintptr_t)meshPtr)->Normals;
             int nCount = (int)(short)*(short*)(meshPtr + 6);
             bool bad = (vArr < 0x10000u ||
                         nArr < 0x10000u ||
@@ -263,11 +263,11 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
                     char _ib[160];
                     Platform::TextFormatTruncated(_ib, sizeof(_ib), Platform::TruncateText,
                         "XFORM_INVALID_MESH etype=%d meshsPtr=%p mesh=%d/%d vArr=%08x nArr=%08x vc=%d nc=%d",
-                        (int)*(short*)((char*)this_ + 2), (void*)(intptr_t)*(int*)&((BMD*)(uintptr_t)(this_))->Meshs,
+                        (int)*(short*)((char*)this_ + 2), (void*)(intptr_t)(intptr_t)((BMD*)(uintptr_t)(this_))->Meshs,
                         local_58, meshCount, vArr, nArr, vertCount, nCount);
                     DbgLogPublic(_ib);
                 }
-                local_6c += 0x28;
+                local_6c += sizeof(ClothModelMesh);
                 local_68_base += 15000;
                 local_64 += 180000;
                 continue;
@@ -286,7 +286,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         // causa (que el modelo y el BoneTransform no correspondan) con datos.
         const int nBonesGuard = (int)(short)*(short*)((char*)this_ + 0x22);
         for (intptr_t vi = 0; vi < vertCount; vi++) {
-            short* vs = (short*)((char*)(vi * 0x10) + *(int*)(meshPtr + 0x10));
+            short* vs = (short*)((char*)(vi * 0x10) + (intptr_t)((ClothModelMesh*)(uintptr_t)meshPtr)->Vertices);
             const int boneIdx = (int)*vs;
             if (boneIdx < 0 || (nBonesGuard > 0 && boneIdx >= nBonesGuard) || boneIdx >= 200) {
                 static bool s_loggedBadBone = false;
@@ -347,7 +347,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         float* pfNrmBase = (float*)((char*)&DAT_06f433bc + local_64);  // v20 — normal buffer (3 floats/normal)
         int normCount = (int)(short)*(short*)(meshPtr + 6);
         for (intptr_t ni = 0; ni < normCount; ni++) {
-            short* ns = (short*)(ni * 0x14 + *(int*)(meshPtr + 0x14));
+            short* ns = (short*)(ni * 0x14 + (intptr_t)((ClothModelMesh*)(uintptr_t)meshPtr)->Normals);
             // VectorRotate(normal_src, boneMatrix, dst=normal buffer)
             Vector_Rotate((float*)(ns + 2), (float*)(*ns * 0x30 + param_1), pfNrmBase);
             if (*(char*)&((BMD*)(uintptr_t)(this_))->LightEnable != '\0') {
@@ -365,7 +365,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         if (diagInGame && diag_this_call < 200 && local_58 == 0 && vertCount > 0) {
             float* pfFirst = (float*)((char*)&DAT_05846224 + 0);
         }
-        local_6c += 0x28;
+        local_6c += sizeof(ClothModelMesh);
         // Avanzar la BASE del mesh 15000 floats (60000 bytes)
         // ABSOLUTAMENTE — equivale a `v37 += 15000` en IDA line 206.
         local_68_base += 15000;
@@ -376,10 +376,10 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     static std::vector<Skinning::Source> skinSources;
     skinSources.clear();
     for(int i=0;i<meshCount;++i) {
-        const char* mesh=(const char*)(uintptr_t)*(DWORD*)&((BMD*)(uintptr_t)(this_))->Meshs+i*0x28;
+        const char* mesh=(const char*)(uintptr_t)(uintptr_t)((BMD*)(uintptr_t)(this_))->Meshs+i*sizeof(ClothModelMesh);
         const int vc=*(const short*)(mesh+4),nc=*(const short*)(mesh+6);
-        const auto* vp=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x10);
-        const auto* np=(const unsigned char*)(uintptr_t)*(DWORD*)(mesh+0x14);
+        const auto* vp=(const unsigned char*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
+        const auto* np=(const unsigned char*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Normals;
         if((uintptr_t)vp<0x10000u || (uintptr_t)np<0x10000u || vc<=0 || vc>20000 || nc<0 || nc>20000) continue;
         skinSources.push_back({mesh,vp,np,(const float*)((const char*)&DAT_0584621c+i*180000),
             (const float*)&DAT_077e298c+i*15000,vc,nc});

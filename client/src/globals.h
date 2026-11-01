@@ -1125,6 +1125,8 @@ extern DWORD   DAT_083a7c98;
 // Slot layout: +0x00 active, +0x20 width(f), +0x24 height(f), +0x28 bpp(b),
 //              +0x2C gl_handle(u), +0x30 ref_count(b), +0x34 pixels(ptr)
 extern char*   g_BitmapsRaw;
+constexpr int TEXTURE_STRIDE = sizeof(void*) == 4 ? 0x38 : 0x40;   // IDA: BITMAP_t, 0x38 bytes
+constexpr int TEXTURE_STRIDE_DWORDS = TEXTURE_STRIDE / 4;
 
 // Accesores retrocompatibles al slot[0] — el código usa (&DAT_xxx)[offset]
 // para indexar la tabla contigua con aritmética de punteros.
@@ -1134,7 +1136,6 @@ extern char*   g_BitmapsRaw;
 #define DAT_083a7cc8  (*(char*)  &g_BitmapsRaw[0x28])
 #define DAT_083a7ccc  (*(DWORD*) &g_BitmapsRaw[0x2C])
 #define DAT_083a7cd0  (*(char*)  &g_BitmapsRaw[0x30])
-#define DAT_083a7cd4  (*(DWORD*) &g_BitmapsRaw[0x34])
 extern DWORD   m_dwUsedTextureMemory;   // IDA: DAT_083bb9d0 (0x083BB9D0)
 extern DWORD   DAT_083bbb68;
 extern DWORD   DAT_083bbb6c;

@@ -370,7 +370,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
         } else if ((bVar4 & 0x40) == 0x40) {
             // Bright-only chrome: skip if texture type is 4
-            if ((&DAT_083a7cc8)[local_10 * 0x38] == '\x04') {
+            if ((&DAT_083a7cc8)[local_10 * TEXTURE_STRIDE] == '\x04') {
                 return;
             }
             renderMode = MODE_METAL;

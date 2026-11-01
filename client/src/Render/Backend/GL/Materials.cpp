@@ -159,7 +159,7 @@ bool BindTexture(TextureSlot texture){
     // antes de asegurar la tabla, y resolver el handle sólo si cambia el slot.
     if(DAT_00561574!=slot){
         DAT_00561574=slot;ResourceTables::EnsureTextures(std::size_t(slot)+1);
-        const unsigned native=(&DAT_083a7ccc)[std::size_t(slot)*0xe];
+        const unsigned native=(&DAT_083a7ccc)[std::size_t(slot)* TEXTURE_STRIDE_DWORDS];
         glBindTexture(GL_TEXTURE_2D,native);
     }
     return true;
@@ -209,7 +209,7 @@ void Select(const PassState& s){
     }
     case P::Surface:{
         GL_BindTextureSlot(s.textureSlot);
-        const bool alpha=(s.flags&0xc0)==0&&(s.alpha||(&DAT_083a7cc8)[std::size_t(s.textureSlot)*0x38]=='\x04');
+        const bool alpha=(s.flags&0xc0)==0&&(s.alpha||(&DAT_083a7cc8)[std::size_t(s.textureSlot)* TEXTURE_STRIDE]=='\x04');
         if(!Materials::Apply(MeshDraw::SurfaceMaterial(s.flags,alpha)))ReferenceSurface(s.flags,alpha);
         break;
     }

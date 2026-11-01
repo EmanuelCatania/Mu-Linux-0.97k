@@ -19,7 +19,7 @@ struct Mesh {
     PART_t partState{};
     float root[12]{}, relative[12]{}, offset[3]{}, extraOrigin[3]{};
     bool linked=false, relativeValid=false;
-    char context[0xbc], object[0x1c0], bones[sizeof(g_BoneScratch)];
+    char context[sizeof(BMD)], object[OBJECT_STRIDE], bones[sizeof(g_BoneScratch)];
     float light[3], alpha, lod;
     unsigned int level, flags;
     unsigned char option;

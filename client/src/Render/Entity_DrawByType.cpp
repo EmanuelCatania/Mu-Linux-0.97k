@@ -743,7 +743,7 @@ LAB_postprocess:
         BMD__BeginRender();
         float wave2 = (float)(fsin((long double)WorldTime * (long double)_DAT_005528e0)
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
-        int texFrame = *(short *)(*(int *)&((BMD*)(uintptr_t)(model))->IndexTexture + 0xc);   // IDA: (std::int16_t) de la malla 0
+        int texFrame = *(short *)((intptr_t)((BMD*)(uintptr_t)(model))->IndexTexture + 0xc);   // IDA: (std::int16_t) de la malla 0
         BMD__RenderMesh(model, 0.0f, 2,
                      AsObject(param_1)->Alpha, 0, wave2,
                      AsObject(param_1)->BlendMeshTexCoordU, AsObject(param_1)->BlendMeshTexCoordV,

@@ -2159,7 +2159,7 @@ label_119:
     if (etype != 0x186 || (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)) {
         if (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)
             PlayBuffer(0x5d, AsObject(param_1), 0);
-        if (*(short *)(DAT_05828d58 + 0xaa + etype * BMD_STRIDE) != -1) {
+        if (*(short *)(DAT_05828d58 + 0xaa + BMD_FIELD_SHIFT + etype * BMD_STRIDE) != -1) {
             // IDA 0x443930 L288-289:
             //     v19 = rand() % 2;
             //     PlayBuffer(*(short*)(Models + 2*(v19 + 94*type) + 170) + 170, c, 0);
@@ -3349,7 +3349,7 @@ void __cdecl MoveCharacter(int p1)
     // L784-795: planta enredadera (tipo 377) — cambio de idle aleatorio al terminar la acción
     if (AsObject(o)->Type == 377
         && AsModel(v422)->CurrentAnimationFrame
-            == *(short*)(*(int *)&AsModel(v422)->Actions + 16 * (AsObject(o)->CurrentAction) + 8) - 1)
+            == *(short*)((intptr_t)AsModel(v422)->Actions + sizeof(ModelAnimationAction) * (AsObject(o)->CurrentAction) + 8) - 1)
     {
         SetAction(AsObject(o), (rand() % 32) ? 0 : 1);
     }
@@ -3378,7 +3378,7 @@ void __cdecl MoveCharacter(int p1)
         intptr_t This = BMD_STRIDE * (AsObject(o)->Type) + (intptr_t)DAT_05828d58;
         memset(p1f, 0, sizeof(p1f));
         for (intptr_t kk = 0; kk < *(short*)(This + 34); ++kk) {
-            intptr_t v401 = *(short*)(*(int*)(This + 44) + 140 * kk + 32);
+            intptr_t v401 = reinterpret_cast<ModelAnimationBone*>(AsModel(This)->Bones)[kk].Parent;
             if (v401 > -1 && v401 < 200) {
                 BMD_TransformPosition((void*)This, (float*)(48 * kk + (intptr_t)AsObject(o)->BoneMatrices), p1f, Position, 1);
                 BMD_TransformPosition((void*)This, (float*)(48 * v401 + (intptr_t)AsObject(o)->BoneMatrices), p1f, TargetPosition, 1);
@@ -3957,9 +3957,9 @@ void __cdecl MoveCharacter(int p1)
                 // Weapon-trail interpolation across 10 sub-frames using BMD_Animation
                 float v368f = 10.0f;
                 float AnimationFrame = AsObject(o)->AnimationFrame
-                                     - *(float*)(*(int *)&AsModel(v422)->Actions + 16 * (AsModel(v422)->CurrentAction) + 4);
+                                     - *(float*)((intptr_t)AsModel(v422)->Actions + sizeof(ModelAnimationAction) * (AsModel(v422)->CurrentAction) + 4);
                 float PriorFrame = AsObject(o)->PriorAnimationFrame;
-                float v370f = *(float*)(*(int *)&AsModel(v422)->Actions + 16 * (AsModel(v422)->CurrentAction) + 4) / 10.0f;
+                float v370f = *(float*)((intptr_t)AsModel(v422)->Actions + sizeof(ModelAnimationAction) * (AsModel(v422)->CurrentAction) + 4) / 10.0f;
                 for (int kk = 0; kk < (int)v368f; ++kk) {
                     // El 6to argumento de BMD_Animation es el Angle de la entidad, no un
                     // buffer de salida: con ceros los huesos se posarían con facing (0,0,0) y

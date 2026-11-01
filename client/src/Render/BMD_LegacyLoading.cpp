@@ -83,7 +83,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     // exclusivamente). Como fallback, si después del SMD load el slot sigue
     // vacío (mesh count = 0), se prueban varias transformaciones del nombre
     // .smd → .bmd para encontrar el archivo real (case-insensitive en Win32).
-    char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * Type);
+    char* slot = (char*)((uintptr_t)DAT_05828d58 + (uintptr_t)BMD_STRIDE * Type);
     short meshCount = *(short*)(slot + 0x22);  // model[+0x22] = mesh count
     if (meshCount > 0) return;  // SMD load worked
 
@@ -366,7 +366,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
     }
 }
 // Forward-declare FindTextureByName (implementada en src/Core/Runtime_Medium.cpp).
-int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
+int __cdecl FindTextureByName(char *Name, char **dwTexture);
 
 // IDA: OpenTexture (0x00505C80)
 // ── OpenTexture (Model_LoadTextures) ────────────────────────────────────────
@@ -431,7 +431,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
 
     for (int i = 0; i < numMeshes; i++) {
         char* Name = texNameTable + i * 0x20;
-        DWORD pSlot = 0;
+        char* pSlot = nullptr;
         int foundIdx = FindTextureByName(Name, &pSlot);
         int resolvedIdx;
 
@@ -479,7 +479,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
                 OpenJPG(local_40, slot, Type,   0x2901, 0, Check);   // OpenJPG/OZJ
 
             // Store filename into the Bitmaps slot (first 32 bytes)
-            char* slotBase = &g_BitmapsRaw[slot * 0x38];
+            char* slotBase = &g_BitmapsRaw[slot * TEXTURE_STRIDE];
             size_t fnLen = strnlen(Name, 32);
             memcpy(slotBase, Name, fnLen);
             if (fnLen < 32) memset(slotBase + fnLen, 0, 32 - fnLen);
@@ -488,7 +488,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             TextureCurrent = slot + 1;   // TextureCurrent++
         } else {
             // Hit: reuse existing slot, bump ref count at +0x30
-            if (pSlot != 0) {
+            if (pSlot != nullptr) {
                 *(unsigned char*)(pSlot + 0x30) += 1;
             }
             resolvedIdx = foundIdx;

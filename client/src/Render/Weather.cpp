@@ -157,7 +157,7 @@ uint __cdecl Weather_Update(void)
 
     // ── Anti-tamper: HashTable reference-count increment for MoveSceneFrame ─────
     local_40 = &MoveSceneFrame;
-    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&MoveSceneFrame);
+    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 3 * sizeof(void*)))(&MoveSceneFrame);
     uVar13 = 0;
     local_40 = (DWORD *)0x0;
     if (DAT_055c9bd4 != 0) {
@@ -206,7 +206,7 @@ LAB_00500f34:
     // Anti-tamper: HashTable reference-count decrement
     fStack_38 = MoveSceneFrame;
     puStack_44 = &MoveSceneFrame;
-    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&MoveSceneFrame);
+    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 3 * sizeof(void*)))(&MoveSceneFrame);
     uVar13 = 0;
     puStack_44 = (DWORD *)0x0;
     if (DAT_055c9bd4 != 0) {

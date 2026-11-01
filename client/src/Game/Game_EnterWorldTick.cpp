@@ -299,7 +299,7 @@ void Game_EnterWorldTick(void)
     // chars correrían la misma anim.
     {
         for (int s = 0; s < 8; ++s) {
-            intptr_t e = (int)(uintptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
+            intptr_t e = (intptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
             if (*(char*)e != '\0') {
                 MoveCharacterVisual(e);            // MoveCharacterVisual: model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108] (anim frame)

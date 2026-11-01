@@ -168,7 +168,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
 void __cdecl CreateBlood(intptr_t o) {
     WORD wType = *(WORD*)(o + 0x02);  // o->Type
     // Models[type].Data + 0x54 = bone index for blood attachment point
-    int boneIdx = *(int*)(DAT_05828d58 + (short)wType * BMD_STRIDE + 0x54);
+    int boneIdx = *(int*)(DAT_05828d58 + (short)wType * BMD_STRIDE + 0x54 + BMD_FIELD_SHIFT);
     if (boneIdx == -1) return;
 
     if (wType == 0x11d) {

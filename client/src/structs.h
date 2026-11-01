@@ -322,6 +322,8 @@ struct BITMAP_t
     BYTE  *Buffer;
 };
 
+static_assert(sizeof(BITMAP_t) == (sizeof(void*) == 4 ? 0x38 : 0x40), "BITMAP_t");
+
 struct MONSTER_ATTRIBUTE
 {
     WORD Life;

@@ -1818,7 +1818,7 @@ LAB_00466e5e:
           if (!validOwner(owner)) return;
           __owner_fVar5 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
           AsObject(param_1)->Position[1] = *(float *)(__owner_fVar5 + 0x14);
-          iVar9 = *(int *)(__owner_fVar5 + 0xfc);
+          iVar9 = (intptr_t)AsObject(__owner_fVar5)->Owner;
           if (!validOwner((void*)(uintptr_t)iVar9)) return;
           AsObject(param_1)->Position[2] = *(float *)(__owner_fVar5 + 0x18);
           AsObject(param_1)->Position[0] = *(float *)(iVar9 + 0x10) + _DAT_0055297c;

@@ -23,7 +23,7 @@ void __cdecl OpenNpc(int Type) {
     // The guard check is: if (DAT_0055a7c4 != 0 && bone_count > 0) return;
     // We skip this check since we can't reliably compute BMD struct offset without BMD_STRIDE.
     // The original binary does this check before the switch.
-    char* model = (char*)DAT_05828d58 + 0xBC * Type;
+    char* model = (char*)DAT_05828d58 + BMD_STRIDE * Type;
     if (DAT_0055a7c4 != 0 && *(short*)(model + 0x26) > 0)
         return;
 

@@ -185,7 +185,7 @@ bool __cdecl CheckFullSet(uintptr_t c) {
 // Models + 188*390 + 48 = byte offset 73368 dentro de DAT_05828d58.
 // IDA: *(_DWORD *)(Models + 73368) = player_model->Actions ptr.
 static inline float* GetPlayerActions() {
-    return *(float**)((char*)(uintptr_t)DAT_05828d58 + 73368);
+    return reinterpret_cast<float*>(AsModel(DAT_05828d58 + BMD_STRIDE * 390)->Actions);
 }
 static inline float GetPlayerActionPlaySpeed(int byteOffset) {
     float* actions = GetPlayerActions();

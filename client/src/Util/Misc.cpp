@@ -45,7 +45,7 @@ bool __cdecl CheckSpecialText(const byte *param_1)
 // on each node until sentinel *(param_1+0xc) is reached.
 void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
 {
-  const intptr_t param_1 = (int)(uintptr_t)physics_manager;
+  const intptr_t param_1 = (intptr_t)physics_manager;
   undefined4 *puVar1;
   int iVar2;
 
@@ -57,6 +57,7 @@ void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
   else if (_DAT_0055256c <= _DAT_00590af0) {
     _DAT_00590af0 = 1.0;
   }
+  if (sizeof(void*) != 4) return;   // Lista siempre vacia; sus nodos son de 32 bits.
   puVar1 = *(undefined4 **)(*(int *)(param_1 + 8) + 8);
   if (puVar1 != *(undefined4 **)(param_1 + 0xc)) {
     do {
@@ -74,9 +75,10 @@ void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
 // CPhysicsManager::Render — renders every registered physics object.
 void __cdecl CPhysicsManager_Render(void* physics_manager)
 {
-  const intptr_t param_1 = (int)(uintptr_t)physics_manager;
+  const intptr_t param_1 = (intptr_t)physics_manager;
   undefined4 *puVar1;
 
+  if (sizeof(void*) != 4) return;   // Lista siempre vacia; sus nodos son de 32 bits.
   puVar1 = *(undefined4 **)(*(int *)(param_1 + 8) + 8);
   if (puVar1 != *(undefined4 **)(param_1 + 0xc)) {
     do {
