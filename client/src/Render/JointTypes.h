@@ -43,6 +43,7 @@ struct JOINT {
     int      MultiUse;                     // 0x9D4
 };
 #pragma pack(pop)
+static_assert(sizeof(JOINT) == 0x9D8 + sizeof(void*) - 4, "JOINT_STRIDE");
 
 #if UINTPTR_MAX == 0xFFFFFFFFu
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)

@@ -1563,7 +1563,7 @@ float    _DAT_005529fc = 18.0f;
 char     DAT_00558128[256]  = {};   // debug log format/data block
 char     DAT_0055a7c4  = 1;         // compressed-assets flag (alias: g_tex_ext_mode); 1=Data mode (plain Data\ folder, no pak)
 DWORD    _DAT_07e016f0 = 0;         // FPS tick timer (DWORD milliseconds)
-char     DAT_083a1218[0x1158]  = {};  // Butterfles OBJECT array (10 entries × 0x1BC stride = 0x1158 bytes)
+char     DAT_083a1218[10 * OBJECT_STRIDE]  = {};  // Butterfles OBJECT array (10 entries × 0x1BC stride = 0x1158 bytes)
 // Float aliases for view/projection matrix — MUST alias the array slots
 // (see CameraMatrix[12] above). Definidos como referencias para compartir
 // memoria con CameraMatrix[3/7/11] y evitar stomping.
@@ -1947,7 +1947,7 @@ float   _DAT_00552d34  = 1.4f;
 
 // ── Joint pool ────────────────────────────────────────────────────────────────
 // Joint pool — Joint_TickAll itera 500 slots × 0x9d8 bytes (~1.2MB).
-char    DAT_07b27150[500 * 0x9d8] = {};   // 500 slots: (0x07C5AB30-0x07B27150)/0x9d8 = 1260000/2520 (IDA ItemDrop_Render: 0x7B27B08..0x7C5B4E8, ancla +0x9B8)
+char    DAT_07b27150[500 * JOINT_STRIDE] = {};   // 500 slots: (0x07C5AB30-0x07B27150)/0x9d8 = 1260000/2520 (IDA ItemDrop_Render: 0x7B27B08..0x7C5B4E8, ancla +0x9B8)
 
 // ── Joint_Create float constants ─────────────────────────────────────────────
 float   _DAT_00552a14  = -0.5f;

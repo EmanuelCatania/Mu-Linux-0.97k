@@ -81,7 +81,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   pcVar14 = DAT_07b27150;
   const uintptr_t __jp_end = (uintptr_t)DAT_07b27150 + sizeof(DAT_07b27150);
   while (*pcVar14 != '\0') {
-    pcVar14 = pcVar14 + 0x9d8;
+    pcVar14 = pcVar14 + JOINT_STRIDE;
     if ((uintptr_t)pcVar14 >= __jp_end) {
       return nullptr;
     }
@@ -93,10 +93,10 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   *(char *)&AsJoint(pcVar14)->Collision = '\0';
   AsJoint(pcVar14)->PKKey = param_8;
   *(char *)&AsJoint(pcVar14)->Skill = param_9;
-  pcVar14[0x9c0] = '\0';
-  pcVar14[0x9c1] = '\0';
-  pcVar14[0x9c2] = '\0';
-  pcVar14[0x9c3] = '\0';
+  pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = '\0';
   // DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
   // +0x9C8 y +0x9CC son el avance por tick de la TargetPosition que aplica
   // LABEL_439 de MoveJoint (`TargetPos.x += o+2504`, `TargetPos.y += o+2508`),
@@ -142,10 +142,10 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
     }
     AsJoint(pcVar14)->Target = (OBJECT*)param_6;
   }
-  pcVar14[0x50] = '\0';
-  pcVar14[0x51] = '\0';
-  pcVar14[0x52] = '\0';
-  pcVar14[0x53] = '\0';
+  pcVar14[0x50 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x51 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x52 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x53 + JOINT_FIELD_SHIFT] = '\0';
   Matrix_BuildFromEuler(pfVar2,local_6c);
   local_90 = AsJoint(pcVar14)->Scale * _DAT_00552a14;
   local_8c = (byte*)0x0;
@@ -193,18 +193,18 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
       pcVar14[0xd] = '\0';
       pcVar14[0xe] = -0x74;
       pcVar14[0xf] = 'B';
-      pcVar14[0x9c0] = '\0';
-      pcVar14[0x9c1] = '\0';
-      pcVar14[0x9c2] = 'H';
-      pcVar14[0x9c3] = 'B';
-      pcVar14[0x54] = '\b';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
-      pcVar14[0x9b8] = '\x14';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = 'H';
+      pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\b';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x14';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       AsJoint(pcVar14)->TargetPosition[2] = fVar24;
       *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0];
       *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1];
@@ -217,14 +217,14 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           goto switchD_0046f0e4_caseD_4fd;
         }
         if (param_1 == 0x498) {
-          pcVar14[0x9b8] = 'd';
-          pcVar14[0x9b9] = '\0';
-          pcVar14[0x9ba] = '\0';
-          pcVar14[0x9bb] = '\0';
-          pcVar14[0x54] = '\x14';
-          pcVar14[0x55] = '\0';
-          pcVar14[0x56] = '\0';
-          pcVar14[0x57] = '\0';
+          pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = 'd';
+          pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x14';
+          pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
           pcVar14[0xc] = '\0';
           pcVar14[0xd] = '\0';
           pcVar14[0xe] = ' ';
@@ -234,10 +234,10 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
             local_94 = (byte *)(iVar6 % 0x14 + 0x23);
             AsJoint(pcVar14)->Direction[2] = (float)(intptr_t)local_94;
             iVar6 = _rand();
-            pcVar14[0x9b8] = '\x19';
-            pcVar14[0x9b9] = '\0';
-            pcVar14[0x9ba] = '\0';
-            pcVar14[0x9bb] = '\0';
+            pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x19';
+            pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
             AsJoint(pcVar14)->Scale = (float)(iVar6 % 0x14) + _DAT_005524fc;
           }
           AsJoint(pcVar14)->TargetPosition[0] = *pfVar1;
@@ -298,14 +298,14 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x3d] = -0x67;
           pcVar14[0x3e] = -0x67;
           pcVar14[0x3f] = '>';
-          pcVar14[0x9b8] = '\x14';
-          pcVar14[0x9b9] = '\0';
-          pcVar14[0x9ba] = '\0';
-          pcVar14[0x9bb] = '\0';
-          pcVar14[0x54] = '\x05';
-          pcVar14[0x55] = '\0';
-          pcVar14[0x56] = '\0';
-          pcVar14[0x57] = '\0';
+          pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x14';
+          pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x05';
+          pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
           AsJoint(pcVar14)->Scale = param_7;
           goto switchD_0046dee7_default;
         case 3:
@@ -334,15 +334,15 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x31] = '\0';
           pcVar14[0x32] = '\0';
           pcVar14[0x33] = '\0';
-          pcVar14[0x9c4] = '\0';
-          pcVar14[0x9c5] = '\0';
-          pcVar14[0x9c6] = '\0';
-          pcVar14[0x9c7] = '\0';
+          pcVar14[0x9c4 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9c5 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9c6 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9c7 + JOINT_FIELD_SHIFT] = '\0';
           iVar6 = _rand();
-          pcVar14[0x9cc] = '\0';
-          pcVar14[0x9cd] = '\0';
-          pcVar14[0x9ce] = '\0';
-          pcVar14[0x9cf] = '\0';
+          pcVar14[0x9cc + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9cd + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9ce + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9cf + JOINT_FIELD_SHIFT] = '\0';
           local_94 = (byte *)(iVar6 % 500);
           AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_94;
           iVar6 = _rand();
@@ -358,38 +358,38 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           pcVar14[0x3d] = -0x34;
           pcVar14[0x3e] = 'L';
           pcVar14[0x3f] = '>';
-          pcVar14[0x9b8] = '\x10';
-          pcVar14[0x9b9] = '\'';
-          pcVar14[0x9ba] = '\0';
-          pcVar14[0x9bb] = '\0';
-          pcVar14[0x54] = '\x1e';
-          pcVar14[0x55] = '\0';
-          pcVar14[0x56] = '\0';
-          pcVar14[0x57] = '\0';
+          pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x10';
+          pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\'';
+          pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x1e';
+          pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
           AsJoint(pcVar14)->Scale = param_7;
           goto switchD_0046dee7_default;
         default:
           goto switchD_0046db06_default;
         }
-        pcVar14[0x9b8] = '?';
-        pcVar14[0x9b9] = 'B';
-        pcVar14[0x9ba] = '\x0f';
-        pcVar14[0x9bb] = '\0';
-        pcVar14[0x54] = '\x1e';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '?';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = 'B';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\x0f';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x1e';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
 switchD_0046db06_default:
         AsJoint(pcVar14)->Scale = param_7;
         goto switchD_0046dee7_default;
       }
-      pcVar14[0x9d0] = '\0';
-      pcVar14[0x9d1] = '\0';
+      pcVar14[0x9d0 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9d1 + JOINT_FIELD_SHIFT] = '\0';
       AsJoint(pcVar14)->LifeTime = (int)param_8;
-      pcVar14[0x54] = '2';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '2';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       if (*(char *)&AsJoint(pcVar14)->Skill == '\0') {
         pcVar14[0xc] = '\0';
         pcVar14[0xd] = '\0';
@@ -422,35 +422,35 @@ switchD_0046db06_default:
       }
       switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
       case 0:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = '\0';
-        pcVar14[0x9c3] = '\0';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = '\0';
         break;
       case 1:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = -0x4c;
-        pcVar14[0x9c3] = 'B';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x4c;
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
         break;
       case 2:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = '4';
-        pcVar14[0x9c3] = 'C';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '4';
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'C';
         break;
       case 3:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = 'p';
-        pcVar14[0x9c3] = 'C';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = 'p';
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'C';
         break;
       case 4:
         *pfVar2 = 0.0;
-        pcVar14[0x9b8] = '\0';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
         pcVar14[0x2c] = '\0';
         pcVar14[0x2d] = '\0';
         pcVar14[0x2e] = '\0';
@@ -469,10 +469,10 @@ switchD_0046db06_default:
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
         pcVar14[0x3f] = '?';
-        pcVar14[0x54] = '\n';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         AsJoint(pcVar14)->StartPosition[0] = (*param_3 - *pfVar1) * _DAT_00552a00;
         AsJoint(pcVar14)->StartPosition[1] = (param_3[1] - AsJoint(pcVar14)->Position[1]) * _DAT_00552a00;
         AsJoint(pcVar14)->StartPosition[2] = (param_3[2] - AsJoint(pcVar14)->Position[2]) * _DAT_00552a00;
@@ -491,14 +491,14 @@ switchD_0046db06_default:
         goto switchD_0046dd50_default;
       }
       fVar24 = param_7 * _DAT_005528f0;
-      pcVar14[0x9c8] = '\0';
-      pcVar14[0x9c9] = '\0';
-      pcVar14[0x9ca] = '\0';
-      pcVar14[0x9cb] = '\0';
-      pcVar14[0x9cc] = '\0';
-      pcVar14[0x9cd] = '\0';
-      pcVar14[0x9ce] = '\0';
-      pcVar14[0x9cf] = '\0';
+      pcVar14[0x9c8 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ca + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cb + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cc + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cd + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ce + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cf + JOINT_FIELD_SHIFT] = '\0';
       AsJoint(pcVar14)->Direction[0] = fVar24;
 switchD_0046dd50_default:
       AsJoint(pcVar14)->TargetPosition[0] = *param_3;
@@ -624,26 +624,26 @@ LAB_0046e742:
         CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
         goto LAB_0046e76a;
       case 1:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = -0x74;
-        pcVar14[0x9c3] = 'B';
-        pcVar14[0x9b8] = '1';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x74;
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '1';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
         AsJoint(pcVar14)->Scale = param_7;
-        pcVar14[0x54] = '\x06';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x06';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         PlayBuffer(0x2a,0,0);
         break;
       case 2:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = 'H';
-        pcVar14[0x9c3] = 'B';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = 'H';
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
         AsJoint(pcVar14)->Scale = param_7;
         *pfVar3 = 0.5;
         pcVar14[0x38] = '\0';
@@ -654,32 +654,32 @@ LAB_0046e742:
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = '\0';
         pcVar14[0x3f] = '?';
-        pcVar14[0x9b8] = '\x14';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
-        pcVar14[0x54] = '\x03';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x14';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x03';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
         *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
         *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
         break;
       case 3:
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = '\f';
-        pcVar14[0x9c3] = 'C';
-        pcVar14[0x9b8] = '1';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '\f';
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'C';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '1';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
         AsJoint(pcVar14)->Scale = param_7;
-        pcVar14[0x54] = '\n';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         *pfVar3 = 1.0;
         pcVar14[0x38] = '\0';
         pcVar14[0x39] = '\0';
@@ -693,10 +693,10 @@ LAB_0046e742:
         break;
       case 4:
         *pfVar2 = 0.0;
-        pcVar14[0x9b8] = '\0';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
         pcVar14[0x2c] = '\0';
         pcVar14[0x2d] = '\0';
         pcVar14[0x2e] = '\0';
@@ -711,10 +711,10 @@ LAB_0046e742:
         pcVar14[0x39] = -0x67;
         pcVar14[0x3a] = -0x67;
         pcVar14[0x3b] = '>';
-        pcVar14[0x54] = '\n';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         pcVar14[0x3c] = '\0';
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
@@ -865,29 +865,29 @@ LAB_0046ec45:
     }
     if (param_1 != 0x4e6) {
       if (param_1 != 0x4e7) goto switchD_0046dee7_default;
-      pcVar14[0x54] = '2';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '2';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       AsJoint(pcVar14)->Scale = param_7;
       iVar6 = _rand();
-      pcVar14[0x9b8] = '\x14';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x14';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       AsJoint(pcVar14)->Velocity = (float)(iVar6 % 0x14) + _DAT_00552878;
       AsJoint(pcVar14)->Light[2] = (float)AsJoint(pcVar14)->MaxTails;
       goto LAB_0046e043;
     }
-    pcVar14[0x9c0] = '\0';
-    pcVar14[0x9c1] = '\0';
-    pcVar14[0x9c2] = 'H';
-    pcVar14[0x9c3] = 'B';
+    pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = 'H';
+    pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
     AsJoint(pcVar14)->Scale = param_7;
-    pcVar14[0x54] = '2';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '2';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
     switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
     case 1:
       iVar6 = _rand();
@@ -901,10 +901,10 @@ LAB_0046ec45:
       *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 8;
       break;
     case 2:
-      pcVar14[0x9b8] = '\x02';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x02';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       *pfVar3 = 1.0;
       pcVar14[0x38] = -0x33;
       pcVar14[0x39] = -0x34;
@@ -936,40 +936,40 @@ LAB_0046ec45:
       pcVar14[0x3a] = '\0';
       pcVar14[0x3b] = '?';
       AsJoint(pcVar14)->Velocity = (float)param_9;
-      pcVar14[0x9d0] = -1;
-      pcVar14[0x9d1] = -1;
+      pcVar14[0x9d0 + JOINT_FIELD_SHIFT] = -1;
+      pcVar14[0x9d1 + JOINT_FIELD_SHIFT] = -1;
       goto LAB_0046e043;
     case 4:
     case 5:
-      pcVar14[0x9c0] = '\0';
-      pcVar14[0x9c1] = '\0';
-      pcVar14[0x9c2] = 'p';
-      pcVar14[0x9c3] = 'B';
-      pcVar14[0x9c4] = '\0';
-      pcVar14[0x9c5] = '\0';
-      pcVar14[0x9c6] = '\0';
-      pcVar14[0x9c7] = '\0';
-      pcVar14[0x9c8] = '\0';
-      pcVar14[0x9c9] = '\0';
-      pcVar14[0x9ca] = '\0';
-      pcVar14[0x9cb] = '\0';
-      pcVar14[0x9cc] = '\0';
-      pcVar14[0x9cd] = '\0';
-      pcVar14[0x9ce] = '\0';
-      pcVar14[0x9cf] = '\0';
+      pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = 'p';
+      pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
+      pcVar14[0x9c4 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c5 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c6 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c7 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c8 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ca + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cb + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cc + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cd + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ce + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9cf + JOINT_FIELD_SHIFT] = '\0';
       *pfVar3 = 0.5;
       pcVar14[0x38] = '\0';
       pcVar14[0x39] = '\0';
       pcVar14[0x3a] = '\0';
       pcVar14[0x3b] = '?';
-      pcVar14[0x9b8] = '2';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
-      pcVar14[0x54] = '\n';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '2';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[0x3c] = '\0';
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
@@ -994,24 +994,24 @@ LAB_0046ec45:
       AsJoint(pcVar14)->Light[2] = fVar24;
       goto LAB_0046e043;
     case 7:
-      pcVar14[0x9c0] = '\0';
-      pcVar14[0x9c1] = '\0';
-      pcVar14[0x9c2] = -0x60;
-      pcVar14[0x9c3] = '@';
+      pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x60;
+      pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = '@';
       AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
       *pfVar3 = 0.5;
       pcVar14[0x38] = '\0';
       pcVar14[0x39] = '\0';
       pcVar14[0x3a] = '\0';
       pcVar14[0x3b] = '?';
-      pcVar14[0x54] = '\x03';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
-      pcVar14[0x9b8] = '\x01';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x03';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x01';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[0x3c] = '\0';
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
@@ -1031,10 +1031,10 @@ LAB_0046ec45:
       goto LAB_0046f415;
     case 9:
       iVar6 = _rand();
-      pcVar14[0x9b8] = '\x1e';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x1e';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       local_94 = (byte *)(iVar6 % 0x14);
       AsJoint(pcVar14)->Velocity = (float)(intptr_t)local_94 + _DAT_00552878;
       iVar6 = _rand();
@@ -1049,10 +1049,10 @@ LAB_0046e043:
       break;
     case 10:
       *pfVar2 = 0.0;
-      pcVar14[0x9b8] = '\0';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[0x2c] = '\0';
 
       pcVar14[0x2d] = '\0';
@@ -1068,10 +1068,10 @@ LAB_0046e043:
       pcVar14[0x39] = -0x67;
       pcVar14[0x3a] = -0x67;
       pcVar14[0x3b] = '>';
-      pcVar14[0x54] = '\n';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[0x3c] = '\0';
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
@@ -1136,10 +1136,10 @@ LAB_0046e043:
       pcVar14[0x3e] = -0x34;
       pcVar14[0x3f] = '=';
     case 0:
-      pcVar14[0x9b8] = '\x02';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x02';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       break;
     case 0xc:
       *pfVar3 = 1.0;
@@ -1151,10 +1151,10 @@ LAB_0046e043:
       pcVar14[0x3d] = -0x34;
       pcVar14[0x3e] = -0x34;
       pcVar14[0x3f] = '=';
-      pcVar14[0x9b8] = '\n';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\n';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       break;
     case 0xd:
       *pfVar3 = 1.0;
@@ -1166,10 +1166,10 @@ LAB_0046e043:
       pcVar14[0x3d] = -0x34;
       pcVar14[0x3e] = -0x34;
       pcVar14[0x3f] = '=';
-      pcVar14[0x9b8] = '\x02';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x02';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[8] = '\v';
       pcVar14[9] = '\0';
       pcVar14[10] = '\0';
@@ -1177,10 +1177,10 @@ LAB_0046e043:
       break;
     case 0xe:
       *pfVar2 = 0.0;
-      pcVar14[0x9b8] = '\0';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[0x2c] = '\0';
       pcVar14[0x2d] = '\0';
       pcVar14[0x2e] = '\0';
@@ -1195,10 +1195,10 @@ LAB_0046e043:
       pcVar14[0x39] = -0x67;
       pcVar14[0x3a] = -0x67;
       pcVar14[0x3b] = '>';
-      pcVar14[0x54] = '\n';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       pcVar14[0x3c] = '\0';
       pcVar14[0x3d] = '\0';
       pcVar14[0x3e] = -0x80;
@@ -1256,10 +1256,10 @@ LAB_0046f415:
       if ((int)uVar9 < 0) {
         uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
       }
-      pcVar14[0x54] = '\x02';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x02';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 8;
     }
     else {
@@ -1269,19 +1269,19 @@ LAB_0046f415:
           pcVar14[0xd] = '\0';
           pcVar14[0xe] = -0x80;
           pcVar14[0xf] = '@';
-          pcVar14[0x9c0] = '\0';
-          pcVar14[0x9c1] = '\0';
-          pcVar14[0x9c2] = -0x10;
-          pcVar14[0x9c3] = 'A';
+          pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x10;
+          pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'A';
           uVar9 = _rand();
           uVar9 = uVar9 & 0x80000003;
           if ((int)uVar9 < 0) {
             uVar9 = (uVar9 - 1 | 0xfffffffc) + 1;
           }
-          pcVar14[0x54] = '\x02';
-          pcVar14[0x55] = '\0';
-          pcVar14[0x56] = '\0';
-          pcVar14[0x57] = '\0';
+          pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x02';
+          pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
           *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 4;
           *pfVar3 = 0.3;
           pcVar14[0x38] = -0x66;
@@ -1307,10 +1307,10 @@ LAB_0046f415:
       if ((int)uVar9 < 0) {
         uVar9 = (uVar9 - 1 | 0xfffffffc) + 1;
       }
-      pcVar14[0x54] = '\x02';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x02';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 4;
     }
     break;
@@ -1323,21 +1323,21 @@ LAB_0046f415:
     case 4:
     case 5:
     case 8:
-      pcVar14[0x9b8] = -1;
-      pcVar14[0x9b9] = -0x37;
-      pcVar14[0x9ba] = -0x66;
-      pcVar14[0x9bb] = ';';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = -1;
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = -0x37;
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = -0x66;
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = ';';
       if (iVar6 == 5) {
-        pcVar14[0x54] = '\n';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       }
       else {
-        pcVar14[0x54] = '\x14';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x14';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       }
       if (iVar6 == 3) {
         *pfVar1 = *(float *)((intptr_t)AsJoint(pcVar14)->Target + 0x4c);
@@ -1365,18 +1365,18 @@ LAB_0046f415:
     case 1:
     case 6:
     case 7:
-      pcVar14[0x9b8] = 'x';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
-      pcVar14[0x54] = '\b';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
-      pcVar14[0x9c0] = '\0';
-      pcVar14[0x9c1] = '\0';
-      pcVar14[0x9c2] = '@';
-      pcVar14[0x9c3] = '@';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = 'x';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\b';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '@';
+      pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = '@';
     }
     switch(*(undefined4 *)&AsJoint(pcVar14)->SubType) {
     case 0:
@@ -1439,25 +1439,25 @@ LAB_0046f415:
     }
     goto switchD_0046dee7_default;
   case 0x4eb:
-    pcVar14[0x9b8] = '\f';
-    pcVar14[0x9b9] = '\0';
-    pcVar14[0x9ba] = '\0';
-    pcVar14[0x9bb] = '\0';
+    pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\f';
+    pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     AsJoint(pcVar14)->Scale = param_7;
-    pcVar14[0x9c0] = '\0';
-    pcVar14[0x9c1] = '\0';
-    pcVar14[0x9c2] = '\0';
-    pcVar14[0x9c3] = '\0';
+    pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = '\0';
     iVar6 = AsJoint(pcVar14)->SubType;
-    pcVar14[0x54] = '\x02';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x02';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
     if (iVar6 == 6) {
-      pcVar14[0x54] = '\x04';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x04';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       *pfVar3 = 1.0;
       pcVar14[0x38] = '\0';
       pcVar14[0x39] = '\0';
@@ -1470,10 +1470,10 @@ LAB_0046f415:
       goto switchD_0046dee7_default;
     }
     if (iVar6 == 7) {
-      pcVar14[0x54] = '\x04';
-      pcVar14[0x55] = '\0';
-      pcVar14[0x56] = '\0';
-      pcVar14[0x57] = '\0';
+      pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x04';
+      pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
       *pfVar3 = 1.0;
       pcVar14[0x38] = '\0';
       pcVar14[0x39] = '\0';
@@ -1486,23 +1486,23 @@ LAB_0046f415:
       goto switchD_0046dee7_default;
     }
     if (iVar6 == 4) {
-      pcVar14[0x9b8] = '\x1e';
-      pcVar14[0x9b9] = '\0';
-      pcVar14[0x9ba] = '\0';
-      pcVar14[0x9bb] = '\0';
+      pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x1e';
+      pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
       uVar9 = _rand();
       uVar9 = uVar9 & 0x8000003f;
       if ((int)uVar9 < 0) {
         uVar9 = (uVar9 - 1 | 0xffffffc0) + 1;
       }
-      pcVar14[0x48] = '\0';
-      pcVar14[0x49] = '\0';
-      pcVar14[0x4a] = ' ';
-      pcVar14[0x4b] = -0x3f;
-      pcVar14[0x4c] = '\0';
-      pcVar14[0x4d] = '\0';
-      pcVar14[0x4e] = '\0';
-      pcVar14[0x4f] = '\0';
+      pcVar14[0x48 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x49 + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x4a + JOINT_FIELD_SHIFT] = ' ';
+      pcVar14[0x4b + JOINT_FIELD_SHIFT] = -0x3f;
+      pcVar14[0x4c + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x4d + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x4e + JOINT_FIELD_SHIFT] = '\0';
+      pcVar14[0x4f + JOINT_FIELD_SHIFT] = '\0';
       AsJoint(pcVar14)->TargetPosition[0] = (float)(int)(uVar9 - 0x20);
       goto switchD_0046dee7_default;
     }
@@ -1518,46 +1518,46 @@ LAB_0046f415:
     if ((int)uVar9 < 0) {
       uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
     }
-    pcVar14[0x54] = '\b';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\b';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
     *(uint *)&AsJoint(pcVar14)->LifeTime = uVar9 + 8;
     break;
   case 0x4ec:
-    pcVar14[0x9c0] = '\0';
-    pcVar14[0x9c1] = '\0';
-    pcVar14[0x9c2] = -0x74;
-    pcVar14[0x9c3] = 'B';
-    pcVar14[0x9b8] = '1';
-    pcVar14[0x9b9] = '\0';
-    pcVar14[0x9ba] = '\0';
-    pcVar14[0x9bb] = '\0';
+    pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x74;
+    pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
+    pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '1';
+    pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     AsJoint(pcVar14)->Scale = param_7;
-    pcVar14[0x54] = '\x06';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x06';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
     goto switchD_0046dee7_default;
   case 0x4ed:
 switchD_0046f0e4_caseD_4ed:
-    pcVar14[0x9c0] = '\0';
-    pcVar14[0x9c1] = '\0';
-    pcVar14[0x9c2] = ' ';
-    pcVar14[0x9c3] = 'B';
+    pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = ' ';
+    pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
     pcVar14[0xc] = '\0';
     pcVar14[0xd] = '\0';
     pcVar14[0xe] = 'p';
     pcVar14[0xf] = 'B';
-    pcVar14[0x54] = '2';
-    pcVar14[0x55] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '2';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
 
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
-    pcVar14[0x9b8] = '\x02';
-    pcVar14[0x9b9] = '\0';
-    pcVar14[0x9ba] = '\0';
-    pcVar14[0x9bb] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x02';
+    pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     if (AsJoint(pcVar14)->SubType != 0) {
       if (AsJoint(pcVar14)->Type == 0x4ed) {
         *pfVar3 = 0.35;
@@ -1585,10 +1585,10 @@ switchD_0046f0e4_caseD_4ed:
     }
     break;
   case 0x4ee:
-    pcVar14[0x9c0] = '\0';
-    pcVar14[0x9c1] = '\0';
-    pcVar14[0x9c2] = '\0';
-    pcVar14[0x9c3] = '\0';
+    pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = '\0';
     fVar24 = AsJoint(pcVar14)->Angle[2] + _DAT_0055284c;
     AsJoint(pcVar14)->Scale = param_7;
     *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
@@ -1596,18 +1596,18 @@ switchD_0046f0e4_caseD_4ed:
     AsJoint(pcVar14)->Direction[2] = fVar24;
     AsJoint(pcVar14)->TargetPosition[0] = *pfVar1;
     *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
-    pcVar14[0x54] = '\x12';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
-    pcVar14[0x50] = -1;
-    pcVar14[0x51] = -1;
-    pcVar14[0x52] = -1;
-    pcVar14[0x53] = -1;
-    pcVar14[0x9b8] = '\x14';
-    pcVar14[0x9b9] = '\0';
-    pcVar14[0x9ba] = '\0';
-    pcVar14[0x9bb] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x12';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x50 + JOINT_FIELD_SHIFT] = -1;
+    pcVar14[0x51 + JOINT_FIELD_SHIFT] = -1;
+    pcVar14[0x52 + JOINT_FIELD_SHIFT] = -1;
+    pcVar14[0x53 + JOINT_FIELD_SHIFT] = -1;
+    pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x14';
+    pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     local_78 = 0.0;
     local_74 = -180.0;
     local_70 = 0.0;
@@ -1624,14 +1624,14 @@ switchD_0046f0e4_caseD_4ed:
   case 0x4fd:
 switchD_0046f0e4_caseD_4fd:
     iVar6 = AsJoint(pcVar14)->SubType;
-    pcVar14[0x9b8] = 'd';
-    pcVar14[0x9b9] = '\0';
-    pcVar14[0x9ba] = '\0';
-    pcVar14[0x9bb] = '\0';
-    pcVar14[0x54] = '\x14';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
+    pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = 'd';
+    pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x14';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
     pcVar14[0xc] = '\0';
     pcVar14[0xd] = '\0';
     pcVar14[0xe] = ' ';
@@ -1645,10 +1645,10 @@ switchD_0046f0e4_caseD_4fd:
       local_98 = (byte *)(iVar6 % 500 + -0xfa);
       AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_98;
       if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
-        pcVar14[0x9b8] = '2';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '2';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
         iVar6 = _rand();
         fVar24 = (float)(iVar6 % 0xfa + 200);
 LAB_0046f54e:
@@ -1673,10 +1673,10 @@ LAB_0046f55a:
         local_98 = (byte *)(iVar6 % 0x32);
         AsJoint(pcVar14)->Position[2] = (float)(intptr_t)local_98 + AsJoint(pcVar14)->Position[2];
         if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
-          pcVar14[0x9b8] = '2';
-          pcVar14[0x9b9] = '\0';
-          pcVar14[0x9ba] = '\0';
-          pcVar14[0x9bb] = '\0';
+          pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '2';
+          pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
           iVar6 = _rand();
           fVar24 = (float)(iVar6 % 0xfa + 200);
           goto LAB_0046f54e;
@@ -1701,20 +1701,20 @@ LAB_0046f55a:
         AsJoint(pcVar14)->LifeTime = iVar6 % 0x32 + 0x19;
       }
       else if (iVar6 == 3) {
-        pcVar14[0x9c0] = '\0';
-        pcVar14[0x9c1] = '\0';
-        pcVar14[0x9c2] = 'H';
-        pcVar14[0x9c3] = 'B';
+        pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = 'H';
+        pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
         *pfVar2 = 0.0;
         AsJoint(pcVar14)->Scale = param_7;
-        pcVar14[0x9b8] = '\x05';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
-        pcVar14[0x54] = '\n';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x05';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         pcVar14[0x2c] = '\0';
         pcVar14[0x2d] = '\0';
         pcVar14[0x2e] = '4';
@@ -1762,14 +1762,14 @@ LAB_0046f55a:
       else if (((iVar6 == 4) || (iVar6 == 6)) || (iVar6 == 0xc)) {
         AsJoint(pcVar14)->Scale = param_7;
         if (iVar6 == 0xc) {
-          pcVar14[0x9b8] = 'F';
-          pcVar14[0x9b9] = '\0';
-          pcVar14[0x9ba] = '\0';
-          pcVar14[0x9bb] = '\0';
-          pcVar14[0x54] = '2';
-          pcVar14[0x55] = '\0';
-          pcVar14[0x56] = '\0';
-          pcVar14[0x57] = '\0';
+          pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = 'F';
+          pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x54 + JOINT_FIELD_SHIFT] = '2';
+          pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
           *pfVar3 = 0.1;
           pcVar14[0x38] = -0x33;
           pcVar14[0x39] = -0x34;
@@ -1789,14 +1789,14 @@ LAB_0046f55a:
         }
         else {
           if (iVar6 == 6) {
-            pcVar14[0x9b8] = '\x14';
-            pcVar14[0x9b9] = '\0';
-            pcVar14[0x9ba] = '\0';
-            pcVar14[0x9bb] = '\0';
-            pcVar14[0x54] = '\x1e';
-            pcVar14[0x55] = '\0';
-            pcVar14[0x56] = '\0';
-            pcVar14[0x57] = '\0';
+            pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x14';
+            pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x1e';
+            pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
             *pfVar3 = 1.0;
             pcVar14[0x38] = '\0';
             pcVar14[0x39] = '\0';
@@ -1809,14 +1809,14 @@ LAB_0046f55a:
           }
           else {
             iVar6 = (intptr_t)AsJoint(pcVar14)->Target;
-            pcVar14[0x9b8] = 'n';
-            pcVar14[0x9b9] = '\0';
-            pcVar14[0x9ba] = '\0';
-            pcVar14[0x9bb] = '\0';
-            pcVar14[0x54] = -0x38;
-            pcVar14[0x55] = '\0';
-            pcVar14[0x56] = '\0';
-            pcVar14[0x57] = '\0';
+            pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = 'n';
+            pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x54 + JOINT_FIELD_SHIFT] = -0x38;
+            pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
             *pfVar3 = *(float *)(iVar6 + 0xe8);
             *(undefined4 *)&AsJoint(pcVar14)->Light[1] = *(undefined4 *)(iVar6 + 0xec);
             *(undefined4 *)&AsJoint(pcVar14)->Light[2] = *(undefined4 *)(iVar6 + 0xf0);
@@ -1832,14 +1832,14 @@ LAB_0046f55a:
         AsJoint(pcVar14)->Direction[2] = (float)fVar21;
       }
       else if (iVar6 == 5) {
-        pcVar14[0x9b8] = '\x02';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
-        pcVar14[0x54] = '\x03';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x02';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x03';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         iVar6 = _rand();
         *pfVar3 = 1.0;
         pcVar14[0x38] = '\0';
@@ -1863,10 +1863,10 @@ LAB_0046f55a:
         pcVar14[0x3a] = 'L';
         pcVar14[0x3b] = '>';
         iVar6 = _rand();
-        pcVar14[0x54] = '\x0f';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x0f';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         AsJoint(pcVar14)->MultiUse = iVar6 % 10;
         AsJoint(pcVar14)->LifeTime = iVar6 % 10 + 0x1e;
         iVar6 = _rand();
@@ -1887,18 +1887,18 @@ LAB_0046f55a:
         pcVar14[0x31] = '\0';
         pcVar14[0x32] = '\0';
         pcVar14[0x33] = '\0';
-        pcVar14[0x9c4] = '\0';
-        pcVar14[0x9c5] = '\0';
-        pcVar14[0x9c6] = '\0';
-        pcVar14[0x9c7] = '\0';
-        pcVar14[0x9c8] = '\0';
-        pcVar14[0x9c9] = '\0';
-        pcVar14[0x9ca] = '\0';
-        pcVar14[0x9cb] = '\0';
-        pcVar14[0x9cc] = '\0';
-        pcVar14[0x9cd] = '\0';
-        pcVar14[0x9ce] = '\0';
-        pcVar14[0x9cf] = '\0';
+        pcVar14[0x9c4 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c5 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c6 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c7 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c8 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9c9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ca + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9cb + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9cc + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9cd + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ce + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9cf + JOINT_FIELD_SHIFT] = '\0';
         AsJoint(pcVar14)->StartPosition[0] = *pfVar1;
         *(undefined4 *)&AsJoint(pcVar14)->StartPosition[1] = *(undefined4 *)&AsJoint(pcVar14)->Position[1];
         *(undefined4 *)&AsJoint(pcVar14)->StartPosition[2] = *(undefined4 *)&AsJoint(pcVar14)->Position[2];
@@ -1912,10 +1912,10 @@ LAB_0046f55a:
       }
       else if (iVar6 == 9) {
         *pfVar2 = 0.0;
-        pcVar14[0x9b8] = '\0';
-        pcVar14[0x9b9] = '\0';
-        pcVar14[0x9ba] = '\0';
-        pcVar14[0x9bb] = '\0';
+        pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
         pcVar14[0x2c] = '\0';
         pcVar14[0x2d] = '\0';
         pcVar14[0x2e] = '\0';
@@ -1930,10 +1930,10 @@ LAB_0046f55a:
         pcVar14[0x39] = -0x67;
         pcVar14[0x3a] = -0x67;
         pcVar14[0x3b] = '>';
-        pcVar14[0x54] = '\n';
-        pcVar14[0x55] = '\0';
-        pcVar14[0x56] = '\0';
-        pcVar14[0x57] = '\0';
+        pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\n';
+        pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+        pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
         pcVar14[0x3c] = '\0';
         pcVar14[0x3d] = '\0';
         pcVar14[0x3e] = -0x80;
@@ -1963,10 +1963,10 @@ LAB_0046f55a:
           local_98 = (byte *)(iVar6 % 500 + -0xfa);
           AsJoint(pcVar14)->Direction[1] = (float)(intptr_t)local_98;
           if (_DAT_00552488 < AsJoint(pcVar14)->Scale) {
-            pcVar14[0x9b8] = '2';
-            pcVar14[0x9b9] = '\0';
-            pcVar14[0x9ba] = '\0';
-            pcVar14[0x9bb] = '\0';
+            pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '2';
+            pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+            pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
             iVar6 = _rand();
             fVar24 = (float)(iVar6 % 0xfa + 200);
             goto LAB_0046f54e;
@@ -1983,18 +1983,18 @@ LAB_0046f55a:
           pcVar14[0x39] = -0x34;
           pcVar14[0x3a] = 'L';
           pcVar14[0x3b] = '>';
-          pcVar14[0x9d4] = '\0';
-          pcVar14[0x9d5] = '\0';
-          pcVar14[0x9d6] = '\0';
-          pcVar14[0x9d7] = '\0';
-          pcVar14[0x9b8] = '\x1e';
-          pcVar14[0x9b9] = '\0';
-          pcVar14[0x9ba] = '\0';
-          pcVar14[0x9bb] = '\0';
-          pcVar14[0x54] = '\x0f';
-          pcVar14[0x55] = '\0';
-          pcVar14[0x56] = '\0';
-          pcVar14[0x57] = '\0';
+          pcVar14[0x9d4 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9d5 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9d6 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9d7 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '\x1e';
+          pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x0f';
+          pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+          pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
           iVar6 = _rand();
           pcVar14[0xc] = '\0';
           pcVar14[0xd] = '\0';
@@ -2037,10 +2037,10 @@ LAB_0046f55a:
   pcVar14[0x3f] = '?';
 switchD_0046dee7_default:
   if (0x32 < AsJoint(pcVar14)->MaxTails) {
-    pcVar14[0x54] = '2';
-    pcVar14[0x55] = '\0';
-    pcVar14[0x56] = '\0';
-    pcVar14[0x57] = '\0';
+    pcVar14[0x54 + JOINT_FIELD_SHIFT] = '2';
+    pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+    pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
   }
   {
     // DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
@@ -2304,23 +2304,23 @@ LAB_0046edc4:
     operator_delete(pbVar8);
   }
 LAB_0046ee73:
-  pcVar14[0x9c0] = '\0';
-  pcVar14[0x9c1] = '\0';
-  pcVar14[0x9c2] = -0x10;
-  pcVar14[0x9c3] = 'A';
-  pcVar14[0x9b8] = '1';
-  pcVar14[0x9b9] = '\0';
-  pcVar14[0x9ba] = '\0';
-  pcVar14[0x9bb] = '\0';
+  pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x10;
+  pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'A';
+  pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '1';
+  pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     // Este slot es la **Scale** del joint (+0x0C): Ghidra lo tipo como `float**`
     // y le asignaba `param_4` (el PUNTERO al vec3 de angulos).  Confirmado con
     // MU 5.2 CreateJoint, case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70;
     // LifeTime = 49; Scale; MaxTails = 6.
     AsJoint(pcVar14)->Scale = param_7;
-  pcVar14[0x54] = '\f';
-  pcVar14[0x55] = '\0';
-  pcVar14[0x56] = '\0';
-  pcVar14[0x57] = '\0';
+  pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\f';
+  pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
   goto switchD_0046dee7_default;
   while( true ) {
     uVar9 = (uVar9 + 1) % (uint)DAT_055c9bd4;
@@ -2569,23 +2569,23 @@ LAB_0046e8c1:
     operator_delete(pbVar8);
   }
 LAB_0046e970:
-  pcVar14[0x9c0] = '\0';
-  pcVar14[0x9c1] = '\0';
-  pcVar14[0x9c2] = -0x74;
-  pcVar14[0x9c3] = 'B';
-  pcVar14[0x9b8] = '1';
-  pcVar14[0x9b9] = '\0';
-  pcVar14[0x9ba] = '\0';
-  pcVar14[0x9bb] = '\0';
+  pcVar14[0x9c0 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c1 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9c2 + JOINT_FIELD_SHIFT] = -0x74;
+  pcVar14[0x9c3 + JOINT_FIELD_SHIFT] = 'B';
+  pcVar14[0x9b8 + JOINT_FIELD_SHIFT] = '1';
+  pcVar14[0x9b9 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9ba + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x9bb + JOINT_FIELD_SHIFT] = '\0';
     // Este slot es la **Scale** del joint (+0x0C): Ghidra lo tipo como `float**`
     // y le asignaba `param_4` (el PUNTERO al vec3 de angulos).  Confirmado con
     // MU 5.2 CreateJoint, case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70;
     // LifeTime = 49; Scale; MaxTails = 6.
     AsJoint(pcVar14)->Scale = param_7;
-  pcVar14[0x54] = '\x06';
-  pcVar14[0x55] = '\0';
-  pcVar14[0x56] = '\0';
-  pcVar14[0x57] = '\0';
+  pcVar14[0x54 + JOINT_FIELD_SHIFT] = '\x06';
+  pcVar14[0x55 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x56 + JOINT_FIELD_SHIFT] = '\0';
+  pcVar14[0x57 + JOINT_FIELD_SHIFT] = '\0';
   goto switchD_0046dee7_default;
 }
 

@@ -31,7 +31,7 @@ Pool *Pools() {
     // históricos DAT que pueden apuntar al interior del primer slot.
     static Pool pools[] = {
         {DAT_07b11670,OBJECT_STRIDE,200,2,2,4,0xfc},
-        {DAT_07b27150,0x9d8,500,4,4,8,0x40},
+        {DAT_07b27150,JOINT_STRIDE,500,4,4,8,0x40},
         {DAT_07abf5f0,0x70,3000,4,4,8,0x3c},
         {DAT_07c5ab3c,0x70,200,4,4,-1,-1},
         {g_WeatherSlotPool,OBJECT_STRIDE,40,2,2,4,0xfc},

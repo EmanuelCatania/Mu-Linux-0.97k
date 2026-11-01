@@ -1556,7 +1556,7 @@ extern float   _DAT_00552a28;
 extern DWORD   _DAT_07e016f0;  // last FPS tick timestamp (timeGetTime value)
 
 // Pool en 0x083a1218 (array Butterfles; lo recorren SMD_Parser.cpp y Entity_Render.cpp, entre otros):
-extern char    DAT_083a1218[0x1158];   // Butterfles OBJECT array (10 entries × 0x1BC stride)
+extern char    DAT_083a1218[10 * OBJECT_STRIDE];   // Butterfles OBJECT array (10 entries × 0x1BC stride)
 
 // Float aliases for view/projection matrix globals (0x083a4xxx):
 // DWORD counterparts (DAT_083a414c etc.) are already declared above.
@@ -1953,7 +1953,10 @@ extern DWORD   FogColor;   // fog color pointer / float start  [IDA 0x0056155C]
 extern float   _DAT_00552d34;  // perspective scale constant
 
 // ── Joint pool ────────────────────────────────────────────────────────────────
-extern char    DAT_07b27150[500 * 0x9d8];   // Joint pool: 500 × 0x9d8 (IDA: 0x07B27150..0x07C5AB30)
+// JOINT lleva un puntero en +0x40: los campos siguientes se corren en x64.
+constexpr int JOINT_FIELD_SHIFT = (int)sizeof(void*) - 4;
+constexpr int JOINT_STRIDE = 0x9D8 + JOINT_FIELD_SHIFT;
+extern char    DAT_07b27150[500 * JOINT_STRIDE];   // Joint pool: 500 × 0x9d8 (IDA: 0x07B27150..0x07C5AB30)
 
 // ── Joint_Create float constants ─────────────────────────────────────────────
 extern float   _DAT_00552a14;  // joint float constant
