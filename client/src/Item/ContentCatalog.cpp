@@ -680,7 +680,7 @@ void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPt
             float position[3];
             BMD_TransformPosition(modelPtr, (float*)(g_BoneScratch + data.Bones[b] * 0x30), offset, position, '\x01');
             if (data.Type == Proto::CATALOG_EFFECT_SPRITE) {
-                Equipment_AddSprite((unsigned short)effect.Bitmap, position, scale, light, (int)(uintptr_t)c, 0.0f, 0);
+                Equipment_AddSprite((unsigned short)effect.Bitmap, position, scale, light, (intptr_t)c, 0.0f, 0);
             } else if (data.Type == Proto::CATALOG_EFFECT_PARTICLE) {
                 Particle_Spawn(data.Particle, position, (float*)((BYTE*)c + 28), light, data.SubType, scale, 0);
             }

@@ -18,7 +18,7 @@ void Equipment_WingSprite(unsigned short type, float *position, float scale,
     float *light, intptr_t owner, float rotation, int mode);
 void Equipment_AddMesh(int model, const void *object, const float *light,
     float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, intptr_t part=0, int linked=0, const float *offset=nullptr);
-void Equipment_EmitWing790(void *model, intptr_t object, int owner);
+void Equipment_EmitWing790(void *model, intptr_t object, intptr_t owner);
 
 // Los modelos son contexto compartido; el tick de un link no lo publica.
 class EquipmentModelContext {

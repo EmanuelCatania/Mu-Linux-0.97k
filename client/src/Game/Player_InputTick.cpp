@@ -1314,8 +1314,8 @@ void __cdecl Player_ProcessInput(void)
                         // Sin ruta (ya esta al lado, o inalcanzable) -> atacar.
                         if (Combat_CheckArrowRequirement() == 0)
                             goto end_tick;              // IDA: return (sin ++MouseUpdateTime)
-                        Action((DWORD)(uintptr_t)ent,
-                                                   (DWORD)(uintptr_t)ent);
+                        Action((intptr_t)ent,
+                                                   (intptr_t)ent);
                         goto end_tick_inc;
                     }
                     {
@@ -1333,8 +1333,8 @@ void __cdecl Player_ProcessInput(void)
                     }
                     if (Combat_CheckArrowRequirement() == 0)
                         goto end_tick;                  // IDA: return
-                    Action((DWORD)(uintptr_t)ent,
-                                               (DWORD)(uintptr_t)ent);
+                    Action((intptr_t)ent,
+                                               (intptr_t)ent);
                     goto end_tick_inc;
                 }
 

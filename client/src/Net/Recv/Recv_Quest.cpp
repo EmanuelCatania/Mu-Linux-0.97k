@@ -104,7 +104,7 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         // 15 chispas + destello, sin rebuild del personaje
         for (int n = 0; n < 15; ++n)
             Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
-                         (float*)(c + 28), 0, (int)(uintptr_t)c,
+                         (float*)(c + 28), 0, (intptr_t)c,
                          40.0f, 2, 0);
         CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
                      (float*)(c + 232), nullptr, (float*)c,
@@ -133,10 +133,10 @@ void NetRecv_A3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                         *(float*)(c + 24) + 200.0f };
         for (int n = 0; n < 15; ++n) {
             Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
-                         (float*)(c + 28), 0, (int)(uintptr_t)c,
+                         (float*)(c + 28), 0, (intptr_t)c,
                          40.0f, 2, 0);
             Joint_Create(1249, up, up,
-                         (float*)(c + 28), 10, (int)(uintptr_t)c,
+                         (float*)(c + 28), 10, (intptr_t)c,
                          40.0f, 2, 0);
         }
         CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),

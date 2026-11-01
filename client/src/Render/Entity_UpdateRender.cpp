@@ -520,7 +520,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             *(short*)((BYTE*)puVar13 + 2) == 390 &&
             *(float*)&((OBJECT*)(uintptr_t)(puVar13))->Alpha != 0.0f) {
             CreateGuildMark(guildMarkIndex, true);
-            RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
+            RenderGuildMarkOnShield((intptr_t)puVar13,
                           *(short*)&((CHARACTER*)(uintptr_t)(param_1))->BodyPart[2].Type);
         }
     }

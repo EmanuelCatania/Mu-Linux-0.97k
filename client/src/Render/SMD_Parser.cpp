@@ -359,7 +359,7 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
             randPass = (rcheck == 0);
         }
         if (!randPass) return;
-        if (*(int*)(T + 252) != (int)(uintptr_t)DAT_07abf5d8) return;  // hero only
+        if (*(int*)(T + 252) != (intptr_t)DAT_07abf5d8) return;  // hero only
 
         // Anti-tamper hash table — skipped
 
@@ -419,7 +419,7 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
         char* found = nullptr;
         for (int idx = 0; idx < 400; ++idx) {
             char* ent = charBase + idx * kEntStride;
-            if ((int)(uintptr_t)ent == owner) continue;
+            if ((intptr_t)ent == (intptr_t)owner) continue;
             if (*ent == 0) continue;
             // visibility flag at +332
             if (*(unsigned char*)(ent + 332 + 20) == 0) continue;

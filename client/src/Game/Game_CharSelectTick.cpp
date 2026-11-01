@@ -219,8 +219,8 @@ void Game_CharSelectTick(void)
     //   CharacterAnimation — avanza entity[+0x108] (frame counter). Para todos.
     // El loop manual de abajo está desactivado (`false &&`).
     {
-        int heroEnt = (int)(uintptr_t)DAT_07abf5d8;
-        int base = (int)(uintptr_t)DAT_07abf5d0;
+        intptr_t heroEnt = (intptr_t)DAT_07abf5d8;
+        intptr_t base = (intptr_t)DAT_07abf5d0;
         MoveCharactersClient();
         for (int s = 0; false && s < 400; ++s) {
             intptr_t e = base + s * CHARACTER_STRIDE;

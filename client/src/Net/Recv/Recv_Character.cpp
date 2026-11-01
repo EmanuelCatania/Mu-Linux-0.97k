@@ -863,7 +863,7 @@ void Recv_LevelUp(const BYTE* Msg, int Size)
         BYTE* hero = (BYTE*)DAT_07abf5d8;
         for (int i = 0; i < 15; ++i) {
             Joint_Create(1249, (float*)(hero + 16), (float*)(hero + 16),
-                         (float*)(hero + 28), 0, (int)(uintptr_t)hero,
+                         (float*)(hero + 28), 0, (intptr_t)hero,
                          40.0f, 2, 0);
         }
         CreateEffect(1264, (float*)(hero + 16), (float*)(hero + 28),

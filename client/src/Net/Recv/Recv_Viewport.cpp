@@ -559,7 +559,7 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                          (float*)(entity + 232), nullptr, (float*)entity,
                          (float*)-1, nullptr, 0);
             CreateSprite(1191, (float*)(entity + 16), 1.0f,
-                         (float*)(entity + 232), (int)(uintptr_t)entity,
+                         (float*)(entity + 232), (intptr_t)entity,
                          0.0f, 0);
             *(DWORD*)(entity + EntityOffset(360)) = 0;
         }
@@ -761,7 +761,7 @@ void NetRecv_1F(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         AsCharacter(summon)->Object.Live = 1;
         ApplyPersistentSkillEffect97k(summon, viewSkillState, 1);
 
-        if (create) AppearMonster((DWORD)(uintptr_t)summon);
+        if (create) AppearMonster((intptr_t)summon);
         NetLog("NET:    0x1F summon id=%d type=%d owner=%s pos=(%d,%d)",
                key, type, owner, x, y);
     }

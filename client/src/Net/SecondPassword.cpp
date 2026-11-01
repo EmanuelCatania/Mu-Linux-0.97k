@@ -2857,7 +2857,7 @@ extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o);
 extern bool __cdecl AttackStage(intptr_t c, intptr_t o);
 extern void __cdecl CreateBlood(intptr_t o);
 extern int  __stdcall FindHotKey(int Skill);
-extern void __cdecl CreateArrows(intptr_t c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
+extern void __cdecl CreateArrows(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:
@@ -4073,7 +4073,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         if (*(unsigned short *)&AsCharacter(entity_ptr)->Object.Type != 390) {
             MoveHead(AsCharacter(entity_ptr));
         }
-        if (entity_ptr != (int)(uintptr_t)DAT_07abf5d8 &&
+        if (entity_ptr != (intptr_t)DAT_07abf5d8 &&
             !AsCharacter(entity_ptr)->Dead && !(rand() % 32)) {
             float *headTarget = (float *)(entity_ptr + 52);
             headTarget[0] = (float)(rand() % 128 - 64);
@@ -4548,7 +4548,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
     // 004520C0 L1383-1396: los pasos del jugador local se eligen según las dos
     // animation-frame thresholds, once per walk/run cycle.
     if (*(unsigned short *)&AsCharacter(entity_ptr)->Object.Type == 390 &&
-        entity_ptr == (int)(uintptr_t)DAT_07abf5d8) {
+        entity_ptr == (intptr_t)DAT_07abf5d8) {
         const unsigned char action = AsCharacter(entity_ptr)->Object.CurrentAction;
         if ((action >= 13 && action <= 33) || action == 79 || action == 80) {
             const float frame = AsCharacter(entity_ptr)->Object.AnimationFrame;

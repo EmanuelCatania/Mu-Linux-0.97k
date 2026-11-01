@@ -48,7 +48,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             for (int i = 0; i < 5; ++i) {
                 Joint_Create(266, (float*)(entity + 16), (float*)(entity + 16),
                               (float*)(entity + 28), 0,
-                              (int)(uintptr_t)entity, 50.0f, -1, 0);
+                              (intptr_t)entity, 50.0f, -1, 0);
             }
         }
         // DESVIACION: IDA crea estos joints solo al castear; se recrean para
@@ -83,7 +83,7 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
 void CreateMagicShiny97k(BYTE* entity, int hand)
 {
     if (!entity || hand < 0 || hand > 1 || DAT_05828d58 == 0) return;
-    const DWORD bones = *(intptr_t*)&AsObject(entity)->BoneMatrices;
+    const intptr_t bones = *(intptr_t*)&AsObject(entity)->BoneMatrices;
     if (bones == 0) return;
 
     const WORD type = *(WORD*)(entity + 2);

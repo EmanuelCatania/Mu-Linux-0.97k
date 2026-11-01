@@ -59,7 +59,7 @@ static void ItemEquip_UseManaScroll97k(int inventorySlot /* IDA: sub_482BE0(3) *
 //   sy = CHARACTER*, a2 = OBJECT*, a3 = ITEM* (no se usa en el cuerpo), a4 = skill.
 // Nombres: skill = a4, target = CharactersClient[SelectedCharacter],
 // routeReach = SkillAttribute[40*a4+38]*1.2 (v12 antes del override), reach = v12.
-static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
+static char ItemEquip_UseSelectedTargetSkill(intptr_t character /* IDA: sy */,
                                              intptr_t object    /* IDA: a2 */,
                                              BYTE  skill     /* IDA: a4 */)
 {

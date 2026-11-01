@@ -45,7 +45,7 @@ Pool *Pools() {
     return pools;
 }
 int scene=-1, world=-1;
-DWORD models=0;
+intptr_t models=0;
 std::uint64_t epoch=0;
 bool published=false;
 bool Ready() {

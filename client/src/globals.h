@@ -832,7 +832,7 @@ extern DWORD   DAT_07eaa148;   // shop/item selection C
 extern DWORD   DAT_07eaa14c;
 extern DWORD   DAT_07eaa150;
 extern DWORD   DAT_07eaa154;
-extern DWORD   DAT_07eaa160;
+extern uintptr_t DAT_07eaa160;
 extern char    DAT_07eaa165;   // char-select packet-sent flag
 extern DWORD   DAT_07eaa168;   // TextureEnable (GL texture state cache)
 extern char    DAT_07eaa179;

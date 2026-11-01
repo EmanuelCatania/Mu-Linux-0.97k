@@ -92,7 +92,7 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 // to dispatch RenderItemInfo (tooltip). El símbolo es `DAT_07eaa160` (Scene_MapTick
 // lo pasa como 3er arg a RenderItemInfo), no `dword_7E11D24`, que es estado del
 // input de texto (sub_494520).
-extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
+extern uintptr_t DAT_07eaa160;                     // IDA `CheckInventory`
 #define CheckInventory     DAT_07eaa160
 
 // Tabla de hotkeys en dword_559C60[3] (Q/W/E) — los globals ya están declarados como
@@ -706,7 +706,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 }
             }
 
-            CheckInventory     = (int)(uintptr_t)rowSlot;
+            CheckInventory     = (intptr_t)rowSlot;
             byte_7EA9844       = (BYTE)mode_flag;
 
             // ── Escribe los globals de posición del tooltip (sx/sy en IDA) ──

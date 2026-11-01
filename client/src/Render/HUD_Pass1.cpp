@@ -303,7 +303,7 @@ void RenderBooleans_(void)
             const int maxY = 480 - 47 * 480 / 640;
             if (c->y < 0 || c->y + boxH > maxY) continue;
             if (c->x < -marginX || c->x + boxW > 640 + marginX) continue;
-            RenderBoolean(c->x, c->y, (DWORD)(uintptr_t)c);
+            RenderBoolean(c->x, c->y, (intptr_t)c);
         }
     }
 }

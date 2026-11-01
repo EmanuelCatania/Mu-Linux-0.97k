@@ -938,7 +938,7 @@ HRESULT __cdecl PlayBuffer(int Buffer, const OBJECT* Object, BOOL bLooped); // I
 // ── Character helpers ─────────────────────────────────────────────────────────
 
 // ── Error reporting ───────────────────────────────────────────────────────────
-void  __cdecl CErrorReport__Write(DWORD This, char *lpszFormat, ...); // 0x00405540
+void  __cdecl CErrorReport__Write(intptr_t This, char *lpszFormat, ...); // 0x00405540
 
 // ── Forward declarations for small unmapped functions ─────────────────────────
 // CRT internals
@@ -1186,7 +1186,7 @@ void  __cdecl InventoryColor(ITEM *p);                              // 0x004E242
 void  __stdcall RenderEquipmentBox(void);                           // 0x004E25A0
 void  __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, float Height); // 0x004E2E40
 void  __stdcall RenderEquipment3D(void);                            // 0x004E3100
-extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight); // IDA: RenderItemsBoxes (0x004E37B0)
+extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY, intptr_t Inventory, int iMaxWidth, int iMaxHeight); // IDA: RenderItemsBoxes (0x004E37B0)
 void  __cdecl RenderItems3D(float p1, float p2, short *p3, int p4, int p5, char p6); // 0x004E38B0
 int   __cdecl CheckMixRecipe(short *p1, int p2, int p3);                // 0x004E40F0
 extern "C" void __cdecl RenderInventoryInterface(int StartX, int StartY, int Flag); // IDA: RenderInventoryInterface (0x004ECBA0)
@@ -1232,8 +1232,8 @@ void  __cdecl RenderWheelWeapon(intptr_t o); // IDA: RenderWheelWeapon (0x0046B7
 void  __cdecl FUN_0046c5a0(int p1, int p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
 void  __cdecl CreateBlood(intptr_t o);                                 // 0x0046C680
 void  __cdecl FUN_0046c7f0(int kind, OBJECT* object, float dx, float dy, float dz); // IDA: 0x0046C7F0, emisor ambiental
-void  __cdecl CreateArrow(intptr_t c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
-void  __cdecl CreateArrows(intptr_t c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
+void  __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
+void  __cdecl CreateArrows(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
 void  __stdcall MoveParticles(void);                                // 0x00477090
 unsigned int __cdecl Item_GetDefenseWithSpecial(DWORD ecx, short *param_1);            // item special option (0x0047CFB0)
 void  __stdcall SetPositionIME_Wnd(float x, float y);              // 0x0047ECAF

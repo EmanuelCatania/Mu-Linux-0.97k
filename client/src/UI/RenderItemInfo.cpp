@@ -1771,7 +1771,7 @@ void __cdecl RenderItemInfo(void* param_1, void* param_2, void* param_3_v, int p
 #endif
     })) {
         DbgLogPublic("RIP CRASHED inside _impl — caught by SEH");
-        extern DWORD DAT_07eaa160;
+        extern uintptr_t DAT_07eaa160;
         DAT_07eaa160 = 0;
     }
 }
@@ -1784,7 +1784,7 @@ void __cdecl RenderRepairInfo(void* param_1, int param_2, void* param_3_v)
         RenderRepairInfo_impl(param_1, param_2, param_3_v);
     })) {
         DbgLogPublic("RRI CRASHED inside _impl — caught by SEH");
-        extern DWORD DAT_07eaa160;
+        extern uintptr_t DAT_07eaa160;
         DAT_07eaa160 = 0;
     }
 }

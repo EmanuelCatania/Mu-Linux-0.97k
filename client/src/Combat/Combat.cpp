@@ -947,7 +947,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
         BYTE* const target = (BYTE*)(uintptr_t)CharactersClient +
                              CHARACTER_STRIDE * (int)SelectedCharacter;    // IDA: CharactersClient[SelectedCharacter]
         if (target[132] == 1 && iType >= 26 && iType <= 28) { // IDA L1864
-            Combat_UseElfSkill((int)(uintptr_t)entity, (int)(uintptr_t)entity);
+            Combat_UseElfSkill((intptr_t)entity, (intptr_t)entity);
             return AF_RETURN;                                 // IDA L1867
         }
         if (CheckAttack() && iType == 51) {                  // IDA L1869: CheckAttack()
@@ -958,7 +958,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
                     || (rightWeapon >= 528 && rightWeapon < 535)
                     || rightWeapon == 545
                     || (leftWeapon >= 544 && leftWeapon <= 546))
-                    Combat_UseElfSkill((int)(uintptr_t)entity, (int)(uintptr_t)entity);
+                    Combat_UseElfSkill((intptr_t)entity, (intptr_t)entity);
             }
             return AF_LABEL_322;                              // IDA L1881
         }
@@ -1041,8 +1041,8 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
                         int skillIndex = 0;                   // IDA: v128 / v129
                         while (skillIndex < 20 && attr[87 + skillIndex] != queuedSkill)
                             ++skillIndex;
-                        CreateArrows((DWORD)(uintptr_t)entity,
-                                          (DWORD)(uintptr_t)entity, 0,
+                        CreateArrows((intptr_t)entity,
+                                          (intptr_t)entity, 0,
                                           (WORD)skillIndex, 0, (WORD)queuedSkill);
                     }
                 }
@@ -1232,8 +1232,8 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
         return;
     }
     if (SelectedCharacter != -1 && CheckAttack()) {          // IDA L7938-7940
-        Combat_UseWizardSkill((DWORD)(uintptr_t)entity,
-                              (DWORD)(uintptr_t)entity);      // IDA L7943: sub_4889D0
+        Combat_UseWizardSkill((intptr_t)entity,
+                              (intptr_t)entity);      // IDA L7943: sub_4889D0
     }
     // IDA LABEL_1354 (L7950).
     if (hasTarget) {                                          // IDA L7951: HIBYTE(v1025)
@@ -1591,14 +1591,14 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
                         MovementSkillTarget = (DWORD)SelectedCharacter;// IDA L1424
                         DAT_07d7809c = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0; // IDA L1423/1425
                         if (DAT_07cf1ffc != 0 &&
-                            Item_Equip((DWORD)(uintptr_t)entity,
+                            Item_Equip((intptr_t)entity,
                                        (DWORD)((uintptr_t)DAT_07cf1ffc + 536 + i)))
                             return;                             // IDA L1431: LABEL_146
                     }
                 }
                 if ((*(char *)&AsCharacter(entity)->Class & 7) == 2) {                   // IDA L1445
                     if (DAT_07cf1ffc != 0 &&
-                        Combat_UseElfSkillItem((DWORD)(uintptr_t)entity,
+                        Combat_UseElfSkillItem((intptr_t)entity,
                                                (DWORD)((uintptr_t)DAT_07cf1ffc + 536 + i)))
                         return;                                 // IDA L1469: LABEL_146
                 }

@@ -52,28 +52,28 @@ static inline void  AE_delete(uintptr_t)      {}
 // Reemplaza el dispatch inline `(*(int(**)(int*,DWORD))(MAIN_HASH_CLASS+12))(...)`.
 // En nuestro build ese slot es HashFn_Sentinel (globals.cpp) y devuelve 0; el
 // shim evita el deref de vtable sin cambiar el comportamiento.
-static inline int AE_ht_hash(DWORD) { return 0; }
+static inline int AE_ht_hash(uintptr_t) { return 0; }
 static inline unsigned int AE_ht_index(const void*, DWORD) { return 0xFFFFFFFFu; }
-static inline void  AE_ht_noop2(const void*, DWORD)        {}
-static inline void  AE_ht_noop3(const void*, DWORD, DWORD) {}
+static inline void  AE_ht_noop2(const void*, uintptr_t)        {}
+static inline void  AE_ht_noop3(const void*, uintptr_t, uintptr_t) {}
 static inline unsigned char AE_SkillRead(const void* ctx, const void* p)
 { return FUN_0045fae0((DWORD)(uintptr_t)ctx, (unsigned char*)p); }
 
 // Wrappers de tipo: Hex-Rays pasa enteros/DWORD donde functions.h declara
 // float*/void*. Se castea aca en vez de tocar los ~50 call sites.
 static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
-                                     int a4, int a5, int a6, int a7, int flag)
+                                     int a4, intptr_t a5, int a6, int a7, int flag)
 { return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       (float*)(intptr_t)a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
-                                     int a4, int a5, float* a6, int a7, int flag)
+                                     int a4, intptr_t a5, float* a6, int a7, int flag)
 { return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline void* AE_CreateJoint(int type, float* p1, float* p2, float* p3,
                                    int sub, intptr_t owner, double scale, int a, int b)
 { return CreateJoint(type, p1, p2, p3, (unsigned int)sub, owner, (float)scale,
                       (short)a, (unsigned char)b); }
-static inline void AE_TransformPosition(DWORD model, const void* mat,
+static inline void AE_TransformPosition(uintptr_t model, const void* mat,
                                         float* pos, float* out, int flag)
 { BMD_TransformPosition((void*)(uintptr_t)model, (float*)mat, pos, out, (char)flag); }
 
@@ -330,7 +330,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   float (*v230)[4]; // [esp-10h] [ebp-7Ch]
   float (*v231)[4]; // [esp-10h] [ebp-7Ch]
   float (*v232)[4]; // [esp-10h] [ebp-7Ch]
-  DWORD This; // [esp+10h] [ebp-5Ch]
+  intptr_t This; // [esp+10h] [ebp-5Ch]
   unsigned int v234; // [esp+14h] [ebp-58h]
   unsigned int v235; // [esp+14h] [ebp-58h]
   unsigned int v236; // [esp+14h] [ebp-58h]
@@ -340,9 +340,9 @@ void __cdecl AttackEffect(intptr_t Owner)
   unsigned int v240; // [esp+14h] [ebp-58h]
   unsigned int v241; // [esp+14h] [ebp-58h]
   unsigned int v242; // [esp+14h] [ebp-58h]
-  DWORD v243; // [esp+18h] [ebp-54h] BYREF
+  intptr_t v243; // [esp+18h] [ebp-54h] BYREF
   const char *v244; // [esp+1Ch] [ebp-50h] BYREF
-  DWORD v245; // [esp+20h] [ebp-4Ch] BYREF
+  intptr_t v245; // [esp+20h] [ebp-4Ch] BYREF
   float v246[3]; // [esp+24h] [ebp-48h] BYREF
   float TargetPosition[3]; // [esp+30h] [ebp-3Ch] BYREF
   float v248[3]; // [esp+3Ch] [ebp-30h] BYREF
@@ -387,7 +387,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   {
     case 35:
       v171 = (char *)(Owner + EntityOffset(770));
-      v243 = Owner + 770;
+      v243 = Owner + EntityOffset(770);
       v172 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Owners = 0;
@@ -587,7 +587,7 @@ LABEL_293:
       break;
     case 42:
       v152 = (char *)(Owner + EntityOffset(770));
-      v243 = Owner + 770;
+      v243 = Owner + EntityOffset(770);
       v153 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerq = 0;
@@ -742,7 +742,7 @@ LABEL_242:
         CreateEffect(1211, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
       }
       v131 = (char *)(Owner + EntityOffset(770));
-      v243 = Owner + 770;
+      v243 = Owner + EntityOffset(770);
       v132 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownero = 0;
@@ -1030,7 +1030,7 @@ LABEL_185:
           CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
         }
         v80 = (char *)(Owner + EntityOffset(770));
-        v243 = Owner + 770;
+        v243 = Owner + EntityOffset(770);
         v81 = AE_ht_hash(Owner + EntityOffset(770));
         v245 = 0;
         Ownerg = 0;
@@ -1169,7 +1169,7 @@ LABEL_120:
       break;
     case 66:
       v98 = (char *)(Owner + EntityOffset(770));
-      v243 = Owner + 770;
+      v243 = Owner + EntityOffset(770);
       v99 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerj = 0;
@@ -1304,7 +1304,7 @@ LABEL_152:
       break;
     case 72:
       v27 = (char *)(Owner + EntityOffset(770));
-      v243 = Owner + 770;
+      v243 = Owner + EntityOffset(770);
       v28 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownerc = 0;
@@ -1510,7 +1510,7 @@ LABEL_50:
       break;
     case 77:
       v61 = (char *)(Owner + EntityOffset(770));
-      v243 = Owner + 770;
+      v243 = Owner + EntityOffset(770);
       v62 = AE_ht_hash(Owner + EntityOffset(770));
       v245 = 0;
       Ownere = 0;
@@ -1702,7 +1702,7 @@ LABEL_6:
       HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
-      v245 = Owner + 770;
+      v245 = Owner + EntityOffset(770);
       v234 = AE_ht_hash(Owner + EntityOffset(770));
       v244 = 0;
       v243 = 0;

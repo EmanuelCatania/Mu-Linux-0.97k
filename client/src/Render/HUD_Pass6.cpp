@@ -240,7 +240,7 @@ extern "C" void __cdecl RenderInventoryInterface(int StartX, int StartY, int Fla
 // bitmap at each position, with InventoryColor() picking the tint.
 // =============================================================================
 extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
-                                         DWORD InventoryPtr,
+                                         intptr_t InventoryPtr,
                                          int iMaxWidth, int iMaxHeight)
 {
     if (iMaxHeight <= 0) return;
@@ -398,7 +398,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 
     float fPosX = (float)((double)InventoryStartX + 15.0);
     float fPosY = (float)((double)InventoryStartY + 200.0);
-    RenderItemsBoxes(fPosX, fPosY, (DWORD)(uintptr_t)OffsetInventoryItems, 8, 8);
+    RenderItemsBoxes(fPosX, fPosY, (intptr_t)OffsetInventoryItems, 8, 8);
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -1335,10 +1335,10 @@ extern "C" void __cdecl RenderTrade(void)
     // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 70.0),
-                     (DWORD)(uintptr_t)Inventory, 8, 4);
+                     (intptr_t)Inventory, 8, 4);
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 270.0),
-                     (DWORD)(uintptr_t)OffsetTradeItems, 8, 4);
+                     (intptr_t)OffsetTradeItems, 8, 4);
 
     // IDA: FUN_004F1270 — 290 es normal, 291 es confirmada/dorada; un wait
     // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
@@ -1438,7 +1438,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     // Shop items start at `&Inventory[32].WalkSpeed` in the original client.
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)ShopItems, 8, 15);
+                     (intptr_t)ShopItems, 8, 15);
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
@@ -1549,7 +1549,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
-                     (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+                     (intptr_t)OffsetMixItems, 8, 4);
     // IDA 004F27F0: RenderItemsBoxes deja puesto el color de la última celda
     // (InventoryColor), y sin este reset los textos y el botón salían teñidos
     // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
@@ -1664,7 +1664,7 @@ extern "C" void __cdecl RenderWarehouse(void)
 
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)OffsetWarehouseItems, 8, 15);
+                     (intptr_t)OffsetWarehouseItems, 8, 15);
 
     // ── Título: "Baúl (Abierto|Cerrado)" ─────────────────────────────────────
     // IDA: Platform::TextFormat(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])

@@ -488,7 +488,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
         do {
             if (a4 > 0) {
                 int v21 = 0;
-                DWORD v24 = v6_addr;
+                intptr_t v24 = v6_addr;
                 int v25 = a4;
                 float sy = (float)((double)v22 + a2);
 

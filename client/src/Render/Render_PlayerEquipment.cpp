@@ -626,7 +626,7 @@ extern "C" int RenderCharacterBackItem(intptr_t c, intptr_t o)
     bool bBack = false;
 
     for (int i = 0; i < 2; ++i) {
-        const int partBase = c + 24 * i;
+        const intptr_t partBase = c + (intptr_t)sizeof(PART_t) * i;
         int iType    = AsCharacter(partBase)->Weapon[0].Type;
         int iLevel   = AsCharacter(partBase)->Weapon[0].Level;
         int iOption1 = AsCharacter(partBase)->Weapon[0].Option1;

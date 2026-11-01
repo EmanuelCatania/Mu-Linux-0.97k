@@ -466,7 +466,7 @@ LAB_after_render: ;
     }
 }
 
-void Equipment_EmitWing790(void *this_, intptr_t param_1, int owner) {
+void Equipment_EmitWing790(void *this_, intptr_t param_1, intptr_t owner) {
 
         float fxLight[3];
         float zeroPos[3];

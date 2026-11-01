@@ -39,7 +39,7 @@ void Effect_TickAll(void)
       })) {
         const int   type    = (int)*(short*)((char*)pfVar1 + 2);
         const int   subType = *(int*)((char*)pfVar1 + 4);
-        const int   owner   = *(intptr_t*)&AsObject(pfVar1)->Owner;
+        const intptr_t owner = *(intptr_t*)&AsObject(pfVar1)->Owner;
         static unsigned char s_seen[2048] = {0};
         if (type >= 0 && type < 2048 && !s_seen[type]) {
           s_seen[type] = 1;

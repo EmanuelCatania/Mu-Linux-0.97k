@@ -23,7 +23,7 @@ std::vector<unsigned int> expected;
 // cambian de dirección ni se liberan mientras un joint pueda conservar Target.
 std::vector<std::unique_ptr<Owner>> owners;
 int renderScene=-1, renderWorld=-1, publishedScene=-1, publishedWorld=-1;
-DWORD renderModels=0, publishedModels=0;
+intptr_t renderModels=0, publishedModels=0;
 bool inRender=false;
 
 struct Scratch {
