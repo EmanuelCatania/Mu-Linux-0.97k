@@ -756,7 +756,7 @@ void Equipment_Tick(intptr_t entity, int highlighted)
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
             float fWorldPos[3];
             BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((intptr_t)puVar13 + 2) * BMD_STRIDE),
-                         (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
+                         (float *)((intptr_t)AsCharacter(puVar13)->Helper.LinkBone * 0x30 + (intptr_t)AsObject(puVar13)->BoneMatrices),
                          fOff, fWorldPos, '\x01');
             float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
             Equipment_AddSprite(0x47e, fWorldPos, 1.5f, fColor2, (intptr_t)puVar13, 0, 0);

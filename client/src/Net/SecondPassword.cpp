@@ -3886,7 +3886,7 @@ void __cdecl MoveCharacter(int p1)
         v377 = 0;
         if (AsObject(o)->Type == 390 && (AsObject(o)->CurrentAction == 37 || AsObject(o)->CurrentAction == 38)) v377 = 1;
         v375 = 0; Type = 0;
-        v378 = *(short*)(c + 24 * v377 + 624);
+        v378 = *(short*)(c + EntityOffset(24 * v377 + 624));
         v376 = *(unsigned char*)(c + 24 * v377 + 626);
 
         BYTE actLocal = AsObject(o)->CurrentAction;
@@ -4111,7 +4111,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
         // los registros arrancan en c+624 y c+648 (stride de 24 bytes).
         if (AsCharacter(entity_ptr)->PK < 6) {
             for (int itemOffset = 624; itemOffset <= 648; itemOffset += 24) {
-                const short itemType = *(short *)(entity_ptr + itemOffset);
+                const short itemType = *(short *)(entity_ptr + EntityOffset(itemOffset));
                 if (itemType == 412) {
                     float itemLight[3] = {0.80000001f, 0.64000005f, 0.40000001f};
                     AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)itemLight, 3, (float*)PrimaryTerrainLight[0]);

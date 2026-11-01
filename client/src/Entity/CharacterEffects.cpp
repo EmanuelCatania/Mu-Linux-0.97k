@@ -40,7 +40,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
         BYTE *boneIdxTable = (BYTE *)&DAT_0055984c;
         for (int i = 0; i < 9; i++) {
             BMD_TransformPosition(model,
-                (float *)(puVar13[0x45] + (int)(UINT)boneIdxTable[i] * 0x30),
+                (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + (int)(UINT)boneIdxTable[i] * 0x30),
                 &local_48, &local_54, '\x01');
             Equipment_AddSprite(0x47e, &local_54, 0.6f, &local_60, (intptr_t)puVar13, 0.0f, 0);
         }
@@ -57,14 +57,14 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
             local_40 = (float)(rand() % 20 - 10);
             int r = rand();
             BMD_TransformPosition(model,
-                (float *)(puVar13[0x45] + (r % nBones) * 0x30),
+                (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + (r % nBones) * 0x30),
                 &local_48, &local_54, '\x01');
             Particle_Spawn(0x498, &local_54, (float *)(puVar13 + 7),
                          &local_60, 3, 1.0f, 0);
         }
     }
     else if (bVar7 == 0x46) {
-        BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x3c0),
+        BMD_TransformPosition(model, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + 0x3c0),
                      &local_48, &local_54, '\x01');
         Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (intptr_t)puVar13, 0.0f, 0);
     }
@@ -80,7 +80,7 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
         local_5c = 0.1f;   // Light[1]
         local_58 = 1.0f;   // Light[2]
         for (int off = 0x270; off < 0x510; off += 0x30) {
-            BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
+            BMD_TransformPosition(model, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + off),
                          &local_48, &local_54, '\x01');
             Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (intptr_t)puVar13, 0.0f, 0);
             // IDA: `if (v29 >= 672 && v29 <= 768 || v29 == 1104)`.
@@ -93,13 +93,13 @@ void CharacterEffects_TickEarly(intptr_t entity, CharacterEffectScratch &scratch
             local_30 = local_54; local_2c = local_50; local_28 = local_4c;
         }
         for (int off = 0x9c0; off < 0xb10; off += 0x30) {
-            BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
+            BMD_TransformPosition(model, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + off),
                          &local_48, &local_54, '\x01');
             Equipment_AddSprite(0x47e, &local_54, 0.8f, &local_60, (intptr_t)puVar13, 0.0f, 0);
         }
     }
     else if (bVar7 == 0x4b) {
-        BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x360),
+        BMD_TransformPosition(model, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + 0x360),
                      &local_48, &local_54, '\x01');
         Particle_Spawn(0x4ab, &local_54, (float *)(puVar13 + 7),
                      &local_60, 0, 0.3f, 0);
@@ -159,7 +159,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
             if ((*(char *)(*(int *)((intptr_t)pvVar23 + 0x2c) + 0x22 + iVar9) == '\0') &&
                 ((iVar9 < 0x834 || iVar9 > 0xaf0)) &&
                 ((iVar9 < 0xec4 || iVar9 > 0x1180))) {
-                BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + iVar18 * 0x30),
+                BMD_TransformPosition(pvVar23, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + iVar18 * 0x30),
                              &local_48, &local_54, '\x01');
                 UINT uType = bAlt ? 0x4f0 : 0x4cf;
                 float fSc  = bAlt ? 1.3f : 2.5f;
@@ -221,7 +221,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         local_48 = 3.5f; local_44 = -12.0f; local_40 = 10.0f;
         float fCol = fSin * _DAT_0055294c + _DAT_00552948;
         local_60 = fCol; local_5c = fCol; local_58 = fCol;
-        BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
+        BMD_TransformPosition(pvVar23, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + 0x3c0),
                      &local_48, &local_54, '\x01');
         Equipment_AddSprite(0x4a7, &local_54, 0.3f, &local_60, (intptr_t)puVar13,
                      (float)WorldTime * _DAT_00552944, 0);
@@ -261,7 +261,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
             ((*(char *)&((CHARACTER*)(uintptr_t)(param_1))->Skin & (char)~7) == '\b')) {
             local_48 = -4.0f; local_44 = 11.0f; local_40 = 0.0f;
             local_60 = 1.0f; local_5c = 1.0f; local_58 = 1.0f;
-            BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x390),
+            BMD_TransformPosition(pvVar23, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + 0x390),
                          &local_48, &local_54, '\x01');
             Equipment_AddSprite(0x498, &local_54, 0.6f, &local_60, 0, 0, 0);
             float fS = (float)(double)fsin((double)(WorldTime * _DAT_00552500));
@@ -273,10 +273,10 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         // IDA línea 2133-2152. Bone idx en c+628 (= LinkBone Weapon[0]),
         // tres Equipment_AddSprite(1191) con rotación basada en WorldTime.
         if (*(char *)&((OBJECT*)(uintptr_t)(puVar13))->CurrentAction == 'X') {
-            BYTE bone = *(BYTE *)(param_1 + 0x9d);  // = (param_1+0x9d*4-1)? no: int-idx 0x9d * 4 = byte 0x274 = c+628 LinkBone[0]
+            BYTE bone = *&AsCharacter(puVar13)->Weapon[0].LinkBone;  // = (param_1+0x9d*4-1)? no: int-idx 0x9d * 4 = byte 0x274 = c+628 LinkBone[0]
             // Wait int-arithmetic: param_1 (int*) + 0x9d ints == byte+0x274 == c+628 ✓
             BMD_TransformPosition(pvVar23,
-                (float *)(puVar13[0x45] + (UINT)bone * 0x30),
+                (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + (UINT)bone * 0x30),
                 &local_48, &local_54, '\x01');
             float Scalep = *(float *)&((OBJECT*)(uintptr_t)(puVar13))->AnimationFrame * 0.1f;  // anim frame * 0.1
             local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
@@ -290,22 +290,22 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
 
         // ── 3. Dragon mode (entity flags bit 2) — fire spray from hand bones ──
         if ((*(BYTE *)(puVar13 + 0x1e) & 4) == 4) {
-            BYTE *pbVar20 = (BYTE *)(param_1 + 0x9d);  // c+628 = first weapon LinkBone
-            for (int iSlot = 2; iSlot > 0; iSlot--, pbVar20 += 0x18) {
+            BYTE *pbVar20 = &AsCharacter(puVar13)->Weapon[0].LinkBone;  // c+628 = first weapon LinkBone
+            for (int iSlot = 2; iSlot > 0; iSlot--, pbVar20 += sizeof(PART_t)) {
                 int iRnd = rand();
                 local_60 = (float)(iRnd % 0x1e + 0x46) * _DAT_005524f8;
                 local_5c = (float)local_60 * _DAT_005528b8;
                 local_58 = (float)local_60 * _DAT_005526e4;
                 BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + (UINT)*pbVar20 * 0x30),
+                    (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + (UINT)*pbVar20 * 0x30),
                     &local_48, &local_54, '\x01');
                 Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (intptr_t)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbVar20 - 6) * 0x30),
+                    (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + ((int)*pbVar20 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
                 Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (intptr_t)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbVar20 - 7) * 0x30),
+                    (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + ((int)*pbVar20 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
                 Equipment_AddSprite(0x4cf, &local_54, 1.5f, &local_60, (intptr_t)puVar13, 0, 0);
             }
@@ -331,18 +331,18 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         //   bone-6 (≈13/14) = brazo
         //   bone-7 (≈12/13) = hombro
         {
-            BYTE *pbV193 = (BYTE *)(param_1 + 0x9d);  // c+628 = LinkBone[Weapon0]
-            for (int v194 = 2; v194 > 0; v194--, pbV193 += 0x18) {
+            BYTE *pbV193 = &AsCharacter(puVar13)->Weapon[0].LinkBone;  // c+628 = LinkBone[Weapon0]
+            for (int v194 = 2; v194 > 0; v194--, pbV193 += sizeof(PART_t)) {
                 BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + (UINT)*pbV193 * 0x30),
+                    (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + (UINT)*pbV193 * 0x30),
                     &local_48, &local_54, '\x01');
                 Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (intptr_t)puVar13, 0, 0);  // CreateSprite 1150
                 BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbV193 - 6) * 0x30),
+                    (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + ((int)*pbV193 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
                 Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (intptr_t)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
-                    (float *)(puVar13[0x45] + ((int)*pbV193 - 7) * 0x30),
+                    (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + ((int)*pbV193 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
                 Equipment_AddSprite(0x47e, &local_54, 1.3f, &local_60, (intptr_t)puVar13, 0, 0);
             }

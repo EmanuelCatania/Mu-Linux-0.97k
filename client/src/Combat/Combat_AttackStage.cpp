@@ -67,7 +67,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         if (attackTime < 9) {
             float localPos[3] = {0.0f, 0.0f, 0.0f};
             // ExtOption index: c->Weapon[Hand].ExtOption = *(BYTE*)(c + Hand*0x18 + 0x274)
-            BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
+            BYTE extOpt = *(BYTE*)(c + EntityOffset(Hand * 0x18 + 0x274));
             intptr_t boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos[3];
@@ -80,7 +80,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         // Second transform for extended trail (attackTime in [6..12])
         if (attackTime > 5 && attackTime < 13) {
             float localPos2[3] = {0.0f, 0.0f, 0.0f};
-            BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
+            BYTE extOpt = *(BYTE*)(c + EntityOffset(Hand * 0x18 + 0x274));
             intptr_t boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos2[3];
@@ -132,7 +132,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
             if (attackTime == 0x04) {
                 float light[3] = {1.0f, 1.0f, 0.5f};
                 float localPos[3] = {0.0f, 0.0f, 0.0f};
-                BYTE extOpt = *(BYTE*)(c + Hand * 0x18 + 0x274);
+                BYTE extOpt = *(BYTE*)(c + EntityOffset(Hand * 0x18 + 0x274));
                 intptr_t bt2 = (intptr_t)AsObject(o)->BoneMatrices;
                 float (*boneMat)[4] = (float(*)[4])(bt2 + extOpt * 0x30);
                 float worldPos[3];
@@ -160,7 +160,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
         // Spawn 3x CreateEffect(0x10A) when attackTime in [13..14]
         if (attackTime > 0x0C && attackTime < 0x0F) {
             // Weapon type from c->Weapon[Hand].Type
-            int weapType = (int)*(short*)(c + Hand * 0x18 + 0x270);
+            int weapType = (int)*(short*)(c + EntityOffset(Hand * 0x18 + 0x270));
 
             for (int i = 0; i < 3; i++) {
                 float rad = AsObject(o)->Angle[2] * _DAT_0055253c;

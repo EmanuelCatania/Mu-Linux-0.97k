@@ -752,7 +752,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
 
         {
         int v119  = 3 * v234 + 78;
-        intptr_t v121  = c + 8 * v119;            // weapon slot ptr (c+624 o c+648)
+        intptr_t v121  = c + EntityOffset(8 * v119);            // weapon slot ptr (c+624 o c+648)
         short v120 = *(short*)v121;          // weapon Type
 
         if (v120 == -1 || v120 == 535 || v120 == 543) {

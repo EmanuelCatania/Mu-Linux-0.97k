@@ -87,7 +87,7 @@ void CreateMagicShiny97k(BYTE* entity, int hand)
     if (bones == 0) return;
 
     const WORD type = *(WORD*)(entity + 2);
-    const BYTE bone = entity[628 + hand * 24];
+    const BYTE bone = entity[EntityOffset(628 + hand * 24)];
     float offset[3] = { 0.0f, 0.0f, 0.0f };
     float position[3];
     float light[3] = { 1.0f, 0.5f, 0.2f };

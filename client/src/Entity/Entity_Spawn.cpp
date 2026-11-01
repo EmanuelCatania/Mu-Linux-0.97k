@@ -220,7 +220,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
             *(short *)(slot - 2) = (short)0xffff;
             slot[0] = 0;
             slot[1] = 0;
-            slot += 0x18;
+            slot += sizeof(PART_t);
         }
     }
     // BodyPart[0..5]
@@ -230,7 +230,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
             *(short *)(slot - 2) = (short)0xffff;
             slot[0] = 0;
             slot[1] = 0;
-            slot += 0x18;
+            slot += sizeof(PART_t);
         }
     }
 
