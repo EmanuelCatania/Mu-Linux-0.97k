@@ -164,7 +164,7 @@ static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t obj
     return result;
 }
 
-char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */)
+char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA: a2 */)
 {
     if (!character || !object)
         return 0;
