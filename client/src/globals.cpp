@@ -510,7 +510,7 @@ alignas(4) static unsigned char g_HashSentinelNode[0x2000] = {0};
 // to allocate. Slot 0 of g_HashValueArr is initialized to &sentinel; slot 0
 // of g_HashKeyArr is left at 0 (matches any "key=0" lookup; for key!=0 the
 // caller's key-check fails and the iteration limit drops out).
-static DWORD g_HashValueArr[ 64] = { 0 };  // values (filled by ctor below)
+static uintptr_t g_HashValueArr[64] = { 0 };  // values (filled by ctor below)
 static DWORD g_HashKeyArr  [1] = { 0 };  // keys
 
 // Buffer layout (original binary): +0 vtable, +4 values, +8 keys, +0xC capacity.
