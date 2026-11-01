@@ -1229,7 +1229,7 @@ void  __cdecl ItemDrop_RenderGroundWeapon(intptr_t param_1); // IDA: FUN_0046b98
 // sin usos en el código compilado (lo usaban ports de IDA ya retirados).
 void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980
 void  __cdecl RenderWheelWeapon(intptr_t o); // IDA: RenderWheelWeapon (0x0046B7C0)
-void  __cdecl FUN_0046c5a0(int p1, int p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
+void  __cdecl FUN_0046c5a0(int p1, intptr_t p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
 void  __cdecl CreateBlood(intptr_t o);                                 // 0x0046C680
 void  __cdecl FUN_0046c7f0(int kind, OBJECT* object, float dx, float dy, float dz); // IDA: 0x0046C7F0, emisor ambiental
 void  __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370

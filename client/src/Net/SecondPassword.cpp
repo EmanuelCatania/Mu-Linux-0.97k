@@ -3626,7 +3626,7 @@ void __cdecl MoveCharacter(intptr_t p1)
 
             // L2230-2233: Magic anim 0x38..0x3C bonus particles
             if (AsObject(o)->CurrentAction >= 0x38u && AsObject(o)->CurrentAction <= 0x3Cu) {
-                FUN_0046c5a0(0, (int)v390, (float*)(Owner + 16), (float*)(o + 28));
+                FUN_0046c5a0(0, (intptr_t)v390, (float*)(Owner + 16), (float*)(o + 28));
             }
 
             // L2234-2237: la tercera componente del ángulo se recalcula a partir de las
