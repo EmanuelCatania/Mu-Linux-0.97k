@@ -483,7 +483,7 @@ int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
         intptr_t v6_addr = x_addr;
         int v22 = 0;
         int v27 = (int)sx;
-        DWORD v26 = x_addr;
+        intptr_t v26 = x_addr;
 
         do {
             if (a4 > 0) {
