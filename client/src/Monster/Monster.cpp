@@ -331,7 +331,7 @@
 //
 // ── ENTITY_CLEARFLAG (0x0043c070) ─────────────────────────────────────────────
 //
-//   void Entity_ClearFlag(ushort flag, int entity):
+//   void Entity_ClearFlag(ushort flag, intptr_t entity):
 //     // Quita bit del bitmap de status y detiene el efecto visual
 //     // entity[+0x78] = status_flags (int)
 //

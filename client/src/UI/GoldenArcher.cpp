@@ -1056,7 +1056,7 @@ void GoldenArcher_Recv9D(BYTE* Msg, int Size)
 
 // Chatter del NPC en el evento propio (DLL MoveCharacter_GoldenArcherChatMessages,
 // hook en 0x44AA70).  Devuelve true si lo manejo.
-extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
+extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(intptr_t c, int action)
 {
     if (!g_GoldenArcherCustom) return false;
     if (action < 80)       SetAction(AsObject(c), 1);

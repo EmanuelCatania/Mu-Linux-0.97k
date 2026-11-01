@@ -258,7 +258,7 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
           if (param_1 != 0x48e) goto switchD_0046dee7_default;
           goto switchD_0046f0e4_caseD_4ed;
         }
-        iVar6 = *(int *)&AsJoint(pcVar14)->Target;
+        iVar6 = (intptr_t)AsJoint(pcVar14)->Target;
         *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[0] = *(undefined4 *)(iVar6 + 0x10);
         *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[1] = *(undefined4 *)(iVar6 + 0x14);
         *(undefined4 *)&AsJoint(pcVar14)->TargetPosition[2] = *(undefined4 *)(iVar6 + 0x18);
@@ -729,7 +729,7 @@ LAB_0046e742:
         iVar6 = 0;
         if (AsJoint(pcVar14)->MaxTails != 1 && -1 < AsJoint(pcVar14)->MaxTails + -1) {
           do {
-            if (*(int *)&AsJoint(pcVar14)->Target == 0) {
+            if ((intptr_t)AsJoint(pcVar14)->Target == 0) {
               local_90 = AsJoint(pcVar14)->StartPosition[0];
               local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
             }
@@ -920,7 +920,7 @@ LAB_0046ec45:
       // DAT_05828d58 + 0x11e68 = dirección absoluta 0x0583AB40 (artefacto Ghidra).
       // TransformPosition con base bogus; omitimos hasta resolver bone matrix real.
       // BMD_TransformPosition((void *)(DAT_05828d58 + 0x11e68),
-      //              (float *)(*(int *)(*(int *)&AsJoint(pcVar14)->Target + 0x114) + 0x630),local_3c,
+      //              (float *)(*(int *)((intptr_t)AsJoint(pcVar14)->Target + 0x114) + 0x630),local_3c,
       //              AsJoint(pcVar14)->TargetPosition,'\x01');
       break;
     case 3:
@@ -1086,7 +1086,7 @@ LAB_0046e043:
       iVar6 = 0;
       if (AsJoint(pcVar14)->MaxTails != 1 && -1 < AsJoint(pcVar14)->MaxTails + -1) {
         do {
-          if (*(int *)&AsJoint(pcVar14)->Target == 0) {
+          if ((intptr_t)AsJoint(pcVar14)->Target == 0) {
             uVar9 = _rand();
             local_94 = (byte *)(uVar9 & 0x80000007);
             if ((intptr_t)local_94 < 0) {
@@ -1213,7 +1213,7 @@ LAB_0046e043:
       iVar6 = 0;
       if (AsJoint(pcVar14)->MaxTails != 1 && -1 < AsJoint(pcVar14)->MaxTails + -1) {
         do {
-          if (*(int *)&AsJoint(pcVar14)->Target == 0) {
+          if ((intptr_t)AsJoint(pcVar14)->Target == 0) {
             local_90 = AsJoint(pcVar14)->StartPosition[0];
             local_8c = *(byte **)&AsJoint(pcVar14)->StartPosition[1];
           }
@@ -1340,14 +1340,14 @@ LAB_0046f415:
         pcVar14[0x57] = '\0';
       }
       if (iVar6 == 3) {
-        *pfVar1 = *(float *)(*(int *)&AsJoint(pcVar14)->Target + 0x4c);
-        *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x50);
-        uVar23 = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x54);
+        *pfVar1 = *(float *)((intptr_t)AsJoint(pcVar14)->Target + 0x4c);
+        *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)((intptr_t)AsJoint(pcVar14)->Target + 0x50);
+        uVar23 = *(undefined4 *)((intptr_t)AsJoint(pcVar14)->Target + 0x54);
       }
       else {
-        *pfVar1 = *(float *)(*(int *)&AsJoint(pcVar14)->Target + 0x40);
-        *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x44);
-        uVar23 = *(undefined4 *)(*(int *)&AsJoint(pcVar14)->Target + 0x48);
+        *pfVar1 = *(float *)((intptr_t)AsJoint(pcVar14)->Target + 0x40);
+        *(undefined4 *)&AsJoint(pcVar14)->Position[1] = *(undefined4 *)((intptr_t)AsJoint(pcVar14)->Target + 0x44);
+        uVar23 = *(undefined4 *)((intptr_t)AsJoint(pcVar14)->Target + 0x48);
       }
       *(undefined4 *)&AsJoint(pcVar14)->Position[2] = uVar23;
       break;
@@ -1655,7 +1655,7 @@ LAB_0046f54e:
         AsJoint(pcVar14)->Direction[2] = fVar24 * _DAT_00552594;
       }
 LAB_0046f55a:
-      iVar6 = *(int *)&AsJoint(pcVar14)->Target;
+      iVar6 = (intptr_t)AsJoint(pcVar14)->Target;
       *pfVar3 = *(float *)(iVar6 + 0xe8);
       *(undefined4 *)&AsJoint(pcVar14)->Light[1] = *(undefined4 *)(iVar6 + 0xec);
       *(undefined4 *)&AsJoint(pcVar14)->Light[2] = *(undefined4 *)(iVar6 + 0xf0);
@@ -1808,7 +1808,7 @@ LAB_0046f55a:
             pcVar14[0x3f] = '?';
           }
           else {
-            iVar6 = *(int *)&AsJoint(pcVar14)->Target;
+            iVar6 = (intptr_t)AsJoint(pcVar14)->Target;
             pcVar14[0x9b8] = 'n';
             pcVar14[0x9b9] = '\0';
             pcVar14[0x9ba] = '\0';

@@ -191,87 +191,87 @@ void __cdecl OpenMonsterModel(int param_1)
      && (AccessModel(iVar1,s_Data_Monster__0055ddf8,s_Monster_0055de08,param_1 + 1),
         *(short *)(iVar2 + 0x24) != 0)) {
     OpenTexture(iVar1,s_Monster__0055ddec,0x2600,'\x01');
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 4) = 0x3e800000;
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x14) = 0x3e4ccccd;
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3eae147b;
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x34) = 0x3ea8f5c3;
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x44) = 0x3ea8f5c3;
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x54) = 0x3f000000;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(4)) = 0x3e800000;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x14)) = 0x3e4ccccd;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3eae147b;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x34)) = 0x3ea8f5c3;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x44)) = 0x3ea8f5c3;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x54)) = 0x3f000000;
     iVar5 = 0;
-    *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3f0ccccd;
-    *(undefined1 *)(*(int *)(iVar2 + 0x30) + 0x60) = 1;
+    *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3f0ccccd;
+    *(undefined1 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x60)) = 1;
     do {
       if (param_1 == 3) {
-        iVar3 = *(int *)(iVar2 + 0x30);
+        iVar3 = (intptr_t)AsModel(iVar2)->Actions;
         fVar4 = *(float *)(iVar3 + 4 + iVar5) * _DAT_00552a1c;
 LAB_005099d1:
         *(float *)(iVar3 + 4 + iVar5) = fVar4;
       }
       else {
         if ((param_1 == 5) || (param_1 == 0x19)) {
-          *(float *)(*(int *)(iVar2 + 0x30) + 4 + iVar5) =
-               *(float *)(*(int *)(iVar2 + 0x30) + 4 + iVar5) * _DAT_00552928;
+          *(float *)((intptr_t)AsModel(iVar2)->Actions + 4 + iVar5) =
+               *(float *)((intptr_t)AsModel(iVar2)->Actions + 4 + iVar5) * _DAT_00552928;
         }
         if ((param_1 == 0x25) || (param_1 == 0x2a)) {
-          iVar3 = *(int *)(iVar2 + 0x30);
+          iVar3 = (intptr_t)AsModel(iVar2)->Actions;
           fVar4 = *(float *)(iVar3 + 4 + iVar5) * _DAT_005528b4;
           goto LAB_005099d1;
         }
       }
-      iVar5 = iVar5 + 0x10;
-    } while (iVar5 < 0x60);
+      iVar5 = iVar5 + (int)sizeof(ModelAnimationAction);
+    } while (iVar5 < 6 * (int)sizeof(ModelAnimationAction));
     switch(param_1) {
     case 2:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3f333333;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3f333333;
       break;
     case 6:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3f19999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3f19999a;
       break;
     case 8:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3f333333;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3f333333;
       break;
     case 9:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3f99999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3f99999a;
       break;
     case 10:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3e8f5c29;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3e8f5c29;
       break;
     case 0xc:
     case 0x1c:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3e99999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3e99999a;
       break;
     case 0xd:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3e8f5c29;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3e8f5c29;
       break;
     case 0x11:
     case 0x15:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3f000000;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3f000000;
       break;
     case 0x13:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3f19999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3f19999a;
       break;
     case 0x14:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3ecccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3ecccccd;
       break;
     case 0x27:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3e6147ae;
       break;
     case 0x29:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3e3851ec;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x24)) = 0x3e3851ec;
       break;
     case 0x2a:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x34) = 0x3eb33333;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x44) = 0x3eb33333;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x34)) = 0x3eb33333;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x44)) = 0x3eb33333;
       break;
     case 0x2c:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e99999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e99999a;
     }
     switch(param_1) {
     case 0xe:
     case 0x1f:
     case 0x27:
     case 0x28:
-      *(undefined1 *)(*(int *)(iVar2 + 0x30) + 0x10) = 1;
+      *(undefined1 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x10)) = 1;
     }
     switch(param_1) {
     case 0:
@@ -397,7 +397,7 @@ LAB_005099d1:
       LoadWaveFile(0xed, "Data\\Sound\\mAssassinDie.wav",2,'\x01');
       Model_SetAnimationSlots(iVar1,0xffff,0xffff,0x41,0x42,0x43);
       *(undefined4 *)(DAT_05828d58 + BMD_STRIDE * 284 + 0x54 + BMD_FIELD_SHIFT) = 0x14;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x14) = 0x3eb33333;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x14)) = 0x3eb33333;
       return;
     case 0xf:
       LoadWaveFile(0xdc, "Data\\Sound\\mIceMonster1.wav",2,'\x01');
@@ -519,10 +519,10 @@ LAB_005099d1:
       LoadWaveFile(0x126, "Data\\Sound\\mBullAttack1.wav",2,'\x01');
       LoadWaveFile(0x127, "Data\\Sound\\mYetiDie.wav",2,'\x01');
       Model_SetAnimationSlots(iVar1,0x7b,0x7b,0x7c,0x7c,0x7d);
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x34) = 0x3f000000;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x44) = 0x3f333333;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x14) = 0x3f4ccccd;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x74) = 0x3f4ccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x34)) = 0x3f000000;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x44)) = 0x3f333333;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x14)) = 0x3f4ccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x74)) = 0x3f4ccccd;
       return;
     case 0x20:
       LoadWaveFile(0x128, "Data\\Sound\\mBali1.wav",2,'\x01');
@@ -530,10 +530,10 @@ LAB_005099d1:
       LoadWaveFile(0x12a, "Data\\Sound\\mBaliAttack1.wav",2,'\x01');
       LoadWaveFile(299, "Data\\Sound\\mBaliAttack2.wav",2,'\x01');
       Model_SetAnimationSlots(iVar1,0x7e,0x7f,0x80,0x81,0x7f);
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x84) = 0x3ecccccd;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x94) = 0x3ecccccd;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x74) = 0x3ecccccd;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0xa4) = 0x3ecccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x84)) = 0x3ecccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x94)) = 0x3ecccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x74)) = 0x3ecccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0xa4)) = 0x3ecccccd;
       *(undefined4 *)(iVar2 + 0x54) = 6;
       return;
     case 0x21:
@@ -546,8 +546,8 @@ LAB_005099d1:
       LoadWaveFile(0x12f, "Data\\Sound\\mBepar2.wav",2,'\x01');
       LoadWaveFile(0x130, "Data\\Sound\\mBalrog1.wav",2,'\x01');
       Model_SetAnimationSlots(iVar1,0x84,0x85,0x68,0x68,0x85);
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x34) = 0x3f000000;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x44) = 0x3f000000;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x34)) = 0x3f000000;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x44)) = 0x3f000000;
       *(undefined4 *)(iVar2 + 0x54) = 0x14;
       return;
     case 0x23:
@@ -573,9 +573,9 @@ LAB_005099d1:
       LoadWaveFile(0x137, "Data\\Sound\\mHydra1.wav",2,'\x01');
       LoadWaveFile(0x138, "Data\\Sound\\mHydraAttack1.wav",2,'\x01');
       Model_SetAnimationSlots(iVar1,0x8d,0x8d,0x8e,0x8e,0x8d);
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x34) = 0x3e19999a;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x44) = 0x3e19999a;
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e4ccccd;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x34)) = 0x3e19999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(0x44)) = 0x3e19999a;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e4ccccd;
       return;
     case 0x29:
       LoadWaveFile(0x139,s_Data_Sound_iron1_wav_0055d074,2,'\x01');
@@ -637,20 +637,20 @@ LAB_005099d1:
       *(undefined4 *)(DAT_05828d58 + BMD_STRIDE * 318 + 0x54 + BMD_FIELD_SHIFT) = 0x14;
       return;
     case 0x31:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       LoadWaveFile(0x15b,s_Data_Sound_mMolt1_wav_0055cd50,2,'\x01');
       LoadWaveFile(0x15c,s_Data_Sound_mMoltAttack1_wav_0055cd34,2,'\x01');
       LoadWaveFile(0x15d,s_Data_Sound_mMoltDie_wav_0055cd1c,2,'\x01');
       Model_SetAnimationSlots(iVar1,0xb1,0xb1,0xb2,0xb2,0xb3);
       return;
     case 0x32:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       LoadWaveFile(0x159,s_Data_Sound_mAlquamosAttack1_wav_0055ccfc,2,'\x01');
       LoadWaveFile(0x15a,s_Data_Sound_mAlquamosDie_wav_0055cce0,2,'\x01');
       Model_SetAnimationSlots(iVar1,0xaf,0xaf,0xaf,0xaf,0xb0);
       return;
     case 0x33:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       LoadWaveFile(0x155,s_Data_Sound_mRainner1_wav_0055ccc4,2,'\x01');
       LoadWaveFile(0x156,s_Data_Sound_mRainnerAttack1_wav_0055cca4,2,'\x01');
       LoadWaveFile(0x157,s_Data_Sound_mRainnerDie_wav_0055cc88,2,'\x01');
@@ -659,21 +659,21 @@ LAB_005099d1:
     case 0x34:
       OpenTGA(s_Monster_iui02_tga_0055cddc,0x1ed,0x2600,0x2900,0,'\x01');
       OpenTGA(s_Monster_iui03_tga_0055cdc8,0x1ef,0x2600,0x2900,0,'\x01');
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       LoadWaveFile(0x15e,s_Data_Sound_mMegaCrust1_wav_0055cdac,2,'\x01');
       LoadWaveFile(0x15f,s_Data_Sound_mMegaCrustAttack1_wav_0055cd88,2,'\x01');
       LoadWaveFile(0x160,s_Data_Sound_mMegaCrustDie_wav_0055cd68,2,'\x01');
       Model_SetAnimationSlots(iVar1,0xb4,0xb4,0xb5,0xb5,0xb6);
       return;
     case 0x35:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       LoadWaveFile(0x152,s_Data_Sound_mPhantom1_wav_0055cc6c,2,'\x01');
       LoadWaveFile(0x153,s_Data_Sound_mPhantomAttack1_wav_0055cc4c,2,'\x01');
       LoadWaveFile(0x154,s_Data_Sound_mPhantomDie_wav_0055cc30,2,'\x01');
       Model_SetAnimationSlots(iVar1,0xa8,0xa8,0xa9,0xa9,0xaa);
       return;
     case 0x36:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       LoadWaveFile(0x14f,s_Data_Sound_mDrakan1_wav_0055cc18,2,'\x01');
       LoadWaveFile(0x150,s_Data_Sound_mDrakanAttack1_wav_0055cbf8,2,'\x01');
       LoadWaveFile(0x151,s_Data_Sound_mDrakanDie_wav_0055cbdc,2,'\x01');
@@ -685,7 +685,7 @@ LAB_005099d1:
       LoadWaveFile(0x163,s_Data_Sound_mPhoenixAttack1_wav_0055cba0,2,'\x01');
       Model_SetAnimationSlots(iVar1,0xb7,0xb8,0xb9,0xb9,0xffff);
     case 0x38:
-      *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
+      *(undefined4 *)((intptr_t)AsModel(iVar2)->Actions + ModelActionByte(100)) = 0x3e6147ae;
       return;
     case 0x39:
       LoadWaveFile(0x16a,s_Data_Sound_mRedSkull_wav_0055caec,2,'\x01');

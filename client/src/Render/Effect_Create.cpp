@@ -1208,7 +1208,7 @@ switchD_00461001_caseD_c7:
     // *(float *)&AsObject(pfVar17)->Owner (= slot+252) es el PUNTERO al owner: hay que reinterpretar
     // los bits, no convertir el float (eso destruia el puntero y la comparacion
     // con Hero nunca daba true).
-    pfVar12 = (float*)(uintptr_t)*(unsigned int *)&AsObject(pfVar17)->Owner;
+    pfVar12 = (float*)(uintptr_t)(intptr_t)AsObject(pfVar17)->Owner;
     if (pfVar12 != (float*)DAT_07abf5d8) {
       return pfVar12;
     }

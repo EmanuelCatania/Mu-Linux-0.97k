@@ -108,7 +108,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
 
         switch (sub) {
         case 0: case 1: case 2: {
-            const intptr_t owner = *(int *)&AsJoint(o)->Target;
+            const intptr_t owner = (intptr_t)AsJoint(o)->Target;
             if (owner) {
                 tgt[0] = *(float *)(owner + 16);
                 tgt[1] = *(float *)(owner + 20);
@@ -126,7 +126,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             break;
         }
         case 6: {
-            const intptr_t owner = *(int *)&AsJoint(o)->Target;
+            const intptr_t owner = (intptr_t)AsJoint(o)->Target;
             if (owner) {
                 tgt[0] = *(float *)(owner + 16);
                 tgt[1] = *(float *)(owner + 20);
@@ -146,7 +146,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             break;
         case 0xC: {
             // IDA entra directo a LABEL_133: no recalcula la distancia.
-            const intptr_t owner = *(int *)&AsJoint(o)->Target;
+            const intptr_t owner = (intptr_t)AsJoint(o)->Target;
             if (owner) {
                 const short mdl = *(short *)(owner + 2);
                 float out[3] = { 0.0f, -100.0f, 0.0f };
@@ -210,7 +210,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
                         angles[1] = (float)(rand() % 100 - 50) + tgt[1];
                         angles[2] = (float)(rand() % 120 - 60) + tgt[2];
                         Joint_Create(1254, angles, tgt, (float *)(o + 40), 1,
-                                     *(int *)&AsJoint(o)->Target, (float)(rand() % 8) + 6.0f, -1, 0);
+                                     (intptr_t)AsJoint(o)->Target, (float)(rand() % 8) + 6.0f, -1, 0);
                     }
                 }
             }
@@ -516,7 +516,7 @@ LAB_00473578_498:
             if ((((char *)AsJoint(param_1)->Target) == (char *)0x0) ||
                 (*((char *)AsJoint(param_1)->Target) == '\0'))
             {
-                *(undefined4 *)&AsJoint(param_1)->Target = 0;
+                *(intptr_t*)&AsJoint(param_1)->Target = 0;
             }
             else {
                 AsJoint(param_1)->Scale =
@@ -530,7 +530,7 @@ LAB_00473578_498:
                 else                             t = 0.0f;
                 float inv_t = _DAT_0055256c - t;
                 Ring_ComputeOrbit(param_2 * 0x4539, local_d8, 1.4f);
-                iVar16 = *(int *)&AsJoint(param_1)->Target;
+                iVar16 = (intptr_t)AsJoint(param_1)->Target;
                 local_d8[0] = local_d8[0] * _DAT_00552900 + *pfVar14;
                 local_d8[1] = local_d8[1] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[1];
                 local_d8[2] = local_d8[2] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[2];
@@ -569,7 +569,7 @@ LAB_004702ce:
                     goto LAB_004702ce;
                 }
             }
-            iVar16 = *(int *)&AsJoint(param_1)->Target;
+            iVar16 = (intptr_t)AsJoint(param_1)->Target;
             fVar22 = fsin(((double)AsJoint(param_1)->LifeTime -
                            (double)AsJoint(param_1)->Direction[1]) * (double)_DAT_00552874);
             fVar24 = (double)_DAT_00552540;
@@ -601,7 +601,7 @@ LAB_0047036e:
             goto switchD_caseD_4ef;
         }
         if (iVar16 == 4) {
-            if (((*(unsigned char *)(*(int *)&AsJoint(param_1)->Target + 0x78)) & 8) != 8)
+            if (((*(unsigned char *)((intptr_t)AsJoint(param_1)->Target + 0x78)) & 8) != 8)
                 goto LAB_0047036e;
             *(undefined4 *)&AsJoint(param_1)->LifeTime = 100;
         }
@@ -640,7 +640,7 @@ LAB_0047036e:
         }
 
         // Update anchor from linked entity current position
-        iVar16   = *(int *)&AsJoint(param_1)->Target;
+        iVar16   = (intptr_t)AsJoint(param_1)->Target;
         *pfVar14 = *(float *)(iVar16 + 0x10);
         *(undefined4 *)&AsJoint(param_1)->TargetPosition[1] = *(undefined4 *)(iVar16 + 0x14);
         AsJoint(param_1)->TargetPosition[2]      = *(float *)(iVar16 + 0x18) + _DAT_00552488;
@@ -764,7 +764,7 @@ LAB_0047036e:
         if (subtype_4e5 == 1) {
             float light_4e5_1[3] = { 0.8f, 0.4f, 1.0f };
             CreateSprite(1150, pfVar15, 4.0f, light_4e5_1,
-                          *(int *)&AsJoint(param_1)->Target, (float)(rand() % 360), 0);
+                          (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
         if (subtype_4e5 == 3) {
@@ -775,9 +775,9 @@ LAB_0047036e:
             AsJoint(param_1)->Position[1] += orbit_4e5_3[1] * 50.0f;
             AsJoint(param_1)->Position[2] += orbit_4e5_3[2] * 50.0f;
             CreateSprite(1150, pfVar15, 3.0f, light_4e5_3,
-                          *(int *)&AsJoint(param_1)->Target, (float)(rand() % 360), 0);
+                          (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             CreateSprite(1231, pfVar15, 1.5f, light_4e5_3,
-                          *(int *)&AsJoint(param_1)->Target, (float)(rand() % 360), 0);
+                          (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
         if (subtype_4e5 == 2) {
@@ -807,7 +807,7 @@ LAB_0047036e:
             }
             const float scale_4e5_2 = (float)((20 - lifetime_4e5_2) / 5) + 4.0f;
             CreateSprite(1150, pfVar15, scale_4e5_2, light_4e5_2,
-                          *(int *)&AsJoint(param_1)->Target, (float)(rand() % 360), 0);
+                          (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
             AsJoint(param_1)->Velocity += 5.0f;
             goto switchD_caseD_4ef;
         }
@@ -815,13 +815,13 @@ LAB_0047036e:
             if (*(int *)&AsJoint(param_1)->Scale == 1117782016) {
                 CreateEffect(205, pfVar15, AsJoint(param_1)->Angle, AsJoint(param_1)->Light,
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
-                if ((AsJoint(param_1)->LifeTime % 15) == 0 && *(int *)&AsJoint(param_1)->Target == (intptr_t)Hero) {
+                if ((AsJoint(param_1)->LifeTime % 15) == 0 && (intptr_t)AsJoint(param_1)->Target == (intptr_t)Hero) {
                     Entity_FindNearby_SendPacket(AsJoint(param_1)->Skill, pfVar15, 150.0f,
                                   AsJoint(param_1)->Weapon, *(unsigned short *)&AsJoint(param_1)->PKKey);
                 }
             }
 
-            const intptr_t owner_4e5 = *(int *)&AsJoint(param_1)->Target;
+            const intptr_t owner_4e5 = (intptr_t)AsJoint(param_1)->Target;
             AsJoint(param_1)->TargetPosition[0] = *(float *)(owner_4e5 + 0x10);
             AsJoint(param_1)->TargetPosition[1] = *(float *)(owner_4e5 + 0x14);
             AsJoint(param_1)->TargetPosition[2] = *(float *)(owner_4e5 + 0x18) + 80.0f;
@@ -946,7 +946,7 @@ LAB_0047036e:
                     target_4ea[1] = AsJoint(param_1)->TargetPosition[1];
                     target_4ea[2] = AsJoint(param_1)->TargetPosition[2];
                 } else {
-                    const intptr_t owner_4ea = *(int *)&AsJoint(param_1)->Target;
+                    const intptr_t owner_4ea = (intptr_t)AsJoint(param_1)->Target;
                     target_4ea[0] = *(float *)(owner_4ea + 0x10);
                     target_4ea[1] = *(float *)(owner_4ea + 0x14);
                     target_4ea[2] = *(float *)(owner_4ea + 0x18) + 120.0f;
@@ -988,7 +988,7 @@ LAB_0047036e:
             goto switchD_caseD_4ef;
         }
         if (subtype_4ea == 2 || subtype_4ea == 3 || subtype_4ea == 4 || subtype_4ea == 5 || subtype_4ea == 8) {
-            const intptr_t owner_4ea = *(int *)&AsJoint(param_1)->Target;
+            const intptr_t owner_4ea = (intptr_t)AsJoint(param_1)->Target;
             if (*(unsigned char *)owner_4ea == 0) {
                 *param_1 = 0;
                 return 0;
@@ -1018,7 +1018,7 @@ LAB_0047036e:
         const int subtype_4eb = AsJoint(param_1)->SubType;
         const int lifetime_4eb = AsJoint(param_1)->LifeTime;
         if (subtype_4eb == 4) {
-            const intptr_t owner_4eb = *(int *)&AsJoint(param_1)->Target;
+            const intptr_t owner_4eb = (intptr_t)AsJoint(param_1)->Target;
             const float anchorX_4eb = AsJoint(param_1)->TargetPosition[0];
             AsJoint(param_1)->Position[0] = *(float *)(owner_4eb + 0x10) + anchorX_4eb;
             AsJoint(param_1)->Position[1] = *(float *)(owner_4eb + 0x14) + AsJoint(param_1)->TargetPosition[1];
@@ -1045,7 +1045,7 @@ LAB_0047036e:
             target_4eb[1] = AsJoint(param_1)->TargetPosition[1];
             target_4eb[2] = AsJoint(param_1)->TargetPosition[2];
         } else {
-            const intptr_t owner_4eb = *(int *)&AsJoint(param_1)->Target;
+            const intptr_t owner_4eb = (intptr_t)AsJoint(param_1)->Target;
             target_4eb[0] = *(float *)(owner_4eb + 0x10);
             target_4eb[1] = *(float *)(owner_4eb + 0x14);
             target_4eb[2] = *(float *)(owner_4eb + 0x18) + 120.0f;
@@ -1069,17 +1069,17 @@ LAB_0047036e:
             const float pulse_4eb = (float)(6 - abs(lifetime_4eb - 6)) * 0.15f;
             float light_4eb[3] = { pulse_4eb, pulse_4eb, pulse_4eb };
             CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
-                          light_4eb, *(int *)&AsJoint(param_1)->Target, (float)(rand() % 360), 0);
+                          light_4eb, (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
         } else if (subtype_4eb != 7 && lifetime_4eb == 1) {
             CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
-                          AsJoint(param_1)->Light, *(int *)&AsJoint(param_1)->Target, (float)(rand() % 360), 0);
+                          AsJoint(param_1)->Light, (intptr_t)AsJoint(param_1)->Target, (float)(rand() % 360), 0);
         }
         goto switchD_caseD_4ef;
     }
 
     // ── Type 0x4ec: Seeker ───────────────────────────────────────────
     if (iVar16 == 0x4ec) {
-        const intptr_t owner = *(int *)&AsJoint(param_1)->Target;
+        const intptr_t owner = (intptr_t)AsJoint(param_1)->Target;
         AsJoint(param_1)->TargetPosition[0] = *(float *)(owner + 0x10);
         AsJoint(param_1)->TargetPosition[1] = *(float *)(owner + 0x14);
         AsJoint(param_1)->TargetPosition[2] = *(float *)(owner + 0x18) + 130.0f;
@@ -1114,7 +1114,7 @@ LAB_0047036e:
 
         for (int segment = 0; segment < segmentLimit; ++segment) {
             if (AsJoint(param_1)->SubType != 2) {
-                const intptr_t owner = *(int *)&AsJoint(param_1)->Target;
+                const intptr_t owner = (intptr_t)AsJoint(param_1)->Target;
                 AsJoint(param_1)->TargetPosition[0] = *(float *)(owner + 0x10);
                 AsJoint(param_1)->TargetPosition[1] = *(float *)(owner + 0x14);
                 targetDistance = *(float *)(owner + 0x18) + 80.0f;
@@ -1200,7 +1200,7 @@ LAB_0047036e:
                 Joint_Create(1254, previousPosition, AsJoint(param_1)->Position,
                               AsJoint(param_1)->Angle, 3, 0, (float)(rand() % 8) + 4.0f, 5, 10);
             }
-            if (*(int *)&AsJoint(param_1)->Target == (intptr_t)Hero && AsJoint(param_1)->LifeTime > 18 && (i % 5) == 0) {
+            if ((intptr_t)AsJoint(param_1)->Target == (intptr_t)Hero && AsJoint(param_1)->LifeTime > 18 && (i % 5) == 0) {
                 Entity_FindNearby_SendPacket(AsJoint(param_1)->Skill, AsJoint(param_1)->Position, 150.0f,
                               AsJoint(param_1)->Weapon, *(unsigned short *)&AsJoint(param_1)->PKKey);
             }
@@ -1292,7 +1292,7 @@ switchD_caseD_4fd:
         }
         if (jsub == 14) {
             // 00470030 LABEL_301/case 14.
-            intptr_t owner = *(int *)&AsJoint(param_1)->Target;
+            intptr_t owner = (intptr_t)AsJoint(param_1)->Target;
             if (owner != 0) {
                 *(DWORD *)&AsJoint(param_1)->StartPosition[0] = *(DWORD *)(owner + EntityOffset(392));
                 *(DWORD *)&AsJoint(param_1)->StartPosition[1] = *(DWORD *)(owner + EntityOffset(396));
@@ -1481,7 +1481,7 @@ switchD_caseD_4fd:
             AsJoint(param_1)->Position[1] = v222 * A1   + AsJoint(param_1)->TargetPosition[1];
             AsJoint(param_1)->Position[2] = v222 * out0 + AsJoint(param_1)->TargetPosition[2];
 
-            const intptr_t jowner = *(int *)&AsJoint(param_1)->Target;
+            const intptr_t jowner = (intptr_t)AsJoint(param_1)->Target;
             if (jowner) {
                 int v226 = 0;
                 // El subtipo 11 NO converge hacia `owner + 16/20/24` sino hacia

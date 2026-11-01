@@ -870,7 +870,7 @@ void __cdecl RenderWheelWeapon(intptr_t o)
     const int savedAng2  = *(int *)&AsObject(o)->Angle[2];
     const short savedType = AsObject(o)->Type;
 
-    const DWORD owner = *(DWORD*)&((OBJECT*)(uintptr_t)(o))->Owner;
+    const DWORD owner = (intptr_t)((OBJECT*)(uintptr_t)(o))->Owner;
     if (!owner) return;
 
     // Modelo del arma = itemType + 400 (owner+136 = índice del item).

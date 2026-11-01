@@ -50,7 +50,7 @@ void* __cdecl Entity_SpawnBoneEffect(intptr_t entity, int effectType, float scal
 
     float outPos[3];
     void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * BMD_STRIDE);
-    float *boneMat = (float *)(*(int *)&((OBJECT*)(uintptr_t)(entity))->BoneMatrices + bone * 0x30);
+    float *boneMat = (float *)((intptr_t)((OBJECT*)(uintptr_t)(entity))->BoneMatrices + bone * 0x30);
     BMD_TransformPosition(modelPtr, boneMat, offset, outPos, '\x01');
 
     // Pulsing light: sin(animTick * period) * amp + base
@@ -79,13 +79,13 @@ void* __cdecl Entity_SpawnBoneRangeEffect(intptr_t entity, intptr_t bone1, intpt
     // Bone1: offset {5, 0, 0} → spawn at world pos
     float vec1[4] = { 5.0f, 0.0f, 0.0f, 0.0f };
     float outPos1[4];
-    BMD_TransformPosition(modelPtr, (float *)(bone1 * 0x30 + *(int *)&((OBJECT*)(uintptr_t)(entity))->BoneMatrices), vec1, outPos1, '\x01');
+    BMD_TransformPosition(modelPtr, (float *)(bone1 * 0x30 + (intptr_t)((OBJECT*)(uintptr_t)(entity))->BoneMatrices), vec1, outPos1, '\x01');
     Equipment_AddSprite(0x4d1, outPos1, scale, light, 0, 0.0f, 0);
 
     // Bone2: offset {-5, 0, 0} → spawn at world pos, write result to entity+0x40
     vec1[0] = -5.0f;
     float outPos2[4];
-    BMD_TransformPosition(modelPtr, (float *)(bone2 * 0x30 + *(int *)&((OBJECT*)(uintptr_t)(entity))->BoneMatrices), vec1, outPos2, '\x01');
+    BMD_TransformPosition(modelPtr, (float *)(bone2 * 0x30 + (intptr_t)((OBJECT*)(uintptr_t)(entity))->BoneMatrices), vec1, outPos2, '\x01');
     Equipment_AddSprite(0x4d1, outPos2, scale, light, 0, 0.0f, 0);
 
     *(float *)(entity + 0x40) = outPos2[0];

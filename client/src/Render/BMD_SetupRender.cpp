@@ -316,7 +316,7 @@ void __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, 
 // Emits a particle at the world position of a specific bone.
 // model: BMD model ptr, type: entity type, bone_idx: bone index,
 // scale: particle scale, color: float[3] RGB, entity: entity index
-void __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, int entity)
+void __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, intptr_t entity)
 {
   // IDA 0x004553C0 (la usan nueve sitios: brillo de arcos y bastones de
   // RenderLinkObject, el equipo del jugador y AttackEffect):

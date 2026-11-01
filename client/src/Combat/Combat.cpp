@@ -9,7 +9,7 @@
 //
 // ─── ENTITY_SETANIMATION (0x0043e820) ──────────────────────────────────────────────────────────────────────────
 //
-//   void Entity_SetAnimation(int entity_ptr, uint anim_id):
+//   void Entity_SetAnimation(intptr_t entity_ptr, uint anim_id):
 //     // Tabla de máximos: DAT_05828d58 + 0x26 + entity[+0x02] * 0xBC
 //     max_anim = *(short*)(DAT_05828d58 + 0x26 + entity[+0x02] * 0xBC)
 //     if (anim_id < max_anim || anim_id == 0x4C || anim_id == 0x4D):
@@ -47,7 +47,7 @@
 //
 // ─── ENTITY_MELEEATTACKSTART (legacy helper; no verified FUN mapping) ───────────────────────────────────────────────
 //
-//   void Entity_MeleeAttackStart(int entity_ptr):
+//   void Entity_MeleeAttackStart(intptr_t entity_ptr):
 //     SetAttackSpeed()                      — reset sonido/efecto global
 //     Entity_SetAnimation(entity, 0x57)   — anim de ataque melee
 //     entity[+0x108] = 5.0f              — frame time de ataque
@@ -62,7 +62,7 @@
 //
 // ─── ENTITY_ATTACKEFFECT (0x004741e0) ──────────────────────────────────────────────────────────────────────────
 //
-//   void Entity_AttackEffect(int entity_ptr, int slot):
+//   void Entity_AttackEffect(intptr_t entity_ptr, int slot):
 //     // Obtiene transform del hueso del arma
 //     bone_data = DAT_05828d58 + entity[+0x02] * 0xBC   // entity def
 //     bone_idx  = entity[+0x274 + slot * 0x18]           // hueso del slot
@@ -1840,7 +1840,7 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 // This is distinct from SkillElf @ 0048BD70 (the Triple-Shot item helper).
 // It emits the common facing packet, snapshots MovementSkillTarget, and has
 // only two active families: 26..28 (targeted elf support) and 51 (Ice Arrow).
-void __cdecl Combat_UseElfSkill(int c, int o) {
+void __cdecl Combat_UseElfSkill(intptr_t c, intptr_t o) {
     if (!c || !o || !Hero || !DAT_07cf1ff4)
         return;
 

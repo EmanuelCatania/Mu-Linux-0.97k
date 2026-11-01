@@ -200,10 +200,10 @@ static inline void TransformPos(void* model, float* boneMat, float* posIn, float
 // IDA usa bone*48 (= 0x30) que es el stride normal. El indexado bone*16 (caso
 // 0x1D5 etc.) es matriz de 4 floats — distinto layout. Wrappers para ambos.
 static inline float* BoneMat48(void* o, int bone) {
-    return (float*)((char*)(uintptr_t)*(int*)&((OBJECT*)(uintptr_t)(o))->BoneMatrices + 0x30 * bone);
+    return (float*)((char*)(uintptr_t)(intptr_t)((OBJECT*)(uintptr_t)(o))->BoneMatrices + 0x30 * bone);
 }
 static inline float* BoneMat16(void* o, int bone) {
-    return (float*)((char*)(uintptr_t)*(int*)&((OBJECT*)(uintptr_t)(o))->BoneMatrices + 16 * (3 * bone));
+    return (float*)((char*)(uintptr_t)(intptr_t)((OBJECT*)(uintptr_t)(o))->BoneMatrices + 16 * (3 * bone));
 }
 
 

@@ -150,7 +150,7 @@ static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
 // 7. Sends opcode 0x19 skill packet for each specific skill type.
 // 8. Final: sends opcode 0x11 if tile is walkable.
 // Anti-tamper hash table ops and XOR encryption blocks are skipped per project policy.
-void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, intptr_t o /* IDA: o */)
+void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: o */)
 {
     if (!c || !o) return;
     BYTE* character = (BYTE*)(uintptr_t)c; // IDA: c / CHARACTER state buffer

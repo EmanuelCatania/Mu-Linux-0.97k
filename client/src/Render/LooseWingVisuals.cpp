@@ -111,7 +111,7 @@ void LooseWingVisuals_TickPreviews() {
 }
 
 // IDA: pose de Entity_Render (0x005038E0), antes de RenderPartObject.
-void LooseWingVisuals_TickGround(int entity) {
+void LooseWingVisuals_TickGround(intptr_t entity) {
     OBJECT &o=*AsObject(entity);
     if (o.Type!=790 || o.Alpha<=_DAT_005524f8) return;
     void *model=(void *)(DAT_05828d58+790* BMD_STRIDE);

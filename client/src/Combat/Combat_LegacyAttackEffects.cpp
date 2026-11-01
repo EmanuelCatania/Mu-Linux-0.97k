@@ -51,7 +51,7 @@ extern void __cdecl operator_delete(void* ptr);
 // Versión PARCIAL, desactivada: IDA_PORT_00445230 está definida en globals.h y
 // rige el port fiel de Combat_AttackEffect.cpp.
 #if !defined(IDA_PORT_00445230)
-void __cdecl AttackEffect(int entity)
+void __cdecl AttackEffect(intptr_t entity)
 {
     if (!entity) return;
     const BYTE attackEffectKind = AsCharacter(entity)->MonsterIndex;

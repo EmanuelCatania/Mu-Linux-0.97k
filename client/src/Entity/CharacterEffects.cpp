@@ -156,7 +156,7 @@ void *CharacterEffects_TickLate(intptr_t entity, CharacterEffectScratch &scratch
         int nBones = *(short *)((char *)pvVar23 + 0x22);
         while (iVar18 < nBones) {
             // Skip bones in exclusion ranges (model-specific blank bones)
-            if ((*(char *)(*(int *)((intptr_t)pvVar23 + 0x2c) + 0x22 + iVar9) == '\0') &&
+            if ((*(char *)((char*)AsModel(pvVar23)->Bones + iVar9 / 0x8c * sizeof(ModelAnimationBone) + 0x22) == '\0') &&
                 ((iVar9 < 0x834 || iVar9 > 0xaf0)) &&
                 ((iVar9 < 0xec4 || iVar9 > 0x1180))) {
                 BMD_TransformPosition(pvVar23, (float *)((intptr_t)AsObject(puVar13)->BoneMatrices + iVar18 * 0x30),

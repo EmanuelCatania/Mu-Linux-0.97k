@@ -109,7 +109,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
 //   *(BYTE *)(a2 + 37 + i)  = ITEM::Special[i]
 // ItemConvert (0x0047B910 L342-430) es quien mete ahi los ids 18..24, 49 y 56
 // cuando el item trae la opcion Skill (Attribute1 & 0x80).
-static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, BYTE* item)
+static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t object, BYTE* item)
 {
     BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!attributes || !Hero || !item)

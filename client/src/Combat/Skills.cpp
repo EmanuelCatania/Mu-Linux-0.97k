@@ -57,7 +57,7 @@
 // Forward declarations for functions identified in decompilation
 extern "C" void __cdecl CreateTeleportBegin(OBJECT* entity); // 0x004742b0
 extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);   // 0x00474310
-extern void Entity_ResetToWalk(int entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
+extern void Entity_ResetToWalk(intptr_t entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
 extern void Entity_TeleportEnd(intptr_t entity_idx);             // Legacy helper; no verified FUN mapping.
 extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legacy helper; no verified FUN mapping.
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620

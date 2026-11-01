@@ -306,11 +306,11 @@ extern int EquipmentLevelSet;                                         // 0=no gl
 extern int g_bAddDefense;                                             // set completo → bonus de defensa en Stats_CalcDefenseRate
 float __cdecl RequestTerrainHeight(float xf, float yf); // IDA: RequestTerrainHeight (0x004F7500)
 void  __cdecl RequestTerrainLight(float grid_x, float grid_y, float *rgb_out); // IDA: RequestTerrainLight (0x004F7960)
-void  __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, int entity); // Model_BoneParticle
+void  __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, intptr_t entity); // Model_BoneParticle
 void  __cdecl PartObjectColor(int weapon_id, float scale, float half_scale, float *color, char flag); // IDA: PartObjectColor (0x00503CF0)
 void  __cdecl Weapon_SetColorAlt(int weapon_id, float scale, float half_scale, float *color);           // Weapon_SetColorAlt: simpler version (no flag)
 // IDA: RenderGuildMarkOnShield — compone la matriz del emblema de guild sobre un jugador visible.
-void  __cdecl RenderGuildMarkOnShield(int entity, int shield_id);
+void  __cdecl RenderGuildMarkOnShield(intptr_t entity, int shield_id);
 // IDA: FUN_004F0100 — CreateGuildMark, compone la textura 34 desde la tabla compartida de marks.
 extern "C" void __cdecl CreateGuildMark(int mark_index, bool blend);
 void  __cdecl RenderTerrainAlphaBitmap(int Texture, float xf, float yf, float SizeX, float SizeY, float *Light, float Rotation, float Alpha); // IDA: RenderTerrainAlphaBitmap (0x004F8BB0)
@@ -418,7 +418,7 @@ void  __cdecl CreateChat(char* ID, char* Text, CHARACTER* entity, int Flag, int 
 // FUN_004821A0 @ 0x004821A0
 void  __cdecl UI_TickHoverBubbles(void);
 int   __cdecl Item_FindQuickSlotByCategory(int category);  // GetItemSlot — returns inventory slot index or -1
-char  __cdecl Item_Equip(DWORD character, DWORD object);            // 0x00483B30, Attack selected-skill executor
+char  __cdecl Item_Equip(intptr_t character, intptr_t object);            // 0x00483B30, Attack selected-skill executor
 
 // ── UI / HUD ──────────────────────────────────────────────────────────────────
 bool  __cdecl FindTextA(char* src, char* pattern, bool caseSensitive); // IDA: FindText (0x004977F0)
@@ -762,7 +762,7 @@ void  __cdecl GL_EnableLightMap(void);           // GL_EnableLightMap (lightmap 
 
 // ── Entity_Render helpers ─────────────────────────────────────────────────────
 void  __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object); // IDA: MoveMonsterClient (0x00454CD0)
-void  __cdecl MoveCharacter(int entity_ptr); // IDA: MoveCharacter (0x00449900)
+void  __cdecl MoveCharacter(intptr_t entity_ptr); // IDA: MoveCharacter (0x00449900)
 void  __cdecl MoveCharacterVisual(intptr_t entity_ptr); // IDA: MoveCharacterVisual (0x004520C0)
 
 // ── Effect_Tick helpers ───────────────────────────────────────────────────────
@@ -915,9 +915,9 @@ void  __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, 
 void  __cdecl SetPlayerShock(CHARACTER* entity, int type); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl AttackEffect(intptr_t entity); // IDA: AttackEffect (0x00445230)
 // IDA: UseSkillWarrior
-void  __cdecl Combat_UseWarriorSkill(int entity, intptr_t skillType);
+void  __cdecl Combat_UseWarriorSkill(intptr_t entity, intptr_t skillType);
 // IDA: UseSkillElf
-void  __cdecl Combat_UseElfSkill(int entity, int object);
+void  __cdecl Combat_UseElfSkill(intptr_t entity, intptr_t object);
 int   __cdecl CHARACTER_MACHINE_GetMagicSkillDamage(int machinePtr, int skillType, int level); // CHARACTER_MACHINE::GetMagicSkillDamage
 
 // ── Sound: PlayBuffer ─────────────────────────────────────────────────────────

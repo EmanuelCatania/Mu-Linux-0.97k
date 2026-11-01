@@ -42,7 +42,7 @@ extern "C" {
 // IDA: RenderGuildMarkOnShield — dibuja la textura 34 ya compuesta por CreateGuildMark
 // sobre el hueso 26 del modelo de jugador. El segundo parámetro es el escudo
 // equipado; sólo modifica el desplazamiento vertical del emblema.
-void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
+void __cdecl RenderGuildMarkOnShield(intptr_t entity, int shield_id)
 {
     BYTE* object = (BYTE*)(uintptr_t)entity;
 
@@ -64,7 +64,7 @@ void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
     localMatrix[11] = (shield_id == 676) ? -18.0f : -10.0f;
 
     // `object+276` es el buffer de matrices animadas; 26 * 48 = 1248.
-    float* bone26 = (float*)((BYTE*)(uintptr_t)*(DWORD*)&((OBJECT*)(uintptr_t)(object))->BoneMatrices + 1248);
+    float* bone26 = (float*)((BYTE*)(uintptr_t)(intptr_t)((OBJECT*)(uintptr_t)(object))->BoneMatrices + 1248);
     R_ConcatTransforms(bone26, localMatrix, &DAT_06989c9c);
 
     Gfx::Translate(*(float*)(object + 16), *(float*)(object + 20), *(float*)(object + 24));

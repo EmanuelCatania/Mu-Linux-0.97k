@@ -935,7 +935,7 @@ void __cdecl SecondPassword_Screen5(void) {
 
 // CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
 extern "C" int g_GoldenArcherCustom;
-extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action);
+extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(intptr_t c, int action);
 // ServerTransfer_HitTest @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
 // transferencia de server (la etiqueta vieja "SecondPassword_Screen7" era falsa).
 // Los dos `__ftol()` que el port no habia resuelto son `InventoryStartX + 35.0`:
@@ -2364,7 +2364,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
 
     AsCharacter(c)->BodyPart[1].Level = (unsigned char)((*(int*)(v7 + 140) >> 3) & 0xF);
     AsCharacter(c)->BodyPart[2].Level = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[3].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->BoneMatrices >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[3].Level = (unsigned char)(((intptr_t)((OBJECT*)(uintptr_t)(v7))->BoneMatrices >> 3) & 0xF);
     AsCharacter(c)->BodyPart[4].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->OBB[10] >> 3) & 0xF);
     AsCharacter(c)->BodyPart[5].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->_unk188[20] >> 3) & 0xF);
     AsCharacter(c)->BodyPart[1].Option1 = *(unsigned char*)(v7 + 163);
@@ -2884,7 +2884,7 @@ static inline void mc_DeleteJoint(int Type, intptr_t Owner, int SubType)
     DeleteJoint(Type, Owner, SubType);
 }
 
-static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
+static inline void mc_CreateBlur(intptr_t c, float* p1, float* p2,
                                  float* color, int type, int flag)
 {
     // CreateBlur (0x0046C320) — la estela que sigue la hoja del arma.  Busca un
@@ -2934,7 +2934,7 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
     }
 }
 
-static inline char mc_JointFind(int Type, DWORD Owner, int flag)
+static inline char mc_JointFind(int Type, intptr_t Owner, int flag)
 {
     // sub_46FE40 (SearchJoint). IDA ancla en &Joints[0].Target y lee los otros
     // campos con índices negativos; flag == -1 ignora el SubType.
@@ -2944,7 +2944,7 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
         const JOINT* j = &joints[i];
         if (j->Live == 0) continue;
         if (j->Type != Type) continue;
-        if ((DWORD)(uintptr_t)j->Target != Owner) continue;
+        if ((intptr_t)j->Target != Owner) continue;
         if (flag != -1 && j->SubType != flag) continue;
         return 1;
     }
@@ -3055,7 +3055,7 @@ static inline void mc_SetPlayerDie(CHARACTER* c)
     // render (bDead = c+0x34e) trata al héroe como muerto (body light rojo).
 }
 
-void __cdecl MoveCharacter(int p1)
+void __cdecl MoveCharacter(intptr_t p1)
 {
     if (!p1) return;
     intptr_t c = (DWORD)p1;
@@ -3086,7 +3086,7 @@ void __cdecl MoveCharacter(int p1)
     intptr_t   v422 = BMD_STRIDE * (AsObject(o)->Type) + (intptr_t)DAT_05828d58;  // model slot
     bool  bEventNpc = false;
     intptr_t Owner = 0;
-    DWORD v390  = 0;
+    intptr_t v390  = 0;
     int   v392 = 0;     // ground-item flag
     int   v393 = 0;     // skill-id captured (24)
     int   v375 = 0, Type = 0, v376 = 0, v378 = 0, v377 = 0;
