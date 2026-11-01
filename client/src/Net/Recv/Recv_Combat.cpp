@@ -51,6 +51,16 @@ void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
                               (int)(uintptr_t)entity, 50.0f, -1, 0);
             }
         }
+        // DESVIACION: IDA crea estos joints solo al castear; se recrean para
+        // que el aura siga visible al reaparecer la entidad en el viewport.
+        if ((effect & 0x08) != 0 && (physicalEffects & 0x08) == 0) {
+            DeleteJoint(266, (DWORD)(uintptr_t)entity, 4);
+            for (int i = 0; i < 5; ++i) {
+                Joint_Create(266, (float*)(entity + 16), (float*)(entity + 16),
+                              (float*)(entity + 28), 4,
+                              (intptr_t)entity, 20.0f, -1, 0);
+            }
+        }
         physicalEffects |= effect;
         return;
     }

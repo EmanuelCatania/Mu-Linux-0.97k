@@ -73,6 +73,30 @@ void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
     GL_DisableCullFace();
 }
 
+// IDA: RenderCharacter (0x00456770), case 390: brillo de Greater Damage en las
+// manos. DESVIACION: tambien se dibuja en monstruos (invocaciones), para que el
+// aura siga visible mientras el buff este activo; ahi solo si el hueso es valido.
+static void RenderAttackBuffSparkles(BYTE* entity)
+{
+    OBJECT& object = *AsObject(entity);
+    if ((*(DWORD*)(entity + 120) & 4) == 0 || !object.BoneMatrices) return;
+    void* model = (void*)(uintptr_t)(DAT_05828d58 + object.Type * BMD_STRIDE);
+    const int boneCount = AsModel(model)->NumBones;
+    const float* bones = (const float*)object.BoneMatrices;
+    float offset[3] = { 0.0f, 0.0f, 0.0f };
+    for (int hand = 0; hand < 2; ++hand) {
+        const int bone = AsCharacter(entity)->Weapon[hand].LinkBone;
+        if (bone < 7 || bone >= boneCount) continue;
+        const float brightness = (float)(rand() % 30 + 70) * 0.01f;
+        float light[3] = { brightness, brightness * 0.3f, brightness * 0.2f };
+        for (int back : { 0, 6, 7 }) {
+            float position[3];
+            BMD_TransformPosition(model, (float*)(bones + 12 * (bone - back)), offset, position, 1);
+            CreateSprite(1231, position, 1.5f, light, (intptr_t)entity, 0.0f, 0);
+        }
+    }
+}
+
 void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
@@ -554,6 +578,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 FUN_00408ff0((void *)AsObject(param_1)->Cloth);
         }
     }
+    RenderAttackBuffSparkles((BYTE*)param_1);
     Equipment_Draw(AsCharacter(param_1), CharacterEffects_LateStage);
     return puVar13;
 }
