@@ -470,7 +470,7 @@ int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
     // IDA receives the inventory-base pointer in the x87 float argument slot.
     // It is a bit-pattern carrier, not a numeric float: a C cast turns most
     // heap pointers into 0 (or undefined), while the original uses the bits.
-    DWORD x_addr;
+    intptr_t x_addr;
     x_addr = (decltype(x_addr))(intptr_t)items;
     int v23 = 0;
     const int pass = (BYTE)a6 ? 1 : 0;
