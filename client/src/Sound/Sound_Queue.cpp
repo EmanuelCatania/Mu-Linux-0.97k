@@ -26,7 +26,7 @@ void Sprite_ReplayStep() {
         if (!sample[0]) continue;
         while (destination < 1002 && DAT_07c85890[destination * OBJECT_STRIDE]) ++destination;
         if (destination == 1002) break;
-        char *out=DAT_07c85890+destination++*0x1bc;
+        char *out=DAT_07c85890+destination++*OBJECT_STRIDE;
         memcpy(out,sample,OBJECT_STRIDE);
         // El sprite efímero conserva su alta/azar; sólo acompaña la traslación
         // visual de su dueño conocido. No se inventa identidad entre emisiones.
@@ -34,7 +34,7 @@ void Sprite_ReplayStep() {
         if (RenderInterpolation_OwnerOffset(*(void **)(out+0xfc),offset))
             for (int axis=0;axis<3;++axis) {
                 *(float *)(out+0x10+4*axis)+=offset[axis];
-                *(float *)(out+0x170+4*axis)+=offset[axis];
+                *(float *)(out+EntityOffset(0x170)+4*axis)+=offset[axis];
             }
     }
 }

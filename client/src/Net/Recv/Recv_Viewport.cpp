@@ -932,7 +932,7 @@ void NetRecv_21(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         WORD raw = (Msg[entryStart + i*2] << 8) | Msg[entryStart + i*2 + 1];
         WORD key = raw & 0x7FFF;
         if (key < 1000) {
-            itemPool[(size_t)key * 0x204 + 72] = 0;  // active flag = 0
+            itemPool[(size_t)key * GROUND_ITEM_STRIDE + 72] = 0;  // active flag = 0
         }
     }
 }

@@ -189,7 +189,7 @@ void __cdecl Entity_Render(void)
 {
     int v14 = 1, v15 = 0, v16 = 0;
     BYTE* Items = (BYTE*)DAT_07e12840;
-    BYTE* end   = Items + 1000 * 0x204;
+    BYTE* end   = Items + 1000 * GROUND_ITEM_STRIDE;
     BYTE* v0    = Items + 333;
 
     while (v0 < end) {
@@ -694,7 +694,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     //   model y hace -400 para el ItemAttribute). ItemLevel = ip+8, Option = ip+31.
     auto drawHoveredItem = [&]() {
         if (hovered < 0 || hovered >= 1000) return;
-        BYTE* o = itemPool + hovered * 0x204 + 72;
+        BYTE* o = itemPool + hovered * GROUND_ITEM_STRIDE + 72;
         if (o[0] && o[EntityOffset(352)])
             RenderItemName(hovered, AsObject(o),
                                 *(int*)(o - 64), (int)*(char*)(o - 41), 0);
@@ -760,7 +760,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     if (s_altNameToggle || (Platform::GetInput().KeyState(VK_MENU) & 0x8000) != 0) {
         for (int i = 0; i < 1000; ++i) {
             if (i == hovered) continue;
-            BYTE* o = itemPool + i * 0x204 + 72;
+            BYTE* o = itemPool + i * GROUND_ITEM_STRIDE + 72;
             if (o[0] && o[EntityOffset(352)]) {
                 RenderItemName(i, AsObject(o),
                                     *(int*)(o - 64), (int)*(char*)(o - 41), 1);

@@ -797,7 +797,7 @@ DWORD    DAT_07e127f8  = 0;
 // model@ip+74, pos@ip+88 y el render (Entity_Render, en Render/Render_WorldHelpers.cpp)
 // los lee en los mismos offsets (active@slot+72). Ambos alineados sobre
 // DAT_07e12840.
-unsigned char DAT_07e12840[1000 * 0x204] = {};
+unsigned char DAT_07e12840[1000 * GROUND_ITEM_STRIDE] = {};
 DWORD    DAT_07e12945  = 0;
 char     DAT_07e91350[0x44]  = {0};
 DWORD    DAT_07e91388  = 0;

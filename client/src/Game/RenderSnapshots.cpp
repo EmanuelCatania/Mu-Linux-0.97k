@@ -159,7 +159,7 @@ Sample PartSample(int slot, int index) {
     return sample;
 }
 Sample ItemSample(int slot) {
-    Sample sample = ObjectSample(*(OBJECT*)(DAT_07e12840 + slot * 0x204 + 72));
+    Sample sample = ObjectSample(*(OBJECT*)(DAT_07e12840 + slot * GROUND_ITEM_STRIDE + 72));
     sample.owner = (std::uintptr_t)DAT_07e12840;
     sample.generation = itemGeneration[slot];
     return sample;
@@ -273,7 +273,7 @@ void RenderSnapshots_NewCharacter(const void* entity) {
 }
 void RenderSnapshots_NewItem(int slot) {
     if (slot<0 || slot>=1000) return;
-    RenderDerivedState_Forget((BYTE *)DAT_07e12840+slot*0x204+72);
+    RenderDerivedState_Forget((BYTE *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72);
     ++itemGeneration[slot];
 }
 void RenderSnapshots_NewDamagePoint(int slot) { if (slot >= 0 && slot < 100) ++pointGeneration[slot]; }

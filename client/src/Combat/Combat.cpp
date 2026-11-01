@@ -1952,7 +1952,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         // The native branch uses the latched ItemKey, not SelectedItem.  It
         // has no SetPlayerStop nor queue cleanup side effect.
         const DWORD groundKey = ItemKey;                         // IDA: v114
-        const BYTE* const groundItem = &DAT_07e12840[0] + (size_t)groundKey * 0x204;
+        const BYTE* const groundItem = &DAT_07e12840[0] + (size_t)groundKey * GROUND_ITEM_STRIDE;
         const float deltaY = *(float*)(o + 20) - ((float)TargetY * 100.0f + 50.0f);
         const float deltaX = *(float*)(o + 16) - ((float)TargetX * 100.0f + 50.0f);
 

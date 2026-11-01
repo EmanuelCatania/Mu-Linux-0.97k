@@ -745,7 +745,8 @@ extern char    lpString_07d4b000[128];  // Exit/Cancel button text
 // extern char    DAT_07d4b384[128];       // version string 3 format   // -> alias a GlobalText, ver el final del archivo
 extern char    lpString_07d4c518[128];  // "Connecting..." string
 extern DWORD   DAT_07e127f8;
-extern unsigned char DAT_07e12840[1000 * 0x204];   // GroundItem pool: 1000 × 0x204 bytes
+constexpr int GROUND_ITEM_STRIDE = 0x48 + OBJECT_STRIDE;  // cabecera + OBJECT
+extern unsigned char DAT_07e12840[1000 * GROUND_ITEM_STRIDE];   // GroundItem pool: 1000 × 0x204 bytes
 extern DWORD   DAT_07e12945;   // sprite render loop base (stride 0x204)
 extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
 extern "C" DWORD   DAT_07e91388;

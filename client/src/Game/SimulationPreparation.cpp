@@ -95,7 +95,7 @@ void PrepareItems() {
     if (SceneFlag != 5 || CameraTopViewEnabled) return;
     BYTE *items = (BYTE *)DAT_07e12840;
     for (int slot = 0; slot < 1000; ++slot) {
-        BYTE *base = items + slot * 0x204;
+        BYTE *base = items + slot * GROUND_ITEM_STRIDE;
         if (!base[72]) continue;
         OBJECT &o = *(OBJECT *)(base + 72);
         const char visible = (char)Frustum_TestSphere(o.Position, 400.0f);

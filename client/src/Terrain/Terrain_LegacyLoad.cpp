@@ -222,7 +222,7 @@ void __cdecl CreateTerrain(const char *path) {
 // en +72, que es el que leen Net_Process (0x20), Entity_Render y MoveItems.
 void __cdecl ClearItems(void) {
     for (int i = 0; i < 1000; ++i) {
-        DAT_07e12840[i * 0x204 + 72] = 0;
+        DAT_07e12840[i * GROUND_ITEM_STRIDE + 72] = 0;
     }
 }
 

@@ -90,7 +90,7 @@ void Mouse_UpdateHoverTargets(void)
         SelectedCharacter = -1;
         Attacking = -1;
     } else if (SelectedCharacter >= 0 &&
-               *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * CHARACTER_STRIDE) == '\0' &&
+               *(char *)(DAT_07abf5d0 + EntityOffset(0x2fd) + SelectedCharacter * CHARACTER_STRIDE) == '\0' &&
                *(char *)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE + 0x84) == '\x02') {
         // Current hover target is a valid alive monster.
         // Keep the original transient hover state.  Leaving this selected
@@ -347,11 +347,11 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     // Pass 1: set highlight flags and color tints for visible entities
     byte *pbVar4 = (byte *)(DAT_07abf5d0 + 0x84);
     for (int loop1 = 400; loop1 != 0; loop1--, pbVar4 += CHARACTER_STRIDE) {
-        if (((*pbVar4 & param_1) == *pbVar4) && (pbVar4[-0x84] != 0) && (pbVar4[0xdc] != 0) &&
-            (_DAT_00552580 < *(float *)(pbVar4 + 0xe4))) {
+        if (((*pbVar4 & param_1) == *pbVar4) && (pbVar4[-0x84] != 0) && (pbVar4[EntityOffset(0x160) - 0x84] != 0) &&
+            (_DAT_00552580 < *(float *)(pbVar4 + EntityOffset(0x168) - 0x84))) {
             pbVar4[0x58] = 1;
             float r, g, b;
-            switch (*(short *)(pbVar4 + 0x13a)) {
+            switch (*(short *)(pbVar4 + EntityOffset(0x1BE) - 0x84)) {
             case 0:  r =  0.2f; g =  0.2f; b =  0.2f; break;
             case 1:  r = -0.4f; g = -0.4f; b = -0.4f; break;
             case 2:  r =  0.2f; g = -0.6f; b = -0.6f; break;
@@ -359,7 +359,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             case 4:  r =  0.3f; g =  0.2f; b = -0.5f; break;
             default: r =  0.0f; g =  0.0f; b =  0.0f; break;
             }
-            if (pbVar4[0x266] > 5) { r = -0.4f; g = -0.4f; b = -0.4f; }
+            if (pbVar4[EntityOffset(0x2EA) - 0x84] > 5) { r = -0.4f; g = -0.4f; b = -0.4f; }
             *(float *)(pbVar4 + 0x64) = r;
             *(float *)(pbVar4 + 0x68) = g;
             *(float *)(pbVar4 + 0x6c) = b;
@@ -384,7 +384,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             }
         }
         if ((*ent == '\0') || (*(char *)&AsObject(ent)->Visible == '\0') ||
-            (!(_DAT_00552580 < AsObject(ent)->Alpha)) || (ent[0x2fd] != '\0'))
+            (!(_DAT_00552580 < AsObject(ent)->Alpha)) || (ent[EntityOffset(0x2fd)] != '\0'))
             continue;
 
         // Party name matching for DarkLord entities
@@ -417,7 +417,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         // sub_513260, y gana la MAS CERCANA A LA CAMARA.
         {
             float box[12];
-            memcpy(box, (const void*)(ent + 0x130), sizeof(box));
+            memcpy(box, (const void*)(ent + EntityOffset(0x130)), sizeof(box));
             if (!Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
                 continue;
 
@@ -487,7 +487,7 @@ int __cdecl ItemOnGround_HoverTest(void)
 
     // Pass 1: atenuar todos los items activos + visibles.
     for (int i = 0; i < 1000; ++i) {
-        BYTE* base = pool + i * 0x204;
+        BYTE* base = pool + i * GROUND_ITEM_STRIDE;
         if (base[72] && base[424]) {
             *(DWORD*)(base + 304) = 0x3E4CCCCD;   // 0.2f
             *(DWORD*)(base + 308) = 0x3E4CCCCD;
@@ -503,7 +503,7 @@ int __cdecl ItemOnGround_HoverTest(void)
     int mouseY = (int)DAT_083a4278;
     int best = -1, bestD = 24 * 24 + 1;
     for (int i = 0; i < 1000; ++i) {
-        BYTE* base = pool + i * 0x204;
+        BYTE* base = pool + i * GROUND_ITEM_STRIDE;
         if (base[72] && base[424]) {
             int sx = *(short*)(base + 72 + 92);   // = v1+92
             int sy = *(short*)(base + 72 + 94);
@@ -513,7 +513,7 @@ int __cdecl ItemOnGround_HoverTest(void)
         }
     }
     if (best >= 0) {
-        BYTE* base = pool + best * 0x204;
+        BYTE* base = pool + best * GROUND_ITEM_STRIDE;
         *(DWORD*)(base + 304) = 0x3FC00000;   // 1.5f (highlight)
         *(DWORD*)(base + 308) = 0x3FC00000;
         *(DWORD*)(base + 312) = 0x3FC00000;
@@ -559,7 +559,7 @@ int __cdecl SpecialObject_HoverTest(void)
         if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;
 
         float box[12];
-        memcpy(box, (const void *)(obj + 0x130), sizeof(box));
+        memcpy(box, (const void *)(obj + EntityOffset(0x130)), sizeof(box));
 
         if (Collision_SegmentToOBB((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
             *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte

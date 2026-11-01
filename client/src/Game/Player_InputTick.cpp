@@ -427,7 +427,7 @@ static void HUD_PickUpNearestItem(void)
     const float heroX = *(const float*)(Hero + 16);
     const float heroY = *(const float*)(Hero + 20);
     for (int i = 0; i < 1000; ++i) {
-        const BYTE* item = &DAT_07e12840[0] + (size_t)i * 0x204;
+        const BYTE* item = &DAT_07e12840[0] + (size_t)i * GROUND_ITEM_STRIDE;
         if (!item[72] || !item[424]) continue;                   // vivo y visible
         const float dx = *(const float*)(item + 88) - heroX;
         const float dy = *(const float*)(item + 92) - heroY;
@@ -1470,7 +1470,7 @@ void __cdecl Player_ProcessInput(void)
                 // item = worldXY/100.
                 int itemSlotIdx = (int)SelectedItem;
                 BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
-                              + (uintptr_t)itemSlotIdx * 0x204;
+                              + (uintptr_t)itemSlotIdx * GROUND_ITEM_STRIDE;
                 // La posición world del item la escribe CreateItem en ip+88/92 (el render la
                 // lee en v1+16 = ip+72+16 = ip+88); itemEnt = ip.
                 int dstX = (int)(*(float*)(itemEnt + 88) / 100.0f);

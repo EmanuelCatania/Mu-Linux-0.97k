@@ -161,7 +161,7 @@ void MoveItems(void)
   //   ip+72  active   ·  ip+74  modelo  ·  ip+88/92  X,Y  ·  ip+96  Z
   //   ip+100/104  Angle[0]/Angle[1]     ·  ip+288  velocidad Z
   for (int slotIdx = 0; slotIdx < 1000; ++slotIdx) {
-    unsigned char *ip = (unsigned char *)DAT_07e12840 + slotIdx * 0x204;
+    unsigned char *ip = (unsigned char *)DAT_07e12840 + slotIdx * GROUND_ITEM_STRIDE;
     if (ip[72] == 0) continue;
 
     float *pZ  = (float *)(ip + 96);

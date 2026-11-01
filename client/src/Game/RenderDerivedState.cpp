@@ -63,7 +63,7 @@ void RenderDerivedState_Begin() {
     }
     SaveObject(DAT_07abf050,sizeof(CHARACTER));
     if (DAT_07e12840) for (int slot=0; slot<1000; ++slot) {
-        auto *item=(BYTE *)DAT_07e12840+slot*0x204+72;
+        auto *item=(BYTE *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72;
         if (AsObject(item)->Live) SaveObject(item,sizeof(OBJECT));
     }
     for (int slot=0; slot<200; ++slot) SaveObject(DAT_07b11670+slot*OBJECT_STRIDE,sizeof(OBJECT));
