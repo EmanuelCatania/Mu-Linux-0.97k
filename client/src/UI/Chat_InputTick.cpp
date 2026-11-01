@@ -136,7 +136,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
 
     auto IsPlayerTarget = [hero](char* entity) {
         return entity && entity != hero && entity[0] && entity[132] == 1 &&
-               (*(short*)(entity + 2) == 390 || entity[847] != 0);
+               (*(short*)(entity + 2) == 390 || entity[EntityOffset(847)] != 0);
     };
     auto IsAdjacent = [hero](const char* entity) {
         return abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionX - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionX) <= 1 &&

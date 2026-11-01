@@ -28,16 +28,9 @@ void HUD_BeginGridPass(int pass);
 
 // sub_4E38B0 / sub_47F360 / sub_47F4C0 are now ported in HUD_Pass4.cpp.
 // sub_4E9300 is ported in HUD_Pass6.cpp.
-extern "C" int __cdecl sub_4E38B0(float a1, float a2, float x, int a4,
+extern "C" int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
                                    float sx, int a6);
 
-static float PointerBitsAsFloat(const void* pointer)
-{
-    DWORD bits = (DWORD)(uintptr_t)pointer;
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
 extern "C" int __cdecl sub_4E9300_(void);
 #define sub_4E9300 sub_4E9300_
 // Alias a los globales reales (IDA): el teclado del PIN los comparte con
@@ -407,37 +400,37 @@ void Render_HudPass_4F6050_(void)
     if (InventoryOpened) {
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
-                   PointerBitsAsFloat(OffsetInventoryItems), 8, 8.0f, 1);
+                   OffsetInventoryItems, 8, 8.0f, 1);
     }
     if (ShopOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
                    // IDA pushes `Inventory.WalkSpeed + 0x880`, which in our
                    // ITEM layout is exactly `&Inventory[32].WalkSpeed`.
-                   PointerBitsAsFloat(ShopItems), 8, 15.0f, 1);
+                   ShopItems, 8, 15.0f, 1);
     }
     if (TradeOpened) {
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 70.0),
-                   PointerBitsAsFloat(Inventory), 8, 4.0f, 1);
+                   Inventory, 8, 4.0f, 1);
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 270.0),
-                   PointerBitsAsFloat(OffsetTradeItems), 8, 4.0f, 1);
+                   OffsetTradeItems, 8, 4.0f, 1);
     }
     if (WarehouseOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat(OffsetWarehouseItems), 8, 15.0f, 1);
+                   OffsetWarehouseItems, 8, 15.0f, 1);
     }
     if (ChaosMixOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 110.0),
-                   PointerBitsAsFloat(OffsetMixItems), 8, 4.0f, 1);
+                   OffsetMixItems, 8, 4.0f, 1);
     }
     if (EventWindowOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat(OffsetMixItems), 8, 4.0f, 1);
+                   OffsetMixItems, 8, 4.0f, 1);
     }
 }
 

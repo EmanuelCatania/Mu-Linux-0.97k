@@ -76,15 +76,8 @@ extern "C" void Net_SendNpcTalkClose(void);
 extern "C" SIZE*  __cdecl RenderCenteredText(int x, int y, const char* text);
 extern "C" int    __cdecl GetScreenWidth(void);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
-extern "C" int    __cdecl sub_4E38B0(float a1, float a2, float x, int a4, float sx, int a6);
+extern "C" int    __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4, float sx, int a6);
 
-static float PointerBitsAsFloat_HudPass6(const void* pointer)
-{
-    DWORD bits = (DWORD)(uintptr_t)pointer;
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
 extern "C" void   __cdecl RenderTipText(int sx, int sy, const char* Text);
 extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
@@ -287,35 +280,35 @@ char __cdecl sub_4F5CE0_(void)
         RenderEquipment3D();
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
-                   PointerBitsAsFloat_HudPass6(OffsetInventoryItems), 8, 8.0f, 0);
+                   OffsetInventoryItems, 8, 8.0f, 0);
     }
     if (ShopOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(ShopItems), 8, 15.0f, 0);
+                   ShopItems, 8, 15.0f, 0);
     }
     if (TradeOpened) {
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 70.0),
-                   PointerBitsAsFloat_HudPass6(Inventory), 8, 4.0f, 0);
+                   Inventory, 8, 4.0f, 0);
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 270.0),
-                   PointerBitsAsFloat_HudPass6(OffsetTradeItems), 8, 4.0f, 0);
+                   OffsetTradeItems, 8, 4.0f, 0);
     }
     if (WarehouseOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(OffsetWarehouseItems), 8, 15.0f, 0);
+                   OffsetWarehouseItems, 8, 15.0f, 0);
     }
     if (ChaosMixOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 110.0),
-                   PointerBitsAsFloat_HudPass6(OffsetMixItems), 8, 4.0f, 0);
+                   OffsetMixItems, 8, 4.0f, 0);
     }
     if (EventWindowOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(OffsetMixItems), 8, 4.0f, 0);
+                   OffsetMixItems, 8, 4.0f, 0);
     }
     return (char)ChaosMixOpened;
 }
