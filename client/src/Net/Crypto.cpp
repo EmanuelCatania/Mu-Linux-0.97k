@@ -274,7 +274,7 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
   // La tabla anti-tamper queda inerte: el slot 0 debe conservar la clave 0.
   return;
   if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return;
-  uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_2);
+  uVar1 = (**(code **)(*(intptr_t *)this_ + 3 * sizeof(void*)))(&param_2);
   abStack_8[0] = 0;
   abStack_8[1] = 0;
   abStack_8[2] = 0;
@@ -356,7 +356,7 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
   local_4 = param_1;
   if (sizeof(void*) != 4) return (void*)0;
   if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return (void*)0;
-  uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_1);
+  uVar1 = (**(code **)(*(intptr_t *)this_ + 3 * sizeof(void*)))(&param_1);
   uVar9 = 0;
   undefined4 stack0xfffffff4 = local_4;
   if (*(int *)((intptr_t)this_ + 0xc) != 0) {

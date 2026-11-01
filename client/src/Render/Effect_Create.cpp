@@ -518,7 +518,7 @@ LAB_004658be:
     if (param_1 == 0x4b0) {
       *(int*)&pfVar17[EffectLifetimeIndex] = 40;
       param_5 = pfVar4;
-      uVar10 = (**(code **)(iVar9 + 0xc))(pfVar4);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
       param_8 = (float *)0x0;
       param_7 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_00465082;
@@ -1109,7 +1109,7 @@ switchD_00461001_caseD_c7:
     *(int*)&pfVar17[EffectLifetimeIndex] = 5;
     param_8 = pfVar4;
     param_7 = pfVar4;
-    uVar10 = (**(code **)(iVar9 + 0xc))(pfVar4);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
     pfVar12 = (float *)0x0;
     param_8 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_0046320b;
@@ -1117,7 +1117,7 @@ switchD_00461001_caseD_c7:
   case 0xef:
     *(int*)&pfVar17[EffectLifetimeIndex] = 25;
     param_5 = pfVar4;
-    uVar10 = (**(code **)(iVar9 + 0xc))(pfVar4);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar4);
     param_8 = (float *)0x0;
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_0046371e;
@@ -1504,7 +1504,7 @@ LAB_004652dd:
   iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
-  uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_6 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -1850,7 +1850,7 @@ LAB_004625ca:
   iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_6 = pfVar12;
-  uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_6 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 == 0) goto LAB_00465388;
@@ -2068,7 +2068,7 @@ LAB_004621ba:
   iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
-  uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_6 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -3007,7 +3007,7 @@ LAB_00463750:
   iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_6 = pfVar12;
-  uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_6 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -3911,7 +3911,7 @@ LAB_00461a9e:
   param_6 = (float*)DAT_07cf1ffc;
   param_3 = (float*)DAT_07cf1ffc;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
-  uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_7 = (float *)0x0;
   _param_9 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -4085,7 +4085,7 @@ LAB_00462e56:
   iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
-  uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pfVar12);
   param_6 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {

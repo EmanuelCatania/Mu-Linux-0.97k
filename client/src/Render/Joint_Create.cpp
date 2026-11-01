@@ -2168,7 +2168,7 @@ LAB_0046ec6d:
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
   *(char *)&AsJoint(pcVar14)->Weapon = ((byte*)DAT_07cf1ffc)[0x580];
-  uVar9 = (**(code **)(iVar6 + 0xc))(pbVar10);
+  uVar9 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar10);
   pbVar10 = (byte *)0x0;
   if (DAT_055c9bd4 != 0) {
     do {
@@ -2433,7 +2433,7 @@ LAB_0046e76a:
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
   *(char *)&AsJoint(pcVar14)->Weapon = ((byte*)DAT_07cf1ffc)[0x580];
-  uVar9 = (**(code **)(iVar6 + 0xc))(pbVar10);
+  uVar9 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar10);
   pbVar10 = (byte *)0x0;
   if (DAT_055c9bd4 != 0) {
     do {

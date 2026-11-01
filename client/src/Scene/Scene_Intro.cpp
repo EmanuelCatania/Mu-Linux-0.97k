@@ -267,7 +267,7 @@ LAB_00513a36:
 LAB_00513a50:
     iVar7 = MAIN_HASH_CLASS;
     *puVar1 = 0xd;
-    uVar4 = (**(code **)(iVar7 + 0xc))(puVar1);
+    uVar4 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
     uStack_4 = 0;
     if (DAT_055c9bd4 != 0) {
         do {
