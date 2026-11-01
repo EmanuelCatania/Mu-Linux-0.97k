@@ -504,13 +504,13 @@ static void* g_FakeHashVtable[8] = {
 //
 // AntiTamper_HashNode() (System_Legacy.cpp) ya usaba 0x585; al centinela se le
 // habia pasado.
-alignas(4) static unsigned char g_HashSentinelNode[0x585] = {0};
+alignas(4) static unsigned char g_HashSentinelNode[0x2000] = {0};
 
 // Single-slot hash arrays. Both point into static storage so we don't need
 // to allocate. Slot 0 of g_HashValueArr is initialized to &sentinel; slot 0
 // of g_HashKeyArr is left at 0 (matches any "key=0" lookup; for key!=0 the
 // caller's key-check fails and the iteration limit drops out).
-static DWORD g_HashValueArr[1] = { 0 };  // values (filled by ctor below)
+static DWORD g_HashValueArr[ 64] = { 0 };  // values (filled by ctor below)
 static DWORD g_HashKeyArr  [1] = { 0 };  // keys
 
 // Buffer layout (original binary): +0 vtable, +4 values, +8 keys, +0xC capacity.
