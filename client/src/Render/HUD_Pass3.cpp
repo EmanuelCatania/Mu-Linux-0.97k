@@ -589,7 +589,7 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 
 extern "C" const BYTE* Guild_GetMarkPixels(int row);
 
-void __cdecl RenderBoolean(int x, int y, DWORD c)
+void __cdecl RenderBoolean(int x, int y, intptr_t c)
 {
     if (!c) return;
 

@@ -453,7 +453,7 @@ DWORD    DAT_055c9b80  = 0;
 // HashTable obfuscation. Original binary has a real hash-table object at
 // 0x055c9bc8..0x055c9bd4 (contiguous). 40+ inlined callers deref the vtable
 // at offset +0xC, and insert/lookup helpers read capacity at offset +0xC from
-// the CONTEXT (&MAIN_HASH_CLASS + 0xC = DAT_055c9bd4).
+// the CONTEXT (&MAIN_HASH_CLASS + 3 * sizeof(void*) = DAT_055c9bd4).
 //
 // Estrategia SAFE SENTINEL SLOT (con capacity=0, los sitios sin el guard de bd4
 // terminan en `puVar = NULL → *(NULL + 0x161)`):

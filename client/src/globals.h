@@ -428,7 +428,7 @@ extern DWORD   DAT_055c9b80;
 extern char    ConfigLoginVersion[12]; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 // Contexto de la ofuscación por HashTable — buffer contiguo (el binario original tiene el
 // 4 fields physically contiguous at 0x055c9bc8..0x055c9bd4). Callers do
-// `&MAIN_HASH_CLASS + 0xC` esperando la capacidad; las macros superponen el buffer para que
+// `&MAIN_HASH_CLASS + 3 * sizeof(void*)` esperando la capacidad; las macros superponen el buffer para que
 // holds. See globals.cpp for init.
 extern uintptr_t g_HashTableCtx[4];
 #define MAIN_HASH_CLASS  (g_HashTableCtx[0])   // vtable pointer

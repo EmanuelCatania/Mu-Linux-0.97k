@@ -217,8 +217,8 @@ extern "C" BYTE g_ChatStagingBuf[kChatPayloadSize] = {0}; // mirror del staging 
 // ---------------------------------------------------------------------------
 static void __fastcall ChatLB_dtor          (DWORD* self, int /*edx*/, char  flag);  // slot 0
 static int  __fastcall ChatLB_setState      (DWORD* self, int /*edx*/, int   v);     // slot 1
-static int  __fastcall ChatLB_setColor1     (DWORD* self, int /*edx*/, int a, int b, int c); // slot 2
-static int  __fastcall ChatLB_setColor2     (DWORD* self, int /*edx*/, int a, int b, int c); // slot 3
+static int  __fastcall ChatLB_setColor1     (DWORD* self, int /*edx*/, int a, int b, intptr_t c); // slot 2
+static int  __fastcall ChatLB_setColor2     (DWORD* self, int /*edx*/, int a, int b, intptr_t c); // slot 3
 static void __fastcall ChatLB_renderScroll  (DWORD* self);                                 // slot 4
 static int  __fastcall ChatLB_tick          (DWORD* self, int /*edx*/, int   v);     // slot 5
 static void __fastcall ChatLB_tickHook      (DWORD* self, int /*edx*/, int v);              // slot 6: nullsub_6, ret 4
@@ -470,7 +470,7 @@ static int __fastcall ChatLB_setState(DWORD* self, int, int v)
 }
 
 // slot 2 — sub_40C6D0
-static int __fastcall ChatLB_setColor1(DWORD* self, int, int a, int b, int c)
+static int __fastcall ChatLB_setColor1(DWORD* self, int, int a, int b, intptr_t c)
 {
     self[15] = a;
     self[17] = b;
@@ -479,7 +479,7 @@ static int __fastcall ChatLB_setColor1(DWORD* self, int, int a, int b, int c)
 }
 
 // slot 3 — sub_40C6F0
-static int __fastcall ChatLB_setColor2(DWORD* self, int, int a, int b, int c)
+static int __fastcall ChatLB_setColor2(DWORD* self, int, int a, int b, intptr_t c)
 {
     self[16] = a;
     self[19] = b;

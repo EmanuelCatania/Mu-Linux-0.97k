@@ -460,7 +460,7 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
                  (float *)(param_1 + 0x130),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
-    DivineSkirt_Apply(AsObject(static_cast<DWORD>(param_1)), param_2, param_3, this_);
+    DivineSkirt_Apply(AsObject(static_cast<intptr_t>(param_1)), param_2, param_3, this_);
     RenderPartObjectEffect(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
   }
   return;

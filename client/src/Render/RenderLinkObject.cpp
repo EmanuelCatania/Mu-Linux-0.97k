@@ -327,8 +327,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // count stored at param_4+0x302 via a hash table keyed on the pointer.
     // The block is transcribed faithfully; net game effect = zero.
     {
-        unsigned char* pbVar1 = (unsigned char*)(param_4 + 0x302);
-        unsigned int uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+        unsigned char* pbVar1 = (unsigned char*)&AsCharacter(param_4)->Skill;
+        unsigned int uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
         unsigned int uVar16 = 0;
         unsigned char* pbStack_26c = nullptr;
         unsigned char* pbStack_270 = pbVar1;
@@ -363,7 +363,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                 if (cmp2 == 0)
                 {
                     if (uVar3 == 0xffffffff) { found = true; break; }
-                    uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+                    uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
                     pbStack_26c = nullptr;
                     uVar16 = 0;
                     if (DAT_055c9bd4 != 0) goto hash_getindex_loop2;
@@ -380,7 +380,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // -- Insert ref slot --
         pbStack_26c = (unsigned char*)operator new(2);
         pbStack_26c[1] = 1;
-        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
         local_23c_f = 0.0f; // local_23c = null
         uVar16 = 0;
 
@@ -432,7 +432,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
             // Simplified: increment ref-count slot [1] and conditionally obfuscate *pbVar1
             pbVar12 = nullptr;
-            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
             uVar16 = 0;
 
             // GetIndex for the newly inserted slot
@@ -466,7 +466,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                     {
                         if (uVar3 == 0xffffffff) goto hash_getindex2_found;
                         *(void**)&local_240 = pbVar1;
-                        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+                        uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
                         uVar16 = 0;
                         if (DAT_055c9bd4 != 0) goto hash_getindex2_loop;
                         goto hash_getindex2_exhaust;
@@ -502,7 +502,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // -- Decrement ref-count (matching release) --
         {
             unsigned char* pbVar12 = nullptr;
-            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 0x0c))(pbVar1);
+            uVar3 = (**(unsigned int(__cdecl**)(unsigned char*))(MAIN_HASH_CLASS + 3 * sizeof(void*)))(pbVar1);
             uVar16 = 0;
             if (DAT_055c9bd4 != 0)
             {
