@@ -806,7 +806,7 @@ LAB_0051c13d:
       local_d4 = -NAN;
     }
     if ((DAT_083a7c24 == 0x8e) && (local_dc = 0, 0 < DAT_083a7c0c)) {
-      local_d8 = (unsigned int)(uintptr_t)DAT_083a4348;
+      const char* answer = (const char*)DAT_083a4348;
       do {
         if (((int)local_d4 == (int)local_dc) &&
            (uVar5 = (int)(0x13fU - DAT_083a427c) >> 0x1f,
@@ -818,7 +818,7 @@ LAB_0051c13d:
         }
         Gfx::Color3f(1.0f, *(float*)&uVar10, 0.0f);
         local_e4.cx = 0;
-        pCVar6 = (LPCSTR)(uintptr_t)local_d8;
+        pCVar6 = answer;
         do {
           if (*pCVar6 == '\0') break;
           ptVar17 = &local_d0;
@@ -831,7 +831,7 @@ LAB_0051c13d:
           pCVar6 = pCVar6 + 0x26;
         } while (local_e4.cx < 1);
         local_dc = local_dc + 1;
-        local_d8 = local_d8 + 0x26;
+        answer += 0x26;
       } while ((int)local_dc < DAT_083a7c0c);
     }
     Gfx::Color3f(1.0f, 1.0f, 1.0f);  // 0x3f800000 = bits de 1.0f

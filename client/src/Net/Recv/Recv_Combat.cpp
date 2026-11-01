@@ -95,11 +95,9 @@ void CreateMagicShiny97k(BYTE* entity, int hand)
 
     BMD_TransformPosition(model, (float*)(uintptr_t)(bones + bone * 0x30),
                  offset, position, 1);
-    // CreateSprite(1231, Position, 1.0, Light, Hand, 0.0, Character).
-    // El quinto argumento es el owner y el último es el subtipo; esto
-    // preserva el orden exacto de parámetros de 004741E0_CreateMagicShiny.c.
-    CreateSprite(1231, position, 1.0f, light, hand, 0.0f, (intptr_t)entity);
-    CreateSprite(1231, position, 1.0f, light, hand + 2, 0.0f, (intptr_t)entity);
+    float* const angle = AsObject(entity)->Angle;
+    Particle_Spawn(1231, position, angle, light, hand, 0.0f, (intptr_t)entity);
+    Particle_Spawn(1231, position, angle, light, hand + 2, 0.0f, (intptr_t)entity);
 }
 
 // 0x15

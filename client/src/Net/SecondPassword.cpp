@@ -1620,7 +1620,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         if (!DAT_083a4124 && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
-            DAT_07eaa160 = (DWORD)(uintptr_t)slot;          // CheckInventory
+            DAT_07eaa160 = (uintptr_t)slot;          // CheckInventory
             DAT_07ea8408 = (DWORD)y0;                       // sy
             DAT_07ea840c = (DWORD)(x0 + (int)w / 2);        // sx
             return;

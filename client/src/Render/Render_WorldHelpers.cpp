@@ -979,11 +979,11 @@ void __cdecl EffectPool_RenderAll(void)
             continue;                       // IDA: `break` — no renderiza nada
         }
         if (type == 239) {
-            RenderWheelWeapon((DWORD)(uintptr_t)(v0 - 10));   // RenderWheelWeapon
+            RenderWheelWeapon((intptr_t)(v0 - 10));   // RenderWheelWeapon
             continue;
         }
         if (type == 244) {
-            ItemDrop_RenderGroundWeapon((int)(uintptr_t)(v0 - 10));
+            ItemDrop_RenderGroundWeapon((intptr_t)(v0 - 10));
             continue;
         }
 
@@ -1003,7 +1003,7 @@ void __cdecl EffectPool_RenderAll(void)
             for (int n = 0; n < 30; ++n) {
                 float pos[3] = { xf, yf, zf };
                 CreateSprite(1176, pos, v0[-7], v0 + 48,
-                             (int)(uintptr_t)(v0 - 10), 0.0f, 0);
+                             (intptr_t)(v0 - 10), 0.0f, 0);
                 xf += v0[38];
                 yf += v0[39];
                 zf += v0[40];
@@ -1042,7 +1042,7 @@ void __cdecl EffectPool_RenderAll(void)
                 // (00475220); the latter interprets its second argument as
                 // a position and dereferences the previous nullptr.
                 CreateSprite(1176, pos, v0[-7], v0 + 48,
-                              (int)(uintptr_t)(v0 - 10), 0.0f, 0);
+                              (intptr_t)(v0 - 10), 0.0f, 0);
                 xf += v0[38];
                 yf += v0[39];
                 zf += v0[40];
@@ -1058,7 +1058,7 @@ void __cdecl EffectPool_RenderAll(void)
 
         // Type 244: special handler.
         if (type == 244) {
-            ItemDrop_RenderGroundWeapon((int)(uintptr_t)(v0 - 10));
+            ItemDrop_RenderGroundWeapon((intptr_t)(v0 - 10));
             continue;
         }
     }
