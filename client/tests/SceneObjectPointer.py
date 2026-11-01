@@ -224,7 +224,7 @@ def harness(revision=None):
 
 def build_and_run(directory, source, args):
     directory.mkdir()
-    (directory / "main.cpp").write_text("constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394;" + chr(10) + source, encoding="utf-8")
+    (directory / "main.cpp").write_text("constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;" + chr(10) + source, encoding="utf-8")
     (directory / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.25)\n"
         "project(SceneObjectPointer LANGUAGES CXX)\n"

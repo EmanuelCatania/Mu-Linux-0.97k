@@ -26,7 +26,7 @@ def function(source,name):
 
 SERVICES=r'''
 #include <cstdint>
-constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394;
+constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
