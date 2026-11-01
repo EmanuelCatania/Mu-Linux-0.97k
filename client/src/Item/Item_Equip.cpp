@@ -99,7 +99,7 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
         return 1;
     }
 
-    Combat_UseWarriorSkill((int)character, (int)object);  // IDA L155: UseSkillWarrior
+    Combat_UseWarriorSkill((intptr_t)character, (intptr_t)object);  // IDA L155: UseSkillWarrior
     return 1;                                         // IDA L157: v30 = 1
 }
 

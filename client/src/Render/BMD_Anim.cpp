@@ -142,8 +142,8 @@ extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o)
 
     // BMD__PlayAnimation(model, &frame, &priorFrame, &priorAction, speed) — advances frame.
     // (IDA passes 7 args incl. Pos=o+16, HeadAngle=o+28; our 5-arg variant ignores them.)
-    bool bPlaying = BMD__PlayAnimation((void*)model, (float*)(o + 264), (float*)(o + 268),
-                        (void*)(o + 262), speed);
+    bool bPlaying = BMD__PlayAnimation((void*)model, (float*)(o + EntityOffset(264)), (float*)(o + EntityOffset(268)),
+                        (void*)(o + EntityOffset(262)), speed);
 
     return bPlaying;
 }

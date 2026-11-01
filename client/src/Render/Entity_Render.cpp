@@ -456,8 +456,8 @@ RenderPartObject(intptr_t param_1,int param_2,const PART_t* param_3,float *param
     else {
       puVar2 = (undefined*)&DAT_06970a9c;
     }
-    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
-                 (float *)(param_1 + 0x130),param_10);
+    Skeleton_Transform(this_,reinterpret_cast<float*>(puVar2),(float *)(param_1 + EntityOffset(0x118)),(float *)(param_1 + EntityOffset(0x124)),
+                 (float *)(param_1 + EntityOffset(0x130)),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
     DivineSkirt_Apply(AsObject(static_cast<intptr_t>(param_1)), param_2, param_3, this_);

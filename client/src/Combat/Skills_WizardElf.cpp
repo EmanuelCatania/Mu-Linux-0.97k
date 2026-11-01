@@ -110,7 +110,7 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
         // Hero->ID at entity offset +0x1C1
         // In original: strlen-based strstr scan. If hero name contains "webzen", skip.
         // This is an anti-impersonation check — GM accounts get special treatment.
-        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)(DWORD)c));
+        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)c));
         {
             // Simple strstr check for "webzen" in hero name
             const char* gmStr = DAT_00559d94;
@@ -167,7 +167,7 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
     case 0xd:
     {
         // GM name check: compare Hero->ID with "webzen" (DAT_00559d9c)
-        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)(DWORD)c));
+        char* heroName = (char*)(Hero ? EntityName::Get(Hero) : EntityName::Get((std::uintptr_t)c));
         {
             const char* gmStr = DAT_00559d9c;
             int gmLen = (int)strlen(gmStr);

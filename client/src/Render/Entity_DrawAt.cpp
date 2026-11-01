@@ -164,9 +164,9 @@ void __cdecl Entity_DrawAt(intptr_t param_1, int param_2, undefined4 param_3, fl
         puVar2 = (undefined*)&DAT_06970a9c;
 
     Skeleton_Transform(pModel, reinterpret_cast<float*>(puVar2),
-                 (float *)(param_1 + 0x118),
-                 (float *)(param_1 + 0x124),
-                 (float *)(param_1 + 0x130),
+                 (float *)(param_1 + EntityOffset(0x118)),
+                 (float *)(param_1 + EntityOffset(0x124)),
+                 (float *)(param_1 + EntityOffset(0x130)),
                  param_10);   // Sprite_DrawBone(model, bone, anim[3], blend)
 
     RenderPartObjectEffect(param_1, param_2, param_4, param_5, param_6,

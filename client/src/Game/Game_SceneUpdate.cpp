@@ -68,9 +68,9 @@ static void LoginScene_ApplySafeObjectAnim()
         if (model) {
             model[0xa0] = *(char *)&AsObject(obj)->CurrentAction;
             BMD__PlayAnimation((void*)model,
-                (float*)(obj + 0x108),
-                (float*)(obj + 0x10c),
-                (void*)(obj + 0x106),
+                (float*)(obj + EntityOffset(0x108)),
+                (float*)(obj + EntityOffset(0x10c)),
+                (void*)(obj + EntityOffset(0x106)),
                 AsObject(obj)->Velocity);
         }
 

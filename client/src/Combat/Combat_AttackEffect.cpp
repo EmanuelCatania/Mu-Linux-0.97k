@@ -386,7 +386,7 @@ void __cdecl AttackEffect(intptr_t Owner)
   switch ( v3 )
   {
     case 35:
-      v171 = (char *)(Owner + 770);
+      v171 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
       v172 = AE_ht_hash(Owner + 770);
       v245 = 0;
@@ -523,7 +523,7 @@ LABEL_269:
             {
               break;
             }
-            v189 = (char *)(Owner + 770);
+            v189 = (char *)(Owner + EntityOffset(770));
             v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v192 == -1 )
             {
@@ -563,7 +563,7 @@ LABEL_291:
         CErrorReport::Write(&g_ErrorReport, aHashTableFullG);
       }
       v188 = operator_new(2u);
-      v189 = (char *)(Owner + 770);
+      v189 = (char *)(Owner + EntityOffset(770));
       *(BYTE *)(v188 + 1) = 1;
       HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + 770);
 LABEL_293:
@@ -586,7 +586,7 @@ LABEL_293:
       }
       break;
     case 42:
-      v152 = (char *)(Owner + 770);
+      v152 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
       v153 = AE_ht_hash(Owner + 770);
       v245 = 0;
@@ -741,7 +741,7 @@ LABEL_242:
         TransformPosition(v2, (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 3024), v248, TargetPosition, 1);
         CreateEffect(1211, TargetPosition, (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
       }
-      v131 = (char *)(Owner + 770);
+      v131 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
       v132 = AE_ht_hash(Owner + 770);
       v245 = 0;
@@ -881,7 +881,7 @@ LABEL_214:
       }
       if ( AsCharacter(Owner)->SkillStage == 14 && AsCharacter(Owner)->MonsterIndex == 59 )
       {
-        v117 = (char *)(Owner + 770);
+        v117 = (char *)(Owner + EntityOffset(770));
         v244 = (const char *)(Owner + 770);
         Ownerl = AE_ht_hash(Owner + 770);
         v245 = 0;
@@ -957,7 +957,7 @@ LABEL_181:
                 v126[1] = v127;
                 if ( !v127 )
                 {
-                  Packet_EncryptByte(v126, (BYTE *)(Owner + 770));
+                  Packet_EncryptByte(v126, (BYTE *)(Owner + EntityOffset(770)));
                 }
               }
               break;
@@ -1029,7 +1029,7 @@ LABEL_185:
           FUN_00466300(Owner + 16);
           CreateEffect(241, (float *)(Owner + 16), (float *)(Owner + 28), (float *)(Owner + 232), 0, 0, (float *)-1, 0, 0);
         }
-        v80 = (char *)(Owner + 770);
+        v80 = (char *)(Owner + EntityOffset(770));
         v243 = Owner + 770;
         v81 = AE_ht_hash(Owner + 770);
         v245 = 0;
@@ -1168,7 +1168,7 @@ LABEL_120:
       }
       break;
     case 66:
-      v98 = (char *)(Owner + 770);
+      v98 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
       v99 = AE_ht_hash(Owner + 770);
       v245 = 0;
@@ -1303,7 +1303,7 @@ LABEL_152:
       }
       break;
     case 72:
-      v27 = (char *)(Owner + 770);
+      v27 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
       v28 = AE_ht_hash(Owner + 770);
       v245 = 0;
@@ -1509,7 +1509,7 @@ LABEL_50:
       }
       break;
     case 77:
-      v61 = (char *)(Owner + 770);
+      v61 = (char *)(Owner + EntityOffset(770));
       v243 = Owner + 770;
       v62 = AE_ht_hash(Owner + 770);
       v245 = 0;
@@ -1644,7 +1644,7 @@ LABEL_88:
     case 124:
     case -126:
     case -120:
-      v4 = (char *)(Owner + 770);
+      v4 = (char *)(Owner + EntityOffset(770));
       v244 = (const char *)(Owner + 770);
       v5 = AE_ht_hash(Owner + 770);
       v243 = 0;
@@ -1770,7 +1770,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 50 )
+      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[0] - 512.0;
         v198 = (double)(rand() % 1024) + AsCharacter(Owner)->Object.Position[1];
@@ -1791,7 +1791,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + CHARACTER_STRIDE * v202;
-    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
+    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 17 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )
       {
@@ -2008,7 +2008,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 3 )
+    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + EntityOffset(770))) == 3 )
     {
       switch ( AsCharacter(Owner)->MonsterIndex )
       {

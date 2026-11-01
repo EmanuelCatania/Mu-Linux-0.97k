@@ -933,7 +933,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
             *((BYTE*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * (int)SelectedCharacter + 132) == 1) {
             if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                (int)TargetX, (int)TargetY,
-                               (unsigned char*)(entity + 852), (float)range)) {
+                               (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
                 *(char *)&AsCharacter(entity)->Movement = 1;                              // IDA L1827
                 *(char *)&AsCharacter(entity)->MovementType = 5;                              // IDA L1828
             }
@@ -1191,7 +1191,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
             if (SelectedCharacter != -1) {
                 if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                    (int)TargetX, (int)TargetY,
-                                   (unsigned char*)(entity + 852), (float)range)) {
+                                   (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
                     *(char *)&AsCharacter(entity)->Movement = 1;                          // IDA L7205
                     *(char *)&AsCharacter(entity)->MovementType = 5;                          // IDA L7206
                 }
@@ -1219,7 +1219,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
         if (SelectedCharacter != -1 && CheckAttack()) {      // IDA L7821: CheckAttack()
             if (Path_FindRoute(AsCharacter(entity)->PositionX, AsCharacter(entity)->PositionY,
                                (int)TargetX, (int)TargetY,
-                               (unsigned char*)(entity + 852), (float)range)) {
+                               (unsigned char*)(entity + EntityOffset(852)), (float)range)) {
                 *(char *)&AsCharacter(entity)->Movement = 1;                              // IDA L7864
                 *(char *)&AsCharacter(entity)->MovementType = 5;                              // IDA L7865
             }
@@ -1445,7 +1445,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
 
     // 2) Stamina decay on entity (movement-tick interpolation) ────────────────────────────────────────────────
     // IDA L1240-1247.  c+124 es el estado de fade y c+360 (0x168) el Alpha:
-    // `v5 = *(float *)(c + 360) - 0.1; ... if (v5 < 0.1) c[124] = 2;`.
+    // `v5 = *(float *)(c + EntityOffset(360)) - 0.1; ... if (v5 < 0.1) c[124] = 2;`.
     // El titulo "stamina" de este bloque era una etiqueta inventada del port.
     if (*(char *)&AsCharacter(entity)->Object.Teleport == 1) {                      // IDA: *(_BYTE *)(c + 124)
         float& fAnim = AsCharacter(entity)->Object.Alpha; // IDA: v5 = *(float *)(c + EntityOffset(360)) — Alpha
@@ -2210,7 +2210,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 int heroGX = AsCharacter(c)->PositionX;
                 int heroGY = AsCharacter(c)->PositionY;
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + 852), Range)) {
+                                 (unsigned char*)(c + EntityOffset(852)), Range)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
@@ -2441,11 +2441,11 @@ void __cdecl Action(intptr_t c, intptr_t o)
             if (inRange && !forceWalk) {
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
                     // Direct-target wizard path (UseSkillWizard @ 004889D0).
-                    Combat_UseWizardSkill((DWORD)c, (DWORD)o);
+                    Combat_UseWizardSkill((intptr_t)c, (intptr_t)o);
                 }
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + 852), (float)skillRange)) {
+                                 (unsigned char*)(c + EntityOffset(852)), (float)skillRange)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
@@ -2461,12 +2461,12 @@ void __cdecl Action(intptr_t c, intptr_t o)
             }
             if ((float)skillRange * 1.2f * 100.0f < (float)sqrt((double)dist) || forceWalk) {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + 852),
+                                 (unsigned char*)(c + EntityOffset(852)),
                                  (float)skillRange * 1.2f)) {
                     AsCharacter(c)->Movement = 1;
                 }
             } else {
-                Combat_UseWarriorSkill((intptr_t)c, (int)o);  // UseSkillWarrior
+                Combat_UseWarriorSkill((intptr_t)c, (intptr_t)o);  // UseSkillWarrior
             }
             break;
 
@@ -2475,14 +2475,14 @@ void __cdecl Action(intptr_t c, intptr_t o)
         case 26: case 27: case 28:
             if (inRange && !forceWalk) {
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
-                    Combat_UseElfSkill((intptr_t)c, (int)o);  // UseSkillElf (AOE)
+                    Combat_UseElfSkill((intptr_t)c, (intptr_t)o);  // UseSkillElf (AOE)
                 }
                 // IDA (LABEL_184) no hace nada si CheckWall falla: si la linea de vista
                 // esta cortada, el skill simplemente no sale y la accion queda
                 // encolada hasta el proximo click (no caminar hacia el blanco).
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + 852), (float)skillRange)) {
+                                 (unsigned char*)(c + EntityOffset(852)), (float)skillRange)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }
@@ -2492,14 +2492,14 @@ void __cdecl Action(intptr_t c, intptr_t o)
         case 51:
             if (inRange && !forceWalk) {
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
-                    Combat_UseElfSkill((intptr_t)c, (int)o);
+                    Combat_UseElfSkill((intptr_t)c, (intptr_t)o);
                 }
                 // IDA (LABEL_184) no hace nada si CheckWall falla: si la linea de vista
                 // esta cortada, el skill simplemente no sale y la accion queda
                 // encolada hasta el proximo click (no caminar hacia el blanco).
             } else {
                 if (Path_FindRoute(heroGX, heroGY, tgtGX, tgtGY,
-                                 (unsigned char*)(c + 852), (float)skillRange)) {
+                                 (unsigned char*)(c + EntityOffset(852)), (float)skillRange)) {
                     AsCharacter(c)->Movement = 1;
                 }
             }

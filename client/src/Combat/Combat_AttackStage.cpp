@@ -58,8 +58,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
                 pos[1] += cosf(rad) * _DAT_00552904;
 
                 float* oAngle = (float*)(o + 0x1C);
-                Joint_Create(0x10a, pos, oAngle, (float*)(o + 0x1C),
-                             (unsigned int)o, 0, 40.0f, (short)oType, 0);
+                Joint_Create(0x10a, pos, pos, oAngle, 2, o, 40.0f, -1, 0);  // IDA L125
             }
         }
 
@@ -71,7 +70,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
             intptr_t boneTransform2 = (intptr_t)AsObject(o)->BoneMatrices;
             float (*boneMat)[4] = (float(*)[4])(boneTransform2 + extOpt * 0x30);
             float worldPos[3];
-            float* swordPos = (float*)(o + 0x188); // o->m_vPosSword
+            float* swordPos = (float*)(o + EntityOffset(0x188)); // o->m_vPosSword
             BMD__TransformPosition((void*)pModel, boneMat, localPos, worldPos, true);
             // Result stored in worldPos — used by trail system
             (void)swordPos; // referenced by original but result consumed internally
@@ -342,7 +341,7 @@ bool __cdecl AttackStage(intptr_t c, intptr_t o)
         }
         if (stage <= 8) {
             float z[3] = {};
-            BMD_TransformPosition((void*)model, (float*)((intptr_t)AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+392), 1);
+            BMD_TransformPosition((void*)model, (float*)((intptr_t)AsObject(o)->BoneMatrices+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+EntityOffset(392)), 1);
             const float r = AsObject(o)->Angle[2]*0.017453292f; *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[0]+=sinf(r)*300.0f; *(float*)&((OBJECT*)(uintptr_t)(o))->_unk188[4]-=cosf(r)*300.0f;
         }
         if (stage >= 6 && stage <= 12) {

@@ -58,7 +58,7 @@ static void Tamachan_Create(char *o)
     *(float *)(o + 236) = 1.0f;
     *(float *)(o + 240) = 1.0f;
     for (int i = 0; i < 3; ++i) {
-        ((float *)(o + 368))[i] = ((float *)(o + 16))[i];
+        ((float *)(o + EntityOffset(368)))[i] = ((float *)(o + 16))[i];
         ((float *)(o + 52))[i]  = ((float *)(o + 16))[i];
     }
     float offset[3], angle[3], matrix[12], rotated[3];
@@ -72,8 +72,8 @@ static void Tamachan_Create(char *o)
     Matrix_BuildFromEuler(angle, matrix);          // AngleMatrix
     Vector_Rotate(offset, matrix, rotated);        // VectorRotate
     for (int i = 0; i < 3; ++i) {
-        ((float *)(o + 368))[i] = rotated[i] + ((float *)(o + 52))[i];
-        ((float *)(o + 16))[i]  = ((float *)(o + 368))[i];
+        ((float *)(o + EntityOffset(368)))[i] = rotated[i] + ((float *)(o + 52))[i];
+        ((float *)(o + 16))[i]  = ((float *)(o + EntityOffset(368)))[i];
     }
 }
 

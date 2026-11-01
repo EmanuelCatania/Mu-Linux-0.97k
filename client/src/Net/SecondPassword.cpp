@@ -3204,7 +3204,7 @@ void __cdecl MoveCharacter(intptr_t p1)
         if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->_unk188[13]) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = AsObject(o)->Direction[1]; in1[2] = 0.0f;
-            AngleMatrix((float*)(o + 408), in2);
+            AngleMatrix((float*)(o + EntityOffset(408)), in2);
             VectorRotate(in1, (float*)in2, out_);
             AsObject(o)->Direction[1] += AsObject(o)->Direction[0];
             AsObject(o)->Gravity += AsObject(o)->Velocity;
@@ -3239,7 +3239,7 @@ void __cdecl MoveCharacter(intptr_t p1)
     bool skipIdleSelect = false;
 
     // ─── IDA L612-614: tick de animación — si la acción actual continúa, salta a L195
-    if (CharacterAnimation((intptr_t)c, (int)o)) {
+    if (CharacterAnimation((intptr_t)c, (intptr_t)o)) {
         skipIdleSelect = true;
     }
 
@@ -3841,19 +3841,19 @@ void __cdecl MoveCharacter(intptr_t p1)
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] - 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
         BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] + 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
     }
 
@@ -3876,7 +3876,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             v379[0] = AsObject(o)->Angle[0];
             v379[1] = AsObject(o)->Angle[1];
             v379[2] = AsObject(o)->Angle[2];
-            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + 788), v379, 0, (intptr_t)o, 50.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + EntityOffset(788)), v379, 0, (intptr_t)o, 50.0f, (short)-1, 0);
             AsCharacter(c)->LongRangeAttack = -1;
         }
     }
@@ -4023,7 +4023,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
     *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0 + BMD_FIELD_SHIFT) = AsCharacter(entity_ptr)->Object.CurrentAction;
 
     // SafeZone update por frame (IDA MoveCharacterVisual L614):
-    //     *(BYTE*)(c + 846) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
+    //     *(BYTE*)(c + EntityOffset(846)) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
     // +0x34E (846) es **SafeZone**, NO dead_flag (el dead real es +0x2FD, ver
     // IDA ReceiveDie L18). Lo usan la música de pueblo, el bind del arma a la
     // espalda y el gate de "no atacar en zona segura".
@@ -4179,7 +4179,7 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
             break;
 
         // 0x119 — IDA raw L851-873. Usa el `Light` (1,1,1) del frame compartido.
-        // Gate `*(WORD*)(c + 446) == 2`: sólo cuando la entidad está en ese
+        // Gate `*(WORD*)(c + EntityOffset(446)) == 2`: sólo cuando la entidad está en ese
         // sub-estado escupe las 10 partículas de fuego. El hueso es ALEATORIO
         // (`48 * (rand() % NumBones)`), o sea las partículas salen de todo el
         // cuerpo, no de un punto fijo. `v2 + 34` es NumBones del modelo (+0x22).
@@ -4623,7 +4623,7 @@ void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
     unsigned int found = Path_FindRoute(cachedX, (float)cachedY,
                                       (unsigned int)AsCharacter(entity)->TargetX,
                                       (unsigned int)AsCharacter(entity)->TargetY,
-                                      (unsigned char*)(entity + 0x354), 0.0f);
+                                      (unsigned char*)(entity + EntityOffset(0x354)), 0.0f);
     if ((char)found != '\0') {
         AsCharacter(entity)->Movement = 1;
     }

@@ -145,7 +145,7 @@ bool __cdecl CheckFullSet(uintptr_t c) {
     EquipmentLevelSet = 0;
 
     // Walk back through body parts (Boot=+600, Glove=+576, Pant=+552, Armor=+528, Helm=+504)
-    short* v3 = (short*)(c + 600);
+    short* v3 = (short*)(c + EntityOffset(600));
     while (*v3 != (short)0xFFFF) {
         --v2;
         v3 -= 12;  // -24 bytes (= 12 shorts) — previous body part
@@ -154,7 +154,7 @@ bool __cdecl CheckFullSet(uintptr_t c) {
             int v4 = (AsCharacter(c)->BodyPart[5].Type - ITEM_MODEL_BASE) % 16;  // Boot set_id
             int v5 = 5;
             int v6 = AsCharacter(c)->BodyPart[5].Level & 0xF;  // Boot level
-            short* v7 = (short*)(c + 600);
+            short* v7 = (short*)(c + EntityOffset(600));
             while (((v7[1]) & 0xF) >= 9 && v4 == (*v7 - ITEM_MODEL_BASE) % 16) {
                 if (v6 >= ((v7[1]) & 0xF)) {
                     v6 = (v7[1]) & 0xF;

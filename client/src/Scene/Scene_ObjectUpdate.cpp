@@ -889,7 +889,7 @@ void __stdcall MoveBugs(void) {
         {
         float* v28 = (float*)(e + 0x10);
         *(BYTE*)(v40 + 160) = AsObject(e)->CurrentAction;          // model.CurrentAction
-        BMD__PlayAnimation((void*)v40, (float*)(e + EntityOffset(0x108)), (float*)(e + 0x10C),
+        BMD__PlayAnimation((void*)v40, (float*)(e + EntityOffset(0x108)), (float*)(e + EntityOffset(0x10C)),
                      (void*)(e + EntityOffset(0x106)), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
 
         short v29 = AsObject(e)->Type;
@@ -1099,8 +1099,8 @@ LABEL_22:
   // NOTA: nuestro BMD__PlayAnimation (BMD_Anim.cpp) es la variante de 5 args (avanza
   // el frame). El IDA sub_440AA0 toma 7 (los 2 últimos = pos/vel para root-motion
   // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
-  BMD__PlayAnimation((void*)v5, (float*)(o + 264), (float*)(o + 268),
-               (void*)(o + 262), oa);
+  BMD__PlayAnimation((void*)v5, (float*)(o + EntityOffset(264)), (float*)(o + EntityOffset(268)),
+               (void*)(o + EntityOffset(262)), oa);
   if ( SceneFlag == 2 || SceneFlag == 4 )
   {
     if ( *(WORD *)(o + 2) == 160 )

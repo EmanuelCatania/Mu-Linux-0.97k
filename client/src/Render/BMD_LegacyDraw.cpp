@@ -1725,7 +1725,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // ItemObjectAttribute sobreescribiendo ent[+0xc] con 0.8f.
     // La reasignación post-ItemObjectAttribute arreglo el problema.
 
-    RenderPartObject((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
+    RenderPartObject((intptr_t)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
     (void)param_6;
 }
 #endif
