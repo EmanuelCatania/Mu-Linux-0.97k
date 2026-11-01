@@ -6,6 +6,14 @@
 #include "stdafx.h"
 #include "Game/RenderFxSnapshots.h"
 
+// x64: los locales del hash anti-tamper estan a 4 bytes en __fr y sus punteros se
+// pisan entre si; con capacidad 0 ninguna busqueda se ejecuta.
+#if UINTPTR_MAX != 0xFFFFFFFFu
+static uintptr_t g_JointNoHashCapacity = 0;
+#undef DAT_055c9bd4
+#define DAT_055c9bd4 g_JointNoHashCapacity
+#endif
+
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
