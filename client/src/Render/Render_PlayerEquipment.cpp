@@ -680,7 +680,7 @@ extern "C" int RenderCharacterBackItem(intptr_t c, intptr_t o)
         }
 
         g_BackItemHand = i;      // lo lee la tabla de poses de RenderLinkObject
-        RenderLinkObject(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
+        RenderLinkObject(0.0f, 0.0f, 15.0f, c, c + EntityOffset(0x2A0),
                      iType, (char)iLevel, (unsigned int)iOption1,
                      Link, '\x01', 0);
         g_BackItemHand = 0;
@@ -704,7 +704,7 @@ extern "C" void Render_PlayerHelper(intptr_t c, intptr_t o)
     unsigned char v215 = AsCharacter(c)->Helper.Option1;   // Option1
     AsCharacter(c)->Helper.LinkBone = 34;                   // LinkBone = 34
     *(int *)&AsCharacter(c)->Helper.PlaySpeed = 0x3F000000;                     // PlaySpeed = 0.5f
-    RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + 0x2B8,
+    RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + EntityOffset(0x2B8),
                  817, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
 
     // Sprite glow at transformed position (20, 0, 15) in bone[34]

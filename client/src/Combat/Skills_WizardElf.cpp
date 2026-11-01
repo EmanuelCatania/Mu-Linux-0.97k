@@ -71,10 +71,10 @@ void __cdecl Combat_UseWizardSkill(intptr_t c, intptr_t o) {
     // path-list sender at 0x491C40.
     if (skillId != 15) {
         BYTE movement[6] = { 0xC1, 6, 0x10,
-            *(BYTE*)((BYTE*)(uintptr_t)Hero + 904), *(BYTE*)((BYTE*)(uintptr_t)Hero + 908),
+            *(BYTE*)((BYTE*)(uintptr_t)Hero + EntityOffset(904)), *(BYTE*)((BYTE*)(uintptr_t)Hero + EntityOffset(908)),
             (BYTE)(16 * (((int)((*(float*)((BYTE*)(uintptr_t)Hero + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
         gNetwork.SendC1(movement, sizeof(movement));
-        *(BYTE*)((BYTE*)(uintptr_t)c + 748) = 0;
+        *(BYTE*)((BYTE*)(uintptr_t)c + EntityOffset(748)) = 0;
     }
 
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
@@ -336,7 +336,7 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 //   skillId            = *(BYTE *)(pItem + i + 37) = ITEM::Special[i]
 //   i                  = i           (L119, la variable de bucle del binario)
 //   result             = v110        (el valor de retorno)
-//   gridX / gridY      = v44 / v113  (*(_DWORD *)(c + 904) / (c + 908))
+//   gridX / gridY      = v44 / v113  (*(_DWORD *)(c + EntityOffset(904)) / (c + EntityOffset(908)))
 //   angle              = v37         (Movement_Tick = CreateAngle @0x0043E050)
 //   dir                = v52         (angulo * 0.71111113)
 //   skillDistance      = v112        (SkillAttribute[40*skill + 38])

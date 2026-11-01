@@ -567,7 +567,7 @@ void UI_TickHoverBubbles(void)
       c->LifeTime[1] = c->LifeTime[1] + -1;
     }
     const char* owner = (const char*)c->Owner;
-    if ((owner != nullptr) && ((*owner == '\0' || (owner[0x160] == '\0')))) {
+    if ((owner != nullptr) && ((*owner == '\0' || (owner[EntityOffset(0x160)] == '\0')))) {
       c->IDLifeTime = 0;
       c->LifeTime[0] = 0;
       c->LifeTime[1] = 0;

@@ -671,8 +671,8 @@ void MoveEffect(float *param_1, int param_2)
             local_318 = 0;
             local_314 = 0x41200000;
             if (!validOwner(owner)) return;
-            iVar9 = *(int *)((intptr_t)AsObject(param_1)->Owner + 0x114);
-            if (!SceneObjects::HasBoneRange(owner, (void*)(uintptr_t)iVar9, 0x630, 12)) {
+            intptr_t ownerBones = *(intptr_t *)((intptr_t)AsObject(param_1)->Owner + EntityOffset(0x114));
+            if (!SceneObjects::HasBoneRange(owner, (void*)(uintptr_t)ownerBones, 0x630, 12)) {
               *(char*)param_1 = 0; return;
             }
             const int ownerModel = *(const short*)((const char*)owner + 2);
@@ -683,7 +683,7 @@ void MoveEffect(float *param_1, int param_2)
             *(float *)((intptr_t)pvVar1 + 0x6c + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[0];
             *(float *)((intptr_t)pvVar1 + 0x70 + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[1];
             *(float *)((intptr_t)pvVar1 + 0x74 + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[2];
-            BMD_TransformPosition(pvVar1,(float *)(iVar9 + 0x630),&local_31c,AsObject(param_1)->Position,'\x01');
+            BMD_TransformPosition(pvVar1,(float *)(ownerBones + 0x630),&local_31c,AsObject(param_1)->Position,'\x01');
           }
           pfVar10 = param_1 + 4;
           iVar9 = 3;

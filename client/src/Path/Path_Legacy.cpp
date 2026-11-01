@@ -447,8 +447,8 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     if (!AsCharacter(ent)->PathSubstep) {
         int next = current + 1;
         if (next > count - 1) next = count - 1;
-        AsCharacter(ent)->PositionX = *(byte *)(ent + 855 + next);
-        AsCharacter(ent)->PositionY = *(byte *)(ent + 870 + next);
+        AsCharacter(ent)->PositionX = *(byte *)(ent + offsetof(CHARACTER, PathX) + next);
+        AsCharacter(ent)->PositionY = *(byte *)(ent + offsetof(CHARACTER, PathY) + next);
     }
 
     float x[4], y[4];
@@ -456,8 +456,8 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
         int point = (int)current - 1 + i;
         if (point < 0) point = 0;
         if (point > count - 1) point = count - 1;
-        x[i] = ((float)*(byte *)(ent + 855 + point) + 0.5f) * 100.0f;
-        y[i] = ((float)*(byte *)(ent + 870 + point) + 0.5f) * 100.0f;
+        x[i] = ((float)*(byte *)(ent + offsetof(CHARACTER, PathX) + point) + 0.5f) * 100.0f;
+        y[i] = ((float)*(byte *)(ent + offsetof(CHARACTER, PathY) + point) + 0.5f) * 100.0f;
     }
 
     float targetX = x[1], targetY = y[1];
@@ -493,8 +493,8 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     }
 
     AsCharacter(ent)->PathCurrent = count - 1;
-    AsCharacter(ent)->PositionX = *(byte *)(ent + 855 + count - 1);
-    AsCharacter(ent)->PositionY = *(byte *)(ent + 870 + count - 1);
+    AsCharacter(ent)->PositionX = *(byte *)(ent + offsetof(CHARACTER, PathX) + count - 1);
+    AsCharacter(ent)->PositionY = *(byte *)(ent + offsetof(CHARACTER, PathY) + count - 1);
     AsCharacter(ent)->Object.Position[0] = targetX;
     AsCharacter(ent)->Object.Position[1] = targetY;
     return 1;

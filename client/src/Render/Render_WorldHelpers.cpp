@@ -9,6 +9,7 @@
 // infer behaviour.
 
 #include "stdafx.h"
+#include "Render/ResourceTables.h"
 #include "Model/ModelTypes.h"
 #include "Entity/EntityName.h"
 #include "Render/Gfx.h"
@@ -809,14 +810,15 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
                 const int __world = (int)gMapManager.GetCurrentMap();   // `World` es macro de World: nombrar
                                                         // la local `World` la volvia una
                                                         // auto-inicializacion con basura.
-                if (typeCode != 188 && typeCode != 189 && __world != 10) {
+                if (typeCode >= 0 && (size_t)typeCode < ResourceTables::ModelCount() &&
+                    typeCode != 188 && typeCode != 189 && __world != 10) {
                     GL_SetBlendSrcOver('\x01');                  // EnableAlphaTest(1)
                     BufferedDraw::Color4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
                     float* modelData = (float*)(DAT_05828d58 + BMD_STRIDE * (int)typeCode);
                     if (modelData) {
-                        modelData[29] = RequestTerrainHeight(posX, posY);  // height
-                        modelData[27] = posX;
-                        modelData[28] = posY;
+                        AsModel(modelData)->BodyOrigin[2] = RequestTerrainHeight(posX, posY);  // height
+                        AsModel(modelData)->BodyOrigin[0] = posX;
+                        AsModel(modelData)->BodyOrigin[1] = posY;
                         BMD__RenderBodyShadow((void*)modelData, -1, -1);    // shadow draw
                     }
                 }

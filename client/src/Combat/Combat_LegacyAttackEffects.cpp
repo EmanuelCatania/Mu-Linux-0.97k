@@ -261,7 +261,7 @@ void __cdecl AttackEffect(intptr_t entity)
         local[0] = 0.0f;
         local[1] = offsetY;
         local[2] = 0.0f;
-        const BYTE bone = *(BYTE*)(entity + 628 + (handIndex >= secondHandAt ? 24 : 0));
+        const BYTE bone = *(BYTE*)(entity + EntityOffset(628) + (handIndex >= secondHandAt ? (int)sizeof(PART_t) : 0));
         BMD_TransformPosition(model, (float*)(boneMatrices + 48 * bone), local, source, 1);
     };
 

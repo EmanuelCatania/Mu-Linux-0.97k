@@ -17,7 +17,7 @@
 
 // IDA L239: v13 = *(std::uint8_t *)(dword_7D7809C + CharacterAttribute + 87).
 // El indice es dword_7D7809C (el slot que Attack acaba de sembrar en L1425 con
-// *(BYTE *)(Hero + 913)), no Hero+913 releido. Coinciden en el camino de Attack,
+// *(BYTE *)(Hero + EntityOffset(913))), no Hero+913 releido. Coinciden en el camino de Attack,
 // pero UseSkillWarrior usa el mismo global y conviene mantenerlos atados.
 static BYTE ItemEquip_SelectedSkill()            // IDA: v13
 {
@@ -89,7 +89,7 @@ static char ItemEquip_UseSelectedTargetSkill(intptr_t character /* IDA: sy */,
     if (dx * dx + dy * dy > reach * reach * 10000.0f) {   // IDA L106: v12*100 < sqrt(...)
         // IDA L145-146: el pathfind usa routeReach, NO el override de 1.8.
         if (!Path_FindRoute(AsCharacter(character)->PositionX, AsCharacter(character)->PositionY,
-                            targetX, targetY, caster + 852, routeReach))
+                            targetX, targetY, caster + EntityOffset(852), routeReach))
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
         caster[EntityOffset(748)] = 1;                              // IDA L150
         caster[EntityOffset(749)] = 5;                              // IDA L151
@@ -136,7 +136,7 @@ static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t obj
         switch (skill) {
         case 0x12: {                                  // IDA L565: skill 18
             // El objetivo es la key del propio heroe, no SelectedCharacter.
-            *(BYTE*)(uintptr_t)(character + 748) = 0;
+            *(BYTE*)(uintptr_t)(character + EntityOffset(748)) = 0;
             if (*(WORD*)(uintptr_t)(character + 2) == 390)
                 SetAction(AsObject(character), 92);     // IDA: SetAction(v4, 92)
             else
@@ -145,7 +145,7 @@ static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t obj
             const DWORD now = Platform::GetTimer().Ticks();          // IDA L599-603
             if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }
             g_dwLatestMagicTick = now;
-            const WORD heroKey = *(WORD*)(Hero + EntityOffset(476)); // IDA: *(_WORD *)(Hero + 476)
+            const WORD heroKey = *(WORD*)(Hero + EntityOffset(476)); // IDA: *(_WORD *)(Hero + EntityOffset(476))
             BYTE packet[6] = { 0xC1, 6, 0x19, 18,
                                (BYTE)(heroKey >> 8), (BYTE)heroKey };
             gNetwork.Send(packet, sizeof(packet));

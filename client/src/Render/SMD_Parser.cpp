@@ -422,11 +422,11 @@ void __cdecl Effect_CollisionCheck(intptr_t Target) {
             if ((intptr_t)ent == (intptr_t)owner) continue;
             if (*ent == 0) continue;
             // visibility flag at +332
-            if (*(unsigned char*)(ent + 332 + 20) == 0) continue;
+            if (*(unsigned char*)(ent + EntityOffset(352)) == 0) continue;
             // skip hero
             if (ent == (char*)(uintptr_t)DAT_07abf5d8) continue;
             // skip if "dead" flag at +745+20
-            if (*(unsigned char*)(ent + 745 + 20) != 0) continue;
+            if (*(unsigned char*)(ent + EntityOffset(765)) != 0) continue;
             // distance check (XY only, sqrt <= 100)
             float dx = *(float*)(T + 16) - *(float*)(ent + 16);
             float dy = *(float*)(T + 20) - *(float*)(ent + 20);
