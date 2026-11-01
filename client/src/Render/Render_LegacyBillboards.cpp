@@ -58,9 +58,9 @@ void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
     BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * BMD_STRIDE);
     if (*(int*)(param_1 + 4) == 0x4d0)
         local_c[1] = -120.0f;
-    *(unsigned int*)(this_ + 0x6c) = *(unsigned int*)(iVar1 + 0x10);
-    *(unsigned int*)(this_ + 0x70) = *(unsigned int*)(iVar1 + 0x14);
-    *(unsigned int*)(this_ + 0x74) = *(unsigned int*)(iVar1 + 0x18);
+    *(unsigned int*)(this_ + 0x6c + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x10);
+    *(unsigned int*)(this_ + 0x70 + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x14);
+    *(unsigned int*)(this_ + 0x74 + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x18);
     uint uVar2 = *(uint*)(param_1 + 8) & 0x80000001;
     if ((int)uVar2 < 0) uVar2 = (uVar2 - 1 | 0xfffffffe) + 1;
     BMD_TransformPosition(this_,

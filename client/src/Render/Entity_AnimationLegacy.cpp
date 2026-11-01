@@ -159,7 +159,7 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
         } else {
             local_54[3] = 1.3f; local_54[4] = 0.0f; local_54[5] = 2.0f;
         }
-        Matrix_BuildFromEuler((float*)((char*)this_ + 0x8c), local_30);
+        Matrix_BuildFromEuler((float*)((char*)this_ + 0x8c + BMD_FIELD_SHIFT), local_30);
         Vector_InverseRotate(local_54 + 3, local_30, local_54 + 6);
     }
     // init AABB for bounding-box mode
@@ -387,17 +387,17 @@ void __cdecl Skeleton_Transform(void* this_, float* boneMatrices, float* param_2
     const float zero[3]{},coefficients[3]{_DAT_00552530,_DAT_005528b4,_DAT_005526e4};
     Skinning::Capture(this_,(const float*)(uintptr_t)param_1,(std::min)(200,int(*(short*)((char*)this_+0x22))),
         _DAT_005597c8,param_5?*(float*)&((BMD*)(uintptr_t)(this_))->BodyScale:1.f,
-        param_5?(float*)((char*)this_+0x6c):zero,local_54+6,coefficients,skinSources.data(),skinSources.size());
+        param_5?(float*)((char*)this_+0x6c + BMD_FIELD_SHIFT):zero,local_54+6,coefficients,skinSources.data(),skinSources.size());
     if (diagInGame && s_xform_dbg < 200) s_xform_dbg++;
     // El editor usa los extremos de la malla; la ruta normal, los bounds locales.
     const float* boundsMin = DAT_07e11d30 == 2 ? local_54 : param_2;
     const float* boundsMax = DAT_07e11d30 == 2 ? local_54 + 3 : param_3;
-    ObjectBounds_Build(boundsMin, boundsMax, (float*)((char*)this_ + 0x6c), param_4);
+    ObjectBounds_Build(boundsMin, boundsMax, (float*)((char*)this_ + 0x6c + BMD_FIELD_SHIFT), param_4);
     // compute largest dimension for bounding radius
     float dx=local_54[3]-local_54[0], dy=local_54[4]-local_54[1], dz=local_54[5]-local_54[2];
     float maxD = (dy > dx ? dy : dx);
     if (dz > maxD) maxD = (dx <= dy ? dy : dx);
-    *(float*)((char*)this_ + 0xb4) = maxD;
+    *(float*)((char*)this_ + 0xb4 + BMD_FIELD_SHIFT) = maxD;
 }
 // BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformVertex)
 // Triangle_ComputeNormal — implemented in src/Math/Math_3D.cpp

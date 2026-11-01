@@ -247,7 +247,7 @@ float * __cdecl Entity_SpawnEffects(intptr_t param_1)
         if ((pfVar3 == (float *)0x67) &&
             (pfVar3 = (float *)(*(short *)((uint)*(byte *)&((OBJECT*)(uintptr_t)(param_1))->CurrentAction * 0x10 + 8
                                            + *(int *)(static_cast<unsigned char*>(pModel) + 0x30)) + -1),
-             (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8) == pfVar3))
+             (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8 + BMD_FIELD_SHIFT) == pfVar3))
         {
             uVar4 = _rand() & 0x8000001f;
             bVar8 = (uVar4 == 0);

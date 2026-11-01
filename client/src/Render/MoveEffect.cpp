@@ -680,9 +680,9 @@ void MoveEffect(float *param_1, int param_2)
               *(char*)param_1 = 0; return;
             }
             pvVar1 = (void *)(DAT_05828d58 + ownerModel * BMD_STRIDE);
-            *(float *)((intptr_t)pvVar1 + 0x6c) = AsObject(param_1)->StartPosition[0];
-            *(float *)((intptr_t)pvVar1 + 0x70) = AsObject(param_1)->StartPosition[1];
-            *(float *)((intptr_t)pvVar1 + 0x74) = AsObject(param_1)->StartPosition[2];
+            *(float *)((intptr_t)pvVar1 + 0x6c + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[0];
+            *(float *)((intptr_t)pvVar1 + 0x70 + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[1];
+            *(float *)((intptr_t)pvVar1 + 0x74 + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[2];
             BMD_TransformPosition(pvVar1,(float *)(iVar9 + 0x630),&local_31c,AsObject(param_1)->Position,'\x01');
           }
           pfVar10 = param_1 + 4;
@@ -2423,7 +2423,7 @@ switchD_00466b93_caseD_c1:
       if ((0xad < sVar3) && (sVar3 < 0x10d)) {
         pvVar1 = (void *)(DAT_05828d58 + sVar3 * BMD_STRIDE);
         fVar13 = AsObject(param_1)->Velocity;
-        *(undefined1 *)((intptr_t)pvVar1 + 0xa0) = AsObject(param_1)->CurrentAction;
+        *(undefined1 *)((intptr_t)pvVar1 + 0xa0 + BMD_FIELD_SHIFT) = AsObject(param_1)->CurrentAction;
         BMD__PlayAnimation(pvVar1,param_1 + 0x42,param_1 + 0x43,(undefined1 *)((intptr_t)param_1 + 0x106),fVar13);
       }
       sVar3 = AsObject(param_1)->Type;

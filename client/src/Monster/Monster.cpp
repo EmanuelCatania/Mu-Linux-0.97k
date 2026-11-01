@@ -76,7 +76,7 @@
 //         entity[+0x1dc] = entity_id
 //         return entity_ptr
 //
-//     return DAT_07abf5d0 + 0x59740          // sentinel: puntero al último slot+1
+//     return DAT_07abf5d0 + CHARACTER_STRIDE * 400 + 0x0          // sentinel: puntero al último slot+1
 //
 // ── ENTITY_FINDORSPAWN (0x0045ccf0) ───────────────────────────────────────────
 //

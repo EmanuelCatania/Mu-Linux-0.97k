@@ -248,13 +248,13 @@ int Game_SceneUpdate(void)
         {
             intptr_t base = DAT_07abf5d0;
             // Entity 0 (slot 0) — scale + position
-            *(float*)(base + 0x3a0) = 0.6f;
-            *(int*)  (base + 0x3b0) = 0;
-            *(int*)  (base + 0x3b4) = 0;
-            *(float*)(base + 0x3b8) = 180.0f;
-            *(float*)(base + 0x3a4) = -200.0f;
-            *(float*)(base + 0x3a8) = -750.0f;
-            *(float*)(base + 0x3ac) = 250.0f;
+            *(float*)(base + CHARACTER_STRIDE * 1 + 0xc) = 0.6f;
+            *(int*)  (base + CHARACTER_STRIDE * 1 + 0x1c) = 0;
+            *(int*)  (base + CHARACTER_STRIDE * 1 + 0x20) = 0;
+            *(float*)(base + CHARACTER_STRIDE * 1 + 0x24) = 180.0f;
+            *(float*)(base + CHARACTER_STRIDE * 1 + 0x10) = -200.0f;
+            *(float*)(base + CHARACTER_STRIDE * 1 + 0x14) = -750.0f;
+            *(float*)(base + CHARACTER_STRIDE * 1 + 0x18) = 250.0f;
         }
 
         unsigned char* loginPreview2 = CreateHero(2, 0, 0, 0.0f, 0.0f, 0.0f);
@@ -263,28 +263,28 @@ int Game_SceneUpdate(void)
             intptr_t base = DAT_07abf5d0;
             // Entity 2 (elf).
             // Ghidra @ 0x0051F900 línea 239: CharactersClient[2].Position[1] = -770.0
-            *(float*)(base + 0x734) = 0.6f;
-            *(int*)  (base + 0x744) = 0;
-            *(int*)  (base + 0x748) = 0;
-            *(float*)(base + 0x74c) = 180.0f;
-            *(float*)(base + 0x738) = -240.0f;
-            *(float*)(base + 0x73c) = -770.0f;
-            *(float*)(base + 0x740) = 250.0f;
+            *(float*)(base + CHARACTER_STRIDE * 2 + 0xc) = 0.6f;
+            *(int*)  (base + CHARACTER_STRIDE * 2 + 0x1c) = 0;
+            *(int*)  (base + CHARACTER_STRIDE * 2 + 0x20) = 0;
+            *(float*)(base + CHARACTER_STRIDE * 2 + 0x24) = 180.0f;
+            *(float*)(base + CHARACTER_STRIDE * 2 + 0x10) = -240.0f;
+            *(float*)(base + CHARACTER_STRIDE * 2 + 0x14) = -770.0f;
+            *(float*)(base + CHARACTER_STRIDE * 2 + 0x18) = 250.0f;
         }
 
         unsigned char* loginPreview3 = CreateHero(3, 2, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview3);
         {
             intptr_t base  = DAT_07abf5d0;
-            intptr_t slot3 = base + 0xabc;  // entity 3 base
-            *(float*)(base + 0xac8) = 0.6f;
-            *(int*)  (base + 0xad8) = 0;
-            *(int*)  (base + 0xadc) = 0;
-            *(float*)(base + 0xae0) = 180.0f;
-            *(float*)(base + 0xacc) = 400.0f;
-            *(float*)(base + 0xad0) = 50.0f;
-            *(float*)(base + 0xad4) = 250.0f;
-            CreateBug(0x330, (void*)(base + 0xacc), (void*)slot3, 0);
+            intptr_t slot3 = base + CHARACTER_STRIDE * 3 + 0x0;  // entity 3 base
+            *(float*)(base + CHARACTER_STRIDE * 3 + 0xc) = 0.6f;
+            *(int*)  (base + CHARACTER_STRIDE * 3 + 0x1c) = 0;
+            *(int*)  (base + CHARACTER_STRIDE * 3 + 0x20) = 0;
+            *(float*)(base + CHARACTER_STRIDE * 3 + 0x24) = 180.0f;
+            *(float*)(base + CHARACTER_STRIDE * 3 + 0x10) = 400.0f;
+            *(float*)(base + CHARACTER_STRIDE * 3 + 0x14) = 50.0f;
+            *(float*)(base + CHARACTER_STRIDE * 3 + 0x18) = 250.0f;
+            CreateBug(0x330, (void*)(base + CHARACTER_STRIDE * 3 + 0x10), (void*)slot3, 0);
         }
 
         // Initialize state variables

@@ -264,7 +264,7 @@ switchD_caseD_2:
             this_model = (void *)(DAT_05828d58 + modelIdx * BMD_STRIDE);
 
             // Animate model
-            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
+            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0 + BMD_FIELD_SHIFT) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
             BMD__PlayAnimation(this_model,
                          (float *)(puVar9 + 8),
                          (float *)(puVar9 + 9),

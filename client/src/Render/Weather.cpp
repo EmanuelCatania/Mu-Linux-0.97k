@@ -510,7 +510,7 @@ LAB_00501734:
 
             if ((DAT_083a3ff0 == 0) || (sVar5 != 0x12d)) {
                 pfVar1 = (float *)(&DAT_0839bcc0 + iVar14 * 0x6f);
-                *(static_cast<unsigned char*>(pvVar9) + 0xa0) = (&DAT_0839bdb5)[iVar2];
+                *(static_cast<unsigned char*>(pvVar9) + 0xa0 + BMD_FIELD_SHIFT) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
@@ -760,7 +760,7 @@ LAB_00501cb5:
             } else {
                 // DAT_083a3ff0 != 0 && type == 0x12d: thunder cloud — full animation
                 SetAction(AsObject(pcVar3), 7);
-                *(static_cast<unsigned char*>(pvVar9) + 0xa0) = (&DAT_0839bdb5)[iVar2];
+                *(static_cast<unsigned char*>(pvVar9) + 0xa0 + BMD_FIELD_SHIFT) = (&DAT_0839bdb5)[iVar2];
                 BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),

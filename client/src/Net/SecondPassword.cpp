@@ -4016,11 +4016,11 @@ void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
     }
 
     // Con acciones: copia la posición de mundo de la entidad a los slots de transform del modelo
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x6c) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x70) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x74) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x68) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
-    *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0) = AsCharacter(entity_ptr)->Object.CurrentAction;
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x6c + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x70 + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x74 + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x68 + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
+    *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0 + BMD_FIELD_SHIFT) = AsCharacter(entity_ptr)->Object.CurrentAction;
 
     // SafeZone update por frame (IDA MoveCharacterVisual L614):
     //     *(BYTE*)(c + 846) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
