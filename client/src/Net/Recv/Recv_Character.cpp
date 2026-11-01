@@ -204,7 +204,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // entity+0x1BE = Level (WORD)
         AsCharacter(c)->Level = level;
         // entity+0x1C0 = CtlCode (BYTE)
-        c[0x1C0] = ctlCode;
+        c[EntityOffset(0x1C0)] = ctlCode;
         char name[EntityName::Capacity];
         NetText::FromServer(name, sizeof(name), rec + 1, NAME);
         EntityName::Set(c, name);
@@ -527,7 +527,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[2] = 0x3e99999a;
     AsCharacter(heroPtr)->Skin = 0;
     AsCharacter(heroPtr)->PK = Msg[44];      // skill bonus / curse-of-equipment slot
-    heroPtr[448] = Msg[45];      // magic bonus / second-pwd flag
+    heroPtr[EntityOffset(448)] = Msg[45];      // magic bonus / second-pwd flag
     AsCharacter(heroPtr)->Object.Kind = 1;            // alive flag
     DAT_07abf5d8 = (char*)heroPtr;   // bind global Hero pointer
 
@@ -557,7 +557,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     *(DWORD*)(heroPtr + 0x78) &= ~2u;
 
     // (9) entity+459 = 0 (status flag) + teleport-in effect 1265.
-    heroPtr[459] = 0;
+    heroPtr[EntityOffset(459)] = 0;
     // CreateEffect(1265, Hero.Position, Hero.Angle, Hero+232, 0, Hero, -1, 0, 0)
     // Effect_Spawn signature: see src/Render/Particle_Spawn.cpp / Particle_Spawn.
     // Wire-up TODO: nuestro Effect_Spawn aún no está parameterizado igual; la
@@ -1219,7 +1219,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 CA[86] = (BYTE)total;
                 if (DAT_07abf5d8) {
                     BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-                    if (hero[913] >= 20) hero[913] = 0;
+                    if (hero[EntityOffset(913)] >= 20) hero[EntityOffset(913)] = 0;
                 }
                 NetLog("NET:    F3/11 Skill%s slot=%d skill=%d total=%d",
                        (count == 0xFE) ? "Add" : "Del", slot, skill, total);
@@ -1249,7 +1249,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             CA[86] = count;
             if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-                if (hero[913] >= 20) hero[913] = 0;
+                if (hero[EntityOffset(913)] >= 20) hero[EntityOffset(913)] = 0;
             }
             if ((DWORD)DAT_005616ac > 4) DAT_005616ac = 0;   // 5 slots: 0..4 (era >= 4, pisaba el quinto)
             // La lista recien ahora esta completa: re-traducir las

@@ -211,25 +211,25 @@ void Entity_RenderAll_3D(void)
   iVar2 = 0;
   do {
     pcVar1 = (char *)(DAT_07abf5d0 + iVar3);
-    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[0x1c0] & 4U) != 0)) && (SceneFlag == 5)) {
-      pcVar1[0x130] = '\0';
-      pcVar1[0x131] = '\0';
-      pcVar1[0x132] = 'z';
-      pcVar1[0x133] = 'D';
-      pcVar1[0x15c] = '\0';
-      pcVar1[0x15d] = '\0';
-      pcVar1[0x15e] = -0x80;
-      pcVar1[0x15f] = '?';
-      pcVar1[0x14c] = '\0';
-      pcVar1[0x14d] = '\0';
-      pcVar1[0x14e] = -0x80;
-      pcVar1[0x14f] = '?';
-      pcVar1[0x13c] = '\0';
-      pcVar1[0x13d] = '\0';
-      pcVar1[0x13e] = -0x80;
-      pcVar1[0x13f] = '?';
+    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[EntityOffset(0x1c0)] & 4U) != 0)) && (SceneFlag == 5)) {
+      pcVar1[EntityOffset(0x130)] = '\0';
+      pcVar1[EntityOffset(0x131)] = '\0';
+      pcVar1[EntityOffset(0x132)] = 'z';
+      pcVar1[EntityOffset(0x133)] = 'D';
+      pcVar1[EntityOffset(0x15c)] = '\0';
+      pcVar1[EntityOffset(0x15d)] = '\0';
+      pcVar1[EntityOffset(0x15e)] = -0x80;
+      pcVar1[EntityOffset(0x15f)] = '?';
+      pcVar1[EntityOffset(0x14c)] = '\0';
+      pcVar1[EntityOffset(0x14d)] = '\0';
+      pcVar1[EntityOffset(0x14e)] = -0x80;
+      pcVar1[EntityOffset(0x14f)] = '?';
+      pcVar1[EntityOffset(0x13c)] = '\0';
+      pcVar1[EntityOffset(0x13d)] = '\0';
+      pcVar1[EntityOffset(0x13e)] = -0x80;
+      pcVar1[EntityOffset(0x13f)] = '?';
     }
-    else if ((*pcVar1 != '\0') && (pcVar1[0x160] != '\0')) {
+    else if ((*pcVar1 != '\0') && (pcVar1[EntityOffset(0x160)] != '\0')) {
       DAT_07abf5d4 = DAT_07abf5d4 + 1;
       if ((iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc)) {
         puVar4 = (undefined4 *)0x1;

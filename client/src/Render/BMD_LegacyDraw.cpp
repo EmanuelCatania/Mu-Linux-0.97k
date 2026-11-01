@@ -1666,7 +1666,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
 
     // Build stack entity and draw
     // entity_type at [+2], scale at [+0x0c], world_pos at [+0x10..+0x18]
-    char ent[0x200];
+    char ent[EntityOffset(0x200)];
     memset(ent, 0, sizeof(ent));
     *(short *)(ent + 2) = (short)param_1;
     *(DWORD *)(ent + 0x0c) = local_3bc;  // write raw float bits into entity+0x0c

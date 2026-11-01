@@ -854,7 +854,7 @@ void __cdecl SecondPassword_Screen5(void) {
         if (!MouseLButtonPush) return;
 
         const WORD charLevel = *(WORD*)((BYTE*)CharacterAttribute + 14);
-        const int mgOffset = ((((const BYTE*)Hero)[444] & 7) == 3) ? 6 : 0;
+        const int mgOffset = ((((const BYTE*)Hero)[EntityOffset(444)] & 7) == 3) ? 6 : 0;
 
         int row = 0;
         for (; row < 6; ++row) {
@@ -2462,11 +2462,11 @@ void __cdecl CheckGate(void)
         const int heroY = *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY;
         if (heroX < gate[2] || heroY < gate[3] || heroX > gate[4] || heroY > gate[5])
             continue;
-        if (DAT_07e11d1c != 0 || hero[773] != 0)          // LoadingWorld
+        if (DAT_07e11d1c != 0 || hero[EntityOffset(773)] != 0)          // LoadingWorld
             continue;
 
         unsigned int requiredLevel = gate[8];
-        if ((hero[444] & 7) == 3) // Magic Gladiator: dos tercios.
+        if ((hero[EntityOffset(444)] & 7) == 3) // Magic Gladiator: dos tercios.
             requiredLevel = (requiredLevel * 2) / 3;
 
         // El gate 28 no entra a la rama comun si no llega al nivel.
@@ -3058,8 +3058,8 @@ static inline void mc_SetPlayerDie(CHARACTER* c)
 void __cdecl MoveCharacter(intptr_t p1)
 {
     if (!p1) return;
-    intptr_t c = (DWORD)p1;
-    intptr_t o = (DWORD)p1;
+    intptr_t c = p1;
+    intptr_t o = p1;
 
     // Common locals
     float WorldPosition[3];
@@ -3239,7 +3239,7 @@ void __cdecl MoveCharacter(intptr_t p1)
     bool skipIdleSelect = false;
 
     // ─── IDA L612-614: tick de animación — si la acción actual continúa, salta a L195
-    if (CharacterAnimation((int)c, (int)o)) {
+    if (CharacterAnimation((intptr_t)c, (int)o)) {
         skipIdleSelect = true;
     }
 
@@ -3272,7 +3272,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             {
                 // L642-738: event NPC idle chatter / random pose dispatch
                 int action = rand() % 100;
-                if (GoldenArcher_CustomNpcIdle((int)c, action)) {
+                if (GoldenArcher_CustomNpcIdle((intptr_t)c, action)) {
                     skipIdleSelect = true;
                 } else
                 if (AsObject(o)->CurrentAction == 1)  // PLAYER_STOP_MALE
@@ -3369,7 +3369,7 @@ void __cdecl MoveCharacter(intptr_t p1)
     // L812-817: attack swing tick
     if (AsCharacter(c)->SkillStage) {
         AttackStage(c, o);
-        AttackEffect((int)c);         // AttackEffect @ 00445230
+        AttackEffect((intptr_t)c);         // AttackEffect @ 00445230
         ++AsCharacter(c)->SkillStage;
     }
 
@@ -3452,9 +3452,9 @@ void __cdecl MoveCharacter(intptr_t p1)
             for (int kk = 0; kk < 4; ++kk) {
                 v394[0] = 0.0f; v394[1] = 0.0f; v394[2] = (float)kk * 90.0f;
                 int hk = FindHotKey(9);
-                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 80.0f,
+                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (intptr_t)o, 80.0f,
                              AsObject(o)->PKKey, (unsigned char)hk);
-                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 20.0f, (short)-1, 0);
+                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (intptr_t)o, 20.0f, (short)-1, 0);
             }
             PlayBuffer(87, 0, 0);
             break;
@@ -3524,7 +3524,7 @@ void __cdecl MoveCharacter(intptr_t p1)
                 v396[0] = AsObject(o)->Position[0];
                 v396[1] = AsObject(o)->Position[1];
                 v396[2] = AsObject(o)->Position[2] + 100.0f;
-                Joint_Create(1253, v396, v396, Angle, 2, (int)o, 60.0f, 0, 0);
+                Joint_Create(1253, v396, v396, Angle, 2, (intptr_t)o, 60.0f, 0, 0);
                 if (!(kk % 20)) {
                     CreateEffect(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
                                  (float*)(uintptr_t)-1, nullptr, 0);
@@ -3785,9 +3785,9 @@ void __cdecl MoveCharacter(intptr_t p1)
 
             if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk2EE[6] == 2) {
                 Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
-                             0, (int)o, 20.0f, (short)-1, 0);
+                             0, (intptr_t)o, 20.0f, (short)-1, 0);
                 Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
-                             1, (int)o, 20.0f, (short)-1, 0);
+                             1, (intptr_t)o, 20.0f, (short)-1, 0);
             }
 
             // L2455-2478: hit-impact "thud" sound for non-buff skills
@@ -3841,19 +3841,19 @@ void __cdecl MoveCharacter(intptr_t p1)
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] - 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
         BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] + 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
     }
 
@@ -3876,7 +3876,7 @@ void __cdecl MoveCharacter(intptr_t p1)
             v379[0] = AsObject(o)->Angle[0];
             v379[1] = AsObject(o)->Angle[1];
             v379[2] = AsObject(o)->Angle[2];
-            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + 788), v379, 0, (int)o, 50.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + 788), v379, 0, (intptr_t)o, 50.0f, (short)-1, 0);
             AsCharacter(c)->LongRangeAttack = -1;
         }
     }

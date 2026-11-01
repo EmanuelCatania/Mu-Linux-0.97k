@@ -605,7 +605,7 @@ void __stdcall MoveObjects(void) {
                     if (*pcVar6 != '\0') {
                         MoveObject_Special(AsObject(pcVar6));
                     }
-                    pcVar6[0x160] = '\0';
+                    pcVar6[EntityOffset(0x160)] = '\0';
                     pcVar6 = reinterpret_cast<char*>(AsObject(pcVar6)->SceneNext);
                 }
             }
@@ -614,7 +614,7 @@ void __stdcall MoveObjects(void) {
                 pcVar6 = static_cast<char*>(puVar4->Head);
                 while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
-                    if (*pcVar6 != '\0' && pcVar6[0x160] != '\0') {
+                    if (*pcVar6 != '\0' && pcVar6[EntityOffset(0x160)] != '\0') {
                         // IDA 0x004FF3B7: push edi pasa la dirección del objeto, no un float.
                         FUN_004fdc00(AsObject(pcVar6));
                         DAT_083a3fec++;

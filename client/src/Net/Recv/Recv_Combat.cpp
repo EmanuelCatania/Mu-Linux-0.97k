@@ -542,12 +542,12 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // llama a AttackStage, que despacha sus efectos visuales desde
     // this exact byte (Evil Spirit included).
     AsCharacter(caster)->Skill = skill;
-    caster[776] = Msg[6];
-    caster[777] = Msg[7];
+    caster[EntityOffset(776)] = Msg[6];
+    caster[EntityOffset(777)] = Msg[7];
     if (caster == (BYTE*)DAT_07abf5d8) {
         AsCharacter(caster)->SkillStage = 1;
         *(WORD *)&AsCharacter(caster)->TargetCharacter = 0xFFFF;
-        caster[756] = 0;
+        caster[EntityOffset(756)] = 0;
         return;
     }
 
@@ -572,7 +572,7 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
     AsCharacter(caster)->SkillStage = 1;
     *(WORD *)&AsCharacter(caster)->TargetCharacter = 0xFFFF;
-    caster[756] = 0;
+    caster[EntityOffset(756)] = 0;
 }
 
 // 0x1B
@@ -722,14 +722,14 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // El tile tiene que tener el bit 0x20 (TW_ACTION); la direccion
     // de la caida sale de si el tile de al lado (indice +1 o -1)
     // tiene 0x08 (TW_NOGROUND).
-    entity[405] = 0;
+    entity[EntityOffset(405)] = 0;
     if ((int)gMapManager.GetCurrentMap() >= 11 && (int)gMapManager.GetCurrentMap() <= 16) {
         const int gx = (int)(AsCharacter(entity)->Object.Position[0] * 0.01f);
         const int gy = (int)(AsCharacter(entity)->Object.Position[1] * 0.01f);
         const int wallIndex = ((gy & 0xFF) << 8) | (gx & 0xFF);
         if ((TerrainWall[wallIndex] & 0x20) == 0x20) {
-            entity[772] = 0;
-            entity[405] = 1;
+            entity[EntityOffset(772)] = 0;
+            entity[EntityOffset(405)] = 1;
             *(float*)(entity + 216) = (float)(rand() % 10) + 10.0f;
             AsCharacter(entity)->Object.Velocity = (float)(rand() % 20) + 20.0f;
             const float angle = (float)(rand() % 10) + 85.0f;
@@ -758,7 +758,7 @@ void NetRecv_17(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
     const int entitySlot = basePtr ? (int)((entity - basePtr) / CHARACTER_STRIDE) : -1;
     NetLog("NET:  → 0x17 Die id=%d slot=%d fall=%d",
-           entityId, entitySlot, entity[405]);
+           entityId, entitySlot, entity[EntityOffset(405)]);
 }
 
 // 0x9C

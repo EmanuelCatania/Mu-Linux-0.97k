@@ -48,9 +48,9 @@ constexpr EffectArrowPreset EffectArrowPresets[] = {
 static void Tamachan_Create(char *o)
 {
     *(int *)(o + 96) = rand() % 50 + 50;           // lifetime
-    o[260] = 1;                                    // estado: flotando
+    o[EntityOffset(260)] = 1;                                    // estado: flotando
     *(float *)(o + 216) = -30.0f;                  // 0xC1F00000
-    SetAction(AsObject(o), (unsigned char)o[260]);   // SetAction
+    SetAction(AsObject(o), (unsigned char)o[EntityOffset(260)]);   // SetAction
     *(float *)(o + 192) = 0.0f;                    // velocidad
     *(float *)(o + 196) = 0.0f;
     *(float *)(o + 200) = 0.0f;
@@ -4191,7 +4191,7 @@ void __cdecl Tamachan_Dismiss(void)
     char *o = &DAT_07b11670[i * OBJECT_STRIDE];
     if (*o && *(short *)(o + 2) == 0xc1) {
       *(int *)(o + 96) = 10;
-      o[260] = 3;
+      o[EntityOffset(260)] = 3;
     }
   }
 }

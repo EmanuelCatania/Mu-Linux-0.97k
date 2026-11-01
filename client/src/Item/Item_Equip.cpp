@@ -91,8 +91,8 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
         if (!Path_FindRoute(AsCharacter(character)->PositionX, AsCharacter(character)->PositionY,
                             targetX, targetY, caster + 852, routeReach))
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
-        caster[748] = 1;                              // IDA L150
-        caster[749] = 5;                              // IDA L151
+        caster[EntityOffset(748)] = 1;                              // IDA L150
+        caster[EntityOffset(749)] = 5;                              // IDA L151
         // IDA: sub_483780 (0x00483780).
         // DESVIACION (fix del DLL, Patchs.cpp 0x00483AC5): avisar al server del camino al perseguir para atacar.
         Combat_SendMovePathPacket(AsCharacter(character), AsObject(character));
@@ -177,7 +177,7 @@ char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA:
     BYTE* const item   = (BYTE*)(uintptr_t)object;
 
     const WORD type   = *(WORD*)(caster + 2);          // IDA: *(_WORD *)(o + 2)
-    const BYTE action = caster[261];                   // IDA: v5
+    const BYTE action = caster[EntityOffset(261)];                   // IDA: v5
 
     // IDA L201-212: rechaza las animaciones de arranque de ataque.
     if (type == 390) {

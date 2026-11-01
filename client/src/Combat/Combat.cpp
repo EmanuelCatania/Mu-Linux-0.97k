@@ -1525,7 +1525,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // auto-ataque de arriba y Player_InputTick L599.  En nuestro arbol esa
     // direccion es `Attacking`, que Mouse_Hover ya usa con esa semantica.
     if (DAT_07e11e18 != 0 && (int)gMapManager.GetCurrentMap() != 6) {  // IDA: m_bAutoAttack, World
-        const BYTE movementState = *(char *)&AsCharacter(entity)->Class & 7;       // IDA: v16 = c[444] & 7 (clase)
+        const BYTE movementState = *(char *)&AsCharacter(entity)->Class & 7;       // IDA: v16 = c[EntityOffset(444)] & 7 (clase)
         if ((movementState != 2 || iType == 24 || iType == 25 || iType == 52)
             && (movementState != 1 || iType != 48)) {
             Attacking = 2;      // IDA: Attacking = 2
@@ -2466,7 +2466,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
                     AsCharacter(c)->Movement = 1;
                 }
             } else {
-                Combat_UseWarriorSkill((int)c, (int)o);  // UseSkillWarrior
+                Combat_UseWarriorSkill((intptr_t)c, (int)o);  // UseSkillWarrior
             }
             break;
 
@@ -2475,7 +2475,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         case 26: case 27: case 28:
             if (inRange && !forceWalk) {
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
-                    Combat_UseElfSkill((int)c, (int)o);  // UseSkillElf (AOE)
+                    Combat_UseElfSkill((intptr_t)c, (int)o);  // UseSkillElf (AOE)
                 }
                 // IDA (LABEL_184) no hace nada si CheckWall falla: si la linea de vista
                 // esta cortada, el skill simplemente no sale y la accion queda
@@ -2492,7 +2492,7 @@ void __cdecl Action(intptr_t c, intptr_t o)
         case 51:
             if (inRange && !forceWalk) {
                 if (Path_IsLineClear(heroGX, heroGY, tgtGX, tgtGY)) {
-                    Combat_UseElfSkill((int)c, (int)o);
+                    Combat_UseElfSkill((intptr_t)c, (int)o);
                 }
                 // IDA (LABEL_184) no hace nada si CheckWall falla: si la linea de vista
                 // esta cortada, el skill simplemente no sale y la accion queda

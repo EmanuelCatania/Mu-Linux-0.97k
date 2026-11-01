@@ -253,7 +253,7 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // (+0x02 es `entity_type`, 390 para jugadores: no es el kind.)
     // Entity stride 0x394 (=916, coincide con IDA). ID string en +0x1C1 (=449).
 
-    DWORD base = DAT_07abf5d0;  // CharactersClient
+    intptr_t base = DAT_07abf5d0;  // CharactersClient
 
     // Pass 1: search players (Kind == 1) — por nombre
     for (int i = 0; i < 400; i++) {

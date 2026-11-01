@@ -1246,7 +1246,7 @@ void __cdecl Player_ProcessInput(void)
                         DAT_00559c70 = -1;
                         goto end_tick_inc;
                     }
-                    int tgtEntityBase = (int)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE);
+                    intptr_t tgtEntityBase = (intptr_t)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE);
                     int dstX = AsCharacter(tgtEntityBase)->PositionX;
                     int dstY = AsCharacter(tgtEntityBase)->PositionY;
 
@@ -1434,7 +1434,7 @@ void __cdecl Player_ProcessInput(void)
                 if (DAT_07eaa118 == '\0' && DAT_07eaa119 == '\0') {
                     AsCharacter(ent)->MovementType = 2;
                     DAT_00559ce8 = SelectedNpc;
-                    int tgtBase = (int)(DAT_07abf5d0 + SelectedNpc * CHARACTER_STRIDE);
+                    intptr_t tgtBase = (intptr_t)(DAT_07abf5d0 + SelectedNpc * CHARACTER_STRIDE);
                     DAT_07db8708  = (int)AsCharacter(tgtBase)->Object.Type;
                     _DAT_07e118e4 = *(DWORD *)&AsCharacter(tgtBase)->Object.Angle[2];
                     DAT_00559c70  = SelectedNpc;

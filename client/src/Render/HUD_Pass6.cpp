@@ -1818,7 +1818,7 @@ extern "C" void __cdecl RenderEventWindow(void)
     const WORD charLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
     // v46 = fila + ((Hero[444] & 7) == 3 ? 6 : 0): el Magic Gladiator usa el
     // segundo banco de 6 filas de m_iBloodCastleLimitLevel.
-    const int mgOffset = (Hero && ((((const BYTE*)Hero)[444] & 7) == 3)) ? 6 : 0;
+    const int mgOffset = (Hero && ((((const BYTE*)Hero)[EntityOffset(444)] & 7) == 3)) ? 6 : 0;
 
     for (int row = 0; row < count; ++row) {
         const auto button = Ui::EventButton(bloodCastle, row, gWindow.GetRightShift());

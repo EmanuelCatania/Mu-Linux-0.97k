@@ -138,14 +138,14 @@ static void Tamachan_Move(char *o, int life)
         *o = 0;
         return;
     }
-    switch ((unsigned char)o[260]) {
+    switch ((unsigned char)o[EntityOffset(260)]) {
     case 0:
         if (life < 10) {
             *(int *)(o + 216) = 0;
             int state = rand() % 2 + 1;
-            o[260] = (char)state;
+            o[EntityOffset(260)] = (char)state;
             SetAction(AsObject(o), state);
-            if (o[260] == 2) goto walk;       // LABEL_312
+            if (o[EntityOffset(260)] == 2) goto walk;       // LABEL_312
             goto newLife;                     // LABEL_313
         }
         *(float *)(o + 24) = *(float *)(o + 60) + *(float *)(o + 216);
@@ -157,9 +157,9 @@ static void Tamachan_Move(char *o, int life)
     case 1:
         if (life < 10) {
             *(float *)(o + 216) = 40.0f;
-            o[260] = 0;
+            o[EntityOffset(260)] = 0;
             SetAction(AsObject(o), 0);
-            if (o[260] == 2) goto walk;
+            if (o[EntityOffset(260)] == 2) goto walk;
             goto newLife;
         }
         *(float *)(o + 24) = *(float *)(o + 60) + *(float *)(o + 216);
@@ -194,9 +194,9 @@ static void Tamachan_Move(char *o, int life)
                 ((float *)(o + 368))[i] = rotated[i] + ((float *)(o + 52))[i];
             *(int *)(o + 96) = rand() % 100 + 50;
             int state = rand() % 3;
-            o[260] = (char)state;
+            o[EntityOffset(260)] = (char)state;
             SetAction(AsObject(o), state);
-            if (o[260] != 2) {
+            if (o[EntityOffset(260)] != 2) {
                 *(float *)(o + 192) = 0.0f;
                 *(float *)(o + 196) = 0.0f;
                 *(float *)(o + 200) = 0.0f;

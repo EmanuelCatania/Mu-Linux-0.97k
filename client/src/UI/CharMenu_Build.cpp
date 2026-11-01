@@ -479,7 +479,7 @@ void __cdecl ItemHelp_RequireClass(const BYTE* pItem)
     if (!pItem || !hero) return;
     if (DAT_07eaa154 > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas
 
-    const BYTE heroSkin  = hero[0x1BC];
+    const BYTE heroSkin  = hero[EntityOffset(0x1BC)];
     const int  heroClass = heroSkin & 7;
     const int  heroStep  = heroSkin >> 3;
     auto className = [](int cls, int req) { return GlobalText[4 * req + 16 + cls]; };

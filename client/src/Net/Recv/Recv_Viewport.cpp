@@ -214,7 +214,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
     if (h && AsCharacter(h)->Dead == 0) {
         // ReceiveMoveCharacter @ 00427B90: speed is always updated.
-        h[0x2fc] = (BYTE)(Msg[7] >> 4);
+        h[EntityOffset(0x2fc)] = (BYTE)(Msg[7] >> 4);
 
         if (h == (BYTE*)DAT_07abf5d8) {
             // IDA no pisa acá la ruta local del héroe ni su posición
@@ -231,7 +231,7 @@ void NetRecv_10(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             // deja que el tick normal de movimiento consuma esa ruta.
             AsCharacter(h)->TargetX = gx;
             AsCharacter(h)->TargetY = gy;
-            if (h[848] == 0) {
+            if (h[EntityOffset(848)] == 0) {
                 const int srcX = AsCharacter(h)->PositionX;
                 const int srcY = AsCharacter(h)->PositionY;
                 if (Path_FindRoute(srcX, srcY, gx, gy, h + 852, 0.0f)) {
@@ -532,16 +532,16 @@ void NetRecv_45(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
 
         // Campos de estado exactos de 00429C50, adaptados sólo para el
         // MuEmu record offsets above.
-        if (entity[747] == 7) *(float*)(entity + 12) = 0.8f;
-        if (DAT_07abf5d8) entity[444] = ((BYTE*)DAT_07abf5d8)[444];
-        entity[746] = e[10 + NAME] & 0x0F;
+        if (entity[EntityOffset(747)] == 7) *(float*)(entity + 12) = 0.8f;
+        if (DAT_07abf5d8) entity[EntityOffset(444)] = ((BYTE*)DAT_07abf5d8)[EntityOffset(444)];
+        entity[EntityOffset(746)] = e[10 + NAME] & 0x0F;
         entity[132] = 1;
-        entity[847] = 1;
-        entity[0x160] = 1; // required by this renderer's active pass
+        entity[EntityOffset(847)] = 1;
+        entity[EntityOffset(0x160)] = 1; // required by this renderer's active pass
         entity[0xdc] = 1;
-        entity[0x305] = 0;
-        entity[0x306] = e[8 + NAME];
-        entity[0x307] = e[9 + NAME];
+        entity[EntityOffset(0x305)] = 0;
+        entity[EntityOffset(0x306)] = e[8 + NAME];
+        entity[EntityOffset(0x307)] = e[9 + NAME];
         *(float*)(entity + 36) = ((float)(e[10 + NAME] >> 4) - 1.0f) * 45.0f;
         *(int*)(entity + EntityOffset(0x388)) = e[2];
         *(int*)(entity + EntityOffset(0x38c)) = e[3];

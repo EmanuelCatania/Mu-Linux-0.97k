@@ -12,7 +12,7 @@
 // effects, joints, sounds per weapon/skill type. Each case creates visual FX
 // via CreateEffect or Joint_Create (CreateJoint).
 static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
-    int Hand = GetHandOfWeapon((int)o);
+    int Hand = GetHandOfWeapon((intptr_t)o);
 
     // anti-tamper hash table — skipped (encrypt/decrypt c->Skill)
     BYTE skillByte = AsCharacter(c)->Skill;
@@ -326,7 +326,7 @@ static bool __cdecl AttackStage_legacy_mismatched(intptr_t c, intptr_t o) {
 // The older AttackStage_legacy_mismatched above is intentionally not called.
 bool __cdecl AttackStage(intptr_t c, intptr_t o)
 {
-    const int hand = GetHandOfWeapon((int)o);
+    const int hand = GetHandOfWeapon((intptr_t)o);
     const BYTE skill = AsCharacter(c)->Skill, stage = AsCharacter(c)->SkillStage;
     const short type = AsObject(o)->Type;
     const intptr_t model = DAT_05828d58 + type * BMD_STRIDE;
@@ -337,7 +337,7 @@ bool __cdecl AttackStage(intptr_t c, intptr_t o)
             const float r = AsObject(o)->Angle[2] * 0.017453292f;
             for (int i = 0; i < 3; ++i) {
                 float p[3] = {AsObject(o)->Position[0]+(float)(rand()%601-300)-sinf(r)*1400.0f, AsObject(o)->Position[1]+(float)(rand()%601-300)+cosf(r)*1400.0f, AsObject(o)->Position[2]+120.0f+(float)(rand()%601-300)};
-                Joint_Create(266, p, p, (float*)(o+28), 2, (int)o, 40.0f, -1, 0);
+                Joint_Create(266, p, p, (float*)(o+28), 2, (intptr_t)o, 40.0f, -1, 0);
             }
         }
         if (stage <= 8) {

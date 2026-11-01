@@ -32,7 +32,7 @@ void __cdecl Effect_UpdateAll(void) {
     char *pcVar1 = DAT_07c85890;
     for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
         if (*pcVar1 != '\0')
-            pcVar1[0x160] = '\x01';
+            pcVar1[EntityOffset(0x160)] = '\x01';
     }
 }
 

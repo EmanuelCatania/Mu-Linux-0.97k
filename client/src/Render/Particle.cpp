@@ -194,10 +194,10 @@ CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param
       *(float *)(pcVar2 + 0xc) = param_3;
       *(float *)(pcVar2 + 0x24) = param_6;
       *pcVar2 = '\x01';
-      pcVar2[0x108] = '\0';
-      pcVar2[0x109] = '\0';
-      pcVar2[0x10a] = -0x80;
-      pcVar2[0x10b] = '?';
+      pcVar2[EntityOffset(0x108)] = '\0';
+      pcVar2[EntityOffset(0x109)] = '\0';
+      pcVar2[EntityOffset(0x10a)] = -0x80;
+      pcVar2[EntityOffset(0x10b)] = '?';
       *(float *)(pcVar2 + 0x10) = param_2[0];
       *(float *)(pcVar2 + 0x14) = param_2[1];
       *(float *)(pcVar2 + 0x18) = param_2[2];

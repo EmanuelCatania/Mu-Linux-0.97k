@@ -695,7 +695,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
     auto drawHoveredItem = [&]() {
         if (hovered < 0 || hovered >= 1000) return;
         BYTE* o = itemPool + hovered * 0x204 + 72;
-        if (o[0] && o[352])
+        if (o[0] && o[EntityOffset(352)])
             RenderItemName(hovered, AsObject(o),
                                 *(int*)(o - 64), (int)*(char*)(o - 41), 0);
     };
@@ -761,7 +761,7 @@ void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, i
         for (int i = 0; i < 1000; ++i) {
             if (i == hovered) continue;
             BYTE* o = itemPool + i * 0x204 + 72;
-            if (o[0] && o[352]) {
+            if (o[0] && o[EntityOffset(352)]) {
                 RenderItemName(i, AsObject(o),
                                     *(int*)(o - 64), (int)*(char*)(o - 41), 1);
             }
@@ -802,7 +802,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
             // Wrapper compatible: TestFrustrum2D returns short (visible flag).
             // IDA's TestFrustrum2D returns bool.
             unsigned short vis = TestFrustrum2D(xGrid, yGrid, -20.0f);
-            slot[352] = (char)(vis != 0);
+            slot[EntityOffset(352)] = (char)(vis != 0);
             if (vis) {
                 Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
                 short typeCode = *(short*)(slot + 2);
@@ -913,7 +913,7 @@ void __cdecl RenderWheelWeapon(intptr_t o)
     Light[1] += AsObject(o)->Light[1];
     Light[2] += AsObject(o)->Light[2];
 
-    RenderPartObject((int)o, model_id, 0, Light, alpha,
+    RenderPartObject((intptr_t)o, model_id, 0, Light, alpha,
                  (unsigned int)(8 * *(unsigned char*)(owner + 137)),
                  0, 1, 1, 1, 0, 2);
 

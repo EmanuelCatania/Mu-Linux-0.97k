@@ -74,7 +74,7 @@ void __cdecl Monster_SaveSetBase(LPCSTR path)
     if (entity[0] && entity[0x84] == 32) {
       const unsigned char x = (unsigned char)(long long)(*(const float*)(entity + 0x10) * 0.0099999998);
       const unsigned char y = (unsigned char)(long long)(*(const float*)(entity + 0x14) * 0.0099999998);
-      fprintf(file, "%4d %4d 30 %4d %4d -1\n", entity[0x2eb], gMapManager.GetCurrentMap(), x, y);
+      fprintf(file, "%4d %4d 30 %4d %4d -1\n", entity[EntityOffset(0x2eb)], gMapManager.GetCurrentMap(), x, y);
     }
   }
   fprintf(file, "end\n");
