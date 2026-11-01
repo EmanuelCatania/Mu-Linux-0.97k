@@ -436,7 +436,7 @@ char  __cdecl Combat_CheckArrowRequirement(void);                               
 // Despachador real de acciones (pickup/equip/attack/skill/walk) basado en
 // `*(c+749)` queue. Implementación en Combat/Combat.cpp.
 // IDA: FUN_0048d640
-void  __cdecl Action(DWORD c, intptr_t o);
+void  __cdecl Action(intptr_t c, intptr_t o);
 unsigned int __cdecl CheckAttack(void); // IDA: CheckAttack (0x00483160)
 void  __cdecl Player_ProcessInput(void); // IDA: Player_InputTick
 void  __cdecl Mouse_UpdateHoverTargets(void);                                    // IDA: FUN_004b0310
@@ -1232,8 +1232,8 @@ void  __cdecl RenderWheelWeapon(intptr_t o); // IDA: RenderWheelWeapon (0x0046B7
 void  __cdecl FUN_0046c5a0(int p1, int p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
 void  __cdecl CreateBlood(intptr_t o);                                 // 0x0046C680
 void  __cdecl FUN_0046c7f0(int kind, OBJECT* object, float dx, float dy, float dz); // IDA: 0x0046C7F0, emisor ambiental
-void  __cdecl CreateArrow(DWORD c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
-void  __cdecl CreateArrows(DWORD c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
+void  __cdecl CreateArrow(intptr_t c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
+void  __cdecl CreateArrows(intptr_t c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
 void  __stdcall MoveParticles(void);                                // 0x00477090
 unsigned int __cdecl Item_GetDefenseWithSpecial(DWORD ecx, short *param_1);            // item special option (0x0047CFB0)
 void  __stdcall SetPositionIME_Wnd(float x, float y);              // 0x0047ECAF

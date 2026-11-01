@@ -44,6 +44,7 @@ struct JOINT {
 };
 #pragma pack(pop)
 
+#if UINTPTR_MAX == 0xFFFFFFFFu
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)
 static_assert(sizeof(JOINT) == 0x9D8, "JOINT");
 MU_ASSERT_FIELD(JOINT, Type, 0x004);
@@ -67,6 +68,7 @@ MU_ASSERT_FIELD(JOINT, Skill, 0x9D2);
 MU_ASSERT_FIELD(JOINT, Weapon, 0x9D3);
 MU_ASSERT_FIELD(JOINT, MultiUse, 0x9D4);
 #undef MU_ASSERT_FIELD
+#endif
 
 inline JOINT* AsJoint(uintptr_t p) { return reinterpret_cast<JOINT*>(p); }
 inline JOINT* AsJoint(void* p) { return static_cast<JOINT*>(p); }

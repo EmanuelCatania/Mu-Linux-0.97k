@@ -437,7 +437,7 @@ static void HUD_PickUpNearestItem(void)
         TargetX = (DWORD)(int)(*(const float*)(item + 88) / 100.0f);
         TargetY = (DWORD)(int)(*(const float*)(item + 92) / 100.0f);
         g_bAutoGetItem = true;
-        Action((DWORD)Hero, (DWORD)Hero);
+        Action((intptr_t)Hero, (intptr_t)Hero);
         g_bAutoGetItem = false;
         *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->MovementType = 0;
         return;
@@ -758,7 +758,7 @@ void __cdecl Player_ProcessInput(void)
                     // la cola que haya (0 = nada).  El port despachaba por
                     // tipo de cola con atajos propios (talk directo, pickup,
                     // solo ataque) y dejaba la cola 4 a un tick secundario.
-                    Action((DWORD)ent, (DWORD)ent);
+                    Action((intptr_t)ent, (intptr_t)ent);
                 }
             }
             else
@@ -1414,7 +1414,7 @@ void __cdecl Player_ProcessInput(void)
                         // ejecutar la accion ahora.  El port mandaba otro
                         // paquete de movimiento y NUNCA llamaba a Action,
                         // asi que sentarse no se disparaba nunca.
-                        Action((DWORD)ent, (DWORD)ent);
+                        Action((intptr_t)ent, (intptr_t)ent);
                     } else {
                         // LABEL_340: hay camino -> caminar hasta el objeto.
                         Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
@@ -1452,7 +1452,7 @@ void __cdecl Player_ProcessInput(void)
                                                     ent + 0x354, 0.0f);
                     if ((char)ok == '\0') {
                         // IDA L1210: sin camino -> LABEL_312 (Action manda el 0x30).
-                        Action((DWORD)ent, (DWORD)ent);
+                        Action((intptr_t)ent, (intptr_t)ent);
                     } else {
                         Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));
                     }
@@ -1485,7 +1485,7 @@ void __cdecl Player_ProcessInput(void)
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {
                     // IDA L1318: sin camino -> Action y cola en 0.
-                    Action((DWORD)ent, (DWORD)ent);
+                    Action((intptr_t)ent, (intptr_t)ent);
                     AsCharacter(ent)->MovementType = 0;
                 } else {
                     Combat_SendMovePathPacket(AsCharacter(ent), AsObject(ent));

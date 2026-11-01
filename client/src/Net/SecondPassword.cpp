@@ -2857,7 +2857,7 @@ extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o);
 extern bool __cdecl AttackStage(intptr_t c, intptr_t o);
 extern void __cdecl CreateBlood(intptr_t o);
 extern int  __stdcall FindHotKey(int Skill);
-extern void __cdecl CreateArrows(DWORD c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
+extern void __cdecl CreateArrows(intptr_t c, intptr_t o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:

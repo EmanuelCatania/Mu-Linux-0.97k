@@ -558,7 +558,7 @@ bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
                 // del case 52 de Attack, que manda el byte de skill encolado c+770.
 
                 // Spawn arrow visual effect
-                CreateArrows((DWORD)heroEntity, (DWORD)(heroEntity),
+                CreateArrows((intptr_t)heroEntity, (intptr_t)(heroEntity),
                                   (DWORD)0, (WORD)skillIndex, 1, 0);
             }
             result = true;

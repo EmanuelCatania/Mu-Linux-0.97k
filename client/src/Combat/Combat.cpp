@@ -1762,7 +1762,7 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// IDA: FUN_0048d640 @ 0x0048D640 — Action(DWORD c, DWORD o)
+// IDA: FUN_0048d640 @ 0x0048D640 — Action(intptr_t c, DWORD o)
 //
 // IDA companion: raw/0048D640_Action.c — 2587 lines, 17558 bytes.
 //
@@ -1929,7 +1929,7 @@ bool g_bAutoGetItem = false;
 // Como en IDA (0x0048D640), Action solo LEE la cola c+749; la reescribe
 // Player_InputTick en cada click.
 // IDA: Action (0x0048D640)
-void __cdecl Action(DWORD c, intptr_t o)
+void __cdecl Action(intptr_t c, intptr_t o)
 {
     if (c == 0 || o == 0) return;
 

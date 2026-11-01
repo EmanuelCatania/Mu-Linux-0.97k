@@ -430,7 +430,7 @@ extern char    ConfigLoginVersion[12]; // IDA: m_ExeVersion — config.ini [LOGI
 // 4 fields physically contiguous at 0x055c9bc8..0x055c9bd4). Callers do
 // `&MAIN_HASH_CLASS + 0xC` esperando la capacidad; las macros superponen el buffer para que
 // holds. See globals.cpp for init.
-extern DWORD   g_HashTableCtx[4];
+extern uintptr_t g_HashTableCtx[4];
 #define MAIN_HASH_CLASS  (g_HashTableCtx[0])   // vtable pointer
 #define DAT_055c9bcc  (g_HashTableCtx[1])   // values array
 #define DAT_055c9bd0  (g_HashTableCtx[2])   // keys array

@@ -157,7 +157,7 @@ void *__cdecl Entity_InitRenderState(void *a1)
     }
   }
   *(BYTE *)result = 1;
-  result[2] = (DWORD)a1;
+  result[2] = (DWORD)(uintptr_t)a1;
   return result;
 }
 

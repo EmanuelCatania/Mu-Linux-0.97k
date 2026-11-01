@@ -514,13 +514,13 @@ static DWORD g_HashValueArr[1] = { 0 };  // values (filled by ctor below)
 static DWORD g_HashKeyArr  [1] = { 0 };  // keys
 
 // Buffer layout (original binary): +0 vtable, +4 values, +8 keys, +0xC capacity.
-DWORD    g_HashTableCtx[4] = { 0, 0, 0, 0 };
+uintptr_t g_HashTableCtx[4] = { 0, 0, 0, 0 };
 struct HashCtxInit_t {
     HashCtxInit_t() {
-        g_HashValueArr[0]   = (DWORD)g_HashSentinelNode;
-        g_HashTableCtx[0] = (DWORD)g_FakeHashVtable;        // vtable
-        g_HashTableCtx[1] = (DWORD)g_HashValueArr;          // value array
-        g_HashTableCtx[2] = (DWORD)g_HashKeyArr;            // key array
+        g_HashValueArr[0]   = (uintptr_t)g_HashSentinelNode;
+        g_HashTableCtx[0] = (uintptr_t)g_FakeHashVtable;        // vtable
+        g_HashTableCtx[1] = (uintptr_t)g_HashValueArr;          // value array
+        g_HashTableCtx[2] = (uintptr_t)g_HashKeyArr;            // key array
         g_HashTableCtx[3] = 1;                               // capacity = 1
     }
 } g_HashCtxInitObj;

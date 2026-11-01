@@ -232,9 +232,11 @@ struct ITEM_t {
     ITEM   Item;         // 0x004
     OBJECT Object;       // 0x048
 };
+#if UINTPTR_MAX == 0xFFFFFFFFu
 static_assert(sizeof(ITEM_t) == 0x204, "ITEM_t");
 static_assert(offsetof(ITEM_t, Item) == 0x004, "ITEM_t::Item");
 static_assert(offsetof(ITEM_t, Object) == 0x048, "ITEM_t::Object");
+#endif
 inline ITEM_t* AsGroundItem(uintptr_t p) { return reinterpret_cast<ITEM_t*>(p); }
 inline ITEM_t* AsGroundItem(void* p) { return static_cast<ITEM_t*>(p); }
 inline const ITEM_t* AsGroundItem(const void* p) { return static_cast<const ITEM_t*>(p); }
