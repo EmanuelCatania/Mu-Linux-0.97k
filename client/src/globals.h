@@ -644,6 +644,7 @@ extern char    g_RenderPool_07c608a8[100 * 0x2f0];
 // Dueños de slot: los pools conservan el layout x86, con 4 bytes para el puntero.
 extern uintptr_t g_ParticleOwner[3000];
 extern uintptr_t g_TrailOwner[100];
+extern uintptr_t g_OperateObjects[200];
 #define DAT_07c608b4  (*(DWORD*)(&g_RenderPool_07c608a8[12]))
 extern DWORD   DAT_07c74ae0;
 extern DWORD   DAT_07c74ae4;   // weather intensity target (interpolated)

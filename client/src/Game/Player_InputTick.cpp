@@ -1386,7 +1386,7 @@ void __cdecl Player_ProcessInput(void)
             // picker del frame anterior.
             const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
             const intptr_t tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
-                                   ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
+                                   ? g_OperateObjects[iSrc] : 0;
 
             if (mountOk && tgtEntityPtr != 0) {
                 // TargetX/TargetY salen de la POSICION DEL OBJETO, no del tile bajo el

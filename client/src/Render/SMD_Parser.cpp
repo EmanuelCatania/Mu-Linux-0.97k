@@ -260,6 +260,7 @@ void __cdecl DeleteObjects(void) {
             // El array es real y esta dimensionado, asi que se acota con sizeof en
             // vez del bound absoluto del binario.
             memset(DAT_083a2370, 0, sizeof(DAT_083a2370));
+    memset(g_OperateObjects, 0, sizeof(g_OperateObjects));
             return;
         }
     } while (true);

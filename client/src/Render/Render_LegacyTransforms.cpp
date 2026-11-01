@@ -157,6 +157,7 @@ void *__cdecl Entity_InitRenderState(void *a1)
     }
   }
   *(BYTE *)result = 1;
+  g_OperateObjects[((char*)result - (char*)&DAT_083a2370) / 12] = (uintptr_t)a1;
   result[2] = (DWORD)(uintptr_t)a1;
   return result;
 }

@@ -74,7 +74,7 @@ void __cdecl Cursor_Render(void) {
         // anterior; si el objeto se libero en el medio el puntero queda colgado.
         const int nOperates = (int)(sizeof(DAT_083a2370) / 0xc);
         const intptr_t operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
-                            ? ((int*)&DAT_083a2378)[SelectedOperate * 3] : 0;
+                            ? g_OperateObjects[SelectedOperate] : 0;
         if (operObj == 0) {
             // LABEL_43 de IDA: flecha por defecto.
             GL_DrawTexture(2, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '', '');

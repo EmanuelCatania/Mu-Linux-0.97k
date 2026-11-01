@@ -735,6 +735,7 @@ unsigned char DAT_07c5ab3c[200 * 0x70] = {};
 char     g_RenderPool_07c608a8[100 * 0x2f0] = {};
 uintptr_t g_ParticleOwner[3000] = {};
 uintptr_t g_TrailOwner[100] = {};
+uintptr_t g_OperateObjects[200] = {};
 DWORD    DAT_07c74ae0  = 0;
 DWORD    DAT_07c74ae4  = 0;    // BGM track 1 enable flag
 // Player render pool: 100 entries × 0x1BC bytes (= 444 bytes/slot).

@@ -543,7 +543,7 @@ int __cdecl SpecialObject_HoverTest(void)
     // Pasada 1 - apagar el resalte de todos.
     for (int i = 0; i < slots; ++i) {
         char *e   = &DAT_083a2370[i * stride];
-        intptr_t   obj = *(int *)(e + 8);
+        intptr_t   obj = (intptr_t)g_OperateObjects[i];
         if (e[0] == 0 || obj == 0) continue;
         if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;   // no visible este frame
         *(DWORD *)(obj + 0xe8) = 0x3e4ccccd;             // 0.2f
@@ -554,7 +554,7 @@ int __cdecl SpecialObject_HoverTest(void)
     // Pasada 2 - el primero que corte el rayo del mouse.
     for (int i = 0; i < slots; ++i) {
         char *e   = &DAT_083a2370[i * stride];
-        intptr_t   obj = *(int *)(e + 8);
+        intptr_t   obj = (intptr_t)g_OperateObjects[i];
         if (e[0] == 0 || obj == 0) continue;
         if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;
 
