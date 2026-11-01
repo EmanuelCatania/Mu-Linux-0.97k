@@ -1916,13 +1916,13 @@ extern char    g_WeatherSlotPool[40 * OBJECT_STRIDE];
 #define DAT_0839bd98  g_WeatherSlotPool[0x0e8]                              // slot[0] color R float byte addr
 #define DAT_0839bd9c  g_WeatherSlotPool[0x0ec]                              // slot[0] color G float byte addr
 #define DAT_0839bda0  g_WeatherSlotPool[0x0f0]                              // slot[0] color B float byte addr
-#define DAT_0839bdb4  g_WeatherSlotPool[0x104]                              // slot[0] state byte (cloud life phase)
-#define DAT_0839bdb5  g_WeatherSlotPool[0x105]                              // slot[0] blend mode byte
-#define DAT_0839bdb6  g_WeatherSlotPool[0x106]                              // slot[0] field at +0x106
-#define DAT_0839bdb8  g_WeatherSlotPool[0x108]                              // slot[0] rotation float byte addr
-#define DAT_0839bdbc  g_WeatherSlotPool[0x10c]                              // slot[0] field at +0x10c
-#define DAT_0839be11  g_WeatherSlotPool[0x161]                              // slot[0] byte field
-#define DAT_0839be14  (*(unsigned int *)&g_WeatherSlotPool[0x164])          // slot[0] alpha fade (int/float)
+#define DAT_0839bdb4  g_WeatherSlotPool[EntityOffset(0x104)]                              // slot[0] state byte (cloud life phase)
+#define DAT_0839bdb5  g_WeatherSlotPool[EntityOffset(0x105)]                              // slot[0] blend mode byte
+#define DAT_0839bdb6  g_WeatherSlotPool[EntityOffset(0x106)]                              // slot[0] field at +0x106
+#define DAT_0839bdb8  g_WeatherSlotPool[EntityOffset(0x108)]                              // slot[0] rotation float byte addr
+#define DAT_0839bdbc  g_WeatherSlotPool[EntityOffset(0x10c)]                              // slot[0] field at +0x10c
+#define DAT_0839be11  g_WeatherSlotPool[EntityOffset(0x161)]                              // slot[0] byte field
+#define DAT_0839be14  (*(unsigned int *)&g_WeatherSlotPool[EntityOffset(0x164)])          // slot[0] alpha fade (int/float)
 // ── Weather float constants ───────────────────────────────────────────────────
 extern float   _DAT_0055285c;  // weather float constant
 extern float   _DAT_0055286c;  // weather float constant
