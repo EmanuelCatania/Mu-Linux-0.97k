@@ -549,6 +549,12 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
         return;
     }
 
+    // DESVIACION (DLL Protocol.cpp, GCDurationSkillAttackRecv): ReceiveMagicContinue
+    // no toca la orientación, y el 0x10 sin pasos que manda el que castea no gira
+    // a la entidad remota; el skill salía hacia donde miraba antes.  El paquete
+    // trae `dir` = Angle[2] * 256/360 del que castea (Msg[8]; x,y es su casilla).
+    AsObject(caster)->Angle[2] = (float)Msg[8] * (360.0f / 256.0f);
+
     if (*(WORD *)&AsCharacter(caster)->Object.Type == 390) {
         switch (skill) {
         case 10: SetAction(AsObject(caster), 90); break;

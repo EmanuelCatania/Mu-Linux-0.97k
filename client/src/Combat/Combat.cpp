@@ -1744,7 +1744,11 @@ static void Combat_SendDuration1E_97k(char* entity, int skillType,
     pkt[3] = (BYTE)skillType;
     pkt[4] = (BYTE)((packetX >= 0) ? packetX : *(DWORD *)&AsCharacter(entity)->PositionX);
     pkt[5] = (BYTE)((packetY >= 0) ? packetY : *(DWORD *)&AsCharacter(entity)->PositionY);
-    pkt[6] = field6;                              // DLL: dir
+    // DESVIACION (DLL, los 13 SendContinue*): `dir` sale siempre del facing,
+    // aunque IDA mande 0 en 41/42/55/56/10/14.  El que mira orienta al que
+    // castea con este byte (NetRecv_1E); con 0 quedaba mirando a 0 grados.
+    (void)field6;
+    pkt[6] = (BYTE)(int)(AsCharacter(entity)->Object.Angle[2] * (256.0f / 360.0f));
     pkt[7] = field7;                              // DLL: dis
     pkt[8] = field8;                              // DLL: angle
     pkt[9]  = (BYTE)((targetIndex >> 8) & 0xFF);  // DLL: HIBYTE(target)
