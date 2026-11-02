@@ -6,10 +6,12 @@ from pathlib import Path
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from X86Views import object_view
 SERVICES=r'''
 using uint=unsigned;
 using byte=unsigned char;
 uintptr_t DAT_05828d58,DAT_07abf5d8;
+char* DAT_07abf5f0;std::uintptr_t g_ParticleOwner[3000];   // dueño completo por slot
 BYTE* expectedModel;BYTE* expectedOutput;float* expectedMatrix;float expectedY;unsigned calls;
 void BMD_TransformPosition(void* model,float* matrix,float* local,float* output,char flag){Require(!calls && model==expectedModel && matrix==expectedMatrix && reinterpret_cast<BYTE*>(output)==expectedOutput && local[0]==0 && local[1]==expectedY && local[2]==0 && flag==1);for(unsigned i=0;i<3;++i)output[i]=float(31+7*i);++calls;}
 '''
@@ -23,7 +25,7 @@ std::uint64_t Run(BYTE* ownerMem,BYTE* particleMem,BYTE* heroMem,BYTE* modelMem)
   std::memset(ownerMem,0xc3,768);std::memset(particleMem,0xa5,160);std::memset(heroMem,0x5a,768);std::memset(modelMem,0x3c,6656);
   const int subtype=subtypes[trial%9],kind=trial%3==0?0x4d0:trial%3==1?0x4cf:0;const short type=types[(trial/9)%8];
   const auto owner32=static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(owner)),matrix32=static_cast<std::uint32_t>(reinterpret_cast<uintptr_t>(matrix));
-  std::memcpy(slot+60,&owner32,4);std::memcpy(owner+276,&matrix32,4);std::memcpy(owner+2,&type,2);std::memcpy(slot+4,&kind,4);std::memcpy(slot+8,&subtype,4);
+  std::memcpy(slot+60,&owner32,4);(void)matrix32;std::memcpy(owner+276,&matrix,sizeof(matrix));DAT_07abf5f0=reinterpret_cast<char*>(slot);g_ParticleOwner[0]=reinterpret_cast<std::uintptr_t>(owner);std::memcpy(owner+2,&type,2);std::memcpy(slot+4,&kind,4);std::memcpy(slot+8,&subtype,4);
   for(unsigned i=0;i<3;++i){std::uint32_t bits=(trial*0x10101u+i*0x220033u)^0x7f800000u;std::memcpy(owner+16+4*i,&bits,4);}
   const int index=subtype%2;hero[628-24]=static_cast<BYTE>((trial*7)%5);hero[628]=static_cast<BYTE>((trial*11)%5);hero[628+24]=static_cast<BYTE>((trial*13)%5);const unsigned bone=hero[628+index*24];
   DAT_05828d58=reinterpret_cast<uintptr_t>(models);DAT_07abf5d8=reinterpret_cast<uintptr_t>(hero);expectedModel=models+type*188;expectedOutput=slot+16;expectedMatrix=reinterpret_cast<float*>(matrix+bone*48);expectedY=kind==0x4d0?-120.0f:0.0f;calls=0;
@@ -40,7 +42,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));Require(low);const
 def harness(revision=None):
  code=function(read_source('src/Render/Render_LegacyBillboards.cpp',revision),'ItemDrop_SetupRenderRef')
  arg='slot' if 'BYTE* param_1' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(slot))'
- return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES+code+MAIN.replace('ARG',arg)
+ return PREAMBLE.split('char DAT_00559bb4',1)[0]+object_view(['BoneMatrices'],revision)+SERVICES+code+MAIN.replace('ARG',arg)
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
  if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):parser.error('Referencia sólo en Windows x86')

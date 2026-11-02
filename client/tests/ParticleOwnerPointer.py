@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Case1176/sub2 real: pool nativo y owner legado32 independiente de su base.
+"""Case1176/sub2 real: pool nativo y owner completo (g_ParticleOwner) independiente de su base.
 
 Extrae sólo el case;no ejecuta MoveParticles ni su decremento/movimiento previo.
 No certifica owners altos,layout nativo del pool,renderer o tick completo.
@@ -15,6 +15,8 @@ from SceneObjectPointer import build_and_run, read_source
 SERVICES=r'''
 static_assert(sizeof(int)==4);
 char* DAT_07abf5f0;
+// Dueño completo por slot (el pool sólo guarda 32 bits en +0x3C).
+std::uintptr_t g_ParticleOwner[3000];
 MACROS
 CONSTANTS
 void Segment(int iVar9){switch(2){
@@ -34,7 +36,7 @@ std::uint64_t Run(BYTE* pool,BYTE* owner,BYTE* alias){
   owner[16]=active;alias[16]=active==0?1:0;
   BYTE* particle=pool+16+slot*112;const bool nullOwner=life<=5 && (profile&1);
   const BYTE liveValues[]={1,127,128,255};particle[0]=liveValues[profile%4];Put(particle,4,1176);Put(particle,8,2);
-  const auto ownerAddress=static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(owner+16));Put(particle,60,nullOwner?std::uint32_t(0):ownerAddress);Put(particle,56,life);
+  const auto ownerAddress=static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(owner+16));Put(particle,60,nullOwner?std::uint32_t(0):ownerAddress);g_ParticleOwner[slot]=nullOwner?0:reinterpret_cast<std::uintptr_t>(owner+16);Put(particle,56,life);
   const float scale=float(int(profile)-32)*0.125f;Put(particle,12,scale);
   const float x=float(profile)*0.25f,y=-float(profile)*0.5f,z=float(int(profile)-20)*0.125f;
   const float vx=float(int(profile)-17)*0.125f,vy=float(int(profile)-9)*0.25f,vz=-float(profile)*0.125f;
