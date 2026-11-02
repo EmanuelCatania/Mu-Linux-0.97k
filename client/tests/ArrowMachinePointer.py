@@ -37,6 +37,7 @@ float* CreateEffect(int type,float* pos,float* angle,float* light,float* flags,f
 }
 '''
 MAIN=r'''
+short Model(short type){return type==-1?type:short(type+400);}
 int Primary(int type){
  switch(type){case 136:case 137:return 0xd9;case 138:return 0xdd;case 139:return 0xdb;case 140:return 0xda;case 141:return 0xe0;case 142:return 0xdf;case 144:case 146:return 0xf2;default:return 0;}
 }
@@ -54,7 +55,7 @@ std::uint64_t Run(BYTE* memory,BYTE* object,BYTE* identity,unsigned heroMode=0){
  for(unsigned t=0;t<20;++t)for(unsigned p=0;p<8;++p)for(WORD skill:skills)for(WORD key:keys)for(unsigned hero=0;hero<2;++hero){
   std::memset(memory,0xa5,1444);std::memset(object,0x6b,512);std::memset(identity,0x7c,128);
   BYTE* cm=static_cast<BYTE*>(DAT_07cf1ffc);const short a=types[t],b=types[(t*3+p)%20];std::memcpy(cm+536,&a,2);std::memcpy(cm+604,&b,2);serialBefore=serials[p];cm[1408]=serialBefore;
-  character.Weapon[0].Type=types[(t+3)%20];character.Weapon[1].Type=types[(t*7+2)%20];const auto beforeCharacter=character;
+  character.Weapon[0].Type=Model(types[(t+3)%20]);character.Weapon[1].Type=Model(types[(t*7+2)%20]);const auto beforeCharacter=character;
   const auto heroAddress=heroMode==2?std::uint64_t(characterAddress)+0x100000000ull:std::uint64_t(characterAddress+(heroMode==1||!hero?1:0));
   DAT_07abf5d8=reinterpret_cast<BYTE*>(static_cast<std::uintptr_t>(heroAddress));
   aliases=(p&1)!=0;wantedIndex=WORD((t*32767+p*8191)&65535);wantedKey=key;wantedSkill=skill;wantedPK=WORD(0x8000+t*31+p);
@@ -71,11 +72,12 @@ std::uint64_t Run(BYTE* memory,BYTE* object,BYTE* identity,unsigned heroMode=0){
   const int first=sameHero?a:character.Weapon[0].Type,second=sameHero?b:character.Weapon[1].Type;
   std::vector<std::uint32_t> expected;
   for(float angle:directions){
-   if(first!=-1)expected.insert(expected.end(),{0,static_cast<std::uint32_t>(first)});
-   if(second!=-1)expected.insert(expected.end(),{0,static_cast<std::uint32_t>(second)});
+   if(sameHero && first!=-1)expected.insert(expected.end(),{0,static_cast<std::uint32_t>(first)});
+   if(sameHero && second!=-1)expected.insert(expected.end(),{0,static_cast<std::uint32_t>(second)});
    if(keyLow==52)expected.insert(expected.end(),{1,0x41});
    if(keyLow==51)expected.insert(expected.end(),{1,0x65});
-   const int primary=first==-1?0:Primary(Behavior(first)),secondary=second==-1?0:Secondary(Behavior(second));
+   // IDA 0x474370: sólo el héroe convierte tipo de item a modelo (+400).
+   const int primary=first==-1?0:Primary(sameHero?Behavior(first):first-400),secondary=second==-1?0:Secondary(sameHero?Behavior(second):second-400);
    if(primary)expected.insert(expected.end(),{2,unsigned(primary),Bits(angle),skillLow});
    if(secondary)expected.insert(expected.end(),{2,unsigned(secondary),Bits(angle),skillLow});
   }
