@@ -10,6 +10,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, read_source
+from X86Views import model_view, object_view
 
 SERVICES=r'''
 using uint=unsigned int;using byte=unsigned char;
@@ -61,7 +62,8 @@ def harness(revision=None):
     start=source.index('if ((pfVar3 == (float *)0x67)');first=source.index('(',start)+1;end=first;depth=1
     while depth:depth+=(source[end]=='(')-(source[end]==')');end+=1
     guard=source[first:end-1];assignment='pfVar3 = (float *)(int)*(short *)(param_1 + 2);';assert assignment in source
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('TYPE',assignment).replace('GUARD',guard)+MAIN
+    views=object_view(['CurrentAction'],revision)+model_view(['Actions'],revision)+'struct ModelAnimationAction { unsigned char _bytes[16]; };'+chr(10)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+views+SERVICES.replace('TYPE',assignment).replace('GUARD',guard)+MAIN
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()
     if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):p.error('Referencia sólo en Windows x86')

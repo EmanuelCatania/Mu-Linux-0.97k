@@ -229,7 +229,8 @@ HARNESS_LAYOUT = (
     "#include <cstddef>" + chr(10) +
     "constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;" + chr(10) +
     "constexpr int TEXTURE_STRIDE=0x38,GROUND_ITEM_STRIDE=0x204;" + chr(10) +
-    "constexpr std::size_t EntityOffset(std::size_t x86){return x86;}" + chr(10))
+    "constexpr std::size_t EntityOffset(std::size_t x86){return x86;}" + chr(10) +
+    "constexpr std::size_t ModelActionByte(std::size_t x86){return x86;}" + chr(10))
 
 
 def build_and_run(directory, source, args):
@@ -237,6 +238,7 @@ def build_and_run(directory, source, args):
     layout = HARNESS_LAYOUT
     if "ModelTypes.h" in source:   # el header real ya define BMD_STRIDE/BMD_FIELD_SHIFT
         layout = layout.replace(",BMD_STRIDE=188,BMD_FIELD_SHIFT=0", "")
+        layout = layout.replace("constexpr std::size_t ModelActionByte(std::size_t x86){return x86;}" + chr(10), "")
     (directory / "main.cpp").write_text(layout + source, encoding="utf-8")
     (directory / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.25)\n"
