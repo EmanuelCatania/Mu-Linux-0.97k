@@ -7,6 +7,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import ROOT, build_and_run, function, read_source
+from X86Views import CLOTH_MODEL_MESH, model_view
 SERVICES=r'''
 #include <algorithm>
 #include <cmath>
@@ -76,7 +77,7 @@ def harness(revision=None):
  skin=re.search(r'struct Source\s*\{[\s\S]*?\};',read_source('src/Render/Skinning.h',revision)).group()
  service=SERVICES.replace('TRANSFORM_HEADER','#include "'+(ROOT/'src/Render/TransformMath.h').as_posix()+'"').replace('SOURCE',skin)
  tail=MAIN.replace('ARG','palette' if 'float* boneMatrices' in body else 'static_cast<int>(reinterpret_cast<uintptr_t>(palette))').replace('GLOBAL_TRANSLATE','')
- return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x200000')+service+constants+'\nchar charTranslate;\n'+bodies+tail
+ return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x200000')+model_view(['BodyOrigin','BodyScale','LightEnable','Meshs'],revision)+CLOTH_MODEL_MESH+service+constants+'\nchar charTranslate;\n'+bodies+tail
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--architecture',choices=('Win32','x64'),default='x64');parser.add_argument('--generator');parser.add_argument('--reference-ref');args=parser.parse_args()
  if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):parser.error('Referencia sólo en Windows x86')

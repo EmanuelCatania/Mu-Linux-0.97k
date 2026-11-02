@@ -10,17 +10,21 @@ import re
 
 from SceneObjectPointer import read_source
 
-_POINTER_SIZES = {"BYTE": 1, "char": 1, "short": 2, "WORD": 2, "int": 4, "DWORD": 4, "float": 4}
+_POINTER_SIZES = {"BYTE": 1, "char": 1, "short": 2, "WORD": 2, "int": 4, "DWORD": 4, "float": 4,
+                  "std::uint8_t": 1, "std::int8_t": 1, "std::uint16_t": 2, "std::int16_t": 2,
+                  "std::uint32_t": 4, "std::int32_t": 4}
 
 
 def _fields(struct, revision=None, header="src/Entity/EntityTypes.h"):
     source = read_source(header, revision)
     body = re.search(r"struct " + struct + r"\s*\{(.*?)\n\};", source, re.S).group(1)
     fields = {}
-    for kind, name, offset in re.findall(r"^\s*([\w:]+\*?)\s+(\w+)\s*;\s*//\s*0x([0-9A-Fa-f]+)", body, re.M):
+    pattern = r"^\s*([\w:]+\*?)\s+(\w+)\s*(\[\s*(\w+)\s*\])?\s*;\s*//\s*0x([0-9A-Fa-f]+)"
+    for kind, name, suffix, count, offset in re.findall(pattern, body, re.M):
         pointer = kind.endswith("*")
-        fields[name] = (int(offset, 16), "std::uint32_t" if pointer else kind,
-                        4 if pointer else _POINTER_SIZES.get(kind, 4))
+        width = 4 if pointer else _POINTER_SIZES.get(kind, 4)
+        n = int(count, 0) if count else 1
+        fields[name] = (int(offset, 16), "std::uint32_t" if pointer else kind, width * n, suffix)
     return fields
 
 
@@ -28,11 +32,11 @@ def view(struct, names, size, revision=None, header="src/Entity/EntityTypes.h"):
     """struct con los campos `names` en su offset x86 y tamaño total `size`."""
     fields = _fields(struct, revision, header)
     out, cursor, pad = [f"struct {struct} {{"], 0, 0
-    for offset, kind, width, name in sorted((*fields[n], n) for n in names):
+    for offset, kind, width, suffix, name in sorted((*fields[n], n) for n in names):
         if offset > cursor:
             out.append(f"    unsigned char _pad{pad}[{offset - cursor}];")
             pad += 1
-        out.append(f"    {kind} {name};")
+        out.append(f"    {kind} {name}{suffix};")
         cursor = offset + width
     if size > cursor:
         out.append(f"    unsigned char _pad{pad}[{size - cursor}];")
@@ -52,6 +56,21 @@ def _packed(struct, names, size, revision, header, accessor):
 
 def object_view(names, revision=None):
     return _packed("OBJECT", names, 0x1BC, revision, "src/Entity/EntityTypes.h", "AsObject")
+
+
+CLOTH_MODEL_MESH = """
+#pragma pack(push, 1)
+struct ClothModelMesh {  // malla del modelo con el layout x86 (40 bytes, punteros de 32 bits)
+    std::uint8_t Unknown0[2];
+    std::int16_t TextureIndex, VertexCount, NormalCount, TexCoordCount, TriangleCount;
+    std::uint8_t Unknown12[4];
+    std::uint32_t Vertices, Normals, TexCoords, Triangles;
+    std::uint8_t Unknown32[4];
+    std::uint32_t TextureFlags;
+};
+#pragma pack(pop)
+static_assert(sizeof(ClothModelMesh) == 40, "ClothModelMesh x86");
+"""
 
 
 def model_view(names, revision=None):

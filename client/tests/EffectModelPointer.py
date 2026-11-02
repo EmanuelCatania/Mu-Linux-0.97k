@@ -11,6 +11,7 @@ import tempfile
 from GatePointer import PREAMBLE
 from BmdSetupPointer import SERVICES
 from SceneObjectPointer import build_and_run, function, read_source
+from X86Views import model_view
 
 EXTRA=r'''
 using byte=BYTE;
@@ -79,7 +80,7 @@ def harness(revision=None):
     for name in sorted(names):
         prefix+=re.search(rf'extern [^;\n]*\b{name}\s*;',header).group()
         prefix+=re.search(rf'^[^/\n]*\b{name}\s*=\s*[^;]+;',definitions,re.M).group()
-    return prefix+setup+color+effect+MAIN
+    return prefix+model_view(['BodyLight','StreamMesh'],revision)+setup+color+effect+MAIN
 
 
 def main():
