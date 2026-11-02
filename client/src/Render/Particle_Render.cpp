@@ -100,7 +100,9 @@ ParticleSample samples[200];
 }
 void Particle_InvalidateRender(const void *entity) {
     const uintptr_t offset = (uintptr_t)entity - (uintptr_t)DAT_07b11670;
-    if (offset < 200 * OBJECT_STRIDE && offset % OBJECT_STRIDE == 0) samples[offset / 0x1bc].valid = false;
+    // El índice es por OBJECT_STRIDE: con 0x1bc, en x64 pasaba de 199 y pisaba
+    // los globals siguientes (la burbuja de chat pendiente: crash en Blood Castle).
+    if (offset < 200 * OBJECT_STRIDE && offset % OBJECT_STRIDE == 0) samples[offset / OBJECT_STRIDE].valid = false;
 }
 // DESVIACION: el pool se muestrea antes del pase de personajes, a 25 Hz.
 void Particle_PrepareRender() {
