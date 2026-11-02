@@ -234,7 +234,10 @@ HARNESS_LAYOUT = (
 
 def build_and_run(directory, source, args):
     directory.mkdir()
-    (directory / "main.cpp").write_text(HARNESS_LAYOUT + source, encoding="utf-8")
+    layout = HARNESS_LAYOUT
+    if "ModelTypes.h" in source:   # el header real ya define BMD_STRIDE/BMD_FIELD_SHIFT
+        layout = layout.replace(",BMD_STRIDE=188,BMD_FIELD_SHIFT=0", "")
+    (directory / "main.cpp").write_text(layout + source, encoding="utf-8")
     (directory / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.25)\n"
         "project(SceneObjectPointer LANGUAGES CXX)\n"
