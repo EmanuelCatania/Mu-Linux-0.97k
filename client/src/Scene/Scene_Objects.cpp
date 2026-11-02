@@ -431,9 +431,9 @@ section2:
             *(float *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 40)->Actions + sizeof(ModelAnimationAction) + 4) = 0.4f; // 0x3ecccccd
         } else if (gMapManager.GetCurrentMap() == 8) {
             // Barracks: clear animated flags on several model slots
-            *(BYTE *)(DAT_05828d58 + 0x89c)  = 0;
-            *(BYTE *)(DAT_05828d58 + 0x958)  = 0;
-            *(BYTE *)(DAT_05828d58 + 0xa14)  = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 11 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 12 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 13 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 73 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 75 + 0x88 + BMD_FIELD_SHIFT) = 0;
             *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 79 + 0x88 + BMD_FIELD_SHIFT) = 0;

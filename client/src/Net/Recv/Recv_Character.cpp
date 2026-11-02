@@ -156,7 +156,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
     // con el mismo personaje, sin pasar por char-select.
     if (gReconnect.OnCharacterList()) return;
     const int CHAR_STRIDE  = CHARACTER_STRIDE;
-    const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
+    const int CHAR_SLOT_AT = (int)EntityOffset(0x2D2);   // entity+0x2D2 = "selected" flag
     const int MAX_PREVIEW  = 5;            // slots renderizados en char-select
 
     // 1) Limpiar flags de los 5 slots previos

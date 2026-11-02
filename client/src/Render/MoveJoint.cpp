@@ -536,7 +536,7 @@ LAB_00473578_498:
                 local_d8[2] = local_d8[2] * _DAT_00552900 + AsJoint(param_1)->TargetPosition[2];
                 local_a8[0] = *(float *)(iVar16 + EntityOffset(0x188));
                 local_a8[1] = *(float *)(iVar16 + EntityOffset(0x18c));
-                local_a8[2] = *(float *)(iVar16 + 400);
+                local_a8[2] = *(float *)(iVar16 + EntityOffset(0x190));
                 // Blend: out[i] = t * rand_pos[i] + inv_t * bone_pos[i]
                 pfVar15[0] = t * local_d8[0] + inv_t * local_a8[0];
                 pfVar15[1] = t * local_d8[1] + inv_t * local_a8[1];

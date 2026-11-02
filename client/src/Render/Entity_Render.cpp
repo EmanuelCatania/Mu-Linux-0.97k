@@ -320,38 +320,17 @@ uint RenderBugs(void)
 }
 
 
-// Entity_SetGravity — Entity_SetGravity
-// Sets the gravity value at param_2+0x84 based on entity type param_1.
-// Maps specific type ranges to negative float constants (gravity strengths).
+// IDA: sub_503830 (0x00503830)
+// BodyHeight de las piezas de armadura en el suelo: se dibujan sobre el
+// esqueleto del jugador y hay que bajarlas hasta el piso.
 void __cdecl Entity_SetGravity(intptr_t param_1, void* model)
 {
-  BYTE* param_2 = static_cast<BYTE*>(model);
-  if (param_1 < 0x270) {
-    if (param_1 < 0x290) goto LAB_0050386e;
-  }
-  else if (param_1 < 0x290) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc3200000;
-    return;
-  }
-  if (param_1 < 0x2b0) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc2c80000;
-    return;
-  }
-LAB_0050386e:
-  if ((0x2cf < param_1) && (param_1 < 0x2f0)) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc28c0000;
-    return;
-  }
-  if ((0x2af < param_1) && (param_1 < 0x2d0)) {
-    *(undefined4 *)(param_2 + 0x84) = 0xc2480000;
-    return;
-  }
-  if ((0x2ef < param_1) && (param_1 < 0x310)) {
-    *(undefined4 *)(param_2 + 0x84) = 0;
-    return;
-  }
-  *(undefined4 *)(param_2 + 0x84) = 0;
-  return;
+  float bodyHeight = 0.0f;
+  if (param_1 >= 624 && param_1 < 656)      bodyHeight = -156.0f;  // cascos
+  else if (param_1 >= 656 && param_1 < 688) bodyHeight = -96.0f;   // armaduras
+  else if (param_1 >= 688 && param_1 < 720) bodyHeight = -48.0f;   // pantalones
+  else if (param_1 >= 720 && param_1 < 752) bodyHeight = -72.0f;   // guantes
+  AsModel(model)->BodyHeight = bodyHeight;
 }
 
 

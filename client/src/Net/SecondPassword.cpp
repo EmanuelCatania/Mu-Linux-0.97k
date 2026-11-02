@@ -2168,7 +2168,7 @@ label_119:
             // leería campos ajenos del struct de modelo.
             int v19 = rand() % 2;
             int iVar9 = 0;
-            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa, AsObject(param_1), iVar9);
+            PlayBuffer(AsModel(DAT_05828d58 + etype * BMD_STRIDE)->Sounds[v19] + 0xaa, AsObject(param_1), iVar9);
         }
     }
 }
@@ -2221,7 +2221,7 @@ void Hero_ApplyCatalogEquipment(CHARACTER* character)
     static const int kWearOff[9] = { 136, 204, 272, 340, 408, 0, 68, 476, 544 };
     for (int part = 0; part < 9; ++part)
         gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
-    const short pet = *(short*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].PlaySpeed;
+    const short pet = *(short*)(v7 + 544);
     if (pet != -1 && gContentCatalog.GetPet(pet)) {
         *(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type = (short)ItemModel(ItemBehaviorType(pet));
         // El owner del pool aún ocupa 32 bits; su layout queda para B2.
@@ -2255,7 +2255,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
         short v = *(short*)(v7 + srcOff);
-        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
+        *(short*)(c + EntityOffset(eOff)) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
     };
     // Valor previo del helper, para detectar el CAMBIO abajo.
     const short prevHelper = AsCharacter(c)->Helper.Type;
@@ -2267,7 +2267,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     // animaciones se deciden por ese tipo); el modelo propio se dibuja en
     // RenderBugs / Render_PlayerHelper.
     {
-        const short pet = *(short*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].PlaySpeed;
+        const short pet = *(short*)(v7 + 544);
         if (pet != -1) AsCharacter(c)->Helper.Type = (short)ItemModel(ItemBehaviorType(pet));
     }
 
@@ -2307,7 +2307,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
             else if (newHelper == 819) bugType = 267;   // Dinorant
-            else if (gContentCatalog.GetPet(*(short*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].PlaySpeed)) bugType = newHelper;   // 0.97.20: CustomPet
+            else if (gContentCatalog.GetPet(*(short*)(v7 + 544))) bugType = newHelper;   // 0.97.20: CustomPet
             // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
             // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
             if (bugType)
@@ -2320,8 +2320,8 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     AsCharacter(c)->Weapon[0].Option1 = *(unsigned char*)(v7 + 27);
     AsCharacter(c)->Weapon[1].Option1 = *(unsigned char*)(v7 + 95);
     unsigned char v11 = AsCharacter(c)->Object.CurrentAction;   // anim_state @ 0x105
-    AsCharacter(c)->Wing.Level = (unsigned char)((*(int*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[0].Type >> 3) & 0xF);
-    AsCharacter(c)->Helper.Level = (unsigned char)((*(int*)&((CHARACTER*)(uintptr_t)(v7))->BodyPart[2].Cloth >> 3) & 0xF);
+    AsCharacter(c)->Wing.Level = (unsigned char)((*(int*)(v7 + 480) >> 3) & 0xF);
+    AsCharacter(c)->Helper.Level = (unsigned char)((*(int*)(v7 + 548) >> 3) & 0xF);
 
     bool skipCancel = (v11 >= 0x85u && v11 <= 0x8Cu);
     if (!skipCancel && (v11 < 0x22u || v11 > 0x5Bu)) {
@@ -2347,31 +2347,31 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
         ? (short)(skinLo + 4 * skinHi + 919)
         : (short)ItemEntityModel(v21);
 
-    short v22 = *(short*)&((OBJECT*)(uintptr_t)(v7))->EnableBoneMatrix;
+    short v22 = *(short*)(v7 + 272);
     AsCharacter(c)->BodyPart[3].Type = (v22 == -1)
         ? (short)(skinLo + 4 * skinHi + 926)
         : (short)ItemEntityModel(v22);
 
-    short v26 = *(short*)&((OBJECT*)(uintptr_t)(v7))->OBB[9];
+    short v26 = *(short*)(v7 + 340);
     AsCharacter(c)->BodyPart[4].Type = (v26 == -1)
         ? (short)(skinLo + 4 * skinHi + 933)
         : (short)ItemEntityModel(v26);
 
-    short v27 = *(short*)&((OBJECT*)(uintptr_t)(v7))->_unk188[16];
+    short v27 = *(short*)(v7 + 408);
     AsCharacter(c)->BodyPart[5].Type = (v27 == -1)
         ? (short)(skinLo + 4 * skinHi + 940)
         : (short)ItemEntityModel(v27);
 
     AsCharacter(c)->BodyPart[1].Level = (unsigned char)((*(int*)(v7 + 140) >> 3) & 0xF);
     AsCharacter(c)->BodyPart[2].Level = (unsigned char)((*(int*)(v7 + 208) >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[3].Level = (unsigned char)(((intptr_t)((OBJECT*)(uintptr_t)(v7))->BoneMatrices >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[4].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->OBB[10] >> 3) & 0xF);
-    AsCharacter(c)->BodyPart[5].Level = (unsigned char)((*(int*)&((OBJECT*)(uintptr_t)(v7))->_unk188[20] >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[3].Level = (unsigned char)((*(int*)(v7 + 276) >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[4].Level = (unsigned char)((*(int*)(v7 + 344) >> 3) & 0xF);
+    AsCharacter(c)->BodyPart[5].Level = (unsigned char)((*(int*)(v7 + 412) >> 3) & 0xF);
     AsCharacter(c)->BodyPart[1].Option1 = *(unsigned char*)(v7 + 163);
     AsCharacter(c)->BodyPart[2].Option1 = *(unsigned char*)(v7 + 231);
     AsCharacter(c)->BodyPart[3].Option1 = *(unsigned char*)(v7 + 299);
-    AsCharacter(c)->BodyPart[4].Option1 = *(unsigned char*)&((OBJECT*)(uintptr_t)(v7))->_unk16C[3];
-    AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)&((OBJECT*)(uintptr_t)(v7))->_unk1B1[2];
+    AsCharacter(c)->BodyPart[4].Option1 = *(unsigned char*)(v7 + 367);
+    AsCharacter(c)->BodyPart[5].Option1 = *(unsigned char*)(v7 + 435);
 
     SetCharacterScale(AsCharacter(c));
     // Recalcula los ocho grupos de atributos y sus campos derivados.

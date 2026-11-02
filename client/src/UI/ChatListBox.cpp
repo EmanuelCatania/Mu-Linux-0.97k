@@ -420,7 +420,7 @@ extern "C" void* ChatListBox_ConstructWhisper(void)
     obj[45] = 0;
 
     // vtable off_5526EC — propia del widget de guild (ver final del archivo)
-    *(void**)obj = GuildListBox_GetVTable();
+    ChatWidget_Pointers(obj).vtable = (void**)GuildListBox_GetVTable();
 
     obj[33] = 150;
     obj[34] = 0;
@@ -1895,7 +1895,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     if (v8 == v7) {
         m_dwBackColor = 0xFF962828u;                        // -6936536
         m_dwTextColor = (party != 0xFF) ? 0xFFFFFFFFu : 0xC4C4C4FFu;
-        CreateGuildMark(*(short*)((BYTE*)(uintptr_t)Hero + 474), true);
+        CreateGuildMark(AsCharacter(Hero)->GuildMarkIndex, true);
         GL_DrawTexture(34, (float)v22, (float)v5, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         v4 += 13;
     } else {

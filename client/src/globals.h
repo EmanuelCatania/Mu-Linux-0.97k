@@ -2811,7 +2811,7 @@ extern DWORD   SelectedHero;         // IDA: DAT_005616ac (0x005616AC)
 //   +0x22c int       display timer 1
 //   +0x230 int       display timer 2
 //   +0x234 DWORD     owner CHARACTER* pointer
-extern char    DAT_07e016f8[100 * 0x254];   // chat bubble pool: 100 slots x 596B
+extern char    DAT_07e016f8[100 * (0x254 + sizeof(void*) - 4)];   // pool de burbujas: 100 CHAT (596 B en x86)
 // unk_7E01720 = base + 40 (campo timer1). MoveChat arranca su walk ahi.
 #define DAT_07e01720  (&DAT_07e016f8[40])
 extern char    DAT_00559d60;        // guild mark prefix string (e.g. "[")

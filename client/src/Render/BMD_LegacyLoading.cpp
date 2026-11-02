@@ -348,7 +348,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         // que si el slot no tiene bones se cae al loader completo BMD__Open para traer
         // la geometría BMD.
         if (numBonesInSlot > 0)
-            BMD__Save((int)(DAT_05828d58 + param_1 * BMD_STRIDE), (char*)param_2, local_40);
+            BMD__Save((intptr_t)model, (char*)param_2, local_40);
         else
             BMD__Open(model, param_2, local_40, 0);
     } else {

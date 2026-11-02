@@ -16,15 +16,15 @@ public:
     bool IsActive() const { return m_Data && m_Data[0] != 0; }
     BYTE Kind() const { return m_Data[0x84]; }
     // IDA: CreateMonster (0x0045CCF0) escribe el tipo de Monster.txt como BYTE.
-    BYTE MonsterIndex() const { return m_Data[0x2EB]; }
+    BYTE MonsterIndex() const { return m_Data[EntityOffset(0x2EB)]; }
     // IDA: CreateChat (0x00481BA0), índice firmado; -1 indica sin guild.
-    short GuildMarkIndex() const { return Read<short>(0x1DA); }
-    WORD NetworkKey() const { return Read<WORD>(0x1DC); }
+    short GuildMarkIndex() const { return Read<short>(EntityOffset(0x1DA)); }
+    WORD NetworkKey() const { return Read<WORD>(EntityOffset(0x1DC)); }
     const char* Name() const { return EntityName::Get(m_Data); }
     float X() const { return Read<float>(0x10); }
     float Y() const { return Read<float>(0x14); }
     float Z() const { return Read<float>(0x18); }
-    float Height() const { return Read<float>(0x12C); }
+    float Height() const { return Read<float>(EntityOffset(0x12C)); }
 private:
     template<typename T> T Read(size_t offset) const {
         T value; memcpy(&value, m_Data + offset, sizeof(value)); return value;

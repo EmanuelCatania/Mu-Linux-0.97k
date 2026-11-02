@@ -485,6 +485,7 @@
 #include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
+#include "Physics/ClothTypes.h"
 #include "Monster/Monster.h"
 
 // IDA: CreateMonster (0x0045CCF0).
@@ -642,16 +643,14 @@ void InitializeMonster42(CHARACTER* character)
 void InitializeMonster73(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
-    {
-        unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)AsCharacter(c)->Object.Type + 40u);
-        unsigned char* dataPtr = *(unsigned char**)modelEntry;
-        if (dataPtr) {
-            dataPtr[0]   = 1;
-            dataPtr[40]  = 0;
-            dataPtr[80]  = 0;
-            dataPtr[120] = 1;
-            dataPtr[160] = 1;
-        }
+    auto* meshes = reinterpret_cast<ClothModelMesh*>(
+        AsModel(DAT_05828d58 + BMD_STRIDE * AsCharacter(c)->Object.Type)->Meshs);
+    if (meshes) {
+        meshes[0].Unknown0[0] = 1;
+        meshes[1].Unknown0[0] = 0;
+        meshes[2].Unknown0[0] = 0;
+        meshes[3].Unknown0[0] = 1;
+        meshes[4].Unknown0[0] = 1;
     }
 }
 
@@ -659,7 +658,7 @@ void InitializeMonster73(CHARACTER* character)
 void InitializeMonster77(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
-    *(unsigned char*)(uintptr_t)(DAT_05828d58 + 61236u) = 0;
+    *(unsigned char*)(uintptr_t)(DAT_05828d58 + BMD_STRIDE * 325 + 0x88 + BMD_FIELD_SHIFT) = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 88.

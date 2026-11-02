@@ -28,7 +28,7 @@ void NetRecv_A0(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     // seteado y es de donde Recv_JoinMapServer copia hero+444.
     int heroClass = -1;
     if (DAT_07abf5d8 != 0)
-        heroClass = *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 444);
+        heroClass = AsCharacter(DAT_07abf5d8)->Class;
     else if (CharacterAttribute != nullptr)
         heroClass = *(BYTE*)((BYTE*)CharacterAttribute + 11);
     // El destino (CSQuest + 0x1C848) son 0x32 bytes: IDA hace

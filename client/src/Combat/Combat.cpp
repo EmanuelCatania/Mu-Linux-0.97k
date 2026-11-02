@@ -1592,14 +1592,14 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
                         DAT_07d7809c = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0; // IDA L1423/1425
                         if (DAT_07cf1ffc != 0 &&
                             Item_Equip((intptr_t)entity,
-                                       (DWORD)((uintptr_t)DAT_07cf1ffc + 536 + i)))
+                                       (intptr_t)((uintptr_t)DAT_07cf1ffc + 536 + i)))
                             return;                             // IDA L1431: LABEL_146
                     }
                 }
                 if ((*(char *)&AsCharacter(entity)->Class & 7) == 2) {                   // IDA L1445
                     if (DAT_07cf1ffc != 0 &&
                         Combat_UseElfSkillItem((intptr_t)entity,
-                                               (DWORD)((uintptr_t)DAT_07cf1ffc + 536 + i)))
+                                               (intptr_t)((uintptr_t)DAT_07cf1ffc + 536 + i)))
                         return;                                 // IDA L1469: LABEL_146
                 }
             }

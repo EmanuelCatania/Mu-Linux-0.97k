@@ -2338,10 +2338,10 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
 
     short v3 = *(short*)(param_1 + 0x25C);  // WeaponR/Shield item type
     if (v3 != -1) {
-        unsigned char dur = AsCharacter(param_1)->Weapon[0].PriorAction;  // shield durability
+        unsigned char dur = *(unsigned char*)(param_1 + 0x276);  // escudo +26: Durability (CharacterMachine, no CHARACTER)
         if (dur != 0) {
             unsigned char maxDur = ((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3].Durability;
-            int level = *(int *)&AsCharacter(param_1)->BodyPart[5].AnimationFrame;
+            int level = *(int *)(param_1 + 0x260);  // escudo +4: Level
             unsigned char opt = *(unsigned char*)(param_1 + 631);
             float durP = CalcDurabilityPercent(dur, maxDur, level, opt);
             unsigned char defenseBase = *(unsigned char*)(param_1 + 0x26C);

@@ -2796,7 +2796,7 @@ char   DAT_07d78098       = 0;
 //   (0x7E0FFC8 - 0x7E016F8) / 596 = **100 slots**.
 // `unk_7E01720` NO es otro pool: es base + 40 (el campo timer1), que es donde
 // MoveChat arranca su walk. Por eso ahora es una macro (ver globals.h).
-char   DAT_07e016f8[100 * 0x254] = {};
+alignas(8) char DAT_07e016f8[100 * (0x254 + sizeof(void*) - 4)] = {};   // CHAT: Owner es un puntero (x64: 0x258)
 // Guild mark bracket strings (initialized by resource loader)
 char   DAT_00559d60       = 0;  // guild mark prefix string "["
 short  DAT_00559d64       = 0;  // guild mark suffix 2-byte "]"

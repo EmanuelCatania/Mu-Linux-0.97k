@@ -215,9 +215,9 @@ void __cdecl Entity_Render(void)
                 if (v5 < 0 || v5 >= 1200) goto next_entry;
 
                 BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + (uintptr_t)v5 * BMD_STRIDE);
-                model[160] = 0;
-                model[152] = (BYTE)((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class) & 7);
-                model[160] = AsObject(v1)->CurrentAction;
+                AsModel(model)->CurrentAction = 0;
+                AsModel(model)->Skin = (char)((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class) & 7);
+                AsModel(model)->CurrentAction = AsObject(v1)->CurrentAction;
                 *(float*)&((BMD*)(uintptr_t)(model))->BodyOrigin[0] = *v2;
                 *(DWORD*)&((BMD*)(uintptr_t)(model))->BodyOrigin[1] = *(DWORD*)(v0 - 241);
                 *(DWORD*)&((BMD*)(uintptr_t)(model))->BodyOrigin[2] = *(DWORD*)(v0 - 237);

@@ -526,8 +526,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
         int next_wp = (int)cur_wp + 1;
         int max_wp  = (int)wp_count - 1;
         if (max_wp < next_wp) next_wp = max_wp;
-        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + 0x357 + next_wp);
-        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + 0x366 + next_wp);
+        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + EntityOffset(0x357) + next_wp);
+        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + EntityOffset(0x366) + next_wp);
     }
 
     // 2026-04-30 SIMPLIFIED: en lugar de Catmull-Rom (que con coeficientes
@@ -539,8 +539,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     if (next_wp >= (int)wp_count) {
         return 1;   // arrived
     }
-    float target_x = ((float)*(byte *)(ent + 0x357 + next_wp) + _DAT_00552504) * _DAT_005524f0;
-    float target_y = ((float)*(byte *)(ent + 0x366 + next_wp) + _DAT_00552504) * _DAT_005524f0;
+    float target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+    float target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
 
     // Distance check
     float dx   = AsCharacter(ent)->Object.Position[0] - target_x;
@@ -565,8 +565,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
         // Update target for facing calc this frame (so hero turns immediately)
         next_wp = (int)cur_wp + 1;
         if (next_wp < (int)wp_count) {
-            target_x = ((float)*(byte *)(ent + 0x357 + next_wp) + _DAT_00552504) * _DAT_005524f0;
-            target_y = ((float)*(byte *)(ent + 0x366 + next_wp) + _DAT_00552504) * _DAT_005524f0;
+            target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+            target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
         }
     }
 

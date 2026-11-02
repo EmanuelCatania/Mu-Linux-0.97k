@@ -29,6 +29,8 @@ struct CHAT {
     vec3_t      Position;              // 0x248
 };
 #pragma pack(pop)
+// El pool DAT_07e016f8 (globals) se dimensiona con esta misma cuenta.
+static_assert(sizeof(CHAT) == 0x254 + sizeof(void*) - 4, "CHAT: tamano del pool de burbujas");
 
 #if UINTPTR_MAX == 0xFFFFFFFFu
 #define MU_ASSERT_FIELD(T, f, off) static_assert(offsetof(T, f) == off, #T "::" #f)

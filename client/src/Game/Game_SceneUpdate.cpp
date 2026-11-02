@@ -66,7 +66,7 @@ static void LoginScene_ApplySafeObjectAnim()
         short type = AsObject(obj)->Type;
         char* model = (char*)(DAT_05828d58 + type * BMD_STRIDE);
         if (model) {
-            model[0xa0] = *(char *)&AsObject(obj)->CurrentAction;
+            AsModel(model)->CurrentAction = AsObject(obj)->CurrentAction;
             BMD__PlayAnimation((void*)model,
                 (float*)(obj + EntityOffset(0x108)),
                 (float*)(obj + EntityOffset(0x10c)),
