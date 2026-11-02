@@ -74,17 +74,19 @@ void ApplyFx() {
                 pair.continuous=!current.Teleport && !previous.Teleport && Near(pair.previous.position,pair.current.position);
                 ApplyObject(*(OBJECT *)out,pair);
             } else if (pool==RenderFxPool::Joints) {
-                if (!Near(view,0x10) || !Near(view,0x44)) continue;
-                const int previousCount=Load<int>(view.previous,0x50),count=Load<int>(view.current,0x50);
+                const int targetOffset=(int)offsetof(JOINT,TargetPosition),countOffset=(int)offsetof(JOINT,NumTails);
+                const int maxOffset=(int)offsetof(JOINT,MaxTails),tailsOffset=(int)offsetof(JOINT,Tails);
+                if (!Near(view,0x10) || !Near(view,targetOffset)) continue;
+                const int previousCount=Load<int>(view.previous,countOffset),count=Load<int>(view.current,countOffset);
                 if (previousCount<0 || count<0 || previousCount>=MAX_JOINT_TAILS || count>=MAX_JOINT_TAILS ||
-                    Load<int>(view.previous,0x54)!=Load<int>(view.current,0x54)) continue;
-                BlendVector(out,view,0x10); BlendVector(out,view,0x28,true); BlendVector(out,view,0x44);
+                    Load<int>(view.previous,maxOffset)!=Load<int>(view.current,maxOffset)) continue;
+                BlendVector(out,view,0x10); BlendVector(out,view,0x28,true); BlendVector(out,view,targetOffset);
                 BlendVector(out,view,0x34); BlendField(out,view,0x0c);
                 // La cola nueva nace colapsada en el último extremo previo;
                 // NumTails/MaxTails y lifetime conservan siempre su valor SIM.
                 for (int row=0;row<=count;++row) for (int component=0;component<12;++component) {
-                    const int oldOffset=0x58+(std::min)(row,previousCount)*48+component*4;
-                    const int offset=0x58+row*48+component*4;
+                    const int oldOffset=tailsOffset+(std::min)(row,previousCount)*48+component*4;
+                    const int offset=tailsOffset+row*48+component*4;
                     const float value=RenderBlend(Load<float>(view.previous,oldOffset),Load<float>(view.current,offset),fraction);
                     memcpy(out+offset,&value,4);
                 }

@@ -40,12 +40,12 @@ static inline float int_as_float(int i) {
 // justamente porque los construye aca).
 //
 // Offsets: +8 SubType - +12 Scale - +16 Position - +40 Angle - +52 Light
-//          +64 Owner - +68 TargetPosition - +84 segMax - +2488 lifetime
+//          +64 Target - TargetPosition - +84 segMax - +2488 lifetime (x86)
 //          +2496 Velocity - +2500/2504/2508 jitter de angulo
 static void MoveJoint_GenericTail(unsigned char *o)
 {
     float *const pos = (float *)(o + 16);
-    float *const tgt = (float *)(o + 68);
+    float *const tgt = AsJoint(o)->TargetPosition;
     float Position[3], Angle[3], Light[3], in1[3], angles[3];
     float v304[12], v305[12];
 
@@ -622,7 +622,7 @@ LAB_0047036e:
                 if (seg_rows > seg_max) seg_rows = seg_max;
             }
             if (seg_rows > 0) {
-                float *pfVar26 = (float *)(param_1 + (seg_rows + -1) * 0x30 + 0x5c);
+                float *pfVar26 = &AsJoint(param_1)->Tails[seg_rows - 1][0][1];
                 do {
                     iVar13 = 4;
                     float *pf = pfVar26;
@@ -658,7 +658,7 @@ LAB_0047036e:
                 if (seg_rows > seg_max) seg_rows = seg_max;
             }
             if (seg_rows > 0) {
-                float *pfVar26 = (float *)(param_1 + (seg_rows + -1) * 0x30 + 0x5c);
+                float *pfVar26 = &AsJoint(param_1)->Tails[seg_rows - 1][0][1];
                 do {
                     iVar13 = 4;
                     float *pf = pfVar26;
@@ -1499,7 +1499,7 @@ switchD_caseD_4fd:
                 for (int v228 = 16; v228 < 28; v228 += 4) {
                     const int    k    = iIndex + v226 + 51230 * iIndex + msf / 10;
                     const double v229 = fcos((double)k * 0.0099999998) * 25.0
-                                      + (double)*(float *)(jowner + srcBase + v228);
+                                      + (double)*(float *)(jowner + EntityOffset(srcBase + v228));
                     float *dst = (float *)(param_1 + v228);
                     *dst = (float)(((double)w * (double)*dst
                                     + v229 * (100.0 - (double)w)) * 0.0099999998);

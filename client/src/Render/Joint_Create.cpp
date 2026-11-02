@@ -2066,12 +2066,12 @@ switchD_0046dee7_default:
     // los bucles de creacion (1254 sub 14 / 1253 sub 4 de las alas del MG, y
     // cualquier subtipo que llame a sub_46FE90 dentro de CreateJoint).
     const int __rowBytes = 0x30;
-    const int __maxRows  = (0x9d8 - 0x58) / __rowBytes;
+    const int __maxRows  = MAX_JOINT_TAILS;
     int __n = AsJoint(pcVar14)->MaxTails;
     if (__n > __maxRows) __n = __maxRows;
     const int __built = AsJoint(pcVar14)->NumTails;
     for (int __r = __built + 1; __r < __n; ++__r)
-        memcpy(pcVar14 + 0x58 + __r * __rowBytes, pcVar14 + 0x58, __rowBytes);
+        memcpy(AsJoint(pcVar14)->Tails[__r], AsJoint(pcVar14)->Tails[0], __rowBytes);
   }
   return (void*)pcVar14;
   while( true ) {
