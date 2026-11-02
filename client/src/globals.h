@@ -711,7 +711,8 @@ extern DWORD   DAT_07e11e5c;   // NPC script chat-log slot 3
 extern DWORD   DAT_07e11de8;
 extern DWORD   DAT_07e11e78;   // target entity index (active selection)
 extern DWORD   DAT_07e11e98;   // party HP bars (stride 0x24)
-extern char    DAT_07e11e9c;   // party slot 0 name base (stride 0x24; +0x1c=entity idx, +0x20=pos ptr)
+// 0x07E11E9C = Party + 0x1C (indice de entidad del slot 0). Era un char suelto.
+#define DAT_07e11e9c (*(char*)(Party + 0x1C))
 extern char    DAT_07e11d6e;            // flag reset each login frame
 extern DWORD   DAT_07d552e4;            // UI inventory/item selection state
 extern DWORD   DAT_07d78094;            // UI click/selection flag
@@ -802,7 +803,8 @@ extern char    DAT_07ea9834[41];    // IDA: nombre remoto de Trade (0.97.40: 40 
 extern char    DAT_07ea983e;
 extern DWORD   DAT_07eaa0d0;
 extern DWORD   DAT_07eaa0d8;
-extern DWORD   DAT_07eaa0e0;
+// 0x07EAA0E0 = PartyNumber. Era una copia que nadie escribia.
+#define DAT_07eaa0e0 (*(DWORD*)&PartyNumber)
 extern DWORD   DAT_07eaa0e4;
 extern DWORD   DAT_07eaa0f0;
 extern DWORD   DAT_07eaa0f4;
@@ -2277,7 +2279,8 @@ extern char    s__s___File_corrupted__00559bd4[];  // "%s - File corrupted."
 extern char    DAT_005597d4[];  // "wb" (binary write mode for crt_fwrite callers)
 
 // ── SecondPassword Screen2 entity list globals ────────────────────────────────
-extern DWORD   DAT_07e11e80;   // char-select entity name table base (stride 0x24 per slot)
+// 0x07E11E80 = Party (stride 0x24). Era un DWORD suelto.
+#define DAT_07e11e80 (*(DWORD*)Party)
 extern DWORD   DAT_07ea5b24;   // Screen2 panel origin X
 extern DWORD   DAT_07ea5b28;   // Screen2 panel origin Y
 

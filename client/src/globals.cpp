@@ -776,7 +776,7 @@ DWORD    DAT_07e11e58  = 0;   // NPC script chat-log slot 2
 DWORD    DAT_07e11e5c  = 0;   // NPC script chat-log slot 3
 DWORD    DAT_07e11e78  = 0;
 DWORD    DAT_07e11e98  = 0;
-char     DAT_07e11e9c  = 0;
+// DAT_07e11e9c: alias de Party + 0x1C (globals.h)
 char     DAT_07e11d6e           = 0;
 char     LockInputStatus           = 0; // IDA: DAT_07e11d6f (0x07E11D6F)
 int      g_WorldLoading         = 0;   // >0 mientras corre OpenWorld (ver WinMain WM_USER)
@@ -855,7 +855,7 @@ char     DAT_07ea9834[41] = {};   // 0.97.40: nombre de 40 bytes + NUL
 char     DAT_07ea983e  = 0;
 DWORD    DAT_07eaa0d0  = 0;
 DWORD    DAT_07eaa0d8  = 0;
-DWORD    DAT_07eaa0e0  = 0;
+// DAT_07eaa0e0: alias de PartyNumber (globals.h)
 DWORD    DAT_07eaa0e4  = 0;
 DWORD    DAT_07eaa0f0  = 0;
 DWORD    DAT_07eaa0f4  = 0;
@@ -2326,7 +2326,7 @@ char    s__s___File_corrupted__00559bd4[] = "%s - File corrupted.";
 char    DAT_005597d4[] = "wb";  // binary write mode at 0x005597d4
 
 // ── SecondPassword Screen2 entity list globals ────────────────────────────────
-DWORD   DAT_07e11e80  = 0;   // char-select entity name table base (stride 0x24)
+// DAT_07e11e80: alias de Party (globals.h)
 DWORD   DAT_07ea5b24  = 0;   // Screen2 panel origin X
 DWORD   DAT_07ea5b28  = 0;   // Screen2 panel origin Y
 

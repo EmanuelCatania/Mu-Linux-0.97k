@@ -461,7 +461,8 @@ int __cdecl Entity_SelectNearest(int param_1_int)
                 if (sVar7 == 0) sVar7 = 1;
                 piVar12[1] = 0;
                 int cmp = strncmp(partyName, playerName, sVar7);
-                *piVar12 = (cmp != 0) ? -3 : -1;
+                // IDA sub_4AFDC0 L250: -3 = el héroe, -1 = miembro fuera del viewport.
+                *piVar12 = (cmp != 0) ? -1 : -3;
             }
         }
     }
@@ -593,7 +594,15 @@ char __cdecl Party_HPBar_HoverCheck(void)
     UINT *puVar5 = (UINT*)&DAT_07e11e9c;                // party slot base (stride 9 uints = 0x24)
 
     for (int i = 0; i < (int)DAT_07eaa0e0; i++, puVar5 += 9) {
-        if (*puVar5 < 0x80000000) {
+        // IDA L83-210: sólo los índices >= 0 se pueden señalar, y sólo para
+        // DW o elfa; la fila baja 19 px para esos y para los -1, no para el
+        // héroe sin resolver (-3).
+        if (*puVar5 >= 0x80000000) {
+            if ((int)*puVar5 == -1) local_24 += _DAT_005527d4;
+            *puVar5 = 0xfffffffe;
+            continue;
+        }
+        if (uVar7 == 2 || uVar7 == 0) {
             // [HashTable obfuscation block skipped — anti-tamper, not game logic]
 
             // Get entity stat ID for this party slot

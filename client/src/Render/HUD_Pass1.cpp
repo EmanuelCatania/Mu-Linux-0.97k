@@ -160,8 +160,11 @@ void RenderPartyHP_(void)
     int v19 = 0;
 
     do {
-        DWORD v2 = v1[1];                          // character index
-        if (v2 != (DWORD)-1) {
+        // DESVIACION: IDA sólo descarta -1, pero el héroe sin resolver queda en
+        // -3 (y -2 entre la pasada del hover y la del picker). En x86 eso leía
+        // basura antes del pool; en x64 el índice sin signo sale del espacio.
+        const int v2 = (int)v1[1];                 // índice del personaje
+        if (v2 >= 0 && v2 < 400) {
             const BYTE* character = (const BYTE*)CharactersClient + (size_t)v2 * CHARACTER_STRIDE;
             float Position[3];
             Position[0] = *(const float*)(character + 16);
