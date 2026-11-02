@@ -497,7 +497,7 @@ void __cdecl Chat_InputTick(void)
                 if ((0x12f < mouseX) && (mouseX < 0x150) &&
                     (0x1bb < mouseY) && (mouseY < 0x1e0))
                 {
-                    DAT_0055a3e4 = (DWORD)*(BYTE *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->_unk390[1];
+                    DAT_0055a3e4 = (DWORD)*(BYTE *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill;
                     DAT_07ea840c = 0x140;
                     DAT_07ea8408 = 0x1bc;
                     DAT_07d78094 = 1;
@@ -529,7 +529,7 @@ void __cdecl Chat_InputTick(void)
                                 DAT_0055a3e4 = uVar14;
                                 if (IsClickPushed()) {
                                     DAT_083a4124 = '\0';
-                                    *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->_unk390[1] = (char)uVar14;
+                                    *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill = (char)uVar14;
                                     DAT_07db870c = '\0';
                                     PlayBuffer(0x19, 0, 0);
                                     DAT_07e11d28 = 0;

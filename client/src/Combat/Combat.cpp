@@ -851,7 +851,7 @@ static void Attack_SeedSkillTarget97k()
     DAT_07d78098 = 1;                                        // IDA: dword_7D78098
     DAT_07d7809c = 0;                                        // IDA L1785
     MovementSkillTarget = 0;                                        // IDA L1786: MovementSkillTarget
-    const BYTE slot = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0;       // IDA: v133 / v545 / v629
+    const BYTE slot = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill : 0;       // IDA: v133 / v545 / v629
     MovementSkillTarget = (DWORD)SelectedCharacter;
     DAT_07d7809c = slot;
 }
@@ -1067,7 +1067,7 @@ static void Attack_WarriorBranch97k(char* entity)
     BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!attr || !Hero)
         return;
-    const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];        // IDA L2915
+    const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];        // IDA L2915
     int piMana = 0, piSkillMana = 0;                          // IDA: v1031 / v1034
     GetSkillInformation(iType, 1, 0, &piMana, 0, &piSkillMana);   // IDA L2916
     if (*(WORD *)&AsCharacter(entity)->Object.Type != 390)
@@ -1398,7 +1398,7 @@ static void Attack_WizardBranch97k(char* entity)
     BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!attr || !Hero)
         return;
-    const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];        // IDA L5950
+    const int iType = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];        // IDA L5950
     int piMana = 0, piSkillMana = 0;                          // IDA: v1035 / v1033
     GetSkillInformation(iType, 1, 0, &piMana, 0, &piSkillMana);   // IDA L5951
     if (piMana > (int)*(unsigned short*)(attr + 30)) {        // IDA L5952
@@ -1582,14 +1582,14 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
                         handAllowed = false;
                         BYTE* const attr = (BYTE*)(uintptr_t)DAT_07cf1ff4;
                         if (attr && Hero) {
-                            const BYTE sk = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];
+                            const BYTE sk = attr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];
                             handAllowed = (sk == 43 || sk == 47 || sk == 49);
                         }
                     }
                     if (handAllowed) {
                         DAT_07d78098 = 1;                       // IDA L1422
                         MovementSkillTarget = (DWORD)SelectedCharacter;// IDA L1424
-                        DAT_07d7809c = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0; // IDA L1423/1425
+                        DAT_07d7809c = Hero ? *(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill : 0; // IDA L1423/1425
                         if (DAT_07cf1ffc != 0 &&
                             Item_Equip((intptr_t)entity,
                                        (intptr_t)((uintptr_t)DAT_07cf1ffc + 536 + i)))
@@ -1666,7 +1666,7 @@ static BYTE Combat_ResolveQueuedSkillId97k()
     // resuelven al skill 0 y retornan antes de cualquier animación o envío de paquete.
     BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
     if (!Hero || !charAttr) return 0;
-    return charAttr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];
+    return charAttr[*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];
 }
 
 static int Combat_GetSkillRange97k(int skillType)
@@ -1682,7 +1682,7 @@ static int Combat_GetSkillRange97k(int skillType)
 static void Combat_SeedRuntimeState97k(int skillType, int targetIdx)
 {
     DAT_07d78098 = 1;
-    DAT_07d7809c = (Hero ? *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] : 0);
+    DAT_07d7809c = (Hero ? *(unsigned char*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill : 0);
     MovementSkillTarget = (DWORD)targetIdx;
     CurrentSkill = (DWORD)skillType;
 }

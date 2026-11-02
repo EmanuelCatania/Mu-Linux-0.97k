@@ -378,7 +378,7 @@ bool __stdcall Combat_UseElfSkillItem(intptr_t c, intptr_t pItem) {
     // and current AG +0x24.
     WORD currentMana = *(WORD*)(charAttrBase + 0x1E);
     WORD currentAG = *(WORD*)(charAttrBase + 0x24);
-    const BYTE selectedSkill = charAttrBase[(BYTE)*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->_unk390[1] + 87];
+    const BYTE selectedSkill = charAttrBase[(BYTE)*(BYTE*)&((CHARACTER*)(uintptr_t)(Hero))->CurrentSkill + 87];
 
     for (int i = 0; i < (int)skillCount && i < 20; i++) {
         BYTE skillId = *(BYTE*)(charAttr + 0x25 + i);

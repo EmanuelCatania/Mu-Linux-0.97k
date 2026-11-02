@@ -154,7 +154,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // Blood Castle (11..16): clamp Z to terrain height when
             // entity is dead+action-start (Blood Castle special case).
             if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16) {
-                if (*(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->_unk188[13] != 0 &&     // o+405 m_bActionStart
+                if (*(BYTE *)&((OBJECT*)(uintptr_t)(puVar13))->ActionStart != 0 &&     // o+405 m_bActionStart
                     *(BYTE *)&((CHARACTER*)(uintptr_t)(param_1))->Dead != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
                     float wy = *(float *)((char *)puVar13 + 0x14);
@@ -294,7 +294,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
                 if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 &&
-                    *(BYTE *)&((OBJECT*)(uintptr_t)(o))->_unk188[13] != 0 && *((BYTE *)param_1 + EntityOffset(765)) != 0)
+                    *(BYTE *)&((OBJECT*)(uintptr_t)(o))->ActionStart != 0 && *((BYTE *)param_1 + EntityOffset(765)) != 0)
                 {
                     float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
                     if (th < *(float *)(o + 24)) *(float *)(o + 24) = th;

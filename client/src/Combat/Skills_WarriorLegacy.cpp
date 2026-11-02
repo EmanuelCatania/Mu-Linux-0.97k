@@ -259,7 +259,7 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
             const BYTE serial = *(BYTE*)(character + 1408);
             *(BYTE*)(character + 1408) = serial + 1;
             *(BYTE*)(o + 136) = serial;
-            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)&((CHARACTER*)(uintptr_t)(character))->_unk390[1] + 87] : skillType,
+            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)&((CHARACTER*)(uintptr_t)(character))->CurrentSkill + 87] : skillType,
                                    centre, *(BYTE*)(o + 136), keys, count);
     } else if (skillType == 56) {
             float angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) - 40.0f };
