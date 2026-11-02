@@ -347,7 +347,10 @@ void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,cha
   undefined *puVar1;
   intptr_t param_2 = (intptr_t)param_2_v;
 
-  *(undefined1 *)((intptr_t)param_1 + 0x44) = 0;
+  // BMD+0x44 (x86) = LightEnable: el contorno de selección se dibuja sin luz,
+  // con el color de BodyLight (dorado). En x64 el offset crudo caía dentro de
+  // un puntero del modelo y el contorno salía iluminado (plateado).
+  AsModel(param_1)->LightEnable = 0;
   // _DAT_005597c8 is float; param_5 is a float passed as undefined4. Reinterpret
   // the bit pattern (cast through uint) so we don't do an int→float conversion.
   *(unsigned int *)&_DAT_005597c8 = (unsigned int)param_5;
