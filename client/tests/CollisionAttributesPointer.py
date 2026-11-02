@@ -47,7 +47,7 @@ std::uint64_t Run(BYTE* allocation,BYTE* attributes,BYTE* poolStorage){
   const bool directed=scenario<10;const short type=scenario==6||scenario==7?243:scenario==8?223:types[(profile+scenario)%5];const int subtype=scenario==6||scenario==7||scenario==8||scenario==11||scenario==12?2:0;
   const int cooldown=scenario==4?cooldowns[2+profile%2]:cooldowns[profile%2];
   firstRand=scenario==2?randoms[1+2*(profile%2)]:scenario==9?randoms[2]:0;soundRand=sounds[profile];packetHit=scenario!=5;
-  const int owner=static_cast<int>(reinterpret_cast<uintptr_t>(scenario==3||!directed?pool:static_cast<BYTE*>(DAT_07abf5d8)));
+  const std::intptr_t owner=reinterpret_cast<std::intptr_t>(scenario==3||!directed?pool:static_cast<BYTE*>(DAT_07abf5d8));   // Owner (+252) es un puntero completo
   memory[16]=1;Put(target,2,type);Put(target,4,subtype);Put(target,16,123.5f);Put(target,20,-42.5f);Put(target,24,19.25f);
   target[132]=directed?1:0;target[133]=static_cast<BYTE>(skillIndex);Put(target,134,short(0x7f00|skillIndex));target[136]=static_cast<BYTE>(profile*31);Put(target,96,scenario==7?15:14);Put(target,244,cooldown);Put(target,252,owner);
   // La rama AOE salta dueño,héroe,inactivo,invisible,muerto y distancia101.
