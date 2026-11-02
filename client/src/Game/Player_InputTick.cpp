@@ -795,15 +795,11 @@ void __cdecl Player_ProcessInput(void)
 
                         if (curOct != newOct) {
                             AsCharacter(ent)->Object.Angle[2] = newFacing;
-                            // TODO(paquete): el binario avisa acá al server con
-                            // PMSG_ACTION_RECV (`C1:18`, Protocol.h:55 —
-                            // {BYTE dir; BYTE action; BYTE index[2]}) llevando el
-                            // octante como `dir`. El layout exacto del buffer en
-                            // el decompile está entrelazado con el ruido de
-                            // hash-table (la key de 32 bytes v233..v256), así que
-                            // queda sin enviar hasta confirmarlo por disassembly:
-                            // sólo afecta a que OTROS jugadores vean la rotación,
-                            // y un paquete mal formado desconecta.
+                            // IDA L440-470: avisa el giro con PMSG_ACTION_RECV
+                            // [C1][05][18][dir][102]; sin esto los demás
+                            // jugadores no ven hacia dónde mira el héroe parado.
+                            BYTE pkt[5] = { 0xC1, 0x05, 0x18, (BYTE)newOct, 102 };
+                            gNetwork.SendC1(pkt, sizeof(pkt));
                         }
                     }
                 }

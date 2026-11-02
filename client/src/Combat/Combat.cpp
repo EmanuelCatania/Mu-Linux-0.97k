@@ -2322,9 +2322,11 @@ void __cdecl Action(intptr_t c, intptr_t o)
                 float fac = *(float*)(o + 36);
                 BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
                 BYTE pkt[8];
-                pkt[0] = 0xC1; pkt[1] = 0x06; pkt[2] = 0x18;
-                pkt[3] = 0x01; pkt[4] = heading; pkt[5] = 110;
-                Combat_SendPlainPacket97k(pkt, 6);
+                // IDA Action (0x48D640): [C1][05][18][dir][accion]; el 0x01 del decompile
+                // es el tamano provisorio, no un dato.
+                pkt[0] = 0xC1; pkt[1] = 0x05; pkt[2] = 0x18;
+                pkt[3] = heading; pkt[4] = 110;
+                Combat_SendPlainPacket97k(pkt, 5);
                 AsCharacter(c)->PathNum = 0;
                 return;
             }
@@ -2361,9 +2363,11 @@ void __cdecl Action(intptr_t c, intptr_t o)
             float fac = *(float*)((char*)(uintptr_t)DAT_07abf5d8 + 36);
             BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
             BYTE pkt[8];
-            pkt[0] = 0xC1; pkt[1] = 0x06; pkt[2] = 0x18;
-            pkt[3] = 0x01; pkt[4] = heading; pkt[5] = 109;
-            Combat_SendPlainPacket97k(pkt, 6);
+            // IDA Action (0x48D640): [C1][05][18][dir][accion]; el 0x01 del decompile
+            // es el tamano provisorio, no un dato.
+            pkt[0] = 0xC1; pkt[1] = 0x05; pkt[2] = 0x18;
+            pkt[3] = heading; pkt[4] = 109;
+            Combat_SendPlainPacket97k(pkt, 5);
         }
 
         // ── 5b. v307 tertiary packet (anim 133/135 + action 108) ───────────────────────────────────────
@@ -2373,9 +2377,11 @@ void __cdecl Action(intptr_t c, intptr_t o)
             float fac = *(float*)((char*)(uintptr_t)DAT_07abf5d8 + 36);
             BYTE heading = (BYTE)((int)((fac + 22.5f) * 0.022222223f + 1.0f) & 7);
             BYTE pkt[8];
-            pkt[0] = 0xC1; pkt[1] = 0x06; pkt[2] = 0x18;
-            pkt[3] = 0x01; pkt[4] = heading; pkt[5] = 108;
-            Combat_SendPlainPacket97k(pkt, 6);
+            // IDA Action (0x48D640): [C1][05][18][dir][accion]; el 0x01 del decompile
+            // es el tamano provisorio, no un dato.
+            pkt[0] = 0xC1; pkt[1] = 0x05; pkt[2] = 0x18;
+            pkt[3] = heading; pkt[4] = 108;
+            Combat_SendPlainPacket97k(pkt, 5);
         }
 
         // PlayBuffer 30 (sonido de paso) al final, per IDA L2065
