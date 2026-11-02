@@ -243,20 +243,24 @@ int __cdecl FUN_00482850_(void)
 //   Line 2: arrow count for slot 604  (uses GlobalText[352])
 // Y offset is resolution-dependent (m_Resolution case).
 // =============================================================================
+// IDA 0x4BF540 dibuja en (GetScreenWidth() - margenParty - k, 4), con k fijo
+// por resolución (90/75/65/58/10) ajustado al ancho de la fuente del 0.97k.
+// DESVIACION: con la fuente configurable ese k no alcanza y el texto queda
+// debajo de la lista de party; se alinea a la derecha de ese mismo borde.
+static int RenderNumArrow_TextX(float partyMargin, const SIZE& sz)
+{
+    const float rate = gWindow.GetScreenRateX() > 0.0f ? gWindow.GetScreenRateX() : 1.0f;
+    const float width = (float)sz.cx / rate;
+    return (int)((float)GetScreenWidth() - partyMargin - 5.0f - width);
+}
+
 extern "C" bool __cdecl RenderNumArrow_(void);
 bool __cdecl RenderNumArrow_(void)
 {
     bool drewSomething = false;
-    float v27 = (PartyNumber > 0 && !PartyOpened) ? 50.0f : 0.0f;
-
-    int baseY = 10;
-    switch (m_Resolution) {
-        case 0: baseY = 90; break;
-        case 1: baseY = 75; break;
-        case 2: baseY = 65; break;
-        case 3: baseY = 58; break;
-        case 4: baseY = 10; break;
-    }
+    // IDA 0x4BF540: 50 px de margen si hay party (la lista compacta), sin
+    // mirar PartyOpened; el ancla es GetScreenWidth(), no el borde de la ventana.
+    float v27 = (PartyNumber > 0) ? 50.0f : 0.0f;
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
@@ -265,9 +269,7 @@ bool __cdecl RenderNumArrow_(void)
     // Anti-tamper inner block (CharacterMachine decrypt) — skipped.
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 536)) == 143) {
-        int screenW = gWindow.PanelOrigin(Ui::WindowRight);
         int v10 = *(unsigned char*)((BYTE*)CharacterMachine + 562);
-        float v25 = (float)((double)screenW - (double)v27 - 10.0);
         int v11 = FUN_00482850_();
         if (v10 > 0 || v11 > 0) {
             CHAR String[100];
@@ -276,15 +278,13 @@ bool __cdecl RenderNumArrow_(void)
             int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
-            Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
+            Text_MeasureBox(RenderNumArrow_TextX(v27, sz), 4, String, 0, 0, 0);
             drewSomething = true;
         }
     }
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 604)) == 135) {
-        int screenW = gWindow.PanelOrigin(Ui::WindowRight);
         int v13 = *(unsigned char*)((BYTE*)CharacterMachine + 630);
-        float v26 = (float)((double)screenW - (double)v27 - 10.0);
         int v14 = FUN_00482850_();
         if (v13 > 0 || v14 > 0) {
             CHAR String[100];
@@ -293,7 +293,7 @@ bool __cdecl RenderNumArrow_(void)
             int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
-            Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
+            Text_MeasureBox(RenderNumArrow_TextX(v27, sz), 4, String, 0, 0, 0);
             drewSomething = true;
         }
     }
