@@ -30,15 +30,16 @@ void __cdecl CreateArrow(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, W
         weaponType1 = (int)*(short*)(cm + 0x25C);
     }
 
-    // Adjust: add ITEM_BASE_MODEL (400) if not -1
+    // IDA 0x474370: el +400 se suma SOLO en la rama del héroe, porque
+    // CharacterMachine guarda el tipo de item; las armas de otra entidad
+    // (c+624/c+648) ya son el modelo vanilla que imita el item.  Sumarlo
+    // siempre dejaba sin flecha a la elfa vista desde otro cliente.
     int adjType0 = weaponType0;
-    if (weaponType0 != -1) {
-        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + ITEM_MODEL_BASE;   // 0.97.20
-    }
     int adjType1 = weaponType1;
-    if (weaponType1 != -1) {
+    if (isHero && weaponType0 != -1)
+        adjType0 = gContentCatalog.GetItemBehavior(weaponType0) + ITEM_MODEL_BASE;   // 0.97.20
+    if (isHero && weaponType1 != -1)
         adjType1 = gContentCatalog.GetItemBehavior(weaponType1) + ITEM_MODEL_BASE;
-    }
 
     // Play sound based on SKKey
     DWORD effectFlags = 0;

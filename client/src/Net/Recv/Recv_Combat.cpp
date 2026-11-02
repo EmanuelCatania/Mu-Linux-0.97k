@@ -569,6 +569,12 @@ void NetRecv_1E(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
     }
     *(DWORD *)&AsCharacter(caster)->Object.AnimationFrame = 0;
     AsCharacter(caster)->SkillStage = 1;
+    // DESVIACION: Triple Shot de otro jugador dispara ya. El modelo 390 anima
+    // con la velocidad de ataque del héroe local; si es más lenta que la del
+    // que tira, el 0x1E siguiente resetea la etapa antes del frame 5 y sólo
+    // sale una de cada varias tandas de flechas.
+    if (skill == 24 && *(WORD *)&AsCharacter(caster)->Object.Type == 390)
+        AsCharacter(caster)->SkillStage = 15;
     *(WORD *)&AsCharacter(caster)->TargetCharacter = 0xFFFF;
     caster[EntityOffset(756)] = 0;
 }
