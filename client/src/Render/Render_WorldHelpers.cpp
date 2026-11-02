@@ -82,7 +82,7 @@ void __cdecl RenderBoids(void)
 
     // El bound de IDA es `< &unk_83A0378` = 40 slots; lo expresamos como un
     // contador para no construir un puntero fuera del array.
-    float* v0 = (float*)&g_WeatherSlotPool[EntityOffset(0x168)];
+    float* v0 = (float*)&g_WeatherSlotPool[0x168];
     for (int __slot = 0; __slot < 40; ++__slot) {
         WORD entType = *((WORD*)v0 - 179);
         // Pre-tick: angle adjust (+90° rotation per frame for non-266)
@@ -124,9 +124,9 @@ void __cdecl RenderBoids(void)
                     void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * 301);
                     void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + BMD_STRIDE * entType);
                     RenderPartObjectBodyColor(mdl301, reinterpret_cast<uintptr_t>(v0 - 90),
-                                              301, *v0, 0x48, 1.0f, -1);
+                                              301, AsObject(v0 - 90)->Alpha, 0x48, 1.0f, -1);
                     RenderPartObjectBodyColor(mdlEnt, reinterpret_cast<uintptr_t>(v0 - 90),
-                                              entType, *v0, 0x44, 1.0f, -1);
+                                              entType, AsObject(v0 - 90)->Alpha, 0x44, 1.0f, -1);
                 }
 
                 // TODO(pendiente): IDA L55-72 tiene ademas, gateado por
@@ -199,7 +199,7 @@ void __cdecl Entity_Render(void)
             // Frustum cull radio 400 alrededor de entity pos (v0-245 = pos vec3).
             float* v2 = (float*)(v0 - 245);
             char vis = (char)Frustum_TestSphere(v2, 400.0f);
-            v0[91] = vis;
+            AsObject(v1)->Visible = vis;
             if (vis) {
                 short type = *(short*)(v0 - 259);
                 int v5 = type;
@@ -217,7 +217,7 @@ void __cdecl Entity_Render(void)
                 BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + (uintptr_t)v5 * BMD_STRIDE);
                 model[160] = 0;
                 model[152] = (BYTE)((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class) & 7);
-                model[160] = *v0;
+                model[160] = AsObject(v1)->CurrentAction;
                 *(float*)&((BMD*)(uintptr_t)(model))->BodyOrigin[0] = *v2;
                 *(DWORD*)&((BMD*)(uintptr_t)(model))->BodyOrigin[1] = *(DWORD*)(v0 - 241);
                 *(DWORD*)&((BMD*)(uintptr_t)(model))->BodyOrigin[2] = *(DWORD*)(v0 - 237);
@@ -231,8 +231,8 @@ void __cdecl Entity_Render(void)
                 // offsets de BYTE (disasm 0x5039E9/0x5039ED: `mov ecx,[esi+7]`,
                 // `mov edx,[esi+3]`), no de float.
                 BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
-                             *(float*)(v0 + 3), *(unsigned int*)(v0 + 7),
-                             v0[1], (unsigned int*)angles_in, headA, 0, 0);
+                             AsObject(v1)->AnimationFrame, *(unsigned int*)&AsObject(v1)->PriorAnimationFrame,
+                             AsObject(v1)->PriorAction, (unsigned int*)angles_in, headA, 0, 0);
 
                 // Compute lighting from terrain + entity color offset.
                 float Light[3];
@@ -267,7 +267,7 @@ void __cdecl Entity_Render(void)
                         // Alpha: IDA `*(float *)(v0 + 99)` — offset de BYTE
                         // (disasm 0x503B4C: `mov eax, [esi+63h]`), o sea Items+432,
                         // el mismo campo que usa el draw principal (v1 + 360).
-                        RenderPartObject((intptr_t)v1, type, 0, Light, *(float*)(v0 + 99),
+                        RenderPartObject((intptr_t)v1, type, 0, Light, AsObject(v1)->Alpha,
                                      *(DWORD*)(v0 - 325), *(v0 - 302),
                                      1, 1, 1, 0, 2);
                         ++v9; ++v10;
@@ -318,7 +318,7 @@ void __cdecl Entity_Render(void)
             }
         }
     next_entry:
-        v0  += 0x204;
+        v0  += GROUND_ITEM_STRIDE;
         ++v16;
         v14 += 20;
         v15 += 1237;
@@ -1017,8 +1017,8 @@ void __cdecl EffectPool_RenderAll(void)
             float angles_in[3]  = { v0[-3], v0[-2], v0[-1] };
             float headA[3]      = { v0[0],  v0[1],  v0[2]  };
             BMD_Animation(model, reinterpret_cast<float*>(&DAT_06970a9c),
-                         v0[56], *(unsigned int*)&v0[57],
-                         *((BYTE*)v0 + 222),
+                         AsObject(v0 - 10)->AnimationFrame, *(unsigned int*)&AsObject(v0 - 10)->PriorAnimationFrame,
+                         AsObject(v0 - 10)->PriorAction,
                          (unsigned int*)angles_in, headA, 0, 0);
 
             v0[16] = 1.0f;

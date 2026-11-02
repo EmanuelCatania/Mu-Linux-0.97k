@@ -162,12 +162,12 @@ void RenderPartyHP_(void)
     do {
         DWORD v2 = v1[1];                          // character index
         if (v2 != (DWORD)-1) {
-            int v3 = 229 * (int)v2;
+            const BYTE* character = (const BYTE*)CharactersClient + (size_t)v2 * CHARACTER_STRIDE;
             float Position[3];
-            Position[0] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 16);
-            Position[1] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 20);
-            Position[2] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 300)  // [75]
-                        + *(float*)((BYTE*)CharactersClient + 4 * v3 + 24)   // [6]
+            Position[0] = *(const float*)(character + 16);
+            Position[1] = *(const float*)(character + 20);
+            Position[2] = *(const float*)(character + EntityOffset(300))  // [75]
+                        + *(const float*)(character + 24)   // [6]
                         + 100.0f;
 
             int sx, sy;

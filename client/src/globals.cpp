@@ -275,7 +275,7 @@ DWORD    DAT_00559c90  = 0;
 // los alias apuntan dentro de este array y son `int&` (IDA: `int InputTextMax[8]`),
 // nunca float ni globals sueltos.
 int      _InputTextMaxArr[8] = {0,0,0,0,0,0,0,0};
-int      InputTextMaxClusters[8] = {0,0,0,0,0,0,0,0};
+int      InputTextMaxClusters[10] = {};
 int&     InputTextMax = _InputTextMaxArr[0];
 int&     _DAT_00559c98 = _InputTextMaxArr[1];
 DWORD&   DAT_00559c98  = reinterpret_cast<DWORD&>(_InputTextMaxArr[1]);

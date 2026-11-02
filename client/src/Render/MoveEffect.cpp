@@ -859,7 +859,7 @@ void MoveEffect(float *param_1, int param_2)
           local_318 = 0x41a00000;
           local_314 = 0;
           Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
-          pfVar15 = param_1 + 0x5c;
+          pfVar15 = AsObject(param_1)->StartPosition;
           *pfVar15 = local_354 + *pfVar10;
           AsObject(param_1)->StartPosition[1] = local_350 + AsObject(param_1)->Position[1];
           AsObject(param_1)->StartPosition[2] = local_34c + AsObject(param_1)->Position[2];
@@ -1901,7 +1901,7 @@ LAB_00466e5e:
         Matrix_BuildFromEuler((float *)((intptr_t)AsObject(param_1)->Owner + 0x1c),local_15c);
         Vector_Rotate(&local_310,local_15c,&local_328);
         local_348 = local_328 + AsObject(param_1)->Position[0];
-        pfVar10 = param_1 + 0x5c;
+        pfVar10 = AsObject(param_1)->StartPosition;
         *pfVar10 = local_348;
         // Rageful Blow, punto de impacto (IDA):
         //  - Y es float: `v355 = TargetPosition[1] + *(float*)(o+20)` (sin truncar).

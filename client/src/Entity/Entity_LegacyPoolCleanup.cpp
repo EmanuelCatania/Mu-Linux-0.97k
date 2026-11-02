@@ -54,7 +54,7 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     // Walk Butterfles pool: each entry 0x1BC bytes (= 111 dwords = 444b),
     // entry layout has Owner at +0xFC (= dword[63]).
     DWORD* v3 = (DWORD*)&DAT_083a1218;
-    DWORD* end = (DWORD*)((char*)&DAT_083a1218 + 0x1158);
+    DWORD* end = (DWORD*)((char*)&DAT_083a1218 + 10 * OBJECT_STRIDE);
     while (v3 < end) {
         if (*(BYTE*)v3 != 0 && AsObject(v3)->Owner == AsObject(v1)) {
             *(BYTE*)v3 = 0;

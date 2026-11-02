@@ -274,7 +274,7 @@ void __cdecl DeleteObjects(void) {
 //
 // Cota del bucle interno: el binario usa el literal 0x83a2370 (= DAT_083a1218
 // + 0x1158, fin del array Butterfles); acá el array vive en otra dirección,
-// así que se usa DAT_083a1218 + 0x1158 (end-pointer real).
+// así que se usa DAT_083a1218 + 10 * OBJECT_STRIDE (end-pointer real).
 void __cdecl ClearCharacters(int param_1) {
     gHealthBar.Clear();
     // DESVIACION: cerrar las extensiones al reconstruir el mapa, sin borrar catálogos.
@@ -282,7 +282,7 @@ void __cdecl ClearCharacters(int param_1) {
     gEventTimer.Close();
     gChaosMixRates.Reset();
     GoldenArcher_ResetCharacter();
-    char* butterflesEnd = DAT_083a1218 + 0x1158;
+    char* butterflesEnd = DAT_083a1218 + 10 * OBJECT_STRIDE;
     for (int i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
         // El slot puede reutilizarse antes de que MoveJoint observe Live=0.

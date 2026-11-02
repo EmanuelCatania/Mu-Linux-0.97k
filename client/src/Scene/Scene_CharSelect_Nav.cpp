@@ -372,7 +372,7 @@ int __cdecl Character_FindByKey_WithClear(int a1)
 
   v1 = 0;
   result = 400;
-  for ( i = 0; i < 366400; i += CHARACTER_STRIDE )
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
   {
     if ( *(BYTE *)(i + CharactersClient) )
     {
@@ -381,7 +381,7 @@ int __cdecl Character_FindByKey_WithClear(int a1)
         result = v1;
       }
     }
-    *(BYTE *)(i + CharactersClient + 744) = 0;
+    *(BYTE *)(i + CharactersClient + EntityOffset(744)) = 0;
     ++v1;
   }
   return result;
@@ -398,7 +398,7 @@ void __cdecl Characters_SetActionAll(int Action)
   std::uintptr_t v2; // eax
   std::uintptr_t v3; // [esp-8h] [ebp-14h]
 
-  for ( i = 0; i < 366400; i += CHARACTER_STRIDE )
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
   {
     v2 = i + CharactersClient;
     if ( *(BYTE *)(i + CharactersClient) )
@@ -425,9 +425,9 @@ void Characters_FreeAllBMDBuffers()
   int i; // edi
   LPVOID *v1; // esi
 
-  for ( i = 0; i < 366400; i += CHARACTER_STRIDE )
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
   {
-    v1 = (LPVOID *)(i + CharactersClient + 276);
+    v1 = (LPVOID *)(i + CharactersClient + EntityOffset(276));
     if ( *v1 )
     {
       delete__(*v1);

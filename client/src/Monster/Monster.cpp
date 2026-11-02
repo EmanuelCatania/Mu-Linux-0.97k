@@ -518,7 +518,7 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
     while (*(unsigned char*)i != 0) {
         if (++v7 >= 400) {
             // all slots occupied — return sentinel slot at end (matches IDA)
-            return AsCharacter(DAT_07abf5d0 + 366400);
+            return AsCharacter(DAT_07abf5d0 + 400 * CHARACTER_STRIDE);
         }
         i += CHARACTER_STRIDE;
     }

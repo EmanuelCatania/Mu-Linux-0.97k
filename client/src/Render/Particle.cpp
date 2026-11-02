@@ -118,7 +118,7 @@ void __cdecl Particle_PathUpdate(OBJECT* object, int param_2, const void* table,
         fVar5 = fVar1 / fVar4 + fVar5;
       }
       iVar7 = iVar7 + 1;
-      pfVar6 = pfVar6 + 0x6f;
+      pfVar6 = pfVar6 + OBJECT_STRIDE / 4;
     } while (iVar7 < param_4);
     if (0 < iVar8) {
       fVar1 = *(float *)(param_1 + 0x10);

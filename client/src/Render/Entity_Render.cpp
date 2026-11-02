@@ -186,7 +186,7 @@ void __cdecl MoveCharacterClient(float *param_1)
 
   if (*(char *)param_1 != '\0') {
     uVar1 = TestFrustrum2D(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
-    *(char *)(param_1 + 0x58) = (char)uVar1;
+    AsObject(param_1)->Visible = (BYTE)uVar1;
     MoveMonsterClient(AsCharacter(param_1), AsObject(param_1));
     MoveCharacter((intptr_t)param_1);
     MoveCharacterVisual((intptr_t)param_1);

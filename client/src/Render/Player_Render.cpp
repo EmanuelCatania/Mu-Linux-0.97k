@@ -96,6 +96,6 @@ void Player_Render(void)
             float  scale    = *(float*)(puVar1 - 0x32);
             RenderPlane((int)classCode, posXYZ, rotation, Ff(scale));
         }
-        puVar1 += 0x6F;
+        puVar1 += OBJECT_STRIDE / 4;
     }
 }

@@ -256,13 +256,12 @@ int Scene_CharSelect(void)
         iVar4 = DAT_005616ac;
         iVar9 = SelectedCharacter;
         iVar7 = 0;
-        pfVar3 = (float *)(DAT_07abf5d0 + 0xec);
         _DAT_0055a7c0 = 0;
         do {
-            if (*(short *)(pfVar3 + 0x73) == 0x333)
-                pfVar3[-0x35] = 20.0f;
+            CHARACTER* preview = AsCharacter(DAT_07abf5d0) + iVar7;
+            if (preview->Helper.Type == 0x333)
+                preview->Object.Position[2] = 20.0f;
             iVar7++;
-            pfVar3 = pfVar3 + 0xe5;
         } while (iVar7 < 5);
 
         // ── DIAG: log 5 slots once a second so we can verify MG entity state ──

@@ -166,8 +166,8 @@ LAB_0050245e:
                     puVar9[2]    = 0x3f000000; // color B = 0.5
                     RenderFxSnapshots_New(puVar9-0x3a);
                     *(unsigned char *)(puVar9 + -0x3a) = 1;  // active = true
-                    puVar9[0x20] = 0;
-                    puVar9[0x1f] = 0x3f800000; // x-scale = 1.0
+                    AsObject((char*)puVar9 - 0xE8)->Alpha = 0.0f;
+                    AsObject((char*)puVar9 - 0xE8)->AlphaTarget = 1.0f;
                     puVar9[-0x21] = 0xffffffff;
                     puVar9[-0x33] = 0;  // vel_x = 0
                     puVar9[-0x32] = 0;  // vel_y = 0
@@ -199,7 +199,7 @@ LAB_0050245e:
                         uVar6 = _rand();
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
-                        puVar9[0x1f] = (unsigned int)((float)(int)(uVar6 + 2) * _DAT_005524f4);
+                        AsObject((char*)puVar9 - 0xE8)->AlphaTarget = (float)(int)(uVar6 + 2) * _DAT_005524f4;
                         *(float*)&puVar9[-7] = _DAT_00552534 / *(float*)&puVar9[-0x37];
                         iVar8 = gMapManager.GetCurrentMap();
                         break;
@@ -266,9 +266,9 @@ switchD_caseD_2:
             // Animate model
             *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0 + BMD_FIELD_SHIFT) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
             BMD__PlayAnimation(this_model,
-                         (float *)(puVar9 + 8),
-                         (float *)(puVar9 + 9),
-                         (unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1e),
+                         &AsObject((char*)puVar9 - 0xE8)->AnimationFrame,
+                         &AsObject((char*)puVar9 - 0xE8)->PriorAnimationFrame,
+                         &AsObject((char*)puVar9 - 0xE8)->PriorAction,
                          *(float*)&puVar9[-7] * _DAT_00552504);
 
             sVar5 = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
@@ -403,7 +403,7 @@ skip_decrement:
         }
 
 LAB_00502b38:
-        puVar9  = puVar9 + 0x6f;   // stride: 0x1bc bytes per slot
+        puVar9  = puVar9 + OBJECT_STRIDE / 4;   // stride: 0x1bc bytes per slot
         local_20++;
         if ((uintptr_t)puVar9 >= arrEnd) return;
     } while (true);

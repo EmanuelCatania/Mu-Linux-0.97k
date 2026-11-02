@@ -51,7 +51,7 @@ void Effect_TickAll(void)
         *(char *)pfVar1 = '\0';   // matar el efecto para no repetir el crash
       }
     }
-    pfVar1 = pfVar1 + 0x6f;
+    pfVar1 = pfVar1 + OBJECT_STRIDE / 4;
     iVar2 = iVar2 + 1;
   } while ((uintptr_t)pfVar1 < poolEnd);
 }

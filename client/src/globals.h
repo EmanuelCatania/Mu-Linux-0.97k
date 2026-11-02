@@ -255,7 +255,7 @@ extern DWORD   DAT_00559c90;
 extern int     _InputTextMaxArr[8];
 // 0.97.40: tope en grapheme clusters por slot (0 = sólo el tope en bytes de
 // _InputTextMaxArr). ClearInput lo vuelve a 0 en los slots que limpia.
-extern int     InputTextMaxClusters[8];
+extern int     InputTextMaxClusters[10];
 inline void Input_SetLimit(int slot, int bytes, int clusters)
 {
     _InputTextMaxArr[slot] = bytes;

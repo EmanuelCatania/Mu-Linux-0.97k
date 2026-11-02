@@ -1345,14 +1345,14 @@ void __cdecl InitGuildWar(void) {
     DAT_00559684 = 0xffffffff;
     lpString_05826bfc[0] = '\0';
     // Re-enable party target markers for all live entities
-    unsigned char *puVar3 = (unsigned char*)(DAT_07abf5d0 + 0x2e9);
+    unsigned char *puVar3 = (unsigned char*)(DAT_07abf5d0 + EntityOffset(0x2e9));
     char *pPlayer = DAT_07abf5d8;
     int iVar4 = 400;
     do {
-        if (puVar3[-0x2e9] != '\0') {
+        if (*(puVar3 - EntityOffset(0x2e9)) != '\0') {
             short sVar1 = *(short*)(pPlayer + EntityOffset(0x1da));
             *puVar3 = 0;
-            if ((sVar1 != -1) && (*(short*)((char*)puVar3 - 0x10f) == sVar1))
+            if ((sVar1 != -1) && (*(short*)((char*)puVar3 - EntityOffset(0x2e9) + EntityOffset(0x1da)) == sVar1))
                 *puVar3 = 1;
         }
         puVar3 += CHARACTER_STRIDE;

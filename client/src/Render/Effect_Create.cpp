@@ -150,7 +150,7 @@ LAB_00460dd8:
   // cantidad de iteraciones.
   {
     bool found_slot = false;
-    for (int i = 0; i < 200; ++i, pfVar17 = pfVar17 + 0x6f) {
+    for (int i = 0; i < 200; ++i, pfVar17 = pfVar17 + OBJECT_STRIDE / 4) {
       if (*(char *)pfVar17 == '\0') { found_slot = true; break; }
     }
     if (!found_slot) return (float *)0x0;
@@ -1261,7 +1261,7 @@ switchD_00461001_caseD_c7:
     local_68 = -100.0;
     local_64 = 15.0;
     Vector_Rotate(&local_6c,local_3c + 3,&local_60);
-    pfVar8 = pfVar17 + 0x5c;
+    pfVar8 = AsObject(pfVar17)->StartPosition;
     *pfVar8 = AsObject(pfVar17)->Position[0];
     AsObject(pfVar17)->StartPosition[1] = AsObject(pfVar17)->Position[1];
     AsObject(pfVar17)->StartPosition[2] = AsObject(pfVar17)->Position[2];

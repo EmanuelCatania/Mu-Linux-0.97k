@@ -817,7 +817,7 @@ LABEL_53:
     if (!dword_55C9B84) {
         int i = 0;
         while (i < (int)self[35]) {
-            if (ChatWidget_Pointers(self).cursor == ChatWidget_Pointers(self).list2) break;
+            if (!ChatWidget_Pointers(self).cursor || ChatWidget_Pointers(self).cursor == ChatWidget_Pointers(self).list2) break;
             int v15 = ((FnRow)vt[25])(self, 0, i);
             if (v15 >= 0) {
                 if (!v15) --i;
