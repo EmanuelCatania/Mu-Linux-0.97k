@@ -222,9 +222,19 @@ def harness(revision=None):
     return preamble + initialize + alpha + physics + angles + rotate + ambient + flames + tick + MAIN.replace("CALL_TICK", call)
 
 
+# Layout x86 con el que trabajan los harnesses (memoria cruda con offsets de
+# IDA).  EntityOffset es la identidad porque el harness no usa los structs
+# reales; TEXTURE_STRIDE y GROUND_ITEM_STRIDE son los tamaños de x86.
+HARNESS_LAYOUT = (
+    "#include <cstddef>" + chr(10) +
+    "constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;" + chr(10) +
+    "constexpr int TEXTURE_STRIDE=0x38,GROUND_ITEM_STRIDE=0x204;" + chr(10) +
+    "constexpr std::size_t EntityOffset(std::size_t x86){return x86;}" + chr(10))
+
+
 def build_and_run(directory, source, args):
     directory.mkdir()
-    (directory / "main.cpp").write_text("constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;" + chr(10) + source, encoding="utf-8")
+    (directory / "main.cpp").write_text(HARNESS_LAYOUT + source, encoding="utf-8")
     (directory / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.25)\n"
         "project(SceneObjectPointer LANGUAGES CXX)\n"

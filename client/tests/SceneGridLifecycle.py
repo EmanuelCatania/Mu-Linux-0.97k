@@ -33,6 +33,7 @@ static std::vector<unsigned> events;
 static float _DAT_00552d20 = 0.000625f;
 static DWORD DAT_05828d58 = 0x1000;
 static unsigned char DAT_083a2370[120];
+static std::uintptr_t g_OperateObjects[200];   // punteros de los operables (DeleteObjects los limpia)
 unsigned Slot(const void* p) {
     const auto address = reinterpret_cast<std::uintptr_t>(p);
     const auto base = reinterpret_cast<std::uintptr_t>(nodes);
