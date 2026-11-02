@@ -483,7 +483,11 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
             if (0 < *psVar1) {
                 char *param_2p = (char *)0;
                 do {
-                    crt_fwrite(param_2p + *(int *)(iVar8 + 0x1c), 0x40, 1, (int *)pFVar4);
+                    // IDA 0x442A60: archivo64/runtime36. Los28 bytes restantes
+                    // no existen en este registro; no leer la cara vecina ni el heap.
+                    char fileFace[64] = {};
+                    memcpy(fileFace, param_2p + *(int *)(iVar8 + 0x1c), 36);
+                    crt_fwrite(fileFace, sizeof(fileFace), 1, (int *)pFVar4);
                     param_2p += 0x24;
                     local_4c++;
                 } while (local_4c < *psVar1);

@@ -49,7 +49,7 @@ int main(){auto* low=static_cast<BYTE*>(Reserve(0x26000000u));auto* names=static
 def harness(revision=None):
     source=read_source('src/Render/BMD_LegacyLoading.cpp',revision)
     prefix=PREAMBLE.split('char DAT_00559bb4',1)[0]+'\n#include "'+(ROOT/'src/Model/ModelTypes.h').as_posix()+'"\n'
-    return prefix+SERVICES+function(source,'OpenSMDModel')+function(source,'OpenSMDAnimation')+MAIN
+    return prefix+"namespace Smd { inline bool SelectModel(const void*) { return true; } }\n"+SERVICES+function(source,'OpenSMDModel')+function(source,'OpenSMDAnimation')+MAIN
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');a=p.parse_args()

@@ -432,6 +432,7 @@ set(MU_HEADERS
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
     src/Model/ModelTypes.h
+    src/Model/SmdImport.h
     src/Core/ResourceLimits.h
     src/Model/BMDFileTypes.h
     src/Entity/CharacterAttributeView.h

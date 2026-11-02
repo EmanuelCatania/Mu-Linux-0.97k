@@ -7,6 +7,7 @@ from ObjectLayoutContract import record
 from SceneObjectPointer import read_source,function,build_and_run
 PREFIX=r'''
 #include <cstdint>
+namespace Smd { inline void Forget(const void*) {} inline bool SelectModel(const void*) { return true; } }
 #include <cstddef>
 #include <cstring>
 #include <cstdio>

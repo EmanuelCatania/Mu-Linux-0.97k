@@ -12,6 +12,7 @@
 //   - IAT thunk landing pads
 
 #include "stdafx.h"
+#include "Model/SmdImport.h"
 #include "Physics/ClothTypes.h"
 #include "Text/TextCore.h"
 #include "Entity/ClothPresentation.h"
@@ -393,18 +394,17 @@ void __cdecl MoveCharacterCamera(float *Origin, float *Position, float *Angle) {
 }
 
 // OpenSMDFile @ 0x0040B200 (106 bytes) — open and parse SMD model file
-// ParseNodes/ParseSkeleton/ParseTriangles son stubs vacios: si se abriera
-// SMDFile aca, el fclose lo dejaria apuntando a un FILE* liberado y el
-// siguiente GetToken (Monster_Data, etc.) reventaria.  No tocar SMDFile hasta
-// que existan los parsers.  Devuelve false (el 0.97k sólo trae .bmd).
-bool __cdecl OpenSMDFile(char *FileName, int /*Type*/, bool /*Flip*/) {
-    if (FileName == NULL) return false;
-    FILE* probe = Platform::GetFileSystem().Open(FileName, "r");
-    if (!probe) return false;
-    fclose(probe);
-    // SMDFile global intentionally untouched — parsers are stubs and consumers
-    // (GetToken/Monster_Data/Item_Data/...) own SMDFile via their own fopen().
-    return false;
+// Parser con estado propio; el archivo se cierra sin alterar el lector de tablas.
+bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip) {
+    // Invalidar la conversión pendiente incluso si falla la apertura. No tocar
+    // SMDFile: GetToken y los lectores de tablas poseen ese FILE* por separado.
+    Smd::Read(nullptr,Type,Flip);
+    if (!FileName) return false;
+    FILE* file = Platform::GetFileSystem().Open(FileName,"rb");
+    if (!file) return false;
+    const bool result = Smd::Read(file,Type,Flip);
+    fclose(file);
+    return result;
 }
 
 
