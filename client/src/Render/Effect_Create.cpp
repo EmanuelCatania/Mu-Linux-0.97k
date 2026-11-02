@@ -825,7 +825,7 @@ LAB_00463e3d:
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
     *(char *)(pfVar17 + 0x22) = cVar5;
-    *(char *)(pfVar12 + EntityOffset(0x160)) = cVar5 + '\x01';
+    *((char *)pfVar12 + 0x160) = cVar5 + '\x01';
     sVar28 = AsObject(pfVar17)->PKKey;
     bVar6 = *(byte *)(pfVar17 + 0x22);
     fVar27 = 300.0;
@@ -1367,7 +1367,7 @@ LAB_004625aa:
   pfVar12 = (float*)DAT_07cf1ffc;
   cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
   *(char *)(pfVar17 + 0x22) = cVar5;
-  *(char *)(pfVar12 + EntityOffset(0x160)) = cVar5 + '\x01';
+  *((char *)pfVar12 + 0x160) = cVar5 + '\x01';
   pfVar12 = (float *)STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
   return pfVar12;
 switchD_00460f25_caseD_100:
@@ -3378,8 +3378,8 @@ LAB_00463363:
 LAB_00463375:
   pfVar12 = (float *)0x0;
 LAB_00463377:
-  cVar5 = *(char *)(pfVar12 + EntityOffset(0x161));
-  *(byte *)(pfVar12 + EntityOffset(0x161)) = cVar5 + 1U;
+  cVar5 = *(char *)(pfVar12 + 0x161);
+  *(byte *)(pfVar12 + 0x161) = cVar5 + 1U;
   if ((byte)(cVar5 + 1U) < 2) {
     pfVar17 = (float*)operator_new(0x584);
     pfVar8 = pfVar17;

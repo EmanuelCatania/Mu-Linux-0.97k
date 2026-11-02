@@ -173,7 +173,7 @@ LAB_0050245e:
                     puVar9[-0x32] = 0;  // vel_y = 0
                     puVar9[-0x31] = 0;  // vel_z = 0
                     *(unsigned char *)(puVar9 + -3) = 1;
-                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x79) = 1;
+                    AsObject((char*)puVar9 - 0xE8)->AlphaEnable = 1;
                     puVar9[-0x39] = 0;
                     puVar9[-0x24] = 0xffffffff;
 

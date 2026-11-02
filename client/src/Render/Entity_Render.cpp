@@ -293,6 +293,7 @@ uint RenderBugs(void)
         float posX = *(float*)(slot + 16);
         float posY = *(float*)(slot + 20);
         unsigned short vis = TestFrustrum2D(posX * 0.01f, posY * 0.01f, -20.0f);
+        AsObject(slot)->Visible = (BYTE)(vis != 0);
         if (!vis) continue;
 
         intptr_t ownerPtr = (intptr_t)AsObject(slot)->Owner;

@@ -88,7 +88,7 @@ static inline void AE_TransformPosition(uintptr_t model, const void* mat,
 #define FUN_0045fae0(ctx, p)          AE_SkillRead((const void*)(ctx), (const void*)(p))
 #define FUN_00466300(pos)             FUN_00466300((float*)(uintptr_t)(pos))
 #define CreateJoint                   AE_CreateJoint
-#define TransformPosition(a,b,c,d,e)  AE_TransformPosition((DWORD)(uintptr_t)(a), (const void*)(b), (c), (d), (e))
+#define TransformPosition(a,b,c,d,e)  AE_TransformPosition((uintptr_t)(a), (const void*)(b), (c), (d), (e))
 #undef  CreateEffect
 #define CreateEffect                  AE_CreateEffect
 
@@ -407,7 +407,7 @@ void __cdecl AttackEffect(intptr_t Owner)
             {
               break;
             }
-            v175 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v175 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v175 == -1 )
             {
               v176 = 0;
@@ -446,7 +446,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + EntityOffset(770));
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + EntityOffset(770));
@@ -461,7 +461,7 @@ LABEL_265:
           {
             if ( v242 != -1 )
             {
-              v181 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v181 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v182 = v181 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v181);
               v183 = v182[1] - 1;
               v182[1] = v183;
@@ -524,7 +524,7 @@ LABEL_269:
               break;
             }
             v189 = (char *)(Owner + EntityOffset(770));
-            v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v192 == -1 )
             {
               v193 = 0;
@@ -565,7 +565,7 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + EntityOffset(770));
       *(BYTE *)(v188 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + EntityOffset(770));
 LABEL_293:
       v190 = *v189;
       PACKET_ENCRYPT(&MAIN_HASH_CLASS, v189);
@@ -607,7 +607,7 @@ LABEL_293:
             {
               break;
             }
-            v156 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v156 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v156 == -1 )
             {
               v157 = 0;
@@ -646,7 +646,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + EntityOffset(770));
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + EntityOffset(770));
@@ -661,7 +661,7 @@ LABEL_238:
           {
             if ( v241 != -1 )
             {
-              v162 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v162 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v163 = v162 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v162);
               v164 = v163[1] - 1;
               v163[1] = v164;
@@ -762,7 +762,7 @@ LABEL_242:
             {
               break;
             }
-            v135 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v135 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v135 == -1 )
             {
               v136 = 0;
@@ -801,7 +801,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + EntityOffset(770));
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + EntityOffset(770));
@@ -816,7 +816,7 @@ LABEL_210:
           {
             if ( v240 != -1 )
             {
-              v141 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v141 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v142 = v141 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v141);
               v143 = v142[1] - 1;
               v142[1] = v143;
@@ -896,7 +896,7 @@ LABEL_214:
               {
                 break;
               }
-              v119 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v119 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               if ( v119 == -1 )
               {
                 v120 = 0;
@@ -936,7 +936,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + EntityOffset(770));
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + EntityOffset(770));
@@ -951,7 +951,7 @@ LABEL_181:
             {
               if ( v239 != -1 )
               {
-                v125 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+                v125 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
                 v126 = v125 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v125);
                 v127 = v126[1] - 1;
                 v126[1] = v127;
@@ -1050,7 +1050,7 @@ LABEL_185:
               {
                 break;
               }
-              v84 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v84 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               if ( v84 == -1 )
               {
                 v85 = 0;
@@ -1089,7 +1089,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + EntityOffset(770));
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + EntityOffset(770));
@@ -1104,7 +1104,7 @@ LABEL_116:
             {
               if ( v237 != -1 )
               {
-                v90 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+                v90 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
                 v91 = v90 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v90);
                 v92 = v91[1] - 1;
                 v91[1] = v92;
@@ -1189,7 +1189,7 @@ LABEL_120:
             {
               break;
             }
-            v102 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v102 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v102 == -1 )
             {
               v103 = 0;
@@ -1228,7 +1228,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + EntityOffset(770));
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + EntityOffset(770));
@@ -1243,7 +1243,7 @@ LABEL_148:
           {
             if ( v238 != -1 )
             {
-              v108 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v108 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v109 = v108 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v108);
               v110 = v109[1] - 1;
               v109[1] = v110;
@@ -1324,7 +1324,7 @@ LABEL_152:
             {
               break;
             }
-            v31 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v31 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v31 == -1 )
             {
               v32 = 0;
@@ -1363,7 +1363,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + EntityOffset(770));
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + EntityOffset(770));
@@ -1378,7 +1378,7 @@ LABEL_46:
           {
             if ( v235 != -1 )
             {
-              v37 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v37 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v38 = v37 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v37);
               v39 = v38[1] - 1;
               v38[1] = v39;
@@ -1530,7 +1530,7 @@ LABEL_50:
             {
               break;
             }
-            v65 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v65 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v65 == -1 )
             {
               v66 = 0;
@@ -1569,7 +1569,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + EntityOffset(770));
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + EntityOffset(770));
@@ -1584,7 +1584,7 @@ LABEL_84:
           {
             if ( v236 != -1 )
             {
-              v71 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v71 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v72 = v71 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v71);
               v73 = v72[1] - 1;
               v72[1] = v73;
@@ -1659,7 +1659,7 @@ LABEL_88:
             {
               break;
             }
-            v8 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+            v8 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
             if ( v8 == -1 )
             {
               v9 = 0;
@@ -1699,7 +1699,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + EntityOffset(770));
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + EntityOffset(770);
@@ -1714,7 +1714,7 @@ LABEL_8:
           {
             if ( v234 != -1 )
             {
-              v14 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
+              v14 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + EntityOffset(770));
               v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
               v16 = v15[1] - 1;
               v15[1] = v16;
@@ -1804,7 +1804,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (i >= 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (i >= 2)))),
               v248,
               TargetPosition,
               1);
@@ -1825,7 +1825,7 @@ LABEL_75:
             memset(v246, 0, sizeof(v246));
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (j >= 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (j >= 2)))),
               v248,
               TargetPosition,
               1);
@@ -1838,7 +1838,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (k >= 3) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (k >= 3)))),
               v248,
               TargetPosition,
               1);
@@ -1856,7 +1856,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (m >= 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (m >= 2)))),
               v248,
               TargetPosition,
               1);
@@ -1878,7 +1878,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (v219 % 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (v219 % 2)))),
               v248,
               TargetPosition,
               1);
@@ -2017,7 +2017,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (n >= 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (n >= 2)))),
               v248,
               TargetPosition,
               1);
@@ -2038,7 +2038,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (ii >= 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (ii >= 2)))),
               v248,
               TargetPosition,
               1);
@@ -2074,7 +2074,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (jj >= 3) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (jj >= 3)))),
               v248,
               TargetPosition,
               1);
@@ -2119,7 +2119,7 @@ LABEL_75:
           {
             TransformPosition(
               This,
-              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + 24 * (v220 % 2) + 628)),
+              (float (*)[4])((intptr_t)AsCharacter(Owner)->Object.BoneMatrices + 48 * *(unsigned char *)(Owner + EntityOffset(628 + 24 * (v220 % 2)))),
               v248,
               TargetPosition,
               1);

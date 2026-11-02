@@ -22,7 +22,7 @@
 //   pcVar3         = &DAT_0839bcb0 + iVar14*0x1bc  — slot base
 //   pcVar3[0]      — active flag (char)
 //   iVar2          = iVar14 * 0x1bc                — byte offset
-//   (&DAT_0839bcb2)[iVar14*0xde] — type (short, stride=0xde*2=0x1bc/1)
+//   (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] — type (short, stride=0xde*2=0x1bc/1)
 //   WSLOT_DW(0x004) — mode flag (char)
 //   (&DAT_0839bcbc)[iVar14*(OBJECT_STRIDE / 4)] — angular speed (float)
 //   (&DAT_0839bcc0)[iVar14*(OBJECT_STRIDE / 4)] — pos_x (float)
@@ -320,7 +320,7 @@ LAB_00501064:
                     RenderFxSnapshots_New(pcVar3);
                     *pcVar3 = '\x01';
                     OpenMonsterModel(0x1f);   // play thunder sound
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0x12d;  // type = lightning
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0x12d;  // type = lightning
                     iVar12 = _rand();
                     (*(unsigned int*)&g_WeatherSlotPool[EntityOffset(0x168) + iVar14 * OBJECT_STRIDE]) = 0x3f800000;
                     (&DAT_0839be14)[iVar14 * (OBJECT_STRIDE / 4)] = 0x3f800000;
@@ -404,11 +404,11 @@ LAB_00501064:
                 // y los murcielagos quedan en 0.5.
                 bool __light1 = false;
                 if (iVar12 == 0) {
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0xae;   // cloud (connecting)
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0xae;   // cloud (connecting)
                 } else if ((iVar12 == 1) || (iVar12 == 4)) {
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0xb0;   // rain (entering)
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0xb0;   // rain (entering)
                 } else if (iVar12 == 3) {
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0xaf;   // snow
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0xaf;   // snow
                     (&DAT_0839bd7c)[iVar14 * (OBJECT_STRIDE / 4)] = 0x3e99999a;
                     WSLOT_DW(0x0dc) = 0;
                     __light1 = true;
@@ -417,11 +417,11 @@ LAB_00501064:
                         // Lightning slots 0-2 in loading state
                         *pcVar3 = '\x01';
                         OpenMonsterModel(0x1f);
-                        (&DAT_0839bcb2)[iVar14 * 0xde] = 0x12d;
+                        (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0x12d;
                         // (detailed init same as storm mode above)
                         goto LAB_0050172b;
                     }
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0x10a;  // firefly
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0x10a;  // firefly
                     (&DAT_0839bd7c)[iVar14 * (OBJECT_STRIDE / 4)] = 0x400ccccd;
                     WSLOT_DW(0x0dc) = 0;
                     (&DAT_0839bd10)[iVar14 * (OBJECT_STRIDE / 4)] = 0x2580;
@@ -429,12 +429,12 @@ LAB_00501064:
                     __light1 = true;
                 } else if (iVar12 != 7) {
                     // Mundos 11-16 (Blood Castle): tipo 184.
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0xb8;
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = 0xb8;
                 } else if (*(float *)(DAT_07abf5d8 + 0x14) * 0.01f < 128.0f) {
                     // Atlans, mitad sur: peces 182/183.
                     const short __fish = (short)(_rand() % 2);
                     *(unsigned int *)(&DAT_0839bd88 + iVar2) = 0x41700000;   // 15.0
-                    (&DAT_0839bcb2)[iVar14 * 0xde] = __fish + 0xb6;
+                    (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] = __fish + 0xb6;
                     (&DAT_0839bd7c)[iVar14 * (OBJECT_STRIDE / 4)] = (_rand() % 100 < 90) ? 0x3e99999a   // 0.3
                                                                            : 0x3e800000;  // 0.25
                     WSLOT_DW(0x0dc) = 0;
@@ -465,7 +465,7 @@ LAB_00501064:
                 uVar13 = _rand(); uVar8 = (intptr_t)DAT_07abf5d8;
                 uVar13 &= 0x800003ff;
                 if ((int)uVar13 < 0) uVar13 = (uVar13 - 1 | 0xfffffc00) + 1;
-                sVar5 = (&DAT_0839bcb2)[iVar14 * 0xde];
+                sVar5 = (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)];
                 WSF(DAT_0839bcc4, iVar14 * (OBJECT_STRIDE / 4)) = (float)((float)(int)(uVar13 - 0x200) + *(float *)(uVar8 + 0x14));
                 (&DAT_0839bcc8)[iVar14 * (OBJECT_STRIDE / 4)] = *(unsigned int *)(uVar8 + 0x18);
                 iVar12 = gMapManager.GetCurrentMap();
@@ -503,7 +503,7 @@ LAB_0050172b:
 
 LAB_00501734:
         if (*pcVar3 != '\0') {
-            sVar5  = (&DAT_0839bcb2)[iVar14 * 0xde];
+            sVar5  = (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)];
             fVar25 = 1.0f;
             pvVar9 = (void *)(DAT_05828d58 + sVar5 * BMD_STRIDE);
             if (sVar5 == 0x12d) fVar25 = 0.5f;
@@ -516,7 +516,7 @@ LAB_00501734:
                              (float *)(&DAT_0839bdbc + iVar2),
                              &DAT_0839bdb6 + iVar2, fVar25);
                 uVar8 = (intptr_t)DAT_07abf5d8;
-                sVar5 = (&DAT_0839bcb2)[iVar14 * 0xde];
+                sVar5 = (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)];
 
                 // ── Update by type ────────────────────────────────────────────
                 if ((sVar5 == 0xae) || (sVar5 == 0xb8)) {
@@ -650,7 +650,7 @@ LAB_00501cb5:
 
                 // ── Movement: apply direction vector ─────────────────────────
                 if ((&DAT_0839bdb4)[iVar2] != '\x02') {
-                    if ((&DAT_0839bcb2)[iVar14*0xde] != 0xaf) {
+                    if ((&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)] != 0xaf) {
                         // Pasar la dirección real de DAT_0839bcb0, no el literal `0x839bcb0` del
                         // binario fuente (en este build el símbolo vive en otra dirección).
                         Particle_PathUpdate(AsObject(pcVar3), iVar14, &DAT_0839bcb0, 0x28);
@@ -689,7 +689,7 @@ LAB_00501cb5:
                     fStack_34 = 0.0f;
                     Vector_Rotate(&fStack_38, (float *)(&DAT_0839bd40 + iVar2), &fStack_2c);
                     fVar7  = fStack_2c + *pfVar1;
-                    sVar5  = (&DAT_0839bcb2)[iVar14*0xde];
+                    sVar5  = (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)];
                     puStack_44 = (DWORD *)0x44bb8000;
                     *pfVar1 = fVar7;
                     fVar25 = fStack_28 + WSF(DAT_0839bcc4, iVar14*(OBJECT_STRIDE / 4));
@@ -734,7 +734,7 @@ LAB_00501cb5:
                 fVar25 = *pfVar1 - *(float *)(DAT_07abf5d8 + 0x10);
                 fVar7  = WSF(DAT_0839bcc4, iVar14*(OBJECT_STRIDE / 4)) - *(float *)(DAT_07abf5d8 + 0x14);
                 if (SQRT(fVar25*fVar25 + fVar7*fVar7) < _DAT_00552ab4) {
-                    sVar5 = (&DAT_0839bcb2)[iVar14*0xde];
+                    sVar5 = (&DAT_0839bcb2)[iVar14 * (OBJECT_STRIDE / 2)];
                     pcVar19 = pcVar3;
                     if (sVar5 == 0xae) {
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
