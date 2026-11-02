@@ -256,8 +256,11 @@ void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: 
             centre[1] += step[1];
             centre[2] += step[2];
             Warrior_CollectMultiTargets(centre, 100.0f, *(WORD*)(o + 134), keys, &count, 6);
-            const BYTE serial = *(BYTE*)(character + 1408);
-            *(BYTE*)(character + 1408) = serial + 1;
+            // IDA 0x485780 L1097-1100: el serial vive en CharacterMachine+1408,
+            // no en la entidad (CHARACTER mide 0x394: 1408 caía en el slot siguiente).
+            BYTE* machine = static_cast<BYTE*>(DAT_07cf1ffc);
+            const BYTE serial = machine ? machine[1408] : 0;
+            if (machine) machine[1408] = serial + 1;
             *(BYTE*)(o + 136) = serial;
             Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)&((CHARACTER*)(uintptr_t)(character))->CurrentSkill + 87] : skillType,
                                    centre, *(BYTE*)(o + 136), keys, count);
