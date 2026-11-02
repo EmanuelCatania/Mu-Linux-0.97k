@@ -1737,8 +1737,8 @@ LABEL_85:
                 short modelType = AsCharacter(c)->Object.Type;
                 const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
                 if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
-                    int idx = rand() % 2 + 94 * modelType;
-                    PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
+                    const BMD* soundModel = AsModel(modelBase);
+                    PlayBuffer(soundModel->Sounds[2 + rand() % 2] + 170, AsObject(c), 0);
                 }
             }
         } else {
@@ -1749,8 +1749,8 @@ LABEL_85:
             short modelType = AsCharacter(c)->Object.Type;
             const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
             if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
-                int idx = rand() % 2 + 94 * modelType;
-                PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
+                const BMD* soundModel = AsModel(modelBase);
+                PlayBuffer(soundModel->Sounds[2 + rand() % 2] + 170, AsObject(c), 0);
             }
         }
     }
