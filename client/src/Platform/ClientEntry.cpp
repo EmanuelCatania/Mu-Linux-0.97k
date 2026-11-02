@@ -311,6 +311,14 @@ static void DbgLog(const char* msg)
         if (h == INVALID_HANDLE_VALUE) {
             h = CreateFileA("debug.log", GENERIC_WRITE, FILE_SHARE_READ,
                             NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h == INVALID_HANDLE_VALUE) {
+                // Otro cliente de la misma carpeta ya tiene debug.log abierto:
+                // el segundo escribe en debug-<pid>.log en vez de quedarse mudo.
+                char alt[64];
+                Platform::TextFormat(alt, "debug-%u.log", (unsigned)GetCurrentProcessId());
+                h = CreateFileA(alt, GENERIC_WRITE, FILE_SHARE_READ,
+                                NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            }
             if (h == INVALID_HANDLE_VALUE) { s_killed = 1; s_inside = false; return; }
         }
         // El debugger de VS captura las first-chance exceptions ANTES que el SEH del
