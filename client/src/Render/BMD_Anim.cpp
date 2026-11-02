@@ -50,6 +50,8 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
     // inicializado (ej. particle pool con stale data). Sólo se descartan
     // direcciones bajas: en Linux x86 el heap puede estar por encima de 2 GB.
     if ((uintptr_t)actionsBase < 0x100000u) return true;
+    // DESVIACION: IDA indexa sin acotar; con una accion fuera de la tabla lee memoria ajena.
+    if (action >= AsModel(self)->NumActions) return true;
     short* pAction = (short*)(actionsBase + action * sizeof(ModelAnimationAction));
     short frameCount = *(short*)((BYTE*)pAction + 8);
     if (frameCount <= 1) return true;

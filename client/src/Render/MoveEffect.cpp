@@ -77,8 +77,8 @@ static bool IsEffectOwner(const void* owner)
     const auto allocation = (uintptr_t)DAT_055c9e48;
     const auto characters = (uintptr_t)DAT_07abf5d0;
     if (allocation && characters >= allocation &&
-        characters - allocation < 0x80u * 0x394u &&
-        (characters - allocation) % 0x394u == 0 &&
+        characters - allocation < 0x80u * CHARACTER_STRIDE &&
+        (characters - allocation) % CHARACTER_STRIDE == 0 &&
         SceneObjects::IsSlot(owner, (void*)characters, 400 * CHARACTER_STRIDE, CHARACTER_STRIDE)) return true;
     return SceneObjects::Contains(owner) ||
         SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), OBJECT_STRIDE) ||
