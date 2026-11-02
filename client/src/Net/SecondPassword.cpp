@@ -2198,11 +2198,10 @@ void __cdecl MoveCharacterPosition(CHARACTER* character) {
             terrainH += _DAT_0055284c;
     }
     *(float*)(param_1 + 0x18) = terrainH;
-    // IDA 00454BA0: model 272 (Bull Fighter family) bobs above terrain.
-    // Keep this model gate and phase ordering identical to the original.
+    // IDA 00454BA0: el modelo 272 (Budge Dragon) aletea sobre el terreno.
+    // sub_5129F0 es fabs y deja su resultado en st0, por eso el decompile no lo muestra.
     if (*(short*)(param_1 + 2) == 272) {
-        const float bob = (float)sin(*(float*)(param_1 + 0x80));
-        (void)Math_Fabs(bob); // IDA calls sub_5129F0 (fabs); result is unused.
+        const float bob = (float)fabs(sin(*(float*)(param_1 + 0x80)));
         *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
     }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
