@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/ResourceTables.h"
 #include "Render/MaterialVisuals.h"
 #include "Item/ContentCatalog.h"
@@ -87,8 +88,8 @@ void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) 
     // alloc) con stride 16 bytes. Esa tabla tiene `numBones` entries de 0x10
     // bytes c/u: sólo escribir speeds hasta el límite de bones disponibles
     // (overflow con NPCs de pocos bones).
-    int slotBase = DAT_05828d58 + id * 0xbc;
-    int actionsTable = *(int*)(slotBase + 48);
+    intptr_t slotBase = DAT_05828d58 + id * BMD_STRIDE;
+    char* actionsTable = (char*)AsModel(slotBase)->Actions;
     short numBones = *(short*)(slotBase + 38);   // realmente numBones, but anim speed lookup uses this
     if (actionsTable && numBones > 0) {
         static const unsigned int kSpeeds[7] = {
@@ -102,7 +103,7 @@ void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) 
         };
         int maxSpeeds = (numBones < 7) ? numBones : 7;
         for (int i = 0; i < maxSpeeds; ++i) {
-            *(unsigned int*)(actionsTable + i * 0x10 + 0x04) = kSpeeds[i];
+            *(unsigned int*)(actionsTable + i * sizeof(ModelAnimationAction) + 0x04) = kSpeeds[i];
         }
     }
 }
@@ -360,9 +361,9 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     // o numMesh están en garbage. Retornar silencioso si modelo no listo.
     {
         if (modelId < 0 || modelId >= ResourceTables::ModelCount()) return;
-        char* modelEntry = (char*)DAT_05828d58 + modelId * 0xbc;
+        char* modelEntry = (char*)DAT_05828d58 + modelId * BMD_STRIDE;
         short numMesh = *(short*)(modelEntry + 0x24);
-        int meshBase = *(int*)(modelEntry + 0x28);
+        intptr_t meshBase = (intptr_t)((BMD*)(uintptr_t)(modelEntry))->Meshs;
         // Books 1..16 are loaded at model IDs 880..895.  The original
         // RenderItem3D has no early-out here; specifically do not hide Book16
         // (Soul Barrier) because a transient mesh check says it is unavailable.

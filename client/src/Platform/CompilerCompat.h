@@ -3,9 +3,7 @@
 // MSVC conserva sus palabras clave. GCC/Clang x86 usan los atributos ABI
 // equivalentes; no borrar convenciones en callbacks ni punteros a funciones.
 #if defined(__GNUC__) && !defined(_MSC_VER)
-#if !defined(__i386__)
-#error "El cliente requiere GCC/Clang de 32 bits (-m32)."
-#endif
+
 #ifndef __forceinline
 #define __forceinline inline __attribute__((always_inline))
 #endif

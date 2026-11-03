@@ -12,6 +12,7 @@ import tempfile
 
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from X86Views import model_view
 
 MAIN = r'''
 std::uint64_t Hash(const BYTE* bytes, std::size_t size, std::uint64_t digest) {
@@ -91,7 +92,7 @@ def harness(revision=None):
     for name in ("DAT_07cf1ff4", "DAT_05828d58", "_DAT_005524bc"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()
         prefix += re.search(rf"^[^/\n]*\b{name}\s*=\s*[^;]+;", definitions, re.M).group()
-    return prefix + function(read_source("src/Combat/Combat_LegacyAnimation.cpp", revision), "SetAttackSpeed") + MAIN
+    return prefix + model_view(["Actions"], revision) + function(read_source("src/Combat/Combat_LegacyAnimation.cpp", revision), "SetAttackSpeed") + MAIN
 
 
 def main():

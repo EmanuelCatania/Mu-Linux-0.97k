@@ -86,8 +86,8 @@ constexpr int kGuildMarkRecordCount = 1000;
 extern "C" void DbgLogPublic(const char* msg);
 static inline WORD ClampToWord(DWORD v) { return v >= 0xFFFF ? (WORD)0xFFFF : (WORD)v; }
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
+extern "C" void __cdecl DeleteJoint(int Type, intptr_t Target, int SubType);
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType);
 extern "C" void __cdecl DeleteCharacter(int Key);  // 0045AC20
 extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);
 

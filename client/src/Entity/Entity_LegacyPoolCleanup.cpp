@@ -44,9 +44,9 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     gHealthBar.Remove((WORD)Key);
     uintptr_t v1 = DAT_07abf5d0;
     int v2 = 0;
-    while (!*(BYTE*)v1 || *(short*)(v1 + 0x1DC) != (short)Key) {
+    while (!*(BYTE*)v1 || *(short*)&((CHARACTER*)(uintptr_t)(v1))->Key != (short)Key) {
         ++v2;
-        v1 += 916;  // 0x394
+        v1 += CHARACTER_STRIDE;  // 0x394
         if (v2 >= 400) return;
     }
     *(BYTE*)v1 = 0;
@@ -54,12 +54,12 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     // Walk Butterfles pool: each entry 0x1BC bytes (= 111 dwords = 444b),
     // entry layout has Owner at +0xFC (= dword[63]).
     DWORD* v3 = (DWORD*)&DAT_083a1218;
-    DWORD* end = (DWORD*)((char*)&DAT_083a1218 + 0x1158);
+    DWORD* end = (DWORD*)((char*)&DAT_083a1218 + 10 * OBJECT_STRIDE);
     while (v3 < end) {
         if (*(BYTE*)v3 != 0 && AsObject(v3)->Owner == AsObject(v1)) {
             *(BYTE*)v3 = 0;
         }
-        v3 += 111;  // stride 444 bytes = 0x1BC
+        v3 += OBJECT_STRIDE / 4;  // stride 444 bytes = 0x1BC
     }
 
     DeleteCloth(AsCharacter(static_cast<uintptr_t>(v1)), AsObject(static_cast<uintptr_t>(v1)), nullptr);
@@ -70,14 +70,14 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     Party_RefreshViewportLinks();
 }
 
-// FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, DWORD Owner, int iSubType)
+// FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, intptr_t Owner, int iSubType)
 // (69 bytes) — walks Effects pool DAT_07b11670 (200 × 0x1BC), zeroes any slot
 // whose Type/Owner/SubType match. Active flag at slot+0; Type at slot+2 (short);
 // SubType at slot+4 (dword); Owner at slot+248 (= dword[62]).
 //
 // Slot anchor: original IDA points `o` at slot+4 (so `o[-4]` = active flag,
 // `o[-2]` (short) = Type, o[0] = SubType, o[62] = Owner). Stride is 111 dwords.
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType)
 {
     DWORD* o = (DWORD*)((char*)&DAT_07b11670[0] + 4);
     // El pool de efectos tiene 200 slots (IDA acota con `&unk_7B27154`:
@@ -87,10 +87,10 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
         if (*((BYTE*)o - 4) != 0 &&
             *((short*)o - 1) == (short)Type &&
             (iSubType == -1 || (int)*o == iSubType) &&
-            o[62] == Owner)
+            (intptr_t)AsObject((char*)o - 4)->Owner == Owner)
         {
             *((BYTE*)o - 4) = 0;
         }
-        o += 111;  // stride 0x1BC
+        o += OBJECT_STRIDE / 4;  // stride 0x1BC
     }
 }

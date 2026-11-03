@@ -100,14 +100,16 @@ ParticleSample samples[200];
 }
 void Particle_InvalidateRender(const void *entity) {
     const uintptr_t offset = (uintptr_t)entity - (uintptr_t)DAT_07b11670;
-    if (offset < 200 * 0x1bc && offset % 0x1bc == 0) samples[offset / 0x1bc].valid = false;
+    // El índice es por OBJECT_STRIDE: con 0x1bc, en x64 pasaba de 199 y pisaba
+    // los globals siguientes (la burbuja de chat pendiente: crash en Blood Castle).
+    if (offset < 200 * OBJECT_STRIDE && offset % OBJECT_STRIDE == 0) samples[offset / OBJECT_STRIDE].valid = false;
 }
 // DESVIACION: el pool se muestrea antes del pase de personajes, a 25 Hz.
 void Particle_PrepareRender() {
     for (int i = 0; i < 200; ++i) {
-        char *slot = (char *)DAT_07b11670 + i * 0x1bc;
+        char *slot = (char *)DAT_07b11670 + i * OBJECT_STRIDE;
         ParticleSample &sample = samples[i];
-        sample.valid = slot[0] && slot[352];
+        sample.valid = slot[0] && slot[EntityOffset(352)];
         if (!sample.valid) continue;
         sample.type = *(short *)(slot + 2);
         sample.variant = *(int *)(slot + 4);
@@ -143,9 +145,9 @@ void __cdecl Particle_RenderAll(void)
 {
     char* base = (char*)&DAT_07b11670[0];
     for (int i = 0; i < 200; ++i) {
-        char* slot = base + i * 0x1BC;
+        char* slot = base + i * OBJECT_STRIDE;
         if (slot[0] == 0) continue;          // inactive
-        if (slot[352] == 0) continue;         // not visible
+        if (slot[EntityOffset(352)] == 0) continue;         // not visible
 
         WORD typeCode = *(WORD*)(slot + 2);
         int  variant  = *(int*)(slot + 4);

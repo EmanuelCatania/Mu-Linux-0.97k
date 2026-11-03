@@ -33,7 +33,7 @@ void Require(bool v){if(!v){std::fputs("Identidad perdida al volver del anillo\n
 #pragma pack(push,1)
 '''+records+r'''
 #pragma pack(pop)
-static_assert(sizeof(CHARACTER)==916);
+static_assert(sizeof(void*)!=4||sizeof(CHARACTER)==916);
 CHARACTER pool[400];uintptr_t CharactersClient=reinterpret_cast<uintptr_t>(pool);
 CHARACTER* AsCharacter(void* p){return static_cast<CHARACTER*>(p);}
 namespace TextEngine{void CopyTruncated(char* out,std::size_t cap,std::string_view value){auto n=value.size()<cap-1?value.size():cap-1;std::memcpy(out,value.data(),n);out[n]=0;}}

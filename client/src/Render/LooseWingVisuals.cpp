@@ -23,7 +23,7 @@ std::vector<unsigned int> expected;
 // cambian de dirección ni se liberan mientras un joint pueda conservar Target.
 std::vector<std::unique_ptr<Owner>> owners;
 int renderScene=-1, renderWorld=-1, publishedScene=-1, publishedWorld=-1;
-DWORD renderModels=0, publishedModels=0;
+intptr_t renderModels=0, publishedModels=0;
 bool inRender=false;
 
 struct Scratch {
@@ -90,7 +90,7 @@ void LooseWingVisuals_TickPreviews() {
         owner.object.Live=1;
         owner.object.EnableBoneMatrix=1;
         owner.object.BoneMatrices=(vec34_t *)owner.bones.data();
-        void *model=(void *)(DAT_05828d58+790*0xbc);
+        void *model=(void *)(DAT_05828d58+790* BMD_STRIDE);
         EquipmentModelContext context(model);
         Scratch scratch;
         BMD &b=*AsModel(model);
@@ -105,16 +105,16 @@ void LooseWingVisuals_TickPreviews() {
         // fase temporal, como los sprites que antes sobrevivían hasta este paso.
         const float simulationTime=WorldTime;
         WorldTime=value.time;
-        Equipment_EmitWing790(model,(int)&owner.object,(int)&owner.object);
+        Equipment_EmitWing790(model,(intptr_t)&owner.object,(intptr_t)&owner.object);
         WorldTime=simulationTime;
     }
 }
 
 // IDA: pose de Entity_Render (0x005038E0), antes de RenderPartObject.
-void LooseWingVisuals_TickGround(int entity) {
+void LooseWingVisuals_TickGround(intptr_t entity) {
     OBJECT &o=*AsObject(entity);
     if (o.Type!=790 || o.Alpha<=_DAT_005524f8) return;
-    void *model=(void *)(DAT_05828d58+790*0xbc);
+    void *model=(void *)(DAT_05828d58+790* BMD_STRIDE);
     EquipmentModelContext context(model);
     Scratch scratch;
     BMD &b=*AsModel(model);

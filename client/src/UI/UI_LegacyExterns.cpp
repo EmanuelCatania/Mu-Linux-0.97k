@@ -191,7 +191,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     Platform::TextFormatSecure(TextListN(2), 100, "\n");
 
     int v10 = 3;
-    int heroClassFlag = *(unsigned char*)(Hero + 444) & 7;
+    int heroClassFlag = *(unsigned char*)(Hero + EntityOffset(444)) & 7;
 
     // Class 0 (Dark Wizard / magic class): damage line
     if (heroClassFlag == 0) {
@@ -420,7 +420,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
 
     // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
     // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
-    if (Hero && ((*(BYTE*)((char*)Hero + 0x1BC) & 7) == 1) && skillType == 47) {
+    if (Hero && ((*(BYTE*)((char*)Hero + EntityOffset(0x1BC)) & 7) == 1) && skillType == 47) {
         Platform::TextFormatTruncated(TextListN(idx), 100, Platform::TruncateText, "%s", GlobalTextOr(96, ""));
         DAT_07e91708[idx] = 5;
         DAT_07ea7b10[idx] = 0;

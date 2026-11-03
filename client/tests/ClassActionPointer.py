@@ -3,6 +3,9 @@
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import re
 import tempfile
 from GatePointer import PREAMBLE

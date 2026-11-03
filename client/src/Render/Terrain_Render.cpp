@@ -79,7 +79,7 @@ static void Terrain_ProcessObjects(bool simulation)
                         // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
                         float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
                         vis = TestFrustrum2D(ex, ey, ez);
-                        if (simulation) entity[0x160] = (char)vis;
+                        if (simulation) entity[EntityOffset(0x160)] = (char)vis;
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
@@ -91,7 +91,7 @@ static void Terrain_ProcessObjects(bool simulation)
                                     HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                                 }
 
-                                WorldEffects_Tick((int)entity);
+                                WorldEffects_Tick((intptr_t)entity);
                             } else {
                                 RenderDerivedState_SaveObject(entity);
                                 Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
@@ -125,10 +125,10 @@ static void Terrain_ProcessObjects(bool simulation)
                 float ey = *(float*)(entity + 0x14) * _DAT_005524f8;
                 float ez = z_offset + *(float*)(entity + 0xd0);
                 unsigned short vis = TestFrustrum2D(ex, ey, ez);
-                entity[0x160] = (char)vis;
+                entity[EntityOffset(0x160)] = (char)vis;
             }
-            iVar += 0x394;
-        } while (iVar < 0x59740);
+            iVar += CHARACTER_STRIDE;
+        } while (iVar < 400 * CHARACTER_STRIDE);
     }
 }
 

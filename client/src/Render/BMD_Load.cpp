@@ -443,7 +443,7 @@ void __cdecl BMD__Init(void *pThis, char flag)
 // BMD__Save @ 0x00442A60 — BMD_SaveToFile
 // Writes BMD model structure to binary file param_1+param_2 (concatenated paths).
 // Writes header 'B'/'M'/'D', then mesh/bone/action data via crt_fwrite (fwrite).
-undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
+undefined4 __cdecl BMD__Save(intptr_t thisModel, char *param_1, char *param_2)
 {
     char local_40[64];
     // concatenate param_1 + param_2
@@ -469,7 +469,7 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
     if (0 < AsModel(thisModel)->NumMeshs) {
         int local_50 = 0, local_48 = 0;
         do {
-            int iVar8 = *(int *)&AsModel(thisModel)->Meshs + local_50;
+            intptr_t iVar8 = (intptr_t)AsModel(thisModel)->Meshs + local_50;
             crt_fwrite((char *)(iVar8 + 4), 2, 1, (int *)pFVar4);
             crt_fwrite((char *)(iVar8 + 6), 2, 1, (int *)pFVar4);
             crt_fwrite((char *)(iVar8 + 8), 2, 1, (int *)pFVar4);
@@ -492,7 +492,7 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
                     local_4c++;
                 } while (local_4c < *psVar1);
             }
-            crt_fwrite((char *)(*(int *)&AsModel(thisModel)->Textures + local_48), 0x20, 1, (int *)pFVar4);
+            crt_fwrite((char *)((intptr_t)AsModel(thisModel)->Textures + local_48), 0x20, 1, (int *)pFVar4);
             local_50 += 0x28;
             param_1i++;
             local_48 += 0x20;
@@ -503,7 +503,7 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
     if (0 < AsModel(thisModel)->NumActions) {
         char *param_2p = (char *)0;
         do {
-            int iVar8 = *(int *)&AsModel(thisModel)->Actions;
+            intptr_t iVar8 = (intptr_t)AsModel(thisModel)->Actions;
             crt_fwrite(param_2p + iVar8 + 8, 2, 1, (int *)pFVar4);
             crt_fwrite(param_2p + iVar8 + 10, 1, 1, (int *)pFVar4);
             if (*(param_2p + iVar8 + 10) != '\0')
@@ -515,9 +515,9 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
     // Write bone data
     param_1i = 0;
     if (0 < AsModel(thisModel)->NumBones) {
-        int local_50 = 0;
+        intptr_t local_50 = 0;
         do {
-            char *pcVar11 = (char *)(local_50 + *(int *)&AsModel(thisModel)->Bones);
+            char *pcVar11 = (char *)(local_50 + (intptr_t)AsModel(thisModel)->Bones);
             crt_fwrite(pcVar11 + 0x22, 1, 1, (int *)pFVar4);
             if (pcVar11[0x22] == '\0') {
                 crt_fwrite(pcVar11, 0x20, 1, (int *)pFVar4);
@@ -527,8 +527,8 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
                     char *param_2p = (char *)0;
                     do {
                         int iVar3 = *(int *)(pcVar11 + 0x24);
-                        crt_fwrite(*(char **)(param_2p + iVar3), *(short *)(*(int *)&AsModel(thisModel)->Actions + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
-                        crt_fwrite(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)&AsModel(thisModel)->Actions + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3), *(short *)((intptr_t)AsModel(thisModel)->Actions + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3 + 4), *(short *)((intptr_t)AsModel(thisModel)->Actions + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
                         param_2p += 0xc;
                         local_48++;
                         iVar8 += 0x10;

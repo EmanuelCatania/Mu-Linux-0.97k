@@ -676,19 +676,18 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         char*  texBpp    = (char*)  &DAT_083a7cc8;
         UINT*  texGL     = (UINT*)  &DAT_083a7ccc;
         char*  texRef    = (char*)  &DAT_083a7cd0;
-        UINT*  texPix    = (UINT*)  &DAT_083a7cd4;
-        int    byteStride = uiTextureIndex * 0x38;
+        int    byteStride = uiTextureIndex * TEXTURE_STRIDE;
 
         texBpp  [byteStride] = 4;                        // 4 components: RGBA
-        texWidth [uiTextureIndex * 0xe] = (float)pw;
-        texHeight[uiTextureIndex * 0xe] = (float)ph;
+        texWidth [uiTextureIndex * TEXTURE_STRIDE_DWORDS] = (float)pw;
+        texHeight[uiTextureIndex * TEXTURE_STRIDE_DWORDS] = (float)ph;
 
         BYTE* pixBuf = (BYTE*)operator_new(pw * ph * 4);
         // DESVIACION CONSCIENTE vs IDA: idem OpenJPG (ver el bloque largo en
         // OpenJPG). El original (OpenTGA 0x529BD0) tampoco inicializa:
         // `operator_new(4 * v21 * v22)` y luego rellena solo width x height.
         memset(pixBuf, 0, (size_t)pw * ph * 4);
-        texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;
+        Bitmaps[uiTextureIndex].Buffer = pixBuf;
         *(int*)&m_dwUsedTextureMemory += 4 * pw * ph;
 
         // The codec preserves the legacy vertical flip and BGRA conversion.
@@ -700,7 +699,7 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
 
         // ── Upload to OpenGL ──────────────────────────────────────────────────
         UINT glHandle = Gfx::CreateTexture();
-        texGL[uiTextureIndex * 0xe] = glHandle;
+        texGL[uiTextureIndex * TEXTURE_STRIDE_DWORDS] = glHandle;
         Gfx::BindTexture(glHandle);
         Gfx::TexImage2D(4, pw, ph, Gfx::Format::RGBA, pixBuf);
         // GL_MODULATE = 0x2100 = 8448.0f. No usar 8192 (0x2000 = GL_NICEST): no es
@@ -724,13 +723,12 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
 void __cdecl UnloadImage(int param_1)
 {
     ResourceTables::EnsureTextures(std::size_t(param_1)+1);
-    int iVar1 = param_1 * 0x38;
-    DWORD *texArr_cd4 = (DWORD*)&DAT_083a7cd4;
+    int iVar1 = param_1 * TEXTURE_STRIDE;
     char  *texArr_cc8 = (char*) &DAT_083a7cc8;
     char  *texArr_cd0 = (char*) &DAT_083a7cd0;
     DWORD *texArr_ccc = (DWORD*)&DAT_083a7ccc;
     DWORD *texArr_ca0 = (DWORD*)&DAT_083a7ca0;
-    if (texArr_cd4[param_1 * 0xe] == 0) return;
+    if (!Bitmaps[param_1].Buffer) return;
     char cVar2 = texArr_cc8[iVar1];
     // __ftol calls were computing width/height — skip since we don't have the floats
     char *ref = texArr_cd0 + iVar1;
@@ -738,12 +736,12 @@ void __cdecl UnloadImage(int param_1)
         char cVar4 = *ref - 1;
         *ref = cVar4;
         if (cVar4 == '\0') {
-            unsigned int glHandle = texArr_ccc[param_1 * 0xe];
+            unsigned int glHandle = texArr_ccc[param_1 * TEXTURE_STRIDE_DWORDS];
             Gfx::DeleteTexture(glHandle);
-            void *pixels = (void*)(uintptr_t)texArr_cd4[param_1 * 0xe];
-            texArr_ca0[param_1 * 0xe] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
+            void *pixels = Bitmaps[param_1].Buffer;
+            texArr_ca0[param_1 * TEXTURE_STRIDE_DWORDS] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
             operator_delete((unsigned char*)pixels);
-            texArr_cd4[param_1 * 0xe] = 0;
+            Bitmaps[param_1].Buffer = nullptr;
             (void)cVar2; // used in original for m_dwUsedTextureMemory -= cVar2 * w * h
         }
     }

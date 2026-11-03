@@ -3,6 +3,7 @@
 // Ver Net/Recv/NetRecv.h.
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
 #include "Platform/Text.h"
@@ -154,8 +155,8 @@ void Recv_CharList(const BYTE* Msg, int Size)
     // DESVIACION (DLL Reconnect.cpp): durante la reconexión se entra directo
     // con el mismo personaje, sin pasar por char-select.
     if (gReconnect.OnCharacterList()) return;
-    const int CHAR_STRIDE  = 0x394;
-    const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
+    const int CHAR_STRIDE  = CHARACTER_STRIDE;
+    const int CHAR_SLOT_AT = (int)EntityOffset(0x2D2);   // entity+0x2D2 = "selected" flag
     const int MAX_PREVIEW  = 5;            // slots renderizados en char-select
 
     // 1) Limpiar flags de los 5 slots previos
@@ -203,7 +204,7 @@ void Recv_CharList(const BYTE* Msg, int Size)
         // entity+0x1BE = Level (WORD)
         AsCharacter(c)->Level = level;
         // entity+0x1C0 = CtlCode (BYTE)
-        c[0x1C0] = ctlCode;
+        c[EntityOffset(0x1C0)] = ctlCode;
         char name[EntityName::Capacity];
         NetText::FromServer(name, sizeof(name), rec + 1, NAME);
         EntityName::Set(c, name);
@@ -261,7 +262,7 @@ void Recv_CreateChar(const BYTE* Msg)
             return;
         }
         // +446 (WORD) = 1 — selected/visible flag; el nombre va desde Msg+5.
-        *(WORD*)(c + 446) = 1;
+        *(WORD*)(c + EntityOffset(446)) = 1;
         char name[EntityName::Capacity];
         NetText::FromServer(name, sizeof(name), Msg + 5, NetText::CharacterNameSize);
         EntityName::Set(c, name);
@@ -422,7 +423,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         if (DAT_07abf5d8) {
             BYTE pk = RB[44];
             if (pk > 6) pk = 0;                   // valor fuera de rango → normal
-            *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 0x2ea) = pk;
+            *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + EntityOffset(0x2ea)) = pk;
             NetLog("NET:    F3/03 PKLevel=%u -> hero+0x2EA", (unsigned)pk);
         }
 
@@ -461,7 +462,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         // Full memset del pool para garantizar todos los bytes limpios.
         // 400 slots × 0x394 = ~366 KB. CreateCharacterPointer + viewport spawn
         // packets repopulan los campos relevantes después.
-        memset((void*)(uintptr_t)DAT_07abf5d0, 0, 400 * 0x394);
+        memset((void*)(uintptr_t)DAT_07abf5d0, 0, 400 * CHARACTER_STRIDE);
         // Reset hero pointer too — el siguiente CreateCharacterPointer setea uno nuevo.
         DAT_07abf5d8 = nullptr;
     }
@@ -491,7 +492,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // (4-5) Random hero slot + spawn at packet position.
     HeroIndex = (DWORD)(_rand() % 400);
     unsigned int heroIndex = HeroIndex;
-    unsigned char* heroPtr = (unsigned char*)(uintptr_t)DAT_07abf5d0 + (heroIndex * 0x394);
+    unsigned char* heroPtr = (unsigned char*)(uintptr_t)DAT_07abf5d0 + (heroIndex * CHARACTER_STRIDE);
     float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
@@ -526,7 +527,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     *(unsigned int *)&AsCharacter(heroPtr)->Object.Light[2] = 0x3e99999a;
     AsCharacter(heroPtr)->Skin = 0;
     AsCharacter(heroPtr)->PK = Msg[44];      // skill bonus / curse-of-equipment slot
-    heroPtr[448] = Msg[45];      // magic bonus / second-pwd flag
+    heroPtr[EntityOffset(448)] = Msg[45];      // magic bonus / second-pwd flag
     AsCharacter(heroPtr)->Object.Kind = 1;            // alive flag
     DAT_07abf5d8 = (char*)heroPtr;   // bind global Hero pointer
 
@@ -556,7 +557,7 @@ void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     *(DWORD*)(heroPtr + 0x78) &= ~2u;
 
     // (9) entity+459 = 0 (status flag) + teleport-in effect 1265.
-    heroPtr[459] = 0;
+    heroPtr[EntityOffset(459)] = 0;
     // CreateEffect(1265, Hero.Position, Hero.Angle, Hero+232, 0, Hero, -1, 0, 0)
     // Effect_Spawn signature: see src/Render/Particle_Spawn.cpp / Particle_Spawn.
     // Wire-up TODO: nuestro Effect_Spawn aún no está parameterizado igual; la
@@ -669,20 +670,20 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     // (3) Desactiva las 400 entidades del pool (el server reenvía el viewport).
     for (int i = 0; i < 400; ++i)
-        *((BYTE*)(uintptr_t)DAT_07abf5d0 + i * 0x394) = 0;
+        *((BYTE*)(uintptr_t)DAT_07abf5d0 + i * CHARACTER_STRIDE) = 0;
 
     // (4) Se preservan dos campos del héroe viejo antes de re-crearlo:
     //     +474 (WORD) y +746 (BYTE, skill/curse slot que llega en el F3/03).
     WORD savedW474 = 0;
     BYTE saved746  = 0;
     if (DAT_07abf5d8) {
-        savedW474 = *(const WORD*)((BYTE*)DAT_07abf5d8 + 474);
-        saved746  = *((const BYTE*)DAT_07abf5d8 + 746);
+        savedW474 = *(const WORD*)((BYTE*)DAT_07abf5d8 + EntityOffset(474));
+        saved746  = *((const BYTE*)DAT_07abf5d8 + EntityOffset(746));
     }
 
     // (5) Re-crea al héroe EN EL MISMO SLOT (HeroIndex no cambia).
     unsigned char* heroPtr =
-        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (HeroIndex * 0x394);
+        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (HeroIndex * CHARACTER_STRIDE);
     const float Rotation = ((float)direction - 1.0f) * 45.0f;
     CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
@@ -739,7 +740,7 @@ void Recv_Revival(const BYTE* Msg, int Size)
 
     float z;
     if ((int)gMapManager.GetCurrentMap() == -1 ||
-        *(const WORD*)(heroPtr + 696) != 819 ||        // sin Dinorant
+        *(const WORD*)(heroPtr + EntityOffset(696)) != 819 ||        // sin Dinorant
         AsCharacter(heroPtr)->SafeZone != 0) {
         z = RequestTerrainHeight(AsCharacter(heroPtr)->Object.Position[0], AsCharacter(heroPtr)->Object.Position[1]);
     } else if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10) {
@@ -862,7 +863,7 @@ void Recv_LevelUp(const BYTE* Msg, int Size)
         BYTE* hero = (BYTE*)DAT_07abf5d8;
         for (int i = 0; i < 15; ++i) {
             Joint_Create(1249, (float*)(hero + 16), (float*)(hero + 16),
-                         (float*)(hero + 28), 0, (int)(uintptr_t)hero,
+                         (float*)(hero + 28), 0, (intptr_t)hero,
                          40.0f, 2, 0);
         }
         CreateEffect(1264, (float*)(hero + 16), (float*)(hero + 28),
@@ -1016,7 +1017,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             const int pkKey = Msg[5] + (Msg[4] << 8);
             const int pkIdx = FindCharacterIndex(pkKey);
             if (pkIdx < 0 || pkIdx >= 400) break;
-            BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * 0x394;
+            BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * CHARACTER_STRIDE;
             const BYTE pkLevel = Msg[6];
             AsCharacter(pkEnt)->PK            = pkLevel;
             AsCharacter(pkEnt)->Level = (WORD)(pkLevel >= 6);
@@ -1218,7 +1219,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 CA[86] = (BYTE)total;
                 if (DAT_07abf5d8) {
                     BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-                    if (hero[913] >= 20) hero[913] = 0;
+                    if (hero[EntityOffset(913)] >= 20) hero[EntityOffset(913)] = 0;
                 }
                 NetLog("NET:    F3/11 Skill%s slot=%d skill=%d total=%d",
                        (count == 0xFE) ? "Add" : "Del", slot, skill, total);
@@ -1248,7 +1249,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
             CA[86] = count;
             if (DAT_07abf5d8) {
                 BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-                if (hero[913] >= 20) hero[913] = 0;
+                if (hero[EntityOffset(913)] >= 20) hero[EntityOffset(913)] = 0;
             }
             if ((DWORD)DAT_005616ac > 4) DAT_005616ac = 0;   // 5 slots: 0..4 (era >= 4, pisaba el quinto)
             // La lista recien ahora esta completa: re-traducir las
@@ -1352,7 +1353,7 @@ void NetRecv_F3(BYTE* Msg, int Size, BYTE hdr, BYTE sub, bool bEncrypted)
                 g_bUseChatListBox = 1;
                 if (DAT_055c9ff0) {          // vtable +56 = setVisibleCnt (slot 14)
                     DWORD* cobj = (DWORD*)DAT_055c9ff0;
-                    void** cvt  = (void**)*cobj;
+                    void** cvt  = ChatWidget_GetVTable(cobj);
                     if (cvt) {
                         typedef int (__fastcall *FnSetCnt)(DWORD*, int, int);
                         ((FnSetCnt)cvt[14])(cobj, 0, chatLines);

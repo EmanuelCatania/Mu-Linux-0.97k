@@ -2,6 +2,7 @@
 // Chat_Bubbles.cpp
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
 #include "Entity/EntityName.h"
 #include "Net/NetText.h"
@@ -73,9 +74,9 @@ void __cdecl FUN_00481a40(CHAT* param_1, char* param_2, int param_3) {
         // System message: dispatch slot 28 (vtable +0x70) = ChatLB_AddText
         // (__fastcall this + 4 args).  Previous cdecl form left ECX = junk
         // and corrupted the chat list.
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef void (__fastcall *FnAddText)(DWORD*, int /*edx*/,
                                                  const char*, const char*,
                                                  int, int);
@@ -252,11 +253,11 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // (+0x02 es `entity_type`, 390 para jugadores: no es el kind.)
     // Entity stride 0x394 (=916, coincide con IDA). ID string en +0x1C1 (=449).
 
-    DWORD base = DAT_07abf5d0;  // CharactersClient
+    intptr_t base = DAT_07abf5d0;  // CharactersClient
 
     // Pass 1: search players (Kind == 1) — por nombre
     for (int i = 0; i < 400; i++) {
-        DWORD c = base + i * 0x394;
+        intptr_t c = base + i * CHARACTER_STRIDE;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 1) {
             if (strcmp(EntityName::Get(c), ID) == 0) {
                 CreateChat(ID, Text, AsCharacter(c), Flag, -1);
@@ -269,7 +270,7 @@ void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // Fiel a IDA: hace `strcmp(...)` pero DESCARTA el resultado y llama igual
     // (rareza del original — el strcmp quedó sin usar).
     for (int i = 0; i < 400; i++) {
-        DWORD c = base + i * 0x394;
+        intptr_t c = base + i * CHARACTER_STRIDE;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 2) {
             CreateChat(ID, Text, AsCharacter(c), Flag, -1);
             return;

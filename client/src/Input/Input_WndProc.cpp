@@ -286,8 +286,8 @@ void Input_OnEvent(const Platform::InputEvent& event)
                     // IDA WndProc L2265-2268: antes del SendChat (no en el
                     // susurro) revisa los gestos, salvo montado fuera de zona segura.
                     if (((const char*)&DAT_07db8810)[0] == '\0') {
-                        WORD helper = *(WORD*)(DAT_07abf5d8 + 0x2b8);
-                        if ((helper != 818 && helper != 819) || *(char*)(DAT_07abf5d8 + 0x34e))
+                        WORD helper = *(WORD*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type;
+                        if ((helper != 818 && helper != 819) || *(char*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone)
                             CheckChatText(line);
                     }
                     Chat_SendChatLine(line);

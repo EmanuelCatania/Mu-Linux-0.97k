@@ -3,6 +3,7 @@
 // data parsers (TextParser_GetToken).
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Model/SmdImport.h"
 #include "Render/ResourceTables.h"
 #include "Platform/Text.h"
@@ -82,7 +83,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     // exclusivamente). Como fallback, si después del SMD load el slot sigue
     // vacío (mesh count = 0), se prueban varias transformaciones del nombre
     // .smd → .bmd para encontrar el archivo real (case-insensitive en Win32).
-    char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * Type);
+    char* slot = (char*)((uintptr_t)DAT_05828d58 + (uintptr_t)BMD_STRIDE * Type);
     short meshCount = *(short*)(slot + 0x22);  // model[+0x22] = mesh count
     if (meshCount > 0) return;  // SMD load worked
 
@@ -347,7 +348,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         // que si el slot no tiene bones se cae al loader completo BMD__Open para traer
         // la geometría BMD.
         if (numBonesInSlot > 0)
-            BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
+            BMD__Save((intptr_t)model, (char*)param_2, local_40);
         else
             BMD__Open(model, param_2, local_40, 0);
     } else {
@@ -365,7 +366,7 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
     }
 }
 // Forward-declare FindTextureByName (implementada en src/Core/Runtime_Medium.cpp).
-int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
+int __cdecl FindTextureByName(char *Name, char **dwTexture);
 
 // IDA: OpenTexture (0x00505C80)
 // ── OpenTexture (Model_LoadTextures) ────────────────────────────────────────
@@ -398,7 +399,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     //    slot +0x38 short* indexTexture (short[n])
     // Verificado en BMD__Open (BMD::Open): this[0x24]=numMeshes,
     // this[0x34]=texName[] y this[0x38]=indexTex[] se asignan directamente.
-    char* slot = (char*)(DAT_05828d58 + Model * 0xBC);
+    char* slot = (char*)(DAT_05828d58 + Model * BMD_STRIDE);
     short numMeshes = *(short*)(slot + 0x24);
     // DIAG-canary inconditional: confirmar que llegamos a la función para Ship/Logo
     {
@@ -412,8 +413,8 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
         static int s_oc = 0;
         bool isLoginSlot = (Model == 0x3c || (Model >= 0xa0 && Model <= 0xa3));
         if (isLoginSlot && s_oc < 20) {
-            char* texNameTable0 = *(char**)(slot + 0x34);
-            short* indexTexture0 = *(short**)(slot + 0x38);
+            char* texNameTable0 = *(char**)&((BMD*)(uintptr_t)(slot))->Textures;
+            short* indexTexture0 = *(short**)&((BMD*)(uintptr_t)(slot))->IndexTexture;
             char firstName[33] = {0};
             if (texNameTable0 && numMeshes > 0) {
                 memcpy(firstName, texNameTable0, 32);
@@ -424,13 +425,13 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     }
     if (numMeshes <= 0) return;
 
-    char* texNameTable  = *(char**)(slot + 0x34);
-    short* indexTexture = *(short**)(slot + 0x38);
+    char* texNameTable  = *(char**)&((BMD*)(uintptr_t)(slot))->Textures;
+    short* indexTexture = *(short**)&((BMD*)(uintptr_t)(slot))->IndexTexture;
     if (!texNameTable || !indexTexture) return;
 
     for (int i = 0; i < numMeshes; i++) {
         char* Name = texNameTable + i * 0x20;
-        DWORD pSlot = 0;
+        char* pSlot = nullptr;
         int foundIdx = FindTextureByName(Name, &pSlot);
         int resolvedIdx;
 
@@ -478,7 +479,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
                 OpenJPG(local_40, slot, Type,   0x2901, 0, Check);   // OpenJPG/OZJ
 
             // Store filename into the Bitmaps slot (first 32 bytes)
-            char* slotBase = &g_BitmapsRaw[slot * 0x38];
+            char* slotBase = &g_BitmapsRaw[slot * TEXTURE_STRIDE];
             size_t fnLen = strnlen(Name, 32);
             memcpy(slotBase, Name, fnLen);
             if (fnLen < 32) memset(slotBase + fnLen, 0, 32 - fnLen);
@@ -487,7 +488,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             TextureCurrent = slot + 1;   // TextureCurrent++
         } else {
             // Hit: reuse existing slot, bump ref count at +0x30
-            if (pSlot != 0) {
+            if (pSlot != nullptr) {
                 *(unsigned char*)(pSlot + 0x30) += 1;
             }
             resolvedIdx = foundIdx;

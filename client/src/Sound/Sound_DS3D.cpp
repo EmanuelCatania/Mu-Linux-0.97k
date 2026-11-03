@@ -153,8 +153,8 @@ void CErrorReport_WriteCurrentTime(int param_1) {
 // Logs OS name, CPU name, RAM (MB), DirectX version to error report.
 // si points to 264-byte SystemInfo struct: si[0..127]=CPU, si[128..255]=OS, si[256..259]=RAMbytes, si[260..]=DirectX.
 void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* si_v) {
-    DWORD This = (DWORD)(uintptr_t)This_v;
-    DWORD si   = (DWORD)(uintptr_t)si_v;
+    intptr_t This = (intptr_t)This_v;
+    intptr_t si   = (intptr_t)si_v;
     CErrorReport__Write(This, (char*)"<System information>\r\n");
     CErrorReport__Write(This, (char*)"OS \t\t\t: %s\r\n", (const char*)(si + 128));
     CErrorReport__Write(This, (char*)"CPU \t\t\t: %s\r\n", (const char*)si);
@@ -166,7 +166,7 @@ void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* 
 // CErrorReport::WriteOpenGLInfo @ 0x004056B0 (IDA: FUN_004056B0).
 // Logs GL vendor/renderer/version + max texture size + max viewport.
 void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
-    DWORD This = (DWORD)(uintptr_t)This_v;
+    intptr_t This = (intptr_t)This_v;
     int maxTex = 0;
     int maxView[2] = {0, 0};
     CErrorReport__Write(This, (char*)"<OpenGL information>\r\n");

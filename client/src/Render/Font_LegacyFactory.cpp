@@ -49,7 +49,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Creates a font rendering object: if type==1, allocates a 0x2C4-byte widget (FUN_0040f730),
 // otherwise allocates a 4-byte simple widget (FUN_00410a90). Stores at this+4,
 // sets this+8 = type, then calls the vtable's first virtual method with dc.
-void __cdecl Font_CreateRenderer(int self, int param_1, int param_2)
+void __cdecl Font_CreateRenderer(intptr_t self, int param_1, int param_2)
 {
     void* pObj = NULL;
     if (param_1 == 1) {
@@ -64,12 +64,12 @@ void __cdecl Font_CreateRenderer(int self, int param_1, int param_2)
             pObj = (void*)mem;
         }
     }
-    *(void**)(self + 4) = pObj;
+    *(void**)(self + 0x10) = pObj;
     *(int*)(self + 8) = param_1;
     // Call vtable method 0: (*(code**)*pObj)(param_2)
-    if (pObj) {
+    if (pObj && sizeof(void*) == 4) {
         typedef void (__cdecl *VtblFn)(int);
-        VtblFn fn = *(VtblFn*)(*(DWORD*)pObj);
+        VtblFn fn = *(VtblFn*)(uintptr_t)*(DWORD*)pObj;  // el descriptor del binario queda vacio
         if (fn) fn(param_2);
     }
 }

@@ -3,6 +3,7 @@
 // BMD__RenderMeshTranslate y RenderObjectScreen (ítems 3D de las grillas).
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Render/BufferedDraw.h"
 #include "Render/MeshDraw.h"
 #include "Render/BMDDevice.h"
@@ -115,7 +116,7 @@ void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, i
         mode = 2;
         BMDDevice::Select({BMDDevice::Pass::Surface,static_cast<unsigned>(fl),tex,f3 < _DAT_00552544});
     } else if ((fl & 0x40) == 0x40) {
-        if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
+        if ((&DAT_083a7cc8)[tex * TEXTURE_STRIDE] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
         BMDDevice::Select({BMDDevice::Pass::Metal});
     } else {
@@ -1334,13 +1335,13 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     }
 
     // Set model height offset based on type range
-    void *modelThis = (void *)(DAT_05828d58 + (int)modelType * 0xbc);
+    void *modelThis = (void *)(DAT_05828d58 + (int)modelType * BMD_STRIDE);
 
-    // FIX 2026-05-02: faltaba `*(BYTE*)(modelThis + 0xa0) = 0`. IDA hace esto
+    // FIX 2026-05-02: faltaba `*(BYTE*)&((BMD*)(uintptr_t)(modelThis))->CurrentAction = 0`. IDA hace esto
     // al inicio para resetear el action index. Sin esto, el player pose usa el
     // action index del último frame del mundo (e.g. running) → body parts
     // posan con bones en pose de correr en lugar de idle.
-    *(unsigned char *)((char *)modelThis + 0xa0) = 0;
+    *(unsigned char *)&((BMD*)(uintptr_t)(modelThis))->CurrentAction = 0;
 
     // BodyHeight (model + 0x84) — desplazamiento vertical por rango de modelo.
     // Valores exactos de IDA `RenderObjectScreen` (0x4E13A0), decodificados de
@@ -1360,15 +1361,15 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // dos síntomas opuestos reportados. El comentario original ya listaba los
     // rangos de IDA bien y el código los contradecía.
     if (param_1 >= MODEL_HELM && param_1 < MODEL_HELM + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC31C0000;   // -156.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC31C0000;   // -156.0
     else if (param_1 >= MODEL_ARMOR && param_1 < MODEL_ARMOR + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2C00000;   //  -96.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2C00000;   //  -96.0
     else if (param_1 >= MODEL_PANTS && param_1 < MODEL_PANTS + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2400000;   //  -48.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2400000;   //  -48.0
     else if (param_1 >= MODEL_GLOVES && param_1 < MODEL_GLOVES + 32)
-        *(unsigned int *)((char *)modelThis + 0x84) = 0xC2900000;   //  -72.0
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0xC2900000;   //  -72.0
     else
-        *(unsigned int *)((char *)modelThis + 0x84) = 0;
+        *(unsigned int *)&((BMD*)(uintptr_t)(modelThis))->BodyHeight = 0;
 
     if (param_1 == MODEL_HELM + 65 || param_1 == MODEL_HELM + 70)
         outPos[0] += 0.04f;
@@ -1665,7 +1666,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
 
     // Build stack entity and draw
     // entity_type at [+2], scale at [+0x0c], world_pos at [+0x10..+0x18]
-    char ent[0x200];
+    char ent[EntityOffset(0x200)];
     memset(ent, 0, sizeof(ent));
     *(short *)(ent + 2) = (short)param_1;
     *(DWORD *)(ent + 0x0c) = local_3bc;  // write raw float bits into entity+0x0c
@@ -1710,7 +1711,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     *(float *)(ent + 0x18) = outPos[2];
 #endif
     *(int   *)(ent + 0xdc) = 0;
-    *(unsigned char *)(ent + 0x1bc) = 2;
+    *(unsigned char *)(ent + EntityOffset(0x1bc)) = 2;
 
 
     float light[3] = { 1.0f, 1.0f, 1.0f };
@@ -1724,7 +1725,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
     // ItemObjectAttribute sobreescribiendo ent[+0xc] con 0.8f.
     // La reasignación post-ItemObjectAttribute arreglo el problema.
 
-    RenderPartObject((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
+    RenderPartObject((intptr_t)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
     (void)param_6;
 }
 #endif
@@ -1883,9 +1884,9 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     }
     ObjectSelect_Type = modelType;
 
-    void* model = (void*)(DAT_05828d58 + (int)modelType * 0xBC);
-    *(BYTE*)((BYTE*)model + 0xA0) = 0;
-    *(float*)((BYTE*)model + 0x84) = inventoryPose.BodyHeight;
+    void* model = (void*)(DAT_05828d58 + (int)modelType * BMD_STRIDE);
+    *(BYTE*)&((BMD*)(uintptr_t)(model))->CurrentAction = 0;
+    *(float*)&((BMD*)(uintptr_t)(model))->BodyHeight = inventoryPose.BodyHeight;
     float scale = (int)ItemLevel < 0 ? inventoryPose.NegativeLevelScale : inventoryPose.Scale;
     if (pose && pose->Scale > 0.0f) scale = pose->Scale;
 
@@ -1906,7 +1907,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     *(float*)(object + 0x18) = position[2];
     *(BYTE*)(object + 0x3D) = ExtOption;
     *(int*)(object + 0xDC) = 0;
-    *(BYTE*)(object + 0x1BC) = 2;
+    *(BYTE*)(object + EntityOffset(0x1BC)) = 2;
 
     if (drawType==790) LooseWingVisuals_SubmitPreview(*(OBJECT *)object,renderAngle,headAngle,
         inventoryPose.BodyHeight,ItemLevel,Select==1);
@@ -1914,6 +1915,6 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
     float light[3] = { 1.0f, 1.0f, 1.0f };
     // Entity_DrawAt's visibility argument is 1.0 in the native UI path used
     // by this client; all OpenGL state setup/teardown stays inside that renderer.
-    RenderPartObject((int)object, drawType, 0, light, 1.0f, ItemLevel, Option1,
+    RenderPartObject((intptr_t)object, drawType, 0, light, 1.0f, ItemLevel, Option1,
                  '\x01', 1, '\x01', 0, 2);
 }

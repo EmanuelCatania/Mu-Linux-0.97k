@@ -96,10 +96,10 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 // Helpers definidos más abajo en este mismo archivo.  Linkage C++ (no
 // extern "C").
 int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
-void __fastcall ChatListBox_DequeueFront(int self); // IDA: ChatListBox_DequeueFront (0x0040C580)
+void __fastcall ChatListBox_DequeueFront(DWORD* self); // IDA: ChatListBox_DequeueFront (0x0040C580)
 int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
 int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-up helper
-int  __cdecl    FUN_0040c930(int slot);                               // ++[slot+0x114]
+int  __cdecl    FUN_0040c930(BYTE* slot);                               // ++[slot+0x114]
 
 // FUN_0040c490 — hit-test de bbox, port de sub_40C490 de IDA (lo referencian
 // muchos helpers de UI). Se define con nombre propio (Chat_BBoxHit) y se
@@ -134,7 +134,63 @@ constexpr int kChatNodeKind    = 300;   // canal DWORD            (0x10C)
 constexpr int kChatNodeExtra   = 304;   // DWORD extra            (0x110)
 constexpr int kChatNodeLines   = 308;   // líneas / desvanecido   (0x114)
 constexpr int kChatPayloadSize = 312;   // 0x118 en el binario
-constexpr int kChatNodeSize    = 8 + kChatPayloadSize;   // 0x120 en el binario
+constexpr int kGuildNodeParty   = 0x2A;  // número de party (nodo +0x32 en el binario)
+constexpr int kGuildNodePayload = 0x2C;
+
+// Nodo de las listas del widget. En el binario `next` y `prev` son los dos
+// DWORD de +0x00 y +0x04; el payload arranca justo después.
+struct ChatLBNode {
+    ChatLBNode* next;
+    ChatLBNode* prev;
+};
+
+static inline BYTE* ChatLBNode_Data(ChatLBNode* node) { return (BYTE*)(node + 1); }
+static inline const BYTE* ChatLBNode_Data(const ChatLBNode* node) { return (const BYTE*)(node + 1); }
+
+// Reserva el nodo y lo enlaza delante de head->next (std::list::insert del binario).
+static ChatLBNode* ChatLBNode_InsertFront(ChatLBNode* head, size_t payload)
+{
+    const size_t bytes = sizeof(ChatLBNode) + payload;
+    ChatLBNode* node = (ChatLBNode*)malloc(bytes);
+    if (!node) return nullptr;
+    memset(node, 0, bytes);
+    ChatLBNode* next = head->next;
+    node->next = next;
+    node->prev = next->prev;
+    next->prev = node;
+    node->prev->next = node;
+    return node;
+}
+
+// Los campos que en el binario son punteros (this[0], [2], [23], [25], [28] y
+// [31]) viven en esta cabecera, delante del bloque de DWORD: así el índice de
+// cada campo restante sigue siendo el de IDA en cualquier arquitectura.
+struct ChatWidgetPointers {
+    void**      vtable;
+    ChatLBNode* list1;     // this[2]
+    ChatLBNode* list2;     // this[23], líneas
+    ChatLBNode* list3;     // this[31], entradas
+    ChatLBNode* cursor;    // this[25]
+    ChatLBNode* selected;  // this[28]
+};
+
+static inline ChatWidgetPointers& ChatWidget_Pointers(void* widget)
+{
+    return ((ChatWidgetPointers*)widget)[-1];
+}
+
+static BYTE* ChatWidget_Allocate(size_t bytes)
+{
+    BYTE* block = (BYTE*)calloc(1, sizeof(ChatWidgetPointers) + bytes);
+    return block ? block + sizeof(ChatWidgetPointers) : nullptr;
+}
+
+static void ChatWidget_Free(void* widget)
+{
+    free(&ChatWidget_Pointers(widget));
+}
+
+extern "C" void** ChatWidget_GetVTable(void* widget) { return ChatWidget_Pointers(widget).vtable; }
 
 extern "C" BYTE g_ChatStagingBuf[kChatPayloadSize] = {0}; // mirror del staging byte_55C95F8
 
@@ -161,8 +217,8 @@ extern "C" BYTE g_ChatStagingBuf[kChatPayloadSize] = {0}; // mirror del staging 
 // ---------------------------------------------------------------------------
 static void __fastcall ChatLB_dtor          (DWORD* self, int /*edx*/, char  flag);  // slot 0
 static int  __fastcall ChatLB_setState      (DWORD* self, int /*edx*/, int   v);     // slot 1
-static int  __fastcall ChatLB_setColor1     (DWORD* self, int /*edx*/, int a, int b, int c); // slot 2
-static int  __fastcall ChatLB_setColor2     (DWORD* self, int /*edx*/, int a, int b, int c); // slot 3
+static int  __fastcall ChatLB_setColor1     (DWORD* self, int /*edx*/, int a, int b, intptr_t c); // slot 2
+static int  __fastcall ChatLB_setColor2     (DWORD* self, int /*edx*/, int a, int b, intptr_t c); // slot 3
 static void __fastcall ChatLB_renderScroll  (DWORD* self);                                 // slot 4
 static int  __fastcall ChatLB_tick          (DWORD* self, int /*edx*/, int   v);     // slot 5
 static void __fastcall ChatLB_tickHook      (DWORD* self, int /*edx*/, int v);              // slot 6: nullsub_6, ret 4
@@ -186,7 +242,7 @@ static void __fastcall ChatLB_renderFooter  (DWORD* self);                      
 static int  __fastcall ChatLB_lineHover     (DWORD* self, int /*edx*/, int   row);   // slot 25
 static int  __fastcall ChatLB_perFrameInput (DWORD* self);                                 // slot 26
 static void __fastcall ChatLB_AddText       (DWORD* self, int /*edx*/, char* src, char* msg, int kind, int extra); // slot 28
-static int  __stdcall  ChatLB_isRowVisible  (int  rowData);                                // slot 29
+static int  __stdcall  ChatLB_isRowVisible  (const BYTE* rowData);                                // slot 29
 
 // ---------------------------------------------------------------------------
 // Vtable — order matches original off_5525CC byte-for-byte.
@@ -233,13 +289,14 @@ static ChatLB_VTable s_ChatLB_VTable = { {
 
 // Helper — aloca una cabeza de lista doblemente enlazada vacía, del tamaño dado.
 // Tanto fwd como back apuntan a la propia cabeza, lo que marca la lista como vacía.
-static DWORD* ChatLB_NewListHead(size_t bytes)
+static ChatLBNode* ChatLB_NewListHead(size_t payload)
 {
-    DWORD* head = (DWORD*)malloc(bytes);
+    const size_t bytes = sizeof(ChatLBNode) + payload;
+    ChatLBNode* head = (ChatLBNode*)malloc(bytes);
     if (!head) return nullptr;
     memset(head, 0, bytes);
-    head[0] = (DWORD)head;  // forward link → self
-    head[1] = (DWORD)head;  // back link    → self
+    head->next = head;
+    head->prev = head;
     return head;
 }
 
@@ -250,16 +307,14 @@ static DWORD* ChatLB_NewListHead(size_t bytes)
 // ---------------------------------------------------------------------------
 extern "C" void* ChatListBox_Construct(void)
 {
-    BYTE* p = (BYTE*)malloc(0x5C8);
+    BYTE* p = ChatWidget_Allocate(0x5C8);
     if (!p) return nullptr;
-    memset(p, 0, 0x5C8);
 
     DWORD* obj = (DWORD*)p;
 
     // ── sub_40C5D0 (base ctor) ──────────────────────────────────────────────
     // Cabeza de lista 1: en this[2] (offset 0x08), nodo de 0x14
-    DWORD* list1 = ChatLB_NewListHead(0x14);
-    obj[2] = (DWORD)list1;
+    ChatWidget_Pointers(obj).list1 = ChatLB_NewListHead(0x0C);
     obj[3] = 0;
     obj[7] = ++dword_55C9B78;  // unique ID (sub_40C480)
     obj[8] = 0;
@@ -273,12 +328,10 @@ extern "C" void* ChatListBox_Construct(void)
 
     // ── sub_40C7D0 (derived ctor) ───────────────────────────────────────────
     // Cabeza de lista 2: en this[23] (offset 0x5C), nodo de kChatNodeSize — historial del chat
-    DWORD* list2 = ChatLB_NewListHead(kChatNodeSize);
-    obj[23] = (DWORD)list2;
+    ChatWidget_Pointers(obj).list2 = ChatLB_NewListHead(kChatPayloadSize);
     obj[24] = 0;
     // Cabeza de lista 3: en this[31] (offset 0x7C), nodo de kChatNodeSize
-    DWORD* list3 = ChatLB_NewListHead(kChatNodeSize);
-    obj[31] = (DWORD)list3;
+    ChatWidget_Pointers(obj).list3 = ChatLB_NewListHead(kChatPayloadSize);
     obj[32] = 0;
 
     obj[21] = 2;          // override base
@@ -288,7 +341,7 @@ extern "C" void* ChatListBox_Construct(void)
     obj[27] = 0;
     obj[45] = 1;          // (gets reset to 0 below)
 
-    *(void**)obj = &s_ChatLB_VTable;  // INSTALL VTABLE
+    ChatWidget_Pointers(obj).vtable = (void**)&s_ChatLB_VTable;  // INSTALL VTABLE
 
     obj[33] = 150;        // chat fade timer / max entries
     obj[34] = 0;          // scroll cursor
@@ -312,7 +365,7 @@ extern "C" void* ChatListBox_Construct(void)
     // sub_40C6B0(this, 268, 250)
     obj[13] = 268; obj[14] = 250;
 
-    obj[28] = obj[23];    // cursor pointer = list head
+    ChatWidget_Pointers(obj).selected = ChatWidget_Pointers(obj).list2;    // cursor pointer = list head
     obj[45] = 0;          // reset
 
     // Clear the staging buffer.
@@ -337,15 +390,13 @@ extern "C" void* ChatListBox_Construct(void)
 // ===========================================================================
 extern "C" void* ChatListBox_ConstructWhisper(void)
 {
-    BYTE* p = (BYTE*)malloc(0xBC);
+    BYTE* p = ChatWidget_Allocate(0xBC);
     if (!p) return nullptr;
-    memset(p, 0, 0xBC);
 
     DWORD* obj = (DWORD*)p;
 
     // sub_40C5D0 (ctor base) — igual que en el constructor principal.
-    DWORD* list1 = ChatLB_NewListHead(0x14);
-    obj[2] = (DWORD)list1;
+    ChatWidget_Pointers(obj).list1 = ChatLB_NewListHead(0x0C);
     obj[3] = 0;
     obj[7] = ++dword_55C9B78;
     obj[9] = 0;
@@ -356,11 +407,9 @@ extern "C" void* ChatListBox_ConstructWhisper(void)
     obj[21] = 1;
 
     // sub_40E990 derived ctor — note 0x18 list-node size and 24 visible.
-    DWORD* list2 = ChatLB_NewListHead(0x18);
-    obj[23] = (DWORD)list2;
+    ChatWidget_Pointers(obj).list2 = ChatLB_NewListHead(0x10);
     obj[24] = 0;
-    DWORD* list3 = ChatLB_NewListHead(0x18);
-    obj[31] = (DWORD)list3;
+    ChatWidget_Pointers(obj).list3 = ChatLB_NewListHead(0x10);
     obj[32] = 0;
 
     obj[21] = 2;
@@ -371,7 +420,7 @@ extern "C" void* ChatListBox_ConstructWhisper(void)
     obj[45] = 0;
 
     // vtable off_5526EC — propia del widget de guild (ver final del archivo)
-    *(void**)obj = GuildListBox_GetVTable();
+    ChatWidget_Pointers(obj).vtable = (void**)GuildListBox_GetVTable();
 
     obj[33] = 150;
     obj[34] = 0;
@@ -405,13 +454,11 @@ static void __fastcall ChatLB_dtor(DWORD* self, int /*edx*/, char flag)
     if (flag & 1) {
         // Best-effort: liberar las cabezas de lista (sus nodos pueden filtrarse — los ports de
         // sub_410E30 / sub_411360 not done).
-        DWORD* list1 = (DWORD*)self[2];
-        DWORD* list2 = (DWORD*)self[23];
-        DWORD* list3 = (DWORD*)self[31];
-        if (list1) free(list1);
-        if (list2) free(list2);
-        if (list3) free(list3);
-        free(self);
+        ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+        if (ptrs.list1) free(ptrs.list1);
+        if (ptrs.list2) free(ptrs.list2);
+        if (ptrs.list3) free(ptrs.list3);
+        ChatWidget_Free(self);
     }
 }
 
@@ -423,7 +470,7 @@ static int __fastcall ChatLB_setState(DWORD* self, int, int v)
 }
 
 // slot 2 — sub_40C6D0
-static int __fastcall ChatLB_setColor1(DWORD* self, int, int a, int b, int c)
+static int __fastcall ChatLB_setColor1(DWORD* self, int, int a, int b, intptr_t c)
 {
     self[15] = a;
     self[17] = b;
@@ -432,7 +479,7 @@ static int __fastcall ChatLB_setColor1(DWORD* self, int, int a, int b, int c)
 }
 
 // slot 3 — sub_40C6F0
-static int __fastcall ChatLB_setColor2(DWORD* self, int, int a, int b, int c)
+static int __fastcall ChatLB_setColor2(DWORD* self, int, int a, int b, intptr_t c)
 {
     self[16] = a;
     self[19] = b;
@@ -451,7 +498,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef int  (__fastcall *FnRow )(DWORD*, int /*edx*/, int row);
 
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     ((FnVoid)vt[22])(self);  // *this+88 — render BG
     ((FnVoid)vt[20])(self);  // *this+80 — render header
@@ -461,7 +508,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
 
     int i = 0;
     while (i < (int)self[35]) {
-        if (self[25] == self[23]) break;
+        if (!ChatWidget_Pointers(self).cursor || ChatWidget_Pointers(self).cursor == ChatWidget_Pointers(self).list2) break;
         int v3 = ((FnRow)vt[23])(self, 0, i);
         if (v3 >= 0) {
             if (!v3) --i;
@@ -469,7 +516,7 @@ static void __fastcall ChatLB_renderScroll(DWORD* self)
             i -= v3;
         }
         ++i;
-        self[25] = *(DWORD*)self[25];  // advance cursor
+        ChatWidget_Pointers(self).cursor = ChatWidget_Pointers(self).cursor->next;  // advance cursor
     }
 
     ((FnVoid)vt[24])(self);  // *this+96 — render footer
@@ -487,10 +534,10 @@ static int __fastcall ChatLB_tick(DWORD* self, int, int v)
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef void (__fastcall *FnInt2)(DWORD*, int, int);
 
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     while (self[3]) {
-        ChatListBox_DequeueFront((int)self);
+        ChatListBox_DequeueFront(self);
         if (!((FnInt)vt[9])(self)) {
             ((FnVoid)vt[8])(self);
         }
@@ -569,7 +616,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef void (__fastcall *FnVoidI)(DWORD*, int /*edx*/, int);
 
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
     int  v17 = 0;
     bool keyHandled = false;
 
@@ -770,7 +817,7 @@ LABEL_53:
     if (!dword_55C9B84) {
         int i = 0;
         while (i < (int)self[35]) {
-            if (self[25] == self[23]) break;
+            if (!ChatWidget_Pointers(self).cursor || ChatWidget_Pointers(self).cursor == ChatWidget_Pointers(self).list2) break;
             int v15 = ((FnRow)vt[25])(self, 0, i);
             if (v15 >= 0) {
                 if (!v15) --i;
@@ -778,7 +825,7 @@ LABEL_53:
                 i -= v15;
             }
             ++i;
-            self[25] = *(DWORD*)self[25];
+            ChatWidget_Pointers(self).cursor = ChatWidget_Pointers(self).cursor->next;
         }
     }
 
@@ -793,13 +840,13 @@ static int __fastcall ChatLB_keyHandler(DWORD* self) { return FUN_00411a20(self)
 // slot 10 — sub_4118D0 — wipe entire list, decrement count per node.
 static void __fastcall ChatLB_clearList(DWORD* self)
 {
-    DWORD** v2 = (DWORD**)self[23];
-    DWORD*  i  = *v2;
-    while (i != (DWORD*)v2) {
-        DWORD** v4 = (DWORD**)i;
-        i = (DWORD*)*i;
-        *v4[1] = (DWORD)*v4;          // unlink: back->fwd = self->fwd
-        (*v4)[1] = (DWORD)v4[1];      //         fwd->back = self->back
+    ChatLBNode* v2 = ChatWidget_Pointers(self).list2;
+    ChatLBNode* i  = v2->next;
+    while (i != v2) {
+        ChatLBNode* v4 = i;
+        i = i->next;
+        v4->prev->next = v4->next;
+        v4->next->prev = v4->prev;
         free(v4);
         --self[24];
     }
@@ -813,7 +860,7 @@ static void __fastcall ChatLB_clearList(DWORD* self)
 static int __fastcall ChatLB_scrollByN(DWORD* self, int, int a2)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     int result = (int)self[24];
     if ((unsigned)result < self[35]) return result;
@@ -821,19 +868,19 @@ static int __fastcall ChatLB_scrollByN(DWORD* self, int, int a2)
     if (g_bUseChatListBox || self[34] || a2 != -6) {
         self[34] -= a2;
     } else {
-        DWORD* v4 = (DWORD*)self[23];
+        ChatLBNode* v4 = ChatWidget_Pointers(self).list2;
         int v5 = 0;
         unsigned v6 = 0;
-        DWORD* v7 = (DWORD*)*v4;
+        ChatLBNode* v7 = v4->next;
         int v9 = 1;
         if (v7 != v4) {
             for (;;) {
-                const DWORD lines = v7[(8 + kChatNodeLines) / 4];
+                const DWORD lines = *(DWORD*)(ChatLBNode_Data(v7) + kChatNodeLines);
                 v5 += (int)(lines - v6 + 1);
                 if (v6 < lines) v6 = lines;
                 if (v5 == 6) break;
                 if (v5 > 6) { --v9; break; }
-                v7 = (DWORD*)*v7;
+                v7 = v7->next;
                 int v8 = ++v9;
                 if (v7 == v4) {
                     self[34] = v8;
@@ -885,9 +932,9 @@ static int __fastcall ChatLB_trimOldest(DWORD* self)
         int v4 = 0;
         if (v2 - max > 0) {
             do {
-                DWORD** v5 = *(DWORD***)(self[23] + 4);
-                *v5[1] = (DWORD)*v5;
-                (*v5)[1] = (DWORD)v5[1];
+                ChatLBNode* v5 = ChatWidget_Pointers(self).list2->prev;
+                v5->prev->next = v5->next;
+                v5->next->prev = v5->prev;
                 free(v5);
                 --self[24];
                 ++v4;
@@ -903,7 +950,7 @@ static int __fastcall ChatLB_trimOldest(DWORD* self)
 static void __fastcall ChatLB_recalcScroll(DWORD* self)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     float* fself = (float*)self;
     int v2 = (int)self[12];
@@ -941,18 +988,18 @@ static void __fastcall ChatLB_recalcScroll(DWORD* self)
 // slot 19 — sub_40CD80 — count visible rows (filters via vtable[+116]).
 static int __fastcall ChatLB_countVisible(DWORD* self)
 {
-    typedef int (__stdcall *FnRow)(int);
-    void** vt = (void**)*self;
+    typedef int (__stdcall *FnRow)(const BYTE*);
+    void** vt = ChatWidget_GetVTable(self);
 
     int v1 = 0;
     if (!DAT_00559bf1 || g_bUseChatListBox) {
-        DWORD** v3 = (DWORD**)self[23];
-        DWORD*  v4 = *v3;
-        if (v4 != (DWORD*)v3) {
+        ChatLBNode* v3 = ChatWidget_Pointers(self).list2;
+        ChatLBNode* v4 = v3->next;
+        if (v4 != v3) {
             do {
-                if (((FnRow)vt[29])((int)(v4 + 2))) ++v1;
-                v4 = (DWORD*)*v4;
-            } while (v4 != (DWORD*)self[23]);
+                if (((FnRow)vt[29])(ChatLBNode_Data(v4))) ++v1;
+                v4 = v4->next;
+            } while (v4 != ChatWidget_Pointers(self).list2);
         }
     }
     return (int)self[24] - v1;
@@ -961,18 +1008,18 @@ static int __fastcall ChatLB_countVisible(DWORD* self)
 // slot 20 — sub_40CDD0 — advance cursor over [scroll] entries.
 static int __fastcall ChatLB_advanceCursor(DWORD* self)
 {
-    typedef int (__stdcall *FnRow)(int);
-    void** vt = (void**)*self;
+    typedef int (__stdcall *FnRow)(const BYTE*);
+    void** vt = ChatWidget_GetVTable(self);
 
     int v2 = 0;
     int result = (int)self[34];
-    self[25] = *(DWORD*)self[23];
+    ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+    ptrs.cursor = ptrs.list2->next;
     if (result > 0) {
         do {
-            result = (int)self[25];
-            if (result == (int)self[23]) break;
-            if (!((FnRow)vt[29])((int)(self[25] + 8))) ++v2;
-            self[25] = *(DWORD*)self[25];
+            if (ptrs.cursor == ptrs.list2) break;
+            if (!((FnRow)vt[29])(ChatLBNode_Data(ptrs.cursor))) ++v2;
+            ptrs.cursor = ptrs.cursor->next;
             result = (int)self[34];
         } while (v2 < result);
     }
@@ -1002,14 +1049,15 @@ static int __fastcall ChatLB_advanceCursor(DWORD* self)
 
 static int __fastcall ChatLB_hitTestInput(DWORD* self)
 {
-    DWORD v2 = self[28];
-    if (v2 != self[23] && MouseRButton) {
+    ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+    ChatLBNode* v2 = ptrs.selected;
+    if (v2 != ptrs.list2 && MouseRButton) {
         // Copia el "nombre del remitente" de la fila con foco al input de susurro.
-        const char* sender = (const char*)(v2 + 8);
+        const char* sender = (const char*)ChatLBNode_Data(v2);
         strncpy((char*)InputText[1], sender, 0x100);
         InputLength[1] = (int)strlen((const char*)InputText[1]);
     }
-    self[28] = self[23];
+    ptrs.selected = ptrs.list2;
 
     // Toggle "input dialog active" flag based on mouse Y band.
     if (FUN_0040c490(160, 436, 320, 50, 1)) {
@@ -1063,7 +1111,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
     //   (bordes), 1282=nis_bar (thumb), 1283=nis_back (riel), 1284=nis_btnarrow.
     typedef void (__fastcall *FnVoidSelf)(DWORD*);
     typedef int  (__fastcall *FnIntSelf )(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     if (g_bUseChatListBox == 1) {
         const float fx = (float)(int)self[11];   // x
@@ -1246,12 +1294,12 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         v5 = row + 1;
         if (row + 1 >= (int)self[35]) return (int)g_bUseChatListBox;
     }
-    if (!DAT_00559bf1 && *(DWORD*)(self[25] + 8 + kChatNodeKind) == 3) return 0;
+    if (!DAT_00559bf1 && *(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind) == 3) return 0;
     if (g_bUseChatListBox) {
-        DWORD t = *(DWORD*)(self[25] + 8 + kChatNodeKind);
+        DWORD t = *(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind);
         if (t == 1 || t == 2) return 0;
     } else {
-        int extra = *(int*)(self[25] + 8 + kChatNodeLines);
+        int extra = *(int*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeLines);
         if (extra && !self[34]) {
             if ((int)self[35] - extra - v5 - 1 < 0) return v5 - (int)self[35];
             v5 += extra;
@@ -1266,9 +1314,9 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
     SIZE sz = {0, 0};
 
     // Remitente: "nombre: " con su paleta.
-    if (*(const char*)(self[25] + 8)) {
+    if (*(const char*)ChatLBNode_Data(ChatWidget_Pointers(self).cursor)) {
         DWORD back = 0x96000000u;
-        switch (*(DWORD*)(self[25] + 8 + kChatNodeKind)) {
+        switch (*(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind)) {
             case 0: back = 0x9632C8FFu; m_dwTextColor = 0xFF000000u; m_dwBackColor = back; break;
             case 1: m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break;
             case 2: m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break;
@@ -1283,12 +1331,12 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         }
         // Parpadeo de la linea seleccionada (self[28]): cada 6 frames, 3 con
         // los colores invertidos.
-        if (self[28] == self[25] && (int)(self[46] % 6) < 3) {
+        if (ChatWidget_Pointers(self).selected == ChatWidget_Pointers(self).cursor && (int)(self[46] % 6) < 3) {
             DWORD t = m_dwTextColor;
             m_dwTextColor = back;
             m_dwBackColor = t;
         }
-        Platform::TextFormat(Buffer, "%s: ", (const char*)(self[25] + 8));
+        Platform::TextFormat(Buffer, "%s: ", (const char*)ChatLBNode_Data(ChatWidget_Pointers(self).cursor));
         UI_DrawText(x, y, Buffer, 0, 1, 0, sizeof(Buffer));
         if (gFont.GetTextDC())
             gFont.MeasureText(gFont.GetTextDC(), Buffer, Platform::TextLength(Buffer), &sz);
@@ -1297,7 +1345,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
     }
 
     // Texto: segunda paleta (solo cambia el susurro).
-    switch (*(DWORD*)(self[25] + 8 + kChatNodeKind)) {
+    switch (*(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind)) {
         case 0: m_dwTextColor = 0xFF000000u; m_dwBackColor = 0x9632C8FFu; break;
         case 1: m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break;
         case 2: m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break;
@@ -1307,7 +1355,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         default: break;
     }
     if (g_bUseChatListBox && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
-    Platform::TextCopy(Buffer, (const char*)(self[25] + 8 + kChatNodeText), sizeof(Buffer));
+    Platform::TextCopy(Buffer, (const char*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeText), sizeof(Buffer));
     UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0, sizeof(Buffer));
 
     GL_ResetState();   // DisableAlphaBlend
@@ -1444,12 +1492,12 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
         v4 = row + 1;
         if (row + 1 >= (int)self[35]) return g_bUseChatListBox;
     }
-    if (!DAT_00559bf1 && *(DWORD*)(self[25] + 8 + kChatNodeKind) == 3) return 0;
+    if (!DAT_00559bf1 && *(DWORD*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind) == 3) return 0;
     if (g_bUseChatListBox) {
-        int v5 = *(int*)(self[25] + 8 + kChatNodeKind);
+        int v5 = *(int*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeKind);
         if (v5 == 1 || v5 == 2) return 0;
     } else {
-        int v6 = *(int*)(self[25] + 8 + kChatNodeLines);
+        int v6 = *(int*)(ChatLBNode_Data(ChatWidget_Pointers(self).cursor) + kChatNodeLines);
         if (v6) {
             if (!self[34]) {
                 if ((int)self[35] - v6 - v4 - 1 < 0) return v4 - (int)self[35];
@@ -1457,15 +1505,15 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
             }
         }
     }
-    if (Hero && *(BYTE*)(Hero + 846) && InputEnable) {
-        const char* sender = (const char*)(self[25] + 8);
+    if (Hero && *(BYTE*)(Hero + EntityOffset(846)) && InputEnable) {
+        const char* sender = (const char*)ChatLBNode_Data(ChatWidget_Pointers(self).cursor);
         SIZE sz = {0,0};
         int len = Platform::TextLength(sender);
         if (gFont.GetTextDC()) gFont.MeasureText(gFont.GetTextDC(), sender, len, &sz);
         if (FUN_0040c490((int)self[11] + 10, (int)self[12] - 13 * v4 - 16, sz.cx, 13, 1)) {
-            int v10 = (int)self[25];
+            ChatLBNode* v10 = ChatWidget_Pointers(self).cursor;
             if (Hero && strcmp((const char*)(v10 + 8), EntityName::Get(Hero))) {
-                self[28] = (DWORD)v10;
+                ChatWidget_Pointers(self).selected = v10;
             }
         }
     }
@@ -1479,7 +1527,7 @@ static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
 static int __fastcall ChatLB_perFrameInput(DWORD* self)
 {
     typedef void (__fastcall *FnInt2)(DWORD*, int, int);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     if (FUN_0040c490((int)self[11], (int)self[12] - (int)self[14],
                      (int)self[13], 8, 1)
@@ -1557,9 +1605,9 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
 
     if (!*src && !*msg) {
         if (!g_bUseChatListBox && !self[34]) {
-            DWORD** v6 = (DWORD**)self[23];
-            for (DWORD* i = *v6; i != (DWORD*)v6; i = (DWORD*)*i) {
-                FUN_0040c930((int)(i + 2));   // ++[+0x114] (cached cx — used as fade)
+            ChatLBNode* v6 = ChatWidget_Pointers(self).list2;
+            for (ChatLBNode* i = v6->next; i != v6; i = i->next) {
+                FUN_0040c930(ChatLBNode_Data(i));   // ++[+0x114] (cached cx — used as fade)
             }
         }
         return;
@@ -1589,26 +1637,15 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
     dword_55C9704 = kind;
     dword_55C970C = 0;
 
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     // Short message — single-node insert.
     if (strlen(msg) + strlen(src) < 0x14) {
         strncpy((char*)&byte_55C9603, msg, 0x100);
 
-        DWORD list_addr = self[23];
-        DWORD* head = (DWORD*)list_addr;
-        DWORD* fwd = (DWORD*)*head;             // current fwd
-        DWORD* back = (DWORD*)*((DWORD*)*head + 1); // current back
-
-        DWORD* node = (DWORD*)malloc(kChatNodeSize);
+        ChatLBNode* node = ChatLBNode_InsertFront(ChatWidget_Pointers(self).list2, kChatPayloadSize);
         if (!node) return;
-        memset(node, 0, kChatNodeSize);
-        node[0] = (DWORD)(fwd ? fwd : node);
-        node[1] = (DWORD)(back ? back : node);
-        if (fwd) fwd[1] = (DWORD)node;
-        *(DWORD*)node[1] = (DWORD)node;
-
-        memcpy(node + 2, &byte_55C95F8, kChatPayloadSize);
+        memcpy(ChatLBNode_Data(node), &byte_55C95F8, kChatPayloadSize);
         ++self[24];
     } else {
         // IDA sub_40C940 L96-150: mensaje largo.  sub_40C2A0 lo parte en hasta
@@ -1627,19 +1664,9 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
                 *(char*)&byte_55C95F8 = 0;
             strncpy((char*)&byte_55C9603, lines[ln], 0x100);
 
-            DWORD list_addr = self[23];
-            DWORD* head = (DWORD*)list_addr;
-            DWORD* fwd  = (DWORD*)*head;
-            DWORD* back = (DWORD*)*((DWORD*)*head + 1);
-
-            DWORD* node = (DWORD*)malloc(kChatNodeSize);
+            ChatLBNode* node = ChatLBNode_InsertFront(ChatWidget_Pointers(self).list2, kChatPayloadSize);
             if (!node) return;
-            memset(node, 0, kChatNodeSize);
-            node[0] = (DWORD)(fwd ? fwd : node);
-            node[1] = (DWORD)(back ? back : node);
-            if (fwd) fwd[1] = (DWORD)node;
-            *(DWORD*)node[1] = (DWORD)node;
-            memcpy(node + 2, &byte_55C95F8, kChatPayloadSize);
+            memcpy(ChatLBNode_Data(node), &byte_55C95F8, kChatPayloadSize);
             ++self[24];
         }
     }
@@ -1648,7 +1675,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
     ((FnVoid)vt[17])(self);
 
     // Auto-scroll-to-end.
-    if (self[34] && !((FnRow)vt[29])(self, 0, (int)&byte_55C95F8)) {
+    if (self[34] && !((int (__stdcall *)(const BYTE*))vt[29])(&byte_55C95F8)) {
         ++self[34];
     }
     if (((FnInt)vt[19])(self) >= (int)self[35]
@@ -1661,7 +1688,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
 // slot 29 — sub_40CD30 — ¿el tipo de mensaje de esta fila es visible ahora?
 //   - whisper-only mode (byte_559BF1=0) hides msg-type 3 (whispers).
 //   - chat-list-box mode hides msg-type 1 and 2 (system/error).
-static int __stdcall ChatLB_isRowVisible(int rowData)
+static int __stdcall ChatLB_isRowVisible(const BYTE* rowData)
 {
     if (!DAT_00559bf1 && *(DWORD*)(rowData + kChatNodeKind) == 3) return 1;
     if (g_bUseChatListBox) {
@@ -1759,10 +1786,10 @@ static int __fastcall GuildLB_countVisible(DWORD* self)
 //    visible, saltando `self[34]` (offset de scroll) nodos ────────────────────
 static int __fastcall GuildLB_advanceCursor(DWORD* self)
 {
-    DWORD* head = (self[29] == 1) ? (DWORD*)self[31] : (DWORD*)self[23];
+    ChatLBNode* head = (self[29] == 1) ? ChatWidget_Pointers(self).list3 : ChatWidget_Pointers(self).list2;
     if (!head) return 0;
     int result = 0;
-    for (self[25] = *head; result < (int)self[34]; self[25] = *(DWORD*)self[25])
+    for (ChatWidget_Pointers(self).cursor = head->next; result < (int)self[34]; ChatWidget_Pointers(self).cursor = ChatWidget_Pointers(self).cursor->next)
         ++result;
     return result;
 }
@@ -1771,7 +1798,7 @@ static int __fastcall GuildLB_advanceCursor(DWORD* self)
 static int __fastcall GuildLB_scrollByN(DWORD* self, int /*edx*/, int a2)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
     int result;
     if (self[29] == 1) {
         result = (int)self[32];
@@ -1805,7 +1832,7 @@ static int __fastcall GuildLB_renderBg(DWORD* self)
 {
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef int  (__fastcall *FnInt )(DWORD*);
-    void**  vt = (void**)*self;
+    void**  vt = ChatWidget_GetVTable(self);
     float*  f  = (float*)self;
 
     self[14] = (DWORD)(40 * ((int)self[35] / 3) + 10);
@@ -1837,7 +1864,7 @@ static int __fastcall GuildLB_renderBg(DWORD* self)
 static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     EnableAlphaTest(true);
     int v4  = (int)self[11] + 8;
@@ -1855,20 +1882,20 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     // seguido `self[25] = (cursor->next)->prev`.  Con la lista circular eso
     // vuelve a dejar el cursor donde estaba; `v8` queda con el `next` para
     // detectar la ultima fila (la del guild master).
-    DWORD* v6 = (DWORD*)self[25];
-    DWORD  v7 = self[23];
+    ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+    ChatLBNode* v6 = ptrs.cursor;
+    ChatLBNode* v7 = ptrs.list2;
     if (!v6) return 0;
-    DWORD  v8 = v6[0];
+    ChatLBNode* v8 = v6->next;
     if (!v8) return 0;
-    self[25] = v8;
-    self[25] = *(DWORD*)(v8 + 4);
-    if (!self[25]) return 0;
+    ptrs.cursor = v8->prev;
+    if (!ptrs.cursor) return 0;
 
-    BYTE party = *(BYTE*)(self[25] + 0x32);
+    BYTE party = *(ChatLBNode_Data(ptrs.cursor) + kGuildNodeParty);
     if (v8 == v7) {
         m_dwBackColor = 0xFF962828u;                        // -6936536
         m_dwTextColor = (party != 0xFF) ? 0xFFFFFFFFu : 0xC4C4C4FFu;
-        CreateGuildMark(*(short*)((BYTE*)(uintptr_t)Hero + 474), true);
+        CreateGuildMark(AsCharacter(Hero)->GuildMarkIndex, true);
         GL_DrawTexture(34, (float)v22, (float)v5, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         v4 += 13;
     } else {
@@ -1878,7 +1905,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
 
     char Buffer[256];
     memset(Buffer, 0, sizeof(Buffer));
-    const char* name = (const char*)(self[25] + 8);
+    const char* name = (const char*)ChatLBNode_Data(ChatWidget_Pointers(self).cursor);
     Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, "%s", name);
     UI_DrawText(v4, v5, Buffer, 0, 1, 0, sizeof(Buffer));
 
@@ -1930,21 +1957,21 @@ static int __fastcall GuildLB_lineHover(DWORD* /*self*/, int /*edx*/, int /*row*
 static int __fastcall GuildLB_perFrameInput(DWORD* self)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
-    if (!self[23]) return 1;
+    if (!ChatWidget_Pointers(self).list2) return 1;
     int v2 = 0;
-    for (self[25] = *(DWORD*)self[23]; v2 < (int)self[34]; self[25] = *(DWORD*)self[25])
+    for (ChatWidget_Pointers(self).cursor = ChatWidget_Pointers(self).list2->next; v2 < (int)self[34]; ChatWidget_Pointers(self).cursor = ChatWidget_Pointers(self).cursor->next)
         ++v2;
 
     int v3 = 0;
     if ((int)self[35] > 0) {
         int v11 = 0;
         do {
-            DWORD v4 = self[25];
-            if (v4 == self[23]) break;
+            ChatLBNode* v4 = ChatWidget_Pointers(self).cursor;
+            if (v4 == ChatWidget_Pointers(self).list2) break;
             if (self[46] == 1 ||
-                !strcmp((const char*)(v4 + 8), EntityName::Get(Hero)))
+                !strcmp((const char*)ChatLBNode_Data(v4), EntityName::Get(Hero)))
             {
                 int v5;
                 if (((FnInt)vt[19])(self) <= (int)self[35])
@@ -1976,7 +2003,7 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
                 }
             }
             ++v3;
-            self[25] = *(DWORD*)self[25];
+            ChatWidget_Pointers(self).cursor = ChatWidget_Pointers(self).cursor->next;
             v11 += 13;
         } while (v3 < (int)self[35]);
     }
@@ -1989,7 +2016,7 @@ static void __fastcall GuildLB_AddMember(DWORD* self, int /*edx*/,
 {
     typedef int  (__fastcall *FnInt )(DWORD*);
     typedef void (__fastcall *FnVoid)(DWORD*);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
 
     if (!Source || !*Source) return;
 
@@ -2004,21 +2031,14 @@ static void __fastcall GuildLB_AddMember(DWORD* self, int /*edx*/,
     staging[NetText::CharacterNameSize + 1] = a3;
     staging[NetText::CharacterNameSize + 2] = a4;
 
-    DWORD* head = (DWORD*)self[23];
-    if (!head || !head[0]) return;
-    DWORD* v6 = (DWORD*)head[0];              // head->next
-    DWORD* v7 = (DWORD*)v6[1];                // head->next->prev
-    DWORD* v8 = (DWORD*)malloc(0x34);
+    ChatLBNode* head = ChatWidget_Pointers(self).list2;
+    if (!head || !head->next) return;
+    ChatLBNode* v8 = ChatLBNode_InsertFront(head, kGuildNodePayload);
     if (!v8) return;
-    memset(v8, 0, 0x34);
-    v8[0] = (DWORD)(uintptr_t)(v6 ? v6 : v8);
-    v8[1] = (DWORD)(uintptr_t)(v7 ? v7 : v8);
-    v6[1] = (DWORD)(uintptr_t)v8;
-    *(DWORD*)v8[1] = (DWORD)(uintptr_t)v8;
 
     // Payload: nombre + conexión desde el staging a nodo+8, y a4 a nodo+0x32.
-    memcpy((BYTE*)v8 + 8, staging, NetText::CharacterNameSize + 2);
-    *((BYTE*)v8 + 0x32) = (BYTE)a4;
+    memcpy(ChatLBNode_Data(v8), staging, NetText::CharacterNameSize + 2);
+    *(ChatLBNode_Data(v8) + kGuildNodeParty) = (BYTE)a4;
 
     ++self[24];
     ((FnVoid)vt[17])(self);                   // trimOldest
@@ -2032,12 +2052,12 @@ static void __fastcall GuildLB_AddMember(DWORD* self, int /*edx*/,
 // Libera los nodos de una lista doble circular con centinela (next en +0) y
 // despues el centinela.  Es lo que hacen los dos bucles de sub_411360 de los
 // teardowns del widget sobre las listas de +0x5C y +0x7C.
-static void GuildLB_freeList(DWORD* head)
+static void GuildLB_freeList(ChatLBNode* head)
 {
     if (!head) return;
-    DWORD* n = (DWORD*)head[0];
+    ChatLBNode* n = head->next;
     while (n && n != head) {
-        DWORD* next = (DWORD*)n[0];
+        ChatLBNode* next = n->next;
         free(n);
         n = next;
     }
@@ -2051,12 +2071,13 @@ static void GuildLB_freeList(DWORD* head)
 // lista propia en su lugar (ver sub_410E50 en la auditoria).
 static void GuildLB_teardown(DWORD* self)
 {
-    GuildLB_freeList((DWORD*)self[23]);
-    self[23] = 0; self[24] = 0;
+    ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+    GuildLB_freeList(ptrs.list2);
+    ptrs.list2 = nullptr; self[24] = 0;
     self[34] = 0;
-    GuildLB_freeList((DWORD*)self[31]);
-    self[31] = 0; self[32] = 0;
-    if (self[2]) { free((void*)self[2]); self[2] = 0; }
+    GuildLB_freeList(ptrs.list3);
+    ptrs.list3 = nullptr; self[32] = 0;
+    if (ptrs.list1) { free(ptrs.list1); ptrs.list1 = nullptr; }
 }
 
 // slot 0 — IDA: sub_40EAC0 (0x0040EAC0) — dtor: sub_40EAE0 + delete si flag&1.
@@ -2084,7 +2105,7 @@ static int __fastcall GuildLB_keyHandler(DWORD* self)
 {
     typedef void (__fastcall *FnV)(DWORD*);
     typedef int  (__fastcall *FnScroll)(DWORD*, int, int);
-    void** vt = (void**)*self;
+    void** vt = ChatWidget_GetVTable(self);
     const int key = (int)self[4];
 
     switch (key) {
@@ -2094,39 +2115,39 @@ static int __fastcall GuildLB_keyHandler(DWORD* self)
     case 12: {
         ((FnScroll)vt[12])(self, 0, -100);
         if (self[26] != 1 || !self[24]) return 0;
-        DWORD* head = (DWORD*)self[23];
-        self[28] = head[1];                       // cursor = ultima (head->prev)
+        ChatWidget_Pointers(self).selected = ChatWidget_Pointers(self).list2->prev;
         return 0;
     }
     case 13:
     case 14: {
         if (self[26] != 1 || !self[24]) return 0;
-        DWORD* head = (DWORD*)self[23];
+        ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+        ChatLBNode* head = ptrs.list2;
         if (key == 13) {
-            DWORD* cur = (DWORD*)self[28];
+            ChatLBNode* cur = ptrs.selected;
             if (cur == head) return 0;
-            DWORD next = cur[0];
-            self[28] = next;
-            if (next == (DWORD)(uintptr_t)head)
-                self[28] = ((DWORD*)next)[1];
+            ChatLBNode* next = cur->next;
+            ptrs.selected = next;
+            if (next == head)
+                ptrs.selected = next->prev;
         } else {
-            DWORD* cur = (DWORD*)self[28];
-            if ((DWORD)(uintptr_t)cur == head[0]) return 0;
-            self[28] = cur[1];
+            ChatLBNode* cur = ptrs.selected;
+            if (cur == head->next) return 0;
+            ptrs.selected = cur->prev;
         }
         if (self[24] <= self[35]) return 0;
 
         // Indice del cursor contando desde la primera entrada.
         int idx = 0;
-        DWORD it = head[0];
-        self[25] = it;
-        if (it != (DWORD)(uintptr_t)head) {
+        ChatLBNode* it = head->next;
+        ptrs.cursor = it;
+        if (it != head) {
             do {
-                if (self[28] == it) break;
+                if (ptrs.selected == it) break;
                 ++idx;
-                it = *(DWORD*)self[25];
-                self[25] = it;
-            } while (it != (DWORD)(uintptr_t)head);
+                it = ptrs.cursor->next;
+                ptrs.cursor = it;
+            } while (it != head);
         }
         const int visible = (int)self[35];
         const int scroll  = (int)self[34];
@@ -2191,17 +2212,17 @@ extern "C" void* GuildListBox_GetVTable(void) { return &s_GuildLB_VTable; }
 extern "C" void GuildList_Clear(void)
 {
     DWORD* obj = (DWORD*)(uintptr_t)DAT_055c9ff4;
-    if (!obj || !*obj) return;
+    if (!obj || !ChatWidget_GetVTable(obj)) return;
     typedef void (__fastcall *FnVoid)(DWORD*);
-    ((FnVoid)((void**)*obj)[10])(obj);
+    ((FnVoid)(ChatWidget_GetVTable(obj))[10])(obj);
 }
 
 extern "C" void GuildList_AddMember(const char* name, char connected, char partyNumber)
 {
     DWORD* obj = (DWORD*)(uintptr_t)DAT_055c9ff4;
-    if (!obj || !*obj) return;
+    if (!obj || !ChatWidget_GetVTable(obj)) return;
     typedef void (__fastcall *FnAdd)(DWORD*, int, const char*, char, char);
-    ((FnAdd)((void**)*obj)[28])(obj, 0, name, connected, partyNumber);
+    ((FnAdd)(ChatWidget_GetVTable(obj))[28])(obj, 0, name, connected, partyNumber);
 }
 
 // ===========================================================================
@@ -2230,7 +2251,7 @@ constexpr int EventRowStep = 34;   // recuadro 245 (21) + línea del tiempo
 static int __fastcall EventLB_renderBg(DWORD* self)
 {
     typedef void (__fastcall *FnVoid)(DWORD*);
-    void**  vt = (void**)*self;
+    void**  vt = ChatWidget_GetVTable(self);
     float*  f  = (float*)self;
 
     self[14] = (DWORD)(EventRowStep * (int)self[35] + 10);
@@ -2258,9 +2279,9 @@ static int __fastcall EventLB_renderBg(DWORD* self)
 static int __fastcall EventLB_renderLine(DWORD* self, int /*edx*/, int row)
 {
     typedef int (__fastcall *FnInt)(DWORD*);
-    void** vt = (void**)*self;
-    const DWORD* node = (const DWORD*)self[25];
-    if (!node || (DWORD)(uintptr_t)node == self[23]) return 0;
+    void** vt = ChatWidget_GetVTable(self);
+    const ChatLBNode* node = ChatWidget_Pointers(self).cursor;
+    if (!node || node == ChatWidget_Pointers(self).list2) return 0;
 
     const int count = ((FnInt)vt[19])(self);
     const int visible = (int)self[35];
@@ -2270,7 +2291,7 @@ static int __fastcall EventLB_renderLine(DWORD* self, int /*edx*/, int row)
         : bottom - EventRowStep * row;
     const int x = (int)self[11] + 8;
     const int width = (int)self[13] - 8 - 23;   // el recuadro no pisa el riel
-    EventTimer_DrawRow((int)node[2], x, y, width);
+    EventTimer_DrawRow(*(const int*)ChatLBNode_Data(node), x, y, width);
     return 1;
 }
 
@@ -2281,17 +2302,12 @@ static int __fastcall EventLB_perFrameInput(DWORD* /*self*/) { return 1; }
 static void __fastcall EventLB_AddEvent(DWORD* self, int /*edx*/, int index)
 {
     typedef int  (__fastcall *FnInt )(DWORD*);
-    void** vt = (void**)*self;
-    DWORD* head = (DWORD*)self[23];
-    if (!head || !head[0]) return;
-    DWORD* next = (DWORD*)head[0];
-    DWORD* node = (DWORD*)malloc(0x0C);
+    void** vt = ChatWidget_GetVTable(self);
+    ChatLBNode* head = ChatWidget_Pointers(self).list2;
+    if (!head || !head->next) return;
+    ChatLBNode* node = ChatLBNode_InsertFront(head, sizeof(int));
     if (!node) return;
-    node[0] = (DWORD)(uintptr_t)next;
-    node[1] = (DWORD)(uintptr_t)head;
-    node[2] = (DWORD)index;
-    next[1] = (DWORD)(uintptr_t)node;
-    head[0] = (DWORD)(uintptr_t)node;
+    *(int*)ChatLBNode_Data(node) = index;
     ++self[24];
     if (((FnInt)vt[19])(self) > (int)self[35])
         ++self[34];
@@ -2339,7 +2355,7 @@ void* EventListBox_Construct(int x, int bottom, int width, int visibleRows)
 {
     DWORD* obj = (DWORD*)ChatListBox_ConstructWhisper();
     if (!obj) return nullptr;
-    *(void**)obj = &s_EventLB_VTable;
+    ChatWidget_Pointers(obj).vtable = (void**)&s_EventLB_VTable;
     obj[33] = 255;                 // trimOldest: un F3/E6 trae hasta 255 filas
     obj[35] = (DWORD)visibleRows;
     obj[11] = (DWORD)x;
@@ -2364,7 +2380,7 @@ void EventListBox_Rebuild(void* widget, int count, bool keepPosition)
     if (!obj) return;
     typedef void (__fastcall *FnVoid)(DWORD*);
     typedef void (__fastcall *FnAdd)(DWORD*, int, int);
-    void** vt = (void**)*obj;
+    void** vt = ChatWidget_GetVTable(obj);
     const int visible = (int)obj[35];
     // El scroll se cuenta desde el final; conservar la distancia al principio.
     const int fromTop = (int)obj[24] - visible - (int)obj[34];
@@ -2385,7 +2401,7 @@ void EventListBox_Tick(void* widget)
     // El slot 7 reescribe el latch de MouseOnWindow; no borrar el de otro widget.
     const int captured = g_ChatLB_MouseOnWindow;
     typedef int (__fastcall *FnTick)(DWORD*, int, int);
-    ((FnTick)((void**)*obj)[5])(obj, 0, 0);
+    ((FnTick)(ChatWidget_GetVTable(obj))[5])(obj, 0, 0);
     g_ChatLB_MouseOnWindow |= captured;
 }
 
@@ -2394,7 +2410,7 @@ void EventListBox_Render(void* widget)
     DWORD* obj = (DWORD*)widget;
     if (!obj) return;
     typedef void (__fastcall *FnVoid)(DWORD*);
-    ((FnVoid)((void**)*obj)[4])(obj);
+    ((FnVoid)(ChatWidget_GetVTable(obj))[4])(obj);
 }
 
 void EventListBox_Scroll(void* widget, int pages)
@@ -2402,13 +2418,13 @@ void EventListBox_Scroll(void* widget, int pages)
     DWORD* obj = (DWORD*)widget;
     if (!obj) return;
     typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-    ((FnScroll)((void**)*obj)[12])(obj, 0, pages * (int)obj[35]);
+    ((FnScroll)(ChatWidget_GetVTable(obj))[12])(obj, 0, pages * (int)obj[35]);
 }
 
 // ── 29-byte ─────────────────────────────────────────────────────────────────
 
 // TextureScript_setScript @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
-void __fastcall TextureScript_setScript(int ecx, int /*edx*/, BYTE *param_1) {
+void __fastcall TextureScript_setScript(intptr_t ecx, int /*edx*/, BYTE *param_1) {
     *(BYTE *)ecx       = param_1[0];
     *(BYTE *)(ecx + 1) = param_1[1];
     *(BYTE *)(ecx + 2) = param_1[2];
@@ -2504,17 +2520,15 @@ void __fastcall FUN_0040c500(void* ecx, void* /*edx*/, int param_1, int param_2,
 // IDA: ChatListBox_DequeueFront (0x0040C580)
 // ChatListBox_DequeueFront @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
 // IDA: ChatListBox_DequeueFront
-void __fastcall ChatListBox_DequeueFront(int param_1) {
-    if (*(int *)(param_1 + 0xc) != 0) {
-        int iVar1 = **(int **)(param_1 + 8);
-        *(int *)(param_1 + 0x10) = *(int *)(iVar1 + 8);
-        *(int *)(param_1 + 0x14) = *(int *)(iVar1 + 0xc);
-        *(int *)(param_1 + 0x18) = *(int *)(iVar1 + 0x10);
-        int *lpMem = (int *)**(int **)(param_1 + 8);
-        *(int *)lpMem[1] = *lpMem;
-        *(int *)(*lpMem + 4) = lpMem[1];
-        operator_delete(lpMem);
-        *(int *)(param_1 + 0xc) = *(int *)(param_1 + 0xc) - 1;
+void __fastcall ChatListBox_DequeueFront(DWORD* self) {
+    if (self[3] != 0) {
+        ChatWidgetPointers& ptrs = ChatWidget_Pointers(self);
+        ChatLBNode* node = ptrs.list1->next;
+        memcpy(&self[4], ChatLBNode_Data(node), 3 * sizeof(DWORD));
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+        operator_delete(node);
+        --self[3];
     }
 }
 
@@ -2524,7 +2538,7 @@ void* __fastcall FUN_0040c5d0(void* param_1) {
 }
 
 // FUN_0040c670 @ 0x0040C670 (10 bytes) — thiscall setter field_0x24
-void __fastcall FUN_0040c670(int ecx, int /*edx*/, int param_1) {
+void __fastcall FUN_0040c670(intptr_t ecx, int /*edx*/, int param_1) {
     *(int *)(ecx + 0x24) = param_1;
 }
 
@@ -2547,7 +2561,7 @@ int __cdecl FUN_0040c680(DWORD *_this)
 }
 
 // FUN_0040c6b0 @ 0x0040C6B0 (17 bytes) — thiscall: setea dos campos en +0x34 y +0x38
-void __fastcall FUN_0040c6b0(int ecx, int /*edx*/, int param_1, int param_2) {
+void __fastcall FUN_0040c6b0(intptr_t ecx, int /*edx*/, int param_1, int param_2) {
     *(int *)(ecx + 0x34) = param_1;
     *(int *)(ecx + 0x38) = param_2;
 }
@@ -2555,14 +2569,14 @@ void __fastcall FUN_0040c6b0(int ecx, int /*edx*/, int param_1, int param_2) {
 // ── 24-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_0040c6d0 @ 0x0040C6D0 (24 bytes) — thiscall: setea 3 campos en +0x3c, +0x44 y +0x48
-void __fastcall FUN_0040c6d0(int ecx, int /*edx*/, int p1, int p2, int p3) {
+void __fastcall FUN_0040c6d0(intptr_t ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x3c) = p1;
     *(int *)(ecx + 0x44) = p2;
     *(int *)(ecx + 0x48) = p3;
 }
 
 // FUN_0040c6f0 @ 0x0040C6F0 (24 bytes) — thiscall: setea 3 campos en +0x40, +0x4c y +0x50
-void __fastcall FUN_0040c6f0(int ecx, int /*edx*/, int p1, int p2, int p3) {
+void __fastcall FUN_0040c6f0(intptr_t ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x40) = p1;
     *(int *)(ecx + 0x4c) = p2;
     *(int *)(ecx + 0x50) = p3;
@@ -2576,44 +2590,10 @@ int __fastcall FUN_0040c710(void* ecx, void* /*edx*/, int param_1) {
 
 // FUN_0040c930 @ 0x0040C930 (11 bytes) — refcount increment at +0x114
 // FUN_0040c930 (IDA-activated)
-int __cdecl FUN_0040c930(int a1)
+int __cdecl FUN_0040c930(BYTE* a1)
 {
-  int result; // eax
-
-  result = a1;
   ++*(DWORD *)(a1 + kChatNodeLines);   // 0x114 en el binario
-  return result;
-}
-
-// FUN_0040cdd0 @ 0x0040CDD0 (71 bytes) — skip ahead in linked list
-// FUN_0040cdd0 (IDA-activated)
-int __cdecl FUN_0040cdd0(DWORD *_this)
-{
-  int v2; // edi
-  int result; // eax
-
-  v2 = 0;
-  result = _this[34];
-  _this[25] = *(DWORD *)_this[23];
-  if ( result > 0 )
-  {
-    do
-    {
-      result = _this[25];
-      if ( result == _this[23] )
-      {
-        break;
-      }
-      if ( !(*(int (__cdecl **)(DWORD *, int))(*_this + 116))(_this, result + 8) )
-      {
-        ++v2;
-      }
-      _this[25] = *(DWORD *)_this[25];
-      result = _this[34];
-    }
-    while ( v2 < result );
-  }
-  return result;
+  return 0;
 }
 
 // FUN_0040d550 @ 0x0040D550 (~45 lines) — UI widget list: destructor helper
@@ -2622,47 +2602,16 @@ void __fastcall FUN_0040d550(void* param_1) { (void)param_1; }
 // FUN_00410a90 @ 0x00410A90 (18 bytes)
 void __fastcall FUN_00410a90(int *param_1) {
     FUN_0040f680(param_1);
-    *param_1 = (int)&PTR_LAB_00552810;
-}
-
-// FUN_00410ab0 @ 0x00410AB0 — StreamBase2 ~dtor
-void __fastcall FUN_00410ab0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00410ad0((void *)ecx);
-    if (param_1 & 1) operator_delete((void *)ecx);
+    *param_1 = (int)(intptr_t)&PTR_LAB_00552810;
 }
 
 // FUN_00410ad0 @ 0x00410AD0 (11 bytes)
 void __fastcall FUN_00410ad0(void *This) {
-    *(int *)This = (int)&PTR_LAB_00552810;
+    *(int *)This = (int)(intptr_t)&PTR_LAB_00552810;
     FUN_0040f690(This);
 }
 
-// FUN_00410de0 @ 0x00410DE0 (62 bytes) — list: erase range [param_2, param_3)
-void __fastcall FUN_00410de0(void *This, int /*edx*/, int *param_1, int *param_2, int *param_3) {
-    while (param_2 != param_3) {
-        int *piVar1 = (int *)*param_2;
-        *(int *)param_2[1] = *param_2;
-        *(int *)(*param_2 + 4) = param_2[1];
-        operator_delete(param_2);
-        *(int *)((int)This + 8) = *(int *)((int)This + 8) - 1;
-        param_2 = piVar1;
-    }
-    *param_1 = (int)param_2;
-}
-
-// FUN_00410e30 @ 0x00410E30 (15 bytes) — thiscall: pop front from singly-linked list
-void __fastcall FUN_00410e30(int ecx, int /*edx*/, int *param_1) {
-    int *puVar1 = *(int **)ecx;
-    *(int *)ecx = *puVar1;
-    *param_1 = (int)puVar1;
-}
-
 // ── 14-byte ─────────────────────────────────────────────────────────────────
-
-// FUN_00410e40 @ 0x00410E40 (14 bytes) — thiscall: copia el valor de *(this+4)->first
-void __fastcall FUN_00410e40(int ecx, int /*edx*/, int *param_1) {
-    *param_1 = **(int **)(ecx + 4);
-}
 
 // FUN_00410e50 @ 0x00410E50 (~295 lines) — BST_EraseNode: red-black tree node removal with
 // full rebalancing (left/right rotations, color fixup). Frees node via delete, decrements
@@ -2679,114 +2628,11 @@ void __cdecl FUN_00411360(void* self, int* param_1, int* param_2) {
 
 // ── BST / STL map operations ────────────────────────────────────────────────
 
-// FUN_004113a0 @ 0x004113A0 (62 bytes) — BST lower_bound (find >= key)
-void __fastcall FUN_004113a0(void *This, int /*edx*/, int *param_1, int *param_2) {
-    int *puVar3 = *(int **)((int)This + 4);
-    if ((void *)puVar3[1] != DAT_055c9b98) {
-        int *puVar1 = (int *)puVar3[1];
-        do {
-            if ((int)puVar1[3] < *param_2) {
-                puVar1 = (int *)puVar1[2];
-            } else {
-                puVar3 = puVar1;
-                puVar1 = (int *)*puVar1;
-            }
-        } while ((void *)puVar1 != DAT_055c9b98);
-        *param_1 = (int)puVar3;
-        return;
-    }
-    *param_1 = (int)puVar3;
-}
-
-// FUN_004113e0 @ 0x004113E0 (62 bytes) — BST upper_bound (find > key)
-void __fastcall FUN_004113e0(void *This, int /*edx*/, int *param_1, int *param_2) {
-    int *puVar3 = *(int **)((int)This + 4);
-    if ((void *)puVar3[1] != DAT_055c9b98) {
-        int *puVar1 = (int *)puVar3[1];
-        do {
-            if (*param_2 < (int)puVar1[3]) {
-                puVar3 = puVar1;
-                puVar1 = (int *)*puVar1;
-            } else {
-                puVar1 = (int *)puVar1[2];
-            }
-        } while ((void *)puVar1 != DAT_055c9b98);
-        *param_1 = (int)puVar3;
-        return;
-    }
-    *param_1 = (int)puVar3;
-}
-
 // FUN_00411460 @ 0x00411460 (~164 lines) — BST_InsertNode: allocates 0x138-byte node,
 // copia la clave vía FUN_004124d0, inserta en el árbol rojo-negro con rebalanceo completo
 // (rotaciones vía FUN_00411700/FUN_00411760). Incrementa el contador en this+0xC.
 void __cdecl FUN_00411460(void* self, DWORD* param_1, int param_2, int* param_3, int* param_4) {
     (void)self; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
-}
-
-// FUN_00411700 @ 0x00411700 (96 bytes) — BST left-rotate
-void __fastcall FUN_00411700(void *This, int /*edx*/, int param_1) {
-    int *piVar1 = *(int **)(param_1 + 8);
-    *(int *)(param_1 + 8) = *piVar1;
-    if ((void *)*piVar1 != DAT_055c9b98) {
-        *(int *)(*piVar1 + 4) = param_1;
-    }
-    piVar1[1] = *(int *)(param_1 + 4);
-    if (param_1 == *(int *)(*(int *)((int)This + 4) + 4)) {
-        *(int **)(*(int *)((int)This + 4) + 4) = piVar1;
-        *piVar1 = param_1;
-        *(int **)(param_1 + 4) = (int *)piVar1;
-        return;
-    }
-    int *piVar2 = *(int **)(param_1 + 4);
-    if (param_1 == *piVar2) {
-        *piVar2 = (int)piVar1;
-        *piVar1 = param_1;
-        *(int **)(param_1 + 4) = (int *)piVar1;
-        return;
-    }
-    piVar2[2] = (int)piVar1;
-    *piVar1 = param_1;
-    *(int **)(param_1 + 4) = (int *)piVar1;
-}
-
-// FUN_00411760 @ 0x00411760 (96 bytes) — BST right-rotate
-void __fastcall FUN_00411760(void *This, int /*edx*/, int *param_1) {
-    int iVar1 = *param_1;
-    *param_1 = *(int *)(iVar1 + 8);
-    if (*(int *)(iVar1 + 8) != (int)DAT_055c9b98) {
-        *(int *)(*(int *)(iVar1 + 8) + 4) = (int)param_1;
-    }
-    *(int *)(iVar1 + 4) = param_1[1];
-    if (param_1 == *(int **)(*(int *)((int)This + 4) + 4)) {
-        *(int *)(*(int *)((int)This + 4) + 4) = iVar1;
-        *(int *)(iVar1 + 8) = (int)param_1;
-        param_1[1] = iVar1;
-        return;
-    }
-    int *piVar2 = (int *)param_1[1];
-    if (param_1 == (int *)piVar2[2]) {
-        piVar2[2] = iVar1;
-        *(int *)(iVar1 + 8) = (int)param_1;
-        param_1[1] = iVar1;
-        return;
-    }
-    *piVar2 = iVar1;
-    *(int *)(iVar1 + 8) = (int)param_1;
-    param_1[1] = iVar1;
-}
-
-// FUN_00411820 @ 0x00411820 (22 bytes) — thiscall: copy two values
-void __fastcall FUN_00411820(int ecx, int /*edx*/, int *param_1, BYTE *param_2) {
-    *(int *)ecx = *param_1;
-    *(BYTE *)(ecx + 4) = *param_2;
-}
-
-// FUN_00411840 @ 0x00411840 (33 bytes) — allocate 0x138 block, set two fields
-void __cdecl FUN_00411840(int param_1, int param_2) {
-    void *pvVar1 = operator_new(0x138);
-    *(int *)((int)pvVar1 + 4) = param_1;
-    *(int *)((int)pvVar1 + 0x134) = param_2;
 }
 
 // FUN_00411920 @ 0x00411920 (~31 líneas) — ListBox_RenderItems: llama a métodos de la vtable para
@@ -2824,10 +2670,10 @@ int __cdecl FUN_004119a0(DWORD *_this, int a2)
   _this[34] = result;
   if ( result >= 0 )
   {
-    result = (*(int (__cdecl **)(DWORD *))(*_this + 76))(_this) - _this[35];
+    result = (*(int (__cdecl **)(DWORD *))((char*)ChatWidget_GetVTable(_this) + 76/4*sizeof(void*)))(_this) - _this[35];
     if ( _this[34] > result )
     {
-      result = (*(int (__cdecl **)(DWORD *))(*_this + 76))(_this) - _this[35];
+      result = (*(int (__cdecl **)(DWORD *))((char*)ChatWidget_GetVTable(_this) + 76/4*sizeof(void*)))(_this) - _this[35];
       _this[34] = result;
     }
   }
@@ -2844,112 +2690,70 @@ int __cdecl FUN_004119a0(DWORD *_this, int a2)
 // FUN_00411a20 (IDA-activated)
 int __cdecl FUN_00411a20(DWORD *_this)
 {
-  int v2; // ecx
-  int result; // eax
-  int v4; // ecx
-  int *v5; // eax
-  int v6; // edx
-  int v7; // ecx
-  int v8; // eax
-  int v9; // ecx
-  int v10; // edx
-  int v11; // edx
-  int v12; // ecx
+  typedef void (__fastcall *FnVoid)(DWORD*);
+  typedef int  (__fastcall *FnScroll)(DWORD*, int, int);
+  void** vt = ChatWidget_GetVTable(_this);
+  ChatWidgetPointers& ptrs = ChatWidget_Pointers(_this);
+  const int key = (int)_this[4];
 
-  v2 = _this[4];
-  switch ( v2 )
+  switch ( key )
   {
     case 7:
-      (*(void (__cdecl **)(DWORD *))(*_this + 108))(_this);
-      result = 0;
+      ((FnVoid)vt[27])(_this);
       break;
     case 12:
-      (*(void (__cdecl **)(DWORD *, int))(*_this + 48))(_this, -100);
-      if ( _this[26] != 1 || !_this[24] )
-      {
-        goto LABEL_23;
-      }
-      v4 = _this[23];
-      _this[28] = v4;
-      result = 0;
-      _this[28] = *(DWORD *)(v4 + 4);
+      ((FnScroll)vt[12])(_this, 0, -100);
+      if ( _this[26] == 1 && _this[24] )
+        ptrs.selected = ptrs.list2->prev;
       break;
     case 13:
-    case 14:
+    case 14: {
       if ( _this[26] != 1 || !_this[24] )
+        break;
+      if ( key == 13 )
       {
-        goto LABEL_23;
+        if ( ptrs.selected == ptrs.list2 )
+          break;
+        ptrs.selected = ptrs.selected->next;
+        if ( ptrs.selected == ptrs.list2 )
+          ptrs.selected = ptrs.selected->prev;
       }
-      if ( v2 == 13 )
+      else
       {
-        v5 = (int *)_this[28];
-        if ( v5 == (int *)_this[23] )
-        {
-          goto LABEL_23;
-        }
-        v6 = *v5;
-        _this[28] = *v5;
-        if ( v6 == _this[23] )
-        {
-          _this[28] = *(DWORD *)(v6 + 4);
-        }
-      }
-      else if ( v2 == 14 )
-      {
-        v7 = _this[28];
-        if ( v7 == *(DWORD *)_this[23] )
-        {
-          goto LABEL_23;
-        }
-        _this[28] = *(DWORD *)(v7 + 4);
+        if ( ptrs.selected == ptrs.list2->next )
+          break;
+        ptrs.selected = ptrs.selected->prev;
       }
       if ( _this[24] <= _this[35] )
+        break;
+      int index = 0;
+      ptrs.cursor = ptrs.list2->next;
+      while ( ptrs.cursor != ptrs.list2 && ptrs.cursor != ptrs.selected )
       {
-        goto LABEL_23;
+        ++index;
+        ptrs.cursor = ptrs.cursor->next;
       }
-      v8 = 0;
-      v9 = *(DWORD *)_this[23];
-      _this[25] = v9;
-      if ( v9 != _this[23] )
+      const int visible = (int)_this[35];
+      const int scroll = (int)_this[34];
+      if ( index < scroll + visible )
       {
-        do
-        {
-          if ( _this[28] == v9 )
-          {
-            break;
-          }
-          ++v8;
-          v10 = *(DWORD *)_this[25];
-          _this[25] = v10;
-          v9 = v10;
-        }
-        while ( v10 != _this[23] );
+        if ( index < scroll )
+          ((FnScroll)vt[12])(_this, 0, scroll - index);
+        break;
       }
-      v11 = _this[35];
-      v12 = _this[34];
-      if ( v8 < v12 + v11 )
-      {
-        if ( v8 < v12 )
-        {
-          (*(void (__cdecl **)(DWORD *, int))(*_this + 48))(_this, v12 - v8);
-        }
-        goto LABEL_23;
-      }
-      (*(void (__cdecl **)(DWORD *, int))(*_this + 48))(_this, v12 - (v8 - v11 + 1));
-      result = 0;
+      ((FnScroll)vt[12])(_this, 0, scroll - (index - visible + 1));
       break;
+    }
     default:
-LABEL_23:
-      result = 0;
       break;
   }
-  return result;
+  return 0;
 }
 
 void ChatListBox_TickPresentation() {
     DWORD *self = (DWORD *)DAT_055c9ff0;
     if (!self) return;
-    void **vt = (void **)*self;
+    void **vt = ChatWidget_GetVTable(self);
     // El campo 46 tiene otro significado en las listas de guild.
     if (!vt || vt[22] != (void *)ChatLB_renderBg) return;
     ++self[46];

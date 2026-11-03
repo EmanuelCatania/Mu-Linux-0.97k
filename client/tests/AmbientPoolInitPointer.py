@@ -7,6 +7,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, read_source
+from X86Views import object_view
 
 SERVICES=r'''
 using uint=unsigned int;
@@ -18,7 +19,7 @@ int Random(unsigned n){const int values[]={0,1,2,3,7,127,128,255,511,512,599,102
 int ControlledRand(){Require(randomAt<3);int r=Random(randomAt++);events.insert(events.end(),{2,DWORD(r)});return r;}
 struct Map{int GetCurrentMap(){events.insert(events.end(),{3,DWORD(world)});return world;}}gMapManager;
 void RenderFxSnapshots_New(void* p){Require(p==record);events.push_back(1);}
-void Joint_Create(int type,float* p,float* q,float* a,int sub,int owner,float scale,int key,int flag){
+void Joint_Create(int type,float* p,float* q,float* a,int sub,intptr_t owner,float scale,int key,int flag){
  Require(type==1258&&reinterpret_cast<BYTE*>(p)==record+16&&p==q&&reinterpret_cast<BYTE*>(a)==record+28&&sub==4&&DWORD(owner)==DWORD(reinterpret_cast<uintptr_t>(record))&&scale==30&&key==-1&&flag==0);
  events.push_back(4);
 }
@@ -43,7 +44,7 @@ std::uint64_t Run(BYTE* memory){
   Put(out,96,DWORD(random()&127));unsigned speed=random()&3;expected.insert(expected.end(),{3,DWORD(mode)});
   Put(out,216,DWORD(0x41500000));out[138]=1;float f=float(speed+4)*.1f;Put(out,12,Bits(f));
   switch(mode){
-   case 0:Put(out,2,short(181));Put(out,356,DWORD(float((random()&1)+2)*.1f));Put(out,204,Bits(.6f/f));expected.insert(expected.end(),{3,DWORD(mode)});coverage|=1;break;
+   case 0:Put(out,2,short(181));Put(out,356,Bits(float((random()&1)+2)*.1f));Put(out,204,Bits(.6f/f));expected.insert(expected.end(),{3,DWORD(mode)});coverage|=1;break;
    case 1:case 6:Put(out,2,short(mode==1?177:178));Put(out,204,Bits(.6f/f));coverage|=mode==1?2:4;break;
    case 7:Put(out,12,DWORD(float((random()&1)+8)*.1f));expected.insert(expected.end(),{3,DWORD(mode)});coverage|=8;break;
    case 8:Put(out,2,short(179));speed=random()&3;Put(out,64,Get(out,16));f=float(speed+8)*.1f;Put(out,12,Bits(f));
@@ -74,10 +75,10 @@ def harness(revision=None):
     while depth:depth+=(source[end]=='{')-(source[end]=='}');end+=1
     block=source[start:end]
     # Fronteras32 ajenas al cursor: la captura antigua de Hero puede ya no existir.
-    for expression,pointer in [('(int)DAT_07abf5d8','DAT_07abf5d8'),('(int)(puVar9 + -0x3a)','(puVar9 + -0x3a)')]:
+    for expression,pointer in [('(intptr_t)DAT_07abf5d8','DAT_07abf5d8'),('(intptr_t)(puVar9 + -0x3a)','(puVar9 + -0x3a)')]:
         assert block.count(expression) in ((0,1) if pointer=='DAT_07abf5d8' else (1,))
-        block=block.replace(expression,'static_cast<int>(reinterpret_cast<uintptr_t>('+pointer+'))')
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('BLOCK',block)+MAIN
+        block=block.replace(expression,'static_cast<intptr_t>(reinterpret_cast<uintptr_t>('+pointer+'))')
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+object_view(['Alpha','AlphaTarget','AlphaEnable'],revision)+SERVICES.replace('BLOCK',block)+MAIN
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()
     if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):p.error('Referencia sólo en Windows x86')

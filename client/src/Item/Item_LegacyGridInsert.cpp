@@ -176,4 +176,4 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     (void)First;
 }
 
-// FUN_0046fe00 @ 0x0046FE00 — DeleteJoint(int Type, DWORD Target, int SubType)
+// FUN_0046fe00 @ 0x0046FE00 — DeleteJoint(int Type, intptr_t Target, int SubType)

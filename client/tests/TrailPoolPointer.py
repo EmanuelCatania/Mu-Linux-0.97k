@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recorrido real de cien estelas con pool alto; owners32 y render controlado."""
+"""Recorrido real de cien estelas con pool alto; dueños en g_TrailOwner y render controlado."""
 import argparse
 import os
 from pathlib import Path
@@ -8,6 +8,7 @@ from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
 
 SERVICES=r'''
+std::uintptr_t g_TrailOwner[100];   // dueño completo por estela
 BYTE* pool;
 #define DAT_07c608b4 (*reinterpret_cast<DWORD*>(pool+12))
 float _DAT_0055256c=1.0f;
@@ -30,7 +31,7 @@ void UV(std::vector<std::uint32_t>& out,float u,float v){out.push_back(7);out.pu
 void Vertex(std::vector<std::uint32_t>& out,const BYTE* p){out.push_back(8);for(unsigned i=0;i<3;++i){std::uint32_t bits;std::memcpy(&bits,p+i*4,4);out.push_back(bits);}}
 std::uint64_t Run(BYTE* memory,BYTE* owners){pool=memory+16;std::uint64_t hash=14695981039346656037ull;const int counts[]={-1,0,1,2,3,7,15,30};const int modes[]={-2,0,1,2,3,4,5,8};
  for(unsigned frame=0;frame<512;++frame){std::memset(memory,0xa5,75232);std::memset(owners,0x6d,51200);std::vector<std::uint32_t> expected;
-  for(unsigned slot=0;slot<100;++slot){BYTE* record=pool+slot*752;BYTE* owner=owners+slot*512;const short kind=static_cast<short>((frame+slot)%3==0?0:((frame+slot)%3==1?1:-1));std::memcpy(owner+446,&kind,2);PutInt(record+12,static_cast<int>(reinterpret_cast<std::uintptr_t>(owner)));
+  for(unsigned slot=0;slot<100;++slot){BYTE* record=pool+slot*752;BYTE* owner=owners+slot*512;const short kind=static_cast<short>((frame+slot)%3==0?0:((frame+slot)%3==1?1:-1));std::memcpy(owner+446,&kind,2);PutInt(record+12,static_cast<int>(reinterpret_cast<std::uintptr_t>(owner)));g_TrailOwner[slot]=reinterpret_cast<std::uintptr_t>(owner);
    const int mode=modes[(frame+slot)%8],segments=counts[(frame/8+slot)%8];record[0]=static_cast<BYTE>((frame+slot)%4==0?0:((frame+slot)%4==1?1:0x80));PutInt(record+4,mode);PutInt(record+16,segments);const int colors[]={static_cast<int>((frame+slot)%17)-8,static_cast<int>((frame*3+slot)%13),static_cast<int>(slot%5)-2};for(unsigned i=0;i<3;++i)PutInt(record+20+4*i,colors[i]);
    for(unsigned vertex=0;vertex<30;++vertex)for(unsigned axis=0;axis<3;++axis){PutFloat(record+32+vertex*12+axis*4,static_cast<float>(int(frame)-int(slot)+int(vertex*3+axis))*.25f);PutFloat(record+392+vertex*12+axis*4,static_cast<float>(int(slot)-int(frame)-int(vertex*3+axis))*.125f);}
    if(!record[0])continue;expected.push_back(kind==0 && mode<3?1:2);if(segments<=1)continue;expected.push_back(3);expected.push_back((mode>2?mode-3:mode)+0x48d);

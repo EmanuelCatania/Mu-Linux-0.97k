@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 from GatePointer import PREAMBLE
-from SceneObjectPointer import build_and_run, function, read_source
+from SceneObjectPointer import ROOT, build_and_run, function, read_source
 
 MAIN=r'''
 using undefined4=std::uint32_t;
@@ -16,8 +16,9 @@ std::uint64_t Run(BYTE* memory){
     for(unsigned trial=0;trial<32768;++trial){
         const int type=trial==0?(-2147483647-1):trial==1?2147483647:static_cast<int>(trial%8192)-4096;
         BYTE before[224];for(unsigned i=0;i<224;++i)memory[i]=before[i]=static_cast<BYTE>((trial*37+i*19)^(trial>>(i%15)));
-        const std::uint32_t expected=type>=624 && type<=655?0xc3200000u:type>=656 && type<=687?0xc2c80000u:type>=688 && type<=719?0xc2480000u:type>=720 && type<=751?0xc28c0000u:0;
-        std::memcpy(before+16+132,&expected,4);Set(type,memory+16);Require(std::memcmp(before,memory,224)==0);
+        // IDA sub_503830: -156/-96/-48/-72 (cascos/armaduras/pantalones/guantes).
+        const std::uint32_t expected=type>=624 && type<=655?0xc31c0000u:type>=656 && type<=687?0xc2c00000u:type>=688 && type<=719?0xc2400000u:type>=720 && type<=751?0xc2900000u:0;
+        std::memcpy(before+16+offsetof(BMD,BodyHeight),&expected,4);Set(type,memory+16);Require(std::memcmp(before,memory,224)==0);
         for(BYTE value:before){digest^=value;digest*=1099511628211ull;}
     }return digest;
 }
@@ -34,7 +35,8 @@ int main(){
 def harness(revision=None):
     code=function(read_source('src/Render/Entity_Render.cpp',revision),'Entity_SetGravity')
     arg='model' if 'void* model' in code else 'static_cast<int>(reinterpret_cast<uintptr_t>(model))'
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+MAIN.replace('FUNCTION',code).replace('ARG',arg)
+    header='#include "'+(ROOT/'src/Model/ModelTypes.h').as_posix()+'"'+chr(10)
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+header+MAIN.replace('FUNCTION',code).replace('ARG',arg)
 
 
 def main():

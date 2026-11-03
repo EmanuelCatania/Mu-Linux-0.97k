@@ -58,7 +58,7 @@ void Trail_RenderAll(void)
   for (int slotIdx = 0; slotIdx < 100; ++slotIdx, piVar2 += 0xbc) {
     if ((char)piVar2[-3] != '\0') {
       iVar3 = piVar2[-2];
-      if ((*(short *)(*piVar2 + 0x1be) == 0) && (iVar3 < 3)) {
+      if ((*(short *)(g_TrailOwner[slotIdx] + EntityOffset(0x1be)) == 0) && (iVar3 < 3)) {
         GL_SetBlendAdditive();
       }
       else {
@@ -75,7 +75,7 @@ void Trail_RenderAll(void)
           do {
             BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
             fVar1 = _DAT_0055256c;
-            if (*(short *)(*piVar2 + 0x1be) == 0) {
+            if (*(short *)(g_TrailOwner[slotIdx] + EntityOffset(0x1be)) == 0) {
               fVar1 = (float)(piVar2[1] - local_8) / (float)piVar2[1];
             }
             // IDA Trail_RenderAll lee el color como FLOAT (`*((float*)v0+2)`):
@@ -87,7 +87,7 @@ void Trail_RenderAll(void)
             BufferedDraw::TexCoord2f((float)local_8 / (float)iVar3,0);
             BufferedDraw::Vertex3fv((const float*)piVar4);
             fVar1 = _DAT_0055256c;
-            if (*(short *)(*piVar2 + 0x1be) == 0) {
+            if (*(short *)(g_TrailOwner[slotIdx] + EntityOffset(0x1be)) == 0) {
               fVar1 = (float)((piVar2[1] - local_8) + -1) / (float)piVar2[1];
             }
             // IDA Trail_RenderAll lee el color como FLOAT (`*((float*)v0+2)`):

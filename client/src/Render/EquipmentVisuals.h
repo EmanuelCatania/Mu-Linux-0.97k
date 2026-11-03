@@ -5,7 +5,7 @@ struct CHARACTER;
 // Muestra compartida de presentación: equipo y sprites del cuerpo.
 // IDA: equipo de RenderCharacter (0x00456770) y RenderLinkObject (0x00455430).
 void Equipment_BeginStep();
-void Equipment_Tick(int entity, int highlighted);
+void Equipment_Tick(intptr_t entity, int highlighted);
 void Equipment_BeginCharacter(const CHARACTER* entity);
 void Equipment_EndCharacter();
 void Equipment_SetStage(int stage);
@@ -13,12 +13,12 @@ void Equipment_Invalidate(const void *entity);
 void Equipment_Draw(const CHARACTER* entity, int stage);
 bool Equipment_IsDrawing();
 void Equipment_AddSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode);
+    float *light, intptr_t owner, float rotation, int mode);
 void Equipment_WingSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode);
+    float *light, intptr_t owner, float rotation, int mode);
 void Equipment_AddMesh(int model, const void *object, const float *light,
-    float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, int part=0, int linked=0, const float *offset=nullptr);
-void Equipment_EmitWing790(void *model, int object, int owner);
+    float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, intptr_t part=0, int linked=0, const float *offset=nullptr);
+void Equipment_EmitWing790(void *model, intptr_t object, intptr_t owner);
 
 // Los modelos son contexto compartido; el tick de un link no lo publica.
 class EquipmentModelContext {

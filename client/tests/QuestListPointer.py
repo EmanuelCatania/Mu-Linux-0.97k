@@ -107,6 +107,10 @@ int main() {
 def harness(revision=None):
     prefix = PREAMBLE.split("BYTE* reservation;", 1)[0].replace("0x10000", "0x100000")
     prefix += "\nusing std::uintptr_t;\n"
+    prefix += "// Vista x86 del personaje: solo Class (+444), que es lo que lee la quest.\n"
+    prefix += "struct CHARACTER { unsigned char _pad[444]; unsigned char Class; };\n"
+    prefix += "inline CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }\n"
+    prefix += "inline CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }\n"
     header, definitions = read_source("src/globals.h", revision), read_source("src/globals.cpp", revision)
     for name in ("g_csQuest", "Hero", "DAT_07cf1ff4"):
         prefix += re.search(rf"extern [^;\n]*\b{name}\s*;", header).group()

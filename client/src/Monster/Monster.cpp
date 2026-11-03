@@ -76,7 +76,7 @@
 //         entity[+0x1dc] = entity_id
 //         return entity_ptr
 //
-//     return DAT_07abf5d0 + 0x59740          // sentinel: puntero al último slot+1
+//     return DAT_07abf5d0 + CHARACTER_STRIDE * 400 + 0x0          // sentinel: puntero al último slot+1
 //
 // ── ENTITY_FINDORSPAWN (0x0045ccf0) ───────────────────────────────────────────
 //
@@ -331,7 +331,7 @@
 //
 // ── ENTITY_CLEARFLAG (0x0043c070) ─────────────────────────────────────────────
 //
-//   void Entity_ClearFlag(ushort flag, int entity):
+//   void Entity_ClearFlag(ushort flag, intptr_t entity):
 //     // Quita bit del bitmap de status y detiene el efecto visual
 //     // entity[+0x78] = status_flags (int)
 //
@@ -485,6 +485,7 @@
 #include "Platform/Text.h"
 #include <array>
 #include "Item/ContentCatalog.h"
+#include "Physics/ClothTypes.h"
 #include "Monster/Monster.h"
 
 // IDA: CreateMonster (0x0045CCF0).
@@ -506,11 +507,11 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
 {
     BYTE* c = reinterpret_cast<BYTE*>(DAT_07abf5d0);
     for (int i = 0; i < 400; ++i) {
-        if (*(unsigned char*)c != 0 && *(short*)(c + 476) == (short)Key) {
+        if (*(unsigned char*)c != 0 && *(short*)&((CHARACTER*)(uintptr_t)(c))->Key == (short)Key) {
             CreateCharacterPointer((unsigned char*)c, Type, PosX, PosY, Rotation);
             return AsCharacter(c);
         }
-        c += 916;
+        c += CHARACTER_STRIDE;
     }
     // search again for an inactive slot
     int v7 = 0;
@@ -518,14 +519,14 @@ CHARACTER* __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
     while (*(unsigned char*)i != 0) {
         if (++v7 >= 400) {
             // all slots occupied — return sentinel slot at end (matches IDA)
-            return AsCharacter(DAT_07abf5d0 + 366400);
+            return AsCharacter(DAT_07abf5d0 + 400 * CHARACTER_STRIDE);
         }
-        i += 916;
+        i += CHARACTER_STRIDE;
     }
     // La limpieza recibe la identidad nativa; los pools se migran por separado.
     DeleteCloth(AsCharacter(i), AsObject(i), nullptr);  // DeleteCloth
     CreateCharacterPointer((unsigned char*)i, Type, PosX, PosY, Rotation);
-    *(short*)(i + 476) = (short)Key;
+    *(short*)&((CHARACTER*)(uintptr_t)(i))->Key = (short)Key;
     return AsCharacter(i);
 }
 
@@ -582,8 +583,8 @@ void InitializeMonsterJoints(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
     // El owner del joint aún es de 32 bits; su layout queda para B2.
-    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)(uintptr_t)c, 30.0f, -1, 0);
-    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)(uintptr_t)c, 30.0f, -1, 0);
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (intptr_t)c, 30.0f, -1, 0);
+    Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (intptr_t)c, 30.0f, -1, 0);
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 8.
@@ -642,16 +643,14 @@ void InitializeMonster42(CHARACTER* character)
 void InitializeMonster73(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
-    {
-        unsigned char* modelEntry = (unsigned char*)(uintptr_t)(DAT_05828d58 + 188u * (unsigned)AsCharacter(c)->Object.Type + 40u);
-        unsigned char* dataPtr = *(unsigned char**)modelEntry;
-        if (dataPtr) {
-            dataPtr[0]   = 1;
-            dataPtr[40]  = 0;
-            dataPtr[80]  = 0;
-            dataPtr[120] = 1;
-            dataPtr[160] = 1;
-        }
+    auto* meshes = reinterpret_cast<ClothModelMesh*>(
+        AsModel(DAT_05828d58 + BMD_STRIDE * AsCharacter(c)->Object.Type)->Meshs);
+    if (meshes) {
+        meshes[0].Unknown0[0] = 1;
+        meshes[1].Unknown0[0] = 0;
+        meshes[2].Unknown0[0] = 0;
+        meshes[3].Unknown0[0] = 1;
+        meshes[4].Unknown0[0] = 1;
     }
 }
 
@@ -659,7 +658,7 @@ void InitializeMonster73(CHARACTER* character)
 void InitializeMonster77(CHARACTER* character)
 {
     BYTE* c = reinterpret_cast<BYTE*>(character);
-    *(unsigned char*)(uintptr_t)(DAT_05828d58 + 61236u) = 0;
+    *(unsigned char*)(uintptr_t)(DAT_05828d58 + BMD_STRIDE * 325 + 0x88 + BMD_FIELD_SHIFT) = 0;
 }
 
 // IDA: CreateMonster (0x0045CCF0), configuración especial del tipo 88.

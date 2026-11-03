@@ -58,7 +58,7 @@ int main(){
 
 def harness(revision=None):
     source=read_source('src/Net/SecondPassword.cpp',revision)
-    start=source.index('void __cdecl MoveCharacterVisual(int entity_ptr)')
+    start=source.index('void __cdecl MoveCharacterVisual(intptr_t entity_ptr)')
     end=source.index('// SafeZone update por frame',start)
     prefix=source[start:end].replace('MoveCharacterVisual(','ModelPrefix(',1)+'\n}\n'
     tail=source[end:];base=r'(?:\(int\)model|static_cast<BYTE\*>\(model\))'

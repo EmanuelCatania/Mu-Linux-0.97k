@@ -85,12 +85,13 @@ struct TEXTMETRICA {
 #define LOBYTE(value) (static_cast<BYTE>(static_cast<DWORD_PTR>(value) & 0xffu))
 #define HIBYTE(value) (static_cast<BYTE>((static_cast<DWORD_PTR>(value) >> 8) & 0xffu))
 using WNDPROC = LRESULT (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
-static_assert(sizeof(void*) == 4, "El cliente requiere x86");
+#if UINTPTR_MAX == 0xFFFFFFFFu
+static_assert(sizeof(HWND) == 4 && sizeof(HDC) == 4 && sizeof(HFONT) == 4);
+static_assert(sizeof(WPARAM) == 4 && sizeof(LPARAM) == 4 && sizeof(SOCKET) == 4);
+#endif
 static_assert(sizeof(BYTE) == 1 && sizeof(WORD) == 2 && sizeof(WCHAR) == 2);
 static_assert(sizeof(DWORD) == 4 && sizeof(LONG) == 4 && sizeof(BOOL) == 4);
 static_assert(sizeof(UINT) == 4 && sizeof(HRESULT) == 4 && sizeof(FLOAT) == 4);
-static_assert(sizeof(HWND) == 4 && sizeof(HDC) == 4 && sizeof(HFONT) == 4);
-static_assert(sizeof(WPARAM) == 4 && sizeof(LPARAM) == 4 && sizeof(SOCKET) == 4);
 static_assert(sizeof(POINT) == 8 && sizeof(SIZE) == 8 && sizeof(RECT) == 16);
 static_assert(sizeof(LARGE_INTEGER) == 8 && sizeof(TEXTMETRICA) == 56);
 static_assert(offsetof(TEXTMETRICA, tmFirstChar) == 44);

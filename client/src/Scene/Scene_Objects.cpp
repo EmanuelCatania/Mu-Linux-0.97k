@@ -58,7 +58,7 @@ void Map_LoadObjectModels(void)
         break;
     case 6: // Atlans
         OpenModel(0xb2, "Data2/Object7/", "SeaCreature.smd" /* DAT_0055f560 */);
-        *(BYTE *)(*(int *)(DAT_05828d58 + 0x82e8) + 0x1a) = 1;
+        *(BYTE *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 178)->Actions + 0x1a) = 1;
         break;
     case 7: // Icarus
         OpenModel(0xb6, "Data2/Object8/", "IcarusWing1.smd" /* DAT_0055f534 */);
@@ -73,7 +73,7 @@ void Map_LoadObjectModels(void)
         iVar7 = 0xbc;
         do {
             iVar3 = iVar7 + 0xbc;
-            *(BYTE *)(*(int *)(iVar7 + 0x851c + DAT_05828d58) + 10) = 1;
+            *(BYTE *)((intptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * (181 + iVar7 / 0xbc))->Actions + 10) = 1;
             iVar7 = iVar3;
         } while (iVar3 < 0x69c);
         break;
@@ -428,15 +428,15 @@ section2:
         // Zone-specific post-load fixups
         if (gMapManager.GetCurrentMap() == 1) {
             // Dungeon: set a float property on model slot 0x76 (offset 0x1d90 into table)
-            *(float *)(*(int *)(DAT_05828d58 + 0x1d90) + 0x14) = 0.4f; // 0x3ecccccd
+            *(float *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 40)->Actions + sizeof(ModelAnimationAction) + 4) = 0.4f; // 0x3ecccccd
         } else if (gMapManager.GetCurrentMap() == 8) {
             // Barracks: clear animated flags on several model slots
-            *(BYTE *)(DAT_05828d58 + 0x89c)  = 0;
-            *(BYTE *)(DAT_05828d58 + 0x958)  = 0;
-            *(BYTE *)(DAT_05828d58 + 0xa14)  = 0;
-            *(BYTE *)(DAT_05828d58 + 0x3624) = 0;
-            *(BYTE *)(DAT_05828d58 + 0x379c) = 0;
-            *(BYTE *)(DAT_05828d58 + 0x3a8c) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 11 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 12 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 13 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 73 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 75 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(BYTE *)(DAT_05828d58 + BMD_STRIDE * 79 + 0x88 + BMD_FIELD_SHIFT) = 0;
         }
     }
 

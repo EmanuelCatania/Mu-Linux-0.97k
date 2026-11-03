@@ -90,8 +90,8 @@ void Mouse_UpdateHoverTargets(void)
         SelectedCharacter = -1;
         Attacking = -1;
     } else if (SelectedCharacter >= 0 &&
-               *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * 0x394) == '\0' &&
-               *(char *)(DAT_07abf5d0 + SelectedCharacter * 0x394 + 0x84) == '\x02') {
+               *(char *)(DAT_07abf5d0 + EntityOffset(0x2fd) + SelectedCharacter * CHARACTER_STRIDE) == '\0' &&
+               *(char *)(DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE + 0x84) == '\x02') {
         // Current hover target is a valid alive monster.
         // Keep the original transient hover state.  Leaving this selected
         // after the cursor moves away turns later ground clicks into a basic
@@ -119,7 +119,7 @@ void Mouse_UpdateHoverTargets(void)
         if (Attacking == -1 ||
             DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
             DAT_083a42ac != '\0' || MouseRButtonPush != '\0' ||
-            *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
+            *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Dead != '\0')
         {
             SelectedCharacter = -1;
         }
@@ -159,7 +159,7 @@ void Mouse_UpdateHoverTargets(void)
         }
 
         // No Alt: check swim/idle move state
-        unsigned char moveFlags = *(unsigned char *)(DAT_07abf5d8 + 0x1bc) & 7;
+        unsigned char moveFlags = *(unsigned char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7;
         if (moveFlags == 2 || moveFlags == 0)
         {
             // HashTable encode/decode block — anti-tamper obfuscation.
@@ -188,7 +188,7 @@ void Mouse_UpdateHoverTargets(void)
             // para poder apuntarle a un jugador que tiene un monstruo detras.
             int firstKind = 0x22, secondKind = 1;
             if (DAT_07abf5d8 && CharacterAttribute) {
-                const BYTE slot  = *(BYTE*)((BYTE*)DAT_07abf5d8 + 913);
+                const BYTE slot  = *(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill;
                 const BYTE skill = ((BYTE*)CharacterAttribute)[87 + slot];
                 if (skill >= 26 && skill <= 28) { firstKind = 1; secondKind = 0x22; }
             }
@@ -346,12 +346,12 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 
     // Pass 1: set highlight flags and color tints for visible entities
     byte *pbVar4 = (byte *)(DAT_07abf5d0 + 0x84);
-    for (int loop1 = 400; loop1 != 0; loop1--, pbVar4 += 0x394) {
-        if (((*pbVar4 & param_1) == *pbVar4) && (pbVar4[-0x84] != 0) && (pbVar4[0xdc] != 0) &&
-            (_DAT_00552580 < *(float *)(pbVar4 + 0xe4))) {
+    for (int loop1 = 400; loop1 != 0; loop1--, pbVar4 += CHARACTER_STRIDE) {
+        if (((*pbVar4 & param_1) == *pbVar4) && (pbVar4[-0x84] != 0) && (pbVar4[EntityOffset(0x160) - 0x84] != 0) &&
+            (_DAT_00552580 < *(float *)(pbVar4 + EntityOffset(0x168) - 0x84))) {
             pbVar4[0x58] = 1;
             float r, g, b;
-            switch (*(short *)(pbVar4 + 0x13a)) {
+            switch (*(short *)(pbVar4 + EntityOffset(0x1BE) - 0x84)) {
             case 0:  r =  0.2f; g =  0.2f; b =  0.2f; break;
             case 1:  r = -0.4f; g = -0.4f; b = -0.4f; break;
             case 2:  r =  0.2f; g = -0.6f; b = -0.6f; break;
@@ -359,7 +359,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             case 4:  r =  0.3f; g =  0.2f; b = -0.5f; break;
             default: r =  0.0f; g =  0.0f; b =  0.0f; break;
             }
-            if (pbVar4[0x266] > 5) { r = -0.4f; g = -0.4f; b = -0.4f; }
+            if (pbVar4[EntityOffset(0x2EA) - 0x84] > 5) { r = -0.4f; g = -0.4f; b = -0.4f; }
             *(float *)(pbVar4 + 0x64) = r;
             *(float *)(pbVar4 + 0x68) = g;
             *(float *)(pbVar4 + 0x6c) = b;
@@ -375,7 +375,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     static DWORD s_lastFilt[5] = {0,0,0,0,0};
     bool diagFilt = (SceneFlag == 4);
 
-    for (int ofs = 0; ofs < 0x59740; ofs += 0x394, ent_idx++) {
+    for (int ofs = 0; ofs < 400 * CHARACTER_STRIDE; ofs += CHARACTER_STRIDE, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
         if (diagFilt && ent_idx < 5) {
             DWORD now = Platform::GetTimer().Ticks();
@@ -384,7 +384,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             }
         }
         if ((*ent == '\0') || (*(char *)&AsObject(ent)->Visible == '\0') ||
-            (!(_DAT_00552580 < AsObject(ent)->Alpha)) || (ent[0x2fd] != '\0'))
+            (!(_DAT_00552580 < AsObject(ent)->Alpha)) || (ent[EntityOffset(0x2fd)] != '\0'))
             continue;
 
         // Party name matching for DarkLord entities
@@ -417,7 +417,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         // sub_513260, y gana la MAS CERCANA A LA CAMARA.
         {
             float box[12];
-            memcpy(box, (const void*)(ent + 0x130), sizeof(box));
+            memcpy(box, (const void*)(ent + EntityOffset(0x130)), sizeof(box));
             if (!Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
                 continue;
 
@@ -461,7 +461,8 @@ int __cdecl Entity_SelectNearest(int param_1_int)
                 if (sVar7 == 0) sVar7 = 1;
                 piVar12[1] = 0;
                 int cmp = strncmp(partyName, playerName, sVar7);
-                *piVar12 = (cmp != 0) ? -3 : -1;
+                // IDA sub_4AFDC0 L250: -3 = el héroe, -1 = miembro fuera del viewport.
+                *piVar12 = (cmp != 0) ? -1 : -3;
             }
         }
     }
@@ -487,8 +488,8 @@ int __cdecl ItemOnGround_HoverTest(void)
 
     // Pass 1: atenuar todos los items activos + visibles.
     for (int i = 0; i < 1000; ++i) {
-        BYTE* base = pool + i * 0x204;
-        if (base[72] && base[424]) {
+        BYTE* base = pool + i * GROUND_ITEM_STRIDE;
+        if (base[72] && base[72 + EntityOffset(0x160)]) {
             *(DWORD*)(base + 304) = 0x3E4CCCCD;   // 0.2f
             *(DWORD*)(base + 308) = 0x3E4CCCCD;
             *(DWORD*)(base + 312) = 0x3E4CCCCD;
@@ -503,8 +504,8 @@ int __cdecl ItemOnGround_HoverTest(void)
     int mouseY = (int)DAT_083a4278;
     int best = -1, bestD = 24 * 24 + 1;
     for (int i = 0; i < 1000; ++i) {
-        BYTE* base = pool + i * 0x204;
-        if (base[72] && base[424]) {
+        BYTE* base = pool + i * GROUND_ITEM_STRIDE;
+        if (base[72] && base[72 + EntityOffset(0x160)]) {
             int sx = *(short*)(base + 72 + 92);   // = v1+92
             int sy = *(short*)(base + 72 + 94);
             int dx = sx - mouseX, dy = sy - mouseY;
@@ -513,7 +514,7 @@ int __cdecl ItemOnGround_HoverTest(void)
         }
     }
     if (best >= 0) {
-        BYTE* base = pool + best * 0x204;
+        BYTE* base = pool + best * GROUND_ITEM_STRIDE;
         *(DWORD*)(base + 304) = 0x3FC00000;   // 1.5f (highlight)
         *(DWORD*)(base + 308) = 0x3FC00000;
         *(DWORD*)(base + 312) = 0x3FC00000;
@@ -543,9 +544,9 @@ int __cdecl SpecialObject_HoverTest(void)
     // Pasada 1 - apagar el resalte de todos.
     for (int i = 0; i < slots; ++i) {
         char *e   = &DAT_083a2370[i * stride];
-        int   obj = *(int *)(e + 8);
+        intptr_t   obj = (intptr_t)g_OperateObjects[i];
         if (e[0] == 0 || obj == 0) continue;
-        if (*(char *)(obj + 0x160) == 0) continue;   // no visible este frame
+        if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;   // no visible este frame
         *(DWORD *)(obj + 0xe8) = 0x3e4ccccd;             // 0.2f
         *(DWORD *)(obj + 0xec) = 0x3e4ccccd;
         *(DWORD *)(obj + 0xf0) = 0x3e4ccccd;
@@ -554,12 +555,12 @@ int __cdecl SpecialObject_HoverTest(void)
     // Pasada 2 - el primero que corte el rayo del mouse.
     for (int i = 0; i < slots; ++i) {
         char *e   = &DAT_083a2370[i * stride];
-        int   obj = *(int *)(e + 8);
+        intptr_t   obj = (intptr_t)g_OperateObjects[i];
         if (e[0] == 0 || obj == 0) continue;
-        if (*(char *)(obj + 0x160) == 0) continue;
+        if (*(char *)&((OBJECT*)(uintptr_t)(obj))->Visible == 0) continue;
 
         float box[12];
-        memcpy(box, (const void *)(obj + 0x130), sizeof(box));
+        memcpy(box, (const void *)(obj + EntityOffset(0x130)), sizeof(box));
 
         if (Collision_SegmentToOBB((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
             *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte
@@ -589,15 +590,23 @@ char __cdecl Party_HPBar_HoverCheck(void)
     float local_24 = 5.0f;                              // top of first bar (Y)
     char result = 0;
 
-    UINT  uVar7 = *(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7;  // clase del heroe (c->Class & 7)
+    UINT  uVar7 = *(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7;  // clase del heroe (c->Class & 7)
     UINT *puVar5 = (UINT*)&DAT_07e11e9c;                // party slot base (stride 9 uints = 0x24)
 
     for (int i = 0; i < (int)DAT_07eaa0e0; i++, puVar5 += 9) {
-        if (*puVar5 < 0x80000000) {
+        // IDA L83-210: sólo los índices >= 0 se pueden señalar, y sólo para
+        // DW o elfa; la fila baja 19 px para esos y para los -1, no para el
+        // héroe sin resolver (-3).
+        if (*puVar5 >= 0x80000000) {
+            if ((int)*puVar5 == -1) local_24 += _DAT_005527d4;
+            *puVar5 = 0xfffffffe;
+            continue;
+        }
+        if (uVar7 == 2 || uVar7 == 0) {
             // [HashTable obfuscation block skipped — anti-tamper, not game logic]
 
             // Get entity stat ID for this party slot
-            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)(DAT_07abf5d8 + 0x391) + 0x57 + (char*)DAT_07cf1ff4);
+            UINT *puVar12 = (UINT*)(UINT)*(BYTE*)((UINT)*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill + 0x57 + (char*)DAT_07cf1ff4);
 
             // Check if entity type is a hoverable icon (0x1a/0x1b/0x1c/0xf/0x10)
             UINT pVal = (UINT)(uintptr_t)puVar12;

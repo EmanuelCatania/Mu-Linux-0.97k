@@ -83,7 +83,7 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
 
     // Setup BMD model: Models base = DAT_05828d58, stride = sizeof(BMD) = 188 (0xBC)
     int modelIdx = (int)AsObject(objPtr)->Type;
-    char* model = (char*)(DAT_05828d58 + modelIdx * 0xBC);
+    char* model = (char*)(DAT_05828d58 + modelIdx * BMD_STRIDE);
     *(char *)&AsModel(model)->CurrentAction = *(char *)&AsObject(objPtr)->CurrentAction;  // set current action
 
     float animSpeed = AsObject(objPtr)->Velocity;
@@ -94,8 +94,8 @@ float* __cdecl MoveObject_PerWorld(OBJECT* object) {
     // Play animation — BMD__PlayAnimation(model, frame*, scale*, extra, speed)
     // Ghidra sig: BMD::PlayAnimation(this, frame*, priorFrame*, priorAction*, speed, pos*, angle*)
     // Our declaration has 5 params; pass what fits
-    BMD__PlayAnimation((void*)model, (float*)(objPtr + 0x108), (float*)(objPtr + 0x10c),
-                 (void*)(objPtr + 0x106), animSpeed);
+    BMD__PlayAnimation((void*)model, (float*)(objPtr + EntityOffset(0x108)), (float*)(objPtr + EntityOffset(0x10c)),
+                 (void*)(objPtr + EntityOffset(0x106)), animSpeed);
 
     // ── Escena de login / char-select (IDA sub_4FDC00, bloque previo al switch)
     // En el orden del binario: después de PlayAnimation, antes del switch.
@@ -605,7 +605,7 @@ void __stdcall MoveObjects(void) {
                     if (*pcVar6 != '\0') {
                         MoveObject_Special(AsObject(pcVar6));
                     }
-                    pcVar6[0x160] = '\0';
+                    pcVar6[EntityOffset(0x160)] = '\0';
                     pcVar6 = reinterpret_cast<char*>(AsObject(pcVar6)->SceneNext);
                 }
             }
@@ -614,7 +614,7 @@ void __stdcall MoveObjects(void) {
                 pcVar6 = static_cast<char*>(puVar4->Head);
                 while (pcVar6 != NULL && SceneObjects::Contains(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
-                    if (*pcVar6 != '\0' && pcVar6[0x160] != '\0') {
+                    if (*pcVar6 != '\0' && pcVar6[EntityOffset(0x160)] != '\0') {
                         // IDA 0x004FF3B7: push edi pasa la dirección del objeto, no un float.
                         FUN_004fdc00(AsObject(pcVar6));
                         DAT_083a3fec++;
@@ -647,15 +647,15 @@ void __stdcall MoveObjects(void) {
                                 light[1] = (float)(rand() % 10) * 0.02f;
                                 light[2] = (float)(rand() % 10) * 0.02f;
                                 CreateSprite(1269, (float*)(pcVar6 + 16), 0.5f,
-                                             light, (int)Hero, 0.0f, 0);
+                                             light, (intptr_t)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
                                              (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
-                                             6, (int)pcVar6, Scale, -1, 0);
+                                             6, (intptr_t)pcVar6, Scale, -1, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
                                              (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
-                                             6, (int)pcVar6, Scale, -1, 0);
+                                             6, (intptr_t)pcVar6, Scale, -1, 0);
                             }
                             else {
                                 DAT_083a3fec--;
@@ -709,7 +709,7 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
         const float range = (float)pet.CollectRange * 100.0f + 50.0f;
         float best = range * range;
         for (int i = 0; i < 1000; ++i) {
-            const BYTE* ip = (const BYTE*)DAT_07e12840 + i * 0x204;
+            const BYTE* ip = (const BYTE*)DAT_07e12840 + i * GROUND_ITEM_STRIDE;
             if (ip[72] == 0 || *(const short*)(ip + 74) != 863) continue;   // zen
             const float* p = (const float*)(ip + 88);
             const float dx = p[0] - ownerPos[0], dy = p[1] - ownerPos[1];
@@ -747,7 +747,7 @@ static void CustomPet_Move(char* e, const BYTE* owner, const Proto::CATALOG_PET&
         *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), CreateAngle(pos[0], pos[1], target[0], target[1]), 20.0f);
 
     *(float*)(e + 0x0C) = pet.Scale;                // Scale
-    *(float*)(e + 0x168) = 1.0f;                    // Alpha
+    *(float*)&((OBJECT*)(uintptr_t)(e))->Alpha = 1.0f;                    // Alpha
     if (pet.BlendMesh != 0xFF) {
         *(int*)(e + 100) = pet.BlendMesh;           // BlendMesh
         *(float*)(e + 104) = 1.0f;                  // BlendMeshLight
@@ -762,12 +762,12 @@ void __stdcall MoveBugs(void) {
     char*  base = (char*)DAT_083a1218;
     DWORD* v0   = (DWORD*)(base + 0xFC);      // = &unk_83A1314 (owner field de entry 0)
     for (int slot = 0; slot < 10; ++slot) {
-        char* e = (char*)v0 - 0xFC;           // v1 — entry base
+        char* e = (char*)v0 - offsetof(OBJECT, Owner);           // v1 — entry base
         if (*(BYTE*)e == 0)                    // !Live
             goto next_bug;
 
     { // El salto de salida no entra en el ámbito de estas variables.
-        DWORD owner = *v0;                     // *v0 — Owner ptr
+        intptr_t owner = (intptr_t)AsObject(e)->Owner;                     // *v0 — Owner ptr
         if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
                 *(BYTE*)e = 0;                 // kill: owner muerto / Kind != 1
@@ -777,11 +777,11 @@ void __stdcall MoveBugs(void) {
         Alpha(AsObject(e));              // Actualiza el alpha sin truncar la dirección.
 
         {
-        int   v2 = (int)owner;
+        intptr_t   v2 = (intptr_t)owner;
         float x2 = *(float*)(v2 + 16);         // owner posX
         float y2 = *(float*)(v2 + 20);         // owner posY
         int   v4 = AsObject(e)->Type;           // type
-        char* v40 = (char*)(DAT_05828d58 + 188 * v4);   // Models[v4]
+        char* v40 = (char*)(DAT_05828d58 + BMD_STRIDE * v4);   // Models[v4]
         float v36 = 0.0f;                      // trackDist (solo usado por 816/817)
 
         if (v4 > 267) {
@@ -813,7 +813,7 @@ void __stdcall MoveBugs(void) {
             if ((TerrainWall[idx] & 1) == 1) {
                 *(DWORD *)&AsObject(e)->Alpha = 0;      // en muro: apaga alpha, no copia pos
             } else {
-                int  v8 = *v0;
+                intptr_t  v8 = owner;
                 char v9 = *(BYTE*)(v8 + 124);
                 if (v9 == 1 || v9 == 2) {
                     float v10 = AsObject(e)->Alpha - 0.1f;
@@ -835,7 +835,7 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Angle[0] = *(DWORD*)(v8 + 28);   // angleX
                 *(DWORD *)&AsObject(e)->Angle[1] = *(DWORD*)(v8 + 32);   // angleY
                 *(DWORD *)&AsObject(e)->Angle[2] = *(DWORD*)(v8 + 36);   // angleZ
-                BYTE v14 = *(BYTE*)(v8 + 261);              // owner CurrentAction
+                BYTE v14 = *(BYTE*)(v8 + EntityOffset(261));              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 3);
                     else                                       SetAction(AsObject(e), 2);
@@ -849,26 +849,26 @@ void __stdcall MoveBugs(void) {
                         else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;        // animSpeed = 0.34f
-                    *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
+                    *(BYTE*)e = *(BYTE*)owner;               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
                     if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 7);
                     else                       SetAction(AsObject(e), 6);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 } else if (v14 < 0x22 || v14 > 0x37) {
                     if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction(AsObject(e), 1);
                     else                                       SetAction(AsObject(e), 0);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 } else if (v11 == 267) {
                     if (v12 == 8 || v12 == 10) SetAction(AsObject(e), 5);
                     else                       SetAction(AsObject(e), 4);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 } else {
                     SetAction(AsObject(e), 3);
                     *(DWORD *)&AsObject(e)->Velocity = 0x3EAE147B;
-                    *(BYTE*)e = *(BYTE*)(*v0);
+                    *(BYTE*)e = *(BYTE*)owner;
                 }
             }
         }
@@ -888,14 +888,14 @@ void __stdcall MoveBugs(void) {
         // ── LABEL_72 — avance BMD común + follow (solo 816/817) ─────────────
         {
         float* v28 = (float*)(e + 0x10);
-        *(BYTE*)(v40 + 160) = AsObject(e)->CurrentAction;          // model.CurrentAction
-        BMD__PlayAnimation((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
-                     (void*)(e + 0x106), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
+        *(BYTE*)(v40 + 160 + BMD_FIELD_SHIFT) = AsObject(e)->CurrentAction;          // model.CurrentAction
+        BMD__PlayAnimation((void*)v40, (float*)(e + EntityOffset(0x108)), (float*)(e + EntityOffset(0x10C)),
+                     (void*)(e + EntityOffset(0x106)), AsObject(e)->Velocity);   // sub_440AA0 (a6/a7 unused)
 
         short v29 = AsObject(e)->Type;
         // 0.97.20: pet custom (Data/Custom/Pets del server).
         if (const Proto::CATALOG_PET* pet = gContentCatalog.GetPetByModel(v29)) {
-            CustomPet_Move(e, (BYTE*)(uintptr_t)*v0, *pet);
+            CustomPet_Move(e, (BYTE*)owner, *pet);
         }
         if (v29 == 816 || v29 == 817) {
             float v30 = AsObject(e)->Position[1];                // posY
@@ -928,8 +928,8 @@ void __stdcall MoveBugs(void) {
                 *(DWORD *)&AsObject(e)->Direction[0] = 0;
                 AsObject(e)->Direction[2] = (float)(rand() % 64 - 32) * 0.1f;
             }
-            int v35 = *v0;
-            if (*(float*)(*v0 + 24) + 100.0f > AsObject(e)->Position[2])
+            intptr_t v35 = owner;
+            if (*(float*)(owner + 24) + 100.0f > AsObject(e)->Position[2])
                 AsObject(e)->Direction[2] = AsObject(e)->Direction[2] + 1.5f;
             if (*(float*)(v35 + 24) + 200.0f < AsObject(e)->Position[2])
                 AsObject(e)->Direction[2] = AsObject(e)->Direction[2] - 1.5f;
@@ -939,7 +939,7 @@ void __stdcall MoveBugs(void) {
 
     }
 next_bug:
-        v0 += 111;                              // +0x1BC bytes
+        v0 += OBJECT_STRIDE / 4;                              // +0x1BC bytes
     }
 }
 
@@ -1059,11 +1059,11 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     }
     if ( HeroTile == 4 )
     {
-      *(DWORD *)(o + 356) = 0;
+      *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 0;
     }
     else
     {
-      *(DWORD *)(o + 356) = 1065353216;
+      *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1065353216;
     }
   }
   if ( gMapManager.GetCurrentMap() == 2 )
@@ -1073,22 +1073,22 @@ void __cdecl FUN_004fdc00(OBJECT* object)
     {
       if ( HeroTile == 3 || HeroTile >= 10 )
       {
-        *(DWORD *)(o + 356) = 0;
+        *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 0;
       }
       else
       {
-        *(DWORD *)(o + 356) = 1065353216;
+        *(DWORD *)&((OBJECT*)(uintptr_t)(o))->AlphaTarget = 1065353216;
       }
     }
   }
 LABEL_22:
   Alpha(AsObject(o));
-  if ( *(float *)(o + 360) < 0.0099999998 )
+  if ( *(float *)&((OBJECT*)(uintptr_t)(o))->Alpha < 0.0099999998 )
   {
     return;
   }
-  v5 = Models + 188 * *(short *)(o + 2);
-  *(BYTE *)(v5 + 160) = *(BYTE *)(o + 261);
+  v5 = Models + BMD_STRIDE * *(short *)(o + 2);
+  *(BYTE *)(v5 + 160 + BMD_FIELD_SHIFT) = *(BYTE *)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
   oa = *(float *)(o + 204);
   if ( gMapManager.GetCurrentMap() == 8 && *(WORD *)(o + 2) == 8 )
   {
@@ -1099,8 +1099,8 @@ LABEL_22:
   // NOTA: nuestro BMD__PlayAnimation (BMD_Anim.cpp) es la variante de 5 args (avanza
   // el frame). El IDA sub_440AA0 toma 7 (los 2 últimos = pos/vel para root-motion
   // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
-  BMD__PlayAnimation((void*)v5, (float*)(o + 264), (float*)(o + 268),
-               (void*)(o + 262), oa);
+  BMD__PlayAnimation((void*)v5, (float*)(o + EntityOffset(264)), (float*)(o + EntityOffset(268)),
+               (void*)(o + EntityOffset(262)), oa);
   if ( SceneFlag == 2 || SceneFlag == 4 )
   {
     if ( *(WORD *)(o + 2) == 160 )
@@ -1168,7 +1168,7 @@ LABEL_38:
         case 0x16:
         case 0x17:
         case 0x18:
-          *(BYTE *)(Models + 188 * *(short *)(o + 2) + 136) = 1;
+          *(BYTE *)(Models + BMD_STRIDE * *(short *)(o + 2) + 136 + BMD_FIELD_SHIFT) = 1;
           *(float *)(o + 112) = (double)((std::int64_t)WorldTime % 1000) * -0.001;
           break;
         case 0x27:
@@ -1291,11 +1291,11 @@ LABEL_59:
           *(float *)(o + 112) = (double)((std::int64_t)WorldTime % 2000) * 0.00050000002;
           break;
         case 0x2A:
-          *(BYTE *)(Models + 188 * v17 + 136) = 0;
+          *(BYTE *)(Models + BMD_STRIDE * v17 + 136 + BMD_FIELD_SHIFT) = 0;
           *(float *)(o + 108) = (double)((std::int64_t)WorldTime % 500) * -0.0020000001;
           break;
         case 0x2B:
-          *(BYTE *)(Models + 188 * v17 + 136) = 0;
+          *(BYTE *)(Models + BMD_STRIDE * v17 + 136 + BMD_FIELD_SHIFT) = 0;
           *(float *)(o + 108) = (double)((std::int64_t)WorldTime % 500) * 0.0020000001;
           break;
         default:

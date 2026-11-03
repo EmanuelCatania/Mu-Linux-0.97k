@@ -7,6 +7,7 @@ import re
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, read_source
+from X86Views import object_view
 
 SERVICES=r'''
 using std::uintptr_t;
@@ -84,7 +85,7 @@ def harness(revision=None):
     reads=re.findall(r'^\s*sVar5\s*=[^\n]+;',source,re.M)
     if len(reads)!=2:raise ValueError('Lecturas de tipo inesperadas')
     guard=re.search(r'if \((\(iVar8 - 1 < 1\)[^\n]+)\) \{',source).group(1)
-    return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.replace('ANIMATE',source[start:end]).replace('READ0',reads[0]).replace('READ1',reads[1]).replace('GUARD',guard)+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0]+object_view(['AnimationFrame','PriorAnimationFrame','PriorAction'],revision)+SERVICES.replace('ANIMATE',source[start:end]).replace('READ0',reads[0]).replace('READ1',reads[1]).replace('GUARD',guard)+MAIN
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()
     if args.reference_ref and (os.name!='nt' or args.architecture!='Win32'):p.error('Referencia sólo en Windows x86')

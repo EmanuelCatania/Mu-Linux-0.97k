@@ -155,3 +155,17 @@ MU_ASSERT_FIELD(BMD, Sounds, 0xAA);
 inline BMD* AsModel(uintptr_t p) { return reinterpret_cast<BMD*>(p); }
 inline BMD* AsModel(void* p) { return static_cast<BMD*>(p); }
 inline const BMD* AsModel(const void* p) { return static_cast<const BMD*>(p); }
+
+// Desplazamiento de los campos de BMD posteriores a LightMaps respecto del x86.
+constexpr int BMD_STRIDE = (int)sizeof(BMD);
+constexpr int BMD_FIELD_SHIFT = BMD_STRIDE - 0xBC;
+
+// Traduce un offset x86 de la tabla de acciones (stride 16) al registro nativo.
+constexpr std::size_t ModelActionByte(std::size_t x86) {
+    return x86 / 16 * sizeof(ModelAnimationAction) + x86 % 16;
+}
+
+// Velocidad de la accion: Unknown0+4 del registro (x86: 16*accion + 4).
+inline float& ModelActionSpeed(void* actions, int action) {
+    return *reinterpret_cast<float*>(static_cast<char*>(actions) + action * sizeof(ModelAnimationAction) + 4);
+}

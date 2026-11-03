@@ -17,7 +17,7 @@ bool __cdecl CheckTarget(CHARACTER* c) {
 
     if (selIdx != -1) {
         // Use selected character's position
-        const std::uintptr_t selEntity = base + selIdx * 0x394;
+        const std::uintptr_t selEntity = base + selIdx * CHARACTER_STRIDE;
         // Position at Object.Position: +0x10 (x), +0x14 (y), +0x18 (z)
         // 0049CAE0 stores target *grid* coordinates, not world coordinates.
         // The native calculation is `(int)(world * 0.01f)`.

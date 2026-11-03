@@ -91,7 +91,7 @@ void __cdecl FUN_004124d0(void *a1, const void *a2)
 }
 
 // FUN_004124f0 @ 0x004124F0 — GG module ~dtor
-void __fastcall FUN_004124f0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_004124f0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_00412510((DWORD *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -104,7 +104,7 @@ void __fastcall FUN_00412510(DWORD* param_1) {
 }
 
 // FUN_004125f0 @ 0x004125F0 — GG module2 ~dtor
-void __fastcall FUN_004125f0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_004125f0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_00412610((DWORD *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }

@@ -137,6 +137,7 @@
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 extern "C" const char* Guild_GetMarkName(int row);
 #include "Text/TextCore.h"
 #include "Party/Party.h"
@@ -469,7 +470,7 @@ void __cdecl SecondPassword_Screen1(void) {
                 // IDA: C1:03:57 cancela el editor y libera INTERFACE_GUILD_CREATE.
                 const BYTE pkt3[3] = { 0xC1, 0x03, 0x57 };
                 gNetwork.SendC1(pkt3, sizeof(pkt3));
-                *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
+                *(short*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->GuildMarkIndex = (short)0xffff;
             }
             PlayBuffer(0x19, 0, 0);
             // DAT_07db8710 es char[10][256] — escribimos el primer byte del slot 0
@@ -495,9 +496,9 @@ LAB_FUN_004e4760_end:
         // vtable[+0x14] = slot 5 = ChatLB_tick, __fastcall (this en ECX +
         // argumento). Despacharlo como cdecl dejaría ECX con basura y ChatLB_tick
         // leería memoria random como `self[3]` (contador de list1).
-        if (DAT_055c9ff4 && *(int*)DAT_055c9ff4) {
+        if (DAT_055c9ff4 && ChatWidget_GetVTable(DAT_055c9ff4)) {
             DWORD* obj = (DWORD*)DAT_055c9ff4;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef int (__fastcall *FnTick)(DWORD*, int /*edx*/, int);
             ((FnTick)vt[5])(obj, 0, 0);
         }
@@ -853,7 +854,7 @@ void __cdecl SecondPassword_Screen5(void) {
         if (!MouseLButtonPush) return;
 
         const WORD charLevel = *(WORD*)((BYTE*)CharacterAttribute + 14);
-        const int mgOffset = ((((const BYTE*)Hero)[444] & 7) == 3) ? 6 : 0;
+        const int mgOffset = ((((const BYTE*)Hero)[EntityOffset(444)] & 7) == 3) ? 6 : 0;
 
         int row = 0;
         for (; row < 6; ++row) {
@@ -934,7 +935,7 @@ void __cdecl SecondPassword_Screen5(void) {
 
 // CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
 extern "C" int g_GoldenArcherCustom;
-extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action);
+extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(intptr_t c, int action);
 // ServerTransfer_HitTest @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
 // transferencia de server (la etiqueta vieja "SecondPassword_Screen7" era falsa).
 // Los dos `__ftol()` que el port no habia resuelto son `InventoryStartX + 35.0`:
@@ -1492,9 +1493,9 @@ bool Equip_CanPlace(const ITEM* item, int a5)
     const BYTE* req   = IA[item->Type].RequireClass;
     bool ok = true;
 
-    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
+    if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7) == 3) {       // Magic Gladiator
         if (!req[3] && !req[0] && !req[1]) ok = false;
-    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
+    } else if (!req[*(BYTE*)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Class & 7]) {
         ok = false;
     }
 
@@ -1619,7 +1620,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         if (!DAT_083a4124 && !rightClick) {                 // MouseLButtonPush
             slot[64] = 2;                                   // Color: hover
             DAT_07ea9844 = 0;                               // byte_7EA9844
-            DAT_07eaa160 = (DWORD)(uintptr_t)slot;          // CheckInventory
+            DAT_07eaa160 = (uintptr_t)slot;          // CheckInventory
             DAT_07ea8408 = (DWORD)y0;                       // sy
             DAT_07ea840c = (DWORD)(x0 + (int)w / 2);        // sx
             return;
@@ -1663,7 +1664,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         DAT_07eaa160 = 0;                                   // CheckInventory
         PlayBuffer(29, 0, 0);
         if (a5 == 8)
-            DeleteBug((int)(uintptr_t)DAT_07abf5d8);
+            DeleteBug((intptr_t)DAT_07abf5d8);
         if (rightClick) {
             DAT_07e11e78 = (DWORD)(unequipTarget + 12);
             DAT_07eaa165 = 1;                               // EquipmentItem
@@ -1921,11 +1922,11 @@ LABEL_129:
         short v53 = AsCharacter(c)->Object.Type;
         if (v53 != 390 || (AsCharacter(c)->Object.SubType >= 206 && AsCharacter(c)->Object.SubType <= 208)) {
             // Models[v53].SoundIdle (offset 170)
-            short modSnd = *(short*)((char*)(uintptr_t)DAT_05828d58 + 188 * v53 + 170);
+            short modSnd = *(short*)((char*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * v53 + 170 + BMD_FIELD_SHIFT);
             if (modSnd != (short)0xFFFF) {
                 int v55 = rand() % 2;
                 short s = *(short*)((char*)(uintptr_t)DAT_05828d58
-                                    + 2 * (v55 + 94 * v53) + 170);
+                                    + BMD_STRIDE * v53 + 2 * v55 + 170 + BMD_FIELD_SHIFT);
                 // PlayBuffer(s + 170, c, 0) — sound playback (PlayBuffer en nuestra port)
                 PlayBuffer(s + 170, AsObject(c), 0);
             }
@@ -2158,7 +2159,7 @@ label_119:
     if (etype != 0x186 || (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)) {
         if (AsCharacter(param_1)->Object.SubType > 0xcd && AsCharacter(param_1)->Object.SubType < 0xd1)
             PlayBuffer(0x5d, AsObject(param_1), 0);
-        if (*(short *)(DAT_05828d58 + 0xaa + etype * 0xbc) != -1) {
+        if (*(short *)(DAT_05828d58 + 0xaa + BMD_FIELD_SHIFT + etype * BMD_STRIDE) != -1) {
             // IDA 0x443930 L288-289:
             //     v19 = rand() % 2;
             //     PlayBuffer(*(short*)(Models + 2*(v19 + 94*type) + 170) + 170, c, 0);
@@ -2167,7 +2168,7 @@ label_119:
             // leería campos ajenos del struct de modelo.
             int v19 = rand() % 2;
             int iVar9 = 0;
-            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa, AsObject(param_1), iVar9);
+            PlayBuffer(AsModel(DAT_05828d58 + etype * BMD_STRIDE)->Sounds[v19] + 0xaa, AsObject(param_1), iVar9);
         }
     }
 }
@@ -2190,18 +2191,17 @@ void __cdecl MoveCharacterPosition(CHARACTER* character) {
     *(float*)(param_1 + 0x14) = out[1] + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
     float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
-    if (*(short*)(param_1 + 0x2b8) == 0x333) {
+    if (*(short*)&((CHARACTER*)(uintptr_t)(param_1))->Helper.Type == 0x333) {
         if (gMapManager.GetCurrentMap() == 8 || gMapManager.GetCurrentMap() == 10)
             terrainH += _DAT_00552848;
         else
             terrainH += _DAT_0055284c;
     }
     *(float*)(param_1 + 0x18) = terrainH;
-    // IDA 00454BA0: model 272 (Bull Fighter family) bobs above terrain.
-    // Keep this model gate and phase ordering identical to the original.
+    // IDA 00454BA0: el modelo 272 (Budge Dragon) aletea sobre el terreno.
+    // sub_5129F0 es fabs y deja su resultado en st0, por eso el decompile no lo muestra.
     if (*(short*)(param_1 + 2) == 272) {
-        const float bob = (float)sin(*(float*)(param_1 + 0x80));
-        (void)Math_Fabs(bob); // IDA calls sub_5129F0 (fabs); result is unused.
+        const float bob = (float)fabs(sin(*(float*)(param_1 + 0x80)));
         *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
     }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
@@ -2222,10 +2222,10 @@ void Hero_ApplyCatalogEquipment(CHARACTER* character)
         gContentCatalog.SetEntityPart(c, part, *(short*)(v7 + kWearOff[part]));
     const short pet = *(short*)(v7 + 544);
     if (pet != -1 && gContentCatalog.GetPet(pet)) {
-        *(short*)(c + 696) = (short)ItemModel(ItemBehaviorType(pet));
+        *(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type = (short)ItemModel(ItemBehaviorType(pet));
         // El owner del pool aún ocupa 32 bits; su layout queda para B2.
-        DeleteBug((DWORD)(uintptr_t)c);
-        CreateBug(*(short*)(c + 696), (void*)(c + 16), (void*)(uintptr_t)c, 0);
+        DeleteBug((intptr_t)c);
+        CreateBug(*(short*)&((CHARACTER*)(uintptr_t)(c))->Helper.Type, (void*)(c + 16), (void*)(uintptr_t)c, 0);
     }
 }
 
@@ -2254,7 +2254,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
     // ── Primary cluster (4 equipment slots → entity offsets 624/648/672/696) ──
     auto writeSlot = [&](int srcOff, int eOff) {
         short v = *(short*)(v7 + srcOff);
-        *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
+        *(short*)(c + EntityOffset(eOff)) = (v == -1) ? (short)-1 : (short)ItemEntityModel(v);
     };
     // Valor previo del helper, para detectar el CAMBIO abajo.
     const short prevHelper = AsCharacter(c)->Helper.Type;
@@ -2301,7 +2301,7 @@ void __cdecl SetCharacterClass(CHARACTER* character) {
         const short newHelper = AsCharacter(c)->Helper.Type;
         if (newHelper != prevHelper) {
             // El owner del pool aún ocupa 32 bits; su layout queda para B2.
-            DeleteBug((DWORD)(uintptr_t)c);          // DeleteBug
+            DeleteBug((intptr_t)c);          // DeleteBug
             int bugType = 0;
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
@@ -2457,15 +2457,15 @@ void __cdecl CheckGate(void)
         const BYTE* const gate = gates + gateIndex * 9; // IDA: GateAttribute + 9*i
         if (gate[0] != 1 || gate[1] != (BYTE)gMapManager.GetCurrentMap())
             continue;
-        const int heroX = *(const int*)(hero + 904);
-        const int heroY = *(const int*)(hero + 908);
+        const int heroX = *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionX;
+        const int heroY = *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY;
         if (heroX < gate[2] || heroY < gate[3] || heroX > gate[4] || heroY > gate[5])
             continue;
-        if (DAT_07e11d1c != 0 || hero[773] != 0)          // LoadingWorld
+        if (DAT_07e11d1c != 0 || hero[EntityOffset(773)] != 0)          // LoadingWorld
             continue;
 
         unsigned int requiredLevel = gate[8];
-        if ((hero[444] & 7) == 3) // Magic Gladiator: dos tercios.
+        if ((hero[EntityOffset(444)] & 7) == 3) // Magic Gladiator: dos tercios.
             requiredLevel = (requiredLevel * 2) / 3;
 
         // El gate 28 no entra a la rama comun si no llega al nivel.
@@ -2851,12 +2851,12 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // hash-encrypt; }` colapsan a una lectura directa de los campos de CharacterMachine.
 //
 // Declaraciones externas locales a esta unidad de traducción:
-extern "C" bool __cdecl CharacterAnimation(int c, int o);
+extern "C" bool __cdecl CharacterAnimation(intptr_t c, intptr_t o);
 
-extern bool __cdecl AttackStage(DWORD c, DWORD o);
-extern void __cdecl CreateBlood(DWORD o);
+extern bool __cdecl AttackStage(intptr_t c, intptr_t o);
+extern void __cdecl CreateBlood(intptr_t o);
 extern int  __stdcall FindHotKey(int Skill);
-extern void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
+extern void __cdecl CreateArrows(intptr_t c, intptr_t o, intptr_t to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:
@@ -2877,13 +2877,13 @@ static inline void mc_AngleVectorOffset(float *origin7, float ax, float ay, floa
 // hubiera — p.ej. los de Scale 50 que deja `InsertBuffPhysicalEffect`
 // (0x43BDE0, el camino de viewport cuando la entidad aparece con el buff ya
 // activo).  Si esto fuera un no-op convivirían los dos grupos (arcos dobles).
-extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
-static inline void mc_DeleteJoint(int Type, DWORD Owner, int SubType)
+extern "C" void __cdecl DeleteJoint(int Type, intptr_t Target, int SubType);
+static inline void mc_DeleteJoint(int Type, intptr_t Owner, int SubType)
 {
     DeleteJoint(Type, Owner, SubType);
 }
 
-static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
+static inline void mc_CreateBlur(intptr_t c, float* p1, float* p2,
                                  float* color, int type, int flag)
 {
     // CreateBlur (0x0046C320) — la estela que sigue la hoja del arma.  Busca un
@@ -2897,7 +2897,7 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
 
     for (int index = 0; index < slotCount; ++index) {
         BYTE* slot = base + index * slotSize;
-        if (slot[0] && *(DWORD*)(slot + 12) == c) {
+        if (slot[0] && g_TrailOwner[index] == (uintptr_t)c) {
             BYTE* b = slot;
             *(int*)(b + 4) = type;
             *(float*)(b + 20) = color[0]; *(float*)(b + 24) = color[1]; *(float*)(b + 28) = color[2];
@@ -2918,7 +2918,8 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
     for (int index = 0; index < slotCount; ++index) {
         BYTE* slot = base + index * slotSize;
         if (!slot[0]) {
-            *(DWORD*)(slot + 12) = c;
+            *(DWORD*)(slot + 12) = (DWORD)c;
+            g_TrailOwner[index] = (uintptr_t)c;
             RenderFxSnapshots_New(slot);
             slot[0] = 1;
             *(int*)(slot + 16) = 0;
@@ -2933,7 +2934,7 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
     }
 }
 
-static inline char mc_JointFind(int Type, DWORD Owner, int flag)
+static inline char mc_JointFind(int Type, intptr_t Owner, int flag)
 {
     // sub_46FE40 (SearchJoint). IDA ancla en &Joints[0].Target y lee los otros
     // campos con índices negativos; flag == -1 ignora el SubType.
@@ -2943,7 +2944,7 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
         const JOINT* j = &joints[i];
         if (j->Live == 0) continue;
         if (j->Type != Type) continue;
-        if ((DWORD)(uintptr_t)j->Target != Owner) continue;
+        if ((intptr_t)j->Target != Owner) continue;
         if (flag != -1 && j->SubType != flag) continue;
         return 1;
     }
@@ -3015,12 +3016,12 @@ void __cdecl SetPlayerDie(CHARACTER* c_in)
 
 LABEL_41:
     // Death sound
-    if (*(float*)(c + 264) == 0.0f) {
+    if (*(float*)&((OBJECT*)(uintptr_t)(c))->AnimationFrame == 0.0f) {
         short v14 = *(short*)(c + 2);
         if (v14 == 390) {
             int v15 = *(int*)(c + 4);
             if (v15 < 206 || v15 > 208) {
-                if ((*(BYTE*)(c + 444) & 7) == 2) {
+                if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 2) {
                     PlayBuffer(80, AsObject(c), 0);
                 } else {
                     PlayBuffer(78, AsObject(c), 0);
@@ -3029,7 +3030,7 @@ LABEL_41:
             }
         }
         // Non-player or player[206-208]: model action sound at +178
-        short modSnd = *(short*)((char*)(uintptr_t)DAT_05828d58 + 188 * v14 + 178);
+        short modSnd = *(short*)((char*)(uintptr_t)DAT_05828d58 + BMD_STRIDE * v14 + 178 + BMD_FIELD_SHIFT);
         if (modSnd != -1) {
             PlayBuffer(modSnd + 170, AsObject(c), 0);
         }
@@ -3054,11 +3055,11 @@ static inline void mc_SetPlayerDie(CHARACTER* c)
     // render (bDead = c+0x34e) trata al héroe como muerto (body light rojo).
 }
 
-void __cdecl MoveCharacter(int p1)
+void __cdecl MoveCharacter(intptr_t p1)
 {
     if (!p1) return;
-    DWORD c = (DWORD)p1;
-    DWORD o = (DWORD)p1;
+    intptr_t c = p1;
+    intptr_t o = p1;
 
     // Common locals
     float WorldPosition[3];
@@ -3082,10 +3083,10 @@ void __cdecl MoveCharacter(int p1)
     // `BoneMatrix[3 * bone]`.  No usar un buffer local: los huesos que
     // BMD_Animation no escribe quedarian con basura de stack.
     float (* const BoneMatrix)[3][4] = (float (*)[3][4])g_BoneScratch;
-    int   v422 = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;  // model slot
+    intptr_t   v422 = BMD_STRIDE * (AsObject(o)->Type) + (intptr_t)DAT_05828d58;  // model slot
     bool  bEventNpc = false;
-    DWORD Owner = 0;
-    DWORD v390  = 0;
+    intptr_t Owner = 0;
+    intptr_t v390  = 0;
     int   v392 = 0;     // ground-item flag
     int   v393 = 0;     // skill-id captured (24)
     int   v375 = 0, Type = 0, v376 = 0, v378 = 0, v377 = 0;
@@ -3143,9 +3144,9 @@ void __cdecl MoveCharacter(int p1)
     }
 
     // ─── IDA L499-502: decaimiento del knockback (mece el modelo hacia arriba mientras c+772 > 0)
-    if (*(BYTE*)(c + 772)) {
-        unsigned char k = (unsigned char)(*(BYTE*)(c + 772));
-        (*(BYTE*)(c + 772))--;
+    if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->StormTime) {
+        unsigned char k = (unsigned char)(*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->StormTime);
+        (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->StormTime)--;
         AsObject(o)->Angle[2] += (float)(10 * k);
     }
 
@@ -3200,10 +3201,10 @@ void __cdecl MoveCharacter(int p1)
             DeleteCloth(AsCharacter(c), AsObject(o), nullptr);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) {
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) {
             float out_[3] = {0,0,0};
             in1[0] = 0.0f; in1[1] = AsObject(o)->Direction[1]; in1[2] = 0.0f;
-            AngleMatrix((float*)(o + 408), in2);
+            AngleMatrix((float*)(o + EntityOffset(408)), in2);
             VectorRotate(in1, (float*)in2, out_);
             AsObject(o)->Direction[1] += AsObject(o)->Direction[0];
             AsObject(o)->Gravity += AsObject(o)->Velocity;
@@ -3211,9 +3212,9 @@ void __cdecl MoveCharacter(int p1)
             AsObject(o)->Direction[2] -= 2.0f;
             AsObject(o)->Angle[0]  -= 5.0f;
             if (AsObject(o)->Direction[2] < 1.0f) *(DWORD *)&AsObject(o)->Direction[2] = 1065353216;  // 1.0f
-            AsObject(o)->Position[0] = out_[0] + *(float*)(o + 420);
-            AsObject(o)->Position[1] = out_[1] + *(float*)(o + 424);
-            AsObject(o)->Position[2] = *(float*)(o + 428) + AsObject(o)->Gravity;
+            AsObject(o)->Position[0] = out_[0] + *(float*)&((OBJECT*)(uintptr_t)(o))->DeadPosition[0];
+            AsObject(o)->Position[1] = out_[1] + *(float*)&((OBJECT*)(uintptr_t)(o))->DeadPosition[1];
+            AsObject(o)->Position[2] = *(float*)&((OBJECT*)(uintptr_t)(o))->DeadPosition[2] + AsObject(o)->Gravity;
         }
         // L593-605: Atlans bubble particles (world 7 in-game)
         if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7) {
@@ -3233,12 +3234,12 @@ void __cdecl MoveCharacter(int p1)
     Alpha(AsObject(o));
 
     // ─── IDA L608-611: shaky timer decay
-    if (*(float*)(c + 836) > 0.0f) *(float*)(c + 836) -= 0.029999999f;
+    if (*(float*)&((CHARACTER*)(uintptr_t)(c))->Freeze > 0.0f) *(float*)&((CHARACTER*)(uintptr_t)(c))->Freeze -= 0.029999999f;
 
     bool skipIdleSelect = false;
 
     // ─── IDA L612-614: tick de animación — si la acción actual continúa, salta a L195
-    if (CharacterAnimation((int)c, (int)o)) {
+    if (CharacterAnimation((intptr_t)c, (intptr_t)o)) {
         skipIdleSelect = true;
     }
 
@@ -3246,8 +3247,8 @@ void __cdecl MoveCharacter(int p1)
     {
         // L616-618: clear chain-skill state
         AsCharacter(c)->LongRangeAttack  = -1;
-        *(BYTE*)(c + 844) = 0;
-        *(BYTE*)(c + 845) = 0;
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Foot[0] = 0;
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Foot[1] = 0;
 
         // L619-739: player (entType=390) idle animation selection
         if (AsObject(o)->Type == 390)
@@ -3271,7 +3272,7 @@ void __cdecl MoveCharacter(int p1)
             {
                 // L642-738: event NPC idle chatter / random pose dispatch
                 int action = rand() % 100;
-                if (GoldenArcher_CustomNpcIdle((int)c, action)) {
+                if (GoldenArcher_CustomNpcIdle((intptr_t)c, action)) {
                     skipIdleSelect = true;
                 } else
                 if (AsObject(o)->CurrentAction == 1)  // PLAYER_STOP_MALE
@@ -3348,7 +3349,7 @@ void __cdecl MoveCharacter(int p1)
     // L784-795: planta enredadera (tipo 377) — cambio de idle aleatorio al terminar la acción
     if (AsObject(o)->Type == 377
         && AsModel(v422)->CurrentAnimationFrame
-            == *(short*)(*(int *)&AsModel(v422)->Actions + 16 * (AsObject(o)->CurrentAction) + 8) - 1)
+            == *(short*)((intptr_t)AsModel(v422)->Actions + sizeof(ModelAnimationAction) * (AsObject(o)->CurrentAction) + 8) - 1)
     {
         SetAction(AsObject(o), (rand() % 32) ? 0 : 1);
     }
@@ -3357,7 +3358,7 @@ void __cdecl MoveCharacter(int p1)
     if (AsCharacter(c)->Dead) {
         unsigned char inc = (unsigned char)(++AsCharacter(c)->Dead);
         if (inc >= 0xFu) mc_SetPlayerDie(AsCharacter(c));
-        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)(o + 405)) mc_SetPlayerDie(AsCharacter(c));
+        if (gMapManager.GetCurrentMap() >= 11 && gMapManager.GetCurrentMap() <= 16 && *(BYTE*)&((OBJECT*)(uintptr_t)(o))->ActionStart) mc_SetPlayerDie(AsCharacter(c));
     }
 
     // L807-811: setup defaults
@@ -3368,19 +3369,19 @@ void __cdecl MoveCharacter(int p1)
     // L812-817: attack swing tick
     if (AsCharacter(c)->SkillStage) {
         AttackStage(c, o);
-        AttackEffect((int)c);         // AttackEffect @ 00445230
+        AttackEffect((intptr_t)c);         // AttackEffect @ 00445230
         ++AsCharacter(c)->SkillStage;
     }
 
     // L818-839: bone-particle effect (o+404 = effect counter)
-    if (*(BYTE*)(o + 404)) {
-        DWORD This = 188 * (AsObject(o)->Type) + (int)DAT_05828d58;
+    if (*(BYTE*)&((OBJECT*)(uintptr_t)(o))->HurtByOneToOne) {
+        intptr_t This = BMD_STRIDE * (AsObject(o)->Type) + (intptr_t)DAT_05828d58;
         memset(p1f, 0, sizeof(p1f));
-        for (int kk = 0; kk < *(short*)(This + 34); ++kk) {
-            int v401 = *(short*)(*(int*)(This + 44) + 140 * kk + 32);
+        for (intptr_t kk = 0; kk < *(short*)(This + 34); ++kk) {
+            intptr_t v401 = reinterpret_cast<ModelAnimationBone*>(AsModel(This)->Bones)[kk].Parent;
             if (v401 > -1 && v401 < 200) {
-                BMD_TransformPosition((void*)This, (float*)(48 * kk + *(int *)&AsObject(o)->BoneMatrices), p1f, Position, 1);
-                BMD_TransformPosition((void*)This, (float*)(48 * v401 + *(int *)&AsObject(o)->BoneMatrices), p1f, TargetPosition, 1);
+                BMD_TransformPosition((void*)This, (float*)(48 * kk + (intptr_t)AsObject(o)->BoneMatrices), p1f, Position, 1);
+                BMD_TransformPosition((void*)This, (float*)(48 * v401 + (intptr_t)AsObject(o)->BoneMatrices), p1f, TargetPosition, 1);
                 Position[0] += (float)(rand() % 41 - 20);
                 Position[1] += (float)(rand() % 41 - 20);
                 Position[2] += (float)(rand() % 41 - 20);
@@ -3390,7 +3391,7 @@ void __cdecl MoveCharacter(int p1)
                 Joint_Create(1254, Position, TargetPosition, (float*)(o + 28), 7, 0, 20.0f, (short)-1, 0);
             }
         }
-        --*(BYTE*)(o + 404);
+        --*(BYTE*)&((OBJECT*)(uintptr_t)(o))->HurtByOneToOne;
     }
 
     // ─── L840-2486: SKILL DISPATCH (when c+757 exhaust limit, drain c+770 queue)
@@ -3399,13 +3400,13 @@ void __cdecl MoveCharacter(int p1)
         AsCharacter(c)->SkillStage = 0;
         AsObject(o)->PKKey = -1;
         if (AsCharacter(c) == AsCharacter(Hero) && SelectedCharacter != -1) {
-            DWORD selSlot = (DWORD)(916 * SelectedCharacter + (int)CharactersClient);
+            intptr_t selSlot = (intptr_t)CharactersClient + (intptr_t)CHARACTER_STRIDE * SelectedCharacter;
             // Guild-war target lock (skipped guild-mark strcmp — same guild = no target)
             if (EnableGuildWar
                 && AsCharacter(selSlot)->PK >= 6u
                 && AsCharacter(selSlot)->GuildMarkIndex != -1
                 && Hero
-                && !strcmp(Guild_GetMarkName(*(const short*)(static_cast<const char*>(Hero) + 474)),
+                && !strcmp(Guild_GetMarkName(*(const short*)(static_cast<const char*>(Hero) + EntityOffset(474))),
                            Guild_GetMarkName(AsCharacter(selSlot)->GuildMarkIndex)))
             {
                 AsObject(o)->PKKey = -1;
@@ -3428,8 +3429,8 @@ void __cdecl MoveCharacter(int p1)
         switch ((char)v328)
         {
         case 5: {  // FireBall
-            WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
-            WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
+            WorldPosition[0] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->SkillX + 0.5f) * 100.0f;
+            WorldPosition[1] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->SkillY + 0.5f) * 100.0f;
             WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(5);
             CreateEffect(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
@@ -3451,9 +3452,9 @@ void __cdecl MoveCharacter(int p1)
             for (int kk = 0; kk < 4; ++kk) {
                 v394[0] = 0.0f; v394[1] = 0.0f; v394[2] = (float)kk * 90.0f;
                 int hk = FindHotKey(9);
-                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 80.0f,
+                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (intptr_t)o, 80.0f,
                              AsObject(o)->PKKey, (unsigned char)hk);
-                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 20.0f, (short)-1, 0);
+                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (intptr_t)o, 20.0f, (short)-1, 0);
             }
             PlayBuffer(87, 0, 0);
             break;
@@ -3476,8 +3477,8 @@ void __cdecl MoveCharacter(int p1)
             break;
         }
         case 13: {  // Lunge / Crescent
-            WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
-            WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
+            WorldPosition[0] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->SkillX + 0.5f) * 100.0f;
+            WorldPosition[1] = ((float)*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->SkillY + 0.5f) * 100.0f;
             WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(13);
             CreateEffect(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
@@ -3523,7 +3524,7 @@ void __cdecl MoveCharacter(int p1)
                 v396[0] = AsObject(o)->Position[0];
                 v396[1] = AsObject(o)->Position[1];
                 v396[2] = AsObject(o)->Position[2] + 100.0f;
-                Joint_Create(1253, v396, v396, Angle, 2, (int)o, 60.0f, 0, 0);
+                Joint_Create(1253, v396, v396, Angle, 2, (intptr_t)o, 60.0f, 0, 0);
                 if (!(kk % 20)) {
                     CreateEffect(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
                                  (float*)(uintptr_t)-1, nullptr, 0);
@@ -3578,7 +3579,7 @@ void __cdecl MoveCharacter(int p1)
         else
         {
             // Targeted skill — Owner = CharactersClient[c+784]
-            v390 = (DWORD)(916 * (AsCharacter(c)->TargetCharacter) + (int)CharactersClient);
+            v390 = (intptr_t)CharactersClient + (intptr_t)CHARACTER_STRIDE * AsCharacter(c)->TargetCharacter;
             Owner = v390;
 
             if (v328 == 3 || v328 == 7) {
@@ -3598,7 +3599,7 @@ void __cdecl MoveCharacter(int p1)
                 CreateArrows(c, o, Owner, 0, 1, 0);
 
             // L2202-2229: target halo + Atlans bubble shower
-            if (*(short*)(v390 + 760)) {
+            if (*(short*)&((CHARACTER*)(uintptr_t)(v390))->Hit) {
                 if (*(short*)(Owner + 2) != 277) {
                     for (int kk = 0; kk < 10; ++kk) {
                         WorldPosition[0] = (float)(rand() % 64 - 32) + *(float*)(Owner + 16);
@@ -3624,7 +3625,7 @@ void __cdecl MoveCharacter(int p1)
 
             // L2230-2233: Magic anim 0x38..0x3C bonus particles
             if (AsObject(o)->CurrentAction >= 0x38u && AsObject(o)->CurrentAction <= 0x3Cu) {
-                FUN_0046c5a0(0, (int)v390, (float*)(Owner + 16), (float*)(o + 28));
+                FUN_0046c5a0(0, (intptr_t)v390, (float*)(Owner + 16), (float*)(o + 28));
             }
 
             // L2234-2237: la tercera componente del ángulo se recalcula a partir de las
@@ -3698,7 +3699,7 @@ void __cdecl MoveCharacter(int p1)
                     mc_DeleteJoint(266, Owner, 0);
                     for (int i = 0; i < 5; ++i) {
                         Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
-                                     (float*)(Owner + 28), 0, (int)Owner, 20.0f, (short)-1, 0);
+                                     (float*)(Owner + 28), 0, (intptr_t)Owner, 20.0f, (short)-1, 0);
                     }
                 }
                 break;
@@ -3740,7 +3741,7 @@ void __cdecl MoveCharacter(int p1)
                         if (!mc_JointFind(266, Owner, 4)) {
                             for (int i = 0; i < 5; ++i) {
                                 Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
-                                             (float*)(Owner + 28), 4, (int)Owner, 20.0f, (short)-1, 0);
+                                             (float*)(Owner + 28), 4, (intptr_t)Owner, 20.0f, (short)-1, 0);
                             }
                         }
                     } else {
@@ -3749,7 +3750,7 @@ void __cdecl MoveCharacter(int p1)
                         *(DWORD*)(Owner + 120) = v29;
                         for (int i = 0; i < 5; ++i) {
                             Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
-                                         (float*)(Owner + 28), 4, (int)Owner, 20.0f, (short)-1, 0);
+                                         (float*)(Owner + 28), 4, (intptr_t)Owner, 20.0f, (short)-1, 0);
                         }
                     }
                 }
@@ -3782,11 +3783,11 @@ void __cdecl MoveCharacter(int p1)
             Light[1] = (AsCharacter(v390) == AsCharacter(Hero)) ? 0.0f : 0.60000002f;
             Light[2] = 0.0f;
 
-            if (*(BYTE*)(c + 756) == 2) {
+            if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->AttackFlag == 2) {
                 Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
-                             0, (int)o, 20.0f, (short)-1, 0);
+                             0, (intptr_t)o, 20.0f, (short)-1, 0);
                 Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
-                             1, (int)o, 20.0f, (short)-1, 0);
+                             1, (intptr_t)o, 20.0f, (short)-1, 0);
             }
 
             // L2455-2478: hit-impact "thud" sound for non-buff skills
@@ -3806,12 +3807,12 @@ void __cdecl MoveCharacter(int p1)
 
         // L2481-2485: clear queue + state — hash decrypt/encrypt skipped
         AsCharacter(c)->Skill = 0;
-        *(short*)(c + 758) = 0;
-        *(BYTE*)(c + 756) = 0;
+        *(short*)&((CHARACTER*)(uintptr_t)(c))->Damage = 0;
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->AttackFlag = 0;
     }
 
     // ─── L2487-2507: Skill_Throw / projectile (c+912 = throwing flag)
-    if (*(BYTE*)(c + 912)) {
+    if (*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk390) {
         AsObject(o)->BlendMesh = -2;
         AsObject(o)->BlendMeshLight += 0.1f;
         float v384f = (AsCharacter(c)->TargetPosition[0] - AsObject(o)->Position[0]) * 0.30000001f;
@@ -3822,7 +3823,7 @@ void __cdecl MoveCharacter(int p1)
         AsObject(o)->Position[2] = v33f;
         if ((float)Math_Fabs(v384f) < 1.0f) {
             if ((float)Math_Fabs(v385f) < 1.0f) {
-                *(BYTE*)(c + 912) = 0;
+                *(BYTE*)&((CHARACTER*)(uintptr_t)(c))->_unk390 = 0;
                 AsObject(o)->BlendMesh = -1;
             }
         }
@@ -3836,46 +3837,46 @@ void __cdecl MoveCharacter(int p1)
         if (AsCharacter(c)->LongRangeAttack == 1253) v383i = -1028390912;  // -8.0f
         // (v380/v381/v382 unused outside debug)
         memset(p1f, 0, sizeof(p1f));
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1584), p1f, WorldPosition, 1);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1584), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] - 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 2016), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = AsObject(o)->Angle[2] + 60.0f;
-        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
+        Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 50.0f, (short)-1, 0);
         if (AsCharacter(c)->LongRangeAttack == 1254) {
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
-            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, WorldPosition, (float*)(c + EntityOffset(788)), v417, 0, (intptr_t)o, 10.0f, (short)-1, 0);
         }
     }
 
     // L2541-2572: Spear stab (1256) — trail at f >= 9.0
     if (AsCharacter(c)->LongRangeAttack == 1256) {
         memset(p1f, 0, sizeof(p1f));
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1968), p1f, WorldPosition, 0);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1968), p1f, WorldPosition, 0);
         memset(p1f, 0, sizeof(p1f));
-        BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1536), p1f, WorldPosition, 0);
+        BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1536), p1f, WorldPosition, 0);
         if (AsObject(o)->AnimationFrame >= 9.0f) {
             if (AsCharacter(c)->Weapon[0].Type == 560) {
                 WorldPosition[0] = 0.0f; WorldPosition[1] = -130.0f; WorldPosition[2] = 0.0f;
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (AsCharacter(c)->Weapon[0].LinkBone) + *(int *)&AsObject(o)->BoneMatrices),
+                             (float*)(48 * (AsCharacter(c)->Weapon[0].LinkBone) + (intptr_t)AsObject(o)->BoneMatrices),
                              WorldPosition, p1f, 0);
             } else {
                 memset(WorldPosition, 0, sizeof(WorldPosition));
-                BMD_TransformPosition((void*)v422, (float*)(*(int *)&AsObject(o)->BoneMatrices + 1968), WorldPosition, p1f, 0);
+                BMD_TransformPosition((void*)v422, (float*)((intptr_t)AsObject(o)->BoneMatrices + 1968), WorldPosition, p1f, 0);
             }
             v379[0] = AsObject(o)->Angle[0];
             v379[1] = AsObject(o)->Angle[1];
             v379[2] = AsObject(o)->Angle[2];
-            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + 788), v379, 0, (int)o, 50.0f, (short)-1, 0);
+            Joint_Create(AsCharacter(c)->LongRangeAttack, p1f, (float*)(c + EntityOffset(788)), v379, 0, (intptr_t)o, 50.0f, (short)-1, 0);
             AsCharacter(c)->LongRangeAttack = -1;
         }
     }
@@ -3885,8 +3886,8 @@ void __cdecl MoveCharacter(int p1)
         v377 = 0;
         if (AsObject(o)->Type == 390 && (AsObject(o)->CurrentAction == 37 || AsObject(o)->CurrentAction == 38)) v377 = 1;
         v375 = 0; Type = 0;
-        v378 = *(short*)(c + 24 * v377 + 624);
-        v376 = *(unsigned char*)(c + 24 * v377 + 626);
+        v378 = *(short*)(c + EntityOffset(24 * v377 + 624));
+        v376 = *(unsigned char*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (626 - 624));
 
         BYTE actLocal = AsObject(o)->CurrentAction;
         if (AsObject(o)->Type == 390) {
@@ -3946,19 +3947,19 @@ void __cdecl MoveCharacter(int p1)
 
             if (AsObject(o)->Type != 390 || v378 == 403 || v378 == 406 || v378 == 409 || v378 == 411 || v378 == 500) {
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + *(int *)&AsObject(o)->BoneMatrices),
+                             (float*)(48 * (*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))) + (intptr_t)AsObject(o)->BoneMatrices),
                              v372, p1f, 1);
                 BMD_TransformPosition((void*)v422,
-                             (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + *(int *)&AsObject(o)->BoneMatrices),
+                             (float*)(48 * (*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))) + (intptr_t)AsObject(o)->BoneMatrices),
                              v371, p2f, 1);
                 mc_CreateBlur(c, p1f, p2f, v373, Type, 0);
             } else {
                 // Weapon-trail interpolation across 10 sub-frames using BMD_Animation
                 float v368f = 10.0f;
                 float AnimationFrame = AsObject(o)->AnimationFrame
-                                     - *(float*)(*(int *)&AsModel(v422)->Actions + 16 * (AsModel(v422)->CurrentAction) + 4);
+                                     - *(float*)((intptr_t)AsModel(v422)->Actions + sizeof(ModelAnimationAction) * (AsModel(v422)->CurrentAction) + 4);
                 float PriorFrame = AsObject(o)->PriorAnimationFrame;
-                float v370f = *(float*)(*(int *)&AsModel(v422)->Actions + 16 * (AsModel(v422)->CurrentAction) + 4) / 10.0f;
+                float v370f = *(float*)((intptr_t)AsModel(v422)->Actions + sizeof(ModelAnimationAction) * (AsModel(v422)->CurrentAction) + 4) / 10.0f;
                 for (int kk = 0; kk < (int)v368f; ++kk) {
                     // El 6to argumento de BMD_Animation es el Angle de la entidad, no un
                     // buffer de salida: con ceros los huesos se posarían con facing (0,0,0) y
@@ -3972,10 +3973,10 @@ void __cdecl MoveCharacter(int p1)
                     // elemento YA son esos 48 bytes: multiplicar por 3 otra vez daba
                     // 144*bone y leia la matriz de otro hueso.
                     BMD_TransformPosition((void*)v422,
-                                 (float*)BoneMatrix[*(BYTE*)(c + 24 * v377 + 628)],
+                                 (float*)BoneMatrix[*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))],
                                  v372, p1f, 0);
                     BMD_TransformPosition((void*)v422,
-                                 (float*)BoneMatrix[*(BYTE*)(c + 24 * v377 + 628)],
+                                 (float*)BoneMatrix[*(BYTE*)(c + (intptr_t)sizeof(PART_t) * v377 + EntityOffset(624) + (628 - 624))],
                                  v371, p2f, 0);
                     mc_CreateBlur(c, p1f, p2f, v373, Type, 1);
                     AnimationFrame += v370f;
@@ -3999,12 +4000,12 @@ void __cdecl MoveCharacter(int p1)
 // Updates model position/animation from entity. When model has no actions: copies cached
 // los parámetros de anim de entity+0x118..+0x12c a +0x130..+0x15c, sumando la posición de mundo de la entidad.
 // IDA: MoveCharacterVisual (0x004520C0)
-void __cdecl MoveCharacterVisual(int entity_ptr)
+void __cdecl MoveCharacterVisual(intptr_t entity_ptr)
 {
     if (!entity_ptr) return;
 
     // Model slot = DAT_05828d58 + entity_type * 0xbc
-    void *model = (void *)(DAT_05828d58 + (int)AsCharacter(entity_ptr)->Object.Type * 0xbc);
+    void *model = (void *)(DAT_05828d58 + (int)AsCharacter(entity_ptr)->Object.Type * BMD_STRIDE);
 
     // If model has no action data: copy cached transform params to render slots
     if (*(short *)(static_cast<BYTE*>(model) + 0x26) == 0) {
@@ -4015,14 +4016,14 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     }
 
     // Con acciones: copia la posición de mundo de la entidad a los slots de transform del modelo
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x6c) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x70) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x74) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
-    *(unsigned int *)(static_cast<BYTE*>(model) + 0x68) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
-    *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0) = AsCharacter(entity_ptr)->Object.CurrentAction;
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x6c + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[0];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x70 + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[1];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x74 + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Position[2];
+    *(unsigned int *)(static_cast<BYTE*>(model) + 0x68 + BMD_FIELD_SHIFT) = *(unsigned int *)&AsCharacter(entity_ptr)->Object.Scale;
+    *(unsigned char *)(static_cast<BYTE*>(model) + 0xa0 + BMD_FIELD_SHIFT) = AsCharacter(entity_ptr)->Object.CurrentAction;
 
     // SafeZone update por frame (IDA MoveCharacterVisual L614):
-    //     *(BYTE*)(c + 846) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
+    //     *(BYTE*)(c + EntityOffset(846)) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
     // +0x34E (846) es **SafeZone**, NO dead_flag (el dead real es +0x2FD, ver
     // IDA ReceiveDie L18). Lo usan la música de pueblo, el bind del arma a la
     // espalda y el gate de "no atacar en zona segura".
@@ -4071,7 +4072,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         if (*(unsigned short *)&AsCharacter(entity_ptr)->Object.Type != 390) {
             MoveHead(AsCharacter(entity_ptr));
         }
-        if (entity_ptr != (int)(uintptr_t)DAT_07abf5d8 &&
+        if (entity_ptr != (intptr_t)DAT_07abf5d8 &&
             !AsCharacter(entity_ptr)->Dead && !(rand() % 32)) {
             float *headTarget = (float *)(entity_ptr + 52);
             headTarget[0] = (float)(rand() % 128 - 64);
@@ -4085,8 +4086,8 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             const float delta = FarAngle(*headCurrent, headCurrent[3], 1) * 0.2f;
             *headCurrent = TurnAngle2(*headCurrent, headCurrent[3], delta);
         }
-        if (*(unsigned char *)(entity_ptr + 848)) {
-            --*(unsigned char *)(entity_ptr + 848);
+        if (*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->Appear) {
+            --*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->Appear;
             float *light = (float *)(entity_ptr + 232);
             for (int i = 0; i < 20; ++i) {
                 light[0] = light[1] = light[2] = 1.0f;
@@ -4105,12 +4106,12 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         }
 
         extern void __cdecl AddTerrainLight(float x, float y, float* light, int range, float* buffer);
-        extern int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5);
+        extern int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5);
         // 004520C0 L697-725: equipped-item terrain light.  The two item
         // los registros arrancan en c+624 y c+648 (stride de 24 bytes).
         if (AsCharacter(entity_ptr)->PK < 6) {
             for (int itemOffset = 624; itemOffset <= 648; itemOffset += 24) {
-                const short itemType = *(short *)(entity_ptr + itemOffset);
+                const short itemType = *(short *)(entity_ptr + EntityOffset(itemOffset));
                 if (itemType == 412) {
                     float itemLight[3] = {0.80000001f, 0.64000005f, 0.40000001f};
                     AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)itemLight, 3, (float*)PrimaryTerrainLight[0]);
@@ -4140,7 +4141,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                                     (animFrame >= 5.0f && animFrame <= 6.0f)));
             if (sparkWindow && !(rand() & 1)) {
                 float origin[3], local[3] = { 0.0f, -4.0f, 0.0f };
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1152), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1152), local, origin, '\x01');
                 Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
@@ -4150,7 +4151,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x110:
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 3 && AsCharacter(entity_ptr)->Object.AnimationFrame <= 4.0f) {
                 float p[3], local[3] = {0.0f, (float)(rand() % 32 + 32), 0.0f};
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 336), local, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 336), local, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 1, 1.0f, 0);
             }
             // IDA fall-through to LABEL_253.
@@ -4159,7 +4160,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x122:
             if (entType == 0x122) {
                 float p[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 336), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 336), WorldPosition, p, '\x01');
                 float spriteLight[3] = {Luminosity, Luminosity * 0.40000001f, Luminosity * 0.2f};
                 CreateSprite(1150, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
             }
@@ -4178,7 +4179,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             break;
 
         // 0x119 — IDA raw L851-873. Usa el `Light` (1,1,1) del frame compartido.
-        // Gate `*(WORD*)(c + 446) == 2`: sólo cuando la entidad está en ese
+        // Gate `*(WORD*)(c + EntityOffset(446)) == 2`: sólo cuando la entidad está en ese
         // sub-estado escupe las 10 partículas de fuego. El hueso es ALEATORIO
         // (`48 * (rand() % NumBones)`), o sea las partículas salen de todo el
         // cuerpo, no de un punto fijo. `v2 + 34` es NumBones del modelo (+0x22).
@@ -4194,7 +4195,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                     for (int i = 0; i < 10; ++i)
                     {
                         BMD_TransformPosition(model,
-                                     (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % numBones)),
+                                     (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % numBones)),
                                      WorldPosition, origin, '\x01');
                         Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                     }
@@ -4210,7 +4211,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x11B:
             if (!(rand() & 3)) {
                 float local[3] = { 0.0f, 0.0f, 0.0f }, origin[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1056), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1056), local, origin, '\x01');
                 Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
@@ -4226,7 +4227,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             AsCharacter(entity_ptr)->Object.BlendMeshTexCoordV = (float)((long long)WorldTime % 1000) * -0.001f;
             if (!(rand() & 1)) {
                 float p[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 96), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 96), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             break;
@@ -4239,7 +4240,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             const unsigned char action = AsCharacter(entity_ptr)->Object.CurrentAction;
             int bone = action == 3 ? 33 : action == 4 ? 20 : action == 8 ? 41 : action == 9 ? 49 : -1;
             if (bone >= 0) {
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * bone), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * bone), local, origin, '\x01');
                 Particle_Spawn(1180, origin, (float *)(entity_ptr + 28), light, 0, 1.0f, 0);
                 float whitePink[3] = { 1.0f, 0.60000002f, 1.0f };
                 Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), whitePink, 0, 1.0f, 0);
@@ -4248,7 +4249,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float green[3] = { 0.1f, 0.80000001f, 0.60000002f };
                 for (int i = 0; i < 20; ++i) {
                     const int randomBone = rand() % *(short *)(static_cast<BYTE*>(model) + 34);
-                    BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
+                    BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * randomBone), local, origin, '\x01');
                     Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
                 }
             }
@@ -4277,16 +4278,16 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x135:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 28), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 27), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 28), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 27), zero, (float *)(entity_ptr + 64), '\x01');
             break;
         }
         // 0x137 — IDA raw L1011-1015.
         case 0x137:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
             Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr)); Combat_SpawnDeathDustParticles(AsObject(entity_ptr));
             break;
         }
@@ -4294,13 +4295,13 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x138:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 24), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 25), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 24), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 25), zero, (float *)(entity_ptr + 64), '\x01');
             if (AsCharacter(entity_ptr)->Object.SubType == 1) {
                 float p[3];
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 288), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 288), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 624), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 624), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
@@ -4313,8 +4314,8 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         {
             const int a = entType == 0x139 ? 11 : 8, b = entType == 0x139 ? 12 : 9;
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
             Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
             break;
         }
@@ -4341,9 +4342,9 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             static const unsigned char linksD[8] = {26, 25, 25, 24, 32, 31, 31, 30};
 
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero,
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 8), zero,
                           (float *)(entity_ptr + 76), '\x01');
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero,
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * 9), zero,
                           (float *)(entity_ptr + 64), '\x01');
 
             if (AsCharacter(entity_ptr)->MonsterIndex == 63) {
@@ -4351,7 +4352,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float bones[35][3] = {};
 
                 for (int bone = 0; bone < 35; ++bone) {
-                    BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * boneOrder[bone]),
+                    BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * boneOrder[bone]),
                                   zero, bones[bone], '\x01');
                 }
 
@@ -4393,13 +4394,13 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float light[3] = {effectLight, effectLight * 0.5f, effectLight * 0.5f};
                 float source[3], destination[3];
 
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 2640), WorldPosition, source, '\x01');
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 2976), WorldPosition, destination, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 2640), WorldPosition, source, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 2976), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
 
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 3360), WorldPosition, source, '\x01');
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 3696), WorldPosition, destination, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 3360), WorldPosition, source, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 3696), WorldPosition, destination, '\x01');
                 MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
                 Combat_SpawnIdleAmbientParticle(AsObject(entity_ptr));
@@ -4420,7 +4421,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         case 0x141:
         {
             float local[3] = { 0.0f, 0.0f, 0.0f }, a[3], b[3];
-            const int boneBase = *(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices;
+            const intptr_t boneBase = (intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices;
             for (int offset = 96; offset < 240; offset += 48) {
                 BMD_TransformPosition(model, (float *)(boneBase + offset), local, a, '\x01');
                 BMD_TransformPosition(model, (float *)(boneBase + offset + 48), local, b, '\x01');
@@ -4473,7 +4474,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             {
                 float sparkOrigin[3];
                 BMD_TransformPosition(model,
-                             (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 816),
+                             (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 816),
                              WorldPosition, sparkOrigin, '\x01');
                 for (int i = 0; i < 4; ++i)
                 {
@@ -4503,7 +4504,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float local[3] = { 0.0f, 5.0f, 10.0f }, origin[3];
                 float terrainLight[3] = { Luminosity * 0.5f, Luminosity * 0.30000001f, 0.0f };
                 AddTerrainLight(AsCharacter(entity_ptr)->Object.Position[0], AsCharacter(entity_ptr)->Object.Position[1], (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1776), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1776), local, origin, '\x01');
                 for (int i = 0; i < 4; ++i) {
                     float angle[3] = { (float)(rand() % 60 + 90), 0.0f, (float)(rand() % 30) };
                     Joint_Create(1257, origin, origin, angle, 0, 0, 10.0f, -1, 0);
@@ -4519,23 +4520,23 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             float p[3];
             if (SceneFlag == 5 && gMapManager.GetCurrentMap() == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
-                BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
+                BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * *(int *)(static_cast<BYTE*>(model) + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
             if (gMapManager.GetCurrentMap() == 9) {
-                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
-                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
+                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
+                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
             if (AsCharacter(entity_ptr)->Object.CurrentAction == 90) {
                 const short n = *(short *)(static_cast<BYTE*>(model) + 34);
                 if (n > 0) for (int i = 0; i < 10; ++i) {
-                    BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
+                    BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * (rand() % n)), local, p, '\x01');
                     Particle_Spawn(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
                 }
             }
             float tail[3] = {0.0f,-30.0f,0.0f};
-            BMD_TransformPosition(model, (float *)(*(int *)&AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * AsCharacter(entity_ptr)->Weapon[0].LinkBone), tail, p, '\x01');
+            BMD_TransformPosition(model, (float *)((intptr_t)AsCharacter(entity_ptr)->Object.BoneMatrices + 48 * AsCharacter(entity_ptr)->Weapon[0].LinkBone), tail, p, '\x01');
             break;
         }
 
@@ -4546,17 +4547,17 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     // 004520C0 L1383-1396: los pasos del jugador local se eligen según las dos
     // animation-frame thresholds, once per walk/run cycle.
     if (*(unsigned short *)&AsCharacter(entity_ptr)->Object.Type == 390 &&
-        entity_ptr == (int)(uintptr_t)DAT_07abf5d8) {
+        entity_ptr == (intptr_t)DAT_07abf5d8) {
         const unsigned char action = AsCharacter(entity_ptr)->Object.CurrentAction;
         if ((action >= 13 && action <= 33) || action == 79 || action == 80) {
             const float frame = AsCharacter(entity_ptr)->Object.AnimationFrame;
             extern char Sound_PlayFootstep();
-            if (frame >= 1.5f && !*(unsigned char *)(entity_ptr + 844)) {
-                *(unsigned char *)(entity_ptr + 844) = 1;
+            if (frame >= 1.5f && !*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->Foot[0]) {
+                *(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->Foot[0] = 1;
                 Sound_PlayFootstep();
             }
-            if (frame >= 4.5f && !*(unsigned char *)(entity_ptr + 845)) {
-                *(unsigned char *)(entity_ptr + 845) = 1;
+            if (frame >= 4.5f && !*(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->Foot[1]) {
+                *(unsigned char *)&((CHARACTER*)(uintptr_t)(entity_ptr))->Foot[1] = 1;
                 Sound_PlayFootstep();
             }
         }
@@ -4599,14 +4600,14 @@ void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
             SetPlayerStop(AsCharacter(entity));
             // Actualiza el facing según el byte de dirección del camino en +0x2fc
             AsCharacter(entity)->Object.Angle[2] =
-                ((float)*(unsigned char*)(entity + 0x2fc) - _DAT_0055256c) * _DAT_00552844;
+                ((float)*(unsigned char*)&((CHARACTER*)(uintptr_t)(entity))->TargetAngle - _DAT_0055256c) * _DAT_00552844;
         }
         MoveCharacterPosition(AsCharacter(entity));
         return;
     }
 
     // No se está moviendo: chequea si hay que pathfindear para llegar a target_grid
-    if (*(char*)(entity + 0x350) != '\0') return;
+    if (*(char*)&((CHARACTER*)(uintptr_t)(entity))->Appear != '\0') return;
     if (*(short*)(param_2 + 2) == 0x115) return;
 
     // Lee PositionX y PositionY (las decoraciones de HashTable son ruido anti-tamper)
@@ -4622,7 +4623,7 @@ void __cdecl MoveMonsterClient(CHARACTER* character, OBJECT* object)
     unsigned int found = Path_FindRoute(cachedX, (float)cachedY,
                                       (unsigned int)AsCharacter(entity)->TargetX,
                                       (unsigned int)AsCharacter(entity)->TargetY,
-                                      (unsigned char*)(entity + 0x354), 0.0f);
+                                      (unsigned char*)(entity + EntityOffset(0x354)), 0.0f);
     if ((char)found != '\0') {
         AsCharacter(entity)->Movement = 1;
     }

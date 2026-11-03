@@ -44,7 +44,7 @@ def harness(revision=None):
     source=read_source('src/Net/Crypto.cpp',revision)
     helper=function(source,'FUN_0053cc00_impl')
     constructor=function(source,'FUN_0053cbb0')
-    legacy='(int)&PTR_FUN_0055389c'
+    legacy='(intptr_t)&PTR_FUN_0055389c'
     assert constructor.count(legacy)==1
     # Adaptación sólo del store32 pendiente de B2; no se elimina en producción.
     constructor=constructor.replace(legacy,'static_cast<int>(reinterpret_cast<std::uintptr_t>(&PTR_FUN_0055389c))')

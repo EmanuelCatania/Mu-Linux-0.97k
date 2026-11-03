@@ -2,6 +2,9 @@
 """Envío real del camino: paquete, estado y dos punteros nativos; sin sockets."""
 import argparse,os,tempfile
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run,function,read_source
 SERVICES=r'''

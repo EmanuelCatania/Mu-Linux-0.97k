@@ -21,7 +21,7 @@ FramePointerSet savedObjects;
 std::size_t used=0;
 bool active=false;
 int scene=-1, world=-1;
-DWORD models=0;
+intptr_t models=0;
 void Save(void *address, std::size_t size, const void *owner=nullptr,
     bool registered=false, bool bones=false) {
     if (!address || !size) return;
@@ -63,16 +63,16 @@ void RenderDerivedState_Begin() {
     }
     SaveObject(DAT_07abf050,sizeof(CHARACTER));
     if (DAT_07e12840) for (int slot=0; slot<1000; ++slot) {
-        auto *item=(BYTE *)DAT_07e12840+slot*0x204+72;
+        auto *item=(BYTE *)DAT_07e12840+slot*GROUND_ITEM_STRIDE+72;
         if (AsObject(item)->Live) SaveObject(item,sizeof(OBJECT));
     }
-    for (int slot=0; slot<200; ++slot) SaveObject(DAT_07b11670+slot*0x1bc,sizeof(OBJECT));
-    for (int slot=0; slot<40; ++slot) SaveObject(g_WeatherSlotPool+slot*0x1bc,sizeof(OBJECT));
-    for (int slot=0; slot<10; ++slot) SaveObject(DAT_083a1218+slot*0x1bc,sizeof(OBJECT));
+    for (int slot=0; slot<200; ++slot) SaveObject(DAT_07b11670+slot*OBJECT_STRIDE,sizeof(OBJECT));
+    for (int slot=0; slot<40; ++slot) SaveObject(g_WeatherSlotPool+slot*OBJECT_STRIDE,sizeof(OBJECT));
+    for (int slot=0; slot<10; ++slot) SaveObject(DAT_083a1218+slot*OBJECT_STRIDE,sizeof(OBJECT));
     // Los objetos del mapa se guardan al tocarlos (RenderDerivedState_SaveObject):
     // el dibujo sólo modifica los visibles y la interpolación los que se movieron.
     RenderFxSnapshots_SaveRenderState();
-    if (models) Save((void *)models,ResourceTables::ModelCount()*0xbc);
+    if (models) Save((void *)models,ResourceTables::ModelCount()* BMD_STRIDE);
     Save(DAT_05826e18,sizeof(DAT_05826e18));
     Save(g_BoneScratch,sizeof(g_BoneScratch));
     Save(&DAT_06989c9c,12*sizeof(float));

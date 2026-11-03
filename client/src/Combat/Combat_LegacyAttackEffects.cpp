@@ -51,7 +51,7 @@ extern void __cdecl operator_delete(void* ptr);
 // Versión PARCIAL, desactivada: IDA_PORT_00445230 está definida en globals.h y
 // rige el port fiel de Combat_AttackEffect.cpp.
 #if !defined(IDA_PORT_00445230)
-void __cdecl AttackEffect(int entity)
+void __cdecl AttackEffect(intptr_t entity)
 {
     if (!entity) return;
     const BYTE attackEffectKind = AsCharacter(entity)->MonsterIndex;
@@ -63,16 +63,16 @@ void __cdecl AttackEffect(int entity)
     // hash-table protected byte in the original client; comparing its storage
     // directly made this path depend on the encoded value instead of the skill.
     const BYTE queuedSkill = FUN_0045fae0((DWORD)&MAIN_HASH_CLASS,
-                                          (BYTE*)(entity + 770));
+                                          (BYTE*)(entity + EntityOffset(770)));
 
     // First switch of 00445230 (lines 293..1689): this selector is +747,
     // not the model type. `frame` is +757 and `action` is +261.
     const BYTE frame = AsCharacter(entity)->SkillStage;
     const BYTE action = AsCharacter(entity)->Object.CurrentAction;
-    const DWORD boneMatricesTop = *(DWORD *)&AsCharacter(entity)->Object.BoneMatrices;
+    const intptr_t boneMatricesTop = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const int modelTypeTop = AsCharacter(entity)->Object.Type;
     void* modelTop = (modelTypeTop >= 0 && DAT_05828d58)
-        ? (void*)(DAT_05828d58 + modelTypeTop * 188) : 0;
+        ? (void*)(DAT_05828d58 + modelTypeTop * BMD_STRIDE) : 0;
     float zero[3] = { 0.0f, 0.0f, 0.0f };
     float world[3] = { 0.0f, 0.0f, 0.0f };
     float effectAngle[3] = { 0.0f, 0.0f, 0.0f };
@@ -183,7 +183,7 @@ void __cdecl AttackEffect(int entity)
         break;
     case 70:
         if (frame == 5 && AsCharacter(entity)->TargetCharacter >= 0 && AsCharacter(entity)->TargetCharacter < 400) {
-            BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + AsCharacter(entity)->TargetCharacter * 916;
+            BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + AsCharacter(entity)->TargetCharacter * CHARACTER_STRIDE;
             for (int n = 0; n < 20; ++n) CreateEffect(1271, (float*)(targetTop + 16), (float*)(targetTop + 28), whiteTop, 0, 0, (float*)-1, 0, 0);
         }
         break;
@@ -205,7 +205,7 @@ void __cdecl AttackEffect(int entity)
             float orange[3] = { 1.0f, 0.5f, 0.0f };
             for (int n = 0; n < 5; ++n) {
                 world[0] = pos[0] + (float)(rand() % 1001 - 500); world[1] = pos[1] + (float)(rand() % 1001 - 500); world[2] = pos[2] + 500.0f;
-                *(float*)(entity + 368) = world[0]; *(float*)(entity + 372) = world[1]; *(float*)(entity + 376) = world[2];
+                *(float*)&((OBJECT*)(uintptr_t)(entity))->StartPosition[0] = world[0]; *(float*)&((OBJECT*)(uintptr_t)(entity))->StartPosition[1] = world[1]; *(float*)&((OBJECT*)(uintptr_t)(entity))->StartPosition[2] = world[2];
                 CreateEffect(256, world, effectAngle, orange, (float*)1, (float*)entity, (float*)-1, 0, 0);
             }
         }
@@ -244,9 +244,9 @@ void __cdecl AttackEffect(int entity)
     const short targetSlot = AsCharacter(entity)->TargetCharacter;
     if (targetSlot < 0 || targetSlot >= 400 || !CharactersClient) return;
 
-    BYTE* target = (BYTE*)(uintptr_t)CharactersClient + targetSlot * 916;
+    BYTE* target = (BYTE*)(uintptr_t)CharactersClient + targetSlot * CHARACTER_STRIDE;
     const int modelType = AsCharacter(entity)->Object.Type;
-    if (modelType < 0 || !DAT_05828d58 || !*(DWORD *)&AsCharacter(entity)->Object.BoneMatrices) return;
+    if (modelType < 0 || !DAT_05828d58 || !(intptr_t)AsCharacter(entity)->Object.BoneMatrices) return;
 
     // The following switch is the skill-3 switch at 00445230:1898.  The
     // apparent `TargetPosition` in IDA is the transformed hand-bone position;
@@ -255,13 +255,13 @@ void __cdecl AttackEffect(int entity)
     float source[3] = { 0.0f, 0.0f, 0.0f };
     float jointAngle[3] = { 0.0f, 0.0f, 0.0f };
     float white[3] = { 1.0f, 1.0f, 1.0f };
-    void* model = (void*)(DAT_05828d58 + modelType * 188);
-    const DWORD boneMatrices = *(DWORD *)&AsCharacter(entity)->Object.BoneMatrices;
+    void* model = (void*)(DAT_05828d58 + modelType * BMD_STRIDE);
+    const intptr_t boneMatrices = (intptr_t)AsCharacter(entity)->Object.BoneMatrices;
     const auto handPosition = [&](int handIndex, float offsetY, int secondHandAt = 2) {
         local[0] = 0.0f;
         local[1] = offsetY;
         local[2] = 0.0f;
-        const BYTE bone = *(BYTE*)(entity + 628 + (handIndex >= secondHandAt ? 24 : 0));
+        const BYTE bone = *(BYTE*)(entity + EntityOffset(628) + (handIndex >= secondHandAt ? (int)sizeof(PART_t) : 0));
         BMD_TransformPosition(model, (float*)(boneMatrices + 48 * bone), local, source, 1);
     };
 
@@ -275,7 +275,7 @@ void __cdecl AttackEffect(int entity)
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-                Joint_Create(1261, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
+                Joint_Create(1261, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 50.0f, -1, 0);
                 Particle_Spawn(1195, source, (float*)(entity + 28), light, 0, 1.0f, 0);
             }
             break;
@@ -284,22 +284,22 @@ void __cdecl AttackEffect(int entity)
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = 0.0f;
-                Joint_Create(1166, source, (float*)(target + 16), jointAngle, 1, (int)target, 50.0f, -1, 0);
-                Joint_Create(1166, source, (float*)(target + 16), jointAngle, 1, (int)target, 10.0f, -1, 0);
+                Joint_Create(1166, source, (float*)(target + 16), jointAngle, 1, (intptr_t)target, 50.0f, -1, 0);
+                Joint_Create(1166, source, (float*)(target + 16), jointAngle, 1, (intptr_t)target, 10.0f, -1, 0);
             }
             break;
         case 0x3D:
             for (int n = 0; n < 6; ++n) {
                 handPosition(n, 0.0f, 3);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-                Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 50.0f, -1, 0);
-                Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 10.0f, -1, 0);
+                Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (intptr_t)target, 50.0f, -1, 0);
+                Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (intptr_t)target, 10.0f, -1, 0);
             }
             if (AsCharacter(entity)->SkillStage == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-                Joint_Create(1261, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
+                Joint_Create(1261, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 50.0f, -1, 0);
                 Particle_Spawn(1195, source, (float*)(entity + 28), light, 0, 1.0f, 0);
             }
             break;
@@ -310,7 +310,7 @@ void __cdecl AttackEffect(int entity)
             for (int n = 0; n < 4; ++n, spin += 270.0f) {
                 handPosition(n % 2, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = spin;
-                Joint_Create(1261, source, (float*)(target + 16), jointAngle, 1, (int)target, 50.0f, -1, 0);
+                Joint_Create(1261, source, (float*)(target + 16), jointAngle, 1, (intptr_t)target, 50.0f, -1, 0);
                 Particle_Spawn(1195, source, (float*)(entity + 28), light, 0, 1.0f, 0);
             }
             break;
@@ -324,7 +324,7 @@ void __cdecl AttackEffect(int entity)
                 float orange[3] = { 1.0f, 0.5f, 0.0f };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 528), offset, source, 1);
                 CreateEffect(256, source, effectAngle, orange, (float*)1, 0, (float*)-1, 0, 0);
-                Joint_Create(1254, source, (float*)(target + 16), effectAngle, 2, (int)target, 50.0f, -1, 0);
+                Joint_Create(1254, source, (float*)(target + 16), effectAngle, 2, (intptr_t)target, 50.0f, -1, 0);
             }
             break;
         case 0x4D:
@@ -333,7 +333,7 @@ void __cdecl AttackEffect(int entity)
                 float effectAngle[3] = { AsCharacter(entity)->Object.Angle[0], AsCharacter(entity)->Object.Angle[1], AsCharacter(entity)->Object.Angle[2] };
                 BMD_TransformPosition(model, (float*)g_AttackEffectMatrix_04D, zero, source, 1);
                 CreateEffect(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
-                Joint_Create(1254, source, source, effectAngle, 2, (int)target, 50.0f, -1, 0);
+                Joint_Create(1254, source, source, effectAngle, 2, (intptr_t)target, 50.0f, -1, 0);
             }
             break;
         case 0x57: case 0x5D: case 0x63: case 0x74: case 0x7A: case 0x80: case 0x86:
@@ -350,7 +350,7 @@ void __cdecl AttackEffect(int entity)
                 float effectAngle[3] = { AsCharacter(entity)->Object.Angle[0], AsCharacter(entity)->Object.Angle[1], AsCharacter(entity)->Object.Angle[2] };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 1584), zero, source, 1);
                 CreateEffect(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
-                Joint_Create(1254, source, source, effectAngle, 2, (int)target, 50.0f, -1, 0);
+                Joint_Create(1254, source, source, effectAngle, 2, (intptr_t)target, 50.0f, -1, 0);
             }
             break;
         // 0x45 uses IDA's uninitialised/reused scratch position.  It remains
@@ -366,8 +366,8 @@ void __cdecl AttackEffect(int entity)
         for (int n = 0; n < 4; ++n) {
             handPosition(n, 0.0f);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
-            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 10.0f, -1, 0);
+            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 50.0f, -1, 0);
+            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 10.0f, -1, 0);
             Particle_Spawn(1180, source, (float*)(entity + 28), white, 0, 1.0f, 0);
         }
         break;
@@ -376,23 +376,23 @@ void __cdecl AttackEffect(int entity)
         for (int n = 0; n < 4; ++n) {
             handPosition(n, 0.0f);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-            Joint_Create(1261, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
+            Joint_Create(1261, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 50.0f, -1, 0);
             Particle_Spawn(1195, source, (float*)(entity + 28), light, 0, 1.0f, 0);
         }
         break;
     case 0x27:
         handPosition(0, AsCharacter(entity)->Object.Type == 390 ? 0.0f : -130.0f);
         jointAngle[0] = -60.0f; jointAngle[1] = 0.0f; jointAngle[2] = AsCharacter(entity)->Object.Angle[2];
-        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
-        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 10.0f, -1, 0);
+        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 50.0f, -1, 0);
+        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 10.0f, -1, 0);
         Particle_Spawn(1180, source, (float*)(entity + 28), white, 0, 1.0f, 0);
         break;
     case 0x30:
         for (int n = 0; n < 6; ++n) {
             handPosition(n, 0.0f, 3);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 50.0f, -1, 0);
-            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 10.0f, -1, 0);
+            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (intptr_t)target, 50.0f, -1, 0);
+            Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (intptr_t)target, 10.0f, -1, 0);
         }
         break;
     case 0x59: case 0x5F: case 0x70: case 0x76: case 0x7C: case 0x82: case 0x88: {
@@ -402,7 +402,7 @@ void __cdecl AttackEffect(int entity)
         for (int n = 0; n < 4; ++n, spin += 270.0f) {
             handPosition(n % 2, 0.0f);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = spin;
-            Joint_Create(1261, source, (float*)(target + 16), jointAngle, 1, (int)target, 50.0f, -1, 0);
+            Joint_Create(1261, source, (float*)(target + 16), jointAngle, 1, (intptr_t)target, 50.0f, -1, 0);
             Particle_Spawn(1195, source, (float*)(entity + 28), light, 0, 1.0f, 0);
         }
         break;
@@ -413,15 +413,15 @@ void __cdecl AttackEffect(int entity)
             BMD_TransformPosition(model, (float*)g_AttackEffectMatrix_04D_Alt, zero, source, 1);
             for (int n = 0; n < 4; ++n) {
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
-                Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 80.0f, -1, 0);
+                Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 80.0f, -1, 0);
             }
         }
         break;
     default:
         handPosition(0, AsCharacter(entity)->Object.Type == 390 ? 0.0f : -130.0f);
         jointAngle[0] = -60.0f; jointAngle[1] = 0.0f; jointAngle[2] = AsCharacter(entity)->Object.Angle[2];
-        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 50.0f, -1, 0);
-        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (int)target, 10.0f, -1, 0);
+        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 50.0f, -1, 0);
+        Joint_Create(1254, source, (float*)(target + 16), jointAngle, 0, (intptr_t)target, 10.0f, -1, 0);
         Particle_Spawn(1180, source, (float*)(entity + 28), white, 0, 1.0f, 0);
         break;
     }

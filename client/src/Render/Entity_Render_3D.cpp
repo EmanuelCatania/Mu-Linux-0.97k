@@ -119,7 +119,7 @@
 // DESVIACION: sólo se llama desde WorldEffects_Tick, con huesos SIM frescos.
 // Emite partículas/joints y publica sprites; el draw reproduce esa muestra.
 // Switch principal: World × entity.type.
-float * __cdecl Entity_SpawnEffects(int param_1)
+float * __cdecl Entity_SpawnEffects(intptr_t param_1)
 {
     void     *pModel;
     float     fVar14;
@@ -127,7 +127,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     int       entityType;
     float    *pfVar3;
     uint      uVar4;
-    uint      randomRemainder;
+    intptr_t      randomRemainder;
     unsigned short uVar5;
     float    *pfVar6, *pfVar12, *pfVar13, *pfVar15, *pfVar16, *pfVar17;
     bool      bVar8;
@@ -154,7 +154,7 @@ float * __cdecl Entity_SpawnEffects(int param_1)
     float     local_c[3];
     float     local_light_rgb[3];
 
-    pModel = (void *)(DAT_05828d58 + *(short *)(param_1 + 2) * 0xbc);
+    pModel = (void *)(DAT_05828d58 + *(short *)(param_1 + 2) * BMD_STRIDE);
     iVar2  = _rand();
     fVar14 = (float)(iVar2 % 0x1e + 0x46) * _DAT_005524f8;
 
@@ -245,9 +245,9 @@ float * __cdecl Entity_SpawnEffects(int param_1)
         }
         // Type 103 — weapon spark trigger (once per anim cycle, 1/32 chance)
         if ((pfVar3 == (float *)0x67) &&
-            (pfVar3 = (float *)(*(short *)((uint)*(byte *)(param_1 + 0x105) * 0x10 + 8
-                                           + *(int *)(static_cast<unsigned char*>(pModel) + 0x30)) + -1),
-             (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8) == pfVar3))
+            (pfVar3 = (float *)(intptr_t)(*(short *)((intptr_t)AsObject(param_1)->CurrentAction * sizeof(ModelAnimationAction) + 8
+                                           + (intptr_t)AsModel(pModel)->Actions) + -1),
+             (float *)(int)*(short *)(static_cast<unsigned char*>(pModel) + 0xa8 + BMD_FIELD_SHIFT) == pfVar3))
         {
             uVar4 = _rand() & 0x8000001f;
             bVar8 = (uVar4 == 0);

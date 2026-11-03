@@ -142,7 +142,7 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
 // Aplica XOR a cada byte de param_1[0..param_2-1] con PacketXorKey3[i % 3].
 void __cdecl Buffer_XorKey3(int param_1,int param_2)
 {
-  int iVar1;
+  intptr_t iVar1;
 
   iVar1 = 0;
   if (0 < param_2) {
@@ -271,20 +271,22 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
 
   // Ofuscación por HashTable: si la tabla no fue construida (vtable==NULL
   // o capacity==0) no hace nada (anti-tamper, no es lógica de juego).
-  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((int)this_ + 0xc) == 0) return;
-  uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_2);
+  // La tabla anti-tamper queda inerte: el slot 0 debe conservar la clave 0.
+  return;
+  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return;
+  uVar1 = (**(code **)(*(intptr_t *)this_ + 3 * sizeof(void*)))(&param_2);
   abStack_8[0] = 0;
   abStack_8[1] = 0;
   abStack_8[2] = 0;
   abStack_8[3] = 0;
   uVar9 = 0;
-  if (*(int *)((int)this_ + 0xc) != 0) {
+  if (*(int *)((intptr_t)this_ + 0xc) != 0) {
     do {
       iVar2 = 4;
       bVar7 = false;
       iVar3 = 0;
       bVar8 = true;
-      pbVar6 = (byte *)(*(int *)((int)this_ + 8) + uVar1 * 4);
+      pbVar6 = (byte *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4);
       pbVar4 = (byte *)&param_1;
       pbVar5 = pbVar6;
       do {
@@ -299,8 +301,8 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
         iVar3 = (1 - (uint)bVar7) - (uint)(bVar7 != 0);
       }
       if (iVar3 == 0) {
-        *(undefined4 *)(*(int *)((int)this_ + 4) + uVar1 * 4) = unaff_retaddr;
-        *(undefined4 *)(*(int *)((int)this_ + 8) + uVar1 * 4) = param_1;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 4) + uVar1 * 4) = unaff_retaddr;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4) = param_1;
         return;
       }
       iVar2 = 4;
@@ -320,13 +322,13 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
         iVar3 = (1 - (uint)bVar7) - (uint)(bVar7 != 0);
       }
       if (iVar3 == 0) {
-        *(undefined4 *)(*(int *)((int)this_ + 4) + uVar1 * 4) = unaff_retaddr;
-        *(undefined4 *)(*(int *)((int)this_ + 8) + uVar1 * 4) = param_1;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 4) + uVar1 * 4) = unaff_retaddr;
+        *(undefined4 *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4) = param_1;
         return;
       }
-      uVar1 = (uVar1 + 1) % *(uint *)((int)this_ + 0xc);
+      uVar1 = (uVar1 + 1) % *(uint *)((intptr_t)this_ + 0xc);
       uVar9 = uVar9 + 1;
-    } while (uVar9 < *(uint *)((int)this_ + 0xc));
+    } while (uVar9 < *(uint *)((intptr_t)this_ + 0xc));
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
   return;
@@ -352,17 +354,18 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
   undefined4 local_4;
 
   local_4 = param_1;
-  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((int)this_ + 0xc) == 0) return (void*)0;
-  uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_1);
+  if (sizeof(void*) != 4) return (void*)0;
+  if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((intptr_t)this_ + 0xc) == 0) return (void*)0;
+  uVar1 = (**(code **)(*(intptr_t *)this_ + 3 * sizeof(void*)))(&param_1);
   uVar9 = 0;
   undefined4 stack0xfffffff4 = local_4;
-  if (*(int *)((int)this_ + 0xc) != 0) {
+  if (*(int *)((intptr_t)this_ + 0xc) != 0) {
     do {
       iVar2 = 4;
       bVar7 = false;
       iVar3 = 0;
       bVar8 = true;
-      pbVar6 = (byte *)(*(int *)((int)this_ + 8) + uVar1 * 4);
+      pbVar6 = (byte *)(*(int *)((intptr_t)this_ + 8) + uVar1 * 4);
       pbVar4 = (byte*)&stack0xfffffff4;
       pbVar5 = pbVar6;
       do {
@@ -399,11 +402,11 @@ void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
         if (uVar1 == 0xffffffff) {
           return (void*)0;
         }
-        return (void*)(uintptr_t)*(undefined4 *)(*(int *)((int)this_ + 4) + uVar1 * 4);
+        return (void*)(uintptr_t)*(undefined4 *)(*(int *)((intptr_t)this_ + 4) + uVar1 * 4);
       }
-      uVar1 = (uVar1 + 1) % *(uint *)((int)this_ + 0xc);
+      uVar1 = (uVar1 + 1) % *(uint *)((intptr_t)this_ + 0xc);
       uVar9 = uVar9 + 1;
-    } while (uVar9 < *(uint *)((int)this_ + 0xc));
+    } while (uVar9 < *(uint *)((intptr_t)this_ + 0xc));
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   return (void*)0;
@@ -1148,7 +1151,7 @@ void* __fastcall FUN_00409ad0(void* param_1) {
 }
 
 // scalar_deleting_destructor_locale @ 0x00409B60 — ~dtor de CPhysicsManager (llama a Locimp_dtor)
-void __fastcall scalar_deleting_destructor_locale(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall scalar_deleting_destructor_locale(intptr_t ecx, int /*edx*/, BYTE param_1) {
     Locimp_dtor((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -1170,7 +1173,7 @@ void __fastcall Locimp_dtor(void* param_1) {
 // __fastcall(ecx=this). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
 // Sin portar: el cuerpo de abajo está vacío.
-void __fastcall FUN_00409d20(int param_1) {
+void __fastcall FUN_00409d20(intptr_t param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
     //   Widget_Release(*node) — cleanup node data
     //   (*node->vtable[0])(1) — destructor with free
@@ -1301,7 +1304,7 @@ void __fastcall FUN_0040a1c0(void* ecx, void* /*edx*/, short param_1, int param_
 // __thiscall(this=shadowCtx, param_1=vertBuf). Allocates output vertex buffer (count * 0x48).
 // Por cada arista de silueta: extruye los vértices de la arista en la dirección -luz (VectorMA),
 // y arma 6 vértices (2 triángulos) por arista = un quad extruido. La altura se clampea a un mínimo.
-void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
+void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, intptr_t param_1) {
     (void)ecx; (void)param_1;
     // this->quadCount = 0
     // this->quadBuf = new byte[this->edgeCount * 0x48]
@@ -1317,7 +1320,7 @@ void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
 // FUN_004236c0 @ 0x004236C0 (90 bytes) — BST node remove (unlink + delete)
 void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
     BYTE* context = static_cast<BYTE*>(This);
-    int iVar1 = *(int *)(*param_1 + 0x10);
+    intptr_t iVar1 = *(int *)(*param_1 + 0x10);
     if (iVar1 == 0) {
         *(int *)(context + 8) = 0;
     } else if (*(int *)(iVar1 + 8) == *param_1) {
@@ -1342,17 +1345,17 @@ void __cdecl InitGuildWar(void) {
     DAT_00559684 = 0xffffffff;
     lpString_05826bfc[0] = '\0';
     // Re-enable party target markers for all live entities
-    unsigned char *puVar3 = (unsigned char*)(DAT_07abf5d0 + 0x2e9);
+    unsigned char *puVar3 = (unsigned char*)(DAT_07abf5d0 + EntityOffset(0x2e9));
     char *pPlayer = DAT_07abf5d8;
     int iVar4 = 400;
     do {
-        if (puVar3[-0x2e9] != '\0') {
-            short sVar1 = *(short*)(pPlayer + 0x1da);
+        if (*(puVar3 - EntityOffset(0x2e9)) != '\0') {
+            short sVar1 = *(short*)(pPlayer + EntityOffset(0x1da));
             *puVar3 = 0;
-            if ((sVar1 != -1) && (*(short*)((char*)puVar3 - 0x10f) == sVar1))
+            if ((sVar1 != -1) && (*(short*)((char*)puVar3 - EntityOffset(0x2e9) + EntityOffset(0x1da)) == sVar1))
                 *puVar3 = 1;
         }
-        puVar3 += 0x394;
+        puVar3 += CHARACTER_STRIDE;
         iVar4--;
     } while (iVar4 != 0);
 }
@@ -1369,18 +1372,18 @@ void __cdecl CWsctlc_Close(uintptr_t ctx) {
 
 // FUN_0053cbb0 @ 0x0053CBB0 (18 bytes) — GameGuard class init
 void __fastcall FUN_0053cbb0(int *param_1) {
-    *param_1 = (int)&PTR_FUN_0055389c;
+    *param_1 = (intptr_t)&PTR_FUN_0055389c;
     FUN_0053cc00_impl(param_1);
 }
 
 // FUN_0053cbd0 @ 0x0053CBD0 — GameGuard ~dtor
-void __fastcall FUN_0053cbd0(int ecx, int /*edx*/, BYTE param_1) {
+void __fastcall FUN_0053cbd0(intptr_t ecx, int /*edx*/, BYTE param_1) {
     FUN_0053cbf0((int *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
 // FUN_0053cbf0 @ 0x0053CBF0 (7 bytes)
-void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (int)&PTR_FUN_0055389c; }
+void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (intptr_t)&PTR_FUN_0055389c; }
 
 // FUN_0053ce30 @ 0x0053CE30 (350 bytes) — Packet crypto decrypt block
 // 4-round Feistel cipher: extracts 16-bit + 2-bit fields via CSimpleModulus_AddBits,

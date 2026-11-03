@@ -17,7 +17,7 @@
 
 // IDA L239: v13 = *(std::uint8_t *)(dword_7D7809C + CharacterAttribute + 87).
 // El indice es dword_7D7809C (el slot que Attack acaba de sembrar en L1425 con
-// *(BYTE *)(Hero + 913)), no Hero+913 releido. Coinciden en el camino de Attack,
+// *(BYTE *)(Hero + EntityOffset(913))), no Hero+913 releido. Coinciden en el camino de Attack,
 // pero UseSkillWarrior usa el mismo global y conviene mantenerlos atados.
 static BYTE ItemEquip_SelectedSkill()            // IDA: v13
 {
@@ -59,15 +59,15 @@ static void ItemEquip_UseManaScroll97k(int inventorySlot /* IDA: sub_482BE0(3) *
 //   sy = CHARACTER*, a2 = OBJECT*, a3 = ITEM* (no se usa en el cuerpo), a4 = skill.
 // Nombres: skill = a4, target = CharactersClient[SelectedCharacter],
 // routeReach = SkillAttribute[40*a4+38]*1.2 (v12 antes del override), reach = v12.
-static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
-                                             DWORD object    /* IDA: a2 */,
+static char ItemEquip_UseSelectedTargetSkill(intptr_t character /* IDA: sy */,
+                                             intptr_t object    /* IDA: a2 */,
                                              BYTE  skill     /* IDA: a4 */)
 {
     if (SelectedCharacter == -1 || !character || !object)
         return 0;                                     // IDA L38-41
 
     BYTE* const caster = (BYTE*)(uintptr_t)character;
-    BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + 916 * (int)SelectedCharacter;
+    BYTE* const target = (BYTE*)(uintptr_t)CharactersClient + CHARACTER_STRIDE * (int)SelectedCharacter;
     // IDA L44-49: sub_483780 es duenio del cast encolado; a diferencia del camino
     // de rango generico de Attack limpia el flag pendiente antes de anotar el slot.
     DAT_07d78098 = 0;                                 // IDA: dword_7D78098 = 0
@@ -89,17 +89,17 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
     if (dx * dx + dy * dy > reach * reach * 10000.0f) {   // IDA L106: v12*100 < sqrt(...)
         // IDA L145-146: el pathfind usa routeReach, NO el override de 1.8.
         if (!Path_FindRoute(AsCharacter(character)->PositionX, AsCharacter(character)->PositionY,
-                            targetX, targetY, caster + 852, routeReach))
+                            targetX, targetY, caster + EntityOffset(852), routeReach))
             return 0;                                 // IDA: goto LABEL_33 con v30 = 0
-        caster[748] = 1;                              // IDA L150
-        caster[749] = 5;                              // IDA L151
+        caster[EntityOffset(748)] = 1;                              // IDA L150
+        caster[EntityOffset(749)] = 5;                              // IDA L151
         // IDA: sub_483780 (0x00483780).
         // DESVIACION (fix del DLL, Patchs.cpp 0x00483AC5): avisar al server del camino al perseguir para atacar.
         Combat_SendMovePathPacket(AsCharacter(character), AsObject(character));
         return 1;
     }
 
-    Combat_UseWarriorSkill((int)character, (int)object);  // IDA L155: UseSkillWarrior
+    Combat_UseWarriorSkill((intptr_t)character, (intptr_t)object);  // IDA L155: UseSkillWarrior
     return 1;                                         // IDA L157: v30 = 1
 }
 
@@ -109,13 +109,13 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
 //   *(BYTE *)(a2 + 37 + i)  = ITEM::Special[i]
 // ItemConvert (0x0047B910 L342-430) es quien mete ahi los ids 18..24, 49 y 56
 // cuando el item trae la opcion Skill (Attribute1 & 0x80).
-static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, BYTE* item)
+static char ItemEquip_DispatchFromItemSkillList(intptr_t character, intptr_t object, BYTE* item)
 {
     BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!attributes || !Hero || !item)
         return 0;
 
-    const BYTE selected = attributes[(BYTE)*(BYTE*)(Hero + 913) + 87];   // IDA L558
+    const BYTE selected = attributes[(BYTE)*(BYTE*)(Hero + EntityOffset(913)) + 87];   // IDA L558
     const int  count    = (int)item[36];                                 // IDA: SpecialNum
     char result = 0;                                                     // IDA: v136
 
@@ -136,7 +136,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
         switch (skill) {
         case 0x12: {                                  // IDA L565: skill 18
             // El objetivo es la key del propio heroe, no SelectedCharacter.
-            *(BYTE*)(uintptr_t)(character + 748) = 0;
+            *(BYTE*)(uintptr_t)(character + EntityOffset(748)) = 0;
             if (*(WORD*)(uintptr_t)(character + 2) == 390)
                 SetAction(AsObject(character), 92);     // IDA: SetAction(v4, 92)
             else
@@ -145,7 +145,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             const DWORD now = Platform::GetTimer().Ticks();          // IDA L599-603
             if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }
             g_dwLatestMagicTick = now;
-            const WORD heroKey = *(WORD*)(Hero + 476); // IDA: *(_WORD *)(Hero + 476)
+            const WORD heroKey = *(WORD*)(Hero + EntityOffset(476)); // IDA: *(_WORD *)(Hero + EntityOffset(476))
             BYTE packet[6] = { 0xC1, 6, 0x19, 18,
                                (BYTE)(heroKey >> 8), (BYTE)heroKey };
             gNetwork.Send(packet, sizeof(packet));
@@ -164,7 +164,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
     return result;
 }
 
-char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */)
+char __cdecl Item_Equip(intptr_t character /* IDA: o */, intptr_t object /* IDA: a2 */)
 {
     if (!character || !object)
         return 0;
@@ -177,7 +177,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
     BYTE* const item   = (BYTE*)(uintptr_t)object;
 
     const WORD type   = *(WORD*)(caster + 2);          // IDA: *(_WORD *)(o + 2)
-    const BYTE action = caster[261];                   // IDA: v5
+    const BYTE action = caster[EntityOffset(261)];                   // IDA: v5
 
     // IDA L201-212: rechaza las animaciones de arranque de ataque.
     if (type == 390) {
@@ -192,7 +192,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
 
     // IDA L251-283.
     if (skill == 47) {
-        const WORD mount = *(WORD*)(Hero + 696);       // IDA: v17
+        const WORD mount = *(WORD*)(Hero + EntityOffset(696));       // IDA: v17
         if (mount != MODEL_HELPER_UNIRIA && mount != MODEL_HELPER_DINORANT) {
             // IDA L256: sin montura NO devuelve 0 — cae en LABEL_25 y el skill
             // puede salir igual por la lista de opciones del arma. El port
@@ -201,7 +201,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
         } else {
             if (type != 390)
                 return 0;
-            const WORD weapon = *(WORD*)(Hero + 624);  // IDA: v26
+            const WORD weapon = *(WORD*)(Hero + EntityOffset(624));  // IDA: v26
             if (weapon == 0xFFFF || weapon < 496 || weapon >= 528)
                 return 0;
         }
@@ -211,7 +211,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
         } else {
             if (type != 390)
                 return 0;
-            const WORD weapon = *(WORD*)(Hero + 624);  // IDA: v21
+            const WORD weapon = *(WORD*)(Hero + EntityOffset(624));  // IDA: v21
             if (weapon == 0xFFFF || (weapon >= 560 && weapon < 592))
                 return 0;
         }

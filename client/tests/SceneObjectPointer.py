@@ -13,6 +13,9 @@ Comparación x86: agregar --reference-ref <commit-base>.
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import re
 import subprocess
 import tempfile
@@ -24,7 +27,7 @@ def read_source(path, revision=None):
     if revision:
         return subprocess.check_output(
             ["git", "show", f"{revision}:{path}"], cwd=ROOT).decode("utf-8")
-    return (ROOT / path).read_text(encoding="utf-8")
+    return lower((ROOT / path).read_text(encoding="utf-8"))
 
 
 def function(source, name):
@@ -219,9 +222,24 @@ def harness(revision=None):
     return preamble + initialize + alpha + physics + angles + rotate + ambient + flames + tick + MAIN.replace("CALL_TICK", call)
 
 
+# Layout x86 con el que trabajan los harnesses (memoria cruda con offsets de
+# IDA).  EntityOffset es la identidad porque el harness no usa los structs
+# reales; TEXTURE_STRIDE y GROUND_ITEM_STRIDE son los tamaños de x86.
+HARNESS_LAYOUT = (
+    "#include <cstddef>" + chr(10) +
+    "constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;" + chr(10) +
+    "constexpr int TEXTURE_STRIDE=0x38,GROUND_ITEM_STRIDE=0x204;" + chr(10) +
+    "constexpr std::size_t EntityOffset(std::size_t x86){return x86;}" + chr(10) +
+    "constexpr std::size_t ModelActionByte(std::size_t x86){return x86;}" + chr(10))
+
+
 def build_and_run(directory, source, args):
     directory.mkdir()
-    (directory / "main.cpp").write_text(source, encoding="utf-8")
+    layout = HARNESS_LAYOUT
+    if "ModelTypes.h" in source:   # el header real ya define BMD_STRIDE/BMD_FIELD_SHIFT
+        layout = layout.replace(",BMD_STRIDE=188,BMD_FIELD_SHIFT=0", "")
+        layout = layout.replace("constexpr std::size_t ModelActionByte(std::size_t x86){return x86;}" + chr(10), "")
+    (directory / "main.cpp").write_text(layout + source, encoding="utf-8")
     (directory / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.25)\n"
         "project(SceneObjectPointer LANGUAGES CXX)\n"

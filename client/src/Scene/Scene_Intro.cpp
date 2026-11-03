@@ -131,11 +131,11 @@ void __cdecl Scene_Intro(HDC param_1)
     uint        uVar4;
     void       *pvVar5;
     undefined4 *puVar6;
-    int         iVar7, iVar8;
+    intptr_t         iVar7, iVar8;
     byte       *pbVar9, *pbVar10, *pbVar11;
     bool        bVar12, bVar13;
     uint        uVar14;
-    int         iStack_10;
+    intptr_t         iStack_10;
     undefined4 *local_c;
     undefined1 *local_8;
     uint        uStack_4;
@@ -143,15 +143,9 @@ void __cdecl Scene_Intro(HDC param_1)
     DWORD       stack_e8;   // local hash-compare buffer (4 bytes at EBP-0x18)
 
     // Reset Bitmaps table (stride 0x38, ~1414 entries = 0x13D30 bytes)
-    puVar3 = (undefined1*)&DAT_083a7cd0;
-    {
-        // NOTE: loop bound must stay within g_BitmapsRaw[0x13D30]; starts at offset 0x30
-        undefined1 *endPtr = (undefined1*)&g_BitmapsRaw[0] + 0x13D30;
-        do {
-            *(undefined4 *)(puVar3 + 4) = 0;
-            *puVar3 = 0;
-            puVar3 = puVar3 + 0x38;
-        } while (puVar3 + 0x38 <= endPtr);
+    for (int i = 0; i < 0x13D30 / 0x38; ++i) {
+        Bitmaps[i].Ref = 0;
+        Bitmaps[i].Buffer = nullptr;
     }
 
     OpenFont();    // World_Init
@@ -220,9 +214,9 @@ void __cdecl Scene_Intro(HDC param_1)
     // Spawn local entity at hardcoded position (5414.4f, 21981.5f)
     // 0x44a8c000 = 1350.0f (x), 0x46a9ec00 = 21742.0f (y)
     local_8 = (undefined1 *)CreateHero(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
-    puVar1  = (undefined4 *)(local_8 + 0x388);
+    puVar1  = (undefined4 *)(local_8 + EntityOffset(0x388));
     local_c = puVar1;
-    uVar4   = (**(code **)(MAIN_HASH_CLASS + 0xc))(puVar1);
+    uVar4   = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
 
     // HashTable anti-tamper tracking (ref-count register/unregister, not game logic)
     uVar14 = 0;
@@ -273,7 +267,7 @@ LAB_00513a36:
 LAB_00513a50:
     iVar7 = MAIN_HASH_CLASS;
     *puVar1 = 0xd;
-    uVar4 = (**(code **)(iVar7 + 0xc))(puVar1);
+    uVar4 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(puVar1);
     uStack_4 = 0;
     if (DAT_055c9bd4 != 0) {
         do {
@@ -312,7 +306,7 @@ LAB_00513a50:
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 
 LAB_00513b4e:
-    puVar1 = (undefined4 *)(iStack_10 + 0x38c);
+    puVar1 = (undefined4 *)(iStack_10 + EntityOffset(0x38c));
     uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
     if (uVar4 == 0xffffffff) {
         pvVar5 = AntiTamper_HashNode();

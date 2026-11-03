@@ -1,6 +1,7 @@
 // Path_Legacy.cpp
 
 #include "stdafx.h"
+#include "Game/PathContext.h"
 #include "Platform/Text.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
 void __cdecl    FUN_00408680(void *_this, char flags);
@@ -301,7 +302,7 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     // _this es el contexto del pathfinder (DAT_05826df4), como en el wrapper que
     // documenta Net_Process.cpp:
     //   PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
-    void* pfCtx = (void*)(intptr_t)DAT_05826df4;
+    PathContext* pfCtx = DAT_05826df4;
 
     // El contexto lo construye PathContext_Create() (src/Game/PathFinder.cpp,
     // llamada desde WinMain), que replica el ctor del binario: 0x0043F280..0x0043F2C7,
@@ -316,16 +317,11 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     #define PF_USE_ORIGINAL 0
     bool pfReady = false;
 #if PF_USE_ORIGINAL
-    pfReady = (pfCtx != nullptr) && (((DWORD*)pfCtx)[0x105] != 0);
+    pfReady = pfCtx != nullptr;
 #endif
     {
         static int s_dbg_pf = 0;
         if (s_dbg_pf++ < 5) {
-            char b[200];
-            DWORD vtbl = 0;
-            if (pfCtx && (uintptr_t)pfCtx >= 0x100000) {
-                vtbl = ((DWORD*)pfCtx)[0x105];
-            }
         }
     }
     if (!pfReady) {
@@ -389,17 +385,17 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
 
 success:
     {
-        int pathLen = *(int*)(DAT_05826df4 + 0x10);
+        int pathLen = pfCtx->Length;
         if (pathLen < 2) return 0;
         if (pathLen > 0xF) pathLen = 0xF;
 
         path[2] = (unsigned char)pathLen;
 
         // Copy waypoints from result buffer into path arrays
-        int base = DAT_05826df4 - *(int*)(DAT_05826df4 + 0x10);
+        const int start = 500 - pfCtx->Length;
         for (int i = 0; i < (int)(unsigned char)path[2]; i++) {
-            path[3 + i]    = *(unsigned char*)(base + 0x208 + i); // wp_x
-            path[0x12 + i] = *(unsigned char*)(base + 0x3FC + i); // wp_y
+            path[3 + i]    = pfCtx->PathX[start + i]; // wp_x
+            path[0x12 + i] = pfCtx->PathY[start + i]; // wp_y
         }
         path[0] = 0;
         path[1] = 0;
@@ -451,8 +447,8 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     if (!AsCharacter(ent)->PathSubstep) {
         int next = current + 1;
         if (next > count - 1) next = count - 1;
-        AsCharacter(ent)->PositionX = *(byte *)(ent + 855 + next);
-        AsCharacter(ent)->PositionY = *(byte *)(ent + 870 + next);
+        AsCharacter(ent)->PositionX = *(byte *)(ent + offsetof(CHARACTER, PathX) + next);
+        AsCharacter(ent)->PositionY = *(byte *)(ent + offsetof(CHARACTER, PathY) + next);
     }
 
     float x[4], y[4];
@@ -460,8 +456,8 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
         int point = (int)current - 1 + i;
         if (point < 0) point = 0;
         if (point > count - 1) point = count - 1;
-        x[i] = ((float)*(byte *)(ent + 855 + point) + 0.5f) * 100.0f;
-        y[i] = ((float)*(byte *)(ent + 870 + point) + 0.5f) * 100.0f;
+        x[i] = ((float)*(byte *)(ent + offsetof(CHARACTER, PathX) + point) + 0.5f) * 100.0f;
+        y[i] = ((float)*(byte *)(ent + offsetof(CHARACTER, PathY) + point) + 0.5f) * 100.0f;
     }
 
     float targetX = x[1], targetY = y[1];
@@ -497,8 +493,8 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     }
 
     AsCharacter(ent)->PathCurrent = count - 1;
-    AsCharacter(ent)->PositionX = *(byte *)(ent + 855 + count - 1);
-    AsCharacter(ent)->PositionY = *(byte *)(ent + 870 + count - 1);
+    AsCharacter(ent)->PositionX = *(byte *)(ent + offsetof(CHARACTER, PathX) + count - 1);
+    AsCharacter(ent)->PositionY = *(byte *)(ent + offsetof(CHARACTER, PathY) + count - 1);
     AsCharacter(ent)->Object.Position[0] = targetX;
     AsCharacter(ent)->Object.Position[1] = targetY;
     return 1;
@@ -530,8 +526,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
         int next_wp = (int)cur_wp + 1;
         int max_wp  = (int)wp_count - 1;
         if (max_wp < next_wp) next_wp = max_wp;
-        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + 0x357 + next_wp);
-        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + 0x366 + next_wp);
+        AsCharacter(ent)->PositionX = (int)*(byte *)(ent + EntityOffset(0x357) + next_wp);
+        AsCharacter(ent)->PositionY = (int)*(byte *)(ent + EntityOffset(0x366) + next_wp);
     }
 
     // 2026-04-30 SIMPLIFIED: en lugar de Catmull-Rom (que con coeficientes
@@ -543,8 +539,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     if (next_wp >= (int)wp_count) {
         return 1;   // arrived
     }
-    float target_x = ((float)*(byte *)(ent + 0x357 + next_wp) + _DAT_00552504) * _DAT_005524f0;
-    float target_y = ((float)*(byte *)(ent + 0x366 + next_wp) + _DAT_00552504) * _DAT_005524f0;
+    float target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+    float target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
 
     // Distance check
     float dx   = AsCharacter(ent)->Object.Position[0] - target_x;
@@ -569,8 +565,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
         // Update target for facing calc this frame (so hero turns immediately)
         next_wp = (int)cur_wp + 1;
         if (next_wp < (int)wp_count) {
-            target_x = ((float)*(byte *)(ent + 0x357 + next_wp) + _DAT_00552504) * _DAT_005524f0;
-            target_y = ((float)*(byte *)(ent + 0x366 + next_wp) + _DAT_00552504) * _DAT_005524f0;
+            target_x = ((float)*(byte *)(ent + EntityOffset(0x357) + next_wp) + _DAT_00552504) * _DAT_005524f0;
+            target_y = ((float)*(byte *)(ent + EntityOffset(0x366) + next_wp) + _DAT_00552504) * _DAT_005524f0;
         }
     }
 

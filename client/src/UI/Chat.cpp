@@ -48,7 +48,7 @@ static void ScaleGlobalTextSize(void)
     float rx = gWindow.GetScreenRateX(), ry = gWindow.GetScreenRateY();
     if (rx <= 0.0f) rx = 1.0f;
     if (ry <= 0.0f) ry = 1.0f;
-    lpsz_07e113d0 = (LPSIZE)(LONG)((double)(LONG)(intptr_t)lpsz_07e113d0 / (double)rx);
+    g_TextExtent07E113D0.cx = (LONG)((double)g_TextExtent07E113D0.cx / (double)rx);
     _DAT_07e113d4 = (LONG)((double)(LONG)_DAT_07e113d4 / (double)ry);
 }
 
@@ -66,20 +66,20 @@ UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_
             undefined4 param_6)
 {
   int c;
-  LPSIZE *lpsz;
+  const int maxWidth = (int)(intptr_t)param_4;
 
   c = Platform::TextLength(param_3);
-  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6, (size_t)c + 1);
-  lpsz = &lpsz_07e113d0;
-  gFont.MeasureText(gFont.GetTextDC(),param_3,c,(LPSIZE)lpsz);
-  if ((0 < (int)param_4) && ((int)param_4 < (int)lpsz_07e113d0)) {
-    lpsz_07e113d0 = param_4;
+  UI_DrawText(param_1,param_2,(char*)param_3,maxWidth,(param_5 != '\0') + 1,param_6, (size_t)c + 1);
+  LPSIZE lpsz = &g_TextExtent07E113D0;
+  gFont.MeasureText(gFont.GetTextDC(),param_3,c,lpsz);
+  if ((0 < maxWidth) && (maxWidth < g_TextExtent07E113D0.cx)) {
+    g_TextExtent07E113D0.cx = maxWidth;
   }
   // IDA RenderText @0x47F650: TextSize.cx /= g_fScreenRate_x; .cy /= g_fScreenRate_y;
   ScaleGlobalTextSize();
   // IDA devuelve &TextSize; el CONCAT44 con lVar1>>32 era ruido de Ghidra
   // (par de registros del retorno de 64 bits).
-  return CONCAT44(0,&lpsz_07e113d0);
+  return (undefined8)(uintptr_t)&g_TextExtent07E113D0;
 }
 
 
@@ -369,7 +369,7 @@ void UI_RenderNotices(void)
   int iVar2;
   longlong lVar3;
   tagSIZE *lpsz;
-  LPSIZE *lpsz_00;
+  LPSIZE lpsz_00;
   tagSIZE local_8;
 
   GL_SetBlendSrcOver('\x01');
@@ -393,9 +393,9 @@ void UI_RenderNotices(void)
       iVar1 = iVar2 + -0x118;
     }
     UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0, 256);
-    lpsz_00 = &lpsz_07e113d0;
+    lpsz_00 = &g_TextExtent07E113D0;
     iVar1 = Platform::TextLength(lpString);
-    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,(LPSIZE)lpsz_00);
+    gFont.MeasureText(gFont.GetTextDC(),lpString,iVar1,lpsz_00);
     // IDA RenderNotices @0x47FCE0 hace exactamente esto acá.
     ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     lpString = lpString + 0x108;
@@ -424,7 +424,7 @@ void UI_RenderChatLogOverlay(void)
   bool bVar8;
   longlong lVar9;
   tagSIZE *lpsz;
-  LPSIZE *lpsz_00;
+  LPSIZE lpsz_00;
   int local_10c;
   tagSIZE local_108;
   CHAR local_100 [256];
@@ -503,7 +503,7 @@ void UI_RenderChatLogOverlay(void)
       uVar2 = SetBackgroundTextColor;
       if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()) + gWindow.PanelOrigin(Ui::WindowLeft))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
-         (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
+         (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0')) {
         pbVar4 = (byte *)EntityName::Get(DAT_07abf5d8);
         do {
           bVar1 = *pbVar6;
@@ -528,9 +528,9 @@ LAB_00480b8e:
         }
       }
       UI_DrawText(gWindow.PanelOrigin(Ui::WindowLeft),iVar7,local_100,0,1,0, sizeof(local_100));
-      lpsz_00 = &lpsz_07e113d0;
+      lpsz_00 = &g_TextExtent07E113D0;
       iVar5 = Platform::TextLength(local_100);
-      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,(LPSIZE)lpsz_00);
+      gFont.MeasureText(gFont.GetTextDC(),local_100,iVar5,lpsz_00);
       ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
     }
     iVar7 = iVar7 + 0xd;
@@ -567,7 +567,7 @@ void UI_TickHoverBubbles(void)
       c->LifeTime[1] = c->LifeTime[1] + -1;
     }
     const char* owner = (const char*)c->Owner;
-    if ((owner != nullptr) && ((*owner == '\0' || (owner[0x160] == '\0')))) {
+    if ((owner != nullptr) && ((*owner == '\0' || (owner[EntityOffset(0x160)] == '\0')))) {
       c->IDLifeTime = 0;
       c->LifeTime[0] = 0;
       c->LifeTime[1] = 0;

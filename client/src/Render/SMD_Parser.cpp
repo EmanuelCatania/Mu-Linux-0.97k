@@ -260,6 +260,7 @@ void __cdecl DeleteObjects(void) {
             // El array es real y esta dimensionado, asi que se acota con sizeof en
             // vez del bound absoluto del binario.
             memset(DAT_083a2370, 0, sizeof(DAT_083a2370));
+    memset(g_OperateObjects, 0, sizeof(g_OperateObjects));
             return;
         }
     } while (true);
@@ -273,7 +274,7 @@ void __cdecl DeleteObjects(void) {
 //
 // Cota del bucle interno: el binario usa el literal 0x83a2370 (= DAT_083a1218
 // + 0x1158, fin del array Butterfles); acá el array vive en otra dirección,
-// así que se usa DAT_083a1218 + 0x1158 (end-pointer real).
+// así que se usa DAT_083a1218 + 10 * OBJECT_STRIDE (end-pointer real).
 void __cdecl ClearCharacters(int param_1) {
     gHealthBar.Clear();
     // DESVIACION: cerrar las extensiones al reconstruir el mapa, sin borrar catálogos.
@@ -281,12 +282,12 @@ void __cdecl ClearCharacters(int param_1) {
     gEventTimer.Close();
     gChaosMixRates.Reset();
     GoldenArcher_ResetCharacter();
-    char* butterflesEnd = DAT_083a1218 + 0x1158;
-    for (int i = 0; i < 0x59740; i += 0x394) {
+    char* butterflesEnd = DAT_083a1218 + 10 * OBJECT_STRIDE;
+    for (int i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
         // El slot puede reutilizarse antes de que MoveJoint observe Live=0.
         // Cancela el Mana Shield del ocupante anterior, incluso si ya fue borrado.
-        if (param_1 == -1 || *(short*)(puVar1 + 0x1dc) != (short)param_1) {
+        if (param_1 == -1 || *(short*)(puVar1 + EntityOffset(0x1dc)) != (short)param_1) {
             JOINT* joints = AsJoint(DAT_07b27150);
             for (size_t jointIndex = 0; jointIndex < sizeof(DAT_07b27150) / sizeof(JOINT); ++jointIndex) {
                 JOINT& joint = joints[jointIndex];
@@ -295,13 +296,13 @@ void __cdecl ClearCharacters(int param_1) {
                     joint.Live = 0;
             }
         }
-        if (*puVar1 != '\0' && *(short*)(puVar1 + 0x1dc) != (short)param_1) {
+        if (*puVar1 != '\0' && *(short*)(puVar1 + EntityOffset(0x1dc)) != (short)param_1) {
             *puVar1 = 0;
             char* pcVar2 = DAT_083a1218;
             do {
                 if (*pcVar2 != '\0' && *(void**)(pcVar2 + 0xfc) == puVar1)
                     *pcVar2 = '\0';
-                pcVar2 += 0x1bc;
+                pcVar2 += OBJECT_STRIDE;
             } while (pcVar2 < butterflesEnd);
         }
         DeleteCloth(AsCharacter(puVar1), AsObject(puVar1), nullptr);
@@ -341,7 +342,7 @@ void __cdecl ClearCharacters(int param_1) {
 // Effect_SpawnSmokeBurst declared in functions.h as (float*, char). Using through normal
 // linkage (no extern decl needed here).
 
-void __cdecl Effect_CollisionCheck(int Target) {
+void __cdecl Effect_CollisionCheck(intptr_t Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
     const BYTE* ca = static_cast<const BYTE*>(DAT_07cf1ff4);  // CharacterAttribute
@@ -359,7 +360,7 @@ void __cdecl Effect_CollisionCheck(int Target) {
             randPass = (rcheck == 0);
         }
         if (!randPass) return;
-        if (*(int*)(T + 252) != (int)(uintptr_t)DAT_07abf5d8) return;  // hero only
+        if (*(intptr_t*)(T + 252) != (intptr_t)DAT_07abf5d8) return;  // hero only
 
         // Anti-tamper hash table — skipped
 
@@ -413,20 +414,20 @@ void __cdecl Effect_CollisionCheck(int Target) {
     }
     else {
         // ── Path B: AOE — scan all entities within 100 units ──────────────
-        int owner = *(int*)(T + 252);
+        intptr_t owner = *(intptr_t*)(T + 252);
         char* charBase = (char*)(uintptr_t)DAT_07abf5d0;  // CharactersClient
-        const int kEntStride = 916;
+        const int kEntStride = CHARACTER_STRIDE;
         char* found = nullptr;
         for (int idx = 0; idx < 400; ++idx) {
             char* ent = charBase + idx * kEntStride;
-            if ((int)(uintptr_t)ent == owner) continue;
+            if ((intptr_t)ent == (intptr_t)owner) continue;
             if (*ent == 0) continue;
             // visibility flag at +332
-            if (*(unsigned char*)(ent + 332 + 20) == 0) continue;
+            if (*(unsigned char*)(ent + EntityOffset(352)) == 0) continue;
             // skip hero
             if (ent == (char*)(uintptr_t)DAT_07abf5d8) continue;
             // skip if "dead" flag at +745+20
-            if (*(unsigned char*)(ent + 745 + 20) != 0) continue;
+            if (*(unsigned char*)(ent + EntityOffset(765)) != 0) continue;
             // distance check (XY only, sqrt <= 100)
             float dx = *(float*)(T + 16) - *(float*)(ent + 16);
             float dy = *(float*)(T + 20) - *(float*)(ent + 20);
@@ -562,7 +563,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     int count = 0;
     short nearbyIds[5] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
-    for (int i = 0; i < 400 && count < 5; i++, pcEnt += 0x394) {
+    for (int i = 0; i < 400 && count < 5; i++, pcEnt += CHARACTER_STRIDE) {
         if (*(char *)&AsCharacter(pcEnt)->Object.Live == '\0') continue;                    // IDA: *(v16 - 747)
         if (*(char *)&AsCharacter(pcEnt)->Object.Visible == '\0') continue;                // IDA: *(v16 - 395)
         if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
@@ -585,7 +586,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
             if (monsterType != 77 && monsterType != 75 && monsterType != 73 &&
                 monsterType != (char)-125 && monsterType != (char)-124 &&
                 monsterType != (char)-123 && monsterType != (char)-122)
-                pcEnt[772] = '\n';                         // IDA: v16[25] = 10
+                pcEnt[EntityOffset(772)] = '\n';                         // IDA: v16[25] = 10
         }
 
         nearbyIds[count++] = sKey;                         // IDA L181
@@ -648,7 +649,7 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
 // Pushes all existing vertex segments one position forward (scroll back),
 // then computes 4 new billboard vertices (at ±half-width perpendicular offsets)
 // using Vector_Rotate and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
-void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
+void __cdecl Joint_SegmentTick(intptr_t param_1, float *param_2) {
     // Ghidra produjo `float local_18[4], local_8, local_4;` y escribía la salida
     // de Vector_Rotate en `local_18 + 3`, esperando local_18[4]==local_8 y
     // local_18[5]==local_4: se expande el array a 6 para que sea contiguo.
@@ -830,7 +831,7 @@ unsigned int __cdecl CheckAttack(void) {
         return 0;
     }
 
-    BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * SelectedCharacter;
+    BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + CHARACTER_STRIDE * SelectedCharacter;
     const BYTE kind = AsCharacter(target)->Object.Kind;
     if (kind == 2) {
         return 1;
@@ -853,7 +854,7 @@ unsigned int __cdecl CheckAttack(void) {
     if (targetPkLevel >= 6) {
         const short targetGuild = AsCharacter(target)->GuildMarkIndex;
         if (targetGuild != -1) {
-            const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 474);
+            const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + EntityOffset(474));
             if (strcmp(DAT_07e919bc + 80 * heroGuild,
                        DAT_07e919bc + 80 * targetGuild) == 0) {
                 return 0;

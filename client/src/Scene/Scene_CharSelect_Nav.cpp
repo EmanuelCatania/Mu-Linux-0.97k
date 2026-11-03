@@ -12,6 +12,7 @@
 // Manejan el scroll del panel de char-select / lista de clases y la elección de slot.
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Game/RenderFxSnapshots.h"
 #include "Platform/Text.h"
 #include "Platform/ISocket.h"
@@ -371,16 +372,16 @@ int __cdecl Character_FindByKey_WithClear(int a1)
 
   v1 = 0;
   result = 400;
-  for ( i = 0; i < 366400; i += 916 )
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
   {
     if ( *(BYTE *)(i + CharactersClient) )
     {
-      if ( *(short *)(i + CharactersClient + 476) == a1 )
+      if ( *(short *)(i + CharactersClient + EntityOffset(476)) == a1 )
       {
         result = v1;
       }
     }
-    *(BYTE *)(i + CharactersClient + 744) = 0;
+    *(BYTE *)(i + CharactersClient + EntityOffset(744)) = 0;
     ++v1;
   }
   return result;
@@ -397,7 +398,7 @@ void __cdecl Characters_SetActionAll(int Action)
   std::uintptr_t v2; // eax
   std::uintptr_t v3; // [esp-8h] [ebp-14h]
 
-  for ( i = 0; i < 366400; i += 916 )
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
   {
     v2 = i + CharactersClient;
     if ( *(BYTE *)(i + CharactersClient) )
@@ -424,9 +425,9 @@ void Characters_FreeAllBMDBuffers()
   int i; // edi
   LPVOID *v1; // esi
 
-  for ( i = 0; i < 366400; i += 916 )
+  for ( i = 0; i < 400 * CHARACTER_STRIDE; i += CHARACTER_STRIDE )
   {
-    v1 = (LPVOID *)(i + CharactersClient + 276);
+    v1 = (LPVOID *)(i + CharactersClient + EntityOffset(276));
     if ( *v1 )
     {
       delete__(*v1);
@@ -503,7 +504,7 @@ char Sound_PlayFootstep()
 {
   char result; // al
 
-  result = *(BYTE *)(Hero + 261);
+  result = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
   if ( result != 30 && result != 31 )
   {
     if ( gMapManager.GetCurrentMap() == 2 )
@@ -515,7 +516,7 @@ char Sound_PlayFootstep()
     }
     else if ( gMapManager.GetCurrentMap() && gMapManager.GetCurrentMap() != 3 )
     {
-      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)(Hero + 846) )   // IDA: World == 7
+      if ( gMapManager.IsSwimmable(gMapManager.GetCurrentMap()) && !*(BYTE *)&((CHARACTER*)(uintptr_t)(Hero))->SafeZone )   // IDA: World == 7
       {
         return PlayBuffer(11, 0, 0);
       }
@@ -698,7 +699,7 @@ void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
   float Objecta; // [esp+24h] [ebp+4h]
   float Objectb; // [esp+24h] [ebp+4h]
 
-  v2 = *(BYTE *)(Hero + 261);
+  v2 = *(BYTE *)&((OBJECT*)(uintptr_t)(Hero))->CurrentAction;
   if ( v2 >= 0xDu && v2 <= 0x21u && *(float *)(Object + 192) < 0.1 )
   {
     v3 = *(float *)(Hero + 16) - *(float *)(Object + 16);
@@ -746,7 +747,7 @@ void __cdecl Effect_PhysicsTick(std::uintptr_t Object)
 // param_1 = label text or ID, param_2 = world position (float[3]),
 // param_3 = color/type, param_4 = screen offset (float[3]), param_5 = extra data.
 // FloatingLabel_Add (IDA-activated)
-int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
+int __cdecl FloatingLabel_Add(intptr_t a1, DWORD *a2, int a3, DWORD *a4, int a5)
 {
   BYTE *v5; // edx
   int v6; // ecx
@@ -1599,12 +1600,12 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
             break;
         }
         default:
-            if (*(unsigned char*)(c + 771) % 3) {
+            if (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3) {
                 SetAction(AsObject(c), 4);
             } else {
                 SetAction(AsObject(c), 3);
             }
-            ++*(unsigned char*)(c + 771);
+            ++*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount;
             break;
         }
         goto LABEL_85;
@@ -1626,14 +1627,14 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
                     if (v5 == 431) {
                         SetAction(AsObject(c), 81);
                     } else {
-                        SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 39);
+                        SetAction(AsObject(c), *(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3 + 39);
                     }
                 } else {
                     short v6 = AsCharacter(c)->Weapon[1].Type;
                     if (v6 < 400 || v6 >= 496) {
-                        SetAction(AsObject(c), (*(unsigned char*)(c + 771) & 1) + 35);
+                        SetAction(AsObject(c), (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount & 1) + 35);
                     } else {
-                        switch (*(unsigned char*)(c + 771) & 3) {
+                        switch (*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount & 3) {
                         case 0: SetAction(AsObject(c), 35); break;
                         case 1: SetAction(AsObject(c), 37); break;
                         case 2: SetAction(AsObject(c), 36); break;
@@ -1664,7 +1665,7 @@ void __cdecl SetPlayerAttack(CHARACTER* character, int /*type*/, int /*flag*/, i
             }
             // Mace/staff (496-527)
             if (v5 >= 496 && v5 < 528) {
-                SetAction(AsObject(c), *(unsigned char*)(c + 771) % 3 + 43);
+                SetAction(AsObject(c), *(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount % 3 + 43);
                 goto LABEL_85;
             }
             // Bow/crossbow type detection on right hand
@@ -1734,10 +1735,10 @@ LABEL_85:
                     PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
                 }
                 short modelType = AsCharacter(c)->Object.Type;
-                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
-                if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
-                    int idx = rand() % 2 + 94 * modelType;
-                    PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
+                const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
+                if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
+                    const BMD* soundModel = AsModel(modelBase);
+                    PlayBuffer(soundModel->Sounds[2 + rand() % 2] + 170, AsObject(c), 0);
                 }
             }
         } else {
@@ -1746,14 +1747,14 @@ LABEL_85:
                 PlayBuffer(rand() % 2 + 40, AsObject(c), 0);
             }
             short modelType = AsCharacter(c)->Object.Type;
-            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + 188 * modelType;
-            if (*(const unsigned short*)(modelBase + 174) != 0xFFFF) {
-                int idx = rand() % 2 + 94 * modelType;
-                PlayBuffer(*(short*)((char*)(uintptr_t)DAT_05828d58 + 2 * idx + 174) + 170, AsObject(c), 0);
+            const BYTE* modelBase = reinterpret_cast<const BYTE*>(DAT_05828d58) + BMD_STRIDE * modelType;
+            if (*(const unsigned short*)&((BMD*)(uintptr_t)(modelBase))->Sounds[2] != 0xFFFF) {
+                const BMD* soundModel = AsModel(modelBase);
+                PlayBuffer(soundModel->Sounds[2 + rand() % 2] + 170, AsObject(c), 0);
             }
         }
     }
-    ++*(unsigned char*)(c + 771);
+    ++*(unsigned char*)&((CHARACTER*)(uintptr_t)(c))->SwordCount;
 }
 
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
@@ -1854,7 +1855,7 @@ void __cdecl SetPlayerShock(CHARACTER* c, int Hit)
         if (etype != 284) {
             // Monster-table sound lookup: Models[etype].Sound[rand()%2]
             const BYTE* modelsBase = reinterpret_cast<const BYTE*>(DAT_05828d58);
-            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + 188 * etype + 174);
+            const short* sndTbl = reinterpret_cast<const short*>(modelsBase + BMD_STRIDE * etype + 174 + BMD_FIELD_SHIFT);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
                 PlayBuffer(v6, AsObject(c), 0);
@@ -1886,8 +1887,8 @@ label_26:
 int __cdecl FindCharacterIndex(int param_1)
 {
     char *pcVar2 = (char*)(uintptr_t)DAT_07abf5d0;
-    for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += 0x394) {
-        if (*pcVar2 != '\0' && *(short*)(pcVar2 + 0x1dc) == (short)param_1)
+    for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += CHARACTER_STRIDE) {
+        if (*pcVar2 != '\0' && *(short*)&((CHARACTER*)(uintptr_t)(pcVar2))->Key == (short)param_1)
             return iVar1;
     }
     return 400;
@@ -1909,7 +1910,7 @@ int __cdecl FindCharacterIndex(int param_1)
 void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
-    DWORD c = DAT_07abf5d0 + 916 * Key;
+    intptr_t c = DAT_07abf5d0 + CHARACTER_STRIDE * Key;
     if (*(WORD *)&AsCharacter(c)->Object.Type != 390) return;
     // 0.97.20: el CharSet sólo lleva vanilla; el único agregado que viaja es
     // el ala custom (más abajo).
@@ -2108,9 +2109,9 @@ void __cdecl FUN_0046c7f0(int param_1, OBJECT* object, float param_3, float para
 void CheckSprites(void)
 {
     char *pcVar1 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar1 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar1 += OBJECT_STRIDE) {
         if (*pcVar1 != '\0')
-            pcVar1[0x160] = '\x01';
+            pcVar1[EntityOffset(0x160)] = '\x01';
     }
 }
 
@@ -2335,15 +2336,15 @@ const ITEM* __cdecl Stats_CalcDefense(BYTE* param_1) {
         *defPtr = (unsigned short)(*(unsigned short*)(param_1 + 22) / 3);
     }
 
-    short v3 = *(short*)(param_1 + 604);  // WeaponR/Shield item type
+    short v3 = *(short*)(param_1 + 0x25C);  // WeaponR/Shield item type
     if (v3 != -1) {
-        unsigned char dur = AsCharacter(param_1)->Weapon[0].PriorAction;  // shield durability
+        unsigned char dur = *(unsigned char*)(param_1 + 0x276);  // escudo +26: Durability (CharacterMachine, no CHARACTER)
         if (dur != 0) {
             unsigned char maxDur = ((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3].Durability;
-            int level = *(int *)&AsCharacter(param_1)->BodyPart[5].AnimationFrame;
+            int level = *(int *)(param_1 + 0x260);  // escudo +4: Level
             unsigned char opt = *(unsigned char*)(param_1 + 631);
             float durP = CalcDurabilityPercent(dur, maxDur, level, opt);
-            unsigned char defenseBase = *(unsigned char*)(param_1 + 620);
+            unsigned char defenseBase = *(unsigned char*)(param_1 + 0x26C);
             unsigned short reduction = (unsigned short)((double)defenseBase * (double)durP);
             *defPtr += defenseBase - reduction;
 
@@ -2393,7 +2394,7 @@ int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
         BYTE* slotPtr = param_1 + 68 * i;
         if (*(unsigned char*)(slotPtr + 562)) {  // slot's [+26] = 0x22A; 8*68+0x22 hmm let me recalc
             unsigned int v7 = Item_GetDefenseWithSpecial(0, (short*)(slotPtr + 536));
-            ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)(slotPtr + 536)];
+            ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)&((CHARACTER*)(uintptr_t)(slotPtr))->BodyPart[2].AnimationFrame];
             float durP;
             if (i == 7) {
                 durP = CalcDurabilityPercent(*(unsigned char*)(param_1 + 1038),
@@ -2402,7 +2403,7 @@ int __cdecl Stats_CalcDefenseRate(BYTE* param_1) {
             } else {
                 durP = CalcDurabilityPercent(*(unsigned char*)(slotPtr + 562),
                                              v8->Durability,
-                                             *(int*)(slotPtr + 540),
+                                             *(int*)&((CHARACTER*)(uintptr_t)(slotPtr))->BodyPart[2].PriorAnimationFrame,
                                              *(unsigned char*)(slotPtr + 563));
             }
             int reduction = (int)((double)(unsigned short)v7 * (double)durP);

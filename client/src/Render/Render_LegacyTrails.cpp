@@ -53,7 +53,7 @@ void __cdecl Entity_TeleportAnim(float *pos, float a, float b, float c)
     return;  // AUTO-SKIP: dead duplicate (kept for reference). Active impl is the
              // 4-arg overload in Combat/Skills_WarriorLegacy.cpp (Entity_TeleportAnim with float* dst_pos).
     char *slot = reinterpret_cast<char*>(DAT_07c80110);
-    while ((int)slot < 0x7c82cd0) {
+    while ((intptr_t)slot < 0x7c82cd0) {
         if (*slot == '\0') {
             *slot = '\x01';
             *(float *)(slot + 0x10) = pos[0];
@@ -79,7 +79,7 @@ void __cdecl Particle_Update(void)
     for (int slotIdx = 0; slotIdx < 100; ++slotIdx, slot = reinterpret_cast<int*>(reinterpret_cast<char*>(slot) + 0x2f0)) {
         if ((char)slot[-3] != '\0') {
             int mode = slot[-2];
-            if (*(short *)(*slot + 0x1be) == 0 && mode < 3)
+            if (*(short *)(g_TrailOwner[slotIdx] + EntityOffset(0x1be)) == 0 && mode < 3)
                 GL_SetBlendAdditive();
             else
                 GL_SetBlendSrcAlpha();
@@ -91,7 +91,7 @@ void __cdecl Particle_Update(void)
                 for (int i = 0; i < seg - 1; i++, vp += 3) {
                     BufferedDraw::Begin(BufferedDraw::Primitive::TriangleFan);
                     float alpha = _DAT_0055256c;
-                    if (*(short *)(*slot + 0x1be) == 0)
+                    if (*(short *)(g_TrailOwner[slotIdx] + EntityOffset(0x1be)) == 0)
                         alpha = (float)(seg - i) / (float)seg;
                     BufferedDraw::Color3f(alpha*(float)slot[2], alpha*(float)slot[3], alpha*(float)slot[4]);
                     BufferedDraw::TexCoord2f((float)i / (float)seg, 1.0f);
@@ -99,7 +99,7 @@ void __cdecl Particle_Update(void)
                     BufferedDraw::TexCoord2f((float)i / (float)seg, 0.0f);
                     BufferedDraw::Vertex3fv((float *)vp);
                     float alpha2 = _DAT_0055256c;
-                    if (*(short *)(*slot + 0x1be) == 0)
+                    if (*(short *)(g_TrailOwner[slotIdx] + EntityOffset(0x1be)) == 0)
                         alpha2 = (float)(seg - i - 1) / (float)seg;
                     BufferedDraw::Color3f(alpha2*(float)slot[2], alpha2*(float)slot[3], alpha2*(float)slot[4]);
                     BufferedDraw::TexCoord2f((float)(i+1) / (float)seg, 0.0f);

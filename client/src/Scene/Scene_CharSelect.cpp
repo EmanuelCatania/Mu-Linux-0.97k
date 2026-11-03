@@ -256,13 +256,12 @@ int Scene_CharSelect(void)
         iVar4 = DAT_005616ac;
         iVar9 = SelectedCharacter;
         iVar7 = 0;
-        pfVar3 = (float *)(DAT_07abf5d0 + 0xec);
         _DAT_0055a7c0 = 0;
         do {
-            if (*(short *)(pfVar3 + 0x73) == 0x333)
-                pfVar3[-0x35] = 20.0f;
+            CHARACTER* preview = AsCharacter(DAT_07abf5d0) + iVar7;
+            if (preview->Helper.Type == 0x333)
+                preview->Object.Position[2] = 20.0f;
             iVar7++;
-            pfVar3 = pfVar3 + 0xe5;
         } while (iVar7 < 5);
 
         // ── DIAG: log 5 slots once a second so we can verify MG entity state ──
@@ -272,7 +271,7 @@ int Scene_CharSelect(void)
             if (now - s_lastDiag > 1000) {
                 s_lastDiag = now;
                 for (int s = 0; s < 5; ++s) {
-                    BYTE* e = (BYTE*)(DAT_07abf5d0 + s * 0x394);
+                    BYTE* e = (BYTE*)(DAT_07abf5d0 + s * CHARACTER_STRIDE);
                 }
             }
         }
@@ -287,14 +286,14 @@ int Scene_CharSelect(void)
         Entity_RenderAll_3D();
 
         // Orbital particles for selected char
-        if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
+        if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE] != '\0')) {
             GL_SetBlendAdditive();   // Frame_UpdateTimer
             uVar12  = (unsigned int)(*(float*)&WorldTime);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
-            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000,  local_70, 0, 0.0f);
-            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0f);
         }
 
@@ -348,7 +347,7 @@ int Scene_CharSelect(void)
                     fStack_54 = posBuf[2];
                     {
                         static DWORD s_lastNI[5] = {0};
-                        int slotIdx = iVar9 / 0x394;
+                        int slotIdx = iVar9 / CHARACTER_STRIDE;
                         DWORD now2 = Platform::GetTimer().Ticks();
                         if (slotIdx >= 0 && slotIdx < 5 && now2 - s_lastNI[slotIdx] > 1000) {
                             s_lastNI[slotIdx] = now2;
@@ -363,13 +362,13 @@ int Scene_CharSelect(void)
                     Camera_ProjectWorldToScreen(posBuf, &local_6c, &nameProjY);
                     {
                         static DWORD s_lastNO[5] = {0};
-                        int slotIdx2 = iVar9 / 0x394;
+                        int slotIdx2 = iVar9 / CHARACTER_STRIDE;
                         DWORD now3 = Platform::GetTimer().Ticks();
                         if (slotIdx2 >= 0 && slotIdx2 < 5 && now3 - s_lastNO[slotIdx2] > 1000) {
                             s_lastNO[slotIdx2] = now3;
                         }
                     }
-                    bVar2 = ((byte*)DAT_07abf5d0)[iVar9 + 0x1c0];
+                    bVar2 = ((byte*)DAT_07abf5d0)[iVar9 + EntityOffset(0x1c0)];
                     // Color by class/flags
                     if      (bVar2 & 1)    { SetBackgroundTextColor = 0x8000ffff; DAT_00559c78 = 0xff000000; }
                     else if (bVar2 & 0x12) { SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000; }
@@ -399,8 +398,8 @@ int Scene_CharSelect(void)
                     SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffffff;
                     gFont.SelectFont((HDC)(uintptr_t)gFont.GetTextDC(), (HGDIOBJ)gFont.GetFont(FONT_NORMAL));
                     {
-                        BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + 0x1bc];
-                        WORD lvl   = *(WORD*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1be);
+                        BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + EntityOffset(0x1bc)];
+                        WORD lvl   = *(WORD*)((BYTE*)DAT_07abf5d0 + iVar9 + EntityOffset(0x1be));
                         int  cidx  = (klass & 7) + 4 * (klass >> 3);
                         // 0.97k tiene DW/DK/ELF/MG y evolved SM/BK/ME (no DL).
                         static const char* kClassNames[16] = {
@@ -423,8 +422,8 @@ int Scene_CharSelect(void)
                                  nameProjY, aCStack_50, (LPSIZE)0x0, '\0', 0);
                     pcVar5 = (char*)DAT_07abf5d0;
                 }
-                iVar9 += 0x394;
-            } while (iVar9 < 0x11e4);
+                iVar9 += CHARACTER_STRIDE;
+            } while (iVar9 < 5 * CHARACTER_STRIDE);
         }
 
         // ── Warning text ──────────────────────────────────────────────────────
@@ -472,9 +471,9 @@ int Scene_CharSelect(void)
             iVar4 = 5;
             pcVar5 = (char*)DAT_07abf5d0;
             do {
-                if ((*pcVar5 != '\0') && (0xdb < *(ushort *)(pcVar5 + 0x1be)))
+                if ((*pcVar5 != '\0') && (0xdb < *(ushort *)(pcVar5 + EntityOffset(0x1be))))
                     uVar8 = 3;
-                pcVar5 += 0x394;
+                pcVar5 += CHARACTER_STRIDE;
             } while (--iVar4 != 0);
 
             local_6c = DAT_005616a4;
@@ -602,7 +601,7 @@ int Scene_CharSelect(void)
             pcVar5 = (char*)DAT_07abf5d0;
             do {
                 if (*pcVar5 == '\0') bVar10 = true;
-                pcVar5 += 0x394;
+                pcVar5 += CHARACTER_STRIDE;
             } while (--iVar9 != 0);
 
             // Create button brightness

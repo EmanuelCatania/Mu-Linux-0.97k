@@ -206,6 +206,7 @@
 //   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Render/Gfx.h"
 #include "Render/RenderProfile.h"
 #include "Render/BufferedDraw.h"
@@ -375,7 +376,7 @@ void Render_GameFrame(void)
     // the chat history scroll UI never paints.
     if (DAT_055c9ff0) {
         DWORD* obj = (DWORD*)DAT_055c9ff0;
-        void** vt  = (void**)*obj;
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt) {
             typedef void (__fastcall *FnVoid)(DWORD*);
             ((FnVoid)vt[4])(obj);
@@ -411,7 +412,7 @@ void Render_HPBars_OLD(void)
     if (DAT_07abf5d0 == 0) return;
     BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int s = 0; s < 400; ++s) {
-        BYTE* slot = basePtr + s * 0x394;
+        BYTE* slot = basePtr + s * CHARACTER_STRIDE;
         if (slot[0] == 0) continue;                 // inactive
         if (slot == (BYTE*)DAT_07abf5d8) continue;  // skip hero
         if (slot[0x84] == 0) continue;              // not visible

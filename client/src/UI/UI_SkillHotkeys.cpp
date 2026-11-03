@@ -78,7 +78,7 @@ void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float he
     // helper (Hero + 696 = c+0x2B8).
     if (skillId == 0x2f) {
         const BYTE* hero = (const BYTE*)(uintptr_t)DAT_07abf5d8;
-        const short helperType = hero ? *(const short*)(hero + 696) : -1;
+        const short helperType = hero ? *(const short*)(hero + EntityOffset(696)) : -1;
         if (helperType != 818 && helperType != 819)
             Gfx::Color3f(1.0f, 0.5f, 0.5f);
     }

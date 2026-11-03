@@ -113,7 +113,7 @@ void CNetwork::InitializePacketSerials()
   // (ref-count de session-key bytes). Neutralizado vía fake vtable en
   // MAIN_HASH_CLASS + capacity (DAT_055c9bd4) = 0 → loops se saltean.
   param_1 = &m_SendSerial;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(&m_SendSerial);
   uVar6 = 0;
   param_1 = (char *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -174,7 +174,7 @@ LAB_00423a34:
   HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&m_SendSerial);
 LAB_00423a52:
   m_SendSerial = 0;
-  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&m_SendSerial);
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 3 * sizeof(void*)))(&m_SendSerial);
   uVar6 = 0;
   if (DAT_055c9bd4 != 0) {
     do {
@@ -267,7 +267,7 @@ LAB_00423b59:
 // símbolo queda exportado.
 // =============================================================================
 // IDA: CWsctlc::Connect (0x0043DCD0)
-extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,
+extern "C" int __cdecl CWsctlc_Connect(intptr_t This, const char* ip_addr,
                                        unsigned short port, DWORD WinMsgNum)
 {
     if (!This || !*(DWORD*)This) {

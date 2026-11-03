@@ -21,6 +21,7 @@
 //   [+0x10] path_len    [+0x207..] path_x    [+0x3fb..] path_y
 
 #include "stdafx.h"
+#include "Game/PathContext.h"
 #pragma warning(disable: 4554 4302 4146)
 
 // 8-directional movement table: pairs of (dx, dy) for grid traversal.
@@ -45,334 +46,133 @@ static const int s_astar_dirs[16] = {
 
 
 // PATH::AddClearPos de ZzzPath.h.
-// Updates the min/max dirty-range [this+0x400..this+0x404] to include param_1.
-// Returns CONCAT31((int3)(param_1>>8), 1) on success, (param_1 & ~0xFF) on out-of-range.
-undefined4 __cdecl PATH_AddClearPos(void *_this, int param_1)
+// Amplía el rango sucio [DirtyMin..DirtyMax] para incluir param_1.
+undefined4 __cdecl PATH_AddClearPos(PathContext *ctx, int param_1)
 {
-  int iVar1;
-
-  if ((-1 < param_1) && (param_1 < *(int *)((int)_this + 8))) {
-    iVar1 = *(int *)((int)_this + 0x400);
-    if (param_1 < *(int *)((int)_this + 0x400)) {
-      iVar1 = param_1;
-    }
-    *(int *)((int)_this + 0x400) = iVar1;
-    if (param_1 <= *(int *)((int)_this + 0x404)) {
-      param_1 = *(int *)((int)_this + 0x404);
-    }
-    *(int *)((int)_this + 0x404) = param_1;
-    return CONCAT31((int3)((uint)param_1 >> 8), 1);
+  if ((-1 < param_1) && (param_1 < ctx->Size)) {
+    if (param_1 < ctx->DirtyMin) ctx->DirtyMin = param_1;
+    if (param_1 > ctx->DirtyMax) ctx->DirtyMax = param_1;
+    return CONCAT31((int3)((uint)ctx->DirtyMax >> 8), 1);
   }
   return param_1 & 0xffffff00;
 }
 
 
-// Add de CBTree, usado por PATH::FindPath.
-// Inserts a (data, cost) pair into the BST keyed by cost (param_2).
-// this+0x8 = root, this+0x4 = count.
-void __cdecl CBTree_Add(void *_this, undefined4 param_1, int param_2)
+static PathNode *NewPathNode(int data, int cost)
 {
-  int iVar1;
-  int iVar2;
-  undefined4 *puVar3;
-
-  iVar1 = *(int *)((int)_this + 8);
-  iVar2 = iVar1;
-  if (iVar1 == 0) {
-    *(int *)((int)_this + 4) = *(int *)((int)_this + 4) + 1;
-    puVar3 = (undefined4 *)operator_new(0x14);
-    if (puVar3 != (undefined4 *)0x0) {
-      puVar3[4] = 0;
-      puVar3[3] = 0;
-      puVar3[2] = 0;
-      *puVar3 = param_1;
-      puVar3[1] = param_2;
-      *(undefined4 **)((int)_this + 8) = puVar3;
-      return;
-    }
-    *(undefined4 *)((int)_this + 8) = 0;
-    return;
+  auto *node = static_cast<PathNode *>(operator_new(sizeof(PathNode)));
+  if (node != nullptr) {
+    node->Parent = nullptr;
+    node->Right = nullptr;
+    node->Left = nullptr;
+    node->Data = data;
+    node->Cost = cost;
   }
-  while (iVar1 != 0) {
-    iVar2 = iVar1;
-    if (param_2 < *(int *)(iVar1 + 4)) {
-      iVar1 = *(int *)(iVar1 + 8);
-    }
-    else {
-      iVar1 = *(int *)(iVar1 + 0xc);
-    }
-  }
-  *(int *)((int)_this + 4) = *(int *)((int)_this + 4) + 1;
-  puVar3 = (undefined4 *)operator_new(0x14);
-  if (puVar3 == (undefined4 *)0x0) {
-    puVar3 = (undefined4 *)0x0;
-  }
-  else {
-    puVar3[4] = 0;
-    puVar3[3] = 0;
-    puVar3[2] = 0;
-    *puVar3 = param_1;
-    puVar3[1] = param_2;
-  }
-  if (param_2 < *(int *)(iVar2 + 4)) {
-    *(undefined4 **)(iVar2 + 8) = puVar3;
-    puVar3[4] = iVar2;
-    return;
-  }
-  *(undefined4 **)(iVar2 + 0xc) = puVar3;
-  puVar3[4] = iVar2;
-  return;
+  return node;
 }
 
 
-// RemoveNode de CBTree, usado por PATH::FindPath.
-// Removes and returns the minimum-key node from the BST.
-// param_1 is a pointer-to-pointer to the root or a subtree root.
-undefined4 __cdecl CBTree_RemoveNode(void *_this, int *param_1)
+// Add de CBTree, usado por PATH::FindPath. Inserta (data, cost) ordenado por cost.
+void __cdecl CBTree_Add(PathQueue *queue, int data, int cost)
 {
-  undefined4 *puVar1;
-  undefined4 uVar2;
-  int iVar3;
-  int iVar4;
-  int *piVar5;
-  int *piVar6;
-
-  piVar5 = param_1;
-  puVar1 = (undefined4 *)*param_1;
-  uVar2 = *puVar1;
-  param_1 = (int *)0x0;
-  piVar6 = (int *)puVar1[2];
-  if (piVar6 == (int *)0x0) {
-    piVar6 = (int *)puVar1[3];
-    if (piVar6 == (int *)0x0) {
-      iVar4 = puVar1[4];
-      if (iVar4 == 0) {
-        *(undefined4 *)((int)_this + 8) = 0;
-      }
-      else if (*(undefined4 **)(iVar4 + 8) == puVar1) {
-        *(undefined4 *)(iVar4 + 8) = 0;
-      }
-      else {
-        *(undefined4 *)(iVar4 + 0xc) = 0;
-      }
-      *(int *)((int)_this + 4) = *(int *)((int)_this + 4) + -1;
-      if ((undefined *)*piVar5 != (undefined *)0x0) {
-        operator_delete((undefined *)*piVar5);
-      }
-      *piVar5 = 0;
-      return uVar2;
-    }
-    if (puVar1 == *(undefined4 **)((int)_this + 8)) {
-      *(int **)((int)_this + 8) = piVar6;
-      piVar6[4] = 0;
-      goto LAB_0042337f;
-    }
+  PathNode *parent = queue->Root;
+  if (parent == nullptr) {
+    queue->Count++;
+    queue->Root = NewPathNode(data, cost);
+    return;
   }
-  else {
-    if (puVar1[3] != 0) {
-      do {
-        param_1 = piVar6;
-        piVar6 = (int *)param_1[3];
-      } while ((int *)param_1[3] != (int *)0x0);
-      iVar4 = *param_1;
-      iVar3 = param_1[1];
-      CBTree_RemoveNode(_this, (int *)&param_1);
-      *(int *)*piVar5 = iVar4;
-      *(int *)(*piVar5 + 4) = iVar3;
-      return uVar2;
-    }
-    if (puVar1 == *(undefined4 **)((int)_this + 8)) {
-      *(int **)((int)_this + 8) = piVar6;
-      piVar6[4] = 0;
-      goto LAB_0042337f;
-    }
+  for (PathNode *node = parent; node != nullptr;) {
+    parent = node;
+    node = (cost < node->Cost) ? node->Left : node->Right;
   }
-  iVar4 = puVar1[4];
-  if (puVar1 == *(undefined4 **)(iVar4 + 0xc)) {
-    *(int **)(iVar4 + 0xc) = piVar6;
-  }
-  else {
-    *(int **)(iVar4 + 8) = piVar6;
-  }
-  piVar6[4] = iVar4;
-LAB_0042337f:
-  if ((undefined *)*piVar5 != (undefined *)0x0) {
-    operator_delete((undefined *)*piVar5);
-  }
-  *(int *)((int)_this + 4) = *(int *)((int)_this + 4) + -1;
-  return uVar2;
+  queue->Count++;
+  PathNode *node = NewPathNode(data, cost);
+  if (cost < parent->Cost) parent->Left = node;
+  else                     parent->Right = node;
+  node->Parent = parent;
 }
 
 
-// CBTree::RemoveFrom de BaseCls.h.
-// Recursively deletes a node and all its children from the BST.
-void __cdecl CBTree_RemoveFrom(void *_this, undefined4 *param_1)
+// Saca `victim` del árbol enganchando su único hijo al padre.
+static void ReplaceWithChild(PathQueue *queue, PathNode *victim, PathNode *child)
 {
-  int iVar1;
-  undefined4 uVar2;
-  undefined4 uVar3;
-  undefined4 *puVar4;
-  undefined4 *puVar5;
+  if (victim == queue->Root) {
+    queue->Root = child;
+    child->Parent = nullptr;
+    return;
+  }
+  PathNode *parent = victim->Parent;
+  if (victim == parent->Right) parent->Right = child;
+  else                         parent->Left = child;
+  child->Parent = parent;
+}
 
-  puVar4 = param_1;
-  if ((undefined4 *)param_1[2] != (undefined4 *)0x0) {
-    CBTree_RemoveFrom(_this, (undefined4 *)param_1[2]);
-  }
-  if ((undefined4 *)puVar4[3] != (undefined4 *)0x0) {
-    CBTree_RemoveFrom(_this, (undefined4 *)puVar4[3]);
-  }
-  puVar5 = (undefined4 *)puVar4[2];
-  param_1 = (undefined4 *)0x0;
-  if (puVar5 == (undefined4 *)0x0) {
-    puVar5 = (undefined4 *)puVar4[3];
-    if (puVar5 == (undefined4 *)0x0) {
-      iVar1 = puVar4[4];
-      if (iVar1 == 0) {
-        *(undefined4 *)((int)_this + 8) = 0;
-      }
-      else if (*(undefined4 **)(iVar1 + 8) == puVar4) {
-        *(undefined4 *)(iVar1 + 8) = 0;
-      }
-      else {
-        *(undefined4 *)(iVar1 + 0xc) = 0;
-      }
-      *(int *)((int)_this + 4) = *(int *)((int)_this + 4) + -1;
-      if (puVar4 != (undefined4 *)0x0) {
-        operator_delete((undefined *)puVar4);
-      }
-      return;
+
+static void DetachLeaf(PathQueue *queue, PathNode *leaf)
+{
+  PathNode *parent = leaf->Parent;
+  if (parent == nullptr)          queue->Root = nullptr;
+  else if (parent->Left == leaf)  parent->Left = nullptr;
+  else                            parent->Right = nullptr;
+}
+
+
+static PathNode *RightmostOf(PathNode *node)
+{
+  while (node->Right != nullptr) node = node->Right;
+  return node;
+}
+
+
+// RemoveNode de CBTree, usado por PATH::FindPath. Devuelve el dato del nodo.
+int __cdecl CBTree_RemoveNode(PathQueue *queue, PathNode **slot)
+{
+  PathNode *node = *slot;
+  const int data = node->Data;
+  PathNode *child = node->Left;
+  if (child == nullptr) {
+    child = node->Right;
+    if (child == nullptr) {
+      DetachLeaf(queue, node);
+      queue->Count--;
+      if (*slot != nullptr) operator_delete(*slot);
+      *slot = nullptr;
+      return data;
     }
-    if (puVar4 == *(undefined4 **)((int)_this + 8)) {
-      *(undefined4 **)((int)_this + 8) = puVar5;
-      puVar5[4] = 0;
-      goto LAB_00423627;
-    }
+  } else if (node->Right != nullptr) {
+    PathNode *replacement = RightmostOf(child);
+    const int replacementData = replacement->Data;
+    const int replacementCost = replacement->Cost;
+    CBTree_RemoveNode(queue, &replacement);
+    (*slot)->Data = replacementData;
+    (*slot)->Cost = replacementCost;
+    return data;
   }
-  else {
-    if (puVar4[3] != 0) {
-      do {
-        param_1 = puVar5;
-        puVar5 = (undefined4 *)param_1[3];
-      } while ((undefined4 *)param_1[3] != (undefined4 *)0x0);
-      uVar2 = *param_1;
-      uVar3 = param_1[1];
-      CBTree_RemoveNode(_this, (int *)&param_1);
-      *puVar4 = uVar2;
-      puVar4[1] = uVar3;
-      return;
-    }
-    if (puVar4 == *(undefined4 **)((int)_this + 8)) {
-      *(undefined4 **)((int)_this + 8) = puVar5;
-      puVar5[4] = 0;
-      goto LAB_00423627;
-    }
-  }
-  iVar1 = puVar4[4];
-  if (puVar4 == *(undefined4 **)(iVar1 + 0xc)) {
-    *(undefined4 **)(iVar1 + 0xc) = puVar5;
-  }
-  else {
-    *(undefined4 **)(iVar1 + 8) = puVar5;
-  }
-  puVar5[4] = iVar1;
-LAB_00423627:
-  if (puVar4 != (undefined4 *)0x0) {
-    operator_delete((undefined *)puVar4);
-  }
-  *(int *)((int)_this + 4) = *(int *)((int)_this + 4) + -1;
-  return;
+  ReplaceWithChild(queue, node, child);
+  if (*slot != nullptr) operator_delete(*slot);
+  queue->Count--;
+  return data;
+}
+
+
+// CBTree::RemoveFrom de BaseCls.h. Borra un nodo y todos sus hijos.
+void __cdecl CBTree_RemoveFrom(PathQueue *queue, PathNode *node)
+{
+  if (node->Left != nullptr) CBTree_RemoveFrom(queue, node->Left);
+  if (node->Right != nullptr) CBTree_RemoveFrom(queue, node->Right);
+  PathNode *self = node;
+  CBTree_RemoveNode(queue, &self);
 }
 
 
 // RemoveAll de CBTree, usado por PATH::FindPath.
-// Removes the BST root node, rebalancing children via CBTree_RemoveFrom/CBTree_RemoveNode.
-void __fastcall CBTree_RemoveAll(undefined4 *param_1)
+void __cdecl CBTree_RemoveAll(PathQueue *queue)
 {
-  undefined4 *puVar1;
-  int iVar2;
-  undefined4 uVar3;
-  undefined4 uVar4;
-  undefined4 *puVar5;
-  undefined4 *local_4;
-
-  puVar1 = (undefined4 *)param_1[2];
-  if (puVar1 == (undefined4 *)0x0) {
-LAB_00440054:
-    param_1[1] = 0;
-    return;
+  if (queue->Root != nullptr) {
+    CBTree_RemoveFrom(queue, queue->Root);
+    queue->Root = nullptr;
   }
-  local_4 = param_1;
-  if ((undefined4 *)puVar1[2] != (undefined4 *)0x0) {
-    CBTree_RemoveFrom(param_1, (undefined4 *)puVar1[2]);
-  }
-  if ((undefined4 *)puVar1[3] != (undefined4 *)0x0) {
-    CBTree_RemoveFrom(param_1, (undefined4 *)puVar1[3]);
-  }
-  puVar5 = (undefined4 *)puVar1[2];
-  local_4 = (undefined4 *)0x0;
-  if (puVar5 == (undefined4 *)0x0) {
-    puVar5 = (undefined4 *)puVar1[3];
-    if (puVar5 == (undefined4 *)0x0) {
-      iVar2 = puVar1[4];
-      if (iVar2 == 0) {
-        param_1[2] = 0;
-      }
-      else if (*(undefined4 **)(iVar2 + 8) == puVar1) {
-        *(undefined4 *)(iVar2 + 8) = 0;
-      }
-      else {
-        *(undefined4 *)(iVar2 + 0xc) = 0;
-      }
-      param_1[1] = param_1[1] + -1;
-      if (puVar1 != (undefined4 *)0x0) {
-        operator_delete((undefined *)puVar1);
-      }
-      param_1[2] = 0;
-      goto LAB_00440054;
-    }
-    if (puVar1 == (undefined4 *)param_1[2]) {
-      param_1[2] = (undefined4)(DWORD_PTR)puVar5;
-      puVar5[4] = 0;
-      goto LAB_0043ffbf;
-    }
-  }
-  else {
-    if (puVar1[3] != 0) {
-      do {
-        local_4 = puVar5;
-        puVar5 = (undefined4 *)local_4[3];
-      } while ((undefined4 *)local_4[3] != (undefined4 *)0x0);
-      uVar3 = *local_4;
-      uVar4 = local_4[1];
-      CBTree_RemoveNode(param_1, (int *)&local_4);
-      *puVar1 = uVar3;
-      puVar1[1] = uVar4;
-      param_1[2] = 0;
-      param_1[1] = 0;
-      return;
-    }
-    if (puVar1 == (undefined4 *)param_1[2]) {
-      param_1[2] = (undefined4)(DWORD_PTR)puVar5;
-      puVar5[4] = 0;
-      goto LAB_0043ffbf;
-    }
-  }
-  iVar2 = puVar1[4];
-  if (puVar1 == *(undefined4 **)(iVar2 + 0xc)) {
-    *(undefined4 **)(iVar2 + 0xc) = puVar5;
-  }
-  else {
-    *(undefined4 **)(iVar2 + 8) = puVar5;
-  }
-  puVar5[4] = iVar2;
-LAB_0043ffbf:
-  if (puVar1 != (undefined4 *)0x0) {
-    operator_delete((undefined *)puVar1);
-  }
-  param_1[2] = 0;
-  param_1[1] = param_1[1] + -1;
-  param_1[1] = 0;
-  return;
+  queue->Count = 0;
 }
 
 
@@ -384,14 +184,13 @@ LAB_0043ffbf:
 // param_7 = radius (0.0 = single target cell; else circle pre-mark)
 // Returns: CONCAT31((len>>8),1) on success, 0 on failure.
 uint __cdecl
-PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
+PATH_FindPath(PathContext *ctx, int param_1, float param_2, int param_3, int param_4,
              int param_5, int param_6, float param_7)
 {
-  void *this_00;
-  byte *pbVar1;
+  PathQueue *this_00;
+  int pbVar1;
   byte bVar2;
-  int iVar3;
-  byte *pbVar4;
+  uint failValue;
   int iVar5;
   int iVar6;
   uint uVar7;
@@ -402,6 +201,8 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
   int iVar12;
   int iVar13;
   longlong lVar14;
+  PathNode *root;
+  PathNode *subtree;
   int *local_28;
   int local_24;
   int local_20;
@@ -414,44 +215,40 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
   int iStack_4;
 
   // Clear dirty range if not already sentinel
-  iVar12 = *(int *)((int)_this + 0x400);
+  iVar12 = ctx->DirtyMin;
   if (iVar12 != 1950000000) {
-    uVar7 = (*(int *)((int)_this + 0x404) - iVar12) + 1;
-    puVar10 = (undefined4 *)(*(int *)((int)_this + 0x3fc) + iVar12);
+    uVar7 = (ctx->DirtyMax - iVar12) + 1;
+    puVar10 = reinterpret_cast<undefined4 *>(ctx->Flags + iVar12);
     for (uVar8 = uVar7 >> 2; uVar8 != 0; uVar8 = uVar8 - 1) {
       *puVar10 = 0;
       puVar10 = puVar10 + 1;
     }
     for (uVar7 = uVar7 & 3; uVar7 != 0; uVar7 = uVar7 - 1) {
       *(undefined1 *)puVar10 = 0;
-      puVar10 = (undefined4 *)((int)puVar10 + 1);
+      puVar10 = reinterpret_cast<undefined4 *>(reinterpret_cast<char *>(puVar10) + 1);
     }
-    *(undefined4 *)((int)_this + 0x400) = 1950000000;
-    *(undefined4 *)((int)_this + 0x404) = 0xffffffff;
+    ctx->DirtyMin = 1950000000;
+    ctx->DirtyMax = -1;
   }
 
-  pbVar4 = (byte *)0x0;
-  if ((param_1 != 0) && (pbVar4 = (byte *)0x0, param_2 != 0.0f)) {
+  failValue = 0;
+  if ((param_1 != 0) && (param_2 != 0.0f)) {
     if (_DAT_00552580 == param_7) {
       // Single-target mode: mark target cell directly
-      pbVar4 = (byte *)(*(int *)_this * param_4);
-      pbVar1 = pbVar4 + param_3;
-      if (((((char)param_5 != '\0') && (param_6 <= (int)(uint)pbVar1[*(int *)((int)_this + 0xc)])) &&
-          (pbVar4 = (byte *)(CONCAT31((int3)((uint)pbVar4 >> 8),
-                                      pbVar4[param_3 + *(int *)((int)_this + 0xc)]) & 0xffffff20),
-           (char)(uintptr_t)pbVar4 != ' ')) ||
-         ((pbVar1[*(int *)((int)_this + 0x3fc)] = 4, (int)pbVar1 < 0 ||
-          (*(int *)((int)_this + 8) <= (int)pbVar1)))) goto LAB_0043fd21;
-      pbVar4 = *(byte **)((int)_this + 0x400);
-      if ((int)pbVar1 < (int)*(byte **)((int)_this + 0x400)) {
-        pbVar4 = pbVar1;
+      failValue = (uint)(ctx->Width * param_4);
+      pbVar1 = (int)failValue + param_3;
+      if (((char)param_5 != '\0') && (param_6 <= (int)(uint)ctx->Walk[pbVar1])) {
+        failValue = CONCAT31((int3)(failValue >> 8), ctx->Walk[pbVar1]) & 0xffffff20;
+        if ((char)failValue != ' ') goto LAB_0043fd21;
       }
-      *(byte **)((int)_this + 0x400) = pbVar4;
-      pbVar4 = *(byte **)((int)_this + 0x404);
-      if ((int)*(byte **)((int)_this + 0x404) < (int)pbVar1) {
-        pbVar4 = pbVar1;
-      }
-      *(byte **)((int)_this + 0x404) = pbVar4;
+      ctx->Flags[pbVar1] = 4;
+      if ((pbVar1 < 0) || (ctx->Size <= pbVar1)) goto LAB_0043fd21;
+      failValue = (uint)ctx->DirtyMin;
+      if (pbVar1 < ctx->DirtyMin) failValue = (uint)pbVar1;
+      ctx->DirtyMin = (int)failValue;
+      failValue = (uint)ctx->DirtyMax;
+      if (ctx->DirtyMax < pbVar1) failValue = (uint)pbVar1;
+      ctx->DirtyMax = (int)failValue;
     }
     else {
       // Circle pre-mark mode
@@ -465,23 +262,23 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
           iVar13 = -(local_24 - ((uVar8 ^ (int)uVar8 >> 0x1f) - ((int)uVar8 >> 0x1f)));
           fVar11 = local_14;
           for (iVar5 = iVar13; local_14 = fVar11, iVar5 < 1; iVar5 = iVar5 + 1) {
-            iVar6 = iVar12 * *(int *)_this + iVar5 + param_3;
-            if ((iVar6 < 0) || (*(int *)((int)_this + 8) <= iVar6)) {
+            iVar6 = iVar12 * ctx->Width + iVar5 + param_3;
+            if ((iVar6 < 0) || (ctx->Size <= iVar6)) {
               CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
             }
             else if (((char)param_5 == '\0') ||
-                    ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar6) < param_6)) {
-              *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar6) = 4;
-              PATH_AddClearPos(_this, iVar6);
+                    ((int)(uint)ctx->Walk[iVar6] < param_6)) {
+              ctx->Flags[iVar6] = 4;
+              PATH_AddClearPos(ctx, iVar6);
             }
-            iVar6 = (iVar12 * *(int *)_this - iVar5) + param_3;
-            if ((iVar6 < 0) || (*(int *)((int)_this + 8) <= iVar6)) {
+            iVar6 = (iVar12 * ctx->Width - iVar5) + param_3;
+            if ((iVar6 < 0) || (ctx->Size <= iVar6)) {
               CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
             }
             else if (((char)param_5 == '\0') ||
-                    ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar6) < param_6)) {
-              *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar6) = 4;
-              PATH_AddClearPos(_this, iVar6);
+                    ((int)(uint)ctx->Walk[iVar6] < param_6)) {
+              ctx->Flags[iVar6] = 4;
+              PATH_AddClearPos(ctx, iVar6);
             }
             fVar11 = local_14;
           }
@@ -490,23 +287,23 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
             do {
               local_1c = (int)fVar11 * (int)fVar11 + local_18;
               if (SQRT((float)local_1c) < param_7) {
-                iVar5 = iVar12 * *(int *)_this + (int)fVar11 + param_3;
-                if ((iVar5 < 0) || (*(int *)((int)_this + 8) <= iVar5)) {
+                iVar5 = iVar12 * ctx->Width + (int)fVar11 + param_3;
+                if ((iVar5 < 0) || (ctx->Size <= iVar5)) {
                   CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
                 }
                 else if (((char)param_5 == '\0') ||
-                        ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar5) < param_6)) {
-                  *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar5) = 4;
-                  PATH_AddClearPos(_this, iVar5);
+                        ((int)(uint)ctx->Walk[iVar5] < param_6)) {
+                  ctx->Flags[iVar5] = 4;
+                  PATH_AddClearPos(ctx, iVar5);
                 }
-                iVar5 = (iVar12 * *(int *)_this - (int)fVar11) + param_3;
-                if ((iVar5 < 0) || (*(int *)((int)_this + 8) <= iVar5)) {
+                iVar5 = (iVar12 * ctx->Width - (int)fVar11) + param_3;
+                if ((iVar5 < 0) || (ctx->Size <= iVar5)) {
                   CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
                 }
                 else if (((char)param_5 == '\0') ||
-                        ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar5) < param_6)) {
-                  *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar5) = 4;
-                  PATH_AddClearPos(_this, iVar5);
+                        ((int)(uint)ctx->Walk[iVar5] < param_6)) {
+                  ctx->Flags[iVar5] = 4;
+                  PATH_AddClearPos(ctx, iVar5);
                 }
               }
               fVar11 = (float)((int)fVar11 + 1);
@@ -519,42 +316,37 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
     }
 
     // A* main loop setup
-    iVar12 = *(int *)_this * (int)param_2 + param_1;
+    iVar12 = ctx->Width * (int)param_2 + param_1;
     local_18 = param_1;
     local_20 = 1950000000;
     local_14 = param_2;
-    CBTree_Add((undefined4 *)((int)_this + 0x414), iVar12, 0);
-    pbVar4 = (byte *)(*(int *)((int)_this + 0x3fc) + iVar12);
-    *pbVar4 = *(byte *)(*(int *)((int)_this + 0x3fc) + iVar12) | 1;
-    if ((-1 < iVar12) && (iVar12 < *(int *)((int)_this + 8))) {
-      iVar5 = *(int *)((int)_this + 0x400);
-      if (iVar12 < *(int *)((int)_this + 0x400)) {
+    CBTree_Add(&ctx->Queue, iVar12, 0);
+    ctx->Flags[iVar12] |= 1;
+    failValue = (uint)(uintptr_t)(ctx->Flags + iVar12);
+    if ((-1 < iVar12) && (iVar12 < ctx->Size)) {
+      iVar5 = ctx->DirtyMin;
+      if (iVar12 < ctx->DirtyMin) {
         iVar5 = iVar12;
       }
-      *(int *)((int)_this + 0x400) = iVar5;
-      if (iVar12 <= *(int *)((int)_this + 0x404)) {
-        iVar12 = *(int *)((int)_this + 0x404);
+      ctx->DirtyMin = iVar5;
+      if (iVar12 <= ctx->DirtyMax) {
+        iVar12 = ctx->DirtyMax;
       }
-      *(int *)((int)_this + 0x404) = iVar12;
+      ctx->DirtyMax = iVar12;
 
       iVar12 = (-(uint)((char)param_5 != '\0') & 0x1c2) + 0x32;
       local_1c = iVar12;
       local_10 = iVar12;
-      iVar5 = (*(code *)**(undefined4 **)((int)_this + 0x414))();
+      iVar5 = ctx->Queue.Count;
 
       // A* search loop
       while ((0 < iVar5 && (0 < iVar12))) {
-        local_24 = 0;
-        iVar5 = *(int *)((int)_this + 0x41c);
-        while (iVar13 = iVar5, iVar13 != 0) {
-          local_24 = iVar13;
-          iVar5 = *(int *)(iVar13 + 8);
-        }
-        iStack_4 = CBTree_RemoveNode((void *)((int)_this + 0x414), &local_24);
-        iVar5 = iStack_4 % *(int *)_this;
-        param_7 = (float)(iStack_4 / *(int *)_this);
-        *(uint *)(*(int *)((int)_this + 0x408) + iStack_4 * 4) =
-             -(uint)(iVar12 != local_10) & 1950000000;
+        root = nullptr;
+        for (PathNode *node = ctx->Queue.Root; node != nullptr; node = node->Left) root = node;
+        iStack_4 = CBTree_RemoveNode(&ctx->Queue, &root);
+        iVar5 = iStack_4 % ctx->Width;
+        param_7 = (float)(iStack_4 / ctx->Width);
+        ctx->Cost[iStack_4] = (int)(-(uint)(iVar12 != local_10) & 1950000000);
 
         // Check 8 directions
         local_28 = (int *)ASTAR_DIR_START;
@@ -563,52 +355,48 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
           iStack_8 = *local_28;    // dy
           iVar13 = iStack_c + iVar5;
           iVar12 = iStack_8 + (int)param_7;
-          if ((((-1 < iVar13) && (-1 < iVar12)) && (iVar13 < *(int *)_this)) &&
-             ((iVar12 < *(int *)((int)_this + 4) &&
-              (iVar6 = *(int *)_this * iVar12 + iVar13,
-              (*(byte *)(*(int *)((int)_this + 0x3fc) + iVar6) & 2) != 0)))) {
+          if ((((-1 < iVar13) && (-1 < iVar12)) && (iVar13 < ctx->Width)) &&
+             ((iVar12 < ctx->Height &&
+              (iVar6 = ctx->Width * iVar12 + iVar13,
+              (ctx->Flags[iVar6] & 2) != 0)))) {
             if ((iStack_c == 0) || (iVar9 = 7, iStack_8 == 0)) {
               iVar9 = 5;
             }
-            iVar3 = *(int *)((int)_this + 0x408);
-            iVar9 = *(int *)(iVar3 + iVar6 * 4) + iVar9;
-            if (iVar9 < *(int *)(iVar3 + iStack_4 * 4)) {
-              *(int *)(iVar3 + iStack_4 * 4) = iVar9;
-              *(int *)(*(int *)((int)_this + 0x40c) + iStack_4 * 4) = iVar13;
-              *(int *)(*(int *)((int)_this + 0x410) + iStack_4 * 4) = iVar12;
+            iVar9 = ctx->Cost[iVar6] + iVar9;
+            if (iVar9 < ctx->Cost[iStack_4]) {
+              ctx->Cost[iStack_4] = iVar9;
+              ctx->ParentX[iStack_4] = iVar13;
+              ctx->ParentY[iStack_4] = iVar12;
             }
           }
           local_28 = local_28 + 2;
         } while (local_28 < ASTAR_DIR_END);
 
-        *(byte *)(*(int *)((int)_this + 0x3fc) + iStack_4) =
-             *(byte *)(*(int *)((int)_this + 0x3fc) + iStack_4) | 2;
+        ctx->Flags[iStack_4] =
+             ctx->Flags[iStack_4] | 2;
 
-        if ((*(byte *)(*(int *)((int)_this + 0x3fc) + iStack_4) & 4) != 0) {
+        if ((ctx->Flags[iStack_4] & 4) != 0) {
           // Found target — trace back path
-          param_5 = *(int *)((int)_this + 0x41c);
-          this_00 = (void *)((int)_this + 0x414);
-          if (param_5 != 0) {
-            if (*(undefined4 **)(param_5 + 8) != (undefined4 *)0x0) {
-              CBTree_RemoveFrom(this_00, *(undefined4 **)(param_5 + 8));
-            }
-            if (*(undefined4 **)(param_5 + 0xc) != (undefined4 *)0x0) {
-              CBTree_RemoveFrom(this_00, *(undefined4 **)(param_5 + 0xc));
-            }
-              CBTree_RemoveNode(this_00, &param_5);
-            *(undefined4 *)((int)_this + 0x41c) = 0;
+          // IDA reusa param_5 como raíz; el valor no vuelve a leerse en esta rama.
+          this_00 = &ctx->Queue;
+          subtree = ctx->Queue.Root;
+          if (subtree != nullptr) {
+            if (subtree->Left != nullptr) CBTree_RemoveFrom(this_00, subtree->Left);
+            if (subtree->Right != nullptr) CBTree_RemoveFrom(this_00, subtree->Right);
+            CBTree_RemoveNode(this_00, &subtree);
+            ctx->Queue.Root = nullptr;
           }
-          *(undefined4 *)((int)_this + 0x418) = 0;
-          *(undefined4 *)((int)_this + 0x10) = 0;
+          ctx->Queue.Count = 0;
+          ctx->Length = 0;
           while (true) {
-            *(char *)((int)_this + (0x207 - *(int *)((int)_this + 0x10))) = (char)iVar5;
-            *(char *)((int)_this + (0x3fb - *(int *)((int)_this + 0x10))) = (char)(int)param_7;
+            ctx->PathX[499 - ctx->Length] = (char)iVar5;
+            ctx->PathY[499 - ctx->Length] = (char)(int)param_7;
             if ((iVar5 == param_1) && (param_7 == param_2)) break;
-            iVar12 = (int)param_7 * *(int *)_this + iVar5;
-            iVar13 = *(int *)((int)_this + 0x10) + 1;
-            iVar5 = *(int *)(*(int *)((int)_this + 0x40c) + iVar12 * 4);
-            param_7 = *(float *)(*(int *)((int)_this + 0x410) + iVar12 * 4);
-            *(int *)((int)_this + 0x10) = iVar13;
+            iVar12 = (int)param_7 * ctx->Width + iVar5;
+            iVar13 = ctx->Length + 1;
+            iVar5 = ctx->ParentX[iVar12];
+            param_7 = *reinterpret_cast<float *>(&ctx->ParentY[iVar12]);
+            ctx->Length = iVar13;
             if (499 < iVar13) {
               return (uint)param_7 & 0xffffff00;
             }
@@ -621,15 +409,15 @@ PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
         do {
           iVar12 = local_28[-1] + iVar5;
           iVar13 = *local_28 + (int)param_7;
-          if ((((-1 < iVar12) && (-1 < iVar13)) && (iVar12 < *(int *)_this)) &&
-             (iVar13 < *(int *)((int)_this + 4))) {
-            iVar6 = *(int *)_this * iVar13 + iVar12;
-            bVar2 = *(byte *)(*(int *)((int)_this + 0xc) + iVar6);
+          if ((((-1 < iVar12) && (-1 < iVar13)) && (iVar12 < ctx->Width)) &&
+             (iVar13 < ctx->Height)) {
+            iVar6 = ctx->Width * iVar13 + iVar12;
+            bVar2 = ctx->Walk[iVar6];
             uVar8 = (uint)bVar2;
             if ((bVar2 & 0x20) == 0x20) {
               uVar8 = uVar8 - 0x20;
             }
-            if (((*(byte *)(*(int *)((int)_this + 0x3fc) + iVar6) & 1) == 0) &&
+            if (((ctx->Flags[iVar6] & 1) == 0) &&
                ((int)uVar8 < param_6)) {
               uVar8 = iVar12 - param_3 >> 0x1f;
               iVar12 = (iVar12 - param_3 ^ uVar8) - uVar8;
@@ -647,24 +435,24 @@ LAB_0043fa38:
               }
               uVar8 = iVar12 - iVar13 >> 0x1f;
               iVar12 = ((iVar12 - iVar13 ^ uVar8) - uVar8) * 0xf + 3 + iVar9 * 0x15;
-              CBTree_Add((void *)((int)_this + 0x414), iVar6,
+              CBTree_Add(&ctx->Queue, iVar6,
                            ((int)(iVar12 + (iVar12 >> 0x1f & 3U)) >> 2) +
-                           *(int *)(*(int *)((int)_this + 0x408) + iStack_4 * 4));
-              pbVar4 = (byte *)(*(int *)((int)_this + 0x3fc) + iVar6);
-              *pbVar4 = *pbVar4 | 1;
-              if ((iVar6 < 0) || (*(int *)((int)_this + 8) <= iVar6)) goto LAB_0043fd21;
-              iVar12 = *(int *)((int)_this + 0x400);
-              if (iVar6 < *(int *)((int)_this + 0x400)) {
+                           ctx->Cost[iStack_4]);
+              ctx->Flags[iVar6] |= 1;
+              failValue = (uint)(uintptr_t)(ctx->Flags + iVar6);
+              if ((iVar6 < 0) || (ctx->Size <= iVar6)) goto LAB_0043fd21;
+              iVar12 = ctx->DirtyMin;
+              if (iVar6 < ctx->DirtyMin) {
                 iVar12 = iVar6;
               }
-              *(int *)((int)_this + 0x400) = iVar12;
-              iVar12 = *(int *)((int)_this + 0x404);
-              if (*(int *)((int)_this + 0x404) < iVar6) {
+              ctx->DirtyMin = iVar12;
+              iVar12 = ctx->DirtyMax;
+              if (ctx->DirtyMax < iVar6) {
                 iVar12 = iVar6;
               }
-              *(int *)((int)_this + 0x404) = iVar12;
-              *(int *)(*(int *)((int)_this + 0x40c) + iVar6 * 4) = iVar5;
-              *(float *)(*(int *)((int)_this + 0x410) + iVar6 * 4) = param_7;
+              ctx->DirtyMax = iVar12;
+              ctx->ParentX[iVar6] = iVar5;
+              *reinterpret_cast<float *>(&ctx->ParentY[iVar6]) = param_7;
             }
           }
           local_28 = local_28 + 2;
@@ -695,48 +483,44 @@ LAB_0043fb32:
         }
         iVar12 = local_1c + -1;
         local_1c = iVar12;
-        iVar5 = (*(code *)**(undefined4 **)((int)_this + 0x414))();
+        iVar5 = ctx->Queue.Count;
       }
 
-      puVar10 = (undefined4 *)((int)_this + 0x414);
       if ((char)param_5 == '\0') {
-        param_5 = *(int *)((int)_this + 0x41c);
-        if (param_5 != 0) {
-          if (*(undefined4 **)(param_5 + 8) != (undefined4 *)0x0) {
-            CBTree_RemoveFrom(puVar10, *(undefined4 **)(param_5 + 8));
-          }
-          if (*(undefined4 **)(param_5 + 0xc) != (undefined4 *)0x0) {
-            CBTree_RemoveFrom(puVar10, *(undefined4 **)(param_5 + 0xc));
-          }
-          CBTree_RemoveNode(puVar10, &param_5);
-          *(undefined4 *)((int)_this + 0x41c) = 0;
+        this_00 = &ctx->Queue;
+        subtree = ctx->Queue.Root;
+        if (subtree != nullptr) {
+          if (subtree->Left != nullptr) CBTree_RemoveFrom(this_00, subtree->Left);
+          if (subtree->Right != nullptr) CBTree_RemoveFrom(this_00, subtree->Right);
+          CBTree_RemoveNode(this_00, &subtree);
+          ctx->Queue.Root = nullptr;
         }
-        *(undefined4 *)((int)_this + 0x418) = 0;
-        *(undefined4 *)((int)_this + 0x10) = 0;
+        ctx->Queue.Count = 0;
+        ctx->Length = 0;
         while (true) {
-          *(char *)((int)_this + (0x207 - *(int *)((int)_this + 0x10))) = (char)local_18;
-          *(char *)((int)_this + (0x3fb - *(int *)((int)_this + 0x10))) = (char)(int)local_14;
+          ctx->PathX[499 - ctx->Length] = (char)local_18;
+          ctx->PathY[499 - ctx->Length] = (char)(int)local_14;
           if ((local_18 == param_1) && (local_14 == param_2)) break;
-          iVar12 = (int)local_14 * *(int *)_this + local_18;
-          iVar5 = *(int *)((int)_this + 0x10) + 1;
-          local_18 = *(int *)(*(int *)((int)_this + 0x40c) + iVar12 * 4);
-          local_14 = *(float *)(*(int *)((int)_this + 0x410) + iVar12 * 4);
-          *(int *)((int)_this + 0x10) = iVar5;
+          iVar12 = (int)local_14 * ctx->Width + local_18;
+          iVar5 = ctx->Length + 1;
+          local_18 = ctx->ParentX[iVar12];
+          local_14 = *reinterpret_cast<float *>(&ctx->ParentY[iVar12]);
+          ctx->Length = iVar5;
           if (499 < iVar5) {
             return (uint)local_14 & 0xffffff00;
           }
         }
 LAB_0043fc4d:
-        iVar12 = *(int *)((int)_this + 0x10) + 1;
-        *(int *)((int)_this + 0x10) = iVar12;
+        iVar12 = ctx->Length + 1;
+        ctx->Length = iVar12;
         return CONCAT31((int3)((uint)iVar12 >> 8), 1);
       }
-      CBTree_RemoveAll((undefined4 *)puVar10);
-      pbVar4 = nullptr;
+      CBTree_RemoveAll(&ctx->Queue);
+      failValue = 0;
     }
   }
 LAB_0043fd21:
-  return (uint)pbVar4 & 0xffffff00;
+  return failValue & 0xffffff00;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -759,49 +543,22 @@ LAB_0043fd21:
 //   [0x107] +0x41c           raiz del arbol de la cola
 //   ademas: [+0x207..] path_x  y  [+0x3fb..] path_y
 //
-// ── El vtable ────────────────────────────────────────────────────────────────
-// El ctor escribe `MOV dword ptr [EAX + 0x414], 0x552840`, y en 0x00552840 hay
-// un unico puntero: 0x00422DE0. Esa direccion no esta definida como funcion en
-// el Ghidra, pero sus bytes son `8B 41 04 C3`:
-//     MOV EAX, [ECX+4]
-//     RET
-// o sea un `__thiscall int GetCount()` que devuelve el campo en this+4. Con
-// this = contexto+0x414, ese campo es +0x418: la cantidad de nodos de la cola.
-// Encaja con el uso en FindPath: `iVar2 = (**(code **)in_ECX[0x105])();` seguido
-// de `while ((0 < iVar2 && (0 < iVar10)))`.
-extern "C" int __fastcall PathPQueue_GetCount(void *_this, void * /*edx*/)
-{
-    return *(int *)((char *)_this + 4);
-}
-
-// El vtable de una sola entrada que vive en 0x00552840 en el binario.
-static void *s_PathPQueueVtbl[1] = { (void *)&PathPQueue_GetCount };
-
-// Ctor del contexto — binario 0x0043F280..0x0043F2C7 (no esta definido como
-// funcion en el Ghidra, va inline antes de InitPath):
-//     PUSH 0x424 ; CALL operator_new ; XOR ECX,ECX ; CMP EAX,ECX ; JZ fail
-//     MOV [EAX+0x414], 0x552840
-//     MOV [EAX+0x418], ECX     MOV [EAX+0x41c], ECX
-//     MOV [EAX+0x3fc], ECX     MOV [EAX+0x408], ECX
-//     MOV [EAX+0x40c], ECX     MOV [EAX+0x410], ECX
-//     MOV [0x05826df4], EAX
-// Ojo con el tamano: son 0x424 bytes, no 0x420. Con 0x420 el ultimo campo del
-// contexto (+0x41c, la raiz del arbol) cae fuera de la reserva.
+// Ctor del contexto — binario 0x0043F280..0x0043F2C7.
+// La vtable de IDA sólo expone GetCount; acá la cuenta se lee del campo.
 void __cdecl PathContext_Create(void)
 {
-    DWORD *p = (DWORD *)operator_new(0x424);
-    if (p == nullptr) {
-        DAT_05826df4 = 0;
+    auto *ctx = static_cast<PathContext *>(operator_new(sizeof(PathContext)));
+    if (ctx == nullptr) {
+        DAT_05826df4 = nullptr;
         return;
     }
-    p[0x105] = (DWORD)(uintptr_t)s_PathPQueueVtbl;   // +0x414 vtable
-    p[0x106] = 0;                                    // +0x418 count
-    p[0x107] = 0;                                    // +0x41c root
-    p[0xff]  = 0;                                    // +0x3fc flagmap
-    p[0x102] = 0;                                    // +0x408 costmap
-    p[0x103] = 0;                                    // +0x40c parentX
-    p[0x104] = 0;                                    // +0x410 parentY
-    DAT_05826df4 = (DWORD)(uintptr_t)p;
+    ctx->Queue.Count = 0;
+    ctx->Queue.Root = nullptr;
+    ctx->Flags = nullptr;
+    ctx->Cost = nullptr;
+    ctx->ParentX = nullptr;
+    ctx->ParentY = nullptr;
+    DAT_05826df4 = ctx;
 }
 
 // ZzzAI::InitPath (0x0043F2D0) no va acá: es PathFinder_ResetContext, que la

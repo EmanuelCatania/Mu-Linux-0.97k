@@ -17,24 +17,24 @@ char simulationSprites[sizeof(DAT_07c85890)] = {};
 // Su consumo por el render no borra la muestra para los renders sin paso.
 void Sprite_CaptureStep() {
     memcpy(simulationSprites, DAT_07c85890, sizeof(simulationSprites));
-    for (int i = 0; i < 1002; ++i) DAT_07c85890[i * 0x1bc] = 0;
+    for (int i = 0; i < 1002; ++i) DAT_07c85890[i * OBJECT_STRIDE] = 0;
 }
 void Sprite_ReplayStep() {
     int destination = 0;
     for (int i = 0; i < 1002; ++i) {
-        const char *sample = simulationSprites + i * 0x1bc;
+        const char *sample = simulationSprites + i * OBJECT_STRIDE;
         if (!sample[0]) continue;
-        while (destination < 1002 && DAT_07c85890[destination * 0x1bc]) ++destination;
+        while (destination < 1002 && DAT_07c85890[destination * OBJECT_STRIDE]) ++destination;
         if (destination == 1002) break;
-        char *out=DAT_07c85890+destination++*0x1bc;
-        memcpy(out,sample,0x1bc);
+        char *out=DAT_07c85890+destination++*OBJECT_STRIDE;
+        memcpy(out,sample,OBJECT_STRIDE);
         // El sprite efímero conserva su alta/azar; sólo acompaña la traslación
         // visual de su dueño conocido. No se inventa identidad entre emisiones.
         float offset[3];
-        if (RenderInterpolation_OwnerOffset((void *)*(int *)(out+0xfc),offset))
+        if (RenderInterpolation_OwnerOffset(*(void **)(out+0xfc),offset))
             for (int axis=0;axis<3;++axis) {
                 *(float *)(out+0x10+4*axis)+=offset[axis];
-                *(float *)(out+0x170+4*axis)+=offset[axis];
+                *(float *)(out+EntityOffset(0x170)+4*axis)+=offset[axis];
             }
     }
 }
@@ -47,10 +47,11 @@ void Sprite_ReplayStep() {
 // Es la función que dibuja todos los sprites/glows/sparkles del pool (glow +9
 // set, wing FX, weapon FX, particles, etc.). Itera los 1002 slots por índice.
 // IDA: RenderSprites
+extern "C" void DbgLogPublic(const char* msg);
 void __cdecl Render_DrawSpritePool(void)
 {
     char *pcVar2 = DAT_07c85890;
-    for (int i = 0; i < 1002; ++i, pcVar2 += 0x1bc) {
+    for (int i = 0; i < 1002; ++i, pcVar2 += OBJECT_STRIDE) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
             if      (blend == 0) GL_SetBlendAdditive();
@@ -99,8 +100,8 @@ void __cdecl Render_DrawSprite(const OBJECT* object)
 
   // El slot es efímero: CreateSprite fija el factor en 1 y el pool se
   // consume en esta pasada. Calcular el ajuste sin alterar la muestra base.
-  fVar1 = *(float *)(param_1 + 0x108);
-  if (*(char *)(param_1 + 0x160) == 0) {
+  fVar1 = *(float *)(param_1 + EntityOffset(0x108));
+  if (*(char *)(param_1 + EntityOffset(0x160)) == 0) {
     fVar1 -= _DAT_005524f4;
     if (fVar1 < _DAT_005526e4) fVar1 = 0.2f;
   } else {
@@ -108,7 +109,7 @@ void __cdecl Render_DrawSprite(const OBJECT* object)
     if (fVar1 > _DAT_0055256c) fVar1 = 1.0f;
   }
   fVar1 *= *(float *)(param_1 + 0xc);
-  iVar2 = *(short *)(param_1 + 2) * 0x38;
+  iVar2 = *(short *)(param_1 + 2) * TEXTURE_STRIDE;
   RenderSprite_0((int)*(short *)(param_1 + 2),(float *)(param_1 + 0x10),
                fVar1 * *(float *)((char*)&DAT_083a7cc0 + iVar2),fVar1 * *(float *)((char*)&DAT_083a7cc4 + iVar2),
                (float *)(param_1 + 0xe8),*(float *)(param_1 + 0x24),0.0,0.0,1.0,1.0);

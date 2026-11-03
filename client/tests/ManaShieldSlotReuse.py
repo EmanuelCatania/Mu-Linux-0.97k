@@ -15,6 +15,9 @@ def function(source,name):
     return source[match.start():end]
 code=r'''
 #include <cstdint>
+constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;
+#include <cstddef>
+constexpr std::size_t EntityOffset(std::size_t x86){return x86;}   // layout x86 del harness
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

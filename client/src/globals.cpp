@@ -275,7 +275,7 @@ DWORD    DAT_00559c90  = 0;
 // los alias apuntan dentro de este array y son `int&` (IDA: `int InputTextMax[8]`),
 // nunca float ni globals sueltos.
 int      _InputTextMaxArr[8] = {0,0,0,0,0,0,0,0};
-int      InputTextMaxClusters[8] = {0,0,0,0,0,0,0,0};
+int      InputTextMaxClusters[10] = {};
 int&     InputTextMax = _InputTextMaxArr[0];
 int&     _DAT_00559c98 = _InputTextMaxArr[1];
 DWORD&   DAT_00559c98  = reinterpret_cast<DWORD&>(_InputTextMaxArr[1]);
@@ -453,7 +453,7 @@ DWORD    DAT_055c9b80  = 0;
 // HashTable obfuscation. Original binary has a real hash-table object at
 // 0x055c9bc8..0x055c9bd4 (contiguous). 40+ inlined callers deref the vtable
 // at offset +0xC, and insert/lookup helpers read capacity at offset +0xC from
-// the CONTEXT (&MAIN_HASH_CLASS + 0xC = DAT_055c9bd4).
+// the CONTEXT (&MAIN_HASH_CLASS + 3 * sizeof(void*) = DAT_055c9bd4).
 //
 // Estrategia SAFE SENTINEL SLOT (con capacity=0, los sitios sin el guard de bd4
 // terminan en `puVar = NULL → *(NULL + 0x161)`):
@@ -504,23 +504,23 @@ static void* g_FakeHashVtable[8] = {
 //
 // AntiTamper_HashNode() (System_Legacy.cpp) ya usaba 0x585; al centinela se le
 // habia pasado.
-alignas(4) static unsigned char g_HashSentinelNode[0x585] = {0};
+alignas(4) static unsigned char g_HashSentinelNode[0x2000] = {0};
 
 // Single-slot hash arrays. Both point into static storage so we don't need
 // to allocate. Slot 0 of g_HashValueArr is initialized to &sentinel; slot 0
 // of g_HashKeyArr is left at 0 (matches any "key=0" lookup; for key!=0 the
 // caller's key-check fails and the iteration limit drops out).
-static DWORD g_HashValueArr[1] = { 0 };  // values (filled by ctor below)
+static uintptr_t g_HashValueArr[64] = { 0 };  // values (filled by ctor below)
 static DWORD g_HashKeyArr  [1] = { 0 };  // keys
 
 // Buffer layout (original binary): +0 vtable, +4 values, +8 keys, +0xC capacity.
-DWORD    g_HashTableCtx[4] = { 0, 0, 0, 0 };
+uintptr_t g_HashTableCtx[4] = { 0, 0, 0, 0 };
 struct HashCtxInit_t {
     HashCtxInit_t() {
-        g_HashValueArr[0]   = (DWORD)g_HashSentinelNode;
-        g_HashTableCtx[0] = (DWORD)g_FakeHashVtable;        // vtable
-        g_HashTableCtx[1] = (DWORD)g_HashValueArr;          // value array
-        g_HashTableCtx[2] = (DWORD)g_HashKeyArr;            // key array
+        g_HashValueArr[0]   = (uintptr_t)g_HashSentinelNode;
+        g_HashTableCtx[0] = (uintptr_t)g_FakeHashVtable;        // vtable
+        g_HashTableCtx[1] = (uintptr_t)g_HashValueArr;          // value array
+        g_HashTableCtx[2] = (uintptr_t)g_HashKeyArr;            // key array
         g_HashTableCtx[3] = 1;                               // capacity = 1
     }
 } g_HashCtxInitObj;
@@ -537,7 +537,7 @@ std::uintptr_t DAT_055c9e48 = 0;
 int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 BYTE*    DAT_055c9ff0  = nullptr;  // objeto del historial de chat
 BYTE*    DAT_055c9ff4  = nullptr;  // objeto de susurros
-DWORD    DAT_055c9ff8  = 0;
+uintptr_t DAT_055c9ff8 = 0;
 // DAT_055c9ffc = g_hWnd (gWindow.GetHwnd())
 // Font memory DC (GDI-only, DIB-backed). Set by Font_BuildLayout.
 // NOT the window DC — that is g_hDC (DAT_055ca004) que vive en CWindow.
@@ -639,7 +639,7 @@ char     DAT_05826d32  = 0;
 char     SoccerObserver  = 0; // IDA: DAT_05826d33 (0x05826D33)
 DWORD    DAT_05826d78  = 0;
 DWORD    DAT_05826dc8  = 0;
-DWORD    DAT_05826df4  = 0;
+PathContext* DAT_05826df4 = nullptr;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
 float    WorldTime  = 0.0f; // IDA: WorldTime (0x05826E08)
@@ -733,6 +733,9 @@ unsigned char DAT_07c5ab3c[200 * 0x70] = {};
 // field within slot[0]. We back the entire pool here and project the anchor
 // through a macro (see globals.h).
 char     g_RenderPool_07c608a8[100 * 0x2f0] = {};
+uintptr_t g_ParticleOwner[3000] = {};
+uintptr_t g_TrailOwner[100] = {};
+uintptr_t g_OperateObjects[200] = {};
 DWORD    DAT_07c74ae0  = 0;
 DWORD    DAT_07c74ae4  = 0;    // BGM track 1 enable flag
 // Player render pool: 100 entries × 0x1BC bytes (= 444 bytes/slot).
@@ -744,7 +747,7 @@ DWORD    DAT_07c74ae4  = 0;    // BGM track 1 enable flag
 // g_PlayerRenderPool cubre los 100 slots completos (cabecera de 0xEC bytes
 // incluida) y DAT_07c74f54 es un alias dentro del array en el offset 0xEC
 // (= anchor v1 del slot 0).
-char     g_PlayerRenderPool[100 * 0x1BC] = {};
+char     g_PlayerRenderPool[100 * OBJECT_STRIDE] = {};
 DWORD*   DAT_07c74f54 = (DWORD*)(g_PlayerRenderPool + 0xEC);
 
 // ── g_CharData XOR block ───────────────────────────────────────────────────────
@@ -773,7 +776,7 @@ DWORD    DAT_07e11e58  = 0;   // NPC script chat-log slot 2
 DWORD    DAT_07e11e5c  = 0;   // NPC script chat-log slot 3
 DWORD    DAT_07e11e78  = 0;
 DWORD    DAT_07e11e98  = 0;
-char     DAT_07e11e9c  = 0;
+// DAT_07e11e9c: alias de Party + 0x1C (globals.h)
 char     DAT_07e11d6e           = 0;
 char     LockInputStatus           = 0; // IDA: DAT_07e11d6f (0x07E11D6F)
 int      g_WorldLoading         = 0;   // >0 mientras corre OpenWorld (ver WinMain WM_USER)
@@ -795,7 +798,7 @@ DWORD    DAT_07e127f8  = 0;
 // model@ip+74, pos@ip+88 y el render (Entity_Render, en Render/Render_WorldHelpers.cpp)
 // los lee en los mismos offsets (active@slot+72). Ambos alineados sobre
 // DAT_07e12840.
-unsigned char DAT_07e12840[1000 * 0x204] = {};
+unsigned char DAT_07e12840[1000 * GROUND_ITEM_STRIDE] = {};
 DWORD    DAT_07e12945  = 0;
 char     DAT_07e91350[0x44]  = {0};
 DWORD    DAT_07e91388  = 0;
@@ -852,7 +855,7 @@ char     DAT_07ea9834[41] = {};   // 0.97.40: nombre de 40 bytes + NUL
 char     DAT_07ea983e  = 0;
 DWORD    DAT_07eaa0d0  = 0;
 DWORD    DAT_07eaa0d8  = 0;
-DWORD    DAT_07eaa0e0  = 0;
+// DAT_07eaa0e0: alias de PartyNumber (globals.h)
 DWORD    DAT_07eaa0e4  = 0;
 DWORD    DAT_07eaa0f0  = 0;
 DWORD    DAT_07eaa0f4  = 0;
@@ -880,7 +883,7 @@ DWORD    DAT_07eaa144  = 0;
 DWORD    DAT_07eaa14c  = 0;
 DWORD    DAT_07eaa150  = 0;
 DWORD    DAT_07eaa154  = 0;
-DWORD    DAT_07eaa160  = 0;
+uintptr_t DAT_07eaa160  = 0;
 char     DAT_07eaa165  = 0;
 DWORD    DAT_07eaa168  = 0;   // TextureEnable (GL texture state cache)
 char     DAT_07eaa179  = 0;
@@ -1249,7 +1252,7 @@ DamagePoint DAT_07c80110[kDamagePointCount] = {};
 // Character/effect update pool — 1002 slots × 444 bytes = 0x6c660 (matches
 // binario original 0x07c85890..0x07cf1ef0). CreateSprite (Effect_Spawn) necesita
 // el pool real para spawnear (glow +9, wing FX, weapon glows, lightning crackles).
-char     DAT_07c85890[1002 * 0x1bc] = {0};
+char     DAT_07c85890[1002 * OBJECT_STRIDE] = {0};
 // DAT_07c85894 = mismo pool, offset +4 (Sound_Queue.cpp / Sigil_RenderAll).
 // Lo dejamos como referencia al int en pool[4..7] para compartir storage.
 int&     DAT_07c85894 = *reinterpret_cast<int*>(&DAT_07c85890[4]);
@@ -1361,7 +1364,7 @@ DWORD    MouseRButtonPush  = 0;
 char     DAT_083a2370[0x960]  = {};   // 200 x 0xc (0x083A2370..0x083A2CD0)
 // Pool de boids (fish/butterfly/bird flocking) @ 0x083a2e90.
 // Particle_PathUpdate itera 10 entries × stride 0x1bc = 0x1180 bytes.
-char     DAT_083a2e90[10 * 0x1bc] = {};
+char     DAT_083a2e90[10 * OBJECT_STRIDE] = {};
 // DAT_083a2378 es ahora un alias dentro de DAT_083a2370 (ver globals.h).
 
 // Server select + char menu new globals
@@ -1491,7 +1494,7 @@ int      DAT_07e11da4  = 0;
 // Pasaba en cada render del campo de login: de ahi que el cliente muriera
 // siempre en el primer frame con el panel de credenciales.
 SIZE     g_TextExtent07E113D0 = {0, 0};
-LPSIZE&  lpsz_07e113d0 = *reinterpret_cast<LPSIZE*>(&g_TextExtent07E113D0.cx);
+
 int&    _DAT_07e113d4  = *reinterpret_cast<int*>(&g_TextExtent07E113D0.cy);
 DWORD    DAT_07e11d2c  = 0;
 // Tabla de 10 punteros del buffer de composición del IME: WinMain la escribe con
@@ -1561,7 +1564,7 @@ float    _DAT_005529fc = 18.0f;
 char     DAT_00558128[256]  = {};   // debug log format/data block
 char     DAT_0055a7c4  = 1;         // compressed-assets flag (alias: g_tex_ext_mode); 1=Data mode (plain Data\ folder, no pak)
 DWORD    _DAT_07e016f0 = 0;         // FPS tick timer (DWORD milliseconds)
-char     DAT_083a1218[0x1158]  = {};  // Butterfles OBJECT array (10 entries × 0x1BC stride = 0x1158 bytes)
+char     DAT_083a1218[10 * OBJECT_STRIDE]  = {};  // Butterfles OBJECT array (10 entries × 0x1BC stride = 0x1158 bytes)
 // Float aliases for view/projection matrix — MUST alias the array slots
 // (see CameraMatrix[12] above). Definidos como referencias para compartir
 // memoria con CameraMatrix[3/7/11] y evitar stomping.
@@ -1742,7 +1745,7 @@ float   _DAT_00552d00 = 0.001f;        // SLERP near-parallel epsilon
 float   _DAT_00552a1c = 1.0f;
 // ── Effect pool ───────────────────────────────────────────────────────────────
 // Effect pool — Effect_TickAll itera 200 slots × 0x1bc bytes.
-char    DAT_07b11670[200 * 0x1bc] = {};   // 200 slots: (0x07B27150-0x07B11670)/0x1bc (IDA bound unk_7B27178 = poolEnd+40)
+char    DAT_07b11670[200 * OBJECT_STRIDE] = {};   // 200 slots: (0x07B27150-0x07B11670)/0x1bc (IDA bound unk_7B27178 = poolEnd+40)
 // ── Monster_Data string literals ─────────────────────────────────────────────
 char    s_Data2_MonsterSetBase2_txt_00561530[] = "Data2/MonsterSetBase2.txt";
 char    s_Data2_Monster__0055e06c[] = "Data2/Monster/";
@@ -1906,7 +1909,7 @@ float   _DAT_0055298c = -50.0f;
 // ── Weather particle pool (40 × 0x1bc = 0x4560 bytes) ────────────────────────
 // Backing buffer único: Weather_Update recorre los slots 1..39 con stride 0x1bc.
 // Ver globals.h para los macros de field accessors.
-alignas(16) char g_WeatherSlotPool[40 * 0x1bc] = {0};
+alignas(16) char g_WeatherSlotPool[40 * OBJECT_STRIDE] = {0};
 // ── Weather float constants ───────────────────────────────────────────────────
 float   _DAT_0055285c = 200.0f;
 float   _DAT_0055286c = 360.0f;
@@ -1945,7 +1948,7 @@ float   _DAT_00552d34  = 1.4f;
 
 // ── Joint pool ────────────────────────────────────────────────────────────────
 // Joint pool — Joint_TickAll itera 500 slots × 0x9d8 bytes (~1.2MB).
-char    DAT_07b27150[500 * 0x9d8] = {};   // 500 slots: (0x07C5AB30-0x07B27150)/0x9d8 = 1260000/2520 (IDA ItemDrop_Render: 0x7B27B08..0x7C5B4E8, ancla +0x9B8)
+char    DAT_07b27150[500 * JOINT_STRIDE] = {};   // 500 slots: (0x07C5AB30-0x07B27150)/0x9d8 = 1260000/2520 (IDA ItemDrop_Render: 0x7B27B08..0x7C5B4E8, ancla +0x9B8)
 
 // ── Joint_Create float constants ─────────────────────────────────────────────
 float   _DAT_00552a14  = -0.5f;
@@ -2323,7 +2326,7 @@ char    s__s___File_corrupted__00559bd4[] = "%s - File corrupted.";
 char    DAT_005597d4[] = "wb";  // binary write mode at 0x005597d4
 
 // ── SecondPassword Screen2 entity list globals ────────────────────────────────
-DWORD   DAT_07e11e80  = 0;   // char-select entity name table base (stride 0x24)
+// DAT_07e11e80: alias de Party (globals.h)
 DWORD   DAT_07ea5b24  = 0;   // Screen2 panel origin X
 DWORD   DAT_07ea5b28  = 0;   // Screen2 panel origin Y
 
@@ -2793,7 +2796,7 @@ char   DAT_07d78098       = 0;
 //   (0x7E0FFC8 - 0x7E016F8) / 596 = **100 slots**.
 // `unk_7E01720` NO es otro pool: es base + 40 (el campo timer1), que es donde
 // MoveChat arranca su walk. Por eso ahora es una macro (ver globals.h).
-char   DAT_07e016f8[100 * 0x254] = {};
+alignas(8) char DAT_07e016f8[100 * (0x254 + sizeof(void*) - 4)] = {};   // CHAT: Owner es un puntero (x64: 0x258)
 // Guild mark bracket strings (initialized by resource loader)
 char   DAT_00559d60       = 0;  // guild mark prefix string "["
 short  DAT_00559d64       = 0;  // guild mark suffix 2-byte "]"

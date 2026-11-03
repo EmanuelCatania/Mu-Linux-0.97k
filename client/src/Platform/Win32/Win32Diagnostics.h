@@ -52,6 +52,28 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     if (line2[0]) __try { CrashLog(line2); } __except (EXCEPTION_EXECUTE_HANDLER) {}
     // ── Stack trace desde el contexto del crash ──────────────────────────────
     __try {
+#if defined(_M_X64)
+        if (ep && ep->ContextRecord) {
+            char trace[128];
+            _snprintf_s(trace, sizeof(trace), _TRUNCATE, "STACK_PC: rva=0x%llX (rsp=0x%p rbp=0x%p)",
+                (unsigned long long)(ep->ContextRecord->Rip - (DWORD64)GetModuleHandleA(nullptr)), (void*)ep->ContextRecord->Rsp, (void*)ep->ContextRecord->Rbp);
+            CrashLog(trace);
+            char scan[900];
+            int used = _snprintf_s(scan, sizeof(scan), _TRUNCATE, "STACK_SCAN:");
+            const DWORD64 image = (DWORD64)GetModuleHandleA(nullptr);
+            const DWORD64* stack = (const DWORD64*)ep->ContextRecord->Rsp;
+            for (int i = 0, found = 0; i < 400 && found < 24; ++i) {
+                __try {
+                    const DWORD64 value = stack[i];
+                    if (value > image + 0x1000 && value < image + 0x2000000) {
+                        used += _snprintf_s(scan + used, sizeof(scan) - used, _TRUNCATE, " %llX", value - image);
+                        ++found;
+                    }
+                } __except (EXCEPTION_EXECUTE_HANDLER) { break; }
+            }
+            CrashLog(scan);
+        }
+#else
         if (ep && ep->ContextRecord) {
             CONTEXT* ctx = ep->ContextRecord;
             char trace[800];
@@ -107,6 +129,7 @@ inline LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
             }
             CrashLog(trace);
         }
+#endif
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     __try {

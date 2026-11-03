@@ -39,7 +39,7 @@ void Effect_TickAll(void)
       })) {
         const int   type    = (int)*(short*)((char*)pfVar1 + 2);
         const int   subType = *(int*)((char*)pfVar1 + 4);
-        const int   owner   = *(int*)((char*)pfVar1 + 252);
+        const intptr_t owner = *(intptr_t*)&AsObject(pfVar1)->Owner;
         static unsigned char s_seen[2048] = {0};
         if (type >= 0 && type < 2048 && !s_seen[type]) {
           s_seen[type] = 1;
@@ -51,7 +51,7 @@ void Effect_TickAll(void)
         *(char *)pfVar1 = '\0';   // matar el efecto para no repetir el crash
       }
     }
-    pfVar1 = pfVar1 + 0x6f;
+    pfVar1 = pfVar1 + OBJECT_STRIDE / 4;
     iVar2 = iVar2 + 1;
   } while ((uintptr_t)pfVar1 < poolEnd);
 }
@@ -237,7 +237,7 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
 void Effect_TickFade(void)
 {
   for (int index=0;index<100;++index) {
-    char *slot=g_PlayerRenderPool+index*0x1bc;
+    char *slot=g_PlayerRenderPool+index*OBJECT_STRIDE;
     if (!slot[0]) continue;
     int &life=*(int *)(slot+0x60);
     --life;

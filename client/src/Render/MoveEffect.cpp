@@ -77,15 +77,15 @@ static bool IsEffectOwner(const void* owner)
     const auto allocation = (uintptr_t)DAT_055c9e48;
     const auto characters = (uintptr_t)DAT_07abf5d0;
     if (allocation && characters >= allocation &&
-        characters - allocation < 0x80u * 0x394u &&
-        (characters - allocation) % 0x394u == 0 &&
-        SceneObjects::IsSlot(owner, (void*)characters, 0x59740, 0x394)) return true;
+        characters - allocation < 0x80u * CHARACTER_STRIDE &&
+        (characters - allocation) % CHARACTER_STRIDE == 0 &&
+        SceneObjects::IsSlot(owner, (void*)characters, 400 * CHARACTER_STRIDE, CHARACTER_STRIDE)) return true;
     return SceneObjects::Contains(owner) ||
-        SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), 0x1bc) ||
-        SceneObjects::IsSlot(owner, g_PlayerRenderPool, sizeof(g_PlayerRenderPool), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), 0x1bc) ||
-        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), 0x1bc);
+        SceneObjects::IsSlot(owner, DAT_07b11670, sizeof(DAT_07b11670), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, DAT_07c85890, sizeof(DAT_07c85890), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, g_PlayerRenderPool, sizeof(g_PlayerRenderPool), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, DAT_083a1218, sizeof(DAT_083a1218), OBJECT_STRIDE) ||
+        SceneObjects::IsSlot(owner, DAT_083a2e90, sizeof(DAT_083a2e90), OBJECT_STRIDE);
 }
 
 // IDA: MoveEffect (0x00466AD0), desvanecimiento 247/248/250/251.
@@ -138,14 +138,14 @@ static void Tamachan_Move(char *o, int life)
         *o = 0;
         return;
     }
-    switch ((unsigned char)o[260]) {
+    switch ((unsigned char)o[EntityOffset(260)]) {
     case 0:
         if (life < 10) {
             *(int *)(o + 216) = 0;
             int state = rand() % 2 + 1;
-            o[260] = (char)state;
+            o[EntityOffset(260)] = (char)state;
             SetAction(AsObject(o), state);
-            if (o[260] == 2) goto walk;       // LABEL_312
+            if (o[EntityOffset(260)] == 2) goto walk;       // LABEL_312
             goto newLife;                     // LABEL_313
         }
         *(float *)(o + 24) = *(float *)(o + 60) + *(float *)(o + 216);
@@ -157,9 +157,9 @@ static void Tamachan_Move(char *o, int life)
     case 1:
         if (life < 10) {
             *(float *)(o + 216) = 40.0f;
-            o[260] = 0;
+            o[EntityOffset(260)] = 0;
             SetAction(AsObject(o), 0);
-            if (o[260] == 2) goto walk;
+            if (o[EntityOffset(260)] == 2) goto walk;
             goto newLife;
         }
         *(float *)(o + 24) = *(float *)(o + 60) + *(float *)(o + 216);
@@ -169,11 +169,11 @@ static void Tamachan_Move(char *o, int life)
         if (!(*(int *)(o + 96) % (rand() % 20 + 10))) PlayBuffer(118, 0, 0);
         return;
     case 2: {
-        float dx = *(float *)(o + 16) - *(float *)(o + 368);
-        float dy = *(float *)(o + 20) - *(float *)(o + 372);
+        float dx = *(float *)(o + 16) - *(float *)&((OBJECT*)(uintptr_t)(o))->StartPosition[0];
+        float dy = *(float *)(o + 20) - *(float *)&((OBJECT*)(uintptr_t)(o))->StartPosition[1];
         *(int *)(o + 96) = 10;
         float dist = (float)sqrt(dy * dy + dx * dx);
-        MoveHumming((float *)(o + 16), (float *)(o + 28), (float *)(o + 368), 3000.0f / dist);
+        MoveHumming((float *)(o + 16), (float *)(o + 28), (float *)(o + EntityOffset(368)), 3000.0f / dist);
         *(float *)(o + 28) = -10.0f;
         *(float *)(o + 32) = 0.0f;
         // En el binario el valor es el st0 de RequestTerrainHeight menos 10
@@ -191,12 +191,12 @@ static void Tamachan_Move(char *o, int life)
             Matrix_BuildFromEuler(angle, matrix);
             Vector_Rotate(offset, matrix, rotated);
             for (int i = 0; i < 3; ++i)
-                ((float *)(o + 368))[i] = rotated[i] + ((float *)(o + 52))[i];
+                ((float *)(o + EntityOffset(368)))[i] = rotated[i] + ((float *)(o + 52))[i];
             *(int *)(o + 96) = rand() % 100 + 50;
             int state = rand() % 3;
-            o[260] = (char)state;
+            o[EntityOffset(260)] = (char)state;
             SetAction(AsObject(o), state);
-            if (o[260] != 2) {
+            if (o[EntityOffset(260)] != 2) {
                 *(float *)(o + 192) = 0.0f;
                 *(float *)(o + 196) = 0.0f;
                 *(float *)(o + 200) = 0.0f;
@@ -240,7 +240,7 @@ void MoveEffect(float *param_1, int param_2)
     *(char*)param_1 = 0;
     return false;
   };
-  const void* owner = *(const void**)((char*)param_1 + 0xfc);
+  const void* owner = *(const void**)&((OBJECT*)(uintptr_t)(param_1))->Owner;
   // Null es legitimo en efectos sin seguimiento. Los no nulos siempre
   // deben pertenecer a un pool; validar null solo en las ramas que lo leen.
   if (owner && !validOwner(owner)) return;
@@ -255,9 +255,9 @@ void MoveEffect(float *param_1, int param_2)
   // `*(float *)&AsObject(param_1)->Owner` es el PUNTERO al owner del efecto: IDA lo lee como DWORD
   // (`*((_DWORD *)param_1 + 63)`), no como float.  Son los efectos que siguen a
   // su entidad duena.
-  int __owner_fVar13 = 0;
-  int __owner_fVar4 = 0;
-  int __owner_fVar5 = 0;
+  intptr_t __owner_fVar13 = 0;
+  intptr_t __owner_fVar4 = 0;
+  intptr_t __owner_fVar5 = 0;
 
 
   void *pvVar1;
@@ -267,11 +267,11 @@ void MoveEffect(float *param_1, int param_2)
   float fVar5;
   float fVar6;
   float fVar7;
-  uint uVar8;
-  int iVar9;
+  intptr_t uVar8;
+  intptr_t iVar9;
   float *pfVar10;
   char *pcVar11;
-  int iVar12;
+  intptr_t iVar12;
   float fVar13;
   undefined2 extraout_var;
   float *pfVar14;
@@ -418,12 +418,12 @@ void MoveEffect(float *param_1, int param_2)
     local_35c = (float *)(uVar8 + 7);
     // El counter (+96) es un DWORD. IDA: `v4 = *(int *)(o + 96)` y compara `v4`;
     // `v356 = *(float *)&v4` es solo la copia de los BITS.
-    const int __cnt = AsObject(param_1)->LifeTime;
+    const intptr_t __cnt = AsObject(param_1)->LifeTime;
     fVar13 = *(float *)&AsObject(param_1)->LifeTime;
-    local_36c = (float)(int)local_35c * _DAT_005524f4;
+    local_36c = (float)(int)(intptr_t)local_35c * _DAT_005524f4;
     if (__cnt < 5) {
       local_35c = (float *)(5 - __cnt);
-      local_36c = local_36c - (float)(int)local_35c * _DAT_005526e4;
+      local_36c = local_36c - (float)(int)(intptr_t)local_35c * _DAT_005526e4;
       if (local_36c < _DAT_00552580) {
         local_36c = 0.0;
       }
@@ -467,7 +467,7 @@ void MoveEffect(float *param_1, int param_2)
           local_368 = local_36c;
           local_360 = 0.0;
           AddTerrainLight(*pfVar10,AsObject(param_1)->Position[1], (float*)&local_368,3, (float*)DAT_081cb608);
-          if (((char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8) && ((AsObject(param_1)->LifeTime) % 0x14 == 0)) {
+          if (((char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8) && ((AsObject(param_1)->LifeTime) % 0x14 == 0)) {
             Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar10,150.0,
                          *(byte *)(param_1 + 0x22),AsObject(param_1)->PKKey);
           }
@@ -504,7 +504,7 @@ void MoveEffect(float *param_1, int param_2)
                 if (AsObject(param_1)->Direction[2] < _DAT_005529ac) goto LAB_0046a366;
               }
               else if (AsObject(param_1)->SubType == 1) {
-                pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+                pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
                 if (((pcVar11 == (char *)0x0) || (*pcVar11 != '\x01')) ||
                    (((byte)*(undefined4 *)(pcVar11 + 0x78) & 0x10) != 0x10)) {
                   *(float *)&AsObject(param_1)->LifeTime = 0.0;
@@ -517,9 +517,9 @@ void MoveEffect(float *param_1, int param_2)
                 local_360 = 0.1;
                 iVar9 = _rand();
                 Particle_Spawn(0x47e,AsObject(param_1)->Position,&local_334,&local_368,4,
-                             (float)(byte)(DAT_00559b78)[iVar9 % 7],*(int *)&AsObject(param_1)->Owner);
+                             (float)(byte)(DAT_00559b78)[iVar9 % 7],(intptr_t)AsObject(param_1)->Owner);
                 Particle_Spawn(0x47e,AsObject(param_1)->Position,&local_334,&local_368,4,
-                             (float)(byte)(DAT_00559b7f)[-(iVar9 % 7)],*(int *)&AsObject(param_1)->Owner);
+                             (float)(byte)(DAT_00559b7f)[-(iVar9 % 7)],(intptr_t)AsObject(param_1)->Owner);
               }
             }
             else if (iVar9 == 0x1f1) {
@@ -576,7 +576,7 @@ void MoveEffect(float *param_1, int param_2)
             local_354 = AsObject(param_1)->Position[0];
             local_350 = AsObject(param_1)->Position[1];
             local_34c = AsObject(param_1)->Position[2] + _DAT_005524f0;
-            Joint_Create(0x4ee,&local_354,&local_354,AsObject(param_1)->HeadAngle,0,*(int *)&AsObject(param_1)->Owner,150.0,
+            Joint_Create(0x4ee,&local_354,&local_354,AsObject(param_1)->HeadAngle,0,(intptr_t)AsObject(param_1)->Owner,150.0,
                          AsObject(param_1)->PKKey,AsObject(param_1)->Skill);
           }
         }
@@ -607,7 +607,7 @@ void MoveEffect(float *param_1, int param_2)
             local_364 = fVar13 * _DAT_005528b4;
             local_360 = fVar13;
             AddTerrainLight(*pfVar10,AsObject(param_1)->Position[1], (float*)&local_368,2, (float*)DAT_081cb608);
-            Effect_SpawnProximityHit((int)param_1);
+            Effect_SpawnProximityHit((intptr_t)param_1);
             break;
           case 0x4a7:
             local_360 = (float)__cnt * _DAT_005526e4;
@@ -615,7 +615,7 @@ void MoveEffect(float *param_1, int param_2)
             local_364 = local_360 * _DAT_00552504;
             goto LAB_004695b5;
           case 0x4ab:
-            Particle_Spawn(0x4ab,AsObject(param_1)->Position,AsObject(param_1)->Angle,&local_368,9,1.0,*(int *)&AsObject(param_1)->Owner);
+            Particle_Spawn(0x4ab,AsObject(param_1)->Position,AsObject(param_1)->Angle,&local_368,9,1.0,(intptr_t)AsObject(param_1)->Owner);
             break;
           case 0x4ac:
             local_368 = 1.0;
@@ -662,7 +662,7 @@ void MoveEffect(float *param_1, int param_2)
         case 0x4f0:
         case 0x4f1:
           if ((0 < AsObject(param_1)->SubType) && (AsObject(param_1)->SubType != 4)) {
-            Effect_SpawnLightningBurst((int)param_1);
+            Effect_SpawnLightningBurst((intptr_t)param_1);
           }
           break;
         case 0x4f3:
@@ -671,19 +671,19 @@ void MoveEffect(float *param_1, int param_2)
             local_318 = 0;
             local_314 = 0x41200000;
             if (!validOwner(owner)) return;
-            iVar9 = *(int *)(*(int *)&AsObject(param_1)->Owner + 0x114);
-            if (!SceneObjects::HasBoneRange(owner, (void*)(uintptr_t)iVar9, 0x630, 12)) {
+            intptr_t ownerBones = *(intptr_t *)((intptr_t)AsObject(param_1)->Owner + EntityOffset(0x114));
+            if (!SceneObjects::HasBoneRange(owner, (void*)(uintptr_t)ownerBones, 0x630, 12)) {
               *(char*)param_1 = 0; return;
             }
             const int ownerModel = *(const short*)((const char*)owner + 2);
             if (!DAT_05828d58 || ownerModel < 0 || ownerModel >= ResourceTables::ModelCount()) {
               *(char*)param_1 = 0; return;
             }
-            pvVar1 = (void *)(DAT_05828d58 + ownerModel * 0xbc);
-            *(float *)((int)pvVar1 + 0x6c) = AsObject(param_1)->StartPosition[0];
-            *(float *)((int)pvVar1 + 0x70) = AsObject(param_1)->StartPosition[1];
-            *(float *)((int)pvVar1 + 0x74) = AsObject(param_1)->StartPosition[2];
-            BMD_TransformPosition(pvVar1,(float *)(iVar9 + 0x630),&local_31c,AsObject(param_1)->Position,'\x01');
+            pvVar1 = (void *)(DAT_05828d58 + ownerModel * BMD_STRIDE);
+            *(float *)((intptr_t)pvVar1 + 0x6c + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[0];
+            *(float *)((intptr_t)pvVar1 + 0x70 + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[1];
+            *(float *)((intptr_t)pvVar1 + 0x74 + BMD_FIELD_SHIFT) = AsObject(param_1)->StartPosition[2];
+            BMD_TransformPosition(pvVar1,(float *)(ownerBones + 0x630),&local_31c,AsObject(param_1)->Position,'\x01');
           }
           pfVar10 = param_1 + 4;
           iVar9 = 3;
@@ -714,7 +714,7 @@ void MoveEffect(float *param_1, int param_2)
                 pfVar15 = param_1;
                 iVar12 = _rand();
                 Particle_Spawn(0x498,&local_354,&local_334,&local_368,2,
-                             (float)(iVar12 % 0x32 + 10) * _DAT_00552594,(int)pfVar15);
+                             (float)(iVar12 % 0x32 + 10) * _DAT_00552594,(intptr_t)pfVar15);
               }
               uVar29 = 0;
               iVar12 = _rand();
@@ -722,7 +722,7 @@ void MoveEffect(float *param_1, int param_2)
               fVar13 = (float)(iVar12 % 0x168);
               pfVar14 = param_1;
               uVar8 = _rand() % 8;
-              CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005526e4,pfVar15,(int)pfVar14,fVar13,uVar29);
+              CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005526e4,pfVar15,(intptr_t)pfVar14,fVar13,uVar29);
             }
             else {
               uVar29 = 0;
@@ -731,11 +731,11 @@ void MoveEffect(float *param_1, int param_2)
               fVar13 = (float)(iVar12 % 0x168);
               pfVar14 = param_1;
               uVar8 = _rand() % 8;
-              CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005528b8,pfVar15,(int)pfVar14,fVar13,uVar29);
+              CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005528b8,pfVar15,(intptr_t)pfVar14,fVar13,uVar29);
               pfVar15 = param_1;
               iVar12 = _rand();
               Particle_Spawn(0x498,&local_354,&local_334,&local_368,2,
-                           (float)(iVar12 % 0x32 + 10) * _DAT_00552594,(int)pfVar15);
+                           (float)(iVar12 % 0x32 + 10) * _DAT_00552594,(intptr_t)pfVar15);
             }
             iVar9 = iVar9 + -1;
           } while (iVar9 != 0);
@@ -764,10 +764,10 @@ void MoveEffect(float *param_1, int param_2)
             pfVar14 = pfVar15;
             pfVar22 = param_1;
             uVar8 = _rand() % 4;
-            CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 4) * _DAT_005526e4,pfVar14,(int)pfVar22,fVar13,uVar29);
+            CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 4) * _DAT_005526e4,pfVar14,(intptr_t)pfVar22,fVar13,uVar29);
             uVar29 = 0;
             iVar9 = _rand();
-            CreateSprite(0x47e,pfVar10,1.0f,pfVar15,(int)param_1,(float)(iVar9 % 0x168),uVar29);
+            CreateSprite(0x47e,pfVar10,1.0f,pfVar15,(intptr_t)param_1,(float)(iVar9 % 0x168),uVar29);
             if ((AsObject(param_1)->SubType == 1) &&
                (fVar17 = RequestTerrainHeight(AsObject(param_1)->Position[0], AsObject(param_1)->Position[1]), (float10)AsObject(param_1)->Position[2] < fVar17)) {
               local_354 = *pfVar10;
@@ -785,7 +785,7 @@ void MoveEffect(float *param_1, int param_2)
           break;
         case 0x4fa:
           if (!validOwner(owner)) return;
-          if (*(char *)*(int *)&AsObject(param_1)->Owner == '\0') {
+          if (*(char *)(intptr_t)AsObject(param_1)->Owner == '\0') {
             *(float *)&AsObject(param_1)->LifeTime = 0.0;
             goto LAB_0046a85e;
           }
@@ -800,21 +800,21 @@ void MoveEffect(float *param_1, int param_2)
             do {
               pfVar10 = local_35c;
               fVar13 = *(float *)&AsObject(param_1)->SubType;
-              fVar17 = (float10)(int)local_35c * (float10)_DAT_005529a0 +
+              fVar17 = (float10)(intptr_t)local_35c * (float10)_DAT_005529a0 +
                        (float10)(AsObject(param_1)->LifeTime) * (float10)_DAT_005529a4;
               if (fVar13 == 4.2039e-45f) {
                 fVar17 = -fVar17;
               }
               if (!validOwner(owner)) return;
-              __owner_fVar4 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+              __owner_fVar4 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
               fVar18 = (float10)fsin((float10)WorldTime * (float10)_DAT_00552998 +
-                                     (float10)(int)local_35c * (float10)_DAT_0055299c);
+                                     (float10)(intptr_t)local_35c * (float10)_DAT_0055299c);
               local_35c = (float *)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
               fVar18 = (float10)fsin(fVar17);
-              local_260 = (float)(fVar18 * (float10)(int)local_35c +
+              local_260 = (float)(fVar18 * (float10)(intptr_t)local_35c +
                                  (float10)*(float *)(__owner_fVar4 + 0x10));
               fVar17 = (float10)fcos(fVar17);
-              local_25c = (float)(fVar17 * (float10)(int)local_35c +
+              local_25c = (float)(fVar17 * (float10)(intptr_t)local_35c +
                                  (float10)*(float *)(__owner_fVar4 + 0x14));
               fVar5 = _DAT_0055285c;
               if (fVar13 == 4.2039e-45f) {
@@ -829,15 +829,15 @@ void MoveEffect(float *param_1, int param_2)
               local_1a4[5] = 1.0f;
               Particle_Spawn(0x4b0,&local_260,AsObject(param_1)->Angle,local_1a4 + (uint)(fVar13 == 4.2039e-45f) * 3,
                            5,0.4f,0);
-              CreateSprite(0x4fa,&local_260,1.0f,&local_368,*(int *)&AsObject(param_1)->Owner,0,0);
-              local_35c = (float *)((int)pfVar10 + 1);
-            } while ((int)local_35c < 3);
+              CreateSprite(0x4fa,&local_260,1.0f,&local_368,(intptr_t)AsObject(param_1)->Owner,0,0);
+              local_35c = (float *)((intptr_t)pfVar10 + 1);
+            } while ((intptr_t)local_35c < 3);
             break;
           case 2:   // 2.8026e-45f
             local_1f4 = (float)__cnt * _DAT_005524f4;
             local_1f0 = local_1f4;
             local_1ec = local_1f4;
-            CreateSprite(0x4fa,AsObject(param_1)->Position,1.5f,&local_1f4,*(int *)&AsObject(param_1)->Owner,0,0);
+            CreateSprite(0x4fa,AsObject(param_1)->Position,1.5f,&local_1f4,(intptr_t)AsObject(param_1)->Owner,0,0);
           }
           break;
         case 0x566:
@@ -859,7 +859,7 @@ void MoveEffect(float *param_1, int param_2)
           local_318 = 0x41a00000;
           local_314 = 0;
           Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
-          pfVar15 = param_1 + 0x5c;
+          pfVar15 = AsObject(param_1)->StartPosition;
           *pfVar15 = local_354 + *pfVar10;
           AsObject(param_1)->StartPosition[1] = local_350 + AsObject(param_1)->Position[1];
           AsObject(param_1)->StartPosition[2] = local_34c + AsObject(param_1)->Position[2];
@@ -878,7 +878,7 @@ void MoveEffect(float *param_1, int param_2)
           break;
         case 0x596:
           if (!validOwner(owner)) return;
-          pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+          pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
           if ((*pcVar11 == '\0') || (((byte)*(undefined4 *)(pcVar11 + 0x78) & 2) != 2)) {
 LAB_0046a366:
             *(float *)&AsObject(param_1)->LifeTime = 0.0;
@@ -887,7 +887,7 @@ LAB_0046a366:
             *(float *)&AsObject(param_1)->LifeTime = 4.2039e-44;
           }
           else {
-            fVar4 = *(float *)(pcVar11 + 0x15c);
+            fVar4 = *(float *)(pcVar11 + EntityOffset(0x15c));
             fVar5 = AsObject(pcVar11)->Position[2];
             AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0];
             AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1];
@@ -900,10 +900,10 @@ LAB_0046a366:
     }
     if (iVar9 == 0x1f0) {
       if (AsObject(param_1)->SubType == 1) {
-        Joint_Create(0x4e1,AsObject(param_1)->Position,AsObject(param_1)->Position,AsObject(param_1)->Angle,0xc,(int)param_1,100.0,-1,0);
+        Joint_Create(0x4e1,AsObject(param_1)->Position,AsObject(param_1)->Position,AsObject(param_1)->Angle,0xc,(intptr_t)param_1,100.0,-1,0);
       }
       else if (*(float *)&AsObject(param_1)->SubType == 0.0) {
-        Joint_Create(0x4e1,AsObject(param_1)->Position,AsObject(param_1)->Position,AsObject(param_1)->Angle,4,(int)param_1,50.0,-1,0);
+        Joint_Create(0x4e1,AsObject(param_1)->Position,AsObject(param_1)->Position,AsObject(param_1)->Angle,4,(intptr_t)param_1,50.0,-1,0);
       }
       goto switchD_00466b93_caseD_c1;
     }
@@ -940,7 +940,7 @@ LAB_0046a366:
         goto LAB_004695b5;
       }
       if (((*(int*)&fVar13) < 1) || (2 < (*(int*)&fVar13))) break;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
       if (pcVar11 == (char *)0x0) goto LAB_0046a85e;
       if ((*pcVar11 == '\0') || (((byte)*(undefined4 *)(pcVar11 + 0x78) & 0x20) != 0x20)) {
         AsObject(param_1)->Alpha = AsObject(param_1)->Alpha - _DAT_00552874;
@@ -983,7 +983,7 @@ LAB_00469366:
         Matrix_BuildFromEuler(AsObject(param_1)->HeadAngle,local_1a4 + 6);
         Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
         if (!validOwner(owner)) return;
-        __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+        __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
         local_354 = local_354 + *(float *)(__owner_fVar13 + 0x10);
         local_350 = local_350 + *(float *)(__owner_fVar13 + 0x14);
         local_368 = 1.0;
@@ -1065,8 +1065,8 @@ LAB_00469772:
               pcVar11 = (char *)(iVar9 + DAT_07abf5d0);
               local_35c = (float *)(int)(AsObject(param_1)->Position[1] - AsObject(pcVar11)->Position[1]);
               if ((((*pcVar11 != '\0') && (*(char *)&AsObject(pcVar11)->Visible != '\0')) && (pcVar11 != DAT_07abf5d8)) &&
-                 ((pcVar11[0x2fd] == '\0' &&
-                  (SQRT(local_348 * local_348 + (float)(int)local_35c * (float)(int)local_35c) <=
+                 ((pcVar11[EntityOffset(0x2fd)] == '\0' &&
+                  (SQRT(local_348 * local_348 + (float)(int)(intptr_t)local_35c * (float)(int)(intptr_t)local_35c) <=
                    _DAT_0055285c)))) {
                 if (AsObject(pcVar11)->Type == 0x186) {
                   uVar8 = 0x82;
@@ -1076,8 +1076,8 @@ LAB_00469772:
                 }
                 SetAction(AsObject(pcVar11),uVar8);
               }
-              iVar9 = iVar9 + 0x394;
-            } while (iVar9 < 0x59740);
+              iVar9 = iVar9 + CHARACTER_STRIDE;
+            } while (iVar9 < 400 * CHARACTER_STRIDE);
             fVar17 = (float10)local_344;
             goto LAB_004698ca;
           }
@@ -1200,7 +1200,7 @@ LAB_00469ab9:
           Particle_Spawn(0x4ab,pfVar10,AsObject(param_1)->Angle,&local_368,5,1.0,0);
         }
         if (AsObject(param_1)->SubType == 1) {
-          Effect_SpawnProximityHit((int)param_1);
+          Effect_SpawnProximityHit((intptr_t)param_1);
         }
       }
       break;
@@ -1217,7 +1217,7 @@ LAB_004695b5:
     case 0xc2:
     case 0x103:
       if (!validOwner(owner)) return;
-      __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+      __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
       fVar4 = *(float *)(__owner_fVar13 + 0x14);
       fVar5 = *(float *)(__owner_fVar13 + 0x18);
       AsObject(param_1)->Position[0] = *(float *)(__owner_fVar13 + 0x10);
@@ -1230,7 +1230,7 @@ LAB_004695b5:
     case 0xd6:
       if (AsObject(param_1)->SubType != 5) goto switchD_00466b93_caseD_c7;
       if (!validOwner(owner)) return;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
 LAB_00468772:
       AsObject(param_1)->Position[0] = AsObject(pcVar11)->Position[0] + AsObject(param_1)->StartPosition[0];
       AsObject(param_1)->Position[1] = AsObject(pcVar11)->Position[1] + AsObject(param_1)->StartPosition[1];
@@ -1282,7 +1282,7 @@ LAB_00468772:
       goto LAB_00468736;
     case 0xca:
       if (!validOwner(owner)) return;
-      __owner_fVar4 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+      __owner_fVar4 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
       fVar6 = *(float *)(__owner_fVar4 + 0x18) + _DAT_005524f0;
       fVar5 = *(float *)(__owner_fVar4 + 0x14);
       AsObject(param_1)->Position[0] = *(float *)(__owner_fVar4 + 0x10);
@@ -1351,7 +1351,7 @@ LAB_00468772:
         local_354 = *pfVar15 - _DAT_0055285c;
         local_350 = AsObject(param_1)->Position[1];
         local_34c = AsObject(param_1)->Position[2] + _DAT_005529c4;
-        Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
+        Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(intptr_t)param_1,10.0,-1,0);
       }
       uVar8 = _rand() % 2;
       bVar16 = uVar8 == 0;
@@ -1359,7 +1359,7 @@ LAB_00468772:
         local_354 = *pfVar15 + _DAT_0055285c;
         local_350 = AsObject(param_1)->Position[1];
         local_34c = AsObject(param_1)->Position[2] + _DAT_005529c4;
-        Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
+        Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(intptr_t)param_1,10.0,-1,0);
       }
       fVar17 = RequestTerrainHeight(AsObject(param_1)->Position[0], AsObject(param_1)->Position[1]);
       AsObject(param_1)->Position[2] = (float)fVar17;
@@ -1379,7 +1379,7 @@ LAB_00468772:
       local_364 = local_36c * _DAT_005529c0;
       local_360 = local_36c * _DAT_00552570;
       AddTerrainLight(*pfVar15,AsObject(param_1)->Position[1], (float*)&local_368,5, (float*)DAT_081cb608);
-      if (((AsObject(param_1)->LifeTime) % 0xf == 0) && ((char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8)) {
+      if (((AsObject(param_1)->LifeTime) % 0xf == 0) && ((char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8)) {
         Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar15,150.0,*(byte *)(param_1 + 0x22),
                      AsObject(param_1)->PKKey);
       }
@@ -1393,7 +1393,7 @@ LAB_00468772:
     case 0xe3:
       if (AsObject(param_1)->SubType == 5) {
         if (!validOwner(owner)) return;
-        pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+        pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
         if (*pcVar11 == '\0') {
           *(undefined1 *)param_1 = 0;
         }
@@ -1458,7 +1458,7 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xd4:
       AsObject(param_1)->Direction[2] = AsObject(param_1)->Direction[2] - _DAT_00552950;
-      Effect_SpawnProximityHit((int)param_1);
+      Effect_SpawnProximityHit((intptr_t)param_1);
       break;
     case 0xd7:
       AsObject(param_1)->Position[2] = AsObject(param_1)->Position[2] + AsObject(param_1)->Gravity;
@@ -1479,7 +1479,7 @@ switchD_00466b93_caseD_c7:
       AddTerrainLight(AsObject(param_1)->Position[0],AsObject(param_1)->Position[1], (float*)&local_368,2, (float*)DAT_081cb608);
       pfVar10 = param_1 + 7;
       Particle_Spawn(0x4ab,AsObject(param_1)->Position,pfVar10,&local_368,0,1.0,0);
-      Effect_CollisionCheck((int)param_1);
+      Effect_CollisionCheck((intptr_t)param_1);
       if (AsObject(param_1)->SubType == 3) {
         fVar13 = *pfVar10 + _DAT_00552488;
         *pfVar10 = fVar13;
@@ -1512,10 +1512,10 @@ switchD_00466b93_caseD_c7:
         pfVar10 = param_1 + 4;
         uVar29 = 0;
         lVar19 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime * 0.1
-        CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
+        CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(intptr_t)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
         lVar19 = (longlong)WorldTime;   // IDA: -(std::int64_t)WorldTime * 0.1
-        CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
+        CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(intptr_t)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
           uVar8 = _rand() % 32;
@@ -1543,10 +1543,10 @@ switchD_00466b93_caseD_c7:
         pfVar10 = param_1 + 4;
         uVar29 = 0;
         lVar19 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime * 0.1
-        CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
+        CreateSprite(0x4a7,pfVar10,0.5f,pfVar15,(intptr_t)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
         lVar19 = (longlong)WorldTime;   // IDA: -(std::int64_t)WorldTime * 0.1
-        CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
+        CreateSprite(0x4a7,pfVar10,1.0f,pfVar15,(intptr_t)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         local_35c = (float *)0x4;
         do {
           uVar8 = _rand() % 16;
@@ -1558,7 +1558,7 @@ switchD_00466b93_caseD_c7:
           local_350 = local_350 + AsObject(param_1)->Position[1];
           local_34c = (float)(int)(uVar8 - 8) + AsObject(param_1)->Position[2];
           Particle_Spawn(0x4d9,&local_354,AsObject(param_1)->Angle,pfVar15,1,1.0,0);
-          local_35c = (float *)((int)local_35c + -1);
+          local_35c = (float *)((intptr_t)local_35c + -1);
         } while (local_35c != (float *)0x0);
         Particle_Spawn(0x4c4,pfVar10,AsObject(param_1)->Angle,pfVar15,0,1.0,0);
       }
@@ -1569,10 +1569,10 @@ switchD_00466b93_caseD_c7:
         pfVar10 = param_1 + 4;
         uVar29 = 0;
         lVar19 = (longlong)WorldTime;   // IDA: (std::int64_t)WorldTime * 0.1
-        CreateSprite(0x47e,pfVar10,1.0f,&local_368,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
+        CreateSprite(0x47e,pfVar10,1.0f,&local_368,(intptr_t)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
         lVar19 = (longlong)WorldTime;   // IDA: -(std::int64_t)WorldTime * 0.1
-        CreateSprite(0x47e,pfVar10,2.0f,&local_368,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
+        CreateSprite(0x47e,pfVar10,2.0f,&local_368,(intptr_t)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
           uVar8 = _rand() % 16;
@@ -1595,7 +1595,7 @@ switchD_00466b93_caseD_c7:
           AsObject(param_1)->Direction[1] = AsObject(param_1)->Direction[1] * _DAT_005528b4;
         }
         if ((AsObject(param_1)->LifeTime == 1) &&
-           (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8)) {
+           (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8)) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar10,100.0,*(byte *)(param_1 + 0x22),
                        AsObject(param_1)->PKKey);
         }
@@ -1604,11 +1604,11 @@ switchD_00466b93_caseD_c7:
       local_364 = local_36c * _DAT_00552530;
       local_360 = local_364;
       AddTerrainLight(AsObject(param_1)->Position[0],AsObject(param_1)->Position[1], (float*)&local_368,2, (float*)DAT_081cb608);
-      Effect_CollisionCheck((int)param_1);
+      Effect_CollisionCheck((intptr_t)param_1);
       break;
     case 0xe1:
       if (!validOwner(owner)) return;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
       AsObject(param_1)->BlendMeshLight = 1.3;
       fVar13 = AsObject(pcVar11)->Position[1];
       fVar4 = AsObject(param_1)->Angle[2] + _DAT_00552488;
@@ -1668,7 +1668,7 @@ switchD_00466b93_caseD_c7:
       }
       else {
         if (!validOwner(owner)) return;
-        __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+        __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
         fVar4 = *(float *)(__owner_fVar13 + 0x10);
         fVar5 = *(float *)(__owner_fVar13 + 0x14);
         AsObject(param_1)->Scale = AsObject(param_1)->Scale + _DAT_005524f8;
@@ -1681,7 +1681,7 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xee:
       CreateEffect(0xef,AsObject(param_1)->Position,AsObject(param_1)->Angle,AsObject(param_1)->Light,(float *)(4 - __cnt),
-                   (float *)*(int *)&AsObject(param_1)->Owner,(float *)(uint)*(ushort *)&AsObject(param_1)->PKKey,
+                   (float *)(intptr_t)AsObject(param_1)->Owner,(float *)(uint)*(ushort *)&AsObject(param_1)->PKKey,
                    (float *)CONCAT31((int3)(CONCAT22(extraout_var,sVar3) >> 8),
                                      AsObject(param_1)->Skill),AsObject(param_1)->Kind);
       break;
@@ -1689,8 +1689,8 @@ switchD_00466b93_caseD_c7:
       if (*(unsigned int *)&AsObject(param_1)->SubType >= 1 && *(unsigned int *)&AsObject(param_1)->SubType <= 4)
         AsObject(param_1)->Alpha = EffectTrailAlpha[*(unsigned int *)&AsObject(param_1)->SubType - 1];
       if (!validOwner(owner)) return;
-      if ((*(byte *)(*(int *)&AsObject(param_1)->Owner + 0x88) < 0x60) ||
-         (0x7f < *(byte *)(*(int *)&AsObject(param_1)->Owner + 0x88))) {
+      if ((*(byte *)((intptr_t)AsObject(param_1)->Owner + 0x88) < 0x60) ||
+         (0x7f < *(byte *)((intptr_t)AsObject(param_1)->Owner + 0x88))) {
         local_318 = 0xc3160000;
       }
       else {
@@ -1702,7 +1702,7 @@ switchD_00466b93_caseD_c7:
       Matrix_BuildFromEuler(pfVar10,local_1a4 + 6);
       Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
       if (!validOwner(owner)) return;
-      __owner_fVar13 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+      __owner_fVar13 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
       pfVar15 = param_1 + 4;
       *pfVar15 = local_354 + *(float *)(__owner_fVar13 + 0x10);
       AsObject(param_1)->Position[1] = local_350 + *(float *)(__owner_fVar13 + 0x14);
@@ -1721,7 +1721,7 @@ switchD_00466b93_caseD_c7:
         iVar12 = _rand();
         local_330 = 0.0;
         local_35c = (float *)(iVar12 % 0x3c + -0x1e);
-        local_334 = (float)(int)local_35c;
+        local_334 = (float)(int)(intptr_t)local_35c;
         iVar12 = _rand();
         local_350 = AsObject(param_1)->Position[1];
         local_34c = AsObject(param_1)->Position[2];
@@ -1729,13 +1729,13 @@ switchD_00466b93_caseD_c7:
         local_354 = *pfVar15;
         local_334 = local_334 + *pfVar10;
         local_330 = local_330 + AsObject(param_1)->Angle[1];
-        local_32c = (float)(int)local_35c + AsObject(param_1)->Angle[2];
+        local_32c = (float)(int)(intptr_t)local_35c + AsObject(param_1)->Angle[2];
         iVar12 = _rand();
         local_35c = (float *)(iVar12 % 0x14 + -10);
-        local_354 = (float)(int)local_35c + local_354;
+        local_354 = (float)(int)(intptr_t)local_35c + local_354;
         iVar12 = _rand();
         local_35c = (float *)(iVar12 % 0x14 + -10);
-        local_350 = (float)(int)local_35c + local_350;
+        local_350 = (float)(int)(intptr_t)local_35c + local_350;
         Joint_Create(0x4e9,&local_354,&local_354,&local_334,0,0,10.0,-1,0);
         if (iVar9 == 0) {
           Particle_Spawn(0x497,&local_354,&local_334,&local_368,0,1.0,0);
@@ -1748,14 +1748,14 @@ switchD_00466b93_caseD_c7:
       local_368 = 1.0;
       local_364 = 0.8;
       local_360 = 0.6;
-      CreateSprite(0x47e,&local_354,2.0f,&local_368,(int)param_1,0,0);
+      CreateSprite(0x47e,&local_354,2.0f,&local_368,(intptr_t)param_1,0,0);
       if (*(float *)&AsObject(param_1)->SubType == 0.0) {
         uVar8 = (*(uint *)&AsObject(param_1)->LifeTime) & 0x80000007;
         bVar16 = uVar8 == 0;
         if ((int)uVar8 < 0) {
           bVar16 = (uVar8 - 1 | 0xfffffff8) == 0xffffffff;
         }
-        if ((bVar16) && ((char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8)) {
+        if ((bVar16) && ((char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8)) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar15,150.0,*(byte *)(param_1 + 0x22),
                        AsObject(param_1)->PKKey);
         }
@@ -1789,7 +1789,7 @@ switchD_00466b93_caseD_c7:
           CreateEffect(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
-        bVar16 = (char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8;
+        bVar16 = (char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8;
         *(undefined1 *)param_1 = 0;
         if (bVar16) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,pfVar10,150.0,*(byte *)(param_1 + 0x22),
@@ -1816,9 +1816,9 @@ LAB_00466e5e:
       else {
         if (*(int*)&fVar4 == 3) {
           if (!validOwner(owner)) return;
-          __owner_fVar5 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+          __owner_fVar5 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
           AsObject(param_1)->Position[1] = *(float *)(__owner_fVar5 + 0x14);
-          iVar9 = *(int *)(__owner_fVar5 + 0xfc);
+          iVar9 = (intptr_t)AsObject(__owner_fVar5)->Owner;
           if (!validOwner((void*)(uintptr_t)iVar9)) return;
           AsObject(param_1)->Position[2] = *(float *)(__owner_fVar5 + 0x18);
           AsObject(param_1)->Position[0] = *(float *)(iVar9 + 0x10) + _DAT_0055297c;
@@ -1827,7 +1827,7 @@ LAB_00466e5e:
         if (*(int*)&fVar4 == 4) {
           fVar7 = AsObject(param_1)->Scale + _DAT_00552a08;
           if (!validOwner(owner)) return;
-          __owner_fVar5 = *(int *)&AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
+          __owner_fVar5 = (intptr_t)AsObject(param_1)->Owner;   // ver nota de __owner_* arriba
           fVar6 = *(float *)(__owner_fVar5 + 0x10);
           AsObject(param_1)->Scale = fVar7;
           fVar7 = fVar7 * _DAT_00552a04;
@@ -1853,7 +1853,7 @@ LAB_00466e5e:
       local_368 = local_36c * _DAT_005526e4;
       local_364 = local_36c * _DAT_005528b4;
       AddTerrainLight(local_344,local_348, (float*)&local_368,2, (float*)DAT_081cb608);
-      Effect_CollisionCheck((int)param_1);
+      Effect_CollisionCheck((intptr_t)param_1);
       break;
     case 0xf3:
       local_360 = local_36c;
@@ -1898,10 +1898,10 @@ LAB_00466e5e:
         local_30c = -80.0;
         local_308 = 0;
         if (!validOwner(owner)) return;
-        Matrix_BuildFromEuler((float *)(*(int *)&AsObject(param_1)->Owner + 0x1c),local_15c);
+        Matrix_BuildFromEuler((float *)((intptr_t)AsObject(param_1)->Owner + 0x1c),local_15c);
         Vector_Rotate(&local_310,local_15c,&local_328);
         local_348 = local_328 + AsObject(param_1)->Position[0];
-        pfVar10 = param_1 + 0x5c;
+        pfVar10 = AsObject(param_1)->StartPosition;
         *pfVar10 = local_348;
         // Rageful Blow, punto de impacto (IDA):
         //  - Y es float: `v355 = TargetPosition[1] + *(float*)(o+20)` (sin truncar).
@@ -1918,7 +1918,7 @@ LAB_00466e5e:
           iVar12 = _rand();
           local_33c = 0.0;
           local_35c = (float *)(iVar12 % 0x3c);
-          local_340 = (float)(int)local_35c - _DAT_0055290c;
+          local_340 = (float)(int)(intptr_t)local_35c - _DAT_0055290c;
           iVar12 = _rand();
           local_324 = AsObject(param_1)->StartPosition[1];
           local_320 = AsObject(param_1)->StartPosition[2];
@@ -1926,13 +1926,13 @@ LAB_00466e5e:
           local_328 = *pfVar10;
           local_340 = local_340 + AsObject(param_1)->Angle[0];
           local_33c = local_33c + AsObject(param_1)->Angle[1];
-          local_338 = (float)(int)local_35c + AsObject(param_1)->Angle[2];
+          local_338 = (float)(int)(intptr_t)local_35c + AsObject(param_1)->Angle[2];
           iVar12 = _rand();
           local_35c = (float *)(iVar12 % 0x14 + -10);
-          local_328 = (float)(int)local_35c + local_328;
+          local_328 = (float)(int)(intptr_t)local_35c + local_328;
           iVar12 = _rand();
           local_35c = (float *)(iVar12 % 0x14 + -10);
-          local_324 = (float)(int)local_35c + local_324;
+          local_324 = (float)(int)(intptr_t)local_35c + local_324;
           Joint_Create(0x4e9,&local_328,&local_328,&local_340,0,0,10.0,-1,0);
           if (iVar9 == 0) {
             Particle_Spawn(0x497,&local_328,&local_340,&local_368,0,1.0,0);
@@ -1956,7 +1956,7 @@ LAB_00466e5e:
           local_340 = 0.0;
           local_33c = 0.0;
           local_35c = (float *)(iVar9 % 0x96 + 100);
-          local_30c = (float)(int)local_35c;
+          local_30c = (float)(int)(intptr_t)local_35c;
           // IDA L2095: `(double)SLODWORD(v356) * 72.0 + (double)*(int *)(o + 4)`
           // — el SubType es un DWORD; convertirlo como float daba siempre 0.
           local_338 = (float)(int)local_358 * _DAT_005529f8 + (float)AsObject(param_1)->SubType;
@@ -1971,7 +1971,7 @@ LAB_00466e5e:
           pfVar14 = (float *)(iVar9 % 0x32 + 0x28);
           iVar9 = _rand();
           local_35c = (float *)(iVar9 % 0x1e + -0xf);
-          local_338 = (float)(int)local_35c + _DAT_00552844;
+          local_338 = (float)(int)(intptr_t)local_35c + _DAT_00552844;
           lVar19 = (longlong)(local_328 * 0.0099999998f);   // IDA TERRAIN_INDEX((std::int64_t)(TargetPosition[0]*0.01),...)
           lVar20 = (longlong)(local_324 * 0.0099999998f);   // IDA TERRAIN_INDEX(...,(std::int64_t)(TargetPosition[1]*0.01))
           iVar9 = TERRAIN_INDEX((int)lVar19,(int)lVar20);
@@ -2007,7 +2007,7 @@ LAB_00466e5e:
           iVar9 = _rand();
           local_308 = 0;
           local_35c = (float *)(iVar9 % 0xf);
-          local_30c = (float)(int)local_35c + _DAT_00552854;
+          local_30c = (float)(int)(intptr_t)local_35c + _DAT_00552854;
           if (2 < (int)local_348) {
             local_358 = (float)_rand();
           }
@@ -2059,7 +2059,7 @@ LAB_00466e5e:
           local_348 = (float)((int)local_348 + 1);
           local_35c = pfVar10;
         } while ((int)local_348 < 4);
-        bVar16 = (char *)*(int *)&AsObject(param_1)->Owner == DAT_07abf5d8;
+        bVar16 = (char *)(intptr_t)AsObject(param_1)->Owner == DAT_07abf5d8;
         *(float *)&AsObject(param_1)->LifeTime = 0.0;
         if (bVar16) {
           Entity_FindNearby_SendPacket((uint)AsObject(param_1)->Skill,AsObject(param_1)->StartPosition,300.0,
@@ -2084,7 +2084,7 @@ LAB_00466e5e:
           local_30c = -40.0;
           local_308 = 0;
           if (!validOwner(owner)) return;
-          Matrix_BuildFromEuler((float *)(*(int *)&AsObject(param_1)->Owner + 0x1c),local_15c);
+          Matrix_BuildFromEuler((float *)((intptr_t)AsObject(param_1)->Owner + 0x1c),local_15c);
           Vector_Rotate(&local_310,local_15c,&local_328);
           local_304 = local_328 + AsObject(param_1)->Position[0];
           local_35c = (float *)0x0;
@@ -2092,12 +2092,12 @@ LAB_00466e5e:
           local_2fc = local_320 + AsObject(param_1)->Position[2];
           do {
             pfVar10 = local_35c;
-            local_2bc = local_2fc - (float)(int)local_35c;
+            local_2bc = local_2fc - (float)(int)(intptr_t)local_35c;
             local_2c4 = local_304;
             local_2c0 = local_300;
             CreateEffect(0xfe,&local_2c4,&local_340,AsObject(param_1)->Light,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
-            local_35c = (float *)((int)pfVar10 + 0x32);
-          } while ((int)local_35c < 200);
+            local_35c = (float *)((intptr_t)pfVar10 + 0x32);
+          } while ((intptr_t)local_35c < 200);
           iVar9 = _rand();
           local_304 = (float)(iVar9 % 0x1e + 0x14) + local_304;
           iVar9 = _rand();
@@ -2105,12 +2105,12 @@ LAB_00466e5e:
           local_2fc = (float)(iVar9 % 500 + -0xfa) + local_2fc;
           do {
             pfVar10 = local_35c;
-            local_2bc = local_2fc - (float)(int)local_35c;
+            local_2bc = local_2fc - (float)(int)(intptr_t)local_35c;
             local_2c4 = local_304;
             local_2c0 = local_300;
             CreateEffect(0xfe,&local_2c4,&local_340,AsObject(param_1)->Light,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
-            local_35c = (float *)((int)pfVar10 + 0x1e);
-          } while ((int)local_35c < 0x78);
+            local_35c = (float *)((intptr_t)pfVar10 + 0x1e);
+          } while ((intptr_t)local_35c < 0x78);
           PlayBuffer(0x59, AsObject(param_1),0);
         }
         fVar13 = AsObject(param_1)->Angle[0] + _DAT_00552878;
@@ -2288,7 +2288,7 @@ LAB_004695c0:
       break;
     case 0xff:
       if (!validOwner(owner)) return;
-      pcVar11 = (char *)*(int *)&AsObject(param_1)->Owner;
+      pcVar11 = (char *)(intptr_t)AsObject(param_1)->Owner;
       if (*pcVar11 == '\0') {
         AsObject(param_1)->LifeTime = -1;   // IDA: lifetime = -1
       }
@@ -2320,7 +2320,7 @@ LAB_004695c0:
           fVar13 = (float)(iVar9 % 0x168);
           pfVar14 = param_1;
           uVar8 = _rand() % 8;
-          CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005526e4,pfVar15,(int)pfVar14,fVar13,uVar29);
+          CreateSprite(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005526e4,pfVar15,(intptr_t)pfVar14,fVar13,uVar29);
         }
         AsObject(param_1)->HeadAngle[1] = AsObject(param_1)->Gravity;
       }
@@ -2381,8 +2381,8 @@ LAB_004695c0:
     }
     case 0x109:
       if (!validOwner(owner)) return;
-      if ((((byte)*(undefined4 *)((char *)*(int *)&AsObject(param_1)->Owner + 0x78) & 0x20) == 0x20) &&
-         (*(char *)*(int *)&AsObject(param_1)->Owner != '\0')) {
+      if ((((byte)*(undefined4 *)((char *)(intptr_t)AsObject(param_1)->Owner + 0x78) & 0x20) == 0x20) &&
+         (*(char *)(intptr_t)AsObject(param_1)->Owner != '\0')) {
         if (0x32 < __cnt) {
           iVar9 = 3;
           do {
@@ -2421,10 +2421,10 @@ switchD_00466b93_caseD_c1:
     if ((((sVar3 != 0xee) && (sVar3 != 0xef)) && (sVar3 != 0xf4)) &&
        (((sVar3 != 0xc5 && (sVar3 != 0xc6)) || (AsObject(param_1)->SubType != 5)))) {
       if ((0xad < sVar3) && (sVar3 < 0x10d)) {
-        pvVar1 = (void *)(DAT_05828d58 + sVar3 * 0xbc);
+        pvVar1 = (void *)(DAT_05828d58 + sVar3 * BMD_STRIDE);
         fVar13 = AsObject(param_1)->Velocity;
-        *(undefined1 *)((int)pvVar1 + 0xa0) = AsObject(param_1)->CurrentAction;
-        BMD__PlayAnimation(pvVar1,param_1 + 0x42,param_1 + 0x43,(undefined1 *)((int)param_1 + 0x106),fVar13);
+        *(undefined1 *)((intptr_t)pvVar1 + 0xa0 + BMD_FIELD_SHIFT) = AsObject(param_1)->CurrentAction;
+        BMD__PlayAnimation(pvVar1,&AsObject(param_1)->AnimationFrame,&AsObject(param_1)->PriorAnimationFrame,(undefined1 *)((intptr_t)param_1 + EntityOffset(0x106)),fVar13);
       }
       sVar3 = AsObject(param_1)->Type;
       if ((sVar3 < 0x4ba) || (0x4bc < sVar3)) {

@@ -33,7 +33,7 @@ void Scene_RefreshCharSelectBackdrop()
     const int id = textures[i];
     if (std::find(selectBackdropTextures.begin(), selectBackdropTextures.end(), id)
         == selectBackdropTextures.end()) {
-      ++g_BitmapsRaw[id * 0x38 + 0x30];
+      ++g_BitmapsRaw[id * TEXTURE_STRIDE + 0x30];
       selectBackdropTextures.push_back(id);
     }
   }
@@ -100,7 +100,7 @@ void Scene_LoadAccountResources(void)
 void Scene_LoadCharSelectResources(void)
 {
   int iVar1;
-  int iVar2;
+  intptr_t iVar2;
 
   OpenTGA(s_Logo_Interface01_tga_00560a4c,0xc,0x2600,0x2900,0,'\x01');
   OpenTGA(s_Logo_Interface02_tga_00560a34,0xd,0x2600,0x2900,0,'\x01');
@@ -147,8 +147,8 @@ void Scene_LoadCharSelectResources(void)
   iVar2 = 0;
   do {
     iVar1 = iVar2 + 0xbc;
-    *(undefined4 *)(*(int *)(iVar2 + 0x7d08 + DAT_05828d58) + 4) = 0x3e99999a;
-    *(undefined4 *)(*(int *)(iVar2 + 0x7d08 + DAT_05828d58) + 0x14) = 0x3e99999a;
+    ModelActionSpeed(AsModel(DAT_05828d58 + BMD_STRIDE * (170 + iVar2 / 0xbc))->Actions, 0) = 0.3f;
+    ModelActionSpeed(AsModel(DAT_05828d58 + BMD_STRIDE * (170 + iVar2 / 0xbc))->Actions, 1) = 0.3f;
     iVar2 = iVar1;
   } while (iVar1 < 0x2f0);
   return;

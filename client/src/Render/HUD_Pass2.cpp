@@ -322,11 +322,11 @@ char Render_CharInfoPanel_(void)
     float v24_y0 = 4.0f;
     float x = 0.0f;
 
-    if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + 474) != 0xFFFF) {
+    if (EnableGuildWar && Hero && *(WORD*)((BYTE*)(uintptr_t)Hero + EntityOffset(474)) != 0xFFFF) {
         EnableAlphaTest(true);
         x = 320.0f - 20.0f;
         gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
-        int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
+        int v20 = *(short*)((BYTE*)(uintptr_t)Hero + EntityOffset(474));
         if (v20 < 0 || (size_t)v20 >= sizeof(DAT_07e919bc) / 80) return ret;
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
@@ -418,7 +418,7 @@ int RenderEquipedHelperLife_(bool a2)
 {
     // El gate lee la ENTIDAD del heroe, no el slot de item.  IDA (0x4BEC00,
     // verificado en el disassembly del prologo):
-    //     mov ax, [eax+2B8h]   ; Hero + 696 = tipo del helper
+    //     mov ax, [eax+2B8h]   ; Hero + EntityOffset(696) = tipo del helper
     //     cmp ax, 330h / 333h  ; 816..819
     // Ese campo lo escriben SetCharacterClass, ChangeCharacterExt y el handler
     // 0x25.  El slot de item (`CharacterMachine + 536 + 68*8`) se usa SOLO para la
@@ -427,7 +427,7 @@ int RenderEquipedHelperLife_(bool a2)
     int retY = 15;                       // `mov esi, 0Fh` del prologo
 
     const BYTE* hero = (const BYTE*)DAT_07abf5d8;
-    const WORD helperType = hero ? *(const WORD*)(hero + 0x2B8) : 0;
+    const WORD helperType = hero ? *(const WORD*)(hero + EntityOffset(0x2B8)) : 0;
 
     DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;

@@ -431,6 +431,7 @@ set(MU_HEADERS
     src/Entity/ObjectPose.h
     src/Entity/ObjectBounds.h
     src/Entity/EntityTypes.h
+    src/Game/PathContext.h
     src/Model/ModelTypes.h
     src/Model/SmdImport.h
     src/Core/ResourceLimits.h

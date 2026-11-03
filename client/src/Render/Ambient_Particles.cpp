@@ -110,8 +110,8 @@ void __cdecl AmbientParticles_Update(void)
     // - Active range (slots 0..2) = primeros 3 × 0x1bc = 0x534 bytes desde base
     // - Total range (slots 0..9) = 10 × 0x1bc = 0x1158 bytes desde base
     const uintptr_t arrBase   = (uintptr_t)DAT_083a2f78;
-    const uintptr_t arrActive = arrBase + 3 * 0x1bc;     // hasta slot 2 inclusive
-    const uintptr_t arrEnd    = arrBase + 10 * 0x1bc;    // hasta slot 9 inclusive
+    const uintptr_t arrActive = arrBase + 3 * OBJECT_STRIDE;     // hasta slot 2 inclusive
+    const uintptr_t arrEnd    = arrBase + 10 * OBJECT_STRIDE;    // hasta slot 9 inclusive
 
     do {
         // ── Is this slot forced active (game state 7/8) or within range? ──────
@@ -166,14 +166,14 @@ LAB_0050245e:
                     puVar9[2]    = 0x3f000000; // color B = 0.5
                     RenderFxSnapshots_New(puVar9-0x3a);
                     *(unsigned char *)(puVar9 + -0x3a) = 1;  // active = true
-                    puVar9[0x20] = 0;
-                    puVar9[0x1f] = 0x3f800000; // x-scale = 1.0
+                    AsObject((char*)puVar9 - 0xE8)->Alpha = 0.0f;
+                    AsObject((char*)puVar9 - 0xE8)->AlphaTarget = 1.0f;
                     puVar9[-0x21] = 0xffffffff;
                     puVar9[-0x33] = 0;  // vel_x = 0
                     puVar9[-0x32] = 0;  // vel_y = 0
                     puVar9[-0x31] = 0;  // vel_z = 0
                     *(unsigned char *)(puVar9 + -3) = 1;
-                    *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x79) = 1;
+                    AsObject((char*)puVar9 - 0xE8)->AlphaEnable = 1;
                     puVar9[-0x39] = 0;
                     puVar9[-0x24] = 0xffffffff;
 
@@ -199,7 +199,7 @@ LAB_0050245e:
                         uVar6 = _rand();
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
-                        puVar9[0x1f] = (unsigned int)((float)(int)(uVar6 + 2) * _DAT_005524f4);
+                        AsObject((char*)puVar9 - 0xE8)->AlphaTarget = (float)(int)(uVar6 + 2) * _DAT_005524f4;
                         *(float*)&puVar9[-7] = _DAT_00552534 / *(float*)&puVar9[-0x37];
                         iVar8 = gMapManager.GetCurrentMap();
                         break;
@@ -241,7 +241,7 @@ LAB_0050245e:
                         puVar9[-7]    = (unsigned int)(*(int *)&fVar3);
                         Joint_Create(0x4ea, pfVar1, pfVar1,
                                      (float *)(puVar9 + -0x33), 4,
-                                     (int)(puVar9 + -0x3a),
+                                     (intptr_t)(puVar9 + -0x3a),
                                      30.0f, -1, 0);
                         iVar8 = gMapManager.GetCurrentMap();
                         break;
@@ -261,14 +261,14 @@ switchD_caseD_2:
             // Guarda propia: el modelIdx puede venir basura (ej. de un slot reciclado de
             // char-select). Models[] válido en 0..~0x4A8.
             if (modelIdx < 0 || modelIdx > 0x4A8) goto LAB_00502b38;
-            this_model = (void *)(DAT_05828d58 + modelIdx * 0xbc);
+            this_model = (void *)(DAT_05828d58 + modelIdx * BMD_STRIDE);
 
             // Animate model
-            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
+            *(unsigned char *)(reinterpret_cast<unsigned char*>(this_model) + 0xa0 + BMD_FIELD_SHIFT) = *(unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1d);
             BMD__PlayAnimation(this_model,
-                         (float *)(puVar9 + 8),
-                         (float *)(puVar9 + 9),
-                         (unsigned char *)(reinterpret_cast<unsigned char*>(puVar9) + 0x1e),
+                         &AsObject((char*)puVar9 - 0xE8)->AnimationFrame,
+                         &AsObject((char*)puVar9 - 0xE8)->PriorAnimationFrame,
+                         &AsObject((char*)puVar9 - 0xE8)->PriorAction,
                          *(float*)&puVar9[-7] * _DAT_00552504);
 
             sVar5 = *(short *)(reinterpret_cast<unsigned char*>(puVar9) + -0xe6);
@@ -403,7 +403,7 @@ skip_decrement:
         }
 
 LAB_00502b38:
-        puVar9  = puVar9 + 0x6f;   // stride: 0x1bc bytes per slot
+        puVar9  = puVar9 + OBJECT_STRIDE / 4;   // stride: 0x1bc bytes per slot
         local_20++;
         if ((uintptr_t)puVar9 >= arrEnd) return;
     } while (true);

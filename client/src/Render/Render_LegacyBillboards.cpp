@@ -53,19 +53,20 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // model render slot, selects the target bone via equip-flags, then calls
 // BMD_TransformPosition to animate/position it.
 void __cdecl ItemDrop_SetupRenderRef(BYTE* param_1) {
-    int iVar1 = *(int*)(param_1 + 0x3c);
+    // +0x3C guarda sólo 32 bits; el dueño completo vive en g_ParticleOwner.
+    intptr_t iVar1 = (intptr_t)g_ParticleOwner[(param_1 - reinterpret_cast<BYTE*>(DAT_07abf5f0)) / 0x70];
     float local_c[3] = {0.0f, 0.0f, 0.0f};
-    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
+    BYTE* this_ = reinterpret_cast<BYTE*>(DAT_05828d58 + *(short*)(iVar1 + 2) * BMD_STRIDE);
     if (*(int*)(param_1 + 4) == 0x4d0)
         local_c[1] = -120.0f;
-    *(unsigned int*)(this_ + 0x6c) = *(unsigned int*)(iVar1 + 0x10);
-    *(unsigned int*)(this_ + 0x70) = *(unsigned int*)(iVar1 + 0x14);
-    *(unsigned int*)(this_ + 0x74) = *(unsigned int*)(iVar1 + 0x18);
+    *(unsigned int*)(this_ + 0x6c + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x10);
+    *(unsigned int*)(this_ + 0x70 + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x14);
+    *(unsigned int*)(this_ + 0x74 + BMD_FIELD_SHIFT) = *(unsigned int*)(iVar1 + 0x18);
     uint uVar2 = *(uint*)(param_1 + 8) & 0x80000001;
     if ((int)uVar2 < 0) uVar2 = (uVar2 - 1 | 0xfffffffe) + 1;
     BMD_TransformPosition(this_,
-        (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + 0x274 + static_cast<intptr_t>(static_cast<int32_t>(uVar2)) * 0x18)) * 0x30
-                 + *(int*)(iVar1 + 0x114)),
+        (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + EntityOffset(0x274 + static_cast<intptr_t>(static_cast<int32_t>(uVar2)) * 0x18))) * 0x30
+                 + *(intptr_t*)&AsObject(iVar1)->BoneMatrices),
         local_c,
         (float*)(param_1 + 0x10),
         '\x01');

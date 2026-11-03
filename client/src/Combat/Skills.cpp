@@ -57,13 +57,13 @@
 // Forward declarations for functions identified in decompilation
 extern "C" void __cdecl CreateTeleportBegin(OBJECT* entity); // 0x004742b0
 extern "C" void __cdecl CreateTeleportEnd(OBJECT* entity);   // 0x00474310
-extern void Entity_ResetToWalk(int entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
-extern void Entity_TeleportEnd(int entity_idx);             // Legacy helper; no verified FUN mapping.
+extern void Entity_ResetToWalk(intptr_t entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
+extern void Entity_TeleportEnd(intptr_t entity_idx);             // Legacy helper; no verified FUN mapping.
 extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legacy helper; no verified FUN mapping.
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
-extern void Entity_MeleeAttackStart(int entity_idx);        // Legacy helper; no verified FUN mapping.
+extern void Entity_MeleeAttackStart(intptr_t entity_idx);        // Legacy helper; no verified FUN mapping.
 extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
-extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
+extern "C" void __cdecl DeleteEffect(int Type, intptr_t Owner, int iSubType);
 
 // SetPlayerBow @ 0042BC00. It selects the bow/crossbow animation and keeps
 // the walking variant when a path is active.
@@ -94,7 +94,7 @@ static void AnimateRemoteSkillCaster97k(BYTE* caster)
         SetPlayerMagic(AsCharacter(caster));
     else
         SetPlayerAttack(AsCharacter(caster), 0, 0, 0);
-    *(DWORD*)(caster + 264) = 0;
+    *(DWORD*)&((OBJECT*)(uintptr_t)(caster))->AnimationFrame = 0;
 }
 
 // External data
@@ -103,8 +103,8 @@ extern BYTE* g_CharData;     // DAT_07cf1ffc
 
 // g_EntityBase is never wired to the actual entity array — the real
 // base lives in DAT_07abf5d0 (set by WinMain).
-#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
-#define STRIDE       0x394
+#define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * CHARACTER_STRIDE)
+#define STRIDE       CHARACTER_STRIDE
 
 // ============================================================
 // PacketHandler_0x19  @ 0x0042bca0
@@ -305,8 +305,8 @@ void PacketHandler_0x19(BYTE* pkt)
         // The alternating action is controlled by the caster-local counter
         // at +771, not by the current map/state.
         SetAction(AsObject(caster),
-                     (caster[771] & 1) ? 41 : skill_type + 37);
-        caster[771] += 1;
+                     (caster[EntityOffset(771)] & 1) ? 41 : skill_type + 37);
+        caster[EntityOffset(771)] += 1;
         PlayBuffer(85, 0, 0);
         goto common_tail;
     }
@@ -341,7 +341,7 @@ void PacketHandler_0x19(BYTE* pkt)
             // Ese efecto es el que spawnea cada tick las particulas 1150/sub4
             // que se cuelgan de los huesos del personaje (MoveParticles).
             if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
-                DeleteEffect(1150, (DWORD)(uintptr_t)target, 1);
+                DeleteEffect(1150, (intptr_t)target, 1);
                 CreateEffect(1150, (float*)(target + 16),
                              (float*)(target + 28), (float*)(target + 232),
                              (float*)1, (float*)target, (float*)-1, nullptr, 0);
@@ -367,7 +367,7 @@ void PacketHandler_0x19(BYTE* pkt)
         SetPlayerBow97k(caster);
         if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
-            DeleteEffect(190, (DWORD)(uintptr_t)target, 1);
+            DeleteEffect(190, (intptr_t)target, 1);
             float angle[3] = {
                 AsObject(target)->Angle[0], AsObject(target)->Angle[1], AsObject(target)->Angle[2]
             };
@@ -377,7 +377,7 @@ void PacketHandler_0x19(BYTE* pkt)
             CreateEffect(190, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)2, (float*)target, (float*)-1, nullptr, 0);
             // Clear freeze offset (0x2BC byte at local +0xBB from struct base = 0xBB)
-            target[748] = 0;
+            target[EntityOffset(748)] = 0;
             SetPlayerStop(AsCharacter(target));
             // Set ice status bit
             *(DWORD*)(target + 120) |= 0x20;
@@ -389,7 +389,7 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         if (target != nullptr && AsCharacter(caster)->SkillSuccess)
         {
-            DeleteEffect(1274, (DWORD)(uintptr_t)target, 0);
+            DeleteEffect(1274, (intptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
             CreateEffect(1274, (float*)(target + 16), (float*)(target + 28), light,
                          nullptr, (float*)target, (float*)-1, nullptr, 0);

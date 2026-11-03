@@ -222,7 +222,7 @@ void __cdecl CreateTerrain(const char *path) {
 // en +72, que es el que leen Net_Process (0x20), Entity_Render y MoveItems.
 void __cdecl ClearItems(void) {
     for (int i = 0; i < 1000; ++i) {
-        DAT_07e12840[i * 0x204 + 72] = 0;
+        DAT_07e12840[i * GROUND_ITEM_STRIDE + 72] = 0;
     }
 }
 
@@ -280,7 +280,7 @@ void __cdecl OpenWorldModels(void) {
             break;
         case 6:
             OpenModel((int)0xb2, "Data2/Object7/", "SummonMonster.smd");
-            *(unsigned char *)(*(int *)(DAT_05828d58 + 0x82e8) + 0x1a) = 1;
+            *(unsigned char *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 178)->Actions + 0x1a) = 1;
             break;
         case 7:
             OpenModel((int)0xb6, "Data2/Object8/", "WaterMill.smd");
@@ -292,7 +292,7 @@ void __cdecl OpenWorldModels(void) {
             OpenModel((int)0xbc, "Data2/Object8/", "Trap03.smd");
             OpenModel((int)0xbd, "Data2/Object8/", "FireArrow.smd");
             for (int iVar7 = 0xbc; iVar7 < 0x69c; iVar7 += 0xbc)
-                *(unsigned char *)(*(int *)(iVar7 + 0x851c + DAT_05828d58) + 10) = 1;
+                *(unsigned char *)((intptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * (181 + iVar7 / 0xbc))->Actions + 10) = 1;
             break;
         case 8:
             OpenModel((int)0xb3, "Data2/Object9/", "SandPillar.smd");
@@ -373,7 +373,7 @@ void __cdecl OpenWorldModels(void) {
 
                 const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
                 Platform::TextFormatTruncated(Buffer, sizeof(Buffer), Platform::TruncateText, fmtLeaf, v4);
-                Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
+                Platform::TextCopy(&g_BitmapsRaw[(v4 + 65) * TEXTURE_STRIDE], Buffer, 0x20);
             }
         }
         break;
@@ -638,7 +638,7 @@ void __cdecl OpenWorldModels(void) {
         };
         for (size_t i = 0; i < sizeof(lorenciaSlots)/sizeof(lorenciaSlots[0]); ++i) {
             int slotIdx = lorenciaSlots[i].slot;
-            char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * slotIdx);
+            char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + (uintptr_t)BMD_STRIDE * slotIdx);
             if (AsModel(slotPtr)->NumBones > 0) continue;  // already loaded (e.g. SMD worked)
             AccessModel(slotIdx, "Data/Object1/", lorenciaSlots[i].bmd, -1);
         }
@@ -684,14 +684,14 @@ void __cdecl OpenWorldModels(void) {
             OpenTexture(i, local_384, 0x2600, '\x01');
         // Map-specific post-load fixups
         if (gMapManager.GetCurrentMap() == 1)
-            *(unsigned int *)(*(int *)(DAT_05828d58 + 0x1d90) + 0x14) = 0x3ecccccd; // 0.4f
+            *(unsigned int *)((uintptr_t)AsModel(DAT_05828d58 + BMD_STRIDE * 40)->Actions + sizeof(ModelAnimationAction) + 4) = 0x3ecccccd; // 0.4f
         else if (gMapManager.GetCurrentMap() == 8) {
-            *(unsigned char *)(DAT_05828d58 + 0x89c)  = 0;
-            *(unsigned char *)(DAT_05828d58 + 0x958)  = 0;
-            *(unsigned char *)(DAT_05828d58 + 0xa14)  = 0;
-            *(unsigned char *)(DAT_05828d58 + 0x3624) = 0;
-            *(unsigned char *)(DAT_05828d58 + 0x379c) = 0;
-            *(unsigned char *)(DAT_05828d58 + 0x3a8c) = 0;
+            *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 11 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 12 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 13 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 73 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 75 + 0x88 + BMD_FIELD_SHIFT) = 0;
+            *(unsigned char *)(DAT_05828d58 + BMD_STRIDE * 79 + 0x88 + BMD_FIELD_SHIFT) = 0;
         }
     }
 

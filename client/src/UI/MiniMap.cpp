@@ -255,7 +255,7 @@ void CMiniMap::RenderMarkers() const
     const BYTE* base = (const BYTE*)(uintptr_t)CharactersClient;
     if (!base) return;
     for (int i = 0; i < 400; ++i) {
-        const BYTE* c = base + i * 916;
+        const BYTE* c = base + i * CHARACTER_STRIDE;
         if (!c[0]) continue;
         const float tx = ((*(const float*)(c + 0x10) / 100.0f) / 256.0f - v.offsetX) * (MaxSize * v.scale);
         const float ty = ((256.0f - *(const float*)(c + 0x14) / 100.0f) / 256.0f - v.offsetY) * (MaxSize * v.scale);

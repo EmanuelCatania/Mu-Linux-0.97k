@@ -13,6 +13,7 @@ import tempfile
 
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from X86Views import CLOTH_MODEL_MESH, model_view
 from LegacyEntityLayout import opaque_cloth_fields
 
 SERVICES = r'''
@@ -196,7 +197,7 @@ def harness(revision=None):
     monster = read_source("src/Monster/Monster.cpp", revision)
     factory = monster[monster.index("// IDA: CreateCharacter (0x0045BFA0)"):]
     call = "return reinterpret_cast<std::uintptr_t>(CreateCharacter(key, type, x, y, rotation));" if "CHARACTER* __cdecl CreateCharacter" in factory else "return CreateCharacter(key, type, x, y, rotation);"
-    return prefix + factory + MAIN.replace("CALL_CREATE", call)
+    return prefix + model_view(["Meshs"], revision) + CLOTH_MODEL_MESH + factory + MAIN.replace("CALL_CREATE", call)
 
 
 def main():

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Net/NetText.h"
 #include "Render/ResourceTables.h"
 #include "Render/EquipmentVisuals.h"
@@ -79,7 +80,7 @@ struct ItemExtraData
 
 // Piezas puestas: por entidad, modelo lógico -> modelo propio.
 constexpr int MAX_ENTITY = 400;
-constexpr int ENTITY_STRIDE = 0x394;
+constexpr int ENTITY_STRIDE = CHARACTER_STRIDE;
 constexpr int ENTITY_PARTS = 9;
 struct EntityPart { short Logic; short Own; };
 EntityPart s_EntityParts[MAX_ENTITY][ENTITY_PARTS];
@@ -118,15 +119,15 @@ unsigned int FindTwoSidedMeshes(const BYTE* model)
 {
     unsigned int bits = 0;
     const short meshCount = *(const short*)(model + 0x24);
-    const BYTE* meshes = (const BYTE*)(uintptr_t)*(const int*)(model + 0x28);
+    const BYTE* meshes = (const BYTE*)(uintptr_t)(intptr_t)((BMD*)(uintptr_t)(model))->Meshs;
     if (!meshes) return 0;
     for (int m = 0; m < meshCount && m < 32; ++m) {
-        const BYTE* mesh = meshes + m * 0x28;
+        const BYTE* mesh = meshes + m * sizeof(ClothModelMesh);
         const short vCount = *(const short*)(mesh + 4), nCount = *(const short*)(mesh + 6);
         const short fCount = *(const short*)(mesh + 10);
-        const BYTE* verts = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x10);
-        const BYTE* norms = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x14);
-        const BYTE* faces = (const BYTE*)(uintptr_t)*(const int*)(mesh + 0x1c);
+        const BYTE* verts = (const BYTE*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
+        const BYTE* norms = (const BYTE*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Normals;
+        const BYTE* faces = (const BYTE*)(uintptr_t)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Triangles;
         if (!verts || !norms || !faces) continue;
         int inverted = 0;
         for (int f = 0; f < fCount; ++f) {
@@ -225,17 +226,17 @@ bool ReadSection(PendingSection& section, const BYTE* msg, int size)
 void SetMonsterSpeeds(int slot, bool npc)
 {
     if (slot < 0 || !DAT_05828d58) return;
-    BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
-    BYTE* actions = *(BYTE**)(model + 0x30);
+    BYTE* model = (BYTE*)(uintptr_t)DAT_05828d58 + slot * BMD_STRIDE;
+    BYTE* actions = *(BYTE**)&((BMD*)(uintptr_t)(model))->Actions;
     const short count = *(short*)(model + 0x26);
     if (!actions || count <= 0) return;
     if (npc) {
-        for (int i = 0; i < count; ++i) *(float*)(actions + 16 * i + 4) = 0.25f;
+        for (int i = 0; i < count; ++i) *(float*)(actions + sizeof(ModelAnimationAction) * i + 4) = 0.25f;
         return;
     }
     static const float speeds[7] = { 0.25f, 0.2f, 0.34f, 0.33f, 0.33f, 0.5f, 0.55f };
-    for (int i = 0; i < count && i < 7; ++i) *(float*)(actions + 16 * i + 4) = speeds[i];
-    if (count > 6) *(bool*)(actions + 16 * 6) = true;   // MONSTER01_DIE: Loop
+    for (int i = 0; i < count && i < 7; ++i) *(float*)(actions + sizeof(ModelAnimationAction) * i + 4) = speeds[i];
+    if (count > 6) *(bool*)(actions + sizeof(ModelAnimationAction) * 6) = true;   // MONSTER01_DIE: Loop
 }
 
 bool SectionComplete(const PendingSection& section)
@@ -607,7 +608,7 @@ int CContentCatalog::LoadModel(const char* folder, const char* name, int fixedSl
     char dir[128];
     Platform::TextFormatTruncated(dir, sizeof(dir), Platform::TruncateText, "Data\\%s", sub);
     AccessModel(slot, dir, name, -1);
-    const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * 0xbc;
+    const BYTE* model = (const BYTE*)(uintptr_t)DAT_05828d58 + slot * BMD_STRIDE;
     if (*(const short*)(model + 0x24) <= 0) {
         Log("ContentCatalog: no se pudo cargar %s%s.bmd", dir, name);
         s_LoadedModels[key] = -1;
@@ -679,7 +680,7 @@ void CContentCatalog::RunEquippedEffects(const void* c, int model, void* modelPt
             float position[3];
             BMD_TransformPosition(modelPtr, (float*)(g_BoneScratch + data.Bones[b] * 0x30), offset, position, '\x01');
             if (data.Type == Proto::CATALOG_EFFECT_SPRITE) {
-                Equipment_AddSprite((unsigned short)effect.Bitmap, position, scale, light, (int)(uintptr_t)c, 0.0f, 0);
+                Equipment_AddSprite((unsigned short)effect.Bitmap, position, scale, light, (intptr_t)c, 0.0f, 0);
             } else if (data.Type == Proto::CATALOG_EFFECT_PARTICLE) {
                 Particle_Spawn(data.Particle, position, (float*)((BYTE*)c + 28), light, data.SubType, scale, 0);
             }

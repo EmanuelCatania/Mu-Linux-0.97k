@@ -7,6 +7,9 @@ party,RNG,ángulo,transporte y animación controlados; no es una sesión de jueg
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import re
 import subprocess
 import tempfile
@@ -23,6 +26,9 @@ def function(source,name):
 
 SERVICES=r'''
 #include <cstdint>
+constexpr int OBJECT_STRIDE=0x1BC,CHARACTER_STRIDE=0x394,BMD_STRIDE=188,BMD_FIELD_SHIFT=0;
+#include <cstddef>
+constexpr std::size_t EntityOffset(std::size_t x86){return x86;}   // layout x86 del harness
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -113,7 +119,7 @@ int main(){
 
 def harness(root=ROOT,revision=None):
     path='src/Combat/Combat.cpp'
-    source=subprocess.check_output(['git','show',revision+':'+path],cwd=root).decode('utf-8') if revision else (root/path).read_text(encoding='utf-8')
+    source=subprocess.check_output(['git','show',revision+':'+path],cwd=root).decode('utf-8') if revision else lower((root/path).read_text(encoding='utf-8'))
     seed=function(source,'Combat_SeedRuntimeState97k').replace('Combat_SeedRuntimeState97k','ActualSeed')
     send=function(source,'Combat_SendPartyRecall97k').replace('Combat_SendPartyRecall97k','ActualSend')
     return SERVICES.replace('SEED',seed).replace('SEND',send).replace('ATTACK',function(source,'Attack_Label1585_97k'))+MAIN

@@ -86,7 +86,7 @@ static void Warrior_CollectMultiTargets(const float* centre, float radius,
     const float radiusSquared = radius * radius;
     BYTE* characters = (BYTE*)(uintptr_t)DAT_07abf5d0;
     for (int index = 0; index < 400 && *count < maximum; ++index) {
-        BYTE* candidate = characters + index * 0x394;
+        BYTE* candidate = characters + index * CHARACTER_STRIDE;
         if (!AsCharacter(candidate)->Object.Live || !AsCharacter(candidate)->Object.Visible || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || AsCharacter(candidate)->Dead)
             continue;
 
@@ -150,7 +150,7 @@ static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
 // 7. Sends opcode 0x19 skill packet for each specific skill type.
 // 8. Final: sends opcode 0x11 if tile is walkable.
 // Anti-tamper hash table ops and XOR encryption blocks are skipped per project policy.
-void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
+void __cdecl Combat_UseWarriorSkill(intptr_t c /* IDA: c */, intptr_t o /* IDA: o */)
 {
     if (!c || !o) return;
     BYTE* character = (BYTE*)(uintptr_t)c; // IDA: c / CHARACTER state buffer
@@ -162,7 +162,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 
     // 0x485815: this is a compact facing packet, not Send_MovePacket.
     BYTE movePacket[6] = { 0xC1, 6, 0x10,
-        *(BYTE*)(character + 904), *(BYTE*)(character + 908),
+        *(BYTE*)&((CHARACTER*)(uintptr_t)(character))->PositionX, *(BYTE*)&((CHARACTER*)(uintptr_t)(character))->PositionY,
         (BYTE)(16 * (((int)((*(float*)(object + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
     gNetwork.SendC1(movePacket, sizeof(movePacket));
     AsCharacter(c)->Movement = 0;
@@ -203,7 +203,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // Native code indexes CharactersClient directly at 0x4859A9.  Attack and
     // Action establish this index before entering this helper; adding a local
     // rejection here changes the original tail (state + C1:11 confirmation).
-    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * 0x394; // IDA: v285 source
+    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * CHARACTER_STRIDE; // IDA: v285 source
     AsCharacter(c)->TargetPosition[0] = *(float*)(targetEntity + 0x10); // TargetPosition.x
     AsCharacter(c)->TargetPosition[1] = *(float*)(targetEntity + 0x14); // TargetPosition.y
     AsCharacter(c)->TargetPosition[2] = *(float*)(targetEntity + 0x18); // TargetPosition.z
@@ -211,7 +211,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     *(float*)(o + 36) = CreateAngle(
         *(float*)(o + 0x10), *(float*)(o + 0x14),
         AsCharacter(c)->TargetPosition[0], AsCharacter(c)->TargetPosition[1]);
-    const WORD targetKey = *(WORD*)(targetEntity + 476); // IDA: v285
+    const WORD targetKey = *(WORD*)&((CHARACTER*)(uintptr_t)(targetEntity))->Key; // IDA: v285
     // There is deliberately no key-validity early return here.  The native
     // CFG at 0x485A2B continues through every family and serializes v285 as
     // read, including the sentinel value when the selected slot is stale.
@@ -256,10 +256,13 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             centre[1] += step[1];
             centre[2] += step[2];
             Warrior_CollectMultiTargets(centre, 100.0f, *(WORD*)(o + 134), keys, &count, 6);
-            const BYTE serial = *(BYTE*)(character + 1408);
-            *(BYTE*)(character + 1408) = serial + 1;
+            // IDA 0x485780 L1097-1100: el serial vive en CharacterMachine+1408,
+            // no en la entidad (CHARACTER mide 0x394: 1408 caía en el slot siguiente).
+            BYTE* machine = static_cast<BYTE*>(DAT_07cf1ffc);
+            const BYTE serial = machine ? machine[1408] : 0;
+            if (machine) machine[1408] = serial + 1;
             *(BYTE*)(o + 136) = serial;
-            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)(character + 913) + 87] : skillType,
+            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)&((CHARACTER*)(uintptr_t)(character))->CurrentSkill + 87] : skillType,
                                    centre, *(BYTE*)(o + 136), keys, count);
     } else if (skillType == 56) {
             float angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) - 40.0f };
@@ -301,10 +304,10 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 // label was incorrect: IDA FUN_004742B0 is documented as CreateTeleportBegin in Entity_LegacyTeleport.cpp.
 // Hit reaction: Entity_SetAnimation(0x57), clear +0x164, set +0x7C=1,
 // spawn effect 0x498 at entity pos, play sound 0x58.
-void __cdecl Entity_WeaponHit(int param_1) {
+void __cdecl Entity_WeaponHit(intptr_t param_1) {
     SetAttackSpeed();
     SetAction(AsObject(param_1), 0x57);
-    *(DWORD *)(param_1 + 0x164) = 0;
+    *(DWORD *)&((OBJECT*)(uintptr_t)(param_1))->AlphaTarget = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
     CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
@@ -367,7 +370,7 @@ void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
 //     300 (0x12C): same as 0x186.
 //     other: set anim 6 (land-idle), return.
 //   Post-effects: if +0x108 == _DAT_00552580 (0.0f): play footstep sound from class table.
-void __cdecl Entity_TeleportEnd(int entity_idx) {
+void __cdecl Entity_TeleportEnd(intptr_t entity_idx) {
     BYTE* puVar3 = (BYTE*)(uintptr_t)(int)entity_idx;
 
     // Local player: clear teleport in-flight state (hash-table ops are obfuscation noise)
@@ -411,17 +414,17 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
 
 LAB_00445110:
     // Post-teleport footstep sound: only if anim speed == _DAT_00552580 (ground landed)
-    if (*(float*)(puVar3 + 0x108) == *(float*)&DAT_00552580) {
+    if (*(float*)&((OBJECT*)(uintptr_t)(puVar3))->AnimationFrame == *(float*)&DAT_00552580) {
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
-            if ((puVar3[0x1bc] & 7) == 2)
+            if ((((CHARACTER*)puVar3)->Class & 7) == 2)
                 PlayBuffer(0x50, AsObject(entity_idx), 0);
             else
                 PlayBuffer(0x4e, AsObject(entity_idx), 0);
             return;
         }
         // General: look up footstep sound from entity-class table at DAT_05828d58+0xb2
-        short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * 0xbc);
+        short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + BMD_FIELD_SHIFT + sVar2 * BMD_STRIDE);
         if (sfx != -1)
             PlayBuffer(sfx + 0xaa, AsObject(entity_idx), 0);
     }
@@ -456,7 +459,7 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 // documented as CreateTeleportEnd in Entity_LegacyTeleport.cpp, so the old address label was misleading.
 // Melee attack initiation: anim 0x57, set speed=5.0f (+0x108), mode=3 (+0x7C),
 // scale=1.0f (+0x164), spawn effect 0x498, play sound 0x58.
-void __cdecl Entity_MeleeAttackStart(int param_1) {
+void __cdecl Entity_MeleeAttackStart(intptr_t param_1) {
     SetAttackSpeed();
     SetAction(AsObject(param_1), 0x57);
     AsObject(param_1)->AnimationFrame = 5.0f;   // 0x40A00000

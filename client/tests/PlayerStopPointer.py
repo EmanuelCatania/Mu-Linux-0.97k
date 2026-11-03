@@ -46,6 +46,11 @@ CHARACTER* AsCharacter(void* p) { return static_cast<CHARACTER*>(p); }
 CHARACTER* AsCharacter(std::uintptr_t p) { return reinterpret_cast<CHARACTER*>(p); }
 OBJECT* AsObject(void* p) { return static_cast<OBJECT*>(p); }
 OBJECT* AsObject(std::uintptr_t p) { return reinterpret_cast<OBJECT*>(p); }
+// Vista x86 del modelo: sólo la tabla de sonidos (+170), con el paso de 188.
+struct BMD { unsigned char _pad[170]; short Sounds[5]; unsigned char _tail[188 - 180]; };
+static_assert(sizeof(BMD) == 188, "BMD x86");
+BMD* AsModel(std::uintptr_t p) { return reinterpret_cast<BMD*>(p); }
+BMD* AsModel(void* p) { return static_cast<BMD*>(p); }
 using uint = unsigned int;
 '''
 

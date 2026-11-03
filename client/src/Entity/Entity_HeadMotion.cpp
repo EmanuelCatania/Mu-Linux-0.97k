@@ -57,7 +57,7 @@ void __cdecl LookAtTarget(OBJECT* o, const CHARACTER* TargetCharacter) {
 // IDA: FUN_0043E940 @ 0x0043E940 — MoveHead (~56 lines), random/tracked head movement for entities.
 void __cdecl MoveHead(CHARACTER* character) {
     BYTE* param_1 = reinterpret_cast<BYTE*>(character);
-    char anim = *(char*)(param_1 + 0x105);
+    char anim = *(char*)&((OBJECT*)(uintptr_t)(param_1))->CurrentAction;
     if (anim == '\x06') return; // dead — no head movement
 
     if (anim == '\0') {
@@ -84,13 +84,13 @@ void __cdecl MoveHead(CHARACTER* character) {
             return;
         }
     }
-    else if ((anim == '\x02') && (*(short*)(param_1 + 0x310) != -1)) {
+    else if ((anim == '\x02') && (*(short*)&((CHARACTER*)(uintptr_t)(param_1))->TargetCharacter != -1)) {
         // Combat: mirar al blanco del ataque.
         // IDA (0x43E940): sub_43E890(a1, COERCE_FLOAT(CharactersClient + 916 * v7)),
         // con `v7 = *(_WORD *)(a1 + 784)` = el indice de la entidad objetivo.
         // 916 = 0x394 es el stride del array de entidades.
         LookAtTarget(&character->Object,
-                     AsCharacter(CharactersClient + 916 * (int)character->TargetCharacter));
+                     AsCharacter(CharactersClient + CHARACTER_STRIDE * (int)character->TargetCharacter));
         return;
     }
     else {

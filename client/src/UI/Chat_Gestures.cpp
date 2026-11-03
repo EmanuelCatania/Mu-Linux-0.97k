@@ -37,10 +37,10 @@ void __cdecl SetActionClass(CHARACTER* character, OBJECT* object, int action, in
 {
     const BYTE* c = reinterpret_cast<const BYTE*>(character);
     const BYTE* o = reinterpret_cast<const BYTE*>(object);
-    BYTE cur = *(BYTE*)(o + 261);
+    BYTE cur = *(BYTE*)&((OBJECT*)(uintptr_t)(o))->CurrentAction;
     if (cur == 0 || cur > 12) return;
     int act = action;
-    if ((*(BYTE*)(c + 444) & 7) == 2 && (action < 123 || action > 128))
+    if ((*(BYTE*)&((CHARACTER*)(uintptr_t)(c))->Class & 7) == 2 && (action < 123 || action > 128))
         act = action + 1;
     SetAction(object, act);
     SendRequestAction((BYTE)actionType);

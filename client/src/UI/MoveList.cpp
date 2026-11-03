@@ -113,9 +113,9 @@ bool CMoveList::CheckMove(const Proto::MOVE_LIST_INFO& map) const
     if (map.MinReset != -1 && m_Resets < (DWORD)map.MinReset) return false;
     if (map.MaxReset != -1 && m_Resets > (DWORD)map.MaxReset) return false;
     if (*(const DWORD*)(attr + 0x548) < map.Money) return false;
-    if (m_PKLimitFree == 0 && hero[0x2EA] >= PKLVL_OUTLAW) return false;
-    const short wing = *(const short*)(hero + 0x2A0);
-    const short helper = *(const short*)(hero + 0x2B8);
+    if (m_PKLimitFree == 0 && hero[EntityOffset(0x2EA)] >= PKLVL_OUTLAW) return false;
+    const short wing = *(const short*)&((CHARACTER*)(uintptr_t)(hero))->Wing.Type;
+    const short helper = *(const short*)&((CHARACTER*)(uintptr_t)(hero))->Helper.Type;
     const bool uniria = helper == GET_ITEM_MODEL(13, 2);
     const bool dinorant = helper == GET_ITEM_MODEL(13, 3);
     if (map.MapNumber == MAP_ATLANS && (uniria || dinorant)) return false;

@@ -140,7 +140,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     // Pixel-copy loop: read 3-byte pixels from ppvBits, write 4-byte DWORD to Bitmaps[0] buffer
     // Bitmaps[0] buffer stride = 0x100 DWORDs per row (256 pixels * 4 bytes)
     // ppvBits stride = 0x600 bytes per row (512 pixels * 3 bytes, or 256 * 6 — double-height?)
-    DWORD* dstRow = (DWORD*)(uintptr_t)DAT_083a7cd4;
+    DWORD* dstRow = (DWORD*)Bitmaps[0].Buffer;
     char*  srcRow = (char*)gFont.GetTextBits();
 
     // Guard (no está en IDA): `srcRow = ppvBits_055c9e4c` es el puntero a los

@@ -1,6 +1,7 @@
 // Cloth_Simulation.cpp
 
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Physics/ClothTypes.h"
 #include "Game/RenderInterpolation.h"
 #include "Game/RenderInterpolationMath.h"
@@ -731,14 +732,12 @@ void Destroy(MeshCloth &c) {
 // Mesh_t en memoria (BMD_Load): +4 NumVertices, +10 NumTriangles,
 // +0x10 Vertices (stride 0x10, Node en +0), +0x1c Triangles (stride 0x24,
 // VertexIndex[4] en +2).
-inline char* MeshPtr(void *model, int mesh) {
+inline char* MeshPtr(void *model, intptr_t mesh) {
     // El layout legado conserva el puntero de tabla en 32 bits hasta B2.
-    const auto table = static_cast<std::uintptr_t>(
-        *reinterpret_cast<const DWORD*>(static_cast<BYTE*>(model) + 0x28));
-    return reinterpret_cast<char*>(table + static_cast<std::intptr_t>(mesh) * 0x28);
+    return reinterpret_cast<char*>(reinterpret_cast<ClothModelMesh*>(AsModel(model)->Meshs) + mesh);
 }
 inline short TriVertex(char *mesh, int tri, int i) {
-    return *(short *)(*(int *)(mesh + 0x1c) + tri * 0x24 + 2 + i * 2);
+    return *(short *)(reinterpret_cast<ClothModelMesh*>(mesh)->Triangles + tri * 0x24 + 2 + i * 2);
 }
 
 int FindMatchVertex(char *mesh, int v1, int v2, int v3) {
@@ -771,11 +770,11 @@ void SetLink(MeshCloth &c, int i, int v1, int v2, float dMin, float dMax, unsign
 Vec3 PoseVertex(void *model, const float *bones, const char *vertex) {
     float p[3];
     Vector_Transform((float *)(vertex + 4), (float *)(bones + *(short *)vertex * 12), p);
-    const float scale = *(float *)((char *)model + 0x68);
+    const float scale = *(float *)&((BMD*)(uintptr_t)(model))->BodyScale;
     p[0] *= scale; p[1] *= scale; p[2] *= scale;
-    p[0] += *(float *)((char *)model + 0x6c);
-    p[1] += *(float *)((char *)model + 0x70);
-    p[2] += *(float *)((char *)model + 0x74);
+    p[0] += *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[0];
+    p[1] += *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[1];
+    p[2] += *(float *)&((BMD*)(uintptr_t)(model))->BodyOrigin[2];
     return { p[0], p[1], p[2] };
 }
 
@@ -793,7 +792,7 @@ bool Create(MeshCloth &c, void *model, const float *bones) {
     c.links       = new Link[nTri * 3 * 2];
 
     bool anyFixed = false;
-    const char *verts = (const char *)*(int *)(mesh + 0x10);
+    const char *verts = (const char *)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
     for (int v = 0; v < nV; ++v) {
         c.vertices[v].pos = PoseVertex(model, bones, verts + v * 0x10);
         if (*(short *)(verts + v * 0x10) == kFixedBone) {
@@ -895,7 +894,7 @@ bool KeepLength(Vertex &v, const Vertex &other, const float *len) {
 // conserva sus anclajes y esferas aunque otra malla reutilice los buffers VT.
 void CapturePose(MeshCloth &c, void *model, const float *boneBase) {
     char *mesh = MeshPtr(model, kSkirtMesh);
-    const char *verts = (const char *)*(int *)(mesh + 0x10);
+    const char *verts = (const char *)(intptr_t)((ClothModelMesh*)(uintptr_t)mesh)->Vertices;
     for (int v = 0; v < c.numVertices; ++v) {
         if (*(short *)(verts + v * 0x10) == kFixedBone) {
             c.vertices[v].anchor = PoseVertex(model, boneBase, verts + v * 0x10);

@@ -28,16 +28,9 @@ void HUD_BeginGridPass(int pass);
 
 // sub_4E38B0 / sub_47F360 / sub_47F4C0 are now ported in HUD_Pass4.cpp.
 // sub_4E9300 is ported in HUD_Pass6.cpp.
-extern "C" int __cdecl sub_4E38B0(float a1, float a2, float x, int a4,
+extern "C" int __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4,
                                    float sx, int a6);
 
-static float PointerBitsAsFloat(const void* pointer)
-{
-    DWORD bits = (DWORD)(uintptr_t)pointer;
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
 extern "C" int __cdecl sub_4E9300_(void);
 #define sub_4E9300 sub_4E9300_
 // Alias a los globales reales (IDA): el teclado del PIN los comparte con
@@ -250,20 +243,24 @@ int __cdecl FUN_00482850_(void)
 //   Line 2: arrow count for slot 604  (uses GlobalText[352])
 // Y offset is resolution-dependent (m_Resolution case).
 // =============================================================================
+// IDA 0x4BF540 dibuja en (GetScreenWidth() - margenParty - k, 4), con k fijo
+// por resolución (90/75/65/58/10) ajustado al ancho de la fuente del 0.97k.
+// DESVIACION: con la fuente configurable ese k no alcanza y el texto queda
+// debajo de la lista de party; se alinea a la derecha de ese mismo borde.
+static int RenderNumArrow_TextX(float partyMargin, const SIZE& sz)
+{
+    const float rate = gWindow.GetScreenRateX() > 0.0f ? gWindow.GetScreenRateX() : 1.0f;
+    const float width = (float)sz.cx / rate;
+    return (int)((float)GetScreenWidth() - partyMargin - 5.0f - width);
+}
+
 extern "C" bool __cdecl RenderNumArrow_(void);
 bool __cdecl RenderNumArrow_(void)
 {
     bool drewSomething = false;
-    float v27 = (PartyNumber > 0 && !PartyOpened) ? 50.0f : 0.0f;
-
-    int baseY = 10;
-    switch (m_Resolution) {
-        case 0: baseY = 90; break;
-        case 1: baseY = 75; break;
-        case 2: baseY = 65; break;
-        case 3: baseY = 58; break;
-        case 4: baseY = 10; break;
-    }
+    // IDA 0x4BF540: 50 px de margen si hay party (la lista compacta), sin
+    // mirar PartyOpened; el ancla es GetScreenWidth(), no el borde de la ventana.
+    float v27 = (PartyNumber > 0) ? 50.0f : 0.0f;
 
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_NORMAL) ? gFont.GetFont(FONT_NORMAL) : gFont.GetFont(FONT_BOLD));
 
@@ -272,9 +269,7 @@ bool __cdecl RenderNumArrow_(void)
     // Anti-tamper inner block (CharacterMachine decrypt) — skipped.
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 536)) == 143) {
-        int screenW = gWindow.PanelOrigin(Ui::WindowRight);
         int v10 = *(unsigned char*)((BYTE*)CharacterMachine + 562);
-        float v25 = (float)((double)screenW - (double)v27 - 10.0);
         int v11 = FUN_00482850_();
         if (v10 > 0 || v11 > 0) {
             CHAR String[100];
@@ -283,15 +278,13 @@ bool __cdecl RenderNumArrow_(void)
             int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
-            Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
+            Text_MeasureBox(RenderNumArrow_TextX(v27, sz), 4, String, 0, 0, 0);
             drewSomething = true;
         }
     }
 
     if (ItemBehaviorType(*(short*)((BYTE*)CharacterMachine + 604)) == 135) {
-        int screenW = gWindow.PanelOrigin(Ui::WindowRight);
         int v13 = *(unsigned char*)((BYTE*)CharacterMachine + 630);
-        float v26 = (float)((double)screenW - (double)v27 - 10.0);
         int v14 = FUN_00482850_();
         if (v13 > 0 || v14 > 0) {
             CHAR String[100];
@@ -300,7 +293,7 @@ bool __cdecl RenderNumArrow_(void)
             int n = Platform::TextLength(String);
             SIZE sz = {0,0};
             gFont.MeasureText(gFont.GetTextDC(), String, n, &sz);
-            Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
+            Text_MeasureBox(RenderNumArrow_TextX(v27, sz), 4, String, 0, 0, 0);
             drewSomething = true;
         }
     }
@@ -407,37 +400,37 @@ void Render_HudPass_4F6050_(void)
     if (InventoryOpened) {
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
-                   PointerBitsAsFloat(OffsetInventoryItems), 8, 8.0f, 1);
+                   OffsetInventoryItems, 8, 8.0f, 1);
     }
     if (ShopOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
                    // IDA pushes `Inventory.WalkSpeed + 0x880`, which in our
                    // ITEM layout is exactly `&Inventory[32].WalkSpeed`.
-                   PointerBitsAsFloat(ShopItems), 8, 15.0f, 1);
+                   ShopItems, 8, 15.0f, 1);
     }
     if (TradeOpened) {
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 70.0),
-                   PointerBitsAsFloat(Inventory), 8, 4.0f, 1);
+                   Inventory, 8, 4.0f, 1);
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 270.0),
-                   PointerBitsAsFloat(OffsetTradeItems), 8, 4.0f, 1);
+                   OffsetTradeItems, 8, 4.0f, 1);
     }
     if (WarehouseOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat(OffsetWarehouseItems), 8, 15.0f, 1);
+                   OffsetWarehouseItems, 8, 15.0f, 1);
     }
     if (ChaosMixOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 110.0),
-                   PointerBitsAsFloat(OffsetMixItems), 8, 4.0f, 1);
+                   OffsetMixItems, 8, 4.0f, 1);
     }
     if (EventWindowOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat(OffsetMixItems), 8, 4.0f, 1);
+                   OffsetMixItems, 8, 4.0f, 1);
     }
 }
 
@@ -589,7 +582,7 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 
 extern "C" const BYTE* Guild_GetMarkPixels(int row);
 
-void __cdecl RenderBoolean(int x, int y, DWORD c)
+void __cdecl RenderBoolean(int x, int y, intptr_t c)
 {
     if (!c) return;
 

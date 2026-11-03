@@ -30,6 +30,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "UI/MoveList.h"
 #include "Net/NetText.h"
 #include "Party/Party.h"
@@ -75,15 +76,8 @@ extern "C" void Net_SendNpcTalkClose(void);
 extern "C" SIZE*  __cdecl RenderCenteredText(int x, int y, const char* text);
 extern "C" int    __cdecl GetScreenWidth(void);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
-extern "C" int    __cdecl sub_4E38B0(float a1, float a2, float x, int a4, float sx, int a6);
+extern "C" int    __cdecl sub_4E38B0(float a1, float a2, const void* items, int a4, float sx, int a6);
 
-static float PointerBitsAsFloat_HudPass6(const void* pointer)
-{
-    DWORD bits = (DWORD)(uintptr_t)pointer;
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
 extern "C" void   __cdecl RenderTipText(int sx, int sy, const char* Text);
 extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
@@ -239,13 +233,13 @@ extern "C" void __cdecl RenderInventoryInterface(int StartX, int StartY, int Fla
 // bitmap at each position, with InventoryColor() picking the tint.
 // =============================================================================
 extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
-                                         DWORD InventoryPtr,
+                                         intptr_t InventoryPtr,
                                          int iMaxWidth, int iMaxHeight)
 {
     if (iMaxHeight <= 0) return;
 
     int row = 0;
-    DWORD ptr = InventoryPtr;
+    intptr_t ptr = InventoryPtr;
     for (int r = 0; r < iMaxHeight; ++r) {
         if (iMaxWidth > 0) {
             ITEM* v7 = (ITEM*)ptr;
@@ -286,35 +280,35 @@ char __cdecl sub_4F5CE0_(void)
         RenderEquipment3D();
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
-                   PointerBitsAsFloat_HudPass6(OffsetInventoryItems), 8, 8.0f, 0);
+                   OffsetInventoryItems, 8, 8.0f, 0);
     }
     if (ShopOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(ShopItems), 8, 15.0f, 0);
+                   ShopItems, 8, 15.0f, 0);
     }
     if (TradeOpened) {
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 70.0),
-                   PointerBitsAsFloat_HudPass6(Inventory), 8, 4.0f, 0);
+                   Inventory, 8, 4.0f, 0);
         sub_4E38B0((float)((double)TradeInventoryStartX + 15.0),
                    (float)((double)TradeInventoryStartY + 270.0),
-                   PointerBitsAsFloat_HudPass6(OffsetTradeItems), 8, 4.0f, 0);
+                   OffsetTradeItems, 8, 4.0f, 0);
     }
     if (WarehouseOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(OffsetWarehouseItems), 8, 15.0f, 0);
+                   OffsetWarehouseItems, 8, 15.0f, 0);
     }
     if (ChaosMixOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 110.0),
-                   PointerBitsAsFloat_HudPass6(OffsetMixItems), 8, 4.0f, 0);
+                   OffsetMixItems, 8, 4.0f, 0);
     }
     if (EventWindowOpened) {
         sub_4E38B0((float)((double)dword_7EAA0C8 + 15.0),
                    (float)((double)dword_7EAA0CC + 50.0),
-                   PointerBitsAsFloat_HudPass6(OffsetMixItems), 8, 4.0f, 0);
+                   OffsetMixItems, 8, 4.0f, 0);
     }
     return (char)ChaosMixOpened;
 }
@@ -397,7 +391,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 
     float fPosX = (float)((double)InventoryStartX + 15.0);
     float fPosY = (float)((double)InventoryStartY + 200.0);
-    RenderItemsBoxes(fPosX, fPosY, (DWORD)(uintptr_t)OffsetInventoryItems, 8, 8);
+    RenderItemsBoxes(fPosX, fPosY, (intptr_t)OffsetInventoryItems, 8, 8);
 
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
@@ -683,7 +677,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
     InputNumber = 0;
     GuildMark_InitializePalette(true);
     if (Hero)
-        *(short*)((BYTE*)Hero + 474) = 999;
+        *(short*)((BYTE*)Hero + EntityOffset(474)) = 999;
 }
 
 // El dialogo previo "¿crear guild?" — modo 0 del mismo panel.
@@ -717,7 +711,7 @@ extern "C" void GuildCreator_CloseFromResult(void)
     GuildCreatorOpened = 0;
     g_iKeyPadEnable = 0;
     if (Hero)
-        *(short*)((BYTE*)Hero + 474) = -1;
+        *(short*)((BYTE*)Hero + EntityOffset(474)) = -1;
 }
 
 extern "C" void SetGuildNoticeText(const char* text)
@@ -793,7 +787,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
 
     m_dwBackColor = 0xFF141414u;
-    SetPlayerColor(*(BYTE*)((char*)Hero + 0x2EA));
+    SetPlayerColor(*(BYTE*)((char*)Hero + EntityOffset(0x2EA)));
     RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Zone label: "ServerName - Channel" via GlobalText[460]/[461].
@@ -982,7 +976,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
 
     // Magic class bonus (class 1=DW, 3=MG): if both slots in [0,192)
-    int classL3 = *(BYTE*)((char*)Hero + 0x1BC) & 7;
+    int classL3 = *(BYTE*)&((CHARACTER*)Hero)->Class & 7;
     bool dualBonus = false;
     if (classL3 == 1 || classL3 == 3) {
         if (typeR >= 0 && typeR < 192 && typeL >= 0 && typeL < 192) {
@@ -1092,13 +1086,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── DW (class 0) / MG (class 3): magic skill damage line ────────────────
-    int classFlag = *(BYTE*)((char*)Hero + 444) & 7;
+    int classFlag = *(BYTE*)((char*)Hero + EntityOffset(444)) & 7;
     int yMagic = iPosY + 335;
     if (classFlag == 0 || classFlag == 3) {
         // IDA RenderCharacterInfoWindow (0x4ECC60) L1038-1091.  El pWeaponRight
         // de IDA es CharacterMachine+536, o sea el pWeaponLeft de este archivo.
         int piMin = 0, piMax = 0;
-        BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + 913));
+        BYTE skillType = *(BYTE*)((char*)CA + 87 + *(BYTE*)((char*)Hero + EntityOffset(913)));
         GetMagicSkillDamage(static_cast<const BYTE*>(CharacterMachine), skillType, &piMin, &piMax);
         int staffMul = (pWeaponLeft->Level >> 3) & 0xF;
 
@@ -1159,7 +1153,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     gFont.SelectFont(gFont.GetTextDC(), gFont.GetFont(FONT_BOLD));
 
     // Hero+474 holds the player's guild-mark index (-1 if no guild).
-    short guildIdx = *(short*)((char*)Hero + 474);
+    short guildIdx = *(short*)((char*)Hero + EntityOffset(474));
     if (guildIdx == -1) {
         sprintf(Text, "%s", GlobalText[180]);
     } else {
@@ -1202,7 +1196,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
         // La lista y sus botones siguen el mismo origen que el marco.
         obj[11] = (DWORD)(StartX + 10);
         obj[12] = (DWORD)(StartY + 387);
-        void** vt  = (void**)*obj;
+        void** vt  = ChatWidget_GetVTable(obj);
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
             typedef int  (__fastcall *FnInput)(DWORD*);
@@ -1334,10 +1328,10 @@ extern "C" void __cdecl RenderTrade(void)
     // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 70.0),
-                     (DWORD)(uintptr_t)Inventory, 8, 4);
+                     (intptr_t)Inventory, 8, 4);
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 270.0),
-                     (DWORD)(uintptr_t)OffsetTradeItems, 8, 4);
+                     (intptr_t)OffsetTradeItems, 8, 4);
 
     // IDA: FUN_004F1270 — 290 es normal, 291 es confirmada/dorada; un wait
     // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
@@ -1437,7 +1431,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     // Shop items start at `&Inventory[32].WalkSpeed` in the original client.
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)ShopItems, 8, 15);
+                     (intptr_t)ShopItems, 8, 15);
     BufferedDraw::Color3f(1.0f, 1.0f, 1.0f);
 
     // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
@@ -1548,7 +1542,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
-                     (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+                     (intptr_t)OffsetMixItems, 8, 4);
     // IDA 004F27F0: RenderItemsBoxes deja puesto el color de la última celda
     // (InventoryColor), y sin este reset los textos y el botón salían teñidos
     // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
@@ -1663,7 +1657,7 @@ extern "C" void __cdecl RenderWarehouse(void)
 
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)OffsetWarehouseItems, 8, 15);
+                     (intptr_t)OffsetWarehouseItems, 8, 15);
 
     // ── Título: "Baúl (Abierto|Cerrado)" ─────────────────────────────────────
     // IDA: Platform::TextFormat(String, "%s (%s)", GlobalText[234], GlobalText[240 + lock])
@@ -1817,7 +1811,7 @@ extern "C" void __cdecl RenderEventWindow(void)
     const WORD charLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
     // v46 = fila + ((Hero[444] & 7) == 3 ? 6 : 0): el Magic Gladiator usa el
     // segundo banco de 6 filas de m_iBloodCastleLimitLevel.
-    const int mgOffset = (Hero && ((((const BYTE*)Hero)[444] & 7) == 3)) ? 6 : 0;
+    const int mgOffset = (Hero && ((((const BYTE*)Hero)[EntityOffset(444)] & 7) == 3)) ? 6 : 0;
 
     for (int row = 0; row < count; ++row) {
         const auto button = Ui::EventButton(bloodCastle, row, gWindow.GetRightShift());

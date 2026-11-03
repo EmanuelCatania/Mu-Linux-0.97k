@@ -92,7 +92,7 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 // to dispatch RenderItemInfo (tooltip). El símbolo es `DAT_07eaa160` (Scene_MapTick
 // lo pasa como 3er arg a RenderItemInfo), no `dword_7E11D24`, que es estado del
 // input de texto (sub_494520).
-extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
+extern uintptr_t DAT_07eaa160;                     // IDA `CheckInventory`
 #define CheckInventory     DAT_07eaa160
 
 // Tabla de hotkeys en dword_559C60[3] (Q/W/E) — los globals ya están declarados como
@@ -119,14 +119,14 @@ extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
 // ── Declaraciones adelantadas de los helpers que usamos ──────────────────────
 void __cdecl ShowCheckBox(int mode, int x, int y);   // definida más abajo
 void __cdecl CreateOkMessageBox(char* strMsg);
-void __cdecl DeleteBug(int Owner);
+void __cdecl DeleteBug(intptr_t Owner);
 
 // PressKey/sub_4D6020: los provee Input.cpp — no siempre están expuestos
 // por un header. Los declaramos acá inline. Los dos tienen que ser `__cdecl` sin
 // mangling, igual que las implementaciones que ya existen.
 extern int  __cdecl PressKey(int vk);
 extern unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
-                                                           int inv_base, int grid_w, int grid_h);
+                                                           const void* inv_base, int grid_w, int grid_h);
 #define sub_4D6020 ItemMove_SnapMouseToEmptySlot
 
 // Latches de MousePosition para el pickup con click derecho. En IDA los originales están en
@@ -152,7 +152,7 @@ extern "C" BYTE OffsetTradeItems[];
 // Args: (origin_x, origin_y, grid_base, grid_w, grid_h)
 // IDA: FUN_004d6020
 unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
-                                                    int grid_base, int grid_w, int grid_h)
+                                                    const void* grid_base, int grid_w, int grid_h)
 {
 
     short pickedType = *(short*)pPickedItem;
@@ -174,12 +174,12 @@ unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
             int empty = 0;
             for (int dx = 0; dx < itemW; ++dx) {
                 for (int dy = 0; dy < itemH; ++dy) {
-                    BYTE* cell = (BYTE*)(uintptr_t)(grid_base + 68 *
-                                 ((y + dy) * grid_w + (x + dx)));
+                    const BYTE* cell = static_cast<const BYTE*>(grid_base) + 68 *
+                                 ((y + dy) * grid_w + (x + dx));
                     // IDA sub_4D6020: libre = Type == 0xFFFF, nada mas.  Key
                     // vale 0 en las celdas NO primarias de un item multi-celda,
                     // asi que no agregar `|| Key <= 0`.
-                    if (*(short*)cell == (short)0xFFFF) {
+                    if (*(const short*)cell == (short)0xFFFF) {
                         ++empty;
                     }
                 }
@@ -202,7 +202,7 @@ unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
 // Compatibility entry point retained solely for the preserved IDA port module.
 // IDA: FUN_004d6020
 unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
-                                   int grid_base, int grid_w, int grid_h)
+                                   const void* grid_base, int grid_w, int grid_h)
 {
     return ItemMove_SnapMouseToEmptySlot(origin_x, origin_y, grid_base, grid_w, grid_h);
 }
@@ -566,7 +566,7 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
                 AsCharacter(heroPtr)->Weapon[1].Option1 = 0;
                 break;
             case 8:  // Pet (Helper)
-                DeleteBug((int)(uintptr_t)heroPtr);
+                DeleteBug((intptr_t)heroPtr);
                 *(WORD *)&AsCharacter(heroPtr)->Helper.Type = 0xFFFF;
                 AsCharacter(heroPtr)->Helper.Option1 = 0;
                 break;
@@ -706,7 +706,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 }
             }
 
-            CheckInventory     = (int)(uintptr_t)rowSlot;
+            CheckInventory     = (intptr_t)rowSlot;
             byte_7EA9844       = (BYTE)mode_flag;
 
             // ── Escribe los globals de posición del tooltip (sx/sy en IDA) ──
@@ -994,20 +994,20 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(TradeInventoryStartX + 15),
                             (int)(TradeInventoryStartY + 0x10E),
-                            (int)(uintptr_t)&OffsetTradeItems[0],
+                            &OffsetTradeItems[0],
                             8, 4);
                     } else if (DAT_07eaa11a != 0 && MixState != 1) {  // ChaosMixOpened
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
                             (int)(DAT_07eaa0cc + 0x6E),
-                            (int)(uintptr_t)&OffsetMixItems[0],
+                            &OffsetMixItems[0],
                             8, 4);
                     } else if (DAT_07eaa119 != 0) {
                         // Warehouse open → try auto-drop into warehouse
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(DAT_07eaa0c8 + 15),
                             (int)(DAT_07eaa0cc + 50),
-                            (int)(uintptr_t)&OffsetWarehouseItems[0],
+                            &OffsetWarehouseItems[0],
                             8, 15);
                     } else if (DAT_07eaa165 == 0) {
                         // DESVIACION (DLL RightClickMove.cpp CheckEquipItem):
@@ -1066,7 +1066,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(InventoryStartX + 15),
                             (int)(InventoryStartY + 200),
-                            (int)(uintptr_t)&OffsetInventoryItems[0],
+                            &OffsetInventoryItems[0],
                             8, 8);
                     }
                     if (byte_83A42EB) {

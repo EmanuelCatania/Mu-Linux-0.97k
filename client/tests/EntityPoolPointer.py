@@ -7,6 +7,9 @@ ni sus consumidores de combate/render, que requieren migraciones posteriores.
 import argparse
 import os
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from legacy_fields import lower
 import re
 import tempfile
 
@@ -82,6 +85,8 @@ def harness(revision=None):
     start = re.search(r"^[ \t]*DAT_055c9e48\s*=", entry, re.M).start()
     end = entry.index(";", entry.index("memset(", start)) + 1
     initialize = entry[start:end].replace("malloc(0x764d4)", "AllocatePool(0x764d4)")
+    initialize = initialize.replace("malloc(529 * CHARACTER_STRIDE)", "AllocatePool(529 * CHARACTER_STRIDE)")
+    assert "AllocatePool(" in initialize, "la reserva del pool no se pudo interceptar"
     initialize = initialize.replace("rand()", "SelectedOffset()")
     lookup = function(read_source("src/Entity/Entity_Lookup.cpp", revision), "Entity_FindById")
     legacy = function(read_source("src/Scene/Scene_CharSelect_Nav.cpp", revision), "FindCharacterIndex")

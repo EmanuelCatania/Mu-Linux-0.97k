@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run, function, read_source
+from X86Views import CLOTH_MODEL_MESH, model_view
 
 MAIN=r'''
 std::uint64_t Run(BYTE* memory,BYTE* storage,std::uintptr_t displacement){
@@ -57,7 +58,7 @@ def harness(revision=None):
     source=read_source('src/Physics/Cloth_Simulation.cpp',revision)
     # Normaliza sólo la extracción; el cuerpo compilado conserva char*.
     mesh=function(source.replace('char* MeshPtr','BYTE* MeshPtr'),'MeshPtr').replace('BYTE* MeshPtr','char* MeshPtr')
-    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x400000')+mesh+MAIN
+    return PREAMBLE.split('char DAT_00559bb4',1)[0].replace('0x10000','0x400000')+model_view(['Meshs'],revision)+CLOTH_MODEL_MESH+mesh+MAIN
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

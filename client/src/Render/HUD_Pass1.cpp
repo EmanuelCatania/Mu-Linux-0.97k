@@ -160,14 +160,17 @@ void RenderPartyHP_(void)
     int v19 = 0;
 
     do {
-        DWORD v2 = v1[1];                          // character index
-        if (v2 != (DWORD)-1) {
-            int v3 = 229 * (int)v2;
+        // DESVIACION: IDA sólo descarta -1, pero el héroe sin resolver queda en
+        // -3 (y -2 entre la pasada del hover y la del picker). En x86 eso leía
+        // basura antes del pool; en x64 el índice sin signo sale del espacio.
+        const int v2 = (int)v1[1];                 // índice del personaje
+        if (v2 >= 0 && v2 < 400) {
+            const BYTE* character = (const BYTE*)CharactersClient + (size_t)v2 * CHARACTER_STRIDE;
             float Position[3];
-            Position[0] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 16);
-            Position[1] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 20);
-            Position[2] = *(float*)((BYTE*)CharactersClient + 4 * v3 + 300)  // [75]
-                        + *(float*)((BYTE*)CharactersClient + 4 * v3 + 24)   // [6]
+            Position[0] = *(const float*)(character + 16);
+            Position[1] = *(const float*)(character + 20);
+            Position[2] = *(const float*)(character + EntityOffset(300))  // [75]
+                        + *(const float*)(character + 24)   // [6]
                         + 100.0f;
 
             int sx, sy;
@@ -303,7 +306,7 @@ void RenderBooleans_(void)
             const int maxY = 480 - 47 * 480 / 640;
             if (c->y < 0 || c->y + boxH > maxY) continue;
             if (c->x < -marginX || c->x + boxW > 640 + marginX) continue;
-            RenderBoolean(c->x, c->y, (DWORD)(uintptr_t)c);
+            RenderBoolean(c->x, c->y, (intptr_t)c);
         }
     }
 }

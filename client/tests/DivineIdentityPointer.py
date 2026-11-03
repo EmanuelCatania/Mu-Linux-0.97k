@@ -4,6 +4,7 @@ import argparse,os,re,tempfile
 from pathlib import Path
 from GatePointer import PREAMBLE
 from SceneObjectPointer import build_and_run,read_source
+from X86Views import CLOTH_MODEL_MESH, model_view
 SERVICES=r'''
 #include <cmath>
 using std::uintptr_t;typedef float vec3_t[3];typedef float vec34_t[3][4];
@@ -52,7 +53,7 @@ def harness(revision=None):
   wrappers=r'''uintptr_t Key(const MeshCloth& c){return static_cast<DWORD>(c.part);}MeshCloth* Find(PART_t* p){return FindSlot(static_cast<int>(reinterpret_cast<uintptr_t>(p)));}void Tick(OBJECT* o,int type,PART_t* p,void* model){DivineSkirt_Tick(static_cast<int>(reinterpret_cast<uintptr_t>(o)),type,static_cast<int>(reinterpret_cast<uintptr_t>(p)),model);}void Apply(OBJECT* o,int type,PART_t* p,void* model){DivineSkirt_Apply(static_cast<int>(reinterpret_cast<uintptr_t>(o)),type,static_cast<int>(reinterpret_cast<uintptr_t>(p)),model);}'''
  else:
   wrappers=r'''uintptr_t Key(const MeshCloth& c){return reinterpret_cast<uintptr_t>(c.part);}MeshCloth* Find(PART_t* p){return FindSlot(p);}void Tick(OBJECT* o,int type,PART_t* p,void* model){DivineSkirt_Tick(o,type,p,model);}void Apply(OBJECT* o,int type,PART_t* p,void* model){DivineSkirt_Apply(o,type,p,model);}'''
- return PREAMBLE.split('char DAT_00559bb4',1)[0]+SERVICES.split('DWORD MoveSceneFrame',1)[0]+types+'DWORD MoveSceneFrame'+SERVICES.split('DWORD MoveSceneFrame',1)[1]+source+wrappers+MAIN
+ return PREAMBLE.split('char DAT_00559bb4',1)[0]+model_view(['Meshs','BodyOrigin','BodyScale'],revision)+CLOTH_MODEL_MESH+SERVICES.split('DWORD MoveSceneFrame',1)[0]+types+'DWORD MoveSceneFrame'+SERVICES.split('DWORD MoveSceneFrame',1)[1]+source+wrappers+MAIN
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--architecture',choices=('Win32','x64'),default='x64');p.add_argument('--generator');p.add_argument('--reference-ref');args=p.parse_args()

@@ -24,6 +24,7 @@
 // All chat packets XOR-encrypted with same 32-byte key as login.
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Text/TextCore.h"
 #include "Party/Party.h"
 #include "Entity/EntityName.h"
@@ -66,7 +67,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
 
     if (*requestedName != '\0' && DAT_07abf5d0) {
         char* candidate = (char*)(uintptr_t)DAT_07abf5d0;
-        for (int i = 0; i < 400; ++i, candidate += 916) {
+        for (int i = 0; i < 400; ++i, candidate += CHARACTER_STRIDE) {
             if (candidate[0] && *(short*)(candidate + 2) == 390 &&
                 candidate[132] == 1 &&
                 Platform::TextCompareIgnoreCase(EntityName::Get(candidate), requestedName) == 0) {
@@ -75,7 +76,7 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
             }
         }
     } else if (SelectedCharacter >= 0 && SelectedCharacter < 400 && DAT_07abf5d0) {
-        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * 916;
+        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * CHARACTER_STRIDE;
         if (candidate[0] && *(short*)(candidate + 2) == 390 && candidate[132] == 1)
             entity = candidate;
     }
@@ -96,7 +97,7 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
 
     char* entity = Chat_FindPlayerInteractionTarget(text + commandLen);
     if (entity) {
-        const WORD key = *(WORD*)(entity + 476);
+        const WORD key = *(WORD*)&((CHARACTER*)(uintptr_t)(entity))->Key;
         BYTE packet[5] = { 0xC1, 0x05, head, (BYTE)(key >> 8), (BYTE)key };
         // El frame lo decide `Data\Hack\HackPacketCheck.txt` (columna Encrypt):
         //   0x40 party y 0x36 trade → Encrypt=1 → C3
@@ -135,23 +136,23 @@ static bool Chat_TrySendPartyRequest(const char* text)
 
     auto IsPlayerTarget = [hero](char* entity) {
         return entity && entity != hero && entity[0] && entity[132] == 1 &&
-               (*(short*)(entity + 2) == 390 || entity[847] != 0);
+               (*(short*)(entity + 2) == 390 || entity[EntityOffset(847)] != 0);
     };
     auto IsAdjacent = [hero](const char* entity) {
-        return abs(*(const int*)(entity + 904) - *(const int*)(hero + 904)) <= 1 &&
-               abs(*(const int*)(entity + 908) - *(const int*)(hero + 908)) <= 1;
+        return abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionX - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionX) <= 1 &&
+               abs(*(const int*)&((CHARACTER*)(uintptr_t)(entity))->PositionY - *(const int*)&((CHARACTER*)(uintptr_t)(hero))->PositionY) <= 1;
     };
 
     char* target = nullptr;
     if (SelectedCharacter >= 0 && SelectedCharacter < 400) {
-        char* candidate = entities + SelectedCharacter * 916;
+        char* candidate = entities + SelectedCharacter * CHARACTER_STRIDE;
         if (IsPlayerTarget(candidate) && IsAdjacent(candidate))
             target = candidate;
     } else {
         const int heroDirection = ((int)((*(float*)(hero + 36) + 22.5f) *
                                          0.022222223f + 1.0f)) & 7;
         for (int i = 0; i < 400; ++i) {
-            char* candidate = entities + i * 916;
+            char* candidate = entities + i * CHARACTER_STRIDE;
             if (!IsPlayerTarget(candidate) || !IsAdjacent(candidate))
                 continue;
 
@@ -167,7 +168,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     if (!target)
         return true;
 
-    const WORD key = *(WORD*)(target + 476);
+    const WORD key = *(WORD*)&((CHARACTER*)(uintptr_t)(target))->Key;
     PartyKey = key;
     const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
     gNetwork.Send(packet, sizeof(packet));
@@ -175,7 +176,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
         char message[300] = {};
-        sprintf(message, GlobalText[476], EntityName::Get(entities + targetIndex * 916));
+        sprintf(message, GlobalText[476], EntityName::Get(entities + targetIndex * CHARACTER_STRIDE));
         UIChatLogWindow_AddText(nullptr, message, 1);
     }
     return true;
@@ -361,7 +362,7 @@ void __cdecl Chat_InputTick(void)
                 (mouseX < posX_scaled) &&
                 ((int)rowY <= mouseY) && (mouseY < (int)(rowY + 0xd)) &&
                 (DAT_00559c84 != '\0') &&
-                (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
             {
                 // Compare entity name at +0x1c1 against table name
                 const char *entityName = EntityName::Get(DAT_07abf5d8);
@@ -395,7 +396,7 @@ void __cdecl Chat_InputTick(void)
                     DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
                                                       : DAT_055c9ff0);
                     if (obj && *(int*)obj) {
-                        void** vt = (void**)*obj;
+                        void** vt = ChatWidget_GetVTable(obj);
                         typedef int (__fastcall *FnScroll)(DWORD*, int, int);
                         typedef int (__fastcall *FnRows)(DWORD*, int);
                         int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
@@ -417,7 +418,7 @@ void __cdecl Chat_InputTick(void)
                     DWORD* obj = (DWORD*)(GuildOpened ? DAT_055c9ff4
                                                       : DAT_055c9ff0);
                     if (obj && *(int*)obj) {
-                        void** vt = (void**)*obj;
+                        void** vt = ChatWidget_GetVTable(obj);
                         typedef int (__fastcall *FnScroll)(DWORD*, int, int);
                         typedef int (__fastcall *FnRows)(DWORD*, int);
                         int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
@@ -496,7 +497,7 @@ void __cdecl Chat_InputTick(void)
                 if ((0x12f < mouseX) && (mouseX < 0x150) &&
                     (0x1bb < mouseY) && (mouseY < 0x1e0))
                 {
-                    DAT_0055a3e4 = (DWORD)*(BYTE *)(DAT_07abf5d8 + 0x391);
+                    DAT_0055a3e4 = (DWORD)*(BYTE *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill;
                     DAT_07ea840c = 0x140;
                     DAT_07ea8408 = 0x1bc;
                     DAT_07d78094 = 1;
@@ -528,7 +529,7 @@ void __cdecl Chat_InputTick(void)
                                 DAT_0055a3e4 = uVar14;
                                 if (IsClickPushed()) {
                                     DAT_083a4124 = '\0';
-                                    *(char *)((char *)DAT_07abf5d8 + 0x391) = (char)uVar14;
+                                    *(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->CurrentSkill = (char)uVar14;
                                     DAT_07db870c = '\0';
                                     PlayBuffer(0x19, 0, 0);
                                     DAT_07e11d28 = 0;
@@ -615,9 +616,9 @@ void __cdecl Chat_InputTick(void)
                             continue;
 
                         // Validate input
-                        if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
-                             (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
-                             (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                        if (((*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x332) &&
+                             (*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x333)) ||
+                             (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
                             CheckChatText((char *)chBuf);   // IDA: sub_497C70
 
                         if ((char)Chat_Validate((char *)chBuf) != '\0')
@@ -654,7 +655,7 @@ void __cdecl Chat_InputTick(void)
                         }
 
                         // Command parsing
-                        if (*(char *)(DAT_07abf5d8 + 0x2fd) == '\0') {
+                        if (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Dead == '\0') {
                             if (chBuf[0] == '/') {
                                 if (Chat_TrySendPartyRequest((const char*)chBuf)) {
                                     goto chat_done;
@@ -711,9 +712,9 @@ void __cdecl Chat_InputTick(void)
                         // fixed PMSG_CHAT_RECV past the received packet.
                         if (DAT_07e108c8 == '\0')
                             goto whisper_done;
-                        if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
-                             (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
-                             (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
+                        if (((*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x332) &&
+                             (*(short *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->Helper.Type != 0x333)) ||
+                             (*(char *)&((CHARACTER*)(uintptr_t)(DAT_07abf5d8))->SafeZone != '\0'))
                             CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
                         if ((char)Chat_Validate(&DAT_07e108c8) == '\0') {

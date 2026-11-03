@@ -148,7 +148,7 @@ void Game_EnterWorldTick(void)
     bool hasFreeSlot = false;
     {
         char* e = (char*)DAT_07abf5d0;
-        for (int i = 0; i < 5; i++, e += 0x394) {
+        for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE) {
             if (*e == '\0') { hasFreeSlot = true; break; }
         }
     }
@@ -299,7 +299,7 @@ void Game_EnterWorldTick(void)
     // chars correrían la misma anim.
     {
         for (int s = 0; s < 8; ++s) {
-            int e = (int)(uintptr_t)DAT_07abf5d0 + s * 0x394;
+            intptr_t e = (intptr_t)DAT_07abf5d0 + s * CHARACTER_STRIDE;
             if (*(char*)e != '\0') {
                 MoveCharacterVisual(e);            // MoveCharacterVisual: model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108] (anim frame)
@@ -316,7 +316,7 @@ void Game_EnterWorldTick(void)
 
     // Delete entity if server confirmed (0x39 = delete ack)
     if (DAT_05826cb0 == 0x39) {
-        ((char*)DAT_07abf5d0)[DAT_005615e0 * 0x394] = '\0';
+        ((char*)DAT_07abf5d0)[DAT_005615e0 * CHARACTER_STRIDE] = '\0';
     }
 
     int mouseX = DAT_083a427c;
@@ -342,7 +342,7 @@ void Game_EnterWorldTick(void)
             // Find first free entity slot
             int slotFound = DAT_005616b0;
             char* e = (char*)DAT_07abf5d0;
-            for (int i = 0; i < 5; i++, e += 0x394) {
+            for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE) {
                 if (*e == '\0') { slotFound = i; break; }
                 slotFound = DAT_005616b0;
             }
@@ -368,8 +368,8 @@ void Game_EnterWorldTick(void)
             IsClickPushed())
         {
             DAT_083a4124 = '\0';
-            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
-            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1c0];
+            ushort lvl = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+            BYTE   flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
 
             if (lvl < 40) {
                 // Level too low error
@@ -470,7 +470,7 @@ void Game_EnterWorldTick(void)
             // corresponde a IDA `if (!v40) goto LABEL_124` y precondición
             // SelectedHero != -1.  Sin esto, cada frame disparaba state=0x19.
             if (DAT_005616ac != -1 && (selectClicked || confirmed)) {
-                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1c0];
+                BYTE flags = ((BYTE*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1c0)];
                 // Precedence-fix: IDA `(flags & 1) == 0`, no `!flags & 1`.
                 if ((flags & 1) == 0) {
                     DAT_083a7c14 = 0x19;
@@ -509,8 +509,8 @@ void Game_EnterWorldTick(void)
         unsigned maxPage = 2;   // rotate limit: 3 si algún char >= lvl 220
         {
             char* e = (char*)DAT_07abf5d0;
-            for (int i = 0; i < 5; i++, e += 0x394)
-                if (*e != '\0' && *(ushort*)(e + 0x1be) > 0xdb) { maxPage = 3; break; }
+            for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE)
+                if (*e != '\0' && *(ushort*)&((CHARACTER*)(uintptr_t)(e))->Level > 0xdb) { maxPage = 3; break; }
         }
         if (mouseX > 0x17f && mouseX < 0x194 &&
             DAT_083a4278 >= dialogY + 0xc4 && DAT_083a4278 < dialogY + 0xd7 &&
@@ -645,12 +645,12 @@ void Game_EnterWorldTick(void)
                     // Copy char name from selected slot
                     // 0.97.40: CharacterMachine guarda 10 bytes; el nombre completo
                     // queda en EntityName::Selected().
-                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * 0x394));
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated((char*)DAT_07cf1ff4, 11, charName);
-                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
-                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
-                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
+                    *(ushort*)((char*)DAT_07cf1ff4 + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
                 // El F3/03 NO sale de aca: IDA 0x521D80 case 25 solo copia los
                 // datos del personaje y pasa a Loading. Lo manda el init de
@@ -667,13 +667,13 @@ void Game_EnterWorldTick(void)
                 // Va DENTRO de case 25, tras el Pkt_Send y el check de validCode (IDA
                 // 0x00521D80:1150); fuera del switch correría cada frame.
                 {
-                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * 0x394));
+                    const char* charName = EntityName::Get((const void*)(uintptr_t)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE));
                     char* charData = (char*)DAT_07cf1ff4;
                     EntityName::SetSelected(charName);
                     TextEngine::CopyTruncated(charData, 11, charName);
-                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1be);
-                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
-                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
+                    *(ushort*)(charData + 0xe) = *(ushort*)(DAT_07abf5d0 + DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1be));
+                    charData[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bc)];
+                    charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * CHARACTER_STRIDE + EntityOffset(0x1bd)];
                 }
 
                 SceneFlag  = 3;  // SceneFlag = Loading
@@ -696,7 +696,7 @@ void Game_EnterWorldTick(void)
                 // Check if any slot is free
                 bool anyFree = false;
                 char* e = (char*)DAT_07abf5d0;
-                for (int i = 0; i < 5; i++, e += 0x394)
+                for (int i = 0; i < 5; i++, e += CHARACTER_STRIDE)
                     if (*e == '\0') { anyFree = true; break; }
 
                 if (anyFree) {

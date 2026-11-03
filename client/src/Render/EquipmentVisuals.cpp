@@ -11,7 +11,8 @@ namespace {
 struct Sprite {
     unsigned short type;
     float position[3], scale, light[3], rotation;
-    int owner, mode, stage;
+    intptr_t owner;
+    int mode, stage;
 };
 struct Mesh {
     MaterialVisualSample material;
@@ -19,7 +20,7 @@ struct Mesh {
     PART_t partState{};
     float root[12]{}, relative[12]{}, offset[3]{}, extraOrigin[3]{};
     bool linked=false, relativeValid=false;
-    char context[0xbc], object[0x1c0], bones[sizeof(g_BoneScratch)];
+    char context[sizeof(BMD)], object[OBJECT_STRIDE], bones[sizeof(g_BoneScratch)];
     float light[3], alpha, lod;
     unsigned int level, flags;
     unsigned char option;
@@ -84,7 +85,7 @@ void Equipment_SetStage(int stage) { currentStage = stage; }
 bool Equipment_IsDrawing() { return drawing; }
 
 void Equipment_AddSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode) {
+    float *light, intptr_t owner, float rotation, int mode) {
     if (!recording) return;
     Sprite sprite;
     sprite.type = type; sprite.scale = scale; sprite.owner = owner;
@@ -95,12 +96,12 @@ void Equipment_AddSprite(unsigned short type, float *position, float scale,
     recording->sprites.push_back(sprite);
 }
 void Equipment_WingSprite(unsigned short type, float *position, float scale,
-    float *light, int owner, float rotation, int mode) {
+    float *light, intptr_t owner, float rotation, int mode) {
     if (recording) Equipment_AddSprite(type, position, scale, light, owner, rotation, mode);
     else CreateSprite(type, position, scale, light, owner, rotation, mode);
 }
 void Equipment_AddMesh(int model, const void *object, const float *light,
-    float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, int part, int linked, const float *offset) {
+    float alpha, unsigned int level, unsigned char option, unsigned int flags, char translate, intptr_t part, int linked, const float *offset) {
     if (!recording) return;
     recording->commands.push_back({true, (unsigned int)recording->meshes.size(), currentStage});
     recording->meshes.emplace_back();
@@ -118,13 +119,13 @@ void Equipment_AddMesh(int model, const void *object, const float *light,
     if (owner.BoneMatrices) {
         mesh.relativeValid=RenderInverseMatrix(ownerBone,inverse);
         if (mesh.relativeValid) R_ConcatTransforms(inverse,mesh.root,mesh.relative);
-        if (!mesh.linked) BMD__RotationPosition((void *)(DAT_05828d58+owner.Type*0xbc),(float *)ownerBone,mesh.offset,rotated);
+        if (!mesh.linked) BMD__RotationPosition((void *)(DAT_05828d58+owner.Type* BMD_STRIDE),(float *)ownerBone,mesh.offset,rotated);
     }
-    const BMD &context=*AsModel(DAT_05828d58+model*0xbc);
+    const BMD &context=*AsModel(DAT_05828d58+model* BMD_STRIDE);
     for (int axis=0;axis<3;++axis) mesh.extraOrigin[axis]=context.BodyOrigin[axis]-owner.Position[axis]-rotated[axis];
     mesh.option = option; mesh.flags = flags; mesh.translate = translate;
     mesh.lod = _DAT_005597c8;
-    memcpy(mesh.context, (void *)(DAT_05828d58 + model * 0xbc), sizeof(mesh.context));
+    memcpy(mesh.context, (void *)(DAT_05828d58 + model * BMD_STRIDE), sizeof(mesh.context));
     memcpy(mesh.bones, g_BoneScratch, sizeof(mesh.bones));
     memcpy(mesh.object, object, sizeof(mesh.object));
     memcpy(mesh.light, light, sizeof(mesh.light));
@@ -167,7 +168,7 @@ void Equipment_Draw(const CHARACTER* entity, int stage) {
         }
         const Mesh &mesh = frame.meshes[command.index];
         float drawAlpha=mesh.alpha;
-        void *model = (void *)(DAT_05828d58 + mesh.model * 0xbc);
+        void *model = (void *)(DAT_05828d58 + mesh.model * BMD_STRIDE);
         EquipmentModelContext savedModel(model);
         memcpy(model, mesh.context, sizeof(mesh.context));
         memcpy(g_BoneScratch, mesh.bones, sizeof(mesh.bones));
@@ -189,7 +190,7 @@ void Equipment_Draw(const CHARACTER* entity, int stage) {
             context.BodyScale=owner.Scale;
             float rotated[3]{};
             if (!mesh.linked) {
-                void *ownerModel=(void *)(DAT_05828d58+owner.Type*0xbc);
+                void *ownerModel=(void *)(DAT_05828d58+owner.Type* BMD_STRIDE);
                 EquipmentModelContext savedOwner(ownerModel);
                 AsModel(ownerModel)->BodyScale=owner.Scale;
                 BMD__RotationPosition(ownerModel,ownerBone,(float *)mesh.offset,rotated);
@@ -220,7 +221,7 @@ void Equipment_Draw(const CHARACTER* entity, int stage) {
         memcpy(object, mesh.object, sizeof(object));
         float light[3]; memcpy(light, mesh.light, sizeof(light));
         MaterialVisualScope material(&mesh.material);
-        RenderPartObjectEffect((int)object, mesh.model, light, drawAlpha,
+        RenderPartObjectEffect((intptr_t)object, mesh.model, light, drawAlpha,
             mesh.level, mesh.option, 0, mesh.flags);
     }
     drawing = false;

@@ -30,7 +30,7 @@ void __cdecl Filter_SaveBMD(const char* path)
         src += 0x14;
         dst += 0x14;
     }
-    uintptr_t acc = (uintptr_t)DAT_007cfa00;
+    DWORD acc = (DWORD)DAT_007cfa00;
     for (unsigned int i = 0; i <= 0x4e1c; i += 4) {
         unsigned int v = *(unsigned int*)(lpMem + i);
         unsigned int k = ((unsigned char)((i >> 2) - 1)) & 1;
@@ -62,12 +62,12 @@ void __cdecl OpenFilterFile(const char* path)
         return;
     }
     BYTE* Buffer = (BYTE*)operator_new(20000);
-    uintptr_t Checksum = 0;
+    DWORD Checksum = 0;
     fread(Buffer,     20000, 1, Stream);
     fread(&Checksum,      4, 1, Stream);
     fclose(Stream);
     // Validate ring checksum — IDA-exact.
-    uintptr_t acc = (uintptr_t)DAT_007cfa00;  // 0x007cfa00 (literal seed)
+    DWORD acc = (DWORD)DAT_007cfa00;  // 0x007cfa00 (literal seed)
     for (unsigned int i = 0; i <= 0x4e1c; i += 4) {
         unsigned int v = *(unsigned int*)(Buffer + i);
         unsigned int k = ((unsigned char)((i >> 2) - 1)) & 1;
@@ -136,7 +136,7 @@ void __cdecl FilterName_SaveBMD(const char* path)
         src += 0x14;
         dst += 0x14;
     }
-    uintptr_t acc = (uintptr_t)DAT_00578200;
+    DWORD acc = (DWORD)DAT_00578200;
     for (unsigned int i = 0; i <= 0x4e1c; i += 4) {
         unsigned int v = *(unsigned int*)(lpMem + i);
         unsigned int k = ((unsigned char)((i >> 2) - 1)) & 1;
@@ -166,11 +166,11 @@ void __cdecl OpenNameFilterFile(const char* path)
         return;
     }
     BYTE* Buffer = (BYTE*)operator_new(20000);
-    uintptr_t Checksum = 0;
+    DWORD Checksum = 0;
     fread(Buffer,     20000, 1, Stream);
     fread(&Checksum,      4, 1, Stream);
     fclose(Stream);
-    uintptr_t acc = (uintptr_t)DAT_00578200;  // 0x00578200 (literal seed)
+    DWORD acc = (DWORD)DAT_00578200;  // 0x00578200 (literal seed)
     for (unsigned int i = 0; i <= 0x4e1c; i += 4) {
         unsigned int v = *(unsigned int*)(Buffer + i);
         unsigned int k = ((unsigned char)((i >> 2) - 1)) & 1;

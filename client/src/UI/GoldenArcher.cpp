@@ -70,6 +70,25 @@ extern "C" int g_GoldenArcherCustom = 0;
 
 static const int kItemRena = 469;   // GET_ITEM(14, 21)
 
+// DESVIACION (DLL GoldenArcher.cpp -> CItemManager::GetInventoryItemCount): si
+// el server declara la Rena/Stone apilable (F3/E3), cada casilla vale su
+// durabilidad; GetItemCount del original cuenta casillas.  level -1 = cualquiera.
+extern "C" BYTE OffsetInventoryItems[];
+int __cdecl ItemStack_GetMaxStack(int index, int level);
+static int GA_CountChips(int level)
+{
+    int count = 0;
+    const ITEM* items = reinterpret_cast<const ITEM*>(OffsetInventoryItems);
+    for (int n = 0; n < 64; ++n) {
+        const ITEM& it = items[n];
+        if (it.Type != kItemRena || (int)it.Key <= 0) continue;
+        const int itemLevel = (it.Level >> 3) & 0xF;
+        if (level != -1 && itemLevel != level) continue;
+        count += ItemStack_GetMaxStack(kItemRena, itemLevel) > 0 ? (int)it.Durability : 1;
+    }
+    return count;
+}
+
 static void GA_ClearInputFields(void)
 {
     ClearInput(0);                // ClearInput(0)
@@ -184,8 +203,8 @@ static void GA_Ida_Render(void)
                120 * GA_WindowWidth / 640, 1, (SIZE*)3);
 
     int chips = 0;                                     // v46
-    if (mode == 1)      chips = GetItemCount(kItemRena, -1);
-    else if (mode == 2) chips = GetItemCount(kItemRena, 1);
+    if (mode == 1)      chips = GA_CountChips(-1);
+    else if (mode == 2) chips = GA_CountChips(1);
 
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
@@ -345,7 +364,7 @@ static void GA_Ida_Check(void)
                 bool send = false;
                 if (GA_In(GA_X(35), 255, 120, 22) && GA_MouseLButtonPop) {
                     GA_MouseLButtonPop = 0;
-                    if (GetItemCount(kItemRena, -1) >= 10 ||
+                    if (GA_CountChips(-1) >= 10 ||
                         (DAT_07e11e20 != -1 && DAT_07e11e22 != -1 && DAT_07e11e24 != -1))
                         send = true;
                 }
@@ -640,7 +659,7 @@ static void RenderRena(void)
     TextC(x, y, GlobalText[882], 190); y += 15;
     TextC(x, y, GlobalText[883], 190); y += 15;
     RenderBox((float)x + 35, (float)y, 120, 22, GlobalText[218]); y += 45;
-    RenderCollectedRegistered(y, 884, 885, GetItemCount(kItemRena, 0)); y += 25;
+    RenderCollectedRegistered(y, 884, 885, GA_CountChips(0)); y += 25;
     y += 15;
     RenderBox((float)x + 35, (float)y, 120, 22, GlobalText[886], GetItemSlot(kItemRena, 0) != -1);
     y += 30;
@@ -689,7 +708,7 @@ static void RenderStone(void)
     TextC(x, y, GlobalText[889], 190); y += 15;
     TextC(x, y, GlobalText[890], 190); y += 15;
     RenderBox((float)x + 35, (float)y, 120, 22, GlobalText[218]); y += 45;
-    RenderCollectedRegistered(y, 891, 892, GetItemCount(kItemRena, 1)); y += 25;
+    RenderCollectedRegistered(y, 891, 892, GA_CountChips(1)); y += 25;
     y += 15;
     RenderBox((float)x + 35, (float)y, 120, 22, GlobalText[893], GetItemSlot(kItemRena, 1) != -1);
     y += 30;
@@ -1056,7 +1075,7 @@ void GoldenArcher_Recv9D(BYTE* Msg, int Size)
 
 // Chatter del NPC en el evento propio (DLL MoveCharacter_GoldenArcherChatMessages,
 // hook en 0x44AA70).  Devuelve true si lo manejo.
-extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
+extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(intptr_t c, int action)
 {
     if (!g_GoldenArcherCustom) return false;
     if (action < 80)       SetAction(AsObject(c), 1);

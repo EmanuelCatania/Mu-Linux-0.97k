@@ -48,7 +48,7 @@ def harness(revision=None):
     public=function(source,'FUN_00405290')
     constructor=function(source,'FUN_00405240_init')
     # Sólo en el banco: conserva el store32 pendiente de B2 con sintaxis que GCC acepta.
-    legacy='(int)&PTR_FUN_005524c4'
+    legacy='(intptr_t)&PTR_FUN_005524c4'
     assert constructor.count(legacy)==1
     constructor=constructor.replace(legacy,'static_cast<int>(reinterpret_cast<std::uintptr_t>(&PTR_FUN_005524c4))')
     integer='static_cast<int>(reinterpret_cast<std::uintptr_t>(data))'

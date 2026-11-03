@@ -550,7 +550,7 @@
 //     Vector_Rotate(vec, mat4x3, &local) — matriz × vector
 //     out[0..2] += local[0..2]  (aplica rotación al offset)
 //
-//   0x0043e5c0  Entity_SmoothAngle(int entity)
+//   0x0043e5c0  Entity_SmoothAngle(intptr_t entity)
 //     entity+0x161 (char flag): si 0 → lerp suave hacia target:
 //       entity+0x168 += (entity+0x164 - entity+0x168) * _DAT_005524f4
 //     Si flag != 0 → snap directo (o animación invertida)
@@ -559,20 +559,20 @@
 //     Función compleja (~40 líneas) con muchos floats y ftol
 //     Actualiza la trayectoria de movimiento de una entidad
 //
-//   0x0043e820  Entity_SetAnimation(int entity, uint animId)
+//   0x0043e820  Entity_SetAnimation(intptr_t entity, uint animId)
 //     Verifica animId < animData[entity.type * 0xbc + 0x26] o == 0x4c/0x4d
 //     Si animId != anim actual:
 //       entity+0x106 = entity+0x105  (prev anim)
 //       entity+0x10c = entity+0x108  (prev anim timer)
 //       entity+0x105 = animId; entity+0x108 = 0  (reset timer)
 //
-//   0x0043e890  Entity_FaceTarget(int entity, int target)
+//   0x0043e890  Entity_FaceTarget(intptr_t entity, int target)
 //     Si target != 0:
 //       Entity_GetDirCode(entity.pos, target.pos)
 //       Angle_Delta(entity.angle, dirCode, 1)
 //       Actualiza entity.angle suavemente
 //
-//   0x0043e940  Entity_AnimTick(int entity)
+//   0x0043e940  Entity_AnimTick(intptr_t entity)
 //     Lee entity+0x105 (anim state). Si != 0x06: avanza frame de animación
 //     Máquina de estados de animación (idle/walk/attack/die/...)
 //

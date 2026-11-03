@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Model/ModelTypes.h"
 #include "Entity/ObjectPose.h"
 #include "Entity/ObjectBounds.h"
 #include "functions.h"
@@ -134,7 +135,7 @@ static void AnimateWithScratch(void* this_, float* param_1, float param_2, unsig
         if (animA->FrameCount <= v39) v39 = 0;
         // IDA también clamp this[+0xA8] contra anim[this+0xA0]'s length:
         //   if ( v11 >= *(std::int16_t *)(16 * *(std::uint8_t*)(This+160) + v13 + 8) )
-        //       *(_WORD *)(This + 168) = 0;
+        //       *(_WORD *)&((BMD*)(uintptr_t)(This))->CurrentAnimationFrame = 0;
         int animBIdxClamp = model.CurrentAction;
         const ModelAnimationAction* animBHdr = actions + animBIdxClamp;
         if (animBHdr->FrameCount <= model.CurrentAnimationFrame)

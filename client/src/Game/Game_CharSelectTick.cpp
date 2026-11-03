@@ -22,6 +22,7 @@
 //   DAT_007eaa118..11c — anti-tamper bytes
 
 #include "stdafx.h"
+#include "UI/ChatListBox.h"
 #include "Net/NetText.h"
 #include "Entity/EntityName.h"
 #include "Config/UserSettings.h"
@@ -80,9 +81,9 @@ void Game_CharSelectTick(void)
         // the called clearList walked random "list" data → AV reading
         // 0x81EC8B55 (instruction bytes — i.e. node[1] pointed into
         // .text).  Use the proper fastcall dispatch.
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef void (__fastcall *FnClear)(DWORD*);
             ((FnClear)vt[10])(obj);
             Object_ClearMembers(DAT_055c9ff0);
@@ -119,10 +120,10 @@ void Game_CharSelectTick(void)
         // Standard viewport mode
         DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;
-        if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
+        if (DAT_055c9ff0 && ChatWidget_GetVTable(DAT_055c9ff0)) {
             // vtable[+0x14] = slot 5 = ChatLB_tick (__fastcall, takes this+arg).
             DWORD* obj = (DWORD*)DAT_055c9ff0;
-            void** vt  = (void**)*obj;
+            void** vt  = ChatWidget_GetVTable(obj);
             typedef int (__fastcall *FnTick)(DWORD*, int /*edx*/, int);
             ((FnTick)vt[5])(obj, 0, 0);
         }
@@ -218,11 +219,11 @@ void Game_CharSelectTick(void)
     //   CharacterAnimation — avanza entity[+0x108] (frame counter). Para todos.
     // El loop manual de abajo está desactivado (`false &&`).
     {
-        int heroEnt = (int)(uintptr_t)DAT_07abf5d8;
-        int base = (int)(uintptr_t)DAT_07abf5d0;
+        intptr_t heroEnt = (intptr_t)DAT_07abf5d8;
+        intptr_t base = (intptr_t)DAT_07abf5d0;
         MoveCharactersClient();
         for (int s = 0; false && s < 400; ++s) {
-            int e = base + s * 0x394;
+            intptr_t e = base + s * CHARACTER_STRIDE;
             if (*(char*)e == '\0') continue;   // inactive
             if (e != heroEnt) {
                 MoveMonsterClient(AsCharacter(e), AsObject(e));            // path tick (skip hero)
