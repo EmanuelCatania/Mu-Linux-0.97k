@@ -458,7 +458,6 @@ set(MU_HEADERS
     src/Platform/SDL3/SDLFont.h
     src/Render/GlyphAtlas.h
     src/Render/Gfx.h
-    src/Render/Backend/GL/LegacyGL.h
     src/Render/ResourceTables.h
     src/Render/Skinning.h
     src/Render/MeshDraw.h
@@ -663,7 +662,6 @@ endif()
 if(WIN32)
 target_link_libraries(mu97k PRIVATE
     opengl32
-    glu32
     winmm
     ws2_32
     version
@@ -693,7 +691,7 @@ target_link_options(mu97k PRIVATE
 
 else()
     find_package(OpenGL REQUIRED)
-    target_link_libraries(mu97k PRIVATE OpenGL::GL OpenGL::GLU)
+    target_link_libraries(mu97k PRIVATE OpenGL::GL)
     target_link_options(mu97k PRIVATE "-Wl,-Map,$<TARGET_FILE_DIR:mu97k>/main.map")
 endif()
 
@@ -768,9 +766,9 @@ if(MU_PLATFORM_BACKEND STREQUAL "SDL3")
     target_compile_features(mu_bmd_device_test PRIVATE cxx_std_17)
     target_link_libraries(mu_bmd_device_test PRIVATE SDL3::SDL3-static)
     if(WIN32)
-        target_link_libraries(mu_bmd_device_test PRIVATE opengl32 glu32)
+        target_link_libraries(mu_bmd_device_test PRIVATE opengl32)
     else()
-        target_link_libraries(mu_bmd_device_test PRIVATE GL GLU)
+        target_link_libraries(mu_bmd_device_test PRIVATE GL)
     endif()
     if(MSVC)
         target_compile_options(mu_bmd_device_test PRIVATE /EHsc /fp:precise /UNDEBUG)

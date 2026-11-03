@@ -14,7 +14,7 @@ enum class Cap { Texture2D, Blend, AlphaTest, DepthTest, CullFace, Fog, ScissorT
 enum class Factor { Zero, One, SrcColor, OneMinusSrcColor, SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha, DstColor, OneMinusDstColor, SrcAlphaSaturate };
 enum class Compare { Never, Less, Equal, LessEqual, Greater, NotEqual, GreaterEqual, Always };
 enum class Matrix { ModelView, Projection, Texture };
-enum class Format { Alpha, RGB, RGBA, Luminance, LuminanceAlpha };
+enum class Format { RGB, RGBA };
 enum class TexParam { MinFilter, MagFilter, WrapS, WrapT };
 enum class TexValue { Nearest, Linear, NearestMipmapNearest, LinearMipmapNearest, NearestMipmapLinear, LinearMipmapLinear, Repeat, Clamp, ClampToEdge };
 enum class TexEnv { Modulate, Replace, Decal, Blend, Add };

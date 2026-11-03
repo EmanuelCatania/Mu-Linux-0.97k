@@ -225,7 +225,7 @@ bool ReadSource(const TerrainDraw::Texture& source,Page& p) {
     if(compare!=GL_NONE||std::memcmp(identity,swizzle,sizeof(identity)))return false;
     if(p.filterMin!=GL_NEAREST&&p.filterMin!=GL_LINEAR)return false;
     glGetTexParameterfv(GL_TEXTURE_2D,GL_TEXTURE_BORDER_COLOR,p.border.data());
-    auto wrap=[](int v){return v==GL_CLAMP||v==GL_REPEAT||v==GL_CLAMP_TO_EDGE||v==GL_MIRRORED_REPEAT;};
+    auto wrap=[](int v){return v==GL_REPEAT||v==GL_CLAMP_TO_EDGE||v==GL_MIRRORED_REPEAT;};
     return wrap(p.wrapS)&&wrap(p.wrapT);
 }
 // Orden residente idéntico al recorrido de bloques 4x4 del 0.97k. Los huecos

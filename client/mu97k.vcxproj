@@ -71,7 +71,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <!-- Disable ASLR so memwatch.py can read DAT_ addresses at their original VAs. -->
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;ws2_32.lib;version.lib;dxguid.lib;dsound.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -182,7 +182,6 @@
     <ClInclude Include="src\Platform\SDL3\SDLFont.h" />
     <ClInclude Include="src\Render\GlyphAtlas.h" />
     <ClInclude Include="src\Render\Gfx.h" />
-    <ClInclude Include="src\Render\Backend\GL\LegacyGL.h" />
     <ClInclude Include="src\Render\ResourceTables.h" />
     <ClInclude Include="src\Render\Skinning.h" />
     <ClInclude Include="src\Render\MeshDraw.h" />

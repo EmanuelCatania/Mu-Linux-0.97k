@@ -45,7 +45,7 @@ jobs:
           sudo sed -i 's|http://azure\.archive\.ubuntu\.com/ubuntu/|https://archive.ubuntu.com/ubuntu/|g' /etc/apt/sources.list
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libglu1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri:i386
+          sudo apt-get install -y g++-multilib libc6-dev-i386 libx11-dev:i386 libxext-dev:i386 libxrandr-dev:i386 libxinerama-dev:i386 libxcursor-dev:i386 libxi-dev:i386 libgl1-mesa-dev:i386 libasound2-dev:i386 libpulse-dev:i386 libwayland-dev:i386 libxkbcommon-dev:i386 libdecor-0-dev:i386 wayland-protocols ninja-build pkg-config xvfb xauth gdb libgl1-mesa-dri:i386
       - name: Verificar contrato de colision BMD (Windows x86)
         if: runner.os == 'Windows'
         run: python -B tests/BMDCollisionArguments.py --architecture Win32

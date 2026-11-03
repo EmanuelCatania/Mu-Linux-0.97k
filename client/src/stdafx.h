@@ -3,7 +3,7 @@
 
 #include "Platform/PlatformHeaders.h"
 
-// OpenGL no se incluye acá: sólo el backend (Render/Backend/GL/LegacyGL.h).
+// OpenGL no se incluye acá: sólo el backend, con Platform/GL/glad.h (3.3 core).
 
 // CRT
 #include <stdio.h>

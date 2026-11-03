@@ -161,7 +161,7 @@ int Unavailable(const char* reason){std::fprintf(stderr,"Contexto GL de prueba n
 int main(){
     std::setvbuf(stdout,nullptr,_IONBF,0);
     if(!SDL_Init(SDL_INIT_VIDEO))return Unavailable(SDL_GetError());
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);SDL_GL_SetAttribute(SDL_GL_RED_SIZE,8);SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,8);SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,8);SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,8);SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_CORE);SDL_GL_SetAttribute(SDL_GL_RED_SIZE,8);SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,8);SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,8);SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,8);SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,24);
     SDL_Window* window=SDL_CreateWindow("BMD backend",128,128,SDL_WINDOW_OPENGL|SDL_WINDOW_HIDDEN);if(!window)return Unavailable(SDL_GetError());auto context=SDL_GL_CreateContext(window);if(!context)return Unavailable(SDL_GetError());if(!Platform::LoadGL33(Resolve))return Unavailable(Platform::GL33Error());
     std::printf("Driver: %s | %s\n",glGetString(GL_RENDERER),glGetString(GL_VERSION));
     for(int restart=0;restart<3;++restart){assert(BufferedDraw::Initialize());MatrixCases();Images();RenderProfile::ResetContext();MeshDraw::Release();BufferedDraw::Release();assert(glGetError()==GL_NO_ERROR);}

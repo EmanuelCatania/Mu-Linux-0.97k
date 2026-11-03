@@ -44,11 +44,8 @@ GLenum ToGL(Compare function) {
 }
 GLenum ToGL(Format format) {
     switch (format) {
-    case Format::Alpha: return GL_ALPHA;
     case Format::RGB: return GL_RGB;
     case Format::RGBA: return GL_RGBA;
-    case Format::Luminance: return GL_LUMINANCE;
-    case Format::LuminanceAlpha: return GL_LUMINANCE_ALPHA;
     }
     return GL_RGBA;
 }
@@ -70,7 +67,9 @@ GLint ToGL(TexValue value) {
     case TexValue::NearestMipmapLinear: return GL_NEAREST_MIPMAP_LINEAR;
     case TexValue::LinearMipmapLinear: return GL_LINEAR_MIPMAP_LINEAR;
     case TexValue::Repeat: return GL_REPEAT;
-    case TexValue::Clamp: return GL_CLAMP;
+    // DESVIACION: GL_CLAMP no existe en core. Con NEAREST nunca muestrea el
+    // borde y los drivers actuales ya lo tratan como CLAMP_TO_EDGE.
+    case TexValue::Clamp: return GL_CLAMP_TO_EDGE;
     case TexValue::ClampToEdge: return GL_CLAMP_TO_EDGE;
     }
     return GL_NEAREST;
@@ -226,7 +225,9 @@ void BindTexture(Texture texture) {
 }
 void TexImage2D(int components, int width, int height, Format format, const void* pixels) {
     BufferedDraw::Flush();TerrainDraw::InvalidateBoundTexture();
-    ProfileUploadGL::Image2D(glad_glTexImage2D, GL_TEXTURE_2D, 0, components, width, height, 0, ToGL(format), GL_UNSIGNED_BYTE, pixels);
+    // Core no acepta la cantidad de componentes como formato interno.
+    const GLint internal = components == 3 ? GL_RGB8 : GL_RGBA8;
+    ProfileUploadGL::Image2D(glad_glTexImage2D, GL_TEXTURE_2D, 0, internal, width, height, 0, ToGL(format), GL_UNSIGNED_BYTE, pixels);
 }
 void TexSubImage2D(int x, int y, int width, int height, Format format, const void* pixels) {
     BufferedDraw::Flush();TerrainDraw::InvalidateBoundTexture();
@@ -244,7 +245,7 @@ TexValue TexValueFromLegacy(int value) {
     case GL_NEAREST_MIPMAP_LINEAR: return TexValue::NearestMipmapLinear;
     case GL_LINEAR_MIPMAP_LINEAR: return TexValue::LinearMipmapLinear;
     case GL_REPEAT: return TexValue::Repeat;
-    case GL_CLAMP: return TexValue::Clamp;
+    case 0x2900: return TexValue::Clamp; // GL_CLAMP del binario
     case GL_CLAMP_TO_EDGE: return TexValue::ClampToEdge;
     default: return TexValue::Nearest;
     }
