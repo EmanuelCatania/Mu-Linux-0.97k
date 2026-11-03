@@ -71,7 +71,8 @@ void ApplyFx() {
                 RenderPosePair pair{Pose(view.previous),Pose(view.current),true};
                 OBJECT current; memcpy(&current,view.current,sizeof(current));
                 OBJECT previous; memcpy(&previous,view.previous,sizeof(previous));
-                pair.continuous=!current.Teleport && !previous.Teleport && Near(pair.previous.position,pair.current.position);
+                pair.continuous=current.Teleport==previous.Teleport && current.Teleport!=1 && current.Teleport!=2 &&
+                    Near(pair.previous.position,pair.current.position);
                 ApplyObject(*(OBJECT *)out,pair);
             } else if (pool==RenderFxPool::Joints) {
                 const int targetOffset=(int)offsetof(JOINT,TargetPosition),countOffset=(int)offsetof(JOINT,NumTails);

@@ -40,7 +40,8 @@ struct Sample {
     std::uint64_t generation = 0;
     std::uintptr_t owner = 0;
     int key = 0, type = 0, detail = 0;
-    bool live = false, teleport = false;
+    bool live = false;
+    int teleport = 0;
 };
 struct Track {
     Sample previous, current;
@@ -85,8 +86,12 @@ bool SameIdentity(const Sample& a, const Sample& b) {
     return a.live && b.live && a.generation == b.generation && a.owner == b.owner &&
            a.key == b.key && a.type == b.type && a.detail == b.detail;
 }
+// OBJECT::Teleport: 1 desvaneciendo, 2 oculto, 3 terminado. El 3 queda puesto
+// tras CreateTeleportEnd y los skills de guerrero (igual que en el original), así
+// que sólo el cambio de estado o el fundido cortan la interpolación.
+bool TeleportStable(int state) { return state != 1 && state != 2; }
 bool Same(const Sample& a, const Sample& b) {
-    return SameIdentity(a, b) && !a.teleport && !b.teleport;
+    return SameIdentity(a, b) && a.teleport == b.teleport && TeleportStable(b.teleport);
 }
 void Begin(Track& track, const Sample& sample, bool sameScene) {
     track.continuous = sameScene && track.published && Same(track.current, sample);
@@ -113,7 +118,7 @@ Sample ObjectSample(const OBJECT& object) {
     sample.live = object.Live != 0;
     if (!sample.live) return sample; // El payload de un slot libre puede no estar inicializado.
     sample.type = object.Type;
-    sample.teleport = object.Teleport != 0;
+    sample.teleport = object.Teleport;
     memcpy(sample.pose.position, object.Position, sizeof(sample.pose.position));
     memcpy(sample.pose.angle, object.Angle, sizeof(sample.pose.angle));
     memcpy(sample.pose.headAngle, object.HeadAngle, sizeof(sample.pose.headAngle));
@@ -220,7 +225,7 @@ bool Read(const Track& track, const Sample& live, RenderPosePair& out) {
         !SameIdentity(track.current, live)) return true;
     out.previous = track.previous.pose;
     out.current = track.current.pose;
-    out.continuous = track.continuous && !live.teleport;
+    out.continuous = track.continuous && TeleportStable(live.teleport);
     return true;
 }
 void LimitDisplacement(RenderPosePair& pair, float maximum) {
